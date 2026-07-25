@@ -30,7 +30,7 @@ export interface RadioTalkGroupDto {
   index: number;
   wireName: string;
   digitalId: number;
-  /** Call type: 0 private, 1 group, 2 all-call — NeonPlug quick-contact flag. */
+  /** NeonPlug quick-contact call type: 0x03 private, 0x04 group, 0x05 all — Studio DM-32UV Write always uses group (0x04). */
   callType: number;
 }
 

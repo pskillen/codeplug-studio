@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   newChannel,
+  newDigitalContact,
   newRadioBuildForProfile,
   newTalkGroup,
   newZone,
@@ -255,5 +256,46 @@ describe('buildRadioWriteProjection', () => {
     });
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.channels[0]?.scanAdd).toBe(false);
+  });
+
+  it('warns and truncates talk groups beyond DM-32UV quick-contact cap', () => {
+    const projectId = 'p1';
+    const talkGroups = Array.from({ length: 801 }, (_, i) =>
+      newTalkGroup(projectId, `TG${i}`, 1000 + i),
+    );
+    const library = {
+      ...emptyLibrary([]),
+      talkGroups,
+    };
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.talkGroups).toHaveLength(800);
+    expect(projection.organisation.talkGroups?.every((tg) => tg.callType === 0x04)).toBe(true);
+    expect(projection.warnings.some((w) => /801 talk group/.test(w) && /800/.test(w))).toBe(true);
+  });
+
+  it('warns and truncates digital contacts beyond DM-32UV address-book cap', () => {
+    const projectId = 'p1';
+    const digitalContacts = Array.from({ length: 251 }, (_, i) =>
+      newDigitalContact(projectId, `DC${i}`, 2000 + i),
+    );
+    const library = {
+      ...emptyLibrary([]),
+      digitalContacts,
+    };
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.digitalContacts).toHaveLength(250);
+    expect(
+      projection.warnings.some((w) => /251 digital contact/.test(w) && /250/.test(w)),
+    ).toBe(true);
   });
 });

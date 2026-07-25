@@ -50,8 +50,12 @@ import {
   type RadioWireEgressIds,
 } from './radioIoChannelMap.ts';
 
-/** NeonPlug quick-contact group-call type byte. */
+/** NeonPlug quick-contact group-call type byte (DM-32UV always writes group call). */
 const TG_CALL_TYPE_GROUP = 0x04;
+
+/** Tier-3 DM-32UV caps — contacts / quick-contact talk groups. */
+const DM32_DEFAULT_MAX_TALK_GROUPS = 800;
+const DM32_DEFAULT_MAX_DIGITAL_CONTACTS = 250;
 
 function numericLimit(
   value: ProfileExportLimits[keyof ProfileExportLimits] | undefined,
@@ -71,8 +75,8 @@ function dm32ExportLimits(egress: RadioWireEgressIds): ProfileExportLimits {
       maxZones: 250,
       maxScanLists: 32,
       maxRxGroupLists: 250,
-      maxContacts: null,
-      maxTalkGroups: null,
+      maxContacts: DM32_DEFAULT_MAX_DIGITAL_CONTACTS,
+      maxTalkGroups: DM32_DEFAULT_MAX_TALK_GROUPS,
       zoneMembers: 64,
       scanListMembers: 15,
       rxGroupListMembers: 32,
@@ -354,14 +358,20 @@ function buildTalkGroupsAndRx(
 } {
   const limits = dm32ExportLimits(egress);
   const nameLen = numericLimit(limits.nameLengthTalkGroup, 16);
+  const maxTalkGroups = numericLimit(limits.maxTalkGroups, DM32_DEFAULT_MAX_TALK_GROUPS);
+  const maxDigitalContacts = numericLimit(
+    limits.maxContacts,
+    DM32_DEFAULT_MAX_DIGITAL_CONTACTS,
+  );
   const maxRx = numericLimit(limits.maxRxGroupLists, 250);
   const maxRxMembers = numericLimit(limits.rxGroupListMembers, 32);
   const contactIdByEntityId = new Map<string, number>();
   const talkGroups: RadioTalkGroupDto[] = [];
   const reservedTg = new Set<string>();
+  const talkGroupTotal = assembled.talkGroups.length;
 
   for (const row of assembled.talkGroups) {
-    if (talkGroups.length >= 800) break;
+    if (talkGroups.length >= maxTalkGroups) break;
     const wireName = applyListWireNameLimits(
       row.wireName,
       reservedTg,
@@ -380,11 +390,17 @@ function buildTalkGroupsAndRx(
     });
     contactIdByEntityId.set(row.entity.id, index);
   }
+  if (talkGroupTotal > maxTalkGroups) {
+    warnings.push(
+      `Build has ${talkGroupTotal} talk group(s); only ${maxTalkGroups} export to radio quick contacts`,
+    );
+  }
 
   const digitalContacts: RadioDigitalContactDto[] = [];
   const reservedDc = new Set<string>();
+  const digitalContactTotal = assembled.digitalContacts.length;
   for (const row of assembled.digitalContacts) {
-    if (digitalContacts.length >= 250) break;
+    if (digitalContacts.length >= maxDigitalContacts) break;
     const wireName = applyListWireNameLimits(
       row.wireName,
       reservedDc,
@@ -403,6 +419,11 @@ function buildTalkGroupsAndRx(
       country: row.entity.country ?? '',
       remark: row.entity.remarks ?? '',
     });
+  }
+  if (digitalContactTotal > maxDigitalContacts) {
+    warnings.push(
+      `Build has ${digitalContactTotal} digital contact(s); only ${maxDigitalContacts} export to radio address book`,
+    );
   }
 
   const rxGroupIndexById = new Map<string, number>();
