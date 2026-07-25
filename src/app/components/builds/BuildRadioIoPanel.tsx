@@ -151,6 +151,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       await reloadEgressPaths();
       setLastFirmware(result.firmware);
       setLastOccupied(result.channelCountOccupied);
+      await releaseSession();
       setPhase('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -180,6 +181,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         signal: abortRef.current!.signal,
       });
       if (warnings.length > 0) setWriteWarnings(warnings);
+      await releaseSession();
       setPhase('done');
     } catch (err) {
       if (err instanceof RadioWriteBlockedError) {

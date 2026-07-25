@@ -70,6 +70,27 @@ describe('AtD890uvProtocol', () => {
     expect(writtenAddrs).not.toContain(AT_D890_SAFE_SKIP_WRITE_ADDR);
   });
 
+  it('sends END on disconnect after connect', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890Connect(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    await radio.disconnect();
+    const endWrites = pipe.writes.filter((w) => new TextDecoder().decode(w) === 'END');
+    expect(endWrites).toHaveLength(1);
+  });
+
+  it('sends END on disconnect after download', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890MinimalDownload(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    await radio.download({});
+    await radio.disconnect();
+    const endWrites = pipe.writes.filter((w) => new TextDecoder().decode(w) === 'END');
+    expect(endWrites).toHaveLength(1);
+  });
+
   it('rejects upload without seeded blocks', async () => {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890Connect(pipe);
