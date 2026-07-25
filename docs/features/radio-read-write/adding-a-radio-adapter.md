@@ -106,6 +106,7 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 - [ ] For Direct radio profiles: still wire `nameLimit` / `resolveMaxNameLength` / `getProfileExportLimits` / Export naming settings (same as [adding-a-new-format.md](../import-export/adding-a-new-format.md) channel wire-name checklist) — serial write uses them even without a CPS adapter
 - [ ] On failed connect/read/write: always close `BytePipe` / clear UI session so the OS port is not held
 - [ ] Write-strategy / hydration-required flags for UI gating
+- [ ] **`prodWriteDisabled`** when direct serial Write is not safe for production deploys — `BuildRadioIoPanel` + `prepareRadioWriteImage` gate via `__BUILD_ENV__` (`hidden` on `prod`, warn + confirm on pre-prod); prefer the radio target's CPS file egress until cleared
 - [ ] Register in `registry.ts`; UI picks only via registry (no `instanceof`)
 
 ### 5. App / RadioBuild + egress integration
@@ -194,6 +195,7 @@ Append here as adapters ship. Keep entries short; promote repeated patterns into
 | 2026-07-25 | Anytone DMR #646 | Kit codec `anytoneDmrRw.ts`: baud **921600** on descriptor (not in frame builders); PROGRAM→QX enter tolerates lone `0x00`; **no echo-strip** (unlike RT95 #641); 16-byte blocks with u32 BE + 8-bit checksum; safe-skip write `0x2fa0010` belongs in adapter (#649).                                                                                                                                                                                                                             |
 | 2026-07-25 | OpenGD77 #692    | **Binary squelch:** analogue library `squelch` % → channel `0x37` via qDMR Global/Open/Normal/Closed scaling (`encodeOpenGd77SquelchByte`). Digital rows stay Global. **`skipScan` / `skipZoneScan`:** both bits stamped from the same scan-inclusion trait — library has no separate all-scan vs zone-scan fields (intentional).                                                                                                                                                                 |
 | 2026-07-25 | UV-21Pro V2 #639 | **UV-17Pro family extract:** shared `radios/uv17pro-family/` (`Uv17ProLayout`, protocol, channel codec, hydration, retain preview). Mini is a thin layout wrapper; UV-21 adds fourth `MEM_*` region (`0x8380`, 1000 slots, `PROGRAMBFNORMALU`). Write path ships channel-span clear, TX inhibit, scan bit, and DTCS reverse from day one — not post-ship gap tickets. AM library mode not encoded on Web Serial (FM/NFM only).                                                                    |
+| 2026-07-25 | AT-D890UV #741   | **`prodWriteDisabled` deploy gate:** set on the descriptor when serial Write is not production-safe. `resolveRadioWriteGate` (`radioWriteEnvGate.ts`) hides Write on `__BUILD_ENV__ === 'prod'` and shows red alert + confirm modal on pre-prod; `prepareRadioWriteImage` throws as a backstop. Read stays enabled; steer operators to the radio target's CPS file egress (Anytone CSV for AT-D890UV).                                                                                            |
 
 ---
 

@@ -117,6 +117,11 @@ export interface RadioDescriptor {
   writeStrategy: RadioWriteStrategy;
   /** When true, Write is blocked until egress has binary hydration from Read. */
   hydrationRequiredForWrite: boolean;
+  /**
+   * When true, direct serial Write is hidden on production deploys and warned in pre-prod.
+   * App layer evaluates {@link __BUILD_ENV__}; adapter code stays registered.
+   */
+  prodWriteDisabled?: boolean;
   /** Baud for Web Serial open (radio-specific). */
   baudRate: number;
   /** Optional second baud to try once when ident/handshake fails at {@link baudRate}. */
