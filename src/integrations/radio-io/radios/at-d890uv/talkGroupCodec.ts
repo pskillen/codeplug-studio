@@ -13,21 +13,42 @@ import {
   talkgroupAddress,
   type AtD890DownloadCache,
 } from './memory.ts';
+import { encodeBcdAsHexU32 } from './bcd.ts';
 import { encodeWideCharName } from './wideChar.ts';
 
-const CALL_TYPE_GROUP = 0x04;
+/** Anytone D890 wire call type: Private=0, Group=1, All=2. */
+const ANYTONE_CALL_TYPE_GROUP = 0x01;
+
+/** NeonPlug quick-contact call types (DM-32 projection). */
+const NEONPLUG_CALL_TYPE_PRIVATE = 0x03;
+const NEONPLUG_CALL_TYPE_GROUP = 0x04;
+const NEONPLUG_CALL_TYPE_ALL = 0x05;
+
+function encodeAtD890TalkgroupCallType(callType: number | undefined): number {
+  switch (callType) {
+    case NEONPLUG_CALL_TYPE_PRIVATE:
+      return 0;
+    case NEONPLUG_CALL_TYPE_GROUP:
+      return 1;
+    case NEONPLUG_CALL_TYPE_ALL:
+      return 2;
+    case 0:
+    case 1:
+    case 2:
+      return callType;
+    default:
+      return ANYTONE_CALL_TYPE_GROUP;
+  }
+}
 
 export function encodeAtD890TalkgroupRecord(tg: RadioTalkGroupDto): Uint8Array {
   const data = new Uint8Array(AT_D890_LIMITS.TALKGROUP_RECORD_SIZE);
   data.fill(0);
-  data[0] = tg.callType || CALL_TYPE_GROUP;
+  data[0] = encodeAtD890TalkgroupCallType(tg.callType);
   if (tg.wireName) {
     data.set(encodeWideCharName(tg.wireName, 0x20), 0x6);
   }
-  const idHex = tg.digitalId.toString(16).padStart(8, '0');
-  for (let i = 0; i < 4; i++) {
-    data[0x2 + i] = Number.parseInt(idHex.slice(i * 2, i * 2 + 2), 16) & 0xff;
-  }
+  data.set(encodeBcdAsHexU32(tg.digitalId), 0x2);
   return data;
 }
 

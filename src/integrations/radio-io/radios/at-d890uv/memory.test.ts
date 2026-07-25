@@ -48,7 +48,7 @@ describe('talkgroup cache merge', () => {
     expect(cache.blocks.get(D890_MAP.TalkgroupData + 0xd0)![0]).not.toBe(0xaa);
     expect(cache.blocks.has(D890_MAP.TalkgroupData + 0xc0)).toBe(true);
     const slot1 = getCacheBytes(cache, talkgroupAddress(1), 1);
-    expect(slot1[0]).toBe(0x04);
+    expect(slot1[0]).toBe(0x01);
   });
 
   it('clearTalkgroupDataBlocksFromCache removes bank keys only', () => {
@@ -84,8 +84,8 @@ describe('getCacheBytes unaligned', () => {
   it('assembles across 16-byte keys for a mid-block start', () => {
     const cache: AtD890DownloadCache = { blocks: new Map() };
     const block = new Uint8Array(16);
-    block[8] = 0x04;
+    block[8] = 0x01;
     putCacheBytes(cache, D890_MAP.TalkgroupData + 0xc0, block);
-    expect(getCacheBytes(cache, talkgroupAddress(1), 1)[0]).toBe(0x04);
+    expect(getCacheBytes(cache, talkgroupAddress(1), 1)[0]).toBe(0x01);
   });
 });
