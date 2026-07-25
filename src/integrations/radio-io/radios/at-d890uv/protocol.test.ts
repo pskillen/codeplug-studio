@@ -8,6 +8,7 @@ import {
   scriptAtD890Connect,
   scriptAtD890MinimalDownload,
   scriptAtD890WriteAck,
+  enqueueAtD890ReadReply,
 } from './__fixtures__/scriptedPipe.ts';
 import { AT_D890_MAP_SIZE, AT_D890_SAFE_SKIP_WRITE_ADDR } from './constants.ts';
 import { encodeBcdFrequencyHz } from './bcd.ts';
@@ -89,6 +90,37 @@ describe('AtD890uvProtocol', () => {
     await radio.disconnect();
     const endWrites = pipe.writes.filter((w) => new TextDecoder().decode(w) === 'END');
     expect(endWrites).toHaveLength(1);
+  });
+
+  it('reads channel bank 1 when ChannelSet bit 128 is set (16-byte cache keys)', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890Connect(pipe);
+    const local = new Uint8Array(D890_MAP.LocalInfoLength).fill(0xff);
+    enqueueAtD890ReadReply(pipe, D890_MAP.LocalInfo, local);
+    const channelSet = new Uint8Array(0x200);
+    setBitmapBit(channelSet, 128, true);
+    enqueueAtD890ReadReply(pipe, D890_MAP.ChannelSet, channelSet);
+    const primary = new Uint8Array(0x40);
+    primary.set(encodeBcdFrequencyHz(439_425_000), 0);
+    const secondary = new Uint8Array(0x40);
+    enqueueAtD890ReadReply(pipe, channelPrimaryAddress(128), primary);
+    enqueueAtD890ReadReply(pipe, channelSecondaryAddress(128), secondary);
+    enqueueAtD890ReadReply(pipe, D890_MAP.ZoneSet, new Uint8Array(0x20));
+    enqueueAtD890ReadReply(pipe, D890_MAP.ZoneHide, new Uint8Array(0x20));
+    enqueueAtD890ReadReply(pipe, D890_MAP.ZoneAChannel, new Uint8Array(0x200));
+    enqueueAtD890ReadReply(pipe, D890_MAP.ZoneBChannel, new Uint8Array(0x200));
+    enqueueAtD890ReadReply(pipe, D890_MAP.ScanListSet, new Uint8Array(0x20));
+    enqueueAtD890ReadReply(pipe, D890_MAP.TalkgroupSet, new Uint8Array(0x4f0).fill(0xff));
+    enqueueAtD890ReadReply(pipe, D890_MAP.ReceiveGroupSet, new Uint8Array(0x10));
+    enqueueAtD890ReadReply(pipe, D890_MAP.RadioIdSet, new Uint8Array(0x20));
+    enqueueAtD890ReadReply(pipe, D890_MAP.MasterIdData, new Uint8Array(0x40));
+
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    await radio.download({});
+    const cache = radio.getDownloadCache()!;
+    expect(cache.blocks.has(channelPrimaryAddress(128))).toBe(true);
+    expect(channelPrimaryAddress(128)).toBe(0x108_0000);
   });
 
   it('rejects upload without seeded blocks', async () => {
