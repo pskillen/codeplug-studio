@@ -48,6 +48,11 @@ export interface RadioChannelDto {
   aprsReceive?: boolean;
   /** Channel APRS report mode (0x1C bits 3–2). */
   aprsReportMode?: 'off' | 'digital' | 'analog';
+  /**
+   * OpenGD77 analogue squelch @ `0x37` — internal percent 1–100, or `null` for Global.
+   * Ignored on encode when `mode` is digital / fixed-digital (qdmr: no per-channel squelch).
+   */
+  squelchPercent?: number | null;
   /** OpenGD77: skipScan bit @ 0x33 bit 4. */
   skipScan?: boolean;
   /** OpenGD77: skipZoneScan bit @ 0x33 bit 5. */
