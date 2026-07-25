@@ -34,10 +34,6 @@ import {
   resolveChannelScanInclusionForExport,
 } from '@core/import-export/scanInclusion/index.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
-import {
-  getRadioIoProfile,
-  isRadioIoOpenGd77Profile,
-} from '@core/import-export/formats/radio-io/profiles.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import type {
   RadioAprsDto,
@@ -803,11 +799,7 @@ function stampUv17ProFlatMemoryChannelBehaviour(
 }
 
 function isOpenGd77RadioIoEgress(profileId: string): boolean {
-  try {
-    return isRadioIoOpenGd77Profile(getRadioIoProfile(profileId));
-  } catch {
-    return false;
-  }
+  return profileId === 'radio-io-opengd77-1701' || profileId === 'radio-io-opengd77-md9600';
 }
 
 function stampOpenGd77ChannelBehaviour(

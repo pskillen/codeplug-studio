@@ -17,7 +17,6 @@ import {
   isRadioIoDm32uvProfile,
   isRadioIoOpenGd771701Profile,
   isRadioIoOpenGd77Md9600Profile,
-  isRadioIoOpenGd77Profile,
 } from './formats/radio-io/profiles.ts';
 
 /** Known number, unknown blank, or not applicable to this radio workflow. */
