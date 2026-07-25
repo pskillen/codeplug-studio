@@ -3,6 +3,7 @@ import {
   newChannel,
   newDigitalContact,
   newRadioBuildForProfile,
+  newRxGroupList,
   newTalkGroup,
   newZone,
 } from '@core/domain/factories.ts';
@@ -331,5 +332,31 @@ describe('buildRadioWriteProjection', () => {
     expect(projection.channels[0]?.dmrRadioIdIndex).toBe(0);
     const encoded = encodeDm32ChannelRecord(projection.channels[0]!);
     expect(encoded[0x2b]).toBe(0);
+  });
+
+  it('projects DM-32 RX group members as DMR IDs', () => {
+    const projectId = 'p1';
+    const tgA = { ...newTalkGroup(projectId, 'Local', 91), id: 'tg-a' };
+    const tgB = { ...newTalkGroup(projectId, 'Brand', 9), id: 'tg-b' };
+    const rxList = {
+      ...newRxGroupList(projectId, 'Local RGL'),
+      id: 'rx-1',
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tgA.id } },
+        { ref: { kind: 'talkGroup' as const, id: tgB.id } },
+      ],
+    };
+    const library = {
+      ...emptyLibrary([]),
+      talkGroups: [tgA, tgB],
+      rxGroupLists: [rxList],
+    };
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.rxGroups?.[0]?.memberDigitalIds).toEqual([91, 9]);
   });
 });

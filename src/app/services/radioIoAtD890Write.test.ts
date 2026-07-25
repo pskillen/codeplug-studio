@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
+import { newChannel, newRadioBuildForProfile, newRxGroupList, newTalkGroup } from '@core/domain/factories.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import {
@@ -180,5 +180,37 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     expect(projection.channels.length).toBeGreaterThan(0);
     expect(projection.organisation.zones).toBeDefined();
     expect(projection.organisation.digitalContacts).toBeUndefined();
+  });
+
+  it('projects RX group members as 0-based talkgroup bank slot indices', () => {
+    const projectId = 'p1';
+    const tgA = { ...newTalkGroup(projectId, 'Local', 91), id: 'tg-a' };
+    const tgB = { ...newTalkGroup(projectId, 'Brand', 9), id: 'tg-b' };
+    const tgC = { ...newTalkGroup(projectId, 'Scotland', 23_559), id: 'tg-c' };
+    const rxList = {
+      ...newRxGroupList(projectId, 'Local RGL'),
+      id: 'rx-1',
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tgA.id } },
+        { ref: { kind: 'talkGroup' as const, id: tgB.id } },
+        { ref: { kind: 'talkGroup' as const, id: tgC.id } },
+      ],
+    };
+    const library = {
+      ...emptyLibrary([]),
+      talkGroups: [tgA, tgB, tgC],
+      rxGroupLists: [rxList],
+    };
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-at-d890uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.rxGroups).toEqual([
+      expect.objectContaining({ memberDigitalIds: [0, 1, 2] }),
+    ]);
+    expect(projection.organisation.rxGroups?.[0]?.memberDigitalIds).not.toContain(91);
+    expect(projection.organisation.rxGroups?.[0]?.memberDigitalIds).not.toContain(23_559);
   });
 });
