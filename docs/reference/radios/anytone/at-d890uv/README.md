@@ -48,7 +48,9 @@ Provisional CSV caps mirror `profiles.ts` (`ANYTONE_PROFILES`); still verify aga
 
 Anytone DMR PROGRAM→QX session at **921600** baud with **u32 BE** addresses and sparse multi‑MB regions. See the binary docs in the map above. Kit codec: `src/integrations/radio-io/kit/codecs/anytoneDmrRw.ts` ([#646](https://github.com/pskillen/codeplug-studio/issues/646)). Adapter: `src/integrations/radio-io/radios/at-d890uv/` ([#649](https://github.com/pskillen/codeplug-studio/issues/649) — shipped).
 
-**Write contract (v1):** Studio replaces channels, zones, scan lists, talk groups, RX groups, operator radio IDs, and master radio ID from `assemble` + `RadioWriteProjection`. LocalInfo, `DigitalContact*`, boot/BK images, crypto, AM air, roaming, and AnalogBook stay Read-retained — use Anytone CSV egress for those.
+**Write contract (v1):** Studio **replaces** channels, zones, scan lists, talk groups (including TalkgroupOrder), RX groups, operator radio IDs, and master radio ID from `assemble` + `RadioWriteProjection`. Regions labelled **kept** in `writeRole` are **not re-derived from the build** but may still be **uploaded** when present in the Read cache — notably **LocalInfo** is replayed verbatim on every Write. Optional settings (`0x3500000` / `0x3500900` / `0x3501280`), alarm settings, `DigitalContact*`, boot/BK images, crypto, AM air, roaming, and AnalogBook are **not** in the v1 Read/Write set. Use Anytone CSV egress for those. See [memory-layout.md](memory-layout.md) for region facts and the kept-vs-replayed table.
+
+**Hardware note:** Chinese UI + startup password after an early Studio Write were attributed to corrupt channel frequency BCD ([#717](https://github.com/pskillen/codeplug-studio/issues/717)), not optional-settings language/password writes.
 
 ## Ground truth (cite; do not copy)
 

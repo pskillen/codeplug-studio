@@ -46,6 +46,46 @@ Addresses are **radio absolute** (u32). Read only enabled slots via each region�
 | `ReceiveGroupData`           | `0x3780000`  | Stride `0x200`; length `0x120`                 | Receive-group lists — [receive-group-record.md](receive-group-record.md) (members = talkgroup bank slot indices)                                                                                                                                |
 | `MasterIdData`               | `0x3684000`  | Length `0x40`                                  | Master / default radio ID                                                                                                                                                                                                                       |
 
+### Optional settings and alarm (not in Studio v1 Read/Write)
+
+anytone-cps community RE — verify on hardware before relying on offsets. Studio **does not** Read or Write these regions today; they are documented so neighbours of modelled zones are understood.
+
+| Region / buffer | Base | Length | Notes |
+| --- | --- | --- | --- |
+| Optional settings (main) | `0x3500000` | `0x200` | UI language @ `+0x05` (`English`/`German` in cps enum — **not** Chinese UI) |
+| Optional settings (main) | `0x3500000` | | Power-on password enable @ `+0x07` |
+| Zone A/B tables | `0x3500400` / `0x3500600` | `0x200` each | **Modelled** — adjacent to optional settings |
+| Optional settings (ext) | `0x3500900` | `0x60` | Power-on password chars @ `+0x20` (8 chars) |
+| Optional settings (APRS) | `0x3501280` | (cps third buffer) | APRS-related optional fields |
+| Alarm settings | `0x3482e00` | `0x10` | Alarm bitmap / enable region (cps) |
+| Alarm settings | `0x3483000` | (cps) | Alarm record bodies |
+
+Chinese UI on the radio is modelled in **LocalInfo ExpertOptions** (`+0x04` and `+0x05` both `0`), not optional-settings language. A hardware incident where Chinese + startup password appeared after the first Studio Write was traced to **illegal channel BCD frequencies** ([#717](https://github.com/pskillen/codeplug-studio/issues/717)), not writes to these optional-settings regions (they were never in the Read/Write set).
+
+### LocalInfo ExpertOptions (Read + replay on Write)
+
+`LocalInfo` @ `0x4f80000` (`0x100` bytes) is **Read** on download and **replayed verbatim** on upload (see Write contract below). ExpertOptions fields (facts from anytone-cps):
+
+| Offset | Field | Notes |
+| --- | --- | --- |
+| `+0x04`, `+0x05` | Chinese UI flag | Both bytes `0` ⇒ Chinese expert chrome |
+| `+0x0b` | Band-settings password | 4 chars |
+| `+0x28` | Program password | 4 chars |
+
+`writeRole` labels LocalInfo **kept** — meaning **not re-derived from the library build**, not “skipped on upload”.
+
+## Write upload contract (sparse cache)
+
+Studio upload (`listWriteChunks`) transmits **every 16-byte block present in the download cache**, not only regions replaced from `assemble`.
+
+| Category | `writeRole` | Re-derived from build? | Uploaded on Write? |
+| --- | --- | --- | --- |
+| Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced` | Yes | Yes |
+| LocalInfo | `kept` | No | **Yes** — replayed from Read cache |
+| Optional settings, alarm, DigitalContact\*, boot images, crypto, … | `kept` / unread | No | No — absent from cache unless future Read expands |
+
+Safe-skip address `0x2fa0010` (family constant) is never written. D890 `LocalInfo+0x10` (`0x4f80010`) is **not** skipped.
+
 Zone record detail: [zone-record.md](zone-record.md). Channel geometry: [channel-record.md](channel-record.md).
 
 ## Channel address formula
