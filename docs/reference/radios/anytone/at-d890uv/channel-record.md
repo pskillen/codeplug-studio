@@ -48,7 +48,7 @@ Offsets are into the concatenated buffer. Exact bit packing follows anytone-cps 
 
 | Offset / bits | Field                                                                            | Encoding / notes                                      |
 | ------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| `0x00–0x03`   | RX frequency                                                                     | Packed BCD-as-hex digits → integer Hz×10 style decode |
+| `0x00–0x03`   | RX frequency                                                                     | BCD-as-hex: hex digit string parsed as **decimal** in **10 Hz** units (`×10` → Hz). Encode: `padStart(8)` of `round(Hz/10)` → byte pairs. Studio library uses Hz. |
 | `0x04–0x07`   | Offset                                                                           | Same packing as RX                                    |
 | `0x08` bits   | duplex:2, bandwidth:2, power:2, type:2                                           | High nibble duplex/bw; low nibble power/type          |
 | `0x09` bits   | talkaround, call confirm, PTT prohibit, reverse; CTCSS/DCS encode/decode selects |                                                       |
