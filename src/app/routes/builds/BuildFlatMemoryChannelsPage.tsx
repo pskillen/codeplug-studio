@@ -352,8 +352,8 @@ export default function BuildFlatMemoryChannelsPage() {
             </Text>
           ) : (
             <Text size="xs" c="dimmed">
-              Sorts this build’s memory locations only — not your library. Sort selection…
-              collates a split selection at the first selected row.
+              Sorts this build’s memory locations only — not your library. Sort selection… collates
+              a split selection at the first selected row.
             </Text>
           )}
         </Group>

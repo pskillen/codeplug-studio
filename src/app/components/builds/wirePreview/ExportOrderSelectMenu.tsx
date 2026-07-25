@@ -121,8 +121,7 @@ export default function ExportOrderSelectMenu({
     onSelectedKeysChange([...next]);
   };
 
-  const hasHelpers =
-    bandOptions.length > 0 || modeOptions.length > 0 || duplexOptions.length > 0;
+  const hasHelpers = bandOptions.length > 0 || modeOptions.length > 0 || duplexOptions.length > 0;
 
   return (
     <Menu shadow="md" width={280} position="bottom-start">
