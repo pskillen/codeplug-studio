@@ -1054,6 +1054,22 @@ function parseRadioBuild(raw: unknown, index: number): RadioBuild {
           ),
         }
       : {}),
+    ...(record.defaultEgressFormatId !== undefined && record.defaultEgressFormatId !== null
+      ? {
+          defaultEgressFormatId: expectString(
+            record.defaultEgressFormatId,
+            `${label}.defaultEgressFormatId`,
+          ),
+        }
+      : {}),
+    ...(record.defaultEgressProfileId !== undefined && record.defaultEgressProfileId !== null
+      ? {
+          defaultEgressProfileId: expectString(
+            record.defaultEgressProfileId,
+            `${label}.defaultEgressProfileId`,
+          ),
+        }
+      : {}),
   };
 }
 

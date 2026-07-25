@@ -2,6 +2,7 @@ import { Button, Card, Group, Stack, Text, TextInput, Anchor } from '@mantine/co
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { listRadioTargets, type RadioTarget } from '@core/radio-targets/index.ts';
+import { EgressPathwayPills } from '../../components/builds/EgressPathwayPills.tsx';
 import { FormPage, PageSection } from '../../components/ui/index.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 
@@ -17,10 +18,6 @@ function targetsByGroup(
     map.set(target.group, list);
   }
   return [...map.entries()].map(([group, groupTargets]) => ({ group, targets: groupTargets }));
-}
-
-function egressSummary(target: RadioTarget): string {
-  return target.compatibleEgress.map((entry) => entry.label).join(' · ');
 }
 
 export default function NewBuildPage() {
@@ -92,9 +89,7 @@ export default function NewBuildPage() {
                           <Text fw={600} mb={4}>
                             {target.label}
                           </Text>
-                          <Text size="sm" c="dimmed">
-                            {egressSummary(target)}
-                          </Text>
+                          <EgressPathwayPills egress={target.compatibleEgress} />
                         </div>
                         <Button variant="light" size="compact-sm">
                           Select
@@ -113,9 +108,8 @@ export default function NewBuildPage() {
             <Stack gap="md">
               <Text size="sm" c="dimmed">
                 Radio: {selectedTarget.label}
-                <br />
-                Pathways: {egressSummary(selectedTarget)}
               </Text>
+              <EgressPathwayPills egress={selectedTarget.compatibleEgress} />
               <TextInput
                 label="Build name"
                 description="Defaults to the radio label — change it when you run multiple builds for the same radio (Team A / Team B)."

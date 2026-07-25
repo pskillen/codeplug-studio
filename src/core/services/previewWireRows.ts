@@ -48,7 +48,7 @@ import {
   previewGeneratedChannelWireName,
   type WirePreviewChannelNameOptions,
 } from './previewChannelWireName.ts';
-import { defaultCompatibleEgress } from '@core/radio-targets/index.ts';
+import { resolveBuildDefaultEgress } from '@core/radio-targets/index.ts';
 import { isAmAirbandBankChannel } from '@core/import-export/formats/anytone/receiveOnlyBanks.ts';
 import {
   classifyAnytoneZoneByMembers,
@@ -252,7 +252,7 @@ export function previewWireRows(
   _options?: WirePreviewChannelNameOptions,
   anytoneBank: AnytoneWirePreviewBank = 'dmr',
 ): WirePreviewRow[] {
-  const defaultEgress = defaultCompatibleEgress(build.radioTargetId);
+  const defaultEgress = resolveBuildDefaultEgress(build);
   const formatId = _options?.formatId ?? defaultEgress?.formatId ?? '';
   const profileId = _options?.profileId ?? defaultEgress?.profileId;
   const projection = assemble(build, library, { formatId, profileId });

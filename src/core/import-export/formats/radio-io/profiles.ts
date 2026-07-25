@@ -29,6 +29,22 @@ export interface RadioIoDm32uvProfile {
   powerLadder: readonly PowerLadderEntry[];
 }
 
+/** Anytone AT-D890UV Web Serial — mirrors anytone-at-d890uv CSV caps. */
+export interface RadioIoAtD890uvProfile {
+  id: 'radio-io-at-d890uv';
+  label: string;
+  maxMemorySlots: number;
+  nameLimit: number;
+  maxZones: number;
+  zoneMembers: number;
+  maxScanLists: number;
+  scanListMembers: number;
+  maxRxGroupLists: number;
+  rxGroupListMembers: number;
+  maxTalkGroups: number;
+  powerLadder: readonly PowerLadderEntry[];
+}
+
 /** OpenGD77 DM-1701 / RT-84 Web Serial — mirrors opengd77-1701 CSV caps. */
 export interface RadioIoOpenGd771701Profile {
   id: 'radio-io-opengd77-1701';
@@ -46,12 +62,21 @@ export interface RadioIoOpenGd771701Profile {
 }
 
 export type RadioIoRadioProfile =
-  RadioIoUv5rMiniProfile | RadioIoDm32uvProfile | RadioIoOpenGd771701Profile;
+  | RadioIoUv5rMiniProfile
+  | RadioIoDm32uvProfile
+  | RadioIoAtD890uvProfile
+  | RadioIoOpenGd771701Profile;
 
 export function isRadioIoDm32uvProfile(
   profile: RadioIoRadioProfile,
 ): profile is RadioIoDm32uvProfile {
   return profile.id === 'radio-io-dm32uv';
+}
+
+export function isRadioIoAtD890uvProfile(
+  profile: RadioIoRadioProfile,
+): profile is RadioIoAtD890uvProfile {
+  return profile.id === 'radio-io-at-d890uv';
 }
 
 export function isRadioIoOpenGd771701Profile(
@@ -73,6 +98,14 @@ const DM32_POWER_LADDER: readonly PowerLadderEntry[] = [
 ];
 
 /** Same P1–P9 ladder as opengd77-1701 CSV profile. */
+/** Same Low / Mid / High / Turbo ladder as anytone-at-d890uv CSV profile. */
+const AT_D890UV_POWER_LADDER: readonly PowerLadderEntry[] = [
+  { percent: 100, wire: 'Turbo', approxWatts: '7 W VHF / 6 W UHF' },
+  { percent: 75, wire: 'High', approxWatts: '5 W' },
+  { percent: 50, wire: 'Mid', approxWatts: '2.5 W' },
+  { percent: 25, wire: 'Low', approxWatts: '0.2 W' },
+];
+
 const OPENGD77_1701_POWER_LADDER: readonly PowerLadderEntry[] = [
   { percent: 100, wire: 'P9', approxWatts: '5 W' },
   { percent: 80, wire: 'P8', approxWatts: '4 W' },
@@ -107,6 +140,21 @@ export const RADIO_IO_DM32UV_PROFILE: RadioIoDm32uvProfile = {
   powerLadder: DM32_POWER_LADDER,
 };
 
+export const RADIO_IO_AT_D890UV_PROFILE: RadioIoAtD890uvProfile = {
+  id: 'radio-io-at-d890uv',
+  label: 'Anytone AT-D890UV',
+  maxMemorySlots: 4000,
+  nameLimit: 16,
+  maxZones: 256,
+  zoneMembers: 64,
+  maxScanLists: 100,
+  scanListMembers: 100,
+  maxRxGroupLists: 128,
+  rxGroupListMembers: 32,
+  maxTalkGroups: 10000,
+  powerLadder: AT_D890UV_POWER_LADDER,
+};
+
 export const RADIO_IO_OPENGD77_1701_PROFILE: RadioIoOpenGd771701Profile = {
   id: 'radio-io-opengd77-1701',
   label: 'Baofeng DM-1701 / RT-84 (OpenGD77)',
@@ -124,6 +172,7 @@ export const RADIO_IO_OPENGD77_1701_PROFILE: RadioIoOpenGd771701Profile = {
 export const RADIO_IO_PROFILES: readonly RadioIoRadioProfile[] = [
   RADIO_IO_UV5R_MINI_PROFILE,
   RADIO_IO_DM32UV_PROFILE,
+  RADIO_IO_AT_D890UV_PROFILE,
   RADIO_IO_OPENGD77_1701_PROFILE,
 ];
 

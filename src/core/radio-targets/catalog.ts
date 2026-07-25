@@ -111,7 +111,10 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
     label: 'Anytone AT-D890UV',
     group: 'Anytone',
     traits: anytoneTraits,
-    compatibleEgress: [egress('anytone', 'anytone-at-d890uv', 'Anytone CSV')],
+    compatibleEgress: [
+      egress('radio-io', 'radio-io-at-d890uv', 'Web Serial'),
+      egress('anytone', 'anytone-at-d890uv', 'Anytone CSV'),
+    ],
   },
 };
 
@@ -185,6 +188,30 @@ export function compatibleEgressForProfile(
 
 export function defaultCompatibleEgress(radioTargetId: string): CompatibleEgress | undefined {
   return radioTargetFor(radioTargetId)?.compatibleEgress[0];
+}
+
+/** Resolve the build's default pathway — denormalised ids win over catalog first egress. */
+export function resolveBuildDefaultEgress(build: {
+  radioTargetId: string;
+  defaultEgressFormatId?: string;
+  defaultEgressProfileId?: string;
+}): CompatibleEgress | undefined {
+  if (build.defaultEgressFormatId && build.defaultEgressProfileId) {
+    const target = radioTargetFor(build.radioTargetId);
+    const fromCatalog = target?.compatibleEgress.find(
+      (entry) =>
+        entry.formatId === build.defaultEgressFormatId &&
+        entry.profileId === build.defaultEgressProfileId,
+    );
+    if (fromCatalog) return fromCatalog;
+    return {
+      formatId: build.defaultEgressFormatId,
+      profileId: build.defaultEgressProfileId,
+      kind: egressKindForFormatId(build.defaultEgressFormatId),
+      label: build.defaultEgressProfileId,
+    };
+  }
+  return defaultCompatibleEgress(build.radioTargetId);
 }
 
 /**

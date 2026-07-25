@@ -1,5 +1,6 @@
 /** Anytone radio profiles — import/export boundary (caps + power ladder). */
 
+import { radioTargetFor, radioTargetIdForProfile } from '@core/radio-targets/index.ts';
 import { percentToWire, wireToPercent, type PowerLadderEntry } from '../../profileLadder.ts';
 
 export interface AnytoneRadioProfile {
@@ -47,8 +48,23 @@ export const ANYTONE_PROFILES: readonly AnytoneRadioProfile[] = [
 
 export const DEFAULT_ANYTONE_PROFILE_ID = ANYTONE_PROFILES[0]!.id;
 
+/** Map Web Serial / sibling egress profile ids to the Anytone CSV profile for caps. */
+export function resolveAnytoneCpsProfileId(profileId: string): string {
+  if (ANYTONE_PROFILES.some((profile) => profile.id === profileId)) return profileId;
+  if (profileId === 'radio-io-at-d890uv') return 'anytone-at-d890uv';
+  const targetId = radioTargetIdForProfile(profileId);
+  if (targetId) {
+    const csv = radioTargetFor(targetId)?.compatibleEgress.find(
+      (entry) => entry.formatId === 'anytone',
+    );
+    if (csv) return csv.profileId;
+  }
+  return profileId;
+}
+
 export function getAnytoneProfile(profileId: string): AnytoneRadioProfile {
-  const found = ANYTONE_PROFILES.find((p) => p.id === profileId);
+  const resolved = resolveAnytoneCpsProfileId(profileId);
+  const found = ANYTONE_PROFILES.find((p) => p.id === resolved);
   if (!found) throw new Error(`Unknown Anytone profile: ${profileId}`);
   return found;
 }

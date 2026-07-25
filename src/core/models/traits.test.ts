@@ -80,6 +80,14 @@ describe('trait profiles', () => {
     expect(profile?.traits).toContain(BuildCapabilityTrait.PerChannelScanFlag);
   });
 
+  it('registers radio-io-at-d890uv with Anytone-style traits (Web Serial only)', () => {
+    const profile = traitProfileFor('radio-io-at-d890uv');
+    expect(profile?.formatId).toBe('radio-io');
+    expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneGrouping);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.DedicatedScanLists);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.MxNChannelExpansion);
+  });
+
   it('has stable profile keys', () => {
     expect(Object.keys(TRAIT_PROFILES).sort()).toEqual([
       'anytone-at-d890uv',
@@ -91,6 +99,7 @@ describe('trait profiles', () => {
       'neonplug-uv5rmini',
       'opengd77-1701',
       'opengd77-md9600',
+      'radio-io-at-d890uv',
       'radio-io-dm32uv',
       'radio-io-opengd77-1701',
       'radio-io-uv5r-mini',

@@ -4,6 +4,7 @@ import {
   anytonePercentToWire,
   anytoneWireToPercent,
   getAnytoneProfile,
+  resolveAnytoneCpsProfileId,
 } from './profiles.ts';
 
 describe('anytone profiles', () => {
@@ -33,5 +34,10 @@ describe('anytone profiles', () => {
 
   it('throws for unknown profile', () => {
     expect(() => getAnytoneProfile('unknown')).toThrow(/Unknown Anytone profile/);
+  });
+
+  it('resolves Web Serial sibling profile to Anytone CSV caps', () => {
+    expect(resolveAnytoneCpsProfileId('radio-io-at-d890uv')).toBe('anytone-at-d890uv');
+    expect(getAnytoneProfile('radio-io-at-d890uv').id).toBe('anytone-at-d890uv');
   });
 });

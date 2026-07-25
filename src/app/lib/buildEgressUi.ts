@@ -1,7 +1,7 @@
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { isRadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
-import { defaultCompatibleEgress } from '@core/radio-targets/index.ts';
+import { resolveBuildDefaultEgress } from '@core/radio-targets/index.ts';
 import { isNeonplugDonorBag } from '../services/buildCpsExportService.ts';
 
 export interface EgressIdentity {
@@ -17,7 +17,7 @@ export function egressIdentityForBuild(
   if (activeEgress && activeEgress.radioBuildId === build.id) {
     return { formatId: activeEgress.formatId, profileId: activeEgress.profileId };
   }
-  const fallback = defaultCompatibleEgress(build.radioTargetId);
+  const fallback = resolveBuildDefaultEgress(build);
   if (!fallback) {
     throw new Error(`No compatible egress for radio target: ${build.radioTargetId}`);
   }

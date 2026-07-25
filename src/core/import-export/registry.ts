@@ -135,6 +135,15 @@ const ANYTONE_EXPORT_DEFAULTS: FormatExportDefaults = {
   exportZoneDerivedScanLists: false,
 };
 
+/** Anytone AT-D890UV Web Serial — same m×n defaults as Anytone CPS. */
+const RADIO_IO_AT_D890UV_EXPORT_DEFAULTS: FormatExportDefaults = {
+  defaultScanInclusion: 'scan',
+  expandModes: false,
+  expandRxGroupLists: true,
+  exportScratchChannels: true,
+  exportZoneDerivedScanLists: false,
+};
+
 const FORMAT_EXPORT_DEFAULTS: Partial<Record<FormatId, FormatExportDefaults>> = {
   chirp: CHIRP_EXPORT_DEFAULTS,
   'radio-io': RADIO_IO_EXPORT_DEFAULTS,
@@ -149,6 +158,9 @@ export function getFormatExportDefaults(
 ): FormatExportDefaults {
   if (formatId === 'radio-io' && profileId === 'radio-io-dm32uv') {
     return RADIO_IO_DM32UV_EXPORT_DEFAULTS;
+  }
+  if (formatId === 'radio-io' && profileId === 'radio-io-at-d890uv') {
+    return RADIO_IO_AT_D890UV_EXPORT_DEFAULTS;
   }
   const fromAdapter = exportAdapters.find((a) => a.id === formatId)?.defaultExportSettings;
   if (fromAdapter) return fromAdapter;

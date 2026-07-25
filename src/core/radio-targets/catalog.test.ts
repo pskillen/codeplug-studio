@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
+import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import {
   defaultCompatibleEgress,
   hasMxNChannelExpansion,
@@ -8,6 +9,7 @@ import {
   radioTargetFor,
   radioTargetHasCompatibleFormat,
   radioTargetIdForProfile,
+  resolveBuildDefaultEgress,
   showsDefaultScanInclusion,
   showsPerChannelScanListNav,
   traitsForRadioTarget,
@@ -68,6 +70,7 @@ describe('radio target catalog', () => {
       'neonplug-uv5rmini',
       'radio-io-uv5r-mini',
       'radio-io-dm32uv',
+      'radio-io-at-d890uv',
       'radio-io-opengd77-1701',
     ]) {
       expect(ids).toContain(profileId);
@@ -82,6 +85,7 @@ describe('radio target catalog', () => {
     expect(radioTargetHasCompatibleFormat('baofeng-dm32uv', 'dm32')).toBe(true);
     expect(radioTargetHasCompatibleFormat('baofeng-dm32uv', 'radio-io')).toBe(true);
     expect(radioTargetHasCompatibleFormat('anytone-at-d890uv', 'anytone')).toBe(true);
+    expect(radioTargetHasCompatibleFormat('anytone-at-d890uv', 'radio-io')).toBe(true);
   });
 
   it('gates Export projection traits by radio target for multi-egress Mini', () => {
@@ -90,5 +94,12 @@ describe('radio target catalog', () => {
     expect(hasMxNChannelExpansion('baofeng-uv5r-mini')).toBe(false);
     expect(hasMxNChannelExpansion('baofeng-dm32uv')).toBe(true);
     expect(hasMxNChannelExpansion('anytone-at-d890uv')).toBe(true);
+  });
+
+  it('resolveBuildDefaultEgress prefers denormalised default pathway on the build', () => {
+    const { build } = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
+    expect(defaultCompatibleEgress(build.radioTargetId)?.profileId).toBe('radio-io-at-d890uv');
+    expect(resolveBuildDefaultEgress(build)?.profileId).toBe('anytone-at-d890uv');
+    expect(resolveBuildDefaultEgress(build)?.formatId).toBe('anytone');
   });
 });

@@ -20,13 +20,18 @@ import {
   type Dm32uvCloneSummary,
 } from '@integrations/radio-io/radios/dm32uv/index.ts';
 import {
+  summariseAtD890uvClone,
+  AT_D890UV_MODEL_ID,
+  type AtD890uvCloneSummary,
+} from '@integrations/radio-io/radios/at-d890uv/index.ts';
+import {
   summariseOpenGd77Clone,
   OPENGD77_DM1701_MODEL_ID,
   type OpenGd77CloneSummary,
 } from '@integrations/radio-io/radios/opengd77/index.ts';
-import { findEgressByFormatId } from '../../lib/buildEgressUi.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
+import { findEgressByFormatId } from '../../lib/buildEgressUi.ts';
 
 function hexOffset(n: number): string {
   return `0x${n.toString(16).toUpperCase()}`;
@@ -701,6 +706,121 @@ function Dm32RadioImageSections({
   );
 }
 
+function AtD890RadioImageSections({
+  summary,
+  bag,
+}: {
+  summary: AtD890uvCloneSummary;
+  bag: RadioCloneHydrationBag;
+}) {
+  return (
+    <>
+      <FormSection title="Capture">
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Tbody>
+              <Table.Tr>
+                <Table.Td fw={600}>Source</Table.Td>
+                <Table.Td>{bag.sourceFileName ?? '—'}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Captured</Table.Td>
+                <Table.Td>{new Date(bag.capturedAt).toLocaleString()}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Via</Table.Td>
+                <Table.Td>{summary.capturedVia}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Regions captured</Table.Td>
+                <Table.Td>{summary.blockCount}</Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      </FormSection>
+
+      <FormSection
+        title="On the radio"
+        description="Counts decoded from the stored image — not your build layout."
+      >
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Tbody>
+              <Table.Tr>
+                <Table.Td fw={600}>Channels</Table.Td>
+                <Table.Td>{summary.channelCount}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Zones</Table.Td>
+                <Table.Td>{summary.zoneCount}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Scan lists</Table.Td>
+                <Table.Td>{summary.scanListCount}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Talk groups</Table.Td>
+                <Table.Td>{summary.talkGroupCount}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>RX group lists</Table.Td>
+                <Table.Td>{summary.rxGroupCount}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Operator radio IDs</Table.Td>
+                <Table.Td>{summary.radioIdCount}</Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      </FormSection>
+
+      <FormSection
+        title="Written from your build"
+        description="When you Write to radio, Studio updates these from your build."
+      >
+        <List size="sm" spacing="xs">
+          {summary.writtenFromBuild.map((item) => (
+            <List.Item key={item}>{item}</List.Item>
+          ))}
+        </List>
+        <Text size="sm" c="dimmed" mt="sm">
+          {summary.digitalContactsWriteGap}
+        </Text>
+      </FormSection>
+
+      <FormSection
+        title="Kept on Write"
+        description="These regions stay as they were on the radio when you Write from your build."
+      >
+        {summary.retainGroups.length === 0 ? (
+          <Text size="sm">No retained regions in this capture.</Text>
+        ) : (
+          <Table.ScrollContainer minWidth={360}>
+            <Table withTableBorder withColumnBorders>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Region</Table.Th>
+                  <Table.Th>Chunks</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {summary.retainGroups.map((g) => (
+                  <Table.Tr key={g.label}>
+                    <Table.Td>{g.label}</Table.Td>
+                    <Table.Td>{g.blockCount}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        )}
+      </FormSection>
+    </>
+  );
+}
+
 export default function BuildRadioImageSettingsPage() {
   const { build, egressPaths } = useBuildLayout();
   const radioEgress = findEgressByFormatId(egressPaths, 'radio-io');
@@ -713,12 +833,15 @@ export default function BuildRadioImageSettingsPage() {
   const isUv5rMini = bag?.retain.radioModelId === UV5R_MINI_MODEL_ID;
   const isDm32 =
     bag?.retain.radioModelId === DM32UV_MODEL_ID || bag?.retain.radioModelId === 'DP570UV';
+  const isAtD890 =
+    bag?.retain.radioModelId === AT_D890UV_MODEL_ID || bag?.retain.radioModelId === 'ID890UV';
   const isOpenGd77 =
     bag?.retain.radioModelId === OPENGD77_DM1701_MODEL_ID ||
     bag?.retain.radioModelId === 'DM-1701' ||
     bag?.retain.radioModelId === 'RT-84';
   const uv5rSummary = bag && isUv5rMini ? summariseUv5rMiniClone(bag) : null;
   const dm32Summary = bag && isDm32 ? summariseDm32uvClone(bag) : null;
+  const atD890Summary = bag && isAtD890 ? summariseAtD890uvClone(bag) : null;
   const openGd77Summary = bag && isOpenGd77 ? summariseOpenGd77Clone(bag) : null;
 
   return (
@@ -731,11 +854,13 @@ export default function BuildRadioImageSettingsPage() {
           has stored an image — the Export pathway switcher need not be on Direct radio.{' '}
           {isDm32
             ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels and other build data from your library.'
-            : isOpenGd77
-              ? 'Counts show what is on the radio; retained settings, VFO, DTMF, and APRS regions are what Studio keeps when you write channels, zones, and contacts from your library.'
-              : isUv5rMini
-                ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels from your library.'
-                : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
+            : isAtD890
+              ? 'Counts show what is on the radio; local info and unmodelled banks stay Read-retained when you write channels, zones, scan lists, and contacts from your library.'
+              : isOpenGd77
+                ? 'Counts show what is on the radio; retained settings, VFO, DTMF, and APRS regions are what Studio keeps when you write channels, zones, and contacts from your library.'
+                : isUv5rMini
+                  ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels from your library.'
+                  : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
         </Text>
       }
     >
@@ -748,7 +873,7 @@ export default function BuildRadioImageSettingsPage() {
               into this build. Write stays blocked until a Read succeeds.
             </Text>
           </FormSection>
-        ) : !uv5rSummary && !dm32Summary && !openGd77Summary ? (
+        ) : !uv5rSummary && !dm32Summary && !atD890Summary && !openGd77Summary ? (
           <FormSection title="Stored image">
             <Text size="sm">
               A radio-clone image is stored (model {bag.retain.radioModelId},{' '}
@@ -758,6 +883,8 @@ export default function BuildRadioImageSettingsPage() {
           </FormSection>
         ) : dm32Summary && bag ? (
           <Dm32RadioImageSections summary={dm32Summary} bag={bag} />
+        ) : atD890Summary && bag ? (
+          <AtD890RadioImageSections summary={atD890Summary} bag={bag} />
         ) : openGd77Summary && bag ? (
           <OpenGd77RadioImageSections summary={openGd77Summary} bag={bag} />
         ) : uv5rSummary && bag ? (

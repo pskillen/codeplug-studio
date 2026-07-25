@@ -13,6 +13,7 @@ import { getOpenGd77Profile } from './formats/opengd77/profiles.ts';
 import { getNeonplugProfile, isNeonplugDm32uvProfile } from './formats/neonplug/profiles.ts';
 import {
   getRadioIoProfile,
+  isRadioIoAtD890uvProfile,
   isRadioIoDm32uvProfile,
   isRadioIoOpenGd771701Profile,
 } from './formats/radio-io/profiles.ts';
@@ -279,6 +280,30 @@ export function getProfileExportLimits(
           nameLengthTalkGroup: profile.nameLimit,
           nameLengthScanList: 10,
           nameLengthRxGroupList: 10,
+          powerLadder: profile.powerLadder,
+          siblingLadders: [],
+        };
+      }
+      if (isRadioIoAtD890uvProfile(profile)) {
+        return {
+          formatId,
+          profileId: profile.id,
+          profileLabel: profile.label,
+          maxChannels: profile.maxMemorySlots,
+          maxZones: profile.maxZones,
+          maxScanLists: profile.maxScanLists,
+          maxRxGroupLists: profile.maxRxGroupLists,
+          maxContacts: null,
+          maxTalkGroups: profile.maxTalkGroups,
+          zoneMembers: profile.zoneMembers,
+          scanListMembers: profile.scanListMembers,
+          rxGroupListMembers: profile.rxGroupListMembers,
+          nameLengthChannel: profile.nameLimit,
+          nameLengthZone: profile.nameLimit,
+          nameLengthContact: profile.nameLimit,
+          nameLengthTalkGroup: profile.nameLimit,
+          nameLengthScanList: profile.nameLimit,
+          nameLengthRxGroupList: profile.nameLimit,
           powerLadder: profile.powerLadder,
           siblingLadders: [],
         };

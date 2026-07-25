@@ -144,6 +144,18 @@ export function seedEgressPathsForBuild(build: RadioBuild): EgressPath[] {
   );
 }
 
+function withDefaultEgressIdentity(
+  build: RadioBuild,
+  egress: Pick<EgressPath, 'id' | 'formatId' | 'profileId'>,
+): RadioBuild {
+  return {
+    ...build,
+    defaultEgressPathId: egress.id,
+    defaultEgressFormatId: egress.formatId,
+    defaultEgressProfileId: egress.profileId,
+  };
+}
+
 /**
  * Create a radio build + all seeded egress paths for a catalog target.
  * Sets `defaultEgressPathId` to the first (preferred) egress.
@@ -155,9 +167,9 @@ export function newRadioBuildWithEgresses(
 ): { build: RadioBuild; egressPaths: EgressPath[] } {
   const build = newRadioBuild(projectId, radioTargetId, name);
   const egressPaths = seedEgressPathsForBuild(build);
-  const defaultEgressPathId = egressPaths[0]?.id;
+  const defaultEgress = egressPaths[0];
   return {
-    build: defaultEgressPathId ? { ...build, defaultEgressPathId } : build,
+    build: defaultEgress ? withDefaultEgressIdentity(build, defaultEgress) : build,
     egressPaths,
   };
 }
@@ -181,7 +193,7 @@ export function newRadioBuildForProfile(
     throw new Error(`No egress seeded for profile ${profileId}`);
   }
   return {
-    build: { ...build, defaultEgressPathId: egress.id },
+    build: withDefaultEgressIdentity(build, egress),
     egress,
     egressPaths,
   };
