@@ -10,17 +10,41 @@ import { createRadioCloneHydrationBagFromBlocks } from '@core/models/radioCloneH
 import { AT_D890UV_MODEL_ID } from './hydration.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 
+function readU16Le(buf: Uint8Array, offset: number): number {
+  return buf[offset]! | (buf[offset + 1]! << 8);
+}
+
 describe('zoneCodec', () => {
-  it('clears removed zone membership with 0xFFFF fillers', () => {
+  it('encodes zone membership as 0-based channel indices', () => {
     const image = createMemoryMap(0x500_0000);
     image.fill(0, 0x500_0000, 0xff);
     encodeZonesIntoAtD890Image(image, [{ wireName: 'Z1', channelNumbers: [1, 2] }]);
     const members = image.get(D890_MAP.ZoneChannels, 0x200);
-    expect(members[0]).toBe(1);
+    expect(members[0]).toBe(0);
     expect(members[1]).toBe(0);
-    expect(members[2]).toBe(2);
+    expect(members[2]).toBe(1);
     expect(members[3]).toBe(0);
     expect(members[4]).toBe(0xff);
+  });
+
+  it('writes zone-local A/B indices (not global channel numbers)', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    encodeZonesIntoAtD890Image(image, [{ wireName: 'Two', channelNumbers: [10, 20] }]);
+    const zoneA = image.get(D890_MAP.ZoneAChannel, 0x200);
+    const zoneB = image.get(D890_MAP.ZoneBChannel, 0x200);
+    expect(readU16Le(zoneA, 0)).toBe(0);
+    expect(readU16Le(zoneB, 0)).toBe(1);
+  });
+
+  it('writes A=0 B=0 when zone has one member', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    encodeZonesIntoAtD890Image(image, [{ wireName: 'One', channelNumbers: [5] }]);
+    const zoneA = image.get(D890_MAP.ZoneAChannel, 0x200);
+    const zoneB = image.get(D890_MAP.ZoneBChannel, 0x200);
+    expect(readU16Le(zoneA, 0)).toBe(0);
+    expect(readU16Le(zoneB, 0)).toBe(0);
   });
 });
 
@@ -90,6 +114,6 @@ describe('zone shrink on merge', () => {
       },
       0,
     );
-    expect(members).toEqual([1]);
+    expect(members).toEqual([0]);
   });
 });
