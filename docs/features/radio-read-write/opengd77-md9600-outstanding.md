@@ -2,15 +2,12 @@
 
 **Tracking:** [#625](https://github.com/pskillen/codeplug-studio/issues/625)
 
-Debt discovered during execution (not a second plan). Every open item must link a GitHub issue.
-
 ## Open
 
-_(none yet)_
+- [ ] Hardware Read→Write→Read-back verify — then clear `prodWriteDisabled` on descriptor and retire prod-gate copy ([#625](https://github.com/pskillen/codeplug-studio/issues/625))
 
-## Known deferrals (out of #625 scope or pending verify)
+## Known deferrals (out of #625 scope)
 
-- Hardware Read→Write→Read-back verify — clear `prodWriteDisabled` after success
 - User Power `+W-` not modelled in library or binary encode
 - Firmware catalog gate — [#619](https://github.com/pskillen/codeplug-studio/issues/619)
 - DTMF contacts + FM APRS systems retain-only (shared OpenGD77 family posture from #624)

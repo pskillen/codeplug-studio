@@ -2,7 +2,7 @@
  * OpenGD77 / OpenUV380 family — shared codecs + DM-1701 descriptor exports for UI.
  */
 
-export { OPENGD77_DM1701_MODEL_ID } from './hydration.ts';
+export { OPENGD77_DM1701_MODEL_ID, OPENGD77_MD9600_MODEL_ID } from './hydration.ts';
 export {
   summariseOpenGd77Clone,
   type OpenGd77CloneSummary,
@@ -20,4 +20,4 @@ export {
   OPENGD77_DTMF_CONTACTS_WRITE_GAP,
   OPENGD77_APRS_WRITE_GAP,
 } from './writeRole.ts';
-export { OPENGD77_DM1701_DESCRIPTOR } from './dm1701/descriptor.ts';
+export { OPENGD77_MD9600_DESCRIPTOR } from './md9600/descriptor.ts';
