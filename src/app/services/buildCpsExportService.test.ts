@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { unzipSync } from 'fflate';
 import { newChannel, newProjectMeta, newRadioBuildForProfile } from '@core/domain/factories.ts';
+import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import { DM32_CORE_EXPORT_FILES } from '../../test/dm32CsvCompare.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
 import {
@@ -26,7 +27,7 @@ vi.mock('@integrations/cloud/index.ts', () => ({
 describe('buildCpsExportService', () => {
   async function seedStore() {
     const meta = newProjectMeta('Export test');
-    const channel = newChannel(meta.projectId, 'GB3DA Demo', 'GB3DA');
+    const channel = withExportEligibleDefaults(newChannel(meta.projectId, 'GB3DA Demo', 'GB3DA'));
     const { build, egressPaths } = newRadioBuildForProfile(
       meta.projectId,
       'opengd77-1701',

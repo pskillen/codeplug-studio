@@ -32,7 +32,12 @@ import {
   resolveChirpChannelMemorySlots,
   type ExportMemorySlot,
 } from '@core/domain/exportOrderOrSlot.ts';
-import { channelEligibleForRadio } from '@core/domain/channelEligibility.ts';
+import {
+  channelEligibleForRadio,
+  formatChannelEligibilityWarning,
+  listIneligibleChannels,
+  resolveChannelEligibilityOptions,
+} from '@core/domain/channelEligibility.ts';
 import { migrateFormatBuild } from '@core/domain/migrateFormatBuild.ts';
 import { sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
 import type { Library } from '@core/models/library.ts';
@@ -333,7 +338,7 @@ function assembleChannels(build: RadioBuild, library: LibrarySlice): AssembledCh
   const assembled: AssembledChannel[] = [];
   for (const entity of library.channels) {
     if (isEntityExcluded(overrides, entity.id)) continue;
-    if (!channelEligibleForRadio(entity, build.radioTargetId)) continue;
+    if (!channelEligibleForRadio(entity, build.radioTargetId, resolveChannelEligibilityOptions(build))) continue;
     const hasOverride = overrideByEntityId(overrides).has(entity.id);
     const reachable = exportReachable.has(entity.id);
     if (!reachable && !hasOverride) {
@@ -449,6 +454,20 @@ export function aprsConfigurationWarnings(
   return warnings;
 }
 
+/** Warnings when library channels are omitted for unsupported mode or frequency range. */
+export function exportChannelEligibilityWarnings(
+  build: RadioBuild,
+  library: LibrarySlice,
+): string[] {
+  const eligibleOptions = resolveChannelEligibilityOptions(build);
+  const candidates = library.channels.filter(
+    (channel) => !isEntityExcluded(build.channelOverrides, channel.id),
+  );
+  return formatChannelEligibilityWarning(
+    listIneligibleChannels(build, candidates, eligibleOptions),
+  );
+}
+
 /** Warnings when orphan library entities are included in export. */
 export function exportInclusionWarnings(
   build: RadioBuild,
@@ -528,6 +547,8 @@ export function exportInclusionWarnings(
   );
 
   warnings.push(...aprsConfigurationWarnings(build, library, assembled));
+
+  warnings.push(...exportChannelEligibilityWarnings(build, library));
 
   return warnings;
 }

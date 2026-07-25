@@ -11,6 +11,7 @@ import {
   newScanList,
   newTalkGroup,
 } from '@core/domain/factories.ts';
+import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
 import { assemble, exportInclusionWarnings } from './assemble.ts';
@@ -258,10 +259,10 @@ describe('assemble', () => {
 
   it('flattens nested library zones into assembled member channel ids', () => {
     const projectId = 'proj-nested';
-    const child: Channel = {
+    const child: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Child ch'),
       id: 'ch-child',
-    };
+    });
     const childZone = {
       id: 'zone-child',
       projectId,
@@ -317,14 +318,14 @@ describe('assemble', () => {
 
   it('flattens nested zones when build has stale zoneGrouping channelIds', () => {
     const projectId = 'proj-nested-layout';
-    const child: Channel = {
+    const child: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'PMR ch'),
       id: 'ch-pmr',
-    };
-    const direct: Channel = {
+    });
+    const direct: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Glasgow ch'),
       id: 'ch-glasgow',
-    };
+    });
     const childZone = {
       id: 'zone-pmr',
       projectId,
@@ -401,14 +402,14 @@ describe('assemble', () => {
 
   it('omits nested-only zones from export but flattens into parent', () => {
     const projectId = 'proj-omit';
-    const pmr: Channel = {
+    const pmr: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'PMR ch'),
       id: 'ch-pmr',
-    };
-    const glasgowCh: Channel = {
+    });
+    const glasgowCh: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Glasgow ch'),
       id: 'ch-glasgow',
-    };
+    });
     const pmrZone = {
       id: 'zone-pmr',
       projectId,
@@ -469,14 +470,14 @@ describe('assemble', () => {
 
   it('excludes channels from standalone omitFromExport zones not nested in a parent', () => {
     const projectId = 'proj-omit-orphan';
-    const pmr: Channel = {
+    const pmr: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'PMR ch'),
       id: 'ch-pmr',
-    };
-    const other: Channel = {
+    });
+    const other: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Other ch'),
       id: 'ch-other',
-    };
+    });
     const pmrZone = {
       id: 'zone-pmr',
       projectId,
@@ -534,14 +535,14 @@ describe('assemble', () => {
 
   it('exports nested omitFromExport zone when forceInclude override is set', () => {
     const projectId = 'proj-force-include-nested';
-    const pmr: Channel = {
+    const pmr: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'PMR ch'),
       id: 'ch-pmr',
-    };
-    const glasgowCh: Channel = {
+    });
+    const glasgowCh: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Glasgow ch'),
       id: 'ch-glasgow',
-    };
+    });
     const pmrZone = {
       id: 'zone-pmr',
       projectId,
@@ -604,10 +605,10 @@ describe('assemble', () => {
 
   it('exports channels from standalone omitFromExport zone when forceInclude is set', () => {
     const projectId = 'proj-force-include-orphan';
-    const pmr: Channel = {
+    const pmr: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'PMR ch'),
       id: 'ch-pmr',
-    };
+    });
     const pmrZone = {
       id: 'zone-pmr',
       projectId,
@@ -655,10 +656,10 @@ describe('assemble', () => {
 
   it('excluded override wins over forceInclude on zones', () => {
     const projectId = 'proj-excluded-wins';
-    const pmr: Channel = {
+    const pmr: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'PMR ch'),
       id: 'ch-pmr',
-    };
+    });
     const pmrZone = {
       id: 'zone-pmr',
       projectId,
@@ -713,16 +714,19 @@ describe('assemble', () => {
       squelch: null,
       bandwidthKHz: 12.5,
     };
-    const ch1: Channel = {
+    const ch1: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'VHF'),
       id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       modeProfiles: [fmProfile],
-    };
-    const ch2: Channel = {
-      ...newChannel(projectId, 'UHF'),
-      id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-      modeProfiles: [fmProfile],
-    };
+    });
+    const ch2: Channel = withExportEligibleDefaults(
+      {
+        ...newChannel(projectId, 'UHF'),
+        id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        modeProfiles: [fmProfile],
+      },
+      430.125,
+    );
     const library = {
       channels: [ch1, ch2],
       zones: [],
@@ -765,8 +769,8 @@ describe('assemble', () => {
   it('projects dedicated scan lists and channel scan list wire names', () => {
     const projectId = 'project-1';
     const scanListId = 'scan-list-1';
-    const ch1 = { ...newChannel(projectId, 'Channel 1'), scanListId };
-    const ch2 = newChannel(projectId, 'Channel 2');
+    const ch1 = withExportEligibleDefaults({ ...newChannel(projectId, 'Channel 1'), scanListId });
+    const ch2 = withExportEligibleDefaults(newChannel(projectId, 'Channel 2'));
     const scanList = {
       ...newScanList(projectId, 'Zone A SCL'),
       id: scanListId,
@@ -796,8 +800,11 @@ describe('assemble', () => {
 
   it('assembles cyclic nested zones with partial flatten and export warnings', () => {
     const projectId = 'proj-cycle';
-    const pmrChannel = { ...newChannel(projectId, 'PMR ch'), id: 'ch-pmr' };
-    const glasgowChannel = { ...newChannel(projectId, 'Glasgow ch'), id: 'ch-g' };
+    const pmrChannel = withExportEligibleDefaults({ ...newChannel(projectId, 'PMR ch'), id: 'ch-pmr' });
+    const glasgowChannel = withExportEligibleDefaults({
+      ...newChannel(projectId, 'Glasgow ch'),
+      id: 'ch-g',
+    });
     const pmrZone = {
       id: 'zone-pmr',
       projectId,
@@ -880,8 +887,10 @@ describe('assemble', () => {
     expect(assembled.aprsConfiguration?.id).toBe(aprsConfig.id);
 
     const libraryWithoutConfig = { ...library, aprsConfiguration: null };
-    const channelWithDigitalAprs: Channel = {
+    const channelWithDigitalAprs = withExportEligibleDefaults({
       ...newChannel(projectId, 'DMR'),
+      rxFrequency: 430_912_500,
+      txFrequency: 430_912_500,
       modeProfiles: [
         {
           mode: 'dmr' as const,
@@ -891,6 +900,7 @@ describe('assemble', () => {
           dmrMode: null,
           contactRef: null,
           rxGroupListId: null,
+          sendTalkerAlias: 'default',
         },
       ],
       aprs: {
@@ -899,7 +909,7 @@ describe('assemble', () => {
         digitalPttMode: 'on' as const,
         reportSlotIndex: 1,
       },
-    } satisfies Parameters<typeof assemble>[1]['channels'][number];
+    }) satisfies Parameters<typeof assemble>[1]['channels'][number];
     const withoutConfig = assemble(config, {
       ...libraryWithoutConfig,
       channels: [channelWithDigitalAprs],

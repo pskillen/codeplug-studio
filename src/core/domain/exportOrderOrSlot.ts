@@ -7,7 +7,7 @@ import {
   overrideOrderOrSlot,
   upsertOverride,
 } from '@core/domain/formatBuildOverrides.ts';
-import { channelEligibleForRadio } from '@core/domain/channelEligibility.ts';
+import { channelEligibleForRadio, resolveChannelEligibilityOptions } from '@core/domain/channelEligibility.ts';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import { radioTargetHasTrait } from '@core/radio-targets/index.ts';
 
@@ -32,10 +32,7 @@ export function isChirpFlatMemoryChannel(channel: Channel, radioTargetId: string
 }
 
 function flatMemoryEligibleChannel(build: RadioBuild, channel: Channel): boolean {
-  if (!channelEligibleForRadio(channel, build.radioTargetId)) {
-    return false;
-  }
-  return true;
+  return channelEligibleForRadio(channel, build.radioTargetId, resolveChannelEligibilityOptions(build));
 }
 
 function includedChirpChannels(build: RadioBuild, library: LibrarySlice): Channel[] {

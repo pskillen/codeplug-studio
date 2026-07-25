@@ -15,6 +15,7 @@ import {
 } from './membershipOrder.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { newChannel } from '@core/domain/factories.ts';
+import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import type { Channel } from '@core/models/library.ts';
 
 describe('zoneOrder', () => {
@@ -110,7 +111,7 @@ describe('assemble zone order cascade', () => {
   const projectId = '11111111-1111-4111-8111-111111111111';
 
   function fmChannel(id: string, name: string): Channel {
-    return {
+    return withExportEligibleDefaults({
       ...newChannel(projectId, name),
       id,
       modeProfiles: [
@@ -120,9 +121,10 @@ describe('assemble zone order cascade', () => {
           txTone: 'none' as const,
           squelch: null,
           bandwidthKHz: 12.5,
+          analogSquelchMode: 'default',
         },
       ],
-    };
+    });
   }
 
   it('orders Zones by Zone.order then build override', () => {

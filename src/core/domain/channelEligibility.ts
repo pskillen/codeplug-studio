@@ -1,5 +1,6 @@
 import type { Channel } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import {
   getRadioRfCapabilities,
   type RadioFrequencyRange,
@@ -84,4 +85,50 @@ export function channelEligibleForRadio(
   options?: ChannelEligibilityOptions,
 ): boolean {
   return getChannelIneligibilityReason(channel, radioTargetId, options) == null;
+}
+
+export function resolveChannelEligibilityOptions(build: RadioBuild): ChannelEligibilityOptions {
+  return {
+    hideOutsideFrequencyRange:
+      build.exportSettings?.hideChannelsOutsideFrequencyRange !== false,
+  };
+}
+
+/** Channels skipped by RF eligibility (not excluded by build override). */
+export function listIneligibleChannels(
+  build: RadioBuild,
+  channels: readonly Channel[],
+  options?: ChannelEligibilityOptions,
+): { channel: Channel; reason: ChannelIneligibilityReason }[] {
+  const resolved = resolveOptions(options ?? resolveChannelEligibilityOptions(build));
+  const ineligible: { channel: Channel; reason: ChannelIneligibilityReason }[] = [];
+  for (const channel of channels) {
+    const reason = getChannelIneligibilityReason(channel, build.radioTargetId, resolved);
+    if (reason) ineligible.push({ channel, reason });
+  }
+  return ineligible;
+}
+
+export function formatChannelEligibilityWarning(
+  skipped: readonly { channel: Channel; reason: ChannelIneligibilityReason }[],
+): string[] {
+  if (skipped.length === 0) return [];
+  const byReason = {
+    'unsupported-mode': skipped.filter((row) => row.reason === 'unsupported-mode'),
+    'out-of-range': skipped.filter((row) => row.reason === 'out-of-range'),
+  };
+  const warnings: string[] = [];
+  if (byReason['unsupported-mode'].length > 0) {
+    const names = byReason['unsupported-mode'].map((row) => row.channel.name).join(', ');
+    warnings.push(
+      `Skipping ${byReason['unsupported-mode'].length} channel(s) with unsupported mode(s): ${names}`,
+    );
+  }
+  if (byReason['out-of-range'].length > 0) {
+    const names = byReason['out-of-range'].map((row) => row.channel.name).join(', ');
+    warnings.push(
+      `Skipping ${byReason['out-of-range'].length} channel(s) outside supported frequency range: ${names}`,
+    );
+  }
+  return warnings;
 }
