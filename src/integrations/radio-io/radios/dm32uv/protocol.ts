@@ -384,17 +384,12 @@ export class Dm32uvProtocol implements CloneImageRadio {
       { ...settle, onProgress: opts.onProgress },
     );
 
-    const remapOutcome = remapDm32BlocksByMetadata(
-      seededBlocks,
-      seededDiscovered,
-      liveDiscovered,
-    );
+    const remapOutcome = remapDm32BlocksByMetadata(seededBlocks, seededDiscovered, liveDiscovered);
     if (!remapOutcome.ok) {
       const sample = remapOutcome.missing
         .slice(0, 3)
         .map(
-          (m) =>
-            `tag 0x${m.metadata.toString(16)} (hydration 0x${m.seededAddress.toString(16)})`,
+          (m) => `tag 0x${m.metadata.toString(16)} (hydration 0x${m.seededAddress.toString(16)})`,
         )
         .join('; ');
       throw new RadioProtocolError(

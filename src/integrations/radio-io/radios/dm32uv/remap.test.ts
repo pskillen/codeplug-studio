@@ -2,10 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA } from './constants.ts';
 import { makeEmptyBlock, makeFirstChannelBlock } from './__fixtures__/scriptedPipe.ts';
-import {
-  remapDm32BlocksByMetadata,
-  remapDm32MemoryMapByTranslations,
-} from './remap.ts';
+import { remapDm32BlocksByMetadata, remapDm32MemoryMapByTranslations } from './remap.ts';
 
 describe('remapDm32BlocksByMetadata', () => {
   it('remaps ZONE and VFO when live addresses moved; SCAN unchanged is identity', () => {
@@ -60,7 +57,9 @@ describe('remapDm32BlocksByMetadata', () => {
     const addr = 0x62000;
     const block = makeEmptyBlock(DM32_METADATA.SCAN_LIST);
     const seededBlocks = new Map([[addr, block]]);
-    const discovered = [{ address: addr, metadata: DM32_METADATA.SCAN_LIST, type: 'scan' as const }];
+    const discovered = [
+      { address: addr, metadata: DM32_METADATA.SCAN_LIST, type: 'scan' as const },
+    ];
 
     const result = remapDm32BlocksByMetadata(seededBlocks, discovered, discovered);
     expect(result.ok).toBe(true);
