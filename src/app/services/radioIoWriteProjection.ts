@@ -257,7 +257,7 @@ function buildDm32Organisation(
               rxTone: { kind: 'none' },
               txTone: { kind: 'none' },
               powerPercent: null,
-              bandwidth: 'FM',
+              bandwidth: 'NFM',
               mode: 'analog',
               scanListId: listIndex,
               scanAdd: true,

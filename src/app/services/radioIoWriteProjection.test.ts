@@ -173,6 +173,8 @@ describe('buildRadioWriteProjection', () => {
     const walkCarrier = walk!.channelNumbers[0]!;
     expect(bySlot.get(homeCarrier)?.wireName).toMatch(/Home.*Scan/i);
     expect(bySlot.get(walkCarrier)?.wireName).toMatch(/Morn.*Scan|Walk.*Scan/i);
+    expect(bySlot.get(homeCarrier)?.bandwidth).toBe('NFM');
+    expect(bySlot.get(walkCarrier)?.bandwidth).toBe('NFM');
     expect(homeCarrier).not.toBe(walkCarrier);
     expect(walk!.channelNumbers[0]).not.toBe(homeCarrier);
 
@@ -188,7 +190,7 @@ describe('buildRadioWriteProjection', () => {
     const walkRec = encodeDm32ChannelRecord(bySlot.get(walkCarrier)!);
     expect((homeRec[0x19]! >> 2) & 0x0f).toBe(1);
     expect((walkRec[0x19]! >> 2) & 0x0f).toBe(2);
-    expect(homeRec[0x19]! & 0x80).toBe(0x80); // FM
+    expect(homeRec[0x19]! & 0x80).toBe(0x00); // NFM (narrow)
     expect(homeRec[0x19]! & 0x40).toBe(0x40); // scanAdd
   });
 
