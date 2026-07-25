@@ -105,7 +105,7 @@ export function mergeChannelsIntoAtD890uvHydration(
     next = encodeScanListsIntoAtD890Image(next, organisation.scanLists);
   }
 
-  syncTalkgroupRegionsToCache(cache, next);
+  syncTalkgroupRegionsToCache(cache, next, organisation?.talkGroups);
   syncRxGroupRegionsToCache(cache, next);
   syncRadioIdRegionsToCache(cache, next);
   syncMasterIdToCache(cache, next);

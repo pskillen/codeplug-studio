@@ -56,6 +56,7 @@ const FIXED_REPLACED = new Set<number>([
   D890_MAP.TalkgroupSet,
   D890_MAP.ReceiveGroupSet,
   D890_MAP.MasterIdData,
+  D890_MAP.TalkgroupOrder,
 ]);
 
 export function atD890RegionLabel(address: number): string {
@@ -89,6 +90,7 @@ export function atD890RegionLabel(address: number): string {
   if (inBank(address, D890_MAP.TalkgroupData, D890_MAP.TalkgroupStride, TALKGROUP_SLOTS)) {
     return 'Talk groups';
   }
+  if (address === D890_MAP.TalkgroupOrder) return 'Talk group order';
   if (address === D890_MAP.ReceiveGroupSet) return 'RX group bitmap';
   if (inBank(address, D890_MAP.ReceiveGroupData, D890_MAP.ReceiveGroupStride, RX_GROUP_SLOTS)) {
     return 'RX group lists';
@@ -115,6 +117,7 @@ export function atD890WriteRole(address: number): AtD890WriteRole {
   if (inBank(address, D890_MAP.TalkgroupData, D890_MAP.TalkgroupStride, TALKGROUP_SLOTS)) {
     return 'replaced';
   }
+  if (address === D890_MAP.TalkgroupOrder) return 'replaced';
   if (inBank(address, D890_MAP.ReceiveGroupData, D890_MAP.ReceiveGroupStride, RX_GROUP_SLOTS)) {
     return 'replaced';
   }
