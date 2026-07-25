@@ -22,29 +22,29 @@ Last channel offset in first block: `0x10 + 83×48 = 0xFA0`.
 
 ## Field offsets (48-byte record)
 
-| Offset        | Field                                 | Encoding / notes                                                     |
-| ------------- | ------------------------------------- | -------------------------------------------------------------------- |
-| `0x00`–`0x0F` | Name                                  | 16 ASCII, null-terminated                                            |
-| `0x10`–`0x13` | RX frequency                          | 4-byte BCD (NeonPlug `decodeBCDFrequency`)                           |
-| `0x14`–`0x17` | TX frequency                          | Same; all `0xFF` = no TX                                             |
-| `0x18`        | Mode / power / forbid TX              | Bits 7–4 mode; bit 3 forbid TX; bits 2–1 power; bit 0 lone worker    |
-| `0x19`        | Bandwidth / scan                      | Bit 7 bandwidth; bit 6 scan add; bits 5–2 scan list id               |
-| `0x1A`        | Talkaround / APRS RX                  | Bit 7 forbid talkaround; bit 2 APRS receive                          |
-| `0x1B`        | Emergency                             | Bits 7/6 indicators; bits 0–5 system id                              |
-| `0x1C`        | Squelch / APRS report                 | Bits 7–4 squelch 0–15; bits 3–2 APRS report mode                     |
-| `0x1D`        | Mode-specific features                | Digital: enc / confirms / TDMA / TS / CC; analog: VOX / scramble / … |
-| `0x1E`        | (reserved / unused in NeonPlug parse) | —                                                                    |
-| `0x1F`        | Digital RX group / analog PTT         | Digital: RX group id bits 5–0; analog: PTT ID                        |
-| `0x21`–`0x22` | RX CTCSS/DCS                          | 2-byte CTCSS/DCS encoding                                            |
-| `0x23`–`0x24` | TX CTCSS/DCS                          | Same                                                                 |
-| `0x25`        | Additional flags                      | Compander dup, VOX-related, …                                        |
-| `0x26`        | RX squelch mode / PTT display         | Bit 7 PTT display (dup of `0x1F`); bits 6–4 squelch mode             |
-| `0x27`        | Step / signaling                      | Bits 7–4 step; bits 3–0 signaling type                               |
-| `0x28`        | Reserved                              | —                                                                    |
-| `0x29`        | PTT ID type                           | Bits 7–4 Off/BOT/EOT/Both                                            |
-| `0x2A`        | Encryption key id (digital)           | `0` = none; `1`–`8` key index                                        |
+| Offset        | Field                                 | Encoding / notes                                                                                                 |
+| ------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `0x00`–`0x0F` | Name                                  | 16 ASCII, null-terminated                                                                                        |
+| `0x10`–`0x13` | RX frequency                          | 4-byte BCD (NeonPlug `decodeBCDFrequency`)                                                                       |
+| `0x14`–`0x17` | TX frequency                          | Same; all `0xFF` = no TX                                                                                         |
+| `0x18`        | Mode / power / forbid TX              | Bits 7–4 mode; bit 3 forbid TX; bits 2–1 power; bit 0 lone worker                                                |
+| `0x19`        | Bandwidth / scan                      | Bit 7 bandwidth; bit 6 scan add; bits 5–2 scan list id                                                           |
+| `0x1A`        | Talkaround / APRS RX                  | Bit 7 forbid talkaround; bit 2 APRS receive                                                                      |
+| `0x1B`        | Emergency                             | Bits 7/6 indicators; bits 0–5 system id                                                                          |
+| `0x1C`        | Squelch / APRS report                 | Bits 7–4 squelch 0–15; bits 3–2 APRS report mode                                                                 |
+| `0x1D`        | Mode-specific features                | Digital: enc / confirms / TDMA / TS / CC; analog: VOX / scramble / …                                             |
+| `0x1E`        | (reserved / unused in NeonPlug parse) | —                                                                                                                |
+| `0x1F`        | Digital RX group / analog PTT         | Digital: RX group id bits 5–0; analog: PTT ID                                                                    |
+| `0x21`–`0x22` | RX CTCSS/DCS                          | 2-byte CTCSS/DCS encoding                                                                                        |
+| `0x23`–`0x24` | TX CTCSS/DCS                          | Same                                                                                                             |
+| `0x25`        | Additional flags                      | Compander dup, VOX-related, …                                                                                    |
+| `0x26`        | RX squelch mode / PTT display         | Bit 7 PTT display (dup of `0x1F`); bits 6–4 squelch mode                                                         |
+| `0x27`        | Step / signaling                      | Bits 7–4 step; bits 3–0 signaling type                                                                           |
+| `0x28`        | Reserved                              | —                                                                                                                |
+| `0x29`        | PTT ID type                           | Bits 7–4 Off/BOT/EOT/Both                                                                                        |
+| `0x2A`        | Encryption key id (digital)           | `0` = none; `1`–`8` key index                                                                                    |
 | `0x2B`        | DMR radio ID index                    | `0xFF` = none; else 0-based index into operator radio-ID bank (`0x67`) from channel `ModeProfile.dmrId` on Write |
-| `0x2C`–`0x2F` | Reserved                              | —                                                                    |
+| `0x2C`–`0x2F` | Reserved                              | —                                                                                                                |
 
 ### Mode (`0x18` bits 7–4)
 

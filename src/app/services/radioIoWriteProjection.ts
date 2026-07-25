@@ -362,10 +362,7 @@ function buildTalkGroupsAndRx(
   const limits = dm32ExportLimits(egress);
   const nameLen = numericLimit(limits.nameLengthTalkGroup, 16);
   const maxTalkGroups = numericLimit(limits.maxTalkGroups, DM32_DEFAULT_MAX_TALK_GROUPS);
-  const maxDigitalContacts = numericLimit(
-    limits.maxContacts,
-    DM32_DEFAULT_MAX_DIGITAL_CONTACTS,
-  );
+  const maxDigitalContacts = numericLimit(limits.maxContacts, DM32_DEFAULT_MAX_DIGITAL_CONTACTS);
   const maxRx = numericLimit(limits.maxRxGroupLists, 250);
   const maxRxMembers = numericLimit(limits.rxGroupListMembers, 32);
   const contactIdByEntityId = new Map<string, number>();

@@ -294,9 +294,9 @@ describe('buildRadioWriteProjection', () => {
     });
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.organisation.digitalContacts).toHaveLength(250);
-    expect(
-      projection.warnings.some((w) => /251 digital contact/.test(w) && /250/.test(w)),
-    ).toBe(true);
+    expect(projection.warnings.some((w) => /251 digital contact/.test(w) && /250/.test(w))).toBe(
+      true,
+    );
   });
 
   it('projects operator radio IDs and channel bank indices from ModeProfile.dmrId', () => {
