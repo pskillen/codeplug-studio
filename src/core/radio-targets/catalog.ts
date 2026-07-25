@@ -110,7 +110,10 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
     label: 'TYT MD-9600 / RT-90 (OpenGD77)',
     group: 'TYT',
     traits: opengd77Traits,
-    compatibleEgress: [egress('opengd77', 'opengd77-md9600', 'OpenGD77 CSV')],
+    compatibleEgress: [
+      egress('radio-io', 'radio-io-opengd77-md9600', 'Web Serial'),
+      egress('opengd77', 'opengd77-md9600', 'OpenGD77 CSV'),
+    ],
   },
   'anytone-at-d890uv': {
     id: 'anytone-at-d890uv',

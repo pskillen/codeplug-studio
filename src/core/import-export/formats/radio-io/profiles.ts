@@ -78,13 +78,29 @@ export interface RadioIoOpenGd771701Profile {
   powerLadder: readonly PowerLadderEntry[];
 }
 
+/** OpenGD77 MD-9600 / RT-90 Web Serial — mirrors opengd77-md9600 CSV caps. */
+export interface RadioIoOpenGd77Md9600Profile {
+  id: 'radio-io-opengd77-md9600';
+  label: string;
+  maxMemorySlots: number;
+  nameLimit: number;
+  maxZones: number;
+  zoneMembers: number;
+  maxScanLists: 'not_used';
+  scanListMembers: 'not_used';
+  maxRxGroupLists: number;
+  rxGroupListMembers: number;
+  powerLadder: readonly PowerLadderEntry[];
+}
+
 export type RadioIoRadioProfile =
   | RadioIoUv5rMiniProfile
   | RadioIoUv21Profile
   | RadioIoRt95Profile
   | RadioIoDm32uvProfile
   | RadioIoAtD890uvProfile
-  | RadioIoOpenGd771701Profile;
+  | RadioIoOpenGd771701Profile
+  | RadioIoOpenGd77Md9600Profile;
 
 export function isRadioIoDm32uvProfile(
   profile: RadioIoRadioProfile,
@@ -102,6 +118,16 @@ export function isRadioIoOpenGd771701Profile(
   profile: RadioIoRadioProfile,
 ): profile is RadioIoOpenGd771701Profile {
   return profile.id === 'radio-io-opengd77-1701';
+}
+
+export function isRadioIoOpenGd77Md9600Profile(
+  profile: RadioIoRadioProfile,
+): profile is RadioIoOpenGd77Md9600Profile {
+  return profile.id === 'radio-io-opengd77-md9600';
+}
+
+export function isRadioIoOpenGd77Profile(profile: RadioIoRadioProfile): boolean {
+  return isRadioIoOpenGd771701Profile(profile) || isRadioIoOpenGd77Md9600Profile(profile);
 }
 
 /** High / Low — UV-17Pro family binary ladder. */
@@ -138,6 +164,18 @@ const OPENGD77_1701_POWER_LADDER: readonly PowerLadderEntry[] = [
   { percent: 10, wire: 'P3', approxWatts: '500 mW' },
   { percent: 5, wire: 'P2', approxWatts: '250 mW' },
   { percent: 1, wire: 'P1', approxWatts: '50 mW' },
+];
+
+const OPENGD77_MD9600_POWER_LADDER: readonly PowerLadderEntry[] = [
+  { percent: 100, wire: 'P9', approxWatts: '40 W' },
+  { percent: 63, wire: 'P8', approxWatts: '25 W' },
+  { percent: 25, wire: 'P7', approxWatts: '10 W' },
+  { percent: 13, wire: 'P6', approxWatts: '5 W' },
+  { percent: 5, wire: 'P5', approxWatts: '1 W' },
+  { percent: 4, wire: 'P4', approxWatts: '750 mW' },
+  { percent: 3, wire: 'P3', approxWatts: '500 mW' },
+  { percent: 2, wire: 'P2', approxWatts: '250 mW' },
+  { percent: 1, wire: 'P1', approxWatts: '100 mW' },
 ];
 
 const RT95_POWER_LADDER: readonly PowerLadderEntry[] = [
@@ -213,6 +251,20 @@ export const RADIO_IO_OPENGD77_1701_PROFILE: RadioIoOpenGd771701Profile = {
   powerLadder: OPENGD77_1701_POWER_LADDER,
 };
 
+export const RADIO_IO_OPENGD77_MD9600_PROFILE: RadioIoOpenGd77Md9600Profile = {
+  id: 'radio-io-opengd77-md9600',
+  label: 'TYT MD-9600 / RT-90 (OpenGD77)',
+  maxMemorySlots: 1023,
+  nameLimit: 16,
+  maxZones: 68,
+  zoneMembers: 80,
+  maxScanLists: 'not_used',
+  scanListMembers: 'not_used',
+  maxRxGroupLists: 76,
+  rxGroupListMembers: 32,
+  powerLadder: OPENGD77_MD9600_POWER_LADDER,
+};
+
 export const RADIO_IO_PROFILES: readonly RadioIoRadioProfile[] = [
   RADIO_IO_UV5R_MINI_PROFILE,
   RADIO_IO_UV21_PROFILE,
@@ -220,6 +272,7 @@ export const RADIO_IO_PROFILES: readonly RadioIoRadioProfile[] = [
   RADIO_IO_DM32UV_PROFILE,
   RADIO_IO_AT_D890UV_PROFILE,
   RADIO_IO_OPENGD77_1701_PROFILE,
+  RADIO_IO_OPENGD77_MD9600_PROFILE,
 ];
 
 export function getRadioIoProfile(profileId: string): RadioIoRadioProfile {

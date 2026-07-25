@@ -149,6 +149,17 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
     ],
   },
+  /** Web Serial direct-write — OpenGD77 / OpenUV380 (MD-9600 / RT-90). */
+  'radio-io-opengd77-md9600': {
+    profileId: 'radio-io-opengd77-md9600',
+    formatId: 'radio-io',
+    label: 'TYT MD-9600 / RT-90 (OpenGD77)',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+    ],
+  },
 };
 
 export function traitProfileFor(profileId: string): TraitProfile | undefined {
