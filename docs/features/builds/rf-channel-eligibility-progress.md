@@ -7,7 +7,7 @@
 
 ## Overall status
 
-**Status:** In progress (slices 0–3 shipped; slice 4 in commit)
+**Status:** Complete — PR pending
 
 ---
 
@@ -57,7 +57,7 @@
 
 ## Slice 4 — Radio Build UI + characteristics bands
 
-**Status:** Done (this commit)
+**Status:** Done
 
 **Delivered**
 
@@ -69,4 +69,10 @@
 
 ## Slice 5 — Feature + tier-3 docs
 
-**Status:** Not started
+**Status:** Done
+
+**Delivered**
+
+- [channel-eligibility.md](channel-eligibility.md) + builds hub status row
+- Seven radio `capabilities.md` frequency range tables
+- Import/export hub + `cps-services.md` assemble note

@@ -4,6 +4,10 @@
 
 Same OpenGD77 modelling posture as the DM-1701 family for DMR / analogue / TG lists / APRS / DTMF — see [DM-1701 capabilities](../../baofeng/dm-1701/capabilities.md). Mobile form factor and higher RF power (see [power.md](power.md)).
 
+### Frequency ranges (Studio eligibility)
+
+Same bands as DM-1701 — see [DM-1701 capabilities § Frequency ranges](../../baofeng/dm-1701/capabilities.md#frequency-ranges-studio-eligibility).
+
 ## `+W-` (User Power) — not modelled in Studio
 
 The radio menu also offers **`+W-`**. That selects **User Power** from **Options → Radio Options → User Power**: a raw ADC voltage that drives the power amplifier (PA), not a wattage step on the P-index ladder.

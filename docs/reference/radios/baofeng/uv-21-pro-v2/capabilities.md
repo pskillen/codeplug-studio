@@ -9,6 +9,21 @@
 | AM                       | Yes (airband-style use)                                             |
 | DMR / other digital      | No — digital-only library channels skipped on export (with warning) |
 
+### Frequency ranges (Studio eligibility)
+
+Inclusive MHz bands used when filtering build lists and export ([#612](https://github.com/pskillen/codeplug-studio/issues/612)). See [channel-eligibility.md](../../../../features/builds/channel-eligibility.md).
+
+| Band (MHz) | Modes | TX |
+| --- | --- | --- |
+| 108–135.999999 | AM | Yes |
+| 136–174 | FM | Yes |
+| 220–260 | FM | Yes |
+| 350–390 | FM | Receive-only |
+| 400–479.999999 | FM | Yes |
+| 480–520 | FM | Receive-only |
+
+Source: CHIRP `UV21ProV2.VALID_BANDS`.
+
 ## Organisation traits
 
 Flat memory list only:

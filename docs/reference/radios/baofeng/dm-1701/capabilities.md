@@ -13,6 +13,17 @@
 | Airband / AM              | **No**                | N/A              | OpenGD77 on 1701 does not carry AM airband                       |
 | YSF / D-STAR / M17        | No native CPS columns | Lossy export     | Collapse to `Digital` if set in internal model                   |
 
+### Frequency ranges (Studio eligibility)
+
+Inclusive MHz bands used when filtering build lists and export ([#612](https://github.com/pskillen/codeplug-studio/issues/612)). See [channel-eligibility.md](../../../../features/builds/channel-eligibility.md).
+
+| Band (MHz) | Modes | TX |
+| --- | --- | --- |
+| 136–174 | FM, DMR | Yes |
+| 400–470 | FM, DMR | Yes |
+
+Source: qDMR `opengd77_limits.cc` (OpenGD77 family).
+
 ## Layout conventions (operator practice)
 
 Not CSV column differences:
