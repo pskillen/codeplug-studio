@@ -1,8 +1,12 @@
 /**
  * AT-D890UV write-role manifest — encode vs retain for sparse regions.
+ *
+ * D890_MAP is sparse and **non-monotonic** — never classify by comparing one
+ * region base to an unrelated region base (e.g. TalkgroupData vs ReceiveGroupSet).
+ * Use explicit bank spans from each region's own base + stride × capacity.
  */
 
-import { D890_MAP } from './constants.ts';
+import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 
 export type AtD890WriteRole = 'replaced' | 'kept';
 
@@ -19,7 +23,29 @@ export const AT_D890_WRITTEN_FROM_BUILD_LABELS: readonly string[] = [
 export const AT_D890_DIGITAL_CONTACTS_WRITE_GAP =
   'Digital contacts, boot images, and analog address book stay as they were on the radio when you Write. Export Anytone CSV for CPS if you need to update those.';
 
-const REPLACED_REGIONS = new Set<number>([
+/** Bitmap byte length → slot capacity (1 bit per slot). */
+function bitmapSlotCount(setBytes: number): number {
+  return setBytes * 8;
+}
+
+function inExclusiveSpan(address: number, base: number, length: number): boolean {
+  return address >= base && address < base + length;
+}
+
+function inBank(address: number, base: number, stride: number, slotCount: number): boolean {
+  return inExclusiveSpan(address, base, stride * slotCount);
+}
+
+const ZONE_SLOTS = bitmapSlotCount(AT_D890_LIMITS.ZONE_SET_BYTES);
+const SCAN_SLOTS = bitmapSlotCount(AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
+const RADIO_ID_SLOTS = bitmapSlotCount(AT_D890_LIMITS.RADIO_ID_SET_BYTES);
+const RX_GROUP_SLOTS = bitmapSlotCount(AT_D890_LIMITS.RX_GROUP_SET_BYTES);
+const TALKGROUP_SLOTS = bitmapSlotCount(AT_D890_LIMITS.TALKGROUP_SET_BYTES);
+
+/** Channel primary/secondary halves live under ChannelData … ChannelData+0x1000000. */
+const CHANNEL_DATA_SPAN = 0x100_0000;
+
+const FIXED_REPLACED = new Set<number>([
   D890_MAP.ChannelSet,
   D890_MAP.ZoneSet,
   D890_MAP.ZoneHide,
@@ -33,9 +59,11 @@ const REPLACED_REGIONS = new Set<number>([
 ]);
 
 export function atD890RegionLabel(address: number): string {
-  if (address === D890_MAP.LocalInfo) return 'Local info';
+  if (inExclusiveSpan(address, D890_MAP.LocalInfo, D890_MAP.LocalInfoLength)) {
+    return 'Local info';
+  }
   if (address === D890_MAP.ChannelSet) return 'Channel bitmap';
-  if (address >= D890_MAP.ChannelData && address < D890_MAP.ChannelData + 0x100_0000) {
+  if (inExclusiveSpan(address, D890_MAP.ChannelData, CHANNEL_DATA_SPAN)) {
     return 'Channel data';
   }
   if (address === D890_MAP.ZoneSet) return 'Zone bitmap';
@@ -43,20 +71,26 @@ export function atD890RegionLabel(address: number): string {
   if (address === D890_MAP.ZoneAChannel || address === D890_MAP.ZoneBChannel) {
     return 'Zone A/B tables';
   }
-  if (address >= D890_MAP.ZonesName && address < D890_MAP.ZoneChannels) return 'Zone names';
-  if (address >= D890_MAP.ZoneChannels && address < D890_MAP.ZoneAChannel) return 'Zone membership';
+  if (inBank(address, D890_MAP.ZonesName, D890_MAP.ZoneDataOffset, ZONE_SLOTS)) {
+    return 'Zone names';
+  }
+  if (inBank(address, D890_MAP.ZoneChannels, D890_MAP.ZoneChannelsStride, ZONE_SLOTS)) {
+    return 'Zone membership';
+  }
   if (address === D890_MAP.RadioIdSet) return 'Operator radio ID bitmap';
-  if (address >= D890_MAP.RadioIdData && address < D890_MAP.ScanListData) {
+  if (inBank(address, D890_MAP.RadioIdData, D890_MAP.RadioIdStride, RADIO_ID_SLOTS)) {
     return 'Operator radio IDs';
   }
   if (address === D890_MAP.ScanListSet) return 'Scan list bitmap';
-  if (address >= D890_MAP.ScanListData && address < D890_MAP.TalkgroupSet) return 'Scan lists';
+  if (inBank(address, D890_MAP.ScanListData, D890_MAP.ScanListStride, SCAN_SLOTS)) {
+    return 'Scan lists';
+  }
   if (address === D890_MAP.TalkgroupSet) return 'Talk group bitmap';
-  if (address >= D890_MAP.TalkgroupData && address < D890_MAP.ReceiveGroupSet) {
+  if (inBank(address, D890_MAP.TalkgroupData, D890_MAP.TalkgroupStride, TALKGROUP_SLOTS)) {
     return 'Talk groups';
   }
   if (address === D890_MAP.ReceiveGroupSet) return 'RX group bitmap';
-  if (address >= D890_MAP.ReceiveGroupData && address < D890_MAP.MasterIdData) {
+  if (inBank(address, D890_MAP.ReceiveGroupData, D890_MAP.ReceiveGroupStride, RX_GROUP_SLOTS)) {
     return 'RX group lists';
   }
   if (address === D890_MAP.MasterIdData) return 'Master radio ID';
@@ -64,15 +98,25 @@ export function atD890RegionLabel(address: number): string {
 }
 
 export function atD890WriteRole(address: number): AtD890WriteRole {
-  if (REPLACED_REGIONS.has(address)) return 'replaced';
-  if (address >= D890_MAP.ChannelData && address < D890_MAP.ChannelData + 0x100_0000) {
+  if (FIXED_REPLACED.has(address)) return 'replaced';
+  if (inExclusiveSpan(address, D890_MAP.ChannelData, CHANNEL_DATA_SPAN)) return 'replaced';
+  if (inBank(address, D890_MAP.ZonesName, D890_MAP.ZoneDataOffset, ZONE_SLOTS)) {
     return 'replaced';
   }
-  if (address >= D890_MAP.ZonesName && address < D890_MAP.ZoneAChannel) return 'replaced';
-  if (address >= D890_MAP.ZoneChannels && address < D890_MAP.ZoneAChannel) return 'replaced';
-  if (address >= D890_MAP.RadioIdData && address < D890_MAP.ScanListData) return 'replaced';
-  if (address >= D890_MAP.ScanListData && address < D890_MAP.TalkgroupSet) return 'replaced';
-  if (address >= D890_MAP.TalkgroupData && address < D890_MAP.ReceiveGroupSet) return 'replaced';
-  if (address >= D890_MAP.ReceiveGroupData && address < D890_MAP.MasterIdData) return 'replaced';
+  if (inBank(address, D890_MAP.ZoneChannels, D890_MAP.ZoneChannelsStride, ZONE_SLOTS)) {
+    return 'replaced';
+  }
+  if (inBank(address, D890_MAP.RadioIdData, D890_MAP.RadioIdStride, RADIO_ID_SLOTS)) {
+    return 'replaced';
+  }
+  if (inBank(address, D890_MAP.ScanListData, D890_MAP.ScanListStride, SCAN_SLOTS)) {
+    return 'replaced';
+  }
+  if (inBank(address, D890_MAP.TalkgroupData, D890_MAP.TalkgroupStride, TALKGROUP_SLOTS)) {
+    return 'replaced';
+  }
+  if (inBank(address, D890_MAP.ReceiveGroupData, D890_MAP.ReceiveGroupStride, RX_GROUP_SLOTS)) {
+    return 'replaced';
+  }
   return 'kept';
 }
