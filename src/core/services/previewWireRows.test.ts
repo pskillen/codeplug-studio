@@ -789,7 +789,10 @@ describe('previewWireRows', () => {
 
   it('excludes channels in standalone omitFromExport zones from export preview', () => {
     const projectId = 'proj-omit-channel-preview';
-    const pmrChannel = withExportEligibleDefaults({ ...newChannel(projectId, 'PMR'), id: 'ch-pmr' });
+    const pmrChannel = withExportEligibleDefaults({
+      ...newChannel(projectId, 'PMR'),
+      id: 'ch-pmr',
+    });
     const pmrZone = {
       ...newZone(projectId, 'PMR446'),
       id: 'zone-pmr',

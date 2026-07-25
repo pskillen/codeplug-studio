@@ -59,10 +59,7 @@ export default function ZoneMemberOrderSection({
   const orderedIds = entry?.channelIds?.length
     ? filterChannelIdsEligibleForBuild(
         build,
-        orderChannelIdsByLayoutHint(
-          resolveEffectiveZoneChannelIds(zone, zones),
-          entry.channelIds,
-        ),
+        orderChannelIdsByLayoutHint(resolveEffectiveZoneChannelIds(zone, zones), entry.channelIds),
         channelById,
       )
     : effective;
