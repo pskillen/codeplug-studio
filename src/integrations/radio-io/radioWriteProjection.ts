@@ -39,7 +39,11 @@ export interface RadioRxGroupDto {
   /** 1-based radio index. */
   index: number;
   wireName: string;
-  /** Member DMR IDs (up to 32). */
+  /**
+   * RX member payload (up to 32).
+   * - `radio-io-dm32uv`: DMR IDs (24-bit LE on wire).
+   * - `radio-io-at-d890uv`: 0-based talkgroup bank slot indices (u32 LE on wire).
+   */
   memberDigitalIds: readonly number[];
 }
 

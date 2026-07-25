@@ -24,6 +24,7 @@ function writeU32Le(buf: Uint8Array, offset: number, value: number): void {
 export function encodeAtD890RxGroupRecord(rx: RadioRxGroupDto): Uint8Array {
   const body = new Uint8Array(0x100);
   body.fill(0xff);
+  // memberDigitalIds are 0-based talkgroup bank slot indices (not DMR IDs).
   const count = Math.min(rx.memberDigitalIds.length, 32);
   for (let i = 0; i < count; i++) {
     writeU32Le(body, i * 4, rx.memberDigitalIds[i]!);
