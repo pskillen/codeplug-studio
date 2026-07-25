@@ -4,70 +4,73 @@
  * Tier-3: docs/reference/radios/baofeng/uv-5r-mini/
  */
 
+import { UV5R_MINI_LAYOUT } from '../uv17pro-family/layout.ts';
+
+const L = UV5R_MINI_LAYOUT;
+
 /** 16-byte ident magic (MSTRING_UV17PROGPS). */
-export const UV5R_MINI_IDENT = new TextEncoder().encode('PROGRAMCOLORPROU');
+export const UV5R_MINI_IDENT = L.ident;
 
 /** Expected ACK after ident / write. */
 export const UV5R_MINI_ACK = 0x06;
 
 /** Block size for R/W frames. */
-export const UV5R_MINI_BLOCK_SIZE = 0x40;
+export const UV5R_MINI_BLOCK_SIZE = L.blockSize;
 
 /** Read response = 4-byte header + BLOCK_SIZE payload. */
-export const UV5R_MINI_READ_RESPONSE_LEN = 4 + UV5R_MINI_BLOCK_SIZE;
+export const UV5R_MINI_READ_RESPONSE_LEN = 4 + L.blockSize;
 
 /** Radio memory regions: [start addr, size]. Full clone. */
-export const UV5R_MINI_MEM_STARTS = [0x0000, 0x9000, 0xa000] as const;
-export const UV5R_MINI_MEM_SIZES = [0x8040, 0x0040, 0x01c0] as const;
-export const UV5R_MINI_MEM_TOTAL = 0x8240;
+export const UV5R_MINI_MEM_STARTS = L.memStarts;
+export const UV5R_MINI_MEM_SIZES = L.memSizes;
+export const UV5R_MINI_MEM_TOTAL = L.memTotal;
 
 /** Number of 64-byte blocks for full clone. */
-export const UV5R_MINI_CLONE_BLOCK_COUNT = UV5R_MINI_MEM_SIZES.reduce(
-  (sum, n) => sum + n / UV5R_MINI_BLOCK_SIZE,
-  0,
-);
+export const UV5R_MINI_CLONE_BLOCK_COUNT = L.cloneBlockCount;
 
-export const UV5R_MINI_CHANNEL_COUNT = 999;
-export const UV5R_MINI_CHANNEL_SIZE = 32;
+export const UV5R_MINI_CHANNEL_COUNT = L.channelCount;
+export const UV5R_MINI_CHANNEL_SIZE = L.channelSize;
 /** Packed span of all channel records. */
-export const UV5R_MINI_CHANNEL_SPAN = UV5R_MINI_CHANNEL_COUNT * UV5R_MINI_CHANNEL_SIZE; // 0x7CE0
+export const UV5R_MINI_CHANNEL_SPAN = L.channelSpan;
 
 /** Primary baud — CHIRP UV17Pro / UV5RMini (115200). */
-export const UV5R_MINI_BAUD_RATE = 115_200;
+export const UV5R_MINI_BAUD_RATE = L.baudRate;
 
 /** Fallback when ident fails at primary — NeonPlug browser lineage (38400). */
-export const UV5R_MINI_BAUD_RATE_FALLBACK = 38_400;
+export const UV5R_MINI_BAUD_RATE_FALLBACK = L.baudRateFallback!;
 
 /** Post-open settle before ident (NeonPlug serialConnection). */
-export const UV5R_MINI_INIT_DELAY_MS = 300;
+export const UV5R_MINI_INIT_DELAY_MS = L.initDelayMs;
 
 /** Buffer clear settle before ident (NeonPlug serialConnection). */
-export const UV5R_MINI_CLEAR_BUFFER_DELAY_MS = 200;
+export const UV5R_MINI_CLEAR_BUFFER_DELAY_MS = L.clearBufferDelayMs;
 
 /** Firmware version string offset in packed clone image. */
-export const UV5R_MINI_FW_VER_OFFSET = 0x1ef0;
+export const UV5R_MINI_FW_VER_OFFSET = L.fwVerOffset;
 
 /** Packed-image retain region offsets — cite tier-3 settings.md / memory-layout.md. */
-export const UV5R_MINI_VFO_A_OFFSET = 0x8000;
-export const UV5R_MINI_VFO_B_OFFSET = 0x8020;
-export const UV5R_MINI_VFO_SIZE = 32;
-export const UV5R_MINI_SETTINGS_OFFSET = 0x8040;
-export const UV5R_MINI_SETTINGS_SIZE = 64;
-export const UV5R_MINI_ANI_OFFSET = 0x8080;
-export const UV5R_MINI_ANI_SIZE = 0x20;
-export const UV5R_MINI_PTT_ID_OFFSET = 0x80a0;
-export const UV5R_MINI_PTT_ID_SIZE = 0x140;
-export const UV5R_MINI_UPCODE_OFFSET = 0x81e0;
-export const UV5R_MINI_UPCODE_SIZE = 0x30;
-export const UV5R_MINI_DOWNCODE_OFFSET = 0x8210;
-export const UV5R_MINI_DOWNCODE_SIZE = UV5R_MINI_MEM_TOTAL - UV5R_MINI_DOWNCODE_OFFSET;
+export const UV5R_MINI_VFO_A_OFFSET = L.vfoAOffset;
+export const UV5R_MINI_VFO_B_OFFSET = L.vfoBOffset;
+export const UV5R_MINI_VFO_SIZE = L.vfoSize;
+export const UV5R_MINI_SETTINGS_OFFSET = L.settingsOffset;
+export const UV5R_MINI_SETTINGS_SIZE = L.settingsSize;
+export const UV5R_MINI_ANI_OFFSET = L.aniOffset;
+export const UV5R_MINI_ANI_SIZE = L.aniSize;
+export const UV5R_MINI_PTT_ID_OFFSET = L.pttIdOffset;
+export const UV5R_MINI_PTT_ID_SIZE = L.pttIdSize;
+export const UV5R_MINI_UPCODE_OFFSET = L.upcodeOffset;
+export const UV5R_MINI_UPCODE_SIZE = L.upcodeSize;
+export const UV5R_MINI_DOWNCODE_OFFSET = L.downcodeOffset;
+export const UV5R_MINI_DOWNCODE_SIZE = L.downcodeSize;
 
 /** Default XOR symbol index ("CO 7"). */
-export const UV5R_MINI_DEFAULT_ENCRSYM = 1;
+export const UV5R_MINI_DEFAULT_ENCRSYM = L.defaultEncrsym;
 
 /** Timeout for ident ACK. */
-export const UV5R_MINI_IDENT_TIMEOUT_MS = 8000;
+export const UV5R_MINI_IDENT_TIMEOUT_MS = L.identTimeoutMs;
 /** Timeout for magic replies / block reads. */
-export const UV5R_MINI_IO_TIMEOUT_MS = 6000;
+export const UV5R_MINI_IO_TIMEOUT_MS = L.ioTimeoutMs;
 /** Timeout for write ACK. */
-export const UV5R_MINI_WRITE_ACK_TIMEOUT_MS = 400;
+export const UV5R_MINI_WRITE_ACK_TIMEOUT_MS = L.writeAckTimeoutMs;
+
+export { UV5R_MINI_LAYOUT };

@@ -2,56 +2,33 @@
  * Bridge MemoryMap ↔ EgressPath radio-clone hydration for UV-5R Mini.
  */
 
-import {
-  createRadioCloneHydrationBag,
-  radioCloneImageBytes,
-  type RadioCloneHydrationBag,
-} from '@core/models/radioCloneHydration.ts';
 import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
-import { memoryMapFromBytes, memoryMapToBytes } from '../../kit/memoryMap.ts';
-import { UV5R_MINI_MEM_TOTAL } from './constants.ts';
-import { encodeChannelsIntoImage, readFirmwareFromImage } from './channelCodec.ts';
+import type { RadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
+import { UV5R_MINI_LAYOUT } from '../uv17pro-family/layout.ts';
+import {
+  extractUv17ProHydration,
+  memoryMapFromUv17ProHydration,
+  mergeChannelsIntoUv17ProHydration,
+} from '../uv17pro-family/hydration.ts';
 
-export const UV5R_MINI_MODEL_ID = 'UV5R-Mini';
+export const UV5R_MINI_MODEL_ID = UV5R_MINI_LAYOUT.radioModelId;
 
-/** Persist a downloaded clone image as FormatBuild.cpsWireHydration. */
 export function extractUv5rMiniHydration(
   image: MemoryMap,
   meta?: { sourceFileName?: string; capturedAt?: string },
 ): RadioCloneHydrationBag {
-  const bytes = memoryMapToBytes(image);
-  if (bytes.length < UV5R_MINI_MEM_TOTAL) {
-    throw new RangeError(
-      `UV-5R Mini hydration expects image ≥ 0x${UV5R_MINI_MEM_TOTAL.toString(16)} bytes`,
-    );
-  }
-  return createRadioCloneHydrationBag({
-    radioModelId: UV5R_MINI_MODEL_ID,
-    imageBytes: bytes,
-    firmware: readFirmwareFromImage(image),
-    capturedVia: 'web-serial',
-    sourceFileName: meta?.sourceFileName,
-    capturedAt: meta?.capturedAt,
-  });
+  return extractUv17ProHydration(UV5R_MINI_LAYOUT, image, meta);
 }
 
-/** Restore MemoryMap from a radio-clone hydration bag. */
 export function memoryMapFromUv5rMiniHydration(bag: RadioCloneHydrationBag): MemoryMap {
-  return memoryMapFromBytes(radioCloneImageBytes(bag));
+  return memoryMapFromUv17ProHydration(bag);
 }
 
-/**
- * Encode modelled channels into a copy of the hydrated image.
- * The channel span is cleared to empty slots before encode; VFO/settings/ANI are preserved.
- */
 export function mergeChannelsIntoUv5rMiniHydration(
   bag: RadioCloneHydrationBag,
   channels: readonly RadioChannelDto[],
   organisation?: import('../../radioWriteProjection.ts').RadioWriteOrganisation,
 ): MemoryMap {
-  void organisation;
-  const image = memoryMapFromUv5rMiniHydration(bag);
-  encodeChannelsIntoImage(image, channels);
-  return image;
+  return mergeChannelsIntoUv17ProHydration(UV5R_MINI_LAYOUT, bag, channels, organisation);
 }
