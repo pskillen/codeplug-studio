@@ -23,7 +23,12 @@ describe('NewBuildPage', () => {
 
     expect(screen.getByText('Choose radio')).toBeInTheDocument();
     expect(screen.getByText('Baofeng UV-5R Mini')).toBeInTheDocument();
-    expect(screen.getByText(/Web Serial · NeonPlug · CHIRP CSV/)).toBeInTheDocument();
+
+    const uv5rCard = screen.getByText('Baofeng UV-5R Mini').closest('[data-with-border]');
+    expect(uv5rCard).not.toBeNull();
+    expect(uv5rCard!).toHaveTextContent('Web Serial');
+    expect(uv5rCard!).toHaveTextContent('NeonPlug');
+    expect(uv5rCard!).toHaveTextContent('CHIRP CSV');
     expect(screen.queryByText('Choose format')).not.toBeInTheDocument();
   });
 
