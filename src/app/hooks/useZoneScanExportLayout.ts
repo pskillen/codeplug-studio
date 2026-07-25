@@ -23,6 +23,7 @@ import {
   type ExpandedMxNChannelRow,
 } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { filterChannelsEligibleForBuild } from '@core/domain/channelEligibility.ts';
+import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { egressIdentityForBuild } from '../lib/buildEgressUi.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
