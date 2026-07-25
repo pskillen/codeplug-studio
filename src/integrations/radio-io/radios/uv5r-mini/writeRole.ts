@@ -15,14 +15,7 @@ import {
 export type Uv5rMiniWriteRole = Uv17ProWriteRole;
 
 export type Uv5rMiniRegionId =
-  | 'channels'
-  | 'vfoA'
-  | 'vfoB'
-  | 'settings'
-  | 'ani'
-  | 'pttId'
-  | 'upcode'
-  | 'downcode';
+  'channels' | 'vfoA' | 'vfoB' | 'settings' | 'ani' | 'pttId' | 'upcode' | 'downcode';
 
 export type Uv5rMiniRegionManifestEntry = Uv17ProRegionManifestEntry & { id: Uv5rMiniRegionId };
 

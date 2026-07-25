@@ -225,9 +225,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
     opts: { onProgress?: ProgressFn; signal?: AbortSignal },
   ): Promise<void> {
     if (image.size < this.layout.memTotal) {
-      throw new RangeError(
-        `Upload image must be at least 0x${this.layout.memTotal.toString(16)}`,
-      );
+      throw new RangeError(`Upload image must be at least 0x${this.layout.memTotal.toString(16)}`);
     }
     const pipe = this.requirePipe();
     const addrs = listRadioBlockAddresses(this.layout);

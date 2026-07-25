@@ -8,7 +8,10 @@ import {
   readFirmwareFromImage,
   UV17PRO_SCAN_BIT,
 } from '../uv17pro-family/channelCodec.ts';
-import { createBlankSyntheticImage, createSyntheticImageBase } from './__fixtures__/syntheticImage.ts';
+import {
+  createBlankSyntheticImage,
+  createSyntheticImageBase,
+} from './__fixtures__/syntheticImage.ts';
 
 const L = UV21_PRO_V2_LAYOUT;
 
@@ -53,8 +56,8 @@ describe('UV-21Pro V2 channelCodec', () => {
     const image = createBlankSyntheticImage();
     encodeChannelsIntoImage(L, image, [sampleDto({ slotIndex: 1000, wireName: 'LAST' })]);
     const offset = 999 * L.channelSize;
-    expect(decodeChannelRecord(L, image.subarray(offset, offset + L.channelSize), 1000).wireName).toBe(
-      'LAST',
-    );
+    expect(
+      decodeChannelRecord(L, image.subarray(offset, offset + L.channelSize), 1000).wireName,
+    ).toBe('LAST');
   });
 });

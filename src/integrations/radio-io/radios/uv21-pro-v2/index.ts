@@ -2,19 +2,16 @@
  * UV-21Pro V2 radio module barrel.
  */
 
-export {
-  UV21_PRO_V2_DESCRIPTOR,
-  UV21_PRO_V2_MODEL_ID,
-} from './descriptor.ts';
+export { UV21_PRO_V2_DESCRIPTOR, UV21_PRO_V2_MODEL_ID } from './descriptor.ts';
 export { UV21_PRO_V2_LAYOUT } from '../uv17pro-family/layout.ts';
 export {
-  summariseUv17ProClone as summariseUv21ProV2Clone,
-  buildCloneRegionSummaries as buildUv21CloneRegionSummaries,
-  type Uv17ProCloneSummary as Uv21ProV2CloneSummary,
-  type Uv17ProOnRadioCounts as Uv21ProV2OnRadioCounts,
-  type Uv17ProRetainGroupSummary as Uv21ProV2RetainGroupSummary,
+  summariseUv21ProV2Clone,
+  UV21_PRO_V2_CLONE_REGION_SUMMARIES,
+  type Uv21ProV2CloneSummary,
+  type Uv21ProV2OnRadioCounts,
+  type Uv21ProV2RetainGroupSummary,
   type RadioCloneRegionSummary,
-} from '../uv17pro-family/cloneSummary.ts';
+} from './cloneSummary.ts';
 export {
   settingsRetainPreview,
   ancillaryRetainPreview,

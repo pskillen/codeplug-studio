@@ -184,11 +184,7 @@ export function decodeChannelsFromImage(
   for (let i = 0; i < max; i++) {
     const offset = i * layout.channelSize;
     channels.push(
-      decodeChannelRecord(
-        layout,
-        bytes.subarray(offset, offset + layout.channelSize),
-        i + 1,
-      ),
+      decodeChannelRecord(layout, bytes.subarray(offset, offset + layout.channelSize), i + 1),
     );
   }
   return channels;

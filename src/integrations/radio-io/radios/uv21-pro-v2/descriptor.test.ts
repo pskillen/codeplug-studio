@@ -18,9 +18,7 @@ describe('UV-21Pro V2 descriptor / registry', () => {
     expect(d?.attributionIds).toEqual(['chirp']);
     expect(d?.baudRate).toBe(115200);
     expect(d?.baudRateFallback).toBeUndefined();
-    expect(d?.compatibleProfiles).toEqual([
-      { formatId: 'radio-io', profileId: 'radio-io-uv21' },
-    ]);
+    expect(d?.compatibleProfiles).toEqual([{ formatId: 'radio-io', profileId: 'radio-io-uv21' }]);
     expect(listDescriptorsForProfile('radio-io', 'radio-io-uv21')).toHaveLength(1);
     expect(listDescriptorsForProfile('chirp', 'chirp-uv21')).toHaveLength(0);
   });

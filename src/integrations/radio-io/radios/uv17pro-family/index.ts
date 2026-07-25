@@ -23,11 +23,7 @@ export {
   UV17PRO_SCAN_BIT,
   UV17PRO_WIDE_BIT,
 } from './channelCodec.ts';
-export {
-  createUv17ProProtocol,
-  Uv17ProProtocol,
-  type Uv17ProConnectOptions,
-} from './protocol.ts';
+export { createUv17ProProtocol, Uv17ProProtocol, type Uv17ProConnectOptions } from './protocol.ts';
 export {
   extractUv17ProHydration,
   memoryMapFromUv17ProHydration,

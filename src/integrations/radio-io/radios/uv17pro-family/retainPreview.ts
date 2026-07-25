@@ -96,10 +96,7 @@ export function settingsRetainPreview(
   if (bytes.length < layout.settingsOffset + layout.settingsSize) {
     return [];
   }
-  const s = bytes.subarray(
-    layout.settingsOffset,
-    layout.settingsOffset + layout.settingsSize,
-  );
+  const s = bytes.subarray(layout.settingsOffset, layout.settingsOffset + layout.settingsSize);
   const chbworkmode = s[26]! & 0x0f;
   const chaworkmode = (s[26]! >> 4) & 0x0f;
 

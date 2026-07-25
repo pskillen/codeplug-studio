@@ -104,16 +104,11 @@ export function buildUv17ProRegionManifest(
   ];
 }
 
-export function uv17ProKeptRegions(
-  layout: Uv17ProLayout,
-): readonly Uv17ProRegionManifestEntry[] {
+export function uv17ProKeptRegions(layout: Uv17ProLayout): readonly Uv17ProRegionManifestEntry[] {
   return buildUv17ProRegionManifest(layout).filter((r) => r.writeRole === 'kept');
 }
 
-export function uv17ProWriteRole(
-  layout: Uv17ProLayout,
-  regionId: string,
-): Uv17ProWriteRole {
+export function uv17ProWriteRole(layout: Uv17ProLayout, regionId: string): Uv17ProWriteRole {
   const entry = buildUv17ProRegionManifest(layout).find((r) => r.id === regionId);
   return entry?.writeRole ?? 'kept';
 }

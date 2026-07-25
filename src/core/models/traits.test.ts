@@ -102,6 +102,7 @@ describe('trait profiles', () => {
       'radio-io-at-d890uv',
       'radio-io-dm32uv',
       'radio-io-opengd77-1701',
+      'radio-io-uv21',
       'radio-io-uv5r-mini',
     ]);
   });

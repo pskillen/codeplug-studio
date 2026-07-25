@@ -19,10 +19,7 @@ const SEND_PREFIX = new Uint8Array([
 ]);
 
 /** Build read/upload magic tables; trailer byte is last byte of SEND! frame. */
-export function buildUv17ProMagics(
-  readTrailer: number,
-  uploadTrailer: number,
-): Uv17ProMagicSet {
+export function buildUv17ProMagics(readTrailer: number, uploadTrailer: number): Uv17ProMagicSet {
   const sendTrailer = (trailer: number): Uint8Array => {
     const out = new Uint8Array(SEND_PREFIX.length + 1);
     out.set(SEND_PREFIX);

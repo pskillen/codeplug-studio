@@ -14,7 +14,11 @@ export function createBlankSyntheticImage(): Uint8Array {
 
 export function writeFakeFirmware(image: Uint8Array, fw = 'UV21PROV2-TEST'): void {
   const bytes = new TextEncoder().encode(fw.slice(0, UV21_PRO_V2_LAYOUT.fwVerLen));
-  image.fill(0xff, UV21_PRO_V2_LAYOUT.fwVerOffset, UV21_PRO_V2_LAYOUT.fwVerOffset + UV21_PRO_V2_LAYOUT.fwVerLen);
+  image.fill(
+    0xff,
+    UV21_PRO_V2_LAYOUT.fwVerOffset,
+    UV21_PRO_V2_LAYOUT.fwVerOffset + UV21_PRO_V2_LAYOUT.fwVerLen,
+  );
   image.set(bytes, UV21_PRO_V2_LAYOUT.fwVerOffset);
 }
 

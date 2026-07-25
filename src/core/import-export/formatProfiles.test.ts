@@ -48,8 +48,10 @@ describe('formatProfiles', () => {
     expect(profiles.find((p) => p.profileId === 'radio-io-uv21')?.maxChannels).toBe(1000);
     expect(profiles[0]?.nameLimit).toBe(12);
     expect(profiles[0]?.maxChannels).toBe(999);
-    expect(profiles[1]?.nameLimit).toBe(16);
-    expect(profiles[1]?.maxChannels).toBe(4000);
+    expect(profiles[1]?.nameLimit).toBe(12);
+    expect(profiles[1]?.maxChannels).toBe(1000);
+    expect(profiles[2]?.nameLimit).toBe(16);
+    expect(profiles[2]?.maxChannels).toBe(4000);
   });
 
   it('returns wire hint for OpenGD77 and CHIRP profiles', () => {

@@ -34,10 +34,7 @@ describe('radio target catalog', () => {
   it('lists UV-21 with Web Serial and CHIRP egress', () => {
     const uv21 = radioTargetFor('baofeng-uv21');
     expect(uv21).toBeDefined();
-    expect(uv21!.compatibleEgress.map((e) => e.profileId)).toEqual([
-      'radio-io-uv21',
-      'chirp-uv21',
-    ]);
+    expect(uv21!.compatibleEgress.map((e) => e.profileId)).toEqual(['radio-io-uv21', 'chirp-uv21']);
   });
 
   it('maps legacy profile ids to a single Mini radio target', () => {
