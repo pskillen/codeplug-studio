@@ -65,12 +65,25 @@ Same packing bridge as channel frequencies ([channel-record.md](channel-record.m
 
 Studio `RadioWriteProjection` carries NeonPlug quick-contact call types (`0x03` private, `0x04` group, `0x05` all) for DM-32. The AT-D890 adapter **remaps** those to Anytone `0/1/2` at encode time — never write NeonPlug `0x04` as group on D890 wire.
 
+## TalkgroupOrder (`0x3f00000`)
+
+Companion write rebuilt whenever the talkgroup bank is encoded (anytone-cps `writeTalkgroupData`). Studio mirrors this on Write.
+
+| Fact | Value |
+| --- | --- |
+| Base | `0x3f00000` |
+| Record shape | Sorted 8-byte pairs: **key** (u32 BE) + **slot id** (u32 BE, 1-based TG index) |
+| Key | `(BCD-as-hex DMR ID << 1) + call_type` where call type is Anytone `0/1/2` |
+| Padding | Total length rounded up to 16 bytes with `0xff` fill |
+
+Example: DMR ID `9` group call → key `0x13` (`(9 << 1) + 1`); DMR ID `99` group → key `0xc7`.
+
 ## Studio module
 
-`src/integrations/radio-io/radios/at-d890uv/talkGroupCodec.ts` — `encodeAtD890TalkgroupRecord`, `encodeTalkgroupsIntoAtD890Image`.
+`src/integrations/radio-io/radios/at-d890uv/talkGroupCodec.ts` — `encodeAtD890TalkgroupRecord`, `encodeTalkgroupsIntoAtD890Image`, `encodeAtD890TalkgroupOrder`.
 
 ## Related
 
 - [#721](https://github.com/pskillen/codeplug-studio/issues/721) — BCD ID + call-type fix
 - [#717](https://github.com/pskillen/codeplug-studio/issues/717) — channel BCD (same packing class with ×10)
-- TalkgroupOrder (`0x3f00000`) — separate ticket; Studio v1 does not rebuild order table
+- [#725](https://github.com/pskillen/codeplug-studio/issues/725) — TalkgroupOrder rebuild on Write
