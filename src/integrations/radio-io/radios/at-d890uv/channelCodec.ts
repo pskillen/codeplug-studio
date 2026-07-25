@@ -6,7 +6,7 @@
 import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto, RadioChannelMode, RadioTone } from '../../radioChannelDto.ts';
 import { decodeBcdFrequencyHz, encodeBcdFrequencyHz } from './bcd.ts';
-import { clearBitmap, listSetBits, setBitmapBit } from './bitmap.ts';
+import { clearBitmapBitsBelow, listSetBits, setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
   cacheToMemoryMap,
@@ -202,6 +202,7 @@ export function decodeChannelsFromAtD890Cache(cache: AtD890DownloadCache): Radio
   const occupied = listSetBits(setData);
   const out: RadioChannelDto[] = [];
   for (const idx of occupied) {
+    if (idx >= AT_D890_LIMITS.MAX_CHANNELS) continue;
     const primary = getCacheBytes(
       cache,
       channelPrimaryAddress(idx),
@@ -225,7 +226,7 @@ export function encodeChannelsIntoAtD890Image(
   channels: readonly RadioChannelDto[],
 ): MemoryMap {
   const set = image.get(D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES).slice();
-  clearBitmap(set);
+  clearBitmapBitsBelow(set, AT_D890_LIMITS.MAX_CHANNELS);
 
   const maxSlot = AT_D890_LIMITS.MAX_CHANNELS;
   for (let idx = 0; idx < maxSlot; idx++) {
