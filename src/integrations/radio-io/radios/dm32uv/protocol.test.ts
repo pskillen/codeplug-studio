@@ -142,12 +142,6 @@ describe('Dm32uvProtocol', () => {
     pipe.enqueue(new Uint8Array([0x06]));
     pipe.enqueue(new Uint8Array(8).fill(0xff));
     pipe.enqueue(new Uint8Array([0x06]));
-    // Verify memory map: metadata byte at each seeded address
-    enqueueReadReply(pipe, start + 0xfff, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
-    enqueueReadReply(pipe, 0x2000 + 0xfff, new Uint8Array([DM32_METADATA.VFO_SETTINGS]));
-    // Two write ACKs
-    pipe.enqueue(new Uint8Array([0x06]));
-    pipe.enqueue(new Uint8Array([0x06]));
 
     const radio = new Dm32uvProtocol();
     await radio.connect(pipe, { settleScale: 0 });
@@ -171,6 +165,13 @@ describe('Dm32uvProtocol', () => {
     image.set(0, channelBlock);
     image.set(DM32_BLOCK_SIZE, settingsBlock);
 
+    // Discover live map (metadata at each block in config range)
+    enqueueReadReply(pipe, start + 0xfff, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
+    enqueueReadReply(pipe, 0x2000 + 0xfff, new Uint8Array([DM32_METADATA.VFO_SETTINGS]));
+    // Two write ACKs
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array([0x06]));
+
     await radio.upload(image, {});
 
     const writeFrames = pipe.writes.filter(
@@ -180,5 +181,80 @@ describe('Dm32uvProtocol', () => {
     expect(writeFrames[0]![1]).toBe(start & 0xff);
     expect(writeFrames[0]![6 + 2]).toBe(0xaa);
     void end;
+  });
+
+  it('discovers live map and remaps VFO to a new absolute address before upload', async () => {
+    const pipe = new Dm32ScriptedPipe();
+    const start = 0x1000;
+    const vfoLive = 0x3000;
+    const channelBlock = makeFirstChannelBlock(1);
+    channelBlock[2] = 0xcc;
+    const settingsBlock = makeEmptyBlock(DM32_METADATA.VFO_SETTINGS);
+    settingsBlock[3] = 0xdd;
+
+    const psearch = new Uint8Array(8);
+    psearch[0] = 0x06;
+    psearch.set(new TextEncoder().encode('DP570UV'), 1);
+    pipe.enqueue(psearch);
+    pipe.enqueue(new Uint8Array([0x50, 0x00, 0x00]));
+    pipe.enqueue(new Uint8Array([0x06]));
+
+    const layout = new Uint8Array(8);
+    layout.set(new Uint8Array([0x00, 0x10, 0x00, 0x00]), 0); // start 0x1000
+    layout.set(new Uint8Array([0xff, 0x3f, 0x00, 0x00]), 4); // end 0x3fff → blocks 0x1000,0x2000,0x3000
+    const firmware = new TextEncoder().encode('DM32.TEST.001\0');
+    for (const id of [
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x10,
+    ]) {
+      if (id === 0x0a) enqueueVFrame(pipe, id, layout);
+      else if (id === 0x01) enqueueVFrame(pipe, id, firmware);
+      else enqueueVFrame(pipe, id, new Uint8Array(0));
+    }
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array(8).fill(0xff));
+    pipe.enqueue(new Uint8Array([0x06]));
+
+    const radio = new Dm32uvProtocol();
+    await radio.connect(pipe, { settleScale: 0 });
+
+    // Stale hydration: VFO still at 0x2000
+    radio.seedDownloadCache({
+      addressBase: start,
+      mapSize: DM32_BLOCK_SIZE * 3,
+      discovered: [
+        { address: start, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' },
+        { address: 0x2000, metadata: DM32_METADATA.VFO_SETTINGS, type: 'vfo' },
+      ],
+      blocks: new Map([
+        [start, channelBlock],
+        [0x2000, settingsBlock],
+      ]),
+    });
+
+    const image = createMemoryMap(DM32_BLOCK_SIZE * 3);
+    image.fill(0, DM32_BLOCK_SIZE * 3, 0xff);
+    image.set(0, channelBlock);
+    image.set(DM32_BLOCK_SIZE, settingsBlock);
+
+    // Live discover: channel at 0x1000, empty at 0x2000, VFO moved to 0x3000
+    enqueueReadReply(pipe, start + 0xfff, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
+    enqueueReadReply(pipe, 0x2000 + 0xfff, new Uint8Array([DM32_METADATA.EMPTY]));
+    enqueueReadReply(pipe, vfoLive + 0xfff, new Uint8Array([DM32_METADATA.VFO_SETTINGS]));
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array([0x06]));
+
+    await radio.upload(image, {});
+
+    const writeFrames = pipe.writes.filter(
+      (w) => w[0] === 0x57 && w.length === 6 + DM32_BLOCK_SIZE,
+    );
+    expect(writeFrames).toHaveLength(2);
+    const channelWriteAddr =
+      writeFrames[0]![1]! | (writeFrames[0]![2]! << 8) | (writeFrames[0]![3]! << 16);
+    const vfoWriteAddr =
+      writeFrames[1]![1]! | (writeFrames[1]![2]! << 8) | (writeFrames[1]![3]! << 16);
+    expect(channelWriteAddr).toBe(start);
+    expect(vfoWriteAddr).toBe(vfoLive);
+    expect(writeFrames[1]![6 + 3]).toBe(0xdd);
   });
 });
