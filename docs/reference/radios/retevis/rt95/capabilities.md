@@ -6,8 +6,8 @@
 | ------------------- | -------------------------------------------------------------- |
 | Max RF power        | ~25 W                                                          |
 | Analogue FM (NFM)   | Yes                                                            |
-| AM                  | Yes                                                            |
-| DMR / other digital | No — non-FM/AM internal modes skipped on export (with warning) |
+| AM / airband        | **No** — FM/NFM only (CHIRP `valid_modes`; no AM in channel record) |
+| DMR / other digital | No — unsupported modes omitted from export (with warning)        |
 
 ## Organisation traits
 
