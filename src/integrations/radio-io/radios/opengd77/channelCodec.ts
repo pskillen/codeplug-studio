@@ -124,6 +124,33 @@ export function powerWireToPercent(wire: number): number | null {
   return OPENGD77_1701_POWER_STEPS[Math.min(wire, 9) - 1]?.percent ?? null;
 }
 
+/** qDMR OpenGD77BaseCodeplug::ChannelElement::setSquelch — Global / Open / Normal / Closed. */
+export function encodeOpenGd77SquelchByte(
+  squelchPercent: number | null | undefined,
+  mode?: RadioChannelMode,
+): number {
+  if (mode === 'digital' || mode === 'fixed-digital') return 0;
+  if (squelchPercent == null || squelchPercent <= 0) return 0;
+  const level = Math.min(10, Math.max(1, Math.round(squelchPercent / 10)));
+  if (level >= 10) return 15;
+  return 1 + Math.floor((14 * level) / 10);
+}
+
+/** Inverse of qDMR squelchLevel() — maps wire byte to internal percent (null = Global/Open). */
+export function decodeOpenGd77SquelchPercent(wire: number): number | null {
+  switch (wire) {
+    case 0:
+    case 1:
+      return null;
+    case 15:
+      return 100;
+    default: {
+      const level = Math.min(10, Math.floor((10 * (wire - 1)) / 14));
+      return level <= 0 ? null : level * 10;
+    }
+  }
+}
+
 function decodeName(raw: Uint8Array): string {
   let name = '';
   for (let i = 0; i < Math.min(OPENGD77_CHANNEL_NAME_LEN, raw.length); i++) {
@@ -208,6 +235,7 @@ export function decodeChannelRecord(raw: Uint8Array, slotIndex: number): RadioCh
     skipScan: (bits33 & 0x10) !== 0,
     skipZoneScan: (bits33 & 0x20) !== 0,
     rxOnly: (bits33 & 0x04) !== 0,
+    squelchPercent: decodeOpenGd77SquelchPercent(raw[0x37]!),
   };
 }
 
@@ -241,7 +269,7 @@ export function encodeChannelRecord(dto: RadioChannelDto): Uint8Array {
   if (dto.skipScan) bits33 |= 0x10;
   if (dto.skipZoneScan) bits33 |= 0x20;
   out[0x33] = bits33;
-  out[0x37] = 0; // squelch global
+  out[0x37] = encodeOpenGd77SquelchByte(dto.squelchPercent, dto.mode);
   return out;
 }
 

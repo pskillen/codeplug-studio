@@ -216,6 +216,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
       txTone: channelToneToRadioTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: row.entity.power,
       bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
+      ...(analog && 'squelch' in analog ? { squelchPercent: analog.squelch } : {}),
       ...(rxOnly ? { rxOnly: true } : {}),
       ...digitalFieldsFromChannel(row.entity, fkMaps),
     });
@@ -272,6 +273,7 @@ export function expandAssembledChannelsToRadioDtos(
       txTone: channelToneToRadioTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: channel.power,
       bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
+      ...(analog && 'squelch' in analog ? { squelchPercent: analog.squelch } : {}),
       ...(rxOnly ? { rxOnly: true } : {}),
       ...digitalFieldsFromProjection(projection, channel, fkMaps),
     });

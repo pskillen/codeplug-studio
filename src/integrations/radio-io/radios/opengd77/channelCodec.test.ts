@@ -4,10 +4,12 @@ import {
   decodeBcdFreqHz,
   decodeChannelRecord,
   decodeChannelsFromImage,
+  decodeOpenGd77SquelchPercent,
   decodeSelectiveCall,
   encodeBcdFreqHz,
   encodeChannelRecord,
   encodeChannelsIntoImage,
+  encodeOpenGd77SquelchByte,
   encodeSelectiveCall,
   powerPercentToWire,
   powerWireToPercent,
@@ -61,6 +63,21 @@ describe('opengd77 channelCodec BCD / tone / power', () => {
     expect(powerPercentToWire(100)).toBe(9);
     expect(powerWireToPercent(9)).toBe(100);
   });
+
+  it('encodes analogue squelch percent with qDMR Global/Open/Normal/Closed scaling', () => {
+    expect(encodeOpenGd77SquelchByte(null, 'analog')).toBe(0);
+    expect(encodeOpenGd77SquelchByte(0, 'analog')).toBe(0);
+    expect(encodeOpenGd77SquelchByte(50, 'analog')).toBe(8);
+    expect(encodeOpenGd77SquelchByte(100, 'analog')).toBe(15);
+    expect(encodeOpenGd77SquelchByte(75, 'digital')).toBe(0);
+  });
+
+  it('decodes squelch wire byte to internal percent', () => {
+    expect(decodeOpenGd77SquelchPercent(0)).toBeNull();
+    expect(decodeOpenGd77SquelchPercent(1)).toBeNull();
+    expect(decodeOpenGd77SquelchPercent(15)).toBe(100);
+    expect(decodeOpenGd77SquelchPercent(8)).toBe(50);
+  });
 });
 
 describe('opengd77 channelCodec record', () => {
@@ -103,6 +120,17 @@ describe('opengd77 channelCodec record', () => {
     expect(decoded.skipZoneScan).toBe(false);
     expect(decoded.rxOnly).toBe(true);
     expect(decoded.rxTone).toEqual({ kind: 'ctcss', hz: 77 });
+  });
+
+  it('round-trips analogue squelch on encode/decode', () => {
+    const dto = sampleDto({
+      mode: 'analog',
+      squelchPercent: 50,
+    });
+    const raw = encodeChannelRecord(dto);
+    expect(raw[0x37]).toBe(8);
+    const decoded = decodeChannelRecord(raw, 1);
+    expect(decoded.squelchPercent).toBe(50);
   });
 
   it('writes bank0 slot and bank1 slot into image', () => {
