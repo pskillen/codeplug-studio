@@ -18,6 +18,14 @@ import {
   type AtD890DownloadCache,
 } from './memory.ts';
 import { encodeWideCharName, decodeWideCharName } from './wideChar.ts';
+import { ctcssHzFromIndex, ctcssIndexFromHz } from './ctcssToneTable.ts';
+
+function decodeToneFromCtcssIndex(index: number): RadioTone {
+  if (index === 0) return { kind: 'none' };
+  const hz = ctcssHzFromIndex(index);
+  if (hz == null) return { kind: 'none' };
+  return { kind: 'ctcss', hz };
+}
 
 function decodeToneFromDcsU16(low: number, high: number): RadioTone {
   if (low === 0 && high === 0) return { kind: 'none' };
@@ -26,10 +34,17 @@ function decodeToneFromDcsU16(low: number, high: number): RadioTone {
   return { kind: 'dcs', code, polarity: high >= 0xc0 ? 'I' : 'N' };
 }
 
-function decodeToneFromCtcssIndex(index: number): RadioTone {
-  if (index === 0) return { kind: 'none' };
-  // Index table not modelled — surface as none; full tone tables are a fidelity follow-up.
-  return { kind: 'none' };
+function readExistingChannelRecord(image: MemoryMap, idx: number): Uint8Array {
+  const combined = new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
+  combined.set(
+    image.get(channelPrimaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
+    0,
+  );
+  combined.set(
+    image.get(channelSecondaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
+    AT_D890_LIMITS.CHANNEL_CHUNK_SIZE,
+  );
+  return combined;
 }
 
 function encodeDcsTone(tone: RadioTone): { low: number; high: number } {
@@ -143,12 +158,19 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
     dmrRadioIdIndex: data[0x18]!,
     timeslot: ((data[0x21]! >> 1) & 1) === 1 ? 2 : 1,
     rxOnly,
+    colorCode: data[0x20]! > 0 ? data[0x20] : undefined,
   };
 }
 
-export function encodeAtD890ChannelRecord(ch: RadioChannelDto): Uint8Array {
-  const data = new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
-  data.fill(0);
+export function encodeAtD890ChannelRecord(
+  ch: RadioChannelDto,
+  prior?: Uint8Array,
+): Uint8Array {
+  const data =
+    prior && prior.length >= AT_D890_LIMITS.CHANNEL_RECORD_SIZE
+      ? prior.slice(0, AT_D890_LIMITS.CHANNEL_RECORD_SIZE)
+      : new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
+  if (!prior) data.fill(0);
   if (ch.empty || ch.rxHz <= 0) {
     return data;
   }
@@ -177,11 +199,27 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto): Uint8Array {
     const enc = encodeDcsTone(ch.txTone);
     data[0x0c] = enc.low;
     data[0x0d] = enc.high;
+    data[0x0a] = 0;
+  } else if (ch.txTone.kind === 'ctcss') {
+    data[0x0a] = ctcssIndexFromHz(ch.txTone.hz);
+  } else {
+    data[0x0a] = 0;
   }
   if (rxDcs) {
     const dec = encodeDcsTone(ch.rxTone);
     data[0x0e] = dec.low;
     data[0x0f] = dec.high;
+    data[0x0b] = 0;
+  } else if (ch.rxTone.kind === 'ctcss') {
+    data[0x0b] = ctcssIndexFromHz(ch.rxTone.hz);
+  } else {
+    data[0x0b] = 0;
+  }
+
+  if (ch.colorCode != null) {
+    const cc = ch.colorCode & 0xff;
+    data[0x20] = cc;
+    data[0x43] = cc;
   }
 
   const contact = ch.txContactId ?? 0;
@@ -229,18 +267,27 @@ export function encodeChannelsIntoAtD890Image(
   clearBitmapBitsBelow(set, AT_D890_LIMITS.MAX_CHANNELS);
 
   const maxSlot = AT_D890_LIMITS.MAX_CHANNELS;
+  const toWrite = channels.filter((ch) => {
+    if (ch.empty || ch.rxHz <= 0) return false;
+    const idx = ch.slotIndex - 1;
+    return idx >= 0 && idx < maxSlot;
+  });
+  const priors = new Map<number, Uint8Array>();
+  for (const ch of toWrite) {
+    const idx = ch.slotIndex - 1;
+    priors.set(idx, readExistingChannelRecord(image, idx));
+  }
+
   for (let idx = 0; idx < maxSlot; idx++) {
     const primary = channelPrimaryAddress(idx);
     image.fill(primary, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE, 0);
     image.fill(channelSecondaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE, 0);
   }
 
-  for (const ch of channels) {
-    if (ch.empty || ch.rxHz <= 0) continue;
+  for (const ch of toWrite) {
     const idx = ch.slotIndex - 1;
-    if (idx < 0 || idx >= maxSlot) continue;
     setBitmapBit(set, idx, true);
-    const encoded = encodeAtD890ChannelRecord(ch);
+    const encoded = encodeAtD890ChannelRecord(ch, priors.get(idx));
     image.set(channelPrimaryAddress(idx), encoded.subarray(0, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE));
     image.set(
       channelSecondaryAddress(idx),
