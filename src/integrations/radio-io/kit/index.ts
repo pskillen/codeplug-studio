@@ -31,6 +31,22 @@ export {
   waitForAckByte,
 } from './codecs/programRw.ts';
 export {
+  ANYTONE_DMR_ACK,
+  ANYTONE_DMR_BLOCK_SIZE,
+  ANYTONE_DMR_READ_HEADER_LEN,
+  ANYTONE_DMR_READ_OPCODE,
+  ANYTONE_DMR_WRITE_OPCODE,
+  ANYTONE_DMR_WRITE_REPLY_HEADER_LEN,
+  anytoneDmrChecksum8AfterOpcode,
+  anytoneDmrRwCodec,
+  enterAnytoneDmrProgramMode,
+  exitAnytoneDmrProgramMode,
+  makeAnytoneDmrReadFrame,
+  makeAnytoneDmrWriteFrame,
+  parseAnytoneDmrReadReply,
+  probeAnytoneDmrIdent,
+} from './codecs/anytoneDmrRw.ts';
+export {
   exchangeVProbe,
   makeVInfoProbeFrame,
   makeVProbeFrame,
