@@ -9,6 +9,7 @@ import { RadioProtocolError } from '../../kit/errors.ts';
 import { AT_D890_LIMITS, AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
 import {
   atD890EnterProgram,
+  atD890ExitProgram,
   atD890ProbeIdent,
   atD890ReadMemory,
   atD890WriteMemory,
@@ -206,8 +207,17 @@ export class AtD890uvProtocol implements CloneImageRadio {
   }
 
   async disconnect(): Promise<void> {
-    this.pipe = null;
-    this.programming = false;
+    const pipe = this.pipe;
+    try {
+      if (pipe && this.programming) {
+        await atD890ExitProgram(pipe);
+      }
+    } catch {
+      // Best-effort — port may already be closing.
+    } finally {
+      this.pipe = null;
+      this.programming = false;
+    }
   }
 
   async download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap> {
