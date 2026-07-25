@@ -11,6 +11,45 @@ export const DM32_ZONE_ENTRY_SIZE = 145;
 export const DM32_ZONE_START_OFFSET = 16;
 export const DM32_ZONE_MAX_MEMBERS = 64;
 
+/** Zone bank first-block header — qDMR ZoneBankElement offsets (1-based wire; 0 = unset). */
+export const DM32_ZONE_HEADER_CHANNEL_INDEX_A = 0x01;
+export const DM32_ZONE_HEADER_CHANNEL_INDEX_B = 0x03;
+export const DM32_ZONE_HEADER_ZONE_INDEX_A = 0x05;
+export const DM32_ZONE_HEADER_ZONE_INDEX_B = 0x07;
+
+function clampWireSelectionIndex(wireValue: number, maxCount: number): number {
+  if (wireValue === 0) return 0;
+  if (maxCount <= 0) return 0;
+  if (wireValue > maxCount) return 1;
+  return wireValue;
+}
+
+/** Sanitize VFO A/B selected zone+channel indices after a shrink (prevents radio UI hang). */
+export function sanitizeDm32ZoneBankHeader(
+  image: MemoryMap,
+  blockBase: number,
+  zoneCount: number,
+  channelCount: number,
+): void {
+  if (blockBase + DM32_ZONE_START_OFFSET > image.size) return;
+  image.bytes[blockBase + DM32_ZONE_HEADER_CHANNEL_INDEX_A] = clampWireSelectionIndex(
+    image.bytes[blockBase + DM32_ZONE_HEADER_CHANNEL_INDEX_A]!,
+    channelCount,
+  );
+  image.bytes[blockBase + DM32_ZONE_HEADER_CHANNEL_INDEX_B] = clampWireSelectionIndex(
+    image.bytes[blockBase + DM32_ZONE_HEADER_CHANNEL_INDEX_B]!,
+    channelCount,
+  );
+  image.bytes[blockBase + DM32_ZONE_HEADER_ZONE_INDEX_A] = clampWireSelectionIndex(
+    image.bytes[blockBase + DM32_ZONE_HEADER_ZONE_INDEX_A]!,
+    zoneCount,
+  );
+  image.bytes[blockBase + DM32_ZONE_HEADER_ZONE_INDEX_B] = clampWireSelectionIndex(
+    image.bytes[blockBase + DM32_ZONE_HEADER_ZONE_INDEX_B]!,
+    zoneCount,
+  );
+}
+
 const TE = new TextEncoder();
 
 function clearDm32ZoneSlot(image: MemoryMap, slotOff: number): void {
@@ -46,6 +85,11 @@ export interface Dm32ZoneEncodeContext {
   discovered: readonly { address: number; metadata: number }[];
 }
 
+export interface Dm32ZoneEncodeOptions {
+  /** 1-based max occupied channel slot after projection (for header clamp). */
+  channelCount?: number;
+}
+
 /**
  * Rewrite all zone blocks (0x5c) from the projection.
  * First block: zones @ offset 16, byte0 = count in first block; later blocks @ 0.
@@ -54,6 +98,7 @@ export function encodeZonesIntoDm32Image(
   image: MemoryMap,
   ctx: Dm32ZoneEncodeContext,
   zones: readonly RadioZoneDto[],
+  options?: Dm32ZoneEncodeOptions,
 ): MemoryMap {
   const zoneBlocks = ctx.discovered
     .filter((b) => b.metadata === DM32_METADATA.ZONE)
@@ -104,6 +149,8 @@ export function encodeZonesIntoDm32Image(
       if (preservedHeader) {
         image.bytes.set(preservedHeader, base + 1);
       }
+      const channelCount = options?.channelCount ?? 0;
+      sanitizeDm32ZoneBankHeader(image, base, encoded.length, channelCount);
     }
 
     image.bytes[base + DM32_METADATA_OFFSET] = DM32_METADATA.ZONE;
