@@ -40,7 +40,7 @@ Addresses are **radio absolute** (u32). Read only enabled slots via each region�
 | `ScanListSet`                | `0x3482c60`  | Bitmap `0x20`                                  | Scan-list occupancy                                 |
 | `ScanListData`               | `0x2100000`  | Stride `0x200`; length `0xd0`                  | Scan-list records                                   |
 | `TalkgroupSet`               | `0x3980000`  | Bitmap `0x4F0` (**inverted**: bit set → empty) | Talkgroup occupancy                                 |
-| `TalkgroupData`              | `0x3a00000`  | Stride `0xc8`; length `0x80`                   | Talkgroup / contact-ish records                     |
+| `TalkgroupData`              | `0x3a00000`  | Stride `0xc8`; encode length `0xc8`            | Talkgroup records. CPS reads `0x80` (used fields fit). Studio sparse R/W uses 16-aligned `0xd0` per slot at `base + idx * 0xc8` (not `0xd0` as stride). |
 | `TalkgroupOrder`             | `0x3f00000`  | (order table — defer detail)                   | Sort / order                                        |
 | `ReceiveGroupSet`            | `0x3701510`  | Bitmap `0x10`                                  | RX-group occupancy                                  |
 | `ReceiveGroupData`           | `0x3780000`  | Stride `0x200`; length `0x120`                 | Receive-group lists                                 |
