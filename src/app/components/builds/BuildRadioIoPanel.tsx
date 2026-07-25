@@ -37,11 +37,9 @@ import WebSerialExperimentalAlert from './WebSerialExperimentalAlert.tsx';
 import { DM32_ANALOG_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
 import { AT_D890_DIGITAL_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/at-d890uv/writeRole.ts';
 import {
-  AT_D890_WRITE_EXPERIMENTAL_LEAD,
-  AT_D890_WRITE_EXPERIMENTAL_PREFER_CSV,
-  AT_D890_WRITE_EXPERIMENTAL_TITLE,
-  RADIO_WRITE_PROD_DISABLED_MESSAGE,
+  resolveRadioWriteExperimentalCopy,
   resolveRadioWriteGate,
+  resolveRadioWriteProdDisabledMessage,
 } from '../../services/radioWriteEnvGate.ts';
 
 export interface BuildRadioIoPanelProps {
@@ -78,6 +76,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const writeGate = resolveRadioWriteGate(descriptor);
   const writeHidden = writeGate === 'hidden';
   const writeWarn = writeGate === 'warn';
+  const writeExperimentalCopy = resolveRadioWriteExperimentalCopy(egress.profileId);
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
 
@@ -268,11 +267,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           .
         </Text>
       ) : null}
-      {writeWarn ? (
-        <Alert color="red" title={AT_D890_WRITE_EXPERIMENTAL_TITLE}>
-          <Text size="sm">{AT_D890_WRITE_EXPERIMENTAL_LEAD}</Text>
+      {writeWarn && writeExperimentalCopy ? (
+        <Alert color="red" title={writeExperimentalCopy.title}>
+          <Text size="sm">{writeExperimentalCopy.lead}</Text>
           <Text size="sm" mt="xs" fw={600}>
-            {AT_D890_WRITE_EXPERIMENTAL_PREFER_CSV}
+            {writeExperimentalCopy.preferEgress}
           </Text>
         </Alert>
       ) : null}
@@ -339,7 +338,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         </Alert>
       ) : writeHidden ? (
         <Text size="xs" c="dimmed">
-          {RADIO_WRITE_PROD_DISABLED_MESSAGE}
+          {resolveRadioWriteProdDisabledMessage(egress.profileId)}
         </Text>
       ) : (
         <Text size="xs" c="dimmed">
@@ -362,13 +361,13 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       <Modal
         opened={writeConfirmOpen}
         onClose={() => setWriteConfirmOpen(false)}
-        title={AT_D890_WRITE_EXPERIMENTAL_TITLE}
+        title={writeExperimentalCopy?.title ?? 'Confirm write'}
         centered
       >
         <Stack gap="sm">
-          <Text size="sm">{AT_D890_WRITE_EXPERIMENTAL_LEAD}</Text>
+          <Text size="sm">{writeExperimentalCopy?.lead}</Text>
           <Text size="sm" fw={600}>
-            {AT_D890_WRITE_EXPERIMENTAL_PREFER_CSV}
+            {writeExperimentalCopy?.preferEgress}
           </Text>
           <Group justify="flex-end" mt="md">
             <Button variant="default" onClick={() => setWriteConfirmOpen(false)}>

@@ -87,6 +87,16 @@ Wire byte → tone Hz via CHIRP `TONE_MAP_VAL_TO_TONE` (`0x00` = 62.5 Hz … `0x
 
 DTCS uses CHIRP `ALL_DTCS_CODES` index split across low byte + high bit, with separate invert bits for encode/decode.
 
+## Web Serial Write (Studio)
+
+| Behaviour           | Implementation                                                                                                                                                                                            |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scan inclusion      | Effective scan resolution (build default + per-channel override) → `scan_enabled_bitfield` @ `0x1960` via `scanAdd` on `RadioChannelDto` ([#734](https://github.com/pskillen/codeplug-studio/issues/734)) |
+| DTCS reverse        | Library `DnnnI` / CHIRP invert → byte `15`/`17` bit `6` on decode/encode ([#735](https://github.com/pskillen/codeplug-studio/issues/735))                                                                 |
+| Custom CTCSS `0x33` | **Gap:** CHIRP driver incomplete — Studio does not encode custom CTCSS indices on Web Serial yet                                                                                                          |
+
+Read from radio does not import scan flags into library `scanInclusion` — scan bitfield is write-projection only (same pattern as UV-17Pro flat-memory adapters).
+
 ## Related
 
 - [memory-layout.md](memory-layout.md) · [settings.md](settings.md)

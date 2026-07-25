@@ -80,6 +80,13 @@ describe('trait profiles', () => {
     expect(profile?.traits).toContain(BuildCapabilityTrait.PerChannelScanFlag);
   });
 
+  it('registers radio-io-rt95 with flat memory traits (Web Serial only)', () => {
+    const profile = traitProfileFor('radio-io-rt95');
+    expect(profile?.formatId).toBe('radio-io');
+    expect(profile?.traits).toContain(BuildCapabilityTrait.FlatMemoryList);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.PerChannelScanFlag);
+  });
+
   it('registers radio-io-at-d890uv with Anytone-style traits (Web Serial only)', () => {
     const profile = traitProfileFor('radio-io-at-d890uv');
     expect(profile?.formatId).toBe('radio-io');
@@ -102,6 +109,7 @@ describe('trait profiles', () => {
       'radio-io-at-d890uv',
       'radio-io-dm32uv',
       'radio-io-opengd77-1701',
+      'radio-io-rt95',
       'radio-io-uv21',
       'radio-io-uv5r-mini',
     ]);

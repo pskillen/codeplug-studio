@@ -57,13 +57,13 @@ See [memory-layout.md](memory-layout.md) band table. Live radio band index comes
 
 ## Upload behaviours
 
-| Behaviour             | CHIRP                                                     | Studio recommendation for [#643](https://github.com/pskillen/codeplug-studio/issues/643) |
-| --------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Full clone **read**   | All blocks `0x0000`…`0x3290` → `0x32A0` image             | Same                                                                                     |
-| Full clone **upload** | Entire image after priming read @ `0x3b10`                | Supported; use carefully                                                                 |
-| Channel-only write    | Not the default — full map write                          | Prefer **RMW**: keep cached full image; rewrite channel span + occupancy/scan bits       |
-| Settings write        | Part of full upload via `set_settings` into mmap          | Prefer RMW of `0x3200`+ / DTMF regions only when intentionally editing settings          |
-| Bandlimit             | Compared; not silently overwritten from radio on mismatch | Warn; do not invent band changes without operator intent                                 |
+| Behaviour             | CHIRP                                                     | Studio Web Serial ([#643](https://github.com/pskillen/codeplug-studio/issues/643))  |
+| --------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Full clone **read**   | All blocks `0x0000`…`0x3290` → `0x32A0` image             | Same                                                                                |
+| Full clone **upload** | Entire image after priming read @ `0x3b10`                | Supported; use carefully                                                            |
+| Channel-only write    | Not the default — full map write                          | **RMW:** rewrite channel span + occupancy/scan bitfields; retain settings/DTMF/gaps |
+| Settings write        | Part of full upload via `set_settings` into mmap          | Prefer RMW of `0x3200`+ / DTMF regions only when intentionally editing settings     |
+| Bandlimit             | Compared; not silently overwritten from radio on mismatch | Warn; do not invent band changes without operator intent                            |
 
 **Safe upload:** Cache the full `0x32A0` download. Mutate channel records + occupancy/scan bitfields (and optional settings spans) offline, then write only changed `0x10` blocks — or write the full map after RMW so unknown gaps between DTMF and `0x3200` survive.
 

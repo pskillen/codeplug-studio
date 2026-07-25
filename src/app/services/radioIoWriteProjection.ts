@@ -943,7 +943,11 @@ export function buildRadioWriteProjection(
       rxGroups,
       digitalContacts,
     };
-  } else if (egress.profileId === 'radio-io-uv5r-mini' || egress.profileId === 'radio-io-uv21') {
+  } else if (
+    egress.profileId === 'radio-io-uv5r-mini' ||
+    egress.profileId === 'radio-io-uv21' ||
+    egress.profileId === 'radio-io-rt95'
+  ) {
     channels = stampUv17ProFlatMemoryChannelBehaviour(
       dtos,
       assembled,

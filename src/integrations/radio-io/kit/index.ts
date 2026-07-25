@@ -31,6 +31,26 @@ export {
   waitForAckByte,
 } from './codecs/programRw.ts';
 export {
+  enterProgramQxMode,
+  exitProgramQxMode,
+  makeProgramQxReadFrame,
+  makeProgramQxWriteFrame,
+  parseProgramQxReadReply,
+  parseProgramQxWriteAck,
+  probeProgramQxIdent,
+  PROGRAM_QX_ACK,
+  PROGRAM_QX_BLOCK_SIZE,
+  PROGRAM_QX_NACK,
+  PROGRAM_QX_READ_HEADER_LEN,
+  PROGRAM_QX_READ_OPCODE,
+  PROGRAM_QX_READ_REPLY_LEN,
+  PROGRAM_QX_WRITE_OPCODE,
+  programQxChecksum8AfterOpcode,
+  programQxCodec,
+  sendProgramQxCommand,
+  stripProgramQxEcho,
+} from './codecs/programQx.ts';
+export {
   ANYTONE_DMR_ACK,
   ANYTONE_DMR_BLOCK_SIZE,
   ANYTONE_DMR_READ_HEADER_LEN,

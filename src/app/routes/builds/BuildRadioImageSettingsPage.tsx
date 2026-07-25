@@ -33,6 +33,11 @@ import {
   OPENGD77_DM1701_MODEL_ID,
   type OpenGd77CloneSummary,
 } from '@integrations/radio-io/radios/opengd77/index.ts';
+import {
+  summariseRt95Clone,
+  RT95_MODEL_ID,
+  type Rt95CloneSummary,
+} from '@integrations/radio-io/radios/rt95/index.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 import { findEgressByFormatId } from '../../lib/buildEgressUi.ts';
@@ -721,6 +726,144 @@ function Dm32RadioImageSections({
   );
 }
 
+function Rt95OnRadioSection({ summary }: { summary: Rt95CloneSummary }) {
+  return (
+    <FormSection
+      title="On the radio"
+      description="Counts decoded from the stored image — not your build layout."
+    >
+      <Table.ScrollContainer minWidth={360}>
+        <Table withTableBorder withColumnBorders>
+          <Table.Tbody>
+            <Table.Tr>
+              <Table.Td fw={600}>Channels</Table.Td>
+              <Table.Td>
+                {summary.occupiedChannelCount} occupied · {summary.emptyChannelCount} empty slots
+              </Table.Td>
+            </Table.Tr>
+          </Table.Tbody>
+        </Table>
+      </Table.ScrollContainer>
+    </FormSection>
+  );
+}
+
+function Rt95WrittenFromBuildSection({ summary }: { summary: Rt95CloneSummary }) {
+  return (
+    <FormSection
+      title="Written from your build"
+      description="When you Write to radio, Studio updates these from your build."
+    >
+      <List size="sm" spacing="xs">
+        {summary.writtenFromBuild.map((item) => (
+          <List.Item key={item}>{item}</List.Item>
+        ))}
+      </List>
+    </FormSection>
+  );
+}
+
+function Rt95KeptOnWriteSection({ summary }: { summary: Rt95CloneSummary }) {
+  return (
+    <FormSection
+      title="Kept on Write"
+      description="These regions stay as they were on the radio when you Write from your build."
+    >
+      {summary.retainGroups.length === 0 ? (
+        <Text size="sm">No retained regions in this capture.</Text>
+      ) : (
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Region</Table.Th>
+                <Table.Th>On Write</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {summary.retainGroups.map((group) => (
+                <Table.Tr key={group.label}>
+                  <Table.Td>{group.label}</Table.Td>
+                  <Table.Td>{group.role}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      )}
+    </FormSection>
+  );
+}
+
+function Rt95SettingsRetainSection({ summary }: { summary: Rt95CloneSummary }) {
+  return (
+    <FormSection title="Radio settings (retain-only)">
+      {summary.settingsRetain.length === 0 ? (
+        <Text size="sm" c="dimmed">
+          No radio settings block in the stored image.
+        </Text>
+      ) : (
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Tbody>
+              {summary.settingsRetain.map((row) => (
+                <Table.Tr key={row.label}>
+                  <Table.Td fw={600}>{row.label}</Table.Td>
+                  <Table.Td>{row.value}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      )}
+    </FormSection>
+  );
+}
+
+function Rt95RadioImageSections({
+  summary,
+  bag,
+}: {
+  summary: Rt95CloneSummary;
+  bag: RadioCloneHydrationBag;
+}) {
+  return (
+    <>
+      <FormSection title="Capture">
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Tbody>
+              <Table.Tr>
+                <Table.Td fw={600}>Source</Table.Td>
+                <Table.Td>{bag.sourceFileName ?? '—'}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Captured</Table.Td>
+                <Table.Td>{new Date(bag.capturedAt).toLocaleString()}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Via</Table.Td>
+                <Table.Td>{summary.capturedVia}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Image size</Table.Td>
+                <Table.Td>
+                  {summary.imageByteLength} bytes ({hexOffset(summary.imageByteLength)})
+                </Table.Td>
+              </Table.Tr>
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      </FormSection>
+
+      <Rt95OnRadioSection summary={summary} />
+      <Rt95WrittenFromBuildSection summary={summary} />
+      <Rt95KeptOnWriteSection summary={summary} />
+      <Rt95SettingsRetainSection summary={summary} />
+    </>
+  );
+}
+
 function AtD890RadioImageSections({
   summary,
   bag,
@@ -854,10 +997,12 @@ export default function BuildRadioImageSettingsPage() {
     bag?.retain.radioModelId === OPENGD77_DM1701_MODEL_ID ||
     bag?.retain.radioModelId === 'DM-1701' ||
     bag?.retain.radioModelId === 'RT-84';
+  const isRt95 = bag?.retain.radioModelId === RT95_MODEL_ID;
   const uv17ProSummary = bag && isUv17ProFamily ? summariseUv17ProFamilyClone(bag) : null;
   const dm32Summary = bag && isDm32 ? summariseDm32uvClone(bag) : null;
   const atD890Summary = bag && isAtD890 ? summariseAtD890uvClone(bag) : null;
   const openGd77Summary = bag && isOpenGd77 ? summariseOpenGd77Clone(bag) : null;
+  const rt95Summary = bag && isRt95 ? summariseRt95Clone(bag) : null;
 
   return (
     <FormPage
@@ -873,9 +1018,11 @@ export default function BuildRadioImageSettingsPage() {
               ? 'Counts show what is on the radio; local info and unmodelled banks stay Read-retained when you write channels, zones, scan lists, and contacts from your library.'
               : isOpenGd77
                 ? 'Counts show what is on the radio; retained settings, VFO, DTMF, and APRS regions are what Studio keeps when you write channels, zones, and contacts from your library.'
-                : isUv17ProFamily
-                  ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels from your library.'
-                  : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
+                : isRt95
+                  ? 'Counts show what is on the radio; retained settings, DTMF, and bandlimit regions are what Studio keeps when you write channels from your library.'
+                  : isUv17ProFamily
+                    ? 'Counts show what is on the radio; retained settings are what Studio keeps when you write channels from your library.'
+                    : 'Unmodelled regions (VFO, settings, ANI) are retained for Write so they survive channel updates from the library. Settings are not editable in Studio.'}
         </Text>
       }
     >
@@ -888,7 +1035,11 @@ export default function BuildRadioImageSettingsPage() {
               into this build. Write stays blocked until a Read succeeds.
             </Text>
           </FormSection>
-        ) : !uv17ProSummary && !dm32Summary && !atD890Summary && !openGd77Summary ? (
+        ) : !uv17ProSummary &&
+          !dm32Summary &&
+          !atD890Summary &&
+          !openGd77Summary &&
+          !rt95Summary ? (
           <FormSection title="Stored image">
             <Text size="sm">
               A radio-clone image is stored (model {bag.retain.radioModelId},{' '}
@@ -902,6 +1053,8 @@ export default function BuildRadioImageSettingsPage() {
           <AtD890RadioImageSections summary={atD890Summary} bag={bag} />
         ) : openGd77Summary && bag ? (
           <OpenGd77RadioImageSections summary={openGd77Summary} bag={bag} />
+        ) : rt95Summary && bag ? (
+          <Rt95RadioImageSections summary={rt95Summary} bag={bag} />
         ) : uv17ProSummary && bag ? (
           <Uv5rRadioImageSections summary={uv17ProSummary} bag={bag} />
         ) : null}

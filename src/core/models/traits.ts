@@ -102,6 +102,13 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
     label: 'Baofeng UV-5R Mini',
     traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
   },
+  /** Web Serial direct-write — Retevis RT95 VOX PROGRAM→QX. */
+  'radio-io-rt95': {
+    profileId: 'radio-io-rt95',
+    formatId: 'radio-io',
+    label: 'Retevis RT95 VOX',
+    traits: [BuildCapabilityTrait.FlatMemoryList, BuildCapabilityTrait.PerChannelScanFlag],
+  },
   /** Web Serial direct-write — UV-17Pro family (UV-21Pro V2). */
   'radio-io-uv21': {
     profileId: 'radio-io-uv21',

@@ -262,6 +262,28 @@ describe('buildRadioWriteProjection', () => {
     expect(projection.channels[0]?.scanAdd).toBe(true);
   });
 
+  it('stamps RT95 scanAdd from effective scan inclusion', () => {
+    const ch = {
+      ...newChannel('p1', 'ScanMe'),
+      id: 'ch-scan',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      scanInclusion: 'default' as const,
+    };
+    const library = emptyLibrary([ch]);
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-rt95');
+    const build = {
+      ...uv5rFlatMemoryBuild(baseBuild, ['ch-scan']),
+      exportSettings: { defaultScanInclusion: 'scan' as const },
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.channels[0]?.scanAdd).toBe(true);
+  });
+
   it('uses radio-io default skip when build omits defaultScanInclusion', () => {
     const ch = {
       ...newChannel('p1', 'A'),
