@@ -53,9 +53,7 @@ function readAsciiField(data: Uint8Array, offset: number, length: number): strin
 }
 
 function asciiPreview(data: Uint8Array): string {
-  return [...data]
-    .map((b) => (b >= 0x20 && b < 0x7f ? String.fromCharCode(b) : '.'))
-    .join('');
+  return [...data].map((b) => (b >= 0x20 && b < 0x7f ? String.fromCharCode(b) : '.')).join('');
 }
 
 function hexDump(data: Uint8Array): string {
@@ -110,11 +108,7 @@ export function settingsRetainPreview(localInfo: Uint8Array): AtD890RetainPrevie
   push(0x80, 'Stock date', readAsciiField(localInfo, 0x80, 0x10) || '(empty)');
   push(0x90, 'Sell date', readAsciiField(localInfo, 0x90, 0x10) || '(empty)');
   push(0xa0, 'Seller', readAsciiField(localInfo, 0xa0, 0x10) || '(empty)');
-  push(
-    0xb0,
-    'Maintenance description',
-    readAsciiField(localInfo, 0xb0, 0x50) || '(empty)',
-  );
+  push(0xb0, 'Maintenance description', readAsciiField(localInfo, 0xb0, 0x50) || '(empty)');
 
   return rows;
 }

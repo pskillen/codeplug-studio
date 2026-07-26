@@ -66,25 +66,25 @@ Chinese UI on the radio is modelled in **LocalInfo ExpertOptions** (`+0x04` and 
 
 `LocalInfo` @ `0x4f80000` (`0x100` bytes) is **Read** on download and **replayed verbatim** on upload (see Write contract below). ExpertOptions fields (facts from anytone-cps `ExpertOptions::decode`):
 
-| Offset           | Field                     | Notes                                                                  |
-| ---------------- | ------------------------- | ---------------------------------------------------------------------- |
-| `+0x02` bit 0    | Full test mode            |                                                                        |
-| `+0x03`          | Frequency mode            | u8                                                                     |
-| `+0x04`, `+0x05` | Chinese UI flag           | Both bytes `0` ⇒ Chinese expert chrome                                 |
-| `+0x06` bit 0    | Band select               |                                                                        |
-| `+0x0b`          | Band-settings password    | 4 chars                                                                |
-| `+0x10`          | Radio type                | 7 chars                                                                |
-| `+0x28`          | Program password          | 4 chars                                                                |
-| `+0x2c`          | Area code                 | 4 chars                                                                |
-| `+0x30`          | Serial number             | 16 chars                                                               |
-| `+0x40`          | Production date           | 16 chars                                                               |
-| `+0x50`          | Manufacture code          | 8 chars                                                                |
-| `+0x60`          | Maintenance date          | 16 chars                                                               |
-| `+0x70`          | Dealer code               | 16 chars                                                               |
-| `+0x80`          | Stock date                | 16 chars                                                               |
-| `+0x90`          | Sell date                 | 16 chars                                                               |
-| `+0xa0`          | Seller                    | 16 chars                                                               |
-| `+0xb0`          | Maintenance description   | 80 (`0x50`) chars                                                      |
+| Offset           | Field                   | Notes                                  |
+| ---------------- | ----------------------- | -------------------------------------- |
+| `+0x02` bit 0    | Full test mode          |                                        |
+| `+0x03`          | Frequency mode          | u8                                     |
+| `+0x04`, `+0x05` | Chinese UI flag         | Both bytes `0` ⇒ Chinese expert chrome |
+| `+0x06` bit 0    | Band select             |                                        |
+| `+0x0b`          | Band-settings password  | 4 chars                                |
+| `+0x10`          | Radio type              | 7 chars                                |
+| `+0x28`          | Program password        | 4 chars                                |
+| `+0x2c`          | Area code               | 4 chars                                |
+| `+0x30`          | Serial number           | 16 chars                               |
+| `+0x40`          | Production date         | 16 chars                               |
+| `+0x50`          | Manufacture code        | 8 chars                                |
+| `+0x60`          | Maintenance date        | 16 chars                               |
+| `+0x70`          | Dealer code             | 16 chars                               |
+| `+0x80`          | Stock date              | 16 chars                               |
+| `+0x90`          | Sell date               | 16 chars                               |
+| `+0xa0`          | Seller                  | 16 chars                               |
+| `+0xb0`          | Maintenance description | 80 (`0x50`) chars                      |
 
 `writeRole` labels LocalInfo **kept** — meaning **not re-derived from the library build**, not “skipped on upload”.
 
