@@ -116,7 +116,6 @@ export default function MapPairPlot({
   labelFrom = 'From',
   labelTo = 'To',
   onPick,
-  pickTarget: _pickTarget,
   height = 200,
   active = true,
 }: MapPairPlotProps) {
