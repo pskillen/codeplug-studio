@@ -6,14 +6,14 @@ Conversion between Maidenhead grid locators and WGS84 coordinates — shared `co
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Convert mode (`/reference/maidenhead`) | Shipped | Locator ↔ coordinates, map, geocode, channel seed |
-| Bearing mode | Shipped | From/To distance and bearing, dual map, hero metrics ([#490](https://github.com/pskillen/codeplug-studio/issues/490)) |
-| Core `maidenhead.ts` | Shipped | Locator validation and conversion |
-| Core `geoDistance.ts` | Shipped | Haversine distance, initial/reciprocal bearing, path metrics |
-| Repeater import seeding | Shipped | Locator/lat-lon → channel location |
-| Channel editor location | Shipped | `MapLocationPicker`, reconcile on save |
+| Area                                   | Status  | Notes                                                                                                                 |
+| -------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| Convert mode (`/reference/maidenhead`) | Shipped | Locator ↔ coordinates, map, geocode, channel seed                                                                     |
+| Bearing mode                           | Shipped | From/To distance and bearing, dual map, hero metrics ([#490](https://github.com/pskillen/codeplug-studio/issues/490)) |
+| Core `maidenhead.ts`                   | Shipped | Locator validation and conversion                                                                                     |
+| Core `geoDistance.ts`                  | Shipped | Haversine distance, initial/reciprocal bearing, path metrics                                                          |
+| Repeater import seeding                | Shipped | Locator/lat-lon → channel location                                                                                    |
+| Channel editor location                | Shipped | `MapLocationPicker`, reconcile on save                                                                                |
 
 ## Purpose
 
@@ -54,29 +54,29 @@ The [map](map/README.md) plots channels that have a stored location. Operator **
 
 ## Code anchors
 
-| Path | Role |
-| --- | --- |
-| `src/core/domain/maidenhead.ts` | `locatorToCoords`, `coordsToLocator`, `isValidLocator` (4–10 char) |
-| `src/core/domain/geoDistance.ts` | `haversineDistanceM`, `initialBearingDeg`, `pathMetricsBetween`, formatters |
-| `src/core/domain/maidenheadGrid.ts` | Grid line/label geometry for map overlay |
-| `src/app/routes/reference/MaidenheadReferencePage.tsx` | Convert / Bearing mode shell |
-| `src/app/routes/reference/MaidenheadBearingSection.tsx` | Bearing mode UI |
-| `src/app/components/MapLocationPicker/` | Click/drag map picker (Convert mode) |
-| `src/app/components/MapPairPlot/` | Dual-marker map (Bearing mode) — [sidecar](../../src/app/components/MapPairPlot/MapPairPlot.md) |
-| `src/integrations/geocode/` | Photon + Mapbox geocode client (Photon uses shared session cache) |
-| `src/integrations/preferences/` | Mapbox token in `localStorage` |
-| `src/app/hooks/useMapSettings.ts` | Settings ↔ preferences bridge |
-| `src/app/lib/channelLookup.ts` | Channel autocomplete helpers |
-| `src/app/components/channels/ChannelLocationSection.tsx` | Channel editor location block |
-| `src/core/domain/channelLocation.ts` | `reconcileChannelLocation` on save |
+| Path                                                     | Role                                                                                            |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `src/core/domain/maidenhead.ts`                          | `locatorToCoords`, `coordsToLocator`, `isValidLocator` (4–10 char)                              |
+| `src/core/domain/geoDistance.ts`                         | `haversineDistanceM`, `initialBearingDeg`, `pathMetricsBetween`, formatters                     |
+| `src/core/domain/maidenheadGrid.ts`                      | Grid line/label geometry for map overlay                                                        |
+| `src/app/routes/reference/MaidenheadReferencePage.tsx`   | Convert / Bearing mode shell                                                                    |
+| `src/app/routes/reference/MaidenheadBearingSection.tsx`  | Bearing mode UI                                                                                 |
+| `src/app/components/MapLocationPicker/`                  | Click/drag map picker (Convert mode)                                                            |
+| `src/app/components/MapPairPlot/`                        | Dual-marker map (Bearing mode) — [sidecar](../../src/app/components/MapPairPlot/MapPairPlot.md) |
+| `src/integrations/geocode/`                              | Photon + Mapbox geocode client (Photon uses shared session cache)                               |
+| `src/integrations/preferences/`                          | Mapbox token in `localStorage`                                                                  |
+| `src/app/hooks/useMapSettings.ts`                        | Settings ↔ preferences bridge                                                                   |
+| `src/app/lib/channelLookup.ts`                           | Channel autocomplete helpers                                                                    |
+| `src/app/components/channels/ChannelLocationSection.tsx` | Channel editor location block                                                                   |
+| `src/core/domain/channelLocation.ts`                     | `reconcileChannelLocation` on save                                                              |
 
 ## Inputs and outputs
 
-| Direction | Input | Output |
-| --- | --- | --- |
-| Locator → coords | 4, 6, 8, or 10-character Maidenhead (case-insensitive) | Centre of the finest specified square |
-| Coords → locator | WGS84 lat/lon + precision | Locator at chosen precision |
-| Bearing mode | Two valid locators (From, To) | Great-circle distance, bearing From→To and To→From |
+| Direction        | Input                                                  | Output                                             |
+| ---------------- | ------------------------------------------------------ | -------------------------------------------------- |
+| Locator → coords | 4, 6, 8, or 10-character Maidenhead (case-insensitive) | Centre of the finest specified square              |
+| Coords → locator | WGS84 lat/lon + precision                              | Locator at chosen precision                        |
+| Bearing mode     | Two valid locators (From, To)                          | Great-circle distance, bearing From→To and To→From |
 
 ## Behaviour
 

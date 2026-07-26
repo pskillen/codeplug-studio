@@ -6,16 +6,16 @@ Leaflet map for plotting two WGS84 points (From / To) with a dashed path line an
 
 ## Props
 
-| Prop        | Type                                 | Default | Description                                                       |
-| ----------- | ------------------------------------ | ------- | ----------------------------------------------------------------- |
-| `pointFrom` | `MapPairPoint \| null`               | —       | From point; null hides the From marker                            |
-| `pointTo`   | `MapPairPoint \| null`               | —       | To point; null hides the To marker                                |
-| `labelFrom` | `string`                           | `From`  | Label under the From marker                                       |
-| `labelTo`   | `string`                           | `To`    | Label under the To marker                                         |
-| `onPick`    | `(lat: number, lon: number) => void` | —       | Called when the map is clicked                                    |
-| `pickTarget`| `'from' \| 'to'`                     | —       | Which side the parent applies the pick to (visual hint in parent) |
-| `height`    | `number \| string`                   | `200`   | Map container height                                              |
-| `active`    | `boolean`                            | `true`  | When `false`, renders a sized placeholder without `MapContainer`  |
+| Prop         | Type                                 | Default | Description                                                       |
+| ------------ | ------------------------------------ | ------- | ----------------------------------------------------------------- |
+| `pointFrom`  | `MapPairPoint \| null`               | —       | From point; null hides the From marker                            |
+| `pointTo`    | `MapPairPoint \| null`               | —       | To point; null hides the To marker                                |
+| `labelFrom`  | `string`                             | `From`  | Label under the From marker                                       |
+| `labelTo`    | `string`                             | `To`    | Label under the To marker                                         |
+| `onPick`     | `(lat: number, lon: number) => void` | —       | Called when the map is clicked                                    |
+| `pickTarget` | `'from' \| 'to'`                     | —       | Which side the parent applies the pick to (visual hint in parent) |
+| `height`     | `number \| string`                   | `200`   | Map container height                                              |
+| `active`     | `boolean`                            | `true`  | When `false`, renders a sized placeholder without `MapContainer`  |
 
 ## Usage
 
