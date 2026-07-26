@@ -25,7 +25,7 @@ Saved `Zone.members` is an ordered list of `ZoneMemberEntry` values (`kind: 'cha
 | -------------------------------- | ------------------------------------------------------------- | --------------------------------- |
 | `zoneMembershipExclusionReasons` | `src/core/domain/zoneHierarchy.ts`                            | Self / descendant / cycle reasons |
 | `ZoneMemberEditor`               | `src/app/components/library/ZoneMemberEditor.tsx`             | Vertical stacked UI (mode prop)   |
-| `GrowZoneRecommendations`        | `src/app/components/library/GrowZoneRecommendations.tsx`    | Add-from-map grow UX              |
+| `GrowZoneRecommendations`        | `src/app/components/library/GrowZoneRecommendations.tsx`      | Add-from-map grow UX              |
 | `ZoneEditLayout`                 | `src/app/routes/library/zones/ZoneEditLayout.tsx`             | Shared draft + save shell         |
 | `suggestChannelsInsideHull`      | `src/core/domain/growZone.ts`                                 | Hull-based suggestions            |
 | `rankChannelsByDistance`         | `src/core/domain/growZone.ts`                                 | Locator distance ranking          |
@@ -38,13 +38,13 @@ Sidecars: `ZoneMemberEditor.md`, `GrowZoneRecommendations.md`, `ChannelZoneMembe
 
 ## `ZoneMemberEditor` modes
 
-| Mode | In-zone list | Add pool | Scan controls | Reorder / remove |
-| --- | --- | --- | --- | --- |
-| `full` | yes | yes | yes | yes |
-| `reorder` | yes | no | no | yes |
-| `addPool` | read-only | yes | no | no |
-| `scanOnly` | read-only | no | yes | no |
-| `summary` | read-only | no | no | no |
+| Mode       | In-zone list | Add pool | Scan controls | Reorder / remove |
+| ---------- | ------------ | -------- | ------------- | ---------------- |
+| `full`     | yes          | yes      | yes           | yes              |
+| `reorder`  | yes          | no       | no            | yes              |
+| `addPool`  | read-only    | yes      | no            | no               |
+| `scanOnly` | read-only    | no       | yes           | no               |
+| `summary`  | read-only    | no       | no            | no               |
 
 ## Behaviour
 

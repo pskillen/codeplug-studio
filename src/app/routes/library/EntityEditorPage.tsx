@@ -147,13 +147,7 @@ export default function EntityEditorPage() {
         if (entityId) {
           return <Navigate to={`/library/zones/${entityId}`} replace />;
         }
-        return (
-          <ZoneEditor
-            projectId={projectId}
-            library={library}
-            entity={null}
-          />
-        );
+        return <ZoneEditor projectId={projectId} library={library} entity={null} />;
     }
   }
 }

@@ -86,12 +86,12 @@ Issue text sometimes says “concave hulls”; shipped behaviour matches the cod
 
 When suggesting channels to add to an existing zone, containment matches the map hull rules above:
 
-| Geolocated member sites | Suggestion geometry |
-| ----------------------- | ------------------- |
-| 0                       | No inside-hull suggestions |
+| Geolocated member sites | Suggestion geometry                                              |
+| ----------------------- | ---------------------------------------------------------------- |
+| 0                       | No inside-hull suggestions                                       |
 | 1                       | 2.5 km circle around the site (`ZONE_HULL_SINGLE_SITE_RADIUS_M`) |
-| 2                       | No area — inside-hull mode unavailable |
-| 3+                      | `pointInConvexHull` on `convexHullLatLon` member sites |
+| 2                       | No area — inside-hull mode unavailable                           |
+| 3+                      | `pointInConvexHull` on `convexHullLatLon` member sites           |
 
 **Near locator** mode ranks all non-member geolocated channels by haversine distance from a reference point (default: arithmetic mean of member coordinates). Suggestions are on-demand snapshots; membership does not auto-update when channels move.
 

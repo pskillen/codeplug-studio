@@ -10,14 +10,14 @@ Use the **`mode`** prop to show a subset on split zone edit screens (`reorder`, 
 
 ## Props
 
-| Prop                 | Type                | Description                          |
-| -------------------- | ------------------- | ------------------------------------ |
-| `channels`           | `Channel[]`         | Full library channels                |
-| `zones`              | `Zone[]`            | Full library zones                   |
-| `editingZoneId`      | `string \| null`    | Zone being edited (`null` on create) |
-| `members`            | `ZoneMemberEntry[]` | Current member list                  |
-| `onChange`           | `(members) => void` | Member list updates                  |
-| `onMapFiltersChange` | optional            | Map hide-filter callback             |
+| Prop                 | Type                | Description                                                   |
+| -------------------- | ------------------- | ------------------------------------------------------------- |
+| `channels`           | `Channel[]`         | Full library channels                                         |
+| `zones`              | `Zone[]`            | Full library zones                                            |
+| `editingZoneId`      | `string \| null`    | Zone being edited (`null` on create)                          |
+| `members`            | `ZoneMemberEntry[]` | Current member list                                           |
+| `onChange`           | `(members) => void` | Member list updates                                           |
+| `onMapFiltersChange` | optional            | Map hide-filter callback                                      |
 | `mode`               | optional            | `full` (default), `reorder`, `addPool`, `scanOnly`, `summary` |
 
 ## Usage

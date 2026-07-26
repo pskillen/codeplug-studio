@@ -279,142 +279,142 @@ export default function ZoneMemberEditor({
           selectedKeys={inZoneReadOnly ? [] : inZoneSelected}
           onToggleSelect={inZoneReadOnly ? () => {} : toggleInZone}
           onRemove={showRemove ? (key) => removeKeys([key]) : () => {}}
-            emptyMessage="No members in zone"
-            onReorder={
-              showReorder
-                ? (nextKeys) => {
-                    if (nextKeys.length !== members.length) return;
-                    onChange(reorderMembersByKeys(members, nextKeys));
-                  }
-                : undefined
-            }
-            reorderDisabled={inZoneFilter.trim().length > 0 || !showReorder}
-            onMoveSelected={showReorder ? moveSelected : undefined}
-            onRemoveSelected={showRemove ? removeSelected : undefined}
-            canMoveUp={showReorder ? canMoveUp : false}
-            canMoveDown={showReorder ? canMoveDown : false}
-            reorderHint={
-              showReorder ? (
-                <Text size="xs" c="dimmed">
-                  {inZoneFilter.trim()
-                    ? 'Clear filter to drag-reorder'
-                    : 'Drag handles reorder · Alt+↑/↓ moves selection'}
-                </Text>
-              ) : null
-            }
-            renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => (
-              <InZoneMemberRow
-                key={itemKey}
-                memberKey={itemKey}
-                member={members.find((m) => memberKeyFromEntry(m) === itemKey)}
-                channelsById={channelsById}
-                zones={zones}
-                selected={selected}
-                onToggleSelect={onToggleSelect}
-                onRemove={onRemove}
-                dragHandle={dragHandle}
-                onIncludeInScanListChange={handleIncludeInScanList}
-                showScanControls={showScanControls}
-                showRemove={showRemove}
-                showSelect={!inZoneReadOnly}
-                showDragHandle={showReorder}
+          emptyMessage="No members in zone"
+          onReorder={
+            showReorder
+              ? (nextKeys) => {
+                  if (nextKeys.length !== members.length) return;
+                  onChange(reorderMembersByKeys(members, nextKeys));
+                }
+              : undefined
+          }
+          reorderDisabled={inZoneFilter.trim().length > 0 || !showReorder}
+          onMoveSelected={showReorder ? moveSelected : undefined}
+          onRemoveSelected={showRemove ? removeSelected : undefined}
+          canMoveUp={showReorder ? canMoveUp : false}
+          canMoveDown={showReorder ? canMoveDown : false}
+          reorderHint={
+            showReorder ? (
+              <Text size="xs" c="dimmed">
+                {inZoneFilter.trim()
+                  ? 'Clear filter to drag-reorder'
+                  : 'Drag handles reorder · Alt+↑/↓ moves selection'}
+              </Text>
+            ) : null
+          }
+          renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => (
+            <InZoneMemberRow
+              key={itemKey}
+              memberKey={itemKey}
+              member={members.find((m) => memberKeyFromEntry(m) === itemKey)}
+              channelsById={channelsById}
+              zones={zones}
+              selected={selected}
+              onToggleSelect={onToggleSelect}
+              onRemove={onRemove}
+              dragHandle={dragHandle}
+              onIncludeInScanListChange={handleIncludeInScanList}
+              showScanControls={showScanControls}
+              showRemove={showRemove}
+              showSelect={!inZoneReadOnly}
+              showDragHandle={showReorder}
+            />
+          )}
+          toolbar={
+            showReorder ? (
+              <MembershipSortMenu
+                disabled={!members.length}
+                label="Sort channels…"
+                onSort={(sortMode) =>
+                  onChange(sortZoneMembersByMode(members, channelsById, zonesById, sortMode))
+                }
               />
-            )}
-            toolbar={
-              showReorder ? (
-                <MembershipSortMenu
-                  disabled={!members.length}
-                  label="Sort channels…"
-                  onSort={(sortMode) =>
-                    onChange(sortZoneMembersByMode(members, channelsById, zonesById, sortMode))
-                  }
-                />
-              ) : undefined
+            ) : undefined
           }
         />
       </PageSection>
 
       {showAddPool ? (
         <PageSection>
-        <AvailableItemPicker
-          title="Other channels & zones"
-          filter={{
-            value: availableFilter,
-            onChange: setAvailableFilter,
-            placeholder: 'Filter…',
-            'aria-label': 'Filter available channels and zones',
-          }}
-          sections={[
-            {
-              id: 'channels',
-              title: 'Channels',
-              itemKeys: availableChannels.map((ch) => ch.id),
-              selectedKeys: availableChannelSelected,
-              onToggleSelect: (id) =>
-                setAvailableChannelSelected((prev) =>
-                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-                ),
-              emptyMessage: 'No channels available',
-              renderItem: ({ itemKey, checked, onToggle }) => {
-                const channel = channelsById.get(itemKey);
-                if (!channel) return null;
-                return (
-                  <AvailableChannelRow
-                    key={itemKey}
-                    channel={channel}
-                    checked={checked}
-                    onToggle={onToggle}
-                  />
-                );
+          <AvailableItemPicker
+            title="Other channels & zones"
+            filter={{
+              value: availableFilter,
+              onChange: setAvailableFilter,
+              placeholder: 'Filter…',
+              'aria-label': 'Filter available channels and zones',
+            }}
+            sections={[
+              {
+                id: 'channels',
+                title: 'Channels',
+                itemKeys: availableChannels.map((ch) => ch.id),
+                selectedKeys: availableChannelSelected,
+                onToggleSelect: (id) =>
+                  setAvailableChannelSelected((prev) =>
+                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                  ),
+                emptyMessage: 'No channels available',
+                renderItem: ({ itemKey, checked, onToggle }) => {
+                  const channel = channelsById.get(itemKey);
+                  if (!channel) return null;
+                  return (
+                    <AvailableChannelRow
+                      key={itemKey}
+                      channel={channel}
+                      checked={checked}
+                      onToggle={onToggle}
+                    />
+                  );
+                },
               },
-            },
-            {
-              id: 'zones',
-              title: 'Zones',
-              itemKeys: availableZones.map((zone) => zone.id),
-              selectedKeys: selectableZoneSelected,
-              onToggleSelect: (id) => {
-                if (exclusionReasons.has(id)) return;
-                setAvailableZoneSelected((prev) =>
-                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-                );
+              {
+                id: 'zones',
+                title: 'Zones',
+                itemKeys: availableZones.map((zone) => zone.id),
+                selectedKeys: selectableZoneSelected,
+                onToggleSelect: (id) => {
+                  if (exclusionReasons.has(id)) return;
+                  setAvailableZoneSelected((prev) =>
+                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                  );
+                },
+                emptyMessage: 'No zones available',
+                renderItem: ({ itemKey, checked, onToggle }) => {
+                  const zone = zonesById.get(itemKey);
+                  if (!zone) return null;
+                  const reason = exclusionReasons.get(zone.id);
+                  return (
+                    <AvailableZoneRow
+                      key={itemKey}
+                      zone={zone}
+                      checked={checked}
+                      onToggle={onToggle}
+                      blockedReason={reason}
+                    />
+                  );
+                },
               },
-              emptyMessage: 'No zones available',
-              renderItem: ({ itemKey, checked, onToggle }) => {
-                const zone = zonesById.get(itemKey);
-                if (!zone) return null;
-                const reason = exclusionReasons.get(zone.id);
-                return (
-                  <AvailableZoneRow
-                    key={itemKey}
-                    zone={zone}
-                    checked={checked}
-                    onToggle={onToggle}
-                    blockedReason={reason}
-                  />
-                );
-              },
-            },
-          ]}
-          onAddSelected={addSelected}
-          addDisabled={!availableChannelSelected.length && !selectableZoneSelected.length}
-          footer={
-            <>
-              <Checkbox
-                label="Hide filtered entries from map"
-                checked={hideAvailableFilteredFromMap}
-                disabled={!availableFilterLower}
-                onChange={(e) => setHideAvailableFilteredFromMap(e.currentTarget.checked)}
-              />
-              <Checkbox
-                label="Hide filtered in-zone members from map"
-                checked={hideInZoneFilteredFromMap}
-                disabled={!inZoneFilterLower}
-                onChange={(e) => setHideInZoneFilteredFromMap(e.currentTarget.checked)}
-              />
-            </>
-          }
-        />
+            ]}
+            onAddSelected={addSelected}
+            addDisabled={!availableChannelSelected.length && !selectableZoneSelected.length}
+            footer={
+              <>
+                <Checkbox
+                  label="Hide filtered entries from map"
+                  checked={hideAvailableFilteredFromMap}
+                  disabled={!availableFilterLower}
+                  onChange={(e) => setHideAvailableFilteredFromMap(e.currentTarget.checked)}
+                />
+                <Checkbox
+                  label="Hide filtered in-zone members from map"
+                  checked={hideInZoneFilteredFromMap}
+                  disabled={!inZoneFilterLower}
+                  onChange={(e) => setHideInZoneFilteredFromMap(e.currentTarget.checked)}
+                />
+              </>
+            }
+          />
         </PageSection>
       ) : null}
     </Stack>

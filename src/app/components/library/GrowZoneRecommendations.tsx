@@ -9,7 +9,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { useDebouncedValue } from '@mantine/hooks';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { addChannelsToZoneMembers } from '@core/domain/zoneMembership.ts';
 import {
@@ -55,9 +55,9 @@ export default function GrowZoneRecommendations() {
   const { mapboxToken } = useMapSettings();
 
   const [mode, setMode] = useState<SuggestionMode>('insideHull');
-  const [centre, setCentre] = useState<GeoCentre | null>(null);
-  const [centreInitialised, setCentreInitialised] = useState(false);
+  const [centreOverride, setCentreOverride] = useState<GeoCentre | null>(null);
   const [locator, setLocator] = useState('');
+  const [locatorTouched, setLocatorTouched] = useState(false);
   const [locatorError, setLocatorError] = useState<string | null>(null);
   const [addressQuery, setAddressQuery] = useState('');
   const [geocodeProvider, setGeocodeProvider] = useState<GeocodeProvider>(
@@ -80,13 +80,9 @@ export default function GrowZoneRecommendations() {
   }, [previewZone, library.zones]);
 
   const defaultCentre = useMemo(() => zoneCentreFromPoints(memberPoints), [memberPoints]);
-
-  useEffect(() => {
-    if (centreInitialised || !defaultCentre) return;
-    setCentre(defaultCentre);
-    setLocator(coordsToLocator(defaultCentre.lat, defaultCentre.lon, 6));
-    setCentreInitialised(true);
-  }, [centreInitialised, defaultCentre]);
+  const centre = centreOverride ?? defaultCentre;
+  const displayedLocator =
+    locatorTouched || !centre ? locator : coordsToLocator(centre.lat, centre.lon, 6);
 
   const geolocatedChannels = useMemo(
     () => library.channels.filter((ch) => channelHasGeolocation(ch)),
@@ -122,13 +118,15 @@ export default function GrowZoneRecommendations() {
   }, [suggestions.channelIds, channelById]);
 
   const applyCentre = useCallback((lat: number, lon: number) => {
-    setCentre({ lat, lon });
+    setCentreOverride({ lat, lon });
     setLocator(coordsToLocator(lat, lon, 6));
+    setLocatorTouched(true);
     setLocatorError(null);
     setMode('nearLocator');
   }, []);
 
   const handleLocatorChange = (value: string) => {
+    setLocatorTouched(true);
     setLocator(value);
     const normalised = value.trim();
     if (!normalised) {
@@ -145,7 +143,7 @@ export default function GrowZoneRecommendations() {
       return;
     }
     setLocatorError(null);
-    setCentre({ lat: coords.lat, lon: coords.lon });
+    setCentreOverride({ lat: coords.lat, lon: coords.lon });
     setMode('nearLocator');
   };
 
@@ -319,7 +317,7 @@ export default function GrowZoneRecommendations() {
             <TextInput
               label="Maidenhead locator"
               placeholder="e.g. IO85uk"
-              value={locator}
+              value={displayedLocator}
               onChange={(e) => handleLocatorChange(e.currentTarget.value)}
               error={locatorError}
             />
@@ -331,7 +329,10 @@ export default function GrowZoneRecommendations() {
               disabled={!defaultCentre}
               onClick={() => {
                 if (!defaultCentre) return;
-                applyCentre(defaultCentre.lat, defaultCentre.lon);
+                setCentreOverride(null);
+                setLocatorTouched(false);
+                setLocator('');
+                setMode('nearLocator');
               }}
             >
               Reset to zone centre

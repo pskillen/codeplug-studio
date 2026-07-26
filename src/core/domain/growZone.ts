@@ -59,13 +59,8 @@ export function resolveZoneMemberGeolocatedPoints(
 ): LatLon[] {
   const plotted = applyFilters(channels, DEFAULT_MAP_FILTER_OPTS).plotted;
   const plottedById = buildChannelById(plotted);
-  return zoneGeolocatedPoints(
-    zone,
-    allZones,
-    plottedById,
-    channels,
-    DEFAULT_MAP_FILTER_OPTS,
-  ).points;
+  return zoneGeolocatedPoints(zone, allZones, plottedById, channels, DEFAULT_MAP_FILTER_OPTS)
+    .points;
 }
 
 export function suggestChannelsInsideHull(
@@ -84,9 +79,7 @@ export function suggestChannelsInsideHull(
     matches.push(channel);
   }
 
-  matches.sort((a, b) =>
-    a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }),
-  );
+  matches.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
   const channelIds = matches.map((ch) => ch.id);
   return { channelIds, distancesM };

@@ -85,12 +85,12 @@ Shared list UI: [app-shell/data-table.md](../app-shell/data-table.md).
 
 **Edit existing zone** — shared draft state on `/library/zones/:id` with focused sub-screens:
 
-| Route | Purpose |
-| --- | --- |
-| `/library/zones/:id` | Identity, reorder-only members, navigation to add / scanning / map preview |
-| `/library/zones/:id/add` | Read-only member summary + **Other channels & zones** add pool + map |
+| Route                             | Purpose                                                                                                                     |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `/library/zones/:id`              | Identity, reorder-only members, navigation to add / scanning / map preview                                                  |
+| `/library/zones/:id/add`          | Read-only member summary + **Other channels & zones** add pool + map                                                        |
 | `/library/zones/:id/add-from-map` | Geographic grow — inside-hull and near-locator suggestions ([#588](https://github.com/pskillen/codeplug-studio/issues/588)) |
-| `/library/zones/:id/scanning` | Per-channel zone-derived scan inclusion only |
+| `/library/zones/:id/scanning`     | Per-channel zone-derived scan inclusion only                                                                                |
 
 `ZoneMemberEditor` composes from **modes** (`reorder`, `addPool`, `scanOnly`, `summary`, `full`) per screen. Channel editor still uses **`ChannelZoneMembershipSection`**. See [zone-member-picker.md](zone-member-picker.md). Sidecars: `ZoneMemberEditor.md`, `GrowZoneRecommendations.md`, `ChannelZoneMembershipSection.md`.
 

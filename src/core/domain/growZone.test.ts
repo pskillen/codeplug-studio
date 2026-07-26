@@ -45,7 +45,15 @@ describe('pointInConvexHull', () => {
   });
 
   it('returns false when hull has fewer than three vertices', () => {
-    expect(pointInConvexHull([0.5, 0.5], [[0, 0], [1, 1]])).toBe(false);
+    expect(
+      pointInConvexHull(
+        [0.5, 0.5],
+        [
+          [0, 0],
+          [1, 1],
+        ],
+      ),
+    ).toBe(false);
   });
 });
 
@@ -55,7 +63,12 @@ describe('zoneCentreFromPoints', () => {
   });
 
   it('returns arithmetic mean of points', () => {
-    expect(zoneCentreFromPoints([[10, 20], [20, 40]])).toEqual({ lat: 15, lon: 30 });
+    expect(
+      zoneCentreFromPoints([
+        [10, 20],
+        [20, 40],
+      ]),
+    ).toEqual({ lat: 15, lon: 30 });
   });
 });
 
@@ -104,14 +117,10 @@ describe('suggestChannelsInsideHull', () => {
 
   it('returns empty for two member sites', () => {
     const inside = locatedChannel('Inside', 0.2, 0.2);
-    const result = suggestChannelsInsideHull(
-      [inside],
-      new Set(),
-      [
-        [0, 0],
-        [1, 1],
-      ],
-    );
+    const result = suggestChannelsInsideHull([inside], new Set(), [
+      [0, 0],
+      [1, 1],
+    ]);
     expect(result.channelIds).toEqual([]);
   });
 
@@ -138,11 +147,7 @@ describe('rankChannelsByDistance', () => {
     const near = locatedChannel('Near', centre.lat + 0.01, centre.lon);
     const far = locatedChannel('Far', centre.lat + 0.5, centre.lon);
 
-    const result = rankChannelsByDistance(
-      [member, near, far],
-      new Set([member.id]),
-      centre,
-    );
+    const result = rankChannelsByDistance([member, near, far], new Set([member.id]), centre);
     expect(result.channelIds).toEqual([near.id, far.id]);
     expect(result.distancesM.get(near.id)).toBeLessThan(result.distancesM.get(far.id)!);
   });
