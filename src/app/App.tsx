@@ -11,6 +11,11 @@ import AddFromRepeaterBookPage from './routes/library/AddFromRepeaterBookPage.ts
 import AddFromRadioidPage from './routes/library/AddFromRadioidPage.tsx';
 import AddChannelSetPage from './routes/library/AddChannelSetPage.tsx';
 import ZoneFromLocationPage from './routes/library/ZoneFromLocationPage.tsx';
+import ZoneCreatePage from './routes/library/zones/ZoneCreatePage.tsx';
+import ZoneEditLayout from './routes/library/zones/ZoneEditLayout.tsx';
+import ZoneEditMainPage from './routes/library/zones/ZoneEditMainPage.tsx';
+import ZoneEditAddPage from './routes/library/zones/ZoneEditAddPage.tsx';
+import ZoneEditScanningPage from './routes/library/zones/ZoneEditScanningPage.tsx';
 import ChannelsListPage from './routes/library/lists/ChannelsListPage.tsx';
 import ZonesListPage from './routes/library/lists/ZonesListPage.tsx';
 import TalkGroupsListPage from './routes/library/lists/TalkGroupsListPage.tsx';
@@ -103,9 +108,19 @@ export const appRouter = createBrowserRouter([
           { path: '/library/channels/defaults', element: <ChannelDefaultsPage /> },
           { path: '/library/zones/defaults', element: <ZoneDefaultsPage /> },
           { path: '/library/zones', element: <ZonesListPage /> },
+          { path: '/library/zones/new', element: <ZoneCreatePage /> },
           {
             path: '/library/zones/new-from-location',
             element: <ZoneFromLocationPage />,
+          },
+          {
+            path: '/library/zones/:zoneId',
+            element: <ZoneEditLayout />,
+            children: [
+              { index: true, element: <ZoneEditMainPage /> },
+              { path: 'add', element: <ZoneEditAddPage /> },
+              { path: 'scanning', element: <ZoneEditScanningPage /> },
+            ],
           },
           { path: '/library/talk-groups', element: <TalkGroupsListPage /> },
           { path: '/library/contacts', element: <ContactsListPage /> },

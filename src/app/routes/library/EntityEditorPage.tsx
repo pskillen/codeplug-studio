@@ -1,6 +1,6 @@
 import { Anchor } from '@mantine/core';
 import { useCallback, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { FormPage } from '../../components/ui/index.ts';
 import { entitiesForKind, kindBySlug } from './registry.ts';
@@ -144,11 +144,14 @@ export default function EntityEditorPage() {
           />
         );
       case 'zone':
+        if (entityId) {
+          return <Navigate to={`/library/zones/${entityId}`} replace />;
+        }
         return (
           <ZoneEditor
             projectId={projectId}
             library={library}
-            entity={entityId ? (library.zones.find((z) => z.id === entityId) ?? null) : null}
+            entity={null}
           />
         );
     }

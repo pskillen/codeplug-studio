@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Channel, Zone } from '../models/library.ts';
+import type { Channel } from '../models/library.ts';
 import { newChannel } from './factories.ts';
 import { pointInConvexHull } from './geo.ts';
 import {

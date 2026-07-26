@@ -44,6 +44,8 @@ import {
 
 export type ZoneMemberEditorMapFilters = ZoneMemberPickerMapFilters;
 
+export type ZoneMemberEditorMode = 'full' | 'reorder' | 'addPool' | 'scanOnly';
+
 export type { ZoneMemberPickerMapFilters } from './zoneMemberPickerUtils.ts';
 export {
   channelMatchesZoneMemberFilter,
@@ -58,6 +60,8 @@ export interface ZoneMemberEditorProps {
   members: ZoneMemberEntry[];
   onChange: (members: ZoneMemberEntry[]) => void;
   onMapFiltersChange?: (filters: ZoneMemberEditorMapFilters) => void;
+  /** Controls which membership UI blocks render. Default `full` (create flow). */
+  mode?: ZoneMemberEditorMode;
 }
 
 function zoneMatchesFilter(zone: Zone, filterLower: string): boolean {
@@ -72,6 +76,7 @@ export default function ZoneMemberEditor({
   members,
   onChange,
   onMapFiltersChange,
+  mode = 'full',
 }: ZoneMemberEditorProps) {
   const [inZoneFilter, setInZoneFilter] = useState('');
   const [availableFilter, setAvailableFilter] = useState('');
@@ -250,6 +255,12 @@ export default function ZoneMemberEditor({
     [members, onChange],
   );
 
+  const showReorder = mode === 'full' || mode === 'reorder';
+  const showScanControls = mode === 'full' || mode === 'scanOnly';
+  const showRemove = mode === 'full' || mode === 'reorder';
+  const showAddPool = mode === 'full' || mode === 'addPool';
+  const inZoneReadOnly = mode === 'addPool' || mode === 'scanOnly';
+
   return (
     <Stack gap="lg">
       <PageSection>
@@ -257,7 +268,7 @@ export default function ZoneMemberEditor({
           title="In this zone"
           description={`${members.length} direct member${members.length === 1 ? '' : 's'}${
             editingZoneId ? ` · ${effectiveChannelCount} channels effective` : ''
-          } — export order`}
+          }${showReorder ? ' — export order' : ''}`}
           filter={{
             value: inZoneFilter,
             onChange: setInZoneFilter,
@@ -265,53 +276,66 @@ export default function ZoneMemberEditor({
             'aria-label': 'Filter in-zone members',
           }}
           itemKeys={filteredInZoneKeys}
-          selectedKeys={inZoneSelected}
-          onToggleSelect={toggleInZone}
-          onRemove={(key) => removeKeys([key])}
-          emptyMessage="No members in zone"
-          onReorder={(nextKeys) => {
-            if (nextKeys.length !== members.length) return;
-            onChange(reorderMembersByKeys(members, nextKeys));
-          }}
-          reorderDisabled={inZoneFilter.trim().length > 0}
-          onMoveSelected={moveSelected}
-          onRemoveSelected={removeSelected}
-          canMoveUp={canMoveUp}
-          canMoveDown={canMoveDown}
-          reorderHint={
-            <Text size="xs" c="dimmed">
-              {inZoneFilter.trim()
-                ? 'Clear filter to drag-reorder'
-                : 'Drag handles reorder · Alt+↑/↓ moves selection'}
-            </Text>
-          }
-          renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => (
-            <InZoneMemberRow
-              key={itemKey}
-              memberKey={itemKey}
-              member={members.find((m) => memberKeyFromEntry(m) === itemKey)}
-              channelsById={channelsById}
-              zones={zones}
-              selected={selected}
-              onToggleSelect={onToggleSelect}
-              onRemove={onRemove}
-              dragHandle={dragHandle}
-              onIncludeInScanListChange={handleIncludeInScanList}
-            />
-          )}
-          toolbar={
-            <MembershipSortMenu
-              disabled={!members.length}
-              label="Sort channels…"
-              onSort={(mode) =>
-                onChange(sortZoneMembersByMode(members, channelsById, zonesById, mode))
-              }
-            />
+          selectedKeys={inZoneReadOnly ? [] : inZoneSelected}
+          onToggleSelect={inZoneReadOnly ? () => {} : toggleInZone}
+          onRemove={showRemove ? (key) => removeKeys([key]) : () => {}}
+            emptyMessage="No members in zone"
+            onReorder={
+              showReorder
+                ? (nextKeys) => {
+                    if (nextKeys.length !== members.length) return;
+                    onChange(reorderMembersByKeys(members, nextKeys));
+                  }
+                : undefined
+            }
+            reorderDisabled={inZoneFilter.trim().length > 0 || !showReorder}
+            onMoveSelected={showReorder ? moveSelected : undefined}
+            onRemoveSelected={showRemove ? removeSelected : undefined}
+            canMoveUp={showReorder ? canMoveUp : false}
+            canMoveDown={showReorder ? canMoveDown : false}
+            reorderHint={
+              showReorder ? (
+                <Text size="xs" c="dimmed">
+                  {inZoneFilter.trim()
+                    ? 'Clear filter to drag-reorder'
+                    : 'Drag handles reorder · Alt+↑/↓ moves selection'}
+                </Text>
+              ) : null
+            }
+            renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => (
+              <InZoneMemberRow
+                key={itemKey}
+                memberKey={itemKey}
+                member={members.find((m) => memberKeyFromEntry(m) === itemKey)}
+                channelsById={channelsById}
+                zones={zones}
+                selected={selected}
+                onToggleSelect={onToggleSelect}
+                onRemove={onRemove}
+                dragHandle={dragHandle}
+                onIncludeInScanListChange={handleIncludeInScanList}
+                showScanControls={showScanControls}
+                showRemove={showRemove}
+                showSelect={!inZoneReadOnly}
+                showDragHandle={showReorder}
+              />
+            )}
+            toolbar={
+              showReorder ? (
+                <MembershipSortMenu
+                  disabled={!members.length}
+                  label="Sort channels…"
+                  onSort={(sortMode) =>
+                    onChange(sortZoneMembersByMode(members, channelsById, zonesById, sortMode))
+                  }
+                />
+              ) : undefined
           }
         />
       </PageSection>
 
-      <PageSection>
+      {showAddPool ? (
+        <PageSection>
         <AvailableItemPicker
           title="Other channels & zones"
           filter={{
@@ -391,7 +415,8 @@ export default function ZoneMemberEditor({
             </>
           }
         />
-      </PageSection>
+        </PageSection>
+      ) : null}
     </Stack>
   );
 }
@@ -406,19 +431,27 @@ function InZoneMemberRow({
   onRemove,
   dragHandle,
   onIncludeInScanListChange,
+  showScanControls = true,
+  showRemove = true,
+  showSelect = true,
+  showDragHandle = true,
 }: {
   memberKey: ZonePickerMemberKey;
   member: ZoneMemberEntry | undefined;
   channelsById: Map<string, Channel>;
   zones: Zone[];
   selected: boolean;
-  onToggleSelect: () => void;
-  onRemove: () => void;
+  onToggleSelect?: () => void;
+  onRemove?: () => void;
   dragHandle: SelectedItemDragHandleProps | null;
   onIncludeInScanListChange: (
     channelId: string,
     include: IncludeInZoneDerivedScanListOverride,
   ) => void;
+  showScanControls?: boolean;
+  showRemove?: boolean;
+  showSelect?: boolean;
+  showDragHandle?: boolean;
 }) {
   const entry = member ? member : entryFromMemberKey(memberKey);
 
@@ -430,12 +463,14 @@ function InZoneMemberRow({
       <Paper withBorder p="xs" radius="sm">
         <Group gap="sm" wrap="nowrap" justify="space-between">
           <Group gap="sm" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-            <Checkbox
-              checked={selected}
-              onChange={onToggleSelect}
-              aria-label={`Select ${zone.name}`}
-            />
-            <SelectedItemDragHandle dragHandle={dragHandle} />
+            {showSelect ? (
+              <Checkbox
+                checked={selected}
+                onChange={onToggleSelect}
+                aria-label={`Select ${zone.name}`}
+              />
+            ) : null}
+            {showDragHandle ? <SelectedItemDragHandle dragHandle={dragHandle} /> : null}
             <Stack gap={0} style={{ minWidth: 0 }}>
               <Text size="sm" fw={500} truncate>
                 Zone: {zone.name}
@@ -449,17 +484,19 @@ function InZoneMemberRow({
             <Text component={Link} to={`/library/zones/${zone.id}`} size="xs">
               Open zone
             </Text>
-            <Tooltip label="Remove from zone">
-              <ActionIcon
-                variant="subtle"
-                color="red"
-                size="sm"
-                onClick={onRemove}
-                aria-label={`Remove ${zone.name} from zone`}
-              >
-                <IconTrash size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-              </ActionIcon>
-            </Tooltip>
+            {showRemove && onRemove ? (
+              <Tooltip label="Remove from zone">
+                <ActionIcon
+                  variant="subtle"
+                  color="red"
+                  size="sm"
+                  onClick={onRemove}
+                  aria-label={`Remove ${zone.name} from zone`}
+                >
+                  <IconTrash size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+                </ActionIcon>
+              </Tooltip>
+            ) : null}
           </Group>
         </Group>
       </Paper>
@@ -474,12 +511,14 @@ function InZoneMemberRow({
     <Paper withBorder p="xs" radius="sm">
       <Group gap="sm" wrap="nowrap" justify="space-between" align="flex-start">
         <Group gap="sm" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-          <Checkbox
-            checked={selected}
-            onChange={onToggleSelect}
-            aria-label={`Select ${channelDisplayLabel(channel)}`}
-          />
-          <SelectedItemDragHandle dragHandle={dragHandle} />
+          {showSelect ? (
+            <Checkbox
+              checked={selected}
+              onChange={onToggleSelect}
+              aria-label={`Select ${channelDisplayLabel(channel)}`}
+            />
+          ) : null}
+          {showDragHandle ? <SelectedItemDragHandle dragHandle={dragHandle} /> : null}
           <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
             <Group gap="xs" wrap="wrap">
               <Text size="sm" fw={500}>
@@ -506,31 +545,35 @@ function InZoneMemberRow({
           </Stack>
         </Group>
         <Group gap="sm" wrap="nowrap" align="flex-start">
-          <Tooltip label="Include this channel in zone-derived scan lists at export">
-            <div>
-              <IncludeInZoneDerivedScanListSegment
-                value={memberOverride}
-                onChange={(next) => onIncludeInScanListChange(channel.id, next)}
-                compact
-                label="Include in scan list"
-              />
-            </div>
-          </Tooltip>
-          <Group gap="xs" wrap="nowrap" align="center" mt={4}>
+          {showScanControls ? (
+            <Tooltip label="Include this channel in zone-derived scan lists at export">
+              <div>
+                <IncludeInZoneDerivedScanListSegment
+                  value={memberOverride}
+                  onChange={(next) => onIncludeInScanListChange(channel.id, next)}
+                  compact
+                  label="Include in scan list"
+                />
+              </div>
+            </Tooltip>
+          ) : null}
+          <Group gap="xs" wrap="nowrap" align="center" mt={showScanControls ? 4 : 0}>
             <Text component={Link} to={`/library/channels/${channel.id}`} size="xs">
               Open
             </Text>
-            <Tooltip label="Remove from zone">
-              <ActionIcon
-                variant="subtle"
-                color="red"
-                size="sm"
-                onClick={onRemove}
-                aria-label={`Remove ${channelDisplayLabel(channel)} from zone`}
-              >
-                <IconTrash size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-              </ActionIcon>
-            </Tooltip>
+            {showRemove && onRemove ? (
+              <Tooltip label="Remove from zone">
+                <ActionIcon
+                  variant="subtle"
+                  color="red"
+                  size="sm"
+                  onClick={onRemove}
+                  aria-label={`Remove ${channelDisplayLabel(channel)} from zone`}
+                >
+                  <IconTrash size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+                </ActionIcon>
+              </Tooltip>
+            ) : null}
           </Group>
         </Group>
       </Group>
