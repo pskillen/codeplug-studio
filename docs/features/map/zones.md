@@ -12,6 +12,10 @@ Channel filtering and the plotted-channel index are defined in [channels.md](cha
 | `zoneGeolocatedPoints`           | `src/core/domain/mapProjection.ts`               | Resolve effective channels → lat/lon with skip reasons |
 | `uniqueLatLon`                   | `src/core/domain/geo.ts`                         | Dedupe sites to 5 decimal places                       |
 | `convexHullLatLon`               | same                                             | Andrew's monotone chain on `[lat, lon]`                |
+| `pointInConvexHull`              | same                                             | Point-in-polygon for hull vertices                     |
+| `pointInZoneHull`                | `src/core/domain/growZone.ts`                    | Map-aligned containment (circle / hull / no area)      |
+| `suggestChannelsInsideHull`      | same                                             | Grow-zone: non-members inside hull                     |
+| `rankChannelsByDistance`         | same                                             | Grow-zone: non-members sorted by distance              |
 | `zoneColor`                      | same                                             | Distinct hue per zone index                            |
 | `selectChannelsWithinRadius`     | `src/core/domain/proximityZone.ts`               | Channels within radius of a point (zone-from-location) |
 | Zone hull rendering              | `src/app/components/CodeplugMap/CodeplugMap.tsx` | Circle / polyline / polygon layers                     |
@@ -77,6 +81,21 @@ Distinct sites are deduplicated with `toFixed(5)` on lat and lon.
 | 3+                      | Convex polygon | `convexHullLatLon` — **not** a true concave hull |
 
 Issue text sometimes says “concave hulls”; shipped behaviour matches the codeplug-tool prototype (convex hull). True concave hulls are out of scope ([#22](https://github.com/pskillen/codeplug-studio/issues/22)).
+
+### Grow-zone containment ([#588](https://github.com/pskillen/codeplug-studio/issues/588))
+
+When suggesting channels to add to an existing zone, containment matches the map hull rules above:
+
+| Geolocated member sites | Suggestion geometry |
+| ----------------------- | ------------------- |
+| 0                       | No inside-hull suggestions |
+| 1                       | 2.5 km circle around the site (`ZONE_HULL_SINGLE_SITE_RADIUS_M`) |
+| 2                       | No area — inside-hull mode unavailable |
+| 3+                      | `pointInConvexHull` on `convexHullLatLon` member sites |
+
+**Near locator** mode ranks all non-member geolocated channels by haversine distance from a reference point (default: arithmetic mean of member coordinates). Suggestions are on-demand snapshots; membership does not auto-update when channels move.
+
+UI: `/library/zones/:id/add-from-map` — see [zone-member-picker.md](../library/zone-member-picker.md).
 
 ### Popups and navigation
 

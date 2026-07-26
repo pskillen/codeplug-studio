@@ -6,6 +6,8 @@ Contributor sidecar for `ZoneMemberEditor.tsx` — vertical stacked zone members
 
 Manages **In this zone** members (export order) and **Other channels & zones** add pool in a single-column layout. Supports direct channels, nested zones, reorder, per-channel `includeInScanList`, and map filter integration.
 
+Use the **`mode`** prop to show a subset on split zone edit screens (`reorder`, `addPool`, `scanOnly`, `summary`) or **`full`** on create.
+
 ## Props
 
 | Prop                 | Type                | Description                          |
@@ -16,6 +18,7 @@ Manages **In this zone** members (export order) and **Other channels & zones** a
 | `members`            | `ZoneMemberEntry[]` | Current member list                  |
 | `onChange`           | `(members) => void` | Member list updates                  |
 | `onMapFiltersChange` | optional            | Map hide-filter callback             |
+| `mode`               | optional            | `full` (default), `reorder`, `addPool`, `scanOnly`, `summary` |
 
 ## Usage
 

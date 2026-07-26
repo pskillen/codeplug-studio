@@ -28,6 +28,8 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | Digital contact metadata + radioid import | Shipped ([#374](https://github.com/pskillen/codeplug-studio/issues/374))                                                                 | Enriched `DigitalContact` CRUD; `/library/contacts/add-from-radioid` — see [contact-directories](../contact-directories/README.md)                                             |
 | Delete all digital contacts               | Shipped ([#427](https://github.com/pskillen/codeplug-studio/issues/427))                                                                 | Library → Contacts toolbar; checkbox-gated modal; cascade-clears channel/`RX` refs then IDB partition clear                                                                    |
 | Membership / zone export order            | Shipped ([#456](https://github.com/pskillen/codeplug-studio/issues/456))                                                                 | `Zone.order` + membership arrays; Sort… confirm; build `orderOrSlot` / layout hints                                                                                            |
+| Zone edit screen split                    | Shipped ([#587](https://github.com/pskillen/codeplug-studio/issues/587))                                                                 | Main / add-from-list / scanning / add-from-map sub-routes under `/library/zones/:id`                                                                                           |
+| Grow zone from map                        | Shipped ([#588](https://github.com/pskillen/codeplug-studio/issues/588))                                                                 | Inside-hull + near-locator suggestions; multi-add on add-from-map screen                                                                                                       |
 | Channel Power approx watts hint           | Shipped ([#414](https://github.com/pskillen/codeplug-studio/issues/414))                                                                 | Frequencies tab — informational ladder projection; `Channel.power` stays percent-only                                                                                          |
 | Channel TX offset quick buttons           | Shipped ([#156](https://github.com/pskillen/codeplug-studio/issues/156))                                                                 | Frequencies tab — offset display + band quick buttons; see [tx-offsets.md](../../reference/tx-offsets.md)                                                                      |
 
@@ -79,7 +81,18 @@ Shared list UI: [app-shell/data-table.md](../app-shell/data-table.md).
 
 ### Zone member editor (#25, #157, #180)
 
-Zone editor uses **`ZoneMemberEditor`** — vertical layout: rich **In this zone** list (export order, per-channel tri-state zone-derived scan membership, reorder) above **Other channels & zones** add pool. Channel editor shows **`ChannelZoneMembershipSection`** — list zones containing the channel, add/remove without opening each zone. See [zone-member-picker.md](zone-member-picker.md). Sidecars: `ZoneMemberEditor.md`, `ChannelZoneMembershipSection.md`. **Zone defaults** (`/library/zones/defaults`) edits library-wide zone behavioural defaults.
+**Create:** `/library/zones/new` — identity, full membership editor (reorder + add pool), map.
+
+**Edit existing zone** — shared draft state on `/library/zones/:id` with focused sub-screens:
+
+| Route | Purpose |
+| --- | --- |
+| `/library/zones/:id` | Identity, reorder-only members, navigation to add / scanning / map preview |
+| `/library/zones/:id/add` | Read-only member summary + **Other channels & zones** add pool + map |
+| `/library/zones/:id/add-from-map` | Geographic grow — inside-hull and near-locator suggestions ([#588](https://github.com/pskillen/codeplug-studio/issues/588)) |
+| `/library/zones/:id/scanning` | Per-channel zone-derived scan inclusion only |
+
+`ZoneMemberEditor` composes from **modes** (`reorder`, `addPool`, `scanOnly`, `summary`, `full`) per screen. Channel editor still uses **`ChannelZoneMembershipSection`**. See [zone-member-picker.md](zone-member-picker.md). Sidecars: `ZoneMemberEditor.md`, `GrowZoneRecommendations.md`, `ChannelZoneMembershipSection.md`.
 
 The zone editor map uses **Draw this zone** / **Draw other zones** controls: the editing zone hull is full colour; other library zones render muted for reference. Channels outside the zone are dimmed on the map (same treatment as out-of-radius channels on zone-from-location). Auto-fit zoom uses only the editing zone's member channels (not the full library).
 
