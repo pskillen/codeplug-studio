@@ -52,3 +52,22 @@ export function zoneColor(index: number): ZoneColor {
     stroke: `hsla(${hue}, 70%, 38%, 0.9)`,
   };
 }
+
+/**
+ * Whether a point lies inside a convex hull polygon (inclusive of boundary).
+ * `hull` vertices are `[lat, lon]` in hull order; needs at least three vertices.
+ */
+export function pointInConvexHull(point: LatLon, hull: LatLon[]): boolean {
+  if (hull.length < 3) return false;
+
+  const [lat, lon] = point;
+
+  for (let i = 0; i < hull.length; i++) {
+    const [aLat, aLon] = hull[i];
+    const [bLat, bLon] = hull[(i + 1) % hull.length];
+    const cross = (bLon - aLon) * (lat - aLat) - (bLat - aLat) * (lon - aLon);
+    if (cross < 0) return false;
+  }
+
+  return true;
+}

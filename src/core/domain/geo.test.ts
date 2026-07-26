@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { convexHullLatLon, uniqueLatLon } from './geo.ts';
+import { convexHullLatLon, pointInConvexHull, uniqueLatLon } from './geo.ts';
 
 describe('convexHullLatLon', () => {
   it('returns hull vertices for a square', () => {
