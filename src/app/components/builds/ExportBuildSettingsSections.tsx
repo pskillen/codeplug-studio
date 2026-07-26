@@ -14,6 +14,7 @@ import type { FormatExportDefaults } from '@core/import-export/types.ts';
 import { FieldCard } from '../fields/Fields.tsx';
 import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
 import ExportAnytoneSettingsSections from './ExportAnytoneSettingsSections.tsx';
+import FrequencyRangeEligibilityFields from './FrequencyRangeEligibilityFields.tsx';
 import DefaultScanInclusionSegment from './DefaultScanInclusionSegment.tsx';
 import ChannelBehaviourExportOverrides from './ChannelBehaviourExportOverrides.tsx';
 import ZoneBehaviourExportOverrides from './ZoneBehaviourExportOverrides.tsx';
@@ -56,15 +57,24 @@ export default function ExportBuildSettingsSections({
 }: ExportBuildSettingsSectionsProps) {
   if (radioTargetHasCompatibleFormat(build.radioTargetId, 'anytone')) {
     return (
-      <ExportAnytoneSettingsSections
-        build={build}
-        saving={saving}
-        settingsError={settingsError}
-        profileNameLimit={profileNameLimit}
-        resolvedSettings={resolvedSettings}
-        onExportSettingsPatch={onExportSettingsPatch}
-        onExportInclusionChange={onExportInclusionChange}
-      />
+      <Stack gap="md">
+        <FrequencyRangeEligibilityFields
+          hideOutsideFrequencyRange={
+            build.exportSettings?.hideChannelsOutsideFrequencyRange !== false
+          }
+          saving={saving}
+          onPatch={onExportSettingsPatch}
+        />
+        <ExportAnytoneSettingsSections
+          build={build}
+          saving={saving}
+          settingsError={settingsError}
+          profileNameLimit={profileNameLimit}
+          resolvedSettings={resolvedSettings}
+          onExportSettingsPatch={onExportSettingsPatch}
+          onExportInclusionChange={onExportInclusionChange}
+        />
+      </Stack>
     );
   }
 
@@ -79,6 +89,13 @@ export default function ExportBuildSettingsSections({
 
   return (
     <Stack gap="md">
+      <FrequencyRangeEligibilityFields
+        hideOutsideFrequencyRange={
+          build.exportSettings?.hideChannelsOutsideFrequencyRange !== false
+        }
+        saving={saving}
+        onPatch={onExportSettingsPatch}
+      />
       {!flatMemory ? (
         <FieldCard
           title="Inclusion"

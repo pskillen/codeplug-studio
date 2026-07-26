@@ -5,9 +5,11 @@ import ZoneScanOverrideSection from '../../../components/builds/wirePreview/over
 import ZoneMemberOrderSection from '../../../components/builds/wirePreview/overrideModalSections/ZoneMemberOrderSection.tsx';
 import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
+import { useBuildLayout } from '../BuildLayoutContext.tsx';
 
 export default function BuildZonesWirePage() {
   const zoneScan = useZoneScanExportLayout();
+  const { build } = useBuildLayout();
 
   const zoneModalContext = (row: WirePreviewRow) => {
     if (!zoneScan.layoutSupported || !zoneScan.layout || !zoneScan.library) {
@@ -61,6 +63,7 @@ export default function BuildZonesWirePage() {
         if (!ctx || !zoneScan.library) return null;
         return (
           <ZoneMemberOrderSection
+            build={build}
             zone={ctx.zone}
             zones={zoneScan.library.zones}
             entry={ctx.entry}

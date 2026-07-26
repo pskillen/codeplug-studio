@@ -7,7 +7,11 @@ import {
   overrideOrderOrSlot,
   upsertOverride,
 } from '@core/domain/formatBuildOverrides.ts';
-import { channelHasFmAmProfile } from '@core/domain/modeProfiles.ts';
+import {
+  channelEligibleForRadio,
+  resolveChannelEligibilityOptions,
+} from '@core/domain/channelEligibility.ts';
+import type { ChannelEligibilityOptions } from '@core/domain/channelEligibility.ts';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import { radioTargetHasTrait } from '@core/radio-targets/index.ts';
 
@@ -26,16 +30,20 @@ export function findFlatMemorySection(build: RadioBuild): FlatMemoryLayout | und
   return build.layout.sections.find((s): s is FlatMemoryLayout => s.kind === 'flatMemory');
 }
 
-/** Analogue FM/AM channel eligible for flat-memory export (CHIRP + NeonPlug UV5R). */
-export function isChirpFlatMemoryChannel(channel: Channel): boolean {
-  return channelHasFmAmProfile(channel);
+export function isChirpFlatMemoryChannel(
+  channel: Channel,
+  radioTargetId: string,
+  options?: ChannelEligibilityOptions,
+): boolean {
+  return channelEligibleForRadio(channel, radioTargetId, options);
 }
 
 function flatMemoryEligibleChannel(build: RadioBuild, channel: Channel): boolean {
-  if (buildUsesFlatMemoryList(build) && !isChirpFlatMemoryChannel(channel)) {
-    return false;
-  }
-  return true;
+  return channelEligibleForRadio(
+    channel,
+    build.radioTargetId,
+    resolveChannelEligibilityOptions(build),
+  );
 }
 
 function includedChirpChannels(build: RadioBuild, library: LibrarySlice): Channel[] {

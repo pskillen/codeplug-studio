@@ -20,6 +20,7 @@ import {
   capabilityCopyFor,
   conceptsForCapabilities,
 } from '../../lib/buildCapabilityCopy.ts';
+import RadioRfCapabilitiesSection from '../../components/builds/RadioRfCapabilitiesSection.tsx';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 
 interface LimitRow {
@@ -121,6 +122,8 @@ export default function BuildCharacteristicsPage() {
             </Stack>
           )}
         </FormSection>
+
+        <RadioRfCapabilitiesSection radioTargetId={build.radioTargetId} />
 
         <FormSection
           title="Export limits"

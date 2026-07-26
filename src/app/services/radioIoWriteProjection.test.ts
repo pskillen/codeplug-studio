@@ -7,6 +7,7 @@ import {
   newTalkGroup,
   newZone,
 } from '@core/domain/factories.ts';
+import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { encodeDm32ChannelRecord } from '@integrations/radio-io/radios/dm32uv/channelCodec.ts';
@@ -39,12 +40,12 @@ function uv5rFlatMemoryBuild(
 
 describe('buildRadioWriteProjection', () => {
   it('maps channels and source→number map for radio-io-dm32uv', () => {
-    const ch = {
+    const ch = withExportEligibleDefaults({
       ...newChannel('p1', 'A'),
       id: 'ch-a',
       rxFrequency: 145_000_000,
       txFrequency: 145_000_000,
-    };
+    });
     const library = emptyLibrary([ch]);
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
     const assembled = assemble(build, library, {
@@ -60,12 +61,12 @@ describe('buildRadioWriteProjection', () => {
   });
 
   it('maps channels, zones, and contacts for radio-io-opengd77-1701', () => {
-    const ch = {
+    const ch = withExportEligibleDefaults({
       ...newChannel('p1', 'A'),
       id: 'ch-a',
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
-    };
+    });
     const zone = {
       ...newZone('p1', 'Local'),
       id: 'zone-a',
@@ -96,13 +97,13 @@ describe('buildRadioWriteProjection', () => {
   });
 
   it('maps channels, zones, and contacts for radio-io-opengd77-md9600', () => {
-    const ch = {
+    const ch = withExportEligibleDefaults({
       ...newChannel('p1', 'A'),
       id: 'ch-a',
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
       power: 63,
-    };
+    });
     const zone = {
       ...newZone('p1', 'Local'),
       id: 'zone-a',
@@ -128,24 +129,24 @@ describe('buildRadioWriteProjection', () => {
   });
 
   it('prepends each zone’s own scan carrier and first-wins scanListId for shared members', () => {
-    const shared = {
+    const shared = withExportEligibleDefaults({
       ...newChannel('p1', 'Hotspot'),
       id: 'ch-shared',
       rxFrequency: 433_000_000,
       txFrequency: 433_000_000,
-    };
-    const onlyHome = {
+    });
+    const onlyHome = withExportEligibleDefaults({
       ...newChannel('p1', 'HomeOnly'),
       id: 'ch-home',
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
-    };
-    const onlyWalk = {
+    });
+    const onlyWalk = withExportEligibleDefaults({
       ...newChannel('p1', 'WalkOnly'),
       id: 'ch-walk',
       rxFrequency: 145_600_000,
       txFrequency: 145_600_000,
-    };
+    });
     const homeZone = {
       ...newZone('p1', 'Home Shack'),
       id: 'zone-home',
@@ -229,27 +230,27 @@ describe('buildRadioWriteProjection', () => {
   });
 
   it('stamps UV-5R Mini scanAdd from effective scan inclusion', () => {
-    const skipLib = {
+    const skipLib = withExportEligibleDefaults({
       ...newChannel('p1', 'Skip'),
       id: 'ch-skip',
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
       scanInclusion: 'skip' as const,
-    };
-    const defaultLib = {
+    });
+    const defaultLib = withExportEligibleDefaults({
       ...newChannel('p1', 'Default'),
       id: 'ch-default',
       rxFrequency: 145_600_000,
       txFrequency: 145_600_000,
       scanInclusion: 'default' as const,
-    };
-    const overrideLib = {
+    });
+    const overrideLib = withExportEligibleDefaults({
       ...newChannel('p1', 'Override'),
       id: 'ch-override',
       rxFrequency: 145_700_000,
       txFrequency: 145_700_000,
       scanInclusion: 'default' as const,
-    };
+    });
     const library = emptyLibrary([skipLib, defaultLib, overrideLib]);
     const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
     const build = uv5rFlatMemoryBuild(baseBuild, ['ch-skip', 'ch-default', 'ch-override']);
@@ -273,13 +274,13 @@ describe('buildRadioWriteProjection', () => {
   });
 
   it('stamps UV-21Pro V2 scanAdd from effective scan inclusion', () => {
-    const ch = {
+    const ch = withExportEligibleDefaults({
       ...newChannel('p1', 'ScanMe'),
       id: 'ch-scan',
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
       scanInclusion: 'default' as const,
-    };
+    });
     const library = emptyLibrary([ch]);
     const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-uv21');
     const build = {
@@ -295,13 +296,13 @@ describe('buildRadioWriteProjection', () => {
   });
 
   it('stamps RT95 scanAdd from effective scan inclusion', () => {
-    const ch = {
+    const ch = withExportEligibleDefaults({
       ...newChannel('p1', 'ScanMe'),
       id: 'ch-scan',
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
       scanInclusion: 'default' as const,
-    };
+    });
     const library = emptyLibrary([ch]);
     const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-rt95');
     const build = {
@@ -317,13 +318,13 @@ describe('buildRadioWriteProjection', () => {
   });
 
   it('uses radio-io default skip when build omits defaultScanInclusion', () => {
-    const ch = {
+    const ch = withExportEligibleDefaults({
       ...newChannel('p1', 'A'),
       id: 'ch-a',
       rxFrequency: 145_500_000,
       txFrequency: 145_500_000,
       scanInclusion: 'default' as const,
-    };
+    });
     const library = emptyLibrary([ch]);
     const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
     const build = uv5rFlatMemoryBuild(baseBuild, ['ch-a']);
@@ -378,7 +379,7 @@ describe('buildRadioWriteProjection', () => {
 
   it('projects operator radio IDs and channel bank indices from ModeProfile.dmrId', () => {
     const projectId = 'p1';
-    const ch = {
+    const ch = withExportEligibleDefaults({
       ...newChannel(projectId, 'Repeater'),
       id: 'ch-dmr',
       callsign: 'MM9PDY',
@@ -394,7 +395,7 @@ describe('buildRadioWriteProjection', () => {
           rxGroupListId: null,
         },
       ],
-    };
+    });
     const library = emptyLibrary([ch]);
     const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-dm32uv');
     const assembled = assemble(build, library, {

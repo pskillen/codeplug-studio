@@ -49,6 +49,11 @@ export interface BuildExportSettings {
    * (wins over library zoneDefaults when set).
    */
   defaultIncludeInZoneDerivedScanList?: boolean;
+  /**
+   * When true (default), channels outside the radio target's supported frequency ranges are
+   * hidden from Radio Build lists and omitted from export.
+   */
+  hideChannelsOutsideFrequencyRange?: boolean;
 }
 
 /**

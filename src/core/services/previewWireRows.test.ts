@@ -7,11 +7,13 @@ import { parseProjectDocument } from '@core/import-export/formats/native-yaml/pa
 import {
   newChannel,
   newFormatBuild,
+  newRadioBuild,
   newRxGroupList,
   newTalkGroup,
   newZone,
 } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
+import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import {
   previewWireRows,
   includedPreviewWireRows,
@@ -162,7 +164,7 @@ describe('previewWireRows', () => {
       channelOverrides: [{ libraryEntityId: ch2.id, excluded: true }],
     };
     const library = {
-      channels: [ch1, ch2, ch3],
+      channels: [ch1, ch2, ch3].map((ch) => withExportEligibleDefaults(ch)),
       zones: [zone],
       talkGroups: [],
       digitalContacts: [],
@@ -478,14 +480,14 @@ describe('previewWireRows', () => {
 
   it('keeps library-zoned channels when exportUnlinkedChannels is false', () => {
     const projectId = 'proj-zone-link';
-    const zonedChannel: Channel = {
+    const zonedChannel: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
       id: 'ch-zoned',
-    };
-    const orphanChannel: Channel = {
+    });
+    const orphanChannel: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Orphan', 'GB9YY'),
       id: 'ch-orphan',
-    };
+    });
     const zone = {
       id: 'zone-edinburgh',
       projectId,
@@ -516,10 +518,10 @@ describe('previewWireRows', () => {
 
   it('keeps library-zoned channels with legacy zone member refs when exportUnlinkedChannels is false', () => {
     const projectId = 'proj-legacy-zone';
-    const zonedChannel: Channel = {
+    const zonedChannel: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Legacy zoned', 'GB3ZZ'),
       id: 'ch-legacy-zoned',
-    };
+    });
     const zone = {
       id: 'zone-legacy',
       projectId,
@@ -550,14 +552,14 @@ describe('previewWireRows', () => {
 
   it('wire preview hide toggle shows orphan channels when off and hides when on', () => {
     const projectId = 'proj-hide-toggle';
-    const zonedChannel: Channel = {
+    const zonedChannel: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
       id: 'ch-zoned',
-    };
-    const orphanChannel: Channel = {
+    });
+    const orphanChannel: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Orphan', 'GB9YY'),
       id: 'ch-orphan',
-    };
+    });
     const zone = {
       id: 'zone-edinburgh',
       projectId,
@@ -596,7 +598,7 @@ describe('previewWireRows', () => {
 
   it('lists unlinked DM32 channels in preview so hide toggle can reveal them', () => {
     const projectId = 'proj-dm32-orphan';
-    const zonedChannel: Channel = {
+    const zonedChannel: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Zoned', 'GB3ZZ'),
       id: 'ch-zoned',
       modeProfiles: [
@@ -608,8 +610,8 @@ describe('previewWireRows', () => {
           bandwidthKHz: 12.5,
         },
       ],
-    };
-    const orphanChannel: Channel = {
+    });
+    const orphanChannel: Channel = withExportEligibleDefaults({
       ...newChannel(projectId, 'Orphan', 'GB9YY'),
       id: 'ch-orphan',
       modeProfiles: [
@@ -621,7 +623,7 @@ describe('previewWireRows', () => {
           bandwidthKHz: 12.5,
         },
       ],
-    };
+    });
     const zone = {
       id: 'zone-edinburgh',
       projectId,
@@ -752,7 +754,7 @@ describe('previewWireRows', () => {
 
   it('attaches direct zone member counts for zone wire preview rows', () => {
     const projectId = 'proj-zone-badges';
-    const ch = { ...newChannel(projectId, 'Direct'), id: 'ch-1' };
+    const ch = withExportEligibleDefaults({ ...newChannel(projectId, 'Direct'), id: 'ch-1' });
     const childZone = { ...newZone(projectId, 'Child'), id: 'zone-child', members: [] };
     const parentZone = {
       ...newZone(projectId, 'Parent'),
@@ -787,7 +789,10 @@ describe('previewWireRows', () => {
 
   it('excludes channels in standalone omitFromExport zones from export preview', () => {
     const projectId = 'proj-omit-channel-preview';
-    const pmrChannel = { ...newChannel(projectId, 'PMR'), id: 'ch-pmr' };
+    const pmrChannel = withExportEligibleDefaults({
+      ...newChannel(projectId, 'PMR'),
+      id: 'ch-pmr',
+    });
     const pmrZone = {
       ...newZone(projectId, 'PMR446'),
       id: 'zone-pmr',
@@ -1001,5 +1006,35 @@ describe('previewWireRows', () => {
     const row = previewWireRows(build, library, 'zone')[0];
     expect(row?.hasMemberOrderOverride).toBe(true);
     expect(row?.hasOrderOrSlotOverride).toBe(false);
+  });
+
+  it('hides AM airband channels on OpenGD77 DM-1701 wire preview', () => {
+    const projectId = 'proj-dm1701-airband';
+    const air: Channel = {
+      ...newChannel(projectId, 'EGLL Tower'),
+      rxFrequency: 118_975_000,
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const fm = withExportEligibleDefaults({
+      ...newChannel(projectId, '2m Local'),
+      rxFrequency: 145_500_000,
+      modeProfiles: [defaultModeProfile('fm')],
+    });
+    const build = newRadioBuild('proj', 'baofeng-dm1701', 'DM-1701');
+    const library = {
+      channels: [air, fm],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const rows = previewWireRows(build, library, 'channel', {
+      formatId: 'opengd77',
+      profileId: '1701',
+    });
+    expect(rows.map((row) => row.libraryEntityId)).toEqual([fm.id]);
   });
 });

@@ -21,6 +21,7 @@ import {
   isChirpFlatMemoryChannel,
   projectFlatMemoryOrderFromSource,
 } from '@core/domain/exportOrderOrSlot.ts';
+import { resolveChannelEligibilityOptions } from '@core/domain/channelEligibility.ts';
 import {
   buildExportSortConfirmMessage,
   buildExportSortSelectionConfirmMessage,
@@ -35,6 +36,7 @@ import type { Channel } from '@core/models/library.ts';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
+import { prepareBuildForFrequencyRangeExportPatch } from '../../lib/frequencyRangeExportSettingsPatch.ts';
 import { resolveOptimisticBuild } from '../../lib/resolveOptimisticBuild.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { previewGeneratedChannelWireName } from '@core/services/previewChannelWireName.ts';
@@ -61,8 +63,11 @@ import { persistence } from '../../state/persistence.ts';
 
 const buildService = new BuildService(persistence);
 
-function analogueChannels(channels: Channel[]): Channel[] {
-  return channels.filter((channel) => isChirpFlatMemoryChannel(channel));
+function eligibleFlatMemoryChannels(channels: Channel[], build: RadioBuild): Channel[] {
+  const options = resolveChannelEligibilityOptions(build);
+  return channels.filter((channel) =>
+    isChirpFlatMemoryChannel(channel, build.radioTargetId, options),
+  );
 }
 
 function toWirePreviewRow(
@@ -198,17 +203,30 @@ export default function BuildFlatMemoryChannelsPage() {
 
   const excludedChannelIds = useMemo(
     () =>
-      analogueChannels(channels)
+      eligibleFlatMemoryChannels(channels, build)
         .filter((channel) => isEntityExcluded(build.channelOverrides, channel.id))
         .map((channel) => channel.id),
-    [channels, build.channelOverrides],
+    [channels, build],
   );
 
   async function handleExportSettingsPatch(patch: Partial<BuildExportSettings>) {
     setSavingSettings(true);
     setSettingsError(null);
-    const next = buildService.withExportSettings(buildRef.current, patch);
-    const result = await putBuild(next, buildRef.current.revision);
+    const prepared = await prepareBuildForFrequencyRangeExportPatch(buildRef.current, patch, {
+      buildService,
+      loadLibrary: async () =>
+        activeProjectId ? loadLibrarySlice(persistence, activeProjectId) : null,
+    });
+    if (prepared.status === 'cancelled') {
+      setSavingSettings(false);
+      return;
+    }
+    if (prepared.status === 'error') {
+      setSavingSettings(false);
+      setSettingsError(prepared.message);
+      return;
+    }
+    const result = await putBuild(prepared.build, buildRef.current.revision);
     setSavingSettings(false);
     if (!result.ok) {
       setSettingsError(

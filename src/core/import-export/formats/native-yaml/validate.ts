@@ -981,6 +981,15 @@ function parseExportSettings(raw: unknown, label: string): BuildExportSettings |
       `${label}.defaultIncludeInZoneDerivedScanList`,
     );
   }
+  if (
+    record.hideChannelsOutsideFrequencyRange !== undefined &&
+    record.hideChannelsOutsideFrequencyRange !== null
+  ) {
+    settings.hideChannelsOutsideFrequencyRange = expectBoolean(
+      record.hideChannelsOutsideFrequencyRange,
+      `${label}.hideChannelsOutsideFrequencyRange`,
+    );
+  }
   return Object.keys(settings).length > 0 ? settings : undefined;
 }
 

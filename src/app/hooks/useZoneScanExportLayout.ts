@@ -22,7 +22,8 @@ import {
   mxnExpansionByChannelId,
   type ExpandedMxNChannelRow,
 } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
-import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
+import { filterChannelsEligibleForBuild } from '@core/domain/channelEligibility.ts';
+import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { egressIdentityForBuild } from '../lib/buildEgressUi.ts';
 import { useBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../state/useProjects.ts';
@@ -92,10 +93,15 @@ export function useZoneScanExportLayout() {
     [library],
   );
 
-  const channelById = useMemo(
-    () => new Map((library?.channels ?? []).map((channel) => [channel.id, channel])),
-    [library],
-  );
+  const channelById = useMemo(() => {
+    if (!library) return new Map<string, import('@core/models/library.ts').Channel>();
+    return new Map(
+      filterChannelsEligibleForBuild(build, library.channels).map((channel) => [
+        channel.id,
+        channel,
+      ]),
+    );
+  }, [library, build]);
 
   /** MxN expansion keyed by parent channel — Members tab nest + Scan-tab counts (#570). */
   const expansionByChannelId = useMemo((): Map<string, ExpandedMxNChannelRow[]> | undefined => {

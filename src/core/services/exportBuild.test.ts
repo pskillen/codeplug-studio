@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
+import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import { dedupeWarnings } from '@core/import-export/dedupeWarnings.ts';
 import { exportBuildAll } from './exportBuild.ts';
 
@@ -17,7 +18,7 @@ describe('exportBuildAll', () => {
   it('returns each build-wide export warning once for multi-file OpenGD77 export', () => {
     const projectId = 'proj-warn-dedup';
     const longName = 'ThisChannelNameIsTooLong';
-    const channel = { ...newChannel(projectId, longName), id: 'ch-1' };
+    const channel = withExportEligibleDefaults({ ...newChannel(projectId, longName), id: 'ch-1' });
     const zone = {
       id: 'zone-1',
       projectId,
@@ -54,10 +55,12 @@ describe('exportBuildAll', () => {
 
   it('returns each build-wide DM32 zone cap warning once across all CSV files', () => {
     const projectId = 'proj-dm32-warn-dedup';
-    const channels = Array.from({ length: 65 }, (_, index) => ({
-      ...newChannel(projectId, `Channel ${index + 1}`),
-      id: `ch-${index + 1}`,
-    }));
+    const channels = Array.from({ length: 65 }, (_, index) =>
+      withExportEligibleDefaults({
+        ...newChannel(projectId, `Channel ${index + 1}`),
+        id: `ch-${index + 1}`,
+      }),
+    );
     const zone = {
       id: 'zone-glasgow',
       projectId,
@@ -115,14 +118,18 @@ describe('exportBuildAll', () => {
       })),
     };
     const channels = [
-      ...Array.from({ length: 65 }, (_, index) => ({
-        ...newChannel(projectId, `Glasgow ${index + 1}`),
-        id: `ch-a-${index + 1}`,
-      })),
-      ...Array.from({ length: 65 }, (_, index) => ({
-        ...newChannel(projectId, `Edinburgh ${index + 1}`),
-        id: `ch-b-${index + 1}`,
-      })),
+      ...Array.from({ length: 65 }, (_, index) =>
+        withExportEligibleDefaults({
+          ...newChannel(projectId, `Glasgow ${index + 1}`),
+          id: `ch-a-${index + 1}`,
+        }),
+      ),
+      ...Array.from({ length: 65 }, (_, index) =>
+        withExportEligibleDefaults({
+          ...newChannel(projectId, `Edinburgh ${index + 1}`),
+          id: `ch-b-${index + 1}`,
+        }),
+      ),
     ];
     const library = {
       channels,
