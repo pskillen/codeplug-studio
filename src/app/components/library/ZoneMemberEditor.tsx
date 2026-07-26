@@ -44,7 +44,7 @@ import {
 
 export type ZoneMemberEditorMapFilters = ZoneMemberPickerMapFilters;
 
-export type ZoneMemberEditorMode = 'full' | 'reorder' | 'addPool' | 'scanOnly';
+export type ZoneMemberEditorMode = 'full' | 'reorder' | 'addPool' | 'scanOnly' | 'summary';
 
 export type { ZoneMemberPickerMapFilters } from './zoneMemberPickerUtils.ts';
 export {
@@ -259,7 +259,7 @@ export default function ZoneMemberEditor({
   const showScanControls = mode === 'full' || mode === 'scanOnly';
   const showRemove = mode === 'full' || mode === 'reorder';
   const showAddPool = mode === 'full' || mode === 'addPool';
-  const inZoneReadOnly = mode === 'addPool' || mode === 'scanOnly';
+  const inZoneReadOnly = mode === 'addPool' || mode === 'scanOnly' || mode === 'summary';
 
   return (
     <Stack gap="lg">

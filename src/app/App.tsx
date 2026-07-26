@@ -16,6 +16,7 @@ import ZoneEditLayout from './routes/library/zones/ZoneEditLayout.tsx';
 import ZoneEditMainPage from './routes/library/zones/ZoneEditMainPage.tsx';
 import ZoneEditAddPage from './routes/library/zones/ZoneEditAddPage.tsx';
 import ZoneEditScanningPage from './routes/library/zones/ZoneEditScanningPage.tsx';
+import ZoneEditAddFromMapPage from './routes/library/zones/ZoneEditAddFromMapPage.tsx';
 import ChannelsListPage from './routes/library/lists/ChannelsListPage.tsx';
 import ZonesListPage from './routes/library/lists/ZonesListPage.tsx';
 import TalkGroupsListPage from './routes/library/lists/TalkGroupsListPage.tsx';
@@ -119,6 +120,7 @@ export const appRouter = createBrowserRouter([
             children: [
               { index: true, element: <ZoneEditMainPage /> },
               { path: 'add', element: <ZoneEditAddPage /> },
+              { path: 'add-from-map', element: <ZoneEditAddFromMapPage /> },
               { path: 'scanning', element: <ZoneEditScanningPage /> },
             ],
           },
