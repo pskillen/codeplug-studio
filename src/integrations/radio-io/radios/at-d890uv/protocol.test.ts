@@ -8,7 +8,7 @@ import {
   scriptAtD890Connect,
   scriptAtD890MinimalDownload,
   scriptAtD890WriteAck,
-  scriptAtD890SentinelReads,
+  scriptAtD890PlausibleSentinelReads,
   enqueueAtD890ReadReply,
 } from './__fixtures__/scriptedPipe.ts';
 import { AT_D890_MAP_SIZE, AT_D890_SAFE_SKIP_WRITE_ADDR } from './constants.ts';
@@ -66,9 +66,8 @@ describe('AtD890uvProtocol', () => {
     const image = cacheToMemoryMap(radio.getDownloadCache()!);
     applyAtD890WriteImageToCache(radio.getDownloadCache()!, image);
     const chunks = listWriteChunks(radio.getDownloadCache()!, AT_D890_SAFE_SKIP_WRITE_ADDR);
-    scriptAtD890SentinelReads(pipe);
+    scriptAtD890PlausibleSentinelReads(pipe);
     scriptAtD890WriteAck(pipe, chunks.length);
-    scriptAtD890SentinelReads(pipe);
 
     await radio.upload(image, {});
     expect(pipe.writes.length).toBeGreaterThan(0);
@@ -158,7 +157,7 @@ describe('AtD890uvProtocol', () => {
     expect(channelPrimaryAddress(128)).toBe(0x108_0000);
   });
 
-  it('fails upload when post-write sentinel differs from pre-write snapshot', async () => {
+  it('does not send END after failed upload abandons program mode', async () => {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890Connect(pipe);
     const radio = new AtD890uvProtocol();
@@ -177,13 +176,43 @@ describe('AtD890uvProtocol', () => {
     const image = cacheToMemoryMap(radio.getDownloadCache()!);
     applyAtD890WriteImageToCache(radio.getDownloadCache()!, image);
     const chunks = listWriteChunks(radio.getDownloadCache()!);
-    const localPre = new Uint8Array(D890_MAP.LocalInfoLength).fill(0x11);
-    const localPost = new Uint8Array(D890_MAP.LocalInfoLength).fill(0x22);
-    scriptAtD890SentinelReads(pipe, { LocalInfo: localPre });
-    scriptAtD890WriteAck(pipe, chunks.length);
-    scriptAtD890SentinelReads(pipe, { LocalInfo: localPost });
+    scriptAtD890PlausibleSentinelReads(pipe);
+    scriptAtD890WriteAck(pipe, 1);
 
-    await expect(radio.upload(image, {})).rejects.toThrow(/sentinel LocalInfo changed/);
+    await expect(radio.upload(image, {})).rejects.toThrow();
+    await radio.disconnect();
+
+    const endWrites = pipe.writes.filter((w) => new TextDecoder().decode(w) === 'END');
+    expect(endWrites).toHaveLength(0);
+    expect(chunks.length).toBeGreaterThan(1);
+  });
+
+  it('refuses upload when sentinel regions read all 0xff before any write frames', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890Connect(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+
+    const channelSet = new Uint8Array(0x200);
+    setBitmapBit(channelSet, 0, true);
+    radio.seedDownloadCache({
+      blocks: new Map([
+        [D890_MAP.ChannelSet, channelSet],
+        [channelPrimaryAddress(0), new Uint8Array(0x40)],
+        [channelSecondaryAddress(0), new Uint8Array(0x40)],
+      ]),
+    });
+
+    const image = cacheToMemoryMap(radio.getDownloadCache()!);
+    applyAtD890WriteImageToCache(radio.getDownloadCache()!, image);
+    scriptAtD890PlausibleSentinelReads(pipe, {
+      OptionalSettingsMain: new Uint8Array(0x200).fill(0xff),
+    });
+
+    await expect(radio.upload(image, {})).rejects.toThrow(/OptionalSettingsMain reads erased/);
+
+    const writeOpcodes = pipe.writes.filter((w) => w[0] === 0x57);
+    expect(writeOpcodes).toHaveLength(0);
   });
 
   it('rejects upload without seeded blocks', async () => {

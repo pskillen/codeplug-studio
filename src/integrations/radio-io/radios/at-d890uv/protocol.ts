@@ -31,7 +31,7 @@ import {
 } from './connection.ts';
 import { decodeChannelsFromAtD890Cache, encodeChannelsIntoAtD890Image } from './channelCodec.ts';
 import {
-  assertAtD890SentinelRegionsUnchanged,
+  assertAtD890SentinelRegionsPlausible,
   snapshotAtD890SentinelRegions,
 } from './sentinelVerify.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
@@ -249,6 +249,14 @@ export class AtD890uvProtocol implements CloneImageRadio {
     }
   }
 
+  /**
+   * Drop PROGRAM mode without sending END — staged writes are not committed to flash.
+   * Call on failed or aborted upload before disconnect().
+   */
+  abandonProgramMode(): void {
+    this.programming = false;
+  }
+
   async download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap> {
     if (!this.pipe || !this.cache || !this.programming) {
       throw new RadioProtocolError('AT-D890UV not connected / not in PROGRAM mode');
@@ -278,34 +286,38 @@ export class AtD890uvProtocol implements CloneImageRadio {
     applyAtD890WriteImageToCache(this.cache, image);
 
     const chunks = listWriteChunks(this.cache, AT_D890_SAFE_SKIP_WRITE_ADDR);
-    const sentinelBefore = await snapshotAtD890SentinelRegions(this.pipe, opts.signal);
 
-    reportProgress(
-      opts.onProgress,
-      { cur: 0, max: chunks.length || 1, msg: 'Writing sparse regions…', stage: 'Upload' },
-      opts.signal,
-    );
+    try {
+      const sentinelBefore = await snapshotAtD890SentinelRegions(this.pipe, opts.signal);
+      assertAtD890SentinelRegionsPlausible(sentinelBefore);
 
-    for (let i = 0; i < chunks.length; i++) {
-      throwIfAborted(opts.signal);
-      const { address, data } = chunks[i]!;
-      if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) continue;
       reportProgress(
         opts.onProgress,
-        {
-          cur: i + 1,
-          max: chunks.length,
-          msg: `Writing 0x${address.toString(16)}`,
-          stage: 'Upload',
-        },
+        { cur: 0, max: chunks.length || 1, msg: 'Writing sparse regions…', stage: 'Upload' },
         opts.signal,
       );
-      await atD890WriteMemory(this.pipe, address, data, opts.signal);
-      putCacheBytes(this.cache, address, data);
-    }
 
-    const sentinelAfter = await snapshotAtD890SentinelRegions(this.pipe, opts.signal);
-    assertAtD890SentinelRegionsUnchanged(sentinelBefore, sentinelAfter);
+      for (let i = 0; i < chunks.length; i++) {
+        throwIfAborted(opts.signal);
+        const { address, data } = chunks[i]!;
+        if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) continue;
+        reportProgress(
+          opts.onProgress,
+          {
+            cur: i + 1,
+            max: chunks.length,
+            msg: `Writing 0x${address.toString(16)}`,
+            stage: 'Upload',
+          },
+          opts.signal,
+        );
+        await atD890WriteMemory(this.pipe, address, data, opts.signal);
+        putCacheBytes(this.cache, address, data);
+      }
+    } catch (err) {
+      this.abandonProgramMode();
+      throw err;
+    }
   }
 
   decodeChannels(image: MemoryMap): RadioChannelDto[] {

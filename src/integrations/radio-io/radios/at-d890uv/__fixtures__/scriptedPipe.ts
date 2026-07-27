@@ -126,7 +126,7 @@ export function scriptAtD890WriteAck(pipe: AtD890ScriptedPipe, count: number): v
   }
 }
 
-/** Enqueue read replies for never-write sentinel spans (pre/post Write verify). */
+/** Enqueue read replies for never-write sentinel spans (pre-Write plausibility). */
 export function scriptAtD890SentinelReads(
   pipe: AtD890ScriptedPipe,
   overrides?: Partial<Record<string, Uint8Array>>,
@@ -135,6 +135,24 @@ export function scriptAtD890SentinelReads(
     const data = overrides?.[extent.id] ?? new Uint8Array(extent.length).fill(0xff);
     enqueueAtD890ReadReply(pipe, extent.start, data);
   }
+}
+
+/** Sentinel reads with at least one non-0xff byte per region — passes pre-Write plausibility. */
+export function plausibleAtD890SentinelOverrides(): Partial<Record<string, Uint8Array>> {
+  const overrides: Partial<Record<string, Uint8Array>> = {};
+  for (const extent of AT_D890_SENTINEL_EXTENTS) {
+    const data = new Uint8Array(extent.length).fill(0xff);
+    data[0] = 0x00;
+    overrides[extent.id] = data;
+  }
+  return overrides;
+}
+
+export function scriptAtD890PlausibleSentinelReads(
+  pipe: AtD890ScriptedPipe,
+  overrides?: Partial<Record<string, Uint8Array>>,
+): void {
+  scriptAtD890SentinelReads(pipe, { ...plausibleAtD890SentinelOverrides(), ...overrides });
 }
 
 export { ANYTONE_DMR_BLOCK_SIZE };
