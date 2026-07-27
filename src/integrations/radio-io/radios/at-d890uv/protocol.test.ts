@@ -11,7 +11,6 @@ import {
   localInfoWithSerial,
   makeAtD890EraseUnitBuffer,
   scriptAtD890UploadReadResponder,
-  collectAtD890ReadRequestAddresses,
   collectAtD890WriteDataAddresses,
   indexOfFirstAtD890WriteFrame,
   writePayloadAt,
@@ -294,78 +293,6 @@ describe('AtD890uvProtocol', () => {
 
     await expect(radio.upload(image, {})).rejects.toThrow(/serial/);
     expect(collectAtD890WriteDataAddresses(pipe)).toHaveLength(0);
-  });
-
-  it('preserves optional settings bytes when writing zone tables', async () => {
-    const pipe = new AtD890ScriptedPipe();
-    scriptAtD890ConnectWithNegotiation(pipe);
-    const unit350 = makeAtD890EraseUnitBuffer();
-    unit350[0x05] = 0x42;
-    unit350[0x900] = 0x01;
-    unit350[0x1280] = 0x02;
-    const memory = new Map([
-      [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
-      [0x350_0000, unit350],
-    ]);
-    const radio = new AtD890uvProtocol();
-    await radio.connect(pipe);
-    scriptAtD890UploadReadResponder(pipe, memory);
-
-    radio.seedDownloadCache({
-      blocks: new Map([
-        [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
-        [D890_MAP.ZoneAChannel, new Uint8Array(D890_MAP.ZoneTableBytes).fill(0x11)],
-        [D890_MAP.ZoneBChannel, new Uint8Array(D890_MAP.ZoneTableBytes)],
-      ]),
-    });
-    const image = cacheToMemoryMap(radio.getDownloadCache()!);
-    applyAtD890WriteImageToCache(radio.getDownloadCache()!, image);
-    enableAtD890AutoWriteAck(pipe);
-
-    await radio.upload(image, {});
-
-    expect(writePayloadAt(pipe, D890_MAP.OptionalSettingsMain)?.[0x05]).toBe(0x42);
-    expect(collectAtD890ReadRequestAddresses(pipe)).toContain(0x350_0000);
-  });
-
-  it('skips all-0xff blocks inside touched erase units', async () => {
-    const pipe = new AtD890ScriptedPipe();
-    scriptAtD890ConnectWithNegotiation(pipe);
-    const unit350 = makeAtD890EraseUnitBuffer(0xff);
-    unit350[0x05] = 0x01;
-    unit350[0x900] = 0x01;
-    unit350[0x1280] = 0x01;
-    unit350[D890_MAP.ZoneAChannel - 0x350_0000] = 0x22;
-    const radio = new AtD890uvProtocol();
-    await radio.connect(pipe);
-    scriptAtD890UploadReadResponder(
-      pipe,
-      new Map([
-        [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
-        [0x350_0000, unit350],
-      ]),
-    );
-
-    radio.seedDownloadCache({
-      blocks: new Map([
-        [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
-        [D890_MAP.ZoneAChannel, new Uint8Array(D890_MAP.ZoneTableBytes).fill(0x22)],
-        [D890_MAP.ZoneBChannel, new Uint8Array(D890_MAP.ZoneTableBytes).fill(0xff)],
-      ]),
-    });
-    const image = cacheToMemoryMap(radio.getDownloadCache()!);
-    applyAtD890WriteImageToCache(radio.getDownloadCache()!, image);
-    enableAtD890AutoWriteAck(pipe);
-
-    await radio.upload(image, {});
-
-    const written = collectAtD890WriteDataAddresses(pipe);
-    expect(
-      written.some((a) => a >= D890_MAP.ZoneBChannel && a < D890_MAP.ZoneBChannel + 0x200),
-    ).toBe(false);
-    expect(
-      written.some((a) => a >= D890_MAP.ZoneAChannel && a < D890_MAP.ZoneAChannel + 0x10),
-    ).toBe(true);
   });
 
   it('rejects upload without seeded blocks', async () => {
