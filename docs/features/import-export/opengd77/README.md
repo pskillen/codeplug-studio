@@ -15,6 +15,7 @@ Product behaviour for OpenGD77 CPS CSV in Codeplug Studio. Wire column tables li
 | Export adapter                        | Shipped | [#88](https://github.com/pskillen/codeplug-studio/issues/88) — `assemble` → serialise                        |
 | Multi-mode channel expansion          | Shipped | [#89](https://github.com/pskillen/codeplug-studio/issues/89) — `-F`/`-D` rows at serialise + preview         |
 | Export name shortening                | Shipped | [#90](https://github.com/pskillen/codeplug-studio/issues/90) — dictionary + `useExportSettings`              |
+| Talk-group timeslot contact clones    | Shipped | [#764](https://github.com/pskillen/codeplug-studio/issues/764) — `talkGroupTimeslotClones` trait; Contacts + TG_Lists |
 | Browser download + export UI          | Shipped | `ExportBuildCpsPanel` on `/builds/:id/export` ([#91](https://github.com/pskillen/codeplug-studio/issues/91)) |
 | CPS import                            | Planned | Phase 4b                                                                                                     |
 

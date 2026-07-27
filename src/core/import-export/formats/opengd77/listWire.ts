@@ -1,6 +1,7 @@
 import type { AssembledBuild, AssembledZone } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { expandChannelWireRows } from '@core/import-export/channelExpansion/multiMode.ts';
+import type { TalkGroupTimeslotCloneIndex } from '@core/import-export/channelExpansion/talkGroupTimeslotClones.ts';
 import { isProjectionExcluded } from '@core/domain/formatBuildOverrides.ts';
 import { channelWireNameById, memberRefWireName } from './exportRefs.ts';
 
@@ -36,10 +37,19 @@ export function zoneExportMemberNames(
 }
 
 /** RX group list member wire names — from assembled entity wire names. */
-export function rxGroupListExportMemberNames(assembled: AssembledBuild, listId: string): string[] {
+export function rxGroupListExportMemberNames(
+  assembled: AssembledBuild,
+  listId: string,
+  cloneIndex?: TalkGroupTimeslotCloneIndex | null,
+): string[] {
   const list = assembled.rxGroupLists.find((r) => r.entity.id === listId);
   if (!list) return [];
   return list.entity.members
-    .map((member) => memberRefWireName(assembled, member.ref))
+    .map((member) =>
+      memberRefWireName(assembled, member.ref, {
+        cloneIndex,
+        memberTimeSlotOverride: member.timeSlotOverride,
+      }),
+    )
     .filter((name) => name.length > 0);
 }

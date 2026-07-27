@@ -41,6 +41,7 @@ Traits come from the build **profile** (`traitProfileFor`). Only one expansion s
 | _(none)_                                                               | CHIRP flat memory | Single row per channel                        | Base name only                                               |
 | `mxnChannelExpansion`                                                  | DM32              | RX group list → one row per TG/contact member | Multi-TG compose modes (below); **no** `-F`/`-D` suffix rows |
 | `multiTalkGroupPerChannel`                                             | OpenGD77          | Native RGL on wire — **no fan-out**           | Base name only; TG list is a separate CPS file               |
+| `talkGroupTimeslotClones`                                              | OpenGD77          | Contact-bank clones — **no channel fan-out**  | Base TG wire name + ` TS1` / ` TS2` on Contacts.csv + TG_Lists members |
 | Multi-mode (implicit when `modeProfiles.length > 1` and `expandModes`) | OpenGD77          | One row per mode profile                      | Appends mode suffix to base name                             |
 
 DM32 does **not** use OpenGD77 multi-mode expansion in preview or export (`expandModes: false`). Dual FM+DMR on one frequency becomes one DM32 row (Fixed Digital / Fixed Analog semantics at serialise).

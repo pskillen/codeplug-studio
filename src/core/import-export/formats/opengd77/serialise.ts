@@ -55,6 +55,11 @@ import {
   type OpenGd77ListWireMaps,
 } from './exportListWire.ts';
 import {
+  buildOpenGd77TimeslotExportContext,
+  formatOpenGd77ContactTsOverride,
+  type OpenGd77TimeslotExportContext,
+} from './timeslotExport.ts';
+import {
   DEFAULT_OPENGD77_PROFILE_ID,
   getOpenGd77Profile,
   type OpenGd77RadioProfile,
@@ -81,6 +86,7 @@ function channelRowValues(
   profile: OpenGd77RadioProfile,
   rowNumber: number,
   options?: CpsExportOptions,
+  timeslotCtx?: OpenGd77TimeslotExportContext,
 ): Record<string, string> {
   const analog = isAnalogProfile(modeProfile) ? modeProfile : null;
   const dmr = isDmrProfile(modeProfile) ? modeProfile : null;
@@ -104,7 +110,10 @@ function channelRowValues(
     ),
     [CHANNEL_COL.colourCode]: formatOpenGd77ColourCodeWire(dmr?.colourCode ?? null),
     [CHANNEL_COL.timeslot]: formatOpenGd77TimeslotWire(dmr?.timeslot ?? null),
-    [CHANNEL_COL.contact]: contactRefWireName(assembled, dmr?.contactRef ?? null, mode),
+    [CHANNEL_COL.contact]: contactRefWireName(assembled, dmr?.contactRef ?? null, mode, {
+      cloneIndex: timeslotCtx?.cloneIndex,
+      channelTimeslot: dmr?.timeslot ?? null,
+    }),
     [CHANNEL_COL.tgList]: rxGroupListWireName(assembled, dmr?.rxGroupListId ?? null, mode),
     [CHANNEL_COL.dmrId]: formatOpenGd77DmrIdWire(mode, dmr?.dmrId ?? null),
     [CHANNEL_COL.rxTone]: formatOpenGd77ToneWire(mode, analog?.rxTone ?? null),
@@ -130,7 +139,11 @@ function channelRowValues(
   return values;
 }
 
-export function serialiseChannels(assembled: AssembledBuild, options?: CpsExportOptions): string {
+export function serialiseChannels(
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+  timeslotCtx?: OpenGd77TimeslotExportContext,
+): string {
   const profile = getOpenGd77Profile(
     options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID,
   );
@@ -163,6 +176,7 @@ export function serialiseChannels(assembled: AssembledBuild, options?: CpsExport
         profile,
         i + 1,
         options,
+        timeslotCtx,
       ),
     ),
   );
@@ -194,18 +208,32 @@ export function serialiseZones(
 export function serialiseContacts(
   assembled: AssembledBuild,
   listWireMaps?: OpenGd77ListWireMaps,
+  timeslotCtx?: OpenGd77TimeslotExportContext,
 ): string {
   const rows: string[][] = [];
 
-  for (const tg of assembled.talkGroups) {
-    rows.push(
-      padRow(CONTACT_HEADERS, {
-        [CONTACT_COL.name]: tg.wireName,
-        [CONTACT_COL.id]: String(tg.entity.digitalId),
-        [CONTACT_COL.idType]: 'Group',
-        [CONTACT_COL.tsOverride]: '',
-      }),
-    );
+  if (timeslotCtx?.cloneIndex) {
+    for (const clone of timeslotCtx.cloneIndex.clones) {
+      rows.push(
+        padRow(CONTACT_HEADERS, {
+          [CONTACT_COL.name]: clone.wireName,
+          [CONTACT_COL.id]: String(clone.digitalId),
+          [CONTACT_COL.idType]: 'Group',
+          [CONTACT_COL.tsOverride]: formatOpenGd77ContactTsOverride(clone.slot),
+        }),
+      );
+    }
+  } else {
+    for (const tg of assembled.talkGroups) {
+      rows.push(
+        padRow(CONTACT_HEADERS, {
+          [CONTACT_COL.name]: tg.wireName,
+          [CONTACT_COL.id]: String(tg.entity.digitalId),
+          [CONTACT_COL.idType]: 'Group',
+          [CONTACT_COL.tsOverride]: '',
+        }),
+      );
+    }
   }
 
   for (const contact of assembled.digitalContacts) {
@@ -241,6 +269,7 @@ export function serialiseRxGroupLists(
   assembled: AssembledBuild,
   profileId?: string,
   listWireMaps?: OpenGd77ListWireMaps,
+  timeslotCtx?: OpenGd77TimeslotExportContext,
 ): string {
   const profile = getOpenGd77Profile(
     profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID,
@@ -251,7 +280,11 @@ export function serialiseRxGroupLists(
       ? rxGroupListExportWireName(listWireMaps, list.entity.id, list.wireName)
       : list.wireName;
     const values: Record<string, string> = { [RX_GROUP_LIST_COL.name]: listName };
-    rxGroupListExportMemberNames(assembled, list.entity.id).forEach((name, i) => {
+    rxGroupListExportMemberNames(
+      assembled,
+      list.entity.id,
+      timeslotCtx?.cloneIndex,
+    ).forEach((name, i) => {
       if (i < memberHeaders.length) values[memberHeaders[i]!] = name;
     });
     return padRow(RX_GROUP_LIST_HEADERS, values);
@@ -288,11 +321,16 @@ export function serialiseOpenGd77Files(
     { ...options, profileId },
     warnings,
   );
+  const timeslotCtx = buildOpenGd77TimeslotExportContext(
+    exportAssembled,
+    { ...options, profileId },
+    warnings,
+  );
   return {
-    'Channels.csv': serialiseChannels(exportAssembled, options),
+    'Channels.csv': serialiseChannels(exportAssembled, options, timeslotCtx),
     'Zones.csv': serialiseZones(exportAssembled, options, listWireMaps),
-    'Contacts.csv': serialiseContacts(exportAssembled, listWireMaps),
-    'TG_Lists.csv': serialiseRxGroupLists(exportAssembled, profileId, listWireMaps),
+    'Contacts.csv': serialiseContacts(exportAssembled, listWireMaps, timeslotCtx),
+    'TG_Lists.csv': serialiseRxGroupLists(exportAssembled, profileId, listWireMaps, timeslotCtx),
     'DTMF.csv': serialiseDtmfHeaderOnly(),
     'APRS.csv': serialiseAprsHeaderOnly(),
   };
