@@ -28,8 +28,7 @@ const RX_GROUP_SLOTS = bitmapSlotCount(AT_D890_LIMITS.RX_GROUP_SET_BYTES);
 function buildChannelDataWritableExtents(): AtD890MemoryExtent[] {
   return Array.from({ length: D890_MAP.ChannelDataBlockCount }, (_, blockIndex) => ({
     id: `ChannelData.block${blockIndex}`,
-    start:
-      D890_MAP.ChannelData + blockIndex * D890_MAP.ChannelDataBlockOffset,
+    start: D890_MAP.ChannelData + blockIndex * D890_MAP.ChannelDataBlockOffset,
     length: D890_MAP.ChannelDataBackedBytes,
   }));
 }

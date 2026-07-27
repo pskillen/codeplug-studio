@@ -115,9 +115,9 @@ describe('AT_D890 writable extents', () => {
     expect(isAtD890WritableAddress(mirrored)).toBe(false);
     expect(isAtD890WritableAddress(backed)).toBe(true);
     expect(() => assertAtD890WritableAddress(mirrored)).toThrow(RadioProtocolError);
-    expect(() =>
-      assertAtD890WritableSpan(mirrored, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
-    ).toThrow(RadioProtocolError);
+    expect(() => assertAtD890WritableSpan(mirrored, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE)).toThrow(
+      RadioProtocolError,
+    );
   });
 
   it('accepts every channel primary and secondary address for slots 0..3999', () => {

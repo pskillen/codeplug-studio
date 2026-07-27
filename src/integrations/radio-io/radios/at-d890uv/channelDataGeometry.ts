@@ -8,8 +8,7 @@
 import { D890_MAP } from './constants.ts';
 
 const CHANNEL_DATA_END =
-  D890_MAP.ChannelData +
-  D890_MAP.ChannelDataBlockCount * D890_MAP.ChannelDataBlockOffset;
+  D890_MAP.ChannelData + D890_MAP.ChannelDataBlockCount * D890_MAP.ChannelDataBlockOffset;
 
 /** True when `address` lies in the ChannelData bank address span. */
 export function isAtD890ChannelDataAddress(address: number): boolean {
