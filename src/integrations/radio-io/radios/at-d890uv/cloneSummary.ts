@@ -48,7 +48,7 @@ export interface AtD890uvCloneSummary {
   writtenFromBuild: readonly string[];
   digitalContactsWriteGap: string;
   retainGroups: readonly AtD890RetainGroupSummary[];
-  /** Decoded LocalInfo ExpertOptions fields (kept / replayed on Write). */
+  /** Decoded LocalInfo ExpertOptions fields (kept on Write — not serial-written). */
   settingsRetain: readonly AtD890RetainPreviewRow[];
   /** LocalInfo as 16-byte register rows. */
   localInfoRegisters: readonly AtD890RegisterRow[];

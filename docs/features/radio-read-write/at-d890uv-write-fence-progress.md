@@ -7,8 +7,8 @@
 
 | Slice | State |
 | --- | --- |
-| 0 Track + progress stubs | In progress |
-| 1 Allow-list extents + stop LocalInfo upload | Pending |
+| 0 Track + progress stubs | Done |
+| 1 Allow-list extents + stop LocalInfo upload | Done |
 | 2 Sentinel pre/post verify | Pending |
 | 3 Airband-in-MR + encode guards | Pending |
 | 4 Documentation | Pending |

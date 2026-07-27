@@ -6,6 +6,10 @@ import { createMemoryMap } from '../../kit/memoryMap.ts';
 import type { MemoryMap } from '../../types.ts';
 import { AT_D890_BLOCK_SIZE, AT_D890_MAP_SIZE, AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import { listSetBits } from './bitmap.ts';
+import {
+  assertAtD890WritableSpan,
+  isAtD890WritableAddress,
+} from './writableExtents.ts';
 
 export interface AtD890SparseBlock {
   address: number;
@@ -93,6 +97,17 @@ export function putCacheBytes(cache: AtD890DownloadCache, address: number, data:
   }
 }
 
+/** Upload-path cache merge — bounds-checked against the write allow-list. */
+export function putWritableCacheBytes(
+  cache: AtD890DownloadCache,
+  address: number,
+  data: Uint8Array,
+): void {
+  const { start, length: spanLen } = alignedSpanForAtD890Region(address, data.length);
+  assertAtD890WritableSpan(start, spanLen);
+  putCacheBytes(cache, address, data);
+}
+
 export function getCacheBytes(
   cache: AtD890DownloadCache,
   address: number,
@@ -142,7 +157,7 @@ export function memoryMapToCacheBlocks(
   return out;
 }
 
-/** Expand stored regions into 16-byte write chunks (sorted, unique). */
+/** Expand stored regions into 16-byte write chunks (sorted, unique). Allow-list only. */
 export function listWriteChunks(
   cache: AtD890DownloadCache,
   skipAddr = 0,
@@ -154,6 +169,7 @@ export function listWriteChunks(
     for (let off = 0; off < data.length; off += AT_D890_BLOCK_SIZE) {
       const addr = base + off;
       if (addr === skipAddr) continue;
+      if (!isAtD890WritableAddress(addr)) continue;
       chunks.push({ address: addr, data: data.subarray(off, off + AT_D890_BLOCK_SIZE) });
     }
   }
@@ -193,6 +209,7 @@ export function mergeImageRegionIntoCache(
   length: number,
 ): void {
   const { start, length: spanLen } = alignedSpanForAtD890Region(address, length);
+  assertAtD890WritableSpan(start, spanLen);
   for (let off = 0; off < spanLen; off += AT_D890_BLOCK_SIZE) {
     putCacheBytes(cache, start + off, image.get(start + off, AT_D890_BLOCK_SIZE));
   }
@@ -216,12 +233,12 @@ export function applyAtD890WriteImageToCache(cache: AtD890DownloadCache, image: 
 
   const channelSet = image.get(D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES);
   for (const idx of listSetBits(channelSet)) {
-    putCacheBytes(
+    putWritableCacheBytes(
       cache,
       channelPrimaryAddress(idx),
       image.get(channelPrimaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
     );
-    putCacheBytes(
+    putWritableCacheBytes(
       cache,
       channelSecondaryAddress(idx),
       image.get(channelSecondaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
@@ -230,12 +247,12 @@ export function applyAtD890WriteImageToCache(cache: AtD890DownloadCache, image: 
 
   const zoneSet = image.get(D890_MAP.ZoneSet, AT_D890_LIMITS.ZONE_SET_BYTES);
   for (const idx of listSetBits(zoneSet)) {
-    putCacheBytes(
+    putWritableCacheBytes(
       cache,
       zoneNameAddress(idx),
       image.get(zoneNameAddress(idx), D890_MAP.ZoneDataLength),
     );
-    putCacheBytes(
+    putWritableCacheBytes(
       cache,
       zoneChannelsAddress(idx),
       image.get(zoneChannelsAddress(idx), D890_MAP.ZoneChannelsStride),
@@ -244,7 +261,7 @@ export function applyAtD890WriteImageToCache(cache: AtD890DownloadCache, image: 
 
   const scanSet = image.get(D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
   for (const idx of listSetBits(scanSet)) {
-    putCacheBytes(
+    putWritableCacheBytes(
       cache,
       scanListAddress(idx),
       image.get(scanListAddress(idx), AT_D890_LIMITS.SCAN_LIST_STRIDE),
@@ -264,7 +281,7 @@ export function applyAtD890WriteImageToCache(cache: AtD890DownloadCache, image: 
 
   const rxSet = image.get(D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES);
   for (const idx of listSetBits(rxSet)) {
-    putCacheBytes(
+    putWritableCacheBytes(
       cache,
       receiveGroupAddress(idx),
       image.get(receiveGroupAddress(idx), AT_D890_LIMITS.RX_GROUP_STRIDE),
@@ -273,7 +290,7 @@ export function applyAtD890WriteImageToCache(cache: AtD890DownloadCache, image: 
 
   const ridSet = image.get(D890_MAP.RadioIdSet, AT_D890_LIMITS.RADIO_ID_SET_BYTES);
   for (const idx of listSetBits(ridSet)) {
-    putCacheBytes(
+    putWritableCacheBytes(
       cache,
       radioIdAddress(idx),
       image.get(radioIdAddress(idx), AT_D890_LIMITS.RADIO_ID_STRIDE),

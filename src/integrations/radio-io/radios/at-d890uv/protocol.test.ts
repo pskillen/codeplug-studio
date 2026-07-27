@@ -37,7 +37,7 @@ describe('AtD890uvProtocol', () => {
     expect(cache?.blocks.has(D890_MAP.ChannelSet)).toBe(true);
   });
 
-  it('uploads after seeding hydration and skips safe-skip address', async () => {
+  it('uploads after seeding hydration and skips safe-skip and LocalInfo', async () => {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890Connect(pipe);
     const radio = new AtD890uvProtocol();
@@ -51,6 +51,7 @@ describe('AtD890uvProtocol', () => {
 
     radio.seedDownloadCache({
       blocks: new Map([
+        [D890_MAP.LocalInfo, new Uint8Array(D890_MAP.LocalInfoLength).fill(0xaa)],
         [D890_MAP.ChannelSet, channelSet],
         [channelPrimaryAddress(0), primary],
         [channelSecondaryAddress(0), secondary],
@@ -69,6 +70,9 @@ describe('AtD890uvProtocol', () => {
       .filter((w) => w[0] === 0x57)
       .map((w) => (w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!);
     expect(writtenAddrs).not.toContain(AT_D890_SAFE_SKIP_WRITE_ADDR);
+    expect(writtenAddrs.some((a) => a >= D890_MAP.LocalInfo && a < D890_MAP.LocalInfo + 0x100)).toBe(
+      false,
+    );
   });
 
   it('sends END on disconnect after connect', async () => {
