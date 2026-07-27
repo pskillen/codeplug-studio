@@ -91,7 +91,7 @@ Chinese UI on the radio is modelled in **LocalInfo ExpertOptions** (`+0x04` and 
 
 ## Write upload contract (WATCH-08 allow-list)
 
-Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `writableExtents.ts`) — only modelled banks may reach the serial port. `listWriteChunks` emits cache blocks inside those extents only; `atD890WriteMemory` rejects any other address.
+Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `writableExtents.ts`) — only modelled banks may reach the serial port. `listWriteChunks` emits cache blocks inside those extents only; `atD890WriteMemory` rejects any other address. **ChannelData** is modelled as **32 per-block backed low halves** (`0x40000` each, `0x80000` pitch) — mirrored upper-half addresses are refused ([#791](https://github.com/pskillen/codeplug-studio/issues/791)).
 
 **Pre-Write sentinel plausibility:** before any write frames, Studio Reads six never-write spans and **refuses** the Write when any region reads entirely `0xff` (already-erased / faulted radio). Regions: `LocalInfo`; optional-settings main (`0x3500000`/`0x200`), ext (`0x3500900`/`0x60`), APRS (`0x3501280`/`0x30`); alarm bitmap (`0x3482e00`/`0x10`) and data (`0x3483000`/`0x30`). In-session pre/post compare was removed ([#769](https://github.com/pskillen/codeplug-studio/issues/769)) — reads in the same PROGRAM session return flash, not the RAM shadow. **Cross-session verify** after `END` (power-cycle + reconnect diff) is deferred to [#769](https://github.com/pskillen/codeplug-studio/issues/769) slice 5b / PR6.
 
@@ -127,7 +127,7 @@ Flash address space is **not** uniformly flat. Measured on hardware 2026-07-27 (
 | Alias stride           | `+0x40000` — upper half mirrors low half |
 | Erase unit             | `0x40000`, aligned                       |
 
-Channel writes must stay in the low half of each block; `0x1840000` physically lands on `0x1800000`. Extent modelling: [#791](https://github.com/pskillen/codeplug-studio/issues/791).
+Channel writes must stay in the low half of each block; `0x1840000` physically lands on `0x1800000`. The write fence models only backed halves (`writableExtents.ts` per-block extents; `channelDataGeometry.ts`).
 
 ### Config regions
 

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
-import { listWriteChunks, type AtD890DownloadCache } from './memory.ts';
+import {
+  channelPrimaryAddress,
+  channelSecondaryAddress,
+  listWriteChunks,
+  type AtD890DownloadCache,
+} from './memory.ts';
 import {
   assertAtD890WritableAddress,
   assertAtD890WritableSpan,
@@ -102,5 +107,37 @@ describe('AT_D890 writable extents', () => {
     expect(() =>
       assertAtD890WritableSpan(D890_MAP.ChannelData, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
     ).not.toThrow();
+  });
+
+  it('rejects mirrored ChannelData upper-half addresses', () => {
+    const mirrored = 0x184_0000;
+    const backed = 0x180_0000;
+    expect(isAtD890WritableAddress(mirrored)).toBe(false);
+    expect(isAtD890WritableAddress(backed)).toBe(true);
+    expect(() => assertAtD890WritableAddress(mirrored)).toThrow(RadioProtocolError);
+    expect(() => assertAtD890WritableSpan(mirrored, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE)).toThrow(
+      RadioProtocolError,
+    );
+  });
+
+  it('accepts every channel primary and secondary address for slots 0..3999', () => {
+    const boundarySlots = [0, 127, 128, AT_D890_LIMITS.MAX_CHANNELS - 1];
+    for (const slot of boundarySlots) {
+      const primary = channelPrimaryAddress(slot);
+      const secondary = channelSecondaryAddress(slot);
+      expect(isAtD890WritableAddress(primary)).toBe(true);
+      expect(isAtD890WritableAddress(secondary)).toBe(true);
+      expect(() =>
+        assertAtD890WritableSpan(primary, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
+      ).not.toThrow();
+      expect(() =>
+        assertAtD890WritableSpan(secondary, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
+      ).not.toThrow();
+    }
+
+    for (let slot = 0; slot < AT_D890_LIMITS.MAX_CHANNELS; slot++) {
+      expect(isAtD890WritableAddress(channelPrimaryAddress(slot))).toBe(true);
+      expect(isAtD890WritableAddress(channelSecondaryAddress(slot))).toBe(true);
+    }
   });
 });

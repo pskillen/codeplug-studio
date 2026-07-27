@@ -14,7 +14,8 @@
  * boundaries always land on the sentinel grid.
  */
 
-import { AT_D890_BLOCK_SIZE } from './constants.ts';
+import { AT_D890_BLOCK_SIZE, D890_MAP } from './constants.ts';
+import { isAtD890ChannelDataRealAddress } from './channelDataGeometry.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 
 /**
@@ -41,15 +42,10 @@ export const AT_D890_PROBE = {
   SPAN_START: 0x180_0000,
   /** Channel block 19 — exclusive. */
   SPAN_END: 0x198_0000,
-  /** `ChannelData` block pitch. */
-  BLOCK_STRIDE: 0x8_0000,
-  /**
-   * Real storage per block. Measured on hardware 2026-07-27: writes `0x40000` above an
-   * address land on that address, so only the low half of each block is backed and the
-   * upper half mirrors it. Sentinels must stay below this offset or they overwrite
-   * each other.
-   */
-  REAL_BYTES_PER_BLOCK: 0x4_0000,
+  /** `ChannelData` block pitch (`D890_MAP.ChannelDataBlockOffset`). */
+  BLOCK_STRIDE: D890_MAP.ChannelDataBlockOffset,
+  /** Real storage per block (`D890_MAP.ChannelDataBackedBytes`). */
+  REAL_BYTES_PER_BLOCK: D890_MAP.ChannelDataBackedBytes,
   /** Blocks the grid covers, so an erase unit larger than one block's real half is visible. */
   BLOCK_COUNT: 3,
   /** Sentinel pitch, and therefore the measurement resolution. */
@@ -122,8 +118,7 @@ export function listAtD890ProbeSentinels(): AtD890ProbeBlock[] {
 
 /** True when `address` lies in backed storage rather than a block's mirrored upper half. */
 export function isAtD890RealAddress(address: number): boolean {
-  const offsetInBlock = (address - AT_D890_PROBE.SPAN_START) % AT_D890_PROBE.BLOCK_STRIDE;
-  return offsetInBlock >= 0 && offsetInBlock < AT_D890_PROBE.REAL_BYTES_PER_BLOCK;
+  return isAtD890ChannelDataRealAddress(address);
 }
 
 export type AtD890SentinelState = 'intact' | 'erased' | 'unexpected';
