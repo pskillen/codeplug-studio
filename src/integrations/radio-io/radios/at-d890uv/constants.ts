@@ -52,6 +52,12 @@ export const D890_MAP = {
   ChannelDataOffset: 0x80,
   ChannelDataBlockSize: 128,
   ChannelDataBlockOffset: 0x80_000,
+  /** Low half of each block — measured backed storage (upper half mirrors at +this). */
+  ChannelDataBackedBytes: 0x4_0000,
+  /** Alias period within a block: addr + this lands on addr. */
+  ChannelDataAliasStride: 0x4_0000,
+  /** Blocks in the ChannelData address span (`0x1000000 / ChannelDataBlockOffset`). */
+  ChannelDataBlockCount: 32,
   ChannelDataSecondaryOffset: 0x40,
   ZoneSet: 0x3482_c00,
   ZoneHide: 0x3482_c20,

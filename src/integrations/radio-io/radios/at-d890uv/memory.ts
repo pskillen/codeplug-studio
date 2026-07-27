@@ -2,6 +2,13 @@
  * D890 sparse cache + channel address geometry.
  */
 
+export {
+  channelDataBlockIndex,
+  channelDataOffsetInBlock,
+  isAtD890ChannelDataAddress,
+  isAtD890ChannelDataRealAddress,
+} from './channelDataGeometry.ts';
+
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import type { MemoryMap } from '../../types.ts';
 import { AT_D890_BLOCK_SIZE, AT_D890_MAP_SIZE, AT_D890_LIMITS, D890_MAP } from './constants.ts';
