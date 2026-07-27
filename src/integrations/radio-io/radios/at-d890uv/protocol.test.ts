@@ -7,16 +7,60 @@ import {
   AtD890ScriptedPipe,
   scriptAtD890ConnectWithNegotiation,
   scriptAtD890MinimalDownload,
-  scriptAtD890WriteAck,
-  scriptAtD890PlausibleSentinelReads,
   enqueueAtD890ReadReply,
+  localInfoWithSerial,
+  makeAtD890EraseUnitBuffer,
+  scriptAtD890UploadReadResponder,
+  collectAtD890WriteDataAddresses,
+  indexOfFirstAtD890WriteFrame,
+  writePayloadAt,
+  enableAtD890AutoWriteAck,
 } from './__fixtures__/scriptedPipe.ts';
 import { AT_D890_MAP_SIZE, AT_D890_SAFE_SKIP_WRITE_ADDR } from './constants.ts';
 import { encodeBcdFrequencyHz } from './bcd.ts';
 import { setBitmapBit } from './bitmap.ts';
 import { channelPrimaryAddress, channelSecondaryAddress } from './memory.ts';
 
+import { listTouchedEraseUnits } from './eraseUnits.ts';
+
 const NEGOTIATED_READ_BLOCK = 0xf0;
+const TEST_SERIAL = 'SN-TEST-UPLOAD01';
+
+function seedChannelZeroUpload(
+  radio: AtD890uvProtocol,
+  serial = TEST_SERIAL,
+): ReturnType<typeof cacheToMemoryMap> {
+  const channelSet = new Uint8Array(0x200);
+  setBitmapBit(channelSet, 0, true);
+  const primary = new Uint8Array(0x40);
+  primary.set(encodeBcdFrequencyHz(145_520_000), 0);
+  const secondary = new Uint8Array(0x40);
+
+  radio.seedDownloadCache({
+    blocks: new Map([
+      [D890_MAP.LocalInfo, localInfoWithSerial(serial)],
+      [D890_MAP.ChannelSet, channelSet],
+      [channelPrimaryAddress(0), primary],
+      [channelSecondaryAddress(0), secondary],
+      [AT_D890_SAFE_SKIP_WRITE_ADDR, new Uint8Array(0x10)],
+    ]),
+  });
+
+  const image = cacheToMemoryMap(radio.getDownloadCache()!);
+  applyAtD890WriteImageToCache(radio.getDownloadCache()!, image);
+  return image;
+}
+
+function channelUploadMemory(liveSerial = TEST_SERIAL): Map<number, Uint8Array> {
+  const unit348 = makeAtD890EraseUnitBuffer();
+  unit348[D890_MAP.AlarmBitmap - 0x348_0000] = 0xab;
+  unit348[D890_MAP.AlarmData - 0x348_0000] = 0xcd;
+  return new Map([
+    [D890_MAP.LocalInfo, localInfoWithSerial(liveSerial)],
+    [0x100_0000, makeAtD890EraseUnitBuffer()],
+    [0x348_0000, unit348],
+  ]);
+}
 
 describe('AtD890uvProtocol', () => {
   it('connects with PROGRAM→QX and ID890UV ident', async () => {
@@ -52,43 +96,36 @@ describe('AtD890uvProtocol', () => {
     expect(cache?.blocks.has(D890_MAP.AlarmBitmap)).toBe(true);
   });
 
-  it('uploads after seeding hydration and skips safe-skip and LocalInfo', async () => {
+  it('uploads after seeding hydration with sparse erase-unit RMW', async () => {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890ConnectWithNegotiation(pipe);
     const radio = new AtD890uvProtocol();
     await radio.connect(pipe);
+    scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
 
-    const channelSet = new Uint8Array(0x200);
-    setBitmapBit(channelSet, 0, true);
-    const primary = new Uint8Array(0x40);
-    primary.set(encodeBcdFrequencyHz(145_520_000), 0);
-    const secondary = new Uint8Array(0x40);
-
-    radio.seedDownloadCache({
-      blocks: new Map([
-        [D890_MAP.LocalInfo, new Uint8Array(D890_MAP.LocalInfoLength).fill(0xaa)],
-        [D890_MAP.ChannelSet, channelSet],
-        [channelPrimaryAddress(0), primary],
-        [channelSecondaryAddress(0), secondary],
-        [AT_D890_SAFE_SKIP_WRITE_ADDR, new Uint8Array(0x10)],
-      ]),
-    });
-
-    const image = cacheToMemoryMap(radio.getDownloadCache()!);
-    applyAtD890WriteImageToCache(radio.getDownloadCache()!, image);
-    const chunks = listWriteChunks(radio.getDownloadCache()!, AT_D890_SAFE_SKIP_WRITE_ADDR);
-    scriptAtD890PlausibleSentinelReads(pipe, undefined, NEGOTIATED_READ_BLOCK);
-    scriptAtD890WriteAck(pipe, chunks.length);
+    const image = seedChannelZeroUpload(radio);
+    const modelled = listWriteChunks(radio.getDownloadCache()!, AT_D890_SAFE_SKIP_WRITE_ADDR);
+    const touched = listTouchedEraseUnits(modelled.map((c) => c.address));
+    enableAtD890AutoWriteAck(pipe);
 
     await radio.upload(image, {});
-    expect(pipe.writes.length).toBeGreaterThan(0);
-    const writtenAddrs = pipe.writes
-      .filter((w) => w[0] === 0x57)
-      .map((w) => (w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!);
+
+    const firstWrite = indexOfFirstAtD890WriteFrame(pipe);
+    expect(firstWrite).toBeGreaterThan(0);
+    const readsBeforeWrite = pipe.writes
+      .slice(0, firstWrite)
+      .filter((w) => w[0] === 0x52)
+      .map((w) => ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0);
+    for (const unit of touched) {
+      expect(readsBeforeWrite).toContain(unit);
+    }
+
+    const writtenAddrs = collectAtD890WriteDataAddresses(pipe);
     expect(writtenAddrs).not.toContain(AT_D890_SAFE_SKIP_WRITE_ADDR);
     expect(
       writtenAddrs.some((a) => a >= D890_MAP.LocalInfo && a < D890_MAP.LocalInfo + 0x100),
     ).toBe(false);
+    expect(writePayloadAt(pipe, D890_MAP.AlarmBitmap)?.[0]).toBe(0xab);
   });
 
   it('sends END on disconnect after connect', async () => {
@@ -207,29 +244,23 @@ describe('AtD890uvProtocol', () => {
     scriptAtD890ConnectWithNegotiation(pipe);
     const radio = new AtD890uvProtocol();
     await radio.connect(pipe);
+    scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
 
-    const channelSet = new Uint8Array(0x200);
-    setBitmapBit(channelSet, 0, true);
-    radio.seedDownloadCache({
-      blocks: new Map([
-        [D890_MAP.ChannelSet, channelSet],
-        [channelPrimaryAddress(0), new Uint8Array(0x40)],
-        [channelSecondaryAddress(0), new Uint8Array(0x40)],
-      ]),
-    });
-
-    const image = cacheToMemoryMap(radio.getDownloadCache()!);
-    applyAtD890WriteImageToCache(radio.getDownloadCache()!, image);
-    const chunks = listWriteChunks(radio.getDownloadCache()!);
-    scriptAtD890PlausibleSentinelReads(pipe, undefined, NEGOTIATED_READ_BLOCK);
-    scriptAtD890WriteAck(pipe, 1);
+    const image = seedChannelZeroUpload(radio);
+    let ackedWrites = 0;
+    const baseWrite = pipe.write.bind(pipe);
+    pipe.write = async (data: Uint8Array) => {
+      await baseWrite(data);
+      if (data[0] === 0x57 && ackedWrites++ === 0) {
+        pipe.enqueue(new Uint8Array([0x06]));
+      }
+    };
 
     await expect(radio.upload(image, {})).rejects.toThrow();
     await radio.disconnect();
 
     const endWrites = pipe.writes.filter((w) => new TextDecoder().decode(w) === 'END');
     expect(endWrites).toHaveLength(0);
-    expect(chunks.length).toBeGreaterThan(1);
   });
 
   it('refuses upload when sentinel regions read all 0xff before any write frames', async () => {
@@ -238,30 +269,30 @@ describe('AtD890uvProtocol', () => {
     const radio = new AtD890uvProtocol();
     await radio.connect(pipe);
 
-    const channelSet = new Uint8Array(0x200);
-    setBitmapBit(channelSet, 0, true);
-    radio.seedDownloadCache({
-      blocks: new Map([
-        [D890_MAP.ChannelSet, channelSet],
-        [channelPrimaryAddress(0), new Uint8Array(0x40)],
-        [channelSecondaryAddress(0), new Uint8Array(0x40)],
-      ]),
-    });
-
-    const image = cacheToMemoryMap(radio.getDownloadCache()!);
-    applyAtD890WriteImageToCache(radio.getDownloadCache()!, image);
-    scriptAtD890PlausibleSentinelReads(
-      pipe,
-      {
-        OptionalSettingsMain: new Uint8Array(0x200).fill(0xff),
-      },
-      NEGOTIATED_READ_BLOCK,
+    const image = seedChannelZeroUpload(radio);
+    const memory = channelUploadMemory();
+    memory.set(
+      D890_MAP.OptionalSettingsMain,
+      new Uint8Array(D890_MAP.OptionalSettingsMainLength).fill(0xff),
     );
+    scriptAtD890UploadReadResponder(pipe, memory);
 
     await expect(radio.upload(image, {})).rejects.toThrow(/OptionalSettingsMain reads erased/);
 
-    const writeOpcodes = pipe.writes.filter((w) => w[0] === 0x57);
-    expect(writeOpcodes).toHaveLength(0);
+    expect(collectAtD890WriteDataAddresses(pipe)).toHaveLength(0);
+  });
+
+  it('refuses upload when LocalInfo serial does not match hydration stash', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    scriptAtD890UploadReadResponder(pipe, channelUploadMemory('LIVE-RADIO-XYZ'));
+
+    const image = seedChannelZeroUpload(radio, 'STASH-RADIO-ABC');
+
+    await expect(radio.upload(image, {})).rejects.toThrow(/serial/);
+    expect(collectAtD890WriteDataAddresses(pipe)).toHaveLength(0);
   });
 
   it('rejects upload without seeded blocks', async () => {

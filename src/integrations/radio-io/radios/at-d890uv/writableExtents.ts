@@ -1,6 +1,7 @@
 /**
  * AT-D890UV serial write allow-list (WATCH-08).
- * Only modelled banks may reach the radio; LocalInfo and optional settings never.
+ * Modelled banks define what Studio may **change**; sparse erase-unit RMW may
+ * **transmit** unchanged bytes inside touched units to survive flash erase.
  */
 
 import { RadioProtocolError } from '../../kit/errors.ts';
@@ -8,6 +9,7 @@ import {
   isAtD890ChannelDataAddress,
   isAtD890ChannelDataRealAddress,
 } from './channelDataGeometry.ts';
+import { eraseUnitBaseFor } from './eraseUnits.ts';
 import { AT_D890_LIMITS, AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
 
 export interface AtD890MemoryExtent {
@@ -120,6 +122,44 @@ export function isAtD890WritableAddress(address: number): boolean {
 }
 
 export function assertAtD890WritableAddress(address: number): void {
+  if (!isAtD890TransmitAddress(address, new Set())) {
+    if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) {
+      throw new RadioProtocolError(
+        `D890 write refused at forbidden address 0x${address.toString(16)} (family safe-skip)`,
+      );
+    }
+    if (isAtD890ChannelDataAddress(address) && !isAtD890ChannelDataRealAddress(address)) {
+      throw new RadioProtocolError(
+        `D890 write refused at 0x${address.toString(16)} — ChannelData mirrored address (not backed storage)`,
+      );
+    }
+    throw new RadioProtocolError(
+      `D890 write refused at 0x${address.toString(16)} — address outside allow-listed modelled banks`,
+    );
+  }
+}
+
+/**
+ * Upload transmit fence: allow modelled banks, plus any address inside a touched erase unit
+ * (preserved optional settings / alarms), while still refusing safe-skip and mirrors.
+ */
+export function isAtD890TransmitAddress(
+  address: number,
+  touchedUnitBases: ReadonlySet<number>,
+): boolean {
+  if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) return false;
+  if (isAtD890ChannelDataAddress(address) && !isAtD890ChannelDataRealAddress(address)) {
+    return false;
+  }
+  if (touchedUnitBases.has(eraseUnitBaseFor(address))) return true;
+  return isAtD890WritableAddress(address);
+}
+
+export function assertAtD890TransmitAddress(
+  address: number,
+  touchedUnitBases: ReadonlySet<number>,
+): void {
+  if (isAtD890TransmitAddress(address, touchedUnitBases)) return;
   if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) {
     throw new RadioProtocolError(
       `D890 write refused at forbidden address 0x${address.toString(16)} (family safe-skip)`,
@@ -130,11 +170,9 @@ export function assertAtD890WritableAddress(address: number): void {
       `D890 write refused at 0x${address.toString(16)} — ChannelData mirrored address (not backed storage)`,
     );
   }
-  if (!findWritableExtentForAddress(address)) {
-    throw new RadioProtocolError(
-      `D890 write refused at 0x${address.toString(16)} — address outside allow-listed modelled banks`,
-    );
-  }
+  throw new RadioProtocolError(
+    `D890 write refused at 0x${address.toString(16)} — address outside touched erase units and modelled banks`,
+  );
 }
 
 /** Fail before bytes reach serial when a span would spill past its declared bank extent. */

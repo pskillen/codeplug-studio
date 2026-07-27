@@ -46,22 +46,24 @@ Addresses are **radio absolute** (u32). Read only enabled slots via each region�
 | `ReceiveGroupData`           | `0x3780000`  | Stride `0x200`; length `0x120`                 | Receive-group lists — [receive-group-record.md](receive-group-record.md) (members = talkgroup bank slot indices)                                                                                                                                |
 | `MasterIdData`               | `0x3684000`  | Length `0x40`                                  | Master / default radio ID                                                                                                                                                                                                                       |
 
-### Optional settings and alarm (Read/stash — never serial-written)
+### Optional settings and alarm (preserved through erase on Write)
 
-anytone-cps community RE — verify on hardware before relying on offsets. Studio **Reads** these regions on Connect/Read ([#760](https://github.com/pskillen/codeplug-studio/issues/760)) for Radio image forensics and persists them in the hydration bag. They are **not** on the serial write allow-list and are **never uploaded** ([#753](https://github.com/pskillen/codeplug-studio/issues/753)).
+anytone-cps community RE — verify on hardware before relying on offsets. Studio **Reads** these regions on Connect/Read ([#760](https://github.com/pskillen/codeplug-studio/issues/760)) for Radio image forensics and persists them in the hydration bag.
+
+On **Write**, sparse erase-unit RMW ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) **fresh-reads** each touched `0x40000` unit from the connected radio and re-stages non-`0xff` bytes unchanged — including optional settings and alarm spans that share units with modelled banks. Studio does **not** re-derive these from the library build; hydration supplies identity check only (LocalInfo serial).
 
 | Region / buffer          | Base                      | Length       | Notes                                                                                    |
 | ------------------------ | ------------------------- | ------------ | ---------------------------------------------------------------------------------------- |
 | Optional settings (main) | `0x3500000`               | `0x200`      | CPS language @ `+0x05` (`English`/`German` — **not** Chinese UI)                         |
 | Optional settings (main) | `0x3500000`               |              | Power-on interface @ `+0x06`; power-on password enable @ `+0x07`                         |
 | Optional settings (main) | `0x3500000`               |              | Startup channel @ `+0xd7`; zone A/B @ `+0xd8`/`+0xd9`; channel A/B @ `+0xda`/`+0xdb`     |
-| Zone A/B tables          | `0x3500400` / `0x3500600` | `0x200` each | **Modelled** — adjacent to optional settings; on write allow-list                        |
+| Zone A/B tables          | `0x3500400` / `0x3500600` | `0x200` each | **Modelled** — share erase unit `0x3500000` with optional settings below                 |
 | Optional settings (ext)  | `0x3500900`               | `0x60`       | Display lines @ `+0x00` / `+0x10` (14 chars each); power-on password @ `+0x20` (8 chars) |
 | Optional settings (APRS) | `0x3501280`               | `0x30`       | GPS/APRS info — hex preview only in Studio                                               |
 | Alarm settings           | `0x3482e00`               | `0x10`       | Digital call type @ `+0x00`                                                              |
 | Alarm settings           | `0x3483000`               | `0x30`       | Analog/digital emergency alarm flags; man-down also @ optional main `+0x24` / `+0x4f`    |
 
-Chinese UI on the radio is modelled in **LocalInfo ExpertOptions** (`+0x04` and `+0x05` both `0`), not optional-settings CPS language. A second hardware incident (Chinese + startup password after Write from a good hydration bag) was traced to **LocalInfo replay on upload** ([#753](https://github.com/pskillen/codeplug-studio/issues/753)) — fixed by WATCH-08 write fencing (LocalInfo is Read for preview but **not serial-written**).
+Chinese UI on the radio is driven by **optional settings** (CPS language, power-on password) when those regions are erased — not LocalInfo ExpertOptions. Bag diffs on a faulted radio showed LocalInfo byte-identical between healthy and faulted reads ([#768](https://github.com/pskillen/codeplug-studio/issues/768)); the brick came from erase collateral in shared flash units, not LocalInfo replay.
 
 ### LocalInfo ExpertOptions (Read only — not written on Studio Write)
 
@@ -89,20 +91,24 @@ Chinese UI on the radio is modelled in **LocalInfo ExpertOptions** (`+0x04` and 
 
 `writeRole` labels LocalInfo **kept** — meaning **not re-derived from the library build** and **not serial-written** on Upload.
 
-## Write upload contract (WATCH-08 allow-list)
+## Write upload contract (WATCH-08 allow-list + sparse erase-unit RMW)
 
-Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `writableExtents.ts`) — only modelled banks may reach the serial port. `listWriteChunks` emits cache blocks inside those extents only; `atD890WriteMemory` rejects any other address. **ChannelData** is modelled as **32 per-block backed low halves** (`0x40000` each, `0x80000` pitch) — mirrored upper-half addresses are refused ([#791](https://github.com/pskillen/codeplug-studio/issues/791)).
+Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `writableExtents.ts`) to define what Studio may **change** from the library build. `listWriteChunks` still emits only modelled banks; **sparse erase-unit RMW** ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) may **transmit** unchanged bytes inside touched `0x40000` units so co-resident optional settings and alarms survive flash erase. `atD890WriteMemory` uses a touched-unit transmit fence during upload; LocalInfo’s unit is never touched so LocalInfo is never serial-written.
+
+**Sparse RMW flow (upload):** compute touched erase units from modelled write addresses → fresh-read each unit from the connected radio → identity-check LocalInfo serial against hydration → overlay modelled chunks → stage only non-`0xff` 16-byte blocks → `END` commits.
+
+**ChannelData** is modelled as **32 per-block backed low halves** (`0x40000` each, `0x80000` pitch) — mirrored upper-half addresses are refused ([#791](https://github.com/pskillen/codeplug-studio/issues/791)).
 
 **Pre-Write sentinel plausibility:** before any write frames, Studio Reads six never-write spans and **refuses** the Write when any region reads entirely `0xff` (already-erased / faulted radio). Regions: `LocalInfo`; optional-settings main (`0x3500000`/`0x200`), ext (`0x3500900`/`0x60`), APRS (`0x3501280`/`0x30`); alarm bitmap (`0x3482e00`/`0x10`) and data (`0x3483000`/`0x30`). In-session pre/post compare was removed ([#769](https://github.com/pskillen/codeplug-studio/issues/769)) — reads in the same PROGRAM session return flash, not the RAM shadow. **Cross-session verify** after `END` (power-cycle + reconnect diff) is deferred to [#769](https://github.com/pskillen/codeplug-studio/issues/769) slice 5b / PR6.
 
 **Encode guards:** MR channel encode rejects AM airband frequencies (108–137 MHz) and non-BCD-encodable Hz before bytes are packed (`channelEncodeGuards.ts`).
 
-| Category                                                   | `writeRole`     | Re-derived from build? | Serial-written on Upload?                                  |
-| ---------------------------------------------------------- | --------------- | ---------------------- | ---------------------------------------------------------- |
-| Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced`      | Yes                    | Yes (allow-listed)                                         |
-| LocalInfo                                                  | `kept`          | No                     | **No** — Read for preview; pre-Write plausibility only     |
-| Optional settings, alarm                                   | `kept`          | No                     | **No** — Read/stash for Radio Info; pre-Write plausibility |
-| DigitalContact\*, boot images, crypto, …                   | `kept` / unread | No                     | No — absent from cache unless future Read tickets          |
+| Category                                                   | `writeRole`     | Re-derived from build? | On Upload                                                            |
+| ---------------------------------------------------------- | --------------- | ---------------------- | -------------------------------------------------------------------- |
+| Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced`      | Yes                    | Written from build (allow-listed)                                    |
+| LocalInfo                                                  | `kept`          | No                     | **Not transmitted** — identity check only; unit not touched          |
+| Optional settings, alarm                                   | `kept`          | No                     | **Preserved** — fresh-read + unchanged re-stage inside touched units |
+| DigitalContact\*, boot images, crypto, …                   | `kept` / unread | No                     | Untouched — absent from cache unless future Read tickets             |
 
 **Serial Write projection (DMR bank only):** `RadioWriteProjection` for `radio-io-at-d890uv` partitions receive-only AM airband and broadcast FM out of MR channels, zones, and scan — same bank split as Anytone CSV egress ([#755](https://github.com/pskillen/codeplug-studio/issues/755)). Omitted banks stay on the radio; use Anytone CSV (`AMAir.CSV` / `FM.CSV`) to update them until binary AmAir Write exists — see [am-air.md](../../../export-formats/anytone/am-air.md). Export **Web Serial** shows an operator-facing **What Write updates** table (written vs deferred vs left alone).
 
@@ -140,6 +146,20 @@ Regions that matter for erase-unit RMW ([#768](https://github.com/pskillen/codep
 | ChannelSet               | `0x3482a00` | `0x34c2a00`        | `0x200` | flat   | 490 / 0                   |
 
 Sparse erase-unit RMW may treat `0x3480000` and `0x3500000` units as 1:1 address → cell. Dual all-`0xff` spans would be inconclusive (not “flat”); none of the measured pairs were.
+
+## Flash erase unit
+
+Measured in `ChannelData` 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`): **`0x40000` (256 kB), aligned**. Writing any 16-byte block into a unit erases the whole unit at `END`; only bytes staged in the same PROGRAM session survive.
+
+| Erase unit base | Modelled writes (examples)                                       | Co-resident regions preserved by sparse RMW        |
+| --------------- | ---------------------------------------------------------------- | -------------------------------------------------- |
+| `0x3480000`     | `ChannelSet`, `ZoneSet`, `ZoneHide`, `RadioIdSet`, `ScanListSet` | `AlarmBitmap` `0x3482e00`, `AlarmData` `0x3483000` |
+| `0x3500000`     | `ZoneAChannel`, `ZoneBChannel`                                   | Optional settings main/ext/APRS `0x3500000`…       |
+| `0x1000000`+    | `ChannelData` (per backed block)                                 | Unused slots in same unit                          |
+
+**Sparse staging:** only non-`0xff` 16-byte blocks are re-transmitted (~37.5 kB across 14 touched units in a typical codeplug, vs 3.67 MB dense). Fresh-read source is the **connected radio**, not the hydration bag; LocalInfo serial must match the stash or Write is refused.
+
+`LocalInfo` (`0x4f80000`) sits in unit `0x4f80000` — outside the modelled write set — so it is never transmitted.
 
 ## Channel address formula
 
