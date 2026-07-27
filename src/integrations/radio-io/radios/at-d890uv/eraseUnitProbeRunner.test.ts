@@ -3,10 +3,12 @@ import {
   AtD890ScriptedPipe,
   enqueueAtD890ReadReply,
   scriptAtD890Connect,
+  scriptAtD890NegotiateReadBlock,
   scriptAtD890WriteAck,
 } from './__fixtures__/scriptedPipe.ts';
 import { buildAtD890WriteTrials, makeAtD890WritePayload } from './writeBlockProbe.ts';
 import {
+  runAtD890ConfigAliasCheck,
   runAtD890ProbeDiagnose,
   runAtD890ProbeInspect,
   runAtD890ProbeMeasure,
@@ -15,6 +17,10 @@ import {
   runAtD890WriteBlockProbe,
   runAtD890WriteBlockVerify,
 } from './eraseUnitProbeRunner.ts';
+import {
+  AT_D890_CONFIG_ALIAS_PAIRS,
+  AT_D890_CONFIG_ALIAS_STRIDE,
+} from './configAliasProbe.ts';
 import {
   AT_D890_PROBE,
   listAtD890ProbeSentinels,
@@ -31,6 +37,75 @@ function writtenAddresses(pipe: AtD890ScriptedPipe): number[] {
     .filter((w) => w[0] === 0x57 /* 'W' */ && w.length === 24)
     .map((w) => ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0);
 }
+
+function readAddresses(pipe: AtD890ScriptedPipe): number[] {
+  return pipe.writes
+    .filter((w) => w[0] === 0x52 /* 'R' */)
+    .map((w) => ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0);
+}
+
+function scriptConfigAliasMemory(
+  memory: Map<number, Uint8Array>,
+  maxBlock = 0xf0,
+): AtD890ScriptedPipe {
+  const pipe = new AtD890ScriptedPipe();
+  scriptAtD890NegotiateReadBlock(pipe, D890_MAP.LocalInfo, maxBlock, D890_MAP.LocalInfoLength);
+  pipe.readResponder = (addr, len) => {
+    for (const [start, data] of memory) {
+      if (addr >= start && addr + len <= start + data.length) {
+        if (start === D890_MAP.LocalInfo && len > maxBlock) return null;
+        return data.subarray(addr - start, addr - start + len);
+      }
+    }
+    return null;
+  };
+  scriptAtD890Connect(pipe);
+  return pipe;
+}
+
+describe('runAtD890ConfigAliasCheck', () => {
+  it('never writes and reads each base and alias candidate', async () => {
+    const memory = new Map<number, Uint8Array>();
+    for (const pair of AT_D890_CONFIG_ALIAS_PAIRS) {
+      const base = new Uint8Array(pair.length).fill(0xff);
+      base[0] = 0x01;
+      const alias = new Uint8Array(pair.length).fill(0xff);
+      alias[0] = 0x02;
+      memory.set(pair.base, base);
+      memory.set(pair.aliasCandidate, alias);
+    }
+    const pipe = scriptConfigAliasMemory(memory);
+    const r = await runAtD890ConfigAliasCheck(pipe);
+
+    expect(writtenAddresses(pipe)).toEqual([]);
+    expect(sentEnd(pipe)).toBe(true);
+    for (const pair of AT_D890_CONFIG_ALIAS_PAIRS) {
+      expect(readAddresses(pipe)).toContain(pair.base);
+      expect(readAddresses(pipe)).toContain(pair.aliasCandidate);
+      expect(pair.aliasCandidate - pair.base).toBe(AT_D890_CONFIG_ALIAS_STRIDE);
+    }
+    expect(r.report.sparseRmwGate).toBe('proceed');
+    expect(r.markdown).toContain('PR5 gate');
+  });
+
+  it('reports replan when LocalInfo aliases', async () => {
+    const local = new Uint8Array(D890_MAP.LocalInfoLength).fill(0xff);
+    local.set(new TextEncoder().encode('SN1234567890ABCD'), 0x30);
+    const memory = new Map<number, Uint8Array>([
+      [D890_MAP.LocalInfo, local],
+      [D890_MAP.LocalInfo + AT_D890_CONFIG_ALIAS_STRIDE, new Uint8Array(local)],
+    ]);
+    for (const pair of AT_D890_CONFIG_ALIAS_PAIRS) {
+      if (pair.id === 'localInfo') continue;
+      memory.set(pair.base, new Uint8Array(pair.length).fill(0xff));
+      memory.set(pair.aliasCandidate, new Uint8Array(pair.length).fill(0xff));
+    }
+    const pipe = scriptConfigAliasMemory(memory);
+    const r = await runAtD890ConfigAliasCheck(pipe);
+    expect(r.report.sparseRmwGate).toBe('replan');
+    expect(r.report.pairs.find((p) => p.id === 'localInfo')?.status).toBe('aliased');
+  });
+});
 
 function sentEnd(pipe: AtD890ScriptedPipe): boolean {
   return pipe.writes.some((w) => w.length === 3 && w[0] === 0x45 && w[1] === 0x4e && w[2] === 0x44);

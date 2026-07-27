@@ -39,7 +39,14 @@ import {
   type AtD890ThroughputResult,
 } from './eraseUnitProbe.ts';
 import {
+  AT_D890_CONFIG_ALIAS_PAIRS,
+  analyseAtD890ConfigAliasReport,
+  formatAtD890ConfigAliasMarkdown,
+  type AtD890ConfigAliasReport,
+} from './configAliasProbe.ts';
+import {
   benchmarkAtD890Sweep,
+  negotiateAtD890ReadBlockSize,
   profileAtD890AccessPattern,
   profileAtD890Link,
   type AtD890AccessProfile,
@@ -522,4 +529,107 @@ export async function runAtD890ProbeMeasure(
   const { readings, throughput } = await readSentinels(pipe, opts, 'Measure');
   await commit(pipe);
   return { result: analyseAtD890EraseUnit(readings), readings, readThroughput: throughput };
+}
+
+export interface AtD890ConfigAliasCheckResult {
+  model: string;
+  readBlockSize: number;
+  report: AtD890ConfigAliasReport;
+  markdown: string;
+  readThroughput: AtD890ThroughputResult;
+}
+
+/**
+ * Read-only config-region alias check (#792).
+ *
+ * Compares each erase-relevant region against its +0x40000 alias candidate. Writes nothing.
+ */
+export async function runAtD890ConfigAliasCheck(
+  pipe: BytePipe,
+  opts: AtD890ProbeOpts = {},
+): Promise<AtD890ConfigAliasCheckResult> {
+  const model = await enterProgramAndIdent(pipe, opts.signal);
+
+  let readBlockSize = AT_D890_BLOCK_SIZE;
+  try {
+    const negotiated = await negotiateAtD890ReadBlockSize(pipe, D890_MAP.LocalInfo, opts);
+    readBlockSize = negotiated.bestBlockSize;
+  } catch {
+    /* Fall back to 16-byte reads when negotiation fails. */
+  }
+
+  const readings: {
+    id: (typeof AT_D890_CONFIG_ALIAS_PAIRS)[number]['id'];
+    baseBytes: Uint8Array;
+    aliasBytes: Uint8Array;
+  }[] = [];
+  let frames = 0;
+  const started = Date.now();
+
+  for (let i = 0; i < AT_D890_CONFIG_ALIAS_PAIRS.length; i++) {
+    const pair = AT_D890_CONFIG_ALIAS_PAIRS[i]!;
+    const chunksPerSpan = Math.ceil(pair.length / readBlockSize);
+
+    throwIfAborted(opts.signal);
+    reportProgress(
+      opts.onProgress,
+      {
+        cur: i * 2 + 1,
+        max: AT_D890_CONFIG_ALIAS_PAIRS.length * 2,
+        msg: `Reading ${pair.label} at ${pair.base.toString(16)}`,
+        stage: 'Config alias',
+      },
+      opts.signal,
+    );
+    const baseBytes = await atD890ReadMemory(
+      pipe,
+      pair.base,
+      pair.length,
+      opts.signal,
+      readBlockSize,
+    );
+    frames += chunksPerSpan;
+
+    throwIfAborted(opts.signal);
+    reportProgress(
+      opts.onProgress,
+      {
+        cur: i * 2 + 2,
+        max: AT_D890_CONFIG_ALIAS_PAIRS.length * 2,
+        msg: `Reading ${pair.label} alias at ${pair.aliasCandidate.toString(16)}`,
+        stage: 'Config alias',
+      },
+      opts.signal,
+    );
+    const aliasBytes = await atD890ReadMemory(
+      pipe,
+      pair.aliasCandidate,
+      pair.length,
+      opts.signal,
+      readBlockSize,
+    );
+    frames += chunksPerSpan;
+
+    readings.push({ id: pair.id, baseBytes, aliasBytes });
+  }
+
+  const report = analyseAtD890ConfigAliasReport(readings);
+  const markdown = formatAtD890ConfigAliasMarkdown(report, {
+    measuredAt: new Date().toISOString().slice(0, 10),
+    model,
+    readBlockSize,
+  });
+
+  await commit(pipe);
+
+  return {
+    model,
+    readBlockSize,
+    report,
+    markdown,
+    readThroughput: summariseAtD890Throughput({
+      frames,
+      elapsedMs: Date.now() - started,
+    }),
+  };
 }
