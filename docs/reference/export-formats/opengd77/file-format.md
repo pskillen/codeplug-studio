@@ -32,7 +32,7 @@ At the vendor boundary:
 - Build `overrides.name` and export wire names are **CPS labels**, not internal relationship keys.
 - Internal models use stable UUIDs (`Channel.id`, `Zone.memberChannelIds`, …).
 - `Zone.meta.imported.memberWireNames` and `RxGroupList.meta.imported.memberWireNames` preserve imported vendor names for export and unresolved-member reporting (when import ships).
-- Columns with no first-class library field (`Zone Skip`, `No Beep`, `No Eco`, `TS1_TA_Tx`, `TS2_TA_Tx ID`) export **documented CPS-safe defaults** when unmodelled — see [channels.md](channels.md) ([#438](https://github.com/pskillen/codeplug-studio/issues/438)).
+- Columns with no first-class library field (`No Beep`, `No Eco`, `TS1_TA_Tx`, `TS2_TA_Tx ID`) export **documented CPS-safe defaults** when unmodelled — see [channels.md](channels.md) ([#438](https://github.com/pskillen/codeplug-studio/issues/438)).
 
 ## Boolean and enum conversion
 
@@ -47,10 +47,10 @@ At the vendor boundary:
 
 | Tier                    | Meaning                                                  | Examples                                                                                                                           |
 | ----------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **Lossless**            | Parsed to typed/boolean model fields and serialised back | `All Skip` ↔ `scanInclusion`, `Rx Only` ↔ `forbidTransmit` cascade, `Use Location`, `Channel Type` for FM/DMR                      |
+| **Lossless**            | Parsed to typed/boolean model fields and serialised back | `All Skip` / `Zone Skip` ↔ `scanInclusion`, `Rx Only` ↔ `forbidTransmit` cascade, `Use Location`, `Channel Type` for FM/DMR |
 | **String pass-through** | Stored as string; export writes stored/computed value    | Frequencies, tones, `Contact`, `TG List`                                                                                           |
-| **Studio default**      | No library field; export emits CPS-safe constant         | `Zone Skip`/`No Beep`/`No Eco` → `No`; digital TA columns → `Off` ([#438](https://github.com/pskillen/codeplug-studio/issues/438)) |
-| **Lossy**               | Internal richness not representable on wire              | Specific modes (`ysf`, `am`, …) collapse to `Analogue`/`Digital` — see [channel-modes.md](../../channel-modes.md)                  |
+| **Studio default**      | No library field; export emits CPS-safe constant         | `No Beep`/`No Eco` → `No`; digital TA columns → `Off` ([#438](https://github.com/pskillen/codeplug-studio/issues/438))         |
+| **Lossy**               | Internal richness not representable on wire              | Non-DMR digital modes (`ysf`, `dstar`, …) **dropped** at export for modelled 1701/MD-9600 ([#773](https://github.com/pskillen/codeplug-studio/issues/773)) |
 | **Header-only**         | Export includes headers; body not modelled               | `DTMF.csv`, `APRS.csv` (except channel `APRS` name)                                                                                |
 | **Not imported**        | File skipped entirely on import (today)                  | `DTMF.csv`, `APRS.csv`                                                                                                             |
 

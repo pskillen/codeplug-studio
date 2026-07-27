@@ -40,3 +40,5 @@ Active debt under epic [#502](https://github.com/pskillen/codeplug-studio/issues
 - [x] CPS-safe defaults for unmodelled channel columns ([#438](https://github.com/pskillen/codeplug-studio/issues/438))
 - [x] Profile export limits for Radio characteristics ([#516](https://github.com/pskillen/codeplug-studio/issues/516))
 - [x] Export golden CSV snapshots + mapping-tests doc ([#92](https://github.com/pskillen/codeplug-studio/issues/92))
+- [x] Zone Skip mirrors All Skip on CSV + serial Write ([#772](https://github.com/pskillen/codeplug-studio/issues/772))
+- [x] Drop non-DMR digital modes at OpenGD77 export boundary ([#773](https://github.com/pskillen/codeplug-studio/issues/773))
