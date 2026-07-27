@@ -8,19 +8,19 @@ Authoritative reference for the **OpenGD77 Customer Programming Software (CPS) C
 
 ## Studio status
 
-| Capability | Status   | Code                                                                 |
-| ---------- | -------- | -------------------------------------------------------------------- |
-| **Export** | Shipped  | [`adapter.ts`](../../../../src/core/import-export/formats/opengd77/adapter.ts), [`serialise.ts`](../../../../src/core/import-export/formats/opengd77/serialise.ts) |
-| **Import** | Planned  | [#522](https://github.com/pskillen/codeplug-studio/issues/522)–[#526](https://github.com/pskillen/codeplug-studio/issues/526) |
+| Capability | Status  | Code                                                                                                                                                               |
+| ---------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Export** | Shipped | [`adapter.ts`](../../../../src/core/import-export/formats/opengd77/adapter.ts), [`serialise.ts`](../../../../src/core/import-export/formats/opengd77/serialise.ts) |
+| **Import** | Planned | [#522](https://github.com/pskillen/codeplug-studio/issues/522)–[#526](https://github.com/pskillen/codeplug-studio/issues/526)                                      |
 
 Column tables below describe **shipped export** behaviour and **target import** behaviour (archive + sibling-format patterns). Where import is not yet implemented, rows are marked accordingly.
 
 ## Two-layer model
 
-| Layer                   | Location                                                  | Contents                                                                                                          |
-| ----------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Generic wire format** | This directory (`channels.md`, `zones.md`, …)             | Column headers, semantic mapping to internal models, import/export conversion rules, fidelity tiers                 |
-| **Radio profiles**      | [`profiles.md`](profiles.md) · [`radios/`](../../radios/) | Studio `profileId` → radio home; limits and features in radios tree                                               |
+| Layer                   | Location                                                  | Contents                                                                                            |
+| ----------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **Generic wire format** | This directory (`channels.md`, `zones.md`, …)             | Column headers, semantic mapping to internal models, import/export conversion rules, fidelity tiers |
+| **Radio profiles**      | [`profiles.md`](profiles.md) · [`radios/`](../../radios/) | Studio `profileId` → radio home; limits and features in radios tree                                 |
 
 The **internal library model is format- and radio-agnostic** ([data model](../../../features/data-model/README.md)). OpenGD77 radio-variant constraints are documented in radio profiles and are **applied at export** via `profileId` on the format build.
 
@@ -84,12 +84,12 @@ Target behaviour from archive `codeplug-tool` — **not shipped** in Studio yet.
 
 ## Sources
 
-| Source                                                                                                                                                             | Use                                                                                      |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Source                                                                                                                                                             | Use                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
 | [G4EML CSV Export and Import Features (PDF)](https://www.opengd77.com/downloads/PC_CPS/Latest/OpenGD77_CPS_CSV%20Features.pdf)                                     | Partial — older CPS (24-col Channels); omits `APRS.csv`; use with shipped adapter code |
-| [G4EML CSV Features (HTML mirror)](https://www.lyonscomputer.com.au/Radio-Transceivers/Radioddity/GD77/2025-Codeplug-Build/OpenGD77_CPS_CSV_Features-Updated.html) | Same content, searchable                                                                 |
-| [`src/core/import-export/formats/opengd77/columns.ts`](../../../../src/core/import-export/formats/opengd77/columns.ts)                                             | Canonical headers in shipped export adapter                                              |
-| [qDMR OpenGD77Codeplug](https://static.dm3mat.de/qdmr/libdmrconf/classOpenGD77Codeplug.html)                                                                       | Secondary limits reference                                                               |
+| [G4EML CSV Features (HTML mirror)](https://www.lyonscomputer.com.au/Radio-Transceivers/Radioddity/GD77/2025-Codeplug-Build/OpenGD77_CPS_CSV_Features-Updated.html) | Same content, searchable                                                               |
+| [`src/core/import-export/formats/opengd77/columns.ts`](../../../../src/core/import-export/formats/opengd77/columns.ts)                                             | Canonical headers in shipped export adapter                                            |
+| [qDMR OpenGD77Codeplug](https://static.dm3mat.de/qdmr/libdmrconf/classOpenGD77Codeplug.html)                                                                       | Secondary limits reference                                                             |
 
 Implementation code is expected to mirror this reference. When code and docs disagree, **code wins until fixed** — file a GitHub issue.
 

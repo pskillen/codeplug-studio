@@ -36,23 +36,23 @@ At the vendor boundary:
 
 ## Boolean and enum conversion
 
-| Wire pattern                              | Internal                | Import (target)                                        | Export (shipped)                         |
-| ----------------------------------------- | ----------------------- | ------------------------------------------------------ | ---------------------------------------- |
-| `Yes` / `No` (case-insensitive on import) | `boolean`               | `parseYesNo`                                           | `wireYesNo` → `Yes` / `No`               |
-| `Off` / non-empty VOX                     | `voxEnabled: boolean`   | `Off` or empty → `false`; any other non-empty → `true` | `wireVoxEnabled` → `Off` / `On`          |
-| `Group` / `Private` (`ID Type`)           | `TalkGroup` / `Contact` | case-insensitive `group` check                         | `Group` / `Private`                      |
-| `Analogue` / `Digital`                    | `ChannelMode`           | see [channel-modes.md](../../channel-modes.md)         | collapse to `Analogue` / `Digital`       |
+| Wire pattern                              | Internal                | Import (target)                                        | Export (shipped)                   |
+| ----------------------------------------- | ----------------------- | ------------------------------------------------------ | ---------------------------------- |
+| `Yes` / `No` (case-insensitive on import) | `boolean`               | `parseYesNo`                                           | `wireYesNo` → `Yes` / `No`         |
+| `Off` / non-empty VOX                     | `voxEnabled: boolean`   | `Off` or empty → `false`; any other non-empty → `true` | `wireVoxEnabled` → `Off` / `On`    |
+| `Group` / `Private` (`ID Type`)           | `TalkGroup` / `Contact` | case-insensitive `group` check                         | `Group` / `Private`                |
+| `Analogue` / `Digital`                    | `ChannelMode`           | see [channel-modes.md](../../channel-modes.md)         | collapse to `Analogue` / `Digital` |
 
 ## Fidelity tiers
 
-| Tier                    | Meaning                                                  | Examples                                                                                                          |
-| ----------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Lossless**            | Parsed to typed/boolean model fields and serialised back | `All Skip` ↔ `scanInclusion`, `Rx Only` ↔ `forbidTransmit` cascade, `Use Location`, `Channel Type` for FM/DMR     |
-| **String pass-through** | Stored as string; export writes stored/computed value    | Frequencies, tones, `Contact`, `TG List`                                                                          |
+| Tier                    | Meaning                                                  | Examples                                                                                                                           |
+| ----------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Lossless**            | Parsed to typed/boolean model fields and serialised back | `All Skip` ↔ `scanInclusion`, `Rx Only` ↔ `forbidTransmit` cascade, `Use Location`, `Channel Type` for FM/DMR                      |
+| **String pass-through** | Stored as string; export writes stored/computed value    | Frequencies, tones, `Contact`, `TG List`                                                                                           |
 | **Studio default**      | No library field; export emits CPS-safe constant         | `Zone Skip`/`No Beep`/`No Eco` → `No`; digital TA columns → `Off` ([#438](https://github.com/pskillen/codeplug-studio/issues/438)) |
-| **Lossy**               | Internal richness not representable on wire              | Specific modes (`ysf`, `am`, …) collapse to `Analogue`/`Digital` — see [channel-modes.md](../../channel-modes.md) |
-| **Header-only**         | Export includes headers; body not modelled               | `DTMF.csv`, `APRS.csv` (except channel `APRS` name)                                                               |
-| **Not imported**        | File skipped entirely on import (today)                  | `DTMF.csv`, `APRS.csv`                                                                                            |
+| **Lossy**               | Internal richness not representable on wire              | Specific modes (`ysf`, `am`, …) collapse to `Analogue`/`Digital` — see [channel-modes.md](../../channel-modes.md)                  |
+| **Header-only**         | Export includes headers; body not modelled               | `DTMF.csv`, `APRS.csv` (except channel `APRS` name)                                                                                |
+| **Not imported**        | File skipped entirely on import (today)                  | `DTMF.csv`, `APRS.csv`                                                                                                             |
 
 ## Locale and line endings
 

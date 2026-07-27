@@ -16,9 +16,9 @@ Export picks the **nearest ladder step** for non-exact percent values via `openg
 
 **Profile-specific ladders** (watts ↔ percent):
 
-| Profile           | Radio home                                                                 |
-| ----------------- | -------------------------------------------------------------------------- |
-| `opengd77-1701`   | [Baofeng DM-1701 — power.md](../../radios/baofeng/dm-1701/power.md)        |
+| Profile           | Radio home                                                                                                                             |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `opengd77-1701`   | [Baofeng DM-1701 — power.md](../../radios/baofeng/dm-1701/power.md)                                                                    |
 | `opengd77-md9600` | [TYT MD-9600 — power.md](../../radios/tyt/md-9600/power.md) (validated [#441](https://github.com/pskillen/codeplug-studio/issues/441)) |
 
 User-power menu string (`+W-` / `-W+`) is **not modelled** in Studio; see [#440](https://github.com/pskillen/codeplug-studio/issues/440) after CPS elicitation ([#403](https://github.com/pskillen/codeplug-studio/issues/403)).
@@ -27,11 +27,11 @@ User-power menu string (`+W-` / `-W+`) is **not modelled** in Studio; see [#440]
 
 Mode-dependent wire rules — see [channels.md](channels.md#mode-dependent-columns).
 
-| OpenGD77 wire (export, analogue) | Internal `squelch` | Notes                                      |
-| -------------------------------- | ------------------ | ------------------------------------------ |
-| `Disabled`                       | `null` or `0`      | Radio default / unset                      |
-| `N%` (e.g. `75%`)                | `N` (0–100)        | Percent level                              |
-| _(empty)_                        | —                  | Digital channels: always empty on export   |
+| OpenGD77 wire (export, analogue) | Internal `squelch` | Notes                                    |
+| -------------------------------- | ------------------ | ---------------------------------------- |
+| `Disabled`                       | `null` or `0`      | Radio default / unset                    |
+| `N%` (e.g. `75%`)                | `N` (0–100)        | Percent level                            |
+| _(empty)_                        | —                  | Digital channels: always empty on export |
 
 `Master`, `Open`, and `Closed` appear in G4EML / user-guide prose but are **not confirmed** in Studio export today — see [#439](https://github.com/pskillen/codeplug-studio/issues/439) after elicitation ([#403](https://github.com/pskillen/codeplug-studio/issues/403)).
 
