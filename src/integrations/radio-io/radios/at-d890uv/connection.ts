@@ -78,6 +78,28 @@ export async function atD890ReadMemory(
   return out;
 }
 
+/**
+ * Single read frame at an arbitrary block length, bypassing the 16-byte loop.
+ *
+ * The wire length field is a `u8`, so the protocol can express far more than the 16 bytes
+ * `atD890ReadMemory` uses. Whether a given radio honours a larger block is a question only
+ * hardware answers — hence this raw form, used by the link prober. Read-only.
+ */
+export async function atD890ReadBlockRaw(
+  pipe: BytePipe,
+  address: number,
+  length: number,
+  signal?: AbortSignal,
+): Promise<Uint8Array> {
+  throwIfAborted(signal);
+  if (length < 1 || length > 0xff) {
+    throw new RangeError(`D890 raw read length must be 1..255, got ${length}`);
+  }
+  await pipe.write(makeAnytoneDmrReadFrame(address, length));
+  const reply = await pipe.readExact(length + 8, AT_D890_CONNECTION.TIMEOUT.READ_MS);
+  return parseAnytoneDmrReadReply(reply, length);
+}
+
 export async function atD890WriteMemory(
   pipe: BytePipe,
   address: number,
@@ -100,6 +122,37 @@ export async function atD890WriteMemory(
         `D890 write not ACKed at 0x${addr.toString(16)}: got 0x${ack[0]?.toString(16) ?? '??'}`,
       );
     }
+  }
+}
+
+/**
+ * Single write frame at an arbitrary 16-aligned block length, bypassing the 16-byte loop.
+ *
+ * Counterpart to {@link atD890ReadBlockRaw}: the wire length field is a `u8`, and reads are
+ * measured to honour 240 bytes, but whether writes do is untested. Used by the write-block
+ * probe. Still address-fenced — this widens the block size, never the allow-list.
+ */
+export async function atD890WriteBlockRaw(
+  pipe: BytePipe,
+  address: number,
+  data: Uint8Array,
+  signal?: AbortSignal,
+): Promise<void> {
+  throwIfAborted(signal);
+  if (data.length < 1 || data.length > 0xff) {
+    throw new RangeError(`D890 raw write length must be 1..255, got ${data.length}`);
+  }
+  // Every 16-byte boundary the frame spans must be allow-listed, so a long frame cannot
+  // straddle out of a permitted bank.
+  for (let off = 0; off < data.length; off += ANYTONE_DMR_BLOCK_SIZE) {
+    assertAtD890WritableAddress(address + off);
+  }
+  await pipe.write(makeAnytoneDmrWriteFrame(address, data.length, data));
+  const ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);
+  if (ack[0] !== 0x06) {
+    throw new RadioProtocolError(
+      `D890 write not ACKed at 0x${address.toString(16)} (${data.length} bytes): got 0x${ack[0]?.toString(16) ?? '??'}`,
+    );
   }
 }
 
