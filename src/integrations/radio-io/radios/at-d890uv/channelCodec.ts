@@ -5,7 +5,8 @@
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto, RadioChannelMode, RadioTone } from '../../radioChannelDto.ts';
-import { decodeBcdFrequencyHz, encodeBcdFrequencyHz } from './bcd.ts';
+import { encodeBcdFrequencyHz, decodeBcdFrequencyHz } from './bcd.ts';
+import { assertAtD890MrChannelFrequencies } from './channelEncodeGuards.ts';
 import { clearBitmapBitsBelow, listSetBits, setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
@@ -168,6 +169,7 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   if (ch.empty || ch.rxHz <= 0) {
     return data;
   }
+  assertAtD890MrChannelFrequencies(ch);
   const rxHz = ch.rxHz;
   const txHz = ch.txHz > 0 ? ch.txHz : rxHz;
   data.set(encodeBcdFrequencyHz(rxHz), 0);
