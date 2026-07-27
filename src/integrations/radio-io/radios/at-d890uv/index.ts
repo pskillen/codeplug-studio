@@ -30,6 +30,9 @@ export {
 } from './cloneSummary.ts';
 export {
   settingsRetainPreview,
+  optionalSettingsRetainPreview,
+  optionalSettingsAprsPreview,
+  alarmRetainPreview,
   localInfoRegisterPreview,
   AT_D890_NOT_IN_CAPTURE,
   type AtD890RetainPreviewRow,

@@ -36,6 +36,9 @@ describe('AtD890uvProtocol', () => {
     const cache = radio.getDownloadCache();
     expect(cache?.blocks.has(D890_MAP.LocalInfo)).toBe(true);
     expect(cache?.blocks.has(D890_MAP.ChannelSet)).toBe(true);
+    expect(cache?.blocks.has(D890_MAP.OptionalSettingsMain)).toBe(true);
+    expect(cache?.blocks.has(D890_MAP.OptionalSettingsExt)).toBe(true);
+    expect(cache?.blocks.has(D890_MAP.AlarmBitmap)).toBe(true);
   });
 
   it('uploads after seeding hydration and skips safe-skip and LocalInfo', async () => {
@@ -104,6 +107,31 @@ describe('AtD890uvProtocol', () => {
     scriptAtD890Connect(pipe);
     const local = new Uint8Array(D890_MAP.LocalInfoLength).fill(0xff);
     enqueueAtD890ReadReply(pipe, D890_MAP.LocalInfo, local);
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.OptionalSettingsMain,
+      new Uint8Array(D890_MAP.OptionalSettingsMainLength).fill(0xff),
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.OptionalSettingsExt,
+      new Uint8Array(D890_MAP.OptionalSettingsExtLength).fill(0xff),
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.OptionalSettingsAprs,
+      new Uint8Array(D890_MAP.OptionalSettingsAprsLength).fill(0xff),
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.AlarmBitmap,
+      new Uint8Array(D890_MAP.AlarmBitmapLength).fill(0xff),
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.AlarmData,
+      new Uint8Array(D890_MAP.AlarmDataLength).fill(0xff),
+    );
     const channelSet = new Uint8Array(0x200);
     setBitmapBit(channelSet, 128, true);
     enqueueAtD890ReadReply(pipe, D890_MAP.ChannelSet, channelSet);

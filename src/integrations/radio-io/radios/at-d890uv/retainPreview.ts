@@ -113,6 +113,148 @@ export function settingsRetainPreview(localInfo: Uint8Array): AtD890RetainPrevie
   return rows;
 }
 
+const AT_D890_CPS_LANGUAGE = ['English', 'German'] as const;
+const AT_D890_POWERON_INTERFACE = ['Default Interface', 'Custom Char', 'Custom Picture'] as const;
+
+function enumLabel<T extends readonly string[]>(
+  values: T,
+  index: number,
+  fallback: string,
+): string {
+  return values[index] ?? `${fallback} (${index})`;
+}
+
+/**
+ * Optional settings forensic preview (Read/stash only — never serial-written).
+ * Chinese UI lives in LocalInfo ExpertOptions, not CPS language here.
+ */
+export function optionalSettingsRetainPreview(
+  main: Uint8Array,
+  ext: Uint8Array,
+): AtD890RetainPreviewRow[] {
+  if (main.length === 0 && ext.length === 0) return [];
+  const baseMain = D890_MAP.OptionalSettingsMain;
+  const baseExt = D890_MAP.OptionalSettingsExt;
+  const rows: AtD890RetainPreviewRow[] = [];
+
+  const pushMain = (off: number, label: string, value: string) => {
+    rows.push({
+      address: hexAddress(baseMain + off),
+      offset: offsetLabel(off),
+      label,
+      value,
+    });
+  };
+  const pushExt = (off: number, label: string, value: string) => {
+    rows.push({
+      address: hexAddress(baseExt + off),
+      offset: offsetLabel(off),
+      label,
+      value,
+    });
+  };
+
+  rows.push({
+    address: hexAddress(D890_MAP.LocalInfo + 0x04),
+    offset: '+0x04/+0x05',
+    label: 'Chinese UI (Expert options)',
+    value: 'See Local info above — separate from CPS language below',
+  });
+
+  if (main.length > 0) {
+    const iface = main[0x06] ?? 0;
+    pushMain(0x06, 'Power-on interface', enumLabel(AT_D890_POWERON_INTERFACE, iface, 'unknown'));
+    const lang = main[0x05] ?? 0;
+    pushMain(0x05, 'CPS language', enumLabel(AT_D890_CPS_LANGUAGE, lang, 'unknown'));
+    const pwdEnable = main[0x07] ?? 0;
+    pushMain(0x07, 'Power-on password enable', bit0(pwdEnable) ? 'On' : 'Off');
+    pushMain(0xd7, 'Default startup channel', String(main[0xd7] ?? 0));
+    pushMain(0xd8, 'Startup zone A', String(main[0xd8] ?? 0));
+    pushMain(0xd9, 'Startup zone B', String(main[0xd9] ?? 0));
+    pushMain(0xda, 'Startup channel A', String(main[0xda] ?? 0));
+    pushMain(0xdb, 'Startup channel B', String(main[0xdb] ?? 0));
+  }
+
+  if (ext.length > 0) {
+    pushExt(0x00, 'Power-on display line 1', readAsciiField(ext, 0x00, 14) || '(empty)');
+    pushExt(0x10, 'Power-on display line 2', readAsciiField(ext, 0x10, 14) || '(empty)');
+    const pwd = readAsciiField(ext, 0x20, 8) || '(empty)';
+    pushExt(0x20, 'Power-on password (sensitive)', pwd);
+  }
+
+  return rows;
+}
+
+/** APRS optional buffer — hex preview only. */
+export function optionalSettingsAprsPreview(aprs: Uint8Array): AtD890RetainPreviewRow[] {
+  if (aprs.length === 0) return [];
+  const preview = hexDump(aprs.subarray(0, Math.min(aprs.length, 16)));
+  const suffix = aprs.length > 16 ? '…' : '';
+  return [
+    {
+      address: hexAddress(D890_MAP.OptionalSettingsAprs),
+      offset: '+0x00',
+      label: 'GPS/APRS info (hex)',
+      value: `${preview}${suffix} (${aprs.length} bytes)`,
+    },
+  ];
+}
+
+/** Light alarm forensic rows (Read/stash only). */
+export function alarmRetainPreview(
+  main: Uint8Array,
+  alarmBitmap: Uint8Array,
+  alarmData: Uint8Array,
+): AtD890RetainPreviewRow[] {
+  const rows: AtD890RetainPreviewRow[] = [];
+  const pushBitmap = (off: number, label: string, value: string) => {
+    rows.push({
+      address: hexAddress(D890_MAP.AlarmBitmap + off),
+      offset: offsetLabel(off),
+      label,
+      value,
+    });
+  };
+  const pushData = (off: number, label: string, value: string) => {
+    rows.push({
+      address: hexAddress(D890_MAP.AlarmData + off),
+      offset: offsetLabel(off),
+      label,
+      value,
+    });
+  };
+
+  if (main.length > 0x24) {
+    rows.push({
+      address: hexAddress(D890_MAP.OptionalSettingsMain + 0x24),
+      offset: '+0x24',
+      label: 'Man-down (optional main)',
+      value: bit0(main[0x24]!) ? 'On' : 'Off',
+    });
+    if (main.length > 0x4f) {
+      rows.push({
+        address: hexAddress(D890_MAP.OptionalSettingsMain + 0x4f),
+        offset: '+0x4f',
+        label: 'Man-down delay (optional main)',
+        value: String(main[0x4f] ?? 0),
+      });
+    }
+  }
+
+  if (alarmBitmap.length > 0) {
+    pushBitmap(0x00, 'Digital call type', String(alarmBitmap[0] ?? 0));
+  }
+
+  if (alarmData.length > 0) {
+    pushData(0x00, 'Analog emergency alarm', bit0(alarmData[0]!) ? 'On' : 'Off');
+  }
+  if (alarmData.length > 0x0a) {
+    pushData(0x0a, 'Digital emergency alarm', bit0(alarmData[0x0a]!) ? 'On' : 'Off');
+  }
+
+  return rows;
+}
+
 const LOCAL_INFO_FIELD_HINTS: { start: number; end: number; label: string }[] = [
   { start: 0x02, end: 0x03, label: 'full test mode' },
   { start: 0x03, end: 0x04, label: 'frequency mode' },
@@ -162,26 +304,6 @@ export function localInfoRegisterPreview(localInfo: Uint8Array): AtD890RegisterR
 
 /** Regions documented but not in Studio v1 Read — shown as a UI note. */
 export const AT_D890_NOT_IN_CAPTURE: readonly { address: string; label: string; note: string }[] = [
-  {
-    address: '0x3500000',
-    label: 'Optional settings (main)',
-    note: 'UI language, power-on password enable — not Read',
-  },
-  {
-    address: '0x3500900',
-    label: 'Optional settings (ext)',
-    note: 'Power-on password chars — not Read',
-  },
-  {
-    address: '0x3501280',
-    label: 'Optional settings (APRS)',
-    note: 'Not Read',
-  },
-  {
-    address: '0x3482e00',
-    label: 'Alarm settings',
-    note: 'Not Read',
-  },
   {
     address: '—',
     label: 'DigitalContact*, boot/BK images, crypto, AM air, roaming, AnalogBook',
