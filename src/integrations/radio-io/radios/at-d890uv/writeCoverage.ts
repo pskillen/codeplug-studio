@@ -11,8 +11,8 @@ export interface AtD890WriteCoverageRow {
 }
 
 export const AT_D890_WRITE_COVERAGE_STATUS_LABEL: Record<AtD890WriteCoverageStatus, string> = {
-  written: 'Updated from your build',
-  planned: 'Not written yet',
+  written: 'Updated from your library',
+  planned: 'Not supported yet',
   leftAlone: 'Left alone',
 };
 

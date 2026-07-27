@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Shows AT-D890UV operators which parts of the radio **Write** updates from their build, which are **not written yet** (use Anytone CSV), and which are **left alone** on the cable path. Rendered on **Export** when the Web Serial pathway is active.
+Shows AT-D890UV operators which parts of the radio **Write** updates from their library, which are **not supported yet** (use Anytone CSV), and which are **left alone** on the cable path. Rendered on **Export** when the Web Serial pathway is active.
 
 ## Props
 
@@ -20,7 +20,7 @@ Shows AT-D890UV operators which parts of the radio **Write** updates from their 
 ## Behaviour
 
 - Static rows from `AT_D890_WRITE_COVERAGE_ROWS` in `writeCoverage.ts` (no hex addresses).
-- Status labels: Updated from your build / Not written yet / Left alone.
+- Status labels with icons: check (updated from library), cross (not supported yet), minus (left alone).
 - Copy follows the [help writing styleguide](../../../docs/reference/writing-styleguide/help-writing-styleguide.md).
 - Does not gate Write — informational only.
 
