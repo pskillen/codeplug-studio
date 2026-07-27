@@ -10,10 +10,17 @@ import {
 } from '../../../kit/codecs/anytoneDmrRw.ts';
 import { D890_MAP } from '../constants.ts';
 import { AT_D890_SENTINEL_EXTENTS } from '../writableExtents.ts';
+import { AT_D890_ERASE_UNIT_BYTES } from '../eraseUnits.ts';
+import {
+  LOCAL_INFO_SERIAL_LENGTH,
+  LOCAL_INFO_SERIAL_OFFSET,
+} from '../identityCheck.ts';
 
 export class AtD890ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
   private bytes: number[] = [];
+  /** When true, each `W` frame is ACKed with `0x06` automatically. */
+  autoAckWrites = false;
 
   /**
    * When the byte queue is short, synthesize a read reply from the latest `R` frame.
@@ -29,6 +36,9 @@ export class AtD890ScriptedPipe implements BytePipe {
 
   async write(data: Uint8Array): Promise<void> {
     this.writes.push(data.slice());
+    if (this.autoAckWrites && data[0] === 0x57) {
+      this.bytes.push(0x06);
+    }
   }
 
   async readExact(n: number, timeoutMs: number): Promise<Uint8Array> {
@@ -166,13 +176,20 @@ function scriptAtD890MemoryReadResponder(
   maxBlock = NEGOTIATED_READ_BLOCK,
 ): void {
   pipe.readResponder = (addr, len) => {
-    for (const [start, data] of memory) {
-      if (addr >= start && addr + len <= start + data.length) {
-        if (start === D890_MAP.LocalInfo && len > maxBlock) return null;
-        return data.subarray(addr - start, addr - start + len);
+    if (addr === D890_MAP.LocalInfo && len > maxBlock) return null;
+    const out = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      const absolute = addr + i;
+      let byte = 0xff;
+      for (const [start, data] of memory) {
+        if (absolute >= start && absolute < start + data.length) {
+          byte = data[absolute - start]!;
+          break;
+        }
       }
+      out[i] = byte;
     }
-    return null;
+    return out;
   };
 }
 
@@ -186,6 +203,11 @@ export function scriptAtD890WriteAck(pipe: AtD890ScriptedPipe, count: number): v
   for (let i = 0; i < count; i++) {
     pipe.enqueue(new Uint8Array([ANYTONE_DMR_ACK]));
   }
+}
+
+/** ACK each write frame as it is sent — safe to use before upload reads complete. */
+export function enableAtD890AutoWriteAck(pipe: AtD890ScriptedPipe): void {
+  pipe.autoAckWrites = true;
 }
 
 /** Enqueue read replies for never-write sentinel spans (pre-Write plausibility). */
@@ -221,6 +243,75 @@ export function scriptAtD890PlausibleSentinelReads(
     { ...plausibleAtD890SentinelOverrides(), ...overrides },
     readBlockSize,
   );
+}
+
+/** LocalInfo with a known serial for identity-check tests. */
+export function localInfoWithSerial(serial: string): Uint8Array {
+  const out = new Uint8Array(D890_MAP.LocalInfoLength).fill(0xff);
+  const bytes = new TextEncoder().encode(serial);
+  out.set(bytes.subarray(0, LOCAL_INFO_SERIAL_LENGTH), LOCAL_INFO_SERIAL_OFFSET);
+  out[0] = 0x00;
+  return out;
+}
+
+/** Fresh-read buffer for one erase unit (`0x40000` bytes). */
+export function makeAtD890EraseUnitBuffer(fill = 0xff): Uint8Array {
+  return new Uint8Array(AT_D890_ERASE_UNIT_BYTES).fill(fill);
+}
+
+/** Ensure sentinel snapshot spans are readable with at least one non-`0xff` byte each. */
+export function withAtD890PlausibleSentinelSpans(
+  memory: Map<number, Uint8Array>,
+): Map<number, Uint8Array> {
+  const out = new Map(memory);
+  for (const extent of AT_D890_SENTINEL_EXTENTS) {
+    const covered = [...out.entries()].some(
+      ([start, data]) =>
+        extent.start >= start && extent.start + extent.length <= start + data.length,
+    );
+    if (!covered) {
+      const data = new Uint8Array(extent.length).fill(0xff);
+      data[0] = 0x00;
+      out.set(extent.start, data);
+    }
+  }
+  return out;
+}
+
+/** `readResponder` backing store for sparse-RMW upload tests (sentinels + erase units). */
+export function scriptAtD890UploadReadResponder(
+  pipe: AtD890ScriptedPipe,
+  memory: Map<number, Uint8Array>,
+  maxBlock = NEGOTIATED_READ_BLOCK,
+): void {
+  scriptAtD890MemoryReadResponder(pipe, withAtD890PlausibleSentinelSpans(memory), maxBlock);
+}
+
+export function collectAtD890ReadRequestAddresses(pipe: AtD890ScriptedPipe): number[] {
+  return pipe.writes
+    .filter((w) => w[0] === 0x52)
+    .map((w) => ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0);
+}
+
+export function collectAtD890WriteDataAddresses(pipe: AtD890ScriptedPipe): number[] {
+  return pipe.writes
+    .filter((w) => w[0] === 0x57)
+    .map((w) => ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0);
+}
+
+export function indexOfFirstAtD890WriteFrame(pipe: AtD890ScriptedPipe): number {
+  return pipe.writes.findIndex((w) => w[0] === 0x57);
+}
+
+/** Payload bytes from the first write frame targeting `address`. */
+export function writePayloadAt(pipe: AtD890ScriptedPipe, address: number): Uint8Array | undefined {
+  const frame = pipe.writes.find(
+    (w) =>
+      w[0] === 0x57 &&
+      ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0 === address,
+  );
+  if (!frame || frame.length < 22) return undefined;
+  return frame.subarray(6, 22);
 }
 
 export { ANYTONE_DMR_BLOCK_SIZE };

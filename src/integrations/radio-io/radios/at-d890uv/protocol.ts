@@ -41,6 +41,14 @@ import {
   snapshotAtD890SentinelRegions,
 } from './sentinelVerify.ts';
 import { eraseUnitBaseFor, listTouchedEraseUnits, readSpanForEraseUnit } from './eraseUnits.ts';
+import { assertAtD890LocalInfoIdentity } from './identityCheck.ts';
+import {
+  assertPreservedBytesMatchFreshRead,
+  listSparseStagingChunks,
+  modelledAddressSetFromChunks,
+  overlayModelledChunksOntoUnit,
+} from './sparseEraseRmw.ts';
+import { assertAtD890TransmitAddress } from './writableExtents.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
