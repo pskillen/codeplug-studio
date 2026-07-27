@@ -95,12 +95,13 @@ On this radio, **`W` frames stage to RAM** inside the PROGRAM session. Flash era
 
 **Failed or aborted uploads** must call `abandonProgramMode()` before `disconnect()` so Studio does **not** send `END` and commit a partial write. Under a commit model, not sending `END` is the safe failure path.
 
+**Hydration on Write:** the hydration bag is required (`hydrationRequiredForWrite`) for LocalInfo **identity check** (serial match) and Radio image preview — it is **not** the data source for preserved bytes. Upload fresh-reads each touched erase unit from the radio immediately before staging.
+
 ## Typical session flow
 
 1. Open serial @ 921600 → `PROGRAM` → `QX\x06` → `0x02` ident → negotiate read block size at LocalInfo.
 2. Read **sparse** regions needed for the adapter (not a contiguous dump) — start with LocalInfo, ChannelSet/ChannelData, Zone*, RadioId*, ScanList*, Talkgroup*/ReceiveGroup*, MasterIdData ([memory-layout.md](memory-layout.md)).
-3. For upload: re-enter program mode → pre-Write sentinel plausibility → write occupied regions in 16-byte blocks → skip `0x2fa0010` → `END` on successful disconnect only.
-4. Prefer sparse erase-unit RMW for settings-heavy regions ([#768](https://github.com/pskillen/codeplug-studio/issues/768) phase 2).
+3. For upload: re-enter program mode → pre-Write sentinel plausibility → **sparse erase-unit RMW** (fresh-read touched units, identity check, overlay modelled chunks, stage non-`0xff` blocks) → skip `0x2fa0010` → `END` on successful disconnect only ([#768](https://github.com/pskillen/codeplug-studio/issues/768)).
 
 ## Related
 
