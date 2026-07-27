@@ -9,7 +9,7 @@
 | --- | --- |
 | 0 Track + progress stubs | Done |
 | 1 Allow-list extents + stop LocalInfo upload | Done |
-| 2 Sentinel pre/post verify | Pending |
+| 2 Sentinel pre/post verify | Done |
 | 3 Airband-in-MR + encode guards | Pending |
 | 4 Documentation | Pending |
 | 5 Pre-PR verify + PR | Pending |

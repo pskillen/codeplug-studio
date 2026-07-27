@@ -8,6 +8,7 @@ import {
   scriptAtD890Connect,
   scriptAtD890MinimalDownload,
   scriptAtD890WriteAck,
+  scriptAtD890SentinelReads,
   enqueueAtD890ReadReply,
 } from './__fixtures__/scriptedPipe.ts';
 import { AT_D890_MAP_SIZE, AT_D890_SAFE_SKIP_WRITE_ADDR } from './constants.ts';
@@ -62,7 +63,9 @@ describe('AtD890uvProtocol', () => {
     const image = cacheToMemoryMap(radio.getDownloadCache()!);
     applyAtD890WriteImageToCache(radio.getDownloadCache()!, image);
     const chunks = listWriteChunks(radio.getDownloadCache()!, AT_D890_SAFE_SKIP_WRITE_ADDR);
+    scriptAtD890SentinelReads(pipe);
     scriptAtD890WriteAck(pipe, chunks.length);
+    scriptAtD890SentinelReads(pipe);
 
     await radio.upload(image, {});
     expect(pipe.writes.length).toBeGreaterThan(0);
@@ -125,6 +128,34 @@ describe('AtD890uvProtocol', () => {
     const cache = radio.getDownloadCache()!;
     expect(cache.blocks.has(channelPrimaryAddress(128))).toBe(true);
     expect(channelPrimaryAddress(128)).toBe(0x108_0000);
+  });
+
+  it('fails upload when post-write sentinel differs from pre-write snapshot', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890Connect(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+
+    const channelSet = new Uint8Array(0x200);
+    setBitmapBit(channelSet, 0, true);
+    radio.seedDownloadCache({
+      blocks: new Map([
+        [D890_MAP.ChannelSet, channelSet],
+        [channelPrimaryAddress(0), new Uint8Array(0x40)],
+        [channelSecondaryAddress(0), new Uint8Array(0x40)],
+      ]),
+    });
+
+    const image = cacheToMemoryMap(radio.getDownloadCache()!);
+    applyAtD890WriteImageToCache(radio.getDownloadCache()!, image);
+    const chunks = listWriteChunks(radio.getDownloadCache()!);
+    const localPre = new Uint8Array(D890_MAP.LocalInfoLength).fill(0x11);
+    const localPost = new Uint8Array(D890_MAP.LocalInfoLength).fill(0x22);
+    scriptAtD890SentinelReads(pipe, { LocalInfo: localPre });
+    scriptAtD890WriteAck(pipe, chunks.length);
+    scriptAtD890SentinelReads(pipe, { LocalInfo: localPost });
+
+    await expect(radio.upload(image, {})).rejects.toThrow(/sentinel LocalInfo changed/);
   });
 
   it('rejects upload without seeded blocks', async () => {
