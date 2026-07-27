@@ -24,7 +24,9 @@ function sampleChannel(overrides: Partial<RadioChannelDto>): RadioChannelDto {
 
 describe('assertAtD890MrChannelFrequencies', () => {
   it('allows normal VHF MR frequencies', () => {
-    expect(() => assertAtD890MrChannelFrequencies(sampleChannel({ rxHz: 145_520_000 }))).not.toThrow();
+    expect(() =>
+      assertAtD890MrChannelFrequencies(sampleChannel({ rxHz: 145_520_000 })),
+    ).not.toThrow();
   });
 
   it('rejects AM airband RX with channel index', () => {
@@ -41,9 +43,7 @@ describe('assertAtD890MrChannelFrequencies', () => {
 
   it('rejects AM airband TX', () => {
     expect(() =>
-      assertAtD890MrChannelFrequencies(
-        sampleChannel({ rxHz: 145_520_000, txHz: 121_500_000 }),
-      ),
+      assertAtD890MrChannelFrequencies(sampleChannel({ rxHz: 145_520_000, txHz: 121_500_000 })),
     ).toThrow(/airband/i);
   });
 

@@ -14,10 +14,7 @@ import {
 } from '../../kit/codecs/anytoneDmrRw.ts';
 import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { throwIfAborted } from '../../kit/progress.ts';
-import {
-  AT_D890_CONNECTION,
-  AT_D890UV_MODEL_IDS,
-} from './constants.ts';
+import { AT_D890_CONNECTION, AT_D890UV_MODEL_IDS } from './constants.ts';
 import { assertAtD890WritableAddress } from './writableExtents.ts';
 
 const TD = new TextDecoder('ascii', { fatal: false });

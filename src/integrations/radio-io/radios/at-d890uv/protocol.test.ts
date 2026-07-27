@@ -73,9 +73,9 @@ describe('AtD890uvProtocol', () => {
       .filter((w) => w[0] === 0x57)
       .map((w) => (w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!);
     expect(writtenAddrs).not.toContain(AT_D890_SAFE_SKIP_WRITE_ADDR);
-    expect(writtenAddrs.some((a) => a >= D890_MAP.LocalInfo && a < D890_MAP.LocalInfo + 0x100)).toBe(
-      false,
-    );
+    expect(
+      writtenAddrs.some((a) => a >= D890_MAP.LocalInfo && a < D890_MAP.LocalInfo + 0x100),
+    ).toBe(false);
   });
 
   it('sends END on disconnect after connect', async () => {

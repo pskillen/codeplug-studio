@@ -25,7 +25,6 @@ describe('AT_D890 writable extents', () => {
     const optionalMainEnd = 0x350_0000 + 0x200;
     const optionalExtEnd = 0x350_0900 + 0x60;
     const zoneAStart = D890_MAP.ZoneAChannel;
-    const zoneAEnd = D890_MAP.ZoneAChannel + D890_MAP.ZoneTableBytes;
     const zoneBEnd = D890_MAP.ZoneBChannel + D890_MAP.ZoneTableBytes;
     expect(zoneAStart).toBeGreaterThanOrEqual(optionalMainEnd);
     expect(zoneBEnd).toBeLessThanOrEqual(optionalExtEnd);

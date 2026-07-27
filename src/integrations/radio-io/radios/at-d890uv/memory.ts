@@ -6,10 +6,7 @@ import { createMemoryMap } from '../../kit/memoryMap.ts';
 import type { MemoryMap } from '../../types.ts';
 import { AT_D890_BLOCK_SIZE, AT_D890_MAP_SIZE, AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import { listSetBits } from './bitmap.ts';
-import {
-  assertAtD890WritableSpan,
-  isAtD890WritableAddress,
-} from './writableExtents.ts';
+import { assertAtD890WritableSpan, isAtD890WritableAddress } from './writableExtents.ts';
 
 export interface AtD890SparseBlock {
   address: number;
