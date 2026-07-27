@@ -4,6 +4,10 @@
  */
 
 import { RadioProtocolError } from '../../kit/errors.ts';
+import {
+  isAtD890ChannelDataAddress,
+  isAtD890ChannelDataRealAddress,
+} from './channelDataGeometry.ts';
 import { AT_D890_LIMITS, AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
 
 export interface AtD890MemoryExtent {
@@ -21,13 +25,21 @@ const SCAN_SLOTS = bitmapSlotCount(AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
 const RADIO_ID_SLOTS = bitmapSlotCount(AT_D890_LIMITS.RADIO_ID_SET_BYTES);
 const RX_GROUP_SLOTS = bitmapSlotCount(AT_D890_LIMITS.RX_GROUP_SET_BYTES);
 
-/** Channel primary/secondary halves live under ChannelData … ChannelData+0x1000000. */
-const CHANNEL_DATA_SPAN = 0x100_0000;
+function buildChannelDataWritableExtents(): AtD890MemoryExtent[] {
+  return Array.from({ length: D890_MAP.ChannelDataBlockCount }, (_, blockIndex) => ({
+    id: `ChannelData.block${blockIndex}`,
+    start:
+      D890_MAP.ChannelData + blockIndex * D890_MAP.ChannelDataBlockOffset,
+    length: D890_MAP.ChannelDataBackedBytes,
+  }));
+}
+
+const CHANNEL_DATA_WRITABLE_EXTENTS = buildChannelDataWritableExtents();
 
 /** Modelled banks Studio may serial-write (positive allow-list). */
 export const AT_D890_WRITABLE_EXTENTS: readonly AtD890MemoryExtent[] = [
   { id: 'ChannelSet', start: D890_MAP.ChannelSet, length: AT_D890_LIMITS.CHANNEL_SET_BYTES },
-  { id: 'ChannelData', start: D890_MAP.ChannelData, length: CHANNEL_DATA_SPAN },
+  ...CHANNEL_DATA_WRITABLE_EXTENTS,
   { id: 'ZoneSet', start: D890_MAP.ZoneSet, length: AT_D890_LIMITS.ZONE_SET_BYTES },
   { id: 'ZoneHide', start: D890_MAP.ZoneHide, length: AT_D890_LIMITS.ZONE_SET_BYTES },
   { id: 'ZoneAChannel', start: D890_MAP.ZoneAChannel, length: D890_MAP.ZoneTableBytes },
@@ -102,6 +114,9 @@ export function findWritableExtentForAddress(address: number): AtD890MemoryExten
 
 export function isAtD890WritableAddress(address: number): boolean {
   if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) return false;
+  if (isAtD890ChannelDataAddress(address) && !isAtD890ChannelDataRealAddress(address)) {
+    return false;
+  }
   return findWritableExtentForAddress(address) !== undefined;
 }
 
@@ -109,6 +124,11 @@ export function assertAtD890WritableAddress(address: number): void {
   if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) {
     throw new RadioProtocolError(
       `D890 write refused at forbidden address 0x${address.toString(16)} (family safe-skip)`,
+    );
+  }
+  if (isAtD890ChannelDataAddress(address) && !isAtD890ChannelDataRealAddress(address)) {
+    throw new RadioProtocolError(
+      `D890 write refused at 0x${address.toString(16)} — ChannelData mirrored address (not backed storage)`,
     );
   }
   if (!findWritableExtentForAddress(address)) {
