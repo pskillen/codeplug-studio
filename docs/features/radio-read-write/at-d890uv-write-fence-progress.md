@@ -5,13 +5,13 @@
 
 ## Status
 
-| Slice                                        | State       |
-| -------------------------------------------- | ----------- |
-| 0 Track + progress stubs                     | Done        |
-| 1 Allow-list extents + stop LocalInfo upload | Done        |
-| 2 Sentinel pre/post verify                   | Done        |
-| 3 Airband-in-MR + encode guards              | Done        |
-| 4 Documentation                              | Done        |
+| Slice                                        | State                                                               |
+| -------------------------------------------- | ------------------------------------------------------------------- |
+| 0 Track + progress stubs                     | Done                                                                |
+| 1 Allow-list extents + stop LocalInfo upload | Done                                                                |
+| 2 Sentinel pre/post verify                   | Done                                                                |
+| 3 Airband-in-MR + encode guards              | Done                                                                |
+| 4 Documentation                              | Done                                                                |
 | 5 Pre-PR verify + PR                         | Done — [#754](https://github.com/pskillen/codeplug-studio/pull/754) |
 
 ## Shipped this branch
