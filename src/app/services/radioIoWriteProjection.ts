@@ -47,6 +47,10 @@ import type {
 } from '@integrations/radio-io/radioWriteProjection.ts';
 import { buildNeonplugAprsRadioSettingsPatch } from '@core/services/aprsExportFacts.ts';
 import {
+  partitionAnytoneChannels,
+  partitionAnytoneZones,
+} from '@core/services/anytoneChannelBanks.ts';
+import {
   expandAssembledChannelsToRadioDtos,
   type RadioChannelFkMaps,
   type RadioWireEgressIds,
@@ -838,6 +842,53 @@ function stampOpenGd77ChannelBehaviour(
   });
 }
 
+/** DMR-bank-only assembled view for AT-D890UV serial Write (CSV parity for AM air / FM broadcast). */
+function buildAtD890DmrBankAssembled(
+  assembled: AssembledBuild,
+  build: RadioBuild,
+  egress: RadioWireEgressIds,
+  warnings: string[],
+): AssembledBuild {
+  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
+  const context = merged.channelBehaviourContext;
+  const { dmrChannels, amAirChannels, fmBroadcastChannels } = partitionAnytoneChannels(
+    assembled,
+    context,
+  );
+
+  if (amAirChannels.length > 0) {
+    warnings.push(
+      `${amAirChannels.length} AM airband channel(s) omitted from Web Serial Write — use Anytone CSV for AMAir.CSV updates; the radio's AM airband bank is unchanged.`,
+    );
+  }
+  if (fmBroadcastChannels.length > 0) {
+    warnings.push(
+      `${fmBroadcastChannels.length} broadcast FM channel(s) omitted from Web Serial Write — use Anytone CSV for FM.CSV updates.`,
+    );
+  }
+
+  const dmrChannelIds = new Set(dmrChannels.map((row) => row.entity.id));
+  const { dmrZones } = partitionAnytoneZones(assembled, context);
+  const zoneById = new Map(assembled.zones.map((zone) => [zone.zoneId, zone]));
+  const zones = dmrZones
+    .map((partitioned) => {
+      const original = zoneById.get(partitioned.zoneId);
+      const memberChannelIds = partitioned.memberChannelIds.filter((id) => dmrChannelIds.has(id));
+      return {
+        zoneId: partitioned.zoneId,
+        wireName: original?.wireName ?? partitioned.zoneId,
+        memberChannelIds,
+      };
+    })
+    .filter((zone) => zone.memberChannelIds.length > 0);
+
+  return {
+    ...assembled,
+    channels: dmrChannels,
+    zones,
+  };
+}
+
 export function buildRadioWriteProjection(
   assembled: AssembledBuild,
   build: RadioBuild,
@@ -870,8 +921,13 @@ export function buildRadioWriteProjection(
     fkMaps = tgRx.fkMaps;
   }
 
+  const projectionAssembled =
+    egress.profileId === 'radio-io-at-d890uv'
+      ? buildAtD890DmrBankAssembled(assembled, build, egress, warnings)
+      : assembled;
+
   const { dtos, warnings: channelWarnings } = expandAssembledChannelsToRadioDtos(
-    assembled,
+    projectionAssembled,
     build,
     library,
     egress,
@@ -881,7 +937,7 @@ export function buildRadioWriteProjection(
 
   const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
   let numbersBySourceChannelId = buildNumbersBySourceChannelId(
-    assembled,
+    projectionAssembled,
     build,
     library,
     egress,
@@ -916,7 +972,7 @@ export function buildRadioWriteProjection(
   } else if (egress.profileId === 'radio-io-at-d890uv') {
     const d890Limits = radioIoExportLimits(egress);
     const org = buildDm32Organisation(
-      assembled,
+      projectionAssembled,
       build,
       library,
       egress,
@@ -927,7 +983,7 @@ export function buildRadioWriteProjection(
     );
     channels = stampUv17ProFlatMemoryChannelBehaviour(
       org.channels,
-      assembled,
+      projectionAssembled,
       build,
       egress,
       org.numbersBySourceChannelId,

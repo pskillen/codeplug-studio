@@ -34,6 +34,7 @@ import RadioIoProgressModal, {
   type RadioIoProgressPhase,
 } from './RadioIoProgressModal.tsx';
 import WebSerialExperimentalAlert from './WebSerialExperimentalAlert.tsx';
+import AtD890WriteCoverageTable from './AtD890WriteCoverageTable.tsx';
 import { DM32_ANALOG_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
 import { AT_D890_DIGITAL_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/at-d890uv/writeRole.ts';
 import {
@@ -274,6 +275,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             {writeExperimentalCopy.preferEgress}
           </Text>
         </Alert>
+      ) : null}
+      {egress.profileId === 'radio-io-at-d890uv' ? (
+        <AtD890WriteCoverageTable buildId={build.id} hasHydration={hasHydration} />
       ) : null}
       <Group gap="xs">
         <Button

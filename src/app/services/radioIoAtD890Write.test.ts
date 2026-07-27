@@ -4,7 +4,9 @@ import {
   newRadioBuildForProfile,
   newRxGroupList,
   newTalkGroup,
+  newZone,
 } from '@core/domain/factories.ts';
+import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import {
@@ -217,5 +219,105 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     ]);
     expect(projection.organisation.rxGroups?.[0]?.memberDigitalIds).not.toContain(91);
     expect(projection.organisation.rxGroups?.[0]?.memberDigitalIds).not.toContain(23_559);
+  });
+
+  it('partitions AM airband out of MR channels, zones, and slot map', () => {
+    const vhf = {
+      ...newChannel('p1', 'VHF'),
+      id: 'ch-vhf',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const airband = {
+      ...newChannel('p1', 'Tower'),
+      id: 'ch-air',
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: 'forbid' as const,
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const zone = {
+      ...newZone('p1', 'Mixed'),
+      id: 'zone-mixed',
+      members: [
+        { kind: 'channel' as const, channelId: vhf.id },
+        { kind: 'channel' as const, channelId: airband.id },
+      ],
+    };
+    const library = { ...emptyLibrary([vhf, airband]), zones: [zone] };
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const build = {
+      ...baseBuild,
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: 'zone-mixed',
+                name: 'Mixed',
+                channelIds: [vhf.id, airband.id],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+
+    expect(projection.channels.every((ch) => ch.rxHz < 108_000_000 || ch.rxHz > 137_000_000)).toBe(
+      true,
+    );
+    expect(projection.numbersBySourceChannelId.has('ch-air')).toBe(false);
+    expect(projection.numbersBySourceChannelId.get('ch-vhf')).toEqual([1]);
+    expect(projection.organisation.zones).toEqual([
+      expect.objectContaining({ wireName: 'Mixed', channelNumbers: [1] }),
+    ]);
+    expect(projection.warnings.some((w) => w.includes('AM airband') && w.includes('omitted'))).toBe(
+      true,
+    );
+  });
+
+  it('partitions broadcast FM out of MR channels with a warning', () => {
+    const vhf = {
+      ...newChannel('p1', 'VHF'),
+      id: 'ch-vhf',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const broadcast = {
+      ...newChannel('p1', 'BBC'),
+      id: 'ch-fm',
+      rxFrequency: 99_500_000,
+      txFrequency: null,
+      forbidTransmit: 'forbid' as const,
+      modeProfiles: [defaultModeProfile('fm')],
+    };
+    const library = emptyLibrary([vhf, broadcast]);
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+
+    expect(projection.channels).toHaveLength(1);
+    expect(projection.channels[0]?.wireName).toBe('VHF');
+    expect(projection.numbersBySourceChannelId.has('ch-fm')).toBe(false);
+    expect(
+      projection.warnings.some((w) => w.includes('broadcast FM') && w.includes('omitted')),
+    ).toBe(true);
   });
 });
