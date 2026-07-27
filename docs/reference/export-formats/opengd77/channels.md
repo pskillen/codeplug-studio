@@ -2,9 +2,11 @@
 
 Generic column reference for `Channels.csv`. Cardinality and display-length limits are radio-profile-specific — see [profiles.md](profiles.md) / [dm-1701](../../radios/baofeng/dm-1701/README.md).
 
-**Code:** [`columns.ts`](../../../../src/core/import-export/formats/opengd77/columns.ts) · [`parse.ts`](../../../../src/core/import-export/formats/opengd77/parse.ts) · [`serialise.ts`](../../../../src/core/import-export/formats/opengd77/serialise.ts) · [`channelWire.ts`](../../../../src/core/import-export/formats/opengd77/channelWire.ts) (import) · [`channelWire.ts`](../../../../src/core/import-export/formats/opengd77/channelWire.ts) (export)
+**Code (export shipped):** [`columns.ts`](../../../../src/core/import-export/formats/opengd77/columns.ts) · [`serialise.ts`](../../../../src/core/import-export/formats/opengd77/serialise.ts) · [`channelWire.ts`](../../../../src/core/import-export/formats/opengd77/channelWire.ts)
 
-## Required headers (app import)
+**Import:** planned ([#522](https://github.com/pskillen/codeplug-studio/issues/522)) — parse rules below describe target behaviour.
+
+## Required headers (target import)
 
 | Header         | Reason                                        |
 | -------------- | --------------------------------------------- |
@@ -16,36 +18,36 @@ All other columns are optional at import — missing headers yield empty values.
 
 ## Column reference
 
-| Vendor header     | Internal field                           | Required (import)   | Import rule                                                 | Export rule                                                              | Bidirectional mapping | Notes                                                                  |
-| ----------------- | ---------------------------------------- | ------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------ | --------------------- | ---------------------------------------------------------------------- |
-| `Channel Number`  | _(export only)_                          | No                  | **Ignored** on import                                       | Sequential `1…n` in channel list order                                   | Not preserved         | Direct-access number in All-channels zone; see radio profile for range |
-| `Channel Name`    | `Channel.name`                           | **Yes**             | Trim; skip row if empty                                     | As stored                                                                | String pass-through   | FK target for zones; case-sensitive                                    |
-| `Channel Type`    | `Channel.mode`                           | No                  | `Analogue`/`Analog` → `fm`; `Digital` → `dmr`; else `other` | All analog modes → `Analogue`; all digital → `Digital`; else passthrough | Lossy for non-FM/DMR  | See [channel-modes.md](../../channel-modes.md)                         |
-| `Rx Frequency`    | `Channel.rxFrequency`                    | No                  | MHz wire → integer Hz                                       | Hz → MHz wire (5 dp)                                                     | Lossless when valid   | `.` or `,` decimal accepted on import                                  |
-| `Tx Frequency`    | `Channel.txFrequency`                    | No                  | MHz wire → integer Hz                                       | Hz → MHz wire (5 dp)                                                     | Lossless when valid   |                                                                        |
-| `Bandwidth (kHz)` | `modeProfiles[]` analog `bandwidthKHz`   | No                  | Parse float kHz; empty → `null`                             | As number string; analogue unset → `12.5`                                | Lossless when set     | Digital: always empty; analogue default at export only                 |
-| `Colour Code`     | `Channel.colourCode`                     | No                  | Parse 0–15                                                  | As integer string                                                        | Lossless              | Digital only                                                           |
-| `Timeslot`        | `Channel.timeslot`                       | No                  | `1` or `2`                                                  | As `1`/`2`                                                               | Lossless              | Digital only                                                           |
-| `Contact`         | `Channel.contactName`                    | No                  | Trim                                                        | As stored                                                                | String pass-through   | TX talk group name; FK → Contacts.csv                                  |
-| `TG List`         | `Channel.rxGroupListName`                | No                  | Trim                                                        | As stored                                                                | String pass-through   | Promiscuous RX list; FK → TG_Lists.csv                                 |
-| `DMR ID`          | `Channel.dmrId`                          | No                  | Parse integer; `None`/empty → `null`                        | Mode-aware — see [mode-dependent columns](#mode-dependent-columns)       | Lossless              | Digital: `None` when unset; analogue: empty                            |
-| `TS1_TA_Tx`       | `Channel.opengd77Extras['TS1_TA_Tx']`    | No                  | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        | Talkaround TS1                                                         |
-| `TS2_TA_Tx ID`    | `Channel.opengd77Extras['TS2_TA_Tx ID']` | No                  | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        | Talkaround TS2                                                         |
-| `RX Tone`         | `Channel.rxTone`                         | No                  | Wire → tone enum (`None` → `none`)                          | Mode-aware — see below                                                   | Lossless              | CTCSS/DCS; see tones below                                             |
-| `TX Tone`         | `Channel.txTone`                         | No                  | Wire → tone enum                                            | Mode-aware — see below                                                   | Lossless              |                                                                        |
-| `Squelch`         | `Channel.squelch`                        | No                  | Wire → percent                                              | Mode-aware — see below                                                   | Lossless              | See [power-squelch.md](power-squelch.md)                               |
-| `Power`           | `Channel.power`                          | No                  | Wire → percent                                              | Percent → wire                                                           | Lossless              | See [power-squelch.md](power-squelch.md)                               |
-| `Rx Only`         | `forbidTransmit` cascade                 | No                  | `Yes`/`No` → boolean                                        | `effectiveForbidTransmit` + `channelBehaviourContext` → `wireYesNo`      | Lossless boolean      | See [behavioural defaults cascade](#behavioural-defaults-cascade)      |
-| `Zone Skip`       | `Channel.opengd77Extras['Zone Skip']`    | No                  | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        | Not mapped to `scanSkip`                                               |
-| `All Skip`        | `Channel.scanInclusion`                  | No                  | `Yes` → `skip`; `No` → `default` or `alwaysScan`            | Resolved via `scanInclusion` + build/format default → `wireYesNo`        | Tri-state + default   | Global scan skip                                                       |
-| `TOT`             | `Channel.transmitTimeout`                | No                  | Parse seconds                                               | As integer string                                                        | Lossless              | `0` = off; CPS step 15 (0–495)                                         |
-| `VOX`             | `Channel.voxEnabled`                     | No                  | `Off` or empty → `false`; else `true`                       | `Off` / `On`                                                             | Lossless boolean      |                                                                        |
-| `No Beep`         | `Channel.opengd77Extras['No Beep']`      | No                  | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        |                                                                        |
-| `No Eco`          | `Channel.opengd77Extras['No Eco']`       | No                  | Trim → opengd77Extras                                       | From opengd77Extras                                                      | opengd77Extras        |                                                                        |
-| `APRS`            | `Channel.aprsConfigName`                 | No                  | Trim                                                        | As stored                                                                | String pass-through   | FK → APRS.csv                                                          |
-| `Latitude`        | `Channel.location.lat`                   | **Column required** | Parse float                                                 | String from location                                                     | Lossless when valid   | Pair with longitude                                                    |
-| `Longitude`       | `Channel.location.lon`                   | **Column required** | Parse float                                                 | String from location                                                     | Lossless when valid   |                                                                        |
-| `Use Location`    | `Channel.useLocation`                    | No                  | `Yes` → `true`                                              | `wireYesNo(useLocation)`                                                 | Lossless boolean      |                                                                        |
+| Vendor header     | Internal field                         | Import (target) | Export (shipped)                                                                 | Notes                                                                  |
+| ----------------- | -------------------------------------- | --------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `Channel Number`  | _(export only)_                        | Ignored         | Sequential `1…n` in channel list order                                           | Direct-access number in All-channels zone                              |
+| `Channel Name`    | `Channel.name`                         | Trim; skip empty | Composed wire name from build + library                                            | FK target for zones; case-sensitive                                    |
+| `Channel Type`    | `Channel.mode`                         | `Analogue`→`fm`; `Digital`→`dmr` | Analog modes → `Analogue`; digital → `Digital`                         | See [channel-modes.md](../../channel-modes.md)                         |
+| `Rx Frequency`    | `Channel.rxFrequency`                  | MHz → Hz        | Hz → MHz (5 dp)                                                                  | `.` or `,` decimal on import (target)                                  |
+| `Tx Frequency`    | `Channel.txFrequency`                  | MHz → Hz        | Hz → MHz (5 dp)                                                                  |                                                                        |
+| `Bandwidth (kHz)` | analog `bandwidthKHz`                  | Parse float     | Analogue: `12.5` when unset; digital: empty                                        |                                                                        |
+| `Colour Code`     | DMR `colourCode`                       | 0–15            | Integer string; digital only                                                       |                                                                        |
+| `Timeslot`        | DMR `timeslot`                         | `1` / `2`       | `1` / `2`; digital only                                                            |                                                                        |
+| `Contact`         | DMR `contactRef`                       | Trim            | Resolved wire name (incl. TS clones — [#764](https://github.com/pskillen/codeplug-studio/issues/764)) | FK → Contacts.csv                                  |
+| `TG List`         | DMR `rxGroupListId`                    | Trim            | Resolved RX-group wire name                                                        | FK → TG_Lists.csv                                                      |
+| `DMR ID`          | DMR `dmrId`                            | Parse int       | Mode-aware — see [mode-dependent columns](#mode-dependent-columns)                 |                                                                        |
+| `TS1_TA_Tx`       | _(unmodelled)_                         | —               | `Off` on digital; empty on analogue ([#438](https://github.com/pskillen/codeplug-studio/issues/438)) | Talkaround TS1; enum set needs elicitation (#403) |
+| `TS2_TA_Tx ID`    | _(unmodelled)_                         | —               | `Off` on digital; empty on analogue ([#438](https://github.com/pskillen/codeplug-studio/issues/438)) | Talkaround TS2                                     |
+| `RX Tone`         | analog `rxTone`                        | Wire → tone     | Mode-aware — see below                                                             |                                                                        |
+| `TX Tone`         | analog `txTone`                        | Wire → tone     | Mode-aware — see below                                                             |                                                                        |
+| `Squelch`         | analog `squelch`                       | Wire → percent  | Mode-aware — see below; [power-squelch.md](power-squelch.md)                       |                                                                        |
+| `Power`           | `Channel.power`                        | Wire → percent  | Ladder wire via profile — [power-squelch.md](power-squelch.md)                   |                                                                        |
+| `Rx Only`         | `forbidTransmit` cascade               | `Yes`/`No`      | `effectiveForbidTransmit` → `wireYesNo` (`Yes`/`No`)                               | See [behavioural defaults cascade](#behavioural-defaults-cascade)      |
+| `Zone Skip`       | _(unmodelled)_                         | —               | `No` ([#438](https://github.com/pskillen/codeplug-studio/issues/438))              | Not mapped to `scanInclusion`                                          |
+| `All Skip`        | `Channel.scanInclusion`                | `Yes`→skip      | `scanInclusion` + build default → `wireYesNo`                                      | Global scan skip                                                       |
+| `TOT`             | `Channel.transmitTimeout`              | Parse seconds   | Empty when unmodelled (export)                                                     | CPS step 15 (0–495); `0` = off                                         |
+| `VOX`             | `Channel.voxEnabled`                   | `Off`→false     | `Off` when unmodelled (export)                                                     |                                                                        |
+| `No Beep`         | _(unmodelled)_                         | —               | `No` ([#438](https://github.com/pskillen/codeplug-studio/issues/438))              |                                                                        |
+| `No Eco`          | _(unmodelled)_                         | —               | `No` ([#438](https://github.com/pskillen/codeplug-studio/issues/438))              |                                                                        |
+| `APRS`            | `Channel.aprsConfigName`               | Trim            | Empty when unmodelled                                                              | FK → APRS.csv — body under APRS epic [#442](https://github.com/pskillen/codeplug-studio/issues/442) |
+| `Latitude`        | `Channel.location.lat`                 | Parse float     | String from location                                                               |                                                                        |
+| `Longitude`       | `Channel.location.lon`                 | Parse float     | String from location                                                               |                                                                        |
+| `Use Location`    | `Channel.useLocation`                  | `Yes`→true      | `wireYesNo(useLocation)`                                                           |                                                                        |
 
 ### TX Admit / Busy Lock
 
@@ -55,20 +57,18 @@ OpenGD77 `Channels.csv` has **no TX Admit or Busy Lock column**. Resolved `txPer
 
 | Cascade field       | OpenGD77 wire                        | Export                                                             |
 | ------------------- | ------------------------------------ | ------------------------------------------------------------------ |
-| `forbidTransmit`    | `Rx Only`                            | Shipped via cascade                                                |
+| `forbidTransmit`    | `Rx Only`                            | Shipped via cascade → `Yes`/`No`                                   |
 | `txPermit`          | _(none)_                             | Loss — no Busy Lock / TX Admit column                              |
 | `sendTalkerAlias`   | _(none)_                             | Loss — no talker-alias column (TS1/TS2 talkaround cells unrelated) |
 | `analogSquelchMode` | _(none — distinct from `Squelch` %)_ | Loss — `Squelch` is level percent only                             |
 
-`Channel Name` maps to split internal fields on import and is **composed on export** from `callsign`, `name`, and the operator's default export name style (see [name-shortening](../../../features/import-export/name-shortening.md)). Split rules: [channel-name-parsing](../../../features/channel-name-parsing.md).
+`Channel Name` maps to split internal fields on import (target) and is **composed on export** from `callsign`, `name`, and the operator's default export name style (see [name-shortening](../../../features/import-export/name-shortening.md)). Split rules: [channel-name-parsing](../../../features/channel-name-parsing.md).
 
 ## Export name length and shortening
 
 Radio LCD limits are profile-specific (~16 chars on [Baofeng 1701](../../radios/baofeng/dm-1701/README.md)). The app default `nameLimit` is **16** on OpenGD77 profiles (`src/core/import-export/formats/opengd77/profiles.ts`).
 
 When a composed or expanded wire name exceeds the effective limit, export runs the shortening pipeline (dictionary → vowel-squeeze → optional `callsign_suffix` downgrade → truncate). Zone `ChannelN` members and TG-list contact names receive the **same** shortened strings as `Channels.csv`.
-
-Operator controls and bidirectional mapping caveats: name shortening (Phase 4+). Per-profile manual overrides: archive reference #122.
 
 ## Tone wire forms
 
@@ -86,13 +86,12 @@ Export derives wire from **model fields + `Channel.mode`** — never from hidden
 | --------------------- | ------------------------------------------ | ----------------------------------------- |
 | `Bandwidth (kHz)`     | always empty                               | `12.5` when unset; else model kHz string  |
 | `RX Tone` / `TX Tone` | always empty                               | `None` when `none`; else CTCSS/DCS wire   |
-| `Squelch`             | always empty                               | `Disabled` when `null`; else `N%`         |
+| `Squelch`             | always empty                               | `Disabled` when `null`/`0`; else `N%`     |
 | `DMR ID`              | `None` when unset; else integer string     | always empty                              |
 | `Contact` / `TG List` | `None` when unset; else resolved wire name | empty when unset; else resolved wire name |
+| `TS1_TA_Tx` / `TS2_TA_Tx ID` | `Off` when unmodelled               | always empty                              |
 
-| `Disabled` squelch and `Master` both map to `squelch: null` on import (radio default).
-
-Binary Web Serial encode uses the same internal percent with qDMR scaling at channel offset `0x37` — see [radios/opengd77/channel-record.md](../../radios/opengd77/channel-record.md#squelch-0x37). CSV elicitation may evolve in [#439](https://github.com/pskillen/codeplug-studio/issues/439); binary write follows library fields as source of truth.
+`Master`, `Open`, and `Closed` squelch sentinels are **not emitted** by Studio export today — see [#439](https://github.com/pskillen/codeplug-studio/issues/439). Binary Web Serial encode uses internal percent at channel offset `0x37` — see [radios/opengd77/channel-record.md](../../radios/opengd77/channel-record.md#squelch-0x37).
 
 ## Digital channel patterns
 

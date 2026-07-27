@@ -1,12 +1,12 @@
 # OpenGD77 — multi-mode channel expansion
 
-**Status:** Shipped in app — tracking archive reference (codeplug-tool#46).
+**Status:** Shipped — `expandChannelWireRows` in [`multiMode.ts`](../../../../src/core/import-export/channelExpansion/multiMode.ts).
 
 ## Problem
 
 The Baofeng 1701 / OpenGD77 CPS has **no dual-mode channel row** — an FM+DMR repeater on the same frequency needs separate `Analogue` and `Digital` `Channels.csv` entries ([`opengd77-1701`](profiles.md)). The internal model lets operators model one logical site with multiple mode profiles; export expands to the wire rows the radio expects.
 
-Sibling formats differ: DM32 stock CPS uses native `Fixed Analog` / `Fixed Digital` on **one** row (archive reference #67); qDMR splits into separate `fm:` / `dmr:` channels.
+Sibling formats differ: DM32 stock CPS uses native `Fixed Analog` / `Fixed Digital` on **one** row; qDMR splits into separate `fm:` / `dmr:` channels.
 
 ## When to expand
 
@@ -16,6 +16,8 @@ Sibling formats differ: DM32 stock CPS uses native `Fixed Analog` / `Fixed Digit
 | `multiMode: true` with N mode profiles | N rows — one per profile                               |
 
 Each expanded row uses the profile's mode for `Channel Type` (`Analogue` / `Digital` via [channels.md](channels.md)) and that profile's mode-specific fields (tones, colour code, contact, TG list, etc.). Shared fields (frequencies, location, power, rx-only, TOT, …) copy from the logical channel.
+
+Controlled by build export option `expandModes` (default `true` on OpenGD77 adapter).
 
 ## Derived channel names
 
@@ -28,9 +30,9 @@ Deterministic suffix from mode category (case-sensitive FKs across files):
 
 **Collisions:** if a derived name already exists among export wire names (existing channels or other expanded rows), append ` 2`, ` 3`, … until unique.
 
-**Length:** 1701 LCD display ~16 characters — export may emit a warning when a derived name exceeds the profile display limit; truncation is not applied automatically.
+**Length:** 1701 LCD display ~16 characters — export may emit a warning when a derived name exceeds the profile display limit; shortening pipeline applies when enabled.
 
-Implementation: `src/core/import-export/ (planned)` — `expandChannelForExport()`.
+Implementation: [`expandChannelWireRows`](../../../../src/core/import-export/channelExpansion/multiMode.ts) · suffix helpers in [`modeExportSuffix.ts`](../../../../src/core/import-export/channelExpansion/modeExportSuffix.ts).
 
 ## Zone membership
 
@@ -38,22 +40,19 @@ Zones reference **logical channel ids** internally (`memberChannelIds`). On expo
 
 If expansion would exceed the target profile's zone member cap, export truncates at the boundary and emits a warning (see [zones.md](zones.md), [`opengd77-1701`](profiles.md)).
 
-## Import re-normalisation (best-effort)
+## Import re-normalisation (planned)
 
-On import, paired flat rows may collapse into one logical multi-mode channel when:
+On import (not shipped), paired flat rows may collapse into one logical multi-mode channel when:
 
 - Same normalised base name stem (after stripping `-F` / `-D` suffixes)
 - Same RX and TX frequency (Hz)
 - Same location (lat/lon) when both set
 - `Channel Type` differs (`Analogue` vs `Digital`)
 
-**Ambiguity:** leave as separate channels — no regression.
-
-Decisions should surface in import preview when archive reference #113 ships.
+**Ambiguity:** leave as separate channels — no regression. Decisions should surface in import preview when [#524](https://github.com/pskillen/codeplug-studio/issues/524) ships.
 
 ## Related
 
-- [#46 — multi-mode channels]archive reference
-- [#36 — multi-talkgroup](multi-talkgroup.md) (orthogonal expansion axis)
+- [multi-talkgroup.md](multi-talkgroup.md) (orthogonal expansion axis)
 - [channels.md](channels.md)
 - [Data model — Channel](../../../features/data-model/README.md)
