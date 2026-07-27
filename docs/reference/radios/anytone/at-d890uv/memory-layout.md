@@ -116,44 +116,30 @@ Zone record detail: [zone-record.md](zone-record.md). Channel geometry: [channel
 
 ## Address aliasing
 
-Sparse erase-unit RMW ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) assumes address → physical cell is **1:1** within each `0x40000` erase unit. If regions alias at `+0x40000`, a byte “preserved” by read-modify-write could land on the wrong cell — in exactly the optional-settings and alarm spans whose loss bricks the radio (Chinese UI, power-on password).
+Flash address space is **not** uniformly flat. Measured on hardware 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`, 240-byte reads).
 
-### ChannelData (measured)
+### ChannelData
 
-Hardware measurement 2026-07-27 (erase-unit probe, `/debug/d890-erase-probe`):
+| Property               | Value                                    |
+| ---------------------- | ---------------------------------------- |
+| Block pitch            | `0x80000` (`ChannelDataBlockOffset`)     |
+| Backed bytes per block | `0x40000` (low half only)                |
+| Alias stride           | `+0x40000` — upper half mirrors low half |
+| Erase unit             | `0x40000`, aligned                       |
 
-| Property                    | Value                                    |
-| --------------------------- | ---------------------------------------- |
-| Block pitch                 | `0x80000` (`ChannelDataBlockOffset`)     |
-| Backed bytes per block      | `0x40000` (low half only)                |
-| Alias stride                | `+0x40000` — upper half mirrors low half |
-| Erase unit (in ChannelData) | `0x40000`, aligned                       |
+Channel writes must stay in the low half of each block; `0x1840000` physically lands on `0x1800000`. Extent modelling: [#791](https://github.com/pskillen/codeplug-studio/issues/791).
 
-Studio is safe on channel writes only while `channelPrimaryAddress` stays in the low half of each block ([#791](https://github.com/pskillen/codeplug-studio/issues/791)).
+### Config regions
 
-### Config regions (probe tooling — [#792](https://github.com/pskillen/codeplug-studio/issues/792))
+Regions that matter for erase-unit RMW ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) are **flat** at `+0x40000` — base and alias candidate hold distinct cells ([#792](https://github.com/pskillen/codeplug-studio/issues/792)):
 
-Aliasing was **not** measured in config erase units before #792. A read-only pairwise probe compares each region against `base + 0x40000`:
+| Region                   | Base        | Alias (`+0x40000`) | Length  | Status | non-`0xff` (base / alias) |
+| ------------------------ | ----------- | ------------------ | ------- | ------ | ------------------------- |
+| LocalInfo                | `0x4f80000` | `0x4fc0000`        | `0x100` | flat   | 233 / 0                   |
+| Optional settings (main) | `0x3500000` | `0x3540000`        | `0x200` | flat   | 512 / 512                 |
+| ChannelSet               | `0x3482a00` | `0x34c2a00`        | `0x200` | flat   | 490 / 0                   |
 
-| Region                   | Base        | Alias candidate | Length  | Erase unit  |
-| ------------------------ | ----------- | --------------- | ------- | ----------- |
-| LocalInfo                | `0x4f80000` | `0x4fc0000`     | `0x100` | — (anchor)  |
-| Optional settings (main) | `0x3500000` | `0x3540000`     | `0x200` | `0x3500000` |
-| ChannelSet               | `0x3482a00` | `0x34c2a00`     | `0x200` | `0x3480000` |
-
-**Method:** `/debug/d890-erase-probe` → **Config-region alias check (read-only)**. No writes, no power-cycle. Use a **CPS-restored** radio so LocalInfo is densely populated.
-
-**Verdict rules:**
-
-| Observation                                | Status                                                |
-| ------------------------------------------ | ----------------------------------------------------- |
-| Any byte differs between base and alias    | `flat` — distinct cells                               |
-| Byte-identical and at least one non-`0xff` | `aliased` — one physical cell                         |
-| Both spans all `0xff`                      | `inconclusive — both erased` (never reported as flat) |
-
-**Hardware measurement:** _pending — run the probe and paste results here (date, radio ident, per-pair status)._
-
-**PR5 gate:** if any config pair is `aliased` at `+0x40000`, stop and re-plan sparse erase-unit RMW. If all pairs are `flat`, PR5 proceeds as designed. If config pairs are inconclusive but LocalInfo is `flat`, PR5 may proceed with LocalInfo as anchor.
+Sparse erase-unit RMW may treat `0x3480000` and `0x3500000` units as 1:1 address → cell. Dual all-`0xff` spans would be inconclusive (not “flat”); none of the measured pairs were.
 
 ## Channel address formula
 
@@ -205,13 +191,15 @@ Full map fields live in anytone-cps `D890_MAP`; expand these pages when an adapt
 
 Cross-checked against:
 
-| Fact set                         | Source                                                           |
-| -------------------------------- | ---------------------------------------------------------------- |
-| Region bases / strides / lengths | anytone-cps `D890_MAP`                                           |
-| Channel / zone address formulas  | anytone-cps `Device::readChannelData` / `readZoneData` / writers |
-| Serial block size / framing      | anytone-cps `SerialDevice`                                       |
+| Fact set                         | Source                                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
+| Region bases / strides / lengths | anytone-cps `D890_MAP`                                                                     |
+| Channel / zone address formulas  | anytone-cps `Device::readChannelData` / `readZoneData` / writers                           |
+| Serial block size / framing      | anytone-cps `SerialDevice`                                                                 |
+| ChannelData alias / erase unit   | Hardware probe 2026-07-27 (`/debug/d890-erase-probe`)                                      |
+| Config-region flat at `+0x40000` | Hardware probe 2026-07-27 ([#792](https://github.com/pskillen/codeplug-studio/issues/792)) |
 
-A live radio dump is optional for this doc ticket; see [fixtures.md](fixtures.md).
+Fixtures: [fixtures.md](fixtures.md).
 
 ## Related
 
