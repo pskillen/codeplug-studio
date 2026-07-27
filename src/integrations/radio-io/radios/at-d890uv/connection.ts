@@ -135,15 +135,17 @@ export async function atD890WriteMemory(
   address: number,
   data: Uint8Array,
   signal?: AbortSignal,
+  opts?: { transmitGuard?: (address: number) => void },
 ): Promise<void> {
+  const guard = opts?.transmitGuard ?? assertAtD890WritableAddress;
   throwIfAborted(signal);
-  assertAtD890WritableAddress(address);
+  guard(address);
   if (data.length % ANYTONE_DMR_BLOCK_SIZE !== 0) {
     throw new RangeError(`D890 write data must be 16-byte aligned: ${data.length}`);
   }
   for (let off = 0; off < data.length; off += ANYTONE_DMR_BLOCK_SIZE) {
     const addr = address + off;
-    assertAtD890WritableAddress(addr);
+    guard(addr);
     const chunk = data.subarray(off, off + ANYTONE_DMR_BLOCK_SIZE);
     await pipe.write(makeAnytoneDmrWriteFrame(addr, ANYTONE_DMR_BLOCK_SIZE, chunk));
     const ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);

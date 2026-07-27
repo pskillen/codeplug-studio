@@ -3,6 +3,7 @@ import { RadioProtocolError } from '../../kit/errors.ts';
 import { ANYTONE_DMR_ACK, anytoneDmrChecksum8AfterOpcode } from '../../kit/codecs/anytoneDmrRw.ts';
 import { D890_MAP } from './constants.ts';
 import { atD890ReadMemory, atD890WriteMemory } from './connection.ts';
+import { assertAtD890TransmitAddress } from './writableExtents.ts';
 import { AtD890ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
 
 function makeReadReply(address: number, payload: Uint8Array): Uint8Array {
@@ -45,6 +46,17 @@ describe('atD890WriteMemory allow-list', () => {
     for (const frame of writeFrames) {
       expect(frame[5]).toBe(0x10);
     }
+  });
+
+  it('permits optional settings when transmit guard includes touched unit', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    const touched = new Set([0x350_0000]);
+    const guard = (addr: number) => assertAtD890TransmitAddress(addr, touched);
+    pipe.enqueue(new Uint8Array([ANYTONE_DMR_ACK]));
+    await atD890WriteMemory(pipe, D890_MAP.OptionalSettingsMain, new Uint8Array(0x10), undefined, {
+      transmitGuard: guard,
+    });
+    expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(1);
   });
 });
 

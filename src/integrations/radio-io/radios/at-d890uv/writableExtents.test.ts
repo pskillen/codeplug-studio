@@ -8,8 +8,10 @@ import {
   type AtD890DownloadCache,
 } from './memory.ts';
 import {
+  assertAtD890TransmitAddress,
   assertAtD890WritableAddress,
   assertAtD890WritableSpan,
+  isAtD890TransmitAddress,
   isAtD890WritableAddress,
 } from './writableExtents.ts';
 
@@ -116,6 +118,22 @@ describe('AT_D890 writable extents', () => {
     expect(isAtD890WritableAddress(backed)).toBe(true);
     expect(() => assertAtD890WritableAddress(mirrored)).toThrow(RadioProtocolError);
     expect(() => assertAtD890WritableSpan(mirrored, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE)).toThrow(
+      RadioProtocolError,
+    );
+    expect(isAtD890TransmitAddress(mirrored, new Set([0x180_0000]))).toBe(false);
+  });
+
+  it('allows optional settings inside a touched erase unit during upload', () => {
+    const touched = new Set([0x350_0000]);
+    expect(isAtD890TransmitAddress(D890_MAP.OptionalSettingsMain, touched)).toBe(true);
+    expect(isAtD890TransmitAddress(D890_MAP.ZoneAChannel, touched)).toBe(true);
+    expect(() => assertAtD890TransmitAddress(D890_MAP.OptionalSettingsMain, touched)).not.toThrow();
+  });
+
+  it('still refuses LocalInfo even when other units are touched', () => {
+    const touched = new Set([0x350_0000, 0x348_0000]);
+    expect(isAtD890TransmitAddress(D890_MAP.LocalInfo, touched)).toBe(false);
+    expect(() => assertAtD890TransmitAddress(D890_MAP.LocalInfo, touched)).toThrow(
       RadioProtocolError,
     );
   });
