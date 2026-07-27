@@ -28,11 +28,7 @@ const NAME_LEN = 0x20;
 function channelPrimaryAddress(index) {
   const blockIndex = Math.floor(index / CHANNEL_DATA_BLOCK_SIZE);
   const indexInBlock = index % CHANNEL_DATA_BLOCK_SIZE;
-  return (
-    CHANNEL_DATA +
-    blockIndex * CHANNEL_DATA_BLOCK_OFFSET +
-    indexInBlock * CHANNEL_DATA_OFFSET
-  );
+  return CHANNEL_DATA + blockIndex * CHANNEL_DATA_BLOCK_OFFSET + indexInBlock * CHANNEL_DATA_OFFSET;
 }
 
 function channelSecondaryAddress(index) {
@@ -138,19 +134,11 @@ const records = [];
 for (const idx of occupied) {
   if (idx >= 4000) continue;
   const primary = getCacheBytes(blocks, channelPrimaryAddress(idx), CHANNEL_CHUNK_SIZE);
-  const secondary = getCacheBytes(
-    blocks,
-    channelSecondaryAddress(idx),
-    CHANNEL_CHUNK_SIZE,
-  );
+  const secondary = getCacheBytes(blocks, channelSecondaryAddress(idx), CHANNEL_CHUNK_SIZE);
   const combined = new Uint8Array(CHANNEL_RECORD_SIZE);
   combined.set(primary, 0);
   combined.set(secondary, CHANNEL_CHUNK_SIZE);
-  const rxHz =
-    parseInt(
-      bytesToHex(combined.subarray(0, 4)),
-      16,
-    ) || 0;
+  const rxHz = parseInt(bytesToHex(combined.subarray(0, 4)), 16) || 0;
   if (rxHz === 0) continue;
   const sanitized = sanitizeNameField(combined);
   records.push({
@@ -166,7 +154,11 @@ console.log(`Extracted ${records.length} channel records`);
 const contactWireValues = records.map((r) => r.wireContactIdx);
 const uniqueContacts = [...new Set(contactWireValues)].sort((a, b) => a - b);
 console.log('Contact wire values sample:', uniqueContacts.slice(0, 20));
-console.log('Min/max contact wire:', Math.min(...contactWireValues), Math.max(...contactWireValues));
+console.log(
+  'Min/max contact wire:',
+  Math.min(...contactWireValues),
+  Math.max(...contactWireValues),
+);
 
 const outLines = [
   '/**',

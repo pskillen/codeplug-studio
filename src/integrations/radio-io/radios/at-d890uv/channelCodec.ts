@@ -28,7 +28,7 @@ const WIRE_INDEX_NONE = 0xff;
 const BYTE_09_PRESERVE_MASK = 0xd0;
 
 function setBit(byte: number, bit: number, value: boolean): number {
-  return value ? (byte | (1 << bit)) & 0xff : (byte & ~(1 << bit)) & 0xff;
+  return value ? (byte | (1 << bit)) & 0xff : byte & ~(1 << bit) & 0xff;
 }
 
 function decodeToneFromCtcssIndex(index: number): RadioTone {
@@ -206,9 +206,7 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
     ...(decodeRxGroupIndex(data[0x1c]!) != null
       ? { rxGroupIndex: decodeRxGroupIndex(data[0x1c]!) }
       : {}),
-    ...(decodeScanListId(data[0x1b]!) != null
-      ? { scanListId: decodeScanListId(data[0x1b]!) }
-      : {}),
+    ...(decodeScanListId(data[0x1b]!) != null ? { scanListId: decodeScanListId(data[0x1b]!) } : {}),
     scanAdd: autoScan,
     dmrRadioIdIndex: data[0x18]!,
     timeslot: ((data[0x21]! >> 1) & 1) === 1 ? 2 : 1,
