@@ -128,7 +128,6 @@ export function analyseAtD890ConfigAliasReport(
   const localInfo = pairs.find((p) => p.id === 'localInfo');
   const anyAliased = pairs.some((p) => p.status === 'aliased');
   const allFlat = pairs.every((p) => p.status === 'flat');
-  const anyInconclusive = pairs.some((p) => p.status === 'inconclusive_both_erased');
 
   let sparseRmwGate: AtD890SparseRmwGate;
   let summary: string;

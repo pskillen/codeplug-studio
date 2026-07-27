@@ -17,6 +17,7 @@ import {
   AT_D890_CONNECTION,
   AT_D890_PROBE,
   estimateAtD890RmwSeconds,
+  runAtD890ConfigAliasCheck,
   runAtD890LinkProbe,
   runAtD890ProbeDiagnose,
   runAtD890ProbeInspect,
@@ -26,6 +27,8 @@ import {
   runAtD890WriteBlockProbe,
   runAtD890WriteBlockVerify,
   type AtD890AliasVerdict,
+  type AtD890ConfigAliasCheckResult,
+  type AtD890ConfigAliasStatus,
   type AtD890EraseUnitResult,
   type AtD890AccessProfile,
   type AtD890LinkProfile,
@@ -37,7 +40,15 @@ import {
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 
 type Pass =
-  'inspect' | 'paint' | 'mark' | 'measure' | 'diagnose' | 'link' | 'writeProbe' | 'writeVerify';
+  | 'inspect'
+  | 'paint'
+  | 'mark'
+  | 'measure'
+  | 'diagnose'
+  | 'link'
+  | 'writeProbe'
+  | 'writeVerify'
+  | 'configAlias';
 
 /** `diagnose` is run on demand, not as part of the sequence. */
 const PASS_ORDER: Pass[] = ['inspect', 'paint', 'mark', 'measure'];
@@ -52,6 +63,7 @@ const PASS_LABEL: Record<Pass, string> = {
   link: 'Profile link speed (read-only)',
   writeProbe: 'Probe write block sizes',
   writeVerify: 'Verify write blocks after power-cycle (read-only)',
+  configAlias: 'Config-region alias check (read-only)',
 };
 
 /** A power-cycle is only meaningful after a pass that committed writes. */
@@ -64,6 +76,7 @@ const PASS_COMMITS_WRITES: Record<Pass, boolean> = {
   link: false,
   writeProbe: true,
   writeVerify: false,
+  configAlias: false,
 };
 
 /** Units the current modelled write set lands in, per erase-unit size (from the bag analysis). */
@@ -77,6 +90,39 @@ function formatBytes(n: number): string {
   if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(n % (1024 * 1024) === 0 ? 0 : 1)} MB`;
   if (n >= 1024) return `${(n / 1024).toFixed(n % 1024 === 0 ? 0 : 1)} kB`;
   return `${n} B`;
+}
+
+function configAliasStatusColor(status: AtD890ConfigAliasStatus): string {
+  switch (status) {
+    case 'flat':
+      return 'green';
+    case 'aliased':
+      return 'red';
+    case 'inconclusive_both_erased':
+      return 'gray';
+  }
+}
+
+function configAliasStatusLabel(status: AtD890ConfigAliasStatus): string {
+  switch (status) {
+    case 'flat':
+      return 'flat';
+    case 'aliased':
+      return 'aliased';
+    case 'inconclusive_both_erased':
+      return 'inconclusive — both erased';
+  }
+}
+
+function sparseRmwGateColor(gate: AtD890ConfigAliasCheckResult['report']['sparseRmwGate']): string {
+  switch (gate) {
+    case 'proceed':
+      return 'green';
+    case 'replan':
+      return 'red';
+    case 'partial':
+      return 'orange';
+  }
 }
 
 function ThroughputRows({ label, t }: { label: string; t: AtD890ThroughputResult }) {
@@ -130,6 +176,7 @@ export default function DebugD890EraseProbePage() {
   const [sweep, setSweep] = useState<AtD890SweepResult | null>(null);
   const [access, setAccess] = useState<AtD890AccessProfile | null>(null);
   const [writeVerdict, setWriteVerdict] = useState<AtD890WriteProbeVerdict | null>(null);
+  const [configAlias, setConfigAlias] = useState<AtD890ConfigAliasCheckResult | null>(null);
   const [shadowReads, setShadowReads] = useState<boolean | null>(null);
   const [desynced, setDesynced] = useState(false);
   const [rates, setRates] = useState<{ label: string; t: AtD890ThroughputResult }[]>([]);
@@ -231,6 +278,15 @@ export default function DebugD890EraseProbePage() {
           );
           setRates((prev) => [...prev, { label: 'Diagnose (read)', t: r.readThroughput }]);
           return;
+        } else if (pass === 'configAlias') {
+          const r = await runAtD890ConfigAliasCheck(pipe, opts);
+          setConfigAlias(r);
+          append(
+            `Config alias check (${r.model}): PR5 gate ${r.report.sparseRmwGate} — ` +
+              r.report.summary,
+          );
+          setRates((prev) => [...prev, { label: 'Config alias (read)', t: r.readThroughput }]);
+          return;
         } else {
           const r = await runAtD890ProbeMeasure(pipe, opts);
           setResult(r.result);
@@ -266,7 +322,7 @@ export default function DebugD890EraseProbePage() {
     <Page>
       <PageHeader
         title="AT-D890UV erase-unit probe"
-        description="Measures the flash erase unit that Write must read-modify-write (#768 phase 1)."
+        description="Measures the flash erase unit that Write must read-modify-write (#768 phase 1). Includes a read-only config-region alias check (#792) — no power-cycle required."
       />
       <Stack gap="md">
         <Alert color="red" title="This writes to the radio">
@@ -297,7 +353,14 @@ export default function DebugD890EraseProbePage() {
             The span deliberately sits in <Code>ChannelData</Code> blocks 16-18 rather than near the
             start of the bank. The erase unit is the unknown being measured, so the span is placed
             where even a far larger unit than expected (up to 8 MB) still lands entirely on unused
-            address space, well above the blocks a real codeplug occupies.
+            address space, well above the             blocks a real codeplug occupies.
+          </Text>
+          <Text size="sm" mt="sm">
+            <strong>Config-region alias check (#792):</strong> a separate read-only pass compares
+            LocalInfo, optional settings, and ChannelSet against their <Code>+0x40000</Code> alias
+            candidates. Identical non-trivial bytes mean one physical cell; dual all-<Code>0xff</Code>{' '}
+            spans are inconclusive. Use a CPS-restored radio so LocalInfo is densely populated. No
+            writes and no power-cycle.
           </Text>
         </PageSection>
 
@@ -404,6 +467,13 @@ export default function DebugD890EraseProbePage() {
                 {PASS_LABEL.writeVerify}
               </Button>
               <Button
+                variant="default"
+                disabled={busy !== null}
+                onClick={() => void runPass('configAlias')}
+              >
+                {PASS_LABEL.configAlias}
+              </Button>
+              <Button
                 variant="subtle"
                 disabled={busy !== null}
                 onClick={() => {
@@ -412,6 +482,7 @@ export default function DebugD890EraseProbePage() {
                   setResult(null);
                   setInspect(null);
                   setAlias(null);
+                  setConfigAlias(null);
                   setLink(null);
                   setSweep(null);
                   setAccess(null);
@@ -667,6 +738,62 @@ export default function DebugD890EraseProbePage() {
               No cell reported another address — the probe span is flat, so any missing sentinels
               really were erased.
             </Text>
+          </PageSection>
+        )}
+
+        {configAlias && (
+          <PageSection title="Config-region alias check (#792)">
+            <Stack gap="sm">
+              <Alert
+                color={sparseRmwGateColor(configAlias.report.sparseRmwGate)}
+                title={`PR5 gate: ${configAlias.report.sparseRmwGate}`}
+              >
+                {configAlias.report.summary}
+              </Alert>
+              <Text size="sm">
+                {configAlias.model} · read block <Code>{configAlias.readBlockSize}</Code> bytes
+              </Text>
+              <Table>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Region</Table.Th>
+                    <Table.Th>Base</Table.Th>
+                    <Table.Th>Alias (+0x40000)</Table.Th>
+                    <Table.Th>Status</Table.Th>
+                    <Table.Th>non-0xff (base / alias)</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {configAlias.report.pairs.map((p) => (
+                    <Table.Tr key={p.id}>
+                      <Table.Td>{p.label}</Table.Td>
+                      <Table.Td>
+                        <Code>{hex(p.base)}</Code>
+                      </Table.Td>
+                      <Table.Td>
+                        <Code>{hex(p.aliasCandidate)}</Code>
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge color={configAliasStatusColor(p.status)} variant="light">
+                          {configAliasStatusLabel(p.status)}
+                        </Badge>
+                      </Table.Td>
+                      <Table.Td>
+                        {p.nonFfBytesBase} / {p.nonFfBytesAlias}
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+              <Group>
+                <Button
+                  variant="light"
+                  onClick={() => void navigator.clipboard.writeText(configAlias.markdown)}
+                >
+                  Copy markdown for docs
+                </Button>
+              </Group>
+            </Stack>
           </PageSection>
         )}
 

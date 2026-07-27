@@ -24,7 +24,8 @@ export default function DebugIndexPage() {
         </Text>
         <Text size="sm">
           <Link to="/debug/d890-erase-probe">AT-D890UV erase-unit probe</Link> — measures the flash
-          erase unit that Write must read-modify-write. <strong>Writes to the radio.</strong>
+          erase unit that Write must read-modify-write, plus a read-only config-region alias check
+          (#792). <strong>Erase passes write to the radio;</strong> the alias check does not.
         </Text>
       </Stack>
     </Page>
