@@ -17,8 +17,11 @@ describe('AT_D890 writable extents', () => {
 
   it('excludes LocalInfo and optional settings', () => {
     expect(isAtD890WritableAddress(D890_MAP.LocalInfo)).toBe(false);
-    expect(isAtD890WritableAddress(0x350_0000)).toBe(false);
-    expect(isAtD890WritableAddress(0x350_0900)).toBe(false);
+    expect(isAtD890WritableAddress(D890_MAP.OptionalSettingsMain)).toBe(false);
+    expect(isAtD890WritableAddress(D890_MAP.OptionalSettingsExt)).toBe(false);
+    expect(isAtD890WritableAddress(D890_MAP.OptionalSettingsAprs)).toBe(false);
+    expect(isAtD890WritableAddress(D890_MAP.AlarmBitmap)).toBe(false);
+    expect(isAtD890WritableAddress(D890_MAP.AlarmData)).toBe(false);
   });
 
   it('Zone A/B writable extents do not overlap optional-settings spans', () => {
@@ -44,6 +47,29 @@ describe('AT_D890 writable extents', () => {
     expect(addrs.some((a) => a >= D890_MAP.LocalInfo && a < D890_MAP.LocalInfo + 0x100)).toBe(
       false,
     );
+    expect(addrs).toContain(D890_MAP.ChannelSet);
+  });
+
+  it('listWriteChunks omits optional settings and alarm even when present in cache', () => {
+    const cache: AtD890DownloadCache = {
+      blocks: new Map([
+        [D890_MAP.OptionalSettingsMain, new Uint8Array(D890_MAP.OptionalSettingsMainLength).fill(0xbb)],
+        [D890_MAP.OptionalSettingsExt, new Uint8Array(D890_MAP.OptionalSettingsExtLength).fill(0xcc)],
+        [D890_MAP.OptionalSettingsAprs, new Uint8Array(D890_MAP.OptionalSettingsAprsLength).fill(0xdd)],
+        [D890_MAP.AlarmBitmap, new Uint8Array(D890_MAP.AlarmBitmapLength).fill(0xee)],
+        [D890_MAP.AlarmData, new Uint8Array(D890_MAP.AlarmDataLength).fill(0xff)],
+        [D890_MAP.ChannelSet, new Uint8Array(0x200)],
+      ]),
+    };
+    const addrs = listWriteChunks(cache).map((c) => c.address);
+    const inRange = (start: number, len: number) =>
+      addrs.some((a) => a >= start && a < start + len);
+
+    expect(inRange(D890_MAP.OptionalSettingsMain, D890_MAP.OptionalSettingsMainLength)).toBe(false);
+    expect(inRange(D890_MAP.OptionalSettingsExt, D890_MAP.OptionalSettingsExtLength)).toBe(false);
+    expect(inRange(D890_MAP.OptionalSettingsAprs, D890_MAP.OptionalSettingsAprsLength)).toBe(false);
+    expect(inRange(D890_MAP.AlarmBitmap, D890_MAP.AlarmBitmapLength)).toBe(false);
+    expect(inRange(D890_MAP.AlarmData, D890_MAP.AlarmDataLength)).toBe(false);
     expect(addrs).toContain(D890_MAP.ChannelSet);
   });
 
