@@ -81,6 +81,31 @@ export function scriptAtD890MinimalDownload(pipe: AtD890ScriptedPipe): void {
   const local = new Uint8Array(D890_MAP.LocalInfoLength);
   local.fill(0xff);
   enqueueAtD890ReadReply(pipe, D890_MAP.LocalInfo, local);
+  enqueueAtD890ReadReply(
+    pipe,
+    D890_MAP.OptionalSettingsMain,
+    new Uint8Array(D890_MAP.OptionalSettingsMainLength).fill(0xff),
+  );
+  enqueueAtD890ReadReply(
+    pipe,
+    D890_MAP.OptionalSettingsExt,
+    new Uint8Array(D890_MAP.OptionalSettingsExtLength).fill(0xff),
+  );
+  enqueueAtD890ReadReply(
+    pipe,
+    D890_MAP.OptionalSettingsAprs,
+    new Uint8Array(D890_MAP.OptionalSettingsAprsLength).fill(0xff),
+  );
+  enqueueAtD890ReadReply(
+    pipe,
+    D890_MAP.AlarmBitmap,
+    new Uint8Array(D890_MAP.AlarmBitmapLength).fill(0xff),
+  );
+  enqueueAtD890ReadReply(
+    pipe,
+    D890_MAP.AlarmData,
+    new Uint8Array(D890_MAP.AlarmDataLength).fill(0xff),
+  );
   const channelSet = new Uint8Array(0x200);
   enqueueAtD890ReadReply(pipe, D890_MAP.ChannelSet, channelSet);
   const zoneSet = new Uint8Array(0x20);

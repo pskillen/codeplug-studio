@@ -43,6 +43,7 @@ export type { AtD890DownloadCache };
 
 const DOWNLOAD_STAGES = [
   'Local info',
+  'Optional settings / alarm',
   'Channels',
   'Zones',
   'Scan lists',
@@ -81,6 +82,31 @@ export async function downloadAtD890SparseRegions(
 
   stage('Reading local info…');
   await readRegion(pipe, cache, D890_MAP.LocalInfo, D890_MAP.LocalInfoLength, signal);
+
+  stage('Reading optional settings and alarm…');
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.OptionalSettingsMain,
+    D890_MAP.OptionalSettingsMainLength,
+    signal,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.OptionalSettingsExt,
+    D890_MAP.OptionalSettingsExtLength,
+    signal,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.OptionalSettingsAprs,
+    D890_MAP.OptionalSettingsAprsLength,
+    signal,
+  );
+  await readRegion(pipe, cache, D890_MAP.AlarmBitmap, D890_MAP.AlarmBitmapLength, signal);
+  await readRegion(pipe, cache, D890_MAP.AlarmData, D890_MAP.AlarmDataLength, signal);
 
   stage('Reading channel bitmap…');
   await readRegion(pipe, cache, D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES, signal);

@@ -82,6 +82,21 @@ export const D890_MAP = {
   ReceiveGroupLength: 0x120,
   MasterIdData: 0x368_4000,
   MasterIdLength: 0x40,
+  /** Optional settings (main) — Read/stash only; never serial-written. */
+  OptionalSettingsMain: 0x350_0000,
+  OptionalSettingsMainLength: 0x200,
+  /** Optional settings (ext) — power-on password chars, display strings. */
+  OptionalSettingsExt: 0x350_0900,
+  OptionalSettingsExtLength: 0x60,
+  /** Optional settings (APRS/GPS info) — hex preview only in Studio. */
+  OptionalSettingsAprs: 0x350_1280,
+  OptionalSettingsAprsLength: 0x30,
+  /** Alarm call-type / TG bitmap — Read/stash only. */
+  AlarmBitmap: 0x3482_e00,
+  AlarmBitmapLength: 0x10,
+  /** Alarm record bodies — Read/stash only. */
+  AlarmData: 0x3483_000,
+  AlarmDataLength: 0x30,
 } as const;
 
 /** Virtual MemoryMap span (absolute addresses; base 0). */
