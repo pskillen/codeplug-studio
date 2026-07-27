@@ -105,4 +105,76 @@ describe('RadioIoProgressModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it('shows unverified write done with optional verify actions', () => {
+    const onVerify = vi.fn();
+    const onCloseWithoutVerify = vi.fn();
+    render(
+      <MantineProvider>
+        <RadioIoProgressModal
+          opened
+          operation="write"
+          phase="done"
+          progress={null}
+          transferStages={['Upload']}
+          writeVerifyStatus="unverified"
+          onCancel={vi.fn()}
+          onVerify={onVerify}
+          onCloseWithoutVerify={onCloseWithoutVerify}
+        />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByText(/Write finished — not yet checked/i)).toBeInTheDocument();
+    expect(screen.getByText(/restarts on its own/i)).toBeInTheDocument();
+    expect(screen.queryByText(/All selected blocks were sent/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Verify preserved settings' }));
+    expect(onVerify).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Close without verifying' }));
+    expect(onCloseWithoutVerify).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows verified write done without implied pass on unverified path', () => {
+    render(
+      <MantineProvider>
+        <RadioIoProgressModal
+          opened
+          operation="write"
+          phase="done"
+          progress={null}
+          writeVerifyStatus="verified"
+          onCancel={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByText('Write finished — settings checked')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Verify preserved settings' })).not.toBeInTheDocument();
+  });
+
+  it('names mismatched regions when verify fails', () => {
+    render(
+      <MantineProvider>
+        <RadioIoProgressModal
+          opened
+          operation="write"
+          phase="done"
+          progress={null}
+          writeVerifyStatus="failed"
+          verifyMismatches={[
+            { id: 'OptionalSettingsMain', label: 'Language and display settings' },
+          ]}
+          onCancel={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByText(/Preserved settings check failed/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Language and display settings does not match/i),
+    ).toBeInTheDocument();
+  });
 });
