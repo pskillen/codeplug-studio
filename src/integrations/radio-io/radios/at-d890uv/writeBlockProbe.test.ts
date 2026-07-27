@@ -167,3 +167,21 @@ describe('summariseAtD890WriteProbe', () => {
     expect(v.speedup).toBe(1);
   });
 });
+
+describe('verdict distinguishes "16 confirmed" from "nothing confirmed"', () => {
+  function res(blockSize: number, readback: AtD890WriteTrialResult['readback']) {
+    return { blockSize, address: 0, accepted: true, readback } as AtD890WriteTrialResult;
+  }
+
+  it('flags a run where nothing matched, despite defaulting to 16', () => {
+    const v = summariseAtD890WriteProbe([res(0x10, 'erased'), res(0x20, 'erased')]);
+    expect(v.bestBlockSize).toBe(0x10);
+    expect(v.anyVerified).toBe(false);
+  });
+
+  it('reports a genuine 16-byte confirmation as verified', () => {
+    const v = summariseAtD890WriteProbe([res(0x10, 'match'), res(0x20, 'erased')]);
+    expect(v.bestBlockSize).toBe(0x10);
+    expect(v.anyVerified).toBe(true);
+  });
+});

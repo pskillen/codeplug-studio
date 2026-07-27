@@ -1,10 +1,22 @@
 /**
  * AT-D890UV write block-size probe (#768).
  *
- * Reads are measured to honour 240-byte blocks. Writes are still 16 bytes per frame, and
- * whether the radio accepts more is untested — anytone-cps hardcodes 16 for writes, but it
- * hardcodes 16 for reads too and the radio happily served 240. At the measured rates that
- * single question is worth ~11 minutes per erase-unit RMW Write.
+ * **Outcome: the question this answers turned out not to matter.** It was posed when the
+ * erase-unit RMW design assumed *dense* staging — rewriting every byte of each touched
+ * erase unit, 3.67 MB, which at 16-byte frames is ~12 minutes. But erasing sets `0xff`, so
+ * a byte that already reads `0xff` needs no staging: only the 37.5 kB of non-`0xff` content
+ * has to be re-sent. That is ~8 s at 16-byte frames, and matches how official CPS writes a
+ * core codeplug in 10-20 s. Block size stops being a lever.
+ *
+ * Kept because it also measures in-session read semantics (#769), and because the desync
+ * behaviour it uncovered is a standing hazard for anything that widens a frame.
+ *
+ * Hardware 2026-07-27: no size verified, **not even 16**, which is the known-good control —
+ * so this run bounds nothing about block sizes. Oversized frames appear to disturb the
+ * session enough that no staged write survives the commit.
+ *
+ * Reads are measured to honour 240-byte blocks. anytone-cps hardcodes 16 for writes, but it
+ * hardcodes 16 for reads too and the radio happily served 240.
  *
  * Two passes with a radio power-cycle between them, because a write is staged into RAM and
  * only reaches flash on commit:
@@ -134,8 +146,14 @@ export function classifyAtD890WriteReadback(
 
 export interface AtD890WriteProbeVerdict {
   results: AtD890WriteTrialResult[];
-  /** Largest size whose read-back matched byte for byte. */
+  /**
+   * Largest size whose read-back matched byte for byte, or the 16-byte default when none
+   * did. Always read alongside {@link anyVerified} — on its own this value cannot tell
+   * "16 bytes confirmed" apart from "nothing confirmed at all".
+   */
   bestBlockSize: number;
+  /** False when no size read back correctly, so the run proved nothing. */
+  anyVerified: boolean;
   /** Throughput multiplier of `bestBlockSize` over 16-byte write frames. */
   speedup: number;
 }
@@ -149,6 +167,7 @@ export function summariseAtD890WriteProbe(
   return {
     results: [...results],
     bestBlockSize,
+    anyVerified: good.length > 0,
     // One frame carries `bestBlockSize` bytes where it used to carry 16, and per-frame
     // round-trip cost dominates, so the ratio is the throughput gain.
     speedup: bestBlockSize / AT_D890_BLOCK_SIZE,

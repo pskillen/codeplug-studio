@@ -511,13 +511,22 @@ export default function DebugD890EraseProbePage() {
                   <strong>Power-cycle the radio</strong> to discard the staged shadow.
                 </Alert>
               )}
-              <Alert color={writeVerdict.bestBlockSize > 0x10 ? 'green' : 'orange'}>
-                Largest write block <Code>{writeVerdict.bestBlockSize}</Code> bytes —{' '}
-                <strong>{writeVerdict.speedup.toFixed(1)}×</strong> the 16-byte path.
-                {writeVerdict.bestBlockSize > 0x10
-                  ? ' Staging is the dominant cost in an erase-unit RMW, so this is the biggest single saving available.'
-                  : ' The radio only stages 16 bytes per frame, so RMW staging cost stands.'}
-              </Alert>
+              {writeVerdict.anyVerified ? (
+                <Alert color={writeVerdict.bestBlockSize > 0x10 ? 'green' : 'orange'}>
+                  Largest verified write block <Code>{writeVerdict.bestBlockSize}</Code> bytes —{' '}
+                  <strong>{writeVerdict.speedup.toFixed(1)}×</strong> the 16-byte path.
+                  {writeVerdict.bestBlockSize > 0x10
+                    ? ' Staging is the dominant cost in a dense erase-unit RMW, so this is a real saving.'
+                    : ' The radio stages only 16 bytes per frame.'}
+                </Alert>
+              ) : (
+                <Alert color="gray" title="Nothing verified">
+                  No size read back correctly — not even 16 bytes, which is the known-good control.
+                  This run proves nothing about block sizes rather than proving 16 is the limit.
+                  Most likely the oversized frames disturbed the session enough that none of the
+                  staged writes survived the commit.
+                </Alert>
+              )}
 
               {shadowReads != null && (
                 <Alert color={shadowReads ? 'blue' : 'yellow'} title="In-session read semantics">
