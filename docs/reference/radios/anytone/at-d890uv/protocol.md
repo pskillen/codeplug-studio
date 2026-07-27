@@ -85,6 +85,8 @@ Checksum (anytone-cps): 8-bit sum over command bytes after the opcode (`cmd[1:]`
 
 **Safe-skip:** if `address == 0x2fa0010`, anytone-cps returns without writing. Studio adapters should honour the same skip (D878 LocalInfo neighbourhood; keep for family safety even when targeting D890).
 
+**ChannelData geometry:** the allow-list covers only backed low halves of each `0x80000` block; mirrored upper-half addresses are refused at `assertAtD890WritableAddress` ([#791](https://github.com/pskillen/codeplug-studio/issues/791)). See [memory-layout.md — Address aliasing](memory-layout.md#address-aliasing).
+
 ## Write staging and commit
 
 On this radio, **`W` frames stage to RAM** inside the PROGRAM session. Flash erase/program is **deferred** until the host sends ASCII **`END`**. A successful disconnect after upload therefore commits the staged image; omitting `END` (or power-cycling without `END`) discards the shadow.
