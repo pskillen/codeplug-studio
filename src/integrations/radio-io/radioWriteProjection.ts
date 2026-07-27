@@ -32,6 +32,8 @@ export interface RadioTalkGroupDto {
   digitalId: number;
   /** NeonPlug quick-contact call type: 0x03 private, 0x04 group, 0x05 all — Studio DM-32UV Write always uses group (0x04). */
   callType: number;
+  /** OpenGD77 contact-bank clone: Force TS1 / TS2 (`0x17` on wire). */
+  timeSlotOverride?: 1 | 2;
 }
 
 /** RX group list for metadata 0x0F. */
@@ -43,6 +45,7 @@ export interface RadioRxGroupDto {
    * RX member payload (up to 32).
    * - `radio-io-dm32uv`: DMR IDs (24-bit LE on wire).
    * - `radio-io-at-d890uv`: 0-based talkgroup bank slot indices (u32 LE on wire).
+   * - `radio-io-opengd77-*`: 1-based DMR contact bank indices when timeslot clones apply.
    */
   memberDigitalIds: readonly number[];
 }

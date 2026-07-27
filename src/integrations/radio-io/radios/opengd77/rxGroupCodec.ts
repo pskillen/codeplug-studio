@@ -56,6 +56,7 @@ export function encodeRxGroupsIntoImage(
   image: MemoryMap,
   groups: readonly RadioRxGroupDto[],
   contactIndexById: ReadonlyMap<number, number>,
+  options?: { memberIdsAreContactIndices?: boolean },
 ): void {
   const bank = new Uint8Array(OPENGD77_RX_GROUP_BANK_SIZE);
   bank.fill(0x00);
@@ -80,7 +81,9 @@ export function encodeRxGroupsIntoImage(
         setU16Le(record, 0x10 + i * 2, 0);
         continue;
       }
-      const contactIdx = contactIndexById.get(dig);
+      const contactIdx = options?.memberIdsAreContactIndices
+        ? dig
+        : contactIndexById.get(dig);
       if (contactIdx == null || contactIdx < 1) {
         setU16Le(record, 0x10 + i * 2, 0);
         continue;

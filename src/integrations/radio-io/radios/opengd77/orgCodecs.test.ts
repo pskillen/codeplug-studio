@@ -51,6 +51,25 @@ describe('opengd77 contactCodec', () => {
     });
   });
 
+  it('encodes Force TS1 and Force TS2 on contact byte 0x17', () => {
+    const ts1 = encodeContactRecord({
+      index: 1,
+      wireName: 'Scot TS1',
+      digitalId: 2355,
+      callType: 0,
+      timeSlotOverride: 1,
+    });
+    const ts2 = encodeContactRecord({
+      index: 2,
+      wireName: 'Scot TS2',
+      digitalId: 2355,
+      callType: 0,
+      timeSlotOverride: 2,
+    });
+    expect(ts1[0x17]).toBe(0x00);
+    expect(ts2[0x17]).toBe(0x02);
+  });
+
   it('writes contacts into image bank', () => {
     const image = createOpenUv380Image();
     encodeContactsIntoImage(image, [

@@ -77,7 +77,12 @@ export function mergeChannelsIntoOpenGd77Hydration(
   );
   encodeContactsIntoImage(image, contacts);
   const byDigitalId = contactIndexByDigitalId(contacts);
-  encodeRxGroupsIntoImage(image, organisation?.rxGroups ?? [], byDigitalId);
+  const useContactIndices = (organisation?.talkGroups ?? []).some(
+    (tg) => tg.timeSlotOverride != null,
+  );
+  encodeRxGroupsIntoImage(image, organisation?.rxGroups ?? [], byDigitalId, {
+    memberIdsAreContactIndices: useContactIndices,
+  });
   encodeChannelsIntoImage(image, channels, {
     clearUnlisted: true,
     powerSteps: opts?.powerSteps,
