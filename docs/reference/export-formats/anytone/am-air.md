@@ -91,3 +91,4 @@ Committed `AMZone.CSV` uses **synthetic** zone/channel labels redacted from the 
 - [fm-broadcast.md](fm-broadcast.md) — sibling receive-only bank
 - [channels.md](channels.md) — primary DMR channel table
 - [csv-reconciliation-gaps.md](../../../features/import-export/anytone/csv-reconciliation-gaps.md) — P1 airband partition
+- Web Serial Write omits AM airband from MR projection (DMR bank only); Anytone CSV still owns `AMAir.CSV` / `AMZone.CSV` updates — [AT-D890UV Write contract](../../radios/anytone/at-d890uv/README.md)

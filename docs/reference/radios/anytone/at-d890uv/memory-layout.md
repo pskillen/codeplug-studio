@@ -98,6 +98,8 @@ Studio upload (`listWriteChunks`) transmits **every 16-byte block present in the
 | LocalInfo                                                          | `kept`          | No                     | **Yes** — replayed from Read cache                |
 | Optional settings, alarm, DigitalContact\*, boot images, crypto, … | `kept` / unread | No                     | No — absent from cache unless future Read expands |
 
+**Serial Write projection (DMR bank only):** `RadioWriteProjection` for `radio-io-at-d890uv` partitions receive-only AM airband and broadcast FM out of MR channels, zones, and scan — same bank split as Anytone CSV egress ([#755](https://github.com/pskillen/codeplug-studio/issues/755)). Omitted banks stay on the radio; use Anytone CSV (`AMAir.CSV` / `FM.CSV`) to update them until binary AmAir Write exists — see [am-air.md](../../../export-formats/anytone/am-air.md). Export **Web Serial** shows an operator-facing **What Write updates** table (written vs deferred vs left alone).
+
 Safe-skip address `0x2fa0010` (family constant) is never written. D890 `LocalInfo+0x10` (`0x4f80010`) is **not** skipped.
 
 Zone record detail: [zone-record.md](zone-record.md). Channel geometry: [channel-record.md](channel-record.md).
