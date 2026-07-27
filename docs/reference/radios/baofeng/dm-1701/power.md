@@ -25,7 +25,7 @@ qdmr collapses power onto fewer wire values (Min / Low / Mid / High / Max → wi
 
 ## Squelch
 
-Profile-independent OpenGD77 rules: `N%`, `Disabled` → 0%, `Master` → `null` — see [power-squelch.md](../../../export-formats/opengd77/power-squelch.md).
+Profile-independent OpenGD77 **export** rules: analogue `null`/`0` → `Disabled`; else `N%`; digital → empty — see [power-squelch.md](../../../export-formats/opengd77/power-squelch.md). `Master` / `Open` / `Closed` sentinels need CPS elicitation ([#439](https://github.com/pskillen/codeplug-studio/issues/439)).
 
 ## Related
 

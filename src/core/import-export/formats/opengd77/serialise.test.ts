@@ -217,6 +217,59 @@ describe('OpenGD77 export serialise', () => {
     expect(rows[1]?.[rxOnlyIndex]).toBe('No');
   });
 
+  it('emits CPS-safe defaults for unmodelled vendor columns on digital rows', () => {
+    const channel: Channel = {
+      ...newChannel('proj', 'DMR Defaults'),
+      rxFrequency: 430_850_000,
+      txFrequency: 438_450_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 123,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const csv = serialiseChannels(minimalAssembled(channel));
+    const rows = parseCsv(csv);
+    const headers = rows[0]!;
+    const dataRow = rows[1]!;
+    expect(dataRow[headers.indexOf(CHANNEL_COL.zoneSkip)]).toBe('No');
+    expect(dataRow[headers.indexOf(CHANNEL_COL.noBeep)]).toBe('No');
+    expect(dataRow[headers.indexOf(CHANNEL_COL.noEco)]).toBe('No');
+    expect(dataRow[headers.indexOf(CHANNEL_COL.ts1TaTx)]).toBe('Off');
+    expect(dataRow[headers.indexOf(CHANNEL_COL.ts2TaTxId)]).toBe('Off');
+  });
+
+  it('emits CPS-safe defaults for unmodelled yes/no columns on analogue rows', () => {
+    const channel: Channel = {
+      ...newChannel('proj', 'FM Defaults'),
+      rxFrequency: 145_750_000,
+      txFrequency: 145_150_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: null,
+        },
+      ],
+    };
+    const csv = serialiseChannels(minimalAssembled(channel));
+    const rows = parseCsv(csv);
+    const headers = rows[0]!;
+    const dataRow = rows[1]!;
+    expect(dataRow[headers.indexOf(CHANNEL_COL.zoneSkip)]).toBe('No');
+    expect(dataRow[headers.indexOf(CHANNEL_COL.noBeep)]).toBe('No');
+    expect(dataRow[headers.indexOf(CHANNEL_COL.noEco)]).toBe('No');
+    expect(dataRow[headers.indexOf(CHANNEL_COL.ts1TaTx)]).toBe('');
+    expect(dataRow[headers.indexOf(CHANNEL_COL.ts2TaTxId)]).toBe('');
+  });
+
   it('serialises channel wire names from assemble projection', () => {
     const assembled = loadAssembled();
     const csv = serialiseChannels(assembled);

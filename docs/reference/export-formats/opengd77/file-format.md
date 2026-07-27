@@ -5,14 +5,14 @@ Cross-cutting wire-format rules for all OpenGD77 CPS CSV files. Per-file column 
 ## Header-name parsing
 
 - Columns are matched by **header name**, not column index. CPS export order may vary; adapters must not hard-code positions.
-- The first row is the header row — do not modify header text when bidirectional mappingping.
+- The first row is the header row — do not modify header text when round-tripping.
 - Canonical header spellings live in [`src/core/import-export/formats/opengd77/columns.ts`](../../../../src/core/import-export/formats/opengd77/columns.ts) and per-file reference docs.
-- UTF-8 BOM at file start is stripped on import.
+- UTF-8 BOM at file start is stripped on import (target).
 - Leading **tab** characters in cell values are stripped on channel import (CPS uses tabs to force spreadsheet text mode for frequencies).
 
 ## Name-based foreign keys
 
-OpenGD77 CPS builds internal indexes from **exact name matches** across files. Typos or case changes silently break links at CPS import — our adapters preserve names for export bidirectional mapping.
+OpenGD77 CPS builds internal indexes from **exact name matches** across files. Typos or case changes silently break links at CPS import — our export adapters preserve names for round-trip fidelity.
 
 | From           | Column(s)             | References                      |
 | -------------- | --------------------- | ------------------------------- |
@@ -29,32 +29,30 @@ Member column **count** (`ChannelN`, `ContactN`) is radio-profile-specific — s
 
 At the vendor boundary:
 
-- `Channel.name`, `Channel.contactName`, `Channel.rxGroupListName` are **wire/display names**, not internal relationship keys.
+- Build `overrides.name` and export wire names are **CPS labels**, not internal relationship keys.
 - Internal models use stable UUIDs (`Channel.id`, `Zone.memberChannelIds`, …).
-- `Zone.meta.imported.memberWireNames` and `RxGroupList.meta.imported.memberWireNames` preserve imported vendor names for export and unresolved-member reporting.
-- `Channel.opengd77Extras` holds OpenGD77-only columns not mapped to first-class model fields (see [channels.md](channels.md)).
+- `Zone.meta.imported.memberWireNames` and `RxGroupList.meta.imported.memberWireNames` preserve imported vendor names for export and unresolved-member reporting (when import ships).
+- Columns with no first-class library field (`Zone Skip`, `No Beep`, `No Eco`, `TS1_TA_Tx`, `TS2_TA_Tx ID`) export **documented CPS-safe defaults** when unmodelled — see [channels.md](channels.md) ([#438](https://github.com/pskillen/codeplug-studio/issues/438)).
 
 ## Boolean and enum conversion
 
-| Wire pattern                              | Internal                | Import                                                 | Export                                   |
-| ----------------------------------------- | ----------------------- | ------------------------------------------------------ | ---------------------------------------- |
-| `Yes` / `No` (case-insensitive on import) | `boolean`               | `parseYesNo`                                           | `wireYesNo` → `Yes` / `No`               |
-| `Off` / non-empty VOX                     | `voxEnabled: boolean`   | `Off` or empty → `false`; any other non-empty → `true` | `wireVoxEnabled` → `Off` / `On`          |
-| `Group` / `Private` (`ID Type`)           | `TalkGroup` / `Contact` | case-insensitive `group` check                         | `Group` / `Private`                      |
-| `Analogue` / `Digital`                    | `ChannelMode`           | see [channel-modes.md](../../channel-modes.md)         | lossy collapse to `Analogue` / `Digital` |
+| Wire pattern                              | Internal                | Import (target)                                        | Export (shipped)                   |
+| ----------------------------------------- | ----------------------- | ------------------------------------------------------ | ---------------------------------- |
+| `Yes` / `No` (case-insensitive on import) | `boolean`               | `parseYesNo`                                           | `wireYesNo` → `Yes` / `No`         |
+| `Off` / non-empty VOX                     | `voxEnabled: boolean`   | `Off` or empty → `false`; any other non-empty → `true` | `wireVoxEnabled` → `Off` / `On`    |
+| `Group` / `Private` (`ID Type`)           | `TalkGroup` / `Contact` | case-insensitive `group` check                         | `Group` / `Private`                |
+| `Analogue` / `Digital`                    | `ChannelMode`           | see [channel-modes.md](../../channel-modes.md)         | collapse to `Analogue` / `Digital` |
 
-Most other fields are stored and bidirectional mappingped as **strings** without normalisation (frequencies, tones, power levels, `Rx Only`, etc.).
+## Fidelity tiers
 
-## Bidirectional mapping tiers
-
-| Tier                    | Meaning                                                  | Examples                                                                                                          |
-| ----------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Lossless**            | Parsed to typed/boolean model fields and serialised back | `All Skip` ↔ `scanSkip`, `VOX`, `Use Location`, `Channel Type` for FM/DMR                                         |
-| **String pass-through** | Stored as string; export writes stored value             | Frequencies, tones, `Rx Only`, `Contact`, `TG List`                                                               |
-| **vendorExtras**        | Stored in `Channel.vendorExtras[header]`                 | `Zone Skip`, `No Beep`, `No Eco`, `TS1_TA_Tx`, `TS2_TA_Tx ID`                                                     |
-| **Lossy**               | Internal richness not representable on wire              | Specific modes (`ysf`, `am`, …) collapse to `Analogue`/`Digital` — see [channel-modes.md](../../channel-modes.md) |
-| **Header-only**         | Export includes headers; body not modelled               | `DTMF.csv`, `APRS.csv` (except channel `APRS` name)                                                               |
-| **Not imported**        | File skipped entirely on import                          | `DTMF.csv`, `APRS.csv` today                                                                                      |
+| Tier                    | Meaning                                                  | Examples                                                                                                                           |
+| ----------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Lossless**            | Parsed to typed/boolean model fields and serialised back | `All Skip` ↔ `scanInclusion`, `Rx Only` ↔ `forbidTransmit` cascade, `Use Location`, `Channel Type` for FM/DMR                      |
+| **String pass-through** | Stored as string; export writes stored/computed value    | Frequencies, tones, `Contact`, `TG List`                                                                                           |
+| **Studio default**      | No library field; export emits CPS-safe constant         | `Zone Skip`/`No Beep`/`No Eco` → `No`; digital TA columns → `Off` ([#438](https://github.com/pskillen/codeplug-studio/issues/438)) |
+| **Lossy**               | Internal richness not representable on wire              | Specific modes (`ysf`, `am`, …) collapse to `Analogue`/`Digital` — see [channel-modes.md](../../channel-modes.md)                  |
+| **Header-only**         | Export includes headers; body not modelled               | `DTMF.csv`, `APRS.csv` (except channel `APRS` name)                                                                                |
+| **Not imported**        | File skipped entirely on import (today)                  | `DTMF.csv`, `APRS.csv`                                                                                                             |
 
 ## Locale and line endings
 
@@ -86,17 +84,17 @@ Structural rules enforced by `cps-verify` for profile `opengd77-1701` ([wire-ver
 
 Cardinality limits (max channels, zone member slots, TG list member slots, name display length) and feature availability (APRS configs, DTMF, airband) **diverge by radio or radio family**. These belong in [profiles.md](profiles.md) / radio homes, not in generic column tables.
 
-Intended architecture:
+Architecture:
 
-1. Operator edits a **radio-agnostic** codeplug in the app.
-2. At export, operator selects a **radio profile** (e.g. Baofeng 1701).
-3. Exporter applies profile limits (truncate/pad member columns, validate counts) while serialising generic wire columns.
+1. Operator edits a **radio-agnostic** library and assembles a **format build**.
+2. Export uses the build's `profileId` (e.g. `opengd77-1701`).
+3. Exporter applies profile limits (truncate/pad member columns, validate counts) while serialising wire columns.
 
-Today's shipped exporter uses [Baofeng 1701 / `opengd77-1701`](profiles.md) constants (80 zone members, 32 TG list members) without a profile picker.
+Today's shipped exporter defaults to [Baofeng 1701 / `opengd77-1701`](profiles.md) constants (80 zone members, 32 TG list members) when no profile is specified.
 
-## App import requirements vs CPS
+## App import requirements (target)
 
-Our channel parser requires header columns `Channel Name`, `Latitude`, and `Longitude` to be **present** (CPS always exports them). Rows without a channel name are skipped. Rows with invalid or missing lat/lon get `location: null`.
+When import ships ([#522](https://github.com/pskillen/codeplug-studio/issues/522)), the channel parser will require header columns `Channel Name`, `Latitude`, and `Longitude` to be **present** (CPS always exports them). Rows without a channel name are skipped. Rows with invalid or missing lat/lon get `location: null`.
 
 This is stricter than "channels without map coordinates" in some hand-edited CSVs — missing header columns throw a parse error.
 

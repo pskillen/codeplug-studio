@@ -26,7 +26,6 @@ import {
   APRS_HEADERS,
   RX_GROUP_LIST_COL,
   RX_GROUP_LIST_HEADERS,
-  VENDOR_EXTRA_HEADERS,
   wireVoxEnabled,
   wireYesNo,
   ZONE_HEADERS,
@@ -44,6 +43,8 @@ import {
   formatOpenGd77TimeslotWire,
   formatOpenGd77ToneWire,
   formatOpenGd77TransmitTimeoutWire,
+  formatOpenGd77UnmodelledYesNoDefault,
+  formatOpenGd77TalkaroundTaWire,
 } from './channelWire.ts';
 import { contactRefWireName, rxGroupListWireName } from './exportRefs.ts';
 import { rxGroupListExportMemberNames, zoneExportMemberNames } from './listWire.ts';
@@ -130,11 +131,12 @@ function channelRowValues(
     [CHANNEL_COL.lat]: channel.location ? String(channel.location.lat) : '',
     [CHANNEL_COL.lon]: channel.location ? String(channel.location.lon) : '',
     [CHANNEL_COL.useLocation]: wireYesNo(channel.useLocation),
+    [CHANNEL_COL.zoneSkip]: formatOpenGd77UnmodelledYesNoDefault(),
+    [CHANNEL_COL.noBeep]: formatOpenGd77UnmodelledYesNoDefault(),
+    [CHANNEL_COL.noEco]: formatOpenGd77UnmodelledYesNoDefault(),
+    [CHANNEL_COL.ts1TaTx]: formatOpenGd77TalkaroundTaWire(mode),
+    [CHANNEL_COL.ts2TaTxId]: formatOpenGd77TalkaroundTaWire(mode),
   };
-
-  for (const header of VENDOR_EXTRA_HEADERS) {
-    values[header] = '';
-  }
 
   return values;
 }
