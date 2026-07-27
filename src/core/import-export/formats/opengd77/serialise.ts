@@ -13,7 +13,7 @@ import type {
   ChannelModeProfileDMR,
 } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
-import { expandOpenGd77ChannelWireRows } from './exportModes.ts';
+import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
 import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import { withTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import { formatCsv } from './csvWrite.ts';

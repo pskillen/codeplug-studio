@@ -1,9 +1,9 @@
 import { expandChannelWireRows } from '@core/import-export/channelExpansion/multiMode.ts';
 import type { ExpandedChannelWireRow } from '@core/import-export/channelExpansion/multiMode.ts';
+import { isAnalogMode } from '@core/import-export/formats/opengd77/channelModes.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
-import { isAnalogMode } from './channelModes.ts';
 
 /** FM+DMR only for modelled OpenGD77 radios (1701 / MD-9600). */
 export function isOpenGd77ExportableMode(mode: ChannelMode): boolean {

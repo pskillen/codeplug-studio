@@ -13,7 +13,7 @@ import {
   assembledChannelsToRadioDtosWithWarnings,
   expandAssembledChannelsToRadioDtos,
 } from './radioIoChannelMap.ts';
-import { openGd77DroppedModesWarning } from '@core/import-export/formats/opengd77/exportModes.ts';
+import { openGd77DroppedModesWarning } from '@core/import-export/opengd77ExportModes.ts';
 import { channelToneToRadioTone } from '@app/lib/channelFields/channelToneToRadioTone.ts';
 
 describe('channelToneToRadioTone', () => {

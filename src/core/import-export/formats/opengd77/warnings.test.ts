@@ -3,7 +3,7 @@ import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import { newChannel, newRxGroupList } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
-import { openGd77DroppedModesWarning } from './exportModes.ts';
+import { openGd77DroppedModesWarning } from '@core/import-export/opengd77ExportModes.ts';
 import { collectOpenGd77ExportWarnings } from './warnings.ts';
 
 function stubChannel(name: string): Channel {

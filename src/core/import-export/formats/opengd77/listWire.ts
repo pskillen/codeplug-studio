@@ -1,6 +1,6 @@
 import type { AssembledBuild, AssembledZone } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import { expandOpenGd77ChannelWireRows } from './exportModes.ts';
+import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
 import type { TalkGroupTimeslotCloneIndex } from '@core/import-export/channelExpansion/talkGroupTimeslotClones.ts';
 import { isProjectionExcluded } from '@core/domain/formatBuildOverrides.ts';
 import { channelWireNameById, memberRefWireName } from './exportRefs.ts';

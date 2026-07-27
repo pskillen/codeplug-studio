@@ -22,7 +22,7 @@ import type { FormatId } from '@core/import-export/types.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import type { RadioChannelDto, RadioChannelMode } from '@integrations/radio-io/radioChannelDto.ts';
 import { channelToneToRadioTone } from '@app/lib/channelFields/channelToneToRadioTone.ts';
-import { filterOpenGd77ExportChannel } from '@core/import-export/formats/opengd77/exportModes.ts';
+import { filterOpenGd77ExportChannel } from '@core/import-export/opengd77ExportModes.ts';
 
 export interface RadioWireEgressIds {
   formatId: string;

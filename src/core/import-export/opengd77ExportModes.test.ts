@@ -5,7 +5,7 @@ import {
   isOpenGd77ExportableMode,
   openGd77DroppedModesWarning,
   openGd77OmittedChannelWarning,
-} from './exportModes.ts';
+} from './opengd77ExportModes.ts';
 
 describe('OpenGD77 exportModes', () => {
   it('accepts analogue and DMR only', () => {
