@@ -2,15 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
 
 describe('getProfileExportLimits', () => {
-  it('maps OpenGD77 known fields and leaves entity counts blank', () => {
+  it('maps OpenGD77 entity caps and name lengths from profile', () => {
     const limits = getProfileExportLimits('opengd77', 'opengd77-1701');
     expect(limits).not.toBeNull();
     expect(limits!.maxChannels).toBe(1023);
+    expect(limits!.maxZones).toBe(68);
+    expect(limits!.maxRxGroupLists).toBe(76);
+    expect(limits!.maxContacts).toBe(1024);
     expect(limits!.zoneMembers).toBe(80);
     expect(limits!.rxGroupListMembers).toBe(32);
     expect(limits!.nameLengthChannel).toBe(16);
-    expect(limits!.maxZones).toBeNull();
-    expect(limits!.maxContacts).toBeNull();
+    expect(limits!.nameLengthZone).toBe(16);
+    expect(limits!.nameLengthContact).toBe(16);
+    expect(limits!.nameLengthTalkGroup).toBe(16);
+    expect(limits!.nameLengthRxGroupList).toBe(16);
+    expect(limits!.maxTalkGroups).toBe('not_used');
     expect(limits!.maxScanLists).toBe('not_used');
     expect(limits!.scanListMembers).toBe('not_used');
     expect(limits!.powerLadder.length).toBeGreaterThan(0);

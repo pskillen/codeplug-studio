@@ -17,6 +17,30 @@ export function formatOpenGd77ContactTsOverride(slot: DMRTimeSlot): string {
   return slot === 2 ? '2' : '1';
 }
 
+/** Projected Contacts.csv row count (talk-group clones or rows + private contacts). */
+export function countOpenGd77ProjectedContactRows(
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+  warnings?: string[],
+): number {
+  const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID;
+  const profile = getOpenGd77Profile(profileId);
+  const privateCount = assembled.digitalContacts.length + assembled.analogContacts.length;
+
+  if (profileHasTalkGroupTimeslotClones(profileId)) {
+    const sink = warnings ?? [];
+    const baseNames = buildTalkGroupWireNameMap(assembled, { ...options, profileId }, sink);
+    const reserved = new Set<string>(baseNames.values());
+    const cloneIndex = buildTalkGroupTimeslotCloneIndex(assembled, baseNames, {
+      maxNameLength: profile.nameLimit,
+      reserved,
+    });
+    return cloneIndex.clones.length + privateCount;
+  }
+
+  return assembled.talkGroups.length + privateCount;
+}
+
 export function buildOpenGd77TimeslotExportContext(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
@@ -36,12 +60,10 @@ export function buildOpenGd77TimeslotExportContext(
     reserved,
   });
 
-  const privateCount = assembled.digitalContacts.length + assembled.analogContacts.length;
-  const totalContacts = cloneIndex.clones.length + privateCount;
-  const maxContacts = 1024;
-  if (totalContacts > maxContacts) {
+  const totalContacts = countOpenGd77ProjectedContactRows(assembled, options, sink);
+  if (totalContacts > profile.maxContacts) {
     sink.push(
-      `Build projects ${totalContacts} contact row(s) (talk-group clones + private); only ${maxContacts} fit OpenGD77 Contacts.csv`,
+      `Build projects ${totalContacts} contact row(s) (talk-group clones + private); only ${profile.maxContacts} fit OpenGD77 Contacts.csv`,
     );
   }
 
