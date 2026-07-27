@@ -59,3 +59,16 @@ export function formatOpenGd77TransmitTimeoutWire(seconds: number | null): strin
   if (seconds == null) return '';
   return String(seconds);
 }
+
+/** CPS-safe defaults for unmodelled channel columns ([#438](https://github.com/pskillen/codeplug-studio/issues/438)). */
+export const OPENGD77_VENDOR_DEFAULT_NO = 'No';
+export const OPENGD77_VENDOR_DEFAULT_OFF = 'Off';
+
+export function formatOpenGd77UnmodelledYesNoDefault(): string {
+  return OPENGD77_VENDOR_DEFAULT_NO;
+}
+
+/** Talkaround TA columns: `Off` on digital when unmodelled; empty on analogue. */
+export function formatOpenGd77TalkaroundTaWire(mode: ChannelMode): string {
+  return isDigitalMode(mode) ? OPENGD77_VENDOR_DEFAULT_OFF : '';
+}
