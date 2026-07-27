@@ -114,6 +114,47 @@ Safe-skip address `0x2fa0010` (family constant) is never written. D890 `LocalInf
 
 Zone record detail: [zone-record.md](zone-record.md). Channel geometry: [channel-record.md](channel-record.md).
 
+## Address aliasing
+
+Sparse erase-unit RMW ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) assumes address → physical cell is **1:1** within each `0x40000` erase unit. If regions alias at `+0x40000`, a byte “preserved” by read-modify-write could land on the wrong cell — in exactly the optional-settings and alarm spans whose loss bricks the radio (Chinese UI, power-on password).
+
+### ChannelData (measured)
+
+Hardware measurement 2026-07-27 (erase-unit probe, `/debug/d890-erase-probe`):
+
+| Property                    | Value                                    |
+| --------------------------- | ---------------------------------------- |
+| Block pitch                 | `0x80000` (`ChannelDataBlockOffset`)     |
+| Backed bytes per block      | `0x40000` (low half only)                |
+| Alias stride                | `+0x40000` — upper half mirrors low half |
+| Erase unit (in ChannelData) | `0x40000`, aligned                       |
+
+Studio is safe on channel writes only while `channelPrimaryAddress` stays in the low half of each block ([#791](https://github.com/pskillen/codeplug-studio/issues/791)).
+
+### Config regions (probe tooling — [#792](https://github.com/pskillen/codeplug-studio/issues/792))
+
+Aliasing was **not** measured in config erase units before #792. A read-only pairwise probe compares each region against `base + 0x40000`:
+
+| Region                   | Base        | Alias candidate | Length  | Erase unit  |
+| ------------------------ | ----------- | --------------- | ------- | ----------- |
+| LocalInfo                | `0x4f80000` | `0x4fc0000`     | `0x100` | — (anchor)  |
+| Optional settings (main) | `0x3500000` | `0x3540000`     | `0x200` | `0x3500000` |
+| ChannelSet               | `0x3482a00` | `0x34c2a00`     | `0x200` | `0x3480000` |
+
+**Method:** `/debug/d890-erase-probe` → **Config-region alias check (read-only)**. No writes, no power-cycle. Use a **CPS-restored** radio so LocalInfo is densely populated.
+
+**Verdict rules:**
+
+| Observation                                | Status                                                |
+| ------------------------------------------ | ----------------------------------------------------- |
+| Any byte differs between base and alias    | `flat` — distinct cells                               |
+| Byte-identical and at least one non-`0xff` | `aliased` — one physical cell                         |
+| Both spans all `0xff`                      | `inconclusive — both erased` (never reported as flat) |
+
+**Hardware measurement:** _pending — run the probe and paste results here (date, radio ident, per-pair status)._
+
+**PR5 gate:** if any config pair is `aliased` at `+0x40000`, stop and re-plan sparse erase-unit RMW. If all pairs are `flat`, PR5 proceeds as designed. If config pairs are inconclusive but LocalInfo is `flat`, PR5 may proceed with LocalInfo as anchor.
+
 ## Channel address formula
 
 For 0-based channel index `idx`:

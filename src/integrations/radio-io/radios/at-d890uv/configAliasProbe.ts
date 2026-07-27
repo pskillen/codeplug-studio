@@ -138,7 +138,8 @@ export function analyseAtD890ConfigAliasReport(
       'At least one region aliases at +0x40000 — stop and re-plan sparse erase-unit RMW before coding PR5.';
   } else if (allFlat) {
     sparseRmwGate = 'proceed';
-    summary = 'All probed regions are flat at +0x40000 — sparse erase-unit RMW may proceed as designed.';
+    summary =
+      'All probed regions are flat at +0x40000 — sparse erase-unit RMW may proceed as designed.';
   } else if (localInfo?.status === 'flat') {
     sparseRmwGate = 'partial';
     summary =

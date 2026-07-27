@@ -17,10 +17,7 @@ import {
   runAtD890WriteBlockProbe,
   runAtD890WriteBlockVerify,
 } from './eraseUnitProbeRunner.ts';
-import {
-  AT_D890_CONFIG_ALIAS_PAIRS,
-  AT_D890_CONFIG_ALIAS_STRIDE,
-} from './configAliasProbe.ts';
+import { AT_D890_CONFIG_ALIAS_PAIRS, AT_D890_CONFIG_ALIAS_STRIDE } from './configAliasProbe.ts';
 import {
   AT_D890_PROBE,
   listAtD890ProbeSentinels,

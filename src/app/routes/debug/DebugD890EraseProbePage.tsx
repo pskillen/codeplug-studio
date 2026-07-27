@@ -353,14 +353,14 @@ export default function DebugD890EraseProbePage() {
             The span deliberately sits in <Code>ChannelData</Code> blocks 16-18 rather than near the
             start of the bank. The erase unit is the unknown being measured, so the span is placed
             where even a far larger unit than expected (up to 8 MB) still lands entirely on unused
-            address space, well above the             blocks a real codeplug occupies.
+            address space, well above the blocks a real codeplug occupies.
           </Text>
           <Text size="sm" mt="sm">
             <strong>Config-region alias check (#792):</strong> a separate read-only pass compares
             LocalInfo, optional settings, and ChannelSet against their <Code>+0x40000</Code> alias
-            candidates. Identical non-trivial bytes mean one physical cell; dual all-<Code>0xff</Code>{' '}
-            spans are inconclusive. Use a CPS-restored radio so LocalInfo is densely populated. No
-            writes and no power-cycle.
+            candidates. Identical non-trivial bytes mean one physical cell; dual all-
+            <Code>0xff</Code> spans are inconclusive. Use a CPS-restored radio so LocalInfo is
+            densely populated. No writes and no power-cycle.
           </Text>
         </PageSection>
 
