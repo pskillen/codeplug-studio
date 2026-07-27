@@ -10,8 +10,10 @@ import type { ChannelModeProfileDMR } from '@core/models/library.ts';
 import { expandAllMxNChannels } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import {
   assembledChannelsToRadioDtos,
+  assembledChannelsToRadioDtosWithWarnings,
   expandAssembledChannelsToRadioDtos,
 } from './radioIoChannelMap.ts';
+import { openGd77DroppedModesWarning } from '@core/import-export/formats/opengd77/exportModes.ts';
 import { channelToneToRadioTone } from '@app/lib/channelFields/channelToneToRadioTone.ts';
 
 describe('channelToneToRadioTone', () => {
@@ -156,6 +158,60 @@ describe('assembledChannelsToRadioDtos', () => {
     };
     const dtos = assembledChannelsToRadioDtos([{ entity, wireName: 'Listen' }], build, egress);
     expect(dtos[0]?.rxOnly).toBe(true);
+  });
+
+  it('drops non-DMR digital modes for OpenGD77 serial projection', () => {
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
+    const entity = {
+      ...newChannel('p1', 'Repeater'),
+      id: 'ch-mix',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none',
+          txTone: 'none',
+          bandwidthKHz: 12.5,
+        },
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 123,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+        { mode: 'ysf' as const, dgId: null, wiresDtmfId: '' },
+      ],
+    };
+    const { dtos, warnings } = assembledChannelsToRadioDtosWithWarnings(
+      [{ entity, wireName: 'Repeater' }],
+      build,
+      egress,
+    );
+    expect(dtos).toHaveLength(1);
+    expect(dtos[0]?.mode).toBe('fixed-digital');
+    expect(warnings).toContain(openGd77DroppedModesWarning('Repeater', ['ysf']));
+  });
+
+  it('omits YSF-only channels from OpenGD77 serial projection', () => {
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
+    const entity = {
+      ...newChannel('p1', 'Fusion only'),
+      id: 'ch-ysf',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      modeProfiles: [{ mode: 'ysf' as const, dgId: null, wiresDtmfId: '' }],
+    };
+    const { dtos, warnings } = assembledChannelsToRadioDtosWithWarnings(
+      [{ entity, wireName: 'Fusion only' }],
+      build,
+      egress,
+    );
+    expect(dtos).toEqual([]);
+    expect(warnings.some((w) => w.includes('Fusion only') && w.includes('ysf'))).toBe(true);
   });
 });
 

@@ -22,6 +22,7 @@ import type { FormatId } from '@core/import-export/types.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import type { RadioChannelDto, RadioChannelMode } from '@integrations/radio-io/radioChannelDto.ts';
 import { channelToneToRadioTone } from '@app/lib/channelFields/channelToneToRadioTone.ts';
+import { filterOpenGd77ExportChannel } from '@core/import-export/formats/opengd77/exportModes.ts';
 
 export interface RadioWireEgressIds {
   formatId: string;
@@ -71,6 +72,10 @@ function resolveRxGroupIndex(
 function bandwidthFromKHz(bandwidthKHz: number | null | undefined): 'FM' | 'NFM' {
   if (bandwidthKHz == null) return 'NFM';
   return bandwidthKHz <= 15 ? 'NFM' : 'FM';
+}
+
+function isOpenGd77RadioIoEgress(profileId: string): boolean {
+  return profileId === 'radio-io-opengd77-1701' || profileId === 'radio-io-opengd77-md9600';
 }
 
 function radioWireName(
@@ -217,10 +222,16 @@ export function assembledChannelsToRadioDtosWithWarnings(
   channels.forEach((row, index) => {
     const rxHz = row.entity.rxFrequency;
     if (rxHz == null || rxHz <= 0) return;
-    const analog = row.entity.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
-    const txHz = row.entity.txFrequency ?? rxHz;
+    let entity = row.entity;
+    if (isOpenGd77RadioIoEgress(egress.profileId)) {
+      const filtered = filterOpenGd77ExportChannel(entity, warnings);
+      if (!filtered) return;
+      entity = filtered;
+    }
+    const analog = entity.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
+    const txHz = entity.txFrequency ?? rxHz;
     const slotIndex = row.orderOrSlot != null && row.orderOrSlot > 0 ? row.orderOrSlot : index + 1;
-    const rxOnly = effectiveForbidTransmit(row.entity, merged.channelBehaviourContext);
+    const rxOnly = effectiveForbidTransmit(entity, merged.channelBehaviourContext);
     dtos.push({
       slotIndex,
       empty: false,
@@ -229,11 +240,11 @@ export function assembledChannelsToRadioDtosWithWarnings(
       txHz,
       rxTone: channelToneToRadioTone(analog && 'rxTone' in analog ? analog.rxTone : 'none'),
       txTone: channelToneToRadioTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
-      powerPercent: row.entity.power,
+      powerPercent: entity.power,
       bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
       ...(analog && 'squelch' in analog ? { squelchPercent: analog.squelch } : {}),
       ...(rxOnly ? { rxOnly: true } : {}),
-      ...digitalFieldsFromChannel(row.entity, fkMaps),
+      ...digitalFieldsFromChannel(entity, fkMaps),
     });
   });
   return { dtos: truncateToRadioCapacity(dtos, egress, warnings), warnings };
