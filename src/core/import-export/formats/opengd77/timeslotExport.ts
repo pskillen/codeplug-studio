@@ -29,11 +29,7 @@ export function buildOpenGd77TimeslotExportContext(
 
   const sink = warnings ?? [];
   const profile = getOpenGd77Profile(profileId);
-  const baseNames = buildTalkGroupWireNameMap(
-    assembled,
-    { ...options, profileId },
-    sink,
-  );
+  const baseNames = buildTalkGroupWireNameMap(assembled, { ...options, profileId }, sink);
   const reserved = new Set<string>(baseNames.values());
   const cloneIndex = buildTalkGroupTimeslotCloneIndex(assembled, baseNames, {
     maxNameLength: profile.nameLimit,

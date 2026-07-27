@@ -280,13 +280,11 @@ export function serialiseRxGroupLists(
       ? rxGroupListExportWireName(listWireMaps, list.entity.id, list.wireName)
       : list.wireName;
     const values: Record<string, string> = { [RX_GROUP_LIST_COL.name]: listName };
-    rxGroupListExportMemberNames(
-      assembled,
-      list.entity.id,
-      timeslotCtx?.cloneIndex,
-    ).forEach((name, i) => {
-      if (i < memberHeaders.length) values[memberHeaders[i]!] = name;
-    });
+    rxGroupListExportMemberNames(assembled, list.entity.id, timeslotCtx?.cloneIndex).forEach(
+      (name, i) => {
+        if (i < memberHeaders.length) values[memberHeaders[i]!] = name;
+      },
+    );
     return padRow(RX_GROUP_LIST_HEADERS, values);
   });
   return formatCsv(RX_GROUP_LIST_HEADERS, rows);

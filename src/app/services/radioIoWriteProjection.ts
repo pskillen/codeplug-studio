@@ -747,9 +747,7 @@ function buildOpenGd77ContactsAndRx(
       if (member.ref.kind === 'talkGroup') {
         if (cloneIndex) {
           const slot = cloneIndex.resolveRxMemberSlot(member.timeSlotOverride);
-          const bankIdx = contactIndexByTalkGroupSlot.get(
-            talkGroupSlotKey(member.ref.id, slot),
-          );
+          const bankIdx = contactIndexByTalkGroupSlot.get(talkGroupSlotKey(member.ref.id, slot));
           if (bankIdx != null) memberDigitalIds.push(bankIdx);
         } else {
           const tg = assembled.talkGroups.find((t) => t.entity.id === member.ref.id);

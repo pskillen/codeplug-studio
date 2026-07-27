@@ -220,16 +220,16 @@ Radios and CPS tools differ in how they _organise_ channels, not just in CSV col
 
 Known traits (initial set — expect more):
 
-| Trait                            | Behaviour                                                            | Example radios / formats             |
-| -------------------------------- | -------------------------------------------------------------------- | ------------------------------------ |
-| **Zone grouping**                | Channels grouped into named zones; operator switches zone on radio   | OpenGD77, DM32                       |
-| **Flat memory list**             | No zones — one ordered list of channels/memories                     | CHIRP analogue                       |
-| **Per-channel scan flag**        | Scan enabled/skipped per channel; no separate scan-list entity       | Many analogue rigs                   |
-| **Scan lists**                   | Named lists of channels used for scanning, distinct from TX grouping | DM32                                 |
-| **Zone as scan list**            | Zone membership doubles as scan scope (zone _is_ the scan list)      | OpenGD77                             |
-| **Multi talk group per channel** | One RF channel; operator picks repeater + TG (or contact) on channel | OpenGD77-style DMR                   |
+| Trait                            | Behaviour                                                                                             | Example radios / formats             |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| **Zone grouping**                | Channels grouped into named zones; operator switches zone on radio                                    | OpenGD77, DM32                       |
+| **Flat memory list**             | No zones — one ordered list of channels/memories                                                      | CHIRP analogue                       |
+| **Per-channel scan flag**        | Scan enabled/skipped per channel; no separate scan-list entity                                        | Many analogue rigs                   |
+| **Scan lists**                   | Named lists of channels used for scanning, distinct from TX grouping                                  | DM32                                 |
+| **Zone as scan list**            | Zone membership doubles as scan scope (zone _is_ the scan list)                                       | OpenGD77                             |
+| **Multi talk group per channel** | One RF channel; operator picks repeater + TG (or contact) on channel                                  | OpenGD77-style DMR                   |
 | **Talk group timeslot clones**   | Export/Write emits up to two contact-bank rows per TG (`TS1`/`TS2`) when RGL members need per-slot RX | OpenGD77 / OpenUV380 firmware        |
-| **m×n channel expansion**        | Radio requires one memory per repeater×talkgroup pair                | DM32, Most commerical digital radios |
+| **m×n channel expansion**        | Radio requires one memory per repeater×talkgroup pair                                                 | DM32, Most commerical digital radios |
 
 Most target radios are a **permutation** of these (plus caps: max channels, max zones, name length, …). Caps belong at the wire adapter / profile; traits belong in shared build model + UI modules.
 

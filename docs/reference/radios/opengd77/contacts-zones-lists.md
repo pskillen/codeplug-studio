@@ -87,15 +87,15 @@ When the build has `talkGroupTimeslotClones`, group contacts encode **Force TS1*
 
 ### Known Write gaps (organisation + channel)
 
-| Area | Write behaviour | Notes |
-| --- | --- | --- |
-| Talk-group contact TS | **Encoded** via TS1/TS2 clone rows + `0x17` | Not RGL per-member override on wire |
-| All-call (`type=2`) | **Not encoded** | No library All-call entity |
-| Private-contact TS | **None** (`0x01`) always | No private TS policy |
-| Channel APRS index / alias | **Defaults** (`0` / None) | See [channel-record.md](channel-record.md) |
-| Per-channel DMR ID override | **Default** `0` | Library `dmrId` on profile not written to `0x27` |
-| TOT | **Default** infinite (`0`) | Not modelled on Write |
-| Empty contact / zone / RGL slots | **`0xFF` fill** + bitmap clear | Bitmap-authoritative; differs from qDMR `0` padding in some tools |
+| Area                             | Write behaviour                             | Notes                                                             |
+| -------------------------------- | ------------------------------------------- | ----------------------------------------------------------------- |
+| Talk-group contact TS            | **Encoded** via TS1/TS2 clone rows + `0x17` | Not RGL per-member override on wire                               |
+| All-call (`type=2`)              | **Not encoded**                             | No library All-call entity                                        |
+| Private-contact TS               | **None** (`0x01`) always                    | No private TS policy                                              |
+| Channel APRS index / alias       | **Defaults** (`0` / None)                   | See [channel-record.md](channel-record.md)                        |
+| Per-channel DMR ID override      | **Default** `0`                             | Library `dmrId` on profile not written to `0x27`                  |
+| TOT                              | **Default** infinite (`0`)                  | Not modelled on Write                                             |
+| Empty contact / zone / RGL slots | **`0xFF` fill** + bitmap clear              | Bitmap-authoritative; differs from qDMR `0` padding in some tools |
 
 ## Scan lists
 

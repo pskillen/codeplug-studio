@@ -6,7 +6,6 @@ import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import {
   newChannel,
-  newChannel,
   newFormatBuild,
   newTalkGroup,
   newZone,
@@ -360,9 +359,9 @@ describe('OpenGD77 export serialise', () => {
     const rows = parseCsv(files['Contacts.csv']);
     const headers = rows[0]!;
     const nameIndex = headers.indexOf(CONTACT_COL.name);
-    const dataRow = rows.slice(1).find((row) => row[nameIndex] === 'Scot West');
+    const dataRow = rows.slice(1).find((row) => row[nameIndex] === 'Scot West TS1');
     expect(dataRow).toBeDefined();
-    expect(dataRow?.[nameIndex]).toBe('Scot West');
+    expect(dataRow?.[nameIndex]).toBe('Scot West TS1');
   });
 
   it('shortens long zone, RX group list, and contact names when shortenNames is enabled', () => {
@@ -461,8 +460,10 @@ describe('OpenGD77 export serialise', () => {
       ],
     };
     const channel: Channel = {
-      ...newChannel(FIXTURE_PROJECT_ID, 'Glasgow', 430_125_000, 430_125_000),
+      ...newChannel(FIXTURE_PROJECT_ID, 'Glasgow'),
       primaryMode: 'dmr',
+      rxFrequency: 430_125_000,
+      txFrequency: 430_125_000,
       modeProfiles: [
         {
           mode: 'dmr',
@@ -496,10 +497,7 @@ describe('OpenGD77 export serialise', () => {
     const groupRows = contactRows
       .slice(1)
       .filter((row) => row[contactHeaders.indexOf(CONTACT_COL.idType)] === 'Group');
-    expect(groupRows.map((row) => row[nameIdx]).sort()).toEqual([
-      'Scot 2355 TS1',
-      'Scot 2355 TS2',
-    ]);
+    expect(groupRows.map((row) => row[nameIdx]).sort()).toEqual(['Scot 2355 TS1', 'Scot 2355 TS2']);
     expect(groupRows.map((row) => row[tsIdx]).sort()).toEqual(['1', '2']);
 
     const rglRows = parseCsv(files['TG_Lists.csv']);
@@ -514,7 +512,9 @@ describe('OpenGD77 export serialise', () => {
     const chHeaders = channelRows[0]!;
     const contactColIdx = chHeaders.indexOf(CHANNEL_COL.contact);
     const chWireName = channel.name;
-    const chData = channelRows.find((row) => row[chHeaders.indexOf(CHANNEL_COL.name)] === chWireName);
+    const chData = channelRows.find(
+      (row) => row[chHeaders.indexOf(CHANNEL_COL.name)] === chWireName,
+    );
     expect(chData?.[contactColIdx]).toBe('Scot 2355 TS1');
   });
 });

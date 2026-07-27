@@ -85,8 +85,7 @@ export function encodeContactRecord(dto: OpenGd77ContactDto): Uint8Array {
   out[0x14] = dto.callType & 0xff;
   out[0x15] = 0xff;
   out[0x16] = 0xff;
-  out[0x17] =
-    dto.timeSlotOverride === 1 ? 0x00 : dto.timeSlotOverride === 2 ? 0x02 : 0x01;
+  out[0x17] = dto.timeSlotOverride === 1 ? 0x00 : dto.timeSlotOverride === 2 ? 0x02 : 0x01;
   return out;
 }
 

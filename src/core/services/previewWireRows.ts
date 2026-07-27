@@ -594,7 +594,10 @@ export function previewWireRows(
         );
         const cloneDetails =
           profileHasTalkGroupTimeslotClones(profileId) && referenced
-            ? buildTalkGroupTimeslotCloneIndex(projection, new Map([[talkGroup.id, generatedWireName]]))
+            ? buildTalkGroupTimeslotCloneIndex(
+                projection,
+                new Map([[talkGroup.id, generatedWireName]]),
+              )
                 .clones.filter((clone) => clone.talkGroupId === talkGroup.id)
                 .map((clone) => ({
                   label: `TS${clone.slot} contact`,

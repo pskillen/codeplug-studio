@@ -81,9 +81,7 @@ export function encodeRxGroupsIntoImage(
         setU16Le(record, 0x10 + i * 2, 0);
         continue;
       }
-      const contactIdx = options?.memberIdsAreContactIndices
-        ? dig
-        : contactIndexById.get(dig);
+      const contactIdx = options?.memberIdsAreContactIndices ? dig : contactIndexById.get(dig);
       if (contactIdx == null || contactIdx < 1) {
         setU16Le(record, 0x10 + i * 2, 0);
         continue;

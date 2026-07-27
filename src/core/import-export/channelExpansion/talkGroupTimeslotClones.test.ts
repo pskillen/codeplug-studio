@@ -25,7 +25,7 @@ function dmrChannel(
   timeslot: 1 | 2,
   rxGroupListId: string | null = null,
 ) {
-  const ch = newChannel(PROJECT_ID, name, 430_000_000, 430_000_000);
+  const ch = newChannel(PROJECT_ID, name);
   const dmr: ChannelModeProfileDMR = {
     mode: 'dmr',
     colourCode: 1,
@@ -34,7 +34,13 @@ function dmrChannel(
     contactRef,
     rxGroupListId,
   };
-  return { ...ch, modeProfiles: [dmr], primaryMode: 'dmr' as const };
+  return {
+    ...ch,
+    rxFrequency: 430_000_000,
+    txFrequency: 430_000_000,
+    modeProfiles: [dmr],
+    primaryMode: 'dmr' as const,
+  };
 }
 
 describe('talkGroupTimeslotClones', () => {
@@ -87,9 +93,7 @@ describe('talkGroupTimeslotClones', () => {
     const tg = newTalkGroup(PROJECT_ID, 'Scotland 2355', 2355);
     const rgl = {
       ...newRxGroupList(PROJECT_ID, 'Scotland'),
-      members: [
-        { ref: { kind: 'talkGroup' as const, id: tg.id }, timeSlotOverride: 2 as const },
-      ],
+      members: [{ ref: { kind: 'talkGroup' as const, id: tg.id }, timeSlotOverride: 2 as const }],
     };
     const channel = dmrChannel('Glasgow', { kind: 'talkGroup', id: tg.id }, 1, rgl.id);
     const assembled = {
@@ -118,12 +122,7 @@ describe('talkGroupTimeslotClones', () => {
 
   it('shortens base before TS suffix when over name limit', () => {
     const reserved = new Set<string>();
-    const name = composeTalkGroupCloneWireName(
-      'Very Long Scotland Name',
-      2,
-      reserved,
-      16,
-    );
+    const name = composeTalkGroupCloneWireName('Very Long Scotland Name', 2, reserved, 16);
     expect(name).toMatch(/TS2$/);
     expect(name.length).toBeLessThanOrEqual(16);
   });

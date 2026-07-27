@@ -42,9 +42,7 @@ export function resolveTalkGroupRxMemberSlot(
   return memberTimeSlotOverride === 2 ? 2 : memberTimeSlotOverride === 1 ? 1 : 1;
 }
 
-function isDmrProfile(
-  profile: { mode: string } | undefined,
-): profile is ChannelModeProfileDMR {
+function isDmrProfile(profile: { mode: string } | undefined): profile is ChannelModeProfileDMR {
   return profile?.mode === 'dmr';
 }
 
