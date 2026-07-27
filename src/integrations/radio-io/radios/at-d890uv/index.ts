@@ -41,3 +41,9 @@ export {
   atD890WriteRole,
   atD890RegionLabel,
 } from './writeRole.ts';
+export {
+  AT_D890_WRITE_COVERAGE_ROWS,
+  AT_D890_WRITE_COVERAGE_STATUS_LABEL,
+  type AtD890WriteCoverageRow,
+  type AtD890WriteCoverageStatus,
+} from './writeCoverage.ts';

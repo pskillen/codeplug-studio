@@ -46,8 +46,7 @@ import type {
   RadioZoneDto,
 } from '@integrations/radio-io/radioWriteProjection.ts';
 import { buildNeonplugAprsRadioSettingsPatch } from '@core/services/aprsExportFacts.ts';
-import { partitionAnytoneChannels } from '@core/import-export/formats/anytone/receiveOnlyBanks.ts';
-import { partitionAnytoneZones } from '@core/import-export/formats/anytone/zonePartition.ts';
+import { partitionAnytoneChannels, partitionAnytoneZones } from '@core/services/anytoneChannelBanks.ts';
 import {
   expandAssembledChannelsToRadioDtos,
   type RadioChannelFkMaps,
