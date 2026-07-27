@@ -20,7 +20,10 @@ import {
 } from './writeRole.ts';
 import {
   AT_D890_NOT_IN_CAPTURE,
+  alarmRetainPreview,
   localInfoRegisterPreview,
+  optionalSettingsAprsPreview,
+  optionalSettingsRetainPreview,
   settingsRetainPreview,
   type AtD890RegisterRow,
   type AtD890RetainPreviewRow,
@@ -48,8 +51,14 @@ export interface AtD890uvCloneSummary {
   writtenFromBuild: readonly string[];
   digitalContactsWriteGap: string;
   retainGroups: readonly AtD890RetainGroupSummary[];
-  /** Decoded LocalInfo ExpertOptions fields (kept on Write — not serial-written). */
+  /** Decoded LocalInfo ExpertOptions fields (read for preview; not serial-written). */
   settingsRetain: readonly AtD890RetainPreviewRow[];
+  /** Decoded optional settings forensic fields (never serial-written). */
+  optionalSettingsRetain: readonly AtD890RetainPreviewRow[];
+  /** APRS optional buffer hex preview. */
+  optionalSettingsAprs: readonly AtD890RetainPreviewRow[];
+  /** Light alarm forensic rows (never serial-written). */
+  alarmRetain: readonly AtD890RetainPreviewRow[];
   /** LocalInfo as 16-byte register rows. */
   localInfoRegisters: readonly AtD890RegisterRow[];
   /** Documented regions Studio does not Read today. */
@@ -93,6 +102,46 @@ export function summariseAtD890uvClone(bag: RadioCloneHydrationBag): AtD890uvClo
   const hasLocalInfo = [...cache.blocks.keys()].some(
     (addr) => addr >= D890_MAP.LocalInfo && addr < D890_MAP.LocalInfo + D890_MAP.LocalInfoLength,
   );
+  const optionalMain = getCacheBytes(
+    cache,
+    D890_MAP.OptionalSettingsMain,
+    D890_MAP.OptionalSettingsMainLength,
+  );
+  const optionalExt = getCacheBytes(
+    cache,
+    D890_MAP.OptionalSettingsExt,
+    D890_MAP.OptionalSettingsExtLength,
+  );
+  const optionalAprs = getCacheBytes(
+    cache,
+    D890_MAP.OptionalSettingsAprs,
+    D890_MAP.OptionalSettingsAprsLength,
+  );
+  const alarmBitmap = getCacheBytes(cache, D890_MAP.AlarmBitmap, D890_MAP.AlarmBitmapLength);
+  const alarmData = getCacheBytes(cache, D890_MAP.AlarmData, D890_MAP.AlarmDataLength);
+  const hasOptionalMain = [...cache.blocks.keys()].some(
+    (addr) =>
+      addr >= D890_MAP.OptionalSettingsMain &&
+      addr < D890_MAP.OptionalSettingsMain + D890_MAP.OptionalSettingsMainLength,
+  );
+  const hasOptionalExt = [...cache.blocks.keys()].some(
+    (addr) =>
+      addr >= D890_MAP.OptionalSettingsExt &&
+      addr < D890_MAP.OptionalSettingsExt + D890_MAP.OptionalSettingsExtLength,
+  );
+  const hasOptionalAprs = [...cache.blocks.keys()].some(
+    (addr) =>
+      addr >= D890_MAP.OptionalSettingsAprs &&
+      addr < D890_MAP.OptionalSettingsAprs + D890_MAP.OptionalSettingsAprsLength,
+  );
+  const hasAlarm =
+    [...cache.blocks.keys()].some(
+      (addr) =>
+        addr >= D890_MAP.AlarmBitmap && addr < D890_MAP.AlarmBitmap + D890_MAP.AlarmBitmapLength,
+    ) ||
+    [...cache.blocks.keys()].some(
+      (addr) => addr >= D890_MAP.AlarmData && addr < D890_MAP.AlarmData + D890_MAP.AlarmDataLength,
+    );
 
   return {
     radioModelId: bag.retain.radioModelId,
@@ -114,6 +163,12 @@ export function summariseAtD890uvClone(bag: RadioCloneHydrationBag): AtD890uvClo
       addressRange: `0x${g.minAddr.toString(16).toLowerCase()}…0x${g.maxAddr.toString(16).toLowerCase()}`,
     })),
     settingsRetain: hasLocalInfo ? settingsRetainPreview(localInfo) : [],
+    optionalSettingsRetain:
+      hasOptionalMain || hasOptionalExt
+        ? optionalSettingsRetainPreview(optionalMain, optionalExt)
+        : [],
+    optionalSettingsAprs: hasOptionalAprs ? optionalSettingsAprsPreview(optionalAprs) : [],
+    alarmRetain: hasAlarm ? alarmRetainPreview(optionalMain, alarmBitmap, alarmData) : [],
     localInfoRegisters: hasLocalInfo ? localInfoRegisterPreview(localInfo) : [],
     notInCapture: AT_D890_NOT_IN_CAPTURE,
     blockCount: radioCloneSparseBlockBytes(bag).length,

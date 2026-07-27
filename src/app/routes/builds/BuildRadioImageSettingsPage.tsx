@@ -1006,7 +1006,7 @@ function AtD890RadioImageSections({
 
       <FormSection
         title="Local info (Expert options)"
-        description="Decoded fields from LocalInfo @ 0x4f80000 — the only settings-like region Studio Reads and replays today."
+        description="Decoded fields from LocalInfo @ 0x4f80000 — Read for forensics; not serial-written on Studio Write."
       >
         {summary.settingsRetain.length === 0 ? (
           <Text size="sm" c="dimmed">
@@ -1026,6 +1026,116 @@ function AtD890RadioImageSections({
               <Table.Tbody>
                 {summary.settingsRetain.map((row) => (
                   <Table.Tr key={`${row.offset}-${row.label}`}>
+                    <Table.Td>
+                      <Code>{row.address}</Code>
+                    </Table.Td>
+                    <Table.Td>
+                      <Code>{row.offset}</Code>
+                    </Table.Td>
+                    <Table.Td>{row.label}</Table.Td>
+                    <Table.Td>{row.value}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        )}
+      </FormSection>
+
+      <FormSection
+        title="Optional settings (forensics)"
+        description="Decoded from optional settings @ 0x3500000 / 0x3500900 — Read and stashed for Radio Info only; never serial-written. CPS language here is separate from Chinese UI in Local info above."
+      >
+        {summary.optionalSettingsRetain.length === 0 ? (
+          <Text size="sm" c="dimmed">
+            No optional settings blocks in this capture.
+          </Text>
+        ) : (
+          <Table.ScrollContainer minWidth={560}>
+            <Table withTableBorder withColumnBorders>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Address</Table.Th>
+                  <Table.Th>Offset</Table.Th>
+                  <Table.Th>Field</Table.Th>
+                  <Table.Th>Value</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {summary.optionalSettingsRetain.map((row) => (
+                  <Table.Tr key={`${row.offset}-${row.label}`}>
+                    <Table.Td>
+                      <Code>{row.address}</Code>
+                    </Table.Td>
+                    <Table.Td>
+                      <Code>{row.offset}</Code>
+                    </Table.Td>
+                    <Table.Td>{row.label}</Table.Td>
+                    <Table.Td>{row.value}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        )}
+      </FormSection>
+
+      {summary.optionalSettingsAprs.length > 0 ? (
+        <FormSection
+          title="Optional settings (APRS)"
+          description="Raw hex from 0x3501280 — not decoded in Studio v1."
+        >
+          <Table.ScrollContainer minWidth={560}>
+            <Table withTableBorder withColumnBorders>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Address</Table.Th>
+                  <Table.Th>Offset</Table.Th>
+                  <Table.Th>Field</Table.Th>
+                  <Table.Th>Value</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {summary.optionalSettingsAprs.map((row) => (
+                  <Table.Tr key={`${row.offset}-${row.label}`}>
+                    <Table.Td>
+                      <Code>{row.address}</Code>
+                    </Table.Td>
+                    <Table.Td>
+                      <Code>{row.offset}</Code>
+                    </Table.Td>
+                    <Table.Td>{row.label}</Table.Td>
+                    <Table.Td>{row.value}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        </FormSection>
+      ) : null}
+
+      <FormSection
+        title="Alarm (forensics)"
+        description="Light decode from alarm @ 0x3482e00 / 0x3483000 and man-down flags in optional main — Read/stash only; never serial-written."
+      >
+        {summary.alarmRetain.length === 0 ? (
+          <Text size="sm" c="dimmed">
+            No alarm blocks in this capture.
+          </Text>
+        ) : (
+          <Table.ScrollContainer minWidth={560}>
+            <Table withTableBorder withColumnBorders>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Address</Table.Th>
+                  <Table.Th>Offset</Table.Th>
+                  <Table.Th>Field</Table.Th>
+                  <Table.Th>Value</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {summary.alarmRetain.map((row) => (
+                  <Table.Tr key={`${row.address}-${row.label}`}>
                     <Table.Td>
                       <Code>{row.address}</Code>
                     </Table.Td>
@@ -1088,7 +1198,7 @@ function AtD890RadioImageSections({
 
       <FormSection
         title="Not in this capture"
-        description="Documented on the radio but Studio does not Read these in v1 — they are absent from the bag and untouched on Write."
+        description="Documented on the radio but Studio does not Read these in v1 — absent from the bag and never serial-written."
       >
         <Table.ScrollContainer minWidth={480}>
           <Table withTableBorder withColumnBorders>

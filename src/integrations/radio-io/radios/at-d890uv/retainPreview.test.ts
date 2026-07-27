@@ -4,7 +4,11 @@
 
 import { describe, expect, it } from 'vitest';
 import { D890_MAP } from './constants.ts';
-import { localInfoRegisterPreview, settingsRetainPreview } from './retainPreview.ts';
+import {
+  localInfoRegisterPreview,
+  optionalSettingsRetainPreview,
+  settingsRetainPreview,
+} from './retainPreview.ts';
 
 describe('settingsRetainPreview', () => {
   it('decodes ExpertOptions fields from LocalInfo', () => {
@@ -27,6 +31,24 @@ describe('settingsRetainPreview', () => {
     expect(rows.find((r) => r.label === 'Radio type')?.value).toBe('D890UV');
     expect(rows.find((r) => r.label === 'Program password')?.value).toBe('ABCD');
     expect(rows.find((r) => r.label === 'Serial number')?.value).toBe('SN1234567890');
+  });
+});
+
+describe('optionalSettingsRetainPreview', () => {
+  it('decodes language, password enable, and password chars', () => {
+    const main = new Uint8Array(D890_MAP.OptionalSettingsMainLength);
+    const ext = new Uint8Array(D890_MAP.OptionalSettingsExtLength);
+    main[0x05] = 1; // German
+    main[0x07] = 1; // password on
+    ext.set(new TextEncoder().encode('SECRET12'), 0x20);
+
+    const rows = optionalSettingsRetainPreview(main, ext);
+    expect(rows.find((r) => r.label === 'CPS language')?.value).toBe('German');
+    expect(rows.find((r) => r.label === 'Power-on password enable')?.value).toBe('On');
+    expect(rows.find((r) => r.label === 'Power-on password (sensitive)')?.value).toBe('SECRET12');
+    expect(rows.find((r) => r.label === 'Chinese UI (Expert options)')?.value).toMatch(
+      /Local info/,
+    );
   });
 });
 
