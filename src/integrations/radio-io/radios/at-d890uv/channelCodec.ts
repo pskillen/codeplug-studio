@@ -287,6 +287,8 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   data[0x1b] = encodeScanListWire(ch.scanListId);
   if (ch.rxGroupIndex != null) {
     data[0x1c] = encodeRxGroupWire(ch.rxGroupIndex);
+  } else if (!prior) {
+    data[0x1c] = WIRE_INDEX_NONE;
   }
 
   if (ch.timeslot === 2) {
