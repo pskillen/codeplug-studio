@@ -10,7 +10,10 @@ export function isOpenGd77ExportableMode(mode: ChannelMode): boolean {
   return isAnalogMode(mode) || mode === 'dmr';
 }
 
-export function openGd77DroppedModesWarning(channelLabel: string, modes: readonly ChannelMode[]): string {
+export function openGd77DroppedModesWarning(
+  channelLabel: string,
+  modes: readonly ChannelMode[],
+): string {
   return `Channel "${channelLabel}": dropped unsupported digital mode(s) for OpenGD77: ${modes.join(', ')}`;
 }
 
@@ -29,7 +32,10 @@ export function filterOpenGd77ExportChannel(
   const dropped = channel.modeProfiles.filter((p) => !isOpenGd77ExportableMode(p.mode));
   if (dropped.length > 0) {
     warnings.push(
-      openGd77DroppedModesWarning(channel.name, dropped.map((p) => p.mode)),
+      openGd77DroppedModesWarning(
+        channel.name,
+        dropped.map((p) => p.mode),
+      ),
     );
   }
   const exportableProfiles = channel.modeProfiles.filter((p) => isOpenGd77ExportableMode(p.mode));

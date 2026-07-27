@@ -90,9 +90,7 @@ describe('opengd77/export golden', () => {
     const csv = serialiseOpenGd77Files(assembled, { profileId: 'opengd77-1701' })['Channels.csv'];
     const rows = parseCsv(csv);
     const headers = rows[0]!;
-    const digitalRow = rows.find(
-      (row) => row[headers.indexOf(CHANNEL_COL.name)] === 'GB7GL Scot',
-    );
+    const digitalRow = rows.find((row) => row[headers.indexOf(CHANNEL_COL.name)] === 'GB7GL Scot');
     expect(digitalRow).toBeDefined();
     expect(digitalRow![headers.indexOf(CHANNEL_COL.noBeep)]).toBe('No');
     expect(digitalRow![headers.indexOf(CHANNEL_COL.noEco)]).toBe('No');

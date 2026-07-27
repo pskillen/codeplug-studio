@@ -22,8 +22,21 @@ describe('OpenGD77 exportModes', () => {
     const channel = {
       ...newChannel('p1', 'Repeater'),
       modeProfiles: [
-        { mode: 'fm' as const, squelch: null, rxTone: 'none' as const, txTone: 'none' as const, bandwidthKHz: null },
-        { mode: 'dmr' as const, colourCode: 1, timeslot: 1 as const, dmrId: 1, contactRef: null, rxGroupListId: null },
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: null,
+        },
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1,
+          contactRef: null,
+          rxGroupListId: null,
+        },
         { mode: 'ysf' as const, dgId: null, wiresDtmfId: '' },
       ],
     };

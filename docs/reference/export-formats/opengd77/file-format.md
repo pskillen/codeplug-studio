@@ -45,14 +45,14 @@ At the vendor boundary:
 
 ## Fidelity tiers
 
-| Tier                    | Meaning                                                  | Examples                                                                                                                           |
-| ----------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| **Lossless**            | Parsed to typed/boolean model fields and serialised back | `All Skip` / `Zone Skip` ↔ `scanInclusion`, `Rx Only` ↔ `forbidTransmit` cascade, `Use Location`, `Channel Type` for FM/DMR |
-| **String pass-through** | Stored as string; export writes stored/computed value    | Frequencies, tones, `Contact`, `TG List`                                                                                           |
-| **Studio default**      | No library field; export emits CPS-safe constant         | `No Beep`/`No Eco` → `No`; digital TA columns → `Off` ([#438](https://github.com/pskillen/codeplug-studio/issues/438))         |
+| Tier                    | Meaning                                                  | Examples                                                                                                                                                   |
+| ----------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Lossless**            | Parsed to typed/boolean model fields and serialised back | `All Skip` / `Zone Skip` ↔ `scanInclusion`, `Rx Only` ↔ `forbidTransmit` cascade, `Use Location`, `Channel Type` for FM/DMR                                |
+| **String pass-through** | Stored as string; export writes stored/computed value    | Frequencies, tones, `Contact`, `TG List`                                                                                                                   |
+| **Studio default**      | No library field; export emits CPS-safe constant         | `No Beep`/`No Eco` → `No`; digital TA columns → `Off` ([#438](https://github.com/pskillen/codeplug-studio/issues/438))                                     |
 | **Lossy**               | Internal richness not representable on wire              | Non-DMR digital modes (`ysf`, `dstar`, …) **dropped** at export for modelled 1701/MD-9600 ([#773](https://github.com/pskillen/codeplug-studio/issues/773)) |
-| **Header-only**         | Export includes headers; body not modelled               | `DTMF.csv`, `APRS.csv` (except channel `APRS` name)                                                                                |
-| **Not imported**        | File skipped entirely on import (today)                  | `DTMF.csv`, `APRS.csv`                                                                                                             |
+| **Header-only**         | Export includes headers; body not modelled               | `DTMF.csv`, `APRS.csv` (except channel `APRS` name)                                                                                                        |
+| **Not imported**        | File skipped entirely on import (today)                  | `DTMF.csv`, `APRS.csv`                                                                                                                                     |
 
 ## Locale and line endings
 
