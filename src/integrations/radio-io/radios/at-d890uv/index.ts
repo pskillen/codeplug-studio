@@ -66,6 +66,7 @@ export {
   estimateAtD890RmwCost,
   profileAtD890AccessPattern,
   profileAtD890Link,
+  negotiateAtD890ReadBlockSize,
   type AtD890AccessProfile,
   type AtD890BlockTrial,
   type AtD890LinkProfile,

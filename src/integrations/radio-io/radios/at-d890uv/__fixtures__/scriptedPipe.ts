@@ -15,6 +15,12 @@ export class AtD890ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
   private bytes: number[] = [];
 
+  /**
+   * When the byte queue is short, synthesize a read reply from the latest `R` frame.
+   * Return `null` to simulate a silent radio (readExact will throw).
+   */
+  readResponder?: (address: number, length: number) => Uint8Array | null;
+
   enqueue(...chunks: Uint8Array[]): void {
     for (const chunk of chunks) {
       this.bytes.push(...chunk);
@@ -28,13 +34,31 @@ export class AtD890ScriptedPipe implements BytePipe {
   async readExact(n: number, timeoutMs: number): Promise<Uint8Array> {
     void timeoutMs;
     if (this.bytes.length < n) {
+      this.tryEnqueueReadReplyFromLastRequest();
+    }
+    if (this.bytes.length < n) {
       throw new Error(`AtD890ScriptedPipe: need ${n} bytes, have ${this.bytes.length}`);
     }
     return new Uint8Array(this.bytes.splice(0, n));
   }
 
+  async flush(): Promise<void> {
+    this.bytes = [];
+  }
+
   async close(): Promise<void> {
     /* no-op */
+  }
+
+  private tryEnqueueReadReplyFromLastRequest(): void {
+    const readFrames = this.writes.filter((w) => w[0] === 0x52);
+    const last = readFrames.at(-1);
+    if (!last || last.length < 6 || !this.readResponder) return;
+    const addr = ((last[1]! << 24) | (last[2]! << 16) | (last[3]! << 8) | last[4]!) >>> 0;
+    const len = last[5]!;
+    const payload = this.readResponder(addr, len);
+    if (!payload || payload.length !== len) return;
+    this.enqueue(makeReadReply(addr, payload));
   }
 }
 
@@ -60,11 +84,49 @@ export function enqueueAtD890ReadReply(
   pipe: AtD890ScriptedPipe,
   address: number,
   data: Uint8Array,
+  readBlockSize = ANYTONE_DMR_BLOCK_SIZE,
 ): void {
-  for (let off = 0; off < data.length; off += ANYTONE_DMR_BLOCK_SIZE) {
-    const chunk = data.subarray(off, off + ANYTONE_DMR_BLOCK_SIZE);
+  for (let off = 0; off < data.length; off += readBlockSize) {
+    const chunkLen = Math.min(readBlockSize, data.length - off);
+    const chunk = data.subarray(off, off + chunkLen);
     pipe.enqueue(makeReadReply(address + off, chunk));
   }
+}
+
+/** Enqueue a single read reply frame of `length` bytes at `address`. */
+export function enqueueAtD890ReadReplyBlock(
+  pipe: AtD890ScriptedPipe,
+  address: number,
+  payload: Uint8Array,
+): void {
+  pipe.enqueue(makeReadReply(address, payload));
+}
+
+/**
+ * Prepare readResponder for connect-time block negotiation at `address`.
+ * Call before {@link scriptAtD890Connect} so `connect()` can probe block sizes.
+ */
+export function scriptAtD890NegotiateReadBlock(
+  pipe: AtD890ScriptedPipe,
+  address: number,
+  maxBlock: number,
+  spanLength = 0x100,
+): void {
+  const data = new Uint8Array(spanLength).fill(0xff);
+  pipe.readResponder = (addr, len) => {
+    const off = addr - address;
+    if (off < 0 || off + len > spanLength) return null;
+    if (len > maxBlock) return null;
+    return data.subarray(off, off + len);
+  };
+}
+
+export function scriptAtD890ConnectWithNegotiation(
+  pipe: AtD890ScriptedPipe,
+  maxBlock = 0xf0,
+): void {
+  scriptAtD890NegotiateReadBlock(pipe, D890_MAP.LocalInfo, maxBlock);
+  scriptAtD890Connect(pipe);
 }
 
 export function scriptAtD890Connect(pipe: AtD890ScriptedPipe, version = 'V100'): void {
@@ -75,49 +137,49 @@ export function scriptAtD890Connect(pipe: AtD890ScriptedPipe, version = 'V100'):
   pipe.enqueue(new Uint8Array([ANYTONE_DMR_ACK]));
 }
 
-/** Minimal download: LocalInfo + empty ChannelSet + org bitmaps. */
+const NEGOTIATED_READ_BLOCK = 0xf0;
+
+function minimalDownloadMemory(): Map<number, Uint8Array> {
+  return new Map([
+    [D890_MAP.LocalInfo, new Uint8Array(D890_MAP.LocalInfoLength).fill(0xff)],
+    [D890_MAP.OptionalSettingsMain, new Uint8Array(D890_MAP.OptionalSettingsMainLength).fill(0xff)],
+    [D890_MAP.OptionalSettingsExt, new Uint8Array(D890_MAP.OptionalSettingsExtLength).fill(0xff)],
+    [D890_MAP.OptionalSettingsAprs, new Uint8Array(D890_MAP.OptionalSettingsAprsLength).fill(0xff)],
+    [D890_MAP.AlarmBitmap, new Uint8Array(D890_MAP.AlarmBitmapLength).fill(0xff)],
+    [D890_MAP.AlarmData, new Uint8Array(D890_MAP.AlarmDataLength).fill(0xff)],
+    [D890_MAP.ChannelSet, new Uint8Array(0x200)],
+    [D890_MAP.ZoneSet, new Uint8Array(0x20)],
+    [D890_MAP.ZoneHide, new Uint8Array(0x20)],
+    [D890_MAP.ZoneAChannel, new Uint8Array(0x200)],
+    [D890_MAP.ZoneBChannel, new Uint8Array(0x200)],
+    [D890_MAP.ScanListSet, new Uint8Array(0x20)],
+    [D890_MAP.TalkgroupSet, new Uint8Array(0x4f0).fill(0xff)],
+    [D890_MAP.ReceiveGroupSet, new Uint8Array(0x10)],
+    [D890_MAP.RadioIdSet, new Uint8Array(0x20)],
+    [D890_MAP.MasterIdData, new Uint8Array(0x40)],
+  ]);
+}
+
+function scriptAtD890MemoryReadResponder(
+  pipe: AtD890ScriptedPipe,
+  memory: Map<number, Uint8Array>,
+  maxBlock = NEGOTIATED_READ_BLOCK,
+): void {
+  pipe.readResponder = (addr, len) => {
+    for (const [start, data] of memory) {
+      if (addr >= start && addr + len <= start + data.length) {
+        if (start === D890_MAP.LocalInfo && len > maxBlock) return null;
+        return data.subarray(addr - start, addr - start + len);
+      }
+    }
+    return null;
+  };
+}
+
+/** Minimal download: negotiate + connect + empty org bitmaps via readResponder. */
 export function scriptAtD890MinimalDownload(pipe: AtD890ScriptedPipe): void {
+  scriptAtD890MemoryReadResponder(pipe, minimalDownloadMemory());
   scriptAtD890Connect(pipe);
-  const local = new Uint8Array(D890_MAP.LocalInfoLength);
-  local.fill(0xff);
-  enqueueAtD890ReadReply(pipe, D890_MAP.LocalInfo, local);
-  enqueueAtD890ReadReply(
-    pipe,
-    D890_MAP.OptionalSettingsMain,
-    new Uint8Array(D890_MAP.OptionalSettingsMainLength).fill(0xff),
-  );
-  enqueueAtD890ReadReply(
-    pipe,
-    D890_MAP.OptionalSettingsExt,
-    new Uint8Array(D890_MAP.OptionalSettingsExtLength).fill(0xff),
-  );
-  enqueueAtD890ReadReply(
-    pipe,
-    D890_MAP.OptionalSettingsAprs,
-    new Uint8Array(D890_MAP.OptionalSettingsAprsLength).fill(0xff),
-  );
-  enqueueAtD890ReadReply(
-    pipe,
-    D890_MAP.AlarmBitmap,
-    new Uint8Array(D890_MAP.AlarmBitmapLength).fill(0xff),
-  );
-  enqueueAtD890ReadReply(
-    pipe,
-    D890_MAP.AlarmData,
-    new Uint8Array(D890_MAP.AlarmDataLength).fill(0xff),
-  );
-  const channelSet = new Uint8Array(0x200);
-  enqueueAtD890ReadReply(pipe, D890_MAP.ChannelSet, channelSet);
-  const zoneSet = new Uint8Array(0x20);
-  enqueueAtD890ReadReply(pipe, D890_MAP.ZoneSet, zoneSet);
-  enqueueAtD890ReadReply(pipe, D890_MAP.ZoneHide, zoneSet);
-  enqueueAtD890ReadReply(pipe, D890_MAP.ZoneAChannel, new Uint8Array(0x200));
-  enqueueAtD890ReadReply(pipe, D890_MAP.ZoneBChannel, new Uint8Array(0x200));
-  enqueueAtD890ReadReply(pipe, D890_MAP.ScanListSet, new Uint8Array(0x20));
-  enqueueAtD890ReadReply(pipe, D890_MAP.TalkgroupSet, new Uint8Array(0x4f0).fill(0xff));
-  enqueueAtD890ReadReply(pipe, D890_MAP.ReceiveGroupSet, new Uint8Array(0x10));
-  enqueueAtD890ReadReply(pipe, D890_MAP.RadioIdSet, new Uint8Array(0x20));
-  enqueueAtD890ReadReply(pipe, D890_MAP.MasterIdData, new Uint8Array(0x40));
 }
 
 export function scriptAtD890WriteAck(pipe: AtD890ScriptedPipe, count: number): void {
@@ -130,10 +192,11 @@ export function scriptAtD890WriteAck(pipe: AtD890ScriptedPipe, count: number): v
 export function scriptAtD890SentinelReads(
   pipe: AtD890ScriptedPipe,
   overrides?: Partial<Record<string, Uint8Array>>,
+  readBlockSize = ANYTONE_DMR_BLOCK_SIZE,
 ): void {
   for (const extent of AT_D890_SENTINEL_EXTENTS) {
     const data = overrides?.[extent.id] ?? new Uint8Array(extent.length).fill(0xff);
-    enqueueAtD890ReadReply(pipe, extent.start, data);
+    enqueueAtD890ReadReply(pipe, extent.start, data, readBlockSize);
   }
 }
 
@@ -151,8 +214,13 @@ export function plausibleAtD890SentinelOverrides(): Partial<Record<string, Uint8
 export function scriptAtD890PlausibleSentinelReads(
   pipe: AtD890ScriptedPipe,
   overrides?: Partial<Record<string, Uint8Array>>,
+  readBlockSize = ANYTONE_DMR_BLOCK_SIZE,
 ): void {
-  scriptAtD890SentinelReads(pipe, { ...plausibleAtD890SentinelOverrides(), ...overrides });
+  scriptAtD890SentinelReads(
+    pipe,
+    { ...plausibleAtD890SentinelOverrides(), ...overrides },
+    readBlockSize,
+  );
 }
 
 export { ANYTONE_DMR_BLOCK_SIZE };

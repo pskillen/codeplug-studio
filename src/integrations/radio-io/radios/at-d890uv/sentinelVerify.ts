@@ -15,10 +15,11 @@ export type AtD890SentinelSnapshot = ReadonlyMap<string, Uint8Array>;
 export async function snapshotAtD890SentinelRegions(
   pipe: BytePipe,
   signal?: AbortSignal,
+  readBlockSize?: number,
 ): Promise<AtD890SentinelSnapshot> {
   const snap = new Map<string, Uint8Array>();
   for (const extent of AT_D890_SENTINEL_EXTENTS) {
-    const data = await atD890ReadMemory(pipe, extent.start, extent.length, signal);
+    const data = await atD890ReadMemory(pipe, extent.start, extent.length, signal, readBlockSize);
     snap.set(extent.id, data);
   }
   return snap;

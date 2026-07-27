@@ -53,27 +53,57 @@ export async function atD890ExitProgram(pipe: BytePipe): Promise<void> {
   await exitAnytoneDmrProgramMode(pipe);
 }
 
+async function readChunkWithFallback(
+  pipe: BytePipe,
+  address: number,
+  chunkLen: number,
+  signal?: AbortSignal,
+): Promise<Uint8Array> {
+  try {
+    return await atD890ReadBlockRaw(pipe, address, chunkLen, signal);
+  } catch (firstErr) {
+    if (chunkLen <= ANYTONE_DMR_BLOCK_SIZE) {
+      throw firstErr;
+    }
+    const fallback = new Uint8Array(chunkLen);
+    for (let sub = 0; sub < chunkLen; sub += ANYTONE_DMR_BLOCK_SIZE) {
+      const subChunk = await atD890ReadBlockRaw(
+        pipe,
+        address + sub,
+        ANYTONE_DMR_BLOCK_SIZE,
+        signal,
+      );
+      fallback.set(subChunk, sub);
+    }
+    return fallback;
+  }
+}
+
 export async function atD890ReadMemory(
   pipe: BytePipe,
   address: number,
   length: number,
   signal?: AbortSignal,
+  readBlockSize = ANYTONE_DMR_BLOCK_SIZE,
 ): Promise<Uint8Array> {
   throwIfAborted(signal);
   if (length % ANYTONE_DMR_BLOCK_SIZE !== 0) {
     throw new RangeError(`D890 read length must be 16-byte aligned: ${length}`);
   }
+  if (
+    readBlockSize % ANYTONE_DMR_BLOCK_SIZE !== 0 ||
+    readBlockSize < ANYTONE_DMR_BLOCK_SIZE ||
+    readBlockSize > 0xff
+  ) {
+    throw new RangeError(`D890 read block size must be 16-aligned and 16..255: ${readBlockSize}`);
+  }
   const out = new Uint8Array(length);
-  for (let off = 0; off < length; off += ANYTONE_DMR_BLOCK_SIZE) {
-    const chunkLen = ANYTONE_DMR_BLOCK_SIZE;
-    const addr = address + off;
-    await pipe.write(makeAnytoneDmrReadFrame(addr, chunkLen));
-    const reply = await pipe.readExact(
-      ANYTONE_DMR_BLOCK_SIZE + 8,
-      AT_D890_CONNECTION.TIMEOUT.READ_MS,
-    );
-    const payload = parseAnytoneDmrReadReply(reply, chunkLen);
+  let off = 0;
+  while (off < length) {
+    const chunkLen = Math.min(readBlockSize, length - off);
+    const payload = await readChunkWithFallback(pipe, address + off, chunkLen, signal);
     out.set(payload, off);
+    off += chunkLen;
   }
   return out;
 }
