@@ -60,11 +60,11 @@ anytone-cps community RE — verify on hardware before relying on offsets. Studi
 | Alarm settings           | `0x3482e00`               | `0x10`             | Alarm bitmap / enable region (cps)                                          |
 | Alarm settings           | `0x3483000`               | (cps)              | Alarm record bodies                                                         |
 
-Chinese UI on the radio is modelled in **LocalInfo ExpertOptions** (`+0x04` and `+0x05` both `0`), not optional-settings language. A hardware incident where Chinese + startup password appeared after the first Studio Write was traced to **illegal channel BCD frequencies** ([#717](https://github.com/pskillen/codeplug-studio/issues/717)), not writes to these optional-settings regions (they were never in the Read/Write set).
+Chinese UI on the radio is modelled in **LocalInfo ExpertOptions** (`+0x04` and `+0x05` both `0`), not optional-settings language. A second hardware incident (Chinese + startup password after Write from a good hydration bag) was traced to **LocalInfo replay on upload** ([#753](https://github.com/pskillen/codeplug-studio/issues/753)) — fixed by WATCH-08 write fencing (LocalInfo is Read for preview but **not serial-written**).
 
-### LocalInfo ExpertOptions (Read + replay on Write)
+### LocalInfo ExpertOptions (Read only — not written on Studio Write)
 
-`LocalInfo` @ `0x4f80000` (`0x100` bytes) is **Read** on download and **replayed verbatim** on upload (see Write contract below). ExpertOptions fields (facts from anytone-cps `ExpertOptions::decode`):
+`LocalInfo` @ `0x4f80000` (`0x100` bytes) is **Read** on download for Radio image retain preview and future band validation. It is **not** on the serial write allow-list ([#753](https://github.com/pskillen/codeplug-studio/issues/753)). ExpertOptions fields (facts from anytone-cps `ExpertOptions::decode`):
 
 | Offset           | Field                   | Notes                                  |
 | ---------------- | ----------------------- | -------------------------------------- |
@@ -86,21 +86,29 @@ Chinese UI on the radio is modelled in **LocalInfo ExpertOptions** (`+0x04` and 
 | `+0xa0`          | Seller                  | 16 chars                               |
 | `+0xb0`          | Maintenance description | 80 (`0x50`) chars                      |
 
-`writeRole` labels LocalInfo **kept** — meaning **not re-derived from the library build**, not “skipped on upload”.
+`writeRole` labels LocalInfo **kept** — meaning **not re-derived from the library build** and **not serial-written** on Upload.
 
-## Write upload contract (sparse cache)
+## Write upload contract (WATCH-08 allow-list)
 
-Studio upload (`listWriteChunks`) transmits **every 16-byte block present in the download cache**, not only regions replaced from `assemble`.
+Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `writableExtents.ts`) — only modelled banks may reach the serial port. `listWriteChunks` emits cache blocks inside those extents only; `atD890WriteMemory` rejects any other address.
 
-| Category                                                           | `writeRole`     | Re-derived from build? | Uploaded on Write?                                |
+**Pre/post sentinel verify:** before and after modelled upload, Studio Reads `LocalInfo`, optional-settings main (`0x3500000`/`0x200`), and optional-settings ext (`0x3500900`/`0x60`) and fails the Write if any byte differs from the pre-write snapshot.
+
+**Encode guards:** MR channel encode rejects AM airband frequencies (108–137 MHz) and non-BCD-encodable Hz before bytes are packed (`channelEncodeGuards.ts`).
+
+| Category                                                           | `writeRole`     | Re-derived from build? | Serial-written on Upload?                         |
 | ------------------------------------------------------------------ | --------------- | ---------------------- | ------------------------------------------------- |
-| Channels, zones, scan, TG, RX, radio IDs, master, TG order         | `replaced`      | Yes                    | Yes                                               |
-| LocalInfo                                                          | `kept`          | No                     | **Yes** — replayed from Read cache                |
-| Optional settings, alarm, DigitalContact\*, boot images, crypto, … | `kept` / unread | No                     | No — absent from cache unless future Read expands |
+| Channels, zones, scan, TG, RX, radio IDs, master, TG order         | `replaced`      | Yes                    | Yes (allow-listed)                                |
+| LocalInfo                                                          | `kept`          | No                     | **No** — Read for preview; sentinel-verified only |
+| Optional settings, alarm, DigitalContact\*, boot images, crypto, … | `kept` / unread | No                     | No — absent from cache; sentinel-verified         |
 
 **Serial Write projection (DMR bank only):** `RadioWriteProjection` for `radio-io-at-d890uv` partitions receive-only AM airband and broadcast FM out of MR channels, zones, and scan — same bank split as Anytone CSV egress ([#755](https://github.com/pskillen/codeplug-studio/issues/755)). Omitted banks stay on the radio; use Anytone CSV (`AMAir.CSV` / `FM.CSV`) to update them until binary AmAir Write exists — see [am-air.md](../../../export-formats/anytone/am-air.md). Export **Web Serial** shows an operator-facing **What Write updates** table (written vs deferred vs left alone).
 
-Safe-skip address `0x2fa0010` (family constant) is never written. D890 `LocalInfo+0x10` (`0x4f80010`) is **not** skipped.
+Safe-skip address `0x2fa0010` (family constant) is never written. D890 `LocalInfo+0x10` (`0x4f80010`) is **not** skipped — LocalInfo is excluded from upload entirely instead.
+
+**Operator note:** after CPS recovery or band changes, perform a **fresh Read** of the live radio before Write. Do not Write from a stale hydration YAML export — the build projection must match the radio you are connected to.
+
+`prodWriteDisabled` remains until hardware Read→Write→Read-back clears the gate ([#741](https://github.com/pskillen/codeplug-studio/issues/741)).
 
 Zone record detail: [zone-record.md](zone-record.md). Channel geometry: [channel-record.md](channel-record.md).
 

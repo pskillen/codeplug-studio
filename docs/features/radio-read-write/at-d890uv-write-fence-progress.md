@@ -11,12 +11,16 @@
 | 1 Allow-list extents + stop LocalInfo upload | Done |
 | 2 Sentinel pre/post verify | Done |
 | 3 Airband-in-MR + encode guards | Done |
-| 4 Documentation | Pending |
-| 5 Pre-PR verify + PR | Pending |
+| 4 Documentation | Done |
+| 5 Pre-PR verify + PR | In progress |
 
 ## Shipped this branch
 
-_(none yet)_
+- `writableExtents.ts` — `AT_D890_WRITABLE_EXTENTS` allow-list; filters `listWriteChunks` and `atD890WriteMemory`
+- LocalInfo no longer serial-written; `writeRole` kept = not uploaded
+- `sentinelVerify.ts` — pre/post Read of LocalInfo + optional settings; fail Write on delta
+- `channelEncodeGuards.ts` — AM airband-in-MR and BCD-encodable Hz hard failures
+- Tier-3 Write contract + feature hub updated ([#753](https://github.com/pskillen/codeplug-studio/issues/753))
 
 ## Manual verify (pending hardware — after merge)
 
