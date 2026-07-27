@@ -125,12 +125,13 @@ describe('RadioIoProgressModal', () => {
       </MantineProvider>,
     );
 
-    expect(screen.getByText(/Write finished — not yet checked/i)).toBeInTheDocument();
+    expect(screen.getByText('Write finished')).toBeInTheDocument();
+    expect(screen.getByText(/Optionally, you can check/i)).toBeInTheDocument();
     expect(screen.getByText(/restarts on its own/i)).toBeInTheDocument();
     expect(screen.queryByText(/All selected blocks were sent/i)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Verify preserved settings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Check preserved settings' }));
     expect(onVerify).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Close without verifying' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(onCloseWithoutVerify).toHaveBeenCalledTimes(1);
   });
 
@@ -152,7 +153,7 @@ describe('RadioIoProgressModal', () => {
     expect(screen.getByText('Write finished — settings checked')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Verify preserved settings' }),
+      screen.queryByRole('button', { name: 'Check preserved settings' }),
     ).not.toBeInTheDocument();
   });
 

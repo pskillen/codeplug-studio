@@ -93,7 +93,7 @@ On this radio, **`W` frames stage to RAM** inside the PROGRAM session. Flash era
 
 **In-session reads return flash**, not the staged shadow — a read issued in the same PROGRAM session after write frames still returns pre-commit bytes. **Read-back verification during upload is invalid by construction** ([#769](https://github.com/pskillen/codeplug-studio/issues/769)).
 
-**Cross-session verify (shipped, optional):** after a successful Write and `END`, the radio restarts on its own while RAM commits to flash. On the build **Direct radio** panel, operators may select **Verify preserved settings** — Studio reconnects, re-reads the six never-write sentinel spans, and diffs against the pre-Write snapshot captured during upload. Closing without verifying shows an explicit **not yet checked** result (not an implied pass). Mismatches name the affected region in plain language ([#769](https://github.com/pskillen/codeplug-studio/issues/769) slice 5b).
+**Cross-session verify (shipped, optional):** after a successful Write and `END`, the radio restarts on its own while RAM commits to flash. On the build **Direct radio** panel, operators may select **Check preserved settings** — Studio reconnects, re-reads the six never-write sentinel spans, and diffs against the pre-Write snapshot captured during upload. Closing without checking is fine — the check is optional, not required for a successful write. Mismatches name the affected region in plain language ([#769](https://github.com/pskillen/codeplug-studio/issues/769) slice 5b).
 
 **Failed or aborted uploads** must call `abandonProgramMode()` before `disconnect()` so Studio does **not** send `END` and commit a partial write. Under a commit model, not sending `END` is the safe failure path.
 
@@ -103,7 +103,7 @@ On this radio, **`W` frames stage to RAM** inside the PROGRAM session. Flash era
 
 1. Open serial @ 921600 → `PROGRAM` → `QX\x06` → `0x02` ident → negotiate read block size at LocalInfo.
 2. Read **sparse** regions needed for the adapter (not a contiguous dump) — start with LocalInfo, ChannelSet/ChannelData, Zone*, RadioId*, ScanList*, Talkgroup*/ReceiveGroup*, MasterIdData ([memory-layout.md](memory-layout.md)).
-3. For upload: re-enter program mode → pre-Write sentinel plausibility → **sparse erase-unit RMW** (fresh-read touched units, identity check, overlay modelled chunks, stage non-`0xff` blocks) → skip `0x2fa0010` → `END` on successful disconnect only ([#768](https://github.com/pskillen/codeplug-studio/issues/768)). Optional: after the radio restarts, **Verify preserved settings** in the build UI ([#769](https://github.com/pskillen/codeplug-studio/issues/769) 5b).
+3. For upload: re-enter program mode → pre-Write sentinel plausibility → **sparse erase-unit RMW** (fresh-read touched units, identity check, overlay modelled chunks, stage non-`0xff` blocks) → skip `0x2fa0010` → `END` on successful disconnect only ([#768](https://github.com/pskillen/codeplug-studio/issues/768)). Optional: after the radio restarts, **Check preserved settings** in the build UI ([#769](https://github.com/pskillen/codeplug-studio/issues/769) 5b).
 
 ## Related
 

@@ -44,7 +44,7 @@ Blocking modal during Web Serial **Read** / **Write** on a Direct radio FormatBu
 - Modal cannot be dismissed via escape, overlay click, or close button while transferring — only **Cancel** (parent aborts). On success (`phase === 'done'`), **Close** dismisses so the operator can review the checklist (especially Write).
 - Parent should pair with `useUnsavedNavigationGuard(busy)` + `beforeunload` so route changes and tab close are blocked while open.
 - When adapters emit `ProgressUpdate.stage`, the parent appends unique labels to `transferStages` so the checklist grows (Read: Discover memory map → Channels → Zones → …; Write: Channels → Zones → Scan lists → …).
-- **AT-D890 Write verify:** when `writeVerifyStatus === 'unverified'`, done state shows a yellow alert (not green) with **Verify preserved settings** and **Close without verifying**. Verify waits for the radio to restart on its own after commit, then reconnects and diffs never-write regions.
+- **AT-D890 Write verify:** when `writeVerifyStatus === 'unverified'`, done state shows a calm alert with optional **Check preserved settings** and **Close**. Checking waits for the radio to restart on its own after commit, then reconnects and diffs never-write regions.
 
 ## Related
 

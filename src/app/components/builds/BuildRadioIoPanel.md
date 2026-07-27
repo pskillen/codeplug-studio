@@ -30,7 +30,7 @@ Renders nothing when `descriptorsForEgress(egress)` is empty. Must render under 
 - **Read from radio** → download → persist hydration on the **egress** → read-only summary.
 - **Write to radio** → blocked until hydration exists (full-image strategy).
 - While busy, opens [`RadioIoProgressModal`](./RadioIoProgressModal.md) (checklist grows from `ProgressUpdate.stage` — Channels, Zones, … — plus transfer bar + keep-tab warning). Cancel aborts via `AbortSignal`.
-- **AT-D890UV Write:** after upload, the progress modal offers optional **Verify preserved settings** — wait for the radio to finish its automatic restart, then Studio reconnects and checks language, password, and other preserved settings against the pre-Write snapshot. **Close without verifying** leaves an explicit not-checked result.
+- **AT-D890UV Write:** after upload, the progress modal offers optional **Check preserved settings** — wait for the radio to finish its automatic restart, then Studio reconnects and checks settings Studio does not set against the pre-Write snapshot. **Close** skips the check without implying a problem.
 - Blocks in-app navigation and tab close while busy (`useUnsavedNavigationGuard`); releases the port on failure.
 - Links to build **Radio image** (`/builds/:id/radio-image`) for the retained region map.
 - In-flow attribution from `descriptor.attributionIds`.

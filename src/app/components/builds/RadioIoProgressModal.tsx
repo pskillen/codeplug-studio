@@ -135,9 +135,9 @@ function writeDoneAlert(writeVerifyStatus: RadioIoWriteVerifyStatus): {
   }
   if (writeVerifyStatus === 'unverified') {
     return {
-      color: 'yellow',
-      title: 'Write finished — not yet checked',
-      body: 'Studio has not yet checked that your language, password, and other preserved settings are still intact. The radio restarts on its own after a write — wait until it has fully booted and shows its normal screen, then you can verify.',
+      color: 'blue',
+      title: 'Write finished',
+      body: "The codeplug was uploaded to the radio. Optionally, you can check that radio settings which Studio doesn't set still match what was on the radio before the write. The radio restarts on its own after a write — wait until it shows its normal screen before you check.",
     };
   }
   return {
@@ -278,9 +278,9 @@ export default function RadioIoProgressModal({
               {writeVerifyStatus === 'unverified' ? (
                 <>
                   <Button variant="default" onClick={() => onCloseWithoutVerify?.()}>
-                    Close without verifying
+                    Close
                   </Button>
-                  <Button onClick={() => onVerify?.()}>Verify preserved settings</Button>
+                  <Button onClick={() => onVerify?.()}>Check preserved settings</Button>
                 </>
               ) : (
                 <Button onClick={() => onClose?.()}>Close</Button>
