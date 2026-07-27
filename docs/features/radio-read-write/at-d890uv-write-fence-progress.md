@@ -12,7 +12,7 @@
 | 2 Sentinel pre/post verify                   | Done        |
 | 3 Airband-in-MR + encode guards              | Done        |
 | 4 Documentation                              | Done        |
-| 5 Pre-PR verify + PR                         | In progress |
+| 5 Pre-PR verify + PR                         | Done — [#754](https://github.com/pskillen/codeplug-studio/pull/754) |
 
 ## Shipped this branch
 
