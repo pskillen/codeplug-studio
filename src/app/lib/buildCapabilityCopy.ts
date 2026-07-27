@@ -94,6 +94,15 @@ const CAPABILITY_COPY: Record<CapabilityId, CapabilityCopy> = {
       'Export typically keeps one channel row and a separate TG / RX-list file.',
     ],
   },
+  [BuildCapabilityTrait.TalkGroupTimeslotClones]: {
+    label: 'Talk group timeslot clones',
+    summary:
+      'Firmware stores per-slot talk groups as separate DMR contacts (TS1 / TS2) because RX-group members cannot carry timeslot override on the wire.',
+    consequences: [
+      'Library keeps one talk group; export may emit up to two contact rows with TS suffixes.',
+      'RGL member timeSlotOverride maps to the matching clone on CSV and Web Serial Write.',
+    ],
+  },
   [BuildCapabilityTrait.MxNChannelExpansion]: {
     label: 'm×n channel expansion',
     summary:

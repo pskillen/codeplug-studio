@@ -228,6 +228,7 @@ Known traits (initial set — expect more):
 | **Scan lists**                   | Named lists of channels used for scanning, distinct from TX grouping | DM32                                 |
 | **Zone as scan list**            | Zone membership doubles as scan scope (zone _is_ the scan list)      | OpenGD77                             |
 | **Multi talk group per channel** | One RF channel; operator picks repeater + TG (or contact) on channel | OpenGD77-style DMR                   |
+| **Talk group timeslot clones**   | Export/Write emits up to two contact-bank rows per TG (`TS1`/`TS2`) when RGL members need per-slot RX | OpenGD77 / OpenUV380 firmware        |
 | **m×n channel expansion**        | Radio requires one memory per repeater×talkgroup pair                | DM32, Most commerical digital radios |
 
 Most target radios are a **permutation** of these (plus caps: max channels, max zones, name length, …). Caps belong at the wire adapter / profile; traits belong in shared build model + UI modules.
