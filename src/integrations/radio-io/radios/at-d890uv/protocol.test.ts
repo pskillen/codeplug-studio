@@ -163,13 +163,38 @@ describe('AtD890uvProtocol', () => {
     enqueueAtD890ReadReply(pipe, channelSecondaryAddress(128), secondary, NEGOTIATED_READ_BLOCK);
     enqueueAtD890ReadReply(pipe, D890_MAP.ZoneSet, new Uint8Array(0x20), NEGOTIATED_READ_BLOCK);
     enqueueAtD890ReadReply(pipe, D890_MAP.ZoneHide, new Uint8Array(0x20), NEGOTIATED_READ_BLOCK);
-    enqueueAtD890ReadReply(pipe, D890_MAP.ZoneAChannel, new Uint8Array(0x200), NEGOTIATED_READ_BLOCK);
-    enqueueAtD890ReadReply(pipe, D890_MAP.ZoneBChannel, new Uint8Array(0x200), NEGOTIATED_READ_BLOCK);
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.ZoneAChannel,
+      new Uint8Array(0x200),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.ZoneBChannel,
+      new Uint8Array(0x200),
+      NEGOTIATED_READ_BLOCK,
+    );
     enqueueAtD890ReadReply(pipe, D890_MAP.ScanListSet, new Uint8Array(0x20), NEGOTIATED_READ_BLOCK);
-    enqueueAtD890ReadReply(pipe, D890_MAP.TalkgroupSet, new Uint8Array(0x4f0).fill(0xff), NEGOTIATED_READ_BLOCK);
-    enqueueAtD890ReadReply(pipe, D890_MAP.ReceiveGroupSet, new Uint8Array(0x10), NEGOTIATED_READ_BLOCK);
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.TalkgroupSet,
+      new Uint8Array(0x4f0).fill(0xff),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.ReceiveGroupSet,
+      new Uint8Array(0x10),
+      NEGOTIATED_READ_BLOCK,
+    );
     enqueueAtD890ReadReply(pipe, D890_MAP.RadioIdSet, new Uint8Array(0x20), NEGOTIATED_READ_BLOCK);
-    enqueueAtD890ReadReply(pipe, D890_MAP.MasterIdData, new Uint8Array(0x40), NEGOTIATED_READ_BLOCK);
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.MasterIdData,
+      new Uint8Array(0x40),
+      NEGOTIATED_READ_BLOCK,
+    );
 
     await radio.download({});
     const cache = radio.getDownloadCache()!;
@@ -225,9 +250,13 @@ describe('AtD890uvProtocol', () => {
 
     const image = cacheToMemoryMap(radio.getDownloadCache()!);
     applyAtD890WriteImageToCache(radio.getDownloadCache()!, image);
-    scriptAtD890PlausibleSentinelReads(pipe, {
-      OptionalSettingsMain: new Uint8Array(0x200).fill(0xff),
-    }, NEGOTIATED_READ_BLOCK);
+    scriptAtD890PlausibleSentinelReads(
+      pipe,
+      {
+        OptionalSettingsMain: new Uint8Array(0x200).fill(0xff),
+      },
+      NEGOTIATED_READ_BLOCK,
+    );
 
     await expect(radio.upload(image, {})).rejects.toThrow(/OptionalSettingsMain reads erased/);
 

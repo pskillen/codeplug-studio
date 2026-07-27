@@ -19,7 +19,12 @@ import {
   alignedSpanForAtD890Region,
   type AtD890DownloadCache,
 } from './memory.ts';
-import { AT_D890_BLOCK_SIZE, AT_D890_LIMITS, AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
+import {
+  AT_D890_BLOCK_SIZE,
+  AT_D890_LIMITS,
+  AT_D890_SAFE_SKIP_WRITE_ADDR,
+  D890_MAP,
+} from './constants.ts';
 import { listSetBits } from './bitmap.ts';
 import {
   atD890EnterProgram,
@@ -84,7 +89,14 @@ export async function downloadAtD890SparseRegions(
   };
 
   stage('Reading local info…');
-  await readRegion(pipe, cache, D890_MAP.LocalInfo, D890_MAP.LocalInfoLength, signal, readBlockSize);
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.LocalInfo,
+    D890_MAP.LocalInfoLength,
+    signal,
+    readBlockSize,
+  );
 
   stage('Reading optional settings and alarm…');
   await readRegion(
@@ -111,11 +123,32 @@ export async function downloadAtD890SparseRegions(
     signal,
     readBlockSize,
   );
-  await readRegion(pipe, cache, D890_MAP.AlarmBitmap, D890_MAP.AlarmBitmapLength, signal, readBlockSize);
-  await readRegion(pipe, cache, D890_MAP.AlarmData, D890_MAP.AlarmDataLength, signal, readBlockSize);
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.AlarmBitmap,
+    D890_MAP.AlarmBitmapLength,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.AlarmData,
+    D890_MAP.AlarmDataLength,
+    signal,
+    readBlockSize,
+  );
 
   stage('Reading channel bitmap…');
-  await readRegion(pipe, cache, D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES, signal, readBlockSize);
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.ChannelSet,
+    AT_D890_LIMITS.CHANNEL_SET_BYTES,
+    signal,
+    readBlockSize,
+  );
   const channelSet = getCacheBytes(cache, D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES);
   for (const idx of listSetBits(channelSet)) {
     throwIfAborted(signal);
@@ -138,27 +171,90 @@ export async function downloadAtD890SparseRegions(
   }
 
   stage('Reading zones…');
-  await readRegion(pipe, cache, D890_MAP.ZoneSet, AT_D890_LIMITS.ZONE_SET_BYTES, signal, readBlockSize);
-  await readRegion(pipe, cache, D890_MAP.ZoneHide, AT_D890_LIMITS.ZONE_SET_BYTES, signal, readBlockSize);
-  await readRegion(pipe, cache, D890_MAP.ZoneAChannel, D890_MAP.ZoneTableBytes, signal, readBlockSize);
-  await readRegion(pipe, cache, D890_MAP.ZoneBChannel, D890_MAP.ZoneTableBytes, signal, readBlockSize);
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.ZoneSet,
+    AT_D890_LIMITS.ZONE_SET_BYTES,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.ZoneHide,
+    AT_D890_LIMITS.ZONE_SET_BYTES,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.ZoneAChannel,
+    D890_MAP.ZoneTableBytes,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.ZoneBChannel,
+    D890_MAP.ZoneTableBytes,
+    signal,
+    readBlockSize,
+  );
   const zoneSet = getCacheBytes(cache, D890_MAP.ZoneSet, AT_D890_LIMITS.ZONE_SET_BYTES);
   for (const idx of listSetBits(zoneSet)) {
     throwIfAborted(signal);
-    await readRegion(pipe, cache, zoneNameAddress(idx), D890_MAP.ZoneDataLength, signal, readBlockSize);
-    await readRegion(pipe, cache, zoneChannelsAddress(idx), D890_MAP.ZoneChannelsStride, signal, readBlockSize);
+    await readRegion(
+      pipe,
+      cache,
+      zoneNameAddress(idx),
+      D890_MAP.ZoneDataLength,
+      signal,
+      readBlockSize,
+    );
+    await readRegion(
+      pipe,
+      cache,
+      zoneChannelsAddress(idx),
+      D890_MAP.ZoneChannelsStride,
+      signal,
+      readBlockSize,
+    );
   }
 
   stage('Reading scan lists…');
-  await readRegion(pipe, cache, D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES, signal, readBlockSize);
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.ScanListSet,
+    AT_D890_LIMITS.SCAN_LIST_SET_BYTES,
+    signal,
+    readBlockSize,
+  );
   const scanSet = getCacheBytes(cache, D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
   for (const idx of listSetBits(scanSet)) {
     throwIfAborted(signal);
-    await readRegion(pipe, cache, scanListAddress(idx), AT_D890_LIMITS.SCAN_LIST_STRIDE, signal, readBlockSize);
+    await readRegion(
+      pipe,
+      cache,
+      scanListAddress(idx),
+      AT_D890_LIMITS.SCAN_LIST_STRIDE,
+      signal,
+      readBlockSize,
+    );
   }
 
   stage('Reading talk groups…');
-  await readRegion(pipe, cache, D890_MAP.TalkgroupSet, AT_D890_LIMITS.TALKGROUP_SET_BYTES, signal, readBlockSize);
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.TalkgroupSet,
+    AT_D890_LIMITS.TALKGROUP_SET_BYTES,
+    signal,
+    readBlockSize,
+  );
   const tgSet = getCacheBytes(cache, D890_MAP.TalkgroupSet, AT_D890_LIMITS.TALKGROUP_SET_BYTES);
   for (const idx of listSetBits(tgSet, true)) {
     throwIfAborted(signal);
@@ -182,19 +278,47 @@ export async function downloadAtD890SparseRegions(
   const rxSet = getCacheBytes(cache, D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES);
   for (const idx of listSetBits(rxSet)) {
     throwIfAborted(signal);
-    await readRegion(pipe, cache, receiveGroupAddress(idx), AT_D890_LIMITS.RX_GROUP_STRIDE, signal, readBlockSize);
+    await readRegion(
+      pipe,
+      cache,
+      receiveGroupAddress(idx),
+      AT_D890_LIMITS.RX_GROUP_STRIDE,
+      signal,
+      readBlockSize,
+    );
   }
 
   stage('Reading operator radio IDs…');
-  await readRegion(pipe, cache, D890_MAP.RadioIdSet, AT_D890_LIMITS.RADIO_ID_SET_BYTES, signal, readBlockSize);
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.RadioIdSet,
+    AT_D890_LIMITS.RADIO_ID_SET_BYTES,
+    signal,
+    readBlockSize,
+  );
   const ridSet = getCacheBytes(cache, D890_MAP.RadioIdSet, AT_D890_LIMITS.RADIO_ID_SET_BYTES);
   for (const idx of listSetBits(ridSet)) {
     throwIfAborted(signal);
-    await readRegion(pipe, cache, radioIdAddress(idx), AT_D890_LIMITS.RADIO_ID_STRIDE, signal, readBlockSize);
+    await readRegion(
+      pipe,
+      cache,
+      radioIdAddress(idx),
+      AT_D890_LIMITS.RADIO_ID_STRIDE,
+      signal,
+      readBlockSize,
+    );
   }
 
   stage('Reading master radio ID…');
-  await readRegion(pipe, cache, D890_MAP.MasterIdData, D890_MAP.MasterIdLength, signal, readBlockSize);
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.MasterIdData,
+    D890_MAP.MasterIdLength,
+    signal,
+    readBlockSize,
+  );
 }
 
 export class AtD890uvProtocol implements CloneImageRadio {

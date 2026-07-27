@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RadioProtocolError } from '../../kit/errors.ts';
-import {
-  ANYTONE_DMR_ACK,
-  anytoneDmrChecksum8AfterOpcode,
-} from '../../kit/codecs/anytoneDmrRw.ts';
+import { ANYTONE_DMR_ACK, anytoneDmrChecksum8AfterOpcode } from '../../kit/codecs/anytoneDmrRw.ts';
 import { D890_MAP } from './constants.ts';
 import { atD890ReadMemory, atD890WriteMemory } from './connection.ts';
 import { AtD890ScriptedPipe } from './__fixtures__/scriptedPipe.ts';

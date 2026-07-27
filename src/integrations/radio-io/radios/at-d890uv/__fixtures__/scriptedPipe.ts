@@ -216,7 +216,11 @@ export function scriptAtD890PlausibleSentinelReads(
   overrides?: Partial<Record<string, Uint8Array>>,
   readBlockSize = ANYTONE_DMR_BLOCK_SIZE,
 ): void {
-  scriptAtD890SentinelReads(pipe, { ...plausibleAtD890SentinelOverrides(), ...overrides }, readBlockSize);
+  scriptAtD890SentinelReads(
+    pipe,
+    { ...plausibleAtD890SentinelOverrides(), ...overrides },
+    readBlockSize,
+  );
 }
 
 export { ANYTONE_DMR_BLOCK_SIZE };
