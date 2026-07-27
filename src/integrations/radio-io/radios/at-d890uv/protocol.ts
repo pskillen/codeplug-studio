@@ -40,6 +40,7 @@ import {
   assertAtD890SentinelRegionsPlausible,
   snapshotAtD890SentinelRegions,
 } from './sentinelVerify.ts';
+import { eraseUnitBaseFor, listTouchedEraseUnits, readSpanForEraseUnit } from './eraseUnits.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
@@ -437,7 +438,12 @@ export class AtD890uvProtocol implements CloneImageRadio {
 
     applyAtD890WriteImageToCache(this.cache, image);
 
-    const chunks = listWriteChunks(this.cache, AT_D890_SAFE_SKIP_WRITE_ADDR);
+    const modelledChunks = listWriteChunks(this.cache, AT_D890_SAFE_SKIP_WRITE_ADDR);
+    const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
+    const touchedUnits = listTouchedEraseUnits(modelledChunks.map((c) => c.address));
+    const touchedUnitSet = new Set(touchedUnits);
+    const transmitGuard = (address: number) =>
+      assertAtD890TransmitAddress(address, touchedUnitSet);
 
     try {
       const sentinelBefore = await snapshotAtD890SentinelRegions(
@@ -447,27 +453,85 @@ export class AtD890uvProtocol implements CloneImageRadio {
       );
       assertAtD890SentinelRegionsPlausible(sentinelBefore);
 
+      const freshUnits = new Map<number, Uint8Array>();
+      for (let u = 0; u < touchedUnits.length; u++) {
+        throwIfAborted(opts.signal);
+        const unitBase = touchedUnits[u]!;
+        const { start, length } = readSpanForEraseUnit(unitBase);
+        reportProgress(
+          opts.onProgress,
+          {
+            cur: u,
+            max: touchedUnits.length,
+            msg: `Reading erase unit 0x${unitBase.toString(16)}…`,
+            stage: 'Preserving untouched settings',
+          },
+          opts.signal,
+        );
+        const data = await atD890ReadMemory(
+          this.pipe,
+          start,
+          length,
+          opts.signal,
+          this.readBlockSize,
+        );
+        freshUnits.set(unitBase, data);
+      }
+
+      const stashedLocal = getCacheBytes(
+        this.cache,
+        D890_MAP.LocalInfo,
+        D890_MAP.LocalInfoLength,
+      );
+      const liveLocal = await atD890ReadMemory(
+        this.pipe,
+        D890_MAP.LocalInfo,
+        D890_MAP.LocalInfoLength,
+        opts.signal,
+        this.readBlockSize,
+      );
+      assertAtD890LocalInfoIdentity(stashedLocal, liveLocal);
+
+      const mergedUnits = new Map<number, Uint8Array>();
+      for (const [base, data] of freshUnits) {
+        mergedUnits.set(base, data.slice());
+      }
+      for (const unitBase of touchedUnits) {
+        const unitChunks = modelledChunks.filter(
+          (c) => eraseUnitBaseFor(c.address) === unitBase,
+        );
+        overlayModelledChunksOntoUnit(unitBase, mergedUnits.get(unitBase)!, unitChunks);
+      }
+
+      const stagingChunks = listSparseStagingChunks(mergedUnits, modelledAddresses);
+      assertPreservedBytesMatchFreshRead(stagingChunks, freshUnits, modelledAddresses);
+
       reportProgress(
         opts.onProgress,
-        { cur: 0, max: chunks.length || 1, msg: 'Writing sparse regions…', stage: 'Upload' },
+        {
+          cur: 0,
+          max: stagingChunks.length || 1,
+          msg: 'Writing sparse regions…',
+          stage: 'Upload',
+        },
         opts.signal,
       );
 
-      for (let i = 0; i < chunks.length; i++) {
+      for (let i = 0; i < stagingChunks.length; i++) {
         throwIfAborted(opts.signal);
-        const { address, data } = chunks[i]!;
+        const { address, data } = stagingChunks[i]!;
         if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) continue;
         reportProgress(
           opts.onProgress,
           {
             cur: i + 1,
-            max: chunks.length,
+            max: stagingChunks.length,
             msg: `Writing 0x${address.toString(16)}`,
             stage: 'Upload',
           },
           opts.signal,
         );
-        await atD890WriteMemory(this.pipe, address, data, opts.signal);
+        await atD890WriteMemory(this.pipe, address, data, opts.signal, { transmitGuard });
         putCacheBytes(this.cache, address, data);
       }
     } catch (err) {

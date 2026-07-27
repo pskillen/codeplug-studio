@@ -41,6 +41,20 @@ function WriteCoverageStatusCell({ status }: { status: AtD890WriteCoverageStatus
     );
   }
 
+  if (status === 'preserved') {
+    return (
+      <Group gap={6} wrap="nowrap">
+        <IconCheck
+          size={STATUS_ICON_SIZE}
+          stroke={ICON_STROKE}
+          color="var(--mantine-color-blue-6)"
+          aria-hidden
+        />
+        <Text size="sm">{label}</Text>
+      </Group>
+    );
+  }
+
   return (
     <Group gap={6} wrap="nowrap">
       <IconMinus
