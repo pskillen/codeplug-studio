@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
-import { applyWireNameLimits, resolveMaxNameLength } from './exportWireNames.ts';
+import {
+  applyWireNameLimits,
+  assembledChannelExportWireName,
+  resolveMaxNameLength,
+} from './exportWireNames.ts';
 import { expandChannelWireRows } from './multiMode.ts';
 
 function channel(partial: Partial<Channel> & Pick<Channel, 'name' | 'callsign'>): Channel {
@@ -24,6 +28,81 @@ describe('resolveMaxNameLength', () => {
 
   it('returns undefined for unknown profile ids', () => {
     expect(resolveMaxNameLength('unknown-profile')).toBeUndefined();
+  });
+});
+
+describe('assembledChannelExportWireName', () => {
+  it('keeps full name under limit when abbreviation is set (abbrev only when shortening)', () => {
+    const entity = channel({
+      callsign: '',
+      name: 'hotspot',
+      abbreviation: 'Hspt',
+    });
+    const reserved = new Set<string>();
+    const warnings: string[] = [];
+    const wireName = assembledChannelExportWireName(
+      { entity, wireName: 'hotspot' },
+      reserved,
+      { shortenNames: true, useChannelAbbreviation: true },
+      'opengd77-1701',
+      warnings,
+    );
+    expect(wireName).toBe('hotspot');
+  });
+
+  it('uses abbreviation when shortening over nameLimit', () => {
+    const entity = channel({
+      callsign: 'GB3MT',
+      name: 'Mugherafelt',
+      abbreviation: "M'flt",
+    });
+    const reserved = new Set<string>();
+    const warnings: string[] = [];
+    const wireName = assembledChannelExportWireName(
+      { entity, wireName: 'GB3MT Mugherafelt' },
+      reserved,
+      { shortenNames: true, useChannelAbbreviation: true },
+      'opengd77-1701',
+      warnings,
+    );
+    expect(wireName).toBe("GB3MT M'flt");
+  });
+
+  it('skips abbreviation when useChannelAbbreviation is false even when shortening', () => {
+    const entity = channel({
+      callsign: 'GB3MT',
+      name: 'Mugherafelt',
+      abbreviation: "M'flt",
+    });
+    const reserved = new Set<string>();
+    const warnings: string[] = [];
+    const wireName = assembledChannelExportWireName(
+      { entity, wireName: 'GB3MT Mugherafelt' },
+      reserved,
+      { shortenNames: true, maxNameLength: 16, useChannelAbbreviation: false },
+      'opengd77-1701',
+      warnings,
+    );
+    expect(wireName).not.toBe("GB3MT M'flt");
+    expect(wireName.length).toBeLessThanOrEqual(16);
+  });
+
+  it('honours build wire name override without eager abbreviation', () => {
+    const entity = channel({
+      callsign: '',
+      name: 'hotspot',
+      abbreviation: 'Hspt',
+    });
+    const reserved = new Set<string>();
+    const warnings: string[] = [];
+    const wireName = assembledChannelExportWireName(
+      { entity, wireName: 'Custom', wireNameOverride: 'Custom' },
+      reserved,
+      { shortenNames: true, useChannelAbbreviation: true },
+      'radio-io-opengd77-md9600',
+      warnings,
+    );
+    expect(wireName).toBe('Custom');
   });
 });
 

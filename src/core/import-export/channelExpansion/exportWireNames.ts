@@ -37,6 +37,20 @@ export function composeExportWireName(channel: Channel, options?: CpsExportOptio
   return composeChannelWireName(pick);
 }
 
+/** Assembled channel → final CPS wire name (override, compose, shorten; abbrev only when over limit). */
+export function assembledChannelExportWireName(
+  row: { entity: Channel; wireName: string; wireNameOverride?: string },
+  reserved: Set<string>,
+  options: CpsExportOptions | undefined,
+  profileId: string | undefined,
+  warnings: string[],
+): string {
+  const base = row.wireNameOverride?.trim()
+    ? row.wireName
+    : composeExportWireName(row.entity, options);
+  return applyWireNameLimits(base, row.entity, reserved, options, profileId, warnings);
+}
+
 export function applyWireNameLimits(
   baseWireName: string,
   channel: Channel,
