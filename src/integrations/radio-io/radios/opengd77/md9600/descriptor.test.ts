@@ -15,7 +15,7 @@ describe('OpenGD77 MD-9600 descriptor / registry', () => {
     const d = getRadioDescriptor(OPENGD77_MD9600_MODEL_ID);
     expect(d?.writeStrategy).toBe('full-image');
     expect(d?.hydrationRequiredForWrite).toBe(true);
-    expect(d?.prodWriteDisabled).toBe(true);
+    expect(d?.prodWriteDisabled).toBeUndefined();
     expect(d?.attributionIds).toEqual(['qdmr']);
     expect(d?.baudRate).toBe(115_200);
     expect(d?.compatibleProfiles).toEqual([
