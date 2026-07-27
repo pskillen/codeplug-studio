@@ -29,6 +29,13 @@ export {
   type AtD890RetainGroupSummary,
 } from './cloneSummary.ts';
 export {
+  settingsRetainPreview,
+  localInfoRegisterPreview,
+  AT_D890_NOT_IN_CAPTURE,
+  type AtD890RetainPreviewRow,
+  type AtD890RegisterRow,
+} from './retainPreview.ts';
+export {
   AT_D890_WRITTEN_FROM_BUILD_LABELS,
   AT_D890_DIGITAL_CONTACTS_WRITE_GAP,
   atD890WriteRole,

@@ -4,7 +4,7 @@
  */
 
 import { Link, Navigate } from 'react-router-dom';
-import { List, Stack, Table, Text } from '@mantine/core';
+import { Code, List, Stack, Table, Text } from '@mantine/core';
 import {
   isRadioCloneHydrationBag,
   type RadioCloneHydrationBag,
@@ -890,8 +890,31 @@ function AtD890RadioImageSections({
                 <Table.Td fw={600}>Via</Table.Td>
                 <Table.Td>{summary.capturedVia}</Table.Td>
               </Table.Tr>
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
+      </FormSection>
+
+      <FormSection title="Radio info">
+        <Table.ScrollContainer minWidth={360}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Tbody>
               <Table.Tr>
-                <Table.Td fw={600}>Regions captured</Table.Td>
+                <Table.Td fw={600}>Model</Table.Td>
+                <Table.Td>{summary.radioModelId}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Firmware</Table.Td>
+                <Table.Td>{summary.firmware?.trim() || '—'}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>Sparse payload</Table.Td>
+                <Table.Td>
+                  {summary.imageByteLength} bytes ({hexOffset(summary.imageByteLength)})
+                </Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>16-byte chunks</Table.Td>
                 <Table.Td>{summary.blockCount}</Table.Td>
               </Table.Tr>
             </Table.Tbody>
@@ -951,16 +974,17 @@ function AtD890RadioImageSections({
 
       <FormSection
         title="Kept on Write"
-        description="These regions stay as they were on the radio when you Write from your build."
+        description="Not re-derived from your build. Local info is still uploaded verbatim from this Read cache."
       >
         {summary.retainGroups.length === 0 ? (
           <Text size="sm">No retained regions in this capture.</Text>
         ) : (
-          <Table.ScrollContainer minWidth={360}>
+          <Table.ScrollContainer minWidth={480}>
             <Table withTableBorder withColumnBorders>
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>Region</Table.Th>
+                  <Table.Th>Address range</Table.Th>
                   <Table.Th>Chunks</Table.Th>
                 </Table.Tr>
               </Table.Thead>
@@ -968,6 +992,9 @@ function AtD890RadioImageSections({
                 {summary.retainGroups.map((g) => (
                   <Table.Tr key={g.label}>
                     <Table.Td>{g.label}</Table.Td>
+                    <Table.Td>
+                      <Code>{g.addressRange}</Code>
+                    </Table.Td>
                     <Table.Td>{g.blockCount}</Table.Td>
                   </Table.Tr>
                 ))}
@@ -975,6 +1002,116 @@ function AtD890RadioImageSections({
             </Table>
           </Table.ScrollContainer>
         )}
+      </FormSection>
+
+      <FormSection
+        title="Local info (Expert options)"
+        description="Decoded fields from LocalInfo @ 0x4f80000 — the only settings-like region Studio Reads and replays today."
+      >
+        {summary.settingsRetain.length === 0 ? (
+          <Text size="sm" c="dimmed">
+            No LocalInfo block in this capture.
+          </Text>
+        ) : (
+          <Table.ScrollContainer minWidth={560}>
+            <Table withTableBorder withColumnBorders>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Address</Table.Th>
+                  <Table.Th>Offset</Table.Th>
+                  <Table.Th>Field</Table.Th>
+                  <Table.Th>Value</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {summary.settingsRetain.map((row) => (
+                  <Table.Tr key={`${row.offset}-${row.label}`}>
+                    <Table.Td>
+                      <Code>{row.address}</Code>
+                    </Table.Td>
+                    <Table.Td>
+                      <Code>{row.offset}</Code>
+                    </Table.Td>
+                    <Table.Td>{row.label}</Table.Td>
+                    <Table.Td>{row.value}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        )}
+      </FormSection>
+
+      <FormSection
+        title="Local info registers"
+        description="Every 16-byte serial chunk in LocalInfo (0x100 bytes). Notes map known ExpertOptions fields onto each chunk."
+      >
+        {summary.localInfoRegisters.length === 0 ? (
+          <Text size="sm" c="dimmed">
+            No LocalInfo registers in this capture.
+          </Text>
+        ) : (
+          <Table.ScrollContainer minWidth={720}>
+            <Table withTableBorder withColumnBorders fz="xs">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Address</Table.Th>
+                  <Table.Th>Offset</Table.Th>
+                  <Table.Th>Hex (16 bytes)</Table.Th>
+                  <Table.Th>ASCII</Table.Th>
+                  <Table.Th>Known fields</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {summary.localInfoRegisters.map((row) => (
+                  <Table.Tr key={row.address}>
+                    <Table.Td>
+                      <Code>{row.address}</Code>
+                    </Table.Td>
+                    <Table.Td>
+                      <Code>{row.offset}</Code>
+                    </Table.Td>
+                    <Table.Td>
+                      <Code style={{ whiteSpace: 'nowrap' }}>{row.hex}</Code>
+                    </Table.Td>
+                    <Table.Td>
+                      <Code>{row.ascii}</Code>
+                    </Table.Td>
+                    <Table.Td>{row.notes}</Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+        )}
+      </FormSection>
+
+      <FormSection
+        title="Not in this capture"
+        description="Documented on the radio but Studio does not Read these in v1 — they are absent from the bag and untouched on Write."
+      >
+        <Table.ScrollContainer minWidth={480}>
+          <Table withTableBorder withColumnBorders>
+            <Table.Thead>
+              <Table.Tr>
+                <Table.Th>Address</Table.Th>
+                <Table.Th>Region</Table.Th>
+                <Table.Th>Note</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {summary.notInCapture.map((row) => (
+                <Table.Tr key={`${row.address}-${row.label}`}>
+                  <Table.Td>
+                    <Code>{row.address}</Code>
+                  </Table.Td>
+                  <Table.Td>{row.label}</Table.Td>
+                  <Table.Td>{row.note}</Table.Td>
+                </Table.Tr>
+              ))}
+            </Table.Tbody>
+          </Table>
+        </Table.ScrollContainer>
       </FormSection>
     </>
   );

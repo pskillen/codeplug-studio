@@ -18,11 +18,20 @@ import {
   atD890RegionLabel,
   atD890WriteRole,
 } from './writeRole.ts';
+import {
+  AT_D890_NOT_IN_CAPTURE,
+  localInfoRegisterPreview,
+  settingsRetainPreview,
+  type AtD890RegisterRow,
+  type AtD890RetainPreviewRow,
+} from './retainPreview.ts';
 
 export interface AtD890RetainGroupSummary {
   label: string;
   blockCount: number;
   role: string;
+  /** Inclusive address span of chunks in this group (hex). */
+  addressRange: string;
 }
 
 export interface AtD890uvCloneSummary {
@@ -39,6 +48,12 @@ export interface AtD890uvCloneSummary {
   writtenFromBuild: readonly string[];
   digitalContactsWriteGap: string;
   retainGroups: readonly AtD890RetainGroupSummary[];
+  /** Decoded LocalInfo ExpertOptions fields (kept / replayed on Write). */
+  settingsRetain: readonly AtD890RetainPreviewRow[];
+  /** LocalInfo as 16-byte register rows. */
+  localInfoRegisters: readonly AtD890RegisterRow[];
+  /** Documented regions Studio does not Read today. */
+  notInCapture: typeof AT_D890_NOT_IN_CAPTURE;
   blockCount: number;
 }
 
@@ -56,17 +71,28 @@ export function summariseAtD890uvClone(bag: RadioCloneHydrationBag): AtD890uvClo
   const rxSet = getCacheBytes(cache, D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES);
   const ridSet = getCacheBytes(cache, D890_MAP.RadioIdSet, AT_D890_LIMITS.RADIO_ID_SET_BYTES);
 
-  const groups = new Map<string, { count: number; role: string }>();
+  const groups = new Map<
+    string,
+    { count: number; role: string; minAddr: number; maxAddr: number }
+  >();
   for (const b of radioCloneSparseBlockBytes(bag)) {
     const role = atD890WriteRole(b.address);
     if (role === 'replaced') continue;
     const label = atD890RegionLabel(b.address);
+    const end = b.address + b.data.length - 1;
     const prev = groups.get(label);
     groups.set(label, {
       count: (prev?.count ?? 0) + 1,
       role: retainRoleCopy(),
+      minAddr: prev ? Math.min(prev.minAddr, b.address) : b.address,
+      maxAddr: prev ? Math.max(prev.maxAddr, end) : end,
     });
   }
+
+  const localInfo = getCacheBytes(cache, D890_MAP.LocalInfo, D890_MAP.LocalInfoLength);
+  const hasLocalInfo = [...cache.blocks.keys()].some(
+    (addr) => addr >= D890_MAP.LocalInfo && addr < D890_MAP.LocalInfo + D890_MAP.LocalInfoLength,
+  );
 
   return {
     radioModelId: bag.retain.radioModelId,
@@ -85,7 +111,11 @@ export function summariseAtD890uvClone(bag: RadioCloneHydrationBag): AtD890uvClo
       label,
       blockCount: g.count,
       role: g.role,
+      addressRange: `0x${g.minAddr.toString(16).toLowerCase()}…0x${g.maxAddr.toString(16).toLowerCase()}`,
     })),
+    settingsRetain: hasLocalInfo ? settingsRetainPreview(localInfo) : [],
+    localInfoRegisters: hasLocalInfo ? localInfoRegisterPreview(localInfo) : [],
+    notInCapture: AT_D890_NOT_IN_CAPTURE,
     blockCount: radioCloneSparseBlockBytes(bag).length,
   };
 }
