@@ -131,7 +131,7 @@ function channelRowValues(
     [CHANNEL_COL.lat]: channel.location ? String(channel.location.lat) : '',
     [CHANNEL_COL.lon]: channel.location ? String(channel.location.lon) : '',
     [CHANNEL_COL.useLocation]: wireYesNo(channel.useLocation),
-    [CHANNEL_COL.zoneSkip]: formatOpenGd77UnmodelledYesNoDefault(),
+    [CHANNEL_COL.zoneSkip]: wireYesNo(formatOpenGd77AllSkip(effectiveScan)),
     [CHANNEL_COL.noBeep]: formatOpenGd77UnmodelledYesNoDefault(),
     [CHANNEL_COL.noEco]: formatOpenGd77UnmodelledYesNoDefault(),
     [CHANNEL_COL.ts1TaTx]: formatOpenGd77TalkaroundTaWire(mode),

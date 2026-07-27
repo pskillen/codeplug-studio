@@ -237,11 +237,57 @@ describe('OpenGD77 export serialise', () => {
     const rows = parseCsv(csv);
     const headers = rows[0]!;
     const dataRow = rows[1]!;
-    expect(dataRow[headers.indexOf(CHANNEL_COL.zoneSkip)]).toBe('No');
     expect(dataRow[headers.indexOf(CHANNEL_COL.noBeep)]).toBe('No');
     expect(dataRow[headers.indexOf(CHANNEL_COL.noEco)]).toBe('No');
     expect(dataRow[headers.indexOf(CHANNEL_COL.ts1TaTx)]).toBe('Off');
     expect(dataRow[headers.indexOf(CHANNEL_COL.ts2TaTxId)]).toBe('Off');
+  });
+
+  it('mirrors Zone Skip from All Skip for scan inclusion', () => {
+    const skipChannel: Channel = {
+      ...newChannel('proj', 'Skip Scan'),
+      rxFrequency: 430_850_000,
+      txFrequency: 438_450_000,
+      scanInclusion: 'skip',
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 123,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const scanChannel: Channel = {
+      ...newChannel('proj', 'Participate Scan'),
+      rxFrequency: 145_750_000,
+      txFrequency: 145_150_000,
+      scanInclusion: 'scan',
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: null,
+        },
+      ],
+    };
+    const skipCsv = serialiseChannels(minimalAssembled(skipChannel));
+    const skipRows = parseCsv(skipCsv);
+    const skipHeaders = skipRows[0]!;
+    const skipRow = skipRows[1]!;
+    expect(skipRow[skipHeaders.indexOf(CHANNEL_COL.allSkip)]).toBe('Yes');
+    expect(skipRow[skipHeaders.indexOf(CHANNEL_COL.zoneSkip)]).toBe('Yes');
+
+    const scanCsv = serialiseChannels(minimalAssembled(scanChannel));
+    const scanRows = parseCsv(scanCsv);
+    const scanHeaders = scanRows[0]!;
+    const scanRow = scanRows[1]!;
+    expect(scanRow[scanHeaders.indexOf(CHANNEL_COL.allSkip)]).toBe('No');
+    expect(scanRow[scanHeaders.indexOf(CHANNEL_COL.zoneSkip)]).toBe('No');
   });
 
   it('emits CPS-safe defaults for unmodelled yes/no columns on analogue rows', () => {
@@ -263,7 +309,6 @@ describe('OpenGD77 export serialise', () => {
     const rows = parseCsv(csv);
     const headers = rows[0]!;
     const dataRow = rows[1]!;
-    expect(dataRow[headers.indexOf(CHANNEL_COL.zoneSkip)]).toBe('No');
     expect(dataRow[headers.indexOf(CHANNEL_COL.noBeep)]).toBe('No');
     expect(dataRow[headers.indexOf(CHANNEL_COL.noEco)]).toBe('No');
     expect(dataRow[headers.indexOf(CHANNEL_COL.ts1TaTx)]).toBe('');

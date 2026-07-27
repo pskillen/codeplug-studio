@@ -90,13 +90,26 @@ describe('opengd77/export golden', () => {
     const csv = serialiseOpenGd77Files(assembled, { profileId: 'opengd77-1701' })['Channels.csv'];
     const rows = parseCsv(csv);
     const headers = rows[0]!;
-    const digitalRow = rows.find((row) => row[headers.indexOf(CHANNEL_COL.type)] === 'Digital');
+    const digitalRow = rows.find(
+      (row) => row[headers.indexOf(CHANNEL_COL.name)] === 'GB7GL Scot',
+    );
     expect(digitalRow).toBeDefined();
-    expect(digitalRow![headers.indexOf(CHANNEL_COL.zoneSkip)]).toBe('No');
     expect(digitalRow![headers.indexOf(CHANNEL_COL.noBeep)]).toBe('No');
     expect(digitalRow![headers.indexOf(CHANNEL_COL.noEco)]).toBe('No');
     expect(digitalRow![headers.indexOf(CHANNEL_COL.ts1TaTx)]).toBe('Off');
     expect(digitalRow![headers.indexOf(CHANNEL_COL.ts2TaTxId)]).toBe('Off');
+  });
+
+  it('mirrors Zone Skip from All Skip on golden export rows', () => {
+    const { build, library } = loadOpenGd77YamlGoldenFixture();
+    const assembled = assembleOpenGd77YamlGolden(library, build);
+    const csv = serialiseOpenGd77Files(assembled, { profileId: 'opengd77-1701' })['Channels.csv'];
+    const rows = parseCsv(csv);
+    const headers = rows[0]!;
+    const skipRow = rows.find((row) => row[headers.indexOf(CHANNEL_COL.name)] === 'GB7GL Scot');
+    expect(skipRow).toBeDefined();
+    expect(skipRow![headers.indexOf(CHANNEL_COL.allSkip)]).toBe('Yes');
+    expect(skipRow![headers.indexOf(CHANNEL_COL.zoneSkip)]).toBe('Yes');
   });
 
   it('expands multi-mode channels into -F and -D wire rows', () => {
