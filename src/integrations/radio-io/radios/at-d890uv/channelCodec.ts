@@ -231,7 +231,9 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   const txHz = ch.txHz > 0 ? ch.txHz : rxHz;
   data.set(encodeBcdFrequencyHz(rxHz), 0);
   const duplex = duplexFromRxTx(rxHz, txHz);
-  data.set(encodeBcdFrequencyHz(offsetHz(rxHz, txHz)), 4);
+  if (duplex !== 0) {
+    data.set(encodeBcdFrequencyHz(offsetHz(rxHz, txHz)), 4);
+  }
   const power = powerWireFromPercent(ch.powerPercent);
   const bw = bandwidthToWire(ch.bandwidth);
   data[8] =
@@ -283,7 +285,9 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   }
   data[0x18] = ch.dmrRadioIdIndex ?? 0;
   data[0x1b] = encodeScanListWire(ch.scanListId);
-  data[0x1c] = encodeRxGroupWire(ch.rxGroupIndex);
+  if (ch.rxGroupIndex != null) {
+    data[0x1c] = encodeRxGroupWire(ch.rxGroupIndex);
+  }
 
   if (ch.timeslot === 2) {
     data[0x21] = setBit(data[0x21]!, 1, true);
