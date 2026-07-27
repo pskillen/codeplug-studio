@@ -70,27 +70,29 @@ async function timeReads(
   return (performance.now() - started) / iterations;
 }
 
+export interface AtD890ReadBlockNegotiation {
+  trials: AtD890BlockTrial[];
+  /** Largest block size that returned bytes identical to the 16-byte baseline. */
+  bestBlockSize: number;
+}
+
 /**
- * Probe the link for the largest usable block size. Read-only; caller supplies a connected,
- * PROGRAM-mode pipe and an address whose contents are stable across the probe.
+ * Probe which read block sizes the radio honours — no timing loops.
+ * Used on Connect and as the first phase of {@link profileAtD890Link}.
  */
-export async function profileAtD890Link(
+export async function probeAtD890ReadBlockSizes(
   pipe: BytePipe,
   address: number,
-  opts: { onProgress?: ProgressFn; signal?: AbortSignal; iterations?: number } = {},
-): Promise<AtD890LinkProfile> {
-  const iterations = opts.iterations ?? 8;
+  opts: { onProgress?: ProgressFn; signal?: AbortSignal } = {},
+): Promise<AtD890ReadBlockNegotiation> {
   const maxCandidate = Math.max(...AT_D890_BLOCK_CANDIDATES);
-
-  // Baseline: the same span via the known-good 16-byte path, for byte-for-byte comparison.
   const baselineSpan = Math.ceil(maxCandidate / AT_D890_BLOCK_SIZE) * AT_D890_BLOCK_SIZE;
-  const baseline = await atD890ReadMemory(pipe, address, baselineSpan, opts.signal);
-  const baselineMsPerFrame = await timeReads(
+  const baseline = await atD890ReadMemory(
     pipe,
     address,
-    AT_D890_BLOCK_SIZE,
-    iterations,
+    baselineSpan,
     opts.signal,
+    AT_D890_BLOCK_SIZE,
   );
 
   const trials: AtD890BlockTrial[] = [];
@@ -117,20 +119,13 @@ export async function profileAtD890Link(
         });
         continue;
       }
-      const msPerFrame = await timeReads(pipe, address, blockSize, iterations, opts.signal);
-      trials.push({
-        blockSize,
-        ok: true,
-        msPerFrame,
-        payloadBytesPerSecond: (blockSize * 1000) / msPerFrame,
-      });
+      trials.push({ blockSize, ok: true });
     } catch (e) {
       trials.push({
         blockSize,
         ok: false,
         detail: e instanceof Error ? e.message : String(e),
       });
-      // A radio that rejects one size may leave stale bytes buffered; resync before the next.
       await pipe.flush?.();
     }
   }
@@ -138,6 +133,67 @@ export async function profileAtD890Link(
   const okTrials = trials.filter((t) => t.ok);
   const bestBlockSize =
     okTrials.length > 0 ? Math.max(...okTrials.map((t) => t.blockSize)) : AT_D890_BLOCK_SIZE;
+
+  return { trials, bestBlockSize };
+}
+
+/**
+ * Connect-fast negotiator — finds the largest usable read block without timing loops.
+ */
+export async function negotiateAtD890ReadBlockSize(
+  pipe: BytePipe,
+  address: number,
+  opts: { onProgress?: ProgressFn; signal?: AbortSignal } = {},
+): Promise<AtD890ReadBlockNegotiation> {
+  return probeAtD890ReadBlockSizes(pipe, address, opts);
+}
+
+/**
+ * Probe the link for the largest usable block size. Read-only; caller supplies a connected,
+ * PROGRAM-mode pipe and an address whose contents are stable across the probe.
+ */
+export async function profileAtD890Link(
+  pipe: BytePipe,
+  address: number,
+  opts: { onProgress?: ProgressFn; signal?: AbortSignal; iterations?: number } = {},
+): Promise<AtD890LinkProfile> {
+  const iterations = opts.iterations ?? 8;
+  const { trials: probeTrials, bestBlockSize } = await probeAtD890ReadBlockSizes(
+    pipe,
+    address,
+    opts,
+  );
+
+  const baselineMsPerFrame = await timeReads(
+    pipe,
+    address,
+    AT_D890_BLOCK_SIZE,
+    iterations,
+    opts.signal,
+  );
+
+  const trials: AtD890BlockTrial[] = [];
+  for (const probeTrial of probeTrials) {
+    if (!probeTrial.ok) {
+      trials.push(probeTrial);
+      continue;
+    }
+    const msPerFrame = await timeReads(
+      pipe,
+      address,
+      probeTrial.blockSize,
+      iterations,
+      opts.signal,
+    );
+    trials.push({
+      blockSize: probeTrial.blockSize,
+      ok: true,
+      msPerFrame,
+      payloadBytesPerSecond: (probeTrial.blockSize * 1000) / msPerFrame,
+    });
+  }
+
+  const okTrials = trials.filter((t) => t.ok);
   const best = okTrials.find((t) => t.blockSize === bestBlockSize);
   const baselineRate = (AT_D890_BLOCK_SIZE * 1000) / baselineMsPerFrame;
 

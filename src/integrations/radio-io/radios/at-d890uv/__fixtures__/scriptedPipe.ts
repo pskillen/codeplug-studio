@@ -15,6 +15,12 @@ export class AtD890ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
   private bytes: number[] = [];
 
+  /**
+   * When the byte queue is short, synthesize a read reply from the latest `R` frame.
+   * Return `null` to simulate a silent radio (readExact will throw).
+   */
+  readResponder?: (address: number, length: number) => Uint8Array | null;
+
   enqueue(...chunks: Uint8Array[]): void {
     for (const chunk of chunks) {
       this.bytes.push(...chunk);
@@ -28,13 +34,31 @@ export class AtD890ScriptedPipe implements BytePipe {
   async readExact(n: number, timeoutMs: number): Promise<Uint8Array> {
     void timeoutMs;
     if (this.bytes.length < n) {
+      this.tryEnqueueReadReplyFromLastRequest();
+    }
+    if (this.bytes.length < n) {
       throw new Error(`AtD890ScriptedPipe: need ${n} bytes, have ${this.bytes.length}`);
     }
     return new Uint8Array(this.bytes.splice(0, n));
   }
 
+  async flush(): Promise<void> {
+    this.bytes = [];
+  }
+
   async close(): Promise<void> {
     /* no-op */
+  }
+
+  private tryEnqueueReadReplyFromLastRequest(): void {
+    const readFrames = this.writes.filter((w) => w[0] === 0x52);
+    const last = readFrames.at(-1);
+    if (!last || last.length < 6 || !this.readResponder) return;
+    const addr = ((last[1]! << 24) | (last[2]! << 16) | (last[3]! << 8) | last[4]!) >>> 0;
+    const len = last[5]!;
+    const payload = this.readResponder(addr, len);
+    if (!payload || payload.length !== len) return;
+    this.enqueue(makeReadReply(addr, payload));
   }
 }
 

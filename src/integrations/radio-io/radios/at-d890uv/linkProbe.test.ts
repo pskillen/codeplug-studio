@@ -36,22 +36,18 @@ function reply(address: number, payload: Uint8Array): Uint8Array {
 
 /**
  * Script a radio that honours block sizes up to `maxBlock`.
- * Baseline span, baseline timing loop, then each candidate trial + its timing loop.
+ * Uses on-demand read replies so probe failures do not consume pre-queued timing data.
  */
 function scriptLink(maxBlock: number, iterations: number): AtD890ScriptedPipe {
+  void iterations;
   const pipe = new AtD890ScriptedPipe();
   const full = content(MAX);
-
-  // Baseline span read via the 16-byte path.
-  enqueueAtD890ReadReply(pipe, ADDRESS, full);
-  // Baseline timing loop.
-  for (let i = 0; i < iterations; i++) pipe.enqueue(reply(ADDRESS, full.subarray(0, 0x10)));
-
-  for (const blockSize of AT_D890_BLOCK_CANDIDATES) {
-    if (blockSize > maxBlock) continue; // unsupported sizes simply never answer
-    pipe.enqueue(reply(ADDRESS, full.subarray(0, blockSize)));
-    for (let i = 0; i < iterations; i++) pipe.enqueue(reply(ADDRESS, full.subarray(0, blockSize)));
-  }
+  pipe.readResponder = (addr, len) => {
+    const off = addr - ADDRESS;
+    if (off < 0 || off + len > full.length) return null;
+    if (len > maxBlock) return null;
+    return full.subarray(off, off + len);
+  };
   return pipe;
 }
 
@@ -86,12 +82,14 @@ describe('profileAtD890Link', () => {
   it('rejects a reply whose bytes disagree with the 16-byte baseline', async () => {
     const pipe = new AtD890ScriptedPipe();
     const iterations = 2;
-    enqueueAtD890ReadReply(pipe, ADDRESS, content(MAX));
-    for (let i = 0; i < iterations; i++) pipe.enqueue(reply(ADDRESS, content(0x10)));
-    // 0x10 trial agrees; 0x20 returns different bytes for the same address.
-    pipe.enqueue(reply(ADDRESS, content(0x10)));
-    for (let i = 0; i < iterations; i++) pipe.enqueue(reply(ADDRESS, content(0x10)));
-    pipe.enqueue(reply(ADDRESS, content(0x20, 0x55)));
+    const full = content(MAX);
+    pipe.readResponder = (addr, len) => {
+      const off = addr - ADDRESS;
+      if (off < 0 || off + len > full.length) return null;
+      if (len === 0x20) return content(0x20, 0x55);
+      if (len > 0x10) return null;
+      return full.subarray(off, off + len);
+    };
 
     const profile = await profileAtD890Link(pipe, ADDRESS, { iterations });
     const trial = profile.trials.find((t) => t.blockSize === 0x20);
