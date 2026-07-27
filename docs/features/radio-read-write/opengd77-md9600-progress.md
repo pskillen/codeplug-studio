@@ -5,15 +5,15 @@
 
 ## Status
 
-| Slice                                     | State |
-| ----------------------------------------- | ----- |
-| 0 Branch + progress stubs                 | Done  |
-| 1 Power ladder parameterisation           | Done  |
-| 2 Descriptor / registry / Write gate copy | Done  |
-| 3 Core profile / traits / catalog egress  | Done  |
-| 4 Write projection                        | Done  |
-| 5 Documentation                           | Done  |
-| 6 Pre-PR verify + PR                      | Done  |
+| Slice                                                                                        | State |
+| -------------------------------------------------------------------------------------------- | ----- |
+| 0 Branch + progress stubs                                                                    | Done  |
+| 1 Power ladder parameterisation                                                              | Done  |
+| 2 Descriptor / registry / Write gate copy                                                    | Done  |
+| 3 Core profile / traits / catalog egress                                                     | Done  |
+| 4 Write projection                                                                           | Done  |
+| 5 Documentation                                                                              | Done  |
+| 6 Pre-PR verify + PR                                                                         | Done  |
 | 7 Clear `prodWriteDisabled` ([#788](https://github.com/pskillen/codeplug-studio/issues/788)) | Done  |
 
 ## Shipped this branch
