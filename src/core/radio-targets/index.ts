@@ -4,6 +4,7 @@ export {
   defaultCompatibleEgress,
   hasDedicatedScanLists,
   hasMxNChannelExpansion,
+  hasTalkGroupTimeslotClones,
   listRadioTargets,
   orderEgressPathsByCatalog,
   radioTargetFor,

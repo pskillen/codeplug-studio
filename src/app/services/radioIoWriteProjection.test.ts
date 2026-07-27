@@ -89,7 +89,7 @@ describe('buildRadioWriteProjection', () => {
     expect(projection.numbersBySourceChannelId.get('ch-a')).toEqual([1]);
     expect(projection.organisation.scanLists).toBeUndefined();
     expect(projection.organisation.talkGroups).toEqual([
-      expect.objectContaining({ index: 1, digitalId: 91, callType: 0 }),
+      expect.objectContaining({ index: 1, digitalId: 91, callType: 0, timeSlotOverride: 1 }),
     ]);
     expect(projection.organisation.zones).toEqual([
       expect.objectContaining({ wireName: 'Local', channelNumbers: [1] }),
@@ -435,5 +435,57 @@ describe('buildRadioWriteProjection', () => {
     });
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.organisation.rxGroups?.[0]?.memberDigitalIds).toEqual([91, 9]);
+  });
+
+  it('projects OpenGD77 talk-group timeslot clones and RX bank indices', () => {
+    const projectId = 'p1';
+    const tg = { ...newTalkGroup(projectId, 'Scotland', 2355), id: 'tg-scot' };
+    const rxList = {
+      ...newRxGroupList(projectId, 'Scotland'),
+      id: 'rx-1',
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg.id }, timeSlotOverride: 2 as const },
+        { ref: { kind: 'talkGroup' as const, id: tg.id }, timeSlotOverride: 1 as const },
+      ],
+    };
+    const ch = withExportEligibleDefaults({
+      ...newChannel(projectId, 'Glasgow'),
+      id: 'ch-1',
+      rxFrequency: 430_125_000,
+      txFrequency: 430_125_000,
+      primaryMode: 'dmr',
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: null,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: rxList.id,
+        },
+      ],
+    });
+    const zone = {
+      ...newZone(projectId, 'Local'),
+      id: 'zone-a',
+      members: [{ kind: 'channel' as const, channelId: ch.id }],
+    };
+    const library = {
+      ...emptyLibrary([ch]),
+      zones: [zone],
+      talkGroups: [tg],
+      rxGroupLists: [rxList],
+    };
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-opengd77-1701');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.talkGroups?.map((row) => row.timeSlotOverride).sort()).toEqual([
+      1, 2,
+    ]);
+    expect(projection.organisation.rxGroups?.[0]?.memberDigitalIds).toEqual([2, 1]);
+    expect(projection.channels[0]?.txContactId).toBe(1);
   });
 });

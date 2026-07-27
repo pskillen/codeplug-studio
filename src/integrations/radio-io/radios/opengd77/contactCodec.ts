@@ -25,6 +25,8 @@ export interface OpenGd77ContactDto {
   digitalId: number;
   /** OpenGD77 wire: 0 group, 1 private, 2 all-call. */
   callType: number;
+  /** Force TS1 / TS2 on group clones; omitted → None (use channel). */
+  timeSlotOverride?: 1 | 2;
 }
 
 function encodeName(name: string, maxLen: number): Uint8Array {
@@ -83,7 +85,7 @@ export function encodeContactRecord(dto: OpenGd77ContactDto): Uint8Array {
   out[0x14] = dto.callType & 0xff;
   out[0x15] = 0xff;
   out[0x16] = 0xff;
-  out[0x17] = 0x01; // TimeSlotOverride::None
+  out[0x17] = dto.timeSlotOverride === 1 ? 0x00 : dto.timeSlotOverride === 2 ? 0x02 : 0x01;
   return out;
 }
 
@@ -119,6 +121,7 @@ export function mergeOrganisationContacts(
       wireName: tg.wireName,
       digitalId: tg.digitalId,
       callType: 0, // OpenGD77 group call
+      ...(tg.timeSlotOverride != null ? { timeSlotOverride: tg.timeSlotOverride } : {}),
     });
   }
 

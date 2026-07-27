@@ -15,10 +15,10 @@ Empty trailing member cells are allowed.
 
 ## Column reference
 
-| Vendor header         | Internal field                                | Required (import) | Import rule                                                      | Export rule                                      | Bidirectional mapping | Notes                                          |
-| --------------------- | --------------------------------------------- | ----------------- | ---------------------------------------------------------------- | ------------------------------------------------ | --------------------- | ---------------------------------------------- |
-| `TG List Name`        | `RxGroupList.name`                            | **Yes**           | Trim; skip row if empty                                          | As stored                                        | String pass-through   | FK from `Channels.TG List`                     |
-| `Contact1`…`ContactN` | `RxGroupList.meta.imported.memberWireNames[]` | No                | Collect non-empty cells in column order; any `Contact\d+` header | Pad into `Contact1`…`ContactN` up to profile cap | Lossless names        | Members are **vendor names** from Contacts.csv |
+| Vendor header         | Internal field                            | Required (import) | Import rule                                                      | Export rule                                                        | Bidirectional mapping | Notes                                                                    |
+| --------------------- | ----------------------------------------- | ----------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------- | ------------------------------------------------------------------------ |
+| `TG List Name`        | `RxGroupList.name`                        | **Yes**           | Trim; skip row if empty                                          | As stored                                                          | String pass-through   | FK from `Channels.TG List`                                               |
+| `Contact1`…`ContactN` | `RxGroupList.members` (talk-group clones) | No                | Collect non-empty cells in column order; any `Contact\d+` header | Clone wire names per member `timeSlotOverride` (`… TS1` / `… TS2`) | Lossless names        | Members reference **Contacts.csv** clone rows when timeslot clones apply |
 
 ## Promiscuous RX semantics
 

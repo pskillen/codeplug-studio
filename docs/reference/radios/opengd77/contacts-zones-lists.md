@@ -81,6 +81,22 @@ Prefer Limit **68** over older Doxygen “250 zones” text.
 
 On Web Serial Write, the **entire** contact, zone, and RX group list banks are replaced from the build projection (empty projection wipes prior payload). Settings / APRS / DTMF regions stay Read-retained — see [channel-record.md](channel-record.md) Write defaults for per-channel unmodelled fields.
 
+### Talk-group timeslot clones (Write + CSV)
+
+When the build has `talkGroupTimeslotClones`, group contacts encode **Force TS1** (`0x00`) or **Force TS2** (`0x02`) at `0x17` on clone rows ([#764](https://github.com/pskillen/codeplug-studio/issues/764)). The library keeps one talk group; Write projects the same clone set as OpenGD77 CSV export. RX-group member indices reference **contact bank slots**, not bare DMR IDs (duplicate IDs across TS1/TS2 clones).
+
+### Known Write gaps (organisation + channel)
+
+| Area                             | Write behaviour                             | Notes                                                             |
+| -------------------------------- | ------------------------------------------- | ----------------------------------------------------------------- |
+| Talk-group contact TS            | **Encoded** via TS1/TS2 clone rows + `0x17` | Not RGL per-member override on wire                               |
+| All-call (`type=2`)              | **Not encoded**                             | No library All-call entity                                        |
+| Private-contact TS               | **None** (`0x01`) always                    | No private TS policy                                              |
+| Channel APRS index / alias       | **Defaults** (`0` / None)                   | See [channel-record.md](channel-record.md)                        |
+| Per-channel DMR ID override      | **Default** `0`                             | Library `dmrId` on profile not written to `0x27`                  |
+| TOT                              | **Default** infinite (`0`)                  | Not modelled on Write                                             |
+| Empty contact / zone / RGL slots | **`0xFF` fill** + bitmap clear              | Bitmap-authoritative; differs from qDMR `0` padding in some tools |
+
 ## Scan lists
 
 Stock / Doxygen maps place scan lists in the low image (e.g. around EEPROM `0x01790`, size `0x1640`, 64 lists). qdmr’s OpenGD77 path **does not encode** scan lists and marks them ignored in limits.

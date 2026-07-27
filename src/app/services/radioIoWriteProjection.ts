@@ -19,6 +19,11 @@ import type { FormatId } from '@core/import-export/types.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import {
+  buildTalkGroupTimeslotCloneIndex,
+  profileHasTalkGroupTimeslotClones,
+  talkGroupSlotKey,
+} from '@core/import-export/channelExpansion/talkGroupTimeslotClones.ts';
+import {
   DEFAULT_SCAN_CARRIER_HZ,
   zoneScanCarrierWireName,
 } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
@@ -638,28 +643,60 @@ function buildOpenGd77ContactsAndRx(
   const maxContacts = 1024;
 
   const contactIdByEntityId = new Map<string, number>();
+  const contactIndexByTalkGroupSlot = new Map<string, number>();
   const talkGroups: RadioTalkGroupDto[] = [];
   const reservedTg = new Set<string>();
 
+  const baseWireNames = new Map<string, string>();
   for (const row of assembled.talkGroups) {
-    if (talkGroups.length >= maxContacts) break;
-    const wireName = applyListWireNameLimits(
-      row.wireName,
-      reservedTg,
-      undefined,
-      egress.profileId,
-      warnings,
-      'Talk group',
-      nameLen,
+    baseWireNames.set(
+      row.entity.id,
+      applyListWireNameLimits(
+        row.wireName,
+        reservedTg,
+        undefined,
+        egress.profileId,
+        warnings,
+        'Talk group',
+        nameLen,
+      ),
     );
-    const index = talkGroups.length + 1;
-    talkGroups.push({
-      index,
-      wireName,
-      digitalId: row.entity.digitalId,
-      callType: 0, // OpenGD77 group
-    });
-    contactIdByEntityId.set(row.entity.id, index);
+  }
+
+  const useClones = profileHasTalkGroupTimeslotClones(egress.profileId);
+  const cloneIndex = useClones
+    ? buildTalkGroupTimeslotCloneIndex(assembled, baseWireNames, {
+        maxNameLength: nameLen,
+        reserved: reservedTg,
+      })
+    : null;
+
+  if (cloneIndex) {
+    for (const clone of cloneIndex.clones) {
+      if (talkGroups.length >= maxContacts) break;
+      const index = talkGroups.length + 1;
+      talkGroups.push({
+        index,
+        wireName: clone.wireName,
+        digitalId: clone.digitalId,
+        callType: 0,
+        timeSlotOverride: clone.slot,
+      });
+      contactIndexByTalkGroupSlot.set(talkGroupSlotKey(clone.talkGroupId, clone.slot), index);
+    }
+  } else {
+    for (const row of assembled.talkGroups) {
+      if (talkGroups.length >= maxContacts) break;
+      const wireName = baseWireNames.get(row.entity.id) ?? row.wireName;
+      const index = talkGroups.length + 1;
+      talkGroups.push({
+        index,
+        wireName,
+        digitalId: row.entity.digitalId,
+        callType: 0,
+      });
+      contactIdByEntityId.set(row.entity.id, index);
+    }
   }
 
   const digitalContacts: RadioDigitalContactDto[] = [];
@@ -708,16 +745,26 @@ function buildOpenGd77ContactsAndRx(
     for (const member of row.entity.members) {
       if (memberDigitalIds.length >= maxRxMembers) break;
       if (member.ref.kind === 'talkGroup') {
-        const tg = assembled.talkGroups.find((t) => t.entity.id === member.ref.id);
-        if (tg) memberDigitalIds.push(tg.entity.digitalId);
+        if (cloneIndex) {
+          const slot = cloneIndex.resolveRxMemberSlot(member.timeSlotOverride);
+          const bankIdx = contactIndexByTalkGroupSlot.get(talkGroupSlotKey(member.ref.id, slot));
+          if (bankIdx != null) memberDigitalIds.push(bankIdx);
+        } else {
+          const tg = assembled.talkGroups.find((t) => t.entity.id === member.ref.id);
+          if (tg) memberDigitalIds.push(tg.entity.digitalId);
+        }
       } else if (member.ref.kind === 'digitalContact') {
-        const dc = assembled.digitalContacts.find((d) => d.entity.id === member.ref.id);
-        if (dc) memberDigitalIds.push(dc.entity.digitalId);
+        if (cloneIndex) {
+          const bankIdx = contactIdByEntityId.get(member.ref.id);
+          if (bankIdx != null) memberDigitalIds.push(bankIdx);
+        } else {
+          const dc = assembled.digitalContacts.find((d) => d.entity.id === member.ref.id);
+          if (dc) memberDigitalIds.push(dc.entity.digitalId);
+        }
       }
     }
     const index = rxGroups.length + 1;
     rxGroups.push({ index, wireName, memberDigitalIds });
-    // Channel groupList is 1-based on wire; DTO rxGroupIndex is 0-based.
     rxGroupIndexById.set(row.entity.id, index - 1);
   }
 
@@ -725,7 +772,11 @@ function buildOpenGd77ContactsAndRx(
     talkGroups,
     rxGroups,
     digitalContacts,
-    fkMaps: { contactIdByEntityId, rxGroupIndexById },
+    fkMaps: {
+      contactIdByEntityId,
+      ...(contactIndexByTalkGroupSlot.size > 0 ? { contactIndexByTalkGroupSlot } : {}),
+      rxGroupIndexById,
+    },
   };
 }
 

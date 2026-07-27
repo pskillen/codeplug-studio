@@ -20,6 +20,10 @@ import {
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import {
+  buildTalkGroupTimeslotCloneIndex,
+  profileHasTalkGroupTimeslotClones,
+} from '@core/import-export/channelExpansion/talkGroupTimeslotClones.ts';
+import {
   applyListWireNameLimits,
   formatUsesListNameShortening,
 } from '@core/import-export/channelExpansion/listWireNames.ts';
@@ -588,6 +592,18 @@ export function previewWireRows(
           profileId,
           warnings,
         );
+        const cloneDetails =
+          profileHasTalkGroupTimeslotClones(profileId) && referenced
+            ? buildTalkGroupTimeslotCloneIndex(
+                projection,
+                new Map([[talkGroup.id, generatedWireName]]),
+              )
+                .clones.filter((clone) => clone.talkGroupId === talkGroup.id)
+                .map((clone) => ({
+                  label: `TS${clone.slot} contact`,
+                  value: clone.wireName,
+                }))
+            : undefined;
         return previewRow(
           talkGroup.id,
           talkGroup.id,
@@ -596,6 +612,7 @@ export function previewWireRows(
           generatedWireName,
           build.talkGroupOverrides,
           referenced ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
+          cloneDetails?.length ? cloneDetails : undefined,
         );
       });
     }

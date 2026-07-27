@@ -21,6 +21,7 @@ describe('trait profiles', () => {
     const profile = traitProfileFor('opengd77-1701');
     expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneGrouping);
     expect(profile?.traits).toContain(BuildCapabilityTrait.MultiTalkGroupPerChannel);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.TalkGroupTimeslotClones);
   });
 
   it('registers chirp-uv5r with flat memory traits', () => {

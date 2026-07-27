@@ -36,6 +36,8 @@ export interface AssembledChannelsToRadioDtosResult {
 /** Optional radio-native FK maps for TX-contact / RX-group indices. */
 export interface RadioChannelFkMaps {
   contactIdByEntityId?: ReadonlyMap<string, number>;
+  /** OpenGD77 TS clones: `${talkGroupId}:${slot}` → 1-based contact bank index. */
+  contactIndexByTalkGroupSlot?: ReadonlyMap<string, number>;
   rxGroupIndexById?: ReadonlyMap<string, number>;
   /** DM-32UV: DMR ID value → 0-based operator radio-ID bank index. */
   dmrIdIndexByValue?: ReadonlyMap<number, number>;
@@ -44,8 +46,15 @@ export interface RadioChannelFkMaps {
 function resolveContactId(
   ref: { kind: string; id: string } | null | undefined,
   maps?: RadioChannelFkMaps,
+  channelTimeslot?: 1 | 2,
 ): number | undefined {
-  if (!ref || !maps?.contactIdByEntityId) return undefined;
+  if (!ref || !maps) return undefined;
+  if (ref.kind === 'talkGroup' && maps.contactIndexByTalkGroupSlot) {
+    const slot = channelTimeslot === 2 ? 2 : 1;
+    const keyed = maps.contactIndexByTalkGroupSlot.get(`${ref.id}:${slot}`);
+    if (keyed != null && keyed > 0) return keyed;
+  }
+  if (!maps.contactIdByEntityId) return undefined;
   const id = maps.contactIdByEntityId.get(ref.id);
   return id != null && id > 0 ? id : undefined;
 }
@@ -121,7 +130,7 @@ function digitalFieldsFromChannel(
   }
 
   const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
-  const txContactId = resolveContactId(dmr.contactRef, fkMaps);
+  const txContactId = resolveContactId(dmr.contactRef, fkMaps, timeslot);
   const rxGroupIndex = resolveRxGroupIndex(dmr.rxGroupListId, fkMaps);
   const dmrRadioIdIndex = dmr.dmrId != null ? fkMaps?.dmrIdIndexByValue?.get(dmr.dmrId) : undefined;
   return {

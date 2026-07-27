@@ -4,6 +4,7 @@ import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import {
   defaultCompatibleEgress,
   hasMxNChannelExpansion,
+  hasTalkGroupTimeslotClones,
   listRadioTargets,
   orderEgressPathsByCatalog,
   radioTargetFor,
@@ -122,6 +123,9 @@ describe('radio target catalog', () => {
     expect(hasMxNChannelExpansion('baofeng-uv5r-mini')).toBe(false);
     expect(hasMxNChannelExpansion('baofeng-dm32uv')).toBe(true);
     expect(hasMxNChannelExpansion('anytone-at-d890uv')).toBe(true);
+    expect(hasTalkGroupTimeslotClones('baofeng-dm1701')).toBe(true);
+    expect(hasTalkGroupTimeslotClones('tyt-md9600')).toBe(true);
+    expect(hasTalkGroupTimeslotClones('baofeng-dm32uv')).toBe(false);
   });
 
   it('resolveBuildDefaultEgress prefers denormalised default pathway on the build', () => {

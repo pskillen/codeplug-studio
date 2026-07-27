@@ -359,9 +359,9 @@ describe('OpenGD77 export serialise', () => {
     const rows = parseCsv(files['Contacts.csv']);
     const headers = rows[0]!;
     const nameIndex = headers.indexOf(CONTACT_COL.name);
-    const dataRow = rows.slice(1).find((row) => row[nameIndex] === 'Scot West');
+    const dataRow = rows.slice(1).find((row) => row[nameIndex] === 'Scot West TS1');
     expect(dataRow).toBeDefined();
-    expect(dataRow?.[nameIndex]).toBe('Scot West');
+    expect(dataRow?.[nameIndex]).toBe('Scot West TS1');
   });
 
   it('shortens long zone, RX group list, and contact names when shortenNames is enabled', () => {
@@ -448,5 +448,73 @@ describe('OpenGD77 export serialise', () => {
     const csv = serialiseChannels(assembled, { profileId: 'opengd77-1701', expandModes: true });
     expect(csv).toContain('-F');
     expect(csv).toContain('-D');
+  });
+
+  it('exports talk-group timeslot clones on Contacts and TG_Lists', () => {
+    const tg = newTalkGroup(FIXTURE_PROJECT_ID, 'Scotland 2355', 2355);
+    const rgl = {
+      ...newRxGroupList(FIXTURE_PROJECT_ID, 'Scotland'),
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg.id }, timeSlotOverride: 2 as const },
+        { ref: { kind: 'talkGroup' as const, id: tg.id }, timeSlotOverride: 1 as const },
+      ],
+    };
+    const channel: Channel = {
+      ...newChannel(FIXTURE_PROJECT_ID, 'Glasgow'),
+      primaryMode: 'dmr',
+      rxFrequency: 430_125_000,
+      txFrequency: 430_125_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: null,
+          contactRef: { kind: 'talkGroup', id: tg.id },
+          rxGroupListId: rgl.id,
+        },
+      ],
+    };
+    const assembled: AssembledBuild = {
+      buildId: 'build-ts',
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+      buildName: 'TS test',
+      channels: [{ entity: channel, wireName: channel.name }],
+      zones: [],
+      scanLists: [],
+      talkGroups: [{ entity: tg, wireName: tg.name }],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [{ entity: rgl, wireName: rgl.name }],
+    };
+    const files = serialiseOpenGd77Files(assembled, { profileId: 'opengd77-1701' });
+
+    const contactRows = parseCsv(files['Contacts.csv']);
+    const contactHeaders = contactRows[0]!;
+    const nameIdx = contactHeaders.indexOf(CONTACT_COL.name);
+    const tsIdx = contactHeaders.indexOf(CONTACT_COL.tsOverride);
+    const groupRows = contactRows
+      .slice(1)
+      .filter((row) => row[contactHeaders.indexOf(CONTACT_COL.idType)] === 'Group');
+    expect(groupRows.map((row) => row[nameIdx]).sort()).toEqual(['Scot 2355 TS1', 'Scot 2355 TS2']);
+    expect(groupRows.map((row) => row[tsIdx]).sort()).toEqual(['1', '2']);
+
+    const rglRows = parseCsv(files['TG_Lists.csv']);
+    const rglHeaders = rglRows[0]!;
+    const c1Idx = rglHeaders.indexOf('Contact1');
+    const c2Idx = rglHeaders.indexOf('Contact2');
+    const rglData = rglRows[1]!;
+    expect(rglData[c1Idx]).toBe('Scot 2355 TS2');
+    expect(rglData[c2Idx]).toBe('Scot 2355 TS1');
+
+    const channelRows = parseCsv(files['Channels.csv']);
+    const chHeaders = channelRows[0]!;
+    const contactColIdx = chHeaders.indexOf(CHANNEL_COL.contact);
+    const chWireName = channel.name;
+    const chData = channelRows.find(
+      (row) => row[chHeaders.indexOf(CHANNEL_COL.name)] === chWireName,
+    );
+    expect(chData?.[contactColIdx]).toBe('Scot 2355 TS1');
   });
 });
