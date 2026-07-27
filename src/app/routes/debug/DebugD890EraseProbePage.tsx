@@ -23,6 +23,8 @@ import {
   runAtD890ProbeMeasure,
   runAtD890ProbePaint,
   runAtD890ProbeVerifyAndMark,
+  runAtD890WriteBlockProbe,
+  runAtD890WriteBlockVerify,
   type AtD890AliasVerdict,
   type AtD890EraseUnitResult,
   type AtD890AccessProfile,
@@ -30,10 +32,12 @@ import {
   type AtD890ProbeInspectResult,
   type AtD890SweepResult,
   type AtD890ThroughputResult,
+  type AtD890WriteProbeVerdict,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 
-type Pass = 'inspect' | 'paint' | 'mark' | 'measure' | 'diagnose' | 'link';
+type Pass =
+  'inspect' | 'paint' | 'mark' | 'measure' | 'diagnose' | 'link' | 'writeProbe' | 'writeVerify';
 
 /** `diagnose` is run on demand, not as part of the sequence. */
 const PASS_ORDER: Pass[] = ['inspect', 'paint', 'mark', 'measure'];
@@ -46,6 +50,8 @@ const PASS_LABEL: Record<Pass, string> = {
   measure: 'Measure',
   diagnose: 'Diagnose address space (read-only)',
   link: 'Profile link speed (read-only)',
+  writeProbe: 'Probe write block sizes',
+  writeVerify: 'Verify write blocks after power-cycle (read-only)',
 };
 
 /** A power-cycle is only meaningful after a pass that committed writes. */
@@ -56,6 +62,8 @@ const PASS_COMMITS_WRITES: Record<Pass, boolean> = {
   measure: false,
   diagnose: false,
   link: false,
+  writeProbe: true,
+  writeVerify: false,
 };
 
 /** Units the current modelled write set lands in, per erase-unit size (from the bag analysis). */
@@ -121,6 +129,8 @@ export default function DebugD890EraseProbePage() {
   const [link, setLink] = useState<AtD890LinkProfile | null>(null);
   const [sweep, setSweep] = useState<AtD890SweepResult | null>(null);
   const [access, setAccess] = useState<AtD890AccessProfile | null>(null);
+  const [writeVerdict, setWriteVerdict] = useState<AtD890WriteProbeVerdict | null>(null);
+  const [shadowReads, setShadowReads] = useState<boolean | null>(null);
   const [rates, setRates] = useState<{ label: string; t: AtD890ThroughputResult }[]>([]);
 
   const append = useCallback((line: string) => {
@@ -179,6 +189,24 @@ export default function DebugD890EraseProbePage() {
               `(${r.profile.speedup.toFixed(1)}× the 16-byte path); sweep ` +
               `${formatBytes(Math.round(r.sweep.bytesPerSecond))}/s; ` +
               `page ${r.access.inferredPageBytes == null ? 'not resolved' : hex(r.access.inferredPageBytes)}.`,
+          );
+          return;
+        } else if (pass === 'writeProbe') {
+          const r = await runAtD890WriteBlockProbe(pipe, opts);
+          setWriteVerdict(r.verdict);
+          setShadowReads(r.inSessionReadsSeeStagedWrites);
+          append(
+            `Write blocks: largest accepted ${r.verdict.bestBlockSize} bytes ` +
+              `(${r.verdict.speedup.toFixed(1)}x). In-session reads see staged writes: ` +
+              `${r.inSessionReadsSeeStagedWrites ? 'yes' : 'no'}. Power-cycle, then verify.`,
+          );
+          return;
+        } else if (pass === 'writeVerify') {
+          const r = await runAtD890WriteBlockVerify(pipe, opts);
+          setWriteVerdict(r.verdict);
+          append(
+            `After commit: largest write block that survived ${r.verdict.bestBlockSize} bytes ` +
+              `(${r.verdict.speedup.toFixed(1)}x the 16-byte path).`,
           );
           return;
         } else if (pass === 'diagnose') {
@@ -350,6 +378,21 @@ export default function DebugD890EraseProbePage() {
                 {PASS_LABEL.link}
               </Button>
               <Button
+                color="red"
+                variant="light"
+                disabled={busy !== null}
+                onClick={() => void runPass('writeProbe')}
+              >
+                {PASS_LABEL.writeProbe}
+              </Button>
+              <Button
+                variant="default"
+                disabled={busy !== null}
+                onClick={() => void runPass('writeVerify')}
+              >
+                {PASS_LABEL.writeVerify}
+              </Button>
+              <Button
                 variant="subtle"
                 disabled={busy !== null}
                 onClick={() => {
@@ -361,6 +404,8 @@ export default function DebugD890EraseProbePage() {
                   setLink(null);
                   setSweep(null);
                   setAccess(null);
+                  setWriteVerdict(null);
+                  setShadowReads(null);
                   setRates([]);
                   setError(null);
                   setLog([]);
@@ -385,6 +430,89 @@ export default function DebugD890EraseProbePage() {
           <Alert color="red" title="Pass failed">
             {error}
           </Alert>
+        )}
+
+        {writeVerdict && (
+          <PageSection title="Write block sizes">
+            <Stack gap="sm">
+              <Table>
+                <Table.Thead>
+                  <Table.Tr>
+                    <Table.Th>Block</Table.Th>
+                    <Table.Th>Frame</Table.Th>
+                    <Table.Th>Read-back</Table.Th>
+                    <Table.Th>Address</Table.Th>
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {writeVerdict.results.map((t) => (
+                    <Table.Tr key={t.blockSize}>
+                      <Table.Td>
+                        <Code>{t.blockSize}</Code>
+                      </Table.Td>
+                      <Table.Td>
+                        <Badge color={t.accepted ? 'green' : 'gray'} variant="light">
+                          {t.accepted ? 'ACKed' : 'refused'}
+                        </Badge>
+                        {t.detail && (
+                          <Text size="xs" c="dimmed">
+                            {t.detail}
+                          </Text>
+                        )}
+                      </Table.Td>
+                      <Table.Td>
+                        {t.readback == null ? (
+                          '—'
+                        ) : (
+                          <Badge
+                            color={
+                              t.readback === 'match'
+                                ? 'green'
+                                : t.readback === 'erased'
+                                  ? 'orange'
+                                  : 'red'
+                            }
+                            variant="light"
+                          >
+                            {t.readback}
+                          </Badge>
+                        )}
+                        {t.readback === 'mismatch' && t.matchingPrefix != null && (
+                          <Text size="xs" c="dimmed">
+                            first {t.matchingPrefix} bytes matched
+                          </Text>
+                        )}
+                      </Table.Td>
+                      <Table.Td>
+                        <Code>{hex(t.address)}</Code>
+                      </Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+
+              <Alert color={writeVerdict.bestBlockSize > 0x10 ? 'green' : 'orange'}>
+                Largest write block <Code>{writeVerdict.bestBlockSize}</Code> bytes —{' '}
+                <strong>{writeVerdict.speedup.toFixed(1)}×</strong> the 16-byte path.
+                {writeVerdict.bestBlockSize > 0x10
+                  ? ' Staging is the dominant cost in an erase-unit RMW, so this is the biggest single saving available.'
+                  : ' The radio only stages 16 bytes per frame, so RMW staging cost stands.'}
+              </Alert>
+
+              {shadowReads != null && (
+                <Alert color={shadowReads ? 'blue' : 'yellow'} title="In-session read semantics">
+                  {shadowReads
+                    ? 'A read issued after a write in the same session returned the new bytes — reads see the staged shadow. Any same-session Write verification is therefore checking RAM, not flash, which is why the sentinel fence never fired (#769).'
+                    : 'A read issued after a write in the same session returned the old bytes — reads come from flash, and staged writes are invisible until commit. Verification must happen after a power-cycle either way.'}
+                </Alert>
+              )}
+
+              <Text size="sm" c="dimmed">
+                Run this pass, power-cycle the radio, then run the verify pass — only a post-commit
+                read proves a block size actually reached flash.
+              </Text>
+            </Stack>
+          </PageSection>
         )}
 
         {link && (

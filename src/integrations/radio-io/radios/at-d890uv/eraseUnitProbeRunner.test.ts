@@ -5,12 +5,15 @@ import {
   scriptAtD890Connect,
   scriptAtD890WriteAck,
 } from './__fixtures__/scriptedPipe.ts';
+import { buildAtD890WriteTrials, makeAtD890WritePayload } from './writeBlockProbe.ts';
 import {
   runAtD890ProbeDiagnose,
   runAtD890ProbeInspect,
   runAtD890ProbeMeasure,
   runAtD890ProbePaint,
   runAtD890ProbeVerifyAndMark,
+  runAtD890WriteBlockProbe,
+  runAtD890WriteBlockVerify,
 } from './eraseUnitProbeRunner.ts';
 import {
   AT_D890_PROBE,
@@ -246,5 +249,89 @@ describe('probe block encoding', () => {
     expect(Array.from(makeAtD890ProbeMarker(a))).not.toEqual(
       Array.from(makeAtD890ProbeSentinel(a)),
     );
+  });
+});
+
+describe('runAtD890WriteBlockProbe', () => {
+  const trials = buildAtD890WriteTrials();
+
+  /** Script a radio honouring writes up to `maxBlock`; the next size up is NAKed. */
+  function scriptWrite(maxBlock: number, staged: boolean): AtD890ScriptedPipe {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890Connect(pipe);
+    const accepted = trials.filter((t) => t.blockSize <= maxBlock);
+    scriptAtD890WriteAck(pipe, accepted.length);
+    // The first oversized frame is answered with a NAK. Modelling refusal as a reply rather
+    // than silence keeps the byte stream aligned for the read-backs that follow.
+    if (accepted.length < trials.length) pipe.enqueue(new Uint8Array([0x15]));
+    // Same-session read-back: staged writes visible, or flash still holding 0xff.
+    for (const { address, blockSize } of accepted) {
+      enqueueAtD890ReadReply(
+        pipe,
+        address,
+        staged ? makeAtD890WritePayload(address, blockSize) : new Uint8Array(blockSize).fill(0xff),
+      );
+    }
+    return pipe;
+  }
+
+  it('stops at the first refusal instead of trying larger frames', async () => {
+    const r = await runAtD890WriteBlockProbe(scriptWrite(0x20, true));
+
+    expect(r.verdict.results.map((t) => t.blockSize)).toEqual([0x10, 0x20, 0x40]);
+    expect(r.verdict.results.at(-1)!.accepted).toBe(false);
+    expect(r.verdict.bestBlockSize).toBe(0x20);
+  });
+
+  it('credits the largest size that read back byte for byte', async () => {
+    const r = await runAtD890WriteBlockProbe(scriptWrite(0xf0, true));
+    expect(r.verdict.bestBlockSize).toBe(0xf0);
+    expect(r.inSessionReadsSeeStagedWrites).toBe(true);
+  });
+
+  it('reports when in-session reads come from flash rather than the staged shadow', async () => {
+    const r = await runAtD890WriteBlockProbe(scriptWrite(0xf0, false));
+    expect(r.inSessionReadsSeeStagedWrites).toBe(false);
+    // Read-back said erased, so no size may be credited from this session alone.
+    expect(r.verdict.bestBlockSize).toBe(0x10);
+  });
+
+  it('commits with END so the verify pass can check flash', async () => {
+    const pipe = scriptWrite(0xf0, true);
+    await runAtD890WriteBlockProbe(pipe);
+    expect(sentEnd(pipe)).toBe(true);
+  });
+});
+
+describe('runAtD890WriteBlockVerify', () => {
+  const trials = buildAtD890WriteTrials();
+
+  it('reads every trial address and writes nothing', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890Connect(pipe);
+    for (const { address, blockSize } of trials) {
+      enqueueAtD890ReadReply(pipe, address, makeAtD890WritePayload(address, blockSize));
+    }
+    const r = await runAtD890WriteBlockVerify(pipe);
+
+    expect(r.verdict.bestBlockSize).toBe(Math.max(...trials.map((t) => t.blockSize)));
+    expect(writtenAddresses(pipe)).toEqual([]);
+  });
+
+  it('does not credit a size whose bytes did not survive the commit', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890Connect(pipe);
+    for (const { address, blockSize } of trials) {
+      // Only the 16-byte write survived; everything larger came back erased.
+      enqueueAtD890ReadReply(
+        pipe,
+        address,
+        blockSize === 0x10
+          ? makeAtD890WritePayload(address, blockSize)
+          : new Uint8Array(blockSize).fill(0xff),
+      );
+    }
+    const r = await runAtD890WriteBlockVerify(pipe);
+    expect(r.verdict.bestBlockSize).toBe(0x10);
   });
 });

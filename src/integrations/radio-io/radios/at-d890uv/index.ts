@@ -73,13 +73,28 @@ export {
   type AtD890SweepResult,
 } from './linkProbe.ts';
 export {
+  AT_D890_WRITE_BLOCK_CANDIDATES,
+  atD890WriteProbeAddress,
+  buildAtD890WriteTrials,
+  classifyAtD890WriteReadback,
+  makeAtD890WritePayload,
+  summariseAtD890WriteProbe,
+  type AtD890WriteOutcome,
+  type AtD890WriteProbeVerdict,
+  type AtD890WriteTrial,
+  type AtD890WriteTrialResult,
+} from './writeBlockProbe.ts';
+export {
   runAtD890LinkProbe,
+  runAtD890WriteBlockProbe,
+  runAtD890WriteBlockVerify,
   runAtD890ProbeDiagnose,
   runAtD890ProbeInspect,
   runAtD890ProbeMeasure,
   runAtD890ProbePaint,
   runAtD890ProbeVerifyAndMark,
   type AtD890LinkProbeResult,
+  type AtD890WriteProbeResult,
   type AtD890ProbeDiagnoseResult,
   type AtD890ProbeInspectResult,
 } from './eraseUnitProbeRunner.ts';

@@ -18,6 +18,7 @@ import {
   atD890ExitProgram,
   atD890ProbeIdent,
   atD890ReadMemory,
+  atD890WriteBlockRaw,
   atD890WriteMemory,
 } from './connection.ts';
 import {
@@ -45,6 +46,13 @@ import {
   type AtD890LinkProfile,
   type AtD890SweepResult,
 } from './linkProbe.ts';
+import {
+  buildAtD890WriteTrials,
+  classifyAtD890WriteReadback,
+  summariseAtD890WriteProbe,
+  type AtD890WriteProbeVerdict,
+  type AtD890WriteTrialResult,
+} from './writeBlockProbe.ts';
 import { AT_D890_BLOCK_SIZE, AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import type { BytePipe, ProgressFn } from '../../types.ts';
@@ -362,6 +370,122 @@ export async function runAtD890LinkProbe(
   );
   await commit(pipe);
   return { model, profile, access, sweep };
+}
+
+export interface AtD890WriteProbeResult {
+  model: string;
+  verdict: AtD890WriteProbeVerdict;
+  /**
+   * Whether a read issued in the same session as a write returned the newly written bytes.
+   * `true` means reads see the staged shadow; `false` means they come from flash and any
+   * same-session Write verification is meaningless (#769).
+   */
+  inSessionReadsSeeStagedWrites: boolean;
+}
+
+/**
+ * Write-side pass 1 — try each candidate block size, then re-read in the same session.
+ *
+ * Trials run ascending and **stop at the first refusal**, so a radio that rejected one size
+ * is never handed a larger frame. Every payload lands in the probe span's last block, which
+ * pass 0 has already confirmed holds no channel records.
+ */
+export async function runAtD890WriteBlockProbe(
+  pipe: BytePipe,
+  opts: AtD890ProbeOpts = {},
+): Promise<AtD890WriteProbeResult> {
+  const model = await enterProgramAndIdent(pipe, opts.signal);
+
+  const trials = buildAtD890WriteTrials();
+  const results: AtD890WriteTrialResult[] = [];
+
+  for (let i = 0; i < trials.length; i++) {
+    throwIfAborted(opts.signal);
+    const { blockSize, address, payload } = trials[i]!;
+    reportProgress(
+      opts.onProgress,
+      {
+        cur: i + 1,
+        max: trials.length,
+        msg: `Writing ${blockSize} bytes at 0x${address.toString(16)}`,
+        stage: 'Write probe',
+      },
+      opts.signal,
+    );
+    try {
+      await atD890WriteBlockRaw(pipe, address, payload, opts.signal);
+      results.push({ blockSize, address, accepted: true });
+    } catch (e) {
+      results.push({
+        blockSize,
+        address,
+        accepted: false,
+        detail: e instanceof Error ? e.message : String(e),
+      });
+      await pipe.flush?.();
+      break;
+    }
+  }
+
+  // Same-session read-back — does a read see the staged shadow, or flash?
+  for (const result of results) {
+    if (!result.accepted) continue;
+    throwIfAborted(opts.signal);
+    const data = await atD890ReadMemory(pipe, result.address, result.blockSize, opts.signal);
+    const { outcome, matchingPrefix } = classifyAtD890WriteReadback(
+      result.address,
+      result.blockSize,
+      data,
+    );
+    result.readback = outcome;
+    result.matchingPrefix = matchingPrefix;
+  }
+
+  await commit(pipe);
+  const sixteen = results.find((r) => r.blockSize === AT_D890_BLOCK_SIZE);
+  return {
+    model,
+    verdict: summariseAtD890WriteProbe(results),
+    // The 16-byte case is the control: it is known to work, so if even that does not read
+    // back in-session, reads are coming from flash rather than the staged shadow.
+    inSessionReadsSeeStagedWrites: sixteen?.readback === 'match',
+  };
+}
+
+/**
+ * Write-side pass 2 — after `END` and a power-cycle, re-read the trial addresses.
+ *
+ * Only this proves a block size committed correctly; the same-session read in pass 1 may
+ * have been served from the staged shadow. Read-only.
+ */
+export async function runAtD890WriteBlockVerify(
+  pipe: BytePipe,
+  opts: AtD890ProbeOpts = {},
+): Promise<{ model: string; verdict: AtD890WriteProbeVerdict }> {
+  const model = await enterProgramAndIdent(pipe, opts.signal);
+
+  const trials = buildAtD890WriteTrials();
+  const results: AtD890WriteTrialResult[] = [];
+  for (let i = 0; i < trials.length; i++) {
+    throwIfAborted(opts.signal);
+    const { blockSize, address } = trials[i]!;
+    reportProgress(
+      opts.onProgress,
+      {
+        cur: i + 1,
+        max: trials.length,
+        msg: `Verifying ${blockSize} bytes at 0x${address.toString(16)}`,
+        stage: 'Write verify',
+      },
+      opts.signal,
+    );
+    const data = await atD890ReadMemory(pipe, address, blockSize, opts.signal);
+    const { outcome, matchingPrefix } = classifyAtD890WriteReadback(address, blockSize, data);
+    results.push({ blockSize, address, accepted: true, readback: outcome, matchingPrefix });
+  }
+
+  await commit(pipe);
+  return { model, verdict: summariseAtD890WriteProbe(results) };
 }
 
 /** Pass 3 — read the grid back and derive the erase unit from the erased run. */
