@@ -1,39 +1,77 @@
 import { describe, expect, it } from 'vitest';
 import {
-  assertAtD890SentinelRegionsUnchanged,
+  assertAtD890SentinelRegionsPlausible,
   snapshotAtD890SentinelRegions,
 } from './sentinelVerify.ts';
+import { AT_D890_SENTINEL_EXTENTS } from './writableExtents.ts';
 import { AtD890ScriptedPipe, scriptAtD890SentinelReads } from './__fixtures__/scriptedPipe.ts';
 import { D890_MAP } from './constants.ts';
 
+function plausibleSentinelOverrides(): Partial<Record<string, Uint8Array>> {
+  const overrides: Partial<Record<string, Uint8Array>> = {};
+  for (const extent of AT_D890_SENTINEL_EXTENTS) {
+    const data = new Uint8Array(extent.length).fill(0xff);
+    data[0] = 0x00;
+    overrides[extent.id] = data;
+  }
+  return overrides;
+}
+
 describe('sentinelVerify', () => {
-  it('passes when pre/post sentinel snapshots match', async () => {
+  it('snapshots every sentinel extent', async () => {
     const pipe = new AtD890ScriptedPipe();
-    const local = new Uint8Array(D890_MAP.LocalInfoLength).fill(0x11);
-    scriptAtD890SentinelReads(pipe, { LocalInfo: local });
-    scriptAtD890SentinelReads(pipe, { LocalInfo: local });
-    const before = await snapshotAtD890SentinelRegions(pipe);
-    const after = await snapshotAtD890SentinelRegions(pipe);
-    expect(() => assertAtD890SentinelRegionsUnchanged(before, after)).not.toThrow();
+    scriptAtD890SentinelReads(pipe, plausibleSentinelOverrides());
+    const snap = await snapshotAtD890SentinelRegions(pipe);
+    for (const extent of AT_D890_SENTINEL_EXTENTS) {
+      expect(snap.get(extent.id)?.length).toBe(extent.length);
+    }
   });
 
-  it('fails when LocalInfo sentinel changes', () => {
-    const localPre = new Uint8Array(D890_MAP.LocalInfoLength).fill(0x11);
-    const localPost = new Uint8Array(D890_MAP.LocalInfoLength).fill(0x22);
-    const optionalMain = new Uint8Array(0x200).fill(0xff);
-    const optionalExt = new Uint8Array(0x60).fill(0xff);
-    const before = new Map([
-      ['LocalInfo', localPre],
-      ['OptionalSettingsMain', optionalMain],
-      ['OptionalSettingsExt', optionalExt],
-    ]);
-    const after = new Map([
-      ['LocalInfo', localPost],
-      ['OptionalSettingsMain', optionalMain],
-      ['OptionalSettingsExt', optionalExt],
-    ]);
-    expect(() => assertAtD890SentinelRegionsUnchanged(before, after)).toThrow(
-      /sentinel LocalInfo changed/,
+  it('plausibility passes when each sentinel has at least one non-0xff byte', () => {
+    const snap = new Map<string, Uint8Array>();
+    for (const extent of AT_D890_SENTINEL_EXTENTS) {
+      const data = new Uint8Array(extent.length).fill(0xff);
+      data[0] = 0x11;
+      snap.set(extent.id, data);
+    }
+    expect(() => assertAtD890SentinelRegionsPlausible(snap)).not.toThrow();
+  });
+
+  it('plausibility fails when LocalInfo is all 0xff', () => {
+    const snap = new Map<string, Uint8Array>();
+    for (const extent of AT_D890_SENTINEL_EXTENTS) {
+      const data = new Uint8Array(extent.length).fill(0xff);
+      if (extent.id !== 'LocalInfo') data[0] = 0x11;
+      snap.set(extent.id, data);
+    }
+    expect(() => assertAtD890SentinelRegionsPlausible(snap)).toThrow(
+      /sentinel LocalInfo reads erased/,
     );
+  });
+
+  it('plausibility fails when OptionalSettingsAprs is all 0xff', () => {
+    const snap = new Map<string, Uint8Array>();
+    for (const extent of AT_D890_SENTINEL_EXTENTS) {
+      const data = new Uint8Array(extent.length).fill(0xff);
+      if (extent.id !== 'OptionalSettingsAprs') data[0] = 0x11;
+      snap.set(extent.id, data);
+    }
+    expect(() => assertAtD890SentinelRegionsPlausible(snap)).toThrow(
+      /sentinel OptionalSettingsAprs reads erased/,
+    );
+  });
+
+  it('includes AlarmBitmap and AlarmData in sentinel set', () => {
+    const ids = AT_D890_SENTINEL_EXTENTS.map((e) => e.id);
+    expect(ids).toContain('AlarmBitmap');
+    expect(ids).toContain('AlarmData');
+    expect(ids).toContain('OptionalSettingsAprs');
+  });
+
+  it('covers alarm regions at expected addresses', () => {
+    const alarmBitmap = AT_D890_SENTINEL_EXTENTS.find((e) => e.id === 'AlarmBitmap');
+    const alarmData = AT_D890_SENTINEL_EXTENTS.find((e) => e.id === 'AlarmData');
+    expect(alarmBitmap?.start).toBe(D890_MAP.AlarmBitmap);
+    expect(alarmData?.start).toBe(D890_MAP.AlarmData);
   });
 });
