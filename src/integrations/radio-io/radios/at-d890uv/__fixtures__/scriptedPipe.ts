@@ -11,10 +11,7 @@ import {
 import { D890_MAP } from '../constants.ts';
 import { AT_D890_SENTINEL_EXTENTS } from '../writableExtents.ts';
 import { AT_D890_ERASE_UNIT_BYTES } from '../eraseUnits.ts';
-import {
-  LOCAL_INFO_SERIAL_LENGTH,
-  LOCAL_INFO_SERIAL_OFFSET,
-} from '../identityCheck.ts';
+import { LOCAL_INFO_SERIAL_LENGTH, LOCAL_INFO_SERIAL_OFFSET } from '../identityCheck.ts';
 
 export class AtD890ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
@@ -307,8 +304,7 @@ export function indexOfFirstAtD890WriteFrame(pipe: AtD890ScriptedPipe): number {
 export function writePayloadAt(pipe: AtD890ScriptedPipe, address: number): Uint8Array | undefined {
   const frame = pipe.writes.find(
     (w) =>
-      w[0] === 0x57 &&
-      ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0 === address,
+      w[0] === 0x57 && ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0 === address,
   );
   if (!frame || frame.length < 22) return undefined;
   return frame.subarray(6, 22);

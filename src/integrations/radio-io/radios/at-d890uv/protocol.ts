@@ -450,8 +450,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
     const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
     const touchedUnits = listTouchedEraseUnits(modelledChunks.map((c) => c.address));
     const touchedUnitSet = new Set(touchedUnits);
-    const transmitGuard = (address: number) =>
-      assertAtD890TransmitAddress(address, touchedUnitSet);
+    const transmitGuard = (address: number) => assertAtD890TransmitAddress(address, touchedUnitSet);
 
     try {
       const sentinelBefore = await snapshotAtD890SentinelRegions(
@@ -486,11 +485,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
         freshUnits.set(unitBase, data);
       }
 
-      const stashedLocal = getCacheBytes(
-        this.cache,
-        D890_MAP.LocalInfo,
-        D890_MAP.LocalInfoLength,
-      );
+      const stashedLocal = getCacheBytes(this.cache, D890_MAP.LocalInfo, D890_MAP.LocalInfoLength);
       const liveLocal = await atD890ReadMemory(
         this.pipe,
         D890_MAP.LocalInfo,
@@ -505,9 +500,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
         mergedUnits.set(base, data.slice());
       }
       for (const unitBase of touchedUnits) {
-        const unitChunks = modelledChunks.filter(
-          (c) => eraseUnitBaseFor(c.address) === unitBase,
-        );
+        const unitChunks = modelledChunks.filter((c) => eraseUnitBaseFor(c.address) === unitBase);
         overlayModelledChunksOntoUnit(unitBase, mergedUnits.get(unitBase)!, unitChunks);
       }
 

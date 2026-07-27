@@ -91,8 +91,6 @@ export function assertPreservedBytesMatchFreshRead(
 }
 
 /** Build a set of modelled write addresses from staging intent chunks. */
-export function modelledAddressSetFromChunks(
-  chunks: readonly AtD890StagingChunk[],
-): Set<number> {
+export function modelledAddressSetFromChunks(chunks: readonly AtD890StagingChunk[]): Set<number> {
   return new Set(chunks.map((c) => c.address));
 }

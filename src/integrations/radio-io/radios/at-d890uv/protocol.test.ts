@@ -7,8 +7,6 @@ import {
   AtD890ScriptedPipe,
   scriptAtD890ConnectWithNegotiation,
   scriptAtD890MinimalDownload,
-  scriptAtD890WriteAck,
-  scriptAtD890PlausibleSentinelReads,
   enqueueAtD890ReadReply,
   localInfoWithSerial,
   makeAtD890EraseUnitBuffer,
@@ -362,12 +360,12 @@ describe('AtD890uvProtocol', () => {
     await radio.upload(image, {});
 
     const written = collectAtD890WriteDataAddresses(pipe);
-    expect(written.some((a) => a >= D890_MAP.ZoneBChannel && a < D890_MAP.ZoneBChannel + 0x200)).toBe(
-      false,
-    );
-    expect(written.some((a) => a >= D890_MAP.ZoneAChannel && a < D890_MAP.ZoneAChannel + 0x10)).toBe(
-      true,
-    );
+    expect(
+      written.some((a) => a >= D890_MAP.ZoneBChannel && a < D890_MAP.ZoneBChannel + 0x200),
+    ).toBe(false);
+    expect(
+      written.some((a) => a >= D890_MAP.ZoneAChannel && a < D890_MAP.ZoneAChannel + 0x10),
+    ).toBe(true);
   });
 
   it('rejects upload without seeded blocks', async () => {

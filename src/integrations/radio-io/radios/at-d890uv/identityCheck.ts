@@ -12,7 +12,10 @@ export const LOCAL_INFO_SERIAL_OFFSET = 0x30;
 export const LOCAL_INFO_SERIAL_LENGTH = 0x10;
 
 function serialSlice(data: Uint8Array): Uint8Array {
-  return data.subarray(LOCAL_INFO_SERIAL_OFFSET, LOCAL_INFO_SERIAL_OFFSET + LOCAL_INFO_SERIAL_LENGTH);
+  return data.subarray(
+    LOCAL_INFO_SERIAL_OFFSET,
+    LOCAL_INFO_SERIAL_OFFSET + LOCAL_INFO_SERIAL_LENGTH,
+  );
 }
 
 function serialLabel(data: Uint8Array): string {

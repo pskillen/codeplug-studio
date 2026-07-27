@@ -29,8 +29,8 @@ describe('assertAtD890LocalInfoIdentity', () => {
   });
 
   it('refuses when buffer is too short', () => {
-    expect(() =>
-      assertAtD890LocalInfoIdentity(new Uint8Array(0x20), localWithSerial('X')),
-    ).toThrow(/identity check needs/);
+    expect(() => assertAtD890LocalInfoIdentity(new Uint8Array(0x20), localWithSerial('X'))).toThrow(
+      /identity check needs/,
+    );
   });
 });
