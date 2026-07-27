@@ -37,7 +37,8 @@ export interface RadioWriteExperimentalCopy {
   preferEgress: string;
 }
 
-export function resolveRadioWriteProdDisabledMessage(_profileId?: string): string {
+export function resolveRadioWriteProdDisabledMessage(profileId?: string): string {
+  void profileId;
   return RADIO_WRITE_PROD_DISABLED_MESSAGE;
 }
 
