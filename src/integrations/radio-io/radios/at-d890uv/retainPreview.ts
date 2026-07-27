@@ -64,7 +64,7 @@ function bit0(byte: number): boolean {
   return (byte & 1) !== 0;
 }
 
-/** Known ExpertOptions / LocalInfo fields (kept on Write — replayed verbatim). */
+/** Known ExpertOptions / LocalInfo fields (kept on Write — read for preview, not serial-written). */
 export function settingsRetainPreview(localInfo: Uint8Array): AtD890RetainPreviewRow[] {
   if (localInfo.length === 0) return [];
   const base = D890_MAP.LocalInfo;
@@ -154,7 +154,7 @@ export function localInfoRegisterPreview(localInfo: Uint8Array): AtD890RegisterR
       role: 'kept',
       hex: hexDump(chunk),
       ascii: asciiPreview(chunk),
-      notes: notesForLocalInfoChunk(off),
+      notes: notesForLocalInfoChunk(off) + ' Not written on Studio Write.',
     });
   }
   return rows;

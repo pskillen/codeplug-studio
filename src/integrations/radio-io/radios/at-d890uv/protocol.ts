@@ -30,6 +30,10 @@ import {
   atD890ModelHints,
 } from './connection.ts';
 import { decodeChannelsFromAtD890Cache, encodeChannelsIntoAtD890Image } from './channelCodec.ts';
+import {
+  assertAtD890SentinelRegionsUnchanged,
+  snapshotAtD890SentinelRegions,
+} from './sentinelVerify.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
@@ -248,6 +252,8 @@ export class AtD890uvProtocol implements CloneImageRadio {
     applyAtD890WriteImageToCache(this.cache, image);
 
     const chunks = listWriteChunks(this.cache, AT_D890_SAFE_SKIP_WRITE_ADDR);
+    const sentinelBefore = await snapshotAtD890SentinelRegions(this.pipe, opts.signal);
+
     reportProgress(
       opts.onProgress,
       { cur: 0, max: chunks.length || 1, msg: 'Writing sparse regions…', stage: 'Upload' },
@@ -271,6 +277,9 @@ export class AtD890uvProtocol implements CloneImageRadio {
       await atD890WriteMemory(this.pipe, address, data, opts.signal);
       putCacheBytes(this.cache, address, data);
     }
+
+    const sentinelAfter = await snapshotAtD890SentinelRegions(this.pipe, opts.signal);
+    assertAtD890SentinelRegionsUnchanged(sentinelBefore, sentinelAfter);
   }
 
   decodeChannels(image: MemoryMap): RadioChannelDto[] {

@@ -14,11 +14,8 @@ import {
 } from '../../kit/codecs/anytoneDmrRw.ts';
 import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { throwIfAborted } from '../../kit/progress.ts';
-import {
-  AT_D890_CONNECTION,
-  AT_D890_SAFE_SKIP_WRITE_ADDR,
-  AT_D890UV_MODEL_IDS,
-} from './constants.ts';
+import { AT_D890_CONNECTION, AT_D890UV_MODEL_IDS } from './constants.ts';
+import { assertAtD890WritableAddress } from './writableExtents.ts';
 
 const TD = new TextDecoder('ascii', { fatal: false });
 
@@ -88,13 +85,13 @@ export async function atD890WriteMemory(
   signal?: AbortSignal,
 ): Promise<void> {
   throwIfAborted(signal);
-  if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) return;
+  assertAtD890WritableAddress(address);
   if (data.length % ANYTONE_DMR_BLOCK_SIZE !== 0) {
     throw new RangeError(`D890 write data must be 16-byte aligned: ${data.length}`);
   }
   for (let off = 0; off < data.length; off += ANYTONE_DMR_BLOCK_SIZE) {
     const addr = address + off;
-    if (addr === AT_D890_SAFE_SKIP_WRITE_ADDR) continue;
+    assertAtD890WritableAddress(addr);
     const chunk = data.subarray(off, off + ANYTONE_DMR_BLOCK_SIZE);
     await pipe.write(makeAnytoneDmrWriteFrame(addr, ANYTONE_DMR_BLOCK_SIZE, chunk));
     const ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);

@@ -9,6 +9,7 @@ import {
   anytoneDmrChecksum8AfterOpcode,
 } from '../../../kit/codecs/anytoneDmrRw.ts';
 import { D890_MAP } from '../constants.ts';
+import { AT_D890_SENTINEL_EXTENTS } from '../writableExtents.ts';
 
 export class AtD890ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
@@ -97,6 +98,17 @@ export function scriptAtD890MinimalDownload(pipe: AtD890ScriptedPipe): void {
 export function scriptAtD890WriteAck(pipe: AtD890ScriptedPipe, count: number): void {
   for (let i = 0; i < count; i++) {
     pipe.enqueue(new Uint8Array([ANYTONE_DMR_ACK]));
+  }
+}
+
+/** Enqueue read replies for never-write sentinel spans (pre/post Write verify). */
+export function scriptAtD890SentinelReads(
+  pipe: AtD890ScriptedPipe,
+  overrides?: Partial<Record<string, Uint8Array>>,
+): void {
+  for (const extent of AT_D890_SENTINEL_EXTENTS) {
+    const data = overrides?.[extent.id] ?? new Uint8Array(extent.length).fill(0xff);
+    enqueueAtD890ReadReply(pipe, extent.start, data);
   }
 }
 
