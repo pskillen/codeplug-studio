@@ -1,5 +1,8 @@
 /**
- * Pre/post Write sentinel reads for never-write regions (WATCH-08).
+ * Pre-Write sentinel reads for never-write regions (WATCH-08).
+ *
+ * In-session read-back after Write is invalid on this radio — writes stage to RAM and
+ * commit at END; reads in the same PROGRAM session return flash, not the shadow.
  */
 
 import type { BytePipe } from '../../types.ts';
@@ -21,25 +24,27 @@ export async function snapshotAtD890SentinelRegions(
   return snap;
 }
 
-export function assertAtD890SentinelRegionsUnchanged(
-  before: AtD890SentinelSnapshot,
-  after: AtD890SentinelSnapshot,
-): void {
+function isAllFf(data: Uint8Array): boolean {
+  for (let i = 0; i < data.length; i++) {
+    if (data[i] !== 0xff) return false;
+  }
+  return data.length > 0;
+}
+
+/**
+ * Refuse Write when a sentinel region reads entirely erased (all 0xff).
+ * An already-bricked radio passes silent in-session compare (0xff == 0xff) — catch it here.
+ */
+export function assertAtD890SentinelRegionsPlausible(snapshot: AtD890SentinelSnapshot): void {
   for (const extent of AT_D890_SENTINEL_EXTENTS) {
-    const pre = before.get(extent.id);
-    const post = after.get(extent.id);
-    if (!pre || !post) {
+    const data = snapshot.get(extent.id);
+    if (!data) {
       throw new RadioProtocolError(`D890 sentinel verify missing snapshot for ${extent.id}`);
     }
-    if (pre.length !== post.length) {
-      throw new RadioProtocolError(`D890 sentinel ${extent.id} length changed after Write`);
-    }
-    for (let i = 0; i < pre.length; i++) {
-      if (pre[i] !== post[i]) {
-        throw new RadioProtocolError(
-          `D890 sentinel ${extent.id} changed at +0x${i.toString(16)} after Write — upload touched a forbidden region`,
-        );
-      }
+    if (isAllFf(data)) {
+      throw new RadioProtocolError(
+        `D890 sentinel ${extent.id} reads erased (all 0xff) — radio may already be faulted; refuse Write`,
+      );
     }
   }
 }

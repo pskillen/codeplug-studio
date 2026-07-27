@@ -78,11 +78,18 @@ export const AT_D890_WRITABLE_EXTENTS: readonly AtD890MemoryExtent[] = [
   { id: 'MasterIdData', start: D890_MAP.MasterIdData, length: D890_MAP.MasterIdLength },
 ] as const;
 
-/** Never serial-written — pre/post sentinel verify spans (slice 2). */
+/** Never serial-written — pre-Write plausibility spans (refuse all-0xff). */
 export const AT_D890_SENTINEL_EXTENTS: readonly AtD890MemoryExtent[] = [
   { id: 'LocalInfo', start: D890_MAP.LocalInfo, length: D890_MAP.LocalInfoLength },
   { id: 'OptionalSettingsMain', start: 0x350_0000, length: 0x200 },
   { id: 'OptionalSettingsExt', start: 0x350_0900, length: 0x60 },
+  {
+    id: 'OptionalSettingsAprs',
+    start: D890_MAP.OptionalSettingsAprs,
+    length: D890_MAP.OptionalSettingsAprsLength,
+  },
+  { id: 'AlarmBitmap', start: D890_MAP.AlarmBitmap, length: D890_MAP.AlarmBitmapLength },
+  { id: 'AlarmData', start: D890_MAP.AlarmData, length: D890_MAP.AlarmDataLength },
 ] as const;
 
 export function isAddressInExtent(address: number, extent: AtD890MemoryExtent): boolean {

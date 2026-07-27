@@ -93,16 +93,16 @@ Chinese UI on the radio is modelled in **LocalInfo ExpertOptions** (`+0x04` and 
 
 Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `writableExtents.ts`) — only modelled banks may reach the serial port. `listWriteChunks` emits cache blocks inside those extents only; `atD890WriteMemory` rejects any other address.
 
-**Pre/post sentinel verify:** before and after modelled upload, Studio Reads `LocalInfo`, optional-settings main (`0x3500000`/`0x200`), and optional-settings ext (`0x3500900`/`0x60`) and fails the Write if any byte differs from the pre-write snapshot.
+**Pre-Write sentinel plausibility:** before any write frames, Studio Reads six never-write spans and **refuses** the Write when any region reads entirely `0xff` (already-erased / faulted radio). Regions: `LocalInfo`; optional-settings main (`0x3500000`/`0x200`), ext (`0x3500900`/`0x60`), APRS (`0x3501280`/`0x30`); alarm bitmap (`0x3482e00`/`0x10`) and data (`0x3483000`/`0x30`). In-session pre/post compare was removed ([#769](https://github.com/pskillen/codeplug-studio/issues/769)) — reads in the same PROGRAM session return flash, not the RAM shadow. **Cross-session verify** after `END` (power-cycle + reconnect diff) is deferred to [#769](https://github.com/pskillen/codeplug-studio/issues/769) slice 5b / PR6.
 
 **Encode guards:** MR channel encode rejects AM airband frequencies (108–137 MHz) and non-BCD-encodable Hz before bytes are packed (`channelEncodeGuards.ts`).
 
-| Category                                                   | `writeRole`     | Re-derived from build? | Serial-written on Upload?                             |
-| ---------------------------------------------------------- | --------------- | ---------------------- | ----------------------------------------------------- |
-| Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced`      | Yes                    | Yes (allow-listed)                                    |
-| LocalInfo                                                  | `kept`          | No                     | **No** — Read for preview; sentinel-verified only     |
-| Optional settings, alarm                                   | `kept`          | No                     | **No** — Read/stash for Radio Info; sentinel-verified |
-| DigitalContact\*, boot images, crypto, …                   | `kept` / unread | No                     | No — absent from cache unless future Read tickets     |
+| Category                                                   | `writeRole`     | Re-derived from build? | Serial-written on Upload?                                  |
+| ---------------------------------------------------------- | --------------- | ---------------------- | ---------------------------------------------------------- |
+| Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced`      | Yes                    | Yes (allow-listed)                                         |
+| LocalInfo                                                  | `kept`          | No                     | **No** — Read for preview; pre-Write plausibility only     |
+| Optional settings, alarm                                   | `kept`          | No                     | **No** — Read/stash for Radio Info; pre-Write plausibility |
+| DigitalContact\*, boot images, crypto, …                   | `kept` / unread | No                     | No — absent from cache unless future Read tickets          |
 
 **Serial Write projection (DMR bank only):** `RadioWriteProjection` for `radio-io-at-d890uv` partitions receive-only AM airband and broadcast FM out of MR channels, zones, and scan — same bank split as Anytone CSV egress ([#755](https://github.com/pskillen/codeplug-studio/issues/755)). Omitted banks stay on the radio; use Anytone CSV (`AMAir.CSV` / `FM.CSV`) to update them until binary AmAir Write exists — see [am-air.md](../../../export-formats/anytone/am-air.md). Export **Web Serial** shows an operator-facing **What Write updates** table (written vs deferred vs left alone).
 

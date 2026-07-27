@@ -54,7 +54,7 @@ qdmr’s Anytone interface expects an `'I'`-prefixed structured reply for some m
 2. Send ASCII `PROGRAM` → expect `QX` + `0x06`.
 3. Send `0x02` → parse model / version; require `ID890UV` + `V100`.
 4. Proceed to sparse region R/W ([memory-layout.md](memory-layout.md)).
-5. Send ASCII `END` to exit (best-effort on error paths).
+5. Send ASCII `END` to exit **only after a successful upload** — failed or aborted uploads must **not** send `END` (see [Write staging and commit](#write-staging-and-commit)).
 
 Unlike RT95, anytone-cps does **not** implement echo-strip for this path — TX/RX are treated as a normal full-duplex USB serial bridge.
 
@@ -82,12 +82,20 @@ Checksum (anytone-cps): 8-bit sum over command bytes after the opcode (`cmd[1:]`
 
 **Safe-skip:** if `address == 0x2fa0010`, anytone-cps returns without writing. Studio adapters should honour the same skip (D878 LocalInfo neighbourhood; keep for family safety even when targeting D890).
 
+## Write staging and commit
+
+On this radio, **`W` frames stage to RAM** inside the PROGRAM session. Flash erase/program is **deferred** until the host sends ASCII **`END`**. A successful disconnect after upload therefore commits the staged image; omitting `END` (or power-cycling without `END`) discards the shadow.
+
+**In-session reads return flash**, not the staged shadow — a read issued in the same PROGRAM session after write frames still returns pre-commit bytes. **Read-back verification during upload is invalid by construction** ([#769](https://github.com/pskillen/codeplug-studio/issues/769)). Cross-session verify (power-cycle, reconnect, re-read) is the only operator-visible check — tracked separately ([#769](https://github.com/pskillen/codeplug-studio/issues/769) slice 5b).
+
+**Failed or aborted uploads** must call `abandonProgramMode()` before `disconnect()` so Studio does **not** send `END` and commit a partial write. Under a commit model, not sending `END` is the safe failure path.
+
 ## Typical session flow
 
 1. Open serial @ 921600 → `PROGRAM` → `QX\x06` → `0x02` ident.
 2. Read **sparse** regions needed for the adapter (not a contiguous dump) — start with LocalInfo, ChannelSet/ChannelData, Zone*, RadioId*, ScanList*, Talkgroup*/ReceiveGroup*, MasterIdData ([memory-layout.md](memory-layout.md)).
-3. For upload: re-enter program mode → ident check → write occupied regions in 16-byte blocks → skip `0x2fa0010` → `END`.
-4. Prefer RMW for settings-heavy regions once optional-settings mapping lands (deferred beyond v1 adapter).
+3. For upload: re-enter program mode → pre-Write sentinel plausibility → write occupied regions in 16-byte blocks → skip `0x2fa0010` → `END` on successful disconnect only.
+4. Prefer sparse erase-unit RMW for settings-heavy regions ([#768](https://github.com/pskillen/codeplug-studio/issues/768) phase 2).
 
 ## Related
 
