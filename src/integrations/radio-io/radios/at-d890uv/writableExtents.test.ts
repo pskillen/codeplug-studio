@@ -53,9 +53,18 @@ describe('AT_D890 writable extents', () => {
   it('listWriteChunks omits optional settings and alarm even when present in cache', () => {
     const cache: AtD890DownloadCache = {
       blocks: new Map([
-        [D890_MAP.OptionalSettingsMain, new Uint8Array(D890_MAP.OptionalSettingsMainLength).fill(0xbb)],
-        [D890_MAP.OptionalSettingsExt, new Uint8Array(D890_MAP.OptionalSettingsExtLength).fill(0xcc)],
-        [D890_MAP.OptionalSettingsAprs, new Uint8Array(D890_MAP.OptionalSettingsAprsLength).fill(0xdd)],
+        [
+          D890_MAP.OptionalSettingsMain,
+          new Uint8Array(D890_MAP.OptionalSettingsMainLength).fill(0xbb),
+        ],
+        [
+          D890_MAP.OptionalSettingsExt,
+          new Uint8Array(D890_MAP.OptionalSettingsExtLength).fill(0xcc),
+        ],
+        [
+          D890_MAP.OptionalSettingsAprs,
+          new Uint8Array(D890_MAP.OptionalSettingsAprsLength).fill(0xdd),
+        ],
         [D890_MAP.AlarmBitmap, new Uint8Array(D890_MAP.AlarmBitmapLength).fill(0xee)],
         [D890_MAP.AlarmData, new Uint8Array(D890_MAP.AlarmDataLength).fill(0xff)],
         [D890_MAP.ChannelSet, new Uint8Array(0x200)],

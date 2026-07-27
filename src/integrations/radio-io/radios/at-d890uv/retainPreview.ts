@@ -116,7 +116,11 @@ export function settingsRetainPreview(localInfo: Uint8Array): AtD890RetainPrevie
 const AT_D890_CPS_LANGUAGE = ['English', 'German'] as const;
 const AT_D890_POWERON_INTERFACE = ['Default Interface', 'Custom Char', 'Custom Picture'] as const;
 
-function enumLabel<T extends readonly string[]>(values: T, index: number, fallback: string): string {
+function enumLabel<T extends readonly string[]>(
+  values: T,
+  index: number,
+  fallback: string,
+): string {
   return values[index] ?? `${fallback} (${index})`;
 }
 
