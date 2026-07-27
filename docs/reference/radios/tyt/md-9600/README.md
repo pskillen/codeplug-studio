@@ -17,7 +17,7 @@ Shares OpenGD77 CPS and codeplug format with Baofeng DM-1701 / Retevis RT-84 (sa
 
 | Adapter      | `profileId`                | Notes                                                                                         |
 | ------------ | -------------------------- | --------------------------------------------------------------------------------------------- |
-| Web Serial   | `radio-io-opengd77-md9600` | OpenUV380 path; `radioType 0x05`; shared family codecs — **Write prod-gated** until HW verify |
+| Web Serial   | `radio-io-opengd77-md9600` | OpenUV380 path; `radioType 0x05`; shared family codecs — Write available on all deploys ([#788](https://github.com/pskillen/codeplug-studio/issues/788)) |
 | OpenGD77 CSV | `opengd77-md9600`          | Zone members 80, TG list 32, max channels 1023 (same wire as 1701 pending CPS export check)   |
 
 ## Studio module

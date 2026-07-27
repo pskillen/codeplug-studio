@@ -37,8 +37,7 @@ export interface RadioWriteExperimentalCopy {
   preferEgress: string;
 }
 
-export function resolveRadioWriteProdDisabledMessage(profileId?: string): string {
-  if (profileId === 'radio-io-at-d890uv') return RADIO_WRITE_PROD_DISABLED_MESSAGE;
+export function resolveRadioWriteProdDisabledMessage(_profileId?: string): string {
   return RADIO_WRITE_PROD_DISABLED_MESSAGE;
 }
 
