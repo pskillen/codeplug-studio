@@ -114,6 +114,33 @@ Safe-skip address `0x2fa0010` (family constant) is never written. D890 `LocalInf
 
 Zone record detail: [zone-record.md](zone-record.md). Channel geometry: [channel-record.md](channel-record.md).
 
+## Address aliasing
+
+Flash address space is **not** uniformly flat. Measured on hardware 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`, 240-byte reads).
+
+### ChannelData
+
+| Property               | Value                                    |
+| ---------------------- | ---------------------------------------- |
+| Block pitch            | `0x80000` (`ChannelDataBlockOffset`)     |
+| Backed bytes per block | `0x40000` (low half only)                |
+| Alias stride           | `+0x40000` — upper half mirrors low half |
+| Erase unit             | `0x40000`, aligned                       |
+
+Channel writes must stay in the low half of each block; `0x1840000` physically lands on `0x1800000`. Extent modelling: [#791](https://github.com/pskillen/codeplug-studio/issues/791).
+
+### Config regions
+
+Regions that matter for erase-unit RMW ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) are **flat** at `+0x40000` — base and alias candidate hold distinct cells ([#792](https://github.com/pskillen/codeplug-studio/issues/792)):
+
+| Region                   | Base        | Alias (`+0x40000`) | Length  | Status | non-`0xff` (base / alias) |
+| ------------------------ | ----------- | ------------------ | ------- | ------ | ------------------------- |
+| LocalInfo                | `0x4f80000` | `0x4fc0000`        | `0x100` | flat   | 233 / 0                   |
+| Optional settings (main) | `0x3500000` | `0x3540000`        | `0x200` | flat   | 512 / 512                 |
+| ChannelSet               | `0x3482a00` | `0x34c2a00`        | `0x200` | flat   | 490 / 0                   |
+
+Sparse erase-unit RMW may treat `0x3480000` and `0x3500000` units as 1:1 address → cell. Dual all-`0xff` spans would be inconclusive (not “flat”); none of the measured pairs were.
+
 ## Channel address formula
 
 For 0-based channel index `idx`:
@@ -164,13 +191,15 @@ Full map fields live in anytone-cps `D890_MAP`; expand these pages when an adapt
 
 Cross-checked against:
 
-| Fact set                         | Source                                                           |
-| -------------------------------- | ---------------------------------------------------------------- |
-| Region bases / strides / lengths | anytone-cps `D890_MAP`                                           |
-| Channel / zone address formulas  | anytone-cps `Device::readChannelData` / `readZoneData` / writers |
-| Serial block size / framing      | anytone-cps `SerialDevice`                                       |
+| Fact set                         | Source                                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
+| Region bases / strides / lengths | anytone-cps `D890_MAP`                                                                     |
+| Channel / zone address formulas  | anytone-cps `Device::readChannelData` / `readZoneData` / writers                           |
+| Serial block size / framing      | anytone-cps `SerialDevice`                                                                 |
+| ChannelData alias / erase unit   | Hardware probe 2026-07-27 (`/debug/d890-erase-probe`)                                      |
+| Config-region flat at `+0x40000` | Hardware probe 2026-07-27 ([#792](https://github.com/pskillen/codeplug-studio/issues/792)) |
 
-A live radio dump is optional for this doc ticket; see [fixtures.md](fixtures.md).
+Fixtures: [fixtures.md](fixtures.md).
 
 ## Related
 

@@ -45,6 +45,18 @@ export {
   atD890RegionLabel,
 } from './writeRole.ts';
 export {
+  AT_D890_CONFIG_ALIAS_PAIRS,
+  AT_D890_CONFIG_ALIAS_STRIDE,
+  analyseAtD890ConfigAliasPair,
+  analyseAtD890ConfigAliasReport,
+  formatAtD890ConfigAliasMarkdown,
+  type AtD890ConfigAliasPairId,
+  type AtD890ConfigAliasPairResult,
+  type AtD890ConfigAliasReport,
+  type AtD890ConfigAliasStatus,
+  type AtD890SparseRmwGate,
+} from './configAliasProbe.ts';
+export {
   AT_D890_PROBE,
   analyseAtD890EraseUnit,
   assertAtD890ProbeSpanUnused,
@@ -90,11 +102,13 @@ export {
   runAtD890LinkProbe,
   runAtD890WriteBlockProbe,
   runAtD890WriteBlockVerify,
+  runAtD890ConfigAliasCheck,
   runAtD890ProbeDiagnose,
   runAtD890ProbeInspect,
   runAtD890ProbeMeasure,
   runAtD890ProbePaint,
   runAtD890ProbeVerifyAndMark,
+  type AtD890ConfigAliasCheckResult,
   type AtD890LinkProbeResult,
   type AtD890WriteProbeResult,
   type AtD890ProbeDiagnoseResult,
