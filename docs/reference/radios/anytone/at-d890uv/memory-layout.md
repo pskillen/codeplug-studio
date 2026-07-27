@@ -97,12 +97,12 @@ Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `wri
 
 **Encode guards:** MR channel encode rejects AM airband frequencies (108–137 MHz) and non-BCD-encodable Hz before bytes are packed (`channelEncodeGuards.ts`).
 
-| Category                                                   | `writeRole`     | Re-derived from build? | Serial-written on Upload?                             |
-| ---------------------------------------------------------- | --------------- | ---------------------- | ----------------------------------------------------- |
-| Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced`      | Yes                    | Yes (allow-listed)                                    |
-| LocalInfo                                                  | `kept`          | No                     | **No** — Read for preview; pre-Write plausibility only |
+| Category                                                   | `writeRole`     | Re-derived from build? | Serial-written on Upload?                                  |
+| ---------------------------------------------------------- | --------------- | ---------------------- | ---------------------------------------------------------- |
+| Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced`      | Yes                    | Yes (allow-listed)                                         |
+| LocalInfo                                                  | `kept`          | No                     | **No** — Read for preview; pre-Write plausibility only     |
 | Optional settings, alarm                                   | `kept`          | No                     | **No** — Read/stash for Radio Info; pre-Write plausibility |
-| DigitalContact\*, boot images, crypto, …                   | `kept` / unread | No                     | No — absent from cache unless future Read tickets     |
+| DigitalContact\*, boot images, crypto, …                   | `kept` / unread | No                     | No — absent from cache unless future Read tickets          |
 
 **Serial Write projection (DMR bank only):** `RadioWriteProjection` for `radio-io-at-d890uv` partitions receive-only AM airband and broadcast FM out of MR channels, zones, and scan — same bank split as Anytone CSV egress ([#755](https://github.com/pskillen/codeplug-studio/issues/755)). Omitted banks stay on the radio; use Anytone CSV (`AMAir.CSV` / `FM.CSV`) to update them until binary AmAir Write exists — see [am-air.md](../../../export-formats/anytone/am-air.md). Export **Web Serial** shows an operator-facing **What Write updates** table (written vs deferred vs left alone).
 
