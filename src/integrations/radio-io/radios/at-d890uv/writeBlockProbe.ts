@@ -26,7 +26,29 @@ import { AT_D890_PROBE } from './eraseUnitProbe.ts';
 /** Ascending. Trials stop at the first failure rather than pushing larger frames at a radio that just rejected one. */
 export const AT_D890_WRITE_BLOCK_CANDIDATES = [0x10, 0x20, 0x40, 0x80, 0xf0] as const;
 
-const WRITE_MAGIC = [0x44, 0x38, 0x39, 0x30, 0x57, 0x42, 0x4c, 0x4b] as const; // "D890WBLK"
+const WRITE_MAGIC = [0x44, 0x38, 0x39, 0x30, 0x42, 0x4c, 0x4b, 0x53] as const; // "D890BLKS"
+
+/**
+ * Bytes that begin a command: `R`, `W`, and the first letters of `PROGRAM` and `END`.
+ *
+ * Measured 2026-07-27: an oversized write frame **desyncs the radio**. It appears to consume
+ * only `W + addr + len + 16 data + checksum` and then parse the remaining payload as fresh
+ * commands. Any payload byte equal to a command opcode therefore risks synthesising a write
+ * to an arbitrary address built from whatever bytes follow it.
+ *
+ * Excluding these from every payload byte makes an oversized frame's tail inert: the radio
+ * may discard it, but it cannot be tricked into writing somewhere we did not choose.
+ */
+const COMMAND_OPCODE_BYTES = new Set([0x45, 0x50, 0x52, 0x57]);
+
+/** Deterministic remap of a command byte to a safe one, so payloads stay reproducible. */
+function toInertByte(byte: number): number {
+  return COMMAND_OPCODE_BYTES.has(byte) ? (byte ^ 0x80) & 0xff : byte;
+}
+
+export function isAtD890InertPayload(data: Uint8Array): boolean {
+  return data.every((b) => !COMMAND_OPCODE_BYTES.has(b));
+}
 
 /**
  * Trial addresses live in the last probe block's backed half, `0x800` off the sentinel grid
@@ -60,6 +82,9 @@ export function makeAtD890WritePayload(address: number, length: number): Uint8Ar
   for (let i = 16; i < length; i++) {
     out[i] = (address + i * 17 + length * 31) & 0xff;
   }
+  // No byte may look like a command: an oversized frame's tail can re-enter the radio's
+  // parser, and a stray opcode there would write to an address we never chose.
+  for (let i = 0; i < out.length; i++) out[i] = toInertByte(out[i]!);
   return out;
 }
 

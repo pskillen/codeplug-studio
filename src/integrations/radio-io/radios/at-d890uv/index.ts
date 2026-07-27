@@ -77,6 +77,7 @@ export {
   atD890WriteProbeAddress,
   buildAtD890WriteTrials,
   classifyAtD890WriteReadback,
+  isAtD890InertPayload,
   makeAtD890WritePayload,
   summariseAtD890WriteProbe,
   type AtD890WriteOutcome,

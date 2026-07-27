@@ -255,17 +255,26 @@ describe('probe block encoding', () => {
 describe('runAtD890WriteBlockProbe', () => {
   const trials = buildAtD890WriteTrials();
 
-  /** Script a radio honouring writes up to `maxBlock`; the next size up is NAKed. */
-  function scriptWrite(maxBlock: number, staged: boolean): AtD890ScriptedPipe {
+  /**
+   * Script a radio honouring writes up to `maxBlock`. Each accepted write is ACKed and then
+   * read back inline; the next size up is NAKed. `desyncAt` instead models the real hazard —
+   * the radio stops answering entirely after that size.
+   */
+  function scriptWrite(opts: {
+    maxBlock: number;
+    staged?: boolean;
+    desyncAt?: number;
+  }): AtD890ScriptedPipe {
+    const { maxBlock, staged = true, desyncAt } = opts;
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890Connect(pipe);
-    const accepted = trials.filter((t) => t.blockSize <= maxBlock);
-    scriptAtD890WriteAck(pipe, accepted.length);
-    // The first oversized frame is answered with a NAK. Modelling refusal as a reply rather
-    // than silence keeps the byte stream aligned for the read-backs that follow.
-    if (accepted.length < trials.length) pipe.enqueue(new Uint8Array([0x15]));
-    // Same-session read-back: staged writes visible, or flash still holding 0xff.
-    for (const { address, blockSize } of accepted) {
+    for (const { address, blockSize } of trials) {
+      if (blockSize > maxBlock) {
+        pipe.enqueue(new Uint8Array([0x15])); // NAK
+        break;
+      }
+      scriptAtD890WriteAck(pipe, 1);
+      if (desyncAt === blockSize) break; // no read reply: the stream goes silent
       enqueueAtD890ReadReply(
         pipe,
         address,
@@ -275,31 +284,49 @@ describe('runAtD890WriteBlockProbe', () => {
     return pipe;
   }
 
-  it('stops at the first refusal instead of trying larger frames', async () => {
-    const r = await runAtD890WriteBlockProbe(scriptWrite(0x20, true));
+  it('reads each size back before trying a larger one', async () => {
+    const r = await runAtD890WriteBlockProbe(scriptWrite({ maxBlock: 0xf0 }));
+    expect(r.verdict.bestBlockSize).toBe(0xf0);
+    expect(r.desynced).toBe(false);
+    expect(r.inSessionReadsSeeStagedWrites).toBe(true);
+  });
 
+  it('stops at a NAK instead of trying larger frames', async () => {
+    const r = await runAtD890WriteBlockProbe(scriptWrite({ maxBlock: 0x20 }));
     expect(r.verdict.results.map((t) => t.blockSize)).toEqual([0x10, 0x20, 0x40]);
     expect(r.verdict.results.at(-1)!.accepted).toBe(false);
     expect(r.verdict.bestBlockSize).toBe(0x20);
   });
 
-  it('credits the largest size that read back byte for byte', async () => {
-    const r = await runAtD890WriteBlockProbe(scriptWrite(0xf0, true));
-    expect(r.verdict.bestBlockSize).toBe(0xf0);
-    expect(r.inSessionReadsSeeStagedWrites).toBe(true);
+  it('stops on desync and keeps the sizes proven so far', async () => {
+    const r = await runAtD890WriteBlockProbe(scriptWrite({ maxBlock: 0xf0, desyncAt: 0x20 }));
+
+    expect(r.desynced).toBe(true);
+    // 0x10 proved good before the stream broke; nothing beyond 0x20 was attempted.
+    expect(r.verdict.bestBlockSize).toBe(0x10);
+    expect(r.verdict.results.map((t) => t.blockSize)).toEqual([0x10, 0x20]);
+  });
+
+  it('does NOT commit a desynced session — the shadow must not reach flash', async () => {
+    const pipe = scriptWrite({ maxBlock: 0xf0, desyncAt: 0x20 });
+    const r = await runAtD890WriteBlockProbe(pipe);
+
+    expect(r.committed).toBe(false);
+    expect(sentEnd(pipe)).toBe(false);
+  });
+
+  it('commits a clean run so the verify pass can check flash', async () => {
+    const pipe = scriptWrite({ maxBlock: 0xf0 });
+    const r = await runAtD890WriteBlockProbe(pipe);
+
+    expect(r.committed).toBe(true);
+    expect(sentEnd(pipe)).toBe(true);
   });
 
   it('reports when in-session reads come from flash rather than the staged shadow', async () => {
-    const r = await runAtD890WriteBlockProbe(scriptWrite(0xf0, false));
+    const r = await runAtD890WriteBlockProbe(scriptWrite({ maxBlock: 0xf0, staged: false }));
     expect(r.inSessionReadsSeeStagedWrites).toBe(false);
-    // Read-back said erased, so no size may be credited from this session alone.
     expect(r.verdict.bestBlockSize).toBe(0x10);
-  });
-
-  it('commits with END so the verify pass can check flash', async () => {
-    const pipe = scriptWrite(0xf0, true);
-    await runAtD890WriteBlockProbe(pipe);
-    expect(sentEnd(pipe)).toBe(true);
   });
 });
 

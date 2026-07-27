@@ -4,6 +4,7 @@ import {
   atD890WriteProbeAddress,
   buildAtD890WriteTrials,
   classifyAtD890WriteReadback,
+  isAtD890InertPayload,
   makeAtD890WritePayload,
   summariseAtD890WriteProbe,
   type AtD890WriteTrialResult,
@@ -79,6 +80,31 @@ describe('makeAtD890WritePayload', () => {
   it('is position-dependent past the header, so zero padding cannot pass', () => {
     const p = makeAtD890WritePayload(atD890WriteProbeAddress(0), MAX);
     expect(p.subarray(16).every((b) => b === 0)).toBe(false);
+  });
+});
+
+describe('payload is inert against the radio command parser', () => {
+  // An oversized frame's tail re-enters the parser, so a payload byte that looks like a
+  // command could synthesise a write to an address we never chose.
+  const OPCODES = [0x45, 0x50, 0x52, 0x57]; // E(ND), P(ROGRAM), R, W
+
+  it.each(AT_D890_WRITE_BLOCK_CANDIDATES)('contains no command opcode at %i bytes', (size) => {
+    for (const { address } of trials) {
+      const payload = makeAtD890WritePayload(address, size);
+      for (const op of OPCODES) expect(Array.from(payload)).not.toContain(op);
+      expect(isAtD890InertPayload(payload)).toBe(true);
+    }
+  });
+
+  it('rejects a payload carrying a command byte', () => {
+    expect(isAtD890InertPayload(new Uint8Array([0x00, 0x57, 0x00]))).toBe(false);
+  });
+
+  it('stays deterministic despite the opcode substitution', () => {
+    const addr = atD890WriteProbeAddress(0);
+    expect(Array.from(makeAtD890WritePayload(addr, MAX))).toEqual(
+      Array.from(makeAtD890WritePayload(addr, MAX)),
+    );
   });
 });
 

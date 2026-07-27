@@ -376,6 +376,13 @@ export interface AtD890WriteProbeResult {
   model: string;
   verdict: AtD890WriteProbeVerdict;
   /**
+   * The radio stopped answering after a write — its parser consumed part of the frame as
+   * commands. Nothing is committed in this case and the operator must power-cycle.
+   */
+  desynced: boolean;
+  /** False when the session was abandoned without `END`, so nothing reached flash. */
+  committed: boolean;
+  /**
    * Whether a read issued in the same session as a write returned the newly written bytes.
    * `true` means reads see the staged shadow; `false` means they come from flash and any
    * same-session Write verification is meaningless (#769).
@@ -398,6 +405,7 @@ export async function runAtD890WriteBlockProbe(
 
   const trials = buildAtD890WriteTrials();
   const results: AtD890WriteTrialResult[] = [];
+  let desynced = false;
 
   for (let i = 0; i < trials.length; i++) {
     throwIfAborted(opts.signal);
@@ -414,7 +422,6 @@ export async function runAtD890WriteBlockProbe(
     );
     try {
       await atD890WriteBlockRaw(pipe, address, payload, opts.signal);
-      results.push({ blockSize, address, accepted: true });
     } catch (e) {
       results.push({
         blockSize,
@@ -425,27 +432,45 @@ export async function runAtD890WriteBlockProbe(
       await pipe.flush?.();
       break;
     }
+
+    /*
+     * Read back immediately, before trying anything larger. An oversized frame does not
+     * merely fail — it desyncs the radio, because the tail of the frame re-enters its
+     * command parser. A read that times out here is that desync, and once the stream is
+     * broken every later trial is meaningless, so stop at once.
+     *
+     * This read also answers whether an in-session read sees the staged shadow or flash.
+     */
+    try {
+      const data = await atD890ReadMemory(pipe, address, blockSize, opts.signal);
+      const { outcome, matchingPrefix } = classifyAtD890WriteReadback(address, blockSize, data);
+      results.push({ blockSize, address, accepted: true, readback: outcome, matchingPrefix });
+    } catch (e) {
+      results.push({
+        blockSize,
+        address,
+        accepted: true,
+        detail: `desynced after this size: ${e instanceof Error ? e.message : String(e)}`,
+      });
+      desynced = true;
+      await pipe.flush?.();
+      break;
+    }
   }
 
-  // Same-session read-back — does a read see the staged shadow, or flash?
-  for (const result of results) {
-    if (!result.accepted) continue;
-    throwIfAborted(opts.signal);
-    const data = await atD890ReadMemory(pipe, result.address, result.blockSize, opts.signal);
-    const { outcome, matchingPrefix } = classifyAtD890WriteReadback(
-      result.address,
-      result.blockSize,
-      data,
-    );
-    result.readback = outcome;
-    result.matchingPrefix = matchingPrefix;
-  }
+  /*
+   * Commit only a clean run. A desynced radio may have parsed part of our payload as
+   * commands, so whatever is staged is not what we intended — sending END would make that
+   * permanent. Leaving without END discards the shadow on power-cycle.
+   */
+  if (!desynced) await commit(pipe);
 
-  await commit(pipe);
   const sixteen = results.find((r) => r.blockSize === AT_D890_BLOCK_SIZE);
   return {
     model,
     verdict: summariseAtD890WriteProbe(results),
+    desynced,
+    committed: !desynced,
     // The 16-byte case is the control: it is known to work, so if even that does not read
     // back in-session, reads are coming from flash rather than the staged shadow.
     inSessionReadsSeeStagedWrites: sixteen?.readback === 'match',

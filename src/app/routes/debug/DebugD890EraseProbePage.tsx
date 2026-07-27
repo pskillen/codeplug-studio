@@ -131,6 +131,7 @@ export default function DebugD890EraseProbePage() {
   const [access, setAccess] = useState<AtD890AccessProfile | null>(null);
   const [writeVerdict, setWriteVerdict] = useState<AtD890WriteProbeVerdict | null>(null);
   const [shadowReads, setShadowReads] = useState<boolean | null>(null);
+  const [desynced, setDesynced] = useState(false);
   const [rates, setRates] = useState<{ label: string; t: AtD890ThroughputResult }[]>([]);
 
   const append = useCallback((line: string) => {
@@ -195,11 +196,21 @@ export default function DebugD890EraseProbePage() {
           const r = await runAtD890WriteBlockProbe(pipe, opts);
           setWriteVerdict(r.verdict);
           setShadowReads(r.inSessionReadsSeeStagedWrites);
+          setDesynced(r.desynced);
           append(
-            `Write blocks: largest accepted ${r.verdict.bestBlockSize} bytes ` +
+            `Write blocks: largest usable ${r.verdict.bestBlockSize} bytes ` +
               `(${r.verdict.speedup.toFixed(1)}x). In-session reads see staged writes: ` +
-              `${r.inSessionReadsSeeStagedWrites ? 'yes' : 'no'}. Power-cycle, then verify.`,
+              `${r.inSessionReadsSeeStagedWrites ? 'yes' : 'no'}.` +
+              (r.desynced
+                ? ' Radio desynced — NOT committed, power-cycle to discard.'
+                : ' Committed; power-cycle, then verify.'),
           );
+          if (r.desynced) {
+            setError(
+              'The radio stopped answering after an oversized write frame. Nothing was ' +
+                'committed — power-cycle the radio before doing anything else.',
+            );
+          }
           return;
         } else if (pass === 'writeVerify') {
           const r = await runAtD890WriteBlockVerify(pipe, opts);
@@ -406,6 +417,7 @@ export default function DebugD890EraseProbePage() {
                   setAccess(null);
                   setWriteVerdict(null);
                   setShadowReads(null);
+                  setDesynced(false);
                   setRates([]);
                   setError(null);
                   setLog([]);
@@ -491,6 +503,14 @@ export default function DebugD890EraseProbePage() {
                 </Table.Tbody>
               </Table>
 
+              {desynced && (
+                <Alert color="red" title="Radio desynced — nothing committed">
+                  An oversized write frame left the radio unable to answer: it consumes only the
+                  first 16 data bytes and re-parses the rest of the frame as commands. The session
+                  was abandoned without <Code>END</Code>, so nothing reached flash.{' '}
+                  <strong>Power-cycle the radio</strong> to discard the staged shadow.
+                </Alert>
+              )}
               <Alert color={writeVerdict.bestBlockSize > 0x10 ? 'green' : 'orange'}>
                 Largest write block <Code>{writeVerdict.bestBlockSize}</Code> bytes —{' '}
                 <strong>{writeVerdict.speedup.toFixed(1)}×</strong> the 16-byte path.
