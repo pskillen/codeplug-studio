@@ -68,6 +68,8 @@ OpenGD77 `Channels.csv` has **no TX Admit or Busy Lock column**. Resolved `txPer
 
 Radio LCD limits are profile-specific (~16 chars on [Baofeng 1701](../../radios/baofeng/dm-1701/README.md)). The app default `nameLimit` is **16** on OpenGD77 profiles (`src/core/import-export/formats/opengd77/profiles.ts`).
 
+OpenGD77 **CSV export** and **Web Serial Write** (DM-1701 / MD-9600) share the same build export naming settings (`shortenNames`, `useChannelAbbreviation`, `maxNameLength`, name mode override). Channel wire names are composed from callsign + name (or build override), then shortened when over the effective limit — `Channel.abbreviation` applies **only during shortening**, not as the default wire label for names that already fit. See [name-shortening](../../../features/import-export/name-shortening.md).
+
 When a composed or expanded wire name exceeds the effective limit, export runs the shortening pipeline (dictionary → vowel-squeeze → optional `callsign_suffix` downgrade → truncate). Zone `ChannelN` members and TG-list contact names receive the **same** shortened strings as `Channels.csv`.
 
 ## Tone wire forms

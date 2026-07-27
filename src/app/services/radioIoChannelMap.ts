@@ -9,9 +9,7 @@
 import type { AssembledBuild, AssembledChannel, LibrarySlice } from '@core/services/assemble.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
-import { channelPickForWireExport, composeChannelWireName } from '@core/domain/channelNaming.ts';
-import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
-import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
+import { assembledChannelExportWireName } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import { expandAllMxNChannels } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import type { ExpandedMxNChannelRow } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
@@ -86,17 +84,8 @@ function radioWireName(
   warnings: string[],
 ): string {
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
-  const pick = channelPickForWireExport(row.entity, {
-    nameModeOverride: merged.nameModeOverride as ChannelExportNameMode | undefined,
-  });
-  let base = row.wireNameOverride?.trim() ? row.wireName : composeChannelWireName(pick);
-  const abbrev = row.entity.abbreviation?.trim();
-  if (abbrev && merged.useChannelAbbreviation !== false) {
-    base = composeChannelWireName({ ...pick, name: abbrev });
-  }
-  return applyWireNameLimits(
-    base,
-    row.entity,
+  return assembledChannelExportWireName(
+    row,
     reserved,
     merged,
     merged.profileId ?? egress.profileId,

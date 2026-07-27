@@ -42,3 +42,4 @@ Active debt under epic [#502](https://github.com/pskillen/codeplug-studio/issues
 - [x] Export golden CSV snapshots + mapping-tests doc ([#92](https://github.com/pskillen/codeplug-studio/issues/92))
 - [x] Zone Skip mirrors All Skip on CSV + serial Write ([#772](https://github.com/pskillen/codeplug-studio/issues/772))
 - [x] Drop non-DMR digital modes at OpenGD77 export boundary ([#773](https://github.com/pskillen/codeplug-studio/issues/773))
+- [x] CSV ↔ serial Write channel wire name parity ([#777](https://github.com/pskillen/codeplug-studio/issues/777))
