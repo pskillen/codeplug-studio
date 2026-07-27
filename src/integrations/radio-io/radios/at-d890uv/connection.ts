@@ -78,6 +78,28 @@ export async function atD890ReadMemory(
   return out;
 }
 
+/**
+ * Single read frame at an arbitrary block length, bypassing the 16-byte loop.
+ *
+ * The wire length field is a `u8`, so the protocol can express far more than the 16 bytes
+ * `atD890ReadMemory` uses. Whether a given radio honours a larger block is a question only
+ * hardware answers — hence this raw form, used by the link prober. Read-only.
+ */
+export async function atD890ReadBlockRaw(
+  pipe: BytePipe,
+  address: number,
+  length: number,
+  signal?: AbortSignal,
+): Promise<Uint8Array> {
+  throwIfAborted(signal);
+  if (length < 1 || length > 0xff) {
+    throw new RangeError(`D890 raw read length must be 1..255, got ${length}`);
+  }
+  await pipe.write(makeAnytoneDmrReadFrame(address, length));
+  const reply = await pipe.readExact(length + 8, AT_D890_CONNECTION.TIMEOUT.READ_MS);
+  return parseAnytoneDmrReadReply(reply, length);
+}
+
 export async function atD890WriteMemory(
   pipe: BytePipe,
   address: number,

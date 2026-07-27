@@ -45,6 +45,45 @@ export {
   atD890RegionLabel,
 } from './writeRole.ts';
 export {
+  AT_D890_PROBE,
+  analyseAtD890EraseUnit,
+  assertAtD890ProbeSpanUnused,
+  classifyAtD890Sentinel,
+  estimateAtD890RmwSeconds,
+  inferAtD890Aliasing,
+  listAtD890ProbeSentinels,
+  readAtD890ProbeTag,
+  summariseAtD890Throughput,
+  verifyAtD890Paint,
+  type AtD890AliasVerdict,
+  type AtD890EraseUnitResult,
+  type AtD890SentinelReading,
+  type AtD890ThroughputResult,
+} from './eraseUnitProbe.ts';
+export {
+  AT_D890_BLOCK_CANDIDATES,
+  benchmarkAtD890Sweep,
+  estimateAtD890RmwCost,
+  profileAtD890AccessPattern,
+  profileAtD890Link,
+  type AtD890AccessProfile,
+  type AtD890BlockTrial,
+  type AtD890LinkProfile,
+  type AtD890StrideSample,
+  type AtD890SweepResult,
+} from './linkProbe.ts';
+export {
+  runAtD890LinkProbe,
+  runAtD890ProbeDiagnose,
+  runAtD890ProbeInspect,
+  runAtD890ProbeMeasure,
+  runAtD890ProbePaint,
+  runAtD890ProbeVerifyAndMark,
+  type AtD890LinkProbeResult,
+  type AtD890ProbeDiagnoseResult,
+  type AtD890ProbeInspectResult,
+} from './eraseUnitProbeRunner.ts';
+export {
   AT_D890_WRITE_COVERAGE_ROWS,
   AT_D890_WRITE_COVERAGE_STATUS_LABEL,
   type AtD890WriteCoverageRow,
