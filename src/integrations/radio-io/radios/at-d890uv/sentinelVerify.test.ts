@@ -18,6 +18,15 @@ function plausibleSentinelOverrides(): Partial<Record<string, Uint8Array>> {
 }
 
 describe('sentinelVerify', () => {
+  it('snapshots every sentinel extent with negotiated read block size', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890SentinelReads(pipe, plausibleSentinelOverrides(), 0xf0);
+    const snap = await snapshotAtD890SentinelRegions(pipe, undefined, 0xf0);
+    for (const extent of AT_D890_SENTINEL_EXTENTS) {
+      expect(snap.get(extent.id)?.length).toBe(extent.length);
+    }
+  });
+
   it('snapshots every sentinel extent', async () => {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890SentinelReads(pipe, plausibleSentinelOverrides());

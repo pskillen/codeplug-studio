@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { AtD890ScriptedPipe, enqueueAtD890ReadReply } from './__fixtures__/scriptedPipe.ts';
+import { AtD890ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
 import {
   AT_D890_BLOCK_CANDIDATES,
   benchmarkAtD890Sweep,
   estimateAtD890RmwCost,
+  negotiateAtD890ReadBlockSize,
   profileAtD890AccessPattern,
   profileAtD890Link,
 } from './linkProbe.ts';
@@ -96,6 +97,21 @@ describe('profileAtD890Link', () => {
     expect(trial?.ok).toBe(false);
     expect(trial?.detail).toMatch(/did not match the 16-byte baseline/);
     expect(profile.bestBlockSize).toBe(0x10);
+  });
+});
+
+describe('negotiateAtD890ReadBlockSize', () => {
+  it('returns the largest honoured block size without timing loops', async () => {
+    const pipe = scriptLink(MAX, 2);
+    const result = await negotiateAtD890ReadBlockSize(pipe, ADDRESS);
+    expect(result.bestBlockSize).toBe(MAX);
+    expect(result.trials.every((t) => t.msPerFrame === undefined)).toBe(true);
+  });
+
+  it('falls back to 16 bytes when larger blocks are rejected', async () => {
+    const pipe = scriptLink(0x10, 2);
+    const result = await negotiateAtD890ReadBlockSize(pipe, ADDRESS);
+    expect(result.bestBlockSize).toBe(0x10);
   });
 });
 
