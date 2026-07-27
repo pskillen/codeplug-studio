@@ -1,17 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
-import { newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
+import { newChannel } from '@core/domain/factories.ts';
+import { assembledChannelExportWireName } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import { parseCsv } from '@core/import-export/csvParse.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
+import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { BuildExportSettings } from '@core/models/radioBuild.ts';
-import { assembledChannelsToRadioDtos } from '@app/services/radioIoChannelMap.ts';
 import { CHANNEL_COL } from './columns.ts';
 import { serialiseChannels } from './serialise.ts';
 
-const OPENGD77_CSV_PROFILES = ['opengd77-1701', 'opengd77-md9600'] as const;
-const OPENGD77_SERIAL_PROFILES = ['radio-io-opengd77-1701', 'radio-io-opengd77-md9600'] as const;
+const PROFILE_PAIRS = [
+  { csv: 'opengd77-1701', serial: 'radio-io-opengd77-1701' },
+  { csv: 'opengd77-md9600', serial: 'radio-io-opengd77-md9600' },
+] as const;
 
 function channelNameFromCsv(csv: string): string {
   const rows = parseCsv(csv);
@@ -55,60 +58,70 @@ function minimalAssembled(channel: Channel, profileId: string): AssembledBuild {
   };
 }
 
-function csvWireName(
-  channel: Channel,
-  csvProfileId: (typeof OPENGD77_CSV_PROFILES)[number],
-  exportSettings?: BuildExportSettings,
-): string {
-  const assembled = minimalAssembled(channel, csvProfileId);
-  const options = mergeExportOptions(
-    { exportSettings } as Parameters<typeof mergeExportOptions>[0],
-    'opengd77',
-    { profileId: csvProfileId },
-  );
-  const csv = serialiseChannels(assembled, options);
-  return channelNameFromCsv(csv);
-}
-
-function serialWireName(
-  channel: Channel,
-  serialProfileId: (typeof OPENGD77_SERIAL_PROFILES)[number],
-  exportSettings?: BuildExportSettings,
-): string {
-  const { build, egress } = newRadioBuildForProfile('p1', serialProfileId);
-  const buildWithSettings = exportSettings
-    ? { ...build, exportSettings: { ...build.exportSettings, ...exportSettings } }
-    : build;
-  const row = { entity: channel, wireName: defaultChannelWireName(channel) };
-  const dtos = assembledChannelsToRadioDtos([row], buildWithSettings, egress);
-  return dtos[0]?.wireName ?? '';
-}
-
-function assertCsvSerialParity(
+function assertCsvSerialNamingParity(
   channel: Channel,
   exportSettings: BuildExportSettings | undefined,
   expectedWireName: string,
 ): void {
-  for (let i = 0; i < OPENGD77_CSV_PROFILES.length; i++) {
-    const csvProfile = OPENGD77_CSV_PROFILES[i]!;
-    const serialProfile = OPENGD77_SERIAL_PROFILES[i]!;
-    const csvName = csvWireName(channel, csvProfile, exportSettings);
-    const serialName = serialWireName(channel, serialProfile, exportSettings);
-    expect(csvName, `${csvProfile} CSV`).toBe(expectedWireName);
-    expect(serialName, `${serialProfile} serial`).toBe(expectedWireName);
-    expect(csvName, `${csvProfile} vs ${serialProfile}`).toBe(serialName);
+  const wireName = defaultChannelWireName(channel);
+  const row = { entity: channel, wireName };
+
+  for (const { csv, serial } of PROFILE_PAIRS) {
+    const csvOptions = mergeExportOptions(
+      { exportSettings } as Parameters<typeof mergeExportOptions>[0],
+      'opengd77',
+      { profileId: csv },
+    );
+    const serialOptions = mergeExportOptions(
+      { exportSettings } as Parameters<typeof mergeExportOptions>[0],
+      'radio-io',
+      { profileId: serial },
+    );
+
+    const csvReserved = new Set<string>();
+    const serialReserved = new Set<string>();
+    const csvWarnings: string[] = [];
+    const serialWarnings: string[] = [];
+
+    const fromSerialHelper = assembledChannelExportWireName(
+      row,
+      serialReserved,
+      serialOptions,
+      serial,
+      serialWarnings,
+    );
+
+    const expanded = expandOpenGd77ChannelWireRows(
+      channel,
+      wireName,
+      true,
+      csvOptions,
+      csv,
+      csvReserved,
+      csvWarnings,
+    );
+    const fromCsvExpand = expanded[0]?.wireName ?? '';
+
+    const assembled = minimalAssembled(channel, csv);
+    const csvName = channelNameFromCsv(serialiseChannels(assembled, csvOptions));
+
+    expect(fromCsvExpand, `${csv} expand`).toBe(expectedWireName);
+    expect(fromSerialHelper, `${serial} helper`).toBe(expectedWireName);
+    expect(csvName, `${csv} Channels.csv`).toBe(expectedWireName);
+    expect(fromCsvExpand, `${csv} expand vs ${serial} helper`).toBe(fromSerialHelper);
+    expect(csvName, `${csv} CSV vs ${serial} helper`).toBe(fromSerialHelper);
   }
 }
 
 describe('OpenGD77 CSV ↔ serial channel wire name parity (#777)', () => {
   it('keeps full name under limit when abbreviation is set (useChannelAbbreviation on)', () => {
     const channel = fmChannel({ name: 'hotspot', abbreviation: 'Hspt' });
-    assertCsvSerialParity(channel, { useChannelAbbreviation: true }, 'hotspot');
+    assertCsvSerialNamingParity(channel, { useChannelAbbreviation: true }, 'hotspot');
   });
 
   it('keeps full name under limit with default export settings', () => {
     const channel = fmChannel({ name: 'hotspot', abbreviation: 'Hspt' });
-    assertCsvSerialParity(channel, undefined, 'hotspot');
+    assertCsvSerialNamingParity(channel, undefined, 'hotspot');
   });
 
   it('shortens with library abbreviation when over nameLimit (useChannelAbbreviation on)', () => {
@@ -117,7 +130,7 @@ describe('OpenGD77 CSV ↔ serial channel wire name parity (#777)', () => {
       name: 'Mugherafelt',
       abbreviation: "M'flt",
     });
-    assertCsvSerialParity(channel, { useChannelAbbreviation: true }, "GB3MT M'flt");
+    assertCsvSerialNamingParity(channel, { useChannelAbbreviation: true }, "GB3MT M'flt");
   });
 
   it('shortens without library abbreviation when useChannelAbbreviation is off', () => {
@@ -130,12 +143,42 @@ describe('OpenGD77 CSV ↔ serial channel wire name parity (#777)', () => {
       shortenNames: true,
       useChannelAbbreviation: false,
     };
-    for (let i = 0; i < OPENGD77_CSV_PROFILES.length; i++) {
-      const csvProfile = OPENGD77_CSV_PROFILES[i]!;
-      const serialProfile = OPENGD77_SERIAL_PROFILES[i]!;
-      const csvName = csvWireName(channel, csvProfile, settings);
-      const serialName = serialWireName(channel, serialProfile, settings);
-      expect(csvName).toBe(serialName);
+    for (const { csv, serial } of PROFILE_PAIRS) {
+      const csvOptions = mergeExportOptions(
+        { exportSettings: settings } as Parameters<typeof mergeExportOptions>[0],
+        'opengd77',
+        { profileId: csv },
+      );
+      const serialOptions = mergeExportOptions(
+        { exportSettings: settings } as Parameters<typeof mergeExportOptions>[0],
+        'radio-io',
+        { profileId: serial },
+      );
+      const wireName = defaultChannelWireName(channel);
+      const row = { entity: channel, wireName };
+      const csvReserved = new Set<string>();
+      const serialReserved = new Set<string>();
+      const expanded = expandOpenGd77ChannelWireRows(
+        channel,
+        wireName,
+        true,
+        csvOptions,
+        csv,
+        csvReserved,
+        [],
+      );
+      const fromSerial = assembledChannelExportWireName(
+        row,
+        serialReserved,
+        serialOptions,
+        serial,
+        [],
+      );
+      const csvName = channelNameFromCsv(
+        serialiseChannels(minimalAssembled(channel, csv), csvOptions),
+      );
+      expect(expanded[0]?.wireName).toBe(fromSerial);
+      expect(csvName).toBe(fromSerial);
       expect(csvName).not.toBe("GB3MT M'flt");
       expect(csvName.length).toBeLessThanOrEqual(16);
     }

@@ -196,6 +196,28 @@ describe('assembledChannelsToRadioDtos', () => {
     expect(warnings).toContain(openGd77DroppedModesWarning('Repeater', ['ysf']));
   });
 
+  it('keeps full channel name under limit when abbreviation is set (no eager abbrev)', () => {
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-md9600');
+    const entity = {
+      ...newChannel('p1', 'hotspot'),
+      abbreviation: 'Hspt',
+      id: 'ch-hotspot',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none',
+          txTone: 'none',
+          bandwidthKHz: 12.5,
+        },
+      ],
+    };
+    const dtos = assembledChannelsToRadioDtos([{ entity, wireName: 'hotspot' }], build, egress);
+    expect(dtos[0]?.wireName).toBe('hotspot');
+  });
+
   it('omits YSF-only channels from OpenGD77 serial projection', () => {
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
     const entity = {
