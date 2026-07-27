@@ -116,7 +116,7 @@ describe('opengd77/export golden', () => {
     const base = loadOpenGd77YamlGoldenFixture();
     const library = shorteningOpenGd77ExportLibrary(base.library);
     const build = shorteningOpenGd77ExportBuild(library);
-    const assembled = assembleOpenGd77YamlGolden(library, build, { shortenNames: true });
+    const assembled = assembleOpenGd77YamlGolden(library, build);
     const csv = serialiseOpenGd77Files(assembled, {
       profileId: 'opengd77-1701',
       shortenNames: true,

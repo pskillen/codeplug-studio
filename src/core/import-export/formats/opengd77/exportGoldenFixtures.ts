@@ -1,12 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  newChannel,
-  newFormatBuild,
-  newRadioBuildForProfile,
-  newTalkGroup,
-} from '@core/domain/factories.ts';
+import { newFormatBuild, newRadioBuildForProfile } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
@@ -47,15 +42,10 @@ export function loadOpenGd77YamlGoldenFixture(): {
   return { build, egress, library };
 }
 
-export function assembleOpenGd77YamlGolden(
-  library: LibrarySlice,
-  build: RadioBuild,
-  options?: { shortenNames?: boolean },
-) {
+export function assembleOpenGd77YamlGolden(library: LibrarySlice, build: RadioBuild) {
   return assemble(build, library, {
     formatId: 'opengd77',
     profileId: 'opengd77-1701',
-    shortenNames: options?.shortenNames,
   });
 }
 

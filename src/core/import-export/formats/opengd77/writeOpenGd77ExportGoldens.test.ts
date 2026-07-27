@@ -2,9 +2,11 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it } from 'vitest';
-import { exportBuildAll } from '@core/services/exportBuild.ts';
 import { serialiseOpenGd77Files } from './serialise.ts';
-import { assembleOpenGd77YamlGolden, loadOpenGd77YamlGoldenFixture } from './exportGoldenFixtures.ts';
+import {
+  assembleOpenGd77YamlGolden,
+  loadOpenGd77YamlGoldenFixture,
+} from './exportGoldenFixtures.ts';
 
 const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/export');
 
