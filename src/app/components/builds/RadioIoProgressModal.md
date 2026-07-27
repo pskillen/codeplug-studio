@@ -6,20 +6,20 @@ Blocking modal during Web Serial **Read** / **Write** on a Direct radio FormatBu
 
 ## Props
 
-| Prop                   | Type                                                                                      | Description                                                      |
-| ---------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `opened`               | `boolean`                                                                                 | Show while an operation is in progress                           |
-| `operation`            | `'read' \| 'write'`                                                                       | Chooses step list and title                                      |
-| `phase`                | `'connecting' \| 'preparing' \| 'transfer' \| 'saving' \| 'verifying' \| 'done'`          | Active coarse phase                                              |
-| `progress`             | `ProgressUpdate \| null`                                                                  | Block-level progress during `transfer` (`msg`, optional `stage`) |
-| `transferStages`       | `readonly string[]`                                                                       | Checklist labels accumulated from `progress.stage`               |
-| `navigationBlocked`    | `boolean`                                                                                 | Extra alert after an in-app navigation attempt                   |
-| `writeVerifyStatus`    | `'none' \| 'unverified' \| 'verifying' \| 'verified' \| 'failed'`                         | AT-D890 optional post-Write preserved-settings check             |
-| `verifyMismatches`     | `readonly { id: string; label: string }[]`                                                | Named regions when verify fails                                  |
-| `onVerify`             | `() => void`                                                                              | Start optional verify (AT-D890)                                  |
-| `onCloseWithoutVerify` | `() => void`                                                                              | Dismiss after Write without running verify                       |
-| `onCancel`             | `() => void`                                                                              | Abort the in-flight transfer                                     |
-| `onClose`              | `() => void`                                                                              | Dismiss after `phase === 'done'` (Write stays open until Close)  |
+| Prop                   | Type                                                                             | Description                                                      |
+| ---------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `opened`               | `boolean`                                                                        | Show while an operation is in progress                           |
+| `operation`            | `'read' \| 'write'`                                                              | Chooses step list and title                                      |
+| `phase`                | `'connecting' \| 'preparing' \| 'transfer' \| 'saving' \| 'verifying' \| 'done'` | Active coarse phase                                              |
+| `progress`             | `ProgressUpdate \| null`                                                         | Block-level progress during `transfer` (`msg`, optional `stage`) |
+| `transferStages`       | `readonly string[]`                                                              | Checklist labels accumulated from `progress.stage`               |
+| `navigationBlocked`    | `boolean`                                                                        | Extra alert after an in-app navigation attempt                   |
+| `writeVerifyStatus`    | `'none' \| 'unverified' \| 'verifying' \| 'verified' \| 'failed'`                | AT-D890 optional post-Write preserved-settings check             |
+| `verifyMismatches`     | `readonly { id: string; label: string }[]`                                       | Named regions when verify fails                                  |
+| `onVerify`             | `() => void`                                                                     | Start optional verify (AT-D890)                                  |
+| `onCloseWithoutVerify` | `() => void`                                                                     | Dismiss after Write without running verify                       |
+| `onCancel`             | `() => void`                                                                     | Abort the in-flight transfer                                     |
+| `onClose`              | `() => void`                                                                     | Dismiss after `phase === 'done'` (Write stays open until Close)  |
 
 ## Usage
 

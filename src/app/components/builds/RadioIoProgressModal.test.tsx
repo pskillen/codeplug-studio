@@ -151,7 +151,9 @@ describe('RadioIoProgressModal', () => {
 
     expect(screen.getByText('Write finished — settings checked')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Verify preserved settings' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Verify preserved settings' }),
+    ).not.toBeInTheDocument();
   });
 
   it('names mismatched regions when verify fails', () => {
@@ -173,8 +175,6 @@ describe('RadioIoProgressModal', () => {
     );
 
     expect(screen.getByText(/Preserved settings check failed/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Language and display settings does not match/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Language and display settings does not match/i)).toBeInTheDocument();
   });
 });

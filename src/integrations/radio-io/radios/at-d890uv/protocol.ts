@@ -439,11 +439,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
       await atD890EnterProgram(this.pipe, opts?.signal);
       this.programming = true;
     }
-    const after = await snapshotAtD890SentinelRegions(
-      this.pipe,
-      opts?.signal,
-      this.readBlockSize,
-    );
+    const after = await snapshotAtD890SentinelRegions(this.pipe, opts?.signal, this.readBlockSize);
     return compareAtD890SentinelSnapshots(before, after);
   }
 

@@ -9,19 +9,9 @@ import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 export type RadioIoOperation = 'read' | 'write';
 
 export type RadioIoProgressPhase =
-  | 'connecting'
-  | 'preparing'
-  | 'transfer'
-  | 'saving'
-  | 'verifying'
-  | 'done';
+  'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
 
-export type RadioIoWriteVerifyStatus =
-  | 'none'
-  | 'unverified'
-  | 'verifying'
-  | 'verified'
-  | 'failed';
+export type RadioIoWriteVerifyStatus = 'none' | 'unverified' | 'verifying' | 'verified' | 'failed';
 
 export interface RadioIoVerifyMismatch {
   readonly id: string;
@@ -124,10 +114,11 @@ function stepStatus(
   return 'pending';
 }
 
-function writeDoneAlert(
-  writeVerifyStatus: RadioIoWriteVerifyStatus,
-  verifyMismatches: readonly RadioIoVerifyMismatch[],
-): { color: string; title: string; body: string } {
+function writeDoneAlert(writeVerifyStatus: RadioIoWriteVerifyStatus): {
+  color: string;
+  title: string;
+  body: string;
+} {
   if (writeVerifyStatus === 'verified') {
     return {
       color: 'green',
@@ -194,7 +185,7 @@ export default function RadioIoProgressModal({
             {(() => {
               const alert =
                 operation === 'write'
-                  ? writeDoneAlert(writeVerifyStatus, verifyMismatches)
+                  ? writeDoneAlert(writeVerifyStatus)
                   : {
                       color: 'green',
                       title: 'Read finished',
@@ -219,8 +210,8 @@ export default function RadioIoProgressModal({
         ) : verifying ? (
           <Alert color="blue" title="Checking preserved settings">
             <Text size="sm">
-              Wait until the radio has fully restarted and shows its normal screen, then Studio
-              will reconnect and read the settings it left alone.
+              Wait until the radio has fully restarted and shows its normal screen, then Studio will
+              reconnect and read the settings it left alone.
             </Text>
           </Alert>
         ) : (
