@@ -38,7 +38,11 @@ import { negotiateAtD890ReadBlockSize } from './linkProbe.ts';
 import { decodeChannelsFromAtD890Cache, encodeChannelsIntoAtD890Image } from './channelCodec.ts';
 import {
   assertAtD890SentinelRegionsPlausible,
+  cloneAtD890SentinelSnapshot,
+  compareAtD890SentinelSnapshots,
   snapshotAtD890SentinelRegions,
+  type AtD890SentinelCompareResult,
+  type AtD890SentinelSnapshot,
 } from './sentinelVerify.ts';
 import { eraseUnitBaseFor, listTouchedEraseUnits, readSpanForEraseUnit } from './eraseUnits.ts';
 import { assertAtD890LocalInfoIdentity } from './identityCheck.ts';
@@ -335,6 +339,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
   private cache: AtD890DownloadCache | null = null;
   private programming = false;
   private readBlockSize = AT_D890_BLOCK_SIZE;
+  private lastUploadSentinelBefore: AtD890SentinelSnapshot | undefined;
 
   getNegotiatedReadBlockSize(): number {
     return this.readBlockSize;
@@ -415,6 +420,29 @@ export class AtD890uvProtocol implements CloneImageRadio {
     this.programming = false;
   }
 
+  /** Pre-Write sentinel snapshot from the last successful {@link upload} — consumed once. */
+  takeUploadSentinelSnapshot(): AtD890SentinelSnapshot | undefined {
+    const snap = this.lastUploadSentinelBefore;
+    this.lastUploadSentinelBefore = undefined;
+    return snap ? cloneAtD890SentinelSnapshot(snap) : undefined;
+  }
+
+  /** Re-read never-write regions and diff against a pre-Write snapshot (cross-session). */
+  async verifySentinelRegionsAgainst(
+    before: AtD890SentinelSnapshot,
+    opts?: { signal?: AbortSignal },
+  ): Promise<AtD890SentinelCompareResult> {
+    if (!this.pipe) {
+      throw new RadioProtocolError('AT-D890UV not connected');
+    }
+    if (!this.programming) {
+      await atD890EnterProgram(this.pipe, opts?.signal);
+      this.programming = true;
+    }
+    const after = await snapshotAtD890SentinelRegions(this.pipe, opts?.signal, this.readBlockSize);
+    return compareAtD890SentinelSnapshots(before, after);
+  }
+
   async download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap> {
     if (!this.pipe || !this.cache || !this.programming) {
       throw new RadioProtocolError('AT-D890UV not connected / not in PROGRAM mode');
@@ -459,6 +487,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
         this.readBlockSize,
       );
       assertAtD890SentinelRegionsPlausible(sentinelBefore);
+      this.lastUploadSentinelBefore = cloneAtD890SentinelSnapshot(sentinelBefore);
 
       const freshUnits = new Map<number, Uint8Array>();
       for (let u = 0; u < touchedUnits.length; u++) {
@@ -536,6 +565,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
         putCacheBytes(this.cache, address, data);
       }
     } catch (err) {
+      this.lastUploadSentinelBefore = undefined;
       this.abandonProgramMode();
       throw err;
     }

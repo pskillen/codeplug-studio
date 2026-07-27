@@ -5,15 +5,15 @@
 
 ## Status
 
-| Slice                                                                                                | State                                                                                    |
-| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| 0 Track + progress stubs                                                                             | Done                                                                                     |
-| 1 Allow-list extents + stop LocalInfo upload                                                         | Done                                                                                     |
-| 2 Sentinel pre/post verify                                                                           | Superseded — removed ([#769](https://github.com/pskillen/codeplug-studio/issues/769) 5a) |
-| 3 Airband-in-MR + encode guards                                                                      | Done                                                                                     |
-| 4 Documentation                                                                                      | Done                                                                                     |
-| 5 Pre-PR verify + PR                                                                                 | Done — [#754](https://github.com/pskillen/codeplug-studio/pull/754)                      |
-| 6 Fail-closed END + plausibility ([#769](https://github.com/pskillen/codeplug-studio/issues/769) 5a) | Done on `769/pskil/d890-fail-closed-write`                                               |
+| Slice                                                                                      | State                                                                                    |
+| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| 0 Track + progress stubs                                                                   | Done                                                                                     |
+| 1 Allow-list extents + stop LocalInfo upload                                               | Done                                                                                     |
+| 2 Sentinel pre/post verify                                                                 | Superseded — removed ([#769](https://github.com/pskillen/codeplug-studio/issues/769) 5a) |
+| 3 Airband-in-MR + encode guards                                                            | Done                                                                                     |
+| 4 Documentation                                                                            | Done                                                                                     |
+| 5 Pre-PR verify + PR                                                                       | Done — [#754](https://github.com/pskillen/codeplug-studio/pull/754)                      |
+| 7 Cross-session verify ([#769](https://github.com/pskillen/codeplug-studio/issues/769) 5b) | Done on `769/pskil/d890-post-commit-verify`                                              |
 
 ## Shipped this branch
 
@@ -27,7 +27,7 @@
 ## Manual verify (pending hardware — after merge)
 
 - [ ] Fresh Read → Write → Read-back on spare AT-D890UV (pre-prod only)
-- [ ] Cross-session verify after power-cycle ([#769](https://github.com/pskillen/codeplug-studio/issues/769) 5b — not this PR)
+- [x] Cross-session verify after radio restart ([#769](https://github.com/pskillen/codeplug-studio/issues/769) 5b — optional UI shipped)
 - [ ] Usable UI; no password surprise
 - [ ] Clear `prodWriteDisabled` only after operator clearance
 

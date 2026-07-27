@@ -3,12 +3,20 @@
  * Presentational only; parent owns cancel / dismiss and phase updates from ProgressFn.
  */
 
-import { Alert, Button, Group, Modal, Progress, Stack, Text } from '@mantine/core';
+import { Alert, Button, Group, List, Modal, Progress, Stack, Text } from '@mantine/core';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 
 export type RadioIoOperation = 'read' | 'write';
 
-export type RadioIoProgressPhase = 'connecting' | 'preparing' | 'transfer' | 'saving' | 'done';
+export type RadioIoProgressPhase =
+  'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
+
+export type RadioIoWriteVerifyStatus = 'none' | 'unverified' | 'verifying' | 'verified' | 'failed';
+
+export interface RadioIoVerifyMismatch {
+  readonly id: string;
+  readonly label: string;
+}
 
 export interface RadioIoProgressModalProps {
   opened: boolean;
@@ -22,6 +30,11 @@ export interface RadioIoProgressModalProps {
   transferStages?: readonly string[];
   /** True when the operator tried to navigate away while busy. */
   navigationBlocked?: boolean;
+  /** AT-D890 optional post-write preserved-settings verify. */
+  writeVerifyStatus?: RadioIoWriteVerifyStatus;
+  verifyMismatches?: readonly RadioIoVerifyMismatch[];
+  onVerify?: () => void;
+  onCloseWithoutVerify?: () => void;
   /** Abort in-flight transfer (shown while not complete). */
   onCancel: () => void;
   /** Dismiss after success (`phase === 'done'`). Write keeps the modal open until this. */
@@ -37,6 +50,7 @@ function buildSteps(
   operation: RadioIoOperation,
   transferStages: readonly string[],
   phase: RadioIoProgressPhase,
+  writeVerifyStatus: RadioIoWriteVerifyStatus,
 ): StepDef[] {
   if (operation === 'write') {
     const steps: StepDef[] = [
@@ -46,7 +60,12 @@ function buildSteps(
         ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
         : [{ id: 'transfer', label: 'Upload to radio' }]),
     ];
-    if (phase === 'done') {
+    if (writeVerifyStatus !== 'none') {
+      steps.push({ id: 'verify', label: 'Check preserved settings (optional)' });
+    }
+    if (phase === 'done' && writeVerifyStatus === 'verified') {
+      steps.push({ id: 'done', label: 'Write complete — settings checked' });
+    } else if (phase === 'done') {
       steps.push({ id: 'done', label: 'Write complete' });
     }
     return steps;
@@ -68,10 +87,14 @@ function activeStepId(
   phase: RadioIoProgressPhase,
   progress: ProgressUpdate | null,
   transferStages: readonly string[],
+  writeVerifyStatus: RadioIoWriteVerifyStatus,
 ): string {
   if (phase === 'connecting') return 'connecting';
   if (phase === 'preparing') return 'preparing';
   if (phase === 'saving') return 'saving';
+  if (phase === 'verifying' || writeVerifyStatus === 'verifying') return 'verify';
+  if (phase === 'done' && writeVerifyStatus === 'verified') return 'done';
+  if (phase === 'done' && writeVerifyStatus !== 'none') return 'verify';
   if (phase === 'done') return 'done';
   if (progress?.stage) return `stage:${progress.stage}`;
   if (transferStages.length > 0) return `stage:${transferStages[transferStages.length - 1]}`;
@@ -91,6 +114,39 @@ function stepStatus(
   return 'pending';
 }
 
+function writeDoneAlert(writeVerifyStatus: RadioIoWriteVerifyStatus): {
+  color: string;
+  title: string;
+  body: string;
+} {
+  if (writeVerifyStatus === 'verified') {
+    return {
+      color: 'green',
+      title: 'Write finished — settings checked',
+      body: 'Your language, password, and other preserved settings match what Studio read before the write.',
+    };
+  }
+  if (writeVerifyStatus === 'failed') {
+    return {
+      color: 'red',
+      title: 'Preserved settings check failed',
+      body: 'Some settings Studio deliberately left alone no longer match what was read before the write.',
+    };
+  }
+  if (writeVerifyStatus === 'unverified') {
+    return {
+      color: 'blue',
+      title: 'Write finished',
+      body: "The codeplug was uploaded to the radio. Optionally, you can check that radio settings which Studio doesn't set still match what was on the radio before the write. The radio restarts on its own after a write — wait until it shows its normal screen before you check.",
+    };
+  }
+  return {
+    color: 'green',
+    title: 'Write finished',
+    body: 'All selected blocks were sent. Review the checklist below, then close when ready.',
+  };
+}
+
 export default function RadioIoProgressModal({
   opened,
   operation,
@@ -98,14 +154,19 @@ export default function RadioIoProgressModal({
   progress,
   transferStages = [],
   navigationBlocked = false,
+  writeVerifyStatus = 'none',
+  verifyMismatches = [],
+  onVerify,
+  onCloseWithoutVerify,
   onCancel,
   onClose,
 }: RadioIoProgressModalProps) {
-  const steps = buildSteps(operation, transferStages, phase);
-  const activeId = activeStepId(phase, progress, transferStages);
+  const steps = buildSteps(operation, transferStages, phase, writeVerifyStatus);
+  const activeId = activeStepId(phase, progress, transferStages, writeVerifyStatus);
   const title = operation === 'read' ? 'Reading from radio' : 'Writing to radio';
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
   const complete = phase === 'done';
+  const verifying = phase === 'verifying' || writeVerifyStatus === 'verifying';
 
   return (
     <Modal
@@ -120,10 +181,38 @@ export default function RadioIoProgressModal({
     >
       <Stack gap="md">
         {complete ? (
-          <Alert color="green" title={operation === 'write' ? 'Write finished' : 'Read finished'}>
-            {operation === 'write'
-              ? 'All selected blocks were sent. Review the checklist below, then close when ready.'
-              : 'Clone image is saved on this build. You can close this dialog.'}
+          <>
+            {(() => {
+              const alert =
+                operation === 'write'
+                  ? writeDoneAlert(writeVerifyStatus)
+                  : {
+                      color: 'green',
+                      title: 'Read finished',
+                      body: 'Clone image is saved on this build. You can close this dialog.',
+                    };
+              return (
+                <Alert color={alert.color} title={alert.title}>
+                  <Text size="sm">{alert.body}</Text>
+                  {writeVerifyStatus === 'failed' && verifyMismatches.length > 0 ? (
+                    <List size="sm" mt="xs">
+                      {verifyMismatches.map((m) => (
+                        <List.Item key={m.id}>
+                          {m.label} does not match what was read before the write.
+                        </List.Item>
+                      ))}
+                    </List>
+                  ) : null}
+                </Alert>
+              );
+            })()}
+          </>
+        ) : verifying ? (
+          <Alert color="blue" title="Checking preserved settings">
+            <Text size="sm">
+              Wait until the radio has fully restarted and shows its normal screen, then Studio will
+              reconnect and read the settings it left alone.
+            </Text>
           </Alert>
         ) : (
           <Alert color="orange" title="Keep this tab open">
@@ -132,7 +221,7 @@ export default function RadioIoProgressModal({
           </Alert>
         )}
 
-        {navigationBlocked && !complete ? (
+        {navigationBlocked && !complete && !verifying ? (
           <Alert color="red" title="Stay on this page">
             Navigation is blocked until this transfer finishes or you cancel.
           </Alert>
@@ -163,7 +252,7 @@ export default function RadioIoProgressModal({
             </Text>
             <Progress value={percent ?? 0} animated={percent == null || percent < 100} size="lg" />
           </Stack>
-        ) : !complete ? (
+        ) : !complete && !verifying ? (
           <Text size="sm" c="dimmed">
             {phase === 'connecting'
               ? 'Waiting for port and radio handshake…'
@@ -173,6 +262,10 @@ export default function RadioIoProgressModal({
                   ? 'Saving hydration on the build…'
                   : 'Transferring…'}
           </Text>
+        ) : verifying ? (
+          <Text size="sm" c="dimmed">
+            Reconnecting and reading preserved settings…
+          </Text>
         ) : progress?.msg ? (
           <Text size="sm" c="dimmed">
             Last: {progress.msg}
@@ -181,7 +274,18 @@ export default function RadioIoProgressModal({
 
         <Group justify="flex-end">
           {complete ? (
-            <Button onClick={() => onClose?.()}>Close</Button>
+            <>
+              {writeVerifyStatus === 'unverified' ? (
+                <>
+                  <Button variant="default" onClick={() => onCloseWithoutVerify?.()}>
+                    Close
+                  </Button>
+                  <Button onClick={() => onVerify?.()}>Check preserved settings</Button>
+                </>
+              ) : (
+                <Button onClick={() => onClose?.()}>Close</Button>
+              )}
+            </>
           ) : (
             <Button variant="default" color="gray" onClick={onCancel}>
               Cancel
