@@ -43,6 +43,7 @@ const opengd77Traits: readonly Trait[] = [
   BuildCapabilityTrait.ZoneGrouping,
   BuildCapabilityTrait.ZoneAsScanList,
   BuildCapabilityTrait.MultiTalkGroupPerChannel,
+  BuildCapabilityTrait.TalkGroupTimeslotClones,
 ];
 
 const anytoneTraits: readonly Trait[] = [
@@ -157,6 +158,10 @@ export function hasDedicatedScanLists(radioTargetId: string): boolean {
 
 export function hasMxNChannelExpansion(radioTargetId: string): boolean {
   return radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.MxNChannelExpansion);
+}
+
+export function hasTalkGroupTimeslotClones(radioTargetId: string): boolean {
+  return radioTargetHasTrait(radioTargetId, BuildCapabilityTrait.TalkGroupTimeslotClones);
 }
 
 /** Whether Export should show default scan inclusion (not dedicated scan-list radios). */

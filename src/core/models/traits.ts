@@ -8,6 +8,11 @@ export const BuildCapabilityTrait = {
   DedicatedScanLists: 'dedicatedScanLists',
   ZoneAsScanList: 'zoneAsScanList',
   MultiTalkGroupPerChannel: 'multiTalkGroupPerChannel',
+  /**
+   * Contact bank carries per-slot talk-group clones (Force TS1/TS2) because RX-group
+   * members cannot store timeslot override on the wire (OpenGD77-class firmware).
+   */
+  TalkGroupTimeslotClones: 'talkGroupTimeslotClones',
   MxNChannelExpansion: 'mxnChannelExpansion',
 } as const;
 
@@ -29,6 +34,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.TalkGroupTimeslotClones,
     ],
   },
   'opengd77-md9600': {
@@ -39,6 +45,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.TalkGroupTimeslotClones,
     ],
   },
   'dm32-baofeng-dm32uv': {
@@ -147,6 +154,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.TalkGroupTimeslotClones,
     ],
   },
   /** Web Serial direct-write — OpenGD77 / OpenUV380 (MD-9600 / RT-90). */
@@ -158,6 +166,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.TalkGroupTimeslotClones,
     ],
   },
 };
