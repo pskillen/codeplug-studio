@@ -6,13 +6,26 @@ export interface OpenGd77RadioProfile {
   id: string;
   label: string;
   maxChannels: number;
+  /** Max zone rows in Zones.csv (shared OpenGD77 codeplug). */
+  maxZones: number;
+  /** Max RX group list (TG_Lists.csv) rows. */
+  maxRxGroupLists: number;
+  /** Max Contacts.csv rows (talk groups + private contacts share this bank). */
+  maxContacts: number;
   zoneMembers: number;
   tgListMembers: number;
-  /** Default max channel wire name length (LCD limit). */
+  /** Default max wire name length (LCD limit) for channels, zones, contacts, lists. */
   nameLimit: number;
   /** High/default first — P-index wire strings. */
   powerLadder: readonly PowerLadderEntry[];
 }
+
+/** Shared entity caps — OpenGD77 uses one codeplug structure across the radio family. */
+const OPENGD77_SHARED_ENTITY_CAPS = {
+  maxZones: 68,
+  maxRxGroupLists: 76,
+  maxContacts: 1024,
+} as const;
 
 const OPENGD77_1701_LADDER: readonly PowerLadderEntry[] = [
   { percent: 100, wire: 'P9', approxWatts: '5 W' },
@@ -49,6 +62,7 @@ export const OPENGD77_PROFILES: readonly OpenGd77RadioProfile[] = [
     id: 'opengd77-1701',
     label: 'Baofeng 1701 / Retevis RT-84',
     maxChannels: 1023,
+    ...OPENGD77_SHARED_ENTITY_CAPS,
     zoneMembers: 80,
     tgListMembers: 32,
     nameLimit: 16,
@@ -58,6 +72,7 @@ export const OPENGD77_PROFILES: readonly OpenGd77RadioProfile[] = [
     id: 'opengd77-md9600',
     label: 'TYT MD-9600 / Retevis RT-90',
     maxChannels: 1023,
+    ...OPENGD77_SHARED_ENTITY_CAPS,
     zoneMembers: 80,
     tgListMembers: 32,
     nameLimit: 16,

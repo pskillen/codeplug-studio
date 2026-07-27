@@ -22,12 +22,7 @@ Active debt under epic [#502](https://github.com/pskillen/codeplug-studio/issues
 
 ### Export tests / fixtures
 
-- [ ] [#92](https://github.com/pskillen/codeplug-studio/issues/92) export golden CSV snapshots + mapping-tests doc
 - [ ] [#437](https://github.com/pskillen/codeplug-studio/issues/437) redacted 1701 CPS under `test-data/opengd77/` (needs operator export)
-
-### Profile / characteristics
-
-- [ ] [#516](https://github.com/pskillen/codeplug-studio/issues/516) fill missing OpenGD77 profile export limits for Radio characteristics
 
 ### Related (not #502 children)
 
@@ -43,3 +38,5 @@ Active debt under epic [#502](https://github.com/pskillen/codeplug-studio/issues
 - [x] Talk-group timeslot clones on export / serial Write ([#764](https://github.com/pskillen/codeplug-studio/issues/764))
 - [x] Tier-3 docs drift vs shipped export ([#436](https://github.com/pskillen/codeplug-studio/issues/436))
 - [x] CPS-safe defaults for unmodelled channel columns ([#438](https://github.com/pskillen/codeplug-studio/issues/438))
+- [x] Profile export limits for Radio characteristics ([#516](https://github.com/pskillen/codeplug-studio/issues/516))
+- [x] Export golden CSV snapshots + mapping-tests doc ([#92](https://github.com/pskillen/codeplug-studio/issues/92))

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newChannel } from '@core/domain/factories.ts';
+import { newChannel, newRxGroupList } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { collectOpenGd77ExportWarnings } from './warnings.ts';
@@ -53,5 +53,24 @@ describe('collectOpenGd77ExportWarnings', () => {
     });
 
     expect(collectOpenGd77ExportWarnings(assembled)).toEqual([]);
+  });
+
+  it('warns when zone count exceeds profile maxZones', () => {
+    const zones = Array.from({ length: 69 }, (_, i) => ({
+      zoneId: `zone-${i}`,
+      wireName: `Zone ${i}`,
+      memberChannelIds: [] as string[],
+    }));
+    const warnings = collectOpenGd77ExportWarnings(minimalAssembled({ zones }));
+    expect(warnings.some((w) => w.includes('69 zones') && w.includes('68'))).toBe(true);
+  });
+
+  it('warns when RX group list count exceeds profile maxRxGroupLists', () => {
+    const rxGroupLists = Array.from({ length: 77 }, (_, i) => ({
+      entity: { ...newRxGroupList('p1', `RGL ${i}`), id: `rgl-${i}`, members: [] },
+      wireName: `RGL ${i}`,
+    }));
+    const warnings = collectOpenGd77ExportWarnings(minimalAssembled({ rxGroupLists }));
+    expect(warnings.some((w) => w.includes('77 RX group lists') && w.includes('76'))).toBe(true);
   });
 });
