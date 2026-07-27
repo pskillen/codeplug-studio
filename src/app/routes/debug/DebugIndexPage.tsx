@@ -22,6 +22,10 @@ export default function DebugIndexPage() {
           <Link to="/debug/local-storage">LocalStorage</Link> — UI preferences, list filters, and
           tokens persisted as key/value pairs.
         </Text>
+        <Text size="sm">
+          <Link to="/debug/d890-erase-probe">AT-D890UV erase-unit probe</Link> — measures the flash
+          erase unit that Write must read-modify-write. <strong>Writes to the radio.</strong>
+        </Text>
       </Stack>
     </Page>
   );
