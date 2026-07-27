@@ -31,17 +31,6 @@ export const AT_D890_WRITE_EXPERIMENTAL_LEAD =
 
 export const AT_D890_WRITE_EXPERIMENTAL_PREFER_CSV = 'Prefer the Anytone CSV export route for now.';
 
-export const RT95_WRITE_EXPERIMENTAL_TITLE = 'Not verified on real hardware yet';
-
-export const RT95_WRITE_EXPERIMENTAL_LEAD =
-  'We have not tested Read or Write on a physical Retevis RT95 VOX yet. The encode path follows published CHIRP facts, but a bug could still leave your radio in a bad state.';
-
-export const RT95_WRITE_EXPERIMENTAL_PREFER_CSV =
-  'Prefer CHIRP CSV export for now. Sorry — direct serial Write is not available on the production site yet.';
-
-export const RT95_WRITE_PROD_DISABLED_MESSAGE =
-  'Direct serial Write to the Retevis RT95 VOX is disabled on the production site. Use CHIRP CSV export on this build instead.';
-
 export const MD9600_WRITE_EXPERIMENTAL_TITLE = 'Not verified on real hardware yet';
 
 export const MD9600_WRITE_EXPERIMENTAL_LEAD =
@@ -60,7 +49,6 @@ export interface RadioWriteExperimentalCopy {
 }
 
 export function resolveRadioWriteProdDisabledMessage(profileId?: string): string {
-  if (profileId === 'radio-io-rt95') return RT95_WRITE_PROD_DISABLED_MESSAGE;
   if (profileId === 'radio-io-opengd77-md9600') return MD9600_WRITE_PROD_DISABLED_MESSAGE;
   if (profileId === 'radio-io-at-d890uv') return RADIO_WRITE_PROD_DISABLED_MESSAGE;
   return RADIO_WRITE_PROD_DISABLED_MESSAGE;
@@ -74,13 +62,6 @@ export function resolveRadioWriteExperimentalCopy(
       title: AT_D890_WRITE_EXPERIMENTAL_TITLE,
       lead: AT_D890_WRITE_EXPERIMENTAL_LEAD,
       preferEgress: AT_D890_WRITE_EXPERIMENTAL_PREFER_CSV,
-    };
-  }
-  if (profileId === 'radio-io-rt95') {
-    return {
-      title: RT95_WRITE_EXPERIMENTAL_TITLE,
-      lead: RT95_WRITE_EXPERIMENTAL_LEAD,
-      preferEgress: RT95_WRITE_EXPERIMENTAL_PREFER_CSV,
     };
   }
   if (profileId === 'radio-io-opengd77-md9600') {

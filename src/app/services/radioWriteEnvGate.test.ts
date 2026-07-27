@@ -9,7 +9,6 @@ import {
   resolveRadioWriteExperimentalCopy,
   resolveRadioWriteProdDisabledMessage,
   RADIO_WRITE_PROD_DISABLED_MESSAGE,
-  RT95_WRITE_PROD_DISABLED_MESSAGE,
   MD9600_WRITE_PROD_DISABLED_MESSAGE,
 } from './radioWriteEnvGate.ts';
 
@@ -25,6 +24,8 @@ describe('radioWriteEnvGate', () => {
   it('allows write for radios without prodWriteDisabled', () => {
     expect(resolveRadioWriteGate(UV5R_MINI_DESCRIPTOR, 'prod')).toBe('allowed');
     expect(resolveRadioWriteGate(UV5R_MINI_DESCRIPTOR, 'local')).toBe('allowed');
+    expect(resolveRadioWriteGate(RT95_DESCRIPTOR, 'prod')).toBe('allowed');
+    expect(resolveRadioWriteGate(RT95_DESCRIPTOR, 'staging')).toBe('allowed');
     expect(resolveRadioWriteGate(undefined, 'prod')).toBe('allowed');
   });
 
@@ -38,11 +39,6 @@ describe('radioWriteEnvGate', () => {
     }
   });
 
-  it('hides RT95 write on prod and warns on pre-prod', () => {
-    expect(resolveRadioWriteGate(RT95_DESCRIPTOR, 'prod')).toBe('hidden');
-    expect(resolveRadioWriteGate(RT95_DESCRIPTOR, 'staging')).toBe('warn');
-  });
-
   it('hides MD-9600 write on prod and warns on pre-prod', () => {
     expect(resolveRadioWriteGate(OPENGD77_MD9600_DESCRIPTOR, 'prod')).toBe('hidden');
     expect(resolveRadioWriteGate(OPENGD77_MD9600_DESCRIPTOR, 'staging')).toBe('warn');
@@ -50,24 +46,22 @@ describe('radioWriteEnvGate', () => {
   });
 
   it('resolves profile-specific prod-disabled messages', () => {
-    expect(resolveRadioWriteProdDisabledMessage('radio-io-rt95')).toBe(
-      RT95_WRITE_PROD_DISABLED_MESSAGE,
-    );
     expect(resolveRadioWriteProdDisabledMessage('radio-io-opengd77-md9600')).toBe(
       MD9600_WRITE_PROD_DISABLED_MESSAGE,
     );
     expect(resolveRadioWriteProdDisabledMessage('radio-io-at-d890uv')).toBe(
       RADIO_WRITE_PROD_DISABLED_MESSAGE,
     );
-    expect(resolveRadioWriteProdDisabledMessage('radio-io-rt95')).toMatch(/CHIRP CSV/i);
     expect(resolveRadioWriteProdDisabledMessage('radio-io-opengd77-md9600')).toMatch(
       /OpenGD77 CSV/i,
+    );
+    expect(resolveRadioWriteProdDisabledMessage('radio-io-rt95')).toBe(
+      RADIO_WRITE_PROD_DISABLED_MESSAGE,
     );
   });
 
   it('resolves experimental write copy for gated radios', () => {
-    expect(resolveRadioWriteExperimentalCopy('radio-io-rt95')?.title).toMatch(/hardware/i);
-    expect(resolveRadioWriteExperimentalCopy('radio-io-rt95')?.preferEgress).toMatch(/Sorry/i);
+    expect(resolveRadioWriteExperimentalCopy('radio-io-rt95')).toBeNull();
     expect(resolveRadioWriteExperimentalCopy('radio-io-at-d890uv')?.title).toMatch(/experimental/i);
     expect(resolveRadioWriteExperimentalCopy('radio-io-opengd77-md9600')?.title).toMatch(
       /hardware/i,
