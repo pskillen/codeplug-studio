@@ -13,7 +13,7 @@ import type {
   ChannelModeProfileDMR,
 } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
-import { expandChannelWireRows } from '@core/import-export/channelExpansion/multiMode.ts';
+import { expandOpenGd77ChannelWireRows } from './exportModes.ts';
 import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import { withTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import { formatCsv } from './csvWrite.ts';
@@ -154,7 +154,7 @@ export function serialiseChannels(
   const reserved = new Set<string>();
   const expandedRows = filterExpandedRowsByOverrides(
     assembled.channels.flatMap((row) =>
-      expandChannelWireRows(
+      expandOpenGd77ChannelWireRows(
         row.entity,
         row.wireNameOverride?.trim() || row.wireName,
         expandModes,

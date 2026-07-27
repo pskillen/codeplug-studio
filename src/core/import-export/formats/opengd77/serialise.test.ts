@@ -264,7 +264,7 @@ describe('OpenGD77 export serialise', () => {
       ...newChannel('proj', 'Participate Scan'),
       rxFrequency: 145_750_000,
       txFrequency: 145_150_000,
-      scanInclusion: 'scan',
+      scanInclusion: 'alwaysScan',
       modeProfiles: [
         {
           mode: 'fm' as const,
@@ -546,6 +546,51 @@ describe('OpenGD77 export serialise', () => {
     const csv = serialiseChannels(assembled, { profileId: 'opengd77-1701', expandModes: true });
     expect(csv).toContain('-F');
     expect(csv).toContain('-D');
+  });
+
+  it('drops non-DMR digital modes from multi-mode expansion', () => {
+    const channel: Channel = {
+      ...newChannel('proj', 'Repeater'),
+      rxFrequency: 145_750_000,
+      txFrequency: 145_150_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: null,
+        },
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 123,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+        { mode: 'ysf' as const, dgId: null, wiresDtmfId: '' },
+      ],
+    };
+    const csv = serialiseChannels(minimalAssembled(channel), {
+      profileId: 'opengd77-1701',
+      expandModes: true,
+    });
+    expect(csv).toContain('-F');
+    expect(csv).toContain('-D');
+    expect(csv).not.toContain('-Y');
+  });
+
+  it('omits YSF-only channels from Channels.csv', () => {
+    const channel: Channel = {
+      ...newChannel('proj', 'Fusion only'),
+      rxFrequency: 145_750_000,
+      txFrequency: 145_150_000,
+      modeProfiles: [{ mode: 'ysf' as const, dgId: null, wiresDtmfId: '' }],
+    };
+    const csv = serialiseChannels(minimalAssembled(channel));
+    const rows = parseCsv(csv);
+    expect(rows.length).toBe(1);
   });
 
   it('exports talk-group timeslot clones on Contacts and TG_Lists', () => {
