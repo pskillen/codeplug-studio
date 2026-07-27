@@ -281,9 +281,9 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     expect(projection.organisation.zones).toEqual([
       expect.objectContaining({ wireName: 'Mixed', channelNumbers: [1] }),
     ]);
-    expect(
-      projection.warnings.some((w) => w.includes('AM airband') && w.includes('omitted')),
-    ).toBe(true);
+    expect(projection.warnings.some((w) => w.includes('AM airband') && w.includes('omitted'))).toBe(
+      true,
+    );
   });
 
   it('partitions broadcast FM out of MR channels with a warning', () => {

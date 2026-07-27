@@ -6,9 +6,9 @@ Shows AT-D890UV operators which parts of the radio **Write** updates from their 
 
 ## Props
 
-| Prop            | Type      | Description                                              |
-| --------------- | --------- | -------------------------------------------------------- |
-| `buildId`       | `string`  | Build id for the **Radio image** deep-dive link          |
+| Prop            | Type      | Description                                               |
+| --------------- | --------- | --------------------------------------------------------- |
+| `buildId`       | `string`  | Build id for the **Radio image** deep-dive link           |
 | `hasHydration?` | `boolean` | When true, shows link to retained-region map after a Read |
 
 ## Usage

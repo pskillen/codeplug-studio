@@ -46,7 +46,10 @@ import type {
   RadioZoneDto,
 } from '@integrations/radio-io/radioWriteProjection.ts';
 import { buildNeonplugAprsRadioSettingsPatch } from '@core/services/aprsExportFacts.ts';
-import { partitionAnytoneChannels, partitionAnytoneZones } from '@core/services/anytoneChannelBanks.ts';
+import {
+  partitionAnytoneChannels,
+  partitionAnytoneZones,
+} from '@core/services/anytoneChannelBanks.ts';
 import {
   expandAssembledChannelsToRadioDtos,
   type RadioChannelFkMaps,
@@ -870,9 +873,7 @@ function buildAtD890DmrBankAssembled(
   const zones = dmrZones
     .map((partitioned) => {
       const original = zoneById.get(partitioned.zoneId);
-      const memberChannelIds = partitioned.memberChannelIds.filter((id) =>
-        dmrChannelIds.has(id),
-      );
+      const memberChannelIds = partitioned.memberChannelIds.filter((id) => dmrChannelIds.has(id));
       return {
         zoneId: partitioned.zoneId,
         wireName: original?.wireName ?? partitioned.zoneId,
