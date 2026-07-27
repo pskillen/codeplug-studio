@@ -32,6 +32,11 @@ import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from './radioWriteEnvGate.ts';
+import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import type {
+  AtD890SentinelCompareResult,
+  AtD890SentinelSnapshot,
+} from '@integrations/radio-io/radios/at-d890uv/sentinelVerify.ts';
 
 export { isWebSerialSupported, getWebSerialUnsupportedMessage };
 
@@ -265,13 +270,20 @@ export async function writeBuildToRadio(
   return { warnings };
 }
 
+function takeAtD890UploadSnapshot(session: RadioSession): AtD890SentinelSnapshot | undefined {
+  if (session.radio instanceof AtD890uvProtocol) {
+    return session.radio.takeUploadSentinelSnapshot();
+  }
+  return undefined;
+}
+
 /** Upload a prepared clone image after {@link prepareRadioWriteImage} and session connect. */
 export async function uploadPreparedRadioWrite(
   session: RadioSession,
   egress: EgressPath,
   image: MemoryMap,
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
-): Promise<void> {
+): Promise<{ sentinelBefore?: AtD890SentinelSnapshot }> {
   const hydration = getRadioCloneHydration(egress);
   if (!hydration) {
     throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
@@ -282,6 +294,20 @@ export async function uploadPreparedRadioWrite(
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
+  const sentinelBefore = takeAtD890UploadSnapshot(session);
+  return sentinelBefore ? { sentinelBefore } : {};
+}
+
+/** Cross-session verify of AT-D890 never-write regions after a committed Write. */
+export async function verifyAtD890PreservedSettings(
+  session: RadioSession,
+  before: AtD890SentinelSnapshot,
+  opts?: { signal?: AbortSignal },
+): Promise<AtD890SentinelCompareResult> {
+  if (!(session.radio instanceof AtD890uvProtocol)) {
+    throw new Error('Preserved-settings verify is only supported for AT-D890UV.');
+  }
+  return session.radio.verifySentinelRegionsAgainst(before, opts);
 }
 
 export async function closeRadioSession(session: RadioSession): Promise<void> {

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   assertAtD890SentinelRegionsPlausible,
+  compareAtD890SentinelSnapshots,
+  labelForAtD890SentinelId,
   snapshotAtD890SentinelRegions,
 } from './sentinelVerify.ts';
 import { AT_D890_SENTINEL_EXTENTS } from './writableExtents.ts';
@@ -82,5 +84,53 @@ describe('sentinelVerify', () => {
     const alarmData = AT_D890_SENTINEL_EXTENTS.find((e) => e.id === 'AlarmData');
     expect(alarmBitmap?.start).toBe(D890_MAP.AlarmBitmap);
     expect(alarmData?.start).toBe(D890_MAP.AlarmData);
+  });
+
+  it('compareAtD890SentinelSnapshots passes when every region matches', () => {
+    const snap = new Map<string, Uint8Array>();
+    for (const extent of AT_D890_SENTINEL_EXTENTS) {
+      const data = new Uint8Array(extent.length).fill(0xff);
+      data[0] = 0x11;
+      snap.set(extent.id, data);
+    }
+    expect(compareAtD890SentinelSnapshots(snap, snap)).toEqual({ ok: true });
+  });
+
+  it('compareAtD890SentinelSnapshots names a mismatched region', () => {
+    const before = new Map<string, Uint8Array>();
+    const after = new Map<string, Uint8Array>();
+    for (const extent of AT_D890_SENTINEL_EXTENTS) {
+      const data = new Uint8Array(extent.length).fill(0xff);
+      data[0] = 0x11;
+      before.set(extent.id, data);
+      after.set(extent.id, data.slice());
+    }
+    after.get('OptionalSettingsMain')![0] = 0x22;
+    const result = compareAtD890SentinelSnapshots(before, after);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.mismatches).toEqual([
+        {
+          id: 'OptionalSettingsMain',
+          label: labelForAtD890SentinelId('OptionalSettingsMain'),
+        },
+      ]);
+    }
+  });
+
+  it('compareAtD890SentinelSnapshots treats a missing region as mismatch', () => {
+    const before = new Map<string, Uint8Array>();
+    const after = new Map<string, Uint8Array>();
+    for (const extent of AT_D890_SENTINEL_EXTENTS) {
+      const data = new Uint8Array(extent.length).fill(0xff);
+      data[0] = 0x11;
+      before.set(extent.id, data);
+      if (extent.id !== 'AlarmData') after.set(extent.id, data);
+    }
+    const result = compareAtD890SentinelSnapshots(before, after);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.mismatches.some((m) => m.id === 'AlarmData')).toBe(true);
+    }
   });
 });

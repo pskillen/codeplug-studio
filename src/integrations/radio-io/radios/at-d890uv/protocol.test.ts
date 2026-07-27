@@ -16,6 +16,7 @@ import {
   writePayloadAt,
   enableAtD890AutoWriteAck,
 } from './__fixtures__/scriptedPipe.ts';
+import { labelForAtD890SentinelId } from './sentinelVerify.ts';
 import { AT_D890_MAP_SIZE, AT_D890_SAFE_SKIP_WRITE_ADDR } from './constants.ts';
 import { encodeBcdFrequencyHz } from './bcd.ts';
 import { setBitmapBit } from './bitmap.ts';
@@ -302,5 +303,75 @@ describe('AtD890uvProtocol', () => {
     await radio.connect(pipe);
     const image = createMemoryMap(AT_D890_MAP_SIZE);
     await expect(radio.upload(image, {})).rejects.toThrow(/no sparse blocks/);
+  });
+
+  it('exposes pre-Write sentinel snapshot after upload', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
+    enableAtD890AutoWriteAck(pipe);
+
+    const image = seedChannelZeroUpload(radio);
+    await radio.upload(image, {});
+
+    const snap = radio.takeUploadSentinelSnapshot();
+    expect(snap?.get('OptionalSettingsMain')?.[0]).toBe(0x00);
+    expect(radio.takeUploadSentinelSnapshot()).toBeUndefined();
+  });
+
+  it('verifySentinelRegionsAgainst passes when post-commit reads match', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
+    enableAtD890AutoWriteAck(pipe);
+
+    const image = seedChannelZeroUpload(radio);
+    await radio.upload(image, {});
+    const before = radio.takeUploadSentinelSnapshot()!;
+
+    await radio.disconnect();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    await radio.connect(pipe);
+    scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
+
+    const result = await radio.verifySentinelRegionsAgainst(before);
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('verifySentinelRegionsAgainst names a mismatched region', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
+    enableAtD890AutoWriteAck(pipe);
+
+    const image = seedChannelZeroUpload(radio);
+    await radio.upload(image, {});
+    const before = radio.takeUploadSentinelSnapshot()!;
+
+    await radio.disconnect();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    await radio.connect(pipe);
+    const mismatched = channelUploadMemory();
+    const main = new Uint8Array(D890_MAP.OptionalSettingsMainLength).fill(0xff);
+    main[0] = 0x99;
+    mismatched.set(D890_MAP.OptionalSettingsMain, main);
+    scriptAtD890UploadReadResponder(pipe, mismatched);
+
+    const result = await radio.verifySentinelRegionsAgainst(before);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.mismatches).toEqual([
+        {
+          id: 'OptionalSettingsMain',
+          label: labelForAtD890SentinelId('OptionalSettingsMain'),
+        },
+      ]);
+    }
   });
 });
