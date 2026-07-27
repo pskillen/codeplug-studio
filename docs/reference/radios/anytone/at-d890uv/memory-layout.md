@@ -46,21 +46,22 @@ Addresses are **radio absolute** (u32). Read only enabled slots via each region�
 | `ReceiveGroupData`           | `0x3780000`  | Stride `0x200`; length `0x120`                 | Receive-group lists — [receive-group-record.md](receive-group-record.md) (members = talkgroup bank slot indices)                                                                                                                                |
 | `MasterIdData`               | `0x3684000`  | Length `0x40`                                  | Master / default radio ID                                                                                                                                                                                                                       |
 
-### Optional settings and alarm (not in Studio v1 Read/Write)
+### Optional settings and alarm (Read/stash — never serial-written)
 
-anytone-cps community RE — verify on hardware before relying on offsets. Studio **does not** Read or Write these regions today; they are documented so neighbours of modelled zones are understood.
+anytone-cps community RE — verify on hardware before relying on offsets. Studio **Reads** these regions on Connect/Read ([#760](https://github.com/pskillen/codeplug-studio/issues/760)) for Radio image forensics and persists them in the hydration bag. They are **not** on the serial write allow-list and are **never uploaded** ([#753](https://github.com/pskillen/codeplug-studio/issues/753)).
 
-| Region / buffer          | Base                      | Length             | Notes                                                                       |
-| ------------------------ | ------------------------- | ------------------ | --------------------------------------------------------------------------- |
-| Optional settings (main) | `0x3500000`               | `0x200`            | UI language @ `+0x05` (`English`/`German` in cps enum — **not** Chinese UI) |
-| Optional settings (main) | `0x3500000`               |                    | Power-on password enable @ `+0x07`                                          |
-| Zone A/B tables          | `0x3500400` / `0x3500600` | `0x200` each       | **Modelled** — adjacent to optional settings                                |
-| Optional settings (ext)  | `0x3500900`               | `0x60`             | Power-on password chars @ `+0x20` (8 chars)                                 |
-| Optional settings (APRS) | `0x3501280`               | (cps third buffer) | APRS-related optional fields                                                |
-| Alarm settings           | `0x3482e00`               | `0x10`             | Alarm bitmap / enable region (cps)                                          |
-| Alarm settings           | `0x3483000`               | (cps)              | Alarm record bodies                                                         |
+| Region / buffer          | Base                      | Length       | Notes                                                                                    |
+| ------------------------ | ------------------------- | ------------ | ---------------------------------------------------------------------------------------- |
+| Optional settings (main) | `0x3500000`               | `0x200`      | CPS language @ `+0x05` (`English`/`German` — **not** Chinese UI)                         |
+| Optional settings (main) | `0x3500000`               |              | Power-on interface @ `+0x06`; power-on password enable @ `+0x07`                         |
+| Optional settings (main) | `0x3500000`               |              | Startup channel @ `+0xd7`; zone A/B @ `+0xd8`/`+0xd9`; channel A/B @ `+0xda`/`+0xdb`     |
+| Zone A/B tables          | `0x3500400` / `0x3500600` | `0x200` each | **Modelled** — adjacent to optional settings; on write allow-list                        |
+| Optional settings (ext)  | `0x3500900`               | `0x60`       | Display lines @ `+0x00` / `+0x10` (14 chars each); power-on password @ `+0x20` (8 chars) |
+| Optional settings (APRS) | `0x3501280`               | `0x30`       | GPS/APRS info — hex preview only in Studio                                               |
+| Alarm settings           | `0x3482e00`               | `0x10`       | Digital call type @ `+0x00`                                                              |
+| Alarm settings           | `0x3483000`               | `0x30`       | Analog/digital emergency alarm flags; man-down also @ optional main `+0x24` / `+0x4f`    |
 
-Chinese UI on the radio is modelled in **LocalInfo ExpertOptions** (`+0x04` and `+0x05` both `0`), not optional-settings language. A second hardware incident (Chinese + startup password after Write from a good hydration bag) was traced to **LocalInfo replay on upload** ([#753](https://github.com/pskillen/codeplug-studio/issues/753)) — fixed by WATCH-08 write fencing (LocalInfo is Read for preview but **not serial-written**).
+Chinese UI on the radio is modelled in **LocalInfo ExpertOptions** (`+0x04` and `+0x05` both `0`), not optional-settings CPS language. A second hardware incident (Chinese + startup password after Write from a good hydration bag) was traced to **LocalInfo replay on upload** ([#753](https://github.com/pskillen/codeplug-studio/issues/753)) — fixed by WATCH-08 write fencing (LocalInfo is Read for preview but **not serial-written**).
 
 ### LocalInfo ExpertOptions (Read only — not written on Studio Write)
 
@@ -96,11 +97,12 @@ Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `wri
 
 **Encode guards:** MR channel encode rejects AM airband frequencies (108–137 MHz) and non-BCD-encodable Hz before bytes are packed (`channelEncodeGuards.ts`).
 
-| Category                                                           | `writeRole`     | Re-derived from build? | Serial-written on Upload?                         |
-| ------------------------------------------------------------------ | --------------- | ---------------------- | ------------------------------------------------- |
-| Channels, zones, scan, TG, RX, radio IDs, master, TG order         | `replaced`      | Yes                    | Yes (allow-listed)                                |
-| LocalInfo                                                          | `kept`          | No                     | **No** — Read for preview; sentinel-verified only |
-| Optional settings, alarm, DigitalContact\*, boot images, crypto, … | `kept` / unread | No                     | No — absent from cache; sentinel-verified         |
+| Category                                                   | `writeRole`     | Re-derived from build? | Serial-written on Upload?                             |
+| ---------------------------------------------------------- | --------------- | ---------------------- | ----------------------------------------------------- |
+| Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced`      | Yes                    | Yes (allow-listed)                                    |
+| LocalInfo                                                  | `kept`          | No                     | **No** — Read for preview; sentinel-verified only     |
+| Optional settings, alarm                                   | `kept`          | No                     | **No** — Read/stash for Radio Info; sentinel-verified |
+| DigitalContact\*, boot images, crypto, …                   | `kept` / unread | No                     | No — absent from cache unless future Read tickets     |
 
 **Serial Write projection (DMR bank only):** `RadioWriteProjection` for `radio-io-at-d890uv` partitions receive-only AM airband and broadcast FM out of MR channels, zones, and scan — same bank split as Anytone CSV egress ([#755](https://github.com/pskillen/codeplug-studio/issues/755)). Omitted banks stay on the radio; use Anytone CSV (`AMAir.CSV` / `FM.CSV`) to update them until binary AmAir Write exists — see [am-air.md](../../../export-formats/anytone/am-air.md). Export **Web Serial** shows an operator-facing **What Write updates** table (written vs deferred vs left alone).
 
