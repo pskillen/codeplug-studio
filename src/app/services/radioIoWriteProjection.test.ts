@@ -128,6 +128,39 @@ describe('buildRadioWriteProjection', () => {
     ]);
   });
 
+  it('stamps OpenGD77 skipScan and skipZoneScan from effective scan inclusion', () => {
+    const skipLib = withExportEligibleDefaults({
+      ...newChannel('p1', 'Skip'),
+      id: 'ch-skip',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      scanInclusion: 'skip' as const,
+    });
+    const scanLib = withExportEligibleDefaults({
+      ...newChannel('p1', 'Scan'),
+      id: 'ch-scan',
+      rxFrequency: 145_600_000,
+      txFrequency: 145_600_000,
+      scanInclusion: 'alwaysScan' as const,
+    });
+    const library = emptyLibrary([skipLib, scanLib]);
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    const bySlot = new Map(projection.channels.map((c) => [c.slotIndex, c]));
+    const skipSlot = projection.numbersBySourceChannelId.get('ch-skip')?.[0];
+    const scanSlot = projection.numbersBySourceChannelId.get('ch-scan')?.[0];
+    const skipDto = bySlot.get(skipSlot!);
+    const scanDto = bySlot.get(scanSlot!);
+    expect(skipDto?.skipScan).toBe(true);
+    expect(skipDto?.skipZoneScan).toBe(true);
+    expect(scanDto?.skipScan).toBe(false);
+    expect(scanDto?.skipZoneScan).toBe(false);
+  });
+
   it('prepends each zone’s own scan carrier and first-wins scanListId for shared members', () => {
     const shared = withExportEligibleDefaults({
       ...newChannel('p1', 'Hotspot'),

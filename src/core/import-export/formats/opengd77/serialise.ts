@@ -13,7 +13,7 @@ import type {
   ChannelModeProfileDMR,
 } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
-import { expandChannelWireRows } from '@core/import-export/channelExpansion/multiMode.ts';
+import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
 import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import { withTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import { formatCsv } from './csvWrite.ts';
@@ -131,7 +131,7 @@ function channelRowValues(
     [CHANNEL_COL.lat]: channel.location ? String(channel.location.lat) : '',
     [CHANNEL_COL.lon]: channel.location ? String(channel.location.lon) : '',
     [CHANNEL_COL.useLocation]: wireYesNo(channel.useLocation),
-    [CHANNEL_COL.zoneSkip]: formatOpenGd77UnmodelledYesNoDefault(),
+    [CHANNEL_COL.zoneSkip]: wireYesNo(formatOpenGd77AllSkip(effectiveScan)),
     [CHANNEL_COL.noBeep]: formatOpenGd77UnmodelledYesNoDefault(),
     [CHANNEL_COL.noEco]: formatOpenGd77UnmodelledYesNoDefault(),
     [CHANNEL_COL.ts1TaTx]: formatOpenGd77TalkaroundTaWire(mode),
@@ -154,7 +154,7 @@ export function serialiseChannels(
   const reserved = new Set<string>();
   const expandedRows = filterExpandedRowsByOverrides(
     assembled.channels.flatMap((row) =>
-      expandChannelWireRows(
+      expandOpenGd77ChannelWireRows(
         row.entity,
         row.wireNameOverride?.trim() || row.wireName,
         expandModes,

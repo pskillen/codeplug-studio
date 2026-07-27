@@ -17,6 +17,8 @@ Sibling formats differ: DM32 stock CPS uses native `Fixed Analog` / `Fixed Digit
 
 Each expanded row uses the profile's mode for `Channel Type` (`Analogue` / `Digital` via [channels.md](channels.md)) and that profile's mode-specific fields (tones, colour code, contact, TG list, etc.). Shared fields (frequencies, location, power, rx-only, TOT, …) copy from the logical channel.
 
+For modelled radios (`opengd77-1701`, `opengd77-md9600`, and matching `radio-io-opengd77-*` Write profiles), only **analogue + DMR** mode profiles expand — YSF, D-STAR, P25, and other digital modes are dropped with an export warning ([#773](https://github.com/pskillen/codeplug-studio/issues/773)). The same filter applies on CSV export and serial Write.
+
 Controlled by build export option `expandModes` (default `true` on OpenGD77 adapter).
 
 ## Derived channel names
@@ -26,7 +28,9 @@ Deterministic suffix from mode category (case-sensitive FKs across files):
 | Profile category             | Suffix | Example (`GB7GL`) |
 | ---------------------------- | ------ | ----------------- |
 | Analog (`fm`, `am`, `ssb-*`) | `-F`   | `GB7GL-F`         |
-| Digital (`dmr`, `ysf`, …)    | `-D`   | `GB7GL-D`         |
+| DMR                          | `-D`   | `GB7GL-D`         |
+
+Other digital modes are not emitted for modelled OpenGD77 radios (see above).
 
 **Collisions:** if a derived name already exists among export wire names (existing channels or other expanded rows), append ` 2`, ` 3`, … until unique.
 

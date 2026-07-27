@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import { newChannel, newRxGroupList } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
+import { openGd77DroppedModesWarning } from '@core/import-export/opengd77ExportModes.ts';
 import { collectOpenGd77ExportWarnings } from './warnings.ts';
 
 function stubChannel(name: string): Channel {
-  return { ...newChannel('p1', name), id: 'ch-1' };
+  return withExportEligibleDefaults({ ...newChannel('p1', name), id: 'ch-1' });
 }
 
 function minimalAssembled(overrides: Partial<AssembledBuild> = {}): AssembledBuild {
@@ -53,6 +55,28 @@ describe('collectOpenGd77ExportWarnings', () => {
     });
 
     expect(collectOpenGd77ExportWarnings(assembled)).toEqual([]);
+  });
+
+  it('warns when non-DMR digital modes are dropped from export', () => {
+    const channel: Channel = {
+      ...stubChannel('Repeater'),
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none' as const,
+          txTone: 'none' as const,
+          bandwidthKHz: null,
+        },
+        { mode: 'ysf' as const, dgId: null, wiresDtmfId: '' },
+      ],
+    };
+    const warnings = collectOpenGd77ExportWarnings(
+      minimalAssembled({
+        channels: [{ wireName: 'Repeater', entity: channel }],
+      }),
+    );
+    expect(warnings).toContain(openGd77DroppedModesWarning('Repeater', ['ysf']));
   });
 
   it('warns when zone count exceeds profile maxZones', () => {

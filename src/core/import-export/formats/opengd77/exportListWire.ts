@@ -1,6 +1,6 @@
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import { expandChannelWireRows } from '@core/import-export/channelExpansion/multiMode.ts';
+import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
 import { isProjectionExcluded } from '@core/domain/formatBuildOverrides.ts';
 import { buildListWireNameMap } from '@core/import-export/channelExpansion/listWireNames.ts';
 import {
@@ -25,7 +25,7 @@ function seedReservedFromChannels(
 ): void {
   const expandModes = options?.expandModes ?? true;
   for (const row of assembled.channels) {
-    const expanded = expandChannelWireRows(
+    const expanded = expandOpenGd77ChannelWireRows(
       row.entity,
       row.wireNameOverride?.trim() || row.wireName,
       expandModes,

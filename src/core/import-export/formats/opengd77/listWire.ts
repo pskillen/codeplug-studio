@@ -1,6 +1,6 @@
 import type { AssembledBuild, AssembledZone } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import { expandChannelWireRows } from '@core/import-export/channelExpansion/multiMode.ts';
+import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
 import type { TalkGroupTimeslotCloneIndex } from '@core/import-export/channelExpansion/talkGroupTimeslotClones.ts';
 import { isProjectionExcluded } from '@core/domain/formatBuildOverrides.ts';
 import { channelWireNameById, memberRefWireName } from './exportRefs.ts';
@@ -20,7 +20,7 @@ export function zoneExportMemberNames(
     const channel = channelById.get(channelId);
     if (!channel) continue;
     const baseWireName = wireById.get(channelId);
-    const rows = expandChannelWireRows(
+    const rows = expandOpenGd77ChannelWireRows(
       channel,
       baseWireName,
       expandModes,
