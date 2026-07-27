@@ -48,6 +48,15 @@ describe('OpenGD77 power ladder', () => {
     expect(percentToWire(profile, null)).toBe('P9');
   });
 
+  it('exposes shared entity caps on OpenGD77 profiles', () => {
+    for (const profileId of ['opengd77-1701', 'opengd77-md9600'] as const) {
+      const profile = getOpenGd77Profile(profileId);
+      expect(profile.maxZones).toBe(68);
+      expect(profile.maxRxGroupLists).toBe(76);
+      expect(profile.maxContacts).toBe(1024);
+    }
+  });
+
   it('throws for unknown profile', () => {
     expect(() => getOpenGd77Profile('unknown')).toThrow(/Unknown OpenGD77 profile/);
   });
