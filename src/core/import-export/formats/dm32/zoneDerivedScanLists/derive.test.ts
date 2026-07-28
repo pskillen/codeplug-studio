@@ -4,10 +4,7 @@ import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts'
 import { assemble } from '@core/services/assemble.ts';
 import { SCAN_COL } from '../columns.ts';
 import { expandAllDm32ChannelsForExport, dm32ChannelExpansionById } from '../channelExpansion.ts';
-import {
-  deriveZoneDerivedScanLists,
-  ensureDm32ScanCsvFloor,
-} from './derive.ts';
+import { deriveZoneDerivedScanLists, ensureDm32ScanCsvFloor } from './derive.ts';
 import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLists/dm32EmptyScanFloor.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 

@@ -18,7 +18,9 @@ import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from '../profiles.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 
-export { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLists/dm32EmptyScanFloor.ts';
+import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLists/dm32EmptyScanFloor.ts';
+
+export { DM32_EMPTY_SCAN_LIST_NAME };
 export type { SyntheticScanCarrier } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
 export { DEFAULT_SCAN_CARRIER_HZ } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
 
