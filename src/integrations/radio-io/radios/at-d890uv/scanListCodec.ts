@@ -4,6 +4,7 @@
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioScanListDto } from '../../radioWriteProjection.ts';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { clearBitmap, setBitmapBit } from './bitmap.ts';
 import { toAtD890ChannelIndex } from './channelIndex.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
@@ -23,8 +24,8 @@ function writeU16Le(buf: Uint8Array, offset: number, value: number): void {
 /** Wire sentinel: priority channel Off / none (anytone-cps `0xffff`). */
 const AT_D890_SCAN_PRIORITY_OFF = 0xffff;
 
-/** Member array: 50 × u16 at `+0x30` (`0x64` bytes). */
-const AT_D890_SCAN_MEMBER_BYTES = 0x64;
+/** Member array: `SCAN_LIST_MEMBERS_MAX` × u16 at `+0x30`. */
+const AT_D890_SCAN_MEMBER_BYTES = AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX * 2;
 
 /** Revert channel byte; trailing `0x95–0xcf` must be `0xff`, not `0x00` (channel index 0). */
 const AT_D890_SCAN_REVERT_OFFSET = 0x94;
@@ -47,7 +48,7 @@ export function encodeAtD890ScanListRecord(scan: RadioScanListDto): Uint8Array {
   data.set(encodeWideCharName(scan.wireName, 0x20), 0xe);
   const members = new Uint8Array(AT_D890_SCAN_MEMBER_BYTES);
   members.fill(0xff);
-  const count = Math.min(scan.channelNumbers.length, AT_D890_SCAN_MEMBER_BYTES / 2);
+  const count = Math.min(scan.channelNumbers.length, AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX);
   for (let i = 0; i < count; i++) {
     writeU16Le(members, i * 2, toAtD890ChannelIndex(scan.channelNumbers[i]!));
   }
