@@ -3,7 +3,10 @@ import { newChannel, newFormatBuild, newZone } from '@core/domain/factories.ts';
 import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { SCAN_COL } from '../formats/dm32/columns.ts';
-import { expandAllDm32ChannelsForExport, dm32ChannelExpansionById } from '../formats/dm32/channelExpansion.ts';
+import {
+  expandAllDm32ChannelsForExport,
+  dm32ChannelExpansionById,
+} from '../formats/dm32/channelExpansion.ts';
 import {
   DM32_EMPTY_SCAN_LIST_NAME,
   deriveZoneDerivedScanLists,

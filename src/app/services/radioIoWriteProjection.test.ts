@@ -548,9 +548,7 @@ describe('buildRadioWriteProjection', () => {
     });
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.organisation.rxGroups).toHaveLength(32);
-    expect(
-      projection.warnings.some((w) => /40 RX group list/.test(w) && /32/.test(w)),
-    ).toBe(true);
+    expect(projection.warnings.some((w) => /40 RX group list/.test(w) && /32/.test(w))).toBe(true);
   });
 
   it('warns and truncates digital contacts beyond DM-32UV address-book cap', () => {

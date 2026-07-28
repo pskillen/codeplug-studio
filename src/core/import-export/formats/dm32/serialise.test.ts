@@ -571,9 +571,7 @@ describe('DM32 export serialise', () => {
     const files = serialiseDm32Files(assembled, library, DM32_PROJECTION, warnings);
     const scanRows = parseCsv(files['Scan.csv']);
     expect(scanRows.length - 1).toBe(15);
-    expect(
-      warnings.some((w) => w.includes('channel scanListId supports at most 15')),
-    ).toBe(true);
+    expect(warnings.some((w) => w.includes('channel scanListId supports at most 15'))).toBe(true);
   });
 
   it('emits a trailing pipe on Scan.csv Channel Members', () => {

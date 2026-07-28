@@ -21,10 +21,10 @@ Zone-derived scan lists synthesise at most **15** named members even when a zone
 
 ## Adapter application
 
-| Adapter                    | Behaviour when over limit                                            |
-| -------------------------- | -------------------------------------------------------------------- |
-| DM32 `dm32-baofeng-dm32uv` | Export warnings / truncation at CSV serialise                        |
-| NeonPlug `neonplug-dm32uv` | Same numeric caps (sync test in `formats/neonplug/profiles.test.ts`) |
+| Adapter                      | Behaviour when over limit                                            |
+| ---------------------------- | -------------------------------------------------------------------- |
+| DM32 `dm32-baofeng-dm32uv`   | Export warnings / truncation at CSV serialise                        |
+| NeonPlug `neonplug-dm32uv`   | Same numeric caps (sync test in `formats/neonplug/profiles.test.ts`) |
 | Web Serial `radio-io-dm32uv` | Same caps via `getProfileExportLimits` + write projection            |
 
 Do **not** bake these into library CRUD.
