@@ -337,14 +337,7 @@ export async function downloadAtD890SparseRegions(
   );
 
   stage('Reading AM airband…');
-  await readRegion(
-    pipe,
-    cache,
-    D890_MAP.AmAirSet,
-    D890_MAP.AmAirSetLength,
-    signal,
-    readBlockSize,
-  );
+  await readRegion(pipe, cache, D890_MAP.AmAirSet, D890_MAP.AmAirSetLength, signal, readBlockSize);
   const amAirSet = getCacheBytes(cache, D890_MAP.AmAirSet, D890_MAP.AmAirSetLength);
   for (const idx of listSetBits(amAirSet)) {
     throwIfAborted(signal);
@@ -357,14 +350,7 @@ export async function downloadAtD890SparseRegions(
       readBlockSize,
     );
   }
-  await readRegion(
-    pipe,
-    cache,
-    D890_MAP.AmAirVfo,
-    D890_MAP.AmAirVfoLength,
-    signal,
-    readBlockSize,
-  );
+  await readRegion(pipe, cache, D890_MAP.AmAirVfo, D890_MAP.AmAirVfoLength, signal, readBlockSize);
 
   await readRegion(
     pipe,

@@ -310,9 +310,7 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.organisation.amAirChannels).toBeUndefined();
     expect(projection.organisation.amZones).toBeUndefined();
-    expect(
-      projection.warnings.some((w) => w.includes('no AM zone membership')),
-    ).toBe(true);
+    expect(projection.warnings.some((w) => w.includes('no AM zone membership'))).toBe(true);
   });
 
   it('warns when an AM zone exceeds 32 members', () => {

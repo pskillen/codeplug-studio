@@ -4,11 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
-import {
-  decodeAmAirRecord,
-  encodeAmAirIntoAtD890Image,
-  encodeAmAirRecord,
-} from './amAirCodec.ts';
+import { decodeAmAirRecord, encodeAmAirIntoAtD890Image, encodeAmAirRecord } from './amAirCodec.ts';
 import {
   decodeAmZoneRecord,
   encodeAmZoneRecord,
@@ -58,9 +54,9 @@ describe('amAirCodec', () => {
     ]);
     const set = image.get(D890_MAP.AmAirSet, D890_MAP.AmAirSetLength);
     expect(listSetBits(set)).toEqual([0, 2]);
-    expect(decodeAmAirRecord(image.get(amAirDataAddress(0), D890_MAP.AmAirDataLength)).wireName).toBe(
-      'A',
-    );
+    expect(
+      decodeAmAirRecord(image.get(amAirDataAddress(0), D890_MAP.AmAirDataLength)).wireName,
+    ).toBe('A');
     expect(decodeAmAirRecord(image.get(amAirDataAddress(2), D890_MAP.AmAirDataLength)).rxHz).toBe(
       121_500_000,
     );

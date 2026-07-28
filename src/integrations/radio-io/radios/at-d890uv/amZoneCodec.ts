@@ -60,7 +60,10 @@ export function decodeAmZoneRecord(data: Uint8Array): {
   return { wireName, channelIndices0 };
 }
 
-function encodeAmZoneScanBits(memberCount: number, scanMemberIndices?: readonly number[]): Uint8Array {
+function encodeAmZoneScanBits(
+  memberCount: number,
+  scanMemberIndices?: readonly number[],
+): Uint8Array {
   const buf = new Uint8Array(D890_MAP.AmZoneScanStride);
   buf.fill(0);
   if (scanMemberIndices) {

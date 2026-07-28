@@ -223,13 +223,19 @@ export function clearTalkgroupOrderBlocksFromCache(cache: AtD890DownloadCache): 
  */
 export function clearAmAirBankBlocksFromCache(cache: AtD890DownloadCache): void {
   const spans: { base: number; end: number }[] = [
-    { base: D890_MAP.AmAirData, end: D890_MAP.AmAirData + D890_MAP.AmAirDataStride * D890_MAP.AmAirCount },
+    {
+      base: D890_MAP.AmAirData,
+      end: D890_MAP.AmAirData + D890_MAP.AmAirDataStride * D890_MAP.AmAirCount,
+    },
     { base: D890_MAP.AmAirVfo, end: D890_MAP.AmAirVfo + D890_MAP.AmAirVfoLength },
     { base: D890_MAP.AmAirSet, end: D890_MAP.AmAirSet + D890_MAP.AmAirSetLength },
     { base: D890_MAP.AmZoneSet, end: D890_MAP.AmZoneSet + D890_MAP.AmZoneSetLength },
     { base: D890_MAP.AmZoneAChannel, end: D890_MAP.AmZoneAChannel + D890_MAP.AmZoneAChannelLength },
     { base: D890_MAP.AmZoneScan, end: D890_MAP.AmZoneScan + D890_MAP.AmZoneScanLength },
-    { base: D890_MAP.AmZoneData, end: D890_MAP.AmZoneData + D890_MAP.AmZoneDataStride * D890_MAP.AmZoneCount },
+    {
+      base: D890_MAP.AmZoneData,
+      end: D890_MAP.AmZoneData + D890_MAP.AmZoneDataStride * D890_MAP.AmZoneCount,
+    },
   ];
   for (const addr of [...cache.blocks.keys()]) {
     if (spans.some((s) => addr >= s.base && addr < s.end)) cache.blocks.delete(addr);

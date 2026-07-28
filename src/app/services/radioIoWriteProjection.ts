@@ -56,14 +56,12 @@ import type {
 } from '@integrations/radio-io/radioWriteProjection.ts';
 import { buildNeonplugAprsRadioSettingsPatch } from '@core/services/aprsExportFacts.ts';
 import {
+  orderedAmAirChannels,
   partitionAnytoneChannels,
   partitionAnytoneZones,
+  receiveBankChannelSlot,
 } from '@core/services/anytoneChannelBanks.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
-import {
-  orderedAmAirChannels,
-  receiveBankChannelSlot,
-} from '@core/import-export/formats/anytone/exportChannelSlots.ts';
 import {
   expandAssembledChannelsToRadioDtos,
   isOpenGd77RadioIoEgress,
@@ -1151,9 +1149,7 @@ export function buildRadioWriteProjection(
       talkGroups,
       rxGroups,
       radioIds: dm32RadioIds,
-      ...(amAir
-        ? { amAirChannels: amAir.amAirChannels, amZones: amAir.amZones }
-        : {}),
+      ...(amAir ? { amAirChannels: amAir.amAirChannels, amZones: amAir.amZones } : {}),
     };
   } else if (isOpenGd77RadioIoEgress(egress.profileId)) {
     channels = stampOpenGd77ChannelBehaviour(

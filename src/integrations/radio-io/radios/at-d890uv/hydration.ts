@@ -10,7 +10,12 @@ import {
 import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
-import { cacheToMemoryMap, putCacheBytes, clearAmAirBankBlocksFromCache, type AtD890DownloadCache } from './memory.ts';
+import {
+  cacheToMemoryMap,
+  putCacheBytes,
+  clearAmAirBankBlocksFromCache,
+  type AtD890DownloadCache,
+} from './memory.ts';
 import { encodeChannelsIntoAtD890Image, syncChannelRegionsToCache } from './channelCodec.ts';
 import { encodeZonesIntoAtD890Image, syncZoneRegionsToCache } from './zoneCodec.ts';
 import { encodeScanListsIntoAtD890Image, syncScanListRegionsToCache } from './scanListCodec.ts';

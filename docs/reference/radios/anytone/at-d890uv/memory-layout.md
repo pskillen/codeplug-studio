@@ -140,13 +140,13 @@ Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `wri
 
 **Encode guards:** MR channel encode rejects AM airband frequencies (108–137 MHz) and non-BCD-encodable Hz before bytes are packed (`channelEncodeGuards.ts`).
 
-| Category                                                   | `writeRole`     | Re-derived from build? | On Upload                                                            |
-| ---------------------------------------------------------- | --------------- | ---------------------- | -------------------------------------------------------------------- |
-| Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced`      | Yes                    | Written from build (allow-listed)                                    |
+| Category                                                   | `writeRole`     | Re-derived from build? | On Upload                                                                                                                                  |
+| ---------------------------------------------------------- | --------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced`      | Yes                    | Written from build (allow-listed)                                                                                                          |
 | AM airband channels + AM zones                             | `replaced`      | When projected         | Written together when build has airband zones; else radio bank left alone ([#756](https://github.com/pskillen/codeplug-studio/issues/756)) |
-| LocalInfo                                                  | `kept`          | No                     | **Not transmitted** — identity check only; unit not touched          |
-| Optional settings, alarm                                   | `kept`          | No                     | **Preserved** — fresh-read + unchanged re-stage inside touched units |
-| DigitalContact\*, boot images, crypto, broadcast FM, …     | `kept` / unread | No                     | Untouched — absent from cache unless future Read tickets             |
+| LocalInfo                                                  | `kept`          | No                     | **Not transmitted** — identity check only; unit not touched                                                                                |
+| Optional settings, alarm                                   | `kept`          | No                     | **Preserved** — fresh-read + unchanged re-stage inside touched units                                                                       |
+| DigitalContact\*, boot images, crypto, broadcast FM, …     | `kept` / unread | No                     | Untouched — absent from cache unless future Read tickets                                                                                   |
 
 **Serial Write projection:** `RadioWriteProjection` for `radio-io-at-d890uv` partitions receive-only AM airband and broadcast FM out of MR channels, zones, and scan — same bank split as Anytone CSV egress ([#755](https://github.com/pskillen/codeplug-studio/issues/755)). **AM airband** then projects into the parallel `AmAir*` / `AmZone*` banks when the build has airband channels **and** AM zone membership (zones ship with channels). Empty airband content retains the radio bank (DigitalContacts-style). Broadcast FM stays CSV-only until a later ticket — see [am-air.md](../../../export-formats/anytone/am-air.md). Export **Web Serial** shows an operator-facing **What Write updates** table (written vs deferred vs left alone).
 
