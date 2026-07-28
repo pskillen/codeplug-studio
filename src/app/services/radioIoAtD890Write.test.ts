@@ -292,6 +292,167 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     );
   });
 
+  it('keeps airband-only zones off DMR organisation.zones and on amZones', () => {
+    const airband = {
+      ...newChannel('p1', 'Tower'),
+      id: 'ch-air',
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: 'forbid' as const,
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const zone = {
+      ...newZone('p1', 'AM only'),
+      id: 'zone-air',
+      members: [{ kind: 'channel' as const, channelId: airband.id }],
+    };
+    const library = { ...emptyLibrary([airband]), zones: [zone] };
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const build = {
+      ...baseBuild,
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: 'zone-air',
+                name: 'AM only',
+                channelIds: [airband.id],
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+
+    expect(projection.organisation.zones?.map((z) => z.wireName)).not.toContain('AM only');
+    expect(projection.organisation.amZones).toEqual([
+      expect.objectContaining({ wireName: 'AM only', channelNumbers: [1] }),
+    ]);
+  });
+
+  it('does not create MR scan list or carrier when exportScanList is on an airband-only zone', () => {
+    const airband = {
+      ...newChannel('p1', 'Tower'),
+      id: 'ch-air',
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: 'forbid' as const,
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const zone = {
+      ...newZone('p1', 'AM only'),
+      id: 'zone-air',
+      members: [{ kind: 'channel' as const, channelId: airband.id }],
+    };
+    const library = { ...emptyLibrary([airband]), zones: [zone] };
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const build = {
+      ...baseBuild,
+      exportSettings: { exportZoneDerivedScanLists: true },
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: 'zone-air',
+                name: 'AM only',
+                channelIds: [airband.id],
+                exportScanList: true,
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+
+    expect(projection.organisation.zones?.map((z) => z.wireName)).not.toContain('AM only');
+    expect(projection.organisation.amZones).toEqual([
+      expect.objectContaining({ wireName: 'AM only' }),
+    ]);
+    expect(projection.organisation.scanLists?.some((list) => list.wireName.includes('AM only'))).toBe(
+      false,
+    );
+    expect(projection.channels.some((ch) => ch.wireName.match(/AM only.*Scan/i))).toBe(false);
+  });
+
+  it('zone-derived scan on a mixed zone includes DMR-bank members only', () => {
+    const vhf = {
+      ...newChannel('p1', 'VHF'),
+      id: 'ch-vhf',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const airband = {
+      ...newChannel('p1', 'Tower'),
+      id: 'ch-air',
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: 'forbid' as const,
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const zone = {
+      ...newZone('p1', 'Mixed'),
+      id: 'zone-mixed',
+      members: [
+        { kind: 'channel' as const, channelId: vhf.id },
+        { kind: 'channel' as const, channelId: airband.id },
+      ],
+    };
+    const library = { ...emptyLibrary([vhf, airband]), zones: [zone] };
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const build = {
+      ...baseBuild,
+      exportSettings: { exportZoneDerivedScanLists: true },
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: 'zone-mixed',
+                name: 'Mixed',
+                channelIds: [vhf.id, airband.id],
+                exportScanList: true,
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+
+    const mixedZone = projection.organisation.zones?.find((z) => z.wireName === 'Mixed');
+    expect(mixedZone).toBeTruthy();
+    expect(mixedZone!.channelNumbers.sort()).toEqual([1, 2]);
+    const mixedScan = projection.organisation.scanLists?.find((list) =>
+      list.wireName.startsWith('Mixed'),
+    );
+    expect(mixedScan).toBeTruthy();
+    expect(mixedScan!.channelNumbers).toEqual([1]);
+    expect(projection.numbersBySourceChannelId.has('ch-air')).toBe(false);
+  });
+
   it('retains radio AM bank when airband channels have no zone membership', () => {
     const airband = {
       ...newChannel('p1', 'Tower'),
