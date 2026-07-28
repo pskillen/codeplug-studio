@@ -11,7 +11,14 @@ export type RadioIoOperation = 'read' | 'write';
 export type RadioIoProgressPhase =
   'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
 
-export type RadioIoWriteVerifyStatus = 'none' | 'unverified' | 'verifying' | 'verified' | 'failed';
+export type RadioIoWriteVerifyStatus =
+  | 'none'
+  | 'pending_delay'
+  | 'ready'
+  | 'unverified'
+  | 'verifying'
+  | 'verified'
+  | 'failed';
 
 export interface RadioIoVerifyMismatch {
   readonly id: string;
@@ -30,8 +37,10 @@ export interface RadioIoProgressModalProps {
   transferStages?: readonly string[];
   /** True when the operator tried to navigate away while busy. */
   navigationBlocked?: boolean;
-  /** AT-D890 optional post-write preserved-settings verify. */
+  /** AT-D890 optional post-write full-memory verify. */
   writeVerifyStatus?: RadioIoWriteVerifyStatus;
+  /** Seconds until auto-verify starts (when status is pending_delay). */
+  verifyCountdown?: number;
   verifyMismatches?: readonly RadioIoVerifyMismatch[];
   onVerify?: () => void;
   onCloseWithoutVerify?: () => void;
@@ -61,10 +70,12 @@ function buildSteps(
         : [{ id: 'transfer', label: 'Upload to radio' }]),
     ];
     if (writeVerifyStatus !== 'none') {
-      steps.push({ id: 'verify', label: 'Check preserved settings (optional)' });
+      steps.push({ id: 'verify', label: 'Verify write (optional)' });
     }
     if (phase === 'done' && writeVerifyStatus === 'verified') {
-      steps.push({ id: 'done', label: 'Write complete — settings checked' });
+      steps.push({ id: 'done', label: 'Write complete — verify passed' });
+    } else if (phase === 'done' && writeVerifyStatus === 'failed') {
+      steps.push({ id: 'done', label: 'Write complete — verify failed' });
     } else if (phase === 'done') {
       steps.push({ id: 'done', label: 'Write complete' });
     }
@@ -93,7 +104,9 @@ function activeStepId(
   if (phase === 'preparing') return 'preparing';
   if (phase === 'saving') return 'saving';
   if (phase === 'verifying' || writeVerifyStatus === 'verifying') return 'verify';
-  if (phase === 'done' && writeVerifyStatus === 'verified') return 'done';
+  if (phase === 'done' && (writeVerifyStatus === 'verified' || writeVerifyStatus === 'failed')) {
+    return 'done';
+  }
   if (phase === 'done' && writeVerifyStatus !== 'none') return 'verify';
   if (phase === 'done') return 'done';
   if (progress?.stage) return `stage:${progress.stage}`;
@@ -114,7 +127,10 @@ function stepStatus(
   return 'pending';
 }
 
-function writeDoneAlert(writeVerifyStatus: RadioIoWriteVerifyStatus): {
+function writeDoneAlert(
+  writeVerifyStatus: RadioIoWriteVerifyStatus,
+  verifyCountdown: number,
+): {
   color: string;
   title: string;
   body: string;
@@ -122,22 +138,36 @@ function writeDoneAlert(writeVerifyStatus: RadioIoWriteVerifyStatus): {
   if (writeVerifyStatus === 'verified') {
     return {
       color: 'green',
-      title: 'Write finished — settings checked',
-      body: 'Your language, password, and other preserved settings match what Studio read before the write.',
+      title: 'Write finished — verify passed',
+      body: 'Every staged block Studio transmitted matches what is on the radio now, and preserved settings are unchanged.',
     };
   }
   if (writeVerifyStatus === 'failed') {
     return {
       color: 'red',
-      title: 'Preserved settings check failed',
-      body: 'Some settings Studio deliberately left alone no longer match what was read before the write.',
+      title: 'Write verify failed',
+      body: 'Some staged blocks or preserved settings do not match. See the verify report for addresses and regions.',
+    };
+  }
+  if (writeVerifyStatus === 'pending_delay') {
+    return {
+      color: 'blue',
+      title: 'Write finished — verify starting soon',
+      body: `The radio is restarting. Full write verify will start automatically in ${verifyCountdown}s unless you skip. Wait until the radio shows its normal screen.`,
+    };
+  }
+  if (writeVerifyStatus === 'verifying') {
+    return {
+      color: 'blue',
+      title: 'Verifying write',
+      body: 'Reading modelled memory from the radio and comparing against what Studio transmitted.',
     };
   }
   if (writeVerifyStatus === 'unverified') {
     return {
       color: 'blue',
       title: 'Write finished',
-      body: "The codeplug was uploaded to the radio. Optionally, you can check that radio settings which Studio doesn't set still match what was on the radio before the write. The radio restarts on its own after a write — wait until it shows its normal screen before you check.",
+      body: 'The codeplug was uploaded. You can run full write verify to read modelled memory and compare it byte-for-byte with what was transmitted.',
     };
   }
   return {
@@ -155,6 +185,7 @@ export default function RadioIoProgressModal({
   transferStages = [],
   navigationBlocked = false,
   writeVerifyStatus = 'none',
+  verifyCountdown = 0,
   verifyMismatches = [],
   onVerify,
   onCloseWithoutVerify,
@@ -167,6 +198,10 @@ export default function RadioIoProgressModal({
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
   const complete = phase === 'done';
   const verifying = phase === 'verifying' || writeVerifyStatus === 'verifying';
+  const awaitingVerify =
+    writeVerifyStatus === 'pending_delay' ||
+    writeVerifyStatus === 'unverified' ||
+    writeVerifyStatus === 'ready';
 
   return (
     <Modal
@@ -180,12 +215,12 @@ export default function RadioIoProgressModal({
       withCloseButton={false}
     >
       <Stack gap="md">
-        {complete ? (
+        {complete || verifying || writeVerifyStatus === 'pending_delay' ? (
           <>
             {(() => {
               const alert =
                 operation === 'write'
-                  ? writeDoneAlert(writeVerifyStatus)
+                  ? writeDoneAlert(writeVerifyStatus, verifyCountdown)
                   : {
                       color: 'green',
                       title: 'Read finished',
@@ -207,13 +242,6 @@ export default function RadioIoProgressModal({
               );
             })()}
           </>
-        ) : verifying ? (
-          <Alert color="blue" title="Checking preserved settings">
-            <Text size="sm">
-              Wait until the radio has fully restarted and shows its normal screen, then Studio will
-              reconnect and read the settings it left alone.
-            </Text>
-          </Alert>
         ) : (
           <Alert color="orange" title="Keep this tab open">
             Do not switch away, close the tab, or navigate elsewhere while the serial link is
@@ -244,7 +272,15 @@ export default function RadioIoProgressModal({
           })}
         </Stack>
 
-        {!complete && phase === 'transfer' ? (
+        {verifying && phase === 'transfer' ? (
+          <Stack gap={4}>
+            <Text size="sm">
+              {progress?.msg ?? 'Reading memory…'}
+              {progress ? ` (${progress.cur}/${progress.max})` : ''}
+            </Text>
+            <Progress value={percent ?? 0} animated={percent == null || percent < 100} size="lg" />
+          </Stack>
+        ) : !complete && phase === 'transfer' ? (
           <Stack gap={4}>
             <Text size="sm">
               {progress?.msg ?? 'Transferring…'}
@@ -264,7 +300,7 @@ export default function RadioIoProgressModal({
           </Text>
         ) : verifying ? (
           <Text size="sm" c="dimmed">
-            Reconnecting and reading preserved settings…
+            Reconnecting and reading modelled memory for verify…
           </Text>
         ) : progress?.msg ? (
           <Text size="sm" c="dimmed">
@@ -273,19 +309,17 @@ export default function RadioIoProgressModal({
         ) : null}
 
         <Group justify="flex-end">
-          {complete ? (
+          {complete && awaitingVerify ? (
             <>
-              {writeVerifyStatus === 'unverified' ? (
-                <>
-                  <Button variant="default" onClick={() => onCloseWithoutVerify?.()}>
-                    Close
-                  </Button>
-                  <Button onClick={() => onVerify?.()}>Check preserved settings</Button>
-                </>
-              ) : (
-                <Button onClick={() => onClose?.()}>Close</Button>
-              )}
+              <Button variant="default" onClick={() => onCloseWithoutVerify?.()}>
+                Skip verify
+              </Button>
+              <Button onClick={() => onVerify?.()}>
+                {writeVerifyStatus === 'pending_delay' ? 'Verify now' : 'Verify write'}
+              </Button>
             </>
+          ) : complete ? (
+            <Button onClick={() => onClose?.()}>Close</Button>
           ) : (
             <Button variant="default" color="gray" onClick={onCancel}>
               Cancel
