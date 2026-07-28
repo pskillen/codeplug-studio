@@ -12,7 +12,7 @@ import {
   expandAllMxNChannels,
   type ExpandedMxNChannelRow,
 } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
-import { resolveAnytoneSiteWireName } from '@core/import-export/formats/anytone/channelExpansion.ts';
+import { resolveAnytoneSiteWireName } from '@core/services/anytoneChannelExpansion.ts';
 import {
   expandChannelWireRows,
   modeExportNameSuffix,

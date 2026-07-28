@@ -8,7 +8,7 @@ import {
 import { assemble, type AssembledChannel, type LibrarySlice } from '@core/services/assemble.ts';
 import type { ChannelModeProfileDMR } from '@core/models/library.ts';
 import { expandAllMxNChannels } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
-import { expandAllAnytoneChannelsForExport } from '@core/import-export/formats/anytone/channelExpansion.ts';
+import { expandAllAnytoneChannelsForExport } from '@core/services/anytoneChannelExpansion.ts';
 import {
   assembledChannelsToRadioDtos,
   assembledChannelsToRadioDtosWithWarnings,
