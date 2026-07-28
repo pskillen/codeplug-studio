@@ -10,7 +10,7 @@ import {
 import {
   deriveZoneDerivedScanLists,
   ensureDm32ScanCsvFloor,
-} from '@core/import-export/zoneDerivedScanLists/derive.ts';
+} from '@core/import-export/formats/dm32/zoneDerivedScanLists/derive.ts';
 import { formatCsv } from './csvWrite.ts';
 import {
   CHANNEL_HEADERS,
@@ -38,7 +38,7 @@ import {
 import { serialiseDm32ChannelRow } from './channelWire.ts';
 import { buildDm32TalkGroupWireNameMap, rxGroupListExportMemberNames } from './listWire.ts';
 import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from './profiles.ts';
-import type { SyntheticScanCarrier } from '@core/import-export/zoneDerivedScanLists/derive.ts';
+import type { SyntheticScanCarrier } from '@core/import-export/formats/dm32/zoneDerivedScanLists/derive.ts';
 
 export type Dm32ExportFiles = Record<Dm32ExportFileName, string> & {
   [DM32_APRS_GUIDE_FILE_NAME]?: string;

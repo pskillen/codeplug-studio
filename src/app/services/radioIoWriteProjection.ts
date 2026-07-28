@@ -34,7 +34,7 @@ import {
   scanMasterEnabled,
   scanMemberIds,
 } from '@core/import-export/zoneDerivedScanLists/members.ts';
-import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLists/derive.ts';
+import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/formats/dm32/zoneDerivedScanLists/derive.ts';
 import {
   buildScanContext,
   effectiveScanSkips,
