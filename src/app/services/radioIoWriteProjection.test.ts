@@ -182,6 +182,31 @@ describe('buildRadioWriteProjection', () => {
     expect(dto?.skipZoneScan).toBe(false);
   });
 
+  it('stamps OpenGD77 skipScan from build scanInclusionOverride over library', () => {
+    const lib = withExportEligibleDefaults({
+      ...newChannel('p1', 'Override'),
+      id: 'ch-override',
+      rxFrequency: 145_800_000,
+      txFrequency: 145_800_000,
+      scanInclusion: 'skip' as const,
+    });
+    const library = emptyLibrary([lib]);
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-md9600');
+    const build = {
+      ...baseBuild,
+      channelOverrides: [{ libraryEntityId: 'ch-override', scanInclusion: 'alwaysScan' as const }],
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    const slot = projection.numbersBySourceChannelId.get('ch-override')?.[0];
+    const dto = projection.channels.find((c) => c.slotIndex === slot);
+    expect(dto?.skipScan).toBe(false);
+    expect(dto?.skipZoneScan).toBe(false);
+  });
+
   it('prepends each zone’s own scan carrier and first-wins scanListId for shared members', () => {
     const shared = withExportEligibleDefaults({
       ...newChannel('p1', 'Hotspot'),

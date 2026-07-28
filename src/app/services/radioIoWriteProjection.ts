@@ -882,7 +882,7 @@ function stampOpenGd77ChannelBehaviour(
   return channels.map((dto) => {
     const row = channelByNumber.get(dto.slotIndex);
     if (!row) return dto;
-    const skip = effectiveScanSkips(row.entity, scanContext);
+    const skip = effectiveScanSkips(row.entity, scanContext, row.scanInclusionOverride);
     const forbid = row.entity.forbidTransmit === 'forbid';
     return {
       ...dto,
