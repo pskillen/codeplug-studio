@@ -11,6 +11,7 @@ import {
   mergeChannelsIntoAtD890uvHydration,
   AT_D890UV_MODEL_ID,
 } from './hydration.ts';
+import { atD890UploadBankIntentFromOrganisation } from './memory.ts';
 import { createAtD890uvProtocol, AtD890uvProtocol } from './protocol.ts';
 
 export { AT_D890UV_MODEL_ID };
@@ -46,9 +47,10 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
       return extractAtD890uvHydration(image, meta);
     },
     mergeChannelsIntoHydration: mergeChannelsIntoAtD890uvHydration,
-    seedProtocolForUpload: (protocol, bag) => {
+    seedProtocolForUpload: (protocol, bag, organisation) => {
       if (protocol instanceof AtD890uvProtocol) {
         protocol.seedDownloadCache(cacheFromBag(bag));
+        protocol.setUploadBankIntent(atD890UploadBankIntentFromOrganisation(organisation));
       }
     },
   },

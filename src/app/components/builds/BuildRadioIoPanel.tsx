@@ -190,13 +190,14 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       }
       const library = await loadLibrarySlice(persistence, activeProjectId);
       setPhase('preparing');
-      const { image, warnings } = prepareRadioWriteImage(build, egress, library);
+      const { image, warnings, organisation } = prepareRadioWriteImage(build, egress, library);
       setPhase('connecting');
       const session = await ensureSession(true);
       setPhase('transfer');
       const uploadResult = await uploadPreparedRadioWrite(session, egress, image, {
         onProgress,
         signal: abortRef.current!.signal,
+        organisation,
       });
       if (warnings.length > 0) setWriteWarnings(warnings);
       if (uploadResult.sentinelBefore) {

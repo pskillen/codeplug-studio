@@ -20,6 +20,7 @@ import {
   amZoneDataAddress,
   alignedSpanForAtD890Region,
   type AtD890DownloadCache,
+  type AtD890UploadBankIntent,
 } from './memory.ts';
 import {
   AT_D890_BLOCK_SIZE,
@@ -415,6 +416,10 @@ export class AtD890uvProtocol implements CloneImageRadio {
   private programming = false;
   private readBlockSize = AT_D890_BLOCK_SIZE;
   private lastUploadSentinelBefore: AtD890SentinelSnapshot | undefined;
+  private uploadBankIntent: AtD890UploadBankIntent = {
+    replaceAmAirBank: false,
+    replaceTalkgroupOrder: false,
+  };
 
   getNegotiatedReadBlockSize(): number {
     return this.readBlockSize;
@@ -438,6 +443,10 @@ export class AtD890uvProtocol implements CloneImageRadio {
       putCacheBytes(normalized, address, data);
     }
     this.cache = normalized;
+  }
+
+  setUploadBankIntent(intent: AtD890UploadBankIntent): void {
+    this.uploadBankIntent = intent;
   }
 
   async connect(
@@ -547,7 +556,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
       );
     }
 
-    applyAtD890WriteImageToCache(this.cache, image);
+    applyAtD890WriteImageToCache(this.cache, image, this.uploadBankIntent);
 
     const modelledChunks = listWriteChunks(this.cache, AT_D890_SAFE_SKIP_WRITE_ADDR);
     const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);

@@ -205,7 +205,7 @@ export function prepareRadioWriteImage(
   build: RadioBuild,
   egress: EgressPath,
   library: LibrarySlice,
-): { image: MemoryMap; warnings: string[] } {
+): { image: MemoryMap; warnings: string[]; organisation: RadioWriteOrganisation } {
   const descriptor = descriptorsForEgress(egress)[0];
   if (descriptor && resolveRadioWriteGate(descriptor) === 'hidden') {
     throw new RadioWriteBlockedError(resolveRadioWriteProdDisabledMessage(egress.profileId));
@@ -224,6 +224,7 @@ export function prepareRadioWriteImage(
   return {
     image: mergeChannelsForWrite(egress, hydration, projection.channels, projection.organisation),
     warnings: projection.warnings,
+    organisation: projection.organisation,
   };
 }
 
@@ -260,8 +261,8 @@ export async function writeBuildToRadio(
       'Read from the radio first so Studio can preserve unmodelled settings, then write.',
     );
   }
-  const { image, warnings } = prepareRadioWriteImage(build, egress, library);
-  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration!);
+  const { image, warnings, organisation } = prepareRadioWriteImage(build, egress, library);
+  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration!, organisation);
   setCachedImage(session, image);
   await session.radio.upload(image, {
     onProgress: opts?.onProgress,
@@ -282,13 +283,21 @@ export async function uploadPreparedRadioWrite(
   session: RadioSession,
   egress: EgressPath,
   image: MemoryMap,
-  opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
+  opts?: {
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
+    organisation?: RadioWriteOrganisation;
+  },
 ): Promise<{ sentinelBefore?: AtD890SentinelSnapshot }> {
   const hydration = getRadioCloneHydration(egress);
   if (!hydration) {
     throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
   }
-  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration);
+  session.descriptor.hydration.seedProtocolForUpload?.(
+    session.radio,
+    hydration,
+    opts?.organisation,
+  );
   setCachedImage(session, image);
   await session.radio.upload(image, {
     onProgress: opts?.onProgress,
