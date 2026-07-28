@@ -59,22 +59,22 @@ On **Write**, sparse erase-unit RMW ([#768](https://github.com/pskillen/codeplug
 | Optional settings (main) | `0x3500000`               |              | Startup channel @ `+0xd7`; zone A/B @ `+0xd8`/`+0xd9`; channel A/B @ `+0xda`/`+0xdb`                                                                                                      |
 | Zone A/B tables          | `0x3500400` / `0x3500600` | `0x200` each | **Modelled** — share erase unit `0x3500000` with optional settings below                                                                                                                  |
 | Optional settings (ext)  | `0x3500900`               | `0x60`       | Display lines @ `+0x00` / `+0x10` (14 chars each); power-on password @ `+0x20` (8 chars)                                                                                                  |
-| Optional settings (APRS) | `0x3501280`               | `0x30`       | GPS/APRS info — hex preview only in Studio; sits in **unused padding** between `AprsConfigMain` and `AprsReceiveFilters` below (`0x3501260`–`0x3501300`), not inside either decoded block |
+| Optional settings (GPS info) | `0x3501280`               | `0x30`       | Optional GPS info string — hex preview only; **not** APRS config (see [aprs.md](aprs.md)) |
 | Alarm settings           | `0x3482e00`               | `0x10`       | Digital call type @ `+0x00`                                                                                                                                                               |
 | Alarm settings           | `0x3483000`               | `0x30`       | Analog/digital emergency alarm flags; man-down also @ optional main `+0x24` / `+0x4f`                                                                                                     |
 
 Chinese UI on the radio is driven by **optional settings** (CPS language, power-on password) when those regions are erased — not LocalInfo ExpertOptions. Bag diffs on a faulted radio showed LocalInfo byte-identical between healthy and faulted reads ([#768](https://github.com/pskillen/codeplug-studio/issues/768)); the brick came from erase collateral in shared flash units, not LocalInfo replay.
 
-### APRS (full binary map — read/decode/encode all exist in anytone-cps)
+### APRS (binary — [#758](https://github.com/pskillen/codeplug-studio/issues/758))
 
-Cite: anytone-cps `AprsSettings::decode_D890UV` / `encode_D890UV`, `Device::readAprsSettings` / `writeAprsSettings` — facts only. Not yet Read or Write in Studio ([#758](https://github.com/pskillen/codeplug-studio/issues/758)); addresses below back the debug memory-export tool (`/debug/d890-erase-probe`) for offline analysis, not a modelled bank.
+Cite: anytone-cps `AprsSettings::decode_D890UV` / `encode_D890UV` — facts only. Deep field tables: [aprs.md](aprs.md).
 
-| Region               | Base        | Length  | Notes                                                                                       |
-| -------------------- | ----------- | ------- | ------------------------------------------------------------------------------------------- |
-| `AprsConfigMain`     | `0x3501000` | `0x260` | Global APRS config: fixed beacons, digipeater path, digital report bindings, filters bitmap |
-| `AprsReceiveFilters` | `0x3501300` | `0x100` | 32 receive-filter records, `0x8` bytes each                                                 |
+| Region               | Base        | Length  | Write role |
+| -------------------- | ----------- | ------- | ---------- |
+| `AprsConfigMain`     | `0x3501000` | `0x260` | Modelled fields re-derived; remainder RMW-preserved |
+| `AprsReceiveFilters` | `0x3501300` | `0x100` | RMW-preserved (unmodelled in library) |
 
-Per-channel APRS bindings live inside the `0x80`-byte MR channel record (RX enable bit 5 of `+0x21`; report type/PTT modes/report channel/mute/freq index at `+0x35`–`+0x3c`) — not yet projected by Studio's channel codec.
+Per-channel APRS bindings in MR channel record — see [channel-record.md](channel-record.md) and [aprs.md](aprs.md).
 
 ### AmAir / AmZone (AM airband — layout verified against hardware 2026-07-28)
 
@@ -143,6 +143,7 @@ Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `wri
 | Category                                                   | `writeRole`     | Re-derived from build? | On Upload                                                                                                                                  |
 | ---------------------------------------------------------- | --------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced`      | Yes                    | Written from build (allow-listed)                                                                                                          |
+| APRS global config + channel APRS bits                     | `replaced`      | Partial                | Modelled digital fields from library; unmodelled bytes RMW-preserved ([#758](https://github.com/pskillen/codeplug-studio/issues/758))     |
 | AM airband channels + AM zones                             | `replaced`      | When projected         | Written together when build has airband zones; else radio bank left alone ([#756](https://github.com/pskillen/codeplug-studio/issues/756)) |
 | LocalInfo                                                  | `kept`          | No                     | **Not transmitted** — identity check only; unit not touched                                                                                |
 | Optional settings, alarm                                   | `kept`          | No                     | **Preserved** — fresh-read + unchanged re-stage inside touched units                                                                       |
