@@ -164,6 +164,11 @@ function minimalDownloadMemory(): Map<number, Uint8Array> {
     [D890_MAP.ReceiveGroupSet, new Uint8Array(0x10)],
     [D890_MAP.RadioIdSet, new Uint8Array(0x20)],
     [D890_MAP.MasterIdData, new Uint8Array(0x40)],
+    [D890_MAP.AmAirSet, new Uint8Array(D890_MAP.AmAirSetLength)],
+    [D890_MAP.AmAirVfo, new Uint8Array(D890_MAP.AmAirVfoLength)],
+    [D890_MAP.AmZoneSet, new Uint8Array(D890_MAP.AmZoneSetLength)],
+    [D890_MAP.AmZoneAChannel, new Uint8Array(D890_MAP.AmZoneAChannelLength)],
+    [D890_MAP.AmZoneScan, new Uint8Array(D890_MAP.AmZoneScanLength)],
   ]);
 }
 
