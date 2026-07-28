@@ -65,15 +65,17 @@ On the **Channels** list, when a library channel expands to **more than one** pr
 
 See [export-projections.md](../import-export/anytone/export-projections.md) and [multi-talkgroup-expansion.md](../../reference/multi-talkgroup-expansion.md).
 
-### Anytone receive-bank preview
+### AT-D890UV receive-bank preview (D890-only)
 
-Anytone builds partition **AM airband** receive channels into `AMAir.CSV` / `AMZone.CSV` at export. Wire preview mirrors that split:
+**AT-D890UV only** — not a generic build trait. Secondary nav and bank split apply when the active egress is `anytone-at-d890uv` (Anytone CSV) **or** `radio-io-at-d890uv` (Web Serial), gated by `usesAtD890AirbandBankSplit` — not bare `formatId === 'anytone'` and not “library has AM channels”. Other Anytone models (e.g. D878UVII) must not inherit this chrome.
+
+The parallel **AM airband** bank partitions receive-only civil airband channels and zones away from the DMR/MR bank at export and Web Serial Write. Wire preview mirrors that split on **both** pathways:
 
 - **Channels** — DMR-bank channels only (no civil airband AM rows)
-- **Zones** — zones with at least one non-airband member (DMR-only and dual-mode)
-- **Airband** — airband channels plus zones with at least one airband member (airband-only and dual-mode)
+- **Zones** — zones with at least one non-airband member (DMR-only and dual-mode); airband-only zones **never** appear here
+- **AM airband** (`/builds/:id/airband`) — positive review surface for AM channels + AM zones (CSV `AMAir.CSV` / `AMZone.CSV` or serial `AmAir*` / `AmZone*` banks); pathway-aware copy and serial Write warnings ([#824](https://github.com/pskillen/codeplug-studio/issues/824))
 
-Dual-mode zones appear on both **Zones** (DMR member projection) and **Airband** (AM member projection). See [am-air.md](../../reference/export-formats/anytone/am-air.md) for export column detail.
+Dual-mode zones appear on both **Zones** (DMR member projection) and **AM airband** (AM member projection). **Zone-derived scan** (`exportScanList`, scan carriers) is a **DMR-bank** feature only — not AmZoneScan on the radio. Airband-only zones hide Export scan list controls on the Zones page ([#823](https://github.com/pskillen/codeplug-studio/issues/823)). See [am-air.md](../../reference/export-formats/anytone/am-air.md) for CSV column detail and [AT-D890UV Write contract](../../reference/radios/anytone/at-d890uv/README.md) for serial banks.
 
 ## Routes
 
@@ -82,13 +84,13 @@ Dual-mode zones appear on both **Zones** (DMR member projection) and **Airband**
 | `/builds/:id/channels`       | `channel`          | Read-only list + modal; export name mode + **Use abbreviations from library** on toolbar; link to bulk edit; multi-mode rows (OpenGD77), RX-list fan-out rows (DM32), or m×n expansion rows (Anytone when enabled). **Anytone:** airband channels appear on **Airband** only (not here). Flat-memory profiles (`FlatMemoryList`) use the shared flat-memory Channels page. |
 | `/builds/:id/scan-list`      | —                  | Flat-memory + per-channel scan flag only — build-wide default scan + per-memory Skip / Default / Always scan stored on `channelOverrides.scanInclusion` (not library). No reorder or wire names.                                                                                                                                                                           |
 | `/builds/:id/channels/bulk`  | `channel`          | Wire name + skip only per row; unsaved navigation guard for wire-name drafts. Shared by OpenGD77, DM32, Anytone DMR, and CHIRP.                                                                                                                                                                                                                                            |
-| `/builds/:id/airband`        | `channel` + `zone` | **Anytone only.** Embedded list + modal sections for AM airband channels and zones (`AMAir.CSV` / `AMZone.CSV`). Dual-mode zones also appear on **Zones** for the DMR projection.                                                                                                                                                                                          |
-| `/builds/:id/zones`          | `zone`             | List + modal with **Export / Members / Scan** tabs; **Not exported as zone** badge when library `omitFromExport` is set; force-export and skip on Export tab; member order on Members; zone-derived scan on Scan when trait-supported (`ZoneScanOverrideSection`). **Anytone:** airband-only zones appear on **Airband** only; dual-mode zones remain here.                |
+| `/builds/:id/airband`        | `channel` + `zone` | **AT-D890UV only** (`anytone-at-d890uv` or `radio-io-at-d890uv` active egress). Embedded lists for AM airband channels and zones — CSV files or serial `AmAir*` / `AmZone*` banks ([#824](https://github.com/pskillen/codeplug-studio/issues/824)). Dual-mode zones also appear on **Zones** for the DMR projection. |
+| `/builds/:id/zones`          | `zone`             | List + modal with **Export / Members / Scan** tabs; **Not exported as zone** badge when library `omitFromExport` is set; force-export and skip on Export tab; member order on Members; zone-derived scan on Scan when trait-supported (`ZoneScanOverrideSection`) — **D890:** hidden for airband-only zones; airband-only zones appear on **AM airband** only; dual-mode zones remain here.                |
 | `/builds/:id/talk-groups`    | `talkGroup`        | Unreferenced TGs still listed; overrides in modal                                                                                                                                                                                                                                                                                                                          |
 | `/builds/:id/contacts`       | `contact`          | Digital + analog contacts; overrides in modal                                                                                                                                                                                                                                                                                                                              |
 | `/builds/:id/rx-group-lists` | `rxGroupList`      | Overrides in modal                                                                                                                                                                                                                                                                                                                                                         |
 
-Secondary nav is trait-gated from `radioTargetId`. Airband still keys off the **active** Anytone egress. NeonPlug settings / Radio image appear when the matching retain bag exists on any egress (`buildNavItems` in `src/app/routes/builds/nav.ts`) — not only while that pathway is selected ([#668](https://github.com/pskillen/codeplug-studio/issues/668)).
+Secondary nav is trait-gated from `radioTargetId`. **AM airband** keys off the active D890 egress (`anytone-at-d890uv` or `radio-io-at-d890uv`) — not a build capability trait. NeonPlug settings / Radio image appear when the matching retain bag exists on any egress (`buildNavItems` in `src/app/routes/builds/nav.ts`) — not only while that pathway is selected ([#668](https://github.com/pskillen/codeplug-studio/issues/668)).
 
 ## Related
 
