@@ -10,12 +10,13 @@ import {
   Table,
   Text,
 } from '@mantine/core';
-import { useCallback, useState } from 'react';
+import { Fragment, useCallback, useState } from 'react';
 import { zipSync } from 'fflate';
 import { Page, PageHeader, PageSection } from '@app/components/ui/index.ts';
 import { openWebSerialPipe, requestWebSerialPort } from '@integrations/radio-io/transport/index.ts';
 import {
   AT_D890_CONNECTION,
+  AT_D890_MEMORY_REGION_GROUPS,
   AT_D890_MEMORY_REGIONS,
   AT_D890_PROBE,
   estimateAtD890RmwSeconds,
@@ -23,7 +24,7 @@ import {
   runAtD890DigitalContactsDump,
   runAtD890LinkProbe,
   runAtD890MemoryDumpAll,
-  runAtD890MemoryRegionDump,
+  runAtD890MemoryGroupDump,
   runAtD890ProbeDiagnose,
   runAtD890ProbeInspect,
   runAtD890ProbeMeasure,
@@ -43,11 +44,7 @@ import {
   type AtD890WriteProbeVerdict,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
-import {
-  downloadBinaryFile,
-  downloadZip,
-  isoTimestampForFilename,
-} from '@integrations/download/browserDownload.ts';
+import { downloadZip, isoTimestampForFilename } from '@integrations/download/browserDownload.ts';
 
 type Pass =
   | 'inspect'
@@ -330,21 +327,23 @@ export default function DebugD890EraseProbePage() {
   const fastest = rates.reduce((max, r) => Math.max(max, r.t.framesPerSecond), 0);
   const anyBusy = busy !== null || regionBusy !== null;
 
-  const exportRegion = useCallback(
-    async (regionId: string) => {
-      setRegionBusy(regionId);
+  const exportGroup = useCallback(
+    async (groupId: string, groupLabel: string) => {
+      setRegionBusy(groupId);
       setError(null);
       setProgress(null);
       let pipe: Awaited<ReturnType<typeof openWebSerialPipe>> | null = null;
       try {
         const port = await requestWebSerialPort(false);
         pipe = await openWebSerialPipe(port, AT_D890_CONNECTION.BAUD_RATE);
-        const r = await runAtD890MemoryRegionDump(pipe, regionId, { onProgress: setProgress });
-        const fileName = `d890-${r.region.id}-${isoTimestampForFilename()}.bin`;
-        downloadBinaryFile(r.bytes, fileName);
+        const r = await runAtD890MemoryGroupDump(pipe, groupId, { onProgress: setProgress });
+        const files: Record<string, Uint8Array> = {};
+        for (const [id, bytes] of r.files) files[`${id}.bin`] = bytes;
+        const fileName = `d890-${groupId}-${isoTimestampForFilename()}.zip`;
+        downloadZip(zipSync(files), fileName);
         append(
-          `Exported ${r.region.label} — ${formatBytes(r.bytes.length)} in ` +
-            `${(r.elapsedMs / 1000).toFixed(1)}s → ${fileName}`,
+          `Exported ${groupLabel} (${r.files.size} region${r.files.size === 1 ? '' : 's'}) — ` +
+            `${formatBytes(r.totalBytes)} in ${(r.elapsedMs / 1000).toFixed(1)}s → ${fileName}`,
         );
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
@@ -629,39 +628,72 @@ export default function DebugD890EraseProbePage() {
             <Table>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Region</Table.Th>
+                  <Table.Th>Area / region</Table.Th>
                   <Table.Th>Base</Table.Th>
                   <Table.Th>Size</Table.Th>
                   <Table.Th />
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
-                {AT_D890_MEMORY_REGIONS.map((r) => {
-                  const size = r.chunks.reduce((sum, c) => sum + c.length, 0);
+                {AT_D890_MEMORY_REGION_GROUPS.map((group) => {
+                  const members = AT_D890_MEMORY_REGIONS.filter((r) => r.group === group.id);
+                  const groupSize = members.reduce(
+                    (sum, r) => sum + r.chunks.reduce((s, c) => s + c.length, 0),
+                    0,
+                  );
                   return (
-                    <Table.Tr key={r.id}>
-                      <Table.Td>{r.label}</Table.Td>
-                      <Table.Td>
-                        <Code>{hex(r.chunks[0]?.address ?? 0)}</Code>
-                        {r.chunks.length > 1 && (
-                          <Text size="xs" c="dimmed">
-                            {r.chunks.length} chunks
+                    <Fragment key={group.id}>
+                      <Table.Tr>
+                        <Table.Td>
+                          <Text fw={600} size="sm">
+                            {group.label}
                           </Text>
-                        )}
-                      </Table.Td>
-                      <Table.Td>{formatBytes(size)}</Table.Td>
-                      <Table.Td>
-                        <Button
-                          size="xs"
-                          variant="default"
-                          disabled={anyBusy}
-                          loading={regionBusy === r.id}
-                          onClick={() => void exportRegion(r.id)}
-                        >
-                          Export
-                        </Button>
-                      </Table.Td>
-                    </Table.Tr>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="xs" c="dimmed">
+                            {members.length} region{members.length === 1 ? '' : 's'}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text fw={600} size="sm">
+                            {formatBytes(groupSize)}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Button
+                            size="xs"
+                            variant="light"
+                            disabled={anyBusy}
+                            loading={regionBusy === group.id}
+                            onClick={() => void exportGroup(group.id, group.label)}
+                          >
+                            Export
+                          </Button>
+                        </Table.Td>
+                      </Table.Tr>
+                      {members.map((r) => {
+                        const size = r.chunks.reduce((sum, c) => sum + c.length, 0);
+                        return (
+                          <Table.Tr key={r.id}>
+                            <Table.Td pl="lg">
+                              <Text size="sm" c="dimmed">
+                                {r.label}
+                              </Text>
+                            </Table.Td>
+                            <Table.Td>
+                              <Code>{hex(r.chunks[0]?.address ?? 0)}</Code>
+                              {r.chunks.length > 1 && (
+                                <Text size="xs" c="dimmed">
+                                  {r.chunks.length} chunks
+                                </Text>
+                              )}
+                            </Table.Td>
+                            <Table.Td>{formatBytes(size)}</Table.Td>
+                            <Table.Td />
+                          </Table.Tr>
+                        );
+                      })}
+                    </Fragment>
                   );
                 })}
               </Table.Tbody>
