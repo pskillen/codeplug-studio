@@ -3,15 +3,12 @@ import { newChannel, newFormatBuild, newZone } from '@core/domain/factories.ts';
 import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { SCAN_COL } from '../columns.ts';
+import { expandAllDm32ChannelsForExport, dm32ChannelExpansionById } from '../channelExpansion.ts';
 import {
-  expandAllDm32ChannelsForExport,
-  dm32ChannelExpansionById,
-} from '../channelExpansion.ts';
-import {
-  DM32_EMPTY_SCAN_LIST_NAME,
   deriveZoneDerivedScanLists,
   ensureDm32ScanCsvFloor,
 } from './derive.ts';
+import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLists/dm32EmptyScanFloor.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';

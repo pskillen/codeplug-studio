@@ -34,7 +34,7 @@ import {
   scanMasterEnabled,
   scanMemberIds,
 } from '@core/import-export/zoneDerivedScanLists/members.ts';
-import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/formats/dm32/zoneDerivedScanLists/derive.ts';
+import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLists/dm32EmptyScanFloor.ts';
 import {
   buildScanContext,
   effectiveScanSkips,
@@ -99,11 +99,6 @@ function requireNumericLimit(
   throw new RadioIoExportLimitsError(
     `Missing export limit ${field} for ${egress.formatId}/${egress.profileId}`,
   );
-}
-
-/** @deprecated use {@link requireProfileExportLimits} */
-function radioIoExportLimits(egress: RadioWireEgressIds): ProfileExportLimits {
-  return requireProfileExportLimits(egress);
 }
 
 
@@ -197,7 +192,10 @@ function buildDm32Organisation(
   const maxZones = requireNumericLimit(limits.maxZones, 'maxZones', egress);
   const maxScanLists =
     scanListWireCap ??
-    Math.min(requireNumericLimit(limits.maxScanLists, 'maxScanLists', egress), DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX);
+    Math.min(
+      requireNumericLimit(limits.maxScanLists, 'maxScanLists', egress),
+      DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX,
+    );
   const scanListMembersCap = requireNumericLimit(limits.scanListMembers, 'scanListMembers', egress);
   const maxMemorySlots = requireNumericLimit(limits.maxChannels, 'maxChannels', egress);
   const zoneMembersCap = requireNumericLimit(limits.zoneMembers, 'zoneMembers', egress);
@@ -396,7 +394,11 @@ function buildTalkGroupsAndRx(
       : requireNumericLimit(limits.maxContacts, 'maxContacts', egress);
   const maxRx = requireNumericLimit(limits.maxRxGroupLists, 'maxRxGroupLists', egress);
   const maxRxMembers = requireNumericLimit(limits.rxGroupListMembers, 'rxGroupListMembers', egress);
-  const nameLenRx = requireNumericLimit(limits.nameLengthRxGroupList, 'nameLengthRxGroupList', egress);
+  const nameLenRx = requireNumericLimit(
+    limits.nameLengthRxGroupList,
+    'nameLengthRxGroupList',
+    egress,
+  );
   const contactIdByEntityId = new Map<string, number>();
   const talkGroups: RadioTalkGroupDto[] = [];
   const reservedTg = new Set<string>();
@@ -628,7 +630,11 @@ function buildOpenGd77ContactsAndRx(
 } {
   const limits = requireProfileExportLimits(egress);
   const nameLen = requireNumericLimit(limits.nameLengthTalkGroup, 'nameLengthTalkGroup', egress);
-  const nameLenRx = requireNumericLimit(limits.nameLengthRxGroupList, 'nameLengthRxGroupList', egress);
+  const nameLenRx = requireNumericLimit(
+    limits.nameLengthRxGroupList,
+    'nameLengthRxGroupList',
+    egress,
+  );
   const maxRx = requireNumericLimit(limits.maxRxGroupLists, 'maxRxGroupLists', egress);
   const maxRxMembers = requireNumericLimit(limits.rxGroupListMembers, 'rxGroupListMembers', egress);
   const maxContacts = requireNumericLimit(limits.maxContacts, 'maxContacts', egress);
@@ -945,12 +951,15 @@ export function buildRadioWriteProjection(
     talkGroups = tgRx.talkGroups;
     rxGroups = tgRx.rxGroups;
     digitalContacts = tgRx.digitalContacts;
-    const radioIdBank = buildDm32RadioIdBank(assembled, build, library, egress, warnings);
-    dm32RadioIds = radioIdBank.radioIds;
-    fkMaps = {
-      ...tgRx.fkMaps,
-      dmrIdIndexByValue: radioIdBank.dmrIdIndexByValue,
-    };
+    fkMaps = tgRx.fkMaps;
+    if (egress.profileId === 'radio-io-dm32uv') {
+      const radioIdBank = buildDm32RadioIdBank(assembled, build, library, egress, warnings);
+      dm32RadioIds = radioIdBank.radioIds;
+      fkMaps = {
+        ...tgRx.fkMaps,
+        dmrIdIndexByValue: radioIdBank.dmrIdIndexByValue,
+      };
+    }
   } else if (isOpenGd77RadioIoEgress(egress.profileId)) {
     const tgRx = buildOpenGd77ContactsAndRx(assembled, egress, warnings);
     talkGroups = tgRx.talkGroups;

@@ -8,8 +8,8 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ## Deferred enforcement (M6 default)
 
-- [ ] DM32 CSV contacts/TGs/zones declared-but-unenforced truncate — document only this PR; enforcement follow-up if desired — [#813](https://github.com/pskillen/codeplug-studio/issues/813)
-- [ ] Anytone RGL member cap declared-but-unenforced — document only this PR — [#813](https://github.com/pskillen/codeplug-studio/issues/813)
+- [ ] DM32 CSV contacts/TGs/zones declared-but-unenforced truncate — documented in [radio-limits-sot.md](radio-limits-sot.md); enforcement follow-up if desired — [#813](https://github.com/pskillen/codeplug-studio/issues/813)
+- [ ] Anytone RGL member cap declared-but-unenforced — documented in [radio-limits-sot.md](radio-limits-sot.md) — [#813](https://github.com/pskillen/codeplug-studio/issues/813)
 
 ## Out of scope (noted)
 

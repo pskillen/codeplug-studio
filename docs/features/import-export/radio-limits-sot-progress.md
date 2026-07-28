@@ -8,51 +8,30 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** Complete (pending merge)
 
 **Branch:** `813/pskil/radio-limits-sot`
 
 ---
 
-## Slice 0: Guardrail — rule + checklist
+## Delivered (all slices)
 
-**Status:** Complete
+- Slice 0: Guardrails in `vendor-boundaries.mdc`, `AGENTS.md`, format/radio checklists
+- Slice 1: `DM32UV_LIMITS` expanded; dm32 / NeonPlug / radio-io profiles + `profileExportLimits`
+- Slice 2: Codecs, APRS slots, NO-TX band from core limits; `maxRadioIds` on export limits API
+- Slice 3: `radioIoWriteProjection` profile-only limits (no app fallbacks)
+- Slice 4: `OPENGD77_FAMILY_LIMITS`, `AT_D890UV_LIMITS` modules + profile wiring
+- Slice 5: DM32 Scan derive under `formats/dm32/`; library APRS clamp removed; M6 docs
+- Slice 6: Tier-3 limits anchors; feature hub row; PR
 
-**Delivered**
+**Feature note:** [radio-limits-sot.md](radio-limits-sot.md)
 
-- `vendor-boundaries.mdc` — radio limits SoT section
-- `AGENTS.md` — vendor boundaries paragraph
-- `adding-a-new-format.md` / `adding-a-radio-adapter.md` — limits module checklist items
-- Progress/outstanding pair created
+**Verify**
 
----
-
-## Slice 1: Expand DM32UV_LIMITS + rewire profiles
-
-**Status:** Complete
-
-**Delivered**
-
-- Expanded `src/core/radios/baofeng/dm-32uv/limits.ts`
-- dm32 / neonplug / radio-io profiles import `DM32UV_LIMITS`
-- `profileExportLimits` maps radio-io DM32 contacts/TGs (fixes H2)
-- Sync tests in dm32, neonplug, radio-io, profileExportLimits
-
----
-
-## Slice 2: Codecs + APRS/NO-TX from limits
-
-**Status:** Complete
-
-**Delivered**
-
-- DM32 codecs import cardinality from `DM32UV_LIMITS`
-- NO-TX band from core limits (NeonPlug keeps JSON sentinel)
-- APRS report-channel count from `DM32UV_LIMITS.APRS_REPORT_CHANNELS`
-- `maxRadioIds` on `ProfileExportLimits`; radio-ID bank uses it (M7)
+- [x] `npm run format:check && npm run lint && npm run test && npm run build`
 
 ---
 
 ## Next
 
-- Slice 3: Purge `radioIoWriteProjection` app fallbacks
+- Merge PR; file follow-up for M6 enforcement if desired

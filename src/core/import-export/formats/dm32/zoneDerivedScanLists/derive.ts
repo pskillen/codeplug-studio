@@ -2,7 +2,11 @@ import type { Channel } from '@core/models/library.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { buildScanContext, effectiveScanSkips } from '@core/import-export/scanInclusion/index.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
-import { layoutEntry, scanMasterEnabled, scanMemberIds } from '@core/import-export/zoneDerivedScanLists/members.ts';
+import {
+  layoutEntry,
+  scanMasterEnabled,
+  scanMemberIds,
+} from '@core/import-export/zoneDerivedScanLists/members.ts';
 import {
   DEFAULT_SCAN_CARRIER_HZ,
   zoneScanCarrierWireName,
@@ -14,11 +18,9 @@ import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from '../profiles.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 
+export { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLists/dm32EmptyScanFloor.ts';
 export type { SyntheticScanCarrier } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
 export { DEFAULT_SCAN_CARRIER_HZ } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
-
-/** Default Scan.csv name when no zone-derived lists exist (#564). Fits CPS official 11-char Scan Name. */
-export const DM32_EMPTY_SCAN_LIST_NAME = 'Scan list 1';
 
 export interface ScanCsvRow {
   values: Record<string, string>;

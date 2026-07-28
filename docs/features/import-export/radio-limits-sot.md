@@ -2,9 +2,9 @@
 
 Hardware cardinality, RF band bounds, and name-length ceilings for a radio model have one **code** module and one **human** doc:
 
-| Kind | Path |
-| --- | --- |
-| Code | `src/core/radios/<manufacturer>/<model>/limits.ts` |
+| Kind | Path                                                     |
+| ---- | -------------------------------------------------------- |
+| Code | `src/core/radios/<manufacturer>/<model>/limits.ts`       |
 | Docs | `docs/reference/radios/<manufacturer>/<model>/limits.md` |
 
 Format profiles (`formats/<format>/profiles.ts`) and radio-io profiles **import** from that module. Protocol-only layout sizes may stay in `integrations/radio-io/`, but cardinality must re-export from core.
@@ -17,8 +17,8 @@ Format profiles (`formats/<format>/profiles.ts`) and radio-io profiles **import*
 
 These profile fields document radio facts but **do not** truncate or warn on the listed CSV/export path today. Enforcement may follow under pathway parity work ([#813](https://github.com/pskillen/codeplug-studio/issues/813)).
 
-| Profile / path | Field | Notes |
-| --- | --- | --- |
-| DM32 `dm32-baofeng-dm32uv` | `maxContacts`, `maxTalkGroups`, `maxZones` | Contacts/TGs/zones serialise without count caps; zone member warnings only |
-| NeonPlug `neonplug-dm32uv` | `maxTalkGroups` | Talk groups not truncated on NeonPlug org export |
-| Anytone `anytone-at-d890uv` | `rxGroupListMembers` | RGL member cap documented; not warned/truncated on Anytone CSV export |
+| Profile / path              | Field                                      | Notes                                                                      |
+| --------------------------- | ------------------------------------------ | -------------------------------------------------------------------------- |
+| DM32 `dm32-baofeng-dm32uv`  | `maxContacts`, `maxTalkGroups`, `maxZones` | Contacts/TGs/zones serialise without count caps; zone member warnings only |
+| NeonPlug `neonplug-dm32uv`  | `maxTalkGroups`                            | Talk groups not truncated on NeonPlug org export                           |
+| Anytone `anytone-at-d890uv` | `rxGroupListMembers`                       | RGL member cap documented; not warned/truncated on Anytone CSV export      |
