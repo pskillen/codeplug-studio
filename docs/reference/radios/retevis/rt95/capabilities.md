@@ -6,7 +6,7 @@
 | ------------------- | ------------------------------------------------------------------- |
 | Max RF power        | ~25 W                                                               |
 | Analogue FM (NFM)   | Yes                                                                 |
-| AM / airband        | **No** — FM/NFM only (CHIRP `valid_modes`; no AM in channel record) |
+| AM / airband        | **No** — FM/NFM only (CHIRP `valid_modes`; no AM in channel record). Studio assemble/export skips AM library channels with an unsupported-mode warning on both CHIRP CSV and Web Serial paths. |
 | DMR / other digital | No — unsupported modes omitted from export (with warning)           |
 
 ### Frequency ranges (Studio eligibility)
