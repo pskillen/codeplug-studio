@@ -76,6 +76,8 @@ export interface WirePreviewZoneScanColumnConfig {
   layout: ZoneGroupingLayout;
   saving: boolean;
   onExportScanListChange: (zoneId: string, enabled: boolean) => void;
+  /** When false, hide the export scan list control for that zone (e.g. airband-only on D890). */
+  showExportScanListForZone?: (zoneId: string) => boolean;
 }
 
 /** Inline Skip / Force export on the wire list (dense include controls). */
@@ -287,6 +289,15 @@ export default function WirePreviewDataTable({
                     );
                   }
                   const entry = layoutEntry(zoneScanColumn.layout, row.libraryEntityId);
+                  const showScan =
+                    zoneScanColumn.showExportScanListForZone?.(row.libraryEntityId) ?? true;
+                  if (!showScan) {
+                    return (
+                      <Text size="sm" c="dimmed">
+                        —
+                      </Text>
+                    );
+                  }
                   return (
                     <Group gap="xs" onClick={(event) => event.stopPropagation()}>
                       <Switch

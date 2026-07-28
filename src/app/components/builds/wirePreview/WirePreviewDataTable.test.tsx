@@ -251,6 +251,44 @@ describe('WirePreviewDataTable', () => {
     expect(onExportScanListChange).toHaveBeenCalledWith('zone-1', false);
   });
 
+  it('hides export scan list switch when showExportScanListForZone returns false', () => {
+    const zoneRow: WirePreviewRow = {
+      key: 'zone-air',
+      libraryEntityId: 'zone-air',
+      entityKind: 'zone',
+      displayLabel: 'AM only',
+      generatedWireName: 'AM only',
+      effectiveWireName: 'AM only',
+      hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
+      excluded: false,
+    };
+    const layout: ZoneGroupingLayout = {
+      kind: 'zoneGrouping',
+      zones: [{ id: 'zone-air', name: 'AM only', channelIds: [], exportScanList: true }],
+    };
+
+    render(
+      <MemoryRouter>
+        <MantineProvider>
+          <WirePreviewDataTable
+            rows={[zoneRow]}
+            onRowActivate={vi.fn()}
+            zoneScanColumn={{
+              layout,
+              saving: false,
+              onExportScanListChange: vi.fn(),
+              showExportScanListForZone: (zoneId) => zoneId !== 'zone-air',
+            }}
+          />
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByLabelText('Export AM only as scan list')).not.toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
+  });
+
   it('shows Custom member order badge when zone member layout order is overridden', () => {
     const zoneRow: WirePreviewRow = {
       key: 'zone-1',

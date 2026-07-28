@@ -1,3 +1,4 @@
+import { resolveAnytoneCpsProfileId } from '@core/import-export/formats/anytone/profiles.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { ChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
@@ -8,7 +9,9 @@ import {
   type AnytoneExportChannelBank,
 } from '@core/import-export/formats/anytone/receiveOnlyBanks.ts';
 import {
+  classifyAnytoneZoneByMembers,
   partitionAnytoneZones as partitionZonesFromFormat,
+  type AnytoneZoneBankKind,
   type AnytoneZonePartition,
 } from '@core/import-export/formats/anytone/zonePartition.ts';
 import {
@@ -16,7 +19,21 @@ import {
   receiveBankChannelSlot as receiveBankChannelSlotFromFormat,
 } from '@core/import-export/formats/anytone/exportChannelSlots.ts';
 
-export type { AnytoneExportChannelBank, AnytoneChannelPartition, AnytoneZonePartition };
+const AT_D890_CPS_PROFILE_ID = 'anytone-at-d890uv';
+
+export type {
+  AnytoneExportChannelBank,
+  AnytoneChannelPartition,
+  AnytoneZonePartition,
+  AnytoneZoneBankKind,
+};
+export { classifyAnytoneZoneByMembers };
+
+/** True when egress uses the AT-D890UV parallel AmAir / AmZone bank split (CSV or Web Serial). */
+export function usesAtD890AirbandBankSplit(profileId: string | undefined): boolean {
+  if (!profileId) return false;
+  return resolveAnytoneCpsProfileId(profileId) === AT_D890_CPS_PROFILE_ID;
+}
 
 /** Anytone CPS export bank for a library channel (DMR/main, AM air, FM broadcast). */
 export function classifyAnytoneExportChannelBank(channel: Channel): AnytoneExportChannelBank {

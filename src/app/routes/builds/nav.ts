@@ -15,6 +15,7 @@ import {
   showsPerChannelScanListNav,
   traitsForRadioTarget,
 } from '@core/radio-targets/index.ts';
+import { usesAtD890AirbandBankSplit } from '@core/services/anytoneChannelBanks.ts';
 import { findNeonplugDonorEgress, findRadioCloneEgress } from '../../lib/buildEgressUi.ts';
 import { entityNavIcons } from '../../nav/entityNavIcons.ts';
 
@@ -27,8 +28,15 @@ export interface BuildNavItem {
 export interface BuildNavOptions {
   /** Seeded egress rows — retain links appear when a matching hydration bag exists. */
   egressPaths?: EgressPath[];
-  /** Selected pathway — Airband (and similar wire-only chrome) keys off this. */
+  /** Selected pathway — AM airband (and similar wire-only chrome) keys off this. */
   activeEgress?: EgressPath | null;
+}
+
+/** Whether the build secondary nav should link to the D890 AM airband export page. */
+export function showsD890AmAirbandNav(build: RadioBuild, options?: BuildNavOptions): boolean {
+  if (usesAtD890AirbandBankSplit(options?.activeEgress?.profileId)) return true;
+  if (build.radioTargetId !== 'anytone-at-d890uv') return false;
+  return (options?.egressPaths ?? []).some((path) => usesAtD890AirbandBankSplit(path.profileId));
 }
 
 /** Secondary nav entries for a radio build detail shell. */
@@ -36,7 +44,6 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
   const base = `/builds/${build.id}`;
   const traits = new Set(traitsForRadioTarget(build.radioTargetId));
   const flatMemory = traits.has(BuildCapabilityTrait.FlatMemoryList);
-  const activeFormatId = options?.activeEgress?.formatId;
   const egressPaths = options?.egressPaths ?? [];
 
   const items: BuildNavItem[] = [
@@ -59,8 +66,8 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
     });
   }
 
-  if (activeFormatId === 'anytone') {
-    items.push({ label: 'Airband', path: `${base}/airband`, icon: IconPlane });
+  if (showsD890AmAirbandNav(build, options)) {
+    items.push({ label: 'AM airband', path: `${base}/airband`, icon: IconPlane });
   }
 
   if (traits.has(BuildCapabilityTrait.ZoneGrouping)) {

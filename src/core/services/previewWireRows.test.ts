@@ -927,6 +927,89 @@ describe('previewWireRows', () => {
     expect(airZoneNames.sort()).toEqual(['AM only', 'Mixed']);
   });
 
+  it('splits D890 Web Serial zones between main Zones and Airband previews', () => {
+    const projectId = 'proj-d890-serial-preview-zn';
+    const dmr: Channel = {
+      ...newChannel(projectId, 'DMR 1'),
+      rxFrequency: 430_000_000,
+      txFrequency: 430_000_000,
+      modeProfiles: [defaultModeProfile('dmr')],
+    };
+    const air: Channel = {
+      ...newChannel(projectId, 'Tower'),
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: 'forbid',
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const airOnlyZone = {
+      ...newZone(projectId, 'AM only'),
+      members: [{ kind: 'channel' as const, channelId: air.id }],
+    };
+    const mixedZone = {
+      ...newZone(projectId, 'Mixed'),
+      members: [
+        { kind: 'channel' as const, channelId: dmr.id },
+        { kind: 'channel' as const, channelId: air.id },
+      ],
+    };
+    const build = newFormatBuild(projectId, 'anytone-at-d890uv');
+    const library = {
+      channels: [dmr, air],
+      zones: [airOnlyZone, mixedZone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const serialEgress = { formatId: 'radio-io' as const, profileId: 'radio-io-at-d890uv' };
+
+    const mainZoneNames = previewWireRows(build, library, 'zone', serialEgress).map(
+      (row) => row.displayLabel,
+    );
+    expect(mainZoneNames).toEqual(['Mixed']);
+
+    const airZoneNames = previewWireRows(build, library, 'zone', serialEgress, 'airband').map(
+      (row) => row.displayLabel,
+    );
+    expect(airZoneNames.sort()).toEqual(['AM only', 'Mixed']);
+  });
+
+  it('filters D890 Web Serial airband channels out of the main Channels preview', () => {
+    const projectId = 'proj-d890-serial-preview-ch';
+    const dmr: Channel = {
+      ...newChannel(projectId, 'DMR 1'),
+      rxFrequency: 430_000_000,
+      txFrequency: 430_000_000,
+      modeProfiles: [defaultModeProfile('dmr')],
+    };
+    const air: Channel = {
+      ...newChannel(projectId, 'Tower'),
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: 'forbid',
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const build = newFormatBuild(projectId, 'anytone-at-d890uv');
+    const library = {
+      channels: [dmr, air],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const serialEgress = { formatId: 'radio-io' as const, profileId: 'radio-io-at-d890uv' };
+
+    const mainRows = previewWireRows(build, library, 'channel', serialEgress);
+    expect(mainRows.map((row) => row.displayLabel)).toEqual([expect.stringContaining('DMR 1')]);
+
+    const airRows = previewWireRows(build, library, 'channel', serialEgress, 'airband');
+    expect(airRows.map((row) => row.displayLabel)).toEqual([expect.stringContaining('Tower')]);
+  });
+
   it('orders zone preview rows by build orderOrSlot overrides', () => {
     const projectId = 'proj-zone-preview-order';
     const zoneA = { ...newZone(projectId, 'Alpha'), order: 1 };

@@ -4,6 +4,10 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useOptionalBuildLayout } from '../../../routes/builds/BuildLayoutContext.tsx';
+import {
+  readStoredActiveEgressId,
+  resolveActiveEgress,
+} from '../../../routes/builds/activeEgress.ts';
 import { buildNavItems } from '../../../routes/builds/nav.ts';
 import { BuildService } from '../../../state/buildService.ts';
 import { persistence } from '../../../state/persistence.ts';
@@ -23,7 +27,11 @@ export default function BuildNavLinks() {
 
   const build = layout?.build ?? hookBuild;
   const egressPaths = layout?.egressPaths ?? localEgressPaths;
-  const activeEgress = layout?.activeEgress ?? null;
+  const activeEgress =
+    layout?.activeEgress ??
+    (build && egressPaths.length > 0
+      ? resolveActiveEgress(build, egressPaths, readStoredActiveEgressId(build.id))
+      : null);
 
   const reloadEgressPaths = useCallback(async () => {
     if (!activeProjectId || !buildId) {
