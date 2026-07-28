@@ -207,6 +207,50 @@ describe('buildRadioWriteProjection', () => {
     expect(dto?.skipZoneScan).toBe(false);
   });
 
+  it('fans out dual-mode zone members to both expanded serial slots', () => {
+    const dual = withExportEligibleDefaults({
+      ...newChannel('p1', 'DualMode'),
+      id: 'ch-dual',
+      rxFrequency: 430_850_000,
+      txFrequency: 438_450_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none',
+          txTone: 'none',
+          bandwidthKHz: 12.5,
+        },
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 123,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    });
+    const zone = {
+      ...newZone('p1', 'Local'),
+      id: 'zone-1',
+      members: [{ kind: 'channel' as const, channelId: 'ch-dual' }],
+    };
+    const library = {
+      ...emptyLibrary([dual]),
+      zones: [zone],
+    };
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-md9600');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.channels).toHaveLength(2);
+    const zoneDto = projection.organisation.zones?.[0];
+    expect(zoneDto?.channelNumbers).toEqual([1, 2]);
+  });
+
   it('prepends each zone’s own scan carrier and first-wins scanListId for shared members', () => {
     const shared = withExportEligibleDefaults({
       ...newChannel('p1', 'Hotspot'),

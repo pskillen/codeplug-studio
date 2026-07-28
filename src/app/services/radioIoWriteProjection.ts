@@ -57,6 +57,8 @@ import {
 } from '@core/services/anytoneChannelBanks.ts';
 import {
   expandAssembledChannelsToRadioDtos,
+  isOpenGd77RadioIoEgress,
+  openGd77NumbersBySourceChannelId,
   type RadioChannelFkMaps,
   type RadioWireEgressIds,
 } from './radioIoChannelMap.ts';
@@ -120,6 +122,15 @@ function buildNumbersBySourceChannelId(
   const map = new Map<string, number[]>();
 
   if (!hasMxNChannelExpansion(build.radioTargetId)) {
+    if (isOpenGd77RadioIoEgress(egress.profileId)) {
+      return openGd77NumbersBySourceChannelId(
+        assembled.channels,
+        build,
+        egress,
+        warnings,
+        maxSlots,
+      );
+    }
     let autoSlot = 1;
     for (const row of assembled.channels) {
       const rxHz = row.entity.rxFrequency;
@@ -851,10 +862,6 @@ function stampUv17ProFlatMemoryChannelBehaviour(
       'scan';
     return { ...dto, scanAdd };
   });
-}
-
-function isOpenGd77RadioIoEgress(profileId: string): boolean {
-  return profileId === 'radio-io-opengd77-1701' || profileId === 'radio-io-opengd77-md9600';
 }
 
 function stampOpenGd77ChannelBehaviour(

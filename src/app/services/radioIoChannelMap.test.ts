@@ -191,9 +191,55 @@ describe('assembledChannelsToRadioDtos', () => {
       build,
       egress,
     );
-    expect(dtos).toHaveLength(1);
-    expect(dtos[0]?.mode).toBe('fixed-digital');
+    expect(dtos).toHaveLength(2);
+    expect(dtos.map((d) => d.wireName).sort()).toEqual(['Repeater-D', 'Repeater-F']);
+    expect(dtos.map((d) => d.mode).sort()).toEqual(['analog', 'digital']);
     expect(warnings).toContain(openGd77DroppedModesWarning('Repeater', ['ysf']));
+  });
+
+  it('expands dual-mode FM+DMR to -F and -D wire rows via expandAssembledChannelsToRadioDtos', () => {
+    const projectId = 'p1';
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-opengd77-1701');
+    const entity = {
+      ...newChannel(projectId, 'DualMode'),
+      id: 'ch-dual',
+      rxFrequency: 430_850_000,
+      txFrequency: 438_450_000,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none',
+          txTone: 'none',
+          bandwidthKHz: 12.5,
+        },
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 123,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const library: LibrarySlice = {
+      channels: [entity],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const { dtos } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress);
+    expect(dtos).toHaveLength(2);
+    expect(dtos.map((d) => d.wireName).sort()).toEqual(['DualMode-D', 'DualMode-F']);
+    expect(dtos.map((d) => d.mode).sort()).toEqual(['analog', 'digital']);
   });
 
   it('keeps full channel name under limit when abbreviation is set (no eager abbrev)', () => {
