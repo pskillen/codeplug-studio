@@ -56,11 +56,7 @@ export function anytoneChannelWireName(
   const pick = channelPickForWireExport(row.entity, {
     nameModeOverride: exportOptions?.nameModeOverride as ChannelExportNameMode | undefined,
   });
-  let base = composeChannelWireName(pick);
-  const abbrev = row.entity.abbreviation?.trim();
-  if (abbrev && exportOptions?.useChannelAbbreviation !== false) {
-    base = composeChannelWireName({ ...pick, name: abbrev });
-  }
+  const base = composeChannelWireName(pick);
 
   if (!shortenNames) {
     const name = sanitiseAsciiWireString(

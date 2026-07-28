@@ -109,7 +109,26 @@ describe('chirp/exportChannelWire', () => {
     expect(row[4]).toBe('0.000000');
   });
 
-  it('uses channel abbreviation for export wire name when enabled', () => {
+  it('keeps full composed name when abbreviation is set but name fits (useChannelAbbreviation on)', () => {
+    const row = channelToChirpRow(
+      assembledChannel({
+        name: 'hs',
+        abbreviation: 'Hs',
+        callsign: 'GB7GL',
+        rxFrequency: 145_500_000,
+        txFrequency: 145_500_000,
+        forbidTransmit: 'default',
+      }),
+      3,
+      'chirp-uv5r',
+      { ...testWireOptions(), shortenNames: true, useChannelAbbreviation: true },
+      { formatDefault: 'skip' },
+      { useChannelAbbreviation: true },
+    );
+    expect(row[1]).toBe('GB7GL hs');
+  });
+
+  it('shortens with library abbreviation when over nameLimit (useChannelAbbreviation on)', () => {
     const row = channelToChirpRow(
       assembledChannel({
         name: 'Largs Scotland West',
@@ -121,7 +140,12 @@ describe('chirp/exportChannelWire', () => {
       }),
       3,
       'chirp-uv5r',
-      { ...testWireOptions(), useChannelAbbreviation: true },
+      {
+        ...testWireOptions(),
+        maxNameLength: 12,
+        shortenNames: true,
+        useChannelAbbreviation: true,
+      },
       { formatDefault: 'skip' },
       { useChannelAbbreviation: true },
     );

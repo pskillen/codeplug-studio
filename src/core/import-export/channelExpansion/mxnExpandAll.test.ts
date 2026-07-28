@@ -413,7 +413,7 @@ describe('expandAllMxNChannels — anytoneFamily', () => {
     expect(rows).toHaveLength(1);
   });
 
-  it('RX-expanded hotspot uses Hspt prefix without phantom disambiguation', () => {
+  it('RX-expanded hotspot uses full site name without phantom disambiguation', () => {
     const hsptOccupier: Channel = {
       ...newChannel(PROJECT_ID, 'Hspt'),
       rxFrequency: 145_500_000,
@@ -429,12 +429,12 @@ describe('expandAllMxNChannels — anytoneFamily', () => {
       ],
     };
     const tgScotland = newTalkGroup(PROJECT_ID, 'Scotland', 23550);
-    const tg2357910 = newTalkGroup(PROJECT_ID, 'TG 2357910', 2357910);
+    const tgTs2 = newTalkGroup(PROJECT_ID, 'TS2', 2357910);
     const rgl = {
       ...newRxGroupList(PROJECT_ID, 'Hotspot RX'),
       members: [
         { ref: { kind: 'talkGroup' as const, id: tgScotland.id } },
-        { ref: { kind: 'talkGroup' as const, id: tg2357910.id } },
+        { ref: { kind: 'talkGroup' as const, id: tgTs2.id } },
       ],
     };
     const hotspot: Channel = {
@@ -474,7 +474,7 @@ describe('expandAllMxNChannels — anytoneFamily', () => {
     const library = {
       channels: [hsptOccupier, hotspot],
       zones: [],
-      talkGroups: [tgScotland, tg2357910],
+      talkGroups: [tgScotland, tgTs2],
       digitalContacts: [],
       analogContacts: [],
       rxGroupLists: [rgl],
@@ -501,13 +501,13 @@ describe('expandAllMxNChannels — anytoneFamily', () => {
     expect(tgRows.length).toBeGreaterThanOrEqual(2);
 
     for (const row of tgRows) {
-      expect(row.wireName).toMatch(/^Hspt /);
-      expect(row.wireName).not.toMatch(/^Hspt 2/);
+      expect(row.wireName).toMatch(/^Hotspot /);
+      expect(row.wireName).not.toMatch(/^Hotspot 2/);
       expect(row.wireName).not.toMatch(/^\s+\d+ /);
     }
 
     const scratch = hotspotRows.find((row) => row.rowKind === 'scratch');
-    expect(scratch?.wireName).toMatch(/^Hspt .*Scratch/);
+    expect(scratch?.wireName).toMatch(/^Hotspot .*Scratch/);
   });
 });
 

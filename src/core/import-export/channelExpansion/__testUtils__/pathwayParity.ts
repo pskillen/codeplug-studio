@@ -7,6 +7,12 @@ import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
 import { CHANNEL_COL } from '@core/import-export/formats/opengd77/columns.ts';
 import { serialiseChannels } from '@core/import-export/formats/opengd77/serialise.ts';
+import { anytoneChannelWireName } from '@core/import-export/formats/anytone/exportChannelWire.ts';
+import {
+  channelToChirpRow,
+  effectiveMaxNameLength,
+  type ChirpChannelWireOptions,
+} from '@core/import-export/formats/chirp/exportChannelWire.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import {
   buildScanContext,
@@ -298,4 +304,131 @@ export function assertOpenGd77WireNameParity(
 export const OPENGD77_PATHWAY_PAIRS: readonly PathwayProfilePair[] = [
   { csv: 'opengd77-1701', serial: 'radio-io-opengd77-1701' },
   { csv: 'opengd77-md9600', serial: 'radio-io-opengd77-md9600' },
+] as const;
+
+/** CHIRP CSV leg: single memory row wire name. */
+export function chirpCsvPathwaySnapshot(
+  input: PathwayExtractInput & { csvOptions: CpsExportOptions },
+): PathwayChannelSnapshot {
+  const { channel, csvOptions, csvProfileId, exportSettings } = input;
+  const wireName = defaultChannelWireName(channel);
+  const row = { entity: channel, wireName };
+  const reserved = new Set<string>();
+  const warnings: string[] = [];
+  const wireOpts: ChirpChannelWireOptions = {
+    reserved,
+    maxNameLength: effectiveMaxNameLength(csvOptions, csvProfileId),
+    shortenNames: csvOptions.shortenNames !== false,
+    nameModeOverride: csvOptions.nameModeOverride as ChirpChannelWireOptions['nameModeOverride'],
+    useChannelAbbreviation: csvOptions.useChannelAbbreviation,
+    warnings,
+  };
+  const chirpRow = channelToChirpRow(
+    row,
+    1,
+    csvProfileId,
+    wireOpts,
+    { formatDefault: 'skip' },
+    csvOptions,
+  );
+  return {
+    wireNames: [chirpRow[1]],
+    rowCount: 1,
+    scanInclusion: effectiveScanForPathway(channel, exportSettings, 'chirp', csvProfileId),
+  };
+}
+
+/** Anytone CSV leg: lean channel wire name via export helper. */
+export function anytoneCsvPathwaySnapshot(
+  input: PathwayExtractInput & { csvOptions: CpsExportOptions },
+): PathwayChannelSnapshot {
+  const { channel, csvOptions, csvProfileId, exportSettings } = input;
+  const wireName = defaultChannelWireName(channel);
+  const row = { entity: channel, wireName };
+  const reserved = new Set<string>();
+  const warnings: string[] = [];
+  const name = anytoneChannelWireName(row, { reserved, warnings }, csvOptions, csvProfileId);
+  return {
+    wireNames: [name],
+    rowCount: 1,
+    scanInclusion: effectiveScanForPathway(channel, exportSettings, 'anytone', csvProfileId),
+  };
+}
+
+export function collectChirpPathwaySnapshots(
+  channel: Channel,
+  exportSettings: BuildExportSettings | undefined,
+  pair: PathwayProfilePair,
+): Record<string, PathwayChannelSnapshot> {
+  const csvOptions = mergePathwayCsvOptions(exportSettings, 'chirp', pair.csv);
+  const serialOptions = mergePathwaySerialOptions(exportSettings, pair.serial);
+  const input: PathwayExtractInput = {
+    channel,
+    exportSettings,
+    csvFormatId: 'chirp',
+    csvProfileId: pair.csv,
+    serialProfileId: pair.serial,
+  };
+  const csv = chirpCsvPathwaySnapshot({ ...input, csvOptions });
+  const serial = serialPathwaySnapshot(channel, serialOptions, pair.serial, exportSettings);
+  return {
+    [`${pair.csv} CSV`]: csv,
+    [`${pair.serial} serial`]: serial,
+  };
+}
+
+export function collectAnytonePathwaySnapshots(
+  channel: Channel,
+  exportSettings: BuildExportSettings | undefined,
+  pair: PathwayProfilePair,
+): Record<string, PathwayChannelSnapshot> {
+  const csvOptions = mergePathwayCsvOptions(exportSettings, 'anytone', pair.csv);
+  const serialOptions = mergePathwaySerialOptions(exportSettings, pair.serial);
+  const input: PathwayExtractInput = {
+    channel,
+    exportSettings,
+    csvFormatId: 'anytone',
+    csvProfileId: pair.csv,
+    serialProfileId: pair.serial,
+  };
+  const csv = anytoneCsvPathwaySnapshot({ ...input, csvOptions });
+  const serial = serialPathwaySnapshot(channel, serialOptions, pair.serial, exportSettings);
+  return {
+    [`${pair.csv} CSV`]: csv,
+    [`${pair.serial} serial`]: serial,
+  };
+}
+
+export function assertChirpWireNameParity(
+  channel: Channel,
+  exportSettings: BuildExportSettings | undefined,
+  expectedWireName: string,
+  pairs: readonly PathwayProfilePair[],
+): void {
+  for (const pair of pairs) {
+    const snapshots = collectChirpPathwaySnapshots(channel, exportSettings, pair);
+    assertPathwayParity(snapshots, { expectedFirstWireName: expectedWireName });
+  }
+}
+
+export function assertAnytoneWireNameParity(
+  channel: Channel,
+  exportSettings: BuildExportSettings | undefined,
+  expectedWireName: string,
+  pairs: readonly PathwayProfilePair[],
+): void {
+  for (const pair of pairs) {
+    const snapshots = collectAnytonePathwaySnapshots(channel, exportSettings, pair);
+    assertPathwayParity(snapshots, { expectedFirstWireName: expectedWireName });
+  }
+}
+
+/** Default CHIRP profile pairs exercised by wireNameParity.test.ts (#780). */
+export const CHIRP_PATHWAY_PAIRS: readonly PathwayProfilePair[] = [
+  { csv: 'chirp-uv5r', serial: 'radio-io-uv5r-mini' },
+] as const;
+
+/** Default Anytone profile pairs exercised by wireNameParity.test.ts (#780). */
+export const ANYTONE_PATHWAY_PAIRS: readonly PathwayProfilePair[] = [
+  { csv: 'anytone-at-d890uv', serial: 'radio-io-at-d890uv' },
 ] as const;

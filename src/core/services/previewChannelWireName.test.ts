@@ -50,6 +50,30 @@ describe('previewGeneratedChannelWireName', () => {
     expect(wireName).toBeTruthy();
   });
 
+  it('keeps full name under limit when abbreviation is set (useChannelAbbreviation on)', () => {
+    const channel: Channel = {
+      ...newChannel(projectId, 'hotspot'),
+      callsign: 'GB7GL',
+      abbreviation: 'Hspt',
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 2 as const,
+          dmrId: 1234567,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      exportSettings: { shortenNames: true, useChannelAbbreviation: true },
+    };
+
+    expect(previewGeneratedChannelWireName(channel, build)).toBe('GB7GL hotspot');
+  });
+
   it('shortens to Anytone AT-D890UV name limit when shortenNames is enabled', () => {
     const channel: Channel = {
       ...newChannel(projectId, 'Glasgow Scotland West Repeater'),

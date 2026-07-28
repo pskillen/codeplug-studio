@@ -58,23 +58,22 @@ Document as **loss** or **trait**, not as a pathway bug:
 
 Recurring divergence patterns from the 2026-07 investigation:
 
-| Key     | Pattern                                                                    | Example                                                                             |
-| ------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| **(a)** | Format wrapper bypasses shared engine                                      | Anytone/CHIRP unconditional-abbreviation wrappers vs generic `applyWireNameLimits`  |
-| **(b)** | Manually mirrored constants that can drift                                 | `nameLimit` declared in CSV profile, radio-io profile, and `profileExportLimits`    |
-| **(c)** | Shared function wired with per-format defaults via comment, not derivation | `getFormatExportDefaults()` for `radio-io-opengd77-*` missing OpenGD77 scan default |
-| **(d)** | New pathway added without threading a callback the original relied on      | radio-io M×N expansion without `resolveSiteWireName`                                |
+| Key     | Pattern                                                                    | Example                                                                                                                              |
+| ------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| **(a)** | Format wrapper bypasses shared engine                                      | Historical: Anytone/CHIRP unconditional-abbreviation wrappers (fixed [#780](https://github.com/pskillen/codeplug-studio/issues/780)) |
+| **(b)** | Manually mirrored constants that can drift                                 | `nameLimit` declared in CSV profile, radio-io profile, and `profileExportLimits`                                                     |
+| **(c)** | Shared function wired with per-format defaults via comment, not derivation | `getFormatExportDefaults()` for `radio-io-opengd77-*` missing OpenGD77 scan default                                                  |
+| **(d)** | New pathway added without threading a callback the original relied on      | radio-io M×N expansion without `resolveSiteWireName`                                                                                 |
 
 ## Divergence inventory
 
 Actionable findings from the pathway audit (2026-07). Fix and lock tickets are children of [#776](https://github.com/pskillen/codeplug-studio/issues/776).
 
-| #   | Radio(s)               | Dimension         | Ticket                                                         | Severity | Summary                                                                                      |
-| --- | ---------------------- | ----------------- | -------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------- |
-| 8   | UV-5R Mini             | Scan/skip flags   | [#806](https://github.com/pskillen/codeplug-studio/issues/806) | High     | NeonPlug hardcodes `defaultScanInclusion: 'scan'`; CHIRP CSV and serial correctly use `skip` |
-| 11  | Anytone + CHIRP radios | Channel wire name | [#780](https://github.com/pskillen/codeplug-studio/issues/780) | Medium   | Unconditional abbreviation substitution in CSV vs shorten-time-only in radio-io/NeonPlug     |
+| #   | Radio(s)   | Dimension       | Ticket                                                         | Severity | Summary                                                                                      |
+| --- | ---------- | --------------- | -------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------- |
+| 8   | UV-5R Mini | Scan/skip flags | [#806](https://github.com/pskillen/codeplug-studio/issues/806) | High     | NeonPlug hardcodes `defaultScanInclusion: 'scan'`; CHIRP CSV and serial correctly use `skip` |
 
-**Closed (clean):** [#777](https://github.com/pskillen/codeplug-studio/issues/777) — OpenGD77 channel wire naming parity (CSV ↔ serial) · [#781](https://github.com/pskillen/codeplug-studio/issues/781) — dual-mode row cardinality · [#782](https://github.com/pskillen/codeplug-studio/issues/782) — AT-D890UV lean site wire names (length cap + ASCII sanitisation on serial) · [#783](https://github.com/pskillen/codeplug-studio/issues/783) — `scanInclusionOverride` · [#803](https://github.com/pskillen/codeplug-studio/issues/803) — default scan inclusion · [#804](https://github.com/pskillen/codeplug-studio/issues/804) — DM-32UV RX group list count cap (CSV ↔ serial ↔ NeonPlug) · [#805](https://github.com/pskillen/codeplug-studio/issues/805) — DM-32UV zone-derived scan-list count cap · [#807](https://github.com/pskillen/codeplug-studio/issues/807) — UV-21/RT95 slot collision handling (CSV ↔ serial) · [#808](https://github.com/pskillen/codeplug-studio/issues/808) — UV-21 AM export parity (CSV `Mode=AM`; serial FM wide).
+**Closed (clean):** [#777](https://github.com/pskillen/codeplug-studio/issues/777) — OpenGD77 channel wire naming parity (CSV ↔ serial) · [#780](https://github.com/pskillen/codeplug-studio/issues/780) — Anytone + CHIRP channel abbreviation policy (shorten-time only; CSV ↔ serial) · [#781](https://github.com/pskillen/codeplug-studio/issues/781) — dual-mode row cardinality · [#782](https://github.com/pskillen/codeplug-studio/issues/782) — AT-D890UV lean site wire names (length cap + ASCII sanitisation on serial) · [#783](https://github.com/pskillen/codeplug-studio/issues/783) — `scanInclusionOverride` · [#803](https://github.com/pskillen/codeplug-studio/issues/803) — default scan inclusion · [#804](https://github.com/pskillen/codeplug-studio/issues/804) — DM-32UV RX group list count cap (CSV ↔ serial ↔ NeonPlug) · [#805](https://github.com/pskillen/codeplug-studio/issues/805) — DM-32UV zone-derived scan-list count cap · [#807](https://github.com/pskillen/codeplug-studio/issues/807) — UV-21/RT95 slot collision handling (CSV ↔ serial) · [#808](https://github.com/pskillen/codeplug-studio/issues/808) — UV-21 AM export parity (CSV `Mode=AM`; serial FM wide).
 
 **Lock suites (harness consumers):** [#784](https://github.com/pskillen/codeplug-studio/issues/784) DM-32UV · [#785](https://github.com/pskillen/codeplug-studio/issues/785) UV-5R Mini · [#786](https://github.com/pskillen/codeplug-studio/issues/786) UV-21 + RT95.
 
@@ -92,6 +91,7 @@ Low-severity risks to address alongside adjacent fixes:
 ### Confirmed clean (no divergence)
 
 - OpenGD77 channel wire naming ([#777](https://github.com/pskillen/codeplug-studio/issues/777), re-confirmed under stress).
+- Anytone + CHIRP channel wire naming — shorten-time abbreviation only; CSV ↔ serial match ([#780](https://github.com/pskillen/codeplug-studio/issues/780)).
 - OpenGD77 dual-mode row cardinality and zone fan-out ([#781](https://github.com/pskillen/codeplug-studio/issues/781)).
 - OpenGD77 scan/skip flags — default `scan` and per-channel override ([#783](https://github.com/pskillen/codeplug-studio/issues/783), [#803](https://github.com/pskillen/codeplug-studio/issues/803)).
 - M×N row cardinality for AT-D890UV and DM-32UV (CSV and radio-io call identical `expandAllMxNChannels()`).
@@ -106,7 +106,11 @@ Low-severity risks to address alongside adjacent fixes:
 
 Shared Vitest helpers live at `src/core/import-export/channelExpansion/__testUtils__/pathwayParity.ts`. How to add a radio target: [pathway-parity tests](../../build/testing/pathway-parity.md).
 
-Reference consumer: `src/core/import-export/formats/opengd77/wireNameParity.test.ts` (OpenGD77 CSV ↔ serial channel wire names, [#777](https://github.com/pskillen/codeplug-studio/issues/777)).
+Reference consumers:
+
+- `src/core/import-export/formats/opengd77/wireNameParity.test.ts` — OpenGD77 CSV ↔ serial ([#777](https://github.com/pskillen/codeplug-studio/issues/777))
+- `src/core/import-export/formats/chirp/wireNameParity.test.ts` — CHIRP CSV ↔ serial ([#780](https://github.com/pskillen/codeplug-studio/issues/780))
+- `src/core/import-export/formats/anytone/wireNameParity.test.ts` — Anytone lean CSV ↔ serial ([#780](https://github.com/pskillen/codeplug-studio/issues/780))
 
 ## Related
 

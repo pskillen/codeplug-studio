@@ -52,12 +52,7 @@ function channelWireName(
   const pick = channelPickForWireExport(row.entity, {
     nameModeOverride: options.nameModeOverride,
   });
-  let base = row.wireNameOverride?.trim() ? row.wireName : composeChannelWireName(pick);
-
-  const abbrev = row.entity.abbreviation?.trim();
-  if (abbrev && (options.useChannelAbbreviation || exportOptions?.useChannelAbbreviation)) {
-    base = composeChannelWireName({ ...pick, name: abbrev });
-  }
+  const base = row.wireNameOverride?.trim() ? row.wireName : composeChannelWireName(pick);
 
   if (!options.shortenNames) {
     if (base.length > options.maxNameLength) {
