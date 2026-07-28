@@ -127,6 +127,7 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 - [ ] App services: hydration persist + assemble→encode path (fake radio)
 - [ ] No React in `integrations/radio-io/`; no frame bytes in `src/app/`
 - [ ] No personal codeplug dumps in the repo
+- [ ] **Pathway parity:** Web Serial Write projection agrees with sibling CPS CSV (and NeonPlug when present) for the catalog target — shared harness in [`pathwayParity.ts`](../../../src/core/import-export/channelExpansion/__testUtils__/pathwayParity.ts); see [pathway-parity tests](../../build/testing/pathway-parity.md) and [export-pathway-parity.md](../import-export/export-pathway-parity.md)
 
 ### 7. Documentation deliverables
 

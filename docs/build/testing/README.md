@@ -40,6 +40,7 @@ flowchart TB
 | Unit      | [unit.md](unit.md)                           | Single function, parser row, domain rule                          | Full multi-file workflow     |
 | Fixtures  | [fixtures.md](fixtures.md)                   | Shared CPS bundles, normalisation rules                           | —                            |
 | Wire      | [wire-verification.md](wire-verification.md) | CPS wire-shape (CRLF, quoting, FKs, caps) via `cps-verify`        | Semantic projection equality |
+| Pathway   | [pathway-parity.md](pathway-parity.md)       | CSV ↔ serial ↔ NeonPlug egress agreement per radio ([#776](https://github.com/pskillen/codeplug-studio/issues/776)) | Import mapping, round-trip   |
 | System    | [system.md](system.md)                       | `core/services` workflows (import into library, assemble, export) | File picker, download events |
 | Component | [component.md](component.md)                 | Modal copy, form wiring, confirm/cancel                           | CSV byte equality            |
 | E2e       | [e2e.md](e2e.md)                             | Real browser: upload, reload, ZIP download                        | Parser edge cases in unit    |
@@ -90,6 +91,7 @@ Docs-only PRs: `format:check` + link audit is sufficient.
 | [unit.md](unit.md)                           | Colocated Vitest by layer                                                                                      |
 | [fixtures.md](fixtures.md)                   | CPS bundles, `sample-exports/` policy                                                                          |
 | [wire-verification.md](wire-verification.md) | External `cps-verify` wire-shape CLI + Vitest ([#480](https://github.com/pskillen/codeplug-studio/issues/480)) |
+| [pathway-parity.md](pathway-parity.md)     | CSV ↔ serial ↔ NeonPlug egress parity harness ([#779](https://github.com/pskillen/codeplug-studio/issues/779)) |
 | [system.md](system.md)                       | Workflow harness — **status: planned**                                                                         |
 | [component.md](component.md)                 | RTL patterns — **status: planned**                                                                             |
 | [e2e.md](e2e.md)                             | Playwright scope — **status: planned**                                                                         |
