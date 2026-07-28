@@ -21,6 +21,16 @@ import {
 import { encodeWideCharName, decodeWideCharName } from './wideChar.ts';
 import { ctcssHzFromIndex, ctcssIndexFromHz } from './ctcssToneTable.ts';
 
+/** Wire sentinel for no scan list / no RX group on D890 channel bytes `0x1b` / `0x1c`. */
+const WIRE_INDEX_NONE = 0xff;
+
+/** Preserve talkaround (7), call confirm (6), reverse (4) on byte `0x09` RMW. */
+const BYTE_09_PRESERVE_MASK = 0xd0;
+
+function setBit(byte: number, bit: number, value: boolean): number {
+  return value ? (byte | (1 << bit)) & 0xff : byte & ~(1 << bit) & 0xff;
+}
+
 function decodeToneFromCtcssIndex(index: number): RadioTone {
   if (index === 0) return { kind: 'none' };
   const hz = ctcssHzFromIndex(index);
@@ -72,6 +82,10 @@ function wireFromMode(mode: RadioChannelMode | undefined): number {
   }
 }
 
+function isDigitalMode(mode: RadioChannelMode | undefined): boolean {
+  return mode === 'digital' || mode === 'fixed-digital';
+}
+
 function powerWireFromPercent(p: number | null): number {
   if (p == null) return 3;
   if (p <= 30) return 0;
@@ -87,6 +101,14 @@ function powerPercentFromWire(bits: number): number | null {
   return 100;
 }
 
+function bandwidthFromWire(bits: number): 'FM' | 'NFM' {
+  return bits === 0 ? 'NFM' : 'FM';
+}
+
+function bandwidthToWire(bandwidth: 'FM' | 'NFM'): number {
+  return bandwidth === 'NFM' ? 0 : 1;
+}
+
 function duplexFromRxTx(rxHz: number, txHz: number): number {
   if (rxHz <= 0 || txHz <= 0 || rxHz === txHz) return 0;
   return txHz > rxHz ? 1 : 2;
@@ -95,6 +117,36 @@ function duplexFromRxTx(rxHz: number, txHz: number): number {
 function offsetHz(rxHz: number, txHz: number): number {
   if (rxHz <= 0 || txHz <= 0) return 0;
   return Math.abs(txHz - rxHz);
+}
+
+function decodeScanListId(wire: number): number | undefined {
+  if (wire === WIRE_INDEX_NONE) return undefined;
+  return wire + 1;
+}
+
+function encodeScanListWire(scanListId: number | undefined): number {
+  if (scanListId == null) return WIRE_INDEX_NONE;
+  return (scanListId - 1) & 0xff;
+}
+
+function decodeRxGroupIndex(wire: number): number | undefined {
+  if (wire === WIRE_INDEX_NONE || wire === 0) return undefined;
+  return wire;
+}
+
+function encodeRxGroupWire(rxGroupIndex: number | undefined): number {
+  if (rxGroupIndex == null) return WIRE_INDEX_NONE;
+  return rxGroupIndex & 0xff;
+}
+
+function decodeTxContactId(contactWire: number, mode: RadioChannelMode): number | undefined {
+  if (!isDigitalMode(mode)) return undefined;
+  return contactWire + 1;
+}
+
+function encodeTxContactWire(txContactId: number | undefined): number | undefined {
+  if (txContactId == null) return undefined;
+  return (txContactId - 1) & 0xffff;
 }
 
 export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): RadioChannelDto {
@@ -112,13 +164,13 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
       rxTone: { kind: 'none' },
       txTone: { kind: 'none' },
       powerPercent: null,
-      bandwidth: 'FM',
+      bandwidth: 'NFM',
     };
   }
   const offHz = decodeBcdFrequencyHz(data.subarray(4, 8));
   const b8 = data[8]!;
   const duplex = (b8 >> 6) & 0x3;
-  const bandwidth = ((b8 >> 4) & 0x3) === 0 ? 'FM' : 'NFM';
+  const bandwidth = bandwidthFromWire((b8 >> 4) & 0x3);
   const powerPercent = powerPercentFromWire((b8 >> 2) & 0x3);
   const channelType = modeFromWire(b8 & 0x3);
   const b9 = data[9]!;
@@ -133,11 +185,12 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
     ctcssEncSel === 2
       ? decodeToneFromDcsU16(data[0x0c]!, data[0x0d]!)
       : decodeToneFromCtcssIndex(data[0x0a]!);
-  const contactIdx = (data[0x13]! << 8) | data[0x14]!;
+  const contactWire = (data[0x13]! << 8) | data[0x14]!;
   let txHz = rxHz;
   if (duplex === 1) txHz = rxHz + offHz;
   if (duplex === 2) txHz = Math.max(0, rxHz - offHz);
   const autoScan = ((data[0x34]! >> 4) & 1) === 1;
+  const txContactId = decodeTxContactId(contactWire, channelType);
   return {
     slotIndex,
     empty: false,
@@ -149,14 +202,16 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
     powerPercent,
     bandwidth,
     mode: channelType,
-    txContactId: contactIdx > 0 ? contactIdx : undefined,
-    rxGroupIndex: data[0x1c]!,
-    scanListId: data[0x1b]! > 0 ? data[0x1b] : undefined,
+    ...(txContactId != null ? { txContactId } : {}),
+    ...(decodeRxGroupIndex(data[0x1c]!) != null
+      ? { rxGroupIndex: decodeRxGroupIndex(data[0x1c]!) }
+      : {}),
+    ...(decodeScanListId(data[0x1b]!) != null ? { scanListId: decodeScanListId(data[0x1b]!) } : {}),
     scanAdd: autoScan,
     dmrRadioIdIndex: data[0x18]!,
     timeslot: ((data[0x21]! >> 1) & 1) === 1 ? 2 : 1,
     rxOnly,
-    colorCode: data[0x20]! > 0 ? data[0x20] : undefined,
+    ...(data[0x20]! > 0 ? { colorCode: data[0x20] } : {}),
   };
 }
 
@@ -174,16 +229,19 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   const txHz = ch.txHz > 0 ? ch.txHz : rxHz;
   data.set(encodeBcdFrequencyHz(rxHz), 0);
   const duplex = duplexFromRxTx(rxHz, txHz);
-  data.set(encodeBcdFrequencyHz(offsetHz(rxHz, txHz)), 4);
+  if (duplex !== 0) {
+    data.set(encodeBcdFrequencyHz(offsetHz(rxHz, txHz)), 4);
+  }
   const power = powerWireFromPercent(ch.powerPercent);
-  const bw = ch.bandwidth === 'NFM' ? 1 : 0;
+  const bw = bandwidthToWire(ch.bandwidth);
   data[8] =
     ((duplex & 0x3) << 6) |
     ((bw & 0x3) << 4) |
     ((power & 0x3) << 2) |
     (wireFromMode(ch.mode) & 0x3);
 
-  let b9 = 0;
+  const priorB9 = prior ? prior[9]! & BYTE_09_PRESERVE_MASK : 0;
+  let b9 = priorB9;
   if (ch.rxOnly) b9 |= 1 << 5;
   const txDcs = ch.txTone.kind === 'dcs';
   const rxDcs = ch.rxTone.kind === 'dcs';
@@ -218,14 +276,30 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
     data[0x43] = cc;
   }
 
-  const contact = ch.txContactId ?? 0;
-  data[0x13] = (contact >> 8) & 0xff;
-  data[0x14] = contact & 0xff;
+  const contactWire = encodeTxContactWire(ch.txContactId);
+  if (contactWire != null) {
+    data[0x13] = (contactWire >> 8) & 0xff;
+    data[0x14] = contactWire & 0xff;
+  }
   data[0x18] = ch.dmrRadioIdIndex ?? 0;
-  data[0x1b] = ch.scanListId ?? 0;
-  data[0x1c] = ch.rxGroupIndex ?? 0;
-  if (ch.timeslot === 2) data[0x21] |= 1 << 1;
-  if (ch.scanAdd) data[0x34] |= 1 << 4;
+  data[0x1b] = encodeScanListWire(ch.scanListId);
+  if (ch.rxGroupIndex != null) {
+    data[0x1c] = encodeRxGroupWire(ch.rxGroupIndex);
+  } else if (!prior) {
+    data[0x1c] = WIRE_INDEX_NONE;
+  }
+
+  if (ch.timeslot === 2) {
+    data[0x21] = setBit(data[0x21]!, 1, true);
+  } else if (ch.timeslot === 1) {
+    data[0x21] = setBit(data[0x21]!, 1, false);
+  }
+
+  if (ch.scanAdd === true) {
+    data[0x34] = setBit(data[0x34]!, 4, true);
+  } else if (ch.scanAdd === false) {
+    data[0x34] = setBit(data[0x34]!, 4, false);
+  }
 
   data.set(encodeWideCharName(ch.wireName, 0x20), 0x44);
   return data;

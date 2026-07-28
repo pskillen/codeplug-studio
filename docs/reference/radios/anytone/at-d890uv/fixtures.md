@@ -29,7 +29,18 @@ How to obtain binary dumps for **directional** codec tests without committing pe
 5. Keep DMR IDs / callsigns fake.
 6. When adapters land, store under `src/integrations/radio-io/**/__fixtures__/` — never under docs with real operator data.
 
-## What this ticket verified without a dump
+## Committed forensic channel fixtures ([#770](https://github.com/pskillen/codeplug-studio/issues/770))
+
+`src/integrations/radio-io/radios/at-d890uv/__fixtures__/healthyChannelRecords.ts` — 181 healthy `0x80` channel records. Wide-char name slots (`0x44–0x63`) are sanitized to `CH####` labels before commit.
+
+Regenerate from a native YAML egress hydration bag (local file — do not commit the YAML):
+
+```bash
+node src/integrations/radio-io/radios/at-d890uv/__fixtures__/extractHealthyChannelRecords.mjs \
+  /path/to/project.yaml [egressPathId]
+```
+
+`channelCodec.test.ts` round-trips every fixture with `parseAtD890ChannelRecord` → `encodeAtD890ChannelRecord` (byte-identical with `prior`).
 
 Acceptance for [#647](https://github.com/pskillen/codeplug-studio/issues/647) cross-checks region bases, strides, and protocol constants against anytone-cps `D890_MAP` / `SerialDevice`. A live dump is valuable for adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649) but is not required to land these reference pages.
 
