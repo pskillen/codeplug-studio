@@ -23,6 +23,7 @@ import { encodeTalkgroupsIntoAtD890Image, syncTalkgroupRegionsToCache } from './
 import { encodeRxGroupsIntoAtD890Image, syncRxGroupRegionsToCache } from './rxGroupCodec.ts';
 import { encodeRadioIdsIntoAtD890Image, syncRadioIdRegionsToCache } from './radioIdCodec.ts';
 import { encodeMasterIdIntoAtD890Image, syncMasterIdToCache } from './masterIdCodec.ts';
+import { encodeAprsIntoAtD890Image, syncAprsRegionsToCache } from './aprsCodec.ts';
 import { encodeAmAirIntoAtD890Image, syncAmAirRegionsToCache } from './amAirCodec.ts';
 import { encodeAmZonesIntoAtD890Image, syncAmZoneRegionsToCache } from './amZoneCodec.ts';
 import { AT_D890UV_MODEL_IDS } from './constants.ts';
@@ -119,6 +120,9 @@ export function mergeChannelsIntoAtD890uvHydration(
     next = encodeAmAirIntoAtD890Image(next, organisation.amAirChannels);
     next = encodeAmZonesIntoAtD890Image(next, organisation.amZones);
   }
+  if (organisation?.aprs) {
+    next = encodeAprsIntoAtD890Image(next, organisation.aprs);
+  }
 
   syncTalkgroupRegionsToCache(cache, next, organisation?.talkGroups);
   syncRxGroupRegionsToCache(cache, next);
@@ -127,6 +131,9 @@ export function mergeChannelsIntoAtD890uvHydration(
   syncChannelRegionsToCache(cache, next);
   syncZoneRegionsToCache(cache, next);
   syncScanListRegionsToCache(cache, next);
+  if (organisation?.aprs) {
+    syncAprsRegionsToCache(cache, next);
+  }
   if (organisation?.amAirChannels && organisation?.amZones) {
     syncAmAirRegionsToCache(cache, next);
     syncAmZoneRegionsToCache(cache, next);

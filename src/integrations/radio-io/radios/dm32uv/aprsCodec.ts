@@ -54,7 +54,7 @@ export function patchDm32AprsSettingsSlice(block: Uint8Array, aprs: RadioAprsDto
     block[0x319] = aprs.longitudeHemisphere === 'E' ? 0x45 : 0x57;
   }
 
-  const channels = aprs.reportChannelNumbers;
+  const channels = aprs.reportChannelNumbers ?? [];
   for (let i = 0; i < 8; i++) {
     writeU16Le(block, 0x320 + i * 2, channels[i] ?? 0);
   }

@@ -46,8 +46,12 @@ export interface RadioChannelDto {
   scanAdd?: boolean;
   /** Channel APRS receive (0x1A bit 2). */
   aprsReceive?: boolean;
-  /** Channel APRS report mode (0x1C bits 3–2). */
+  /** Channel APRS report mode (0x35 on D890; 0x1C bits 3–2 on DM-32). */
   aprsReportMode?: 'off' | 'digital' | 'analog';
+  /** D890 digital APRS PTT @ `0x37`. */
+  aprsDigitalPttMode?: 'off' | 'on';
+  /** D890 digital report slot — 1-based into global APRS slots (`0x38` is 0-based). */
+  aprsReportSlotIndex?: number | null;
   /**
    * OpenGD77 analogue squelch @ `0x37` — internal percent 1–100, or `null` for Global.
    * Ignored on encode when `mode` is digital / fixed-digital (qdmr: no per-channel squelch).

@@ -229,4 +229,36 @@ describe('encodeAtD890ChannelRecord', () => {
       expect(encoded).toEqual(prior);
     }
   });
+
+  it('encodes and decodes digital APRS channel bindings', () => {
+    const prior = new Uint8Array(0x80);
+    prior[0x36] = 0xcc;
+    const ch: RadioChannelDto = {
+      slotIndex: 2,
+      empty: false,
+      wireName: 'APRS',
+      rxHz: 430_125_000,
+      txHz: 430_125_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'NFM',
+      mode: 'digital',
+      aprsReceive: true,
+      aprsReportMode: 'digital',
+      aprsDigitalPttMode: 'on',
+      aprsReportSlotIndex: 3,
+    };
+    const encoded = encodeAtD890ChannelRecord(ch, prior);
+    expect((encoded[0x21]! >> 5) & 1).toBe(1);
+    expect(encoded[0x35]).toBe(2);
+    expect(encoded[0x37]).toBe(1);
+    expect(encoded[0x38]).toBe(2);
+    expect(encoded[0x36]).toBe(0xcc);
+    const decoded = parseAtD890ChannelRecord(encoded, 2);
+    expect(decoded.aprsReceive).toBe(true);
+    expect(decoded.aprsReportMode).toBe('digital');
+    expect(decoded.aprsDigitalPttMode).toBe('on');
+    expect(decoded.aprsReportSlotIndex).toBe(3);
+  });
 });

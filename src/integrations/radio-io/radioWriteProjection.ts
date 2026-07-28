@@ -90,9 +90,25 @@ export interface RadioRadioIdDto {
 }
 
 /** APRS / GPS position slice on settings block (offsets 0x301–0x334). */
+export interface RadioAprsDigitalSlotDto {
+  /** LE u16 wire: MR CPS channel `No.` or sentinel (e.g. `0x0fa2` Current). */
+  reportChannelWire: number;
+  targetDmrId: number | null;
+  callType: 0 | 1;
+  timeslot: 0 | 1 | 2;
+}
+
+export interface RadioAprsFixCoordinateDto {
+  degrees: number;
+  minInt: number;
+  minMark: number;
+  hemisphere: 0 | 1;
+}
+
+/** APRS / GPS position slice on settings block (offsets 0x301–0x334). */
 export interface RadioAprsDto {
-  /** Report channel numbers 1–8 (0 = current). */
-  reportChannelNumbers: readonly number[];
+  /** DM-32 report channel numbers 1–8 (0 = current). */
+  reportChannelNumbers?: readonly number[];
   scheduledSendTime?: number;
   manualBeacon?: boolean;
   latitude?: string;
@@ -102,6 +118,13 @@ export interface RadioAprsDto {
   repeaterActiveDelay?: number;
   callType?: number;
   uploadDmrId?: number;
+  /** AT-D890UV global APRS block — up to 8 digital report slots. */
+  digitalSlots?: readonly RadioAprsDigitalSlotDto[];
+  manualTxIntervalSec?: number | null;
+  autoTxIntervalSec?: number | null;
+  fixedLocationBeacon?: 0 | 1;
+  fixedLatitude?: RadioAprsFixCoordinateDto;
+  fixedLongitude?: RadioAprsFixCoordinateDto;
 }
 
 /**

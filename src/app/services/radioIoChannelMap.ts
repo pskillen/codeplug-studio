@@ -142,6 +142,8 @@ function aprsFieldsFromChannel(channel: Channel): Partial<RadioChannelDto> {
   return {
     aprsReceive: aprs.receiveEnabled === true,
     aprsReportMode: aprs.reportType === 'digital' ? 'digital' : 'off',
+    aprsDigitalPttMode: aprs.digitalPttMode === 'on' ? 'on' : 'off',
+    ...(aprs.reportSlotIndex != null ? { aprsReportSlotIndex: aprs.reportSlotIndex } : {}),
   };
 }
 
