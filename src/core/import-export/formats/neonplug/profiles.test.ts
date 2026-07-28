@@ -29,6 +29,7 @@ describe('neonplug profiles', () => {
     expect(neon.rxGroupListMembers).toBe(dm32.rxGroupListMembers);
     expect(neon.maxContacts).toBe(dm32.maxContacts);
     expect(neon.maxTalkGroups).toBe(dm32.maxTalkGroups);
+    expect(neon.maxRadioIds).toBe(dm32.maxRadioIds);
     expect(neon.nameLimit).toBe(dm32.nameLimit);
     expect(neon.scanListNameLimit).toBe(dm32.scanListNameLimit);
     expect(neon.rxGroupListNameLimit).toBe(dm32.rxGroupListNameLimit);

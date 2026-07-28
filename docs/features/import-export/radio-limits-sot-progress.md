@@ -16,7 +16,7 @@
 
 ## Slice 0: Guardrail — rule + checklist
 
-**Status:** In progress
+**Status:** Complete
 
 **Delivered**
 
@@ -27,6 +27,19 @@
 
 ---
 
+## Slice 1: Expand DM32UV_LIMITS + rewire profiles
+
+**Status:** Complete
+
+**Delivered**
+
+- Expanded `src/core/radios/baofeng/dm-32uv/limits.ts`
+- dm32 / neonplug / radio-io profiles import `DM32UV_LIMITS`
+- `profileExportLimits` maps radio-io DM32 contacts/TGs (fixes H2)
+- Sync tests in dm32, neonplug, radio-io, profileExportLimits
+
+---
+
 ## Next
 
-- Slice 1: Expand `DM32UV_LIMITS`; rewire dm32/neonplug/radio-io profiles + `profileExportLimits`
+- Slice 2: Codecs/APRS/NO-TX band/radio-ID from limits

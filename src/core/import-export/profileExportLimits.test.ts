@@ -150,10 +150,17 @@ describe('getProfileExportLimits', () => {
     const dm32 = getProfileExportLimits('dm32', 'dm32-baofeng-dm32uv');
     expect(limits).not.toBeNull();
     expect(dm32).not.toBeNull();
-    expect(limits!.maxRxGroupLists).toBe(32);
-    expect(limits!.maxRxGroupLists).toBe(dm32!.maxRxGroupLists);
+    expect(limits!.maxChannels).toBe(dm32!.maxChannels);
+    expect(limits!.maxZones).toBe(dm32!.maxZones);
     expect(limits!.maxScanLists).toBe(dm32!.maxScanLists);
+    expect(limits!.maxRxGroupLists).toBe(dm32!.maxRxGroupLists);
+    expect(limits!.maxContacts).toBe(dm32!.maxContacts);
+    expect(limits!.maxTalkGroups).toBe(dm32!.maxTalkGroups);
+    expect(limits!.zoneMembers).toBe(dm32!.zoneMembers);
     expect(limits!.scanListMembers).toBe(dm32!.scanListMembers);
+    expect(limits!.rxGroupListMembers).toBe(dm32!.rxGroupListMembers);
+    expect(limits!.nameLengthScanList).toBe(dm32!.nameLengthScanList);
+    expect(limits!.nameLengthRxGroupList).toBe(dm32!.nameLengthRxGroupList);
   });
 
   it('projects Anytone AT-D890UV Direct radio limits from radio-io profile', () => {

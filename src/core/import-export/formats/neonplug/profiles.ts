@@ -5,6 +5,7 @@
  * Keep `neonplug-dm32uv` numeric caps in sync with `dm32-baofeng-dm32uv` — see profiles.test.ts.
  */
 
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { percentToWire, wireToPercent, type PowerLadderEntry } from '../../profileLadder.ts';
 
 export interface NeonplugDm32uvRadioProfile {
@@ -21,6 +22,7 @@ export interface NeonplugDm32uvRadioProfile {
   rxGroupListMembers: number;
   maxContacts: number;
   maxTalkGroups: number;
+  maxRadioIds: number;
   /** Channel / zone / contact / talk-group wire name length. */
   nameLimit: number;
   scanListNameLimit: number;
@@ -62,18 +64,19 @@ const UV5R_LADDER: readonly PowerLadderEntry[] = [
 export const NEONPLUG_DM32UV_PROFILE: NeonplugDm32uvRadioProfile = {
   id: 'neonplug-dm32uv',
   label: 'Baofeng DM-32UV (NeonPlug)',
-  maxChannels: 4000,
-  maxZones: 250,
-  zoneMembers: 64,
-  maxScanLists: 32,
-  scanListMembers: 15,
-  maxRxGroupLists: 32,
-  rxGroupListMembers: 32,
-  maxContacts: 250,
-  maxTalkGroups: 800,
-  nameLimit: 16,
-  scanListNameLimit: 10,
-  rxGroupListNameLimit: 10,
+  maxChannels: DM32UV_LIMITS.CHANNEL_MAX,
+  maxZones: DM32UV_LIMITS.ZONE_MAX,
+  zoneMembers: DM32UV_LIMITS.ZONE_MEMBERS_MAX,
+  maxScanLists: DM32UV_LIMITS.SCAN_LISTS_MAX,
+  scanListMembers: DM32UV_LIMITS.SCAN_LIST_MEMBERS_MAX,
+  maxRxGroupLists: DM32UV_LIMITS.RX_GROUPS_MAX,
+  rxGroupListMembers: DM32UV_LIMITS.RX_GROUP_MEMBERS_MAX,
+  maxContacts: DM32UV_LIMITS.CONTACTS_MAX,
+  maxTalkGroups: DM32UV_LIMITS.TALK_GROUPS_MAX,
+  maxRadioIds: DM32UV_LIMITS.RADIO_IDS_MAX,
+  nameLimit: DM32UV_LIMITS.NAME_LENGTH_CHANNEL_ZONE_CONTACT_TG,
+  scanListNameLimit: DM32UV_LIMITS.NAME_LENGTH_SCAN_LIST,
+  rxGroupListNameLimit: DM32UV_LIMITS.NAME_LENGTH_RX_GROUP_LIST,
   powerLadder: DM32_POWER_LADDER,
   squelchLadder: DM32_SQUELCH_LADDER,
 };

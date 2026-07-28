@@ -3,6 +3,7 @@
  * No CPS import/export adapter; binary I/O lives in integrations/radio-io.
  */
 
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import type { PowerLadderEntry } from '../../profileLadder.ts';
 
 export interface RadioIoUv5rMiniProfile {
@@ -43,6 +44,11 @@ export interface RadioIoDm32uvProfile {
   scanListMembers: number;
   maxRxGroupLists: number;
   rxGroupListMembers: number;
+  maxContacts: number;
+  maxTalkGroups: number;
+  maxRadioIds: number;
+  scanListNameLimit: number;
+  rxGroupListNameLimit: number;
   powerLadder: readonly PowerLadderEntry[];
 }
 
@@ -211,14 +217,19 @@ export const RADIO_IO_RT95_PROFILE: RadioIoRt95Profile = {
 export const RADIO_IO_DM32UV_PROFILE: RadioIoDm32uvProfile = {
   id: 'radio-io-dm32uv',
   label: 'Baofeng DM-32UV',
-  maxMemorySlots: 4000,
-  nameLimit: 16,
-  maxZones: 250,
-  zoneMembers: 64,
-  maxScanLists: 32,
-  scanListMembers: 15,
-  maxRxGroupLists: 32,
-  rxGroupListMembers: 32,
+  maxMemorySlots: DM32UV_LIMITS.CHANNEL_MAX,
+  nameLimit: DM32UV_LIMITS.NAME_LENGTH_CHANNEL_ZONE_CONTACT_TG,
+  maxZones: DM32UV_LIMITS.ZONE_MAX,
+  zoneMembers: DM32UV_LIMITS.ZONE_MEMBERS_MAX,
+  maxScanLists: DM32UV_LIMITS.SCAN_LISTS_MAX,
+  scanListMembers: DM32UV_LIMITS.SCAN_LIST_MEMBERS_MAX,
+  maxRxGroupLists: DM32UV_LIMITS.RX_GROUPS_MAX,
+  rxGroupListMembers: DM32UV_LIMITS.RX_GROUP_MEMBERS_MAX,
+  maxContacts: DM32UV_LIMITS.CONTACTS_MAX,
+  maxTalkGroups: DM32UV_LIMITS.TALK_GROUPS_MAX,
+  maxRadioIds: DM32UV_LIMITS.RADIO_IDS_MAX,
+  scanListNameLimit: DM32UV_LIMITS.NAME_LENGTH_SCAN_LIST,
+  rxGroupListNameLimit: DM32UV_LIMITS.NAME_LENGTH_RX_GROUP_LIST,
   powerLadder: DM32_POWER_LADDER,
 };
 
