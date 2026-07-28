@@ -52,6 +52,8 @@ Internal library % mapping for file adapters: [power.md](power.md).
 | `0`        | FM (wide)    |
 | `1`        | NFM (narrow) |
 
+**AM mode:** CHIRP `UV5RMini` adds AM to `MODES` (same UV-17Pro family codec as UV-21). The clone image has no AM bit — CHIRP infers AM from airband frequency on Read and encodes AM as `wide=0` on Write. Studio CHIRP CSV writes `Mode=AM`; Web Serial Write maps library `mode: am` to `bandwidth: FM`.
+
 Do not copy classic UV-5R wide-bit polarity into this codec.
 
 ## Duplex off / TX inhibit

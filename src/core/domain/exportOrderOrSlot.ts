@@ -22,6 +22,60 @@ export interface ExportMemorySlot {
   channelId: string | null;
 }
 
+export interface ExportMemorySlotEntry {
+  channelId: string;
+  /** When unset, channel is placed after explicit slots in list order. */
+  orderOrSlot?: number | null;
+}
+
+/**
+ * Resolve 1-based memory slots with CHIRP collision policy: explicit slots sorted
+ * ascending; first claimant wins; losers and implicit channels fill next free slots.
+ */
+export function resolveExportMemorySlotAssignments(
+  entries: readonly ExportMemorySlotEntry[],
+): Map<string, number> {
+  const explicit: { slot: number; channelId: string }[] = [];
+  const implicit: string[] = [];
+
+  for (const entry of entries) {
+    const slot = entry.orderOrSlot;
+    if (slot != null && slot > 0) {
+      explicit.push({ slot, channelId: entry.channelId });
+    } else {
+      implicit.push(entry.channelId);
+    }
+  }
+
+  const slotToChannel = new Map<number, string>();
+  const bumped: string[] = [];
+
+  for (const entry of explicit.sort((a, b) => a.slot - b.slot)) {
+    if (!slotToChannel.has(entry.slot)) {
+      slotToChannel.set(entry.slot, entry.channelId);
+    } else {
+      bumped.push(entry.channelId);
+    }
+  }
+
+  const implicitIds = [...implicit, ...bumped];
+  if (implicitIds.length > 0) {
+    const maxExplicit = explicit.length > 0 ? Math.max(...explicit.map((row) => row.slot)) : 0;
+    let nextSlot = maxExplicit > 0 ? maxExplicit + 1 : 1;
+    for (const channelId of implicitIds) {
+      while (slotToChannel.has(nextSlot)) nextSlot++;
+      slotToChannel.set(nextSlot, channelId);
+      nextSlot++;
+    }
+  }
+
+  const channelToSlot = new Map<string, number>();
+  for (const [slot, channelId] of slotToChannel) {
+    channelToSlot.set(channelId, slot);
+  }
+  return channelToSlot;
+}
+
 export function buildUsesFlatMemoryList(build: RadioBuild): boolean {
   return radioTargetHasTrait(build.radioTargetId, BuildCapabilityTrait.FlatMemoryList);
 }
@@ -60,41 +114,19 @@ export function resolveChirpChannelMemorySlots(
   library: LibrarySlice,
 ): ExportMemorySlot[] {
   const included = includedChirpChannels(build, library);
-  const explicit: { slot: number; channelId: string }[] = [];
-  const implicit: string[] = [];
+  const channelToSlot = resolveExportMemorySlotAssignments(
+    included.map((channel) => ({
+      channelId: channel.id,
+      orderOrSlot: overrideOrderOrSlot(build.channelOverrides, channel.id),
+    })),
+  );
 
-  for (const channel of included) {
-    const slot = overrideOrderOrSlot(build.channelOverrides, channel.id);
-    if (slot != null) {
-      explicit.push({ slot, channelId: channel.id });
-    } else {
-      implicit.push(channel.id);
-    }
-  }
+  if (channelToSlot.size === 0) return [];
 
   const slotToChannel = new Map<number, string>();
-  const bumped: string[] = [];
-
-  for (const entry of explicit.sort((a, b) => a.slot - b.slot)) {
-    if (!slotToChannel.has(entry.slot)) {
-      slotToChannel.set(entry.slot, entry.channelId);
-    } else {
-      bumped.push(entry.channelId);
-    }
+  for (const [channelId, slot] of channelToSlot) {
+    slotToChannel.set(slot, channelId);
   }
-
-  const implicitIds = [...implicit, ...bumped];
-  if (implicitIds.length > 0) {
-    const maxExplicit = explicit.length > 0 ? Math.max(...explicit.map((row) => row.slot)) : 0;
-    let nextSlot = maxExplicit > 0 ? maxExplicit + 1 : 1;
-    for (const channelId of implicitIds) {
-      while (slotToChannel.has(nextSlot)) nextSlot++;
-      slotToChannel.set(nextSlot, channelId);
-      nextSlot++;
-    }
-  }
-
-  if (slotToChannel.size === 0) return [];
 
   const maxSlot = Math.max(...slotToChannel.keys());
   const slots: ExportMemorySlot[] = [];

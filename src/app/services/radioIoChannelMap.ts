@@ -13,6 +13,10 @@ import { assembledChannelExportWireName } from '@core/import-export/channelExpan
 import { expandAllMxNChannels } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import type { ExpandedMxNChannelRow } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
+import {
+  resolveExportMemorySlotAssignments,
+  type ExportMemorySlot,
+} from '@core/domain/exportOrderOrSlot.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
@@ -71,6 +75,35 @@ function resolveRxGroupIndex(
 function bandwidthFromKHz(bandwidthKHz: number | null | undefined): 'FM' | 'NFM' {
   if (bandwidthKHz == null) return 'NFM';
   return bandwidthKHz <= 15 ? 'NFM' : 'FM';
+}
+
+/** CHIRP UV-17Pro family: AM has no wire bit — encode as FM wide (not NFM). */
+function bandwidthFromAnalogProfile(
+  analog: Pick<ChannelModeProfile, 'mode'> & { bandwidthKHz?: number | null },
+): 'FM' | 'NFM' {
+  if (analog.mode === 'am') return 'FM';
+  return bandwidthFromKHz(analog.bandwidthKHz);
+}
+
+function channelSlotIndexMap(
+  channels: readonly AssembledChannel[],
+  channelMemorySlots?: readonly ExportMemorySlot[],
+): Map<string, number> {
+  if (channelMemorySlots && channelMemorySlots.length > 0) {
+    const map = new Map<string, number>();
+    for (const slot of channelMemorySlots) {
+      if (slot.channelId != null) {
+        map.set(slot.channelId, slot.slot);
+      }
+    }
+    return map;
+  }
+  return resolveExportMemorySlotAssignments(
+    channels.map((row) => ({
+      channelId: row.entity.id,
+      orderOrSlot: row.orderOrSlot,
+    })),
+  );
 }
 
 function isOpenGd77RadioIoEgress(profileId: string): boolean {
@@ -230,9 +263,7 @@ function openGd77AssembledChannelsToRadioDtos(
         profileAnalog && 'txTone' in profileAnalog ? profileAnalog.txTone : 'none',
       ),
       powerPercent: entity.power,
-      bandwidth: bandwidthFromKHz(
-        profileAnalog && 'bandwidthKHz' in profileAnalog ? profileAnalog.bandwidthKHz : null,
-      ),
+      bandwidth: bandwidthFromAnalogProfile(profileAnalog ?? { mode: 'fm', bandwidthKHz: null }),
       ...(profileAnalog && 'squelch' in profileAnalog
         ? { squelchPercent: profileAnalog.squelch }
         : {}),
@@ -335,6 +366,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
   build: RadioBuild,
   egress: RadioWireEgressIds,
   fkMaps?: RadioChannelFkMaps,
+  channelMemorySlots?: readonly ExportMemorySlot[],
 ): AssembledChannelsToRadioDtosResult {
   if (isOpenGd77RadioIoEgress(egress.profileId)) {
     return openGd77AssembledChannelsToRadioDtos(channels, build, egress, fkMaps);
@@ -343,6 +375,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
   const reserved = new Set<string>();
   const warnings: string[] = [];
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
+  const slotByChannelId = channelSlotIndexMap(channels, channelMemorySlots);
   const dtos: RadioChannelDto[] = [];
   channels.forEach((row, index) => {
     const rxHz = row.entity.rxFrequency;
@@ -350,7 +383,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
     const entity = row.entity;
     const analog = entity.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
     const txHz = entity.txFrequency ?? rxHz;
-    const slotIndex = row.orderOrSlot != null && row.orderOrSlot > 0 ? row.orderOrSlot : index + 1;
+    const slotIndex = slotByChannelId.get(entity.id) ?? index + 1;
     const rxOnly = effectiveForbidTransmit(entity, merged.channelBehaviourContext);
     dtos.push({
       slotIndex,
@@ -361,7 +394,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
       rxTone: channelToneToRadioTone(analog && 'rxTone' in analog ? analog.rxTone : 'none'),
       txTone: channelToneToRadioTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: entity.power,
-      bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
+      bandwidth: bandwidthFromAnalogProfile(analog ?? { mode: 'fm', bandwidthKHz: null }),
       ...(analog && 'squelch' in analog ? { squelchPercent: analog.squelch } : {}),
       ...(rxOnly ? { rxOnly: true } : {}),
       ...digitalFieldsFromChannel(entity, fkMaps),
@@ -381,7 +414,13 @@ export function expandAssembledChannelsToRadioDtos(
   fkMaps?: RadioChannelFkMaps,
 ): AssembledChannelsToRadioDtosResult {
   if (!hasMxNChannelExpansion(build.radioTargetId)) {
-    return assembledChannelsToRadioDtosWithWarnings(assembled.channels, build, egress, fkMaps);
+    return assembledChannelsToRadioDtosWithWarnings(
+      assembled.channels,
+      build,
+      egress,
+      fkMaps,
+      assembled.channelMemorySlots,
+    );
   }
 
   const warnings: string[] = [];
@@ -418,7 +457,7 @@ export function expandAssembledChannelsToRadioDtos(
       rxTone: channelToneToRadioTone(analog && 'rxTone' in analog ? analog.rxTone : 'none'),
       txTone: channelToneToRadioTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: channel.power,
-      bandwidth: bandwidthFromKHz(analog && 'bandwidthKHz' in analog ? analog.bandwidthKHz : null),
+      bandwidth: bandwidthFromAnalogProfile(analog ?? { mode: 'fm', bandwidthKHz: null }),
       ...(analog && 'squelch' in analog ? { squelchPercent: analog.squelch } : {}),
       ...(rxOnly ? { rxOnly: true } : {}),
       ...digitalFieldsFromProjection(projection, channel, fkMaps),

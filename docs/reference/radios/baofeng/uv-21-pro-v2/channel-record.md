@@ -52,7 +52,7 @@ Internal library % mapping: [power.md](power.md).
 | `0`        | FM (wide)    |
 | `1`        | NFM (narrow) |
 
-**AM mode:** CHIRP `UV21ProV2` adds AM to `MODES`. Studio v1 Web Serial encode maps FM/NFM only — AM library channels are skipped with a warning (same as CHIRP CSV path). Document as known loss.
+**AM mode:** CHIRP `UV21ProV2` adds AM to `MODES`. The clone image has no distinct AM bit — CHIRP infers AM from airband frequency (108–136 MHz) on Read and encodes AM as `wide=0` (FM wide) on Write. Studio CHIRP CSV writes `Mode=AM`; Web Serial Write maps library `mode: am` to `bandwidth: FM` (not NFM). Operators should treat AM as frequency-implied on the radio, not a separate wire field.
 
 ## Duplex off / TX inhibit
 
