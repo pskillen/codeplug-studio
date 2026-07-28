@@ -18,6 +18,7 @@ Shared hardware / memory caps (NeonPlug `LIMITS` + radio-confirmed zone name len
 | Channel / zone / contact / TG names | **16**   | `nameLimit` — channel LCD + radio-confirmed zone                                                                               |
 | Scan list names                     | **10**   | `scanListNameLimit` — conservative (CPS official 11; NeonPlug field 10)                                                        |
 | RX group list names                 | **10**   | `rxGroupListNameLimit` — NeonPlug RXGroup 11-byte null-terminated field                                                        |
+| Default scan inclusion (export)     | **scan** | When library `scanInclusion` is `default`; `DM32UV_LIMITS.DEFAULT_SCAN_INCLUSION`                                              |
 
 Zone-derived scan lists synthesise at most **15** named members even when a zone has up to **64** members — intentional export loss; see DM32 [scan-lists.md](../../../export-formats/dm32/scan-lists.md).
 

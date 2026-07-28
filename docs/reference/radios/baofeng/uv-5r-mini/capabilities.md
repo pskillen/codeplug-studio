@@ -34,7 +34,7 @@ Studio Build → Channels uses the shared **flat-memory** Channels page for this
 
 ### Web Serial Write — scan bit
 
-Binary Web Serial Write maps **effective** scan inclusion (build override → library `scanInclusion` → `exportSettings.defaultScanInclusion` → radio-io format default) to channel record byte `15` bit 2 (`scan` = participate). Same resolution as CHIRP `Skip` and NeonPlug file `scanAdd` — see [scan-inclusion.md](../../../scan-inclusion.md). Shipped [#696](https://github.com/pskillen/codeplug-studio/issues/696).
+Binary Web Serial Write maps **effective** scan inclusion (build override → library `scanInclusion` → `exportSettings.defaultScanInclusion` → radio-io format default) to channel record byte `15` bit 2 (`scan` = participate). Same resolution as CHIRP `Skip` and NeonPlug file `scanAdd` — see [scan-inclusion.md](../../../scan-inclusion.md). Shipped [#696](https://github.com/pskillen/codeplug-studio/issues/696); NeonPlug UV-5R default aligned [#806](https://github.com/pskillen/codeplug-studio/issues/806).
 
 ## Related
 

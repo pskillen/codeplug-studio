@@ -40,7 +40,9 @@ describe('mergeExportOptions', () => {
 
   it('getFormatExportDefaults applies radio-tier scan default per NeonPlug profile', () => {
     expect(getFormatExportDefaults('neonplug').defaultScanInclusion).toBe('scan');
-    expect(getFormatExportDefaults('neonplug', 'neonplug-dm32uv').defaultScanInclusion).toBe('scan');
+    expect(getFormatExportDefaults('neonplug', 'neonplug-dm32uv').defaultScanInclusion).toBe(
+      'scan',
+    );
     expect(getFormatExportDefaults('neonplug', 'neonplug-uv5rmini').defaultScanInclusion).toBe(
       'skip',
     );
