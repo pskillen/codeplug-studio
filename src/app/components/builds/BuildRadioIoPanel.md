@@ -23,9 +23,7 @@ Renders nothing when `descriptorsForEgress(egress)` is empty. Must render under 
 
 - Leads with [`WebSerialExperimentalAlert`](./WebSerialExperimentalAlert.md) — orange experimental warning (does not block controls).
 - For **AT-D890UV** (`radio-io-at-d890uv`), shows [`AtD890WriteCoverageTable`](./AtD890WriteCoverageTable.md) — what Write updates vs defers vs leaves alone.
-- When the adapter sets `prodWriteDisabled` (AT-D890UV today), `resolveRadioWriteGate` from `radioWriteEnvGate.ts` applies:
-  - **`prod`:** Write button hidden; dimmed note steers to file egress (Anytone CSV). Read unchanged.
-  - **Pre-prod:** red experimental `Alert` plus confirm `Modal` before Write runs (copy is profile-specific).
+- When an adapter sets `prodWriteDisabled`, `resolveRadioWriteGate` from `radioWriteEnvGate.ts` hides Write on `prod` and shows a confirm modal on pre-prod (no adapters carry the flag today; mechanism remains for future bring-up).
 - Feature-detects Web Serial; shows unsupported banner when missing.
 - **Read from radio** → download → persist hydration on the **egress** → read-only summary.
 - **Write to radio** → blocked until hydration exists (full-image strategy).

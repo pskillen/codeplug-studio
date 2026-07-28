@@ -8,7 +8,7 @@ Debt discovered during execution — not the plan's upcoming slices.
 
 - [x] Cross-session post-commit verify (optional reconnect diff after radio restart) — [#769](https://github.com/pskillen/codeplug-studio/issues/769) slice 5b
 - [ ] Full firmware band-mode table validation — defer to follow-up issue under [#645](https://github.com/pskillen/codeplug-studio/issues/645)
-- [ ] Hardware Read→Write→Read-back clearance before clearing `prodWriteDisabled` ([#741](https://github.com/pskillen/codeplug-studio/issues/741))
+- [x] Hardware Read→Write→Read-back clearance before clearing `prodWriteDisabled` ([#800](https://github.com/pskillen/codeplug-studio/issues/800))
 
 ## Closed / filed elsewhere
 

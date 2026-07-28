@@ -28,8 +28,8 @@
 
 - [ ] Fresh Read → Write → Read-back on spare AT-D890UV (pre-prod only)
 - [x] Cross-session verify after radio restart ([#769](https://github.com/pskillen/codeplug-studio/issues/769) 5b — optional UI shipped)
-- [ ] Usable UI; no password surprise
-- [ ] Clear `prodWriteDisabled` only after operator clearance
+- [x] Usable UI; no password surprise
+- [x] Clear `prodWriteDisabled` after operator clearance ([#800](https://github.com/pskillen/codeplug-studio/issues/800))
 
 ## Related
 

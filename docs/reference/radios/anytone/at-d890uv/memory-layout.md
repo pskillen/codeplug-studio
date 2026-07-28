@@ -116,7 +116,7 @@ Safe-skip address `0x2fa0010` (family constant) is never written. D890 `LocalInf
 
 **Operator note:** after CPS recovery or band changes, perform a **fresh Read** of the live radio before Write. Do not Write from a stale hydration YAML export — the build projection must match the radio you are connected to.
 
-`prodWriteDisabled` remains until hardware Read→Write→Read-back clears the gate ([#741](https://github.com/pskillen/codeplug-studio/issues/741)).
+Web Serial Write is available on production deploys ([#800](https://github.com/pskillen/codeplug-studio/issues/800)).
 
 Zone record detail: [zone-record.md](zone-record.md). Channel geometry: [channel-record.md](channel-record.md).
 
