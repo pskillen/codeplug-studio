@@ -9,6 +9,7 @@ import {
   expandAllMxNChannels,
   expandMxNZoneMemberNumbers,
 } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
+import { resolveAnytoneSiteWireName } from '@core/import-export/formats/anytone/channelExpansion.ts';
 import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import {
@@ -154,6 +155,8 @@ function buildNumbersBySourceChannelId(
       radioTargetId: build.radioTargetId,
       options: merged,
       warnings,
+      resolveSiteWireName:
+        build.radioTargetId === 'anytone-at-d890uv' ? resolveAnytoneSiteWireName : undefined,
     }),
     build.channelOverrides,
   );
@@ -550,6 +553,8 @@ function buildDm32RadioIdBank(
         radioTargetId: build.radioTargetId,
         options: merged,
         warnings,
+        resolveSiteWireName:
+          build.radioTargetId === 'anytone-at-d890uv' ? resolveAnytoneSiteWireName : undefined,
       }),
       build.channelOverrides,
     );

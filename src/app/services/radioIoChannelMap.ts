@@ -12,6 +12,7 @@ import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
 import { assembledChannelExportWireName } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import { expandAllMxNChannels } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import type { ExpandedMxNChannelRow } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
+import { resolveAnytoneSiteWireName } from '@core/import-export/formats/anytone/channelExpansion.ts';
 import { filterExpandedRowsByOverrides } from '@core/domain/formatBuildOverrides.ts';
 import {
   resolveExportMemorySlotAssignments,
@@ -432,6 +433,8 @@ export function expandAssembledChannelsToRadioDtos(
       radioTargetId: build.radioTargetId,
       options: merged,
       warnings,
+      resolveSiteWireName:
+        build.radioTargetId === 'anytone-at-d890uv' ? resolveAnytoneSiteWireName : undefined,
     }),
     build.channelOverrides,
   );
