@@ -10,9 +10,7 @@ import {
 import { cloneAtD890SentinelSnapshot } from './sentinelVerify.ts';
 import { D890_MAP } from './constants.ts';
 
-function makeRegionFiles(
-  overrides: Record<string, Uint8Array>,
-): Map<string, Uint8Array> {
+function makeRegionFiles(overrides: Record<string, Uint8Array>): Map<string, Uint8Array> {
   const files = new Map<string, Uint8Array>();
   for (const region of AT_D890_MEMORY_REGIONS) {
     const total = region.chunks.reduce((sum, c) => sum + c.length, 0);
@@ -104,10 +102,7 @@ describe('buildAtD890WriteVerifyResult', () => {
     const files = makeRegionFiles({});
     const before = sentinelSnapshotFromRegionDump(files);
     const afterFiles = makeRegionFiles({});
-    afterFiles.set(
-      'localInfo',
-      new Uint8Array(D890_MAP.LocalInfoLength).fill(0x99),
-    );
+    afterFiles.set('localInfo', new Uint8Array(D890_MAP.LocalInfoLength).fill(0x99));
     const snapshot = captureAtD890WriteStagingSnapshot([]);
     const result = buildAtD890WriteVerifyResult(
       snapshot,

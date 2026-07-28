@@ -307,11 +307,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       });
       if (warnings.length > 0) setWriteWarnings(warnings);
       await releaseSession();
-      if (
-        supportsWriteVerify &&
-        uploadResult.sentinelBefore &&
-        uploadResult.stagingSnapshot
-      ) {
+      if (supportsWriteVerify && uploadResult.sentinelBefore && uploadResult.stagingSnapshot) {
         const pending: PendingVerifyPayload = {
           stagingSnapshot: uploadResult.stagingSnapshot,
           sentinelBefore: uploadResult.sentinelBefore,

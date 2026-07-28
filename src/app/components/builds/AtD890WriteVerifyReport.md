@@ -8,17 +8,19 @@ Displays the outcome of cross-session write verify: staged 16-byte chunk compari
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `result` | `AtD890WriteVerifyResult` | Compare outcome from `verifyAtD890WriteMemory` |
-| `onClose` | `() => void` | Dismiss report and reset parent verify state |
+| Prop      | Type                      | Description                                    |
+| --------- | ------------------------- | ---------------------------------------------- |
+| `result`  | `AtD890WriteVerifyResult` | Compare outcome from `verifyAtD890WriteMemory` |
+| `onClose` | `() => void`              | Dismiss report and reset parent verify state   |
 
 ## Usage
 
 ```tsx
-{verifyResult ? (
-  <AtD890WriteVerifyReport result={verifyResult} onClose={handleCloseVerifyReport} />
-) : null}
+{
+  verifyResult ? (
+    <AtD890WriteVerifyReport result={verifyResult} onClose={handleCloseVerifyReport} />
+  ) : null;
+}
 ```
 
 ## Behaviour

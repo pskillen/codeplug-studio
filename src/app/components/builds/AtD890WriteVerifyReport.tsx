@@ -131,7 +131,12 @@ export default function AtD890WriteVerifyReport({ result, onClose }: AtD890Write
   const hiddenMismatchCount = Math.max(0, mismatches.length - MISMATCH_DISPLAY_LIMIT);
 
   return (
-    <Paper withBorder p="md" radius="md" style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
+    <Paper
+      withBorder
+      p="md"
+      radius="md"
+      style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
+    >
       <Group justify="space-between" mb="sm">
         <Title order={4}>Write verify report</Title>
         <Button size="xs" variant="subtle" onClick={onClose}>
@@ -141,10 +146,13 @@ export default function AtD890WriteVerifyReport({ result, onClose }: AtD890Write
 
       <ScrollArea style={{ flex: 1 }} type="auto">
         <Stack gap="md" pr="xs">
-          <Alert color={result.ok ? 'green' : 'red'} title={result.ok ? 'Verify passed' : 'Verify failed'}>
+          <Alert
+            color={result.ok ? 'green' : 'red'}
+            title={result.ok ? 'Verify passed' : 'Verify failed'}
+          >
             <Text size="sm">
-              {result.staging.mismatchedChunks} of {result.staging.totalChunks} staged chunks mismatched.
-              Preserved settings: {result.sentinel.ok ? 'unchanged' : 'changed'}.
+              {result.staging.mismatchedChunks} of {result.staging.totalChunks} staged chunks
+              mismatched. Preserved settings: {result.sentinel.ok ? 'unchanged' : 'changed'}.
             </Text>
           </Alert>
 
@@ -174,11 +182,8 @@ export default function AtD890WriteVerifyReport({ result, onClose }: AtD890Write
                   const groupBytes = rows.reduce((sum, r) => sum + r.bytesRead, 0);
                   const groupStaged = rows.reduce((sum, r) => sum + r.stagedChunkCount, 0);
                   const groupMismatches = rows.reduce((sum, r) => sum + r.mismatchedChunks, 0);
-                  const groupStatus: AtD890RegionVerifyStatus = groupMismatches > 0
-                    ? 'mismatch'
-                    : groupStaged > 0
-                      ? 'match'
-                      : 'not_written';
+                  const groupStatus: AtD890RegionVerifyStatus =
+                    groupMismatches > 0 ? 'mismatch' : groupStaged > 0 ? 'match' : 'not_written';
                   return (
                     <Fragment key={group.id}>
                       <Table.Tr style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>

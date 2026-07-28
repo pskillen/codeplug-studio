@@ -12,13 +12,7 @@ export type RadioIoProgressPhase =
   'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
 
 export type RadioIoWriteVerifyStatus =
-  | 'none'
-  | 'pending_delay'
-  | 'ready'
-  | 'unverified'
-  | 'verifying'
-  | 'verified'
-  | 'failed';
+  'none' | 'pending_delay' | 'ready' | 'unverified' | 'verifying' | 'verified' | 'failed';
 
 export interface RadioIoVerifyMismatch {
   readonly id: string;

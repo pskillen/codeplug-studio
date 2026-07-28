@@ -50,9 +50,7 @@ export function serializeAtD890WriteVerifyPending(
   };
 }
 
-export function deserializeAtD890WriteVerifyPending(
-  payload: AtD890WriteVerifyPendingPayload,
-): {
+export function deserializeAtD890WriteVerifyPending(payload: AtD890WriteVerifyPendingPayload): {
   stagingSnapshot: AtD890WriteStagingSnapshot;
   sentinelBefore: AtD890SentinelSnapshot;
 } {
