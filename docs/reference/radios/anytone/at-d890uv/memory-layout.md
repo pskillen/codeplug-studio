@@ -143,11 +143,14 @@ Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `wri
 | Category                                                   | `writeRole`     | Re-derived from build? | On Upload                                                            |
 | ---------------------------------------------------------- | --------------- | ---------------------- | -------------------------------------------------------------------- |
 | Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced`      | Yes                    | Written from build (allow-listed)                                    |
+| AM airband channels + AM zones                             | `replaced`      | When projected         | Written together when build has airband zones; else radio bank left alone ([#756](https://github.com/pskillen/codeplug-studio/issues/756)) |
 | LocalInfo                                                  | `kept`          | No                     | **Not transmitted** — identity check only; unit not touched          |
 | Optional settings, alarm                                   | `kept`          | No                     | **Preserved** — fresh-read + unchanged re-stage inside touched units |
-| DigitalContact\*, boot images, crypto, …                   | `kept` / unread | No                     | Untouched — absent from cache unless future Read tickets             |
+| DigitalContact\*, boot images, crypto, broadcast FM, …     | `kept` / unread | No                     | Untouched — absent from cache unless future Read tickets             |
 
-**Serial Write projection (DMR bank only):** `RadioWriteProjection` for `radio-io-at-d890uv` partitions receive-only AM airband and broadcast FM out of MR channels, zones, and scan — same bank split as Anytone CSV egress ([#755](https://github.com/pskillen/codeplug-studio/issues/755)). Omitted banks stay on the radio; use Anytone CSV (`AMAir.CSV` / `FM.CSV`) to update them until binary AmAir Write exists — see [am-air.md](../../../export-formats/anytone/am-air.md). Export **Web Serial** shows an operator-facing **What Write updates** table (written vs deferred vs left alone).
+**Serial Write projection:** `RadioWriteProjection` for `radio-io-at-d890uv` partitions receive-only AM airband and broadcast FM out of MR channels, zones, and scan — same bank split as Anytone CSV egress ([#755](https://github.com/pskillen/codeplug-studio/issues/755)). **AM airband** then projects into the parallel `AmAir*` / `AmZone*` banks when the build has airband channels **and** AM zone membership (zones ship with channels). Empty airband content retains the radio bank (DigitalContacts-style). Broadcast FM stays CSV-only until a later ticket — see [am-air.md](../../../export-formats/anytone/am-air.md). Export **Web Serial** shows an operator-facing **What Write updates** table (written vs deferred vs left alone).
+
+**AmAir erase unit:** `AmAirData` (`0x3880000`) and `AmZoneData` (`0x3888000`) share erase unit `0x3880000`. Sparse RMW fresh-reads the unit when airband is written.
 
 Safe-skip address `0x2fa0010` (family constant) is never written. D890 `LocalInfo+0x10` (`0x4f80010`) is **not** skipped — LocalInfo is excluded from upload entirely instead.
 
@@ -192,6 +195,7 @@ Measured in `ChannelData` 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`): **`
 | --------------- | ---------------------------------------------------------------- | -------------------------------------------------- |
 | `0x3480000`     | `ChannelSet`, `ZoneSet`, `ZoneHide`, `RadioIdSet`, `ScanListSet` | `AlarmBitmap` `0x3482e00`, `AlarmData` `0x3483000` |
 | `0x3500000`     | `ZoneAChannel`, `ZoneBChannel`                                   | Optional settings main/ext/APRS `0x3500000`…       |
+| `0x3880000`     | `AmAir*` / `AmZone*` (when airband projected)                    | AmAir VFO + unmodelled co-residents in the unit    |
 | `0x1000000`+    | `ChannelData` (per backed block)                                 | Unused slots in same unit                          |
 
 **Sparse staging:** only non-`0xff` 16-byte blocks are re-transmitted (~37.5 kB across 14 touched units in a typical codeplug, vs 3.67 MB dense). Fresh-read source is the **connected radio**, not the hydration bag; LocalInfo serial must match the stash or Write is refused.
