@@ -15,7 +15,11 @@ import { encodeTalkgroupsIntoAtD890Image } from './talkGroupCodec.ts';
 import { encodeAmAirIntoAtD890Image } from './amAirCodec.ts';
 import { encodeAmZonesIntoAtD890Image } from './amZoneCodec.ts';
 import { createRadioCloneHydrationBagFromBlocks } from '@core/models/radioCloneHydration.ts';
-import { AT_D890UV_MODEL_ID, cacheFromBag, mergeChannelsIntoAtD890uvHydration } from './hydration.ts';
+import {
+  AT_D890UV_MODEL_ID,
+  cacheFromBag,
+  mergeChannelsIntoAtD890uvHydration,
+} from './hydration.ts';
 
 describe('alignedSpanForAtD890Region', () => {
   it('covers odd talkgroup slots that are not 16-aligned', () => {
@@ -160,9 +164,7 @@ describe('applyAtD890WriteImageToCache bank intent', () => {
     const cache = cacheFromBag(bag);
     const image = createMemoryMap(AT_D890_MAP_SIZE);
     image.fill(0, AT_D890_MAP_SIZE, 0xff);
-    encodeAmAirIntoAtD890Image(image, [
-      { slotIndex: 1, wireName: 'Tower', rxHz: 118_000_000 },
-    ]);
+    encodeAmAirIntoAtD890Image(image, [{ slotIndex: 1, wireName: 'Tower', rxHz: 118_000_000 }]);
     encodeAmZonesIntoAtD890Image(image, [
       {
         wireName: 'Air',
