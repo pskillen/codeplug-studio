@@ -246,10 +246,10 @@ Both `DigitalContactData` and `DigitalContactOrder` are **block-hopped**: logica
 
 ## Debug memory-region export (`/debug/d890-erase-probe`)
 
-Read-only raw-binary export of every region documented on this page, for offline diffing against codeplugs written by the official Anytone CPS — this is the read-only differential RE workflow for AmZone encode and any other undocumented byte ranges, not a modelled Read/Write path. Three operations:
+Read-only raw-binary export of every region documented on this page, for offline diffing against codeplugs written by the official Anytone CPS — this is the read-only differential RE workflow for AmZone encode and any other undocumented byte ranges, not a modelled Read/Write path. Regions are grouped into higher-level areas (Device, Optional settings & alarm, APRS, Channels, Zones, Scan lists, Talkgroups, RX groups, Radio IDs, Airband) — each region's address/size is still listed individually, but export happens at group granularity:
 
-- One button per region — downloads that region's raw bytes as a single `.bin` file.
-- **Export all (excl. Digital Contacts)** — every region above except `DigitalContact*`, zipped together (contacts are excluded because the block-hopped bank is large and slow relative to everything else).
+- One button per group — zips every region in that group into a single download.
+- **Export all (excl. Digital Contacts)** — every region above regardless of group, except `DigitalContact*`, zipped together (contacts are excluded because the block-hopped bank is large and slow relative to everything else).
 - **Export Digital Contacts** — meta + de-interleaved order table + de-interleaved contact data, zipped separately.
 
 Filenames are stamped with the export time in ISO 8601 (colons/periods replaced with `-` for filesystem safety). Nothing here is on the write allow-list; the tool only issues `R` frames.
