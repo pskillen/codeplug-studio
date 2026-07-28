@@ -69,21 +69,18 @@ Recurring divergence patterns from the 2026-07 investigation:
 
 Actionable findings from the pathway audit (2026-07). Fix and lock tickets are children of [#776](https://github.com/pskillen/codeplug-studio/issues/776).
 
-| #   | Radio(s)                   | Dimension                        | Ticket                                                         | Severity    | Summary                                                                                                         |
-| --- | -------------------------- | -------------------------------- | -------------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
-| 1   | OpenGD77 DM-1701 + MD-9600 | Row cardinality                  | [#781](https://github.com/pskillen/codeplug-studio/issues/781) | High        | Serial Write collapses FM+DMR dual-mode to one DTO; CSV emits two rows (`-F`/`-D`)                              |
-| 2   | OpenGD77 DM-1701 + MD-9600 | Scan/skip flags                  | [#783](https://github.com/pskillen/codeplug-studio/issues/783) | Medium–High | `scanInclusionOverride` dropped on both CSV and serial (self-consistent but wrong)                              |
-| 3   | OpenGD77 DM-1701 + MD-9600 | Scan/skip flags                  | [#803](https://github.com/pskillen/codeplug-studio/issues/803) | High        | Default scan inclusion: CSV `scan`, serial `skip` — missing `getFormatExportDefaults` for `radio-io-opengd77-*` |
-| 4   | Anytone AT-D890UV          | Wire name, site name, length cap | [#782](https://github.com/pskillen/codeplug-studio/issues/782) | High        | Lean radio-io rows bypass length limiting entirely (raw unshortened compose)                                    |
-| 5   | Anytone AT-D890UV          | Charset                          | [#782](https://github.com/pskillen/codeplug-studio/issues/782) | Medium–High | Same missing-callback bug skips ASCII sanitisation on lean rows                                                 |
-| 6   | DM-32UV                    | RX group list count cap          | [#804](https://github.com/pskillen/codeplug-studio/issues/804) | Medium–High | CSV uncapped; radio-io wrong cap (250); only NeonPlug enforces 32 with warning                                  |
-| 7   | DM-32UV                    | Zone-derived scan-list count cap | [#805](https://github.com/pskillen/codeplug-studio/issues/805) | High        | CSV has no 15-list ceiling; NeonPlug and radio-io warn and truncate                                             |
-| 8   | UV-5R Mini                 | Scan/skip flags                  | [#806](https://github.com/pskillen/codeplug-studio/issues/806) | High        | NeonPlug hardcodes `defaultScanInclusion: 'scan'`; CHIRP CSV and serial correctly use `skip`                    |
-| 9   | UV-21Pro V2 + RT95 VOX     | Slot ordering                    | [#807](https://github.com/pskillen/codeplug-studio/issues/807) | Medium      | CSV resolves slot collisions; radio-io lean mapper can clobber duplicate `slotIndex`                            |
-| 10  | UV-21Pro V2 + RT95 VOX     | Power/tone/bandwidth (AM)        | [#808](https://github.com/pskillen/codeplug-studio/issues/808) | Medium      | CSV writes `Mode=AM`; radio-io re-encodes as NFM with no warning; docs stale                                    |
-| 11  | Anytone + CHIRP radios     | Channel wire name                | [#780](https://github.com/pskillen/codeplug-studio/issues/780) | Medium      | Unconditional abbreviation substitution in CSV vs shorten-time-only in radio-io/NeonPlug                        |
+| #   | Radio(s)               | Dimension                        | Ticket                                                         | Severity    | Summary                                                                                      |
+| --- | ---------------------- | -------------------------------- | -------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------- |
+| 4   | Anytone AT-D890UV      | Wire name, site name, length cap | [#782](https://github.com/pskillen/codeplug-studio/issues/782) | High        | Lean radio-io rows bypass length limiting entirely (raw unshortened compose)                 |
+| 5   | Anytone AT-D890UV      | Charset                          | [#782](https://github.com/pskillen/codeplug-studio/issues/782) | Medium–High | Same missing-callback bug skips ASCII sanitisation on lean rows                              |
+| 6   | DM-32UV                | RX group list count cap          | [#804](https://github.com/pskillen/codeplug-studio/issues/804) | Medium–High | CSV uncapped; radio-io wrong cap (250); only NeonPlug enforces 32 with warning               |
+| 7   | DM-32UV                | Zone-derived scan-list count cap | [#805](https://github.com/pskillen/codeplug-studio/issues/805) | High        | CSV has no 15-list ceiling; NeonPlug and radio-io warn and truncate                          |
+| 8   | UV-5R Mini             | Scan/skip flags                  | [#806](https://github.com/pskillen/codeplug-studio/issues/806) | High        | NeonPlug hardcodes `defaultScanInclusion: 'scan'`; CHIRP CSV and serial correctly use `skip` |
+| 9   | UV-21Pro V2 + RT95 VOX | Slot ordering                    | [#807](https://github.com/pskillen/codeplug-studio/issues/807) | Medium      | CSV resolves slot collisions; radio-io lean mapper can clobber duplicate `slotIndex`         |
+| 10  | UV-21Pro V2 + RT95 VOX | Power/tone/bandwidth (AM)        | [#808](https://github.com/pskillen/codeplug-studio/issues/808) | Medium      | CSV writes `Mode=AM`; radio-io re-encodes as NFM with no warning; docs stale                 |
+| 11  | Anytone + CHIRP radios | Channel wire name                | [#780](https://github.com/pskillen/codeplug-studio/issues/780) | Medium      | Unconditional abbreviation substitution in CSV vs shorten-time-only in radio-io/NeonPlug     |
 
-**Closed (clean):** [#777](https://github.com/pskillen/codeplug-studio/issues/777) — OpenGD77 channel wire naming parity (CSV ↔ serial).
+**Closed (clean):** [#777](https://github.com/pskillen/codeplug-studio/issues/777) — OpenGD77 channel wire naming parity (CSV ↔ serial) · [#781](https://github.com/pskillen/codeplug-studio/issues/781) — dual-mode row cardinality · [#783](https://github.com/pskillen/codeplug-studio/issues/783) — `scanInclusionOverride` · [#803](https://github.com/pskillen/codeplug-studio/issues/803) — default scan inclusion.
 
 **Lock suites (harness consumers):** [#784](https://github.com/pskillen/codeplug-studio/issues/784) DM-32UV · [#785](https://github.com/pskillen/codeplug-studio/issues/785) UV-5R Mini · [#786](https://github.com/pskillen/codeplug-studio/issues/786) UV-21 + RT95.
 
@@ -101,6 +98,8 @@ Low-severity risks to address alongside adjacent fixes:
 ### Confirmed clean (no divergence)
 
 - OpenGD77 channel wire naming ([#777](https://github.com/pskillen/codeplug-studio/issues/777), re-confirmed under stress).
+- OpenGD77 dual-mode row cardinality and zone fan-out ([#781](https://github.com/pskillen/codeplug-studio/issues/781)).
+- OpenGD77 scan/skip flags — default `scan` and per-channel override ([#783](https://github.com/pskillen/codeplug-studio/issues/783), [#803](https://github.com/pskillen/codeplug-studio/issues/803)).
 - M×N row cardinality for AT-D890UV and DM-32UV (CSV and radio-io call identical `expandAllMxNChannels()`).
 - DM-32UV channel/site wire naming — 3-way match (CSV / radio-io / NeonPlug), including forced shortening.
 - UV-5R Mini, UV-21, RT95 — DTCS reverse polarity, power ladder breakpoints, bandwidth-null defaults match across pathways.

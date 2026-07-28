@@ -139,6 +139,32 @@ export function wireNamesFromOpenGd77ChannelsCsv(csv: string): string[] {
   return rows.slice(1).map((row) => row[nameIndex] ?? '');
 }
 
+/** Serial (radio-io) leg via OpenGD77 mode expansion (parity with CSV expand). */
+export function opengd77SerialPathwaySnapshot(
+  channel: Channel,
+  serialOptions: CpsExportOptions,
+  serialProfileId: string,
+  exportSettings?: BuildExportSettings,
+): PathwayChannelSnapshot {
+  const wireName = defaultChannelWireName(channel);
+  const reserved = new Set<string>();
+  const warnings: string[] = [];
+  const expanded = expandOpenGd77ChannelWireRows(
+    channel,
+    wireName,
+    serialOptions.expandModes ?? true,
+    serialOptions,
+    serialProfileId,
+    reserved,
+    warnings,
+  );
+  return {
+    wireNames: expanded.map((row) => row.wireName),
+    rowCount: expanded.length,
+    scanInclusion: effectiveScanForPathway(channel, exportSettings, 'radio-io', serialProfileId),
+  };
+}
+
 /** Serial (radio-io) leg via the shared core wire-name pipeline. */
 export function serialPathwaySnapshot(
   channel: Channel,
@@ -243,7 +269,7 @@ export function collectOpenGd77PathwaySnapshots(
   const csvSerialisedNames = wireNamesFromOpenGd77ChannelsCsv(
     serialiseChannels(minimalAssembledBuild(channel, 'opengd77', pair.csv), csvOptions),
   );
-  const serial = serialPathwaySnapshot(channel, serialOptions, pair.serial, exportSettings);
+  const serial = opengd77SerialPathwaySnapshot(channel, serialOptions, pair.serial, exportSettings);
   return {
     [`${pair.csv} expand`]: csvExpand,
     [`${pair.csv} Channels.csv`]: {
@@ -251,7 +277,7 @@ export function collectOpenGd77PathwaySnapshots(
       rowCount: csvSerialisedNames.length,
       scanInclusion: csvExpand.scanInclusion,
     },
-    [`${pair.serial} helper`]: serial,
+    [`${pair.serial} expand`]: serial,
   };
 }
 

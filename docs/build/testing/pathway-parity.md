@@ -18,25 +18,26 @@ Pathway parity tests are **directional**: constructed `Channel` (+ optional `Bui
 
 `src/core/import-export/channelExpansion/__testUtils__/pathwayParity.ts`
 
-| Export                                                 | Role                                                       |
-| ------------------------------------------------------ | ---------------------------------------------------------- |
-| `PathwayProfilePair`                                   | `{ csv, serial, neonplug? }` profile ids for one radio     |
-| `PathwayChannelSnapshot`                               | `{ wireNames, rowCount, scanInclusion? }` comparable facts |
-| `fmChannelFixture`                                     | Minimal FM channel builder                                 |
-| `minimalAssembledBuild`                                | Single-channel `AssembledBuild` for serialise tests        |
-| `mergePathwayCsvOptions` / `mergePathwaySerialOptions` | `mergeExportOptions` wiring                                |
-| `serialPathwaySnapshot`                                | Serial leg via `assembledChannelExportWireName` (core)     |
-| `opengd77CsvPathwaySnapshot`                           | OpenGD77 CSV expand leg                                    |
-| `collectOpenGd77PathwaySnapshots`                      | All three legs for one profile pair                        |
-| `assertPathwayParity`                                  | Cross-leg equality (`compareScanInclusion` opt-in)         |
-| `assertOpenGd77WireNameParity`                         | Thin wrapper for OpenGD77 name tests                       |
-| `OPENGD77_PATHWAY_PAIRS`                               | Reference profile pairs (1701 + MD-9600)                   |
+| Export                                                 | Role                                                               |
+| ------------------------------------------------------ | ------------------------------------------------------------------ |
+| `PathwayProfilePair`                                   | `{ csv, serial, neonplug? }` profile ids for one radio             |
+| `PathwayChannelSnapshot`                               | `{ wireNames, rowCount, scanInclusion? }` comparable facts         |
+| `fmChannelFixture`                                     | Minimal FM channel builder                                         |
+| `minimalAssembledBuild`                                | Single-channel `AssembledBuild` for serialise tests                |
+| `mergePathwayCsvOptions` / `mergePathwaySerialOptions` | `mergeExportOptions` wiring                                        |
+| `serialPathwaySnapshot`                                | Single-mode serial leg via `assembledChannelExportWireName` (core) |
+| `opengd77SerialPathwaySnapshot`                        | OpenGD77 serial expand leg (`expandOpenGd77ChannelWireRows`)       |
+| `opengd77CsvPathwaySnapshot`                           | OpenGD77 CSV expand leg                                            |
+| `collectOpenGd77PathwaySnapshots`                      | All three legs for one profile pair                                |
+| `assertPathwayParity`                                  | Cross-leg equality (`compareScanInclusion` opt-in)                 |
+| `assertOpenGd77WireNameParity`                         | Thin wrapper for OpenGD77 name tests                               |
+| `OPENGD77_PATHWAY_PAIRS`                               | Reference profile pairs (1701 + MD-9600)                           |
 
 **Layer boundary:** the harness stays in `src/core/`. It uses core expansion and wire-name helpers — not `src/app/services/radioIoWriteProjection.ts`. Full DTO comparison for a radio adapter can add a thin app-side `__testUtils__` wrapper that calls `buildRadioWriteProjection` and compares against CSV snapshots.
 
 ## Reference test
 
-[`wireNameParity.test.ts`](../../../src/core/import-export/formats/opengd77/wireNameParity.test.ts) — OpenGD77 CSV ↔ serial channel wire names ([#777](https://github.com/pskillen/codeplug-studio/issues/777), shipped). Run:
+[`wireNameParity.test.ts`](../../../src/core/import-export/formats/opengd77/wireNameParity.test.ts) — OpenGD77 CSV ↔ serial channel wire names ([#777](https://github.com/pskillen/codeplug-studio/issues/777)), dual-mode expansion ([#781](https://github.com/pskillen/codeplug-studio/issues/781)), and scan inclusion when `compareScanInclusion: true` ([#783](https://github.com/pskillen/codeplug-studio/issues/783), [#803](https://github.com/pskillen/codeplug-studio/issues/803)). Run:
 
 ```bash
 npm test -- src/core/import-export/formats/opengd77/wireNameParity.test.ts
@@ -89,13 +90,15 @@ describe('MyRadio CSV ↔ serial pathway parity', () => {
 });
 ```
 
-### 4. Enable scan comparison when fixing defaults
+### 4. Enable scan comparison for OpenGD77
 
-Known divergence: OpenGD77 serial defaults `skip` where CSV defaults `scan` ([#803](https://github.com/pskillen/codeplug-studio/issues/803)). Until fixed, leave `compareScanInclusion` off (default). After a fix lands, enable:
+OpenGD77 CSV and `radio-io-opengd77-*` share `defaultScanInclusion: 'scan'` ([#803](https://github.com/pskillen/codeplug-studio/issues/803)). Dual-mode and override tests enable scan comparison:
 
 ```typescript
 assertPathwayParity(snapshots, { compareScanInclusion: true });
 ```
+
+Other radios may still diverge on scan defaults — leave `compareScanInclusion` off unless the format pair is known clean.
 
 ### 5. NeonPlug leg (3-way radios)
 

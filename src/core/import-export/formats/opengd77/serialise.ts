@@ -4,13 +4,14 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import {
   buildScanContext,
   formatOpenGd77AllSkip,
-  resolveEffectiveScanInclusion,
+  resolveChannelScanInclusionForExport,
 } from '@core/import-export/scanInclusion/index.ts';
 import type {
   Channel,
   ChannelModeProfile,
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
+  ScanInclusion,
 } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
@@ -88,6 +89,7 @@ function channelRowValues(
   rowNumber: number,
   options?: CpsExportOptions,
   timeslotCtx?: OpenGd77TimeslotExportContext,
+  scanInclusionOverride?: ScanInclusion,
 ): Record<string, string> {
   const analog = isAnalogProfile(modeProfile) ? modeProfile : null;
   const dmr = isDmrProfile(modeProfile) ? modeProfile : null;
@@ -97,7 +99,11 @@ function channelRowValues(
       : undefined,
     { defaultScanInclusion: 'scan' },
   );
-  const effectiveScan = resolveEffectiveScanInclusion(channel, scanContext);
+  const effectiveScan = resolveChannelScanInclusionForExport(
+    channel,
+    scanInclusionOverride,
+    scanContext,
+  );
 
   const values: Record<string, string> = {
     [CHANNEL_COL.number]: String(rowNumber),
@@ -166,12 +172,13 @@ export function serialiseChannels(
     ),
     options?.channelOverrides,
   );
-  const rows = expandedRows.map((row, i) =>
-    padRow(
+  const rows = expandedRows.map((row, i) => {
+    const assembledRow = assembled.channels.find((c) => c.entity.id === row.sourceChannelId)!;
+    return padRow(
       CHANNEL_HEADERS,
       channelRowValues(
         row.wireName,
-        assembled.channels.find((c) => c.entity.id === row.sourceChannelId)!.entity,
+        assembledRow.entity,
         row.mode,
         row.modeProfile,
         assembled,
@@ -179,9 +186,10 @@ export function serialiseChannels(
         i + 1,
         options,
         timeslotCtx,
+        assembledRow.scanInclusionOverride,
       ),
-    ),
-  );
+    );
+  });
   return formatCsv(CHANNEL_HEADERS, rows);
 }
 

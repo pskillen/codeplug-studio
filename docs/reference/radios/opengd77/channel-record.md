@@ -95,7 +95,7 @@ qdmr maps:
 
 ### Scan skip bits @ `0x33`
 
-OpenGD77 distinguishes **skip all-scan** (bit 4) and **skip zone-scan** (bit 5). The library exposes a single **scan inclusion** flag per channel — there is no separate all-scan vs zone-scan model. Web Serial Write therefore sets **both** `skipScan` and `skipZoneScan` from the same resolved scan-inclusion trait (`effectiveScanSkips` in `stampOpenGd77ChannelBehaviour`). This is intentional until a future library/build trait splits the two semantics.
+OpenGD77 distinguishes **skip all-scan** (bit 4) and **skip zone-scan** (bit 5). The library exposes a single **scan inclusion** flag per channel — there is no separate all-scan vs zone-scan model. Web Serial Write therefore sets **both** `skipScan` and `skipZoneScan` from the same resolved scan-inclusion trait (`effectiveScanSkips` in `stampOpenGd77ChannelBehaviour`), honouring per-channel `scanInclusionOverride` when set. Default scan inclusion is `scan` for both CSV and `radio-io-opengd77-*` profiles. This is intentional until a future library/build trait splits the two semantics.
 
 ### Alias (bits @ `0x30`)
 

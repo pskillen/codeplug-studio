@@ -162,6 +162,12 @@ export function getFormatExportDefaults(
   if (formatId === 'radio-io' && profileId === 'radio-io-at-d890uv') {
     return RADIO_IO_AT_D890UV_EXPORT_DEFAULTS;
   }
+  if (
+    formatId === 'radio-io' &&
+    (profileId === 'radio-io-opengd77-1701' || profileId === 'radio-io-opengd77-md9600')
+  ) {
+    return OPENGD77_EXPORT_DEFAULTS;
+  }
   const fromAdapter = exportAdapters.find((a) => a.id === formatId)?.defaultExportSettings;
   if (fromAdapter) return fromAdapter;
   return FORMAT_EXPORT_DEFAULTS[formatId as FormatId] ?? { defaultScanInclusion: 'scan' };

@@ -20,7 +20,8 @@ import type { FormatId } from '@core/import-export/types.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import type { RadioChannelDto, RadioChannelMode } from '@integrations/radio-io/radioChannelDto.ts';
 import { channelToneToRadioTone } from '@app/lib/channelFields/channelToneToRadioTone.ts';
-import { filterOpenGd77ExportChannel } from '@core/import-export/opengd77ExportModes.ts';
+import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
+import type { ExpandedChannelWireRow } from '@core/import-export/channelExpansion/multiMode.ts';
 
 export interface RadioWireEgressIds {
   formatId: string;
@@ -75,6 +76,8 @@ function bandwidthFromKHz(bandwidthKHz: number | null | undefined): 'FM' | 'NFM'
 function isOpenGd77RadioIoEgress(profileId: string): boolean {
   return profileId === 'radio-io-opengd77-1701' || profileId === 'radio-io-opengd77-md9600';
 }
+
+export { isOpenGd77RadioIoEgress };
 
 function radioWireName(
   row: AssembledChannel,
@@ -136,6 +139,135 @@ function digitalFieldsFromChannel(
     ...(dmrRadioIdIndex != null ? { dmrRadioIdIndex } : {}),
     ...aprsFieldsFromChannel(channel),
   };
+}
+
+function digitalFieldsFromExpandedWireRow(
+  expansion: ExpandedChannelWireRow,
+  channel: Channel,
+  fkMaps?: RadioChannelFkMaps,
+): Partial<RadioChannelDto> {
+  const dmr = isDmrProfile(expansion.modeProfile) ? expansion.modeProfile : null;
+
+  if (!dmr) {
+    return { mode: 'analog', ...aprsFieldsFromChannel(channel) };
+  }
+
+  const timeslot = dmr.timeslot === 2 ? 2 : dmr.timeslot === 1 ? 1 : undefined;
+  const txContactId = resolveContactId(dmr.contactRef, fkMaps, timeslot);
+  const rxGroupIndex = resolveRxGroupIndex(dmr.rxGroupListId, fkMaps);
+  const dmrRadioIdIndex = dmr.dmrId != null ? fkMaps?.dmrIdIndexByValue?.get(dmr.dmrId) : undefined;
+  return {
+    mode: 'digital',
+    colorCode: dmr.colourCode ?? undefined,
+    timeslot,
+    ...(txContactId != null ? { txContactId } : {}),
+    ...(rxGroupIndex != null ? { rxGroupIndex } : {}),
+    ...(dmrRadioIdIndex != null ? { dmrRadioIdIndex } : {}),
+    ...aprsFieldsFromChannel(channel),
+  };
+}
+
+function expandOpenGd77AssembledWireRows(
+  channels: readonly AssembledChannel[],
+  build: RadioBuild,
+  egress: RadioWireEgressIds,
+  warnings: string[],
+): ExpandedChannelWireRow[] {
+  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
+  const reserved = new Set<string>();
+  const expandModes = merged.expandModes ?? true;
+  return filterExpandedRowsByOverrides(
+    channels.flatMap((row) =>
+      expandOpenGd77ChannelWireRows(
+        row.entity,
+        row.wireNameOverride?.trim() || row.wireName,
+        expandModes,
+        merged,
+        merged.profileId ?? egress.profileId,
+        reserved,
+        warnings,
+      ),
+    ),
+    build.channelOverrides,
+  );
+}
+
+function openGd77AssembledChannelsToRadioDtos(
+  channels: readonly AssembledChannel[],
+  build: RadioBuild,
+  egress: RadioWireEgressIds,
+  fkMaps?: RadioChannelFkMaps,
+): AssembledChannelsToRadioDtosResult {
+  const warnings: string[] = [];
+  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
+  const expandedRows = expandOpenGd77AssembledWireRows(channels, build, egress, warnings);
+  const rowBySourceId = new Map(channels.map((row) => [row.entity.id, row]));
+  const dtos: RadioChannelDto[] = [];
+  let slotIndex = 1;
+
+  for (const expansion of expandedRows) {
+    const row = rowBySourceId.get(expansion.sourceChannelId);
+    if (!row) continue;
+    const entity = row.entity;
+    const rxHz = entity.rxFrequency;
+    if (rxHz == null || rxHz <= 0) continue;
+    const profileAnalog =
+      expansion.modeProfile.mode === 'fm' || expansion.modeProfile.mode === 'am'
+        ? expansion.modeProfile
+        : null;
+    const txHz = entity.txFrequency ?? rxHz;
+    const rxOnly = effectiveForbidTransmit(entity, merged.channelBehaviourContext);
+    dtos.push({
+      slotIndex,
+      empty: false,
+      wireName: expansion.wireName,
+      rxHz,
+      txHz,
+      rxTone: channelToneToRadioTone(
+        profileAnalog && 'rxTone' in profileAnalog ? profileAnalog.rxTone : 'none',
+      ),
+      txTone: channelToneToRadioTone(
+        profileAnalog && 'txTone' in profileAnalog ? profileAnalog.txTone : 'none',
+      ),
+      powerPercent: entity.power,
+      bandwidth: bandwidthFromKHz(
+        profileAnalog && 'bandwidthKHz' in profileAnalog ? profileAnalog.bandwidthKHz : null,
+      ),
+      ...(profileAnalog && 'squelch' in profileAnalog
+        ? { squelchPercent: profileAnalog.squelch }
+        : {}),
+      ...(rxOnly ? { rxOnly: true } : {}),
+      ...digitalFieldsFromExpandedWireRow(expansion, entity, fkMaps),
+    });
+    slotIndex += 1;
+  }
+
+  return { dtos: truncateToRadioCapacity(dtos, egress, warnings), warnings };
+}
+
+/** Map expanded OpenGD77 wire rows to 1-based slot numbers per source channel id. */
+export function openGd77NumbersBySourceChannelId(
+  channels: readonly AssembledChannel[],
+  build: RadioBuild,
+  egress: RadioWireEgressIds,
+  warnings: string[],
+  maxSlots?: number,
+): Map<string, number[]> {
+  const map = new Map<string, number[]>();
+  const expandedRows = expandOpenGd77AssembledWireRows(channels, build, egress, warnings);
+  let slotIndex = 1;
+  for (const expansion of expandedRows) {
+    const row = channels.find((r) => r.entity.id === expansion.sourceChannelId);
+    if (!row) continue;
+    const rxHz = row.entity.rxFrequency;
+    if (rxHz == null || rxHz <= 0) continue;
+    if (maxSlots != null && slotIndex > maxSlots) break;
+    const list = map.get(expansion.sourceChannelId) ?? [];
+    list.push(slotIndex);
+    map.set(expansion.sourceChannelId, list);
+    slotIndex += 1;
+  }
+  return map;
 }
 
 function digitalFieldsFromProjection(
@@ -204,6 +336,10 @@ export function assembledChannelsToRadioDtosWithWarnings(
   egress: RadioWireEgressIds,
   fkMaps?: RadioChannelFkMaps,
 ): AssembledChannelsToRadioDtosResult {
+  if (isOpenGd77RadioIoEgress(egress.profileId)) {
+    return openGd77AssembledChannelsToRadioDtos(channels, build, egress, fkMaps);
+  }
+
   const reserved = new Set<string>();
   const warnings: string[] = [];
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
@@ -211,12 +347,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
   channels.forEach((row, index) => {
     const rxHz = row.entity.rxFrequency;
     if (rxHz == null || rxHz <= 0) return;
-    let entity = row.entity;
-    if (isOpenGd77RadioIoEgress(egress.profileId)) {
-      const filtered = filterOpenGd77ExportChannel(entity, warnings);
-      if (!filtered) return;
-      entity = filtered;
-    }
+    const entity = row.entity;
     const analog = entity.modeProfiles.find((p) => p.mode === 'fm' || p.mode === 'am');
     const txHz = entity.txFrequency ?? rxHz;
     const slotIndex = row.orderOrSlot != null && row.orderOrSlot > 0 ? row.orderOrSlot : index + 1;

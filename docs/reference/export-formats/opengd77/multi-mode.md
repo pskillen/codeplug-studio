@@ -10,12 +10,14 @@ Sibling formats differ: DM32 stock CPS uses native `Fixed Analog` / `Fixed Digit
 
 ## When to expand
 
-| Internal state                         | OpenGD77 export                                        |
-| -------------------------------------- | ------------------------------------------------------ |
-| `multiMode: false`                     | One `Channels.csv` row per logical channel (unchanged) |
-| `multiMode: true` with N mode profiles | N rows — one per profile                               |
+| Internal state                                     | OpenGD77 export                                 |
+| -------------------------------------------------- | ----------------------------------------------- |
+| Single mode profile (`modeProfiles.length === 1`)  | One `Channels.csv` row / one serial channel DTO |
+| Multiple mode profiles (`modeProfiles.length > 1`) | N rows / N DTOs — one per exportable profile    |
 
 Each expanded row uses the profile's mode for `Channel Type` (`Analogue` / `Digital` via [channels.md](channels.md)) and that profile's mode-specific fields (tones, colour code, contact, TG list, etc.). Shared fields (frequencies, location, power, rx-only, TOT, …) copy from the logical channel.
+
+**CSV** and **Web Serial Write** both call `expandOpenGd77ChannelWireRows` (via `serialiseChannels` and `expandAssembledChannelsToRadioDtos` respectively). Serial maps each expanded row to its own `RadioChannelDto` with `mode: 'analog'` or `mode: 'digital'` — never `fixed-digital`.
 
 For modelled radios (`opengd77-1701`, `opengd77-md9600`, and matching `radio-io-opengd77-*` Write profiles), only **analogue + DMR** mode profiles expand — YSF, D-STAR, P25, and other digital modes are dropped with an export warning ([#773](https://github.com/pskillen/codeplug-studio/issues/773)). The same filter applies on CSV export and serial Write.
 

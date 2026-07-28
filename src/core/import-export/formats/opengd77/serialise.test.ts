@@ -290,6 +290,58 @@ describe('OpenGD77 export serialise', () => {
     expect(scanRow[scanHeaders.indexOf(CHANNEL_COL.zoneSkip)]).toBe('No');
   });
 
+  it('honours build scanInclusionOverride over library scan inclusion', () => {
+    const channel: Channel = {
+      ...newChannel('proj', 'Override Scan'),
+      rxFrequency: 430_850_000,
+      txFrequency: 438_450_000,
+      scanInclusion: 'skip',
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 123,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const assembled: AssembledBuild = {
+      ...minimalAssembled(channel),
+      channels: [
+        {
+          entity: channel,
+          wireName: channel.name,
+          scanInclusionOverride: 'alwaysScan',
+        },
+      ],
+    };
+    const csv = serialiseChannels(assembled);
+    const rows = parseCsv(csv);
+    const headers = rows[0]!;
+    const dataRow = rows[1]!;
+    expect(dataRow[headers.indexOf(CHANNEL_COL.allSkip)]).toBe('No');
+    expect(dataRow[headers.indexOf(CHANNEL_COL.zoneSkip)]).toBe('No');
+
+    const skipOverride: AssembledBuild = {
+      ...minimalAssembled(channel),
+      channels: [
+        {
+          entity: { ...channel, scanInclusion: 'alwaysScan' },
+          wireName: channel.name,
+          scanInclusionOverride: 'skip',
+        },
+      ],
+    };
+    const skipCsv = serialiseChannels(skipOverride);
+    const skipRows = parseCsv(skipCsv);
+    const skipHeaders = skipRows[0]!;
+    const skipRow = skipRows[1]!;
+    expect(skipRow[skipHeaders.indexOf(CHANNEL_COL.allSkip)]).toBe('Yes');
+    expect(skipRow[skipHeaders.indexOf(CHANNEL_COL.zoneSkip)]).toBe('Yes');
+  });
+
   it('emits CPS-safe defaults for unmodelled yes/no columns on analogue rows', () => {
     const channel: Channel = {
       ...newChannel('proj', 'FM Defaults'),
