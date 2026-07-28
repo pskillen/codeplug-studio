@@ -133,6 +133,95 @@ describe('assembledChannelsToRadioDtos', () => {
     expect(dtos[0]?.wireName.length).toBeLessThanOrEqual(12);
   });
 
+  it('bumps colliding orderOrSlot to match CHIRP CSV slot resolver', () => {
+    const projectId = 'p1';
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-uv21');
+    const mkRow = (id: string, name: string, orderOrSlot: number): AssembledChannel => ({
+      entity: {
+        ...newChannel(projectId, name),
+        id,
+        rxFrequency: 145_500_000,
+        txFrequency: 145_500_000,
+        modeProfiles: [
+          {
+            mode: 'fm' as const,
+            squelch: null,
+            rxTone: 'none',
+            txTone: 'none',
+            bandwidthKHz: 12.5,
+          },
+        ],
+      },
+      wireName: name,
+      orderOrSlot,
+    });
+    const rows = [mkRow('ch-a', 'A', 3), mkRow('ch-b', 'B', 3)];
+    const dtos = assembledChannelsToRadioDtos(rows, build, egress);
+    expect(dtos.map((d) => d.slotIndex).sort()).toEqual([3, 4]);
+    const byName = Object.fromEntries(dtos.map((d) => [d.wireName, d.slotIndex]));
+    expect(byName.A).toBe(3);
+    expect(byName.B).toBe(4);
+  });
+
+  it('maps AM mode profile to FM wide bandwidth (CHIRP frequency-implied AM)', () => {
+    const projectId = 'p1';
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-uv21');
+    const entity = {
+      ...newChannel(projectId, 'Airband'),
+      id: 'ch-am',
+      rxFrequency: 121_500_000,
+      txFrequency: 121_500_000,
+      modeProfiles: [
+        {
+          mode: 'am' as const,
+          squelch: null,
+          rxTone: 'none',
+          txTone: 'none',
+          bandwidthKHz: null,
+        },
+      ],
+    };
+    const row: AssembledChannel = { entity, wireName: 'Airband', orderOrSlot: 1 };
+    const dtos = assembledChannelsToRadioDtos([row], build, egress);
+    expect(dtos[0]?.bandwidth).toBe('FM');
+  });
+
+  it('omits AM channels for RT95 after assemble eligibility filtering', () => {
+    const projectId = 'p1';
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-rt95');
+    const entity = {
+      ...newChannel(projectId, 'Tower'),
+      id: 'ch-am',
+      rxFrequency: 118_800_000,
+      txFrequency: 118_800_000,
+      modeProfiles: [
+        {
+          mode: 'am' as const,
+          squelch: null,
+          rxTone: 'none',
+          txTone: 'none',
+          bandwidthKHz: null,
+        },
+      ],
+    };
+    const library: LibrarySlice = {
+      channels: [entity],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    expect(assembled.channels).toHaveLength(0);
+    const { dtos } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress);
+    expect(dtos).toEqual([]);
+  });
+
   it('skips channels without RX frequency', () => {
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
     const entity = {

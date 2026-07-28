@@ -11,6 +11,7 @@ import {
   migrateFlatMemoryLayoutToOrderOrSlot,
   projectFlatMemoryOrderFromSource,
   resolveChirpChannelMemorySlots,
+  resolveExportMemorySlotAssignments,
 } from './exportOrderOrSlot.ts';
 
 describe('exportOrderOrSlot', () => {
@@ -50,6 +51,34 @@ describe('exportOrderOrSlot', () => {
       { slot: 1, channelId: 'ch-1' },
     ]);
     expect(chirpMemoryChannelIds(build, library)).toEqual(['ch-1']);
+  });
+
+  it('bumps colliding explicit orderOrSlot to the next free slot', () => {
+    const assignments = resolveExportMemorySlotAssignments([
+      { channelId: 'ch-a', orderOrSlot: 3 },
+      { channelId: 'ch-b', orderOrSlot: 3 },
+    ]);
+    expect(assignments.get('ch-a')).toBe(3);
+    expect(assignments.get('ch-b')).toBe(4);
+  });
+
+  it('resolveChirpChannelMemorySlots bumps colliding explicit slots', () => {
+    const ch1 = fmChannel('ch-1', 'A');
+    const ch2 = fmChannel('ch-2', 'B');
+    const build = {
+      ...newFormatBuild(projectId, 'chirp-uv21'),
+      channelOverrides: [
+        { libraryEntityId: 'ch-1', orderOrSlot: 3 },
+        { libraryEntityId: 'ch-2', orderOrSlot: 3 },
+      ],
+    };
+    const library = { ...emptyLibrary, channels: [ch1, ch2] };
+    expect(resolveChirpChannelMemorySlots(build, library)).toEqual([
+      { slot: 1, channelId: null },
+      { slot: 2, channelId: null },
+      { slot: 3, channelId: 'ch-1' },
+      { slot: 4, channelId: 'ch-2' },
+    ]);
   });
 
   it('respects explicit orderOrSlot and leaves blank gaps', () => {
