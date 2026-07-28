@@ -3,6 +3,8 @@
  * Cite: anytone-cps `anytone_memory.h` / `Device` (facts only).
  */
 
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+
 export const AT_D890UV_MODEL_IDS = ['AT-D890UV', 'ID890UV'] as const;
 
 /** Family safe-skip write address (878-line radios; apply on D890 too). */
@@ -22,11 +24,11 @@ export const AT_D890_CONNECTION = {
 } as const;
 
 export const AT_D890_LIMITS = {
-  MAX_CHANNELS: 4000,
+  MAX_CHANNELS: AT_D890UV_LIMITS.CHANNEL_MAX,
   CHANNEL_SET_BYTES: 0x200,
   ZONE_SET_BYTES: 0x20,
   ZONE_MEMBERS_BYTES: 0x200,
-  ZONE_MAX_MEMBERS: 64,
+  ZONE_MAX_MEMBERS: AT_D890UV_LIMITS.ZONE_MEMBERS_MAX,
   SCAN_LIST_SET_BYTES: 0x20,
   SCAN_LIST_RECORD_SIZE: 0xd0,
   SCAN_LIST_STRIDE: 0x200,

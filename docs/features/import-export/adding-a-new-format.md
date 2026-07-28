@@ -91,7 +91,7 @@ Full export path: [cps-services.md](cps-services.md).
 
 **Rule for serialisers:** consume `AssembledBuild` — especially `zones[].memberChannelIds` (flat UUID lists). Do **not** re-walk library nesting or `ZoneGroupingLayout.channelIds` as membership source of truth; `assemble` already flattened effective membership.
 
-If the format needs derived artefacts (DM32 zone-derived `Scan.csv`), add a **derive** step between assemble and serialise (see `src/core/import-export/zoneDerivedScanLists/derive.ts`) rather than pushing hierarchy logic into the adapter.
+If the format needs derived artefacts (DM32 zone-derived `Scan.csv`), add a **derive** step between assemble and serialise (see `src/core/import-export/formats/dm32/zoneDerivedScanLists/derive.ts`) rather than pushing hierarchy logic into the adapter.
 
 Nested zone semantics: [nested-zones.md](../library/nested-zones.md).
 
@@ -166,6 +166,7 @@ src/core/import-export/formats/<format>/
 - [ ] Register adapter in `importAdapters` and/or `exportAdapters`
 - [ ] Add `TraitProfile` in `src/core/models/traits.ts` — drives build UI composition
 - [ ] Add radio profiles in `formats/<format>/profiles.ts` (`nameLimit` and caps for export warnings)
+- [ ] Radio limits module exists or is extended under `src/core/radios/<mfr>/<model>/limits.ts`; profiles import it — do not re-literal caps
 - [ ] Register compatible egress on each radio target in `src/core/radio-targets/catalog.ts` (`compatibleEgress` entries with `formatId`, `profileId`, `kind`, `label`)
 - [ ] Extend `resolveMaxNameLength` in `channelExpansion/exportWireNames.ts` for new `profileId` prefixes
 - [ ] Extend `getFormatProfiles()` in `formatProfiles.ts` + `formatProfileWireHint` if needed
@@ -536,7 +537,7 @@ End-to-end smoke before PR:
 | Reference hub     | `docs/reference/export-formats/dm32/README.md`                        |
 | Adapter behaviour | `docs/features/import-export/dm32/README.md`                          |
 | Export adapter    | `formats/dm32/adapter.ts`; m×n via `channelExpansion/mxnExpandAll.ts` |
-| Zone scan derive  | `zoneDerivedScanLists/derive.ts`                                      |
+| Zone scan derive  | `formats/dm32/zoneDerivedScanLists/derive.ts`                         |
 | Trait profile     | `dm32-baofeng-dm32uv`                                                 |
 | Fixtures / tests  | `src/test/dm32/`, `formats/dm32/serialise.test.ts`                    |
 | Expansion         | Multi-mode **off**; multi-TG **on**; zone-derived `Scan.csv`          |

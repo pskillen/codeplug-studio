@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { percentToWire, wireToPercent } from '../../profileLadder.ts';
 import { getOpenGd77Profile, opengd77PercentToWire, opengd77WireToPercent } from './profiles.ts';
 
@@ -46,6 +47,19 @@ describe('OpenGD77 power ladder', () => {
     expect(percentToWire(profile, 20)).toBe('P7');
     expect(percentToWire(profile, 10)).toBe('P6');
     expect(percentToWire(profile, null)).toBe('P9');
+  });
+
+  it('imports shared entity caps from OPENGD77_FAMILY_LIMITS', () => {
+    for (const profileId of ['opengd77-1701', 'opengd77-md9600'] as const) {
+      const profile = getOpenGd77Profile(profileId);
+      expect(profile.maxChannels).toBe(OPENGD77_FAMILY_LIMITS.CHANNEL_MAX);
+      expect(profile.maxZones).toBe(OPENGD77_FAMILY_LIMITS.ZONE_MAX);
+      expect(profile.maxRxGroupLists).toBe(OPENGD77_FAMILY_LIMITS.RX_GROUP_LISTS_MAX);
+      expect(profile.maxContacts).toBe(OPENGD77_FAMILY_LIMITS.CONTACTS_MAX);
+      expect(profile.zoneMembers).toBe(OPENGD77_FAMILY_LIMITS.ZONE_MEMBERS_MAX);
+      expect(profile.tgListMembers).toBe(OPENGD77_FAMILY_LIMITS.RX_GROUP_MEMBERS_MAX);
+      expect(profile.rxGroupListNameLimit).toBe(OPENGD77_FAMILY_LIMITS.RX_GROUP_NAME_LEN);
+    }
   });
 
   it('exposes shared entity caps on OpenGD77 profiles', () => {

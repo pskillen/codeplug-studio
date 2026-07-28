@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import {
   ANYTONE_PROFILES,
   anytonePercentToWire,
@@ -34,6 +35,19 @@ describe('anytone profiles', () => {
 
   it('throws for unknown profile', () => {
     expect(() => getAnytoneProfile('unknown')).toThrow(/Unknown Anytone profile/);
+  });
+
+  it('imports org caps from AT_D890UV_LIMITS', () => {
+    const profile = getAnytoneProfile('anytone-at-d890uv');
+    expect(profile.maxChannels).toBe(AT_D890UV_LIMITS.CHANNEL_MAX);
+    expect(profile.maxZones).toBe(AT_D890UV_LIMITS.ZONE_MAX);
+    expect(profile.zoneMembers).toBe(AT_D890UV_LIMITS.ZONE_MEMBERS_MAX);
+    expect(profile.maxScanLists).toBe(AT_D890UV_LIMITS.SCAN_LISTS_MAX);
+    expect(profile.scanListMembers).toBe(AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX);
+    expect(profile.maxRxGroupLists).toBe(AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX);
+    expect(profile.rxGroupListMembers).toBe(AT_D890UV_LIMITS.RX_GROUP_MEMBERS_MAX);
+    expect(profile.maxTalkGroups).toBe(AT_D890UV_LIMITS.TALK_GROUPS_MAX);
+    expect(profile.maxAprsSlots).toBe(AT_D890UV_LIMITS.APRS_SLOTS);
   });
 
   it('resolves Web Serial sibling profile to Anytone CSV caps', () => {

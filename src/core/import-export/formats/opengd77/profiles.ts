@@ -1,5 +1,6 @@
 /** OpenGD77 radio profiles — import/export boundary (cardinality + power ladder). */
 
+import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { percentToWire, wireToPercent, type PowerLadderEntry } from '../../profileLadder.ts';
 
 export interface OpenGd77RadioProfile {
@@ -16,16 +17,11 @@ export interface OpenGd77RadioProfile {
   tgListMembers: number;
   /** Default max wire name length (LCD limit) for channels, zones, contacts, lists. */
   nameLimit: number;
+  /** Max RX group list name length (binary codec uses 15 bytes). */
+  rxGroupListNameLimit: number;
   /** High/default first — P-index wire strings. */
   powerLadder: readonly PowerLadderEntry[];
 }
-
-/** Shared entity caps — OpenGD77 uses one codeplug structure across the radio family. */
-const OPENGD77_SHARED_ENTITY_CAPS = {
-  maxZones: 68,
-  maxRxGroupLists: 76,
-  maxContacts: 1024,
-} as const;
 
 const OPENGD77_1701_LADDER: readonly PowerLadderEntry[] = [
   { percent: 100, wire: 'P9', approxWatts: '5 W' },
@@ -57,25 +53,29 @@ const OPENGD77_MD9600_LADDER: readonly PowerLadderEntry[] = [
   { percent: 1, wire: 'P1', approxWatts: '100 mW' },
 ];
 
+const OPENGD77_SHARED_PROFILE_CAPS = {
+  maxZones: OPENGD77_FAMILY_LIMITS.ZONE_MAX,
+  maxRxGroupLists: OPENGD77_FAMILY_LIMITS.RX_GROUP_LISTS_MAX,
+  maxContacts: OPENGD77_FAMILY_LIMITS.CONTACTS_MAX,
+  zoneMembers: OPENGD77_FAMILY_LIMITS.ZONE_MEMBERS_MAX,
+  tgListMembers: OPENGD77_FAMILY_LIMITS.RX_GROUP_MEMBERS_MAX,
+  nameLimit: OPENGD77_FAMILY_LIMITS.NAME_LENGTH_CHANNEL_ZONE_CONTACT_TG,
+  rxGroupListNameLimit: OPENGD77_FAMILY_LIMITS.RX_GROUP_NAME_LEN,
+} as const;
+
 export const OPENGD77_PROFILES: readonly OpenGd77RadioProfile[] = [
   {
     id: 'opengd77-1701',
     label: 'Baofeng 1701 / Retevis RT-84',
-    maxChannels: 1023,
-    ...OPENGD77_SHARED_ENTITY_CAPS,
-    zoneMembers: 80,
-    tgListMembers: 32,
-    nameLimit: 16,
+    maxChannels: OPENGD77_FAMILY_LIMITS.CHANNEL_MAX,
+    ...OPENGD77_SHARED_PROFILE_CAPS,
     powerLadder: OPENGD77_1701_LADDER,
   },
   {
     id: 'opengd77-md9600',
     label: 'TYT MD-9600 / Retevis RT-90',
-    maxChannels: 1023,
-    ...OPENGD77_SHARED_ENTITY_CAPS,
-    zoneMembers: 80,
-    tgListMembers: 32,
-    nameLimit: 16,
+    maxChannels: OPENGD77_FAMILY_LIMITS.CHANNEL_MAX,
+    ...OPENGD77_SHARED_PROFILE_CAPS,
     powerLadder: OPENGD77_MD9600_LADDER,
   },
 ] as const;

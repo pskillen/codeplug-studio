@@ -106,6 +106,7 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 - [ ] `RadioDescriptor`: `modelIds`, label, group, capabilities, `attributionIds`, `protocolFactory`
 - [ ] **`compatibleProfiles`**: `{ formatId, profileId }[]` so UI binds egress pathways to catalog targets. Prefer a **Direct radio** (`radio-io`) profile for Web Serial — not a CPS file format (NeonPlug/CHIRP). CPS pathways are separate `EgressPath` children; adapters cite protocol lineage via `attributionIds` only.
 - [ ] For Direct radio profiles: still wire `nameLimit` / `resolveMaxNameLength` / `getProfileExportLimits` / Export naming settings (same as [adding-a-new-format.md](../import-export/adding-a-new-format.md) channel wire-name checklist) — serial write uses them even without a CPS adapter
+- [ ] Radio limits module exists or is extended under `src/core/radios/<mfr>/<model>/limits.ts`; radio-io profile imports cardinality from it (protocol offsets may stay in `integrations/radio-io/`)
 - [ ] On failed connect/read/write: always close `BytePipe` / clear UI session so the OS port is not held
 - [ ] Write-strategy / hydration-required flags for UI gating
 - [ ] **`prodWriteDisabled`** when direct serial Write is not safe for production deploys — `BuildRadioIoPanel` + `prepareRadioWriteImage` gate via `__BUILD_ENV__` (`hidden` on `prod` only); prefer the radio target's CPS file egress until cleared

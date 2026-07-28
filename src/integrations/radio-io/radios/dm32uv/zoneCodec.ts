@@ -5,11 +5,12 @@
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioZoneDto } from '../../radioWriteProjection.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from './constants.ts';
 
 export const DM32_ZONE_ENTRY_SIZE = 145;
 export const DM32_ZONE_START_OFFSET = 16;
-export const DM32_ZONE_MAX_MEMBERS = 64;
+export const DM32_ZONE_MAX_MEMBERS = DM32UV_LIMITS.ZONE_MEMBERS_MAX;
 
 /** Zone bank first-block header — qDMR ZoneBankElement offsets (1-based wire; 0 = unset). */
 export const DM32_ZONE_HEADER_CHANNEL_INDEX_A = 0x01;

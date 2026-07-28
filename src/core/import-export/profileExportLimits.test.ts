@@ -15,7 +15,7 @@ describe('getProfileExportLimits', () => {
     expect(limits!.nameLengthZone).toBe(16);
     expect(limits!.nameLengthContact).toBe(16);
     expect(limits!.nameLengthTalkGroup).toBe(16);
-    expect(limits!.nameLengthRxGroupList).toBe(16);
+    expect(limits!.nameLengthRxGroupList).toBe(15);
     expect(limits!.maxTalkGroups).toBe('not_used');
     expect(limits!.maxScanLists).toBe('not_used');
     expect(limits!.scanListMembers).toBe('not_used');
@@ -53,7 +53,9 @@ describe('getProfileExportLimits', () => {
     expect(limits!.zoneMembers).toBe(64);
     expect(limits!.scanListMembers).toBe(100);
     expect(limits!.rxGroupListMembers).toBe(32);
-    expect(limits!.maxZones).toBeNull();
+    expect(limits!.maxZones).toBe(256);
+    expect(limits!.maxRxGroupLists).toBe(128);
+    expect(limits!.maxTalkGroups).toBe(10_000);
     expect(limits!.maxContacts).toBeNull();
   });
 
@@ -150,10 +152,17 @@ describe('getProfileExportLimits', () => {
     const dm32 = getProfileExportLimits('dm32', 'dm32-baofeng-dm32uv');
     expect(limits).not.toBeNull();
     expect(dm32).not.toBeNull();
-    expect(limits!.maxRxGroupLists).toBe(32);
-    expect(limits!.maxRxGroupLists).toBe(dm32!.maxRxGroupLists);
+    expect(limits!.maxChannels).toBe(dm32!.maxChannels);
+    expect(limits!.maxZones).toBe(dm32!.maxZones);
     expect(limits!.maxScanLists).toBe(dm32!.maxScanLists);
+    expect(limits!.maxRxGroupLists).toBe(dm32!.maxRxGroupLists);
+    expect(limits!.maxContacts).toBe(dm32!.maxContacts);
+    expect(limits!.maxTalkGroups).toBe(dm32!.maxTalkGroups);
+    expect(limits!.zoneMembers).toBe(dm32!.zoneMembers);
     expect(limits!.scanListMembers).toBe(dm32!.scanListMembers);
+    expect(limits!.rxGroupListMembers).toBe(dm32!.rxGroupListMembers);
+    expect(limits!.nameLengthScanList).toBe(dm32!.nameLengthScanList);
+    expect(limits!.nameLengthRxGroupList).toBe(dm32!.nameLengthRxGroupList);
   });
 
   it('projects Anytone AT-D890UV Direct radio limits from radio-io profile', () => {

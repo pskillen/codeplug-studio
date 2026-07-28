@@ -1,4 +1,5 @@
 import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import type { ChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
 import {
   buildScanContext,
@@ -61,9 +62,9 @@ function isDmrProfile(profile: ChannelModeProfile): profile is ChannelModeProfil
  */
 export const NEONPLUG_NO_TX_FREQUENCY_MHZ = 1666.666;
 
-/** RX MHz range where NeonPlug expects the no-TX TX sentinel. */
-export const NEONPLUG_NO_TX_BAND_RX_MIN_MHZ = 87;
-export const NEONPLUG_NO_TX_BAND_RX_MAX_MHZ = 136;
+/** RX MHz range where NeonPlug expects the no-TX TX sentinel (DM-32UV hardware band). */
+export const NEONPLUG_NO_TX_BAND_RX_MIN_MHZ = DM32UV_LIMITS.NO_TX_BAND_RX_MIN_HZ / 1_000_000;
+export const NEONPLUG_NO_TX_BAND_RX_MAX_MHZ = DM32UV_LIMITS.NO_TX_BAND_RX_MAX_HZ / 1_000_000;
 
 /** Hz → MHz number for NeonPlug JSON (e.g. `145.35`). */
 export function formatNeonplugFrequencyMhz(hz: number | null): number {

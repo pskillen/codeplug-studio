@@ -36,9 +36,26 @@ Explicit, labelled escape hatches are OK when unlikely to generalise:
 - Format-specific opaque columns at the boundary when documented in `docs/reference/export-formats/<format>/`
 - Document **known leakage** to fix — do not copy into new code
 
+## Radio limits source of truth
+
+Hardware cardinality, RF band bounds, and name-length ceilings for a radio model live in one **code** module and one **human** doc:
+
+| Kind | Path |
+| --- | --- |
+| Code | `src/core/radios/<manufacturer>/<model>/limits.ts` |
+| Docs | `docs/reference/radios/<manufacturer>/<model>/limits.md` |
+
+**Format profiles** (`formats/<format>/profiles.ts`) and **radio-io profiles** import or re-export from that module — do not re-literal the table. **Protocol-only** layout sizes (block offsets, record strides) may stay in `integrations/radio-io/radios/<radio>/constants.ts`, but **cardinality** must re-export from core.
+
+**Forbidden:**
+
+- Radio-specific numeric SoT in `src/app/` (especially `radioIoWriteProjection` fallbacks such as `DM32_DEFAULT_*` or `numericLimit(x, <radioLiteral>)` when profile is null)
+- NeonPlug-prefixed names for radio hardware geometry (JSON wire sentinels in format adapters are OK)
+
 ## Anti-patterns
 
-- `OPENGD77_*` / radio-profile constants outside import/export
+- `OPENGD77_*` / radio-profile constants outside import/export or `src/core/radios/`
+- `numericLimit(x, <radioLiteral>)` as the source of truth when profile is null
 - Resolving library entities by wire name in CRUD or validation
 - Import/export column mapping documented only via OpenGD77 reference when describing the **internal** library model
 - **Wire stash on export** — provenance bags or any export path that replays imported CPS cells instead of model fields ([export-from-model.mdc](export-from-model.mdc))

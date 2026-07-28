@@ -1,17 +1,20 @@
 /** Anytone radio profiles — import/export boundary (caps + power ladder). */
 
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { radioTargetFor, radioTargetIdForProfile } from '@core/radio-targets/index.ts';
 import { percentToWire, wireToPercent, type PowerLadderEntry } from '../../profileLadder.ts';
 
 export interface AnytoneRadioProfile {
   id: string;
   label: string;
-  /** Provisional — verify against CPS manual. */
   maxChannels: number;
+  maxZones: number;
   zoneMembers: number;
   maxScanLists: number;
   scanListMembers: number;
+  maxRxGroupLists: number;
   rxGroupListMembers: number;
+  maxTalkGroups: number;
   nameLimit: number;
   /** Digital APRS channel slots in `APRS.CSV` (AT-D890UV). */
   maxAprsSlots: number;
@@ -33,13 +36,16 @@ export const ANYTONE_PROFILES: readonly AnytoneRadioProfile[] = [
   {
     id: 'anytone-at-d890uv',
     label: 'Anytone AT-D890UV',
-    maxChannels: 4000,
-    zoneMembers: 64,
-    maxScanLists: 100,
-    scanListMembers: 100,
-    rxGroupListMembers: 32,
-    nameLimit: 16,
-    maxAprsSlots: 8,
+    maxChannels: AT_D890UV_LIMITS.CHANNEL_MAX,
+    maxZones: AT_D890UV_LIMITS.ZONE_MAX,
+    zoneMembers: AT_D890UV_LIMITS.ZONE_MEMBERS_MAX,
+    maxScanLists: AT_D890UV_LIMITS.SCAN_LISTS_MAX,
+    scanListMembers: AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX,
+    maxRxGroupLists: AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX,
+    rxGroupListMembers: AT_D890UV_LIMITS.RX_GROUP_MEMBERS_MAX,
+    maxTalkGroups: AT_D890UV_LIMITS.TALK_GROUPS_MAX,
+    nameLimit: AT_D890UV_LIMITS.NAME_LENGTH,
+    maxAprsSlots: AT_D890UV_LIMITS.APRS_SLOTS,
     powerLadder: AT_D890UV_POWER_LADDER,
     defaultRadioIdLabel: 'TEST01',
     defaultRadioId: '1234567',

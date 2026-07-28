@@ -683,4 +683,20 @@ describe('buildRadioWriteProjection', () => {
     expect(projection.organisation.rxGroups?.[0]?.memberDigitalIds).toEqual([2, 1]);
     expect(projection.channels[0]?.txContactId).toBe(1);
   });
+
+  it('throws when export limits are missing for the egress profile', () => {
+    const ch = withExportEligibleDefaults(newChannel('p1', 'A'));
+    const library = emptyLibrary([ch]);
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    expect(() =>
+      buildRadioWriteProjection(assembled, build, library, {
+        ...egress,
+        formatId: 'dm32',
+      }),
+    ).toThrow(/Missing export limits/);
+  });
 });

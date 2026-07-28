@@ -1,13 +1,14 @@
 import type { AprsChannelSlot, AprsConfiguration } from '@core/models/aprs.ts';
 import type { AprsSlotCallType } from '@core/models/libraryTypes.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 
 export const DM32_APRS_GUIDE_FILE_NAME = 'APRS.md' as const;
 
 export const DM32_APRS_GUIDE_TIP =
   'Baofeng DM-32 CPS has no APRS.csv; set global APRS fields in CPS using APRS.md included in this export';
 
-const MAX_REPORT_CHANNELS = 8;
+const MAX_REPORT_CHANNELS = DM32UV_LIMITS.APRS_REPORT_CHANNELS;
 
 export interface Dm32AprsReportChannelLine {
   index: number;

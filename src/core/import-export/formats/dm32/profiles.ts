@@ -1,5 +1,6 @@
 /** Baofeng DM32 radio profiles — import/export boundary. */
 
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { percentToWire, wireToPercent, type PowerLadderEntry } from '../../profileLadder.ts';
 
 export interface Dm32RadioProfile {
@@ -16,6 +17,7 @@ export interface Dm32RadioProfile {
   rxGroupListMembers: number;
   maxContacts: number;
   maxTalkGroups: number;
+  maxRadioIds: number;
   /** Default max channel / zone / contact / talk-group wire name length (LCD limit). */
   nameLimit: number;
   /**
@@ -46,18 +48,19 @@ export const DM32_PROFILES: readonly Dm32RadioProfile[] = [
   {
     id: 'dm32-baofeng-dm32uv',
     label: 'Baofeng DM-32UV',
-    maxChannels: 4000,
-    maxZones: 250,
-    zoneMembers: 64,
-    maxScanLists: 32,
-    scanListMembers: 15,
-    maxRxGroupLists: 32,
-    rxGroupListMembers: 32,
-    maxContacts: 250,
-    maxTalkGroups: 800,
-    nameLimit: 16,
-    scanListNameLimit: 10,
-    rxGroupListNameLimit: 10,
+    maxChannels: DM32UV_LIMITS.CHANNEL_MAX,
+    maxZones: DM32UV_LIMITS.ZONE_MAX,
+    zoneMembers: DM32UV_LIMITS.ZONE_MEMBERS_MAX,
+    maxScanLists: DM32UV_LIMITS.SCAN_LISTS_MAX,
+    scanListMembers: DM32UV_LIMITS.SCAN_LIST_MEMBERS_MAX,
+    maxRxGroupLists: DM32UV_LIMITS.RX_GROUPS_MAX,
+    rxGroupListMembers: DM32UV_LIMITS.RX_GROUP_MEMBERS_MAX,
+    maxContacts: DM32UV_LIMITS.CONTACTS_MAX,
+    maxTalkGroups: DM32UV_LIMITS.TALK_GROUPS_MAX,
+    maxRadioIds: DM32UV_LIMITS.RADIO_IDS_MAX,
+    nameLimit: DM32UV_LIMITS.NAME_LENGTH_CHANNEL_ZONE_CONTACT_TG,
+    scanListNameLimit: DM32UV_LIMITS.NAME_LENGTH_SCAN_LIST,
+    rxGroupListNameLimit: DM32UV_LIMITS.NAME_LENGTH_RX_GROUP_LIST,
     powerLadder: DM32_POWER_LADDER,
     squelchLadder: DM32_SQUELCH_LADDER,
     defaultDmrIdLabel: 'Paddy MM7IGV',

@@ -2,7 +2,7 @@
 
 Shared hardware / memory caps (NeonPlug `LIMITS` + radio-confirmed zone name length). Adapters warn or truncate at the **export boundary** — library CRUD stays unlimited.
 
-**Code:** `src/core/radios/baofeng/dm-32uv/limits.ts` (`DM32UV_LIMITS`); Web Serial `DM32_LIMITS` in `src/integrations/radio-io/radios/dm32uv/constants.ts` imports the same facts.
+**Code:** `src/core/radios/baofeng/dm-32uv/limits.ts` (`DM32UV_LIMITS`); Web Serial `DM32_LIMITS` in `src/integrations/radio-io/radios/dm32uv/constants.ts` re-exports cardinality from core.
 
 | Constraint                          | Value    | Notes                                                                                                                          |
 | ----------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
