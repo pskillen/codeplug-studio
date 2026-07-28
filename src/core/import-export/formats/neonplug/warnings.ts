@@ -5,7 +5,7 @@ import {
   isNeonplugDm32uvProfile,
   DEFAULT_NEONPLUG_PROFILE_ID,
 } from './profiles.ts';
-import { NEONPLUG_MAX_CHANNEL_SCAN_LIST_ID } from './zoneDerivedScanLists.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 
 /** Cap / truncation warnings for NeonPlug channel + DM32UV org export. */
 export function collectNeonplugExportWarnings(
@@ -40,7 +40,7 @@ export function collectNeonplugExportWarnings(
     }
     const scanExportZones =
       assembled.zoneGrouping?.zones.filter((z) => z.exportScanList).length ?? 0;
-    const maxScanLists = Math.min(profile.maxScanLists, NEONPLUG_MAX_CHANNEL_SCAN_LIST_ID);
+    const maxScanLists = Math.min(profile.maxScanLists, DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX);
     if (scanExportZones > maxScanLists) {
       warnings.push(
         `Build requests ${scanExportZones} zone-derived scan list(s); only ${maxScanLists} export to NeonPlug (channel scanListId bit-field)`,

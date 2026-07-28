@@ -12,7 +12,7 @@ import {
   deriveZoneDerivedScanLists,
   ensureDm32ScanCsvFloor,
 } from './derive.ts';
-import { DM32UV_MAX_CHANNEL_SCAN_LIST_ID } from './limits.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -178,10 +178,10 @@ describe('deriveZoneDerivedScanLists', () => {
       { exportZoneDerivedScanLists: true },
       warnings,
     );
-    expect(derived.scanRows).toHaveLength(DM32UV_MAX_CHANNEL_SCAN_LIST_ID);
+    expect(derived.scanRows).toHaveLength(DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX);
     expect(
       warnings.some((w) =>
-        w.includes(`channel scanListId supports at most ${DM32UV_MAX_CHANNEL_SCAN_LIST_ID}`),
+        w.includes(`channel scanListId supports at most ${DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX}`),
       ),
     ).toBe(true);
   });

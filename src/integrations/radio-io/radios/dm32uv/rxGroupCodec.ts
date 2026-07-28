@@ -5,10 +5,10 @@
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioRxGroupDto } from '../../radioWriteProjection.ts';
-import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from './constants.ts';
+import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET, DM32_LIMITS } from './constants.ts';
 
 export const DM32_RX_GROUP_ENTRY_SIZE = 109;
-export const DM32_RX_GROUPS_MAX = 32;
+export const DM32_RX_GROUPS_MAX = DM32_LIMITS.RX_GROUPS_MAX;
 
 const TE = new TextEncoder();
 
