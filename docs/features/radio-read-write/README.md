@@ -58,6 +58,7 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 
 | Doc                                                                | Contents                                                                 |
 | ------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| [export-pathway-parity.md](../import-export/export-pathway-parity.md) | Web Serial Write must match sibling CPS/NeonPlug egresses for the same radio ([#776](https://github.com/pskillen/codeplug-studio/issues/776)) |
 | [adding-a-radio-adapter.md](adding-a-radio-adapter.md)             | Checklist for new Web Serial radio modules (living — update as we learn) |
 | [browser-radio-io-progress.md](browser-radio-io-progress.md)       | Program progress for epic #594                                           |
 | [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md) | Open debt with linked issues                                             |

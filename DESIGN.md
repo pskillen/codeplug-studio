@@ -278,6 +278,7 @@ Import and export tests use **different fixtures**. Export tests do not require 
 | **Trait assembly** | Library + trait layout → projection; shared across formats sharing traits     |
 | **Domain**         | Unit tests on mutations, validation, merge heuristics                         |
 | **Round-trip**     | Optional smoke only; never the primary gate; document expected loss when used |
+| **Pathway parity** | Constructed library + build → compare CPS CSV, Web Serial, and NeonPlug egress outputs for the same radio; orthogonal to import/export round-trip — see [export-pathway-parity.md](docs/features/import-export/export-pathway-parity.md) |
 
 System tests target `core/services` and format adapters, not React routes.
 
