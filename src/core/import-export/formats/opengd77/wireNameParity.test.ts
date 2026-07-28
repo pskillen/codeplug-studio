@@ -69,7 +69,12 @@ describe('OpenGD77 CSV ↔ serial channel wire name parity (#777)', () => {
         new Set<string>(),
         [],
       );
-      const fromSerial = opengd77SerialPathwaySnapshot(channel, serialOptions, pair.serial, settings);
+      const fromSerial = opengd77SerialPathwaySnapshot(
+        channel,
+        serialOptions,
+        pair.serial,
+        settings,
+      );
       const csvName = snapshots[`${pair.csv} Channels.csv`]!.wireNames[0] ?? '';
       expect(expanded[0]?.wireName).toBe(fromSerial.wireNames[0]);
       expect(csvName).toBe(fromSerial.wireNames[0]);
@@ -106,7 +111,10 @@ describe('OpenGD77 CSV ↔ serial channel wire name parity (#777)', () => {
       assertPathwayParity(snapshots, {
         compareScanInclusion: true,
       });
-      expect(snapshots[`${pair.csv} expand`]!.wireNames.sort()).toEqual(['DualMode-D', 'DualMode-F']);
+      expect([...snapshots[`${pair.csv} expand`]!.wireNames].sort()).toEqual([
+        'DualMode-D',
+        'DualMode-F',
+      ]);
     }
   });
 });
