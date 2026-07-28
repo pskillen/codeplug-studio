@@ -37,10 +37,10 @@ function withProjectionExclusions(
   return filterExpandedRowsByOverrides(rows, options?.channelOverrides);
 }
 
-const resolveAnytoneSiteWireName: NonNullable<ExpandAllMxNChannelsArgs['resolveSiteWireName']> = (
-  assembledChannel,
-  ctx,
-) =>
+/** Anytone site wire-name composer for MxN expansion (CSV, serial, preview). */
+export const resolveAnytoneSiteWireName: NonNullable<
+  ExpandAllMxNChannelsArgs['resolveSiteWireName']
+> = (assembledChannel, ctx) =>
   anytoneChannelWireName(
     assembledChannel,
     { reserved: ctx.reserved, warnings: ctx.warnings, reserve: !ctx.willExpandRx },

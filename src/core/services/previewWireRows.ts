@@ -12,7 +12,7 @@ import {
   expandAllMxNChannels,
   type ExpandedMxNChannelRow,
 } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
-import { anytoneChannelWireName } from '@core/import-export/formats/anytone/exportChannelWire.ts';
+import { resolveAnytoneSiteWireName } from '@core/import-export/formats/anytone/channelExpansion.ts';
 import {
   expandChannelWireRows,
   modeExportNameSuffix,
@@ -357,20 +357,7 @@ export function previewWireRows(
           radioTargetId: build.radioTargetId,
           options: mxnOptions,
           warnings,
-          resolveSiteWireName:
-            formatId === 'anytone'
-              ? (assembledChannel, ctx) =>
-                  anytoneChannelWireName(
-                    assembledChannel,
-                    {
-                      reserved: ctx.reserved,
-                      warnings: ctx.warnings,
-                      reserve: !ctx.willExpandRx,
-                    },
-                    ctx.options,
-                    ctx.profileId ?? profileId,
-                  )
-              : undefined,
+          resolveSiteWireName: formatId === 'anytone' ? resolveAnytoneSiteWireName : undefined,
         });
         const expandedByChannelId = new Map<string, ExpandedMxNChannelRow[]>();
         for (const generated of expanded) {
