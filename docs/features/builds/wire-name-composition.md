@@ -28,7 +28,7 @@ Before any expansion, `defaultChannelWireName` / `composeChannelWireName` uses *
 | `name_only`                                | name, else callsign             | `Glasgow`       |
 | `callsign_suffix`                          | last 2 chars of callsign + name | `GL Glasgow`    |
 
-**Operator controls:** fallback mode on wire preview (channels) and export panel (`nameModeOverride` in localStorage). Per-channel **`Channel.abbreviation`** is used during shortening, not in the initial compose step.
+**Operator controls:** fallback mode on wire preview (channels) and export panel (`nameModeOverride` in localStorage). Per-channel **`Channel.abbreviation`** is used during shortening, not in the initial compose step. All egress pathways (CPS CSV, Web Serial, NeonPlug where shipped, wire preview) share `applyWireNameLimits` in `exportWireNames.ts` — abbreviation is never substituted before the profile `nameLimit` check.
 
 **Build override:** `channelOverrides.wireName` replaces the generated base before expansion (OpenGD77) or before DM32 RX fan-out.
 
