@@ -5,7 +5,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Anchor, Button, Group, Modal, Stack, Text } from '@mantine/core';
+import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
@@ -42,7 +42,6 @@ import AtD890WriteCoverageTable from './AtD890WriteCoverageTable.tsx';
 import { DM32_ANALOG_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
 import { AT_D890_DIGITAL_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/at-d890uv/writeRole.ts';
 import {
-  resolveRadioWriteExperimentalCopy,
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from '../../services/radioWriteEnvGate.ts';
@@ -72,7 +71,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [transferStages, setTransferStages] = useState<string[]>([]);
   const [lastFirmware, setLastFirmware] = useState<string | undefined>();
   const [lastOccupied, setLastOccupied] = useState<number | null>(null);
-  const [writeConfirmOpen, setWriteConfirmOpen] = useState(false);
   const [writeVerifyStatus, setWriteVerifyStatus] = useState<RadioIoWriteVerifyStatus>('none');
   const [sentinelBefore, setSentinelBefore] = useState<AtD890SentinelSnapshot | null>(null);
   const [verifyMismatches, setVerifyMismatches] = useState<RadioIoVerifyMismatch[]>([]);
@@ -84,8 +82,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const descriptor = descriptors[0];
   const writeGate = resolveRadioWriteGate(descriptor);
   const writeHidden = writeGate === 'hidden';
-  const writeWarn = writeGate === 'warn';
-  const writeExperimentalCopy = resolveRadioWriteExperimentalCopy(egress.profileId);
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
 
@@ -226,19 +222,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     }
   }
 
-  function handleWriteClick() {
-    if (writeWarn) {
-      setWriteConfirmOpen(true);
-      return;
-    }
-    void handleWrite();
-  }
-
-  function handleWriteConfirmed() {
-    setWriteConfirmOpen(false);
-    void handleWrite();
-  }
-
   function resetProgressState(): void {
     setBusy(false);
     setProgress(null);
@@ -326,14 +309,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           .
         </Text>
       ) : null}
-      {writeWarn && writeExperimentalCopy ? (
-        <Alert color="red" title={writeExperimentalCopy.title}>
-          <Text size="sm">{writeExperimentalCopy.lead}</Text>
-          <Text size="sm" mt="xs" fw={600}>
-            {writeExperimentalCopy.preferEgress}
-          </Text>
-        </Alert>
-      ) : null}
       {egress.profileId === 'radio-io-at-d890uv' ? (
         <AtD890WriteCoverageTable buildId={build.id} hasHydration={hasHydration} />
       ) : null}
@@ -350,7 +325,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           <Button
             size="xs"
             disabled={!serialOk || busy || !hasHydration}
-            onClick={handleWriteClick}
+            onClick={() => void handleWrite()}
           >
             Write to radio
           </Button>
@@ -419,32 +394,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           </Stack>
         </Alert>
       ) : null}
-
-      <Modal
-        opened={writeConfirmOpen}
-        onClose={() => setWriteConfirmOpen(false)}
-        title={writeExperimentalCopy?.title ?? 'Confirm write'}
-        centered
-      >
-        <Stack gap="sm">
-          <Text size="sm">{writeExperimentalCopy?.lead}</Text>
-          <Text size="sm" fw={600}>
-            {writeExperimentalCopy?.preferEgress}
-          </Text>
-          <Group justify="flex-end" mt="md">
-            <Button variant="default" onClick={() => setWriteConfirmOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              color="red"
-              disabled={!serialOk || busy || !hasHydration}
-              onClick={handleWriteConfirmed}
-            >
-              Write to radio anyway
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
 
       <RadioIoProgressModal
         opened={busy}

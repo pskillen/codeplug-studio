@@ -6,7 +6,6 @@ import { UV5R_MINI_DESCRIPTOR } from '@integrations/radio-io/radios/uv5r-mini/de
 import {
   isProdBuildEnv,
   resolveRadioWriteGate,
-  resolveRadioWriteExperimentalCopy,
   resolveRadioWriteProdDisabledMessage,
   RADIO_WRITE_PROD_DISABLED_MESSAGE,
 } from './radioWriteEnvGate.ts';
@@ -32,6 +31,13 @@ describe('radioWriteEnvGate', () => {
     expect(resolveRadioWriteGate(undefined, 'prod')).toBe('allowed');
   });
 
+  it('hides write on prod only when prodWriteDisabled is set', () => {
+    const gated = { prodWriteDisabled: true as const };
+    expect(resolveRadioWriteGate(gated, 'prod')).toBe('hidden');
+    expect(resolveRadioWriteGate(gated, 'staging')).toBe('allowed');
+    expect(resolveRadioWriteGate(gated, 'local')).toBe('allowed');
+  });
+
   it('resolves profile-specific prod-disabled messages', () => {
     expect(resolveRadioWriteProdDisabledMessage('radio-io-at-d890uv')).toBe(
       RADIO_WRITE_PROD_DISABLED_MESSAGE,
@@ -42,12 +48,6 @@ describe('radioWriteEnvGate', () => {
     expect(resolveRadioWriteProdDisabledMessage('radio-io-rt95')).toBe(
       RADIO_WRITE_PROD_DISABLED_MESSAGE,
     );
-  });
-
-  it('has no experimental write copy for cleared adapters', () => {
-    expect(resolveRadioWriteExperimentalCopy('radio-io-rt95')).toBeNull();
-    expect(resolveRadioWriteExperimentalCopy('radio-io-opengd77-md9600')).toBeNull();
-    expect(resolveRadioWriteExperimentalCopy('radio-io-at-d890uv')).toBeNull();
   });
 
   it('exports a prod-disabled operator message', () => {
