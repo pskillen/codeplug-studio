@@ -93,8 +93,9 @@ Gaps / unknown bytes: Studio Write **RMW**s each occupied modelled slot — read
 | `0x0a` / `0x0b`                                                  | CTCSS indices                                                | Written when tone kind is CTCSS (51 standard Anytone tones; custom index 51 → none)                                             |
 | `0x0c–0x0f`                                                      | DCS                                                          | Re-derived when DCS selected                                                                                                    |
 | `0x13–0x14`, `0x18`, `0x1b`, `0x1c`, `0x21`, `0x34`, `0x44–0x63` | Contact, radio ID, scan, RX group, timeslot, auto scan, name | Re-derived (`0x1b`/`0x1c` use `0xff` when unset on fresh encode; unset RX group on RMW preserves prior)                         |
+| `0x21` bit 5, `0x35`, `0x37`, `0x38`                             | APRS RX, report type, digital PTT, report slot               | Re-derived from `Channel.aprs` when digital ([#758](https://github.com/pskillen/codeplug-studio/issues/758))                    |
 | `0x20` / `0x43`                                                  | RX / TX colour code                                          | Written from projection `colorCode` (same value both bytes)                                                                     |
-| Other                                                            | APRS, crypto, R5Tone, …                                      | **Preserved** from hydrated record on RMW                                                                                       |
+| Other APRS / crypto / R5Tone                                     | Analog APRS, encryption, …                                   | **Preserved** from hydrated record on RMW                                                                                       |
 
 Gaps / unknown bytes: preserve on RMW (see table above).
 

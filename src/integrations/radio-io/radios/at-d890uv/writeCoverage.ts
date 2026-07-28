@@ -26,6 +26,7 @@ export const AT_D890_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow[] = [
   { label: 'RX group lists', status: 'written' },
   { label: 'Operator radio IDs', status: 'written' },
   { label: 'Master radio ID', status: 'written' },
+  { label: 'Digital APRS settings', status: 'written' },
   { label: 'AM airband', status: 'written' },
   { label: 'AM airband zones', status: 'written' },
   { label: 'Broadcast FM', status: 'planned' },

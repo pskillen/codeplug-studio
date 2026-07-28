@@ -45,6 +45,7 @@ import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts'
 import type {
   RadioAmAirChannelDto,
   RadioAmZoneDto,
+  RadioAprsDigitalSlotDto,
   RadioAprsDto,
   RadioDigitalContactDto,
   RadioRadioIdDto,
@@ -54,7 +55,10 @@ import type {
   RadioWriteProjection,
   RadioZoneDto,
 } from '@integrations/radio-io/radioWriteProjection.ts';
-import { buildNeonplugAprsRadioSettingsPatch } from '@core/services/aprsExportFacts.ts';
+import {
+  buildNeonplugAprsRadioSettingsPatch,
+  formatAnytonePositionSource,
+} from '@core/services/aprsExportFacts.ts';
 import {
   orderedAmAirChannels,
   partitionAnytoneChannels,
@@ -62,6 +66,7 @@ import {
   receiveBankChannelSlot,
 } from '@core/services/anytoneChannelBanks.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+import { AT_D890_APRS_CURRENT_CHANNEL_WIRE } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import {
   expandAssembledChannelsToRadioDtos,
   isOpenGd77RadioIoEgress,
@@ -622,6 +627,83 @@ function radioAprsFromNeonplugPatch(
   };
 }
 
+function parseFixCoordinate(
+  degrees: string,
+  minInt: string,
+  minMark: string,
+  hemisphere: string,
+): { degrees: number; minInt: number; minMark: number; hemisphere: 0 | 1 } {
+  return {
+    degrees: Number.parseInt(degrees, 10) || 0,
+    minInt: Number.parseInt(minInt, 10) || 0,
+    minMark: Number.parseInt(minMark, 10) || 0,
+    hemisphere: (Number.parseInt(hemisphere, 10) === 1 ? 1 : 0) as 0 | 1,
+  };
+}
+
+/** Map library `AprsConfiguration` → AT-D890UV global APRS block DTO. */
+function radioAprsFromAnytoneLibrary(
+  assembled: AssembledBuild,
+  numbersBySourceChannelId: ReadonlyMap<string, readonly number[]>,
+  warnings: string[],
+): RadioAprsDto | null {
+  const config = assembled.aprsConfiguration;
+  if (!config) return null;
+
+  const dmrSlotByChannelId = new Map<string, number>();
+  for (const [channelId, nums] of numbersBySourceChannelId) {
+    if (nums[0] != null) dmrSlotByChannelId.set(channelId, nums[0]!);
+  }
+
+  const digitalSlots: RadioAprsDigitalSlotDto[] = [];
+  const slots = (config.channelSlots ?? []).slice(0, AT_D890UV_LIMITS.APRS_SLOTS);
+  for (const slot of slots) {
+    let reportChannelWire = AT_D890_APRS_CURRENT_CHANNEL_WIRE;
+    if (slot.channelRef != null) {
+      const wire = dmrSlotByChannelId.get(slot.channelRef.id);
+      if (wire == null) {
+        warnings.push(
+          `APRS slot references channel "${slot.channelRef.id}" outside the DMR bank; encoding Current Channel on Web Serial Write`,
+        );
+      } else {
+        reportChannelWire = wire;
+      }
+    }
+    digitalSlots.push({
+      reportChannelWire,
+      targetDmrId: slot.targetDmrId,
+      callType: slot.callType === 'private' ? 0 : 1,
+      timeslot: slot.timeslot === 1 ? 1 : slot.timeslot === 2 ? 2 : 0,
+    });
+  }
+
+  const position = formatAnytonePositionSource(config.positionSource, config.fixedLocation);
+  const fixedLocationBeacon = position.fixedLocationBeacon === '1' ? 1 : 0;
+
+  return {
+    manualTxIntervalSec: config.manualTxIntervalSec,
+    autoTxIntervalSec: config.autoTxIntervalSec,
+    fixedLocationBeacon: fixedLocationBeacon as 0 | 1,
+    ...(fixedLocationBeacon
+      ? {
+          fixedLatitude: parseFixCoordinate(
+            position.latitude.degrees,
+            position.latitude.minInt,
+            position.latitude.minMark,
+            position.latitude.hemisphere,
+          ),
+          fixedLongitude: parseFixCoordinate(
+            position.longitude.degrees,
+            position.longitude.minInt,
+            position.longitude.minMark,
+            position.longitude.hemisphere,
+          ),
+        }
+      : {}),
+    digitalSlots,
+  };
+}
+
 function buildOpenGd77ContactsAndRx(
   assembled: AssembledBuild,
   egress: RadioWireEgressIds,
@@ -1150,6 +1232,7 @@ export function buildRadioWriteProjection(
       rxGroups,
       radioIds: dm32RadioIds,
       ...(amAir ? { amAirChannels: amAir.amAirChannels, amZones: amAir.amZones } : {}),
+      aprs: radioAprsFromAnytoneLibrary(projectionAssembled, numbersBySourceChannelId, warnings),
     };
   } else if (isOpenGd77RadioIoEgress(egress.profileId)) {
     channels = stampOpenGd77ChannelBehaviour(

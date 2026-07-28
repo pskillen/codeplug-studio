@@ -67,21 +67,22 @@ Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
 
 ## Implementation status
 
-| Area                                                                   | Status                                                                   |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Tier-1 + reconciliation docs                                           | Shipped ([#248](https://github.com/pskillen/codeplug-studio/issues/248)) |
-| Core types + schema v15                                                | Shipped ([#249](https://github.com/pskillen/codeplug-studio/issues/249)) |
-| Domain normalize / validation                                          | Shipped                                                                  |
-| `assemble()` APRS projection                                           | Shipped                                                                  |
-| Native YAML round-trip                                                 | Shipped                                                                  |
-| IndexedDB persistence (`aprsConfigurations`, schema v16)               | Shipped ([#353](https://github.com/pskillen/codeplug-studio/issues/353)) |
-| Singleton model + schema v17 migration                                 | Shipped                                                                  |
-| Library APRS UI (settings page, channel tab, assignments, list column) | Shipped ([#354](https://github.com/pskillen/codeplug-studio/issues/354)) |
-| Anytone export (`APRS.CSV`, channel cols, `aprsDefaults.ts`)           | Shipped ([#251](https://github.com/pskillen/codeplug-studio/issues/251)) |
-| Anytone APRS slots on analog channels (AM air / FM broadcast)          | Shipped ([#359](https://github.com/pskillen/codeplug-studio/issues/359)) |
-| Native YAML v17 singleton parse + orphan slot soft-warn                | Shipped ([#430](https://github.com/pskillen/codeplug-studio/issues/430)) |
-| DM32 per-channel APRS + `APRS.md` guide                                | Shipped ([#250](https://github.com/pskillen/codeplug-studio/issues/250)) |
-| NeonPlug DM-32UV APRS → `radioSettings` (merge-export)                 | Shipped ([#559](https://github.com/pskillen/codeplug-studio/issues/559)) |
+| Area                                                                   | Status                                                                                                                                                                                                                                  |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tier-1 + reconciliation docs                                           | Shipped ([#248](https://github.com/pskillen/codeplug-studio/issues/248))                                                                                                                                                                |
+| Core types + schema v15                                                | Shipped ([#249](https://github.com/pskillen/codeplug-studio/issues/249))                                                                                                                                                                |
+| Domain normalize / validation                                          | Shipped                                                                                                                                                                                                                                 |
+| `assemble()` APRS projection                                           | Shipped                                                                                                                                                                                                                                 |
+| Native YAML round-trip                                                 | Shipped                                                                                                                                                                                                                                 |
+| IndexedDB persistence (`aprsConfigurations`, schema v16)               | Shipped ([#353](https://github.com/pskillen/codeplug-studio/issues/353))                                                                                                                                                                |
+| Singleton model + schema v17 migration                                 | Shipped                                                                                                                                                                                                                                 |
+| Library APRS UI (settings page, channel tab, assignments, list column) | Shipped ([#354](https://github.com/pskillen/codeplug-studio/issues/354))                                                                                                                                                                |
+| Anytone export (`APRS.CSV`, channel cols, `aprsDefaults.ts`)           | Shipped ([#251](https://github.com/pskillen/codeplug-studio/issues/251))                                                                                                                                                                |
+| Anytone APRS slots on analog channels (AM air / FM broadcast)          | Shipped ([#359](https://github.com/pskillen/codeplug-studio/issues/359))                                                                                                                                                                |
+| Native YAML v17 singleton parse + orphan slot soft-warn                | Shipped ([#430](https://github.com/pskillen/codeplug-studio/issues/430))                                                                                                                                                                |
+| DM32 per-channel APRS + `APRS.md` guide                                | Shipped ([#250](https://github.com/pskillen/codeplug-studio/issues/250))                                                                                                                                                                |
+| NeonPlug DM-32UV APRS → `radioSettings` (merge-export)                 | Shipped ([#559](https://github.com/pskillen/codeplug-studio/issues/559))                                                                                                                                                                |
+| AT-D890UV Web Serial digital APRS Write                                | Shipped ([#758](https://github.com/pskillen/codeplug-studio/issues/758)) — modelled globals + channel bindings; RX filters / analog identity RMW; hardware verify pending — [aprs.md](../../reference/radios/anytone/at-d890uv/aprs.md) |
 
 ---
 

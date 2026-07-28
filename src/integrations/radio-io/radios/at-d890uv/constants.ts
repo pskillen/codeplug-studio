@@ -96,7 +96,7 @@ export const D890_MAP = {
   /** Optional settings (ext) — power-on password chars, display strings. */
   OptionalSettingsExt: 0x350_0900,
   OptionalSettingsExtLength: 0x60,
-  /** Optional settings (APRS/GPS info) — hex preview only in Studio. */
+  /** Optional GPS info string — not APRS config; hex preview + sentinel only. */
   OptionalSettingsAprs: 0x350_1280,
   OptionalSettingsAprsLength: 0x30,
   /** Alarm call-type / TG bitmap — Read/stash only. */
@@ -105,14 +105,10 @@ export const D890_MAP = {
   /** Alarm record bodies — Read/stash only. */
   AlarmData: 0x3483_000,
   AlarmDataLength: 0x30,
-  /**
-   * Full global APRS config — decode/encode both exist in anytone-cps (`AprsSettings`),
-   * unlike `OptionalSettingsAprs` above, which is an unrelated unused-padding span.
-   * Not Read or Write in Studio yet (#758) — debug memory-export only.
-   */
+  /** Full global APRS config — see aprs.md. */
   AprsConfigMain: 0x350_1000,
   AprsConfigMainLength: 0x260,
-  /** 32 receive-filter records, `0x8` bytes each. */
+  /** 32 receive-filter records, `0x8` bytes each — RMW-preserved on Write. */
   AprsReceiveFilters: 0x350_1300,
   AprsReceiveFiltersLength: 0x100,
   /**
@@ -190,3 +186,6 @@ export const D890_MAP = {
 export const AT_D890_MAP_SIZE = 0x500_0000;
 
 export const AT_D890_INVALID_U16 = 0xffff;
+
+/** APRS digital report channel sentinel — Current Channel (anytone-cps UI). */
+export const AT_D890_APRS_CURRENT_CHANNEL_WIRE = 0x0fa2;

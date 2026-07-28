@@ -23,7 +23,7 @@ export const AT_D890_SENTINEL_LABELS: Readonly<Record<string, string>> = {
   LocalInfo: 'Radio identity',
   OptionalSettingsMain: 'Language and display settings',
   OptionalSettingsExt: 'Power-on password settings',
-  OptionalSettingsAprs: 'APRS settings',
+  OptionalSettingsAprs: 'Optional GPS info',
   AlarmBitmap: 'Alarm settings',
   AlarmData: 'Alarm data',
 };

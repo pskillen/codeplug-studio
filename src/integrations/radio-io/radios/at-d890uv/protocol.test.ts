@@ -95,6 +95,9 @@ describe('AtD890uvProtocol', () => {
     expect(cache?.blocks.has(D890_MAP.OptionalSettingsMain)).toBe(true);
     expect(cache?.blocks.has(D890_MAP.OptionalSettingsExt)).toBe(true);
     expect(cache?.blocks.has(D890_MAP.AlarmBitmap)).toBe(true);
+    expect(cache?.blocks.has(D890_MAP.AprsConfigMain)).toBe(true);
+    expect(cache?.blocks.has(D890_MAP.AprsReceiveFilters)).toBe(true);
+    expect(cache?.blocks.get(D890_MAP.AprsConfigMain)?.[0]).toBe(0x11);
   });
 
   it('uploads after seeding hydration with sparse erase-unit RMW', async () => {
@@ -189,6 +192,18 @@ describe('AtD890uvProtocol', () => {
       pipe,
       D890_MAP.AlarmData,
       new Uint8Array(D890_MAP.AlarmDataLength).fill(0xff),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.AprsConfigMain,
+      new Uint8Array(D890_MAP.AprsConfigMainLength).fill(0x11),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.AprsReceiveFilters,
+      new Uint8Array(D890_MAP.AprsReceiveFiltersLength).fill(0x22),
       NEGOTIATED_READ_BLOCK,
     );
     const channelSet = new Uint8Array(0x200);

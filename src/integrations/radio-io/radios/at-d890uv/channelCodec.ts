@@ -212,6 +212,10 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
     timeslot: ((data[0x21]! >> 1) & 1) === 1 ? 2 : 1,
     rxOnly,
     ...(data[0x20]! > 0 ? { colorCode: data[0x20] } : {}),
+    aprsReceive: ((data[0x21]! >> 5) & 1) === 1,
+    aprsReportMode: data[0x35]! === 2 ? 'digital' : 'off',
+    aprsDigitalPttMode: data[0x37]! === 1 ? 'on' : 'off',
+    ...(data[0x35]! === 2 && data[0x38]! < 8 ? { aprsReportSlotIndex: data[0x38]! + 1 } : {}),
   };
 }
 
@@ -299,6 +303,19 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
     data[0x34] = setBit(data[0x34]!, 4, true);
   } else if (ch.scanAdd === false) {
     data[0x34] = setBit(data[0x34]!, 4, false);
+  }
+
+  if (ch.aprsReceive != null) {
+    data[0x21] = setBit(data[0x21]!, 5, ch.aprsReceive);
+  }
+  if (ch.aprsReportMode != null) {
+    data[0x35] = ch.aprsReportMode === 'digital' ? 2 : 0;
+  }
+  if (ch.aprsDigitalPttMode != null) {
+    data[0x37] = ch.aprsDigitalPttMode === 'on' ? 1 : 0;
+  }
+  if (ch.aprsReportSlotIndex != null && ch.aprsReportMode === 'digital') {
+    data[0x38] = Math.max(0, Math.min(7, ch.aprsReportSlotIndex - 1));
   }
 
   data.set(encodeWideCharName(ch.wireName, 0x20), 0x44);
