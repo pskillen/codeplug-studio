@@ -61,6 +61,12 @@ describe('buildNavItems', () => {
     expect(serialLabels).toContain('AM airband');
   });
 
+  it('includes AM airband for D890 builds when egress paths exist but active egress is unset', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
+    const labels = buildNavItems(build, { egressPaths }).map((item) => item.label);
+    expect(labels).toContain('AM airband');
+  });
+
   it('does not include AM airband for non-D890 radio targets', () => {
     const { build, egress } = newRadioBuildForProfile('proj', 'opengd77-1701');
     expect(buildNavItems(build, { activeEgress: egress }).map((item) => item.label)).not.toContain(

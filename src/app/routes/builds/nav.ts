@@ -28,8 +28,15 @@ export interface BuildNavItem {
 export interface BuildNavOptions {
   /** Seeded egress rows — retain links appear when a matching hydration bag exists. */
   egressPaths?: EgressPath[];
-  /** Selected pathway — Airband (and similar wire-only chrome) keys off this. */
+  /** Selected pathway — AM airband (and similar wire-only chrome) keys off this. */
   activeEgress?: EgressPath | null;
+}
+
+/** Whether the build secondary nav should link to the D890 AM airband export page. */
+export function showsD890AmAirbandNav(build: RadioBuild, options?: BuildNavOptions): boolean {
+  if (usesAtD890AirbandBankSplit(options?.activeEgress?.profileId)) return true;
+  if (build.radioTargetId !== 'anytone-at-d890uv') return false;
+  return (options?.egressPaths ?? []).some((path) => usesAtD890AirbandBankSplit(path.profileId));
 }
 
 /** Secondary nav entries for a radio build detail shell. */
@@ -37,7 +44,6 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
   const base = `/builds/${build.id}`;
   const traits = new Set(traitsForRadioTarget(build.radioTargetId));
   const flatMemory = traits.has(BuildCapabilityTrait.FlatMemoryList);
-  const activeEgressProfileId = options?.activeEgress?.profileId;
   const egressPaths = options?.egressPaths ?? [];
 
   const items: BuildNavItem[] = [
@@ -60,7 +66,7 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
     });
   }
 
-  if (usesAtD890AirbandBankSplit(activeEgressProfileId)) {
+  if (showsD890AmAirbandNav(build, options)) {
     items.push({ label: 'AM airband', path: `${base}/airband`, icon: IconPlane });
   }
 

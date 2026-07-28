@@ -10,42 +10,11 @@ import { persistence } from '../../state/persistence.ts';
 import { useFormatBuild } from '../../state/useFormatBuilds.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import { BuildLayoutProvider } from './BuildLayoutContext.tsx';
-
-const activeEgressStorageKey = (buildId: string) => `cps.activeEgress.${buildId}`;
-
-function readStoredActiveEgressId(buildId: string): string | null {
-  try {
-    return sessionStorage.getItem(activeEgressStorageKey(buildId));
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredActiveEgressId(buildId: string, egressId: string): void {
-  try {
-    sessionStorage.setItem(activeEgressStorageKey(buildId), egressId);
-  } catch {
-    // sessionStorage unavailable — active selection is in-memory only
-  }
-}
-
-function resolveActiveEgressId(
-  build: RadioBuild,
-  egressPaths: EgressPath[],
-  preferredId: string | null,
-): string | null {
-  if (egressPaths.length === 0) return null;
-  if (preferredId && egressPaths.some((path) => path.id === preferredId)) {
-    return preferredId;
-  }
-  if (
-    build.defaultEgressPathId &&
-    egressPaths.some((path) => path.id === build.defaultEgressPathId)
-  ) {
-    return build.defaultEgressPathId;
-  }
-  return egressPaths[0]?.id ?? null;
-}
+import {
+  readStoredActiveEgressId,
+  resolveActiveEgress,
+  writeStoredActiveEgressId,
+} from './activeEgress.ts';
 
 function orderedEgressPaths(build: RadioBuild, paths: EgressPath[]): EgressPath[] {
   return orderEgressPathsByCatalog(build.radioTargetId, paths);
@@ -112,13 +81,10 @@ export default function BuildLayout() {
   );
 
   const preferredEgressId = activeEgressOverrideId ?? (id ? readStoredActiveEgressId(id) : null);
-  const activeEgressId = build
-    ? resolveActiveEgressId(build, egressPaths, preferredEgressId)
-    : null;
-  const activeEgress = useMemo(
-    () => egressPaths.find((path) => path.id === activeEgressId) ?? null,
-    [egressPaths, activeEgressId],
-  );
+  const activeEgress = useMemo(() => {
+    if (!build) return null;
+    return resolveActiveEgress(build, egressPaths, preferredEgressId);
+  }, [build, egressPaths, preferredEgressId]);
 
   if (loading) {
     return (
