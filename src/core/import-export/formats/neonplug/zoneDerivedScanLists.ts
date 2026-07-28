@@ -118,7 +118,7 @@ export function deriveNeonplugZoneDerivedScanLists(
     options?.defaultScanInclusion != null
       ? { defaultScanInclusion: options.defaultScanInclusion }
       : undefined,
-    { defaultScanInclusion: 'scan' },
+    { defaultScanInclusion: DM32UV_LIMITS.DEFAULT_SCAN_INCLUSION },
   );
   const reservedScanListNames = new Set<string>();
   const reservedCarrierNames = new Set(reservedWireNames);

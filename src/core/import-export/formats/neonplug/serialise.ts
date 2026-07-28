@@ -133,7 +133,10 @@ function expandedRowToNeonplugChannel(
   options: CpsExportOptions | undefined,
   fks: Dm32uvChannelFkMaps,
 ): NeonplugChannel {
-  const { scanContext, behaviourContext } = neonplugContextsFromExportOptions(options);
+  const { scanContext, behaviourContext } = neonplugContextsFromExportOptions({
+    ...options,
+    profileId,
+  });
   return channelToNeonplugChannel(source.entity, {
     number,
     name: expanded.wireName,
@@ -183,7 +186,10 @@ function serialiseUv5rminiChannels(
     throw new Error(`Expected neonplug-uv5rmini profile, got ${profileId}`);
   }
 
-  const { scanContext, behaviourContext } = neonplugContextsFromExportOptions(options);
+  const { scanContext, behaviourContext } = neonplugContextsFromExportOptions({
+    ...options,
+    profileId,
+  });
   const reserved = new Set<string>();
   const byId = channelById(assembled);
   const channels: NeonplugChannel[] = [];

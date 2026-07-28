@@ -1,5 +1,6 @@
 import type { MultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { NEONPLUG_JSON_FILE_NAME, serialiseNeonplugCodeplug } from './serialise.ts';
 import { collectNeonplugExportWarnings } from './warnings.ts';
 
@@ -9,7 +10,7 @@ export const neonplugExportAdapter: MultiFileExportAdapter = {
   status: 'shipped',
   delivery: 'multi-file',
   defaultExportSettings: {
-    defaultScanInclusion: 'scan',
+    defaultScanInclusion: DM32UV_LIMITS.DEFAULT_SCAN_INCLUSION,
     expandModes: false,
     expandRxGroupLists: true,
     exportScratchChannels: true,

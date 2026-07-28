@@ -31,4 +31,6 @@ export const DM32UV_LIMITS = {
   /** NO-TX band: RX 87–136 MHz exclusive upper bound (Hz). */
   NO_TX_BAND_RX_MIN_HZ: 87_000_000,
   NO_TX_BAND_RX_MAX_HZ: 136_000_000,
+  /** Effective scan inclusion when channel + build omit override (DM32 / NeonPlug convention). */
+  DEFAULT_SCAN_INCLUSION: 'scan',
 } as const;

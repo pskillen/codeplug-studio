@@ -27,6 +27,7 @@ import {
   neonplugPercentToWire,
   type NeonplugRadioProfile,
 } from './profiles.ts';
+import { neonplugDefaultScanInclusion } from './scanDefault.ts';
 import type {
   NeonplugAprsReportMode,
   NeonplugBandwidth,
@@ -238,7 +239,10 @@ export function channelToNeonplugChannel(
   const activeDmr = isDigital ? (profiles.find(isDmrProfile) ?? dmrProfile) : dmrProfile;
 
   const scanContext =
-    options.scanContext ?? buildScanContext(undefined, { defaultScanInclusion: 'scan' });
+    options.scanContext ??
+    buildScanContext(undefined, {
+      defaultScanInclusion: neonplugDefaultScanInclusion(options.profileId),
+    });
   const scanAdd =
     resolveChannelScanInclusionForExport(channel, options.scanInclusionOverride, scanContext) ===
     'scan';
@@ -319,7 +323,7 @@ export function neonplugContextsFromExportOptions(options?: CpsExportOptions): {
       options?.defaultScanInclusion != null
         ? { defaultScanInclusion: options.defaultScanInclusion }
         : undefined,
-      { defaultScanInclusion: 'scan' },
+      { defaultScanInclusion: neonplugDefaultScanInclusion(options?.profileId) },
     ),
     behaviourContext: options?.channelBehaviourContext,
   };
