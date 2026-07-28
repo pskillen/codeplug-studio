@@ -1,9 +1,10 @@
 import type { AprsChannelSlot, AprsConfiguration } from '@core/models/aprs.ts';
 import type { AprsPositionSource, AprsSlotCallType, GeoPoint } from '@core/models/libraryTypes.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 
 /** NeonPlug report-channel slots are fixed at 8 (radioSettings.aprsReportChannel1…8). */
-export const NEONPLUG_APRS_MAX_REPORT_CHANNELS = 8;
+export const NEONPLUG_APRS_MAX_REPORT_CHANNELS = DM32UV_LIMITS.APRS_REPORT_CHANNELS;
 
 /** Combo idx: 0=Off, n = n×30s, max 240 → 7200s. */
 export const NEONPLUG_APRS_SCHEDULED_SEND_MAX_IDX = 240;

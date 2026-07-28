@@ -5,11 +5,12 @@
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioScanListDto } from '../../radioWriteProjection.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from './constants.ts';
 
 export const DM32_SCAN_LIST_ENTRY_SIZE = 57;
-export const DM32_SCAN_LIST_MAX_MEMBERS = 15;
-export const DM32_SCAN_LISTS_MAX = 32;
+export const DM32_SCAN_LIST_MAX_MEMBERS = DM32UV_LIMITS.SCAN_LIST_MEMBERS_MAX;
+export const DM32_SCAN_LISTS_MAX = DM32UV_LIMITS.SCAN_LISTS_MAX;
 
 const TE = new TextEncoder();
 

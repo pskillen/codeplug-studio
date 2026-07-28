@@ -39,6 +39,7 @@ export interface ProfileExportLimits {
   maxRxGroupLists: ExportLimitValue;
   maxContacts: ExportLimitValue;
   maxTalkGroups: ExportLimitValue;
+  maxRadioIds: ExportLimitValue;
 
   zoneMembers: ExportLimitValue;
   scanListMembers: ExportLimitValue;
@@ -68,6 +69,7 @@ function blankDigitalOrganisation(partial: {
   maxRxGroupLists?: ExportLimitValue;
   maxContacts?: ExportLimitValue;
   maxTalkGroups?: ExportLimitValue;
+  maxRadioIds?: ExportLimitValue;
   zoneMembers?: ExportLimitValue;
   scanListMembers?: ExportLimitValue;
   rxGroupListMembers?: ExportLimitValue;
@@ -87,6 +89,7 @@ function blankDigitalOrganisation(partial: {
     maxRxGroupLists: partial.maxRxGroupLists ?? null,
     maxContacts: partial.maxContacts ?? null,
     maxTalkGroups: partial.maxTalkGroups ?? null,
+    maxRadioIds: partial.maxRadioIds ?? null,
     zoneMembers: partial.zoneMembers ?? null,
     scanListMembers: partial.scanListMembers ?? null,
     rxGroupListMembers: partial.rxGroupListMembers ?? null,
@@ -147,6 +150,7 @@ export function getProfileExportLimits(
         maxRxGroupLists: profile.maxRxGroupLists,
         maxContacts: profile.maxContacts,
         maxTalkGroups: profile.maxTalkGroups,
+        maxRadioIds: profile.maxRadioIds,
         zoneMembers: profile.zoneMembers,
         scanListMembers: profile.scanListMembers,
         rxGroupListMembers: profile.rxGroupListMembers,
@@ -195,6 +199,7 @@ export function getProfileExportLimits(
         maxRxGroupLists: 'not_used',
         maxContacts: 'not_used',
         maxTalkGroups: 'not_used',
+        maxRadioIds: 'not_used',
         zoneMembers: 'not_used',
         scanListMembers: 'not_used',
         rxGroupListMembers: 'not_used',
@@ -225,6 +230,7 @@ export function getProfileExportLimits(
           maxRxGroupLists: profile.maxRxGroupLists,
           maxContacts: profile.maxContacts,
           maxTalkGroups: profile.maxTalkGroups,
+          maxRadioIds: profile.maxRadioIds,
           zoneMembers: profile.zoneMembers,
           scanListMembers: profile.scanListMembers,
           rxGroupListMembers: profile.rxGroupListMembers,
@@ -245,6 +251,7 @@ export function getProfileExportLimits(
         maxRxGroupLists: 'not_used',
         maxContacts: 'not_used',
         maxTalkGroups: 'not_used',
+        maxRadioIds: 'not_used',
         zoneMembers: 'not_used',
         scanListMembers: 'not_used',
         rxGroupListMembers: 'not_used',
@@ -272,6 +279,7 @@ export function getProfileExportLimits(
           maxRxGroupLists: profile.maxRxGroupLists,
           maxContacts: profile.maxContacts,
           maxTalkGroups: profile.maxTalkGroups,
+          maxRadioIds: profile.maxRadioIds,
           zoneMembers: profile.zoneMembers,
           scanListMembers: profile.scanListMembers,
           rxGroupListMembers: profile.rxGroupListMembers,
@@ -296,6 +304,7 @@ export function getProfileExportLimits(
           maxRxGroupLists: profile.maxRxGroupLists,
           maxContacts: null,
           maxTalkGroups: profile.maxTalkGroups,
+          maxRadioIds: null,
           zoneMembers: profile.zoneMembers,
           scanListMembers: profile.scanListMembers,
           rxGroupListMembers: profile.rxGroupListMembers,
@@ -320,6 +329,7 @@ export function getProfileExportLimits(
           maxRxGroupLists: profile.maxRxGroupLists,
           maxContacts: null,
           maxTalkGroups: null,
+          maxRadioIds: null,
           zoneMembers: profile.zoneMembers,
           scanListMembers: profile.scanListMembers,
           rxGroupListMembers: profile.rxGroupListMembers,
@@ -343,6 +353,7 @@ export function getProfileExportLimits(
         maxRxGroupLists: 'not_used',
         maxContacts: 'not_used',
         maxTalkGroups: 'not_used',
+        maxRadioIds: 'not_used',
         zoneMembers: 'not_used',
         scanListMembers: 'not_used',
         rxGroupListMembers: 'not_used',

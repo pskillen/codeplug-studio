@@ -5,6 +5,7 @@
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioRxGroupDto } from '../../radioWriteProjection.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET, DM32_LIMITS } from './constants.ts';
 
 export const DM32_RX_GROUP_ENTRY_SIZE = 109;
@@ -19,7 +20,7 @@ export function encodeDm32RxGroup(group: RadioRxGroupDto): Uint8Array {
   data.set(name, 0);
   data[name.length] = 0;
 
-  const members = group.memberDigitalIds.slice(0, 32);
+  const members = group.memberDigitalIds.slice(0, DM32UV_LIMITS.RX_GROUP_MEMBERS_MAX);
   for (let i = 0; i < members.length; i++) {
     const id = members[i]! >>> 0;
     const off = 0x0b + i * 3;

@@ -13,6 +13,7 @@ import {
   DM32_METADATA_OFFSET,
   DM32_OFFSET,
 } from './constants.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import {
   encodeTxContactEntry,
   getTxContactOffset,
@@ -28,16 +29,13 @@ export interface Dm32ChannelDecodeContext {
 const TD = new TextDecoder('ascii', { fatal: false });
 const TE = new TextEncoder();
 
-/** NeonPlug NO_TX band: RX 87–136 MHz exclusive upper bound. */
-const NO_TX_BAND_RX_MIN_HZ = 87_000_000;
-const NO_TX_BAND_RX_MAX_HZ = 136_000_000;
+/** NO-TX band: RX 87–136 MHz exclusive upper bound (DM-32UV hardware). */
+export function isRxInNoTxBand(rxHz: number): boolean {
+  return rxHz >= DM32UV_LIMITS.NO_TX_BAND_RX_MIN_HZ && rxHz < DM32UV_LIMITS.NO_TX_BAND_RX_MAX_HZ;
+}
 
 /** Default squelch level when not modelled (NeonPlug createDefaultChannel). */
 const DM32_DEFAULT_SQUELCH_LEVEL = 3;
-
-export function isRxInNoTxBand(rxHz: number): boolean {
-  return rxHz >= NO_TX_BAND_RX_MIN_HZ && rxHz < NO_TX_BAND_RX_MAX_HZ;
-}
 
 /** NeonPlug BCD: freq MHz as float → Studio uses Hz integers. */
 export function decodeBcdFrequencyHz(data: Uint8Array): number {

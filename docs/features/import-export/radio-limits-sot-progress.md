@@ -40,6 +40,19 @@
 
 ---
 
+## Slice 2: Codecs + APRS/NO-TX from limits
+
+**Status:** Complete
+
+**Delivered**
+
+- DM32 codecs import cardinality from `DM32UV_LIMITS`
+- NO-TX band from core limits (NeonPlug keeps JSON sentinel)
+- APRS report-channel count from `DM32UV_LIMITS.APRS_REPORT_CHANNELS`
+- `maxRadioIds` on `ProfileExportLimits`; radio-ID bank uses it (M7)
+
+---
+
 ## Next
 
-- Slice 2: Codecs/APRS/NO-TX band/radio-ID from limits
+- Slice 3: Purge `radioIoWriteProjection` app fallbacks

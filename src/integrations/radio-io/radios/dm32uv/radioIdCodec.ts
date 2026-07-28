@@ -5,13 +5,14 @@
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioRadioIdDto } from '../../radioWriteProjection.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from './constants.ts';
 import type { Dm32TalkGroupEncodeContext } from './talkGroupCodec.ts';
 
 const TE = new TextEncoder();
 
 export const DM32_DMR_RADIO_ID_ENTRY_SIZE = 16;
-export const DM32_DMR_RADIO_IDS_MAX = 250;
+export const DM32_DMR_RADIO_IDS_MAX = DM32UV_LIMITS.RADIO_IDS_MAX;
 
 function findBlock(
   discovered: readonly { address: number; metadata: number }[],

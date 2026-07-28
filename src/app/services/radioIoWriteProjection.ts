@@ -526,7 +526,7 @@ function buildDm32RadioIdBank(
   warnings: string[],
 ): { radioIds: RadioRadioIdDto[]; dmrIdIndexByValue: Map<number, number> } {
   const limits = dm32ExportLimits(egress);
-  const maxRadioIds = numericLimit(limits.maxContacts, DM32_DEFAULT_MAX_RADIO_IDS);
+  const maxRadioIds = numericLimit(limits.maxRadioIds, DM32_DEFAULT_MAX_RADIO_IDS);
   const seen = new Map<number, { dmrId: number; name: string }>();
 
   const considerDmrId = (dmrId: number | null | undefined, channel: Channel) => {
