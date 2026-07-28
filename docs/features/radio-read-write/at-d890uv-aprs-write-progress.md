@@ -4,11 +4,16 @@
 
 ## Status
 
-In progress — implementation slices 1–5.
+Code complete — hardware verify pending.
 
 ## Shipped in branch
 
-- (pending commits)
+- Tier-3 [aprs.md](../../reference/radios/anytone/at-d890uv/aprs.md) + memory-layout / Write-contract updates
+- Sparse Read of `AprsConfigMain` + `AprsReceiveFilters`
+- `aprsCodec.ts` — patch modelled global fields; `channelCodec` digital APRS bits
+- `radioIoWriteProjection` → `organisation.aprs` for `radio-io-at-d890uv`
+- WATCH-08 allow-list + write coverage row
+- Unit tests: `aprsCodec.test.ts`, channel APRS round-trip, hydration merge, writable extents
 
 ## Hardware verify checklist
 

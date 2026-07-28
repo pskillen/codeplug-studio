@@ -82,6 +82,7 @@ Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
 | Native YAML v17 singleton parse + orphan slot soft-warn                | Shipped ([#430](https://github.com/pskillen/codeplug-studio/issues/430)) |
 | DM32 per-channel APRS + `APRS.md` guide                                | Shipped ([#250](https://github.com/pskillen/codeplug-studio/issues/250)) |
 | NeonPlug DM-32UV APRS → `radioSettings` (merge-export)                 | Shipped ([#559](https://github.com/pskillen/codeplug-studio/issues/559)) |
+| AT-D890UV Web Serial digital APRS Write                                | Shipped ([#758](https://github.com/pskillen/codeplug-studio/issues/758)) — modelled globals + channel bindings; RX filters / analog identity RMW; hardware verify pending — [aprs.md](../../reference/radios/anytone/at-d890uv/aprs.md) |
 
 ---
 
