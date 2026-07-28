@@ -26,7 +26,7 @@ export default function BuildZonesWirePage() {
       const kind = classifyAnytoneZoneByMembers(
         directZoneMemberChannelIds(zone),
         zoneScan.channelById,
-        zoneScan.zoneBehaviourContext,
+        zoneScan.channelBehaviourContext,
       );
       return kind !== 'airband';
     },
@@ -34,7 +34,7 @@ export default function BuildZonesWirePage() {
       activeEgress?.profileId,
       zoneScan.channelById,
       zoneScan.library,
-      zoneScan.zoneBehaviourContext,
+      zoneScan.channelBehaviourContext,
       zoneScan.zoneById,
     ],
   );

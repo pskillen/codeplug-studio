@@ -10,6 +10,7 @@ import {
 import { scanListMemberCapForProfile } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { buildZoneBehaviourContext } from '@core/import-export/zoneBehaviourDefaults/index.ts';
+import { buildChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import {
@@ -86,6 +87,11 @@ export function useZoneScanExportLayout() {
   const zoneBehaviourContext = useMemo(
     () => buildZoneBehaviourContext(library?.zoneDefaults, build.exportSettings),
     [library?.zoneDefaults, build.exportSettings],
+  );
+
+  const channelBehaviourContext = useMemo(
+    () => buildChannelBehaviourContext(library?.channelDefaults, build.exportSettings),
+    [library?.channelDefaults, build.exportSettings],
   );
 
   const zoneById = useMemo(
@@ -191,6 +197,7 @@ export function useZoneScanExportLayout() {
     channelById,
     expansionByChannelId,
     zoneBehaviourContext,
+    channelBehaviourContext,
     saving,
     error,
     updateZoneEntry,

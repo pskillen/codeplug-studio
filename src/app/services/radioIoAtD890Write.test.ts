@@ -444,7 +444,7 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
 
     const mixedZone = projection.organisation.zones?.find((z) => z.wireName === 'Mixed');
     expect(mixedZone).toBeTruthy();
-    expect(mixedZone!.channelNumbers.sort()).toEqual([1, 2]);
+    expect([...mixedZone!.channelNumbers].sort()).toEqual([1, 2]);
     const mixedScan = projection.organisation.scanLists?.find((list) =>
       list.wireName.startsWith('Mixed'),
     );
