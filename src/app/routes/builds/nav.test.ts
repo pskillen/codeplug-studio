@@ -48,20 +48,24 @@ describe('buildNavItems', () => {
   it('includes Airband only when the active egress is AT-D890UV (CSV or Web Serial)', () => {
     const { build, egress, egressPaths } = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
     expect(buildNavItems(build).map((item) => item.label)).not.toContain('Airband');
+    expect(buildNavItems(build).map((item) => item.label)).not.toContain('AM airband');
     const csvLabels = buildNavItems(build, { activeEgress: egress }).map((item) => item.label);
-    expect(csvLabels).toContain('Airband');
-    expect(csvLabels.indexOf('Airband')).toBeGreaterThan(csvLabels.indexOf('Channels'));
+    expect(csvLabels).toContain('AM airband');
+    expect(csvLabels.indexOf('AM airband')).toBeGreaterThan(csvLabels.indexOf('Channels'));
 
     const serialEgress =
       egressPaths.find((path) => path.profileId === 'radio-io-at-d890uv') ?? egress;
     const serialLabels = buildNavItems(build, { activeEgress: serialEgress }).map(
       (item) => item.label,
     );
-    expect(serialLabels).toContain('Airband');
+    expect(serialLabels).toContain('AM airband');
   });
 
-  it('does not include Airband for non-D890 radio targets', () => {
+  it('does not include AM airband for non-D890 radio targets', () => {
     const { build, egress } = newRadioBuildForProfile('proj', 'opengd77-1701');
+    expect(buildNavItems(build, { activeEgress: egress }).map((item) => item.label)).not.toContain(
+      'AM airband',
+    );
     expect(buildNavItems(build, { activeEgress: egress }).map((item) => item.label)).not.toContain(
       'Airband',
     );

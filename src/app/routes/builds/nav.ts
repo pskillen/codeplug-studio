@@ -61,7 +61,7 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
   }
 
   if (usesAtD890AirbandBankSplit(activeEgressProfileId)) {
-    items.push({ label: 'Airband', path: `${base}/airband`, icon: IconPlane });
+    items.push({ label: 'AM airband', path: `${base}/airband`, icon: IconPlane });
   }
 
   if (traits.has(BuildCapabilityTrait.ZoneGrouping)) {
