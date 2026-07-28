@@ -665,8 +665,8 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
 
     expect(projection.channels.every((c) => c.scanAdd === false)).toBe(true);
-    expect(projection.organisation.scanLists?.some((list) => list.designatedTxChannel != null)).toBe(
-      false,
-    );
+    expect(
+      projection.organisation.scanLists?.some((list) => list.designatedTxChannel != null),
+    ).toBe(false);
   });
 });
