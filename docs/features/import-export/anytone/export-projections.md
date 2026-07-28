@@ -81,6 +81,8 @@ When **Export zone-derived scan lists** is on and a zone is marked **Export as s
 
 The build **Channels** wire preview uses the **same expansion path** as export. Fan-out rows show talk-group context (name, ID, slot) or a **Scratch channel** marker under the display name.
 
+**Web Serial Write** (`radio-io-at-d890uv`) uses the same m×n expansion and `resolveAnytoneSiteWireName` composer as CPS CSV — see [export-pathway-parity.md](../export-pathway-parity.md).
+
 ---
 
 ## DM32 comparison
