@@ -271,13 +271,14 @@ In codeplug-tool, **full import→export→re-import equality** often stood in f
 
 Import and export tests use **different fixtures**. Export tests do not require importing first. Overlap between directions is a nice cross-check, not the definition of correctness.
 
-| Layer              | Bar                                                                           |
-| ------------------ | ----------------------------------------------------------------------------- |
-| **Import mapping** | Per-format fixture suite → internal model                                     |
-| **Export mapping** | Per-format constructed model → wire output                                    |
-| **Trait assembly** | Library + trait layout → projection; shared across formats sharing traits     |
-| **Domain**         | Unit tests on mutations, validation, merge heuristics                         |
-| **Round-trip**     | Optional smoke only; never the primary gate; document expected loss when used |
+| Layer              | Bar                                                                                                                                                                                                                                      |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Import mapping** | Per-format fixture suite → internal model                                                                                                                                                                                                |
+| **Export mapping** | Per-format constructed model → wire output                                                                                                                                                                                               |
+| **Trait assembly** | Library + trait layout → projection; shared across formats sharing traits                                                                                                                                                                |
+| **Domain**         | Unit tests on mutations, validation, merge heuristics                                                                                                                                                                                    |
+| **Round-trip**     | Optional smoke only; never the primary gate; document expected loss when used                                                                                                                                                            |
+| **Pathway parity** | Constructed library + build → compare CPS CSV, Web Serial, and NeonPlug egress outputs for the same radio; orthogonal to import/export round-trip — see [export-pathway-parity.md](docs/features/import-export/export-pathway-parity.md) |
 
 System tests target `core/services` and format adapters, not React routes.
 

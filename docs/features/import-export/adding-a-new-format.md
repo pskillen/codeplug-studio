@@ -336,6 +336,7 @@ Checklist for flat/single-row formats:
 - [ ] Export applies the same rules at serialise (shared `applyWireNameLimits`; optional `exportChannelWire.ts` beside `channelWire.ts`)
 - [ ] `collect*ExportWarnings` warns when explicit overrides exceed `nameLimit` (do not silently shorten operator overrides)
 - [ ] Tests: `previewWireRows.test.ts` without explicit `maxNameLength` in options; directional export test on the name column
+- [ ] When a sibling `radio-io-*` egress exists for the same catalog target, wire-name parity test using the shared harness — [pathway-parity tests](../../build/testing/pathway-parity.md)
 
 See [wire-name-composition.md](../builds/wire-name-composition.md) for the full pipeline. Regression: [#287](https://github.com/pskillen/codeplug-studio/issues/287).
 
@@ -381,6 +382,7 @@ Primary quality gate: **directional mapping tests**, not full round-trip equalit
 - [ ] Import golden: CPS fixture → expected library JSON (+ build layout when applicable)
 - [ ] Fill adapter matrix row in [mapping-tests.md](../../build/testing/mapping-tests.md)
 - [ ] Document excluded columns in tests (export-reassigned or lossy fields)
+- [ ] **Pathway parity:** when the radio also has a Web Serial (`radio-io-*`) or NeonPlug egress, add or extend a parity test via [`pathwayParity.ts`](../../../src/core/import-export/channelExpansion/__testUtils__/pathwayParity.ts) — see [pathway-parity tests](../../build/testing/pathway-parity.md) and [export-pathway-parity.md](export-pathway-parity.md)
 
 ```bash
 npm run test        # Vitest — colocated *.test.ts

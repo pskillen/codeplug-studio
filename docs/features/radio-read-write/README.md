@@ -56,12 +56,13 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 
 ## Documentation map
 
-| Doc                                                                | Contents                                                                 |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| [adding-a-radio-adapter.md](adding-a-radio-adapter.md)             | Checklist for new Web Serial radio modules (living — update as we learn) |
-| [browser-radio-io-progress.md](browser-radio-io-progress.md)       | Program progress for epic #594                                           |
-| [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md) | Open debt with linked issues                                             |
-| [protocol-kit-architecture.md](protocol-kit-architecture.md)       | Spike deep-dive — kit vs per-radio modules                               |
+| Doc                                                                   | Contents                                                                                                                                      |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| [export-pathway-parity.md](../import-export/export-pathway-parity.md) | Web Serial Write must match sibling CPS/NeonPlug egresses for the same radio ([#776](https://github.com/pskillen/codeplug-studio/issues/776)) |
+| [adding-a-radio-adapter.md](adding-a-radio-adapter.md)                | Checklist for new Web Serial radio modules (living — update as we learn)                                                                      |
+| [browser-radio-io-progress.md](browser-radio-io-progress.md)          | Program progress for epic #594                                                                                                                |
+| [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md)    | Open debt with linked issues                                                                                                                  |
+| [protocol-kit-architecture.md](protocol-kit-architecture.md)          | Spike deep-dive — kit vs per-radio modules                                                                                                    |
 
 Tier-3 protocol refs: [baofeng/uv-5r-mini](../../reference/radios/baofeng/uv-5r-mini/README.md) (PROGRAM+R/W binary; CSV / `.neonplug` ≠ clone) · [baofeng/uv-21-pro-v2](../../reference/radios/baofeng/uv-21-pro-v2/README.md) (UV-17Pro family; CSV ≠ clone) · [baofeng/dm-32uv](../../reference/radios/baofeng/dm-32uv/README.md) (V-frame + 4KB block R/W; CSV / `.neonplug` ≠ binary) · [retevis/rt95](../../reference/radios/retevis/rt95/README.md) (PROGRAM→QX binary; CSV ≠ clone) · [anytone/at-d890uv](../../reference/radios/anytone/at-d890uv/README.md) (Anytone DMR PROGRAM→QX + u32 sparse regions; CSV ≠ binary) · [OpenGD77 / OpenUV380 binary](../../reference/radios/opengd77/README.md) (memory + serial; CSV ≠ binary).
 
