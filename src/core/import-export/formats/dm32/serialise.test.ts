@@ -16,6 +16,7 @@ import {
 import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { serialiseDm32Files } from './serialise.ts';
+import { collectDm32ExportWarnings } from './warnings.ts';
 import { CHANNEL_COL, ZONE_COL, SCAN_COL, RX_GROUP_LIST_COL, CONTACT_COL } from './columns.ts';
 import { parseCsv } from '@core/import-export/csvParse.ts';
 import { minimalDm32Bundle } from '../../../../test/dm32/bundles.ts';
@@ -630,6 +631,30 @@ describe('DM32 export serialise', () => {
     const zoneRows = parseCsv(files['Zones.csv']);
     const zoneNameIndex = zoneRows[0]!.indexOf(ZONE_COL.name);
     expect(zoneRows[1]?.[zoneNameIndex]).toBe('Glasgow Airband');
+  });
+
+  it('truncates RX group lists to profile maxRxGroupLists in RXGroupLists.csv', () => {
+    const rxGroupLists = Array.from({ length: 40 }, (_, i) => ({
+      ...newRxGroupList(PROJECT_ID, `RX${i}`),
+      id: `rx-${i}`,
+    }));
+    const library: LibrarySlice = {
+      channels: [],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists,
+      scanLists: [],
+      aprsConfiguration: null,
+    };
+    const build = dm32Build();
+    const assembled = assemble(build, library, DM32_PROJECTION);
+    const warnings = collectDm32ExportWarnings(assembled, library, DM32_PROJECTION);
+    const files = serialiseDm32Files(assembled, library, DM32_PROJECTION);
+    const rows = parseCsv(files['RXGroupLists.csv']);
+    expect(rows.length - 1).toBe(32);
+    expect(warnings.some((w) => /40 RX group list/.test(w) && /32/.test(w))).toBe(true);
   });
 
   /**
