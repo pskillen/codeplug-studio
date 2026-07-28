@@ -550,4 +550,123 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
       projection.warnings.some((w) => w.includes('broadcast FM') && w.includes('omitted')),
     ).toBe(true);
   });
+
+  it('stamps scanAdd (auto_scan) on zone scan carriers only', () => {
+    const included = {
+      ...newChannel('p1', 'Included'),
+      id: 'ch-in',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const excluded = {
+      ...newChannel('p1', 'Excluded'),
+      id: 'ch-out',
+      rxFrequency: 145_600_000,
+      txFrequency: 145_600_000,
+      power: 100,
+      scanInclusion: 'skip' as const,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const zone = {
+      ...newZone('p1', 'Glasgow'),
+      id: 'zone-gla',
+      members: [
+        { kind: 'channel' as const, channelId: included.id },
+        { kind: 'channel' as const, channelId: excluded.id },
+      ],
+    };
+    const library = { ...emptyLibrary([included, excluded]), zones: [zone] };
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const build = {
+      ...baseBuild,
+      exportSettings: { exportZoneDerivedScanLists: true },
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: 'zone-gla',
+                name: 'Glasgow',
+                channelIds: [included.id, excluded.id],
+                exportScanList: true,
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+
+    const carrierSlot = projection.organisation.scanLists?.find((list) =>
+      list.wireName.startsWith('Glasgow'),
+    )?.designatedTxChannel;
+    expect(carrierSlot).toBeTypeOf('number');
+
+    const bySlot = new Map(projection.channels.map((ch) => [ch.slotIndex, ch]));
+    expect(bySlot.get(carrierSlot!)?.scanAdd).toBe(true);
+
+    const includedSlot = projection.numbersBySourceChannelId.get('ch-in')?.[0];
+    const excludedSlot = projection.numbersBySourceChannelId.get('ch-out')?.[0];
+    expect(bySlot.get(includedSlot!)?.scanAdd).toBe(false);
+    expect(bySlot.get(excludedSlot!)?.scanAdd).toBe(false);
+  });
+
+  it('stamps scanAdd false on all channels when zone scan export is disabled', () => {
+    const ch = {
+      ...newChannel('p1', 'Solo'),
+      id: 'ch-1',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const zone = {
+      ...newZone('p1', 'Home'),
+      id: 'zone-home',
+      members: [{ kind: 'channel' as const, channelId: ch.id }],
+    };
+    const library = { ...emptyLibrary([ch]), zones: [zone] };
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const build = {
+      ...baseBuild,
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: 'zone-home',
+                name: 'Home',
+                channelIds: [ch.id],
+                exportScanList: false,
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+
+    expect(projection.channels.every((c) => c.scanAdd === false)).toBe(true);
+    expect(projection.organisation.scanLists?.some((list) => list.designatedTxChannel != null)).toBe(
+      false,
+    );
+  });
 });
