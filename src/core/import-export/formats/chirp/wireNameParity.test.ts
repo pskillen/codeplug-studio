@@ -4,7 +4,6 @@ import {
   CHIRP_PATHWAY_PAIRS,
   collectChirpPathwaySnapshots,
   fmChannelFixture,
-  mergePathwayCsvOptions,
   mergePathwaySerialOptions,
   serialPathwaySnapshot,
 } from '@core/import-export/channelExpansion/__testUtils__/pathwayParity.ts';
@@ -51,7 +50,6 @@ describe('CHIRP CSV ↔ serial channel wire name parity (#780)', () => {
     };
     for (const pair of CHIRP_PATHWAY_PAIRS) {
       const snapshots = collectChirpPathwaySnapshots(channel, settings, pair);
-      const csvOptions = mergePathwayCsvOptions(settings, 'chirp', pair.csv);
       const serialOptions = mergePathwaySerialOptions(settings, pair.serial);
       const fromSerial = serialPathwaySnapshot(channel, serialOptions, pair.serial, settings);
       const csvName = snapshots[`${pair.csv} CSV`]!.wireNames[0] ?? '';
