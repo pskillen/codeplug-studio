@@ -152,6 +152,8 @@ function minimalDownloadMemory(): Map<number, Uint8Array> {
     [D890_MAP.OptionalSettingsMain, new Uint8Array(D890_MAP.OptionalSettingsMainLength).fill(0xff)],
     [D890_MAP.OptionalSettingsExt, new Uint8Array(D890_MAP.OptionalSettingsExtLength).fill(0xff)],
     [D890_MAP.OptionalSettingsAprs, new Uint8Array(D890_MAP.OptionalSettingsAprsLength).fill(0xff)],
+    [D890_MAP.AprsConfigMain, new Uint8Array(D890_MAP.AprsConfigMainLength).fill(0x11)],
+    [D890_MAP.AprsReceiveFilters, new Uint8Array(D890_MAP.AprsReceiveFiltersLength).fill(0x22)],
     [D890_MAP.AlarmBitmap, new Uint8Array(D890_MAP.AlarmBitmapLength).fill(0xff)],
     [D890_MAP.AlarmData, new Uint8Array(D890_MAP.AlarmDataLength).fill(0xff)],
     [D890_MAP.ChannelSet, new Uint8Array(0x200)],

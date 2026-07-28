@@ -65,6 +65,7 @@ export type { AtD890DownloadCache };
 const DOWNLOAD_STAGES = [
   'Local info',
   'Optional settings / alarm',
+  'APRS settings',
   'Channels',
   'Zones',
   'Scan lists',
@@ -152,6 +153,24 @@ export async function downloadAtD890SparseRegions(
     cache,
     D890_MAP.AlarmData,
     D890_MAP.AlarmDataLength,
+    signal,
+    readBlockSize,
+  );
+
+  stage('Reading APRS settings…');
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.AprsConfigMain,
+    D890_MAP.AprsConfigMainLength,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.AprsReceiveFilters,
+    D890_MAP.AprsReceiveFiltersLength,
     signal,
     readBlockSize,
   );
