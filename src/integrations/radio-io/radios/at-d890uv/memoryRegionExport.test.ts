@@ -5,9 +5,11 @@ import {
   scriptAtD890ConnectWithNegotiation,
 } from './__fixtures__/scriptedPipe.ts';
 import {
+  AT_D890_MEMORY_REGION_GROUPS,
   AT_D890_MEMORY_REGIONS,
   runAtD890DigitalContactsDump,
   runAtD890MemoryDumpAll,
+  runAtD890MemoryGroupDump,
   runAtD890MemoryRegionDump,
 } from './memoryRegionExport.ts';
 import { D890_MAP } from './constants.ts';
@@ -46,6 +48,22 @@ describe('AT_D890_MEMORY_REGIONS', () => {
     expect(channelData.chunks[0]!.length).toBe(
       D890_MAP.ChannelDataBlockSize * D890_MAP.ChannelDataOffset,
     );
+  });
+
+  it('every region belongs to a known group', () => {
+    const groupIds = new Set(AT_D890_MEMORY_REGION_GROUPS.map((g) => g.id));
+    for (const region of AT_D890_MEMORY_REGIONS) {
+      expect(groupIds.has(region.group), `${region.id} group "${region.group}"`).toBe(true);
+    }
+  });
+
+  it('every group has at least one region', () => {
+    for (const group of AT_D890_MEMORY_REGION_GROUPS) {
+      expect(
+        AT_D890_MEMORY_REGIONS.some((r) => r.group === group.id),
+        `group "${group.id}" has no regions`,
+      ).toBe(true);
+    }
   });
 });
 
@@ -93,6 +111,30 @@ describe('runAtD890MemoryDumpAll', () => {
     }
     expect(result.totalBytes).toBeGreaterThan(0);
     expect(writeFrames(pipe)).toEqual([]);
+  });
+});
+
+describe('runAtD890MemoryGroupDump', () => {
+  it('dumps only the regions in the requested group and never writes', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe, 0x10);
+    pipe.readResponder = (addr, len) => {
+      void addr;
+      return new Uint8Array(len).fill(0xcd);
+    };
+
+    const result = await runAtD890MemoryGroupDump(pipe, 'airband');
+
+    const expectedIds = AT_D890_MEMORY_REGIONS.filter((r) => r.group === 'airband').map(
+      (r) => r.id,
+    );
+    expect([...result.files.keys()]).toEqual(expectedIds);
+    expect(writeFrames(pipe)).toEqual([]);
+  });
+
+  it('rejects an unknown group id', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    await expect(runAtD890MemoryGroupDump(pipe, 'notAGroup')).rejects.toThrow(RangeError);
   });
 });
 

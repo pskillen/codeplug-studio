@@ -28,8 +28,32 @@ export interface AtD890MemoryRegionChunk {
 export interface AtD890MemoryRegion {
   id: string;
   label: string;
+  /** {@link AT_D890_MEMORY_REGION_GROUPS} id — the unit the debug page exports as one file. */
+  group: string;
   chunks: AtD890MemoryRegionChunk[];
 }
+
+export interface AtD890MemoryRegionGroup {
+  id: string;
+  label: string;
+}
+
+/**
+ * Higher-level export units — one export button per group on the debug page, even though
+ * each group still lists its individual regions (address/size) for reference.
+ */
+export const AT_D890_MEMORY_REGION_GROUPS: readonly AtD890MemoryRegionGroup[] = [
+  { id: 'device', label: 'Device' },
+  { id: 'optionalSettings', label: 'Optional settings & alarm' },
+  { id: 'aprs', label: 'APRS' },
+  { id: 'channels', label: 'Channels' },
+  { id: 'zones', label: 'Zones' },
+  { id: 'scanLists', label: 'Scan lists' },
+  { id: 'talkgroups', label: 'Talkgroups' },
+  { id: 'receiveGroups', label: 'RX groups' },
+  { id: 'radioIds', label: 'Radio IDs' },
+  { id: 'airband', label: 'Airband (AM channels + zones)' },
+];
 
 /** `RadioIdSet` bitmap capacity (`0x20` bytes × 8 bits) — no separate named max elsewhere. */
 const RADIO_ID_MAX = 0x20 * 8;
@@ -56,8 +80,14 @@ function channelDataChunks(): AtD890MemoryRegionChunk[] {
   return chunks;
 }
 
-function region(id: string, label: string, address: number, length: number): AtD890MemoryRegion {
-  return { id, label, chunks: [{ address, length }] };
+function region(
+  id: string,
+  label: string,
+  group: string,
+  address: number,
+  length: number,
+): AtD890MemoryRegion {
+  return { id, label, group, chunks: [{ address, length }] };
 }
 
 /**
@@ -65,110 +95,167 @@ function region(id: string, label: string, address: number, length: number): AtD
  * and handled separately by {@link runAtD890DigitalContactsDump}.
  */
 export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
-  region('localInfo', 'Local info', D890_MAP.LocalInfo, D890_MAP.LocalInfoLength),
+  region('localInfo', 'Local info', 'device', D890_MAP.LocalInfo, D890_MAP.LocalInfoLength),
   region(
     'optionalSettingsMain',
     'Optional settings (main)',
+    'optionalSettings',
     D890_MAP.OptionalSettingsMain,
     D890_MAP.OptionalSettingsMainLength,
   ),
   region(
     'optionalSettingsExt',
     'Optional settings (ext)',
+    'optionalSettings',
     D890_MAP.OptionalSettingsExt,
     D890_MAP.OptionalSettingsExtLength,
   ),
   region(
+    'alarmBitmap',
+    'Alarm bitmap',
+    'optionalSettings',
+    D890_MAP.AlarmBitmap,
+    D890_MAP.AlarmBitmapLength,
+  ),
+  region(
+    'alarmData',
+    'Alarm data',
+    'optionalSettings',
+    D890_MAP.AlarmData,
+    D890_MAP.AlarmDataLength,
+  ),
+  region(
     'aprsConfigMain',
     'APRS config (global)',
+    'aprs',
     D890_MAP.AprsConfigMain,
     D890_MAP.AprsConfigMainLength,
   ),
   region(
     'aprsReceiveFilters',
     'APRS receive filters',
+    'aprs',
     D890_MAP.AprsReceiveFilters,
     D890_MAP.AprsReceiveFiltersLength,
   ),
-  region('alarmBitmap', 'Alarm bitmap', D890_MAP.AlarmBitmap, D890_MAP.AlarmBitmapLength),
-  region('alarmData', 'Alarm data', D890_MAP.AlarmData, D890_MAP.AlarmDataLength),
   region(
     'channelSet',
     'Channel occupancy bitmap',
+    'channels',
     D890_MAP.ChannelSet,
     AT_D890_LIMITS.CHANNEL_SET_BYTES,
   ),
-  { id: 'channelData', label: 'Channel bodies', chunks: channelDataChunks() },
-  region('zoneSet', 'Zone occupancy bitmap', D890_MAP.ZoneSet, 0x20),
-  region('zoneHide', 'Zone hidden bitmap', D890_MAP.ZoneHide, 0x20),
+  { id: 'channelData', label: 'Channel bodies', group: 'channels', chunks: channelDataChunks() },
+  region('zoneSet', 'Zone occupancy bitmap', 'zones', D890_MAP.ZoneSet, 0x20),
+  region('zoneHide', 'Zone hidden bitmap', 'zones', D890_MAP.ZoneHide, 0x20),
   region(
     'zonesName',
     'Zone names',
+    'zones',
     D890_MAP.ZonesName,
     AT_D890UV_LIMITS.ZONE_MAX * D890_MAP.ZoneDataOffset,
   ),
   region(
     'zoneChannels',
     'Zone membership',
+    'zones',
     D890_MAP.ZoneChannels,
     AT_D890UV_LIMITS.ZONE_MAX * D890_MAP.ZoneChannelsStride,
   ),
-  region('zoneAChannel', 'Zone A-channel table', D890_MAP.ZoneAChannel, D890_MAP.ZoneTableBytes),
-  region('zoneBChannel', 'Zone B-channel table', D890_MAP.ZoneBChannel, D890_MAP.ZoneTableBytes),
-  region('radioIdSet', 'Radio ID occupancy bitmap', D890_MAP.RadioIdSet, 0x20),
   region(
-    'radioIdData',
-    'Radio ID records',
-    D890_MAP.RadioIdData,
-    RADIO_ID_MAX * D890_MAP.RadioIdStride,
+    'zoneAChannel',
+    'Zone A-channel table',
+    'zones',
+    D890_MAP.ZoneAChannel,
+    D890_MAP.ZoneTableBytes,
   ),
-  region('scanListSet', 'Scan-list occupancy bitmap', D890_MAP.ScanListSet, 0x20),
+  region(
+    'zoneBChannel',
+    'Zone B-channel table',
+    'zones',
+    D890_MAP.ZoneBChannel,
+    D890_MAP.ZoneTableBytes,
+  ),
+  region('scanListSet', 'Scan-list occupancy bitmap', 'scanLists', D890_MAP.ScanListSet, 0x20),
   region(
     'scanListData',
     'Scan-list records',
+    'scanLists',
     D890_MAP.ScanListData,
     AT_D890UV_LIMITS.SCAN_LISTS_MAX * D890_MAP.ScanListStride,
   ),
-  region('talkgroupSet', 'Talkgroup occupancy bitmap', D890_MAP.TalkgroupSet, 0x4f0),
+  region('talkgroupSet', 'Talkgroup occupancy bitmap', 'talkgroups', D890_MAP.TalkgroupSet, 0x4f0),
   region(
     'talkgroupData',
     'Talkgroup records',
+    'talkgroups',
     D890_MAP.TalkgroupData,
     AT_D890UV_LIMITS.TALK_GROUPS_MAX * D890_MAP.TalkgroupStride,
   ),
-  region('talkgroupOrder', 'Talkgroup order table', D890_MAP.TalkgroupOrder, 0x1000),
-  region('receiveGroupSet', 'RX-group occupancy bitmap', D890_MAP.ReceiveGroupSet, 0x10),
+  region('talkgroupOrder', 'Talkgroup order table', 'talkgroups', D890_MAP.TalkgroupOrder, 0x1000),
+  region(
+    'receiveGroupSet',
+    'RX-group occupancy bitmap',
+    'receiveGroups',
+    D890_MAP.ReceiveGroupSet,
+    0x10,
+  ),
   region(
     'receiveGroupData',
     'RX-group records',
+    'receiveGroups',
     D890_MAP.ReceiveGroupData,
     AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX * D890_MAP.ReceiveGroupStride,
   ),
-  region('masterIdData', 'Master ID', D890_MAP.MasterIdData, D890_MAP.MasterIdLength),
-  region('amAirSet', 'AM airband occupancy bitmap', D890_MAP.AmAirSet, D890_MAP.AmAirSetLength),
+  region('radioIdSet', 'Radio ID occupancy bitmap', 'radioIds', D890_MAP.RadioIdSet, 0x20),
+  region(
+    'radioIdData',
+    'Radio ID records',
+    'radioIds',
+    D890_MAP.RadioIdData,
+    RADIO_ID_MAX * D890_MAP.RadioIdStride,
+  ),
+  region('masterIdData', 'Master ID', 'radioIds', D890_MAP.MasterIdData, D890_MAP.MasterIdLength),
+  region(
+    'amAirSet',
+    'AM airband occupancy bitmap',
+    'airband',
+    D890_MAP.AmAirSet,
+    D890_MAP.AmAirSetLength,
+  ),
   region(
     'amAirData',
     'AM airband channels',
+    'airband',
     D890_MAP.AmAirData,
     D890_MAP.AmAirCount * D890_MAP.AmAirDataStride,
   ),
-  region('amAirVfo', 'AM airband VFO', D890_MAP.AmAirVfo, D890_MAP.AmAirVfoLength),
-  region('amZoneSet', 'AM zone occupancy bitmap', D890_MAP.AmZoneSet, D890_MAP.AmZoneSetLength),
+  region('amAirVfo', 'AM airband VFO', 'airband', D890_MAP.AmAirVfo, D890_MAP.AmAirVfoLength),
+  region(
+    'amZoneSet',
+    'AM zone occupancy bitmap',
+    'airband',
+    D890_MAP.AmZoneSet,
+    D890_MAP.AmZoneSetLength,
+  ),
   region(
     'amZoneAChannel',
     'AM zone A-channel table',
+    'airband',
     D890_MAP.AmZoneAChannel,
     D890_MAP.AmZoneAChannelLength,
   ),
   region(
     'amZoneScan',
     'AM zone scan bitmap',
+    'airband',
     D890_MAP.AmZoneScan,
     D890_MAP.AmZoneCount * D890_MAP.AmZoneScanStride,
   ),
   region(
     'amZoneData',
     'AM zone records',
+    'airband',
     D890_MAP.AmZoneData,
     D890_MAP.AmZoneCount * D890_MAP.AmZoneDataStride,
   ),
@@ -245,32 +332,28 @@ export async function runAtD890MemoryRegionDump(
 
 export interface AtD890MemoryDumpAllResult {
   model: string;
-  /** region id → raw bytes, in `AT_D890_MEMORY_REGIONS` order. */
+  /** region id → raw bytes, in the order the regions were dumped. */
   files: Map<string, Uint8Array>;
   totalBytes: number;
   elapsedMs: number;
 }
 
-/** Dump every region in {@link AT_D890_MEMORY_REGIONS} in one PROGRAM session. */
-export async function runAtD890MemoryDumpAll(
+/** Dump `regions` in one PROGRAM session — shared by "dump all" and "dump group". */
+async function dumpRegionsInSession(
   pipe: BytePipe,
-  opts: AtD890MemoryDumpOpts = {},
+  regions: readonly AtD890MemoryRegion[],
+  opts: AtD890MemoryDumpOpts,
 ): Promise<AtD890MemoryDumpAllResult> {
   const { model, readBlockSize } = await enterAndNegotiate(pipe, opts.signal);
   const files = new Map<string, Uint8Array>();
   const started = Date.now();
 
-  for (let i = 0; i < AT_D890_MEMORY_REGIONS.length; i++) {
+  for (let i = 0; i < regions.length; i++) {
     throwIfAborted(opts.signal);
-    const regionDef = AT_D890_MEMORY_REGIONS[i]!;
+    const regionDef = regions[i]!;
     reportProgress(
       opts.onProgress,
-      {
-        cur: i,
-        max: AT_D890_MEMORY_REGIONS.length,
-        msg: `Reading ${regionDef.label}…`,
-        stage: regionDef.label,
-      },
+      { cur: i, max: regions.length, msg: `Reading ${regionDef.label}…`, stage: regionDef.label },
       opts.signal,
     );
     files.set(regionDef.id, await readRegionRaw(pipe, regionDef, readBlockSize, opts.signal));
@@ -283,6 +366,30 @@ export async function runAtD890MemoryDumpAll(
   for (const bytes of files.values()) totalBytes += bytes.length;
 
   return { model, files, totalBytes, elapsedMs };
+}
+
+/** Dump every region in {@link AT_D890_MEMORY_REGIONS} in one PROGRAM session. */
+export async function runAtD890MemoryDumpAll(
+  pipe: BytePipe,
+  opts: AtD890MemoryDumpOpts = {},
+): Promise<AtD890MemoryDumpAllResult> {
+  return dumpRegionsInSession(pipe, AT_D890_MEMORY_REGIONS, opts);
+}
+
+/**
+ * Dump every region belonging to one {@link AT_D890_MEMORY_REGION_GROUPS} entry — the unit
+ * the debug page's per-group Export button uses.
+ */
+export async function runAtD890MemoryGroupDump(
+  pipe: BytePipe,
+  groupId: string,
+  opts: AtD890MemoryDumpOpts = {},
+): Promise<AtD890MemoryDumpAllResult> {
+  const regions = AT_D890_MEMORY_REGIONS.filter((r) => r.group === groupId);
+  if (regions.length === 0) {
+    throw new RangeError(`Unknown AT-D890UV memory region group id: ${groupId}`);
+  }
+  return dumpRegionsInSession(pipe, regions, opts);
 }
 
 /** Read a little-endian u32 at `offset`. */
