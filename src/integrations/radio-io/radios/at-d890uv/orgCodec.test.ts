@@ -116,4 +116,27 @@ describe('zone shrink on merge', () => {
     );
     expect(members).toEqual([0]);
   });
+
+  it('merges organisation.aprs into AprsConfigMain', () => {
+    const bag = createRadioCloneHydrationBagFromBlocks({
+      radioModelId: AT_D890UV_MODEL_ID,
+      blocks: [
+        {
+          address: D890_MAP.AprsConfigMain,
+          data: new Uint8Array(D890_MAP.AprsConfigMainLength).fill(0xaa),
+        },
+      ],
+      addressBase: 0,
+      capturedVia: 'web-serial',
+    });
+    const image = mergeChannelsIntoAtD890uvHydration(bag, [], {
+      aprs: {
+        manualTxIntervalSec: 90,
+        digitalSlots: [],
+      },
+    });
+    const block = image.get(D890_MAP.AprsConfigMain, D890_MAP.AprsConfigMainLength);
+    expect(block[0x0a]).toBe(90);
+    expect(block[0x16]).toBe(0xaa);
+  });
 });

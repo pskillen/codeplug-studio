@@ -89,6 +89,12 @@ export const AT_D890_WRITABLE_EXTENTS: readonly AtD890MemoryExtent[] = [
     length: D890_MAP.RadioIdStride * RADIO_ID_SLOTS,
   },
   { id: 'MasterIdData', start: D890_MAP.MasterIdData, length: D890_MAP.MasterIdLength },
+  { id: 'AprsConfigMain', start: D890_MAP.AprsConfigMain, length: D890_MAP.AprsConfigMainLength },
+  {
+    id: 'AprsReceiveFilters',
+    start: D890_MAP.AprsReceiveFilters,
+    length: D890_MAP.AprsReceiveFiltersLength,
+  },
   { id: 'AmAirSet', start: D890_MAP.AmAirSet, length: D890_MAP.AmAirSetLength },
   {
     id: 'AmAirData',

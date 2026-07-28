@@ -18,6 +18,7 @@ export const AT_D890_WRITTEN_FROM_BUILD_LABELS: readonly string[] = [
   'RX group lists',
   'Operator radio IDs',
   'Master radio ID',
+  'Digital APRS settings',
   'AM airband channels',
   'AM airband zones',
 ] as const;
@@ -59,6 +60,8 @@ const FIXED_REPLACED = new Set<number>([
   D890_MAP.ReceiveGroupSet,
   D890_MAP.MasterIdData,
   D890_MAP.TalkgroupOrder,
+  D890_MAP.AprsConfigMain,
+  D890_MAP.AprsReceiveFilters,
   D890_MAP.AmAirSet,
   D890_MAP.AmZoneSet,
   D890_MAP.AmZoneAChannel,
@@ -102,6 +105,12 @@ export function atD890RegionLabel(address: number): string {
     return 'RX group lists';
   }
   if (address === D890_MAP.MasterIdData) return 'Master radio ID';
+  if (inExclusiveSpan(address, D890_MAP.AprsConfigMain, D890_MAP.AprsConfigMainLength)) {
+    return 'Digital APRS settings';
+  }
+  if (inExclusiveSpan(address, D890_MAP.AprsReceiveFilters, D890_MAP.AprsReceiveFiltersLength)) {
+    return 'Digital APRS receive filters';
+  }
   if (address === D890_MAP.AmAirSet) return 'AM airband bitmap';
   if (inExclusiveSpan(address, D890_MAP.AmAirVfo, D890_MAP.AmAirVfoLength)) {
     return 'AM airband VFO';
@@ -148,6 +157,12 @@ export function atD890WriteRole(address: number): AtD890WriteRole {
     return 'replaced';
   }
   if (inBank(address, D890_MAP.AmZoneData, D890_MAP.AmZoneDataStride, D890_MAP.AmZoneCount)) {
+    return 'replaced';
+  }
+  if (inExclusiveSpan(address, D890_MAP.AprsConfigMain, D890_MAP.AprsConfigMainLength)) {
+    return 'replaced';
+  }
+  if (inExclusiveSpan(address, D890_MAP.AprsReceiveFilters, D890_MAP.AprsReceiveFiltersLength)) {
     return 'replaced';
   }
   return 'kept';
