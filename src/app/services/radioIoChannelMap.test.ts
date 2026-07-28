@@ -8,6 +8,7 @@ import {
 import { assemble, type AssembledChannel, type LibrarySlice } from '@core/services/assemble.ts';
 import type { ChannelModeProfileDMR } from '@core/models/library.ts';
 import { expandAllMxNChannels } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
+import { expandAllAnytoneChannelsForExport } from '@core/import-export/formats/anytone/channelExpansion.ts';
 import {
   assembledChannelsToRadioDtos,
   assembledChannelsToRadioDtosWithWarnings,
@@ -483,5 +484,152 @@ describe('expandAssembledChannelsToRadioDtos — MxN', () => {
     });
     const { dtos } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress);
     expect(dtos).toHaveLength(1);
+  });
+});
+
+describe('expandAssembledChannelsToRadioDtos — Anytone AT-D890UV site wire names', () => {
+  const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
+
+  function leanAnytoneLibrary(channelName: string) {
+    const tg = newTalkGroup(PROJECT_ID, 'Scotland', 950);
+    const rgl = {
+      ...newRxGroupList(PROJECT_ID, 'Scotland'),
+      members: [{ ref: { kind: 'talkGroup' as const, id: tg.id } }],
+    };
+    const channel = {
+      ...newChannel(PROJECT_ID, channelName),
+      callsign: 'GB7GL',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: 1234567,
+          contactRef: null,
+          rxGroupListId: rgl.id,
+        } satisfies ChannelModeProfileDMR,
+      ],
+    };
+    return {
+      channel,
+      library: {
+        channels: [channel],
+        zones: [],
+        talkGroups: [tg],
+        digitalContacts: [],
+        analogContacts: [],
+        rxGroupLists: [rgl],
+        scanLists: [],
+      },
+    };
+  }
+
+  function anytoneLeanBuild() {
+    const { build, egress } = newRadioBuildForProfile(PROJECT_ID, 'radio-io-at-d890uv');
+    return {
+      build: {
+        ...build,
+        exportSettings: {
+          ...build.exportSettings,
+          expandRxGroupLists: false,
+          shortenNames: true,
+        },
+      },
+      egress,
+    };
+  }
+
+  it('shortens lean site wire names to match CSV export', () => {
+    const longName = 'Really Long Repeater Site Name';
+    const { library } = leanAnytoneLibrary(longName);
+    const { build, egress } = anytoneLeanBuild();
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const csvRows = expandAllAnytoneChannelsForExport(assembled, library, {
+      expandRxGroupLists: false,
+      shortenNames: true,
+      profileId: 'anytone-at-d890uv',
+    });
+    const { dtos } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress);
+    expect(csvRows).toHaveLength(1);
+    expect(csvRows[0]?.rowKind).toBe('lean');
+    expect(dtos).toHaveLength(1);
+    expect(dtos[0]?.wireName).toBe(csvRows[0]?.wireName);
+    expect(dtos[0]?.wireName.length).toBeLessThanOrEqual(16);
+    expect(dtos[0]?.wireName).not.toContain(longName);
+  });
+
+  it('sanitises non-ASCII lean site wire names like CSV export', () => {
+    const { library } = leanAnytoneLibrary('Café Nïce');
+    const { build, egress } = anytoneLeanBuild();
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const csvRows = expandAllAnytoneChannelsForExport(assembled, library, {
+      expandRxGroupLists: false,
+      shortenNames: true,
+      profileId: 'anytone-at-d890uv',
+    });
+    const { dtos } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress);
+    expect(dtos[0]?.wireName).toBe(csvRows[0]?.wireName);
+    expect(dtos[0]?.wireName).not.toMatch(/[^\x20-\x7E]/);
+    expect(dtos[0]?.wireName).not.toContain('é');
+    expect(dtos[0]?.wireName).not.toContain('ï');
+  });
+
+  it('matches CSV fan-out wire names on talk-group rows', () => {
+    const tg1 = newTalkGroup(PROJECT_ID, 'Scotland', 950);
+    const tg2 = newTalkGroup(PROJECT_ID, 'Local', 9);
+    const rgl = {
+      ...newRxGroupList(PROJECT_ID, 'Scotland'),
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg1.id } },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id } },
+      ],
+    };
+    const channel = {
+      ...newChannel(PROJECT_ID, 'Glasgow'),
+      callsign: 'GB7GL',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: 1234567,
+          contactRef: null,
+          rxGroupListId: rgl.id,
+        } satisfies ChannelModeProfileDMR,
+      ],
+    };
+    const library: LibrarySlice = {
+      channels: [channel],
+      zones: [],
+      talkGroups: [tg1, tg2],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [rgl],
+      scanLists: [],
+    };
+    const { build, egress } = newRadioBuildForProfile(PROJECT_ID, 'radio-io-at-d890uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const csvRows = expandAllAnytoneChannelsForExport(assembled, library, {
+      expandRxGroupLists: true,
+      exportScratchChannels: true,
+      profileId: 'anytone-at-d890uv',
+    });
+    const { dtos } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress);
+    expect(dtos.map((d) => d.wireName)).toEqual(csvRows.map((row) => row.wireName));
+    expect(dtos.length).toBeGreaterThan(1);
+    expect(channel.id).toBe(assembled.channels[0]?.entity.id);
   });
 });
