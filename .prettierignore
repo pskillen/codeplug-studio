@@ -1,4 +1,5 @@
 dist/
 node_modules/
 .cursor/
+.claude/
 src/core/import-export/formats/native-yaml/__fixtures__/

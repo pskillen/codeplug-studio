@@ -10,15 +10,21 @@ import {
   Table,
   Text,
 } from '@mantine/core';
-import { useCallback, useState } from 'react';
+import { Fragment, useCallback, useState } from 'react';
+import { zipSync } from 'fflate';
 import { Page, PageHeader, PageSection } from '@app/components/ui/index.ts';
 import { openWebSerialPipe, requestWebSerialPort } from '@integrations/radio-io/transport/index.ts';
 import {
   AT_D890_CONNECTION,
+  AT_D890_MEMORY_REGION_GROUPS,
+  AT_D890_MEMORY_REGIONS,
   AT_D890_PROBE,
   estimateAtD890RmwSeconds,
   runAtD890ConfigAliasCheck,
+  runAtD890DigitalContactsDump,
   runAtD890LinkProbe,
+  runAtD890MemoryDumpAll,
+  runAtD890MemoryGroupDump,
   runAtD890ProbeDiagnose,
   runAtD890ProbeInspect,
   runAtD890ProbeMeasure,
@@ -38,6 +44,7 @@ import {
   type AtD890WriteProbeVerdict,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
+import { downloadZip, isoTimestampForFilename } from '@integrations/download/browserDownload.ts';
 
 type Pass =
   | 'inspect'
@@ -166,6 +173,7 @@ function saveDonePasses(passes: Pass[]): void {
 export default function DebugD890EraseProbePage() {
   const [done, setDone] = useState<Pass[]>(loadDonePasses);
   const [busy, setBusy] = useState<Pass | null>(null);
+  const [regionBusy, setRegionBusy] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [log, setLog] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -317,6 +325,94 @@ export default function DebugD890EraseProbePage() {
 
   const nextPass = PASS_ORDER.find((p) => !done.includes(p));
   const fastest = rates.reduce((max, r) => Math.max(max, r.t.framesPerSecond), 0);
+  const anyBusy = busy !== null || regionBusy !== null;
+
+  const exportGroup = useCallback(
+    async (groupId: string, groupLabel: string) => {
+      setRegionBusy(groupId);
+      setError(null);
+      setProgress(null);
+      let pipe: Awaited<ReturnType<typeof openWebSerialPipe>> | null = null;
+      try {
+        const port = await requestWebSerialPort(false);
+        pipe = await openWebSerialPipe(port, AT_D890_CONNECTION.BAUD_RATE);
+        const r = await runAtD890MemoryGroupDump(pipe, groupId, { onProgress: setProgress });
+        const files: Record<string, Uint8Array> = {};
+        for (const [id, bytes] of r.files) files[`${id}.bin`] = bytes;
+        const fileName = `d890-${groupId}-${isoTimestampForFilename()}.zip`;
+        downloadZip(zipSync(files), fileName);
+        append(
+          `Exported ${groupLabel} (${r.files.size} region${r.files.size === 1 ? '' : 's'}) — ` +
+            `${formatBytes(r.totalBytes)} in ${(r.elapsedMs / 1000).toFixed(1)}s → ${fileName}`,
+        );
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        setError(message);
+        append(`FAILED: ${message}`);
+      } finally {
+        await pipe?.close().catch(() => undefined);
+        setRegionBusy(null);
+        setProgress(null);
+      }
+    },
+    [append],
+  );
+
+  const exportAllRegions = useCallback(async () => {
+    setRegionBusy('__all__');
+    setError(null);
+    setProgress(null);
+    let pipe: Awaited<ReturnType<typeof openWebSerialPipe>> | null = null;
+    try {
+      const port = await requestWebSerialPort(false);
+      pipe = await openWebSerialPipe(port, AT_D890_CONNECTION.BAUD_RATE);
+      const r = await runAtD890MemoryDumpAll(pipe, { onProgress: setProgress });
+      const files: Record<string, Uint8Array> = {};
+      for (const [id, bytes] of r.files) files[`${id}.bin`] = bytes;
+      const fileName = `d890-memory-dump-${isoTimestampForFilename()}.zip`;
+      downloadZip(zipSync(files), fileName);
+      append(
+        `Exported ${r.files.size} regions (excl. Digital Contacts) — ` +
+          `${formatBytes(r.totalBytes)} in ${(r.elapsedMs / 1000).toFixed(1)}s → ${fileName}`,
+      );
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message);
+      append(`FAILED: ${message}`);
+    } finally {
+      await pipe?.close().catch(() => undefined);
+      setRegionBusy(null);
+      setProgress(null);
+    }
+  }, [append]);
+
+  const exportDigitalContacts = useCallback(async () => {
+    setRegionBusy('__contacts__');
+    setError(null);
+    setProgress(null);
+    let pipe: Awaited<ReturnType<typeof openWebSerialPipe>> | null = null;
+    try {
+      const port = await requestWebSerialPort(false);
+      pipe = await openWebSerialPipe(port, AT_D890_CONNECTION.BAUD_RATE);
+      const r = await runAtD890DigitalContactsDump(pipe, { onProgress: setProgress });
+      const fileName = `d890-digital-contacts-${isoTimestampForFilename()}.zip`;
+      downloadZip(
+        zipSync({ 'meta.bin': r.meta, 'order.bin': r.order, 'contacts.bin': r.contacts }),
+        fileName,
+      );
+      append(
+        `Exported ${r.contactCount} digital contacts in ${(r.elapsedMs / 1000).toFixed(1)}s → ${fileName}`,
+      );
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message);
+      append(`FAILED: ${message}`);
+    } finally {
+      await pipe?.close().catch(() => undefined);
+      setRegionBusy(null);
+      setProgress(null);
+    }
+  }, [append]);
 
   return (
     <Page>
@@ -427,7 +523,7 @@ export default function DebugD890EraseProbePage() {
             <Group>
               <Button
                 onClick={() => nextPass && void runPass(nextPass)}
-                loading={busy !== null}
+                loading={anyBusy}
                 disabled={!nextPass}
                 color={nextPass && PASS_COMMITS_WRITES[nextPass] ? 'red' : undefined}
               >
@@ -437,45 +533,37 @@ export default function DebugD890EraseProbePage() {
               </Button>
               {/* Always available: read-only, idempotent, and its whole purpose is to
                   inspect a grid painted in an earlier session or before a page reload. */}
-              <Button
-                variant="default"
-                disabled={busy !== null}
-                onClick={() => void runPass('diagnose')}
-              >
+              <Button variant="default" disabled={anyBusy} onClick={() => void runPass('diagnose')}>
                 {PASS_LABEL.diagnose}
               </Button>
-              <Button
-                variant="default"
-                disabled={busy !== null}
-                onClick={() => void runPass('link')}
-              >
+              <Button variant="default" disabled={anyBusy} onClick={() => void runPass('link')}>
                 {PASS_LABEL.link}
               </Button>
               <Button
                 color="red"
                 variant="light"
-                disabled={busy !== null}
+                disabled={anyBusy}
                 onClick={() => void runPass('writeProbe')}
               >
                 {PASS_LABEL.writeProbe}
               </Button>
               <Button
                 variant="default"
-                disabled={busy !== null}
+                disabled={anyBusy}
                 onClick={() => void runPass('writeVerify')}
               >
                 {PASS_LABEL.writeVerify}
               </Button>
               <Button
                 variant="default"
-                disabled={busy !== null}
+                disabled={anyBusy}
                 onClick={() => void runPass('configAlias')}
               >
                 {PASS_LABEL.configAlias}
               </Button>
               <Button
                 variant="subtle"
-                disabled={busy !== null}
+                disabled={anyBusy}
                 onClick={() => {
                   setDone([]);
                   saveDonePasses([]);
@@ -506,6 +594,110 @@ export default function DebugD890EraseProbePage() {
                 <Progress value={(progress.cur / Math.max(1, progress.max)) * 100} />
               </Stack>
             )}
+          </Stack>
+        </PageSection>
+
+        <PageSection title="Raw memory-region export (read-only)">
+          <Stack gap="sm">
+            <Text size="sm">
+              Dumps documented regions to raw <Code>.bin</Code> files for offline diffing against
+              codeplugs written by the official Anytone CPS — write the config there first, then
+              dump here. Never issues a write frame. See{' '}
+              <Code>docs/reference/radios/anytone/at-d890uv/memory-layout.md</Code> for what each
+              region means.
+            </Text>
+            <Group>
+              <Button
+                variant="light"
+                disabled={anyBusy}
+                loading={regionBusy === '__all__'}
+                onClick={() => void exportAllRegions()}
+              >
+                Export all (excl. Digital Contacts) → ZIP
+              </Button>
+              <Button
+                variant="light"
+                color="orange"
+                disabled={anyBusy}
+                loading={regionBusy === '__contacts__'}
+                onClick={() => void exportDigitalContacts()}
+              >
+                Export Digital Contacts → ZIP
+              </Button>
+            </Group>
+            <Table>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Area / region</Table.Th>
+                  <Table.Th>Base</Table.Th>
+                  <Table.Th>Size</Table.Th>
+                  <Table.Th />
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {AT_D890_MEMORY_REGION_GROUPS.map((group) => {
+                  const members = AT_D890_MEMORY_REGIONS.filter((r) => r.group === group.id);
+                  const groupSize = members.reduce(
+                    (sum, r) => sum + r.chunks.reduce((s, c) => s + c.length, 0),
+                    0,
+                  );
+                  return (
+                    <Fragment key={group.id}>
+                      <Table.Tr>
+                        <Table.Td>
+                          <Text fw={600} size="sm">
+                            {group.label}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text size="xs" c="dimmed">
+                            {members.length} region{members.length === 1 ? '' : 's'}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Text fw={600} size="sm">
+                            {formatBytes(groupSize)}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td>
+                          <Button
+                            size="xs"
+                            variant="light"
+                            disabled={anyBusy}
+                            loading={regionBusy === group.id}
+                            onClick={() => void exportGroup(group.id, group.label)}
+                          >
+                            Export
+                          </Button>
+                        </Table.Td>
+                      </Table.Tr>
+                      {members.map((r) => {
+                        const size = r.chunks.reduce((sum, c) => sum + c.length, 0);
+                        return (
+                          <Table.Tr key={r.id}>
+                            <Table.Td pl="lg">
+                              <Text size="sm" c="dimmed">
+                                {r.label}
+                              </Text>
+                            </Table.Td>
+                            <Table.Td>
+                              <Code>{hex(r.chunks[0]?.address ?? 0)}</Code>
+                              {r.chunks.length > 1 && (
+                                <Text size="xs" c="dimmed">
+                                  {r.chunks.length} chunks
+                                </Text>
+                              )}
+                            </Table.Td>
+                            <Table.Td>{formatBytes(size)}</Table.Td>
+                            <Table.Td />
+                          </Table.Tr>
+                        );
+                      })}
+                    </Fragment>
+                  );
+                })}
+              </Table.Tbody>
+            </Table>
           </Stack>
         </PageSection>
 

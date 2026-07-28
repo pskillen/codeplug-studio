@@ -52,18 +52,43 @@ anytone-cps community RE — verify on hardware before relying on offsets. Studi
 
 On **Write**, sparse erase-unit RMW ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) **fresh-reads** each touched `0x40000` unit from the connected radio and re-stages non-`0xff` bytes unchanged — including optional settings and alarm spans that share units with modelled banks. Studio does **not** re-derive these from the library build; hydration supplies identity check only (LocalInfo serial).
 
-| Region / buffer          | Base                      | Length       | Notes                                                                                    |
-| ------------------------ | ------------------------- | ------------ | ---------------------------------------------------------------------------------------- |
-| Optional settings (main) | `0x3500000`               | `0x200`      | CPS language @ `+0x05` (`English`/`German` — **not** Chinese UI)                         |
-| Optional settings (main) | `0x3500000`               |              | Power-on interface @ `+0x06`; power-on password enable @ `+0x07`                         |
-| Optional settings (main) | `0x3500000`               |              | Startup channel @ `+0xd7`; zone A/B @ `+0xd8`/`+0xd9`; channel A/B @ `+0xda`/`+0xdb`     |
-| Zone A/B tables          | `0x3500400` / `0x3500600` | `0x200` each | **Modelled** — share erase unit `0x3500000` with optional settings below                 |
-| Optional settings (ext)  | `0x3500900`               | `0x60`       | Display lines @ `+0x00` / `+0x10` (14 chars each); power-on password @ `+0x20` (8 chars) |
-| Optional settings (APRS) | `0x3501280`               | `0x30`       | GPS/APRS info — hex preview only in Studio                                               |
-| Alarm settings           | `0x3482e00`               | `0x10`       | Digital call type @ `+0x00`                                                              |
-| Alarm settings           | `0x3483000`               | `0x30`       | Analog/digital emergency alarm flags; man-down also @ optional main `+0x24` / `+0x4f`    |
+| Region / buffer          | Base                      | Length       | Notes                                                                                                                                                                                     |
+| ------------------------ | ------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Optional settings (main) | `0x3500000`               | `0x200`      | CPS language @ `+0x05` (`English`/`German` — **not** Chinese UI)                                                                                                                          |
+| Optional settings (main) | `0x3500000`               |              | Power-on interface @ `+0x06`; power-on password enable @ `+0x07`                                                                                                                          |
+| Optional settings (main) | `0x3500000`               |              | Startup channel @ `+0xd7`; zone A/B @ `+0xd8`/`+0xd9`; channel A/B @ `+0xda`/`+0xdb`                                                                                                      |
+| Zone A/B tables          | `0x3500400` / `0x3500600` | `0x200` each | **Modelled** — share erase unit `0x3500000` with optional settings below                                                                                                                  |
+| Optional settings (ext)  | `0x3500900`               | `0x60`       | Display lines @ `+0x00` / `+0x10` (14 chars each); power-on password @ `+0x20` (8 chars)                                                                                                  |
+| Optional settings (APRS) | `0x3501280`               | `0x30`       | GPS/APRS info — hex preview only in Studio; sits in **unused padding** between `AprsConfigMain` and `AprsReceiveFilters` below (`0x3501260`–`0x3501300`), not inside either decoded block |
+| Alarm settings           | `0x3482e00`               | `0x10`       | Digital call type @ `+0x00`                                                                                                                                                               |
+| Alarm settings           | `0x3483000`               | `0x30`       | Analog/digital emergency alarm flags; man-down also @ optional main `+0x24` / `+0x4f`                                                                                                     |
 
 Chinese UI on the radio is driven by **optional settings** (CPS language, power-on password) when those regions are erased — not LocalInfo ExpertOptions. Bag diffs on a faulted radio showed LocalInfo byte-identical between healthy and faulted reads ([#768](https://github.com/pskillen/codeplug-studio/issues/768)); the brick came from erase collateral in shared flash units, not LocalInfo replay.
+
+### APRS (full binary map — read/decode/encode all exist in anytone-cps)
+
+Cite: anytone-cps `AprsSettings::decode_D890UV` / `encode_D890UV`, `Device::readAprsSettings` / `writeAprsSettings` — facts only. Not yet Read or Write in Studio ([#758](https://github.com/pskillen/codeplug-studio/issues/758)); addresses below back the debug memory-export tool (`/debug/d890-erase-probe`) for offline analysis, not a modelled bank.
+
+| Region               | Base        | Length  | Notes                                                                                       |
+| -------------------- | ----------- | ------- | ------------------------------------------------------------------------------------------- |
+| `AprsConfigMain`     | `0x3501000` | `0x260` | Global APRS config: fixed beacons, digipeater path, digital report bindings, filters bitmap |
+| `AprsReceiveFilters` | `0x3501300` | `0x100` | 32 receive-filter records, `0x8` bytes each                                                 |
+
+Per-channel APRS bindings live inside the `0x80`-byte MR channel record (RX enable bit 5 of `+0x21`; report type/PTT modes/report channel/mute/freq index at `+0x35`–`+0x3c`) — not yet projected by Studio's channel codec.
+
+### AmAir / AmZone (AM airband — read/decode exist; AmZone encode is an unfilled stub upstream)
+
+Cite: anytone-cps `D890_MAP`, `AmAir`/`AmZone` decode/encode, `Device::readAmAir` / `readAmZones` / `writeAmZones` — facts only. Tracked in [#756](https://github.com/pskillen/codeplug-studio/issues/756); not Read or Write in Studio today. Capacities: 256 AM channels + 1 VFO slot (index 256), 16 AM zones (`Memory::initAmAir` / `initAmZones`).
+
+| Region           | Base        | Stride / length              | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------- | ----------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AmAirSet`       | `0x3884200` | Bitmap `0x20`                | AM channel occupancy (256 bits)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `AmAirData`      | `0x3880000` | Stride `0x40`; length `0x40` | Freq (BCD `+0x0`) + wide-char name (`+0x4`, `0x20`) — same shape as MR channel BCD packing                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `AmAirVfo`       | `0x3884000` | `0x40`                       | VFO slot, index 256                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `AmZoneSet`      | `0x3884400` | Bitmap `0x10`                | Zone occupancy (16 zones)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `AmZoneAChannel` | `0x3884600` | `0x10` (**1 byte per zone**) | A-channel = index into the zone's member list. anytone-cps's own read path treats this as u16 (`Device::readAmZones`) while its write path treats it as u8 (`Device::writeAmZones`) — the two disagree; region size (`0x10` for 16 zones) is only dimensionally consistent with **u8**, so treat the u16 read as the likely bug pending hardware confirmation.                                                                                                                                                                              |
+| `AmZoneScan`     | `0x3884800` | `0x10` per zone (16 zones)   | Scan-membership bitmap over member list. anytone-cps's read indexing (`idx*0x10` region offset **and** a second `idx*4` byte offset inside it) looks like a double-multiply bug — reads outside zone `idx`'s own slice for `idx > 0`. Needs its own hardware-verified re-derivation, not a straight port.                                                                                                                                                                                                                                   |
+| `AmZoneData`     | `0x3888000` | Stride `0x80`; length `0x80` | Name (`+0x0`, `0x20` wide-char) + up to 32 u16 member indices (`+0x22`, `0x40`). Bytes `0x20`–`0x22` and `0x62`–`0x80` are never touched by decode — unknown purpose. **`AmZone::encode_D890UV()` is an empty-array stub in anytone-cps** — `writeAmZones()` calls it, so any zone Write there sends an empty record while still marking the zone occupied. Do not port this encode; it needs independent hardware-verified re-derivation (see [memory-export tool](#debug-memory-region-export) below for the read-only capture workflow). |
 
 ### LocalInfo ExpertOptions (Read only — not written on Studio Write)
 
@@ -195,17 +220,39 @@ Bit indexing: slot `n` → byte `n // 8`, bit `n % 8`.
 
 Not required for the first adapter; document existence only:
 
-| Region family                         | Bases (D890)                          | Notes                             |
-| ------------------------------------- | ------------------------------------- | --------------------------------- |
-| Boot / BK images                      | `0x3f80000`, `0x4000000`, `0x4080000` | Large image blobs                 |
-| DigitalContact\*                      | `0x7000000` …                         | Huge contact banks                |
-| AES / ARC4 / EncryptionCode\*         | `0x3580000` …                         | Crypto material — treat carefully |
-| AmAir / AmZone\*                      | `0x3880000` …                         | AM airband                        |
-| RoamingChannel\* / RoamingZone\*      | `0x2080000` …                         | Roaming                           |
-| PrefabSms\*, AnalogBook\*, GpsRoaming | various                               | Secondary features                |
-| Talkgroup / digital-contact whitelist | `0x4c80000` / `0x4c82000`             | D890-specific lists               |
+| Region family                         | Bases (D890)                          | Notes                                                                                                                  |
+| ------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Boot / BK images                      | `0x3f80000`, `0x4000000`, `0x4080000` | Large image blobs                                                                                                      |
+| DigitalContact\*                      | `0x7000000` …                         | Huge contact banks — see [layout below](#digitalcontact-huge-bank-layout-only-read-decode-exist)                       |
+| AES / ARC4 / EncryptionCode\*         | `0x3580000` …                         | Crypto material — treat carefully                                                                                      |
+| AmAir / AmZone\*                      | `0x3880000` …                         | AM airband — see [detail above](#amair-amzone-am-airband--readdecode-exist-amzone-encode-is-an-unfilled-stub-upstream) |
+| RoamingChannel\* / RoamingZone\*      | `0x2080000` …                         | Roaming                                                                                                                |
+| PrefabSms\*, AnalogBook\*, GpsRoaming | various                               | Secondary features                                                                                                     |
+| Talkgroup / digital-contact whitelist | `0x4c80000` / `0x4c82000`             | D890-specific lists                                                                                                    |
 
 Full map fields live in anytone-cps `D890_MAP`; expand these pages when an adapter slice needs them.
+
+### DigitalContact (huge bank — layout only; Read/decode exist, Studio Write is a deliberate v1 gap)
+
+Cite: anytone-cps `D890_MAP`, `Device::readDigitalContacts` / `parseDigitalContact_D890UV` / `writeDigitalContacts` — facts only. Tracked in [#759](https://github.com/pskillen/codeplug-studio/issues/759); Studio never Reads or Writes this bank ([#753](https://github.com/pskillen/codeplug-studio/issues/753) allow-list). The layout itself is fully known upstream (unlike AmZone) — the open question is product policy (replace-vs-merge, never-wipe-on-empty), not RE.
+
+| Region                | Base        | Block length / stride             | Notes                                                                                                                                                           |
+| --------------------- | ----------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DigitalContactMeta`  | `0x7000000` | `0x10`                            | `u32` contact count @ `+0x0`, `u32` end address (post block-hop) @ `+0x4`, `0x8` padding                                                                        |
+| `DigitalContactData`  | `0x7900000` | Block `0x30d40`; stride `0x80000` | Variable-length records: call type, call-alert flag, BCD radio ID, then name/city/callsign/state/country/remarks as wide-char strings each terminated by `\0\0` |
+| `DigitalContactOrder` | `0x7080000` | Block `0x3e800`; stride `0x80000` | Sort/lookup table, `0x8` bytes/contact (`(radio_id<<1)\|call_type` key + data offset), rebuilt on every Write, `0xff`-padded to 16 bytes                        |
+
+Both `DigitalContactData` and `DigitalContactOrder` are **block-hopped**: logical byte `i` maps to `base + floor(i / blockLength) * stride + (i % blockLength)` — a linear record stream de-interleaved across `0x80000`-spaced physical blocks. The debug memory-export tool below reconstructs this linear stream (using the count from `DigitalContactMeta`) rather than dumping the raw sparse address range, which is mostly unused space between blocks.
+
+## Debug memory-region export (`/debug/d890-erase-probe`)
+
+Read-only raw-binary export of every region documented on this page, for offline diffing against codeplugs written by the official Anytone CPS — this is the read-only differential RE workflow for AmZone encode and any other undocumented byte ranges, not a modelled Read/Write path. Regions are grouped into higher-level areas (Device, Optional settings & alarm, APRS, Channels, Zones, Scan lists, Talkgroups, RX groups, Radio IDs, Airband) — each region's address/size is still listed individually, but export happens at group granularity:
+
+- One button per group — zips every region in that group into a single download.
+- **Export all (excl. Digital Contacts)** — every region above regardless of group, except `DigitalContact*`, zipped together (contacts are excluded because the block-hopped bank is large and slow relative to everything else).
+- **Export Digital Contacts** — meta + de-interleaved order table + de-interleaved contact data, zipped separately.
+
+Filenames are stamped with the export time in ISO 8601 (colons/periods replaced with `-` for filesystem safety). Nothing here is on the write allow-list; the tool only issues `R` frames.
 
 ## Verification
 

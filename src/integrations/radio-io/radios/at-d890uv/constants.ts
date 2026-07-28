@@ -105,6 +105,59 @@ export const D890_MAP = {
   /** Alarm record bodies — Read/stash only. */
   AlarmData: 0x3483_000,
   AlarmDataLength: 0x30,
+  /**
+   * Full global APRS config — decode/encode both exist in anytone-cps (`AprsSettings`),
+   * unlike `OptionalSettingsAprs` above, which is an unrelated unused-padding span.
+   * Not Read or Write in Studio yet (#758) — debug memory-export only.
+   */
+  AprsConfigMain: 0x350_1000,
+  AprsConfigMainLength: 0x260,
+  /** 32 receive-filter records, `0x8` bytes each. */
+  AprsReceiveFilters: 0x350_1300,
+  AprsReceiveFiltersLength: 0x100,
+  /**
+   * AM airband channels + VFO. 256 programmable slots + 1 VFO slot (index 256) —
+   * `Memory::initAmAir` in anytone-cps. Not Read or Write in Studio yet (#756).
+   */
+  AmAirSet: 0x3884_200,
+  AmAirSetLength: 0x20,
+  AmAirData: 0x3880_000,
+  AmAirDataStride: 0x40,
+  AmAirDataLength: 0x40,
+  AmAirCount: 256,
+  AmAirVfo: 0x3884_000,
+  AmAirVfoLength: 0x40,
+  /**
+   * AM airband zones. 16 zones — `Memory::initAmZones` in anytone-cps.
+   * `AmZone::encode_D890UV()` is an empty-array stub upstream — see memory-layout.md
+   * for the AChannel byte-width and Scan bitmap read-path caveats before trusting these
+   * beyond a raw debug dump. Not Read or Write in Studio yet (#756).
+   */
+  AmZoneSet: 0x3884_400,
+  AmZoneSetLength: 0x10,
+  AmZoneAChannel: 0x3884_600,
+  AmZoneAChannelLength: 0x10,
+  AmZoneScan: 0x3884_800,
+  AmZoneScanStride: 0x10,
+  AmZoneData: 0x3888_000,
+  AmZoneDataStride: 0x80,
+  AmZoneDataLength: 0x80,
+  AmZoneCount: 16,
+  /**
+   * Digital contact book. Huge, block-hopped bank — see memory-layout.md for the
+   * linear-stream reconstruction formula. Read/decode/encode all exist in anytone-cps;
+   * Studio deliberately never Reads or Writes this bank (#759, #753 allow-list).
+   */
+  DigitalContactMeta: 0x700_0000,
+  DigitalContactMetaLength: 0x10,
+  DigitalContactData: 0x790_0000,
+  DigitalContactDataBlockLength: 0x30d40,
+  DigitalContactDataStride: 0x8_0000,
+  DigitalContactOrder: 0x708_0000,
+  DigitalContactOrderBlockLength: 0x3e800,
+  DigitalContactOrderBlockStride: 0x8_0000,
+  /** Order-table entry: `u32` key (`(radioId<<1)|callType`) + `u32` data offset. */
+  DigitalContactOrderEntrySize: 8,
 } as const;
 
 /** Virtual MemoryMap span (absolute addresses; base 0). */
