@@ -16,6 +16,9 @@ Provisional caps for variant `anytone-at-d890uv`. Enforced at **export** (warnin
 | Max talk groups            | **10000**             | `AT_D890UV_LIMITS.TALK_GROUPS_MAX` — Web Serial projection                                                    | —                                           |
 | Channel / zone / scan name | **16** chars          | Fixture + `profiles.ts`                                                                                       | Wire names ≤ 16                             |
 | Max APRS slots             | **8**                 | `profiles.ts` / [aprs.md](../../../export-formats/anytone/aprs.md)                                            | —                                           |
+| Max AM airband channels    | **256**               | `AT_D890UV_LIMITS.AM_AIR_CHANNEL_MAX` — parallel AmAir bank                                                   | `AMAir.CSV` programmed rows ≤ 256           |
+| Max AM airband zones       | **16**                | `AT_D890UV_LIMITS.AM_ZONE_MAX`                                                                                | `AMZone.CSV` rows ≤ 16                      |
+| Max AM zone members        | **32**                | `AT_D890UV_LIMITS.AM_ZONE_MEMBERS_MAX` — narrower than DMR zones                                              | `AMZone.CSV` pipe members ≤ 32              |
 | VFO row numbers            | `4001` / `4002` (CPS) | CPS appends on import — Studio need not emit ([#357](https://github.com/pskillen/codeplug-studio/issues/357)) | —                                           |
 
 ## Related

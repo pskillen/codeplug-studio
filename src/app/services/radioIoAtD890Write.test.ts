@@ -281,9 +281,80 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     expect(projection.organisation.zones).toEqual([
       expect.objectContaining({ wireName: 'Mixed', channelNumbers: [1] }),
     ]);
+    expect(projection.organisation.amAirChannels).toEqual([
+      expect.objectContaining({ slotIndex: 1, wireName: 'Tower', rxHz: 118_800_000 }),
+    ]);
+    expect(projection.organisation.amZones).toEqual([
+      expect.objectContaining({ wireName: 'Mixed', channelNumbers: [1] }),
+    ]);
     expect(projection.warnings.some((w) => w.includes('AM airband') && w.includes('omitted'))).toBe(
-      true,
+      false,
     );
+  });
+
+  it('retains radio AM bank when airband channels have no zone membership', () => {
+    const airband = {
+      ...newChannel('p1', 'Tower'),
+      id: 'ch-air',
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: 'forbid' as const,
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const library = emptyLibrary([airband]);
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.amAirChannels).toBeUndefined();
+    expect(projection.organisation.amZones).toBeUndefined();
+    expect(
+      projection.warnings.some((w) => w.includes('no AM zone membership')),
+    ).toBe(true);
+  });
+
+  it('warns when an AM zone exceeds 32 members', () => {
+    const channels = Array.from({ length: 33 }, (_, i) => ({
+      ...newChannel('p1', `AM${i + 1}`),
+      id: `ch-am-${i}`,
+      rxFrequency: 118_000_000 + i * 25_000,
+      txFrequency: null,
+      forbidTransmit: 'forbid' as const,
+      modeProfiles: [defaultModeProfile('am')],
+    }));
+    const zone = {
+      ...newZone('p1', 'BigAir'),
+      id: 'zone-air',
+      members: channels.map((ch) => ({ kind: 'channel' as const, channelId: ch.id })),
+    };
+    const library = { ...emptyLibrary(channels), zones: [zone] };
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const build = {
+      ...baseBuild,
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [
+              {
+                id: 'zone-air',
+                name: 'BigAir',
+                channelIds: channels.map((ch) => ch.id),
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.amZones?.[0]?.channelNumbers).toHaveLength(32);
+    expect(projection.warnings.some((w) => w.includes('truncated') && w.includes('32'))).toBe(true);
   });
 
   it('partitions broadcast FM out of MR channels with a warning', () => {
