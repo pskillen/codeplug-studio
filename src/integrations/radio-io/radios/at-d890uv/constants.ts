@@ -129,20 +129,40 @@ export const D890_MAP = {
   AmAirVfoLength: 0x40,
   /**
    * AM airband zones. 16 zones — `Memory::initAmZones` in anytone-cps.
-   * `AmZone::encode_D890UV()` is an empty-array stub upstream — see memory-layout.md
-   * for the AChannel byte-width and Scan bitmap read-path caveats before trusting these
-   * beyond a raw debug dump. Not Read or Write in Studio yet (#756).
+   * Record layout verified against a hardware dump reconciled with CPS CSV egress
+   * 2026-07-28 — see memory-layout.md. `AmZone::encode_D890UV()` is still an empty-array
+   * stub upstream; do not port it. Not Read or Write in Studio yet (#756).
    */
   AmZoneSet: 0x3884_400,
   AmZoneSetLength: 0x10,
+  /**
+   * A-channel per zone = **index into that zone's member list**, not a global AM channel
+   * index (verified: zones whose A-channel is their first member all read `0`, while their
+   * global indices are 18/8/4). Element width is **not** yet confirmed — every zone sampled
+   * so far has A-channel 0, which is byte-identical under u8 and u16. anytone-cps reads u16
+   * and writes u8; `0x10` for 16 zones only fits u8. Needs a sample with a non-first
+   * A-channel before encode can be written.
+   */
   AmZoneAChannel: 0x3884_600,
   AmZoneAChannelLength: 0x10,
+  /**
+   * Scan membership: one bit per **member-list position** (not global channel index —
+   * verified, see memory-layout.md), `0x4` bytes = 32 bits per zone, matching the 32 member
+   * slots in the record. anytone-cps reads this at a `0x10` stride, which is wrong and makes
+   * its own decode read outside the zone's slice for any zone after the first.
+   */
   AmZoneScan: 0x3884_800,
-  AmZoneScanStride: 0x10,
+  AmZoneScanStride: 0x4,
   AmZoneData: 0x3888_000,
   AmZoneDataStride: 0x80,
   AmZoneDataLength: 0x80,
   AmZoneCount: 16,
+  /** Zone name: UTF-16LE, max 16 chars, always NUL-terminated (terminator may sit at `0x20`). */
+  AmZoneNameOffset: 0x0,
+  AmZoneNameLength: 0x22,
+  /** Member list: u16 LE per slot, `0xffff` = empty/terminator. */
+  AmZoneMembersOffset: 0x22,
+  AmZoneMemberSlots: 32,
   /**
    * Digital contact book. Huge, block-hopped bank — see memory-layout.md for the
    * linear-stream reconstruction formula. Read/decode/encode all exist in anytone-cps;
