@@ -120,3 +120,14 @@ export {
   type AtD890WriteCoverageRow,
   type AtD890WriteCoverageStatus,
 } from './writeCoverage.ts';
+export {
+  AT_D890_MEMORY_REGIONS,
+  runAtD890DigitalContactsDump,
+  runAtD890MemoryDumpAll,
+  runAtD890MemoryRegionDump,
+  type AtD890DigitalContactsDumpResult,
+  type AtD890MemoryDumpAllResult,
+  type AtD890MemoryRegion,
+  type AtD890MemoryRegionChunk,
+  type AtD890MemoryRegionDumpResult,
+} from './memoryRegionExport.ts';
