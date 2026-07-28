@@ -12,6 +12,7 @@ import type { ExpandedMxNChannelRow } from '../channelExpansion/mxnExpandAll.ts'
 import { SCAN_COL } from '../formats/dm32/columns.ts';
 import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from '../formats/dm32/profiles.ts';
 import { applyListWireNameLimits } from '../channelExpansion/listWireNames.ts';
+import { DM32UV_MAX_CHANNEL_SCAN_LIST_ID } from './limits.ts';
 
 export type { SyntheticScanCarrier } from './carrier.ts';
 export { DEFAULT_SCAN_CARRIER_HZ } from './carrier.ts';
@@ -123,10 +124,18 @@ export function deriveZoneDerivedScanLists(
   const zoneById = new Map(library.zones.map((zone) => [zone.id, zone]));
   const reservedNames = new Set<string>();
   let rowNumber = 0;
+  const maxLists = Math.min(profile.maxScanLists, DM32UV_MAX_CHANNEL_SCAN_LIST_ID);
 
   for (const assembledZone of assembled.zones) {
     const entry = layoutEntry(layout, assembledZone.zoneId);
     if (!entry?.exportScanList) continue;
+
+    if (result.scanRows.length >= maxLists) {
+      warnings.push(
+        `Additional zone-derived scan list(s) skipped; channel scanListId supports at most ${maxLists} lists`,
+      );
+      break;
+    }
 
     const libraryZone = zoneById.get(assembledZone.zoneId);
     if (!libraryZone) continue;

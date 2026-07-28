@@ -3,11 +3,13 @@ import { newChannel, newFormatBuild, newZone } from '@core/domain/factories.ts';
 import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { SCAN_COL } from '../formats/dm32/columns.ts';
+import { expandAllDm32ChannelsForExport, dm32ChannelExpansionById } from '../formats/dm32/channelExpansion.ts';
 import {
   DM32_EMPTY_SCAN_LIST_NAME,
   deriveZoneDerivedScanLists,
   ensureDm32ScanCsvFloor,
 } from './derive.ts';
+import { DM32UV_MAX_CHANNEL_SCAN_LIST_ID } from './limits.ts';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
 
@@ -107,5 +109,77 @@ describe('deriveZoneDerivedScanLists', () => {
     expect(derived.scanRows).toEqual([]);
     expect(derived.carriers).toEqual([]);
     expect(derived.scanListByChannelWireName.size).toBe(0);
+  });
+
+  it('caps zone-derived scan list count at channel scanListId hardware limit', () => {
+    const pairs = Array.from({ length: 20 }, (_, i) => {
+      const channel = {
+        ...newChannel(PROJECT_ID, `Ch${i}`),
+        id: `ch-${i}`,
+        rxFrequency: 145_500_000,
+        txFrequency: 145_500_000,
+        modeProfiles: [
+          {
+            mode: 'fm' as const,
+            rxTone: 'none' as const,
+            txTone: 'none' as const,
+            squelch: null,
+            bandwidthKHz: 12.5,
+          },
+        ],
+      };
+      const zone = newZone(PROJECT_ID, `Zone${String(i).padStart(2, '0')}`);
+      zone.id = `zone-${i}`;
+      zone.members = [{ kind: 'channel' as const, channelId: channel.id }];
+      return { channel, zone };
+    });
+    const channels = pairs.map((p) => p.channel);
+    const zones = pairs.map((p) => p.zone);
+    const build = newFormatBuild(PROJECT_ID, 'dm32-baofeng-dm32uv', 'DM32');
+    const layout = seedZoneGroupingFromLibrary({
+      channels,
+      zones,
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    });
+    layout.zones = layout.zones.map((entry) => ({
+      ...entry,
+      exportScanList: true,
+      scanCarrierFrequencyHz: 145_500_000,
+    }));
+    build.layout = { sections: [layout] };
+    const library = {
+      channels,
+      zones,
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const assembled = {
+      ...assemble(build, library, { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' }),
+      library,
+      zoneGrouping: layout,
+    };
+    const warnings: string[] = [];
+    const expanded = expandAllDm32ChannelsForExport(assembled, library, undefined, warnings);
+    const expansionByChannelId = dm32ChannelExpansionById(expanded);
+    const derived = deriveZoneDerivedScanLists(
+      assembled,
+      library,
+      expansionByChannelId,
+      { exportZoneDerivedScanLists: true },
+      warnings,
+    );
+    expect(derived.scanRows).toHaveLength(DM32UV_MAX_CHANNEL_SCAN_LIST_ID);
+    expect(
+      warnings.some((w) =>
+        w.includes(`channel scanListId supports at most ${DM32UV_MAX_CHANNEL_SCAN_LIST_ID}`),
+      ),
+    ).toBe(true);
   });
 });

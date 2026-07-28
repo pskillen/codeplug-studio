@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   newChannel,
   newDigitalContact,
+  newFormatBuild,
   newRadioBuildForProfile,
   newRxGroupList,
   newTalkGroup,
   newZone,
 } from '@core/domain/factories.ts';
+import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { assemble } from '@core/services/assemble.ts';
@@ -477,6 +479,56 @@ describe('buildRadioWriteProjection', () => {
     expect(projection.organisation.talkGroups).toHaveLength(800);
     expect(projection.organisation.talkGroups?.every((tg) => tg.callType === 0x04)).toBe(true);
     expect(projection.warnings.some((w) => /801 talk group/.test(w) && /800/.test(w))).toBe(true);
+  });
+
+  it('caps zone-derived scan lists at channel scanListId hardware limit', () => {
+    const projectId = 'p1';
+    const pairs = Array.from({ length: 20 }, (_, i) => {
+      const ch = withExportEligibleDefaults({
+        ...newChannel(projectId, `Ch${i}`),
+        id: `ch-${i}`,
+        rxFrequency: 145_500_000,
+        txFrequency: 145_500_000,
+      });
+      const zone = {
+        ...newZone(projectId, `Zone${String(i).padStart(2, '0')}`),
+        id: `zone-${i}`,
+        members: [{ kind: 'channel' as const, channelId: ch.id }],
+      };
+      return { ch, zone };
+    });
+    const channels = pairs.map((p) => p.ch);
+    const zones = pairs.map((p) => p.zone);
+    const build = newFormatBuild(projectId, 'radio-io-dm32uv', 'DM32');
+    const layout = seedZoneGroupingFromLibrary({
+      channels,
+      zones,
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    });
+    layout.zones = layout.zones.map((entry) => ({
+      ...entry,
+      exportScanList: true,
+      scanCarrierFrequencyHz: 145_500_000,
+    }));
+    build.layout = { sections: [layout] };
+    const library = {
+      ...emptyLibrary(channels),
+      zones,
+    };
+    const { egress } = newRadioBuildForProfile(projectId, 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.scanLists).toHaveLength(15);
+    expect(
+      projection.warnings.some((w) => w.includes('channel scanListId supports at most 15')),
+    ).toBe(true);
   });
 
   it('warns and truncates RX group lists beyond DM-32UV cap', () => {

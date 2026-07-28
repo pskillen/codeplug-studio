@@ -14,9 +14,10 @@ import {
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { NeonplugDm32uvRadioProfile } from './profiles.ts';
 import type { NeonplugScanList } from './wireTypes.ts';
+import { DM32UV_MAX_CHANNEL_SCAN_LIST_ID } from '@core/import-export/zoneDerivedScanLists/limits.ts';
 
-/** Channel `scanListId` is 4 bits (0–15); 0 = none, so at most 15 referenceable lists. */
-export const NEONPLUG_MAX_CHANNEL_SCAN_LIST_ID = 15;
+/** Re-export for NeonPlug callers — same hardware FK ceiling as CSV / radio-io. */
+export const NEONPLUG_MAX_CHANNEL_SCAN_LIST_ID = DM32UV_MAX_CHANNEL_SCAN_LIST_ID;
 
 /**
  * Default name for the DM32UV empty-list floor (#564).

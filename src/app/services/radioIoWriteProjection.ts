@@ -23,6 +23,7 @@ import {
   profileHasTalkGroupTimeslotClones,
   talkGroupSlotKey,
 } from '@core/import-export/channelExpansion/talkGroupTimeslotClones.ts';
+import { DM32UV_MAX_CHANNEL_SCAN_LIST_ID } from '@core/import-export/zoneDerivedScanLists/limits.ts';
 import {
   DEFAULT_SCAN_CARRIER_HZ,
   zoneScanCarrierWireName,
@@ -198,7 +199,9 @@ function buildDm32Organisation(
 } {
   const limits = radioIoExportLimits(egress);
   const maxZones = numericLimit(limits.maxZones, 250);
-  const maxScanLists = scanListWireCap ?? Math.min(numericLimit(limits.maxScanLists, 32), 15);
+  const maxScanLists =
+    scanListWireCap ??
+    Math.min(numericLimit(limits.maxScanLists, 32), DM32UV_MAX_CHANNEL_SCAN_LIST_ID);
   const scanListMembersCap = numericLimit(limits.scanListMembers, 15);
   const maxMemorySlots = numericLimit(limits.maxChannels, 4000);
   const zoneMembersCap = numericLimit(limits.zoneMembers, 64);
