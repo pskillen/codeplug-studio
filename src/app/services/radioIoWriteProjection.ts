@@ -869,7 +869,7 @@ function stampOpenGd77ChannelBehaviour(
     merged.defaultScanInclusion != null
       ? { defaultScanInclusion: merged.defaultScanInclusion }
       : undefined,
-    { defaultScanInclusion: 'scan' },
+    getFormatExportDefaults('radio-io', profileId),
   );
 
   const channelByNumber = new Map<number, (typeof assembled.channels)[number]>();

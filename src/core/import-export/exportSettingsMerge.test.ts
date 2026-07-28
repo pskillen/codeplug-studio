@@ -44,6 +44,22 @@ describe('mergeExportOptions', () => {
     expect(getFormatExportDefaults('radio-io', 'radio-io-dm32uv').exportScratchChannels).toBe(true);
   });
 
+  it('getFormatExportDefaults matches OpenGD77 CSV for radio-io-opengd77 profiles', () => {
+    for (const profileId of ['radio-io-opengd77-1701', 'radio-io-opengd77-md9600'] as const) {
+      const defaults = getFormatExportDefaults('radio-io', profileId);
+      expect(defaults.defaultScanInclusion).toBe('scan');
+      expect(defaults.expandModes).toBe(true);
+    }
+    expect(getFormatExportDefaults('radio-io').defaultScanInclusion).toBe('skip');
+  });
+
+  it('mergeExportOptions applies radio-io-opengd77 scan/expand defaults via profileId', () => {
+    const build = { ...newFormatBuild('proj', 'radio-io-opengd77-1701'), exportSettings: {} };
+    const options = mergeExportOptions(build, 'radio-io', { profileId: 'radio-io-opengd77-1701' });
+    expect(options.defaultScanInclusion).toBe('scan');
+    expect(options.expandModes).toBe(true);
+  });
+
   it('mergeExportOptions applies radio-io-dm32uv m×n defaults via profileId', () => {
     const build = { ...newFormatBuild('proj', 'radio-io-dm32uv'), exportSettings: {} };
     const options = mergeExportOptions(build, 'radio-io', { profileId: 'radio-io-dm32uv' });

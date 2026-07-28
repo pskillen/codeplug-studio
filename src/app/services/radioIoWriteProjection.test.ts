@@ -161,6 +161,27 @@ describe('buildRadioWriteProjection', () => {
     expect(scanDto?.skipZoneScan).toBe(false);
   });
 
+  it('stamps OpenGD77 default scan inclusion as scan when build omits export default', () => {
+    const defaultLib = withExportEligibleDefaults({
+      ...newChannel('p1', 'DefaultScan'),
+      id: 'ch-default',
+      rxFrequency: 145_700_000,
+      txFrequency: 145_700_000,
+      scanInclusion: 'default' as const,
+    });
+    const library = emptyLibrary([defaultLib]);
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    const slot = projection.numbersBySourceChannelId.get('ch-default')?.[0];
+    const dto = projection.channels.find((c) => c.slotIndex === slot);
+    expect(dto?.skipScan).toBe(false);
+    expect(dto?.skipZoneScan).toBe(false);
+  });
+
   it('prepends each zone’s own scan carrier and first-wins scanListId for shared members', () => {
     const shared = withExportEligibleDefaults({
       ...newChannel('p1', 'Hotspot'),
