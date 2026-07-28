@@ -196,6 +196,24 @@ describe('channelToNeonplugChannel', () => {
     expect(wire.scanAdd).toBe(true);
   });
 
+  it('defaults scanAdd to false on UV5R-Mini when library scanInclusion is default', () => {
+    const wire = channelToNeonplugChannel(channel({ scanInclusion: 'default' }), {
+      number: 1,
+      name: 'Default scan',
+      profileId: 'neonplug-uv5rmini',
+    });
+    expect(wire.scanAdd).toBe(false);
+  });
+
+  it('defaults scanAdd to true on DM32UV when library scanInclusion is default', () => {
+    const wire = channelToNeonplugChannel(channel({ scanInclusion: 'default' }), {
+      number: 1,
+      name: 'Default scan',
+      profileId: 'neonplug-dm32uv',
+    });
+    expect(wire.scanAdd).toBe(true);
+  });
+
   it('emits no-TX TX sentinel for receive-only airband channels', () => {
     const wire = channelToNeonplugChannel(
       channel({

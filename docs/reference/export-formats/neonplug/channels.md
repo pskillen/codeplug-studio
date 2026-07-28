@@ -117,7 +117,8 @@ Many `unknown*` fields exist (`unknown1A_6_4`, `unknown1C_1_0`, `unknown2A`, …
 - Studio ladder wire **`Middle`** maps to NeonPlug **`Medium`**.
 - **Receive-only airband / FM band:** when effective `forbidTx` and RX is in **87–136 MHz**, emit `txFrequency: 1666.666` (not `0`) — see [Frequencies](#frequencies) above.
 - **DM32UV:** `contactId` / `rxGroupListId` / `scanListId` resolve from library UUID FKs (`0` = none). `scanListId` is 1-based into zone-derived `scanLists[]` (max **15**).
-- **UV5R-Mini:** org FKs stay `0`; org arrays empty.
+- **UV5R-Mini:** org FKs stay `0`; org arrays empty. Effective `scanAdd` when library `scanInclusion` is `default` and build omits override: **`false`** (`skip`) — radio SoT matches CHIRP `Skip` and Web Serial ([#806](https://github.com/pskillen/codeplug-studio/issues/806)).
+- **DM32UV:** effective `scanAdd` default is **`true`** (`scan`) when library is `default`.
 - **DM32UV:** `number` is sequential 1…N in assemble channel order.
 - **UV5R-Mini:** `number` is the flat-memory slot from `assemble` (`channelMemorySlots`); blank slots are omitted; FM/AM only (digital-only channels skipped with a warning).
 - Unknown / radio-layout bitfields use safe defaults (`0` / `false`) — no stash-and-replay.

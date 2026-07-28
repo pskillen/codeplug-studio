@@ -25,13 +25,15 @@ Replaces legacy boolean `scanSkip` (schema v8). Import migration: `true` → `sk
    2. Format adapter `defaultExportSettings.defaultScanInclusion`
    3. Fallback `scan`
 
-| Format   | Adapter default when build omits override |
-| -------- | ----------------------------------------- |
-| OpenGD77 | `scan`                                    |
-| DM32     | `scan`                                    |
-| CHIRP    | `skip`                                    |
+| Format                       | Adapter default when build omits override                    |
+| ---------------------------- | ------------------------------------------------------------ |
+| OpenGD77                     | `scan`                                                       |
+| DM32                         | `scan`                                                       |
+| CHIRP                        | `skip`                                                       |
+| NeonPlug `neonplug-dm32uv`   | `scan` (radio SoT `DM32UV_LIMITS.DEFAULT_SCAN_INCLUSION`)    |
+| NeonPlug `neonplug-uv5rmini` | `skip` (radio SoT `UV5R_MINI_LIMITS.DEFAULT_SCAN_INCLUSION`) |
 
-Implementation: `src/core/import-export/scanInclusion/resolve.ts` (`resolveChannelScanInclusionForExport`).
+Implementation: `src/core/import-export/scanInclusion/resolve.ts` (`resolveChannelScanInclusionForExport`). NeonPlug profile defaults: `getFormatExportDefaults('neonplug', profileId)`.
 
 ## Orthogonal concepts
 

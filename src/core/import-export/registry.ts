@@ -6,6 +6,8 @@ import { anytoneExportAdapter } from './formats/anytone/adapter.ts';
 import { neonplugExportAdapter } from './formats/neonplug/adapter.ts';
 import type { ExportAdapter } from './exportAdapter.ts';
 import type { ImportAdapter } from './importAdapter.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
+import { UV5R_MINI_LIMITS } from '@core/radios/baofeng/uv-5r-mini/limits.ts';
 import type { FormatCatalogEntry, FormatExportDefaults, FormatId } from './types.ts';
 
 export const formatCatalog: readonly FormatCatalogEntry[] = [
@@ -167,6 +169,14 @@ export function getFormatExportDefaults(
     (profileId === 'radio-io-opengd77-1701' || profileId === 'radio-io-opengd77-md9600')
   ) {
     return OPENGD77_EXPORT_DEFAULTS;
+  }
+  if (formatId === 'neonplug') {
+    const fromAdapter = exportAdapters.find((a) => a.id === 'neonplug')?.defaultExportSettings;
+    const base = fromAdapter ?? { defaultScanInclusion: DM32UV_LIMITS.DEFAULT_SCAN_INCLUSION };
+    if (profileId === 'neonplug-uv5rmini') {
+      return { ...base, defaultScanInclusion: UV5R_MINI_LIMITS.DEFAULT_SCAN_INCLUSION };
+    }
+    return { ...base, defaultScanInclusion: DM32UV_LIMITS.DEFAULT_SCAN_INCLUSION };
   }
   const fromAdapter = exportAdapters.find((a) => a.id === formatId)?.defaultExportSettings;
   if (fromAdapter) return fromAdapter;

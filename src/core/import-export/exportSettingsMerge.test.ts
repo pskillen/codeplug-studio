@@ -38,6 +38,16 @@ describe('mergeExportOptions', () => {
     expect(getFormatExportDefaults('chirp').defaultScanInclusion).toBe('skip');
   });
 
+  it('getFormatExportDefaults applies radio-tier scan default per NeonPlug profile', () => {
+    expect(getFormatExportDefaults('neonplug').defaultScanInclusion).toBe('scan');
+    expect(getFormatExportDefaults('neonplug', 'neonplug-dm32uv').defaultScanInclusion).toBe(
+      'scan',
+    );
+    expect(getFormatExportDefaults('neonplug', 'neonplug-uv5rmini').defaultScanInclusion).toBe(
+      'skip',
+    );
+  });
+
   it('getFormatExportDefaults enables m×n for radio-io-dm32uv profile', () => {
     expect(getFormatExportDefaults('radio-io').expandRxGroupLists).toBe(false);
     expect(getFormatExportDefaults('radio-io', 'radio-io-dm32uv').expandRxGroupLists).toBe(true);
