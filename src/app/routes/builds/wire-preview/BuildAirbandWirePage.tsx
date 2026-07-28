@@ -10,6 +10,7 @@ import { buildRadioWriteProjection } from '../../../services/radioIoWriteProject
 import ExportWarningsAlert from '../../../components/builds/ExportWarningsAlert.tsx';
 import { loadLibrarySlice } from '../../../lib/loadLibrarySlice.ts';
 import { useProjects } from '../../../state/useProjects.ts';
+import { persistence } from '../../../state/persistence.ts';
 
 function isAmAirbandWriteWarning(message: string): boolean {
   return /AM airband|airband bank unchanged/i.test(message);
@@ -24,18 +25,15 @@ export default function BuildAirbandWirePage() {
   const isWebSerial = activeEgress?.profileId === 'radio-io-at-d890uv';
 
   useEffect(() => {
-    if (!activeProjectId) {
-      setLibrary(null);
-      return;
-    }
+    if (!activeProjectId) return;
     let cancelled = false;
-    void loadLibrarySlice(activeProjectId).then((slice) => {
+    void loadLibrarySlice(persistence, activeProjectId).then((slice) => {
       if (!cancelled) setLibrary(slice);
     });
     return () => {
       cancelled = true;
     };
-  }, [activeProjectId]);
+  }, [activeProjectId, build.updatedAt]);
 
   const serialWarnings = useMemo(() => {
     if (!isWebSerial || !library || !activeEgress) return [];
@@ -93,9 +91,9 @@ export default function BuildAirbandWirePage() {
         ) : (
           <Text size="sm" c="dimmed">
             AM airband receive channels and zones export to <code>AMAir.CSV</code> and{' '}
-            <code>AMZone.CSV</code> — separate from the DMR channel bank (
-            <code>Channel.CSV</code> / <code>DMRZone.CSV</code>). Zones with both airband and DMR
-            members also appear on the Zones page for the DMR projection.
+            <code>AMZone.CSV</code> — separate from the DMR channel bank (<code>Channel.CSV</code> /{' '}
+            <code>DMRZone.CSV</code>). Zones with both airband and DMR members also appear on the
+            Zones page for the DMR projection.
           </Text>
         )}
 

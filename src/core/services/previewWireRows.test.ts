@@ -970,13 +970,9 @@ describe('previewWireRows', () => {
     );
     expect(mainZoneNames).toEqual(['Mixed']);
 
-    const airZoneNames = previewWireRows(
-      build,
-      library,
-      'zone',
-      serialEgress,
-      'airband',
-    ).map((row) => row.displayLabel);
+    const airZoneNames = previewWireRows(build, library, 'zone', serialEgress, 'airband').map(
+      (row) => row.displayLabel,
+    );
     expect(airZoneNames.sort()).toEqual(['AM only', 'Mixed']);
   });
 

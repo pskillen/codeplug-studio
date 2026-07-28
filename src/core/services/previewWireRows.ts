@@ -493,24 +493,23 @@ export function previewWireRows(
       const reserved = shortenListNames ? new Set<string>() : null;
       const warnings: string[] = [];
       const channelById = new Map(library.channels.map((ch) => [ch.id, ch]));
-      const zonesForBank =
-        atD890AirbandBankSplit
-          ? library.zones.filter((zone) => {
-              const assembledZone = projection.zones.find((row) => row.zoneId === zone.id);
-              const memberIds =
-                assembledZone && assembledZone.memberChannelIds.length > 0
-                  ? assembledZone.memberChannelIds
-                  : directZoneMemberChannelIds(zone);
-              const kind = classifyAnytoneZoneByMembers(
-                memberIds,
-                channelById,
-                _options?.channelBehaviourContext,
-              );
-              return anytoneBank === 'airband'
-                ? zoneShowsOnAnytoneAirbandBank(kind)
-                : zoneShowsOnAnytoneDmrBank(kind);
-            })
-          : library.zones;
+      const zonesForBank = atD890AirbandBankSplit
+        ? library.zones.filter((zone) => {
+            const assembledZone = projection.zones.find((row) => row.zoneId === zone.id);
+            const memberIds =
+              assembledZone && assembledZone.memberChannelIds.length > 0
+                ? assembledZone.memberChannelIds
+                : directZoneMemberChannelIds(zone);
+            const kind = classifyAnytoneZoneByMembers(
+              memberIds,
+              channelById,
+              _options?.channelBehaviourContext,
+            );
+            return anytoneBank === 'airband'
+              ? zoneShowsOnAnytoneAirbandBank(kind)
+              : zoneShowsOnAnytoneDmrBank(kind);
+          })
+        : library.zones;
       const zonesForPreview = sortZonesByExportOrder(zonesForBank, build.zoneOverrides);
       const zoneGrouping = findZoneGroupingSection(build);
       return zonesForPreview.map((zone) => {

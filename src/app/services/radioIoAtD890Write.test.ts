@@ -382,9 +382,9 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     expect(projection.organisation.amZones).toEqual([
       expect.objectContaining({ wireName: 'AM only' }),
     ]);
-    expect(projection.organisation.scanLists?.some((list) => list.wireName.includes('AM only'))).toBe(
-      false,
-    );
+    expect(
+      projection.organisation.scanLists?.some((list) => list.wireName.includes('AM only')),
+    ).toBe(false);
     expect(projection.channels.some((ch) => ch.wireName.match(/AM only.*Scan/i))).toBe(false);
   });
 

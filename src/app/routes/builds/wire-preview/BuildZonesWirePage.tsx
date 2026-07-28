@@ -4,9 +4,11 @@ import { useZoneScanExportLayout } from '../../../hooks/useZoneScanExportLayout.
 import ZoneScanOverrideSection from '../../../components/builds/wirePreview/overrideModalSections/ZoneScanOverrideSection.tsx';
 import ZoneMemberOrderSection from '../../../components/builds/wirePreview/overrideModalSections/ZoneMemberOrderSection.tsx';
 import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
-import { classifyAnytoneZoneByMembers } from '@core/import-export/formats/anytone/zonePartition.ts';
 import { directZoneMemberChannelIds } from '@core/domain/zoneMembers.ts';
-import { usesAtD890AirbandBankSplit } from '@core/services/anytoneChannelBanks.ts';
+import {
+  classifyAnytoneZoneByMembers,
+  usesAtD890AirbandBankSplit,
+} from '@core/services/anytoneChannelBanks.ts';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { useBuildLayout } from '../BuildLayoutContext.tsx';
 import { useCallback } from 'react';
@@ -28,7 +30,13 @@ export default function BuildZonesWirePage() {
       );
       return kind !== 'airband';
     },
-    [activeEgress?.profileId, zoneScan.channelById, zoneScan.library, zoneScan.zoneBehaviourContext, zoneScan.zoneById],
+    [
+      activeEgress?.profileId,
+      zoneScan.channelById,
+      zoneScan.library,
+      zoneScan.zoneBehaviourContext,
+      zoneScan.zoneById,
+    ],
   );
 
   const zoneModalContext = (row: WirePreviewRow) => {
