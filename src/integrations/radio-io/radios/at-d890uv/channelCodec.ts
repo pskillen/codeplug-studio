@@ -299,6 +299,7 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
     data[0x21] = setBit(data[0x21]!, 1, false);
   }
 
+  // scanAdd maps to auto_scan (bit 4) on AT-D890UV — not per-channel scan membership.
   if (ch.scanAdd === true) {
     data[0x34] = setBit(data[0x34]!, 4, true);
   } else if (ch.scanAdd === false) {
