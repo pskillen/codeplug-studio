@@ -129,6 +129,50 @@ describe('anytone export wire context', () => {
     expect(amAirName.length).toBeLessThanOrEqual(16);
   });
 
+  it('exports channelOverrides.wireName to Channel.CSV Name column', () => {
+    const override = 'MyCustomOverride';
+    const tg = newTalkGroup(PROJECT_ID, 'Scotland', 950);
+    const channel: Channel = {
+      ...newChannel(PROJECT_ID, 'Glasgow Scotland Repeater'),
+      callsign: 'GB7GL',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      channelOverrides: [{ libraryEntityId: channel.id, wireName: override }],
+      exportSettings: { expandRxGroupLists: false },
+    };
+    const library = {
+      channels: [channel],
+      zones: [],
+      talkGroups: [tg],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library, {
+      profileId: 'anytone-at-d890uv',
+      expandRxGroupLists: false,
+      exportScratchChannels: false,
+    });
+    const channelTable = csvToTable(files['Channel.CSV']);
+    expect(cell(channelTable, 0, 'Channel Name')).toBe(override);
+    expect(cell(channelTable, 0, 'Channel Name')).not.toBe('GB7GL Glasgow Scotland Repeater');
+  });
+
   it('zone-derived scan list wire name matches zone wire name', () => {
     const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
     const ch: Channel = {
