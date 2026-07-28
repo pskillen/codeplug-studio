@@ -134,3 +134,17 @@ export {
   type AtD890MemoryRegionDumpResult,
   type AtD890MemoryRegionGroup,
 } from './memoryRegionExport.ts';
+export {
+  buildAtD890WriteVerifyResult,
+  captureAtD890WriteStagingSnapshot,
+  cloneAtD890WriteStagingSnapshot,
+  compareStagingAgainstRegionDump,
+  formatAtD890WriteVerifyMarkdown,
+  labelForAtD890SentinelId,
+  summarizeVerifyByRegion,
+  type AtD890RegionVerifyRow,
+  type AtD890RegionVerifyStatus,
+  type AtD890StagingChunkMismatch,
+  type AtD890WriteStagingSnapshot,
+  type AtD890WriteVerifyResult,
+} from './writeMemoryVerify.ts';

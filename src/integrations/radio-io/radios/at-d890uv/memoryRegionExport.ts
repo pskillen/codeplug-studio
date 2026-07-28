@@ -111,6 +111,13 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
     D890_MAP.OptionalSettingsExtLength,
   ),
   region(
+    'optionalSettingsAprs',
+    'Optional GPS info',
+    'optionalSettings',
+    D890_MAP.OptionalSettingsAprs,
+    D890_MAP.OptionalSettingsAprsLength,
+  ),
+  region(
     'alarmBitmap',
     'Alarm bitmap',
     'optionalSettings',
