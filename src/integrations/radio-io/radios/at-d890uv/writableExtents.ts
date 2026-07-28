@@ -89,6 +89,24 @@ export const AT_D890_WRITABLE_EXTENTS: readonly AtD890MemoryExtent[] = [
     length: D890_MAP.RadioIdStride * RADIO_ID_SLOTS,
   },
   { id: 'MasterIdData', start: D890_MAP.MasterIdData, length: D890_MAP.MasterIdLength },
+  { id: 'AmAirSet', start: D890_MAP.AmAirSet, length: D890_MAP.AmAirSetLength },
+  {
+    id: 'AmAirData',
+    start: D890_MAP.AmAirData,
+    length: D890_MAP.AmAirDataStride * D890_MAP.AmAirCount,
+  },
+  { id: 'AmZoneSet', start: D890_MAP.AmZoneSet, length: D890_MAP.AmZoneSetLength },
+  {
+    id: 'AmZoneAChannel',
+    start: D890_MAP.AmZoneAChannel,
+    length: D890_MAP.AmZoneAChannelLength,
+  },
+  { id: 'AmZoneScan', start: D890_MAP.AmZoneScan, length: D890_MAP.AmZoneScanLength },
+  {
+    id: 'AmZoneData',
+    start: D890_MAP.AmZoneData,
+    length: D890_MAP.AmZoneDataStride * D890_MAP.AmZoneCount,
+  },
 ] as const;
 
 /** Never serial-written — pre-Write plausibility spans (refuse all-0xff). */

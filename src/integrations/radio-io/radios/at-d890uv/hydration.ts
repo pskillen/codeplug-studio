@@ -10,7 +10,7 @@ import {
 import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
-import { cacheToMemoryMap, putCacheBytes, type AtD890DownloadCache } from './memory.ts';
+import { cacheToMemoryMap, putCacheBytes, clearAmAirBankBlocksFromCache, type AtD890DownloadCache } from './memory.ts';
 import { encodeChannelsIntoAtD890Image, syncChannelRegionsToCache } from './channelCodec.ts';
 import { encodeZonesIntoAtD890Image, syncZoneRegionsToCache } from './zoneCodec.ts';
 import { encodeScanListsIntoAtD890Image, syncScanListRegionsToCache } from './scanListCodec.ts';
@@ -18,6 +18,8 @@ import { encodeTalkgroupsIntoAtD890Image, syncTalkgroupRegionsToCache } from './
 import { encodeRxGroupsIntoAtD890Image, syncRxGroupRegionsToCache } from './rxGroupCodec.ts';
 import { encodeRadioIdsIntoAtD890Image, syncRadioIdRegionsToCache } from './radioIdCodec.ts';
 import { encodeMasterIdIntoAtD890Image, syncMasterIdToCache } from './masterIdCodec.ts';
+import { encodeAmAirIntoAtD890Image, syncAmAirRegionsToCache } from './amAirCodec.ts';
+import { encodeAmZonesIntoAtD890Image, syncAmZoneRegionsToCache } from './amZoneCodec.ts';
 import { AT_D890UV_MODEL_IDS } from './constants.ts';
 import type { AtD890DownloadCache as ProtocolCache } from './protocol.ts';
 
@@ -104,6 +106,14 @@ export function mergeChannelsIntoAtD890uvHydration(
   if (organisation?.scanLists) {
     next = encodeScanListsIntoAtD890Image(next, organisation.scanLists);
   }
+  // Product rule (#756): AmAir and AmZone Write together, or leave both alone.
+  // Always drop prior Read/cache airband blocks first so retain does not re-stage
+  // them, and a shrink does not leave stale occupied-slot bodies on the allow-list.
+  clearAmAirBankBlocksFromCache(cache);
+  if (organisation?.amAirChannels && organisation?.amZones) {
+    next = encodeAmAirIntoAtD890Image(next, organisation.amAirChannels);
+    next = encodeAmZonesIntoAtD890Image(next, organisation.amZones);
+  }
 
   syncTalkgroupRegionsToCache(cache, next, organisation?.talkGroups);
   syncRxGroupRegionsToCache(cache, next);
@@ -112,6 +122,10 @@ export function mergeChannelsIntoAtD890uvHydration(
   syncChannelRegionsToCache(cache, next);
   syncZoneRegionsToCache(cache, next);
   syncScanListRegionsToCache(cache, next);
+  if (organisation?.amAirChannels && organisation?.amZones) {
+    syncAmAirRegionsToCache(cache, next);
+    syncAmZoneRegionsToCache(cache, next);
+  }
 
   return next;
 }

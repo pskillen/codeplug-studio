@@ -217,6 +217,25 @@ export function clearTalkgroupOrderBlocksFromCache(cache: AtD890DownloadCache): 
   }
 }
 
+/**
+ * Drop cached AmAir / AmZone blocks so a DMR-only Write does not re-stage the
+ * airband erase unit (retain-when-empty product rule — #756).
+ */
+export function clearAmAirBankBlocksFromCache(cache: AtD890DownloadCache): void {
+  const spans: { base: number; end: number }[] = [
+    { base: D890_MAP.AmAirData, end: D890_MAP.AmAirData + D890_MAP.AmAirDataStride * D890_MAP.AmAirCount },
+    { base: D890_MAP.AmAirVfo, end: D890_MAP.AmAirVfo + D890_MAP.AmAirVfoLength },
+    { base: D890_MAP.AmAirSet, end: D890_MAP.AmAirSet + D890_MAP.AmAirSetLength },
+    { base: D890_MAP.AmZoneSet, end: D890_MAP.AmZoneSet + D890_MAP.AmZoneSetLength },
+    { base: D890_MAP.AmZoneAChannel, end: D890_MAP.AmZoneAChannel + D890_MAP.AmZoneAChannelLength },
+    { base: D890_MAP.AmZoneScan, end: D890_MAP.AmZoneScan + D890_MAP.AmZoneScanLength },
+    { base: D890_MAP.AmZoneData, end: D890_MAP.AmZoneData + D890_MAP.AmZoneDataStride * D890_MAP.AmZoneCount },
+  ];
+  for (const addr of [...cache.blocks.keys()]) {
+    if (spans.some((s) => addr >= s.base && addr < s.end)) cache.blocks.delete(addr);
+  }
+}
+
 /** Merge a possibly unaligned image region into 16-byte cache keys. */
 export function mergeImageRegionIntoCache(
   cache: AtD890DownloadCache,
@@ -312,6 +331,9 @@ export function applyAtD890WriteImageToCache(cache: AtD890DownloadCache, image: 
       image.get(radioIdAddress(idx), AT_D890_LIMITS.RADIO_ID_STRIDE),
     );
   }
+
+  // AmAir / AmZone: only when hydration encoded them (syncAm*RegionsToCache).
+  // Omitting here keeps the radio bank unchanged when the build has no airband content.
 }
 
 export function mergeMapRegionsIntoCache(
