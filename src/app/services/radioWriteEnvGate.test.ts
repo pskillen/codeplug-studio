@@ -27,17 +27,9 @@ describe('radioWriteEnvGate', () => {
     expect(resolveRadioWriteGate(RT95_DESCRIPTOR, 'staging')).toBe('allowed');
     expect(resolveRadioWriteGate(OPENGD77_MD9600_DESCRIPTOR, 'prod')).toBe('allowed');
     expect(resolveRadioWriteGate(OPENGD77_MD9600_DESCRIPTOR, 'staging')).toBe('allowed');
+    expect(resolveRadioWriteGate(AT_D890UV_DESCRIPTOR, 'prod')).toBe('allowed');
+    expect(resolveRadioWriteGate(AT_D890UV_DESCRIPTOR, 'staging')).toBe('allowed');
     expect(resolveRadioWriteGate(undefined, 'prod')).toBe('allowed');
-  });
-
-  it('hides AT-D890UV write on prod', () => {
-    expect(resolveRadioWriteGate(AT_D890UV_DESCRIPTOR, 'prod')).toBe('hidden');
-  });
-
-  it('warns AT-D890UV write on pre-prod envs', () => {
-    for (const env of ['local', 'dev', 'main', 'staging'] as const) {
-      expect(resolveRadioWriteGate(AT_D890UV_DESCRIPTOR, env)).toBe('warn');
-    }
   });
 
   it('resolves profile-specific prod-disabled messages', () => {
@@ -52,14 +44,14 @@ describe('radioWriteEnvGate', () => {
     );
   });
 
-  it('resolves experimental write copy for gated radios', () => {
+  it('has no experimental write copy for cleared adapters', () => {
     expect(resolveRadioWriteExperimentalCopy('radio-io-rt95')).toBeNull();
     expect(resolveRadioWriteExperimentalCopy('radio-io-opengd77-md9600')).toBeNull();
-    expect(resolveRadioWriteExperimentalCopy('radio-io-at-d890uv')?.title).toMatch(/experimental/i);
+    expect(resolveRadioWriteExperimentalCopy('radio-io-at-d890uv')).toBeNull();
   });
 
   it('exports a prod-disabled operator message', () => {
     expect(RADIO_WRITE_PROD_DISABLED_MESSAGE).toMatch(/production/i);
-    expect(RADIO_WRITE_PROD_DISABLED_MESSAGE).toMatch(/Anytone CSV/i);
+    expect(RADIO_WRITE_PROD_DISABLED_MESSAGE).toMatch(/file export/i);
   });
 });
