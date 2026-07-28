@@ -63,6 +63,7 @@ import {
   zoneShowsOnAnytoneAirbandBank,
   zoneShowsOnAnytoneDmrBank,
 } from '@core/import-export/formats/anytone/zonePartition.ts';
+import { usesAtD890AirbandBankSplit } from './anytoneChannelBanks.ts';
 
 export type WirePreviewEntityKind =
   'channel' | 'zone' | 'scanList' | 'talkGroup' | 'contact' | 'rxGroupList';
@@ -271,6 +272,7 @@ export function previewWireRows(
   const defaultEgress = resolveBuildDefaultEgress(build);
   const formatId = _options?.formatId ?? defaultEgress?.formatId ?? '';
   const profileId = _options?.profileId ?? defaultEgress?.profileId;
+  const atD890AirbandBankSplit = usesAtD890AirbandBankSplit(profileId);
   const projection = assemble(build, library, { formatId, profileId });
 
   switch (entityKind) {
@@ -372,7 +374,7 @@ export function previewWireRows(
 
         for (const channel of library.channels) {
           if (!channelPassesRfEligibility(channel)) continue;
-          if (formatId === 'anytone') {
+          if (atD890AirbandBankSplit) {
             if (anytoneBank === 'dmr' && isAmAirbandBankChannel(channel, behaviourContext))
               continue;
             if (anytoneBank === 'airband' && !isAmAirbandBankChannel(channel, behaviourContext))
@@ -492,7 +494,7 @@ export function previewWireRows(
       const warnings: string[] = [];
       const channelById = new Map(library.channels.map((ch) => [ch.id, ch]));
       const zonesForBank =
-        formatId === 'anytone'
+        atD890AirbandBankSplit
           ? library.zones.filter((zone) => {
               const assembledZone = projection.zones.find((row) => row.zoneId === zone.id);
               const memberIds =

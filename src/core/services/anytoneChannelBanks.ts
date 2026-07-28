@@ -1,6 +1,15 @@
+import { resolveAnytoneCpsProfileId } from '@core/import-export/formats/anytone/profiles.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { ChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
+
+const AT_D890_CPS_PROFILE_ID = 'anytone-at-d890uv';
+
+/** True when egress uses the AT-D890UV parallel AmAir / AmZone bank split (CSV or Web Serial). */
+export function usesAtD890AirbandBankSplit(profileId: string | undefined): boolean {
+  if (!profileId) return false;
+  return resolveAnytoneCpsProfileId(profileId) === AT_D890_CPS_PROFILE_ID;
+}
 import {
   classifyAnytoneExportChannelBank as classifyFromFormat,
   partitionAnytoneChannels as partitionChannelsFromFormat,

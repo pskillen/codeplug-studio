@@ -15,6 +15,7 @@ import {
   showsPerChannelScanListNav,
   traitsForRadioTarget,
 } from '@core/radio-targets/index.ts';
+import { usesAtD890AirbandBankSplit } from '@core/services/anytoneChannelBanks.ts';
 import { findNeonplugDonorEgress, findRadioCloneEgress } from '../../lib/buildEgressUi.ts';
 import { entityNavIcons } from '../../nav/entityNavIcons.ts';
 
@@ -36,7 +37,7 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
   const base = `/builds/${build.id}`;
   const traits = new Set(traitsForRadioTarget(build.radioTargetId));
   const flatMemory = traits.has(BuildCapabilityTrait.FlatMemoryList);
-  const activeFormatId = options?.activeEgress?.formatId;
+  const activeEgressProfileId = options?.activeEgress?.profileId;
   const egressPaths = options?.egressPaths ?? [];
 
   const items: BuildNavItem[] = [
@@ -59,7 +60,7 @@ export function buildNavItems(build: RadioBuild, options?: BuildNavOptions): Bui
     });
   }
 
-  if (activeFormatId === 'anytone') {
+  if (usesAtD890AirbandBankSplit(activeEgressProfileId)) {
     items.push({ label: 'Airband', path: `${base}/airband`, icon: IconPlane });
   }
 
