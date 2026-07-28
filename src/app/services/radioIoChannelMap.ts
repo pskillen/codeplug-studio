@@ -263,9 +263,7 @@ function openGd77AssembledChannelsToRadioDtos(
         profileAnalog && 'txTone' in profileAnalog ? profileAnalog.txTone : 'none',
       ),
       powerPercent: entity.power,
-      bandwidth: bandwidthFromAnalogProfile(
-        profileAnalog ?? { mode: 'fm', bandwidthKHz: null },
-      ),
+      bandwidth: bandwidthFromAnalogProfile(profileAnalog ?? { mode: 'fm', bandwidthKHz: null }),
       ...(profileAnalog && 'squelch' in profileAnalog
         ? { squelchPercent: profileAnalog.squelch }
         : {}),
@@ -396,9 +394,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
       rxTone: channelToneToRadioTone(analog && 'rxTone' in analog ? analog.rxTone : 'none'),
       txTone: channelToneToRadioTone(analog && 'txTone' in analog ? analog.txTone : 'none'),
       powerPercent: entity.power,
-      bandwidth: bandwidthFromAnalogProfile(
-        analog ?? { mode: 'fm', bandwidthKHz: null },
-      ),
+      bandwidth: bandwidthFromAnalogProfile(analog ?? { mode: 'fm', bandwidthKHz: null }),
       ...(analog && 'squelch' in analog ? { squelchPercent: analog.squelch } : {}),
       ...(rxOnly ? { rxOnly: true } : {}),
       ...digitalFieldsFromChannel(entity, fkMaps),
