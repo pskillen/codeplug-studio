@@ -4,12 +4,32 @@ import { useZoneScanExportLayout } from '../../../hooks/useZoneScanExportLayout.
 import ZoneScanOverrideSection from '../../../components/builds/wirePreview/overrideModalSections/ZoneScanOverrideSection.tsx';
 import ZoneMemberOrderSection from '../../../components/builds/wirePreview/overrideModalSections/ZoneMemberOrderSection.tsx';
 import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
+import { classifyAnytoneZoneByMembers } from '@core/import-export/formats/anytone/zonePartition.ts';
+import { directZoneMemberChannelIds } from '@core/domain/zoneMembers.ts';
+import { usesAtD890AirbandBankSplit } from '@core/services/anytoneChannelBanks.ts';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { useBuildLayout } from '../BuildLayoutContext.tsx';
+import { useCallback } from 'react';
 
 export default function BuildZonesWirePage() {
   const zoneScan = useZoneScanExportLayout();
-  const { build } = useBuildLayout();
+  const { build, activeEgress } = useBuildLayout();
+
+  const zoneShowsDmrDerivedScan = useCallback(
+    (zoneId: string): boolean => {
+      if (!usesAtD890AirbandBankSplit(activeEgress?.profileId)) return true;
+      if (!zoneScan.library) return true;
+      const zone = zoneScan.zoneById.get(zoneId);
+      if (!zone) return true;
+      const kind = classifyAnytoneZoneByMembers(
+        directZoneMemberChannelIds(zone),
+        zoneScan.channelById,
+        zoneScan.zoneBehaviourContext,
+      );
+      return kind !== 'airband';
+    },
+    [activeEgress?.profileId, zoneScan.channelById, zoneScan.library, zoneScan.zoneBehaviourContext, zoneScan.zoneById],
+  );
 
   const zoneModalContext = (row: WirePreviewRow) => {
     if (!zoneScan.layoutSupported || !zoneScan.layout || !zoneScan.library) {
@@ -34,6 +54,7 @@ export default function BuildZonesWirePage() {
               saving: zoneScan.saving,
               onExportScanListChange: (zoneId, enabled) =>
                 zoneScan.updateZoneEntry(zoneId, { exportScanList: enabled }),
+              showExportScanListForZone: zoneShowsDmrDerivedScan,
             }
           : undefined
       }
@@ -78,6 +99,7 @@ export default function BuildZonesWirePage() {
       }}
       modalScanSection={(row) => {
         if (!zoneScan.enabled) return null;
+        if (!zoneShowsDmrDerivedScan(row.libraryEntityId)) return null;
         const ctx = zoneModalContext(row);
         if (!ctx || !zoneScan.library) return null;
         return (
