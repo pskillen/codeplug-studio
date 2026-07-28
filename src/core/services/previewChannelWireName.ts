@@ -1,12 +1,8 @@
-import {
-  channelPickForWireExport,
-  composeChannelWireName,
-  type ChannelExportNameMode,
-} from '@core/domain/channelNaming.ts';
-import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
+import { assembledChannelExportWireName } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Channel } from '@core/models/library.ts';
+import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
 import { resolveBuildDefaultEgress } from '@core/radio-targets/index.ts';
 import { mergeExportOptions } from './exportBuild.ts';
 
@@ -35,13 +31,11 @@ export function previewGeneratedChannelWireName(
   const profileId = merged.profileId ?? defaultEgress?.profileId;
   const reserved = new Set<string>();
   const warnings: string[] = [];
-  const pick = channelPickForWireExport(channel, {
-    nameModeOverride: merged.nameModeOverride as ChannelExportNameMode | undefined,
-  });
-  let base = composeChannelWireName(pick);
-  const abbrev = channel.abbreviation?.trim();
-  if (abbrev && merged.useChannelAbbreviation !== false) {
-    base = composeChannelWireName({ ...pick, name: abbrev });
-  }
-  return applyWireNameLimits(base, channel, reserved, merged, profileId, warnings);
+  return assembledChannelExportWireName(
+    { entity: channel, wireName: defaultChannelWireName(channel) },
+    reserved,
+    merged,
+    profileId,
+    warnings,
+  );
 }

@@ -53,6 +53,43 @@ describe('anytoneChannelWireName', () => {
     expect(warnings.some((w) => w.includes(override))).toBe(true);
   });
 
+  it('keeps full name under limit when abbreviation is set (useChannelAbbreviation on)', () => {
+    const channel = {
+      ...dmrChannel('hotspot'),
+      abbreviation: 'Hspt',
+    };
+    const wireName = anytoneChannelWireName(
+      { entity: channel, wireName: 'GB3GL hotspot' },
+      { reserved: new Set() },
+      {
+        profileId: 'anytone-at-d890uv',
+        shortenNames: true,
+        useChannelAbbreviation: true,
+      },
+    );
+
+    expect(wireName).toBe('GB3GL hotspot');
+  });
+
+  it('shortens with library abbreviation when over nameLimit (useChannelAbbreviation on)', () => {
+    const channel = {
+      ...dmrChannel('Mugherafelt'),
+      callsign: 'GB3MT',
+      abbreviation: "M'flt",
+    };
+    const wireName = anytoneChannelWireName(
+      { entity: channel, wireName: 'GB3MT Mugherafelt' },
+      { reserved: new Set() },
+      {
+        profileId: 'anytone-at-d890uv',
+        shortenNames: true,
+        useChannelAbbreviation: true,
+      },
+    );
+
+    expect(wireName).toBe("GB3MT M'flt");
+  });
+
   it('matches previewGeneratedChannelWireName for the same channel and build settings', () => {
     const channel = dmrChannel('Glasgow Scotland West Repeater');
     const build = newFormatBuild(PROJECT_ID, 'anytone-at-d890uv');
