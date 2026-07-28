@@ -306,7 +306,7 @@ export function localInfoRegisterPreview(localInfo: Uint8Array): AtD890RegisterR
 export const AT_D890_NOT_IN_CAPTURE: readonly { address: string; label: string; note: string }[] = [
   {
     address: '—',
-    label: 'DigitalContact*, boot/BK images, crypto, AM air, roaming, AnalogBook',
+    label: 'DigitalContact*, boot/BK images, crypto, roaming, AnalogBook, broadcast FM',
     note: 'Not in v1 Read/Write set',
   },
 ] as const;

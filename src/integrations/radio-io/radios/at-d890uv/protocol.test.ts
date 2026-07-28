@@ -233,6 +233,36 @@ describe('AtD890uvProtocol', () => {
       new Uint8Array(0x40),
       NEGOTIATED_READ_BLOCK,
     );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.AmAirSet,
+      new Uint8Array(D890_MAP.AmAirSetLength),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.AmAirVfo,
+      new Uint8Array(D890_MAP.AmAirVfoLength),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.AmZoneSet,
+      new Uint8Array(D890_MAP.AmZoneSetLength),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.AmZoneAChannel,
+      new Uint8Array(D890_MAP.AmZoneAChannelLength),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.AmZoneScan,
+      new Uint8Array(D890_MAP.AmZoneScanLength),
+      NEGOTIATED_READ_BLOCK,
+    );
 
     await radio.download({});
     const cache = radio.getDownloadCache()!;

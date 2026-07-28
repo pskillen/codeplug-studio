@@ -953,6 +953,14 @@ function AtD890RadioImageSections({
                 <Table.Td fw={600}>Operator radio IDs</Table.Td>
                 <Table.Td>{summary.radioIdCount}</Table.Td>
               </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>AM airband channels</Table.Td>
+                <Table.Td>{summary.amAirCount}</Table.Td>
+              </Table.Tr>
+              <Table.Tr>
+                <Table.Td fw={600}>AM airband zones</Table.Td>
+                <Table.Td>{summary.amZoneCount}</Table.Td>
+              </Table.Tr>
             </Table.Tbody>
           </Table>
         </Table.ScrollContainer>

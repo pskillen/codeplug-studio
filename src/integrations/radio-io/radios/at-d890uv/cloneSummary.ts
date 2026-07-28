@@ -48,6 +48,8 @@ export interface AtD890uvCloneSummary {
   talkGroupCount: number;
   rxGroupCount: number;
   radioIdCount: number;
+  amAirCount: number;
+  amZoneCount: number;
   writtenFromBuild: readonly string[];
   digitalContactsWriteGap: string;
   retainGroups: readonly AtD890RetainGroupSummary[];
@@ -79,6 +81,8 @@ export function summariseAtD890uvClone(bag: RadioCloneHydrationBag): AtD890uvClo
   const tgSet = getCacheBytes(cache, D890_MAP.TalkgroupSet, AT_D890_LIMITS.TALKGROUP_SET_BYTES);
   const rxSet = getCacheBytes(cache, D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES);
   const ridSet = getCacheBytes(cache, D890_MAP.RadioIdSet, AT_D890_LIMITS.RADIO_ID_SET_BYTES);
+  const amAirSet = getCacheBytes(cache, D890_MAP.AmAirSet, D890_MAP.AmAirSetLength);
+  const amZoneSet = getCacheBytes(cache, D890_MAP.AmZoneSet, D890_MAP.AmZoneSetLength);
 
   const groups = new Map<
     string,
@@ -154,6 +158,8 @@ export function summariseAtD890uvClone(bag: RadioCloneHydrationBag): AtD890uvClo
     talkGroupCount: listSetBits(tgSet, true).length,
     rxGroupCount: listSetBits(rxSet).length,
     radioIdCount: listSetBits(ridSet).length,
+    amAirCount: listSetBits(amAirSet).length,
+    amZoneCount: listSetBits(amZoneSet).length,
     writtenFromBuild: AT_D890_WRITTEN_FROM_BUILD_LABELS,
     digitalContactsWriteGap: AT_D890_DIGITAL_CONTACTS_WRITE_GAP,
     retainGroups: [...groups.entries()].map(([label, g]) => ({

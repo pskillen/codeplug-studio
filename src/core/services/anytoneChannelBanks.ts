@@ -1,6 +1,6 @@
 import type { Channel } from '@core/models/library.ts';
 import type { ChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/index.ts';
-import type { AssembledBuild } from '@core/services/assemble.ts';
+import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import {
   classifyAnytoneExportChannelBank as classifyFromFormat,
   partitionAnytoneChannels as partitionChannelsFromFormat,
@@ -11,6 +11,10 @@ import {
   partitionAnytoneZones as partitionZonesFromFormat,
   type AnytoneZonePartition,
 } from '@core/import-export/formats/anytone/zonePartition.ts';
+import {
+  orderedAmAirChannels as orderedAmAirChannelsFromFormat,
+  receiveBankChannelSlot as receiveBankChannelSlotFromFormat,
+} from '@core/import-export/formats/anytone/exportChannelSlots.ts';
 
 export type { AnytoneExportChannelBank, AnytoneChannelPartition, AnytoneZonePartition };
 
@@ -19,7 +23,7 @@ export function classifyAnytoneExportChannelBank(channel: Channel): AnytoneExpor
   return classifyFromFormat(channel);
 }
 
-/** Split assembled channels into DMR, AM airband, and FM broadcast banks (Anytone CSV parity). */
+/** Split assembled channels into DMR, AM airband, and broadcast FM banks (Anytone CSV parity). */
 export function partitionAnytoneChannels(
   assembled: AssembledBuild,
   context?: ChannelBehaviourContext,
@@ -33,4 +37,17 @@ export function partitionAnytoneZones(
   context?: ChannelBehaviourContext,
 ): AnytoneZonePartition {
   return partitionZonesFromFormat(assembled, context);
+}
+
+/** AM airband channels in export / serial slot order. */
+export function orderedAmAirChannels(
+  assembled: AssembledBuild,
+  context?: ChannelBehaviourContext,
+): AssembledChannel[] {
+  return orderedAmAirChannelsFromFormat(assembled, context);
+}
+
+/** 1-based AmAir / FM bank slot (`No.` / wire index). */
+export function receiveBankChannelSlot(row: AssembledChannel, index: number): number {
+  return receiveBankChannelSlotFromFormat(row, index);
 }

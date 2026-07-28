@@ -20,6 +20,16 @@ describe('AT_D890 writable extents', () => {
     expect(isAtD890WritableAddress(D890_MAP.ChannelSet)).toBe(true);
     expect(isAtD890WritableAddress(D890_MAP.ZoneAChannel)).toBe(true);
     expect(isAtD890WritableAddress(D890_MAP.MasterIdData)).toBe(true);
+    expect(isAtD890WritableAddress(D890_MAP.AmAirSet)).toBe(true);
+    expect(isAtD890WritableAddress(D890_MAP.AmAirData)).toBe(true);
+    expect(isAtD890WritableAddress(D890_MAP.AmZoneSet)).toBe(true);
+    expect(isAtD890WritableAddress(D890_MAP.AmZoneData)).toBe(true);
+    expect(isAtD890WritableAddress(D890_MAP.AmZoneAChannel)).toBe(true);
+    expect(isAtD890WritableAddress(D890_MAP.AmZoneScan)).toBe(true);
+  });
+
+  it('excludes AmAir VFO (retain-only companion of the programmable bank)', () => {
+    expect(isAtD890WritableAddress(D890_MAP.AmAirVfo)).toBe(false);
   });
 
   it('excludes LocalInfo and optional settings', () => {

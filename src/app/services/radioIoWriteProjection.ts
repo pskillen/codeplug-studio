@@ -43,6 +43,8 @@ import {
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import type {
+  RadioAmAirChannelDto,
+  RadioAmZoneDto,
   RadioAprsDto,
   RadioDigitalContactDto,
   RadioRadioIdDto,
@@ -54,9 +56,12 @@ import type {
 } from '@integrations/radio-io/radioWriteProjection.ts';
 import { buildNeonplugAprsRadioSettingsPatch } from '@core/services/aprsExportFacts.ts';
 import {
+  orderedAmAirChannels,
   partitionAnytoneChannels,
   partitionAnytoneZones,
+  receiveBankChannelSlot,
 } from '@core/services/anytoneChannelBanks.ts';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import {
   expandAssembledChannelsToRadioDtos,
   isOpenGd77RadioIoEgress,
@@ -894,16 +899,8 @@ function buildAtD890DmrBankAssembled(
 ): AssembledBuild {
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const context = merged.channelBehaviourContext;
-  const { dmrChannels, amAirChannels, fmBroadcastChannels } = partitionAnytoneChannels(
-    assembled,
-    context,
-  );
+  const { dmrChannels, fmBroadcastChannels } = partitionAnytoneChannels(assembled, context);
 
-  if (amAirChannels.length > 0) {
-    warnings.push(
-      `${amAirChannels.length} AM airband channel(s) omitted from Web Serial Write — use Anytone CSV for AMAir.CSV updates; the radio's AM airband bank is unchanged.`,
-    );
-  }
   if (fmBroadcastChannels.length > 0) {
     warnings.push(
       `${fmBroadcastChannels.length} broadcast FM channel(s) omitted from Web Serial Write — use Anytone CSV for FM.CSV updates.`,
@@ -930,6 +927,116 @@ function buildAtD890DmrBankAssembled(
     channels: dmrChannels,
     zones,
   };
+}
+
+/**
+ * AM airband organisation for AT-D890UV Write.
+ * Returns undefined to retain the radio AmAir/AmZone banks (empty build, or channels without zones).
+ * When present, both channels and zones are always set together (product rule #756).
+ */
+function buildAtD890AmAirOrganisation(
+  assembled: AssembledBuild,
+  build: RadioBuild,
+  egress: RadioWireEgressIds,
+  warnings: string[],
+): { amAirChannels: RadioAmAirChannelDto[]; amZones: RadioAmZoneDto[] } | undefined {
+  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
+  const context = merged.channelBehaviourContext;
+  const ordered = orderedAmAirChannels(assembled, context);
+  const { amZones: partitionedAmZones } = partitionAnytoneZones(assembled, context);
+  const zoneById = new Map(assembled.zones.map((zone) => [zone.zoneId, zone]));
+
+  if (ordered.length === 0) {
+    return undefined;
+  }
+
+  if (partitionedAmZones.length === 0) {
+    warnings.push(
+      `${ordered.length} AM airband channel(s) present but no AM zone membership — Web Serial leaves the radio AM airband bank unchanged (zones ship with channels). Add airband channels to a zone, or use Anytone CSV.`,
+    );
+    return undefined;
+  }
+
+  const nameLen = AT_D890UV_LIMITS.NAME_LENGTH;
+  const reservedNames = new Set<string>();
+  const amAirChannels: RadioAmAirChannelDto[] = [];
+  const slotByChannelId = new Map<string, number>();
+
+  ordered.forEach((row, index) => {
+    const slot = receiveBankChannelSlot(row, index);
+    if (slot < 1 || slot > AT_D890UV_LIMITS.AM_AIR_CHANNEL_MAX) {
+      warnings.push(
+        `AM airband channel "${row.wireName}" slot ${slot} is outside 1–${AT_D890UV_LIMITS.AM_AIR_CHANNEL_MAX}; omitted from Web Serial Write`,
+      );
+      return;
+    }
+    if (amAirChannels.length >= AT_D890UV_LIMITS.AM_AIR_CHANNEL_MAX) {
+      warnings.push(
+        `AM airband channel bank exceeds ${AT_D890UV_LIMITS.AM_AIR_CHANNEL_MAX}; extra channels omitted from Web Serial Write`,
+      );
+      return;
+    }
+    const wireName = applyListWireNameLimits(
+      row.wireName,
+      reservedNames,
+      undefined,
+      egress.profileId,
+      warnings,
+      'Channel',
+      nameLen,
+    );
+    amAirChannels.push({
+      slotIndex: slot,
+      wireName,
+      rxHz: row.entity.rxFrequency ?? 0,
+    });
+    slotByChannelId.set(row.entity.id, slot);
+  });
+
+  if (amAirChannels.length === 0) {
+    return undefined;
+  }
+
+  const reservedZoneNames = new Set<string>();
+  const amZones: RadioAmZoneDto[] = [];
+  for (const partitioned of partitionedAmZones) {
+    if (amZones.length >= AT_D890UV_LIMITS.AM_ZONE_MAX) {
+      warnings.push(
+        `AM airband zone bank exceeds ${AT_D890UV_LIMITS.AM_ZONE_MAX}; extra zones omitted from Web Serial Write`,
+      );
+      break;
+    }
+    const original = zoneById.get(partitioned.zoneId);
+    let channelNumbers = partitioned.memberChannelIds
+      .map((id) => slotByChannelId.get(id))
+      .filter((n): n is number => typeof n === 'number');
+    if (channelNumbers.length === 0) continue;
+    if (channelNumbers.length > AT_D890UV_LIMITS.AM_ZONE_MEMBERS_MAX) {
+      warnings.push(
+        `AM airband zone "${original?.wireName ?? partitioned.zoneId}" truncated from ${channelNumbers.length} to ${AT_D890UV_LIMITS.AM_ZONE_MEMBERS_MAX} members`,
+      );
+      channelNumbers = channelNumbers.slice(0, AT_D890UV_LIMITS.AM_ZONE_MEMBERS_MAX);
+    }
+    const wireName = applyListWireNameLimits(
+      original?.wireName ?? partitioned.zoneId,
+      reservedZoneNames,
+      undefined,
+      egress.profileId,
+      warnings,
+      'Zone',
+      nameLen,
+    );
+    amZones.push({ wireName, channelNumbers, aChannelMemberIndex: 0 });
+  }
+
+  if (amZones.length === 0) {
+    warnings.push(
+      'AM airband channels could not be mapped into any AM zone for Web Serial Write — radio AM airband bank unchanged.',
+    );
+    return undefined;
+  }
+
+  return { amAirChannels, amZones };
 }
 
 export function buildRadioWriteProjection(
@@ -1035,12 +1142,14 @@ export function buildRadioWriteProjection(
       org.numbersBySourceChannelId,
     );
     numbersBySourceChannelId = org.numbersBySourceChannelId;
+    const amAir = buildAtD890AmAirOrganisation(assembled, build, egress, warnings);
     organisation = {
       zones: org.zones,
       scanLists: org.scanLists,
       talkGroups,
       rxGroups,
       radioIds: dm32RadioIds,
+      ...(amAir ? { amAirChannels: amAir.amAirChannels, amZones: amAir.amZones } : {}),
     };
   } else if (isOpenGd77RadioIoEgress(egress.profileId)) {
     channels = stampOpenGd77ChannelBehaviour(

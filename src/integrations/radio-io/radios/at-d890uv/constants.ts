@@ -117,7 +117,7 @@ export const D890_MAP = {
   AprsReceiveFiltersLength: 0x100,
   /**
    * AM airband channels + VFO. 256 programmable slots + 1 VFO slot (index 256) —
-   * `Memory::initAmAir` in anytone-cps. Not Read or Write in Studio yet (#756).
+   * `Memory::initAmAir` in anytone-cps. Sparse Read + Write (#756).
    */
   AmAirSet: 0x3884_200,
   AmAirSetLength: 0x20,
@@ -129,20 +129,46 @@ export const D890_MAP = {
   AmAirVfoLength: 0x40,
   /**
    * AM airband zones. 16 zones — `Memory::initAmZones` in anytone-cps.
-   * `AmZone::encode_D890UV()` is an empty-array stub upstream — see memory-layout.md
-   * for the AChannel byte-width and Scan bitmap read-path caveats before trusting these
-   * beyond a raw debug dump. Not Read or Write in Studio yet (#756).
+   * Record layout verified against a hardware dump reconciled with CPS CSV egress
+   * 2026-07-28 — see memory-layout.md. `AmZone::encode_D890UV()` is still an empty-array
+   * stub upstream; do not port it. Sparse Read + Write (#756).
    */
   AmZoneSet: 0x3884_400,
   AmZoneSetLength: 0x10,
+  /**
+   * A-channel per zone = **u16 LE index into that zone's member list**, not a global AM
+   * channel index. Both facts verified on hardware: a sample with A-channels at member
+   * positions 0/1/2 reads `00 00 01 00 02 00` — u8 would have given `00 01 02`, and a
+   * global-index scheme would have given the members' global indices.
+   *
+   * anytone-cps reads u16 (correct) but **writes u8** into a `0x10` buffer, which lands
+   * zone n's value on byte n instead of byte 2n — corrupting zone 0's high byte. Its `0x10`
+   * read length also only covers 8 of the 16 zones. Do not port either.
+   */
   AmZoneAChannel: 0x3884_600,
-  AmZoneAChannelLength: 0x10,
+  AmZoneAChannelStride: 2,
+  /** 16 zones × u16. Zones 8-15 are inferred from the stride — not yet sampled. */
+  AmZoneAChannelLength: 0x20,
+  /**
+   * Scan membership: one bit per **member-list position** (not global channel index —
+   * verified, see memory-layout.md), `0x4` bytes = 32 bits per zone, matching the 32 member
+   * slots in the record. anytone-cps reads this at a `0x10` stride, which is wrong and makes
+   * its own decode read outside the zone's slice for any zone after the first.
+   */
   AmZoneScan: 0x3884_800,
-  AmZoneScanStride: 0x10,
+  AmZoneScanStride: 0x4,
+  /** 16 zones × 4 bytes. */
+  AmZoneScanLength: 0x40,
   AmZoneData: 0x3888_000,
   AmZoneDataStride: 0x80,
   AmZoneDataLength: 0x80,
   AmZoneCount: 16,
+  /** Zone name: UTF-16LE, max 16 chars, always NUL-terminated (terminator may sit at `0x20`). */
+  AmZoneNameOffset: 0x0,
+  AmZoneNameLength: 0x22,
+  /** Member list: u16 LE per slot, `0xffff` = empty/terminator. */
+  AmZoneMembersOffset: 0x22,
+  AmZoneMemberSlots: 32,
   /**
    * Digital contact book. Huge, block-hopped bank — see memory-layout.md for the
    * linear-stream reconstruction formula. Read/decode/encode all exist in anytone-cps;
