@@ -34,8 +34,10 @@ When scan export is enabled for a zone on **DM32** or **Anytone**:
 - **Carrier channel** = `{zoneName} Scan` at `scanCarrierFrequencyHz` or **145.500 MHz** simplex
 - Carrier is prepended as the first member in the zone CSV pipe list (`Zones.csv` / `DMRZone.CSV`)
 - Zone-derived `ScanList.CSV` members are **DMR bank channels only** — AMAir/FM receive-bank channels in the zone are excluded (they live in `AMAir.CSV` / `FM.CSV`, not `Channel.CSV`)
-- Only the **carrier channel** receives the zone-derived `Scan List` FK — member channels keep library/manual assignments only (channels can belong to multiple zones; scan lists are per-channel)
+- Only the **carrier channel** receives the zone-derived `Scan List` FK on **Anytone CSV export** — member channels keep library/manual assignments only (channels can belong to multiple zones; scan lists are per-channel)
 - **Auto Scan** = `1` on the carrier channel (`Channel.CSV` / `Channels.csv`)
+
+**Anytone Web Serial Write** (`radio-io-at-d890uv`) uses **first-wins** zone-derived scan FK on member channels (NeonPlug / DM32 parity) — see [#830](https://github.com/pskillen/codeplug-studio/issues/830). CSV export behaviour is unchanged.
 
 **DM32:** `Scan.csv` `Scan Tx Mode` = `Last Actived Channel`.
 
@@ -50,7 +52,7 @@ When scan export is enabled for a zone on **DM32** or **Anytone**:
 | **OpenGD77** | Ignored (zone = scan)          | —                                           |
 | **CHIRP**    | Ignored                        | —                                           |
 
-Channel `Scan List` FK on Anytone: library `Channel.scanListId` on member channels; zone-derived FK attaches to the carrier channel only.
+Channel `Scan List` FK on Anytone **CSV**: library `Channel.scanListId` on member channels; zone-derived FK attaches to the **carrier channel only**. **Web Serial** may stamp first-wins FK on shared zone members — see scan carrier section above.
 
 ## Related
 

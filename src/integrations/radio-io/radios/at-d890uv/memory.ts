@@ -11,9 +11,12 @@ export {
 
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import type { MemoryMap } from '../../types.ts';
+import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
 import { AT_D890_BLOCK_SIZE, AT_D890_MAP_SIZE, AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import { listSetBits } from './bitmap.ts';
 import { assertAtD890WritableSpan, isAtD890WritableAddress } from './writableExtents.ts';
+import { syncAmAirRegionsToCache } from './amAirCodec.ts';
+import { syncAmZoneRegionsToCache } from './amZoneCodec.ts';
 
 export interface AtD890SparseBlock {
   address: number;
@@ -256,8 +259,33 @@ export function mergeImageRegionIntoCache(
   }
 }
 
+/** Upload intent for banks that hydration encodes but Read may not have cached. */
+export type AtD890UploadBankIntent = {
+  /** When true, stage AmAir/AmZone from the write image (both keys were projected). */
+  replaceAmAirBank: boolean;
+  /** When true, stage TalkgroupOrder rebuilt in the write image. */
+  replaceTalkgroupOrder: boolean;
+};
+
+export function atD890UploadBankIntentFromOrganisation(
+  organisation?: RadioWriteOrganisation,
+): AtD890UploadBankIntent {
+  return {
+    replaceAmAirBank:
+      organisation?.amAirChannels !== undefined && organisation?.amZones !== undefined,
+    replaceTalkgroupOrder: organisation?.talkGroups !== undefined,
+  };
+}
+
 /** Push modelled regions from a merged MemoryMap back into the upload cache. */
-export function applyAtD890WriteImageToCache(cache: AtD890DownloadCache, image: MemoryMap): void {
+export function applyAtD890WriteImageToCache(
+  cache: AtD890DownloadCache,
+  image: MemoryMap,
+  intent: AtD890UploadBankIntent = {
+    replaceAmAirBank: false,
+    replaceTalkgroupOrder: false,
+  },
+): void {
   const staticRegions: { address: number; length: number }[] = [
     { address: D890_MAP.ChannelSet, length: AT_D890_LIMITS.CHANNEL_SET_BYTES },
     { address: D890_MAP.ZoneSet, length: AT_D890_LIMITS.ZONE_SET_BYTES },
@@ -338,8 +366,16 @@ export function applyAtD890WriteImageToCache(cache: AtD890DownloadCache, image: 
     );
   }
 
-  // AmAir / AmZone: only when hydration encoded them (syncAm*RegionsToCache).
-  // Omitting here keeps the radio bank unchanged when the build has no airband content.
+  if (intent.replaceTalkgroupOrder) {
+    clearTalkgroupOrderBlocksFromCache(cache);
+    mergeImageRegionIntoCache(cache, image, D890_MAP.TalkgroupOrder, 0x1000);
+  }
+
+  if (intent.replaceAmAirBank) {
+    clearAmAirBankBlocksFromCache(cache);
+    syncAmAirRegionsToCache(cache, image);
+    syncAmZoneRegionsToCache(cache, image);
+  }
 }
 
 export function mergeMapRegionsIntoCache(

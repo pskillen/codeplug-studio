@@ -99,6 +99,7 @@ export interface RadioHydrationHooks {
   seedProtocolForUpload?(
     protocol: CloneImageRadio,
     bag: import('@core/models/radioCloneHydration.ts').RadioCloneHydrationBag,
+    organisation?: import('./radioWriteProjection.ts').RadioWriteOrganisation,
   ): void;
 }
 
