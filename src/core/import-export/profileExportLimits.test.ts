@@ -15,7 +15,7 @@ describe('getProfileExportLimits', () => {
     expect(limits!.nameLengthZone).toBe(16);
     expect(limits!.nameLengthContact).toBe(16);
     expect(limits!.nameLengthTalkGroup).toBe(16);
-    expect(limits!.nameLengthRxGroupList).toBe(16);
+    expect(limits!.nameLengthRxGroupList).toBe(15);
     expect(limits!.maxTalkGroups).toBe('not_used');
     expect(limits!.maxScanLists).toBe('not_used');
     expect(limits!.scanListMembers).toBe('not_used');
@@ -53,7 +53,9 @@ describe('getProfileExportLimits', () => {
     expect(limits!.zoneMembers).toBe(64);
     expect(limits!.scanListMembers).toBe(100);
     expect(limits!.rxGroupListMembers).toBe(32);
-    expect(limits!.maxZones).toBeNull();
+    expect(limits!.maxZones).toBe(256);
+    expect(limits!.maxRxGroupLists).toBe(128);
+    expect(limits!.maxTalkGroups).toBe(10_000);
     expect(limits!.maxContacts).toBeNull();
   });
 

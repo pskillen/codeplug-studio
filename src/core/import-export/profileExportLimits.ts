@@ -6,6 +6,7 @@
 
 import type { FormatId } from './types.ts';
 import type { PowerLadderEntry } from './profileLadder.ts';
+import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { getAnytoneProfile } from './formats/anytone/profiles.ts';
 import { getChirpProfile } from './formats/chirp/profiles.ts';
 import { getDm32Profile } from './formats/dm32/profiles.ts';
@@ -130,7 +131,7 @@ export function getProfileExportLimits(
         nameLengthZone: profile.nameLimit,
         nameLengthContact: profile.nameLimit,
         nameLengthTalkGroup: profile.nameLimit,
-        nameLengthRxGroupList: profile.nameLimit,
+        nameLengthRxGroupList: profile.rxGroupListNameLimit,
         nameLengthScanList: 'not_used',
       });
     }
@@ -171,11 +172,11 @@ export function getProfileExportLimits(
         maxChannels: profile.maxChannels,
         nameLengthChannel: profile.nameLimit,
         powerLadder: profile.powerLadder,
-        maxZones: null,
+        maxZones: profile.maxZones,
         maxScanLists: profile.maxScanLists,
-        maxRxGroupLists: null,
+        maxRxGroupLists: profile.maxRxGroupLists,
         maxContacts: null,
-        maxTalkGroups: null,
+        maxTalkGroups: profile.maxTalkGroups,
         zoneMembers: profile.zoneMembers,
         scanListMembers: profile.scanListMembers,
         rxGroupListMembers: profile.rxGroupListMembers,
@@ -338,7 +339,7 @@ export function getProfileExportLimits(
           nameLengthContact: profile.nameLimit,
           nameLengthTalkGroup: profile.nameLimit,
           nameLengthScanList: 'not_used',
-          nameLengthRxGroupList: profile.nameLimit,
+          nameLengthRxGroupList: OPENGD77_FAMILY_LIMITS.RX_GROUP_NAME_LEN,
           powerLadder: profile.powerLadder,
           siblingLadders: [],
         };

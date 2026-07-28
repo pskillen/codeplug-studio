@@ -3,6 +3,8 @@
  * No CPS import/export adapter; binary I/O lives in integrations/radio-io.
  */
 
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import type { PowerLadderEntry } from '../../profileLadder.ts';
 
@@ -236,43 +238,43 @@ export const RADIO_IO_DM32UV_PROFILE: RadioIoDm32uvProfile = {
 export const RADIO_IO_AT_D890UV_PROFILE: RadioIoAtD890uvProfile = {
   id: 'radio-io-at-d890uv',
   label: 'Anytone AT-D890UV',
-  maxMemorySlots: 4000,
-  nameLimit: 16,
-  maxZones: 256,
-  zoneMembers: 64,
-  maxScanLists: 100,
-  scanListMembers: 100,
-  maxRxGroupLists: 128,
-  rxGroupListMembers: 32,
-  maxTalkGroups: 10000,
+  maxMemorySlots: AT_D890UV_LIMITS.CHANNEL_MAX,
+  nameLimit: AT_D890UV_LIMITS.NAME_LENGTH,
+  maxZones: AT_D890UV_LIMITS.ZONE_MAX,
+  zoneMembers: AT_D890UV_LIMITS.ZONE_MEMBERS_MAX,
+  maxScanLists: AT_D890UV_LIMITS.SCAN_LISTS_MAX,
+  scanListMembers: AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX,
+  maxRxGroupLists: AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX,
+  rxGroupListMembers: AT_D890UV_LIMITS.RX_GROUP_MEMBERS_MAX,
+  maxTalkGroups: AT_D890UV_LIMITS.TALK_GROUPS_MAX,
   powerLadder: AT_D890UV_POWER_LADDER,
 };
 
 export const RADIO_IO_OPENGD77_1701_PROFILE: RadioIoOpenGd771701Profile = {
   id: 'radio-io-opengd77-1701',
   label: 'Baofeng DM-1701 / RT-84 (OpenGD77)',
-  maxMemorySlots: 1023,
-  nameLimit: 16,
-  maxZones: 68,
-  zoneMembers: 80,
+  maxMemorySlots: OPENGD77_FAMILY_LIMITS.CHANNEL_MAX,
+  nameLimit: OPENGD77_FAMILY_LIMITS.NAME_LENGTH_CHANNEL_ZONE_CONTACT_TG,
+  maxZones: OPENGD77_FAMILY_LIMITS.ZONE_MAX,
+  zoneMembers: OPENGD77_FAMILY_LIMITS.ZONE_MEMBERS_MAX,
   maxScanLists: 'not_used',
   scanListMembers: 'not_used',
-  maxRxGroupLists: 76,
-  rxGroupListMembers: 32,
+  maxRxGroupLists: OPENGD77_FAMILY_LIMITS.RX_GROUP_LISTS_MAX,
+  rxGroupListMembers: OPENGD77_FAMILY_LIMITS.RX_GROUP_MEMBERS_MAX,
   powerLadder: OPENGD77_1701_POWER_LADDER,
 };
 
 export const RADIO_IO_OPENGD77_MD9600_PROFILE: RadioIoOpenGd77Md9600Profile = {
   id: 'radio-io-opengd77-md9600',
   label: 'TYT MD-9600 / RT-90 (OpenGD77)',
-  maxMemorySlots: 1023,
-  nameLimit: 16,
-  maxZones: 68,
-  zoneMembers: 80,
+  maxMemorySlots: OPENGD77_FAMILY_LIMITS.CHANNEL_MAX,
+  nameLimit: OPENGD77_FAMILY_LIMITS.NAME_LENGTH_CHANNEL_ZONE_CONTACT_TG,
+  maxZones: OPENGD77_FAMILY_LIMITS.ZONE_MAX,
+  zoneMembers: OPENGD77_FAMILY_LIMITS.ZONE_MEMBERS_MAX,
   maxScanLists: 'not_used',
   scanListMembers: 'not_used',
-  maxRxGroupLists: 76,
-  rxGroupListMembers: 32,
+  maxRxGroupLists: OPENGD77_FAMILY_LIMITS.RX_GROUP_LISTS_MAX,
+  rxGroupListMembers: OPENGD77_FAMILY_LIMITS.RX_GROUP_MEMBERS_MAX,
   powerLadder: OPENGD77_MD9600_POWER_LADDER,
 };
 
