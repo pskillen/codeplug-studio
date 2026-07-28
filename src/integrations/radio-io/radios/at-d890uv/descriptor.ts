@@ -33,7 +33,6 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
   compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-at-d890uv' }],
   writeStrategy: 'selective-ranges',
   hydrationRequiredForWrite: true,
-  prodWriteDisabled: true,
   baudRate: AT_D890_CONNECTION.BAUD_RATE,
   hydration: {
     extractHydration: (image, meta) => {
