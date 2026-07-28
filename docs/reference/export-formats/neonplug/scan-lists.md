@@ -39,7 +39,7 @@ DM32 CSV synthesises `Scan.csv` from **zone-derived** scan lists (with synthetic
 | Designated TX         | `designatedTxChannel` = carrier channel number                                                                                            |
 | Carrier frequency     | Layout `scanCarrierFrequencyHz` when present; else **145.500 MHz** (`DEFAULT_SCAN_CARRIER_HZ`)                                            |
 | Priority / hang / CTC | Lossy defaults: `ctcScanMode`/`scanTxMode` = `0`; omit rest                                                                               |
-| Cap                   | Min of profile `maxScanLists` and **15**                                                                                                  |
+| Cap                   | Min of profile `maxScanLists` and **15** (`DM32UV_MAX_CHANNEL_SCAN_LIST_ID` in `zoneDerivedScanLists/limits.ts`)         |
 
 All expanded channel objects for a source library channel inherit the same `scanListId`. Carriers use synthetic source id `scan-carrier:{zoneId}` (export-only — not library channels).
 
