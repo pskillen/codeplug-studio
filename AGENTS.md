@@ -46,6 +46,8 @@ The **library** and domain layer are **vendor-neutral**. Radio caps, column name
 
 **Export source of truth:** typed model fields (+ explicit boundary rules). Do not stash raw CPS cells in metadata and replay on export. See [`.cursor/rules/export-from-model.mdc`](.cursor/rules/export-from-model.mdc).
 
+**Radio limits SoT:** hardware cardinality, RF band bounds, and name-length ceilings → `src/core/radios/<mfr>/<model>/limits.ts` (code) + `docs/reference/radios/<mfr>/<model>/limits.md` (human). Format and radio-io profiles **import** from that module; do not re-declare literals. Protocol-only layout sizes may stay in `integrations/radio-io/`, but cardinality must re-export from core. No radio-specific numeric fallbacks in `src/app/`. See [vendor-boundaries.mdc](.cursor/rules/vendor-boundaries.mdc).
+
 ## Working principles
 
 1. **Import-first** — invest in thorough CPS → internal mapping; test with per-direction fixtures.

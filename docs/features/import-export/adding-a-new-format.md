@@ -166,6 +166,7 @@ src/core/import-export/formats/<format>/
 - [ ] Register adapter in `importAdapters` and/or `exportAdapters`
 - [ ] Add `TraitProfile` in `src/core/models/traits.ts` — drives build UI composition
 - [ ] Add radio profiles in `formats/<format>/profiles.ts` (`nameLimit` and caps for export warnings)
+- [ ] Radio limits module exists or is extended under `src/core/radios/<mfr>/<model>/limits.ts`; profiles import it — do not re-literal caps
 - [ ] Register compatible egress on each radio target in `src/core/radio-targets/catalog.ts` (`compatibleEgress` entries with `formatId`, `profileId`, `kind`, `label`)
 - [ ] Extend `resolveMaxNameLength` in `channelExpansion/exportWireNames.ts` for new `profileId` prefixes
 - [ ] Extend `getFormatProfiles()` in `formatProfiles.ts` + `formatProfileWireHint` if needed
