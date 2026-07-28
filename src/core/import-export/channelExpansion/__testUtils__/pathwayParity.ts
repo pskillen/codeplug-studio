@@ -160,12 +160,7 @@ export function serialPathwaySnapshot(
   return {
     wireNames: [name],
     rowCount: 1,
-    scanInclusion: effectiveScanForPathway(
-      channel,
-      exportSettings,
-      'radio-io',
-      serialProfileId,
-    ),
+    scanInclusion: effectiveScanForPathway(channel, exportSettings, 'radio-io', serialProfileId),
   };
 }
 

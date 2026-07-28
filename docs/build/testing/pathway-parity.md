@@ -8,29 +8,29 @@ How to assert that **CPS CSV**, **Web Serial Write**, and **NeonPlug** egress pa
 
 Pathway parity tests are **directional**: constructed `Channel` (+ optional `BuildExportSettings`) → compare comparable facts across egress legs. They are **not** import↔export round-trip gates — see [DESIGN.md — Testing](../../DESIGN.md#testing) and [mapping-tests.md](mapping-tests.md).
 
-| Proves | Does not prove |
-| --- | --- |
-| CSV expand/serialise agrees with core serial wire-name pipeline | Full `buildRadioWriteProjection` DTO byte equality (app layer — future extension) |
-| Row count per canonical channel matches across pathways | `cps-verify` wire-shape (CRLF, FK integrity) — see [wire-verification.md](wire-verification.md) |
-| Scan inclusion matches when `compareScanInclusion: true` | NeonPlug index FKs vs CSV name FKs (legitimate format difference) |
+| Proves                                                          | Does not prove                                                                                  |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| CSV expand/serialise agrees with core serial wire-name pipeline | Full `buildRadioWriteProjection` DTO byte equality (app layer — future extension)               |
+| Row count per canonical channel matches across pathways         | `cps-verify` wire-shape (CRLF, FK integrity) — see [wire-verification.md](wire-verification.md) |
+| Scan inclusion matches when `compareScanInclusion: true`        | NeonPlug index FKs vs CSV name FKs (legitimate format difference)                               |
 
 ## Harness module
 
 `src/core/import-export/channelExpansion/__testUtils__/pathwayParity.ts`
 
-| Export | Role |
-| --- | --- |
-| `PathwayProfilePair` | `{ csv, serial, neonplug? }` profile ids for one radio |
-| `PathwayChannelSnapshot` | `{ wireNames, rowCount, scanInclusion? }` comparable facts |
-| `fmChannelFixture` | Minimal FM channel builder |
-| `minimalAssembledBuild` | Single-channel `AssembledBuild` for serialise tests |
-| `mergePathwayCsvOptions` / `mergePathwaySerialOptions` | `mergeExportOptions` wiring |
-| `serialPathwaySnapshot` | Serial leg via `assembledChannelExportWireName` (core) |
-| `opengd77CsvPathwaySnapshot` | OpenGD77 CSV expand leg |
-| `collectOpenGd77PathwaySnapshots` | All three legs for one profile pair |
-| `assertPathwayParity` | Cross-leg equality (`compareScanInclusion` opt-in) |
-| `assertOpenGd77WireNameParity` | Thin wrapper for OpenGD77 name tests |
-| `OPENGD77_PATHWAY_PAIRS` | Reference profile pairs (1701 + MD-9600) |
+| Export                                                 | Role                                                       |
+| ------------------------------------------------------ | ---------------------------------------------------------- |
+| `PathwayProfilePair`                                   | `{ csv, serial, neonplug? }` profile ids for one radio     |
+| `PathwayChannelSnapshot`                               | `{ wireNames, rowCount, scanInclusion? }` comparable facts |
+| `fmChannelFixture`                                     | Minimal FM channel builder                                 |
+| `minimalAssembledBuild`                                | Single-channel `AssembledBuild` for serialise tests        |
+| `mergePathwayCsvOptions` / `mergePathwaySerialOptions` | `mergeExportOptions` wiring                                |
+| `serialPathwaySnapshot`                                | Serial leg via `assembledChannelExportWireName` (core)     |
+| `opengd77CsvPathwaySnapshot`                           | OpenGD77 CSV expand leg                                    |
+| `collectOpenGd77PathwaySnapshots`                      | All three legs for one profile pair                        |
+| `assertPathwayParity`                                  | Cross-leg equality (`compareScanInclusion` opt-in)         |
+| `assertOpenGd77WireNameParity`                         | Thin wrapper for OpenGD77 name tests                       |
+| `OPENGD77_PATHWAY_PAIRS`                               | Reference profile pairs (1701 + MD-9600)                   |
 
 **Layer boundary:** the harness stays in `src/core/`. It uses core expansion and wire-name helpers — not `src/app/services/radioIoWriteProjection.ts`. Full DTO comparison for a radio adapter can add a thin app-side `__testUtils__` wrapper that calls `buildRadioWriteProjection` and compares against CSV snapshots.
 
@@ -81,7 +81,7 @@ describe('MyRadio CSV ↔ serial pathway parity', () => {
       const csvOptions = mergePathwayCsvOptions(undefined, 'myformat', pair.csv);
       const serialOptions = mergePathwaySerialOptions(undefined, pair.serial);
       assertPathwayParity({
-        csv: myFormatCsvPathwaySnapshot({ channel, csvOptions, csvProfileId: pair.csv, /* … */ }),
+        csv: myFormatCsvPathwaySnapshot({ channel, csvOptions, csvProfileId: pair.csv /* … */ }),
         serial: serialPathwaySnapshot(channel, serialOptions, pair.serial),
       });
     }

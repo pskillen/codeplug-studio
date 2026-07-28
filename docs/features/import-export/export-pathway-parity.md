@@ -14,15 +14,15 @@ This document is the **parity contract** (what must match vs what may differ) an
 
 ## Egress pathways per radio
 
-| Radio | CPS CSV | Web Serial | NeonPlug |
-| --- | --- | --- | --- |
-| Baofeng DM-1701/RT-84 | OpenGD77 | `radio-io-opengd77-1701` | — |
-| TYT MD-9600/RT-90 | OpenGD77 | `radio-io-opengd77-md9600` | — |
-| Anytone AT-D890UV | Anytone | `radio-io-at-d890uv` | — |
-| Baofeng DM-32UV | DM32 | `radio-io-dm32uv` | `neonplug-dm32uv` |
-| Baofeng UV-5R Mini | CHIRP | `radio-io-uv5r-mini` | `neonplug-uv5r-mini` |
-| Baofeng UV-21Pro V2 | CHIRP | `radio-io-uv21` | — |
-| Retevis RT95 VOX | CHIRP | `radio-io-rt95` | — |
+| Radio                 | CPS CSV  | Web Serial                 | NeonPlug             |
+| --------------------- | -------- | -------------------------- | -------------------- |
+| Baofeng DM-1701/RT-84 | OpenGD77 | `radio-io-opengd77-1701`   | —                    |
+| TYT MD-9600/RT-90     | OpenGD77 | `radio-io-opengd77-md9600` | —                    |
+| Anytone AT-D890UV     | Anytone  | `radio-io-at-d890uv`       | —                    |
+| Baofeng DM-32UV       | DM32     | `radio-io-dm32uv`          | `neonplug-dm32uv`    |
+| Baofeng UV-5R Mini    | CHIRP    | `radio-io-uv5r-mini`       | `neonplug-uv5r-mini` |
+| Baofeng UV-21Pro V2   | CHIRP    | `radio-io-uv21`            | —                    |
+| Retevis RT95 VOX      | CHIRP    | `radio-io-rt95`            | —                    |
 
 All pathways share `assemble(build, library)` as the organisation entry point. Divergence bugs appear when a pathway bypasses shared expansion, naming, or default-resolution helpers.
 
@@ -30,18 +30,18 @@ All pathways share `assemble(build, library)` as the organisation entry point. D
 
 When the wire format or pathway can express the fact, these dimensions must agree across every egress of the **same** radio target.
 
-| # | Dimension | What "match" means | Code anchors |
-| --- | --- | --- | --- |
-| 1 | **Channel wire name** | Same base compose (callsign/name per export name mode), abbreviation policy (strategy-when-over-limit, not unconditional substitution), shortening trigger, override precedence, multi-mode / multi-TG suffix handling | `src/core/domain/channelNaming.ts` · `src/core/import-export/channelExpansion/exportWireNames.ts` |
-| 2 | **Row / channel cardinality** | Same exported row count per canonical channel: multi-mode fan-out, M×N repeater×talkgroup fan-out, scratch rows, unsupported-mode dropping | `mxnExpandAll.ts` · `opengd77ExportModes.ts` · `talkGroupTimeslotClones.ts` |
-| 3 | **Scan / skip flags** | Skip / Zone Skip mirror the same effective scan-inclusion value; per-channel `scanInclusionOverride` honoured identically | `src/core/import-export/scanInclusion/` |
-| 4 | **Zone / scan-list / RX-group membership** | Same expanded slot rows, same ordering | per-format `channelExpansion.ts` · `listWireNames.ts` |
-| 5 | **Site / repeater wire names** | Same composer regardless of pathway (where distinct from channel names) | `formats/anytone/channelExpansion.ts` (`resolveAnytoneSiteWireName`) |
-| 6 | **Talk group / contact naming** | Same names, same FK resolution strategy per format family; timeslot-clone naming | `talkGroupWireNames.ts` · `multiTalkGroupWireName.ts` · `talkGroupTimeslotClones.ts` |
-| 7 | **Power, tone, bandwidth, squelch defaults** | Same default for unmodelled fields on every pathway (e.g. null `bandwidthKHz` → 12.5 kHz / NFM) | `channelBehaviourDefaults/` |
-| 8 | **Name-length / count caps** | Same numeric cap across pathways for the same radio — not independently duplicated constants that merely agree today | format profiles · `formats/radio-io/profiles.ts` · `profileExportLimits.ts` |
-| 9 | **Organisation / library membership** | Same zone/list inclusion rules (`exportUnlinkedChannels`, `zoneGrouping` layout) | `src/core/services/assemble.ts` |
-| 10 | **Character sanitisation** | Identical ASCII normalisation | `sanitiseAsciiWireString.ts` |
+| #   | Dimension                                    | What "match" means                                                                                                                                                                                                     | Code anchors                                                                                      |
+| --- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 1   | **Channel wire name**                        | Same base compose (callsign/name per export name mode), abbreviation policy (strategy-when-over-limit, not unconditional substitution), shortening trigger, override precedence, multi-mode / multi-TG suffix handling | `src/core/domain/channelNaming.ts` · `src/core/import-export/channelExpansion/exportWireNames.ts` |
+| 2   | **Row / channel cardinality**                | Same exported row count per canonical channel: multi-mode fan-out, M×N repeater×talkgroup fan-out, scratch rows, unsupported-mode dropping                                                                             | `mxnExpandAll.ts` · `opengd77ExportModes.ts` · `talkGroupTimeslotClones.ts`                       |
+| 3   | **Scan / skip flags**                        | Skip / Zone Skip mirror the same effective scan-inclusion value; per-channel `scanInclusionOverride` honoured identically                                                                                              | `src/core/import-export/scanInclusion/`                                                           |
+| 4   | **Zone / scan-list / RX-group membership**   | Same expanded slot rows, same ordering                                                                                                                                                                                 | per-format `channelExpansion.ts` · `listWireNames.ts`                                             |
+| 5   | **Site / repeater wire names**               | Same composer regardless of pathway (where distinct from channel names)                                                                                                                                                | `formats/anytone/channelExpansion.ts` (`resolveAnytoneSiteWireName`)                              |
+| 6   | **Talk group / contact naming**              | Same names, same FK resolution strategy per format family; timeslot-clone naming                                                                                                                                       | `talkGroupWireNames.ts` · `multiTalkGroupWireName.ts` · `talkGroupTimeslotClones.ts`              |
+| 7   | **Power, tone, bandwidth, squelch defaults** | Same default for unmodelled fields on every pathway (e.g. null `bandwidthKHz` → 12.5 kHz / NFM)                                                                                                                        | `channelBehaviourDefaults/`                                                                       |
+| 8   | **Name-length / count caps**                 | Same numeric cap across pathways for the same radio — not independently duplicated constants that merely agree today                                                                                                   | format profiles · `formats/radio-io/profiles.ts` · `profileExportLimits.ts`                       |
+| 9   | **Organisation / library membership**        | Same zone/list inclusion rules (`exportUnlinkedChannels`, `zoneGrouping` layout)                                                                                                                                       | `src/core/services/assemble.ts`                                                                   |
+| 10  | **Character sanitisation**                   | Identical ASCII normalisation                                                                                                                                                                                          | `sanitiseAsciiWireString.ts`                                                                      |
 
 See also [name-shortening.md](name-shortening.md) for the documented abbreviation-when-over-limit spec.
 
@@ -58,30 +58,30 @@ Document as **loss** or **trait**, not as a pathway bug:
 
 Recurring divergence patterns from the 2026-07 investigation:
 
-| Key | Pattern | Example |
-| --- | --- | --- |
-| **(a)** | Format wrapper bypasses shared engine | Anytone/CHIRP unconditional-abbreviation wrappers vs generic `applyWireNameLimits` |
-| **(b)** | Manually mirrored constants that can drift | `nameLimit` declared in CSV profile, radio-io profile, and `profileExportLimits` |
+| Key     | Pattern                                                                    | Example                                                                             |
+| ------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| **(a)** | Format wrapper bypasses shared engine                                      | Anytone/CHIRP unconditional-abbreviation wrappers vs generic `applyWireNameLimits`  |
+| **(b)** | Manually mirrored constants that can drift                                 | `nameLimit` declared in CSV profile, radio-io profile, and `profileExportLimits`    |
 | **(c)** | Shared function wired with per-format defaults via comment, not derivation | `getFormatExportDefaults()` for `radio-io-opengd77-*` missing OpenGD77 scan default |
-| **(d)** | New pathway added without threading a callback the original relied on | radio-io M×N expansion without `resolveSiteWireName` |
+| **(d)** | New pathway added without threading a callback the original relied on      | radio-io M×N expansion without `resolveSiteWireName`                                |
 
 ## Divergence inventory
 
 Actionable findings from the pathway audit (2026-07). Fix and lock tickets are children of [#776](https://github.com/pskillen/codeplug-studio/issues/776).
 
-| # | Radio(s) | Dimension | Ticket | Severity | Summary |
-| --- | --- | --- | --- | --- | --- |
-| 1 | OpenGD77 DM-1701 + MD-9600 | Row cardinality | [#781](https://github.com/pskillen/codeplug-studio/issues/781) | High | Serial Write collapses FM+DMR dual-mode to one DTO; CSV emits two rows (`-F`/`-D`) |
-| 2 | OpenGD77 DM-1701 + MD-9600 | Scan/skip flags | [#783](https://github.com/pskillen/codeplug-studio/issues/783) | Medium–High | `scanInclusionOverride` dropped on both CSV and serial (self-consistent but wrong) |
-| 3 | OpenGD77 DM-1701 + MD-9600 | Scan/skip flags | [#803](https://github.com/pskillen/codeplug-studio/issues/803) | High | Default scan inclusion: CSV `scan`, serial `skip` — missing `getFormatExportDefaults` for `radio-io-opengd77-*` |
-| 4 | Anytone AT-D890UV | Wire name, site name, length cap | [#782](https://github.com/pskillen/codeplug-studio/issues/782) | High | Lean radio-io rows bypass length limiting entirely (raw unshortened compose) |
-| 5 | Anytone AT-D890UV | Charset | [#782](https://github.com/pskillen/codeplug-studio/issues/782) | Medium–High | Same missing-callback bug skips ASCII sanitisation on lean rows |
-| 6 | DM-32UV | RX group list count cap | [#804](https://github.com/pskillen/codeplug-studio/issues/804) | Medium–High | CSV uncapped; radio-io wrong cap (250); only NeonPlug enforces 32 with warning |
-| 7 | DM-32UV | Zone-derived scan-list count cap | [#805](https://github.com/pskillen/codeplug-studio/issues/805) | High | CSV has no 15-list ceiling; NeonPlug and radio-io warn and truncate |
-| 8 | UV-5R Mini | Scan/skip flags | [#806](https://github.com/pskillen/codeplug-studio/issues/806) | High | NeonPlug hardcodes `defaultScanInclusion: 'scan'`; CHIRP CSV and serial correctly use `skip` |
-| 9 | UV-21Pro V2 + RT95 VOX | Slot ordering | [#807](https://github.com/pskillen/codeplug-studio/issues/807) | Medium | CSV resolves slot collisions; radio-io lean mapper can clobber duplicate `slotIndex` |
-| 10 | UV-21Pro V2 + RT95 VOX | Power/tone/bandwidth (AM) | [#808](https://github.com/pskillen/codeplug-studio/issues/808) | Medium | CSV writes `Mode=AM`; radio-io re-encodes as NFM with no warning; docs stale |
-| 11 | Anytone + CHIRP radios | Channel wire name | [#780](https://github.com/pskillen/codeplug-studio/issues/780) | Medium | Unconditional abbreviation substitution in CSV vs shorten-time-only in radio-io/NeonPlug |
+| #   | Radio(s)                   | Dimension                        | Ticket                                                         | Severity    | Summary                                                                                                         |
+| --- | -------------------------- | -------------------------------- | -------------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| 1   | OpenGD77 DM-1701 + MD-9600 | Row cardinality                  | [#781](https://github.com/pskillen/codeplug-studio/issues/781) | High        | Serial Write collapses FM+DMR dual-mode to one DTO; CSV emits two rows (`-F`/`-D`)                              |
+| 2   | OpenGD77 DM-1701 + MD-9600 | Scan/skip flags                  | [#783](https://github.com/pskillen/codeplug-studio/issues/783) | Medium–High | `scanInclusionOverride` dropped on both CSV and serial (self-consistent but wrong)                              |
+| 3   | OpenGD77 DM-1701 + MD-9600 | Scan/skip flags                  | [#803](https://github.com/pskillen/codeplug-studio/issues/803) | High        | Default scan inclusion: CSV `scan`, serial `skip` — missing `getFormatExportDefaults` for `radio-io-opengd77-*` |
+| 4   | Anytone AT-D890UV          | Wire name, site name, length cap | [#782](https://github.com/pskillen/codeplug-studio/issues/782) | High        | Lean radio-io rows bypass length limiting entirely (raw unshortened compose)                                    |
+| 5   | Anytone AT-D890UV          | Charset                          | [#782](https://github.com/pskillen/codeplug-studio/issues/782) | Medium–High | Same missing-callback bug skips ASCII sanitisation on lean rows                                                 |
+| 6   | DM-32UV                    | RX group list count cap          | [#804](https://github.com/pskillen/codeplug-studio/issues/804) | Medium–High | CSV uncapped; radio-io wrong cap (250); only NeonPlug enforces 32 with warning                                  |
+| 7   | DM-32UV                    | Zone-derived scan-list count cap | [#805](https://github.com/pskillen/codeplug-studio/issues/805) | High        | CSV has no 15-list ceiling; NeonPlug and radio-io warn and truncate                                             |
+| 8   | UV-5R Mini                 | Scan/skip flags                  | [#806](https://github.com/pskillen/codeplug-studio/issues/806) | High        | NeonPlug hardcodes `defaultScanInclusion: 'scan'`; CHIRP CSV and serial correctly use `skip`                    |
+| 9   | UV-21Pro V2 + RT95 VOX     | Slot ordering                    | [#807](https://github.com/pskillen/codeplug-studio/issues/807) | Medium      | CSV resolves slot collisions; radio-io lean mapper can clobber duplicate `slotIndex`                            |
+| 10  | UV-21Pro V2 + RT95 VOX     | Power/tone/bandwidth (AM)        | [#808](https://github.com/pskillen/codeplug-studio/issues/808) | Medium      | CSV writes `Mode=AM`; radio-io re-encodes as NFM with no warning; docs stale                                    |
+| 11  | Anytone + CHIRP radios     | Channel wire name                | [#780](https://github.com/pskillen/codeplug-studio/issues/780) | Medium      | Unconditional abbreviation substitution in CSV vs shorten-time-only in radio-io/NeonPlug                        |
 
 **Closed (clean):** [#777](https://github.com/pskillen/codeplug-studio/issues/777) — OpenGD77 channel wire naming parity (CSV ↔ serial).
 
@@ -91,12 +91,12 @@ Actionable findings from the pathway audit (2026-07). Fix and lock tickets are c
 
 Low-severity risks to address alongside adjacent fixes:
 
-| # | Radio(s) | Note | Root cause |
-| --- | --- | --- | --- |
-| 12 | DM-32UV | `exportZoneDerivedScanLists` explicit on CSV adapter but omitted on radio-io/NeonPlug | (c) |
-| 13 | DM-32UV | `radio-io-dm32uv` profile omits `scanListNameLimit` / `rxGroupListNameLimit` fields | (b) |
-| 14 | All radios | `nameLimit` declared up to three times per radio (currently in sync) | (b) |
-| 15 | AT-D890UV, DM-32UV | radio-io `getFormatExportDefaults` mirrors CSV via comment, not derivation | (c) |
+| #   | Radio(s)           | Note                                                                                  | Root cause |
+| --- | ------------------ | ------------------------------------------------------------------------------------- | ---------- |
+| 12  | DM-32UV            | `exportZoneDerivedScanLists` explicit on CSV adapter but omitted on radio-io/NeonPlug | (c)        |
+| 13  | DM-32UV            | `radio-io-dm32uv` profile omits `scanListNameLimit` / `rxGroupListNameLimit` fields   | (b)        |
+| 14  | All radios         | `nameLimit` declared up to three times per radio (currently in sync)                  | (b)        |
+| 15  | AT-D890UV, DM-32UV | radio-io `getFormatExportDefaults` mirrors CSV via comment, not derivation            | (c)        |
 
 ### Confirmed clean (no divergence)
 
