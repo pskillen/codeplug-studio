@@ -552,8 +552,7 @@ function buildDm32RadioIdBank(
         radioTargetId: build.radioTargetId,
         options: merged,
         warnings,
-        resolveSiteWireName:
-          build.radioTargetId === 'anytone-at-d890uv' ? resolveAnytoneSiteWireName : undefined,
+        resolveSiteWireName: mxnSiteWireNameResolverForRadioTarget(build.radioTargetId),
       }),
       build.channelOverrides,
     );
