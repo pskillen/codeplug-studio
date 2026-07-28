@@ -982,7 +982,7 @@ function buildAtD890AmAirOrganisation(
       undefined,
       egress.profileId,
       warnings,
-      'AM airband channel',
+      'Channel',
       nameLen,
     );
     amAirChannels.push({
@@ -1023,7 +1023,7 @@ function buildAtD890AmAirOrganisation(
       undefined,
       egress.profileId,
       warnings,
-      'AM airband zone',
+      'Zone',
       nameLen,
     );
     amZones.push({ wireName, channelNumbers, aChannelMemberIndex: 0 });
