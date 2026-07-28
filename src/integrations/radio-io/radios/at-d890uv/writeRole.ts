@@ -96,6 +96,23 @@ export function atD890RegionLabel(address: number): string {
     return 'RX group lists';
   }
   if (address === D890_MAP.MasterIdData) return 'Master radio ID';
+  if (address === D890_MAP.AmAirSet) return 'AM airband bitmap';
+  if (inExclusiveSpan(address, D890_MAP.AmAirVfo, D890_MAP.AmAirVfoLength)) {
+    return 'AM airband VFO';
+  }
+  if (inBank(address, D890_MAP.AmAirData, D890_MAP.AmAirDataStride, D890_MAP.AmAirCount)) {
+    return 'AM airband channels';
+  }
+  if (address === D890_MAP.AmZoneSet) return 'AM airband zone bitmap';
+  if (inExclusiveSpan(address, D890_MAP.AmZoneAChannel, D890_MAP.AmZoneAChannelLength)) {
+    return 'AM airband zone A-channel';
+  }
+  if (inExclusiveSpan(address, D890_MAP.AmZoneScan, D890_MAP.AmZoneScanLength)) {
+    return 'AM airband zone scan';
+  }
+  if (inBank(address, D890_MAP.AmZoneData, D890_MAP.AmZoneDataStride, D890_MAP.AmZoneCount)) {
+    return 'AM airband zones';
+  }
   return 'Other retained region';
 }
 

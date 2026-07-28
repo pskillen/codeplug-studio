@@ -83,6 +83,18 @@ export function radioIdAddress(index: number): number {
   return D890_MAP.RadioIdData + index * D890_MAP.RadioIdStride;
 }
 
+export function amAirDataAddress(index: number): number {
+  return D890_MAP.AmAirData + index * D890_MAP.AmAirDataStride;
+}
+
+export function amZoneDataAddress(index: number): number {
+  return D890_MAP.AmZoneData + index * D890_MAP.AmZoneDataStride;
+}
+
+export function amZoneScanAddress(zoneIndex: number): number {
+  return D890_MAP.AmZoneScan + zoneIndex * D890_MAP.AmZoneScanStride;
+}
+
 export function putCacheBytes(cache: AtD890DownloadCache, address: number, data: Uint8Array): void {
   if (data.length === 0) return;
   if (address % AT_D890_BLOCK_SIZE !== 0) {

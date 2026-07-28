@@ -117,7 +117,7 @@ export const D890_MAP = {
   AprsReceiveFiltersLength: 0x100,
   /**
    * AM airband channels + VFO. 256 programmable slots + 1 VFO slot (index 256) —
-   * `Memory::initAmAir` in anytone-cps. Not Read or Write in Studio yet (#756).
+   * `Memory::initAmAir` in anytone-cps. Sparse Read + Write (#756).
    */
   AmAirSet: 0x3884_200,
   AmAirSetLength: 0x20,
@@ -131,7 +131,7 @@ export const D890_MAP = {
    * AM airband zones. 16 zones — `Memory::initAmZones` in anytone-cps.
    * Record layout verified against a hardware dump reconciled with CPS CSV egress
    * 2026-07-28 — see memory-layout.md. `AmZone::encode_D890UV()` is still an empty-array
-   * stub upstream; do not port it. Not Read or Write in Studio yet (#756).
+   * stub upstream; do not port it. Sparse Read + Write (#756).
    */
   AmZoneSet: 0x3884_400,
   AmZoneSetLength: 0x10,
@@ -157,6 +157,8 @@ export const D890_MAP = {
    */
   AmZoneScan: 0x3884_800,
   AmZoneScanStride: 0x4,
+  /** 16 zones × 4 bytes. */
+  AmZoneScanLength: 0x40,
   AmZoneData: 0x3888_000,
   AmZoneDataStride: 0x80,
   AmZoneDataLength: 0x80,

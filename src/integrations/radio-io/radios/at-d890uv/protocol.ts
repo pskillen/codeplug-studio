@@ -16,6 +16,8 @@ import {
   talkgroupAddress,
   receiveGroupAddress,
   radioIdAddress,
+  amAirDataAddress,
+  amZoneDataAddress,
   alignedSpanForAtD890Region,
   type AtD890DownloadCache,
 } from './memory.ts';
@@ -70,6 +72,7 @@ const DOWNLOAD_STAGES = [
   'RX groups',
   'Radio IDs',
   'Master ID',
+  'AM airband',
 ] as const;
 
 async function readRegion(
@@ -332,6 +335,73 @@ export async function downloadAtD890SparseRegions(
     signal,
     readBlockSize,
   );
+
+  stage('Reading AM airband…');
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.AmAirSet,
+    D890_MAP.AmAirSetLength,
+    signal,
+    readBlockSize,
+  );
+  const amAirSet = getCacheBytes(cache, D890_MAP.AmAirSet, D890_MAP.AmAirSetLength);
+  for (const idx of listSetBits(amAirSet)) {
+    throwIfAborted(signal);
+    await readRegion(
+      pipe,
+      cache,
+      amAirDataAddress(idx),
+      D890_MAP.AmAirDataLength,
+      signal,
+      readBlockSize,
+    );
+  }
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.AmAirVfo,
+    D890_MAP.AmAirVfoLength,
+    signal,
+    readBlockSize,
+  );
+
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.AmZoneSet,
+    D890_MAP.AmZoneSetLength,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.AmZoneAChannel,
+    D890_MAP.AmZoneAChannelLength,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.AmZoneScan,
+    D890_MAP.AmZoneScanLength,
+    signal,
+    readBlockSize,
+  );
+  const amZoneSet = getCacheBytes(cache, D890_MAP.AmZoneSet, D890_MAP.AmZoneSetLength);
+  for (const idx of listSetBits(amZoneSet)) {
+    throwIfAborted(signal);
+    await readRegion(
+      pipe,
+      cache,
+      amZoneDataAddress(idx),
+      D890_MAP.AmZoneDataLength,
+      signal,
+      readBlockSize,
+    );
+  }
 }
 
 export class AtD890uvProtocol implements CloneImageRadio {
