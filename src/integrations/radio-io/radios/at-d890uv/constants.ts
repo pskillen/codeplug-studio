@@ -136,15 +136,19 @@ export const D890_MAP = {
   AmZoneSet: 0x3884_400,
   AmZoneSetLength: 0x10,
   /**
-   * A-channel per zone = **index into that zone's member list**, not a global AM channel
-   * index (verified: zones whose A-channel is their first member all read `0`, while their
-   * global indices are 18/8/4). Element width is **not** yet confirmed — every zone sampled
-   * so far has A-channel 0, which is byte-identical under u8 and u16. anytone-cps reads u16
-   * and writes u8; `0x10` for 16 zones only fits u8. Needs a sample with a non-first
-   * A-channel before encode can be written.
+   * A-channel per zone = **u16 LE index into that zone's member list**, not a global AM
+   * channel index. Both facts verified on hardware: a sample with A-channels at member
+   * positions 0/1/2 reads `00 00 01 00 02 00` — u8 would have given `00 01 02`, and a
+   * global-index scheme would have given the members' global indices.
+   *
+   * anytone-cps reads u16 (correct) but **writes u8** into a `0x10` buffer, which lands
+   * zone n's value on byte n instead of byte 2n — corrupting zone 0's high byte. Its `0x10`
+   * read length also only covers 8 of the 16 zones. Do not port either.
    */
   AmZoneAChannel: 0x3884_600,
-  AmZoneAChannelLength: 0x10,
+  AmZoneAChannelStride: 2,
+  /** 16 zones × u16. Zones 8-15 are inferred from the stride — not yet sampled. */
+  AmZoneAChannelLength: 0x20,
   /**
    * Scan membership: one bit per **member-list position** (not global channel index —
    * verified, see memory-layout.md), `0x4` bytes = 32 bits per zone, matching the 32 member

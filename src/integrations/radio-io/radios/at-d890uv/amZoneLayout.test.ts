@@ -31,6 +31,15 @@ const SCAN_HEAD = Uint8Array.from([
   0xff, 0x03, 0x00, 0x00, 0xff, 0x01, 0x00, 0x00, 0x1f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ]);
 
+/**
+ * `AmZoneAChannel` from the sample whose zones 0/1/2 select member positions 0/1/2.
+ * This is the pattern that distinguishes u16 LE from u8 — under u8 it would read
+ * `00 01 02`, which is what anytone-cps writes.
+ */
+const ACHANNEL_POS_012 = Uint8Array.from([
+  0x00, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+]);
+
 function u16le(buf: Uint8Array, off: number): number {
   return buf[off]! | (buf[off + 1]! << 8);
 }
@@ -71,6 +80,30 @@ describe('AmZone record layout (hardware-verified 2026-07-28)', () => {
     const end = D890_MAP.AmZoneMembersOffset + D890_MAP.AmZoneMemberSlots * 2;
     expect(end).toBe(0x62);
     expect(end).toBeLessThan(D890_MAP.AmZoneDataLength);
+  });
+});
+
+describe('AmZoneAChannel (hardware-verified 2026-07-28)', () => {
+  it('is u16 LE per zone, sized for all 16 zones', () => {
+    expect(D890_MAP.AmZoneAChannelStride).toBe(2);
+    expect(D890_MAP.AmZoneCount * D890_MAP.AmZoneAChannelStride).toBe(
+      D890_MAP.AmZoneAChannelLength,
+    );
+  });
+
+  it.each([
+    [0, 0],
+    [1, 1],
+    [2, 2],
+  ])('zone %i selects member position %i', (zone, pos) => {
+    expect(u16le(ACHANNEL_POS_012, zone * D890_MAP.AmZoneAChannelStride)).toBe(pos);
+  });
+
+  it('would decode wrongly if read as u8 — the anytone-cps write bug', () => {
+    // anytone-cps writes `aChannelData[i] = pos`, producing 00 01 02 for these zones.
+    const asU8 = [0, 1, 2].map((z) => ACHANNEL_POS_012[z]);
+    expect(asU8).not.toEqual([0, 1, 2]);
+    expect(asU8).toEqual([0, 0, 1]);
   });
 });
 
