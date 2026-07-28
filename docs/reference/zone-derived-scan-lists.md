@@ -37,7 +37,7 @@ When scan export is enabled for a zone on **DM32** or **Anytone**:
 - Only the **carrier channel** receives the zone-derived `Scan List` FK on **Anytone CSV export** — member channels keep library/manual assignments only (channels can belong to multiple zones; scan lists are per-channel)
 - **Auto Scan** = `1` on the carrier channel (`Channel.CSV` / `Channels.csv`)
 
-**Anytone Web Serial Write** (`radio-io-at-d890uv`) uses **first-wins** zone-derived scan FK on member channels (NeonPlug / DM32 parity) — see [#830](https://github.com/pskillen/codeplug-studio/issues/830). CSV export behaviour is unchanged.
+**Anytone Web Serial Write** (`radio-io-at-d890uv`): `RadioChannelDto.scanAdd` maps to channel-record `0x34` bit 4 (`auto_scan` — start scanning on channel select), **not** per-channel scan membership. Projection sets it **on** zone scan carriers only (parity with CSV above); all other channels get an explicit **off**. Uses **first-wins** zone-derived scan FK on member channels (NeonPlug / DM32 parity) — see [#830](https://github.com/pskillen/codeplug-studio/issues/830). CSV export behaviour is unchanged.
 
 **DM32:** `Scan.csv` `Scan Tx Mode` = `Last Actived Channel`.
 

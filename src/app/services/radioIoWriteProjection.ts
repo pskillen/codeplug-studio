@@ -936,6 +936,21 @@ function stampUv17ProFlatMemoryChannelBehaviour(
   });
 }
 
+/**
+ * AT-D890UV wire bit 4 of 0x34 is `auto_scan` ("start scanning on channel select"),
+ * not scan membership — membership lives in the scan-list member array. Mirror the
+ * CSV path (channelWire.ts): carriers on, everything else off.
+ */
+function stampAtD890AutoScan(
+  channels: RadioChannelDto[],
+  scanLists: readonly RadioScanListDto[],
+): RadioChannelDto[] {
+  const carrierSlots = new Set(
+    scanLists.map((sl) => sl.designatedTxChannel).filter((n): n is number => n != null),
+  );
+  return channels.map((ch) => ({ ...ch, scanAdd: carrierSlots.has(ch.slotIndex) }));
+}
+
 function stampOpenGd77ChannelBehaviour(
   channels: RadioChannelDto[],
   assembled: AssembledBuild,
@@ -1216,13 +1231,7 @@ export function buildRadioWriteProjection(
       warnings,
       requireNumericLimit(d890Limits.maxScanLists, 'maxScanLists', egress),
     );
-    channels = stampUv17ProFlatMemoryChannelBehaviour(
-      org.channels,
-      projectionAssembled,
-      build,
-      egress,
-      org.numbersBySourceChannelId,
-    );
+    channels = stampAtD890AutoScan(org.channels, org.scanLists);
     numbersBySourceChannelId = org.numbersBySourceChannelId;
     const amAir = buildAtD890AmAirOrganisation(assembled, build, egress, warnings);
     organisation = {
