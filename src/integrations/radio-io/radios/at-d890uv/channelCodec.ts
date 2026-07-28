@@ -215,9 +215,7 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
     aprsReceive: ((data[0x21]! >> 5) & 1) === 1,
     aprsReportMode: data[0x35]! === 2 ? 'digital' : 'off',
     aprsDigitalPttMode: data[0x37]! === 1 ? 'on' : 'off',
-    ...(data[0x35]! === 2 && data[0x38]! < 8
-      ? { aprsReportSlotIndex: data[0x38]! + 1 }
-      : {}),
+    ...(data[0x35]! === 2 && data[0x38]! < 8 ? { aprsReportSlotIndex: data[0x38]! + 1 } : {}),
   };
 }
 

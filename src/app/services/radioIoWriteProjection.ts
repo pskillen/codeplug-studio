@@ -55,7 +55,10 @@ import type {
   RadioWriteProjection,
   RadioZoneDto,
 } from '@integrations/radio-io/radioWriteProjection.ts';
-import { buildNeonplugAprsRadioSettingsPatch } from '@core/services/aprsExportFacts.ts';
+import {
+  buildNeonplugAprsRadioSettingsPatch,
+  formatAnytonePositionSource,
+} from '@core/services/aprsExportFacts.ts';
 import {
   orderedAmAirChannels,
   partitionAnytoneChannels,
@@ -63,7 +66,6 @@ import {
   receiveBankChannelSlot,
 } from '@core/services/anytoneChannelBanks.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
-import { formatAnytonePositionSource } from '@core/import-export/formats/anytone/aprsWireFormat.ts';
 import { AT_D890_APRS_CURRENT_CHANNEL_WIRE } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import {
   expandAssembledChannelsToRadioDtos,

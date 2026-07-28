@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
-import {
-  AT_D890_APRS_CURRENT_CHANNEL_WIRE,
-  AT_D890_MAP_SIZE,
-  D890_MAP,
-} from './constants.ts';
+import { AT_D890_APRS_CURRENT_CHANNEL_WIRE, AT_D890_MAP_SIZE, D890_MAP } from './constants.ts';
 import { encodeAprsIntoAtD890Image, patchAtD890AprsConfigBlock } from './aprsCodec.ts';
 
 describe('aprsCodec', () => {

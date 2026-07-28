@@ -52,16 +52,16 @@ anytone-cps community RE — verify on hardware before relying on offsets. Studi
 
 On **Write**, sparse erase-unit RMW ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) **fresh-reads** each touched `0x40000` unit from the connected radio and re-stages non-`0xff` bytes unchanged — including optional settings and alarm spans that share units with modelled banks. Studio does **not** re-derive these from the library build; hydration supplies identity check only (LocalInfo serial).
 
-| Region / buffer          | Base                      | Length       | Notes                                                                                                                                                                                     |
-| ------------------------ | ------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Optional settings (main) | `0x3500000`               | `0x200`      | CPS language @ `+0x05` (`English`/`German` — **not** Chinese UI)                                                                                                                          |
-| Optional settings (main) | `0x3500000`               |              | Power-on interface @ `+0x06`; power-on password enable @ `+0x07`                                                                                                                          |
-| Optional settings (main) | `0x3500000`               |              | Startup channel @ `+0xd7`; zone A/B @ `+0xd8`/`+0xd9`; channel A/B @ `+0xda`/`+0xdb`                                                                                                      |
-| Zone A/B tables          | `0x3500400` / `0x3500600` | `0x200` each | **Modelled** — share erase unit `0x3500000` with optional settings below                                                                                                                  |
-| Optional settings (ext)  | `0x3500900`               | `0x60`       | Display lines @ `+0x00` / `+0x10` (14 chars each); power-on password @ `+0x20` (8 chars)                                                                                                  |
+| Region / buffer              | Base                      | Length       | Notes                                                                                     |
+| ---------------------------- | ------------------------- | ------------ | ----------------------------------------------------------------------------------------- |
+| Optional settings (main)     | `0x3500000`               | `0x200`      | CPS language @ `+0x05` (`English`/`German` — **not** Chinese UI)                          |
+| Optional settings (main)     | `0x3500000`               |              | Power-on interface @ `+0x06`; power-on password enable @ `+0x07`                          |
+| Optional settings (main)     | `0x3500000`               |              | Startup channel @ `+0xd7`; zone A/B @ `+0xd8`/`+0xd9`; channel A/B @ `+0xda`/`+0xdb`      |
+| Zone A/B tables              | `0x3500400` / `0x3500600` | `0x200` each | **Modelled** — share erase unit `0x3500000` with optional settings below                  |
+| Optional settings (ext)      | `0x3500900`               | `0x60`       | Display lines @ `+0x00` / `+0x10` (14 chars each); power-on password @ `+0x20` (8 chars)  |
 | Optional settings (GPS info) | `0x3501280`               | `0x30`       | Optional GPS info string — hex preview only; **not** APRS config (see [aprs.md](aprs.md)) |
-| Alarm settings           | `0x3482e00`               | `0x10`       | Digital call type @ `+0x00`                                                                                                                                                               |
-| Alarm settings           | `0x3483000`               | `0x30`       | Analog/digital emergency alarm flags; man-down also @ optional main `+0x24` / `+0x4f`                                                                                                     |
+| Alarm settings               | `0x3482e00`               | `0x10`       | Digital call type @ `+0x00`                                                               |
+| Alarm settings               | `0x3483000`               | `0x30`       | Analog/digital emergency alarm flags; man-down also @ optional main `+0x24` / `+0x4f`     |
 
 Chinese UI on the radio is driven by **optional settings** (CPS language, power-on password) when those regions are erased — not LocalInfo ExpertOptions. Bag diffs on a faulted radio showed LocalInfo byte-identical between healthy and faulted reads ([#768](https://github.com/pskillen/codeplug-studio/issues/768)); the brick came from erase collateral in shared flash units, not LocalInfo replay.
 
@@ -69,10 +69,10 @@ Chinese UI on the radio is driven by **optional settings** (CPS language, power-
 
 Cite: anytone-cps `AprsSettings::decode_D890UV` / `encode_D890UV` — facts only. Deep field tables: [aprs.md](aprs.md).
 
-| Region               | Base        | Length  | Write role |
-| -------------------- | ----------- | ------- | ---------- |
+| Region               | Base        | Length  | Write role                                          |
+| -------------------- | ----------- | ------- | --------------------------------------------------- |
 | `AprsConfigMain`     | `0x3501000` | `0x260` | Modelled fields re-derived; remainder RMW-preserved |
-| `AprsReceiveFilters` | `0x3501300` | `0x100` | RMW-preserved (unmodelled in library) |
+| `AprsReceiveFilters` | `0x3501300` | `0x100` | RMW-preserved (unmodelled in library)               |
 
 Per-channel APRS bindings in MR channel record — see [channel-record.md](channel-record.md) and [aprs.md](aprs.md).
 
@@ -143,7 +143,7 @@ Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `wri
 | Category                                                   | `writeRole`     | Re-derived from build? | On Upload                                                                                                                                  |
 | ---------------------------------------------------------- | --------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | Channels, zones, scan, TG, RX, radio IDs, master, TG order | `replaced`      | Yes                    | Written from build (allow-listed)                                                                                                          |
-| APRS global config + channel APRS bits                     | `replaced`      | Partial                | Modelled digital fields from library; unmodelled bytes RMW-preserved ([#758](https://github.com/pskillen/codeplug-studio/issues/758))     |
+| APRS global config + channel APRS bits                     | `replaced`      | Partial                | Modelled digital fields from library; unmodelled bytes RMW-preserved ([#758](https://github.com/pskillen/codeplug-studio/issues/758))      |
 | AM airband channels + AM zones                             | `replaced`      | When projected         | Written together when build has airband zones; else radio bank left alone ([#756](https://github.com/pskillen/codeplug-studio/issues/756)) |
 | LocalInfo                                                  | `kept`          | No                     | **Not transmitted** — identity check only; unit not touched                                                                                |
 | Optional settings, alarm                                   | `kept`          | No                     | **Preserved** — fresh-read + unchanged re-stage inside touched units                                                                       |
