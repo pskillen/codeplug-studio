@@ -13,6 +13,25 @@ export interface RadioZoneDto {
   channelNumbers: readonly number[];
 }
 
+/** AT-D890UV AM airband channel (parallel bank — freq + name only). */
+export interface RadioAmAirChannelDto {
+  /** 1-based AmAir slot (CSV `No.`); wire occupancy is 0-based. */
+  slotIndex: number;
+  wireName: string;
+  rxHz: number;
+}
+
+/** AT-D890UV AM airband zone (max 32 members; A-channel = member-list index). */
+export interface RadioAmZoneDto {
+  wireName: string;
+  /** Ordered 1-based AmAir channel numbers. */
+  channelNumbers: readonly number[];
+  /** Index into `channelNumbers` for the zone A-channel (default 0). */
+  aChannelMemberIndex?: number;
+  /** Member-list positions included in scan; omit to scan all members. */
+  scanMemberIndices?: readonly number[];
+}
+
 /** Scan list membership as radio channel numbers (1-based). */
 export interface RadioScanListDto {
   wireName: string;
@@ -98,6 +117,15 @@ export interface RadioWriteOrganisation {
   /** Operator DMR radio IDs (metadata 0x67) — DM-32UV Web Serial Write. */
   radioIds?: readonly RadioRadioIdDto[];
   aprs?: RadioAprsDto | null;
+  /**
+   * AT-D890UV AM airband channels. Omit to leave the radio AmAir bank unchanged.
+   * When present, `amZones` must also be present (zones ship with channels).
+   */
+  amAirChannels?: readonly RadioAmAirChannelDto[];
+  /**
+   * AT-D890UV AM airband zones. Omit (with `amAirChannels`) to retain radio state.
+   */
+  amZones?: readonly RadioAmZoneDto[];
 }
 
 /**
