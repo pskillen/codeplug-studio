@@ -14,9 +14,7 @@ import {
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { NeonplugDm32uvRadioProfile } from './profiles.ts';
 import type { NeonplugScanList } from './wireTypes.ts';
-
-/** Channel `scanListId` is 4 bits (0–15); 0 = none, so at most 15 referenceable lists. */
-export const NEONPLUG_MAX_CHANNEL_SCAN_LIST_ID = 15;
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 
 /**
  * Default name for the DM32UV empty-list floor (#564).
@@ -124,7 +122,7 @@ export function deriveNeonplugZoneDerivedScanLists(
   );
   const reservedScanListNames = new Set<string>();
   const reservedCarrierNames = new Set(reservedWireNames);
-  const maxLists = Math.min(profile.maxScanLists, NEONPLUG_MAX_CHANNEL_SCAN_LIST_ID);
+  const maxLists = Math.min(profile.maxScanLists, DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX);
 
   for (const assembledZone of assembled.zones) {
     const entry = emptyLayoutMode ? undefined : layoutEntry(layout, assembledZone.zoneId);

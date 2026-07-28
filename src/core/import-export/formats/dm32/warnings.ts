@@ -33,6 +33,12 @@ export function collectDm32ExportWarnings(
     }
   }
 
+  if (assembled.rxGroupLists.length > profile.maxRxGroupLists) {
+    warnings.push(
+      `Build has ${assembled.rxGroupLists.length} RX group list(s); only ${profile.maxRxGroupLists} export to DM32`,
+    );
+  }
+
   for (const list of assembled.rxGroupLists) {
     if (list.entity.members.length > profile.rxGroupListMembers) {
       warnings.push(

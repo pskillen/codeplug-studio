@@ -296,7 +296,11 @@ export function serialiseRxGroupLists(
   },
 ): string {
   const ctx = buildSerialiseContext(assembled, library, options, warnings);
-  const rows = assembled.rxGroupLists.map((list, i) =>
+  const profile = getDm32Profile(
+    options?.profileId ?? assembled.profileId ?? DEFAULT_DM32_PROFILE_ID,
+  );
+  const rxLists = assembled.rxGroupLists.slice(0, profile.maxRxGroupLists);
+  const rows = rxLists.map((list, i) =>
     padRow(RX_GROUP_LIST_HEADERS, {
       [RX_GROUP_LIST_COL.number]: String(i + 1),
       [RX_GROUP_LIST_COL.name]: ctx.rxGroupListWireNames.get(list.entity.id) ?? list.wireName,

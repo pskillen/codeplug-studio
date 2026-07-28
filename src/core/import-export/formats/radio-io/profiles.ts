@@ -217,7 +217,7 @@ export const RADIO_IO_DM32UV_PROFILE: RadioIoDm32uvProfile = {
   zoneMembers: 64,
   maxScanLists: 32,
   scanListMembers: 15,
-  maxRxGroupLists: 250,
+  maxRxGroupLists: 32,
   rxGroupListMembers: 32,
   powerLadder: DM32_POWER_LADDER,
 };

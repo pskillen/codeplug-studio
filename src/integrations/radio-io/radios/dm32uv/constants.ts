@@ -3,6 +3,8 @@
  * Cite: NeonPlug src/radios/dm32uv/constants.ts (facts only).
  */
 
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
+
 /** Metadata byte at offset 0xFFF of each 4KB block. */
 export const DM32_METADATA = {
   CHANNEL_FIRST: 0x12,
@@ -74,6 +76,8 @@ export const DM32_LIMITS = {
   CHANNEL_MAX: 4000,
   CHANNELS_IN_FIRST_BLOCK: 84,
   CHANNELS_PER_LATER_BLOCK: 85,
+  CHANNEL_SCAN_LIST_ID_MAX: DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX,
+  RX_GROUPS_MAX: DM32UV_LIMITS.RX_GROUPS_MAX,
   /**
    * Hard cap on contact-bank 4KB blocks to fold into a download map.
    * NeonPlug reads by header count, never the full V-frame 0x0F end address

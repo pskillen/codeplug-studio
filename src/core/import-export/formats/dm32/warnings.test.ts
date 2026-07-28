@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { newRxGroupList } from '@core/domain/factories.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { collectDm32ExportWarnings } from './warnings.ts';
@@ -63,5 +64,23 @@ describe('collectDm32ExportWarnings', () => {
       maxNameLength: 1,
     });
     expect(capped.length).toBeGreaterThan(0);
+  });
+
+  it('warns when RX group list count exceeds profile maxRxGroupLists', () => {
+    const projectId = '11111111-1111-4111-8111-111111111111';
+    const build = minimalDm32ExportBuild();
+    const library = {
+      ...minimalDm32ExportLibrary(),
+      rxGroupLists: Array.from({ length: 40 }, (_, i) => ({
+        ...newRxGroupList(projectId, `RX${i}`),
+        id: `rx-${i}`,
+      })),
+    };
+    const assembled = assemble(build, library, {
+      formatId: 'dm32',
+      profileId: 'dm32-baofeng-dm32uv',
+    });
+    const warnings = collectDm32ExportWarnings(assembled, library);
+    expect(warnings.some((w) => /40 RX group list/.test(w) && /32/.test(w))).toBe(true);
   });
 });
