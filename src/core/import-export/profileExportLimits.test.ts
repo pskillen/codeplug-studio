@@ -145,6 +145,17 @@ describe('getProfileExportLimits', () => {
     expect(limits!.powerLadder.map((e) => e.wire)).toEqual(['High', 'Low']);
   });
 
+  it('maps radio-io DM32UV caps identically to DM32 CPS profile', () => {
+    const limits = getProfileExportLimits('radio-io', 'radio-io-dm32uv');
+    const dm32 = getProfileExportLimits('dm32', 'dm32-baofeng-dm32uv');
+    expect(limits).not.toBeNull();
+    expect(dm32).not.toBeNull();
+    expect(limits!.maxRxGroupLists).toBe(32);
+    expect(limits!.maxRxGroupLists).toBe(dm32!.maxRxGroupLists);
+    expect(limits!.maxScanLists).toBe(dm32!.maxScanLists);
+    expect(limits!.scanListMembers).toBe(dm32!.scanListMembers);
+  });
+
   it('projects Anytone AT-D890UV Direct radio limits from radio-io profile', () => {
     const limits = getProfileExportLimits('radio-io', 'radio-io-at-d890uv');
     expect(limits).not.toBeNull();

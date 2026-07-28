@@ -479,6 +479,28 @@ describe('buildRadioWriteProjection', () => {
     expect(projection.warnings.some((w) => /801 talk group/.test(w) && /800/.test(w))).toBe(true);
   });
 
+  it('warns and truncates RX group lists beyond DM-32UV cap', () => {
+    const projectId = 'p1';
+    const rxGroupLists = Array.from({ length: 40 }, (_, i) => ({
+      ...newRxGroupList(projectId, `RX${i}`),
+      id: `rx-${i}`,
+    }));
+    const library = {
+      ...emptyLibrary([]),
+      rxGroupLists,
+    };
+    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.rxGroups).toHaveLength(32);
+    expect(
+      projection.warnings.some((w) => /40 RX group list/.test(w) && /32/.test(w)),
+    ).toBe(true);
+  });
+
   it('warns and truncates digital contacts beyond DM-32UV address-book cap', () => {
     const projectId = 'p1';
     const digitalContacts = Array.from({ length: 251 }, (_, i) =>

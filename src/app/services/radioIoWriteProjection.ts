@@ -88,7 +88,7 @@ function radioIoExportLimits(egress: RadioWireEgressIds): ProfileExportLimits {
       maxChannels: 4000,
       maxZones: 250,
       maxScanLists: 32,
-      maxRxGroupLists: 250,
+      maxRxGroupLists: 32,
       maxContacts: DM32_DEFAULT_MAX_DIGITAL_CONTACTS,
       maxTalkGroups: DM32_DEFAULT_MAX_TALK_GROUPS,
       zoneMembers: 64,
@@ -391,7 +391,7 @@ function buildTalkGroupsAndRx(
     egress.profileId === 'radio-io-at-d890uv' || limits.maxContacts === 'not_used'
       ? 0
       : numericLimit(limits.maxContacts, DM32_DEFAULT_MAX_DIGITAL_CONTACTS);
-  const maxRx = numericLimit(limits.maxRxGroupLists, 250);
+  const maxRx = numericLimit(limits.maxRxGroupLists, 32);
   const maxRxMembers = numericLimit(limits.rxGroupListMembers, 32);
   const contactIdByEntityId = new Map<string, number>();
   const talkGroups: RadioTalkGroupDto[] = [];
@@ -457,6 +457,7 @@ function buildTalkGroupsAndRx(
   const rxGroupIndexById = new Map<string, number>();
   const rxGroups: RadioRxGroupDto[] = [];
   const reservedRx = new Set<string>();
+  const rxGroupTotal = assembled.rxGroupLists.length;
 
   for (const row of assembled.rxGroupLists) {
     if (rxGroups.length >= maxRx) break;
@@ -491,6 +492,11 @@ function buildTalkGroupsAndRx(
     // Channel byte uses 0-based in some docs; NeonPlug RX group id is 1-based in channel field bits.
     // Studio channelCodec writes rxGroupIndex & 0x3f — use 1-based index matching NeonPlug.
     rxGroupIndexById.set(row.entity.id, index);
+  }
+  if (rxGroupTotal > maxRx) {
+    warnings.push(
+      `Build has ${rxGroupTotal} RX group list(s); only ${maxRx} export to radio RX group lists`,
+    );
   }
 
   return {
