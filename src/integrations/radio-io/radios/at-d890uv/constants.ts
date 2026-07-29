@@ -45,6 +45,15 @@ export const AT_D890_LIMITS = {
   CHANNEL_CHUNK_SIZE: 0x40,
 } as const;
 
+/**
+ * Dump / write-verify read spans — deliberately wider than {@link AT_D890UV_LIMITS}
+ * encode caps so debug export can see hardware slots above modelled write limits.
+ * Do not derive from product limits — that hides unmodelled occupancy (F23 / #845).
+ */
+export const AT_D890_DUMP_ZONES = 256;
+export const AT_D890_DUMP_SCAN_LISTS = 256;
+export const AT_D890_DUMP_RX_GROUP_LISTS = 256;
+
 /** `D890_MAP` — first-adapter subset. */
 export const D890_MAP = {
   LocalInfo: 0x4f8_0000,

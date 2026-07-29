@@ -16,7 +16,14 @@ import {
   atD890ReadMemory,
 } from './connection.ts';
 import { negotiateAtD890ReadBlockSize } from './linkProbe.ts';
-import { AT_D890_BLOCK_SIZE, AT_D890_LIMITS, D890_MAP } from './constants.ts';
+import {
+  AT_D890_BLOCK_SIZE,
+  AT_D890_DUMP_RX_GROUP_LISTS,
+  AT_D890_DUMP_SCAN_LISTS,
+  AT_D890_DUMP_ZONES,
+  AT_D890_LIMITS,
+  D890_MAP,
+} from './constants.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import type { BytePipe, ProgressFn } from '../../types.ts';
 
@@ -160,14 +167,14 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
     'Zone names',
     'zones',
     D890_MAP.ZonesName,
-    AT_D890UV_LIMITS.ZONE_MAX * D890_MAP.ZoneDataOffset,
+    AT_D890_DUMP_ZONES * D890_MAP.ZoneDataOffset,
   ),
   region(
     'zoneChannels',
     'Zone membership',
     'zones',
     D890_MAP.ZoneChannels,
-    AT_D890UV_LIMITS.ZONE_MAX * D890_MAP.ZoneChannelsStride,
+    AT_D890_DUMP_ZONES * D890_MAP.ZoneChannelsStride,
   ),
   region(
     'zoneAChannel',
@@ -189,7 +196,7 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
     'Scan-list records',
     'scanLists',
     D890_MAP.ScanListData,
-    AT_D890UV_LIMITS.SCAN_LISTS_MAX * D890_MAP.ScanListStride,
+    AT_D890_DUMP_SCAN_LISTS * D890_MAP.ScanListStride,
   ),
   region('talkgroupSet', 'Talkgroup occupancy bitmap', 'talkgroups', D890_MAP.TalkgroupSet, 0x4f0),
   region(
@@ -212,7 +219,7 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
     'RX-group records',
     'receiveGroups',
     D890_MAP.ReceiveGroupData,
-    AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX * D890_MAP.ReceiveGroupStride,
+    AT_D890_DUMP_RX_GROUP_LISTS * D890_MAP.ReceiveGroupStride,
   ),
   region('radioIdSet', 'Radio ID occupancy bitmap', 'radioIds', D890_MAP.RadioIdSet, 0x20),
   region(
