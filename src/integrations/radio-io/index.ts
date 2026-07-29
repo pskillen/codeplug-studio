@@ -20,6 +20,26 @@ export type {
   RadioWriteStrategy,
 } from './types.ts';
 
+export type {
+  WriteVerifyCaptureResult,
+  WriteVerifyDebugContext,
+  WriteVerifyHooks,
+  WriteVerifyKeptCompareResult,
+  WriteVerifyKeptSnapshot,
+  WriteVerifyMismatch,
+  WriteVerifyPendingPayload,
+  WriteVerifyRegionGroup,
+  WriteVerifyRegionRow,
+  WriteVerifyResult,
+  WriteVerifyStagingChunk,
+  WriteVerifyStagingSnapshot,
+  WriteVerifyStagingSnapshotJson,
+} from './writeVerify.ts';
+export {
+  deserializeWriteVerifyStagingSnapshot,
+  serializeWriteVerifyStagingSnapshot,
+} from './writeVerify.ts';
+
 export type { RadioChannelDto, RadioTone } from './radioChannelDto.ts';
 export type {
   RadioAprsDto,

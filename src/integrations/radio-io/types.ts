@@ -129,6 +129,8 @@ export interface RadioDescriptor {
   baudRateFallback?: number;
   /** Persist / merge clone image for this radio family. */
   hydration: RadioHydrationHooks;
+  /** Optional cross-session write verify — compare staged upload vs post-commit read-back. */
+  writeVerify?: import('./writeVerify.ts').WriteVerifyHooks;
 }
 
 /**
