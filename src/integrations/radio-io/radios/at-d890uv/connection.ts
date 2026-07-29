@@ -154,6 +154,10 @@ export async function atD890WriteMemory(
         `D890 write not ACKed at 0x${addr.toString(16)}: got 0x${ack[0]?.toString(16) ?? '??'}`,
       );
     }
+    const remaining = data.length - off - ANYTONE_DMR_BLOCK_SIZE;
+    if (remaining > 0 && AT_D890_CONNECTION.INTER_BLOCK_DELAY_MS > 0) {
+      await new Promise((r) => setTimeout(r, AT_D890_CONNECTION.INTER_BLOCK_DELAY_MS));
+    }
   }
 }
 
