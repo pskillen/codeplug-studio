@@ -191,3 +191,49 @@ export function captureWriteVerifyStaging(
     chunks: chunks.map((c) => ({ address: c.address, data: c.data.slice() })),
   };
 }
+
+export function formatWriteVerifyDebugMarkdown(
+  result: WriteVerifyResult,
+  context: import('./writeVerify.ts').WriteVerifyDebugContext,
+  hints: readonly string[] = [],
+): string {
+  const lines: string[] = [
+    '# Write verify debug export',
+    '',
+    `**Model:** ${result.model}`,
+    `**Measured:** ${context.measuredAt}`,
+    `**Build:** ${context.buildId} · egress ${context.egressId}`,
+    `**Profile:** ${context.formatId} / ${context.profileId}`,
+    `**OK:** ${result.ok}`,
+    `**Elapsed:** ${result.elapsedMs} ms · **Bytes read:** ${result.totalBytesRead}`,
+    `**Staging captured:** ${result.stagingCapturedAt}`,
+    `**Chunks:** ${result.staging.totalChunks} · mismatched ${result.staging.mismatchedChunks} · not read ${result.staging.notReadChunks ?? 0}`,
+    '',
+    '## Regions',
+    '',
+    '| Region | Status | Staged | Mismatched | Bytes read |',
+    '| --- | --- | --- | --- | --- |',
+    ...result.regions.map(
+      (r) =>
+        `| ${r.label} | ${r.status} | ${r.stagedChunkCount} | ${r.mismatchedChunks} | ${r.bytesRead} |`,
+    ),
+  ];
+  if (result.staging.mismatches.length > 0) {
+    lines.push('', '## Mismatches', '');
+    for (const m of result.staging.mismatches) {
+      lines.push(
+        `- **${m.kind}** @ 0x${m.address.toString(16)} (${m.regionLabel})`,
+        `  - expected: ${[...m.expected].map((b) => b.toString(16).padStart(2, '0')).join(' ')}`,
+      );
+      if (m.actual) {
+        lines.push(
+          `  - actual: ${[...m.actual].map((b) => b.toString(16).padStart(2, '0')).join(' ')}`,
+        );
+      }
+    }
+  }
+  if (hints.length > 0) {
+    lines.push('', '## Hints', '', ...hints.map((h) => `- ${h}`));
+  }
+  return lines.join('\n');
+}

@@ -109,6 +109,10 @@ Upload path also issues a priming read at radio address **`0x3b10`** (outside th
 4. For upload: re-enter program mode → version check (warn if image vs radio bandlimit differ) → priming read `0x3b10` → write each `0x10` block → `END`.
 5. Prefer RMW for settings / bandlimit — see [settings.md](settings.md).
 
+## Write verify
+
+After upload, Studio stages every **16-byte** block written in `0x0000`…`0x3290`. **Verify write** reconnects (no reboot wait), runs a full download, and compares staged payloads byte-for-byte. Region rows follow [writeRole.ts](../../../../../src/integrations/radio-io/radios/rt95/writeRole.ts) (`replaced` vs `kept`). Feature: [write-verify.md](../../../../features/radio-read-write/write-verify.md).
+
 ## Related
 
 - [fixtures.md](fixtures.md) · [memory-layout.md](memory-layout.md) · [settings.md](settings.md)
