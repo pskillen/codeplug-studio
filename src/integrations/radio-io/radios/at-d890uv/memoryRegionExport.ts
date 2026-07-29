@@ -18,9 +18,6 @@ import {
 import { negotiateAtD890ReadBlockSize } from './linkProbe.ts';
 import {
   AT_D890_BLOCK_SIZE,
-  AT_D890_DUMP_RX_GROUP_LISTS,
-  AT_D890_DUMP_RX_GROUP_SET_BYTES,
-  AT_D890_DUMP_SCAN_LISTS,
   AT_D890_LIMITS,
   D890_MAP,
 } from './constants.ts';
@@ -196,7 +193,7 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
     'Scan-list records',
     'scanLists',
     D890_MAP.ScanListData,
-    AT_D890_DUMP_SCAN_LISTS * D890_MAP.ScanListStride,
+    AT_D890UV_LIMITS.SCAN_LISTS_MAX * D890_MAP.ScanListStride,
   ),
   region('talkgroupSet', 'Talkgroup occupancy bitmap', 'talkgroups', D890_MAP.TalkgroupSet, 0x4f0),
   region(
@@ -212,14 +209,14 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
     'RX-group occupancy bitmap',
     'receiveGroups',
     D890_MAP.ReceiveGroupSet,
-    AT_D890_DUMP_RX_GROUP_SET_BYTES,
+    AT_D890_LIMITS.RX_GROUP_SET_BYTES,
   ),
   region(
     'receiveGroupData',
     'RX-group records',
     'receiveGroups',
     D890_MAP.ReceiveGroupData,
-    AT_D890_DUMP_RX_GROUP_LISTS * D890_MAP.ReceiveGroupStride,
+    AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX * D890_MAP.ReceiveGroupStride,
   ),
   region('radioIdSet', 'Radio ID occupancy bitmap', 'radioIds', D890_MAP.RadioIdSet, 0x20),
   region(

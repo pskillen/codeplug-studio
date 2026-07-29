@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import {
   AtD890ScriptedPipe,
   scriptAtD890Connect,
@@ -12,12 +13,7 @@ import {
   runAtD890MemoryGroupDump,
   runAtD890MemoryRegionDump,
 } from './memoryRegionExport.ts';
-import {
-  AT_D890_DUMP_RX_GROUP_LISTS,
-  AT_D890_DUMP_RX_GROUP_SET_BYTES,
-  AT_D890_DUMP_SCAN_LISTS,
-  D890_MAP,
-} from './constants.ts';
+import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 
 function writeFrames(pipe: AtD890ScriptedPipe) {
   return pipe.writes.filter((w) => w[0] === 0x57 /* 'W' */);
@@ -43,15 +39,17 @@ describe('AT_D890_MEMORY_REGIONS', () => {
     }
   });
 
-  it('dump/verify probe spans cover scan lists and RX groups through CPS UI ceiling', () => {
+  it('dump/verify spans for scan lists and RX groups derive from product limits', () => {
     const scanListData = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'scanListData')!;
     const receiveGroupSet = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'receiveGroupSet')!;
     const receiveGroupData = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'receiveGroupData')!;
 
-    expect(scanListData.chunks[0]!.length).toBe(AT_D890_DUMP_SCAN_LISTS * D890_MAP.ScanListStride);
-    expect(receiveGroupSet.chunks[0]!.length).toBe(AT_D890_DUMP_RX_GROUP_SET_BYTES);
+    expect(scanListData.chunks[0]!.length).toBe(
+      AT_D890UV_LIMITS.SCAN_LISTS_MAX * D890_MAP.ScanListStride,
+    );
+    expect(receiveGroupSet.chunks[0]!.length).toBe(AT_D890_LIMITS.RX_GROUP_SET_BYTES);
     expect(receiveGroupData.chunks[0]!.length).toBe(
-      AT_D890_DUMP_RX_GROUP_LISTS * D890_MAP.ReceiveGroupStride,
+      AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX * D890_MAP.ReceiveGroupStride,
     );
   });
 

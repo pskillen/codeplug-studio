@@ -4,7 +4,8 @@
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioRxGroupDto } from '../../radioWriteProjection.ts';
-import { clearBitmap, setBitmapBit } from './bitmap.ts';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+import { clearBitmapBitsBelow, setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
   mergeMapRegionsIntoCache,
@@ -25,7 +26,7 @@ export function encodeAtD890RxGroupRecord(rx: RadioRxGroupDto): Uint8Array {
   const body = new Uint8Array(0x100);
   body.fill(0xff);
   // memberDigitalIds are 0-based talkgroup bank slot indices (not DMR IDs).
-  const count = Math.min(rx.memberDigitalIds.length, 32);
+  const count = Math.min(rx.memberDigitalIds.length, AT_D890UV_LIMITS.RX_GROUP_MEMBERS_MAX);
   for (let i = 0; i < count; i++) {
     writeU32Le(body, i * 4, rx.memberDigitalIds[i]!);
   }
@@ -42,8 +43,8 @@ export function encodeRxGroupsIntoAtD890Image(
   rxGroups: readonly RadioRxGroupDto[],
 ): MemoryMap {
   const set = image.get(D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES).slice();
-  clearBitmap(set);
-  const max = set.length * 8;
+  clearBitmapBitsBelow(set, AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX);
+  const max = AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX;
   for (let i = 0; i < max; i++) {
     image.fill(receiveGroupAddress(i), AT_D890_LIMITS.RX_GROUP_STRIDE, 0xff);
   }
