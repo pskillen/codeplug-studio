@@ -37,12 +37,13 @@ import type {
   AtD890SentinelCompareResult,
   AtD890SentinelSnapshot,
 } from '@integrations/radio-io/radios/at-d890uv/sentinelVerify.ts';
+import { runAtD890WriteVerifyMemoryRead } from '@integrations/radio-io/radios/at-d890uv/memoryRegionExport.ts';
 import {
   buildAtD890WriteVerifyResult,
+  listStagingAddressesOutsideModelledRegions,
   type AtD890WriteStagingSnapshot,
   type AtD890WriteVerifyResult,
 } from '@integrations/radio-io/radios/at-d890uv/writeMemoryVerify.ts';
-import { runAtD890MemoryDumpAll } from '@integrations/radio-io/radios/at-d890uv/memoryRegionExport.ts';
 
 export { isWebSerialSupported, getWebSerialUnsupportedMessage };
 
@@ -347,15 +348,22 @@ export async function verifyAtD890WriteMemory(
     throw new Error('Write-memory verify is only supported for AT-D890UV.');
   }
   const pipe = session.pipe;
-  const dump = await runAtD890MemoryDumpAll(pipe, {
+  const spillAddresses = listStagingAddressesOutsideModelledRegions(stagingSnapshot);
+  const dump = await runAtD890WriteVerifyMemoryRead(pipe, spillAddresses, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
-  return buildAtD890WriteVerifyResult(stagingSnapshot, dump.files, sentinelBefore, {
-    model: dump.model,
-    elapsedMs: dump.elapsedMs,
-    totalBytesRead: dump.totalBytes,
-  });
+  return buildAtD890WriteVerifyResult(
+    stagingSnapshot,
+    dump.files,
+    sentinelBefore,
+    {
+      model: dump.model,
+      elapsedMs: dump.elapsedMs,
+      totalBytesRead: dump.totalBytes,
+    },
+    dump.spillChunks,
+  );
 }
 
 export async function closeRadioSession(session: RadioSession): Promise<void> {

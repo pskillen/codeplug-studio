@@ -14,11 +14,23 @@ import { RadioProtocolError } from '../../kit/errors.ts';
 /** Measured flash erase granularity (hardware 2026-07-27). */
 export const AT_D890_ERASE_UNIT_BYTES = 0x4_0000;
 
+/**
+ * Per erase-unit flash bookkeeping blocks (16-byte each) — sector-management markers,
+ * not codeplug payload. Staged during sparse RMW but excluded from write-verify compare.
+ */
+export const AT_D890_ERASE_UNIT_BOOKKEEPING_BLOCK_OFFSETS = [0x3fbf0, 0x3fff0] as const;
+
 const ERASE_UNIT_MASK = ~(AT_D890_ERASE_UNIT_BYTES - 1);
 
 /** Floor `address` to its containing erase-unit base. */
 export function eraseUnitBaseFor(address: number): number {
   return address & ERASE_UNIT_MASK;
+}
+
+/** True when `address` is a 16-byte bookkeeping block at the tail of an erase unit. */
+export function isAtD890EraseUnitBookkeepingAddress(address: number): boolean {
+  const offsetInUnit = address & (AT_D890_ERASE_UNIT_BYTES - 1);
+  return AT_D890_ERASE_UNIT_BOOKKEEPING_BLOCK_OFFSETS.some((off) => off === offsetInUnit);
 }
 
 /** Unique ascending erase-unit bases touched by any of `addresses`. */
