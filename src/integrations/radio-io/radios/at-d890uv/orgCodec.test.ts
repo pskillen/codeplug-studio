@@ -14,6 +14,11 @@ function readU16Le(buf: Uint8Array, offset: number): number {
   return buf[offset]! | (buf[offset + 1]! << 8);
 }
 
+function writeU16Le(buf: Uint8Array, offset: number, value: number): void {
+  buf[offset] = value & 0xff;
+  buf[offset + 1] = (value >>> 8) & 0xff;
+}
+
 describe('zoneCodec', () => {
   it('encodes zone membership as 0-based channel indices', () => {
     const image = createMemoryMap(0x500_0000);
@@ -45,6 +50,28 @@ describe('zoneCodec', () => {
     const zoneB = image.get(D890_MAP.ZoneBChannel, 0x200);
     expect(readU16Le(zoneA, 0)).toBe(0);
     expect(readU16Le(zoneB, 0)).toBe(0);
+  });
+
+  it('zeros zone A/B table entries at indices 250–255', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    const zoneA = image.get(D890_MAP.ZoneAChannel, D890_MAP.ZoneTableBytes).slice();
+    const zoneB = image.get(D890_MAP.ZoneBChannel, D890_MAP.ZoneTableBytes).slice();
+    for (let i = 250; i < 256; i++) {
+      writeU16Le(zoneA, i * 2, 0xffff);
+      writeU16Le(zoneB, i * 2, 0xffff);
+    }
+    image.set(D890_MAP.ZoneAChannel, zoneA);
+    image.set(D890_MAP.ZoneBChannel, zoneB);
+
+    encodeZonesIntoAtD890Image(image, [{ wireName: 'Z1', channelNumbers: [1] }]);
+
+    const outA = image.get(D890_MAP.ZoneAChannel, D890_MAP.ZoneTableBytes);
+    const outB = image.get(D890_MAP.ZoneBChannel, D890_MAP.ZoneTableBytes);
+    for (let i = 250; i < 256; i++) {
+      expect(readU16Le(outA, i * 2)).toBe(0);
+      expect(readU16Le(outB, i * 2)).toBe(0);
+    }
   });
 });
 
