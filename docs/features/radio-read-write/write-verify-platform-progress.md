@@ -1,18 +1,17 @@
 # Generic write verify platform — progress
 
 **Tracking:** [#838](https://github.com/pskillen/codeplug-studio/issues/838) · epic [#632](https://github.com/pskillen/codeplug-studio/issues/632)  
-**Plan:** `.cursor/plans/generic_write_verify_b607e2b9.plan.md`  
-**Branch:** `838/pskil/write-verify-platform`
+**Branch:** `838/pskil/write-verify-adapters`
 
 ---
 
 ## Overall status
 
-**Status:** Complete (pending merge)
+**Status:** In progress (Phase 1 adapters)
 
-**Branch:** `838/pskil/write-verify-platform`
+**Branch:** `838/pskil/write-verify-adapters` from `origin/main`
 
-**Prerequisite:** [#839](https://github.com/pskillen/codeplug-studio/pull/839) merged to `main`.
+**Prerequisite:** Phase 0 merged ([#838](https://github.com/pskillen/codeplug-studio/issues/838) platform + D890).
 
 ---
 
@@ -29,7 +28,33 @@
 
 ---
 
-## Delivered
+## Phase 1 — adapters + reconnect UX
+
+| Slice                                      | State       |
+| ------------------------------------------ | ----------- |
+| 0 Branch + extend progress/outstanding     | In progress |
+| 1 Soft vs hard reconnect UX                | Pending     |
+| 2 Shared MemoryMap staging compare helpers | Pending     |
+| 3 RT95 write verify                        | Pending     |
+| 4 UV-5R Mini + UV-21 write verify          | Pending     |
+| 5 OpenGD77 1701 + MD9600 write verify      | Pending     |
+| 6 DM-32UV write verify                     | Pending     |
+| 7 Feature docs + PR                        | Pending     |
+
+### Adapter checklist
+
+| Radio              | `writeVerify` hooks | `requiresCrossSessionReconnect` |
+| ------------------ | ------------------- | ------------------------------- |
+| AT-D890UV          | Done (Phase 0)      | `true`                          |
+| RT95               | Pending             | `false`                         |
+| UV-5R Mini / UV-21 | Pending             | `false`                         |
+| OpenGD77 1701      | Pending             | `true`                          |
+| OpenGD77 MD9600    | Pending             | `true`                          |
+| DM-32UV            | Pending             | `false`                         |
+
+---
+
+## Delivered (Phase 0)
 
 - `src/integrations/radio-io/writeVerify.ts` — neutral contracts + staging JSON helpers
 - `radios/at-d890uv/writeVerifyHooks.ts` — D890 adapter mapping
@@ -37,13 +62,6 @@
 - `writeVerifyStorage.ts` — `radioIo.writeVerify.pending` with `profileId` guard
 - `WriteVerifyReport.tsx` — generic report shell + sidecar
 - [write-verify.md](write-verify.md) — extension pattern
-
----
-
-## Verify (pre-merge)
-
-- [x] `npm run format:check && npm run lint && npm run test && npm run build`
-- [ ] Manual AT-D890UV Write → Verify write smoke on hardware
 
 ---
 
