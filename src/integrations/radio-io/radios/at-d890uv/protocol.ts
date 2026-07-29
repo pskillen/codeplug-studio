@@ -569,6 +569,12 @@ export class AtD890uvProtocol implements CloneImageRadio {
       );
     }
 
+    const preUploadCache: AtD890DownloadCache = {
+      blocks: new Map(
+        [...this.cache.blocks.entries()].map(([address, data]) => [address, data.slice()]),
+      ),
+    };
+
     applyAtD890WriteImageToCache(this.cache, image, this.uploadBankIntent);
 
     const modelledChunks = listWriteChunks(this.cache, AT_D890_SAFE_SKIP_WRITE_ADDR);
@@ -635,7 +641,10 @@ export class AtD890uvProtocol implements CloneImageRadio {
       const transmittedChunks = stagingChunks.filter(
         (c) => c.address !== AT_D890_SAFE_SKIP_WRITE_ADDR,
       );
-      this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(transmittedChunks);
+      this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(
+        transmittedChunks,
+        preUploadCache,
+      );
 
       reportProgress(
         opts.onProgress,

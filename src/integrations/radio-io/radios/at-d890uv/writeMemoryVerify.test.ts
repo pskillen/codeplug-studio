@@ -12,6 +12,8 @@ import {
 } from './writeMemoryVerify.ts';
 import { cloneAtD890SentinelSnapshot } from './sentinelVerify.ts';
 import { D890_MAP } from './constants.ts';
+import { eraseUnitBaseFor } from './eraseUnits.ts';
+import { putCacheBytes, type AtD890DownloadCache } from './memory.ts';
 
 function makeRegionFiles(overrides: Record<string, Uint8Array>): Map<string, Uint8Array> {
   const files = new Map<string, Uint8Array>();
@@ -232,6 +234,29 @@ describe('buildAtD890WriteVerifyResult', () => {
     expect(result.staging.excludedBookkeepingChunks).toBe(1);
     expect(result.staging.mismatchedChunks).toBe(0);
     expect(result.staging.notReadChunks).toBe(0);
+  });
+
+  it('fails when an erase unit had must-change bytes but flash did not commit', () => {
+    const files = makeRegionFiles({});
+    const addr = D890_MAP.ChannelSet;
+    const preRadio = new Uint8Array(16).fill(0xff);
+    const staged = new Uint8Array(16).fill(0xab);
+    writeChunkAt(files, addr, preRadio);
+
+    const preCache: AtD890DownloadCache = { blocks: new Map() };
+    putCacheBytes(preCache, addr, preRadio);
+    const snapshot = captureAtD890WriteStagingSnapshot([{ address: addr, data: staged }], preCache);
+
+    const result = buildAtD890WriteVerifyResult(snapshot, files, undefined, {
+      model: 'ID890UV',
+      elapsedMs: 100,
+      totalBytesRead: 512,
+    });
+    expect(result.ok).toBe(false);
+    const unit = result.eraseUnits.find((u) => u.unitBase === eraseUnitBaseFor(addr));
+    expect(unit?.verdict).toBe('not-committed');
+    expect(unit?.mustChangeChunks).toBe(1);
+    expect(unit?.changedChunks).toBe(0);
   });
 });
 

@@ -15,6 +15,8 @@ export interface WriteVerifyStagingChunk {
 export interface WriteVerifyStagingSnapshot {
   readonly capturedAt: string;
   readonly chunks: readonly WriteVerifyStagingChunk[];
+  /** Hydration cache bytes before write overlay — paired addresses with staged chunks. */
+  readonly preWriteChunks?: readonly WriteVerifyStagingChunk[];
 }
 
 /** JSON-serializable opaque bag — adapter owns entry shape (e.g. sentinel id → bytes). */
@@ -62,6 +64,16 @@ export interface WriteVerifyKeptCompareResult {
   readonly mismatches?: readonly WriteVerifyKeptMismatch[];
 }
 
+export type WriteVerifyEraseUnitVerdict = 'committed' | 'not-committed' | 'no-evidence';
+
+export interface WriteVerifyEraseUnitRow {
+  readonly unitBase: number;
+  readonly stagedChunks: number;
+  readonly mustChangeChunks: number;
+  readonly changedChunks: number;
+  readonly verdict: WriteVerifyEraseUnitVerdict;
+}
+
 export interface WriteVerifyResult {
   readonly ok: boolean;
   readonly model: string;
@@ -80,6 +92,8 @@ export interface WriteVerifyResult {
   readonly kept?: WriteVerifyKeptCompareResult;
   readonly regions: readonly WriteVerifyRegionRow[];
   readonly regionGroups: readonly WriteVerifyRegionGroup[];
+  /** Per erase-unit commit evidence (sparse RMW radios). */
+  readonly eraseUnits?: readonly WriteVerifyEraseUnitRow[];
 }
 
 export interface WriteVerifyDebugContext {
@@ -121,6 +135,7 @@ export interface WriteVerifyHooks {
 export interface WriteVerifyStagingSnapshotJson {
   readonly capturedAt: string;
   readonly chunks: readonly { readonly address: number; readonly data: readonly number[] }[];
+  readonly preWriteChunks?: readonly { readonly address: number; readonly data: readonly number[] }[];
 }
 
 export function serializeWriteVerifyStagingSnapshot(
@@ -129,6 +144,10 @@ export function serializeWriteVerifyStagingSnapshot(
   return {
     capturedAt: snapshot.capturedAt,
     chunks: snapshot.chunks.map((c) => ({
+      address: c.address,
+      data: [...c.data],
+    })),
+    preWriteChunks: snapshot.preWriteChunks?.map((c) => ({
       address: c.address,
       data: [...c.data],
     })),
@@ -141,6 +160,10 @@ export function deserializeWriteVerifyStagingSnapshot(
   return {
     capturedAt: json.capturedAt,
     chunks: json.chunks.map((c) => ({
+      address: c.address,
+      data: Uint8Array.from(c.data),
+    })),
+    preWriteChunks: json.preWriteChunks?.map((c) => ({
       address: c.address,
       data: Uint8Array.from(c.data),
     })),

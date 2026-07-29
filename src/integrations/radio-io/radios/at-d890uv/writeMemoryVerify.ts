@@ -7,7 +7,7 @@
 
 import { AT_D890_MEMORY_REGIONS } from './memoryRegionExport.ts';
 import type { AtD890StagingChunk } from './sparseEraseRmw.ts';
-import { isAtD890ExcludedBookkeepingStagingAddress } from './eraseUnits.ts';
+import { eraseUnitBaseFor, isAtD890ExcludedBookkeepingStagingAddress } from './eraseUnits.ts';
 import {
   compareAtD890SentinelSnapshots,
   type AtD890SentinelCompareResult,
@@ -15,6 +15,12 @@ import {
 } from './sentinelVerify.ts';
 import { AT_D890_SENTINEL_EXTENTS } from './writableExtents.ts';
 import { AT_D890_BLOCK_SIZE } from './constants.ts';
+import { getCacheBytes, type AtD890DownloadCache } from './memory.ts';
+import {
+  summarizeEraseUnitCommitVerdicts,
+  type WriteVerifyEraseUnitRow,
+} from '../../writeVerifyCompare.ts';
+import type { WriteVerifyByteLookup } from '../../writeVerifyCompare.ts';
 
 export const AT_D890_RMW_SPILL_REGION_ID = 'rmwPreservedSpill';
 export const AT_D890_RMW_SPILL_REGION_LABEL = 'RMW-preserved spill (outside modelled banks)';
@@ -23,6 +29,8 @@ export const AT_D890_RMW_SPILL_GROUP = 'rmwPreserved';
 export interface AtD890WriteStagingSnapshot {
   readonly chunks: readonly AtD890StagingChunk[];
   readonly capturedAt: string;
+  /** Hydration cache bytes before applyAtD890WriteImageToCache — paired with staged addresses. */
+  readonly preWriteChunks: readonly AtD890StagingChunk[];
 }
 
 export type AtD890RegionVerifyStatus =
@@ -70,6 +78,7 @@ export interface AtD890WriteVerifyResult {
   };
   readonly sentinel: AtD890SentinelCompareResult;
   readonly regions: readonly AtD890RegionVerifyRow[];
+  readonly eraseUnits: readonly WriteVerifyEraseUnitRow[];
 }
 
 /** Optional session context for agent-oriented debug export. */
@@ -99,15 +108,26 @@ export function cloneAtD890WriteStagingSnapshot(
   return {
     capturedAt: snapshot.capturedAt,
     chunks: snapshot.chunks.map((c) => ({ address: c.address, data: c.data.slice() })),
+    preWriteChunks: snapshot.preWriteChunks.map((c) => ({
+      address: c.address,
+      data: c.data.slice(),
+    })),
   };
 }
 
 export function captureAtD890WriteStagingSnapshot(
   chunks: readonly AtD890StagingChunk[],
+  preUploadCache?: AtD890DownloadCache,
 ): AtD890WriteStagingSnapshot {
   return {
     capturedAt: new Date().toISOString(),
     chunks: chunks.map((c) => ({ address: c.address, data: c.data.slice() })),
+    preWriteChunks: preUploadCache
+      ? chunks.map((c) => ({
+          address: c.address,
+          data: getCacheBytes(preUploadCache, c.address, c.data.length).slice(),
+        }))
+      : [],
   };
 }
 
@@ -370,6 +390,18 @@ export function summarizeVerifyByRegion(
   return rows;
 }
 
+function buildPostWriteLookup(
+  files: ReadonlyMap<string, Uint8Array>,
+  spillChunks: ReadonlyMap<number, Uint8Array>,
+): WriteVerifyByteLookup {
+  const addressLookup = buildAddressLookup(files, spillChunks);
+  return {
+    get(address: number, length: number): Uint8Array | null {
+      return readBytesAt(addressLookup, address, length);
+    },
+  };
+}
+
 export function buildAtD890WriteVerifyResult(
   snapshot: AtD890WriteStagingSnapshot,
   files: ReadonlyMap<string, Uint8Array>,
@@ -389,8 +421,20 @@ export function buildAtD890WriteVerifyResult(
   const sentinelOk = sentinel.ok;
   const excludedBookkeepingChunks = countExcludedBookkeepingChunks(snapshot);
   const comparableChunks = snapshot.chunks.length - excludedBookkeepingChunks;
+  const preWriteByAddress = new Map(snapshot.preWriteChunks.map((c) => [c.address, c.data]));
+  const eraseUnits =
+    snapshot.preWriteChunks.length > 0
+      ? summarizeEraseUnitCommitVerdicts({
+          stagingChunks: snapshot.chunks,
+          preWriteByAddress,
+          lookup: buildPostWriteLookup(files, spillChunks),
+          unitBaseFor: eraseUnitBaseFor,
+          isComparableAddress: isComparableStagingAddress,
+        })
+      : [];
+  const eraseUnitsOk = eraseUnits.every((u) => u.verdict !== 'not-committed');
   return {
-    ok: stagingOk && sentinelOk,
+    ok: stagingOk && sentinelOk && eraseUnitsOk,
     model: meta.model,
     elapsedMs: meta.elapsedMs,
     totalBytesRead: meta.totalBytesRead,
@@ -404,6 +448,7 @@ export function buildAtD890WriteVerifyResult(
     },
     sentinel,
     regions,
+    eraseUnits,
   };
 }
 
@@ -421,6 +466,23 @@ export function formatAtD890WriteVerifyMarkdown(
     `**Overall:** ${result.ok ? 'PASS' : 'FAIL'} — ${result.staging.mismatchedChunks} of ${result.staging.totalChunks} staged chunks mismatched${result.staging.notReadChunks > 0 ? `, ${result.staging.notReadChunks} not read` : ''}${result.staging.excludedBookkeepingChunks > 0 ? ` (${result.staging.excludedBookkeepingChunks} erase-unit bookkeeping blocks excluded)` : ''}`,
     `**Preserved settings:** ${result.sentinel.ok ? 'PASS' : 'FAIL'}`,
     '',
+  ];
+
+  if (result.eraseUnits.length > 0) {
+    lines.push(
+      '**Erase-unit commit:**',
+      '',
+      '| Unit base | Staged | Must change | Changed on flash | Verdict |',
+      '| --- | --- | --- | --- | --- |',
+      ...result.eraseUnits.map(
+        (u) =>
+          `| ${hexAddr(u.unitBase)} | ${u.stagedChunks} | ${u.mustChangeChunks} | ${u.changedChunks} | **${u.verdict}** |`,
+      ),
+      '',
+    );
+  }
+
+  lines.push(
     '| Region | Group | Staged chunks | Mismatches | Status |',
     '| --- | --- | --- | --- | --- |',
     ...result.regions
@@ -429,7 +491,7 @@ export function formatAtD890WriteVerifyMarkdown(
         (r) =>
           `| ${r.label} | ${r.group} | ${r.stagedChunkCount} | ${r.mismatchedChunks} | ${r.status} |`,
       ),
-  ];
+  );
 
   if (!result.sentinel.ok) {
     lines.push('', '**Preserved-settings mismatches:**');
@@ -511,6 +573,26 @@ export function formatAtD890WriteVerifyDebugMarkdown(
     `- Staging: ${result.staging.mismatchedChunks} / ${result.staging.totalChunks} staged 16-byte chunks mismatched${result.staging.notReadChunks > 0 ? `, ${result.staging.notReadChunks} not read` : ''}${result.staging.excludedBookkeepingChunks > 0 ? ` (${result.staging.excludedBookkeepingChunks} bookkeeping blocks excluded)` : ''}`,
     `- Preserved settings (6 sentinels): **${result.sentinel.ok ? 'PASS' : 'FAIL'}**`,
     '',
+  );
+
+  if (result.eraseUnits.length > 0) {
+    lines.push(
+      '## Erase-unit commit verdict',
+      '',
+      'A unit with **must-change > 0** and **changed == 0** did not commit to flash — even when',
+      'per-chunk staging compare looks fine (bytes already matched CPS on the radio).',
+      '',
+      '| unitBase | stagedChunks | mustChangeChunks | changedChunks | verdict |',
+      '| --- | --- | --- | --- | --- |',
+      ...result.eraseUnits.map(
+        (u) =>
+          `| ${hexAddr(u.unitBase)} | ${u.stagedChunks} | ${u.mustChangeChunks} | ${u.changedChunks} | **${u.verdict}** |`,
+      ),
+      '',
+    );
+  }
+
+  lines.push(
     '## Regions',
     '',
     '| id | label | group | bytesRead | stagedChunks | mismatches | status |',

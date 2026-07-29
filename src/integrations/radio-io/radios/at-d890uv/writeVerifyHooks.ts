@@ -64,6 +64,8 @@ function mapD890StagingSnapshot(staging: WriteVerifyStagingSnapshot): AtD890Writ
   return {
     capturedAt: staging.capturedAt,
     chunks: staging.chunks.map((c) => ({ address: c.address, data: c.data })),
+    preWriteChunks:
+      staging.preWriteChunks?.map((c) => ({ address: c.address, data: c.data })) ?? [],
   };
 }
 
@@ -84,6 +86,7 @@ function mapD890ResultToNeutral(result: AtD890WriteVerifyResult): WriteVerifyRes
     kept: result.sentinel.ok ? { ok: true } : { ok: false, mismatches: result.sentinel.mismatches },
     regions: result.regions,
     regionGroups: [...AT_D890_MEMORY_REGION_GROUPS, ...AT_D890_VERIFY_ONLY_REGION_GROUPS],
+    eraseUnits: result.eraseUnits,
   };
 }
 
@@ -119,6 +122,7 @@ function mapD890ResultFromNeutralForMarkdown(result: WriteVerifyResult): AtD890W
       ? { ok: true }
       : { ok: false, mismatches: result.kept?.mismatches ?? [] },
     regions: result.regions,
+    eraseUnits: result.eraseUnits ?? [],
   };
 }
 
@@ -134,6 +138,10 @@ export const AT_D890_WRITE_VERIFY_HOOKS: WriteVerifyHooks = {
       staging: {
         capturedAt: stagingSnapshot.capturedAt,
         chunks: stagingSnapshot.chunks.map((c) => ({
+          address: c.address,
+          data: c.data,
+        })),
+        preWriteChunks: stagingSnapshot.preWriteChunks.map((c) => ({
           address: c.address,
           data: c.data,
         })),

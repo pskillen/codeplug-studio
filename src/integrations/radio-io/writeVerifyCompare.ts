@@ -9,6 +9,8 @@ import type {
   WriteVerifyRegionRow,
   WriteVerifyRegionStatus,
   WriteVerifyResult,
+  WriteVerifyEraseUnitRow,
+  WriteVerifyEraseUnitVerdict,
   WriteVerifyStagingSnapshot,
 } from './writeVerify.ts';
 
@@ -175,6 +177,56 @@ export function rollupWriteVerifyRegionStatus(
   return 'skipped';
 }
 
+export type { WriteVerifyEraseUnitRow, WriteVerifyEraseUnitVerdict };
+
+export function summarizeEraseUnitCommitVerdicts(input: {
+  stagingChunks: readonly { address: number; data: Uint8Array }[];
+  preWriteByAddress: ReadonlyMap<number, Uint8Array>;
+  lookup: WriteVerifyByteLookup;
+  unitBaseFor: (address: number) => number;
+  isComparableAddress: (address: number) => boolean;
+}): WriteVerifyEraseUnitRow[] {
+  const byUnit = new Map<
+    number,
+    { stagedChunks: number; mustChangeChunks: number; changedChunks: number }
+  >();
+
+  for (const { address, data } of input.stagingChunks) {
+    if (!input.isComparableAddress(address)) continue;
+    const unitBase = input.unitBaseFor(address);
+    const row = byUnit.get(unitBase) ?? {
+      stagedChunks: 0,
+      mustChangeChunks: 0,
+      changedChunks: 0,
+    };
+    row.stagedChunks++;
+
+    const preWrite = input.preWriteByAddress.get(address);
+    const mustChange = preWrite !== undefined && !chunksEqual(data, preWrite);
+    if (!mustChange) {
+      byUnit.set(unitBase, row);
+      continue;
+    }
+    row.mustChangeChunks++;
+
+    const postRead = input.lookup.get(address, data.length);
+    if (postRead !== null && !chunksEqual(postRead, preWrite)) {
+      row.changedChunks++;
+    }
+    byUnit.set(unitBase, row);
+  }
+
+  return [...byUnit.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([unitBase, counts]) => {
+      let verdict: WriteVerifyEraseUnitVerdict;
+      if (counts.mustChangeChunks === 0) verdict = 'no-evidence';
+      else if (counts.changedChunks === 0) verdict = 'not-committed';
+      else verdict = 'committed';
+      return { unitBase, ...counts, verdict };
+    });
+}
+
 export function buildWriteVerifyResult(input: {
   model: string;
   elapsedMs: number;
@@ -183,11 +235,15 @@ export function buildWriteVerifyResult(input: {
   mismatches: readonly WriteVerifyMismatch[];
   regions: readonly WriteVerifyRegionRow[];
   regionGroups: readonly WriteVerifyRegionGroup[];
+  eraseUnits?: readonly WriteVerifyEraseUnitRow[];
 }): WriteVerifyResult {
   const notReadChunks = input.mismatches.filter((m) => m.kind === 'not_read').length;
   const mismatchedChunks = input.mismatches.filter((m) => m.kind === 'mismatch').length;
+  const eraseUnitsOk =
+    input.eraseUnits === undefined ||
+    input.eraseUnits.every((u) => u.verdict !== 'not-committed');
   return {
-    ok: input.mismatches.length === 0,
+    ok: input.mismatches.length === 0 && eraseUnitsOk,
     model: input.model,
     elapsedMs: input.elapsedMs,
     totalBytesRead: input.totalBytesRead,
@@ -200,6 +256,7 @@ export function buildWriteVerifyResult(input: {
     },
     regions: input.regions,
     regionGroups: input.regionGroups,
+    eraseUnits: input.eraseUnits,
   };
 }
 
