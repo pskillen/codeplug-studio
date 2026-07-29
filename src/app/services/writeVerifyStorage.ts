@@ -37,7 +37,9 @@ export function serializeWriteVerifyPending(
   };
 }
 
-export function deserializeWriteVerifyPending(payload: WriteVerifyStoredPayload): WriteVerifyPendingPayload {
+export function deserializeWriteVerifyPending(
+  payload: WriteVerifyStoredPayload,
+): WriteVerifyPendingPayload {
   return {
     staging: deserializeWriteVerifyStagingSnapshot(payload.staging),
     kept: payload.kept,

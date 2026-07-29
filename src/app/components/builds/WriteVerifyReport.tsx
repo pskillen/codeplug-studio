@@ -172,9 +172,7 @@ export default function WriteVerifyReport({
           {excludedBookkeepingChunks > 0
             ? ` ${excludedBookkeepingChunks} bookkeeping blocks excluded from compare.`
             : ''}{' '}
-          {result.kept
-            ? `${keptSectionTitle}: ${keptOk ? 'unchanged' : 'changed'}.`
-            : null}
+          {result.kept ? `${keptSectionTitle}: ${keptOk ? 'unchanged' : 'changed'}.` : null}
         </Text>
       </Alert>
 

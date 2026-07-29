@@ -333,6 +333,7 @@ describe('radioIoSession helpers', () => {
       radioModelId: 'AT-D890UV',
       imageBytes: new Uint8Array(1024),
     });
+    const { egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
     const image = {
       size: 1024,
       bytes: new Uint8Array(1024),
@@ -340,17 +341,7 @@ describe('radioIoSession helpers', () => {
       set: () => undefined,
       fill: () => undefined,
     } as MemoryMap;
-    const result = await uploadPreparedRadioWrite(
-      session,
-      {
-        id: 'egress',
-        formatId: 'radio-io',
-        profileId: 'radio-io-at-d890uv',
-        revision: 1,
-        hydration,
-      },
-      image,
-    );
+    const result = await uploadPreparedRadioWrite(session, { ...egress, hydration }, image);
     expect(captureAfterUpload).toHaveBeenCalledWith(session);
     expect(result.writeVerifyPending?.staging.chunks.length).toBe(1);
     expect(result.writeVerifyPending?.kept).toBeDefined();
@@ -376,6 +367,7 @@ describe('radioIoSession helpers', () => {
       radioModelId: 'UV5R-Mini',
       imageBytes: new Uint8Array(UV5R_MINI_MEM_TOTAL),
     });
+    const { egress } = uv5rMiniRadioIo();
     const image = {
       size: UV5R_MINI_MEM_TOTAL,
       bytes: new Uint8Array(UV5R_MINI_MEM_TOTAL),
@@ -383,17 +375,7 @@ describe('radioIoSession helpers', () => {
       set: () => undefined,
       fill: () => undefined,
     } as MemoryMap;
-    const result = await uploadPreparedRadioWrite(
-      session,
-      {
-        id: 'egress',
-        formatId: 'radio-io',
-        profileId: 'radio-io-uv5r-mini',
-        revision: 1,
-        hydration,
-      },
-      image,
-    );
+    const result = await uploadPreparedRadioWrite(session, { ...egress, hydration }, image);
     expect(result.writeVerifyPending).toBeUndefined();
   });
 
@@ -413,7 +395,10 @@ describe('radioIoSession helpers', () => {
       regionGroups: [],
     }));
     const session: RadioSession = {
-      descriptor: { ...AT_D890UV_DESCRIPTOR, writeVerify: { ...AT_D890_WRITE_VERIFY_HOOKS, runVerify } },
+      descriptor: {
+        ...AT_D890UV_DESCRIPTOR,
+        writeVerify: { ...AT_D890_WRITE_VERIFY_HOOKS, runVerify },
+      },
       pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
       radio: {
         connect: vi.fn(),

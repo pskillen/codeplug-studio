@@ -9,7 +9,10 @@ import { Alert, Anchor, Button, Group, Modal, Stack, Text } from '@mantine/core'
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
-import type { WriteVerifyPendingPayload, WriteVerifyResult } from '@integrations/radio-io/writeVerify.ts';
+import type {
+  WriteVerifyPendingPayload,
+  WriteVerifyResult,
+} from '@integrations/radio-io/writeVerify.ts';
 import { findAttribution } from '../../lib/attributions.ts';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
@@ -62,7 +65,7 @@ export interface BuildRadioIoPanelProps {
 const buildService = new BuildService(persistence);
 const VERIFY_BUTTON_DEBOUNCE_MS = 5000;
 
-interface PendingVerifyPayload extends WriteVerifyPendingPayload {}
+type PendingVerifyPayload = WriteVerifyPendingPayload;
 
 export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelProps) {
   const descriptors = descriptorsForEgress(egress);
@@ -286,12 +289,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         const pending: PendingVerifyPayload = uploadResult.writeVerifyPending;
         pendingVerifyRef.current = pending;
         saveWriteVerifyPending(
-          serializeWriteVerifyPending(
-            build.id,
-            egress.id,
-            egress.profileId,
-            pending,
-          ),
+          serializeWriteVerifyPending(build.id, egress.id, egress.profileId, pending),
         );
         setVerifyButtonEnabled(false);
         setWriteVerifyStatus('unverified');

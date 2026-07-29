@@ -7,14 +7,18 @@ import type {
   WriteVerifyDebugContext,
   WriteVerifyHooks,
   WriteVerifyKeptSnapshot,
-  WriteVerifyPendingPayload,
   WriteVerifyResult,
+  WriteVerifyStagingSnapshot,
 } from '../../writeVerify.ts';
 import type { RadioSession } from '../../types.ts';
-import { runAtD890WriteVerifyMemoryRead, AT_D890_MEMORY_REGION_GROUPS, AT_D890_RMW_SPILL_GROUP } from './memoryRegionExport.ts';
+import {
+  runAtD890WriteVerifyMemoryRead,
+  AT_D890_MEMORY_REGION_GROUPS,
+} from './memoryRegionExport.ts';
 import { AtD890uvProtocol } from './protocol.ts';
 import type { AtD890SentinelSnapshot } from './sentinelVerify.ts';
 import {
+  AT_D890_RMW_SPILL_GROUP,
   buildAtD890WriteVerifyResult,
   formatAtD890WriteVerifyDebugMarkdown,
   listStagingAddressesOutsideModelledRegions,
@@ -26,17 +30,21 @@ const AT_D890_VERIFY_ONLY_REGION_GROUPS = [
   { id: AT_D890_RMW_SPILL_GROUP, label: 'RMW-preserved spill' },
 ];
 
-export interface AtD890KeptSnapshotJson {
+export interface AtD890KeptSnapshotJson extends WriteVerifyKeptSnapshot {
   readonly entries: readonly { readonly id: string; readonly data: readonly number[] }[];
 }
 
-export function serializeAtD890KeptSnapshot(snapshot: AtD890SentinelSnapshot): AtD890KeptSnapshotJson {
+export function serializeAtD890KeptSnapshot(
+  snapshot: AtD890SentinelSnapshot,
+): AtD890KeptSnapshotJson {
   return {
     entries: [...snapshot.entries()].map(([id, data]) => ({ id, data: [...data] })),
   };
 }
 
-export function deserializeAtD890KeptSnapshot(json: AtD890KeptSnapshotJson): AtD890SentinelSnapshot {
+export function deserializeAtD890KeptSnapshot(
+  json: AtD890KeptSnapshotJson,
+): AtD890SentinelSnapshot {
   const out = new Map<string, Uint8Array>();
   for (const { id, data } of json.entries) {
     out.set(id, Uint8Array.from(data));
@@ -73,9 +81,7 @@ function mapD890ResultToNeutral(result: AtD890WriteVerifyResult): WriteVerifyRes
       notReadChunks: result.staging.notReadChunks,
       mismatches: result.staging.mismatches,
     },
-    kept: result.sentinel.ok
-      ? { ok: true }
-      : { ok: false, mismatches: result.sentinel.mismatches },
+    kept: result.sentinel.ok ? { ok: true } : { ok: false, mismatches: result.sentinel.mismatches },
     regions: result.regions,
     regionGroups: [...AT_D890_MEMORY_REGION_GROUPS, ...AT_D890_VERIFY_ONLY_REGION_GROUPS],
   };

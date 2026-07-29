@@ -8,35 +8,45 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** Complete (pending merge)
 
 **Branch:** `838/pskil/write-verify-platform`
 
-**Prerequisite:** [#839](https://github.com/pskillen/codeplug-studio/pull/839) merged to `main` (D890 full write verify hardening).
+**Prerequisite:** [#839](https://github.com/pskillen/codeplug-studio/pull/839) merged to `main`.
 
 ---
 
 ## Phase 0 — platform + D890 migration
 
-| Slice | State |
-| --- | --- |
-| 0 Kickoff branch + progress files | In progress |
-| 1 Neutral types + `WriteVerifyHooks` on descriptor | Not started |
-| 2 D890 descriptor hooks + generic session API | Not started |
-| 3 Generic `writeVerifyStorage` (`profileId` match) | Not started |
-| 4 `WriteVerifyReport` + panel gate via `descriptor.writeVerify` | Not started |
-| 5 Feature docs + protocol note + PR | Not started |
+| Slice                                                           | State |
+| --------------------------------------------------------------- | ----- |
+| 0 Kickoff branch + progress files                               | Done  |
+| 1 Neutral types + `WriteVerifyHooks` on descriptor              | Done  |
+| 2 D890 descriptor hooks + generic session API                   | Done  |
+| 3 Generic `writeVerifyStorage` (`profileId` match)              | Done  |
+| 4 `WriteVerifyReport` + panel gate via `descriptor.writeVerify` | Done  |
+| 5 Feature docs + protocol note + PR                             | Done  |
 
 ---
 
-## Next
+## Delivered
 
-- Complete slice 0 kickoff commit
-- Implement neutral types and wire D890 onto descriptor hooks
+- `src/integrations/radio-io/writeVerify.ts` — neutral contracts + staging JSON helpers
+- `radios/at-d890uv/writeVerifyHooks.ts` — D890 adapter mapping
+- `radioIoSession.ts` — `uploadPreparedRadioWrite` / `verifyRadioWrite` (no app `instanceof`)
+- `writeVerifyStorage.ts` — `radioIo.writeVerify.pending` with `profileId` guard
+- `WriteVerifyReport.tsx` — generic report shell + sidecar
+- [write-verify.md](write-verify.md) — extension pattern
+
+---
+
+## Verify (pre-merge)
+
+- [x] `npm run format:check && npm run lint && npm run test && npm run build`
+- [ ] Manual AT-D890UV Write → Verify write smoke on hardware
 
 ---
 
 ## Related
 
 - [write-verify-platform-outstanding.md](write-verify-platform-outstanding.md)
-- Parent D890 verify: [#837](https://github.com/pskillen/codeplug-studio/issues/837)

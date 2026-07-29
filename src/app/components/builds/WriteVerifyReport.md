@@ -8,15 +8,15 @@ Displays staged chunk comparison against a post-commit read-back, optional retai
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `result` | `WriteVerifyResult` | Compare outcome from `verifyRadioWrite` |
-| `debugContext` | `WriteVerifyDebugContext` | Build/egress/session context for debug export |
-| `formatDebugMarkdown` | `(result, context) => string` | Adapter-owned debug markdown (from `descriptor.writeVerify`) |
-| `onClose` | `() => void` | Dismiss report and reset parent verify state |
-| `inModal` | `boolean` (optional) | Body-only layout when parent supplies Modal chrome |
-| `keptSectionTitle` | `string` (optional) | Label for retained-region section (D890: "Preserved settings") |
-| `keptSummaryLabel` | `string` (optional) | Pass summary suffix (D890: "6 sentinel regions") |
+| Prop                  | Type                          | Description                                                    |
+| --------------------- | ----------------------------- | -------------------------------------------------------------- |
+| `result`              | `WriteVerifyResult`           | Compare outcome from `verifyRadioWrite`                        |
+| `debugContext`        | `WriteVerifyDebugContext`     | Build/egress/session context for debug export                  |
+| `formatDebugMarkdown` | `(result, context) => string` | Adapter-owned debug markdown (from `descriptor.writeVerify`)   |
+| `onClose`             | `() => void`                  | Dismiss report and reset parent verify state                   |
+| `inModal`             | `boolean` (optional)          | Body-only layout when parent supplies Modal chrome             |
+| `keptSectionTitle`    | `string` (optional)           | Label for retained-region section (D890: "Preserved settings") |
+| `keptSummaryLabel`    | `string` (optional)           | Pass summary suffix (D890: "6 sentinel regions")               |
 
 ## Usage
 
