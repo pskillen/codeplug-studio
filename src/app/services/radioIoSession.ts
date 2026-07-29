@@ -26,24 +26,17 @@ import {
   isWebSerialSupported,
   getWebSerialUnsupportedMessage,
 } from '@integrations/radio-io/index.ts';
+import type {
+  WriteVerifyCaptureResult,
+  WriteVerifyPendingPayload,
+  WriteVerifyResult,
+} from '@integrations/radio-io/writeVerify.ts';
 import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
 import type { RadioWriteOrganisation } from '@integrations/radio-io/radioWriteProjection.ts';
 import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from './radioWriteEnvGate.ts';
-import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
-import type {
-  AtD890SentinelCompareResult,
-  AtD890SentinelSnapshot,
-} from '@integrations/radio-io/radios/at-d890uv/sentinelVerify.ts';
-import { runAtD890WriteVerifyMemoryRead } from '@integrations/radio-io/radios/at-d890uv/memoryRegionExport.ts';
-import {
-  buildAtD890WriteVerifyResult,
-  listStagingAddressesOutsideModelledRegions,
-  type AtD890WriteStagingSnapshot,
-  type AtD890WriteVerifyResult,
-} from '@integrations/radio-io/radios/at-d890uv/writeMemoryVerify.ts';
 
 export { isWebSerialSupported, getWebSerialUnsupportedMessage };
 
@@ -278,19 +271,6 @@ export async function writeBuildToRadio(
   return { warnings };
 }
 
-function takeAtD890UploadSnapshots(session: RadioSession): {
-  sentinelBefore?: AtD890SentinelSnapshot;
-  stagingSnapshot?: AtD890WriteStagingSnapshot;
-} {
-  if (!(session.radio instanceof AtD890uvProtocol)) {
-    return {};
-  }
-  return {
-    sentinelBefore: session.radio.takeUploadSentinelSnapshot(),
-    stagingSnapshot: session.radio.takeUploadStagingSnapshot(),
-  };
-}
-
 /** Upload a prepared clone image after {@link prepareRadioWriteImage} and session connect. */
 export async function uploadPreparedRadioWrite(
   session: RadioSession,
@@ -301,10 +281,7 @@ export async function uploadPreparedRadioWrite(
     signal?: AbortSignal;
     organisation?: RadioWriteOrganisation;
   },
-): Promise<{
-  sentinelBefore?: AtD890SentinelSnapshot;
-  stagingSnapshot?: AtD890WriteStagingSnapshot;
-}> {
+): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult }> {
   const hydration = getRadioCloneHydration(egress);
   if (!hydration) {
     throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
@@ -319,51 +296,21 @@ export async function uploadPreparedRadioWrite(
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
-  return takeAtD890UploadSnapshots(session);
+  const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
+  return captured ? { writeVerifyPending: captured } : {};
 }
 
-/** Cross-session verify of AT-D890 never-write regions after a committed Write. */
-export async function verifyAtD890PreservedSettings(
+/** Cross-session write verify — delegates to descriptor {@link WriteVerifyHooks}. */
+export async function verifyRadioWrite(
   session: RadioSession,
-  before: AtD890SentinelSnapshot,
-  opts?: { signal?: AbortSignal },
-): Promise<AtD890SentinelCompareResult> {
-  if (!(session.radio instanceof AtD890uvProtocol)) {
-    throw new Error('Preserved-settings verify is only supported for AT-D890UV.');
-  }
-  return session.radio.verifySentinelRegionsAgainst(before, opts);
-}
-
-/**
- * Cross-session full-memory write verify — read all modelled regions and compare
- * staged upload bytes against post-commit flash.
- */
-export async function verifyAtD890WriteMemory(
-  session: RadioSession,
-  stagingSnapshot: AtD890WriteStagingSnapshot,
-  sentinelBefore: AtD890SentinelSnapshot | undefined,
+  pending: WriteVerifyPendingPayload,
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
-): Promise<AtD890WriteVerifyResult> {
-  if (!(session.radio instanceof AtD890uvProtocol)) {
-    throw new Error('Write-memory verify is only supported for AT-D890UV.');
+): Promise<WriteVerifyResult> {
+  const hooks = session.descriptor.writeVerify;
+  if (!hooks) {
+    throw new Error(`Write verify is not supported for ${session.descriptor.label}.`);
   }
-  const pipe = session.pipe;
-  const spillAddresses = listStagingAddressesOutsideModelledRegions(stagingSnapshot);
-  const dump = await runAtD890WriteVerifyMemoryRead(pipe, spillAddresses, {
-    onProgress: opts?.onProgress,
-    signal: opts?.signal,
-  });
-  return buildAtD890WriteVerifyResult(
-    stagingSnapshot,
-    dump.files,
-    sentinelBefore,
-    {
-      model: dump.model,
-      elapsedMs: dump.elapsedMs,
-      totalBytesRead: dump.totalBytes,
-    },
-    dump.spillChunks,
-  );
+  return hooks.runVerify(session, pending, opts);
 }
 
 export async function closeRadioSession(session: RadioSession): Promise<void> {

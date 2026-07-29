@@ -13,6 +13,7 @@ import {
 } from './hydration.ts';
 import { atD890UploadBankIntentFromOrganisation } from './memory.ts';
 import { createAtD890uvProtocol, AtD890uvProtocol } from './protocol.ts';
+import { AT_D890_WRITE_VERIFY_HOOKS } from './writeVerifyHooks.ts';
 
 export { AT_D890UV_MODEL_ID };
 
@@ -54,4 +55,5 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
       }
     },
   },
+  writeVerify: AT_D890_WRITE_VERIFY_HOOKS,
 };

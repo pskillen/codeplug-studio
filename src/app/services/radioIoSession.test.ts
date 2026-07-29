@@ -21,8 +21,12 @@ import {
   openRadioSessionForBuild,
   prepareRadioWriteImage,
   RadioWriteBlockedError,
+  uploadPreparedRadioWrite,
+  verifyRadioWrite,
   writeBuildToRadio,
 } from './radioIoSession.ts';
+import { AT_D890_WRITE_VERIFY_HOOKS } from '@integrations/radio-io/radios/at-d890uv/writeVerifyHooks.ts';
+import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
 import * as radioIo from '@integrations/radio-io/index.ts';
 import * as radioWriteEnvGate from './radioWriteEnvGate.ts';
 
@@ -294,5 +298,121 @@ describe('radioIoSession helpers', () => {
     portSpy.mockRestore();
     openSpy.mockRestore();
     listSpy.mockRestore();
+  });
+
+  it('returns writeVerifyPending when descriptor writeVerify captures after upload', async () => {
+    const captureAfterUpload = vi.fn(() => ({
+      staging: {
+        capturedAt: '2026-07-29T00:00:00.000Z',
+        chunks: [{ address: 0x1000, data: Uint8Array.from([0xaa]) }],
+      },
+      kept: { entries: [{ id: 'alarm', data: [0xff] }] },
+    }));
+    const upload = vi.fn(async () => undefined);
+    const radio: CloneImageRadio = {
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      download: vi.fn(),
+      upload,
+      decodeChannels: () => [],
+      encodeChannels: (img) => img,
+      readFirmware: () => undefined,
+    };
+    const session: RadioSession = {
+      descriptor: {
+        ...AT_D890UV_DESCRIPTOR,
+        writeVerify: {
+          ...AT_D890_WRITE_VERIFY_HOOKS,
+          captureAfterUpload,
+        },
+      },
+      pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
+      radio,
+    };
+    const hydration = createRadioCloneHydrationBag({
+      radioModelId: 'AT-D890UV',
+      imageBytes: new Uint8Array(1024),
+    });
+    const { egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const image = {
+      size: 1024,
+      bytes: new Uint8Array(1024),
+      get: () => new Uint8Array(16),
+      set: () => undefined,
+      fill: () => undefined,
+    } as MemoryMap;
+    const result = await uploadPreparedRadioWrite(session, { ...egress, hydration }, image);
+    expect(captureAfterUpload).toHaveBeenCalledWith(session);
+    expect(result.writeVerifyPending?.staging.chunks.length).toBe(1);
+    expect(result.writeVerifyPending?.kept).toBeDefined();
+  });
+
+  it('returns no writeVerifyPending for descriptors without writeVerify hooks', async () => {
+    const upload = vi.fn(async () => undefined);
+    const radio: CloneImageRadio = {
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      download: vi.fn(),
+      upload,
+      decodeChannels: () => [],
+      encodeChannels: (img) => img,
+      readFirmware: () => undefined,
+    };
+    const session: RadioSession = {
+      descriptor: miniDescriptor(radio),
+      pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
+      radio,
+    };
+    const hydration = createRadioCloneHydrationBag({
+      radioModelId: 'UV5R-Mini',
+      imageBytes: new Uint8Array(UV5R_MINI_MEM_TOTAL),
+    });
+    const { egress } = uv5rMiniRadioIo();
+    const image = {
+      size: UV5R_MINI_MEM_TOTAL,
+      bytes: new Uint8Array(UV5R_MINI_MEM_TOTAL),
+      get: () => new Uint8Array(16),
+      set: () => undefined,
+      fill: () => undefined,
+    } as MemoryMap;
+    const result = await uploadPreparedRadioWrite(session, { ...egress, hydration }, image);
+    expect(result.writeVerifyPending).toBeUndefined();
+  });
+
+  it('verifyRadioWrite delegates to descriptor writeVerify hooks', async () => {
+    const runVerify = vi.fn(async () => ({
+      ok: true,
+      model: 'AT-D890UV',
+      elapsedMs: 1,
+      totalBytesRead: 16,
+      stagingCapturedAt: 't',
+      staging: {
+        totalChunks: 0,
+        mismatchedChunks: 0,
+        mismatches: [],
+      },
+      regions: [],
+      regionGroups: [],
+    }));
+    const session: RadioSession = {
+      descriptor: {
+        ...AT_D890UV_DESCRIPTOR,
+        writeVerify: { ...AT_D890_WRITE_VERIFY_HOOKS, runVerify },
+      },
+      pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
+      radio: {
+        connect: vi.fn(),
+        disconnect: vi.fn(),
+        download: vi.fn(),
+        upload: vi.fn(),
+        decodeChannels: () => [],
+        encodeChannels: (img) => img,
+        readFirmware: () => undefined,
+      },
+    };
+    const pending = { staging: { capturedAt: 't', chunks: [] } };
+    const result = await verifyRadioWrite(session, pending);
+    expect(runVerify).toHaveBeenCalledWith(session, pending, undefined);
+    expect(result.ok).toBe(true);
   });
 });

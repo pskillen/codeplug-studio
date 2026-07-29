@@ -1,5 +1,5 @@
 /**
- * Full-memory write verify report for AT-D890UV serial Write.
+ * Cross-session write verify report for Web Serial Write.
  */
 
 import { Fragment, useMemo, useState } from 'react';
@@ -17,28 +17,25 @@ import {
   Text,
   Title,
 } from '@mantine/core';
-import {
-  AT_D890_MEMORY_REGION_GROUPS,
-  formatAtD890WriteVerifyDebugMarkdown,
-  AT_D890_RMW_SPILL_GROUP,
-  type AtD890RegionVerifyStatus,
-  type AtD890WriteVerifyDebugContext,
-  type AtD890WriteVerifyResult,
-} from '@integrations/radio-io/radios/at-d890uv/index.ts';
-
-/** Verify-only region group — not part of {@link AT_D890_MEMORY_REGION_GROUPS} memory export. */
-const AT_D890_VERIFY_ONLY_REGION_GROUPS: { id: string; label: string }[] = [
-  { id: AT_D890_RMW_SPILL_GROUP, label: 'RMW-preserved spill' },
-];
+import type {
+  WriteVerifyDebugContext,
+  WriteVerifyRegionStatus,
+  WriteVerifyResult,
+} from '@integrations/radio-io/writeVerify.ts';
 
 const MISMATCH_DISPLAY_LIMIT = 50;
 
-export interface AtD890WriteVerifyReportProps {
-  result: AtD890WriteVerifyResult;
-  debugContext: AtD890WriteVerifyDebugContext;
+export interface WriteVerifyReportProps {
+  result: WriteVerifyResult;
+  debugContext: WriteVerifyDebugContext;
+  formatDebugMarkdown: (result: WriteVerifyResult, context: WriteVerifyDebugContext) => string;
   onClose: () => void;
   /** When true, render body only (parent supplies Modal chrome). */
   inModal?: boolean;
+  /** Section title for optional kept-region compare (D890: preserved settings). */
+  keptSectionTitle?: string;
+  /** Dimmed summary when kept compare passes (e.g. "6 sentinel regions"). */
+  keptSummaryLabel?: string;
 }
 
 function hex(address: number): string {
@@ -55,7 +52,7 @@ function bytesToHex(data: Uint8Array): string {
   return [...data].map((b) => b.toString(16).padStart(2, '0')).join(' ');
 }
 
-function regionStatusColor(status: AtD890RegionVerifyStatus): string {
+function regionStatusColor(status: WriteVerifyRegionStatus): string {
   switch (status) {
     case 'match':
       return 'green';
@@ -68,7 +65,7 @@ function regionStatusColor(status: AtD890RegionVerifyStatus): string {
   }
 }
 
-function regionStatusLabel(status: AtD890RegionVerifyStatus): string {
+function regionStatusLabel(status: WriteVerifyRegionStatus): string {
   switch (status) {
     case 'match':
       return 'match';
@@ -81,31 +78,33 @@ function regionStatusLabel(status: AtD890RegionVerifyStatus): string {
   }
 }
 
-export default function AtD890WriteVerifyReport({
+export default function WriteVerifyReport({
   result,
   debugContext,
+  formatDebugMarkdown,
   onClose,
   inModal = false,
-}: AtD890WriteVerifyReportProps) {
+  keptSectionTitle = 'Retained regions',
+  keptSummaryLabel,
+}: WriteVerifyReportProps) {
   const [log, setLog] = useState<string[]>(() => [
     `${new Date().toLocaleTimeString()} — verify complete: ${result.staging.mismatchedChunks} mismatched of ${result.staging.totalChunks} staged chunks`,
   ]);
 
   const regionsByGroup = useMemo(() => {
     const map = new Map<string, typeof result.regions>();
-    const allGroups = [...AT_D890_MEMORY_REGION_GROUPS, ...AT_D890_VERIFY_ONLY_REGION_GROUPS];
-    for (const group of allGroups) {
+    for (const group of result.regionGroups) {
       map.set(
         group.id,
         result.regions.filter((r) => r.group === group.id),
       );
     }
     return map;
-  }, [result.regions]);
+  }, [result.regions, result.regionGroups]);
 
   const debugMarkdown = useMemo(
-    () => formatAtD890WriteVerifyDebugMarkdown(result, debugContext),
-    [result, debugContext],
+    () => formatDebugMarkdown(result, debugContext),
+    [formatDebugMarkdown, result, debugContext],
   );
 
   function appendLog(line: string): void {
@@ -122,7 +121,7 @@ export default function AtD890WriteVerifyReport({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `d890-write-verify-${new Date().toISOString().replace(/[:.]/g, '-')}.md`;
+    a.download = `write-verify-${new Date().toISOString().replace(/[:.]/g, '-')}.md`;
     a.click();
     URL.revokeObjectURL(url);
     appendLog('Downloaded markdown report');
@@ -147,7 +146,7 @@ export default function AtD890WriteVerifyReport({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `d890-write-verify-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    a.download = `write-verify-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
     a.click();
     URL.revokeObjectURL(url);
     appendLog('Downloaded mismatch JSON');
@@ -155,6 +154,10 @@ export default function AtD890WriteVerifyReport({
 
   const mismatches = result.staging.mismatches;
   const hiddenMismatchCount = Math.max(0, mismatches.length - MISMATCH_DISPLAY_LIMIT);
+  const keptOk = result.kept?.ok ?? true;
+  const keptMismatches = result.kept?.mismatches ?? [];
+  const notReadChunks = result.staging.notReadChunks ?? 0;
+  const excludedBookkeepingChunks = result.staging.excludedBookkeepingChunks ?? 0;
 
   const body = (
     <Stack gap="md" pr={inModal ? undefined : 'xs'}>
@@ -165,13 +168,11 @@ export default function AtD890WriteVerifyReport({
         <Text size="sm">
           {result.staging.mismatchedChunks} of {result.staging.totalChunks} staged chunks
           mismatched.
-          {result.staging.notReadChunks > 0
-            ? ` ${result.staging.notReadChunks} could not be read back.`
-            : ''}
-          {result.staging.excludedBookkeepingChunks > 0
-            ? ` ${result.staging.excludedBookkeepingChunks} erase-unit bookkeeping blocks excluded from compare.`
+          {notReadChunks > 0 ? ` ${notReadChunks} could not be read back.` : ''}
+          {excludedBookkeepingChunks > 0
+            ? ` ${excludedBookkeepingChunks} bookkeeping blocks excluded from compare.`
             : ''}{' '}
-          Preserved settings: {result.sentinel.ok ? 'unchanged' : 'changed'}.
+          {result.kept ? `${keptSectionTitle}: ${keptOk ? 'unchanged' : 'changed'}.` : null}
         </Text>
       </Alert>
 
@@ -203,57 +204,55 @@ export default function AtD890WriteVerifyReport({
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {[...AT_D890_MEMORY_REGION_GROUPS, ...AT_D890_VERIFY_ONLY_REGION_GROUPS].map(
-              (group) => {
-                const rows = regionsByGroup.get(group.id) ?? [];
-                if (rows.length === 0) return null;
-                const groupBytes = rows.reduce((sum, r) => sum + r.bytesRead, 0);
-                const groupStaged = rows.reduce((sum, r) => sum + r.stagedChunkCount, 0);
-                const groupMismatches = rows.reduce((sum, r) => sum + r.mismatchedChunks, 0);
-                const groupStatus: AtD890RegionVerifyStatus =
-                  groupMismatches > 0 ? 'mismatch' : groupStaged > 0 ? 'match' : 'not_written';
-                return (
-                  <Fragment key={group.id}>
-                    <Table.Tr>
-                      <Table.Td fw={600}>{group.label}</Table.Td>
-                      <Table.Td>{formatBytes(groupBytes)}</Table.Td>
-                      <Table.Td>{groupStaged}</Table.Td>
-                      <Table.Td>{groupMismatches}</Table.Td>
+            {result.regionGroups.map((group) => {
+              const rows = regionsByGroup.get(group.id) ?? [];
+              if (rows.length === 0) return null;
+              const groupBytes = rows.reduce((sum, r) => sum + r.bytesRead, 0);
+              const groupStaged = rows.reduce((sum, r) => sum + r.stagedChunkCount, 0);
+              const groupMismatches = rows.reduce((sum, r) => sum + r.mismatchedChunks, 0);
+              const groupStatus: WriteVerifyRegionStatus =
+                groupMismatches > 0 ? 'mismatch' : groupStaged > 0 ? 'match' : 'not_written';
+              return (
+                <Fragment key={group.id}>
+                  <Table.Tr>
+                    <Table.Td fw={600}>{group.label}</Table.Td>
+                    <Table.Td>{formatBytes(groupBytes)}</Table.Td>
+                    <Table.Td>{groupStaged}</Table.Td>
+                    <Table.Td>{groupMismatches}</Table.Td>
+                    <Table.Td>
+                      <Badge color={regionStatusColor(groupStatus)} variant="light">
+                        {regionStatusLabel(groupStatus)}
+                      </Badge>
+                    </Table.Td>
+                  </Table.Tr>
+                  {rows.map((r) => (
+                    <Table.Tr key={r.id}>
+                      <Table.Td pl="xl">{r.label}</Table.Td>
+                      <Table.Td>{formatBytes(r.bytesRead)}</Table.Td>
+                      <Table.Td>{r.stagedChunkCount}</Table.Td>
+                      <Table.Td>{r.mismatchedChunks}</Table.Td>
                       <Table.Td>
-                        <Badge color={regionStatusColor(groupStatus)} variant="light">
-                          {regionStatusLabel(groupStatus)}
+                        <Badge color={regionStatusColor(r.status)} variant="light" size="sm">
+                          {regionStatusLabel(r.status)}
                         </Badge>
                       </Table.Td>
                     </Table.Tr>
-                    {rows.map((r) => (
-                      <Table.Tr key={r.id}>
-                        <Table.Td pl="xl">{r.label}</Table.Td>
-                        <Table.Td>{formatBytes(r.bytesRead)}</Table.Td>
-                        <Table.Td>{r.stagedChunkCount}</Table.Td>
-                        <Table.Td>{r.mismatchedChunks}</Table.Td>
-                        <Table.Td>
-                          <Badge color={regionStatusColor(r.status)} variant="light" size="sm">
-                            {regionStatusLabel(r.status)}
-                          </Badge>
-                        </Table.Td>
-                      </Table.Tr>
-                    ))}
-                  </Fragment>
-                );
-              },
-            )}
+                  ))}
+                </Fragment>
+              );
+            })}
           </Table.Tbody>
         </Table>
       </Stack>
 
-      {!result.sentinel.ok ? (
+      {result.kept && !keptOk ? (
         <Stack gap="xs">
           <Text fw={600} size="sm">
-            Preserved settings
+            {keptSectionTitle}
           </Text>
           <Table withTableBorder>
             <Table.Tbody>
-              {result.sentinel.mismatches.map((m) => (
+              {keptMismatches.map((m) => (
                 <Table.Tr key={m.id}>
                   <Table.Td>{m.label}</Table.Td>
                   <Table.Td>
@@ -266,9 +265,12 @@ export default function AtD890WriteVerifyReport({
             </Table.Tbody>
           </Table>
         </Stack>
-      ) : (
-        <Text size="sm">Preserved settings (6 sentinel regions): unchanged</Text>
-      )}
+      ) : result.kept && keptOk ? (
+        <Text size="sm">
+          {keptSectionTitle}
+          {keptSummaryLabel ? ` (${keptSummaryLabel})` : ''}: unchanged
+        </Text>
+      ) : null}
 
       {mismatches.length > 0 ? (
         <Stack gap="xs">
