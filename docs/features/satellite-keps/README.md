@@ -23,11 +23,12 @@ Tier-1 hub for **satellite Keplerian elements (keps / TLEs)** in Codeplug Studio
 
 ## Documentation map
 
-| Doc                                                         | Role                                                            |
-| ----------------------------------------------------------- | --------------------------------------------------------------- |
-| [feature-design.md](feature-design.md)                      | Problem space, TLE sources, Keplerian definitions, UX workflows |
-| `docs/reference/radios/anytone/at-d890uv/satellite-keps.md` | Planned — D890 memory / write protocol                          |
-| `docs/reference/radios/opengd77/satellite-orbitals.md`      | Planned — shared OpenGD77 satellite bank                        |
+| Doc                                                         | Role                                                                                                           |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [feature-design.md](feature-design.md)                      | Problem space, TLE sources, Keplerian definitions, UX workflows                                                |
+| [Satellite tracking](../satellite-tracking/)                | Post-MVP pass prediction + Tracking Dashboard ([#860](https://github.com/pskillen/codeplug-studio/issues/860)) |
+| `docs/reference/radios/anytone/at-d890uv/satellite-keps.md` | Planned — D890 memory / write protocol                                                                         |
+| `docs/reference/radios/opengd77/satellite-orbitals.md`      | Planned — shared OpenGD77 satellite bank                                                                       |
 
 ---
 
@@ -64,6 +65,6 @@ Browser fetches go through a same-origin Pages Function proxy (same pattern as R
 
 - Space-Track authenticated API
 - Reading keps back from the radio
-- In-app AOS/LOS or Doppler prediction UI
+- In-app AOS/LOS or Doppler prediction UI — see [Satellite tracking](../satellite-tracking/) ([#860](https://github.com/pskillen/codeplug-studio/issues/860))
 - Satellite settings menus beyond the keps payload
 - Radios not listed above
