@@ -14,7 +14,19 @@ export const AT_D890_BLOCK_SIZE = 0x10;
 
 export const AT_D890_CONNECTION = {
   BAUD_RATE: 921600,
-  INTER_BLOCK_DELAY_MS: 5,
+  /**
+   * Sleep after every ACKed 16-byte write frame. **0 = disabled, and that is correct.**
+   *
+   * B1 experiment E2 tested 5 ms on hardware (verify `14-38-44-317Z`) and it changed
+   * nothing — same 1761/2929 mismatches, same units. The hypothesis rested on reading
+   * anytone-cps's `waitForReadyRead(50)` as a per-block sleep; it is a *timeout*, so CPS
+   * proceeds as soon as the ACK lands and was never paced. Pacing only makes Studio slower.
+   *
+   * Kept as a knob because the delay is applied per frame, not per `atD890WriteMemory`
+   * call — the upload loop passes one 16-byte chunk per call, so the old
+   * "between blocks within a call" gate silently disabled it entirely.
+   */
+  INTER_BLOCK_DELAY_MS: 0,
   TIMEOUT: {
     HANDSHAKE_MS: 8000,
     IDENT_MS: 8000,

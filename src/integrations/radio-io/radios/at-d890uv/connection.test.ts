@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { ANYTONE_DMR_ACK, anytoneDmrChecksum8AfterOpcode } from '../../kit/codecs/anytoneDmrRw.ts';
-import { D890_MAP } from './constants.ts';
+import { AT_D890_CONNECTION, D890_MAP } from './constants.ts';
 import { atD890ReadMemory, atD890WriteMemory } from './connection.ts';
 import { assertAtD890TransmitAddress } from './writableExtents.ts';
 import { AtD890ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
@@ -45,6 +45,24 @@ describe('atD890WriteMemory allow-list', () => {
     expect(writeFrames).toHaveLength(2);
     for (const frame of writeFrames) {
       expect(frame[5]).toBe(0x10);
+    }
+  });
+
+  it('paces a single-block write when the delay is enabled', async () => {
+    // Regression: the delay used to be gated on `remaining > 0`, so it never fired for the
+    // 16-byte chunks the upload loop passes, and B1 experiment E2 was silently a no-op for
+    // three hardware runs. Ships disabled (0) — this locks the wiring, not the value.
+    const original = AT_D890_CONNECTION.INTER_BLOCK_DELAY_MS;
+    (AT_D890_CONNECTION as { INTER_BLOCK_DELAY_MS: number }).INTER_BLOCK_DELAY_MS = 40;
+    try {
+      const pipe = new AtD890ScriptedPipe();
+      pipe.enqueue(new Uint8Array([ANYTONE_DMR_ACK]));
+      const started = Date.now();
+      await atD890WriteMemory(pipe, D890_MAP.ChannelSet, new Uint8Array(0x10));
+      // Timer granularity can fire a few ms early; assert the delay clearly happened.
+      expect(Date.now() - started).toBeGreaterThanOrEqual(30);
+    } finally {
+      (AT_D890_CONNECTION as { INTER_BLOCK_DELAY_MS: number }).INTER_BLOCK_DELAY_MS = original;
     }
   });
 

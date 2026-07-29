@@ -48,7 +48,13 @@ import {
   type AtD890SentinelCompareResult,
   type AtD890SentinelSnapshot,
 } from './sentinelVerify.ts';
-import { eraseUnitBaseFor, listTouchedEraseUnits, readSpanForEraseUnit } from './eraseUnits.ts';
+import {
+  AT_D890_SKIP_BOOKKEEPING_WRITES,
+  eraseUnitBaseFor,
+  isAtD890EraseUnitBookkeepingAddress,
+  listTouchedEraseUnits,
+  readSpanForEraseUnit,
+} from './eraseUnits.ts';
 import { assertAtD890LocalInfoIdentity } from './identityCheck.ts';
 import {
   assertPreservedBytesMatchFreshRead,
@@ -650,7 +656,9 @@ export class AtD890uvProtocol implements CloneImageRadio {
       const stagingChunks = listSparseStagingChunks(mergedUnits, modelledAddresses);
       assertPreservedBytesMatchFreshRead(stagingChunks, freshUnits, modelledAddresses);
       const transmittedChunks = stagingChunks.filter(
-        (c) => c.address !== AT_D890_SAFE_SKIP_WRITE_ADDR,
+        (c) =>
+          c.address !== AT_D890_SAFE_SKIP_WRITE_ADDR &&
+          !(AT_D890_SKIP_BOOKKEEPING_WRITES && isAtD890EraseUnitBookkeepingAddress(c.address)),
       );
       const preWriteFromRadio = preWriteChunksFromFreshUnits(transmittedChunks, freshUnits);
       this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(transmittedChunks, {

@@ -20,6 +20,30 @@ export const AT_D890_ERASE_UNIT_BYTES = 0x4_0000;
  */
 export const AT_D890_ERASE_UNIT_BOOKKEEPING_BLOCK_OFFSETS = [0x3fbf0, 0x3fff0] as const;
 
+/**
+ * Omit the per-unit bookkeeping blocks from the transmit set.
+ *
+ * These two blocks look like flash sector-management metadata:
+ *
+ * ```
+ * +0x3fbf0   ff ff ff ff 22 33 44 55 ff ff ff ff ff ff ff ff
+ * +0x3fff0   ff ff ff ff ff ff ff ff ff ff ff ff 55 55 aa aa
+ * ```
+ *
+ * anytone-cps never touches sector tails, and Studio never did either until
+ * `fe6955e3` (sparse erase-unit RMW upload, 2026-07-27) started writing back every
+ * non-`0xff` block of each touched unit.
+ *
+ * **Tested on hardware and confirmed radio-managed, not codeplug payload**: after this
+ * flag shipped, the `+0x3fbf0` marker still changed on flash without Studio ever writing
+ * it — the radio sets it on the sector it processes. Writing it back was always wrong,
+ * whether or not it explains any particular commit failure (it does not — see
+ * `tmp/anytone-airband/d890-write-commit-divergence.md` §4).
+ *
+ * Nothing is erased, so skipping these leaves whatever is already on flash intact.
+ */
+export const AT_D890_SKIP_BOOKKEEPING_WRITES = true;
+
 const ERASE_UNIT_MASK = ~(AT_D890_ERASE_UNIT_BYTES - 1);
 
 /** Floor `address` to its containing erase-unit base. */
