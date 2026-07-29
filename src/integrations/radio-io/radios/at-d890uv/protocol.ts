@@ -55,6 +55,11 @@ import {
   modelledAddressSetFromChunks,
   overlayModelledChunksOntoUnit,
 } from './sparseEraseRmw.ts';
+import {
+  captureAtD890WriteStagingSnapshot,
+  cloneAtD890WriteStagingSnapshot,
+  type AtD890WriteStagingSnapshot,
+} from './writeMemoryVerify.ts';
 import { assertAtD890TransmitAddress } from './writableExtents.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
@@ -416,6 +421,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
   private programming = false;
   private readBlockSize = AT_D890_BLOCK_SIZE;
   private lastUploadSentinelBefore: AtD890SentinelSnapshot | undefined;
+  private lastUploadStagingSnapshot: AtD890WriteStagingSnapshot | undefined;
   private uploadBankIntent: AtD890UploadBankIntent = {
     replaceAmAirBank: false,
     replaceTalkgroupOrder: false,
@@ -509,6 +515,13 @@ export class AtD890uvProtocol implements CloneImageRadio {
     const snap = this.lastUploadSentinelBefore;
     this.lastUploadSentinelBefore = undefined;
     return snap ? cloneAtD890SentinelSnapshot(snap) : undefined;
+  }
+
+  /** Staging chunks from the last successful {@link upload} — consumed once. */
+  takeUploadStagingSnapshot(): AtD890WriteStagingSnapshot | undefined {
+    const snap = this.lastUploadStagingSnapshot;
+    this.lastUploadStagingSnapshot = undefined;
+    return snap ? cloneAtD890WriteStagingSnapshot(snap) : undefined;
   }
 
   /** Re-read never-write regions and diff against a pre-Write snapshot (cross-session). */
@@ -619,6 +632,10 @@ export class AtD890uvProtocol implements CloneImageRadio {
 
       const stagingChunks = listSparseStagingChunks(mergedUnits, modelledAddresses);
       assertPreservedBytesMatchFreshRead(stagingChunks, freshUnits, modelledAddresses);
+      const transmittedChunks = stagingChunks.filter(
+        (c) => c.address !== AT_D890_SAFE_SKIP_WRITE_ADDR,
+      );
+      this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(transmittedChunks);
 
       reportProgress(
         opts.onProgress,
@@ -650,6 +667,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
       }
     } catch (err) {
       this.lastUploadSentinelBefore = undefined;
+      this.lastUploadStagingSnapshot = undefined;
       this.abandonProgramMode();
       throw err;
     }

@@ -6,6 +6,8 @@ import {
   AT_D890_ERASE_UNIT_BYTES,
   assertEraseUnitAddressInTouchedSet,
   eraseUnitBaseFor,
+  isAtD890EraseUnitBookkeepingAddress,
+  isAtD890ExcludedBookkeepingStagingAddress,
   listTouchedEraseUnits,
   readSpanForEraseUnit,
 } from './eraseUnits.ts';
@@ -61,6 +63,30 @@ describe('readSpanForEraseUnit', () => {
 
   it('rejects misaligned unit bases', () => {
     expect(() => readSpanForEraseUnit(0x348_0001)).toThrow(RadioProtocolError);
+  });
+});
+
+describe('isAtD890EraseUnitBookkeepingAddress', () => {
+  it('matches the two tail bookkeeping blocks in every erase unit', () => {
+    expect(isAtD890EraseUnitBookkeepingAddress(0x348_0000 + 0x3fbf0)).toBe(true);
+    expect(isAtD890EraseUnitBookkeepingAddress(0x348_0000 + 0x3fff0)).toBe(true);
+    expect(isAtD890EraseUnitBookkeepingAddress(0x100_0000 + 0x3fbf0)).toBe(true);
+    expect(isAtD890EraseUnitBookkeepingAddress(0x100_0000 + 0x3fff0)).toBe(true);
+  });
+
+  it('does not match ordinary staged addresses', () => {
+    expect(isAtD890EraseUnitBookkeepingAddress(D890_MAP.ChannelSet)).toBe(false);
+    expect(isAtD890EraseUnitBookkeepingAddress(0x348_0000)).toBe(false);
+  });
+});
+
+describe('isAtD890ExcludedBookkeepingStagingAddress', () => {
+  it('excludes tail bookkeeping only outside modelled banks', () => {
+    const spillBookkeeping = 0x348_0000 + 0x3fbf0;
+    const inRegionBookkeeping = 0x3a0_0000 + 0x3fbf0;
+    expect(isAtD890ExcludedBookkeepingStagingAddress(spillBookkeeping, true)).toBe(true);
+    expect(isAtD890ExcludedBookkeepingStagingAddress(spillBookkeeping, false)).toBe(false);
+    expect(isAtD890ExcludedBookkeepingStagingAddress(inRegionBookkeeping, false)).toBe(false);
   });
 });
 

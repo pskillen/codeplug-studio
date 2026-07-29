@@ -3,7 +3,7 @@
  * Presentational only; parent owns cancel / dismiss and phase updates from ProgressFn.
  */
 
-import { Alert, Button, Group, List, Modal, Progress, Stack, Text } from '@mantine/core';
+import { Alert, Button, Group, Modal, Progress, ScrollArea, Stack, Text } from '@mantine/core';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 
 export type RadioIoOperation = 'read' | 'write';
@@ -12,11 +12,6 @@ export type RadioIoProgressPhase =
   'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
 
 export type RadioIoWriteVerifyStatus = 'none' | 'unverified' | 'verifying' | 'verified' | 'failed';
-
-export interface RadioIoVerifyMismatch {
-  readonly id: string;
-  readonly label: string;
-}
 
 export interface RadioIoProgressModalProps {
   opened: boolean;
@@ -30,9 +25,10 @@ export interface RadioIoProgressModalProps {
   transferStages?: readonly string[];
   /** True when the operator tried to navigate away while busy. */
   navigationBlocked?: boolean;
-  /** AT-D890 optional post-write preserved-settings verify. */
+  /** AT-D890 optional post-write full-memory verify. */
   writeVerifyStatus?: RadioIoWriteVerifyStatus;
-  verifyMismatches?: readonly RadioIoVerifyMismatch[];
+  /** When false during `unverified`, Verify write stays disabled (brief post-write debounce). */
+  verifyButtonEnabled?: boolean;
   onVerify?: () => void;
   onCloseWithoutVerify?: () => void;
   /** Abort in-flight transfer (shown while not complete). */
@@ -53,6 +49,27 @@ function buildSteps(
   writeVerifyStatus: RadioIoWriteVerifyStatus,
 ): StepDef[] {
   if (operation === 'write') {
+    const postUpload = writeVerifyStatus !== 'none' || phase === 'done' || phase === 'verifying';
+
+    if (postUpload) {
+      const steps: StepDef[] = [
+        { id: 'connecting', label: 'Connect and handshake' },
+        { id: 'preparing', label: 'Assemble channels into image' },
+        { id: 'transfer', label: 'Upload to radio' },
+      ];
+      if (writeVerifyStatus !== 'none') {
+        steps.push({ id: 'verify', label: 'Verify write (optional)' });
+      }
+      if (phase === 'done' && writeVerifyStatus === 'verified') {
+        steps.push({ id: 'done', label: 'Write complete — verify passed' });
+      } else if (phase === 'done' && writeVerifyStatus === 'failed') {
+        steps.push({ id: 'done', label: 'Write complete — verify failed' });
+      } else if (phase === 'done' && writeVerifyStatus === 'none') {
+        steps.push({ id: 'done', label: 'Write complete' });
+      }
+      return steps;
+    }
+
     const steps: StepDef[] = [
       { id: 'connecting', label: 'Connect and handshake' },
       { id: 'preparing', label: 'Assemble channels into image' },
@@ -60,14 +77,6 @@ function buildSteps(
         ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
         : [{ id: 'transfer', label: 'Upload to radio' }]),
     ];
-    if (writeVerifyStatus !== 'none') {
-      steps.push({ id: 'verify', label: 'Check preserved settings (optional)' });
-    }
-    if (phase === 'done' && writeVerifyStatus === 'verified') {
-      steps.push({ id: 'done', label: 'Write complete — settings checked' });
-    } else if (phase === 'done') {
-      steps.push({ id: 'done', label: 'Write complete' });
-    }
     return steps;
   }
   const steps: StepDef[] = [
@@ -93,8 +102,12 @@ function activeStepId(
   if (phase === 'preparing') return 'preparing';
   if (phase === 'saving') return 'saving';
   if (phase === 'verifying' || writeVerifyStatus === 'verifying') return 'verify';
-  if (phase === 'done' && writeVerifyStatus === 'verified') return 'done';
-  if (phase === 'done' && writeVerifyStatus !== 'none') return 'verify';
+  if (phase === 'done' && (writeVerifyStatus === 'verified' || writeVerifyStatus === 'failed')) {
+    return 'done';
+  }
+  if (phase === 'done' && writeVerifyStatus === 'unverified') {
+    return 'verify';
+  }
   if (phase === 'done') return 'done';
   if (progress?.stage) return `stage:${progress.stage}`;
   if (transferStages.length > 0) return `stage:${transferStages[transferStages.length - 1]}`;
@@ -122,22 +135,29 @@ function writeDoneAlert(writeVerifyStatus: RadioIoWriteVerifyStatus): {
   if (writeVerifyStatus === 'verified') {
     return {
       color: 'green',
-      title: 'Write finished — settings checked',
-      body: 'Your language, password, and other preserved settings match what Studio read before the write.',
+      title: 'Write finished — verify passed',
+      body: 'Every staged block Studio transmitted matches what is on the radio now, and preserved settings are unchanged.',
     };
   }
   if (writeVerifyStatus === 'failed') {
     return {
       color: 'red',
-      title: 'Preserved settings check failed',
-      body: 'Some settings Studio deliberately left alone no longer match what was read before the write.',
+      title: 'Write verify failed',
+      body: 'Some staged blocks or preserved settings do not match. See the verify report for addresses and regions.',
     };
   }
   if (writeVerifyStatus === 'unverified') {
     return {
       color: 'blue',
       title: 'Write finished',
-      body: "The codeplug was uploaded to the radio. Optionally, you can check that radio settings which Studio doesn't set still match what was on the radio before the write. The radio restarts on its own after a write — wait until it shows its normal screen before you check.",
+      body: 'The radio restarts after a write while flash commits. Wait until it shows its normal screen, then click Verify write to reconnect and compare memory byte-for-byte with what was transmitted.',
+    };
+  }
+  if (writeVerifyStatus === 'verifying') {
+    return {
+      color: 'blue',
+      title: 'Verifying write',
+      body: 'Reading modelled memory from the radio and comparing against what Studio transmitted.',
     };
   }
   return {
@@ -155,7 +175,7 @@ export default function RadioIoProgressModal({
   transferStages = [],
   navigationBlocked = false,
   writeVerifyStatus = 'none',
-  verifyMismatches = [],
+  verifyButtonEnabled = true,
   onVerify,
   onCloseWithoutVerify,
   onCancel,
@@ -167,6 +187,8 @@ export default function RadioIoProgressModal({
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
   const complete = phase === 'done';
   const verifying = phase === 'verifying' || writeVerifyStatus === 'verifying';
+  const awaitingVerify = writeVerifyStatus === 'unverified';
+  const showPostUploadAlert = complete || verifying || writeVerifyStatus === 'unverified';
 
   return (
     <Modal
@@ -180,7 +202,7 @@ export default function RadioIoProgressModal({
       withCloseButton={false}
     >
       <Stack gap="md">
-        {complete ? (
+        {showPostUploadAlert ? (
           <>
             {(() => {
               const alert =
@@ -194,26 +216,10 @@ export default function RadioIoProgressModal({
               return (
                 <Alert color={alert.color} title={alert.title}>
                   <Text size="sm">{alert.body}</Text>
-                  {writeVerifyStatus === 'failed' && verifyMismatches.length > 0 ? (
-                    <List size="sm" mt="xs">
-                      {verifyMismatches.map((m) => (
-                        <List.Item key={m.id}>
-                          {m.label} does not match what was read before the write.
-                        </List.Item>
-                      ))}
-                    </List>
-                  ) : null}
                 </Alert>
               );
             })()}
           </>
-        ) : verifying ? (
-          <Alert color="blue" title="Checking preserved settings">
-            <Text size="sm">
-              Wait until the radio has fully restarted and shows its normal screen, then Studio will
-              reconnect and read the settings it left alone.
-            </Text>
-          </Alert>
         ) : (
           <Alert color="orange" title="Keep this tab open">
             Do not switch away, close the tab, or navigate elsewhere while the serial link is
@@ -227,24 +233,34 @@ export default function RadioIoProgressModal({
           </Alert>
         ) : null}
 
-        <Stack gap={6}>
-          {steps.map((step) => {
-            const status = stepStatus(step.id, activeId, steps);
-            return (
-              <Text
-                key={step.id}
-                size="sm"
-                fw={status === 'active' ? 600 : 400}
-                c={status === 'pending' ? 'dimmed' : undefined}
-              >
-                {status === 'done' ? '✓ ' : status === 'active' ? '→ ' : '· '}
-                {step.label}
-              </Text>
-            );
-          })}
-        </Stack>
+        <ScrollArea.Autosize mah={160} type="auto">
+          <Stack gap={6}>
+            {steps.map((step) => {
+              const status = stepStatus(step.id, activeId, steps);
+              return (
+                <Text
+                  key={step.id}
+                  size="sm"
+                  fw={status === 'active' ? 600 : 400}
+                  c={status === 'pending' ? 'dimmed' : undefined}
+                >
+                  {status === 'done' ? '✓ ' : status === 'active' ? '→ ' : '· '}
+                  {step.label}
+                </Text>
+              );
+            })}
+          </Stack>
+        </ScrollArea.Autosize>
 
-        {!complete && phase === 'transfer' ? (
+        {verifying ? (
+          <Stack gap={4}>
+            <Text size="sm">
+              {progress?.msg ?? 'Reading memory…'}
+              {progress ? ` (${progress.cur}/${progress.max})` : ''}
+            </Text>
+            <Progress value={percent ?? 0} animated={percent == null || percent < 100} size="lg" />
+          </Stack>
+        ) : !complete && phase === 'transfer' ? (
           <Stack gap={4}>
             <Text size="sm">
               {progress?.msg ?? 'Transferring…'}
@@ -262,30 +278,23 @@ export default function RadioIoProgressModal({
                   ? 'Saving hydration on the build…'
                   : 'Transferring…'}
           </Text>
-        ) : verifying ? (
-          <Text size="sm" c="dimmed">
-            Reconnecting and reading preserved settings…
-          </Text>
-        ) : progress?.msg ? (
-          <Text size="sm" c="dimmed">
-            Last: {progress.msg}
-          </Text>
         ) : null}
 
         <Group justify="flex-end">
-          {complete ? (
+          {complete && awaitingVerify ? (
             <>
-              {writeVerifyStatus === 'unverified' ? (
-                <>
-                  <Button variant="default" onClick={() => onCloseWithoutVerify?.()}>
-                    Close
-                  </Button>
-                  <Button onClick={() => onVerify?.()}>Check preserved settings</Button>
-                </>
-              ) : (
-                <Button onClick={() => onClose?.()}>Close</Button>
-              )}
+              <Button variant="default" onClick={() => onCloseWithoutVerify?.()}>
+                Skip verify
+              </Button>
+              <Button
+                onClick={() => onVerify?.()}
+                disabled={writeVerifyStatus === 'unverified' && !verifyButtonEnabled}
+              >
+                Verify write
+              </Button>
             </>
+          ) : complete ? (
+            <Button onClick={() => onClose?.()}>Close</Button>
           ) : (
             <Button variant="default" color="gray" onClick={onCancel}>
               Cancel

@@ -111,6 +111,13 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
     D890_MAP.OptionalSettingsExtLength,
   ),
   region(
+    'optionalSettingsAprs',
+    'Optional GPS info',
+    'optionalSettings',
+    D890_MAP.OptionalSettingsAprs,
+    D890_MAP.OptionalSettingsAprsLength,
+  ),
+  region(
     'alarmBitmap',
     'Alarm bitmap',
     'optionalSettings',
@@ -374,6 +381,68 @@ export async function runAtD890MemoryDumpAll(
   opts: AtD890MemoryDumpOpts = {},
 ): Promise<AtD890MemoryDumpAllResult> {
   return dumpRegionsInSession(pipe, AT_D890_MEMORY_REGIONS, opts);
+}
+
+export interface AtD890WriteVerifyMemoryReadResult extends AtD890MemoryDumpAllResult {
+  /** 16-byte blocks read at staged addresses outside {@link AT_D890_MEMORY_REGIONS}. */
+  spillChunks: Map<number, Uint8Array>;
+}
+
+/**
+ * Modelled-region dump plus targeted reads for RMW-preserved staging spill addresses
+ * (non-0xff bytes staged from touched erase units but outside every modelled bank).
+ * One PROGRAM session — used by cross-session write verify.
+ */
+export async function runAtD890WriteVerifyMemoryRead(
+  pipe: BytePipe,
+  spillAddresses: readonly number[],
+  opts: AtD890MemoryDumpOpts = {},
+): Promise<AtD890WriteVerifyMemoryReadResult> {
+  const { model, readBlockSize } = await enterAndNegotiate(pipe, opts.signal);
+  const files = new Map<string, Uint8Array>();
+  const started = Date.now();
+  const regions = AT_D890_MEMORY_REGIONS;
+  const totalSteps = regions.length + spillAddresses.length;
+
+  for (let i = 0; i < regions.length; i++) {
+    throwIfAborted(opts.signal);
+    const regionDef = regions[i]!;
+    reportProgress(
+      opts.onProgress,
+      { cur: i, max: totalSteps, msg: `Reading ${regionDef.label}…`, stage: regionDef.label },
+      opts.signal,
+    );
+    files.set(regionDef.id, await readRegionRaw(pipe, regionDef, readBlockSize, opts.signal));
+  }
+
+  const spillChunks = new Map<number, Uint8Array>();
+  for (let i = 0; i < spillAddresses.length; i++) {
+    throwIfAborted(opts.signal);
+    const address = spillAddresses[i]!;
+    reportProgress(
+      opts.onProgress,
+      {
+        cur: regions.length + i,
+        max: totalSteps,
+        msg: `Reading RMW spill 0x${address.toString(16)}…`,
+        stage: 'RMW preserved spill',
+      },
+      opts.signal,
+    );
+    spillChunks.set(
+      address,
+      await atD890ReadMemory(pipe, address, AT_D890_BLOCK_SIZE, opts.signal, readBlockSize),
+    );
+  }
+
+  const elapsedMs = Date.now() - started;
+  await atD890ExitProgram(pipe);
+
+  let totalBytes = 0;
+  for (const bytes of files.values()) totalBytes += bytes.length;
+  totalBytes += spillChunks.size * AT_D890_BLOCK_SIZE;
+
+  return { model, files, totalBytes, elapsedMs, spillChunks };
 }
 
 /**

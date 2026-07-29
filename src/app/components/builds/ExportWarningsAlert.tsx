@@ -49,8 +49,8 @@ function ShortenedGroupPanel({ group }: { group: WireNameShorteningGroup }) {
     <Stack gap={4}>
       <Text size="sm">{wireNameShorteningIntro(group)}</Text>
       <List size="sm" spacing={2} withPadding>
-        {group.items.map((item) => (
-          <List.Item key={`${item.original}-${item.exported}`}>
+        {group.items.map((item, index) => (
+          <List.Item key={`${item.original}-${item.exported}-${index}`}>
             <Text span size="sm" ff="monospace">
               {shorteningLine(item)}
             </Text>
@@ -75,8 +75,8 @@ export default function ExportWarningsAlert({ warnings }: ExportWarningsAlertPro
       <Stack gap="sm">
         {general.length > 0 ? (
           <Stack gap={4}>
-            {general.map((warning) => (
-              <Text key={warning} size="sm">
+            {general.map((warning, index) => (
+              <Text key={`general-${index}`} size="sm">
                 {warning}
               </Text>
             ))}
@@ -91,8 +91,8 @@ export default function ExportWarningsAlert({ warnings }: ExportWarningsAlertPro
                 </Accordion.Control>
                 <Accordion.Panel>
                   <Stack gap={4}>
-                    {unlinkedGroup.items.map((warning) => (
-                      <Text key={warning} size="sm">
+                    {unlinkedGroup.items.map((warning, index) => (
+                      <Text key={`unlinked-${index}`} size="sm">
                         {warning}
                       </Text>
                     ))}

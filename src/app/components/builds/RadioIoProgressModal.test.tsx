@@ -78,7 +78,7 @@ describe('RadioIoProgressModal', () => {
     );
 
     expect(screen.getByText(/Write finished/i)).toBeInTheDocument();
-    expect(screen.getByText(/✓ Channels/)).toBeInTheDocument();
+    expect(screen.getByText(/✓ Upload to radio/)).toBeInTheDocument();
     expect(screen.getByText(/→ Write complete/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
@@ -118,6 +118,7 @@ describe('RadioIoProgressModal', () => {
           progress={null}
           transferStages={['Upload']}
           writeVerifyStatus="unverified"
+          verifyButtonEnabled
           onCancel={vi.fn()}
           onVerify={onVerify}
           onCloseWithoutVerify={onCloseWithoutVerify}
@@ -126,16 +127,14 @@ describe('RadioIoProgressModal', () => {
     );
 
     expect(screen.getByText('Write finished')).toBeInTheDocument();
-    expect(screen.getByText(/Optionally, you can check/i)).toBeInTheDocument();
-    expect(screen.getByText(/restarts on its own/i)).toBeInTheDocument();
-    expect(screen.queryByText(/All selected blocks were sent/i)).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Check preserved settings' }));
+    expect(screen.getByText(/Wait until it shows its normal screen/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Verify write' }));
     expect(onVerify).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip verify' }));
     expect(onCloseWithoutVerify).toHaveBeenCalledTimes(1);
   });
 
-  it('shows verified write done without implied pass on unverified path', () => {
+  it('shows verified write done without verify actions', () => {
     render(
       <MantineProvider>
         <RadioIoProgressModal
@@ -150,14 +149,12 @@ describe('RadioIoProgressModal', () => {
       </MantineProvider>,
     );
 
-    expect(screen.getByText('Write finished — settings checked')).toBeInTheDocument();
+    expect(screen.getByText('Write finished — verify passed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'Check preserved settings' }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Verify write' })).not.toBeInTheDocument();
   });
 
-  it('names mismatched regions when verify fails', () => {
+  it('shows failed verify summary without inline mismatch list', () => {
     render(
       <MantineProvider>
         <RadioIoProgressModal
@@ -166,16 +163,53 @@ describe('RadioIoProgressModal', () => {
           phase="done"
           progress={null}
           writeVerifyStatus="failed"
-          verifyMismatches={[
-            { id: 'OptionalSettingsMain', label: 'Language and display settings' },
-          ]}
           onCancel={vi.fn()}
           onClose={vi.fn()}
         />
       </MantineProvider>,
     );
 
-    expect(screen.getByText(/Preserved settings check failed/i)).toBeInTheDocument();
-    expect(screen.getByText(/Language and display settings does not match/i)).toBeInTheDocument();
+    expect(screen.getByText('Write verify failed')).toBeInTheDocument();
+    expect(screen.getByText(/See the verify report/i)).toBeInTheDocument();
+  });
+
+  it('disables verify briefly after write to prevent button mashing', () => {
+    const onVerify = vi.fn();
+    const { rerender } = render(
+      <MantineProvider>
+        <RadioIoProgressModal
+          opened
+          operation="write"
+          phase="done"
+          progress={null}
+          writeVerifyStatus="unverified"
+          verifyButtonEnabled={false}
+          onCancel={vi.fn()}
+          onVerify={onVerify}
+          onCloseWithoutVerify={vi.fn()}
+        />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Verify write' })).toBeDisabled();
+
+    rerender(
+      <MantineProvider>
+        <RadioIoProgressModal
+          opened
+          operation="write"
+          phase="done"
+          progress={null}
+          writeVerifyStatus="unverified"
+          verifyButtonEnabled
+          onCancel={vi.fn()}
+          onVerify={onVerify}
+          onCloseWithoutVerify={vi.fn()}
+        />
+      </MantineProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Verify write' }));
+    expect(onVerify).toHaveBeenCalledTimes(1);
   });
 });
