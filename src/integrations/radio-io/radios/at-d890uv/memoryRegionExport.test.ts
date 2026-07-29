@@ -5,6 +5,7 @@ import {
   scriptAtD890ConnectWithNegotiation,
 } from './__fixtures__/scriptedPipe.ts';
 import {
+  AT_D890_DUMP_REGIONS,
   AT_D890_MEMORY_REGION_GROUPS,
   AT_D890_MEMORY_REGIONS,
   runAtD890DigitalContactsDump,
@@ -82,10 +83,17 @@ describe('AT_D890_MEMORY_REGIONS', () => {
   it('every group has at least one region', () => {
     for (const group of AT_D890_MEMORY_REGION_GROUPS) {
       expect(
-        AT_D890_MEMORY_REGIONS.some((r) => r.group === group.id),
+        AT_D890_DUMP_REGIONS.some((r) => r.group === group.id),
         `group "${group.id}" has no regions`,
       ).toBe(true);
     }
+  });
+
+  it('keeps alias probes out of the write-verify read scope', () => {
+    // AT_D890_MEMORY_REGIONS is verify's read scope and the authority for
+    // isModelledRegionAddress; probes must only ever reach the dump page.
+    expect(AT_D890_MEMORY_REGIONS.some((r) => r.group === 'aliasProbe')).toBe(false);
+    expect(AT_D890_DUMP_REGIONS.filter((r) => r.group === 'aliasProbe').length).toBeGreaterThan(0);
   });
 });
 

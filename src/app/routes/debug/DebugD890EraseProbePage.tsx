@@ -17,7 +17,7 @@ import { openWebSerialPipe, requestWebSerialPort } from '@integrations/radio-io/
 import {
   AT_D890_CONNECTION,
   AT_D890_MEMORY_REGION_GROUPS,
-  AT_D890_MEMORY_REGIONS,
+  AT_D890_DUMP_REGIONS,
   AT_D890_PROBE,
   estimateAtD890RmwSeconds,
   runAtD890ConfigAliasCheck,
@@ -636,7 +636,7 @@ export default function DebugD890EraseProbePage() {
               </Table.Thead>
               <Table.Tbody>
                 {AT_D890_MEMORY_REGION_GROUPS.map((group) => {
-                  const members = AT_D890_MEMORY_REGIONS.filter((r) => r.group === group.id);
+                  const members = AT_D890_DUMP_REGIONS.filter((r) => r.group === group.id);
                   const groupSize = members.reduce(
                     (sum, r) => sum + r.chunks.reduce((s, c) => s + c.length, 0),
                     0,
