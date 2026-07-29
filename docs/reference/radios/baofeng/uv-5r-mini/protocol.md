@@ -80,6 +80,10 @@ Do not paste CHIRP’s full table into Studio as GPL source — cite NeonPlug `b
 3. Read all `MEM_*` regions in `0x40` blocks → assemble packed `0x8240` image ([memory-layout.md](memory-layout.md)). Sync each read reply to opcode `0x52`.
 4. For upload: upload handshake (NeonPlug trailer `0x01`) → write all `MEM_*` regions from hydrated image ([settings.md](settings.md)).
 
+## Write verify
+
+Upload stages **plaintext** 64-byte blocks at each radio `MEM_*` address. **Verify write** reconnects without a reboot wait, downloads and decrypts the full packed image, and compares staged payloads via packed-offset mapping. Regions follow `uv17pro-family/writeRole.ts`. Feature: [write-verify.md](../../../../features/radio-read-write/write-verify.md).
+
 ## BLE (follow-up)
 
 NeonPlug supports BLE (`FFE0` / `FFE1`, name filter `walkie-talkie`) with the same framing; CHIRP uses a larger BLE upload block (`0x80`) when BLE is active. **Out of scope** for this docs ticket and for closing adapter [#617](https://github.com/pskillen/codeplug-studio/issues/617) — note only.

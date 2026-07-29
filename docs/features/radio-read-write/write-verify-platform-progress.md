@@ -36,7 +36,7 @@
 | 1 Soft vs hard reconnect UX                | Done        |
 | 2 Shared MemoryMap staging compare helpers | Done        |
 | 3 RT95 write verify                        | Done        |
-| 4 UV-5R Mini + UV-21 write verify          | Pending     |
+| 4 UV-5R Mini + UV-21 write verify          | Done        |
 | 5 OpenGD77 1701 + MD9600 write verify      | Pending     |
 | 6 DM-32UV write verify                     | Pending     |
 | 7 Feature docs + PR                        | Pending     |
@@ -47,7 +47,7 @@
 | ------------------ | ------------------- | ------------------------------- |
 | AT-D890UV          | Done (Phase 0)      | `true`                          |
 | RT95               | Done        | `false`                         |
-| UV-5R Mini / UV-21 | Pending             | `false`                         |
+| UV-5R Mini / UV-21 | Done        | `false`                         |
 | OpenGD77 1701      | Pending             | `true`                          |
 | OpenGD77 MD9600    | Pending             | `true`                          |
 | DM-32UV            | Pending             | `false`                         |

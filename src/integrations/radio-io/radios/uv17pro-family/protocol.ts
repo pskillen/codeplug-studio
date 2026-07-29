@@ -14,6 +14,10 @@ import {
 import { createMemoryMap, memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
+import {
+  captureWriteVerifyStaging,
+  type WriteVerifyStagingSnapshot,
+} from '../../writeVerifyCompare.ts';
 import type { Uv17ProLayout } from './layout.ts';
 import { uv17ProCrypt } from './crypt.ts';
 import {
@@ -58,7 +62,7 @@ async function flushPipe(pipe: BytePipe): Promise<void> {
   }
 }
 
-function packedOffsetForRadioAddr(layout: Uv17ProLayout, radioAddr: number): number {
+export function packedOffsetForRadioAddr(layout: Uv17ProLayout, radioAddr: number): number {
   let packed = 0;
   for (let i = 0; i < layout.memStarts.length; i++) {
     const start = layout.memStarts[i]!;
@@ -152,6 +156,7 @@ async function handshake(
 
 export class Uv17ProProtocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
+  private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
 
   constructor(private readonly layout: Uv17ProLayout) {}
 
@@ -237,11 +242,13 @@ export class Uv17ProProtocol implements CloneImageRadio {
     await handshake(this.layout, pipe, 'upload', { signal: opts.signal });
     let done = 0;
     const max = addrs.length;
+    const stagingChunks: { address: number; data: Uint8Array }[] = [];
     for (const addr of addrs) {
       throwIfAborted(opts.signal);
       const packed = packedOffsetForRadioAddr(this.layout, addr);
       const plain = image.get(packed, this.layout.blockSize);
       await this.writeBlock(pipe, addr, plain);
+      stagingChunks.push({ address: addr, data: plain.slice() });
       done += 1;
       reportProgress(
         opts.onProgress,
@@ -249,6 +256,14 @@ export class Uv17ProProtocol implements CloneImageRadio {
         opts.signal,
       );
     }
+    this.lastUploadStaging = captureWriteVerifyStaging(stagingChunks);
+  }
+
+  /** Staging chunks from the last successful {@link upload} — consumed once. */
+  takeUploadStagingSnapshot(): WriteVerifyStagingSnapshot | undefined {
+    const snap = this.lastUploadStaging;
+    this.lastUploadStaging = undefined;
+    return snap;
   }
 
   decodeChannels(image: MemoryMap): RadioChannelDto[] {
