@@ -5,6 +5,7 @@
 import type { MemoryMap } from '../../types.ts';
 import type { RadioScanListDto } from '../../radioWriteProjection.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+import { AT_D890_SCAN_TIMING_DECISECONDS } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import { clearBitmap, setBitmapBit } from './bitmap.ts';
 import { toAtD890ChannelIndex } from './channelIndex.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
@@ -23,9 +24,6 @@ function writeU16Le(buf: Uint8Array, offset: number, value: number): void {
 
 /** Wire sentinel: priority channel Off / none (anytone-cps `0xffff`). */
 const AT_D890_SCAN_PRIORITY_OFF = 0xffff;
-
-/** Temporary pin until library scan behavioural settings ship ([#572](https://github.com/pskillen/codeplug-studio/issues/572)). */
-export const AT_D890_SCAN_TIMING_DECISECONDS = 30;
 
 /** Revert channel: Selected + TalkBack (official CPS default). */
 const AT_D890_SCAN_REVERT_CHANNEL = 0x01;

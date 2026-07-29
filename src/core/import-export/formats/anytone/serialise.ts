@@ -28,6 +28,7 @@ import {
 import { formatCsv } from './csvWrite.ts';
 import { serialiseAnytoneChannelRow } from './channelWire.ts';
 import type { ChannelModeProfileDMR } from '@core/models/library.ts';
+import { AT_D890_SCAN_TIMING_SECONDS_CSV } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import {
   buildAnytoneExportWireContext,
   padReceiveBankName,
@@ -249,10 +250,10 @@ function serialiseScanListsCsv(
       [SCAN_LIST_COL.priority2Rx]: '',
       [SCAN_LIST_COL.priority2Tx]: '',
       [SCAN_LIST_COL.revertChannel]: 'Selected + TalkBack',
-      [SCAN_LIST_COL.lookBackA]: '5.0',
-      [SCAN_LIST_COL.lookBackB]: '5.0',
-      [SCAN_LIST_COL.dropoutDelay]: '5.0',
-      [SCAN_LIST_COL.dwellTime]: '5.0',
+      [SCAN_LIST_COL.lookBackA]: AT_D890_SCAN_TIMING_SECONDS_CSV,
+      [SCAN_LIST_COL.lookBackB]: AT_D890_SCAN_TIMING_SECONDS_CSV,
+      [SCAN_LIST_COL.dropoutDelay]: AT_D890_SCAN_TIMING_SECONDS_CSV,
+      [SCAN_LIST_COL.dwellTime]: AT_D890_SCAN_TIMING_SECONDS_CSV,
     });
   });
   return formatCsv(SCAN_LIST_HEADERS, rows);
