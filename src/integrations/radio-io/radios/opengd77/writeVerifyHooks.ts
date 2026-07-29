@@ -24,7 +24,7 @@ import {
 import { openUv380AbsToOffset } from './constants.ts';
 import { readAbs } from './memory.ts';
 import { OpenGd77Protocol } from './protocol.ts';
-import { buildOpenGd77VerifyManifest, openGd77KeptRegions } from './writeVerifySupport.ts';
+import { buildOpenGd77VerifyManifest, keptRegionOverlapsStaging, openGd77KeptRegions } from './writeVerifySupport.ts';
 import { memoryMapToBytes } from '../../kit/memoryMap.ts';
 
 const OPENGD77_VERIFY_REGION_GROUPS: readonly WriteVerifyRegionGroup[] = [
@@ -57,9 +57,14 @@ function deserializeKeptSnapshot(json: WriteVerifyKeptSnapshot): Map<string, Uin
 function compareKeptRegions(
   before: Map<string, Uint8Array>,
   image: Parameters<typeof readAbs>[0],
+  staging: WriteVerifyPendingPayload['staging'],
+  manifest: ReturnType<typeof buildOpenGd77VerifyManifest>,
 ): WriteVerifyKeptCompareResult {
   const mismatches: { id: string; label: string }[] = [];
   for (const region of openGd77KeptRegions()) {
+    if (keptRegionOverlapsStaging(region.id, manifest, staging)) {
+      continue;
+    }
     const expected = before.get(region.id);
     if (!expected) continue;
     const actual = readAbs(image, region.absAddress, expected.length);
@@ -115,7 +120,9 @@ export function createOpenGd77WriteVerifyHooks(modelId: string): WriteVerifyHook
         (id) => manifest.find((r) => r.id === id)?.length ?? 0,
       );
       const keptBefore = pending.kept ? deserializeKeptSnapshot(pending.kept) : undefined;
-      const kept = keptBefore ? compareKeptRegions(keptBefore, image) : undefined;
+      const kept = keptBefore
+        ? compareKeptRegions(keptBefore, image, pending.staging, manifest)
+        : undefined;
       const result = buildWriteVerifyResult({
         model: modelId,
         elapsedMs,

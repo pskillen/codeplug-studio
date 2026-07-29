@@ -19,9 +19,11 @@ import {
 } from '@mantine/core';
 import type {
   WriteVerifyDebugContext,
+  WriteVerifyMismatch,
   WriteVerifyRegionStatus,
   WriteVerifyResult,
 } from '@integrations/radio-io/writeVerify.ts';
+import { rollupWriteVerifyRegionStatus } from '@integrations/radio-io/writeVerifyCompare.ts';
 
 const MISMATCH_DISPLAY_LIMIT = 50;
 
@@ -58,6 +60,8 @@ function regionStatusColor(status: WriteVerifyRegionStatus): string {
       return 'green';
     case 'mismatch':
       return 'red';
+    case 'not_read':
+      return 'orange';
     case 'not_written':
       return 'gray';
     case 'skipped':
@@ -71,11 +75,30 @@ function regionStatusLabel(status: WriteVerifyRegionStatus): string {
       return 'match';
     case 'mismatch':
       return 'mismatch';
+    case 'not_read':
+      return 'not read';
     case 'not_written':
       return 'not written';
     case 'skipped':
       return 'skipped';
   }
+}
+
+function formatRegionIssueCounts(mismatchedChunks: number, notReadChunks: number): string {
+  if (mismatchedChunks > 0 && notReadChunks > 0) {
+    return `${mismatchedChunks} mismatch, ${notReadChunks} not read`;
+  }
+  if (mismatchedChunks > 0) return String(mismatchedChunks);
+  if (notReadChunks > 0) return `${notReadChunks} not read`;
+  return '0';
+}
+
+function mismatchKindLabel(kind: WriteVerifyMismatch['kind']): string {
+  return kind === 'not_read' ? 'not read' : 'mismatch';
+}
+
+function mismatchKindColor(kind: WriteVerifyMismatch['kind']): string {
+  return kind === 'not_read' ? 'orange' : 'red';
 }
 
 export default function WriteVerifyReport({
@@ -153,6 +176,7 @@ export default function WriteVerifyReport({
   }
 
   const mismatches = result.staging.mismatches;
+  const notReadIssues = mismatches.filter((m) => m.kind === 'not_read');
   const hiddenMismatchCount = Math.max(0, mismatches.length - MISMATCH_DISPLAY_LIMIT);
   const keptOk = result.kept?.ok ?? true;
   const keptMismatches = result.kept?.mismatches ?? [];
@@ -199,7 +223,7 @@ export default function WriteVerifyReport({
               <Table.Th>Region</Table.Th>
               <Table.Th>Size</Table.Th>
               <Table.Th>Staged</Table.Th>
-              <Table.Th>Mismatches</Table.Th>
+              <Table.Th>Issues</Table.Th>
               <Table.Th>Status</Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -210,15 +234,15 @@ export default function WriteVerifyReport({
               const groupBytes = rows.reduce((sum, r) => sum + r.bytesRead, 0);
               const groupStaged = rows.reduce((sum, r) => sum + r.stagedChunkCount, 0);
               const groupMismatches = rows.reduce((sum, r) => sum + r.mismatchedChunks, 0);
-              const groupStatus: WriteVerifyRegionStatus =
-                groupMismatches > 0 ? 'mismatch' : groupStaged > 0 ? 'match' : 'not_written';
+              const groupNotRead = rows.reduce((sum, r) => sum + r.notReadChunks, 0);
+              const groupStatus = rollupWriteVerifyRegionStatus(rows);
               return (
                 <Fragment key={group.id}>
                   <Table.Tr>
                     <Table.Td fw={600}>{group.label}</Table.Td>
                     <Table.Td>{formatBytes(groupBytes)}</Table.Td>
                     <Table.Td>{groupStaged}</Table.Td>
-                    <Table.Td>{groupMismatches}</Table.Td>
+                    <Table.Td>{formatRegionIssueCounts(groupMismatches, groupNotRead)}</Table.Td>
                     <Table.Td>
                       <Badge color={regionStatusColor(groupStatus)} variant="light">
                         {regionStatusLabel(groupStatus)}
@@ -230,7 +254,7 @@ export default function WriteVerifyReport({
                       <Table.Td pl="xl">{r.label}</Table.Td>
                       <Table.Td>{formatBytes(r.bytesRead)}</Table.Td>
                       <Table.Td>{r.stagedChunkCount}</Table.Td>
-                      <Table.Td>{r.mismatchedChunks}</Table.Td>
+                      <Table.Td>{formatRegionIssueCounts(r.mismatchedChunks, r.notReadChunks)}</Table.Td>
                       <Table.Td>
                         <Badge color={regionStatusColor(r.status)} variant="light" size="sm">
                           {regionStatusLabel(r.status)}
@@ -275,13 +299,20 @@ export default function WriteVerifyReport({
       {mismatches.length > 0 ? (
         <Stack gap="xs">
           <Text fw={600} size="sm">
-            Staging mismatches
+            Staging issues
           </Text>
+          {notReadIssues.length > 0 ? (
+            <Text size="sm" c="dimmed">
+              {notReadIssues.length} staged block{notReadIssues.length === 1 ? '' : 's'} could not
+              be read back — compare was not run for those addresses.
+            </Text>
+          ) : null}
           <Table striped withTableBorder>
             <Table.Thead>
               <Table.Tr>
                 <Table.Th>Address</Table.Th>
                 <Table.Th>Region</Table.Th>
+                <Table.Th>Kind</Table.Th>
                 <Table.Th>Expected</Table.Th>
                 <Table.Th>Actual</Table.Th>
               </Table.Tr>
@@ -294,10 +325,27 @@ export default function WriteVerifyReport({
                   </Table.Td>
                   <Table.Td>{m.regionLabel}</Table.Td>
                   <Table.Td>
-                    <Code>{bytesToHex(m.expected)}</Code>
+                    <Badge color={mismatchKindColor(m.kind)} variant="light" size="sm">
+                      {mismatchKindLabel(m.kind)}
+                    </Badge>
                   </Table.Td>
                   <Table.Td>
-                    <Code>{m.kind === 'not_read' ? '(not read)' : bytesToHex(m.actual!)}</Code>
+                    {m.kind === 'not_read' ? (
+                      <Text size="sm" c="dimmed">
+                        (not read back)
+                      </Text>
+                    ) : (
+                      <Code>{bytesToHex(m.expected)}</Code>
+                    )}
+                  </Table.Td>
+                  <Table.Td>
+                    {m.kind === 'not_read' ? (
+                      <Text size="sm" c="dimmed">
+                        —
+                      </Text>
+                    ) : (
+                      <Code>{bytesToHex(m.actual!)}</Code>
+                    )}
                   </Table.Td>
                 </Table.Tr>
               ))}
@@ -305,7 +353,8 @@ export default function WriteVerifyReport({
           </Table>
           {hiddenMismatchCount > 0 ? (
             <Text size="sm" c="dimmed">
-              … and {hiddenMismatchCount} more mismatches (download JSON for full list).
+              … and {hiddenMismatchCount} more issue{hiddenMismatchCount === 1 ? '' : 's'} (download
+              JSON for full list).
             </Text>
           ) : null}
         </Stack>

@@ -56,18 +56,45 @@ describe('writeVerifyCompare', () => {
     expect(mismatches[1]?.kind).toBe('not_read');
     expect(mismatches[1]?.actual).toBeNull();
 
+    const regions = summarizeWriteVerifyRegions(staging, mismatches, MANIFEST, () => 0x10);
+    expect(regions.find((r) => r.id === 'channels')?.status).toBe('mismatch');
+    expect(regions.find((r) => r.id === 'channels')?.mismatchedChunks).toBe(1);
+    expect(regions.find((r) => r.id === 'channels')?.notReadChunks).toBe(0);
+
     const result = buildWriteVerifyResult({
       model: 'test',
       elapsedMs: 1,
       totalBytesRead: 4,
       staging,
       mismatches,
-      regions: summarizeWriteVerifyRegions(staging, mismatches, MANIFEST, () => 0x10),
+      regions,
       regionGroups: [{ id: 'memories', label: 'Memories' }],
     });
     expect(result.ok).toBe(false);
     expect(result.staging.mismatchedChunks).toBe(1);
     expect(result.staging.notReadChunks).toBe(1);
+
+    const unreadStaging = captureWriteVerifyStaging([
+      { address: 0x120, data: new Uint8Array([0x01, 0x02]) },
+    ]);
+    const unreadRegions = summarizeWriteVerifyRegions(
+      unreadStaging,
+      [
+        {
+          kind: 'not_read',
+          address: 0x120,
+          regionId: 'settings',
+          regionLabel: 'Settings',
+          expected: new Uint8Array([0x01, 0x02]),
+          actual: null,
+        },
+      ],
+      MANIFEST,
+      () => 0x40,
+    );
+    expect(unreadRegions.find((r) => r.id === 'settings')?.status).toBe('not_read');
+    expect(unreadRegions.find((r) => r.id === 'settings')?.notReadChunks).toBe(1);
+    expect(unreadRegions.find((r) => r.id === 'settings')?.mismatchedChunks).toBe(0);
   });
 
   it('compares sparse block lookup by absolute address', () => {

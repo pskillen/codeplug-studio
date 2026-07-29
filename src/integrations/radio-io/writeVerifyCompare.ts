@@ -118,6 +118,7 @@ export function summarizeWriteVerifyRegions(
 ): WriteVerifyRegionRow[] {
   const stagedCountByRegion = new Map<string, number>();
   const mismatchCountByRegion = new Map<string, number>();
+  const notReadCountByRegion = new Map<string, number>();
 
   for (const { address } of staging.chunks) {
     const region = regionAtFromManifest(manifest, address);
@@ -126,13 +127,18 @@ export function summarizeWriteVerifyRegions(
   }
 
   for (const m of mismatches) {
-    mismatchCountByRegion.set(m.regionId, (mismatchCountByRegion.get(m.regionId) ?? 0) + 1);
+    if (m.kind === 'not_read') {
+      notReadCountByRegion.set(m.regionId, (notReadCountByRegion.get(m.regionId) ?? 0) + 1);
+    } else {
+      mismatchCountByRegion.set(m.regionId, (mismatchCountByRegion.get(m.regionId) ?? 0) + 1);
+    }
   }
 
   return manifest.map((region) => {
     const bytesRead = bytesReadForRegion(region.id);
     const stagedChunkCount = stagedCountByRegion.get(region.id) ?? 0;
     const mismatchedChunks = mismatchCountByRegion.get(region.id) ?? 0;
+    const notReadChunks = notReadCountByRegion.get(region.id) ?? 0;
     let status: WriteVerifyRegionStatus;
     if (bytesRead === 0) {
       status = 'skipped';
@@ -140,6 +146,8 @@ export function summarizeWriteVerifyRegions(
       status = 'not_written';
     } else if (mismatchedChunks > 0) {
       status = 'mismatch';
+    } else if (notReadChunks > 0) {
+      status = 'not_read';
     } else {
       status = 'match';
     }
@@ -150,9 +158,21 @@ export function summarizeWriteVerifyRegions(
       bytesRead,
       stagedChunkCount,
       mismatchedChunks,
+      notReadChunks,
       status,
     };
   });
+}
+
+/** Roll up child region rows into a group summary status. */
+export function rollupWriteVerifyRegionStatus(
+  rows: readonly Pick<WriteVerifyRegionRow, 'status'>[],
+): WriteVerifyRegionStatus {
+  if (rows.some((r) => r.status === 'mismatch')) return 'mismatch';
+  if (rows.some((r) => r.status === 'not_read')) return 'not_read';
+  if (rows.some((r) => r.status === 'match')) return 'match';
+  if (rows.some((r) => r.status === 'not_written')) return 'not_written';
+  return 'skipped';
 }
 
 export function buildWriteVerifyResult(input: {
@@ -211,23 +231,21 @@ export function formatWriteVerifyDebugMarkdown(
     '',
     '## Regions',
     '',
-    '| Region | Status | Staged | Mismatched | Bytes read |',
-    '| --- | --- | --- | --- | --- |',
+    '| Region | Status | Staged | Mismatched | Not read | Bytes read |',
+    '| --- | --- | --- | --- | --- | --- |',
     ...result.regions.map(
       (r) =>
-        `| ${r.label} | ${r.status} | ${r.stagedChunkCount} | ${r.mismatchedChunks} | ${r.bytesRead} |`,
+        `| ${r.label} | ${r.status} | ${r.stagedChunkCount} | ${r.mismatchedChunks} | ${r.notReadChunks} | ${r.bytesRead} |`,
     ),
   ];
   if (result.staging.mismatches.length > 0) {
-    lines.push('', '## Mismatches', '');
+    lines.push('', '## Staging issues', '');
     for (const m of result.staging.mismatches) {
-      lines.push(
-        `- **${m.kind}** @ 0x${m.address.toString(16)} (${m.regionLabel})`,
-        `  - expected: ${[...m.expected].map((b) => b.toString(16).padStart(2, '0')).join(' ')}`,
-      );
-      if (m.actual) {
+      lines.push(`- **${m.kind}** @ 0x${m.address.toString(16)} (${m.regionLabel})`);
+      if (m.kind === 'mismatch') {
         lines.push(
-          `  - actual: ${[...m.actual].map((b) => b.toString(16).padStart(2, '0')).join(' ')}`,
+          `  - expected: ${[...m.expected].map((b) => b.toString(16).padStart(2, '0')).join(' ')}`,
+          `  - actual: ${[...m.actual!].map((b) => b.toString(16).padStart(2, '0')).join(' ')}`,
         );
       }
     }

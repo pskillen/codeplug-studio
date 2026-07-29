@@ -35,3 +35,17 @@ export function buildOpenGd77VerifyManifest(): readonly WriteVerifyRegionManifes
 }
 
 export { openGd77KeptRegions };
+
+export function keptRegionOverlapsStaging(
+  regionId: OpenGd77RegionId,
+  manifest: readonly WriteVerifyRegionManifestEntry[],
+  staging: { readonly chunks: readonly { readonly address: number; readonly data: Uint8Array }[] },
+): boolean {
+  const region = manifest.find((r) => r.id === regionId);
+  if (!region) return false;
+  const regionEnd = region.start + region.length;
+  return staging.chunks.some(({ address, data }) => {
+    const chunkEnd = address + data.length;
+    return address < regionEnd && chunkEnd > region.start;
+  });
+}
