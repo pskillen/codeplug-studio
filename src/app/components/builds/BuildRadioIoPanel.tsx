@@ -505,6 +505,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         transferStages={transferStages}
         navigationBlocked={leaveAttempted}
         writeVerifyStatus={writeVerifyStatus}
+        requiresCrossSessionReconnect={writeVerifyHooks?.requiresCrossSessionReconnect ?? true}
         verifyButtonEnabled={verifyButtonEnabled}
         onVerify={() => void handleVerifyWrite()}
         onCloseWithoutVerify={handleCloseWithoutVerify}

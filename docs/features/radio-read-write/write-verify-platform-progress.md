@@ -32,8 +32,8 @@
 
 | Slice                                      | State       |
 | ------------------------------------------ | ----------- |
-| 0 Branch + extend progress/outstanding     | In progress |
-| 1 Soft vs hard reconnect UX                | Pending     |
+| 0 Branch + extend progress/outstanding     | Done        |
+| 1 Soft vs hard reconnect UX                | Done        |
 | 2 Shared MemoryMap staging compare helpers | Pending     |
 | 3 RT95 write verify                        | Pending     |
 | 4 UV-5R Mini + UV-21 write verify          | Pending     |
