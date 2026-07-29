@@ -24,7 +24,11 @@ import {
 import { openUv380AbsToOffset } from './constants.ts';
 import { readAbs } from './memory.ts';
 import { OpenGd77Protocol } from './protocol.ts';
-import { buildOpenGd77VerifyManifest, keptRegionOverlapsStaging, openGd77KeptRegions } from './writeVerifySupport.ts';
+import {
+  buildOpenGd77VerifyManifest,
+  keptRegionOverlapsStaging,
+  openGd77KeptRegions,
+} from './writeVerifySupport.ts';
 import { memoryMapToBytes } from '../../kit/memoryMap.ts';
 
 const OPENGD77_VERIFY_REGION_GROUPS: readonly WriteVerifyRegionGroup[] = [

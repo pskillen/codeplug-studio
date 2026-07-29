@@ -254,7 +254,9 @@ export default function WriteVerifyReport({
                       <Table.Td pl="xl">{r.label}</Table.Td>
                       <Table.Td>{formatBytes(r.bytesRead)}</Table.Td>
                       <Table.Td>{r.stagedChunkCount}</Table.Td>
-                      <Table.Td>{formatRegionIssueCounts(r.mismatchedChunks, r.notReadChunks)}</Table.Td>
+                      <Table.Td>
+                        {formatRegionIssueCounts(r.mismatchedChunks, r.notReadChunks)}
+                      </Table.Td>
                       <Table.Td>
                         <Badge color={regionStatusColor(r.status)} variant="light" size="sm">
                           {regionStatusLabel(r.status)}

@@ -25,7 +25,8 @@ export interface AtD890WriteStagingSnapshot {
   readonly capturedAt: string;
 }
 
-export type AtD890RegionVerifyStatus = 'match' | 'mismatch' | 'not_read' | 'not_written' | 'skipped';
+export type AtD890RegionVerifyStatus =
+  'match' | 'mismatch' | 'not_read' | 'not_written' | 'skipped';
 
 export interface AtD890RegionVerifyRow {
   readonly id: string;

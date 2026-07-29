@@ -25,12 +25,7 @@ export interface WriteVerifyRegionGroup {
   readonly label: string;
 }
 
-export type WriteVerifyRegionStatus =
-  | 'match'
-  | 'mismatch'
-  | 'not_read'
-  | 'not_written'
-  | 'skipped';
+export type WriteVerifyRegionStatus = 'match' | 'mismatch' | 'not_read' | 'not_written' | 'skipped';
 
 export interface WriteVerifyRegionRow {
   readonly id: string;
