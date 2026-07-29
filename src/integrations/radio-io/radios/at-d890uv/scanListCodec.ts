@@ -24,27 +24,25 @@ function writeU16Le(buf: Uint8Array, offset: number, value: number): void {
 /** Wire sentinel: priority channel Off / none (anytone-cps `0xffff`). */
 const AT_D890_SCAN_PRIORITY_OFF = 0xffff;
 
-/** Member array: `SCAN_LIST_MEMBERS_MAX` × u16 at `+0x30`. */
-const AT_D890_SCAN_MEMBER_BYTES = AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX * 2;
+/** Temporary pin until library scan behavioural settings ship ([#572](https://github.com/pskillen/codeplug-studio/issues/572)). */
+export const AT_D890_SCAN_TIMING_DECISECONDS = 30;
 
-/** Revert channel byte; trailing `0x95–0xcf` must be `0xff`, not `0x00` (channel index 0). */
-const AT_D890_SCAN_REVERT_OFFSET = 0x94;
-const AT_D890_SCAN_TRAIL_PAD_START = 0x95;
+/** Revert channel: Selected + TalkBack (official CPS default). */
+const AT_D890_SCAN_REVERT_CHANNEL = 0x01;
+
+/** Member array: `SCAN_LIST_MEMBERS_MAX` × u16 at `+0x30` through `+0xF7`. */
+const AT_D890_SCAN_MEMBER_BYTES = AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX * 2;
 
 export function encodeAtD890ScanListRecord(scan: RadioScanListDto): Uint8Array {
   const data = new Uint8Array(AT_D890_LIMITS.SCAN_LIST_RECORD_SIZE);
   data.fill(0);
   data[0x1] = 0;
-  const priority1 =
-    scan.designatedTxChannel != null && scan.designatedTxChannel > 0
-      ? toAtD890ChannelIndex(scan.designatedTxChannel)
-      : AT_D890_SCAN_PRIORITY_OFF;
-  writeU16Le(data, 0x2, priority1);
+  writeU16Le(data, 0x2, AT_D890_SCAN_PRIORITY_OFF);
   writeU16Le(data, 0x4, AT_D890_SCAN_PRIORITY_OFF);
-  writeU16Le(data, 0x6, 5);
-  writeU16Le(data, 0x8, 5);
-  writeU16Le(data, 0xa, 1);
-  writeU16Le(data, 0xc, 1);
+  writeU16Le(data, 0x6, AT_D890_SCAN_TIMING_DECISECONDS);
+  writeU16Le(data, 0x8, AT_D890_SCAN_TIMING_DECISECONDS);
+  writeU16Le(data, 0xa, AT_D890_SCAN_TIMING_DECISECONDS);
+  writeU16Le(data, 0xc, AT_D890_SCAN_TIMING_DECISECONDS);
   data.set(encodeWideCharName(scan.wireName, 0x20), 0xe);
   const members = new Uint8Array(AT_D890_SCAN_MEMBER_BYTES);
   members.fill(0xff);
@@ -55,8 +53,8 @@ export function encodeAtD890ScanListRecord(scan: RadioScanListDto): Uint8Array {
   const combined = new Uint8Array(AT_D890_LIMITS.SCAN_LIST_RECORD_SIZE);
   combined.set(data, 0);
   combined.set(members, 0x30);
-  combined[AT_D890_SCAN_REVERT_OFFSET] = 0;
-  combined.fill(0xff, AT_D890_SCAN_TRAIL_PAD_START, combined.length);
+  combined[0xf8] = AT_D890_SCAN_REVERT_CHANNEL;
+  combined[0xf9] = 0;
   return combined;
 }
 
