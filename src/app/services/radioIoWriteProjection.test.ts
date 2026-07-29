@@ -253,7 +253,7 @@ describe('buildRadioWriteProjection', () => {
     expect(zoneDto?.channelNumbers).toEqual([1, 2]);
   });
 
-  it('prepends each zone’s own scan carrier and first-wins scanListId for shared members', () => {
+  it('prepends each zone’s own scan carrier; shared members do not get zone-derived scanListId', () => {
     const shared = withExportEligibleDefaults({
       ...newChannel('p1', 'Hotspot'),
       id: 'ch-shared',
@@ -343,8 +343,7 @@ describe('buildRadioWriteProjection', () => {
 
     const sharedNums = projection.numbersBySourceChannelId.get('ch-shared') ?? [];
     expect(sharedNums.length).toBeGreaterThan(0);
-    // First zone (Home) wins scanListId for the shared hotspot — not Morning Walk’s list.
-    expect(bySlot.get(sharedNums[0]!)?.scanListId).toBe(1);
+    expect(bySlot.get(sharedNums[0]!)?.scanListId).toBeUndefined();
 
     const homeRec = encodeDm32ChannelRecord(bySlot.get(homeCarrier)!);
     const walkRec = encodeDm32ChannelRecord(bySlot.get(walkCarrier)!);

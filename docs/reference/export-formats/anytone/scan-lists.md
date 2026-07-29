@@ -33,9 +33,9 @@ When **Export zone-derived scan lists** is enabled on the build Export page and 
 
 **Carrier cross-file naming:** The zone scan carrier is a neutral FM channel (no template callsign). Its `Channel.CSV` **Channel Name** must match the **first** `Zone Channel Member` in `DMRZone.CSV` exactly — Anytone CPS resolves zone members by exact channel name ([#370](https://github.com/pskillen/codeplug-studio/issues/370)). Export derives both from the same wire context; do not prefix the carrier with a repeater callsign from another library channel.
 
-**Scan list members:** `ScanList.CSV` references `Channel.CSV` names only — AMAir/FM receive-bank channels are omitted from zone-derived scan lists even when present in the zone. On **Web Serial**, zone-derived scan FK uses first-wins on members — [zone-derived-scan-lists.md](../../../zone-derived-scan-lists.md).
+**Scan list members:** `ScanList.CSV` references `Channel.CSV` names only — AMAir/FM receive-bank channels are omitted from zone-derived scan lists even when present in the zone. On **Web Serial**, zone-derived scan FK is carrier-only — [zone-derived-scan-lists.md](../../../zone-derived-scan-lists.md).
 
-**Provisional caps (AT-D890UV):** 100 scan lists, **50** members per list (binary record geometry; anytone-cps encode/decode). External wire verifier enforces **50 members** per `Scan Channel Member` list.
+**Provisional caps (AT-D890UV):** 100 scan lists, **100** members per list (confirmed on hardware — [scan-list-record.md](../../../radios/anytone/at-d890uv/scan-list-record.md)). External wire verifier enforces member cap per `Scan Channel Member` list.
 
 ## Wire rules
 
@@ -70,18 +70,18 @@ Anytone CPS uses vendor-specific labels. Map to industry terms when documenting 
 
 ## Observed wire values (operator CPS + elicitation, July 2026)
 
-| Column                     | Values observed / confirmed                                                                                                                           | Studio export default |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
-| `Scan Mode`                | `Off`; resume modes `TO`, `CO`, `SE`                                                                                                                  | `Off`                 |
-| `Priority Channel Select`  | `Off` (+ enabled when priority used)                                                                                                                  | `Off`                 |
-| `Priority Channel 1` / `2` | `Off` or channel name                                                                                                                                 | `Off`                 |
-| `Revert Channel`           | `Selected` — PTT on selected (scan carrier); `Selected + TalkBack` — PTT on selected if no signal, else on signal channel; `Last Called`; `Last Used` | `Selected + TalkBack` |
-| `Look Back Time A[s]`      | Priority sample A                                                                                                                                     | `5.0`                 |
-| `Look Back Time B[s]`      | Priority sample B                                                                                                                                     | `5.0`                 |
-| `Dropout Delay Time[s]`    | 0.1–5.0 s                                                                                                                                             | `5.0`                 |
-| `Dwell Time[s]`            | 0.1–5.0 s                                                                                                                                             | `5.0`                 |
+| Column                     | Values observed / confirmed                                                                                                                           | Studio export default                                                                  |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `Scan Mode`                | `Off`; resume modes `TO`, `CO`, `SE`                                                                                                                  | `Off`                                                                                  |
+| `Priority Channel Select`  | `Off` (+ enabled when priority used)                                                                                                                  | `Off`                                                                                  |
+| `Priority Channel 1` / `2` | `Off` or channel name                                                                                                                                 | `Off`                                                                                  |
+| `Revert Channel`           | `Selected` — PTT on selected (scan carrier); `Selected + TalkBack` — PTT on selected if no signal, else on signal channel; `Last Called`; `Last Used` | `Selected + TalkBack`                                                                  |
+| `Look Back Time A[s]`      | Priority sample A                                                                                                                                     | `3.0` (temporary until [#572](https://github.com/pskillen/codeplug-studio/issues/572)) |
+| `Look Back Time B[s]`      | Priority sample B                                                                                                                                     | `3.0`                                                                                  |
+| `Dropout Delay Time[s]`    | 0.1–5.0 s                                                                                                                                             | `3.0`                                                                                  |
+| `Dwell Time[s]`            | 0.1–5.0 s                                                                                                                                             | `3.0`                                                                                  |
 
-Studio export sets all four timing columns to **`5.0`** (upper bound of the CPS range) from `serialiseScanListsCsv()` — [#402](https://github.com/pskillen/codeplug-studio/issues/402). Operator CPS fixtures may still show other values (`1.0` / `3.1`). Scan Mode / priority / Revert remain fixed MVP constants — modelling readiness tracked under [#393](https://github.com/pskillen/codeplug-studio/issues/393).
+Studio export sets all four timing columns to **`3.0`** s (wire `30` deciseconds on Web Serial) from `serialiseScanListsCsv()` — temporary pin until [#572](https://github.com/pskillen/codeplug-studio/issues/572). Operator CPS fixtures may still show other values (`1.0` / `3.1`). Scan Mode / priority / Revert remain fixed MVP constants — modelling readiness tracked under [#393](https://github.com/pskillen/codeplug-studio/issues/393).
 
 ## Related
 

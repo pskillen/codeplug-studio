@@ -38,6 +38,7 @@ Provisional CSV caps mirror `profiles.ts` (`ANYTONE_PROFILES`); still verify aga
 | [talkgroup-record.md](talkgroup-record.md)         | Stride `0xc8`; BCD-as-hex DMR ID; call type 0/1/2; inverted TalkgroupSet                                                     |
 | [receive-group-record.md](receive-group-record.md) | Stride `0x200`; u32 LE talkgroup bank slot indices; wide-char name at `0x100`                                                |
 | [zone-record.md](zone-record.md)                   | ZoneSet / ZonesName / ZoneChannels / A/B indices                                                                             |
+| [scan-list-record.md](scan-list-record.md)         | ScanListData record layout (100 members; revert @ `0xF8`)                                                                    |
 | [fixtures.md](fixtures.md)                         | How to capture dumps for tests without committing personal codeplugs                                                         |
 
 ## Adapter wire (files)
