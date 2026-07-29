@@ -21,7 +21,8 @@ import {
   summarizeWriteVerifyRegions,
   type WriteVerifyRegionManifestEntry,
 } from '../../writeVerifyCompare.ts';
-import { DM32_BLOCK_SIZE, DM32_METADATA_OFFSET, DM32UV_MODEL_ID } from './constants.ts';
+import { DM32_BLOCK_SIZE, DM32_METADATA_OFFSET } from './constants.ts';
+import { DM32UV_MODEL_ID } from './hydration.ts';
 import { bulkReadDm32Blocks, classifyDm32Metadata } from './memory.ts';
 import { Dm32uvProtocol } from './protocol.ts';
 import { dm32BlockLabel, dm32WriteRole } from './writeRole.ts';

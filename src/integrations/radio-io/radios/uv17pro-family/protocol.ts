@@ -14,10 +14,8 @@ import {
 import { createMemoryMap, memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
-import {
-  captureWriteVerifyStaging,
-  type WriteVerifyStagingSnapshot,
-} from '../../writeVerifyCompare.ts';
+import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
+import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 import type { Uv17ProLayout } from './layout.ts';
 import { uv17ProCrypt } from './crypt.ts';
 import {

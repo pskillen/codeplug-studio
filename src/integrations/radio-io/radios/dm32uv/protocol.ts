@@ -38,10 +38,8 @@ import {
   type Dm32DiscoveredBlock,
 } from './memory.ts';
 import { remapDm32BlocksByMetadata, remapDm32MemoryMapByTranslations } from './remap.ts';
-import {
-  captureWriteVerifyStaging,
-  type WriteVerifyStagingSnapshot,
-} from '../../writeVerifyCompare.ts';
+import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
+import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 import {
   dm32MaxContactsFromFirmware,
   parseDm32ContactsRange,

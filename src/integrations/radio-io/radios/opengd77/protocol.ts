@@ -57,10 +57,8 @@ import {
   writeAbs,
 } from './memory.ts';
 import { openGd77KeptRegionLength, openGd77KeptRegions } from './writeVerifySupport.ts';
-import {
-  captureWriteVerifyStaging,
-  type WriteVerifyStagingSnapshot,
-} from '../../writeVerifyCompare.ts';
+import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
+import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 
 /** Packed FirmwareInfo size (qdmr FirmwareInfo). */
 export const OPENGD77_FIRMWARE_INFO_SIZE = 46;
