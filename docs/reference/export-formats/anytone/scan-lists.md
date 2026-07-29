@@ -35,7 +35,7 @@ When **Export zone-derived scan lists** is enabled on the build Export page and 
 
 **Scan list members:** `ScanList.CSV` references `Channel.CSV` names only — AMAir/FM receive-bank channels are omitted from zone-derived scan lists even when present in the zone. On **Web Serial**, zone-derived scan FK is carrier-only — [zone-derived-scan-lists.md](../../../zone-derived-scan-lists.md).
 
-**Provisional caps (AT-D890UV):** 100 scan lists, **50** members per list (binary record geometry; anytone-cps encode/decode). External wire verifier enforces **50 members** per `Scan Channel Member` list.
+**Provisional caps (AT-D890UV):** 100 scan lists, **100** members per list (confirmed on hardware — [scan-list-record.md](../../../radios/anytone/at-d890uv/scan-list-record.md)). External wire verifier enforces member cap per `Scan Channel Member` list.
 
 ## Wire rules
 
