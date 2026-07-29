@@ -6,7 +6,7 @@ import type { MemoryMap } from '../../types.ts';
 import type { RadioScanListDto } from '../../radioWriteProjection.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { AT_D890_SCAN_TIMING_DECISECONDS } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
-import { clearBitmap, setBitmapBit } from './bitmap.ts';
+import { clearBitmapBitsBelow, setBitmapBit } from './bitmap.ts';
 import { toAtD890ChannelIndex } from './channelIndex.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
@@ -61,8 +61,8 @@ export function encodeScanListsIntoAtD890Image(
   scanLists: readonly RadioScanListDto[],
 ): MemoryMap {
   const set = image.get(D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES).slice();
-  clearBitmap(set);
-  const max = set.length * 8;
+  clearBitmapBitsBelow(set, AT_D890UV_LIMITS.SCAN_LISTS_MAX);
+  const max = AT_D890UV_LIMITS.SCAN_LISTS_MAX;
   for (let i = 0; i < max; i++) {
     image.fill(scanListAddress(i), AT_D890_LIMITS.SCAN_LIST_STRIDE, 0xff);
   }
