@@ -322,13 +322,6 @@ function buildDm32Organisation(
               designatedTxChannel: carrierSlot,
               listIndex,
             });
-            // First-wins for shared members (NeonPlug parity) — do not clobber carriers.
-            for (const n of scanMembers) {
-              if (carrierSlots.has(n)) continue;
-              if (!scanListIdByChannelNumber.has(n)) {
-                scanListIdByChannelNumber.set(n, listIndex);
-              }
-            }
             scanListIdByChannelNumber.set(carrierSlot, listIndex);
           }
         }

@@ -33,7 +33,7 @@ When **Export zone-derived scan lists** is enabled on the build Export page and 
 
 **Carrier cross-file naming:** The zone scan carrier is a neutral FM channel (no template callsign). Its `Channel.CSV` **Channel Name** must match the **first** `Zone Channel Member` in `DMRZone.CSV` exactly — Anytone CPS resolves zone members by exact channel name ([#370](https://github.com/pskillen/codeplug-studio/issues/370)). Export derives both from the same wire context; do not prefix the carrier with a repeater callsign from another library channel.
 
-**Scan list members:** `ScanList.CSV` references `Channel.CSV` names only — AMAir/FM receive-bank channels are omitted from zone-derived scan lists even when present in the zone. On **Web Serial**, zone-derived scan FK uses first-wins on members — [zone-derived-scan-lists.md](../../../zone-derived-scan-lists.md).
+**Scan list members:** `ScanList.CSV` references `Channel.CSV` names only — AMAir/FM receive-bank channels are omitted from zone-derived scan lists even when present in the zone. On **Web Serial**, zone-derived scan FK is carrier-only — [zone-derived-scan-lists.md](../../../zone-derived-scan-lists.md).
 
 **Provisional caps (AT-D890UV):** 100 scan lists, **50** members per list (binary record geometry; anytone-cps encode/decode). External wire verifier enforces **50 members** per `Scan Channel Member` list.
 
