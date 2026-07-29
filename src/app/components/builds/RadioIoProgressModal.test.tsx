@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
-import RadioIoProgressModal from './RadioIoProgressModal.tsx';
+import RadioIoProgressModal, { writeDoneAlert } from './RadioIoProgressModal.tsx';
 
 describe('RadioIoProgressModal', () => {
   it('shows keep-tab warning, read steps, and transfer progress', () => {
@@ -118,6 +118,7 @@ describe('RadioIoProgressModal', () => {
           progress={null}
           transferStages={['Upload']}
           writeVerifyStatus="unverified"
+          requiresCrossSessionReconnect
           verifyButtonEnabled
           onCancel={vi.fn()}
           onVerify={onVerify}
@@ -132,6 +133,35 @@ describe('RadioIoProgressModal', () => {
     expect(onVerify).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole('button', { name: 'Skip verify' }));
     expect(onCloseWithoutVerify).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows soft-reconnect unverified copy when radio does not restart', () => {
+    render(
+      <MantineProvider>
+        <RadioIoProgressModal
+          opened
+          operation="write"
+          phase="done"
+          progress={null}
+          writeVerifyStatus="unverified"
+          requiresCrossSessionReconnect={false}
+          verifyButtonEnabled
+          onCancel={vi.fn()}
+          onVerify={vi.fn()}
+          onCloseWithoutVerify={vi.fn()}
+        />
+      </MantineProvider>,
+    );
+
+    expect(
+      screen.getByText(/Click Verify write to reconnect and compare transmitted blocks/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Wait until it shows its normal screen/i)).not.toBeInTheDocument();
+  });
+
+  it('writeDoneAlert branches hard vs soft reconnect copy', () => {
+    expect(writeDoneAlert('unverified', true).body).toMatch(/restarts after a write/i);
+    expect(writeDoneAlert('unverified', false).body).toMatch(/Click Verify write to reconnect/i);
   });
 
   it('shows verified write done without verify actions', () => {

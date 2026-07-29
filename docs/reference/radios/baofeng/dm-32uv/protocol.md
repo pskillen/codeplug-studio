@@ -111,6 +111,10 @@ Observed non-ACK codes (NeonPlug comments): `0xC0`, `0xC8`, `0x48` — treat as 
 5. Bulk-read required 4KB blocks ([memory-layout.md](memory-layout.md)).
 6. Parse offline; write path merges `RadioWriteProjection` into cached blocks — replaced entities are full-record encode, not in-payload RMW ([#685](https://github.com/pskillen/codeplug-studio/issues/685)).
 
+## Write verify
+
+Upload stages each **post-remap 4 KB block** actually written. **Verify write** reconnects without reboot wait, bulk-reads only staged absolute addresses, and compares payloads byte-for-byte. Per-block report labels come from `writeRole.ts` metadata classification. Digital contact bank is excluded unless those blocks were staged. Feature: [write-verify.md](../../../../features/radio-read-write/write-verify.md).
+
 ## Boot-image side note
 
 NeonPlug also has a **boot-image** path (`enterBootImageReadMode`, `writeMemoryBlock`) with different entry bytes (`0x47 …`) and writes of 2048/4096 without the codeplug metadata byte. **Out of scope** for codeplug adapter [#638](https://github.com/pskillen/codeplug-studio/issues/638) — document only so agents do not confuse it with codeplug R/W.

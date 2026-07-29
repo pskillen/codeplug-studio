@@ -14,6 +14,8 @@ import {
   UV5R_MINI_MODEL_ID,
 } from './hydration.ts';
 import { createUv5rMiniProtocol } from './protocol.ts';
+import { createUv17ProWriteVerifyHooks } from '../uv17pro-family/writeVerifyHooks.ts';
+import { UV5R_MINI_LAYOUT } from '../uv17pro-family/layout.ts';
 
 export { UV5R_MINI_MODEL_ID };
 
@@ -41,4 +43,5 @@ export const UV5R_MINI_DESCRIPTOR: RadioDescriptor = {
     extractHydration: extractUv5rMiniHydration,
     mergeChannelsIntoHydration: mergeChannelsIntoUv5rMiniHydration,
   },
+  writeVerify: createUv17ProWriteVerifyHooks(UV5R_MINI_LAYOUT),
 };

@@ -1,22 +1,21 @@
 # Generic write verify platform — outstanding
 
-Items **skipped**, **incomplete**, or **discovered during execution** — not scheduled Phase 1 adapter work.
+Items **skipped**, **incomplete**, or **discovered during execution**.
 
 **Tracking:** [#838](https://github.com/pskillen/codeplug-studio/issues/838)
 
 ---
 
-## Phase 1 radio adapters
+## Hardware verify (post-merge)
 
-Per-radio `writeVerify` hooks — tracked on [#838](https://github.com/pskillen/codeplug-studio/issues/838) Phase 1 checklist (comment after Phase 0 ships):
-
-- DM-32UV
-- OpenGD77 1701 / MD9600
-- UV-5R Mini / UV-21
-- RT95
+- [ ] Manual AT-D890UV Write → reboot → Verify write smoke (regression)
+- [ ] Manual RT95 / UV / DM32 soft-reconnect verify smoke
+- [ ] Manual OpenGD77 hard-reconnect verify smoke after `SAVE_REBOOT`
 
 ---
 
-## Hardware verify
+## Deferred / out of scope (#838)
 
-- [ ] Manual AT-D890UV Write → reboot → Verify write smoke on spare hardware (post Phase 0 merge)
+- DM-32 digital contact bank verify by default (matches Read — contact bank not folded into hydration)
+- D878UVII and other Anytone maps beyond D890
+- CSV / file-export verify

@@ -77,6 +77,10 @@ Do not paste CHIRP’s full table into Studio as GPL source — cite CHIRP drive
 3. Read all `MEM_*` regions in `0x40` blocks → assemble packed `0x8380` image ([memory-layout.md](memory-layout.md)). Sync each read reply to opcode `0x52`.
 4. For upload: upload handshake → write all **four** `MEM_*` regions from hydrated image ([settings.md](settings.md)).
 
+## Write verify
+
+Same as UV-5R Mini — shared `uv17pro-family` hooks stage radio-address plaintext blocks and compare after full download (four-region `0x8380` layout). Feature: [write-verify.md](../../../../features/radio-read-write/write-verify.md).
+
 ## Differences vs UV-5R Mini
 
 | Item   | UV-21Pro V2               | UV-5R Mini               |

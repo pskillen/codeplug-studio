@@ -114,6 +114,10 @@ Typical flash path: set sector → write 32-byte buffers → finish sector. EEPR
 5. Read/write 32-byte blocks against registered spans ([memory-layout.md](memory-layout.md)).
 6. Save / reboot via control commands as required; close CPS screen (`05h`).
 
+## Write verify
+
+Upload stages each **dirty 4096-byte FLASH sector** from `collectDirtySectors` (not untouched image gaps) plus a pre-upload snapshot of **kept** regions from `writeRole.ts`. **Verify write** runs after `SAVE_REBOOT` — operator waits for restart, reconnects, full `download()`, and compares sector payloads plus kept spans. Feature: [write-verify.md](../../../features/radio-read-write/write-verify.md).
+
 Exact framing byte layouts are in qdmr’s `doc/code/opengd77_protocol_*.txt` verbincludes — cite those files when implementing a codec; do not copy GPL sources into Studio.
 
 ## Related

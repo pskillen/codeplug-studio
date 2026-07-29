@@ -19,6 +19,8 @@ import {
 import { createMemoryMap, memoryMapFromBytes } from '../../kit/memoryMap.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
+import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
+import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 import {
   RT95_BLOCK_ADDR_END,
   RT95_BLOCK_ADDR_START,
@@ -42,6 +44,7 @@ export interface Rt95ConnectOptions {
 export class Rt95Protocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
   private radioBandlimit: number | null = null;
+  private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
 
   async connect(pipe: BytePipe, opts?: Rt95ConnectOptions): Promise<IdentResult> {
     this.pipe = pipe;
@@ -155,12 +158,14 @@ export class Rt95Protocol implements CloneImageRadio {
 
     const blockCount = (RT95_BLOCK_ADDR_END - RT95_BLOCK_ADDR_START) / RT95_BLOCK_SIZE + 1;
     let done = 0;
+    const stagingChunks: { address: number; data: Uint8Array }[] = [];
 
     try {
       for (let addr = RT95_BLOCK_ADDR_START; addr <= RT95_BLOCK_ADDR_END; addr += RT95_BLOCK_SIZE) {
         throwIfAborted(opts.signal);
         const payload = image.get(addr, RT95_BLOCK_SIZE);
         await this.writeBlock(pipe, addr, payload);
+        stagingChunks.push({ address: addr, data: payload.slice() });
         done += 1;
         reportProgress(
           opts.onProgress,
@@ -168,9 +173,17 @@ export class Rt95Protocol implements CloneImageRadio {
           opts.signal,
         );
       }
+      this.lastUploadStaging = captureWriteVerifyStaging(stagingChunks);
     } finally {
       await exitProgramQxMode(pipe);
     }
+  }
+
+  /** Staging chunks from the last successful {@link upload} — consumed once. */
+  takeUploadStagingSnapshot(): WriteVerifyStagingSnapshot | undefined {
+    const snap = this.lastUploadStaging;
+    this.lastUploadStaging = undefined;
+    return snap;
   }
 
   decodeChannels(image: MemoryMap): RadioChannelDto[] {

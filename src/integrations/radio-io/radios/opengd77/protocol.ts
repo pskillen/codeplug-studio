@@ -53,8 +53,12 @@ import {
   createOpenUv380Image,
   openUv380DownloadByteCount,
   openUv380ImageFromBytes,
+  readAbs,
   writeAbs,
 } from './memory.ts';
+import { openGd77KeptRegionLength, openGd77KeptRegions } from './writeVerifySupport.ts';
+import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
+import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 
 /** Packed FirmwareInfo size (qdmr FirmwareInfo). */
 export const OPENGD77_FIRMWARE_INFO_SIZE = 46;
@@ -185,6 +189,8 @@ export class OpenGd77Protocol implements CloneImageRadio {
   private firmwareInfo: OpenGd77FirmwareInfo | null = null;
   /** Image from last download or seed — used for dirty-sector upload. */
   private priorImage: MemoryMap | null = null;
+  private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
+  private lastUploadKept: Map<string, Uint8Array> | undefined;
   private readonly allowedRadioTypes: readonly number[];
   private readonly modelHints: readonly string[];
   private readonly powerSteps: readonly OpenGd77PowerStep[];
@@ -311,6 +317,17 @@ export class OpenGd77Protocol implements CloneImageRadio {
       ? collectDirtySectors(prior, image)
       : collectDirtySectors(createOpenUv380Image(), image);
 
+    if (prior) {
+      const kept = new Map<string, Uint8Array>();
+      for (const region of openGd77KeptRegions()) {
+        const len = openGd77KeptRegionLength(region.id);
+        kept.set(region.id, readAbs(prior, region.absAddress, len));
+      }
+      this.lastUploadKept = kept;
+    } else {
+      this.lastUploadKept = undefined;
+    }
+
     for (let i = 0; i < sectors.length; i++) {
       throwIfAborted(opts.signal);
       const sector = sectors[i]!;
@@ -323,6 +340,10 @@ export class OpenGd77Protocol implements CloneImageRadio {
       });
     }
 
+    this.lastUploadStaging = captureWriteVerifyStaging(
+      sectors.map((sector) => ({ address: sector.sectorAbs, data: sector.payload })),
+    );
+
     await pipe.write(
       makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),
     );
@@ -333,6 +354,19 @@ export class OpenGd77Protocol implements CloneImageRadio {
     }
 
     this.priorImage = openUv380ImageFromBytes(image.bytes);
+  }
+
+  takeUploadStagingSnapshot(): WriteVerifyStagingSnapshot | undefined {
+    const snap = this.lastUploadStaging;
+    this.lastUploadStaging = undefined;
+    return snap;
+  }
+
+  takeUploadKeptSnapshot(): Map<string, Uint8Array> | undefined {
+    const snap = this.lastUploadKept;
+    this.lastUploadKept = undefined;
+    if (!snap) return undefined;
+    return new Map([...snap.entries()].map(([id, data]) => [id, data.slice()]));
   }
 
   decodeChannels(image: MemoryMap): RadioChannelDto[] {

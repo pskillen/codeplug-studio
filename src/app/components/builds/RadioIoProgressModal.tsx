@@ -27,6 +27,11 @@ export interface RadioIoProgressModalProps {
   navigationBlocked?: boolean;
   /** Optional post-write cross-session verify when descriptor supplies writeVerify hooks. */
   writeVerifyStatus?: RadioIoWriteVerifyStatus;
+  /**
+   * When true, operator must wait for radio restart before verify (D890, OpenGD77).
+   * When false, verify reconnects without a reboot wait (RT95, UV, DM32).
+   */
+  requiresCrossSessionReconnect?: boolean;
   /** When false during `unverified`, Verify write stays disabled (brief post-write debounce). */
   verifyButtonEnabled?: boolean;
   onVerify?: () => void;
@@ -127,7 +132,10 @@ function stepStatus(
   return 'pending';
 }
 
-function writeDoneAlert(writeVerifyStatus: RadioIoWriteVerifyStatus): {
+export function writeDoneAlert(
+  writeVerifyStatus: RadioIoWriteVerifyStatus,
+  requiresCrossSessionReconnect = true,
+): {
   color: string;
   title: string;
   body: string;
@@ -150,7 +158,9 @@ function writeDoneAlert(writeVerifyStatus: RadioIoWriteVerifyStatus): {
     return {
       color: 'blue',
       title: 'Write finished',
-      body: 'The radio restarts after a write while flash commits. Wait until it shows its normal screen, then click Verify write to reconnect and compare memory byte-for-byte with what was transmitted.',
+      body: requiresCrossSessionReconnect
+        ? 'The radio restarts after a write while flash commits. Wait until it shows its normal screen, then click Verify write to reconnect and compare memory byte-for-byte with what was transmitted.'
+        : 'Click Verify write to reconnect and compare transmitted blocks with the radio.',
     };
   }
   if (writeVerifyStatus === 'verifying') {
@@ -175,6 +185,7 @@ export default function RadioIoProgressModal({
   transferStages = [],
   navigationBlocked = false,
   writeVerifyStatus = 'none',
+  requiresCrossSessionReconnect = true,
   verifyButtonEnabled = true,
   onVerify,
   onCloseWithoutVerify,
@@ -207,7 +218,7 @@ export default function RadioIoProgressModal({
             {(() => {
               const alert =
                 operation === 'write'
-                  ? writeDoneAlert(writeVerifyStatus)
+                  ? writeDoneAlert(writeVerifyStatus, requiresCrossSessionReconnect)
                   : {
                       color: 'green',
                       title: 'Read finished',

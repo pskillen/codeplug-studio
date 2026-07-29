@@ -25,7 +25,8 @@ export interface AtD890WriteStagingSnapshot {
   readonly capturedAt: string;
 }
 
-export type AtD890RegionVerifyStatus = 'match' | 'mismatch' | 'not_written' | 'skipped';
+export type AtD890RegionVerifyStatus =
+  'match' | 'mismatch' | 'not_read' | 'not_written' | 'skipped';
 
 export interface AtD890RegionVerifyRow {
   readonly id: string;
@@ -34,6 +35,7 @@ export interface AtD890RegionVerifyRow {
   readonly bytesRead: number;
   readonly stagedChunkCount: number;
   readonly mismatchedChunks: number;
+  readonly notReadChunks: number;
   readonly status: AtD890RegionVerifyStatus;
 }
 
@@ -287,6 +289,7 @@ export function summarizeVerifyByRegion(
   spillChunks: ReadonlyMap<number, Uint8Array> = new Map(),
 ): AtD890RegionVerifyRow[] {
   const mismatchCountByRegion = new Map<string, number>();
+  const notReadCountByRegion = new Map<string, number>();
   const stagedCountByRegion = new Map<string, number>();
 
   for (const { address } of snapshot.chunks) {
@@ -309,13 +312,18 @@ export function summarizeVerifyByRegion(
   }
 
   for (const m of mismatches) {
-    mismatchCountByRegion.set(m.regionId, (mismatchCountByRegion.get(m.regionId) ?? 0) + 1);
+    if (m.kind === 'not_read') {
+      notReadCountByRegion.set(m.regionId, (notReadCountByRegion.get(m.regionId) ?? 0) + 1);
+    } else {
+      mismatchCountByRegion.set(m.regionId, (mismatchCountByRegion.get(m.regionId) ?? 0) + 1);
+    }
   }
 
   const rows = AT_D890_MEMORY_REGIONS.map((regionDef) => {
     const bytesRead = files.get(regionDef.id)?.length ?? 0;
     const stagedChunkCount = stagedCountByRegion.get(regionDef.id) ?? 0;
     const mismatchedChunks = mismatchCountByRegion.get(regionDef.id) ?? 0;
+    const notReadChunks = notReadCountByRegion.get(regionDef.id) ?? 0;
     let status: AtD890RegionVerifyStatus;
     if (bytesRead === 0) {
       status = 'skipped';
@@ -323,6 +331,8 @@ export function summarizeVerifyByRegion(
       status = 'not_written';
     } else if (mismatchedChunks > 0) {
       status = 'mismatch';
+    } else if (notReadChunks > 0) {
+      status = 'not_read';
     } else {
       status = 'match';
     }
@@ -333,6 +343,7 @@ export function summarizeVerifyByRegion(
       bytesRead,
       stagedChunkCount,
       mismatchedChunks,
+      notReadChunks,
       status,
     };
   });
@@ -340,6 +351,10 @@ export function summarizeVerifyByRegion(
   const spillStaged = stagedCountByRegion.get(AT_D890_RMW_SPILL_REGION_ID) ?? 0;
   if (spillStaged > 0) {
     const mismatchedChunks = mismatchCountByRegion.get(AT_D890_RMW_SPILL_REGION_ID) ?? 0;
+    const notReadChunks = notReadCountByRegion.get(AT_D890_RMW_SPILL_REGION_ID) ?? 0;
+    let status: AtD890RegionVerifyStatus = 'match';
+    if (mismatchedChunks > 0) status = 'mismatch';
+    else if (notReadChunks > 0) status = 'not_read';
     rows.push({
       id: AT_D890_RMW_SPILL_REGION_ID,
       label: AT_D890_RMW_SPILL_REGION_LABEL,
@@ -347,7 +362,8 @@ export function summarizeVerifyByRegion(
       bytesRead: spillChunks.size * AT_D890_BLOCK_SIZE,
       stagedChunkCount: spillStaged,
       mismatchedChunks,
-      status: mismatchedChunks > 0 ? 'mismatch' : 'match',
+      notReadChunks,
+      status,
     });
   }
 

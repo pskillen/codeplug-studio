@@ -25,7 +25,7 @@ export interface WriteVerifyRegionGroup {
   readonly label: string;
 }
 
-export type WriteVerifyRegionStatus = 'match' | 'mismatch' | 'not_written' | 'skipped';
+export type WriteVerifyRegionStatus = 'match' | 'mismatch' | 'not_read' | 'not_written' | 'skipped';
 
 export interface WriteVerifyRegionRow {
   readonly id: string;
@@ -33,7 +33,10 @@ export interface WriteVerifyRegionRow {
   readonly group: string;
   readonly bytesRead: number;
   readonly stagedChunkCount: number;
+  /** Staged chunks where read-back bytes differ from transmitted staging. */
   readonly mismatchedChunks: number;
+  /** Staged chunks with no read-back in the verify image (compare not run). */
+  readonly notReadChunks: number;
   readonly status: WriteVerifyRegionStatus;
 }
 
