@@ -12,7 +12,12 @@ import {
   runAtD890MemoryGroupDump,
   runAtD890MemoryRegionDump,
 } from './memoryRegionExport.ts';
-import { D890_MAP } from './constants.ts';
+import {
+  AT_D890_DUMP_RX_GROUP_LISTS,
+  AT_D890_DUMP_RX_GROUP_SET_BYTES,
+  AT_D890_DUMP_SCAN_LISTS,
+  D890_MAP,
+} from './constants.ts';
 
 function writeFrames(pipe: AtD890ScriptedPipe) {
   return pipe.writes.filter((w) => w[0] === 0x57 /* 'W' */);
@@ -36,6 +41,18 @@ describe('AT_D890_MEMORY_REGIONS', () => {
         expect(chunk.length, `${region.id} length > 0`).toBeGreaterThan(0);
       }
     }
+  });
+
+  it('dump/verify probe spans cover scan lists and RX groups through CPS UI ceiling', () => {
+    const scanListData = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'scanListData')!;
+    const receiveGroupSet = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'receiveGroupSet')!;
+    const receiveGroupData = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'receiveGroupData')!;
+
+    expect(scanListData.chunks[0]!.length).toBe(AT_D890_DUMP_SCAN_LISTS * D890_MAP.ScanListStride);
+    expect(receiveGroupSet.chunks[0]!.length).toBe(AT_D890_DUMP_RX_GROUP_SET_BYTES);
+    expect(receiveGroupData.chunks[0]!.length).toBe(
+      AT_D890_DUMP_RX_GROUP_LISTS * D890_MAP.ReceiveGroupStride,
+    );
   });
 
   it('channelData is tiled across every block, not one 8 MB span', () => {
