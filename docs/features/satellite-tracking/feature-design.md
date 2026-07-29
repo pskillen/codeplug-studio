@@ -51,14 +51,14 @@ A robust table component (e.g., using TanStack Table or AG Grid) displaying upco
 - **Columns:** Satellite Name, AOS Time (Local & UTC), LOS Time, Duration, Max Elevation, Uplink/Downlink Freqs, Mode, Status.
 - **Sorting:** Default by `AOS Time` (ascending).
 - **Quick Filters (Checkboxes/Toggles):**
-  - *Elevation:* "Only show passes > 20°" (low passes are often blocked by local terrain).
-  - *Band:* 2m / 70cm / 23cm / Microwave.
-  - *Mode:* FM Voice / SSB / Digital (APRS) / SSTV.
-  - *Status:* "Hide inactive/dead satellites."
+  - _Elevation:_ "Only show passes > 20°" (low passes are often blocked by local terrain).
+  - _Band:_ 2m / 70cm / 23cm / Microwave.
+  - _Mode:_ FM Voice / SSB / Digital (APRS) / SSTV.
+  - _Status:_ "Hide inactive/dead satellites."
 
 ## 4. Feature: 3D Orbital Visualization
 
-A "war room" style visualization of the Earth, providing an intuitive understanding of where satellites are *right now*.
+A "war room" style visualization of the Earth, providing an intuitive understanding of where satellites are _right now_.
 
 ### Tech Stack Recommendation
 
@@ -89,7 +89,7 @@ While 3D is impressive, a 2D map is often easier for reading precise ground trac
 - **Ground Tracks:** Draw the satellite's path as an SVG polyline across the map.
 - **Current Position:** A custom icon moving along the path in real-time.
 - **Footprint Overlay:** A dynamic, moving polygon circle around the satellite representing the RF footprint. (Note: On a 2D Mercator projection, this footprint circle distorts into an oval or complex shape at higher latitudes; libraries like Turf.js can help calculate these polygons).
-- **Upcoming Passes (Static projection):** When a user clicks a specific future pass in the Data Grid, the 2D map should draw *that specific future ground track*, allowing the user to see exactly where the satellite will rise and set relative to their specific location.
+- **Upcoming Passes (Static projection):** When a user clicks a specific future pass in the Data Grid, the 2D map should draw _that specific future ground track_, allowing the user to see exactly where the satellite will rise and set relative to their specific location.
 
 ## 6. Suggested Page Structure in Codeplug Studio
 
@@ -100,4 +100,3 @@ To keep the UI clean, this should live in its own distinct area away from the ma
 - **Main Content Area (Split View):**
   - **Top Half:** Viewport toggleable between the 3D Globe and 2D Map. Features a floating toolbar for filtering which active satellites are rendered.
   - **Bottom Half:** The interactive Data Grid showing the predicted passes. Clicking a row highlights that pass/satellite in the map above.
-

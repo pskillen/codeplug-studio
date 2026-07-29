@@ -9,23 +9,23 @@ Tier-1 hub for the **Tracking Dashboard** — client-side pass prediction (SGP4)
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Observer location settings | Not started | [#862](https://github.com/pskillen/codeplug-studio/issues/862) |
-| SGP4 pass prediction (Web Worker) | Not started | [#863](https://github.com/pskillen/codeplug-studio/issues/863) — `satellite.js` |
-| SatNOGS transmitters proxy + merge | Not started | [#864](https://github.com/pskillen/codeplug-studio/issues/864) |
-| Tracking Dashboard + pass grid | Not started | [#865](https://github.com/pskillen/codeplug-studio/issues/865) |
-| 3D orbital globe | Not started | [#866](https://github.com/pskillen/codeplug-studio/issues/866) |
-| 2D ground-track map + toggle | Not started | [#867](https://github.com/pskillen/codeplug-studio/issues/867) |
+| Area                               | Status      | Notes                                                                           |
+| ---------------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| Observer location settings         | Not started | [#862](https://github.com/pskillen/codeplug-studio/issues/862)                  |
+| SGP4 pass prediction (Web Worker)  | Not started | [#863](https://github.com/pskillen/codeplug-studio/issues/863) — `satellite.js` |
+| SatNOGS transmitters proxy + merge | Not started | [#864](https://github.com/pskillen/codeplug-studio/issues/864)                  |
+| Tracking Dashboard + pass grid     | Not started | [#865](https://github.com/pskillen/codeplug-studio/issues/865)                  |
+| 3D orbital globe                   | Not started | [#866](https://github.com/pskillen/codeplug-studio/issues/866)                  |
+| 2D ground-track map + toggle       | Not started | [#867](https://github.com/pskillen/codeplug-studio/issues/867)                  |
 
 ---
 
 ## Documentation map
 
-| Doc | Role |
-| --- | --- |
-| [feature-design.md](feature-design.md) | Post-MVP architecture, prediction, grid, 3D/2D UX |
-| [Satellite keps hub](../satellite-keps/) | TLE fetch, library, radio write (MVP) |
+| Doc                                      | Role                                              |
+| ---------------------------------------- | ------------------------------------------------- |
+| [feature-design.md](feature-design.md)   | Post-MVP architecture, prediction, grid, 3D/2D UX |
+| [Satellite keps hub](../satellite-keps/) | TLE fetch, library, radio write (MVP)             |
 
 ---
 
