@@ -9,9 +9,7 @@ import { Alert, Anchor, Button, Group, Modal, Stack, Text } from '@mantine/core'
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
-import type { AtD890WriteVerifyResult } from '@integrations/radio-io/radios/at-d890uv/writeMemoryVerify.ts';
-import type { AtD890SentinelSnapshot } from '@integrations/radio-io/radios/at-d890uv/sentinelVerify.ts';
-import type { AtD890WriteStagingSnapshot } from '@integrations/radio-io/radios/at-d890uv/writeMemoryVerify.ts';
+import type { WriteVerifyPendingPayload, WriteVerifyResult } from '@integrations/radio-io/writeVerify.ts';
 import { findAttribution } from '../../lib/attributions.ts';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
@@ -31,21 +29,21 @@ import {
   RadioWriteBlockedError,
   readRadioHydrationForBuild,
   uploadPreparedRadioWrite,
-  verifyAtD890WriteMemory,
+  verifyRadioWrite,
 } from '../../services/radioIoSession.ts';
 import {
-  clearAtD890WriteVerifyPending,
-  deserializeAtD890WriteVerifyPending,
-  loadAtD890WriteVerifyPending,
-  saveAtD890WriteVerifyPending,
-  serializeAtD890WriteVerifyPending,
-} from '../../services/atD890WriteVerifyStorage.ts';
+  clearWriteVerifyPending,
+  deserializeWriteVerifyPending,
+  loadWriteVerifyPending,
+  saveWriteVerifyPending,
+  serializeWriteVerifyPending,
+} from '../../services/writeVerifyStorage.ts';
 import RadioIoProgressModal, {
   type RadioIoOperation,
   type RadioIoProgressPhase,
   type RadioIoWriteVerifyStatus,
 } from './RadioIoProgressModal.tsx';
-import AtD890WriteVerifyReport from './AtD890WriteVerifyReport.tsx';
+import WriteVerifyReport from './WriteVerifyReport.tsx';
 import WebSerialExperimentalAlert from './WebSerialExperimentalAlert.tsx';
 import AtD890WriteCoverageTable from './AtD890WriteCoverageTable.tsx';
 import { DM32_ANALOG_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
@@ -64,10 +62,7 @@ export interface BuildRadioIoPanelProps {
 const buildService = new BuildService(persistence);
 const VERIFY_BUTTON_DEBOUNCE_MS = 5000;
 
-interface PendingVerifyPayload {
-  stagingSnapshot: AtD890WriteStagingSnapshot;
-  sentinelBefore: AtD890SentinelSnapshot;
-}
+interface PendingVerifyPayload extends WriteVerifyPendingPayload {}
 
 export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelProps) {
   const descriptors = descriptorsForEgress(egress);
@@ -91,15 +86,16 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [lastOccupied, setLastOccupied] = useState<number | null>(null);
   const [writeVerifyStatus, setWriteVerifyStatus] = useState<RadioIoWriteVerifyStatus>('none');
   const [verifyButtonEnabled, setVerifyButtonEnabled] = useState(false);
-  const [verifyResult, setVerifyResult] = useState<AtD890WriteVerifyResult | null>(null);
+  const [verifyResult, setVerifyResult] = useState<WriteVerifyResult | null>(null);
 
   const serialOk = isWebSerialSupported();
-  const supportsWriteVerify = egress.profileId === 'radio-io-at-d890uv';
-  const hydration = getRadioCloneHydration(egress);
-  const hasHydration = buildHasRadioCloneHydration(egress);
   const descriptor = descriptors[0];
+  const writeVerifyHooks = descriptor?.writeVerify;
+  const supportsWriteVerify = Boolean(writeVerifyHooks);
   const writeGate = resolveRadioWriteGate(descriptor);
   const writeHidden = writeGate === 'hidden';
+  const hydration = getRadioCloneHydration(egress);
+  const hasHydration = buildHasRadioCloneHydration(egress);
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
 
@@ -118,16 +114,16 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
 
   const loadPendingVerify = useCallback((): PendingVerifyPayload | null => {
     if (pendingVerifyRef.current) return pendingVerifyRef.current;
-    const stored = loadAtD890WriteVerifyPending(build.id, egress.id);
+    const stored = loadWriteVerifyPending(build.id, egress.id, egress.profileId);
     if (!stored) return null;
-    return deserializeAtD890WriteVerifyPending(stored);
-  }, [build.id, egress.id]);
+    return deserializeWriteVerifyPending(stored);
+  }, [build.id, egress.id, egress.profileId]);
 
   const clearPendingVerify = useCallback((): void => {
     pendingVerifyRef.current = null;
     verifyStartedRef.current = false;
     verifyReadActiveRef.current = false;
-    clearAtD890WriteVerifyPending();
+    clearWriteVerifyPending();
   }, []);
 
   const attributionNames = (descriptor?.attributionIds ?? [])
@@ -198,15 +194,10 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     try {
       const session = await ensureSession();
       setPhase('verifying');
-      const result = await verifyAtD890WriteMemory(
-        session,
-        pending.stagingSnapshot,
-        pending.sentinelBefore,
-        {
-          onProgress,
-          signal: abortRef.current.signal,
-        },
-      );
+      const result = await verifyRadioWrite(session, pending, {
+        onProgress,
+        signal: abortRef.current.signal,
+      });
       await releaseSession();
       clearPendingVerify();
       verifyReadActiveRef.current = false;
@@ -291,18 +282,15 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       });
       if (warnings.length > 0) setWriteWarnings(warnings);
       await releaseSession();
-      if (supportsWriteVerify && uploadResult.sentinelBefore && uploadResult.stagingSnapshot) {
-        const pending: PendingVerifyPayload = {
-          stagingSnapshot: uploadResult.stagingSnapshot,
-          sentinelBefore: uploadResult.sentinelBefore,
-        };
+      if (supportsWriteVerify && uploadResult.writeVerifyPending) {
+        const pending: PendingVerifyPayload = uploadResult.writeVerifyPending;
         pendingVerifyRef.current = pending;
-        saveAtD890WriteVerifyPending(
-          serializeAtD890WriteVerifyPending(
+        saveWriteVerifyPending(
+          serializeWriteVerifyPending(
             build.id,
             egress.id,
-            pending.stagingSnapshot,
-            pending.sentinelBefore,
+            egress.profileId,
+            pending,
           ),
         );
         setVerifyButtonEnabled(false);
@@ -377,8 +365,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         centered
         zIndex={400}
       >
-        {verifyResult ? (
-          <AtD890WriteVerifyReport
+        {verifyResult && writeVerifyHooks ? (
+          <WriteVerifyReport
             result={verifyResult}
             debugContext={{
               buildId: build.id,
@@ -391,8 +379,15 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
               pageUrl: window.location.href,
               userAgent: navigator.userAgent,
             }}
+            formatDebugMarkdown={writeVerifyHooks.formatDebugMarkdown}
             onClose={handleCloseVerifyReport}
             inModal
+            keptSectionTitle={
+              egress.profileId === 'radio-io-at-d890uv' ? 'Preserved settings' : undefined
+            }
+            keptSummaryLabel={
+              egress.profileId === 'radio-io-at-d890uv' ? '6 sentinel regions' : undefined
+            }
           />
         ) : null}
         <Group justify="flex-end" mt="md">

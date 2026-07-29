@@ -25,7 +25,7 @@ export interface RadioIoProgressModalProps {
   transferStages?: readonly string[];
   /** True when the operator tried to navigate away while busy. */
   navigationBlocked?: boolean;
-  /** AT-D890 optional post-write full-memory verify. */
+  /** Optional post-write cross-session verify when descriptor supplies writeVerify hooks. */
   writeVerifyStatus?: RadioIoWriteVerifyStatus;
   /** When false during `unverified`, Verify write stays disabled (brief post-write debounce). */
   verifyButtonEnabled?: boolean;
