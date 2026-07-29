@@ -34,7 +34,7 @@
 | ------------------------------------------ | ----------- |
 | 0 Branch + extend progress/outstanding     | Done        |
 | 1 Soft vs hard reconnect UX                | Done        |
-| 2 Shared MemoryMap staging compare helpers | Pending     |
+| 2 Shared MemoryMap staging compare helpers | Done        |
 | 3 RT95 write verify                        | Pending     |
 | 4 UV-5R Mini + UV-21 write verify          | Pending     |
 | 5 OpenGD77 1701 + MD9600 write verify      | Pending     |
