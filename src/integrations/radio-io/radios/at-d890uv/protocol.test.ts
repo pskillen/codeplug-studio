@@ -238,7 +238,7 @@ describe('AtD890uvProtocol', () => {
     enqueueAtD890ReadReply(
       pipe,
       D890_MAP.ReceiveGroupSet,
-      new Uint8Array(0x10),
+      new Uint8Array(0x20),
       NEGOTIATED_READ_BLOCK,
     );
     enqueueAtD890ReadReply(pipe, D890_MAP.RadioIdSet, new Uint8Array(0x20), NEGOTIATED_READ_BLOCK);

@@ -50,11 +50,11 @@ describe('getProfileExportLimits', () => {
     expect(limits).not.toBeNull();
     expect(limits!.maxChannels).toBe(4000);
     expect(limits!.maxScanLists).toBe(100);
-    expect(limits!.zoneMembers).toBe(64);
+    expect(limits!.zoneMembers).toBe(250);
     expect(limits!.scanListMembers).toBe(100);
-    expect(limits!.rxGroupListMembers).toBe(32);
-    expect(limits!.maxZones).toBe(256);
-    expect(limits!.maxRxGroupLists).toBe(128);
+    expect(limits!.rxGroupListMembers).toBe(64);
+    expect(limits!.maxZones).toBe(250);
+    expect(limits!.maxRxGroupLists).toBe(250);
     expect(limits!.maxTalkGroups).toBe(10_000);
     expect(limits!.maxContacts).toBeNull();
   });
@@ -172,7 +172,7 @@ describe('getProfileExportLimits', () => {
     expect(limits!.nameLengthChannel).toBe(16);
     expect(limits!.maxScanLists).toBe(100);
     expect(limits!.scanListMembers).toBe(100);
-    expect(limits!.zoneMembers).toBe(64);
+    expect(limits!.zoneMembers).toBe(250);
     expect(limits!.powerLadder.map((e) => e.wire)).toEqual(['Turbo', 'High', 'Mid', 'Low']);
   });
 });

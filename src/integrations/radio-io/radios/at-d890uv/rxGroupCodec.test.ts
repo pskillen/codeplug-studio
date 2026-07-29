@@ -60,9 +60,7 @@ describe('encodeRxGroupsIntoAtD890Image', () => {
     image.fill(0, 0x500_0000, 0xff);
     image.set(D890_MAP.ReceiveGroupSet, new Uint8Array(AT_D890_LIMITS.RX_GROUP_SET_BYTES));
 
-    encodeRxGroupsIntoAtD890Image(image, [
-      { index: 250, wireName: 'High', memberDigitalIds: [0] },
-    ]);
+    encodeRxGroupsIntoAtD890Image(image, [{ index: 250, wireName: 'High', memberDigitalIds: [0] }]);
 
     const outSet = image.get(D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES);
     expect(outSet[31]).toBe(0x02); // bit 249
@@ -75,9 +73,7 @@ describe('encodeRxGroupsIntoAtD890Image', () => {
     setBitmapBit(set, 255, true);
     image.set(D890_MAP.ReceiveGroupSet, set);
 
-    encodeRxGroupsIntoAtD890Image(image, [
-      { index: 1, wireName: 'Local', memberDigitalIds: [0] },
-    ]);
+    encodeRxGroupsIntoAtD890Image(image, [{ index: 1, wireName: 'Local', memberDigitalIds: [0] }]);
 
     const outSet = image.get(D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES);
     expect(outSet[0]).toBe(0x01); // bit 0 from encoded list

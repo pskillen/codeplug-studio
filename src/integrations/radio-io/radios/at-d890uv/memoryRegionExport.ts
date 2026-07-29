@@ -16,11 +16,7 @@ import {
   atD890ReadMemory,
 } from './connection.ts';
 import { negotiateAtD890ReadBlockSize } from './linkProbe.ts';
-import {
-  AT_D890_BLOCK_SIZE,
-  AT_D890_LIMITS,
-  D890_MAP,
-} from './constants.ts';
+import { AT_D890_BLOCK_SIZE, AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import type { BytePipe, ProgressFn } from '../../types.ts';
 

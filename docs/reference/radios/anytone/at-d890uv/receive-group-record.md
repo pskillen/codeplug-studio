@@ -12,9 +12,9 @@ Cite: anytone-cps `ReceiveGroup::encode` — facts only; do not paste GPL source
 | ---------------- | ------------------------------------------------------------------ |
 | Record size      | `0x120` (288) bytes encode                                         |
 | Stride           | `0x200` between slots                                              |
-| Max slots        | `ReceiveGroupSet` bitmap `0x10` bytes × 8 bits                     |
+| Max slots        | **250** (`ReceiveGroupSet` bitmap `0x20` bytes × 8 bits)           |
 | Occupancy        | Bit **set** → slot occupied ([memory-layout.md](memory-layout.md)) |
-| Max members      | 32 per list ([limits.md](limits.md))                               |
+| Max members      | **64** per list ([limits.md](limits.md))                           |
 | Name storage     | `0x20` bytes at offset `0x100` (wide-char / UTF-16 style packing)  |
 | Name display cap | 10 chars (CSV / [limits.md](limits.md))                            |
 
@@ -31,13 +31,13 @@ receiveGroupAddr = 0x3780000 + (idx * 0x200)
 | Item     | Value                                 |
 | -------- | ------------------------------------- |
 | Base     | `0x3701510`                           |
-| Size     | `0x10` bytes                          |
+| Size     | `0x20` bytes                          |
 | Sense    | Bit **set** → slot occupied           |
 | Indexing | Slot `n` → byte `n // 8`, bit `n % 8` |
 
 ## Member payload (`0x0`–`0xFF`)
 
-- Up to **32** entries at offsets `0, 4, 8, …` (u32 LE each).
+- Up to **64** entries at offsets `0, 4, 8, …` (u32 LE each).
 - Each value is a **0-based talkgroup bank slot index** (`Talkgroup.id` in anytone-cps), **not** the talkgroup DMR ID.
 - Unused slots are filled with `0xFFFFFFFF`.
 - Member order must match the talkgroup bank encode order (`TalkgroupData` slots `0..N-1`).
