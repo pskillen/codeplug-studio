@@ -10,14 +10,14 @@ Tier-1 hub for **satellite Keplerian elements (keps / TLEs)** in Codeplug Studio
 
 | Area | Status | Notes |
 | --- | --- | --- |
-| TLE parse + orbital model | Not started | Child of [#848](https://github.com/pskillen/codeplug-studio/issues/848) |
-| CelesTrak / AMSAT fetch (Pages proxy) | Not started | Space-Track deferred |
-| Curated library persistence | Not started | Enabled flags + last-updated |
-| Satellite Keps library UI | Not started | Design: [feature-design.md](feature-design.md) §§7–9 |
-| Uplink / downlink metadata | Not started | Needed for radio encode |
-| Anytone D890 wire docs + write | Not started | RE then radio-io |
-| OpenGD77 orbital wire docs + write | Not started | Shared DM-1701 / MD-9600 |
-| Write Keps workflows A + B | Not started | Library modal + build contextual; serial lock |
+| TLE parse + orbital model | Not started | [#850](https://github.com/pskillen/codeplug-studio/issues/850) |
+| CelesTrak / AMSAT fetch (Pages proxy) | Not started | [#851](https://github.com/pskillen/codeplug-studio/issues/851) — Space-Track deferred |
+| Curated library persistence | Not started | [#852](https://github.com/pskillen/codeplug-studio/issues/852) |
+| Satellite Keps library UI | Not started | [#853](https://github.com/pskillen/codeplug-studio/issues/853) — [feature-design.md](feature-design.md) §§7–9 |
+| Uplink / downlink metadata | Not started | [#854](https://github.com/pskillen/codeplug-studio/issues/854) |
+| Anytone D890 wire docs + write | Not started | [#855](https://github.com/pskillen/codeplug-studio/issues/855) → [#856](https://github.com/pskillen/codeplug-studio/issues/856) |
+| OpenGD77 orbital wire docs + write | Not started | [#857](https://github.com/pskillen/codeplug-studio/issues/857) → [#858](https://github.com/pskillen/codeplug-studio/issues/858) |
+| Write Keps workflows A + B | Not started | [#859](https://github.com/pskillen/codeplug-studio/issues/859) |
 
 ---
 
