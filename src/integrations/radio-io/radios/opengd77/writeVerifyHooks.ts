@@ -24,10 +24,7 @@ import {
 import { openUv380AbsToOffset } from './constants.ts';
 import { readAbs } from './memory.ts';
 import { OpenGd77Protocol } from './protocol.ts';
-import {
-  buildOpenGd77VerifyManifest,
-  openGd77KeptRegions,
-} from './writeVerifySupport.ts';
+import { buildOpenGd77VerifyManifest, openGd77KeptRegions } from './writeVerifySupport.ts';
 import { memoryMapToBytes } from '../../kit/memoryMap.ts';
 
 const OPENGD77_VERIFY_REGION_GROUPS: readonly WriteVerifyRegionGroup[] = [
@@ -108,10 +105,8 @@ export function createOpenGd77WriteVerifyHooks(modelId: string): WriteVerifyHook
       });
       const elapsedMs = Math.round(performance.now() - started);
       const lookup = memoryMapByteLookup(image, openUv380AbsToOffset);
-      const mismatches = compareStagingAgainstLookup(
-        pending.staging,
-        lookup,
-        (addr) => regionAtFromManifest(manifest, addr),
+      const mismatches = compareStagingAgainstLookup(pending.staging, lookup, (addr) =>
+        regionAtFromManifest(manifest, addr),
       );
       const regions = summarizeWriteVerifyRegions(
         pending.staging,

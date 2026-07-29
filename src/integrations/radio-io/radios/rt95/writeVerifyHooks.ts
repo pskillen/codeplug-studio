@@ -66,10 +66,8 @@ export const RT95_WRITE_VERIFY_HOOKS: WriteVerifyHooks = {
     });
     const elapsedMs = Math.round(performance.now() - started);
     const lookup = memoryMapByteLookup(image);
-    const mismatches = compareStagingAgainstLookup(
-      pending.staging,
-      lookup,
-      (addr) => regionAtFromManifest(RT95_VERIFY_MANIFEST, addr),
+    const mismatches = compareStagingAgainstLookup(pending.staging, lookup, (addr) =>
+      regionAtFromManifest(RT95_VERIFY_MANIFEST, addr),
     );
     const regions = summarizeWriteVerifyRegions(
       pending.staging,

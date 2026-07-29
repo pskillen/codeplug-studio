@@ -30,10 +30,8 @@ describe('RT95 write verify compare', () => {
       chunks.push({ address: addr, data: image.get(addr, RT95_BLOCK_SIZE) });
     }
     const staging = captureWriteVerifyStaging(chunks);
-    const mismatches = compareStagingAgainstLookup(
-      staging,
-      memoryMapByteLookup(image),
-      (addr) => regionAtFromManifest(MANIFEST, addr),
+    const mismatches = compareStagingAgainstLookup(staging, memoryMapByteLookup(image), (addr) =>
+      regionAtFromManifest(MANIFEST, addr),
     );
     expect(mismatches).toHaveLength(0);
     const result = buildWriteVerifyResult({
@@ -56,10 +54,8 @@ describe('RT95 write verify compare', () => {
     const staging = captureWriteVerifyStaging([
       { address: 0x0000, data: original.subarray(0, RT95_BLOCK_SIZE) },
     ]);
-    const mismatches = compareStagingAgainstLookup(
-      staging,
-      memoryMapByteLookup(image),
-      (addr) => regionAtFromManifest(MANIFEST, addr),
+    const mismatches = compareStagingAgainstLookup(staging, memoryMapByteLookup(image), (addr) =>
+      regionAtFromManifest(MANIFEST, addr),
     );
     expect(mismatches).toHaveLength(1);
     expect(mismatches[0]?.kind).toBe('mismatch');

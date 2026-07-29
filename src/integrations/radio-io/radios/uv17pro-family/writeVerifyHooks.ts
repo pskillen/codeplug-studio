@@ -71,23 +71,14 @@ export function createUv17ProWriteVerifyHooks(layout: Uv17ProLayout): WriteVerif
       const lookup = memoryMapByteLookup(image, (radioAddr) =>
         packedOffsetForRadioAddr(layout, radioAddr),
       );
-      const mismatches = compareStagingAgainstLookup(
-        pending.staging,
-        lookup,
-        (addr) => {
-          const packed = packedOffsetForRadioAddr(layout, addr);
-          return regionAtFromManifest(manifest, packed);
-        },
-      );
-      const regions = summarizeWriteVerifyRegions(
-        pending.staging,
-        mismatches,
-        manifest,
-        (id) => {
-          const region = manifest.find((r) => r.id === id);
-          return region ? regionBytesRead(image.size, region) : 0;
-        },
-      );
+      const mismatches = compareStagingAgainstLookup(pending.staging, lookup, (addr) => {
+        const packed = packedOffsetForRadioAddr(layout, addr);
+        return regionAtFromManifest(manifest, packed);
+      });
+      const regions = summarizeWriteVerifyRegions(pending.staging, mismatches, manifest, (id) => {
+        const region = manifest.find((r) => r.id === id);
+        return region ? regionBytesRead(image.size, region) : 0;
+      });
       return buildWriteVerifyResult({
         model: layout.radioModelId,
         elapsedMs,

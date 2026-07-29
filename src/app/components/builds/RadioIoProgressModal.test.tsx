@@ -153,7 +153,9 @@ describe('RadioIoProgressModal', () => {
       </MantineProvider>,
     );
 
-    expect(screen.getByText(/Click Verify write to reconnect and compare transmitted blocks/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Click Verify write to reconnect and compare transmitted blocks/i),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/Wait until it shows its normal screen/i)).not.toBeInTheDocument();
   });
 

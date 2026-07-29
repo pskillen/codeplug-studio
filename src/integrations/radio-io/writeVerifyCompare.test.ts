@@ -26,18 +26,13 @@ describe('writeVerifyCompare', () => {
       { address: 0x0010, data: new Uint8Array([0xaa, 0xbb]) },
     ]);
 
-    const mismatches = compareStagingAgainstLookup(
-      staging,
-      memoryMapByteLookup(map),
-      (addr) => regionAtFromManifest(MANIFEST, addr),
+    const mismatches = compareStagingAgainstLookup(staging, memoryMapByteLookup(map), (addr) =>
+      regionAtFromManifest(MANIFEST, addr),
     );
 
     expect(mismatches).toHaveLength(0);
-    const regions = summarizeWriteVerifyRegions(
-      staging,
-      mismatches,
-      MANIFEST,
-      (id) => (id === 'channels' ? 0x20 : 0),
+    const regions = summarizeWriteVerifyRegions(staging, mismatches, MANIFEST, (id) =>
+      id === 'channels' ? 0x20 : 0,
     );
     expect(regions.find((r) => r.id === 'channels')?.status).toBe('match');
     expect(regions.find((r) => r.id === 'settings')?.status).toBe('skipped');
@@ -52,10 +47,8 @@ describe('writeVerifyCompare', () => {
       { address: 0x300, data: new Uint8Array([0x01, 0x02]) },
     ]);
 
-    const mismatches = compareStagingAgainstLookup(
-      staging,
-      memoryMapByteLookup(map),
-      (addr) => regionAtFromManifest(MANIFEST, addr),
+    const mismatches = compareStagingAgainstLookup(staging, memoryMapByteLookup(map), (addr) =>
+      regionAtFromManifest(MANIFEST, addr),
     );
 
     expect(mismatches).toHaveLength(2);
@@ -78,17 +71,14 @@ describe('writeVerifyCompare', () => {
   });
 
   it('compares sparse block lookup by absolute address', () => {
-    const blocks = new Map<number, Uint8Array>([
-      [0x4000, new Uint8Array(16).fill(0x55)],
-    ]);
+    const blocks = new Map<number, Uint8Array>([[0x4000, new Uint8Array(16).fill(0x55)]]);
     const staging = captureWriteVerifyStaging([
       { address: 0x4000, data: new Uint8Array(16).fill(0x55) },
     ]);
-    const mismatches = compareStagingAgainstLookup(
-      staging,
-      sparseBlockByteLookup(blocks),
-      () => ({ id: 'block', label: 'Block' }),
-    );
+    const mismatches = compareStagingAgainstLookup(staging, sparseBlockByteLookup(blocks), () => ({
+      id: 'block',
+      label: 'Block',
+    }));
     expect(mismatches).toHaveLength(0);
   });
 

@@ -4,7 +4,11 @@
 
 import type { WriteVerifyRegionManifestEntry } from '../../writeVerifyCompare.ts';
 import { OPENUV380_IMAGE_END } from './constants.ts';
-import { OPENGD77_REGION_MANIFEST, openGd77KeptRegions, type OpenGd77RegionId } from './writeRole.ts';
+import {
+  OPENGD77_REGION_MANIFEST,
+  openGd77KeptRegions,
+  type OpenGd77RegionId,
+} from './writeRole.ts';
 
 const SORTED_MANIFEST = [...OPENGD77_REGION_MANIFEST].sort((a, b) => a.absAddress - b.absAddress);
 

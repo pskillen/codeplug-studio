@@ -7,9 +7,9 @@
 
 ## Overall status
 
-**Status:** In progress (Phase 1 adapters)
+**Status:** Complete (pending merge)
 
-**Branch:** `838/pskil/write-verify-adapters` from `origin/main`
+**Branch:** `838/pskil/write-verify-adapters`
 
 **Prerequisite:** Phase 0 merged ([#838](https://github.com/pskillen/codeplug-studio/issues/838) platform + D890).
 
@@ -30,38 +30,47 @@
 
 ## Phase 1 — adapters + reconnect UX
 
-| Slice                                      | State       |
-| ------------------------------------------ | ----------- |
-| 0 Branch + extend progress/outstanding     | Done        |
-| 1 Soft vs hard reconnect UX                | Done        |
-| 2 Shared MemoryMap staging compare helpers | Done        |
-| 3 RT95 write verify                        | Done        |
-| 4 UV-5R Mini + UV-21 write verify          | Done        |
-| 5 OpenGD77 1701 + MD9600 write verify      | Done        |
-| 6 DM-32UV write verify                     | Done        |
-| 7 Feature docs + PR                        | Pending     |
+| Slice                                      | State |
+| ------------------------------------------ | ----- |
+| 0 Branch + extend progress/outstanding     | Done  |
+| 1 Soft vs hard reconnect UX                | Done  |
+| 2 Shared MemoryMap staging compare helpers | Done  |
+| 3 RT95 write verify                        | Done  |
+| 4 UV-5R Mini + UV-21 write verify          | Done  |
+| 5 OpenGD77 1701 + MD9600 write verify      | Done  |
+| 6 DM-32UV write verify                     | Done  |
+| 7 Feature docs + PR                        | Done  |
 
 ### Adapter checklist
 
 | Radio              | `writeVerify` hooks | `requiresCrossSessionReconnect` |
 | ------------------ | ------------------- | ------------------------------- |
 | AT-D890UV          | Done (Phase 0)      | `true`                          |
-| RT95               | Done        | `false`                         |
-| UV-5R Mini / UV-21 | Done        | `false`                         |
-| OpenGD77 1701      | Done        | `true`                          |
-| OpenGD77 MD9600    | Done        | `true`                          |
-| DM-32UV            | Done        | `false`                         |
+| RT95               | Done                | `false`                         |
+| UV-5R Mini / UV-21 | Done                | `false`                         |
+| OpenGD77 1701      | Done                | `true`                          |
+| OpenGD77 MD9600    | Done                | `true`                          |
+| DM-32UV            | Done                | `false`                         |
 
 ---
 
-## Delivered (Phase 0)
+## Delivered
 
 - `src/integrations/radio-io/writeVerify.ts` — neutral contracts + staging JSON helpers
-- `radios/at-d890uv/writeVerifyHooks.ts` — D890 adapter mapping
+- `src/integrations/radio-io/writeVerifyCompare.ts` — shared staging compare + region summarize
+- Per-radio `writeVerifyHooks.ts` under `radios/*/` (D890, RT95, UV family, OpenGD77, DM-32)
 - `radioIoSession.ts` — `uploadPreparedRadioWrite` / `verifyRadioWrite` (no app `instanceof`)
 - `writeVerifyStorage.ts` — `radioIo.writeVerify.pending` with `profileId` guard
 - `WriteVerifyReport.tsx` — generic report shell + sidecar
-- [write-verify.md](write-verify.md) — extension pattern
+- `RadioIoProgressModal.tsx` — soft vs hard reconnect copy via `requiresCrossSessionReconnect`
+- [write-verify.md](write-verify.md) — extension pattern + shipped adapter table
+
+---
+
+## Verify (pre-merge)
+
+- [x] `npm run format:check && npm run lint && npm run test && npm run build`
+- [ ] Manual hardware smoke per adapter family (see outstanding)
 
 ---
 
