@@ -39,6 +39,10 @@ import {
 } from './memory.ts';
 import { remapDm32BlocksByMetadata, remapDm32MemoryMapByTranslations } from './remap.ts';
 import {
+  captureWriteVerifyStaging,
+  type WriteVerifyStagingSnapshot,
+} from '../../writeVerifyCompare.ts';
+import {
   dm32MaxContactsFromFirmware,
   parseDm32ContactsRange,
   parseDm32MaxContacts,
@@ -106,6 +110,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
   /** Live config range from V-frame 0x0A at connect — survives hydration seed. */
   private liveLayout: Dm32LiveLayout | null = null;
   private programming = false;
+  private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
 
   /** Last successful download cache (for hydration / RMW). */
   getDownloadCache(): Dm32DownloadCache | null {
@@ -429,6 +434,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
     const groups = groupDm32BlocksForProgress(discoveredForProgress);
     const scale = settle.settleScale ?? 1;
     const interBlockMs = scale <= 0 ? 0 : DM32_CONNECTION.BLOCK_READ_DELAY_MS * scale;
+    const stagingChunks: { address: number; data: Uint8Array }[] = [];
 
     // Seed the progress checklist with every bank before the first write so Channels
     // is visible even while later groups are still pending.
@@ -475,8 +481,16 @@ export class Dm32uvProtocol implements CloneImageRadio {
         );
         await dm32WriteMemory(this.pipe, addr, data, settle);
         this.cache.blocks.set(addr, data);
+        stagingChunks.push({ address: addr, data: data.slice() });
       }
     }
+    this.lastUploadStaging = captureWriteVerifyStaging(stagingChunks);
+  }
+
+  takeUploadStagingSnapshot(): WriteVerifyStagingSnapshot | undefined {
+    const snap = this.lastUploadStaging;
+    this.lastUploadStaging = undefined;
+    return snap;
   }
 
   decodeChannels(image: MemoryMap): RadioChannelDto[] {

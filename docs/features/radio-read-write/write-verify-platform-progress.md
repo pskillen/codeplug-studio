@@ -38,7 +38,7 @@
 | 3 RT95 write verify                        | Done        |
 | 4 UV-5R Mini + UV-21 write verify          | Done        |
 | 5 OpenGD77 1701 + MD9600 write verify      | Done        |
-| 6 DM-32UV write verify                     | Pending     |
+| 6 DM-32UV write verify                     | Done        |
 | 7 Feature docs + PR                        | Pending     |
 
 ### Adapter checklist
@@ -50,7 +50,7 @@
 | UV-5R Mini / UV-21 | Done        | `false`                         |
 | OpenGD77 1701      | Done        | `true`                          |
 | OpenGD77 MD9600    | Done        | `true`                          |
-| DM-32UV            | Pending             | `false`                         |
+| DM-32UV            | Done        | `false`                         |
 
 ---
 
