@@ -4,7 +4,11 @@ import { AT_D890_SCAN_TIMING_DECISECONDS } from '@core/radios/anytone/at-d890uv/
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
-import { encodeAtD890ScanListRecord, encodeScanListsIntoAtD890Image, refreshScanListSetFromRadioBase } from './scanListCodec.ts';
+import {
+  encodeAtD890ScanListRecord,
+  encodeScanListsIntoAtD890Image,
+  refreshScanListSetFromRadioBase,
+} from './scanListCodec.ts';
 
 function readU16Le(buf: Uint8Array, offset: number): number {
   return buf[offset]! | (buf[offset + 1]! << 8);

@@ -142,8 +142,14 @@ export interface WriteVerifyHooks {
 export interface WriteVerifyStagingSnapshotJson {
   readonly capturedAt: string;
   readonly chunks: readonly { readonly address: number; readonly data: readonly number[] }[];
-  readonly preWriteChunks?: readonly { readonly address: number; readonly data: readonly number[] }[];
-  readonly downloadCacheChunks?: readonly { readonly address: number; readonly data: readonly number[] }[];
+  readonly preWriteChunks?: readonly {
+    readonly address: number;
+    readonly data: readonly number[];
+  }[];
+  readonly downloadCacheChunks?: readonly {
+    readonly address: number;
+    readonly data: readonly number[];
+  }[];
 }
 
 export function serializeWriteVerifyStagingSnapshot(

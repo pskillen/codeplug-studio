@@ -68,7 +68,10 @@ describe('encodeRxGroupsIntoAtD890Image', () => {
   it('clears phantom bits 250–255 when base image byte 31 is 0xff', () => {
     const image = createMemoryMap(0x500_0000);
     image.fill(0, 0x500_0000, 0xff);
-    image.set(D890_MAP.ReceiveGroupSet, new Uint8Array(AT_D890_LIMITS.RX_GROUP_SET_BYTES).fill(0xff));
+    image.set(
+      D890_MAP.ReceiveGroupSet,
+      new Uint8Array(AT_D890_LIMITS.RX_GROUP_SET_BYTES).fill(0xff),
+    );
 
     encodeRxGroupsIntoAtD890Image(image, [{ index: 1, wireName: 'Local', memberDigitalIds: [0] }]);
 

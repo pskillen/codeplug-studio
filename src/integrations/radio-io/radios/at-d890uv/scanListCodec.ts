@@ -62,10 +62,7 @@ export function encodeAtD890ScanListRecord(scan: RadioScanListDto): Uint8Array {
  * Hydration encodes against the last Download; bits at or above {@link AT_D890UV_LIMITS.SCAN_LISTS_MAX}
  * must survive from flash, not stale cache.
  */
-export function refreshScanListSetFromRadioBase(
-  image: MemoryMap,
-  freshRadioSet: Uint8Array,
-): void {
+export function refreshScanListSetFromRadioBase(image: MemoryMap, freshRadioSet: Uint8Array): void {
   const encoded = image.get(D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES).slice();
   const merged = freshRadioSet.slice(0, AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
   clearBitmapBitsBelow(merged, AT_D890UV_LIMITS.SCAN_LISTS_MAX);

@@ -649,12 +649,7 @@ export function formatAtD890WriteVerifyDebugMarkdown(
   );
 
   if (result.cacheStaleness) {
-    lines.push(
-      '## Cache staleness',
-      '',
-      result.cacheStaleness.message,
-      '',
-    );
+    lines.push('## Cache staleness', '', result.cacheStaleness.message, '');
   }
 
   if (result.eraseUnits.length > 0) {
