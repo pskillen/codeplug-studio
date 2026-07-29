@@ -7,6 +7,7 @@ import {
   assertEraseUnitAddressInTouchedSet,
   eraseUnitBaseFor,
   isAtD890EraseUnitBookkeepingAddress,
+  isAtD890ExcludedBookkeepingStagingAddress,
   listTouchedEraseUnits,
   readSpanForEraseUnit,
 } from './eraseUnits.ts';
@@ -76,6 +77,16 @@ describe('isAtD890EraseUnitBookkeepingAddress', () => {
   it('does not match ordinary staged addresses', () => {
     expect(isAtD890EraseUnitBookkeepingAddress(D890_MAP.ChannelSet)).toBe(false);
     expect(isAtD890EraseUnitBookkeepingAddress(0x348_0000)).toBe(false);
+  });
+});
+
+describe('isAtD890ExcludedBookkeepingStagingAddress', () => {
+  it('excludes tail bookkeeping only outside modelled banks', () => {
+    const spillBookkeeping = 0x348_0000 + 0x3fbf0;
+    const inRegionBookkeeping = 0x3a0_0000 + 0x3fbf0;
+    expect(isAtD890ExcludedBookkeepingStagingAddress(spillBookkeeping, true)).toBe(true);
+    expect(isAtD890ExcludedBookkeepingStagingAddress(spillBookkeeping, false)).toBe(false);
+    expect(isAtD890ExcludedBookkeepingStagingAddress(inRegionBookkeeping, false)).toBe(false);
   });
 });
 

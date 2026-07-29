@@ -33,6 +33,20 @@ export function isAtD890EraseUnitBookkeepingAddress(address: number): boolean {
   return AT_D890_ERASE_UNIT_BOOKKEEPING_BLOCK_OFFSETS.some((off) => off === offsetInUnit);
 }
 
+/**
+ * Bookkeeping blocks staged during sparse RMW but excluded from verify compare.
+ *
+ * Only addresses **outside** modelled banks are excluded — the same offsets can fall
+ * inside a declared region span (e.g. `TalkgroupData` at `0x3a3fbf0`) and must still
+ * be compared there.
+ */
+export function isAtD890ExcludedBookkeepingStagingAddress(
+  address: number,
+  isOutsideModelledBanks: boolean,
+): boolean {
+  return isOutsideModelledBanks && isAtD890EraseUnitBookkeepingAddress(address);
+}
+
 /** Unique ascending erase-unit bases touched by any of `addresses`. */
 export function listTouchedEraseUnits(addresses: readonly number[]): number[] {
   const bases = new Set<number>();

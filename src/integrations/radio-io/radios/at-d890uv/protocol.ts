@@ -632,7 +632,10 @@ export class AtD890uvProtocol implements CloneImageRadio {
 
       const stagingChunks = listSparseStagingChunks(mergedUnits, modelledAddresses);
       assertPreservedBytesMatchFreshRead(stagingChunks, freshUnits, modelledAddresses);
-      this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(stagingChunks);
+      const transmittedChunks = stagingChunks.filter(
+        (c) => c.address !== AT_D890_SAFE_SKIP_WRITE_ADDR,
+      );
+      this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(transmittedChunks);
 
       reportProgress(
         opts.onProgress,

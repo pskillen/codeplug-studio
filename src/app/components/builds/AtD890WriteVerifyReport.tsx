@@ -20,10 +20,16 @@ import {
 import {
   AT_D890_MEMORY_REGION_GROUPS,
   formatAtD890WriteVerifyDebugMarkdown,
+  AT_D890_RMW_SPILL_GROUP,
   type AtD890RegionVerifyStatus,
   type AtD890WriteVerifyDebugContext,
   type AtD890WriteVerifyResult,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
+
+/** Verify-only region group — not part of {@link AT_D890_MEMORY_REGION_GROUPS} memory export. */
+const AT_D890_VERIFY_ONLY_REGION_GROUPS: { id: string; label: string }[] = [
+  { id: AT_D890_RMW_SPILL_GROUP, label: 'RMW-preserved spill' },
+];
 
 const MISMATCH_DISPLAY_LIMIT = 50;
 
@@ -87,7 +93,8 @@ export default function AtD890WriteVerifyReport({
 
   const regionsByGroup = useMemo(() => {
     const map = new Map<string, typeof result.regions>();
-    for (const group of AT_D890_MEMORY_REGION_GROUPS) {
+    const allGroups = [...AT_D890_MEMORY_REGION_GROUPS, ...AT_D890_VERIFY_ONLY_REGION_GROUPS];
+    for (const group of allGroups) {
       map.set(
         group.id,
         result.regions.filter((r) => r.group === group.id),
@@ -127,11 +134,12 @@ export default function AtD890WriteVerifyReport({
       staging: {
         ...result.staging,
         mismatches: result.staging.mismatches.map((m) => ({
+          kind: m.kind,
           address: m.address,
           regionId: m.regionId,
           regionLabel: m.regionLabel,
           expected: bytesToHex(m.expected),
-          actual: bytesToHex(m.actual),
+          actual: m.actual ? bytesToHex(m.actual) : null,
         })),
       },
     };
@@ -157,6 +165,9 @@ export default function AtD890WriteVerifyReport({
         <Text size="sm">
           {result.staging.mismatchedChunks} of {result.staging.totalChunks} staged chunks
           mismatched.
+          {result.staging.notReadChunks > 0
+            ? ` ${result.staging.notReadChunks} could not be read back.`
+            : ''}
           {result.staging.excludedBookkeepingChunks > 0
             ? ` ${result.staging.excludedBookkeepingChunks} erase-unit bookkeeping blocks excluded from compare.`
             : ''}{' '}
@@ -192,43 +203,45 @@ export default function AtD890WriteVerifyReport({
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
-            {AT_D890_MEMORY_REGION_GROUPS.map((group) => {
-              const rows = regionsByGroup.get(group.id) ?? [];
-              if (rows.length === 0) return null;
-              const groupBytes = rows.reduce((sum, r) => sum + r.bytesRead, 0);
-              const groupStaged = rows.reduce((sum, r) => sum + r.stagedChunkCount, 0);
-              const groupMismatches = rows.reduce((sum, r) => sum + r.mismatchedChunks, 0);
-              const groupStatus: AtD890RegionVerifyStatus =
-                groupMismatches > 0 ? 'mismatch' : groupStaged > 0 ? 'match' : 'not_written';
-              return (
-                <Fragment key={group.id}>
-                  <Table.Tr>
-                    <Table.Td fw={600}>{group.label}</Table.Td>
-                    <Table.Td>{formatBytes(groupBytes)}</Table.Td>
-                    <Table.Td>{groupStaged}</Table.Td>
-                    <Table.Td>{groupMismatches}</Table.Td>
-                    <Table.Td>
-                      <Badge color={regionStatusColor(groupStatus)} variant="light">
-                        {regionStatusLabel(groupStatus)}
-                      </Badge>
-                    </Table.Td>
-                  </Table.Tr>
-                  {rows.map((r) => (
-                    <Table.Tr key={r.id}>
-                      <Table.Td pl="xl">{r.label}</Table.Td>
-                      <Table.Td>{formatBytes(r.bytesRead)}</Table.Td>
-                      <Table.Td>{r.stagedChunkCount}</Table.Td>
-                      <Table.Td>{r.mismatchedChunks}</Table.Td>
+            {[...AT_D890_MEMORY_REGION_GROUPS, ...AT_D890_VERIFY_ONLY_REGION_GROUPS].map(
+              (group) => {
+                const rows = regionsByGroup.get(group.id) ?? [];
+                if (rows.length === 0) return null;
+                const groupBytes = rows.reduce((sum, r) => sum + r.bytesRead, 0);
+                const groupStaged = rows.reduce((sum, r) => sum + r.stagedChunkCount, 0);
+                const groupMismatches = rows.reduce((sum, r) => sum + r.mismatchedChunks, 0);
+                const groupStatus: AtD890RegionVerifyStatus =
+                  groupMismatches > 0 ? 'mismatch' : groupStaged > 0 ? 'match' : 'not_written';
+                return (
+                  <Fragment key={group.id}>
+                    <Table.Tr>
+                      <Table.Td fw={600}>{group.label}</Table.Td>
+                      <Table.Td>{formatBytes(groupBytes)}</Table.Td>
+                      <Table.Td>{groupStaged}</Table.Td>
+                      <Table.Td>{groupMismatches}</Table.Td>
                       <Table.Td>
-                        <Badge color={regionStatusColor(r.status)} variant="light" size="sm">
-                          {regionStatusLabel(r.status)}
+                        <Badge color={regionStatusColor(groupStatus)} variant="light">
+                          {regionStatusLabel(groupStatus)}
                         </Badge>
                       </Table.Td>
                     </Table.Tr>
-                  ))}
-                </Fragment>
-              );
-            })}
+                    {rows.map((r) => (
+                      <Table.Tr key={r.id}>
+                        <Table.Td pl="xl">{r.label}</Table.Td>
+                        <Table.Td>{formatBytes(r.bytesRead)}</Table.Td>
+                        <Table.Td>{r.stagedChunkCount}</Table.Td>
+                        <Table.Td>{r.mismatchedChunks}</Table.Td>
+                        <Table.Td>
+                          <Badge color={regionStatusColor(r.status)} variant="light" size="sm">
+                            {regionStatusLabel(r.status)}
+                          </Badge>
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Fragment>
+                );
+              },
+            )}
           </Table.Tbody>
         </Table>
       </Stack>
@@ -282,7 +295,7 @@ export default function AtD890WriteVerifyReport({
                     <Code>{bytesToHex(m.expected)}</Code>
                   </Table.Td>
                   <Table.Td>
-                    <Code>{bytesToHex(m.actual)}</Code>
+                    <Code>{m.kind === 'not_read' ? '(not read)' : bytesToHex(m.actual!)}</Code>
                   </Table.Td>
                 </Table.Tr>
               ))}

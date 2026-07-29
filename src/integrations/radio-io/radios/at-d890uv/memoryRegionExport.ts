@@ -53,7 +53,6 @@ export const AT_D890_MEMORY_REGION_GROUPS: readonly AtD890MemoryRegionGroup[] = 
   { id: 'receiveGroups', label: 'RX groups' },
   { id: 'radioIds', label: 'Radio IDs' },
   { id: 'airband', label: 'Airband (AM channels + zones)' },
-  { id: 'rmwPreserved', label: 'RMW-preserved spill' },
 ];
 
 /** `RadioIdSet` bitmap capacity (`0x20` bytes × 8 bits) — no separate named max elsewhere. */

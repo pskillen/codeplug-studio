@@ -153,6 +153,7 @@ export {
   type AtD890RegionVerifyRow,
   type AtD890RegionVerifyStatus,
   type AtD890StagingChunkMismatch,
+  type AtD890StagingChunkMismatchKind,
   type AtD890WriteStagingSnapshot,
   type AtD890WriteVerifyDebugContext,
   type AtD890WriteVerifyResult,

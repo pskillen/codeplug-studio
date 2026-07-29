@@ -94,18 +94,19 @@ describe('compareStagingAgainstRegionDump', () => {
     expect(mismatches[0]!.actual).toEqual(actual);
   });
 
-  it('treats missing spill readback as 0xff mismatch (legacy blind spot)', () => {
+  it('reports spill not_read when readback is missing (never fabricates 0xff)', () => {
     const files = makeRegionFiles({});
     const spillAddr = 0x2fa_0300;
     const expected = new Uint8Array(16).fill(0x33);
     const snapshot = captureAtD890WriteStagingSnapshot([{ address: spillAddr, data: expected }]);
     const { mismatches } = compareStagingAgainstRegionDump(snapshot, files);
     expect(mismatches).toHaveLength(1);
+    expect(mismatches[0]!.kind).toBe('not_read');
     expect(mismatches[0]!.regionId).toBe('unknown');
-    expect(mismatches[0]!.actual.every((b) => b === 0xff)).toBe(true);
+    expect(mismatches[0]!.actual).toBeNull();
   });
 
-  it('skips erase-unit bookkeeping blocks during compare', () => {
+  it('skips erase-unit bookkeeping blocks outside modelled banks', () => {
     const files = makeRegionFiles({});
     const bookkeepingAddr = 0x348_0000 + 0x3fbf0;
     const staged = new Uint8Array(16);
@@ -115,6 +116,22 @@ describe('compareStagingAgainstRegionDump', () => {
     ]);
     const { mismatches } = compareStagingAgainstRegionDump(snapshot, files);
     expect(mismatches).toHaveLength(0);
+  });
+
+  it('compares bookkeeping blocks inside modelled region spans', () => {
+    const files = makeRegionFiles({});
+    const bookkeepingAddr = 0x3a0_0000 + 0x3fbf0;
+    const staged = new Uint8Array(16);
+    staged.set([0x22, 0x33, 0x44, 0x55], 4);
+    const actual = new Uint8Array(16).fill(0xff);
+    writeChunkAt(files, bookkeepingAddr, actual);
+    const snapshot = captureAtD890WriteStagingSnapshot([
+      { address: bookkeepingAddr, data: staged },
+    ]);
+    const { mismatches } = compareStagingAgainstRegionDump(snapshot, files);
+    expect(mismatches).toHaveLength(1);
+    expect(mismatches[0]!.kind).toBe('mismatch');
+    expect(mismatches[0]!.regionId).toBe('talkgroupData');
   });
 });
 
@@ -154,6 +171,7 @@ describe('summarizeVerifyByRegion', () => {
     const addr = D890_MAP.ScanListSet;
     const expected = new Uint8Array(16).fill(1);
     const mismatch = {
+      kind: 'mismatch' as const,
       address: addr,
       regionId: 'scanListSet',
       regionLabel: 'Scan-list occupancy bitmap',
@@ -213,6 +231,7 @@ describe('buildAtD890WriteVerifyResult', () => {
     expect(result.staging.totalChunks).toBe(0);
     expect(result.staging.excludedBookkeepingChunks).toBe(1);
     expect(result.staging.mismatchedChunks).toBe(0);
+    expect(result.staging.notReadChunks).toBe(0);
   });
 });
 

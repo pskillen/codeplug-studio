@@ -7,7 +7,7 @@
 
 import { AT_D890_MEMORY_REGIONS } from './memoryRegionExport.ts';
 import type { AtD890StagingChunk } from './sparseEraseRmw.ts';
-import { isAtD890EraseUnitBookkeepingAddress } from './eraseUnits.ts';
+import { isAtD890ExcludedBookkeepingStagingAddress } from './eraseUnits.ts';
 import {
   compareAtD890SentinelSnapshots,
   type AtD890SentinelCompareResult,
@@ -37,12 +37,16 @@ export interface AtD890RegionVerifyRow {
   readonly status: AtD890RegionVerifyStatus;
 }
 
+export type AtD890StagingChunkMismatchKind = 'mismatch' | 'not_read';
+
 export interface AtD890StagingChunkMismatch {
+  readonly kind: AtD890StagingChunkMismatchKind;
   readonly address: number;
   readonly regionId: string;
   readonly regionLabel: string;
   readonly expected: Uint8Array;
-  readonly actual: Uint8Array;
+  /** Absent when {@link kind} is `not_read` — never fabricate unread bytes. */
+  readonly actual: Uint8Array | null;
 }
 
 export interface AtD890WriteVerifyResult {
@@ -55,9 +59,11 @@ export interface AtD890WriteVerifyResult {
   readonly staging: {
     /** Staged chunks compared (excludes erase-unit bookkeeping blocks). */
     readonly totalChunks: number;
-    /** Bookkeeping blocks staged but excluded from compare (per-unit +0x3fbf0 / +0x3fff0). */
+    /** Bookkeeping blocks staged but excluded from compare (per-unit +0x3fbf0 / +0x3fff0 outside modelled banks). */
     readonly excludedBookkeepingChunks: number;
     readonly mismatchedChunks: number;
+    /** Staged chunks with no readback in the verify dump (compare could not run). */
+    readonly notReadChunks: number;
     readonly mismatches: readonly AtD890StagingChunkMismatch[];
   };
   readonly sentinel: AtD890SentinelCompareResult;
@@ -114,32 +120,39 @@ export function atD890AddressInModelledRegions(address: number): boolean {
   return false;
 }
 
-/** Staged 16-byte block starts outside every modelled bank (RMW erase-unit spill). */
+/**
+ * Staged 16-byte block starts outside every modelled bank (RMW erase-unit spill).
+ *
+ * `ChannelData` writable extent is `0x40000` per block but verify reads only the
+ * `0x4000` used prefix per block ({@link AT_D890_MEMORY_REGIONS}); the gap is covered
+ * here via targeted spill reads, except for excluded bookkeeping tail blocks.
+ */
 export function listStagingAddressesOutsideModelledRegions(
   snapshot: AtD890WriteStagingSnapshot,
 ): number[] {
   const addresses = new Set<number>();
   for (const { address } of snapshot.chunks) {
     if (atD890AddressInModelledRegions(address)) continue;
-    if (isAtD890EraseUnitBookkeepingAddress(address)) continue;
+    if (isAtD890ExcludedBookkeepingStagingAddress(address, true)) continue;
     addresses.add(address);
   }
   return [...addresses].sort((a, b) => a - b);
 }
 
 function countExcludedBookkeepingChunks(snapshot: AtD890WriteStagingSnapshot): number {
-  return snapshot.chunks.filter((c) => isAtD890EraseUnitBookkeepingAddress(c.address)).length;
+  return snapshot.chunks.filter((c) =>
+    isAtD890ExcludedBookkeepingStagingAddress(
+      c.address,
+      !atD890AddressInModelledRegions(c.address),
+    ),
+  ).length;
 }
 
 function isComparableStagingAddress(address: number): boolean {
-  return !isAtD890EraseUnitBookkeepingAddress(address);
-}
-
-/** Map region id → flat bytes from a memory dump. */
-export function regionFilesFromDump(
-  files: ReadonlyMap<string, Uint8Array>,
-): ReadonlyMap<string, Uint8Array> {
-  return files;
+  return !isAtD890ExcludedBookkeepingStagingAddress(
+    address,
+    !atD890AddressInModelledRegions(address),
+  );
 }
 
 interface AddressLookup {
@@ -151,8 +164,6 @@ function buildAddressLookup(
   files: ReadonlyMap<string, Uint8Array>,
   spillChunks: ReadonlyMap<number, Uint8Array> = new Map(),
 ): AddressLookup {
-  const regionById = new Map(AT_D890_MEMORY_REGIONS.map((r) => [r.id, r]));
-
   function getByteFromSpill(address: number): number | undefined {
     for (const [chunkAddr, data] of spillChunks) {
       if (address >= chunkAddr && address < chunkAddr + data.length) {
@@ -196,7 +207,6 @@ function buildAddressLookup(
     return undefined;
   }
 
-  void regionById;
   return { getByte, regionAt };
 }
 
@@ -242,14 +252,27 @@ export function compareStagingAgainstRegionDump(
   for (const { address, data } of snapshot.chunks) {
     if (!isComparableStagingAddress(address)) continue;
     const actual = readBytesAt(lookup, address, data.length);
-    if (!actual || !chunksEqual(data, actual)) {
+    if (actual === null) {
       const region = lookup.regionAt(address);
       mismatches.push({
+        kind: 'not_read',
         address,
         regionId: region?.id ?? 'unknown',
         regionLabel: region?.label ?? 'Unknown address (not read)',
         expected: data.slice(),
-        actual: actual ?? new Uint8Array(data.length).fill(0xff),
+        actual: null,
+      });
+      continue;
+    }
+    if (!chunksEqual(data, actual)) {
+      const region = lookup.regionAt(address);
+      mismatches.push({
+        kind: 'mismatch',
+        address,
+        regionId: region?.id ?? 'unknown',
+        regionLabel: region?.label ?? 'Unknown address',
+        expected: data.slice(),
+        actual,
       });
     }
   }
@@ -344,7 +367,9 @@ export function buildAtD890WriteVerifyResult(
     ? compareAtD890SentinelSnapshots(sentinelBefore, sentinelAfter)
     : ({ ok: true } as AtD890SentinelCompareResult);
   const regions = summarizeVerifyByRegion(snapshot, files, mismatches, spillChunks);
-  const stagingOk = mismatches.length === 0;
+  const notReadChunks = mismatches.filter((m) => m.kind === 'not_read').length;
+  const mismatchedChunks = mismatches.filter((m) => m.kind === 'mismatch').length;
+  const stagingOk = mismatchedChunks === 0 && notReadChunks === 0;
   const sentinelOk = sentinel.ok;
   const excludedBookkeepingChunks = countExcludedBookkeepingChunks(snapshot);
   const comparableChunks = snapshot.chunks.length - excludedBookkeepingChunks;
@@ -357,7 +382,8 @@ export function buildAtD890WriteVerifyResult(
     staging: {
       totalChunks: comparableChunks,
       excludedBookkeepingChunks,
-      mismatchedChunks: mismatches.length,
+      mismatchedChunks,
+      notReadChunks,
       mismatches,
     },
     sentinel,
@@ -376,7 +402,7 @@ export function formatAtD890WriteVerifyMarkdown(
     `Measured: ${meta.measuredAt} · radio: ${result.model}${meta.readBlockSize != null ? ` · read block: ${meta.readBlockSize} bytes` : ''}`,
     `Read: ${result.totalBytesRead} bytes in ${(result.elapsedMs / 1000).toFixed(1)}s`,
     '',
-    `**Overall:** ${result.ok ? 'PASS' : 'FAIL'} — ${result.staging.mismatchedChunks} of ${result.staging.totalChunks} staged chunks mismatched${result.staging.excludedBookkeepingChunks > 0 ? ` (${result.staging.excludedBookkeepingChunks} erase-unit bookkeeping blocks excluded)` : ''}`,
+    `**Overall:** ${result.ok ? 'PASS' : 'FAIL'} — ${result.staging.mismatchedChunks} of ${result.staging.totalChunks} staged chunks mismatched${result.staging.notReadChunks > 0 ? `, ${result.staging.notReadChunks} not read` : ''}${result.staging.excludedBookkeepingChunks > 0 ? ` (${result.staging.excludedBookkeepingChunks} erase-unit bookkeeping blocks excluded)` : ''}`,
     `**Preserved settings:** ${result.sentinel.ok ? 'PASS' : 'FAIL'}`,
     '',
     '| Region | Group | Staged chunks | Mismatches | Status |',
@@ -401,8 +427,9 @@ export function formatAtD890WriteVerifyMarkdown(
     lines.push('| Address | Region | Expected | Actual |');
     lines.push('| --- | --- | --- | --- |');
     for (const m of result.staging.mismatches.slice(0, 20)) {
+      const actualCol = m.kind === 'not_read' ? '*(not read)*' : `\`${bytesToHex(m.actual!)}\``;
       lines.push(
-        `| ${hexAddr(m.address)} | ${m.regionLabel} | \`${bytesToHex(m.expected)}\` | \`${bytesToHex(m.actual)}\` |`,
+        `| ${hexAddr(m.address)} | ${m.regionLabel} | \`${bytesToHex(m.expected)}\` | ${actualCol} |`,
       );
     }
     if (result.staging.mismatches.length > 20) {
@@ -465,7 +492,7 @@ export function formatAtD890WriteVerifyDebugMarkdown(
     '## Verdict',
     '',
     `- Overall: **${result.ok ? 'PASS' : 'FAIL'}**`,
-    `- Staging: ${result.staging.mismatchedChunks} / ${result.staging.totalChunks} staged 16-byte chunks mismatched${result.staging.excludedBookkeepingChunks > 0 ? ` (${result.staging.excludedBookkeepingChunks} bookkeeping blocks excluded)` : ''}`,
+    `- Staging: ${result.staging.mismatchedChunks} / ${result.staging.totalChunks} staged 16-byte chunks mismatched${result.staging.notReadChunks > 0 ? `, ${result.staging.notReadChunks} not read` : ''}${result.staging.excludedBookkeepingChunks > 0 ? ` (${result.staging.excludedBookkeepingChunks} bookkeeping blocks excluded)` : ''}`,
     `- Preserved settings (6 sentinels): **${result.sentinel.ok ? 'PASS' : 'FAIL'}**`,
     '',
     '## Regions',
@@ -497,9 +524,8 @@ export function formatAtD890WriteVerifyDebugMarkdown(
       lines.push('| address | expected (16 B) | actual (16 B) |');
       lines.push('| --- | --- | --- |');
       for (const m of items) {
-        lines.push(
-          `| ${hexAddr(m.address)} | \`${bytesToHex(m.expected)}\` | \`${bytesToHex(m.actual)}\` |`,
-        );
+        const actualCol = m.kind === 'not_read' ? '*(not read)*' : `\`${bytesToHex(m.actual!)}\``;
+        lines.push(`| ${hexAddr(m.address)} | \`${bytesToHex(m.expected)}\` | ${actualCol} |`);
       }
       lines.push('');
     }
@@ -511,10 +537,9 @@ export function formatAtD890WriteVerifyDebugMarkdown(
     '1. **Staging mismatch, sentinel OK** — transport/erase issue: block not committed, wrong erase unit, or radio shadow not flushed. Check `sparseEraseRmw.ts`, `protocol.ts` upload loop, and hardware erase-unit boundaries.',
     '2. **Sentinel mismatch** — optional settings / alarm corrupted during sparse RMW inside a touched erase unit. Compare pre-write sentinel snapshot vs post-read.',
     '3. **Encoder vs transport** — if offline `staging.test.ts` passes against a memory dump but live verify fails, suspect timing (verify too early) or a different codeplug than staged.',
-    '4. **All-0xff actual on spill** — RMW-preserved block outside modelled banks was not read back; confirm verify included spill addresses from the staging snapshot.',
-    '5. **Erase-unit bookkeeping** — per-unit blocks at +0x3fbf0 and +0x3fff0 are flash sector markers, not codeplug payload; verify excludes them from compare.',
-    '6. **All-0xff actual (modelled)** — address may not have been written or reads flash before commit completed; confirm the radio finished restarting before verify.',
-    '7. **Partial byte diff** — single 16-byte block wrong: check codec for that region id in `src/integrations/radio-io/radios/at-d890uv/`.',
+    '4. **not read** — address was staged but had no byte in the verify dump (modelled region gap or missing spill read). Do not treat as all-0xff; add spill addresses or extend the region read.',
+    '5. **Erase-unit bookkeeping (outside modelled banks)** — per-unit blocks at +0x3fbf0 and +0x3fff0 in RMW spill are flash sector markers, not codeplug payload; verify excludes them only when outside declared region spans.',
+    '6. **Partial byte diff** — single 16-byte block wrong: check codec for that region id in `src/integrations/radio-io/radios/at-d890uv/`.',
     '',
     '## Related code',
     '',
