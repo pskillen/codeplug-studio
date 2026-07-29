@@ -94,3 +94,35 @@ export function assertPreservedBytesMatchFreshRead(
 export function modelledAddressSetFromChunks(chunks: readonly AtD890StagingChunk[]): Set<number> {
   return new Set(chunks.map((c) => c.address));
 }
+
+/** Extract live radio bytes at each staged address from fresh erase-unit reads (pre-overlay). */
+export function preWriteChunksFromFreshUnits(
+  chunks: readonly AtD890StagingChunk[],
+  freshUnits: ReadonlyMap<number, Uint8Array>,
+): AtD890StagingChunk[] {
+  return chunks.map(({ address, data }) => ({
+    address,
+    data: readBytesFromEraseUnitBuffer(freshUnits, address, data.length),
+  }));
+}
+
+function readBytesFromEraseUnitBuffer(
+  freshUnits: ReadonlyMap<number, Uint8Array>,
+  address: number,
+  length: number,
+): Uint8Array {
+  const unitBase = eraseUnitBaseFor(address);
+  const buffer = freshUnits.get(unitBase);
+  if (!buffer) {
+    throw new RadioProtocolError(
+      `D890 pre-write read missing fresh erase unit 0x${unitBase.toString(16)} for 0x${address.toString(16)}`,
+    );
+  }
+  const off = address - unitBase;
+  if (off < 0 || off + length > buffer.length) {
+    throw new RadioProtocolError(
+      `D890 pre-write read 0x${address.toString(16)}+0x${length.toString(16)} overflows unit 0x${unitBase.toString(16)}`,
+    );
+  }
+  return buffer.subarray(off, off + length).slice();
+}

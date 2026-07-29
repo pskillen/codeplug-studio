@@ -39,6 +39,7 @@ import {
 } from './connection.ts';
 import { negotiateAtD890ReadBlockSize } from './linkProbe.ts';
 import { decodeChannelsFromAtD890Cache, encodeChannelsIntoAtD890Image } from './channelCodec.ts';
+import { refreshScanListSetFromRadioBase } from './scanListCodec.ts';
 import {
   assertAtD890SentinelRegionsPlausible,
   cloneAtD890SentinelSnapshot,
@@ -54,6 +55,7 @@ import {
   listSparseStagingChunks,
   modelledAddressSetFromChunks,
   overlayModelledChunksOntoUnit,
+  preWriteChunksFromFreshUnits,
 } from './sparseEraseRmw.ts';
 import {
   captureAtD890WriteStagingSnapshot,
@@ -575,6 +577,15 @@ export class AtD890uvProtocol implements CloneImageRadio {
       ),
     };
 
+    const freshScanListSet = await atD890ReadMemory(
+      this.pipe,
+      D890_MAP.ScanListSet,
+      AT_D890_LIMITS.SCAN_LIST_SET_BYTES,
+      opts.signal,
+      this.readBlockSize,
+    );
+    refreshScanListSetFromRadioBase(image, freshScanListSet);
+
     applyAtD890WriteImageToCache(this.cache, image, this.uploadBankIntent);
 
     const modelledChunks = listWriteChunks(this.cache, AT_D890_SAFE_SKIP_WRITE_ADDR);
@@ -641,10 +652,11 @@ export class AtD890uvProtocol implements CloneImageRadio {
       const transmittedChunks = stagingChunks.filter(
         (c) => c.address !== AT_D890_SAFE_SKIP_WRITE_ADDR,
       );
-      this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(
-        transmittedChunks,
-        preUploadCache,
-      );
+      const preWriteFromRadio = preWriteChunksFromFreshUnits(transmittedChunks, freshUnits);
+      this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(transmittedChunks, {
+        preWriteFromRadio,
+        downloadCache: preUploadCache,
+      });
 
       reportProgress(
         opts.onProgress,

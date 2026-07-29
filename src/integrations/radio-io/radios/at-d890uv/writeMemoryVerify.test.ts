@@ -6,8 +6,10 @@ import {
   captureAtD890WriteStagingSnapshot,
   compareStagingAgainstRegionDump,
   formatAtD890WriteVerifyDebugMarkdown,
+  isAtD890VolatileVerifyAddress,
   listStagingAddressesOutsideModelledRegions,
   sentinelSnapshotFromRegionDump,
+  summarizeDownloadCacheStaleness,
   summarizeVerifyByRegion,
 } from './writeMemoryVerify.ts';
 import { cloneAtD890SentinelSnapshot } from './sentinelVerify.ts';
@@ -245,7 +247,10 @@ describe('buildAtD890WriteVerifyResult', () => {
 
     const preCache: AtD890DownloadCache = { blocks: new Map() };
     putCacheBytes(preCache, addr, preRadio);
-    const snapshot = captureAtD890WriteStagingSnapshot([{ address: addr, data: staged }], preCache);
+    const snapshot = captureAtD890WriteStagingSnapshot([{ address: addr, data: staged }], {
+      preWriteFromRadio: [{ address: addr, data: preRadio }],
+      downloadCache: preCache,
+    });
 
     const result = buildAtD890WriteVerifyResult(snapshot, files, undefined, {
       model: 'ID890UV',
@@ -257,6 +262,39 @@ describe('buildAtD890WriteVerifyResult', () => {
     expect(unit?.verdict).toBe('not-committed');
     expect(unit?.mustChangeChunks).toBe(1);
     expect(unit?.changedChunks).toBe(0);
+  });
+
+  it('flags cache staleness when pre-write radio differs from download cache', () => {
+    const addr = D890_MAP.ChannelSet;
+    const radio = new Uint8Array(16).fill(0x02);
+    const cached = new Uint8Array(16).fill(0x00);
+    const snapshot = captureAtD890WriteStagingSnapshot([{ address: addr, data: radio }], {
+      preWriteFromRadio: [{ address: addr, data: radio }],
+      downloadCache: (() => {
+        const cache: AtD890DownloadCache = { blocks: new Map() };
+        putCacheBytes(cache, addr, cached);
+        return cache;
+      })(),
+    });
+    const staleness = summarizeDownloadCacheStaleness(
+      snapshot.preWriteChunks,
+      snapshot.downloadCacheChunks,
+    );
+    expect(staleness?.differingChunks).toBe(1);
+  });
+
+  it('excludes volatile zone A/B channel tables from compare', () => {
+    const files = makeRegionFiles({});
+    const addr = D890_MAP.ZoneAChannel;
+    const staged = new Uint8Array(16).fill(0x00);
+    const radio = new Uint8Array(16).fill(0x06);
+    writeChunkAt(files, addr, radio);
+    const snapshot = captureAtD890WriteStagingSnapshot([{ address: addr, data: staged }], {
+      preWriteFromRadio: [{ address: addr, data: radio }],
+    });
+    expect(isAtD890VolatileVerifyAddress(addr)).toBe(true);
+    const { mismatches } = compareStagingAgainstRegionDump(snapshot, files);
+    expect(mismatches).toHaveLength(0);
   });
 });
 

@@ -15,8 +15,10 @@ export interface WriteVerifyStagingChunk {
 export interface WriteVerifyStagingSnapshot {
   readonly capturedAt: string;
   readonly chunks: readonly WriteVerifyStagingChunk[];
-  /** Hydration cache bytes before write overlay — paired addresses with staged chunks. */
+  /** Live radio bytes at each staged address (fresh pre-write read). */
   readonly preWriteChunks?: readonly WriteVerifyStagingChunk[];
+  /** Last-download cache bytes at staged addresses — staleness guard only. */
+  readonly downloadCacheChunks?: readonly WriteVerifyStagingChunk[];
 }
 
 /** JSON-serializable opaque bag — adapter owns entry shape (e.g. sentinel id → bytes). */
@@ -64,7 +66,7 @@ export interface WriteVerifyKeptCompareResult {
   readonly mismatches?: readonly WriteVerifyKeptMismatch[];
 }
 
-export type WriteVerifyEraseUnitVerdict = 'committed' | 'not-committed' | 'no-evidence';
+export type WriteVerifyEraseUnitVerdict = 'committed' | 'partial' | 'not-committed' | 'no-evidence';
 
 export interface WriteVerifyEraseUnitRow {
   readonly unitBase: number;
@@ -94,6 +96,11 @@ export interface WriteVerifyResult {
   readonly regionGroups: readonly WriteVerifyRegionGroup[];
   /** Per erase-unit commit evidence (sparse RMW radios). */
   readonly eraseUnits?: readonly WriteVerifyEraseUnitRow[];
+  /** Radio differed from last Download at staged addresses (another writer since hydration). */
+  readonly cacheStaleness?: {
+    readonly differingChunks: number;
+    readonly message: string;
+  };
 }
 
 export interface WriteVerifyDebugContext {
@@ -136,6 +143,7 @@ export interface WriteVerifyStagingSnapshotJson {
   readonly capturedAt: string;
   readonly chunks: readonly { readonly address: number; readonly data: readonly number[] }[];
   readonly preWriteChunks?: readonly { readonly address: number; readonly data: readonly number[] }[];
+  readonly downloadCacheChunks?: readonly { readonly address: number; readonly data: readonly number[] }[];
 }
 
 export function serializeWriteVerifyStagingSnapshot(
@@ -148,6 +156,10 @@ export function serializeWriteVerifyStagingSnapshot(
       data: [...c.data],
     })),
     preWriteChunks: snapshot.preWriteChunks?.map((c) => ({
+      address: c.address,
+      data: [...c.data],
+    })),
+    downloadCacheChunks: snapshot.downloadCacheChunks?.map((c) => ({
       address: c.address,
       data: [...c.data],
     })),
@@ -164,6 +176,10 @@ export function deserializeWriteVerifyStagingSnapshot(
       data: Uint8Array.from(c.data),
     })),
     preWriteChunks: json.preWriteChunks?.map((c) => ({
+      address: c.address,
+      data: Uint8Array.from(c.data),
+    })),
+    downloadCacheChunks: json.downloadCacheChunks?.map((c) => ({
       address: c.address,
       data: Uint8Array.from(c.data),
     })),

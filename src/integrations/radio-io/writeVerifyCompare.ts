@@ -222,6 +222,7 @@ export function summarizeEraseUnitCommitVerdicts(input: {
       let verdict: WriteVerifyEraseUnitVerdict;
       if (counts.mustChangeChunks === 0) verdict = 'no-evidence';
       else if (counts.changedChunks === 0) verdict = 'not-committed';
+      else if (counts.changedChunks < counts.mustChangeChunks) verdict = 'partial';
       else verdict = 'committed';
       return { unitBase, ...counts, verdict };
     });
@@ -241,7 +242,7 @@ export function buildWriteVerifyResult(input: {
   const mismatchedChunks = input.mismatches.filter((m) => m.kind === 'mismatch').length;
   const eraseUnitsOk =
     input.eraseUnits === undefined ||
-    input.eraseUnits.every((u) => u.verdict !== 'not-committed');
+    input.eraseUnits.every((u) => u.verdict === 'committed' || u.verdict === 'no-evidence');
   return {
     ok: input.mismatches.length === 0 && eraseUnitsOk,
     model: input.model,

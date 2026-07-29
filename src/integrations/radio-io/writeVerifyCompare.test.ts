@@ -204,4 +204,52 @@ describe('writeVerifyCompare', () => {
     expect(committed[0]?.mustChangeChunks).toBe(1);
     expect(committed[0]?.changedChunks).toBe(1);
   });
+
+  it('summarizeEraseUnitCommitVerdicts labels partial when only some must-change bytes landed', () => {
+    const addr = 0x100;
+    const preWrite = new Uint8Array(16).fill(0xff);
+    const stagedA = new Uint8Array(16).fill(0xaa);
+    const stagedB = new Uint8Array(16).fill(0xbb);
+    const postA = new Uint8Array(16).fill(0xaa);
+    const postB = new Uint8Array(16).fill(0xff);
+
+    const rows = summarizeEraseUnitCommitVerdicts({
+      stagingChunks: [
+        { address: addr, data: stagedA },
+        { address: addr + 0x10, data: stagedB },
+      ],
+      preWriteByAddress: new Map([
+        [addr, preWrite],
+        [addr + 0x10, preWrite],
+      ]),
+      lookup: {
+        get(a: number, len: number) {
+          if (a === addr && len === 16) return postA;
+          if (a === addr + 0x10 && len === 16) return postB;
+          return null;
+        },
+      },
+      unitBaseFor: () => 0,
+      isComparableAddress: () => true,
+    });
+
+    expect(rows[0]?.verdict).toBe('partial');
+    expect(rows[0]?.mustChangeChunks).toBe(2);
+    expect(rows[0]?.changedChunks).toBe(1);
+
+    const okResult = buildWriteVerifyResult({
+      model: 'test',
+      elapsedMs: 1,
+      totalBytesRead: 32,
+      staging: captureWriteVerifyStaging([
+        { address: addr, data: stagedA },
+        { address: addr + 0x10, data: stagedB },
+      ]),
+      mismatches: [],
+      regions: [],
+      regionGroups: [],
+      eraseUnits: rows,
+    });
+    expect(okResult.ok).toBe(false);
+  });
 });

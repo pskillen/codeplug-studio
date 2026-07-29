@@ -4,7 +4,7 @@ import { AT_D890_SCAN_TIMING_DECISECONDS } from '@core/radios/anytone/at-d890uv/
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
-import { encodeAtD890ScanListRecord, encodeScanListsIntoAtD890Image } from './scanListCodec.ts';
+import { encodeAtD890ScanListRecord, encodeScanListsIntoAtD890Image, refreshScanListSetFromRadioBase } from './scanListCodec.ts';
 
 function readU16Le(buf: Uint8Array, offset: number): number {
   return buf[offset]! | (buf[offset + 1]! << 8);
@@ -87,5 +87,24 @@ describe('encodeScanListsIntoAtD890Image', () => {
     const outSet = image.get(D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
     expect(outSet[0]).toBe(0x01); // bit 0 from encoded list
     expect(outSet[31]).toBe(0x02); // bit 249 preserved
+  });
+
+  it('refreshScanListSetFromRadioBase preserves bits 100+ from live radio not stale cache', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    image.set(D890_MAP.ScanListSet, new Uint8Array(AT_D890_LIMITS.SCAN_LIST_SET_BYTES));
+
+    encodeScanListsIntoAtD890Image(image, [
+      { wireName: 'Home', listIndex: 1, channelNumbers: [1] },
+    ]);
+    expect(image.get(D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES)[31]).toBe(0x00);
+
+    const freshRadio = new Uint8Array(AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
+    setBitmapBit(freshRadio, 249, true);
+    refreshScanListSetFromRadioBase(image, freshRadio);
+
+    const outSet = image.get(D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
+    expect(outSet[0]).toBe(0x01);
+    expect(outSet[31]).toBe(0x02);
   });
 });
