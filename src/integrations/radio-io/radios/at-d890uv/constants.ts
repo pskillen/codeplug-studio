@@ -45,6 +45,15 @@ export const AT_D890_LIMITS = {
   CHANNEL_CHUNK_SIZE: 0x40,
 } as const;
 
+/**
+ * Dump / write-verify Read probe spans — not product SoT.
+ * Wider than {@link AT_D890UV_LIMITS} encode caps so debug export and cross-session
+ * verify can see hardware slots above modelled write limits ([#845](https://github.com/pskillen/codeplug-studio/issues/845) F18).
+ */
+export const AT_D890_DUMP_SCAN_LISTS = 250;
+export const AT_D890_DUMP_RX_GROUP_LISTS = 250;
+export const AT_D890_DUMP_RX_GROUP_SET_BYTES = 0x20;
+
 /** `D890_MAP` — first-adapter subset. */
 export const D890_MAP = {
   LocalInfo: 0x4f8_0000,
