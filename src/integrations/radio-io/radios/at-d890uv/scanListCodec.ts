@@ -6,7 +6,7 @@ import type { MemoryMap } from '../../types.ts';
 import type { RadioScanListDto } from '../../radioWriteProjection.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { AT_D890_SCAN_TIMING_DECISECONDS } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
-import { clearBitmap, setBitmapBit } from './bitmap.ts';
+import { clearBitmapBitsBelow, setBitmapBit } from './bitmap.ts';
 import { toAtD890ChannelIndex } from './channelIndex.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
@@ -56,13 +56,33 @@ export function encodeAtD890ScanListRecord(scan: RadioScanListDto): Uint8Array {
   return combined;
 }
 
+/**
+ * Re-merge {@link D890_MAP.ScanListSet} using a live radio bitmap as the preservation base.
+ *
+ * Hydration encodes against the last Download; bits at or above {@link AT_D890UV_LIMITS.SCAN_LISTS_MAX}
+ * must survive from flash, not stale cache.
+ */
+export function refreshScanListSetFromRadioBase(image: MemoryMap, freshRadioSet: Uint8Array): void {
+  const encoded = image.get(D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES).slice();
+  const merged = freshRadioSet.slice(0, AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
+  clearBitmapBitsBelow(merged, AT_D890UV_LIMITS.SCAN_LISTS_MAX);
+  const cap = AT_D890UV_LIMITS.SCAN_LISTS_MAX;
+  for (let idx = 0; idx < cap; idx++) {
+    const byte = Math.floor(idx / 8);
+    const bit = idx % 8;
+    const on = (encoded[byte]! & (1 << bit)) !== 0;
+    setBitmapBit(merged, idx, on);
+  }
+  image.set(D890_MAP.ScanListSet, merged);
+}
+
 export function encodeScanListsIntoAtD890Image(
   image: MemoryMap,
   scanLists: readonly RadioScanListDto[],
 ): MemoryMap {
   const set = image.get(D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES).slice();
-  clearBitmap(set);
-  const max = set.length * 8;
+  clearBitmapBitsBelow(set, AT_D890UV_LIMITS.SCAN_LISTS_MAX);
+  const max = AT_D890UV_LIMITS.SCAN_LISTS_MAX;
   for (let i = 0; i < max; i++) {
     image.fill(scanListAddress(i), AT_D890_LIMITS.SCAN_LIST_STRIDE, 0xff);
   }

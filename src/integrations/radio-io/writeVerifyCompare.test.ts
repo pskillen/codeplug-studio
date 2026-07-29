@@ -7,6 +7,7 @@ import {
   memoryMapByteLookup,
   regionAtFromManifest,
   sparseBlockByteLookup,
+  summarizeEraseUnitCommitVerdicts,
   summarizeWriteVerifyRegions,
 } from './writeVerifyCompare.ts';
 
@@ -121,5 +122,134 @@ describe('writeVerifyCompare', () => {
       () => ({ id: 'packed', label: 'Packed' }),
     );
     expect(mismatches).toHaveLength(0);
+  });
+
+  it('summarizeEraseUnitCommitVerdicts detects not-committed units', () => {
+    const unitBase = 0x2f0_0000;
+    const addr = unitBase + 0x100;
+    const preWrite = new Uint8Array(16).fill(0xff);
+    const staged = new Uint8Array(16).fill(0xab);
+    const postRead = new Uint8Array(16).fill(0xff);
+
+    const rows = summarizeEraseUnitCommitVerdicts({
+      stagingChunks: [{ address: addr, data: staged }],
+      preWriteByAddress: new Map([[addr, preWrite]]),
+      lookup: {
+        get(a: number, len: number) {
+          if (a === addr && len === 16) return postRead;
+          return null;
+        },
+      },
+      unitBaseFor: (a) => a & ~0x3ffff,
+      isComparableAddress: () => true,
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      unitBase,
+      stagedChunks: 1,
+      mustChangeChunks: 1,
+      changedChunks: 0,
+      verdict: 'not-committed',
+    });
+
+    const okResult = buildWriteVerifyResult({
+      model: 'test',
+      elapsedMs: 1,
+      totalBytesRead: 16,
+      staging: captureWriteVerifyStaging([{ address: addr, data: staged }]),
+      mismatches: [],
+      regions: [],
+      regionGroups: [],
+      eraseUnits: rows,
+    });
+    expect(okResult.ok).toBe(false);
+  });
+
+  it('summarizeEraseUnitCommitVerdicts labels committed and no-evidence units', () => {
+    const addr = 0x100;
+    const unchanged = new Uint8Array(16).fill(0x55);
+    const preWrite = new Uint8Array(16).fill(0xff);
+    const staged = new Uint8Array(16).fill(0xab);
+    const committedPost = new Uint8Array(16).fill(0xab);
+
+    const noEvidence = summarizeEraseUnitCommitVerdicts({
+      stagingChunks: [{ address: addr, data: unchanged }],
+      preWriteByAddress: new Map([[addr, unchanged]]),
+      lookup: {
+        get(a: number, len: number) {
+          if (a === addr && len === 16) return unchanged;
+          return null;
+        },
+      },
+      unitBaseFor: () => 0,
+      isComparableAddress: () => true,
+    });
+    expect(noEvidence[0]?.verdict).toBe('no-evidence');
+    expect(noEvidence[0]?.mustChangeChunks).toBe(0);
+
+    const committed = summarizeEraseUnitCommitVerdicts({
+      stagingChunks: [{ address: addr + 0x10, data: staged }],
+      preWriteByAddress: new Map([[addr + 0x10, preWrite]]),
+      lookup: {
+        get(a: number, len: number) {
+          if (a === addr + 0x10 && len === 16) return committedPost;
+          return null;
+        },
+      },
+      unitBaseFor: () => 0,
+      isComparableAddress: () => true,
+    });
+    expect(committed[0]?.verdict).toBe('committed');
+    expect(committed[0]?.mustChangeChunks).toBe(1);
+    expect(committed[0]?.changedChunks).toBe(1);
+  });
+
+  it('summarizeEraseUnitCommitVerdicts labels partial when only some must-change bytes landed', () => {
+    const addr = 0x100;
+    const preWrite = new Uint8Array(16).fill(0xff);
+    const stagedA = new Uint8Array(16).fill(0xaa);
+    const stagedB = new Uint8Array(16).fill(0xbb);
+    const postA = new Uint8Array(16).fill(0xaa);
+    const postB = new Uint8Array(16).fill(0xff);
+
+    const rows = summarizeEraseUnitCommitVerdicts({
+      stagingChunks: [
+        { address: addr, data: stagedA },
+        { address: addr + 0x10, data: stagedB },
+      ],
+      preWriteByAddress: new Map([
+        [addr, preWrite],
+        [addr + 0x10, preWrite],
+      ]),
+      lookup: {
+        get(a: number, len: number) {
+          if (a === addr && len === 16) return postA;
+          if (a === addr + 0x10 && len === 16) return postB;
+          return null;
+        },
+      },
+      unitBaseFor: () => 0,
+      isComparableAddress: () => true,
+    });
+
+    expect(rows[0]?.verdict).toBe('partial');
+    expect(rows[0]?.mustChangeChunks).toBe(2);
+    expect(rows[0]?.changedChunks).toBe(1);
+
+    const okResult = buildWriteVerifyResult({
+      model: 'test',
+      elapsedMs: 1,
+      totalBytesRead: 32,
+      staging: captureWriteVerifyStaging([
+        { address: addr, data: stagedA },
+        { address: addr + 0x10, data: stagedB },
+      ]),
+      mismatches: [],
+      regions: [],
+      regionGroups: [],
+      eraseUnits: rows,
+    });
+    expect(okResult.ok).toBe(false);
   });
 });

@@ -113,7 +113,7 @@ function minimalD890HydrationBag() {
       { address: D890_MAP.ZoneBChannel, data: new Uint8Array(0x200) },
       { address: D890_MAP.ScanListSet, data: new Uint8Array(0x20) },
       { address: D890_MAP.TalkgroupSet, data: new Uint8Array(0x4f0).fill(0xff) },
-      { address: D890_MAP.ReceiveGroupSet, data: new Uint8Array(0x10) },
+      { address: D890_MAP.ReceiveGroupSet, data: new Uint8Array(0x20) },
       { address: D890_MAP.RadioIdSet, data: new Uint8Array(0x20) },
       { address: D890_MAP.MasterIdData, data: new Uint8Array(0x40) },
     ],

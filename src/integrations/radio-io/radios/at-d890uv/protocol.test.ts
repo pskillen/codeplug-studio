@@ -22,7 +22,7 @@ import { encodeBcdFrequencyHz } from './bcd.ts';
 import { setBitmapBit } from './bitmap.ts';
 import { channelPrimaryAddress, channelSecondaryAddress } from './memory.ts';
 
-import { listTouchedEraseUnits } from './eraseUnits.ts';
+import { isAtD890EraseUnitBookkeepingAddress, listTouchedEraseUnits } from './eraseUnits.ts';
 
 const NEGOTIATED_READ_BLOCK = 0xf0;
 const TEST_SERIAL = 'SN-TEST-UPLOAD01';
@@ -132,6 +132,26 @@ describe('AtD890uvProtocol', () => {
     expect(writePayloadAt(pipe, D890_MAP.AlarmBitmap)?.[0]).toBe(0xab);
   });
 
+  it('never transmits the per-unit flash bookkeeping blocks', async () => {
+    // E7: `+0x3fbf0` and `+0x3fff0` are radio-managed sector metadata, confirmed on
+    // hardware — the marker changed on flash without Studio ever writing it. Not the
+    // cause of the D890 commit issue, but writing it back was always wrong regardless.
+    // See tmp/anytone-airband/d890-write-commit-divergence.md §4.
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
+
+    const image = seedChannelZeroUpload(radio);
+    enableAtD890AutoWriteAck(pipe);
+    await radio.upload(image, {});
+
+    const written = collectAtD890WriteDataAddresses(pipe);
+    const bookkeeping = written.filter((a) => isAtD890EraseUnitBookkeepingAddress(a));
+    expect(bookkeeping).toEqual([]);
+  });
+
   it('sends END on disconnect after connect', async () => {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890ConnectWithNegotiation(pipe);
@@ -238,7 +258,7 @@ describe('AtD890uvProtocol', () => {
     enqueueAtD890ReadReply(
       pipe,
       D890_MAP.ReceiveGroupSet,
-      new Uint8Array(0x10),
+      new Uint8Array(0x20),
       NEGOTIATED_READ_BLOCK,
     );
     enqueueAtD890ReadReply(pipe, D890_MAP.RadioIdSet, new Uint8Array(0x20), NEGOTIATED_READ_BLOCK);

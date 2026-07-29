@@ -39,3 +39,10 @@ sample-exports/
 
 # Local MCP secrets (never commit)
 .cursor/mcp.json
+
+# Python dev-tools (each tool keeps its own venv; see dev-tools/README.md)
+dev-tools/**/.venv/
+dev-tools/**/__pycache__/
+dev-tools/**/*.pyc
+dev-tools/**/*.egg-info/
+dev-tools/**/.pytest_cache/

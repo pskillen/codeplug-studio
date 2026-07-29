@@ -7,14 +7,20 @@
 
 import { AT_D890_MEMORY_REGIONS } from './memoryRegionExport.ts';
 import type { AtD890StagingChunk } from './sparseEraseRmw.ts';
-import { isAtD890ExcludedBookkeepingStagingAddress } from './eraseUnits.ts';
+import { eraseUnitBaseFor, isAtD890ExcludedBookkeepingStagingAddress } from './eraseUnits.ts';
 import {
   compareAtD890SentinelSnapshots,
   type AtD890SentinelCompareResult,
   type AtD890SentinelSnapshot,
 } from './sentinelVerify.ts';
 import { AT_D890_SENTINEL_EXTENTS } from './writableExtents.ts';
-import { AT_D890_BLOCK_SIZE } from './constants.ts';
+import { AT_D890_BLOCK_SIZE, D890_MAP } from './constants.ts';
+import { getCacheBytes, type AtD890DownloadCache } from './memory.ts';
+import {
+  summarizeEraseUnitCommitVerdicts,
+  type WriteVerifyEraseUnitRow,
+} from '../../writeVerifyCompare.ts';
+import type { WriteVerifyByteLookup } from '../../writeVerifyCompare.ts';
 
 export const AT_D890_RMW_SPILL_REGION_ID = 'rmwPreservedSpill';
 export const AT_D890_RMW_SPILL_REGION_LABEL = 'RMW-preserved spill (outside modelled banks)';
@@ -23,6 +29,15 @@ export const AT_D890_RMW_SPILL_GROUP = 'rmwPreserved';
 export interface AtD890WriteStagingSnapshot {
   readonly chunks: readonly AtD890StagingChunk[];
   readonly capturedAt: string;
+  /** Live radio bytes at each staged address (fresh erase-unit read before overlay). */
+  readonly preWriteChunks: readonly AtD890StagingChunk[];
+  /** Last-download cache bytes at staged addresses — staleness guard only. */
+  readonly downloadCacheChunks?: readonly AtD890StagingChunk[];
+}
+
+export interface AtD890CacheStaleness {
+  readonly differingChunks: number;
+  readonly message: string;
 }
 
 export type AtD890RegionVerifyStatus =
@@ -70,6 +85,8 @@ export interface AtD890WriteVerifyResult {
   };
   readonly sentinel: AtD890SentinelCompareResult;
   readonly regions: readonly AtD890RegionVerifyRow[];
+  readonly eraseUnits: readonly WriteVerifyEraseUnitRow[];
+  readonly cacheStaleness?: AtD890CacheStaleness;
 }
 
 /** Optional session context for agent-oriented debug export. */
@@ -99,16 +116,82 @@ export function cloneAtD890WriteStagingSnapshot(
   return {
     capturedAt: snapshot.capturedAt,
     chunks: snapshot.chunks.map((c) => ({ address: c.address, data: c.data.slice() })),
+    preWriteChunks: snapshot.preWriteChunks.map((c) => ({
+      address: c.address,
+      data: c.data.slice(),
+    })),
+    downloadCacheChunks: snapshot.downloadCacheChunks?.map((c) => ({
+      address: c.address,
+      data: c.data.slice(),
+    })),
   };
 }
 
 export function captureAtD890WriteStagingSnapshot(
   chunks: readonly AtD890StagingChunk[],
+  opts?: {
+    /** Live radio bytes at each staged address (pre-overlay fresh erase-unit read). */
+    preWriteFromRadio?: readonly AtD890StagingChunk[];
+    /** Last-download cache for staleness guard vs {@link preWriteFromRadio}. */
+    downloadCache?: AtD890DownloadCache;
+  },
 ): AtD890WriteStagingSnapshot {
+  const preWriteFromRadio = opts?.preWriteFromRadio ?? [];
+  const preWriteChunks =
+    preWriteFromRadio.length > 0
+      ? preWriteFromRadio.map((c) => ({ address: c.address, data: c.data.slice() }))
+      : opts?.downloadCache
+        ? chunks.map((c) => ({
+            address: c.address,
+            data: getCacheBytes(opts.downloadCache!, c.address, c.data.length).slice(),
+          }))
+        : [];
+
+  const downloadCacheChunks = opts?.downloadCache
+    ? chunks.map((c) => ({
+        address: c.address,
+        data: getCacheBytes(opts.downloadCache!, c.address, c.data.length).slice(),
+      }))
+    : undefined;
+
   return {
     capturedAt: new Date().toISOString(),
     chunks: chunks.map((c) => ({ address: c.address, data: c.data.slice() })),
+    preWriteChunks,
+    downloadCacheChunks,
   };
+}
+
+function chunksEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+export function summarizeDownloadCacheStaleness(
+  preWriteRadio: readonly AtD890StagingChunk[],
+  downloadCacheChunks: readonly AtD890StagingChunk[] | undefined,
+): AtD890CacheStaleness | undefined {
+  if (!downloadCacheChunks || downloadCacheChunks.length === 0) return undefined;
+  const cacheByAddress = new Map(downloadCacheChunks.map((c) => [c.address, c.data]));
+  let differingChunks = 0;
+  for (const { address, data } of preWriteRadio) {
+    const cached = cacheByAddress.get(address);
+    if (cached !== undefined && !chunksEqual(data, cached)) differingChunks++;
+  }
+  if (differingChunks === 0) return undefined;
+  return {
+    differingChunks,
+    message: `Radio differs from last Download at ${differingChunks} staged 16-byte blocks — another writer (e.g. CPS) may have modified flash since hydration.`,
+  };
+}
+
+/** Zone A/B channel tables hold the operator's per-zone selection — volatile across write and verify. */
+export function isAtD890VolatileVerifyAddress(address: number): boolean {
+  const zoneBEnd = D890_MAP.ZoneBChannel + D890_MAP.ZoneTableBytes;
+  return address >= D890_MAP.ZoneAChannel && address < zoneBEnd;
 }
 
 /** Whether `address` falls inside a documented modelled {@link AT_D890_MEMORY_REGIONS} span. */
@@ -151,10 +234,15 @@ function countExcludedBookkeepingChunks(snapshot: AtD890WriteStagingSnapshot): n
 }
 
 function isComparableStagingAddress(address: number): boolean {
+  if (isAtD890VolatileVerifyAddress(address)) return false;
   return !isAtD890ExcludedBookkeepingStagingAddress(
     address,
     !atD890AddressInModelledRegions(address),
   );
+}
+
+function countExcludedVolatileChunks(snapshot: AtD890WriteStagingSnapshot): number {
+  return snapshot.chunks.filter((c) => isAtD890VolatileVerifyAddress(c.address)).length;
 }
 
 interface AddressLookup {
@@ -220,14 +308,6 @@ function readBytesAt(lookup: AddressLookup, address: number, length: number): Ui
     out[i] = b;
   }
   return out;
-}
-
-function chunksEqual(expected: Uint8Array, actual: Uint8Array): boolean {
-  if (expected.length !== actual.length) return false;
-  for (let i = 0; i < expected.length; i++) {
-    if (expected[i] !== actual[i]) return false;
-  }
-  return true;
 }
 
 /** Extract sentinel spans from a region dump for cross-session compare. */
@@ -370,6 +450,18 @@ export function summarizeVerifyByRegion(
   return rows;
 }
 
+function buildPostWriteLookup(
+  files: ReadonlyMap<string, Uint8Array>,
+  spillChunks: ReadonlyMap<number, Uint8Array>,
+): WriteVerifyByteLookup {
+  const addressLookup = buildAddressLookup(files, spillChunks);
+  return {
+    get(address: number, length: number): Uint8Array | null {
+      return readBytesAt(addressLookup, address, length);
+    },
+  };
+}
+
 export function buildAtD890WriteVerifyResult(
   snapshot: AtD890WriteStagingSnapshot,
   files: ReadonlyMap<string, Uint8Array>,
@@ -388,9 +480,29 @@ export function buildAtD890WriteVerifyResult(
   const stagingOk = mismatchedChunks === 0 && notReadChunks === 0;
   const sentinelOk = sentinel.ok;
   const excludedBookkeepingChunks = countExcludedBookkeepingChunks(snapshot);
-  const comparableChunks = snapshot.chunks.length - excludedBookkeepingChunks;
+  const excludedVolatileChunks = countExcludedVolatileChunks(snapshot);
+  const comparableChunks =
+    snapshot.chunks.length - excludedBookkeepingChunks - excludedVolatileChunks;
+  const preWriteByAddress = new Map(snapshot.preWriteChunks.map((c) => [c.address, c.data]));
+  const cacheStaleness = summarizeDownloadCacheStaleness(
+    snapshot.preWriteChunks,
+    snapshot.downloadCacheChunks,
+  );
+  const eraseUnits =
+    snapshot.preWriteChunks.length > 0
+      ? summarizeEraseUnitCommitVerdicts({
+          stagingChunks: snapshot.chunks,
+          preWriteByAddress,
+          lookup: buildPostWriteLookup(files, spillChunks),
+          unitBaseFor: eraseUnitBaseFor,
+          isComparableAddress: isComparableStagingAddress,
+        })
+      : [];
+  const eraseUnitsOk = eraseUnits.every(
+    (u) => u.verdict === 'committed' || u.verdict === 'no-evidence',
+  );
   return {
-    ok: stagingOk && sentinelOk,
+    ok: stagingOk && sentinelOk && eraseUnitsOk,
     model: meta.model,
     elapsedMs: meta.elapsedMs,
     totalBytesRead: meta.totalBytesRead,
@@ -404,6 +516,8 @@ export function buildAtD890WriteVerifyResult(
     },
     sentinel,
     regions,
+    eraseUnits,
+    cacheStaleness,
   };
 }
 
@@ -421,6 +535,27 @@ export function formatAtD890WriteVerifyMarkdown(
     `**Overall:** ${result.ok ? 'PASS' : 'FAIL'} — ${result.staging.mismatchedChunks} of ${result.staging.totalChunks} staged chunks mismatched${result.staging.notReadChunks > 0 ? `, ${result.staging.notReadChunks} not read` : ''}${result.staging.excludedBookkeepingChunks > 0 ? ` (${result.staging.excludedBookkeepingChunks} erase-unit bookkeeping blocks excluded)` : ''}`,
     `**Preserved settings:** ${result.sentinel.ok ? 'PASS' : 'FAIL'}`,
     '',
+  ];
+
+  if (result.cacheStaleness) {
+    lines.push(`**Cache staleness:** ${result.cacheStaleness.message}`, '');
+  }
+
+  if (result.eraseUnits.length > 0) {
+    lines.push(
+      '**Erase-unit commit:**',
+      '',
+      '| Unit base | Staged | Must change | Changed on flash | Verdict |',
+      '| --- | --- | --- | --- | --- |',
+      ...result.eraseUnits.map(
+        (u) =>
+          `| ${hexAddr(u.unitBase)} | ${u.stagedChunks} | ${u.mustChangeChunks} | ${u.changedChunks} | **${u.verdict}** |`,
+      ),
+      '',
+    );
+  }
+
+  lines.push(
     '| Region | Group | Staged chunks | Mismatches | Status |',
     '| --- | --- | --- | --- | --- |',
     ...result.regions
@@ -429,7 +564,7 @@ export function formatAtD890WriteVerifyMarkdown(
         (r) =>
           `| ${r.label} | ${r.group} | ${r.stagedChunkCount} | ${r.mismatchedChunks} | ${r.status} |`,
       ),
-  ];
+  );
 
   if (!result.sentinel.ok) {
     lines.push('', '**Preserved-settings mismatches:**');
@@ -511,6 +646,31 @@ export function formatAtD890WriteVerifyDebugMarkdown(
     `- Staging: ${result.staging.mismatchedChunks} / ${result.staging.totalChunks} staged 16-byte chunks mismatched${result.staging.notReadChunks > 0 ? `, ${result.staging.notReadChunks} not read` : ''}${result.staging.excludedBookkeepingChunks > 0 ? ` (${result.staging.excludedBookkeepingChunks} bookkeeping blocks excluded)` : ''}`,
     `- Preserved settings (6 sentinels): **${result.sentinel.ok ? 'PASS' : 'FAIL'}**`,
     '',
+  );
+
+  if (result.cacheStaleness) {
+    lines.push('## Cache staleness', '', result.cacheStaleness.message, '');
+  }
+
+  if (result.eraseUnits.length > 0) {
+    lines.push(
+      '## Erase-unit commit verdict',
+      '',
+      'Baseline is the **live radio** before overlay, not the last Download cache.',
+      'A unit with **must-change > 0** and **changed == 0** did not commit to flash.',
+      '**partial** means some but not all must-change chunks differ on flash after write.',
+      '',
+      '| unitBase | stagedChunks | mustChangeChunks | changedChunks | verdict |',
+      '| --- | --- | --- | --- | --- |',
+      ...result.eraseUnits.map(
+        (u) =>
+          `| ${hexAddr(u.unitBase)} | ${u.stagedChunks} | ${u.mustChangeChunks} | ${u.changedChunks} | **${u.verdict}** |`,
+      ),
+      '',
+    );
+  }
+
+  lines.push(
     '## Regions',
     '',
     '| id | label | group | bytesRead | stagedChunks | mismatches | status |',

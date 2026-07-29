@@ -39,6 +39,7 @@ import {
 } from './connection.ts';
 import { negotiateAtD890ReadBlockSize } from './linkProbe.ts';
 import { decodeChannelsFromAtD890Cache, encodeChannelsIntoAtD890Image } from './channelCodec.ts';
+import { refreshScanListSetFromRadioBase } from './scanListCodec.ts';
 import {
   assertAtD890SentinelRegionsPlausible,
   cloneAtD890SentinelSnapshot,
@@ -47,13 +48,20 @@ import {
   type AtD890SentinelCompareResult,
   type AtD890SentinelSnapshot,
 } from './sentinelVerify.ts';
-import { eraseUnitBaseFor, listTouchedEraseUnits, readSpanForEraseUnit } from './eraseUnits.ts';
+import {
+  AT_D890_SKIP_BOOKKEEPING_WRITES,
+  eraseUnitBaseFor,
+  isAtD890EraseUnitBookkeepingAddress,
+  listTouchedEraseUnits,
+  readSpanForEraseUnit,
+} from './eraseUnits.ts';
 import { assertAtD890LocalInfoIdentity } from './identityCheck.ts';
 import {
   assertPreservedBytesMatchFreshRead,
   listSparseStagingChunks,
   modelledAddressSetFromChunks,
   overlayModelledChunksOntoUnit,
+  preWriteChunksFromFreshUnits,
 } from './sparseEraseRmw.ts';
 import {
   captureAtD890WriteStagingSnapshot,
@@ -569,6 +577,21 @@ export class AtD890uvProtocol implements CloneImageRadio {
       );
     }
 
+    const preUploadCache: AtD890DownloadCache = {
+      blocks: new Map(
+        [...this.cache.blocks.entries()].map(([address, data]) => [address, data.slice()]),
+      ),
+    };
+
+    const freshScanListSet = await atD890ReadMemory(
+      this.pipe,
+      D890_MAP.ScanListSet,
+      AT_D890_LIMITS.SCAN_LIST_SET_BYTES,
+      opts.signal,
+      this.readBlockSize,
+    );
+    refreshScanListSetFromRadioBase(image, freshScanListSet);
+
     applyAtD890WriteImageToCache(this.cache, image, this.uploadBankIntent);
 
     const modelledChunks = listWriteChunks(this.cache, AT_D890_SAFE_SKIP_WRITE_ADDR);
@@ -633,9 +656,15 @@ export class AtD890uvProtocol implements CloneImageRadio {
       const stagingChunks = listSparseStagingChunks(mergedUnits, modelledAddresses);
       assertPreservedBytesMatchFreshRead(stagingChunks, freshUnits, modelledAddresses);
       const transmittedChunks = stagingChunks.filter(
-        (c) => c.address !== AT_D890_SAFE_SKIP_WRITE_ADDR,
+        (c) =>
+          c.address !== AT_D890_SAFE_SKIP_WRITE_ADDR &&
+          !(AT_D890_SKIP_BOOKKEEPING_WRITES && isAtD890EraseUnitBookkeepingAddress(c.address)),
       );
-      this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(transmittedChunks);
+      const preWriteFromRadio = preWriteChunksFromFreshUnits(transmittedChunks, freshUnits);
+      this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(transmittedChunks, {
+        preWriteFromRadio,
+        downloadCache: preUploadCache,
+      });
 
       reportProgress(
         opts.onProgress,

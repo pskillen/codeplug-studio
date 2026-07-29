@@ -4,6 +4,7 @@
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioZoneDto } from '../../radioWriteProjection.ts';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { clearBitmap, listSetBits, setBitmapBit } from './bitmap.ts';
 import { AT_D890_INVALID_U16, AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
@@ -42,12 +43,16 @@ export function encodeZonesIntoAtD890Image(
   const zoneB = image.get(D890_MAP.ZoneBChannel, D890_MAP.ZoneTableBytes).slice();
   clearBitmap(zoneSet);
 
-  const maxZones = zoneSet.length * 8;
+  const maxZones = AT_D890UV_LIMITS.ZONE_MAX;
   for (let i = 0; i < maxZones; i++) {
     writeU16Le(zoneA, i * 2, 0);
     writeU16Le(zoneB, i * 2, 1);
     image.fill(zoneNameAddress(i), D890_MAP.ZoneDataLength, 0xff);
     image.fill(zoneChannelsAddress(i), D890_MAP.ZoneChannelsStride, 0xff);
+  }
+  for (let i = maxZones; i < zoneSet.length * 8; i++) {
+    writeU16Le(zoneA, i * 2, 0);
+    writeU16Le(zoneB, i * 2, 0);
   }
 
   zones.forEach((zone, zIdx) => {

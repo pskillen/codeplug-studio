@@ -19,8 +19,8 @@ import { negotiateAtD890ReadBlockSize } from './linkProbe.ts';
 import {
   AT_D890_BLOCK_SIZE,
   AT_D890_DUMP_RX_GROUP_LISTS,
-  AT_D890_DUMP_RX_GROUP_SET_BYTES,
   AT_D890_DUMP_SCAN_LISTS,
+  AT_D890_DUMP_ZONES,
   AT_D890_LIMITS,
   D890_MAP,
 } from './constants.ts';
@@ -60,6 +60,7 @@ export const AT_D890_MEMORY_REGION_GROUPS: readonly AtD890MemoryRegionGroup[] = 
   { id: 'receiveGroups', label: 'RX groups' },
   { id: 'radioIds', label: 'Radio IDs' },
   { id: 'airband', label: 'Airband (AM channels + zones)' },
+  { id: 'aliasProbe', label: 'Alias probe (+0x40000 windows) — B1/B2 diagnostic' },
 ];
 
 /** `RadioIdSet` bitmap capacity (`0x20` bytes × 8 bits) — no separate named max elsewhere. */
@@ -96,6 +97,33 @@ function region(
 ): AtD890MemoryRegion {
   return { id, label, group, chunks: [{ address, length }] };
 }
+
+/**
+ * Read-only diagnostic: the erase unit **one `0x40000` window above** each bank that
+ * reports `not-committed` in write-verify.
+ *
+ * Motivated by hardware evidence (verify `14-05-34-148Z`, dump `14-06-18-907Z`): the
+ * talkgroup payload staged at `0x3a000c0` was found byte-exact at `0x3a400c0`, one erase
+ * unit high, while the addressed location kept its pre-write content. If other banks are
+ * displaced the same way, "the unit did not commit" is really "the write landed elsewhere".
+ *
+ * Each span starts one erase unit (`0x40000`) above the bank and runs to the next known
+ * bank, so it catches a displacement of `+0x40000`, `+0x80000` or `+0xC0000` — not only the
+ * exact offset seen once in the talkgroup bank. Nothing else is known to live in these gaps.
+ *
+ * Not in the default dump path — export the `aliasProbe` group explicitly. `ChannelData` is
+ * deliberately absent: `ChannelDataAliasStride` is `0x40000`, so `0x1040000` already mirrors
+ * `0x1000000` on read and a displaced write there would be visible in the normal dump.
+ */
+const ALIAS_PROBE_REGIONS: readonly AtD890MemoryRegion[] = [
+  region('probeZoneChannels', 'above zoneChannels', 'aliasProbe', 0x204_0000, 0xc_0000),
+  region('probeScanListData', 'above scanListData', 'aliasProbe', 0x214_0000, 0xc_0000),
+  region('probeBitmaps', 'above channel/zone/scan bitmaps', 'aliasProbe', 0x34c_0000, 0x4_0000),
+  region('probeZonesName', 'above zonesName', 'aliasProbe', 0x364_0000, 0x4_0000),
+  region('probeReceiveGroupData', 'above receiveGroupData', 'aliasProbe', 0x37c_0000, 0x4_0000),
+  region('probeAmAir', 'above amAir/amZone', 'aliasProbe', 0x38c_0000, 0x4_0000),
+  region('probeTalkgroupOrder', 'above talkgroupOrder', 'aliasProbe', 0x3f4_0000, 0xc_0000),
+];
 
 /**
  * Every region documented in `D890_MAP` except `DigitalContact*`, which is block-hopped
@@ -167,14 +195,14 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
     'Zone names',
     'zones',
     D890_MAP.ZonesName,
-    AT_D890UV_LIMITS.ZONE_MAX * D890_MAP.ZoneDataOffset,
+    AT_D890_DUMP_ZONES * D890_MAP.ZoneDataOffset,
   ),
   region(
     'zoneChannels',
     'Zone membership',
     'zones',
     D890_MAP.ZoneChannels,
-    AT_D890UV_LIMITS.ZONE_MAX * D890_MAP.ZoneChannelsStride,
+    AT_D890_DUMP_ZONES * D890_MAP.ZoneChannelsStride,
   ),
   region(
     'zoneAChannel',
@@ -212,7 +240,7 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
     'RX-group occupancy bitmap',
     'receiveGroups',
     D890_MAP.ReceiveGroupSet,
-    AT_D890_DUMP_RX_GROUP_SET_BYTES,
+    AT_D890_LIMITS.RX_GROUP_SET_BYTES,
   ),
   region(
     'receiveGroupData',
@@ -275,6 +303,19 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
   ),
 ];
 
+/**
+ * Dump-page region list: modelled banks **plus** the alias probes.
+ *
+ * Deliberately separate from {@link AT_D890_MEMORY_REGIONS}, which is write-verify's read
+ * scope *and* the authority for `isModelledRegionAddress`. Adding probes there would add
+ * ~3.4 MB to every verify and reclassify the probe windows as modelled banks, changing the
+ * bookkeeping-exclusion scoping. Probes are a read-only diagnostic; keep them off that path.
+ */
+export const AT_D890_DUMP_REGIONS: readonly AtD890MemoryRegion[] = [
+  ...AT_D890_MEMORY_REGIONS,
+  ...ALIAS_PROBE_REGIONS,
+];
+
 export interface AtD890MemoryDumpOpts {
   onProgress?: ProgressFn;
   signal?: AbortSignal;
@@ -327,7 +368,7 @@ export async function runAtD890MemoryRegionDump(
   regionId: string,
   opts: AtD890MemoryDumpOpts = {},
 ): Promise<AtD890MemoryRegionDumpResult> {
-  const regionDef = AT_D890_MEMORY_REGIONS.find((r) => r.id === regionId);
+  const regionDef = AT_D890_DUMP_REGIONS.find((r) => r.id === regionId);
   if (!regionDef) throw new RangeError(`Unknown AT-D890UV memory region id: ${regionId}`);
 
   const { model, readBlockSize } = await enterAndNegotiate(pipe, opts.signal);
@@ -461,7 +502,7 @@ export async function runAtD890MemoryGroupDump(
   groupId: string,
   opts: AtD890MemoryDumpOpts = {},
 ): Promise<AtD890MemoryDumpAllResult> {
-  const regions = AT_D890_MEMORY_REGIONS.filter((r) => r.group === groupId);
+  const regions = AT_D890_DUMP_REGIONS.filter((r) => r.group === groupId);
   if (regions.length === 0) {
     throw new RangeError(`Unknown AT-D890UV memory region group id: ${groupId}`);
   }

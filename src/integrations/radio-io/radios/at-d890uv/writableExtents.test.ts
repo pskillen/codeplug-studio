@@ -11,11 +11,19 @@ import {
   assertAtD890TransmitAddress,
   assertAtD890WritableAddress,
   assertAtD890WritableSpan,
+  AT_D890_WRITABLE_EXTENTS,
   isAtD890TransmitAddress,
   isAtD890WritableAddress,
 } from './writableExtents.ts';
 
 describe('AT_D890 writable extents', () => {
+  it('ReceiveGroupData writable span matches RX_GROUP_SET_BYTES bitmap width', () => {
+    const receiveGroupData = AT_D890_WRITABLE_EXTENTS.find((e) => e.id === 'ReceiveGroupData')!;
+    expect(receiveGroupData.length).toBe(
+      AT_D890_LIMITS.RX_GROUP_STRIDE * AT_D890_LIMITS.RX_GROUP_SET_BYTES * 8,
+    );
+  });
+
   it('includes modelled static banks', () => {
     expect(isAtD890WritableAddress(D890_MAP.ChannelSet)).toBe(true);
     expect(isAtD890WritableAddress(D890_MAP.ZoneAChannel)).toBe(true);

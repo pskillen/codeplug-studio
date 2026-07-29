@@ -15,6 +15,10 @@ export interface WriteVerifyStagingChunk {
 export interface WriteVerifyStagingSnapshot {
   readonly capturedAt: string;
   readonly chunks: readonly WriteVerifyStagingChunk[];
+  /** Live radio bytes at each staged address (fresh pre-write read). */
+  readonly preWriteChunks?: readonly WriteVerifyStagingChunk[];
+  /** Last-download cache bytes at staged addresses — staleness guard only. */
+  readonly downloadCacheChunks?: readonly WriteVerifyStagingChunk[];
 }
 
 /** JSON-serializable opaque bag — adapter owns entry shape (e.g. sentinel id → bytes). */
@@ -62,6 +66,16 @@ export interface WriteVerifyKeptCompareResult {
   readonly mismatches?: readonly WriteVerifyKeptMismatch[];
 }
 
+export type WriteVerifyEraseUnitVerdict = 'committed' | 'partial' | 'not-committed' | 'no-evidence';
+
+export interface WriteVerifyEraseUnitRow {
+  readonly unitBase: number;
+  readonly stagedChunks: number;
+  readonly mustChangeChunks: number;
+  readonly changedChunks: number;
+  readonly verdict: WriteVerifyEraseUnitVerdict;
+}
+
 export interface WriteVerifyResult {
   readonly ok: boolean;
   readonly model: string;
@@ -80,6 +94,13 @@ export interface WriteVerifyResult {
   readonly kept?: WriteVerifyKeptCompareResult;
   readonly regions: readonly WriteVerifyRegionRow[];
   readonly regionGroups: readonly WriteVerifyRegionGroup[];
+  /** Per erase-unit commit evidence (sparse RMW radios). */
+  readonly eraseUnits?: readonly WriteVerifyEraseUnitRow[];
+  /** Radio differed from last Download at staged addresses (another writer since hydration). */
+  readonly cacheStaleness?: {
+    readonly differingChunks: number;
+    readonly message: string;
+  };
 }
 
 export interface WriteVerifyDebugContext {
@@ -121,6 +142,14 @@ export interface WriteVerifyHooks {
 export interface WriteVerifyStagingSnapshotJson {
   readonly capturedAt: string;
   readonly chunks: readonly { readonly address: number; readonly data: readonly number[] }[];
+  readonly preWriteChunks?: readonly {
+    readonly address: number;
+    readonly data: readonly number[];
+  }[];
+  readonly downloadCacheChunks?: readonly {
+    readonly address: number;
+    readonly data: readonly number[];
+  }[];
 }
 
 export function serializeWriteVerifyStagingSnapshot(
@@ -129,6 +158,14 @@ export function serializeWriteVerifyStagingSnapshot(
   return {
     capturedAt: snapshot.capturedAt,
     chunks: snapshot.chunks.map((c) => ({
+      address: c.address,
+      data: [...c.data],
+    })),
+    preWriteChunks: snapshot.preWriteChunks?.map((c) => ({
+      address: c.address,
+      data: [...c.data],
+    })),
+    downloadCacheChunks: snapshot.downloadCacheChunks?.map((c) => ({
       address: c.address,
       data: [...c.data],
     })),
@@ -141,6 +178,14 @@ export function deserializeWriteVerifyStagingSnapshot(
   return {
     capturedAt: json.capturedAt,
     chunks: json.chunks.map((c) => ({
+      address: c.address,
+      data: Uint8Array.from(c.data),
+    })),
+    preWriteChunks: json.preWriteChunks?.map((c) => ({
+      address: c.address,
+      data: Uint8Array.from(c.data),
+    })),
+    downloadCacheChunks: json.downloadCacheChunks?.map((c) => ({
       address: c.address,
       data: Uint8Array.from(c.data),
     })),

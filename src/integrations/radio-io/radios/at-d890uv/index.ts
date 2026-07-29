@@ -121,6 +121,7 @@ export {
   type AtD890WriteCoverageStatus,
 } from './writeCoverage.ts';
 export {
+  AT_D890_DUMP_REGIONS,
   AT_D890_MEMORY_REGION_GROUPS,
   AT_D890_MEMORY_REGIONS,
   runAtD890DigitalContactsDump,

@@ -5,6 +5,7 @@ import {
   scriptAtD890ConnectWithNegotiation,
 } from './__fixtures__/scriptedPipe.ts';
 import {
+  AT_D890_DUMP_REGIONS,
   AT_D890_MEMORY_REGION_GROUPS,
   AT_D890_MEMORY_REGIONS,
   runAtD890DigitalContactsDump,
@@ -14,8 +15,9 @@ import {
 } from './memoryRegionExport.ts';
 import {
   AT_D890_DUMP_RX_GROUP_LISTS,
-  AT_D890_DUMP_RX_GROUP_SET_BYTES,
   AT_D890_DUMP_SCAN_LISTS,
+  AT_D890_DUMP_ZONES,
+  AT_D890_LIMITS,
   D890_MAP,
 } from './constants.ts';
 
@@ -43,13 +45,17 @@ describe('AT_D890_MEMORY_REGIONS', () => {
     }
   });
 
-  it('dump/verify probe spans cover scan lists and RX groups through CPS UI ceiling', () => {
+  it('dump/verify probe spans cover bitmap capacity beyond product encode caps', () => {
+    const zonesName = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'zonesName')!;
+    const zoneChannels = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'zoneChannels')!;
     const scanListData = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'scanListData')!;
     const receiveGroupSet = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'receiveGroupSet')!;
     const receiveGroupData = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'receiveGroupData')!;
 
+    expect(zonesName.chunks[0]!.length).toBe(AT_D890_DUMP_ZONES * D890_MAP.ZoneDataOffset);
+    expect(zoneChannels.chunks[0]!.length).toBe(AT_D890_DUMP_ZONES * D890_MAP.ZoneChannelsStride);
     expect(scanListData.chunks[0]!.length).toBe(AT_D890_DUMP_SCAN_LISTS * D890_MAP.ScanListStride);
-    expect(receiveGroupSet.chunks[0]!.length).toBe(AT_D890_DUMP_RX_GROUP_SET_BYTES);
+    expect(receiveGroupSet.chunks[0]!.length).toBe(AT_D890_LIMITS.RX_GROUP_SET_BYTES);
     expect(receiveGroupData.chunks[0]!.length).toBe(
       AT_D890_DUMP_RX_GROUP_LISTS * D890_MAP.ReceiveGroupStride,
     );
@@ -77,10 +83,17 @@ describe('AT_D890_MEMORY_REGIONS', () => {
   it('every group has at least one region', () => {
     for (const group of AT_D890_MEMORY_REGION_GROUPS) {
       expect(
-        AT_D890_MEMORY_REGIONS.some((r) => r.group === group.id),
+        AT_D890_DUMP_REGIONS.some((r) => r.group === group.id),
         `group "${group.id}" has no regions`,
       ).toBe(true);
     }
+  });
+
+  it('keeps alias probes out of the write-verify read scope', () => {
+    // AT_D890_MEMORY_REGIONS is verify's read scope and the authority for
+    // isModelledRegionAddress; probes must only ever reach the dump page.
+    expect(AT_D890_MEMORY_REGIONS.some((r) => r.group === 'aliasProbe')).toBe(false);
+    expect(AT_D890_DUMP_REGIONS.filter((r) => r.group === 'aliasProbe').length).toBeGreaterThan(0);
   });
 });
 
