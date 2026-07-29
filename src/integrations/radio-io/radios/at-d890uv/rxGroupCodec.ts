@@ -5,7 +5,7 @@
 import type { MemoryMap } from '../../types.ts';
 import type { RadioRxGroupDto } from '../../radioWriteProjection.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
-import { clearBitmapBitsBelow, setBitmapBit } from './bitmap.ts';
+import { clearBitmap, setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
   mergeMapRegionsIntoCache,
@@ -43,7 +43,7 @@ export function encodeRxGroupsIntoAtD890Image(
   rxGroups: readonly RadioRxGroupDto[],
 ): MemoryMap {
   const set = image.get(D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES).slice();
-  clearBitmapBitsBelow(set, AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX);
+  clearBitmap(set);
   const max = AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX;
   for (let i = 0; i < max; i++) {
     image.fill(receiveGroupAddress(i), AT_D890_LIMITS.RX_GROUP_STRIDE, 0xff);

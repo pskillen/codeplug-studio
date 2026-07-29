@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
-import { setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import { encodeAtD890RxGroupRecord, encodeRxGroupsIntoAtD890Image } from './rxGroupCodec.ts';
 
@@ -66,17 +65,15 @@ describe('encodeRxGroupsIntoAtD890Image', () => {
     expect(outSet[31]).toBe(0x02); // bit 249
   });
 
-  it('leaves ReceiveGroupSet bytes for bits 250–255 when bit 255 was preset', () => {
+  it('clears phantom bits 250–255 when base image byte 31 is 0xff', () => {
     const image = createMemoryMap(0x500_0000);
     image.fill(0, 0x500_0000, 0xff);
-    const set = new Uint8Array(AT_D890_LIMITS.RX_GROUP_SET_BYTES);
-    setBitmapBit(set, 255, true);
-    image.set(D890_MAP.ReceiveGroupSet, set);
+    image.set(D890_MAP.ReceiveGroupSet, new Uint8Array(AT_D890_LIMITS.RX_GROUP_SET_BYTES).fill(0xff));
 
     encodeRxGroupsIntoAtD890Image(image, [{ index: 1, wireName: 'Local', memberDigitalIds: [0] }]);
 
     const outSet = image.get(D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES);
     expect(outSet[0]).toBe(0x01); // bit 0 from encoded list
-    expect(outSet[31]).toBe(0x80); // bit 255 preserved
+    expect(outSet[31]).toBe(0x00); // not 0xfc from preserved bits 250–255
   });
 });
