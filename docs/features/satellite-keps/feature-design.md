@@ -33,15 +33,14 @@ Each data line is strictly 69 characters long and uses a rigid column-based form
 For automated tools, fetching TLEs via HTTP GET requests is the standard approach. The primary sources used by the amateur radio community are:
 
 - **CelesTrak (Recommended):** The most reliable, free, and unrestricted source for automated fetching. They provide pre-filtered lists of satellites.
-  - *Amateur specific endpoint:* `https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle`
+  - _Amateur specific endpoint:_ `https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle`
 - **AMSAT (Radio Amateur Satellite Corporation):** Provides a curated text file specifically for active amateur satellites.
-  - *Endpoint:* `https://www.amsat.org/tle/current/nasabare.txt`
+  - _Endpoint:_ `https://www.amsat.org/tle/current/nasabare.txt`
 - **Space-Track.org:** The authoritative US Space Command database. Highly accurate, but requires an authenticated account (API key) and strict adherence to rate limiting, making it less ideal for direct integration into client-side ham radio flashing tools.
 
 ## 4. Definition of Keplerian Elements
 
 Keplerian elements are the mathematical parameters required to define an orbit and the position of a satellite within that orbit at a specific point in time.
-
 
 |                                           |            |                                                                                                                                                                                              |
 | ----------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -54,7 +53,6 @@ Keplerian elements are the mathematical parameters required to define an orbit a
 | **Mean Anomaly**                          | $M$        | The phase of the satellite in its orbit at the Epoch. Represents an angle progressing uniformly over time from $0^{\circ}$ to $360^{\circ}$.                                                 |
 | **Mean Motion**                           | $n$        | The speed of the satellite, expressed in revolutions per day. This determines the orbital period and altitude.                                                                               |
 | **BSTAR (Drag Term)**                     | $B^*$      | An empirical parameter modeling atmospheric drag and solar radiation pressure, dictating how quickly the orbit decays.                                                                       |
-
 
 ## 5. Engineering Considerations for the Tool
 
@@ -84,19 +82,21 @@ The user can initiate a web-serial write to their radio via two distinct paths, 
 
 #### Workflow A: Global Write (From the Library)
 
-*Intended for the quick, bi-weekly update when the user just plugs in their radio to refresh orbital data.*
+_Intended for the quick, bi-weekly update when the user just plugs in their radio to refresh orbital data._
 
 1. User navigates to the Keps Library and clicks `Write Keps to Radio`.
 2. A modal window appears titled "Select Target Radio".
 3. **Smart List Sorting:** The modal lists radios in two sections:
-  - **Recommended / Your Radios:** Pulls from the user's curated Codeplug library (e.g., "Anytone D890 - Base Station", "OpenGD77 - SOTA Kit").
-  - **Other Supported Radios:** A generic list (e.g., "Generic OpenGD77", "Generic Anytone 890") for ad-hoc writes to radios not stored in the user's profile.
+
+- **Recommended / Your Radios:** Pulls from the user's curated Codeplug library (e.g., "Anytone D890 - Base Station", "OpenGD77 - SOTA Kit").
+- **Other Supported Radios:** A generic list (e.g., "Generic OpenGD77", "Generic Anytone 890") for ad-hoc writes to radios not stored in the user's profile.
+
 4. User selects the radio. Codeplug Studio triggers the browser's Web Serial API prompt to connect to the COM port.
 5. A progress bar displays the binary payload transfer, distinct from the UI used for codeplug writes.
 
 #### Workflow B: Contextual Write (From the Export/Build Page)
 
-*Intended for when the user is already deep in the process of flashing a new codeplug structure and wants to sync their Keps at the same time.*
+_Intended for when the user is already deep in the process of flashing a new codeplug structure and wants to sync their Keps at the same time._
 
 1. User is on the specific "Build" page for a saved radio (e.g., their "OpenGD77 - SOTA Kit" profile).
 2. In the action panel, alongside the primary `Write Codeplug` button, there is a secondary `Write Keps` button.
@@ -106,6 +106,5 @@ The user can initiate a web-serial write to their radio via two distinct paths, 
 
 ### 9. UX Edge Cases & Error Handling
 
-- **Memory Overages:** Radios have hard limits on satellite capacity. The Library view must dynamically show a count (e.g., "Selected: 42"). If the user initiates a write to an OpenGD77, and the selected count exceeds the firmware's limit, the write should halt with a clear error: *"You have selected 85 satellites, but the OpenGD77 only supports 45. Please deselect some satellites in the library."*
+- **Memory Overages:** Radios have hard limits on satellite capacity. The Library view must dynamically show a count (e.g., "Selected: 42"). If the user initiates a write to an OpenGD77, and the selected count exceeds the firmware's limit, the write should halt with a clear error: _"You have selected 85 satellites, but the OpenGD77 only supports 45. Please deselect some satellites in the library."_
 - **COM Port Collisions:** Since the user might attempt to click `Write Codeplug` and `Write Keps` in rapid succession on the Build page, the UI must disable the adjacent button while a serial write lock is active to prevent port crashing.
-

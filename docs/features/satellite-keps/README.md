@@ -8,26 +8,26 @@ Tier-1 hub for **satellite Keplerian elements (keps / TLEs)** in Codeplug Studio
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| TLE parse + orbital model | Not started | [#850](https://github.com/pskillen/codeplug-studio/issues/850) |
-| CelesTrak / AMSAT fetch (Pages proxy) | Not started | [#851](https://github.com/pskillen/codeplug-studio/issues/851) — Space-Track deferred |
-| Curated library persistence | Not started | [#852](https://github.com/pskillen/codeplug-studio/issues/852) |
-| Satellite Keps library UI | Not started | [#853](https://github.com/pskillen/codeplug-studio/issues/853) — [feature-design.md](feature-design.md) §§7–9 |
-| Uplink / downlink metadata | Not started | [#854](https://github.com/pskillen/codeplug-studio/issues/854) |
-| Anytone D890 wire docs + write | Not started | [#855](https://github.com/pskillen/codeplug-studio/issues/855) → [#856](https://github.com/pskillen/codeplug-studio/issues/856) |
-| OpenGD77 orbital wire docs + write | Not started | [#857](https://github.com/pskillen/codeplug-studio/issues/857) → [#858](https://github.com/pskillen/codeplug-studio/issues/858) |
-| Write Keps workflows A + B | Not started | [#859](https://github.com/pskillen/codeplug-studio/issues/859) |
+| Area                                  | Status      | Notes                                                                                                                           |
+| ------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| TLE parse + orbital model             | Not started | [#850](https://github.com/pskillen/codeplug-studio/issues/850)                                                                  |
+| CelesTrak / AMSAT fetch (Pages proxy) | Not started | [#851](https://github.com/pskillen/codeplug-studio/issues/851) — Space-Track deferred                                           |
+| Curated library persistence           | Not started | [#852](https://github.com/pskillen/codeplug-studio/issues/852)                                                                  |
+| Satellite Keps library UI             | Not started | [#853](https://github.com/pskillen/codeplug-studio/issues/853) — [feature-design.md](feature-design.md) §§7–9                   |
+| Uplink / downlink metadata            | Not started | [#854](https://github.com/pskillen/codeplug-studio/issues/854)                                                                  |
+| Anytone D890 wire docs + write        | Not started | [#855](https://github.com/pskillen/codeplug-studio/issues/855) → [#856](https://github.com/pskillen/codeplug-studio/issues/856) |
+| OpenGD77 orbital wire docs + write    | Not started | [#857](https://github.com/pskillen/codeplug-studio/issues/857) → [#858](https://github.com/pskillen/codeplug-studio/issues/858) |
+| Write Keps workflows A + B            | Not started | [#859](https://github.com/pskillen/codeplug-studio/issues/859)                                                                  |
 
 ---
 
 ## Documentation map
 
-| Doc | Role |
-| --- | --- |
-| [feature-design.md](feature-design.md) | Problem space, TLE sources, Keplerian definitions, UX workflows |
-| `docs/reference/radios/anytone/at-d890uv/satellite-keps.md` | Planned — D890 memory / write protocol |
-| `docs/reference/radios/opengd77/satellite-orbitals.md` | Planned — shared OpenGD77 satellite bank |
+| Doc                                                         | Role                                                            |
+| ----------------------------------------------------------- | --------------------------------------------------------------- |
+| [feature-design.md](feature-design.md)                      | Problem space, TLE sources, Keplerian definitions, UX workflows |
+| `docs/reference/radios/anytone/at-d890uv/satellite-keps.md` | Planned — D890 memory / write protocol                          |
+| `docs/reference/radios/opengd77/satellite-orbitals.md`      | Planned — shared OpenGD77 satellite bank                        |
 
 ---
 
@@ -41,20 +41,20 @@ Tier-1 hub for **satellite Keplerian elements (keps / TLEs)** in Codeplug Studio
 
 ## Target radios (MVP)
 
-| Radio | Notes |
-| --- | --- |
-| Anytone AT-D890UV | First end-to-end write path |
+| Radio                                   | Notes                                |
+| --------------------------------------- | ------------------------------------ |
+| Anytone AT-D890UV                       | First end-to-end write path          |
 | OpenGD77 (Baofeng DM-1701, TYT MD-9600) | Shared satellite orbital wire format |
 
 ---
 
 ## Upstream sources
 
-| Source | Role | Endpoint (reference) |
-| --- | --- | --- |
-| CelesTrak | Primary | `https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle` |
-| AMSAT | Secondary | `https://www.amsat.org/tle/current/nasabare.txt` |
-| Space-Track.org | Out of MVP | Authenticated API |
+| Source          | Role       | Endpoint (reference)                                                   |
+| --------------- | ---------- | ---------------------------------------------------------------------- |
+| CelesTrak       | Primary    | `https://celestrak.org/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle` |
+| AMSAT           | Secondary  | `https://www.amsat.org/tle/current/nasabare.txt`                       |
+| Space-Track.org | Out of MVP | Authenticated API                                                      |
 
 Browser fetches go through a same-origin Pages Function proxy (same pattern as RadioID / RepeaterBook).
 
