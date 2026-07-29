@@ -38,12 +38,12 @@ Addresses are **radio absolute** (u32). Read only enabled slots via each region�
 | `RadioIdSet`                 | `0x3482c40`  | Bitmap `0x20`                                             | Radio ID occupancy                                                                                                                                                                                                                                                |
 | `RadioIdData`                | `0x3680000`  | Stride `0x40`; length `0x40`                              | Radio ID records                                                                                                                                                                                                                                                  |
 | `ScanListSet`                | `0x3482c60`  | Bitmap `0x20`                                             | Scan-list occupancy                                                                                                                                                                                                                                               |
-| `ScanListData`               | `0x2100000`  | Stride `0x200`; used through `0xF9` (encode `0xfa` today) | Scan-list records — **100** member u16s at `+0x30`…`+0xF7` (0-based global channel indices); `revert_channel` @ `+0xF8`; priority @ `+0x2` / `+0x4`: `0xffff` = Off — [scan-list-record.md](scan-list-record.md). Full stride zero-fill past `0xF9` deferred (F4) |
+| `ScanListData`               | `0x2100000`  | Stride `0x200`; used through `0xF9` (encode `0xfa` today) | Scan-list records — **100** member u16s at `+0x30`…`+0xF7` (0-based global channel indices); `revert_channel` @ `+0xF8`; priority @ `+0x2` / `+0x4`: `0xffff` = Off — [scan-list-record.md](scan-list-record.md). Full stride zero-fill past `0xF9` deferred (F4). **Dump / write-verify Read:** `250 × 0x200` (probe span through CPS UI bit 249); **product encode cap** remains **100** until F16 ([#845](https://github.com/pskillen/codeplug-studio/issues/845)) |
 | `TalkgroupSet`               | `0x3980000`  | Bitmap `0x4F0` (**inverted**: bit set → empty)            | Talkgroup occupancy                                                                                                                                                                                                                                               |
 | `TalkgroupData`              | `0x3a00000`  | Stride `0xc8`; encode length `0xc8`                       | Talkgroup records — [talkgroup-record.md](talkgroup-record.md). CPS reads `0x80` (used fields fit). Studio sparse R/W uses a **16-aligned span** covering each slot (`alignDown(base+idx*0xc8)` …) — odd indices are not 16-aligned themselves.                   |
 | `TalkgroupOrder`             | `0x3f00000`  | Variable; 16-byte padded pairs                            | Sort / lookup table — rebuilt in the write image when talk groups are projected; staged on upload via `applyAtD890WriteImageToCache` ([talkgroup-record.md](talkgroup-record.md))                                                                                 |
-| `ReceiveGroupSet`            | `0x3701510`  | Bitmap `0x10`                                             | RX-group occupancy                                                                                                                                                                                                                                                |
-| `ReceiveGroupData`           | `0x3780000`  | Stride `0x200`; length `0x120`                            | Receive-group lists — [receive-group-record.md](receive-group-record.md) (members = talkgroup bank slot indices)                                                                                                                                                  |
+| `ReceiveGroupSet`            | `0x3701510`  | Bitmap `0x10` (write path); dump/verify Read `0x20`     | RX-group occupancy. **Write / encode** still uses **`0x10`** (128 bits) until F16; debug export and write-verify Read probe **`0x20`** (256 bits) ([#845](https://github.com/pskillen/codeplug-studio/issues/845)) |
+| `ReceiveGroupData`           | `0x3780000`  | Stride `0x200`; length `0x120`                            | Receive-group lists — [receive-group-record.md](receive-group-record.md) (members = talkgroup bank slot indices). **Dump / write-verify Read:** `250 × 0x200` (probe span); **product encode cap** remains **128** until F16 ([#845](https://github.com/pskillen/codeplug-studio/issues/845)) |
 | `MasterIdData`               | `0x3684000`  | Length `0x40`                                             | Master / default radio ID                                                                                                                                                                                                                                         |
 
 ### Optional settings and alarm (preserved through erase on Write)
@@ -232,7 +232,7 @@ Only indices with a set bit in `ChannelSet` are present.
 | ZoneSet         | `0x20`  | Bit **set** → zone occupied             |
 | RadioIdSet      | `0x20`  | Bit **set** → radio ID occupied         |
 | ScanListSet     | `0x20`  | Bit **set** → scan list occupied        |
-| ReceiveGroupSet | `0x10`  | Bit **set** → receive group occupied    |
+| ReceiveGroupSet | `0x10`  | Bit **set** → receive group occupied (write path). Dump / write-verify Read probes **`0x20`** ([#845](https://github.com/pskillen/codeplug-studio/issues/845)) |
 | TalkgroupSet    | `0x4F0` | Bit **set** → slot **empty** (inverted) |
 
 Bit indexing: slot `n` → byte `n // 8`, bit `n % 8`.
@@ -274,6 +274,8 @@ Read-only raw-binary export of every region documented on this page, for offline
 - **Export Digital Contacts** — meta + de-interleaved order table + de-interleaved contact data, zipped separately.
 
 Filenames are stamped with the export time in ISO 8601 (colons/periods replaced with `-` for filesystem safety). Nothing here is on the write allow-list; the tool only issues `R` frames.
+
+Dump extents for `ScanListData`, `ReceiveGroupSet`, and `ReceiveGroupData` may exceed current product encode caps so RE can measure hardware above modelled write limits — see the region table rows above ([#845](https://github.com/pskillen/codeplug-studio/issues/845) F18).
 
 ## Verification
 
