@@ -8,17 +8,29 @@ Displays the outcome of cross-session write verify: staged 16-byte chunk compari
 
 ## Props
 
-| Prop      | Type                      | Description                                    |
-| --------- | ------------------------- | ---------------------------------------------- |
-| `result`  | `AtD890WriteVerifyResult` | Compare outcome from `verifyAtD890WriteMemory` |
-| `onClose` | `() => void`              | Dismiss report and reset parent verify state   |
+| Prop           | Type                            | Description                                        |
+| -------------- | ------------------------------- | -------------------------------------------------- |
+| `result`       | `AtD890WriteVerifyResult`       | Compare outcome from `verifyAtD890WriteMemory`     |
+| `debugContext` | `AtD890WriteVerifyDebugContext` | Build/egress/session context for debug export      |
+| `onClose`      | `() => void`                    | Dismiss report and reset parent verify state       |
+| `inModal`      | `boolean` (optional)            | Body-only layout when parent supplies Modal chrome |
 
 ## Usage
 
 ```tsx
 {
   verifyResult ? (
-    <AtD890WriteVerifyReport result={verifyResult} onClose={handleCloseVerifyReport} />
+    <AtD890WriteVerifyReport
+      result={verifyResult}
+      debugContext={{
+        buildId,
+        egressId,
+        formatId,
+        profileId,
+        measuredAt: new Date().toISOString(),
+      }}
+      onClose={handleCloseVerifyReport}
+    />
   ) : null;
 }
 ```
@@ -29,7 +41,8 @@ Displays the outcome of cross-session write verify: staged 16-byte chunk compari
 - Grouped region table (`AT_D890_MEMORY_REGION_GROUPS`) with per-region badges
 - Mismatch detail table (first 50 rows) with expected/actual hex
 - Preserved-settings sub-table when sentinel compare fails
-- **Copy markdown** — `formatAtD890WriteVerifyMarkdown` for issue paste
+- **Copy debug info** — inline anchor; `formatAtD890WriteVerifyDebugMarkdown` with full mismatch list, session context, and investigation hints for AI agents
+- **Download markdown** — same full debug markdown as a `.md` file
 - **Download JSON** — serializable mismatch export when failures exist
 
 ## Related

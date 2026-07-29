@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
+import { Alert, Anchor, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
@@ -43,7 +43,6 @@ import {
 import RadioIoProgressModal, {
   type RadioIoOperation,
   type RadioIoProgressPhase,
-  type RadioIoVerifyMismatch,
   type RadioIoWriteVerifyStatus,
 } from './RadioIoProgressModal.tsx';
 import AtD890WriteVerifyReport from './AtD890WriteVerifyReport.tsx';
@@ -63,7 +62,7 @@ export interface BuildRadioIoPanelProps {
 }
 
 const buildService = new BuildService(persistence);
-const VERIFY_DELAY_SECONDS = 30;
+const VERIFY_BUTTON_DEBOUNCE_MS = 5000;
 
 interface PendingVerifyPayload {
   stagingSnapshot: AtD890WriteStagingSnapshot;
@@ -78,6 +77,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const abortRef = useRef<AbortController | null>(null);
   const pendingVerifyRef = useRef<PendingVerifyPayload | null>(null);
   const verifyStartedRef = useRef(false);
+  const verifyReadActiveRef = useRef(false);
 
   const [busy, setBusy] = useState(false);
   const [operation, setOperation] = useState<RadioIoOperation>('read');
@@ -90,8 +90,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [lastFirmware, setLastFirmware] = useState<string | undefined>();
   const [lastOccupied, setLastOccupied] = useState<number | null>(null);
   const [writeVerifyStatus, setWriteVerifyStatus] = useState<RadioIoWriteVerifyStatus>('none');
-  const [verifyCountdown, setVerifyCountdown] = useState(0);
-  const [verifyMismatches, setVerifyMismatches] = useState<RadioIoVerifyMismatch[]>([]);
+  const [verifyButtonEnabled, setVerifyButtonEnabled] = useState(false);
   const [verifyResult, setVerifyResult] = useState<AtD890WriteVerifyResult | null>(null);
 
   const serialOk = isWebSerialSupported();
@@ -127,10 +126,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const clearPendingVerify = useCallback((): void => {
     pendingVerifyRef.current = null;
     verifyStartedRef.current = false;
+    verifyReadActiveRef.current = false;
     clearAtD890WriteVerifyPending();
   }, []);
-
-  const handleVerifyWriteRef = useRef<(() => Promise<void>) | null>(null);
 
   const attributionNames = (descriptor?.attributionIds ?? [])
     .map((id) => findAttribution(id)?.name)
@@ -138,7 +136,12 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     .join(' / ');
 
   function onProgress(p: ProgressUpdate) {
-    setPhase((prev) => (prev === 'verifying' ? 'transfer' : 'transfer'));
+    if (verifyReadActiveRef.current) {
+      setPhase('verifying');
+      setProgress(p);
+      return;
+    }
+    setPhase('transfer');
     setProgress(p);
     if (p.stage) {
       setTransferStages((prev) => (prev.includes(p.stage!) ? prev : [...prev, p.stage!]));
@@ -153,10 +156,10 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     setProgress(null);
     setTransferStages([]);
     setWriteVerifyStatus('none');
-    setVerifyCountdown(0);
-    setVerifyMismatches([]);
+    setVerifyButtonEnabled(false);
     setVerifyResult(null);
     verifyStartedRef.current = false;
+    verifyReadActiveRef.current = false;
     clearPendingVerify();
     abortRef.current = new AbortController();
   }
@@ -179,10 +182,12 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     return session;
   }
 
-  async function handleVerifyWrite(): Promise<void> {
+  const handleVerifyWrite = useCallback(async () => {
     const pending = loadPendingVerify();
-    if (!pending || verifyStartedRef.current) return;
+    if (!pending) return;
+    if (verifyStartedRef.current) return;
     verifyStartedRef.current = true;
+    verifyReadActiveRef.current = true;
     setWriteVerifyStatus('verifying');
     setPhase('verifying');
     setProgress(null);
@@ -192,7 +197,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     }
     try {
       const session = await ensureSession();
-      setPhase('transfer');
+      setPhase('verifying');
       const result = await verifyAtD890WriteMemory(
         session,
         pending.stagingSnapshot,
@@ -204,52 +209,31 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       );
       await releaseSession();
       clearPendingVerify();
-      setVerifyResult(result);
-      setBusy(false);
-      setProgress(null);
+      verifyReadActiveRef.current = false;
       abortRef.current = null;
-      if (result.ok) {
-        setWriteVerifyStatus('verified');
-        setVerifyMismatches([]);
-      } else {
-        setWriteVerifyStatus('failed');
-        const mismatches: RadioIoVerifyMismatch[] = [];
-        if (!result.sentinel.ok) {
-          mismatches.push(...result.sentinel.mismatches);
-        }
-        for (const m of result.staging.mismatches.slice(0, 10)) {
-          mismatches.push({
-            id: `chunk-${m.address}`,
-            label: `${m.regionLabel} at 0x${m.address.toString(16)}`,
-          });
-        }
-        setVerifyMismatches(mismatches);
-      }
+      setProgress(null);
+      setError(null);
+      setVerifyResult(result);
+      setWriteVerifyStatus('none');
       setPhase('done');
+      setBusy(false);
     } catch (err) {
       verifyStartedRef.current = false;
+      verifyReadActiveRef.current = false;
       setError(err instanceof Error ? err.message : String(err));
       setWriteVerifyStatus('unverified');
+      setVerifyButtonEnabled(true);
       setPhase('done');
       await releaseSession();
     }
-  }
+  }, [clearPendingVerify, loadPendingVerify]);
 
   useEffect(() => {
-    handleVerifyWriteRef.current = handleVerifyWrite;
-  });
+    if (writeVerifyStatus !== 'unverified' || verifyButtonEnabled) return;
 
-  useEffect(() => {
-    if (writeVerifyStatus !== 'pending_delay') return;
-    if (verifyCountdown <= 0) {
-      void handleVerifyWriteRef.current?.();
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      setVerifyCountdown((c) => c - 1);
-    }, 1000);
+    const timer = window.setTimeout(() => setVerifyButtonEnabled(true), VERIFY_BUTTON_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [writeVerifyStatus, verifyCountdown]);
+  }, [writeVerifyStatus, verifyButtonEnabled]);
 
   if (descriptors.length === 0) return null;
 
@@ -321,8 +305,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             pending.sentinelBefore,
           ),
         );
-        setVerifyCountdown(VERIFY_DELAY_SECONDS);
-        setWriteVerifyStatus('pending_delay');
+        setVerifyButtonEnabled(false);
+        setWriteVerifyStatus('unverified');
       } else {
         clearPendingVerify();
       }
@@ -344,8 +328,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     setBusy(false);
     setProgress(null);
     setWriteVerifyStatus('none');
-    setVerifyCountdown(0);
-    setVerifyMismatches([]);
+    setVerifyButtonEnabled(false);
     clearPendingVerify();
     abortRef.current = null;
   }
@@ -386,9 +369,36 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
 
   return (
     <Stack gap="sm">
-      {verifyResult ? (
-        <AtD890WriteVerifyReport result={verifyResult} onClose={handleCloseVerifyReport} />
-      ) : null}
+      <Modal
+        opened={verifyResult !== null}
+        onClose={handleCloseVerifyReport}
+        title="Write verify report"
+        size="xl"
+        centered
+        zIndex={400}
+      >
+        {verifyResult ? (
+          <AtD890WriteVerifyReport
+            result={verifyResult}
+            debugContext={{
+              buildId: build.id,
+              egressId: egress.id,
+              formatId: egress.formatId,
+              profileId: egress.profileId,
+              measuredAt: new Date().toISOString(),
+              buildVersion: __BUILD_VERSION__,
+              buildEnv: __BUILD_ENV__,
+              pageUrl: window.location.href,
+              userAgent: navigator.userAgent,
+            }}
+            onClose={handleCloseVerifyReport}
+            inModal
+          />
+        ) : null}
+        <Group justify="flex-end" mt="md">
+          <Button onClick={handleCloseVerifyReport}>Close</Button>
+        </Group>
+      </Modal>
       <WebSerialExperimentalAlert />
       <Text fw={600} size="sm">
         Direct radio (Web Serial)
@@ -485,8 +495,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       {writeWarnings.length > 0 ? (
         <Alert color="yellow" title="Write warnings">
           <Stack gap={4}>
-            {writeWarnings.map((line) => (
-              <Text key={line} size="sm">
+            {writeWarnings.map((line, index) => (
+              <Text key={`write-warning-${index}`} size="sm">
                 {line}
               </Text>
             ))}
@@ -502,8 +512,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         transferStages={transferStages}
         navigationBlocked={leaveAttempted}
         writeVerifyStatus={writeVerifyStatus}
-        verifyCountdown={verifyCountdown}
-        verifyMismatches={verifyMismatches}
+        verifyButtonEnabled={verifyButtonEnabled}
         onVerify={() => void handleVerifyWrite()}
         onCloseWithoutVerify={handleCloseWithoutVerify}
         onCancel={handleCancel}
