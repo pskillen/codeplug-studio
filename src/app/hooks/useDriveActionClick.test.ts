@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import * as platform from '../../integrations/platform/isNativeApp.ts';
 import type { DriveConnectResult } from './useDriveSession.ts';
 import { isDriveReady, runDriveActionWhenReady } from './useDriveActionClick.ts';
 
@@ -31,21 +32,25 @@ describe('runDriveActionWhenReady', () => {
     expect(result).toEqual({ ok: true });
   });
 
-  it('calls onNotConfigured when OAuth is not configured', async () => {
-    const onNotConfigured = vi.fn();
+  it('returns gated error when on native app', async () => {
+    vi.spyOn(platform, 'isNativeApp').mockReturnValue(true);
     const action = vi.fn();
+    const connect = vi.fn();
 
     const result = await runDriveActionWhenReady({
-      isConfigured: false,
+      isConfigured: true,
       connected: false,
       sessionExpired: false,
-      connect: vi.fn(),
-      onNotConfigured,
+      connect,
+      onNotConfigured: vi.fn(),
       action,
     });
 
-    expect(onNotConfigured).toHaveBeenCalledOnce();
+    expect(connect).not.toHaveBeenCalled();
     expect(action).not.toHaveBeenCalled();
-    expect(result).toEqual({ ok: false });
+    expect(result).toEqual({
+      ok: false,
+      connectError: 'Google Drive integration is not available in the Android app yet.',
+    });
   });
 });

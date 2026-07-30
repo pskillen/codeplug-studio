@@ -37,6 +37,10 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
 
 Release and pre-release builds receive `VITE_GOOGLE_CLIENT_ID` from the repo Actions secret `GOOGLE_OAUTH_CLIENT_ID` (see [cloudflare-pages.yaml](../../../.github/workflows/cloudflare-pages.yaml)). Without it, the deployed SPA shows “not configured” on Settings → Google Drive. Authorized JavaScript origins must include the hostnames listed above.
 
+### Android Companion App (Capacitor Native)
+
+Google Drive OAuth popups are not supported inside the Capacitor WebView shell. When running on native Android app builds (`isNativeApp()`), Drive integration is explicitly gated in UI with clear messaging advising operators to use local file import/export.
+
 ## OAuth scope
 
 `https://www.googleapis.com/auth/drive` — list folders, create folders, read/write native YAML files the operator selects.
