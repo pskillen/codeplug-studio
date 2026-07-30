@@ -1,3 +1,4 @@
+import { resolveApiUrl } from '../../platform/resolveApiUrl.ts';
 import { fetchDirectoryText } from '../directoryFetch.ts';
 import { recordRateLimit } from '../rateLimit.ts';
 import { REPEATERBOOK_CACHE_PREFIX } from '../sessionCache.ts';
@@ -124,7 +125,8 @@ export function buildRepeaterBookExportUrl(
     const trimmed = value.trim();
     if (trimmed) search.set(key, trimmed);
   }
-  return `${REPEATERBOOK_EXPORT_PROXY_PATH}?${search.toString()}`;
+  const basePath = resolveApiUrl(REPEATERBOOK_EXPORT_PROXY_PATH);
+  return `${basePath}?${search.toString()}`;
 }
 
 export async function searchRepeaterBookByCallsign(
