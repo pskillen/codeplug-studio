@@ -4,9 +4,10 @@ Execution log for [Epic #747](https://github.com/pskillen/codeplug-studio/issues
 
 ## Slices
 
-| Slice        | Status   | Branch / PR                            | Notes                                                     |
-| ------------ | -------- | -------------------------------------- | --------------------------------------------------------- |
-| **Scaffold** | Complete | `886/junie/capacitor-android-scaffold` | Capacitor Android project initialized and verified (#886) |
+| Slice                   | Status   | Branch / PR                            | Notes                                                                                                                           |
+| ----------------------- | -------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **Scaffold**            | Complete | `886/junie/capacitor-android-scaffold` | Capacitor Android project initialized and verified (#886)                                                                       |
+| **API Proxy & Routing** | Complete | `887/junie/native-api-cors-browser`    | Native API routing to `https://codeplug.mm9pdy.net`, CORS headers on Pages functions, Browser plugin external navigation (#887) |
 
 ## Verification
 

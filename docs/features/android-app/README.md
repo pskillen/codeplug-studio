@@ -4,12 +4,12 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 ## Implementation status
 
-| Area       | Status   | Notes                                    |
-| ---------- | -------- | ---------------------------------------- |
-| Scaffold   | Complete | Capacitor core + Android platform (#886) |
-| API Proxy  | Deferred | CORS and absolute URL handling (#887)    |
-| USB Serial | Deferred | BytePipe implementation (#888)           |
-| APK CI     | Deferred | GitHub Actions build (#889)              |
+| Area       | Status   | Notes                                                                                                                          |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Scaffold   | Complete | Capacitor core + Android platform (#886)                                                                                       |
+| API Proxy  | Complete | Absolute URL routing, CORS allowlist for Capacitor origins, system browser external navigation, and Google Drive gating (#887) |
+| USB Serial | Deferred | BytePipe implementation (#888)                                                                                                 |
+| APK CI     | Deferred | GitHub Actions build (#889)                                                                                                    |
 
 ## Documentation map
 
@@ -22,6 +22,13 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 - **Capacitor Shell:** The app is a thin wrapper around the same Vite SPA used in the browser.
 - **USB-OTG:** Used for radio programming since Web Serial is unavailable in mobile browsers.
+
+## Native Behaviour (#887)
+
+- **API Proxies:** On Capacitor native shells, relative `/api/*` requests (RadioID, RepeaterBook, IRTS) automatically route to `https://codeplug.mm9pdy.net`.
+- **CORS Allowlist:** Cloudflare Pages Functions allow `capacitor://localhost` and `http://localhost` origins.
+- **External Links:** All external links (`target="_blank"` or external HTTP/HTTPS hrefs) open via `@capacitor/browser` in system Chrome Custom Tabs rather than inside the webview.
+- **Google Drive:** Explicitly gated on native with user guidance to use local YAML import/export.
 
 ## Contributor Guide
 
