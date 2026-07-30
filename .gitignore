@@ -31,6 +31,16 @@ coverage/
 test-results/
 *.tsbuildinfo
 
+# Capacitor / Android
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+*.apk
+*.aab
+*.keystore
+*.jks
+
 # Operator CPS exports for local testing
 sample-exports/
 

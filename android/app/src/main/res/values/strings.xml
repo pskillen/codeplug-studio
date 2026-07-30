@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Codeplug Studio</string>
+    <string name="title_activity_main">Codeplug Studio</string>
+    <string name="package_name">net.mm9pdy.codeplugstudio</string>
+    <string name="custom_url_scheme">net.mm9pdy.codeplugstudio</string>
+</resources>
