@@ -25,8 +25,8 @@ import {
   closeRadioSession,
   descriptorsForEgress,
   getRadioCloneHydration,
-  getWebSerialUnsupportedMessage,
-  isWebSerialSupported,
+  getRadioSerialUnsupportedMessage,
+  isRadioSerialSupported,
   openRadioSessionForEgress,
   prepareRadioWriteImage,
   RadioWriteBlockedError,
@@ -91,7 +91,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [verifyButtonEnabled, setVerifyButtonEnabled] = useState(false);
   const [verifyResult, setVerifyResult] = useState<WriteVerifyResult | null>(null);
 
-  const serialOk = isWebSerialSupported();
+  const serialOk = isRadioSerialSupported();
   const descriptor = descriptors[0];
   const writeVerifyHooks = descriptor?.writeVerify;
   const supportsWriteVerify = Boolean(writeVerifyHooks);
@@ -401,7 +401,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         Write sends the assembled build into that image — it does not import channels into the
         library. After a factory reset, Read again before Write (memory-bank addresses can move).
       </Text>
-      {!serialOk ? <Alert color="yellow">{getWebSerialUnsupportedMessage()}</Alert> : null}
+      {!serialOk ? <Alert color="yellow">{getRadioSerialUnsupportedMessage()}</Alert> : null}
       {attributionNames ? (
         <Text size="xs" c="dimmed">
           Protocol lineage thanks to {attributionNames}. See{' '}

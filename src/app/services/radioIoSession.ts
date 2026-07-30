@@ -13,17 +13,23 @@ import {
 import {
   createRadioSession,
   listDescriptorsForProfile,
+  openCapacitorSerialPipe,
   openWebSerialPipe,
   RadioTimeoutError,
   RadioWrongIdentError,
+  requestCapacitorSerialPort,
   requestWebSerialPort,
   setCachedImage,
+  type BytePipe,
   type MemoryMap,
   type ProgressFn,
   type RadioDescriptor,
   type RadioHydrationHooks,
   type RadioSession,
+  isCapacitorSerialSupported,
+  isRadioSerialSupported,
   isWebSerialSupported,
+  getRadioSerialUnsupportedMessage,
   getWebSerialUnsupportedMessage,
 } from '@integrations/radio-io/index.ts';
 import type {
@@ -38,7 +44,12 @@ import {
   resolveRadioWriteProdDisabledMessage,
 } from './radioWriteEnvGate.ts';
 
-export { isWebSerialSupported, getWebSerialUnsupportedMessage };
+export {
+  isRadioSerialSupported,
+  isWebSerialSupported,
+  getRadioSerialUnsupportedMessage,
+  getWebSerialUnsupportedMessage,
+};
 
 export function descriptorsForEgress(egress: EgressPath): RadioDescriptor[] {
   return listDescriptorsForProfile(egress.formatId, egress.profileId);
@@ -107,8 +118,11 @@ export async function openRadioSessionForEgress(
     ? ([descriptor.baudRate, descriptor.baudRateFallback] as const)
     : ([descriptor.baudRate] as const);
 
-  const port = await requestWebSerialPort(opts?.forcePortSelection ?? true);
-  let pipe: Awaited<ReturnType<typeof openWebSerialPipe>> | null = null;
+  const isNative = isCapacitorSerialSupported();
+  const nativeDevice = isNative ? await requestCapacitorSerialPort() : null;
+  const webPort = isNative ? null : await requestWebSerialPort(opts?.forcePortSelection ?? true);
+
+  let pipe: BytePipe | null = null;
 
   for (let attempt = 0; attempt < bauds.length; attempt++) {
     if (pipe) {
@@ -118,7 +132,15 @@ export async function openRadioSessionForEgress(
         /* ignore close errors before baud retry */
       }
     }
-    pipe = await openWebSerialPipe(port, bauds[attempt]!);
+
+    if (isNative && nativeDevice) {
+      pipe = await openCapacitorSerialPipe(nativeDevice, bauds[attempt]!);
+    } else if (webPort) {
+      pipe = await openWebSerialPipe(webPort, bauds[attempt]!);
+    } else {
+      throw new Error('No available serial transport found.');
+    }
+
     const radio = descriptor.protocolFactory();
     try {
       await radio.connect(pipe, {

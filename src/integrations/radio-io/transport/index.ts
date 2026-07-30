@@ -1,6 +1,10 @@
 export {
+  assertRadioSerialSupported,
   assertWebSerialSupported,
+  getRadioSerialUnsupportedMessage,
   getWebSerialUnsupportedMessage,
+  isCapacitorSerialSupported,
+  isRadioSerialSupported,
   isWebSerialSupported,
 } from './featureDetect.ts';
 export {
