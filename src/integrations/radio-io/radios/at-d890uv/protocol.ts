@@ -670,22 +670,21 @@ export class AtD890uvProtocol implements CloneImageRadio {
         opts.onProgress,
         {
           cur: 0,
-          max: stagingChunks.length || 1,
+          max: transmittedChunks.length || 1,
           msg: 'Writing sparse regions…',
           stage: 'Upload',
         },
         opts.signal,
       );
 
-      for (let i = 0; i < stagingChunks.length; i++) {
+      for (let i = 0; i < transmittedChunks.length; i++) {
         throwIfAborted(opts.signal);
-        const { address, data } = stagingChunks[i]!;
-        if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) continue;
+        const { address, data } = transmittedChunks[i]!;
         reportProgress(
           opts.onProgress,
           {
             cur: i + 1,
-            max: stagingChunks.length,
+            max: transmittedChunks.length,
             msg: `Writing 0x${address.toString(16)}`,
             stage: 'Upload',
           },

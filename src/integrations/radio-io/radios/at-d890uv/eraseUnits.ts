@@ -34,11 +34,11 @@ export const AT_D890_ERASE_UNIT_BOOKKEEPING_BLOCK_OFFSETS = [0x3fbf0, 0x3fff0] a
  * `fe6955e3` (sparse erase-unit RMW upload, 2026-07-27) started writing back every
  * non-`0xff` block of each touched unit.
  *
- * **Tested on hardware and confirmed radio-managed, not codeplug payload**: after this
- * flag shipped, the `+0x3fbf0` marker still changed on flash without Studio ever writing
- * it — the radio sets it on the sector it processes. Writing it back was always wrong,
- * whether or not it explains any particular commit failure (it does not — see
- * `tmp/anytone-airband/d890-write-commit-divergence.md` §4).
+ * **Radio-managed, not codeplug payload** (hardware observation): the `+0x3fbf0` marker can
+ * change on flash without Studio transmitting it — the radio sets it on the sector it
+ * processes. Writing it back was always wrong. Until F27, `AT_D890_SKIP_BOOKKEEPING_WRITES`
+ * did not reach the wire because the upload loop iterated `stagingChunks` instead of the
+ * filtered transmit list.
  *
  * Nothing is erased, so skipping these leaves whatever is already on flash intact.
  */
