@@ -23,6 +23,22 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 - **Capacitor Shell:** The app is a thin wrapper around the same Vite SPA used in the browser.
 - **USB-OTG:** Used for radio programming since Web Serial is unavailable in mobile browsers.
 
+## Contributor Guide
+
+### Prerequisites
+
+- **Android Studio** (Koala or newer recommended)
+- **JDK 17**
+- **Android SDK** (API level 34+)
+
+### Local Development Loop
+
+1. Run `npm run sync:android`. This builds the SPA and syncs assets to the Android project.
+2. Open Android Studio: `npm run open:android` (or open the `android/` folder manually).
+3. Select a device/emulator and click **Run**.
+
+Note: API proxies and USB serial functionality are currently under development (#887 / #888). Expect `/api/*` requests and radio I/O to fail in this scaffold phase.
+
 ## Cross-links
 
 - **Epic:** [codeplug-studio#747](https://github.com/pskillen/codeplug-studio/issues/747)
