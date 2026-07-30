@@ -99,7 +99,7 @@ Docs-only PRs: `format:check` + link audit is sufficient.
 ## Related
 
 | Resource             | Link                                                                                         |
-| -------------------- |----------------------------------------------------------------------------------------------|
+| -------------------- | -------------------------------------------------------------------------------------------- |
 | Build and deploy     | [docs/build/README.md](../README.md)                                                         |
 | Data model           | [docs/features/data-model/README.md](../../features/data-model/README.md)                    |
 | OpenGD77 wire format | [docs/reference/export-formats/opengd77/](../../reference/export-formats/opengd77/README.md) |
