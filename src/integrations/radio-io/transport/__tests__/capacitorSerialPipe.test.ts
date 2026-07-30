@@ -2,8 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { RadioClosedError, RadioTimeoutError } from '../../kit/errors.ts';
 import {
   base64ToUint8Array,
-  CapacitorSerialBytePipe,
-  openCapacitorSerialPipe,
   requestCapacitorSerialPipe,
   requestCapacitorSerialPort,
   uint8ArrayToBase64,
@@ -26,38 +24,48 @@ function createMockPlugin(): UsbSerialPluginLike & {
     },
   ];
 
-  let hasPerm = true;
-  let requestPermResult = true;
+  const hasPerm = true;
+  const requestPermResult = true;
 
   const dataListeners: Array<(event: { portId: string; data: string }) => void> = [];
   const errorListeners: Array<(event: { portId: string; error: string }) => void> = [];
 
   return {
-    devices,
     dataListeners,
     errorListeners,
     listDevices: vi.fn(async () => ({ devices })),
     hasPermission: vi.fn(async () => ({ granted: hasPerm })),
     requestPermission: vi.fn(async () => ({ granted: requestPermResult })),
     open: vi.fn(async ({ deviceId }) => ({ portId: `port-${deviceId}` })),
-    addListener: vi.fn(async (eventName: 'data' | 'error', listener: any) => {
-      if (eventName === 'data') {
-        dataListeners.push(listener);
-      } else if (eventName === 'error') {
-        errorListeners.push(listener);
-      }
-      return {
-        remove: async () => {
-          if (eventName === 'data') {
-            const idx = dataListeners.indexOf(listener);
-            if (idx >= 0) dataListeners.splice(idx, 1);
-          } else if (eventName === 'error') {
-            const idx = errorListeners.indexOf(listener);
-            if (idx >= 0) errorListeners.splice(idx, 1);
-          }
-        },
-      };
-    }),
+    addListener: vi.fn(
+      async (
+        eventName: 'data' | 'error',
+        listener:
+          | ((data: { portId: string; data: string }) => void)
+          | ((error: { portId: string; error: string }) => void),
+      ) => {
+        if (eventName === 'data') {
+          dataListeners.push(listener as (data: { portId: string; data: string }) => void);
+        } else if (eventName === 'error') {
+          errorListeners.push(listener as (error: { portId: string; error: string }) => void);
+        }
+        return {
+          remove: async () => {
+            if (eventName === 'data') {
+              const idx = dataListeners.indexOf(
+                listener as (data: { portId: string; data: string }) => void,
+              );
+              if (idx >= 0) dataListeners.splice(idx, 1);
+            } else if (eventName === 'error') {
+              const idx = errorListeners.indexOf(
+                listener as (error: { portId: string; error: string }) => void,
+              );
+              if (idx >= 0) errorListeners.splice(idx, 1);
+            }
+          },
+        };
+      },
+    ),
     startReading: vi.fn(async () => {}),
     stopReading: vi.fn(async () => {}),
     write: vi.fn(async () => {}),
@@ -114,18 +122,14 @@ describe('requestCapacitorSerialPort', () => {
     plugin.hasPermission = vi.fn(async () => ({ granted: false }));
     plugin.requestPermission = vi.fn(async () => ({ granted: false }));
 
-    await expect(requestCapacitorSerialPort({ plugin })).rejects.toThrow(
-      RadioClosedError,
-    );
+    await expect(requestCapacitorSerialPort({ plugin })).rejects.toThrow(RadioClosedError);
   });
 
   it('throws RadioClosedError when no USB devices are connected', async () => {
     const plugin = createMockPlugin();
     plugin.listDevices = vi.fn(async () => ({ devices: [] }));
 
-    await expect(requestCapacitorSerialPort({ plugin })).rejects.toThrow(
-      RadioClosedError,
-    );
+    await expect(requestCapacitorSerialPort({ plugin })).rejects.toThrow(RadioClosedError);
   });
 });
 

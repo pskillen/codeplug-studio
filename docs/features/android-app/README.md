@@ -8,7 +8,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Scaffold   | Complete | Capacitor core + Android platform (#886)                                                                                       |
 | API Proxy  | Complete | Absolute URL routing, CORS allowlist for Capacitor origins, system browser external navigation, and Google Drive gating (#887) |
-| USB Serial | Complete | BytePipe implemented with `@leeskies/capacitor-usb-serial` for Android USB-OTG radio I/O (#888) |
+| USB Serial | Complete | BytePipe implemented with `@leeskies/capacitor-usb-serial` for Android USB-OTG radio I/O (#888)                                |
 | APK CI     | Deferred | GitHub Actions build (#889)                                                                                                    |
 
 ## Documentation map
