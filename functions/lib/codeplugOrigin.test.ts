@@ -18,6 +18,13 @@ describe('isAllowedCodeplugOrigin', () => {
     expect(isAllowedCodeplugOrigin('http://localhost:5173/library/channels')).toBe(true);
   });
 
+  it('accepts Capacitor native origins', () => {
+    expect(isAllowedCodeplugOrigin('capacitor://localhost')).toBe(true);
+    expect(isAllowedCodeplugOrigin('http://localhost')).toBe(true);
+    expect(isAllowedCodeplugOrigin('capacitor://localhost/index.html')).toBe(true);
+    expect(isAllowedCodeplugOrigin('http://localhost/index.html')).toBe(true);
+  });
+
   it('rejects unknown, typosquat, and wrong local ports', () => {
     expect(isAllowedCodeplugOrigin('https://evil.com')).toBe(false);
     expect(isAllowedCodeplugOrigin('https://codeplug.mm9pdy.net.evil.com')).toBe(false);
