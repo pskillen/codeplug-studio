@@ -8,7 +8,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Scaffold   | Complete | Capacitor core + Android platform (#886)                                                                                       |
 | API Proxy  | Complete | Absolute URL routing, CORS allowlist for Capacitor origins, system browser external navigation, and Google Drive gating (#887) |
-| USB Serial | Deferred | BytePipe implementation (#888)                                                                                                 |
+| USB Serial | In Prog  | `@leeskies/capacitor-usb-serial` plugin added; BytePipe implementation (#888)                                                    |
 | APK CI     | Deferred | GitHub Actions build (#889)                                                                                                    |
 
 ## Documentation map
@@ -23,8 +23,9 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 - **Capacitor Shell:** The app is a thin wrapper around the same Vite SPA used in the browser.
 - **USB-OTG:** Used for radio programming since Web Serial is unavailable in mobile browsers.
 
-## Native Behaviour (#887)
+## Native Behaviour (#887, #888)
 
+- **USB-Serial Plugin:** `@leeskies/capacitor-usb-serial` (MIT license, v0.1.0) backed by `mik3y/usb-serial-for-android`. Supports CH340, CP2102, FTDI, PL2303, and CDC/ACM chips over USB-OTG.
 - **API Proxies:** On Capacitor native shells, relative `/api/*` requests (RadioID, RepeaterBook, IRTS) automatically route to `https://codeplug.mm9pdy.net`.
 - **CORS Allowlist:** Cloudflare Pages Functions allow `capacitor://localhost` and `http://localhost` origins.
 - **External Links:** All external links (`target="_blank"` or external HTTP/HTTPS hrefs) open via `@capacitor/browser` in system Chrome Custom Tabs rather than inside the webview.
