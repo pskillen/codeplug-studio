@@ -11,3 +11,12 @@ export {
   type SerialPortLike,
   type WebSerialPipeOptions,
 } from './webSerialPipe.ts';
+export {
+  CapacitorSerialBytePipe,
+  openCapacitorSerialPipe,
+  requestCapacitorSerialPipe,
+  requestCapacitorSerialPort,
+  type CapacitorSerialPipeOptions,
+  type UsbDeviceLike,
+  type UsbSerialPluginLike,
+} from './capacitorSerialPipe.ts';
