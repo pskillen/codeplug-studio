@@ -182,3 +182,71 @@ describe('applyAtD890WriteImageToCache bank intent', () => {
     expect(addresses.has(D890_MAP.AmZoneSet)).toBe(false);
   });
 });
+
+describe('applyAtD890WriteImageToCache APRS (#884)', () => {
+  /** VFO A sentinel — radio default for unused digital report slots. */
+  const VFO_A_WIRE = 0x0fa0;
+
+  it('stages patched AprsConfigMain digital report slots into listWriteChunks', () => {
+    // Stale Read cache: slots look like VFO A (hardware symptom in #884).
+    const stale = new Uint8Array(D890_MAP.AprsConfigMainLength).fill(0xaa);
+    for (let i = 0; i < 8; i++) {
+      stale[0x40 + i * 2] = VFO_A_WIRE & 0xff;
+      stale[0x41 + i * 2] = (VFO_A_WIRE >> 8) & 0xff;
+    }
+    const bag = createRadioCloneHydrationBagFromBlocks({
+      radioModelId: AT_D890UV_MODEL_ID,
+      addressBase: 0,
+      capturedVia: 'web-serial',
+      blocks: [
+        { address: D890_MAP.LocalInfo, data: new Uint8Array(0x100).fill(0xff) },
+        { address: D890_MAP.ChannelSet, data: new Uint8Array(0x200) },
+        { address: D890_MAP.ZoneSet, data: new Uint8Array(0x20) },
+        { address: D890_MAP.ZoneHide, data: new Uint8Array(0x20) },
+        { address: D890_MAP.ZoneAChannel, data: new Uint8Array(0x200) },
+        { address: D890_MAP.ZoneBChannel, data: new Uint8Array(0x200) },
+        { address: D890_MAP.ScanListSet, data: new Uint8Array(0x20) },
+        { address: D890_MAP.TalkgroupSet, data: new Uint8Array(0x4f0).fill(0xff) },
+        { address: D890_MAP.ReceiveGroupSet, data: new Uint8Array(0x20) },
+        { address: D890_MAP.RadioIdSet, data: new Uint8Array(0x20) },
+        { address: D890_MAP.MasterIdData, data: new Uint8Array(0x40) },
+        { address: D890_MAP.AprsConfigMain, data: stale },
+      ],
+    });
+    const cache = cacheFromBag(bag);
+
+    // Expected wires from operator CSV / #884 handover repro.
+    const image = mergeChannelsIntoAtD890uvHydration(bag, [], {
+      aprs: {
+        digitalSlots: [
+          { reportChannelWire: 0x0fa2, targetDmrId: null, callType: 0, timeslot: 0 },
+          { reportChannelWire: 49, targetDmrId: null, callType: 0, timeslot: 0 },
+          { reportChannelWire: 39, targetDmrId: null, callType: 0, timeslot: 0 },
+          { reportChannelWire: 107, targetDmrId: null, callType: 0, timeslot: 0 },
+          { reportChannelWire: 69, targetDmrId: null, callType: 0, timeslot: 0 },
+          { reportChannelWire: 91, targetDmrId: null, callType: 0, timeslot: 0 },
+        ],
+      },
+    });
+
+    applyAtD890WriteImageToCache(cache, image);
+
+    const fromCache = getCacheBytes(cache, D890_MAP.AprsConfigMain, D890_MAP.AprsConfigMainLength);
+    expect(fromCache[0x40]).toBe(0xa2);
+    expect(fromCache[0x41]).toBe(0x0f);
+    expect(fromCache[0x42]).toBe(49);
+    expect(fromCache[0x43]).toBe(0);
+    expect(fromCache[0x44]).toBe(39);
+    expect(fromCache[0x48]).toBe(69);
+    expect(fromCache[0x4a]).toBe(91);
+
+    const slotBlockAddr = D890_MAP.AprsConfigMain + 0x40;
+    const chunk = listWriteChunks(cache).find((c) => c.address === slotBlockAddr);
+    expect(chunk).toBeDefined();
+    expect(chunk!.data[0]).toBe(0xa2);
+    expect(chunk!.data[1]).toBe(0x0f);
+    expect(chunk!.data[2]).toBe(49);
+    expect(chunk!.data[3]).toBe(0);
+    expect(chunk!.data[4]).toBe(39);
+  });
+});
