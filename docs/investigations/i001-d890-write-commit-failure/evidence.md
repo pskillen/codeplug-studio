@@ -6,8 +6,10 @@ produced retracted findings are kept where the retraction is instructive.
 **Timestamps in artefact names are UTC. Commit timestamps are local (BST, +1).** Reconciling those two is what
 resolved the investigation — see the parent README, process failure 3.
 
-Raw dumps, verify reports and `.pcapng` captures are **not** in the repo. They lived in the operator's
-`~/Downloads` at the time of writing.
+Raw dumps, verify reports and `.pcapng` captures are **not** in the repo — they live in
+`~/radio-artefacts/at-d890uv/`, with an `INDEX.md` mapping every id below to its file. Deliberately outside
+the repo: a cleanup agent deleted the working directory on 2026-07-30 and took the decoded CPS frame JSONs
+with it.
 
 ---
 
@@ -31,6 +33,39 @@ Raw dumps, verify reports and `.pcapng` captures are **not** in the repo. They l
 | `P/14-50`                   | `d890-aliasProbe-2026-07-29T14-50-41-654Z`  | —                | **Found the whole Studio write image at `+0x40000`**, in every probed bank. Identified by a timing constant of `0x1e` (30 ds) that nothing but Studio writes                                                      |
 | `D/29-18-03` → `D/30-06-57` | dumps either side of `R/30-06-56`           | Studio           | **32,933 bytes changed on the live bank** across 18 regions, including every occupancy bitmap. `talkgroupData` split at `0x40000`: 6,595 live / 176 window                                                        |
 | `P/30-06-58`                | `d890-aliasProbe-2026-07-30T06-58-45-439Z`  | —                | Post-fix: the live bank holds Studio's payload _and_ so does the `+0x40000` window — the same signature an official CPS write produces                                                                            |
+
+## Added after closure — 2026-07-30 factory reset
+
+The negative control (`R/30-nc`) factory-reset the radio. Recovering it produced two dumps that answer a
+separate open question and add supporting evidence for the mechanism.
+
+| id           | Artefact                                    | Written by              | What it established                                                                                                                                                                                   |
+| ------------ | ------------------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `D/30-09-25` | `d890-memory-dump-2026-07-30T09-25-39-477Z` | radio (on-radio "init") | **No DM-32-style address drift** (#716). Every region except `amZoneScan` still holds content at its expected `D890_MAP` base, and `localInfo` is byte-identical — the device serial survives a reset |
+| `P/30-09-27` | `d890-aliasProbe-2026-07-30T09-27-18-869Z`  | —                       | Post-init, the `zonesName` `+0x40000` window holds `12 34 56 78` followed by `"My Radio"` — an unrecognised magic plus a factory zone name                                                            |
+| `D/30-09-30` | `d890-memory-dump-2026-07-30T09-30-52-409Z` | **official CPS**        | Scratch codeplug on a freshly-initialised radio. `"Scan List 1"` at `0x2100000`, `"Zone 1"` at `0x3600000` — content exactly at the documented bases                                                  |
+| `P/30-09-32` | `d890-aliasProbe-2026-07-30T09-32-05-991Z`  | —                       | After the CPS write the window **mirrors the live bank byte-for-byte** — CPS reaches both, as in `P/30-06-58`                                                                                         |
+
+**Supporting the A/B sector inference (still not proof).** Post-init the `zonesName` window held factory
+content and a `12345678` magic while the live base held something else; after one CPS write both hold the
+same bytes. That is the behaviour an A/B ping-pong pair would show, with the reset having programmed one
+side and CPS then programming the other. The `12345678` magic is unidentified and was not pursued.
+
+### A second, unrelated cause of the same error message
+
+⚠️ **Do not read this record as "_Program error please initialise the radio!_ means marker writes".**
+
+A Studio write on 2026-07-30, after the reset and on post-`R/30-nc` code that **cannot** transmit the markers,
+produced the same message. The cause was a codeplug with **channels but zero zones** — an invalid state for
+this firmware, unrelated to i001. Studio writes it faithfully; the radio rejects it. A pre-write refusal is
+ticketed, and the symptom is cross-referenced in
+[`flash-sectors.md`](../../reference/radios/anytone/at-d890uv/flash-sectors.md).
+
+**This retracts a hypothesis offered during recovery.** It was proposed that Studio could not program a
+factory-reset radio because the 17 erase units it does not model (`cps-wire-capture.md`) were left at factory
+defaults. That is **unsupported** — the zero-zone codeplug accounts for the failure without it. Whether Studio
+can program a D890 from bare metal is **untested**, not broken, and the "restore from official CPS first"
+advice given during recovery rests on the unmodelled-bank reasoning rather than on evidence.
 
 ## Wire captures
 
