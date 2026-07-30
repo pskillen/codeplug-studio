@@ -63,6 +63,41 @@ function channelUploadMemory(liveSerial = TEST_SERIAL): Map<number, Uint8Array> 
   ]);
 }
 
+/** Radio sector-marker pattern at +0x3fbf0 / +0x3fff0 — see eraseUnits.ts. */
+function seedAtD890EraseUnitBookkeepingMarkers(unit: Uint8Array): void {
+  unit.set(
+    [
+      0xff, 0xff, 0xff, 0xff, 0x22, 0x33, 0x44, 0x55, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+      0xff,
+    ],
+    0x3fbf0,
+  );
+  unit.set(
+    [
+      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x55, 0x55, 0xaa,
+      0xaa,
+    ],
+    0x3fff0,
+  );
+}
+
+/** Upload memory with non-`0xff` bookkeeping blocks in every touched erase unit. */
+function channelUploadMemoryWithBookkeepingMarkers(
+  liveSerial = TEST_SERIAL,
+): Map<number, Uint8Array> {
+  const unit348 = makeAtD890EraseUnitBuffer();
+  unit348[D890_MAP.AlarmBitmap - 0x348_0000] = 0xab;
+  unit348[D890_MAP.AlarmData - 0x348_0000] = 0xcd;
+  seedAtD890EraseUnitBookkeepingMarkers(unit348);
+  const unit100 = makeAtD890EraseUnitBuffer();
+  seedAtD890EraseUnitBookkeepingMarkers(unit100);
+  return new Map([
+    [D890_MAP.LocalInfo, localInfoWithSerial(liveSerial)],
+    [0x100_0000, unit100],
+    [0x348_0000, unit348],
+  ]);
+}
+
 describe('AtD890uvProtocol', () => {
   it('connects with PROGRAM→QX and ID890UV ident', async () => {
     const pipe = new AtD890ScriptedPipe();
@@ -141,7 +176,7 @@ describe('AtD890uvProtocol', () => {
     scriptAtD890ConnectWithNegotiation(pipe);
     const radio = new AtD890uvProtocol();
     await radio.connect(pipe);
-    scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
+    scriptAtD890UploadReadResponder(pipe, channelUploadMemoryWithBookkeepingMarkers());
 
     const image = seedChannelZeroUpload(radio);
     enableAtD890AutoWriteAck(pipe);

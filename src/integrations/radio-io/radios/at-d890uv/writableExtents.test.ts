@@ -158,6 +158,16 @@ describe('AT_D890 writable extents', () => {
     );
   });
 
+  it('refuses erase-unit flash sector-management markers even inside a touched unit', () => {
+    const touched = new Set([0x350_0000]);
+    const markerA = 0x350_0000 + 0x3fbf0;
+    const markerB = 0x350_0000 + 0x3fff0;
+    expect(isAtD890TransmitAddress(markerA, touched)).toBe(false);
+    expect(isAtD890TransmitAddress(markerB, touched)).toBe(false);
+    expect(() => assertAtD890TransmitAddress(markerA, touched)).toThrow(/sector-management marker/);
+    expect(() => assertAtD890TransmitAddress(markerB, touched)).toThrow(/sector-management marker/);
+  });
+
   it('accepts every channel primary and secondary address for slots 0..3999', () => {
     const boundarySlots = [0, 127, 128, AT_D890_LIMITS.MAX_CHANNELS - 1];
     for (const slot of boundarySlots) {

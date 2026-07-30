@@ -5,7 +5,11 @@
  */
 
 import { AT_D890_BLOCK_SIZE } from './constants.ts';
-import { AT_D890_ERASE_UNIT_BYTES, eraseUnitBaseFor } from './eraseUnits.ts';
+import {
+  AT_D890_ERASE_UNIT_BYTES,
+  eraseUnitBaseFor,
+  isAtD890EraseUnitBookkeepingAddress,
+} from './eraseUnits.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 
 export interface AtD890StagingChunk {
@@ -36,7 +40,8 @@ export function overlayModelledChunksOntoUnit(
 }
 
 /**
- * List 16-byte staging frames from merged unit buffers, omitting all-`0xff` blocks.
+ * List 16-byte staging frames from merged unit buffers, omitting all-`0xff` blocks
+ * and erase-unit flash sector-management markers.
  * Returns chunks in ascending address order.
  */
 export function listSparseStagingChunks(
@@ -54,9 +59,25 @@ export function listSparseStagingChunks(
       );
     }
     for (let off = 0; off < buffer.length; off += AT_D890_BLOCK_SIZE) {
+      const address = unitBase + off;
+      // ⚠️ DO NOT REMOVE, AND DO NOT ADD A FLAG TO RE-ENABLE THIS.
+      // +0x3fbf0 and +0x3fff0 in every 0x40000 erase unit are the radio's own flash
+      // sector-management markers, not codeplug payload. The radio maintains them itself;
+      // the official Anytone CPS never writes them.
+      //
+      // fe6955e3's whole-unit RMW writeback swept them into our transmitted set. For three
+      // days every Studio write was ACKed, reached flash, and landed 0x40000 above the
+      // address we sent while the live bank kept its old contents — the radio was
+      // unprogrammable and the cause was invisible.
+      //
+      // Restoring these writes as a controlled experiment on 2026-07-30 made the radio
+      // display "Program error please initialise the radio!" and factory-reset itself,
+      // destroying the operator's configuration. Writing these addresses is not a
+      // diagnostic option. See docs/reference/radios/anytone/at-d890uv/flash-sectors.md
+      if (isAtD890EraseUnitBookkeepingAddress(address)) continue;
       const chunk = buffer.subarray(off, off + AT_D890_BLOCK_SIZE);
       if (isAllFf(chunk)) continue;
-      out.push({ address: unitBase + off, data: chunk.slice() });
+      out.push({ address, data: chunk.slice() });
     }
   }
   return out;

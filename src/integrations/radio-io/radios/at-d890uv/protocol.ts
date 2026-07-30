@@ -49,7 +49,6 @@ import {
   type AtD890SentinelSnapshot,
 } from './sentinelVerify.ts';
 import {
-  AT_D890_SKIP_BOOKKEEPING_WRITES,
   eraseUnitBaseFor,
   isAtD890EraseUnitBookkeepingAddress,
   listTouchedEraseUnits,
@@ -655,10 +654,27 @@ export class AtD890uvProtocol implements CloneImageRadio {
 
       const stagingChunks = listSparseStagingChunks(mergedUnits, modelledAddresses);
       assertPreservedBytesMatchFreshRead(stagingChunks, freshUnits, modelledAddresses);
+      // Defence in depth: markers are already omitted in listSparseStagingChunks.
+      // Keep this filter so a future staging change cannot put them on the wire.
+      //
+      // ⚠️ DO NOT REMOVE, AND DO NOT ADD A FLAG TO RE-ENABLE THIS.
+      // +0x3fbf0 and +0x3fff0 in every 0x40000 erase unit are the radio's own flash
+      // sector-management markers, not codeplug payload. The radio maintains them itself;
+      // the official Anytone CPS never writes them.
+      //
+      // fe6955e3's whole-unit RMW writeback swept them into our transmitted set. For three
+      // days every Studio write was ACKed, reached flash, and landed 0x40000 above the
+      // address we sent while the live bank kept its old contents — the radio was
+      // unprogrammable and the cause was invisible.
+      //
+      // Restoring these writes as a controlled experiment on 2026-07-30 made the radio
+      // display "Program error please initialise the radio!" and factory-reset itself,
+      // destroying the operator's configuration. Writing these addresses is not a
+      // diagnostic option. See docs/reference/radios/anytone/at-d890uv/flash-sectors.md
       const transmittedChunks = stagingChunks.filter(
         (c) =>
           c.address !== AT_D890_SAFE_SKIP_WRITE_ADDR &&
-          !(AT_D890_SKIP_BOOKKEEPING_WRITES && isAtD890EraseUnitBookkeepingAddress(c.address)),
+          !isAtD890EraseUnitBookkeepingAddress(c.address),
       );
       const preWriteFromRadio = preWriteChunksFromFreshUnits(transmittedChunks, freshUnits);
       this.lastUploadStagingSnapshot = captureAtD890WriteStagingSnapshot(transmittedChunks, {
@@ -670,22 +686,21 @@ export class AtD890uvProtocol implements CloneImageRadio {
         opts.onProgress,
         {
           cur: 0,
-          max: stagingChunks.length || 1,
+          max: transmittedChunks.length || 1,
           msg: 'Writing sparse regions…',
           stage: 'Upload',
         },
         opts.signal,
       );
 
-      for (let i = 0; i < stagingChunks.length; i++) {
+      for (let i = 0; i < transmittedChunks.length; i++) {
         throwIfAborted(opts.signal);
-        const { address, data } = stagingChunks[i]!;
-        if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) continue;
+        const { address, data } = transmittedChunks[i]!;
         reportProgress(
           opts.onProgress,
           {
             cur: i + 1,
-            max: stagingChunks.length,
+            max: transmittedChunks.length,
             msg: `Writing 0x${address.toString(16)}`,
             stage: 'Upload',
           },
