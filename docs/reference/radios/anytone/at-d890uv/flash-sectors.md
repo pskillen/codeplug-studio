@@ -6,10 +6,10 @@ Durable facts about erase-unit geometry and the two per-unit sector-management b
 
 ## Erase unit
 
-| Property | Value |
-| -------- | ----- |
-| Size | `0x40000` (256 kB), aligned |
-| Write chunk | always 16 bytes |
+| Property    | Value                       |
+| ----------- | --------------------------- |
+| Size        | `0x40000` (256 kB), aligned |
+| Write chunk | always 16 bytes             |
 
 Writing any 16-byte block into a unit can erase the whole unit; co-resident bytes must be re-staged if
 Studio touches the unit (sparse erase-unit RMW — see [memory-layout.md](memory-layout.md)).
@@ -19,10 +19,10 @@ Studio touches the unit (sparse erase-unit RMW — see [memory-layout.md](memory
 Two 16-byte blocks at the tail of **every** erase unit are the radio's own flash sector-management
 metadata, **not** codeplug payload:
 
-| Offset in unit | Typical pattern (hex) |
-| -------------- | --------------------- |
-| `+0x3fbf0` | `ff ff ff ff 22 33 44 55 ff ff ff ff ff ff ff ff` |
-| `+0x3fff0` | `ff ff ff ff ff ff ff ff ff ff ff ff 55 55 aa aa` |
+| Offset in unit | Typical pattern (hex)                             |
+| -------------- | ------------------------------------------------- |
+| `+0x3fbf0`     | `ff ff ff ff 22 33 44 55 ff ff ff ff ff ff ff ff` |
+| `+0x3fff0`     | `ff ff ff ff ff ff ff ff ff ff ff ff 55 55 aa aa` |
 
 The radio maintains them itself — observed changing from all-`0xff` to the marker pattern on a sector
 Studio never addressed. Official Anytone CPS never writes them (USB wire capture of a full codeplug
@@ -34,7 +34,7 @@ Studio must not transmit these addresses on any path (staging, transmit filter, 
 is no diagnostic or debug exception.
 
 **Consequence (hardware, 2026-07-30, one variable):** restoring marker writes made the radio display
-*"Program error please initialise the radio!"* and **factory-reset itself**, destroying the operator's
+_"Program error please initialise the radio!"_ and **factory-reset itself**, destroying the operator's
 configuration. Suppressing them restores normal commit behaviour.
 
 Sparse erase-unit RMW itself is correct for preserving co-resident codeplug / settings bytes; only

@@ -13,34 +13,34 @@ Raw dumps, verify reports and `.pcapng` captures are **not** in the repo. They l
 
 ## Decisive runs
 
-| id | Artefact | Configuration | What it established |
-| -- | -------- | ------------- | ------------------- |
-| `R/07-53` | `write-verify-2026-07-29T07-53-01-652Z` | defaults | 126 mismatches, all the `auto_scan` bit on channels 0–127. Read at the time as a deterministic single-unit failure — **that reading was wrong**, but the run is the cleanest picture of the symptom |
-| `R/12-25` | `…T12-25-27-399Z` | post-#845 | Reported 55 / 3481 mismatches — reads as a 98.4% pass. The independent dump diff showed **ten of thirteen erase units changed zero bytes**. The origin of "a low mismatch count is not evidence of commit" |
-| `R/13-08` | `…T13-08-09-818Z` | 5 ms inter-frame pacing | Reported twelve units `committed`. The dump diff showed **1 byte changed on the entire radio**, and it was operator knob churn. All twelve verdicts false — the verify baseline was the stale download cache, not the radio |
-| `R/17-18` | `…T17-18-42-229Z` | marker suppression *believed* active — **it was not** | Zero of 12 units with work committed, `channelData` included. Killed the idea that some banks commit and others divert. **Wrongly recorded as clearing the sector-marker hypothesis** |
-| **`R/30-06-56`** | `write-verify-2026-07-30T06-56-39-871Z` | **markers genuinely suppressed** | **The fix.** PASS, 0 / 2927. 12 of 12 units `committed`, `must-change == changed` exactly. Unit `0x1000000` staged 1024 chunks — the exact prediction |
-| **`R/30-nc`** | none — the write did not complete | markers deliberately restored | **Causation proven.** *"Program error please initialise the radio!"* → factory reset |
+| id               | Artefact                                | Configuration                                         | What it established                                                                                                                                                                                                         |
+| ---------------- | --------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `R/07-53`        | `write-verify-2026-07-29T07-53-01-652Z` | defaults                                              | 126 mismatches, all the `auto_scan` bit on channels 0–127. Read at the time as a deterministic single-unit failure — **that reading was wrong**, but the run is the cleanest picture of the symptom                         |
+| `R/12-25`        | `…T12-25-27-399Z`                       | post-#845                                             | Reported 55 / 3481 mismatches — reads as a 98.4% pass. The independent dump diff showed **ten of thirteen erase units changed zero bytes**. The origin of "a low mismatch count is not evidence of commit"                  |
+| `R/13-08`        | `…T13-08-09-818Z`                       | 5 ms inter-frame pacing                               | Reported twelve units `committed`. The dump diff showed **1 byte changed on the entire radio**, and it was operator knob churn. All twelve verdicts false — the verify baseline was the stale download cache, not the radio |
+| `R/17-18`        | `…T17-18-42-229Z`                       | marker suppression _believed_ active — **it was not** | Zero of 12 units with work committed, `channelData` included. Killed the idea that some banks commit and others divert. **Wrongly recorded as clearing the sector-marker hypothesis**                                       |
+| **`R/30-06-56`** | `write-verify-2026-07-30T06-56-39-871Z` | **markers genuinely suppressed**                      | **The fix.** PASS, 0 / 2927. 12 of 12 units `committed`, `must-change == changed` exactly. Unit `0x1000000` staged 1024 chunks — the exact prediction                                                                       |
+| **`R/30-nc`**    | none — the write did not complete       | markers deliberately restored                         | **Causation proven.** _"Program error please initialise the radio!"_ → factory reset                                                                                                                                        |
 
 ## Decisive dumps and probes
 
-| id | Artefact | Written by | What it established |
-| -- | -------- | ---------- | ------------------- |
-| `D/08-47` | `d890-memory-dump-2026-07-29T08-47-45-764Z` | **official CPS** | Control: ChannelData block 0 changed 418 bytes and the `auto_scan` count dropped 137 → 11. **The radio's flash is healthy and the defect is entirely Studio-side.** Also the ground-truth scan-list record layout |
-| `D/11-50` | `…T11-50-53-192Z` | **official CPS** | Bank capacities. Also the 1 MB sweep proving scan-list slots above ~100 are not flat-addressed |
-| `P/14-50` | `d890-aliasProbe-2026-07-29T14-50-41-654Z` | — | **Found the whole Studio write image at `+0x40000`**, in every probed bank. Identified by a timing constant of `0x1e` (30 ds) that nothing but Studio writes |
-| `D/29-18-03` → `D/30-06-57` | dumps either side of `R/30-06-56` | Studio | **32,933 bytes changed on the live bank** across 18 regions, including every occupancy bitmap. `talkgroupData` split at `0x40000`: 6,595 live / 176 window |
-| `P/30-06-58` | `d890-aliasProbe-2026-07-30T06-58-45-439Z` | — | Post-fix: the live bank holds Studio's payload *and* so does the `+0x40000` window — the same signature an official CPS write produces |
+| id                          | Artefact                                    | Written by       | What it established                                                                                                                                                                                               |
+| --------------------------- | ------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `D/08-47`                   | `d890-memory-dump-2026-07-29T08-47-45-764Z` | **official CPS** | Control: ChannelData block 0 changed 418 bytes and the `auto_scan` count dropped 137 → 11. **The radio's flash is healthy and the defect is entirely Studio-side.** Also the ground-truth scan-list record layout |
+| `D/11-50`                   | `…T11-50-53-192Z`                           | **official CPS** | Bank capacities. Also the 1 MB sweep proving scan-list slots above ~100 are not flat-addressed                                                                                                                    |
+| `P/14-50`                   | `d890-aliasProbe-2026-07-29T14-50-41-654Z`  | —                | **Found the whole Studio write image at `+0x40000`**, in every probed bank. Identified by a timing constant of `0x1e` (30 ds) that nothing but Studio writes                                                      |
+| `D/29-18-03` → `D/30-06-57` | dumps either side of `R/30-06-56`           | Studio           | **32,933 bytes changed on the live bank** across 18 regions, including every occupancy bitmap. `talkgroupData` split at `0x40000`: 6,595 live / 176 window                                                        |
+| `P/30-06-58`                | `d890-aliasProbe-2026-07-30T06-58-45-439Z`  | —                | Post-fix: the live bank holds Studio's payload _and_ so does the `+0x40000` window — the same signature an official CPS write produces                                                                            |
 
 ## Wire captures
 
 Three USBPcap captures of the official Anytone CPS, decoded with `dev-tools/wire-capture-decoder/`.
 
-| id | Session | Frames |
-| -- | ------- | -----: |
-| `C/read` | one full read-back | 8,026 |
+| id        | Session                                                                                            | Frames |
+| --------- | -------------------------------------------------------------------------------------------------- | -----: |
+| `C/read`  | one full read-back                                                                                 |  8,026 |
 | `C/small` | one channel name edited, then written — **stopped mid-session**, no `END`, secondary evidence only | 13,990 |
-| `C/full` | the operator's real full codeplug, ran to completion — **primary evidence** | 19,960 |
+| `C/full`  | the operator's real full codeplug, ran to completion — **primary evidence**                        | 19,960 |
 
 See [`cps-wire-capture.md`](cps-wire-capture.md).
 
@@ -50,7 +50,7 @@ See [`cps-wire-capture.md`](cps-wire-capture.md).
 
 These are what made the evidence trustworthy once it was, and each was learned by getting it wrong first.
 
-- **A result that matches proves nothing.** Only bytes that *had to change* are evidence. A staged byte equal
+- **A result that matches proves nothing.** Only bytes that _had to change_ are evidence. A staged byte equal
   to what is already on flash is equally consistent with the write doing nothing. This invalidated two
   separate headline findings four days apart, and it is the single easiest mistake to repeat.
 - **Dump immediately before and immediately after every write.** The diff is the only commit evidence

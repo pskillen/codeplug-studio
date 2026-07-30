@@ -9,13 +9,13 @@
 [`docs/reference/radios/anytone/at-d890uv/flash-sectors.md`](../../reference/radios/anytone/at-d890uv/flash-sectors.md).**
 This record is how it was established, and what was ruled out on the way.
 
-| | |
-| --- | --- |
-| **Symptom** | Every write frame ACKed, bytes reached flash, radio behaved as if nothing had been written |
-| **Root cause** | `+0x3fbf0` and `+0x3fff0` in every `0x40000` erase unit are radio-managed flash sector metadata. Writing them diverted the whole write to a shadow sector at `+0x40000` |
-| **Introduced by** | `fe6955e3` — whole-erase-unit RMW writeback swept the markers into the transmitted set |
-| **Masked by** | `98f67b50` — added a suppression flag, but wired it only into the verify snapshot; the transmit loop kept iterating the unfiltered list, so the flag never affected a transmitted byte |
-| **Fixed by** | Making the transmit loop iterate the filtered list |
+|                   |                                                                                                                                                                                        |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Symptom**       | Every write frame ACKed, bytes reached flash, radio behaved as if nothing had been written                                                                                             |
+| **Root cause**    | `+0x3fbf0` and `+0x3fff0` in every `0x40000` erase unit are radio-managed flash sector metadata. Writing them diverted the whole write to a shadow sector at `+0x40000`                |
+| **Introduced by** | `fe6955e3` — whole-erase-unit RMW writeback swept the markers into the transmitted set                                                                                                 |
+| **Masked by**     | `98f67b50` — added a suppression flag, but wired it only into the verify snapshot; the transmit loop kept iterating the unfiltered list, so the flag never affected a transmitted byte |
+| **Fixed by**      | Making the transmit loop iterate the filtered list                                                                                                                                     |
 
 ---
 
@@ -34,7 +34,7 @@ scanListData
 ```
 
 Because the radio reads the live bank, it showed the last **official CPS** write and looked untouched. Worse,
-it stayed *functional* — the un-committed banks still held a coherent CPS codeplug — so the radio's own
+it stayed _functional_ — the un-committed banks still held a coherent CPS codeplug — so the radio's own
 behaviour was useless as evidence for three days.
 
 ## Root cause
@@ -61,10 +61,10 @@ not depend on it.
 
 Two runs, one variable, opposite outcomes:
 
-| Markers on the wire | Outcome |
-| ------------------- | ------- |
-| **suppressed** | Verify PASS, 0 / 2927 staged chunks mismatched. 12 of 12 erase units with work `committed`, `must-change == changed` exactly in every one. Independent before/after dump diff: **32,933 bytes changed** on the live bank across 18 regions, including every occupancy bitmap |
-| **restored** | Radio displayed *"Program error please initialise the radio!"* and **factory-reset itself**, losing the clock and the operator's entire configuration |
+| Markers on the wire | Outcome                                                                                                                                                                                                                                                                      |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **suppressed**      | Verify PASS, 0 / 2927 staged chunks mismatched. 12 of 12 erase units with work `committed`, `must-change == changed` exactly in every one. Independent before/after dump diff: **32,933 bytes changed** on the live bank across 18 regions, including every occupancy bitmap |
+| **restored**        | Radio displayed _"Program error please initialise the radio!"_ and **factory-reset itself**, losing the clock and the operator's entire configuration                                                                                                                        |
 
 The negative control was more destructive than predicted. Writing these addresses does not merely divert the
 write — it corrupts sector management badly enough that the firmware rejects the codeplug wholesale. That is
@@ -85,11 +85,11 @@ accurately in a commit message, and covered by a passing test — and never affe
 because the filter built a list the transmit loop did not read.
 
 > **Verify a claimed fix actually reaches the thing under test.** Confirm the code path executes before
-> crediting *or blaming* a change.
+> crediting _or blaming_ a change.
 
 ### 2. A test that could not fail
 
-`protocol.test.ts` had a test named *"never transmits the per-unit flash bookkeeping blocks"*. It passed with
+`protocol.test.ts` had a test named _"never transmits the per-unit flash bookkeeping blocks"_. It passed with
 the suppression flag forced to `false`, because the fixture never staged a marker block in the first place.
 The assertion guarding the exact behaviour that later bricked a radio was vacuous.
 
@@ -99,7 +99,7 @@ The assertion guarding the exact behaviour that later bricked a radio was vacuou
 ### 3. A hypothesis "cleared" by a run that predated it
 
 The sector-marker hypothesis was tested on hardware at 18:18 local and recorded as cleared. The commit adding
-the suppression flag landed at **22:00 local** — four hours *later*. Combined with (1), the hypothesis was
+the suppression flag landed at **22:00 local** — four hours _later_. Combined with (1), the hypothesis was
 never tested at all. Once it was in the dead column, nobody looked there again, and it was the answer.
 
 The dump filenames were UTC and the commits were local (BST, +1), which is what made the ordering easy to get
@@ -113,20 +113,20 @@ wrong.
 Six conclusions were retracted, two of them inverted. Individually they looked like reasoning errors; the
 cluster was a structural problem. The notes were organised chronologically — a document per session, per
 phase — so corrections had to be threaded back through prose that had already been read, as
-`~~strikethroughs~~` and "superseded by §11" banners. Restructuring them by *role* (what is true / what was
+`~~strikethroughs~~` and "superseded by §11" banners. Restructuring them by _role_ (what is true / what was
 ruled out / an immutable evidence ledger) is what surfaced the four-hour discrepancy in (3) within an hour.
 
 ## What else this produced
 
-| Finding | Where it went |
-| ------- | ------------- |
+| Finding                                                                                                       | Where it went                                                                                  |
+| ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | The protocol has **no** commit / erase / swap command; `END` is not a commit. 19,960 CPS frames, zero unknown | [`flash-sectors.md`](../../reference/radios/anytone/at-d890uv/flash-sectors.md), `protocol.md` |
-| Scan-list record layout: 100 members at `0x30`–`0xF7`, `revert_channel` at `0xF8`, record reaches `0xF9` | [`scan-list-record.md`](../../reference/radios/anytone/at-d890uv/scan-list-record.md) |
-| Bank capacities: zones 250, RX groups 250, RX members 64, scan lists 100 | [`limits.md`](../../reference/radios/anytone/at-d890uv/limits.md) |
-| `auto_scan` is bit 4 of channel byte `0x34`, and is *not* scan-list membership | [`channel-record.md`](../../reference/radios/anytone/at-d890uv/channel-record.md) |
-| CPS writes 17 erase units Studio does not model, two of them the densest banks in the capture | **Still open** — see [`cps-wire-capture.md`](cps-wire-capture.md) |
-| `anytone-cps` is wrong on at least three counts about the scan-list record | [`dead-ends.md`](dead-ends.md) |
-| A reusable USB wire-capture decoder | `dev-tools/wire-capture-decoder/` |
+| Scan-list record layout: 100 members at `0x30`–`0xF7`, `revert_channel` at `0xF8`, record reaches `0xF9`      | [`scan-list-record.md`](../../reference/radios/anytone/at-d890uv/scan-list-record.md)          |
+| Bank capacities: zones 250, RX groups 250, RX members 64, scan lists 100                                      | [`limits.md`](../../reference/radios/anytone/at-d890uv/limits.md)                              |
+| `auto_scan` is bit 4 of channel byte `0x34`, and is _not_ scan-list membership                                | [`channel-record.md`](../../reference/radios/anytone/at-d890uv/channel-record.md)              |
+| CPS writes 17 erase units Studio does not model, two of them the densest banks in the capture                 | **Still open** — see [`cps-wire-capture.md`](cps-wire-capture.md)                              |
+| `anytone-cps` is wrong on at least three counts about the scan-list record                                    | [`dead-ends.md`](dead-ends.md)                                                                 |
+| A reusable USB wire-capture decoder                                                                           | `dev-tools/wire-capture-decoder/`                                                              |
 
 ## Further reading
 

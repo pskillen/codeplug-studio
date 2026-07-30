@@ -14,17 +14,17 @@ This file is **reference data**, not argument. Decoded with `dev-tools/wire-capt
 
 19,960 frames, **zero unknown**. Every frame decoded as one of:
 
-| Direction | Frame | Notes |
-| --------- | ----- | ----- |
-| host→radio | `PROGRAM` | 7 bytes, no terminator |
-| radio→host | `QX\x06` | `51 58 06` |
-| host→radio | `0x02` | ident probe |
-| radio→host | ident reply | ASCII model + version, `0x06`-terminated |
-| host→radio | `R` = `52` + addr(4, BE) + len(1) | reads |
-| host→radio | `W` = `57` + addr(4, BE) + `10` + 16 bytes + cksum + `06` | 9,976 of these |
-| radio→host | `W` … `06` | read replies |
-| radio→host | `06` | write ACK |
-| host→radio | `END` | 3 bytes |
+| Direction  | Frame                                                     | Notes                                    |
+| ---------- | --------------------------------------------------------- | ---------------------------------------- |
+| host→radio | `PROGRAM`                                                 | 7 bytes, no terminator                   |
+| radio→host | `QX\x06`                                                  | `51 58 06`                               |
+| host→radio | `0x02`                                                    | ident probe                              |
+| radio→host | ident reply                                               | ASCII model + version, `0x06`-terminated |
+| host→radio | `R` = `52` + addr(4, BE) + len(1)                         | reads                                    |
+| host→radio | `W` = `57` + addr(4, BE) + `10` + 16 bytes + cksum + `06` | 9,976 of these                           |
+| radio→host | `W` … `06`                                                | read replies                             |
+| radio→host | `06`                                                      | write ACK                                |
+| host→radio | `END`                                                     | 3 bytes                                  |
 
 Checksum is an 8-bit sum of body bytes after the opcode. `checksum_ok` is `true` on every frame.
 
@@ -36,54 +36,54 @@ PROGRAM → QX\x06 → 0x02 → ident reply → one R/W-reply pair (version-ish 
 
 Verified negatives, each checked programmatically:
 
-| Checked | Result |
-| ------- | ------ |
-| Any frame between the last `W` and `END` | none — last `W` → `06` → `END` → `06` |
-| Any frame between two `W` commands, at any address transition | **none, anywhere in the session** |
-| Any frame between the ident probe and the first `W` | one read pair only |
-| Any read (`52`) issued during the write phase | **zero** |
-| `0x2FA0010` ever written | no |
-| Any address written twice | no — 9,976 writes, 9,976 distinct addresses |
-| Any `X` where `X+0x40000` also written | **zero** |
-| The sector markers `+0x3fbf0` / `+0x3fff0` ever written | **zero**, in both write captures |
+| Checked                                                       | Result                                      |
+| ------------------------------------------------------------- | ------------------------------------------- |
+| Any frame between the last `W` and `END`                      | none — last `W` → `06` → `END` → `06`       |
+| Any frame between two `W` commands, at any address transition | **none, anywhere in the session**           |
+| Any frame between the ident probe and the first `W`           | one read pair only                          |
+| Any read (`52`) issued during the write phase                 | **zero**                                    |
+| `0x2FA0010` ever written                                      | no                                          |
+| Any address written twice                                     | no — 9,976 writes, 9,976 distinct addresses |
+| Any `X` where `X+0x40000` also written                        | **zero**                                    |
+| The sector markers `+0x3fbf0` / `+0x3fff0` ever written       | **zero**, in both write captures            |
 
 ## Per-erase-unit write census
 
 Erase units are `0x40000`-aligned, so 16,384 possible 16-byte chunks per unit. Density is against that.
 
-| Erase unit | `C/full` chunks | `C/small` chunks | Density (`C/full`) | In Studio's map? |
-| ---------- | --------------: | ---------------: | -----------------: | ---------------- |
-| `0x01000000` | 1024 | 16 | 6.2% | yes — channels blk 0 |
-| `0x01080000` | 424 | 8 | 2.6% | yes — channels blk 1 |
-| `0x01f80000` | 16 | 16 | 0.1% | **no** |
-| `0x02000000` | 352 | 32 | 2.1% | yes — zone membership |
-| `0x02080000` | 27 | 27 | 0.2% | **no** |
-| `0x02100000` | 352 | 32 | 2.1% | yes — scan lists |
-| `0x02980000` | 14 | 14 | 0.1% | **no** |
-| `0x03180000` | 160 | 160 | 1.0% | **no** |
-| `0x03400000` | 14 | 14 | 0.1% | **no** |
-| `0x03480000` | 199 | 199 | 1.2% | yes — occupancy bitmaps |
-| `0x03500000` | 239 | 239 | 1.5% | yes — zone A/B, settings |
-| `0x03580000` | **1367** | 1367 | 8.3% | **no** |
-| `0x03600000` | 22 | 2 | 0.1% | yes — zone names |
-| `0x03680000` | 8 | 8 | 0.0% | yes — radio IDs |
-| `0x03700000` | 345 | 345 | 2.1% | yes — RX-group bitmap |
-| `0x03780000` | 216 | 18 | 1.3% | yes — RX-group records |
-| `0x03800000` | 20 | 20 | 0.1% | **no** |
-| `0x03880000` | 133 | 11 | 0.8% | yes — airband |
-| `0x03900000` | **2500** | 2500 | 15.3% | **no** |
-| `0x03980000` | 79 | 79 | 0.5% | yes — talkgroup bitmap |
-| `0x03a00000` | 425 | 13 | 2.6% | yes — talkgroup records |
-| `0x03f00000` | 17 | 1 | 0.1% | yes — talkgroup order |
-| `0x04980000` | 16 | 16 | 0.1% | **no** |
-| `0x04a00000` | 3 | 3 | 0.0% | **no** |
-| `0x04b00000` | 212 | 212 | 1.3% | **no** |
-| `0x04b80000` | 34 | 34 | 0.2% | **no** |
-| `0x04c00000` | 500 | 500 | 3.1% | **no** |
-| `0x04c80000` | 1000 | 1000 | 6.1% | **no** |
-| `0x18000000` | 250 | 106 | 1.5% | **no** |
-| `0x18080000` | 8 | 8 | 0.0% | **no** |
-| **Total** | **9,976** | **6,992** | — | |
+| Erase unit   | `C/full` chunks | `C/small` chunks | Density (`C/full`) | In Studio's map?         |
+| ------------ | --------------: | ---------------: | -----------------: | ------------------------ |
+| `0x01000000` |            1024 |               16 |               6.2% | yes — channels blk 0     |
+| `0x01080000` |             424 |                8 |               2.6% | yes — channels blk 1     |
+| `0x01f80000` |              16 |               16 |               0.1% | **no**                   |
+| `0x02000000` |             352 |               32 |               2.1% | yes — zone membership    |
+| `0x02080000` |              27 |               27 |               0.2% | **no**                   |
+| `0x02100000` |             352 |               32 |               2.1% | yes — scan lists         |
+| `0x02980000` |              14 |               14 |               0.1% | **no**                   |
+| `0x03180000` |             160 |              160 |               1.0% | **no**                   |
+| `0x03400000` |              14 |               14 |               0.1% | **no**                   |
+| `0x03480000` |             199 |              199 |               1.2% | yes — occupancy bitmaps  |
+| `0x03500000` |             239 |              239 |               1.5% | yes — zone A/B, settings |
+| `0x03580000` |        **1367** |             1367 |               8.3% | **no**                   |
+| `0x03600000` |              22 |                2 |               0.1% | yes — zone names         |
+| `0x03680000` |               8 |                8 |               0.0% | yes — radio IDs          |
+| `0x03700000` |             345 |              345 |               2.1% | yes — RX-group bitmap    |
+| `0x03780000` |             216 |               18 |               1.3% | yes — RX-group records   |
+| `0x03800000` |              20 |               20 |               0.1% | **no**                   |
+| `0x03880000` |             133 |               11 |               0.8% | yes — airband            |
+| `0x03900000` |        **2500** |             2500 |              15.3% | **no**                   |
+| `0x03980000` |              79 |               79 |               0.5% | yes — talkgroup bitmap   |
+| `0x03a00000` |             425 |               13 |               2.6% | yes — talkgroup records  |
+| `0x03f00000` |              17 |                1 |               0.1% | yes — talkgroup order    |
+| `0x04980000` |              16 |               16 |               0.1% | **no**                   |
+| `0x04a00000` |               3 |                3 |               0.0% | **no**                   |
+| `0x04b00000` |             212 |              212 |               1.3% | **no**                   |
+| `0x04b80000` |              34 |               34 |               0.2% | **no**                   |
+| `0x04c00000` |             500 |              500 |               3.1% | **no**                   |
+| `0x04c80000` |            1000 |             1000 |               6.1% | **no**                   |
+| `0x18000000` |             250 |              106 |               1.5% | **no**                   |
+| `0x18080000` |               8 |                8 |               0.0% | **no**                   |
+| **Total**    |       **9,976** |        **6,992** |                  — |                          |
 
 Two properties worth restating:
 
@@ -113,7 +113,7 @@ in this codeplug, so no content-based hint.
 
 **Not investigated.** Two reasons this matters more than it looks:
 
-1. Every hypothesis in this investigation so far assumes Studio writes a *subset* of the right addresses. If
+1. Every hypothesis in this investigation so far assumes Studio writes a _subset_ of the right addresses. If
    any of these holds a validity marker, index, or generation counter the firmware consults, that is invisible
    to all of them.
 2. It is a possible user-visible feature gap independent of the write-commit question.
@@ -133,5 +133,5 @@ Frame-level JSON was produced under `reports/` in the working directory — a fl
 `kind == "WRITE_CMD"` for the 9,976-entry address+payload oracle.
 
 **Not yet analysed:** inter-frame timing. This capture set has timestamps (`time_range`) but only frame
-*shape* has been examined. If the answer turns out to be timing or ordering rather than content, the data is
+_shape_ has been examined. If the answer turns out to be timing or ordering rather than content, the data is
 already on disk.

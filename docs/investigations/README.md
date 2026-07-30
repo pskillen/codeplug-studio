@@ -1,15 +1,15 @@
 # Investigations
 
 Closed investigation records. Each is a bug or behaviour that took sustained, expensive work to understand —
-kept because the *reasoning* has ongoing value: what was ruled out, what the evidence was, and what the
+kept because the _reasoning_ has ongoing value: what was ruled out, what the evidence was, and what the
 process failures were.
 
 **These are archives, not living documents.** An investigation lands here when it closes. Live investigations
 run in a scratch directory (gitignored) and only their durable conclusions are promoted — settled technical
 facts to the reference docs, the record of how they were established to here.
 
-| # | Investigation | Closed | Outcome |
-| - | ------------- | ------ | ------- |
+| #                                                | Investigation                            | Closed     | Outcome                                                      |
+| ------------------------------------------------ | ---------------------------------------- | ---------- | ------------------------------------------------------------ |
 | [i001](i001-d890-write-commit-failure/README.md) | AT-D890UV Web Serial writes never commit | 2026-07-30 | Studio was transmitting the radio's own flash sector markers |
 
 ## Conventions
