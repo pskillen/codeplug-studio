@@ -18,7 +18,9 @@
     "test:e2e": "playwright test",
     "test:system": "vitest run src/test/system",
     "test:watch": "vitest",
-    "verify:codeplug": "node --experimental-strip-types cps-verify/src/cli.ts"
+    "verify:codeplug": "node --experimental-strip-types cps-verify/src/cli.ts",
+    "sync:android": "npm run build && npx cap sync android",
+    "open:android": "npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
