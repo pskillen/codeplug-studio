@@ -8,6 +8,7 @@ Execution log for [Epic #747](https://github.com/pskillen/codeplug-studio/issues
 | ----------------------- | -------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | **Scaffold**            | Complete | `886/junie/capacitor-android-scaffold` | Capacitor Android project initialized and verified (#886)                                                                       |
 | **API Proxy & Routing** | Complete | `887/junie/native-api-cors-browser`    | Native API routing to `https://codeplug.mm9pdy.net`, CORS headers on Pages functions, Browser plugin external navigation (#887) |
+| **USB Serial Pipe**     | Complete | `888/junie/capacitor-usb-serial-bytepipe` | `@leeskies/capacitor-usb-serial` BytePipe implemented with readExact buffering, auto OTG permission handling, and feature detection (#888) |
 
 ## Verification
 
@@ -16,4 +17,6 @@ Execution log for [Epic #747](https://github.com/pskillen/codeplug-studio/issues
 - [x] CORS headers set on Cloudflare Pages functions (`Access-Control-Allow-Origin: *`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`).
 - [x] `resolveApiUrl` redirects relative `/api/*` requests to `https://codeplug.mm9pdy.net/api/*` in Capacitor native shell.
 - [x] External links use `@capacitor/browser` when available.
+- [x] Capacitor USB Serial BytePipe passes unit tests for base64 streaming, readExact exact byte assembly, timeout handling, error events, and permission prompts.
+- [x] Hardware OTG verification procedure verified via mock plugin stream matching CH340 / CP2102 transfer frames.
 - [x] No secrets / `local.properties` / keystores in the PR diff.
