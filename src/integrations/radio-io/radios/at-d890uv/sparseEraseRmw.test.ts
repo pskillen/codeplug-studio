@@ -57,6 +57,24 @@ describe('listSparseStagingChunks', () => {
     expect(addrs).toEqual([...addrs].sort((a, b) => a - b));
     expect(addrs[0]).toBeLessThan(addrs[addrs.length - 1]!);
   });
+
+  it('never stages erase-unit flash sector-management markers', () => {
+    const buffer = unitBuffer(0xff);
+    buffer[0x05] = 0x01;
+    buffer.set(
+      [0xff, 0xff, 0xff, 0xff, 0x22, 0x33, 0x44, 0x55, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+      0x3fbf0,
+    );
+    buffer.set(
+      [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x55, 0x55, 0xaa, 0xaa],
+      0x3fff0,
+    );
+    const chunks = listSparseStagingChunks(new Map([[UNIT_350, buffer]]), new Set());
+    const addrs = chunks.map((c) => c.address);
+    expect(addrs).toContain(UNIT_350);
+    expect(addrs).not.toContain(UNIT_350 + 0x3fbf0);
+    expect(addrs).not.toContain(UNIT_350 + 0x3fff0);
+  });
 });
 
 describe('assertPreservedBytesMatchFreshRead', () => {
