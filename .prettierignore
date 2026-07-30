@@ -1,4 +1,5 @@
 dist/
+android/
 node_modules/
 .cursor/
 .claude/

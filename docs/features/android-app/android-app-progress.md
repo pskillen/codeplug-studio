@@ -6,10 +6,10 @@ Execution log for [Epic #747](https://github.com/pskillen/codeplug-studio/issues
 
 | Slice | Status | Branch / PR | Notes |
 | --- | --- | --- | --- |
-| **Scaffold** | In progress | `886/junie/capacitor-android-scaffold` | Capacitor core, CLI, Android platform (#886) |
+| **Scaffold** | In progress | `886/junie/capacitor-android-scaffold` | Capacitor dependencies installed, `capacitor.config.ts` initialized (#886) |
 
 ## Next
 
-1. Install Capacitor dependencies.
-2. Initialize `capacitor.config.ts`.
-3. Add Android platform.
+1. Add Android platform.
+2. Update `.gitignore` for Android artifacts.
+3. Add NPM sync scripts.
