@@ -7,7 +7,13 @@ function isAllowedUrl(url: URL): boolean {
   const port = url.port || (protocol === 'https:' ? '443' : '80');
 
   if (hostname === 'localhost') {
-    return protocol === 'http:' && port === '5173';
+    if (protocol === 'capacitor:') {
+      return port === '80';
+    }
+    if (protocol === 'http:') {
+      return port === '5173' || port === '80';
+    }
+    return false;
   }
 
   if (protocol !== 'https:') {

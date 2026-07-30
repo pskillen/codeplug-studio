@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { AppShell, Box, Divider, Group } from '@mantine/core';
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { Outlet } from 'react-router-dom';
@@ -10,6 +11,7 @@ import CookieConsentBanner from '../CookieConsentBanner/CookieConsentBanner.tsx'
 import DriveRefreshProvider from '../ProjectInterchangeBar/DriveRefreshProvider.tsx';
 import RefreshFromDriveBanner from '../ProjectInterchangeBar/RefreshFromDriveBanner.tsx';
 import { usePageAnalytics } from '../../hooks/usePageAnalytics.ts';
+import { handleExternalLinkClick } from '../../lib/openExternalUrl.ts';
 import {
   NAVBAR_WIDTH_WITH_SECONDARY,
   PRIMARY_NAV_WIDTH,
@@ -20,6 +22,13 @@ import { useProjects } from '../../state/useProjects.ts';
 
 export default function AppLayout() {
   usePageAnalytics();
+
+  useEffect(() => {
+    window.addEventListener('click', handleExternalLinkClick, true);
+    return () => {
+      window.removeEventListener('click', handleExternalLinkClick, true);
+    };
+  }, []);
   const [opened, { toggle, close }] = useDisclosure();
   const isDesktopNav = useMediaQuery('(min-width: 48em)');
   const location = useLocation();

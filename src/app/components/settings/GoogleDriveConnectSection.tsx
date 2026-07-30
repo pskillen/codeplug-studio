@@ -1,4 +1,5 @@
 import { Alert, Button, Stack, Text } from '@mantine/core';
+import { isNativeApp } from '../../../integrations/platform/isNativeApp.ts';
 import { useDriveSession } from '../../hooks/useDriveSession.ts';
 
 export default function GoogleDriveConnectSection() {
@@ -12,6 +13,17 @@ export default function GoogleDriveConnectSection() {
     connect,
     sessionExpired,
   } = useDriveSession();
+
+  if (isNativeApp()) {
+    return (
+      <Stack gap="sm">
+        <Alert color="blue" title="Android App">
+          Google Drive integration is not available in the Android app yet. Please use local file
+          import and export to manage portable YAML files.
+        </Alert>
+      </Stack>
+    );
+  }
 
   const showReconnect = isConfigured && (!connected || sessionExpired);
 

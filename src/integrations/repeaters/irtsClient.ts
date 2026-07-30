@@ -1,6 +1,7 @@
 import { bandFromFrequencyMhz } from '@core/domain/bandCatalog.ts';
 import { csvToTable } from '@core/import-export/csvParse.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import { resolveApiUrl } from '../platform/resolveApiUrl.ts';
 import { RepeaterDirectoryError, type RepeaterListing } from './types.ts';
 import { fetchDirectoryText } from './directoryFetch.ts';
 import { clearDirectoryCache, IRTS_CACHE_PREFIX } from './sessionCache.ts';
@@ -165,7 +166,8 @@ export function clearIrtsCatalogueCache(): void {
 export async function fetchIrtsRepeaters(options?: {
   refresh?: boolean;
 }): Promise<RepeaterListing[]> {
-  const { body, status } = await fetchDirectoryText(IRTS_REPEATERS_API_PATH, {
+  const url = resolveApiUrl(IRTS_REPEATERS_API_PATH);
+  const { body, status } = await fetchDirectoryText(url, {
     provider: 'irts',
     cachePrefix: IRTS_CACHE_PREFIX,
     skipCache: options?.refresh === true,

@@ -1,3 +1,4 @@
+import { resolveApiUrl } from '../platform/resolveApiUrl.ts';
 import { fetchCachedText } from '../http/cachedFetch.ts';
 import {
   RADIOID_CACHE_PREFIX,
@@ -70,7 +71,8 @@ function buildSearchUrl(params: RadioidDmrUserSearchParams): string {
     search.set(key, String(value));
   }
   const query = search.toString();
-  return query ? `${RADIOID_DMR_USER_PROXY_PATH}?${query}` : RADIOID_DMR_USER_PROXY_PATH;
+  const basePath = resolveApiUrl(RADIOID_DMR_USER_PROXY_PATH);
+  return query ? `${basePath}?${query}` : basePath;
 }
 
 export async function searchRadioidDmrUsers(
