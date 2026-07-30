@@ -74,6 +74,12 @@ Corroborating detail: post-fix, erase unit `0x1000000` staged exactly **1024** c
 day earlier, when the marker hypothesis was first raised and then wrongly dismissed, was "1026 → exactly
 1024".
 
+⚠️ **The error message is not diagnostic of this bug.** A later write on code that cannot transmit the markers
+produced the same _"Program error please initialise the radio!"_ from a codeplug with zero zones — a separate,
+unrelated invalid state. See [`evidence.md`](evidence.md) and
+[`flash-sectors.md`](../../reference/radios/anytone/at-d890uv/flash-sectors.md) before attributing that message
+to marker writes.
+
 ## Why it took three days
 
 The bug was two lines. Three process failures kept it hidden, and all three are cheap to avoid.

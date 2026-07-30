@@ -40,6 +40,23 @@ configuration. Suppressing them restores normal commit behaviour.
 Sparse erase-unit RMW itself is correct for preserving co-resident codeplug / settings bytes; only
 these marker blocks are excluded.
 
+### ⚠️ That message has more than one cause
+
+_"Program error please initialise the radio!"_ is **not** specific to marker writes. Two unrelated causes are
+confirmed on hardware, both of which destroy the operator's configuration and require an on-radio init plus a
+full official-CPS restore:
+
+| Cause                                                                                    | Status                                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Studio transmitting the sector-management markers above                                  | **Fixed** — [#871](https://github.com/pskillen/codeplug-studio/pull/871), suppression is structural                                                                                              |
+| Writing a codeplug with **channels but zero zones** — an invalid state for this firmware | **Open** — [#880](https://github.com/pskillen/codeplug-studio/issues/880) (refusal); [#881](https://github.com/pskillen/codeplug-studio/issues/881) (synthesised "All Channels" zone as the fix) |
+
+Do not diagnose that message as a marker problem without checking the zone count first. A zero-zone codeplug
+is written faithfully by Studio and rejected by the radio — it is not an encoding fault.
+
+**Recovery, either way:** on-radio init, then write a full codeplug from the **official** Anytone CPS. Studio
+alone is not known to be sufficient — it writes 15 erase units where CPS writes 30.
+
 ## Write diversion at `+0x40000`
 
 When Studio transmitted the markers (after sparse RMW began sweeping them in), every write frame was
