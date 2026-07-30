@@ -32,6 +32,7 @@ Provisional CSV caps mirror `profiles.ts` (`ANYTONE_PROFILES`); still verify aga
 | [capabilities.md](capabilities.md)                 | Feature / bank export availability                                                                                           |
 | [power.md](power.md)                               | Low / Mid / High / Turbo ladder                                                                                              |
 | [protocol.md](protocol.md)                         | Baud 921600, PROGRAM→QX, ident, ASCII R/W + u32 BE, checksum, END, safe-skip address                                         |
+| [flash-sectors.md](flash-sectors.md)               | Erase-unit geometry; sector-management markers that must never be written; no wire commit command                            |
 | [memory-layout.md](memory-layout.md)               | `D890_MAP` region table (first-adapter subset) + address formulas                                                            |
 | [channel-record.md](channel-record.md)             | 0x80 combined channel (0x40+0x40); address formula; ChannelSet bitmap                                                        |
 | [aprs.md](aprs.md)                                 | Global APRS `0x3501000`, receive filters, channel APRS bits ([#758](https://github.com/pskillen/codeplug-studio/issues/758)) |

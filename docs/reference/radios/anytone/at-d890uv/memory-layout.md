@@ -132,7 +132,7 @@ Where the reconciliation contradicts anytone-cps, the hardware wins and the disc
 
 Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `writableExtents.ts`) to define what Studio may **change** from the library build. `listWriteChunks` still emits only modelled banks; **sparse erase-unit RMW** ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) may **transmit** unchanged bytes inside touched `0x40000` units so co-resident optional settings and alarms survive flash erase. `atD890WriteMemory` uses a touched-unit transmit fence during upload; LocalInfo’s unit is never touched so LocalInfo is never serial-written.
 
-**Sparse RMW flow (upload):** compute touched erase units from modelled write addresses → fresh-read each unit from the connected radio → identity-check LocalInfo serial against hydration → overlay modelled chunks → stage only non-`0xff` 16-byte blocks → transmit filtered chunks → `END` (bare `0x06` ACK; no further wire command). The mechanism that promotes staged bytes onto the live bank is **unknown and under investigation** — official CPS uses the same `PROGRAM` / `R` / `W` / `END` frame set and does not send a separate commit command.
+**Sparse RMW flow (upload):** compute touched erase units from modelled write addresses → fresh-read each unit from the connected radio → identity-check LocalInfo serial against hydration → overlay modelled chunks → stage only non-`0xff` 16-byte blocks **excluding** per-unit flash sector-management markers at `+0x3fbf0` / `+0x3fff0` → transmit filtered chunks → `END` (bare `0x06` ACK; no further wire command). There is **no** separate commit command — see [flash-sectors.md](flash-sectors.md).
 
 **ChannelData** is modelled as **32 per-block backed low halves** (`0x40000` each, `0x80000` pitch) — mirrored upper-half addresses are refused ([#791](https://github.com/pskillen/codeplug-studio/issues/791)).
 
@@ -174,7 +174,7 @@ Flash address space is **not** uniformly flat. Measured on hardware 2026-07-27 (
 | Alias stride           | `+0x40000` — upper half mirrors low half |
 | Erase unit             | `0x40000`, aligned                       |
 
-The same `+0x40000` offset appears in a separate observation: Studio writes that are ACKed can land in a staging window at `address + 0x40000` instead of on the addressed live bank. That write-commit behaviour is **not settled** and may or may not be the same mechanism as ChannelData aliasing — see the write-commit investigation under epic [#645](https://github.com/pskillen/codeplug-studio/issues/645).
+The same `+0x40000` offset appears when Studio incorrectly transmitted flash sector-management markers: writes landed in a shadow window at `address + 0x40000` instead of on the live bank. That diversion is **probably** the same A/B sector mechanism as this alias stride — **inference, not proven**. Never write the markers; see [flash-sectors.md](flash-sectors.md) and investigation [i001](../../../investigations/i001-d890-write-commit-failure/README.md).
 
 Channel writes must stay in the low half of each block; `0x1840000` physically lands on `0x1800000`. The write fence models only backed halves (`writableExtents.ts` per-block extents; `channelDataGeometry.ts`).
 
@@ -196,7 +196,7 @@ Sparse erase-unit RMW may treat `0x3480000` and `0x3500000` units as 1:1 address
 
 ## Flash erase unit
 
-Measured in `ChannelData` 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`): **`0x40000` (256 kB), aligned**. Writing any 16-byte block into a unit erases the whole unit at `END`; only bytes staged in the same PROGRAM session survive.
+Measured in `ChannelData` 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`): **`0x40000` (256 kB), aligned**. Writing into a unit can erase the whole unit; only bytes re-staged in the same PROGRAM session survive. There is no separate erase/commit opcode — see [flash-sectors.md](flash-sectors.md).
 
 | Erase unit base | Modelled writes (examples)                                       | Co-resident regions preserved by sparse RMW        |
 | --------------- | ---------------------------------------------------------------- | -------------------------------------------------- |
