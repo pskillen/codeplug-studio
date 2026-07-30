@@ -17,6 +17,7 @@ import { listSetBits } from './bitmap.ts';
 import { assertAtD890WritableSpan, isAtD890WritableAddress } from './writableExtents.ts';
 import { syncAmAirRegionsToCache } from './amAirCodec.ts';
 import { syncAmZoneRegionsToCache } from './amZoneCodec.ts';
+import { syncAprsRegionsToCache } from './aprsCodec.ts';
 
 export interface AtD890SparseBlock {
   address: number;
@@ -299,6 +300,9 @@ export function applyAtD890WriteImageToCache(
     { address: D890_MAP.MasterIdData, length: D890_MAP.MasterIdLength },
   ];
   mergeMapRegionsIntoCache(cache, image, staticRegions);
+  // AprsConfigMain is modelled (patch-only) but not in staticRegions — without this,
+  // listWriteChunks retransmits stale Read bytes and digital report slots never Upload (#884).
+  syncAprsRegionsToCache(cache, image);
 
   const channelSet = image.get(D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES);
   for (const idx of listSetBits(channelSet)) {
