@@ -46,10 +46,10 @@ _"Program error please initialise the radio!"_ is **not** specific to marker wri
 confirmed on hardware, both of which destroy the operator's configuration and require an on-radio init plus a
 full official-CPS restore:
 
-| Cause                                                                                    | Status                                                                                              |
-| ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Studio transmitting the sector-management markers above                                  | **Fixed** — [#871](https://github.com/pskillen/codeplug-studio/pull/871), suppression is structural |
-| Writing a codeplug with **channels but zero zones** — an invalid state for this firmware | **Open** — Studio has no guard; a pre-write refusal is ticketed                                     |
+| Cause                                                                                    | Status                                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Studio transmitting the sector-management markers above                                  | **Fixed** — [#871](https://github.com/pskillen/codeplug-studio/pull/871), suppression is structural                                                                                              |
+| Writing a codeplug with **channels but zero zones** — an invalid state for this firmware | **Open** — [#880](https://github.com/pskillen/codeplug-studio/issues/880) (refusal); [#881](https://github.com/pskillen/codeplug-studio/issues/881) (synthesised "All Channels" zone as the fix) |
 
 Do not diagnose that message as a marker problem without checking the zone count first. A zero-zone codeplug
 is written faithfully by Studio and rejected by the radio — it is not an encoding fault.
