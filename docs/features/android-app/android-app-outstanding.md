@@ -4,4 +4,4 @@ Debt and follow-ups discovered during [Epic #747](https://github.com/pskillen/co
 
 ## Debt
 
-*None yet.*
+_None yet._

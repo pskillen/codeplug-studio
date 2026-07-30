@@ -4,18 +4,18 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Scaffold | In progress | Capacitor core + Android platform (#886) |
-| API Proxy | Deferred | CORS and absolute URL handling (#887) |
-| USB Serial | Deferred | BytePipe implementation (#888) |
-| APK CI | Deferred | GitHub Actions build (#889) |
+| Area       | Status   | Notes                                    |
+| ---------- | -------- | ---------------------------------------- |
+| Scaffold   | Shipped  | Capacitor core + Android platform (#886) |
+| API Proxy  | Deferred | CORS and absolute URL handling (#887)    |
+| USB Serial | Deferred | BytePipe implementation (#888)           |
+| APK CI     | Deferred | GitHub Actions build (#889)              |
 
 ## Documentation map
 
-| Doc | Purpose |
-| --- | --- |
-| [android-app-progress.md](android-app-progress.md) | Execution log for Epic #747 |
+| Doc                                                      | Purpose                        |
+| -------------------------------------------------------- | ------------------------------ |
+| [android-app-progress.md](android-app-progress.md)       | Execution log for Epic #747    |
 | [android-app-outstanding.md](android-app-outstanding.md) | Discovered debt and follow-ups |
 
 ## Concepts

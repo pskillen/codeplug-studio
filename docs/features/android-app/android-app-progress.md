@@ -4,11 +4,12 @@ Execution log for [Epic #747](https://github.com/pskillen/codeplug-studio/issues
 
 ## Slices
 
-| Slice | Status | Branch / PR | Notes |
-| --- | --- | --- | --- |
-| **Scaffold** | In progress | `886/junie/capacitor-android-scaffold` | Scripts added to `package.json`, docs updated (#886) |
+| Slice        | Status   | Branch / PR                            | Notes                                                     |
+| ------------ | -------- | -------------------------------------- | --------------------------------------------------------- |
+| **Scaffold** | Complete | `886/junie/capacitor-android-scaffold` | Capacitor Android project initialized and verified (#886) |
 
-## Next
+## Verification
 
-1. Verification.
-2. Final project checks (lint, build).
+- [x] `npm run sync:android` completes without error.
+- [x] `npm run format:check && npm run lint && npm run test && npm run build` passes.
+- [x] No secrets / `local.properties` / keystores in the PR diff.
