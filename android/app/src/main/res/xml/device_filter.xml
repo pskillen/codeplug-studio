@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  OPTIONAL auto-attach filter template.
+
+  Copy this file into your APP's res/xml/ directory and reference it from your main
+  Activity's USB_DEVICE_ATTACHED intent-filter meta-data (see README). List the
+  vendor-id / product-id pairs (DECIMAL) of the devices you want to auto-attach to.
+
+  Examples of common USB-serial chips (decimal VID / PID):
+    FTDI FT232R          vendor-id="1027" product-id="24577"
+    Silicon Labs CP2102  vendor-id="4292" product-id="60000"
+    Prolific PL2303      vendor-id="1659" product-id="8963"
+    CH340                vendor-id="6790" product-id="29987"
+    Arduino Uno (CDC)    vendor-id="9025" product-id="67"
+
+  You can also match a whole vendor by specifying only vendor-id, or match a USB class
+  (CDC = 2) with <usb-device class="2" />.
+-->
+<resources>
+    <usb-device vendor-id="1027" />   <!-- FTDI -->
+    <usb-device vendor-id="4292" />   <!-- Silicon Labs -->
+    <usb-device vendor-id="1659" />   <!-- Prolific -->
+    <usb-device vendor-id="6790" />   <!-- CH34x (WCH) -->
+    <usb-device class="2" />          <!-- CDC/ACM devices -->
+</resources>
