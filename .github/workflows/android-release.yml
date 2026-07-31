@@ -30,19 +30,19 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
 
       - name: Setup Java JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       - name: Install dependencies
         run: npm ci
@@ -90,7 +90,7 @@ jobs:
           echo "Built ${DEST} (versionName=${ANDROID_VERSION_NAME} versionCode=${ANDROID_VERSION_CODE})"
 
       - name: Upload APK workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: app-release-apk
           path: android/app/build/outputs/apk/release/codeplug-studio-*.apk
@@ -98,7 +98,7 @@ jobs:
 
       - name: Attach APK to GitHub Release
         if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: android/app/build/outputs/apk/release/codeplug-studio-*.apk
           fail_on_unmatched_files: true
