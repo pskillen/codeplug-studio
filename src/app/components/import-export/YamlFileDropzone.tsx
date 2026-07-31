@@ -8,7 +8,12 @@ export interface YamlFileDropzoneProps {
   disabled?: boolean;
 }
 
-const ACCEPT = '.yaml,.yml';
+// Extension-only accept values (e.g. just ".yaml,.yml") don't resolve to a
+// MIME type on Android — MimeTypeMap doesn't know yaml — which leaves the
+// native file-chooser intent with nothing to match, so the Android system
+// picker shows no storage sources at all. Listing real MIME types alongside
+// the extensions fixes that.
+const ACCEPT = '.yaml,.yml,application/x-yaml,application/yaml,text/yaml,text/x-yaml,text/plain';
 
 export default function YamlFileDropzone({
   onFileText,
