@@ -8,8 +8,9 @@ on:
       - dev
   workflow_dispatch:
 
+# write needed to attach APK to GitHub Releases; artifact upload works with read alone
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: android-release-${{ github.ref }}
@@ -56,6 +57,9 @@ jobs:
           VERSION="${TAG_NAME#v}"
           echo "BUILD_VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "BUILD_ENV=apk" >> "$GITHUB_ENV"
+          # Native package identity (Play / sideload updates)
+          echo "ANDROID_VERSION_NAME=${VERSION}" >> "$GITHUB_ENV"
+          echo "ANDROID_VERSION_CODE=${{ github.run_number }}" >> "$GITHUB_ENV"
 
       - name: Build SPA
         run: npm run build
@@ -73,12 +77,29 @@ jobs:
       - name: Build Release APK
         env:
           ANDROID_KEYSTORE_FILE: ${{ env.ANDROID_KEYSTORE_FILE }}
+          ANDROID_VERSION_NAME: ${{ env.ANDROID_VERSION_NAME }}
+          ANDROID_VERSION_CODE: ${{ env.ANDROID_VERSION_CODE }}
         run: |
           cd android
           ./gradlew assembleRelease
+          # Stable artifact name for Releases / download UX
+          RELEASE_DIR="app/build/outputs/apk/release"
+          SRC="$(ls -1 "${RELEASE_DIR}"/*.apk | head -n 1)"
+          DEST="${RELEASE_DIR}/codeplug-studio-${ANDROID_VERSION_NAME}.apk"
+          cp "${SRC}" "${DEST}"
+          echo "APK_PATH=${DEST}" >> "$GITHUB_ENV"
+          echo "Built ${DEST}"
 
-      - name: Upload APK Artifact
+      - name: Upload APK workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          path: android/app/build/outputs/apk/release/codeplug-studio-*.apk
+          if-no-files-found: error
+
+      - name: Attach APK to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: android/app/build/outputs/apk/release/codeplug-studio-*.apk
+          fail_on_unmatched_files: true
