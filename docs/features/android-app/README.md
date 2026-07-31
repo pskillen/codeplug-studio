@@ -53,9 +53,14 @@ Build injects `BUILD_ENV=apk`, `BUILD_VERSION` / `ANDROID_VERSION_NAME` from the
 | `ANDROID_KEYSTORE_BASE64` | Base64-encoded PKCS12/JKS release keystore |
 | `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
 | `ANDROID_KEY_ALIAS` | Key alias |
-| `ANDROID_KEY_PASSWORD` | Key password (often same as keystore password for PKCS12) |
 
 Without secrets, Gradle still builds; the APK will not be release-signed.
+
+Note: PKCS12 keystores don't support a key password distinct from the store
+password — `keytool` silently ignores a different `-keypass` at generation
+time and encrypts the key with the store password instead. `build.gradle`
+reuses `ANDROID_KEYSTORE_PASSWORD` as the key password, so there is no
+separate `ANDROID_KEY_PASSWORD` secret.
 
 Local optional signing: `android/keystore.properties` (gitignored).
 

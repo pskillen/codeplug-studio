@@ -29,10 +29,13 @@ android {
         release {
             // Local vars must not be named keyAlias/keyPassword — Groovy treats
             // `keyAlias keyAlias` as String.call(String) and fails evaluation.
+            //
+            // PKCS12 keystores don't support a key password distinct from the store
+            // password (keytool silently ignores a different -keypass at generation
+            // time), so keyPassword is always set equal to storePassword below.
             def releaseStoreFile = System.getenv("ANDROID_KEYSTORE_FILE") ?: System.getenv("ANDROID_KEYSTORE_PATH") ?: (project.hasProperty("RELEASE_STORE_FILE") ? project.property("RELEASE_STORE_FILE") : null)
             def releaseStorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: (project.hasProperty("RELEASE_STORE_PASSWORD") ? project.property("RELEASE_STORE_PASSWORD") : null)
             def releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: (project.hasProperty("RELEASE_KEY_ALIAS") ? project.property("RELEASE_KEY_ALIAS") : null)
-            def releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: (project.hasProperty("RELEASE_KEY_PASSWORD") ? project.property("RELEASE_KEY_PASSWORD") : null)
 
             def keystorePropertiesFile = rootProject.file("keystore.properties")
             if (keystorePropertiesFile.exists()) {
@@ -41,14 +44,13 @@ android {
                 releaseStoreFile = releaseStoreFile ?: keystoreProperties['storeFile']
                 releaseStorePassword = releaseStorePassword ?: keystoreProperties['storePassword']
                 releaseKeyAlias = releaseKeyAlias ?: keystoreProperties['keyAlias']
-                releaseKeyPassword = releaseKeyPassword ?: keystoreProperties['keyPassword']
             }
 
-            if (releaseStoreFile && file(releaseStoreFile).exists() && releaseStorePassword && releaseKeyAlias && releaseKeyPassword) {
+            if (releaseStoreFile && file(releaseStoreFile).exists() && releaseStorePassword && releaseKeyAlias) {
                 storeFile file(releaseStoreFile)
                 storePassword releaseStorePassword
                 keyAlias releaseKeyAlias
-                keyPassword releaseKeyPassword
+                keyPassword releaseStorePassword
             }
         }
     }
