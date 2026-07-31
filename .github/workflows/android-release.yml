@@ -2,11 +2,14 @@ name: Android Release APK
 
 on:
   release:
-    types: [published]
+    types: [published, prereleased]
+  push:
+    branches:
+      - dev
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: android-release-${{ github.ref }}
@@ -73,9 +76,8 @@ jobs:
           cd android
           ./gradlew assembleRelease
 
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v2
-        if: ${{ github.event_name == 'release' }}
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: |
-            android/app/build/outputs/apk/release/*.apk
+          name: app-release-apk
+          path: android/app/build/outputs/apk/release/*.apk

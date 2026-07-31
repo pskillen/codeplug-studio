@@ -9,7 +9,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 | Scaffold   | Complete | Capacitor core + Android platform (#886)                                                                                       |
 | API Proxy  | Complete | Absolute URL routing, CORS allowlist for Capacitor origins, system browser external navigation, and Google Drive gating (#887) |
 | USB Serial | Complete | BytePipe implemented with `@leeskies/capacitor-usb-serial` for Android USB-OTG radio I/O (#888)                                |
-| APK CI     | Complete | GitHub Actions signed release APK workflow and release asset publishing (#889)                                                |
+| APK CI     | Complete | GitHub Actions signed release APK workflow and release asset publishing (#889)                                                 |
 
 ## Documentation map
 
@@ -35,7 +35,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 ### Release Packaging & CI
 
-The GitHub Actions workflow [`.github/workflows/android-release.yml`](../../.github/workflows/android-release.yml) automatically builds a signed `app-release.apk` whenever a GitHub Release (pre-release or full release) is published.
+The GitHub Actions workflow [`.github/workflows/android-release.yml`](../../.github/workflows/android-release.yml) automatically builds a signed `app-release.apk` whenever a GitHub Release (published or pre-released) is created, on pushes to `dev`, or via `workflow_dispatch`. Built APKs are uploaded as workflow artifacts via `actions/upload-artifact@v4`.
 
 - **Build Environment:** Android APK builds inject `BUILD_ENV=apk` and strip any leading `v` from tag versioning (`BUILD_VERSION=x.y.z`).
 - **Release Signing Secrets:** CI release signing requires four GitHub Actions repository secrets:
@@ -53,7 +53,7 @@ The GitHub Actions workflow [`.github/workflows/android-release.yml`](../../.git
 4. If prompted, enable **"Install unknown apps"** / **"Install from unknown sources"** for your browser or file manager.
 5. Launch Codeplug Studio. Verify the version footer displays `Codeplug Studio · apk · <version>`.
 
-*Note:* Sideloaded APK distribution is the MVP packaging path. Google Play Store distribution (AAB packaging, store listing, and Data Safety declarations) is tracked separately in [#890](https://github.com/pskillen/codeplug-studio/issues/890).
+_Note:_ Sideloaded APK distribution is the MVP packaging path. Google Play Store distribution (AAB packaging, store listing, and Data Safety declarations) is tracked separately in [#890](https://github.com/pskillen/codeplug-studio/issues/890).
 
 ## Contributor Guide
 
