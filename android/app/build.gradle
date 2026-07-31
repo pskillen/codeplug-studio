@@ -18,26 +18,28 @@ android {
     }
     signingConfigs {
         release {
-            def keystoreFile = System.getenv("ANDROID_KEYSTORE_FILE") ?: System.getenv("ANDROID_KEYSTORE_PATH") ?: (project.hasProperty("RELEASE_STORE_FILE") ? project.property("RELEASE_STORE_FILE") : null)
-            def keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: (project.hasProperty("RELEASE_STORE_PASSWORD") ? project.property("RELEASE_STORE_PASSWORD") : null)
-            def keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: (project.hasProperty("RELEASE_KEY_ALIAS") ? project.property("RELEASE_KEY_ALIAS") : null)
-            def keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: (project.hasProperty("RELEASE_KEY_PASSWORD") ? project.property("RELEASE_KEY_PASSWORD") : null)
+            // Local vars must not be named keyAlias/keyPassword — Groovy treats
+            // `keyAlias keyAlias` as String.call(String) and fails evaluation.
+            def releaseStoreFile = System.getenv("ANDROID_KEYSTORE_FILE") ?: System.getenv("ANDROID_KEYSTORE_PATH") ?: (project.hasProperty("RELEASE_STORE_FILE") ? project.property("RELEASE_STORE_FILE") : null)
+            def releaseStorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: (project.hasProperty("RELEASE_STORE_PASSWORD") ? project.property("RELEASE_STORE_PASSWORD") : null)
+            def releaseKeyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: (project.hasProperty("RELEASE_KEY_ALIAS") ? project.property("RELEASE_KEY_ALIAS") : null)
+            def releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: (project.hasProperty("RELEASE_KEY_PASSWORD") ? project.property("RELEASE_KEY_PASSWORD") : null)
 
             def keystorePropertiesFile = rootProject.file("keystore.properties")
             if (keystorePropertiesFile.exists()) {
                 def keystoreProperties = new Properties()
                 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-                keystoreFile = keystoreFile ?: keystoreProperties['storeFile']
-                keystorePassword = keystorePassword ?: keystoreProperties['storePassword']
-                keyAlias = keyAlias ?: keystoreProperties['keyAlias']
-                keyPassword = keyPassword ?: keystoreProperties['keyPassword']
+                releaseStoreFile = releaseStoreFile ?: keystoreProperties['storeFile']
+                releaseStorePassword = releaseStorePassword ?: keystoreProperties['storePassword']
+                releaseKeyAlias = releaseKeyAlias ?: keystoreProperties['keyAlias']
+                releaseKeyPassword = releaseKeyPassword ?: keystoreProperties['keyPassword']
             }
 
-            if (keystoreFile && file(keystoreFile).exists() && keystorePassword && keyAlias && keyPassword) {
-                storeFile file(keystoreFile)
-                storePassword keystorePassword
-                keyAlias keyAlias
-                keyPassword keyPassword
+            if (releaseStoreFile && file(releaseStoreFile).exists() && releaseStorePassword && releaseKeyAlias && releaseKeyPassword) {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
             }
         }
     }
