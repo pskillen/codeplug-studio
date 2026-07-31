@@ -44,5 +44,9 @@
     <!-- Permissions & Features -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Both declared together: Capacitor's Bridge requests FINE and falls back to
+         COARSE if the user picks "Approximate" in the system permission dialog. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
 </manifest>

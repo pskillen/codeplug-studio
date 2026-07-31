@@ -75,6 +75,10 @@ Pull requests and pushes to `main` run [`../../.github/workflows/pull-request.ym
 
 `format:check` → `lint` → `test` → `build` → `e2e` (Playwright)
 
+## Android APK
+
+Signed release APKs are built via [`.github/workflows/android-release.yml`](../../.github/workflows/android-release.yml). On **GitHub Release** publish/prerelease events the APK is attached as a **Release asset**; pushes to `dev` and `workflow_dispatch` upload a workflow **artifact** only. Keystore secrets and sideload steps: [Android Companion App](../features/android-app/README.md).
+
 ## Cursor Approval Agent
 
 PR auto-approval is governed by repository policy files discovered by the [Cursor Approval Agent](https://cursor.com/docs/approval-agents). Bugbot is **not** used. **GitHub CI status is not an approval gate** — branch protection blocks merge when required checks fail, and CI is often still pending when the Approval Agent runs.

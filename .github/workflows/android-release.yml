@@ -1,0 +1,103 @@
+name: Android Release APK
+
+on:
+  release:
+    types: [published, prereleased]
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+# write needed to attach APK to GitHub Releases; artifact upload works with read alone
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    # secrets cannot be referenced in `if:` — map to env first, then gate on env
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set build version and environment
+        run: |
+          if [ -n "${{ github.event.release.tag_name }}" ]; then
+            TAG_NAME="${{ github.event.release.tag_name }}"
+          else
+            TAG_NAME="${{ github.ref_name }}"
+          fi
+          VERSION="${TAG_NAME#v}"
+          echo "BUILD_VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "BUILD_ENV=apk" >> "$GITHUB_ENV"
+          # Native package identity (Play / sideload updates)
+          echo "ANDROID_VERSION_NAME=${VERSION}" >> "$GITHUB_ENV"
+          echo "ANDROID_VERSION_CODE=${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      - name: Build SPA
+        run: npm run build
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: Decode Keystore
+        if: ${{ env.ANDROID_KEYSTORE_BASE64 != '' }}
+        run: |
+          KEYSTORE_PATH="${RUNNER_TEMP}/release.keystore"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+          echo "ANDROID_KEYSTORE_FILE=${KEYSTORE_PATH}" >> "$GITHUB_ENV"
+
+      - name: Build Release APK
+        env:
+          # Prefer GITHUB_ENV from prior steps; only re-pass keystore path (set conditionally).
+          ANDROID_KEYSTORE_FILE: ${{ env.ANDROID_KEYSTORE_FILE }}
+        run: |
+          cd android
+          ./gradlew assembleRelease
+          # Stable artifact name for Releases / download UX
+          RELEASE_DIR="app/build/outputs/apk/release"
+          SRC="$(ls -1 "${RELEASE_DIR}"/*.apk | head -n 1)"
+          DEST="${RELEASE_DIR}/codeplug-studio-${ANDROID_VERSION_NAME}.apk"
+          cp "${SRC}" "${DEST}"
+          echo "APK_PATH=${DEST}" >> "$GITHUB_ENV"
+          echo "Built ${DEST} (versionName=${ANDROID_VERSION_NAME} versionCode=${ANDROID_VERSION_CODE})"
+
+      - name: Upload APK workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-release-apk
+          path: android/app/build/outputs/apk/release/codeplug-studio-*.apk
+          if-no-files-found: error
+
+      - name: Attach APK to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v3
+        with:
+          files: android/app/build/outputs/apk/release/codeplug-studio-*.apk
+          fail_on_unmatched_files: true

@@ -21,6 +21,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // Required by @leeskies/capacitor-usb-serial (mik3y/usb-serial-for-android on JitPack)
+        maven { url 'https://jitpack.io' }
     }
 }
 
