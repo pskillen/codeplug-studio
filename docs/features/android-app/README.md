@@ -4,19 +4,19 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Scaffold | Shipped | Capacitor core + Android platform (#886) |
-| API / CORS / Browser | Shipped | Absolute `/api` on native, Capacitor CORS allowlist, system browser, Drive gated (#887) |
-| USB Serial | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888). \*Unit/mock coverage; **hardware OTG R/W still outstanding** |
-| APK CI | In progress | Signed APK workflow + Release attach on `release` events (#889) — land via PR to `main` |
-| Play Store | Deferred | AAB + listing + Closed Testing (#890) |
+| Area                 | Status      | Notes                                                                                                              |
+| -------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------ |
+| Scaffold             | Shipped     | Capacitor core + Android platform (#886)                                                                           |
+| API / CORS / Browser | Shipped     | Absolute `/api` on native, Capacitor CORS allowlist, system browser, Drive gated (#887)                            |
+| USB Serial           | Shipped\*   | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888). \*Unit/mock coverage; **hardware OTG R/W still outstanding** |
+| APK CI               | In progress | Signed APK workflow + Release attach on `release` events (#889) — land via PR to `main`                            |
+| Play Store           | Deferred    | AAB + listing + Closed Testing (#890)                                                                              |
 
 ## Documentation map
 
-| Doc | Purpose |
-| --- | --- |
-| [android-app-progress.md](android-app-progress.md) | Execution log for Epic #747 |
+| Doc                                                      | Purpose                        |
+| -------------------------------------------------------- | ------------------------------ |
+| [android-app-progress.md](android-app-progress.md)       | Execution log for Epic #747    |
 | [android-app-outstanding.md](android-app-outstanding.md) | Discovered debt and follow-ups |
 
 ## Concepts
@@ -39,20 +39,20 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 [`.github/workflows/android-release.yml`](../../../.github/workflows/android-release.yml):
 
-| Trigger | Output |
-| --- | --- |
-| `release` published / prereleased | Signed APK attached to that **GitHub Release** + workflow artifact |
-| Push to `dev` / `workflow_dispatch` | Workflow **artifact** only (for CI testing) |
+| Trigger                             | Output                                                             |
+| ----------------------------------- | ------------------------------------------------------------------ |
+| `release` published / prereleased   | Signed APK attached to that **GitHub Release** + workflow artifact |
+| Push to `dev` / `workflow_dispatch` | Workflow **artifact** only (for CI testing)                        |
 
 Build injects `BUILD_ENV=apk`, `BUILD_VERSION` / `ANDROID_VERSION_NAME` from the tag (leading `v` stripped), and `ANDROID_VERSION_CODE` from `github.run_number`.
 
 **GitHub Actions secrets (required for a signed APK):**
 
-| Secret | Meaning |
-| --- | --- |
-| `ANDROID_KEYSTORE_BASE64` | Base64-encoded PKCS12/JKS release keystore |
-| `ANDROID_KEYSTORE_PASSWORD` | Keystore password |
-| `ANDROID_KEY_ALIAS` | Key alias |
+| Secret                      | Meaning                                    |
+| --------------------------- | ------------------------------------------ |
+| `ANDROID_KEYSTORE_BASE64`   | Base64-encoded PKCS12/JKS release keystore |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password                          |
+| `ANDROID_KEY_ALIAS`         | Key alias                                  |
 
 Without secrets, Gradle still builds; the APK will not be release-signed.
 

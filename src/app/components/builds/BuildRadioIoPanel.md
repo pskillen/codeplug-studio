@@ -6,9 +6,9 @@ Build Export chrome for **direct serial** read/write (desktop **Web Serial**, An
 
 ## Props
 
-| Prop     | Type         | Description                                                                  |
-| -------- | ------------ | ---------------------------------------------------------------------------- |
-| `build`  | `RadioBuild` | Active radio build                                                           |
+| Prop     | Type         | Description                                                                     |
+| -------- | ------------ | ------------------------------------------------------------------------------- |
+| `build`  | `RadioBuild` | Active radio build                                                              |
 | `egress` | `EgressPath` | Active direct-serial pathway (`formatId`/`profileId`/hydration live here, #654) |
 
 ## Usage

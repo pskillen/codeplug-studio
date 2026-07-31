@@ -4,13 +4,13 @@ Execution log for [Epic #747](https://github.com/pskillen/codeplug-studio/issues
 
 ## Slices
 
-| Slice | Status | Branch / PR | Notes |
-| --- | --- | --- | --- |
-| Scaffold | Complete | PR #891 (`886/…`) | Capacitor Android shell (#886) |
-| API Proxy & Routing | Complete | PR #892 (`887/…`) | Absolute API base, CORS allowlist, Browser, Drive gated (#887) |
-| USB Serial Pipe | Complete\* | PR #893 (`888/…`) | Capacitor `BytePipe` + feature detect (#888). \*Hardware OTG still outstanding |
-| Signed APK CI | In progress | `889/pskillen/android-apk-ci-fixes` | Workflow + signing + Release attach + versionName/Code (#889) |
-| Play Store | Deferred | — | #890 |
+| Slice               | Status      | Branch / PR                         | Notes                                                                          |
+| ------------------- | ----------- | ----------------------------------- | ------------------------------------------------------------------------------ |
+| Scaffold            | Complete    | PR #891 (`886/…`)                   | Capacitor Android shell (#886)                                                 |
+| API Proxy & Routing | Complete    | PR #892 (`887/…`)                   | Absolute API base, CORS allowlist, Browser, Drive gated (#887)                 |
+| USB Serial Pipe     | Complete\*  | PR #893 (`888/…`)                   | Capacitor `BytePipe` + feature detect (#888). \*Hardware OTG still outstanding |
+| Signed APK CI       | In progress | `889/pskillen/android-apk-ci-fixes` | Workflow + signing + Release attach + versionName/Code (#889)                  |
+| Play Store          | Deferred    | —                                   | #890                                                                           |
 
 ## Verification
 
