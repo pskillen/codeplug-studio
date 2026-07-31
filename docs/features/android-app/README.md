@@ -27,7 +27,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 ## Native behaviour (#887, #888)
 
-- **USB-Serial Plugin:** `@leeskies/capacitor-usb-serial` (MIT) backed by `mik3y/usb-serial-for-android`. Common chips (CH340, CP2102, FTDI, PL2303, CDC/ACM) listed in `android/app/src/main/res/xml/device_filter.xml`.
+- **USB-Serial Plugin:** `@leeskies/capacitor-usb-serial` (MIT) backed by `mik3y/usb-serial-for-android`. Common chips (CH340, CP2102, FTDI, PL2303, CDC/ACM) listed in `android/app/src/main/res/xml/device_filter.xml`. Root `android/build.gradle` must include JitPack (`maven { url 'https://jitpack.io' }` in `allprojects.repositories`) so Gradle can resolve that transitive dependency.
 - **API Proxies:** On Capacitor native, relative `/api/*` (RadioID, RepeaterBook, IRTS) resolve to `https://codeplug.mm9pdy.net`.
 - **CORS:** Pages Functions allowlist includes `capacitor://localhost` and `http://localhost` (mirrored `Access-Control-Allow-Origin` — **not** `*`). See `functions/lib/codeplugOrigin.ts`.
 - **External Links:** Anchors with `target="_blank"` and http(s) hrefs open via `@capacitor/browser` (Chrome Custom Tabs).
@@ -58,6 +58,8 @@ Build injects `BUILD_ENV=apk`, `BUILD_VERSION` / `ANDROID_VERSION_NAME` from the
 Without secrets, Gradle still builds; the APK will not be release-signed.
 
 Local optional signing: `android/keystore.properties` (gitignored).
+
+**Local / CI JDK:** Capacitor Android 8 compiles with **Java 21** (`sourceCompatibility`/`targetCompatibility` 21). Use Temurin/Homebrew JDK 21+ for `./gradlew assembleRelease` (CI `android-release.yml` sets `java-version: '21'`).
 
 ### Operator sideload (MVP)
 
