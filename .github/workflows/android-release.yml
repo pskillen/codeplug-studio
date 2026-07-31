@@ -76,9 +76,8 @@ jobs:
 
       - name: Build Release APK
         env:
+          # Prefer GITHUB_ENV from prior steps; only re-pass keystore path (set conditionally).
           ANDROID_KEYSTORE_FILE: ${{ env.ANDROID_KEYSTORE_FILE }}
-          ANDROID_VERSION_NAME: ${{ env.ANDROID_VERSION_NAME }}
-          ANDROID_VERSION_CODE: ${{ env.ANDROID_VERSION_CODE }}
         run: |
           cd android
           ./gradlew assembleRelease
@@ -88,7 +87,7 @@ jobs:
           DEST="${RELEASE_DIR}/codeplug-studio-${ANDROID_VERSION_NAME}.apk"
           cp "${SRC}" "${DEST}"
           echo "APK_PATH=${DEST}" >> "$GITHUB_ENV"
-          echo "Built ${DEST}"
+          echo "Built ${DEST} (versionName=${ANDROID_VERSION_NAME} versionCode=${ANDROID_VERSION_CODE})"
 
       - name: Upload APK workflow artifact
         uses: actions/upload-artifact@v4
