@@ -1,14 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { OPENGD77_MD9600_DESCRIPTOR } from '@integrations/radio-io/radios/opengd77/md9600/descriptor.ts';
 import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
 import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.ts';
 import { UV5R_MINI_DESCRIPTOR } from '@integrations/radio-io/radios/uv5r-mini/descriptor.ts';
+import * as featureDetect from '@integrations/radio-io/transport/featureDetect.ts';
 import {
   isProdBuildEnv,
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
   RADIO_WRITE_PROD_DISABLED_MESSAGE,
 } from './radioWriteEnvGate.ts';
+
+vi.mock('@integrations/radio-io/transport/featureDetect.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof featureDetect>();
+  return {
+    ...actual,
+    isCapacitorSerialSupported: vi.fn(() => false),
+  };
+});
 
 describe('radioWriteEnvGate', () => {
   it('detects prod build env', () => {
@@ -36,6 +45,13 @@ describe('radioWriteEnvGate', () => {
     expect(resolveRadioWriteGate(gated, 'prod')).toBe('hidden');
     expect(resolveRadioWriteGate(gated, 'staging')).toBe('allowed');
     expect(resolveRadioWriteGate(gated, 'local')).toBe('allowed');
+  });
+
+  it('allows write on native platforms even in prod', () => {
+    vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
+    const gated = { prodWriteDisabled: true as const };
+    expect(resolveRadioWriteGate(gated, 'prod')).toBe('allowed');
+    vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
   });
 
   it('resolves profile-specific prod-disabled messages', () => {

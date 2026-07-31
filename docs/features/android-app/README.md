@@ -8,7 +8,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Scaffold   | Complete | Capacitor core + Android platform (#886)                                                                                       |
 | API Proxy  | Complete | Absolute URL routing, CORS allowlist for Capacitor origins, system browser external navigation, and Google Drive gating (#887) |
-| USB Serial | Deferred | BytePipe implementation (#888)                                                                                                 |
+| USB Serial | Complete | BytePipe implemented with `@leeskies/capacitor-usb-serial` for Android USB-OTG radio I/O (#888)                                |
 | APK CI     | Deferred | GitHub Actions build (#889)                                                                                                    |
 
 ## Documentation map
@@ -23,8 +23,9 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 - **Capacitor Shell:** The app is a thin wrapper around the same Vite SPA used in the browser.
 - **USB-OTG:** Used for radio programming since Web Serial is unavailable in mobile browsers.
 
-## Native Behaviour (#887)
+## Native Behaviour (#887, #888)
 
+- **USB-Serial Plugin:** `@leeskies/capacitor-usb-serial` (MIT license, v0.1.0) backed by `mik3y/usb-serial-for-android`. Supports CH340, CP2102, FTDI, PL2303, and CDC/ACM chips over USB-OTG.
 - **API Proxies:** On Capacitor native shells, relative `/api/*` requests (RadioID, RepeaterBook, IRTS) automatically route to `https://codeplug.mm9pdy.net`.
 - **CORS Allowlist:** Cloudflare Pages Functions allow `capacitor://localhost` and `http://localhost` origins.
 - **External Links:** All external links (`target="_blank"` or external HTTP/HTTPS hrefs) open via `@capacitor/browser` in system Chrome Custom Tabs rather than inside the webview.
@@ -44,9 +45,10 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 2. Open Android Studio: `npm run open:android` (or open the `android/` folder manually).
 3. Select a device/emulator and click **Run**.
 
-Note: USB serial functionality is currently under development (#888). Expect radio I/O to fail until #888 is complete. API proxies route to `https://codeplug.mm9pdy.net` on native shells.
+Note: USB serial functionality connects via `@leeskies/capacitor-usb-serial` on Android native shells (#888). API proxies route to `https://codeplug.mm9pdy.net` on native shells.
 
 ## Cross-links
 
 - **Epic:** [codeplug-studio#747](https://github.com/pskillen/codeplug-studio/issues/747)
-- **Current Phase:** [codeplug-studio#887](https://github.com/pskillen/codeplug-studio/issues/887)
+- **Current Phase:** [codeplug-studio#888](https://github.com/pskillen/codeplug-studio/issues/888)
+- **Radio I/O Hub:** [radio-read-write/README.md](../radio-read-write/README.md)

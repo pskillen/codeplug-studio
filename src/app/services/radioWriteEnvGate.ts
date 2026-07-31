@@ -4,6 +4,7 @@
  */
 
 import type { RadioDescriptor } from '@integrations/radio-io/types.ts';
+import { isCapacitorSerialSupported } from '@integrations/radio-io/transport/featureDetect.ts';
 
 export type RadioWriteGate = 'hidden' | 'allowed';
 
@@ -17,6 +18,11 @@ export function resolveRadioWriteGate(
   buildEnv: string = __BUILD_ENV__,
 ): RadioWriteGate {
   if (!descriptor?.prodWriteDisabled) return 'allowed';
+
+  // Allow serial Write on native platforms (OTG) even in prod builds,
+  // as the companion app is a dedicated environment.
+  if (isCapacitorSerialSupported()) return 'allowed';
+
   if (buildEnv === 'prod') return 'hidden';
   return 'allowed';
 }

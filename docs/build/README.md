@@ -71,7 +71,7 @@ If `git status` still shows phantom whole-file edits with empty diffs, run `git 
 
 ## CI
 
-Pull requests and pushes to `main` run [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml):
+Pull requests and pushes to `main` run [`../../.github/workflows/pull-request.yml`](../../.github/workflows/pull-request.yml):
 
 `format:check` → `lint` → `test` → `build` → `e2e` (Playwright)
 
@@ -105,7 +105,7 @@ In the **Approval Agents** dashboard for `pskillen/codeplug-studio`:
 After merging policy files, confirm behaviour manually:
 
 1. Docs-only PR with no hard triggers → should auto-approve (even while CI is pending).
-2. PR touching `.github/workflows/ci.yml` → should **not** auto-approve.
+2. PR touching `../../.github/workflows/pull-request.yml` → should **not** auto-approve.
 3. PR touching `.cursor/rules/layer-boundaries.mdc` → should **not** auto-approve.
 
 ## Cloudflare Pages deploy

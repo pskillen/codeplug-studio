@@ -61,7 +61,7 @@ Run before commit when touching application code: `npm run lint`, `npm run forma
 
 ## CI on pull requests
 
-Every pull request and push to `main` runs [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). Vitest emits `test-results/junit.xml` in CI; [dorny/test-reporter](https://github.com/dorny/test-reporter) publishes per-test pass/fail on the PR Checks tab.
+Every pull request and push to `main` runs [`.github/workflows/pull-request.yml`](../../.github/workflows/pull-request.yml). Vitest emits `test-results/junit.xml` in CI; [dorny/test-reporter](https://github.com/dorny/test-reporter) publishes per-test pass/fail on the PR Checks tab.
 
 | Check              | Script                    | CI                 | Notes                                                                                                      |
 | ------------------ | ------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------- |
@@ -103,4 +103,4 @@ Docs-only PRs: `format:check` + link audit is sufficient.
 | Build and deploy     | [docs/build/README.md](../README.md)                                                         |
 | Data model           | [docs/features/data-model/README.md](../../features/data-model/README.md)                    |
 | OpenGD77 wire format | [docs/reference/export-formats/opengd77/](../../reference/export-formats/opengd77/README.md) |
-| PR checks            | [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)                                 |
+| PR checks            | [`../../../.github/workflows/pull-request.yml`](../../.github/workflows/pull-request.yml)    |
