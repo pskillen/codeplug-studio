@@ -77,7 +77,7 @@ Pull requests and pushes to `main` run [`../../.github/workflows/pull-request.ym
 
 ## Android APK
 
-Signed release APKs are automatically built via [`.github/workflows/android-release.yml`](../../.github/workflows/android-release.yml) on release publish/pre-release events, pushes to `dev`, and `workflow_dispatch`, uploading the compiled APK as a workflow artifact. For keystore secret setup and sideload instructions, see [Android Companion App documentation](../features/android-app/README.md).
+Signed release APKs are built via [`.github/workflows/android-release.yml`](../../.github/workflows/android-release.yml). On **GitHub Release** publish/prerelease events the APK is attached as a **Release asset**; pushes to `dev` and `workflow_dispatch` upload a workflow **artifact** only. Keystore secrets and sideload steps: [Android Companion App](../features/android-app/README.md).
 
 ## Cursor Approval Agent
 

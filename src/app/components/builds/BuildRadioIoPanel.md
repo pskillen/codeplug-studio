@@ -2,14 +2,14 @@
 
 ## Purpose
 
-Build Export chrome for **Web Serial** read/write on **Direct radio** (`radio-io`) egress pathways when a registered adapter matches the profile. Read hydrates `EgressPath.hydration` (`radio-clone`); write runs `assemble` → encode → upload. No CPS ZIP/CSV for this format.
+Build Export chrome for **direct serial** read/write (desktop **Web Serial**, Android Capacitor **USB-OTG**) on **Direct radio** (`radio-io`) egress pathways when a registered adapter matches the profile. Read hydrates `EgressPath.hydration` (`radio-clone`); write runs `assemble` → encode → upload. No CPS ZIP/CSV for this format.
 
 ## Props
 
 | Prop     | Type         | Description                                                                  |
 | -------- | ------------ | ---------------------------------------------------------------------------- |
 | `build`  | `RadioBuild` | Active radio build                                                           |
-| `egress` | `EgressPath` | Active Web Serial pathway (`formatId`/`profileId`/hydration live here, #654) |
+| `egress` | `EgressPath` | Active direct-serial pathway (`formatId`/`profileId`/hydration live here, #654) |
 
 ## Usage
 
@@ -24,7 +24,7 @@ Renders nothing when `descriptorsForEgress(egress)` is empty. Must render under 
 - Leads with [`WebSerialExperimentalAlert`](./WebSerialExperimentalAlert.md) — orange experimental warning (does not block controls).
 - For **AT-D890UV** (`radio-io-at-d890uv`), shows [`AtD890WriteCoverageTable`](./AtD890WriteCoverageTable.md) — what Write updates vs defers vs leaves alone.
 - When an adapter sets `prodWriteDisabled`, `resolveRadioWriteGate` hides Write on `prod` only (no adapters carry the flag today; mechanism remains for future bring-up).
-- Feature-detects Web Serial; shows unsupported banner when missing.
+- Feature-detects Web Serial **or** Capacitor USB-serial (`isRadioSerialSupported`); shows unsupported banner when neither is available.
 - **Read from radio** → download → persist hydration on the **egress** → read-only summary.
 - **Write to radio** → blocked until hydration exists (full-image strategy).
 - While busy, opens [`RadioIoProgressModal`](./RadioIoProgressModal.md) (checklist grows from `ProgressUpdate.stage` — Channels, Zones, … — plus transfer bar + keep-tab warning). Cancel aborts via `AbortSignal`.
