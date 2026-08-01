@@ -79,6 +79,8 @@ Pull requests and pushes to `main` run [`../../.github/workflows/pull-request.ym
 
 Signed release APKs are built via [`.github/workflows/android-release.yml`](../../.github/workflows/android-release.yml). On **GitHub Release** publish/prerelease events the APK is attached as a **Release asset**; pushes to `dev` and `workflow_dispatch` upload a workflow **artifact** only. Keystore secrets and sideload steps: [Android Companion App](../features/android-app/README.md).
 
+`BUILD_ENV` and `VITE_GA_MEASUREMENT_ID` use the **same mapping as Pages** (full release → `prod` + `GA_MEASUREMENT_ID`; prerelease → `staging` + preprod; `dev` push → `dev` + preprod; `workflow_dispatch` chooses `prod` \| `staging` \| `main` \| `dev`). There is no `BUILD_ENV=apk`.
+
 ## Cursor Approval Agent
 
 PR auto-approval is governed by repository policy files discovered by the [Cursor Approval Agent](https://cursor.com/docs/approval-agents). Bugbot is **not** used. **GitHub CI status is not an approval gate** — branch protection blocks merge when required checks fail, and CI is often still pending when the Approval Agent runs.
@@ -189,7 +191,8 @@ Anonymous page-view analytics is consent-gated in the SPA. Deployed builds recei
    - `GA_MEASUREMENT_ID` — prod stream (injected when `build_env` is `prod`)
    - `GA_MEASUREMENT_ID_PREPROD` — pre-prod stream (injected for `staging`, `main`, and `dev` deploy workflows)
 4. In GA admin for both streams: review data retention, disable ads personalization signals if desired.
-5. After deploy: accept analytics cookies on the live site → confirm events in the matching property's Realtime report.
+5. After deploy (or APK sideload): accept analytics cookies → confirm events in the matching property's Realtime / DebugView report. Filter or compare with custom dimensions **`app_surface`** (`web` \| `android`) and **`build_env`**.
+6. In **both** GA4 properties, register event-scoped custom dimensions for `app_surface` and `build_env` (Admin → Custom definitions) so Explore reports can split web vs Android and by environment.
 
 See [analytics feature docs](../features/analytics/README.md) for what is and is not collected.
 

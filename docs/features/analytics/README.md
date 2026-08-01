@@ -15,7 +15,8 @@ Anonymous page-view measurement and the consent/legal plumbing needed to run Goo
 | Consent preference API | Shipped | `localStorage` key `codeplug-studio:analytics-consent`         |
 | GA4 integration        | Shipped | Consent-gated `gtag.js`; page views only                       |
 | Path sanitization      | Shipped | Route templates — no entity UUIDs in GA                        |
-| Dual-property CI       | Shipped | Prod vs pre-prod measurement IDs at build time                 |
+| Dual-property CI       | Shipped | Prod vs pre-prod measurement IDs at build time (Pages + APK)   |
+| Surface / env params   | Shipped | `app_surface` + `build_env` on every `page_view` (#896)        |
 | Playwright smoke       | Shipped | [#176](https://github.com/pskillen/codeplug-studio/issues/176) |
 
 ## Consent flow
@@ -41,7 +42,13 @@ Essential app storage (IndexedDB projects, UI prefs) works regardless of analyti
   4. Current route maps to a sanitized template (not excluded)
 - Triggers on **consent accept** (current page) and on each **client-side navigation** (React Router path change)
 - Sanitized route templates (e.g. `/library/:kind/:id`, not real UUIDs)
-- Deploy environment is visible in the footer (`__BUILD_ENV__`) but is not sent as a custom dimension in v1
+- Extra event params on every `page_view` (for Explore filters):
+  - **`app_surface`** — `web` in the browser; `android` inside Capacitor (`isNativeApp()`)
+  - **`build_env`** — Vite `__BUILD_ENV__` (`prod` \| `staging` \| `main` \| `dev` \| `local`)
+
+Register **`app_surface`** and **`build_env`** as **event-scoped custom dimensions** in both the prod and pre-prod GA4 properties (Admin → Custom definitions). Until registered, params still arrive on hits but are harder to use in reports.
+
+**Android APKs** use the same consent-gated gtag path (not Firebase). CI injects `VITE_GA_MEASUREMENT_ID` like Pages — see [build README](../../build/README.md#google-analytics-4-optional). Play Data safety must declare analytics if measurement IDs are present in release APKs.
 
 ## What GA does not collect
 
@@ -58,10 +65,12 @@ Essential app storage (IndexedDB projects, UI prefs) works regardless of analyti
 
 Deployed builds receive the ID from GitHub Actions secrets — see [build README](../../build/README.md#google-analytics-4-optional):
 
-| Deploy             | Secret                      |
-| ------------------ | --------------------------- |
-| Production         | `GA_MEASUREMENT_ID`         |
-| Staging, next, dev | `GA_MEASUREMENT_ID_PREPROD` |
+| Deploy / APK `BUILD_ENV` | Secret                      |
+| ------------------------ | --------------------------- |
+| `prod`                   | `GA_MEASUREMENT_ID`         |
+| `staging`, `main`, `dev` | `GA_MEASUREMENT_ID_PREPROD` |
+
+Pages and Android Release APK workflows share this mapping. No separate Android GA4 property — filter with `app_surface` / `build_env`.
 
 ## Code anchors
 
@@ -80,5 +89,6 @@ Deployed builds receive the ID from GitHub Actions secrets — see [build README
 ## Related
 
 - [app-shell README](../app-shell/README.md) — footer legal links, banner mount
+- [android-app README](../android-app/README.md) — APK `BUILD_ENV` + GA injection (#896)
 - [DESIGN.md](../../../DESIGN.md) — privacy principle (browser-local operator data)
-- Epic [#96](https://github.com/pskillen/codeplug-studio/issues/96) (parked under [#496](https://github.com/pskillen/codeplug-studio/issues/496))
+- Epic [#96](https://github.com/pskillen/codeplug-studio/issues/96) (parked under [#496](https://github.com/pskillen/codeplug-studio/issues/496)); Android GA [#896](https://github.com/pskillen/codeplug-studio/issues/896)
