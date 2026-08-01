@@ -7,6 +7,17 @@ on:
     branches:
       - dev
   workflow_dispatch:
+    inputs:
+      build_env:
+        description: Deploy environment (same vocabulary as Cloudflare Pages)
+        required: true
+        type: choice
+        options:
+          - prod
+          - staging
+          - main
+          - dev
+        default: dev
 
 # write needed to attach APK to GitHub Releases; artifact upload works with read alone
 permissions:
@@ -55,12 +66,44 @@ jobs:
           fi
           VERSION="${TAG_NAME#v}"
           echo "BUILD_VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "BUILD_ENV=apk" >> "$GITHUB_ENV"
           # Native package identity (Play / sideload updates)
           echo "ANDROID_VERSION_NAME=${VERSION}" >> "$GITHUB_ENV"
           echo "ANDROID_VERSION_CODE=${{ github.run_number }}" >> "$GITHUB_ENV"
 
+          # Match Cloudflare Pages BUILD_ENV vocabulary (prod|staging|main|dev)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            BUILD_ENV="${{ inputs.build_env }}"
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            if [ "${{ github.event.release.prerelease }}" = "true" ]; then
+              BUILD_ENV=staging
+            else
+              BUILD_ENV=prod
+            fi
+          elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_name }}" = "dev" ]; then
+            BUILD_ENV=dev
+          else
+            echo "Unable to map trigger to BUILD_ENV" >&2
+            exit 1
+          fi
+          echo "BUILD_ENV=${BUILD_ENV}" >> "$GITHUB_ENV"
+          echo "Mapped BUILD_ENV=${BUILD_ENV} (event=${{ github.event_name }})"
+
+      - name: Set GA measurement ID
+        run: |
+          case "${BUILD_ENV}" in
+            prod)
+              echo "VITE_GA_MEASUREMENT_ID=${{ secrets.GA_MEASUREMENT_ID }}" >> "$GITHUB_ENV"
+              ;;
+            staging|main|dev)
+              echo "VITE_GA_MEASUREMENT_ID=${{ secrets.GA_MEASUREMENT_ID_PREPROD }}" >> "$GITHUB_ENV"
+              ;;
+          esac
+
       - name: Build SPA
+        env:
+          BUILD_ENV: ${{ env.BUILD_ENV }}
+          BUILD_VERSION: ${{ env.BUILD_VERSION }}
+          VITE_GA_MEASUREMENT_ID: ${{ env.VITE_GA_MEASUREMENT_ID }}
         run: npm run build
 
       - name: Sync Capacitor Android
@@ -86,7 +129,7 @@ jobs:
           DEST="${RELEASE_DIR}/codeplug-studio-${ANDROID_VERSION_NAME}.apk"
           cp "${SRC}" "${DEST}"
           echo "APK_PATH=${DEST}" >> "$GITHUB_ENV"
-          echo "Built ${DEST} (versionName=${ANDROID_VERSION_NAME} versionCode=${ANDROID_VERSION_CODE})"
+          echo "Built ${DEST} (versionName=${ANDROID_VERSION_NAME} versionCode=${ANDROID_VERSION_CODE} BUILD_ENV=${BUILD_ENV})"
 
       - name: Upload APK workflow artifact
         uses: actions/upload-artifact@v7
