@@ -4,13 +4,14 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 ## Implementation status
 
-| Area                 | Status      | Notes                                                                                                              |
-| -------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------ |
-| Scaffold             | Shipped     | Capacitor core + Android platform (#886)                                                                           |
-| API / CORS / Browser | Shipped     | Absolute `/api` on native, Capacitor CORS allowlist, system browser, Drive gated (#887)                            |
-| USB Serial           | Shipped\*   | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888). \*Unit/mock coverage; **hardware OTG R/W still outstanding** |
-| APK CI               | In progress | Signed APK workflow + Release attach on `release` events (#889) — land via PR to `main`                            |
-| Play Store           | Deferred    | AAB + listing + Closed Testing (#890)                                                                              |
+| Area                 | Status    | Notes                                                                                                              |
+| -------------------- | --------- | ------------------------------------------------------------------------------------------------------------------ |
+| Scaffold             | Shipped   | Capacitor core + Android platform (#886)                                                                           |
+| API / CORS / Browser | Shipped   | Absolute `/api` on native, Capacitor CORS allowlist, system browser, Drive gated (#887)                            |
+| USB Serial           | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888). \*Unit/mock coverage; **hardware OTG R/W still outstanding** |
+| APK CI               | Shipped   | Signed APK + Release attach (#889); real `BUILD_ENV` + GA ID inject (#896)                                         |
+| Analytics (gtag)     | Shipped   | Same SPA consent gate; `app_surface=android` + `build_env` on page views (#896)                                    |
+| Play Store           | Deferred  | AAB + listing + Closed Testing (#890)                                                                              |
 
 ## Documentation map
 
@@ -37,22 +38,26 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 ### CI packaging
 
-[`.github/workflows/android-release.yml`](../../../.github/workflows/android-release.yml):
+Reusable [`.github/workflows/android-release.yaml`](../../../.github/workflows/android-release.yaml), called from the same deploy wrappers as Pages:
 
-| Trigger                             | Output                                                             |
-| ----------------------------------- | ------------------------------------------------------------------ |
-| `release` published / prereleased   | Signed APK attached to that **GitHub Release** + workflow artifact |
-| Push to `dev` / `workflow_dispatch` | Workflow **artifact** only (for CI testing)                        |
+| Caller                                                    | Trigger                   | `BUILD_ENV` | Output                       |
+| --------------------------------------------------------- | ------------------------- | ----------- | ---------------------------- |
+| [`dev.yaml`](../../../.github/workflows/dev.yaml)         | Push to `dev`             | `dev`       | Workflow artifact            |
+| [`main.yaml`](../../../.github/workflows/main.yaml)       | Push to `main`            | `main`      | Workflow artifact            |
+| [`staging.yaml`](../../../.github/workflows/staging.yaml) | Pre-release               | `staging`   | Artifact + **Release asset** |
+| [`prod.yaml`](../../../.github/workflows/prod.yaml)       | Full release (`released`) | `prod`      | Artifact + **Release asset** |
 
-Build injects `BUILD_ENV=apk`, `BUILD_VERSION` / `ANDROID_VERSION_NAME` from the tag (leading `v` stripped), and `ANDROID_VERSION_CODE` from `github.run_number`.
+GA secrets follow Pages (`prod` → `GA_MEASUREMENT_ID`; otherwise `GA_MEASUREMENT_ID_PREPROD`). Version comes from the release tag when provided, else short git SHA; `ANDROID_VERSION_CODE` from `github.run_number`.
 
 **GitHub Actions secrets (required for a signed APK):**
 
-| Secret                      | Meaning                                    |
-| --------------------------- | ------------------------------------------ |
-| `ANDROID_KEYSTORE_BASE64`   | Base64-encoded PKCS12/JKS release keystore |
-| `ANDROID_KEYSTORE_PASSWORD` | Keystore password                          |
-| `ANDROID_KEY_ALIAS`         | Key alias                                  |
+| Secret                      | Meaning                                      |
+| --------------------------- | -------------------------------------------- |
+| `ANDROID_KEYSTORE_BASE64`   | Base64-encoded PKCS12/JKS release keystore   |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password                            |
+| `ANDROID_KEY_ALIAS`         | Key alias                                    |
+| `GA_MEASUREMENT_ID`         | Prod stream (when `BUILD_ENV=prod`)          |
+| `GA_MEASUREMENT_ID_PREPROD` | Pre-prod stream (`staging` / `main` / `dev`) |
 
 Without secrets, Gradle still builds; the APK will not be release-signed.
 
@@ -64,16 +69,16 @@ separate `ANDROID_KEY_PASSWORD` secret.
 
 Local optional signing: `android/keystore.properties` (gitignored).
 
-**Local / CI JDK:** Capacitor Android 8 compiles with **Java 21** (`sourceCompatibility`/`targetCompatibility` 21). Use Temurin/Homebrew JDK 21+ for `./gradlew assembleRelease` (CI `android-release.yml` sets `java-version: '21'`).
+**Local / CI JDK:** Capacitor Android 8 compiles with **Java 21** (`sourceCompatibility`/`targetCompatibility` 21). Use Temurin/Homebrew JDK 21+ for `./gradlew assembleRelease` (CI `android-release.yaml` sets `java-version: '21'`).
 
 ### Operator sideload (MVP)
 
 1. Open the [Releases](https://github.com/pskillen/codeplug-studio/releases) page for a published (or pre-) release that ran the Android workflow.
 2. Under **Assets**, download `codeplug-studio-<version>.apk`.
 3. Install on the device (enable install from that source if prompted).
-4. Confirm the in-app footer shows `apk · <version>`.
+4. Confirm the in-app footer shows the mapped env (e.g. `prod · <version>` or `staging · <version>`), not `apk`.
 
-For CI test builds on `dev`, download the APK from the workflow run’s **Artifacts** instead (artifacts expire; not shown on Releases).
+For CI test builds on `dev`, download the APK from the workflow run’s **Artifacts** instead (artifacts expire; not shown on Releases). Consent-gated analytics uses the same banner as web; page views carry `app_surface=android`. See [analytics](../analytics/README.md).
 
 Play Store distribution is [#890](https://github.com/pskillen/codeplug-studio/issues/890).
 

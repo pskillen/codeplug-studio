@@ -71,13 +71,22 @@ If `git status` still shows phantom whole-file edits with empty diffs, run `git 
 
 ## CI
 
-Pull requests and pushes to `main` run [`../../.github/workflows/pull-request.yml`](../../.github/workflows/pull-request.yml):
+Pull requests and pushes to `main` run [`../../.github/workflows/pull-request.yaml`](../../.github/workflows/pull-request.yaml):
 
 `format:check` → `lint` → `test` → `build` → `e2e` (Playwright)
 
 ## Android APK
 
-Signed release APKs are built via [`.github/workflows/android-release.yml`](../../.github/workflows/android-release.yml). On **GitHub Release** publish/prerelease events the APK is attached as a **Release asset**; pushes to `dev` and `workflow_dispatch` upload a workflow **artifact** only. Keystore secrets and sideload steps: [Android Companion App](../features/android-app/README.md).
+Signed release APKs use the reusable [`.github/workflows/android-release.yaml`](../../.github/workflows/android-release.yaml), called from the same thin wrappers as Pages ([`dev.yaml`](../../.github/workflows/dev.yaml), [`main.yaml`](../../.github/workflows/main.yaml), [`staging.yaml`](../../.github/workflows/staging.yaml), [`prod.yaml`](../../.github/workflows/prod.yaml)):
+
+| Caller         | Trigger                   | `build_env` | APK destination              |
+| -------------- | ------------------------- | ----------- | ---------------------------- |
+| `dev.yaml`     | Push to `dev`             | `dev`       | Workflow artifact only       |
+| `main.yaml`    | Push to `main`            | `main`      | Workflow artifact only       |
+| `staging.yaml` | Pre-release               | `staging`   | Artifact + **Release asset** |
+| `prod.yaml`    | Full release (`released`) | `prod`      | Artifact + **Release asset** |
+
+`BUILD_ENV` / `VITE_GA_MEASUREMENT_ID` match Pages (`prod` → `GA_MEASUREMENT_ID`; `staging` \| `main` \| `dev` → `GA_MEASUREMENT_ID_PREPROD`). Keystore secrets and sideload steps: [Android Companion App](../features/android-app/README.md).
 
 ## Cursor Approval Agent
 
@@ -109,7 +118,7 @@ In the **Approval Agents** dashboard for `pskillen/codeplug-studio`:
 After merging policy files, confirm behaviour manually:
 
 1. Docs-only PR with no hard triggers → should auto-approve (even while CI is pending).
-2. PR touching `../../.github/workflows/pull-request.yml` → should **not** auto-approve.
+2. PR touching `../../.github/workflows/pull-request.yaml` → should **not** auto-approve.
 3. PR touching `.cursor/rules/layer-boundaries.mdc` → should **not** auto-approve.
 
 ## Cloudflare Pages deploy
@@ -189,7 +198,8 @@ Anonymous page-view analytics is consent-gated in the SPA. Deployed builds recei
    - `GA_MEASUREMENT_ID` — prod stream (injected when `build_env` is `prod`)
    - `GA_MEASUREMENT_ID_PREPROD` — pre-prod stream (injected for `staging`, `main`, and `dev` deploy workflows)
 4. In GA admin for both streams: review data retention, disable ads personalization signals if desired.
-5. After deploy: accept analytics cookies on the live site → confirm events in the matching property's Realtime report.
+5. After deploy (or APK sideload): accept analytics cookies → confirm events in the matching property's Realtime / DebugView report. Filter or compare with custom dimensions **`app_surface`** (`web` \| `android`) and **`build_env`**.
+6. In **both** GA4 properties, register event-scoped custom dimensions for `app_surface` and `build_env` (Admin → Custom definitions) so Explore reports can split web vs Android and by environment.
 
 See [analytics feature docs](../features/analytics/README.md) for what is and is not collected.
 

@@ -2,6 +2,7 @@ import {
   isAnalyticsConsentAccepted,
   subscribeAnalyticsConsent,
 } from '../preferences/analyticsConsent.ts';
+import { isNativeApp } from '../platform/isNativeApp.ts';
 
 declare global {
   interface Window {
@@ -15,6 +16,14 @@ type Gtag = {
   /** gtag.js replaces the stub after the external script loads. */
 };
 
+export type AppSurface = 'android' | 'web';
+
+/** Event params for GA4 Explore filters (register as custom dimensions in Console). */
+export type PageViewAnalyticsParams = {
+  app_surface: AppSurface;
+  build_env: string;
+};
+
 let scriptInjected = false;
 let analyticsReady = false;
 let pendingPagePath: string | null = null;
@@ -24,6 +33,14 @@ const readyListeners = new Set<AnalyticsReadyListener>();
 
 export function getMeasurementId(): string {
   return import.meta.env.VITE_GA_MEASUREMENT_ID?.trim() ?? '';
+}
+
+/** Surface + deploy env attached to every consent-gated page_view. */
+export function getPageViewAnalyticsParams(): PageViewAnalyticsParams {
+  return {
+    app_surface: isNativeApp() ? 'android' : 'web',
+    build_env: __BUILD_ENV__,
+  };
 }
 
 /** Match Google's snippet — push `arguments`, not a rest-params array. */
@@ -82,6 +99,7 @@ function sendPageView(pagePath: string, measurementId: string): void {
     page_path: pagePath,
     page_location: window.location.href,
     page_title: document.title,
+    ...getPageViewAnalyticsParams(),
   });
 }
 

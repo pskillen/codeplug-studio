@@ -19,7 +19,7 @@ Constitution references: [AGENTS.md](AGENTS.md), [DESIGN.md](DESIGN.md),
 - **Merge protection** on `main` already blocks merge when required CI fails.
 - The Approval Agent often runs while CI is still **pending**; treating CI as a gate would block most auto-approvals.
 
-CI still runs on every PR via [`.github/workflows/pull-request.yml`](.github/workflows/pull-request.yml) (`format:check`, `lint`, `test`, `build`, `e2e`). That is separate from this approval decision.
+CI still runs on every PR via [`.github/workflows/pull-request.yaml`](.github/workflows/pull-request.yaml) (`format:check`, `lint`, `test`, `build`, `e2e`). That is separate from this approval decision.
 
 ## Do NOT auto-approve — request human review
 

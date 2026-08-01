@@ -12,6 +12,7 @@ Debt and follow-ups discovered during [Epic #747](https://github.com/pskillen/co
 | Capacitor 8 vs USB plugin peers     | Medium   | `.npmrc` `legacy-peer-deps=true` — prefer a Capacitor-8-compatible plugin fork when available                                 |
 | External link interceptor coverage  | Low      | Only `target="_blank"` + http(s); docs previously overstated “all external hrefs”                                             |
 | `versionCode` = `github.run_number` | Low      | Monotonic for CI; not SemVer-derived — fine for sideload; revisit for Play if needed                                          |
+| GA4 custom dimensions registration  | Low      | Register `app_surface` + `build_env` in prod and pre-prod GA4 Admin (manual; code already sends params — #896)                |
 
 ## Closed / fixed in verification pass
 

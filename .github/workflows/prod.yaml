@@ -11,3 +11,11 @@ jobs:
     with:
       build_env: prod
       build_version: ${{ github.event.release.tag_name }}
+
+  android:
+    uses: ./.github/workflows/android-release.yaml
+    secrets: inherit
+    with:
+      build_env: prod
+      build_version: ${{ github.event.release.tag_name }}
+      attach_to_release: true
