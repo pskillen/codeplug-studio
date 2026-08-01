@@ -1,30 +1,29 @@
-name: Android Release APK
+name: Build Android APK
 
 on:
-  release:
-    types: [published, prereleased]
-  push:
-    branches:
-      - dev
-  workflow_dispatch:
+  workflow_call:
     inputs:
       build_env:
-        description: Deploy environment (same vocabulary as Cloudflare Pages)
+        description: Same vocabulary as Cloudflare Pages (prod|staging|main|dev)
         required: true
-        type: choice
-        options:
-          - prod
-          - staging
-          - main
-          - dev
-        default: dev
+        type: string
+      build_version:
+        description: Version string for footer / APK name (e.g. release tag). Defaults to short git SHA.
+        required: false
+        type: string
+        default: ''
+      attach_to_release:
+        description: Attach the signed APK to the GitHub Release that triggered the caller
+        required: false
+        type: boolean
+        default: false
 
 # write needed to attach APK to GitHub Releases; artifact upload works with read alone
 permissions:
   contents: write
 
 concurrency:
-  group: android-release-${{ github.ref }}
+  group: android-apk-${{ inputs.build_env }}
   cancel-in-progress: true
 
 jobs:
@@ -57,51 +56,38 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Set build version and environment
+      - name: Set build version
         run: |
-          if [ -n "${{ github.event.release.tag_name }}" ]; then
-            TAG_NAME="${{ github.event.release.tag_name }}"
+          if [ -n "${{ inputs.build_version }}" ]; then
+            VERSION="${{ inputs.build_version }}"
+            VERSION="${VERSION#v}"
           else
-            TAG_NAME="${{ github.ref_name }}"
+            VERSION="$(git rev-parse --short HEAD)"
           fi
-          VERSION="${TAG_NAME#v}"
           echo "BUILD_VERSION=${VERSION}" >> "$GITHUB_ENV"
-          # Native package identity (Play / sideload updates)
           echo "ANDROID_VERSION_NAME=${VERSION}" >> "$GITHUB_ENV"
           echo "ANDROID_VERSION_CODE=${{ github.run_number }}" >> "$GITHUB_ENV"
-
-          # Match Cloudflare Pages BUILD_ENV vocabulary (prod|staging|main|dev)
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            BUILD_ENV="${{ inputs.build_env }}"
-          elif [ "${{ github.event_name }}" = "release" ]; then
-            if [ "${{ github.event.release.prerelease }}" = "true" ]; then
-              BUILD_ENV=staging
-            else
-              BUILD_ENV=prod
-            fi
-          elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref_name }}" = "dev" ]; then
-            BUILD_ENV=dev
-          else
-            echo "Unable to map trigger to BUILD_ENV" >&2
-            exit 1
-          fi
-          echo "BUILD_ENV=${BUILD_ENV}" >> "$GITHUB_ENV"
-          echo "Mapped BUILD_ENV=${BUILD_ENV} (event=${{ github.event_name }})"
+          echo "BUILD_ENV=${{ inputs.build_env }}" >> "$GITHUB_ENV"
+          echo "Version=${VERSION} BUILD_ENV=${{ inputs.build_env }}"
 
       - name: Set GA measurement ID
         run: |
-          case "${BUILD_ENV}" in
+          case "${{ inputs.build_env }}" in
             prod)
               echo "VITE_GA_MEASUREMENT_ID=${{ secrets.GA_MEASUREMENT_ID }}" >> "$GITHUB_ENV"
               ;;
             staging|main|dev)
               echo "VITE_GA_MEASUREMENT_ID=${{ secrets.GA_MEASUREMENT_ID_PREPROD }}" >> "$GITHUB_ENV"
               ;;
+            *)
+              echo "Unexpected build_env: ${{ inputs.build_env }}" >&2
+              exit 1
+              ;;
           esac
 
       - name: Build SPA
         env:
-          BUILD_ENV: ${{ env.BUILD_ENV }}
+          BUILD_ENV: ${{ inputs.build_env }}
           BUILD_VERSION: ${{ env.BUILD_VERSION }}
           VITE_GA_MEASUREMENT_ID: ${{ env.VITE_GA_MEASUREMENT_ID }}
         run: npm run build
@@ -118,12 +104,10 @@ jobs:
 
       - name: Build Release APK
         env:
-          # Prefer GITHUB_ENV from prior steps; only re-pass keystore path (set conditionally).
           ANDROID_KEYSTORE_FILE: ${{ env.ANDROID_KEYSTORE_FILE }}
         run: |
           cd android
           ./gradlew assembleRelease
-          # Stable artifact name for Releases / download UX
           RELEASE_DIR="app/build/outputs/apk/release"
           SRC="$(ls -1 "${RELEASE_DIR}"/*.apk | head -n 1)"
           DEST="${RELEASE_DIR}/codeplug-studio-${ANDROID_VERSION_NAME}.apk"
@@ -134,12 +118,12 @@ jobs:
       - name: Upload APK workflow artifact
         uses: actions/upload-artifact@v7
         with:
-          name: app-release-apk
+          name: app-release-apk-${{ inputs.build_env }}
           path: android/app/build/outputs/apk/release/codeplug-studio-*.apk
           if-no-files-found: error
 
       - name: Attach APK to GitHub Release
-        if: github.event_name == 'release'
+        if: ${{ inputs.attach_to_release }}
         uses: softprops/action-gh-release@v3
         with:
           files: android/app/build/outputs/apk/release/codeplug-studio-*.apk

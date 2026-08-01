@@ -38,23 +38,16 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 ### CI packaging
 
-[`.github/workflows/android-release.yml`](../../../.github/workflows/android-release.yml):
+Reusable [`.github/workflows/android-release.yaml`](../../../.github/workflows/android-release.yaml), called from the same deploy wrappers as Pages:
 
-| Trigger                             | Output                                                             |
-| ----------------------------------- | ------------------------------------------------------------------ |
-| `release` published / prereleased   | Signed APK attached to that **GitHub Release** + workflow artifact |
-| Push to `dev` / `workflow_dispatch` | Workflow **artifact** only (for CI testing)                        |
+| Caller                                                                    | Trigger               | `BUILD_ENV` | Output                     |
+| ------------------------------------------------------------------------- | --------------------- | ----------- | -------------------------- |
+| [`dev.yaml`](../../../.github/workflows/dev.yaml)                         | Push to `dev`         | `dev`       | Workflow artifact          |
+| [`main.yaml`](../../../.github/workflows/main.yaml)                       | Push to `main`        | `main`      | Workflow artifact          |
+| [`staging.yaml`](../../../.github/workflows/staging.yaml)                 | Pre-release           | `staging`   | Artifact + **Release asset** |
+| [`prod.yaml`](../../../.github/workflows/prod.yaml)                       | Full release (`released`) | `prod`  | Artifact + **Release asset** |
 
-`BUILD_ENV` matches Cloudflare Pages vocabulary (not a literal `apk`):
-
-| Trigger                       | `BUILD_ENV`                                                   | GA secret                   |
-| ----------------------------- | ------------------------------------------------------------- | --------------------------- |
-| Full Release (not prerelease) | `prod`                                                        | `GA_MEASUREMENT_ID`         |
-| Pre-release                   | `staging`                                                     | `GA_MEASUREMENT_ID_PREPROD` |
-| Push to `dev`                 | `dev`                                                         | `GA_MEASUREMENT_ID_PREPROD` |
-| `workflow_dispatch`           | input (`prod` \| `staging` \| `main` \| `dev`, default `dev`) | same case rule              |
-
-Also injects `BUILD_VERSION` / `ANDROID_VERSION_NAME` from the tag (leading `v` stripped), and `ANDROID_VERSION_CODE` from `github.run_number`.
+GA secrets follow Pages (`prod` → `GA_MEASUREMENT_ID`; otherwise `GA_MEASUREMENT_ID_PREPROD`). Version comes from the release tag when provided, else short git SHA; `ANDROID_VERSION_CODE` from `github.run_number`.
 
 **GitHub Actions secrets (required for a signed APK):**
 
@@ -76,7 +69,7 @@ separate `ANDROID_KEY_PASSWORD` secret.
 
 Local optional signing: `android/keystore.properties` (gitignored).
 
-**Local / CI JDK:** Capacitor Android 8 compiles with **Java 21** (`sourceCompatibility`/`targetCompatibility` 21). Use Temurin/Homebrew JDK 21+ for `./gradlew assembleRelease` (CI `android-release.yml` sets `java-version: '21'`).
+**Local / CI JDK:** Capacitor Android 8 compiles with **Java 21** (`sourceCompatibility`/`targetCompatibility` 21). Use Temurin/Homebrew JDK 21+ for `./gradlew assembleRelease` (CI `android-release.yaml` sets `java-version: '21'`).
 
 ### Operator sideload (MVP)
 

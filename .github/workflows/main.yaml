@@ -12,3 +12,9 @@ jobs:
     with:
       build_env: main
       cloudflare_branch: next
+
+  android:
+    uses: ./.github/workflows/android-release.yaml
+    secrets: inherit
+    with:
+      build_env: main
