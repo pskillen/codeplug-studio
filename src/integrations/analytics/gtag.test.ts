@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearAnalyticsConsent, setAnalyticsConsent } from '../preferences/analyticsConsent.ts';
-import { getMeasurementId, initAnalytics, resetAnalyticsForTests, trackPageView } from './gtag.ts';
+import * as platform from '../platform/isNativeApp.ts';
+import {
+  getMeasurementId,
+  getPageViewAnalyticsParams,
+  initAnalytics,
+  resetAnalyticsForTests,
+  trackPageView,
+} from './gtag.ts';
 
 function createLocalStorageMock() {
   const store = new Map<string, string>();
@@ -48,11 +55,13 @@ describe('gtag analytics', () => {
       origin: 'https://dev.codeplug.mm9pdy.net',
       href: 'https://dev.codeplug.mm9pdy.net/',
     });
+    vi.spyOn(platform, 'isNativeApp').mockReturnValue(false);
   });
 
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
     resetAnalyticsForTests();
   });
 
@@ -98,6 +107,48 @@ describe('gtag analytics', () => {
         page_path: '/library/channels',
         page_location: 'https://dev.codeplug.mm9pdy.net/',
         page_title: '',
+        app_surface: 'web',
+        build_env: __BUILD_ENV__,
+      },
+    ]);
+  });
+
+  it('getPageViewAnalyticsParams reports web by default', () => {
+    expect(getPageViewAnalyticsParams()).toEqual({
+      app_surface: 'web',
+      build_env: __BUILD_ENV__,
+    });
+  });
+
+  it('getPageViewAnalyticsParams reports android when native', () => {
+    vi.spyOn(platform, 'isNativeApp').mockReturnValue(true);
+    expect(getPageViewAnalyticsParams()).toEqual({
+      app_surface: 'android',
+      build_env: __BUILD_ENV__,
+    });
+  });
+
+  it('sends app_surface android on page_view when native', () => {
+    vi.spyOn(platform, 'isNativeApp').mockReturnValue(true);
+    const gtagCalls: unknown[][] = [];
+    window.gtag = ((...args: unknown[]) => {
+      gtagCalls.push(args);
+    }) as typeof window.gtag;
+
+    setAnalyticsConsent('accepted');
+    trackPageView('/library/channels');
+    scriptOnload?.();
+
+    expect(gtagCalls).toContainEqual([
+      'event',
+      'page_view',
+      {
+        send_to: 'G-TEST123',
+        page_path: '/library/channels',
+        page_location: 'https://dev.codeplug.mm9pdy.net/',
+        page_title: '',
+        app_surface: 'android',
+        build_env: __BUILD_ENV__,
       },
     ]);
   });
