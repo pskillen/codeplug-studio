@@ -40,12 +40,12 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 Reusable [`.github/workflows/android-release.yaml`](../../../.github/workflows/android-release.yaml), called from the same deploy wrappers as Pages:
 
-| Caller                                                                    | Trigger               | `BUILD_ENV` | Output                     |
-| ------------------------------------------------------------------------- | --------------------- | ----------- | -------------------------- |
-| [`dev.yaml`](../../../.github/workflows/dev.yaml)                         | Push to `dev`         | `dev`       | Workflow artifact          |
-| [`main.yaml`](../../../.github/workflows/main.yaml)                       | Push to `main`        | `main`      | Workflow artifact          |
-| [`staging.yaml`](../../../.github/workflows/staging.yaml)                 | Pre-release           | `staging`   | Artifact + **Release asset** |
-| [`prod.yaml`](../../../.github/workflows/prod.yaml)                       | Full release (`released`) | `prod`  | Artifact + **Release asset** |
+| Caller                                                    | Trigger                   | `BUILD_ENV` | Output                       |
+| --------------------------------------------------------- | ------------------------- | ----------- | ---------------------------- |
+| [`dev.yaml`](../../../.github/workflows/dev.yaml)         | Push to `dev`             | `dev`       | Workflow artifact            |
+| [`main.yaml`](../../../.github/workflows/main.yaml)       | Push to `main`            | `main`      | Workflow artifact            |
+| [`staging.yaml`](../../../.github/workflows/staging.yaml) | Pre-release               | `staging`   | Artifact + **Release asset** |
+| [`prod.yaml`](../../../.github/workflows/prod.yaml)       | Full release (`released`) | `prod`      | Artifact + **Release asset** |
 
 GA secrets follow Pages (`prod` → `GA_MEASUREMENT_ID`; otherwise `GA_MEASUREMENT_ID_PREPROD`). Version comes from the release tag when provided, else short git SHA; `ANDROID_VERSION_CODE` from `github.run_number`.
 

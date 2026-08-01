@@ -43,7 +43,7 @@ cps-verify/
 
 ## CI
 
-[`../../../.github/workflows/pull-request.yml`](../../../.github/workflows/pull-request.yml) runs `npm run test:cps-verify` and publishes **CPS wire verify** via Dorny (`test-results/cps-verify-junit.xml`).
+[`../../../.github/workflows/pull-request.yaml`](../../../.github/workflows/pull-request.yaml) runs `npm run test:cps-verify` and publishes **CPS wire verify** via Dorny (`test-results/cps-verify-junit.xml`).
 
 That Vitest run includes:
 

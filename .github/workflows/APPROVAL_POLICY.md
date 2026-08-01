@@ -6,7 +6,7 @@
 
 Changes to any workflow in `.github/workflows/`, including:
 
-- [`pull-request.yml`](pull-request.yml) — PR CI (`format:check`, `lint`, `test`, `build`, e2e)
+- [`pull-request.yaml`](pull-request.yaml) — PR CI (`format:check`, `lint`, `test`, `build`, e2e)
 - [`cloudflare-pages.yaml`](cloudflare-pages.yaml) — reusable Pages deploy (secrets, OAuth client ID, GA measurement IDs)
 - [`main.yaml`](main.yaml), [`dev.yaml`](dev.yaml), [`staging.yaml`](staging.yaml), [`prod.yaml`](prod.yaml) — environment deploy triggers
 

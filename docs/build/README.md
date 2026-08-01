@@ -79,12 +79,12 @@ Pull requests and pushes to `main` run [`../../.github/workflows/pull-request.ya
 
 Signed release APKs use the reusable [`.github/workflows/android-release.yaml`](../../.github/workflows/android-release.yaml), called from the same thin wrappers as Pages ([`dev.yaml`](../../.github/workflows/dev.yaml), [`main.yaml`](../../.github/workflows/main.yaml), [`staging.yaml`](../../.github/workflows/staging.yaml), [`prod.yaml`](../../.github/workflows/prod.yaml)):
 
-| Caller | Trigger | `build_env` | APK destination |
-| --- | --- | --- | --- |
-| `dev.yaml` | Push to `dev` | `dev` | Workflow artifact only |
-| `main.yaml` | Push to `main` | `main` | Workflow artifact only |
-| `staging.yaml` | Pre-release | `staging` | Artifact + **Release asset** |
-| `prod.yaml` | Full release (`released`) | `prod` | Artifact + **Release asset** |
+| Caller         | Trigger                   | `build_env` | APK destination              |
+| -------------- | ------------------------- | ----------- | ---------------------------- |
+| `dev.yaml`     | Push to `dev`             | `dev`       | Workflow artifact only       |
+| `main.yaml`    | Push to `main`            | `main`      | Workflow artifact only       |
+| `staging.yaml` | Pre-release               | `staging`   | Artifact + **Release asset** |
+| `prod.yaml`    | Full release (`released`) | `prod`      | Artifact + **Release asset** |
 
 `BUILD_ENV` / `VITE_GA_MEASUREMENT_ID` match Pages (`prod` → `GA_MEASUREMENT_ID`; `staging` \| `main` \| `dev` → `GA_MEASUREMENT_ID_PREPROD`). Keystore secrets and sideload steps: [Android Companion App](../features/android-app/README.md).
 
