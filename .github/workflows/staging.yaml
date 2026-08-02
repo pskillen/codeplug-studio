@@ -4,6 +4,10 @@ on:
   release:
     types: [prereleased]
 
+# android-release.yaml needs this permission
+permissions:
+  contents: write
+
 jobs:
   deploy:
     uses: ./.github/workflows/cloudflare-pages.yaml

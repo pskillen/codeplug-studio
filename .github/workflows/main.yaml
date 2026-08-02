@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+# android-release.yaml needs this permission, even if it doesn't always upload
+permissions:
+  contents: write
+
 jobs:
   deploy:
     uses: ./.github/workflows/cloudflare-pages.yaml
