@@ -4,6 +4,7 @@ import { clearDriveSession, loadDriveSession, saveDriveSession } from './drivePr
 import { DriveAuthError, DriveCancelledError, DriveConfigError } from './driveTypes.ts';
 import type { DriveApiClient } from './driveApi.ts';
 import type { GoogleIdentityClient } from './loadGoogleIdentity.ts';
+import { createWebAuthProvider } from './webGoogleAuth.ts';
 
 function createLocalStorageMock() {
   const store = new Map<string, string>();
@@ -72,7 +73,7 @@ describe('googleDrive port', () => {
   it('connect stores session and account label', async () => {
     const port = createGoogleDrivePort({
       api,
-      loadIdentity: async () => identity,
+      authProvider: createWebAuthProvider({ loadIdentity: async () => identity }),
       getClientId: () => 'client-id.apps.googleusercontent.com',
       fetchImpl: fetch,
     });
@@ -90,7 +91,7 @@ describe('googleDrive port', () => {
     });
     const port = createGoogleDrivePort({
       api,
-      loadIdentity: async () => identity,
+      authProvider: createWebAuthProvider({ loadIdentity: async () => identity }),
       getClientId: () => 'client-id.apps.googleusercontent.com',
       fetchImpl: fetch,
     });
@@ -126,7 +127,7 @@ describe('googleDrive port', () => {
     };
     const port = createGoogleDrivePort({
       api,
-      loadIdentity: async () => cancelledIdentity,
+      authProvider: createWebAuthProvider({ loadIdentity: async () => cancelledIdentity }),
       getClientId: () => 'client-id.apps.googleusercontent.com',
       fetchImpl: fetch,
     });
@@ -140,7 +141,7 @@ describe('googleDrive port', () => {
     });
     const port = createGoogleDrivePort({
       api,
-      loadIdentity: async () => identity,
+      authProvider: createWebAuthProvider({ loadIdentity: async () => identity }),
       getClientId: () => 'client-id',
       fetchImpl: fetch,
     });
@@ -156,7 +157,7 @@ describe('googleDrive port', () => {
     });
     const port = createGoogleDrivePort({
       api,
-      loadIdentity: async () => identity,
+      authProvider: createWebAuthProvider({ loadIdentity: async () => identity }),
       getClientId: () => 'client-id',
       fetchImpl: fetch,
     });
