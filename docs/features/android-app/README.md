@@ -12,14 +12,16 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 | USB Serial            | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888). \*Unit/mock coverage; **hardware OTG R/W still outstanding** |
 | APK CI                | Shipped   | Signed APK + Release attach (#889); real `BUILD_ENV` + GA ID inject (#896)                                         |
 | Analytics (gtag)      | Shipped   | Same SPA consent gate; `app_surface=android` + `build_env` on page views (#896)                                    |
-| Play Store            | Deferred  | AAB + listing + Closed Testing (#890)                                                                              |
+| In-app icon / splash  | Shipped   | Brand-derived adaptive icon + splash via `@capacitor/assets` (#898)                                                |
+| Play Store listing    | Drafted   | Graphics + copy staged under [store-assets/](store-assets/README.md); submission itself still #890                 |
 
 ## Documentation map
 
-| Doc                                                      | Purpose                        |
-| -------------------------------------------------------- | ------------------------------ |
-| [android-app-progress.md](android-app-progress.md)       | Execution log for Epic #747    |
-| [android-app-outstanding.md](android-app-outstanding.md) | Discovered debt and follow-ups |
+| Doc                                                      | Purpose                                   |
+| -------------------------------------------------------- | ----------------------------------------- |
+| [android-app-progress.md](android-app-progress.md)       | Execution log for Epic #747               |
+| [android-app-outstanding.md](android-app-outstanding.md) | Discovered debt and follow-ups            |
+| [store-assets/README.md](store-assets/README.md)         | Play Store graphics + listing copy (#898) |
 
 ## Concepts
 

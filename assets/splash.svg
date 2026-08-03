@@ -1,0 +1,40 @@
+<svg width="2732" height="2732" viewBox="0 0 2732 2732" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Splash source for @capacitor/assets. Brand mark + wordmark centered on the same
+       navy background as public/branding/studio-hero.svg, with a subtle grid echo. -->
+  <style>
+    .logo-bold { font-family: system-ui, -apple-system, sans-serif; font-weight: 800; font-size: 32px; fill: #ffffff; }
+    .logo-light { font-family: system-ui, -apple-system, sans-serif; font-weight: 400; font-size: 32px; fill: #94a3b8; }
+  </style>
+
+  <rect width="2732" height="2732" fill="#0f172a"></rect>
+
+  <path
+    d="M0 341 H2732 M0 682 H2732 M0 1023 H2732 M0 1364 H2732 M0 1705 H2732 M0 2046 H2732 M0 2387 H2732"
+    stroke="#1e293b" stroke-width="2"></path>
+  <path
+    d="M341 0 V2732 M682 0 V2732 M1023 0 V2732 M1364 0 V2732 M1705 0 V2732 M2046 0 V2732 M2387 0 V2732"
+    stroke="#1e293b" stroke-width="2"></path>
+
+  <!-- Logo lockup (icon + wordmark), same composition as public/branding/studio-logo.svg,
+       recentered on canvas by its own bounding box and scaled up. -->
+  <g transform="translate(547,1178.6) scale(4.68)">
+    <g transform="translate(0, 10) scale(0.6)">
+      <path d="M 18 35 L 5 50 L 18 65" stroke="#06b6d4" stroke-width="4.5" stroke-linecap="round"
+        stroke-linejoin="round"></path>
+      <path d="M 38 35 L 48 50 L 38 65" stroke="#06b6d4" stroke-width="4.5" stroke-linecap="round"
+        stroke-linejoin="round"></path>
+      <path d="M 26.5 65 L 26.5 35" stroke="#f97316" stroke-width="3.5" stroke-linecap="round"></path>
+      <circle cx="26.5" cy="24" r="3.5" fill="#f97316"></circle>
+      <path d="M 54 50 L 65 50" stroke="#64748b" stroke-width="3.5" stroke-linecap="round"></path>
+      <path d="M 59 45 L 66 50 L 59 55" stroke="#64748b" stroke-width="3.5" stroke-linecap="round"
+        stroke-linejoin="round"></path>
+      <rect x="72" y="38" width="22" height="34" rx="3.5" stroke="#60a5fa" stroke-width="3.5"
+        fill="none"></rect>
+      <path d="M 77 38 L 77 16" stroke="#60a5fa" stroke-width="3.5" stroke-linecap="round"></path>
+      <rect x="76.5" y="44" width="13" height="11" rx="2" fill="#10b981"></rect>
+      <circle cx="83" cy="63" r="3" fill="#60a5fa"></circle>
+    </g>
+    <text x="70" y="52" class="logo-bold">Codeplug</text>
+    <text x="226" y="52" class="logo-light">Studio</text>
+  </g>
+</svg>
