@@ -100,9 +100,22 @@ Play Store distribution is [#890](https://github.com/pskillen/codeplug-studio/is
 
 Note: `npm ci` uses `.npmrc` `legacy-peer-deps=true` so Capacitor 8 can install alongside the USB-serial plugin’s peer range.
 
+## Privacy & legal
+
+The APK embeds the same SPA legal routes used on the website. Play Console and operators should use the hosted URLs:
+
+| Page    | In-app route | Hosted URL                          |
+| ------- | ------------ | ----------------------------------- |
+| Privacy | `/privacy`   | https://codeplug.mm9pdy.net/privacy |
+| Terms   | `/terms`     | https://codeplug.mm9pdy.net/terms   |
+| Cookies | `/cookies`   | https://codeplug.mm9pdy.net/cookies |
+
+Copy covers the Android companion, USB-OTG radio programming (bytes stay on-cable), and the rule that operator data does not leave the device unless the operator starts an action (Drive, remote directories, consented analytics). See [#897](https://github.com/pskillen/codeplug-studio/issues/897). Play Data safety form fill-out remains [#890](https://github.com/pskillen/codeplug-studio/issues/890).
+
 ## Cross-links
 
 - Epic [#747](https://github.com/pskillen/codeplug-studio/issues/747)
-- Tickets [#886](https://github.com/pskillen/codeplug-studio/issues/886)–[#890](https://github.com/pskillen/codeplug-studio/issues/890)
+- Tickets [#886](https://github.com/pskillen/codeplug-studio/issues/886)–[#890](https://github.com/pskillen/codeplug-studio/issues/890), legal copy [#897](https://github.com/pskillen/codeplug-studio/issues/897)
 - Radio I/O hub: [radio-read-write/README.md](../radio-read-write/README.md)
+- Analytics / consent: [analytics/README.md](../analytics/README.md)
 - Deploy / SPA matrix: [docs/build/README.md](../../build/README.md)
