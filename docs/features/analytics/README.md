@@ -11,7 +11,7 @@ Anonymous page-view measurement and the consent/legal plumbing needed to run Goo
 | Area                   | Status  | Notes                                                          |
 | ---------------------- | ------- | -------------------------------------------------------------- |
 | Cookie consent banner  | Shipped | First visit; accept / essential only                           |
-| Legal pages            | Shipped | `/privacy`, `/terms`, `/cookies`                               |
+| Legal pages            | Shipped | `/privacy`, `/terms`, `/cookies` — web + Android companion ([#897](https://github.com/pskillen/codeplug-studio/issues/897)) |
 | Consent preference API | Shipped | `localStorage` key `codeplug-studio:analytics-consent`         |
 | GA4 integration        | Shipped | Consent-gated `gtag.js`; page views only                       |
 | Path sanitization      | Shipped | Route templates — no entity UUIDs in GA                        |
