@@ -1,5 +1,5 @@
 import { Alert, Button, Stack, Text } from '@mantine/core';
-import { isNativeApp } from '../../../integrations/platform/isNativeApp.ts';
+import { isNativeApp } from '@integrations/platform/isNativeApp.ts';
 import { useDriveSession } from '../../hooks/useDriveSession.ts';
 
 export default function GoogleDriveConnectSection() {
@@ -14,29 +14,19 @@ export default function GoogleDriveConnectSection() {
     sessionExpired,
   } = useDriveSession();
 
-  if (isNativeApp()) {
-    return (
-      <Stack gap="sm">
-        <Alert color="blue" title="Android App">
-          Google Drive integration is not available in the Android app yet. Please use local file
-          import and export to manage portable YAML files.
-        </Alert>
-      </Stack>
-    );
-  }
-
   const showReconnect = isConfigured && (!connected || sessionExpired);
+  const clientIdEnv = isNativeApp() ? 'VITE_GOOGLE_ANDROID_CLIENT_ID' : 'VITE_GOOGLE_CLIENT_ID';
 
   return (
     <Stack gap="sm">
       <Text size="sm" c="dimmed">
         Connect Google Drive to open and save native YAML project files from the cloud. OAuth tokens
-        stay in this browser only.
+        stay on this device only.
       </Text>
       {!isConfigured ? (
         <Alert color="yellow" title="Not configured">
-          Set <code>VITE_GOOGLE_CLIENT_ID</code> in <code>.env.local</code> for local development.
-          See the build docs for Google Cloud setup.
+          Set <code>{clientIdEnv}</code> in <code>.env.local</code> for local development. See the
+          build docs for Google Cloud setup.
         </Alert>
       ) : null}
       {connected && !sessionExpired ? (
