@@ -23,7 +23,7 @@ Rendered inside `AppNav` below `ActiveProjectBar` when the project has a Drive l
 | Linked Drive + dirty                      | Save enabled                                                                         |
 | Linked Drive + clean                      | Save disabled                                                                        |
 | Session expired                           | `SoftWarning` danger tone with greyed Save/Check; buttons still clickable for reauth |
-| Check Drive                               | Runs manual remote-newer check via `useDriveRefresh().checkNow()`                    |
+| Check Drive                               | Runs manual remote-newer check via `useDriveRefresh().checkNow()`; failures (including a scope error on a file the app no longer has `drive.file` access to) show inline in red below the buttons |
 | Local file only                           | Export YAML link to `/summary`                                                       |
 | No portable destination + prior Drive use | `BrowserOnlyWarning` (dismissible)                                                   |
 | Never connected Drive                     | Cluster hidden unless project has Drive/local interchange                            |

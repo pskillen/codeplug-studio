@@ -2,6 +2,7 @@ import type { DriveFolderCrumb, DriveListItem } from '@integrations/cloud/index.
 import {
   APP_ROOT_FOLDER_NAME,
   DRIVE_ROOT_FOLDER_ID,
+  DriveScopeError,
   isDriveAuthError,
 } from '@integrations/cloud/index.ts';
 
@@ -58,6 +59,9 @@ export function formatBrowsePathLabel(path: DriveFolderCrumb[]): string {
 export function driveErrorMessage(err: unknown): string {
   if (isDriveAuthError(err)) {
     return 'Google Drive session expired. Reconnect to continue.';
+  }
+  if (err instanceof DriveScopeError) {
+    return "This file or folder is no longer reachable with Studio's Drive permissions — save it again to recreate it in Studio's Drive folder.";
   }
   if (err instanceof Error) return err.message;
   return String(err);

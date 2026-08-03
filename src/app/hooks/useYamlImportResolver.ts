@@ -11,6 +11,7 @@ import {
 import { useGoogleDrive } from './useGoogleDrive.ts';
 import { useProjects } from '../state/useProjects.ts';
 import type { DriveOpenSelection } from '../components/import-export/DriveBrowserModal.tsx';
+import { driveErrorMessage } from '../components/import-export/driveBrowserHelpers.ts';
 
 export interface LocalYamlImportSource {
   kind: 'localFile';
@@ -258,8 +259,11 @@ export function useRefreshFromDrivePrompt() {
     void (async () => {
       try {
         await runRemoteCheck({ respectDismissed: true });
-      } catch {
-        if (!cancelled) setBannerOpen(false);
+      } catch (err) {
+        if (!cancelled) {
+          setBannerOpen(false);
+          setError(driveErrorMessage(err));
+        }
       }
     })();
     return () => {
@@ -272,10 +276,12 @@ export function useRefreshFromDrivePrompt() {
       return;
     }
     setChecking(true);
+    setError(null);
     try {
       await runRemoteCheck({ respectDismissed: false });
-    } catch {
+    } catch (err) {
       setBannerOpen(false);
+      setError(driveErrorMessage(err));
     } finally {
       setChecking(false);
     }
@@ -328,7 +334,7 @@ export function useRefreshFromDrivePrompt() {
       await refreshProjects();
       closeRefreshUi();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(driveErrorMessage(err));
     } finally {
       setImporting(false);
     }
@@ -355,7 +361,7 @@ export function useRefreshFromDrivePrompt() {
       switchProject(result.projectId);
       closeRefreshUi();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(driveErrorMessage(err));
     } finally {
       setImporting(false);
     }

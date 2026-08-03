@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { APP_ROOT_FOLDER_NAME, DRIVE_ROOT_FOLDER_ID } from '@integrations/cloud/index.ts';
+import {
+  APP_ROOT_FOLDER_NAME,
+  DRIVE_ROOT_FOLDER_ID,
+  DriveAuthError,
+  DriveScopeError,
+} from '@integrations/cloud/index.ts';
 import {
   appendFolderToPath,
+  driveErrorMessage,
   findYamlFileByName,
   formatBrowsePathLabel,
   pathUpToIndex,
@@ -75,5 +81,23 @@ describe('driveBrowserHelpers', () => {
 
   it('formatBrowsePathLabel falls back to the app root name for an empty path', () => {
     expect(formatBrowsePathLabel([])).toBe(APP_ROOT_FOLDER_NAME);
+  });
+
+  it('driveErrorMessage prompts reconnect for auth errors', () => {
+    expect(driveErrorMessage(new DriveAuthError())).toBe(
+      'Google Drive session expired. Reconnect to continue.',
+    );
+  });
+
+  it('driveErrorMessage explains scope errors actionably', () => {
+    expect(driveErrorMessage(new DriveScopeError())).toContain('save it again');
+  });
+
+  it('driveErrorMessage falls back to the error message', () => {
+    expect(driveErrorMessage(new Error('boom'))).toBe('boom');
+  });
+
+  it('driveErrorMessage stringifies non-Error values', () => {
+    expect(driveErrorMessage('plain string')).toBe('plain string');
   });
 });

@@ -9,6 +9,7 @@ import {
 import { importProjectFromYaml } from '../services/projectImportExportService.ts';
 import { saveDriveLastFolderId, saveDriveLastFolderPath } from '@integrations/cloud/drivePrefs.ts';
 import type { DriveSaveTarget } from '../components/import-export/DriveBrowserModal.tsx';
+import { driveErrorMessage } from '../components/import-export/driveBrowserHelpers.ts';
 import { assessDriveSaveConflict } from '../services/driveSaveConflictService.ts';
 import {
   exportProjectToYaml,
@@ -97,7 +98,7 @@ export function useDriveSaveFlow(options: UseDriveSaveFlowOptions = {}) {
       notifySaved();
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(driveErrorMessage(err));
       return false;
     } finally {
       setSaving(false);
@@ -152,7 +153,7 @@ export function useDriveSaveFlow(options: UseDriveSaveFlowOptions = {}) {
       await refreshDirty();
       closeConflict();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(driveErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -209,7 +210,7 @@ export function useDriveSaveFlow(options: UseDriveSaveFlowOptions = {}) {
       notifySaved();
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(driveErrorMessage(err));
       return false;
     } finally {
       setSaving(false);

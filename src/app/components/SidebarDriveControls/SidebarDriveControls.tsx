@@ -26,7 +26,7 @@ export default function SidebarDriveControls() {
     activeProjectId,
     activeProject ?? undefined,
   );
-  const { checkNow, checking } = useDriveRefresh();
+  const { checkNow, checking, error: checkError } = useDriveRefresh();
   const {
     saving,
     error,
@@ -147,6 +147,11 @@ export default function SidebarDriveControls() {
         {error && !conflictOpen ? (
           <Text size="xs" c="red">
             {error}
+          </Text>
+        ) : null}
+        {!error && checkError ? (
+          <Text size="xs" c="red">
+            {checkError}
           </Text>
         ) : null}
       </Stack>
