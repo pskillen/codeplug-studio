@@ -181,6 +181,7 @@ Pages Functions are matched before the SPA `_redirects` catch-all; no `_routes.j
 | `CLOUDFLARE_API_TOKEN`      | API token with **Cloudflare Pages — Edit** (and account read)     |
 | `CLOUDFLARE_ACCOUNT_ID`     | Cloudflare account id                                             |
 | `GOOGLE_OAUTH_CLIENT_ID`    | Google OAuth web client id for Drive Connect on deployed builds   |
+| `ANDROID_GOOGLE_OAUTH_CLIENT_ID` | Google OAuth **Android** client id for Drive on APK builds   |
 | `GA_MEASUREMENT_ID`         | GA4 measurement ID for **production** deploys (`prod`)            |
 | `GA_MEASUREMENT_ID_PREPROD` | GA4 measurement ID for **staging**, **next**, and **dev** deploys |
 
@@ -210,9 +211,10 @@ See [analytics feature docs](../features/analytics/README.md) for what is and is
 | `BUILD_ENV`              | `local`                  | `prod`, `staging`, `main`, or `dev`                                  |
 | `BUILD_VERSION`          | `local`                  | Release tag or commit SHA (leading `v` stripped)                     |
 | `VITE_GOOGLE_CLIENT_ID`  | `.env.local` (see above) | GitHub Actions secret `GOOGLE_OAUTH_CLIENT_ID`                       |
+| `VITE_GOOGLE_ANDROID_CLIENT_ID` | `.env.local` (Android APK) | GitHub Actions secret `ANDROID_GOOGLE_OAUTH_CLIENT_ID` (APK CI only) |
 | `VITE_GA_MEASUREMENT_ID` | `.env.local` (optional)  | `GA_MEASUREMENT_ID` (prod) or `GA_MEASUREMENT_ID_PREPROD` (pre-prod) |
 
-`BUILD_ENV` and `BUILD_VERSION` are injected via Vite `define` in `vite.config.ts`. `VITE_GOOGLE_CLIENT_ID` and `VITE_GA_MEASUREMENT_ID` are read from the environment at build time by Vite (`import.meta.env`).
+`BUILD_ENV` and `BUILD_VERSION` are injected via Vite `define` in `vite.config.ts`. `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_ANDROID_CLIENT_ID`, and `VITE_GA_MEASUREMENT_ID` are read from the environment at build time by Vite (`import.meta.env`).
 
 Displayed in [`BuildFooter`](../../src/app/components/BuildFooter/BuildFooter.tsx). See [version-number skill](../../.cursor/skills/version-number/SKILL.md).
 

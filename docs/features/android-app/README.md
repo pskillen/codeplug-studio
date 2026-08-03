@@ -7,7 +7,8 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 | Area                 | Status    | Notes                                                                                                              |
 | -------------------- | --------- | ------------------------------------------------------------------------------------------------------------------ |
 | Scaffold             | Shipped   | Capacitor core + Android platform (#886)                                                                           |
-| API / CORS / Browser | Shipped   | Absolute `/api` on native, Capacitor CORS allowlist, system browser, Drive gated (#887)                            |
+| API / CORS / Browser | Shipped   | Absolute `/api` on native, Capacitor CORS allowlist, system browser (#887)                                         |
+| Google Drive (native)| Shipped   | PKCE OAuth in Custom Tabs + deep link (#895)                                                                       |
 | USB Serial           | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888). \*Unit/mock coverage; **hardware OTG R/W still outstanding** |
 | APK CI               | Shipped   | Signed APK + Release attach (#889); real `BUILD_ENV` + GA ID inject (#896)                                         |
 | Analytics (gtag)     | Shipped   | Same SPA consent gate; `app_surface=android` + `build_env` on page views (#896)                                    |
@@ -32,7 +33,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 - **API Proxies:** On Capacitor native, relative `/api/*` (RadioID, RepeaterBook, IRTS) resolve to `https://codeplug.mm9pdy.net`.
 - **CORS:** Pages Functions allowlist includes `capacitor://localhost` and `http://localhost` (mirrored `Access-Control-Allow-Origin` — **not** `*`). See `functions/lib/codeplugOrigin.ts`.
 - **External Links:** Anchors with `target="_blank"` and http(s) hrefs open via `@capacitor/browser` (Chrome Custom Tabs).
-- **Google Drive:** Gated on native — use local YAML import/export on Android for now.
+- **Google Drive:** PKCE OAuth in Chrome Custom Tabs with redirect `net.mm9pdy.codeplugstudio:/oauth2redirect`. Requires Android OAuth client + `VITE_GOOGLE_ANDROID_CLIENT_ID` in APK builds. See [google-drive](../import-export/google-drive.md).
 
 ## Sideload APK (#889)
 
@@ -58,6 +59,7 @@ GA secrets follow Pages (`prod` → `GA_MEASUREMENT_ID`; otherwise `GA_MEASUREME
 | `ANDROID_KEY_ALIAS`         | Key alias                                    |
 | `GA_MEASUREMENT_ID`         | Prod stream (when `BUILD_ENV=prod`)          |
 | `GA_MEASUREMENT_ID_PREPROD` | Pre-prod stream (`staging` / `main` / `dev`) |
+| `ANDROID_GOOGLE_OAUTH_CLIENT_ID` | Android OAuth client id for Drive on APK builds |
 
 Without secrets, Gradle still builds; the APK will not be release-signed.
 
