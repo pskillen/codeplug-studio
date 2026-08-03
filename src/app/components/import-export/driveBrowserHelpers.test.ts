@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { APP_ROOT_FOLDER_NAME, DRIVE_ROOT_FOLDER_ID } from '@integrations/cloud/index.ts';
 import {
   appendFolderToPath,
   findYamlFileByName,
@@ -14,10 +15,33 @@ describe('driveBrowserHelpers', () => {
         interchangeFolderId: 'folder-a',
         lastFolderId: 'folder-b',
         lastFolderPath: [{ id: 'folder-b', name: 'Backups' }],
+        appRootFolderId: 'app-root',
       }),
     ).toEqual({
       folderId: 'folder-a',
       path: [{ id: 'folder-b', name: 'Backups' }],
+    });
+  });
+
+  it('resolveInitialBrowseState defaults to the app-owned root folder', () => {
+    expect(
+      resolveInitialBrowseState({
+        appRootFolderId: 'app-root',
+      }),
+    ).toEqual({
+      folderId: 'app-root',
+      path: [{ id: 'app-root', name: APP_ROOT_FOLDER_NAME }],
+    });
+  });
+
+  it('resolveInitialBrowseState falls back to DRIVE_ROOT_FOLDER_ID when unresolved', () => {
+    expect(
+      resolveInitialBrowseState({
+        appRootFolderId: null,
+      }),
+    ).toEqual({
+      folderId: DRIVE_ROOT_FOLDER_ID,
+      path: [{ id: DRIVE_ROOT_FOLDER_ID, name: APP_ROOT_FOLDER_NAME }],
     });
   });
 
@@ -47,5 +71,9 @@ describe('driveBrowserHelpers', () => {
         { id: 'f1', name: 'Codeplugs' },
       ]),
     ).toBe('My Drive / Codeplugs');
+  });
+
+  it('formatBrowsePathLabel falls back to the app root name for an empty path', () => {
+    expect(formatBrowsePathLabel([])).toBe(APP_ROOT_FOLDER_NAME);
   });
 });

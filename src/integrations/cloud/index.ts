@@ -46,6 +46,7 @@ export {
   resetNativeAuthRedirectListenerForTests,
 } from './nativeAuthRedirect.ts';
 export {
+  APP_ROOT_FOLDER_NAME,
   DRIVE_FOLDER_MIME,
   DRIVE_OAUTH_SCOPE,
   DRIVE_ROOT_FOLDER_ID,

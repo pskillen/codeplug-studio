@@ -22,7 +22,8 @@ Lets operators navigate Drive folders with breadcrumbs, create folders, open `.y
 
 ## Behaviour
 
-- Restores browse path from `ProjectMeta.interchange.googleDrive` or localStorage prefs.
+- Browsing is rooted at the app-owned **"Codeplug Studio"** Drive folder (`port.getAppRootFolderId()`), not "My Drive" — required by the `drive.file` OAuth scope, which can only see files/folders the app itself created. Breadcrumbs cannot navigate above that root.
+- Restores browse path from `ProjectMeta.interchange.googleDrive` or localStorage prefs, falling back to the app root when neither is set.
 - Persists `lastFolderId` and breadcrumb path on navigation.
 - Save mode reports `existingFileId` when a same-named YAML exists in the folder (parent shows overwrite confirm).
 

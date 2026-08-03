@@ -11,6 +11,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import {
+  APP_ROOT_FOLDER_NAME,
   DRIVE_ROOT_FOLDER_ID,
   googleDrivePort,
   type DriveFolderCrumb,
@@ -88,10 +89,12 @@ function DriveBrowserBody({
   port,
 }: DriveBrowserBodyProps) {
   const { connected, connect, loading: driveLoading, withDriveAuthRetry } = useDriveSession();
+  const appRootFolderId = port.getAppRootFolderId();
   const initial = resolveInitialBrowseState({
     interchangeFolderId,
     lastFolderId: loadDriveLastFolderId(),
     lastFolderPath: loadDriveLastFolderPath(),
+    appRootFolderId,
   });
   const [folderId, setFolderId] = useState(initial.folderId);
   const [path, setPath] = useState<DriveFolderCrumb[]>(initial.path);
@@ -137,7 +140,8 @@ function DriveBrowserBody({
 
   function navigateToCrumb(index: number) {
     const nextPath = pathUpToIndex(path, index);
-    const nextFolderId = nextPath[nextPath.length - 1]?.id ?? DRIVE_ROOT_FOLDER_ID;
+    const nextFolderId =
+      nextPath[nextPath.length - 1]?.id ?? appRootFolderId ?? DRIVE_ROOT_FOLDER_ID;
     setFolderId(nextFolderId);
     setPath(nextPath);
     persistBrowseState(nextFolderId, nextPath);
@@ -187,7 +191,7 @@ function DriveBrowserBody({
       setError('Enter a filename.');
       return;
     }
-    const folderName = path[path.length - 1]?.name ?? 'My Drive';
+    const folderName = path[path.length - 1]?.name ?? APP_ROOT_FOLDER_NAME;
     const existing = children.find(
       (child) =>
         child.kind === saveConflictKind && child.name.toLowerCase() === trimmed.toLowerCase(),

@@ -1,21 +1,31 @@
 import type { DriveFolderCrumb, DriveListItem } from '@integrations/cloud/index.ts';
-import { DRIVE_ROOT_FOLDER_ID, isDriveAuthError } from '@integrations/cloud/index.ts';
+import {
+  APP_ROOT_FOLDER_NAME,
+  DRIVE_ROOT_FOLDER_ID,
+  isDriveAuthError,
+} from '@integrations/cloud/index.ts';
 
 export interface ResolveInitialBrowseInput {
   interchangeFolderId?: string;
   lastFolderId?: string | null;
   lastFolderPath?: DriveFolderCrumb[];
+  /** Resolved app-owned Drive folder id, or null if it hasn't resolved yet. */
+  appRootFolderId: string | null;
 }
 
 export function resolveInitialBrowseState(input: ResolveInitialBrowseInput): {
   folderId: string;
   path: DriveFolderCrumb[];
 } {
-  const folderId = input.interchangeFolderId ?? input.lastFolderId ?? DRIVE_ROOT_FOLDER_ID;
+  // DRIVE_ROOT_FOLDER_ID is a last-resort fallback for the rare case where
+  // resolveAppRootFolder hasn't completed yet — see driveErrorMessage handling
+  // for how a resulting DriveScopeError surfaces to the operator.
+  const rootId = input.appRootFolderId ?? DRIVE_ROOT_FOLDER_ID;
+  const folderId = input.interchangeFolderId ?? input.lastFolderId ?? rootId;
   const path =
     input.lastFolderPath && input.lastFolderPath.length > 0
       ? input.lastFolderPath
-      : [{ id: DRIVE_ROOT_FOLDER_ID, name: 'My Drive' }];
+      : [{ id: rootId, name: APP_ROOT_FOLDER_NAME }];
   return { folderId, path };
 }
 
@@ -41,7 +51,7 @@ export function findYamlFileByName(
 }
 
 export function formatBrowsePathLabel(path: DriveFolderCrumb[]): string {
-  if (path.length === 0) return 'My Drive';
+  if (path.length === 0) return APP_ROOT_FOLDER_NAME;
   return path.map((crumb) => crumb.name).join(' / ');
 }
 
