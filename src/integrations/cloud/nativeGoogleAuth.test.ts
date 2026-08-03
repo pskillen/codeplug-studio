@@ -10,7 +10,7 @@ import {
   rejectNativeOAuthRedirect,
 } from './nativeGoogleAuth.ts';
 import { clearPendingNativeAuth, loadPendingNativeAuth } from './drivePrefs.ts';
-import { DriveAuthError, DriveCancelledError } from './driveTypes.ts';
+import { DRIVE_OAUTH_SCOPE, DriveAuthError, DriveCancelledError } from './driveTypes.ts';
 
 function mockFetch(body: Record<string, unknown>, ok = true, status = 200): typeof fetch {
   return vi.fn(async () => ({
@@ -50,7 +50,7 @@ describe('nativeGoogleAuth', () => {
     const url = buildAuthorizationUrl({
       clientId: 'android-client.apps.googleusercontent.com',
       redirectUri: NATIVE_OAUTH_REDIRECT_URI,
-      scope: 'https://www.googleapis.com/auth/drive',
+      scope: DRIVE_OAUTH_SCOPE,
       state: 'state-123',
       codeChallenge: 'challenge-abc',
     });

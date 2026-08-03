@@ -43,6 +43,7 @@ describe('googleDrive port', () => {
       mimeType: 'application/yaml',
     })),
     getUserEmail: vi.fn(async () => 'op@example.com'),
+    resolveAppRootFolder: vi.fn(async () => 'app-root-id'),
   };
 
   const identity: GoogleIdentityClient = {
@@ -81,6 +82,18 @@ describe('googleDrive port', () => {
     expect(port.isConnected()).toBe(true);
     expect(port.getAccountLabel()).toBe('op@example.com');
     expect(loadDriveSession()?.accessToken).toBe('ya29.test');
+  });
+
+  it('connect resolves and caches the app root folder', async () => {
+    const port = createGoogleDrivePort({
+      api,
+      authProvider: createWebAuthProvider({ loadIdentity: async () => identity }),
+      getClientId: () => 'client-id.apps.googleusercontent.com',
+      fetchImpl: fetch,
+    });
+    await port.connect();
+    expect(api.resolveAppRootFolder).toHaveBeenCalledWith('ya29.test');
+    expect(port.getAppRootFolderId()).toBe('app-root-id');
   });
 
   it('disconnect clears session', async () => {

@@ -1,8 +1,17 @@
-export const DRIVE_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive';
+export const DRIVE_OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
 export const DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder';
 
 export const DRIVE_ROOT_FOLDER_ID = 'root';
+
+/**
+ * Name of the app-owned Drive folder Studio creates on first connect. Under the
+ * `drive.file` scope the app can only see files/folders it created (or that were
+ * explicitly opened via a Picker-style flow, which Studio does not use) — so all
+ * browsing, open, and save happens inside this one folder rather than arbitrary
+ * pre-existing Drive folders.
+ */
+export const APP_ROOT_FOLDER_NAME = 'Codeplug Studio';
 
 export interface DriveListItem {
   id: string;

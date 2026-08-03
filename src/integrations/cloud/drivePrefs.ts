@@ -9,6 +9,7 @@ export const DRIVE_PENDING_NATIVE_AUTH_KEY = 'codeplug-studio:drive:pendingNativ
 export const DRIVE_LAST_ACCOUNT_KEY = 'codeplug-studio:drive:lastAccount';
 export const DRIVE_LAST_FOLDER_ID_KEY = 'codeplug-studio:drive:lastFolderId';
 export const DRIVE_LAST_FOLDER_PATH_KEY = 'codeplug-studio:drive:lastFolderPath';
+export const DRIVE_APP_ROOT_FOLDER_ID_KEY = 'codeplug-studio:drive:appRootFolderId';
 
 export const DRIVE_STORAGE_KEYS = [
   DRIVE_ACCESS_TOKEN_KEY,
@@ -18,6 +19,7 @@ export const DRIVE_STORAGE_KEYS = [
   DRIVE_LAST_ACCOUNT_KEY,
   DRIVE_LAST_FOLDER_ID_KEY,
   DRIVE_LAST_FOLDER_PATH_KEY,
+  DRIVE_APP_ROOT_FOLDER_ID_KEY,
 ] as const;
 
 export interface DriveFolderCrumb {
@@ -182,4 +184,13 @@ export function loadDriveLastAccount(): string | null {
 
 export function saveDriveLastAccount(account: string | null): void {
   writeItem(DRIVE_LAST_ACCOUNT_KEY, account);
+}
+
+/** Refreshed on every successful connect(); see `resolveAppRootFolder` in driveApi.ts. */
+export function loadDriveAppRootFolderId(): string | null {
+  return readItem(DRIVE_APP_ROOT_FOLDER_ID_KEY);
+}
+
+export function saveDriveAppRootFolderId(folderId: string | null): void {
+  writeItem(DRIVE_APP_ROOT_FOLDER_ID_KEY, folderId);
 }

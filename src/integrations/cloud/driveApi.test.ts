@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createDriveApiClient } from './driveApi.ts';
-import { DRIVE_FOLDER_MIME } from './driveTypes.ts';
+import { APP_ROOT_FOLDER_NAME, DRIVE_FOLDER_MIME } from './driveTypes.ts';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -127,5 +127,29 @@ describe('driveApi', () => {
     );
     const api = createDriveApiClient(fetchMock);
     await expect(api.listChildren('root', 'bad')).rejects.toMatchObject({ name: 'DriveAuthError' });
+  });
+
+  it('resolves an existing app root folder without creating one', async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ files: [{ id: 'existing-root', name: APP_ROOT_FOLDER_NAME }] }),
+    );
+    const api = createDriveApiClient(fetchMock);
+    const folderId = await api.resolveAppRootFolder('token');
+    expect(folderId).toBe('existing-root');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain(encodeURIComponent(APP_ROOT_FOLDER_NAME));
+  });
+
+  it('creates the app root folder when none exists yet', async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse({ files: [] }))
+      .mockResolvedValueOnce(
+        jsonResponse({ id: 'new-root', name: APP_ROOT_FOLDER_NAME, mimeType: DRIVE_FOLDER_MIME }),
+      );
+    const api = createDriveApiClient(fetchMock);
+    const folderId = await api.resolveAppRootFolder('token');
+    expect(folderId).toBe('new-root');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1]?.[1]?.method).toBe('POST');
   });
 });

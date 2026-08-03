@@ -28,6 +28,7 @@ function createPort(overrides: Partial<GoogleDrivePort> = {}): GoogleDrivePort {
     disconnect: vi.fn(async () => undefined),
     isConnected: vi.fn(() => false),
     getAccountLabel: vi.fn(() => null),
+    getAppRootFolderId: vi.fn(() => null),
     listChildren: vi.fn(async () => []),
     createFolder: vi.fn(async () => ({
       id: 'f',

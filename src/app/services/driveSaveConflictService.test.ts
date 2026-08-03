@@ -52,6 +52,7 @@ function mockDrivePort(remoteYaml: string, modifiedTime: string): GoogleDrivePor
     disconnect: vi.fn(),
     isConnected: () => true,
     getAccountLabel: () => 'user@example.com',
+    getAppRootFolderId: () => 'app-root-id',
     listChildren: vi.fn(),
     createFolder: vi.fn(),
     readFile: vi.fn(async () => remoteYaml),
