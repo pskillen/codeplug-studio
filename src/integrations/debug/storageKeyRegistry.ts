@@ -10,6 +10,8 @@ import {
   DRIVE_LAST_ACCOUNT_KEY,
   DRIVE_LAST_FOLDER_ID_KEY,
   DRIVE_LAST_FOLDER_PATH_KEY,
+  DRIVE_PENDING_NATIVE_AUTH_KEY,
+  DRIVE_REFRESH_TOKEN_KEY,
   DRIVE_TOKEN_EXPIRES_AT_KEY,
 } from '@integrations/cloud/drivePrefs.ts';
 import { parseStorageRaw, redactParsedValue } from './parseStorageValue.ts';
@@ -40,6 +42,8 @@ const KNOWN_STORAGE_KEYS: StorageKeyDescriptor[] = [
   { key: ANALYTICS_CONSENT_KEY, label: 'Analytics cookie consent', redact: false },
   { key: DRIVE_ACCESS_TOKEN_KEY, label: 'Google Drive access token', redact: true },
   { key: DRIVE_TOKEN_EXPIRES_AT_KEY, label: 'Google Drive token expiry', redact: false },
+  { key: DRIVE_REFRESH_TOKEN_KEY, label: 'Google Drive refresh token', redact: true },
+  { key: DRIVE_PENDING_NATIVE_AUTH_KEY, label: 'Google Drive pending native OAuth', redact: true },
   { key: DRIVE_LAST_ACCOUNT_KEY, label: 'Google Drive account', redact: false },
   { key: DRIVE_LAST_FOLDER_ID_KEY, label: 'Google Drive last folder id', redact: false },
   { key: DRIVE_LAST_FOLDER_PATH_KEY, label: 'Google Drive browse path', redact: false },
