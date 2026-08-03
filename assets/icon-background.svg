@@ -1,0 +1,12 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Adaptive icon background layer: solid brand navy (matches public/branding/studio-hero.svg).
+       Kept flat/solid (no pattern) since launchers apply parallax/zoom to this layer and a busy
+       pattern would crop unpredictably. -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#1e293b"></stop>
+      <stop offset="100%" stop-color="#0f172a"></stop>
+    </radialGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"></rect>
+</svg>
