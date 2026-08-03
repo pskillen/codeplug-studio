@@ -21,9 +21,9 @@ export default function GoogleDriveConnectSection() {
     <Stack gap="sm">
       <Text size="sm" c="dimmed">
         Connect Google Drive to open and save native YAML project files from the cloud. Connecting
-        asks for full Drive access so you can browse to any folder — not just files this app
-        creates — but Studio only touches what you open or save. OAuth tokens stay on this device
-        only; disconnect any time.
+        asks for full Drive access so you can browse to any folder — not just files this app creates
+        — but Studio only touches what you open or save. OAuth tokens stay on this device only;
+        disconnect any time.
       </Text>
       {!isConfigured ? (
         <Alert color="yellow" title="Not configured">

@@ -41,9 +41,9 @@ export default function HomePage() {
             Codeplug Studio is a browser tool for building amateur radio channel libraries. A{' '}
             <strong>codeplug</strong> is the set of channels, talk groups, and settings a radio
             loads from its vendor programming software (CPS) — normally you re-enter that list by
-            hand, separately for every radio. Studio lets you curate one shared library — pulling
-            in repeaters and talk groups from public directories — then export the CPS-ready files
-            for whichever radios you own, instead of retyping the same data each time.
+            hand, separately for every radio. Studio lets you curate one shared library — pulling in
+            repeaters and talk groups from public directories — then export the CPS-ready files for
+            whichever radios you own, instead of retyping the same data each time.
           </Text>
         </PageSection>
 
