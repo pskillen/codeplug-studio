@@ -1,5 +1,4 @@
 import { useCallback } from 'react';
-import { isNativeApp } from '../../integrations/platform/isNativeApp.ts';
 import type { DriveConnectResult } from './useDriveSession.ts';
 import { useGoogleDrive } from './useGoogleDrive.ts';
 
@@ -30,13 +29,6 @@ export async function runDriveActionWhenReady({
   onNotConfigured,
   action,
 }: RunDriveActionWhenReadyParams): Promise<RunDriveActionResult> {
-  if (isNativeApp()) {
-    return {
-      ok: false,
-      connectError: 'Google Drive integration is not available in the Android app yet.',
-    };
-  }
-
   if (!isConfigured) {
     onNotConfigured();
     return { ok: false };

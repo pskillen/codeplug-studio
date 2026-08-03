@@ -1,4 +1,5 @@
 import { createDriveApiClient, type DriveApiClient, driveApi } from './driveApi.ts';
+import type { DriveAuthProvider } from './driveAuthProvider.ts';
 import {
   clearDriveSession,
   driveSessionIsValid,
@@ -9,17 +10,12 @@ import {
 } from './drivePrefs.ts';
 import {
   DriveAuthError,
-  DriveCancelledError,
   DriveConfigError,
-  DRIVE_OAUTH_SCOPE,
   type DriveFileMetadata,
   type DriveListItem,
 } from './driveTypes.ts';
-import {
-  getGoogleClientId,
-  loadGoogleIdentity,
-  type GoogleIdentityClient,
-} from './loadGoogleIdentity.ts';
+import { getGoogleClientId } from './loadGoogleIdentity.ts';
+import { createWebAuthProvider } from './webGoogleAuth.ts';
 
 export interface GoogleDrivePort {
   connect(): Promise<void>;
@@ -47,7 +43,7 @@ export interface GoogleDrivePort {
 
 export interface GoogleDriveDeps {
   api: DriveApiClient;
-  loadIdentity: () => Promise<GoogleIdentityClient>;
+  authProvider: DriveAuthProvider;
   fetchImpl: typeof fetch;
   getClientId: () => string;
 }
@@ -58,49 +54,10 @@ function requireClientId(getClientId: () => string): string {
   return clientId;
 }
 
-function requestAccessToken(
-  identity: GoogleIdentityClient,
-  clientId: string,
-): Promise<{ accessToken: string; expiresAt: number }> {
-  return new Promise((resolve, reject) => {
-    const client = identity.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: DRIVE_OAUTH_SCOPE,
-      callback: (response) => {
-        if (response.error) {
-          if (response.error === 'popup_closed_by_user' || response.error === 'access_denied') {
-            reject(new DriveCancelledError(response.error_description));
-            return;
-          }
-          reject(new DriveAuthError(response.error_description ?? response.error));
-          return;
-        }
-        if (!response.access_token) {
-          reject(new DriveAuthError('No access token returned.'));
-          return;
-        }
-        const expiresInMs = (response.expires_in ?? 3600) * 1000;
-        resolve({
-          accessToken: response.access_token,
-          expiresAt: Date.now() + expiresInMs,
-        });
-      },
-      error_callback: (error) => {
-        if (error.type === 'popup_closed') {
-          reject(new DriveCancelledError());
-          return;
-        }
-        reject(new DriveAuthError(error.message));
-      },
-    });
-    client.requestAccessToken({ prompt: '' });
-  });
-}
-
 export function createGoogleDrivePort(deps?: Partial<GoogleDriveDeps>): GoogleDrivePort {
   const resolved: GoogleDriveDeps = {
     api: deps?.api ?? driveApi,
-    loadIdentity: deps?.loadIdentity ?? loadGoogleIdentity,
+    authProvider: deps?.authProvider ?? createWebAuthProvider(),
     fetchImpl: deps?.fetchImpl ?? fetch,
     getClientId: deps?.getClientId ?? getGoogleClientId,
   };
@@ -109,22 +66,40 @@ export function createGoogleDrivePort(deps?: Partial<GoogleDriveDeps>): GoogleDr
     resolved.api = deps.api ?? createDriveApiClient(deps.fetchImpl);
   }
 
-  function getValidSession(): DriveSession {
+  async function getValidSession(): Promise<DriveSession> {
     const session = loadDriveSession();
-    if (!driveSessionIsValid(session)) {
-      throw new DriveAuthError();
+    if (session !== null && driveSessionIsValid(session)) {
+      return session;
     }
-    return session;
+
+    const staleSession = loadDriveSession();
+    if (staleSession?.refreshToken && resolved.authProvider.tryRefresh) {
+      const clientId = resolved.getClientId();
+      if (clientId) {
+        const refreshed = await resolved.authProvider.tryRefresh(staleSession, clientId);
+        if (refreshed) {
+          const newSession: DriveSession = {
+            accessToken: refreshed.accessToken,
+            expiresAt: refreshed.expiresAt,
+            accountEmail: staleSession.accountEmail,
+            refreshToken: refreshed.refreshToken ?? staleSession.refreshToken,
+          };
+          saveDriveSession(newSession);
+          return newSession;
+        }
+      }
+    }
+
+    throw new DriveAuthError();
   }
 
   return {
     async connect() {
       const clientId = requireClientId(resolved.getClientId);
-      const identity = await resolved.loadIdentity();
-      const token = await requestAccessToken(identity, clientId);
+      const tokens = await resolved.authProvider.authorize(clientId);
       let accountEmail = loadDriveSession()?.accountEmail;
       try {
-        const email = await resolved.api.getUserEmail(token.accessToken);
+        const email = await resolved.api.getUserEmail(tokens.accessToken);
         if (email) {
           accountEmail = email;
           saveDriveLastAccount(email);
@@ -133,20 +108,18 @@ export function createGoogleDrivePort(deps?: Partial<GoogleDriveDeps>): GoogleDr
         // Account label is optional when userinfo fails.
       }
       saveDriveSession({
-        accessToken: token.accessToken,
-        expiresAt: token.expiresAt,
+        accessToken: tokens.accessToken,
+        expiresAt: tokens.expiresAt,
         accountEmail,
+        refreshToken: tokens.refreshToken,
       });
     },
 
     async disconnect() {
       const session = loadDriveSession();
-      if (session?.accessToken) {
+      if (session) {
         try {
-          const identity = await resolved.loadIdentity();
-          await new Promise<void>((resolve) => {
-            identity.accounts.oauth2.revoke(session.accessToken, () => resolve());
-          });
+          await resolved.authProvider.revoke(session);
         } catch {
           // Best-effort revoke.
         }
@@ -164,35 +137,33 @@ export function createGoogleDrivePort(deps?: Partial<GoogleDriveDeps>): GoogleDr
     },
 
     async listChildren(parentId) {
-      const session = getValidSession();
+      const session = await getValidSession();
       return resolved.api.listChildren(parentId, session.accessToken);
     },
 
     async createFolder(parentId, name) {
-      const session = getValidSession();
+      const session = await getValidSession();
       return resolved.api.createFolder(parentId, name, session.accessToken);
     },
 
     async readFile(fileId) {
-      const session = getValidSession();
+      const session = await getValidSession();
       return resolved.api.readFile(fileId, session.accessToken);
     },
 
     async writeFile(params) {
-      const session = getValidSession();
+      const session = await getValidSession();
       return resolved.api.writeFile(params, session.accessToken);
     },
 
     async writeBinaryFile(params) {
-      const session = getValidSession();
+      const session = await getValidSession();
       return resolved.api.writeBinaryFile(params, session.accessToken);
     },
 
     async getFileMetadata(fileId) {
-      const session = getValidSession();
+      const session = await getValidSession();
       return resolved.api.getFileMetadata(fileId, session.accessToken);
     },
   };
 }
-
-export const googleDrivePort = createGoogleDrivePort();

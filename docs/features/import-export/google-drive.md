@@ -14,13 +14,15 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
 
 ## localStorage keys
 
-| Key                                    | Purpose                                  |
-| -------------------------------------- | ---------------------------------------- |
-| `codeplug-studio:drive:accessToken`    | OAuth bearer (masked in Debug)           |
-| `codeplug-studio:drive:tokenExpiresAt` | Token expiry (epoch ms)                  |
-| `codeplug-studio:drive:lastAccount`    | Connected Google account email           |
-| `codeplug-studio:drive:lastFolderId`   | Last browsed folder id                   |
-| `codeplug-studio:drive:lastFolderPath` | Breadcrumb path JSON `[{ id, name }, …]` |
+| Key                                       | Purpose                                  |
+| ----------------------------------------- | ---------------------------------------- |
+| `codeplug-studio:drive:accessToken`       | OAuth bearer (masked in Debug)           |
+| `codeplug-studio:drive:tokenExpiresAt`    | Token expiry (epoch ms)                  |
+| `codeplug-studio:drive:refreshToken`      | Native-only OAuth refresh token (masked) |
+| `codeplug-studio:drive:pendingNativeAuth` | Ephemeral PKCE state (native OAuth only) |
+| `codeplug-studio:drive:lastAccount`       | Connected Google account email           |
+| `codeplug-studio:drive:lastFolderId`      | Last browsed folder id                   |
+| `codeplug-studio:drive:lastFolderPath`    | Breadcrumb path JSON `[{ id, name }, …]` |
 
 ## OAuth setup
 
@@ -37,9 +39,29 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
 
 Release and pre-release builds receive `VITE_GOOGLE_CLIENT_ID` from the repo Actions secret `GOOGLE_OAUTH_CLIENT_ID` (see [cloudflare-pages.yaml](../../../.github/workflows/cloudflare-pages.yaml)). Without it, the deployed SPA shows “not configured” on Settings → Google Drive. Authorized JavaScript origins must include the hostnames listed above.
 
-### Android Companion App (Capacitor Native)
+### Android Companion App (Capacitor native)
 
-Google Drive OAuth popups are not supported inside the Capacitor WebView shell. When running on native Android app builds (`isNativeApp()`), Drive integration is explicitly gated in UI with clear messaging advising operators to use local file import/export.
+Native Android uses **PKCE authorization-code OAuth** in Chrome Custom Tabs — not GIS popups inside the WebView.
+
+1. In the same Google Cloud project, create an **OAuth 2.0 Android client**:
+   - Package name: `net.mm9pdy.codeplugstudio`
+   - SHA-1: release signing certificate fingerprint (see [Android app hub](../android-app/README.md))
+   - Enable **custom URI scheme** under Advanced settings (required for redirect `net.mm9pdy.codeplugstudio:/oauth2redirect`)
+2. Copy the Android client id to `.env.local` as `VITE_GOOGLE_ANDROID_CLIENT_ID` for local APK builds.
+3. CI APK builds receive `VITE_GOOGLE_ANDROID_CLIENT_ID` from the repo secret `ANDROID_GOOGLE_OAUTH_CLIENT_ID` (see [android-release.yaml](../../../.github/workflows/android-release.yaml)).
+
+Flow: `connect()` opens Google's authorize URL in Custom Tabs → operator consents → redirect re-enters the app via `@capacitor/app` `appUrlOpen` (or cold-start `getLaunchUrl`) → code exchange → session in the same localStorage keys as web (plus optional `refreshToken` for silent refresh).
+
+Implementation: `nativeGoogleAuth.ts`, `nativeAuthRedirect.ts`, `nativeGoogleDrive.ts` behind the shared `GoogleDrivePort`.
+
+**Manual verify (Android APK):**
+
+- [ ] Connect from Settings → Reconnect or Open/Save from Drive
+- [ ] Background app mid-consent, resume — session completes
+- [ ] Force-kill mid-consent, relaunch — cold-start redirect completes auth
+- [ ] Disconnect / revoke
+- [ ] Token expiry + silent refresh (wait or shorten expiry in test)
+- [ ] Denied consent — no error storm; can retry
 
 ## OAuth scope
 
@@ -47,17 +69,17 @@ Google Drive OAuth popups are not supported inside the Capacitor WebView shell. 
 
 ## Port API (`GoogleDrivePort`)
 
-| Method                                                | Purpose                                              |
-| ----------------------------------------------------- | ---------------------------------------------------- |
-| `connect()`                                           | GIS OAuth token flow; stores session in localStorage |
-| `disconnect()`                                        | Revoke token + clear session                         |
-| `isConnected()`                                       | Session present and not expired                      |
-| `getAccountLabel()`                                   | Connected Google account email                       |
-| `listChildren(parentId)`                              | Folders + `.yaml` / `.yml` files                     |
-| `createFolder(parentId, name)`                        | New folder in parent                                 |
-| `readFile(fileId)`                                    | Download file text                                   |
-| `writeFile({ parentId, fileName, content, fileId? })` | Create or overwrite YAML                             |
-| `getFileMetadata(fileId)`                             | Name, parents, modified time                         |
+| Method                                                | Purpose                                                      |
+| ----------------------------------------------------- | ------------------------------------------------------------ |
+| `connect()`                                           | OAuth token flow (GIS on web; PKCE + Custom Tabs on Android) |
+| `disconnect()`                                        | Revoke token + clear session                                 |
+| `isConnected()`                                       | Session present and not expired                              |
+| `getAccountLabel()`                                   | Connected Google account email                               |
+| `listChildren(parentId)`                              | Folders + `.yaml` / `.yml` files                             |
+| `createFolder(parentId, name)`                        | New folder in parent                                         |
+| `readFile(fileId)`                                    | Download file text                                           |
+| `writeFile({ parentId, fileName, content, fileId? })` | Create or overwrite YAML                                     |
+| `getFileMetadata(fileId)`                             | Name, parents, modified time                                 |
 
 Implementation: `src/integrations/cloud/googleDrive.ts`.
 
@@ -71,7 +93,7 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 - **Reconnect** when the OAuth session expired (no Disconnect detour required)
 - **Disconnect** revokes the token and clears the session when connected
 - When disconnected, copy points operators to **Open from Drive** / **Save to Drive** in the app
-- When `VITE_GOOGLE_CLIENT_ID` is unset, shows OAuth setup guidance
+- When `VITE_GOOGLE_CLIENT_ID` (web) or `VITE_GOOGLE_ANDROID_CLIENT_ID` (Android) is unset, shows OAuth setup guidance
 
 ### Primary sidebar — Drive controls ([#368](https://github.com/pskillen/codeplug-studio/issues/368))
 
@@ -136,7 +158,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `GoogleDriveButton`             | Presentational CTA styling                                                                                                  |
 | `GoogleDriveActionButton`       | Open/save CTAs — inline connect, then Drive browser                                                                         |
-| `GoogleDriveNotConfiguredModal` | Settings redirect when `VITE_GOOGLE_CLIENT_ID` is missing                                                                   |
+| `GoogleDriveNotConfiguredModal` | Settings redirect when the platform client id env is missing                                                                |
 | `DriveBrowserModal`             | Folder browser when connected                                                                                               |
 | `SidebarDriveControls`          | Sidebar Save / Check Drive icon buttons ([#368](https://github.com/pskillen/codeplug-studio/issues/368))                    |
 | `DriveRefreshProvider`          | Shared remote-check state for sidebar + refresh banner                                                                      |
@@ -150,7 +172,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | Situation                   | UI behaviour                                                                                                                                                                                                     |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Not configured              | Drive action buttons greyed; click → modal → Settings (OAuth client setup)                                                                                                                                       |
-| Not connected               | Drive action buttons greyed; click → GIS OAuth → Drive browser on success                                                                                                                                        |
+| Not connected               | Drive action buttons greyed; click → OAuth connect → Drive browser on success                                                                                                                                    |
 | Sign-in cancelled           | No browser open; no error alert                                                                                                                                                                                  |
 | Connect failed              | Inline red alert on the action button                                                                                                                                                                            |
 | Auth expired                | Session cleared; greyed sidebar Save/Check with inline hint; click either button to reconnect; Settings **Reconnect** — no manual Disconnect required                                                            |
@@ -180,6 +202,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | Tabular overwrite / conflict diff | Shipped | [#477](https://github.com/pskillen/codeplug-studio/issues/477) — full entity counts + timestamps                                             |
 | Portable project id on open       | Shipped | [#361](https://github.com/pskillen/codeplug-studio/issues/361) — `seedPreservingId` default                                                  |
 | Sidebar Drive controls            | Shipped | [#368](https://github.com/pskillen/codeplug-studio/issues/368) — Save/Check in primary nav                                                   |
+| Android native OAuth (PKCE)       | Shipped | [#895](https://github.com/pskillen/codeplug-studio/issues/895) — Custom Tabs + deep link; on-device verify pending                           |
 
 ## Manual verify checklist
 

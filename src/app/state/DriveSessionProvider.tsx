@@ -12,18 +12,21 @@ import {
   DriveAuthError,
   DriveCancelledError,
   DriveConfigError,
-  getGoogleClientId,
+  getActiveGoogleClientId,
   googleDrivePort,
   handleDriveAuthFailure,
   loadDriveSession,
   msUntilDriveSessionExpiry,
   type GoogleDrivePort,
 } from '@integrations/cloud/index.ts';
+import { isNativeApp } from '@integrations/platform/isNativeApp.ts';
 
 function formatDriveError(err: unknown): string {
   if (err instanceof DriveCancelledError) return err.message;
   if (err instanceof DriveConfigError) {
-    return 'Google Drive is not configured. Set VITE_GOOGLE_CLIENT_ID for local builds.';
+    return isNativeApp()
+      ? 'Google Drive is not configured. Set VITE_GOOGLE_ANDROID_CLIENT_ID for local Android builds.'
+      : 'Google Drive is not configured. Set VITE_GOOGLE_CLIENT_ID for local builds.';
   }
   if (err instanceof DriveAuthError) return err.message;
   if (err instanceof Error) return err.message;
@@ -65,7 +68,7 @@ export default function DriveSessionProvider({
   const [error, setError] = useState<string | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
   const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isConfigured = Boolean(getGoogleClientId());
+  const isConfigured = Boolean(getActiveGoogleClientId());
 
   const refresh = useCallback(() => {
     const isConnected = port.isConnected();

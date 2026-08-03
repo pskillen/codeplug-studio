@@ -18,7 +18,8 @@ OAuth connect happens from Drive action buttons in import/export and build expor
 
 ## Behaviour
 
-- When `VITE_GOOGLE_CLIENT_ID` is missing, shows a configuration warning.
+- When `VITE_GOOGLE_CLIENT_ID` (web) or `VITE_GOOGLE_ANDROID_CLIENT_ID` (Android APK) is missing, shows a configuration warning.
+- OAuth tokens stay on this device only (web browser or Capacitor WebView).
 - When disconnected, explains that **Open from Drive** / **Save to Drive** in the app trigger connect.
 - When the session expired, shows **Reconnect** (no Disconnect detour required).
 - When connected, shows account email and **Disconnect** (revokes token and clears session).

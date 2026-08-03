@@ -32,10 +32,10 @@ describe('runDriveActionWhenReady', () => {
     expect(result).toEqual({ ok: true });
   });
 
-  it('returns gated error when on native app', async () => {
+  it('connects on native when not yet connected', async () => {
     vi.spyOn(platform, 'isNativeApp').mockReturnValue(true);
     const action = vi.fn();
-    const connect = vi.fn();
+    const connect = vi.fn(async (): Promise<DriveConnectResult> => ({ status: 'connected' }));
 
     const result = await runDriveActionWhenReady({
       isConfigured: true,
@@ -46,11 +46,8 @@ describe('runDriveActionWhenReady', () => {
       action,
     });
 
-    expect(connect).not.toHaveBeenCalled();
-    expect(action).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      ok: false,
-      connectError: 'Google Drive integration is not available in the Android app yet.',
-    });
+    expect(connect).toHaveBeenCalledOnce();
+    expect(action).toHaveBeenCalledOnce();
+    expect(result).toEqual({ ok: true });
   });
 });

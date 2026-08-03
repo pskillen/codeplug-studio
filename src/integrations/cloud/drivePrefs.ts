@@ -4,6 +4,8 @@
 
 export const DRIVE_ACCESS_TOKEN_KEY = 'codeplug-studio:drive:accessToken';
 export const DRIVE_TOKEN_EXPIRES_AT_KEY = 'codeplug-studio:drive:tokenExpiresAt';
+export const DRIVE_REFRESH_TOKEN_KEY = 'codeplug-studio:drive:refreshToken';
+export const DRIVE_PENDING_NATIVE_AUTH_KEY = 'codeplug-studio:drive:pendingNativeAuth';
 export const DRIVE_LAST_ACCOUNT_KEY = 'codeplug-studio:drive:lastAccount';
 export const DRIVE_LAST_FOLDER_ID_KEY = 'codeplug-studio:drive:lastFolderId';
 export const DRIVE_LAST_FOLDER_PATH_KEY = 'codeplug-studio:drive:lastFolderPath';
@@ -11,6 +13,8 @@ export const DRIVE_LAST_FOLDER_PATH_KEY = 'codeplug-studio:drive:lastFolderPath'
 export const DRIVE_STORAGE_KEYS = [
   DRIVE_ACCESS_TOKEN_KEY,
   DRIVE_TOKEN_EXPIRES_AT_KEY,
+  DRIVE_REFRESH_TOKEN_KEY,
+  DRIVE_PENDING_NATIVE_AUTH_KEY,
   DRIVE_LAST_ACCOUNT_KEY,
   DRIVE_LAST_FOLDER_ID_KEY,
   DRIVE_LAST_FOLDER_PATH_KEY,
@@ -25,7 +29,18 @@ export interface DriveSession {
   accessToken: string;
   expiresAt: number;
   accountEmail?: string;
+  /** Native PKCE flow only — used for silent refresh. */
+  refreshToken?: string;
 }
+
+export interface PendingNativeAuth {
+  state: string;
+  codeVerifier: string;
+  createdAt: number;
+}
+
+/** Abandoned native OAuth flows expire after this duration. */
+export const DRIVE_PENDING_NATIVE_AUTH_TTL_MS = 10 * 60 * 1000;
 
 /** Refresh local session state this many ms before token expiry. */
 export const DRIVE_TOKEN_REFRESH_BUFFER_MS = 60_000;
@@ -68,12 +83,23 @@ export function loadDriveSession(): DriveSession | null {
   const expiresRaw = readItem(DRIVE_TOKEN_EXPIRES_AT_KEY);
   const expiresAt = expiresRaw ? Number(expiresRaw) : 0;
   const accountEmail = readItem(DRIVE_LAST_ACCOUNT_KEY) ?? undefined;
-  return { accessToken, expiresAt, accountEmail: accountEmail || undefined };
+  const refreshToken = readItem(DRIVE_REFRESH_TOKEN_KEY) ?? undefined;
+  return {
+    accessToken,
+    expiresAt,
+    accountEmail: accountEmail || undefined,
+    refreshToken: refreshToken || undefined,
+  };
 }
 
 export function saveDriveSession(session: DriveSession): void {
   writeItem(DRIVE_ACCESS_TOKEN_KEY, session.accessToken);
   writeItem(DRIVE_TOKEN_EXPIRES_AT_KEY, String(session.expiresAt));
+  if (session.refreshToken) {
+    writeItem(DRIVE_REFRESH_TOKEN_KEY, session.refreshToken);
+  } else {
+    writeItem(DRIVE_REFRESH_TOKEN_KEY, null);
+  }
   if (session.accountEmail) {
     writeItem(DRIVE_LAST_ACCOUNT_KEY, session.accountEmail);
   }
@@ -82,6 +108,38 @@ export function saveDriveSession(session: DriveSession): void {
 export function clearDriveSession(): void {
   writeItem(DRIVE_ACCESS_TOKEN_KEY, null);
   writeItem(DRIVE_TOKEN_EXPIRES_AT_KEY, null);
+  writeItem(DRIVE_REFRESH_TOKEN_KEY, null);
+}
+
+export function savePendingNativeAuth(pending: PendingNativeAuth): void {
+  writeItem(DRIVE_PENDING_NATIVE_AUTH_KEY, JSON.stringify(pending));
+}
+
+export function loadPendingNativeAuth(): PendingNativeAuth | null {
+  const raw = readItem(DRIVE_PENDING_NATIVE_AUTH_KEY);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as PendingNativeAuth;
+    if (
+      !parsed ||
+      typeof parsed.state !== 'string' ||
+      typeof parsed.codeVerifier !== 'string' ||
+      typeof parsed.createdAt !== 'number'
+    ) {
+      return null;
+    }
+    if (Date.now() - parsed.createdAt > DRIVE_PENDING_NATIVE_AUTH_TTL_MS) {
+      clearPendingNativeAuth();
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingNativeAuth(): void {
+  writeItem(DRIVE_PENDING_NATIVE_AUTH_KEY, null);
 }
 
 export function loadDriveLastFolderId(): string | null {
