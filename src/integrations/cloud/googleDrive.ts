@@ -166,5 +166,3 @@ export function createGoogleDrivePort(deps?: Partial<GoogleDriveDeps>): GoogleDr
     },
   };
 }
-
-export const googleDrivePort = createGoogleDrivePort();

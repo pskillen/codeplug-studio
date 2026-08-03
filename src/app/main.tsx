@@ -4,11 +4,17 @@ import { ColorSchemeScript, MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
 import 'leaflet/dist/leaflet.css';
 import '../index.css';
+import { registerNativeAuthRedirectListener } from '../integrations/cloud/nativeAuthRedirect.ts';
+import { isNativeApp } from '../integrations/platform/isNativeApp.ts';
 import App from './App.tsx';
 import ProjectProvider from './state/ProjectProvider.tsx';
 import DriveSessionProvider from './state/DriveSessionProvider.tsx';
 import { OperatorPositionProvider } from './state/operatorPosition.tsx';
 import { theme } from './theme.ts';
+
+if (isNativeApp()) {
+  registerNativeAuthRedirectListener();
+}
 
 const root = document.getElementById('root');
 if (!root) {
