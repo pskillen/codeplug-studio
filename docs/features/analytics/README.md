@@ -8,16 +8,16 @@ Anonymous page-view measurement and the consent/legal plumbing needed to run Goo
 
 ## Implementation status
 
-| Area                   | Status  | Notes                                                          |
-| ---------------------- | ------- | -------------------------------------------------------------- |
-| Cookie consent banner  | Shipped | First visit; accept / essential only                           |
+| Area                   | Status  | Notes                                                                                                                       |
+| ---------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Cookie consent banner  | Shipped | First visit; accept / essential only                                                                                        |
 | Legal pages            | Shipped | `/privacy`, `/terms`, `/cookies` — web + Android companion ([#897](https://github.com/pskillen/codeplug-studio/issues/897)) |
-| Consent preference API | Shipped | `localStorage` key `codeplug-studio:analytics-consent`         |
-| GA4 integration        | Shipped | Consent-gated `gtag.js`; page views only                       |
-| Path sanitization      | Shipped | Route templates — no entity UUIDs in GA                        |
-| Dual-property CI       | Shipped | Prod vs pre-prod measurement IDs at build time (Pages + APK)   |
-| Surface / env params   | Shipped | `app_surface` + `build_env` on every `page_view` (#896)        |
-| Playwright smoke       | Shipped | [#176](https://github.com/pskillen/codeplug-studio/issues/176) |
+| Consent preference API | Shipped | `localStorage` key `codeplug-studio:analytics-consent`                                                                      |
+| GA4 integration        | Shipped | Consent-gated `gtag.js`; page views only                                                                                    |
+| Path sanitization      | Shipped | Route templates — no entity UUIDs in GA                                                                                     |
+| Dual-property CI       | Shipped | Prod vs pre-prod measurement IDs at build time (Pages + APK)                                                                |
+| Surface / env params   | Shipped | `app_surface` + `build_env` on every `page_view` (#896)                                                                     |
+| Playwright smoke       | Shipped | [#176](https://github.com/pskillen/codeplug-studio/issues/176)                                                              |
 
 ## Consent flow
 
