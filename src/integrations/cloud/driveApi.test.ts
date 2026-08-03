@@ -137,7 +137,9 @@ describe('driveApi', () => {
     const folderId = await api.resolveAppRootFolder('token');
     expect(folderId).toBe('existing-root');
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(String(fetchMock.mock.calls[0]?.[0])).toContain(encodeURIComponent(APP_ROOT_FOLDER_NAME));
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+      encodeURIComponent(APP_ROOT_FOLDER_NAME),
+    );
   });
 
   it('creates the app root folder when none exists yet', async () => {
