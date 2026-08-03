@@ -65,6 +65,24 @@ export default function PrivacyPolicyPage() {
         </List>
       </PageSection>
 
+      <PageSection title="Google Drive access">
+        <Text size="sm">
+          If you connect Google Drive (Settings, or Open/Save from Drive), Studio requests Google's{' '}
+          <code>drive</code> OAuth scope — full Drive access — because the in-app folder browser
+          needs to list folders and files you did not create with Studio, not just its own. In
+          practice Studio only reads and writes the folder you browse to and the <code>.yaml</code> /{' '}
+          <code>.yml</code> files you open or save there; it does not scan, index, or read the rest
+          of your Drive in the background.
+        </Text>
+        <Text size="sm" mt="sm">
+          Drive data is never shared with any third party, sold, or used for anything beyond the
+          open/save you asked for. The OAuth access token (and, on Android, a refresh token) stay in
+          this device's storage only — see "What stays on your device" above. Disconnecting from
+          Settings revokes the token immediately; tokens also expire on their own and are cleared
+          automatically.
+        </Text>
+      </PageSection>
+
       <PageSection title="Optional analytics">
         <Text size="sm">
           If you accept analytics cookies, we load Google Analytics 4 to measure anonymous page
