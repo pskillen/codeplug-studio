@@ -4,7 +4,7 @@ import type { AprsSlotCallType, DMRTimeSlot } from '@core/models/libraryTypes.ts
 import type { Channel } from '@core/models/library.ts';
 import { Button, Group, Modal, NumberInput, Select, SimpleGrid, Stack } from '@mantine/core';
 import { aprsSlotChannelSelectGroups } from '../../lib/aprsBindingHelpers.ts';
-import { MODAL_COMBOBOX_Z_INDEX } from '../../theme.ts';
+import { modalComboboxProps } from '../../theme.ts';
 
 export { channelLabelForSlot } from '../../lib/aprsBindingHelpers.ts';
 
@@ -99,7 +99,7 @@ function AprsChannelSlotForm({
           label="Channel"
           data={channelOptions}
           searchable
-          comboboxProps={{ zIndex: MODAL_COMBOBOX_Z_INDEX }}
+          comboboxProps={modalComboboxProps()}
           value={draft.channelRef?.id ?? CURRENT_CHANNEL_VALUE}
           onChange={(value) =>
             setDraft({
@@ -112,7 +112,7 @@ function AprsChannelSlotForm({
         <Select
           label="Timeslot"
           data={TIMESLOT_OPTIONS}
-          comboboxProps={{ zIndex: MODAL_COMBOBOX_Z_INDEX }}
+          comboboxProps={modalComboboxProps()}
           value={draft.timeslot != null ? String(draft.timeslot) : ''}
           onChange={(value) =>
             setDraft({
@@ -134,7 +134,7 @@ function AprsChannelSlotForm({
         <Select
           label="Call type"
           data={CALL_TYPE_OPTIONS}
-          comboboxProps={{ zIndex: MODAL_COMBOBOX_Z_INDEX }}
+          comboboxProps={modalComboboxProps()}
           value={draft.callType}
           onChange={(value) =>
             setDraft({ ...draft, callType: (value as AprsSlotCallType | null) ?? 'group' })

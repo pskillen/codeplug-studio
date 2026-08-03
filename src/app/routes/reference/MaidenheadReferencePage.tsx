@@ -14,6 +14,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks';
 import { useCallback, useMemo, useState } from 'react';
 import MapLocationPicker from '../../components/MapLocationPicker/MapLocationPicker.tsx';
+import { mapComboboxProps } from '../../theme.ts';
 import UseMyLocationButton from '../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import { FormSection, ListPage, PageSection } from '../../components/ui/index.ts';
 import { useMapSettings } from '../../hooks/useMapSettings.ts';
@@ -325,7 +326,7 @@ export default function MaidenheadReferencePage() {
                     disabled={!hasActiveProject}
                     rightSection={channelOptionsLoading ? <Loader size={18} /> : null}
                     filter={({ options }) => options}
-                    comboboxProps={{ zIndex: 1000 }}
+                    comboboxProps={mapComboboxProps()}
                   />
                   <Button
                     onClick={handleApplyChannelLocation}

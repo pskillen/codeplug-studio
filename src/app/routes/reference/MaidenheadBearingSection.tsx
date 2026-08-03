@@ -22,6 +22,7 @@ import {
 import { coordsToLocator, isValidLocator, locatorToCoords } from '@core/domain/maidenhead.ts';
 import { GeocodeError, geocodeQuery, type GeocodeProvider } from '@integrations/geocode/index.ts';
 import MapPairPlot, { type MapPairPickTarget } from '../../components/MapPairPlot/MapPairPlot.tsx';
+import { mapComboboxProps } from '../../theme.ts';
 import UseMyLocationButton from '../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import { FormSection } from '../../components/ui/index.ts';
 import {
@@ -400,7 +401,7 @@ export default function MaidenheadBearingSection({
                     disabled={!hasActiveProject}
                     rightSection={channelOptionsLoading ? <Loader size={18} /> : null}
                     filter={({ options }) => options}
-                    comboboxProps={{ zIndex: 1000 }}
+                    comboboxProps={mapComboboxProps()}
                   />
                   <Button
                     onClick={handleApplyChannelLocation}

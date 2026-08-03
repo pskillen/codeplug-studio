@@ -1,4 +1,4 @@
-import { createTheme, type MantineColorsTuple } from '@mantine/core';
+import { createTheme, type ComboboxProps, type MantineColorsTuple } from '@mantine/core';
 
 const brand: MantineColorsTuple = [
   '#e8f1ff',
@@ -29,8 +29,37 @@ const dark: MantineColorsTuple = [
 /** Above Leaflet map panes (`.leaflet-top` uses z-index 1000). */
 export const MODAL_ABOVE_MAP_Z_INDEX = 1200;
 
+/** Combobox dropdowns on map pages (same band as Leaflet controls). */
+export const MAP_COMBOBOX_Z_INDEX = 1000;
+
 /** Select/Autocomplete dropdowns rendered inside modals. */
 export const MODAL_COMBOBOX_Z_INDEX = MODAL_ABOVE_MAP_Z_INDEX + 100;
+
+/**
+ * Mantine Popover defaults `hideDetached: true`, which hides the dropdown when the
+ * trigger is near the viewport edge. On long scrollable pages (Settings, mobile
+ * WebView) that can scroll the trigger off-screen when the menu opens — see #902.
+ */
+export const COMBOBOX_DEFAULT_PROPS = {
+  hideDetached: false,
+} as const satisfies Partial<ComboboxProps>;
+
+/** Merge combobox defaults with per-control overrides (theme shallow-merges `comboboxProps`). */
+export function comboboxProps(overrides?: ComboboxProps): ComboboxProps {
+  return { ...COMBOBOX_DEFAULT_PROPS, ...overrides };
+}
+
+export function mapComboboxProps(overrides?: ComboboxProps): ComboboxProps {
+  return comboboxProps({ zIndex: MAP_COMBOBOX_Z_INDEX, ...overrides });
+}
+
+export function modalComboboxProps(overrides?: ComboboxProps): ComboboxProps {
+  return comboboxProps({ zIndex: MODAL_COMBOBOX_Z_INDEX, ...overrides });
+}
+
+const comboboxComponentDefaults = {
+  comboboxProps: COMBOBOX_DEFAULT_PROPS,
+} as const;
 
 export const theme = createTheme({
   primaryColor: 'brand',
@@ -70,6 +99,15 @@ export const theme = createTheme({
           xl: 1140,
         },
       },
+    },
+    Select: {
+      defaultProps: comboboxComponentDefaults,
+    },
+    Autocomplete: {
+      defaultProps: comboboxComponentDefaults,
+    },
+    MultiSelect: {
+      defaultProps: comboboxComponentDefaults,
     },
   },
 });
