@@ -1,8 +1,8 @@
 # Google Drive import / export
 
-Browse Google Drive folders, open native YAML projects, and save exports back to Drive — without leaving the Studio SPA.
+Open native YAML projects and save exports back to a Studio-owned Drive folder — without leaving the Studio SPA.
 
-**Tracking:** [#61](https://github.com/pskillen/codeplug-studio/issues/61) · [#62](https://github.com/pskillen/codeplug-studio/issues/62) · [#285](https://github.com/pskillen/codeplug-studio/issues/285) · [#286](https://github.com/pskillen/codeplug-studio/issues/286) · [#361](https://github.com/pskillen/codeplug-studio/issues/361) · [#368](https://github.com/pskillen/codeplug-studio/issues/368) · [#477](https://github.com/pskillen/codeplug-studio/issues/477) · Epic [#35](https://github.com/pskillen/codeplug-studio/issues/35)
+**Tracking:** [#61](https://github.com/pskillen/codeplug-studio/issues/61) · [#62](https://github.com/pskillen/codeplug-studio/issues/62) · [#285](https://github.com/pskillen/codeplug-studio/issues/285) · [#286](https://github.com/pskillen/codeplug-studio/issues/286) · [#361](https://github.com/pskillen/codeplug-studio/issues/361) · [#368](https://github.com/pskillen/codeplug-studio/issues/368) · [#477](https://github.com/pskillen/codeplug-studio/issues/477) · [#909](https://github.com/pskillen/codeplug-studio/issues/909) · Epic [#35](https://github.com/pskillen/codeplug-studio/issues/35)
 
 **Source:** `src/integrations/cloud/`, `src/app/components/import-export/`, Settings
 
@@ -23,6 +23,7 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
 | `codeplug-studio:drive:lastAccount`       | Connected Google account email           |
 | `codeplug-studio:drive:lastFolderId`      | Last browsed folder id                   |
 | `codeplug-studio:drive:lastFolderPath`    | Breadcrumb path JSON `[{ id, name }, …]` |
+| `codeplug-studio:drive:appRootFolderId`   | Resolved "Codeplug Studio" folder id, refreshed on every connect |
 
 ## OAuth setup
 
@@ -65,23 +66,30 @@ Implementation: `nativeGoogleAuth.ts`, `nativeAuthRedirect.ts`, `nativeGoogleDri
 
 ## OAuth scope
 
-`https://www.googleapis.com/auth/drive` — list folders, create folders, read/write native YAML files the operator selects.
+`https://www.googleapis.com/auth/drive.file` ([#909](https://github.com/pskillen/codeplug-studio/issues/909)) — access limited to files/folders Studio itself creates. Google classifies the previously-used full `drive` scope as **restricted** (annual third-party security assessment + submitted demo video before OAuth verification); `drive.file` is non-sensitive and verifies near-instantly.
+
+### App-owned root folder
+
+Because `drive.file` can't list arbitrary pre-existing Drive folders, Studio creates and manages its own **"Codeplug Studio"** folder in the operator's Drive on first connect (`resolveAppRootFolder` in `driveApi.ts`), and all browsing/open/save happens inside that folder — `DriveBrowserModal` cannot navigate above it. That grant is tied to the (Google account, OAuth client) pair rather than a single browser session, so reconnecting from a different device rediscovers the same folder (by name + mimetype query) instead of creating a duplicate.
+
+Operators who want to open a YAML they didn't create via Studio need to move/copy it into the "Codeplug Studio" folder first using Drive's own UI — Studio's custom browser has no way to reach it otherwise (Picker-based access was considered and declined for this iteration; see [#909](https://github.com/pskillen/codeplug-studio/issues/909)).
 
 ## Port API (`GoogleDrivePort`)
 
 | Method                                                | Purpose                                                      |
 | ----------------------------------------------------- | ------------------------------------------------------------ |
-| `connect()`                                           | OAuth token flow (GIS on web; PKCE + Custom Tabs on Android) |
+| `connect()`                                           | OAuth token flow (GIS on web; PKCE + Custom Tabs on Android); also resolves/creates the app root folder |
 | `disconnect()`                                        | Revoke token + clear session                                 |
 | `isConnected()`                                       | Session present and not expired                              |
 | `getAccountLabel()`                                   | Connected Google account email                               |
+| `getAppRootFolderId()`                                | Resolved "Codeplug Studio" folder id from the last connect    |
 | `listChildren(parentId)`                              | Folders + `.yaml` / `.yml` files                             |
 | `createFolder(parentId, name)`                        | New folder in parent                                         |
 | `readFile(fileId)`                                    | Download file text                                           |
 | `writeFile({ parentId, fileName, content, fileId? })` | Create or overwrite YAML                                     |
 | `getFileMetadata(fileId)`                             | Name, parents, modified time                                 |
 
-Implementation: `src/integrations/cloud/googleDrive.ts`.
+Implementation: `src/integrations/cloud/googleDrive.ts`, `src/integrations/cloud/driveApi.ts`.
 
 ## UI flows
 
@@ -119,7 +127,7 @@ Implementation: `src/integrations/cloud/googleDrive.ts`.
 
 `DriveBrowserModal` — opened from import/export panels:
 
-- Breadcrumb navigation from **My Drive** or last-used / project-remembered folder
+- Breadcrumb navigation rooted at the app-owned **"Codeplug Studio"** folder (not "My Drive") or last-used / project-remembered folder within it
 - Lists subfolders and `.yaml` / `.yml` files
 - **Create folder** in the current directory
 - Persists browse path to localStorage on navigation
@@ -183,6 +191,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | Save remote newer           | **Drive save conflict** modal before overwrite — **Refresh from Drive**, **Save anyway**, **Save as new file**, or Cancel ([#335](https://github.com/pskillen/codeplug-studio/issues/335))                       |
 | Save project id mismatch    | Same modal — shows local vs remote `project.id` and diff; no silent overwrite of another project's file ([#335](https://github.com/pskillen/codeplug-studio/issues/335))                                         |
 | Save failure                | Red alert in conflict modal or inline on the Save bar                                                                                                                                                            |
+| Drive scope error (403)     | A file/folder opened (not created) via Studio before the `drive.file` scope change is no longer reachable — actionable message via `driveErrorMessage`, surfaced in the browser modal, save flow, and sidebar "Check Drive" ([#909](https://github.com/pskillen/codeplug-studio/issues/909)) |
 
 ## Implementation status
 
@@ -203,12 +212,15 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | Portable project id on open       | Shipped | [#361](https://github.com/pskillen/codeplug-studio/issues/361) — `seedPreservingId` default                                                  |
 | Sidebar Drive controls            | Shipped | [#368](https://github.com/pskillen/codeplug-studio/issues/368) — Save/Check in primary nav                                                   |
 | Android native OAuth (PKCE)       | Shipped | [#895](https://github.com/pskillen/codeplug-studio/issues/895) — Custom Tabs + deep link; on-device verify pending                           |
+| `drive.file` scope narrowing      | Shipped | [#909](https://github.com/pskillen/codeplug-studio/issues/909) — app-owned "Codeplug Studio" root folder; cross-device rediscovery unverified against a real account (see checklist) |
 
 ## Manual verify checklist
 
 - [ ] Disconnect in Settings with a real OAuth client
 - [ ] Click **Open from Drive** while disconnected → GIS connect → browser opens
-- [ ] Browse folders, create folder, path restored on reopen
+- [ ] Connect creates a **"Codeplug Studio"** folder in the real Drive account (check via drive.google.com)
+- [ ] Browse folders (within the app root), create folder, path restored on reopen
+- [ ] Connect from a **second browser profile/incognito** with the same Google account → the same "Codeplug Studio" folder is found, not duplicated ([#909](https://github.com/pskillen/codeplug-studio/issues/909) key risk)
 - [ ] Token expiry greys sidebar Drive buttons without page reload; click Save or Check reconnects
 - [ ] **Save to Drive** in sidebar overwrites remembered file when project is dirty
 - [ ] **Check Drive** finds newer remote copy and shows refresh banner

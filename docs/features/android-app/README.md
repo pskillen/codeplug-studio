@@ -119,7 +119,7 @@ The APK embeds the same SPA legal routes used on the website. Play Console and o
 | Terms   | `/terms`     | https://codeplug.mm9pdy.net/terms   |
 | Cookies | `/cookies`   | https://codeplug.mm9pdy.net/cookies |
 
-Copy covers the Android companion, USB-OTG radio programming (bytes stay on-cable), and the rule that operator data does not leave the device unless the operator starts an action (Drive, remote directories, consented analytics). See [#897](https://github.com/pskillen/codeplug-studio/issues/897). Play Data safety form fill-out remains [#890](https://github.com/pskillen/codeplug-studio/issues/890).
+Copy covers the Android companion, USB-OTG radio programming (bytes stay on-cable), and the rule that operator data does not leave the device unless the operator starts an action (Drive, remote directories, consented analytics). See [#897](https://github.com/pskillen/codeplug-studio/issues/897). Play Data safety form fill-out remains [#890](https://github.com/pskillen/codeplug-studio/issues/890); narrowing the shared Drive OAuth scope to `drive.file` ([#909](https://github.com/pskillen/codeplug-studio/issues/909)) keeps that declaration to a non-sensitive scope rather than a restricted one.
 
 ## Cross-links
 

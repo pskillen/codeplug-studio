@@ -68,11 +68,10 @@ export default function PrivacyPolicyPage() {
       <PageSection title="Google Drive access">
         <Text size="sm">
           If you connect Google Drive (Settings, or Open/Save from Drive), Studio requests Google's{' '}
-          <code>drive</code> OAuth scope — full Drive access — because the in-app folder browser
-          needs to list folders and files you did not create with Studio, not just its own. In
-          practice Studio only reads and writes the folder you browse to and the <code>.yaml</code>{' '}
-          / <code>.yml</code> files you open or save there; it does not scan, index, or read the
-          rest of your Drive in the background.
+          <code>drive.file</code> OAuth scope — access limited to files Studio itself creates, not
+          your whole Drive. On first connect, Studio creates a "Codeplug Studio" folder in your
+          Drive and keeps all browsing, opening, and saving inside that one folder; it cannot see or
+          list anything else in your Drive.
         </Text>
         <Text size="sm" mt="sm">
           Drive data is never shared with any third party, sold, or used for anything beyond the
