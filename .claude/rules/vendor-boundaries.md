@@ -1,0 +1,57 @@
+# Vendor boundaries and internal model
+
+**Critical rule.** When editing related files, if you notice existing code or docs that violate this rule — even outside your current task — **flag it to the user as a high concern** before or alongside your main work. Do not silently ignore, copy the pattern, or defer without mention. Do not attempt to fix if it's outside the original instruction.
+
+Read [AGENTS.md — Vendor boundaries](../../AGENTS.md#vendor-boundaries) for the full table. This rule adds FK and format-boundary specifics.
+
+## Two data worlds
+
+| World | Where | Rule |
+| --- | --- | --- |
+| **External CPS formats / radios** | `src/core/import-export/formats/`, `docs/reference/export-formats/<format>/`, `docs/reference/radios/<mfr>/<model>/` | Third-party column layouts, wire strings, name-based FKs at the wire edge; radio caps/ladders in radio homes — stay here |
+| **Internal library model** | `src/core/` (models, domain, validation), `src/app/` (library CRUD, build UI) | Vendor-neutral; strip external modelling at import, re-apply at export |
+
+At the boundary, **convert** — do not pass vendor shapes through to the library model.
+
+## Internal foreign keys
+
+- Relationships use **UUID `id` fields** (`memberChannelIds`, contact refs, RX-list refs).
+- **Never** use human-readable, case-sensitive name strings as internal FKs in mutations, validation, persistence, or CRUD.
+- `name` fields are display/export labels, not relationship keys.
+- Wire-name resolution belongs at the import/export edge only — do not add new name-based FKs in core or app.
+
+## OpenGD77 is one format among many
+
+OpenGD77 CSV is one shipped format; **DM32, qDMR, CHIRP, native YAML** are siblings. Do not let OpenGD77 shape the library model, default assumptions, or generic docs. OpenGD77 specifics belong under `src/core/import-export/formats/opengd77/` and `docs/reference/export-formats/opengd77/`.
+
+## Approved vendor leakage
+
+Explicit, labelled escape hatches are OK when unlikely to generalise:
+
+- Format-specific opaque columns at the boundary when documented in `docs/reference/export-formats/<format>/`
+- Document **known leakage** to fix — do not copy into new code
+
+## Radio limits source of truth
+
+Hardware cardinality, RF band bounds, and name-length ceilings for a radio model live in one **code** module and one **human** doc:
+
+| Kind | Path |
+| --- | --- |
+| Code | `src/core/radios/<manufacturer>/<model>/limits.ts` |
+| Docs | `docs/reference/radios/<manufacturer>/<model>/limits.md` |
+
+**Format profiles** (`formats/<format>/profiles.ts`) and **radio-io profiles** import or re-export from that module — do not re-literal the table. **Protocol-only** layout sizes (block offsets, record strides) may stay in `integrations/radio-io/radios/<radio>/constants.ts`, but **cardinality** must re-export from core.
+
+**Forbidden:**
+
+- Radio-specific numeric SoT in `src/app/` (especially `radioIoWriteProjection` fallbacks such as `DM32_DEFAULT_*` or `numericLimit(x, <radioLiteral>)` when profile is null)
+- NeonPlug-prefixed names for radio hardware geometry (JSON wire sentinels in format adapters are OK)
+
+## Anti-patterns
+
+- `OPENGD77_*` / radio-profile constants outside import/export or `src/core/radios/`
+- `numericLimit(x, <radioLiteral>)` as the source of truth when profile is null
+- Resolving library entities by wire name in CRUD or validation
+- Import/export column mapping documented only via OpenGD77 reference when describing the **internal** library model
+- **Wire stash on export** — provenance bags or any export path that replays imported CPS cells instead of model fields ([export-from-model.md](export-from-model.md))
+- Modelling OpenGD77-shaped zones in the **library** because OpenGD77 has `Zones.csv` — use **build capability traits** instead ([library-and-builds.md](library-and-builds.md))
