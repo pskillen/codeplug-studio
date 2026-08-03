@@ -14,6 +14,7 @@ Debt and follow-ups discovered during [Epic #747](https://github.com/pskillen/co
 | `versionCode` = `github.run_number` | Low      | Monotonic for CI; not SemVer-derived — fine for sideload; revisit for Play if needed                                               |
 | GA4 custom dimensions registration  | Low      | Register `app_surface` + `build_env` in prod and pre-prod GA4 Admin (manual; code already sends params — #896)                     |
 | Native Drive OAuth device verify    | High     | [#895](https://github.com/pskillen/codeplug-studio/issues/895) — signed APK + real Android client id; checklist in google-drive.md |
+| Adaptive icon / splash device check | Medium   | #898 generated icon + splash assets were only verified via rasterized PNG inspection (no emulator/device in this environment) — confirm on a real launcher (light + dark, circle + squircle masks) before Play submission |
 
 ## Closed / fixed in verification pass
 
