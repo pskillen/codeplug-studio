@@ -33,13 +33,14 @@ export {
 } from './drivePrefs.ts';
 export { createDriveApiClient, driveApi, type DriveApiClient } from './driveApi.ts';
 export type { DriveAuthProvider, DriveAuthTokens } from './driveAuthProvider.ts';
-export { createGoogleDrivePort, type GoogleDriveDeps, type GoogleDrivePort } from './googleDrive.ts';
+export {
+  createGoogleDrivePort,
+  type GoogleDriveDeps,
+  type GoogleDrivePort,
+} from './googleDrive.ts';
 export { getActiveGoogleClientId } from './googleClientIds.ts';
 export { createNativeGoogleDrivePort } from './nativeGoogleDrive.ts';
-export {
-  NATIVE_OAUTH_REDIRECT_URI,
-  getGoogleAndroidClientId,
-} from './nativeGoogleAuth.ts';
+export { NATIVE_OAUTH_REDIRECT_URI, getGoogleAndroidClientId } from './nativeGoogleAuth.ts';
 export {
   registerNativeAuthRedirectListener,
   resetNativeAuthRedirectListenerForTests,
@@ -60,4 +61,6 @@ export {
 export { getGoogleClientId, loadGoogleIdentity } from './loadGoogleIdentity.ts';
 export { createWebAuthProvider } from './webGoogleAuth.ts';
 
-export const googleDrivePort = isNativeApp() ? createNativeGoogleDrivePort() : createGoogleDrivePort();
+export const googleDrivePort = isNativeApp()
+  ? createNativeGoogleDrivePort()
+  : createGoogleDrivePort();

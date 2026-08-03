@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  generateCodeChallenge,
-  generateCodeVerifier,
-  generateOAuthState,
-} from './pkce.ts';
+import { generateCodeChallenge, generateCodeVerifier, generateOAuthState } from './pkce.ts';
 
 describe('pkce', () => {
   it('generates verifier and matching S256 challenge', async () => {

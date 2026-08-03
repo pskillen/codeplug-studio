@@ -4,15 +4,15 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 ## Implementation status
 
-| Area                 | Status    | Notes                                                                                                              |
-| -------------------- | --------- | ------------------------------------------------------------------------------------------------------------------ |
-| Scaffold             | Shipped   | Capacitor core + Android platform (#886)                                                                           |
-| API / CORS / Browser | Shipped   | Absolute `/api` on native, Capacitor CORS allowlist, system browser (#887)                                         |
-| Google Drive (native)| Shipped   | PKCE OAuth in Custom Tabs + deep link (#895)                                                                       |
-| USB Serial           | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888). \*Unit/mock coverage; **hardware OTG R/W still outstanding** |
-| APK CI               | Shipped   | Signed APK + Release attach (#889); real `BUILD_ENV` + GA ID inject (#896)                                         |
-| Analytics (gtag)     | Shipped   | Same SPA consent gate; `app_surface=android` + `build_env` on page views (#896)                                    |
-| Play Store           | Deferred  | AAB + listing + Closed Testing (#890)                                                                              |
+| Area                  | Status    | Notes                                                                                                              |
+| --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------ |
+| Scaffold              | Shipped   | Capacitor core + Android platform (#886)                                                                           |
+| API / CORS / Browser  | Shipped   | Absolute `/api` on native, Capacitor CORS allowlist, system browser (#887)                                         |
+| Google Drive (native) | Shipped   | PKCE OAuth in Custom Tabs + deep link (#895)                                                                       |
+| USB Serial            | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888). \*Unit/mock coverage; **hardware OTG R/W still outstanding** |
+| APK CI                | Shipped   | Signed APK + Release attach (#889); real `BUILD_ENV` + GA ID inject (#896)                                         |
+| Analytics (gtag)      | Shipped   | Same SPA consent gate; `app_surface=android` + `build_env` on page views (#896)                                    |
+| Play Store            | Deferred  | AAB + listing + Closed Testing (#890)                                                                              |
 
 ## Documentation map
 
@@ -52,13 +52,13 @@ GA secrets follow Pages (`prod` → `GA_MEASUREMENT_ID`; otherwise `GA_MEASUREME
 
 **GitHub Actions secrets (required for a signed APK):**
 
-| Secret                      | Meaning                                      |
-| --------------------------- | -------------------------------------------- |
-| `ANDROID_KEYSTORE_BASE64`   | Base64-encoded PKCS12/JKS release keystore   |
-| `ANDROID_KEYSTORE_PASSWORD` | Keystore password                            |
-| `ANDROID_KEY_ALIAS`         | Key alias                                    |
-| `GA_MEASUREMENT_ID`         | Prod stream (when `BUILD_ENV=prod`)          |
-| `GA_MEASUREMENT_ID_PREPROD` | Pre-prod stream (`staging` / `main` / `dev`) |
+| Secret                           | Meaning                                         |
+| -------------------------------- | ----------------------------------------------- |
+| `ANDROID_KEYSTORE_BASE64`        | Base64-encoded PKCS12/JKS release keystore      |
+| `ANDROID_KEYSTORE_PASSWORD`      | Keystore password                               |
+| `ANDROID_KEY_ALIAS`              | Key alias                                       |
+| `GA_MEASUREMENT_ID`              | Prod stream (when `BUILD_ENV=prod`)             |
+| `GA_MEASUREMENT_ID_PREPROD`      | Pre-prod stream (`staging` / `main` / `dev`)    |
 | `ANDROID_GOOGLE_OAUTH_CLIENT_ID` | Android OAuth client id for Drive on APK builds |
 
 Without secrets, Gradle still builds; the APK will not be release-signed.

@@ -1,10 +1,6 @@
 import { DriveAuthError, DriveCancelledError, DRIVE_OAUTH_SCOPE } from './driveTypes.ts';
 import type { DriveAuthProvider, DriveAuthTokens } from './driveAuthProvider.ts';
-import type { DriveSession } from './drivePrefs.ts';
-import {
-  loadGoogleIdentity,
-  type GoogleIdentityClient,
-} from './loadGoogleIdentity.ts';
+import { loadGoogleIdentity, type GoogleIdentityClient } from './loadGoogleIdentity.ts';
 
 function requestAccessToken(
   identity: GoogleIdentityClient,
@@ -49,9 +45,7 @@ export interface WebGoogleAuthDeps {
   loadIdentity: () => Promise<GoogleIdentityClient>;
 }
 
-export function createWebAuthProvider(
-  deps?: Partial<WebGoogleAuthDeps>,
-): DriveAuthProvider {
+export function createWebAuthProvider(deps?: Partial<WebGoogleAuthDeps>): DriveAuthProvider {
   const loadIdentity = deps?.loadIdentity ?? loadGoogleIdentity;
 
   return {

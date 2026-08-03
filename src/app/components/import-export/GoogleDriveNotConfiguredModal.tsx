@@ -1,5 +1,6 @@
 import { Button, Modal, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
+import { isNativeApp } from '@integrations/platform/isNativeApp.ts';
 import { SETTINGS_DRIVE_SECTION_ID } from '../../lib/settingsSections.ts';
 
 export interface GoogleDriveNotConfiguredModalProps {
@@ -11,6 +12,8 @@ export default function GoogleDriveNotConfiguredModal({
   opened,
   onClose,
 }: GoogleDriveNotConfiguredModalProps) {
+  const clientIdEnv = isNativeApp() ? 'VITE_GOOGLE_ANDROID_CLIENT_ID' : 'VITE_GOOGLE_CLIENT_ID';
+
   return (
     <Modal
       opened={opened}
@@ -21,7 +24,7 @@ export default function GoogleDriveNotConfiguredModal({
     >
       <Stack gap="md">
         <Text size="sm">
-          Google Drive is not configured for this build. Set <code>VITE_GOOGLE_CLIENT_ID</code> for
+          Google Drive is not configured for this build. Set <code>{clientIdEnv}</code> for
           local development — see Settings for details.
         </Text>
         <Button

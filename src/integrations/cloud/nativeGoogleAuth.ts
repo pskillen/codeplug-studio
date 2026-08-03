@@ -5,16 +5,8 @@ import {
   savePendingNativeAuth,
   type DriveSession,
 } from './drivePrefs.ts';
-import {
-  DriveAuthError,
-  DriveCancelledError,
-  DRIVE_OAUTH_SCOPE,
-} from './driveTypes.ts';
-import {
-  generateCodeChallenge,
-  generateCodeVerifier,
-  generateOAuthState,
-} from './pkce.ts';
+import { DriveAuthError, DriveCancelledError, DRIVE_OAUTH_SCOPE } from './driveTypes.ts';
+import { generateCodeChallenge, generateCodeVerifier, generateOAuthState } from './pkce.ts';
 
 export const NATIVE_OAUTH_REDIRECT_URI = 'net.mm9pdy.codeplugstudio:/oauth2redirect';
 export const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -138,16 +130,16 @@ export interface NativeGoogleAuthDeps {
   closeBrowser?: () => Promise<void>;
 }
 
-export function createNativeAuthProvider(
-  deps?: Partial<NativeGoogleAuthDeps>,
-): DriveAuthProvider {
+export function createNativeAuthProvider(deps?: Partial<NativeGoogleAuthDeps>): DriveAuthProvider {
   const fetchImpl = deps?.fetchImpl ?? fetch;
   const openAuthorizationUrl = deps?.openAuthorizationUrl;
   const waitForAuthorizationCode = deps?.waitForAuthorizationCode;
   const closeBrowser = deps?.closeBrowser;
 
   if (!openAuthorizationUrl || !waitForAuthorizationCode) {
-    throw new Error('Native auth provider requires openAuthorizationUrl and waitForAuthorizationCode.');
+    throw new Error(
+      'Native auth provider requires openAuthorizationUrl and waitForAuthorizationCode.',
+    );
   }
 
   return {
@@ -265,7 +257,10 @@ export function parseNativeOAuthRedirectUrl(url: string): {
   }
 }
 
-export function rejectNativeOAuthRedirect(error: string, description?: string): DriveCancelledError {
+export function rejectNativeOAuthRedirect(
+  error: string,
+  description?: string,
+): DriveCancelledError {
   if (error === 'access_denied') {
     return new DriveCancelledError(description);
   }

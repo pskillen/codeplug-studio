@@ -14,15 +14,15 @@ IndexedDB remains the **edit store**; Drive holds portable YAML interchange file
 
 ## localStorage keys
 
-| Key                                    | Purpose                                  |
-| -------------------------------------- | ---------------------------------------- |
-| `codeplug-studio:drive:accessToken`    | OAuth bearer (masked in Debug)           |
-| `codeplug-studio:drive:tokenExpiresAt` | Token expiry (epoch ms)                  |
-| `codeplug-studio:drive:refreshToken`   | Native-only OAuth refresh token (masked) |
+| Key                                       | Purpose                                  |
+| ----------------------------------------- | ---------------------------------------- |
+| `codeplug-studio:drive:accessToken`       | OAuth bearer (masked in Debug)           |
+| `codeplug-studio:drive:tokenExpiresAt`    | Token expiry (epoch ms)                  |
+| `codeplug-studio:drive:refreshToken`      | Native-only OAuth refresh token (masked) |
 | `codeplug-studio:drive:pendingNativeAuth` | Ephemeral PKCE state (native OAuth only) |
-| `codeplug-studio:drive:lastAccount`    | Connected Google account email           |
-| `codeplug-studio:drive:lastFolderId`   | Last browsed folder id                   |
-| `codeplug-studio:drive:lastFolderPath` | Breadcrumb path JSON `[{ id, name }, …]` |
+| `codeplug-studio:drive:lastAccount`       | Connected Google account email           |
+| `codeplug-studio:drive:lastFolderId`      | Last browsed folder id                   |
+| `codeplug-studio:drive:lastFolderPath`    | Breadcrumb path JSON `[{ id, name }, …]` |
 
 ## OAuth setup
 
@@ -69,17 +69,17 @@ Implementation: `nativeGoogleAuth.ts`, `nativeAuthRedirect.ts`, `nativeGoogleDri
 
 ## Port API (`GoogleDrivePort`)
 
-| Method                                                | Purpose                                              |
-| ----------------------------------------------------- | ---------------------------------------------------- |
+| Method                                                | Purpose                                                      |
+| ----------------------------------------------------- | ------------------------------------------------------------ |
 | `connect()`                                           | OAuth token flow (GIS on web; PKCE + Custom Tabs on Android) |
-| `disconnect()`                                        | Revoke token + clear session                         |
-| `isConnected()`                                       | Session present and not expired                      |
-| `getAccountLabel()`                                   | Connected Google account email                       |
-| `listChildren(parentId)`                              | Folders + `.yaml` / `.yml` files                     |
-| `createFolder(parentId, name)`                        | New folder in parent                                 |
-| `readFile(fileId)`                                    | Download file text                                   |
-| `writeFile({ parentId, fileName, content, fileId? })` | Create or overwrite YAML                             |
-| `getFileMetadata(fileId)`                             | Name, parents, modified time                         |
+| `disconnect()`                                        | Revoke token + clear session                                 |
+| `isConnected()`                                       | Session present and not expired                              |
+| `getAccountLabel()`                                   | Connected Google account email                               |
+| `listChildren(parentId)`                              | Folders + `.yaml` / `.yml` files                             |
+| `createFolder(parentId, name)`                        | New folder in parent                                         |
+| `readFile(fileId)`                                    | Download file text                                           |
+| `writeFile({ parentId, fileName, content, fileId? })` | Create or overwrite YAML                                     |
+| `getFileMetadata(fileId)`                             | Name, parents, modified time                                 |
 
 Implementation: `src/integrations/cloud/googleDrive.ts`.
 
@@ -158,7 +158,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `GoogleDriveButton`             | Presentational CTA styling                                                                                                  |
 | `GoogleDriveActionButton`       | Open/save CTAs — inline connect, then Drive browser                                                                         |
-| `GoogleDriveNotConfiguredModal` | Settings redirect when the platform client id env is missing |
+| `GoogleDriveNotConfiguredModal` | Settings redirect when the platform client id env is missing                                                                |
 | `DriveBrowserModal`             | Folder browser when connected                                                                                               |
 | `SidebarDriveControls`          | Sidebar Save / Check Drive icon buttons ([#368](https://github.com/pskillen/codeplug-studio/issues/368))                    |
 | `DriveRefreshProvider`          | Shared remote-check state for sidebar + refresh banner                                                                      |
@@ -172,7 +172,7 @@ When OAuth is not configured, click opens `GoogleDriveNotConfiguredModal` with *
 | Situation                   | UI behaviour                                                                                                                                                                                                     |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Not configured              | Drive action buttons greyed; click → modal → Settings (OAuth client setup)                                                                                                                                       |
-| Not connected               | Drive action buttons greyed; click → OAuth connect → Drive browser on success |
+| Not connected               | Drive action buttons greyed; click → OAuth connect → Drive browser on success                                                                                                                                    |
 | Sign-in cancelled           | No browser open; no error alert                                                                                                                                                                                  |
 | Connect failed              | Inline red alert on the action button                                                                                                                                                                            |
 | Auth expired                | Session cleared; greyed sidebar Save/Check with inline hint; click either button to reconnect; Settings **Reconnect** — no manual Disconnect required                                                            |

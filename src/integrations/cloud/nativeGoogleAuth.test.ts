@@ -9,7 +9,7 @@ import {
   refreshAccessToken,
   rejectNativeOAuthRedirect,
 } from './nativeGoogleAuth.ts';
-import { clearPendingNativeAuth, loadPendingNativeAuth, savePendingNativeAuth } from './drivePrefs.ts';
+import { clearPendingNativeAuth, loadPendingNativeAuth } from './drivePrefs.ts';
 import { DriveAuthError, DriveCancelledError } from './driveTypes.ts';
 
 function createLocalStorageMock() {
