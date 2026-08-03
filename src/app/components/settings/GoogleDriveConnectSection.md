@@ -18,6 +18,7 @@ OAuth connect happens from Drive action buttons in import/export and build expor
 
 ## Behaviour
 
+- Always states, before connecting, that Drive access is the full `drive` scope (not just app-created files) and that Studio only touches what you open or save — Google OAuth verification's "prominently displayed" in-product disclosure requirement.
 - When `VITE_GOOGLE_CLIENT_ID` (web) or `VITE_GOOGLE_ANDROID_CLIENT_ID` (Android APK) is missing, shows a configuration warning.
 - OAuth tokens stay on this device only (web browser or Capacitor WebView).
 - When disconnected, explains that **Open from Drive** / **Save to Drive** in the app trigger connect.
