@@ -103,7 +103,7 @@ describe('googleDrive port', () => {
   it('requires configuration for connect', async () => {
     const port = createGoogleDrivePort({
       api,
-      loadIdentity: async () => identity,
+      authProvider: createWebAuthProvider({ loadIdentity: async () => identity }),
       getClientId: () => '',
       fetchImpl: fetch,
     });

@@ -24,8 +24,8 @@ export default function GoogleDriveNotConfiguredModal({
     >
       <Stack gap="md">
         <Text size="sm">
-          Google Drive is not configured for this build. Set <code>{clientIdEnv}</code> for
-          local development — see Settings for details.
+          Google Drive is not configured for this build. Set <code>{clientIdEnv}</code> for local
+          development — see Settings for details.
         </Text>
         <Button
           component={Link}

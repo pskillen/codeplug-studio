@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildAuthorizationUrl,
   createNativeAuthProvider,
@@ -11,6 +11,14 @@ import {
 } from './nativeGoogleAuth.ts';
 import { clearPendingNativeAuth, loadPendingNativeAuth } from './drivePrefs.ts';
 import { DriveAuthError, DriveCancelledError } from './driveTypes.ts';
+
+function mockFetch(body: Record<string, unknown>, ok = true, status = 200): typeof fetch {
+  return vi.fn(async () => ({
+    ok,
+    status,
+    json: async () => body,
+  })) as unknown as typeof fetch;
+}
 
 function createLocalStorageMock() {
   const store = new Map<string, string>();
@@ -54,15 +62,11 @@ describe('nativeGoogleAuth', () => {
   });
 
   it('exchanges authorization code for tokens', async () => {
-    const fetchImpl = vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        access_token: 'ya29.native',
-        expires_in: 3600,
-        refresh_token: 'rt.native',
-      }),
-    })) as typeof fetch;
+    const fetchImpl = mockFetch({
+      access_token: 'ya29.native',
+      expires_in: 3600,
+      refresh_token: 'rt.native',
+    });
 
     const tokens = await exchangeAuthorizationCode({
       clientId: 'android-client.apps.googleusercontent.com',
@@ -77,14 +81,10 @@ describe('nativeGoogleAuth', () => {
   });
 
   it('refreshes access token', async () => {
-    const fetchImpl = vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        access_token: 'ya29.refreshed',
-        expires_in: 3600,
-      }),
-    })) as typeof fetch;
+    const fetchImpl = mockFetch({
+      access_token: 'ya29.refreshed',
+      expires_in: 3600,
+    });
 
     const tokens = await refreshAccessToken({
       clientId: 'android-client.apps.googleusercontent.com',
@@ -97,15 +97,11 @@ describe('nativeGoogleAuth', () => {
   });
 
   it('authorize opens URL and exchanges returned code', async () => {
-    const fetchImpl = vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        access_token: 'ya29.flow',
-        expires_in: 3600,
-        refresh_token: 'rt.flow',
-      }),
-    })) as typeof fetch;
+    const fetchImpl = mockFetch({
+      access_token: 'ya29.flow',
+      expires_in: 3600,
+      refresh_token: 'rt.flow',
+    });
 
     let capturedUrl = '';
     let capturedState = '';
@@ -154,11 +150,7 @@ describe('nativeGoogleAuth', () => {
   });
 
   it('tryRefresh returns null when refresh fails', async () => {
-    const fetchImpl = vi.fn(async () => ({
-      ok: false,
-      status: 400,
-      json: async () => ({ error: 'invalid_grant' }),
-    })) as typeof fetch;
+    const fetchImpl = mockFetch({ error: 'invalid_grant' }, false, 400);
 
     const provider = createNativeAuthProvider({
       fetchImpl,
@@ -179,11 +171,7 @@ describe('nativeGoogleAuth', () => {
 
   it('pending auth is saved during authorize', async () => {
     const provider = createNativeAuthProvider({
-      fetchImpl: vi.fn(async () => ({
-        ok: true,
-        status: 200,
-        json: async () => ({ access_token: 't', expires_in: 3600 }),
-      })) as typeof fetch,
+      fetchImpl: mockFetch({ access_token: 't', expires_in: 3600 }),
       openAuthorizationUrl: async () => {},
       waitForAuthorizationCode: async () => {
         const pending = loadPendingNativeAuth();
@@ -199,11 +187,11 @@ describe('nativeGoogleAuth', () => {
 
 describe('exchangeAuthorizationCode errors', () => {
   it('throws DriveAuthError on token error response', async () => {
-    const fetchImpl = vi.fn(async () => ({
-      ok: false,
-      status: 400,
-      json: async () => ({ error: 'invalid_grant', error_description: 'Bad code' }),
-    })) as typeof fetch;
+    const fetchImpl = mockFetch(
+      { error: 'invalid_grant', error_description: 'Bad code' },
+      false,
+      400,
+    );
 
     await expect(
       exchangeAuthorizationCode({

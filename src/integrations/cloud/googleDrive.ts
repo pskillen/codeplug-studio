@@ -68,20 +68,21 @@ export function createGoogleDrivePort(deps?: Partial<GoogleDriveDeps>): GoogleDr
 
   async function getValidSession(): Promise<DriveSession> {
     const session = loadDriveSession();
-    if (driveSessionIsValid(session)) {
+    if (session !== null && driveSessionIsValid(session)) {
       return session;
     }
 
-    if (session?.refreshToken && resolved.authProvider.tryRefresh) {
+    const staleSession = loadDriveSession();
+    if (staleSession?.refreshToken && resolved.authProvider.tryRefresh) {
       const clientId = resolved.getClientId();
       if (clientId) {
-        const refreshed = await resolved.authProvider.tryRefresh(session, clientId);
+        const refreshed = await resolved.authProvider.tryRefresh(staleSession, clientId);
         if (refreshed) {
           const newSession: DriveSession = {
             accessToken: refreshed.accessToken,
             expiresAt: refreshed.expiresAt,
-            accountEmail: session.accountEmail,
-            refreshToken: refreshed.refreshToken ?? session.refreshToken,
+            accountEmail: staleSession.accountEmail,
+            refreshToken: refreshed.refreshToken ?? staleSession.refreshToken,
           };
           saveDriveSession(newSession);
           return newSession;

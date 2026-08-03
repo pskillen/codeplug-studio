@@ -7,6 +7,14 @@ import {
 } from './nativeAuthRedirect.ts';
 import { DriveCancelledError } from './driveTypes.ts';
 
+function mockFetch(body: Record<string, unknown>): typeof fetch {
+  return vi.fn(async () => ({
+    ok: true,
+    status: 200,
+    json: async () => body,
+  })) as unknown as typeof fetch;
+}
+
 function createLocalStorageMock() {
   const store = new Map<string, string>();
   return {
@@ -54,15 +62,11 @@ describe('nativeAuthRedirect', () => {
   it('saves session on cold-start redirect without active waiter', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => ({
-        ok: true,
-        status: 200,
-        json: async () => ({
-          access_token: 'ya29.cold',
-          expires_in: 3600,
-          refresh_token: 'rt.cold',
-        }),
-      })) as typeof fetch,
+      mockFetch({
+        access_token: 'ya29.cold',
+        expires_in: 3600,
+        refresh_token: 'rt.cold',
+      }),
     );
 
     savePendingNativeAuth({
