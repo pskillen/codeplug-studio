@@ -150,14 +150,20 @@ describe('App', () => {
   it('renders legal pages', () => {
     const privacy = renderApp('/privacy');
     expect(screen.getByRole('heading', { name: 'Privacy policy' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Android companion' })).toBeInTheDocument();
+    expect(screen.getByText(/Programming a radio over USB does not upload/i)).toBeInTheDocument();
+    expect(screen.getByText(/unless you start it/i)).toBeInTheDocument();
     privacy.unmount();
 
     const terms = renderApp('/terms');
     expect(screen.getByRole('heading', { name: 'Terms of use' })).toBeInTheDocument();
+    expect(screen.getByText(/Play Store/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Direct radio programming' })).toBeInTheDocument();
     terms.unmount();
 
     renderApp('/cookies');
     expect(screen.getByRole('heading', { name: 'Cookies & storage' })).toBeInTheDocument();
+    expect(screen.getByText(/Android companion app/i)).toBeInTheDocument();
   });
 
   it('shows cookie banner when consent is unset and hides after accept', () => {
