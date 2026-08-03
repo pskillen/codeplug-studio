@@ -4,16 +4,19 @@ Creative and copy for the Play Console listing (#898), staged here so #890 (Play
 
 ## Graphics
 
-| File                                                                           | Dimensions                     | Play Console slot                                           |
-| ------------------------------------------------------------------------------ | ------------------------------ | ----------------------------------------------------------- |
-| [hi-res-icon-512.png](hi-res-icon-512.png)                                     | 512×512, 32-bit PNG with alpha | High-res icon                                               |
-| [feature-graphic-1024x500.png](feature-graphic-1024x500.png)                   | 1024×500, no alpha             | Feature graphic                                             |
-| [screenshot-1-home.png](screenshot-1-home.png)                                 | 1236×2676                      | Phone screenshot — home / what Studio does                  |
-| [screenshot-2-add-from-directories.png](screenshot-2-add-from-directories.png) | 1236×2676                      | Phone screenshot — importing from directories               |
-| [screenshot-3-nearby-repeaters.png](screenshot-3-nearby-repeaters.png)         | 1236×2676                      | Phone screenshot — ukrepeater.net search + map              |
-| [screenshot-4-channel-set-import.png](screenshot-4-channel-set-import.png)     | 1236×2676                      | Phone screenshot — built-in frequency grid (PMR446) preview |
+| File                                                                                 | Dimensions                     | Play Console slot                                                                          |
+| ------------------------------------------------------------------------------------ | ------------------------------ | ------------------------------------------------------------------------------------------ |
+| [hi-res-icon-512.png](hi-res-icon-512.png)                                           | 512×512, 32-bit PNG with alpha | High-res icon                                                                              |
+| [feature-graphic-1024x500.png](feature-graphic-1024x500.png)                         | 1024×500, no alpha             | Feature graphic                                                                            |
+| [screenshot-1-home.png](screenshot-1-home.png)                                       | 1236×2676                      | Phone screenshot — home / what Studio does                                                 |
+| [screenshot-2-add-from-directories.png](screenshot-2-add-from-directories.png)       | 1236×2676                      | Phone screenshot — importing from directories                                              |
+| [screenshot-3-nearby-repeaters.png](screenshot-3-nearby-repeaters.png)               | 1236×2676                      | Phone screenshot — ukrepeater.net search + map                                             |
+| [screenshot-4-channel-set-import.png](screenshot-4-channel-set-import.png)           | 1236×2676                      | Phone screenshot — built-in frequency grid (PMR446) preview                                |
+| [screenshot-5-directory-comparison.png](screenshot-5-directory-comparison.png)       | 1236×2676                      | Phone screenshot — ukrepeater.net directory-comparison diff for a manually-entered channel |
+| [screenshot-6-brandmeister-talkgroups.png](screenshot-6-brandmeister-talkgroups.png) | 1236×2676                      | Phone screenshot — BrandMeister talk-group / RX group list sync                            |
+| [screenshot-7-new-build-choose-radio.png](screenshot-7-new-build-choose-radio.png)   | 1236×2676                      | Phone screenshot — New build, choose-radio step                                            |
 
-All screenshots are real app UI captured from the dev server at a phone viewport (412×892 CSS px, 3x device scale) — not mockups. `feature-graphic.svg` is the editable source for the feature graphic (reuses the `public/branding/studio-hero.svg` composition, height-fit to 1024×500).
+All screenshots are real app UI captured from the dev server at a phone viewport (412×892 CSS px, 3x device scale) — not mockups. Screenshots 5 and 6 use a real repeater (GB7GL, a 70cm DMR repeater in Glasgow): the channel was hand-entered with deliberately wrong 2m frequencies so the directory-comparison diff has something real to show, and the talk-group sync pulled GB7GL's actual BrandMeister static talk groups. `feature-graphic.svg` is the editable source for the feature graphic (reuses the `public/branding/studio-hero.svg` composition, height-fit to 1024×500).
 
 Play Store requirements this satisfies: high-res icon ≥512×512 with alpha; feature graphic exactly 1024×500 with no alpha; ≥2 phone screenshots (short side ≥320px, long side ≤3840px) — see [Google's spec](https://support.google.com/googleplay/android-developer/answer/9866151).
 
@@ -84,4 +87,8 @@ await sharp('docs/features/android-app/store-assets/feature-graphic.svg')
   .toFile('docs/features/android-app/store-assets/feature-graphic-1024x500.png');
 ```
 
-Screenshots were captured with Playwright against `npm run dev` at a 412×892 viewport (3x device scale), dark colour scheme. Re-run similar flows (Home → New project → Library → Channels → Add from…) if the UI changes enough to make these stale.
+Screenshots were captured with Playwright against `npm run dev` at a 412×892 viewport (3x device scale), dark colour scheme. Re-run similar flows if the UI changes enough to make these stale:
+
+- Screenshots 1–4: Home → New project → Library → Channels → Add from…
+- Screenshot 5–6: Library → Channels → New channel (callsign `GB7GL`, add a DMR mode profile) → Save → open the channel → Repeater tab → Check ukrepeater.net (screenshot the "Directory comparison" dialog) → Check BrandMeister talk groups & RX list (screenshot the "RX group list sync" dialog). The BrandMeister button only appears once the channel has a DMR mode profile.
+- Screenshot 7: Export for radio → New build (`/builds/new`).
