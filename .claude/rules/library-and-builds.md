@@ -1,0 +1,62 @@
+---
+paths:
+  - "src/core/**"
+  - "src/app/**"
+  - "docs/features/**"
+---
+
+# Library and format builds
+
+**Critical rule.** When editing related files, if you notice existing code or docs that violate this rule — even outside your current task — **flag it to the user as a high concern** before or alongside your main work. Do not silently ignore, copy the pattern, or defer without mention.
+
+Read [DESIGN.md — Glossary](../../DESIGN.md#glossary), [DESIGN.md — Build capability traits](../../DESIGN.md#build-capability-traits), and [docs/poc-migration/epic-1-context.md](../../docs/poc-migration/epic-1-context.md).
+
+## Library (canonical inventory)
+
+The **library** holds RF semantics shared across builds:
+
+- Channels, talk groups, contacts, RX group lists (and similar entities).
+- Frequency, mode, talk group refs, location — **not** format-specific organisation.
+
+Operators curate the library once. Multiple format builds may reference the same library entities with different organisation.
+
+## Format build (per-target assembly)
+
+A **format build** is a **persisted** row scoped to one format/profile workflow:
+
+- `formatId` + `profileId` — which wire family and variant (trait profile + limits).
+- `*Selections` — which library entities participate; `overrides.name` holds the **CPS wire name** for that build.
+- `layout` — trait-shaped state (zone membership order, scan lists, flat memory order, …).
+
+Do **not** model OpenGD77 zones in the library because OpenGD77 has `Zones.csv`. Model **zone grouping** on the build when the trait profile requires it.
+
+### Why builds are persisted (not export-time only)
+
+Unlike the archive single-codeplug model, builds survive between sessions so the operator can:
+
+- Accept import-populated or profile-default wire names, or customise them.
+- Tune shortened names for profile limits (e.g. 16-character channel names).
+- Review m×n / multi-talkgroup expansion names before the next export.
+
+Export always combines **library + build** via `assemble(build, library)`.
+
+## Trait profile vs wire adapter
+
+| Concern | Where |
+| --- | --- |
+| Which traits apply | Trait profile (per format/profile definition) |
+| Build model + build UI | Composed from shared trait modules |
+| CPS column mapping | Wire adapter for that format/profile |
+
+OpenGD77 and DM32 adapters both map **zone grouping** trait layout to different CSV shapes. CHIRP maps **flat memory list** + **per-channel scan flag**. Adapters stay format-specific; they share trait concepts internally.
+
+## Export
+
+Export path: `assemble(build, library)` → export projection → wire serialisation. The build's trait layout drives organisation; the library supplies entity data.
+
+## Anti-patterns
+
+- Single in-app "codeplug" edit surface with export buttons for many formats (old codeplug-tool model).
+- Duplicating library entities per format build instead of selection + layout.
+- Trait-specific UI wired only for one format instead of reusable trait modules under `app/features/builds/`.
+- Optimising library schema for round-trip with one CPS format.
