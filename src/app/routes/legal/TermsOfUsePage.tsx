@@ -6,10 +6,18 @@ export default function TermsOfUsePage() {
     <ListPage title="Terms of use" description="Using Codeplug Studio as a hobby programming aid.">
       <PageSection title="As-is software">
         <Text size="sm">
-          Codeplug Studio is provided as-is, without warranty. It helps you design codeplug layouts
-          and export CPS-ready files for vendor programming software. Where browser radio write (Web
-          Serial) is implemented for a radio, treat it as experimental and verify programming before
-          transmitting — file export and third-party tools remain supported paths.
+          Codeplug Studio is provided as-is, without warranty. The same applies whether you use the
+          website, a sideloaded Android APK, or a build from the Play Store. It helps you design
+          codeplug layouts and export CPS-ready files for vendor programming software.
+        </Text>
+      </PageSection>
+
+      <PageSection title="Direct radio programming">
+        <Text size="sm">
+          Where Studio can write a radio directly — over Web Serial in a supported desktop browser,
+          or over USB (OTG) in the Android companion app — treat that path as experimental. Verify
+          programming before you transmit. File export and your radio&apos;s vendor CPS remain
+          supported paths, and Studio is not a substitute for vendor CPS where you still need it.
         </Text>
       </PageSection>
 
@@ -18,6 +26,10 @@ export default function TermsOfUsePage() {
           <List.Item>
             You are responsible for verifying frequencies, tones, and programming before
             transmitting.
+          </List.Item>
+          <List.Item>
+            Programming a radio over USB or Web Serial is at your own risk — the same care you would
+            take with any programming cable and CPS.
           </List.Item>
           <List.Item>
             Frequency and repeater data loaded from third-party sources is for amateur programming
@@ -32,9 +44,9 @@ export default function TermsOfUsePage() {
 
       <PageSection title="Data">
         <Text size="sm">
-          Your projects live in browser storage on your device. Back up important work (native YAML
-          export, cloud storage if configured). We are not liable for data loss from clearing
-          browser storage or device failure.
+          Your projects live in storage on this device (browser or phone app). Back up important
+          work (native YAML export, Google Drive if you use it). We are not liable for data loss
+          from clearing storage or device failure.
         </Text>
       </PageSection>
 
