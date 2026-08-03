@@ -4,14 +4,14 @@ Creative and copy for the Play Console listing (#898), staged here so #890 (Play
 
 ## Graphics
 
-| File | Dimensions | Play Console slot |
-| --- | --- | --- |
-| [hi-res-icon-512.png](hi-res-icon-512.png) | 512×512, 32-bit PNG with alpha | High-res icon |
-| [feature-graphic-1024x500.png](feature-graphic-1024x500.png) | 1024×500, no alpha | Feature graphic |
-| [screenshot-1-home.png](screenshot-1-home.png) | 1236×2676 | Phone screenshot — home / what Studio does |
-| [screenshot-2-add-from-directories.png](screenshot-2-add-from-directories.png) | 1236×2676 | Phone screenshot — importing from directories |
-| [screenshot-3-nearby-repeaters.png](screenshot-3-nearby-repeaters.png) | 1236×2676 | Phone screenshot — ukrepeater.net search + map |
-| [screenshot-4-channel-set-import.png](screenshot-4-channel-set-import.png) | 1236×2676 | Phone screenshot — built-in frequency grid (PMR446) preview |
+| File                                                                           | Dimensions                     | Play Console slot                                           |
+| ------------------------------------------------------------------------------ | ------------------------------ | ----------------------------------------------------------- |
+| [hi-res-icon-512.png](hi-res-icon-512.png)                                     | 512×512, 32-bit PNG with alpha | High-res icon                                               |
+| [feature-graphic-1024x500.png](feature-graphic-1024x500.png)                   | 1024×500, no alpha             | Feature graphic                                             |
+| [screenshot-1-home.png](screenshot-1-home.png)                                 | 1236×2676                      | Phone screenshot — home / what Studio does                  |
+| [screenshot-2-add-from-directories.png](screenshot-2-add-from-directories.png) | 1236×2676                      | Phone screenshot — importing from directories               |
+| [screenshot-3-nearby-repeaters.png](screenshot-3-nearby-repeaters.png)         | 1236×2676                      | Phone screenshot — ukrepeater.net search + map              |
+| [screenshot-4-channel-set-import.png](screenshot-4-channel-set-import.png)     | 1236×2676                      | Phone screenshot — built-in frequency grid (PMR446) preview |
 
 All screenshots are real app UI captured from the dev server at a phone viewport (412×892 CSS px, 3x device scale) — not mockups. `feature-graphic.svg` is the editable source for the feature graphic (reuses the `public/branding/studio-hero.svg` composition, height-fit to 1024×500).
 
@@ -72,10 +72,15 @@ The feature graphic and hi-res icon are rendered directly from SVG here via `sha
 
 ```js
 import sharp from 'sharp';
-await sharp('assets/icon-only.svg').resize(512, 512).ensureAlpha().png()
+await sharp('assets/icon-only.svg')
+  .resize(512, 512)
+  .ensureAlpha()
+  .png()
   .toFile('docs/features/android-app/store-assets/hi-res-icon-512.png');
-await sharp('docs/features/android-app/store-assets/feature-graphic.svg').resize(1024, 500)
-  .flatten({ background: '#0f172a' }).png()
+await sharp('docs/features/android-app/store-assets/feature-graphic.svg')
+  .resize(1024, 500)
+  .flatten({ background: '#0f172a' })
+  .png()
   .toFile('docs/features/android-app/store-assets/feature-graphic-1024x500.png');
 ```
 
