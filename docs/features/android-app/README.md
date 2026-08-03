@@ -7,7 +7,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 | Area                  | Status    | Notes                                                                                                              |
 | --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------ |
 | Scaffold              | Shipped   | Capacitor core + Android platform (#886)                                                                           |
-| API / CORS / Browser  | Shipped   | Absolute `/api` on native, Capacitor CORS allowlist, system browser (#887)                                         |
+| API / CORS / Browser  | Shipped   | Absolute `/api` on native, Capacitor CORS allowlist, system browser (#887); staging vs prod API origin (#899)      |
 | Google Drive (native) | Shipped   | PKCE OAuth in Custom Tabs + deep link (#895)                                                                       |
 | USB Serial            | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888). \*Unit/mock coverage; **hardware OTG R/W still outstanding** |
 | APK CI                | Shipped   | Signed APK + Release attach (#889); real `BUILD_ENV` + GA ID inject (#896)                                         |
@@ -30,7 +30,15 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 ## Native behaviour (#887, #888)
 
 - **USB-Serial Plugin:** `@leeskies/capacitor-usb-serial` (MIT) backed by `mik3y/usb-serial-for-android`. Common chips (CH340, CP2102, FTDI, PL2303, CDC/ACM) listed in `android/app/src/main/res/xml/device_filter.xml`. Root `android/build.gradle` must include JitPack (`maven { url 'https://jitpack.io' }` in `allprojects.repositories`) so Gradle can resolve that transitive dependency.
-- **API Proxies:** On Capacitor native, relative `/api/*` (RadioID, RepeaterBook, IRTS) resolve to `https://codeplug.mm9pdy.net`.
+- **API Proxies:** On Capacitor native, relative `/api/*` (RadioID, RepeaterBook, IRTS) resolve to an absolute origin from `BUILD_ENV` via `resolveApiUrl` (`src/integrations/platform/resolveApiUrl.ts`):
+
+| `BUILD_ENV`                              | Native API origin                     |
+| ---------------------------------------- | ------------------------------------- |
+| `prod`                                   | `https://codeplug.mm9pdy.net`         |
+| `staging`, `main`, `dev`, `local`, other | `https://staging.codeplug.mm9pdy.net` |
+
+Web builds keep same-origin relative `/api/*` (hostname selects the Functions deployment). Pre-release sideload APKs (`BUILD_ENV=staging`) therefore hit staging proxies, not production.
+
 - **CORS:** Pages Functions allowlist includes `capacitor://localhost` and `http://localhost` (mirrored `Access-Control-Allow-Origin` — **not** `*`). See `functions/lib/codeplugOrigin.ts`.
 - **External Links:** Anchors with `target="_blank"` and http(s) hrefs open via `@capacitor/browser` (Chrome Custom Tabs).
 - **Google Drive:** PKCE OAuth in Chrome Custom Tabs with redirect `net.mm9pdy.codeplugstudio:/oauth2redirect`. Requires Android OAuth client + `VITE_GOOGLE_ANDROID_CLIENT_ID` in APK builds. See [google-drive](../import-export/google-drive.md).
@@ -48,7 +56,7 @@ Reusable [`.github/workflows/android-release.yaml`](../../../.github/workflows/a
 | [`staging.yaml`](../../../.github/workflows/staging.yaml) | Pre-release               | `staging`   | Artifact + **Release asset** |
 | [`prod.yaml`](../../../.github/workflows/prod.yaml)       | Full release (`released`) | `prod`      | Artifact + **Release asset** |
 
-GA secrets follow Pages (`prod` → `GA_MEASUREMENT_ID`; otherwise `GA_MEASUREMENT_ID_PREPROD`). Version comes from the release tag when provided, else short git SHA; `ANDROID_VERSION_CODE` from `github.run_number`.
+GA secrets follow Pages (`prod` → `GA_MEASUREMENT_ID`; otherwise `GA_MEASUREMENT_ID_PREPROD`). Native API origin follows the same `BUILD_ENV` split (see table above). Version comes from the release tag when provided, else short git SHA; `ANDROID_VERSION_CODE` from `github.run_number`.
 
 **GitHub Actions secrets (required for a signed APK):**
 
