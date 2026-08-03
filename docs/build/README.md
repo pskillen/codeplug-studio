@@ -86,7 +86,7 @@ Signed release APKs use the reusable [`.github/workflows/android-release.yaml`](
 | `staging.yaml` | Pre-release               | `staging`   | Artifact + **Release asset** |
 | `prod.yaml`    | Full release (`released`) | `prod`      | Artifact + **Release asset** |
 
-`BUILD_ENV` / `VITE_GA_MEASUREMENT_ID` match Pages (`prod` → `GA_MEASUREMENT_ID`; `staging` \| `main` \| `dev` → `GA_MEASUREMENT_ID_PREPROD`). Keystore secrets and sideload steps: [Android Companion App](../features/android-app/README.md).
+`BUILD_ENV` / `VITE_GA_MEASUREMENT_ID` match Pages (`prod` → `GA_MEASUREMENT_ID`; `staging` \| `main` \| `dev` → `GA_MEASUREMENT_ID_PREPROD`). On Capacitor native, `resolveApiUrl` uses the same channel split for API origin: `prod` → `https://codeplug.mm9pdy.net`; all other `BUILD_ENV` values → `https://staging.codeplug.mm9pdy.net` (pre-release APKs therefore avoid accidental prod proxy load). Keystore secrets and sideload steps: [Android Companion App](../features/android-app/README.md).
 
 ## Cursor Approval Agent
 

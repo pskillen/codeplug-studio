@@ -19,7 +19,7 @@ Execution log for [Epic #747](https://github.com/pskillen/codeplug-studio/issues
 
 - [x] `npm run sync:android` / format / lint / test / build (as of phase PRs)
 - [x] CORS allowlist in `functions/lib/codeplugOrigin.ts` mirrors Capacitor origins (not `*`)
-- [x] `resolveApiUrl` absolute prod apex for native `/api/*`
+- [x] `resolveApiUrl` picks native API origin from `BUILD_ENV` (`prod` → apex; else staging) (#899)
 - [x] External `_blank` http(s) links via `@capacitor/browser`
 - [x] Capacitor USB Serial `BytePipe` unit tests (`readExact`, timeouts, etc.)
 - [x] `.npmrc` legacy-peer-deps for Cap 8 + USB plugin
