@@ -3,7 +3,9 @@ import type { DriveAuthProvider } from './driveAuthProvider.ts';
 import {
   clearDriveSession,
   driveSessionIsValid,
+  loadDriveAppRootFolderId,
   loadDriveSession,
+  saveDriveAppRootFolderId,
   saveDriveLastAccount,
   saveDriveSession,
   type DriveSession,
@@ -22,6 +24,8 @@ export interface GoogleDrivePort {
   disconnect(): Promise<void>;
   isConnected(): boolean;
   getAccountLabel(): string | null;
+  /** The app-owned "Codeplug Studio" Drive folder id, resolved on the last connect(). */
+  getAppRootFolderId(): string | null;
   listChildren(parentId: string): Promise<DriveListItem[]>;
   createFolder(parentId: string, name: string): Promise<DriveFileMetadata>;
   readFile(fileId: string): Promise<string>;
@@ -107,6 +111,12 @@ export function createGoogleDrivePort(deps?: Partial<GoogleDriveDeps>): GoogleDr
       } catch {
         // Account label is optional when userinfo fails.
       }
+      try {
+        const rootFolderId = await resolved.api.resolveAppRootFolder(tokens.accessToken);
+        saveDriveAppRootFolderId(rootFolderId);
+      } catch {
+        // Re-resolved lazily by callers if this fails; cached value (if any) stays.
+      }
       saveDriveSession({
         accessToken: tokens.accessToken,
         expiresAt: tokens.expiresAt,
@@ -134,6 +144,10 @@ export function createGoogleDrivePort(deps?: Partial<GoogleDriveDeps>): GoogleDr
     getAccountLabel() {
       const session = loadDriveSession();
       return session?.accountEmail ?? null;
+    },
+
+    getAppRootFolderId() {
+      return loadDriveAppRootFolderId();
     },
 
     async listChildren(parentId) {

@@ -20,10 +20,9 @@ export default function GoogleDriveConnectSection() {
   return (
     <Stack gap="sm">
       <Text size="sm" c="dimmed">
-        Connect Google Drive to open and save native YAML project files from the cloud. Connecting
-        asks for full Drive access so you can browse to any folder — not just files this app creates
-        — but Studio only touches what you open or save. OAuth tokens stay on this device only;
-        disconnect any time.
+        Connect Google Drive to open and save native YAML project files from the cloud. Studio only
+        asks for access to its own "Codeplug Studio" folder — created automatically on first connect
+        — not the rest of your Drive. OAuth tokens stay on this device only; disconnect any time.
       </Text>
       {!isConfigured ? (
         <Alert color="yellow" title="Not configured">

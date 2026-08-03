@@ -1,5 +1,7 @@
 import {
+  APP_ROOT_FOLDER_NAME,
   DRIVE_FOLDER_MIME,
+  DRIVE_ROOT_FOLDER_ID,
   DriveAuthError,
   DriveNameConflictError,
   DriveNetworkError,
@@ -11,6 +13,14 @@ import {
 export interface DriveApiClient {
   listChildren(parentId: string, accessToken: string): Promise<DriveListItem[]>;
   createFolder(parentId: string, name: string, accessToken: string): Promise<DriveFileMetadata>;
+  /**
+   * Finds the app-owned root folder (by name) among files this app already has
+   * `drive.file` access to, creating it under "My Drive" on first use. That grant
+   * is tied to the (Google account, OAuth client) pair, not a single browser, so
+   * reconnecting from a different device rediscovers the same folder instead of
+   * creating a duplicate.
+   */
+  resolveAppRootFolder(accessToken: string): Promise<string>;
   readFile(fileId: string, accessToken: string): Promise<string>;
   writeFile(
     params: { parentId: string; fileName: string; content: string; fileId?: string },
@@ -137,7 +147,7 @@ function mapListItem(file: {
 }
 
 export function createDriveApiClient(fetchImpl: typeof fetch = fetch): DriveApiClient {
-  return {
+  const client: DriveApiClient = {
     async listChildren(parentId, accessToken) {
       const query = encodeURIComponent(`'${parentId}' in parents and trashed=false`);
       const fields = encodeURIComponent('files(id,name,mimeType,modifiedTime)');
@@ -279,7 +289,27 @@ export function createDriveApiClient(fetchImpl: typeof fetch = fetch): DriveApiC
       const body = (await response.json()) as { email?: string };
       return body.email ?? '';
     },
+
+    async resolveAppRootFolder(accessToken) {
+      const query = encodeURIComponent(
+        `mimeType='${DRIVE_FOLDER_MIME}' and name='${APP_ROOT_FOLDER_NAME}' and trashed=false`,
+      );
+      const fields = encodeURIComponent('files(id,name)');
+      const url = `${DRIVE_API_BASE}/files?q=${query}&fields=${fields}`;
+      const response = await driveFetch(fetchImpl, url, accessToken);
+      const body = (await response.json()) as DriveFilesListResponse;
+      const existing = body.files?.find((file) => !!file.id);
+      if (existing?.id) return existing.id;
+
+      const created = await client.createFolder(
+        DRIVE_ROOT_FOLDER_ID,
+        APP_ROOT_FOLDER_NAME,
+        accessToken,
+      );
+      return created.id;
+    },
   };
+  return client;
 }
 
 export const driveApi = createDriveApiClient();
