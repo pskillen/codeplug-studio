@@ -101,14 +101,19 @@ describe('App', () => {
     vi.unstubAllGlobals();
   });
 
-  it('shows debug nav without an active project', () => {
+  it('shows tools and help without an active project; settings/debug in overflow', async () => {
     renderApp('/');
 
-    expect(screen.getByRole('link', { name: 'Projects' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Reference' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Debug' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Library' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Projects' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tools' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Help' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Library' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const menuItems = await screen.findAllByRole('menuitem');
+    expect(menuItems.map((el) => el.textContent)).toEqual(
+      expect.arrayContaining(['Settings', 'Debug']),
+    );
   });
 
   it('renders the debug index without an active project', async () => {
