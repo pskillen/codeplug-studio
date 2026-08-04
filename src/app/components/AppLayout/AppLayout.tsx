@@ -140,8 +140,10 @@ export default function AppLayout() {
         >
           <CookieConsentBanner />
           <RefreshFromDriveBanner />
-          <Outlet />
-          <BuildFooter />
+          <div className={classes.pageContent}>
+            <Outlet />
+            <BuildFooter />
+          </div>
         </main>
 
         {showBottomNav ? (
