@@ -356,7 +356,11 @@ export default function DataTable<T>({
       (col) => !hideableSet.has(col.key) || visibleHideableKeys.includes(col.key),
     );
     if (!isMobileCollapse) return cols;
-    return cols.filter((col) => !col.hideOnMobile);
+    return cols.filter((col) => {
+      if (!col.hideOnMobile) return true;
+      // Collapsed-by-default columns still appear when the operator enables them in Show/hide cols.
+      return hideableSet.has(col.key) && visibleHideableKeys.includes(col.key);
+    });
   }, [columns, hideableDefs, visibleHideableKeys, isMobileCollapse]);
 
   const showCallsignColumn = callsignColumn && !isMobileCollapse;

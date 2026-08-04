@@ -238,6 +238,32 @@ describe('DataTable mobile column collapse', () => {
     expect(within(thead).getByText('Score')).toBeInTheDocument();
     expect(within(thead).queryByText('Callsign')).not.toBeInTheDocument();
   });
+
+  it('shows hideOnMobile columns when enabled in Show/hide cols', () => {
+    renderTable(makeRows(2), {
+      mobileColumnPolicy: 'collapse',
+      columnVisibility: ['score', 'zone'],
+      columns: [
+        {
+          key: 'score',
+          header: 'Score',
+          render: (row) => row.score,
+          hideable: true,
+          hideOnMobile: false,
+        },
+        {
+          key: 'zone',
+          header: 'Zone',
+          render: () => 'Z',
+          hideable: true,
+          hideOnMobile: true,
+        },
+      ],
+    });
+
+    const thead = screen.getByTestId('datatable-thead');
+    expect(within(thead).getByText('Zone')).toBeInTheDocument();
+  });
 });
 
 describe('DataTable bulkReorder', () => {
