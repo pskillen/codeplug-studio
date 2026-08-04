@@ -1,7 +1,7 @@
 import { ActionIcon, Badge, Button, Group, Stack, Text, Tooltip } from '@mantine/core';
-import { IconArrowDown, IconArrowUp } from '@tabler/icons-react';
+import { IconArrowDown, IconArrowUp, IconMapPin, IconPlus } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Zone } from '@core/models/library.ts';
 import { formatZoneDirectMemberSummary } from '@core/domain/zoneMembers.ts';
 import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
@@ -18,7 +18,7 @@ import MembershipSortMenu from '../../../components/library/MembershipSortMenu.t
 import { DataTable, ListPage, PageSection } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
-import { ICON_STROKE } from '../../../lib/iconSizes.ts';
+import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { persistence } from '../../../state/persistence.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
@@ -163,14 +163,62 @@ export default function ZonesListPage() {
 
   if (loading) {
     return (
-      <ListPage title="Zones">
+      <ListPage
+        title="Zones"
+        actions={
+          <Group gap="xs">
+            <Button
+              component={Link}
+              to="/library/zones/new"
+              leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+            >
+              New zone
+            </Button>
+            <Button
+              component={Link}
+              to="/library/zones/new-from-location"
+              variant="light"
+              leftSection={<IconMapPin size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+            >
+              New zone from location
+            </Button>
+            <Button component={Link} to="/library/zones/defaults" variant="subtle">
+              Zone defaults
+            </Button>
+          </Group>
+        }
+      >
         <Text>Loading library…</Text>
       </ListPage>
     );
   }
 
   return (
-    <ListPage title="Zones">
+    <ListPage
+      title="Zones"
+      actions={
+        <Group gap="xs">
+          <Button
+            component={Link}
+            to="/library/zones/new"
+            leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+          >
+            New zone
+          </Button>
+          <Button
+            component={Link}
+            to="/library/zones/new-from-location"
+            variant="light"
+            leftSection={<IconMapPin size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+          >
+            New zone from location
+          </Button>
+          <Button component={Link} to="/library/zones/defaults" variant="subtle">
+            Zone defaults
+          </Button>
+        </Group>
+      }
+    >
       <Stack gap="lg">
         <Text size="sm" c="dimmed">
           Zones appear on your radio in this order. Use the arrows to rearrange them (clear the name
