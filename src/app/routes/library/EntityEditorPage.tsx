@@ -50,6 +50,16 @@ export default function EntityEditorPage() {
   }
 
   if (loading) {
+    if (meta.kind === 'channel') {
+      return (
+        <ChannelEditor
+          projectId={projectId ?? ''}
+          library={library}
+          entity={null}
+          loading
+        />
+      );
+    }
     return (
       <FormPage title="Loading…">
         <span />
@@ -63,6 +73,10 @@ export default function EntityEditorPage() {
   }
 
   const listPath = listPathForEditorSlug(meta.slug);
+
+  if (meta.kind === 'channel') {
+    return renderEditor();
+  }
 
   return (
     <FormPage

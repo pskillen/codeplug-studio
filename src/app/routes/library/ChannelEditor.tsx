@@ -1,5 +1,7 @@
-import { useEffect, useState, type ReactNode } from 'react';
-import { Alert, Button, Group, Select, SimpleGrid, Stack, Tabs, TextInput } from '@mantine/core';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, Select, Stack } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
+import { IconCheck } from '@tabler/icons-react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { ChannelAprsBinding } from '@core/models/aprs.ts';
 import type {
@@ -19,22 +21,36 @@ import {
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import {
   GradientSegmentedControl,
-  FormSection,
   PercentLevelSlider,
   UnsavedChangesModal,
 } from '../../components/ui/index.ts';
-import { modeColor, modeLabel, type ChannelMode as UiChannelMode } from '../../lib/channelModes.ts';
+import {
+  Button,
+  DesignSystemV2Provider,
+  FormField,
+  Panel,
+  Pill,
+  SectionNav,
+  TextInput,
+} from '../../components/v2/index.ts';
+import { DSV2_TOKENS } from '../../theme-v2.ts';
+import {
+  CHANNEL_MODES,
+  modeColor,
+  modeLabel,
+  type ChannelMode as UiChannelMode,
+} from '../../lib/channelModes.ts';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
+import { formatChannelRxTxListCell } from '../../lib/formatFrequency.ts';
 import ForbidTransmitSegment from '../../components/channels/ForbidTransmitSegment.tsx';
 import TxPermitSegment from '../../components/channels/TxPermitSegment.tsx';
 import TxOffsetControls from '../../components/channels/TxOffsetControls.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
-import ChannelIdentitySummary from '../../components/channels/ChannelIdentitySummary.tsx';
 import ChannelLocationSection, {
   channelLocationValuesFromChannel,
   type ChannelLocationValues,
 } from '../../components/channels/ChannelLocationSection.tsx';
 import ChannelModeProfilesEditor from '../../components/channels/ChannelModeProfilesEditor.tsx';
-import ChannelModesMultiSelect from '../../components/channels/ChannelModesMultiSelect.tsx';
 import ChannelWireNameExamples from '../../components/channels/ChannelWireNameExamples.tsx';
 import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
 import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
@@ -49,24 +65,23 @@ import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { channelEditorPageTitle } from './channelEditorPageTitle.ts';
 import { useEntitySave } from './useEntitySave.ts';
+import classes from './ChannelEditor.module.css';
 
-function ChannelEditorPanel({
-  showIdentitySummary,
-  channel,
-  isNew,
-  children,
-}: {
-  showIdentitySummary?: boolean;
-  channel: Channel;
-  isNew: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <Stack gap="md">
-      {showIdentitySummary ? <ChannelIdentitySummary channel={channel} isNew={isNew} /> : null}
-      {children}
-    </Stack>
-  );
+const EDITOR_SECTIONS = [
+  'Identity',
+  'Frequencies',
+  'Modes',
+  'Scanning',
+  'APRS',
+  'Location',
+  'Zones',
+  'Repeater info',
+] as const;
+
+type EditorSection = (typeof EDITOR_SECTIONS)[number];
+
+function sectionId(section: EditorSection): string {
+  return section;
 }
 
 export default function ChannelEditor({
@@ -74,11 +89,13 @@ export default function ChannelEditor({
   entity,
   library,
   onPageTitle,
+  loading: loadingProp = false,
 }: {
   projectId: string;
   entity: Channel | null;
   library: Library;
   onPageTitle?: (title: string) => void;
+  loading?: boolean;
 }) {
   const base = entity ?? newChannel(projectId, '');
 
@@ -101,8 +118,9 @@ export default function ChannelEditor({
   const [aprsBinding, setAprsBinding] = useState<ChannelAprsBinding>(() =>
     channelAprsBindingFromChannel(base),
   );
-  const [activeTab, setActiveTab] = useState('identity');
+  const [activeSection, setActiveSection] = useState<EditorSection>('Identity');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const isMobileNav = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
 
   const { save, saving, error } = useEntitySave('channels');
   const navigate = useNavigate();
@@ -228,152 +246,236 @@ export default function ChannelEditor({
     ...library.scanLists.map((list) => ({ value: list.id, label: list.name })),
   ];
 
+  const visibleSections = useMemo(
+    () =>
+      entity
+        ? [...EDITOR_SECTIONS]
+        : EDITOR_SECTIONS.filter((s) => s !== 'Zones' && s !== 'Repeater info'),
+    [entity],
+  );
+
+  const browseChannelIds = useMemo(
+    () =>
+      [...library.channels]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((ch) => ch.id),
+    [library.channels],
+  );
+
+  const browseIndex = entity ? browseChannelIds.indexOf(entity.id) : -1;
+  const prevChannelId = browseIndex > 0 ? browseChannelIds[browseIndex - 1] : null;
+  const nextChannelId =
+    browseIndex >= 0 && browseIndex < browseChannelIds.length - 1
+      ? browseChannelIds[browseIndex + 1]
+      : null;
+
+  function scrollToSection(section: EditorSection) {
+    setActiveSection(section);
+    document.getElementById(sectionId(section))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function toggleMode(mode: ChannelMode) {
+    const next = selectedModes.includes(mode)
+      ? selectedModes.filter((m) => m !== mode)
+      : [...selectedModes, mode];
+    handleModesChange(next as UiChannelMode[]);
+  }
+
+  function v2HeaderModePill(mode: ChannelMode) {
+    const color = modeColor(mode);
+    const textColor =
+      mode === 'dstar' || mode === 'dmr' || mode === 'tetra'
+        ? DSV2_TOKENS.colors.pillTextLight
+        : DSV2_TOKENS.colors.pillTextDark;
+    return (
+      <Pill key={mode} tone="semantic" color={color} textColor={textColor}>
+        {modeLabel(mode)}
+      </Pill>
+    );
+  }
+
+  if (loadingProp) {
+    return (
+      <DesignSystemV2Provider>
+        <div className={classes.root}>
+          <p className={classes.headerName}>Loading…</p>
+        </div>
+      </DesignSystemV2Provider>
+    );
+  }
+
   return (
-    <Stack gap="lg" maw={640}>
-      {!entity ? (
-        <Alert color="blue" variant="light">
-          Prefer importing from a directory? Use{' '}
-          <Link to="/library/channels/add-from-ukrepeater">ukrepeater.net</Link> or{' '}
-          <Link to="/library/channels/add-from-brandmeister">BrandMeister</Link> in the section nav.
-        </Alert>
-      ) : null}
+    <DesignSystemV2Provider>
+      <div className={classes.root}>
+        <header className={classes.stickyHeader}>
+          <Link to="/library/channels" className={classes.backLink}>← Channels</Link>
+          <div className={classes.headerDivider} aria-hidden />
+          <div className={classes.headerIdentity}>
+            <div className={classes.headerName}>{liveChannel.name || 'Untitled channel'}</div>
+            {callsign ? <div className={classes.headerCallsign}>{callsign}</div> : null}
+          </div>
+          <div className={classes.headerFreq}>
+            {formatChannelRxTxListCell(liveRxHz, liveTxHz)}
+          </div>
+          {selectedModes.length > 0 ? (
+            <div className={classes.headerModes}>
+              {selectedModes.map((mode) => v2HeaderModePill(mode))}
+            </div>
+          ) : null}
+          <div className={classes.headerActions}>
+            <Button variant="secondary" onClick={() => navigate('/library/channels')}>
+              Discard
+            </Button>
+            <Button variant="primary" onClick={handleSave} loading={saving}>
+              Save channel
+            </Button>
+          </div>
+        </header>
 
-      <Tabs value={activeTab} onChange={(value) => value && setActiveTab(value)}>
-        <Tabs.List>
-          <Tabs.Tab value="identity">Identity</Tabs.Tab>
-          <Tabs.Tab value="frequencies">Frequencies</Tabs.Tab>
-          <Tabs.Tab value="modes">Modes</Tabs.Tab>
-          <Tabs.Tab value="scanning">Scanning</Tabs.Tab>
-          <Tabs.Tab value="aprs">APRS</Tabs.Tab>
-          <Tabs.Tab value="location">Location</Tabs.Tab>
-          {entity ? <Tabs.Tab value="zones">Zones</Tabs.Tab> : null}
-          {entity ? <Tabs.Tab value="verify">Repeater</Tabs.Tab> : null}
-        </Tabs.List>
+        {!entity ? (
+          <Alert color="blue" variant="light" className={classes.alert}>
+            Prefer importing from a directory? Use{' '}
+            <Link to="/library/channels/add-from-ukrepeater">ukrepeater.net</Link> or{' '}
+            <Link to="/library/channels/add-from-brandmeister">BrandMeister</Link> in the section
+            nav.
+          </Alert>
+        ) : null}
 
-        <Tabs.Panel value="identity" pt="md">
-          <FormSection>
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-              <TextInput
-                label="Callsign"
-                description="The callsign, if this is a fixed station. Optional for simplex channels."
-                value={callsign}
-                onChange={(e) => setCallsign(e.currentTarget.value)}
-              />
-            </SimpleGrid>
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-              <TextInput
-                label="Name"
-                description="The full unabbreviated name of the channel. May be shortened on export."
-                value={name}
-                onChange={(e) => setName(e.currentTarget.value)}
-              />
-              <TextInput
-                label="Abbreviation"
-                description="Optional short label used when export shortening needs a shorter name."
-                value={abbreviation}
-                onChange={(e) => setAbbreviation(e.currentTarget.value)}
-              />
-            </SimpleGrid>
-            <ChannelWireNameExamples callsign={callsign} name={name} abbreviation={abbreviation} />
-            <TextInput
-              label="Comment"
-              description="Optional comment for the channel. Usually internal but may be exported in some formats."
-              value={comment}
-              onChange={(e) => setComment(e.currentTarget.value)}
+        <div className={classes.layout}>
+          <div className={classes.sectionRail}>
+            <SectionNav
+              items={visibleSections}
+              active={activeSection}
+              onChange={(item) => scrollToSection(item as EditorSection)}
+              orientation={isMobileNav ? 'horizontal' : 'vertical'}
             />
-          </FormSection>
-        </Tabs.Panel>
+          </div>
 
-        <Tabs.Panel value="scanning" pt="md">
-          <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
-            <Stack gap="lg">
-              <FormSection>
-                <ScanInclusionSegment value={scanInclusion} onChange={setScanInclusion} />
-              </FormSection>
-              <FormSection>
-                <Select
-                  label="Scan list"
-                  description="Dedicated scan list for CPS export (Channel.CSV Scan List column). List membership is edited under Library → Scan lists."
-                  data={scanListOptions}
-                  value={scanListId}
-                  onChange={(value) => setScanListId(value ?? '')}
-                  clearable
-                  searchable
+          <div className={classes.content}>
+            <Panel id={sectionId('Identity')} title="Identity">
+              <div className={classes.fieldGrid}>
+                <FormField label="Name">
+                  <TextInput
+                    variant="plain"
+                    value={name}
+                    onChange={(e) => setName(e.currentTarget.value)}
+                    aria-label="Name"
+                  />
+                </FormField>
+                <FormField label="Callsign">
+                  <TextInput
+                    variant="plain"
+                    value={callsign}
+                    onChange={(e) => setCallsign(e.currentTarget.value)}
+                    aria-label="Callsign"
+                  />
+                </FormField>
+                <FormField label="Abbreviation (optional)">
+                  <TextInput
+                    variant="plain"
+                    value={abbreviation}
+                    onChange={(e) => setAbbreviation(e.currentTarget.value)}
+                    aria-label="Abbreviation"
+                  />
+                </FormField>
+              </div>
+              <Stack gap="sm" mt="md">
+                <ChannelWireNameExamples callsign={callsign} name={name} abbreviation={abbreviation} />
+                <FormField label="Comment">
+                  <TextInput
+                    variant="plain"
+                    value={comment}
+                    onChange={(e) => setComment(e.currentTarget.value)}
+                    aria-label="Comment"
+                  />
+                </FormField>
+              </Stack>
+            </Panel>
+
+            <Panel id={sectionId('Frequencies')} title="Frequencies">
+              <div className={classes.fieldGridTwo}>
+                <FormField label="RX frequency (MHz)" mono>
+                  <TextInput
+                    variant="plain"
+                    value={rx}
+                    onChange={(e) => setRx(e.currentTarget.value)}
+                    mono
+                    aria-label="RX frequency"
+                  />
+                </FormField>
+                <FormField label="TX frequency (MHz)" mono>
+                  <TextInput
+                    variant="plain"
+                    value={tx}
+                    onChange={(e) => setTx(e.currentTarget.value)}
+                    mono
+                    aria-label="TX frequency"
+                  />
+                </FormField>
+              </div>
+              <Stack gap="md" mt="md">
+                <TxOffsetControls
+                  rxFrequencyHz={liveRxHz}
+                  txFrequencyHz={liveTxHz}
+                  onTxFrequencyChange={setTx}
                 />
-                <ScanListSummary listId={scanListId || null} library={library} />
-              </FormSection>
-            </Stack>
-          </ChannelEditorPanel>
-        </Tabs.Panel>
+                <PercentLevelSlider label="Power" value={power} onChange={setPower} />
+                <PowerLadderHints power={power} />
+                <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
+                <TxPermitSegment value={txPermit} onChange={setTxPermit} />
+              </Stack>
+            </Panel>
 
-        <Tabs.Panel value="aprs" pt="md">
-          <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
-            <FormSection>
-              <ChannelAprsBindingSection
-                aprsConfiguration={library.aprsConfiguration}
-                channels={library.channels}
-                value={aprsBinding}
-                onChange={setAprsBinding}
-              />
-            </FormSection>
-          </ChannelEditorPanel>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="frequencies" pt="md">
-          <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
-            <FormSection>
-              <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-                <TextInput
-                  label="RX frequency (MHz)"
-                  value={rx}
-                  onChange={(e) => setRx(e.currentTarget.value)}
-                />
-                <TextInput
-                  label="TX frequency (MHz)"
-                  value={tx}
-                  onChange={(e) => setTx(e.currentTarget.value)}
-                />
-              </SimpleGrid>
-              <TxOffsetControls
-                rxFrequencyHz={liveRxHz}
-                txFrequencyHz={liveTxHz}
-                onTxFrequencyChange={setTx}
-              />
-              <PercentLevelSlider label="Power" value={power} onChange={setPower} />
-              <PowerLadderHints power={power} />
-              <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
-              <TxPermitSegment value={txPermit} onChange={setTxPermit} />
-            </FormSection>
-          </ChannelEditorPanel>
-        </Tabs.Panel>
-
-        <Tabs.Panel value="modes" pt="md">
-          <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
-            <Stack gap="lg">
-              <FormSection>
-                <ChannelModesMultiSelect value={selectedModes} onChange={handleModesChange} />
-              </FormSection>
-              <FormSection>
-                <GradientSegmentedControl
-                  label="Primary mode"
-                  description={
-                    modeProfiles.length === 0
-                      ? 'Select at least one mode to set which mode is primary for dual-mode CPS export.'
-                      : 'Primary mode drives dual-mode Channel Type on Anytone and DM32 export.'
+            <Panel
+              id={sectionId('Modes')}
+              title="Modes"
+              sub="Turn a mode on or off — its fields appear below when active."
+            >
+              <div className={classes.modeSwitcher}>
+                {CHANNEL_MODES.filter((m) => m.id !== 'other').map((modeDef) => {
+                  const mode = modeDef.id as ChannelMode;
+                  const active = selectedModes.includes(mode);
+                  const color = modeColor(mode);
+                  const textColor =
+                    mode === 'dstar' || mode === 'dmr' || mode === 'tetra'
+                      ? DSV2_TOKENS.colors.pillTextLight
+                      : DSV2_TOKENS.colors.pillTextDark;
+                  if (active) {
+                    return (
+                      <span key={mode} className={classes.modeActivePill}>
+                        <Pill
+                          tone="semantic"
+                          color={color}
+                          textColor={textColor}
+                          onRemove={() => toggleMode(mode)}
+                        >
+                          <IconCheck size={12} stroke={2.5} aria-hidden />
+                          {modeLabel(mode)}
+                        </Pill>
+                      </span>
+                    );
                   }
-                  value={resolveChannelPrimaryMode({ primaryMode, modeProfiles }) ?? ''}
-                  onChange={(value) => setPrimaryMode(value as ChannelMode)}
-                  data={modeProfiles.map((profile) => ({
-                    value: profile.mode,
-                    label: modeLabel(profile.mode),
-                  }))}
-                  segmentColors={modeProfiles.map((profile) => modeColor(profile.mode))}
-                  fullWidth
-                  disabled={modeProfiles.length === 0}
-                />
-              </FormSection>
+                  return (
+                    <Pill key={mode} tone="dashed" onClick={() => toggleMode(mode)}>
+                      + {modeLabel(mode)}
+                    </Pill>
+                  );
+                })}
+              </div>
               {modeProfiles.length > 0 ? (
-                <FormSection>
+                <Stack gap="md">
+                  <GradientSegmentedControl
+                    label="Primary mode"
+                    description="Primary mode drives dual-mode Channel Type on Anytone and DM32 export."
+                    value={resolveChannelPrimaryMode({ primaryMode, modeProfiles }) ?? ''}
+                    onChange={(value) => setPrimaryMode(value as ChannelMode)}
+                    data={modeProfiles.map((profile) => ({
+                      value: profile.mode,
+                      label: modeLabel(profile.mode),
+                    }))}
+                    segmentColors={modeProfiles.map((profile) => modeColor(profile.mode))}
+                    fullWidth
+                  />
                   <ChannelModeProfilesEditor
                     profiles={modeProfiles}
                     library={library}
@@ -381,58 +483,108 @@ export default function ChannelEditor({
                     txFrequency={liveTxHz}
                     onChange={setModeProfiles}
                   />
-                </FormSection>
+                </Stack>
               ) : null}
-            </Stack>
-          </ChannelEditorPanel>
-        </Tabs.Panel>
+            </Panel>
 
-        <Tabs.Panel value="location" pt="md">
-          <ChannelEditorPanel channel={liveChannel} isNew={!entity} showIdentitySummary>
-            <ChannelLocationSection
-              value={location}
-              onChange={setLocation}
-              mapActive={activeTab === 'location'}
-            />
-          </ChannelEditorPanel>
-        </Tabs.Panel>
+            <Panel id={sectionId('Scanning')} title="Scanning">
+              <Stack gap="lg">
+                <ScanInclusionSegment value={scanInclusion} onChange={setScanInclusion} />
+                <FormField label="Scan list">
+                  <Select
+                    data={scanListOptions}
+                    value={scanListId}
+                    onChange={(value) => setScanListId(value ?? '')}
+                    clearable
+                    searchable
+                  />
+                </FormField>
+                <ScanListSummary listId={scanListId || null} library={library} />
+              </Stack>
+            </Panel>
+
+            <Panel id={sectionId('APRS')} title="APRS">
+              <ChannelAprsBindingSection
+                aprsConfiguration={library.aprsConfiguration}
+                channels={library.channels}
+                value={aprsBinding}
+                onChange={setAprsBinding}
+              />
+            </Panel>
+
+            <Panel id={sectionId('Location')} title="Location">
+              <ChannelLocationSection
+                value={location}
+                onChange={setLocation}
+                mapActive={activeSection === 'Location'}
+              />
+            </Panel>
+
+            {entity ? (
+              <Panel id={sectionId('Zones')} title="Zones">
+                <ChannelZoneMembershipSection channelId={entity.id} library={library} />
+              </Panel>
+            ) : null}
+
+            {entity ? (
+              <Panel id={sectionId('Repeater info')} title="Repeater info">
+                <RepeaterVerifyPanel channel={liveChannel} library={library} />
+              </Panel>
+            ) : null}
+          </div>
+        </div>
 
         {entity ? (
-          <Tabs.Panel value="zones" pt="md">
-            <ChannelEditorPanel channel={liveChannel} isNew={false} showIdentitySummary>
-              <ChannelZoneMembershipSection channelId={entity.id} library={library} />
-            </ChannelEditorPanel>
-          </Tabs.Panel>
+          <footer className={classes.footerBar}>
+            <div className={classes.footerNav}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!prevChannelId}
+                onClick={() => prevChannelId && navigate(`/library/channels/${prevChannelId}`)}
+              >
+                ← Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!nextChannelId}
+                onClick={() => nextChannelId && navigate(`/library/channels/${nextChannelId}`)}
+              >
+                Next →
+              </Button>
+            </div>
+            <TextBrowseHint index={browseIndex} total={browseChannelIds.length} />
+          </footer>
         ) : null}
 
-        {entity ? (
-          <Tabs.Panel value="verify" pt="md">
-            <ChannelEditorPanel channel={liveChannel} isNew={false} showIdentitySummary>
-              <RepeaterVerifyPanel channel={liveChannel} library={library} />
-            </ChannelEditorPanel>
-          </Tabs.Panel>
+        {validationError ? (
+          <Alert color="red" className={classes.alert}>{validationError}</Alert>
         ) : null}
-      </Tabs>
+        {error ? <Alert color="red" className={classes.alert}>{error}</Alert> : null}
 
-      {validationError ? <Alert color="red">{validationError}</Alert> : null}
-      {error ? <Alert color="red">{error}</Alert> : null}
-      <Group>
-        <Button onClick={handleSave} loading={saving}>
-          Save
-        </Button>
-        <Button component={Link} to="/library/channels" variant="light">
-          Cancel
-        </Button>
-        {entity ? (
-          <>
-            <Button variant="default" onClick={() => void handleDuplicate()}>
-              Duplicate
-            </Button>
-            <ChannelDeleteButton channel={entity} onDeleted={() => navigate('/library/channels')} />
-          </>
-        ) : null}
-      </Group>
-      <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
-    </Stack>
+        <div className={classes.legacyActions}>
+          {entity ? (
+            <>
+              <Button variant="ghost" size="sm" onClick={() => void handleDuplicate()}>
+                Duplicate
+              </Button>
+              <ChannelDeleteButton channel={entity} onDeleted={() => navigate('/library/channels')} />
+            </>
+          ) : null}
+        </div>
+
+        <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
+      </div>
+    </DesignSystemV2Provider>
+  );
+}
+
+function TextBrowseHint({ index, total }: { index: number; total: number }) {
+  if (index < 0 || total === 0) return null;
+  return (
+    <span style={{ fontSize: '12px', color: 'var(--dsv2-text-tertiary)' }}>
+      Channel {index + 1} of {total}
+    </span>
   );
 }
