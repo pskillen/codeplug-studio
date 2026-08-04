@@ -1,7 +1,7 @@
-import { ActionIcon, Badge, Button, Group, Stack, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, Group, Tooltip } from '@mantine/core';
 import { IconArrowDown, IconArrowUp, IconMapPin, IconPlus } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { Zone } from '@core/models/library.ts';
 import { formatZoneDirectMemberSummary } from '@core/domain/zoneMembers.ts';
 import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
@@ -15,13 +15,15 @@ import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import MembershipSortMenu from '../../../components/library/MembershipSortMenu.tsx';
-import { DataTable, ListPage, PageSection } from '../../../components/ui/index.ts';
+import { Button, DesignSystemV2Provider } from '../../../components/v2/index.ts';
+import { DataTable } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { persistence } from '../../../state/persistence.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
+import classes from './ZonesListPage.module.css';
 
 export default function ZonesListPage() {
   const { library, loading, reload } = useLibrary();
@@ -85,6 +87,28 @@ export default function ZonesListPage() {
     await persistZoneOrders(sortZonesByName(zones));
   }, [filterActive, persistZoneOrders, savingOrder, zones]);
 
+  const listActions = (
+    <Group gap="xs" className={classes.toolbarActions}>
+      <Button
+        variant="primary"
+        leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => navigate('/library/zones/new')}
+      >
+        New zone
+      </Button>
+      <Button
+        variant="secondary"
+        leftSection={<IconMapPin size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => navigate('/library/zones/new-from-location')}
+      >
+        New zone from location
+      </Button>
+      <Button variant="ghost" onClick={() => navigate('/library/zones/defaults')}>
+        Zone defaults
+      </Button>
+    </Group>
+  );
+
   const columns = useMemo((): DataTableColumn<Zone>[] => {
     return [
       {
@@ -94,10 +118,8 @@ export default function ZonesListPage() {
         render: (z) => {
           const index = orderedZones.findIndex((row) => row.id === z.id);
           return (
-            <Group gap={4} wrap="nowrap">
-              <Text size="sm" c="dimmed" w={28}>
-                {z.order ?? '—'}
-              </Text>
+            <div className={classes.reorderCell}>
+              <span className={classes.orderLabel}>{z.order ?? '—'}</span>
               <Tooltip label="Move up">
                 <ActionIcon
                   variant="subtle"
@@ -126,7 +148,7 @@ export default function ZonesListPage() {
                   <IconArrowDown size={14} stroke={ICON_STROKE} />
                 </ActionIcon>
               </Tooltip>
-            </Group>
+            </div>
           );
         },
       },
@@ -136,14 +158,10 @@ export default function ZonesListPage() {
         render: (z) => {
           const countLabel = formatZoneDirectMemberSummary(z);
           return (
-            <Group gap="xs" wrap="nowrap">
-              <Text size="sm">{countLabel}</Text>
-              {z.omitFromExport ? (
-                <Badge size="xs" variant="light">
-                  Nested only
-                </Badge>
-              ) : null}
-            </Group>
+            <div className={classes.membersCell}>
+              <span>{countLabel}</span>
+              {z.omitFromExport ? <span className={classes.nestedBadge}>Nested only</span> : null}
+            </div>
           );
         },
       },
@@ -163,89 +181,55 @@ export default function ZonesListPage() {
 
   if (loading) {
     return (
-      <ListPage
-        title="Zones"
-        actions={
-          <Group gap="xs">
-            <Button
-              component={Link}
-              to="/library/zones/new"
-              leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-            >
-              New zone
-            </Button>
-            <Button
-              component={Link}
-              to="/library/zones/new-from-location"
-              variant="light"
-              leftSection={<IconMapPin size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-            >
-              New zone from location
-            </Button>
-            <Button component={Link} to="/library/zones/defaults" variant="subtle">
-              Zone defaults
-            </Button>
-          </Group>
-        }
-      >
-        <Text>Loading library…</Text>
-      </ListPage>
+      <DesignSystemV2Provider>
+        <div className={classes.page}>
+          <div className={classes.headerRow}>
+            <div>
+              <h1 className={classes.title}>Zones</h1>
+              <p className={classes.description}>Loading library…</p>
+            </div>
+            {listActions}
+          </div>
+        </div>
+      </DesignSystemV2Provider>
     );
   }
 
   return (
-    <ListPage
-      title="Zones"
-      actions={
-        <Group gap="xs">
-          <Button
-            component={Link}
-            to="/library/zones/new"
-            leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-          >
-            New zone
-          </Button>
-          <Button
-            component={Link}
-            to="/library/zones/new-from-location"
-            variant="light"
-            leftSection={<IconMapPin size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-          >
-            New zone from location
-          </Button>
-          <Button component={Link} to="/library/zones/defaults" variant="subtle">
-            Zone defaults
-          </Button>
-        </Group>
-      }
-    >
-      <Stack gap="lg">
-        <Text size="sm" c="dimmed">
+    <DesignSystemV2Provider>
+      <div className={classes.page}>
+        <div className={classes.headerRow}>
+          <div>
+            <h1 className={classes.title}>Zones</h1>
+            <p className={classes.description}>
+              Every zone in this project. Reorder export order or open one to edit members.
+            </p>
+          </div>
+          {listActions}
+        </div>
+
+        <p className={classes.hint}>
           Zones appear on your radio in this order. Use the arrows to rearrange them (clear the name
           filter first). <strong>Sort zones…</strong> rewrites the list permanently by name — it is
           not a temporary browse sort.
-        </Text>
+        </p>
         {filterActive ? (
-          <Text size="sm" c="orange">
-            Reorder is disabled while a name filter is active.
-          </Text>
+          <p className={classes.warning}>Reorder is disabled while a name filter is active.</p>
         ) : null}
-        {orderError ? (
-          <Text size="sm" c="red">
-            {orderError}
-          </Text>
-        ) : null}
-        <Group>
+        {orderError ? <p className={classes.error}>{orderError}</p> : null}
+        <div className={classes.sortRow}>
           <MembershipSortMenu
             modes={['name']}
             disabled={filterActive || savingOrder || !zones.length}
             onSort={() => void sortZonesAlphabetically()}
             label="Sort zones…"
           />
-        </Group>
+        </div>
+
         <DataTable
           variant="list"
           reorderMode
+          selectionChrome="v2"
           rows={filtered}
           totalRowCount={zones.length}
           search={nameFilterInput}
@@ -260,26 +244,27 @@ export default function ZonesListPage() {
           columns={columns}
         />
 
-        <PageSection title="Map">
-          {position ? (
-            <Group gap="sm" align="center">
-              {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
-                <Text size="sm" c="dimmed">
-                  My location accuracy ±{Math.round(position.accuracyMeters)} m
-                </Text>
-              ) : null}
-              <Button variant="subtle" size="compact-sm" onClick={clearPosition}>
-                Clear my location
-              </Button>
-            </Group>
-          ) : (
-            <UseMyLocationButton
-              label="Show my location"
-              onLocation={(lat, lon, accuracyMeters) =>
-                setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
-              }
-            />
-          )}
+        <section className={classes.mapSection}>
+          <h2 className={classes.mapSectionTitle}>Map</h2>
+          <div className={classes.mapMeta}>
+            {position ? (
+              <>
+                {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
+                  <span>My location accuracy ±{Math.round(position.accuracyMeters)} m</span>
+                ) : null}
+                <Button variant="ghost" size="sm" onClick={clearPosition}>
+                  Clear my location
+                </Button>
+              </>
+            ) : (
+              <UseMyLocationButton
+                label="Show my location"
+                onLocation={(lat, lon, accuracyMeters) =>
+                  setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
+                }
+              />
+            )}
+          </div>
 
           <CodeplugMap
             channels={channels}
@@ -291,13 +276,13 @@ export default function ZonesListPage() {
             onZoneClick={(id) => navigate(`/library/zones/${id}`)}
           />
           {mapSkipped.length > 0 ? (
-            <Text size="sm" c="dimmed">
+            <p className={classes.mapSkipped}>
               {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
               (missing coordinates, Use Location = No, or 0,0).
-            </Text>
+            </p>
           ) : null}
-        </PageSection>
-      </Stack>
-    </ListPage>
+        </section>
+      </div>
+    </DesignSystemV2Provider>
   );
 }

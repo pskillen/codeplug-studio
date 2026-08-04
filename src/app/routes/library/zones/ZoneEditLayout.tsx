@@ -1,9 +1,50 @@
-import { Anchor, Stack } from '@mantine/core';
-import { Link, Navigate, Outlet, useParams } from 'react-router-dom';
-import { FormPage } from '../../../components/ui/index.ts';
+import { Link, Navigate, Outlet, useNavigate, useParams } from 'react-router-dom';
+import {
+  Button,
+  DesignSystemV2Provider,
+} from '../../../components/v2/index.ts';
+import { UnsavedChangesModal } from '../../../components/ui/index.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
-import { ZoneEditProvider } from './ZoneEditContext.tsx';
-import ZoneEditActions from './ZoneEditActions.tsx';
+import { ZoneEditProvider, useZoneEdit } from './ZoneEditContext.tsx';
+import classes from './ZoneEditLayout.module.css';
+
+function ZoneEditChrome() {
+  const navigate = useNavigate();
+  const { previewZone, saving, validationError, error, handleSave, modalOpen, stay, leave } =
+    useZoneEdit();
+  const displayError = validationError ?? error;
+
+  return (
+    <div className={classes.root}>
+      <header className={classes.stickyHeader}>
+        <Link to="/library/zones" className={classes.backLink}>
+          ← Zones
+        </Link>
+        <div className={classes.headerDivider} aria-hidden />
+        <div className={classes.headerIdentity}>
+          <div className={classes.headerName}>{previewZone.name || 'Untitled zone'}</div>
+          <div className={classes.headerSubtitle}>Edit zone</div>
+        </div>
+        <div className={classes.headerActions}>
+          <Button variant="secondary" onClick={() => navigate('/library/zones')}>
+            Discard
+          </Button>
+          <Button variant="primary" onClick={handleSave} loading={saving}>
+            Save zone
+          </Button>
+        </div>
+      </header>
+
+      {displayError ? <p className={classes.error}>{displayError}</p> : null}
+
+      <div className={classes.content}>
+        <Outlet />
+      </div>
+
+      <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
+    </div>
+  );
+}
 
 export default function ZoneEditLayout() {
   const { zoneId } = useParams();
@@ -15,43 +56,37 @@ export default function ZoneEditLayout() {
 
   if (loading || !projectId) {
     return (
-      <FormPage title="Loading…">
-        <span />
-      </FormPage>
+      <DesignSystemV2Provider>
+        <div className={classes.root}>
+          <p className={classes.headerName}>Loading…</p>
+        </div>
+      </DesignSystemV2Provider>
     );
   }
 
   const entity = library.zones.find((z) => z.id === zoneId);
   if (!entity) {
     return (
-      <FormPage
-        title="Zone not found"
-        description={
-          <Anchor component={Link} to="/library/zones" size="sm">
-            ← Back to zones
-          </Anchor>
-        }
-      >
-        <span />
-      </FormPage>
+      <DesignSystemV2Provider>
+        <div className={classes.root}>
+          <header className={classes.stickyHeader}>
+            <Link to="/library/zones" className={classes.backLink}>
+              ← Zones
+            </Link>
+          </header>
+          <div className={classes.content}>
+            <p className={classes.headerName}>Zone not found</p>
+          </div>
+        </div>
+      </DesignSystemV2Provider>
     );
   }
 
   return (
-    <ZoneEditProvider entity={entity} library={library} projectId={projectId}>
-      <FormPage
-        title={`Edit zone`}
-        description={
-          <Anchor component={Link} to="/library/zones" size="sm">
-            ← Back to zones
-          </Anchor>
-        }
-      >
-        <Stack gap="md" maw={960}>
-          <Outlet />
-          <ZoneEditActions />
-        </Stack>
-      </FormPage>
-    </ZoneEditProvider>
+    <DesignSystemV2Provider>
+      <ZoneEditProvider entity={entity} library={library} projectId={projectId}>
+        <ZoneEditChrome />
+      </ZoneEditProvider>
+    </DesignSystemV2Provider>
   );
 }
