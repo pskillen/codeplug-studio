@@ -32,10 +32,10 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ### Before merge
 
-- [ ] `npm run format:check && npm run lint && npm run test && npm run build`
+- [x] `npm run format:check && npm run lint && npm run test && npm run build`
 - [ ] Manual desktop + mobile pass across Summary / Library / Builds / Tools / Help / Settings / Debug
 - [ ] Confirm `--dsv2-*` does not leak onto `<Outlet/>`
 
 ## Next
 
-Open PR for #917 → design review → screen ports (#918+).
+Design review on [PR #930](https://github.com/pskillen/codeplug-studio/pull/930) → merge #917 → screen ports (#918+).
