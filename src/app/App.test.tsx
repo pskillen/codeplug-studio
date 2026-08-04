@@ -109,7 +109,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Help' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Library' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
     const menuItems = await screen.findAllByRole('menuitem');
     expect(menuItems.map((el) => el.textContent)).toEqual(
       expect.arrayContaining(['Settings', 'Debug']),

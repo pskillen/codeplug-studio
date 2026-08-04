@@ -81,7 +81,9 @@ export default function AppLayout() {
   const overflowAvatar = (
     <Menu shadow="md" width={200} position="bottom-end">
       <Menu.Target>
-        <button type="button" className={shellClasses.avatar} aria-label="More" />
+        <button type="button" className={shellClasses.avatar} aria-label="Settings">
+          <IconSettings size={ICON_SIZE_NAV} stroke={ICON_STROKE} aria-hidden />
+        </button>
       </Menu.Target>
       <Menu.Dropdown>
         <Menu.Item

@@ -102,11 +102,15 @@ button.project:hover {
 }
 
 .avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 30px;
   height: 30px;
   border-radius: var(--dsv2-radius-control);
   background: var(--dsv2-surface);
   border: 1px solid var(--dsv2-border);
+  color: var(--dsv2-text-secondary);
   flex-shrink: 0;
   padding: 0;
   cursor: pointer;
@@ -114,4 +118,5 @@ button.project:hover {
 
 button.avatar:hover {
   border-color: var(--dsv2-accent);
+  color: var(--dsv2-text-primary);
 }
