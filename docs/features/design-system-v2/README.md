@@ -6,20 +6,20 @@ Guiding principles for the whole epic: (1) fidelity to the Claude Design “Code
 
 ## Implementation status
 
-| Area                               | Status         | Notes                                                                                                                                                                                        |
-| ---------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Theme tokens + CSS var resolver    | Shipped (#916) | `src/app/theme-v2.ts` — `DSV2_TOKENS`, `themeV2`, `dsv2CssVariablesResolver`                                                                                                                 |
-| Theme isolation provider           | Shipped (#916) | `DesignSystemV2Provider` — nested `MantineProvider`, `.dsv2-scope` selector (never `:root`)                                                                                                  |
-| Net-new primitives                 | Shipped (#916) | `Button`, `Pill`, `OverrideField`, `MapPanel`                                                                                                                                                |
-| Navigation chrome (presentational) | Shipped (#916) | `AppShell` (top header), `ContextualStrip`, `SectionNav`, `BottomTabBar`                                                                                                                     |
-| ShuttleList family                 | Shipped (#916) | Wraps `SelectedItemList` / `AvailableItemPicker` — does not reimplement DnD                                                                                                                  |
-| DataTable                          | Reuse only     | Existing `components/ui/DataTable` re-skins inside the provider; no duplicate                                                                                                                |
-| `/styleguide/v2` preview           | Shipped (#916) | Nested under `DesignSystemV2Provider`; linked from `/styleguide`                                                                                                                             |
-| Live chrome port                   | Shipped (#917) | AppLayout wired; Library strip + Summary on v2 (#918–#923, #932–#935)                                                                                                                        |
+| Area                               | Status         | Notes                                                                                                                     |
+| ---------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Theme tokens + CSS var resolver    | Shipped (#916) | `src/app/theme-v2.ts` — `DSV2_TOKENS`, `themeV2`, `dsv2CssVariablesResolver`                                              |
+| Theme isolation provider           | Shipped (#916) | `DesignSystemV2Provider` — nested `MantineProvider`, `.dsv2-scope` selector (never `:root`)                               |
+| Net-new primitives                 | Shipped (#916) | `Button`, `Pill`, `OverrideField`, `MapPanel`                                                                             |
+| Navigation chrome (presentational) | Shipped (#916) | `AppShell` (top header), `ContextualStrip`, `SectionNav`, `BottomTabBar`                                                  |
+| ShuttleList family                 | Shipped (#916) | Wraps `SelectedItemList` / `AvailableItemPicker` — does not reimplement DnD                                               |
+| DataTable                          | Reuse only     | Existing `components/ui/DataTable` re-skins inside the provider; no duplicate                                             |
+| `/styleguide/v2` preview           | Shipped (#916) | Nested under `DesignSystemV2Provider`; linked from `/styleguide`                                                          |
+| Live chrome port                   | Shipped (#917) | AppLayout wired; Library strip + Summary on v2 (#918–#923, #932–#935)                                                     |
 | Screen ports                       | In progress    | Library strip + MapPanel shipped; Builds/export ([#924](https://github.com/pskillen/codeplug-studio/issues/924)) deferred |
-| ShuttleList in production          | Shipped        | Zone / RGL / scan list membership editors                                                                                                                                                    |
-| Real `CodeplugMap` in MapPanel     | Shipped (#925) | `MapPanel` children slot; library maps, pickers, Maidenhead tools                                                                                                                              |
-| Domain BandPill / ModePill re-skin | Out of scope   | Use `Pill` `tone="semantic"` when those screens port                                                                                                                                         |
+| ShuttleList in production          | Shipped        | Zone / RGL / scan list membership editors                                                                                 |
+| Real `CodeplugMap` in MapPanel     | Shipped (#925) | `MapPanel` children slot; library maps, pickers, Maidenhead tools                                                         |
+| Domain BandPill / ModePill re-skin | Out of scope   | Use `Pill` `tone="semantic"` when those screens port                                                                      |
 
 ## Theme scoping (for contributors)
 
@@ -35,27 +35,27 @@ Mantine `theme.components.*.defaultProps` and CSS variables are **global** if ap
 
 ## Component map
 
-| Component                | Sidecar                                                                               | Notes                                        |
-| ------------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `DesignSystemV2Provider` | [DesignSystemV2Provider.md](../../../src/app/components/v2/DesignSystemV2Provider.md) | Required wrapper for all v2 UI               |
-| `Button`                 | [Button.md](../../../src/app/components/v2/Button.md)                                 | Includes dashed variant                      |
-| `Pill`                   | [Pill.md](../../../src/app/components/v2/Pill.md)                                     | `tone="semantic"`; dashed/removable variants |
-| `CountTile`              | [CountTile.md](../../../src/app/components/v2/CountTile.md)                           | Summary stat grid                            |
-| `StatusBanner`           | [StatusBanner.md](../../../src/app/components/v2/StatusBanner.md)                     | Integrity / notice banners                   |
-| `Panel`                  | [Panel.md](../../../src/app/components/v2/Panel.md)                                   | Titled bordered sections                     |
-| `TextInput`              | [TextInput.md](../../../src/app/components/v2/TextInput.md)                           | Standalone or inside `FormField`             |
-| `SearchInput`            | [SearchInput.md](../../../src/app/components/v2/SearchInput.md)                       | List filter bar                              |
-| `Checkbox`               | [Checkbox.md](../../../src/app/components/v2/Checkbox.md)                             | Row selection                                |
-| `ToggleSwitch`           | [ToggleSwitch.md](../../../src/app/components/v2/ToggleSwitch.md)                     | Boolean toggles                              |
-| `SegmentedControl`       | [SegmentedControl.md](../../../src/app/components/v2/SegmentedControl.md)             | TS1/TS2 and similar                          |
-| `FormField`              | [FormField.md](../../../src/app/components/v2/FormField.md)                           | Label-above-box wrapper                      |
-| `OverrideField`          | [OverrideField.md](../../../src/app/components/v2/OverrideField.md)                   | Build override chrome                        |
+| Component                | Sidecar                                                                               | Notes                                                  |
+| ------------------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `DesignSystemV2Provider` | [DesignSystemV2Provider.md](../../../src/app/components/v2/DesignSystemV2Provider.md) | Required wrapper for all v2 UI                         |
+| `Button`                 | [Button.md](../../../src/app/components/v2/Button.md)                                 | Includes dashed variant                                |
+| `Pill`                   | [Pill.md](../../../src/app/components/v2/Pill.md)                                     | `tone="semantic"`; dashed/removable variants           |
+| `CountTile`              | [CountTile.md](../../../src/app/components/v2/CountTile.md)                           | Summary stat grid                                      |
+| `StatusBanner`           | [StatusBanner.md](../../../src/app/components/v2/StatusBanner.md)                     | Integrity / notice banners                             |
+| `Panel`                  | [Panel.md](../../../src/app/components/v2/Panel.md)                                   | Titled bordered sections                               |
+| `TextInput`              | [TextInput.md](../../../src/app/components/v2/TextInput.md)                           | Standalone or inside `FormField`                       |
+| `SearchInput`            | [SearchInput.md](../../../src/app/components/v2/SearchInput.md)                       | List filter bar                                        |
+| `Checkbox`               | [Checkbox.md](../../../src/app/components/v2/Checkbox.md)                             | Row selection                                          |
+| `ToggleSwitch`           | [ToggleSwitch.md](../../../src/app/components/v2/ToggleSwitch.md)                     | Boolean toggles                                        |
+| `SegmentedControl`       | [SegmentedControl.md](../../../src/app/components/v2/SegmentedControl.md)             | TS1/TS2 and similar                                    |
+| `FormField`              | [FormField.md](../../../src/app/components/v2/FormField.md)                           | Label-above-box wrapper                                |
+| `OverrideField`          | [OverrideField.md](../../../src/app/components/v2/OverrideField.md)                   | Build override chrome                                  |
 | `MapPanel`               | [MapPanel.md](../../../src/app/components/v2/MapPanel.md)                             | Map chrome; hosts CodeplugMap / pickers via `children` |
-| `AppShell`               | [AppShell.md](../../../src/app/components/v2/AppShell.md)                             | Top header bar (not a sidebar shell)         |
-| `ContextualStrip`        | [ContextualStrip.md](../../../src/app/components/v2/ContextualStrip.md)               | Section sub-view pills under AppShell        |
-| `SectionNav`             | [SectionNav.md](../../../src/app/components/v2/SectionNav.md)                         | In-page section rail                         |
-| `BottomTabBar`           | [BottomTabBar.md](../../../src/app/components/v2/BottomTabBar.md)                     | Mobile primary nav                           |
-| `ShuttleList*`           | [ShuttleList.md](../../../src/app/components/v2/ShuttleList.md)                       | Reuses list-kit                              |
+| `AppShell`               | [AppShell.md](../../../src/app/components/v2/AppShell.md)                             | Top header bar (not a sidebar shell)                   |
+| `ContextualStrip`        | [ContextualStrip.md](../../../src/app/components/v2/ContextualStrip.md)               | Section sub-view pills under AppShell                  |
+| `SectionNav`             | [SectionNav.md](../../../src/app/components/v2/SectionNav.md)                         | In-page section rail                                   |
+| `BottomTabBar`           | [BottomTabBar.md](../../../src/app/components/v2/BottomTabBar.md)                     | Mobile primary nav                                     |
+| `ShuttleList*`           | [ShuttleList.md](../../../src/app/components/v2/ShuttleList.md)                       | Reuses list-kit                                        |
 
 Barrel: `src/app/components/v2/index.ts`.
 

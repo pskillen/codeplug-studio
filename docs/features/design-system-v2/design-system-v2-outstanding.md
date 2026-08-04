@@ -4,12 +4,12 @@ Debt and follow-ups discovered during [epic #915](https://github.com/pskillen/co
 
 ## Debt
 
-| Item                                          | Severity | Notes                                                                                                                                                      |
-| --------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Domain BandPill / ModePill in membership rows | Low      | Zone/RGL/scan shuttle rows still use v1 `BandPill` / `ModePill` inside `ShuttleRow` labels — acceptable until domain pills re-skin                         |
-| Mantine segments in v2 editors                | Low      | Talk group / digital contact mode pickers and APRS sub-panels still use v1 `GradientSegmentedControl` / Mantine tabs inside v2 shells                      |
-| `ZoneEditActions.tsx` unused                  | Low      | Save moved to layout sticky header — file can be removed in #927 retire pass                                                                               |
-| Cookie banner vs BottomTabBar overlap         | Low      | Fixed cookie dialog may sit over the mobile tab bar until a dedicated offset lands                                                                         |
+| Item                                          | Severity | Notes                                                                                                                                 |
+| --------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Domain BandPill / ModePill in membership rows | Low      | Zone/RGL/scan shuttle rows still use v1 `BandPill` / `ModePill` inside `ShuttleRow` labels — acceptable until domain pills re-skin    |
+| Mantine segments in v2 editors                | Low      | Talk group / digital contact mode pickers and APRS sub-panels still use v1 `GradientSegmentedControl` / Mantine tabs inside v2 shells |
+| `ZoneEditActions.tsx` unused                  | Low      | Save moved to layout sticky header — file can be removed in #927 retire pass                                                          |
+| Cookie banner vs BottomTabBar overlap         | Low      | Fixed cookie dialog may sit over the mobile tab bar until a dedicated offset lands                                                    |
 
 ## Closed during library ports
 

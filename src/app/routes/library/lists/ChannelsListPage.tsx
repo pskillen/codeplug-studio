@@ -10,7 +10,13 @@ import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import { haversineDistanceM } from '@core/domain/geoDistance.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
-import { Button, DesignSystemV2Provider, MapPanel, Pill, SearchInput } from '../../../components/v2/index.ts';
+import {
+  Button,
+  DesignSystemV2Provider,
+  MapPanel,
+  Pill,
+  SearchInput,
+} from '../../../components/v2/index.ts';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import { DataTable } from '../../../components/ui/index.ts';

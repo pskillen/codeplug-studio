@@ -8,16 +8,16 @@ Presentational map panel matching the design-system layout: optional title + set
 
 ## Props
 
-| Prop              | Type         | Notes                                              |
-| ----------------- | ------------ | -------------------------------------------------- |
-| `title`           | `string`     | Optional header label                              |
-| `height`          | `number`     | Map body height in px (default 200)                |
-| `children`        | `ReactNode`  | Live map content; omit for hatch placeholder       |
+| Prop              | Type         | Notes                                                   |
+| ----------------- | ------------ | ------------------------------------------------------- |
+| `title`           | `string`     | Optional header label                                   |
+| `height`          | `number`     | Map body height in px (default 200)                     |
+| `children`        | `ReactNode`  | Live map content; omit for hatch placeholder            |
 | `caption`         | `ReactNode`  | Hatch overlay text when no children (default `[ map ]`) |
-| `onSettingsClick` | `() => void` | Shows settings `ActionIcon`                        |
-| `gearActive`      | `boolean`    | Accent border when settings popover is open        |
-| `legend`          | `ReactNode`  | Optional row under the map                         |
-| `mapLabel`        | `string`     | `aria-label` for the map region                    |
+| `onSettingsClick` | `() => void` | Shows settings `ActionIcon`                             |
+| `gearActive`      | `boolean`    | Accent border when settings popover is open             |
+| `legend`          | `ReactNode`  | Optional row under the map                              |
+| `mapLabel`        | `string`     | `aria-label` for the map region                         |
 
 ## Usage
 

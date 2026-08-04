@@ -67,7 +67,11 @@ export default function MapPanel({
         aria-label={resolvedMapLabel}
         style={mapStyle}
       >
-        {hasLiveMap ? children : caption ? <span className={classes.caption}>{caption}</span> : null}
+        {hasLiveMap ? (
+          children
+        ) : caption ? (
+          <span className={classes.caption}>{caption}</span>
+        ) : null}
       </div>
       {legend ? <div className={classes.legend}>{legend}</div> : null}
     </div>
