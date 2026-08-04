@@ -2,6 +2,7 @@ import { Anchor, Button, Group, Paper, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { setAnalyticsConsent } from '@integrations/preferences/analyticsConsent.ts';
 import { useAnalyticsConsent } from '../../hooks/useAnalyticsConsent.ts';
+import { DSV2_TOKENS } from '../../theme-v2.ts';
 
 export default function CookieConsentBanner() {
   const { choice } = useAnalyticsConsent();
@@ -27,6 +28,8 @@ export default function CookieConsentBanner() {
         zIndex: 200,
         maxWidth: '48rem',
         marginInline: 'auto',
+        borderColor: DSV2_TOKENS.colors.border,
+        background: DSV2_TOKENS.colors.surface,
       }}
     >
       <Text size="sm" mb="sm">

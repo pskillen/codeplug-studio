@@ -1,4 +1,5 @@
 import { Alert, Button, Group } from '@mantine/core';
+import { DSV2_TOKENS } from '../../theme-v2.ts';
 import { useDriveRefresh } from './DriveRefreshProvider.tsx';
 import InterchangeOverwriteModal from '../import-export/InterchangeOverwriteModal.tsx';
 
@@ -30,6 +31,13 @@ export default function RefreshFromDriveBanner() {
         color={idMismatch ? 'yellow' : 'blue'}
         title={idMismatch ? 'Drive file project mismatch' : 'Newer copy on Google Drive'}
         mb="sm"
+        styles={{
+          root: {
+            borderColor: idMismatch
+              ? DSV2_TOKENS.colors.warningBorder
+              : DSV2_TOKENS.colors.accentBorder,
+          },
+        }}
       >
         <Group justify="space-between" align="center" wrap="nowrap" gap="sm">
           <span>
