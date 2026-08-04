@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { LocationEditSource } from '@core/domain/channelLocation.ts';
 import { coordsToLocator, isValidLocator, locatorToCoords } from '@core/domain/maidenhead.ts';
 import MapLocationPicker from '../MapLocationPicker/MapLocationPicker.tsx';
+import { MapPanel } from '../v2/index.ts';
 import { FormSection } from '../ui/index.ts';
 
 export interface ChannelLocationValues {
@@ -151,13 +152,15 @@ export default function ChannelLocationSection({
             Clear position
           </Button>
         </Group>
-        <MapLocationPicker
-          lat={parseCoord(value.lat)}
-          lon={parseCoord(value.lon)}
-          onPick={applyCoords}
-          height={280}
-          active={mapActive}
-        />
+        <MapPanel title="Map" height={280}>
+          <MapLocationPicker
+            lat={parseCoord(value.lat)}
+            lon={parseCoord(value.lon)}
+            onPick={applyCoords}
+            height="100%"
+            active={mapActive}
+          />
+        </MapPanel>
       </Stack>
     </FormSection>
   );
