@@ -1,18 +1,20 @@
 import { useMemo } from 'react';
-import { Button, Text } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { ScanList } from '@core/models/library.ts';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
-import { DataTable, ListPage } from '../../../components/ui/index.ts';
+import { Button, DesignSystemV2Provider } from '../../../components/v2/index.ts';
+import { DataTable } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
+import classes from './LibraryListPage.module.css';
 
 export default function ScanListsListPage() {
+  const navigate = useNavigate();
   const { library, loading } = useLibrary();
   const { scanLists } = library;
   const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
@@ -45,9 +47,9 @@ export default function ScanListsListPage() {
 
   const listActions = (
     <Button
-      component={Link}
-      to="/library/scan-lists/new"
+      variant="primary"
       leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+      onClick={() => navigate('/library/scan-lists/new')}
     >
       New scan list
     </Button>
@@ -55,31 +57,47 @@ export default function ScanListsListPage() {
 
   if (loading) {
     return (
-      <ListPage title="Scan lists" actions={listActions}>
-        <Text>Loading library…</Text>
-      </ListPage>
+      <DesignSystemV2Provider>
+        <div className={classes.page}>
+          <h1 className={classes.title}>Scan lists</h1>
+          <p className={classes.description}>Loading library…</p>
+        </div>
+      </DesignSystemV2Provider>
     );
   }
 
   return (
-    <ListPage title="Scan lists" actions={listActions}>
-      <DataTable
-        variant="list"
-        rows={filtered}
-        totalRowCount={scanLists.length}
-        search={nameFilterInput}
-        searchPending={nameFilterPending}
-        onSearchChange={setNameFilter}
-        searchPlaceholder="Filter name…"
-        sort={sort}
-        onSortChange={setSort}
-        rowKey={(r) => r.id}
-        nameColumn={{
-          getName: (r) => r.name,
-          getPath: (r) => `/library/scan-lists/${r.id}`,
-        }}
-        columns={columns}
-      />
-    </ListPage>
+    <DesignSystemV2Provider>
+      <div className={classes.page}>
+        <div className={classes.headerRow}>
+          <div>
+            <h1 className={classes.title}>Scan lists</h1>
+            <p className={classes.description}>
+              Named channel sequences for scan-capable builds. Open one to edit membership order.
+            </p>
+          </div>
+          <div className={classes.toolbarActions}>{listActions}</div>
+        </div>
+
+        <DataTable
+          variant="list"
+          selectionChrome="v2"
+          rows={filtered}
+          totalRowCount={scanLists.length}
+          search={nameFilterInput}
+          searchPending={nameFilterPending}
+          onSearchChange={setNameFilter}
+          searchPlaceholder="Filter name…"
+          sort={sort}
+          onSortChange={setSort}
+          rowKey={(r) => r.id}
+          nameColumn={{
+            getName: (r) => r.name,
+            getPath: (r) => `/library/scan-lists/${r.id}`,
+          }}
+          columns={columns}
+        />
+      </div>
+    </DesignSystemV2Provider>
   );
 }

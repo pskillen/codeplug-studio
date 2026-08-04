@@ -4,6 +4,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { FormPage } from '../../components/ui/index.ts';
 import { entitiesForKind, kindBySlug } from './registry.ts';
+import type { LibraryEntityKind } from '@integrations/persistence/index.ts';
 import { listPathForEditorSlug } from './nav.ts';
 import ChannelEditor from './ChannelEditor.tsx';
 import RxGroupListEditor from './RxGroupListEditor.tsx';
@@ -13,6 +14,15 @@ import ZoneEditor from './ZoneEditor.tsx';
 import { TalkGroupEditor } from './TalkGroupEditor.tsx';
 import { DigitalContactEditor } from './DigitalContactEditor.tsx';
 import { AnalogContactEditor } from './AnalogContactEditor.tsx';
+
+const V2_SELF_SHELLED_EDITORS = new Set<LibraryEntityKind>([
+  'channel',
+  'rxGroupList',
+  'talkGroup',
+  'digitalContact',
+  'analogContact',
+  'scanList',
+]);
 
 export default function EntityEditorPage() {
   const { kind: slug, id } = useParams();
@@ -67,7 +77,7 @@ export default function EntityEditorPage() {
 
   const listPath = listPathForEditorSlug(meta.slug);
 
-  if (meta.kind === 'channel') {
+  if (V2_SELF_SHELLED_EDITORS.has(meta.kind)) {
     return renderEditor();
   }
 

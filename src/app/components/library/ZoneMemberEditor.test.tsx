@@ -116,7 +116,7 @@ describe('ZoneMemberEditor cycle-closing zones', () => {
     const edinburghCheckbox = screen.getByRole('checkbox', { name: 'Select zone Edinburgh' });
     expect(edinburghCheckbox).not.toBeDisabled();
     fireEvent.click(edinburghCheckbox);
-    fireEvent.click(screen.getByRole('button', { name: 'Add selected' }));
+    fireEvent.click(screen.getByRole('button', { name: /Add selected/ }));
     expect(onChange).toHaveBeenCalledWith([{ kind: 'zone', zoneId: 'z-e' }]);
   });
 });

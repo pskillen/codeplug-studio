@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Stack, Switch, Text, TextInput } from '@mantine/core';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import type { Library, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
@@ -11,7 +10,15 @@ import {
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
-import { FormSection, PageSection, UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/ui/index.ts';
+import {
+  Button,
+  DesignSystemV2Provider,
+  FormField,
+  Panel,
+  TextInput,
+  ToggleSwitch,
+} from '../../components/v2/index.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import ZoneMemberEditor, {
   type ZoneMemberEditorMapFilters,
@@ -23,8 +30,8 @@ import {
 } from '../../components/library/zoneMembers.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
-import EditorActions from './EditorActions.tsx';
 import { readInitialChannelIds } from './zoneEditorState.ts';
+import classes from './zones/ZoneEditLayout.module.css';
 
 export default function ZoneEditor({
   projectId,
@@ -135,78 +142,109 @@ export default function ZoneEditor({
   const displayError = validationError ?? error;
 
   return (
-    <Stack gap="md" maw={960}>
-      <FormSection title="Identity">
-        <TextInput label="Name" value={name} onChange={(e) => setName(e.currentTarget.value)} />
-        <TextInput
-          label="Comment"
-          value={comment}
-          onChange={(e) => setComment(e.currentTarget.value)}
-        />
-        <Switch
-          label="Don't export as its own zone"
-          checked={omitFromExport}
-          onChange={(e) => setOmitFromExport(e.currentTarget.checked)}
-        />
-        <Text size="sm" c="dimmed">
-          Enable when this zone is only a building block for other zones — for example a PMR446
-          simplex set you nest inside every city zone. Its channels still export inside parent
-          zones; this zone will not get its own row in Zones.csv.
-        </Text>
-        {entity ? (
-          <EntityDeleteButton
-            kind="zone"
-            entityId={entity.id}
-            label={entity.name}
-            onDeleted={() => navigate('/library/zones')}
-          />
-        ) : null}
-      </FormSection>
+    <DesignSystemV2Provider>
+      <div className={classes.root}>
+        <header className={classes.stickyHeader}>
+          <Link to="/library/zones" className={classes.backLink}>
+            ← Zones
+          </Link>
+          <div className={classes.headerDivider} aria-hidden />
+          <div className={classes.headerIdentity}>
+            <div className={classes.headerName}>{previewZone.name || 'Untitled zone'}</div>
+            <div className={classes.headerSubtitle}>{entity ? 'Edit zone' : 'New zone'}</div>
+          </div>
+          <div className={classes.headerActions}>
+            <Button variant="secondary" onClick={() => navigate('/library/zones')}>
+              Discard
+            </Button>
+            <Button variant="primary" onClick={handleSave} loading={saving}>
+              Save zone
+            </Button>
+          </div>
+        </header>
 
-      <FormSection
-        title="Members"
-        description="Order matches export order for zone-capable builds. Nested zones flatten at export."
-      >
-        <ZoneMemberEditor
-          channels={library.channels}
-          zones={library.zones}
-          editingZoneId={base.id}
-          members={members}
-          onChange={setMembers}
-          onMapFiltersChange={handleMapFiltersChange}
-        />
-        {library.channels.length === 0 ? (
-          <Link to="/library/channels/new">Add a channel</Link>
-        ) : null}
-      </FormSection>
+        {displayError ? <p className={classes.error}>{displayError}</p> : null}
 
-      <PageSection title="Map">
-        <CodeplugMap
-          channels={channelsForMap}
-          zones={zonesForMap}
-          allChannels={library.channels}
-          height={360}
-          mapControlMode="zoneEmphasis"
-          emphasisZoneId={base.id}
-          fitBoundsChannelIds={fitBoundsChannelIds}
-          dimmedChannelIds={dimmedChannelIds}
-          onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-        />
-        {mapSkipped.length > 0 ? (
-          <Text size="sm" c="dimmed">
-            {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
-            (missing coordinates, Use Location = No, or 0,0).
-          </Text>
-        ) : null}
-      </PageSection>
+        <div className={classes.content}>
+          <Panel title="Identity">
+            <div className={classes.fieldStack}>
+              <FormField label="Name">
+                <TextInput
+                  variant="plain"
+                  value={name}
+                  onChange={(e) => setName(e.currentTarget.value)}
+                  aria-label="Name"
+                />
+              </FormField>
+              <FormField label="Comment">
+                <TextInput
+                  variant="plain"
+                  value={comment}
+                  onChange={(e) => setComment(e.currentTarget.value)}
+                  aria-label="Comment"
+                />
+              </FormField>
+              <ToggleSwitch
+                label="Don't export as its own zone"
+                checked={omitFromExport}
+                onChange={(checked) => setOmitFromExport(checked)}
+              />
+              <p className={classes.hint}>
+                Enable when this zone is only a building block for other zones — for example a
+                PMR446 simplex set you nest inside every city zone. Its channels still export inside
+                parent zones; this zone will not get its own row in Zones.csv.
+              </p>
+              {entity ? (
+                <EntityDeleteButton
+                  kind="zone"
+                  entityId={entity.id}
+                  label={entity.name}
+                  onDeleted={() => navigate('/library/zones')}
+                />
+              ) : null}
+            </div>
+          </Panel>
 
-      <EditorActions
-        saving={saving}
-        error={displayError}
-        onSave={handleSave}
-        cancelPath="/library/zones"
-      />
-      <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
-    </Stack>
+          <Panel
+            title="Members"
+            sub="Order matches export order for zone-capable builds. Nested zones flatten at export."
+          >
+            <ZoneMemberEditor
+              channels={library.channels}
+              zones={library.zones}
+              editingZoneId={base.id}
+              members={members}
+              onChange={setMembers}
+              onMapFiltersChange={handleMapFiltersChange}
+            />
+            {library.channels.length === 0 ? (
+              <Link to="/library/channels/new">Add a channel</Link>
+            ) : null}
+          </Panel>
+
+          <Panel title="Map">
+            <CodeplugMap
+              channels={channelsForMap}
+              zones={zonesForMap}
+              allChannels={library.channels}
+              height={360}
+              mapControlMode="zoneEmphasis"
+              emphasisZoneId={base.id}
+              fitBoundsChannelIds={fitBoundsChannelIds}
+              dimmedChannelIds={dimmedChannelIds}
+              onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+            />
+            {mapSkipped.length > 0 ? (
+              <p className={classes.mapSkipped}>
+                {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
+                (missing coordinates, Use Location = No, or 0,0).
+              </p>
+            ) : null}
+          </Panel>
+        </div>
+
+        <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
+      </div>
+    </DesignSystemV2Provider>
   );
 }

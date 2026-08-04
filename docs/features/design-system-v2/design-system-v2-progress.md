@@ -4,46 +4,38 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## Slices
 
-| Slice                    | Status      | Branch / PR                                                     | Notes                                                   |
-| ------------------------ | ----------- | --------------------------------------------------------------- | ------------------------------------------------------- |
-| Foundations (#916)       | Shipped     | [PR #928](https://github.com/pskillen/codeplug-studio/pull/928) | Theme isolation, `components/v2/*`, `/styleguide/v2`    |
-| Chrome port (#917)       | Shipped     | [PR #930](https://github.com/pskillen/codeplug-studio/pull/930) | AppShell + ContextualStrip + BottomTabBar live          |
-| Screen ports (#918–#925) | In progress | —                                                               | Summary / Channels / Channel editor shipped (#918–#920) |
+| Slice                          | Status      | Branch / PR                                                     | Notes                                                |
+| ------------------------------ | ----------- | --------------------------------------------------------------- | ---------------------------------------------------- |
+| Foundations (#916)             | Shipped     | [PR #928](https://github.com/pskillen/codeplug-studio/pull/928) | Theme isolation, `components/v2/*`, `/styleguide/v2` |
+| Chrome port (#917)             | Shipped     | [PR #930](https://github.com/pskillen/codeplug-studio/pull/930) | AppShell + ContextualStrip + BottomTabBar live       |
+| Summary / Channels (#918–#920) | Shipped     | [PR #931](https://github.com/pskillen/codeplug-studio/pull/931) | Summary, Channels list, Channel editor on v2         |
+| Library ports (#921+)          | In progress | `921/pskillen/design-system-v2-library`                         | PR pending — all Library strip screens ported        |
 
-### Screen ports (#918–#920) — this branch
+### Library ports (#921 branch)
 
-| Sub-slice             | Status      | Notes                                                                |
-| --------------------- | ----------- | -------------------------------------------------------------------- |
-| Summary (#918)        | Complete    | CountTile grid, Panel breakdowns, StatusBanner, v2 Provider on route |
-| Channels (#919)       | Complete    | SearchInput, v2 DataTable collapse, semantic Pill band/mode cells    |
-| Channel editor (#920) | Complete    | SectionNav scroll layout, Panel sections, mode chip switcher         |
-| Mobile QA (#926)      | Not started | —                                                                    | Cross-cutting narrow + Android WebView |
-| Retire v1 (#927)      | Not started | —                                                                    | After full rollout only                |
-
-### #917 chrome port (this branch)
-
-| Sub-slice                    | Status   | Notes                                                           |
-| ---------------------------- | -------- | --------------------------------------------------------------- |
-| Five-tab primary nav data    | Complete | Summary / Library / Tools / Export / Help + strip maps          |
-| AppLayout → v2 chrome        | Complete | Provider isolates header/strip/bottom bar; Outlet stays v1      |
-| Entity list New/Add toolbars | Complete | Preserved after SectionNav removal                              |
-| Banner/footer token restyle  | Complete | Cookie / Drive refresh / BuildFooter borders from `DSV2_TOKENS` |
-| Dead v1 chrome cleanup       | Complete | AppNav, SectionNav sidebar, AppHeader, ActiveProjectBar gone    |
+| Sub-slice                | Status      | Notes                                                                                                                                      |
+| ------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Kickoff                  | Complete    | Child issues [#932](https://github.com/pskillen/codeplug-studio/issues/932)–[#935](https://github.com/pskillen/codeplug-studio/issues/935) |
+| Zones list + edit (#921) | Complete    | v2 list + sticky editor shell                                                                                                              |
+| Zones add/scan (#922)    | Complete    | ShuttleList* on ZoneMemberEditor                                                                                                           |
+| RGLs (#923)              | Complete    | List + editor + shuttle picker                                                                                                             |
+| Talk Groups (#932)       | Complete    | Best-effort chrome port                                                                                                                    |
+| Contacts (#933)          | Complete    | List + digital/analog editors                                                                                                              |
+| Scan lists (#934)        | Complete    | ShuttleList membership                                                                                                                     |
+| APRS (#935)              | Complete    | Tabbed page chrome                                                                                                                         |
+| Builds/export (#924)     | Deferred    | Out of scope this PR                                                                                                                       |
+| MapPanel (#925)          | Deferred    | Out of scope this PR                                                                                                                       |
+| Mobile QA (#926)         | Not started | —                                                                                                                                          |
+| Retire v1 (#927)         | Not started | After full rollout only                                                                                                                    |
 
 ## Verification
 
-### Done (local)
+### Before merge (library ports PR)
 
-- [x] Nav unit tests (`primaryNavItems`, `contextualStripItems`)
-- [x] `AppShell` project-click / disabled / hide-tabs tests
-- [x] `tsc --noEmit -p tsconfig.app.json`
-
-### Before merge
-
-- [x] `npm run format:check && npm run lint && npm run test && npm run build`
-- [ ] Manual desktop + mobile pass across Summary / Library / Builds / Tools / Help / Settings / Debug
-- [ ] Confirm `--dsv2-*` does not leak onto `<Outlet/>`
+- [ ] `npm run format:check && npm run lint && npm run test && npm run build`
+- [ ] Manual desktop + mobile pass on Library strip (Zones, RGLs, TG, Contacts, Scan, APRS)
+- [ ] Membership reorder/add/remove on Zones, RGLs, Scan lists
 
 ## Next
 
-Design review on [PR #930](https://github.com/pskillen/codeplug-studio/pull/930) → merge #917 → screen ports (#918+).
+Merge library ports PR → #924 Builds/export or #925 MapPanel as separate tickets.

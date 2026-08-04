@@ -1,0 +1,114 @@
+.page {
+  padding: var(--dsv2-page-padding-y) var(--dsv2-page-padding-x);
+  min-width: 0;
+}
+
+.headerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: var(--dsv2-font-heading-lg);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 3px;
+}
+
+.description {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.toolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hint {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+
+.warning {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-accent-warning, #f59e0b);
+  margin: 0 0 12px;
+}
+
+.error {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-accent-danger, #ef4444);
+  margin: 0 0 12px;
+}
+
+.sortRow {
+  margin-bottom: 12px;
+}
+
+.mapSection {
+  margin-top: 24px;
+}
+
+.mapSectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 10px;
+}
+
+.mapMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+.mapSkipped {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+  margin-top: 8px;
+}
+
+.reorderCell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.orderLabel {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+  width: 28px;
+  font-variant-numeric: tabular-nums;
+}
+
+.membersCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.nestedBadge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: var(--dsv2-radius-sm);
+  background: var(--dsv2-surface-raised);
+  color: var(--dsv2-text-secondary);
+  border: 1px solid var(--dsv2-border);
+}

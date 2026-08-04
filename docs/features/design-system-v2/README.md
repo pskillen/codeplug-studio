@@ -1,24 +1,25 @@
 # Design system v2
 
-Visual/navigation redesign for Codeplug Studio ([epic #915](https://github.com/pskillen/codeplug-studio/issues/915)). Foundations ([#916](https://github.com/pskillen/codeplug-studio/issues/916)) shipped the theme + `components/v2/` library; the chrome port ([#917](https://github.com/pskillen/codeplug-studio/issues/917)) wires live `AppLayout` to v2 `AppShell` / `ContextualStrip` / `BottomTabBar`. Summary, Channels list, and Channel editor ([#918](https://github.com/pskillen/codeplug-studio/issues/918)–[#920](https://github.com/pskillen/codeplug-studio/issues/920)) now render v2 page content inside `DesignSystemV2Provider`; remaining library screens stay v1 until their tickets land.
+Visual/navigation redesign for Codeplug Studio ([epic #915](https://github.com/pskillen/codeplug-studio/issues/915)). Foundations ([#916](https://github.com/pskillen/codeplug-studio/issues/916)) shipped the theme + `components/v2/` library; the chrome port ([#917](https://github.com/pskillen/codeplug-studio/issues/917)) wires live `AppLayout` to v2 `AppShell` / `ContextualStrip` / `BottomTabBar`. Summary, Channels, Channel editor ([#918](https://github.com/pskillen/codeplug-studio/issues/918)–[#920](https://github.com/pskillen/codeplug-studio/issues/920)), and the full Library strip (Zones, RGLs, Talk Groups, Contacts, Scan lists, APRS — [#921](https://github.com/pskillen/codeplug-studio/issues/921)–[#923](https://github.com/pskillen/codeplug-studio/issues/923), [#932](https://github.com/pskillen/codeplug-studio/issues/932)–[#935](https://github.com/pskillen/codeplug-studio/issues/935)) render v2 page content inside `DesignSystemV2Provider`. Builds/export ([#924](https://github.com/pskillen/codeplug-studio/issues/924)) and MapPanel wiring ([#925](https://github.com/pskillen/codeplug-studio/issues/925)) remain deferred.
 
 Guiding principles for the whole epic: (1) fidelity to the Claude Design “Codeplug Studio Design System” tokens/patterns, and (2) mobile as a first-class requirement (Android app shipped; narrow viewports matter on every component demo).
 
 ## Implementation status
 
-| Area                               | Status         | Notes                                                                                                   |
-| ---------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------- |
-| Theme tokens + CSS var resolver    | Shipped (#916) | `src/app/theme-v2.ts` — `DSV2_TOKENS`, `themeV2`, `dsv2CssVariablesResolver`                            |
-| Theme isolation provider           | Shipped (#916) | `DesignSystemV2Provider` — nested `MantineProvider`, `.dsv2-scope` selector (never `:root`)             |
-| Net-new primitives                 | Shipped (#916) | `Button`, `Pill`, `OverrideField`, `MapPanel`                                                           |
-| Navigation chrome (presentational) | Shipped (#916) | `AppShell` (top header), `ContextualStrip`, `SectionNav`, `BottomTabBar`                                |
-| ShuttleList family                 | Shipped (#916) | Wraps `SelectedItemList` / `AvailableItemPicker` — does not reimplement DnD                             |
-| DataTable                          | Reuse only     | Existing `components/ui/DataTable` re-skins inside the provider; no duplicate                           |
-| `/styleguide/v2` preview           | Shipped (#916) | Nested under `DesignSystemV2Provider`; linked from `/styleguide`                                        |
-| Live chrome port                   | Shipped (#917) | AppLayout wired; Summary / Channels / Channel editor content on v2 (#918–#920)                          |
-| Screen ports                       | In progress    | Summary / Channels / Channel editor shipped (#918–#920); Zones / RX / Builds / Map (#921–#925) deferred |
-| Real `CodeplugMap` in MapPanel     | Deferred       | [#925](https://github.com/pskillen/codeplug-studio/issues/925)                                          |
-| Domain BandPill / ModePill re-skin | Out of scope   | Use `Pill` `tone="semantic"` when those screens port                                                    |
+| Area                               | Status         | Notes                                                                                                                                                                                        |
+| ---------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Theme tokens + CSS var resolver    | Shipped (#916) | `src/app/theme-v2.ts` — `DSV2_TOKENS`, `themeV2`, `dsv2CssVariablesResolver`                                                                                                                 |
+| Theme isolation provider           | Shipped (#916) | `DesignSystemV2Provider` — nested `MantineProvider`, `.dsv2-scope` selector (never `:root`)                                                                                                  |
+| Net-new primitives                 | Shipped (#916) | `Button`, `Pill`, `OverrideField`, `MapPanel`                                                                                                                                                |
+| Navigation chrome (presentational) | Shipped (#916) | `AppShell` (top header), `ContextualStrip`, `SectionNav`, `BottomTabBar`                                                                                                                     |
+| ShuttleList family                 | Shipped (#916) | Wraps `SelectedItemList` / `AvailableItemPicker` — does not reimplement DnD                                                                                                                  |
+| DataTable                          | Reuse only     | Existing `components/ui/DataTable` re-skins inside the provider; no duplicate                                                                                                                |
+| `/styleguide/v2` preview           | Shipped (#916) | Nested under `DesignSystemV2Provider`; linked from `/styleguide`                                                                                                                             |
+| Live chrome port                   | Shipped (#917) | AppLayout wired; Library strip + Summary on v2 (#918–#923, #932–#935)                                                                                                                        |
+| Screen ports                       | In progress    | Library strip shipped; Builds/export ([#924](https://github.com/pskillen/codeplug-studio/issues/924)) and MapPanel ([#925](https://github.com/pskillen/codeplug-studio/issues/925)) deferred |
+| ShuttleList in production          | Shipped        | Zone / RGL / scan list membership editors                                                                                                                                                    |
+| Real `CodeplugMap` in MapPanel     | Deferred       | [#925](https://github.com/pskillen/codeplug-studio/issues/925)                                                                                                                               |
+| Domain BandPill / ModePill re-skin | Out of scope   | Use `Pill` `tone="semantic"` when those screens port                                                                                                                                         |
 
 ## Theme scoping (for contributors)
 

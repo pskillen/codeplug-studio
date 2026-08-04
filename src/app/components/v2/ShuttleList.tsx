@@ -69,6 +69,10 @@ export interface ShuttleRowProps {
   dragHandle: SelectedItemDragHandleProps | null;
   trailing?: ReactNode;
   className?: string;
+  /** When false, hides the row checkbox (read-only member lists). Default true. */
+  selectable?: boolean;
+  /** When false, hides the remove control. Default true. */
+  removable?: boolean;
 }
 
 /**
@@ -84,6 +88,8 @@ export function ShuttleRow({
   dragHandle,
   trailing,
   className,
+  selectable = true,
+  removable = true,
 }: ShuttleRowProps) {
   return (
     <div
@@ -92,26 +98,30 @@ export function ShuttleRow({
         .join(' ')}
     >
       <SelectedItemDragHandle dragHandle={dragHandle} />
-      <Checkbox
-        checked={selected}
-        onChange={onToggleSelect}
-        aria-label={typeof label === 'string' ? `Select ${label}` : 'Select item'}
-        size="xs"
-      />
+      {selectable ? (
+        <Checkbox
+          checked={selected}
+          onChange={onToggleSelect}
+          aria-label={typeof label === 'string' ? `Select ${label}` : 'Select item'}
+          size="xs"
+        />
+      ) : null}
       <div className={classes.rowCopy}>
         <div className={classes.rowLabel}>{label}</div>
         {subtitle ? <div className={classes.rowSubtitle}>{subtitle}</div> : null}
       </div>
       {trailing ? <div className={classes.rowTrailing}>{trailing}</div> : null}
-      <ActionIcon
-        variant="subtle"
-        color="gray"
-        size="sm"
-        aria-label={typeof label === 'string' ? `Remove ${label}` : 'Remove item'}
-        onClick={onRemove}
-      >
-        <IconX size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-      </ActionIcon>
+      {removable ? (
+        <ActionIcon
+          variant="subtle"
+          color="gray"
+          size="sm"
+          aria-label={typeof label === 'string' ? `Remove ${label}` : 'Remove item'}
+          onClick={onRemove}
+        >
+          <IconX size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+        </ActionIcon>
+      ) : null}
     </div>
   );
 }

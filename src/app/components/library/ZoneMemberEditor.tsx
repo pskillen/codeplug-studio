@@ -1,5 +1,4 @@
-import { ActionIcon, Badge, Checkbox, Group, Paper, Stack, Text, Tooltip } from '@mantine/core';
-import { IconTrash } from '@tabler/icons-react';
+import { Badge, Checkbox, Group, Stack, Text } from '@mantine/core';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Channel, Zone, ZoneMemberEntry } from '@core/models/library.ts';
@@ -17,16 +16,18 @@ import type { IncludeInZoneDerivedScanListOverride } from '@core/models/zoneBeha
 import IncludeInZoneDerivedScanListSegment from '../zones/IncludeInZoneDerivedScanListSegment.tsx';
 import { BandPillForChannel } from '../pills/BandPill.tsx';
 import ModePill from '../pills/ModePill.tsx';
-import AvailableItemPicker from '../ui/AvailableItemPicker.tsx';
 import type { SelectedItemDragHandleProps } from '../ui/SelectedItemDragHandle.tsx';
-import SelectedItemDragHandle from '../ui/SelectedItemDragHandle.tsx';
-import SelectedItemList from '../ui/SelectedItemList.tsx';
-import { PageSection } from '../ui/index.ts';
+import {
+  ShuttleAddBar,
+  ShuttleListPanel,
+  ShuttlePoolHeader,
+  ShuttlePoolPanel,
+  ShuttleRow,
+} from '../v2/index.ts';
 import MembershipSortMenu from './MembershipSortMenu.tsx';
 import { sortZoneMembersByMode } from '@core/domain/membershipSort.ts';
 import { channelModesForFilter, sortByName } from '../../lib/channels.ts';
 import { formatChannelRxTxListCell } from '../../lib/formatFrequency.ts';
-import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import {
   channelMatchesZoneMemberFilter,
   computeZoneMemberPickerMapFilters,
@@ -263,159 +264,158 @@ export default function ZoneMemberEditor({
 
   return (
     <Stack gap="lg">
-      <PageSection>
-        <SelectedItemList
-          title="In this zone"
-          description={`${members.length} direct member${members.length === 1 ? '' : 's'}${
-            editingZoneId ? ` · ${effectiveChannelCount} channels effective` : ''
-          }${showReorder ? ' — export order' : ''}`}
-          filter={{
-            value: inZoneFilter,
-            onChange: setInZoneFilter,
-            placeholder: 'Filter members…',
-            'aria-label': 'Filter in-zone members',
-          }}
-          itemKeys={filteredInZoneKeys}
-          selectedKeys={inZoneReadOnly ? [] : inZoneSelected}
-          onToggleSelect={inZoneReadOnly ? () => {} : toggleInZone}
-          onRemove={showRemove ? (key) => removeKeys([key]) : () => {}}
-          emptyMessage="No members in zone"
-          onReorder={
-            showReorder
-              ? (nextKeys) => {
-                  if (nextKeys.length !== members.length) return;
-                  onChange(reorderMembersByKeys(members, nextKeys));
-                }
-              : undefined
-          }
-          reorderDisabled={inZoneFilter.trim().length > 0 || !showReorder}
-          onMoveSelected={showReorder ? moveSelected : undefined}
-          onRemoveSelected={showRemove ? removeSelected : undefined}
-          canMoveUp={showReorder ? canMoveUp : false}
-          canMoveDown={showReorder ? canMoveDown : false}
-          reorderHint={
-            showReorder ? (
-              <Text size="xs" c="dimmed">
-                {inZoneFilter.trim()
-                  ? 'Clear filter to drag-reorder'
-                  : 'Drag handles reorder · Alt+↑/↓ moves selection'}
-              </Text>
-            ) : null
-          }
-          renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => (
-            <InZoneMemberRow
-              key={itemKey}
-              memberKey={itemKey}
-              member={members.find((m) => memberKeyFromEntry(m) === itemKey)}
-              channelsById={channelsById}
-              zones={zones}
-              selected={selected}
-              onToggleSelect={onToggleSelect}
-              onRemove={onRemove}
-              dragHandle={dragHandle}
-              onIncludeInScanListChange={handleIncludeInScanList}
-              showScanControls={showScanControls}
-              showRemove={showRemove}
-              showSelect={!inZoneReadOnly}
-              showDragHandle={showReorder}
+      <ShuttleListPanel
+        title="In this zone"
+        description={`${members.length} direct member${members.length === 1 ? '' : 's'}${
+          editingZoneId ? ` · ${effectiveChannelCount} channels effective` : ''
+        }${showReorder ? ' — export order' : ''}`}
+        filter={{
+          value: inZoneFilter,
+          onChange: setInZoneFilter,
+          placeholder: 'Filter members…',
+          'aria-label': 'Filter in-zone members',
+        }}
+        itemKeys={filteredInZoneKeys}
+        selectedKeys={inZoneReadOnly ? [] : inZoneSelected}
+        onToggleSelect={inZoneReadOnly ? () => {} : toggleInZone}
+        onRemove={showRemove ? (key) => removeKeys([key]) : () => {}}
+        emptyMessage="No members in zone"
+        onReorder={
+          showReorder
+            ? (nextKeys) => {
+                if (nextKeys.length !== members.length) return;
+                onChange(reorderMembersByKeys(members, nextKeys));
+              }
+            : undefined
+        }
+        reorderDisabled={inZoneFilter.trim().length > 0 || !showReorder}
+        onMoveSelected={showReorder ? moveSelected : undefined}
+        onRemoveSelected={showRemove ? removeSelected : undefined}
+        canMoveUp={showReorder ? canMoveUp : false}
+        canMoveDown={showReorder ? canMoveDown : false}
+        reorderHint={
+          showReorder ? (
+            <Text size="xs" c="dimmed">
+              {inZoneFilter.trim()
+                ? 'Clear filter to drag-reorder'
+                : 'Drag handles reorder · Alt+↑/↓ moves selection'}
+            </Text>
+          ) : null
+        }
+        renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => (
+          <InZoneMemberRow
+            key={itemKey}
+            memberKey={itemKey}
+            member={members.find((m) => memberKeyFromEntry(m) === itemKey)}
+            channelsById={channelsById}
+            zones={zones}
+            selected={selected}
+            onToggleSelect={onToggleSelect}
+            onRemove={onRemove}
+            dragHandle={showReorder ? dragHandle : null}
+            onIncludeInScanListChange={handleIncludeInScanList}
+            showScanControls={showScanControls}
+            showRemove={showRemove}
+            showSelect={!inZoneReadOnly}
+          />
+        )}
+        toolbar={
+          showReorder ? (
+            <MembershipSortMenu
+              disabled={!members.length}
+              label="Sort channels…"
+              onSort={(sortMode) =>
+                onChange(sortZoneMembersByMode(members, channelsById, zonesById, sortMode))
+              }
             />
-          )}
-          toolbar={
-            showReorder ? (
-              <MembershipSortMenu
-                disabled={!members.length}
-                label="Sort channels…"
-                onSort={(sortMode) =>
-                  onChange(sortZoneMembersByMode(members, channelsById, zonesById, sortMode))
-                }
-              />
-            ) : undefined
-          }
-        />
-      </PageSection>
+          ) : undefined
+        }
+      />
 
       {showAddPool ? (
-        <PageSection>
-          <AvailableItemPicker
-            title="Other channels & zones"
-            filter={{
-              value: availableFilter,
-              onChange: setAvailableFilter,
-              placeholder: 'Filter…',
-              'aria-label': 'Filter available channels and zones',
-            }}
-            sections={[
-              {
-                id: 'channels',
-                title: 'Channels',
-                itemKeys: availableChannels.map((ch) => ch.id),
-                selectedKeys: availableChannelSelected,
-                onToggleSelect: (id) =>
-                  setAvailableChannelSelected((prev) =>
-                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-                  ),
-                emptyMessage: 'No channels available',
-                renderItem: ({ itemKey, checked, onToggle }) => {
-                  const channel = channelsById.get(itemKey);
-                  if (!channel) return null;
-                  return (
-                    <AvailableChannelRow
-                      key={itemKey}
-                      channel={channel}
-                      checked={checked}
-                      onToggle={onToggle}
-                    />
-                  );
-                },
+        <ShuttlePoolPanel
+          header={<ShuttlePoolHeader label="Other channels & zones" />}
+          title="Other channels & zones"
+          filter={{
+            value: availableFilter,
+            onChange: setAvailableFilter,
+            placeholder: 'Filter…',
+            'aria-label': 'Filter available channels and zones',
+          }}
+          sections={[
+            {
+              id: 'channels',
+              title: 'Channels',
+              itemKeys: availableChannels.map((ch) => ch.id),
+              selectedKeys: availableChannelSelected,
+              onToggleSelect: (id) =>
+                setAvailableChannelSelected((prev) =>
+                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                ),
+              emptyMessage: 'No channels available',
+              renderItem: ({ itemKey, checked, onToggle }) => {
+                const channel = channelsById.get(itemKey);
+                if (!channel) return null;
+                return (
+                  <AvailableChannelRow
+                    key={itemKey}
+                    channel={channel}
+                    checked={checked}
+                    onToggle={onToggle}
+                  />
+                );
               },
-              {
-                id: 'zones',
-                title: 'Zones',
-                itemKeys: availableZones.map((zone) => zone.id),
-                selectedKeys: selectableZoneSelected,
-                onToggleSelect: (id) => {
-                  if (exclusionReasons.has(id)) return;
-                  setAvailableZoneSelected((prev) =>
-                    prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-                  );
-                },
-                emptyMessage: 'No zones available',
-                renderItem: ({ itemKey, checked, onToggle }) => {
-                  const zone = zonesById.get(itemKey);
-                  if (!zone) return null;
-                  const reason = exclusionReasons.get(zone.id);
-                  return (
-                    <AvailableZoneRow
-                      key={itemKey}
-                      zone={zone}
-                      checked={checked}
-                      onToggle={onToggle}
-                      blockedReason={reason}
-                    />
-                  );
-                },
+            },
+            {
+              id: 'zones',
+              title: 'Zones',
+              itemKeys: availableZones.map((zone) => zone.id),
+              selectedKeys: selectableZoneSelected,
+              onToggleSelect: (id) => {
+                if (exclusionReasons.has(id)) return;
+                setAvailableZoneSelected((prev) =>
+                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                );
               },
-            ]}
-            onAddSelected={addSelected}
-            addDisabled={!availableChannelSelected.length && !selectableZoneSelected.length}
-            footer={
-              <>
-                <Checkbox
-                  label="Hide filtered entries from map"
-                  checked={hideAvailableFilteredFromMap}
-                  disabled={!availableFilterLower}
-                  onChange={(e) => setHideAvailableFilteredFromMap(e.currentTarget.checked)}
-                />
-                <Checkbox
-                  label="Hide filtered in-zone members from map"
-                  checked={hideInZoneFilteredFromMap}
-                  disabled={!inZoneFilterLower}
-                  onChange={(e) => setHideInZoneFilteredFromMap(e.currentTarget.checked)}
-                />
-              </>
-            }
-          />
-        </PageSection>
+              emptyMessage: 'No zones available',
+              renderItem: ({ itemKey, checked, onToggle }) => {
+                const zone = zonesById.get(itemKey);
+                if (!zone) return null;
+                const reason = exclusionReasons.get(zone.id);
+                return (
+                  <AvailableZoneRow
+                    key={itemKey}
+                    zone={zone}
+                    checked={checked}
+                    onToggle={onToggle}
+                    blockedReason={reason}
+                  />
+                );
+              },
+            },
+          ]}
+          footer={
+            <>
+              <ShuttleAddBar
+                onAdd={addSelected}
+                disabled={!availableChannelSelected.length && !selectableZoneSelected.length}
+                selectedCount={availableChannelSelected.length + selectableZoneSelected.length}
+              />
+              <Checkbox
+                label="Hide filtered entries from map"
+                checked={hideAvailableFilteredFromMap}
+                disabled={!availableFilterLower}
+                onChange={(e) => setHideAvailableFilteredFromMap(e.currentTarget.checked)}
+              />
+              <Checkbox
+                label="Hide filtered in-zone members from map"
+                checked={hideInZoneFilteredFromMap}
+                disabled={!inZoneFilterLower}
+                onChange={(e) => setHideInZoneFilteredFromMap(e.currentTarget.checked)}
+              />
+            </>
+          }
+        />
       ) : null}
     </Stack>
   );
@@ -434,7 +434,6 @@ function InZoneMemberRow({
   showScanControls = true,
   showRemove = true,
   showSelect = true,
-  showDragHandle = true,
 }: {
   memberKey: ZonePickerMemberKey;
   member: ZoneMemberEntry | undefined;
@@ -451,7 +450,6 @@ function InZoneMemberRow({
   showScanControls?: boolean;
   showRemove?: boolean;
   showSelect?: boolean;
-  showDragHandle?: boolean;
 }) {
   const entry = member ? member : entryFromMemberKey(memberKey);
 
@@ -460,46 +458,21 @@ function InZoneMemberRow({
     if (!zone) return null;
     const effectiveCount = resolveEffectiveZoneChannelIds(zone, zones).length;
     return (
-      <Paper withBorder p="xs" radius="sm">
-        <Group gap="sm" wrap="nowrap" justify="space-between">
-          <Group gap="sm" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-            {showSelect ? (
-              <Checkbox
-                checked={selected}
-                onChange={onToggleSelect}
-                aria-label={`Select ${zone.name}`}
-              />
-            ) : null}
-            {showDragHandle ? <SelectedItemDragHandle dragHandle={dragHandle} /> : null}
-            <Stack gap={0} style={{ minWidth: 0 }}>
-              <Text size="sm" fw={500} truncate>
-                Zone: {zone.name}
-              </Text>
-              <Text size="xs" c="dimmed">
-                {effectiveCount} channel{effectiveCount === 1 ? '' : 's'} effective
-              </Text>
-            </Stack>
-          </Group>
-          <Group gap="xs" wrap="nowrap">
-            <Text component={Link} to={`/library/zones/${zone.id}`} size="xs">
-              Open zone
-            </Text>
-            {showRemove && onRemove ? (
-              <Tooltip label="Remove from zone">
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  size="sm"
-                  onClick={onRemove}
-                  aria-label={`Remove ${zone.name} from zone`}
-                >
-                  <IconTrash size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-                </ActionIcon>
-              </Tooltip>
-            ) : null}
-          </Group>
-        </Group>
-      </Paper>
+      <ShuttleRow
+        label={`Zone: ${zone.name}`}
+        subtitle={`${effectiveCount} channel${effectiveCount === 1 ? '' : 's'} effective`}
+        selected={selected}
+        onToggleSelect={onToggleSelect ?? (() => {})}
+        onRemove={onRemove ?? (() => {})}
+        dragHandle={dragHandle}
+        selectable={showSelect}
+        removable={showRemove}
+        trailing={
+          <Text component={Link} to={`/library/zones/${zone.id}`} size="xs">
+            Open zone
+          </Text>
+        }
+      />
     );
   }
 
@@ -508,76 +481,49 @@ function InZoneMemberRow({
   const memberOverride = entry.includeInScanList ?? 'default';
 
   return (
-    <Paper withBorder p="xs" radius="sm">
-      <Group gap="sm" wrap="nowrap" justify="space-between" align="flex-start">
-        <Group gap="sm" wrap="nowrap" style={{ flex: 1, minWidth: 0 }}>
-          {showSelect ? (
-            <Checkbox
-              checked={selected}
-              onChange={onToggleSelect}
-              aria-label={`Select ${channelDisplayLabel(channel)}`}
-            />
+    <ShuttleRow
+      label={
+        <Group gap="xs" wrap="wrap">
+          <span>{channelDisplayLabel(channel)}</span>
+          <BandPillForChannel channel={channel} size="xs" />
+          {channelModesForFilter(channel).map((mode) => (
+            <ModePill key={mode} mode={mode} size="xs" />
+          ))}
+          {channel.scanInclusion === 'skip' ? (
+            <Badge size="xs" variant="light" color="gray">
+              Skip scan
+            </Badge>
           ) : null}
-          {showDragHandle ? <SelectedItemDragHandle dragHandle={dragHandle} /> : null}
-          <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
-            <Group gap="xs" wrap="wrap">
-              <Text size="sm" fw={500}>
-                {channelDisplayLabel(channel)}
-              </Text>
-              <BandPillForChannel channel={channel} size="xs" />
-              {channelModesForFilter(channel).map((mode) => (
-                <ModePill key={mode} mode={mode} size="xs" />
-              ))}
-              {channel.scanInclusion === 'skip' ? (
-                <Badge size="xs" variant="light" color="gray">
-                  Skip scan
-                </Badge>
-              ) : null}
-              {channel.scanInclusion === 'alwaysScan' ? (
-                <Badge size="xs" variant="light" color="teal">
-                  Always scan
-                </Badge>
-              ) : null}
-            </Group>
-            <Text size="xs" c="dimmed">
-              {formatChannelRxTxListCell(channel.rxFrequency, channel.txFrequency) || '—'}
-            </Text>
-          </Stack>
+          {channel.scanInclusion === 'alwaysScan' ? (
+            <Badge size="xs" variant="light" color="teal">
+              Always scan
+            </Badge>
+          ) : null}
         </Group>
+      }
+      subtitle={formatChannelRxTxListCell(channel.rxFrequency, channel.txFrequency) || '—'}
+      selected={selected}
+      onToggleSelect={onToggleSelect ?? (() => {})}
+      onRemove={onRemove ?? (() => {})}
+      dragHandle={dragHandle}
+      selectable={showSelect}
+      removable={showRemove}
+      trailing={
         <Group gap="sm" wrap="nowrap" align="flex-start">
           {showScanControls ? (
-            <Tooltip label="Include this channel in zone-derived scan lists at export">
-              <div>
-                <IncludeInZoneDerivedScanListSegment
-                  value={memberOverride}
-                  onChange={(next) => onIncludeInScanListChange(channel.id, next)}
-                  compact
-                  label="Include in scan list"
-                />
-              </div>
-            </Tooltip>
+            <IncludeInZoneDerivedScanListSegment
+              value={memberOverride}
+              onChange={(next) => onIncludeInScanListChange(channel.id, next)}
+              compact
+              label="Include in scan list"
+            />
           ) : null}
-          <Group gap="xs" wrap="nowrap" align="center" mt={showScanControls ? 4 : 0}>
-            <Text component={Link} to={`/library/channels/${channel.id}`} size="xs">
-              Open
-            </Text>
-            {showRemove && onRemove ? (
-              <Tooltip label="Remove from zone">
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  size="sm"
-                  onClick={onRemove}
-                  aria-label={`Remove ${channelDisplayLabel(channel)} from zone`}
-                >
-                  <IconTrash size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-                </ActionIcon>
-              </Tooltip>
-            ) : null}
-          </Group>
+          <Text component={Link} to={`/library/channels/${channel.id}`} size="xs">
+            Open
+          </Text>
         </Group>
-      </Group>
-    </Paper>
+      }
+    />
   );
 }
 

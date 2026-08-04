@@ -213,6 +213,10 @@ Channel DMR profiles reference a **digital contact** and an **RX group list** by
 - **DMR tab:** below the RX group list selector, `RxGroupListSummary` shows the selected list's members (name, kind, digital ID, timeslot override) with a link to the list editor ([#75](https://github.com/pskillen/codeplug-studio/issues/75)).
 - Component sidecars under `src/app/components/channels/` and `MapLocationPicker/`.
 
+### Library strip (design system v2, [#921](https://github.com/pskillen/codeplug-studio/issues/921)–[#923](https://github.com/pskillen/codeplug-studio/issues/923), [#932](https://github.com/pskillen/codeplug-studio/issues/932)–[#935](https://github.com/pskillen/codeplug-studio/issues/935))
+
+All contextual Library destinations use `DesignSystemV2Provider` with v2 list chrome (`SearchInput` / `DataTable` `selectionChrome="v2"`) and editor shells (sticky header + `Panel` sections). Zone, RGL, and scan list membership editors use `ShuttleList*` around the existing list-kit (`SelectedItemList` / `AvailableItemPicker`) — behaviour unchanged. Maps on zone/channel list pages still embed raw `CodeplugMap` until [#925](https://github.com/pskillen/codeplug-studio/issues/925).
+
 ### Talk group editor ([#110](https://github.com/pskillen/codeplug-studio/issues/110))
 
 - **Identity:** name + optional abbreviation on one row (`TalkGroupEditor`); `TalkGroupWireNameExamples` shows informational multi-talkgroup wire-name previews at a typical 16-character limit.

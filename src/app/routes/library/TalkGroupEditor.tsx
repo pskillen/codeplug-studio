@@ -1,20 +1,23 @@
 import { useState } from 'react';
-import { Button, Group, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
 import { Link, useNavigate } from 'react-router-dom';
 import type { DigitalChannelMode, TalkGroup } from '@core/models/library.ts';
 import { newTalkGroup } from '@core/domain/factories.ts';
 import TalkGroupWireNameExamples from '../../components/library/TalkGroupWireNameExamples.tsx';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
+import { GradientSegmentedControl, UnsavedChangesModal } from '../../components/ui/index.ts';
 import {
-  FormSection,
-  GradientSegmentedControl,
-  UnsavedChangesModal,
-} from '../../components/ui/index.ts';
+  Button,
+  DesignSystemV2Provider,
+  FormField,
+  Panel,
+  TextInput,
+} from '../../components/v2/index.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
 import { parseOptionalInt } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useEntitySave } from './useEntitySave.ts';
+import classes from './zones/ZoneEditLayout.module.css';
 
 const MODE_OPTIONS = digitalModeSegmentOptions();
 
@@ -63,69 +66,101 @@ export function TalkGroupEditor({
   const liveDigitalId = parseOptionalInt(digitalId) ?? 0;
 
   return (
-    <Stack gap="lg" maw={640}>
-      <FormSection title="Identity">
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
-          <TextInput
-            label="Name"
-            description="Full talk group name. May be shortened on export when used as a multi-talkgroup channel suffix."
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-          />
-          <TextInput
-            label="Abbreviation"
-            description="Optional short label used when export shortening needs a shorter TG suffix."
-            value={abbreviation}
-            onChange={(e) => setAbbreviation(e.currentTarget.value)}
-          />
-        </SimpleGrid>
-        <TalkGroupWireNameExamples
-          name={name}
-          abbreviation={abbreviation}
-          digitalId={liveDigitalId}
-        />
-        <GradientSegmentedControl
-          label="Mode"
-          value={mode}
-          onChange={setMode}
-          data={MODE_OPTIONS}
-          scheme="digitalModes"
-          fullWidth
-        />
-        <TextInput
-          label="Group ID"
-          value={digitalId}
-          onChange={(e) => setDigitalId(e.currentTarget.value)}
-        />
-        <TextInput
-          label="Comment"
-          value={comment}
-          onChange={(e) => setComment(e.currentTarget.value)}
-        />
-      </FormSection>
+    <DesignSystemV2Provider>
+      <div className={classes.root}>
+        <header className={classes.stickyHeader}>
+          <Link to="/library/talk-groups" className={classes.backLink}>
+            ← Talk groups
+          </Link>
+          <div className={classes.headerDivider} aria-hidden />
+          <div className={classes.headerIdentity}>
+            <div className={classes.headerName}>{name.trim() || 'Untitled talk group'}</div>
+            <div className={classes.headerSubtitle}>
+              {entity ? 'Edit talk group' : 'New talk group'}
+            </div>
+          </div>
+          <div className={classes.headerActions}>
+            <Button variant="secondary" onClick={() => navigate('/library/talk-groups')}>
+              Discard
+            </Button>
+            <Button variant="primary" onClick={handleSave} loading={saving}>
+              Save talk group
+            </Button>
+          </div>
+        </header>
 
-      {error ? (
-        <Text c="red" size="sm">
-          {error}
-        </Text>
-      ) : null}
-      <Group>
-        <Button onClick={handleSave} loading={saving}>
-          Save
-        </Button>
-        <Button component={Link} to="/library/talk-groups" variant="light">
-          Cancel
-        </Button>
-        {entity ? (
-          <EntityDeleteButton
-            kind="talkGroup"
-            entityId={entity.id}
-            label={entity.name}
-            onDeleted={() => navigate('/library/talk-groups')}
-          />
-        ) : null}
-      </Group>
-      <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
-    </Stack>
+        {error ? <p className={classes.error}>{error}</p> : null}
+
+        <div className={classes.content}>
+          <Panel title="Identity">
+            <div className={classes.fieldStack}>
+              <FormField label="Name">
+                <TextInput
+                  variant="plain"
+                  value={name}
+                  onChange={(e) => setName(e.currentTarget.value)}
+                  aria-label="Name"
+                />
+              </FormField>
+              <p className={classes.hint}>
+                Full talk group name. May be shortened on export when used as a multi-talkgroup
+                channel suffix.
+              </p>
+              <FormField label="Abbreviation">
+                <TextInput
+                  variant="plain"
+                  value={abbreviation}
+                  onChange={(e) => setAbbreviation(e.currentTarget.value)}
+                  aria-label="Abbreviation"
+                />
+              </FormField>
+              <p className={classes.hint}>
+                Optional short label used when export shortening needs a shorter TG suffix.
+              </p>
+              <TalkGroupWireNameExamples
+                name={name}
+                abbreviation={abbreviation}
+                digitalId={liveDigitalId}
+              />
+              <GradientSegmentedControl
+                label="Mode"
+                value={mode}
+                onChange={setMode}
+                data={MODE_OPTIONS}
+                scheme="digitalModes"
+                fullWidth
+              />
+              <FormField label="Group ID">
+                <TextInput
+                  variant="plain"
+                  value={digitalId}
+                  onChange={(e) => setDigitalId(e.currentTarget.value)}
+                  aria-label="Group ID"
+                />
+              </FormField>
+              <FormField label="Comment">
+                <TextInput
+                  variant="plain"
+                  value={comment}
+                  onChange={(e) => setComment(e.currentTarget.value)}
+                  aria-label="Comment"
+                />
+              </FormField>
+            </div>
+          </Panel>
+
+          {entity ? (
+            <EntityDeleteButton
+              kind="talkGroup"
+              entityId={entity.id}
+              label={entity.name}
+              onDeleted={() => navigate('/library/talk-groups')}
+            />
+          ) : null}
+        </div>
+
+        <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
+      </div>
+    </DesignSystemV2Provider>
   );
 }

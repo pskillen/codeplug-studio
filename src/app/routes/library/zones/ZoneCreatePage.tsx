@@ -1,30 +1,20 @@
-import { Anchor } from '@mantine/core';
-import { Link } from 'react-router-dom';
-import { FormPage } from '../../../components/ui/index.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
+import { DesignSystemV2Provider } from '../../../components/v2/index.ts';
 import ZoneEditor from '../ZoneEditor.tsx';
+import classes from './ZoneEditLayout.module.css';
 
 export default function ZoneCreatePage() {
   const { library, loading, projectId } = useLibrary();
 
   if (loading || !projectId) {
     return (
-      <FormPage title="Loading…">
-        <span />
-      </FormPage>
+      <DesignSystemV2Provider>
+        <div className={classes.root}>
+          <p className={classes.headerName}>Loading…</p>
+        </div>
+      </DesignSystemV2Provider>
     );
   }
 
-  return (
-    <FormPage
-      title="New zone"
-      description={
-        <Anchor component={Link} to="/library/zones" size="sm">
-          ← Back to zones
-        </Anchor>
-      }
-    >
-      <ZoneEditor projectId={projectId} library={library} entity={null} />
-    </FormPage>
-  );
+  return <ZoneEditor projectId={projectId} library={library} entity={null} />;
 }

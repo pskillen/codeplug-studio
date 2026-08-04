@@ -1,21 +1,19 @@
-import { Stack } from '@mantine/core';
+import { Panel } from '../../../components/v2/index.ts';
 import ZoneMemberEditor from '../../../components/library/ZoneMemberEditor.tsx';
-import { FormSection } from '../../../components/ui/index.ts';
 import { useZoneEdit } from './ZoneEditContext.tsx';
-import ZoneEditHeader from './ZoneEditHeader.tsx';
 import ZoneMapSection from './ZoneMapSection.tsx';
+import classes from './ZoneEditLayout.module.css';
 
 export default function ZoneEditAddPage() {
   const { entity, library, members, setMembers, setMapFilters } = useZoneEdit();
 
   return (
-    <Stack gap="md">
-      <ZoneEditHeader
-        subtitle="Add channels and nested zones from the library pool."
-        backTo={`/library/zones/${entity.id}`}
-        backLabel="← Back to zone"
-      />
-      <FormSection title="Add members">
+    <>
+      <p className={classes.hint}>
+        Add channels and nested zones from the library pool. Changes save with the zone header
+        actions.
+      </p>
+      <Panel title="Add members">
         <ZoneMemberEditor
           channels={library.channels}
           zones={library.zones}
@@ -25,8 +23,8 @@ export default function ZoneEditAddPage() {
           onMapFiltersChange={setMapFilters}
           mode="addPool"
         />
-      </FormSection>
+      </Panel>
       <ZoneMapSection />
-    </Stack>
+    </>
   );
 }

@@ -1,20 +1,18 @@
-import { Stack } from '@mantine/core';
+import { Panel } from '../../../components/v2/index.ts';
 import ZoneMemberEditor from '../../../components/library/ZoneMemberEditor.tsx';
-import { FormSection } from '../../../components/ui/index.ts';
 import { useZoneEdit } from './ZoneEditContext.tsx';
-import ZoneEditHeader from './ZoneEditHeader.tsx';
+import classes from './ZoneEditLayout.module.css';
 
 export default function ZoneEditScanningPage() {
   const { entity, library, members, setMembers, setMapFilters } = useZoneEdit();
 
   return (
-    <Stack gap="md">
-      <ZoneEditHeader
-        subtitle="Set zone-derived scan list inclusion per direct channel member."
-        backTo={`/library/zones/${entity.id}`}
-        backLabel="← Back to zone"
-      />
-      <FormSection title="Scan inclusion">
+    <>
+      <p className={classes.hint}>
+        Set zone-derived scan list inclusion per direct channel member. Changes save with the zone
+        header actions.
+      </p>
+      <Panel title="Scan inclusion">
         <ZoneMemberEditor
           channels={library.channels}
           zones={library.zones}
@@ -24,7 +22,7 @@ export default function ZoneEditScanningPage() {
           onMapFiltersChange={setMapFilters}
           mode="scanOnly"
         />
-      </FormSection>
-    </Stack>
+      </Panel>
+    </>
   );
 }
