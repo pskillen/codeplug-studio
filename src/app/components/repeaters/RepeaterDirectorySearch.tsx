@@ -52,6 +52,7 @@ import { BandPillsForRepeaterListing, ModePillsForRepeaterListing } from '../pil
 import { FormPage, PageSection, DataTable } from '../ui/index.ts';
 import type { DataTableColumn } from '../ui/DataTable.tsx';
 import CodeplugMap from '../CodeplugMap/CodeplugMap.tsx';
+import { DesignSystemV2Provider, MapPanel } from '../v2/index.ts';
 import { findChannelByCallsign } from './findChannelByCallsign.ts';
 import { buildRepeaterDirectoryRows } from './repeaterDirectoryRows.ts';
 import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
@@ -691,12 +692,16 @@ export default function RepeaterDirectorySearch({
         <PageSection title="Results">
           <Stack gap="xs" mb="md">
             {mapChannels.length > 0 ? (
-              <CodeplugMap
-                channels={mapChannels}
-                zones={[]}
-                allChannels={mapChannels}
-                height={360}
-              />
+              <DesignSystemV2Provider>
+                <MapPanel title="Results map" height={360}>
+                  <CodeplugMap
+                    channels={mapChannels}
+                    zones={[]}
+                    allChannels={mapChannels}
+                    height="100%"
+                  />
+                </MapPanel>
+              </DesignSystemV2Provider>
             ) : null}
             {mapSkippedCount > 0 ? (
               <Text size="sm" c="dimmed">

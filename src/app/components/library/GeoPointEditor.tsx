@@ -2,6 +2,7 @@ import { Group, NumberInput, Stack, TextInput } from '@mantine/core';
 import { useState } from 'react';
 import { coordsToLocator, isValidLocator, locatorToCoords } from '@core/domain/maidenhead.ts';
 import MapLocationPicker from '../MapLocationPicker/MapLocationPicker.tsx';
+import { MapPanel } from '../v2/index.ts';
 
 function parseCoord(value: string): number | null {
   const n = Number.parseFloat(value);
@@ -102,10 +103,14 @@ export default function GeoPointEditor({
           decimalScale={6}
         />
       </Group>
-      {mapActive && latN != null && lonN != null ? (
-        <MapLocationPicker lat={latN} lon={lonN} onPick={applyCoords} />
-      ) : mapActive ? (
-        <MapLocationPicker lat={null} lon={null} onPick={applyCoords} />
+      {mapActive ? (
+        <MapPanel title="Map" height={280}>
+          {latN != null && lonN != null ? (
+            <MapLocationPicker lat={latN} lon={lonN} onPick={applyCoords} height="100%" />
+          ) : (
+            <MapLocationPicker lat={null} lon={null} onPick={applyCoords} height="100%" />
+          )}
+        </MapPanel>
       ) : null}
     </Stack>
   );

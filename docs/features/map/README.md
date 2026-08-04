@@ -23,14 +23,17 @@ Summary and list routes each embed a map — list pages keep contextual maps for
 ## Component stack
 
 ```text
-ChannelsListPage / ZonesListPage / SummaryPage
-└─ CodeplugMap (src/app/components/CodeplugMap/)
-   ├─ MapControls — label + zone toggles
-   ├─ MaidenheadGridLayer — optional locator grid (Settings)
-   ├─ mapProjection — filter, merge, zone member resolution
-   ├─ geo — convex hull, zone colours
-   └─ mapView — auto bounds / single-point zoom
+ChannelsListPage / ZonesListPage / SummaryPage / …
+└─ MapPanel (src/app/components/v2/) — title, gear, legend chrome
+   └─ CodeplugMap (src/app/components/CodeplugMap/)
+      ├─ MapControls — label + zone toggles
+      ├─ MaidenheadGridLayer — optional locator grid (Settings)
+      ├─ mapProjection — filter, merge, zone member resolution
+      ├─ geo — convex hull, zone colours
+      └─ mapView — auto bounds / single-point zoom
 ```
+
+Location pickers (`MapLocationPicker`, `MapPairPlot`) use the same `MapPanel` chrome on channel editor, APRS geo editor, and Maidenhead reference tools.
 
 Mode marker colours come from `src/app/lib/channelModes.ts` (`modeColor`). The core layer returns `ChannelMode` values only — no UI colours in `src/core/`.
 

@@ -47,6 +47,7 @@ import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx'
 import ZoneSelect from '../library/ZoneSelect.tsx';
 import { FormPage, PageSection, SplitButton } from '../ui/index.ts';
 import CodeplugMap from '../CodeplugMap/CodeplugMap.tsx';
+import { DesignSystemV2Provider, MapPanel } from '../v2/index.ts';
 import classes from './OpenAipAirportSearch.module.css';
 
 const DEFAULT_ZONE_NAME = 'Airband';
@@ -636,12 +637,16 @@ export default function OpenAipAirportSearch() {
         <PageSection title="Results">
           <Stack gap="md">
             {mapChannels.length > 0 ? (
-              <CodeplugMap
-                channels={mapChannels}
-                zones={[]}
-                allChannels={mapChannels}
-                height={360}
-              />
+              <DesignSystemV2Provider>
+                <MapPanel title="Results map" height={360}>
+                  <CodeplugMap
+                    channels={mapChannels}
+                    zones={[]}
+                    allChannels={mapChannels}
+                    height="100%"
+                  />
+                </MapPanel>
+              </DesignSystemV2Provider>
             ) : (
               <Text size="sm" c="dimmed">
                 No geolocated airports to plot on the map.

@@ -1,5 +1,6 @@
 import { Group, SimpleGrid, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
+import MapLocationPicker from '../../../components/MapLocationPicker/MapLocationPicker.tsx';
 import { DataTable, Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
 import { CountTile, MapPanel, Panel, Pill } from '../../../components/v2/index.ts';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
@@ -90,17 +91,37 @@ export default function StyleguideV2DataDisplayPage() {
         />
       </PageSection>
 
-      <PageSection title="MapPanel" description="Hatch placeholder until CodeplugMap (#925).">
-        <Stack gap="sm">
+      <PageSection
+        title="MapPanel"
+        description="Hatch placeholder (no children) and live map inside v2 chrome."
+      >
+        <Stack gap="lg">
           <MapPanel
-            title="Channel location"
+            title="Empty state"
             onSettingsClick={() => undefined}
             legend={
               <Text size="sm" c="dimmed">
-                Placeholder map — not a live tile layer
+                Hatch placeholder when no map children are passed
               </Text>
             }
           />
+          <MapPanel
+            title="Channel location"
+            height={280}
+            legend={
+              <Text size="sm" c="dimmed">
+                Live OpenStreetMap tiles via MapLocationPicker
+              </Text>
+            }
+          >
+            <MapLocationPicker
+              lat={56.5}
+              lon={-4.0}
+              onPick={() => undefined}
+              height="100%"
+              active
+            />
+          </MapPanel>
         </Stack>
       </PageSection>
     </Page>

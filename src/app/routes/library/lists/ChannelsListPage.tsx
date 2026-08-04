@@ -10,7 +10,13 @@ import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import { haversineDistanceM } from '@core/domain/geoDistance.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
-import { Button, DesignSystemV2Provider, Pill, SearchInput } from '../../../components/v2/index.ts';
+import {
+  Button,
+  DesignSystemV2Provider,
+  MapPanel,
+  Pill,
+  SearchInput,
+} from '../../../components/v2/index.ts';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import { DataTable } from '../../../components/ui/index.ts';
@@ -509,14 +515,6 @@ export default function ChannelsListPage() {
           <AddFromDataSourceModal opened={addFromOpen} onClose={() => setAddFromOpen(false)} />
 
           <section className={classes.mapSection}>
-            <h2 className={classes.mapSectionTitle}>Map</h2>
-            {skipped.length > 0 ? (
-              <Text size="sm" c="dimmed">
-                {skipped.length} channel{skipped.length === 1 ? '' : 's'} not shown on map (missing
-                coordinates, Use Location = No, or 0,0).
-              </Text>
-            ) : null}
-
             {position ? (
               <Group gap="sm" align="center">
                 {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
@@ -537,15 +535,28 @@ export default function ChannelsListPage() {
               />
             )}
 
-            <CodeplugMap
-              channels={mapChannels}
-              zones={zones}
-              allChannels={mapChannels}
+            <MapPanel
+              title="Map"
               height={420}
-              operatorPosition={position}
-              onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-              onZoneClick={(id) => navigate(`/library/zones/${id}`)}
-            />
+              legend={
+                skipped.length > 0 ? (
+                  <Text size="sm" c="dimmed">
+                    {skipped.length} channel{skipped.length === 1 ? '' : 's'} not shown on map
+                    (missing coordinates, Use Location = No, or 0,0).
+                  </Text>
+                ) : undefined
+              }
+            >
+              <CodeplugMap
+                channels={mapChannels}
+                zones={zones}
+                allChannels={mapChannels}
+                height="100%"
+                operatorPosition={position}
+                onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+                onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+              />
+            </MapPanel>
           </section>
         </Stack>
       </div>

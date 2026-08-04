@@ -15,6 +15,7 @@ import {
   Button,
   DesignSystemV2Provider,
   FormField,
+  MapPanel,
   Panel,
   TextInput,
   ToggleSwitch,
@@ -222,25 +223,30 @@ export default function ZoneEditor({
             ) : null}
           </Panel>
 
-          <Panel title="Map">
+          <MapPanel
+            title="Map"
+            height={360}
+            legend={
+              mapSkipped.length > 0 ? (
+                <p className={classes.mapSkipped}>
+                  {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
+                  (missing coordinates, Use Location = No, or 0,0).
+                </p>
+              ) : undefined
+            }
+          >
             <CodeplugMap
               channels={channelsForMap}
               zones={zonesForMap}
               allChannels={library.channels}
-              height={360}
+              height="100%"
               mapControlMode="zoneEmphasis"
               emphasisZoneId={base.id}
               fitBoundsChannelIds={fitBoundsChannelIds}
               dimmedChannelIds={dimmedChannelIds}
               onChannelClick={(id) => navigate(`/library/channels/${id}`)}
             />
-            {mapSkipped.length > 0 ? (
-              <p className={classes.mapSkipped}>
-                {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
-                (missing coordinates, Use Location = No, or 0,0).
-              </p>
-            ) : null}
-          </Panel>
+          </MapPanel>
         </div>
 
         <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />

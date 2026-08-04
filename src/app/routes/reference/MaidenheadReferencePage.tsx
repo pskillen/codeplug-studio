@@ -14,6 +14,7 @@ import {
 import { useDebouncedValue } from '@mantine/hooks';
 import { useCallback, useMemo, useState } from 'react';
 import MapLocationPicker from '../../components/MapLocationPicker/MapLocationPicker.tsx';
+import { DesignSystemV2Provider, MapPanel } from '../../components/v2/index.ts';
 import { mapComboboxProps } from '../../theme.ts';
 import UseMyLocationButton from '../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import { FormSection, ListPage, PageSection } from '../../components/ui/index.ts';
@@ -255,11 +256,20 @@ export default function MaidenheadReferencePage() {
             </SimpleGrid>
 
             <Stack gap="sm">
-              <Title order={4}>Map</Title>
               <Text size="sm" c="dimmed">
                 Click the map or drag the marker to set coordinates.
               </Text>
-              <MapLocationPicker lat={mapLat} lon={mapLon} onPick={handleMapPick} active />
+              <DesignSystemV2Provider>
+                <MapPanel title="Map" height={280}>
+                  <MapLocationPicker
+                    lat={mapLat}
+                    lon={mapLon}
+                    onPick={handleMapPick}
+                    height="100%"
+                    active
+                  />
+                </MapPanel>
+              </DesignSystemV2Provider>
             </Stack>
 
             <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">

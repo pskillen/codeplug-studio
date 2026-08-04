@@ -22,6 +22,7 @@ import {
 import { coordsToLocator, isValidLocator, locatorToCoords } from '@core/domain/maidenhead.ts';
 import { GeocodeError, geocodeQuery, type GeocodeProvider } from '@integrations/geocode/index.ts';
 import MapPairPlot, { type MapPairPickTarget } from '../../components/MapPairPlot/MapPairPlot.tsx';
+import { DesignSystemV2Provider, MapPanel } from '../../components/v2/index.ts';
 import { mapComboboxProps } from '../../theme.ts';
 import UseMyLocationButton from '../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import { FormSection } from '../../components/ui/index.ts';
@@ -312,14 +313,18 @@ export default function MaidenheadBearingSection({
         <Text size="sm" c="dimmed">
           Tap the map to set <strong>{pickTarget === 'from' ? 'From' : 'To'}</strong>.
         </Text>
-        <MapPairPlot
-          pointFrom={fromCoords}
-          pointTo={toCoords}
-          pickTarget={pickTarget}
-          onPick={handleMapPick}
-          height={200}
-          active={mapActive}
-        />
+        <DesignSystemV2Provider>
+          <MapPanel title="Map" height={200}>
+            <MapPairPlot
+              pointFrom={fromCoords}
+              pointTo={toCoords}
+              pickTarget={pickTarget}
+              onPick={handleMapPick}
+              height="100%"
+              active={mapActive}
+            />
+          </MapPanel>
+        </DesignSystemV2Provider>
       </Stack>
 
       <Accordion variant="separated">
