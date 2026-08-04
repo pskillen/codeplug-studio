@@ -24,7 +24,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Scan lists (#934)        | Complete    | ShuttleList membership                                                                                                                     |
 | APRS (#935)              | Complete    | Tabbed page chrome                                                                                                                         |
 | Builds/export (#924)     | Deferred    | Out of scope this PR                                                                                                                       |
-| MapPanel (#925)          | Deferred    | Out of scope this PR                                                                                                                       |
+| MapPanel (#925)          | Shipped    | MapPanel children slot; all map call sites wrapped                                                                                         |
 | Mobile QA (#926)         | Not started | —                                                                                                                                          |
 | Retire v1 (#927)         | Not started | After full rollout only                                                                                                                    |
 
@@ -38,4 +38,4 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## Next
 
-Merge library ports PR → #924 Builds/export or #925 MapPanel as separate tickets.
+Merge MapPanel PR → #924 Builds/export or #926 mobile QA as separate tickets.

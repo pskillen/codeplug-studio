@@ -24,7 +24,7 @@ Two modes on one page — **Convert** and **Bearing**.
 **Convert** — locator ↔ coordinates ad hoc without an active project:
 
 - Locator ↔ coordinates at selectable precision (4 / 6 / 8 / 10 characters)
-- Map click and drag marker (`MapLocationPicker`)
+- Map click and drag marker (`MapLocationPicker` inside v2 `MapPanel`)
 - Device geolocation via **Use my location**
 - Address geocode (Photon by default; Mapbox when a token is set in Settings)
 - Channel lookup when a project is active (seeds from channel `location`)
@@ -34,7 +34,7 @@ Two modes on one page — **Convert** and **Bearing**.
 - **From** and **To** locator fields; **Use my location** on **From** for your current position
 - Hero shows bearing From → To (degrees true + compass octant) and distance (km and miles)
 - **Details** table: coordinates, reciprocal bearing, Δ lat/lon
-- `MapPairPlot`: both points, dashed path, fit bounds; **Set on map: From | To** near the map
+- `MapPairPlot`: both points, dashed path, fit bounds inside v2 `MapPanel`; **Set on map: From | To** near the map
 - Address and channel look-up under **More ways to set** (accordion)
 - Metrics use the **centre** of each locator square; coarser grids imply larger positional uncertainty
 
@@ -46,7 +46,7 @@ When importing from [repeater directories](repeater-directories/README.md), reco
 
 ### Channel editor
 
-The library channel editor (`/library/channels/:id`) includes a **Location** section with locator input, lat/lon, use-location, and `MapLocationPicker` (click/drag). Save calls `reconcileChannelLocation` — coordinates win when locator and coords conflict in one edit session. No **Use my location** on this page (reference tool and list maps only).
+The library channel editor (`/library/channels/:id`) includes a **Location** section with locator input, lat/lon, use-location, and `MapLocationPicker` inside v2 `MapPanel` (click/drag). Save calls `reconcileChannelLocation` — coordinates win when locator and coords conflict in one edit session. No **Use my location** on this page (reference tool and list maps only).
 
 ### Channel map
 
