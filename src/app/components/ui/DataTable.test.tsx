@@ -205,6 +205,41 @@ describe('DataTable orderMode, storedOrder, and scale', () => {
   });
 });
 
+describe('DataTable mobile column collapse', () => {
+  beforeEach(() => {
+    mockScrollViewport();
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes('max-width'),
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+  });
+
+  it('hides hideOnMobile columns and callsign when policy is collapse', () => {
+    renderTable(makeRows(2), {
+      mobileColumnPolicy: 'collapse',
+      callsignColumn: {
+        getName: (row) => `CS-${row.id}`,
+        getPath: (row) => `#${row.id}`,
+      },
+      columns: [
+        { key: 'score', header: 'Score', render: (row) => row.score, hideOnMobile: false },
+        { key: 'zone', header: 'Zone', render: () => 'Z', hideOnMobile: true },
+      ],
+    });
+
+    const thead = screen.getByTestId('datatable-thead');
+    expect(within(thead).queryByText('Zone')).not.toBeInTheDocument();
+    expect(within(thead).getByText('Score')).toBeInTheDocument();
+    expect(within(thead).queryByText('Callsign')).not.toBeInTheDocument();
+  });
+});
+
 describe('DataTable bulkReorder', () => {
   beforeEach(() => {
     mockScrollViewport();

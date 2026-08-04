@@ -14,6 +14,8 @@ import {
 import { IconChevronDown, IconChevronUp, IconRestore, IconSelector } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import EmptyState from './EmptyState.tsx';
 import { useDataTableColumnVisibility } from '../../hooks/useDataTableColumnVisibility.ts';
 import {
@@ -45,6 +47,8 @@ export interface DataTableColumn<T> {
   sortValue?: (row: T) => string | number | null;
   defaultVisible?: boolean;
   hideable?: boolean;
+  /** When table `mobileColumnPolicy` is `collapse`, omit column on narrow viewports. */
+  hideOnMobile?: boolean;
 }
 
 export type DataTableMobileColumnPolicy = 'none' | 'collapse';
@@ -107,7 +111,7 @@ export interface DataTableProps<T> {
   filteredEmptyMessage?: string;
   totalRowCount?: number;
   resultCount?: number;
-  /** Extension point for #68 mobile column collapse. Only `none` is implemented. */
+  /** Extension point for #68 mobile column collapse. */
   mobileColumnPolicy?: DataTableMobileColumnPolicy;
   /** When set, rows are clickable and the name column renders as plain text. */
   onRowActivate?: (row: T) => void;
@@ -269,8 +273,11 @@ export default function DataTable<T>({
   virtualizeOverscan,
   getRowClassName,
   bulkReorder,
+  mobileColumnPolicy = 'none',
 }: DataTableProps<T>) {
   const isList = variant === 'list';
+  const isMobileCollapse =
+    mobileColumnPolicy === 'collapse' && useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
   const showSearchInput = showSearch ?? (isList && onSearchChange !== undefined);
   const bulkReorderActive = bulkReorder != null;
   const bulkReorderDisabled = bulkReorder?.disabled ?? false;
@@ -339,10 +346,14 @@ export default function DataTable<T>({
 
   const visibleColumns = useMemo(() => {
     const hideableSet = new Set(hideableDefs.map((d) => d.key));
-    return columns.filter(
+    const cols = columns.filter(
       (col) => !hideableSet.has(col.key) || visibleHideableKeys.includes(col.key),
     );
-  }, [columns, hideableDefs, visibleHideableKeys]);
+    if (!isMobileCollapse) return cols;
+    return cols.filter((col) => !col.hideOnMobile);
+  }, [columns, hideableDefs, visibleHideableKeys, isMobileCollapse]);
+
+  const showCallsignColumn = callsignColumn && !isMobileCollapse;
 
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(
     effectiveDefaultSort ?? null,
@@ -451,7 +462,7 @@ export default function DataTable<T>({
   const leadingColCount =
     (selectable ? 1 : 0) +
     (showLeadingStoredOrderSort ? 1 : 0) +
-    (callsignColumn ? 1 : 0) +
+    (showCallsignColumn ? 1 : 0) +
     1 +
     visibleColumns.length;
   const defaultEmpty = <EmptyState message="No items" />;
@@ -508,9 +519,9 @@ export default function DataTable<T>({
             </Table.Td>
           ) : null}
           {showLeadingStoredOrderSort ? <Table.Td /> : null}
-          {callsignColumn ? (
+          {showCallsignColumn ? (
             <Table.Td>
-              <LinkedCell column={callsignColumn} row={row} asLink={!onRowActivate} />
+              <LinkedCell column={callsignColumn!} row={row} asLink={!onRowActivate} />
             </Table.Td>
           ) : null}
           <Table.Td>
@@ -557,6 +568,7 @@ export default function DataTable<T>({
       toggleRow,
       showLeadingStoredOrderSort,
       nameColumn,
+      showCallsignColumn,
       callsignColumn,
       visibleColumns,
       getRowClassName,
@@ -677,12 +689,12 @@ export default function DataTable<T>({
                     />
                   </Table.Th>
                 ) : null}
-                {callsignColumn ? (
+                {showCallsignColumn ? (
                   <Table.Th className={classes.stickyTh}>
                     <SortableHeader
-                      label={callsignColumn.header ?? 'Callsign'}
+                      label={callsignColumn!.header ?? 'Callsign'}
                       columnKey={DATATABLE_CALLSIGN_SORT_KEY}
-                      sortable={sortingEnabled && callsignColumn.sortable !== false}
+                      sortable={sortingEnabled && callsignColumn!.sortable !== false}
                       sortState={sortState}
                       onSort={handleSort}
                     />
