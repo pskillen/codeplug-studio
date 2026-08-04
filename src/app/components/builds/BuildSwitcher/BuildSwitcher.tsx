@@ -25,7 +25,15 @@ function buildSelectGroups(builds: RadioBuild[]) {
     .map(([group, items]) => ({ group, items }));
 }
 
-export default function BuildSwitcher() {
+export interface BuildSwitcherProps {
+  /**
+   * Compact leading control for the v2 ContextualStrip on build-detail routes.
+   * Hides the "Build" label and radio cue; uses a narrow select.
+   */
+  compact?: boolean;
+}
+
+export default function BuildSwitcher({ compact = false }: BuildSwitcherProps) {
   const { id: paramId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -38,21 +46,30 @@ export default function BuildSwitcher() {
   const radioLabel = radioTargetFor(build.radioTargetId)?.label ?? build.radioTargetId;
   const selectData = buildSelectGroups(builds);
 
+  const select = (
+    <Select
+      label={compact ? undefined : 'Build'}
+      aria-label={compact ? 'Build' : undefined}
+      data={selectData}
+      value={build.id}
+      onChange={(nextId) => {
+        if (!nextId || nextId === build.id) return;
+        const target = builds.find((b) => b.id === nextId);
+        if (!target) return;
+        navigate(pathForSwitchedBuild(location.pathname, build.id, target));
+      }}
+      allowDeselect={false}
+      searchable={builds.length > 5}
+      size={compact ? 'xs' : undefined}
+      w={compact ? 200 : undefined}
+    />
+  );
+
+  if (compact) return select;
+
   return (
     <Stack gap="xs">
-      <Select
-        label="Build"
-        data={selectData}
-        value={build.id}
-        onChange={(nextId) => {
-          if (!nextId || nextId === build.id) return;
-          const target = builds.find((b) => b.id === nextId);
-          if (!target) return;
-          navigate(pathForSwitchedBuild(location.pathname, build.id, target));
-        }}
-        allowDeselect={false}
-        searchable={builds.length > 5}
-      />
+      {select}
       <Text size="xs" c="dimmed">
         {radioLabel}
       </Text>

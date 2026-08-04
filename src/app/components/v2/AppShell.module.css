@@ -81,9 +81,22 @@
   padding: 6px 12px;
   border: 1px solid var(--dsv2-border);
   border-radius: var(--dsv2-radius-control);
+  background: transparent;
+  font-family: var(--dsv2-font-family);
   font-size: var(--dsv2-font-body-sm);
   color: var(--dsv2-text-secondary);
   white-space: nowrap;
+  cursor: pointer;
+}
+
+button.project:hover {
+  border-color: var(--dsv2-border-strip);
+  color: var(--dsv2-text-primary);
+}
+
+.tabDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .projectDot {
@@ -101,10 +114,10 @@
   background: var(--dsv2-surface);
   border: 1px solid var(--dsv2-border);
   flex-shrink: 0;
+  padding: 0;
+  cursor: pointer;
 }
 
-@media (max-width: 640px) {
-  .tabs {
-    display: none;
-  }
+button.avatar:hover {
+  border-color: var(--dsv2-accent);
 }

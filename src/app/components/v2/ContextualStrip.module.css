@@ -1,10 +1,16 @@
 .root {
   display: flex;
+  align-items: center;
   gap: 6px;
   padding: 12px var(--dsv2-page-padding-x);
   border-bottom: 1px solid var(--dsv2-border-strip);
   background: var(--dsv2-surface-quiet);
   overflow-x: auto;
+}
+
+.leading {
+  flex-shrink: 0;
+  margin-right: 6px;
 }
 
 .item {

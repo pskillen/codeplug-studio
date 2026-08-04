@@ -19,7 +19,15 @@ import SoftWarning from '../ui/SoftWarning.tsx';
 
 const disconnectedIconStyle = { opacity: 0.55, cursor: 'pointer' } as const;
 
-export default function SidebarDriveControls() {
+export interface SidebarDriveControlsProps {
+  /**
+   * `header` — icon cluster only for AppShell `rightExtra`.
+   * `sidebar` — full stack with source label (legacy AppNav).
+   */
+  variant?: 'sidebar' | 'header';
+}
+
+export default function SidebarDriveControls({ variant = 'sidebar' }: SidebarDriveControlsProps) {
   const { activeProjectId, activeProject } = useProjects();
   const { sessionExpired, connected } = useGoogleDrive();
   const { dirty, hasPortableDestination } = useProjectPortableDirty(
@@ -116,45 +124,51 @@ export default function SidebarDriveControls() {
 
   return (
     <>
-      <Stack gap="xs">
-        {sourceLabel ? (
-          <Text size="xs" c="dimmed" truncate>
-            {sourceLabel}
-          </Text>
-        ) : null}
-        {drive ? (
-          showExpiryHint ? (
-            <SoftWarning tone="danger">
-              <Stack gap="xs">
-                <Text size="xs" c="dimmed">
-                  Session expired — click Save or Check to reconnect. You can keep working locally.
-                </Text>
-                {driveButtons}
-              </Stack>
-            </SoftWarning>
-          ) : (
-            driveButtons
-          )
-        ) : null}
-        {localFile && !drive ? (
-          <Anchor component={Link} to="/summary" size="xs">
-            Export YAML
-          </Anchor>
-        ) : null}
-        {!hasPortableDestination && everConnectedDrive ? (
-          <BrowserOnlyWarning projectId={activeProjectId} />
-        ) : null}
-        {error && !conflictOpen ? (
-          <Text size="xs" c="red">
-            {error}
-          </Text>
-        ) : null}
-        {!error && checkError ? (
-          <Text size="xs" c="red">
-            {checkError}
-          </Text>
-        ) : null}
-      </Stack>
+      {variant === 'header' ? (
+        drive ? (
+          driveButtons
+        ) : null
+      ) : (
+        <Stack gap="xs">
+          {sourceLabel ? (
+            <Text size="xs" c="dimmed" truncate>
+              {sourceLabel}
+            </Text>
+          ) : null}
+          {drive ? (
+            showExpiryHint ? (
+              <SoftWarning tone="danger">
+                <Stack gap="xs">
+                  <Text size="xs" c="dimmed">
+                    Session expired — click Save or Check to reconnect. You can keep working locally.
+                  </Text>
+                  {driveButtons}
+                </Stack>
+              </SoftWarning>
+            ) : (
+              driveButtons
+            )
+          ) : null}
+          {localFile && !drive ? (
+            <Anchor component={Link} to="/summary" size="xs">
+              Export YAML
+            </Anchor>
+          ) : null}
+          {!hasPortableDestination && everConnectedDrive ? (
+            <BrowserOnlyWarning projectId={activeProjectId} />
+          ) : null}
+          {error && !conflictOpen ? (
+            <Text size="xs" c="red">
+              {error}
+            </Text>
+          ) : null}
+          {!error && checkError ? (
+            <Text size="xs" c="red">
+              {checkError}
+            </Text>
+          ) : null}
+        </Stack>
+      )}
       <DriveSaveConflictModal
         opened={conflictOpen}
         projectName={projectName}
