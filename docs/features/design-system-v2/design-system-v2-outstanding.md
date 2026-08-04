@@ -1,20 +1,18 @@
 # Design system v2 — Outstanding
 
-Debt and follow-ups discovered during [epic #915](https://github.com/pskillen/codeplug-studio/issues/915) / foundations [#916](https://github.com/pskillen/codeplug-studio/issues/916).
+Debt and follow-ups discovered during [epic #915](https://github.com/pskillen/codeplug-studio/issues/915).
 
 ## Debt
 
-| Item                                                 | Severity | Notes                                                                                                                                                                                     |
-| ---------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Forms/data-display components not yet ported         | Low      | `StatusDot` still deferred — unused by #918–#920 screens. Other forms/data-display primitives shipped in #918–#920.                                                                       |
-| v1 spacing not remapped in `themeV2`                 | Low      | `Panel` / `FormField` use v2 padding on ported screens; reused v1 shells may still differ.                                                                                                |
-| ShuttleList skins Mantine title chrome inside panels | Low      | `SelectedItemList` / `AvailableItemPicker` still render their own Mantine `Text` titles; v2 panel is a wrapper. Fine for preview; may want thinner wrappers when membership screens port. |
-| MapPanel hatch only                                  | Deferred | Real `CodeplugMap` wiring tracked as [#925](https://github.com/pskillen/codeplug-studio/issues/925).                                                                                      |
-| Domain BandPill / ModePill still v1                  | Deferred | Explicitly out of #916; use `Pill` `tone="semantic"` when those screens port.                                                                                                             |
-| Drive session-expired SoftWarning left sidebar       | Low      | Header Drive icons remain clickable for reauth; the old sidebar SoftWarning copy is gone with AppNav (#917).                                                                              |
-| Cookie banner vs BottomTabBar overlap                | Low      | Fixed cookie dialog may sit over the mobile tab bar until a dedicated offset lands.                                                                                                       |
+| Item                                          | Severity | Notes                                                                                                                                                      |
+| --------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MapPanel` still hatch placeholder            | Deferred | Real `CodeplugMap` wiring tracked as [#925](https://github.com/pskillen/codeplug-studio/issues/925) — Zones/Channels/Summary still embed raw `CodeplugMap` |
+| Domain BandPill / ModePill in membership rows | Low      | Zone/RGL/scan shuttle rows still use v1 `BandPill` / `ModePill` inside `ShuttleRow` labels — acceptable until domain pills re-skin                         |
+| Mantine segments in v2 editors                | Low      | Talk group / digital contact mode pickers and APRS sub-panels still use v1 `GradientSegmentedControl` / Mantine tabs inside v2 shells                      |
+| `ZoneEditActions.tsx` unused                  | Low      | Save moved to layout sticky header — file can be removed in #927 retire pass                                                                               |
+| Cookie banner vs BottomTabBar overlap         | Low      | Fixed cookie dialog may sit over the mobile tab bar until a dedicated offset lands                                                                         |
 
-## Closed during #916
+## Closed during library ports
 
-- Token gaps vs DS `tokens/*.css` (accent tints, border-strip, typography names, panel padding swap) — fixed in fidelity pass on PR #928
-- `AppShell` reinvented as sidebar layout — rewritten to DS top-header API; added `ContextualStrip` + `SectionNav`
+- ShuttleList skins only in styleguide — now wired in `ZoneMemberEditor`, `RxGroupListMemberPicker`, `ScanListMemberEditor`
+- Epic #915 exclusion of TG / Contacts / Scan / APRS — shipped as best-effort chrome ports ([#932](https://github.com/pskillen/codeplug-studio/issues/932)–[#935](https://github.com/pskillen/codeplug-studio/issues/935))
