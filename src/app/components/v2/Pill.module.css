@@ -1,0 +1,48 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: var(--dsv2-radius-pill);
+  border: 1px solid transparent;
+  font-family: var(--dsv2-font-family);
+  font-size: var(--dsv2-font-caption);
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.neutral {
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-secondary);
+  border-color: var(--dsv2-border);
+}
+
+.accent {
+  background: color-mix(in srgb, var(--dsv2-accent) 18%, transparent);
+  color: var(--dsv2-accent);
+  border-color: color-mix(in srgb, var(--dsv2-accent) 35%, transparent);
+}
+
+.accentSolid {
+  background: var(--dsv2-accent);
+  color: #fff;
+}
+
+.success {
+  background: color-mix(in srgb, var(--dsv2-success) 18%, transparent);
+  color: var(--dsv2-success);
+  border-color: color-mix(in srgb, var(--dsv2-success) 35%, transparent);
+}
+
+.warning {
+  background: color-mix(in srgb, var(--dsv2-warning) 18%, transparent);
+  color: var(--dsv2-warning);
+  border-color: color-mix(in srgb, var(--dsv2-warning) 35%, transparent);
+}
+
+.semantic {
+  /* Fill/text set via inline style from props. */
+}

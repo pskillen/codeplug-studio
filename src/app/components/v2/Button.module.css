@@ -1,0 +1,102 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dsv2-space-2);
+  border-radius: var(--dsv2-radius-control);
+  font-family: var(--dsv2-font-family);
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.root:disabled,
+.root[data-disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sm {
+  min-height: 28px;
+  padding: 0 var(--dsv2-space-4);
+  font-size: var(--dsv2-font-caption);
+}
+
+.md {
+  min-height: 34px;
+  padding: 0 var(--dsv2-space-5);
+  font-size: var(--dsv2-font-body);
+}
+
+.lg {
+  min-height: 40px;
+  padding: 0 var(--dsv2-space-7);
+  font-size: var(--dsv2-font-title);
+}
+
+.primary {
+  background: var(--dsv2-accent);
+  color: #fff;
+}
+
+.primary:hover:not(:disabled):not([data-disabled]) {
+  background: var(--dsv2-accent-hover);
+}
+
+.secondary {
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-primary);
+  border-color: var(--dsv2-border);
+}
+
+.secondary:hover:not(:disabled):not([data-disabled]) {
+  background: var(--dsv2-surface-quiet);
+}
+
+.outline {
+  background: transparent;
+  color: var(--dsv2-text-primary);
+  border-color: var(--dsv2-border);
+}
+
+.outline:hover:not(:disabled):not([data-disabled]) {
+  border-color: var(--dsv2-text-tertiary);
+  background: var(--dsv2-surface-quiet);
+}
+
+.dashed {
+  background: transparent;
+  color: var(--dsv2-text-secondary);
+  border-color: var(--dsv2-border);
+  border-style: dashed;
+}
+
+.dashed:hover:not(:disabled):not([data-disabled]) {
+  color: var(--dsv2-text-primary);
+  border-color: var(--dsv2-text-tertiary);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--dsv2-text-secondary);
+  border-color: transparent;
+}
+
+.ghost:hover:not(:disabled):not([data-disabled]) {
+  color: var(--dsv2-text-primary);
+  background: var(--dsv2-surface-quiet);
+}
+
+.destructive {
+  background: var(--dsv2-destructive);
+  color: #fff;
+}
+
+.destructive:hover:not(:disabled):not([data-disabled]) {
+  filter: brightness(1.08);
+}
