@@ -4,7 +4,7 @@ import DesignSystemV2Provider from './DesignSystemV2Provider.tsx';
 import MapPanel from './MapPanel.tsx';
 
 describe('MapPanel', () => {
-  it('renders title, placeholder, and legend', () => {
+  it('renders title, hatch caption, and legend', () => {
     render(
       <DesignSystemV2Provider>
         <MapPanel title="Nearby" legend={<span>UHF</span>} />
@@ -13,6 +13,7 @@ describe('MapPanel', () => {
 
     expect(screen.getByText('Nearby')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Map placeholder' })).toBeInTheDocument();
+    expect(screen.getByText('[ map ]')).toBeInTheDocument();
     expect(screen.getByText('UHF')).toBeInTheDocument();
   });
 

@@ -11,7 +11,7 @@ Guiding principles for the whole epic: (1) fidelity to the Claude Design “Code
 | Theme tokens + CSS var resolver    | Shipped (#916) | `src/app/theme-v2.ts` — `DSV2_TOKENS`, `themeV2`, `dsv2CssVariablesResolver`                                                  |
 | Theme isolation provider           | Shipped (#916) | `DesignSystemV2Provider` — nested `MantineProvider`, `.dsv2-scope` selector (never `:root`)                                   |
 | Net-new primitives                 | Shipped (#916) | `Button`, `Pill`, `OverrideField`, `MapPanel`                                                                                 |
-| Navigation chrome (presentational) | Shipped (#916) | `AppShell`, `BottomTabBar` — fixture-driven; real routes in #917                                                              |
+| Navigation chrome (presentational) | Shipped (#916) | `AppShell` (top header), `ContextualStrip`, `SectionNav`, `BottomTabBar` — real routes in #917                                |
 | ShuttleList family                 | Shipped (#916) | Wraps `SelectedItemList` / `AvailableItemPicker` — does not reimplement DnD                                                   |
 | DataTable                          | Reuse only     | Existing `components/ui/DataTable` re-skins inside the provider; no duplicate                                                 |
 | `/styleguide/v2` preview           | Shipped (#916) | Nested under `DesignSystemV2Provider`; linked from `/styleguide`                                                              |
@@ -41,7 +41,9 @@ Mantine `theme.components.*.defaultProps` and CSS variables are **global** if ap
 | `Pill`                   | [Pill.md](../../../src/app/components/v2/Pill.md)                                     | `tone="semantic"` for band/mode fills |
 | `OverrideField`          | [OverrideField.md](../../../src/app/components/v2/OverrideField.md)                   | Build override chrome                 |
 | `MapPanel`               | [MapPanel.md](../../../src/app/components/v2/MapPanel.md)                             | Hatch placeholder                     |
-| `AppShell`               | [AppShell.md](../../../src/app/components/v2/AppShell.md)                             | Presentational shell                  |
+| `AppShell`               | [AppShell.md](../../../src/app/components/v2/AppShell.md)                             | Top header bar (not a sidebar shell)  |
+| `ContextualStrip`        | [ContextualStrip.md](../../../src/app/components/v2/ContextualStrip.md)               | Section sub-view pills under AppShell |
+| `SectionNav`             | [SectionNav.md](../../../src/app/components/v2/SectionNav.md)                         | In-page section rail                  |
 | `BottomTabBar`           | [BottomTabBar.md](../../../src/app/components/v2/BottomTabBar.md)                     | Mobile primary nav                    |
 | `ShuttleList*`           | [ShuttleList.md](../../../src/app/components/v2/ShuttleList.md)                       | Reuses list-kit                       |
 
@@ -49,13 +51,13 @@ Barrel: `src/app/components/v2/index.ts`.
 
 ## Interactive demos
 
-| Path                          | Contents                          |
-| ----------------------------- | --------------------------------- |
-| `/styleguide/v2`              | Index                             |
-| `/styleguide/v2/forms`        | Button, OverrideField             |
-| `/styleguide/v2/data-display` | Pill, DataTable re-skin, MapPanel |
-| `/styleguide/v2/navigation`   | AppShell + BottomTabBar           |
-| `/styleguide/v2/patterns`     | ShuttleList family                |
+| Path                          | Contents                                            |
+| ----------------------------- | --------------------------------------------------- |
+| `/styleguide/v2`              | Index                                               |
+| `/styleguide/v2/forms`        | Button, OverrideField                               |
+| `/styleguide/v2/data-display` | Pill, DataTable re-skin, MapPanel                   |
+| `/styleguide/v2/navigation`   | AppShell, ContextualStrip, SectionNav, BottomTabBar |
+| `/styleguide/v2/patterns`     | ShuttleList family                                  |
 
 ## Progress tracking
 

@@ -16,8 +16,14 @@ describe('theme-v2 tokens', () => {
 
   it('keeps typography, spacing, radii, and the single popover shadow', () => {
     expect(DSV2_TOKENS.typography.sizes.body).toBe('13px');
+    expect(DSV2_TOKENS.typography.sizes.eyebrow).toBe('10.5px');
+    expect(DSV2_TOKENS.typography.sizes.micro).toBe('11px');
+    expect(DSV2_TOKENS.colors.accentTint12).toBe('rgba(79,140,255,.12)');
+    expect(DSV2_TOKENS.colors.borderStrip).toBe('#1c232d');
     expect(DSV2_TOKENS.spacing['1']).toBe('4px');
     expect(DSV2_TOKENS.spacing['10']).toBe('32px');
+    expect(DSV2_TOKENS.spacing.panelPaddingY).toBe('18px');
+    expect(DSV2_TOKENS.spacing.panelPaddingX).toBe('20px');
     expect(DSV2_TOKENS.radii.control).toBe('8px');
     expect(DSV2_TOKENS.radii.panel).toBe('10px');
     expect(DSV2_TOKENS.radii.pill).toBe('999px');

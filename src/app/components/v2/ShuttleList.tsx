@@ -113,18 +113,28 @@ export function ShuttleRow({
 }
 
 export interface ShuttlePoolHeaderProps {
-  title: ReactNode;
+  /** Design-system prop name. */
+  label?: string;
+  /** Alias used by earlier v2 API — same as `label`. */
+  title?: ReactNode;
   count?: number;
   actions?: ReactNode;
   className?: string;
 }
 
-/** Section header for the available-items (pool) side. */
-export function ShuttlePoolHeader({ title, count, actions, className }: ShuttlePoolHeaderProps) {
+/** Section header for the available-items (pool) side — uppercase eyebrow. */
+export function ShuttlePoolHeader({
+  title,
+  label,
+  count,
+  actions,
+  className,
+}: ShuttlePoolHeaderProps) {
+  const text = label ?? title;
   return (
     <div className={[classes.poolHeader, className].filter(Boolean).join(' ')}>
       <div className={classes.poolTitle}>
-        <span>{title}</span>
+        <span>{text}</span>
         {count != null ? <span className={classes.poolCount}>{count}</span> : null}
       </div>
       {actions ? <div className={classes.poolActions}>{actions}</div> : null}
@@ -136,6 +146,9 @@ export interface ShuttleAddBarProps {
   onAdd: () => void;
   disabled?: boolean;
   label?: string;
+  /** Preferred count prop (design system). */
+  count?: number;
+  /** Alias for `count`. */
   selectedCount?: number;
   className?: string;
 }
@@ -146,13 +159,15 @@ export function ShuttleAddBar({
   disabled,
   label = 'Add selected',
   selectedCount,
+  count,
   className,
 }: ShuttleAddBarProps) {
-  const text = selectedCount != null && selectedCount > 0 ? `${label} (${selectedCount})` : label;
+  const n = count ?? selectedCount ?? 0;
+  const text = `${label} (${n})`;
 
   return (
     <div className={[classes.addBar, className].filter(Boolean).join(' ')}>
-      <Button variant="primary" size="sm" onClick={onAdd} disabled={disabled}>
+      <Button variant="secondary" size="sm" onClick={onAdd} disabled={disabled ?? n === 0}>
         {text}
       </Button>
     </div>

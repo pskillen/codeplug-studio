@@ -21,7 +21,7 @@ describe('OverrideField', () => {
     const onReset = vi.fn();
     render(
       <DesignSystemV2Provider>
-        <OverrideField label="Wire name" overridden onReset={onReset}>
+        <OverrideField label="Wire name" overridden onReset={onReset} libraryHint="from library">
           <input aria-label="Wire name value" />
         </OverrideField>
       </DesignSystemV2Provider>,
@@ -29,7 +29,7 @@ describe('OverrideField', () => {
 
     expect(screen.getByText('Overridden for this build')).toBeInTheDocument();
     expect(screen.getByLabelText('Wire name value')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset ✕' }));
     expect(onReset).toHaveBeenCalledOnce();
   });
 });

@@ -2,17 +2,19 @@ import type { ReactNode } from 'react';
 import classes from './BottomTabBar.module.css';
 
 export interface BottomTabItem {
-  id: string;
+  /** Stable id for selection (preferred). */
+  id?: string;
   label: string;
   icon: ReactNode;
-  /** Optional count badge. */
   badge?: number | string;
 }
 
 export interface BottomTabBarProps {
   items: readonly BottomTabItem[];
-  activeId: string;
-  onChange?: (id: string) => void;
+  /** Active item id, or label when ids are omitted (design-system API). */
+  active?: string;
+  activeId?: string;
+  onChange?: (idOrLabel: string) => void;
   className?: string;
 }
 
@@ -20,18 +22,27 @@ export interface BottomTabBarProps {
  * Mobile bottom tab bar. Presentational / fixture-driven in #916; real route
  * wiring lands in the chrome port (#917).
  */
-export default function BottomTabBar({ items, activeId, onChange, className }: BottomTabBarProps) {
+export default function BottomTabBar({
+  items,
+  active,
+  activeId,
+  onChange,
+  className,
+}: BottomTabBarProps) {
+  const current = activeId ?? active;
+
   return (
     <nav className={[classes.root, className].filter(Boolean).join(' ')} aria-label="Primary">
       {items.map((item) => {
-        const active = item.id === activeId;
+        const key = item.id ?? item.label;
+        const isActive = current === key || current === item.label;
         return (
           <button
-            key={item.id}
+            key={key}
             type="button"
-            className={[classes.tab, active ? classes.active : ''].filter(Boolean).join(' ')}
-            aria-current={active ? 'page' : undefined}
-            onClick={() => onChange?.(item.id)}
+            className={[classes.tab, isActive ? classes.active : ''].filter(Boolean).join(' ')}
+            aria-current={isActive ? 'page' : undefined}
+            onClick={() => onChange?.(key)}
           >
             <span className={classes.icon} aria-hidden>
               {item.icon}

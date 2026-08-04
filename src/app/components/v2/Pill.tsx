@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react';
+import { DSV2_TOKENS } from '../../theme-v2.ts';
 import classes from './Pill.module.css';
 
 export type PillTone = 'neutral' | 'accent' | 'accentSolid' | 'success' | 'warning' | 'semantic';
@@ -7,7 +8,10 @@ export interface PillProps {
   tone?: PillTone;
   /** Required when `tone="semantic"` — saturated fill for band/mode tags. */
   color?: string;
-  /** Optional text color for `tone="semantic"` (defaults to white). */
+  /**
+   * Text color for `tone="semantic"`. Defaults to design-system `--pill-text-dark`
+   * (yellow/light semantic fills); pass `--dsv2-pill-text-light` / `#fff` for dark fills.
+   */
   textColor?: string;
   children: ReactNode;
   className?: string;
@@ -28,14 +32,17 @@ const TONE_CLASS: Record<Exclude<PillTone, 'semantic'>, string> = {
 export default function Pill({
   tone = 'neutral',
   color,
-  textColor = '#fff',
+  textColor = DSV2_TOKENS.colors.pillTextDark,
   children,
   className,
 }: PillProps) {
   const toneClass = tone === 'semantic' ? classes.semantic : TONE_CLASS[tone];
   const style: CSSProperties | undefined =
-    tone === 'semantic' && color
-      ? { backgroundColor: color, color: textColor, borderColor: color }
+    tone === 'semantic'
+      ? {
+          backgroundColor: color ?? DSV2_TOKENS.colors.modeFm,
+          color: textColor,
+        }
       : undefined;
 
   return (

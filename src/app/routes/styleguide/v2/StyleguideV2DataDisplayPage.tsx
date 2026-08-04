@@ -24,13 +24,21 @@ export default function StyleguideV2DataDisplayPage() {
           <Pill tone="accentSolid">Accent solid</Pill>
           <Pill tone="success">Success</Pill>
           <Pill tone="warning">Warning</Pill>
-          <Pill tone="semantic" color={DSV2_TOKENS.colors.band2m}>
+          <Pill
+            tone="semantic"
+            color={DSV2_TOKENS.colors.band2m}
+            textColor={DSV2_TOKENS.colors.pillTextLight}
+          >
             2m
           </Pill>
-          <Pill tone="semantic" color={DSV2_TOKENS.colors.modeDmr}>
+          <Pill
+            tone="semantic"
+            color={DSV2_TOKENS.colors.modeDmr}
+            textColor={DSV2_TOKENS.colors.pillTextLight}
+          >
             DMR
           </Pill>
-          <Pill tone="semantic" color={DSV2_TOKENS.colors.modeFm} textColor="#111">
+          <Pill tone="semantic" color={DSV2_TOKENS.colors.modeFm}>
             FM
           </Pill>
         </Group>

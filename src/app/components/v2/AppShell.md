@@ -1,41 +1,41 @@
 # AppShell
 
-Presentational layout chrome for design-system v2 (header / nav / strip / main / bottom bar).
+Design-system primary header: wordmark, top-level tabs, project chip, avatar slot.
 
 ## Purpose
 
-Demo and future live shell for v2 screens. Fixture-driven in foundations (#916); real route wiring is [#917](https://github.com/pskillen/codeplug-studio/issues/917).
+The **top** chrome bar from the Claude Design system — not a sidebar layout. Pair with `ContextualStrip` for Library sub-views and `BottomTabBar` on narrow viewports. Real route wiring is [#917](https://github.com/pskillen/codeplug-studio/issues/917).
 
 ## Props
 
-| Prop              | Type        | Notes                                   |
-| ----------------- | ----------- | --------------------------------------- |
-| `header`          | `ReactNode` | Top brand / project strip               |
-| `nav`             | `ReactNode` | Desktop side nav (hidden ≤640px)        |
-| `contextualStrip` | `ReactNode` | Optional section strip under the header |
-| `children`        | `ReactNode` | Main content                            |
-| `bottomBar`       | `ReactNode` | Typically a `BottomTabBar` for mobile   |
+| Prop          | Type                    | Notes                                      |
+| ------------- | ----------------------- | ------------------------------------------ |
+| `tabs`        | `readonly string[]`     | Top-level sections                         |
+| `activeTab`   | `string`                | Selected tab label                         |
+| `onTabChange` | `(tab: string) => void` | Tab click                                  |
+| `projectName` | `string`                | Default `Untitled project`                 |
+| `rightExtra`  | `ReactNode`             | Injected before the avatar (Help/Settings) |
 
 ## Usage
 
 ```tsx
 <AppShell
-  header={<strong>Codeplug Studio</strong>}
-  nav={<nav>…</nav>}
-  contextualStrip={<span>Channels</span>}
-  bottomBar={<BottomTabBar items={tabs} activeId="library" />}
->
-  Page body
-</AppShell>
+  tabs={['Summary', 'Library', 'Tools', 'Export for radio']}
+  activeTab="Library"
+  onTabChange={setTab}
+  projectName="Skywarn Repeaters"
+/>
+<ContextualStrip items={['Channels', 'Zones']} active={sub} onChange={setSub} />
 ```
 
 ## Behaviour
 
-- Narrow viewports hide the side `nav` and rely on `bottomBar`.
+- Narrow CSS hides the top tab row — rely on `BottomTabBar` for mobile primary nav.
 - Must render inside `DesignSystemV2Provider`.
 - Live demos: `/styleguide/v2/navigation`
 
 ## Related
 
+- [ContextualStrip.md](./ContextualStrip.md)
 - [BottomTabBar.md](./BottomTabBar.md)
 - [docs/features/design-system-v2/README.md](../../../../docs/features/design-system-v2/README.md)

@@ -1,57 +1,74 @@
 import type { ReactNode } from 'react';
-import Button from './Button.tsx';
 import Pill from './Pill.tsx';
 import classes from './OverrideField.module.css';
 
 export interface OverrideFieldProps {
   label: string;
   description?: string;
+  /** Shown after description when not overridden — e.g. library wire name. */
+  libraryHint?: string;
   /** When true, shows the overridden state with reset affordance. */
-  overridden: boolean;
+  overridden?: boolean;
+  /** Accent-tint background for the active/highlighted row. */
+  highlighted?: boolean;
   onOverride?: () => void;
   onReset?: () => void;
-  /** Field control(s) shown when overridden (or always, for editors). */
+  /** Optional nested control(s) under the row (app extension; not in DS JSX). */
   children?: ReactNode;
   className?: string;
 }
 
 /**
  * Build-override pattern: library default vs per-build override with reset.
+ * Matches the design-system row chrome (flat, not a bordered card).
  */
 export default function OverrideField({
   label,
   description,
-  overridden,
+  libraryHint,
+  overridden = false,
+  highlighted = false,
   onOverride,
   onReset,
   children,
   className,
 }: OverrideFieldProps) {
   return (
-    <div className={[classes.root, className].filter(Boolean).join(' ')}>
-      <div className={classes.header}>
-        <div className={classes.copy}>
-          <div className={classes.label}>{label}</div>
-          {description ? <div className={classes.description}>{description}</div> : null}
-        </div>
+    <div
+      className={[classes.root, highlighted ? classes.highlighted : '', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div className={classes.copy}>
+        <div className={classes.label}>{label}</div>
+        {description || (libraryHint && !overridden) ? (
+          <div className={overridden ? classes.descriptionOverridden : classes.description}>
+            {description}
+            {libraryHint && !overridden ? (
+              <span className={classes.libraryHint}> ({libraryHint})</span>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+      <div className={classes.actions}>
         {overridden ? (
-          <div className={classes.actions}>
+          <>
             <Pill tone="accent">Overridden for this build</Pill>
             {onReset ? (
-              <Button variant="ghost" size="sm" onClick={onReset}>
-                Reset
-              </Button>
+              <button type="button" className={classes.reset} onClick={onReset}>
+                Reset ✕
+              </button>
             ) : null}
-          </div>
+          </>
         ) : (
-          <div className={classes.actions}>
+          <>
             <span className={classes.defaultHint}>using library default</span>
             {onOverride ? (
-              <Button variant="ghost" size="sm" onClick={onOverride}>
+              <button type="button" className={classes.override} onClick={onOverride}>
                 Override for this build
-              </Button>
+              </button>
             ) : null}
-          </div>
+          </>
         )}
       </div>
       {children ? <div className={classes.body}>{children}</div> : null}

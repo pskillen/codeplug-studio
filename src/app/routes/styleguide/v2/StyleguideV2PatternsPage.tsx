@@ -96,7 +96,7 @@ export default function StyleguideV2PatternsPage() {
           />
 
           <Stack gap="sm">
-            <ShuttlePoolHeader title="Available" count={poolKeys.length} />
+            <ShuttlePoolHeader label="Available" />
             <ShuttlePoolPanel
               title="Pool"
               description="Channels and zones not yet in the member list"
@@ -134,7 +134,7 @@ export default function StyleguideV2PatternsPage() {
               footer={
                 <ShuttleAddBar
                   onAdd={addSelected}
-                  selectedCount={poolPick.length}
+                  count={poolPick.length}
                   disabled={poolPick.length === 0}
                 />
               }

@@ -43,7 +43,9 @@ export default function StyleguideV2FormsPage() {
         <OverrideField
           label="Wire name"
           description="CPS channel name for this build"
+          libraryHint="GB3DA Stornoway"
           overridden={overridden}
+          highlighted={overridden}
           onOverride={() => setOverridden(true)}
           onReset={() => {
             setOverridden(false);

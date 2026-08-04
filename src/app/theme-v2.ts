@@ -12,9 +12,8 @@ import { theme } from './theme.ts';
 export const DSV2_SCOPE_SELECTOR = '.dsv2-scope';
 
 /**
- * Design system v2 tokens (Claude Design "Codeplug Studio Design System").
- * Source of truth for Phase 1 foundations (#916); net-new v2 components reference
- * these directly (and via `--dsv2-*` CSS vars) rather than remapping Mantine spacing.
+ * Design system v2 tokens — mirrored from
+ * `Codeplug Studio Design System/tokens/{colors,typography,spacing,radii,shadows}.css`.
  */
 export const DSV2_TOKENS = {
   colors: {
@@ -23,15 +22,28 @@ export const DSV2_TOKENS = {
     surfaceQuiet: '#0d1218',
     border: '#232b36',
     borderQuiet: '#1a2129',
+    borderStrip: '#1c232d',
     textPrimary: '#e8ecf1',
     textSecondary: '#93a1b0',
     textTertiary: '#5b6b7c',
     textDisabled: '#3a4451',
     accent: '#4f8cff',
     accentHover: '#6f9fff',
+    accentTint06: 'rgba(79,140,255,.06)',
+    accentTint10: 'rgba(79,140,255,.10)',
+    accentTint12: 'rgba(79,140,255,.12)',
+    accentTint14: 'rgba(79,140,255,.14)',
+    accentBorder: 'rgba(79,140,255,.4)',
     success: '#4fae8a',
+    successTint: 'rgba(79,174,138,.07)',
+    successBorder: '#2a3a30',
     warning: '#d7a34f',
+    warningTint: 'rgba(215,163,79,.12)',
+    warningBorder: '#3a3320',
     destructive: '#d1665c',
+    destructiveTint: 'rgba(209,102,92,.12)',
+    pillTextDark: '#14161a',
+    pillTextLight: '#fff',
     band2m: '#4a87fd',
     band70cm: '#20c997',
     band23cm: '#9c36b5',
@@ -48,15 +60,22 @@ export const DSV2_TOKENS = {
     modeOther: '#9c36b5',
   },
   typography: {
-    fontFamily: 'system-ui, sans-serif',
+    fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif',
+    fontFamilyMono: 'ui-monospace, Menlo, monospace',
     sizes: {
-      display: '22px',
-      title: '16px',
+      /** `--text-heading-lg` */
+      headingLg: '22px',
+      /** `--text-heading` */
+      heading: '16px',
+      /** `--text-section-label` / `--text-body` */
+      sectionLabel: '13px',
       body: '13px',
-      bodyStrong: '13px',
-      label: '12.5px',
-      caption: '11px',
-      micro: '10.5px',
+      /** `--text-body-sm` */
+      bodySm: '12.5px',
+      /** `--text-micro` */
+      micro: '11px',
+      /** `--text-eyebrow` */
+      eyebrow: '10.5px',
     },
     weights: {
       regular: 400,
@@ -64,6 +83,7 @@ export const DSV2_TOKENS = {
       semibold: 600,
       bold: 700,
     },
+    trackingEyebrow: '0.05em',
   },
   spacing: {
     '1': '4px',
@@ -78,8 +98,9 @@ export const DSV2_TOKENS = {
     '10': '32px',
     pagePaddingX: '32px',
     pagePaddingY: '26px',
-    panelPaddingX: '18px',
-    panelPaddingY: '20px',
+    /** DS `--panel-padding: 18px 20px` → y x */
+    panelPaddingY: '18px',
+    panelPaddingX: '20px',
     rowPaddingY: '11px',
     rowPaddingX: '16px',
   },
@@ -138,6 +159,7 @@ const themeV2Override = createTheme({
     dark: darkV2,
   },
   fontFamily: DSV2_TOKENS.typography.fontFamily,
+  fontFamilyMonospace: DSV2_TOKENS.typography.fontFamilyMono,
   defaultRadius: 'md',
   radius: {
     xs: '4px',
@@ -189,15 +211,28 @@ export const dsv2CssVariablesResolver: CSSVariablesResolver = (mantineTheme) => 
     '--dsv2-surface-quiet': colors.surfaceQuiet,
     '--dsv2-border': colors.border,
     '--dsv2-border-quiet': colors.borderQuiet,
+    '--dsv2-border-strip': colors.borderStrip,
     '--dsv2-text-primary': colors.textPrimary,
     '--dsv2-text-secondary': colors.textSecondary,
     '--dsv2-text-tertiary': colors.textTertiary,
     '--dsv2-text-disabled': colors.textDisabled,
     '--dsv2-accent': colors.accent,
     '--dsv2-accent-hover': colors.accentHover,
+    '--dsv2-accent-tint-06': colors.accentTint06,
+    '--dsv2-accent-tint-10': colors.accentTint10,
+    '--dsv2-accent-tint-12': colors.accentTint12,
+    '--dsv2-accent-tint-14': colors.accentTint14,
+    '--dsv2-accent-border': colors.accentBorder,
     '--dsv2-success': colors.success,
+    '--dsv2-success-tint': colors.successTint,
+    '--dsv2-success-border': colors.successBorder,
     '--dsv2-warning': colors.warning,
+    '--dsv2-warning-tint': colors.warningTint,
+    '--dsv2-warning-border': colors.warningBorder,
     '--dsv2-destructive': colors.destructive,
+    '--dsv2-destructive-tint': colors.destructiveTint,
+    '--dsv2-pill-text-dark': colors.pillTextDark,
+    '--dsv2-pill-text-light': colors.pillTextLight,
     '--dsv2-band-2m': colors.band2m,
     '--dsv2-band-70cm': colors.band70cm,
     '--dsv2-band-23cm': colors.band23cm,
@@ -213,12 +248,15 @@ export const dsv2CssVariablesResolver: CSSVariablesResolver = (mantineTheme) => 
     '--dsv2-mode-tetra': colors.modeTetra,
     '--dsv2-mode-other': colors.modeOther,
     '--dsv2-font-family': typography.fontFamily,
-    '--dsv2-font-display': typography.sizes.display,
-    '--dsv2-font-title': typography.sizes.title,
+    '--dsv2-font-mono': typography.fontFamilyMono,
+    '--dsv2-font-heading-lg': typography.sizes.headingLg,
+    '--dsv2-font-heading': typography.sizes.heading,
+    '--dsv2-font-section-label': typography.sizes.sectionLabel,
     '--dsv2-font-body': typography.sizes.body,
-    '--dsv2-font-label': typography.sizes.label,
-    '--dsv2-font-caption': typography.sizes.caption,
+    '--dsv2-font-body-sm': typography.sizes.bodySm,
     '--dsv2-font-micro': typography.sizes.micro,
+    '--dsv2-font-eyebrow': typography.sizes.eyebrow,
+    '--dsv2-tracking-eyebrow': typography.trackingEyebrow,
     '--dsv2-space-1': spacing['1'],
     '--dsv2-space-2': spacing['2'],
     '--dsv2-space-3': spacing['3'],
