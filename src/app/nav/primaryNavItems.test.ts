@@ -23,11 +23,7 @@ describe('primaryNavItems', () => {
     const tools = primaryNavItems.find((i) => i.label === 'Tools');
     expect(tools?.to).toBe('/reference');
     expect(tools?.requiresProject).toBeFalsy();
-    expect(projectNavItems.map((i) => i.label)).toEqual([
-      'Summary',
-      'Library',
-      'Export for radio',
-    ]);
+    expect(projectNavItems.map((i) => i.label)).toEqual(['Summary', 'Library', 'Export for radio']);
   });
 });
 

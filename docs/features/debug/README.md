@@ -74,7 +74,7 @@ List-prefs keys follow `mm9pdy-codeplug-studio.list.{entity}.{projectId}` with o
 | Preferences keys | `src/integrations/preferences/index.ts` (`ACTIVE_PROJECT_KEY`, `MAPBOX_TOKEN_KEY`)            |
 | Routes           | `src/app/routes/debug/`                                                                       |
 | Tree viewer      | `src/app/components/JsonTreeViewer/JsonTreeViewer.tsx`                                        |
-| Navigation       | `AppNav`, `DebugSectionNav`, `sectionNavRegistry.ts`                                          |
+| Navigation       | Avatar overflow → Debug; `debugStripItems` in `contextualStripItems.ts`                       |
 
 ## Manual verify
 

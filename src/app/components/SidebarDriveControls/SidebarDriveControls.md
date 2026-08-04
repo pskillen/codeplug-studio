@@ -1,36 +1,27 @@
 # SidebarDriveControls
 
-Drive save and remote-check icon buttons for interchange — sidebar stack or compact header cluster.
+Drive save and remote-check icon buttons in the AppShell `rightExtra` slot.
 
 ## Purpose
 
-Compact interchange controls for linked Google Drive projects: **Save to Drive** and **Check Drive**, with click-to-reconnect when the OAuth session has expired (no separate Reconnect button).
-
-## Props
-
-| Prop      | Type                    | Notes                                                                     |
-| --------- | ----------------------- | ------------------------------------------------------------------------- |
-| `variant` | `'sidebar' \| 'header'` | `header` = icon cluster for AppShell `rightExtra` (default `sidebar`) |
+Compact interchange controls for linked Google Drive projects: **Save to Drive** and **Check Drive**, with click-to-reconnect when the OAuth session has expired.
 
 ## Usage
 
 ```tsx
 <DriveRefreshProvider>
-  <SidebarDriveControls variant="header" />
+  <AppShell rightExtra={<SidebarDriveControls />} … />
 </DriveRefreshProvider>
 ```
 
 ## Behaviour
 
-| State                                     | UI                                                                                                                                              |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Linked Drive + dirty                      | Save enabled                                                                                                                                    |
-| Linked Drive + clean                      | Save disabled                                                                                                                                   |
-| Session expired                           | Sidebar: `SoftWarning` + buttons; header: icon buttons only                                                                                     |
-| Check Drive                               | Runs manual remote-newer check via `useDriveRefresh().checkNow()`; failures show inline in red below the buttons (sidebar only)                 |
-| Local file only                           | Export YAML link to `/summary` (sidebar only)                                                                                                   |
-| No portable destination + prior Drive use | `BrowserOnlyWarning` (dismissible, sidebar only)                                                                                                |
-| Never connected Drive                     | Cluster hidden unless project has Drive/local interchange                                                                                       |
+| State                | UI                                                          |
+| -------------------- | ----------------------------------------------------------- |
+| Linked Drive + dirty | Save enabled                                                |
+| Linked Drive + clean | Save disabled                                               |
+| Session expired      | Icons stay clickable for reauth (greyed when disconnected)  |
+| No Drive link        | Cluster hidden (conflict/save modals still mount if needed) |
 
 ## Related
 

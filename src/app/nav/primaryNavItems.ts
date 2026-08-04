@@ -33,7 +33,13 @@ export interface PrimaryNavItem {
  */
 export const primaryNavItems: PrimaryNavItem[] = [
   { to: '/summary', label: 'Summary', icon: IconChartBar, requiresProject: true },
-  { to: '/library', label: 'Library', icon: IconBooks, countKey: 'channels', requiresProject: true },
+  {
+    to: '/library',
+    label: 'Library',
+    icon: IconBooks,
+    countKey: 'channels',
+    requiresProject: true,
+  },
   { to: '/reference', label: 'Tools', icon: IconTool },
   { to: '/builds', label: 'Export for radio', icon: IconHammer, requiresProject: true },
   { to: '/help', label: 'Help', icon: IconHelp },

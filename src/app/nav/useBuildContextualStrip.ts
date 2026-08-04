@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { EgressPath } from '@core/models/egressPath.ts';
-import {
-  readStoredActiveEgressId,
-  resolveActiveEgress,
-} from '../routes/builds/activeEgress.ts';
+import { readStoredActiveEgressId, resolveActiveEgress } from '../routes/builds/activeEgress.ts';
 import { buildNavItems, isBuildDetailPath } from '../routes/builds/nav.ts';
 import { useOptionalBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { BuildService } from '../state/buildService.ts';
@@ -16,9 +13,7 @@ import type { ContextualStripItem } from './contextualStripItems.ts';
  * Trait-shaped build-detail strip items for ContextualStrip. Returns null when
  * not on a build detail route or the build has not loaded yet.
  */
-export function useBuildContextualStrip(
-  pathname: string,
-): readonly ContextualStripItem[] | null {
+export function useBuildContextualStrip(pathname: string): readonly ContextualStripItem[] | null {
   const buildId = isBuildDetailPath(pathname)
     ? (pathname.match(/^\/builds\/([^/]+)/)?.[1] ?? null)
     : null;

@@ -8,17 +8,17 @@ The **top** chrome bar from the Claude Design system — not a sidebar layout. P
 
 ## Props
 
-| Prop            | Type                    | Notes                                                         |
-| --------------- | ----------------------- | ------------------------------------------------------------- |
-| `tabs`          | `readonly string[]`     | Top-level sections                                            |
-| `activeTab`     | `string`                | Selected tab label                                            |
-| `onTabChange`   | `(tab: string) => void` | Tab click                                                     |
-| `disabledTabs`  | `readonly string[]`     | Labels rendered disabled                                      |
-| `showTabs`      | `boolean`               | Hide desktop tab row when `BottomTabBar` is active (default true) |
-| `projectName`   | `string`                | Default `Untitled project`                                    |
-| `onProjectClick`| `() => void`            | Makes the project chip a button (home / switch project)       |
-| `rightExtra`    | `ReactNode`             | Injected before the avatar (Drive controls)                   |
-| `avatar`        | `ReactNode`             | Replaces the default avatar square (overflow menu target)     |
+| Prop             | Type                    | Notes                                                             |
+| ---------------- | ----------------------- | ----------------------------------------------------------------- |
+| `tabs`           | `readonly string[]`     | Top-level sections                                                |
+| `activeTab`      | `string`                | Selected tab label                                                |
+| `onTabChange`    | `(tab: string) => void` | Tab click                                                         |
+| `disabledTabs`   | `readonly string[]`     | Labels rendered disabled                                          |
+| `showTabs`       | `boolean`               | Hide desktop tab row when `BottomTabBar` is active (default true) |
+| `projectName`    | `string`                | Default `Untitled project`                                        |
+| `onProjectClick` | `() => void`            | Makes the project chip a button (home / switch project)           |
+| `rightExtra`     | `ReactNode`             | Injected before the avatar (Drive controls)                       |
+| `avatar`         | `ReactNode`             | Replaces the default avatar square (overflow menu target)         |
 
 ## Usage
 
@@ -29,7 +29,7 @@ The **top** chrome bar from the Claude Design system — not a sidebar layout. P
   onTabChange={goToTab}
   projectName="Skywarn Repeaters"
   onProjectClick={() => navigate('/')}
-  rightExtra={<SidebarDriveControls variant="header" />}
+  rightExtra={<SidebarDriveControls />}
   avatar={overflowMenu}
 />
 <ContextualStrip items={['Channels', 'Zones']} active={sub} onChange={setSub} />

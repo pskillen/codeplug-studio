@@ -44,7 +44,9 @@ export const debugStripItems: readonly ContextualStripItem[] = [
  * has no sub-nav (Summary, builds list / new, home). Build-detail strips are
  * dynamic (trait-shaped) and resolved by the chrome shell from `buildNavItems`.
  */
-export function resolveContextualStripItems(pathname: string): readonly ContextualStripItem[] | null {
+export function resolveContextualStripItems(
+  pathname: string,
+): readonly ContextualStripItem[] | null {
   if (pathname.startsWith('/library')) return libraryStripItems;
   if (pathname.startsWith('/reference')) return toolsStripItems;
   if (pathname.startsWith('/help') || pathname.startsWith('/attributions')) {

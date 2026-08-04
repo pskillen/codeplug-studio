@@ -11,6 +11,8 @@ Debt and follow-ups discovered during [epic #915](https://github.com/pskillen/co
 | ShuttleList skins Mantine title chrome inside panels | Low      | `SelectedItemList` / `AvailableItemPicker` still render their own Mantine `Text` titles; v2 panel is a wrapper. Fine for preview; may want thinner wrappers when membership screens port. |
 | MapPanel hatch only                                  | Deferred | Real `CodeplugMap` wiring tracked as [#925](https://github.com/pskillen/codeplug-studio/issues/925).                                                                                      |
 | Domain BandPill / ModePill still v1                  | Deferred | Explicitly out of #916; use `Pill` `tone="semantic"` when those screens port.                                                                                                             |
+| Drive session-expired SoftWarning left sidebar       | Low      | Header Drive icons remain clickable for reauth; the old sidebar SoftWarning copy is gone with AppNav (#917).                                                                              |
+| Cookie banner vs BottomTabBar overlap                | Low      | Fixed cookie dialog may sit over the mobile tab bar until a dedicated offset lands.                                                                                                       |
 
 ## Closed during #916
 

@@ -105,7 +105,7 @@ Implementation: `src/integrations/cloud/googleDrive.ts`, `src/integrations/cloud
 
 ### Primary sidebar — Drive controls ([#368](https://github.com/pskillen/codeplug-studio/issues/368))
 
-`SidebarDriveControls` in `AppNav`, below the active project header:
+`SidebarDriveControls` in the AppShell `rightExtra` slot:
 
 - Shows **Google Drive · {fileName}** (or **Local file · {fileName}**) from `ProjectMeta.interchange`
 - **Save to Drive** (floppy icon) — enabled when local edits are newer than the last portable sync; assesses linked file before overwrite ([#335](https://github.com/pskillen/codeplug-studio/issues/335))

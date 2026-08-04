@@ -3,12 +3,7 @@ import { Menu } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconBug, IconSettings } from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import {
-  AppShell,
-  BottomTabBar,
-  ContextualStrip,
-  DesignSystemV2Provider,
-} from '../v2/index.ts';
+import { AppShell, BottomTabBar, ContextualStrip, DesignSystemV2Provider } from '../v2/index.ts';
 import type { BottomTabItem } from '../v2/BottomTabBar.tsx';
 import BuildFooter from '../BuildFooter/BuildFooter.tsx';
 import BuildSwitcher from '../builds/BuildSwitcher/BuildSwitcher.tsx';
@@ -50,19 +45,14 @@ export default function AppLayout() {
   const { activeProjectId, activeProject } = useProjects();
   const hasActiveProject = activeProjectId != null;
 
-  const visibleTabs = primaryNavItems.filter(
-    (item) => !item.requiresProject || hasActiveProject,
-  );
+  const visibleTabs = primaryNavItems.filter((item) => !item.requiresProject || hasActiveProject);
   const tabLabels = visibleTabs.map((item) => item.label);
-  const activePrimary =
-    visibleTabs.find((item) => navActive(location.pathname, item.to)) ?? null;
+  const activePrimary = visibleTabs.find((item) => navActive(location.pathname, item.to)) ?? null;
 
   const staticStrip = resolveContextualStripItems(location.pathname);
   const buildStrip = useBuildContextualStrip(location.pathname);
   const stripItems = buildStrip ?? staticStrip;
-  const stripActive = stripItems
-    ? activeContextualStripLabel(location.pathname, stripItems)
-    : null;
+  const stripActive = stripItems ? activeContextualStripLabel(location.pathname, stripItems) : null;
   const showBuildSwitcher = isBuildDetailPath(location.pathname);
 
   const bottomItems: BottomTabItem[] = visibleTabs.map((item) => {
@@ -86,9 +76,7 @@ export default function AppLayout() {
     if (item) navigate(item.to);
   }
 
-  const projectName = hasActiveProject
-    ? (activeProject?.name ?? 'Untitled project')
-    : 'Projects';
+  const projectName = hasActiveProject ? (activeProject?.name ?? 'Untitled project') : 'Projects';
 
   const overflowAvatar = (
     <Menu shadow="md" width={200} position="bottom-end">
@@ -125,9 +113,7 @@ export default function AppLayout() {
             showTabs={isDesktopNav !== false}
             projectName={projectName}
             onProjectClick={() => navigate('/')}
-            rightExtra={
-              hasActiveProject ? <SidebarDriveControls variant="header" /> : undefined
-            }
+            rightExtra={hasActiveProject ? <SidebarDriveControls /> : undefined}
             avatar={overflowAvatar}
           />
           {stripItems && stripItems.length > 0 ? (
@@ -149,11 +135,7 @@ export default function AppLayout() {
 
         {isDesktopNav === false ? (
           <DesignSystemV2Provider>
-            <BottomTabBar
-              items={bottomItems}
-              activeId={activePrimary?.label}
-              onChange={goToTab}
-            />
+            <BottomTabBar items={bottomItems} activeId={activePrimary?.label} onChange={goToTab} />
           </DesignSystemV2Provider>
         ) : null}
       </div>

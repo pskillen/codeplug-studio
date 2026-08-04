@@ -21,7 +21,7 @@ import BuildSwitcher from '../../builds/BuildSwitcher/BuildSwitcher.tsx';
 <BuildSwitcher compact />
 ```
 
-Mounted as the leading control on build-detail `ContextualStrip` rows (`compact`), and still available from legacy `BuildSectionNavFrame` until that chrome is removed.
+Mounted as the leading control on build-detail `ContextualStrip` rows (`compact`).
 
 ## Behaviour
 
