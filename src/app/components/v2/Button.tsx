@@ -1,5 +1,5 @@
-import { Button as MantineButton, type ButtonProps as MantineButtonProps } from '@mantine/core';
-import type { ReactNode } from 'react';
+import { Button as MantineButton } from '@mantine/core';
+import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import classes from './Button.module.css';
 
 export type ButtonVariant =
@@ -7,13 +7,14 @@ export type ButtonVariant =
 
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
-export interface ButtonProps extends Omit<
-  MantineButtonProps,
-  'variant' | 'size' | 'color' | 'children'
-> {
+export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'color'> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   children: ReactNode;
+  loading?: boolean;
+  leftSection?: ReactNode;
+  rightSection?: ReactNode;
+  fullWidth?: boolean;
 }
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
@@ -40,6 +41,11 @@ export default function Button({
   size = 'md',
   className,
   children,
+  loading,
+  leftSection,
+  rightSection,
+  fullWidth,
+  type = 'button',
   ...rest
 }: ButtonProps) {
   const classNames = [classes.root, VARIANT_CLASS[variant], SIZE_CLASS[size], className]
@@ -49,7 +55,12 @@ export default function Button({
   return (
     <MantineButton
       {...rest}
+      type={type}
       unstyled
+      loading={loading}
+      leftSection={leftSection}
+      rightSection={rightSection}
+      fullWidth={fullWidth}
       className={classNames}
       data-variant={variant}
       data-size={size}
