@@ -13,6 +13,10 @@
   white-space: nowrap;
 }
 
+button.root {
+  cursor: pointer;
+}
+
 .neutral {
   background: #1a2129;
   color: var(--dsv2-text-secondary);
@@ -46,4 +50,27 @@
 .semantic {
   font-weight: 700;
   /* Fill/text set via inline style from props. */
+}
+
+.dashed {
+  background: transparent;
+  border: 1px dashed var(--dsv2-border);
+  color: var(--dsv2-text-tertiary);
+  font-weight: 600;
+}
+
+.remove {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  opacity: 0.75;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.remove:hover {
+  opacity: 1;
 }

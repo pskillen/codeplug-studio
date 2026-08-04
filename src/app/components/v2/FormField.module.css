@@ -1,0 +1,27 @@
+.root {
+  min-width: 0;
+}
+
+.label {
+  font-size: 11.5px;
+  color: var(--dsv2-text-tertiary);
+  margin-bottom: 5px;
+}
+
+.body {
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  padding: 8px 11px;
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-primary);
+  min-width: 0;
+}
+
+.mono {
+  font-family: var(--dsv2-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.staticValue {
+  line-height: 1.4;
+}

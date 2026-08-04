@@ -55,6 +55,8 @@ export default function StyleguideV2DataDisplayPage() {
           <Pill tone="semantic" color={DSV2_TOKENS.colors.modeFm}>
             FM
           </Pill>
+          <Pill tone="neutral" onRemove={() => undefined}>Zone chip</Pill>
+          <Pill tone="dashed" onClick={() => undefined}>+ Add to zone</Pill>
         </Group>
       </PageSection>
 

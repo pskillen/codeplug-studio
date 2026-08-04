@@ -2,7 +2,14 @@ import type { CSSProperties, ReactNode } from 'react';
 import { DSV2_TOKENS } from '../../theme-v2.ts';
 import classes from './Pill.module.css';
 
-export type PillTone = 'neutral' | 'accent' | 'accentSolid' | 'success' | 'warning' | 'semantic';
+export type PillTone =
+  | 'neutral'
+  | 'accent'
+  | 'accentSolid'
+  | 'success'
+  | 'warning'
+  | 'semantic'
+  | 'dashed';
 
 export interface PillProps {
   tone?: PillTone;
@@ -15,6 +22,10 @@ export interface PillProps {
   textColor?: string;
   children: ReactNode;
   className?: string;
+  /** Renders trailing ✕ control — zone membership chips. */
+  onRemove?: () => void;
+  /** When set with `tone="dashed"`, renders as a button for add-chip affordances. */
+  onClick?: () => void;
 }
 
 const TONE_CLASS: Record<Exclude<PillTone, 'semantic'>, string> = {
@@ -23,6 +34,7 @@ const TONE_CLASS: Record<Exclude<PillTone, 'semantic'>, string> = {
   accentSolid: classes.accentSolid,
   success: classes.success,
   warning: classes.warning,
+  dashed: classes.dashed,
 };
 
 /**
@@ -35,6 +47,8 @@ export default function Pill({
   textColor = DSV2_TOKENS.colors.pillTextDark,
   children,
   className,
+  onRemove,
+  onClick,
 }: PillProps) {
   const toneClass = tone === 'semantic' ? classes.semantic : TONE_CLASS[tone];
   const style: CSSProperties | undefined =
@@ -45,9 +59,39 @@ export default function Pill({
         }
       : undefined;
 
-  return (
-    <span className={[classes.root, toneClass, className].filter(Boolean).join(' ')} style={style}>
+  const classNames = [classes.root, toneClass, className].filter(Boolean).join(' ');
+  const isInteractive = tone === 'dashed' && onClick != null;
+
+  const content = (
+    <>
       {children}
+      {onRemove ? (
+        <button
+          type="button"
+          className={classes.remove}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          aria-label="Remove"
+        >
+          ✕
+        </button>
+      ) : null}
+    </>
+  );
+
+  if (isInteractive) {
+    return (
+      <button type="button" className={classNames} style={style} onClick={onClick}>
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <span className={classNames} style={style}>
+      {content}
     </span>
   );
 }

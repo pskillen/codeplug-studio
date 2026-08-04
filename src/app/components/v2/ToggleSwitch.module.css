@@ -1,0 +1,56 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.rootDisabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.track {
+  width: 34px;
+  height: 19px;
+  border-radius: 999px;
+  position: relative;
+  flex-shrink: 0;
+  transition: background-color 150ms ease;
+  background: var(--dsv2-border);
+}
+
+.trackChecked {
+  background: var(--dsv2-accent);
+}
+
+.thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 150ms ease, background-color 150ms ease;
+  background: var(--dsv2-text-tertiary);
+}
+
+.thumbChecked {
+  left: 17px;
+  background: var(--dsv2-bg);
+}
+
+.input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.label {
+  line-height: 1.3;
+}

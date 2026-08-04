@@ -1,0 +1,33 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-surface);
+  padding: 9px 12px;
+}
+
+.icon {
+  color: var(--dsv2-text-tertiary);
+  flex-shrink: 0;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--dsv2-text-primary);
+  font-size: var(--dsv2-font-body);
+  font-family: var(--dsv2-font-family);
+}
+
+.input::placeholder {
+  color: var(--dsv2-text-tertiary);
+}
+
+.tag {
+  flex-shrink: 0;
+}
