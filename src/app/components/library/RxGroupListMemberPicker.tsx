@@ -1,14 +1,4 @@
-import {
-  ActionIcon,
-  Badge,
-  Checkbox,
-  Group,
-  SegmentedControl,
-  Stack,
-  Text,
-  Tooltip,
-} from '@mantine/core';
-import { IconTrash } from '@tabler/icons-react';
+import { Badge, Checkbox, Group, SegmentedControl, Stack, Text } from '@mantine/core';
 import { useCallback, useMemo, useState } from 'react';
 import type {
   DigitalContact,
@@ -20,17 +10,19 @@ import type {
 import { reorderRxGroupListMembers, rxGroupListMemberKey } from '@core/domain/membershipOrder.ts';
 import { sortRxGroupListMembersByMode } from '@core/domain/membershipSort.ts';
 import { sortByName } from '../../lib/channels.ts';
-import { ICON_STROKE } from '../../lib/iconSizes.ts';
 import {
   applyTimeslotSegment,
   memberOptionMatchesFilter,
   memberSupportsTimeSlotOverride,
   timeslotSegmentValue,
 } from '../../lib/rxGroupListMembers.ts';
-import AvailableItemPicker from '../ui/AvailableItemPicker.tsx';
-import SelectedItemDragHandle from '../ui/SelectedItemDragHandle.tsx';
-import SelectedItemList from '../ui/SelectedItemList.tsx';
-import { PageSection } from '../ui/index.ts';
+import {
+  ShuttleAddBar,
+  ShuttleListPanel,
+  ShuttlePoolHeader,
+  ShuttlePoolPanel,
+  ShuttleRow,
+} from '../v2/index.ts';
 import MembershipSortMenu from './MembershipSortMenu.tsx';
 
 export interface RxGroupListMemberPickerProps {
@@ -229,78 +221,71 @@ export default function RxGroupListMemberPicker({
 
   return (
     <Stack gap="lg">
-      <PageSection>
-        <SelectedItemList
-          title="In this list"
-          description={`${members.length} member${members.length === 1 ? '' : 's'} — export order. Timeslot override applies to this list membership only; Auto lets the channel slot or export rules decide.`}
-          filter={{
-            value: inListFilter,
-            onChange: setInListFilter,
-            placeholder: 'Filter by name or DMR ID…',
-            'aria-label': 'Filter in-list members',
-          }}
-          itemKeys={filteredInListKeys}
-          selectedKeys={inListSelected}
-          onToggleSelect={toggleInList}
-          onRemove={(key) => removeKeys([key])}
-          emptyMessage="No members in list"
-          onReorder={(nextKeys) => {
-            if (filterActive) return;
-            onChange(reorderRxGroupListMembersByKeys(members, nextKeys));
-          }}
-          reorderDisabled={filterActive}
-          onMoveSelected={moveSelected}
-          onRemoveSelected={() => removeKeys(inListSelected)}
-          canMoveUp={canMoveUp}
-          canMoveDown={canMoveDown}
-          reorderHint={
-            <Text size="xs" c="dimmed">
-              {filterActive
-                ? 'Clear filter to drag-reorder'
-                : 'Drag handles reorder · Alt+↑/↓ moves selection'}
-            </Text>
-          }
-          toolbar={
-            <MembershipSortMenu
-              modes={['name', 'callsign']}
-              disabled={!members.length || filterActive}
-              label="Sort members…"
-              onSort={(mode) =>
-                onChange(
-                  sortRxGroupListMembersByMode(members, talkGroupsById, digitalContactsById, mode),
-                )
-              }
-            />
-          }
-          renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => {
-            const member = members.find((row) => rxGroupListMemberKey(row) === itemKey);
-            const option = optionByKey.get(itemKey);
-            if (!member || !option) {
-              return (
-                <Group key={itemKey} gap="xs" wrap="nowrap">
-                  <Text size="sm" c="dimmed">
-                    {itemKey}
-                  </Text>
-                </Group>
-              );
+      <ShuttleListPanel
+        title="In this list"
+        description={`${members.length} member${members.length === 1 ? '' : 's'} — export order. Timeslot override applies to this list membership only; Auto lets the channel slot or export rules decide.`}
+        filter={{
+          value: inListFilter,
+          onChange: setInListFilter,
+          placeholder: 'Filter by name or DMR ID…',
+          'aria-label': 'Filter in-list members',
+        }}
+        itemKeys={filteredInListKeys}
+        selectedKeys={inListSelected}
+        onToggleSelect={toggleInList}
+        onRemove={(key) => removeKeys([key])}
+        emptyMessage="No members in list"
+        onReorder={(nextKeys) => {
+          if (filterActive) return;
+          onChange(reorderRxGroupListMembersByKeys(members, nextKeys));
+        }}
+        reorderDisabled={filterActive}
+        onMoveSelected={moveSelected}
+        onRemoveSelected={() => removeKeys(inListSelected)}
+        canMoveUp={canMoveUp}
+        canMoveDown={canMoveDown}
+        reorderHint={
+          <Text size="xs" c="dimmed">
+            {filterActive
+              ? 'Clear filter to drag-reorder'
+              : 'Drag handles reorder · Alt+↑/↓ moves selection'}
+          </Text>
+        }
+        toolbar={
+          <MembershipSortMenu
+            modes={['name', 'callsign']}
+            disabled={!members.length || filterActive}
+            label="Sort members…"
+            onSort={(mode) =>
+              onChange(
+                sortRxGroupListMembersByMode(members, talkGroupsById, digitalContactsById, mode),
+              )
             }
-            const showSlot = memberSupportsTimeSlotOverride(member, library);
+          />
+        }
+        renderItem={({ itemKey, selected, onToggleSelect, onRemove, dragHandle }) => {
+          const member = members.find((row) => rxGroupListMemberKey(row) === itemKey);
+          const option = optionByKey.get(itemKey);
+          if (!member || !option) {
             return (
-              <Group key={itemKey} gap="xs" wrap="nowrap" align="flex-start">
-                <Checkbox checked={selected} onChange={onToggleSelect} aria-label="Select" mt={4} />
-                <SelectedItemDragHandle dragHandle={dragHandle} />
-                <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-                  <Group gap="xs" wrap="nowrap" justify="space-between">
-                    <Stack gap={0} style={{ minWidth: 0 }}>
-                      <Text size="sm" truncate>
-                        {option.name}
-                      </Text>
-                      <Text size="xs" c="dimmed" ff="monospace">
-                        {option.digitalId || '—'}
-                      </Text>
-                    </Stack>
-                    <MemberKindBadge kind={option.ref.kind} />
-                  </Group>
+              <Text key={itemKey} size="sm" c="dimmed">
+                {itemKey}
+              </Text>
+            );
+          }
+          const showSlot = memberSupportsTimeSlotOverride(member, library);
+          return (
+            <ShuttleRow
+              key={itemKey}
+              label={option.name}
+              subtitle={String(option.digitalId || '—')}
+              selected={selected}
+              onToggleSelect={onToggleSelect}
+              onRemove={onRemove}
+              dragHandle={dragHandle}
+              trailing={
+                <Group gap="xs" wrap="nowrap" align="center">
+                  <MemberKindBadge kind={option.ref.kind} />
                   {showSlot ? (
                     <SegmentedControl
                       size="xs"
@@ -309,108 +294,101 @@ export default function RxGroupListMemberPicker({
                       onChange={(value) => setMemberTimeslot(itemKey, value)}
                     />
                   ) : null}
-                </Stack>
-                <Tooltip label="Remove">
-                  <ActionIcon
-                    variant="subtle"
-                    color="gray"
-                    size="sm"
-                    onClick={onRemove}
-                    aria-label="Remove"
-                  >
-                    <IconTrash size={14} stroke={ICON_STROKE} />
-                  </ActionIcon>
-                </Tooltip>
-              </Group>
-            );
-          }}
-        />
-      </PageSection>
+                </Group>
+              }
+            />
+          );
+        }}
+      />
 
-      <PageSection>
-        <AvailableItemPicker
-          title="Other talk groups & contacts"
-          description="Stage items to add to this receive group list"
-          filter={{
-            value: availableFilter,
-            onChange: setAvailableFilter,
-            placeholder: 'Filter by name or DMR ID…',
-            'aria-label': 'Filter available talk groups and contacts',
-          }}
-          sections={[
-            {
-              id: 'talkGroups',
-              title: 'Talk groups',
-              itemKeys: availableTalkGroups.map((o) => o.key),
-              selectedKeys: availableTgSelected,
-              onToggleSelect: (key) =>
-                setAvailableTgSelected((prev) =>
-                  prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key],
-                ),
-              emptyMessage: 'No talk groups available',
-              renderItem: ({ itemKey, checked, onToggle }) => {
-                const option = optionByKey.get(itemKey);
-                if (!option) return null;
-                return (
-                  <Group key={itemKey} gap="xs" wrap="nowrap" align="flex-start">
-                    <Checkbox
-                      checked={checked}
-                      onChange={onToggle}
-                      aria-label={`Select ${option.name}`}
-                      mt={4}
-                    />
-                    <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
-                      <Text size="sm" truncate>
-                        {option.name}
-                      </Text>
-                      <Text size="xs" c="dimmed" ff="monospace">
-                        {option.digitalId || '—'}
-                      </Text>
-                    </Stack>
-                    <MemberKindBadge kind={option.ref.kind} />
-                  </Group>
-                );
-              },
+      <ShuttlePoolPanel
+        header={<ShuttlePoolHeader label="Other talk groups & contacts" />}
+        title="Other talk groups & contacts"
+        description="Stage items to add to this receive group list"
+        filter={{
+          value: availableFilter,
+          onChange: setAvailableFilter,
+          placeholder: 'Filter by name or DMR ID…',
+          'aria-label': 'Filter available talk groups and contacts',
+        }}
+        sections={[
+          {
+            id: 'talkGroups',
+            title: 'Talk groups',
+            itemKeys: availableTalkGroups.map((o) => o.key),
+            selectedKeys: availableTgSelected,
+            onToggleSelect: (key) =>
+              setAvailableTgSelected((prev) =>
+                prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key],
+              ),
+            emptyMessage: 'No talk groups available',
+            renderItem: ({ itemKey, checked, onToggle }) => {
+              const option = optionByKey.get(itemKey);
+              if (!option) return null;
+              return (
+                <Group key={itemKey} gap="xs" wrap="nowrap" align="flex-start">
+                  <Checkbox
+                    checked={checked}
+                    onChange={onToggle}
+                    aria-label={`Select ${option.name}`}
+                    mt={4}
+                  />
+                  <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                    <Text size="sm" truncate>
+                      {option.name}
+                    </Text>
+                    <Text size="xs" c="dimmed" ff="monospace">
+                      {option.digitalId || '—'}
+                    </Text>
+                  </Stack>
+                  <MemberKindBadge kind={option.ref.kind} />
+                </Group>
+              );
             },
-            {
-              id: 'digitalContacts',
-              title: 'Digital contacts',
-              itemKeys: availableDigitalContacts.map((o) => o.key),
-              selectedKeys: availableDcSelected,
-              onToggleSelect: (key) =>
-                setAvailableDcSelected((prev) =>
-                  prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key],
-                ),
-              emptyMessage: 'No digital contacts available',
-              renderItem: ({ itemKey, checked, onToggle }) => {
-                const option = optionByKey.get(itemKey);
-                if (!option) return null;
-                return (
-                  <Group key={itemKey} gap="xs" wrap="nowrap" align="flex-start">
-                    <Checkbox
-                      checked={checked}
-                      onChange={onToggle}
-                      aria-label={`Select ${option.name}`}
-                      mt={4}
-                    />
-                    <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
-                      <Text size="sm" truncate>
-                        {option.name}
-                      </Text>
-                      <Text size="xs" c="dimmed" ff="monospace">
-                        {option.digitalId || '—'}
-                      </Text>
-                    </Stack>
-                    <MemberKindBadge kind={option.ref.kind} />
-                  </Group>
-                );
-              },
+          },
+          {
+            id: 'digitalContacts',
+            title: 'Digital contacts',
+            itemKeys: availableDigitalContacts.map((o) => o.key),
+            selectedKeys: availableDcSelected,
+            onToggleSelect: (key) =>
+              setAvailableDcSelected((prev) =>
+                prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key],
+              ),
+            emptyMessage: 'No digital contacts available',
+            renderItem: ({ itemKey, checked, onToggle }) => {
+              const option = optionByKey.get(itemKey);
+              if (!option) return null;
+              return (
+                <Group key={itemKey} gap="xs" wrap="nowrap" align="flex-start">
+                  <Checkbox
+                    checked={checked}
+                    onChange={onToggle}
+                    aria-label={`Select ${option.name}`}
+                    mt={4}
+                  />
+                  <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+                    <Text size="sm" truncate>
+                      {option.name}
+                    </Text>
+                    <Text size="xs" c="dimmed" ff="monospace">
+                      {option.digitalId || '—'}
+                    </Text>
+                  </Stack>
+                  <MemberKindBadge kind={option.ref.kind} />
+                </Group>
+              );
             },
-          ]}
-          onAddSelected={addSelected}
-          addDisabled={!availableTgSelected.length && !availableDcSelected.length}
-        />
-      </PageSection>
+          },
+        ]}
+        footer={
+          <ShuttleAddBar
+            onAdd={addSelected}
+            disabled={!availableTgSelected.length && !availableDcSelected.length}
+            selectedCount={availableTgSelected.length + availableDcSelected.length}
+          />
+        }
+      />
     </Stack>
   );
 }

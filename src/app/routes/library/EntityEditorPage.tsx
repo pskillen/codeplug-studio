@@ -67,7 +67,7 @@ export default function EntityEditorPage() {
 
   const listPath = listPathForEditorSlug(meta.slug);
 
-  if (meta.kind === 'channel') {
+  if (meta.kind === 'channel' || meta.kind === 'rxGroupList') {
     return renderEditor();
   }
 

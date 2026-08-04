@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { Button, Text } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { RxGroupList } from '@core/models/library.ts';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
-import { DataTable, ListPage } from '../../../components/ui/index.ts';
+import { Button, DesignSystemV2Provider } from '../../../components/v2/index.ts';
+import { DataTable } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
@@ -16,8 +16,10 @@ import {
   referenceCountFromIndex,
 } from '../../../lib/listReferences.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
+import classes from './RxGroupListsListPage.module.css';
 
 export default function RxGroupListsListPage() {
+  const navigate = useNavigate();
   const { library, loading } = useLibrary();
   const { rxGroupLists } = library;
   const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
@@ -61,9 +63,9 @@ export default function RxGroupListsListPage() {
 
   const listActions = (
     <Button
-      component={Link}
-      to="/library/rx-group-lists/new"
+      variant="primary"
       leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+      onClick={() => navigate('/library/rx-group-lists/new')}
     >
       New Receive Group List
     </Button>
@@ -71,31 +73,53 @@ export default function RxGroupListsListPage() {
 
   if (loading) {
     return (
-      <ListPage title="Receive Group Lists" actions={listActions}>
-        <Text>Loading library…</Text>
-      </ListPage>
+      <DesignSystemV2Provider>
+        <div className={classes.page}>
+          <div className={classes.headerRow}>
+            <div>
+              <h1 className={classes.title}>Receive Group Lists</h1>
+              <p className={classes.description}>Loading library…</p>
+            </div>
+            {listActions}
+          </div>
+        </div>
+      </DesignSystemV2Provider>
     );
   }
 
   return (
-    <ListPage title="Receive Group Lists" actions={listActions}>
-      <DataTable
-        variant="list"
-        rows={filtered}
-        totalRowCount={rxGroupLists.length}
-        search={nameFilterInput}
-        searchPending={nameFilterPending}
-        onSearchChange={setNameFilter}
-        searchPlaceholder="Filter name…"
-        sort={sort}
-        onSortChange={setSort}
-        rowKey={(r) => r.id}
-        nameColumn={{
-          getName: (r) => r.name,
-          getPath: (r) => `/library/rx-group-lists/${r.id}`,
-        }}
-        columns={columns}
-      />
-    </ListPage>
+    <DesignSystemV2Provider>
+      <div className={classes.page}>
+        <div className={classes.headerRow}>
+          <div>
+            <h1 className={classes.title}>Receive Group Lists</h1>
+            <p className={classes.description}>
+              DMR receive group lists in this project. Open one to edit membership and timeslot
+              overrides.
+            </p>
+          </div>
+          <div className={classes.toolbarActions}>{listActions}</div>
+        </div>
+
+        <DataTable
+          variant="list"
+          selectionChrome="v2"
+          rows={filtered}
+          totalRowCount={rxGroupLists.length}
+          search={nameFilterInput}
+          searchPending={nameFilterPending}
+          onSearchChange={setNameFilter}
+          searchPlaceholder="Filter name…"
+          sort={sort}
+          onSortChange={setSort}
+          rowKey={(r) => r.id}
+          nameColumn={{
+            getName: (r) => r.name,
+            getPath: (r) => `/library/rx-group-lists/${r.id}`,
+          }}
+          columns={columns}
+        />
+      </div>
+    </DesignSystemV2Provider>
   );
 }
