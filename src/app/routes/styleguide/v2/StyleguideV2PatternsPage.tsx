@@ -1,4 +1,4 @@
-import { Checkbox, Group, SimpleGrid, Stack, Text } from '@mantine/core';
+import { Checkbox, Group, SimpleGrid, Text } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
@@ -95,51 +95,49 @@ export default function StyleguideV2PatternsPage() {
             }}
           />
 
-          <Stack gap="sm">
-            <ShuttlePoolHeader label="Available" />
-            <ShuttlePoolPanel
-              title="Pool"
-              description="Channels and zones not yet in the member list"
-              sections={[
-                {
-                  id: 'pool',
-                  title: 'Items',
-                  itemKeys: poolKeys,
-                  selectedKeys: poolPick,
-                  onToggleSelect: togglePoolPick,
-                  emptyMessage: 'Nothing left in the pool',
-                  renderItem: ({ itemKey, checked, onToggle }) => {
-                    const entry = CATALOG[itemKey];
-                    return (
-                      <Group key={itemKey} gap="sm" wrap="nowrap" py={4}>
-                        <Checkbox
-                          checked={checked}
-                          onChange={onToggle}
-                          aria-label={`Select ${entry.label}`}
-                          size="xs"
-                        />
-                        <div>
-                          <Text size="sm" fw={600}>
-                            {entry.label}
-                          </Text>
-                          <Text size="xs" c="dimmed">
-                            {entry.subtitle}
-                          </Text>
-                        </div>
-                      </Group>
-                    );
-                  },
+          <ShuttlePoolPanel
+            header={<ShuttlePoolHeader label="Available" />}
+            title="Other items"
+            description="Channels and zones not yet in the member list"
+            sections={[
+              {
+                id: 'pool',
+                title: 'Items',
+                itemKeys: poolKeys,
+                selectedKeys: poolPick,
+                onToggleSelect: togglePoolPick,
+                emptyMessage: 'Nothing left in the pool',
+                renderItem: ({ itemKey, checked, onToggle }) => {
+                  const entry = CATALOG[itemKey];
+                  return (
+                    <Group key={itemKey} gap="sm" wrap="nowrap" py={4}>
+                      <Checkbox
+                        checked={checked}
+                        onChange={onToggle}
+                        aria-label={`Select ${entry.label}`}
+                        size="xs"
+                      />
+                      <div>
+                        <Text size="sm" fw={600}>
+                          {entry.label}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {entry.subtitle}
+                        </Text>
+                      </div>
+                    </Group>
+                  );
                 },
-              ]}
-              footer={
-                <ShuttleAddBar
-                  onAdd={addSelected}
-                  count={poolPick.length}
-                  disabled={poolPick.length === 0}
-                />
-              }
-            />
-          </Stack>
+              },
+            ]}
+            footer={
+              <ShuttleAddBar
+                onAdd={addSelected}
+                count={poolPick.length}
+                disabled={poolPick.length === 0}
+              />
+            }
+          />
         </SimpleGrid>
       </PageSection>
     </Page>

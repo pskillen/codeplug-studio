@@ -38,15 +38,19 @@ export interface ShuttlePoolPanelProps<
   TKey extends string = string,
 > extends AvailableItemPickerProps<TKey> {
   className?: string;
+  /** Optional section eyebrow inside the panel (e.g. `ShuttlePoolHeader`). */
+  header?: ReactNode;
 }
 
 /** v2-styled panel around {@link AvailableItemPicker} (pool / role B side). */
 export function ShuttlePoolPanel<TKey extends string>({
   className,
+  header,
   ...pickerProps
 }: ShuttlePoolPanelProps<TKey>) {
   return (
     <div className={[classes.panel, className].filter(Boolean).join(' ')}>
+      {header}
       <AvailableItemPicker {...pickerProps} />
     </div>
   );
