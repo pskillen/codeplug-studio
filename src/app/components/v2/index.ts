@@ -8,3 +8,7 @@ export { default as OverrideField } from './OverrideField.tsx';
 export type { OverrideFieldProps } from './OverrideField.tsx';
 export { default as MapPanel } from './MapPanel.tsx';
 export type { MapPanelProps } from './MapPanel.tsx';
+export { default as AppShell } from './AppShell.tsx';
+export type { AppShellProps } from './AppShell.tsx';
+export { default as BottomTabBar } from './BottomTabBar.tsx';
+export type { BottomTabBarProps, BottomTabItem } from './BottomTabBar.tsx';
