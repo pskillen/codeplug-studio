@@ -12,6 +12,7 @@ import ImportYamlIntoActivePanel from '../components/import-export/ImportYamlInt
 import {
   CountTile,
   DesignSystemV2Provider,
+  MapPanel,
   Panel,
   Pill,
   StatusBanner,
@@ -92,22 +93,28 @@ export default function SummaryPage() {
           <Link to="/library/channels">Channels</Link> or the library map below.
         </p>
 
-        <Panel title="Library map" className={classes.mapPanel}>
+        <MapPanel
+          title="Library map"
+          className={classes.mapPanel}
+          height={480}
+          legend={
+            mapSkipped.length > 0 ? (
+              <span className={classes.mapSkipped}>
+                {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
+                (missing coordinates, Use Location = No, or 0,0).
+              </span>
+            ) : undefined
+          }
+        >
           <CodeplugMap
             channels={channels}
             zones={zones}
             allChannels={channels}
-            height={480}
+            height="100%"
             onChannelClick={(id) => navigate(`/library/channels/${id}`)}
             onZoneClick={(id) => navigate(`/library/zones/${id}`)}
           />
-          {mapSkipped.length > 0 ? (
-            <p className={classes.mapSkipped}>
-              {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
-              (missing coordinates, Use Location = No, or 0,0).
-            </p>
-          ) : null}
-        </Panel>
+        </MapPanel>
 
         <div className={classes.integrityBanner}>
           {summary.danglingReferences.length === 0 ? (

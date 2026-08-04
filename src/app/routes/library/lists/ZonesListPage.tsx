@@ -15,7 +15,7 @@ import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import MembershipSortMenu from '../../../components/library/MembershipSortMenu.tsx';
-import { Button, DesignSystemV2Provider } from '../../../components/v2/index.ts';
+import { Button, DesignSystemV2Provider, MapPanel } from '../../../components/v2/index.ts';
 import { DataTable } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
@@ -245,7 +245,6 @@ export default function ZonesListPage() {
         />
 
         <section className={classes.mapSection}>
-          <h2 className={classes.mapSectionTitle}>Map</h2>
           <div className={classes.mapMeta}>
             {position ? (
               <>
@@ -266,21 +265,28 @@ export default function ZonesListPage() {
             )}
           </div>
 
-          <CodeplugMap
-            channels={channels}
-            zones={zones}
-            allChannels={channels}
+          <MapPanel
+            title="Map"
             height={420}
-            operatorPosition={position}
-            onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-            onZoneClick={(id) => navigate(`/library/zones/${id}`)}
-          />
-          {mapSkipped.length > 0 ? (
-            <p className={classes.mapSkipped}>
-              {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
-              (missing coordinates, Use Location = No, or 0,0).
-            </p>
-          ) : null}
+            legend={
+              mapSkipped.length > 0 ? (
+                <p className={classes.mapSkipped}>
+                  {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
+                  (missing coordinates, Use Location = No, or 0,0).
+                </p>
+              ) : undefined
+            }
+          >
+            <CodeplugMap
+              channels={channels}
+              zones={zones}
+              allChannels={channels}
+              height="100%"
+              operatorPosition={position}
+              onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+              onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+            />
+          </MapPanel>
         </section>
       </div>
     </DesignSystemV2Provider>
