@@ -15,17 +15,20 @@ import BuildsSectionNav from '../components/SectionNav/sections/BuildsSectionNav
 import type { SectionNavEntry } from './sectionNavTypes.ts';
 import { isBuildDetailPath } from '../routes/builds/nav.ts';
 
-/** Longest prefix first — more specific library list routes win over `/library`. */
+/**
+ * Longest prefix first — more specific library list routes win over `/library`.
+ * Titles align with primary tabs: Tools (was Reference), Help, Library, Export.
+ */
 const registry: SectionNavEntry[] = [
   { title: 'Help', prefix: '/attributions', Component: HelpSectionNav },
   { title: 'Help', prefix: '/help', Component: HelpSectionNav },
   {
-    title: 'Maidenhead',
+    title: 'Tools',
     prefix: '/reference/maidenhead',
     Component: MaidenheadReferenceSectionNav,
   },
-  { title: 'Bands', prefix: '/reference/bands', Component: BandsReferenceSectionNav },
-  { title: 'Reference', prefix: '/reference', Component: ReferenceSectionNav },
+  { title: 'Tools', prefix: '/reference/bands', Component: BandsReferenceSectionNav },
+  { title: 'Tools', prefix: '/reference', Component: ReferenceSectionNav },
   { title: 'Debug', prefix: '/debug', Component: DebugSectionNav },
   { title: 'Settings', prefix: '/settings', Component: SettingsSectionNav },
   { title: 'Channels', prefix: '/library/channels', Component: ChannelsSectionNav },

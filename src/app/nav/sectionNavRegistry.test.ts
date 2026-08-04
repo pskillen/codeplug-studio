@@ -28,4 +28,10 @@ describe('sectionNavRegistry', () => {
     expect(entry?.title).toBe('APRS configuration');
     expect(shouldShowSecondaryNav('/library/aprs-configuration', true)).toBe(true);
   });
+
+  it('titles reference routes under the Tools primary tab', () => {
+    expect(resolveSectionNav('/reference')?.title).toBe('Tools');
+    expect(resolveSectionNav('/reference/maidenhead')?.title).toBe('Tools');
+    expect(resolveSectionNav('/reference/bands')?.title).toBe('Tools');
+  });
 });

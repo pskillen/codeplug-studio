@@ -1,9 +1,9 @@
 import { Badge, NavLink, Stack } from '@mantine/core';
-import { IconBook, IconBug, IconHelp, IconSettings } from '@tabler/icons-react';
+import { IconBug, IconSettings } from '@tabler/icons-react';
 import { Link, useLocation } from 'react-router-dom';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { navActive } from '../../nav/navActive.ts';
-import { homeNavItem, projectNavItems } from '../../nav/primaryNavItems.ts';
+import { homeNavItem, primaryNavItems } from '../../nav/primaryNavItems.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import ActiveProjectBar from '../ActiveProjectBar/ActiveProjectBar.tsx';
@@ -28,6 +28,9 @@ export default function AppNav({ onNavClick }: AppNavProps) {
   const { library } = useLibrary();
   const hasActiveProject = activeProjectId != null;
   const HomeIcon = homeNavItem.icon;
+  const visiblePrimary = primaryNavItems.filter(
+    (item) => !item.requiresProject || hasActiveProject,
+  );
 
   return (
     <Stack gap="md" style={{ height: '100%' }}>
@@ -35,22 +38,6 @@ export default function AppNav({ onNavClick }: AppNavProps) {
         <>
           <ActiveProjectBar onNavClick={onNavClick} />
           <SidebarDriveControls />
-          {projectNavItems.map((item) => {
-            const Icon = item.icon;
-            const count = item.countKey ? library[item.countKey].length : undefined;
-            return (
-              <NavLink
-                key={item.to}
-                component={Link}
-                to={item.to}
-                label={item.label}
-                leftSection={<Icon size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-                rightSection={entityCountBadge(count)}
-                active={navActive(location.pathname, item.to)}
-                onClick={onNavClick}
-              />
-            );
-          })}
         </>
       ) : (
         <NavLink
@@ -62,23 +49,23 @@ export default function AppNav({ onNavClick }: AppNavProps) {
           onClick={onNavClick}
         />
       )}
+      {visiblePrimary.map((item) => {
+        const Icon = item.icon;
+        const count = item.countKey ? library[item.countKey].length : undefined;
+        return (
+          <NavLink
+            key={item.to}
+            component={Link}
+            to={item.to}
+            label={item.label}
+            leftSection={<Icon size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+            rightSection={entityCountBadge(count)}
+            active={navActive(location.pathname, item.to)}
+            onClick={onNavClick}
+          />
+        );
+      })}
       <div style={{ flex: 1 }} />
-      <NavLink
-        component={Link}
-        to="/help"
-        label="Help"
-        leftSection={<IconHelp size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-        active={navActive(location.pathname, '/help')}
-        onClick={onNavClick}
-      />
-      <NavLink
-        component={Link}
-        to="/reference"
-        label="Reference"
-        leftSection={<IconBook size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-        active={navActive(location.pathname, '/reference')}
-        onClick={onNavClick}
-      />
       <NavLink
         component={Link}
         to="/debug"
