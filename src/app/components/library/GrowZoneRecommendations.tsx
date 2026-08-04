@@ -26,6 +26,7 @@ import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import type { Channel } from '@core/models/library.ts';
 import { GeocodeError, geocodeQuery, type GeocodeProvider } from '@integrations/geocode/index.ts';
 import CodeplugMap from '../CodeplugMap/CodeplugMap.tsx';
+import { MapPanel } from '../v2/index.ts';
 import ModePill from '../pills/ModePill.tsx';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
 import { DataTable, FormSection } from '../ui/index.ts';
@@ -396,17 +397,19 @@ export default function GrowZoneRecommendations() {
       </FormSection>
 
       <FormSection title="Map">
-        <CodeplugMap
-          channels={library.channels}
-          zones={library.zones}
-          allChannels={library.channels}
-          height={360}
-          mapControlMode="zoneEmphasis"
-          emphasisZoneId={entity.id}
-          referencePosition={centre}
-          dimmedChannelIds={dimmedChannelIds}
-          onMapClick={(lat, lon) => applyCentre(lat, lon)}
-        />
+        <MapPanel height={360}>
+          <CodeplugMap
+            channels={library.channels}
+            zones={library.zones}
+            allChannels={library.channels}
+            height="100%"
+            mapControlMode="zoneEmphasis"
+            emphasisZoneId={entity.id}
+            referencePosition={centre}
+            dimmedChannelIds={dimmedChannelIds}
+            onMapClick={(lat, lon) => applyCentre(lat, lon)}
+          />
+        </MapPanel>
       </FormSection>
     </Stack>
   );

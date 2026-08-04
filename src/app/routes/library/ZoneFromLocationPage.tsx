@@ -26,6 +26,7 @@ import { validateZoneMembership } from '@core/domain/validation.ts';
 import type { Channel } from '@core/models/library.ts';
 import { GeocodeError, geocodeQuery, type GeocodeProvider } from '@integrations/geocode/index.ts';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
+import { DesignSystemV2Provider, MapPanel } from '../../components/v2/index.ts';
 import ModePill from '../../components/pills/ModePill.tsx';
 import UseMyLocationButton from '../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import { DataTable, FormPage, FormSection } from '../../components/ui/index.ts';
@@ -374,24 +375,31 @@ export default function ZoneFromLocationPage() {
           <Text size="sm" c="dimmed" mb="xs">
             Click the map to set the reference centre. Channels outside the radius are dimmed.
           </Text>
-          <CodeplugMap
-            channels={library.channels}
-            zones={library.zones}
-            allChannels={library.channels}
-            height={420}
-            mapControlMode="zoneFromLocation"
-            referencePosition={centre}
-            referenceRadiusM={centre ? radiusKm * 1000 : null}
-            dimmedChannelIds={centre ? dimmedChannelIds : []}
-            provisionalZone={
-              selection.channelIds.length > 0
-                ? { channelIds: selection.channelIds, label: resolvedZoneName.trim() || 'New zone' }
-                : null
-            }
-            onMapClick={(lat, lon) => applyCentre(lat, lon)}
-            onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-            onZoneClick={(id) => navigate(`/library/zones/${id}`)}
-          />
+          <DesignSystemV2Provider>
+            <MapPanel height={420}>
+              <CodeplugMap
+                channels={library.channels}
+                zones={library.zones}
+                allChannels={library.channels}
+                height="100%"
+                mapControlMode="zoneFromLocation"
+                referencePosition={centre}
+                referenceRadiusM={centre ? radiusKm * 1000 : null}
+                dimmedChannelIds={centre ? dimmedChannelIds : []}
+                provisionalZone={
+                  selection.channelIds.length > 0
+                    ? {
+                        channelIds: selection.channelIds,
+                        label: resolvedZoneName.trim() || 'New zone',
+                      }
+                    : null
+                }
+                onMapClick={(lat, lon) => applyCentre(lat, lon)}
+                onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+                onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+              />
+            </MapPanel>
+          </DesignSystemV2Provider>
           {!centre ? (
             <Text size="sm" c="dimmed" mt="xs">
               Set a reference position to preview channels in range.
