@@ -5,7 +5,7 @@ Contributor and agent reference for **how we build UI** in Codeplug Studio — w
 This is **not** user-facing help copy. For wording aimed at operators, use [help writing styleguide](../writing-styleguide/help-writing-styleguide.md). For value formatting (frequencies, pills, icons), see [display.md](display.md) in this folder.
 
 **Tracking:** [#465](https://github.com/pskillen/codeplug-studio/issues/465) · Parent [#52](https://github.com/pskillen/codeplug-studio/issues/52)  
-**Interactive demos:** `/styleguide/*` (dev-only, unlinked) — visual catalogue; this doc is the written contract.
+**Interactive demos:** `/styleguide/*` (v1 kit) and `/styleguide/v2/*` (design-system v2 preview, [#916](https://github.com/pskillen/codeplug-studio/issues/916)) — both are dev-only and unlinked from main nav. This doc is the written contract for v1 list-kit roles; v2 component behaviour lives in [design-system-v2](../../features/design-system-v2/README.md) and `src/app/components/v2/*.md` sidecars.
 
 ## When to read this
 

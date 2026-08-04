@@ -1,0 +1,80 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dsv2-space-2);
+  border-radius: var(--dsv2-radius-control);
+  font-family: var(--dsv2-font-family);
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  border-style: solid;
+  border-width: 1px;
+  transition: background-color 120ms ease;
+}
+
+.root:disabled,
+.root[data-disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.sm {
+  padding: 6px 12px;
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.md {
+  padding: 8px 14px;
+  font-size: var(--dsv2-font-body);
+}
+
+.lg {
+  padding: 10px 18px;
+  font-size: 14px;
+}
+
+.primary {
+  background: var(--dsv2-accent);
+  color: var(--dsv2-bg);
+  border-color: transparent;
+}
+
+.primary:hover:not(:disabled):not([data-disabled]) {
+  background: var(--dsv2-accent-hover);
+}
+
+.secondary {
+  background: transparent;
+  color: var(--dsv2-text-secondary);
+  border-color: var(--dsv2-border);
+}
+
+.outline {
+  background: transparent;
+  color: var(--dsv2-text-primary);
+  border-color: var(--dsv2-border);
+}
+
+.dashed {
+  background: transparent;
+  color: var(--dsv2-text-secondary);
+  border-color: var(--dsv2-border);
+  border-style: dashed;
+}
+
+.ghost {
+  background: transparent;
+  color: var(--dsv2-text-tertiary);
+  border-color: transparent;
+}
+
+.destructive {
+  background: var(--dsv2-destructive);
+  color: #fff;
+  border-color: transparent;
+}
+
+.destructive:hover:not(:disabled):not([data-disabled]) {
+  background: #dd7a70;
+}

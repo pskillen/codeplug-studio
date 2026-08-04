@@ -1,0 +1,27 @@
+.root {
+  display: flex;
+  gap: 6px;
+  padding: 12px var(--dsv2-page-padding-x);
+  border-bottom: 1px solid var(--dsv2-border-strip);
+  background: var(--dsv2-surface-quiet);
+  overflow-x: auto;
+}
+
+.item {
+  padding: 6px 14px;
+  border: none;
+  border-radius: var(--dsv2-radius-pill);
+  background: transparent;
+  color: var(--dsv2-text-secondary);
+  font-family: var(--dsv2-font-family);
+  font-size: var(--dsv2-font-body-sm);
+  font-weight: 400;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.active {
+  font-weight: 600;
+  color: var(--dsv2-bg);
+  background: var(--dsv2-accent);
+}
