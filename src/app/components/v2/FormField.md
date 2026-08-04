@@ -8,11 +8,11 @@ Channel editor Identity/Frequencies/etc. — label + bordered body; slots contro
 
 ## Props
 
-| Prop       | Type        | Notes                         |
-| ---------- | ----------- | ----------------------------- |
-| `label`    | `string`    | Field label                   |
-| `mono`     | `boolean`   | Tabular numerics on body      |
-| `value`    | `ReactNode` | Static read-only display      |
+| Prop       | Type        | Notes                             |
+| ---------- | ----------- | --------------------------------- |
+| `label`    | `string`    | Field label                       |
+| `mono`     | `boolean`   | Tabular numerics on body          |
+| `value`    | `ReactNode` | Static read-only display          |
 | `children` | `ReactNode` | Editable controls when no `value` |
 
 ## Usage

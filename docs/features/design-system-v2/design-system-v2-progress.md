@@ -4,21 +4,21 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## Slices
 
-| Slice                    | Status      | Branch / PR                                                     | Notes                                                |
-| ------------------------ | ----------- | --------------------------------------------------------------- | ---------------------------------------------------- |
-| Foundations (#916)       | Shipped     | [PR #928](https://github.com/pskillen/codeplug-studio/pull/928) | Theme isolation, `components/v2/*`, `/styleguide/v2` |
-| Chrome port (#917)       | In progress | [PR #930](https://github.com/pskillen/codeplug-studio/pull/930) | AppShell + ContextualStrip + BottomTabBar live       |
-| Screen ports (#918–#925) | In progress | —                                                               | Summary, Channels, Zones, RX lists, Builds, Map      |
+| Slice                    | Status      | Branch / PR                                                     | Notes                                                   |
+| ------------------------ | ----------- | --------------------------------------------------------------- | ------------------------------------------------------- |
+| Foundations (#916)       | Shipped     | [PR #928](https://github.com/pskillen/codeplug-studio/pull/928) | Theme isolation, `components/v2/*`, `/styleguide/v2`    |
+| Chrome port (#917)       | Shipped     | [PR #930](https://github.com/pskillen/codeplug-studio/pull/930) | AppShell + ContextualStrip + BottomTabBar live          |
+| Screen ports (#918–#925) | In progress | —                                                               | Summary / Channels / Channel editor shipped (#918–#920) |
 
 ### Screen ports (#918–#920) — this branch
 
-| Sub-slice       | Status      | Notes                                                                 |
-| --------------- | ----------- | --------------------------------------------------------------------- |
-| Summary (#918)  | Complete    | CountTile grid, Panel breakdowns, StatusBanner, v2 Provider on route  |
-| Channels (#919) | Complete    | SearchInput, v2 DataTable collapse, semantic Pill band/mode cells     |
-| Channel editor (#920) | Complete    | SectionNav scroll layout, Panel sections, mode chip switcher          |
-| Mobile QA (#926)         | Not started | —                                                               | Cross-cutting narrow + Android WebView               |
-| Retire v1 (#927)         | Not started | —                                                               | After full rollout only                              |
+| Sub-slice             | Status      | Notes                                                                |
+| --------------------- | ----------- | -------------------------------------------------------------------- |
+| Summary (#918)        | Complete    | CountTile grid, Panel breakdowns, StatusBanner, v2 Provider on route |
+| Channels (#919)       | Complete    | SearchInput, v2 DataTable collapse, semantic Pill band/mode cells    |
+| Channel editor (#920) | Complete    | SectionNav scroll layout, Panel sections, mode chip switcher         |
+| Mobile QA (#926)      | Not started | —                                                                    | Cross-cutting narrow + Android WebView |
+| Retire v1 (#927)      | Not started | —                                                                    | After full rollout only                |
 
 ### #917 chrome port (this branch)
 

@@ -8,13 +8,13 @@ Standard v2 content panel — `18px 20px` padding, `10px` radius, `1px` border. 
 
 ## Props
 
-| Prop        | Type        | Notes                                    |
-| ----------- | ----------- | ---------------------------------------- |
+| Prop        | Type        | Notes                                     |
+| ----------- | ----------- | ----------------------------------------- |
 | `id`        | `string`    | Anchor id for `SectionNav` scroll targets |
-| `title`     | `string`    | Section heading                          |
-| `sub`       | `string`    | Optional description below title         |
-| `children`  | `ReactNode` | Panel body                               |
-| `className` | `string`    | Optional root class                      |
+| `title`     | `string`    | Section heading                           |
+| `sub`       | `string`    | Optional description below title          |
+| `children`  | `ReactNode` | Panel body                                |
+| `className` | `string`    | Optional root class                       |
 
 ## Usage
 

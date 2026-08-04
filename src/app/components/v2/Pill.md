@@ -8,14 +8,14 @@ Small, high-contrast labels. Named tones cover accent/status chrome; `tone="sema
 
 ## Props
 
-| Prop        | Type                                                                             | Notes                          |
-| ----------- | -------------------------------------------------------------------------------- | ------------------------------ |
-| `tone`      | `'neutral' \| 'accent' \| 'accentSolid' \| 'success' \| 'warning' \| 'semantic' \| 'dashed'` | Default `neutral`              |
-| `color`     | `string`                                                                         | Required for `tone="semantic"` |
-| `textColor` | `string`                                                                         | Semantic only                  |
-| `children`  | `ReactNode`                                                                      | Label text                     |
-| `onRemove`  | `() => void`                                                                     | Trailing ✕ for membership chips |
-| `onClick`   | `() => void`                                                                     | With `tone="dashed"`, renders button |
+| Prop        | Type                                                                                         | Notes                                |
+| ----------- | -------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `tone`      | `'neutral' \| 'accent' \| 'accentSolid' \| 'success' \| 'warning' \| 'semantic' \| 'dashed'` | Default `neutral`                    |
+| `color`     | `string`                                                                                     | Required for `tone="semantic"`       |
+| `textColor` | `string`                                                                                     | Semantic only                        |
+| `children`  | `ReactNode`                                                                                  | Label text                           |
+| `onRemove`  | `() => void`                                                                                 | Trailing ✕ for membership chips      |
+| `onClick`   | `() => void`                                                                                 | With `tone="dashed"`, renders button |
 
 ## Usage
 

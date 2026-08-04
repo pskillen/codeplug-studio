@@ -31,7 +31,9 @@ export default function TextInput({
     .filter(Boolean)
     .join(' ');
 
-  const input = <input id={label ? inputId : undefined} className={inputClass} disabled={disabled} {...rest} />;
+  const input = (
+    <input id={label ? inputId : undefined} className={inputClass} disabled={disabled} {...rest} />
+  );
 
   if (!label && variant === 'plain') {
     return input;

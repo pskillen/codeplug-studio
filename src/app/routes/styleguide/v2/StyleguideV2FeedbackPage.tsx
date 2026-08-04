@@ -17,10 +17,10 @@ export default function StyleguideV2FeedbackPage() {
 
       <PageSection title="StatusBanner" description="Success, warning, and info tones.">
         <Stack gap="sm">
-          <StatusBanner tone="success">No dangling references — all relationships resolve.</StatusBanner>
-          <StatusBanner tone="warning">
-            3 channels reference a missing talk group.
+          <StatusBanner tone="success">
+            No dangling references — all relationships resolve.
           </StatusBanner>
+          <StatusBanner tone="warning">3 channels reference a missing talk group.</StatusBanner>
           <StatusBanner tone="info">
             Export combines library + build via assemble — re-import may differ.
           </StatusBanner>

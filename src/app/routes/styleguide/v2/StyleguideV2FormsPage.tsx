@@ -50,7 +50,10 @@ export default function StyleguideV2FormsPage() {
         </Stack>
       </PageSection>
 
-      <PageSection title="TextInput & FormField" description="Standalone input and label-above-box wrapper.">
+      <PageSection
+        title="TextInput & FormField"
+        description="Standalone input and label-above-box wrapper."
+      >
         <Stack gap="md">
           <TextInput label="Name" value="Wrotham" readOnly />
           <FormField label="Callsign" value="GB3LR" />
@@ -113,10 +116,17 @@ export default function StyleguideV2FormsPage() {
         </OverrideField>
       </PageSection>
 
-      <PageSection title="Pill extensions" description="Removable and dashed add chips (see data-display too).">
+      <PageSection
+        title="Pill extensions"
+        description="Removable and dashed add chips (see data-display too)."
+      >
         <Group gap="sm">
-          <Pill tone="neutral" onRemove={() => undefined}>Home zone</Pill>
-          <Pill tone="dashed" onClick={() => undefined}>+ DMR</Pill>
+          <Pill tone="neutral" onRemove={() => undefined}>
+            Home zone
+          </Pill>
+          <Pill tone="dashed" onClick={() => undefined}>
+            + DMR
+          </Pill>
         </Group>
       </PageSection>
     </Page>

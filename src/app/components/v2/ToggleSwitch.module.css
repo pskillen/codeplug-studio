@@ -34,7 +34,9 @@
   position: absolute;
   top: 2px;
   left: 2px;
-  transition: left 150ms ease, background-color 150ms ease;
+  transition:
+    left 150ms ease,
+    background-color 150ms ease;
   background: var(--dsv2-text-tertiary);
 }
 

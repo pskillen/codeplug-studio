@@ -10,12 +10,7 @@ import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import { haversineDistanceM } from '@core/domain/geoDistance.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
-import {
-  Button,
-  DesignSystemV2Provider,
-  Pill,
-  SearchInput,
-} from '../../../components/v2/index.ts';
+import { Button, DesignSystemV2Provider, Pill, SearchInput } from '../../../components/v2/index.ts';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import { DataTable } from '../../../components/ui/index.ts';
@@ -43,10 +38,7 @@ import {
   channelScanListName,
 } from '../../../lib/entityRefs.ts';
 import { bandFromChannel } from '../../../lib/bands.ts';
-import {
-  getModeDefinition,
-  type ChannelMode,
-} from '../../../lib/channelModes.ts';
+import { getModeDefinition, type ChannelMode } from '../../../lib/channelModes.ts';
 import { channelModesForFilter } from '../../../lib/channels.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../../lib/breakpoints.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';

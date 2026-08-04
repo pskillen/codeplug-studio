@@ -3,13 +3,7 @@ import { DSV2_TOKENS } from '../../theme-v2.ts';
 import classes from './Pill.module.css';
 
 export type PillTone =
-  | 'neutral'
-  | 'accent'
-  | 'accentSolid'
-  | 'success'
-  | 'warning'
-  | 'semantic'
-  | 'dashed';
+  'neutral' | 'accent' | 'accentSolid' | 'success' | 'warning' | 'semantic' | 'dashed';
 
 export interface PillProps {
   tone?: PillTone;

@@ -8,11 +8,11 @@ Skip-scan, show-on-map, and similar boolean toggles in channel editor sections.
 
 ## Props
 
-| Prop       | Type        | Notes           |
-| ---------- | ----------- | --------------- |
-| `checked`  | `boolean`   | On state        |
-| `onChange` | `(b) => void` | Toggle handler  |
-| `label`    | `ReactNode` | Optional label  |
+| Prop       | Type          | Notes          |
+| ---------- | ------------- | -------------- |
+| `checked`  | `boolean`     | On state       |
+| `onChange` | `(b) => void` | Toggle handler |
+| `label`    | `ReactNode`   | Optional label |
 
 ## Usage
 

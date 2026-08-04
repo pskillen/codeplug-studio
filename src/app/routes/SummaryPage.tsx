@@ -128,7 +128,10 @@ export default function SummaryPage() {
           )}
         </div>
 
-        <Panel title="Project interchange" sub="Lossless project backup — library, builds, and metadata as native YAML.">
+        <Panel
+          title="Project interchange"
+          sub="Lossless project backup — library, builds, and metadata as native YAML."
+        >
           <div className={classes.interchangeGrid}>
             <div>
               <h3 className={classes.interchangeSectionTitle}>Import (replace active project)</h3>
@@ -191,7 +194,9 @@ function modeBreakdownPill(modeLabel: string) {
 function bandBreakdownPill(bandLabel: string) {
   const band = ALL_BANDS.find((b) => b.label === bandLabel);
   const color = band?.color ?? DSV2_TOKENS.colors.modeOther;
-  const textColor = band?.color ? DSV2_TOKENS.colors.pillTextLight : DSV2_TOKENS.colors.pillTextDark;
+  const textColor = band?.color
+    ? DSV2_TOKENS.colors.pillTextLight
+    : DSV2_TOKENS.colors.pillTextDark;
 
   return (
     <Pill tone="semantic" color={color} textColor={textColor}>

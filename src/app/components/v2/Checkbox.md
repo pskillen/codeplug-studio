@@ -8,10 +8,10 @@ DataTable bulk-select and list row checkboxes.
 
 ## Props
 
-| Prop              | Type                    | Notes              |
-| ----------------- | ----------------------- | ------------------ |
-| `checked`         | `boolean`               | Checked state      |
-| `onCheckedChange` | `(checked) => void`     | Toggle callback    |
+| Prop              | Type                | Notes           |
+| ----------------- | ------------------- | --------------- |
+| `checked`         | `boolean`           | Checked state   |
+| `onCheckedChange` | `(checked) => void` | Toggle callback |
 
 ## Usage
 

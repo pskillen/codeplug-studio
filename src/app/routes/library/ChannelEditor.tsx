@@ -255,10 +255,7 @@ export default function ChannelEditor({
   );
 
   const browseChannelIds = useMemo(
-    () =>
-      [...library.channels]
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map((ch) => ch.id),
+    () => [...library.channels].sort((a, b) => a.name.localeCompare(b.name)).map((ch) => ch.id),
     [library.channels],
   );
 
@@ -271,7 +268,9 @@ export default function ChannelEditor({
 
   function scrollToSection(section: EditorSection) {
     setActiveSection(section);
-    document.getElementById(sectionId(section))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document
+      .getElementById(sectionId(section))
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function toggleMode(mode: ChannelMode) {
@@ -308,15 +307,15 @@ export default function ChannelEditor({
     <DesignSystemV2Provider>
       <div className={classes.root}>
         <header className={classes.stickyHeader}>
-          <Link to="/library/channels" className={classes.backLink}>← Channels</Link>
+          <Link to="/library/channels" className={classes.backLink}>
+            ← Channels
+          </Link>
           <div className={classes.headerDivider} aria-hidden />
           <div className={classes.headerIdentity}>
             <div className={classes.headerName}>{liveChannel.name || 'Untitled channel'}</div>
             {callsign ? <div className={classes.headerCallsign}>{callsign}</div> : null}
           </div>
-          <div className={classes.headerFreq}>
-            {formatChannelRxTxListCell(liveRxHz, liveTxHz)}
-          </div>
+          <div className={classes.headerFreq}>{formatChannelRxTxListCell(liveRxHz, liveTxHz)}</div>
           {selectedModes.length > 0 ? (
             <div className={classes.headerModes}>
               {selectedModes.map((mode) => v2HeaderModePill(mode))}
@@ -380,7 +379,11 @@ export default function ChannelEditor({
                 </FormField>
               </div>
               <Stack gap="sm" mt="md">
-                <ChannelWireNameExamples callsign={callsign} name={name} abbreviation={abbreviation} />
+                <ChannelWireNameExamples
+                  callsign={callsign}
+                  name={name}
+                  abbreviation={abbreviation}
+                />
                 <FormField label="Comment">
                   <TextInput
                     variant="plain"
@@ -559,9 +562,15 @@ export default function ChannelEditor({
         ) : null}
 
         {validationError ? (
-          <Alert color="red" className={classes.alert}>{validationError}</Alert>
+          <Alert color="red" className={classes.alert}>
+            {validationError}
+          </Alert>
         ) : null}
-        {error ? <Alert color="red" className={classes.alert}>{error}</Alert> : null}
+        {error ? (
+          <Alert color="red" className={classes.alert}>
+            {error}
+          </Alert>
+        ) : null}
 
         <div className={classes.legacyActions}>
           {entity ? (
@@ -569,7 +578,10 @@ export default function ChannelEditor({
               <Button variant="ghost" size="sm" onClick={() => void handleDuplicate()}>
                 Duplicate
               </Button>
-              <ChannelDeleteButton channel={entity} onDeleted={() => navigate('/library/channels')} />
+              <ChannelDeleteButton
+                channel={entity}
+                onDeleted={() => navigate('/library/channels')}
+              />
             </>
           ) : null}
         </div>

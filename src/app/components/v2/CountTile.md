@@ -8,12 +8,12 @@ Displays a prominent numeric value with an optional `/total` denominator and a t
 
 ## Props
 
-| Prop        | Type        | Notes                          |
-| ----------- | ----------- | ------------------------------ |
-| `value`     | `ReactNode` | Primary count                  |
-| `total`     | `ReactNode` | Optional denominator           |
-| `label`     | `string`    | Tertiary caption below value   |
-| `className` | `string`    | Optional root class            |
+| Prop        | Type        | Notes                        |
+| ----------- | ----------- | ---------------------------- |
+| `value`     | `ReactNode` | Primary count                |
+| `total`     | `ReactNode` | Optional denominator         |
+| `label`     | `string`    | Tertiary caption below value |
+| `className` | `string`    | Optional root class          |
 
 ## Usage
 

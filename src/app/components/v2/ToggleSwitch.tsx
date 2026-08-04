@@ -35,11 +35,7 @@ export default function ToggleSwitch({
 
   return (
     <label
-      className={[
-        classes.root,
-        disabled ? classes.rootDisabled : '',
-        className,
-      ]
+      className={[classes.root, disabled ? classes.rootDisabled : '', className]
         .filter(Boolean)
         .join(' ')}
     >

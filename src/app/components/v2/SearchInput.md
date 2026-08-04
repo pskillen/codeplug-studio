@@ -8,12 +8,12 @@ Channels list name/callsign filter and similar list filter bars.
 
 ## Props
 
-| Prop           | Type     | Notes                    |
-| -------------- | -------- | ------------------------ |
-| `value`        | `string` | Input value              |
-| `onChange`     | handler  | Input change             |
-| `placeholder`  | `string` | Default `Search…`        |
-| `detectedTag`  | `string` | Suffix neutral Pill      |
+| Prop          | Type     | Notes               |
+| ------------- | -------- | ------------------- |
+| `value`       | `string` | Input value         |
+| `onChange`    | handler  | Input change        |
+| `placeholder` | `string` | Default `Search…`   |
+| `detectedTag` | `string` | Suffix neutral Pill |
 
 ## Usage
 

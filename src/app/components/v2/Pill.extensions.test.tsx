@@ -8,7 +8,9 @@ describe('Pill extensions', () => {
     const onClick = vi.fn();
     render(
       <DesignSystemV2Provider>
-        <Pill tone="dashed" onClick={onClick}>+ Add to zone</Pill>
+        <Pill tone="dashed" onClick={onClick}>
+          + Add to zone
+        </Pill>
       </DesignSystemV2Provider>,
     );
 
@@ -20,7 +22,9 @@ describe('Pill extensions', () => {
     const onRemove = vi.fn();
     render(
       <DesignSystemV2Provider>
-        <Pill tone="neutral" onRemove={onRemove}>Zone A</Pill>
+        <Pill tone="neutral" onRemove={onRemove}>
+          Zone A
+        </Pill>
       </DesignSystemV2Provider>,
     );
 

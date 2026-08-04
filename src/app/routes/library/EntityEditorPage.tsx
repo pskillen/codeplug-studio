@@ -51,14 +51,7 @@ export default function EntityEditorPage() {
 
   if (loading) {
     if (meta.kind === 'channel') {
-      return (
-        <ChannelEditor
-          projectId={projectId ?? ''}
-          library={library}
-          entity={null}
-          loading
-        />
-      );
+      return <ChannelEditor projectId={projectId ?? ''} library={library} entity={null} loading />;
     }
     return (
       <FormPage title="Loading…">

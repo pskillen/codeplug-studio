@@ -8,12 +8,12 @@ Standalone bordered input or `variant="plain"` inner control inside `FormField`.
 
 ## Props
 
-| Prop      | Type                    | Notes                    |
-| --------- | ----------------------- | ------------------------ |
-| `label`   | `string`                | Optional, linked label   |
-| `mono`    | `boolean`               | Tabular mono numerics    |
-| `variant` | `'default' \| 'plain'`  | Default bordered box     |
-| …         | Native input attributes | `value`, `onChange`, …   |
+| Prop      | Type                    | Notes                  |
+| --------- | ----------------------- | ---------------------- |
+| `label`   | `string`                | Optional, linked label |
+| `mono`    | `boolean`               | Tabular mono numerics  |
+| `variant` | `'default' \| 'plain'`  | Default bordered box   |
+| …         | Native input attributes | `value`, `onChange`, … |
 
 ## Usage
 

@@ -8,10 +8,10 @@ Surfaces integrity summaries (dangling references), contextual notices, and non-
 
 ## Props
 
-| Prop        | Type                               | Notes              |
-| ----------- | ---------------------------------- | ------------------ |
-| `tone`      | `'success' \| 'warning' \| 'info'` | Default `info`     |
-| `children`  | `ReactNode`                        | Banner message     |
+| Prop        | Type                               | Notes               |
+| ----------- | ---------------------------------- | ------------------- |
+| `tone`      | `'success' \| 'warning' \| 'info'` | Default `info`      |
+| `children`  | `ReactNode`                        | Banner message      |
 | `className` | `string`                           | Optional root class |
 
 ## Usage
