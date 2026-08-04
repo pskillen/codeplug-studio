@@ -191,8 +191,8 @@ export default function ZoneEditor({
               />
               <p className={classes.hint}>
                 Enable when this zone is only a building block for other zones — for example a
-                PMR446 simplex set you nest inside every city zone. Its channels still export
-                inside parent zones; this zone will not get its own row in Zones.csv.
+                PMR446 simplex set you nest inside every city zone. Its channels still export inside
+                parent zones; this zone will not get its own row in Zones.csv.
               </p>
               {entity ? (
                 <EntityDeleteButton

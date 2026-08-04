@@ -399,9 +399,7 @@ export default function ZoneMemberEditor({
               <ShuttleAddBar
                 onAdd={addSelected}
                 disabled={!availableChannelSelected.length && !selectableZoneSelected.length}
-                selectedCount={
-                  availableChannelSelected.length + selectableZoneSelected.length
-                }
+                selectedCount={availableChannelSelected.length + selectableZoneSelected.length}
               />
               <Checkbox
                 label="Hide filtered entries from map"

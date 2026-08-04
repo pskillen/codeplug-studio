@@ -90,7 +90,10 @@ export default function ZoneEditMainPage() {
           >
             Add from map
           </Button>
-          <Button variant="primary" onClick={() => navigate(`/library/zones/${entity.id}/scanning`)}>
+          <Button
+            variant="primary"
+            onClick={() => navigate(`/library/zones/${entity.id}/scanning`)}
+          >
             Configure zone scanning
           </Button>
         </div>

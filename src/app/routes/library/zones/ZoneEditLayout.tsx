@@ -1,8 +1,5 @@
 import { Link, Navigate, Outlet, useNavigate, useParams } from 'react-router-dom';
-import {
-  Button,
-  DesignSystemV2Provider,
-} from '../../../components/v2/index.ts';
+import { Button, DesignSystemV2Provider } from '../../../components/v2/index.ts';
 import { UnsavedChangesModal } from '../../../components/ui/index.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
 import { ZoneEditProvider, useZoneEdit } from './ZoneEditContext.tsx';
