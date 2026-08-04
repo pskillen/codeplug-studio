@@ -102,9 +102,15 @@ export default function AppLayout() {
     </Menu>
   );
 
+  const showBottomNav = isDesktopNav === false;
+
   return (
     <DriveRefreshProvider>
-      <div className={classes.root}>
+      <div
+        className={[classes.root, showBottomNav ? classes.rootWithBottomNav : '']
+          .filter(Boolean)
+          .join(' ')}
+      >
         <DesignSystemV2Provider>
           <AppShell
             tabs={tabLabels}
@@ -126,14 +132,18 @@ export default function AppLayout() {
           ) : null}
         </DesignSystemV2Provider>
 
-        <main className={classes.main}>
+        <main
+          className={[classes.main, showBottomNav ? classes.mainScroll : '']
+            .filter(Boolean)
+            .join(' ')}
+        >
           <CookieConsentBanner />
           <RefreshFromDriveBanner />
           <Outlet />
           <BuildFooter />
         </main>
 
-        {isDesktopNav === false ? (
+        {showBottomNav ? (
           <DesignSystemV2Provider>
             <BottomTabBar items={bottomItems} activeId={activePrimary?.label} onChange={goToTab} />
           </DesignSystemV2Provider>

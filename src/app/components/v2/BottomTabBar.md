@@ -32,6 +32,7 @@ Narrow-viewport primary nav for the v2 shell. Presentational in #916; wired to r
 - Active tab gets `aria-current="page"` and accent styling.
 - Prefer `ICON_SIZE_NAV` / `ICON_STROKE` from `lib/iconSizes.ts` for icons.
 - Must render inside `DesignSystemV2Provider`.
+- Live `AppLayout` keeps this bar in the flex shell footer (viewport-locked on mobile); do not rely on `position: sticky` alone after scrolling page content.
 - Live demos: `/styleguide/v2/navigation`
 
 ## Related
