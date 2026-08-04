@@ -1,0 +1,87 @@
+.page {
+  padding: var(--dsv2-page-padding-y) var(--dsv2-page-padding-x);
+  min-width: 0;
+}
+
+.headerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: var(--dsv2-font-heading-lg);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 3px;
+}
+
+.description {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.searchWrap {
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+}
+
+.toolbarActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.nameCell {
+  min-width: 0;
+}
+
+.namePrimary {
+  color: var(--dsv2-text-primary);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.nameMeta {
+  color: var(--dsv2-text-tertiary);
+  font-size: 11.5px;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.mapSection {
+  margin-top: 24px;
+}
+
+.mapSectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 10px;
+}
+
+.alert {
+  margin-bottom: 12px;
+  font-size: var(--dsv2-font-body-sm);
+}

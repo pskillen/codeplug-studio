@@ -1,7 +1,8 @@
-import { Alert, Button, Group, Stack, Text } from '@mantine/core';
+import { Alert, Group, Stack, Text } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { Channel } from '@core/models/library.ts';
 import { zonesWithDirectChannelMember } from '@core/domain/zoneMembership.ts';
 import { applyFilters, channelHasGeolocation } from '@core/domain/mapProjection.ts';
@@ -9,10 +10,15 @@ import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import { haversineDistanceM } from '@core/domain/geoDistance.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
-import { BandPillForChannel } from '../../../components/pills/BandPill.tsx';
-import ModePill from '../../../components/pills/ModePill.tsx';
+import {
+  Button,
+  DesignSystemV2Provider,
+  Pill,
+  SearchInput,
+} from '../../../components/v2/index.ts';
+import { DSV2_TOKENS } from '../../../theme-v2.ts';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
-import { DataTable, ListPage, PageSection } from '../../../components/ui/index.ts';
+import { DataTable } from '../../../components/ui/index.ts';
 import type { DataTableColumn, DataTableSortState } from '../../../components/ui/DataTable.tsx';
 import {
   CHANNEL_OPTIONAL_COLUMNS,
@@ -36,7 +42,13 @@ import {
   dmrRxGroupListName,
   channelScanListName,
 } from '../../../lib/entityRefs.ts';
+import { bandFromChannel } from '../../../lib/bands.ts';
+import {
+  getModeDefinition,
+  type ChannelMode,
+} from '../../../lib/channelModes.ts';
 import { channelModesForFilter } from '../../../lib/channels.ts';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../../lib/breakpoints.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useProjects } from '../../../state/useProjects.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
@@ -59,10 +71,25 @@ import {
   channelHasDmrProfile,
   formatAprsAssignmentSummary,
 } from '../../../lib/aprsBindingHelpers.ts';
+import classes from './ChannelsListPage.module.css';
 
 function percentLabel(value: number | null): string {
   if (value == null) return '—';
   return `${value}%`;
+}
+
+function v2ModePill(mode: ChannelMode, primary: boolean) {
+  const def = getModeDefinition(mode);
+  const textColor =
+    mode === 'dstar' || mode === 'dmr' || mode === 'tetra'
+      ? DSV2_TOKENS.colors.pillTextLight
+      : DSV2_TOKENS.colors.pillTextDark;
+  const label = primary ? `${def.label} (primary)` : def.label;
+  return (
+    <Pill key={mode} tone="semantic" color={def.color} textColor={textColor}>
+      {label}
+    </Pill>
+  );
 }
 
 export default function ChannelsListPage() {
@@ -72,6 +99,7 @@ export default function ChannelsListPage() {
   const { channels, zones } = library;
   const { position, setPosition, clearPosition } = useOperatorPosition();
   const query = useChannelListQuery();
+  const isMobileTable = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
   const filtered = useFilteredChannels(channels, query, position, { skipSort: true });
   const [columnSortOverride, setColumnSortOverride] = usePersistedChannelColumnSort();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -83,22 +111,22 @@ export default function ChannelsListPage() {
   );
 
   const listActions = (
-    <Group gap="xs">
+    <Group gap="xs" className={classes.toolbarActions}>
       <Button
-        component={Link}
-        to="/library/channels/new"
+        variant="primary"
         leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => navigate('/library/channels/new')}
       >
         New channel
       </Button>
       <Button
-        variant="light"
+        variant="secondary"
         leftSection={<IconWorldSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
         onClick={() => setAddFromOpen(true)}
       >
         Add from…
       </Button>
-      <Button component={Link} to="/library/channels/defaults" variant="subtle">
+      <Button variant="ghost" onClick={() => navigate('/library/channels/defaults')}>
         Channel defaults
       </Button>
     </Group>
@@ -148,6 +176,7 @@ export default function ChannelsListPage() {
         header: col.header,
         hideable: true,
         defaultVisible: col.defaultVisible,
+        hideOnMobile: col.key !== 'band' && col.key !== 'mode' && col.key !== 'rxTx',
       };
 
       if (col.key === 'zones') {
@@ -170,7 +199,15 @@ export default function ChannelsListPage() {
       if (col.key === 'band') {
         return {
           ...base,
-          render: (ch: Channel) => <BandPillForChannel channel={ch} />,
+          render: (ch: Channel) => {
+            const band = bandFromChannel(ch.rxFrequency, ch.txFrequency);
+            if (!band) return '—';
+            return (
+              <Pill tone="semantic" color={band.color} textColor={DSV2_TOKENS.colors.pillTextLight}>
+                {band.label}
+              </Pill>
+            );
+          },
           sortValue: (ch: Channel) => ch.rxFrequency ?? ch.txFrequency ?? 0,
         };
       }
@@ -181,11 +218,9 @@ export default function ChannelsListPage() {
             const modes = channelModesForFilter(ch);
             const primary = modes.length > 1 ? resolveChannelPrimaryMode(ch) : null;
             return (
-              <Group gap={4}>
-                {modes.map((mode) => (
-                  <ModePill key={mode} mode={mode} size="xs" primary={mode === primary} />
-                ))}
-              </Group>
+              <div className={classes.pillRow}>
+                {modes.map((mode) => v2ModePill(mode, mode === primary))}
+              </div>
             );
           },
           sortValue: (ch: Channel) => channelModesForFilter(ch).join(','),
@@ -298,9 +333,26 @@ export default function ChannelsListPage() {
       nameColumn: {
         getName: (ch: Channel) => ch.name || '—',
         getPath: (ch: Channel) => `/library/channels/${ch.id}`,
+        render: isMobileTable
+          ? (ch: Channel) => {
+              const zoneNames = zonesWithDirectChannelMember(ch.id, zones)
+                .map((z) => z.name)
+                .join(', ');
+              const power = percentLabel(ch.power);
+              const secondary = [ch.callsign, power !== '—' ? `Power ${power}` : null, zoneNames]
+                .filter(Boolean)
+                .join(' · ');
+              return (
+                <div className={classes.nameCell}>
+                  <div className={classes.namePrimary}>{ch.name || '—'}</div>
+                  {secondary ? <div className={classes.nameMeta}>{secondary}</div> : null}
+                </div>
+              );
+            }
+          : undefined,
       },
     }),
-    [optionalColumnDefs, tableColumns],
+    [isMobileTable, tableColumns, zones],
   );
 
   const sortedRows = useMemo(
@@ -354,127 +406,157 @@ export default function ChannelsListPage() {
 
   if (loading) {
     return (
-      <ListPage title="Channels" actions={listActions}>
-        <Text>Loading library…</Text>
-      </ListPage>
+      <DesignSystemV2Provider>
+        <div className={classes.page}>
+          <h1 className={classes.title}>Channels</h1>
+          <p className={classes.description}>Loading library…</p>
+        </div>
+      </DesignSystemV2Provider>
     );
   }
 
   return (
-    <ListPage title="Channels" actions={listActions}>
-      <Stack gap="lg">
-        {distanceSortPending ? (
-          <Text size="sm" c="dimmed">
-            Distance sort needs your location. Sorted by name until set — use the Distance column
-            header after setting location.
-          </Text>
-        ) : null}
+    <DesignSystemV2Provider>
+      <div className={classes.page}>
+        <div className={classes.headerRow}>
+          <div>
+            <h1 className={classes.title}>Channels</h1>
+            <p className={classes.description}>
+              Every channel in this project. Search, filter, or open one to edit.
+            </p>
+          </div>
+          {listActions}
+        </div>
 
-        {bulkEditMessage ? (
-          <Alert
-            color={bulkEditMessageColor}
-            withCloseButton
-            onClose={() => setBulkEditMessage(null)}
-          >
-            {bulkEditMessage}
-          </Alert>
-        ) : null}
-
-        <ChannelListFilters />
-
-        <DataTable
-          variant="list"
-          rows={filtered}
-          totalRowCount={channels.length}
-          rowKey={(ch) => ch.id}
-          sort={effectiveSort}
-          onSortChange={handleSortChange}
-          columnVisibilityStorageKey={columnStorageKey}
-          columnVisibilityLoad={columnStorageKey ? loadVisibleColumns : undefined}
-          callsignColumn={sortCtx.callsignColumn}
-          nameColumn={sortCtx.nameColumn}
-          columns={tableColumns}
-          search={query.nameFilterInput}
-          searchPending={query.nameFilterPending}
-          onSearchChange={query.setNameFilter}
-          searchPlaceholder="Filter name or callsign…"
-          selectable
-          selectedKeys={selectedKeys}
-          onSelectedKeysChange={setSelectedKeys}
-          toolbar={
-            <Group gap="xs">
-              <Button
-                variant="light"
-                size="compact-sm"
-                disabled={selectedKeys.length === 0}
-                onClick={handleBulkEdit}
-              >
-                Bulk edit
-              </Button>
-              <Button
-                variant="light"
-                size="compact-sm"
-                disabled={selectedKeys.length === 0}
-                onClick={handleCreateZoneFromSelected}
-              >
-                New zone from selected
-              </Button>
-            </Group>
-          }
-        />
-
-        <ChannelBulkEditModal
-          opened={bulkEditOpen}
-          onClose={() => setBulkEditOpen(false)}
-          channels={selectedChannels}
-          projectId={projectId}
-          deleteEntity={deleteEntity}
-          reload={reload}
-          onApplied={handleBulkEditApplied}
-          onDeleted={handleBulkDeleted}
-        />
-
-        <AddFromDataSourceModal opened={addFromOpen} onClose={() => setAddFromOpen(false)} />
-
-        <PageSection title="Map">
-          {skipped.length > 0 ? (
-            <Text size="sm" c="dimmed">
-              {skipped.length} channel{skipped.length === 1 ? '' : 's'} not shown on map (missing
-              coordinates, Use Location = No, or 0,0).
+        <Stack gap="lg">
+          {distanceSortPending ? (
+            <Text size="sm" c="dimmed" className={classes.alert}>
+              Distance sort needs your location. Sorted by name until set — use the Distance column
+              header after setting location.
             </Text>
           ) : null}
 
-          {position ? (
-            <Group gap="sm" align="center">
-              {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
-                <Text size="sm" c="dimmed">
-                  My location accuracy ±{Math.round(position.accuracyMeters)} m
-                </Text>
-              ) : null}
-              <Button variant="subtle" size="compact-sm" onClick={clearPosition}>
-                Clear my location
-              </Button>
-            </Group>
-          ) : (
-            <UseMyLocationButton
-              label="Show my location"
-              onLocation={(lat, lon, accuracyMeters) =>
-                setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
-              }
-            />
-          )}
+          {bulkEditMessage ? (
+            <Alert
+              color={bulkEditMessageColor}
+              withCloseButton
+              onClose={() => setBulkEditMessage(null)}
+              className={classes.alert}
+            >
+              {bulkEditMessage}
+            </Alert>
+          ) : null}
 
-          <CodeplugMap
-            channels={mapChannels}
-            zones={zones}
-            allChannels={mapChannels}
-            height={420}
-            operatorPosition={position}
-            onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-            onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+          <div className={classes.filterRow}>
+            <div className={classes.searchWrap}>
+              <SearchInput
+                value={query.nameFilterInput}
+                onChange={(e) => query.setNameFilter(e.currentTarget.value)}
+                placeholder="Filter name or callsign…"
+                detectedTag={query.nameFilterPending ? 'Filtering…' : undefined}
+                aria-label="Filter name or callsign"
+              />
+            </div>
+          </div>
+
+          <ChannelListFilters />
+
+          <DataTable
+            variant="list"
+            rows={filtered}
+            totalRowCount={channels.length}
+            rowKey={(ch) => ch.id}
+            sort={effectiveSort}
+            onSortChange={handleSortChange}
+            columnVisibilityStorageKey={columnStorageKey}
+            columnVisibilityLoad={columnStorageKey ? loadVisibleColumns : undefined}
+            callsignColumn={sortCtx.callsignColumn}
+            nameColumn={sortCtx.nameColumn}
+            columns={tableColumns}
+            showSearch={false}
+            search={query.nameFilterInput}
+            searchPending={query.nameFilterPending}
+            selectable
+            selectedKeys={selectedKeys}
+            onSelectedKeysChange={setSelectedKeys}
+            mobileColumnPolicy="collapse"
+            selectionChrome="v2"
+            toolbar={
+              <Group gap="xs">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={selectedKeys.length === 0}
+                  onClick={handleBulkEdit}
+                >
+                  Bulk edit
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={selectedKeys.length === 0}
+                  onClick={handleCreateZoneFromSelected}
+                >
+                  New zone from selected
+                </Button>
+              </Group>
+            }
           />
-        </PageSection>
-      </Stack>
-    </ListPage>
+
+          <ChannelBulkEditModal
+            opened={bulkEditOpen}
+            onClose={() => setBulkEditOpen(false)}
+            channels={selectedChannels}
+            projectId={projectId}
+            deleteEntity={deleteEntity}
+            reload={reload}
+            onApplied={handleBulkEditApplied}
+            onDeleted={handleBulkDeleted}
+          />
+
+          <AddFromDataSourceModal opened={addFromOpen} onClose={() => setAddFromOpen(false)} />
+
+          <section className={classes.mapSection}>
+            <h2 className={classes.mapSectionTitle}>Map</h2>
+            {skipped.length > 0 ? (
+              <Text size="sm" c="dimmed">
+                {skipped.length} channel{skipped.length === 1 ? '' : 's'} not shown on map (missing
+                coordinates, Use Location = No, or 0,0).
+              </Text>
+            ) : null}
+
+            {position ? (
+              <Group gap="sm" align="center">
+                {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
+                  <Text size="sm" c="dimmed">
+                    My location accuracy ±{Math.round(position.accuracyMeters)} m
+                  </Text>
+                ) : null}
+                <Button variant="ghost" size="sm" onClick={clearPosition}>
+                  Clear my location
+                </Button>
+              </Group>
+            ) : (
+              <UseMyLocationButton
+                label="Show my location"
+                onLocation={(lat, lon, accuracyMeters) =>
+                  setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
+                }
+              />
+            )}
+
+            <CodeplugMap
+              channels={mapChannels}
+              zones={zones}
+              allChannels={mapChannels}
+              height={420}
+              operatorPosition={position}
+              onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+              onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+            />
+          </section>
+        </Stack>
+      </div>
+    </DesignSystemV2Provider>
   );
 }

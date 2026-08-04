@@ -15,7 +15,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Sub-slice       | Status      | Notes                                                                 |
 | --------------- | ----------- | --------------------------------------------------------------------- |
 | Summary (#918)  | Complete    | CountTile grid, Panel breakdowns, StatusBanner, v2 Provider on route  |
-| Channels (#919) | Not started | —                                                                     |
+| Channels (#919) | Complete    | SearchInput, v2 DataTable collapse, semantic Pill band/mode cells     |
 | Channel editor (#920) | Not started | —                                                                     |
 | Mobile QA (#926)         | Not started | —                                                               | Cross-cutting narrow + Android WebView               |
 | Retire v1 (#927)         | Not started | —                                                               | After full rollout only                              |

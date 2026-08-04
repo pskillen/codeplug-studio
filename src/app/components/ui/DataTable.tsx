@@ -17,6 +17,7 @@ import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import EmptyState from './EmptyState.tsx';
+import { Checkbox as V2Checkbox } from '../v2/index.ts';
 import { useDataTableColumnVisibility } from '../../hooks/useDataTableColumnVisibility.ts';
 import {
   DataTableBulkReorderProvider,
@@ -113,6 +114,8 @@ export interface DataTableProps<T> {
   resultCount?: number;
   /** Extension point for #68 mobile column collapse. */
   mobileColumnPolicy?: DataTableMobileColumnPolicy;
+  /** Row checkbox chrome — `v2` for design-system v2 pages inside `DesignSystemV2Provider`. */
+  selectionChrome?: 'mantine' | 'v2';
   /** When set, rows are clickable and the name column renders as plain text. */
   onRowActivate?: (row: T) => void;
   /**
@@ -274,10 +277,13 @@ export default function DataTable<T>({
   getRowClassName,
   bulkReorder,
   mobileColumnPolicy = 'none',
+  selectionChrome = 'mantine',
 }: DataTableProps<T>) {
   const isList = variant === 'list';
-  const isMobileCollapse =
-    mobileColumnPolicy === 'collapse' && useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
+  const isMobileViewport = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
+  const isMobileCollapse = mobileColumnPolicy === 'collapse' && isMobileViewport;
+
+  const RowCheckbox = selectionChrome === 'v2' ? V2Checkbox : Checkbox;
   const showSearchInput = showSearch ?? (isList && onSearchChange !== undefined);
   const bulkReorderActive = bulkReorder != null;
   const bulkReorderDisabled = bulkReorder?.disabled ?? false;
@@ -509,9 +515,10 @@ export default function DataTable<T>({
           {selectable ? (
             <Table.Td>
               {rowSelectable ? (
-                <Checkbox
+                <RowCheckbox
                   checked={selectedKeys.includes(key)}
                   onChange={() => toggleRow(key)}
+                  onCheckedChange={() => toggleRow(key)}
                   onClick={(e) => e.stopPropagation()}
                   aria-label={`Select row ${nameColumn.getName(row)}`}
                 />
@@ -669,10 +676,11 @@ export default function DataTable<T>({
               <Table.Tr>
                 {selectable ? (
                   <Table.Th className={classes.stickyTh} style={{ width: 36 }}>
-                    <Checkbox
+                    <RowCheckbox
                       checked={allSelected}
                       indeterminate={someSelected}
                       onChange={toggleAll}
+                      onCheckedChange={() => toggleAll()}
                       aria-label="Select all rows"
                     />
                   </Table.Th>
