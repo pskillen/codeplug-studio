@@ -1,14 +1,15 @@
 import { useMemo, useState } from 'react';
-import { Button, Group, Stack, Text } from '@mantine/core';
+import { Group } from '@mantine/core';
 import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { AnalogContact, DigitalContact } from '@core/models/library.ts';
 import { entityListColumnsKey } from '@integrations/listPrefs/keys.ts';
 import DeleteAllDigitalContactsDialog from '../../../components/contacts/DeleteAllDigitalContactsDialog.tsx';
 import AddFromDataSourceModal from '../../../components/library/AddFromDataSourceModal.tsx';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import ModePill from '../../../components/pills/ModePill.tsx';
-import { DataTable, ListPage, PageSection } from '../../../components/ui/index.ts';
+import { Button, DesignSystemV2Provider, Panel } from '../../../components/v2/index.ts';
+import { DataTable } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import {
   filterRowsByName,
@@ -26,6 +27,7 @@ import {
 } from '../../../lib/listReferences.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
 import { useProjects } from '../../../state/useProjects.ts';
+import classes from './LibraryListPage.module.css';
 
 function DigitalContactsTable({
   contacts,
@@ -115,6 +117,7 @@ function DigitalContactsTable({
     <DataTable
       variant="list"
       scale="extreme"
+      selectionChrome="v2"
       rows={filtered}
       totalRowCount={contacts.length}
       search={nameFilterInput}
@@ -133,9 +136,8 @@ function DigitalContactsTable({
       toolbar={
         <Group gap="xs">
           <Button
-            variant="light"
-            color="red"
-            size="compact-sm"
+            variant="destructive"
+            size="sm"
             disabled={contacts.length === 0}
             onClick={onDeleteAll}
           >
@@ -204,6 +206,7 @@ function AnalogContactsTable({
   return (
     <DataTable
       variant="list"
+      selectionChrome="v2"
       rows={filtered}
       totalRowCount={contacts.length}
       search={nameFilterInput}
@@ -223,29 +226,29 @@ function AnalogContactsTable({
 }
 
 export default function ContactsListPage() {
+  const navigate = useNavigate();
   const { library, loading, deleteAllDigitalContacts } = useLibrary();
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const [addFromOpen, setAddFromOpen] = useState(false);
 
   const listActions = (
-    <Group gap="xs">
+    <Group gap="xs" className={classes.toolbarActions}>
       <Button
-        component={Link}
-        to="/library/digital-contacts/new"
+        variant="primary"
         leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => navigate('/library/digital-contacts/new')}
       >
         New digital contact
       </Button>
       <Button
-        component={Link}
-        to="/library/analog-contacts/new"
-        variant="light"
+        variant="secondary"
         leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => navigate('/library/analog-contacts/new')}
       >
         New analog contact
       </Button>
       <Button
-        variant="light"
+        variant="secondary"
         leftSection={<IconWorldSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
         onClick={() => setAddFromOpen(true)}
       >
@@ -256,44 +259,51 @@ export default function ContactsListPage() {
 
   if (loading) {
     return (
-      <ListPage title="Contacts" actions={listActions}>
-        <Text>Loading library…</Text>
-      </ListPage>
+      <DesignSystemV2Provider>
+        <div className={classes.page}>
+          <h1 className={classes.title}>Contacts</h1>
+          <p className={classes.description}>Loading library…</p>
+        </div>
+      </DesignSystemV2Provider>
     );
   }
 
   return (
-    <ListPage
-      title="Contacts"
-      description="Digital and analog contacts in one inventory."
-      actions={listActions}
-    >
-      <Stack gap="lg">
-        <PageSection title={`Digital contacts (${library.digitalContacts.length})`}>
+    <DesignSystemV2Provider>
+      <div className={classes.page}>
+        <div className={classes.headerRow}>
+          <div>
+            <h1 className={classes.title}>Contacts</h1>
+            <p className={classes.description}>Digital and analog contacts in one inventory.</p>
+          </div>
+          {listActions}
+        </div>
+
+        <Panel title={`Digital contacts (${library.digitalContacts.length})`}>
           <DigitalContactsTable
             contacts={library.digitalContacts}
             library={library}
             onDeleteAll={() => setDeleteAllOpen(true)}
           />
-        </PageSection>
+        </Panel>
 
-        <PageSection title={`Analog contacts (${library.analogContacts.length})`}>
+        <Panel title={`Analog contacts (${library.analogContacts.length})`}>
           <AnalogContactsTable contacts={library.analogContacts} library={library} />
-        </PageSection>
-      </Stack>
+        </Panel>
 
-      <DeleteAllDigitalContactsDialog
-        opened={deleteAllOpen}
-        onClose={() => setDeleteAllOpen(false)}
-        contactCount={library.digitalContacts.length}
-        onConfirm={deleteAllDigitalContacts}
-      />
+        <DeleteAllDigitalContactsDialog
+          opened={deleteAllOpen}
+          onClose={() => setDeleteAllOpen(false)}
+          contactCount={library.digitalContacts.length}
+          onConfirm={deleteAllDigitalContacts}
+        />
 
-      <AddFromDataSourceModal
-        opened={addFromOpen}
-        onClose={() => setAddFromOpen(false)}
-        sources={CONTACT_ADD_SOURCES}
-      />
-    </ListPage>
+        <AddFromDataSourceModal
+          opened={addFromOpen}
+          onClose={() => setAddFromOpen(false)}
+          sources={CONTACT_ADD_SOURCES}
+        />
+      </div>
+    </DesignSystemV2Provider>
   );
 }
