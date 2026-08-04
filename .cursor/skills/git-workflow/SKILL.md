@@ -173,4 +173,4 @@ See [documentation-deliverables.mdc](../rules/documentation-deliverables.mdc) an
 | Pre-commit | lint, test, build when `package.json` exists; no secrets in diff |
 | Commit | Conventional commits; atomic; Shell `working_directory` = repo root |
 | PR | push; one PR; link issue; describe manual test steps |
-| Deploy | Merge to `main` (next deploy); push to `dev` (dev deploy); pre-release → staging; full release (tag `v*`) → prod on Cloudflare Pages |
+| Deploy | Merge to `main` (next deploy); push to `dev` (dev deploy); pre-release → staging; full release → prod on Cloudflare Pages. Tags are bare SemVer (`2.1.4`, no `v` prefix) |

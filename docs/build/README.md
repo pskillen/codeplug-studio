@@ -88,6 +88,8 @@ Signed release APKs use the reusable [`.github/workflows/android-release.yaml`](
 
 `BUILD_ENV` / `VITE_GA_MEASUREMENT_ID` match Pages (`prod` → `GA_MEASUREMENT_ID`; `staging` \| `main` \| `dev` → `GA_MEASUREMENT_ID_PREPROD`). On Capacitor native, `resolveApiUrl` uses the same channel split for API origin: `prod` → `https://codeplug.mm9pdy.net`; all other `BUILD_ENV` values → `https://staging.codeplug.mm9pdy.net` (pre-release APKs therefore avoid accidental prod proxy load). Keystore secrets and sideload steps: [Android Companion App](../features/android-app/README.md).
 
+Staging and prod releases also build a signed `.aab` (workflow artifact only, never a Release asset) and feed a separate Play Store Closed Testing / Production publish pipeline — see [play-store-publish.md](../features/android-app/play-store-publish.md).
+
 ## Cursor Approval Agent
 
 PR auto-approval is governed by repository policy files discovered by the [Cursor Approval Agent](https://cursor.com/docs/approval-agents). Bugbot is **not** used. **GitHub CI status is not an approval gate** — branch protection blocks merge when required checks fail, and CI is often still pending when the Approval Agent runs.
