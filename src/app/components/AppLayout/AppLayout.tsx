@@ -119,6 +119,7 @@ export default function AppLayout() {
             showTabs={isDesktopNav !== false}
             projectName={projectName}
             onProjectClick={() => navigate('/')}
+            onBrandClick={() => navigate('/')}
             rightExtra={hasActiveProject ? <SidebarDriveControls /> : undefined}
             avatar={overflowAvatar}
           />

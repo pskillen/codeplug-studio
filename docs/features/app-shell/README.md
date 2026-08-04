@@ -141,10 +141,10 @@ Brand SVGs live under [`public/branding/`](../../../public/branding/) ([#330](ht
 
 Colours assume the default **dark** colour scheme. To update branding, replace the SVGs in place (keep filenames) or change the paths in `index.html` and the shell.
 
-| Area            | Status  | Notes                                                       |
-| --------------- | ------- | ----------------------------------------------------------- |
-| Favicon / tab   | Shipped | SVG icon + theme-color + OG image in `index.html`           |
-| Header wordmark | Shipped | v2 [`AppShell`](../../../src/app/components/v2/AppShell.md) |
+| Area            | Status  | Notes                                                                              |
+| --------------- | ------- | ---------------------------------------------------------------------------------- |
+| Favicon / tab   | Shipped | SVG icon + theme-color + OG image in `index.html`                                  |
+| Header wordmark | Shipped | v2 [`AppShell`](../../../src/app/components/v2/AppShell.md) uses `studio-logo.svg` |
 
 ## Footer and feedback links
 

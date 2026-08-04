@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import classes from './AppShell.module.css';
 
+const LOGO_SRC = '/branding/studio-logo.svg';
+
 export interface AppShellProps {
   /** Top-level section tabs (e.g. Summary / Library / Tools / Export for radio / Help). */
   tabs?: readonly string[];
@@ -13,6 +15,8 @@ export interface AppShellProps {
   projectName?: string;
   /** Clicking the project chip (navigate home to switch projects). */
   onProjectClick?: () => void;
+  /** Clicking the brand logo (typically navigate home). */
+  onBrandClick?: () => void;
   /** Injected before the avatar slot (Drive controls). */
   rightExtra?: ReactNode;
   /** Replaces the default avatar square (overflow menu target). */
@@ -21,7 +25,7 @@ export interface AppShellProps {
 }
 
 /**
- * Design-system primary header: wordmark, top tabs, project chip, avatar slot.
+ * Design-system primary header: brand logo, top tabs, project chip, avatar slot.
  * Pair with `ContextualStrip` below for section sub-views.
  */
 export default function AppShell({
@@ -32,22 +36,31 @@ export default function AppShell({
   showTabs = true,
   projectName = 'Untitled project',
   onProjectClick,
+  onBrandClick,
   rightExtra,
   avatar,
   className,
 }: AppShellProps) {
   const disabled = new Set(disabledTabs);
 
+  const logo = (
+    <img src={LOGO_SRC} alt={onBrandClick ? '' : 'Codeplug Studio'} className={classes.logo} />
+  );
+
   return (
     <header className={[classes.root, className].filter(Boolean).join(' ')}>
-      <div className={classes.brand}>
-        <div className={classes.mark} aria-hidden>
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className={classes.wordmark}>Codeplug Studio</div>
-      </div>
+      {onBrandClick ? (
+        <button
+          type="button"
+          className={classes.brand}
+          onClick={onBrandClick}
+          aria-label="Codeplug Studio home"
+        >
+          {logo}
+        </button>
+      ) : (
+        <div className={classes.brand}>{logo}</div>
+      )}
 
       {showTabs ? (
         <nav className={classes.tabs} aria-label="Primary">
