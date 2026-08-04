@@ -41,6 +41,7 @@ import StyleguideV2Layout from './routes/styleguide/v2/StyleguideV2Layout.tsx';
 import StyleguideV2IndexPage from './routes/styleguide/v2/StyleguideV2IndexPage.tsx';
 import StyleguideV2FormsPage from './routes/styleguide/v2/StyleguideV2FormsPage.tsx';
 import StyleguideV2DataDisplayPage from './routes/styleguide/v2/StyleguideV2DataDisplayPage.tsx';
+import StyleguideV2FeedbackPage from './routes/styleguide/v2/StyleguideV2FeedbackPage.tsx';
 import StyleguideV2NavigationPage from './routes/styleguide/v2/StyleguideV2NavigationPage.tsx';
 import StyleguideV2PatternsPage from './routes/styleguide/v2/StyleguideV2PatternsPage.tsx';
 import DebugIndexPage from './routes/debug/DebugIndexPage.tsx';
@@ -103,6 +104,7 @@ export const appRouter = createBrowserRouter([
           { index: true, element: <StyleguideV2IndexPage /> },
           { path: 'forms', element: <StyleguideV2FormsPage /> },
           { path: 'data-display', element: <StyleguideV2DataDisplayPage /> },
+          { path: 'feedback', element: <StyleguideV2FeedbackPage /> },
           { path: 'navigation', element: <StyleguideV2NavigationPage /> },
           { path: 'patterns', element: <StyleguideV2PatternsPage /> },
         ],

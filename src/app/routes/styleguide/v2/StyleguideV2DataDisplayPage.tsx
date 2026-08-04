@@ -1,7 +1,7 @@
-import { Group, Stack, Text } from '@mantine/core';
+import { Group, SimpleGrid, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { DataTable, Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
-import { MapPanel, Pill } from '../../../components/v2/index.ts';
+import { CountTile, MapPanel, Panel, Pill } from '../../../components/v2/index.ts';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
 import { SAMPLE_ROWS } from '../fixtures.ts';
 
@@ -16,6 +16,20 @@ export default function StyleguideV2DataDisplayPage() {
           </>
         }
       />
+
+      <PageSection title="CountTile" description="Summary stat grid tiles.">
+        <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="sm">
+          <CountTile value={42} label="Channels" />
+          <CountTile value={8} label="Talk groups" />
+          <CountTile value={18} total={24} label="In build" />
+        </SimpleGrid>
+      </PageSection>
+
+      <PageSection title="Panel" description="Titled bordered section container.">
+        <Panel title="Identity" sub="Optional description below the title.">
+          <Text size="sm">Panel body content.</Text>
+        </Panel>
+      </PageSection>
 
       <PageSection title="Pill" description="Named tones plus tone=semantic escape hatch.">
         <Group gap="sm" wrap="wrap">
