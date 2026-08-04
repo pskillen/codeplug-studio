@@ -34,10 +34,10 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ### Before merge
 
-- [ ] `npm run format:check && npm run lint && npm run test && npm run build`
+- [x] `npm run format:check && npm run lint && npm run test && npm run build`
 - [ ] Manual: `/styleguide/v2` + sub-pages at narrow width
 - [ ] Manual: spot-check v1 `/styleguide/*` and one live screen — no visual/CSS var leak
 
 ## Next
 
-Open PR for #916 → design review gate → pick up #917.
+Design review on [PR #928](https://github.com/pskillen/codeplug-studio/pull/928) → merge #916 → pick up #917.
