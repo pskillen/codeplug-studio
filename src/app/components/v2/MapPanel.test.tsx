@@ -28,4 +28,19 @@ describe('MapPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Map settings' }));
     expect(onSettingsClick).toHaveBeenCalledOnce();
   });
+
+  it('renders children instead of hatch placeholder', () => {
+    render(
+      <DesignSystemV2Provider>
+        <MapPanel title="Live map" height={300}>
+          <div data-testid="live-map">Map content</div>
+        </MapPanel>
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.getByTestId('live-map')).toBeInTheDocument();
+    expect(screen.queryByText('[ map ]')).not.toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: 'Map placeholder' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Map')).toBeInTheDocument();
+  });
 });

@@ -1,37 +1,49 @@
 # MapPanel
 
-Map chrome with a diagonal-hatch placeholder (real map wiring deferred).
+Map chrome for live Leaflet maps and hatch placeholder empty states.
 
 ## Purpose
 
-Presentational map panel matching the design-system layout: optional title + settings gear, hatch placeholder, optional legend. Real `CodeplugMap` integration is [#925](https://github.com/pskillen/codeplug-studio/issues/925).
+Presentational map panel matching the design-system layout: optional title + settings gear, map body, optional legend. Hosts `CodeplugMap`, `MapLocationPicker`, or `MapPairPlot` via `children`; without children, shows a diagonal-hatch placeholder.
 
 ## Props
 
-| Prop              | Type         | Notes                            |
-| ----------------- | ------------ | -------------------------------- |
-| `title`           | `string`     | Optional header label            |
-| `onSettingsClick` | `() => void` | Shows settings `ActionIcon`      |
-| `legend`          | `ReactNode`  | Optional row under the map       |
-| `mapLabel`        | `string`     | `aria-label` for the placeholder |
+| Prop              | Type         | Notes                                              |
+| ----------------- | ------------ | -------------------------------------------------- |
+| `title`           | `string`     | Optional header label                              |
+| `height`          | `number`     | Map body height in px (default 200)                |
+| `children`        | `ReactNode`  | Live map content; omit for hatch placeholder       |
+| `caption`         | `ReactNode`  | Hatch overlay text when no children (default `[ map ]`) |
+| `onSettingsClick` | `() => void` | Shows settings `ActionIcon`                        |
+| `gearActive`      | `boolean`    | Accent border when settings popover is open        |
+| `legend`          | `ReactNode`  | Optional row under the map                         |
+| `mapLabel`        | `string`     | `aria-label` for the map region                    |
 
 ## Usage
 
 ```tsx
-<MapPanel
-  title="Channel location"
-  onSettingsClick={() => openSettings()}
-  legend={<span>2m · 70cm</span>}
-/>
+// Live library map
+<MapPanel title="Library map" height={480} legend={<span>12 channels plotted</span>}>
+  <CodeplugMap channels={channels} zones={zones} height="100%" showControls />
+</MapPanel>
+
+// Location picker
+<MapPanel title="Channel location" height={280}>
+  <MapLocationPicker lat={lat} lon={lon} onPick={onPick} height="100%" active />
+</MapPanel>
+
+// Empty / styleguide placeholder
+<MapPanel title="Channel location" onSettingsClick={() => openSettings()} />
 ```
 
 ## Behaviour
 
-- Placeholder uses CSS `repeating-linear-gradient` hatch — not a live map.
+- Without `children`: CSS `repeating-linear-gradient` hatch — not a live map (`role="img"`).
+- With `children`: map body uses `mapLive` styles (no hatch, no padding); Leaflet maps should pass `height="100%"`.
 - Must render inside `DesignSystemV2Provider`.
 - Live demos: `/styleguide/v2/data-display`
 
 ## Related
 
 - [docs/features/design-system-v2/README.md](../../../../docs/features/design-system-v2/README.md)
-- Ticket [#925](https://github.com/pskillen/codeplug-studio/issues/925)
+- [docs/features/map/README.md](../../../../docs/features/map/README.md)
