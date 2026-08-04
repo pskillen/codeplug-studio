@@ -1,0 +1,102 @@
+name: Publish Android to Play Store (production)
+
+# Batches the actual Play Store Production push separately from release cadence,
+# so shipping web changes often doesn't spam real users with Play update
+# notifications. Finds the latest full (non-prerelease) GitHub Release, checks
+# whether it's newer than the last version actually pushed to Play (tracked via
+# an `android-<semver>` git tag on the released commit), and if so, downloads
+# that release's already-built AAB artifact (from android-release.yaml, built
+# via prod.yaml) and publishes it.
+
+on:
+  schedule:
+    # Monday 09:00 UTC — adjust if a different weekly slot is preferred.
+    - cron: '0 9 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: android-play-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Determine whether a newer full release needs publishing
+        id: check
+        run: |
+          LATEST_TAG="$(gh release list --exclude-drafts --json tagName,isPrerelease --limit 100 \
+            --jq '.[] | select(.isPrerelease==false) | .tagName' | sort -V | tail -n1)"
+
+          if [ -z "${LATEST_TAG}" ]; then
+            echo "No full (non-prerelease) GitHub Release found. Nothing to publish."
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          LAST_PUBLISHED="$(git tag -l 'android-*' | sed 's/^android-//' | sort -V | tail -n1)"
+
+          if [ -n "${LAST_PUBLISHED}" ]; then
+            HIGHEST="$(printf '%s\n%s\n' "${LATEST_TAG}" "${LAST_PUBLISHED}" | sort -V | tail -n1)"
+            if [ "${LATEST_TAG}" = "${LAST_PUBLISHED}" ] || [ "${HIGHEST}" = "${LAST_PUBLISHED}" ]; then
+              echo "Latest full release (${LATEST_TAG}) is not newer than the last version published to Play (${LAST_PUBLISHED}). Nothing to do."
+              echo "should_publish=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          TARGET_SHA="$(git rev-list -n 1 "${LATEST_TAG}")"
+          echo "New version to publish: ${LATEST_TAG} (commit ${TARGET_SHA})"
+          echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          echo "version=${LATEST_TAG}" >> "$GITHUB_OUTPUT"
+          echo "target_sha=${TARGET_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Find the prod.yaml run that built this release's AAB
+        if: steps.check.outputs.should_publish == 'true'
+        id: find-run
+        run: |
+          RUN_ID="$(gh run list --workflow=prod.yaml --json databaseId,headSha,event,conclusion --limit 100 \
+            --jq --arg sha "${{ steps.check.outputs.target_sha }}" \
+            '[.[] | select(.headSha==$sha and .event=="release" and .conclusion=="success")] | first | .databaseId // empty')"
+
+          if [ -z "${RUN_ID}" ]; then
+            echo "::error::No successful prod.yaml run found for commit ${{ steps.check.outputs.target_sha }} (release ${{ steps.check.outputs.version }}). Cannot locate the AAB artifact."
+            exit 1
+          fi
+
+          echo "Found prod.yaml run ${RUN_ID}"
+          echo "run_id=${RUN_ID}" >> "$GITHUB_OUTPUT"
+
+      - name: Download AAB artifact
+        if: steps.check.outputs.should_publish == 'true'
+        run: gh run download "${{ steps.find-run.outputs.run_id }}" -n app-release-aab-prod -D ./aab-download
+
+      - name: Publish AAB to Play Store production track
+        if: steps.check.outputs.should_publish == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: net.mm9pdy.codeplugstudio
+          releaseFiles: ./aab-download/codeplug-studio-*.aab
+          track: production
+          status: completed
+
+      - name: Tag the published commit
+        if: steps.check.outputs.should_publish == 'true'
+        run: |
+          VERSION="${{ steps.check.outputs.version }}"
+          SHA="${{ steps.check.outputs.target_sha }}"
+          git tag "android-${VERSION}" "${SHA}"
+          git push origin "android-${VERSION}"
+          echo "Tagged and pushed android-${VERSION}"
