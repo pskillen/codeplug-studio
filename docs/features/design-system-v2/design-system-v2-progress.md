@@ -7,7 +7,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Slice                    | Status      | Branch / PR                                                     | Notes                                                |
 | ------------------------ | ----------- | --------------------------------------------------------------- | ---------------------------------------------------- |
 | Foundations (#916)       | Shipped     | [PR #928](https://github.com/pskillen/codeplug-studio/pull/928) | Theme isolation, `components/v2/*`, `/styleguide/v2` |
-| Chrome port (#917)       | In progress | `917/pskillen/design-system-v2-chrome`                          | AppShell + ContextualStrip + BottomTabBar live       |
+| Chrome port (#917)       | In progress | [PR #930](https://github.com/pskillen/codeplug-studio/pull/930) | AppShell + ContextualStrip + BottomTabBar live       |
 | Screen ports (#918–#925) | Not started | —                                                               | Summary, Channels, Zones, RX lists, Builds, Map      |
 | Mobile QA (#926)         | Not started | —                                                               | Cross-cutting narrow + Android WebView               |
 | Retire v1 (#927)         | Not started | —                                                               | After full rollout only                              |
