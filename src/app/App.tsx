@@ -37,6 +37,12 @@ import StyleguideLayoutPage from './routes/styleguide/StyleguideLayoutPage.tsx';
 import StyleguideDataTablePage from './routes/styleguide/StyleguideDataTablePage.tsx';
 import StyleguideMembershipPage from './routes/styleguide/StyleguideMembershipPage.tsx';
 import StyleguideControlsPage from './routes/styleguide/StyleguideControlsPage.tsx';
+import StyleguideV2Layout from './routes/styleguide/v2/StyleguideV2Layout.tsx';
+import StyleguideV2IndexPage from './routes/styleguide/v2/StyleguideV2IndexPage.tsx';
+import StyleguideV2FormsPage from './routes/styleguide/v2/StyleguideV2FormsPage.tsx';
+import StyleguideV2DataDisplayPage from './routes/styleguide/v2/StyleguideV2DataDisplayPage.tsx';
+import StyleguideV2NavigationPage from './routes/styleguide/v2/StyleguideV2NavigationPage.tsx';
+import StyleguideV2PatternsPage from './routes/styleguide/v2/StyleguideV2PatternsPage.tsx';
 import DebugIndexPage from './routes/debug/DebugIndexPage.tsx';
 import DebugIndexedDbPage from './routes/debug/DebugIndexedDbPage.tsx';
 import DebugIndexedDbStorePage from './routes/debug/DebugIndexedDbStorePage.tsx';
@@ -90,6 +96,17 @@ export const appRouter = createBrowserRouter([
       { path: '/styleguide/data-table', element: <StyleguideDataTablePage /> },
       { path: '/styleguide/membership', element: <StyleguideMembershipPage /> },
       { path: '/styleguide/controls', element: <StyleguideControlsPage /> },
+      {
+        path: '/styleguide/v2',
+        element: <StyleguideV2Layout />,
+        children: [
+          { index: true, element: <StyleguideV2IndexPage /> },
+          { path: 'forms', element: <StyleguideV2FormsPage /> },
+          { path: 'data-display', element: <StyleguideV2DataDisplayPage /> },
+          { path: 'navigation', element: <StyleguideV2NavigationPage /> },
+          { path: 'patterns', element: <StyleguideV2PatternsPage /> },
+        ],
+      },
       { path: '/debug', element: <DebugIndexPage /> },
       { path: '/debug/indexed-db', element: <DebugIndexedDbPage /> },
       { path: '/debug/indexed-db/:storeName', element: <DebugIndexedDbStorePage /> },

@@ -4,6 +4,11 @@ import { Page, PageHeader } from '../../components/ui/index.ts';
 
 const SECTIONS = [
   {
+    to: '/styleguide/v2',
+    title: 'Design system v2 (preview)',
+    description: 'Isolated v2 theme + components (#916). Does not change live screens.',
+  },
+  {
     to: '/styleguide/layout',
     title: 'Layout',
     description: 'Page, PageHeader, PageSection, ListPage, FormPage shells.',
