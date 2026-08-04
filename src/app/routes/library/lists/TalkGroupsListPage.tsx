@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import { Button, Text } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { TalkGroup } from '@core/models/library.ts';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import ModePill from '../../../components/pills/ModePill.tsx';
-import { DataTable, ListPage } from '../../../components/ui/index.ts';
+import { Button, DesignSystemV2Provider } from '../../../components/v2/index.ts';
+import { DataTable } from '../../../components/ui/index.ts';
 import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
@@ -13,8 +13,10 @@ import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { formatReferenceCount, referenceCount } from '../../../lib/listReferences.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
+import classes from './LibraryListPage.module.css';
 
 export default function TalkGroupsListPage() {
+  const navigate = useNavigate();
   const { library, loading } = useLibrary();
   const { talkGroups } = library;
   const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
@@ -86,9 +88,9 @@ export default function TalkGroupsListPage() {
 
   const listActions = (
     <Button
-      component={Link}
-      to="/library/talk-groups/new"
+      variant="primary"
       leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+      onClick={() => navigate('/library/talk-groups/new')}
     >
       New talk group
     </Button>
@@ -96,31 +98,47 @@ export default function TalkGroupsListPage() {
 
   if (loading) {
     return (
-      <ListPage title="Talk groups" actions={listActions}>
-        <Text>Loading library…</Text>
-      </ListPage>
+      <DesignSystemV2Provider>
+        <div className={classes.page}>
+          <h1 className={classes.title}>Talk groups</h1>
+          <p className={classes.description}>Loading library…</p>
+        </div>
+      </DesignSystemV2Provider>
     );
   }
 
   return (
-    <ListPage title="Talk groups" actions={listActions}>
-      <DataTable
-        variant="list"
-        rows={filtered}
-        totalRowCount={talkGroups.length}
-        search={nameFilterInput}
-        searchPending={nameFilterPending}
-        onSearchChange={setNameFilter}
-        searchPlaceholder="Filter name…"
-        sort={sort}
-        onSortChange={setSort}
-        rowKey={(tg) => tg.id}
-        nameColumn={{
-          getName: (tg) => tg.name,
-          getPath: (tg) => `/library/talk-groups/${tg.id}`,
-        }}
-        columns={columns}
-      />
-    </ListPage>
+    <DesignSystemV2Provider>
+      <div className={classes.page}>
+        <div className={classes.headerRow}>
+          <div>
+            <h1 className={classes.title}>Talk groups</h1>
+            <p className={classes.description}>
+              DMR and other digital talk groups referenced by channels and receive group lists.
+            </p>
+          </div>
+          <div className={classes.toolbarActions}>{listActions}</div>
+        </div>
+
+        <DataTable
+          variant="list"
+          selectionChrome="v2"
+          rows={filtered}
+          totalRowCount={talkGroups.length}
+          search={nameFilterInput}
+          searchPending={nameFilterPending}
+          onSearchChange={setNameFilter}
+          searchPlaceholder="Filter name…"
+          sort={sort}
+          onSortChange={setSort}
+          rowKey={(tg) => tg.id}
+          nameColumn={{
+            getName: (tg) => tg.name,
+            getPath: (tg) => `/library/talk-groups/${tg.id}`,
+          }}
+          columns={columns}
+        />
+      </div>
+    </DesignSystemV2Provider>
   );
 }
