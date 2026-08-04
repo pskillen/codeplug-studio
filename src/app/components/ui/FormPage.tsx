@@ -1,6 +1,7 @@
 import { Group, Paper } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type { FormEvent, ReactNode } from 'react';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import Page, { type PageProps } from './Page.tsx';
 import PageHeader from './PageHeader.tsx';
 
@@ -38,7 +39,7 @@ export default function FormPage({
   onSubmit,
   width = 'default',
 }: FormPageProps) {
-  const isMobile = useMediaQuery('(max-width: 48em)');
+  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
 
   const body = (
     <>

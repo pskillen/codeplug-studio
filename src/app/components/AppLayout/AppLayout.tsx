@@ -25,9 +25,7 @@ import { isBuildDetailPath } from '../../routes/builds/nav.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import shellClasses from '../v2/AppShell.module.css';
 import classes from './AppLayout.module.css';
-
-/** Mantine `sm` — single breakpoint for AppShell tabs ↔ BottomTabBar. */
-const DESKTOP_NAV_QUERY = '(min-width: 48em)';
+import { DESKTOP_MIN_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 
 export default function AppLayout() {
   usePageAnalytics();
@@ -39,7 +37,7 @@ export default function AppLayout() {
     };
   }, []);
 
-  const isDesktopNav = useMediaQuery(DESKTOP_NAV_QUERY);
+  const isDesktopNav = useMediaQuery(DESKTOP_MIN_WIDTH_MEDIA_QUERY);
   const location = useLocation();
   const navigate = useNavigate();
   const { activeProjectId, activeProject } = useProjects();
@@ -142,8 +140,10 @@ export default function AppLayout() {
         >
           <CookieConsentBanner />
           <RefreshFromDriveBanner />
-          <Outlet />
-          <BuildFooter />
+          <div className={classes.pageContent}>
+            <Outlet />
+            <BuildFooter />
+          </div>
         </main>
 
         {showBottomNav ? (

@@ -1,0 +1,121 @@
+.page {
+  padding: var(--dsv2-page-padding-y) var(--dsv2-page-padding-x);
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--dsv2-font-heading-lg);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 3px;
+}
+
+.description {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0 0 20px;
+  line-height: 1.45;
+}
+
+.countGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.breakdownGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.breakdownRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-secondary);
+}
+
+.breakdownCount {
+  margin-left: auto;
+  color: var(--dsv2-text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.breakdownList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.locationHint {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0 0 14px;
+  line-height: 1.45;
+}
+
+.locationHint a {
+  color: var(--dsv2-accent);
+  text-decoration: none;
+}
+
+.locationHint a:hover {
+  text-decoration: underline;
+}
+
+.mapPanel {
+  margin-bottom: 14px;
+}
+
+.integrityBanner {
+  margin-bottom: 20px;
+}
+
+.interchangeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.interchangeSectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 10px;
+}
+
+.mapSkipped {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+  margin-top: 10px;
+}
+
+.danglingList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-destructive);
+}
+
+@media (max-width: 48em) {
+  .countGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .breakdownGrid,
+  .interchangeGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 48em) and (max-width: 62em) {
+  .countGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

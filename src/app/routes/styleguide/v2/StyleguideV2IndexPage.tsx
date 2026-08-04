@@ -11,7 +11,12 @@ const SECTIONS = [
   {
     to: '/styleguide/v2/data-display',
     title: 'Data display',
-    description: 'Pill (incl. semantic), re-skinned DataTable, MapPanel placeholder.',
+    description: 'CountTile, Panel, Pill (incl. semantic), re-skinned DataTable, MapPanel.',
+  },
+  {
+    to: '/styleguide/v2/feedback',
+    title: 'Feedback',
+    description: 'StatusBanner success/warning/info tones.',
   },
   {
     to: '/styleguide/v2/navigation',

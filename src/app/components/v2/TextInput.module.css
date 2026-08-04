@@ -1,0 +1,43 @@
+.root {
+  display: block;
+  width: 100%;
+}
+
+.label {
+  font-size: 11.5px;
+  color: var(--dsv2-text-tertiary);
+  margin-bottom: 5px;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  padding: 8px 11px;
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-primary);
+  background: var(--dsv2-bg);
+  font-family: var(--dsv2-font-family);
+  outline: none;
+}
+
+.input:focus-visible {
+  border-color: var(--dsv2-accent-border);
+}
+
+.input:disabled {
+  color: var(--dsv2-text-disabled);
+  cursor: default;
+}
+
+.mono {
+  font-family: var(--dsv2-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.plain {
+  border: none;
+  padding: 0;
+  background: transparent;
+}

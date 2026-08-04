@@ -1,0 +1,11 @@
+.root {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--dsv2-accent);
+  cursor: pointer;
+}
+
+.root:disabled {
+  cursor: default;
+  opacity: 0.5;
+}

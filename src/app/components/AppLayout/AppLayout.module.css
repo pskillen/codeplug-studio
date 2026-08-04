@@ -25,3 +25,21 @@
 .mainScroll {
   overflow: auto;
 }
+
+/**
+ * Page body below chrome: full width on mobile/tablet; 75% centered from md up.
+ * Matches `ABOVE_TABLET_MIN_WIDTH_MEDIA_QUERY` in `src/app/lib/breakpoints.ts`.
+ */
+.pageContent {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (min-width: 62em) {
+  .pageContent {
+    width: 75%;
+    max-width: 75%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

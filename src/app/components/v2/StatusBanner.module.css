@@ -1,0 +1,55 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--dsv2-radius-panel);
+  padding: 14px 16px;
+  border: 1px solid var(--dsv2-border);
+}
+
+.success {
+  border-color: var(--dsv2-success-border);
+  background: var(--dsv2-success-tint);
+}
+
+.warning {
+  border-color: var(--dsv2-warning-border);
+  background: var(--dsv2-warning-tint);
+}
+
+.info {
+  border-color: var(--dsv2-border);
+  background: var(--dsv2-accent-tint-06);
+}
+
+.iconSuccess {
+  color: var(--dsv2-success);
+  flex-shrink: 0;
+}
+
+.iconWarning {
+  color: var(--dsv2-warning);
+  flex-shrink: 0;
+}
+
+.iconInfo {
+  color: var(--dsv2-accent);
+  flex-shrink: 0;
+}
+
+.message {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.messageSuccess {
+  color: #c9d6ce;
+}
+
+.messageWarning {
+  color: #e2d3ab;
+}
+
+.messageInfo {
+  color: var(--dsv2-text-secondary);
+}
