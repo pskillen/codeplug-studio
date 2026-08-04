@@ -4,20 +4,26 @@ Section sub-view pill strip — typically directly under `AppShell`.
 
 ## Purpose
 
-Matches the design-system Library strip (Channels / Zones / …). Solid accent fill on the active pill.
+Matches the design-system Library strip (Channels / Zones / …). Solid accent fill on the active pill. Horizontally scrollable at any width.
 
 ## Props
 
-| Prop       | Type                     | Notes             |
-| ---------- | ------------------------ | ----------------- |
-| `items`    | `readonly string[]`      | Pill labels       |
-| `active`   | `string`                 | Selected label    |
-| `onChange` | `(item: string) => void` | Selection handler |
+| Prop       | Type                     | Notes                                                 |
+| ---------- | ------------------------ | ----------------------------------------------------- |
+| `items`    | `readonly string[]`      | Pill labels                                           |
+| `active`   | `string`                 | Selected label                                        |
+| `onChange` | `(item: string) => void` | Selection handler                                     |
+| `leading`  | `ReactNode`              | Optional leading control (e.g. compact BuildSwitcher) |
 
 ## Usage
 
 ```tsx
-<ContextualStrip items={['Channels', 'Zones', 'Talk groups']} active={sub} onChange={setSub} />
+<ContextualStrip
+  items={['Channels', 'Zones', 'Talk groups']}
+  active={sub}
+  onChange={setSub}
+  leading={isBuildDetail ? <BuildSwitcher compact /> : undefined}
+/>
 ```
 
 ## Related

@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
-import { Text } from '@mantine/core';
+import { Button, Text } from '@mantine/core';
+import { IconPlus } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
 import type { RxGroupList } from '@core/models/library.ts';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import { DataTable, ListPage } from '../../../components/ui/index.ts';
@@ -7,6 +9,7 @@ import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
+import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import {
   formatReferenceCount,
   buildReferenceCountIndex,
@@ -56,16 +59,26 @@ export default function RxGroupListsListPage() {
     ];
   }, [referenceIndex]);
 
+  const listActions = (
+    <Button
+      component={Link}
+      to="/library/rx-group-lists/new"
+      leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+    >
+      New Receive Group List
+    </Button>
+  );
+
   if (loading) {
     return (
-      <ListPage title="Receive Group Lists">
+      <ListPage title="Receive Group Lists" actions={listActions}>
         <Text>Loading library…</Text>
       </ListPage>
     );
   }
 
   return (
-    <ListPage title="Receive Group Lists">
+    <ListPage title="Receive Group Lists" actions={listActions}>
       <DataTable
         variant="list"
         rows={filtered}

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Anchor, Group, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { GITHUB_ISSUES_URL, GITHUB_REPO_URL } from '../../lib/githubLinks.ts';
+import { DSV2_TOKENS } from '../../theme-v2.ts';
 
 function FooterLink({ to, children }: { to: string; children: ReactNode }) {
   return (
@@ -19,7 +20,7 @@ export default function BuildFooter() {
       c="dimmed"
       mt="xl"
       pt="md"
-      style={{ borderTop: '1px solid var(--mantine-color-dark-4)' }}
+      style={{ borderTop: `1px solid ${DSV2_TOKENS.colors.border}` }}
     >
       <Group gap="xs" wrap="wrap">
         <span>

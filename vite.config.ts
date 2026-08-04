@@ -28,6 +28,8 @@ export default defineConfig(({ mode }) => {
   return {
     base: '/',
     server: {
+      // Allow ngrok public hostnames when tunneling local Vite (Run Dev Server).
+      allowedHosts: ['.ngrok-free.app', '.ngrok-free.dev', '.ngrok.app', '.ngrok.io'],
       proxy: {
         '/api/irts/repeaters': {
           target: 'https://www.irts.ie',

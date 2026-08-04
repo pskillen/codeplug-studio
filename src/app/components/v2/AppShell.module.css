@@ -12,32 +12,26 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
   margin-right: var(--dsv2-space-8);
   flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
 }
 
-.mark {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 3px;
-  width: 20px;
-  height: 16px;
+button.brand:hover {
+  opacity: 0.9;
 }
 
-.mark span {
+.logo {
   display: block;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--dsv2-accent);
-}
-
-.wordmark {
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--dsv2-text-primary);
-  white-space: nowrap;
+  height: 28px;
+  width: auto;
+  max-width: min(180px, 42vw);
+  object-fit: contain;
+  object-position: left center;
 }
 
 .tabs {
@@ -81,9 +75,22 @@
   padding: 6px 12px;
   border: 1px solid var(--dsv2-border);
   border-radius: var(--dsv2-radius-control);
+  background: transparent;
+  font-family: var(--dsv2-font-family);
   font-size: var(--dsv2-font-body-sm);
   color: var(--dsv2-text-secondary);
   white-space: nowrap;
+  cursor: pointer;
+}
+
+button.project:hover {
+  border-color: var(--dsv2-border-strip);
+  color: var(--dsv2-text-primary);
+}
+
+.tabDisabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .projectDot {
@@ -95,16 +102,21 @@
 }
 
 .avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 30px;
   height: 30px;
   border-radius: var(--dsv2-radius-control);
   background: var(--dsv2-surface);
   border: 1px solid var(--dsv2-border);
+  color: var(--dsv2-text-secondary);
   flex-shrink: 0;
+  padding: 0;
+  cursor: pointer;
 }
 
-@media (max-width: 640px) {
-  .tabs {
-    display: none;
-  }
+button.avatar:hover {
+  border-color: var(--dsv2-accent);
+  color: var(--dsv2-text-primary);
 }

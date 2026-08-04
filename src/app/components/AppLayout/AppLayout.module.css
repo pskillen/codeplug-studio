@@ -1,0 +1,27 @@
+.root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/**
+ * Mobile: lock the shell to the viewport so BottomTabBar stays on-screen
+ * while main content scrolls inside.
+ */
+.rootWithBottomNav {
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--mantine-spacing-md);
+}
+
+.mainScroll {
+  overflow: auto;
+}

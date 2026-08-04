@@ -4,8 +4,14 @@
     {
       "type": "node-terminal",
       "request": "launch",
-      "name": "Run Dev Server",
+      "name": "Vite Dev Server",
       "command": "npm run dev"
+    },
+    {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "ngrok Tunnel",
+      "command": "node scripts/ngrok-tunnel.mjs"
     },
     {
       "type": "chrome",
@@ -25,6 +31,13 @@
       "args": ["run", "--no-file-parallelism"],
       "smartStep": true,
       "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Run Dev Server",
+      "configurations": ["Vite Dev Server", "ngrok Tunnel"],
+      "stopAll": true
     }
   ]
 }

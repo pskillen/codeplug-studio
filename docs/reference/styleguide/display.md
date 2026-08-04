@@ -71,15 +71,15 @@ Pass icons via Mantine `leftSection` (or `rightSection` for forward arrows) and 
 
 Import icons by name per file — e.g. `import { IconSettings } from '@tabler/icons-react'`. Do not barrel-re-export from a shared icons module (hurts tree-shaking).
 
-## Two-section navigation
+## Primary + contextual navigation
 
-Desktop (`sm+`): primary column (`AppNav`, ~260px) + secondary column (`SectionNav`, ~220px). Mobile: primary in burger drawer; secondary renders as a toolbar above route content.
+Desktop (`sm+`): v2 `AppShell` top tabs. Narrow viewports: `BottomTabBar` instead of the tab row. Section sub-views use a horizontally scrollable `ContextualStrip` (Library entity types, Tools, Help, build detail, …).
 
-Registry: `src/app/nav/sectionNavRegistry.ts` maps pathname prefixes to section components under `src/app/components/SectionNav/sections/`. Filter state prefers URL search params where implemented.
+Strip destinations: `src/app/nav/contextualStripItems.ts` and `useBuildContextualStrip` for trait-shaped build nav. Filter state prefers URL search params where implemented.
 
-Section nav titles should match list page titles ([README — Page shells](README.md#page-shells)).
+Strip labels should match list page titles ([README — Page shells](README.md#page-shells)) where they describe the same destinations.
 
-Library and build secondary nav links include Tabler `leftSection` icons (`ICON_SIZE_NAV` / `ICON_STROKE`). Shared entity icons: `src/app/nav/entityNavIcons.ts`; build-only icons are set on `buildNavItems` in `src/app/routes/builds/nav.ts`.
+Shared entity icons: `src/app/nav/entityNavIcons.ts`; build-only icons are set on `buildNavItems` in `src/app/routes/builds/nav.ts`.
 
 ## Related
 

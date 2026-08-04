@@ -1,8 +1,8 @@
 # ProjectInterchangeBar
 
-**Retired** — replaced by [`SidebarDriveControls`](../SidebarDriveControls/SidebarDriveControls.md) in the primary sidebar ([#368](https://github.com/pskillen/codeplug-studio/issues/368)).
+**Retired** — replaced by [`SidebarDriveControls`](../SidebarDriveControls/SidebarDriveControls.md) ([#368](https://github.com/pskillen/codeplug-studio/issues/368), moved to AppShell `rightExtra` in [#917](https://github.com/pskillen/codeplug-studio/issues/917)).
 
-Portable interchange UI now lives below the active project header in `AppNav`. The **Newer copy on Google Drive** banner remains in main content via `RefreshFromDriveBanner`.
+The **Newer copy on Google Drive** banner remains in main content via `RefreshFromDriveBanner`.
 
 ## Related
 

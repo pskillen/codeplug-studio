@@ -1,6 +1,7 @@
 import { Alert, Button, Group, Stack, Text } from '@mantine/core';
+import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { Channel } from '@core/models/library.ts';
 import { zonesWithDirectChannelMember } from '@core/domain/zoneMembership.ts';
 import { applyFilters, channelHasGeolocation } from '@core/domain/mapProjection.ts';
@@ -36,9 +37,11 @@ import {
   channelScanListName,
 } from '../../../lib/entityRefs.ts';
 import { channelModesForFilter } from '../../../lib/channels.ts';
+import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useProjects } from '../../../state/useProjects.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { useLibrary } from '../../../state/useLibrary.ts';
+import AddFromDataSourceModal from '../../../components/library/AddFromDataSourceModal.tsx';
 import ChannelListDeleteAction from '../../../components/library/ChannelListDeleteAction.tsx';
 import ChannelBulkEditModal from '../../../components/library/ChannelBulkEditModal.tsx';
 import ChannelListFilters from '../../../components/library/ChannelListFilters.tsx';
@@ -73,9 +76,32 @@ export default function ChannelsListPage() {
   const [columnSortOverride, setColumnSortOverride] = usePersistedChannelColumnSort();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [addFromOpen, setAddFromOpen] = useState(false);
   const [bulkEditMessage, setBulkEditMessage] = useState<string | null>(null);
   const [bulkEditMessageColor, setBulkEditMessageColor] = useState<'green' | 'orange' | 'red'>(
     'green',
+  );
+
+  const listActions = (
+    <Group gap="xs">
+      <Button
+        component={Link}
+        to="/library/channels/new"
+        leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+      >
+        New channel
+      </Button>
+      <Button
+        variant="light"
+        leftSection={<IconWorldSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => setAddFromOpen(true)}
+      >
+        Add from…
+      </Button>
+      <Button component={Link} to="/library/channels/defaults" variant="subtle">
+        Channel defaults
+      </Button>
+    </Group>
   );
 
   const mapChannels = filtered;
@@ -328,14 +354,14 @@ export default function ChannelsListPage() {
 
   if (loading) {
     return (
-      <ListPage title="Channels">
+      <ListPage title="Channels" actions={listActions}>
         <Text>Loading library…</Text>
       </ListPage>
     );
   }
 
   return (
-    <ListPage title="Channels">
+    <ListPage title="Channels" actions={listActions}>
       <Stack gap="lg">
         {distanceSortPending ? (
           <Text size="sm" c="dimmed">
@@ -407,6 +433,8 @@ export default function ChannelsListPage() {
           onApplied={handleBulkEditApplied}
           onDeleted={handleBulkDeleted}
         />
+
+        <AddFromDataSourceModal opened={addFromOpen} onClose={() => setAddFromOpen(false)} />
 
         <PageSection title="Map">
           {skipped.length > 0 ? (

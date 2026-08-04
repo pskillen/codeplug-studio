@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
-import { Text } from '@mantine/core';
+import { Button, Text } from '@mantine/core';
+import { IconPlus } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
 import type { TalkGroup } from '@core/models/library.ts';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import ModePill from '../../../components/pills/ModePill.tsx';
@@ -8,6 +10,7 @@ import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
+import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { formatReferenceCount, referenceCount } from '../../../lib/listReferences.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
 
@@ -81,16 +84,26 @@ export default function TalkGroupsListPage() {
     ];
   }, [library]);
 
+  const listActions = (
+    <Button
+      component={Link}
+      to="/library/talk-groups/new"
+      leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+    >
+      New talk group
+    </Button>
+  );
+
   if (loading) {
     return (
-      <ListPage title="Talk groups">
+      <ListPage title="Talk groups" actions={listActions}>
         <Text>Loading library…</Text>
       </ListPage>
     );
   }
 
   return (
-    <ListPage title="Talk groups">
+    <ListPage title="Talk groups" actions={listActions}>
       <DataTable
         variant="list"
         rows={filtered}

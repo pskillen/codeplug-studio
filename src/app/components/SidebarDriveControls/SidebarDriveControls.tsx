@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import { ActionIcon, Anchor, Group, Stack, Text, Tooltip } from '@mantine/core';
+import { ActionIcon, Group, Tooltip } from '@mantine/core';
 import { IconDeviceFloppy, IconRefresh } from '@tabler/icons-react';
-import { Link } from 'react-router-dom';
 import { loadDriveLastAccount } from '@integrations/cloud/drivePrefs.ts';
-import { portableInterchangeLabel } from '@core/services/projectSyncSummary.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { useDriveActionClick } from '../../hooks/useDriveActionClick.ts';
 import { useDriveSaveFlow } from '../../hooks/useDriveSaveFlow.ts';
@@ -13,20 +11,18 @@ import { useProjects } from '../../state/useProjects.ts';
 import DriveBrowserModal from '../import-export/DriveBrowserModal.tsx';
 import DriveSaveConflictModal from '../import-export/DriveSaveConflictModal.tsx';
 import GoogleDriveNotConfiguredModal from '../import-export/GoogleDriveNotConfiguredModal.tsx';
-import BrowserOnlyWarning from '../ProjectInterchangeBar/BrowserOnlyWarning.tsx';
 import { useDriveRefresh } from '../ProjectInterchangeBar/DriveRefreshProvider.tsx';
-import SoftWarning from '../ui/SoftWarning.tsx';
 
 const disconnectedIconStyle = { opacity: 0.55, cursor: 'pointer' } as const;
 
+/**
+ * Compact Drive save/check cluster for AppShell `rightExtra`.
+ */
 export default function SidebarDriveControls() {
   const { activeProjectId, activeProject } = useProjects();
   const { sessionExpired, connected } = useGoogleDrive();
-  const { dirty, hasPortableDestination } = useProjectPortableDirty(
-    activeProjectId,
-    activeProject ?? undefined,
-  );
-  const { checkNow, checking, error: checkError } = useDriveRefresh();
+  const { dirty } = useProjectPortableDirty(activeProjectId, activeProject ?? undefined);
+  const { checkNow, checking } = useDriveRefresh();
   const {
     saving,
     error,
@@ -58,11 +54,10 @@ export default function SidebarDriveControls() {
   const everConnectedDrive = Boolean(loadDriveLastAccount());
   const showCluster = Boolean(drive || everConnectedDrive || (localFile && !drive));
 
-  if (!showCluster) {
+  if (!showCluster || !drive) {
     return null;
   }
 
-  const sourceLabel = portableInterchangeLabel(activeProject);
   const showExpiryHint = sessionExpired && !connected;
   const saveDisabled = saving || (!showExpiryHint && saveAction.driveReady && !dirty);
   const checkDisabled = checking || saving;
@@ -83,78 +78,36 @@ export default function SidebarDriveControls() {
     });
   }
 
-  const driveButtons = (
-    <Group gap="xs">
-      <Tooltip label="Save to Drive">
-        <ActionIcon
-          variant="default"
-          size="md"
-          aria-label="Save to Drive"
-          loading={saving || saveAction.driveLoading}
-          disabled={saveDisabled}
-          style={!saveAction.driveReady && !saveDisabled ? disconnectedIconStyle : undefined}
-          onClick={() => void handleSave()}
-        >
-          <IconDeviceFloppy size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-        </ActionIcon>
-      </Tooltip>
-      <Tooltip label="Check Drive">
-        <ActionIcon
-          variant="default"
-          size="md"
-          aria-label="Check Drive"
-          loading={checking || checkAction.driveLoading}
-          disabled={checkDisabled}
-          style={!checkAction.driveReady && !checkDisabled ? disconnectedIconStyle : undefined}
-          onClick={() => void handleCheck()}
-        >
-          <IconRefresh size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-        </ActionIcon>
-      </Tooltip>
-    </Group>
-  );
-
   return (
     <>
-      <Stack gap="xs">
-        {sourceLabel ? (
-          <Text size="xs" c="dimmed" truncate>
-            {sourceLabel}
-          </Text>
-        ) : null}
-        {drive ? (
-          showExpiryHint ? (
-            <SoftWarning tone="danger">
-              <Stack gap="xs">
-                <Text size="xs" c="dimmed">
-                  Session expired — click Save or Check to reconnect. You can keep working locally.
-                </Text>
-                {driveButtons}
-              </Stack>
-            </SoftWarning>
-          ) : (
-            driveButtons
-          )
-        ) : null}
-        {localFile && !drive ? (
-          <Anchor component={Link} to="/summary" size="xs">
-            Export YAML
-          </Anchor>
-        ) : null}
-        {!hasPortableDestination && everConnectedDrive ? (
-          <BrowserOnlyWarning projectId={activeProjectId} />
-        ) : null}
-        {error && !conflictOpen ? (
-          <Text size="xs" c="red">
-            {error}
-          </Text>
-        ) : null}
-        {!error && checkError ? (
-          <Text size="xs" c="red">
-            {checkError}
-          </Text>
-        ) : null}
-      </Stack>
+      <Group gap="xs">
+        <Tooltip label="Save to Drive">
+          <ActionIcon
+            variant="default"
+            size="md"
+            aria-label="Save to Drive"
+            loading={saving || saveAction.driveLoading}
+            disabled={saveDisabled}
+            style={!saveAction.driveReady && !saveDisabled ? disconnectedIconStyle : undefined}
+            onClick={() => void handleSave()}
+          >
+            <IconDeviceFloppy size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+          </ActionIcon>
+        </Tooltip>
+        <Tooltip label="Check Drive">
+          <ActionIcon
+            variant="default"
+            size="md"
+            aria-label="Check Drive"
+            loading={checking || checkAction.driveLoading}
+            disabled={checkDisabled}
+            style={!checkAction.driveReady && !checkDisabled ? disconnectedIconStyle : undefined}
+            onClick={() => void handleCheck()}
+          >
+            <IconRefresh size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
       <DriveSaveConflictModal
         opened={conflictOpen}
         projectName={projectName}

@@ -122,10 +122,9 @@ describe('SidebarDriveControls', () => {
     });
   });
 
-  it('shows drive source label and action buttons', () => {
+  it('shows drive action buttons', () => {
     renderControls();
 
-    expect(screen.getByText('Google Drive · demo.yaml')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save to Drive' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Check Drive' })).toBeEnabled();
   });

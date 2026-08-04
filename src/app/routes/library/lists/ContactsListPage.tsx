@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Button, Group, Stack, Text } from '@mantine/core';
+import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
 import type { AnalogContact, DigitalContact } from '@core/models/library.ts';
 import { entityListColumnsKey } from '@integrations/listPrefs/keys.ts';
 import DeleteAllDigitalContactsDialog from '../../../components/contacts/DeleteAllDigitalContactsDialog.tsx';
+import AddFromDataSourceModal from '../../../components/library/AddFromDataSourceModal.tsx';
 import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
 import ModePill from '../../../components/pills/ModePill.tsx';
 import { DataTable, ListPage, PageSection } from '../../../components/ui/index.ts';
@@ -14,6 +17,8 @@ import {
 } from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
+import { CONTACT_ADD_SOURCES } from '../../../lib/contactDataSources.ts';
+import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import {
   formatReferenceCount,
   buildReferenceCountIndex,
@@ -220,17 +225,49 @@ function AnalogContactsTable({
 export default function ContactsListPage() {
   const { library, loading, deleteAllDigitalContacts } = useLibrary();
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [addFromOpen, setAddFromOpen] = useState(false);
+
+  const listActions = (
+    <Group gap="xs">
+      <Button
+        component={Link}
+        to="/library/digital-contacts/new"
+        leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+      >
+        New digital contact
+      </Button>
+      <Button
+        component={Link}
+        to="/library/analog-contacts/new"
+        variant="light"
+        leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+      >
+        New analog contact
+      </Button>
+      <Button
+        variant="light"
+        leftSection={<IconWorldSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => setAddFromOpen(true)}
+      >
+        Add from…
+      </Button>
+    </Group>
+  );
 
   if (loading) {
     return (
-      <ListPage title="Contacts">
+      <ListPage title="Contacts" actions={listActions}>
         <Text>Loading library…</Text>
       </ListPage>
     );
   }
 
   return (
-    <ListPage title="Contacts" description="Digital and analog contacts in one inventory.">
+    <ListPage
+      title="Contacts"
+      description="Digital and analog contacts in one inventory."
+      actions={listActions}
+    >
       <Stack gap="lg">
         <PageSection title={`Digital contacts (${library.digitalContacts.length})`}>
           <DigitalContactsTable
@@ -250,6 +287,12 @@ export default function ContactsListPage() {
         onClose={() => setDeleteAllOpen(false)}
         contactCount={library.digitalContacts.length}
         onConfirm={deleteAllDigitalContacts}
+      />
+
+      <AddFromDataSourceModal
+        opened={addFromOpen}
+        onClose={() => setAddFromOpen(false)}
+        sources={CONTACT_ADD_SOURCES}
       />
     </ListPage>
   );
