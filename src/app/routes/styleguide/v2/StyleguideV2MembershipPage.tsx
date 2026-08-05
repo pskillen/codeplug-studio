@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
-import { MembershipPanel, MembershipRow } from '../../../components/v2/index.ts';
+import { MembershipPanel, MembershipPoolRow, MembershipRow } from '../../../components/v2/index.ts';
 
 interface DemoMember {
   id: string;
@@ -100,6 +100,19 @@ export default function StyleguideV2MembershipPage() {
             />
           ))}
         </MembershipPanel>
+      </PageSection>
+
+      <PageSection
+        title="MembershipPoolRow"
+        description="Add-candidate rows for AddMembersScreen, including a blocked-but-visible candidate."
+      >
+        <MembershipPoolRow label="Zone B" subtitle="12 channels" onCheck={() => undefined} />
+        <MembershipPoolRow label="Zone C" subtitle="4 channels" checked onCheck={() => undefined} />
+        <MembershipPoolRow
+          label="Zone A (this zone)"
+          disabled
+          reason="This zone — cannot nest a zone in itself"
+        />
       </PageSection>
 
       <PageSection

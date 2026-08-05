@@ -60,6 +60,8 @@ export { default as MembershipRow } from './MembershipRow.tsx';
 export type { MembershipRowProps } from './MembershipRow.tsx';
 export { MembershipList, MembershipPanel } from './MembershipPanel.tsx';
 export type { MembershipPanelProps, MembershipPanelSearchConfig } from './MembershipPanel.tsx';
+export { default as MembershipPoolRow } from './MembershipPoolRow.tsx';
+export type { MembershipPoolRowProps } from './MembershipPoolRow.tsx';
 export {
   ShuttleAddBar,
   ShuttleList,
