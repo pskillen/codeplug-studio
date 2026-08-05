@@ -28,6 +28,15 @@ export { default as MapPanel } from './MapPanel.tsx';
 export type { MapPanelProps } from './MapPanel.tsx';
 export { default as RowActionIcon } from './RowActionIcon.tsx';
 export type { RowActionIconProps, RowActionIconTone } from './RowActionIcon.tsx';
+export { default as DataTable } from './DataTable.tsx';
+export type {
+  DataTableColumn,
+  DataTableProps,
+  DataTableSearchConfig,
+  DataTableSortDirection,
+  DataTableSortState,
+  DataTableVariant,
+} from './DataTable.tsx';
 export { default as ModalShell } from './ModalShell.tsx';
 export type { ModalShellIconTone, ModalShellProps, ModalShellSize } from './ModalShell.tsx';
 export { default as ConfirmModal } from './ConfirmModal.tsx';

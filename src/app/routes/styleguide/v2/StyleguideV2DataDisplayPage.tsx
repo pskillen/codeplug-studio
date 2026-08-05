@@ -1,14 +1,28 @@
 import { Group, SimpleGrid, Stack, Text } from '@mantine/core';
 import { IconPencil, IconTrash } from '@tabler/icons-react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import MapLocationPicker from '../../../components/MapLocationPicker/MapLocationPicker.tsx';
 import { DataTable, Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
-import { CountTile, MapPanel, Panel, Pill, RowActionIcon } from '../../../components/v2/index.ts';
+import {
+  CountTile,
+  DataTable as DataTableV2,
+  MapPanel,
+  Panel,
+  Pill,
+  RowActionIcon,
+} from '../../../components/v2/index.ts';
 import { ICON_SIZE_ACTION } from '../../../lib/iconSizes.ts';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
-import { SAMPLE_ROWS } from '../fixtures.ts';
+import { SAMPLE_ROWS, STICKY_DEMO_ROWS } from '../fixtures.ts';
 
 export default function StyleguideV2DataDisplayPage() {
+  const [dataTableSearch, setDataTableSearch] = useState('');
+
+  const filteredDataTableRows = STICKY_DEMO_ROWS.filter((row) =>
+    row.name.toLowerCase().includes(dataTableSearch.toLowerCase()),
+  );
+
   return (
     <Page width="default">
       <PageHeader
@@ -112,6 +126,43 @@ export default function StyleguideV2DataDisplayPage() {
             },
           ]}
           emptyState={<Text size="sm">No rows</Text>}
+        />
+      </PageSection>
+
+      <PageSection
+        title="DataTable (v2)"
+        description="New v2 port: sort, search, counts. Fork of the DS spec — selection/reorder/nesting land in later commits."
+      >
+        <DataTableV2
+          rows={filteredDataTableRows}
+          getRowId={(row) => row.id}
+          totalRowCount={STICKY_DEMO_ROWS.length}
+          resultCount={filteredDataTableRows.length}
+          search={{
+            value: dataTableSearch,
+            onChange: setDataTableSearch,
+            placeholder: 'Filter channels…',
+          }}
+          columns={[
+            {
+              key: 'name',
+              header: 'Name',
+              render: (row) => row.name,
+              sortable: true,
+              sortValue: (row) => row.name,
+            },
+            {
+              key: 'score',
+              header: 'Score',
+              render: (row) => row.score,
+              sortable: true,
+              sortValue: (row) => row.score,
+              align: 'right',
+              width: '100px',
+              dim: true,
+            },
+          ]}
+          caption="Header click cycles ascending → descending → unsorted."
         />
       </PageSection>
 

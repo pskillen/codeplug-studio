@@ -1,0 +1,121 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-4);
+  min-width: 0;
+}
+
+.search {
+  width: 100%;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dsv2-space-4);
+}
+
+.count {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.table {
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  overflow: auto;
+}
+
+.headerRow {
+  display: grid;
+  align-items: center;
+  border-bottom: 1px solid var(--dsv2-border);
+  background: var(--dsv2-surface-quiet);
+}
+
+[data-variant='embedded'] .headerRow {
+  background: transparent;
+}
+
+.headerCell {
+  padding: 8px var(--dsv2-row-padding-x);
+  font-size: var(--dsv2-font-micro);
+  font-weight: 600;
+  color: var(--dsv2-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--dsv2-tracking-eyebrow);
+  min-width: 0;
+}
+
+.alignRight {
+  text-align: right;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.sortIcon {
+  color: var(--dsv2-text-tertiary);
+}
+
+.sortIconActive {
+  color: var(--dsv2-accent);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+}
+
+.dataRow {
+  display: grid;
+  align-items: center;
+  border-bottom: 1px solid var(--dsv2-border-quiet);
+}
+
+.dataRow:last-child {
+  border-bottom: none;
+}
+
+.dataCell {
+  padding: var(--dsv2-row-padding-y) var(--dsv2-row-padding-x);
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dim {
+  color: var(--dsv2-text-secondary);
+}
+
+.emptyRow {
+  display: flex;
+}
+
+.emptyCell {
+  flex: 1;
+  padding: 24px var(--dsv2-row-padding-x);
+  text-align: center;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+.caption {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
