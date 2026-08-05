@@ -26,6 +26,8 @@ export { default as FormField } from './FormField.tsx';
 export type { FormFieldProps } from './FormField.tsx';
 export { default as MapPanel } from './MapPanel.tsx';
 export type { MapPanelProps } from './MapPanel.tsx';
+export { default as ModalShell } from './ModalShell.tsx';
+export type { ModalShellIconTone, ModalShellProps, ModalShellSize } from './ModalShell.tsx';
 export { default as AppShell } from './AppShell.tsx';
 export type { AppShellProps } from './AppShell.tsx';
 export { default as BottomTabBar } from './BottomTabBar.tsx';
