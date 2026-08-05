@@ -58,6 +58,8 @@ export { default as SectionNav } from './SectionNav.tsx';
 export type { SectionNavOrientation, SectionNavProps } from './SectionNav.tsx';
 export { default as MembershipRow } from './MembershipRow.tsx';
 export type { MembershipRowProps } from './MembershipRow.tsx';
+export { MembershipList, MembershipPanel } from './MembershipPanel.tsx';
+export type { MembershipPanelProps, MembershipPanelSearchConfig } from './MembershipPanel.tsx';
 export {
   ShuttleAddBar,
   ShuttleList,
