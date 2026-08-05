@@ -1,4 +1,6 @@
-/** Shared Tabler icon dimensions for consistent UI chrome. */
-export const ICON_SIZE_NAV = 16;
-export const ICON_SIZE_ACTION = 18;
-export const ICON_STROKE = 1.5;
+import { DSV2_TOKENS } from '../theme-v2.ts';
+
+/** Shared Tabler icon dimensions for consistent UI chrome — sourced from `DSV2_TOKENS.iconSize`. */
+export const ICON_SIZE_NAV = DSV2_TOKENS.iconSize.nav;
+export const ICON_SIZE_ACTION = DSV2_TOKENS.iconSize.action;
+export const ICON_STROKE = DSV2_TOKENS.iconSize.stroke;
