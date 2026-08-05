@@ -1,8 +1,10 @@
 import { Group, SimpleGrid, Stack, Text } from '@mantine/core';
+import { IconPencil, IconTrash } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import MapLocationPicker from '../../../components/MapLocationPicker/MapLocationPicker.tsx';
 import { DataTable, Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
-import { CountTile, MapPanel, Panel, Pill } from '../../../components/v2/index.ts';
+import { CountTile, MapPanel, Panel, Pill, RowActionIcon } from '../../../components/v2/index.ts';
+import { ICON_SIZE_ACTION } from '../../../lib/iconSizes.ts';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
 import { SAMPLE_ROWS } from '../fixtures.ts';
 
@@ -62,6 +64,28 @@ export default function StyleguideV2DataDisplayPage() {
           <Pill tone="dashed" onClick={() => undefined}>
             + Add to zone
           </Pill>
+        </Group>
+      </PageSection>
+
+      <PageSection title="RowActionIcon" description="Icon-only row action, stops propagation.">
+        <Group gap="xs">
+          <RowActionIcon
+            icon={<IconPencil size={ICON_SIZE_ACTION} />}
+            onClick={() => undefined}
+            label="Edit"
+          />
+          <RowActionIcon
+            icon={<IconTrash size={ICON_SIZE_ACTION} />}
+            onClick={() => undefined}
+            label="Delete"
+            tone="destructive"
+          />
+          <RowActionIcon
+            icon={<IconTrash size={ICON_SIZE_ACTION} />}
+            onClick={() => undefined}
+            label="Delete (disabled)"
+            disabled
+          />
         </Group>
       </PageSection>
 

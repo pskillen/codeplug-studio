@@ -1,0 +1,17 @@
+.root {
+  color: var(--dsv2-text-secondary);
+}
+
+.root:hover {
+  background: var(--dsv2-surface-quiet);
+  color: var(--dsv2-text-primary);
+}
+
+.destructive {
+  color: var(--dsv2-destructive);
+}
+
+.destructive:hover {
+  background: var(--dsv2-destructive-tint);
+  color: var(--dsv2-destructive);
+}
