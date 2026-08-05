@@ -34,7 +34,17 @@ The full-capability list/detail table used across library lists, wire preview, a
 | `bulkActions`       | `ReactNode`                | Slot in the selection toolbar, shown alongside a Clear action                           |
 | `onClearSelection`  | `() => void`               | Clear-selection toolbar action                                                          |
 
-Reorder, nesting, scale, column visibility, and row-activate props land in later commits on this same file — see the component's own type exports for the current full surface.
+## Props (reorder)
+
+| Prop          | Type                      | Notes                                                                             |
+| ------------- | ------------------------- | --------------------------------------------------------------------------------- |
+| `reorderMode` | `boolean`                 | Disables column sort; locks display to `rows` order; adds a leading Order column  |
+| `onReorder`   | `(nextRows: T[]) => void` | Called by both per-row and bulk move controls with the recomputed row order       |
+| `bulkReorder` | `boolean`                 | Adds Move up/down to the selection toolbar. Requires `selectable` + `reorderMode` |
+
+Per-row and bulk moves both use the same block-move algorithm as the zone/RGL/scan membership reorder (`reorderSelectedKeys` from `@core/domain/zoneOrder.ts`) — a single row is just a one-key selection. **Scope note:** this ships up/down move controls, not drag-and-drop; the capability inventory lists a drag handle as optional ("up/down (optionally + drag handle)"). Full drag parity with `components/ui/DataTable`'s dnd-kit reorder is tracked as follow-up debt rather than forked into this CSS-grid layout in this PR.
+
+Nesting, scale, column visibility, and row-activate props land in later commits on this same file — see the component's own type exports for the current full surface.
 
 ## Usage
 

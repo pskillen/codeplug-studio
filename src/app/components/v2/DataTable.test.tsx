@@ -200,4 +200,60 @@ describe('DataTable v2', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
     expect(onClearSelection).toHaveBeenCalled();
   });
+
+  it('reorderMode disables column sort and displays rows in given order', () => {
+    render(
+      <DesignSystemV2Provider>
+        <DataTable columns={COLUMNS} rows={ROWS} getRowId={(row) => row.id} reorderMode />
+      </DesignSystemV2Provider>,
+    );
+
+    // Sort buttons are gone — headers render as plain text under reorderMode.
+    expect(screen.queryByRole('button', { name: /Name/ })).not.toBeInTheDocument();
+    const rowsInOrder = screen
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => row.textContent);
+    expect(rowsInOrder[0]).toContain('Bravo');
+  });
+
+  it('per-row move-down button calls onReorder with the swapped order', () => {
+    const onReorder = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={ROWS}
+          getRowId={(row) => row.id}
+          reorderMode
+          onReorder={onReorder}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move row 1 down' }));
+    expect(onReorder).toHaveBeenCalledWith([ROWS[1], ROWS[0], ROWS[2]]);
+  });
+
+  it('bulkReorder toolbar Move up applies to all selected rows', () => {
+    const onReorder = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={ROWS}
+          getRowId={(row) => row.id}
+          selectable
+          selectedKeys={['3']}
+          onSelectionChange={() => undefined}
+          reorderMode
+          bulkReorder
+          onReorder={onReorder}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move selected up' }));
+    expect(onReorder).toHaveBeenCalledWith([ROWS[0], ROWS[2], ROWS[1]]);
+  });
 });

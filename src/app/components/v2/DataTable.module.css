@@ -47,6 +47,42 @@
   cursor: pointer;
 }
 
+.bulkReorderButtons {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.moveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-sm);
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
+.moveButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.orderCell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.orderIndex {
+  min-width: 16px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsv2-text-tertiary);
+}
+
 .table {
   border: 1px solid var(--dsv2-border);
   border-radius: var(--dsv2-radius-panel);

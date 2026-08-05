@@ -20,6 +20,8 @@ import { SAMPLE_ROWS, STICKY_DEMO_ROWS } from '../fixtures.ts';
 export default function StyleguideV2DataDisplayPage() {
   const [dataTableSearch, setDataTableSearch] = useState('');
   const [dataTableSelected, setDataTableSelected] = useState<string[]>([]);
+  const [reorderRows, setReorderRows] = useState(() => STICKY_DEMO_ROWS.slice(0, 5));
+  const [reorderSelected, setReorderSelected] = useState<string[]>([]);
 
   const filteredDataTableRows = STICKY_DEMO_ROWS.filter((row) =>
     row.name.toLowerCase().includes(dataTableSearch.toLowerCase()),
@@ -175,6 +177,24 @@ export default function StyleguideV2DataDisplayPage() {
             },
           ]}
           caption="Header click cycles ascending → descending → unsorted."
+        />
+      </PageSection>
+
+      <PageSection
+        title="DataTable (v2) — reorderMode + bulkReorder"
+        description="Column sort disabled; per-row and bulk Move up/down mutate the agreed order."
+      >
+        <DataTableV2
+          rows={reorderRows}
+          getRowId={(row) => row.id}
+          reorderMode
+          onReorder={setReorderRows}
+          selectable
+          bulkReorder
+          selectedKeys={reorderSelected}
+          onSelectionChange={setReorderSelected}
+          onClearSelection={() => setReorderSelected([])}
+          columns={[{ key: 'name', header: 'Name', render: (row) => row.name }]}
         />
       </PageSection>
 

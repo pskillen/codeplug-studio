@@ -1,6 +1,13 @@
 import { Loader, TextInput } from '@mantine/core';
-import { IconChevronDown, IconChevronUp, IconSelector } from '@tabler/icons-react';
+import {
+  IconArrowDown,
+  IconArrowUp,
+  IconChevronDown,
+  IconChevronUp,
+  IconSelector,
+} from '@tabler/icons-react';
 import { useMemo, useState, type ReactNode } from 'react';
+import { reorderSelectedKeys } from '@core/domain/zoneOrder.ts';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
 import Checkbox from './Checkbox.tsx';
 import classes from './DataTable.module.css';
@@ -58,6 +65,14 @@ export interface DataTableProps<T> {
   /** Slot for bulk-action buttons, shown in the selection toolbar alongside a Clear action. */
   bulkActions?: ReactNode;
   onClearSelection?: () => void;
+  /**
+   * Locks display to `rows` order (column sort disabled) and adds a leading
+   * Order column with per-row up/down move controls.
+   */
+  reorderMode?: boolean;
+  onReorder?: (nextRows: T[]) => void;
+  /** Adds Move up/down to the selection toolbar. Requires `selectable` + `reorderMode`. */
+  bulkReorder?: boolean;
   className?: string;
 }
 
@@ -111,6 +126,9 @@ export default function DataTable<T>({
   isRowSelectable,
   bulkActions,
   onClearSelection,
+  reorderMode = false,
+  onReorder,
+  bulkReorder = false,
   className,
 }: DataTableProps<T>) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
@@ -125,17 +143,29 @@ export default function DataTable<T>({
   };
 
   const handleSort = (key: string) => {
+    if (reorderMode) return;
     applySort(nextSortDirection(sortState, key));
   };
 
   const sortColumn = sortState ? columns.find((col) => col.key === sortState.key) : undefined;
 
   const sortedRows = useMemo(() => {
-    if (!sortState || !sortColumn?.sortValue) return rows;
+    if (reorderMode || !sortState || !sortColumn?.sortValue) return rows;
     const { sortValue } = sortColumn;
     const direction = sortState.direction === 'asc' ? 1 : -1;
     return [...rows].sort((a, b) => direction * compareValues(sortValue(a), sortValue(b)));
-  }, [rows, sortState, sortColumn]);
+  }, [reorderMode, rows, sortState, sortColumn]);
+
+  const moveRows = (keysToMove: string[], direction: 'up' | 'down') => {
+    if (!onReorder) return;
+    const rowsByKey = new Map(rows.map((row) => [getRowId(row), row]));
+    const nextKeys = reorderSelectedKeys(
+      rows.map((row) => getRowId(row)),
+      new Set(keysToMove),
+      direction,
+    );
+    onReorder(nextKeys.map((key) => rowsByKey.get(key)!));
+  };
 
   const displayCount = resultCount ?? sortedRows.length;
   const isFilteredEmpty =
@@ -173,6 +203,7 @@ export default function DataTable<T>({
 
   const gridTemplateColumns = [
     selectable ? '32px' : null,
+    reorderMode ? '72px' : null,
     ...columns.map((col) => col.width ?? '1fr'),
   ]
     .filter(Boolean)
@@ -200,6 +231,26 @@ export default function DataTable<T>({
       {showSelectionToolbar ? (
         <div className={classes.selectionToolbar}>
           <span className={classes.selectionCount}>{selectedKeys.length} selected</span>
+          {bulkReorder && reorderMode ? (
+            <span className={classes.bulkReorderButtons}>
+              <button
+                type="button"
+                className={classes.moveButton}
+                aria-label="Move selected up"
+                onClick={() => moveRows(selectedKeys, 'up')}
+              >
+                <IconArrowUp size={14} stroke={ICON_STROKE} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className={classes.moveButton}
+                aria-label="Move selected down"
+                onClick={() => moveRows(selectedKeys, 'down')}
+              >
+                <IconArrowDown size={14} stroke={ICON_STROKE} aria-hidden />
+              </button>
+            </span>
+          ) : null}
           {bulkActions}
           <button type="button" className={classes.clearSelection} onClick={onClearSelection}>
             Clear
@@ -219,6 +270,11 @@ export default function DataTable<T>({
               />
             </div>
           ) : null}
+          {reorderMode ? (
+            <div role="columnheader" className={classes.headerCell}>
+              Order
+            </div>
+          ) : null}
           {columns.map((col) => {
             const active = sortState?.key === col.key;
             const Icon = active
@@ -226,7 +282,7 @@ export default function DataTable<T>({
                 ? IconChevronUp
                 : IconChevronDown
               : IconSelector;
-            const sortable = col.sortable !== false && !!col.sortValue;
+            const sortable = !reorderMode && col.sortable !== false && !!col.sortValue;
 
             return (
               <div
@@ -269,7 +325,7 @@ export default function DataTable<T>({
               </div>
             </div>
           ) : (
-            sortedRows.map((row) => {
+            sortedRows.map((row, index) => {
               const key = getRowId(row);
               const rowSelectable = rowIsSelectable(row);
               return (
@@ -291,6 +347,29 @@ export default function DataTable<T>({
                           aria-label={`Select row ${key}`}
                         />
                       ) : null}
+                    </div>
+                  ) : null}
+                  {reorderMode ? (
+                    <div role="cell" className={[classes.dataCell, classes.orderCell].join(' ')}>
+                      <span className={classes.orderIndex}>{index + 1}</span>
+                      <button
+                        type="button"
+                        className={classes.moveButton}
+                        aria-label={`Move row ${index + 1} up`}
+                        disabled={index === 0}
+                        onClick={() => moveRows([key], 'up')}
+                      >
+                        <IconArrowUp size={12} stroke={ICON_STROKE} aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        className={classes.moveButton}
+                        aria-label={`Move row ${index + 1} down`}
+                        disabled={index === sortedRows.length - 1}
+                        onClick={() => moveRows([key], 'down')}
+                      >
+                        <IconArrowDown size={12} stroke={ICON_STROKE} aria-hidden />
+                      </button>
                     </div>
                   ) : null}
                   {columns.map((col) => (
