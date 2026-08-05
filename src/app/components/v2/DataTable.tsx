@@ -1,14 +1,18 @@
 import { Loader, TextInput } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import {
   IconArrowDown,
   IconArrowUp,
   IconChevronDown,
+  IconChevronRight,
   IconChevronUp,
   IconSelector,
 } from '@tabler/icons-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { reorderSelectedKeys } from '@core/domain/zoneOrder.ts';
-import { ICON_STROKE } from '../../lib/iconSizes.ts';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
+import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
+import Button from './Button.tsx';
 import Checkbox from './Checkbox.tsx';
 import classes from './DataTable.module.css';
 
@@ -23,6 +27,12 @@ export interface DataTableColumn<T> {
   sortValue?: (row: T) => string | number | null;
   /** Muted/secondary text styling for this cell. */
   dim?: boolean;
+  /** Shown in the column-visibility popover; hidden columns still exist unless toggled off. */
+  hideable?: boolean;
+  /** Whether a hideable column starts visible. Default `true`. */
+  defaultVisible?: boolean;
+  /** Dropped on narrow viewports unless re-enabled via the column-visibility popover. */
+  hideOnMobile?: boolean;
 }
 
 export type DataTableSortDirection = 'asc' | 'desc';
@@ -73,7 +83,26 @@ export interface DataTableProps<T> {
   onReorder?: (nextRows: T[]) => void;
   /** Adds Move up/down to the selection toolbar. Requires `selectable` + `reorderMode`. */
   bulkReorder?: boolean;
+  /** Expand/collapse lead column, recursing into `getChildren(row)` for expanded parents. */
+  nested?: boolean;
+  getChildren?: (row: T) => T[] | undefined;
+  /** `'extreme'` adds a sticky header and a max-height scroll region for dense tables. */
+  scale?: 'default' | 'extreme';
+  /** Controlled column visibility for `hideable` columns; uncontrolled (per-column `defaultVisible`) if omitted. */
+  visibleKeys?: string[];
+  onVisibleKeysChange?: (keys: string[]) => void;
+  /** Makes rows clickable; disabled for rows failing `isRowSelectable` when `selectable` is set. */
+  onRowActivate?: (row: T) => void;
+  /** `'nestParent'` gives the row a quiet background. */
+  getRowVariant?: (row: T) => 'nestParent' | undefined;
   className?: string;
+}
+
+interface FlatRow<T> {
+  row: T;
+  key: string;
+  depth: number;
+  hasChildren: boolean;
 }
 
 function compareValues(a: string | number | null, b: string | number | null): number {
@@ -129,6 +158,13 @@ export default function DataTable<T>({
   reorderMode = false,
   onReorder,
   bulkReorder = false,
+  nested = false,
+  getChildren,
+  scale = 'default',
+  visibleKeys: controlledVisibleKeys,
+  onVisibleKeysChange,
+  onRowActivate,
+  getRowVariant,
   className,
 }: DataTableProps<T>) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
@@ -172,12 +208,72 @@ export default function DataTable<T>({
     sortedRows.length === 0 && totalRowCount !== undefined && totalRowCount > 0;
   const showMetaRow = !!search || totalRowCount !== undefined || resultCount !== undefined;
 
+  const isMobileViewport = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
+
+  const hideableDefs = columns.filter((col) => col.hideable);
+  const [internalVisibleKeys, setInternalVisibleKeys] = useState<string[]>(() =>
+    hideableDefs.filter((col) => col.defaultVisible !== false).map((col) => col.key),
+  );
+  const visibleHideableKeys = controlledVisibleKeys ?? internalVisibleKeys;
+  const setVisibleHideableKeys = onVisibleKeysChange ?? setInternalVisibleKeys;
+  const showColumnPicker = hideableDefs.length > 0;
+  const [columnPickerOpen, setColumnPickerOpen] = useState(false);
+
+  const toggleColumnVisible = (key: string, checked: boolean) => {
+    setVisibleHideableKeys(
+      checked ? [...visibleHideableKeys, key] : visibleHideableKeys.filter((k) => k !== key),
+    );
+  };
+
+  const visibleColumns = columns.filter((col) => {
+    if (col.hideable && !visibleHideableKeys.includes(col.key)) return false;
+    if (isMobileViewport && col.hideOnMobile) {
+      return col.hideable && visibleHideableKeys.includes(col.key);
+    }
+    return true;
+  });
+
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+  const toggleExpanded = (key: string) => {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
+  const flattenedRows = useMemo(() => {
+    if (!nested || !getChildren) {
+      return sortedRows.map((row): FlatRow<T> => {
+        const children = getChildren?.(row);
+        return { row, key: getRowId(row), depth: 0, hasChildren: !!children?.length };
+      });
+    }
+    const flat: FlatRow<T>[] = [];
+    const visit = (row: T, depth: number) => {
+      const key = getRowId(row);
+      const children = getChildren(row);
+      flat.push({ row, key, depth, hasChildren: !!children?.length });
+      if (children?.length && expandedKeys.has(key)) {
+        children.forEach((child) => visit(child, depth + 1));
+      }
+    };
+    sortedRows.forEach((row) => visit(row, 0));
+    return flat;
+  }, [nested, getChildren, sortedRows, getRowId, expandedKeys]);
+
   const [internalSelectedKeys, setInternalSelectedKeys] = useState<string[]>([]);
   const selectedKeys = controlledSelectedKeys ?? internalSelectedKeys;
   const setSelectedKeys = onSelectionChange ?? setInternalSelectedKeys;
 
   const rowIsSelectable = (row: T) => isRowSelectable?.(row) ?? true;
-  const selectableRowKeys = sortedRows.filter(rowIsSelectable).map((row) => getRowId(row));
+  const selectableRowKeys = flattenedRows
+    .filter((flat) => rowIsSelectable(flat.row))
+    .map((flat) => flat.key);
   const allSelected =
     selectable &&
     selectableRowKeys.length > 0 &&
@@ -202,9 +298,10 @@ export default function DataTable<T>({
   const showSelectionToolbar = selectable && selectedKeys.length > 0;
 
   const gridTemplateColumns = [
+    nested ? '24px' : null,
     selectable ? '32px' : null,
     reorderMode ? '72px' : null,
-    ...columns.map((col) => col.width ?? '1fr'),
+    ...visibleColumns.map((col) => col.width ?? '1fr'),
   ]
     .filter(Boolean)
     .join(' ');
@@ -222,9 +319,36 @@ export default function DataTable<T>({
         />
       ) : null}
 
-      {showMetaRow ? (
+      {showMetaRow || showColumnPicker ? (
         <div className={classes.metaRow}>
-          <span className={classes.count}>{countLabel(displayCount, totalRowCount)}</span>
+          <span className={classes.count}>
+            {showMetaRow ? countLabel(displayCount, totalRowCount) : null}
+          </span>
+          {showColumnPicker ? (
+            <div className={classes.columnPickerWrapper}>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-expanded={columnPickerOpen}
+                onClick={() => setColumnPickerOpen((open) => !open)}
+              >
+                Show/hide cols
+              </Button>
+              {columnPickerOpen ? (
+                <div className={classes.columnPicker} role="menu">
+                  {hideableDefs.map((col) => (
+                    <label key={col.key} className={classes.columnPickerRow}>
+                      <Checkbox
+                        checked={visibleHideableKeys.includes(col.key)}
+                        onCheckedChange={(checked) => toggleColumnVisible(col.key, checked)}
+                      />
+                      <span>{col.header}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -258,8 +382,9 @@ export default function DataTable<T>({
         </div>
       ) : null}
 
-      <div className={classes.table} role="table">
+      <div className={classes.table} role="table" data-scale={scale}>
         <div className={classes.headerRow} role="row" style={{ gridTemplateColumns }}>
+          {nested ? <div role="columnheader" className={classes.headerCell} /> : null}
           {selectable ? (
             <div role="columnheader" className={classes.headerCell}>
               <Checkbox
@@ -275,7 +400,7 @@ export default function DataTable<T>({
               Order
             </div>
           ) : null}
-          {columns.map((col) => {
+          {visibleColumns.map((col) => {
             const active = sortState?.key === col.key;
             const Icon = active
               ? sortState!.direction === 'asc'
@@ -318,25 +443,62 @@ export default function DataTable<T>({
         </div>
 
         <div className={classes.body}>
-          {sortedRows.length === 0 ? (
+          {flattenedRows.length === 0 ? (
             <div className={classes.emptyRow} role="row">
               <div role="cell" className={classes.emptyCell}>
                 {isFilteredEmpty ? filteredEmptyMessage : emptyMessage}
               </div>
             </div>
           ) : (
-            sortedRows.map((row, index) => {
-              const key = getRowId(row);
+            flattenedRows.map((flat) => {
+              const { row, key, depth, hasChildren } = flat;
               const rowSelectable = rowIsSelectable(row);
+              const topLevelIndex =
+                depth === 0 ? sortedRows.findIndex((r) => getRowId(r) === key) : -1;
+              const rowVariant = getRowVariant?.(row);
+              const activatable = !!onRowActivate && (!selectable || rowSelectable);
+
               return (
                 <div
                   key={key}
                   role="row"
-                  className={[classes.dataRow, selectable && !rowSelectable ? classes.rowGated : '']
+                  className={[
+                    classes.dataRow,
+                    selectable && !rowSelectable ? classes.rowGated : '',
+                    rowVariant === 'nestParent' ? classes.rowNestParent : '',
+                    activatable ? classes.rowActivatable : '',
+                  ]
                     .filter(Boolean)
                     .join(' ')}
                   style={{ gridTemplateColumns }}
+                  onClick={activatable ? () => onRowActivate!(row) : undefined}
                 >
+                  {nested ? (
+                    <div
+                      role="cell"
+                      className={classes.dataCell}
+                      style={{ paddingLeft: depth * 16 }}
+                    >
+                      {hasChildren ? (
+                        <button
+                          type="button"
+                          className={classes.expandButton}
+                          aria-label={expandedKeys.has(key) ? 'Collapse row' : 'Expand row'}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            toggleExpanded(key);
+                          }}
+                        >
+                          <IconChevronRight
+                            size={ICON_SIZE_NAV}
+                            stroke={ICON_STROKE}
+                            className={expandedKeys.has(key) ? classes.expandIconOpen : undefined}
+                            aria-hidden
+                          />
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
                   {selectable ? (
                     <div role="cell" className={classes.dataCell}>
                       {rowSelectable ? (
@@ -351,28 +513,40 @@ export default function DataTable<T>({
                   ) : null}
                   {reorderMode ? (
                     <div role="cell" className={[classes.dataCell, classes.orderCell].join(' ')}>
-                      <span className={classes.orderIndex}>{index + 1}</span>
-                      <button
-                        type="button"
-                        className={classes.moveButton}
-                        aria-label={`Move row ${index + 1} up`}
-                        disabled={index === 0}
-                        onClick={() => moveRows([key], 'up')}
-                      >
-                        <IconArrowUp size={12} stroke={ICON_STROKE} aria-hidden />
-                      </button>
-                      <button
-                        type="button"
-                        className={classes.moveButton}
-                        aria-label={`Move row ${index + 1} down`}
-                        disabled={index === sortedRows.length - 1}
-                        onClick={() => moveRows([key], 'down')}
-                      >
-                        <IconArrowDown size={12} stroke={ICON_STROKE} aria-hidden />
-                      </button>
+                      {depth === 0 && !hasChildren ? (
+                        <>
+                          <span className={classes.orderIndex}>{topLevelIndex + 1}</span>
+                          <button
+                            type="button"
+                            className={classes.moveButton}
+                            aria-label={`Move row ${topLevelIndex + 1} up`}
+                            disabled={topLevelIndex === 0}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              moveRows([key], 'up');
+                            }}
+                          >
+                            <IconArrowUp size={12} stroke={ICON_STROKE} aria-hidden />
+                          </button>
+                          <button
+                            type="button"
+                            className={classes.moveButton}
+                            aria-label={`Move row ${topLevelIndex + 1} down`}
+                            disabled={topLevelIndex === sortedRows.length - 1}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              moveRows([key], 'down');
+                            }}
+                          >
+                            <IconArrowDown size={12} stroke={ICON_STROKE} aria-hidden />
+                          </button>
+                        </>
+                      ) : depth === 0 ? (
+                        <span className={classes.orderIndex}>{topLevelIndex + 1}</span>
+                      ) : null}
                     </div>
                   ) : null}
-                  {columns.map((col) => (
+                  {visibleColumns.map((col) => (
                     <div
                       key={col.key}
                       role="cell"

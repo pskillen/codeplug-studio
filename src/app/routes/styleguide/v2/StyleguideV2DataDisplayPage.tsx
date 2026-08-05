@@ -15,13 +15,37 @@ import {
 } from '../../../components/v2/index.ts';
 import { ICON_SIZE_ACTION } from '../../../lib/iconSizes.ts';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
-import { SAMPLE_ROWS, STICKY_DEMO_ROWS } from '../fixtures.ts';
+import { LARGE_VIRTUAL_DEMO_ROWS, SAMPLE_ROWS, STICKY_DEMO_ROWS } from '../fixtures.ts';
+
+interface NestedDemoRow {
+  id: string;
+  name: string;
+  children?: NestedDemoRow[];
+}
+
+const NESTED_DEMO_ROWS: NestedDemoRow[] = [
+  {
+    id: 'zone-1',
+    name: 'Zone: Highlands',
+    children: [
+      { id: 'ch-1', name: 'GB3DA Stornoway' },
+      { id: 'ch-2', name: 'GB3IV Inverness' },
+    ],
+  },
+  {
+    id: 'zone-2',
+    name: 'Zone: Central Belt',
+    children: [{ id: 'ch-3', name: 'GB7GM Glasgow' }],
+  },
+];
 
 export default function StyleguideV2DataDisplayPage() {
   const [dataTableSearch, setDataTableSearch] = useState('');
   const [dataTableSelected, setDataTableSelected] = useState<string[]>([]);
   const [reorderRows, setReorderRows] = useState(() => STICKY_DEMO_ROWS.slice(0, 5));
   const [reorderSelected, setReorderSelected] = useState<string[]>([]);
+  const [activatedRow, setActivatedRow] = useState<string | null>(null);
+  const [visibleKeys, setVisibleKeys] = useState<string[]>([]);
 
   const filteredDataTableRows = STICKY_DEMO_ROWS.filter((row) =>
     row.name.toLowerCase().includes(dataTableSearch.toLowerCase()),
@@ -195,6 +219,61 @@ export default function StyleguideV2DataDisplayPage() {
           onSelectionChange={setReorderSelected}
           onClearSelection={() => setReorderSelected([])}
           columns={[{ key: 'name', header: 'Name', render: (row) => row.name }]}
+        />
+      </PageSection>
+
+      <PageSection
+        title="DataTable (v2) — nested + row activate"
+        description="Expand/collapse lead column; whole-row click opens a detail (wire-preview shape)."
+      >
+        <Stack gap="xs">
+          {activatedRow ? (
+            <Text size="sm" c="dimmed">
+              Activated: {activatedRow}
+            </Text>
+          ) : null}
+          <DataTableV2
+            rows={NESTED_DEMO_ROWS}
+            getRowId={(row) => row.id}
+            nested
+            getChildren={(row) => row.children}
+            getRowVariant={(row) => (row.children?.length ? 'nestParent' : undefined)}
+            onRowActivate={(row) => setActivatedRow(row.name)}
+            columns={[{ key: 'name', header: 'Name', render: (row) => row.name }]}
+          />
+        </Stack>
+      </PageSection>
+
+      <PageSection
+        title="DataTable (v2) — scale=extreme + column visibility"
+        description="Sticky header over a max-height scroll region; hideable columns via Show/hide cols."
+      >
+        <DataTableV2
+          rows={LARGE_VIRTUAL_DEMO_ROWS}
+          getRowId={(row) => row.id}
+          scale="extreme"
+          visibleKeys={visibleKeys}
+          onVisibleKeysChange={setVisibleKeys}
+          totalRowCount={LARGE_VIRTUAL_DEMO_ROWS.length}
+          columns={[
+            { key: 'name', header: 'Name', render: (row) => row.name },
+            {
+              key: 'score',
+              header: 'Score',
+              render: (row) => row.score,
+              align: 'right',
+              width: '90px',
+            },
+            {
+              key: 'note',
+              header: 'Note',
+              render: () => '—',
+              hideable: true,
+              defaultVisible: false,
+              width: '80px',
+              dim: true,
+            },
+          ]}
         />
       </PageSection>
 

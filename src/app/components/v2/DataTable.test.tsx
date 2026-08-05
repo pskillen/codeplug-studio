@@ -256,4 +256,94 @@ describe('DataTable v2', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Move selected up' }));
     expect(onReorder).toHaveBeenCalledWith([ROWS[0], ROWS[2], ROWS[1]]);
   });
+
+  it('row activate calls onRowActivate for a selectable row and not for a gated row', () => {
+    const onRowActivate = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={ROWS}
+          getRowId={(row) => row.id}
+          selectable
+          isRowSelectable={(row) => row.id !== '2'}
+          onRowActivate={onRowActivate}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    fireEvent.click(screen.getAllByRole('row')[1]!);
+    expect(onRowActivate).toHaveBeenCalledWith(ROWS[0]);
+
+    onRowActivate.mockClear();
+    fireEvent.click(screen.getAllByRole('row')[2]!);
+    expect(onRowActivate).not.toHaveBeenCalled();
+  });
+
+  it('getRowVariant("nestParent") applies the quiet-background row class', () => {
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={ROWS}
+          getRowId={(row) => row.id}
+          getRowVariant={(row) => (row.id === '1' ? 'nestParent' : undefined)}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.getAllByRole('row')[1]!.className).toMatch(/rowNestParent/);
+    expect(screen.getAllByRole('row')[2]!.className).not.toMatch(/rowNestParent/);
+  });
+
+  it('nested rows expand to show children and collapse again', () => {
+    const parentRows = [{ id: 'p1', name: 'Zone A', score: 0 }];
+    const children: Record<string, Row[]> = {
+      p1: [{ id: 'c1', name: 'Channel 1', score: 0 }],
+    };
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={parentRows}
+          getRowId={(row) => row.id}
+          nested
+          getChildren={(row) => children[row.id]}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.queryByText('Channel 1')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand row' }));
+    expect(screen.getByText('Channel 1')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse row' }));
+    expect(screen.queryByText('Channel 1')).not.toBeInTheDocument();
+  });
+
+  it('shows a column-visibility popover for hideable columns and hides a column when unchecked', () => {
+    const columnsWithHideable: DataTableColumn<Row>[] = [
+      ...COLUMNS,
+      { key: 'extra', header: 'Extra', render: () => 'x', hideable: true },
+    ];
+    render(
+      <DesignSystemV2Provider>
+        <DataTable columns={columnsWithHideable} rows={ROWS} getRowId={(row) => row.id} />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.getAllByText('Extra').length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Show/hide cols' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Extra' }));
+    expect(screen.queryByRole('columnheader', { name: 'Extra' })).not.toBeInTheDocument();
+  });
+
+  it('applies the extreme scale data attribute for sticky-header dense tables', () => {
+    render(
+      <DesignSystemV2Provider>
+        <DataTable columns={COLUMNS} rows={ROWS} getRowId={(row) => row.id} scale="extreme" />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.getByRole('table')).toHaveAttribute('data-scale', 'extreme');
+  });
 });

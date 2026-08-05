@@ -42,9 +42,21 @@ The full-capability list/detail table used across library lists, wire preview, a
 | `onReorder`   | `(nextRows: T[]) => void` | Called by both per-row and bulk move controls with the recomputed row order       |
 | `bulkReorder` | `boolean`                 | Adds Move up/down to the selection toolbar. Requires `selectable` + `reorderMode` |
 
-Per-row and bulk moves both use the same block-move algorithm as the zone/RGL/scan membership reorder (`reorderSelectedKeys` from `@core/domain/zoneOrder.ts`) — a single row is just a one-key selection. **Scope note:** this ships up/down move controls, not drag-and-drop; the capability inventory lists a drag handle as optional ("up/down (optionally + drag handle)"). Full drag parity with `components/ui/DataTable`'s dnd-kit reorder is tracked as follow-up debt rather than forked into this CSS-grid layout in this PR.
+Per-row and bulk moves both use the same block-move algorithm as the zone/RGL/scan membership reorder (`reorderSelectedKeys` from `@core/domain/zoneOrder.ts`) — a single row is just a one-key selection. **Scope note:** this ships up/down move controls, not drag-and-drop; the capability inventory lists a drag handle as optional ("up/down (optionally + drag handle)"). Full drag parity with `components/ui/DataTable`'s dnd-kit reorder is tracked as follow-up debt rather than forked into this CSS-grid layout in this PR. Order numbering/controls are top-level only; nested child rows and parent (has-children) rows don't reorder, matching the capability doc's "non-reorderable parents."
 
-Nesting, scale, column visibility, and row-activate props land in later commits on this same file — see the component's own type exports for the current full surface.
+## Props (nesting, scale, column visibility, row activate)
+
+| Prop                  | Type                                    | Notes                                                                                               |
+| --------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `nested`              | `boolean`                               | Adds an expand/collapse lead column                                                                 |
+| `getChildren`         | `(row: T) => T[] \| undefined`          | Recursive — expanded children render indented (16px per depth)                                      |
+| `scale`               | `'default' \| 'extreme'`                | `'extreme'` adds a sticky header + 440px max-height scroll region for dense tables                  |
+| `visibleKeys`         | `string[]`                              | Controlled visibility for `hideable` columns; uncontrolled (per-column `defaultVisible`) if omitted |
+| `onVisibleKeysChange` | `(keys: string[]) => void`              | Paired with the "Show/hide cols" toggle                                                             |
+| `onRowActivate`       | `(row: T) => void`                      | Makes rows clickable; disabled for rows failing `isRowSelectable` when `selectable` is set          |
+| `getRowVariant`       | `(row: T) => 'nestParent' \| undefined` | `'nestParent'` gives the row a quiet background                                                     |
+
+Column-level `hideable`/`defaultVisible`/`hideOnMobile` live on `DataTableColumn`. Mobile collapse uses `useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY)` (viewport-width based, matching the existing `components/ui/DataTable` convention) rather than a per-instance `ResizeObserver` — a deliberate deviation from the DS bundle's approach for consistency with how this codebase already solves the same problem. The column-visibility toggle is a small self-contained dropdown (not Mantine `Popover`) — `Popover.Target` requires a ref-forwarding child and `v2/Button` doesn't forward refs, so a custom absolutely-positioned panel was simpler and more testable than fixing that dependency chain.
 
 ## Usage
 

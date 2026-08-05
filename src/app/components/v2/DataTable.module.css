@@ -83,10 +83,47 @@
   color: var(--dsv2-text-tertiary);
 }
 
+.columnPickerWrapper {
+  position: relative;
+}
+
+.columnPicker {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 160px;
+  padding: 10px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-surface);
+  box-shadow: var(--dsv2-shadow-popover);
+}
+
+.columnPickerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-primary);
+  cursor: pointer;
+}
+
 .table {
   border: 1px solid var(--dsv2-border);
   border-radius: var(--dsv2-radius-panel);
   overflow: auto;
+}
+
+[data-variant='embedded'] .table {
+  border-color: var(--dsv2-border-quiet);
+}
+
+.table[data-scale='extreme'] {
+  max-height: 440px;
 }
 
 .headerRow {
@@ -98,6 +135,12 @@
 
 [data-variant='embedded'] .headerRow {
   background: transparent;
+}
+
+.table[data-scale='extreme'] .headerRow {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .headerCell {
@@ -154,6 +197,35 @@
 
 .rowGated {
   opacity: 0.45;
+}
+
+.rowNestParent {
+  background: var(--dsv2-surface-quiet);
+}
+
+.rowActivatable {
+  cursor: pointer;
+}
+
+.rowActivatable:hover {
+  background: var(--dsv2-surface-quiet);
+}
+
+.expandButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
+.expandIconOpen {
+  transform: rotate(90deg);
 }
 
 .dataCell {
