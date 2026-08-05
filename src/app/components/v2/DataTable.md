@@ -23,7 +23,18 @@ The full-capability list/detail table used across library lists, wire preview, a
 | `resultCount`           | `number`                                        | Displayed count override                                               |
 | `countLabel`            | `(displayed, total) => ReactNode`               | Custom count copy                                                      |
 
-Selection, reorder, nesting, scale, column visibility, and row-activate props land in later commits on this same file — see the component's own type exports for the current full surface.
+## Props (selection)
+
+| Prop                | Type                       | Notes                                                                                   |
+| ------------------- | -------------------------- | --------------------------------------------------------------------------------------- |
+| `selectable`        | `boolean`                  | Adds a checkbox column + selection toolbar                                              |
+| `selectedKeys`      | `string[]`                 | Controlled selection; uncontrolled if omitted                                           |
+| `onSelectionChange` | `(keys: string[]) => void` |                                                                                         |
+| `isRowSelectable`   | `(row: T) => boolean`      | Rows failing this render a disabled, dimmed checkbox and are excluded from "select all" |
+| `bulkActions`       | `ReactNode`                | Slot in the selection toolbar, shown alongside a Clear action                           |
+| `onClearSelection`  | `() => void`               | Clear-selection toolbar action                                                          |
+
+Reorder, nesting, scale, column visibility, and row-activate props land in later commits on this same file — see the component's own type exports for the current full surface.
 
 ## Usage
 

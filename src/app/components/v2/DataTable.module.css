@@ -21,6 +21,32 @@
   color: var(--dsv2-text-secondary);
 }
 
+.selectionToolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--dsv2-space-4);
+  padding: 8px var(--dsv2-row-padding-x);
+  border: 1px solid var(--dsv2-accent-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-accent-tint-06);
+}
+
+.selectionCount {
+  font-size: var(--dsv2-font-body-sm);
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+}
+
+.clearSelection {
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
 .table {
   border: 1px solid var(--dsv2-border);
   border-radius: var(--dsv2-radius-panel);
@@ -88,6 +114,10 @@
 
 .dataRow:last-child {
   border-bottom: none;
+}
+
+.rowGated {
+  opacity: 0.45;
 }
 
 .dataCell {

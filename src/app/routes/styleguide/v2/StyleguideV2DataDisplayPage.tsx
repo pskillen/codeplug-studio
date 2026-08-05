@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import MapLocationPicker from '../../../components/MapLocationPicker/MapLocationPicker.tsx';
 import { DataTable, Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
 import {
+  Button,
   CountTile,
   DataTable as DataTableV2,
   MapPanel,
@@ -18,6 +19,7 @@ import { SAMPLE_ROWS, STICKY_DEMO_ROWS } from '../fixtures.ts';
 
 export default function StyleguideV2DataDisplayPage() {
   const [dataTableSearch, setDataTableSearch] = useState('');
+  const [dataTableSelected, setDataTableSelected] = useState<string[]>([]);
 
   const filteredDataTableRows = STICKY_DEMO_ROWS.filter((row) =>
     row.name.toLowerCase().includes(dataTableSearch.toLowerCase()),
@@ -143,6 +145,16 @@ export default function StyleguideV2DataDisplayPage() {
             onChange: setDataTableSearch,
             placeholder: 'Filter channels…',
           }}
+          selectable
+          selectedKeys={dataTableSelected}
+          onSelectionChange={setDataTableSelected}
+          isRowSelectable={(row) => row.score > 0}
+          onClearSelection={() => setDataTableSelected([])}
+          bulkActions={
+            <Button variant="secondary" size="sm" onClick={() => setDataTableSelected([])}>
+              Delete selected
+            </Button>
+          }
           columns={[
             {
               key: 'name',

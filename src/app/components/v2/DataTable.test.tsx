@@ -134,4 +134,70 @@ describe('DataTable v2', () => {
 
     expect(screen.getByText('Nothing here')).toBeInTheDocument();
   });
+
+  it('toggles row selection and calls onSelectionChange', () => {
+    const onSelectionChange = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={ROWS}
+          getRowId={(row) => row.id}
+          selectable
+          selectedKeys={[]}
+          onSelectionChange={onSelectionChange}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    fireEvent.click(screen.getByLabelText('Select row 1'));
+    expect(onSelectionChange).toHaveBeenCalledWith(['1']);
+  });
+
+  it('excludes non-selectable rows from select-all and gates their checkbox', () => {
+    const onSelectionChange = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={ROWS}
+          getRowId={(row) => row.id}
+          selectable
+          selectedKeys={[]}
+          onSelectionChange={onSelectionChange}
+          isRowSelectable={(row) => row.id !== '2'}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.queryByLabelText('Select row 2')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Select all rows'));
+    expect(onSelectionChange).toHaveBeenCalledWith(expect.arrayContaining(['1', '3']));
+    expect(onSelectionChange.mock.calls[0][0]).not.toContain('2');
+  });
+
+  it('shows the selection toolbar with bulk actions and a clear control once rows are selected', () => {
+    const onClearSelection = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={ROWS}
+          getRowId={(row) => row.id}
+          selectable
+          selectedKeys={['1']}
+          onSelectionChange={() => undefined}
+          onClearSelection={onClearSelection}
+          bulkActions={<button type="button">Delete selected</button>}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete selected' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(onClearSelection).toHaveBeenCalled();
+  });
 });

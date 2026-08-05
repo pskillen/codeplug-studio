@@ -2,6 +2,7 @@ import { Loader, TextInput } from '@mantine/core';
 import { IconChevronDown, IconChevronUp, IconSelector } from '@tabler/icons-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
+import Checkbox from './Checkbox.tsx';
 import classes from './DataTable.module.css';
 
 export interface DataTableColumn<T> {
@@ -48,6 +49,15 @@ export interface DataTableProps<T> {
   totalRowCount?: number;
   resultCount?: number;
   countLabel?: (displayed: number, total: number | undefined) => ReactNode;
+  /** Adds a checkbox column and selection toolbar. */
+  selectable?: boolean;
+  selectedKeys?: string[];
+  onSelectionChange?: (keys: string[]) => void;
+  /** Rows failing this predicate render a disabled, dimmed checkbox and are excluded from "select all". */
+  isRowSelectable?: (row: T) => boolean;
+  /** Slot for bulk-action buttons, shown in the selection toolbar alongside a Clear action. */
+  bulkActions?: ReactNode;
+  onClearSelection?: () => void;
   className?: string;
 }
 
@@ -95,6 +105,12 @@ export default function DataTable<T>({
   totalRowCount,
   resultCount,
   countLabel = defaultCountLabel,
+  selectable = false,
+  selectedKeys: controlledSelectedKeys,
+  onSelectionChange,
+  isRowSelectable,
+  bulkActions,
+  onClearSelection,
   className,
 }: DataTableProps<T>) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
@@ -126,7 +142,41 @@ export default function DataTable<T>({
     sortedRows.length === 0 && totalRowCount !== undefined && totalRowCount > 0;
   const showMetaRow = !!search || totalRowCount !== undefined || resultCount !== undefined;
 
-  const gridTemplateColumns = columns.map((col) => col.width ?? '1fr').join(' ');
+  const [internalSelectedKeys, setInternalSelectedKeys] = useState<string[]>([]);
+  const selectedKeys = controlledSelectedKeys ?? internalSelectedKeys;
+  const setSelectedKeys = onSelectionChange ?? setInternalSelectedKeys;
+
+  const rowIsSelectable = (row: T) => isRowSelectable?.(row) ?? true;
+  const selectableRowKeys = sortedRows.filter(rowIsSelectable).map((row) => getRowId(row));
+  const allSelected =
+    selectable &&
+    selectableRowKeys.length > 0 &&
+    selectableRowKeys.every((k) => selectedKeys.includes(k));
+  const someSelected =
+    selectable && selectableRowKeys.some((k) => selectedKeys.includes(k)) && !allSelected;
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelectedKeys(selectedKeys.filter((k) => !selectableRowKeys.includes(k)));
+    } else {
+      setSelectedKeys([...new Set([...selectedKeys, ...selectableRowKeys])]);
+    }
+  };
+
+  const toggleRow = (key: string) => {
+    setSelectedKeys(
+      selectedKeys.includes(key) ? selectedKeys.filter((k) => k !== key) : [...selectedKeys, key],
+    );
+  };
+
+  const showSelectionToolbar = selectable && selectedKeys.length > 0;
+
+  const gridTemplateColumns = [
+    selectable ? '32px' : null,
+    ...columns.map((col) => col.width ?? '1fr'),
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className={[classes.root, className].filter(Boolean).join(' ')} data-variant={variant}>
@@ -147,8 +197,28 @@ export default function DataTable<T>({
         </div>
       ) : null}
 
+      {showSelectionToolbar ? (
+        <div className={classes.selectionToolbar}>
+          <span className={classes.selectionCount}>{selectedKeys.length} selected</span>
+          {bulkActions}
+          <button type="button" className={classes.clearSelection} onClick={onClearSelection}>
+            Clear
+          </button>
+        </div>
+      ) : null}
+
       <div className={classes.table} role="table">
         <div className={classes.headerRow} role="row" style={{ gridTemplateColumns }}>
+          {selectable ? (
+            <div role="columnheader" className={classes.headerCell}>
+              <Checkbox
+                checked={allSelected}
+                indeterminate={someSelected}
+                onCheckedChange={toggleAll}
+                aria-label="Select all rows"
+              />
+            </div>
+          ) : null}
           {columns.map((col) => {
             const active = sortState?.key === col.key;
             const Icon = active
@@ -201,13 +271,28 @@ export default function DataTable<T>({
           ) : (
             sortedRows.map((row) => {
               const key = getRowId(row);
+              const rowSelectable = rowIsSelectable(row);
               return (
                 <div
                   key={key}
                   role="row"
-                  className={classes.dataRow}
+                  className={[classes.dataRow, selectable && !rowSelectable ? classes.rowGated : '']
+                    .filter(Boolean)
+                    .join(' ')}
                   style={{ gridTemplateColumns }}
                 >
+                  {selectable ? (
+                    <div role="cell" className={classes.dataCell}>
+                      {rowSelectable ? (
+                        <Checkbox
+                          checked={selectedKeys.includes(key)}
+                          onCheckedChange={() => toggleRow(key)}
+                          onClick={(event) => event.stopPropagation()}
+                          aria-label={`Select row ${key}`}
+                        />
+                      ) : null}
+                    </div>
+                  ) : null}
                   {columns.map((col) => (
                     <div
                       key={col.key}
