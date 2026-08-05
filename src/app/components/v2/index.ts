@@ -56,6 +56,8 @@ export { default as ContextualStrip } from './ContextualStrip.tsx';
 export type { ContextualStripProps } from './ContextualStrip.tsx';
 export { default as SectionNav } from './SectionNav.tsx';
 export type { SectionNavOrientation, SectionNavProps } from './SectionNav.tsx';
+export { default as MembershipRow } from './MembershipRow.tsx';
+export type { MembershipRowProps } from './MembershipRow.tsx';
 export {
   ShuttleAddBar,
   ShuttleList,

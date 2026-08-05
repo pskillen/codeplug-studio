@@ -24,6 +24,11 @@ const SECTIONS = [
     description: 'ModalShell base overlay primitive.',
   },
   {
+    to: '/styleguide/v2/membership',
+    title: 'Membership',
+    description: 'Members-first list + full-screen add takeover, superseding ShuttleList.',
+  },
+  {
     to: '/styleguide/v2/navigation',
     title: 'Navigation',
     description: 'AppShell and BottomTabBar (fixture-driven).',

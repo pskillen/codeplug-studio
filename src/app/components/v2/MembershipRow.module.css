@@ -1,0 +1,51 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: var(--dsv2-row-padding-y) var(--dsv2-row-padding-x);
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-sm);
+  background: var(--dsv2-surface);
+  margin-bottom: 8px;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.label {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pills {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.subtitle {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.trailing {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
