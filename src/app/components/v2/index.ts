@@ -30,6 +30,13 @@ export { default as ModalShell } from './ModalShell.tsx';
 export type { ModalShellIconTone, ModalShellProps, ModalShellSize } from './ModalShell.tsx';
 export { default as ConfirmModal } from './ConfirmModal.tsx';
 export type { ConfirmModalProps, ConfirmModalTone } from './ConfirmModal.tsx';
+export { default as ProgressModal } from './ProgressModal.tsx';
+export type {
+  ProgressModalPhase,
+  ProgressModalProps,
+  ProgressModalStep,
+  ProgressModalStepStatus,
+} from './ProgressModal.tsx';
 export { default as AppShell } from './AppShell.tsx';
 export type { AppShellProps } from './AppShell.tsx';
 export { default as BottomTabBar } from './BottomTabBar.tsx';
