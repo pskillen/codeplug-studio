@@ -13,7 +13,7 @@ Matches the design-system Library strip (Channels / Zones / …). Solid accent f
 | `items`    | `readonly string[]`      | Pill labels                                           |
 | `active`   | `string`                 | Selected label                                        |
 | `onChange` | `(item: string) => void` | Selection handler                                     |
-| `trailing` | `ReactNode`              | Optional trailing control after tabs (e.g. build chip) |
+| `leading`  | `ReactNode`              | Optional leading control before tabs (e.g. build chip) |
 
 ## Usage
 
@@ -22,7 +22,7 @@ Matches the design-system Library strip (Channels / Zones / …). Solid accent f
   items={['Channels', 'Zones', 'Talk groups']}
   active={sub}
   onChange={setSub}
-  trailing={isBuildDetail ? <BuildStripLeading buildId={buildId} /> : undefined}
+  leading={isBuildDetail ? <BuildStripLeading buildId={buildId} /> : undefined}
 />
 ```
 

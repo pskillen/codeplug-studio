@@ -14,7 +14,7 @@ export interface BuildStripLeadingProps {
 }
 
 /**
- * mk2 B2 — build identity chip in the contextual strip trailing slot.
+ * mk2 B2 — build identity chip at the start of the contextual strip.
  */
 export default function BuildStripLeading({ buildId, mobile }: BuildStripLeadingProps) {
   const layout = useOptionalBuildLayout();

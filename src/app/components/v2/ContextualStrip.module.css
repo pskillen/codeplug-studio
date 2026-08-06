@@ -10,7 +10,7 @@
 
 .leading {
   flex-shrink: 0;
-  margin-right: 6px;
+  max-width: min(200px, 42vw);
 }
 
 .divider {
@@ -19,12 +19,6 @@
   margin: 0 8px;
   background: var(--dsv2-border-strip);
   flex-shrink: 0;
-}
-
-.trailing {
-  flex-shrink: 0;
-  margin-left: auto;
-  max-width: min(200px, 42vw);
 }
 
 .item {

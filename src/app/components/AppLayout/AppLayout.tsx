@@ -287,7 +287,7 @@ function AppLayoutBody({
             items={stripItems.map((i) => i.label)}
             active={stripActive ?? undefined}
             onChange={goToStrip}
-            trailing={
+            leading={
               showBuildSwitcher && buildDetailId ? (
                 <BuildStripLeading buildId={buildDetailId} mobile={isDesktopNav === false} />
               ) : undefined

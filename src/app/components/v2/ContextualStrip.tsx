@@ -5,8 +5,8 @@ export interface ContextualStripProps {
   items: readonly string[];
   active?: string;
   onChange?: (item: string) => void;
-  /** Controls after section tabs (e.g. build switcher chip). */
-  trailing?: ReactNode;
+  /** Controls before section tabs (e.g. build switcher chip). */
+  leading?: ReactNode;
   className?: string;
 }
 
@@ -17,11 +17,17 @@ export default function ContextualStrip({
   items,
   active,
   onChange,
-  trailing,
+  leading,
   className,
 }: ContextualStripProps) {
   return (
     <div className={[classes.root, className].filter(Boolean).join(' ')} role="tablist">
+      {leading ? (
+        <>
+          <div className={classes.leading}>{leading}</div>
+          <div className={classes.divider} aria-hidden />
+        </>
+      ) : null}
       {items.map((item) => {
         const isActive = item === active;
         return (
@@ -37,12 +43,6 @@ export default function ContextualStrip({
           </button>
         );
       })}
-      {trailing ? (
-        <>
-          <div className={classes.divider} aria-hidden />
-          <div className={classes.trailing}>{trailing}</div>
-        </>
-      ) : null}
     </div>
   );
 }
