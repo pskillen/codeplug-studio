@@ -6,13 +6,13 @@ C2 unsaved-changes confirm when the operator tries to leave a form with unsaved 
 
 ## Props
 
-| Prop      | Type         | Description                                                         |
-| --------- | ------------ | ------------------------------------------------------------------- |
-| `opened`  | `boolean`    | Modal visibility (from guard `modalOpen`)                           |
-| `onStay`  | `() => void` | Stay on the page — calls guard `stay`                               |
-| `onLeave` | `() => void` | Discard and navigate — calls guard `leave`                          |
-| `title`   | `string`     | Modal title (default: "Discard unsaved changes?")                   |
-| `message` | `string`     | Body copy (default: generic discard-and-leave)                      |
+| Prop      | Type         | Description                                       |
+| --------- | ------------ | ------------------------------------------------- |
+| `opened`  | `boolean`    | Modal visibility (from guard `modalOpen`)         |
+| `onStay`  | `() => void` | Stay on the page — calls guard `stay`             |
+| `onLeave` | `() => void` | Discard and navigate — calls guard `leave`        |
+| `title`   | `string`     | Modal title (default: "Discard unsaved changes?") |
+| `message` | `string`     | Body copy (default: generic discard-and-leave)    |
 
 ## Usage
 

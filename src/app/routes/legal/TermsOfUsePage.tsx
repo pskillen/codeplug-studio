@@ -12,8 +12,8 @@ export default function TermsOfUsePage() {
 
       <h2>Direct radio programming</h2>
       <p>
-        Where Studio can write a radio directly — over Web Serial in a supported desktop browser,
-        or over USB (OTG) in the Android companion app — treat that path as experimental. Verify
+        Where Studio can write a radio directly — over Web Serial in a supported desktop browser, or
+        over USB (OTG) in the Android companion app — treat that path as experimental. Verify
         programming before you transmit. File export and your radio&apos;s vendor CPS remain
         supported paths, and Studio is not a substitute for vendor CPS where you still need it.
       </p>

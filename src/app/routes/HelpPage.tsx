@@ -61,7 +61,12 @@ export default function HelpPage() {
                       <span className={classes.workflowLabel}>{item.label}</span>
                       <span className={classes.workflowDescription}>{item.description}</span>
                     </span>
-                    <IconChevronRight size={18} stroke={1.75} aria-hidden className={classes.chevron} />
+                    <IconChevronRight
+                      size={18}
+                      stroke={1.75}
+                      aria-hidden
+                      className={classes.chevron}
+                    />
                   </Link>
                 </li>
               ))}

@@ -149,7 +149,12 @@ export default function AprsChannelSlotsEditor({
             }}
             emptyMessage="No slots configured."
           />
-          <Button variant="dashed" size="sm" onClick={openAdd} style={{ marginTop: 'var(--dsv2-space-3, 12px)' }}>
+          <Button
+            variant="dashed"
+            size="sm"
+            onClick={openAdd}
+            style={{ marginTop: 'var(--dsv2-space-3, 12px)' }}
+          >
             Add slot
           </Button>
         </>

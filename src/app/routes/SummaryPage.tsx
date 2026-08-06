@@ -46,8 +46,7 @@ export default function SummaryPage() {
     { label: 'Builds', value: builds.length },
   ];
 
-  const exportPath =
-    builds.length > 0 ? `/builds/${builds[0]?.id}/export` : '/builds';
+  const exportPath = builds.length > 0 ? `/builds/${builds[0]?.id}/export` : '/builds';
 
   return (
     <DesignSystemV2Provider>

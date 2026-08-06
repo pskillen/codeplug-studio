@@ -43,74 +43,74 @@ export default function CookieConsentBanner() {
         role="dialog"
         aria-label="Cookie consent"
       >
-      <div className={classes.inner}>
-        <Text size="sm" className={classes.copy}>
-          We use essential browser storage for your projects and preferences. With your permission
-          we also load Google Analytics to measure anonymous page usage — never your codeplug data.
-          See our{' '}
-          <Anchor component={Link} to="/privacy" size="sm">
-            Privacy policy
-          </Anchor>{' '}
-          and{' '}
-          <Anchor component={Link} to="/cookies" size="sm">
-            Cookies
-          </Anchor>{' '}
-          pages.
-        </Text>
+        <div className={classes.inner}>
+          <Text size="sm" className={classes.copy}>
+            We use essential browser storage for your projects and preferences. With your permission
+            we also load Google Analytics to measure anonymous page usage — never your codeplug
+            data. See our{' '}
+            <Anchor component={Link} to="/privacy" size="sm">
+              Privacy policy
+            </Anchor>{' '}
+            and{' '}
+            <Anchor component={Link} to="/cookies" size="sm">
+              Cookies
+            </Anchor>{' '}
+            pages.
+          </Text>
 
-        {expanded ? (
-          <div className={classes.prefs}>
-            <div className={classes.prefRow}>
-              <div>
-                <Text size="sm" fw={600}>
-                  Necessary
-                </Text>
-                <Text size="xs" c="dimmed">
-                  Required for projects, builds, and preferences on this device.
-                </Text>
-              </div>
-              <Switch checked disabled label="Always on" labelPosition="left" />
-            </div>
-            <div className={classes.prefRow}>
-              <div>
-                <Text size="sm" fw={600}>
-                  Analytics
-                </Text>
-                <Text size="xs" c="dimmed">
-                  Anonymous page views only — no codeplug content.
-                </Text>
-              </div>
-              <Switch
-                checked={analyticsDraft}
-                onChange={(event) => setAnalyticsDraft(event.currentTarget.checked)}
-                aria-label="Analytics cookies"
-              />
-            </div>
-          </div>
-        ) : null}
-
-        <div className={classes.actions}>
           {expanded ? (
-            <>
-              <Button variant="secondary" size="sm" onClick={rejectNonEssential}>
-                Reject non-essential
-              </Button>
-              <Button variant="primary" size="sm" onClick={savePreferences}>
-                Save preferences
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="secondary" size="sm" onClick={openManage}>
-                Manage
-              </Button>
-              <Button variant="primary" size="sm" onClick={acceptAll}>
-                Accept
-              </Button>
-            </>
-          )}
+            <div className={classes.prefs}>
+              <div className={classes.prefRow}>
+                <div>
+                  <Text size="sm" fw={600}>
+                    Necessary
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    Required for projects, builds, and preferences on this device.
+                  </Text>
+                </div>
+                <Switch checked disabled label="Always on" labelPosition="left" />
+              </div>
+              <div className={classes.prefRow}>
+                <div>
+                  <Text size="sm" fw={600}>
+                    Analytics
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    Anonymous page views only — no codeplug content.
+                  </Text>
+                </div>
+                <Switch
+                  checked={analyticsDraft}
+                  onChange={(event) => setAnalyticsDraft(event.currentTarget.checked)}
+                  aria-label="Analytics cookies"
+                />
+              </div>
+            </div>
+          ) : null}
+
+          <div className={classes.actions}>
+            {expanded ? (
+              <>
+                <Button variant="secondary" size="sm" onClick={rejectNonEssential}>
+                  Reject non-essential
+                </Button>
+                <Button variant="primary" size="sm" onClick={savePreferences}>
+                  Save preferences
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="secondary" size="sm" onClick={openManage}>
+                  Manage
+                </Button>
+                <Button variant="primary" size="sm" onClick={acceptAll}>
+                  Accept
+                </Button>
+              </>
+            )}
+          </div>
         </div>
-      </div>
       </div>
     </DesignSystemV2Provider>
   );

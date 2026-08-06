@@ -48,11 +48,11 @@ export default function PrivacyPolicyPage() {
 
       <h2>Google Drive access</h2>
       <p>
-        If you connect Google Drive (Settings, or Open/Save from Drive), Studio requests Google&apos;s{' '}
-        <code>drive.file</code> OAuth scope — access limited to files Studio itself creates, not
-        your whole Drive. On first connect, Studio creates a &quot;Codeplug Studio&quot; folder in your
-        Drive and keeps all browsing, opening, and saving inside that one folder; it cannot see or
-        list anything else in your Drive.
+        If you connect Google Drive (Settings, or Open/Save from Drive), Studio requests
+        Google&apos;s <code>drive.file</code> OAuth scope — access limited to files Studio itself
+        creates, not your whole Drive. On first connect, Studio creates a &quot;Codeplug
+        Studio&quot; folder in your Drive and keeps all browsing, opening, and saving inside that
+        one folder; it cannot see or list anything else in your Drive.
       </p>
       <p>
         Drive data is never shared with any third party, sold, or used for anything beyond the

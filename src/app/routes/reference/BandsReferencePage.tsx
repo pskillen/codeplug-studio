@@ -12,8 +12,8 @@ export default function BandsReferencePage() {
       <div className={classes.page}>
         <h1 className={classes.title}>Band plan</h1>
         <p className={classes.description}>
-          UK Ofcom amateur licence allocations plus common non-amateur receive services. Informational
-          only — not enforced when programming channels. Source:{' '}
+          UK Ofcom amateur licence allocations plus common non-amateur receive services.
+          Informational only — not enforced when programming channels. Source:{' '}
           <Anchor href={RSGB_BAND_PLAN_URL} target="_blank" rel="noopener noreferrer" size="sm">
             RSGB Band Plan (effective 1 Jan 2024)
           </Anchor>
