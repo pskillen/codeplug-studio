@@ -9,13 +9,14 @@ import QuickBuildSwitcher from './QuickBuildSwitcher.tsx';
 
 export interface BuildStripLeadingProps {
   buildId: string;
-  compact?: boolean;
+  /** Use bottom-sheet switcher on narrow layouts (chip label stays visible). */
+  mobile?: boolean;
 }
 
 /**
  * mk2 B2 — build identity chip in the contextual strip trailing slot.
  */
-export default function BuildStripLeading({ buildId, compact }: BuildStripLeadingProps) {
+export default function BuildStripLeading({ buildId, mobile }: BuildStripLeadingProps) {
   const layout = useOptionalBuildLayout();
   const location = useLocation();
   const navigate = useNavigate();
@@ -34,7 +35,6 @@ export default function BuildStripLeading({ buildId, compact }: BuildStripLeadin
       name={build.name}
       statusLabel={showRadioSub ? radioLabel : null}
       statusTone="neutral"
-      compact={compact}
       onClick={() => setSwitcherOpen((open) => !open)}
       aria-expanded={switcherOpen}
       aria-haspopup="dialog"
@@ -50,7 +50,7 @@ export default function BuildStripLeading({ buildId, compact }: BuildStripLeadin
       opened={switcherOpen}
       onClose={() => setSwitcherOpen(false)}
       onOpen={() => setSwitcherOpen(true)}
-      mobile={compact}
+      mobile={mobile}
       builds={builds}
       activeBuildId={build.id}
       onSwitchBuild={(nextId) => {

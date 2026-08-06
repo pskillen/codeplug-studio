@@ -282,7 +282,6 @@ function AppLayoutBody({
           rightExtra={hasActiveProject ? <SidebarDriveControls /> : undefined}
           avatar={overflowAvatar}
         />
-        <ChromeDismissibleNotices />
         {stripItems && stripItems.length > 0 ? (
           <ContextualStrip
             items={stripItems.map((i) => i.label)}
@@ -290,12 +289,13 @@ function AppLayoutBody({
             onChange={goToStrip}
             trailing={
               showBuildSwitcher && buildDetailId ? (
-                <BuildStripLeading buildId={buildDetailId} compact={isDesktopNav === false} />
+                <BuildStripLeading buildId={buildDetailId} mobile={isDesktopNav === false} />
               ) : undefined
             }
           />
         ) : null}
         {showBuildSwitcher ? <BuildSubChrome pathname={pathname} /> : null}
+        <ChromeDismissibleNotices />
       </DesignSystemV2Provider>
 
       <main

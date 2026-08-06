@@ -24,6 +24,7 @@
 .trailing {
   flex-shrink: 0;
   margin-left: auto;
+  max-width: min(200px, 42vw);
 }
 
 .item {

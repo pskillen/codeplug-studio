@@ -19,10 +19,11 @@ import { usesAtD890AirbandBankSplit } from '@core/services/anytoneChannelBanks.t
 import { findNeonplugDonorEgress, findRadioCloneEgress } from '../../lib/buildEgressUi.ts';
 import { entityNavIcons } from '../../nav/entityNavIcons.ts';
 
-export type BuildNavSection = 'overview' | 'export' | 'wire-preview' | 'audit';
+export type BuildNavSection = 'overview' | 'export' | 'export-settings' | 'wire-preview' | 'audit';
 
 export const BUILD_SECTION_OVERVIEW = 'Overview';
 export const BUILD_SECTION_EXPORT = 'Export';
+export const BUILD_SECTION_EXPORT_SETTINGS = 'Export settings';
 export const BUILD_SECTION_WIRE_PREVIEW = 'Wire preview';
 export const BUILD_SECTION_ABOUT = 'About';
 
@@ -52,11 +53,6 @@ export interface BuildAuditNavItem {
   label: string;
   path: string;
   icon: TablerIcon;
-}
-
-export interface BuildExportNavItem {
-  label: string;
-  path: string;
 }
 
 /** @deprecated Use section + entity nav — kept for tests that assert trait gating paths. */
@@ -90,6 +86,12 @@ export function buildSectionNavItems(build: RadioBuild): BuildSectionNavItem[] {
       icon: IconFileExport,
     },
     {
+      label: BUILD_SECTION_EXPORT_SETTINGS,
+      section: 'export-settings',
+      path: `${base}/export/settings`,
+      icon: IconSettings,
+    },
+    {
       label: BUILD_SECTION_WIRE_PREVIEW,
       section: 'wire-preview',
       path: defaultWirePreviewPath(build),
@@ -101,15 +103,6 @@ export function buildSectionNavItems(build: RadioBuild): BuildSectionNavItem[] {
       path: `${base}/characteristics`,
       icon: IconRadio,
     },
-  ];
-}
-
-/** mk2 Export section — pathway delivery vs projection settings. */
-export function buildExportNavItems(build: RadioBuild): BuildExportNavItem[] {
-  const base = `/builds/${build.id}`;
-  return [
-    { label: BUILD_SECTION_EXPORT, path: `${base}/export` },
-    { label: 'Export settings', path: `${base}/export/settings` },
   ];
 }
 
@@ -267,6 +260,7 @@ export function allBuildDetailPaths(build: RadioBuild, options?: BuildNavOptions
   const base = `/builds/${build.id}`;
   const paths = new Set<string>([
     `${base}/export`,
+    `${base}/export/settings`,
     `${base}/overview`,
     ...buildWireEntityNavItems(build, options).map((item) => item.path),
     `${base}/channels/bulk`,
@@ -299,7 +293,7 @@ export function activeBuildSection(pathname: string, buildId: string): BuildNavS
 
   const suffix = pathname.slice(prefix.length);
   if (!suffix || suffix === 'export') return 'export';
-  if (suffix === 'export/settings' || suffix.startsWith('export/settings/')) return 'export';
+  if (suffix === 'export/settings' || suffix.startsWith('export/settings/')) return 'export-settings';
   if (suffix === 'overview' || suffix.startsWith('overview/')) return 'overview';
 
   const firstSegment = suffix.split('/')[0];
@@ -317,28 +311,13 @@ export function activeBuildSectionLabel(pathname: string, buildId: string): stri
       return BUILD_SECTION_OVERVIEW;
     case 'export':
       return BUILD_SECTION_EXPORT;
+    case 'export-settings':
+      return BUILD_SECTION_EXPORT_SETTINGS;
     case 'wire-preview':
       return BUILD_SECTION_WIRE_PREVIEW;
     case 'audit':
       return BUILD_SECTION_ABOUT;
   }
-}
-
-export function activeExportNavItem(
-  pathname: string,
-  buildId: string,
-  items: readonly BuildExportNavItem[],
-): BuildExportNavItem | null {
-  const prefix = `/builds/${buildId}/`;
-  if (!pathname.startsWith(prefix)) return null;
-
-  let best: BuildExportNavItem | null = null;
-  for (const item of items) {
-    if (pathname === item.path || pathname.startsWith(`${item.path}/`)) {
-      if (!best || item.path.length > best.path.length) best = item;
-    }
-  }
-  return best;
 }
 
 export function activeWireEntityNavItem(
