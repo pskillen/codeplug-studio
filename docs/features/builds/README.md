@@ -27,22 +27,22 @@ Both share the **library**; each has its own `RadioBuild` → `assemble` → `Eg
 2. Open **Export for radio** (sidebar) → **New build**.
 3. Pick a **radio target** (e.g. Baofeng UV-5R Mini) and a display name (use names to distinguish Team A / Team B permutations).
 4. Land on **Export** (default) — choose an **egress** (Web Serial, NeonPlug, CHIRP, …), then download / write / donor merge as that pathway requires.
-5. Use **Setup** for rename/delete and capability badges; open **Radio characteristics** for organisation, export limits, and **RF bands & modes**.
-6. Shape wire names and zone layout on entity sub-routes — see [wire-preview.md](wire-preview.md).
-7. Switch builds from the secondary-nav **Build** select without returning to the list.
+5. Use **Overview** for rename/delete and capability badges; open **Radio characteristics** under **Audit** for organisation, export limits, and **RF bands & modes**.
+6. Shape wire names and zone layout on **Wire preview** entity chips — see [wire-preview.md](wire-preview.md).
+7. Switch builds from the identity bar **Build** select without returning to the list.
 
 See [profiles.md](profiles.md) for egress profile limits and the CHIRP runtime profile override on Export.
 
 Native YAML remains **project interchange** (library + all radio builds + egress paths) on **Summary**. It is not created via the new-build flow.
 
-## Export vs Setup
+## Export vs Overview
 
-| Surface                            | Owns                                                                                                                                  |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Export** (`/builds/:id/export`)  | **Radio-level** projection settings (gated by `radioTargetId` traits), then **egress switcher**, download / Drive / donor / hydration |
-| **Setup** (`/builds/:id/overview`) | Build identity (rename/delete), catalog radio target, organisation capability badges                                                  |
+| Surface                               | Owns                                                                                                                                  |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **Export** (`/builds/:id/export`)     | **Radio-level** projection settings (gated by `radioTargetId` traits), then **pathway cards**, download / Drive / donor / hydration |
+| **Overview** (`/builds/:id/overview`) | Build identity (rename/delete), catalog radio target, organisation capability badges                                                  |
 
-Export does not host identity editors; Setup does not host download actions. Secondary nav lists **Export** first; `/builds/:id` redirects to Export.
+Export does not host identity editors; Overview does not host download actions. Contextual strip: **Overview · Export · Wire preview · Audit**; `/builds/:id` redirects to Export.
 
 Projection settings (scan inclusion, m×n, naming fill-ins, …) stay visible across pathway switches ([#658](https://github.com/pskillen/codeplug-studio/issues/658)). Pathway chrome (CHIRP profile picker, NeonPlug donor, Web Serial, CPS download) follows the active egress.
 
@@ -56,8 +56,8 @@ Projection settings (scan inclusion, m×n, naming fill-ins, …) stay visible ac
 | `/builds/new`                   | Create build — **choose radio target** → name (seeds all compatible egress children)                                                     |
 | `/builds/:id`                   | Redirect → export                                                                                                                        |
 | `/builds/:id/export`            | CPS export panel (default / front door)                                                                                                  |
-| `/builds/:id/overview`          | Setup — identity, target profile, organisation badges                                                                                    |
-| `/builds/:id/characteristics`   | Read-only radio characteristics — organisation, export limits, RF bands & modes, ladders                                                 |
+| `/builds/:id/overview`          | Overview — identity, target profile, organisation badges                                                                                 |
+| `/builds/:id/characteristics`   | Audit — read-only radio characteristics (organisation, export limits, RF bands & modes, ladders)                                         |
 | `/builds/:id/channels`          | Wire preview — channels (list + modal)                                                                                                   |
 | `/builds/:id/scan-list`         | Flat-memory only — per-channel scan include/skip as **build** overrides (CHIRP / NeonPlug UV5R); does not mutate library `scanInclusion` |
 | `/builds/:id/channels/bulk`     | Wire preview — channel bulk edit                                                                                                         |
