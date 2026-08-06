@@ -8,6 +8,10 @@ export interface FormFieldProps {
   value?: ReactNode;
   children?: ReactNode;
   className?: string;
+  /** Validation error — destructive border and hint below the field. */
+  error?: string;
+  /** Optional non-error hint below the field. */
+  hint?: string;
 }
 
 /**
@@ -19,8 +23,16 @@ export default function FormField({
   value,
   children,
   className,
+  error,
+  hint,
 }: FormFieldProps) {
-  const bodyClass = [classes.body, mono ? classes.mono : ''].filter(Boolean).join(' ');
+  const bodyClass = [
+    classes.body,
+    mono ? classes.mono : '',
+    error ? classes.bodyError : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div className={[classes.root, className].filter(Boolean).join(' ')}>
@@ -28,6 +40,8 @@ export default function FormField({
       <div className={bodyClass}>
         {value != null ? <div className={classes.staticValue}>{value}</div> : children}
       </div>
+      {error ? <div className={classes.error}>{error}</div> : null}
+      {!error && hint ? <div className={classes.hint}>{hint}</div> : null}
     </div>
   );
 }

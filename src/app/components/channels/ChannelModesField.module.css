@@ -1,0 +1,71 @@
+.root {
+  min-width: 0;
+}
+
+.label {
+  font-size: 11.5px;
+  color: var(--dsv2-text-tertiary);
+  margin-bottom: 5px;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--dsv2-text-tertiary);
+  margin: 0 0 8px;
+  line-height: 1.45;
+}
+
+.groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.group {
+  min-width: 0;
+}
+
+.groupLabel {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--dsv2-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  padding: 6px 12px;
+  border-radius: var(--dsv2-radius-pill);
+  border: 1px solid var(--dsv2-border);
+  background: transparent;
+  color: var(--dsv2-text-secondary);
+  font-weight: 400;
+  font-family: var(--dsv2-font-family);
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--dsv2-text-primary);
+}
+
+.chipActive {
+  border-color: var(--dsv2-accent-border);
+  background: var(--dsv2-accent-tint-12);
+  color: var(--dsv2-text-primary);
+  font-weight: 600;
+}
+
+.chipCheck {
+  flex-shrink: 0;
+}
