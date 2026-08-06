@@ -9,7 +9,7 @@ Debt and follow-ups discovered during [epic #915](https://github.com/pskillen/co
 | Domain BandPill / ModePill in membership rows      | Low           | Zone/RGL/scan shuttle rows still use v1 `BandPill` / `ModePill` inside `ShuttleRow` labels — acceptable until domain pills re-skin                                                                                                                                                                                                                                                            |
 | Mantine segments in v2 editors                     | Low           | APRS sub-panels and some channel mode-profile fields still use Mantine / v1 segments — talk group / digital contact mode pickers migrated to v2 `SegmentedControl` in #943                                                                                                                                                                                                                    |
 | `ZoneEditActions.tsx` unused                       | Low           | Save moved to layout sticky header — file can be removed in #927 retire pass                                                                                                                                                                                                                                                                                                                  |
-| Cookie banner vs BottomTabBar overlap              | Low           | Fixed cookie dialog may sit over the mobile tab bar until a dedicated offset lands                                                                                                                                                                                                                                                                                                            |
+| Cookie banner vs BottomTabBar overlap              | Closed (#945) | U7 ribbon uses `--dsv2-bottom-tab-bar-height` on narrow ([#945](https://github.com/pskillen/codeplug-studio/issues/945))                                                                                                                                                                                                                                                                      |
 | `DataTable` v2 `storedOrder` not built             | Low           | Capability inventory flags it as speculative — "API + styleguide only, no current product call site." Add against a real consumer if one emerges; v1 `ui/DataTable` still has it                                                                                                                                                                                                              |
 | v2/v1 component coexistence                        | Low           | `EmptyState`, `DismissibleNotice` (vs `SoftWarning`), `FileDropzone` (vs `YamlFileDropzone`), and `DataTable` all now have independent v1 and v2 implementations by design (fork-and-coexist, not extend-in-place) — YAML Home/Summary panels now use v2 via `ProjectYamlFileDropzone` ([#944](https://github.com/pskillen/codeplug-studio/issues/944)); retire v1 `YamlFileDropzone` in #927 |
 | `Combobox` not wired to a real consumer            | Closed (#943) | `GeocodeCentreField` on `ZoneFromLocationPage` and `GrowZoneRecommendations`                                                                                                                                                                                                                                                                                                                  |
@@ -36,6 +36,13 @@ Debt and follow-ups discovered during [epic #915](https://github.com/pskillen/co
 - `EditorHeader` + `StickyFooter` promoted to `components/v2` (missed from #938 Batch 3 canvas helpers)
 - Channel editor mk2 E1 layout: Identity modes multi-select, stacked Mode settings, sticky footer, light zone chips
 - `ChannelModesField`, FormField/TextInput validation error affordance
+
+## Closed during APRS + utilities (#945)
+
+- C2: `UnsavedChangesModal` adapter on v2 `ConfirmModal` (default tone)
+- A1: APRS slots + assignment matrix mk2 chrome
+- U1–U7: Summary, Settings, Help, Maidenhead, Band plan, legal template, cookie ribbon
+- Cookie banner / BottomTabBar overlap
 
 ## Closed during directories & ingest (#944)
 

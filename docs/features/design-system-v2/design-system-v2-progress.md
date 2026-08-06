@@ -16,27 +16,22 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Form editors + zone (#943)  | In progress | `943/pskillen/ds-r2-form-editors`                               | Batch 3 E3–E5, E8, M2, M3 — stacked on #942 branch                                                           |
 | Builds & radio (#924)       | Shipped     | PR pending                                                      | Batch 4 B0–B12, R1, R2 — stacked on #943 branch                                                              |
 | Directories & ingest (#944) | Shipped     | `944/pskillen/ds-r2-directories-ingest` (stacked on #924)       | Batch 5 D1–D4, P2, C5, C6 — PR pending                                                                       |
-| APRS + utilities (#945)     | In progress | `945/pskillen/ds-r2-aprs-utilities` (stacked on #944)           | Batch 5 A1, U1–U7, C2                                                                                        |
+| APRS + utilities (#945)     | Shipped     | `945/pskillen/ds-r2-aprs-utilities` (stacked on #944)           | Batch 5 A1, U1–U7, C2 — PR pending                                                                           |
 
 ### #945 APRS + utilities (Batch 5 A1, U1–U7, C2)
 
-| Sub-slice                | Status      | Notes                                                                 |
-| ------------------------ | ----------- | --------------------------------------------------------------------- |
-| Kickoff + diff checklist | In progress | Branch `945/pskillen/ds-r2-aprs-utilities` from `944/.../directories-ingest` |
-
-**mk2 diff (live → Batch 5 utilities):**
-
-| ID  | Live surface                              | Gap                                                                 |
-| --- | ----------------------------------------- | ------------------------------------------------------------------- |
-| A1  | APRS partial v2; v1 slots table + Mantine modal | v2 DataTable slots, ModalShell add/edit, EmptyState, matrix filters |
-| U1  | Summary v2 mk1 port with map + breakdown panels | Banner → tiles → shortcut panels; drop map; keep YAML below         |
-| U2  | `ListPage` + Mantine sections             | Dense v2 Panels (keys, Drive StatusDot, units)                      |
-| U3  | `ListPage`; modal v2                      | Getting started + workflows + feedback panels                       |
-| U4  | Hybrid ListPage + MapPanel island         | Locate/map grid + bearing panel on v2 chrome                          |
-| U5  | ListPage + Mantine Alert                  | Typography-forward bare tables, max-width ~720                        |
-| U6  | ListPage legal pages                      | Body-text-only template (back link + title + body)                  |
-| U7  | Mantine Paper fixed bottom                | Ribbon above BottomTabBar; Manage/Accept expanded prefs               |
-| C2  | v1 Mantine `UnsavedChangesModal`          | v2 `ConfirmModal` default tone (Discard, not destructive)           |
+| Sub-slice                | Status   | Notes                                                                        |
+| ------------------------ | -------- | ---------------------------------------------------------------------------- |
+| Kickoff + diff checklist | Complete | Branch `945/pskillen/ds-r2-aprs-utilities` from `944/.../directories-ingest` |
+| C2 Unsaved changes       | Complete | `UnsavedChangesModal` → v2 `ConfirmModal` default tone                       |
+| A1 APRS configuration    | Complete | v2 slots table, `ModalShell`, assignment matrix filters/bulk bar             |
+| U1 Summary               | Complete | Tiles, banner, shortcuts; YAML interchange retained                          |
+| U2 Settings              | Complete | Dense v2 panels; Drive `StatusDot`                                           |
+| U3 Help                  | Complete | Getting started + workflow links + Quick start modal                         |
+| U4/U5 Tools              | Complete | Maidenhead locate/map grid; bare band plan tables                            |
+| U6 Legal                 | Complete | `LegalDocumentLayout` body-text template                                     |
+| U7 Cookies               | Complete | Bottom ribbon above `BottomTabBar`                                           |
+| Docs + PR                | Complete | Feature hubs; PR `Closes #945`                                               |
 
 ### #944 directories & ingest (Batch 5 D1–D4, P2, C5, C6)
 
@@ -141,7 +136,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## Next
 
-**r2 retrofit** in flight: APRS + utilities ([#945](https://github.com/pskillen/codeplug-studio/issues/945)) on `945/pskillen/ds-r2-aprs-utilities` (stacked on [#944](https://github.com/pskillen/codeplug-studio/issues/944)). After merge: mobile QA ([#926](https://github.com/pskillen/codeplug-studio/issues/926)).
+**r2 retrofit** next slice: mobile QA ([#926](https://github.com/pskillen/codeplug-studio/issues/926)) after [#945](https://github.com/pskillen/codeplug-studio/issues/945) merges. Then v1 retire ([#927](https://github.com/pskillen/codeplug-studio/issues/927)).
 
 ## Verification
 

@@ -23,11 +23,11 @@ ProjectProvider
          ├─ /map       _(redirect → /library/channels)_
          ├─ /reference Tools (Maidenhead, band plan)
          ├─ /debug     Storage inspectors (IndexedDB + localStorage) — overflow menu
-         ├─ /settings  Settings shell — overflow menu
-         ├─ /privacy   Privacy policy (analytics + local data)
-         ├─ /terms     Terms of use
-         ├─ /cookies   Cookies & storage (+ change consent)
-         ├─ /help      Help shell (top-level tab)
+         ├─ /settings  mk2 U2 dense panels — overflow menu ([#945](https://github.com/pskillen/codeplug-studio/issues/945))
+         ├─ /privacy   U6 body-text legal template
+         ├─ /terms     U6 body-text legal template
+         ├─ /cookies   U6 body-text + cookie preference control
+         ├─ /help      mk2 U3 help hub + Quick start entry ([#945](https://github.com/pskillen/codeplug-studio/issues/945))
 ```
 
 ## Documentation map
