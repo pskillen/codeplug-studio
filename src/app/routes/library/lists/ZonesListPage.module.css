@@ -55,6 +55,20 @@
   margin-bottom: 12px;
 }
 
+.toolbarRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.toolbarRow > :first-child {
+  flex: 1;
+  min-width: 160px;
+  max-width: 320px;
+}
+
 .mapSection {
   margin-top: 24px;
 }
