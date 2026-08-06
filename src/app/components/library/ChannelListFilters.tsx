@@ -7,6 +7,7 @@ import { useChannelListQuery } from '../../hooks/useChannelListQuery.ts';
 import { useFilteredChannels } from '../../hooks/useChannelListFilters.ts';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
 import { FacetBar, FacetChip, SplitFilter } from './FacetBar.tsx';
+import classes from './ChannelListFilters.module.css';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useOperatorPosition } from '../../state/operatorPosition.tsx';
 
@@ -54,7 +55,7 @@ export default function ChannelListFilters() {
   };
 
   return (
-    <Stack gap="sm">
+    <Stack gap="sm" className={classes.root}>
       <FacetBar scrollable>
         <FacetChip
           label="All bands"
@@ -110,7 +111,7 @@ export default function ChannelListFilters() {
       ) : null}
 
       {query.distanceFilterEnabled ? (
-        <Stack gap="xs">
+        <Stack gap="xs" className={classes.distanceSection}>
           <Text size="sm" fw={500}>
             Within {query.maxDistanceKm} km
             {position
