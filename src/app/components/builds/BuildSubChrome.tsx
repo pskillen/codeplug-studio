@@ -30,7 +30,7 @@ export interface BuildSubChromeModel {
 }
 
 /**
- * Trait-shaped wire-entity chips and Audit sub-strip for mk2 build workspace (B2).
+ * Trait-shaped wire-entity chips and About sub-strip for mk2 build workspace (B2).
  */
 export function useBuildSubChrome(pathname: string): BuildSubChromeModel | null {
   const buildId = isBuildDetailPath(pathname)

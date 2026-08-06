@@ -2,7 +2,7 @@ import {
   activeBuildSection,
   buildAuditNavItems,
   buildSectionNavItems,
-  BUILD_SECTION_AUDIT,
+  BUILD_SECTION_ABOUT,
   BUILD_SECTION_EXPORT,
   BUILD_SECTION_OVERVIEW,
   BUILD_SECTION_WIRE_PREVIEW,
@@ -182,14 +182,14 @@ describe('buildNavItems', () => {
 });
 
 describe('buildSectionNavItems', () => {
-  it('lists mk2 section order Overview, Export, Wire preview, Audit', () => {
+  it('lists mk2 section order Overview, Export, Wire preview, About', () => {
     const build = newFormatBuild('proj', 'opengd77-1701');
     const labels = buildSectionNavItems(build).map((item) => item.label);
     expect(labels).toEqual([
       BUILD_SECTION_OVERVIEW,
       BUILD_SECTION_EXPORT,
       BUILD_SECTION_WIRE_PREVIEW,
-      BUILD_SECTION_AUDIT,
+      BUILD_SECTION_ABOUT,
     ]);
   });
 });
@@ -202,7 +202,7 @@ describe('activeBuildSection', () => {
     expect(activeBuildSection(`/builds/${build.id}/channels/bulk`, build.id)).toBe('wire-preview');
   });
 
-  it('maps audit routes to audit section', () => {
+  it('maps about routes to audit section', () => {
     expect(activeBuildSection(`/builds/${build.id}/characteristics`, build.id)).toBe('audit');
     expect(activeBuildSection(`/builds/${build.id}/export-resolution`, build.id)).toBe('audit');
   });

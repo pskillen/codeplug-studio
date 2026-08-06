@@ -24,7 +24,7 @@ export type BuildNavSection = 'overview' | 'export' | 'wire-preview' | 'audit';
 export const BUILD_SECTION_OVERVIEW = 'Overview';
 export const BUILD_SECTION_EXPORT = 'Export';
 export const BUILD_SECTION_WIRE_PREVIEW = 'Wire preview';
-export const BUILD_SECTION_AUDIT = 'Audit';
+export const BUILD_SECTION_ABOUT = 'About';
 
 export interface BuildNavOptions {
   /** Seeded egress rows — retain links appear when a matching hydration bag exists. */
@@ -91,7 +91,7 @@ export function buildSectionNavItems(build: RadioBuild): BuildSectionNavItem[] {
       icon: entityNavIcons.channels,
     },
     {
-      label: BUILD_SECTION_AUDIT,
+      label: BUILD_SECTION_ABOUT,
       section: 'audit',
       path: `${base}/characteristics`,
       icon: IconRadio,
@@ -179,7 +179,7 @@ export function buildWireEntityNavItems(
   return items;
 }
 
-/** mk2 Audit section — characteristics, export resolution, pathway retain viewers. */
+/** mk2 About section — characteristics, export resolution, pathway retain viewers. */
 export function buildAuditNavItems(
   build: RadioBuild,
   options?: BuildNavOptions,
@@ -305,7 +305,7 @@ export function activeBuildSectionLabel(pathname: string, buildId: string): stri
     case 'wire-preview':
       return BUILD_SECTION_WIRE_PREVIEW;
     case 'audit':
-      return BUILD_SECTION_AUDIT;
+      return BUILD_SECTION_ABOUT;
   }
 }
 
