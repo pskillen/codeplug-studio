@@ -13,11 +13,7 @@ import {
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
-import {
-  createNameColumn,
-  v1SortToV2,
-  v2SortToV1,
-} from '../../../lib/libraryListTable.ts';
+import { createNameColumn, v1SortToV2, v2SortToV1 } from '../../../lib/libraryListTable.tsx';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import {
   formatReferenceCount,
@@ -62,17 +58,14 @@ export default function ScanListsListPage() {
           formatReferenceCount(
             referenceCountFromIndex(referenceIndex, { kind: 'scanList', id: r.id }),
           ),
-        sortValue: (r) =>
-          referenceCountFromIndex(referenceIndex, { kind: 'scanList', id: r.id }),
+        sortValue: (r) => referenceCountFromIndex(referenceIndex, { kind: 'scanList', id: r.id }),
       },
       {
         key: 'actions',
         header: '',
         hideable: false,
         width: '40px',
-        render: (r) => (
-          <EntityListRowDeleteAction kind="scanList" entityId={r.id} label={r.name} />
-        ),
+        render: (r) => <EntityListRowDeleteAction kind="scanList" entityId={r.id} label={r.name} />,
       },
     ];
   }, [referenceIndex]);

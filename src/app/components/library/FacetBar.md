@@ -8,11 +8,11 @@ Pill chips and a two-way split toggle matching mk2 Batch 2 facet bars. Lives und
 
 ## Components
 
-| Export | Role |
-| --- | --- |
-| `FacetBar` | Horizontal chip row; optional `scrollable` for mobile |
-| `FacetChip` | Single filter chip with active state |
-| `SplitFilter` | Two-option toggle (e.g. Simplex / Split) |
+| Export        | Role                                                  |
+| ------------- | ----------------------------------------------------- |
+| `FacetBar`    | Horizontal chip row; optional `scrollable` for mobile |
+| `FacetChip`   | Single filter chip with active state                  |
+| `SplitFilter` | Two-option toggle (e.g. Simplex / Split)              |
 
 ## Usage
 
@@ -20,7 +20,14 @@ Pill chips and a two-way split toggle matching mk2 Batch 2 facet bars. Lives und
 <FacetBar scrollable>
   <FacetChip label="All bands" active onClick={() => setBand(null)} />
   <FacetChip label="2m" active={band === '2m'} onClick={() => setBand('2m')} />
-  <SplitFilter options={[{ value: 'simplex', label: 'Simplex' }, { value: 'split', label: 'Split' }]} value={duplex} onChange={setDuplex} />
+  <SplitFilter
+    options={[
+      { value: 'simplex', label: 'Simplex' },
+      { value: 'split', label: 'Split' },
+    ]}
+    value={duplex}
+    onChange={setDuplex}
+  />
 </FacetBar>
 ```
 

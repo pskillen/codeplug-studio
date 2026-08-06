@@ -8,11 +8,11 @@ Title + optional count/description subtitle + primary action cluster for Batch 2
 
 ## Props
 
-| Prop | Type | Notes |
-| --- | --- | --- |
-| `title` | `string` | Page heading |
+| Prop       | Type        | Notes                           |
+| ---------- | ----------- | ------------------------------- |
+| `title`    | `string`    | Page heading                    |
 | `subtitle` | `ReactNode` | Count line or short description |
-| `actions` | `ReactNode` | Primary/secondary buttons |
+| `actions`  | `ReactNode` | Primary/secondary buttons       |
 
 ## Usage
 

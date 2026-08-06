@@ -14,11 +14,7 @@ import {
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
-import {
-  createNameColumn,
-  v1SortToV2,
-  v2SortToV1,
-} from '../../../lib/libraryListTable.ts';
+import { createNameColumn, v1SortToV2, v2SortToV1 } from '../../../lib/libraryListTable.tsx';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { formatReferenceCount, referenceCount } from '../../../lib/listReferences.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
@@ -129,11 +125,7 @@ export default function TalkGroupsListPage() {
   return (
     <DesignSystemV2Provider>
       <div className={classes.page}>
-        <LibraryInventoryHeader
-          title="Talk groups"
-          subtitle={countLabel}
-          actions={listActions}
-        />
+        <LibraryInventoryHeader title="Talk groups" subtitle={countLabel} actions={listActions} />
 
         <DataTable
           columns={columns}

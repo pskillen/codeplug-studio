@@ -61,7 +61,7 @@ import {
   usePersistedColumnVisibility,
   v1SortToV2,
   v2SortToV1,
-} from '../../../lib/libraryListTable.ts';
+} from '../../../lib/libraryListTable.tsx';
 import { useProjects } from '../../../state/useProjects.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { useLibrary } from '../../../state/useLibrary.ts';

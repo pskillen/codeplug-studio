@@ -291,8 +291,10 @@ function ChannelBulkEditModalBody({
         }
       >
         <div className={classes.banner}>
-          <strong>{total} channel{total === 1 ? '' : 's'} selected.</strong> Enable only the fields
-          you want to change — blank fields keep current values.
+          <strong>
+            {total} channel{total === 1 ? '' : 's'} selected.
+          </strong>{' '}
+          Enable only the fields you want to change — blank fields keep current values.
         </div>
 
         <Stack gap="md">
@@ -441,7 +443,9 @@ function ChannelBulkEditModalBody({
             >
               <AnalogSquelchModeSegment
                 value={form.analogSquelchMode}
-                onChange={(analogSquelchMode) => setForm((prev) => ({ ...prev, analogSquelchMode }))}
+                onChange={(analogSquelchMode) =>
+                  setForm((prev) => ({ ...prev, analogSquelchMode }))
+                }
               />
             </fieldset>
             {form.changeAnalogSquelchMode && impact.analogSquelchMode ? (

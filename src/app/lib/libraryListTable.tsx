@@ -25,14 +25,7 @@ export interface NameColumnOptions<T> {
 }
 
 export function createNameColumn<T>(options: NameColumnOptions<T>): DataTableColumn<T> {
-  const {
-    getName,
-    getPath,
-    header = 'Name',
-    sortValue,
-    hideOnMobile,
-    render,
-  } = options;
+  const { getName, getPath, header = 'Name', sortValue, hideOnMobile, render } = options;
   return {
     key: DATATABLE_NAME_SORT_KEY,
     header,

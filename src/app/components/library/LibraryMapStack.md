@@ -8,12 +8,12 @@ Wraps list content and a `MapPanel` child in stacked or split layouts, with an o
 
 ## Props
 
-| Prop | Type | Notes |
-| --- | --- | --- |
-| `layout` | `'stacked' \| 'split'` | Split applies at desktop; narrow always stacks |
-| `list` | `ReactNode` | Table + facets above the map |
-| `map` | `ReactNode` | Usually `MapPanel` with `CodeplugMap` children |
-| `mobileMapToggle` | `boolean` | Default `true` — collapse map on mobile until toggled |
+| Prop              | Type                   | Notes                                                 |
+| ----------------- | ---------------------- | ----------------------------------------------------- |
+| `layout`          | `'stacked' \| 'split'` | Split applies at desktop; narrow always stacks        |
+| `list`            | `ReactNode`            | Table + facets above the map                          |
+| `map`             | `ReactNode`            | Usually `MapPanel` with `CodeplugMap` children        |
+| `mobileMapToggle` | `boolean`              | Default `true` — collapse map on mobile until toggled |
 
 ## Usage
 

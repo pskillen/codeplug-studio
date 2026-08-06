@@ -61,10 +61,7 @@ export function SplitFilter({ options, value, onChange, disabled }: SplitFilterP
         <button
           key={option.value}
           type="button"
-          className={[
-            classes.splitOption,
-            value === option.value ? classes.splitOptionActive : '',
-          ]
+          className={[classes.splitOption, value === option.value ? classes.splitOptionActive : '']
             .filter(Boolean)
             .join(' ')}
           disabled={disabled}

@@ -43,11 +43,7 @@ export default function LibraryMapStack({
       <div className={classes.listPane}>{list}</div>
       {isMobile && mobileMapToggle ? (
         <div className={classes.mapToggleRow}>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setMapVisible((prev) => !prev)}
-          >
+          <Button variant="secondary" size="sm" onClick={() => setMapVisible((prev) => !prev)}>
             {mapVisible ? 'Hide map' : 'Show map'}
           </Button>
         </div>

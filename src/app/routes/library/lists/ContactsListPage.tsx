@@ -28,7 +28,7 @@ import {
   usePersistedColumnVisibility,
   v1SortToV2,
   v2SortToV1,
-} from '../../../lib/libraryListTable.ts';
+} from '../../../lib/libraryListTable.tsx';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import {
   formatReferenceCount,
@@ -74,10 +74,7 @@ function DigitalContactsTable({
     ],
     [],
   );
-  const [visibleKeys, setVisibleKeys] = usePersistedColumnVisibility(
-    columnStorageKey,
-    columnDefs,
-  );
+  const [visibleKeys, setVisibleKeys] = usePersistedColumnVisibility(columnStorageKey, columnDefs);
 
   const columns = useMemo((): DataTableColumn<DigitalContact>[] => {
     return [
@@ -150,12 +147,7 @@ function DigitalContactsTable({
   return (
     <>
       <div className={classes.toolbarActions}>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={contacts.length === 0}
-          onClick={onDeleteAll}
-        >
+        <Button variant="ghost" size="sm" disabled={contacts.length === 0} onClick={onDeleteAll}>
           Delete all digital contacts
         </Button>
       </div>
@@ -315,11 +307,7 @@ export default function ContactsListPage() {
   return (
     <DesignSystemV2Provider>
       <div className={classes.page}>
-        <LibraryInventoryHeader
-          title="Contacts"
-          subtitle={countSubtitle}
-          actions={listActions}
-        />
+        <LibraryInventoryHeader title="Contacts" subtitle={countSubtitle} actions={listActions} />
 
         <Panel title={`Digital contacts (${digitalCount})`}>
           <DigitalContactsTable

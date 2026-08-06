@@ -4,10 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Zone } from '@core/models/library.ts';
 import { formatZoneDirectMemberSummary } from '@core/domain/zoneMembers.ts';
 import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
-import {
-  applyDenseZoneOrders,
-  sortZonesByExportOrder,
-} from '@core/domain/zoneOrder.ts';
+import { applyDenseZoneOrders, sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
 import { sortZonesByName } from '@core/domain/membershipSort.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
@@ -24,7 +21,7 @@ import {
   type DataTableColumn,
 } from '../../../components/v2/index.ts';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
-import { createNameColumn } from '../../../lib/libraryListTable.ts';
+import { createNameColumn } from '../../../lib/libraryListTable.tsx';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { persistence } from '../../../state/persistence.ts';
@@ -134,7 +131,7 @@ export default function ZonesListPage() {
             </div>
           );
         },
-        sortValue: (z) => z.memberChannelIds.length,
+        sortValue: (z) => z.members.length,
       },
       {
         key: 'comment',

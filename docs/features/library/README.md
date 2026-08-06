@@ -54,15 +54,15 @@ Shipped initiatives (mode profiles, membership order, zones revision-2, library 
 
 `/library` redirects to `/library/channels`. Each entity kind has a dedicated list page; section nav order matches `routes/library/nav.ts`:
 
-| List route                   | UI                                                                                                                                                | Map |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| `/library/channels`          | v2 `DataTable` — facet chips, selection bulk footer, `ModalShell` bulk edit, hideable columns, URL + `localStorage` filter prefs                  | Yes — stacked via `LibraryMapStack` |
-| `/library/channels/defaults` | Library-wide channel behavioural defaults (TX deny, TX permit, talker alias, analog squelch) — nested under Channels in section nav               | No  |
-| `/library/zones`             | v2 `DataTable` — `reorderMode` grip + `Zone.order`; Sort zones…; members, comment; split map via `LibraryMapStack`                                | Yes |
-| `/library/talk-groups`       | v2 `DataTable` — mode, ID, Abbrev, channels/RX lists using, comment, `RowActionIcon` delete                                                       | No  |
-| `/library/contacts`          | Dual v2 `DataTable` in `Panel`s: digital `scale="extreme"` + Delete all; analog thin list; RadioID import in header                               | No  |
-| `/library/rx-group-lists`    | v2 `DataTable` — members, channels using, row delete                                                                                              | No  |
-| `/library/scan-lists`        | v2 `DataTable` — members, channels-using ref count, row delete                                                                                    | No  |
+| List route                   | UI                                                                                                                                  | Map                                 |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `/library/channels`          | v2 `DataTable` — facet chips, selection bulk footer, `ModalShell` bulk edit, hideable columns, URL + `localStorage` filter prefs    | Yes — stacked via `LibraryMapStack` |
+| `/library/channels/defaults` | Library-wide channel behavioural defaults (TX deny, TX permit, talker alias, analog squelch) — nested under Channels in section nav | No                                  |
+| `/library/zones`             | v2 `DataTable` — `reorderMode` grip + `Zone.order`; Sort zones…; members, comment; split map via `LibraryMapStack`                  | Yes                                 |
+| `/library/talk-groups`       | v2 `DataTable` — mode, ID, Abbrev, channels/RX lists using, comment, `RowActionIcon` delete                                         | No                                  |
+| `/library/contacts`          | Dual v2 `DataTable` in `Panel`s: digital `scale="extreme"` + Delete all; analog thin list; RadioID import in header                 | No                                  |
+| `/library/rx-group-lists`    | v2 `DataTable` — members, channels using, row delete                                                                                | No                                  |
+| `/library/scan-lists`        | v2 `DataTable` — members, channels-using ref count, row delete                                                                      | No                                  |
 
 Shared L1 chrome: `LibraryInventoryHeader`, optional `FacetBar` (channels), `LibraryMapStack` (C7 map+list). List tables use `components/v2/DataTable` — see [design-system-v2](../design-system-v2/README.md) ([#940](https://github.com/pskillen/codeplug-studio/issues/940)).
 

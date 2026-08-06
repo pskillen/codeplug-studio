@@ -1,11 +1,7 @@
 import { Slider, Stack, Text } from '@mantine/core';
 import { useMemo } from 'react';
 import { DISTANCE_FILTER_MARKS_KM } from '../../lib/channels.ts';
-import {
-  ALL_BANDS,
-  bandsFromFrequencies,
-  type BandDefinition,
-} from '../../lib/bands.ts';
+import { ALL_BANDS, bandsFromFrequencies, type BandDefinition } from '../../lib/bands.ts';
 import { modeFilterOptions, modeLabel, type ChannelMode } from '../../lib/channelModes.ts';
 import { useChannelListQuery } from '../../hooks/useChannelListQuery.ts';
 import { useFilteredChannels } from '../../hooks/useChannelListFilters.ts';
