@@ -1,4 +1,3 @@
-import { portableSyncedAt } from '@core/services/interchangeMeta.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import type { StatusDotTone } from '../components/v2/StatusDot.tsx';
 
@@ -47,7 +46,7 @@ export function useProjectChipStatus({
     return { tone: 'warning', label: 'Google Drive disconnected' };
   }
 
-  if (dirty || !portableSyncedAt(project)) {
+  if (dirty) {
     return { tone: 'neutral', label: 'Unsaved changes' };
   }
 

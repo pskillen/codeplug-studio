@@ -4,6 +4,7 @@ import { useMemo, type ReactNode } from 'react';
 import { portableSyncedAt } from '@core/services/interchangeMeta.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
+import { DSV2_SCOPE_SELECTOR } from '../../theme-v2.ts';
 import Button from '../v2/Button.tsx';
 import classes from './QuickProjectSwitcher.module.css';
 
@@ -144,6 +145,7 @@ export default function QuickProjectSwitcher({
       offset={8}
       width={320}
       withinPortal
+      portalProps={{ target: DSV2_SCOPE_SELECTOR }}
     >
       <Popover.Target>{children}</Popover.Target>
       <Popover.Dropdown className={classes.panel} p={0}>

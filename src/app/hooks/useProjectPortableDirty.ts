@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { portableSyncedAt } from '@core/services/interchangeMeta.ts';
-import { summariseProjectSeed } from '@core/services/projectSyncSummary.ts';
+import { isProjectPortableDirtyFromSeed } from '@core/services/projectSyncSummary.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { persistence } from '../state/persistence.ts';
 
@@ -8,6 +8,12 @@ export interface UseProjectPortableDirtyResult {
   dirty: boolean;
   hasPortableDestination: boolean;
   refresh: () => Promise<void>;
+}
+
+async function evaluatePortableDirty(projectId: string): Promise<boolean> {
+  const seed = await persistence.loadProjectSeed(projectId);
+  if (!seed) return false;
+  return isProjectPortableDirtyFromSeed(seed);
 }
 
 export function useProjectPortableDirty(
@@ -18,43 +24,28 @@ export function useProjectPortableDirty(
   const syncedAt = meta ? portableSyncedAt(meta) : null;
   const hasPortableDestination = Boolean(syncedAt);
 
-  async function refresh() {
-    if (!projectId || !meta || !syncedAt) {
+  const refresh = useCallback(async () => {
+    if (!projectId || !syncedAt) {
       setDirty(false);
       return;
     }
-    const seed = await persistence.loadProjectSeed(projectId);
-    if (!seed) {
-      setDirty(false);
-      return;
-    }
-    const summary = summariseProjectSeed(seed);
-    const lastModifiedAt = summary.lastModifiedAt;
-    setDirty(Boolean(lastModifiedAt && lastModifiedAt > syncedAt));
-  }
+    setDirty(await evaluatePortableDirty(projectId));
+  }, [projectId, syncedAt]);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      if (!projectId || !meta || !syncedAt) {
+      if (!projectId || !syncedAt) {
         if (!cancelled) setDirty(false);
         return;
       }
-      const seed = await persistence.loadProjectSeed(projectId);
-      if (cancelled || !seed) {
-        if (!cancelled) setDirty(false);
-        return;
-      }
-      const summary = summariseProjectSeed(seed);
-      const lastModifiedAt = summary.lastModifiedAt;
-      if (!cancelled) {
-        setDirty(Boolean(lastModifiedAt && lastModifiedAt > syncedAt));
-      }
+      const nextDirty = await evaluatePortableDirty(projectId);
+      if (!cancelled) setDirty(nextDirty);
     })();
     return () => {
       cancelled = true;
     };
-  }, [meta, projectId, syncedAt]);
+  }, [projectId, syncedAt]);
 
   useEffect(() => {
     if (!projectId) return;
@@ -63,7 +54,7 @@ export function useProjectPortableDirty(
         void refresh();
       }
     });
-  }, [projectId, meta, syncedAt]);
+  }, [projectId, refresh]);
 
   return { dirty, hasPortableDestination, refresh };
 }
