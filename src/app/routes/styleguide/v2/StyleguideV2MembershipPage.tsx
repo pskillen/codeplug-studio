@@ -1,3 +1,5 @@
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
@@ -8,11 +10,66 @@ import {
   MembershipPoolRow,
   MembershipRow,
 } from '../../../components/v2/index.ts';
+import {
+  DataTableBulkReorderProvider,
+  DataTableBulkReorderSortable,
+} from '../../../lib/dataTable/DataTableBulkReorder.tsx';
 
 interface DemoMember {
   id: string;
   label: string;
   subtitle: string;
+}
+
+/**
+ * Demo-local wiring showing how a real consumer (#941–#943) drives
+ * MembershipRow's drag handle: MembershipRow itself takes `dragHandleProps`
+ * as an externally-supplied prop (same pattern as ShuttleRow), so the actual
+ * dnd-kit `useSortable` call belongs to whatever list shell wraps it — here,
+ * the styleguide page itself. Reuses the same generic
+ * DataTableBulkReorderProvider/Sortable + useSortable pattern DataTable v2
+ * uses, rather than inventing a second drag mechanism.
+ */
+function SortableMembershipRow({
+  member,
+  checked,
+  onCheck,
+  onRemove,
+}: {
+  member: DemoMember;
+  checked?: boolean;
+  onCheck?: () => void;
+  onRemove?: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: member.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.65 : undefined,
+      }}
+    >
+      <MembershipRow
+        label={member.label}
+        subtitle={member.subtitle}
+        checked={checked}
+        onCheck={onCheck}
+        onRemove={onRemove}
+        dragHandleProps={{ setActivatorNodeRef, attributes, listeners, disabled: false }}
+      />
+    </div>
+  );
 }
 
 const INITIAL_MEMBERS: DemoMember[] = [
@@ -120,16 +177,31 @@ export default function StyleguideV2MembershipPage() {
           onBulkRemove={() => setSelected([])}
           onClearSelection={() => setSelected([])}
         >
-          {filtered.map((member) => (
-            <MembershipRow
-              key={member.id}
-              label={member.label}
-              subtitle={member.subtitle}
-              checked={selected.includes(member.id)}
-              onCheck={() => toggle(member.id)}
-              onRemove={() => setMembers((prev) => prev.filter((m) => m.id !== member.id))}
-            />
-          ))}
+          <DataTableBulkReorderProvider
+            sortableKeys={search ? [] : members.map((m) => m.id)}
+            orderedKeys={members.map((m) => m.id)}
+            selectedKeys={selected}
+            disabled={!!search}
+            onSetOrder={(nextKeys) => {
+              const byId = new Map(members.map((m) => [m.id, m]));
+              setMembers(nextKeys.map((id) => byId.get(id)!));
+            }}
+          >
+            <DataTableBulkReorderSortable
+              sortableKeys={search ? [] : members.map((m) => m.id)}
+              disabled={!!search}
+            >
+              {filtered.map((member) => (
+                <SortableMembershipRow
+                  key={member.id}
+                  member={member}
+                  checked={selected.includes(member.id)}
+                  onCheck={() => toggle(member.id)}
+                  onRemove={() => setMembers((prev) => prev.filter((m) => m.id !== member.id))}
+                />
+              ))}
+            </DataTableBulkReorderSortable>
+          </DataTableBulkReorderProvider>
         </MembershipPanel>
       </PageSection>
 
@@ -151,9 +223,21 @@ export default function StyleguideV2MembershipPage() {
         description="onAdd omitted: no Add button, no pool affordance — the build's zone-member-order shape."
       >
         <MembershipPanel title="Wire order">
-          {members.map((member) => (
-            <MembershipRow key={member.id} label={member.label} subtitle={member.subtitle} />
-          ))}
+          <DataTableBulkReorderProvider
+            sortableKeys={members.map((m) => m.id)}
+            orderedKeys={members.map((m) => m.id)}
+            selectedKeys={[]}
+            onSetOrder={(nextKeys) => {
+              const byId = new Map(members.map((m) => [m.id, m]));
+              setMembers(nextKeys.map((id) => byId.get(id)!));
+            }}
+          >
+            <DataTableBulkReorderSortable sortableKeys={members.map((m) => m.id)}>
+              {members.map((member) => (
+                <SortableMembershipRow key={member.id} member={member} />
+              ))}
+            </DataTableBulkReorderSortable>
+          </DataTableBulkReorderProvider>
         </MembershipPanel>
       </PageSection>
 

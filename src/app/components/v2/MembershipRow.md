@@ -41,6 +41,7 @@ import { DesignSystemV2Provider, MembershipRow } from '@app/components/v2';
 
 - Must render inside `DesignSystemV2Provider`.
 - Checkbox and remove action are both **implicit by prop presence** — omit `onCheck`/`onRemove` to hide them, rather than a separate boolean flag. This is how the reorder-only, no-selection variant (build's zone member order) composes without a `mode` prop.
+- `dragHandleProps` is externally supplied, not self-managed — `MembershipRow` renders whatever `setActivatorNodeRef`/`attributes`/`listeners` it's given (or a static, non-interactive icon when omitted) but never calls `useSortable` itself. The consumer's list shell owns the `DndContext`/`useSortable` wiring, same pattern as `ShuttleRow`. The styleguide demo (`StyleguideV2MembershipPage.tsx`) shows the reference wiring via `DataTableBulkReorderProvider`/`Sortable`; real editor call sites (#941–#943) will need the same.
 - Live demos: `/styleguide/v2/membership`
 
 ## Related

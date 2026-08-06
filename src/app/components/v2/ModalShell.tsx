@@ -1,6 +1,7 @@
 import { CloseButton, Modal, ScrollArea } from '@mantine/core';
 import type { ReactNode } from 'react';
 import { ICON_SIZE_ACTION } from '../../lib/iconSizes.ts';
+import { DSV2_SCOPE_SELECTOR } from '../../theme-v2.ts';
 import classes from './ModalShell.module.css';
 
 export type ModalShellSize = 'sm' | 'md' | 'lg';
@@ -126,6 +127,7 @@ export default function ModalShell({
       padding={0}
       centered
       className={classes.modalRoot}
+      portalProps={{ target: DSV2_SCOPE_SELECTOR }}
     >
       {panel}
     </Modal>

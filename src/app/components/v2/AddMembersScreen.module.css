@@ -1,10 +1,42 @@
-.root {
+.overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
   display: flex;
   flex-direction: column;
+}
+
+.panel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
   background: var(--dsv2-bg);
+}
+
+/**
+ * Desktop (≥48em, matching DESKTOP_MIN_WIDTH_MEDIA_QUERY): a centered modal
+ * over a dimmed backdrop, not a full-bleed takeover — full-screen stays the
+ * mobile/tablet treatment only.
+ */
+@media (min-width: 48em) {
+  .overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    background: rgba(6, 9, 13, 0.7);
+  }
+
+  .panel {
+    flex: none;
+    width: 100%;
+    max-width: 720px;
+    max-height: 85vh;
+    border: 1px solid var(--dsv2-border);
+    border-radius: var(--dsv2-radius-panel);
+    box-shadow: var(--dsv2-shadow-popover);
+    overflow: hidden;
+  }
 }
 
 .header {

@@ -33,9 +33,11 @@ export interface AddMembersScreenProps {
 }
 
 /**
- * Full-screen picker takeover — the pool ("B") side of the Membership family.
- * A members-first list (MembershipPanel) triggers this via `onAdd`; staged
- * selections commit back to the member list via `onCommit`.
+ * Full-screen picker takeover on mobile/tablet, a centered modal on desktop
+ * (≥48em, matching the app's existing desktop breakpoint) — the pool ("B")
+ * side of the Membership family. A members-first list (MembershipPanel)
+ * triggers this via `onAdd`; staged selections commit back to the member
+ * list via `onCommit`.
  */
 export default function AddMembersScreen({
   open,
@@ -53,63 +55,65 @@ export default function AddMembersScreen({
   if (!open) return null;
 
   return (
-    <div
-      className={[classes.root, className].filter(Boolean).join(' ')}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className={classes.header}>
-        <div className={classes.title}>{title}</div>
-        <button type="button" className={classes.close} aria-label="Close" onClick={onCancel}>
-          <IconX size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
-        </button>
-      </div>
-
-      {sections.length > 1 ? (
-        <div className={classes.tabs} role="tablist">
-          {sections.map((section) => (
-            <button
-              key={section.id}
-              type="button"
-              role="tab"
-              aria-selected={section.id === activeSectionId}
-              className={[classes.tab, section.id === activeSectionId ? classes.tabActive : '']
-                .filter(Boolean)
-                .join(' ')}
-              onClick={() => onSectionChange?.(section.id)}
-            >
-              {section.label}
-              {section.count != null ? (
-                <span className={classes.tabCount}>{section.count}</span>
-              ) : null}
-            </button>
-          ))}
+    <div className={classes.overlay}>
+      <div
+        className={[classes.panel, className].filter(Boolean).join(' ')}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className={classes.header}>
+          <div className={classes.title}>{title}</div>
+          <button type="button" className={classes.close} aria-label="Close" onClick={onCancel}>
+            <IconX size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
+          </button>
         </div>
-      ) : null}
 
-      {search ? (
-        <div className={classes.search}>
-          <IconSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} aria-hidden />
-          <input
-            type="text"
-            value={search.value}
-            onChange={(event) => search.onChange(event.currentTarget.value)}
-            placeholder={search.placeholder ?? 'Find…'}
-            aria-label="Find candidates"
-            className={classes.searchInput}
-          />
+        {sections.length > 1 ? (
+          <div className={classes.tabs} role="tablist">
+            {sections.map((section) => (
+              <button
+                key={section.id}
+                type="button"
+                role="tab"
+                aria-selected={section.id === activeSectionId}
+                className={[classes.tab, section.id === activeSectionId ? classes.tabActive : '']
+                  .filter(Boolean)
+                  .join(' ')}
+                onClick={() => onSectionChange?.(section.id)}
+              >
+                {section.label}
+                {section.count != null ? (
+                  <span className={classes.tabCount}>{section.count}</span>
+                ) : null}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {search ? (
+          <div className={classes.search}>
+            <IconSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} aria-hidden />
+            <input
+              type="text"
+              value={search.value}
+              onChange={(event) => search.onChange(event.currentTarget.value)}
+              placeholder={search.placeholder ?? 'Find…'}
+              aria-label="Find candidates"
+              className={classes.searchInput}
+            />
+          </div>
+        ) : null}
+
+        <div className={classes.body}>{children}</div>
+
+        <div className={classes.footer}>
+          <Button variant="secondary" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button variant="primary" size="sm" onClick={onCommit} disabled={totalStaged === 0}>
+            Add selected ({totalStaged})
+          </Button>
         </div>
-      ) : null}
-
-      <div className={classes.body}>{children}</div>
-
-      <div className={classes.footer}>
-        <Button variant="secondary" size="sm" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button variant="primary" size="sm" onClick={onCommit} disabled={totalStaged === 0}>
-          Add selected ({totalStaged})
-        </Button>
       </div>
     </div>
   );
