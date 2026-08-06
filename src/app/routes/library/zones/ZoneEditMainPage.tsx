@@ -1,13 +1,21 @@
-import { Link, useNavigate } from 'react-router-dom';
-import ZoneMemberEditor from '../../../components/library/ZoneMemberEditor.tsx';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import ZoneMemberEditor, { ZoneMemberAddOverlay } from '../../../components/library/ZoneMemberEditor.tsx';
 import EntityDeleteButton from '../../../components/library/EntityDeleteButton.tsx';
-import { Button, FormField, Panel, TextInput, ToggleSwitch } from '../../../components/v2/index.ts';
+import { FormField, Panel, TextInput, ToggleSwitch } from '../../../components/v2/index.ts';
 import { useZoneEdit } from './ZoneEditContext.tsx';
 import ZoneMapSection from './ZoneMapSection.tsx';
 import classes from './ZoneEditLayout.module.css';
+import workspaceClasses from './ZoneEditWorkspace.module.css';
+
+const SCANNING_DESCRIPTION =
+  'How members are scanned depends on the target radio. Some radios scan a list Studio projects from this membership — the control below decides each channel\'s inclusion in that projected list. Others treat the zone itself as the scan list, where this setting has no effect.';
 
 export default function ZoneEditMainPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [addOpen, setAddOpen] = useState(false);
+  const scanningRef = useRef<HTMLDivElement>(null);
   const {
     entity,
     library,
@@ -21,6 +29,21 @@ export default function ZoneEditMainPage() {
     setMembers,
     setMapFilters,
   } = useZoneEdit();
+
+  useEffect(() => {
+    if (searchParams.get('add') === 'members') {
+      setAddOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete('add');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (window.location.hash === '#scanning') {
+      scanningRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
 
   return (
     <>
@@ -61,45 +84,60 @@ export default function ZoneEditMainPage() {
         </div>
       </Panel>
 
-      <Panel
-        title="Members"
-        sub="Reorder export order here. Add channels or configure scanning on dedicated screens."
-      >
-        <ZoneMemberEditor
-          channels={library.channels}
-          zones={library.zones}
-          editingZoneId={entity.id}
-          members={members}
-          onChange={setMembers}
-          onMapFiltersChange={setMapFilters}
-          mode="reorder"
-        />
-        {library.channels.length === 0 ? (
-          <Link to="/library/channels/new">Add a channel</Link>
-        ) : null}
-      </Panel>
-
-      <Panel title="Add channels">
-        <div className={classes.actionRow}>
-          <Button variant="secondary" onClick={() => navigate(`/library/zones/${entity.id}/add`)}>
-            Add from channel list
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => navigate(`/library/zones/${entity.id}/add-from-map`)}
-          >
-            Add from map
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => navigate(`/library/zones/${entity.id}/scanning`)}
-          >
-            Configure zone scanning
-          </Button>
+      <div className={workspaceClasses.workspace}>
+        <div className={workspaceClasses.membersColumn}>
+          <ZoneMemberEditor
+            channels={library.channels}
+            zones={library.zones}
+            editingZoneId={entity.id}
+            members={members}
+            onChange={setMembers}
+            onMapFiltersChange={setMapFilters}
+            mode="members"
+            onAdd={() => setAddOpen(true)}
+          />
+          {library.channels.length === 0 ? (
+            <Link to="/library/channels/new">Add a channel</Link>
+          ) : null}
         </div>
-      </Panel>
+        <div className={workspaceClasses.mapColumn}>
+          <ZoneMapSection title="Coverage" />
+        </div>
+      </div>
 
-      <ZoneMapSection />
+      <div
+        ref={scanningRef}
+        id="scanning"
+        className={workspaceClasses.scanningSection}
+      >
+        <Panel title="Scanning behaviour" description={SCANNING_DESCRIPTION}>
+          <ZoneMemberEditor
+            channels={library.channels}
+            zones={library.zones}
+            editingZoneId={entity.id}
+            members={members}
+            onChange={setMembers}
+            mode="scanning"
+          />
+        </Panel>
+      </div>
+
+      <p className={classes.hint}>
+        <Link to={`/library/zones/${entity.id}/add-from-map`}>Add from map</Link> — grow membership
+        from geographic suggestions (#943).
+      </p>
+
+      <ZoneMemberAddOverlay
+        open={addOpen}
+        zoneName={name.trim() || 'Untitled zone'}
+        onCancel={() => setAddOpen(false)}
+        onCommit={() => setAddOpen(false)}
+        channels={library.channels}
+        zones={library.zones}
+        editingZoneId={entity.id}
+        members={members}
+        onChange={setMembers}
+      />
     </>
   );
 }

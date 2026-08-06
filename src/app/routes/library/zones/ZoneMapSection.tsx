@@ -5,7 +5,13 @@ import { MapPanel } from '../../../components/v2/index.ts';
 import { useZoneEdit } from './ZoneEditContext.tsx';
 import { useZoneEditMap } from './useZoneEditMap.ts';
 
-export default function ZoneMapSection({ height = 360 }: { height?: number }) {
+export default function ZoneMapSection({
+  height = 360,
+  title = 'Map',
+}: {
+  height?: number;
+  title?: string;
+}) {
   const navigate = useNavigate();
   const { library, previewZone, mapFilters } = useZoneEdit();
   const { channelsForMap, zonesForMap, fitBoundsChannelIds, dimmedChannelIds, mapSkipped } =
@@ -13,7 +19,7 @@ export default function ZoneMapSection({ height = 360 }: { height?: number }) {
 
   return (
     <MapPanel
-      title="Map"
+      title={title}
       height={height}
       legend={
         mapSkipped.length > 0 ? (

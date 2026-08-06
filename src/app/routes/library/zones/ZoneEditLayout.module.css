@@ -1,6 +1,28 @@
 .root {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  min-height: 100%;
   margin: calc(-1 * var(--mantine-spacing-md));
+  position: relative;
+}
+
+.loading {
+  padding: 24px var(--dsv2-page-padding-x);
+  color: var(--dsv2-text-tertiary);
+}
+
+.scrollBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px var(--dsv2-page-padding-x) 84px;
+  min-width: 0;
+  max-width: 1200px;
+}
+
+.scrollBodyCompact {
+  padding: 0 16px 76px;
 }
 
 .stickyHeader {
@@ -62,6 +84,20 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+/* Legacy create editor scroll area */
+.createScrollBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px var(--dsv2-page-padding-x) 84px;
+  min-width: 0;
+  max-width: 1200px;
+}
+
+.createScrollBodyCompact {
+  padding: 0 16px 76px;
 }
 
 .error {
