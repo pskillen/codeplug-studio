@@ -8,6 +8,7 @@ import {
   Button,
   CountTile,
   DataTable as DataTableV2,
+  EmptyState,
   MapPanel,
   Panel,
   Pill,
@@ -275,6 +276,24 @@ export default function StyleguideV2DataDisplayPage() {
             },
           ]}
         />
+      </PageSection>
+
+      <PageSection
+        title="EmptyState"
+        description="Icon badge + title + description + optional action; compact variant for denser contexts."
+      >
+        <Stack gap="lg">
+          <EmptyState
+            title="No channels yet"
+            description="Add channels from a directory or a CPS import."
+            action={
+              <Button variant="secondary" size="sm" onClick={() => undefined}>
+                Add from…
+              </Button>
+            }
+          />
+          <EmptyState title="No matches" compact />
+        </Stack>
       </PageSection>
 
       <PageSection
