@@ -13,7 +13,7 @@ Matches the design-system Library strip (Channels / Zones / …). Solid accent f
 | `items`    | `readonly string[]`      | Pill labels                                           |
 | `active`   | `string`                 | Selected label                                        |
 | `onChange` | `(item: string) => void` | Selection handler                                     |
-| `leading`  | `ReactNode`              | Optional leading control (e.g. compact BuildSwitcher) |
+| `trailing` | `ReactNode`              | Optional trailing control after tabs (e.g. build chip) |
 
 ## Usage
 
