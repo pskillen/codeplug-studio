@@ -2,9 +2,11 @@ import { useState } from 'react';
 import type { AprsChannelSlot } from '@core/models/aprs.ts';
 import type { AprsSlotCallType, DMRTimeSlot } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
-import { Button, Group, Modal, NumberInput, Select, SimpleGrid, Stack } from '@mantine/core';
+import { NumberInput, Select, SimpleGrid, Stack } from '@mantine/core';
+import { IconAntenna } from '@tabler/icons-react';
 import { aprsSlotChannelSelectGroups } from '../../lib/aprsBindingHelpers.ts';
 import { modalComboboxProps } from '../../theme.ts';
+import { Button, ModalShell } from '../v2/index.ts';
 
 export { channelLabelForSlot } from '../../lib/aprsBindingHelpers.ts';
 
@@ -58,7 +60,14 @@ export default function AprsChannelSlotModal({
     : 'closed';
 
   return (
-    <Modal opened={opened} onClose={onClose} title={title} centered>
+    <ModalShell
+      open={opened}
+      onClose={onClose}
+      title={title}
+      icon={<IconAntenna size={20} stroke={1.75} />}
+      iconTone="accent"
+      size="sm"
+    >
       {opened ? (
         <AprsChannelSlotForm
           key={formKey}
@@ -68,7 +77,7 @@ export default function AprsChannelSlotModal({
           onSave={onSave}
         />
       ) : null}
-    </Modal>
+    </ModalShell>
   );
 }
 
@@ -121,8 +130,6 @@ function AprsChannelSlotForm({
             })
           }
         />
-      </SimpleGrid>
-      <SimpleGrid cols={{ base: 1, sm: 2 }}>
         <NumberInput
           label="Target DMR ID"
           value={draft.targetDmrId ?? ''}
@@ -141,12 +148,16 @@ function AprsChannelSlotForm({
           }
         />
       </SimpleGrid>
-      <Group justify="flex-end">
-        <Button variant="default" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button onClick={handleSave}>Save slot</Button>
-      </Group>
+      <Stack gap="sm" align="flex-end">
+        <div style={{ display: 'flex', gap: 'var(--mantine-spacing-sm)' }}>
+          <Button variant="secondary" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" size="sm" onClick={handleSave}>
+            Save slot
+          </Button>
+        </div>
+      </Stack>
     </Stack>
   );
 }

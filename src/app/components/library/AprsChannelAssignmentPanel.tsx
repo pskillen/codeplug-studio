@@ -14,10 +14,8 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  TextInput,
 } from '@mantine/core';
-import { GradientSegmentedControl } from '../ui/index.ts';
-import { Button, DataTable, type DataTableColumn, type DataTableSortState } from '../v2/index.ts';
+import { Button, DataTable, Panel, SearchInput, SegmentedControl, type DataTableColumn, type DataTableSortState } from '../v2/index.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
 import { createNameColumn } from '../../lib/libraryListTable.tsx';
 import {
@@ -417,11 +415,11 @@ function AprsChannelAssignmentPanelInner({
   }, [modeFilter]);
 
   return (
-    <Stack gap="md">
-      <Text size="sm" c="dimmed">
-        Assign digital APRS bindings per channel. Use the channel-type filter to include analog
-        channels when needed.
-      </Text>
+    <Panel
+      title="Channel assignment"
+      sub="Assign digital APRS bindings per channel. Use the channel-type filter to include analog channels when needed."
+    >
+      <Stack gap="md">
       <SimpleGrid cols={{ base: 1, xs: 2, sm: 4 }} spacing="sm">
         <MultiSelect
           label="Band"
@@ -470,25 +468,29 @@ function AprsChannelAssignmentPanelInner({
           onChange={(value) => setReceiveFilter(value ?? 'all')}
         />
       </SimpleGrid>
-      <Group align="flex-end" gap="md" wrap="nowrap">
-        <GradientSegmentedControl
-          label="Channel type"
-          value={modeFilter}
-          onChange={(value) => setModeFilter(value as AprsAssignmentModeFilter)}
-          data={[
-            { value: 'digital', label: 'Digital' },
-            { value: 'analog', label: 'Analog' },
-            { value: 'both', label: 'Both' },
-          ]}
-          scheme="three"
-        />
-        <TextInput
-          label="Search"
-          placeholder="Filter by name or callsign"
-          value={search}
-          onChange={(event) => setSearch(event.currentTarget.value)}
-          style={{ flex: 1, minWidth: 0 }}
-        />
+      <Group align="flex-end" gap="md" wrap="wrap">
+        <div>
+          <Text size="xs" c="dimmed" mb={4}>
+            Channel type
+          </Text>
+          <SegmentedControl
+            value={modeFilter}
+            onChange={(value) => setModeFilter(value as AprsAssignmentModeFilter)}
+            options={[
+              { value: 'digital', label: 'Digital' },
+              { value: 'analog', label: 'Analog' },
+              { value: 'both', label: 'Both' },
+            ]}
+          />
+        </div>
+        <div style={{ flex: 1, minWidth: '12rem' }}>
+          <SearchInput
+            value={search}
+            onChange={(event) => setSearch(event.currentTarget.value)}
+            placeholder="Filter by name or callsign"
+            aria-label="Filter channels"
+          />
+        </div>
       </Group>
       <DataTable
         variant="embedded"
@@ -506,6 +508,16 @@ function AprsChannelAssignmentPanelInner({
         onSelectionChange={setSelectedKeys}
         emptyMessage={emptyStateMessage}
         filteredEmptyMessage={emptyStateMessage}
+        bulkActions={
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={selectedKeys.length === 0}
+            onClick={() => setBulkOpen(true)}
+          >
+            Assign slot to selected…
+          </Button>
+        }
       />
       <Group>
         <Button
@@ -524,14 +536,6 @@ function AprsChannelAssignmentPanelInner({
         >
           Select none
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={selectedKeys.length === 0}
-          onClick={() => setBulkOpen(true)}
-        >
-          Bulk set…
-        </Button>
         <Button variant="primary" size="sm" loading={saving} onClick={() => void handleSave()}>
           Save assignments
         </Button>
@@ -547,5 +551,6 @@ function AprsChannelAssignmentPanelInner({
         onApply={handleBulkApply}
       />
     </Stack>
+    </Panel>
   );
 }
