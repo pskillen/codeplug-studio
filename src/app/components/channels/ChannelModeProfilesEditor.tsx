@@ -22,7 +22,7 @@ import type {
 } from '@core/models/library.ts';
 import { isAnalogChannelModeProfile, isModeOnlyStub } from '@core/domain/modeProfiles.ts';
 import ModePill from '../pills/ModePill.tsx';
-import { PercentLevelSlider, PillTabs } from '../ui/index.ts';
+import { PercentLevelSlider } from '../ui/index.ts';
 import RxGroupListSummary from '../library/RxGroupListSummary.tsx';
 import AnalogSquelchModeSegment from './AnalogSquelchModeSegment.tsx';
 import SendTalkerAliasSegment from './SendTalkerAliasSegment.tsx';
@@ -33,6 +33,7 @@ import {
   type ChannelTimeslot,
 } from '../../lib/channelFields/index.ts';
 import { isDmrMode, modeLabel } from '../../lib/channelModes.ts';
+import classes from './ChannelModeProfilesEditor.module.css';
 
 const bandwidthSelectData = [
   { value: '', label: '—' },
@@ -66,66 +67,69 @@ export default function ChannelModeProfilesEditor({
     );
   };
 
+  if (profiles.length === 0) {
+    return (
+      <p className={classes.empty}>Select at least one mode above to configure mode-specific settings.</p>
+    );
+  }
+
   return (
-    <PillTabs
-      items={profiles.map((profile, index) => ({
-        value: profile.mode,
-        leading: <ModePill mode={profile.mode} size="xs" />,
-        label: modeLabel(profile.mode),
-        panel: (
-          <Stack gap="sm">
-            {isAnalogChannelModeProfile(profile) ? (
-              <AnalogPanel profile={profile} onPatch={(patch) => updateProfile(index, patch)} />
-            ) : null}
-            {isDmrMode(profile.mode) ? (
-              <DmrPanel
-                profile={profile as ChannelModeProfileDMR}
-                library={library}
-                rxFrequency={rxFrequency}
-                txFrequency={txFrequency}
-                onPatch={(patch) => updateProfile(index, patch)}
-              />
-            ) : null}
-            {profile.mode === 'dstar' ? (
-              <DstarPanel
-                profile={profile as ChannelModeProfileDstar}
-                onPatch={(patch) => updateProfile(index, patch)}
-              />
-            ) : null}
-            {profile.mode === 'ysf' ? (
-              <YsfPanel
-                profile={profile as ChannelModeProfileYsf}
-                onPatch={(patch) => updateProfile(index, patch)}
-              />
-            ) : null}
-            {profile.mode === 'nxdn' ? (
-              <NxdnPanel
-                profile={profile as ChannelModeProfileNxdn}
-                library={library}
-                onPatch={(patch) => updateProfile(index, patch)}
-              />
-            ) : null}
-            {profile.mode === 'tetra' ? (
-              <TetraPanel
-                profile={profile as ChannelModeProfileTetra}
-                library={library}
-                onPatch={(patch) => updateProfile(index, patch)}
-              />
-            ) : null}
-            {isModeOnlyStub(profile) ? (
-              <Text size="sm" c="dimmed">
-                No additional fields for this mode yet.
-              </Text>
-            ) : null}
-          </Stack>
-        ),
-      }))}
-      emptyState={
-        <Text size="sm" c="dimmed">
-          Select at least one mode above to configure mode-specific settings.
-        </Text>
-      }
-    />
+    <Stack gap={0}>
+      {profiles.map((profile, index) => (
+        <div
+          key={profile.mode}
+          className={index > 0 ? classes.stackedBlock : classes.firstBlock}
+        >
+          <div className={classes.modeHeader}>
+            <ModePill mode={profile.mode} size="xs" />
+            <span className={classes.modeTitle}>{modeLabel(profile.mode)} settings</span>
+          </div>
+          {isAnalogChannelModeProfile(profile) ? (
+            <AnalogPanel profile={profile} onPatch={(patch) => updateProfile(index, patch)} />
+          ) : null}
+          {isDmrMode(profile.mode) ? (
+            <DmrPanel
+              profile={profile as ChannelModeProfileDMR}
+              library={library}
+              rxFrequency={rxFrequency}
+              txFrequency={txFrequency}
+              onPatch={(patch) => updateProfile(index, patch)}
+            />
+          ) : null}
+          {profile.mode === 'dstar' ? (
+            <DstarPanel
+              profile={profile as ChannelModeProfileDstar}
+              onPatch={(patch) => updateProfile(index, patch)}
+            />
+          ) : null}
+          {profile.mode === 'ysf' ? (
+            <YsfPanel
+              profile={profile as ChannelModeProfileYsf}
+              onPatch={(patch) => updateProfile(index, patch)}
+            />
+          ) : null}
+          {profile.mode === 'nxdn' ? (
+            <NxdnPanel
+              profile={profile as ChannelModeProfileNxdn}
+              library={library}
+              onPatch={(patch) => updateProfile(index, patch)}
+            />
+          ) : null}
+          {profile.mode === 'tetra' ? (
+            <TetraPanel
+              profile={profile as ChannelModeProfileTetra}
+              library={library}
+              onPatch={(patch) => updateProfile(index, patch)}
+            />
+          ) : null}
+          {isModeOnlyStub(profile) ? (
+            <Text size="sm" c="dimmed">
+              No additional fields for this mode yet.
+            </Text>
+          ) : null}
+        </div>
+      ))}
+    </Stack>
   );
 }
 

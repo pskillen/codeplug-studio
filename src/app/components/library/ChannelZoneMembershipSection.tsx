@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Button, Group, Stack, Text } from '@mantine/core';
+import { Alert, Group, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import type { Library } from '@core/models/library.ts';
 import {
@@ -10,7 +10,9 @@ import {
 import { validateZoneMembership } from '@core/domain/validation.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
+import { Pill } from '../v2/index.ts';
 import ZoneSelect from './ZoneSelect.tsx';
+import classes from './ChannelZoneMembershipSection.module.css';
 
 export interface ChannelZoneMembershipSectionProps {
   channelId: string;
@@ -97,52 +99,38 @@ export default function ChannelZoneMembershipSection({
     [channelId, library.zones, persistZoneMembers],
   );
 
-  const directCount = directMemberships.length;
-  const effectiveCount = memberships.length;
-
   return (
-    <Stack gap="sm">
-      <Text size="sm" c="dimmed">
-        Appears in {directCount} zone{directCount === 1 ? '' : 's'} directly
-        {effectiveCount !== directCount
-          ? ` · ${effectiveCount} zone${effectiveCount === 1 ? '' : 's'} including nested`
-          : ''}
-      </Text>
+    <Stack gap="md">
+      <p className={classes.hint}>
+        Zones containing this channel. To reorder or manage other members, edit the zone itself.
+      </p>
 
-      {directMemberships.length > 0 ? (
-        <Stack gap="xs">
-          {directMemberships.map(({ zone }) => (
-            <Group key={zone.id} justify="space-between" wrap="nowrap">
-              <Text size="sm" fw={500}>
-                {zone.name}
-              </Text>
-              <Group gap="xs" wrap="nowrap">
-                <Button
-                  component={Link}
-                  to={`/library/zones/${zone.id}`}
-                  variant="subtle"
-                  size="compact-xs"
-                >
-                  Open zone
-                </Button>
-                <Button
-                  variant="light"
-                  color="red"
-                  size="compact-xs"
-                  disabled={busy}
-                  onClick={() => void handleRemove(zone.id)}
-                >
-                  Remove from zone
-                </Button>
-              </Group>
-            </Group>
-          ))}
-        </Stack>
-      ) : (
-        <Text size="sm" c="dimmed">
-          Not a direct member of any zone.
-        </Text>
-      )}
+      <div className={classes.chipRow}>
+        {directMemberships.map(({ zone }) => (
+          <Pill key={zone.id} tone="neutral" onRemove={() => void handleRemove(zone.id)}>
+            {zone.name}
+          </Pill>
+        ))}
+        <div className={classes.addZone}>
+          <ZoneSelect
+            label={directMemberships.length > 0 ? undefined : 'Add to zone'}
+            placeholder="Add to zone…"
+            zones={zonesAvailableToAdd}
+            value={selectedZoneId}
+            onChange={setSelectedZoneId}
+          />
+        </div>
+        {selectedZoneId ? (
+          <button
+            type="button"
+            className={classes.addButton}
+            disabled={busy}
+            onClick={() => void handleAdd()}
+          >
+            Add
+          </button>
+        ) : null}
+      </div>
 
       {nestedOnlyMemberships.length > 0 ? (
         <Stack gap="xs">
@@ -155,30 +143,13 @@ export default function ChannelZoneMembershipSection({
                 {zone.name}
                 {viaNestedZoneName ? ` (via ${viaNestedZoneName})` : ''}
               </Text>
-              <Button
-                component={Link}
-                to={`/library/zones/${zone.id}`}
-                variant="subtle"
-                size="compact-xs"
-              >
+              <Link to={`/library/zones/${zone.id}`} className={classes.openLink}>
                 Open zone
-              </Button>
+              </Link>
             </Group>
           ))}
         </Stack>
       ) : null}
-
-      <Group align="flex-end" wrap="wrap">
-        <ZoneSelect
-          label="Add to zone"
-          zones={zonesAvailableToAdd}
-          value={selectedZoneId}
-          onChange={setSelectedZoneId}
-        />
-        <Button disabled={!selectedZoneId || busy} loading={busy} onClick={() => void handleAdd()}>
-          Add
-        </Button>
-      </Group>
 
       {error ? <Alert color="red">{error}</Alert> : null}
     </Stack>

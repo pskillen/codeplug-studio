@@ -1,0 +1,29 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.offsetLine,
+.offsetHint {
+  margin: 0;
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-secondary);
+}
+
+.offsetHint {
+  color: var(--dsv2-text-tertiary);
+}
+
+.quickSet {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quickLabel {
+  font-size: 11.5px;
+  color: var(--dsv2-text-tertiary);
+}

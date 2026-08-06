@@ -1,4 +1,4 @@
-import { Button, Group, Stack, Text } from '@mantine/core';
+import { IconArrowsRightLeft } from '@tabler/icons-react';
 import { useMemo } from 'react';
 import {
   formatOffsetMhz,
@@ -7,7 +7,9 @@ import {
   txFrequencyHzFromOffset,
   txOffsetsForFrequencyHz,
 } from '@core/domain/txOffsets.ts';
+import { Button } from '../v2/index.ts';
 import { hzToMhzString } from '../../lib/units.ts';
+import classes from './TxOffsetControls.module.css';
 
 export interface TxOffsetControlsProps {
   rxFrequencyHz: number | null;
@@ -33,39 +35,46 @@ export default function TxOffsetControls({
 
   if (!rxValid) return null;
 
+  const simplexActive = offsetMhz != null && offsetsMatch(offsetMhz, 0);
+
   return (
-    <Stack gap={6}>
+    <div className={classes.root}>
       {offsetLabel != null ? (
-        <Text size="sm">
-          Offset:{' '}
-          <Text component="span" fw={600}>
-            {offsetLabel}
-          </Text>
-        </Text>
+        <p className={classes.offsetLine}>
+          Offset: <strong>{offsetLabel}</strong>
+        </p>
       ) : (
-        <Text size="sm" c="dimmed">
-          Offset: set TX to compute, or pick a quick offset
-        </Text>
+        <p className={classes.offsetHint}>Offset: set TX to compute, or pick a quick offset</p>
       )}
-      <Group gap="xs" wrap="wrap">
-        {options.map((option) => {
-          const active = offsetMhz != null && offsetsMatch(offsetMhz, option.offsetMhz);
-          return (
-            <Button
-              key={`${option.label}:${option.offsetMhz}`}
-              type="button"
-              size="compact-sm"
-              variant={active ? 'filled' : 'light'}
-              onClick={() => {
-                const txHz = txFrequencyHzFromOffset(rxFrequencyHz, option.offsetMhz);
-                onTxFrequencyChange(hzToMhzString(txHz));
-              }}
-            >
-              {option.label}
-            </Button>
-          );
-        })}
-      </Group>
-    </Stack>
+      <div className={classes.quickSet}>
+        <span className={classes.quickLabel}>Quick set:</span>
+        <Button
+          variant={simplexActive ? 'primary' : 'outline'}
+          size="sm"
+          leftSection={<IconArrowsRightLeft size={12} stroke={2} aria-hidden />}
+          onClick={() => onTxFrequencyChange(hzToMhzString(rxFrequencyHz))}
+        >
+          Simplex
+        </Button>
+        {options
+          .filter((option) => option.offsetMhz !== 0)
+          .map((option) => {
+            const active = offsetMhz != null && offsetsMatch(offsetMhz, option.offsetMhz);
+            return (
+              <Button
+                key={`${option.label}:${option.offsetMhz}`}
+                variant={active ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  const txHz = txFrequencyHzFromOffset(rxFrequencyHz, option.offsetMhz);
+                  onTxFrequencyChange(hzToMhzString(txHz));
+                }}
+              >
+                {option.label}
+              </Button>
+            );
+          })}
+      </div>
+    </div>
   );
 }

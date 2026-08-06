@@ -1,10 +1,9 @@
-import { Button, Checkbox, Group, NumberInput, Stack, Text, TextInput } from '@mantine/core';
+import { Checkbox, Group, NumberInput, Stack } from '@mantine/core';
 import { useState } from 'react';
 import type { LocationEditSource } from '@core/domain/channelLocation.ts';
 import { coordsToLocator, isValidLocator, locatorToCoords } from '@core/domain/maidenhead.ts';
 import MapLocationPicker from '../MapLocationPicker/MapLocationPicker.tsx';
-import { MapPanel } from '../v2/index.ts';
-import { FormSection } from '../ui/index.ts';
+import { Button as V2Button, FormField, MapPanel, TextInput } from '../v2/index.ts';
 
 export interface ChannelLocationValues {
   maidenheadLocator: string;
@@ -26,12 +25,14 @@ export interface ChannelLocationSectionProps {
   onChange: (value: ChannelLocationValues) => void;
   /** When false, the map unmounts while locator/coords fields stay mounted. */
   mapActive?: boolean;
+  compact?: boolean;
 }
 
 export default function ChannelLocationSection({
   value,
   onChange,
   mapActive = true,
+  compact = false,
 }: ChannelLocationSectionProps) {
   const [locatorError, setLocatorError] = useState<string | null>(null);
 
@@ -83,11 +84,17 @@ export default function ChannelLocationSection({
     });
   };
 
+  const mapHeight = compact ? 140 : 180;
+
   return (
-    <FormSection title="Location">
-      <Stack gap="sm">
+    <Stack gap="md">
+      <p style={{ margin: 0, fontSize: 12, color: 'var(--dsv2-text-tertiary)', lineHeight: 1.45 }}>
+        If this is a real repeater, we can pull its frequency, tone and mode straight from a
+        directory — you&apos;ll still review everything before saving.
+      </p>
+      <FormField label="Maidenhead locator" error={locatorError ?? undefined}>
         <TextInput
-          label="Maidenhead locator"
+          variant="plain"
           value={value.maidenheadLocator}
           onChange={(e) => {
             setLocatorError(null);
@@ -98,71 +105,71 @@ export default function ChannelLocationSection({
             });
           }}
           onBlur={(e) => applyLocator(e.currentTarget.value)}
-          error={locatorError}
+          aria-label="Maidenhead locator"
         />
-        <Group grow>
-          <NumberInput
-            label="Latitude"
-            value={value.lat}
-            onChange={(v) => {
-              const lat = String(v ?? '');
-              const next = { ...value, lat, lastEdited: 'coords' as const };
-              const latN = parseCoord(lat);
-              const lonN = parseCoord(value.lon);
-              if (latN != null && lonN != null) {
-                next.maidenheadLocator = coordsToLocator(latN, lonN, 6);
-              }
-              onChange(next);
-            }}
-            decimalScale={6}
-          />
-          <NumberInput
-            label="Longitude"
-            value={value.lon}
-            onChange={(v) => {
-              const lon = String(v ?? '');
-              const next = { ...value, lon, lastEdited: 'coords' as const };
-              const latN = parseCoord(value.lat);
-              const lonN = parseCoord(lon);
-              if (latN != null && lonN != null) {
-                next.maidenheadLocator = coordsToLocator(latN, lonN, 6);
-              }
-              onChange(next);
-            }}
-            decimalScale={6}
-          />
-        </Group>
-        <Checkbox
-          label="Use location"
-          description="Use coordinates for distance sort and export when the format supports location"
-          checked={value.useLocation}
-          onChange={(e) => onChange({ ...value, useLocation: e.currentTarget.checked })}
+      </FormField>
+      <Group grow>
+        <NumberInput
+          label="Latitude"
+          value={value.lat}
+          onChange={(v) => {
+            const lat = String(v ?? '');
+            const next = { ...value, lat, lastEdited: 'coords' as const };
+            const latN = parseCoord(lat);
+            const lonN = parseCoord(value.lon);
+            if (latN != null && lonN != null) {
+              next.maidenheadLocator = coordsToLocator(latN, lonN, 6);
+            }
+            onChange(next);
+          }}
+          decimalScale={6}
         />
-        <Checkbox
-          label="Hide this channel from the map"
-          description="Coordinates are kept; this channel is omitted from Codeplug Studio maps only"
-          checked={value.hideFromInternalMap}
-          onChange={(e) => onChange({ ...value, hideFromInternalMap: e.currentTarget.checked })}
+        <NumberInput
+          label="Longitude"
+          value={value.lon}
+          onChange={(v) => {
+            const lon = String(v ?? '');
+            const next = { ...value, lon, lastEdited: 'coords' as const };
+            const latN = parseCoord(value.lat);
+            const lonN = parseCoord(lon);
+            if (latN != null && lonN != null) {
+              next.maidenheadLocator = coordsToLocator(latN, lonN, 6);
+            }
+            onChange(next);
+          }}
+          decimalScale={6}
         />
-        <Group justify="space-between" align="center">
-          <Text size="xs" c="dimmed">
-            Click or drag the map marker to set coordinates.
-          </Text>
-          <Button type="button" variant="subtle" size="compact-sm" onClick={clearPosition}>
-            Clear position
-          </Button>
-        </Group>
-        <MapPanel title="Map" height={280}>
-          <MapLocationPicker
-            lat={parseCoord(value.lat)}
-            lon={parseCoord(value.lon)}
-            onPick={applyCoords}
-            height="100%"
-            active={mapActive}
-          />
-        </MapPanel>
-      </Stack>
-    </FormSection>
+      </Group>
+      <Checkbox
+        label="Use location"
+        description="Use coordinates for distance sort and export when the format supports location"
+        checked={value.useLocation}
+        onChange={(e) => onChange({ ...value, useLocation: e.currentTarget.checked })}
+      />
+      <Checkbox
+        label="Hide this channel from the map"
+        description="Coordinates are kept; this channel is omitted from Codeplug Studio maps only"
+        checked={value.hideFromInternalMap}
+        onChange={(e) => onChange({ ...value, hideFromInternalMap: e.currentTarget.checked })}
+      />
+      <Group justify="space-between" align="center">
+        <span style={{ fontSize: 12, color: 'var(--dsv2-text-tertiary)' }}>
+          Click or drag the map marker to set coordinates.
+        </span>
+        <V2Button type="button" variant="ghost" size="sm" onClick={clearPosition}>
+          Clear position
+        </V2Button>
+      </Group>
+      <MapPanel height={mapHeight}>
+        <MapLocationPicker
+          lat={parseCoord(value.lat)}
+          lon={parseCoord(value.lon)}
+          onPick={applyCoords}
+          height="100%"
+          active={mapActive}
+        />
+      </MapPanel>
+    </Stack>
   );
 }
 
