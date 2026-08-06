@@ -1,4 +1,4 @@
-import { Stack, Switch } from '@mantine/core';
+import { Stack } from '@mantine/core';
 import type { BuildExportSettings } from '@core/models/formatBuild.ts';
 import type {
   AnalogSquelchMode,
@@ -6,6 +6,7 @@ import type {
   SendTalkerAliasMode,
   TxPermitMode,
 } from '@core/models/channelBehaviourDefaults.ts';
+import { OverrideField } from '../v2/index.ts';
 import ForbidTransmitSegment from '../channels/ForbidTransmitSegment.tsx';
 import TxPermitSegment from '../channels/TxPermitSegment.tsx';
 import SendTalkerAliasSegment from '../channels/SendTalkerAliasSegment.tsx';
@@ -34,18 +35,13 @@ export default function ChannelBehaviourExportOverrides({
 
   return (
     <Stack gap="md">
-      <Stack gap="xs">
-        <Switch
-          label="Override transmit permission"
-          description="When enabled, wins over library defaults and per-channel overrides."
-          checked={forbidEnabled}
-          disabled={disabled}
-          onChange={(event) =>
-            onPatch({
-              defaultForbidTransmit: event.currentTarget.checked ? forbidValue : undefined,
-            })
-          }
-        />
+      <OverrideField
+        label="Transmit permission"
+        description="Build-level default for forbid transmit."
+        overridden={forbidEnabled}
+        onOverride={() => onPatch({ defaultForbidTransmit: forbidValue })}
+        onReset={() => onPatch({ defaultForbidTransmit: undefined })}
+      >
         <ForbidTransmitSegment
           value={forbidValue}
           includeDefault={false}
@@ -54,19 +50,14 @@ export default function ChannelBehaviourExportOverrides({
             onPatch({ defaultForbidTransmit: value === 'default' ? 'allow' : value })
           }
         />
-      </Stack>
+      </OverrideField>
 
-      <Stack gap="xs">
-        <Switch
-          label="Override TX permit"
-          checked={txPermitEnabled}
-          disabled={disabled}
-          onChange={(event) =>
-            onPatch({
-              defaultTxPermit: event.currentTarget.checked ? txPermitValue : undefined,
-            })
-          }
-        />
+      <OverrideField
+        label="TX permit"
+        overridden={txPermitEnabled}
+        onOverride={() => onPatch({ defaultTxPermit: txPermitValue })}
+        onReset={() => onPatch({ defaultTxPermit: undefined })}
+      >
         <TxPermitSegment
           value={txPermitValue}
           includeDefault={false}
@@ -75,19 +66,14 @@ export default function ChannelBehaviourExportOverrides({
             onPatch({ defaultTxPermit: value === 'default' ? 'permitAlways' : value })
           }
         />
-      </Stack>
+      </OverrideField>
 
-      <Stack gap="xs">
-        <Switch
-          label="Override send talker alias"
-          checked={talkerAliasEnabled}
-          disabled={disabled}
-          onChange={(event) =>
-            onPatch({
-              defaultSendTalkerAlias: event.currentTarget.checked ? talkerAliasValue : undefined,
-            })
-          }
-        />
+      <OverrideField
+        label="Send talker alias"
+        overridden={talkerAliasEnabled}
+        onOverride={() => onPatch({ defaultSendTalkerAlias: talkerAliasValue })}
+        onReset={() => onPatch({ defaultSendTalkerAlias: undefined })}
+      >
         <SendTalkerAliasSegment
           value={talkerAliasValue}
           includeDefault={false}
@@ -96,19 +82,14 @@ export default function ChannelBehaviourExportOverrides({
             onPatch({ defaultSendTalkerAlias: value === 'default' ? 'on' : value })
           }
         />
-      </Stack>
+      </OverrideField>
 
-      <Stack gap="xs">
-        <Switch
-          label="Override analog squelch mode"
-          checked={squelchEnabled}
-          disabled={disabled}
-          onChange={(event) =>
-            onPatch({
-              defaultAnalogSquelchMode: event.currentTarget.checked ? squelchValue : undefined,
-            })
-          }
-        />
+      <OverrideField
+        label="Analog squelch mode"
+        overridden={squelchEnabled}
+        onOverride={() => onPatch({ defaultAnalogSquelchMode: squelchValue })}
+        onReset={() => onPatch({ defaultAnalogSquelchMode: undefined })}
+      >
         <AnalogSquelchModeSegment
           value={squelchValue}
           includeDefault={false}
@@ -117,7 +98,7 @@ export default function ChannelBehaviourExportOverrides({
             onPatch({ defaultAnalogSquelchMode: value === 'default' ? 'carrier' : value })
           }
         />
-      </Stack>
+      </OverrideField>
     </Stack>
   );
 }

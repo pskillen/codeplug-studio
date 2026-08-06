@@ -18,6 +18,7 @@ import {
 import type { FormatId } from '@core/import-export/types.ts';
 import type { CpsAppExportOptions } from '../../services/buildCpsExportService.ts';
 import ExportBuildSettingsSections from './ExportBuildSettingsSections.tsx';
+import EgressPathwayCards from './EgressPathwayCards.tsx';
 import ProfilePicker from './ProfilePicker.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
 import ExportWarningsAlert from './ExportWarningsAlert.tsx';
@@ -422,19 +423,11 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
 
   const egressSwitcher =
     egressPaths.length > 1 ? (
-      <Stack gap={4}>
-        <Text size="sm" fw={600}>
-          Export pathway
-        </Text>
-        <SegmentedControl
-          value={activeEgress.id}
-          data={egressPaths.map((path) => ({
-            value: path.id,
-            label: egressPathLabel(path),
-          }))}
-          onChange={(id) => void handleActiveEgressChange(id)}
-        />
-      </Stack>
+      <EgressPathwayCards
+        egressPaths={egressPaths}
+        activeEgressId={activeEgress.id}
+        onSelect={(id) => void handleActiveEgressChange(id)}
+      />
     ) : null;
 
   if (formatId === 'radio-io') {

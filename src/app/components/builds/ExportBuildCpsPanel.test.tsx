@@ -220,7 +220,7 @@ describe('ExportBuildCpsPanel', () => {
     );
 
     const naming = await screen.findByText('Naming');
-    const pathway = screen.getByText('Export pathway');
+    const pathway = screen.getByText('Pathway');
     expect(naming.compareDocumentPosition(pathway) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 

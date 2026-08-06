@@ -1,27 +1,20 @@
-import { Stack, Text } from '@mantine/core';
 import ExportBuildCpsPanel from '../../components/builds/ExportBuildCpsPanel.tsx';
-import { FormPage } from '../../components/ui/index.ts';
-import { Link } from 'react-router-dom';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
+import classes from './BuildExportPage.module.css';
 
 export default function BuildExportPage() {
   const { build } = useBuildLayout();
 
   return (
-    <FormPage
-      title="Export to CPS"
-      description={
-        <Stack gap={4}>
-          <Link to="/builds" style={{ fontSize: 'var(--mantine-font-size-sm)' }}>
-            ← Back to builds
-          </Link>
-          <Text size="sm" c="dimmed">
-            Rename or change profile on <Link to={`/builds/${build.id}/overview`}>Setup</Link>.
-          </Text>
-        </Stack>
-      }
-    >
+    <div className={classes.page}>
+      <div className={classes.header}>
+        <h1 className={classes.title}>Export</h1>
+        <p className={classes.subtitle}>
+          Choose a pathway, tune projection settings, then download CPS files or write over Web
+          Serial. Settings persist when you switch pathway.
+        </p>
+      </div>
       <ExportBuildCpsPanel build={build} />
-    </FormPage>
+    </div>
   );
 }
