@@ -56,19 +56,19 @@ Shipped initiatives (mode profiles, membership order, zones revision-2, library 
 
 | List route                   | UI                                                                                                                                                | Map |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --- |
-| `/library/channels`          | `DataTable` — sortable columns, **Zones** column, delete row action, toolbar search, hideable optional columns, URL + `localStorage` filter prefs | Yes |
+| `/library/channels`          | v2 `DataTable` — facet chips, selection bulk footer, `ModalShell` bulk edit, hideable columns, URL + `localStorage` filter prefs                  | Yes — stacked via `LibraryMapStack` |
 | `/library/channels/defaults` | Library-wide channel behavioural defaults (TX deny, TX permit, talker alias, analog squelch) — nested under Channels in section nav               | No  |
-| `/library/zones`             | `DataTable` — `reorderMode` export order + Move up/down → `Zone.order`; Sort zones… permanent; members, comment, delete; map                      | Yes |
-| `/library/talk-groups`       | `DataTable` — mode, ID, optional Abbrev, channels/RX lists using, comment, delete row action                                                      | No  |
-| `/library/contacts`          | Two `DataTable` sections: digital + analog (separate `dq` / `aq` filters); digital toolbar **Delete all**; per-row delete each                    | No  |
-| `/library/rx-group-lists`    | `DataTable` — members, channels using, delete row action                                                                                          | No  |
-| `/library/scan-lists`        | `DataTable` — member count, channels-using ref count, delete row action                                                                           | No  |
+| `/library/zones`             | v2 `DataTable` — `reorderMode` grip + `Zone.order`; Sort zones…; members, comment; split map via `LibraryMapStack`                                | Yes |
+| `/library/talk-groups`       | v2 `DataTable` — mode, ID, Abbrev, channels/RX lists using, comment, `RowActionIcon` delete                                                       | No  |
+| `/library/contacts`          | Dual v2 `DataTable` in `Panel`s: digital `scale="extreme"` + Delete all; analog thin list; RadioID import in header                               | No  |
+| `/library/rx-group-lists`    | v2 `DataTable` — members, channels using, row delete                                                                                              | No  |
+| `/library/scan-lists`        | v2 `DataTable` — members, channels-using ref count, row delete                                                                                    | No  |
 
-Shared list UI: [app-shell/data-table.md](../app-shell/data-table.md).
+Shared L1 chrome: `LibraryInventoryHeader`, optional `FacetBar` (channels), `LibraryMapStack` (C7 map+list). List tables use `components/v2/DataTable` — see [design-system-v2](../design-system-v2/README.md) ([#940](https://github.com/pskillen/codeplug-studio/issues/940)).
 
 ### Channels list (#24)
 
-- Filters on the list page (`ChannelListFilters`): band, mode, simplex/split, distance radius (when operator location is set). Name/callsign search is on the `DataTable` toolbar only.
+- Filters on the list page (`ChannelListFilters`): mk2 facet chips for band, mode, duplex, and distance radius (when operator location is set). Name/callsign search is on the v2 `DataTable` toolbar.
 - The embedded map plots the **same filtered channel set** as the table (all active filters apply).
 - Filter state syncs to URL query params and per-project `localStorage`.
 - Column sort and visibility prefs persist per project.
