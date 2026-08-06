@@ -1,0 +1,54 @@
+.card {
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-surface);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.cardName {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  font-family: var(--dsv2-font-family);
+}
+
+.menuButton {
+  border: none;
+  background: transparent;
+  color: var(--dsv2-text-tertiary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--dsv2-radius-control);
+}
+
+.menuButton:hover {
+  color: var(--dsv2-text-primary);
+  background: var(--dsv2-accent-tint-06);
+}
+
+.cardSub {
+  font-size: 12.5px;
+  color: var(--dsv2-text-secondary);
+  font-family: var(--dsv2-font-family);
+}
+
+.cardStats {
+  font-size: 12.5px;
+  color: var(--dsv2-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--dsv2-font-family);
+}
+
+.cardActions {
+  margin-top: 4px;
+}
