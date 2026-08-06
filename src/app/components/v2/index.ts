@@ -40,6 +40,8 @@ export { default as EmptyState } from './EmptyState.tsx';
 export type { EmptyStateProps } from './EmptyState.tsx';
 export { default as FileDropzone } from './FileDropzone.tsx';
 export type { FileDropzoneProps } from './FileDropzone.tsx';
+export { default as Combobox } from './Combobox.tsx';
+export type { ComboboxOption, ComboboxProps } from './Combobox.tsx';
 export { default as DataTable } from './DataTable.tsx';
 export type {
   DataTableColumn,

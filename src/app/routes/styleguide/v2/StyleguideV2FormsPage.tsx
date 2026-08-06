@@ -5,6 +5,8 @@ import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
 import {
   Button,
   Checkbox,
+  Combobox,
+  type ComboboxOption,
   FileDropzone,
   FormField,
   OverrideField,
@@ -18,6 +20,12 @@ import {
 const VARIANTS = ['primary', 'secondary', 'outline', 'dashed', 'ghost', 'destructive'] as const;
 const SIZES = ['sm', 'md', 'lg'] as const;
 
+const REPEATER_OPTIONS: ComboboxOption<string>[] = [
+  { value: 'gb3da', label: 'GB3DA Stornoway', sublabel: '145.575 MHz' },
+  { value: 'gb3iv', label: 'GB3IV Inverness', sublabel: '145.175 MHz' },
+  { value: 'gb7gm', label: 'GB7GM Glasgow', sublabel: '145.6375 MHz' },
+];
+
 export default function StyleguideV2FormsPage() {
   const [overridden, setOverridden] = useState(false);
   const [wireName, setWireName] = useState('GB3DA-DMR');
@@ -26,6 +34,12 @@ export default function StyleguideV2FormsPage() {
   const [skipScan, setSkipScan] = useState(false);
   const [selected, setSelected] = useState(true);
   const [droppedFileName, setDroppedFileName] = useState<string | undefined>();
+  const [repeaterQuery, setRepeaterQuery] = useState('');
+  const [repeater, setRepeater] = useState<ComboboxOption<string> | null>(null);
+
+  const repeaterResults = REPEATER_OPTIONS.filter((option) =>
+    option.label.toLowerCase().includes(repeaterQuery.toLowerCase()),
+  );
 
   return (
     <Page width="default">
@@ -129,6 +143,21 @@ export default function StyleguideV2FormsPage() {
           fileName={droppedFileName}
           onFilesSelected={([file]) => setDroppedFileName(file?.name)}
           onClear={() => setDroppedFileName(undefined)}
+        />
+      </PageSection>
+
+      <PageSection
+        title="Combobox"
+        description="Async search-select; committed chip state with a Change link."
+      >
+        <Combobox
+          value={repeater}
+          inputValue={repeaterQuery}
+          onInputChange={setRepeaterQuery}
+          options={repeaterResults}
+          onSelect={setRepeater}
+          onClear={() => setRepeater(null)}
+          placeholder="Search repeaters…"
         />
       </PageSection>
 
