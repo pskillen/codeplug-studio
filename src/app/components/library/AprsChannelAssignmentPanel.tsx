@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { Link } from 'react-router-dom';
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
 import { normalizeChannel } from '@core/domain/normalizeChannel.ts';
 import {
   Alert,
-  Button,
   Checkbox,
   Group,
   MultiSelect,
@@ -16,9 +16,10 @@ import {
   Text,
   TextInput,
 } from '@mantine/core';
-import { DataTable, GradientSegmentedControl } from '../ui/index.ts';
-import type { DataTableColumn } from '../ui/DataTable.tsx';
+import { GradientSegmentedControl } from '../ui/index.ts';
+import { Button, DataTable, type DataTableColumn, type DataTableSortState } from '../v2/index.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
+import { createNameColumn } from '../../lib/libraryListTable.tsx';
 import {
   ALL_BANDS,
   bandsFromFrequencies,
@@ -128,6 +129,10 @@ function AprsChannelAssignmentPanelInner({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [sort, setSort] = useState<DataTableSortState>({
+    key: DATATABLE_NAME_SORT_KEY,
+    direction: 'asc',
+  });
 
   const isDirty = useMemo(
     () => channelAssignmentsDirty(channels, draftById, aprsConfiguration),
@@ -209,6 +214,21 @@ function AprsChannelAssignmentPanelInner({
 
   const columns = useMemo((): DataTableColumn<Channel>[] => {
     return [
+      createNameColumn<Channel>({
+        getName: (row) => row.name,
+        getPath: (row) => `/library/channels/${row.id}`,
+      }),
+      {
+        key: 'callsign',
+        header: 'Callsign',
+        sortable: true,
+        sortValue: (row) => row.callsign || '',
+        render: (row) => (
+          <Link to={`/library/channels/${row.id}`} className="libraryListNameLink">
+            {row.callsign || '—'}
+          </Link>
+        ),
+      },
       {
         key: 'band',
         header: 'Band',
@@ -471,53 +491,48 @@ function AprsChannelAssignmentPanelInner({
         />
       </Group>
       <DataTable
-        rows={filteredRows}
-        rowKey={(row) => row.id}
-        nameColumn={{
-          header: 'Name',
-          getName: (row) => row.name,
-          getPath: (row) => `/library/channels/${row.id}`,
-          sortable: true,
-          sortValue: (row) => row.name,
-        }}
-        callsignColumn={{
-          header: 'Callsign',
-          getName: (row) => row.callsign || '—',
-          getPath: (row) => `/library/channels/${row.id}`,
-          sortable: true,
-          sortValue: (row) => row.callsign,
-        }}
+        variant="embedded"
         columns={columns}
-        showSearch={false}
+        rows={filteredRows}
+        getRowId={(row) => row.id}
+        totalRowCount={visibleChannels.length}
+        resultCount={filteredRows.length}
+        sort={sort}
+        onSortChange={(next) => {
+          if (next) setSort(next);
+        }}
         selectable
         selectedKeys={selectedKeys}
-        onSelectedKeysChange={setSelectedKeys}
-        emptyState={emptyStateMessage}
-        defaultSort={{ columnKey: DATATABLE_NAME_SORT_KEY, direction: 'asc' }}
+        onSelectionChange={setSelectedKeys}
+        emptyMessage={emptyStateMessage}
+        filteredEmptyMessage={emptyStateMessage}
       />
       <Group>
         <Button
-          variant="light"
+          variant="secondary"
+          size="sm"
           disabled={selectedKeys.length === 0}
           onClick={() => setSelectedKeys(filteredRows.map((row) => row.id))}
         >
           Select filtered
         </Button>
         <Button
-          variant="light"
+          variant="secondary"
+          size="sm"
           disabled={selectedKeys.length === 0}
           onClick={() => setSelectedKeys([])}
         >
           Select none
         </Button>
         <Button
-          variant="default"
+          variant="outline"
+          size="sm"
           disabled={selectedKeys.length === 0}
           onClick={() => setBulkOpen(true)}
         >
           Bulk set…
         </Button>
-        <Button loading={saving} onClick={() => void handleSave()}>
+        <Button variant="primary" size="sm" loading={saving} onClick={() => void handleSave()}>
           Save assignments
         </Button>
       </Group>
