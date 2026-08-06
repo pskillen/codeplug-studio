@@ -1,0 +1,118 @@
+.page {
+  padding: var(--dsv2-page-padding-y) var(--dsv2-page-padding-x);
+  min-width: 0;
+  max-width: 52rem;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.back {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--dsv2-text-tertiary);
+  text-decoration: none;
+  margin-bottom: 8px;
+}
+
+.back:hover {
+  color: var(--dsv2-text-secondary);
+  text-decoration: underline;
+}
+
+.title {
+  font-size: var(--dsv2-font-heading-lg);
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--dsv2-text-primary);
+}
+
+.subtitle {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--dsv2-text-primary);
+}
+
+.targetGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.targetGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.groupLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsv2-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.targetGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.targetCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-surface);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.targetCard:hover {
+  border-color: var(--dsv2-accent-border);
+  background: var(--dsv2-accent-tint-06);
+}
+
+.targetName {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+}
+
+.namePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-surface);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}

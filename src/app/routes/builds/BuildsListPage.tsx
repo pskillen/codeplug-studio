@@ -1,26 +1,29 @@
-import { Button, Group, Loader, Stack, Text, TextInput } from '@mantine/core';
-import { IconPlus } from '@tabler/icons-react';
+import { IconPlus, IconRadio } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import { radioTargetFor } from '@core/radio-targets/index.ts';
 import {
-  DataTable,
-  GradientSegmentedControl,
-  ListPage,
-  PageSection,
-} from '../../components/ui/index.ts';
+  Button,
+  EmptyState,
+  SearchInput,
+  SegmentedControl,
+} from '../../components/v2/index.ts';
+import { Loader, Text } from '@mantine/core';
+import DataTable from '../../components/ui/DataTable.tsx';
 import type { DataTableColumn } from '../../components/ui/DataTable.tsx';
 import type { DataTableSortState } from '../../lib/dataTable/sort.ts';
 import { filterRowsByName } from '../../hooks/useListNameQuery.ts';
 import { useDebouncedNameFilter } from '../../hooks/useDebouncedNameFilter.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
+import BuildListCard, { BuildsListSection } from '../../components/builds/BuildListCard.tsx';
 import { groupFormatBuilds, type BuildsListGroupMode } from './groupFormatBuilds.ts';
+import classes from './BuildsListPage.module.css';
 
 const GROUP_OPTIONS = [
-  { value: 'list', label: 'List' },
   { value: 'radio', label: 'By radio' },
+  { value: 'list', label: 'List' },
 ] as const;
 
 export default function BuildsListPage() {
@@ -37,14 +40,14 @@ export default function BuildsListPage() {
     columnKey: DATATABLE_NAME_SORT_KEY,
     direction: 'asc',
   });
-  const [groupMode, setGroupMode] = useState<BuildsListGroupMode>('list');
+  const [groupMode, setGroupMode] = useState<BuildsListGroupMode>('radio');
   const filtered = useMemo(
     () => filterRowsByName(builds, nameFilter, (b) => b.name),
     [builds, nameFilter],
   );
   const groups = useMemo(() => {
     if (groupMode === 'list') return null;
-    return groupFormatBuilds(filtered, groupMode);
+    return groupFormatBuilds(filtered, 'radio');
   }, [filtered, groupMode]);
 
   const columns = useMemo((): DataTableColumn<RadioBuild>[] => {
@@ -78,96 +81,86 @@ export default function BuildsListPage() {
 
   if (loading) {
     return (
-      <ListPage title="Builds">
+      <div className={classes.page}>
         <Text>Loading builds…</Text>
-      </ListPage>
+      </div>
     );
   }
 
   return (
-    <ListPage
-      title="Builds"
-      description="Named radio configurations from your library — wire names and layout per handheld. Export pathways (Web Serial, NeonPlug, CPS) are chosen per build on Export."
-      actions={
-        <Button component={Link} to="/builds/new" leftSection={<IconPlus size={16} />}>
-          New build
-        </Button>
-      }
-    >
-      <Stack gap="lg">
-        {builds.length === 0 ? (
-          <Text c="dimmed">
-            No builds yet. Create one for the radio you are programming — you can keep several
-            builds for the same radio type (for example Team A and Team B).
-          </Text>
-        ) : null}
-        {builds.length > 0 ? (
-          <Group justify="space-between" align="flex-end" wrap="wrap" gap="sm">
-            <TextInput
-              placeholder="Filter name…"
+    <div className={classes.page}>
+      <div className={classes.headerRow}>
+        <div>
+          <h1 className={classes.title}>Export for radio</h1>
+          <p className={classes.subtitle}>
+            Each build packages your library for one radio target — wire names, layout, and export
+            pathway per handheld.
+          </p>
+        </div>
+        <div className={classes.headerActions}>
+          <Button component={Link} to="/builds/new" variant="primary" leftSection={<IconPlus size={16} stroke={1.75} />}>
+            New build
+          </Button>
+        </div>
+      </div>
+
+      {builds.length === 0 ? (
+        <EmptyState
+          icon={<IconRadio size={20} stroke={1.75} />}
+          title="No builds yet"
+          description="Create a build for the radio you are programming. You can keep several builds for the same radio type (Team A / Team B)."
+          action={
+            <Button variant="primary" onClick={() => navigate('/builds/new')}>
+              New build
+            </Button>
+          }
+        />
+      ) : (
+        <>
+          <div className={classes.toolbar}>
+            <SearchInput
               value={nameFilterInput}
               onChange={(e) => setNameFilterInput(e.currentTarget.value)}
-              rightSection={nameFilterPending ? <Loader size={16} /> : undefined}
-              maw={360}
-              style={{ flex: '1 1 12rem' }}
+              placeholder="Filter builds…"
               aria-label="Filter builds by name"
+              className={classes.search}
             />
-            <GradientSegmentedControl
-              label="Group"
-              size="xs"
-              scheme="onOff"
+            {nameFilterPending ? <Loader size="xs" /> : null}
+            <SegmentedControl
               value={groupMode}
-              onChange={setGroupMode}
-              data={[...GROUP_OPTIONS]}
+              onChange={(value) => setGroupMode(value as BuildsListGroupMode)}
+              options={GROUP_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
             />
-          </Group>
-        ) : null}
-        {groupMode === 'list' ? (
-          <DataTable
-            variant="list"
-            rows={filtered}
-            totalRowCount={builds.length}
-            sort={sort}
-            onSortChange={setSort}
-            rowKey={(b) => b.id}
-            nameColumn={{
-              getName: (b) => b.name,
-              getPath: (b) => `/builds/${b.id}`,
-            }}
-            columns={columns}
-          />
-        ) : (
-          <Stack gap="md">
-            {groups?.length === 0 ? (
-              <Text size="sm" c="dimmed">
-                No builds match this filter.
-              </Text>
-            ) : null}
-            {groups?.map((group) => (
-              <PageSection key={group.key} title={`${group.label} (${group.builds.length})`}>
-                <DataTable
-                  variant="list"
-                  rows={group.builds}
-                  totalRowCount={group.builds.length}
-                  sort={sort}
-                  onSortChange={setSort}
-                  rowKey={(b) => b.id}
-                  nameColumn={{
-                    getName: (b) => b.name,
-                    getPath: (b) => `/builds/${b.id}`,
-                  }}
-                  columns={columns}
-                />
-              </PageSection>
-            ))}
-          </Stack>
-        )}
-        {builds.length === 0 ? (
-          <Group>
-            <Button onClick={() => navigate('/builds/new')}>Create your first build</Button>
-          </Group>
-        ) : null}
-      </Stack>
-    </ListPage>
+          </div>
+
+          {groupMode === 'radio' ? (
+            <div className={classes.groups}>
+              {groups?.length === 0 ? (
+                <Text size="sm" c="dimmed">No builds match this filter.</Text>
+              ) : null}
+              {groups?.map((group) => (
+                <BuildsListSection key={group.key} title={group.label}>
+                  {group.builds.map((build) => <BuildListCard key={build.id} build={build} />)}
+                </BuildsListSection>
+              ))}
+            </div>
+          ) : (
+            <DataTable
+              variant="list"
+              rows={filtered}
+              totalRowCount={builds.length}
+              sort={sort}
+              onSortChange={setSort}
+              rowKey={(b) => b.id}
+              nameColumn={{
+                getName: (b) => b.name,
+                getPath: (b) => `/builds/${b.id}/export`,
+              }}
+              columns={columns}
+            />
+          )}
+        </>
+      )}
+    </div>
   );
 }
