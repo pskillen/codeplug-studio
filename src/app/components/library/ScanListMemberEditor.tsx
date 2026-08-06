@@ -1,23 +1,26 @@
-import { Checkbox, Group, Stack, Text } from '@mantine/core';
 import { useCallback, useMemo, useState } from 'react';
 import type { Channel } from '@core/models/library.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
-import { reorderScanListMembers } from '@core/domain/membershipOrder.ts';
 import { sortChannelIdsByMode } from '@core/domain/membershipSort.ts';
+import { reorderSelectedKeys } from '@core/domain/zoneOrder.ts';
 import {
-  ShuttleAddBar,
-  ShuttleListPanel,
-  ShuttlePoolHeader,
-  ShuttlePoolPanel,
-  ShuttleRow,
+  AddMembersScreen,
+  MembershipPanel,
+  MembershipPoolRow,
 } from '../v2/index.ts';
+import {
+  DataTableBulkReorderProvider,
+  DataTableBulkReorderSortable,
+} from '../../lib/dataTable/DataTableBulkReorder.tsx';
 import MembershipSortMenu from './MembershipSortMenu.tsx';
+import SortableMembershipRow, { MembershipRowList } from './SortableMembershipRow.tsx';
 import { sortByName } from '../../lib/channels.ts';
 
 export interface ScanListMemberEditorProps {
   channels: Channel[];
   memberChannelIds: string[];
   onChange: (memberChannelIds: string[]) => void;
+  onAdd?: () => void;
 }
 
 function channelMatchesFilter(channel: Channel, filterLower: string): boolean {
@@ -29,32 +32,14 @@ export default function ScanListMemberEditor({
   channels,
   memberChannelIds,
   onChange,
+  onAdd,
 }: ScanListMemberEditorProps) {
   const [selected, setSelected] = useState<string[]>([]);
-  const [availableFilter, setAvailableFilter] = useState('');
-  const [availableSelected, setAvailableSelected] = useState<string[]>([]);
 
   const channelsById = useMemo(() => new Map(channels.map((ch) => [ch.id, ch])), [channels]);
-  const memberSet = useMemo(() => new Set(memberChannelIds), [memberChannelIds]);
-  const availableFilterLower = availableFilter.trim().toLowerCase();
-
-  const availableChannels = useMemo(
-    () =>
-      sortByName(channels).filter(
-        (channel) =>
-          !memberSet.has(channel.id) && channelMatchesFilter(channel, availableFilterLower),
-      ),
-    [channels, memberSet, availableFilterLower],
-  );
 
   const toggleSelect = useCallback((channelId: string) => {
     setSelected((prev) =>
-      prev.includes(channelId) ? prev.filter((id) => id !== channelId) : [...prev, channelId],
-    );
-  }, []);
-
-  const toggleAvailable = useCallback((channelId: string) => {
-    setAvailableSelected((prev) =>
       prev.includes(channelId) ? prev.filter((id) => id !== channelId) : [...prev, channelId],
     );
   }, []);
@@ -72,107 +57,133 @@ export default function ScanListMemberEditor({
   const moveSelected = useCallback(
     (direction: 'up' | 'down') => {
       if (!selected.length) return;
-      onChange(reorderScanListMembers(memberChannelIds, new Set(selected), direction));
+      onChange(
+        reorderSelectedKeys(memberChannelIds, new Set(selected), direction) as string[],
+      );
     },
     [memberChannelIds, onChange, selected],
   );
 
-  const addSelected = useCallback(() => {
-    const toAdd = availableSelected.filter((id) => !memberSet.has(id));
+  return (
+    <MembershipPanel
+      title="Members"
+      description={`${memberChannelIds.length} channel${memberChannelIds.length === 1 ? '' : 's'} — export order`}
+      addLabel="Add members"
+      onAdd={onAdd}
+      selectedCount={selected.length}
+      onBulkMoveUp={() => moveSelected('up')}
+      onBulkMoveDown={() => moveSelected('down')}
+      onBulkRemove={() => removeIds(selected)}
+      onClearSelection={() => setSelected([])}
+      isEmpty={memberChannelIds.length === 0}
+      emptyMessage="No channels in scan list"
+    >
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <MembershipSortMenu
+          disabled={!memberChannelIds.length}
+          label="Sort channels…"
+          onSort={(mode) => onChange(sortChannelIdsByMode(memberChannelIds, channelsById, mode))}
+        />
+      </div>
+      <DataTableBulkReorderProvider
+        sortableKeys={memberChannelIds}
+        orderedKeys={memberChannelIds}
+        selectedKeys={selected}
+        onSetOrder={onChange}
+      >
+        <DataTableBulkReorderSortable sortableKeys={memberChannelIds}>
+          <MembershipRowList>
+            {memberChannelIds.map((itemKey) => {
+              const channel = channelsById.get(itemKey);
+              return (
+                <SortableMembershipRow
+                  key={itemKey}
+                  itemKey={itemKey}
+                  label={channel ? channelDisplayLabel(channel) : itemKey}
+                  checked={selected.includes(itemKey)}
+                  onCheck={() => toggleSelect(itemKey)}
+                  onRemove={() => removeIds([itemKey])}
+                />
+              );
+            })}
+          </MembershipRowList>
+        </DataTableBulkReorderSortable>
+      </DataTableBulkReorderProvider>
+    </MembershipPanel>
+  );
+}
+
+export function ScanListAddOverlay({
+  open,
+  listName,
+  onCancel,
+  onCommit,
+  channels,
+  memberChannelIds,
+  onChange,
+}: {
+  open: boolean;
+  listName: string;
+  onCancel: () => void;
+  onCommit: () => void;
+  channels: Channel[];
+  memberChannelIds: string[];
+  onChange: (memberChannelIds: string[]) => void;
+}) {
+  const [search, setSearch] = useState('');
+  const [staged, setStaged] = useState<string[]>([]);
+  const memberSet = useMemo(() => new Set(memberChannelIds), [memberChannelIds]);
+  const filterLower = search.trim().toLowerCase();
+
+  const availableChannels = useMemo(
+    () =>
+      sortByName(channels).filter(
+        (channel) =>
+          !memberSet.has(channel.id) && channelMatchesFilter(channel, filterLower),
+      ),
+    [channels, memberSet, filterLower],
+  );
+
+  const toggleStaged = (id: string) => {
+    setStaged((prev) => (prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]));
+  };
+
+  const commit = () => {
+    const toAdd = staged.filter((id) => !memberSet.has(id));
     if (!toAdd.length) return;
     onChange([...memberChannelIds, ...toAdd]);
-    setAvailableSelected([]);
-  }, [availableSelected, memberChannelIds, memberSet, onChange]);
-
-  const canMoveUp = selected.some((id) => memberChannelIds.indexOf(id) > 0);
-  const canMoveDown = selected.some((id) => {
-    const index = memberChannelIds.indexOf(id);
-    return index >= 0 && index < memberChannelIds.length - 1;
-  });
+    setStaged([]);
+    setSearch('');
+    onCommit();
+  };
 
   return (
-    <Stack gap="lg">
-      <ShuttleListPanel
-        title="Channels in this scan list"
-        description={`${memberChannelIds.length} channel${
-          memberChannelIds.length === 1 ? '' : 's'
-        } — export order`}
-        itemKeys={memberChannelIds}
-        selectedKeys={selected}
-        onToggleSelect={toggleSelect}
-        onRemove={(id) => removeIds([id])}
-        emptyMessage="No channels in scan list"
-        onReorder={onChange}
-        onMoveSelected={moveSelected}
-        onRemoveSelected={() => removeIds(selected)}
-        canMoveUp={canMoveUp}
-        canMoveDown={canMoveDown}
-        renderItem={({ itemKey, selected: rowSelected, onToggleSelect, onRemove, dragHandle }) => {
-          const channel = channelsById.get(itemKey);
-          return (
-            <ShuttleRow
-              key={itemKey}
-              label={channel ? channelDisplayLabel(channel) : itemKey}
-              selected={rowSelected}
-              onToggleSelect={onToggleSelect}
-              onRemove={onRemove}
-              dragHandle={dragHandle}
-            />
-          );
-        }}
-        toolbar={
-          <MembershipSortMenu
-            disabled={!memberChannelIds.length}
-            label="Sort channels…"
-            onSort={(mode) => onChange(sortChannelIdsByMode(memberChannelIds, channelsById, mode))}
+    <AddMembersScreen
+      open={open}
+      title={`Add to ${listName}`}
+      onCancel={() => {
+        setStaged([]);
+        setSearch('');
+        onCancel();
+      }}
+      search={{ value: search, onChange: setSearch, placeholder: 'Find…' }}
+      totalStaged={staged.length}
+      onCommit={commit}
+    >
+      {availableChannels.length === 0 ? (
+        <p style={{ fontSize: 13, color: 'var(--dsv2-text-tertiary)', margin: 0 }}>
+          No channels available
+        </p>
+      ) : (
+        availableChannels.map((channel) => (
+          <MembershipPoolRow
+            key={channel.id}
+            checked={staged.includes(channel.id)}
+            onCheck={() => toggleStaged(channel.id)}
+            label={channelDisplayLabel(channel)}
           />
-        }
-      />
-
-      <ShuttlePoolPanel
-        header={<ShuttlePoolHeader label="Other channels" />}
-        title="Other channels"
-        description="Stage channels to add to this scan list"
-        filter={{
-          value: availableFilter,
-          onChange: setAvailableFilter,
-          placeholder: 'Filter…',
-          'aria-label': 'Filter available channels',
-        }}
-        sections={[
-          {
-            id: 'channels',
-            title: 'Channels',
-            itemKeys: availableChannels.map((channel) => channel.id),
-            selectedKeys: availableSelected,
-            onToggleSelect: toggleAvailable,
-            emptyMessage: 'No channels available',
-            renderItem: ({ itemKey, checked, onToggle }) => {
-              const channel = channelsById.get(itemKey);
-              if (!channel) return null;
-              return (
-                <Group key={itemKey} gap="xs" wrap="nowrap">
-                  <Checkbox
-                    checked={checked}
-                    onChange={onToggle}
-                    aria-label={`Select ${channelDisplayLabel(channel)}`}
-                  />
-                  <Text size="sm" truncate>
-                    {channelDisplayLabel(channel)}
-                  </Text>
-                </Group>
-              );
-            },
-          },
-        ]}
-        footer={
-          <ShuttleAddBar
-            onAdd={addSelected}
-            disabled={!availableSelected.length}
-            selectedCount={availableSelected.length}
-          />
-        }
-      />
-    </Stack>
+        ))
+      )}
+    </AddMembersScreen>
   );
 }
