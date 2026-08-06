@@ -22,7 +22,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | L5 Contacts              | Complete | Dual tables, extreme digital, RadioID header action                                 |
 | L3 Zones + C7            | Complete | reorderMode grip, split map stack, Sort zones…                                      |
 | L2 Channels + C7         | Complete | Facet chips, v2 table/map, selection bulk                                           |
-| C3 overlays              | Complete | `ChannelBulkEditModal`, `AprsChannelBulkAssignModal` on ModalShell                  |
+| C3 overlays              | Complete | `ChannelBulkEditModal`, `AprsChannelBulkAssignModal` on ModalShell; APRS assignments table on v2 `DataTable` |
 
 ## mk1 slices (history — superseded by r2)
 
