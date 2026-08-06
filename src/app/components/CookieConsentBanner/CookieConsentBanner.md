@@ -1,6 +1,6 @@
 # CookieConsentBanner
 
-Fixed bottom bar shown on first visit until the operator accepts or declines analytics cookies.
+U7 bottom ribbon for first-visit analytics consent — sits above the mobile `BottomTabBar` when visible.
 
 ## Purpose
 
@@ -21,13 +21,15 @@ import CookieConsentBanner from './components/CookieConsentBanner/CookieConsentB
 
 ## Behaviour
 
+- Wraps content in `DesignSystemV2Provider` (banner renders outside shell chrome scope).
 - Reads consent via `useAnalyticsConsent()` (`localStorage` key `codeplug-studio:analytics-consent`).
 - Hidden when `choice` is `accepted` or `declined`.
-- **Accept analytics** → `setAnalyticsConsent('accepted')` — enables GA loader (see `src/integrations/analytics/`).
-- **Essential only** → `setAnalyticsConsent('declined')` — analytics never loads.
+- **Collapsed:** copy + Manage / Accept.
+- **Expanded (Manage):** Necessary (always on) + Analytics toggle; Reject non-essential / Save preferences.
+- On narrow viewports, `bottom` uses `--dsv2-bottom-tab-bar-height` so the ribbon clears the tab bar.
 - Links to `/privacy` and `/cookies` (in-app routes).
 
-Companion control for changing preference: `CookiePreferenceControl.tsx` on the Cookies page.
+Companion control for changing preference after a choice: `CookiePreferenceControl.tsx` on the Cookies page.
 
 ## Related
 
