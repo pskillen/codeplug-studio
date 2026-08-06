@@ -6,7 +6,7 @@ import type {
   RxGroupListMember,
   TalkGroup,
 } from '@core/models/library.ts';
-import { reorderRxGroupListMembers, rxGroupListMemberKey } from '@core/domain/membershipOrder.ts';
+import { rxGroupListMemberKey } from '@core/domain/membershipOrder.ts';
 import { sortRxGroupListMembersByMode } from '@core/domain/membershipSort.ts';
 import { reorderSelectedKeys } from '@core/domain/zoneOrder.ts';
 import { sortByName } from '../../lib/channels.ts';

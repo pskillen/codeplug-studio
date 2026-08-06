@@ -38,27 +38,27 @@ Sidecars: `ZoneMemberEditor.md`, `GrowZoneRecommendations.md`, `ChannelZoneMembe
 
 ## `ZoneMemberEditor` modes
 
-| Mode        | Role                                                                 |
-| ----------- | -------------------------------------------------------------------- |
-| `members`   | Main panel — reorder, find, Sort…, bulk; `onAdd` opens overlay       |
-| `scanning`  | Scanning behaviour panel — Auto / Force / Skip per channel member    |
-| `summary`   | Read-only member list                                                |
-| `full`      | Create — members + inline pool (no overlay)                          |
-| `pool`      | Legacy shim — inline pool only                                       |
+| Mode       | Role                                                              |
+| ---------- | ----------------------------------------------------------------- |
+| `members`  | Main panel — reorder, find, Sort…, bulk; `onAdd` opens overlay    |
+| `scanning` | Scanning behaviour panel — Auto / Force / Skip per channel member |
+| `summary`  | Read-only member list                                             |
+| `full`     | Create — members + inline pool (no overlay)                       |
+| `pool`     | Legacy shim — inline pool only                                    |
 
 Deprecated aliases: `reorder` → `members`, `scanOnly` → `scanning`, `addPool` → `pool`.
 
 ## Behaviour
 
-| Control                      | Effect                                                                                                                                                       |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Find in list                 | Filters current members; disables drag / bulk move while active                                                                                                |
-| Add members                  | Opens `AddMembersScreen` — Channels + Zones sections; blocked nested zones visible with reason                                                               |
-| Move up / down / drag        | Reorders selected in-zone members; **Alt+↑ / Alt+↓** via bulk reorder kit                                                                                    |
-| Sort channels…               | One-shot rewrite of membership order after confirm — [#456](https://github.com/pskillen/codeplug-studio/issues/456)                                          |
-| Remove                       | Per-row ✕ or bulk **Remove selected**                                                                                                                        |
-| Scanning behaviour           | Per direct channel member — Auto (`default`) / Force (`include`) / Skip (`skip`)                                                                             |
-| Blocked nested zones         | Greyed in pool with reason badge; cannot stage or add                                                                                                        |
+| Control               | Effect                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Find in list          | Filters current members; disables drag / bulk move while active                                                     |
+| Add members           | Opens `AddMembersScreen` — Channels + Zones sections; blocked nested zones visible with reason                      |
+| Move up / down / drag | Reorders selected in-zone members; **Alt+↑ / Alt+↓** via bulk reorder kit                                           |
+| Sort channels…        | One-shot rewrite of membership order after confirm — [#456](https://github.com/pskillen/codeplug-studio/issues/456) |
+| Remove                | Per-row ✕ or bulk **Remove selected**                                                                               |
+| Scanning behaviour    | Per direct channel member — Auto (`default`) / Force (`include`) / Skip (`skip`)                                    |
+| Blocked nested zones  | Greyed in pool with reason badge; cannot stage or add                                                               |
 
 ## Related
 

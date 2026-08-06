@@ -15,7 +15,6 @@ import {
   zoneMembershipExclusionLabel,
 } from './zoneMemberPickerUtils.ts';
 import {
-  memberKeyFromEntry,
   memberKeysFromMembers,
   membersFromMemberKeys,
   type ZonePickerMemberKey,
@@ -149,7 +148,6 @@ export function useZoneMemberAddPool({
 
 export interface ZoneMemberAddPoolProps {
   pool: ReturnType<typeof useZoneMemberAddPool>;
-  channels: Channel[];
   activeSectionId?: ZoneAddSectionId;
   filter?: string;
   variant?: 'overlay' | 'inline';
@@ -157,7 +155,6 @@ export interface ZoneMemberAddPoolProps {
 
 export default function ZoneMemberAddPool({
   pool,
-  channels,
   activeSectionId = 'channels',
   filter = '',
   variant = 'overlay',
@@ -192,7 +189,9 @@ export default function ZoneMemberAddPool({
         disabled={blocked}
         label={zone.name}
         subtitle={
-          blocked ? undefined : `${effectiveCount} effective channel${effectiveCount === 1 ? '' : 's'}`
+          blocked
+            ? undefined
+            : `${effectiveCount} effective channel${effectiveCount === 1 ? '' : 's'}`
         }
         reason={blocked ? zoneMembershipExclusionLabel(reason) : undefined}
       />
@@ -246,14 +245,18 @@ export default function ZoneMemberAddPool({
 
   if (activeSectionId === 'zones') {
     return availableZones.length === 0 ? (
-      <p style={{ fontSize: 13, color: 'var(--dsv2-text-tertiary)', margin: 0 }}>No zones available</p>
+      <p style={{ fontSize: 13, color: 'var(--dsv2-text-tertiary)', margin: 0 }}>
+        No zones available
+      </p>
     ) : (
       availableZones.map(renderZoneRow)
     );
   }
 
   return availableChannels.length === 0 ? (
-    <p style={{ fontSize: 13, color: 'var(--dsv2-text-tertiary)', margin: 0 }}>No channels available</p>
+    <p style={{ fontSize: 13, color: 'var(--dsv2-text-tertiary)', margin: 0 }}>
+      No channels available
+    </p>
   ) : (
     availableChannels.map((channel) => renderChannelRow(channel))
   );

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import ZoneMemberEditor, { ZoneMemberAddOverlay } from '../../../components/library/ZoneMemberEditor.tsx';
+import ZoneMemberEditor, {
+  ZoneMemberAddOverlay,
+} from '../../../components/library/ZoneMemberEditor.tsx';
 import EntityDeleteButton from '../../../components/library/EntityDeleteButton.tsx';
 import { FormField, Panel, TextInput, ToggleSwitch } from '../../../components/v2/index.ts';
 import { useZoneEdit } from './ZoneEditContext.tsx';
@@ -9,12 +11,12 @@ import classes from './ZoneEditLayout.module.css';
 import workspaceClasses from './ZoneEditWorkspace.module.css';
 
 const SCANNING_DESCRIPTION =
-  'How members are scanned depends on the target radio. Some radios scan a list Studio projects from this membership — the control below decides each channel\'s inclusion in that projected list. Others treat the zone itself as the scan list, where this setting has no effect.';
+  "How members are scanned depends on the target radio. Some radios scan a list Studio projects from this membership — the control below decides each channel's inclusion in that projected list. Others treat the zone itself as the scan list, where this setting has no effect.";
 
 export default function ZoneEditMainPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [addOpen, setAddOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(() => searchParams.get('add') === 'members');
   const scanningRef = useRef<HTMLDivElement>(null);
   const {
     entity,
@@ -31,12 +33,10 @@ export default function ZoneEditMainPage() {
   } = useZoneEdit();
 
   useEffect(() => {
-    if (searchParams.get('add') === 'members') {
-      setAddOpen(true);
-      const next = new URLSearchParams(searchParams);
-      next.delete('add');
-      setSearchParams(next, { replace: true });
-    }
+    if (searchParams.get('add') !== 'members') return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('add');
+    setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
   useEffect(() => {
@@ -105,12 +105,8 @@ export default function ZoneEditMainPage() {
         </div>
       </div>
 
-      <div
-        ref={scanningRef}
-        id="scanning"
-        className={workspaceClasses.scanningSection}
-      >
-        <Panel title="Scanning behaviour" description={SCANNING_DESCRIPTION}>
+      <div ref={scanningRef} id="scanning" className={workspaceClasses.scanningSection}>
+        <Panel title="Scanning behaviour" sub={SCANNING_DESCRIPTION}>
           <ZoneMemberEditor
             channels={library.channels}
             zones={library.zones}

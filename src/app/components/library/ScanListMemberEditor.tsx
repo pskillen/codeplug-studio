@@ -3,11 +3,7 @@ import type { Channel } from '@core/models/library.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { sortChannelIdsByMode } from '@core/domain/membershipSort.ts';
 import { reorderSelectedKeys } from '@core/domain/zoneOrder.ts';
-import {
-  AddMembersScreen,
-  MembershipPanel,
-  MembershipPoolRow,
-} from '../v2/index.ts';
+import { AddMembersScreen, MembershipPanel, MembershipPoolRow } from '../v2/index.ts';
 import {
   DataTableBulkReorderProvider,
   DataTableBulkReorderSortable,
@@ -57,9 +53,7 @@ export default function ScanListMemberEditor({
   const moveSelected = useCallback(
     (direction: 'up' | 'down') => {
       if (!selected.length) return;
-      onChange(
-        reorderSelectedKeys(memberChannelIds, new Set(selected), direction) as string[],
-      );
+      onChange(reorderSelectedKeys(memberChannelIds, new Set(selected), direction) as string[]);
     },
     [memberChannelIds, onChange, selected],
   );
@@ -138,8 +132,7 @@ export function ScanListAddOverlay({
   const availableChannels = useMemo(
     () =>
       sortByName(channels).filter(
-        (channel) =>
-          !memberSet.has(channel.id) && channelMatchesFilter(channel, filterLower),
+        (channel) => !memberSet.has(channel.id) && channelMatchesFilter(channel, filterLower),
       ),
     [channels, memberSet, filterLower],
   );

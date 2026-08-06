@@ -5,7 +5,6 @@ import type { Channel, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import {
-  reorderZoneMembers,
   setChannelMemberIncludeInScanList,
 } from '@core/domain/zoneMembership.ts';
 import type { IncludeInZoneDerivedScanListOverride } from '@core/models/zoneBehaviourDefaults.ts';
@@ -37,7 +36,6 @@ import { formatChannelRxTxListCell } from '../../lib/formatFrequency.ts';
 import {
   channelMatchesZoneMemberFilter,
   computeZoneMemberPickerMapFilters,
-  zoneMembershipExclusionLabel,
   type ZoneMemberPickerMapFilters,
 } from './zoneMemberPickerUtils.ts';
 import {
@@ -83,7 +81,9 @@ export interface ZoneMemberEditorProps {
   onAdd?: () => void;
 }
 
-function resolveMode(mode: ZoneMemberEditorMode = 'full'): 'members' | 'scanning' | 'summary' | 'full' | 'pool' {
+function resolveMode(
+  mode: ZoneMemberEditorMode = 'full',
+): 'members' | 'scanning' | 'summary' | 'full' | 'pool' {
   switch (mode) {
     case 'reorder':
       return 'members';
@@ -133,8 +133,6 @@ export default function ZoneMemberEditor({
 }: ZoneMemberEditorProps) {
   const resolvedMode = resolveMode(mode);
   const [inZoneFilter, setInZoneFilter] = useState('');
-  const [hideAvailableFilteredFromMap, setHideAvailableFilteredFromMap] = useState(true);
-  const [hideInZoneFilteredFromMap, setHideInZoneFilteredFromMap] = useState(true);
   const [inZoneSelected, setInZoneSelected] = useState<ZonePickerMemberKey[]>([]);
 
   const addPool = useZoneMemberAddPool({ channels, zones, editingZoneId, members, onChange });
@@ -185,20 +183,12 @@ export default function ZoneMemberEditor({
         selectedChannelIds,
         '',
         inZoneFilter,
-        hideAvailableFilteredFromMap,
-        hideInZoneFilteredFromMap,
+        true,
+        true,
         members,
         zones,
       ),
-    [
-      channels,
-      selectedChannelIds,
-      inZoneFilter,
-      hideAvailableFilteredFromMap,
-      hideInZoneFilteredFromMap,
-      members,
-      zones,
-    ],
+    [channels, selectedChannelIds, inZoneFilter, members, zones],
   );
 
   useEffect(() => {
@@ -226,7 +216,11 @@ export default function ZoneMemberEditor({
       if (!inZoneSelected.length || filterActive) return;
       onChange(
         membersFromMemberKeys(
-          reorderSelectedKeys(memberKeys, new Set(inZoneSelected), direction) as ZonePickerMemberKey[],
+          reorderSelectedKeys(
+            memberKeys,
+            new Set(inZoneSelected),
+            direction,
+          ) as ZonePickerMemberKey[],
         ),
       );
     },
@@ -242,7 +236,9 @@ export default function ZoneMemberEditor({
 
   const channelMembers = useMemo(
     () =>
-      members.filter((m): m is Extract<ZoneMemberEntry, { kind: 'channel' }> => m.kind === 'channel'),
+      members.filter(
+        (m): m is Extract<ZoneMemberEntry, { kind: 'channel' }> => m.kind === 'channel',
+      ),
     [members],
   );
 
@@ -255,7 +251,8 @@ export default function ZoneMemberEditor({
       showOpenLink?: boolean;
     },
   ) => {
-    const entry = members.find((m) => memberKeyFromEntry(m) === memberKey) ?? entryFromMemberKey(memberKey);
+    const entry =
+      members.find((m) => memberKeyFromEntry(m) === memberKey) ?? entryFromMemberKey(memberKey);
     const selected = inZoneSelected.includes(memberKey);
 
     if (entry.kind === 'zone') {
@@ -329,13 +326,7 @@ export default function ZoneMemberEditor({
   };
 
   if (resolvedMode === 'pool') {
-    return (
-      <ZoneMemberAddPool
-        pool={addPool}
-        channels={channels}
-        variant="inline"
-      />
-    );
+    return <ZoneMemberAddPool pool={addPool} variant="inline" />;
   }
 
   if (resolvedMode === 'scanning') {
@@ -376,7 +367,9 @@ export default function ZoneMemberEditor({
     return (
       <MembershipRowList>
         {memberKeys.length === 0 ? (
-          <p style={{ fontSize: 13, color: 'var(--dsv2-text-tertiary)', margin: 0 }}>No members in zone</p>
+          <p style={{ fontSize: 13, color: 'var(--dsv2-text-tertiary)', margin: 0 }}>
+            No members in zone
+          </p>
         ) : (
           memberKeys.map((key) =>
             renderMemberRow(key, { showSelect: false, showRemove: false, showDrag: false }),
@@ -451,7 +444,7 @@ export default function ZoneMemberEditor({
 
       {showInlinePool ? (
         <>
-          <ZoneMemberAddPool pool={addPool} channels={channels} variant="inline" />
+          <ZoneMemberAddPool pool={addPool} variant="inline" />
           <Button
             variant="secondary"
             size="sm"
@@ -521,7 +514,6 @@ export function ZoneMemberAddOverlay({
     >
       <ZoneMemberAddPool
         pool={pool}
-        channels={channels}
         variant="overlay"
         activeSectionId={activeSectionId}
         filter={search}

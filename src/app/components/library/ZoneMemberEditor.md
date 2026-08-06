@@ -8,15 +8,15 @@ Manages zone membership using `MembershipPanel` + `MembershipRow` (role C) and `
 
 ## Props
 
-| Prop                 | Type                | Description                                                   |
-| -------------------- | ------------------- | ------------------------------------------------------------- |
-| `channels`           | `Channel[]`         | Full library channels                                         |
-| `zones`              | `Zone[]`            | Full library zones                                            |
-| `editingZoneId`      | `string \| null`    | Zone being edited (`null` on create)                          |
-| `members`            | `ZoneMemberEntry[]` | Current member list                                           |
-| `onChange`           | `(members) => void` | Member list updates                                           |
-| `onMapFiltersChange` | optional            | Map hide-filter callback                                      |
-| `mode`               | optional            | `members`, `scanning`, `summary`, `full` (default), `pool`    |
+| Prop                 | Type                | Description                                                      |
+| -------------------- | ------------------- | ---------------------------------------------------------------- |
+| `channels`           | `Channel[]`         | Full library channels                                            |
+| `zones`              | `Zone[]`            | Full library zones                                               |
+| `editingZoneId`      | `string \| null`    | Zone being edited (`null` on create)                             |
+| `members`            | `ZoneMemberEntry[]` | Current member list                                              |
+| `onChange`           | `(members) => void` | Member list updates                                              |
+| `onMapFiltersChange` | optional            | Map hide-filter callback                                         |
+| `mode`               | optional            | `members`, `scanning`, `summary`, `full` (default), `pool`       |
 | `onAdd`              | optional            | When set, member panel shows **Add members** (overlay in parent) |
 
 ## Usage
