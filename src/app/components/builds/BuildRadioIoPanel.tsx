@@ -5,7 +5,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Anchor, Button, Group, Modal, Stack, Text } from '@mantine/core';
+import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
+import {
+  ModalShell,
+  WriteVerifyReport as WriteVerifyReportV2,
+  Button as V2Button,
+} from '../v2/index.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
@@ -47,6 +52,7 @@ import RadioIoProgressModal, {
   type RadioIoWriteVerifyStatus,
 } from './RadioIoProgressModal.tsx';
 import WriteVerifyReport from './WriteVerifyReport.tsx';
+import { mapWriteVerifyResultToV2Report } from './writeVerifyReportV2Adapter.ts';
 import WebSerialExperimentalAlert from './WebSerialExperimentalAlert.tsx';
 import AtD890WriteCoverageTable from './AtD890WriteCoverageTable.tsx';
 import { DM32_ANALOG_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
@@ -355,43 +361,51 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
 
   return (
     <Stack gap="sm">
-      <Modal
-        opened={verifyResult !== null}
+      <ModalShell
+        open={verifyResult !== null}
         onClose={handleCloseVerifyReport}
         title="Write verify report"
-        size="xl"
-        centered
-        zIndex={400}
+        size="lg"
+        footer={
+          <V2Button variant="primary" size="sm" onClick={handleCloseVerifyReport}>
+            Close
+          </V2Button>
+        }
       >
-        {verifyResult && writeVerifyHooks ? (
-          <WriteVerifyReport
-            result={verifyResult}
-            debugContext={{
-              buildId: build.id,
-              egressId: egress.id,
-              formatId: egress.formatId,
-              profileId: egress.profileId,
-              measuredAt: new Date().toISOString(),
-              buildVersion: __BUILD_VERSION__,
-              buildEnv: __BUILD_ENV__,
-              pageUrl: window.location.href,
-              userAgent: navigator.userAgent,
-            }}
-            formatDebugMarkdown={writeVerifyHooks.formatDebugMarkdown}
-            onClose={handleCloseVerifyReport}
-            inModal
-            keptSectionTitle={
-              egress.profileId === 'radio-io-at-d890uv' ? 'Preserved settings' : undefined
-            }
-            keptSummaryLabel={
-              egress.profileId === 'radio-io-at-d890uv' ? '6 sentinel regions' : undefined
-            }
-          />
+        {verifyResult ? (
+          <Stack gap="md">
+            <WriteVerifyReportV2
+              title="Verify results"
+              {...mapWriteVerifyResultToV2Report(verifyResult)}
+            />
+            {writeVerifyHooks ? (
+              <WriteVerifyReport
+                result={verifyResult}
+                debugContext={{
+                  buildId: build.id,
+                  egressId: egress.id,
+                  formatId: egress.formatId,
+                  profileId: egress.profileId,
+                  measuredAt: new Date().toISOString(),
+                  buildVersion: __BUILD_VERSION__,
+                  buildEnv: __BUILD_ENV__,
+                  pageUrl: window.location.href,
+                  userAgent: navigator.userAgent,
+                }}
+                formatDebugMarkdown={writeVerifyHooks.formatDebugMarkdown}
+                onClose={handleCloseVerifyReport}
+                inModal
+                keptSectionTitle={
+                  egress.profileId === 'radio-io-at-d890uv' ? 'Preserved settings' : undefined
+                }
+                keptSummaryLabel={
+                  egress.profileId === 'radio-io-at-d890uv' ? '6 sentinel regions' : undefined
+                }
+              />
+            ) : null}
+          </Stack>
         ) : null}
-        <Group justify="flex-end" mt="md">
-          <Button onClick={handleCloseVerifyReport}>Close</Button>
-        </Group>
-      </Modal>
+      </ModalShell>
       <WebSerialExperimentalAlert />
       <Text fw={600} size="sm">
         Direct radio (Web Serial)

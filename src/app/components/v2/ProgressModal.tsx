@@ -35,6 +35,8 @@ export interface ProgressModalProps {
   summary?: ReactNode;
   onClose: () => void;
   onRetry?: () => void;
+  /** When set, replaces the default finished footer (and running cancel is omitted). */
+  footer?: ReactNode;
   inline?: boolean;
 }
 
@@ -66,6 +68,7 @@ export default function ProgressModal({
   summary,
   onClose,
   onRetry,
+  footer,
   inline,
 }: ProgressModalProps) {
   const running = phase === 'running';
@@ -85,7 +88,8 @@ export default function ProgressModal({
       dismissible={!running}
       inline={inline}
       footer={
-        running ? undefined : (
+        footer ??
+        (running ? undefined : (
           <>
             {hasError && onRetry ? (
               <Button variant="secondary" size="sm" onClick={onRetry}>
@@ -96,7 +100,7 @@ export default function ProgressModal({
               Close
             </Button>
           </>
-        )
+        ))
       }
     >
       {progress != null ? (

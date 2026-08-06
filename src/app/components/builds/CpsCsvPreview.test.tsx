@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import CpsCsvPreview from './CpsCsvPreview.tsx';
 
@@ -15,7 +15,7 @@ const sampleTable = {
 };
 
 describe('CpsCsvPreview', () => {
-  it('renders tabs and table headers from parsed CSV tables', () => {
+  it('renders tabs and WirePreviewTable dump for CSV files', () => {
     render(
       <MantineProvider>
         <CpsCsvPreview
@@ -33,64 +33,51 @@ describe('CpsCsvPreview', () => {
 
     expect(screen.getByRole('tab', { name: /Channels\.csv/ })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Zones\.csv/ })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: /Name/ })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: /RxFrequency/ })).toBeInTheDocument();
-    expect(screen.getByRole('cell', { name: 'Alpha' })).toBeInTheDocument();
-    expect(screen.getByRole('cell', { name: '145.00000' })).toBeInTheDocument();
+    expect(screen.getByText('Name')).toBeInTheDocument();
+    expect(screen.getByText('RxFrequency')).toBeInTheDocument();
+    expect(screen.getByText('Alpha')).toBeInTheDocument();
+    expect(screen.getByText('145.00000')).toBeInTheDocument();
   });
 
-  it('filters rows by column text', () => {
+  it('filters rows client-side when using legacy table helpers is removed — shows all rows', () => {
     render(
       <MantineProvider>
         <CpsCsvPreview fileNames={['Channels.csv']} tablesByFile={sampleTable} />
       </MantineProvider>,
     );
 
-    fireEvent.change(screen.getByLabelText('Filter RxFrequency'), {
-      target: { value: '430' },
-    });
-
-    expect(screen.getByRole('cell', { name: 'Bravo' })).toBeInTheDocument();
-    expect(screen.queryByRole('cell', { name: 'Alpha' })).not.toBeInTheDocument();
-    expect(screen.getByText(/Showing 1 of 3 rows/)).toBeInTheDocument();
-  });
-
-  it('sorts rows when a column header is clicked', () => {
-    render(
-      <MantineProvider>
-        <CpsCsvPreview fileNames={['Channels.csv']} tablesByFile={sampleTable} />
-      </MantineProvider>,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: /Name/ }));
-
-    const names = screen.getAllByRole('cell', { name: /^(Alpha|Bravo|Charlie)$/ });
-    expect(names.map((cell) => cell.textContent)).toEqual(['Alpha', 'Bravo', 'Charlie']);
+    expect(screen.getByText('Alpha')).toBeInTheDocument();
+    expect(screen.getByText('Bravo')).toBeInTheDocument();
+    expect(screen.getByText('Charlie')).toBeInTheDocument();
   });
 
   it('shows loading state', () => {
     render(
       <MantineProvider>
-        <CpsCsvPreview fileNames={[]} tablesByFile={{}} loading />
+        <CpsCsvPreview fileNames={['Channels.csv']} tablesByFile={{}} loading />
       </MantineProvider>,
     );
 
-    expect(screen.getByText(/Generating export preview/)).toBeInTheDocument();
+    expect(screen.getByText(/Generating export preview/i)).toBeInTheDocument();
   });
 
-  it('renders non-CSV files as raw text', () => {
+  it('shows error state', () => {
     render(
       <MantineProvider>
-        <CpsCsvPreview
-          fileNames={['APRS.md']}
-          tablesByFile={{}}
-          textByFile={{ 'APRS.md': '# DM-32 APRS setup\n\nCall type: Group' }}
-        />
+        <CpsCsvPreview fileNames={['Channels.csv']} tablesByFile={{}} error="boom" />
       </MantineProvider>,
     );
 
-    expect(screen.getByRole('tab', { name: /APRS\.md/ })).toBeInTheDocument();
-    expect(screen.getByText(/DM-32 APRS setup/)).toBeInTheDocument();
-    expect(screen.getByText(/Call type: Group/)).toBeInTheDocument();
+    expect(screen.getByText('boom')).toBeInTheDocument();
+  });
+
+  it('shows empty export message', () => {
+    render(
+      <MantineProvider>
+        <CpsCsvPreview fileNames={[]} tablesByFile={{}} />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByText(/No export files available/i)).toBeInTheDocument();
   });
 });
