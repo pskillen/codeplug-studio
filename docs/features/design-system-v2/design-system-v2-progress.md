@@ -12,15 +12,17 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Shell & project (#939)      | Shipped     | merged to `main`                                                | S1–S4, P1 Home, P3 Drive modals, P4 Quick start — mk2 Batch 1 + P4                                           |
 | Library lists (#940)        | Shipped     | `940/pskillen/ds-r2-library-lists`                              | Batch 2 L1–L7, C3, C7 — v2 DataTable + L1 chrome + ModalShell bulk overlays                                  |
 | Channel editor (#941)       | Shipped     | [PR #951](https://github.com/pskillen/codeplug-studio/pull/951) | Batch 3 E1 — EditorHeader/StickyFooter + stacked modes + sticky footer                                       |
-| Membership editors (#942)   | In progress | `942/pskillen/ds-r2-membership-editors`                         | Batch 3 E2/M1/E6/E7 — Membership* in zone/RGL/scan editors; consolidated zone workspace                      |
+| Membership editors (#942)   | Shipped     | [PR pending]                                                    | Batch 3 E2/M1/E6/E7 — zone workspace, RGL timeslot, scan minimal M1 |
 
 ### #942 membership editors (Batch 3 E2/M1/E6/E7)
 
-| Sub-slice                | Status      | Notes                                                                                          |
-| ------------------------ | ----------- | ---------------------------------------------------------------------------------------------- |
-| Kickoff + diff checklist | In progress | Branch `942/pskillen/ds-r2-membership-editors` from `main` (#941 merged); zone route consolidation to single E2 workspace |
-| Zone Membership*         | Pending     | `ZoneMemberEditor` + `AddMembersScreen`; scanning panel separate from member rows              |
-| RGL / Scan E6/E7         | Pending     | Timeslot trailing; minimal M1 baseline                                                         |
+| Sub-slice                | Status   | Notes                                                                                          |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------------- |
+| Kickoff + diff checklist | Complete | Branch `942/pskillen/ds-r2-membership-editors` from `main` (#941 merged)                     |
+| Zone Membership*         | Complete | `ZoneMemberEditor`, `ZoneMemberAddPool`, `ZoneMemberAddOverlay`                                |
+| E2 workspace             | Complete | EditorHeader/StickyFooter, members+map, Scanning behaviour panel, legacy route redirects       |
+| RGL E6                   | Complete | `RxGroupListMemberPicker` + `RxGroupListAddOverlay`                                            |
+| Scan E7                  | Complete | `ScanListMemberEditor` + `ScanListAddOverlay`                                                  |
 
 ### #940 library lists (Batch 2)
 
@@ -45,7 +47,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## Next
 
-**r2 retrofit** membership editors ([#942](https://github.com/pskillen/codeplug-studio/issues/942)) in flight on `942/pskillen/ds-r2-membership-editors`.
+**r2 retrofit** continues with form editors + zone helpers ([#943](https://github.com/pskillen/codeplug-studio/issues/943)).
 
 ## Verification
 
