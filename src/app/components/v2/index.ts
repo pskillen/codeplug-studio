@@ -8,6 +8,8 @@ export { default as CountTile } from './CountTile.tsx';
 export type { CountTileProps } from './CountTile.tsx';
 export { default as StatusBanner } from './StatusBanner.tsx';
 export type { StatusBannerProps, StatusBannerTone } from './StatusBanner.tsx';
+export { default as StatusDot } from './StatusDot.tsx';
+export type { StatusDotProps, StatusDotTone } from './StatusDot.tsx';
 export { default as Panel } from './Panel.tsx';
 export type { PanelProps } from './Panel.tsx';
 export { default as OverrideField } from './OverrideField.tsx';

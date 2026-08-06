@@ -1,0 +1,37 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.success {
+  background: var(--dsv2-success);
+}
+
+.warning {
+  background: var(--dsv2-warning);
+}
+
+.destructive {
+  background: var(--dsv2-destructive);
+}
+
+.neutral {
+  background: var(--dsv2-text-tertiary);
+}
+
+.accent {
+  background: var(--dsv2-accent);
+}
+
+.label {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
