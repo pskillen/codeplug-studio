@@ -13,6 +13,17 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Library lists (#940)        | Shipped | `940/pskillen/ds-r2-library-lists`                              | Batch 2 L1–L7, C3, C7 — v2 DataTable + L1 chrome + ModalShell bulk overlays                                  |
 | Channel editor (#941)       | Shipped | [PR #951](https://github.com/pskillen/codeplug-studio/pull/951) | Batch 3 E1 — EditorHeader/StickyFooter + stacked modes + sticky footer                                       |
 | Membership editors (#942)   | Shipped | [PR pending]                                                    | Batch 3 E2/M1/E6/E7 — zone workspace, RGL timeslot, scan minimal M1                                          |
+| Form editors + zone (#943)  | In progress | `943/pskillen/ds-r2-form-editors`                               | Batch 3 E3–E5, E8, M2, M3 — stacked on #942 branch                                                            |
+
+### #943 form editors + zone helpers (E3–E5, E8, M2, M3)
+
+| Sub-slice                | Status      | Notes                                                                                                                       |
+| ------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Kickoff + diff checklist | In progress | Branch `943/pskillen/ds-r2-form-editors` from `942/pskillen/ds-r2-membership-editors` (stacked until #942 merges)            |
+| Inventory                | —           | `E3`–`E5` compact forms; `E8` dense defaults (annotated: separate routes, real behavioural fields only); `M2`/`M3` wizards |
+| File anchors             | —           | `TalkGroupEditor`, `DigitalContactEditor`, `AnalogContactEditor`; defaults pages; `ZoneFromLocationPage`, `GrowZoneRecommendations` |
+
+**Annotated mk2 deltas (locked):** no Talk-group Usage field; no Power/Bandwidth/contact-Country defaults invention; Combobox for geocode on M2/M3; v2 DataTable multi-select on M2/M3.
 
 ### #942 membership editors (Batch 3 E2/M1/E6/E7)
 
@@ -47,7 +58,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## Next
 
-**r2 retrofit** continues with form editors + zone helpers ([#943](https://github.com/pskillen/codeplug-studio/issues/943)).
+**r2 retrofit** in flight: form editors + zone helpers ([#943](https://github.com/pskillen/codeplug-studio/issues/943)).
 
 ## Verification
 
