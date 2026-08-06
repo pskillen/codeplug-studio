@@ -43,13 +43,13 @@ function renderModal(
 }
 
 describe('DriveSaveConflictModal', () => {
-  it('shows refresh action when remote is newer', () => {
+  it('shows dual-card keep actions when remote is newer', () => {
     renderModal();
 
-    expect(screen.getByRole('button', { name: 'Refresh from Drive' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Save anyway' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Save as new file' })).toBeInTheDocument();
-    expect(screen.getByText('Channels')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Keep Drive version' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Keep this version' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Save as new file instead' })).toBeInTheDocument();
+    expect(screen.getByText(/What's changed in the Drive version/i)).toBeInTheDocument();
   });
 
   it('hides refresh when only project id mismatches', () => {
@@ -63,16 +63,15 @@ describe('DriveSaveConflictModal', () => {
     );
 
     expect(screen.queryByRole('button', { name: 'Refresh from Drive' })).not.toBeInTheDocument();
-    expect(screen.getByText(/Local project id: local-id/)).toBeInTheDocument();
-    expect(screen.getByText(/Remote project id: remote-id/)).toBeInTheDocument();
+    expect(screen.getByText(/belongs to a different project/i)).toBeInTheDocument();
   });
 
   it('calls action handlers from buttons', () => {
     const { onRefreshFromDrive, onSaveAnyway, onSaveAsNew } = renderModal();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Refresh from Drive' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save anyway' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save as new file' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Keep Drive version' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Keep this version' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save as new file instead' }));
 
     expect(onRefreshFromDrive).toHaveBeenCalledTimes(1);
     expect(onSaveAnyway).toHaveBeenCalledTimes(1);

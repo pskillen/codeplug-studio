@@ -6,9 +6,10 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## r2 retrofit slices
 
-| Slice                       | Status  | Branch / PR                      | Notes                                                                                                        |
-| --------------------------- | ------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Foundations gap-fill (#938) | Shipped | `938/pskillen/ds-r2-foundations` | Overlays, DataTable v2 full capability set, Membership family, forms/feedback, build stubs, icon-size tokens |
+| Slice                       | Status      | Branch / PR                                                     | Notes                                                                                                        |
+| --------------------------- | ----------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Foundations gap-fill (#938) | Shipped     | [PR #946](https://github.com/pskillen/codeplug-studio/pull/946) | Overlays, DataTable v2 full capability set, Membership family, forms/feedback, build stubs, icon-size tokens |
+| Shell & project (#939)      | In progress | `939/pskillen/ds-r2-shell`                                      | S1–S4, P1 Home, P3 Drive modals, P4 Quick start — mk2 Batch 1 + P4                                           |
 
 ### #938 foundations gap-fill
 
@@ -62,4 +63,4 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## Next
 
-**r2 retrofit** continues with [#939](https://github.com/pskillen/codeplug-studio/issues/939) shell & project lifecycle (highest blast radius — review carefully), then #940–#945 in parallel once #939 merges, per `tmp/design-system-prep/retrofit-r2-plan.md`'s suggested pickup order.
+**r2 retrofit** continues with [#940](https://github.com/pskillen/codeplug-studio/issues/940) library lists after [#939](https://github.com/pskillen/codeplug-studio/issues/939) merges.

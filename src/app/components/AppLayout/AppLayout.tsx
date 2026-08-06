@@ -1,16 +1,31 @@
-import { useEffect } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Menu } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconBug, IconSettings } from '@tabler/icons-react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { AppShell, BottomTabBar, ContextualStrip, DesignSystemV2Provider } from '../v2/index.ts';
+import {
+  AppShell,
+  BottomTabBar,
+  ContextualStrip,
+  DesignSystemV2Provider,
+  ProjectChip,
+} from '../v2/index.ts';
 import type { BottomTabItem } from '../v2/BottomTabBar.tsx';
 import BuildFooter from '../BuildFooter/BuildFooter.tsx';
 import BuildSwitcher from '../builds/BuildSwitcher/BuildSwitcher.tsx';
 import CookieConsentBanner from '../CookieConsentBanner/CookieConsentBanner.tsx';
-import DriveRefreshProvider from '../ProjectInterchangeBar/DriveRefreshProvider.tsx';
-import RefreshFromDriveBanner from '../ProjectInterchangeBar/RefreshFromDriveBanner.tsx';
+import DriveRefreshProvider, {
+  useDriveRefresh,
+} from '../ProjectInterchangeBar/DriveRefreshProvider.tsx';
+import DriveSaveFlowProvider, {
+  useDriveSaveFlowContext,
+} from '../SidebarDriveControls/DriveSaveFlowProvider.tsx';
 import SidebarDriveControls from '../SidebarDriveControls/SidebarDriveControls.tsx';
+import ChromeDismissibleNotices from '../shell/ChromeDismissibleNotices.tsx';
+import QuickProjectSwitcher from '../shell/QuickProjectSwitcher.tsx';
+import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
+import { useProjectChipStatus } from '../../hooks/useProjectChipStatus.ts';
+import { useProjectPortableDirty } from '../../hooks/useProjectPortableDirty.ts';
 import { usePageAnalytics } from '../../hooks/usePageAnalytics.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { handleExternalLinkClick } from '../../lib/openExternalUrl.ts';
@@ -37,11 +52,36 @@ export default function AppLayout() {
     };
   }, []);
 
+  return (
+    <DriveSaveFlowProvider>
+      <DriveRefreshProvider>
+        <AppLayoutShell />
+      </DriveRefreshProvider>
+    </DriveSaveFlowProvider>
+  );
+}
+
+function AppLayoutShell() {
   const isDesktopNav = useMediaQuery(DESKTOP_MIN_WIDTH_MEDIA_QUERY);
   const location = useLocation();
   const navigate = useNavigate();
-  const { activeProjectId, activeProject } = useProjects();
+  const { activeProjectId, activeProject, projects, switchProject } = useProjects();
   const hasActiveProject = activeProjectId != null;
+  const { sessionExpired, connected } = useGoogleDrive();
+  const { bannerOpen } = useDriveRefresh();
+  const { saving } = useDriveSaveFlowContext();
+  const { dirty } = useProjectPortableDirty(activeProjectId, activeProject ?? undefined);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  const chipStatus = useProjectChipStatus({
+    project: activeProject,
+    hasActiveProject,
+    dirty,
+    saving,
+    driveUpdateAvailable: bannerOpen,
+    driveSessionExpired: sessionExpired && !connected,
+    driveLinked: Boolean(activeProject?.interchange?.googleDrive),
+  });
 
   const visibleTabs = primaryNavItems.filter((item) => !item.requiresProject || hasActiveProject);
   const tabLabels = visibleTabs.map((item) => item.label);
@@ -74,7 +114,60 @@ export default function AppLayout() {
     if (item) navigate(item.to);
   }
 
-  const projectName = hasActiveProject ? (activeProject?.name ?? 'Untitled project') : 'Projects';
+  const projectName = hasActiveProject
+    ? (activeProject?.name ?? 'Untitled project')
+    : 'No project open';
+
+  const compactChip = isDesktopNav === false;
+
+  function handleProjectChipClick() {
+    if (hasActiveProject && location.pathname !== '/') {
+      setSwitcherOpen(true);
+      return;
+    }
+    if (hasActiveProject) {
+      setSwitcherOpen((open) => !open);
+      return;
+    }
+    navigate('/');
+  }
+
+  const projectChip = (
+    <ProjectChip
+      name={projectName}
+      statusTone={chipStatus.tone}
+      statusLabel={chipStatus.label}
+      compact={compactChip}
+      onClick={handleProjectChipClick}
+      aria-expanded={hasActiveProject ? switcherOpen : undefined}
+      aria-haspopup={hasActiveProject ? 'dialog' : undefined}
+    />
+  );
+
+  const projectChipControl =
+    hasActiveProject && projects.length > 0 ? (
+      <QuickProjectSwitcher
+        opened={switcherOpen}
+        onClose={() => setSwitcherOpen(false)}
+        onOpen={() => setSwitcherOpen(true)}
+        mobile={compactChip}
+        projects={projects}
+        activeProjectId={activeProjectId}
+        onSwitchProject={switchProject}
+        onNewProject={() => {
+          setSwitcherOpen(false);
+          navigate('/');
+        }}
+        onManageAll={() => {
+          setSwitcherOpen(false);
+          navigate('/');
+        }}
+      >
+        {projectChip}
+      </QuickProjectSwitcher>
+    ) : (
+      projectChip
+    );
 
   const overflowAvatar = (
     <Menu shadow="md" width={200} position="bottom-end">
@@ -105,53 +198,102 @@ export default function AppLayout() {
   const showBottomNav = isDesktopNav === false;
 
   return (
-    <DriveRefreshProvider>
-      <div
-        className={[classes.root, showBottomNav ? classes.rootWithBottomNav : '']
+    <AppLayoutBody
+      showBottomNav={showBottomNav}
+      tabLabels={tabLabels}
+      activePrimary={activePrimary}
+      goToTab={goToTab}
+      isDesktopNav={isDesktopNav}
+      projectChipControl={projectChipControl}
+      hasActiveProject={hasActiveProject}
+      overflowAvatar={overflowAvatar}
+      stripItems={stripItems}
+      stripActive={stripActive}
+      goToStrip={goToStrip}
+      showBuildSwitcher={showBuildSwitcher}
+      bottomItems={bottomItems}
+    />
+  );
+}
+
+interface AppLayoutBodyProps {
+  showBottomNav: boolean;
+  tabLabels: string[];
+  activePrimary: (typeof primaryNavItems)[number] | null;
+  goToTab: (label: string) => void;
+  isDesktopNav: boolean | undefined;
+  projectChipControl: ReactNode;
+  hasActiveProject: boolean;
+  overflowAvatar: ReactNode;
+  stripItems: ReturnType<typeof resolveContextualStripItems>;
+  stripActive: string | null;
+  goToStrip: (label: string) => void;
+  showBuildSwitcher: boolean;
+  bottomItems: BottomTabItem[];
+}
+
+function AppLayoutBody({
+  showBottomNav,
+  tabLabels,
+  activePrimary,
+  goToTab,
+  isDesktopNav,
+  projectChipControl,
+  hasActiveProject,
+  overflowAvatar,
+  stripItems,
+  stripActive,
+  goToStrip,
+  showBuildSwitcher,
+  bottomItems,
+}: AppLayoutBodyProps) {
+  const navigate = useNavigate();
+
+  return (
+    <div
+      className={[classes.root, showBottomNav ? classes.rootWithBottomNav : '']
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <DesignSystemV2Provider>
+        <AppShell
+          tabs={tabLabels}
+          activeTab={activePrimary?.label}
+          onTabChange={goToTab}
+          showTabs={isDesktopNav !== false}
+          projectChip={projectChipControl}
+          onBrandClick={() => navigate('/')}
+          rightExtra={hasActiveProject ? <SidebarDriveControls /> : undefined}
+          avatar={overflowAvatar}
+        />
+        <ChromeDismissibleNotices />
+        {stripItems && stripItems.length > 0 ? (
+          <ContextualStrip
+            items={stripItems.map((i) => i.label)}
+            active={stripActive ?? undefined}
+            onChange={goToStrip}
+            leading={showBuildSwitcher ? <BuildSwitcher compact /> : undefined}
+          />
+        ) : null}
+      </DesignSystemV2Provider>
+
+      <main
+        className={[classes.main, showBottomNav ? classes.mainScroll : '']
           .filter(Boolean)
           .join(' ')}
       >
+        <CookieConsentBanner />
+        <div className={classes.pageContent}>
+          <Outlet />
+          <BuildFooter />
+        </div>
+      </main>
+
+      {showBottomNav ? (
         <DesignSystemV2Provider>
-          <AppShell
-            tabs={tabLabels}
-            activeTab={activePrimary?.label}
-            onTabChange={goToTab}
-            showTabs={isDesktopNav !== false}
-            projectName={projectName}
-            onProjectClick={() => navigate('/')}
-            onBrandClick={() => navigate('/')}
-            rightExtra={hasActiveProject ? <SidebarDriveControls /> : undefined}
-            avatar={overflowAvatar}
-          />
-          {stripItems && stripItems.length > 0 ? (
-            <ContextualStrip
-              items={stripItems.map((i) => i.label)}
-              active={stripActive ?? undefined}
-              onChange={goToStrip}
-              leading={showBuildSwitcher ? <BuildSwitcher compact /> : undefined}
-            />
-          ) : null}
+          <BottomTabBar items={bottomItems} activeId={activePrimary?.label} onChange={goToTab} />
         </DesignSystemV2Provider>
-
-        <main
-          className={[classes.main, showBottomNav ? classes.mainScroll : '']
-            .filter(Boolean)
-            .join(' ')}
-        >
-          <CookieConsentBanner />
-          <RefreshFromDriveBanner />
-          <div className={classes.pageContent}>
-            <Outlet />
-            <BuildFooter />
-          </div>
-        </main>
-
-        {showBottomNav ? (
-          <DesignSystemV2Provider>
-            <BottomTabBar items={bottomItems} activeId={activePrimary?.label} onChange={goToTab} />
-          </DesignSystemV2Provider>
-        ) : null}
-      </div>
-    </DriveRefreshProvider>
+      ) : null}
+    </div>
   );
 }

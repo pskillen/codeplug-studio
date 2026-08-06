@@ -3,9 +3,8 @@ import {
   Alert,
   Anchor,
   Breadcrumbs,
-  Button,
+  Button as MantineButton,
   Group,
-  Modal,
   Stack,
   Text,
   TextInput,
@@ -32,6 +31,7 @@ import {
   resolveInitialBrowseState,
 } from './driveBrowserHelpers.ts';
 import { useDriveSession } from '../../hooks/useDriveSession.ts';
+import { DesignSystemV2Provider, Button, ModalShell } from '../v2/index.ts';
 import GoogleDriveButton from './GoogleDriveButton.tsx';
 
 export interface DriveOpenSelection {
@@ -214,9 +214,14 @@ function DriveBrowserBody({
         <Alert color="yellow">
           <Stack gap="xs">
             <Text size="sm">Connect Google Drive to browse files.</Text>
-            <Button size="xs" variant="light" loading={driveLoading} onClick={() => void connect()}>
+            <MantineButton
+              size="xs"
+              variant="light"
+              loading={driveLoading}
+              onClick={() => void connect()}
+            >
               Reconnect
-            </Button>
+            </MantineButton>
           </Stack>
         </Alert>
       ) : null}
@@ -224,7 +229,7 @@ function DriveBrowserBody({
         <Alert color="red">
           {error}
           {error.toLowerCase().includes('session expired') ? (
-            <Button
+            <MantineButton
               size="xs"
               variant="light"
               mt="xs"
@@ -232,7 +237,7 @@ function DriveBrowserBody({
               onClick={() => void connect()}
             >
               Reconnect
-            </Button>
+            </MantineButton>
           ) : null}
         </Alert>
       ) : null}
@@ -266,7 +271,7 @@ function DriveBrowserBody({
             onChange={(event) => setNewFolderName(event.currentTarget.value)}
             style={{ flex: 1 }}
           />
-          <Button
+          <MantineButton
             size="xs"
             variant="subtle"
             loading={creatingFolder}
@@ -274,7 +279,7 @@ function DriveBrowserBody({
             onClick={() => void handleCreateFolder()}
           >
             Create folder
-          </Button>
+          </MantineButton>
         </Group>
       </Stack>
       {loading ? <Text size="sm">Loading…</Text> : null}
@@ -284,14 +289,14 @@ function DriveBrowserBody({
             Folders
           </Text>
           {folders.map((folder) => (
-            <Button
+            <MantineButton
               key={folder.id}
               variant="subtle"
               justify="flex-start"
               onClick={() => openFolder(folder)}
             >
               {folder.name}
-            </Button>
+            </MantineButton>
           ))}
         </Stack>
       ) : null}
@@ -301,14 +306,14 @@ function DriveBrowserBody({
             YAML files
           </Text>
           {yamlFiles.map((file) => (
-            <Button
+            <MantineButton
               key={file.id}
               variant="light"
               justify="flex-start"
               onClick={() => void handleOpenFile(file)}
             >
               {file.name}
-            </Button>
+            </MantineButton>
           ))}
         </Stack>
       ) : null}
@@ -352,29 +357,34 @@ export default function DriveBrowserModal({
   port = googleDrivePort,
 }: DriveBrowserModalProps) {
   return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title={mode === 'open' ? 'Open from Google Drive' : 'Save to Google Drive'}
-      size="lg"
-      centered
-      closeOnClickOutside={!saving}
-      closeOnEscape={!saving}
-    >
-      {opened ? (
-        <DriveBrowserBody
-          key={`${mode}-${interchangeFolderId ?? 'root'}-${defaultFileName}`}
-          mode={mode}
-          interchangeFolderId={interchangeFolderId}
-          defaultFileName={defaultFileName}
-          saveConflictKind={saveConflictKind}
-          saving={saving}
-          onClose={onClose}
-          onSelectFile={onSelectFile}
-          onSaveTarget={onSaveTarget}
-          port={port}
-        />
-      ) : null}
-    </Modal>
+    <DesignSystemV2Provider>
+      <ModalShell
+        open={opened}
+        onClose={onClose}
+        title={mode === 'open' ? 'Open from Google Drive' : 'Save to Google Drive'}
+        size="lg"
+        dismissible={!saving}
+        footer={
+          <Button variant="secondary" size="sm" onClick={onClose} disabled={saving}>
+            {mode === 'save' ? 'Cancel' : 'Close'}
+          </Button>
+        }
+      >
+        {opened ? (
+          <DriveBrowserBody
+            key={`${mode}-${interchangeFolderId ?? 'root'}-${defaultFileName}`}
+            mode={mode}
+            interchangeFolderId={interchangeFolderId}
+            defaultFileName={defaultFileName}
+            saveConflictKind={saveConflictKind}
+            saving={saving}
+            onClose={onClose}
+            onSelectFile={onSelectFile}
+            onSaveTarget={onSaveTarget}
+            port={port}
+          />
+        ) : null}
+      </ModalShell>
+    </DesignSystemV2Provider>
   );
 }

@@ -1,0 +1,71 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: min(280px, 42vw);
+  padding: 6px 12px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  background: transparent;
+  font-family: var(--dsv2-font-family);
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+button.chip:hover {
+  border-color: var(--dsv2-border-strip);
+  color: var(--dsv2-text-primary);
+}
+
+.chipCompact {
+  padding: 4px 8px;
+  gap: 6px;
+  max-width: none;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotSuccess {
+  background: var(--dsv2-success);
+}
+
+.dotWarning {
+  background: var(--dsv2-warning);
+}
+
+.dotAccent {
+  background: var(--dsv2-accent);
+}
+
+.dotNeutral {
+  background: var(--dsv2-text-tertiary);
+}
+
+.name {
+  font-weight: 500;
+  color: var(--dsv2-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.separator {
+  color: var(--dsv2-text-tertiary);
+}
+
+.statusLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  flex-shrink: 0;
+  margin-left: 2px;
+  color: var(--dsv2-text-tertiary);
+}
