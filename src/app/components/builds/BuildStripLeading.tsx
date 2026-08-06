@@ -1,10 +1,11 @@
-import { Text } from '@mantine/core';
-import { Link } from 'react-router-dom';
-import { radioTargetFor, compatibleEgressForProfile } from '@core/radio-targets/index.ts';
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { radioTargetFor } from '@core/radio-targets/index.ts';
 import { useOptionalBuildLayout } from '../../routes/builds/BuildLayoutContext.tsx';
-import { useFormatBuild } from '../../state/useFormatBuilds.ts';
-import BuildSwitcher from './BuildSwitcher/BuildSwitcher.tsx';
-import classes from './BuildStripLeading.module.css';
+import { pathForSwitchedBuild } from '../../routes/builds/nav.ts';
+import { useFormatBuild, useFormatBuilds } from '../../state/useFormatBuilds.ts';
+import ProjectChip from '../v2/ProjectChip.tsx';
+import QuickBuildSwitcher from './QuickBuildSwitcher.tsx';
 
 export interface BuildStripLeadingProps {
   buildId: string;
@@ -12,35 +13,62 @@ export interface BuildStripLeadingProps {
 }
 
 /**
- * mk2 B2 — build switcher + radio/pathway meta in the contextual strip leading slot.
+ * mk2 B2 — build identity chip in the contextual strip trailing slot.
  */
 export default function BuildStripLeading({ buildId, compact }: BuildStripLeadingProps) {
   const layout = useOptionalBuildLayout();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { build: hookBuild } = useFormatBuild(buildId);
+  const { builds } = useFormatBuilds();
   const build = layout?.build ?? hookBuild;
-  const activeEgress = layout?.activeEgress;
+  const [switcherOpen, setSwitcherOpen] = useState(false);
 
   if (!build) return null;
 
   const radioLabel = radioTargetFor(build.radioTargetId)?.label ?? build.radioTargetId;
-  const pathwayLabel = activeEgress
-    ? (compatibleEgressForProfile(build.radioTargetId, activeEgress.profileId)?.label ??
-      activeEgress.profileId)
-    : 'No pathway selected';
+  const showRadioSub = radioLabel.trim().toLowerCase() !== build.name.trim().toLowerCase();
+
+  const chip = (
+    <ProjectChip
+      name={build.name}
+      statusLabel={showRadioSub ? radioLabel : null}
+      statusTone="neutral"
+      compact={compact}
+      onClick={() => setSwitcherOpen((open) => !open)}
+      aria-expanded={switcherOpen}
+      aria-haspopup="dialog"
+    />
+  );
+
+  if (builds.length <= 1) {
+    return chip;
+  }
 
   return (
-    <div className={[classes.root, compact ? classes.compact : ''].filter(Boolean).join(' ')}>
-      <Link to="/builds" className={classes.backLink}>
-        Export for radio
-      </Link>
-      <BuildSwitcher compact />
-      <Text size="xs" c="dimmed" className={classes.meta}>
-        {radioLabel}
-        <span className={classes.dot} aria-hidden>
-          ·
-        </span>
-        {pathwayLabel}
-      </Text>
-    </div>
+    <QuickBuildSwitcher
+      opened={switcherOpen}
+      onClose={() => setSwitcherOpen(false)}
+      onOpen={() => setSwitcherOpen(true)}
+      mobile={compact}
+      builds={builds}
+      activeBuildId={build.id}
+      onSwitchBuild={(nextId) => {
+        const target = builds.find((candidate) => candidate.id === nextId);
+        if (!target) return;
+        navigate(
+          pathForSwitchedBuild(location.pathname, build.id, target, {
+            egressPaths: layout?.egressPaths,
+            activeEgress: layout?.activeEgress,
+          }),
+        );
+      }}
+      onNewBuild={() => {
+        setSwitcherOpen(false);
+        navigate('/builds/new');
+      }}
+    >
+      {chip}
+    </QuickBuildSwitcher>
   );
 }

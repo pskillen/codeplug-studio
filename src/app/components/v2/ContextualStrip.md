@@ -22,7 +22,7 @@ Matches the design-system Library strip (Channels / Zones / …). Solid accent f
   items={['Channels', 'Zones', 'Talk groups']}
   active={sub}
   onChange={setSub}
-  leading={isBuildDetail ? <BuildSwitcher compact /> : undefined}
+  trailing={isBuildDetail ? <BuildStripLeading buildId={buildId} /> : undefined}
 />
 ```
 

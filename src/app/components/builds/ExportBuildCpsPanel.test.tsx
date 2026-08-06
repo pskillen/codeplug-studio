@@ -516,10 +516,10 @@ describe('ExportBuildCpsPanel', () => {
         >
           <MantineProvider>
             <MemoryRouter>
-              <button type="button" onClick={() => setActiveEgressId(neon.id)}>
+              <button type="button" onClick={() => setActiveEgressId(neon!.id)}>
                 Switch NeonPlug
               </button>
-              <button type="button" onClick={() => setActiveEgressId(chirp.id)}>
+              <button type="button" onClick={() => setActiveEgressId(chirp!.id)}>
                 Switch CHIRP
               </button>
               <ExportBuildCpsPanel build={build} panelMode="settings" />
