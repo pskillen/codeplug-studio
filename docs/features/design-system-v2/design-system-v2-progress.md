@@ -17,13 +17,16 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ### #943 form editors + zone helpers (E3–E5, E8, M2, M3)
 
-| Sub-slice                | Status      | Notes                                                                                                                       |
-| ------------------------ | ----------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Kickoff + diff checklist | In progress | Branch `943/pskillen/ds-r2-form-editors` from `942/pskillen/ds-r2-membership-editors` (stacked until #942 merges)            |
-| Inventory                | —           | `E3`–`E5` compact forms; `E8` dense defaults (annotated: separate routes, real behavioural fields only); `M2`/`M3` wizards |
-| File anchors             | —           | `TalkGroupEditor`, `DigitalContactEditor`, `AnalogContactEditor`; defaults pages; `ZoneFromLocationPage`, `GrowZoneRecommendations` |
+| Sub-slice                | Status   | Notes                                                                                                                       |
+| ------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Kickoff + diff checklist | Complete | Branch `943/pskillen/ds-r2-form-editors` from `942/pskillen/ds-r2-membership-editors`                                       |
+| E3–E5 compact forms      | Complete | `EditorHeader`/`StickyFooter`, `CompactFormEditor.module.css`, v2 `SegmentedControl`                                        |
+| E8 dense defaults        | Complete | Separate channel/zone routes; `DefaultsSettings.module.css`; annotated vs mk2 E8 frame                                    |
+| M2 zone-from-location    | Complete | `GeocodeCentreField`, radius chips, v2 `DataTable` multi-select, `ZoneFromLocationPage.module.css`                           |
+| M3 grow recommendations  | Complete | Table-first `GrowZoneRecommendations` + v2 `DataTable` bulk add                                                             |
+| Docs + PR                | Pending  | Feature hubs, outstanding Combobox debt closed                                                                              |
 
-**Annotated mk2 deltas (locked):** no Talk-group Usage field; no Power/Bandwidth/contact-Country defaults invention; Combobox for geocode on M2/M3; v2 DataTable multi-select on M2/M3.
+**Annotated mk2 deltas (locked):** no Talk-group Usage field; no Power/Bandwidth/contact-Country defaults invention; Combobox wired on M2/M3.
 
 ### #942 membership editors (Batch 3 E2/M1/E6/E7)
 

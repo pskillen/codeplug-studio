@@ -44,7 +44,7 @@ import { Combobox, DesignSystemV2Provider } from '@app/components/v2';
 
 - Must render inside `DesignSystemV2Provider`.
 - Dropdown opens on input focus while `inputValue` is non-empty; closes on outside click (`mousedown` listener) or option select.
-- **Generalized icon, not location-specific**: the mk2 DS bundle hardcodes a map-pin icon for the committed state (its only worked example is a location picker). This component accepts an `icon` prop instead, defaulting to a search icon, so non-location consumers aren't stuck with a pin. Not yet wired into a real consumer (e.g. `ZoneFromLocationPage.tsx`'s hand-rolled geocode search) — that's a follow-up, not this ticket's scope.
+- **Generalized icon, not location-specific**: the mk2 DS bundle hardcodes a map-pin icon for the committed state (its only worked example is a location picker). This component accepts an `icon` prop instead, defaulting to a search icon, so non-location consumers aren't stuck with a pin. Live consumers: `GeocodeCentreField` on zone-from-location ([#943](https://github.com/pskillen/codeplug-studio/issues/943)) and grow-zone recommendations.
 - Live demos: `/styleguide/v2/forms`
 
 ## Related
