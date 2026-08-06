@@ -1,0 +1,39 @@
+.page {
+  padding: var(--dsv2-page-padding-y) var(--dsv2-page-padding-x);
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--dsv2-font-heading-lg);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 3px;
+}
+
+.description {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0 0 20px;
+  line-height: 1.45;
+}
+
+.locateMapGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 48em) {
+  .locateMapGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.locatorReadout {
+  font-family: var(--dsv2-font-mono, ui-monospace, monospace);
+  font-size: var(--dsv2-font-body);
+  font-weight: 600;
+  color: var(--dsv2-accent);
+  margin-top: 8px;
+}

@@ -1,0 +1,28 @@
+.page {
+  padding: var(--dsv2-page-padding-y) var(--dsv2-page-padding-x);
+  max-width: 720px;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--dsv2-font-heading-lg);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 3px;
+}
+
+.description {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0 0 24px;
+  line-height: 1.45;
+}
+
+.tableWrap {
+  margin-bottom: 16px;
+}
+
+.disclaimer {
+  color: var(--dsv2-text-tertiary);
+  line-height: 1.45;
+}

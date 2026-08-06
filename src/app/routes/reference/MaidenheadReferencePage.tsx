@@ -1,6 +1,5 @@
 import {
   Autocomplete,
-  Button,
   Group,
   Loader,
   NumberInput,
@@ -14,10 +13,10 @@ import {
 import { useDebouncedValue } from '@mantine/hooks';
 import { useCallback, useMemo, useState } from 'react';
 import MapLocationPicker from '../../components/MapLocationPicker/MapLocationPicker.tsx';
-import { DesignSystemV2Provider, MapPanel } from '../../components/v2/index.ts';
+import { DesignSystemV2Provider, MapPanel, Panel, Button } from '../../components/v2/index.ts';
 import { mapComboboxProps } from '../../theme.ts';
 import UseMyLocationButton from '../../components/UseMyLocationButton/UseMyLocationButton.tsx';
-import { FormSection, ListPage, PageSection } from '../../components/ui/index.ts';
+import { FormSection } from '../../components/ui/index.ts';
 import { useMapSettings } from '../../hooks/useMapSettings.ts';
 import {
   channelHasLocation,
@@ -35,6 +34,7 @@ import { GeocodeError, geocodeQuery, type GeocodeProvider } from '@integrations/
 import { useProjects } from '../../state/useProjects.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import MaidenheadBearingSection from './MaidenheadBearingSection.tsx';
+import classes from './MaidenheadReferencePage.module.css';
 
 type PageMode = 'convert' | 'bearing';
 
@@ -202,77 +202,79 @@ export default function MaidenheadReferencePage() {
   };
 
   return (
-    <ListPage
-      title="Maidenhead locator"
-      description="Convert a locator to coordinates, or find distance and bearing between two points."
-    >
-      <SegmentedControl
-        value={mode}
-        onChange={(value) => setMode(value as PageMode)}
-        data={MODE_OPTIONS}
-        fullWidth
-      />
+    <DesignSystemV2Provider>
+      <div className={classes.page}>
+        <h1 className={classes.title}>Maidenhead locator</h1>
+        <p className={classes.description}>
+          Convert a locator to coordinates, or find distance and bearing between two points.
+        </p>
 
-      {mode === 'convert' ? (
-        <PageSection title="Converter">
-          <Stack gap="lg">
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-              <FormSection title="Locator">
-                <TextInput
-                  label="Maidenhead locator"
-                  placeholder="e.g. IO85uk"
-                  value={locator}
-                  onChange={(e) => handleLocatorChange(e.currentTarget.value)}
-                  error={locatorError}
-                />
-                <SegmentedControl
-                  value={String(precision)}
-                  onChange={handlePrecisionChange}
-                  data={PRECISION_OPTIONS}
-                />
-              </FormSection>
+        <Stack gap="md">
+          <SegmentedControl
+            value={mode}
+            onChange={(value) => setMode(value as PageMode)}
+            data={MODE_OPTIONS}
+            fullWidth
+          />
 
-              <FormSection title="Coordinates">
-                <Group grow>
-                  <NumberInput
-                    label="Latitude"
-                    value={lat}
-                    onChange={handleLatChange}
-                    decimalScale={6}
-                    min={-90}
-                    max={90}
-                  />
-                  <NumberInput
-                    label="Longitude"
-                    value={lon}
-                    onChange={handleLonChange}
-                    decimalScale={6}
-                    min={-180}
-                    max={180}
-                  />
-                </Group>
-                <UseMyLocationButton onLocation={(latN, lonN) => applyCoords(latN, lonN)} />
-              </FormSection>
-            </SimpleGrid>
+          {mode === 'convert' ? (
+            <Panel title="Locate">
+              <Stack gap="lg">
+                <div className={classes.locateMapGrid}>
+                  <Stack gap="md">
+                    <FormSection title="Locator">
+                      <TextInput
+                        label="Maidenhead locator"
+                        placeholder="e.g. IO85uk"
+                        value={locator}
+                        onChange={(e) => handleLocatorChange(e.currentTarget.value)}
+                        error={locatorError}
+                      />
+                      <SegmentedControl
+                        value={String(precision)}
+                        onChange={handlePrecisionChange}
+                        data={PRECISION_OPTIONS}
+                      />
+                      {locator.trim() && !locatorError ? (
+                        <div className={classes.locatorReadout}>{locator.toUpperCase()}</div>
+                      ) : null}
+                    </FormSection>
 
-            <Stack gap="sm">
-              <Text size="sm" c="dimmed">
-                Click the map or drag the marker to set coordinates.
-              </Text>
-              <DesignSystemV2Provider>
-                <MapPanel title="Map" height={280}>
-                  <MapLocationPicker
-                    lat={mapLat}
-                    lon={mapLon}
-                    onPick={handleMapPick}
-                    height="100%"
-                    active
-                  />
-                </MapPanel>
-              </DesignSystemV2Provider>
-            </Stack>
+                    <FormSection title="Coordinates">
+                      <Group grow>
+                        <NumberInput
+                          label="Latitude"
+                          value={lat}
+                          onChange={handleLatChange}
+                          decimalScale={6}
+                          min={-90}
+                          max={90}
+                        />
+                        <NumberInput
+                          label="Longitude"
+                          value={lon}
+                          onChange={handleLonChange}
+                          decimalScale={6}
+                          min={-180}
+                          max={180}
+                        />
+                      </Group>
+                      <UseMyLocationButton onLocation={(latN, lonN) => applyCoords(latN, lonN)} />
+                    </FormSection>
+                  </Stack>
 
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+                  <MapPanel title="Map" height={220}>
+                    <MapLocationPicker
+                      lat={mapLat}
+                      lon={mapLon}
+                      onPick={handleMapPick}
+                      height="100%"
+                      active
+                    />
+                  </MapPanel>
+                </div>
+
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
               <Stack gap="sm">
                 <Title order={4}>Address lookup</Title>
                 <Text size="sm" c="dimmed">
@@ -299,6 +301,8 @@ export default function MaidenheadReferencePage() {
                     }}
                   />
                   <Button
+                    variant="primary"
+                    size="sm"
                     onClick={() => void handleGeocode()}
                     loading={geocodeLoading}
                     style={{ flexShrink: 0 }}
@@ -339,6 +343,8 @@ export default function MaidenheadReferencePage() {
                     comboboxProps={mapComboboxProps()}
                   />
                   <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={handleApplyChannelLocation}
                     disabled={!hasActiveProject || !selectedChannel || !selectedChannelHasLocation}
                     style={{ flexShrink: 0 }}
@@ -353,19 +359,21 @@ export default function MaidenheadReferencePage() {
                 ) : null}
               </Stack>
             </SimpleGrid>
-          </Stack>
-        </PageSection>
-      ) : (
-        <PageSection title="Bearing">
-          <MaidenheadBearingSection
-            channels={channels}
-            hasActiveProject={hasActiveProject}
-            mapboxToken={mapboxToken}
-            hasMapboxToken={hasMapboxToken}
-            mapActive
-          />
-        </PageSection>
-      )}
-    </ListPage>
+              </Stack>
+            </Panel>
+          ) : (
+            <Panel title="Bearing">
+              <MaidenheadBearingSection
+                channels={channels}
+                hasActiveProject={hasActiveProject}
+                mapboxToken={mapboxToken}
+                hasMapboxToken={hasMapboxToken}
+                mapActive
+              />
+            </Panel>
+          )}
+        </Stack>
+      </div>
+    </DesignSystemV2Provider>
   );
 }
