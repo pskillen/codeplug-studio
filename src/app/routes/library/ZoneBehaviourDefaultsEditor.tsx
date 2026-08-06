@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Alert, Stack, Switch } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import type { ZoneBehaviourDefaults } from '@core/models/zoneBehaviourDefaults.ts';
 import { normalizeZoneBehaviourDefaults } from '@core/domain/normalizeZoneBehaviourDefaults.ts';
-import { FormSection, UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/ui/index.ts';
+import { Button, Panel, ToggleSwitch } from '../../components/v2/index.ts';
 import { useEntityFormDirty, useFormBaseline } from '../../hooks/useEntityFormDirty.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { persistence } from '../../state/persistence.ts';
-import EditorActions from './EditorActions.tsx';
+import classes from './DefaultsSettings.module.css';
 
 export default function ZoneBehaviourDefaultsEditor({
   projectId,
@@ -27,6 +29,7 @@ export default function ZoneBehaviourDefaultsEditor({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
 
   function buildDefaults(): ZoneBehaviourDefaults {
     return normalizeZoneBehaviourDefaults({ includeInZoneDerivedScanList });
@@ -80,25 +83,36 @@ export default function ZoneBehaviourDefaultsEditor({
   }
 
   return (
-    <Stack gap="md" maw={640}>
-      <FormSection>
-        <Switch
-          label="Include members in zone-derived scan lists by default"
-          description="On = include; off = exclude. Used when a build makes scan lists from zones (for example DM32 or Anytone). You can still override this for individual members or on a build."
-          checked={includeInZoneDerivedScanList}
-          onChange={(event) => setIncludeInZoneDerivedScanList(event.currentTarget.checked)}
-          disabled={saving}
-        />
-      </FormSection>
-      {error ? <Alert color="red">{error}</Alert> : null}
-      <EditorActions
-        saving={saving}
-        error={null}
-        onSave={() => void handleSave()}
-        hideCancel
-        cancelPath="/library/zones"
-      />
+    <div className={[classes.stack, isMobile ? classes.pageCompact : ''].filter(Boolean).join(' ')}>
+      <Panel title="Zone behavioural defaults">
+        <div className={classes.toggleBlock}>
+          <ToggleSwitch
+            checked={includeInZoneDerivedScanList}
+            onChange={setIncludeInZoneDerivedScanList}
+            disabled={saving}
+            label="Include members in zone-derived scan lists by default"
+          />
+          <p className={classes.segmentHint} style={{ marginTop: 8 }}>
+            On = include; off = exclude. Used when a build makes scan lists from zones (for example
+            DM32 or Anytone). Per-member and per-build overrides still win when set.
+          </p>
+        </div>
+      </Panel>
+
+      {error ? <p className={classes.error}>{error}</p> : null}
+
+      <div className={classes.actions}>
+        <Button variant="primary" size="sm" onClick={() => void handleSave()} loading={saving}>
+          Save zone defaults
+        </Button>
+        {isDirty ? (
+          <span className={classes.segmentHint}>Unsaved changes</span>
+        ) : (
+          <span className={classes.segmentHint}>All changes saved</span>
+        )}
+      </div>
+
       <UnsavedChangesModal opened={routeModalOpen} onStay={routeStay} onLeave={routeLeave} />
-    </Stack>
+    </div>
   );
 }

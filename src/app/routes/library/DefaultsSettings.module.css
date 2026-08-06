@@ -1,0 +1,76 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px var(--dsv2-page-padding-x) 32px;
+  min-width: 0;
+  margin: calc(-1 * var(--mantine-spacing-md));
+}
+
+.pageCompact {
+  padding: 18px 16px 28px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+}
+
+.blurb {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--dsv2-text-tertiary);
+  line-height: 1.45;
+  max-width: 42rem;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 42rem;
+}
+
+.segmentBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.segmentLabel {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsv2-text-tertiary);
+}
+
+.segmentHint {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--dsv2-text-tertiary);
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--dsv2-danger);
+}
+
+.loading {
+  padding: 24px var(--dsv2-page-padding-x);
+  color: var(--dsv2-text-tertiary);
+}
+
+.toggleBlock {
+  padding-top: 4px;
+}
