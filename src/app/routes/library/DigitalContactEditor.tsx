@@ -1,26 +1,46 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
+import { useNavigate } from 'react-router-dom';
 import type { DigitalChannelMode, DigitalContact } from '@core/models/library.ts';
 import { newDigitalContact } from '@core/domain/factories.ts';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
-import { GradientSegmentedControl, UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/ui/index.ts';
 import {
-  Button,
   DesignSystemV2Provider,
+  DismissibleNotice,
+  EditorHeader,
   FormField,
   Panel,
+  SegmentedControl,
+  StickyFooter,
   TextInput,
 } from '../../components/v2/index.ts';
 import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
 import { parseOptionalInt } from '../../lib/units.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
+import { referenceCount } from '../../lib/listReferences.ts';
 import { persistence } from '../../state/persistence.ts';
-import { useEntitySave } from './useEntitySave.ts';
-import RadioidContactVerifyPanel from '../../components/contacts/RadioidContactVerifyPanel.tsx';
 import { useLibrary } from '../../state/useLibrary.ts';
-import classes from './zones/ZoneEditLayout.module.css';
+import RadioidContactVerifyPanel from '../../components/contacts/RadioidContactVerifyPanel.tsx';
+import { useEntitySave } from './useEntitySave.ts';
+import classes from './CompactFormEditor.module.css';
 
 const MODE_OPTIONS = digitalModeSegmentOptions();
+
+function digitalContactUsageSubtitle(entity: DigitalContact | null, channelCount: number): string {
+  if (!entity) return 'New digital contact';
+  if (channelCount === 0) return 'Digital contact · not used by channels';
+  return `Digital contact · used by ${channelCount} channel${channelCount === 1 ? '' : 's'}`;
+}
+
+function isLikelyRadioidSourced(contact: DigitalContact): boolean {
+  return (
+    contact.callsign.trim().length > 0 &&
+    contact.digitalId > 0 &&
+    (contact.country.trim().length > 0 || contact.city.trim().length > 0)
+  );
+}
 
 export function DigitalContactEditor({
   projectId,
@@ -40,8 +60,9 @@ export function DigitalContactEditor({
   const [remarks, setRemarks] = useState(base.remarks);
   const [comment, setComment] = useState(base.comment);
   const { save, saving, error } = useEntitySave('digital-contacts');
-  const { reload } = useLibrary();
+  const { library, reload } = useLibrary();
   const navigate = useNavigate();
+  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
 
   function buildRow(): DigitalContact {
     return {
@@ -58,7 +79,13 @@ export function DigitalContactEditor({
     };
   }
 
-  const { permitNavigationOnce, modalOpen, stay, leave } = useEntityEditorUnsavedGuard(buildRow);
+  const {
+    permitNavigationOnce,
+    modalOpen,
+    stay,
+    leave,
+    isDirty,
+  } = useEntityEditorUnsavedGuard(buildRow);
 
   function handleSave() {
     const row = buildRow();
@@ -67,35 +94,57 @@ export function DigitalContactEditor({
     });
   }
 
+  const channelUsageCount = useMemo(() => {
+    if (!entity) return 0;
+    return referenceCount(library, { kind: 'digitalContact', id: entity.id });
+  }, [entity, library]);
+
+  const headerTitle = callsign.trim() || name.trim() || 'Untitled contact';
+  const headerSubtitle = digitalContactUsageSubtitle(entity, channelUsageCount);
+  const showRadioidNotice = entity != null && isLikelyRadioidSourced(entity);
+
   return (
     <DesignSystemV2Provider>
       <div className={classes.root}>
-        <header className={classes.stickyHeader}>
-          <Link to="/library/contacts" className={classes.backLink}>
-            ← Contacts
-          </Link>
-          <div className={classes.headerDivider} aria-hidden />
-          <div className={classes.headerIdentity}>
-            <div className={classes.headerName}>{name.trim() || 'Untitled contact'}</div>
-            <div className={classes.headerSubtitle}>
-              {entity ? 'Edit digital contact' : 'New digital contact'}
-            </div>
-          </div>
-          <div className={classes.headerActions}>
-            <Button variant="secondary" onClick={() => navigate('/library/contacts')}>
-              Discard
-            </Button>
-            <Button variant="primary" onClick={handleSave} loading={saving}>
-              Save contact
-            </Button>
-          </div>
-        </header>
+        <EditorHeader
+          crumb="Contacts"
+          crumbTo="/library/contacts"
+          title={headerTitle}
+          subtitle={headerSubtitle}
+          compact={isMobile}
+        />
 
-        {error ? <p className={classes.error}>{error}</p> : null}
+        <div
+          className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}
+        >
+          {error ? <p className={classes.error}>{error}</p> : null}
 
-        <div className={classes.content}>
-          <Panel title="Identity">
-            <div className={classes.fieldStack}>
+          <Panel>
+            {showRadioidNotice ? (
+              <DismissibleNotice tone="info">
+                Fetched from RadioID — edits here are local to this project.
+              </DismissibleNotice>
+            ) : null}
+
+            <div
+              className={[
+                classes.fieldGrid,
+                isMobile ? classes.fieldGridCompact : '',
+                showRadioidNotice ? classes.fieldStack : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              style={showRadioidNotice ? { marginTop: 14 } : undefined}
+            >
+              <FormField label="Callsign" mono>
+                <TextInput
+                  variant="plain"
+                  value={callsign}
+                  onChange={(e) => setCallsign(e.currentTarget.value)}
+                  mono
+                  aria-label="Callsign"
+                />
+              </FormField>
               <FormField label="Name">
                 <TextInput
                   variant="plain"
@@ -104,35 +153,44 @@ export function DigitalContactEditor({
                   aria-label="Name"
                 />
               </FormField>
-              <GradientSegmentedControl
-                label="Mode"
-                value={mode}
-                onChange={setMode}
-                data={MODE_OPTIONS}
-                scheme="digitalModes"
-                fullWidth
-              />
-              <FormField label="Contact ID">
+            </div>
+
+            <div
+              className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(' ')}
+              style={{ marginTop: 14 }}
+            >
+              <FormField label="Country">
+                <TextInput
+                  variant="plain"
+                  value={country}
+                  onChange={(e) => setCountry(e.currentTarget.value)}
+                  aria-label="Country"
+                />
+              </FormField>
+              <FormField label="DMR ID" mono>
                 <TextInput
                   variant="plain"
                   value={digitalId}
                   onChange={(e) => setDigitalId(e.currentTarget.value)}
-                  aria-label="Contact ID"
-                />
-              </FormField>
-              <FormField label="Callsign">
-                <TextInput
-                  variant="plain"
-                  value={callsign}
-                  onChange={(e) => setCallsign(e.currentTarget.value)}
-                  aria-label="Callsign"
+                  mono
+                  aria-label="DMR ID"
                 />
               </FormField>
             </div>
-          </Panel>
 
-          <Panel title="Address">
-            <div className={classes.fieldStack}>
+            <div style={{ marginTop: 14 }}>
+              <p className={classes.segmentLabel}>Mode</p>
+              <SegmentedControl
+                options={MODE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+                value={mode}
+                onChange={setMode}
+              />
+            </div>
+
+            <div
+              className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(' ')}
+              style={{ marginTop: 14 }}
+            >
               <FormField label="City">
                 <TextInput
                   variant="plain"
@@ -149,39 +207,27 @@ export function DigitalContactEditor({
                   aria-label="State"
                 />
               </FormField>
-              <FormField label="Country">
-                <TextInput
-                  variant="plain"
-                  value={country}
-                  onChange={(e) => setCountry(e.currentTarget.value)}
-                  aria-label="Country"
-                />
-              </FormField>
-              <FormField label="Remarks">
-                <TextInput
-                  variant="plain"
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.currentTarget.value)}
-                  aria-label="Remarks"
-                />
-              </FormField>
-              <p className={classes.hint}>
-                Exported on some CPS formats (e.g. Anytone Remarks column).
-              </p>
             </div>
-          </Panel>
 
-          <Panel title="Notes">
-            <div className={classes.fieldStack}>
-              <FormField label="Comment">
+            <FormField label="Remarks" hint="Exported on some CPS formats (e.g. Anytone Remarks column).">
+              <TextInput
+                variant="plain"
+                value={remarks}
+                onChange={(e) => setRemarks(e.currentTarget.value)}
+                aria-label="Remarks"
+              />
+            </FormField>
+
+            <div style={{ marginTop: 14 }}>
+              <FormField label="Comment" hint="Internal notes — not exported on all formats.">
                 <TextInput
                   variant="plain"
                   value={comment}
                   onChange={(e) => setComment(e.currentTarget.value)}
+                  placeholder="Optional note"
                   aria-label="Comment"
                 />
               </FormField>
-              <p className={classes.hint}>Internal notes — not exported on all formats.</p>
             </div>
           </Panel>
 
@@ -198,6 +244,15 @@ export function DigitalContactEditor({
             />
           ) : null}
         </div>
+
+        <StickyFooter
+          saveLabel="Save contact"
+          dirty={isDirty}
+          onCancel={() => navigate('/library/contacts')}
+          onSave={handleSave}
+          saving={saving}
+          compact={isMobile}
+        />
 
         <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
       </div>

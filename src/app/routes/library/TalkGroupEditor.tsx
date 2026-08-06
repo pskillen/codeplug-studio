@@ -1,25 +1,37 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
+import { useNavigate } from 'react-router-dom';
 import type { DigitalChannelMode, TalkGroup } from '@core/models/library.ts';
 import { newTalkGroup } from '@core/domain/factories.ts';
 import TalkGroupWireNameExamples from '../../components/library/TalkGroupWireNameExamples.tsx';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
-import { GradientSegmentedControl, UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/ui/index.ts';
 import {
-  Button,
   DesignSystemV2Provider,
+  EditorHeader,
   FormField,
   Panel,
+  SegmentedControl,
+  StickyFooter,
   TextInput,
 } from '../../components/v2/index.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { digitalModeSegmentOptions } from '../../lib/channelModes.ts';
+import { referenceCount } from '../../lib/listReferences.ts';
 import { parseOptionalInt } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
+import { useLibrary } from '../../state/useLibrary.ts';
 import { useEntitySave } from './useEntitySave.ts';
-import classes from './zones/ZoneEditLayout.module.css';
+import classes from './CompactFormEditor.module.css';
 
 const MODE_OPTIONS = digitalModeSegmentOptions();
+
+function talkGroupUsageSubtitle(entity: TalkGroup | null, channelCount: number): string {
+  if (!entity) return 'New talk group';
+  if (channelCount === 0) return 'Talk group · not used by channels';
+  return `Talk group · used by ${channelCount} channel${channelCount === 1 ? '' : 's'}`;
+}
 
 export function TalkGroupEditor({
   projectId,
@@ -35,7 +47,9 @@ export function TalkGroupEditor({
   const [digitalId, setDigitalId] = useState(String(base.digitalId));
   const [comment, setComment] = useState(base.comment);
   const { save, saving, error } = useEntitySave('talk-groups');
+  const { library } = useLibrary();
   const navigate = useNavigate();
+  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
 
   function buildRow(): TalkGroup {
     const trimmedAbbrev = abbreviation.trim();
@@ -54,7 +68,13 @@ export function TalkGroupEditor({
     return row;
   }
 
-  const { permitNavigationOnce, modalOpen, stay, leave } = useEntityEditorUnsavedGuard(buildRow);
+  const {
+    permitNavigationOnce,
+    modalOpen,
+    stay,
+    leave,
+    isDirty,
+  } = useEntityEditorUnsavedGuard(buildRow);
 
   function handleSave() {
     const row = buildRow();
@@ -64,36 +84,34 @@ export function TalkGroupEditor({
   }
 
   const liveDigitalId = parseOptionalInt(digitalId) ?? 0;
+  const channelUsageCount = useMemo(() => {
+    if (!entity) return 0;
+    return referenceCount(library, { kind: 'talkGroup', id: entity.id });
+  }, [entity, library]);
+
+  const headerTitle = name.trim() || 'Untitled talk group';
+  const headerSubtitle = talkGroupUsageSubtitle(entity, channelUsageCount);
 
   return (
     <DesignSystemV2Provider>
       <div className={classes.root}>
-        <header className={classes.stickyHeader}>
-          <Link to="/library/talk-groups" className={classes.backLink}>
-            ← Talk groups
-          </Link>
-          <div className={classes.headerDivider} aria-hidden />
-          <div className={classes.headerIdentity}>
-            <div className={classes.headerName}>{name.trim() || 'Untitled talk group'}</div>
-            <div className={classes.headerSubtitle}>
-              {entity ? 'Edit talk group' : 'New talk group'}
-            </div>
-          </div>
-          <div className={classes.headerActions}>
-            <Button variant="secondary" onClick={() => navigate('/library/talk-groups')}>
-              Discard
-            </Button>
-            <Button variant="primary" onClick={handleSave} loading={saving}>
-              Save talk group
-            </Button>
-          </div>
-        </header>
+        <EditorHeader
+          crumb="Talk groups"
+          crumbTo="/library/talk-groups"
+          title={headerTitle}
+          subtitle={headerSubtitle}
+          compact={isMobile}
+        />
 
-        {error ? <p className={classes.error}>{error}</p> : null}
+        <div
+          className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}
+        >
+          {error ? <p className={classes.error}>{error}</p> : null}
 
-        <div className={classes.content}>
-          <Panel title="Identity">
-            <div className={classes.fieldStack}>
+          <Panel>
+            <div
+              className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(' ')}
+            >
               <FormField label="Name">
                 <TextInput
                   variant="plain"
@@ -102,10 +120,32 @@ export function TalkGroupEditor({
                   aria-label="Name"
                 />
               </FormField>
-              <p className={classes.hint}>
-                Full talk group name. May be shortened on export when used as a multi-talkgroup
-                channel suffix.
-              </p>
+              <div>
+                <p className={classes.segmentLabel}>Mode</p>
+                <SegmentedControl
+                  options={MODE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+                  value={mode}
+                  onChange={setMode}
+                />
+              </div>
+            </div>
+            <div
+              className={[
+                classes.fieldGrid,
+                isMobile ? classes.fieldGridCompact : '',
+                classes.fieldStack,
+              ].join(' ')}
+              style={{ marginTop: 14 }}
+            >
+              <FormField label="Talk group ID" mono>
+                <TextInput
+                  variant="plain"
+                  value={digitalId}
+                  onChange={(e) => setDigitalId(e.currentTarget.value)}
+                  mono
+                  aria-label="Talk group ID"
+                />
+              </FormField>
               <FormField label="Abbreviation">
                 <TextInput
                   variant="plain"
@@ -114,35 +154,23 @@ export function TalkGroupEditor({
                   aria-label="Abbreviation"
                 />
               </FormField>
-              <p className={classes.hint}>
-                Optional short label used when export shortening needs a shorter TG suffix.
-              </p>
-              <TalkGroupWireNameExamples
-                name={name}
-                abbreviation={abbreviation}
-                digitalId={liveDigitalId}
-              />
-              <GradientSegmentedControl
-                label="Mode"
-                value={mode}
-                onChange={setMode}
-                data={MODE_OPTIONS}
-                scheme="digitalModes"
-                fullWidth
-              />
-              <FormField label="Group ID">
-                <TextInput
-                  variant="plain"
-                  value={digitalId}
-                  onChange={(e) => setDigitalId(e.currentTarget.value)}
-                  aria-label="Group ID"
-                />
-              </FormField>
+            </div>
+            <p className={classes.hint} style={{ marginTop: 8 }}>
+              Full talk group name. Abbreviation is used when export shortening needs a shorter TG
+              suffix.
+            </p>
+            <TalkGroupWireNameExamples
+              name={name}
+              abbreviation={abbreviation}
+              digitalId={liveDigitalId}
+            />
+            <div style={{ marginTop: 14 }}>
               <FormField label="Comment">
                 <TextInput
                   variant="plain"
                   value={comment}
                   onChange={(e) => setComment(e.currentTarget.value)}
+                  placeholder="Optional note"
                   aria-label="Comment"
                 />
               </FormField>
@@ -158,6 +186,15 @@ export function TalkGroupEditor({
             />
           ) : null}
         </div>
+
+        <StickyFooter
+          saveLabel="Save talk group"
+          dirty={isDirty}
+          onCancel={() => navigate('/library/talk-groups')}
+          onSave={handleSave}
+          saving={saving}
+          compact={isMobile}
+        />
 
         <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
       </div>
