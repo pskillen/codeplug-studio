@@ -126,6 +126,7 @@ export default function BuildsListPage() {
             />
             {nameFilterPending ? <Loader size="xs" /> : null}
             <SegmentedControl
+              size="md"
               value={groupMode}
               onChange={(value) => setGroupMode(value as BuildsListGroupMode)}
               options={GROUP_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}

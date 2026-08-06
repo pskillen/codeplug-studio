@@ -54,6 +54,7 @@ import DebugLocalStoragePage from './routes/debug/DebugLocalStoragePage.tsx';
 import DebugLocalStorageViewerPage from './routes/debug/DebugLocalStorageViewerPage.tsx';
 import DebugD890EraseProbePage from './routes/debug/DebugD890EraseProbePage.tsx';
 import BuildsListPage from './routes/builds/BuildsListPage.tsx';
+import BuildsV2Layout from './routes/builds/BuildsV2Layout.tsx';
 import NewBuildPage from './routes/builds/NewBuildPage.tsx';
 import BuildLayout from './routes/builds/BuildLayout.tsx';
 import BuildOverviewPage from './routes/builds/BuildOverviewPage.tsx';
@@ -191,29 +192,35 @@ export const appRouter = createBrowserRouter([
             element: <AddChannelSetPage />,
           },
           { path: '/library/:kind/:id', element: <EntityEditorPage /> },
-          { path: '/builds', element: <BuildsListPage /> },
-          { path: '/builds/new', element: <NewBuildPage /> },
           {
-            path: '/builds/:id',
-            element: <BuildLayout />,
+            path: '/builds',
+            element: <BuildsV2Layout />,
             children: [
-              { index: true, element: <Navigate to="export" replace /> },
-              { path: 'overview', element: <BuildOverviewPage /> },
-              { path: 'characteristics', element: <BuildCharacteristicsPage /> },
-              { path: 'memories', element: <Navigate to="channels" replace /> },
-              { path: 'channels/bulk', element: <BuildChannelsBulkEditPage /> },
-              { path: 'channels', element: <BuildChannelsWirePage /> },
-              { path: 'scan-list', element: <BuildFlatMemoryScanListPage /> },
-              { path: 'airband', element: <BuildAirbandWirePage /> },
-              { path: 'zones', element: <BuildZonesWirePage /> },
-              { path: 'scan-lists', element: <BuildScanListsWirePage /> },
-              { path: 'talk-groups', element: <BuildTalkGroupsWirePage /> },
-              { path: 'contacts', element: <BuildContactsWirePage /> },
-              { path: 'rx-group-lists', element: <BuildRxGroupListsWirePage /> },
-              { path: 'export', element: <BuildExportPage /> },
-              { path: 'export-resolution', element: <BuildExportResolutionPage /> },
-              { path: 'neonplug-settings', element: <BuildNeonplugSettingsPage /> },
-              { path: 'radio-image', element: <BuildRadioImageSettingsPage /> },
+              { index: true, element: <BuildsListPage /> },
+              { path: 'new', element: <NewBuildPage /> },
+              {
+                path: ':id',
+                element: <BuildLayout />,
+                children: [
+                  { index: true, element: <Navigate to="export" replace /> },
+                  { path: 'overview', element: <BuildOverviewPage /> },
+                  { path: 'characteristics', element: <BuildCharacteristicsPage /> },
+                  { path: 'memories', element: <Navigate to="channels" replace /> },
+                  { path: 'channels/bulk', element: <BuildChannelsBulkEditPage /> },
+                  { path: 'channels', element: <BuildChannelsWirePage /> },
+                  { path: 'scan-list', element: <BuildFlatMemoryScanListPage /> },
+                  { path: 'airband', element: <BuildAirbandWirePage /> },
+                  { path: 'zones', element: <BuildZonesWirePage /> },
+                  { path: 'scan-lists', element: <BuildScanListsWirePage /> },
+                  { path: 'talk-groups', element: <BuildTalkGroupsWirePage /> },
+                  { path: 'contacts', element: <BuildContactsWirePage /> },
+                  { path: 'rx-group-lists', element: <BuildRxGroupListsWirePage /> },
+                  { path: 'export', element: <BuildExportPage /> },
+                  { path: 'export-resolution', element: <BuildExportResolutionPage /> },
+                  { path: 'neonplug-settings', element: <BuildNeonplugSettingsPage /> },
+                  { path: 'radio-image', element: <BuildRadioImageSettingsPage /> },
+                ],
+              },
             ],
           },
           { path: '/import-export', element: <Navigate to="/summary" replace /> },

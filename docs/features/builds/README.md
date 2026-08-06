@@ -37,10 +37,10 @@ Native YAML remains **project interchange** (library + all radio builds + egress
 
 ## Export vs Overview
 
-| Surface                               | Owns                                                                                                                                  |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Surface                               | Owns                                                                                                                                |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | **Export** (`/builds/:id/export`)     | **Radio-level** projection settings (gated by `radioTargetId` traits), then **pathway cards**, download / Drive / donor / hydration |
-| **Overview** (`/builds/:id/overview`) | Build identity (rename/delete), catalog radio target, organisation capability badges                                                  |
+| **Overview** (`/builds/:id/overview`) | Build identity (rename/delete), catalog radio target, organisation capability badges                                                |
 
 Export does not host identity editors; Overview does not host download actions. Contextual strip: **Overview · Export · Wire preview · Audit**; `/builds/:id` redirects to Export.
 

@@ -1,15 +1,34 @@
 import { Checkbox, Group, SimpleGrid, Text } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { newRadioBuildForProfile } from '@core/domain/factories.ts';
+import BuildListCard, { BuildsListSection } from '../../../components/builds/BuildListCard.tsx';
 import { FacetBar, FacetChip, SplitFilter } from '../../../components/library/FacetBar.tsx';
 import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
 import {
+  SegmentedControl,
   ShuttleAddBar,
   ShuttleListPanel,
   ShuttlePoolHeader,
   ShuttlePoolPanel,
   ShuttleRow,
 } from '../../../components/v2/index.ts';
+
+const DEMO_BUILDS = (() => {
+  const mini = newRadioBuildForProfile('styleguide-demo', 'radio-io-uv5r-mini');
+  const dm1701 = newRadioBuildForProfile('styleguide-demo', 'opengd77-1701');
+  const olderUpdatedAt = new Date(Date.parse(mini.build.updatedAt) - 86400000).toISOString();
+  return [
+    { ...mini.build, id: 'styleguide-build-mini-a', name: 'UV-5R Team A' },
+    {
+      ...mini.build,
+      id: 'styleguide-build-mini-b',
+      name: 'UV-5R Team B',
+      updatedAt: olderUpdatedAt,
+    },
+    { ...dm1701.build, id: 'styleguide-build-dm1701', name: 'DM-1701 field kit' },
+  ];
+})();
 
 const CATALOG: Record<string, { label: string; subtitle: string }> = {
   alpha: { label: 'GB3DA Stornoway', subtitle: '145.575 / 145.175 MHz' },
@@ -28,6 +47,7 @@ export default function StyleguideV2PatternsPage() {
   const [facetBands, setFacetBands] = useState<string[]>([]);
   const [facetDuplex, setFacetDuplex] = useState<string | null>(null);
   const [facetDistance, setFacetDistance] = useState(false);
+  const [buildGroupMode, setBuildGroupMode] = useState<'radio' | 'list'>('radio');
 
   const poolKeys = useMemo(
     () => (Object.keys(CATALOG) as DemoKey[]).filter((key) => !memberKeys.includes(key)),
@@ -106,6 +126,39 @@ export default function StyleguideV2PatternsPage() {
         <Text size="sm" c="dimmed">
           Duplex filter: {facetDuplex ?? 'none'}
         </Text>
+      </PageSection>
+
+      <PageSection
+        title="Export for radio — build card"
+        description="Grouped build list cards on Export for radio (B0). Pathway pills summarise compatible egress; card links to the build export front door."
+      >
+        <Group gap="md" align="center" mb="sm">
+          <SegmentedControl
+            size="md"
+            value={buildGroupMode}
+            onChange={(value) => setBuildGroupMode(value as 'radio' | 'list')}
+            options={[
+              { value: 'radio', label: 'By radio' },
+              { value: 'list', label: 'List' },
+            ]}
+          />
+          <Text size="sm" c="dimmed">
+            Group mode (list view uses DataTable elsewhere)
+          </Text>
+        </Group>
+        {buildGroupMode === 'radio' ? (
+          <BuildsListSection title="Baofeng UV-5R Mini">
+            {DEMO_BUILDS.filter((b) => b.radioTargetId === 'baofeng-uv5r-mini').map((build) => (
+              <BuildListCard key={build.id} build={build} />
+            ))}
+          </BuildsListSection>
+        ) : (
+          <BuildsListSection title="All builds">
+            {DEMO_BUILDS.map((build) => (
+              <BuildListCard key={build.id} build={build} />
+            ))}
+          </BuildsListSection>
+        )}
       </PageSection>
 
       <PageSection

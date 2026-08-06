@@ -27,7 +27,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | B4/B5 export             | Complete | OverrideField + pathway cards                                                   |
 | B6–B8 wire preview       | Complete | v2 `DataTable` lists + `ModalShell` override detail + `OverrideField` wire name |
 | B9–B12 secondary         | Complete | Audit shells: characteristics, export-resolution, bulk, flat-memory scan        |
-| R1/R2 radio + CPS        | Complete | v2 `ProgressModal`, `WriteVerifyReport`, `WirePreviewTable` CPS preview          |
+| R1/R2 radio + CPS        | Complete | v2 `ProgressModal`, `WriteVerifyReport`, `WirePreviewTable` CPS preview         |
 
 **mk2 diff (live → Batch 4):**
 
