@@ -4,7 +4,7 @@ import { IconDeviceFloppy, IconRefresh } from '@tabler/icons-react';
 import { loadDriveLastAccount } from '@integrations/cloud/drivePrefs.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { useDriveActionClick } from '../../hooks/useDriveActionClick.ts';
-import { useDriveSaveFlow } from '../../hooks/useDriveSaveFlow.ts';
+import { useDriveSaveFlowContext } from './DriveSaveFlowProvider.tsx';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useProjectPortableDirty } from '../../hooks/useProjectPortableDirty.ts';
 import { useProjects } from '../../state/useProjects.ts';
@@ -39,7 +39,7 @@ export default function SidebarDriveControls() {
     openSaveAsNew,
     saveToNewTarget,
     closeConflict,
-  } = useDriveSaveFlow();
+  } = useDriveSaveFlowContext();
 
   const saveAction = useDriveActionClick({ disabled: saving, loading: checking });
   const checkAction = useDriveActionClick({ disabled: saving, loading: checking });

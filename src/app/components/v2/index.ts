@@ -72,6 +72,8 @@ export type {
 } from './ProgressModal.tsx';
 export { default as AppShell } from './AppShell.tsx';
 export type { AppShellProps } from './AppShell.tsx';
+export { default as ProjectChip } from './ProjectChip.tsx';
+export type { ProjectChipProps } from './ProjectChip.tsx';
 export { default as BottomTabBar } from './BottomTabBar.tsx';
 export type { BottomTabBarProps, BottomTabItem } from './BottomTabBar.tsx';
 export { default as ContextualStrip } from './ContextualStrip.tsx';

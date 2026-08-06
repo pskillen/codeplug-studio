@@ -104,7 +104,7 @@ describe('App', () => {
   it('shows tools and help without an active project; settings/debug in overflow', async () => {
     renderApp('/');
 
-    expect(screen.getByRole('button', { name: 'Projects' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'No project open' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Tools' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Help' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Library' })).not.toBeInTheDocument();

@@ -4,6 +4,7 @@ import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
 import SidebarDriveControls from './SidebarDriveControls.tsx';
 import DriveRefreshProvider from '../ProjectInterchangeBar/DriveRefreshProvider.tsx';
+import DriveSaveFlowProvider from './DriveSaveFlowProvider.tsx';
 
 const mockStartSaveToDrive = vi.fn();
 const mockCheckNow = vi.fn();
@@ -105,9 +106,11 @@ function renderControls() {
   return render(
     <MemoryRouter>
       <MantineProvider>
-        <DriveRefreshProvider>
-          <SidebarDriveControls />
-        </DriveRefreshProvider>
+        <DriveSaveFlowProvider>
+          <DriveRefreshProvider>
+            <SidebarDriveControls />
+          </DriveRefreshProvider>
+        </DriveSaveFlowProvider>
       </MantineProvider>
     </MemoryRouter>,
   );

@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import ProjectChip from './ProjectChip.tsx';
+import type { StatusDotTone } from './StatusDot.tsx';
 import classes from './AppShell.module.css';
 
 const LOGO_SRC = '/branding/studio-logo.svg';
@@ -12,9 +14,19 @@ export interface AppShellProps {
   disabledTabs?: readonly string[];
   /** When false, hide the desktop tab row (mobile uses BottomTabBar instead). Default true. */
   showTabs?: boolean;
+  /** When set, replaces the built-in project chip (e.g. S3 switcher wrapper). */
+  projectChip?: ReactNode;
   projectName?: string;
-  /** Clicking the project chip (navigate home to switch projects). */
+  /** mk2 S2 status dot tone on the project chip. */
+  projectStatusTone?: StatusDotTone;
+  /** mk2 S2 secondary label (e.g. Unsaved changes); omit when quiet. */
+  projectStatusLabel?: string | null;
+  /** Mobile: compact chip (dot + chevron only). */
+  compactProjectChip?: boolean;
+  /** Clicking the project chip (opens quick switcher or navigate home). */
   onProjectClick?: () => void;
+  'aria-expanded'?: boolean;
+  'aria-haspopup'?: boolean | 'dialog' | 'menu' | 'listbox' | 'tree' | 'grid';
   /** Clicking the brand logo (typically navigate home). */
   onBrandClick?: () => void;
   /** Injected before the avatar slot (Drive controls). */
@@ -34,9 +46,15 @@ export default function AppShell({
   onTabChange,
   disabledTabs = [],
   showTabs = true,
+  projectChip,
   projectName = 'Untitled project',
+  projectStatusTone = 'success',
+  projectStatusLabel = null,
+  compactProjectChip = false,
   onProjectClick,
   onBrandClick,
+  'aria-expanded': ariaExpanded,
+  'aria-haspopup': ariaHaspopup,
   rightExtra,
   avatar,
   className,
@@ -92,17 +110,25 @@ export default function AppShell({
       ) : null}
 
       <div className={classes.right}>
-        {onProjectClick ? (
-          <button type="button" className={classes.project} onClick={onProjectClick}>
-            <span className={classes.projectDot} aria-hidden />
-            {projectName}
-          </button>
-        ) : (
-          <div className={classes.project}>
-            <span className={classes.projectDot} aria-hidden />
-            {projectName}
-          </div>
-        )}
+        {projectChip ??
+          (onProjectClick ? (
+            <ProjectChip
+              name={projectName}
+              statusTone={projectStatusTone}
+              statusLabel={projectStatusLabel}
+              compact={compactProjectChip}
+              onClick={onProjectClick}
+              aria-expanded={ariaExpanded}
+              aria-haspopup={ariaHaspopup}
+            />
+          ) : (
+            <ProjectChip
+              name={projectName}
+              statusTone={projectStatusTone}
+              statusLabel={projectStatusLabel}
+              compact={compactProjectChip}
+            />
+          ))}
         {rightExtra}
         {avatar ?? <div className={classes.avatar} aria-hidden />}
       </div>
