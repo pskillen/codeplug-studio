@@ -159,7 +159,9 @@ function RadioidContactBulkImportDialogBody({
           </label>
         ) : null}
         {!projectId ? (
-          <StatusBanner tone="warning">Select an active project before importing contacts.</StatusBanner>
+          <StatusBanner tone="warning">
+            Select an active project before importing contacts.
+          </StatusBanner>
         ) : null}
         <div className={classes.footer}>
           <Button variant="secondary" onClick={onClose}>

@@ -41,7 +41,8 @@ export default function InterchangeOverwriteModal({
       {idMismatch ? (
         <>
           <p className={classes.muted}>
-            The linked Drive file belongs to a different project than <strong>{projectName}</strong>.
+            The linked Drive file belongs to a different project than <strong>{projectName}</strong>
+            .
           </p>
           {localProjectId ? (
             <p className={classes.muted}>Local project id: {localProjectId}</p>

@@ -6,11 +6,11 @@ Native YAML project import dropzone — v2 `FileDropzone` with `.yaml`/`.yml` ac
 
 ## Props
 
-| Prop         | Type                                              | Description                          |
-| ------------ | ------------------------------------------------- | ------------------------------------ |
-| `onFileText` | `(text: string, fileName: string) => void \| Promise<void>` | Called after successful read |
-| `error`      | `string \| null`                                  | External error (e.g. import resolver) |
-| `disabled`   | `boolean`                                         | Disables browse/drop while importing |
+| Prop         | Type                                                        | Description                           |
+| ------------ | ----------------------------------------------------------- | ------------------------------------- |
+| `onFileText` | `(text: string, fileName: string) => void \| Promise<void>` | Called after successful read          |
+| `error`      | `string \| null`                                            | External error (e.g. import resolver) |
+| `disabled`   | `boolean`                                                   | Disables browse/drop while importing  |
 
 ## Usage
 

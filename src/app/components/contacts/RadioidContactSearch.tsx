@@ -32,7 +32,7 @@ import RadioidContactUpdateDialog from './RadioidContactUpdateDialog.tsx';
 import RadioidContactPreviewDialog from './RadioidContactPreviewDialog.tsx';
 
 const GATED_SELECTION_CAPTION =
-  "Already-in-library rows are dimmed — use Update to refresh fields from RadioID.net. RadioID paginates server-side.";
+  'Already-in-library rows are dimmed — use Update to refresh fields from RadioID.net. RadioID paginates server-side.';
 
 function listingKey(listing: RadioidDmrUserListing): string {
   return String(listing.id);
@@ -115,7 +115,11 @@ export default function RadioidContactSearch() {
           const label = row.callsign || '—';
           if (existing) {
             return (
-              <button type="button" className="libraryListNameLink" onClick={() => openPreview(row)}>
+              <button
+                type="button"
+                className="libraryListNameLink"
+                onClick={() => openPreview(row)}
+              >
                 {label}
               </button>
             );
@@ -132,7 +136,11 @@ export default function RadioidContactSearch() {
           const existing = findDigitalContactByDigitalId(library.digitalContacts, row.id);
           if (existing) {
             return (
-              <button type="button" className="libraryListNameLink" onClick={() => openPreview(row)}>
+              <button
+                type="button"
+                className="libraryListNameLink"
+                onClick={() => openPreview(row)}
+              >
                 {row.id}
               </button>
             );
@@ -218,7 +226,9 @@ export default function RadioidContactSearch() {
   const tableCaption =
     totalPages > 1 ? (
       <Group justify="space-between" wrap="wrap" gap="sm">
-        <span>{totalCount.toLocaleString()} results — page {page} of {totalPages}</span>
+        <span>
+          {totalCount.toLocaleString()} results — page {page} of {totalPages}
+        </span>
         <Pagination total={totalPages} value={page} onChange={goToPage} size="sm" />
       </Group>
     ) : (
@@ -233,7 +243,12 @@ export default function RadioidContactSearch() {
       subtitle={
         <>
           Search the worldwide{' '}
-          <a href="https://www.radioid.net/" target="_blank" rel="noreferrer" className="libraryListNameLink">
+          <a
+            href="https://www.radioid.net/"
+            target="_blank"
+            rel="noreferrer"
+            className="libraryListNameLink"
+          >
             RadioID.net
           </a>{' '}
           DMR user database and import private contacts into your library. Community data — verify
@@ -347,7 +362,9 @@ export default function RadioidContactSearch() {
           />
         </Panel>
       ) : !loading && !error ? (
-        <p className={pageClasses.attribution}>Enter filters and search to load DMR users from RadioID.net.</p>
+        <p className={pageClasses.attribution}>
+          Enter filters and search to load DMR users from RadioID.net.
+        </p>
       ) : null}
 
       {bulkScope ? (

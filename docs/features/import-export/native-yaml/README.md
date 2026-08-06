@@ -102,7 +102,7 @@ loadProjectSeed → ProjectAggregate
 | Local file UI (#60)               | Shipped                                                                                                                                                                                                                                |
 | App chrome Save + import sync     | Shipped ([#285](https://github.com/pskillen/codeplug-studio/issues/285))                                                                                                                                                               |
 | Portable project id on first open | Shipped ([#361](https://github.com/pskillen/codeplug-studio/issues/361)) — `seedPreservingId` for unknown UUID on Home / Drive open                                                                                                    |
-| mk2 import chrome (r2 #944)       | Shipped — `ProjectYamlFileDropzone` (v2 `FileDropzone`); `InterchangeOverwriteModal` on `ConfirmModal` / `ModalShell` ([#944](https://github.com/pskillen/codeplug-studio/issues/944))                                                  |
+| mk2 import chrome (r2 #944)       | Shipped — `ProjectYamlFileDropzone` (v2 `FileDropzone`); `InterchangeOverwriteModal` on `ConfirmModal` / `ModalShell` ([#944](https://github.com/pskillen/codeplug-studio/issues/944))                                                 |
 
 ## Testing
 

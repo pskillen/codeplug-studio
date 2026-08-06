@@ -154,7 +154,9 @@ export default function ChannelSetPicker() {
     const addable = new Set(
       previewRows.filter((row) => row.status === 'add').map((row) => row.index),
     );
-    setSelectedIndices(new Set(keys.map((key) => Number(key)).filter((index) => addable.has(index))));
+    setSelectedIndices(
+      new Set(keys.map((key) => Number(key)).filter((index) => addable.has(index))),
+    );
   }
 
   const previewColumns = useMemo((): DataTableColumn<PreviewRow>[] => {
@@ -278,7 +280,11 @@ export default function ChannelSetPicker() {
               onChange={(e) => setNamePrefix(e.currentTarget.value)}
             />
           </FormField>
-          <FormField label="Power (%)" hint="Leave empty for radio default" className={pageClasses.filterField}>
+          <FormField
+            label="Power (%)"
+            hint="Leave empty for radio default"
+            className={pageClasses.filterField}
+          >
             <TextInput
               variant="plain"
               type="number"

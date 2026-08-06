@@ -283,7 +283,8 @@ export default function RepeaterDirectorySearch({
         key: 'frequencies',
         header: 'Frequencies',
         hideOnMobile: true,
-        render: (row) => formatListingFrequencies(row.listing.rxFrequencyHz, row.listing.txFrequencyHz),
+        render: (row) =>
+          formatListingFrequencies(row.listing.rxFrequencyHz, row.listing.txFrequencyHz),
       },
       {
         key: 'locator',
@@ -715,7 +716,11 @@ export default function RepeaterDirectorySearch({
                   Add selected ({selectedKeys.length})
                 </Button>
                 {added.size > 0 ? (
-                  <Button variant="secondary" size="sm" onClick={() => navigate('/library/channels')}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate('/library/channels')}
+                  >
                     View library
                   </Button>
                 ) : null}
