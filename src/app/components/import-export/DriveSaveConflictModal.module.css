@@ -1,0 +1,81 @@
+.lead {
+  color: var(--dsv2-text-secondary);
+}
+
+.changeBox {
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.changeTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsv2-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--dsv2-font-family);
+}
+
+.changeLine {
+  font-size: 12.5px;
+  color: var(--dsv2-text-secondary);
+  font-family: var(--dsv2-font-family);
+}
+
+.versionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.versionGridMobile {
+  grid-template-columns: 1fr;
+}
+
+.versionCard {
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--dsv2-surface);
+}
+
+.versionCardNewer {
+  border-color: var(--dsv2-accent-border);
+  background: var(--dsv2-accent-tint-06);
+}
+
+.versionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.versionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsv2-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--dsv2-font-family);
+}
+
+.versionTime {
+  font-size: 13px;
+  color: var(--dsv2-text-primary);
+  font-family: var(--dsv2-font-family);
+}
+
+.versionStats {
+  font-size: 12.5px;
+  color: var(--dsv2-text-secondary);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--dsv2-font-family);
+}

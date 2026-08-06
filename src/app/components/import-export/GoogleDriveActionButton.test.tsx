@@ -149,11 +149,9 @@ describe('GoogleDriveActionButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open from Drive' }));
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('heading', { name: 'Google Drive not configured' }),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Connect Google Drive')).toBeInTheDocument();
     });
-    expect(screen.getByRole('link', { name: 'Go to Settings' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Connect Drive' })).toHaveAttribute(
       'href',
       '/settings',
     );
