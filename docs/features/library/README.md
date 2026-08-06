@@ -198,20 +198,17 @@ All entity editors track dirty form state against the mount baseline (`useEntity
 
 Channel DMR profiles reference a **digital contact** and an **RX group list** by UUID `id` (the editor exposes dropdowns); NXDN/TETRA profiles may reference talk groups by UUID. RX group lists and zones hold member `EntityRef[]`. `RxGroupListMember.timeSlotOverride` is an optional per-member DMR slot hint (vendor-neutral; maps to CPS TS Override at export). Names are display labels only — never foreign keys.
 
-### Channel editor ([#16](https://github.com/pskillen/codeplug-studio/issues/16), [#28](https://github.com/pskillen/codeplug-studio/issues/28))
+### Channel editor ([#16](https://github.com/pskillen/codeplug-studio/issues/16), [#28](https://github.com/pskillen/codeplug-studio/issues/28), r2 [#941](https://github.com/pskillen/codeplug-studio/issues/941))
 
-- **Layout (design system v2, [#920](https://github.com/pskillen/codeplug-studio/issues/920)):** single-scroll page with sticky header (back link, name/callsign, frequencies, active-mode pills, Discard/Save), `SectionNav` anchor rail (horizontal pills on narrow viewports), and `Panel` sections (Identity → Frequencies → Modes → Scanning → APRS → Location → Zones → Repeater info). Same CRUD behaviour and sub-components as before — presentation restructure only.
-- **Top-level sections (legacy note):** formerly Mantine tabs; content now maps to the panel sections above.
-- **TX offset (Frequencies):** under RX/TX, `TxOffsetControls` shows the live offset (`===` or `+/- MHz`) and band-appropriate quick buttons (2 m / 70 cm documented; others Simplex only) that set TX from RX + offset ([#156](https://github.com/pskillen/codeplug-studio/issues/156); [tx-offsets.md](../../reference/tx-offsets.md)).
-- **Power (Frequencies):** `PercentLevelSlider` stores vendor-neutral percent (`null` = radio default). Below it, `PowerLadderHints` lists approximate watts / wire labels for project format builds (or all shipped ladders if none) — informational only ([#414](https://github.com/pskillen/codeplug-studio/issues/414)). Wire/watts detail lives in `docs/reference/export-formats/<format>/`; not embedded here.
-- **Identity context:** `FormPage` title reflects live callsign or name on edit (`Edit channel — GB7DC`); `ChannelIdentitySummary` under the tab list on non-identity tabs shows name/callsign, band, mode pills, and RX/TX from draft values ([#283](https://github.com/pskillen/codeplug-studio/issues/283)).
-- **No default mode** on new channels — operator selects modes via card grid (`ChannelModesMultiSelect`); `modeProfiles` starts empty.
-- **Location section:** Maidenhead locator, lat/lon, use-location, map click/drag (`ChannelLocationSection` + `MapLocationPicker`). Map unmounts when another editor tab is active ([#208](https://github.com/pskillen/codeplug-studio/issues/208)). Save reconciles locator ↔ coords via `reconcileChannelLocation` (coordinates win on conflict).
-- **Mode profiles:** tabbed editor per selected mode (`ChannelModeProfilesEditor`); **Primary mode** `GradientSegmentedControl` when multiple modes enabled; DMR panel includes **DMR operating mode** (Auto / DMO / Repeater).
-- **Zone membership** (edit only): `ChannelZoneMembershipSection` — zones containing this channel, add/remove ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).
-- **Duplicate** and **Delete channel** actions on saved channels ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).
-- **DMR tab:** below the RX group list selector, `RxGroupListSummary` shows the selected list's members (name, kind, digital ID, timeslot override) with a link to the list editor ([#75](https://github.com/pskillen/codeplug-studio/issues/75)).
-- Component sidecars under `src/app/components/channels/` and `MapLocationPicker/`.
+- **Layout (mk2 E1, [#941](https://github.com/pskillen/codeplug-studio/issues/941)):** `EditorHeader` (back crumb, title, subtitle) + scroll `Panel` sections + `StickyFooter` (Cancel/Save, dirty status). Order: Identity (with `ChannelModesField` multi-select) → Frequency → Mode settings (stacked blocks) → Location → Zones (edit) → Scanning → APRS → Repeater info (edit). Product-only Scanning/APRS/Repeater panels are not in mk2 frames but remain restyled in the same chrome.
+- **TX offset (Frequency):** `TxOffsetControls` — Simplex + band offsets on v2 `Button`; live offset display ([#156](https://github.com/pskillen/codeplug-studio/issues/156); [tx-offsets.md](../../reference/tx-offsets.md)).
+- **Power (Frequency):** `PercentLevelSlider` stores vendor-neutral percent (`null` = radio default). `PowerLadderHints` below — informational only ([#414](https://github.com/pskillen/codeplug-studio/issues/414)).
+- **No default mode** on new channels — operator selects modes via `ChannelModesField` in Identity; `modeProfiles` starts empty.
+- **Location:** `ChannelLocationSection` + `MapLocationPicker` in v2 `MapPanel`. Save reconciles locator ↔ coords via `reconcileChannelLocation`.
+- **Mode profiles:** stacked per-mode blocks in `ChannelModeProfilesEditor`; v2 `SegmentedControl` for **Primary mode** when multiple modes; DMR panel includes **DMR operating mode**.
+- **Zone membership** (edit only): light inverse chips + zone add (`ChannelZoneMembershipSection`) — not full Membership shuttle ([#942](https://github.com/pskillen/codeplug-studio/issues/942)).
+- **Duplicate** and **Delete channel** on saved channels ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).
+- Component sidecars: `ChannelModesField.md`, `EditorHeader.md`, `StickyFooter.md`, and siblings under `src/app/components/channels/`.
 
 ### Library strip (design system v2, [#921](https://github.com/pskillen/codeplug-studio/issues/921)–[#923](https://github.com/pskillen/codeplug-studio/issues/923), [#932](https://github.com/pskillen/codeplug-studio/issues/932)–[#935](https://github.com/pskillen/codeplug-studio/issues/935))
 

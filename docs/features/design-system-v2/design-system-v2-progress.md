@@ -34,6 +34,10 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Summary / Channels (#918–#920) | Shipped    | [PR #931](https://github.com/pskillen/codeplug-studio/pull/931) | Summary, Channels list, Channel editor on v2         |
 | Library ports (#921+)          | Superseded | `921/pskillen/design-system-v2-library`                         | Visual acceptance replaced by r2 #940                |
 
+## Next
+
+**r2 retrofit** continues with membership editors ([#942](https://github.com/pskillen/codeplug-studio/issues/942)) after [#941](https://github.com/pskillen/codeplug-studio/issues/941) merges.
+
 ## Verification
 
 ### #940 library lists
@@ -49,15 +53,18 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ### #941 channel editor (E1)
 
-| Sub-slice                | Status      | Notes                                                                                                        |
-| ------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------ |
-| Kickoff + diff checklist | Complete    | Branch `941/pskillen/ds-r2-channel-editor`                                                                   |
-| v2 EditorHeader/StickyFooter | Pending | Batch 3 canvas helpers missed from #938 — promote for E1–E8 reuse                                            |
-| E1 shell + sections      | Pending     | Replace mk1 sticky header + `SectionNav` + Modes tabs with footer + stacked Mode settings                    |
-| Product panels           | Pending     | Scanning / APRS / Repeater restyled into E1 chrome (not in mk2 frames — product continuity)                 |
+| Sub-slice                    | Status   | Notes                                                                                         |
+| ---------------------------- | -------- | --------------------------------------------------------------------------------------------- |
+| Kickoff + diff checklist     | Complete | Branch `941/pskillen/ds-r2-channel-editor`                                                    |
+| v2 EditorHeader/StickyFooter | Complete | Sidecars + `/styleguide/v2/navigation`                                                        |
+| E1 shell + sections          | Complete | Stacked Mode settings; Identity modes; Frequency RX-first + Power; sticky footer              |
+| Product panels               | Complete | Scanning / APRS / Repeater restyled into E1 chrome                                            |
 
-**Desktop/narrow deltas vs live:** sticky **header** + horizontal `SectionNav` + separate Modes panel → `EditorHeader` + scroll panels + `StickyFooter`; modes as Identity multi-select chips; settings stack in one panel; Power under Frequency; Zones light chips (not Membership shuttle).
+## Verification
 
-## Next
+### #941 channel editor
 
-**r2 retrofit** in flight: [#941](https://github.com/pskillen/codeplug-studio/issues/941) channel editor (E1); then membership editors ([#942](https://github.com/pskillen/codeplug-studio/issues/942)).
+- [x] `npm run format:check && npm run lint && npm run test && npm run build`
+- [ ] Manual desktop + narrow pass vs Batch 3 E1 frames
+
+### #940 library lists
