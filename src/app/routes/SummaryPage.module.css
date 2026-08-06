@@ -17,6 +17,10 @@
   line-height: 1.45;
 }
 
+.integrityBanner {
+  margin-bottom: 20px;
+}
+
 .countGrid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -24,56 +28,22 @@
   margin-bottom: 20px;
 }
 
-.breakdownGrid {
+.shortcutGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
 
-.breakdownRow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.shortcutCopy {
   font-size: var(--dsv2-font-body);
   color: var(--dsv2-text-secondary);
-}
-
-.breakdownCount {
-  margin-left: auto;
-  color: var(--dsv2-text-primary);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.breakdownList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.locationHint {
-  font-size: var(--dsv2-font-body);
-  color: var(--dsv2-text-tertiary);
-  margin: 0 0 14px;
+  margin: 0 0 12px;
   line-height: 1.45;
 }
 
-.locationHint a {
-  color: var(--dsv2-accent);
-  text-decoration: none;
-}
-
-.locationHint a:hover {
-  text-decoration: underline;
-}
-
-.mapPanel {
-  margin-bottom: 14px;
-}
-
-.integrityBanner {
-  margin-bottom: 20px;
+.interchangePanel {
+  margin-top: 4px;
 }
 
 .interchangeGrid {
@@ -89,12 +59,6 @@
   margin: 0 0 10px;
 }
 
-.mapSkipped {
-  font-size: var(--dsv2-font-body-sm);
-  color: var(--dsv2-text-tertiary);
-  margin-top: 10px;
-}
-
 .danglingList {
   display: flex;
   flex-direction: column;
@@ -108,7 +72,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .breakdownGrid,
+  .shortcutGrid,
   .interchangeGrid {
     grid-template-columns: minmax(0, 1fr);
   }
