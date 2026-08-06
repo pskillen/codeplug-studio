@@ -8,14 +8,14 @@ Replaces the mk1 channel editor sticky header. Provides breadcrumb navigation, t
 
 ## Props
 
-| Prop            | Type              | Notes                                      |
-| --------------- | ----------------- | ------------------------------------------ |
-| `crumb`         | `string`          | Breadcrumb label (e.g. `"Channels"`)       |
-| `crumbTo`       | `string`          | Router `Link` target for the crumb         |
-| `onCrumbClick`  | `() => void`      | Button crumb when no `crumbTo`             |
-| `title`         | `ReactNode`       | Main heading                               |
-| `subtitle`      | `ReactNode`       | Optional supporting line                   |
-| `compact`       | `boolean`         | Narrow padding and smaller title           |
+| Prop           | Type         | Notes                                |
+| -------------- | ------------ | ------------------------------------ |
+| `crumb`        | `string`     | Breadcrumb label (e.g. `"Channels"`) |
+| `crumbTo`      | `string`     | Router `Link` target for the crumb   |
+| `onCrumbClick` | `() => void` | Button crumb when no `crumbTo`       |
+| `title`        | `ReactNode`  | Main heading                         |
+| `subtitle`     | `ReactNode`  | Optional supporting line             |
+| `compact`      | `boolean`    | Narrow padding and smaller title     |
 
 ## Usage
 
@@ -24,7 +24,9 @@ Replaces the mk1 channel editor sticky header. Provides breadcrumb navigation, t
   crumb="Channels"
   crumbTo="/library/channels"
   title={isNew ? 'New channel' : channel.name}
-  subtitle={isNew ? 'Set up the identity, frequency and mode for this channel.' : 'FM + DMR · editing'}
+  subtitle={
+    isNew ? 'Set up the identity, frequency and mode for this channel.' : 'FM + DMR · editing'
+  }
   compact={isMobile}
 />
 ```

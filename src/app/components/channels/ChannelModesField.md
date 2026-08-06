@@ -8,18 +8,15 @@ Replaces the separate Modes panel mode switcher. Analog and Digital chip groups 
 
 ## Props
 
-| Prop            | Type                              | Notes                    |
-| --------------- | --------------------------------- | ------------------------ |
-| `selectedModes` | `readonly CoreChannelMode[]`      | Active modes             |
-| `onChange`      | `(modes: CoreChannelMode[]) => void` | Toggle handler        |
+| Prop            | Type                                 | Notes          |
+| --------------- | ------------------------------------ | -------------- |
+| `selectedModes` | `readonly CoreChannelMode[]`         | Active modes   |
+| `onChange`      | `(modes: CoreChannelMode[]) => void` | Toggle handler |
 
 ## Usage
 
 ```tsx
-<ChannelModesField
-  selectedModes={modeProfiles.map((p) => p.mode)}
-  onChange={handleModesChange}
-/>
+<ChannelModesField selectedModes={modeProfiles.map((p) => p.mode)} onChange={handleModesChange} />
 ```
 
 ## Related

@@ -53,12 +53,12 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ### #941 channel editor (E1)
 
-| Sub-slice                    | Status   | Notes                                                                                         |
-| ---------------------------- | -------- | --------------------------------------------------------------------------------------------- |
-| Kickoff + diff checklist     | Complete | Branch `941/pskillen/ds-r2-channel-editor`                                                    |
-| v2 EditorHeader/StickyFooter | Complete | Sidecars + `/styleguide/v2/navigation`                                                        |
-| E1 shell + sections          | Complete | Stacked Mode settings; Identity modes; Frequency RX-first + Power; sticky footer              |
-| Product panels               | Complete | Scanning / APRS / Repeater restyled into E1 chrome                                            |
+| Sub-slice                    | Status   | Notes                                                                            |
+| ---------------------------- | -------- | -------------------------------------------------------------------------------- |
+| Kickoff + diff checklist     | Complete | Branch `941/pskillen/ds-r2-channel-editor`                                       |
+| v2 EditorHeader/StickyFooter | Complete | Sidecars + `/styleguide/v2/navigation`                                           |
+| E1 shell + sections          | Complete | Stacked Mode settings; Identity modes; Frequency RX-first + Power; sticky footer |
+| Product panels               | Complete | Scanning / APRS / Repeater restyled into E1 chrome                               |
 
 ## Verification
 

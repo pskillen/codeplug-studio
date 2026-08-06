@@ -33,7 +33,9 @@ function ModeChip({
       onClick={onClick}
       aria-pressed={active}
     >
-      {active ? <IconCheck size={11} stroke={2.5} aria-hidden className={classes.chipCheck} /> : null}
+      {active ? (
+        <IconCheck size={11} stroke={2.5} aria-hidden className={classes.chipCheck} />
+      ) : null}
       {children}
     </button>
   );
@@ -60,11 +62,7 @@ export default function ChannelModesField({
         <div className={classes.groupLabel}>{label}</div>
         <div className={classes.chips}>
           {modes.map((mode) => (
-            <ModeChip
-              key={mode}
-              active={selectedModes.includes(mode)}
-              onClick={() => toggle(mode)}
-            >
+            <ModeChip key={mode} active={selectedModes.includes(mode)} onClick={() => toggle(mode)}>
               {modeLabel(mode as ChannelMode)}
             </ModeChip>
           ))}

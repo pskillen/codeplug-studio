@@ -32,7 +32,9 @@ export default function StickyFooter({
 
   return (
     <footer
-      className={[classes.root, compact ? classes.compact : '', className].filter(Boolean).join(' ')}
+      className={[classes.root, compact ? classes.compact : '', className]
+        .filter(Boolean)
+        .join(' ')}
       aria-live="polite"
     >
       <span className={classes.status}>{status}</span>

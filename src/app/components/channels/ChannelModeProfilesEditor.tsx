@@ -69,17 +69,16 @@ export default function ChannelModeProfilesEditor({
 
   if (profiles.length === 0) {
     return (
-      <p className={classes.empty}>Select at least one mode above to configure mode-specific settings.</p>
+      <p className={classes.empty}>
+        Select at least one mode above to configure mode-specific settings.
+      </p>
     );
   }
 
   return (
     <Stack gap={0}>
       {profiles.map((profile, index) => (
-        <div
-          key={profile.mode}
-          className={index > 0 ? classes.stackedBlock : classes.firstBlock}
-        >
+        <div key={profile.mode} className={index > 0 ? classes.stackedBlock : classes.firstBlock}>
           <div className={classes.modeHeader}>
             <ModePill mode={profile.mode} size="xs" />
             <span className={classes.modeTitle}>{modeLabel(profile.mode)} settings</span>

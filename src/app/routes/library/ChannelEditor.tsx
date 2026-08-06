@@ -18,10 +18,7 @@ import {
   resolveChannelPrimaryMode,
 } from '@core/domain/modeProfiles.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
-import {
-  PercentLevelSlider,
-  UnsavedChangesModal,
-} from '../../components/ui/index.ts';
+import { PercentLevelSlider, UnsavedChangesModal } from '../../components/ui/index.ts';
 import {
   Button,
   DesignSystemV2Provider,
@@ -195,7 +192,9 @@ export default function ChannelEditor({
       return;
     }
     if (rx.trim() && !tx.trim()) {
-      setValidationError("TX frequency can't be blank — use Simplex above or enter a value manually.");
+      setValidationError(
+        "TX frequency can't be blank — use Simplex above or enter a value manually.",
+      );
       return;
     }
     setValidationError(null);
@@ -284,7 +283,9 @@ export default function ChannelEditor({
           ) : null}
 
           <Panel title="Identity">
-            <div className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(' ')}>
+            <div
+              className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(' ')}
+            >
               <FormField label="Name">
                 <TextInput
                   variant="plain"
@@ -325,10 +326,7 @@ export default function ChannelEditor({
                 name={name}
                 abbreviation={abbreviation}
               />
-              <ChannelModesField
-                selectedModes={selectedModes}
-                onChange={handleModesChange}
-              />
+              <ChannelModesField selectedModes={selectedModes} onChange={handleModesChange} />
             </Stack>
           </Panel>
 
@@ -349,11 +347,7 @@ export default function ChannelEditor({
                 onTxFrequencyChange={setTx}
               />
             </div>
-            <FormField
-              label="TX frequency (MHz)"
-              mono
-              error={txFieldError}
-            >
+            <FormField label="TX frequency (MHz)" mono error={txFieldError}>
               <TextInput
                 variant="plain"
                 value={tx}
@@ -405,11 +399,7 @@ export default function ChannelEditor({
           </Panel>
 
           <Panel title="Location">
-            <ChannelLocationSection
-              value={location}
-              onChange={setLocation}
-              compact={isMobile}
-            />
+            <ChannelLocationSection value={location} onChange={setLocation} compact={isMobile} />
           </Panel>
 
           {entity ? (

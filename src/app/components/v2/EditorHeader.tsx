@@ -37,7 +37,9 @@ export default function EditorHeader({
 
   return (
     <header
-      className={[classes.root, compact ? classes.compact : '', className].filter(Boolean).join(' ')}
+      className={[classes.root, compact ? classes.compact : '', className]
+        .filter(Boolean)
+        .join(' ')}
     >
       <div className={classes.crumbRow}>
         {crumbTo ? (

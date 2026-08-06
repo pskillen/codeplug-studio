@@ -26,11 +26,7 @@ export default function FormField({
   error,
   hint,
 }: FormFieldProps) {
-  const bodyClass = [
-    classes.body,
-    mono ? classes.mono : '',
-    error ? classes.bodyError : '',
-  ]
+  const bodyClass = [classes.body, mono ? classes.mono : '', error ? classes.bodyError : '']
     .filter(Boolean)
     .join(' ');
 

@@ -115,16 +115,14 @@ export default function StyleguideV2NavigationPage() {
           <div style={{ padding: '16px 32px', color: 'var(--dsv2-text-tertiary)', fontSize: 13 }}>
             Scrollable editor panels…
           </div>
-          <StickyFooter
-            saveLabel="Save channel"
-            dirty
-            onCancel={() => {}}
-            onSave={() => {}}
-          />
+          <StickyFooter saveLabel="Save channel" dirty onCancel={() => {}} onSave={() => {}} />
         </div>
       </PageSection>
 
-      <PageSection title="SectionNav" description="Legacy in-page section rail (superseded by E1 scroll layout).">
+      <PageSection
+        title="SectionNav"
+        description="Legacy in-page section rail (superseded by E1 scroll layout)."
+      >
         <div
           style={{
             display: 'flex',

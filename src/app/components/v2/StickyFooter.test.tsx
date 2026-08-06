@@ -7,12 +7,7 @@ describe('StickyFooter', () => {
   it('shows unsaved status when dirty', () => {
     render(
       <DesignSystemV2Provider>
-        <StickyFooter
-          saveLabel="Save channel"
-          dirty
-          onCancel={() => {}}
-          onSave={() => {}}
-        />
+        <StickyFooter saveLabel="Save channel" dirty onCancel={() => {}} onSave={() => {}} />
       </DesignSystemV2Provider>,
     );
 
@@ -24,11 +19,7 @@ describe('StickyFooter', () => {
     const onSave = vi.fn();
     render(
       <DesignSystemV2Provider>
-        <StickyFooter
-          saveLabel="Save channel"
-          onCancel={onCancel}
-          onSave={onSave}
-        />
+        <StickyFooter saveLabel="Save channel" onCancel={onCancel} onSave={onSave} />
       </DesignSystemV2Provider>,
     );
 
