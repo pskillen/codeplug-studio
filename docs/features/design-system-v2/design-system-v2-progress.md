@@ -10,6 +10,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | --------------------------- | ----------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Foundations gap-fill (#938) | Shipped     | [PR #946](https://github.com/pskillen/codeplug-studio/pull/946) | Overlays, DataTable v2 full capability set, Membership family, forms/feedback, build stubs, icon-size tokens |
 | Shell & project (#939)      | In progress | `939/pskillen/ds-r2-shell`                                      | S1–S4, P1 Home, P3 Drive modals, P4 Quick start — mk2 Batch 1 + P4                                           |
+| Library lists (#940)        | In progress | `940/pskillen/ds-r2-library-lists`                              | Batch 2: L1–L7, C3, C7 — v2 DataTable + L1 chrome + ModalShell bulk overlays                                 |
 
 ### #938 foundations gap-fill
 
@@ -61,6 +62,30 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 - [ ] Manual desktop + mobile pass on Library strip (Zones, RGLs, TG, Contacts, Scan, APRS)
 - [ ] Membership reorder/add/remove on Zones, RGLs, Scan lists
 
+### #940 library lists (Batch 2)
+
+| Sub-slice | Status | Notes |
+| --- | --- | --- |
+| Kickoff + diff checklist | In progress | Branch `940/pskillen/ds-r2-library-lists` from `origin/main` |
+| L1 shared chrome | Pending | `LibraryInventoryHeader`, `FacetBar`, `LibraryMapStack` |
+| L4/L6/L7 thin lists | Pending | v2 DataTable migration |
+| L5 Contacts | Pending | Dual tables, extreme scale digital |
+| L3 Zones + C7 | Pending | reorderMode grip, map split/toggle |
+| L2 Channels + C7 | Pending | facets, selection bulk, map stacked |
+| C3 overlays | Pending | `ChannelBulkEditModal`, `AprsChannelBulkAssignModal` → ModalShell |
+
+**mk2 vs live deltas (acceptance checklist):**
+
+| ID | Desktop gaps | Narrow gaps |
+| --- | --- | --- |
+| L1 | v1 DataTable; no shared header/facet shell | column collapse not on v2 table |
+| L2 | Mantine facets; v1 table; Mantine bulk modal | facet scroll; map toggle |
+| L3 | arrow reorder vs grip; hand-rolled toolbar | map toggle |
+| L4/L6/L7 | duplicated page CSS; v1 table | column collapse |
+| L5 | v1 table in Panel; no mk2 header counts layout | stacked sections |
+| C3 | Mantine Modal chrome | mobile modal inset |
+| C7 | map present but no shared stack/split/toggle helper | mobile map collapsed |
+
 ## Next
 
-**r2 retrofit** continues with [#940](https://github.com/pskillen/codeplug-studio/issues/940) library lists after [#939](https://github.com/pskillen/codeplug-studio/issues/939) merges.
+**r2 retrofit** active: [#940](https://github.com/pskillen/codeplug-studio/issues/940) library lists on `940/pskillen/ds-r2-library-lists`.
