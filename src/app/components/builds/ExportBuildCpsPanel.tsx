@@ -59,11 +59,16 @@ import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 
 export interface ExportBuildCpsPanelProps {
   build: RadioBuild;
+  /** When `settings`, only projection/inclusion controls; default is pathway delivery UI. */
+  panelMode?: 'delivery' | 'settings';
 }
 
 const buildService = new BuildService(persistence);
 
-export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps) {
+export default function ExportBuildCpsPanel({
+  build,
+  panelMode = 'delivery',
+}: ExportBuildCpsPanelProps) {
   const { activeProjectId, activeProject } = useProjects();
   const { activeEgress, egressPaths, setActiveEgressId, reloadEgressPaths } = useBuildLayout();
   const { withDriveAuthRetry } = useGoogleDrive();
@@ -422,23 +427,36 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
       />
     ) : null;
 
+  const settingsSections = (
+    <ExportBuildSettingsSections
+      build={build}
+      formatId={formatId}
+      saving={savingSettings}
+      settingsError={settingsError}
+      profileNameLimit={profileNameLimit}
+      resolvedSettings={resolvedSettings}
+      formatDefaults={formatDefaults}
+      defaultScanValue={defaultScanValue}
+      onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
+      onExportInclusionChange={(field, checked) => void handleExportInclusionChange(field, checked)}
+    />
+  );
+
+  if (panelMode === 'settings') {
+    if (!activeEgress) {
+      return (
+        <Alert color="gray" title="No export pathway">
+          This build has no active egress pathway. Reload the page or open Setup to restore pathways
+          for this radio.
+        </Alert>
+      );
+    }
+    return <Stack gap="sm">{settingsSections}</Stack>;
+  }
+
   if (formatId === 'radio-io') {
     return (
       <Stack gap="sm">
-        <ExportBuildSettingsSections
-          build={build}
-          formatId={formatId}
-          saving={savingSettings}
-          settingsError={settingsError}
-          profileNameLimit={profileNameLimit}
-          resolvedSettings={resolvedSettings}
-          formatDefaults={formatDefaults}
-          defaultScanValue={defaultScanValue}
-          onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
-          onExportInclusionChange={(field, checked) =>
-            void handleExportInclusionChange(field, checked)
-          }
-        />
         {egressSwitcher}
         <Text size="sm">
           Direct radio via Web Serial for{' '}
@@ -485,20 +503,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
 
     return (
       <Stack gap="sm">
-        <ExportBuildSettingsSections
-          build={build}
-          formatId={formatId}
-          saving={savingSettings}
-          settingsError={settingsError}
-          profileNameLimit={profileNameLimit}
-          resolvedSettings={resolvedSettings}
-          formatDefaults={formatDefaults}
-          defaultScanValue={defaultScanValue}
-          onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
-          onExportInclusionChange={(field, checked) =>
-            void handleExportInclusionChange(field, checked)
-          }
-        />
         {egressSwitcher}
         <Text size="sm">
           Export as{' '}
@@ -577,20 +581,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
 
   return (
     <Stack gap="sm">
-      <ExportBuildSettingsSections
-        build={build}
-        formatId={formatId}
-        saving={savingSettings}
-        settingsError={settingsError}
-        profileNameLimit={profileNameLimit}
-        resolvedSettings={resolvedSettings}
-        formatDefaults={formatDefaults}
-        defaultScanValue={defaultScanValue}
-        onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
-        onExportInclusionChange={(field, checked) =>
-          void handleExportInclusionChange(field, checked)
-        }
-      />
       {egressSwitcher}
       {showDm32PreferNeonPlug ? <Dm32PreferNeonPlugAlert /> : null}
       <Text size="sm">

@@ -98,7 +98,11 @@ vi.mock('../import-export/DriveBrowserModal.tsx', () => ({
 
 function renderExportPanel(
   profileId: string,
-  opts?: { hydration?: EgressPath['hydration']; router?: boolean },
+  opts?: {
+    hydration?: EgressPath['hydration'];
+    router?: boolean;
+    panelMode?: 'delivery' | 'settings';
+  },
 ) {
   const { build, egress, egressPaths } = newRadioBuildForProfile('project-1', profileId);
   if (opts?.hydration) {
@@ -115,7 +119,7 @@ function renderExportPanel(
   const panel = (
     <BuildLayoutProvider value={layoutValue}>
       <MantineProvider>
-        <ExportBuildCpsPanel build={build} />
+        <ExportBuildCpsPanel build={build} panelMode={opts?.panelMode} />
       </MantineProvider>
     </BuildLayoutProvider>
   );
@@ -135,7 +139,7 @@ describe('ExportBuildCpsPanel', () => {
   });
 
   it('renders export name settings for shipped OpenGD77 builds', async () => {
-    renderExportPanel('opengd77-1701');
+    renderExportPanel('opengd77-1701', { panelMode: 'settings' });
 
     expect(await screen.findByText('Naming')).toBeInTheDocument();
     expect(screen.getByText('Shorten long names')).toBeInTheDocument();
@@ -195,7 +199,14 @@ describe('ExportBuildCpsPanel', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('places radio settings above the export pathway switcher', async () => {
+  it('keeps export settings off the delivery panel', async () => {
+    renderExportPanel('opengd77-1701');
+
+    expect(await screen.findByText(/Export as/)).toBeInTheDocument();
+    expect(screen.queryByText('Naming')).not.toBeInTheDocument();
+  });
+
+  it('shows settings on the settings panel for radio-io builds', async () => {
     const { build, egressPaths } = newRadioBuildForProfile('project-1', 'radio-io-uv5r-mini');
     const radioIo = egressPaths.find((path) => path.formatId === 'radio-io');
     if (!radioIo) throw new Error('expected Web Serial egress');
@@ -213,15 +224,13 @@ describe('ExportBuildCpsPanel', () => {
       >
         <MantineProvider>
           <MemoryRouter>
-            <ExportBuildCpsPanel build={build} />
+            <ExportBuildCpsPanel build={build} panelMode="settings" />
           </MemoryRouter>
         </MantineProvider>
       </BuildLayoutProvider>,
     );
 
-    const naming = await screen.findByText('Naming');
-    const pathway = screen.getByText('Pathway');
-    expect(naming.compareDocumentPosition(pathway) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(await screen.findByText('Naming')).toBeInTheDocument();
   });
 
   it('opens CSV preview modal for CHIRP single-file export', async () => {
@@ -238,7 +247,7 @@ describe('ExportBuildCpsPanel', () => {
   });
 
   it('hides default scan behaviour for Anytone dedicated scan list builds', async () => {
-    renderExportPanel('anytone-at-d890uv');
+    renderExportPanel('anytone-at-d890uv', { panelMode: 'settings' });
 
     expect(await screen.findByText('Scan lists')).toBeInTheDocument();
     expect(screen.queryByText('Default scan behaviour')).not.toBeInTheDocument();
@@ -408,8 +417,7 @@ describe('ExportBuildCpsPanel', () => {
     expect(await screen.findByText(/Direct radio via Web Serial/i)).toBeInTheDocument();
     expect(screen.getByText(/no CPS file export/i)).toBeInTheDocument();
     expect(screen.getByText('Web Serial is experimental')).toBeInTheDocument();
-    expect(screen.getByText('Naming')).toBeInTheDocument();
-    expect(screen.getByText(/Target name length/i)).toBeInTheDocument();
+    expect(screen.queryByText('Naming')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Download ZIP/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Download CSV/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Read from radio/i })).toBeInTheDocument();
@@ -508,7 +516,13 @@ describe('ExportBuildCpsPanel', () => {
         >
           <MantineProvider>
             <MemoryRouter>
-              <ExportBuildCpsPanel build={build} />
+              <button type="button" onClick={() => setActiveEgressId(neon.id)}>
+                Switch NeonPlug
+              </button>
+              <button type="button" onClick={() => setActiveEgressId(chirp.id)}>
+                Switch CHIRP
+              </button>
+              <ExportBuildCpsPanel build={build} panelMode="settings" />
             </MemoryRouter>
           </MantineProvider>
         </BuildLayoutProvider>
@@ -520,12 +534,14 @@ describe('ExportBuildCpsPanel', () => {
     expect(await screen.findByText('Naming')).toBeInTheDocument();
     expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /NeonPlug/i }));
-    expect(await screen.findByText('Naming')).toBeInTheDocument();
-    expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Switch NeonPlug' }));
+    await waitFor(() => {
+      expect(screen.getByText('Naming')).toBeInTheDocument();
+    });
 
-    fireEvent.click(screen.getByRole('button', { name: /CHIRP/i }));
-    expect(await screen.findByText('Naming')).toBeInTheDocument();
-    expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Switch CHIRP' }));
+    await waitFor(() => {
+      expect(screen.getByText('Naming')).toBeInTheDocument();
+    });
   });
 });

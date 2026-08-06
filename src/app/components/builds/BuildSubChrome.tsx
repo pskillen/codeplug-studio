@@ -7,10 +7,13 @@ import { readStoredActiveEgressId, resolveActiveEgress } from '../../routes/buil
 import {
   activeAuditNavItem,
   activeBuildSection,
+  activeExportNavItem,
   activeWireEntityNavItem,
   buildAuditNavItems,
+  buildExportNavItems,
   buildWireEntityNavItems,
   type BuildAuditNavItem,
+  type BuildExportNavItem,
   type BuildWireEntityNavItem,
 } from '../../routes/builds/nav.ts';
 import { isBuildDetailPath } from '../../routes/builds/nav.ts';
@@ -25,6 +28,8 @@ export interface BuildSubChromeModel {
   section: ReturnType<typeof activeBuildSection>;
   wireEntities: readonly BuildWireEntityNavItem[];
   activeWireEntity: BuildWireEntityNavItem | null;
+  exportItems: readonly BuildExportNavItem[];
+  activeExportItem: BuildExportNavItem | null;
   auditItems: readonly BuildAuditNavItem[];
   activeAuditItem: BuildAuditNavItem | null;
 }
@@ -89,12 +94,15 @@ export function useBuildSubChrome(pathname: string): BuildSubChromeModel | null 
     const options = { egressPaths, activeEgress };
     const section = activeBuildSection(pathname, buildId);
     const wireEntities = buildWireEntityNavItems(build, options);
+    const exportItems = buildExportNavItems(build);
     const auditItems = buildAuditNavItems(build, options);
 
     return {
       section,
       wireEntities,
       activeWireEntity: activeWireEntityNavItem(pathname, buildId, wireEntities),
+      exportItems,
+      activeExportItem: activeExportNavItem(pathname, buildId, exportItems),
       auditItems,
       activeAuditItem: activeAuditNavItem(pathname, buildId, auditItems),
     };
@@ -106,6 +114,22 @@ export default function BuildSubChrome({ pathname }: { pathname: string }) {
   const model = useBuildSubChrome(pathname);
 
   if (!model || !model.section) return null;
+
+  if (model.section === 'export' && model.exportItems.length > 0) {
+    return (
+      <div className={classes.row}>
+        <ContextualStrip
+          items={model.exportItems.map((item) => item.label)}
+          active={model.activeExportItem?.label}
+          onChange={(label) => {
+            const target = model.exportItems.find((item) => item.label === label);
+            if (target) navigate(target.path);
+          }}
+          className={classes.auditStrip}
+        />
+      </div>
+    );
+  }
 
   if (model.section === 'wire-preview' && model.wireEntities.length > 0) {
     return (

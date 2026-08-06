@@ -54,6 +54,11 @@ export interface BuildAuditNavItem {
   icon: TablerIcon;
 }
 
+export interface BuildExportNavItem {
+  label: string;
+  path: string;
+}
+
 /** @deprecated Use section + entity nav — kept for tests that assert trait gating paths. */
 export interface BuildNavItem {
   label: string;
@@ -96,6 +101,15 @@ export function buildSectionNavItems(build: RadioBuild): BuildSectionNavItem[] {
       path: `${base}/characteristics`,
       icon: IconRadio,
     },
+  ];
+}
+
+/** mk2 Export section — pathway delivery vs projection settings. */
+export function buildExportNavItems(build: RadioBuild): BuildExportNavItem[] {
+  const base = `/builds/${build.id}`;
+  return [
+    { label: BUILD_SECTION_EXPORT, path: `${base}/export` },
+    { label: 'Export settings', path: `${base}/export/settings` },
   ];
 }
 
@@ -285,6 +299,7 @@ export function activeBuildSection(pathname: string, buildId: string): BuildNavS
 
   const suffix = pathname.slice(prefix.length);
   if (!suffix || suffix === 'export') return 'export';
+  if (suffix === 'export/settings' || suffix.startsWith('export/settings/')) return 'export';
   if (suffix === 'overview' || suffix.startsWith('overview/')) return 'overview';
 
   const firstSegment = suffix.split('/')[0];
@@ -307,6 +322,23 @@ export function activeBuildSectionLabel(pathname: string, buildId: string): stri
     case 'audit':
       return BUILD_SECTION_ABOUT;
   }
+}
+
+export function activeExportNavItem(
+  pathname: string,
+  buildId: string,
+  items: readonly BuildExportNavItem[],
+): BuildExportNavItem | null {
+  const prefix = `/builds/${buildId}/`;
+  if (!pathname.startsWith(prefix)) return null;
+
+  let best: BuildExportNavItem | null = null;
+  for (const item of items) {
+    if (pathname === item.path || pathname.startsWith(`${item.path}/`)) {
+      if (!best || item.path.length > best.path.length) best = item;
+    }
+  }
+  return best;
 }
 
 export function activeWireEntityNavItem(

@@ -209,6 +209,7 @@ describe('activeBuildSection', () => {
 
   it('maps export and overview', () => {
     expect(activeBuildSection(`/builds/${build.id}/export`, build.id)).toBe('export');
+    expect(activeBuildSection(`/builds/${build.id}/export/settings`, build.id)).toBe('export');
     expect(activeBuildSection(`/builds/${build.id}/overview`, build.id)).toBe('overview');
   });
 });

@@ -64,6 +64,7 @@ import BuildNeonplugSettingsPage from './routes/builds/BuildNeonplugSettingsPage
 import BuildRadioImageSettingsPage from './routes/builds/BuildRadioImageSettingsPage.tsx';
 import BuildFlatMemoryScanListPage from './routes/builds/BuildFlatMemoryScanListPage.tsx';
 import BuildExportPage from './routes/builds/BuildExportPage.tsx';
+import BuildExportSettingsPage from './routes/builds/BuildExportSettingsPage.tsx';
 import BuildExportResolutionPage from './routes/builds/BuildExportResolutionPage.tsx';
 import BuildChannelsWirePage from './routes/builds/wire-preview/BuildChannelsWirePage.tsx';
 import BuildChannelsBulkEditPage from './routes/builds/wire-preview/BuildChannelsBulkEditPage.tsx';
@@ -218,6 +219,7 @@ export const appRouter = createBrowserRouter([
                   { path: 'contacts', element: <BuildContactsWirePage /> },
                   { path: 'rx-group-lists', element: <BuildRxGroupListsWirePage /> },
                   { path: 'export', element: <BuildExportPage /> },
+                  { path: 'export/settings', element: <BuildExportSettingsPage /> },
                   { path: 'export-resolution', element: <BuildExportResolutionPage /> },
                   { path: 'neonplug-settings', element: <BuildNeonplugSettingsPage /> },
                   { path: 'radio-image', element: <BuildRadioImageSettingsPage /> },
