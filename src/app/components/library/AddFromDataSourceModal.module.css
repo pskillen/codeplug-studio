@@ -1,0 +1,64 @@
+.sourceCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--dsv2-border-subtle);
+  border-radius: var(--dsv2-radius-md);
+  background: var(--dsv2-surface-raised);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.sourceCard:hover {
+  border-color: var(--dsv2-border-strong);
+  background: var(--dsv2-surface-subtle);
+}
+
+.sourceIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--dsv2-radius-md);
+  background: var(--dsv2-accent-subtle);
+  color: var(--dsv2-accent);
+}
+
+.sourceTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+}
+
+.sourceSubtitle {
+  font-size: 12px;
+  color: var(--dsv2-text-secondary);
+}
+
+.sourceDescription {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--dsv2-text-tertiary);
+}
+
+.sourceBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--dsv2-surface-subtle);
+  color: var(--dsv2-text-secondary);
+}
