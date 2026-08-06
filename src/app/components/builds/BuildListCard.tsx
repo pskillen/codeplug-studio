@@ -29,13 +29,7 @@ export default function BuildListCard({ build }: BuildListCardProps) {
   );
 }
 
-export function BuildsListSection({
-  title,
-  children,
-}: {
-  title: ReactNode;
-  children: ReactNode;
-}) {
+export function BuildsListSection({ title, children }: { title: ReactNode; children: ReactNode }) {
   return (
     <section className={classes.section}>
       <h2 className={classes.sectionTitle}>{title}</h2>

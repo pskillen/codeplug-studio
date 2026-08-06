@@ -48,10 +48,15 @@ export default function EgressPathwayCards({
               onClick={() => onSelect(path.id)}
             >
               <div className={classes.cardHeader}>
-                <span className={[classes.icon, pathwayIconClass(path.formatId)].join(' ')} aria-hidden />
+                <span
+                  className={[classes.icon, pathwayIconClass(path.formatId)].join(' ')}
+                  aria-hidden
+                />
                 <span className={classes.cardTitle}>{egressPathLabel(path)}</span>
               </div>
-              <span className={classes.cardDesc}>{path.formatId === 'radio-io' ? 'Web Serial' : 'CPS files'}</span>
+              <span className={classes.cardDesc}>
+                {path.formatId === 'radio-io' ? 'Web Serial' : 'CPS files'}
+              </span>
             </button>
           );
         })}

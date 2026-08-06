@@ -66,7 +66,9 @@ export default function BuildOverviewPage() {
           onChange={(e) => setName(e.currentTarget.value)}
         />
         {error ? (
-          <Text c="red" size="sm">{error}</Text>
+          <Text c="red" size="sm">
+            {error}
+          </Text>
         ) : null}
         <div className={classes.rowActions}>
           <Button loading={saving} disabled={!nameDirty} onClick={() => void handleSave()}>
@@ -84,7 +86,9 @@ export default function BuildOverviewPage() {
         </p>
         <div className={classes.pills}>
           {(radioTarget?.traits ?? []).map((trait) => (
-            <Pill key={trait} tone="neutral">{capabilityLabel(trait)}</Pill>
+            <Pill key={trait} tone="neutral">
+              {capabilityLabel(trait)}
+            </Pill>
           ))}
         </div>
         {egressPaths.length > 0 ? (
@@ -98,8 +102,7 @@ export default function BuildOverviewPage() {
           </ul>
         ) : null}
         <p className={classes.panelHint}>
-          Export pathways are chosen on{' '}
-          <Link to={`/builds/${build.id}/export`}>Export</Link>.
+          Export pathways are chosen on <Link to={`/builds/${build.id}/export`}>Export</Link>.
         </p>
       </section>
 
@@ -109,7 +112,12 @@ export default function BuildOverviewPage() {
           Deleting a build removes its export history and overrides. Channels and zones in your
           library are not affected.
         </p>
-        <Button variant="destructive" size="sm" loading={deleting} onClick={() => void handleDelete()}>
+        <Button
+          variant="destructive"
+          size="sm"
+          loading={deleting}
+          onClick={() => void handleDelete()}
+        >
           Delete build
         </Button>
       </section>

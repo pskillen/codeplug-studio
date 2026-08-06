@@ -37,7 +37,9 @@ export default function BuildIdentityBar({ buildId, compact }: BuildIdentityBarP
         <BuildSwitcher compact />
         <Text size="xs" c="dimmed" className={classes.meta}>
           {radioLabel}
-          <span className={classes.dot} aria-hidden>·</span>
+          <span className={classes.dot} aria-hidden>
+            ·
+          </span>
           {pathwayLabel}
         </Text>
       </div>

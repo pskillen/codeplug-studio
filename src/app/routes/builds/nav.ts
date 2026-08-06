@@ -72,8 +72,18 @@ export function showsD890AmAirbandNav(build: RadioBuild, options?: BuildNavOptio
 export function buildSectionNavItems(build: RadioBuild): BuildSectionNavItem[] {
   const base = `/builds/${build.id}`;
   return [
-    { label: BUILD_SECTION_OVERVIEW, section: 'overview', path: `${base}/overview`, icon: IconSettings },
-    { label: BUILD_SECTION_EXPORT, section: 'export', path: `${base}/export`, icon: IconFileExport },
+    {
+      label: BUILD_SECTION_OVERVIEW,
+      section: 'overview',
+      path: `${base}/overview`,
+      icon: IconSettings,
+    },
+    {
+      label: BUILD_SECTION_EXPORT,
+      section: 'export',
+      path: `${base}/export`,
+      icon: IconFileExport,
+    },
     {
       label: BUILD_SECTION_WIRE_PREVIEW,
       section: 'wire-preview',
@@ -99,7 +109,12 @@ export function buildWireEntityNavItems(
   const flatMemory = traits.has(BuildCapabilityTrait.FlatMemoryList);
 
   const items: BuildWireEntityNavItem[] = [
-    { label: 'Channels', path: `${base}/channels`, icon: entityNavIcons.channels, segment: 'channels' },
+    {
+      label: 'Channels',
+      path: `${base}/channels`,
+      icon: entityNavIcons.channels,
+      segment: 'channels',
+    },
   ];
 
   if (showsPerChannelScanListNav(build.radioTargetId)) {
@@ -165,7 +180,10 @@ export function buildWireEntityNavItems(
 }
 
 /** mk2 Audit section — characteristics, export resolution, pathway retain viewers. */
-export function buildAuditNavItems(build: RadioBuild, options?: BuildNavOptions): BuildAuditNavItem[] {
+export function buildAuditNavItems(
+  build: RadioBuild,
+  options?: BuildNavOptions,
+): BuildAuditNavItem[] {
   const base = `/builds/${build.id}`;
   const egressPaths = options?.egressPaths ?? [];
 

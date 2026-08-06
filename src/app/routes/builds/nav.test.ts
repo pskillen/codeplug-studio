@@ -219,9 +219,9 @@ describe('buildAuditNavItems', () => {
     const withDonor = egressPaths.map((path) =>
       path.id === egress.id ? withHydration(path, neonplugDonorHydration) : path,
     );
-    expect(buildAuditNavItems(build, { egressPaths: withDonor }).map((item) => item.label)).toContain(
-      'NeonPlug settings',
-    );
+    expect(
+      buildAuditNavItems(build, { egressPaths: withDonor }).map((item) => item.label),
+    ).toContain('NeonPlug settings');
   });
 });
 
