@@ -24,7 +24,8 @@ Summary and list routes each embed a map — list pages keep contextual maps for
 
 ```text
 ChannelsListPage / ZonesListPage / SummaryPage / …
-└─ MapPanel (src/app/components/v2/) — title, gear, legend chrome
+└─ LibraryMapStack (optional — stacked or split list+map, mobile toggle) ([#940](https://github.com/pskillen/codeplug-studio/issues/940))
+   └─ MapPanel (src/app/components/v2/) — title, gear, legend chrome
    └─ CodeplugMap (src/app/components/CodeplugMap/)
       ├─ MapControls — label + zone toggles
       ├─ MaidenheadGridLayer — optional locator grid (Settings)

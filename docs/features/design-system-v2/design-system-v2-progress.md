@@ -10,57 +10,42 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | --------------------------- | ----------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Foundations gap-fill (#938) | Shipped     | [PR #946](https://github.com/pskillen/codeplug-studio/pull/946) | Overlays, DataTable v2 full capability set, Membership family, forms/feedback, build stubs, icon-size tokens |
 | Shell & project (#939)      | In progress | `939/pskillen/ds-r2-shell`                                      | S1–S4, P1 Home, P3 Drive modals, P4 Quick start — mk2 Batch 1 + P4                                           |
+| Library lists (#940)        | Shipped     | `940/pskillen/ds-r2-library-lists`                              | Batch 2 L1–L7, C3, C7 — v2 DataTable + L1 chrome + ModalShell bulk overlays                                  |
 
-### #938 foundations gap-fill
+### #940 library lists (Batch 2)
 
-| Sub-slice                                                                          | Status   | Notes                                                                    |
-| ---------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------ |
-| Icon-size tokens                                                                   | Complete | `DSV2_TOKENS.iconSize` + `--dsv2-icon-size-*`                            |
-| Overlays: ModalShell → ConfirmModal → ProgressModal                                | Complete | New `/styleguide/v2/overlays`                                            |
-| DataTable v2: core → selection/bulk → reorder → nesting/scale/visibility           | Complete | New independent `v2/DataTable.tsx`; coexists with v1                     |
-| Membership: MembershipRow → MembershipPanel → MembershipPoolRow → AddMembersScreen | Complete | New `/styleguide/v2/membership`; not wired into live editors (#941–#943) |
-| Forms/feedback: StatusDot, EmptyState, DismissibleNotice, FileDropzone, Combobox   | Complete | Demoed on existing `/forms`, `/data-display`, `/feedback` pages          |
-| Build stubs: WirePreviewTable, WriteVerifyReport                                   | Complete | Static-fixture only; full wiring is Builds (#924)                        |
+| Sub-slice                | Status   | Notes                                                                               |
+| ------------------------ | -------- | ----------------------------------------------------------------------------------- |
+| Kickoff + diff checklist | Complete | Branch `940/pskillen/ds-r2-library-lists`                                           |
+| L1 shared chrome         | Complete | `LibraryInventoryHeader`, `FacetBar`, `LibraryMapStack`, `libraryListTable` helpers |
+| L4/L6/L7 thin lists      | Complete | Talk groups, RX group lists, scan lists on v2 DataTable                             |
+| L5 Contacts              | Complete | Dual tables, extreme digital, RadioID header action                                 |
+| L3 Zones + C7            | Complete | reorderMode grip, split map stack, Sort zones…                                      |
+| L2 Channels + C7         | Complete | Facet chips, v2 table/map, selection bulk                                           |
+| C3 overlays              | Complete | `ChannelBulkEditModal`, `AprsChannelBulkAssignModal` on ModalShell                  |
 
 ## mk1 slices (history — superseded by r2)
 
-| Slice                          | Status      | Branch / PR                                                     | Notes                                                |
-| ------------------------------ | ----------- | --------------------------------------------------------------- | ---------------------------------------------------- |
-| Foundations (#916)             | Shipped     | [PR #928](https://github.com/pskillen/codeplug-studio/pull/928) | Theme isolation, `components/v2/*`, `/styleguide/v2` |
-| Chrome port (#917)             | Shipped     | [PR #930](https://github.com/pskillen/codeplug-studio/pull/930) | AppShell + ContextualStrip + BottomTabBar live       |
-| Summary / Channels (#918–#920) | Shipped     | [PR #931](https://github.com/pskillen/codeplug-studio/pull/931) | Summary, Channels list, Channel editor on v2         |
-| Library ports (#921+)          | In progress | `921/pskillen/design-system-v2-library`                         | PR pending — all Library strip screens ported        |
-
-### Library ports (#921 branch)
-
-| Sub-slice                | Status      | Notes                                                                                                                                      |
-| ------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Kickoff                  | Complete    | Child issues [#932](https://github.com/pskillen/codeplug-studio/issues/932)–[#935](https://github.com/pskillen/codeplug-studio/issues/935) |
-| Zones list + edit (#921) | Complete    | v2 list + sticky editor shell                                                                                                              |
-| Zones add/scan (#922)    | Complete    | ShuttleList* on ZoneMemberEditor                                                                                                           |
-| RGLs (#923)              | Complete    | List + editor + shuttle picker                                                                                                             |
-| Talk Groups (#932)       | Complete    | Best-effort chrome port                                                                                                                    |
-| Contacts (#933)          | Complete    | List + digital/analog editors                                                                                                              |
-| Scan lists (#934)        | Complete    | ShuttleList membership                                                                                                                     |
-| APRS (#935)              | Complete    | Tabbed page chrome                                                                                                                         |
-| Builds/export (#924)     | Deferred    | Out of scope this PR                                                                                                                       |
-| MapPanel (#925)          | Shipped     | MapPanel children slot; all map call sites wrapped                                                                                         |
-| Mobile QA (#926)         | Not started | —                                                                                                                                          |
-| Retire v1 (#927)         | Not started | After full rollout only                                                                                                                    |
+| Slice                          | Status     | Branch / PR                                                     | Notes                                                |
+| ------------------------------ | ---------- | --------------------------------------------------------------- | ---------------------------------------------------- |
+| Foundations (#916)             | Shipped    | [PR #928](https://github.com/pskillen/codeplug-studio/pull/928) | Theme isolation, `components/v2/*`, `/styleguide/v2` |
+| Chrome port (#917)             | Shipped    | [PR #930](https://github.com/pskillen/codeplug-studio/pull/930) | AppShell + ContextualStrip + BottomTabBar live       |
+| Summary / Channels (#918–#920) | Shipped    | [PR #931](https://github.com/pskillen/codeplug-studio/pull/931) | Summary, Channels list, Channel editor on v2         |
+| Library ports (#921+)          | Superseded | `921/pskillen/design-system-v2-library`                         | Visual acceptance replaced by r2 #940                |
 
 ## Verification
 
-### #938 foundations gap-fill (this branch)
+### #940 library lists
 
 - [x] `npm run format:check && npm run lint && npm run test && npm run build`
-- [x] Manual desktop + narrow pass on every new/extended `/styleguide/v2/*` page (overlays, membership, data-display, forms, feedback) — zero console errors, interactions verified (modal open/close, AddMembersScreen stage/commit + blocked candidate, DataTable v2 reorder/nested-expand/column-visibility, Combobox search/select, DismissibleNotice dismiss)
+- [ ] Manual desktop + narrow pass on L2–L7 vs Batch 2 frames
+- [ ] C3 ModalShell chrome; C7 map toggle on mobile
 
-### mk1 library ports (history)
+### #938 foundations gap-fill
 
-- [ ] `npm run format:check && npm run lint && npm run test && npm run build`
-- [ ] Manual desktop + mobile pass on Library strip (Zones, RGLs, TG, Contacts, Scan, APRS)
-- [ ] Membership reorder/add/remove on Zones, RGLs, Scan lists
+- [x] `npm run format:check && npm run lint && npm run test && npm run build`
+- [x] Manual desktop + narrow pass on every new/extended `/styleguide/v2/*` page
 
 ## Next
 
-**r2 retrofit** continues with [#940](https://github.com/pskillen/codeplug-studio/issues/940) library lists after [#939](https://github.com/pskillen/codeplug-studio/issues/939) merges.
+**r2 retrofit** continues with [#941](https://github.com/pskillen/codeplug-studio/issues/941) channel editor (Batch 3) after [#939](https://github.com/pskillen/codeplug-studio/issues/939) merges.

@@ -1,10 +1,10 @@
-import { useCallback, useState } from 'react';
-import { ActionIcon, Tooltip } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
+import { useCallback, useState } from 'react';
 import type { Channel } from '@core/models/library.ts';
 import { runChannelDeleteFlow } from '../../lib/channelDeleteFlow.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
+import { RowActionIcon } from '../v2/index.ts';
 
 export default function ChannelListDeleteAction({ channel }: { channel: Channel }) {
   const { projectId, deleteEntity, reload } = useLibrary();
@@ -31,21 +31,12 @@ export default function ChannelListDeleteAction({ channel }: { channel: Channel 
   const label = channel.name || channel.callsign || 'channel';
 
   return (
-    <Tooltip label={`Delete ${label}`}>
-      <ActionIcon
-        variant="subtle"
-        color="red"
-        size="sm"
-        loading={busy}
-        aria-label={`Delete ${label}`}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          void handleDelete();
-        }}
-      >
-        <IconTrash size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-      </ActionIcon>
-    </Tooltip>
+    <RowActionIcon
+      tone="destructive"
+      label={`Delete channel ${label}`}
+      disabled={busy}
+      icon={<IconTrash size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+      onClick={() => void handleDelete()}
+    />
   );
 }

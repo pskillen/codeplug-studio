@@ -10,7 +10,7 @@ Operators multi-select channels on `/library/channels` and bulk-update common fi
 
 | Prop           | Type                                                      | Description                                   |
 | -------------- | --------------------------------------------------------- | --------------------------------------------- |
-| `opened`       | `boolean`                                                 | Mantine modal open state                      |
+| `opened`       | `boolean`                                                 | `ModalShell` open state                       |
 | `onClose`      | `() => void`                                              | Close without persisting                      |
 | `channels`     | `Channel[]`                                               | Selected channels in table order (2 or more)  |
 | `projectId`    | `string \| null`                                          | Active project for delete                     |
@@ -47,7 +47,7 @@ Single-channel selection is handled by the list page (navigate to the channel ed
 
 ## Behaviour
 
-- Title shows **Bulk edit** with a badge count of selected channels.
+- Shell: `ModalShell` (`size="lg"`) with pencil icon, selection banner, and footer **Apply to N channels** / Cancel / Delete.
 - **View selected channels** expands a compact scrollable name list.
 - Each field has a **Change …** checkbox; unchecked fields are omitted from the patch and their controls are disabled.
 - Channel-level fields (`scanInclusion`, `forbidTransmit`, `power`) apply to every selected channel when enabled.

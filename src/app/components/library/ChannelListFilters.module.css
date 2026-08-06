@@ -1,0 +1,8 @@
+.root {
+  margin-bottom: var(--dsv2-space-5);
+}
+
+.distanceSection {
+  /* Mantine Slider mark labels sit below the track and overflow the layout box. */
+  padding-bottom: 22px;
+}

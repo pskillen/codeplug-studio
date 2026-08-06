@@ -3,9 +3,13 @@ import type { AprsChannelSlot, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
 import { CHANNEL_APRS_OFF } from '@core/domain/aprs/defaults.ts';
-import { Button, Checkbox, Group, Modal, Select, Stack, Text } from '@mantine/core';
+import { Checkbox, Select, Stack, Text } from '@mantine/core';
+import { IconAntenna } from '@tabler/icons-react';
 import { APRS_SLOT_NONE_VALUE, aprsSlotSelectOptions } from '../../lib/aprsBindingHelpers.ts';
 import { modalComboboxProps } from '../../theme.ts';
+import { Button, ModalShell } from '../v2/index.ts';
+import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
+import classes from './ChannelBulkEditModal.module.css';
 
 const REPORT_TYPE_OPTIONS = [
   { value: 'off', label: 'Off' },
@@ -96,11 +100,32 @@ export default function AprsChannelBulkAssignModal({
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Bulk set APRS bindings" centered>
+    <ModalShell
+      open={opened}
+      onClose={onClose}
+      title="Assign APRS slot"
+      icon={<IconAntenna size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+      iconTone="accent"
+      size="lg"
+      footer={
+        <div className={classes.footerActions}>
+          <Button variant="secondary" size="sm" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" size="sm" onClick={handleApply}>
+            Apply to {selectedCount} channel{selectedCount === 1 ? '' : 's'}
+          </Button>
+        </div>
+      }
+    >
+      <div className={classes.banner}>
+        <strong>
+          {selectedCount} channel{selectedCount === 1 ? '' : 's'} selected.
+        </strong>{' '}
+        Enable only the fields you want to change.
+      </div>
+
       <Stack gap="md">
-        <Text size="sm" c="dimmed">
-          Apply to {selectedCount} selected channel{selectedCount === 1 ? '' : 's'}.
-        </Text>
         <Checkbox
           label="Clear APRS binding"
           checked={clearBinding}
@@ -157,13 +182,10 @@ export default function AprsChannelBulkAssignModal({
           value={digitalPttModeValue}
           onChange={(value) => setDigitalPttModeValue((value as AprsPttMode | null) ?? 'off')}
         />
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleApply}>Apply to {selectedCount}</Button>
-        </Group>
+        <Text size="sm" c="dimmed">
+          Blank fields keep current values on each channel unless cleared above.
+        </Text>
       </Stack>
-    </Modal>
+    </ModalShell>
   );
 }

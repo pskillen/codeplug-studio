@@ -1,28 +1,32 @@
-import { ActionIcon, Group, Tooltip } from '@mantine/core';
-import { IconArrowDown, IconArrowUp, IconMapPin, IconPlus } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
+import { IconMapPin, IconPlus } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import type { Zone } from '@core/models/library.ts';
 import { formatZoneDirectMemberSummary } from '@core/domain/zoneMembers.ts';
 import { applyFilters, DEFAULT_MAP_FILTER_OPTS } from '@core/domain/mapProjection.ts';
-import {
-  applyDenseZoneOrders,
-  reorderZoneIds,
-  sortZonesByExportOrder,
-} from '@core/domain/zoneOrder.ts';
+import { applyDenseZoneOrders, sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
 import { sortZonesByName } from '@core/domain/membershipSort.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
-import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
+import EntityListRowDeleteAction from '../../../components/library/EntityListRowDeleteAction.tsx';
+import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
+import LibraryMapStack from '../../../components/library/LibraryMapStack.tsx';
 import MembershipSortMenu from '../../../components/library/MembershipSortMenu.tsx';
-import { Button, DesignSystemV2Provider, MapPanel } from '../../../components/v2/index.ts';
-import { DataTable } from '../../../components/ui/index.ts';
-import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
+import {
+  Button,
+  DataTable,
+  DesignSystemV2Provider,
+  MapPanel,
+  SearchInput,
+  type DataTableColumn,
+} from '../../../components/v2/index.ts';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
+import { createNameColumn } from '../../../lib/libraryListTable.tsx';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { persistence } from '../../../state/persistence.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
+import pageClasses from '../../../components/library/LibraryInventoryPage.module.css';
 import classes from './ZonesListPage.module.css';
 
 export default function ZonesListPage() {
@@ -41,8 +45,8 @@ export default function ZonesListPage() {
     [orderedZones, nameFilter],
   );
   const filterActive = nameFilter.trim().length > 0;
-  const reorderDisabled = filterActive || savingOrder;
   const { skipped: mapSkipped } = applyFilters(channels, DEFAULT_MAP_FILTER_OPTS);
+  const reorderDisabled = filterActive || savingOrder;
 
   const persistZoneOrders = useCallback(
     async (nextZones: Zone[]) => {
@@ -71,12 +75,12 @@ export default function ZonesListPage() {
     [reload, zones],
   );
 
-  const moveZone = useCallback(
-    async (zoneId: string, direction: 'up' | 'down') => {
+  const handleReorder = useCallback(
+    async (nextRows: Zone[]) => {
       if (reorderDisabled) return;
-      const orderedIds = orderedZones.map((zone) => zone.id);
-      const nextIds = reorderZoneIds(orderedIds, new Set([zoneId]), direction);
-      if (nextIds.every((id, index) => id === orderedIds[index])) return;
+      const nextIds = nextRows.map((z) => z.id);
+      const currentIds = orderedZones.map((z) => z.id);
+      if (nextIds.every((id, index) => id === currentIds[index])) return;
       await persistZoneOrders(applyDenseZoneOrders(zones, nextIds));
     },
     [orderedZones, persistZoneOrders, reorderDisabled, zones],
@@ -88,7 +92,7 @@ export default function ZonesListPage() {
   }, [filterActive, persistZoneOrders, savingOrder, zones]);
 
   const listActions = (
-    <Group gap="xs" className={classes.toolbarActions}>
+    <div className={pageClasses.toolbarActions}>
       <Button
         variant="primary"
         leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
@@ -103,55 +107,18 @@ export default function ZonesListPage() {
       >
         New zone from location
       </Button>
-      <Button variant="ghost" onClick={() => navigate('/library/zones/defaults')}>
+      <Button variant="outline" onClick={() => navigate('/library/zones/defaults')}>
         Zone defaults
       </Button>
-    </Group>
+    </div>
   );
 
   const columns = useMemo((): DataTableColumn<Zone>[] => {
     return [
-      {
-        key: 'exportOrder',
-        header: 'Export order',
-        hideable: false,
-        render: (z) => {
-          const index = orderedZones.findIndex((row) => row.id === z.id);
-          return (
-            <div className={classes.reorderCell}>
-              <span className={classes.orderLabel}>{z.order ?? '—'}</span>
-              <Tooltip label="Move up">
-                <ActionIcon
-                  variant="subtle"
-                  size="sm"
-                  aria-label={`Move ${z.name} up`}
-                  disabled={reorderDisabled || index <= 0}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    void moveZone(z.id, 'up');
-                  }}
-                >
-                  <IconArrowUp size={14} stroke={ICON_STROKE} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label="Move down">
-                <ActionIcon
-                  variant="subtle"
-                  size="sm"
-                  aria-label={`Move ${z.name} down`}
-                  disabled={reorderDisabled || index < 0 || index >= orderedZones.length - 1}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    void moveZone(z.id, 'down');
-                  }}
-                >
-                  <IconArrowDown size={14} stroke={ICON_STROKE} />
-                </ActionIcon>
-              </Tooltip>
-            </div>
-          );
-        },
-      },
+      createNameColumn<Zone>({
+        getName: (z) => z.name,
+        getPath: (z) => `/library/zones/${z.id}`,
+      }),
       {
         key: 'members',
         header: 'Members',
@@ -164,130 +131,133 @@ export default function ZonesListPage() {
             </div>
           );
         },
+        sortValue: (z) => z.members.length,
       },
       {
         key: 'comment',
         header: 'Comment',
+        hideOnMobile: true,
         render: (z) => z.comment || '—',
+        sortValue: (z) => z.comment || '',
       },
       {
         key: 'actions',
         header: '',
         hideable: false,
-        render: (z) => <EntityListDeleteAction kind="zone" entityId={z.id} label={z.name} />,
+        width: '52px',
+        render: (z) => <EntityListRowDeleteAction kind="zone" entityId={z.id} label={z.name} />,
       },
     ];
-  }, [moveZone, orderedZones, reorderDisabled]);
+  }, []);
+
+  const tableRows = filterActive ? filtered : orderedZones;
+
+  const mapPanel = (
+    <>
+      <div className={classes.mapMeta}>
+        {position ? (
+          <>
+            {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
+              <span>My location accuracy ±{Math.round(position.accuracyMeters)} m</span>
+            ) : null}
+            <Button variant="ghost" size="sm" onClick={clearPosition}>
+              Clear my location
+            </Button>
+          </>
+        ) : (
+          <UseMyLocationButton
+            label="Show my location"
+            onLocation={(lat, lon, accuracyMeters) =>
+              setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
+            }
+          />
+        )}
+      </div>
+      <MapPanel
+        title="Zone map"
+        height={420}
+        legend={
+          mapSkipped.length > 0 ? (
+            <p className={classes.mapSkipped}>
+              {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
+              (missing coordinates, Use Location = No, or 0,0).
+            </p>
+          ) : undefined
+        }
+      >
+        <CodeplugMap
+          channels={channels}
+          zones={zones}
+          allChannels={channels}
+          height="100%"
+          operatorPosition={position}
+          onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+          onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+        />
+      </MapPanel>
+    </>
+  );
+
+  const listContent = (
+    <>
+      <div className={classes.toolbarRow}>
+        <SearchInput
+          value={nameFilterInput}
+          onChange={(e) => setNameFilter(e.currentTarget.value)}
+          placeholder="Filter name…"
+          detectedTag={nameFilterPending ? 'Filtering…' : undefined}
+          aria-label="Filter zones by name"
+        />
+        <MembershipSortMenu
+          modes={['name']}
+          disabled={filterActive || savingOrder || !zones.length}
+          onSort={() => void sortZonesAlphabetically()}
+          label="Sort zones…"
+        />
+      </div>
+      {filterActive ? (
+        <p className={classes.warning}>
+          Reorder is locked while searching. Clear the filter to rearrange export order.
+        </p>
+      ) : null}
+      {orderError ? <p className={classes.error}>{orderError}</p> : null}
+      <DataTable
+        columns={columns}
+        rows={tableRows}
+        getRowId={(z) => z.id}
+        totalRowCount={zones.length}
+        reorderMode={!reorderDisabled}
+        onReorder={(next) => void handleReorder(next)}
+        emptyMessage="No zones in this project yet."
+        filteredEmptyMessage={
+          nameFilter.trim()
+            ? `No zones match “${nameFilter.trim()}”.`
+            : 'No zones match your filter.'
+        }
+        onRowActivate={(z) => navigate(`/library/zones/${z.id}`)}
+      />
+    </>
+  );
 
   if (loading) {
     return (
       <DesignSystemV2Provider>
-        <div className={classes.page}>
-          <div className={classes.headerRow}>
-            <div>
-              <h1 className={classes.title}>Zones</h1>
-              <p className={classes.description}>Loading library…</p>
-            </div>
-            {listActions}
-          </div>
+        <div className={pageClasses.page}>
+          <LibraryInventoryHeader title="Zones" subtitle="Loading library…" />
         </div>
       </DesignSystemV2Provider>
     );
   }
 
+  const countLabel =
+    zones.length === 1 ? '1 zone in this project' : `${zones.length} zones in this project`;
+
   return (
     <DesignSystemV2Provider>
-      <div className={classes.page}>
-        <div className={classes.headerRow}>
-          <div>
-            <h1 className={classes.title}>Zones</h1>
-            <p className={classes.description}>
-              Every zone in this project. Reorder export order or open one to edit members.
-            </p>
-          </div>
-          {listActions}
-        </div>
+      <div className={pageClasses.page}>
+        <LibraryInventoryHeader title="Zones" subtitle={countLabel} actions={listActions} />
 
-        <p className={classes.hint}>
-          Zones appear on your radio in this order. Use the arrows to rearrange them (clear the name
-          filter first). <strong>Sort zones…</strong> rewrites the list permanently by name — it is
-          not a temporary browse sort.
-        </p>
-        {filterActive ? (
-          <p className={classes.warning}>Reorder is disabled while a name filter is active.</p>
-        ) : null}
-        {orderError ? <p className={classes.error}>{orderError}</p> : null}
-        <div className={classes.sortRow}>
-          <MembershipSortMenu
-            modes={['name']}
-            disabled={filterActive || savingOrder || !zones.length}
-            onSort={() => void sortZonesAlphabetically()}
-            label="Sort zones…"
-          />
-        </div>
-
-        <DataTable
-          variant="list"
-          reorderMode
-          selectionChrome="v2"
-          rows={filtered}
-          totalRowCount={zones.length}
-          search={nameFilterInput}
-          searchPending={nameFilterPending}
-          onSearchChange={setNameFilter}
-          searchPlaceholder="Filter name…"
-          rowKey={(z) => z.id}
-          nameColumn={{
-            getName: (z) => z.name,
-            getPath: (z) => `/library/zones/${z.id}`,
-          }}
-          columns={columns}
-        />
-
-        <section className={classes.mapSection}>
-          <div className={classes.mapMeta}>
-            {position ? (
-              <>
-                {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
-                  <span>My location accuracy ±{Math.round(position.accuracyMeters)} m</span>
-                ) : null}
-                <Button variant="ghost" size="sm" onClick={clearPosition}>
-                  Clear my location
-                </Button>
-              </>
-            ) : (
-              <UseMyLocationButton
-                label="Show my location"
-                onLocation={(lat, lon, accuracyMeters) =>
-                  setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
-                }
-              />
-            )}
-          </div>
-
-          <MapPanel
-            title="Map"
-            height={420}
-            legend={
-              mapSkipped.length > 0 ? (
-                <p className={classes.mapSkipped}>
-                  {mapSkipped.length} channel{mapSkipped.length === 1 ? '' : 's'} not shown on map
-                  (missing coordinates, Use Location = No, or 0,0).
-                </p>
-              ) : undefined
-            }
-          >
-            <CodeplugMap
-              channels={channels}
-              zones={zones}
-              allChannels={channels}
-              height="100%"
-              operatorPosition={position}
-              onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-              onZoneClick={(id) => navigate(`/library/zones/${id}`)}
-            />
-          </MapPanel>
-        </section>
+        <LibraryMapStack layout="split" list={listContent} map={mapPanel} />
       </div>
     </DesignSystemV2Provider>
   );

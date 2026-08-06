@@ -1,0 +1,42 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.split {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.listPane {
+  flex: 1.4;
+  min-width: 0;
+}
+
+.mapPane {
+  flex: 1;
+  min-width: 0;
+}
+
+.mapToggleRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mapCollapsed {
+  display: none;
+}
+
+@media (max-width: 47.99em) {
+  .split {
+    flex-direction: column;
+  }
+
+  .mapCollapsed {
+    display: none;
+  }
+}

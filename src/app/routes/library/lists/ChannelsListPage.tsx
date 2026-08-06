@@ -1,4 +1,4 @@
-import { Alert, Group, Stack, Text } from '@mantine/core';
+import { Alert } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
@@ -12,15 +12,23 @@ import { haversineDistanceM } from '@core/domain/geoDistance.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import {
   Button,
+  DataTable,
   DesignSystemV2Provider,
+  DismissibleNotice,
   MapPanel,
   Pill,
-  SearchInput,
+  type DataTableColumn,
+  type DataTableSortState as V2Sort,
 } from '../../../components/v2/index.ts';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
-import { DataTable } from '../../../components/ui/index.ts';
-import type { DataTableColumn, DataTableSortState } from '../../../components/ui/DataTable.tsx';
+import AddFromDataSourceModal from '../../../components/library/AddFromDataSourceModal.tsx';
+import ChannelBulkEditModal from '../../../components/library/ChannelBulkEditModal.tsx';
+import ChannelListDeleteAction from '../../../components/library/ChannelListDeleteAction.tsx';
+import ChannelListFilters from '../../../components/library/ChannelListFilters.tsx';
+import ChannelZonesListCell from '../../../components/library/ChannelZonesListCell.tsx';
+import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
+import LibraryMapStack from '../../../components/library/LibraryMapStack.tsx';
 import {
   CHANNEL_OPTIONAL_COLUMNS,
   channelListColumnsKey,
@@ -31,7 +39,7 @@ import { usePersistedChannelColumnSort } from '../../../hooks/usePersistedChanne
 import {
   DATATABLE_CALLSIGN_SORT_KEY,
   DATATABLE_NAME_SORT_KEY,
-  sortDataTableRows,
+  type DataTableSortState as V1Sort,
 } from '../../../lib/dataTable/sort.ts';
 import {
   distanceLabelForChannel,
@@ -48,14 +56,15 @@ import { getModeDefinition, type ChannelMode } from '../../../lib/channelModes.t
 import { channelModesForFilter } from '../../../lib/channels.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../../lib/breakpoints.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
+import {
+  createNameColumn,
+  usePersistedColumnVisibility,
+  v1SortToV2,
+  v2SortToV1,
+} from '../../../lib/libraryListTable.tsx';
 import { useProjects } from '../../../state/useProjects.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { useLibrary } from '../../../state/useLibrary.ts';
-import AddFromDataSourceModal from '../../../components/library/AddFromDataSourceModal.tsx';
-import ChannelListDeleteAction from '../../../components/library/ChannelListDeleteAction.tsx';
-import ChannelBulkEditModal from '../../../components/library/ChannelBulkEditModal.tsx';
-import ChannelListFilters from '../../../components/library/ChannelListFilters.tsx';
-import ChannelZonesListCell from '../../../components/library/ChannelZonesListCell.tsx';
 import {
   bulkDeleteAlertColor,
   formatChannelBulkDeleteMessage,
@@ -69,6 +78,7 @@ import {
   channelHasDmrProfile,
   formatAprsAssignmentSummary,
 } from '../../../lib/aprsBindingHelpers.ts';
+import pageClasses from '../../../components/library/LibraryInventoryPage.module.css';
 import classes from './ChannelsListPage.module.css';
 
 function percentLabel(value: number | null): string {
@@ -108,32 +118,26 @@ export default function ChannelsListPage() {
     'green',
   );
 
-  const listActions = (
-    <Group gap="xs" className={classes.toolbarActions}>
-      <Button
-        variant="primary"
-        leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-        onClick={() => navigate('/library/channels/new')}
-      >
-        New channel
-      </Button>
-      <Button
-        variant="secondary"
-        leftSection={<IconWorldSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-        onClick={() => setAddFromOpen(true)}
-      >
-        Add from…
-      </Button>
-      <Button variant="ghost" onClick={() => navigate('/library/channels/defaults')}>
-        Channel defaults
-      </Button>
-    </Group>
+  const columnStorageKey = activeProjectId ? channelListColumnsKey(activeProjectId) : undefined;
+  const loadVisibleColumns = useCallback(
+    () => (activeProjectId ? loadChannelVisibleColumns(activeProjectId) : []),
+    [activeProjectId],
+  );
+  const hideableDefs = useMemo(
+    () =>
+      CHANNEL_OPTIONAL_COLUMNS.map((col) => ({
+        key: col.key,
+        defaultVisible: col.defaultVisible,
+      })),
+    [],
+  );
+  const [visibleKeys, setVisibleKeys] = usePersistedColumnVisibility(
+    columnStorageKey,
+    hideableDefs,
+    columnStorageKey ? loadVisibleColumns : undefined,
   );
 
-  const mapChannels = filtered;
-  const { skipped } = applyFilters(filtered, { requireUseLocation: true, skipZero: true });
-
-  const effectiveSort = useMemo((): DataTableSortState => {
+  const effectiveV1Sort = useMemo((): V1Sort => {
     if (columnSortOverride) return columnSortOverride;
     if (query.sortMode === 'distance' && position) {
       return { columnKey: 'distance', direction: 'asc' };
@@ -142,24 +146,26 @@ export default function ChannelsListPage() {
   }, [columnSortOverride, query.sortMode, position]);
 
   const handleSortChange = useCallback(
-    (state: DataTableSortState | null) => {
+    (state: V2Sort | null) => {
       if (!state) return;
+      const v1 = v2SortToV1(state);
+      if (!v1) return;
       if (
-        state.columnKey === DATATABLE_NAME_SORT_KEY ||
-        state.columnKey === DATATABLE_CALLSIGN_SORT_KEY
+        v1.columnKey === DATATABLE_NAME_SORT_KEY ||
+        v1.columnKey === DATATABLE_CALLSIGN_SORT_KEY
       ) {
-        setColumnSortOverride(state);
+        setColumnSortOverride(v1);
         if (query.sortMode === 'distance') {
           query.setSortMode('name');
         }
         return;
       }
-      if (state.columnKey === 'distance') {
-        setColumnSortOverride(state);
+      if (v1.columnKey === 'distance') {
+        setColumnSortOverride(v1);
         query.setSortMode('distance');
         return;
       }
-      setColumnSortOverride(state);
+      setColumnSortOverride(v1);
       if (query.sortMode === 'distance') {
         query.setSortMode('name');
       }
@@ -227,6 +233,7 @@ export default function ChannelsListPage() {
       if (col.key === 'rxTx') {
         return {
           ...base,
+          header: 'Frequency',
           render: (ch: Channel) => formatChannelRxTxListCell(ch.rxFrequency, ch.txFrequency),
           sortValue: (ch: Channel) => ch.rxFrequency ?? ch.txFrequency,
         };
@@ -307,69 +314,65 @@ export default function ChannelsListPage() {
     });
   }, [channels, library, position, zones]);
 
-  const tableColumns = useMemo((): DataTableColumn<Channel>[] => {
+  const columns = useMemo((): DataTableColumn<Channel>[] => {
+    const callsignColumn: DataTableColumn<Channel> = {
+      key: DATATABLE_CALLSIGN_SORT_KEY,
+      header: 'Callsign',
+      hideable: true,
+      hideOnMobile: true,
+      sortable: true,
+      render: (ch) => ch.callsign || '—',
+      sortValue: (ch) => ch.callsign || '',
+    };
+
+    const nameColumn = createNameColumn<Channel>({
+      getName: (ch) => ch.name || '—',
+      getPath: (ch) => `/library/channels/${ch.id}`,
+      render: isMobileTable
+        ? (ch) => {
+            const zoneNames = zonesWithDirectChannelMember(ch.id, zones)
+              .map((z) => z.name)
+              .join(', ');
+            const power = percentLabel(ch.power);
+            const secondary = [ch.callsign, power !== '—' ? `Power ${power}` : null, zoneNames]
+              .filter(Boolean)
+              .join(' · ');
+            return (
+              <div className={classes.nameCell}>
+                <div className={classes.namePrimary}>{ch.name || '—'}</div>
+                {secondary ? <div className={classes.nameMeta}>{secondary}</div> : null}
+              </div>
+            );
+          }
+        : undefined,
+    });
+
     return [
+      nameColumn,
+      callsignColumn,
       ...optionalColumnDefs,
       {
         key: 'actions',
         header: '',
         hideable: false,
-        defaultVisible: true,
+        width: '52px',
         render: (ch: Channel) => <ChannelListDeleteAction channel={ch} />,
       },
     ];
-  }, [optionalColumnDefs]);
-
-  const sortCtx = useMemo(
-    () => ({
-      columns: tableColumns,
-      callsignColumn: {
-        getName: (ch: Channel) => ch.callsign || '—',
-        getPath: (ch: Channel) => `/library/channels/${ch.id}`,
-        sortValue: (ch: Channel) => ch.callsign || '',
-      },
-      nameColumn: {
-        getName: (ch: Channel) => ch.name || '—',
-        getPath: (ch: Channel) => `/library/channels/${ch.id}`,
-        render: isMobileTable
-          ? (ch: Channel) => {
-              const zoneNames = zonesWithDirectChannelMember(ch.id, zones)
-                .map((z) => z.name)
-                .join(', ');
-              const power = percentLabel(ch.power);
-              const secondary = [ch.callsign, power !== '—' ? `Power ${power}` : null, zoneNames]
-                .filter(Boolean)
-                .join(' · ');
-              return (
-                <div className={classes.nameCell}>
-                  <div className={classes.namePrimary}>{ch.name || '—'}</div>
-                  {secondary ? <div className={classes.nameMeta}>{secondary}</div> : null}
-                </div>
-              );
-            }
-          : undefined,
-      },
-    }),
-    [isMobileTable, tableColumns, zones],
-  );
-
-  const sortedRows = useMemo(
-    () => sortDataTableRows(filtered, effectiveSort, sortCtx),
-    [filtered, effectiveSort, sortCtx],
-  );
+  }, [isMobileTable, optionalColumnDefs, zones]);
 
   const selectedChannels = useMemo(() => {
     const selectedSet = new Set(selectedKeys);
-    return sortedRows.filter((ch) => selectedSet.has(ch.id));
-  }, [selectedKeys, sortedRows]);
+    return filtered.filter((ch) => selectedSet.has(ch.id));
+  }, [filtered, selectedKeys]);
 
   const handleCreateZoneFromSelected = useCallback(() => {
     const selectedSet = new Set(selectedKeys);
-    const orderedIds = sortedRows.filter((ch) => selectedSet.has(ch.id)).map((ch) => ch.id);
+    const orderedIds = filtered.filter((ch) => selectedSet.has(ch.id)).map((ch) => ch.id);
     if (orderedIds.length === 0) return;
     setSelectedKeys([]);
     navigate('/library/zones/new', { state: { initialChannelIds: orderedIds } });
-  }, [navigate, selectedKeys, sortedRows]);
+  }, [filtered, navigate, selectedKeys]);
 
   const handleBulkEdit = useCallback(() => {
     if (selectedChannels.length === 0) return;
@@ -395,170 +398,182 @@ export default function ChannelsListPage() {
   }, []);
 
   const distanceSortPending = query.sortMode === 'distance' && !position;
+  const mapChannels = filtered;
+  const { skipped } = applyFilters(filtered, { requireUseLocation: true, skipZero: true });
 
-  const columnStorageKey = activeProjectId ? channelListColumnsKey(activeProjectId) : undefined;
-  const loadVisibleColumns = useCallback(
-    () => (activeProjectId ? loadChannelVisibleColumns(activeProjectId) : []),
-    [activeProjectId],
+  const listActions = (
+    <div className={pageClasses.toolbarActions}>
+      <Button
+        variant="secondary"
+        leftSection={<IconWorldSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => setAddFromOpen(true)}
+      >
+        Add from directory
+      </Button>
+      <Button
+        variant="primary"
+        leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => navigate('/library/channels/new')}
+      >
+        New channel
+      </Button>
+      <Button variant="outline" onClick={() => navigate('/library/channels/defaults')}>
+        Channel defaults
+      </Button>
+    </div>
+  );
+
+  const listContent = (
+    <>
+      {distanceSortPending ? (
+        <DismissibleNotice tone="info">
+          Distance sort needs your location. Sorted by name until set — use the Distance column
+          header after setting location.
+        </DismissibleNotice>
+      ) : null}
+
+      {bulkEditMessage ? (
+        <Alert
+          color={bulkEditMessageColor}
+          withCloseButton
+          onClose={() => setBulkEditMessage(null)}
+          className={classes.alert}
+        >
+          {bulkEditMessage}
+        </Alert>
+      ) : null}
+
+      <ChannelListFilters />
+
+      <DataTable
+        columns={columns}
+        rows={filtered}
+        getRowId={(ch) => ch.id}
+        totalRowCount={channels.length}
+        visibleKeys={visibleKeys}
+        onVisibleKeysChange={setVisibleKeys}
+        search={{
+          value: query.nameFilterInput,
+          onChange: query.setNameFilter,
+          placeholder: 'Filter name or callsign…',
+          pending: query.nameFilterPending,
+        }}
+        sort={v1SortToV2(effectiveV1Sort)}
+        onSortChange={handleSortChange}
+        selectable
+        selectedKeys={selectedKeys}
+        onSelectionChange={setSelectedKeys}
+        bulkActions={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={selectedKeys.length === 0}
+              onClick={handleBulkEdit}
+            >
+              Bulk edit
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={selectedKeys.length === 0}
+              onClick={handleCreateZoneFromSelected}
+            >
+              New zone from selection
+            </Button>
+          </>
+        }
+        emptyMessage="No channels in this project yet."
+        filteredEmptyMessage={
+          query.nameFilter.trim()
+            ? `No channels match “${query.nameFilter.trim()}”.`
+            : 'No channels match your filters.'
+        }
+        onRowActivate={(ch) => navigate(`/library/channels/${ch.id}`)}
+      />
+
+      <ChannelBulkEditModal
+        opened={bulkEditOpen}
+        onClose={() => setBulkEditOpen(false)}
+        channels={selectedChannels}
+        projectId={projectId}
+        deleteEntity={deleteEntity}
+        reload={reload}
+        onApplied={handleBulkEditApplied}
+        onDeleted={handleBulkDeleted}
+      />
+
+      <AddFromDataSourceModal opened={addFromOpen} onClose={() => setAddFromOpen(false)} />
+    </>
+  );
+
+  const mapContent = (
+    <>
+      <div className={classes.mapMeta}>
+        {position ? (
+          <>
+            {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
+              <span>My location accuracy ±{Math.round(position.accuracyMeters)} m</span>
+            ) : null}
+            <Button variant="ghost" size="sm" onClick={clearPosition}>
+              Clear my location
+            </Button>
+          </>
+        ) : (
+          <UseMyLocationButton
+            label="Show my location"
+            onLocation={(lat, lon, accuracyMeters) =>
+              setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
+            }
+          />
+        )}
+      </div>
+      <MapPanel
+        title="Channel locations"
+        height={420}
+        legend={
+          skipped.length > 0 ? (
+            <span>
+              {skipped.length} channel{skipped.length === 1 ? '' : 's'} not shown on map (missing
+              coordinates, Use Location = No, or 0,0).
+            </span>
+          ) : undefined
+        }
+      >
+        <CodeplugMap
+          channels={mapChannels}
+          zones={zones}
+          allChannels={mapChannels}
+          height="100%"
+          operatorPosition={position}
+          onChannelClick={(id) => navigate(`/library/channels/${id}`)}
+          onZoneClick={(id) => navigate(`/library/zones/${id}`)}
+        />
+      </MapPanel>
+    </>
   );
 
   if (loading) {
     return (
       <DesignSystemV2Provider>
-        <div className={classes.page}>
-          <h1 className={classes.title}>Channels</h1>
-          <p className={classes.description}>Loading library…</p>
+        <div className={pageClasses.page}>
+          <LibraryInventoryHeader title="Channels" subtitle="Loading library…" />
         </div>
       </DesignSystemV2Provider>
     );
   }
 
+  const countLabel =
+    channels.length === 1
+      ? '1 channel in this project'
+      : `${channels.length} channels in this project`;
+
   return (
     <DesignSystemV2Provider>
-      <div className={classes.page}>
-        <div className={classes.headerRow}>
-          <div>
-            <h1 className={classes.title}>Channels</h1>
-            <p className={classes.description}>
-              Every channel in this project. Search, filter, or open one to edit.
-            </p>
-          </div>
-          {listActions}
-        </div>
+      <div className={pageClasses.page}>
+        <LibraryInventoryHeader title="Channels" subtitle={countLabel} actions={listActions} />
 
-        <Stack gap="lg">
-          {distanceSortPending ? (
-            <Text size="sm" c="dimmed" className={classes.alert}>
-              Distance sort needs your location. Sorted by name until set — use the Distance column
-              header after setting location.
-            </Text>
-          ) : null}
-
-          {bulkEditMessage ? (
-            <Alert
-              color={bulkEditMessageColor}
-              withCloseButton
-              onClose={() => setBulkEditMessage(null)}
-              className={classes.alert}
-            >
-              {bulkEditMessage}
-            </Alert>
-          ) : null}
-
-          <div className={classes.filterRow}>
-            <div className={classes.searchWrap}>
-              <SearchInput
-                value={query.nameFilterInput}
-                onChange={(e) => query.setNameFilter(e.currentTarget.value)}
-                placeholder="Filter name or callsign…"
-                detectedTag={query.nameFilterPending ? 'Filtering…' : undefined}
-                aria-label="Filter name or callsign"
-              />
-            </div>
-          </div>
-
-          <ChannelListFilters />
-
-          <DataTable
-            variant="list"
-            rows={filtered}
-            totalRowCount={channels.length}
-            rowKey={(ch) => ch.id}
-            sort={effectiveSort}
-            onSortChange={handleSortChange}
-            columnVisibilityStorageKey={columnStorageKey}
-            columnVisibilityLoad={columnStorageKey ? loadVisibleColumns : undefined}
-            callsignColumn={sortCtx.callsignColumn}
-            nameColumn={sortCtx.nameColumn}
-            columns={tableColumns}
-            showSearch={false}
-            search={query.nameFilterInput}
-            searchPending={query.nameFilterPending}
-            selectable
-            selectedKeys={selectedKeys}
-            onSelectedKeysChange={setSelectedKeys}
-            mobileColumnPolicy="collapse"
-            selectionChrome="v2"
-            toolbar={
-              <Group gap="xs">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={selectedKeys.length === 0}
-                  onClick={handleBulkEdit}
-                >
-                  Bulk edit
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  disabled={selectedKeys.length === 0}
-                  onClick={handleCreateZoneFromSelected}
-                >
-                  New zone from selected
-                </Button>
-              </Group>
-            }
-          />
-
-          <ChannelBulkEditModal
-            opened={bulkEditOpen}
-            onClose={() => setBulkEditOpen(false)}
-            channels={selectedChannels}
-            projectId={projectId}
-            deleteEntity={deleteEntity}
-            reload={reload}
-            onApplied={handleBulkEditApplied}
-            onDeleted={handleBulkDeleted}
-          />
-
-          <AddFromDataSourceModal opened={addFromOpen} onClose={() => setAddFromOpen(false)} />
-
-          <section className={classes.mapSection}>
-            {position ? (
-              <Group gap="sm" align="center">
-                {position.accuracyMeters != null && Number.isFinite(position.accuracyMeters) ? (
-                  <Text size="sm" c="dimmed">
-                    My location accuracy ±{Math.round(position.accuracyMeters)} m
-                  </Text>
-                ) : null}
-                <Button variant="ghost" size="sm" onClick={clearPosition}>
-                  Clear my location
-                </Button>
-              </Group>
-            ) : (
-              <UseMyLocationButton
-                label="Show my location"
-                onLocation={(lat, lon, accuracyMeters) =>
-                  setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
-                }
-              />
-            )}
-
-            <MapPanel
-              title="Map"
-              height={420}
-              legend={
-                skipped.length > 0 ? (
-                  <Text size="sm" c="dimmed">
-                    {skipped.length} channel{skipped.length === 1 ? '' : 's'} not shown on map
-                    (missing coordinates, Use Location = No, or 0,0).
-                  </Text>
-                ) : undefined
-              }
-            >
-              <CodeplugMap
-                channels={mapChannels}
-                zones={zones}
-                allChannels={mapChannels}
-                height="100%"
-                operatorPosition={position}
-                onChannelClick={(id) => navigate(`/library/channels/${id}`)}
-                onZoneClick={(id) => navigate(`/library/zones/${id}`)}
-              />
-            </MapPanel>
-          </section>
-        </Stack>
+        <LibraryMapStack layout="stacked" list={listContent} map={mapContent} />
       </div>
     </DesignSystemV2Provider>
   );

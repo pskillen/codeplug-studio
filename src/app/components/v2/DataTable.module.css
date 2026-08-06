@@ -260,6 +260,13 @@
   color: var(--dsv2-text-secondary);
 }
 
+.actionCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: var(--dsv2-row-padding-y) 12px var(--dsv2-row-padding-y) var(--dsv2-space-3);
+}
+
 .emptyRow {
   display: flex;
 }

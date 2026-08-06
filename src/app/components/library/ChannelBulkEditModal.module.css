@@ -1,0 +1,30 @@
+.banner {
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-accent-tint-12);
+  color: var(--dsv2-text-secondary);
+  font-size: var(--dsv2-font-body-sm);
+  line-height: 1.45;
+}
+
+.banner strong {
+  color: var(--dsv2-text-primary);
+  font-weight: 600;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.footerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  width: 100%;
+}

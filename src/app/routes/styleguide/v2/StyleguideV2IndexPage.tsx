@@ -36,7 +36,7 @@ const SECTIONS = [
   {
     to: '/styleguide/v2/patterns',
     title: 'Patterns',
-    description: 'ShuttleList family over the existing list-kit.',
+    description: 'FacetBar chips, ShuttleList family over the list-kit.',
   },
 ] as const;
 
