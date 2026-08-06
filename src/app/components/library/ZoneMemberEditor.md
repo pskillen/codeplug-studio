@@ -1,12 +1,10 @@
 # ZoneMemberEditor
 
-Contributor sidecar for `ZoneMemberEditor.tsx` — vertical stacked zone membership editor on the zone form.
+Contributor sidecar for `ZoneMemberEditor.tsx` — zone membership on the mk2 **Membership** family.
 
 ## Purpose
 
-Manages **In this zone** members (export order) and **Other channels & zones** add pool in a single-column layout. Supports direct channels, nested zones, reorder, per-channel `includeInScanList`, and map filter integration.
-
-Use the **`mode`** prop to show a subset on split zone edit screens (`reorder`, `addPool`, `scanOnly`, `summary`) or **`full`** on create.
+Manages zone membership using `MembershipPanel` + `MembershipRow` (role C) and `AddMembersScreen` + `MembershipPoolRow` (role B). Supports direct channels, nested zones, reorder, and per-channel `includeInScanList` in a dedicated **Scanning behaviour** panel (not on member rows).
 
 ## Props
 
@@ -18,7 +16,8 @@ Use the **`mode`** prop to show a subset on split zone edit screens (`reorder`, 
 | `members`            | `ZoneMemberEntry[]` | Current member list                                           |
 | `onChange`           | `(members) => void` | Member list updates                                           |
 | `onMapFiltersChange` | optional            | Map hide-filter callback                                      |
-| `mode`               | optional            | `full` (default), `reorder`, `addPool`, `scanOnly`, `summary` |
+| `mode`               | optional            | `members`, `scanning`, `summary`, `full` (default), `pool`    |
+| `onAdd`              | optional            | When set, member panel shows **Add members** (overlay in parent) |
 
 ## Usage
 
@@ -29,18 +28,22 @@ Use the **`mode`** prop to show a subset on split zone edit screens (`reorder`, 
   editingZoneId={zone.id}
   members={members}
   onChange={setMembers}
-  onMapFiltersChange={setMapFilters}
+  mode="members"
+  onAdd={() => setAddOpen(true)}
 />
+<ZoneMemberAddOverlay open={addOpen} zoneName={zone.name} ... />
 ```
 
 ## Behaviour
 
-- Composes [`SelectedItemList`](../ui/SelectedItemList.md) (in-zone list) and [`AvailableItemPicker`](../ui/AvailableItemPicker.md) (add pool) with domain-specific row renderers.
-- **In this zone:** rich channel rows (freq, mode pills, scan skip badge, labelled include-in-scan control on the right); nested zone rows with effective counts; **reorder mode** — drag handles, built-in Move up/down / Remove selected / Alt+↑/↓; **Sort channels…** above the member list (permanent rewrite).
-- **Other channels & zones:** filter, multi-select add, hide-from-map checkboxes.
-- **Blocked nested zones** stay visible in the available pool (not hidden): self, descendants of the current membership, and zones that would close a cycle are greyed out with a reason badge (`This zone` / `Already nested under this zone` / `Would create a cycle`) and cannot be selected or added. Save still validates via `validateZoneMembership`.
-- Map filters via `computeZoneMemberPickerMapFilters` in `zoneMemberPickerUtils.ts`.
+- **`members`:** `MembershipPanel` with find-in-list, Sort channels…, bulk move/remove, drag reorder (`DataTableBulkReorderProvider`). Scan controls are **not** on rows.
+- **`scanning`:** Lighter list for the Scanning behaviour panel — Auto / Force / Skip per direct channel member.
+- **`full`:** Create flow — members panel + inline pool (no `onAdd`).
+- **`pool`:** Legacy shim — inline pool only.
+- Blocked nested zones in the add pool use `MembershipPoolRow` `disabled` + `reason`.
+- Map filters via `computeZoneMemberPickerMapFilters`.
 
 ## Related
 
 - [zone-member-picker.md](../../../docs/features/library/zone-member-picker.md) · [nested-zones.md](../../../docs/features/library/nested-zones.md)
+- [MembershipPanel.md](../v2/MembershipPanel.md) · [AddMembersScreen.md](../v2/AddMembersScreen.md)
