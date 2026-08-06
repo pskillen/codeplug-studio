@@ -131,7 +131,13 @@ export default function QuickBuildSwitcher({
   }
 
   return (
-    <Popover opened={opened} onClose={onClose} position="bottom-start" withinPortal portalProps={{ target: DSV2_SCOPE_SELECTOR }}>
+    <Popover
+      opened={opened}
+      onClose={onClose}
+      position="bottom-start"
+      withinPortal
+      portalProps={{ target: DSV2_SCOPE_SELECTOR }}
+    >
       <Popover.Target>
         <div onClick={onOpen}>{children}</div>
       </Popover.Target>

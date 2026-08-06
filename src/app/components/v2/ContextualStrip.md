@@ -8,11 +8,11 @@ Matches the design-system Library strip (Channels / Zones / …). Solid accent f
 
 ## Props
 
-| Prop       | Type                     | Notes                                                 |
-| ---------- | ------------------------ | ----------------------------------------------------- |
-| `items`    | `readonly string[]`      | Pill labels                                           |
-| `active`   | `string`                 | Selected label                                        |
-| `onChange` | `(item: string) => void` | Selection handler                                     |
+| Prop       | Type                     | Notes                                                  |
+| ---------- | ------------------------ | ------------------------------------------------------ |
+| `items`    | `readonly string[]`      | Pill labels                                            |
+| `active`   | `string`                 | Selected label                                         |
+| `onChange` | `(item: string) => void` | Selection handler                                      |
 | `leading`  | `ReactNode`              | Optional leading control before tabs (e.g. build chip) |
 
 ## Usage

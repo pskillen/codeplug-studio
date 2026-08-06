@@ -293,7 +293,8 @@ export function activeBuildSection(pathname: string, buildId: string): BuildNavS
 
   const suffix = pathname.slice(prefix.length);
   if (!suffix || suffix === 'export') return 'export';
-  if (suffix === 'export/settings' || suffix.startsWith('export/settings/')) return 'export-settings';
+  if (suffix === 'export/settings' || suffix.startsWith('export/settings/'))
+    return 'export-settings';
   if (suffix === 'overview' || suffix.startsWith('overview/')) return 'overview';
 
   const firstSegment = suffix.split('/')[0];
