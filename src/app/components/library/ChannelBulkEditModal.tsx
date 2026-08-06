@@ -2,18 +2,15 @@ import { useMemo, useState } from 'react';
 import {
   Accordion,
   Alert,
-  Badge,
   Box,
-  Button,
   Checkbox,
   Collapse,
   Group,
-  Modal,
   Stack,
   Text,
   UnstyledButton,
 } from '@mantine/core';
-import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import { IconChevronDown, IconChevronRight, IconPencil } from '@tabler/icons-react';
 import type {
   AnalogSquelchModeOverride,
   ForbidTransmitOverride,
@@ -32,7 +29,8 @@ import SendTalkerAliasSegment from '../channels/SendTalkerAliasSegment.tsx';
 import AnalogSquelchModeSegment from '../channels/AnalogSquelchModeSegment.tsx';
 import ScanInclusionSegment from '../channels/ScanInclusionSegment.tsx';
 import { PercentLevelSlider } from '../ui/index.ts';
-import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
+import { Button, ConfirmModal, ModalShell } from '../v2/index.ts';
+import { ICON_SIZE_ACTION, ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import {
   persistChannelBulkEdit,
   type PersistChannelBulkEditSuccess,
@@ -43,6 +41,7 @@ import {
 } from '../../lib/channelBulkDelete.ts';
 import type { DeleteOutcome } from '../../state/libraryService.ts';
 import { persistence } from '../../state/persistence.ts';
+import classes from './ChannelBulkEditModal.module.css';
 
 export interface ChannelBulkEditModalProps {
   opened: boolean;
@@ -144,37 +143,20 @@ export default function ChannelBulkEditModal({
   onDeleted,
 }: ChannelBulkEditModalProps) {
   const sessionKey = channels.map((channel) => channel.id).join(',');
-  const total = channels.length;
+
+  if (!opened) return null;
 
   return (
-    <Modal
-      opened={opened}
+    <ChannelBulkEditModalBody
+      key={sessionKey}
+      channels={channels}
+      projectId={projectId}
+      deleteEntity={deleteEntity}
+      reload={reload}
       onClose={onClose}
-      title={
-        <Group gap="sm" wrap="nowrap">
-          <Text fw={600} component="span">
-            Bulk edit
-          </Text>
-          <Badge size="lg" variant="light">
-            {total} channel{total === 1 ? '' : 's'}
-          </Badge>
-        </Group>
-      }
-      size="lg"
-    >
-      {opened ? (
-        <ChannelBulkEditModalBody
-          key={sessionKey}
-          channels={channels}
-          projectId={projectId}
-          deleteEntity={deleteEntity}
-          reload={reload}
-          onClose={onClose}
-          onApplied={onApplied}
-          onDeleted={onDeleted}
-        />
-      ) : null}
-    </Modal>
+      onApplied={onApplied}
+      onDeleted={onDeleted}
+    />
   );
 }
 
@@ -269,289 +251,312 @@ function ChannelBulkEditModalBody({
     }
   };
 
-  if (view === 'confirmDelete') {
-    return (
-      <Stack gap="md">
-        <Text>
-          Delete {total} channel{total === 1 ? '' : 's'}? This cannot be undone.
-        </Text>
-        <Text size="sm" c="dimmed">
-          Channels that are only in zones will be removed from those zones first. Channels
-          referenced by scan lists or other entities cannot be deleted until those references are
-          cleared.
-        </Text>
-
-        {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
-
-        <Group justify="space-between">
-          <Button variant="default" onClick={() => setView('edit')} disabled={busy}>
-            Back
-          </Button>
-          <Button color="red" onClick={() => void handleConfirmDelete()} loading={deleting}>
-            Delete {total} channel{total === 1 ? '' : 's'}
-          </Button>
-        </Group>
-      </Stack>
-    );
-  }
-
   return (
-    <Stack gap="md">
-      <UnstyledButton onClick={() => setShowChannelList((v) => !v)} aria-expanded={showChannelList}>
-        <Group gap={6} wrap="nowrap">
-          {showChannelList ? (
-            <IconChevronDown size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-          ) : (
-            <IconChevronRight size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
-          )}
-          <Text size="sm" c="dimmed">
-            View selected channels
-          </Text>
-        </Group>
-      </UnstyledButton>
+    <>
+      <ModalShell
+        open={view === 'edit'}
+        onClose={onClose}
+        title="Bulk edit channels"
+        icon={<IconPencil size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
+        iconTone="accent"
+        size="lg"
+        dismissible={!busy}
+        footer={
+          <div className={classes.footer}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setErrorMessage(null);
+                setView('confirmDelete');
+              }}
+              disabled={busy || !projectId}
+            >
+              Delete {total} channel{total === 1 ? '' : 's'}
+            </Button>
+            <div className={classes.footerActions}>
+              <Button variant="secondary" size="sm" onClick={onClose} disabled={busy}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => void handleApply()}
+                disabled={!hasChanges || busy}
+              >
+                {applying ? 'Applying…' : `Apply to ${total} channel${total === 1 ? '' : 's'}`}
+              </Button>
+            </div>
+          </div>
+        }
+      >
+        <div className={classes.banner}>
+          <strong>{total} channel{total === 1 ? '' : 's'} selected.</strong> Enable only the fields
+          you want to change — blank fields keep current values.
+        </div>
 
-      <Collapse expanded={showChannelList}>
-        <Box mah={160} style={{ overflowY: 'auto' }} pt="xs">
-          <Stack gap={4}>
-            {channels.map((channel) => (
-              <Text key={channel.id} size="sm">
-                {channel.name || 'Untitled'}
-                {channel.callsign ? (
-                  <Text component="span" c="dimmed" inherit>
-                    {' '}
-                    · {channel.callsign}
-                  </Text>
-                ) : null}
-              </Text>
-            ))}
-          </Stack>
-        </Box>
-      </Collapse>
-
-      <Stack gap="sm">
-        <Checkbox
-          label="Change scan inclusion"
-          checked={form.changeScanInclusion}
-          onChange={(e) => {
-            const checked = e.currentTarget.checked;
-            setForm((prev) => ({ ...prev, changeScanInclusion: checked }));
-          }}
-        />
-        <fieldset
-          disabled={!form.changeScanInclusion}
-          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-        >
-          <ScanInclusionSegment
-            value={form.scanInclusion}
-            onChange={(scanInclusion) => setForm((prev) => ({ ...prev, scanInclusion }))}
-          />
-        </fieldset>
-        {form.changeScanInclusion && impact.scanInclusion ? (
-          <Text size="xs" c="dimmed">
-            {channelLevelImpactText(impact.scanInclusion.appliesTo)}
-          </Text>
-        ) : null}
-
-        <Checkbox
-          label="Change transmit permission"
-          checked={form.changeForbidTransmit}
-          onChange={(e) => {
-            const checked = e.currentTarget.checked;
-            setForm((prev) => ({ ...prev, changeForbidTransmit: checked }));
-          }}
-        />
-        <fieldset
-          disabled={!form.changeForbidTransmit}
-          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-        >
-          <ForbidTransmitSegment
-            value={form.forbidTransmit}
-            onChange={(forbidTransmit) => setForm((prev) => ({ ...prev, forbidTransmit }))}
-          />
-        </fieldset>
-        {form.changeForbidTransmit && impact.forbidTransmit ? (
-          <Text size="xs" c="dimmed">
-            {channelLevelImpactText(impact.forbidTransmit.appliesTo)}
-          </Text>
-        ) : null}
-
-        <Checkbox
-          label="Change TX permit"
-          checked={form.changeTxPermit}
-          onChange={(e) => {
-            const checked = e.currentTarget.checked;
-            setForm((prev) => ({ ...prev, changeTxPermit: checked }));
-          }}
-        />
-        <fieldset
-          disabled={!form.changeTxPermit}
-          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-        >
-          <TxPermitSegment
-            value={form.txPermit}
-            onChange={(txPermit) => setForm((prev) => ({ ...prev, txPermit }))}
-          />
-        </fieldset>
-        {form.changeTxPermit && impact.txPermit ? (
-          <Text size="xs" c="dimmed">
-            {channelLevelImpactText(impact.txPermit.appliesTo)}
-          </Text>
-        ) : null}
-
-        <Checkbox
-          label="Change send talker alias"
-          checked={form.changeSendTalkerAlias}
-          onChange={(e) => {
-            const checked = e.currentTarget.checked;
-            setForm((prev) => ({ ...prev, changeSendTalkerAlias: checked }));
-          }}
-        />
-        <fieldset
-          disabled={!form.changeSendTalkerAlias}
-          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-        >
-          <SendTalkerAliasSegment
-            value={form.sendTalkerAlias}
-            onChange={(sendTalkerAlias) => setForm((prev) => ({ ...prev, sendTalkerAlias }))}
-          />
-        </fieldset>
-        {form.changeSendTalkerAlias && impact.sendTalkerAlias ? (
-          <Text size="xs" c="dimmed">
-            {dmrImpactText(impact.sendTalkerAlias.appliesTo, impact.sendTalkerAlias.skipped, total)}
-          </Text>
-        ) : null}
-
-        <Checkbox
-          label="Change analog squelch mode"
-          checked={form.changeAnalogSquelchMode}
-          onChange={(e) => {
-            const checked = e.currentTarget.checked;
-            setForm((prev) => ({ ...prev, changeAnalogSquelchMode: checked }));
-          }}
-        />
-        <fieldset
-          disabled={!form.changeAnalogSquelchMode}
-          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-        >
-          <AnalogSquelchModeSegment
-            value={form.analogSquelchMode}
-            onChange={(analogSquelchMode) => setForm((prev) => ({ ...prev, analogSquelchMode }))}
-          />
-        </fieldset>
-        {form.changeAnalogSquelchMode && impact.analogSquelchMode ? (
-          <Text size="xs" c="dimmed">
-            {analogImpactText(
-              impact.analogSquelchMode.appliesTo,
-              impact.analogSquelchMode.skipped,
-              total,
-            )}
-          </Text>
-        ) : null}
-
-        <Checkbox
-          label="Change power"
-          checked={form.changePower}
-          onChange={(e) => {
-            const checked = e.currentTarget.checked;
-            setForm((prev) => ({ ...prev, changePower: checked }));
-          }}
-        />
-        <fieldset
-          disabled={!form.changePower}
-          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-        >
-          <PercentLevelSlider
-            label="Power"
-            value={form.power}
-            onChange={(power) => setForm((prev) => ({ ...prev, power }))}
-          />
-        </fieldset>
-        {form.changePower && impact.power ? (
-          <Text size="xs" c="dimmed">
-            {channelLevelImpactText(impact.power.appliesTo)}
-          </Text>
-        ) : null}
-      </Stack>
-
-      {showAnalogSection ? (
-        <Accordion variant="separated">
-          <Accordion.Item value="analog">
-            <Accordion.Control>
-              Analog mode settings
-              <Text size="xs" c="dimmed">
-                Updates squelch on existing analog mode profiles only. Does not add or remove modes.
-              </Text>
-            </Accordion.Control>
-
-            <Accordion.Panel>
-              <Stack gap="sm">
-                <Checkbox
-                  label="Change squelch"
-                  checked={form.changeAnalogSquelch}
-                  onChange={(e) => {
-                    const checked = e.currentTarget.checked;
-                    setForm((prev) => ({ ...prev, changeAnalogSquelch: checked }));
-                  }}
-                />
-                <fieldset
-                  disabled={!form.changeAnalogSquelch}
-                  style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-                >
-                  <PercentLevelSlider
-                    label="Squelch"
-                    value={form.analogSquelch}
-                    onChange={(analogSquelch) => setForm((prev) => ({ ...prev, analogSquelch }))}
-                    zeroLabel="Open (0%)"
-                  />
-                </fieldset>
-                {form.changeAnalogSquelch && impact.analogSquelch ? (
-                  <Text size="xs" c="dimmed">
-                    {analogImpactText(
-                      impact.analogSquelch.appliesTo,
-                      impact.analogSquelch.skipped,
-                      total,
-                    )}
-                  </Text>
-                ) : null}
-              </Stack>
-            </Accordion.Panel>
-          </Accordion.Item>
-        </Accordion>
-      ) : null}
-
-      {!hasChanges ? (
-        <Text size="sm" c="dimmed">
-          Enable at least one change above to apply.
-        </Text>
-      ) : null}
-
-      {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
-
-      <Group justify="space-between">
-        <Button
-          variant="subtle"
-          color="red"
-          onClick={() => {
-            setErrorMessage(null);
-            setView('confirmDelete');
-          }}
-          disabled={busy || !projectId}
-        >
-          Delete {total} channel{total === 1 ? '' : 's'}
-        </Button>
-        <Group gap="xs">
-          <Button variant="default" onClick={onClose} disabled={busy}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => void handleApply()}
-            loading={applying}
-            disabled={!hasChanges || busy}
+        <Stack gap="md">
+          <UnstyledButton
+            onClick={() => setShowChannelList((v) => !v)}
+            aria-expanded={showChannelList}
           >
-            Apply
-          </Button>
-        </Group>
-      </Group>
-    </Stack>
+            <Group gap={6} wrap="nowrap">
+              {showChannelList ? (
+                <IconChevronDown size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+              ) : (
+                <IconChevronRight size={ICON_SIZE_NAV} stroke={ICON_STROKE} />
+              )}
+              <Text size="sm" c="dimmed">
+                View selected channels
+              </Text>
+            </Group>
+          </UnstyledButton>
+
+          <Collapse expanded={showChannelList}>
+            <Box mah={160} style={{ overflowY: 'auto' }} pt="xs">
+              <Stack gap={4}>
+                {channels.map((channel) => (
+                  <Text key={channel.id} size="sm">
+                    {channel.name || 'Untitled'}
+                    {channel.callsign ? (
+                      <Text component="span" c="dimmed" inherit>
+                        {' '}
+                        · {channel.callsign}
+                      </Text>
+                    ) : null}
+                  </Text>
+                ))}
+              </Stack>
+            </Box>
+          </Collapse>
+
+          <Stack gap="sm">
+            <Checkbox
+              label="Change scan inclusion"
+              checked={form.changeScanInclusion}
+              onChange={(e) => {
+                const checked = e.currentTarget.checked;
+                setForm((prev) => ({ ...prev, changeScanInclusion: checked }));
+              }}
+            />
+            <fieldset
+              disabled={!form.changeScanInclusion}
+              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+            >
+              <ScanInclusionSegment
+                value={form.scanInclusion}
+                onChange={(scanInclusion) => setForm((prev) => ({ ...prev, scanInclusion }))}
+              />
+            </fieldset>
+            {form.changeScanInclusion && impact.scanInclusion ? (
+              <Text size="xs" c="dimmed">
+                {channelLevelImpactText(impact.scanInclusion.appliesTo)}
+              </Text>
+            ) : null}
+
+            <Checkbox
+              label="Change transmit permission"
+              checked={form.changeForbidTransmit}
+              onChange={(e) => {
+                const checked = e.currentTarget.checked;
+                setForm((prev) => ({ ...prev, changeForbidTransmit: checked }));
+              }}
+            />
+            <fieldset
+              disabled={!form.changeForbidTransmit}
+              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+            >
+              <ForbidTransmitSegment
+                value={form.forbidTransmit}
+                onChange={(forbidTransmit) => setForm((prev) => ({ ...prev, forbidTransmit }))}
+              />
+            </fieldset>
+            {form.changeForbidTransmit && impact.forbidTransmit ? (
+              <Text size="xs" c="dimmed">
+                {channelLevelImpactText(impact.forbidTransmit.appliesTo)}
+              </Text>
+            ) : null}
+
+            <Checkbox
+              label="Change TX permit"
+              checked={form.changeTxPermit}
+              onChange={(e) => {
+                const checked = e.currentTarget.checked;
+                setForm((prev) => ({ ...prev, changeTxPermit: checked }));
+              }}
+            />
+            <fieldset
+              disabled={!form.changeTxPermit}
+              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+            >
+              <TxPermitSegment
+                value={form.txPermit}
+                onChange={(txPermit) => setForm((prev) => ({ ...prev, txPermit }))}
+              />
+            </fieldset>
+            {form.changeTxPermit && impact.txPermit ? (
+              <Text size="xs" c="dimmed">
+                {channelLevelImpactText(impact.txPermit.appliesTo)}
+              </Text>
+            ) : null}
+
+            <Checkbox
+              label="Change send talker alias"
+              checked={form.changeSendTalkerAlias}
+              onChange={(e) => {
+                const checked = e.currentTarget.checked;
+                setForm((prev) => ({ ...prev, changeSendTalkerAlias: checked }));
+              }}
+            />
+            <fieldset
+              disabled={!form.changeSendTalkerAlias}
+              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+            >
+              <SendTalkerAliasSegment
+                value={form.sendTalkerAlias}
+                onChange={(sendTalkerAlias) => setForm((prev) => ({ ...prev, sendTalkerAlias }))}
+              />
+            </fieldset>
+            {form.changeSendTalkerAlias && impact.sendTalkerAlias ? (
+              <Text size="xs" c="dimmed">
+                {dmrImpactText(
+                  impact.sendTalkerAlias.appliesTo,
+                  impact.sendTalkerAlias.skipped,
+                  total,
+                )}
+              </Text>
+            ) : null}
+
+            <Checkbox
+              label="Change analog squelch mode"
+              checked={form.changeAnalogSquelchMode}
+              onChange={(e) => {
+                const checked = e.currentTarget.checked;
+                setForm((prev) => ({ ...prev, changeAnalogSquelchMode: checked }));
+              }}
+            />
+            <fieldset
+              disabled={!form.changeAnalogSquelchMode}
+              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+            >
+              <AnalogSquelchModeSegment
+                value={form.analogSquelchMode}
+                onChange={(analogSquelchMode) => setForm((prev) => ({ ...prev, analogSquelchMode }))}
+              />
+            </fieldset>
+            {form.changeAnalogSquelchMode && impact.analogSquelchMode ? (
+              <Text size="xs" c="dimmed">
+                {analogImpactText(
+                  impact.analogSquelchMode.appliesTo,
+                  impact.analogSquelchMode.skipped,
+                  total,
+                )}
+              </Text>
+            ) : null}
+
+            <Checkbox
+              label="Change power"
+              checked={form.changePower}
+              onChange={(e) => {
+                const checked = e.currentTarget.checked;
+                setForm((prev) => ({ ...prev, changePower: checked }));
+              }}
+            />
+            <fieldset
+              disabled={!form.changePower}
+              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+            >
+              <PercentLevelSlider
+                label="Power"
+                value={form.power}
+                onChange={(power) => setForm((prev) => ({ ...prev, power }))}
+              />
+            </fieldset>
+            {form.changePower && impact.power ? (
+              <Text size="xs" c="dimmed">
+                {channelLevelImpactText(impact.power.appliesTo)}
+              </Text>
+            ) : null}
+          </Stack>
+
+          {showAnalogSection ? (
+            <Accordion variant="separated">
+              <Accordion.Item value="analog">
+                <Accordion.Control>
+                  Analog mode settings
+                  <Text size="xs" c="dimmed">
+                    Updates squelch on existing analog mode profiles only. Does not add or remove
+                    modes.
+                  </Text>
+                </Accordion.Control>
+
+                <Accordion.Panel>
+                  <Stack gap="sm">
+                    <Checkbox
+                      label="Change squelch"
+                      checked={form.changeAnalogSquelch}
+                      onChange={(e) => {
+                        const checked = e.currentTarget.checked;
+                        setForm((prev) => ({ ...prev, changeAnalogSquelch: checked }));
+                      }}
+                    />
+                    <fieldset
+                      disabled={!form.changeAnalogSquelch}
+                      style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+                    >
+                      <PercentLevelSlider
+                        label="Squelch"
+                        value={form.analogSquelch}
+                        onChange={(analogSquelch) =>
+                          setForm((prev) => ({ ...prev, analogSquelch }))
+                        }
+                        zeroLabel="Open (0%)"
+                      />
+                    </fieldset>
+                    {form.changeAnalogSquelch && impact.analogSquelch ? (
+                      <Text size="xs" c="dimmed">
+                        {analogImpactText(
+                          impact.analogSquelch.appliesTo,
+                          impact.analogSquelch.skipped,
+                          total,
+                        )}
+                      </Text>
+                    ) : null}
+                  </Stack>
+                </Accordion.Panel>
+              </Accordion.Item>
+            </Accordion>
+          ) : null}
+
+          {!hasChanges ? (
+            <Text size="sm" c="dimmed">
+              Enable at least one change above to apply.
+            </Text>
+          ) : null}
+
+          {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
+        </Stack>
+      </ModalShell>
+
+      <ConfirmModal
+        open={view === 'confirmDelete'}
+        onClose={() => setView('edit')}
+        onConfirm={() => void handleConfirmDelete()}
+        title={`Delete ${total} channel${total === 1 ? '' : 's'}?`}
+        tone="destructive"
+        busy={deleting}
+        confirmLabel={`Delete ${total} channel${total === 1 ? '' : 's'}`}
+      >
+        <Stack gap="sm">
+          <Text size="sm">This cannot be undone.</Text>
+          <Text size="sm" c="dimmed">
+            Channels that are only in zones will be removed from those zones first. Channels
+            referenced by scan lists or other entities cannot be deleted until those references are
+            cleared.
+          </Text>
+          {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
+        </Stack>
+      </ConfirmModal>
+    </>
   );
 }
