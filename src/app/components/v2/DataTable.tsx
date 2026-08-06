@@ -268,6 +268,7 @@ function DataTableBodyRow<T>({
           key={col.key}
           className={[
             classes.dataCell,
+            col.key === 'actions' ? classes.actionCell : '',
             col.align === 'right' ? classes.alignRight : '',
             col.dim ? classes.dim : '',
           ]
@@ -582,7 +583,11 @@ export default function DataTable<T>({
                 aria-sort={
                   active ? (sortState!.direction === 'asc' ? 'ascending' : 'descending') : 'none'
                 }
-                className={[classes.headerCell, col.align === 'right' ? classes.alignRight : '']
+                className={[
+                  classes.headerCell,
+                  col.key === 'actions' ? classes.actionCell : '',
+                  col.align === 'right' ? classes.alignRight : '',
+                ]
                   .filter(Boolean)
                   .join(' ')}
               >

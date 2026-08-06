@@ -13,6 +13,27 @@
   transition: background-color 120ms ease;
 }
 
+.root :global(.mantine-Button-inner) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dsv2-space-2);
+}
+
+.root :global(.mantine-Button-section) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  line-height: 0;
+}
+
+.root :global(.mantine-Button-label) {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.2;
+}
+
 .root:disabled,
 .root[data-disabled] {
   opacity: 0.5;
