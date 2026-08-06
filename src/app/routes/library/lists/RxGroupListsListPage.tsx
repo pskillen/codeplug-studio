@@ -2,13 +2,22 @@ import { useMemo } from 'react';
 import { IconPlus } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import type { RxGroupList } from '@core/models/library.ts';
-import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
-import { Button, DesignSystemV2Provider } from '../../../components/v2/index.ts';
-import { DataTable } from '../../../components/ui/index.ts';
-import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
+import EntityListRowDeleteAction from '../../../components/library/EntityListRowDeleteAction.tsx';
+import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
+import {
+  Button,
+  DataTable,
+  DesignSystemV2Provider,
+  type DataTableColumn,
+} from '../../../components/v2/index.ts';
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
+import {
+  createNameColumn,
+  v1SortToV2,
+  v2SortToV1,
+} from '../../../lib/libraryListTable.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import {
   formatReferenceCount,
@@ -16,7 +25,7 @@ import {
   referenceCountFromIndex,
 } from '../../../lib/listReferences.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
-import classes from './RxGroupListsListPage.module.css';
+import classes from '../../../components/library/LibraryInventoryPage.module.css';
 
 export default function RxGroupListsListPage() {
   const navigate = useNavigate();
@@ -36,6 +45,10 @@ export default function RxGroupListsListPage() {
 
   const columns = useMemo((): DataTableColumn<RxGroupList>[] => {
     return [
+      createNameColumn<RxGroupList>({
+        getName: (r) => r.name,
+        getPath: (r) => `/library/rx-group-lists/${r.id}`,
+      }),
       {
         key: 'members',
         header: 'Members',
@@ -56,7 +69,10 @@ export default function RxGroupListsListPage() {
         key: 'actions',
         header: '',
         hideable: false,
-        render: (r) => <EntityListDeleteAction kind="rxGroupList" entityId={r.id} label={r.name} />,
+        width: '40px',
+        render: (r) => (
+          <EntityListRowDeleteAction kind="rxGroupList" entityId={r.id} label={r.name} />
+        ),
       },
     ];
   }, [referenceIndex]);
@@ -67,7 +83,7 @@ export default function RxGroupListsListPage() {
       leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
       onClick={() => navigate('/library/rx-group-lists/new')}
     >
-      New Receive Group List
+      New receive group list
     </Button>
   );
 
@@ -75,49 +91,49 @@ export default function RxGroupListsListPage() {
     return (
       <DesignSystemV2Provider>
         <div className={classes.page}>
-          <div className={classes.headerRow}>
-            <div>
-              <h1 className={classes.title}>Receive Group Lists</h1>
-              <p className={classes.description}>Loading library…</p>
-            </div>
-            {listActions}
-          </div>
+          <LibraryInventoryHeader title="Receive group lists" subtitle="Loading library…" />
         </div>
       </DesignSystemV2Provider>
     );
   }
 
+  const countLabel =
+    rxGroupLists.length === 1
+      ? '1 receive group list in this project'
+      : `${rxGroupLists.length} receive group lists in this project`;
+
   return (
     <DesignSystemV2Provider>
       <div className={classes.page}>
-        <div className={classes.headerRow}>
-          <div>
-            <h1 className={classes.title}>Receive Group Lists</h1>
-            <p className={classes.description}>
-              DMR receive group lists in this project. Open one to edit membership and timeslot
-              overrides.
-            </p>
-          </div>
-          <div className={classes.toolbarActions}>{listActions}</div>
-        </div>
+        <LibraryInventoryHeader
+          title="Receive group lists"
+          subtitle={countLabel}
+          actions={listActions}
+        />
 
         <DataTable
-          variant="list"
-          selectionChrome="v2"
-          rows={filtered}
-          totalRowCount={rxGroupLists.length}
-          search={nameFilterInput}
-          searchPending={nameFilterPending}
-          onSearchChange={setNameFilter}
-          searchPlaceholder="Filter name…"
-          sort={sort}
-          onSortChange={setSort}
-          rowKey={(r) => r.id}
-          nameColumn={{
-            getName: (r) => r.name,
-            getPath: (r) => `/library/rx-group-lists/${r.id}`,
-          }}
           columns={columns}
+          rows={filtered}
+          getRowId={(r) => r.id}
+          totalRowCount={rxGroupLists.length}
+          search={{
+            value: nameFilterInput,
+            onChange: setNameFilter,
+            placeholder: 'Filter name…',
+            pending: nameFilterPending,
+          }}
+          sort={v1SortToV2(sort)}
+          onSortChange={(next) => {
+            const v1 = v2SortToV1(next);
+            if (v1) setSort(v1);
+          }}
+          emptyMessage="No receive group lists in this project yet."
+          filteredEmptyMessage={
+            nameFilter.trim()
+              ? `No receive group lists match “${nameFilter.trim()}”.`
+              : 'No receive group lists match your filter.'
+          }
+          onRowActivate={(r) => navigate(`/library/rx-group-lists/${r.id}`)}
         />
       </div>
     </DesignSystemV2Provider>
