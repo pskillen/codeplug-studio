@@ -1,0 +1,49 @@
+.page {
+  padding: var(--dsv2-page-padding-y) var(--dsv2-page-padding-x);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  margin-bottom: 4px;
+}
+
+.title {
+  font-size: var(--dsv2-font-heading-md);
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--dsv2-text-primary);
+}
+
+.subtitle {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-surface);
+}
+
+.panelTitle {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--dsv2-text-primary);
+}
+
+.panelHint {
+  font-size: 13px;
+  color: var(--dsv2-text-tertiary);
+  margin: 0;
+  line-height: 1.45;
+}

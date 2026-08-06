@@ -3,24 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { FacetBar, FacetChip } from '../../components/library/FacetBar.tsx';
 import { ContextualStrip } from '../v2/index.ts';
-import { readStoredActiveEgressId, resolveActiveEgress } from '../routes/builds/activeEgress.ts';
+import { readStoredActiveEgressId, resolveActiveEgress } from '../../routes/builds/activeEgress.ts';
 import {
   activeAuditNavItem,
   activeBuildSection,
   activeWireEntityNavItem,
   buildAuditNavItems,
   buildWireEntityNavItems,
-  BUILD_SECTION_AUDIT,
-  BUILD_SECTION_WIRE_PREVIEW,
   type BuildAuditNavItem,
   type BuildWireEntityNavItem,
-} from '../routes/builds/nav.ts';
-import { isBuildDetailPath } from '../routes/builds/nav.ts';
-import { useOptionalBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
-import { BuildService } from '../state/buildService.ts';
-import { persistence } from '../state/persistence.ts';
-import { useFormatBuild } from '../state/useFormatBuilds.ts';
-import { useProjects } from '../state/useProjects.ts';
+} from '../../routes/builds/nav.ts';
+import { isBuildDetailPath } from '../../routes/builds/nav.ts';
+import { useOptionalBuildLayout } from '../../routes/builds/BuildLayoutContext.tsx';
+import { BuildService } from '../../state/buildService.ts';
+import { persistence } from '../../state/persistence.ts';
+import { useFormatBuild } from '../../state/useFormatBuilds.ts';
+import { useProjects } from '../../state/useProjects.ts';
 import classes from './BuildSubChrome.module.css';
 
 export interface BuildSubChromeModel {

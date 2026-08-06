@@ -475,7 +475,7 @@ describe('ExportBuildCpsPanel', () => {
     expect(
       await screen.findByRole('button', { name: /Download for radio write/i }),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('radio', { name: /CHIRP CSV/i }));
+    fireEvent.click(screen.getByRole('button', { name: /CHIRP/i }));
     expect(await screen.findByRole('button', { name: /Download CSV/i })).toBeInTheDocument();
     expect(screen.getByText(/memory CSV using the profile below/i)).toBeInTheDocument();
     expect(chirpEgress.formatId).toBe('chirp');
@@ -520,11 +520,11 @@ describe('ExportBuildCpsPanel', () => {
     expect(await screen.findByText('Naming')).toBeInTheDocument();
     expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('radio', { name: /NeonPlug/i }));
+    fireEvent.click(screen.getByRole('button', { name: /NeonPlug/i }));
     expect(await screen.findByText('Naming')).toBeInTheDocument();
     expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('radio', { name: /CHIRP CSV/i }));
+    fireEvent.click(screen.getByRole('button', { name: /CHIRP/i }));
     expect(await screen.findByText('Naming')).toBeInTheDocument();
     expect(screen.getByText('Default scan behaviour')).toBeInTheDocument();
   });

@@ -56,7 +56,7 @@ describe('NewBuildPage', () => {
 
     fireEvent.click(screen.getByText('Baofeng UV-5R Mini'));
 
-    expect(screen.getByText('Build name')).toBeInTheDocument();
+    expect(screen.getByLabelText('Build name')).toBeInTheDocument();
     expect(screen.getByLabelText('Build name')).toHaveValue('Baofeng UV-5R Mini');
   });
 });

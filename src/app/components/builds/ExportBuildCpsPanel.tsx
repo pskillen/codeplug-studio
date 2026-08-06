@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button, Group, Modal, SegmentedControl, Stack, Text } from '@mantine/core';
+import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
 import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
 import { prepareBuildForFrequencyRangeExportPatch } from '../../lib/frequencyRangeExportSettingsPatch.ts';
-import type { EgressPath } from '@core/models/egressPath.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import { formatCatalogEntry, getExportAdapter } from '@core/import-export/registry.ts';
 import {
@@ -63,13 +62,6 @@ export interface ExportBuildCpsPanelProps {
 }
 
 const buildService = new BuildService(persistence);
-
-function egressPathLabel(path: EgressPath): string {
-  if (path.label?.trim()) return path.label.trim();
-  const formatLabel = formatCatalogEntry(path.formatId as FormatId)?.label ?? path.formatId;
-  const profile = traitProfileFor(path.profileId)?.label ?? path.profileId;
-  return `${formatLabel} — ${profile}`;
-}
 
 export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps) {
   const { activeProjectId, activeProject } = useProjects();

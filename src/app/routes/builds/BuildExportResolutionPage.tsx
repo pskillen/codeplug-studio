@@ -27,7 +27,7 @@ import { findAnalogProfile, findDmrProfile } from '@core/domain/modeProfiles.ts'
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { findZoneGroupingSection } from '@core/domain/zoneGroupingLayout.ts';
 import { assemble, librarySliceFrom } from '@core/services/assemble.ts';
-import { FormPage } from '../../components/ui/index.ts';
+import classes from './BuildSubPage.module.css';
 import { zoneScanExportSupported } from '../../hooks/useZoneScanExportLayout.ts';
 import {
   analogSquelchModeLabel,
@@ -167,26 +167,28 @@ export default function BuildExportResolutionPage() {
 
   if (loading) {
     return (
-      <FormPage title="Export resolution">
+      <div className={classes.page}>
+        <div className={classes.header}>
+          <h1 className={classes.title}>Export resolution</h1>
+        </div>
         <Loader size="sm" />
-      </FormPage>
+      </div>
     );
   }
 
   return (
-    <FormPage
-      title="Export resolution"
-      description={
-        <Text size="sm" component="span">
+    <div className={classes.page}>
+      <div className={classes.header}>
+        <h1 className={classes.title}>Export resolution</h1>
+        <p className={classes.subtitle}>
           Effective behavioural values for this build&apos;s export projection, and which cascade
           layer wins. <Link to={`/builds/${build.id}/export`}>Edit build overrides on Export</Link>
           {' · '}
           <Link to="/library/channels/defaults">Channel defaults</Link>
           {' · '}
           <Link to="/library/zones/defaults">Zone defaults</Link>
-        </Text>
-      }
-    >
+        </p>
+      </div>
       <Tabs defaultValue="channels">
         <Tabs.List>
           <Tabs.Tab value="channels">Channels</Tabs.Tab>
@@ -342,6 +344,6 @@ export default function BuildExportResolutionPage() {
           )}
         </Tabs.Panel>
       </Tabs>
-    </FormPage>
+    </div>
   );
 }

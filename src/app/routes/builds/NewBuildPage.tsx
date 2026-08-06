@@ -51,7 +51,9 @@ export default function NewBuildPage() {
   return (
     <div className={classes.page}>
       <div className={classes.header}>
-        <Link to="/builds" className={classes.back}>← Back to builds</Link>
+        <Link to="/builds" className={classes.back}>
+          ← Back to builds
+        </Link>
         <h1 className={classes.title}>New build</h1>
         <p className={classes.subtitle}>
           Choose a radio target, then give this build a name. Compatible export pathways are seeded
@@ -93,16 +95,22 @@ export default function NewBuildPage() {
         <div className={classes.section}>
           <h2 className={classes.sectionTitle}>Build name</h2>
           <div className={classes.namePanel}>
-            <Text size="sm" c="dimmed">Radio: {selectedTarget.label}</Text>
+            <Text size="sm" c="dimmed">
+              Radio: {selectedTarget.label}
+            </Text>
             <EgressPathwayPills egress={selectedTarget.compatibleEgress} />
             <TextInput
               label="Build name"
-              description="Defaults to the radio label — change when you run multiple builds for the same radio."
               value={name}
               onChange={(e) => setName(e.currentTarget.value)}
             />
+            <Text size="xs" c="dimmed">
+              Defaults to the radio label — change when you run multiple builds for the same radio.
+            </Text>
             {error ? (
-              <Text c="red" size="sm">{error}</Text>
+              <Text c="red" size="sm">
+                {error}
+              </Text>
             ) : null}
             <div className={classes.actions}>
               <Button loading={creating} onClick={() => void handleCreate()}>

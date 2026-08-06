@@ -14,7 +14,6 @@ import {
 } from '@core/models/traits.ts';
 import { traitsForRadioTarget } from '@core/radio-targets/index.ts';
 import { egressIdentityForBuild } from '../../lib/buildEgressUi.ts';
-import { FormPage, FormSection } from '../../components/ui/index.ts';
 import {
   BUILD_ORGANISATION_INTRO,
   capabilityCopyFor,
@@ -22,6 +21,7 @@ import {
 } from '../../lib/buildCapabilityCopy.ts';
 import RadioRfCapabilitiesSection from '../../components/builds/RadioRfCapabilitiesSection.tsx';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
+import classes from './BuildSubPage.module.css';
 
 interface LimitRow {
   label: string;
@@ -70,29 +70,25 @@ export default function BuildCharacteristicsPage() {
   const shownLimits = limits ? limitRows(limits) : [];
 
   return (
-    <FormPage
-      title="Radio characteristics"
-      description={
-        <Text size="sm" component="span">
-          Read-only facts for{' '}
-          <Text span fw={600}>
-            {formatEntry?.label ?? formatId}
-          </Text>
+    <div className={classes.page}>
+      <div className={classes.header}>
+        <h1 className={classes.title}>Radio characteristics</h1>
+        <p className={classes.subtitle}>
+          Read-only facts for <strong>{formatEntry?.label ?? formatId}</strong>
           {limits ? (
             <>
               {' · '}
-              <Text span fw={600}>
-                {limits.profileLabel}
-              </Text>
+              <strong>{limits.profileLabel}</strong>
             </>
           ) : null}
           . Limits follow the active export pathway — switch it on{' '}
           <Link to={`/builds/${build.id}/export`}>Export</Link>.
-        </Text>
-      }
-    >
+        </p>
+      </div>
       <Stack gap="lg">
-        <FormSection title="How this radio is organised" description={BUILD_ORGANISATION_INTRO}>
+        <section className={classes.panel}>
+          <h2 className={classes.panelTitle}>How this radio is organised</h2>
+          <p className={classes.panelHint}>{BUILD_ORGANISATION_INTRO}</p>
           {traits.length === 0 ? (
             <Text size="sm" c="dimmed">
               No organisation details are recorded for this profile yet.
@@ -121,14 +117,16 @@ export default function BuildCharacteristicsPage() {
               })}
             </Stack>
           )}
-        </FormSection>
+        </section>
 
         <RadioRfCapabilitiesSection radioTargetId={build.radioTargetId} />
 
-        <FormSection
-          title="Export limits"
-          description="Caps the exporter enforces for this profile. A dash means we have not recorded a figure yet — it is not a promise that the radio is unlimited."
-        >
+        <section className={classes.panel}>
+          <h2 className={classes.panelTitle}>Export limits</h2>
+          <p className={classes.panelHint}>
+            Caps the exporter enforces for this profile. A dash means we have not recorded a figure
+            yet — it is not a promise that the radio is unlimited.
+          </p>
           {!limits || shownLimits.length === 0 ? (
             <Text size="sm" c="dimmed">
               No export limits are available for this profile.
@@ -153,12 +151,14 @@ export default function BuildCharacteristicsPage() {
               </Table>
             </Table.ScrollContainer>
           )}
-        </FormSection>
+        </section>
 
-        <FormSection
-          title="Power levels"
-          description="How library power (percent) maps when exporting to this profile. Radio default (no fixed level) usually exports as the highest step."
-        >
+        <section className={classes.panel}>
+          <h2 className={classes.panelTitle}>Power levels</h2>
+          <p className={classes.panelHint}>
+            How library power (percent) maps when exporting to this profile. Radio default (no fixed
+            level) usually exports as the highest step.
+          </p>
           {!limits || limits.powerLadder.length === 0 ? (
             <Text size="sm" c="dimmed">
               No power ladder is recorded for this profile.
@@ -170,15 +170,15 @@ export default function BuildCharacteristicsPage() {
               ))}
             </List>
           )}
-        </FormSection>
+        </section>
 
         {limits && limits.siblingLadders.length > 0
           ? limits.siblingLadders.map((ladder) => (
-              <FormSection
-                key={ladder.label}
-                title={ladder.label}
-                description={`Steps this profile uses for ${ladder.label.toLowerCase()} on export.`}
-              >
+              <section key={ladder.label} className={classes.panel}>
+                <h2 className={classes.panelTitle}>{ladder.label}</h2>
+                <p className={classes.panelHint}>
+                  Steps this profile uses for {ladder.label.toLowerCase()} on export.
+                </p>
                 <List size="sm" spacing={2}>
                   {ladder.entries.map((entry) => (
                     <List.Item key={`${ladder.label}-${entry.wire}-${entry.percent}`}>
@@ -186,12 +186,13 @@ export default function BuildCharacteristicsPage() {
                     </List.Item>
                   ))}
                 </List>
-              </FormSection>
+              </section>
             ))
           : null}
 
         {concepts.length > 0 ? (
-          <FormSection title="Other concepts for this target">
+          <section className={classes.panel}>
+            <h2 className={classes.panelTitle}>Other concepts for this target</h2>
             <Stack gap="md">
               {concepts.map((concept) => (
                 <Stack key={concept.id} gap={4}>
@@ -200,7 +201,7 @@ export default function BuildCharacteristicsPage() {
                 </Stack>
               ))}
             </Stack>
-          </FormSection>
+          </section>
         ) : null}
 
         {traits.includes(BuildCapabilityTrait.ZoneGrouping) ||
@@ -212,6 +213,6 @@ export default function BuildCharacteristicsPage() {
           </Text>
         ) : null}
       </Stack>
-    </FormPage>
+    </div>
   );
 }

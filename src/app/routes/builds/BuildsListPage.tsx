@@ -1,14 +1,9 @@
 import { IconPlus, IconRadio } from '@tabler/icons-react';
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import { radioTargetFor } from '@core/radio-targets/index.ts';
-import {
-  Button,
-  EmptyState,
-  SearchInput,
-  SegmentedControl,
-} from '../../components/v2/index.ts';
+import { Button, EmptyState, SearchInput, SegmentedControl } from '../../components/v2/index.ts';
 import { Loader, Text } from '@mantine/core';
 import DataTable from '../../components/ui/DataTable.tsx';
 import type { DataTableColumn } from '../../components/ui/DataTable.tsx';
@@ -98,7 +93,11 @@ export default function BuildsListPage() {
           </p>
         </div>
         <div className={classes.headerActions}>
-          <Button component={Link} to="/builds/new" variant="primary" leftSection={<IconPlus size={16} stroke={1.75} />}>
+          <Button
+            variant="primary"
+            onClick={() => navigate('/builds/new')}
+            leftSection={<IconPlus size={16} stroke={1.75} />}
+          >
             New build
           </Button>
         </div>
@@ -136,11 +135,15 @@ export default function BuildsListPage() {
           {groupMode === 'radio' ? (
             <div className={classes.groups}>
               {groups?.length === 0 ? (
-                <Text size="sm" c="dimmed">No builds match this filter.</Text>
+                <Text size="sm" c="dimmed">
+                  No builds match this filter.
+                </Text>
               ) : null}
               {groups?.map((group) => (
                 <BuildsListSection key={group.key} title={group.label}>
-                  {group.builds.map((build) => <BuildListCard key={build.id} build={build} />)}
+                  {group.builds.map((build) => (
+                    <BuildListCard key={build.id} build={build} />
+                  ))}
                 </BuildsListSection>
               ))}
             </div>
