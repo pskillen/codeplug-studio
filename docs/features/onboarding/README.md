@@ -18,7 +18,7 @@ User-facing copy follows the [help writing styleguide](../../reference/writing-s
 | ------------------------ | ------- | -------------------------------------------------------------------------------- |
 | Home section order       | Shipped | New project → projects / empty guide → Import from YAML                          |
 | Inline empty-state guide | Shipped | When `!loading && projects.length === 0`                                         |
-| Quick start modal        | Shipped | Home + Help header actions; operator-opened only                                 |
+| Quick start modal        | Shipped | v2 `ModalShell` on Home + Help ([#939](https://github.com/pskillen/codeplug-studio/issues/939)) |
 | Getting-started copy     | Shipped | Directories-first fill, optional DMR shortcut, CPS differences, Reference footer |
 | Help workflow alignment  | Shipped | Builds + Add from… + Reference links                                             |
 

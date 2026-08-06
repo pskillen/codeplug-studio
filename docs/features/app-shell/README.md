@@ -8,14 +8,14 @@ Tier-1 reference for the Phase 2 application shell: navigation chrome, route sur
 
 ## Overview
 
-The SPA uses design-system v2 chrome ([#917](https://github.com/pskillen/codeplug-studio/issues/917)): a single top `AppShell` bar, an optional horizontal `ContextualStrip`, and a mobile `BottomTabBar`. Page content inside `<Outlet/>` remains on the v1 Mantine theme until Phase 3 screen ports. `ProjectProvider` supplies project state via `useProjects()`. Visible product mark: the **Codeplug Studio** wordmark in the shell ([#330](https://github.com/pskillen/codeplug-studio/issues/330)); document title remains **MM9PDY Codeplug Studio**.
+The SPA uses design-system v2 chrome ([#917](https://github.com/pskillen/codeplug-studio/issues/917), re-accepted against mk2 in [#939](https://github.com/pskillen/codeplug-studio/issues/939)): a single top `AppShell` bar with mk2 **S2** project chip (save/sync status), **S3** quick project switcher, and **S4** `DismissibleNotice` chrome ribbons; optional `ContextualStrip`; mobile `BottomTabBar`. Home (`/`) is mk2 **P1** project manage (card grid, empty `EmptyState` + inline Quick start). Drive browse/save/conflict modals use v2 `ModalShell` (**P3**). `ProjectProvider` supplies project state via `useProjects()`. Visible product mark: the **Codeplug Studio** wordmark in the shell ([#330](https://github.com/pskillen/codeplug-studio/issues/330)); document title remains **MM9PDY Codeplug Studio**.
 
 ```text
 ProjectProvider
 └─ DriveSessionProvider
    └─ OperatorPositionProvider
       └─ BrowserRouter
-      └─ AppLayout (DriveRefreshProvider → v2 AppShell + ContextualStrip + BottomTabBar; Outlet + banners + footer on v1)
+      └─ AppLayout (DriveSaveFlowProvider → DriveRefreshProvider → v2 AppShell + S4 notices + ContextualStrip + BottomTabBar; Outlet + footer)
          ├─ /          Projects (lifecycle UI)
          ├─ /library/* Per-entity library list routes (see library docs)
          ├─ /summary   Library summary + project YAML interchange
@@ -48,7 +48,10 @@ ProjectProvider
 | [SidebarDriveControls](../../src/app/components/SidebarDriveControls/SidebarDriveControls.md) | AppShell Drive Save / Check ([#368](https://github.com/pskillen/codeplug-studio/issues/368), [#917](https://github.com/pskillen/codeplug-studio/issues/917)) |
 | [SoftWarning](../../src/app/components/ui/SoftWarning.md)                                     | Compact theme-aware warning panel                                                                                                                            |
 | [GettingStartedContent](../../src/app/components/onboarding/GettingStartedContent.md)         | Empty-state + Quick start guide ([#345](https://github.com/pskillen/codeplug-studio/issues/345))                                                             |
-| [AppShell (v2)](../../src/app/components/v2/AppShell.md)                                      | Design-system top bar + tabs ([#917](https://github.com/pskillen/codeplug-studio/issues/917))                                                                |
+| [ProjectChip (v2)](../../src/app/components/v2/ProjectChip.md)                                | mk2 S2 combined project identity chip                                                                                                                        |
+| [QuickProjectSwitcher](../../src/app/components/shell/QuickProjectSwitcher.md)                | mk2 S3 overlay / mobile sheet ([#939](https://github.com/pskillen/codeplug-studio/issues/939))                                                               |
+| [ProjectManageCard](../../src/app/components/shell/ProjectManageCard.tsx)                     | mk2 P1 home project cards (inline — no sidecar)                                                                                                              |
+| [AppShell (v2)](../../src/app/components/v2/AppShell.md)                                      | Design-system top bar + tabs ([#917](https://github.com/pskillen/codeplug-studio/issues/917), [#939](https://github.com/pskillen/codeplug-studio/issues/939)) |
 | [ContextualStrip (v2)](../../src/app/components/v2/ContextualStrip.md)                        | Horizontal section pill strip                                                                                                                                |
 | [BottomTabBar (v2)](../../src/app/components/v2/BottomTabBar.md)                              | Mobile primary nav                                                                                                                                           |
 | [design-system-v2](../design-system-v2/README.md)                                             | v2 theme + component library epic                                                                                                                            |
@@ -66,7 +69,7 @@ UI primitives live in `src/app/components/ui/` (ported from codeplug-tool). Reus
 
 | Path                                          | Surface                 | Status                                                                                                                                                                                                                                         |
 | --------------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`                                           | Projects                | Lifecycle UI (create/switch/rename/delete) + empty-state getting-started ([#345](https://github.com/pskillen/codeplug-studio/issues/345)) + **Import from YAML** below the list ([#60](https://github.com/pskillen/codeplug-studio/issues/60)) |
+| `/`                                           | Projects                | mk2 P1 card grid + `EmptyState` empty launch; rename/delete via v2 modals ([#939](https://github.com/pskillen/codeplug-studio/issues/939)); Quick start inline + modal ([#345](https://github.com/pskillen/codeplug-studio/issues/345)); Import from YAML ([#60](https://github.com/pskillen/codeplug-studio/issues/60)) |
 | `/library`                                    | _(redirect)_            | → `/library/channels`                                                                                                                                                                                                                          |
 | `/library/channels`                           | Channels list           | DataTable + filters + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20), [#24](https://github.com/pskillen/codeplug-studio/issues/24)                                                                                         |
 | `/library/zones`                              | Zones list              | DataTable + map — [#20](https://github.com/pskillen/codeplug-studio/issues/20)                                                                                                                                                                 |
