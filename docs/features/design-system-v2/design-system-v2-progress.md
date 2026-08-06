@@ -37,7 +37,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ### #940 library lists
 
-- [ ] `npm run format:check && npm run lint && npm run test && npm run build`
+- [x] `npm run format:check && npm run lint && npm run test && npm run build`
 - [ ] Manual desktop + narrow pass on L2–L7 vs Batch 2 frames
 - [ ] C3 ModalShell chrome; C7 map toggle on mobile
 
