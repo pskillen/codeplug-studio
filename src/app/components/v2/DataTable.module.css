@@ -1,0 +1,278 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-4);
+  min-width: 0;
+}
+
+.search {
+  width: 100%;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dsv2-space-4);
+}
+
+.count {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.selectionToolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--dsv2-space-4);
+  padding: 8px var(--dsv2-row-padding-x);
+  border: 1px solid var(--dsv2-accent-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-accent-tint-06);
+}
+
+.selectionCount {
+  font-size: var(--dsv2-font-body-sm);
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+}
+
+.clearSelection {
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
+.bulkReorderButtons {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.moveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-sm);
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
+.moveButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.orderCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--dsv2-row-padding-y) 8px;
+  min-width: 0;
+  overflow: visible;
+}
+
+.orderIndex {
+  min-width: 14px;
+  font-size: var(--dsv2-font-body-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsv2-text-tertiary);
+}
+
+.columnPickerWrapper {
+  position: relative;
+}
+
+.columnPicker {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 160px;
+  padding: 10px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-surface);
+  box-shadow: var(--dsv2-shadow-popover);
+}
+
+.columnPickerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-primary);
+  cursor: pointer;
+}
+
+.table {
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  overflow: auto;
+}
+
+[data-variant='embedded'] .table {
+  border-color: var(--dsv2-border-quiet);
+}
+
+.table[data-scale='extreme'] {
+  max-height: 440px;
+}
+
+.headerRow {
+  display: grid;
+  align-items: center;
+  border-bottom: 1px solid var(--dsv2-border);
+  background: var(--dsv2-surface-quiet);
+}
+
+[data-variant='embedded'] .headerRow {
+  background: transparent;
+}
+
+.table[data-scale='extreme'] .headerRow {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.headerCell {
+  padding: 8px var(--dsv2-row-padding-x);
+  font-size: var(--dsv2-font-micro);
+  font-weight: 600;
+  color: var(--dsv2-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: var(--dsv2-tracking-eyebrow);
+  min-width: 0;
+}
+
+/**
+ * Lead columns (nested expander, checkbox) are icon/control-only — the
+ * regular 16px .headerCell/.dataCell horizontal padding leaves no room for
+ * their content inside a narrow (32-40px) column and clips it into the next
+ * column. Use a smaller, symmetric padding instead.
+ */
+.leadCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  min-width: 0;
+  overflow: visible;
+}
+
+.alignRight {
+  text-align: right;
+}
+
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+.sortIcon {
+  color: var(--dsv2-text-tertiary);
+}
+
+.sortIconActive {
+  color: var(--dsv2-accent);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+}
+
+.dataRow {
+  display: grid;
+  align-items: center;
+  border-bottom: 1px solid var(--dsv2-border-quiet);
+}
+
+.dataRow:last-child {
+  border-bottom: none;
+}
+
+.rowGated {
+  opacity: 0.45;
+}
+
+.rowNestParent {
+  background: var(--dsv2-surface-quiet);
+}
+
+.rowActivatable {
+  cursor: pointer;
+}
+
+.rowActivatable:hover {
+  background: var(--dsv2-surface-quiet);
+}
+
+.expandButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
+.expandIconOpen {
+  transform: rotate(90deg);
+}
+
+.dataCell {
+  padding: var(--dsv2-row-padding-y) var(--dsv2-row-padding-x);
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dim {
+  color: var(--dsv2-text-secondary);
+}
+
+.emptyRow {
+  display: flex;
+}
+
+.emptyCell {
+  flex: 1;
+  padding: 24px var(--dsv2-row-padding-x);
+  text-align: center;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+.caption {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}

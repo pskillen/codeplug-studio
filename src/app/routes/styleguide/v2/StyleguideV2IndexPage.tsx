@@ -19,6 +19,16 @@ const SECTIONS = [
     description: 'StatusBanner success/warning/info tones.',
   },
   {
+    to: '/styleguide/v2/overlays',
+    title: 'Overlays',
+    description: 'ModalShell base overlay primitive.',
+  },
+  {
+    to: '/styleguide/v2/membership',
+    title: 'Membership',
+    description: 'Members-first list + full-screen add takeover, superseding ShuttleList.',
+  },
+  {
     to: '/styleguide/v2/navigation',
     title: 'Navigation',
     description: 'AppShell and BottomTabBar (fixture-driven).',

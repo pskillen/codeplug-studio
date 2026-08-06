@@ -1,0 +1,113 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-4);
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--dsv2-space-4);
+}
+
+.headerCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--dsv2-font-heading);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+}
+
+.description {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--dsv2-space-4);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-tertiary);
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-primary);
+}
+
+.sortButton {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-accent);
+  cursor: pointer;
+}
+
+.sortDisabled {
+  flex-shrink: 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+.bulkToolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px var(--dsv2-row-padding-x);
+  border: 1px solid var(--dsv2-accent-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-accent-tint-06);
+}
+
+.selectionCount {
+  font-size: var(--dsv2-font-body-sm);
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+}
+
+.clearSelection {
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.empty {
+  padding: 24px var(--dsv2-row-padding-x);
+  text-align: center;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}

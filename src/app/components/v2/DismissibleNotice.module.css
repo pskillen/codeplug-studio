@@ -1,0 +1,47 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--dsv2-radius-control);
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.warning {
+  background: var(--dsv2-warning-tint);
+  border: 1px solid var(--dsv2-warning-border);
+}
+
+.info {
+  background: var(--dsv2-accent-tint-06);
+  border: 1px solid var(--dsv2-border);
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+[data-tone='warning'] .icon {
+  color: var(--dsv2-warning);
+}
+
+[data-tone='info'] .icon {
+  color: var(--dsv2-accent);
+}
+
+.message {
+  flex: 1;
+  min-width: 0;
+  color: var(--dsv2-text-secondary);
+}
+
+.action {
+  flex-shrink: 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-accent);
+}
+
+.close {
+  flex-shrink: 0;
+  color: var(--dsv2-text-tertiary);
+}

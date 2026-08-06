@@ -1,12 +1,59 @@
 import { Group, SimpleGrid, Stack, Text } from '@mantine/core';
+import { IconPencil, IconTrash } from '@tabler/icons-react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import MapLocationPicker from '../../../components/MapLocationPicker/MapLocationPicker.tsx';
 import { DataTable, Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
-import { CountTile, MapPanel, Panel, Pill } from '../../../components/v2/index.ts';
+import {
+  Button,
+  CountTile,
+  DataTable as DataTableV2,
+  EmptyState,
+  MapPanel,
+  Panel,
+  Pill,
+  RowActionIcon,
+  WirePreviewTable,
+  WriteVerifyReport,
+} from '../../../components/v2/index.ts';
+import { ICON_SIZE_ACTION } from '../../../lib/iconSizes.ts';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
-import { SAMPLE_ROWS } from '../fixtures.ts';
+import { LARGE_VIRTUAL_DEMO_ROWS, SAMPLE_ROWS, STICKY_DEMO_ROWS } from '../fixtures.ts';
+
+interface NestedDemoRow {
+  id: string;
+  name: string;
+  children?: NestedDemoRow[];
+}
+
+const NESTED_DEMO_ROWS: NestedDemoRow[] = [
+  {
+    id: 'zone-1',
+    name: 'Zone: Highlands',
+    children: [
+      { id: 'ch-1', name: 'GB3DA Stornoway' },
+      { id: 'ch-2', name: 'GB3IV Inverness' },
+    ],
+  },
+  {
+    id: 'zone-2',
+    name: 'Zone: Central Belt',
+    children: [{ id: 'ch-3', name: 'GB7GM Glasgow' }],
+  },
+];
 
 export default function StyleguideV2DataDisplayPage() {
+  const [dataTableSearch, setDataTableSearch] = useState('');
+  const [dataTableSelected, setDataTableSelected] = useState<string[]>([]);
+  const [reorderRows, setReorderRows] = useState(() => STICKY_DEMO_ROWS.slice(0, 5));
+  const [reorderSelected, setReorderSelected] = useState<string[]>([]);
+  const [activatedRow, setActivatedRow] = useState<string | null>(null);
+  const [visibleKeys, setVisibleKeys] = useState<string[]>([]);
+
+  const filteredDataTableRows = STICKY_DEMO_ROWS.filter((row) =>
+    row.name.toLowerCase().includes(dataTableSearch.toLowerCase()),
+  );
+
   return (
     <Page width="default">
       <PageHeader
@@ -65,6 +112,28 @@ export default function StyleguideV2DataDisplayPage() {
         </Group>
       </PageSection>
 
+      <PageSection title="RowActionIcon" description="Icon-only row action, stops propagation.">
+        <Group gap="xs">
+          <RowActionIcon
+            icon={<IconPencil size={ICON_SIZE_ACTION} />}
+            onClick={() => undefined}
+            label="Edit"
+          />
+          <RowActionIcon
+            icon={<IconTrash size={ICON_SIZE_ACTION} />}
+            onClick={() => undefined}
+            label="Delete"
+            tone="destructive"
+          />
+          <RowActionIcon
+            icon={<IconTrash size={ICON_SIZE_ACTION} />}
+            onClick={() => undefined}
+            label="Delete (disabled)"
+            disabled
+          />
+        </Group>
+      </PageSection>
+
       <PageSection
         title="DataTable (re-skinned)"
         description="Existing ui/DataTable inside the v2 provider — radii/colors from themeV2."
@@ -89,6 +158,144 @@ export default function StyleguideV2DataDisplayPage() {
           ]}
           emptyState={<Text size="sm">No rows</Text>}
         />
+      </PageSection>
+
+      <PageSection
+        title="DataTable (v2)"
+        description="New v2 port: sort, search, counts. Fork of the DS spec — selection/reorder/nesting land in later commits."
+      >
+        <DataTableV2
+          rows={filteredDataTableRows}
+          getRowId={(row) => row.id}
+          totalRowCount={STICKY_DEMO_ROWS.length}
+          resultCount={filteredDataTableRows.length}
+          search={{
+            value: dataTableSearch,
+            onChange: setDataTableSearch,
+            placeholder: 'Filter channels…',
+          }}
+          selectable
+          selectedKeys={dataTableSelected}
+          onSelectionChange={setDataTableSelected}
+          isRowSelectable={(row) => row.score > 0}
+          onClearSelection={() => setDataTableSelected([])}
+          bulkActions={
+            <Button variant="secondary" size="sm" onClick={() => setDataTableSelected([])}>
+              Delete selected
+            </Button>
+          }
+          columns={[
+            {
+              key: 'name',
+              header: 'Name',
+              render: (row) => row.name,
+              sortable: true,
+              sortValue: (row) => row.name,
+            },
+            {
+              key: 'score',
+              header: 'Score',
+              render: (row) => row.score,
+              sortable: true,
+              sortValue: (row) => row.score,
+              align: 'right',
+              width: '100px',
+              dim: true,
+            },
+          ]}
+          caption="Header click cycles ascending → descending → unsorted."
+        />
+      </PageSection>
+
+      <PageSection
+        title="DataTable (v2) — reorderMode + bulkReorder"
+        description="Column sort disabled; per-row and bulk Move up/down mutate the agreed order."
+      >
+        <DataTableV2
+          rows={reorderRows}
+          getRowId={(row) => row.id}
+          reorderMode
+          onReorder={setReorderRows}
+          selectable
+          bulkReorder
+          selectedKeys={reorderSelected}
+          onSelectionChange={setReorderSelected}
+          onClearSelection={() => setReorderSelected([])}
+          columns={[{ key: 'name', header: 'Name', render: (row) => row.name }]}
+        />
+      </PageSection>
+
+      <PageSection
+        title="DataTable (v2) — nested + row activate"
+        description="Expand/collapse lead column; whole-row click opens a detail (wire-preview shape)."
+      >
+        <Stack gap="xs">
+          {activatedRow ? (
+            <Text size="sm" c="dimmed">
+              Activated: {activatedRow}
+            </Text>
+          ) : null}
+          <DataTableV2
+            rows={NESTED_DEMO_ROWS}
+            getRowId={(row) => row.id}
+            nested
+            getChildren={(row) => row.children}
+            getRowVariant={(row) => (row.children?.length ? 'nestParent' : undefined)}
+            onRowActivate={(row) => setActivatedRow(row.name)}
+            columns={[{ key: 'name', header: 'Name', render: (row) => row.name }]}
+          />
+        </Stack>
+      </PageSection>
+
+      <PageSection
+        title="DataTable (v2) — scale=extreme + column visibility"
+        description="Sticky header over a max-height scroll region; hideable columns via Show/hide cols."
+      >
+        <DataTableV2
+          rows={LARGE_VIRTUAL_DEMO_ROWS}
+          getRowId={(row) => row.id}
+          scale="extreme"
+          visibleKeys={visibleKeys}
+          onVisibleKeysChange={setVisibleKeys}
+          totalRowCount={LARGE_VIRTUAL_DEMO_ROWS.length}
+          columns={[
+            { key: 'name', header: 'Name', render: (row) => row.name },
+            {
+              key: 'score',
+              header: 'Score',
+              render: (row) => row.score,
+              align: 'right',
+              width: '90px',
+            },
+            {
+              key: 'note',
+              header: 'Note',
+              render: () => '—',
+              hideable: true,
+              defaultVisible: false,
+              width: '80px',
+              dim: true,
+            },
+          ]}
+        />
+      </PageSection>
+
+      <PageSection
+        title="EmptyState"
+        description="Icon badge + title + description + optional action; compact variant for denser contexts."
+      >
+        <Stack gap="lg">
+          <EmptyState
+            title="No channels yet"
+            description="Add channels from a directory or a CPS import."
+            action={
+              <Button variant="secondary" size="sm" onClick={() => undefined}>
+                Add from…
+              </Button>
+            }
+          />
+          <EmptyState title="No matches" compact />
+        </Stack>
       </PageSection>
 
       <PageSection
@@ -123,6 +330,47 @@ export default function StyleguideV2DataDisplayPage() {
             />
           </MapPanel>
         </Stack>
+      </PageSection>
+
+      <PageSection
+        title="WirePreviewTable"
+        description="Stub — full implementation in #924. Read-only, monospace, no interactivity."
+      >
+        <WirePreviewTable
+          title="Channels"
+          columns={[
+            { key: 'name', label: 'Name', render: (row) => row.name },
+            { key: 'wireName', label: 'Wire name', render: (row) => row.wireName, dim: true },
+          ]}
+          rows={[
+            { id: '1', name: 'GB3DA Stornoway', wireName: 'GB3DA-DMR' },
+            { id: '2', name: 'GB3IV Inverness', wireName: 'GB3IV-CUSTOM' },
+          ]}
+          getRowId={(row) => row.id}
+          isRowChanged={(row) => row.id === '2'}
+          caption="Static fixture — real wire-preview data lands in #924."
+        />
+      </PageSection>
+
+      <PageSection
+        title="WriteVerifyReport"
+        description="Stub — full implementation in #924. Static fixture, no interactivity."
+      >
+        <WriteVerifyReport
+          summary={[
+            { value: 41, label: 'Channels written' },
+            { value: 1, label: 'Failed', tone: 'destructive' },
+          ]}
+          rows={[
+            { id: '1', tone: 'success', label: 'Channel 1', detail: 'Verified' },
+            {
+              id: '2',
+              tone: 'destructive',
+              label: 'Channel 2',
+              detail: 'Rejected — name too long',
+            },
+          ]}
+        />
       </PageSection>
     </Page>
   );

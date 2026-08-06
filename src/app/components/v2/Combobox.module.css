@@ -1,0 +1,132 @@
+.root {
+  position: relative;
+  min-width: 0;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-surface);
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--dsv2-text-tertiary);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-primary);
+}
+
+.spinner {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--dsv2-border);
+  border-top-color: var(--dsv2-accent);
+  border-radius: 50%;
+  animation: dsv2-combobox-spin 0.7s linear infinite;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 2;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-surface);
+  box-shadow: var(--dsv2-shadow-popover);
+}
+
+.empty {
+  padding: 12px;
+  text-align: center;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+.option {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option:hover {
+  background: var(--dsv2-surface-quiet);
+}
+
+.optionLabel {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-primary);
+}
+
+.optionSublabel {
+  font-size: var(--dsv2-font-micro);
+  color: var(--dsv2-text-tertiary);
+}
+
+.committed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-surface);
+}
+
+.committedIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--dsv2-accent);
+}
+
+.committedLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.changeLink {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-accent);
+  cursor: pointer;
+}
+
+@keyframes dsv2-combobox-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

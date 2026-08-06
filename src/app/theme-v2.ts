@@ -113,6 +113,18 @@ export const DSV2_TOKENS = {
   shadows: {
     popover: '0 8px 24px rgba(0,0,0,.35)',
   },
+  /**
+   * Two-step icon scale: `nav` for primary navigation/chrome icons, `action` for
+   * denser in-row action icons (e.g. `RowActionIcon`). The mk2 DS export never
+   * formalized a second size token (ad hoc 11.5–20px observed, no consistent
+   * nav/action split) — these values come from the pre-existing app constants
+   * in `lib/iconSizes.ts`, not invented from the unsettled DS bundle.
+   */
+  iconSize: {
+    nav: 16,
+    action: 18,
+    stroke: 1.5,
+  },
 } as const;
 
 /** Accent blue ladder seeded from DSV2 accent `#4f8cff`. */
@@ -203,7 +215,7 @@ export const themeV2 = mergeMantineTheme(mergeMantineTheme(DEFAULT_THEME, theme)
  */
 export const dsv2CssVariablesResolver: CSSVariablesResolver = (mantineTheme) => {
   const base = defaultCssVariablesResolver(mantineTheme);
-  const { colors, typography, spacing, radii, shadows } = DSV2_TOKENS;
+  const { colors, typography, spacing, radii, shadows, iconSize } = DSV2_TOKENS;
 
   const dsv2Variables: Record<string, string> = {
     '--dsv2-bg': colors.bg,
@@ -278,6 +290,8 @@ export const dsv2CssVariablesResolver: CSSVariablesResolver = (mantineTheme) => 
     '--dsv2-radius-pill': radii.pill,
     '--dsv2-radius-sm': radii.sm,
     '--dsv2-shadow-popover': shadows.popover,
+    '--dsv2-icon-size-nav': `${iconSize.nav}px`,
+    '--dsv2-icon-size-action': `${iconSize.action}px`,
   };
 
   return {

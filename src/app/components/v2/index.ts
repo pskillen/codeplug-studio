@@ -8,6 +8,14 @@ export { default as CountTile } from './CountTile.tsx';
 export type { CountTileProps } from './CountTile.tsx';
 export { default as StatusBanner } from './StatusBanner.tsx';
 export type { StatusBannerProps, StatusBannerTone } from './StatusBanner.tsx';
+export { default as StatusDot } from './StatusDot.tsx';
+export type { StatusDotProps, StatusDotTone } from './StatusDot.tsx';
+export { default as DismissibleNotice } from './DismissibleNotice.tsx';
+export type {
+  DismissibleNoticeAction,
+  DismissibleNoticeProps,
+  DismissibleNoticeTone,
+} from './DismissibleNotice.tsx';
 export { default as Panel } from './Panel.tsx';
 export type { PanelProps } from './Panel.tsx';
 export { default as OverrideField } from './OverrideField.tsx';
@@ -26,6 +34,42 @@ export { default as FormField } from './FormField.tsx';
 export type { FormFieldProps } from './FormField.tsx';
 export { default as MapPanel } from './MapPanel.tsx';
 export type { MapPanelProps } from './MapPanel.tsx';
+export { default as RowActionIcon } from './RowActionIcon.tsx';
+export type { RowActionIconProps, RowActionIconTone } from './RowActionIcon.tsx';
+export { default as EmptyState } from './EmptyState.tsx';
+export type { EmptyStateProps } from './EmptyState.tsx';
+export { default as FileDropzone } from './FileDropzone.tsx';
+export type { FileDropzoneProps } from './FileDropzone.tsx';
+export { default as Combobox } from './Combobox.tsx';
+export type { ComboboxOption, ComboboxProps } from './Combobox.tsx';
+export { default as WirePreviewTable } from './WirePreviewTable.tsx';
+export type { WirePreviewTableColumn, WirePreviewTableProps } from './WirePreviewTable.tsx';
+export { default as WriteVerifyReport } from './WriteVerifyReport.tsx';
+export type {
+  WriteVerifyReportProps,
+  WriteVerifyReportRow,
+  WriteVerifyReportSummaryItem,
+} from './WriteVerifyReport.tsx';
+export { default as DataTable } from './DataTable.tsx';
+export type {
+  DataTableColumn,
+  DataTableProps,
+  DataTableSearchConfig,
+  DataTableSortDirection,
+  DataTableSortState,
+  DataTableVariant,
+} from './DataTable.tsx';
+export { default as ModalShell } from './ModalShell.tsx';
+export type { ModalShellIconTone, ModalShellProps, ModalShellSize } from './ModalShell.tsx';
+export { default as ConfirmModal } from './ConfirmModal.tsx';
+export type { ConfirmModalProps, ConfirmModalTone } from './ConfirmModal.tsx';
+export { default as ProgressModal } from './ProgressModal.tsx';
+export type {
+  ProgressModalPhase,
+  ProgressModalProps,
+  ProgressModalStep,
+  ProgressModalStepStatus,
+} from './ProgressModal.tsx';
 export { default as AppShell } from './AppShell.tsx';
 export type { AppShellProps } from './AppShell.tsx';
 export { default as BottomTabBar } from './BottomTabBar.tsx';
@@ -34,6 +78,18 @@ export { default as ContextualStrip } from './ContextualStrip.tsx';
 export type { ContextualStripProps } from './ContextualStrip.tsx';
 export { default as SectionNav } from './SectionNav.tsx';
 export type { SectionNavOrientation, SectionNavProps } from './SectionNav.tsx';
+export { default as MembershipRow } from './MembershipRow.tsx';
+export type { MembershipRowProps } from './MembershipRow.tsx';
+export { MembershipList, MembershipPanel } from './MembershipPanel.tsx';
+export type { MembershipPanelProps, MembershipPanelSearchConfig } from './MembershipPanel.tsx';
+export { default as MembershipPoolRow } from './MembershipPoolRow.tsx';
+export type { MembershipPoolRowProps } from './MembershipPoolRow.tsx';
+export { default as AddMembersScreen } from './AddMembersScreen.tsx';
+export type {
+  AddMembersScreenProps,
+  AddMembersScreenSearchConfig,
+  AddMembersScreenSection,
+} from './AddMembersScreen.tsx';
 export {
   ShuttleAddBar,
   ShuttleList,

@@ -2,7 +2,26 @@
 
 Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues/915) (child of [#495](https://github.com/pskillen/codeplug-studio/issues/495)).
 
-## Slices
+**r2 retrofit** (plan: `tmp/design-system-prep/retrofit-r2-plan.md`) supersedes the mk1 rollout's visual acceptance below — it targets the completed mk2 Claude Design export, not incidental live UI. mk1 slices stay as history.
+
+## r2 retrofit slices
+
+| Slice                       | Status  | Branch / PR                      | Notes                                                                                                        |
+| --------------------------- | ------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Foundations gap-fill (#938) | Shipped | `938/pskillen/ds-r2-foundations` | Overlays, DataTable v2 full capability set, Membership family, forms/feedback, build stubs, icon-size tokens |
+
+### #938 foundations gap-fill
+
+| Sub-slice                                                                          | Status   | Notes                                                                    |
+| ---------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------ |
+| Icon-size tokens                                                                   | Complete | `DSV2_TOKENS.iconSize` + `--dsv2-icon-size-*`                            |
+| Overlays: ModalShell → ConfirmModal → ProgressModal                                | Complete | New `/styleguide/v2/overlays`                                            |
+| DataTable v2: core → selection/bulk → reorder → nesting/scale/visibility           | Complete | New independent `v2/DataTable.tsx`; coexists with v1                     |
+| Membership: MembershipRow → MembershipPanel → MembershipPoolRow → AddMembersScreen | Complete | New `/styleguide/v2/membership`; not wired into live editors (#941–#943) |
+| Forms/feedback: StatusDot, EmptyState, DismissibleNotice, FileDropzone, Combobox   | Complete | Demoed on existing `/forms`, `/data-display`, `/feedback` pages          |
+| Build stubs: WirePreviewTable, WriteVerifyReport                                   | Complete | Static-fixture only; full wiring is Builds (#924)                        |
+
+## mk1 slices (history — superseded by r2)
 
 | Slice                          | Status      | Branch / PR                                                     | Notes                                                |
 | ------------------------------ | ----------- | --------------------------------------------------------------- | ---------------------------------------------------- |
@@ -30,7 +49,12 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## Verification
 
-### Before merge (library ports PR)
+### #938 foundations gap-fill (this branch)
+
+- [x] `npm run format:check && npm run lint && npm run test && npm run build`
+- [x] Manual desktop + narrow pass on every new/extended `/styleguide/v2/*` page (overlays, membership, data-display, forms, feedback) — zero console errors, interactions verified (modal open/close, AddMembersScreen stage/commit + blocked candidate, DataTable v2 reorder/nested-expand/column-visibility, Combobox search/select, DismissibleNotice dismiss)
+
+### mk1 library ports (history)
 
 - [ ] `npm run format:check && npm run lint && npm run test && npm run build`
 - [ ] Manual desktop + mobile pass on Library strip (Zones, RGLs, TG, Contacts, Scan, APRS)
@@ -38,4 +62,4 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## Next
 
-Merge MapPanel PR → #924 Builds/export or #926 mobile QA as separate tickets.
+**r2 retrofit** continues with [#939](https://github.com/pskillen/codeplug-studio/issues/939) shell & project lifecycle (highest blast radius — review carefully), then #940–#945 in parallel once #939 merges, per `tmp/design-system-prep/retrofit-r2-plan.md`'s suggested pickup order.

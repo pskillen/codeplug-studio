@@ -1,0 +1,82 @@
+.progressBar {
+  margin-bottom: var(--dsv2-space-6);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.stepIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.stepIconPending {
+  color: var(--dsv2-text-tertiary);
+}
+
+.stepIconActive {
+  color: var(--dsv2-accent);
+}
+
+.stepIconActive svg {
+  animation: dsv2-progress-spin 0.9s linear infinite;
+}
+
+.stepIconSuccess {
+  color: var(--dsv2-success);
+}
+
+.stepIconError {
+  color: var(--dsv2-destructive);
+}
+
+.stepCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stepLabel {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-primary);
+}
+
+.stepDetail {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.note {
+  margin: var(--dsv2-space-6) 0 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+.summary {
+  margin-top: var(--dsv2-space-6);
+}
+
+@keyframes dsv2-progress-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
