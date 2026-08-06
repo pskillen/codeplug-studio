@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { readStoredActiveEgressId, resolveActiveEgress } from '../routes/builds/activeEgress.ts';
-import { buildNavItems, isBuildDetailPath } from '../routes/builds/nav.ts';
+import { buildSectionNavItems, isBuildDetailPath } from '../routes/builds/nav.ts';
 import { useOptionalBuildLayout } from '../routes/builds/BuildLayoutContext.tsx';
 import { BuildService } from '../state/buildService.ts';
 import { persistence } from '../state/persistence.ts';
@@ -10,8 +10,7 @@ import { useProjects } from '../state/useProjects.ts';
 import type { ContextualStripItem } from './contextualStripItems.ts';
 
 /**
- * Trait-shaped build-detail strip items for ContextualStrip. Returns null when
- * not on a build detail route or the build has not loaded yet.
+ * mk2 B2 — four section strip items for ContextualStrip on build-detail routes.
  */
 export function useBuildContextualStrip(pathname: string): readonly ContextualStripItem[] | null {
   const buildId = isBuildDetailPath(pathname)
@@ -60,14 +59,9 @@ export function useBuildContextualStrip(pathname: string): readonly ContextualSt
 
   return useMemo(() => {
     if (!buildId || !build) return null;
-    const activeEgress =
-      layout?.activeEgress ??
-      (egressPaths.length > 0
-        ? resolveActiveEgress(build, egressPaths, readStoredActiveEgressId(build.id))
-        : null);
-    return buildNavItems(build, { egressPaths, activeEgress }).map((item) => ({
+    return buildSectionNavItems(build).map((item) => ({
       label: item.label,
       to: item.path,
     }));
-  }, [build, buildId, egressPaths, layout?.activeEgress]);
+  }, [build, buildId]);
 }

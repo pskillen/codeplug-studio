@@ -13,6 +13,8 @@ import {
 import type { BottomTabItem } from '../v2/BottomTabBar.tsx';
 import BuildFooter from '../BuildFooter/BuildFooter.tsx';
 import BuildSwitcher from '../builds/BuildSwitcher/BuildSwitcher.tsx';
+import BuildIdentityBar from '../builds/BuildIdentityBar.tsx';
+import BuildSubChrome from '../builds/BuildSubChrome.tsx';
 import CookieConsentBanner from '../CookieConsentBanner/CookieConsentBanner.tsx';
 import DriveRefreshProvider, {
   useDriveRefresh,
@@ -36,7 +38,7 @@ import {
 import { navActive } from '../../nav/navActive.ts';
 import { primaryNavItems } from '../../nav/primaryNavItems.ts';
 import { useBuildContextualStrip } from '../../nav/useBuildContextualStrip.ts';
-import { isBuildDetailPath } from '../../routes/builds/nav.ts';
+import { activeBuildSectionLabel, isBuildDetailPath } from '../../routes/builds/nav.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import shellClasses from '../v2/AppShell.module.css';
 import classes from './AppLayout.module.css';
@@ -90,7 +92,16 @@ function AppLayoutShell() {
   const staticStrip = resolveContextualStripItems(location.pathname);
   const buildStrip = useBuildContextualStrip(location.pathname);
   const stripItems = buildStrip ?? staticStrip;
-  const stripActive = stripItems ? activeContextualStripLabel(location.pathname, stripItems) : null;
+  const buildDetailId = isBuildDetailPath(location.pathname)
+    ? (location.pathname.match(/^\/builds\/([^/]+)/)?.[1] ?? null)
+    : null;
+  const stripActive = buildStrip
+    ? buildDetailId
+      ? activeBuildSectionLabel(location.pathname, buildDetailId)
+      : null
+    : stripItems
+      ? activeContextualStripLabel(location.pathname, stripItems)
+      : null;
   const showBuildSwitcher = isBuildDetailPath(location.pathname);
 
   const bottomItems: BottomTabItem[] = visibleTabs.map((item) => {
@@ -211,6 +222,8 @@ function AppLayoutShell() {
       stripActive={stripActive}
       goToStrip={goToStrip}
       showBuildSwitcher={showBuildSwitcher}
+      buildDetailId={buildDetailId}
+      pathname={location.pathname}
       bottomItems={bottomItems}
     />
   );
@@ -229,6 +242,8 @@ interface AppLayoutBodyProps {
   stripActive: string | null;
   goToStrip: (label: string) => void;
   showBuildSwitcher: boolean;
+  buildDetailId: string | null;
+  pathname: string;
   bottomItems: BottomTabItem[];
 }
 
@@ -245,6 +260,8 @@ function AppLayoutBody({
   stripActive,
   goToStrip,
   showBuildSwitcher,
+  buildDetailId,
+  pathname,
   bottomItems,
 }: AppLayoutBodyProps) {
   const navigate = useNavigate();
@@ -267,6 +284,9 @@ function AppLayoutBody({
           avatar={overflowAvatar}
         />
         <ChromeDismissibleNotices />
+        {showBuildSwitcher && buildDetailId ? (
+          <BuildIdentityBar buildId={buildDetailId} compact={isDesktopNav === false} />
+        ) : null}
         {stripItems && stripItems.length > 0 ? (
           <ContextualStrip
             items={stripItems.map((i) => i.label)}
@@ -275,6 +295,7 @@ function AppLayoutBody({
             leading={showBuildSwitcher ? <BuildSwitcher compact /> : undefined}
           />
         ) : null}
+        {showBuildSwitcher ? <BuildSubChrome pathname={pathname} /> : null}
       </DesignSystemV2Provider>
 
       <main
