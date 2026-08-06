@@ -121,12 +121,12 @@ function AppLayoutShell() {
   const compactChip = isDesktopNav === false;
 
   function handleProjectChipClick() {
-    if (hasActiveProject && location.pathname !== '/') {
-      setSwitcherOpen(true);
+    if (hasActiveProject && projects.length > 0) {
+      setSwitcherOpen((open) => !open);
       return;
     }
     if (hasActiveProject) {
-      setSwitcherOpen((open) => !open);
+      navigate('/');
       return;
     }
     navigate('/');

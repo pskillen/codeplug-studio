@@ -1,9 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useDriveActionClick } from '../../hooks/useDriveActionClick.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useDriveRefresh } from '../ProjectInterchangeBar/DriveRefreshProvider.tsx';
 import { useProjects } from '../../state/useProjects.ts';
-import { SETTINGS_DRIVE_SECTION_ID } from '../../lib/settingsSections.ts';
 import DismissibleNotice from '../v2/DismissibleNotice.tsx';
+import GoogleDriveNotConfiguredModal from '../import-export/GoogleDriveNotConfiguredModal.tsx';
 import InterchangeOverwriteModal from '../import-export/InterchangeOverwriteModal.tsx';
 
 /**
@@ -11,9 +12,10 @@ import InterchangeOverwriteModal from '../import-export/InterchangeOverwriteModa
  * Renders below the shell header, distinct from page `StatusBanner`.
  */
 export default function ChromeDismissibleNotices() {
-  const navigate = useNavigate();
   const { activeProject, activeProjectId } = useProjects();
   const { sessionExpired, connected } = useGoogleDrive();
+  const reconnectAction = useDriveActionClick();
+  const [notConfiguredOpen, setNotConfiguredOpen] = useState(false);
   const {
     bannerOpen,
     diff,
@@ -54,12 +56,19 @@ export default function ChromeDismissibleNotices() {
           action={{
             label: 'Reconnect',
             onClick: () =>
-              navigate('/settings', { state: { scrollTo: SETTINGS_DRIVE_SECTION_ID } }),
+              void reconnectAction.runAction({
+                onNotConfigured: () => setNotConfiguredOpen(true),
+                action: () => undefined,
+              }),
           }}
         >
           You&apos;re signed out of Google Drive — changes are saving to this device only.
         </DismissibleNotice>
       ) : null}
+      <GoogleDriveNotConfiguredModal
+        opened={notConfiguredOpen}
+        onClose={() => setNotConfiguredOpen(false)}
+      />
       <InterchangeOverwriteModal
         opened={overwriteOpen}
         title="Refresh from Google Drive?"
