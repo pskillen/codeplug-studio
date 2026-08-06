@@ -1,4 +1,5 @@
-import { Button, Group, Modal, Stack, Text } from '@mantine/core';
+import ConfirmModal from '../v2/ConfirmModal.tsx';
+import DesignSystemV2Provider from '../v2/DesignSystemV2Provider.tsx';
 
 export interface UnsavedChangesModalProps {
   opened: boolean;
@@ -8,26 +9,31 @@ export interface UnsavedChangesModalProps {
   message?: string;
 }
 
+/**
+ * C2 unsaved-changes confirm — v2 {@link ConfirmModal} with default (non-destructive) tone.
+ * Wraps its own {@link DesignSystemV2Provider} so editors outside the shell chrome scope still
+ * render ds tokens correctly.
+ */
 export default function UnsavedChangesModal({
   opened,
   onStay,
   onLeave,
-  title = 'Unsaved changes',
-  message = 'You have unsaved edits. Leave without saving?',
+  title = 'Discard unsaved changes?',
+  message = 'You have unsaved edits on this screen. Discard them and leave?',
 }: UnsavedChangesModalProps) {
   return (
-    <Modal opened={opened} onClose={onStay} title={title} centered>
-      <Stack gap="sm">
-        <Text size="sm">{message}</Text>
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onStay}>
-            Stay
-          </Button>
-          <Button color="red" onClick={onLeave}>
-            Leave
-          </Button>
-        </Group>
-      </Stack>
-    </Modal>
+    <DesignSystemV2Provider>
+      <ConfirmModal
+        open={opened}
+        onClose={onStay}
+        onConfirm={onLeave}
+        title={title}
+        cancelLabel="Stay"
+        confirmLabel="Discard"
+        tone="default"
+      >
+        {message}
+      </ConfirmModal>
+    </DesignSystemV2Provider>
   );
 }
