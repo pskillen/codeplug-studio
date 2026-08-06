@@ -22,7 +22,7 @@
 }
 
 .scrollBodyCompact {
-  padding: 0 16px 76px;
+  padding: 0 16px var(--dsv2-sticky-footer-height, 3.25rem);
 }
 
 .stickyHeader {
@@ -97,7 +97,7 @@
 }
 
 .createScrollBodyCompact {
-  padding: 0 16px 76px;
+  padding: 0 16px var(--dsv2-sticky-footer-height, 3.25rem);
 }
 
 .error {

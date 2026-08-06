@@ -13,6 +13,9 @@
   max-height: 100dvh;
   min-height: 0;
   overflow: hidden;
+  /* Tab padding + icon + label line (matches BottomTabBar.module.css). */
+  --dsv2-bottom-tab-bar-height: calc(50.6px + env(safe-area-inset-bottom, 0px));
+  --dsv2-sticky-footer-height: 3.25rem;
 }
 
 .main {
@@ -24,6 +27,11 @@
 
 .mainScroll {
   overflow: auto;
+}
+
+.rootWithBottomNav .mainScroll {
+  /* Let editor chrome (StickyFooter) sit flush above BottomTabBar. */
+  padding-bottom: 0;
 }
 
 /**

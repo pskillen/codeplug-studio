@@ -4,7 +4,7 @@ Sticky editor save bar with Cancel + Save and dirty/saved status.
 
 ## Purpose
 
-Batch 3 E1–E8 chrome. Sits at the bottom of scrollable editor content; parent should add bottom padding so fields are not obscured.
+Batch 3 E1–E8 chrome. On desktop, sticks to the bottom of the scrollable editor column. On mobile (≤48em) with `BottomTabBar`, `AppLayout` sets `--dsv2-bottom-tab-bar-height` and the footer is `position: fixed` flush above the tab bar; editor scroll bodies use `--dsv2-sticky-footer-height` for bottom padding.
 
 ## Props
 
@@ -22,7 +22,7 @@ Batch 3 E1–E8 chrome. Sits at the bottom of scrollable editor content; parent 
 ## Usage
 
 ```tsx
-<div style={{ paddingBottom: compact ? 76 : 84 }}>
+<div className={isMobile ? styles.scrollBodyCompact : styles.scrollBody}>
   {/* panels */}
   <StickyFooter
     saveLabel="Save channel"
@@ -34,6 +34,8 @@ Batch 3 E1–E8 chrome. Sits at the bottom of scrollable editor content; parent 
   />
 </div>
 ```
+
+`scrollBodyCompact` should use `padding-bottom: var(--dsv2-sticky-footer-height, 3.25rem)` so content clears the fixed footer on mobile.
 
 ## Related
 
