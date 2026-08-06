@@ -89,7 +89,7 @@ export default function TalkGroupsListPage() {
         key: 'actions',
         header: '',
         hideable: false,
-        width: '40px',
+        width: '52px',
         render: (tg) => (
           <EntityListRowDeleteAction kind="talkGroup" entityId={tg.id} label={tg.name} />
         ),

@@ -136,7 +136,7 @@ function DigitalContactsTable({
         key: 'actions',
         header: '',
         hideable: false,
-        width: '40px',
+        width: '52px',
         render: (c) => (
           <EntityListRowDeleteAction kind="digitalContact" entityId={c.id} label={c.name} />
         ),
@@ -229,7 +229,7 @@ function AnalogContactsTable({
         key: 'actions',
         header: '',
         hideable: false,
-        width: '40px',
+        width: '52px',
         render: (c) => (
           <EntityListRowDeleteAction kind="analogContact" entityId={c.id} label={c.name} />
         ),

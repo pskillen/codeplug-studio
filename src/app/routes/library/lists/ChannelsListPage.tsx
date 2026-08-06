@@ -355,7 +355,7 @@ export default function ChannelsListPage() {
         key: 'actions',
         header: '',
         hideable: false,
-        width: '40px',
+        width: '52px',
         render: (ch: Channel) => <ChannelListDeleteAction channel={ch} />,
       },
     ];
@@ -417,7 +417,7 @@ export default function ChannelsListPage() {
       >
         New channel
       </Button>
-      <Button variant="ghost" onClick={() => navigate('/library/channels/defaults')}>
+      <Button variant="outline" onClick={() => navigate('/library/channels/defaults')}>
         Channel defaults
       </Button>
     </div>

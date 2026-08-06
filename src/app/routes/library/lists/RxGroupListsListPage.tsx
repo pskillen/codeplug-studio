@@ -65,7 +65,7 @@ export default function RxGroupListsListPage() {
         key: 'actions',
         header: '',
         hideable: false,
-        width: '40px',
+        width: '52px',
         render: (r) => (
           <EntityListRowDeleteAction kind="rxGroupList" entityId={r.id} label={r.name} />
         ),

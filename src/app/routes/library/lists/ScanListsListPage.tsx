@@ -64,7 +64,7 @@ export default function ScanListsListPage() {
         key: 'actions',
         header: '',
         hideable: false,
-        width: '40px',
+        width: '52px',
         render: (r) => <EntityListRowDeleteAction kind="scanList" entityId={r.id} label={r.name} />,
       },
     ];
