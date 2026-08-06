@@ -17,12 +17,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { GradientSegmentedControl } from '../ui/index.ts';
-import {
-  Button,
-  DataTable,
-  type DataTableColumn,
-  type DataTableSortState,
-} from '../v2/index.ts';
+import { Button, DataTable, type DataTableColumn, type DataTableSortState } from '../v2/index.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
 import { createNameColumn } from '../../lib/libraryListTable.tsx';
 import {
