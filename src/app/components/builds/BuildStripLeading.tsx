@@ -4,17 +4,17 @@ import { radioTargetFor, compatibleEgressForProfile } from '@core/radio-targets/
 import { useOptionalBuildLayout } from '../../routes/builds/BuildLayoutContext.tsx';
 import { useFormatBuild } from '../../state/useFormatBuilds.ts';
 import BuildSwitcher from './BuildSwitcher/BuildSwitcher.tsx';
-import classes from './BuildIdentityBar.module.css';
+import classes from './BuildStripLeading.module.css';
 
-export interface BuildIdentityBarProps {
+export interface BuildStripLeadingProps {
   buildId: string;
   compact?: boolean;
 }
 
 /**
- * mk2 B2 slim identity row — build switcher, radio target, active pathway cue.
+ * mk2 B2 — build switcher + radio/pathway meta in the contextual strip leading slot.
  */
-export default function BuildIdentityBar({ buildId, compact }: BuildIdentityBarProps) {
+export default function BuildStripLeading({ buildId, compact }: BuildStripLeadingProps) {
   const layout = useOptionalBuildLayout();
   const { build: hookBuild } = useFormatBuild(buildId);
   const build = layout?.build ?? hookBuild;
@@ -33,16 +33,14 @@ export default function BuildIdentityBar({ buildId, compact }: BuildIdentityBarP
       <Link to="/builds" className={classes.backLink}>
         Export for radio
       </Link>
-      <div className={classes.identity}>
-        <BuildSwitcher compact />
-        <Text size="xs" c="dimmed" className={classes.meta}>
-          {radioLabel}
-          <span className={classes.dot} aria-hidden>
-            ·
-          </span>
-          {pathwayLabel}
-        </Text>
-      </div>
+      <BuildSwitcher compact />
+      <Text size="xs" c="dimmed" className={classes.meta}>
+        {radioLabel}
+        <span className={classes.dot} aria-hidden>
+          ·
+        </span>
+        {pathwayLabel}
+      </Text>
     </div>
   );
 }

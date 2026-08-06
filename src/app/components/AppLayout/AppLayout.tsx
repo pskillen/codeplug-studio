@@ -12,8 +12,7 @@ import {
 } from '../v2/index.ts';
 import type { BottomTabItem } from '../v2/BottomTabBar.tsx';
 import BuildFooter from '../BuildFooter/BuildFooter.tsx';
-import BuildSwitcher from '../builds/BuildSwitcher/BuildSwitcher.tsx';
-import BuildIdentityBar from '../builds/BuildIdentityBar.tsx';
+import BuildStripLeading from '../builds/BuildStripLeading.tsx';
 import BuildSubChrome from '../builds/BuildSubChrome.tsx';
 import CookieConsentBanner from '../CookieConsentBanner/CookieConsentBanner.tsx';
 import DriveRefreshProvider, {
@@ -284,15 +283,16 @@ function AppLayoutBody({
           avatar={overflowAvatar}
         />
         <ChromeDismissibleNotices />
-        {showBuildSwitcher && buildDetailId ? (
-          <BuildIdentityBar buildId={buildDetailId} compact={isDesktopNav === false} />
-        ) : null}
         {stripItems && stripItems.length > 0 ? (
           <ContextualStrip
             items={stripItems.map((i) => i.label)}
             active={stripActive ?? undefined}
             onChange={goToStrip}
-            leading={showBuildSwitcher ? <BuildSwitcher compact /> : undefined}
+            leading={
+              showBuildSwitcher && buildDetailId ? (
+                <BuildStripLeading buildId={buildDetailId} compact={isDesktopNav === false} />
+              ) : undefined
+            }
           />
         ) : null}
         {showBuildSwitcher ? <BuildSubChrome pathname={pathname} /> : null}

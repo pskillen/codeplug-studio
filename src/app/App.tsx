@@ -46,6 +46,7 @@ import StyleguideV2OverlaysPage from './routes/styleguide/v2/StyleguideV2Overlay
 import StyleguideV2MembershipPage from './routes/styleguide/v2/StyleguideV2MembershipPage.tsx';
 import StyleguideV2NavigationPage from './routes/styleguide/v2/StyleguideV2NavigationPage.tsx';
 import StyleguideV2PatternsPage from './routes/styleguide/v2/StyleguideV2PatternsPage.tsx';
+import StyleguideV2ContainersPage from './routes/styleguide/v2/StyleguideV2ContainersPage.tsx';
 import DebugIndexPage from './routes/debug/DebugIndexPage.tsx';
 import DebugIndexedDbPage from './routes/debug/DebugIndexedDbPage.tsx';
 import DebugIndexedDbStorePage from './routes/debug/DebugIndexedDbStorePage.tsx';
@@ -112,6 +113,7 @@ export const appRouter = createBrowserRouter([
           { path: 'membership', element: <StyleguideV2MembershipPage /> },
           { path: 'navigation', element: <StyleguideV2NavigationPage /> },
           { path: 'patterns', element: <StyleguideV2PatternsPage /> },
+          { path: 'containers', element: <StyleguideV2ContainersPage /> },
         ],
       },
       { path: '/debug', element: <DebugIndexPage /> },

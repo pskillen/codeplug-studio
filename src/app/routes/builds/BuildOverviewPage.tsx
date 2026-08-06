@@ -1,11 +1,11 @@
-import { Text } from '@mantine/core';
+import { Stack, Text } from '@mantine/core';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { radioTargetFor } from '@core/radio-targets/index.ts';
 import { capabilityLabel } from '../../lib/buildCapabilityCopy.ts';
 import { BuildService } from '../../state/buildService.ts';
 import { persistence } from '../../state/persistence.ts';
-import { Button, Pill, TextInput } from '../../components/v2/index.ts';
+import { Button, Panel, Pill, TextInput } from '../../components/v2/index.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 import classes from './BuildOverviewPage.module.css';
 
@@ -58,60 +58,61 @@ export default function BuildOverviewPage() {
         </p>
       </div>
 
-      <section className={classes.panel}>
-        <h2 className={classes.panelTitle}>Identity</h2>
-        <TextInput
-          label="Name"
-          value={displayName}
-          onChange={(e) => setName(e.currentTarget.value)}
-        />
-        {error ? (
-          <Text c="red" size="sm">
-            {error}
+      <Panel title="Identity">
+        <Stack gap="sm">
+          <TextInput
+            label="Name"
+            value={displayName}
+            onChange={(e) => setName(e.currentTarget.value)}
+          />
+          {error ? (
+            <Text c="red" size="sm">
+              {error}
+            </Text>
+          ) : null}
+          <div className={classes.rowActions}>
+            <Button loading={saving} disabled={!nameDirty} onClick={() => void handleSave()}>
+              Save name
+            </Button>
+          </div>
+        </Stack>
+      </Panel>
+
+      <Panel title="Capabilities">
+        <Stack gap="sm">
+          <Text size="sm" c="dimmed">
+            Short labels for this radio target. See{' '}
+            <Link to={`/builds/${build.id}/characteristics`}>Radio characteristics</Link> for limits
+            and RF detail.
           </Text>
-        ) : null}
-        <div className={classes.rowActions}>
-          <Button loading={saving} disabled={!nameDirty} onClick={() => void handleSave()}>
-            Save name
-          </Button>
-        </div>
-      </section>
-
-      <section className={classes.panel}>
-        <h2 className={classes.panelTitle}>Capabilities</h2>
-        <p className={classes.panelHint}>
-          Short labels for this radio target. See{' '}
-          <Link to={`/builds/${build.id}/characteristics`}>Radio characteristics</Link> for limits
-          and RF detail.
-        </p>
-        <div className={classes.pills}>
-          {(radioTarget?.traits ?? []).map((trait) => (
-            <Pill key={trait} tone="neutral">
-              {capabilityLabel(trait)}
-            </Pill>
-          ))}
-        </div>
-        {egressPaths.length > 0 ? (
-          <ul className={classes.egressList}>
-            {egressPaths.map((path) => (
-              <li key={path.id}>
-                {path.label ?? path.profileId}
-                {build.defaultEgressPathId === path.id ? ' (default)' : ''}
-              </li>
+          <div className={classes.pills}>
+            {(radioTarget?.traits ?? []).map((trait) => (
+              <Pill key={trait} tone="neutral">
+                {capabilityLabel(trait)}
+              </Pill>
             ))}
-          </ul>
-        ) : null}
-        <p className={classes.panelHint}>
-          Export pathways are chosen on <Link to={`/builds/${build.id}/export`}>Export</Link>.
-        </p>
-      </section>
+          </div>
+          {egressPaths.length > 0 ? (
+            <ul className={classes.egressList}>
+              {egressPaths.map((path) => (
+                <li key={path.id}>
+                  {path.label ?? path.profileId}
+                  {build.defaultEgressPathId === path.id ? ' (default)' : ''}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <Text size="sm" c="dimmed">
+            Export pathways are chosen on <Link to={`/builds/${build.id}/export`}>Export</Link>.
+          </Text>
+        </Stack>
+      </Panel>
 
-      <section className={classes.dangerPanel}>
-        <h2 className={classes.panelTitle}>Danger zone</h2>
-        <p className={classes.panelHint}>
-          Deleting a build removes its export history and overrides. Channels and zones in your
-          library are not affected.
-        </p>
+      <Panel
+        variant="danger"
+        title="Danger zone"
+        sub="Deleting a build removes its export history and overrides. Channels and zones in your library are not affected."
+      >
         <Button
           variant="destructive"
           size="sm"
@@ -120,7 +121,7 @@ export default function BuildOverviewPage() {
         >
           Delete build
         </Button>
-      </section>
+      </Panel>
     </div>
   );
 }
