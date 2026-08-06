@@ -58,10 +58,7 @@ export interface SplitFilterProps {
 export function SplitFilter({ options, value, onChange, disabled }: SplitFilterProps) {
   return (
     <div
-      className={[
-        classes.splitFilter,
-        value ? classes.splitFilterActive : '',
-      ]
+      className={[classes.splitFilter, value ? classes.splitFilterActive : '']
         .filter(Boolean)
         .join(' ')}
       role="group"

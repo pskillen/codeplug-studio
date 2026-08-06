@@ -8,10 +8,10 @@ Pill chips and a two-way split toggle matching mk2 Batch 2 facet bars. Lives und
 
 ## Components
 
-| Export        | Role                                                  |
-| ------------- | ----------------------------------------------------- |
-| `FacetBar`    | Horizontal chip row; optional `scrollable` for mobile |
-| `FacetChip`   | Single filter chip with active state                  |
+| Export        | Role                                                                  |
+| ------------- | --------------------------------------------------------------------- |
+| `FacetBar`    | Horizontal chip row; optional `scrollable` for mobile                 |
+| `FacetChip`   | Single filter chip with active state                                  |
 | `SplitFilter` | Two-option pill toggle; re-clicking the active option clears (`null`) |
 
 ## Usage
