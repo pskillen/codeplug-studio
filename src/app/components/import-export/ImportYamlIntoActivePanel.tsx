@@ -5,7 +5,7 @@ import { useProjects } from '../../state/useProjects.ts';
 import DriveBrowserModal from './DriveBrowserModal.tsx';
 import GoogleDriveActionButton from './GoogleDriveActionButton.tsx';
 import InterchangeOverwriteModal from './InterchangeOverwriteModal.tsx';
-import YamlFileDropzone from './YamlFileDropzone.tsx';
+import ProjectYamlFileDropzone from './ProjectYamlFileDropzone.tsx';
 
 export default function ImportYamlIntoActivePanel() {
   const { activeProjectId, activeProject } = useProjects();
@@ -18,16 +18,14 @@ export default function ImportYamlIntoActivePanel() {
 
   return (
     <Stack gap="sm">
-      <YamlFileDropzone
+      <ProjectYamlFileDropzone
         onFileText={(text, fileName) => resolver.handleLocalFile(fileName, text)}
         disabled={resolver.importing}
+        error={resolver.error && !resolver.overwriteOpen ? resolver.error : null}
       />
       <GoogleDriveActionButton disabled={resolver.importing} onClick={() => setDriveOpen(true)}>
         Open from Drive
       </GoogleDriveActionButton>
-      {resolver.error && !resolver.overwriteOpen ? (
-        <Alert color="red">{resolver.error}</Alert>
-      ) : null}
       <DriveBrowserModal
         opened={driveOpen}
         onClose={() => setDriveOpen(false)}

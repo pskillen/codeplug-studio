@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { MantineProvider } from '@mantine/core';
 import InterchangeOverwriteModal from './InterchangeOverwriteModal.tsx';
 import { testProjectSyncDiff } from './testProjectSyncDiff.ts';
 
@@ -10,17 +9,15 @@ function renderModal(props: Partial<React.ComponentProps<typeof InterchangeOverw
   const onImportAsNew = vi.fn();
 
   render(
-    <MantineProvider>
-      <InterchangeOverwriteModal
-        opened
-        title="Refresh from Google Drive?"
-        projectName="Demo"
-        diff={testProjectSyncDiff({}, { counts: { channels: 3 } })}
-        onClose={onClose}
-        onConfirm={onConfirm}
-        {...props}
-      />
-    </MantineProvider>,
+    <InterchangeOverwriteModal
+      opened
+      title="Refresh from Google Drive?"
+      projectName="Demo"
+      diff={testProjectSyncDiff({}, { counts: { channels: 3 } })}
+      onClose={onClose}
+      onConfirm={onConfirm}
+      {...props}
+    />,
   );
 
   return { onClose, onConfirm, onImportAsNew };
@@ -52,7 +49,7 @@ describe('InterchangeOverwriteModal', () => {
   it('surfaces import errors without closing', () => {
     renderModal({ error: 'YAML project id does not match active project' });
 
-    expect(screen.getByText('Import failed')).toBeInTheDocument();
+    expect(screen.getByText(/Import failed/)).toBeInTheDocument();
     expect(screen.getByText(/does not match active project/)).toBeInTheDocument();
   });
 
