@@ -1,16 +1,20 @@
 import { useMemo, useState } from 'react';
-import { Group } from '@mantine/core';
-import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
+import { IconId, IconPlus } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import type { AnalogContact, DigitalContact } from '@core/models/library.ts';
 import { entityListColumnsKey } from '@integrations/listPrefs/keys.ts';
 import DeleteAllDigitalContactsDialog from '../../../components/contacts/DeleteAllDigitalContactsDialog.tsx';
 import AddFromDataSourceModal from '../../../components/library/AddFromDataSourceModal.tsx';
-import EntityListDeleteAction from '../../../components/library/EntityListDeleteAction.tsx';
+import EntityListRowDeleteAction from '../../../components/library/EntityListRowDeleteAction.tsx';
+import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
 import ModePill from '../../../components/pills/ModePill.tsx';
-import { Button, DesignSystemV2Provider, Panel } from '../../../components/v2/index.ts';
-import { DataTable } from '../../../components/ui/index.ts';
-import type { DataTableColumn } from '../../../components/ui/DataTable.tsx';
+import {
+  Button,
+  DataTable,
+  DesignSystemV2Provider,
+  Panel,
+  type DataTableColumn,
+} from '../../../components/v2/index.ts';
 import {
   filterRowsByName,
   filterRowsBySearchFields,
@@ -19,6 +23,12 @@ import {
 import { usePersistedEntityListSort } from '../../../hooks/usePersistedEntityListSort.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../../lib/dataTable/sort.ts';
 import { CONTACT_ADD_SOURCES } from '../../../lib/contactDataSources.ts';
+import {
+  createNameColumn,
+  usePersistedColumnVisibility,
+  v1SortToV2,
+  v2SortToV1,
+} from '../../../lib/libraryListTable.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import {
   formatReferenceCount,
@@ -27,7 +37,7 @@ import {
 } from '../../../lib/listReferences.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
 import { useProjects } from '../../../state/useProjects.ts';
-import classes from './LibraryListPage.module.css';
+import classes from '../../../components/library/LibraryInventoryPage.module.css';
 
 function DigitalContactsTable({
   contacts,
@@ -38,6 +48,7 @@ function DigitalContactsTable({
   library: ReturnType<typeof useLibrary>['library'];
   onDeleteAll: () => void;
 }) {
+  const navigate = useNavigate();
   const { activeProjectId } = useProjects();
   const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
     useListNameQuery('digital-contacts');
@@ -54,11 +65,30 @@ function DigitalContactsTable({
     ? entityListColumnsKey('digital-contacts', activeProjectId)
     : undefined;
 
+  const columnDefs = useMemo(
+    () => [
+      { key: 'callsign', defaultVisible: true },
+      { key: 'country', defaultVisible: false },
+      { key: 'channels', defaultVisible: true },
+      { key: 'comment', defaultVisible: false },
+    ],
+    [],
+  );
+  const [visibleKeys, setVisibleKeys] = usePersistedColumnVisibility(
+    columnStorageKey,
+    columnDefs,
+  );
+
   const columns = useMemo((): DataTableColumn<DigitalContact>[] => {
     return [
+      createNameColumn<DigitalContact>({
+        getName: (c) => c.name,
+        getPath: (c) => `/library/digital-contacts/${c.id}`,
+      }),
       {
         key: 'mode',
         header: 'Mode',
+        hideOnMobile: true,
         render: (c) => <ModePill mode={c.mode} size="xs" />,
         sortValue: (c) => c.mode,
       },
@@ -66,6 +96,7 @@ function DigitalContactsTable({
         key: 'callsign',
         header: 'Callsign',
         hideable: true,
+        hideOnMobile: true,
         render: (c) => c.callsign || '—',
         sortValue: (c) => c.callsign || '',
       },
@@ -80,6 +111,7 @@ function DigitalContactsTable({
         header: 'Country',
         hideable: true,
         defaultVisible: false,
+        hideOnMobile: true,
         render: (c) => c.country || '—',
         sortValue: (c) => c.country || '',
       },
@@ -99,6 +131,7 @@ function DigitalContactsTable({
         header: 'Comment',
         hideable: true,
         defaultVisible: false,
+        hideOnMobile: true,
         render: (c) => c.comment || '—',
         sortValue: (c) => c.comment || '',
       },
@@ -106,46 +139,55 @@ function DigitalContactsTable({
         key: 'actions',
         header: '',
         hideable: false,
+        width: '40px',
         render: (c) => (
-          <EntityListDeleteAction kind="digitalContact" entityId={c.id} label={c.name} />
+          <EntityListRowDeleteAction kind="digitalContact" entityId={c.id} label={c.name} />
         ),
       },
     ];
   }, [referenceIndex]);
 
   return (
-    <DataTable
-      variant="list"
-      scale="extreme"
-      selectionChrome="v2"
-      rows={filtered}
-      totalRowCount={contacts.length}
-      search={nameFilterInput}
-      searchPending={nameFilterPending}
-      onSearchChange={setNameFilter}
-      searchPlaceholder="Filter name or callsign…"
-      sort={sort}
-      onSortChange={setSort}
-      rowKey={(c) => c.id}
-      nameColumn={{
-        getName: (c) => c.name,
-        getPath: (c) => `/library/digital-contacts/${c.id}`,
-      }}
-      columns={columns}
-      columnVisibilityStorageKey={columnStorageKey}
-      toolbar={
-        <Group gap="xs">
-          <Button
-            variant="destructive"
-            size="sm"
-            disabled={contacts.length === 0}
-            onClick={onDeleteAll}
-          >
-            Delete all
-          </Button>
-        </Group>
-      }
-    />
+    <>
+      <div className={classes.toolbarActions}>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={contacts.length === 0}
+          onClick={onDeleteAll}
+        >
+          Delete all digital contacts
+        </Button>
+      </div>
+      <DataTable
+        columns={columns}
+        rows={filtered}
+        getRowId={(c) => c.id}
+        scale="extreme"
+        totalRowCount={contacts.length}
+        visibleKeys={visibleKeys}
+        onVisibleKeysChange={setVisibleKeys}
+        search={{
+          value: nameFilterInput,
+          onChange: setNameFilter,
+          placeholder: 'Filter name or callsign…',
+          pending: nameFilterPending,
+        }}
+        sort={v1SortToV2(sort)}
+        onSortChange={(next) => {
+          const v1 = v2SortToV1(next);
+          if (v1) setSort(v1);
+        }}
+        emptyMessage="No digital contacts in this project yet."
+        filteredEmptyMessage={
+          nameFilter.trim()
+            ? `No digital contacts match “${nameFilter.trim()}”.`
+            : 'No digital contacts match your filter.'
+        }
+        caption="Imported contacts may include RadioID.net provenance metadata."
+        onRowActivate={(c) => navigate(`/library/digital-contacts/${c.id}`)}
+      />
+    </>
   );
 }
 
@@ -156,6 +198,7 @@ function AnalogContactsTable({
   contacts: AnalogContact[];
   library: ReturnType<typeof useLibrary>['library'];
 }) {
+  const navigate = useNavigate();
   const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
     useListNameQuery('analog-contacts');
   const [sort, setSort] = usePersistedEntityListSort('analog-contacts', {
@@ -170,17 +213,15 @@ function AnalogContactsTable({
 
   const columns = useMemo((): DataTableColumn<AnalogContact>[] => {
     return [
+      createNameColumn<AnalogContact>({
+        getName: (c) => c.name,
+        getPath: (c) => `/library/analog-contacts/${c.id}`,
+      }),
       {
         key: 'code',
-        header: 'Code',
+        header: 'CTCSS tone',
         render: (c) => c.code || '—',
         sortValue: (c) => c.code || '',
-      },
-      {
-        key: 'comment',
-        header: 'Comment',
-        render: (c) => c.comment || '—',
-        sortValue: (c) => c.comment || '',
       },
       {
         key: 'channels',
@@ -196,8 +237,9 @@ function AnalogContactsTable({
         key: 'actions',
         header: '',
         hideable: false,
+        width: '40px',
         render: (c) => (
-          <EntityListDeleteAction kind="analogContact" entityId={c.id} label={c.name} />
+          <EntityListRowDeleteAction kind="analogContact" entityId={c.id} label={c.name} />
         ),
       },
     ];
@@ -205,22 +247,28 @@ function AnalogContactsTable({
 
   return (
     <DataTable
-      variant="list"
-      selectionChrome="v2"
-      rows={filtered}
-      totalRowCount={contacts.length}
-      search={nameFilterInput}
-      searchPending={nameFilterPending}
-      onSearchChange={setNameFilter}
-      searchPlaceholder="Filter name…"
-      sort={sort}
-      onSortChange={setSort}
-      rowKey={(c) => c.id}
-      nameColumn={{
-        getName: (c) => c.name,
-        getPath: (c) => `/library/analog-contacts/${c.id}`,
-      }}
       columns={columns}
+      rows={filtered}
+      getRowId={(c) => c.id}
+      totalRowCount={contacts.length}
+      search={{
+        value: nameFilterInput,
+        onChange: setNameFilter,
+        placeholder: 'Filter name…',
+        pending: nameFilterPending,
+      }}
+      sort={v1SortToV2(sort)}
+      onSortChange={(next) => {
+        const v1 = v2SortToV1(next);
+        if (v1) setSort(v1);
+      }}
+      emptyMessage="No analog contacts in this project yet."
+      filteredEmptyMessage={
+        nameFilter.trim()
+          ? `No analog contacts match “${nameFilter.trim()}”.`
+          : 'No analog contacts match your filter.'
+      }
+      onRowActivate={(c) => navigate(`/library/analog-contacts/${c.id}`)}
     />
   );
 }
@@ -231,38 +279,34 @@ export default function ContactsListPage() {
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const [addFromOpen, setAddFromOpen] = useState(false);
 
+  const digitalCount = library.digitalContacts.length;
+  const analogCount = library.analogContacts.length;
+  const countSubtitle = `${digitalCount.toLocaleString()} digital · ${analogCount.toLocaleString()} analog`;
+
   const listActions = (
-    <Group gap="xs" className={classes.toolbarActions}>
+    <>
+      <Button
+        variant="secondary"
+        leftSection={<IconId size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => navigate('/library/contacts/add-from-radioid')}
+      >
+        Import from RadioID
+      </Button>
       <Button
         variant="primary"
         leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
         onClick={() => navigate('/library/digital-contacts/new')}
       >
-        New digital contact
+        New contact
       </Button>
-      <Button
-        variant="secondary"
-        leftSection={<IconPlus size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-        onClick={() => navigate('/library/analog-contacts/new')}
-      >
-        New analog contact
-      </Button>
-      <Button
-        variant="secondary"
-        leftSection={<IconWorldSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-        onClick={() => setAddFromOpen(true)}
-      >
-        Add from…
-      </Button>
-    </Group>
+    </>
   );
 
   if (loading) {
     return (
       <DesignSystemV2Provider>
         <div className={classes.page}>
-          <h1 className={classes.title}>Contacts</h1>
-          <p className={classes.description}>Loading library…</p>
+          <LibraryInventoryHeader title="Contacts" subtitle="Loading library…" />
         </div>
       </DesignSystemV2Provider>
     );
@@ -271,15 +315,13 @@ export default function ContactsListPage() {
   return (
     <DesignSystemV2Provider>
       <div className={classes.page}>
-        <div className={classes.headerRow}>
-          <div>
-            <h1 className={classes.title}>Contacts</h1>
-            <p className={classes.description}>Digital and analog contacts in one inventory.</p>
-          </div>
-          {listActions}
-        </div>
+        <LibraryInventoryHeader
+          title="Contacts"
+          subtitle={countSubtitle}
+          actions={listActions}
+        />
 
-        <Panel title={`Digital contacts (${library.digitalContacts.length})`}>
+        <Panel title={`Digital contacts (${digitalCount})`}>
           <DigitalContactsTable
             contacts={library.digitalContacts}
             library={library}
@@ -287,7 +329,7 @@ export default function ContactsListPage() {
           />
         </Panel>
 
-        <Panel title={`Analog contacts (${library.analogContacts.length})`}>
+        <Panel title={`Analog contacts (${analogCount})`}>
           <AnalogContactsTable contacts={library.analogContacts} library={library} />
         </Panel>
 
