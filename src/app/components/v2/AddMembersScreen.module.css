@@ -1,0 +1,98 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  background: var(--dsv2-bg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dsv2-space-4);
+  padding: var(--dsv2-panel-padding-y) var(--dsv2-panel-padding-x);
+  border-bottom: 1px solid var(--dsv2-border-quiet);
+}
+
+.title {
+  font-size: var(--dsv2-font-heading);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+}
+
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px var(--dsv2-panel-padding-x) 0;
+  border-bottom: 1px solid var(--dsv2-border-quiet);
+}
+
+.tab {
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
+.tabActive {
+  border-bottom-color: var(--dsv2-accent);
+  color: var(--dsv2-text-primary);
+  font-weight: 600;
+}
+
+.tabCount {
+  margin-left: 6px;
+  color: var(--dsv2-text-tertiary);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: var(--dsv2-space-4) var(--dsv2-panel-padding-x) 0;
+  padding: 6px 10px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-tertiary);
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-primary);
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--dsv2-space-4) var(--dsv2-panel-padding-x);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: var(--dsv2-panel-padding-y) var(--dsv2-panel-padding-x);
+  border-top: 1px solid var(--dsv2-border-quiet);
+}

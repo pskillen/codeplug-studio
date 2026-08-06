@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
-import { MembershipPanel, MembershipPoolRow, MembershipRow } from '../../../components/v2/index.ts';
+import {
+  AddMembersScreen,
+  Button,
+  MembershipPanel,
+  MembershipPoolRow,
+  MembershipRow,
+} from '../../../components/v2/index.ts';
 
 interface DemoMember {
   id: string;
@@ -15,10 +21,24 @@ const INITIAL_MEMBERS: DemoMember[] = [
   { id: '3', label: 'GB7GM Glasgow', subtitle: '145.6375 MHz' },
 ];
 
+const POOL_CANDIDATES = [
+  { id: 'p1', label: 'GB3ZA Aberdeen', subtitle: '145.6125 MHz' },
+  { id: 'p2', label: 'GB3PZ Perth', subtitle: '145.7125 MHz' },
+];
+
+const ADD_SECTIONS = [
+  { id: 'channels', label: 'Channels', count: POOL_CANDIDATES.length },
+  { id: 'zones', label: 'Zones', count: 0 },
+];
+
 export default function StyleguideV2MembershipPage() {
   const [members, setMembers] = useState(INITIAL_MEMBERS);
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState('');
+  const [addScreenOpen, setAddScreenOpen] = useState(false);
+  const [activeSectionId, setActiveSectionId] = useState('channels');
+  const [staged, setStaged] = useState<string[]>([]);
+  const [addSearch, setAddSearch] = useState('');
 
   const filtered = members.filter((m) => m.label.toLowerCase().includes(search.toLowerCase()));
 
@@ -39,6 +59,17 @@ export default function StyleguideV2MembershipPage() {
       }
       return next;
     });
+  };
+
+  const toggleStaged = (id: string) => {
+    setStaged((prev) => (prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]));
+  };
+
+  const commitStaged = () => {
+    const added = POOL_CANDIDATES.filter((c) => staged.includes(c.id));
+    setMembers((prev) => [...prev, ...added]);
+    setStaged([]);
+    setAddScreenOpen(false);
   };
 
   return (
@@ -80,7 +111,7 @@ export default function StyleguideV2MembershipPage() {
           title="Zone members"
           description={`${members.length} direct`}
           addLabel="Add members"
-          onAdd={() => undefined}
+          onAdd={() => setAddScreenOpen(true)}
           search={{ value: search, onChange: setSearch }}
           onSortClick={() => undefined}
           selectedCount={selected.length}
@@ -125,6 +156,47 @@ export default function StyleguideV2MembershipPage() {
           ))}
         </MembershipPanel>
       </PageSection>
+
+      <PageSection
+        title="AddMembersScreen"
+        description="Full-screen picker takeover triggered by MembershipPanel's + Add members above."
+      >
+        <Button variant="secondary" size="sm" onClick={() => setAddScreenOpen(true)}>
+          Open AddMembersScreen
+        </Button>
+      </PageSection>
+
+      <AddMembersScreen
+        open={addScreenOpen}
+        title="Add channels"
+        onCancel={() => setAddScreenOpen(false)}
+        sections={ADD_SECTIONS}
+        activeSectionId={activeSectionId}
+        onSectionChange={setActiveSectionId}
+        search={{ value: addSearch, onChange: setAddSearch }}
+        totalStaged={staged.length}
+        onCommit={commitStaged}
+      >
+        {activeSectionId === 'channels' ? (
+          POOL_CANDIDATES.filter((c) =>
+            c.label.toLowerCase().includes(addSearch.toLowerCase()),
+          ).map((candidate) => (
+            <MembershipPoolRow
+              key={candidate.id}
+              label={candidate.label}
+              subtitle={candidate.subtitle}
+              checked={staged.includes(candidate.id)}
+              onCheck={() => toggleStaged(candidate.id)}
+            />
+          ))
+        ) : (
+          <MembershipPoolRow
+            label="Zone: Highlands (this zone)"
+            disabled
+            reason="This zone — cannot nest a zone in itself"
+          />
+        )}
+      </AddMembersScreen>
     </Page>
   );
 }
