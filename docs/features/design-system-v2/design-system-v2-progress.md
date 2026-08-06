@@ -9,8 +9,9 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Slice                       | Status      | Branch / PR                                                     | Notes                                                                                                        |
 | --------------------------- | ----------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Foundations gap-fill (#938) | Shipped     | [PR #946](https://github.com/pskillen/codeplug-studio/pull/946) | Overlays, DataTable v2 full capability set, Membership family, forms/feedback, build stubs, icon-size tokens |
-| Shell & project (#939)      | In progress | `939/pskillen/ds-r2-shell`                                      | S1–S4, P1 Home, P3 Drive modals, P4 Quick start — mk2 Batch 1 + P4                                           |
+| Shell & project (#939)      | Shipped     | merged to `main`                                                | S1–S4, P1 Home, P3 Drive modals, P4 Quick start — mk2 Batch 1 + P4                                           |
 | Library lists (#940)        | Shipped     | `940/pskillen/ds-r2-library-lists`                              | Batch 2 L1–L7, C3, C7 — v2 DataTable + L1 chrome + ModalShell bulk overlays                                  |
+| Channel editor (#941)       | In progress | `941/pskillen/ds-r2-channel-editor`                             | Batch 3 E1 — EditorHeader/StickyFooter + stacked modes + sticky footer                                       |
 
 ### #940 library lists (Batch 2)
 
@@ -46,6 +47,17 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 - [x] `npm run format:check && npm run lint && npm run test && npm run build`
 - [x] Manual desktop + narrow pass on every new/extended `/styleguide/v2/*` page
 
+### #941 channel editor (E1)
+
+| Sub-slice                | Status      | Notes                                                                                                        |
+| ------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------ |
+| Kickoff + diff checklist | Complete    | Branch `941/pskillen/ds-r2-channel-editor`                                                                   |
+| v2 EditorHeader/StickyFooter | Pending | Batch 3 canvas helpers missed from #938 — promote for E1–E8 reuse                                            |
+| E1 shell + sections      | Pending     | Replace mk1 sticky header + `SectionNav` + Modes tabs with footer + stacked Mode settings                    |
+| Product panels           | Pending     | Scanning / APRS / Repeater restyled into E1 chrome (not in mk2 frames — product continuity)                 |
+
+**Desktop/narrow deltas vs live:** sticky **header** + horizontal `SectionNav` + separate Modes panel → `EditorHeader` + scroll panels + `StickyFooter`; modes as Identity multi-select chips; settings stack in one panel; Power under Frequency; Zones light chips (not Membership shuttle).
+
 ## Next
 
-**r2 retrofit** continues with [#941](https://github.com/pskillen/codeplug-studio/issues/941) channel editor (Batch 3) after [#939](https://github.com/pskillen/codeplug-studio/issues/939) merges.
+**r2 retrofit** in flight: [#941](https://github.com/pskillen/codeplug-studio/issues/941) channel editor (E1); then membership editors ([#942](https://github.com/pskillen/codeplug-studio/issues/942)).
