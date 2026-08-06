@@ -15,13 +15,21 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Membership editors (#942)   | Shipped     | [PR pending]                                                    | Batch 3 E2/M1/E6/E7 — zone workspace, RGL timeslot, scan minimal M1                                          |
 | Form editors + zone (#943)  | In progress | `943/pskillen/ds-r2-form-editors`                               | Batch 3 E3–E5, E8, M2, M3 — stacked on #942 branch                                                           |
 | Builds & radio (#924)       | Shipped     | PR pending                                                      | Batch 4 B0–B12, R1, R2 — stacked on #943 branch                                                              |
-| Directories & ingest (#944) | In progress | `944/pskillen/ds-r2-directories-ingest` (stacked on #924)       | Batch 5 D1–D4, P2, C5, C6                                                                                    |
+| Directories & ingest (#944) | Shipped     | `944/pskillen/ds-r2-directories-ingest` (stacked on #924)       | Batch 5 D1–D4, P2, C5, C6 — PR pending                                                      |
 
 ### #944 directories & ingest (Batch 5 D1–D4, P2, C5, C6)
 
-| Sub-slice                | Status      | Notes                                                                                       |
-| ------------------------ | ----------- | ------------------------------------------------------------------------------------------- |
-| Kickoff + diff checklist | In progress | Branch `944/pskillen/ds-r2-directories-ingest` from `924/pskillen/ds-r2-builds-radio`       |
+| Sub-slice                | Status   | Notes                                                                                       |
+| ------------------------ | -------- | ------------------------------------------------------------------------------------------- |
+| Kickoff + diff checklist | Complete | Branch `944/pskillen/ds-r2-directories-ingest` from `924/pskillen/ds-r2-builds-radio`       |
+| D1 repeater directories  | Complete | `DirectoryIngestPage`, v2 filters/table/map, `CountryComboboxField`, `ModalShell` update    |
+| D2 OpenAIP               | Complete | Shared ingest shell; airport card layout retained                                            |
+| D3 RadioID               | Complete | Pagination caption, preview/update/bulk on `ModalShell`                                     |
+| D4 channel sets          | Complete | `ChannelSetPicker` on mk2 ingest frame + v2 embedded table                                  |
+| P2/C6 YAML ingest        | Complete | `ProjectYamlFileDropzone`; `ConfirmModal` / `ModalShell` overwrite                          |
+| C5 Combobox              | Complete | `CountryComboboxField` on RepeaterBook + RadioID country filters                              |
+| Add-from modal           | Complete | `AddFromDataSourceModal` on `ModalShell`                                                    |
+| Docs + PR                | Complete | Feature hubs + sidecars; PR `Closes #944`                                                   |
 
 **mk2 diff (live → Batch 5 ingest):**
 
@@ -112,9 +120,14 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## Next
 
-**r2 retrofit** in flight: directories & ingest ([#944](https://github.com/pskillen/codeplug-studio/issues/944)) on `944/pskillen/ds-r2-directories-ingest` (stacked on [#924](https://github.com/pskillen/codeplug-studio/issues/924)).
+**r2 retrofit** next slice: settings & tools ([#945](https://github.com/pskillen/codeplug-studio/issues/945)) after [#944](https://github.com/pskillen/codeplug-studio/issues/944) merges (stacked on [#924](https://github.com/pskillen/codeplug-studio/issues/924)).
 
 ## Verification
+
+### #944 directories & ingest
+
+- [x] `npm run format:check && npm run lint && npm run test && npm run build`
+- [ ] Manual desktop + narrow pass on D1–D4 directory routes + YAML import panels
 
 ### #940 library lists
 

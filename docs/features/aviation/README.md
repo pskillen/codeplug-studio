@@ -13,7 +13,7 @@ Tier-1 reference for **airport airband monitoring** workflows — searching [Ope
 | Area                       | Status  | Notes                                                                                                          |
 | -------------------------- | ------- | -------------------------------------------------------------------------------------------------------------- |
 | OpenAIP API client         | Shipped | `src/integrations/aviation/` — [#263](https://github.com/pskillen/codeplug-studio/issues/263)                  |
-| Airport search UI          | Shipped | `/library/channels/add-from-openaip`                                                                           |
+| Airport search UI          | Shipped | `/library/channels/add-from-openaip` — mk2 D2 ingest shell ([#944](https://github.com/pskillen/codeplug-studio/issues/944)) |
 | Import to existing zone    | Shipped | [#284](https://github.com/pskillen/codeplug-studio/issues/284) — append to library zone                        |
 | Settings API key           | Shipped | Browser `localStorage` only                                                                                    |
 | Core airband generation    | Shipped | `src/core/domain/airband/`                                                                                     |

@@ -44,6 +44,7 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 | ETCC keeper endpoint                | Deferred | Not in archive query router                                                                                                                                                                                                                                                                                                        |
 | Offline result cache                | Shipped  | sessionStorage TTL ≤5 min; stale fallback on 429 ([#73](https://github.com/pskillen/codeplug-studio/issues/73))                                                                                                                                                                                                                    |
 | Directory rate-limit cooldown       | Shipped  | Per-provider 429 gate; honours `Retry-After`; no auto-retry ([#341](https://github.com/pskillen/codeplug-studio/issues/341))                                                                                                                                                                                                       |
+| mk2 directory search chrome (r2 #944) | Shipped | `DirectoryIngestPage`, v2 `Panel`/`DataTable`/`MapPanel`, `CountryComboboxField`, `ModalShell` update dialog ([#944](https://github.com/pskillen/codeplug-studio/issues/944))                                                                                                                                                      |
 
 ## Documentation map
 
@@ -127,8 +128,10 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 
 | Component                               | Role                                                                                                           |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `RepeaterDirectorySearch.tsx`           | Shared search form + results `DataTable` (source capabilities; custom select for existing rows)                |
-| `RepeaterListingUpdateDialog.tsx`       | Directory comparison modal (diff table, apply selected)                                                        |
+| `DirectoryIngestPage.tsx`               | mk2 Batch 5 page shell (`EditorHeader`, v2 scope) — sidecar `DirectoryIngestPage.md`                           |
+| `CountryComboboxField.tsx`              | v2 country typeahead for RepeaterBook filters (C5) — sidecar `CountryComboboxField.md`                          |
+| `RepeaterDirectorySearch.tsx`           | Shared search form + v2 results `DataTable` (source capabilities; gated select for existing rows)              |
+| `RepeaterListingUpdateDialog.tsx`       | Directory comparison `ModalShell` (diff table, apply selected)                                                 |
 | `RepeaterVerifyPanel.tsx`               | Channel editor verify (UK, IRTS, RepeaterBook, optional BrandMeister)                                          |
 | `BrandmeisterRxGroupListSyncDialog.tsx` | BrandMeister RX group list diff + update/create ([#65](https://github.com/pskillen/codeplug-studio/issues/65)) |
 | `findChannelByCallsign.ts`              | Case-insensitive library lookup                                                                                |

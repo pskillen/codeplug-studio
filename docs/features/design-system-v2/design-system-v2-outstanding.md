@@ -11,7 +11,7 @@ Debt and follow-ups discovered during [epic #915](https://github.com/pskillen/co
 | `ZoneEditActions.tsx` unused                       | Low           | Save moved to layout sticky header — file can be removed in #927 retire pass                                                                                                                                                                                                                          |
 | Cookie banner vs BottomTabBar overlap              | Low           | Fixed cookie dialog may sit over the mobile tab bar until a dedicated offset lands                                                                                                                                                                                                                    |
 | `DataTable` v2 `storedOrder` not built             | Low           | Capability inventory flags it as speculative — "API + styleguide only, no current product call site." Add against a real consumer if one emerges; v1 `ui/DataTable` still has it                                                                                                                      |
-| v2/v1 component coexistence                        | Low           | `EmptyState`, `DismissibleNotice` (vs `SoftWarning`), `FileDropzone` (vs `YamlFileDropzone`), and `DataTable` all now have independent v1 and v2 implementations by design (fork-and-coexist, not extend-in-place) — consolidate call sites in a later migration, then retire the v1 versions in #927 |
+| v2/v1 component coexistence                        | Low           | `EmptyState`, `DismissibleNotice` (vs `SoftWarning`), `FileDropzone` (vs `YamlFileDropzone`), and `DataTable` all now have independent v1 and v2 implementations by design (fork-and-coexist, not extend-in-place) — YAML Home/Summary panels now use v2 via `ProjectYamlFileDropzone` ([#944](https://github.com/pskillen/codeplug-studio/issues/944)); retire v1 `YamlFileDropzone` in #927 |
 | `Combobox` not wired to a real consumer            | Closed (#943) | `GeocodeCentreField` on `ZoneFromLocationPage` and `GrowZoneRecommendations`                                                                                                                                                                                                                          |
 | `WirePreviewTable` / `WriteVerifyReport` are stubs | Closed (#924) | v2 components wired: CPS preview (`CsvWirePreviewTable`), verify summary (`writeVerifyReportV2Adapter` + `BuildRadioIoPanel`); interactive wire lists use v2 `DataTable` separately (B6)                                                                                                              |
 | Membership family not wired into live editors      | Closed (#942) | Zone / RGL / scan editors now use MembershipPanel + AddMembersScreen                                                                                                                                                                                                                                  |
@@ -36,6 +36,13 @@ Debt and follow-ups discovered during [epic #915](https://github.com/pskillen/co
 - `EditorHeader` + `StickyFooter` promoted to `components/v2` (missed from #938 Batch 3 canvas helpers)
 - Channel editor mk2 E1 layout: Identity modes multi-select, stacked Mode settings, sticky footer, light zone chips
 - `ChannelModesField`, FormField/TextInput validation error affordance
+
+## Closed during directories & ingest (#944)
+
+- Batch 5 D1–D4: `DirectoryIngestPage`, repeater/OpenAIP/RadioID/channel-set ingest on mk2 frames
+- C5 `CountryComboboxField` on RepeaterBook + RadioID country filters
+- P2/C6 `ProjectYamlFileDropzone` + `InterchangeOverwriteModal` (`ConfirmModal` / `ModalShell`)
+- `AddFromDataSourceModal` migrated to `ModalShell`
 
 ## Closed during foundations gap-fill (#938)
 

@@ -14,10 +14,10 @@ Picker modal for channel import sources — built-in channel sets and external d
 
 ## Behaviour
 
-- Renders a `BadgeCard` per entry in `sources` (channel or contact directory routes).
+- Renders a responsive card grid inside v2 `ModalShell` (one card per `sources` entry).
 - Card click navigates to the directory route and closes the modal.
 
 ## Related
 
 - [`channelDataSources.ts`](../../lib/channelDataSources.ts) — source definitions
-- [`BadgeCard`](../ui/BadgeCard.md) — card primitive
+- [`ModalShell`](../v2/ModalShell.md) — overlay chrome
