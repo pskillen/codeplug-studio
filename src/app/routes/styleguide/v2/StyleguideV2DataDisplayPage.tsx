@@ -13,6 +13,8 @@ import {
   Panel,
   Pill,
   RowActionIcon,
+  WirePreviewTable,
+  WriteVerifyReport,
 } from '../../../components/v2/index.ts';
 import { ICON_SIZE_ACTION } from '../../../lib/iconSizes.ts';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
@@ -328,6 +330,47 @@ export default function StyleguideV2DataDisplayPage() {
             />
           </MapPanel>
         </Stack>
+      </PageSection>
+
+      <PageSection
+        title="WirePreviewTable"
+        description="Stub — full implementation in #924. Read-only, monospace, no interactivity."
+      >
+        <WirePreviewTable
+          title="Channels"
+          columns={[
+            { key: 'name', label: 'Name', render: (row) => row.name },
+            { key: 'wireName', label: 'Wire name', render: (row) => row.wireName, dim: true },
+          ]}
+          rows={[
+            { id: '1', name: 'GB3DA Stornoway', wireName: 'GB3DA-DMR' },
+            { id: '2', name: 'GB3IV Inverness', wireName: 'GB3IV-CUSTOM' },
+          ]}
+          getRowId={(row) => row.id}
+          isRowChanged={(row) => row.id === '2'}
+          caption="Static fixture — real wire-preview data lands in #924."
+        />
+      </PageSection>
+
+      <PageSection
+        title="WriteVerifyReport"
+        description="Stub — full implementation in #924. Static fixture, no interactivity."
+      >
+        <WriteVerifyReport
+          summary={[
+            { value: 41, label: 'Channels written' },
+            { value: 1, label: 'Failed', tone: 'destructive' },
+          ]}
+          rows={[
+            { id: '1', tone: 'success', label: 'Channel 1', detail: 'Verified' },
+            {
+              id: '2',
+              tone: 'destructive',
+              label: 'Channel 2',
+              detail: 'Rejected — name too long',
+            },
+          ]}
+        />
       </PageSection>
     </Page>
   );
