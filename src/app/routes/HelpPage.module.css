@@ -1,0 +1,82 @@
+.page {
+  padding: var(--dsv2-page-padding-y) var(--dsv2-page-padding-x);
+  max-width: 820px;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--dsv2-font-heading-lg);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 3px;
+}
+
+.description {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0 0 20px;
+  line-height: 1.45;
+}
+
+.panelCopy {
+  color: var(--dsv2-text-secondary);
+  margin-bottom: 12px;
+  line-height: 1.45;
+}
+
+.workflowList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.workflowLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px;
+  border-radius: var(--dsv2-radius-sm, 6px);
+  text-decoration: none;
+  color: inherit;
+}
+
+.workflowLink:hover {
+  background: var(--dsv2-surface-quiet, rgba(0, 0, 0, 0.04));
+}
+
+.workflowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.workflowLabel {
+  font-size: var(--dsv2-font-body);
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+}
+
+.workflowDescription {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+  line-height: 1.4;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: var(--dsv2-text-tertiary);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
