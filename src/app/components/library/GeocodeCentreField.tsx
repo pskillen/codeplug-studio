@@ -142,7 +142,8 @@ export default function GeocodeCentreField({
       </div>
       {!hasMapboxToken ? (
         <p style={{ margin: '8px 0 0', fontSize: 11.5, color: 'var(--dsv2-text-tertiary)' }}>
-          Add a Mapbox token in Settings to use Mapbox geocoding. Photon (OSM) works without a token.
+          Add a Mapbox token in Settings to use Mapbox geocoding. Photon (OSM) works without a
+          token.
         </p>
       ) : null}
     </div>

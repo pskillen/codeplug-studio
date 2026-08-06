@@ -19,7 +19,9 @@ export default function ZoneDefaultsPage() {
 
   return (
     <DesignSystemV2Provider>
-      <div className={[classes.page, isMobile ? classes.pageCompact : ''].filter(Boolean).join(' ')}>
+      <div
+        className={[classes.page, isMobile ? classes.pageCompact : ''].filter(Boolean).join(' ')}
+      >
         <h1 className={classes.title}>Zone defaults</h1>
         <p className={classes.blurb}>
           Choose whether zone members are included in or excluded from zone-derived scan lists by

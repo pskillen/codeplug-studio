@@ -79,13 +79,8 @@ export function DigitalContactEditor({
     };
   }
 
-  const {
-    permitNavigationOnce,
-    modalOpen,
-    stay,
-    leave,
-    isDirty,
-  } = useEntityEditorUnsavedGuard(buildRow);
+  const { permitNavigationOnce, modalOpen, stay, leave, isDirty } =
+    useEntityEditorUnsavedGuard(buildRow);
 
   function handleSave() {
     const row = buildRow();
@@ -114,9 +109,7 @@ export function DigitalContactEditor({
           compact={isMobile}
         />
 
-        <div
-          className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}
-        >
+        <div className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}>
           {error ? <p className={classes.error}>{error}</p> : null}
 
           <Panel>
@@ -209,7 +202,10 @@ export function DigitalContactEditor({
               </FormField>
             </div>
 
-            <FormField label="Remarks" hint="Exported on some CPS formats (e.g. Anytone Remarks column).">
+            <FormField
+              label="Remarks"
+              hint="Exported on some CPS formats (e.g. Anytone Remarks column)."
+            >
               <TextInput
                 variant="plain"
                 value={remarks}

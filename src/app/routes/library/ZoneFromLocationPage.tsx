@@ -244,9 +244,7 @@ export default function ZoneFromLocationPage() {
         header: 'Mode',
         width: '0.8fr',
         render: (ch) => (
-          <Group gap={4}>
-            {channelModesForFilter(ch).map((mode) => v2ModePill(mode))}
-          </Group>
+          <Group gap={4}>{channelModesForFilter(ch).map((mode) => v2ModePill(mode))}</Group>
         ),
       },
       {
@@ -268,9 +266,7 @@ export default function ZoneFromLocationPage() {
   }
 
   const canCreate =
-    centre != null &&
-    selectedChannelIds.length > 0 &&
-    resolvedZoneName.trim().length > 0;
+    centre != null && selectedChannelIds.length > 0 && resolvedZoneName.trim().length > 0;
 
   const channelsPanelTitle = centre
     ? `Channels found — ${selectedRows.length} within range`
@@ -287,9 +283,7 @@ export default function ZoneFromLocationPage() {
           compact={isMobile}
         />
 
-        <div
-          className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}
-        >
+        <div className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}>
           <Panel title="Centre point">
             <GeocodeCentreField
               mapboxToken={mapboxToken}
@@ -306,10 +300,7 @@ export default function ZoneFromLocationPage() {
                 <button
                   key={km}
                   type="button"
-                  className={[
-                    classes.radiusChip,
-                    radiusKm === km ? classes.radiusChipActive : '',
-                  ]
+                  className={[classes.radiusChip, radiusKm === km ? classes.radiusChipActive : '']
                     .filter(Boolean)
                     .join(' ')}
                   onClick={() => {

@@ -52,13 +52,8 @@ export function AnalogContactEditor({
     };
   }
 
-  const {
-    permitNavigationOnce,
-    modalOpen,
-    stay,
-    leave,
-    isDirty,
-  } = useEntityEditorUnsavedGuard(buildRow);
+  const { permitNavigationOnce, modalOpen, stay, leave, isDirty } =
+    useEntityEditorUnsavedGuard(buildRow);
 
   function handleSave() {
     const row = buildRow();
@@ -86,9 +81,7 @@ export function AnalogContactEditor({
           compact={isMobile}
         />
 
-        <div
-          className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}
-        >
+        <div className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}>
           {error ? <p className={classes.error}>{error}</p> : null}
 
           <Panel>

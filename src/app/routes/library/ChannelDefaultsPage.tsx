@@ -19,7 +19,9 @@ export default function ChannelDefaultsPage() {
 
   return (
     <DesignSystemV2Provider>
-      <div className={[classes.page, isMobile ? classes.pageCompact : ''].filter(Boolean).join(' ')}>
+      <div
+        className={[classes.page, isMobile ? classes.pageCompact : ''].filter(Boolean).join(' ')}
+      >
         <h1 className={classes.title}>Channel defaults</h1>
         <p className={classes.blurb}>
           Library-wide behavioural defaults for channels. Per-channel and per-build overrides take

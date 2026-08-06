@@ -71,12 +71,7 @@ function nearestMemberDistanceM(
   if (!channelHasGeolocation(channel) || memberPoints.length === 0) return null;
   let min = Number.POSITIVE_INFINITY;
   for (const [lat, lon] of memberPoints) {
-    const distanceM = haversineDistanceM(
-      channel.location!.lat,
-      channel.location!.lon,
-      lat,
-      lon,
-    );
+    const distanceM = haversineDistanceM(channel.location!.lat, channel.location!.lon, lat, lon);
     if (distanceM < min) min = distanceM;
   }
   return min === Number.POSITIVE_INFINITY ? null : min;
@@ -238,9 +233,7 @@ export default function GrowZoneRecommendations() {
         header: 'Mode',
         width: '0.8fr',
         render: (ch) => (
-          <Group gap={4}>
-            {channelModesForFilter(ch).map((modeKey) => v2ModePill(modeKey))}
-          </Group>
+          <Group gap={4}>{channelModesForFilter(ch).map((modeKey) => v2ModePill(modeKey))}</Group>
         ),
       },
       {
@@ -266,9 +259,7 @@ export default function GrowZoneRecommendations() {
     mode === 'insideHull' && (memberPoints.length === 0 || memberPoints.length === 2);
 
   const geocodeCentre =
-    centre && mode === 'nearLocator'
-      ? { lat: centre.lat, lon: centre.lon }
-      : null;
+    centre && mode === 'nearLocator' ? { lat: centre.lat, lon: centre.lon } : null;
 
   return (
     <DesignSystemV2Provider>
@@ -281,9 +272,7 @@ export default function GrowZoneRecommendations() {
           compact={isMobile}
         />
 
-        <div
-          className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}
-        >
+        <div className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}>
           <Panel title="Suggestion mode">
             <div className={classes.modeBlock}>
               <SegmentedControl
