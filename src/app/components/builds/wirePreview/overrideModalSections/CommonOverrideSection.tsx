@@ -1,5 +1,6 @@
 import { Stack, Switch, Text, Tooltip } from '@mantine/core';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
+import { OverrideField } from '../../../v2/index.ts';
 import { WireNameOverrideInput } from '../WireNameOverrideInput.tsx';
 import { rowEffectivelyIncluded } from '../wirePreviewRowUtils.ts';
 
@@ -46,10 +47,13 @@ export default function CommonOverrideSection({
           aria-label={`Skip ${row.displayLabel} from export`}
         />
       )}
-      <Stack gap={4}>
-        <Text size="sm" fw={500}>
-          Wire name
-        </Text>
+      <OverrideField
+        label="Wire name"
+        overridden={row.hasWireNameOverride}
+        onOverride={() => onWireNameChange(row, row.effectiveWireName || row.generatedWireName)}
+        onReset={() => onWireNameChange(row, '')}
+        libraryHint={`Default: ${row.generatedWireName}`}
+      >
         <WireNameOverrideInput
           key={`${row.key}:${row.hasWireNameOverride}:${row.effectiveWireName}`}
           row={row}
@@ -59,7 +63,7 @@ export default function CommonOverrideSection({
           onWireNameChange={onWireNameChange}
           onDirtyChange={() => {}}
         />
-      </Stack>
+      </OverrideField>
     </Stack>
   );
 }

@@ -1,7 +1,8 @@
-import { Modal, Stack, Tabs, Text } from '@mantine/core';
+import { Stack, Tabs, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
 import type { WirePreviewEntityKind, WirePreviewRow } from '@core/services/previewWireRows.ts';
+import { Button, ModalShell } from '../../v2/index.ts';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
 import { resolveOverrideModalSections } from './resolveOverrideModalSections.tsx';
 
@@ -60,47 +61,54 @@ export default function WirePreviewOverrideModal({
     </Stack>
   );
 
-  return (
-    <Modal
-      opened={opened}
-      onClose={onClose}
-      title={`Edit export overrides — ${row.displayLabel}`}
-      size="lg"
-    >
-      {useZoneTabs ? (
-        <Tabs defaultValue="export">
-          <Tabs.List>
-            <Tabs.Tab value="export">Export</Tabs.Tab>
-            {membersSection != null ? <Tabs.Tab value="members">Members</Tabs.Tab> : null}
-            {scanSection != null ? <Tabs.Tab value="scan">Scan</Tabs.Tab> : null}
-          </Tabs.List>
+  const body = useZoneTabs ? (
+    <Tabs defaultValue="export">
+      <Tabs.List>
+        <Tabs.Tab value="export">Export</Tabs.Tab>
+        {membersSection != null ? <Tabs.Tab value="members">Members</Tabs.Tab> : null}
+        {scanSection != null ? <Tabs.Tab value="scan">Scan</Tabs.Tab> : null}
+      </Tabs.List>
 
-          <Tabs.Panel value="export" pt="md">
-            <Stack gap="lg">
-              {libraryHeader}
-              {sections}
-            </Stack>
-          </Tabs.Panel>
-
-          {membersSection != null ? (
-            <Tabs.Panel value="members" pt="md">
-              {membersSection}
-            </Tabs.Panel>
-          ) : null}
-
-          {scanSection != null ? (
-            <Tabs.Panel value="scan" pt="md">
-              {scanSection}
-            </Tabs.Panel>
-          ) : null}
-        </Tabs>
-      ) : (
+      <Tabs.Panel value="export" pt="md">
         <Stack gap="lg">
           {libraryHeader}
           {sections}
-          {extraSections}
         </Stack>
-      )}
-    </Modal>
+      </Tabs.Panel>
+
+      {membersSection != null ? (
+        <Tabs.Panel value="members" pt="md">
+          {membersSection}
+        </Tabs.Panel>
+      ) : null}
+
+      {scanSection != null ? (
+        <Tabs.Panel value="scan" pt="md">
+          {scanSection}
+        </Tabs.Panel>
+      ) : null}
+    </Tabs>
+  ) : (
+    <Stack gap="lg">
+      {libraryHeader}
+      {sections}
+      {extraSections}
+    </Stack>
+  );
+
+  return (
+    <ModalShell
+      open={opened}
+      onClose={onClose}
+      title={`Edit override — ${row.displayLabel}`}
+      size="lg"
+      footer={
+        <Button variant="secondary" onClick={onClose}>
+          Done
+        </Button>
+      }
+    >
+      {body}
+    </ModalShell>
   );
 }

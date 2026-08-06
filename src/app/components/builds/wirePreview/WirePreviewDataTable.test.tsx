@@ -1,7 +1,9 @@
+import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
+import { DesignSystemV2Provider } from '../../v2/index.ts';
 import WirePreviewDataTable from './WirePreviewDataTable.tsx';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
@@ -31,15 +33,21 @@ const rows: WirePreviewRow[] = [
   },
 ];
 
+function renderTable(props: ComponentProps<typeof WirePreviewDataTable>) {
+  return render(
+    <MemoryRouter>
+      <MantineProvider>
+        <DesignSystemV2Provider>
+          <WirePreviewDataTable {...props} />
+        </DesignSystemV2Provider>
+      </MantineProvider>
+    </MemoryRouter>,
+  );
+}
+
 describe('WirePreviewDataTable', () => {
   it('renders read-only status badges without per-row inputs by default', () => {
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewDataTable rows={rows} onRowActivate={vi.fn()} />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderTable({ rows, onRowActivate: vi.fn() });
 
     expect(screen.getAllByText('GB3DA Demo').length).toBeGreaterThan(0);
     expect(screen.getByText('Skipped channel')).toBeInTheDocument();
@@ -50,17 +58,11 @@ describe('WirePreviewDataTable', () => {
 
   it('renders Skip from export when inclusionColumn is set', () => {
     const onExcludedChange = vi.fn();
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewDataTable
-            rows={rows}
-            onRowActivate={vi.fn()}
-            inclusionColumn={{ onExcludedChange }}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderTable({
+      rows,
+      onRowActivate: vi.fn(),
+      inclusionColumn: { onExcludedChange },
+    });
 
     const skip = screen.getByLabelText('Skip GB3DA Demo from export');
     fireEvent.click(skip);
@@ -83,17 +85,11 @@ describe('WirePreviewDataTable', () => {
       forceInclude: true,
       excluded: false,
     };
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewDataTable
-            rows={[zoneRow]}
-            onRowActivate={vi.fn()}
-            inclusionColumn={{ onExcludedChange, onForceIncludeChange }}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderTable({
+      rows: [zoneRow],
+      onRowActivate: vi.fn(),
+      inclusionColumn: { onExcludedChange, onForceIncludeChange },
+    });
 
     expect(screen.getByLabelText('Force export Nested as its own zone')).toBeChecked();
     expect(screen.queryByLabelText('Skip Nested from export')).not.toBeInTheDocument();
@@ -115,17 +111,11 @@ describe('WirePreviewDataTable', () => {
       forceInclude: false,
       excluded: false,
     };
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewDataTable
-            rows={[zoneRow]}
-            onRowActivate={vi.fn()}
-            inclusionColumn={{ onExcludedChange, onForceIncludeChange }}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderTable({
+      rows: [zoneRow],
+      onRowActivate: vi.fn(),
+      inclusionColumn: { onExcludedChange, onForceIncludeChange },
+    });
 
     expect(screen.getByLabelText('Force export Nested as its own zone')).toBeInTheDocument();
     expect(screen.queryByLabelText('Skip Nested from export')).not.toBeInTheDocument();
@@ -135,13 +125,7 @@ describe('WirePreviewDataTable', () => {
 
   it('calls onRowActivate when a row is clicked', () => {
     const onRowActivate = vi.fn();
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewDataTable rows={rows} onRowActivate={onRowActivate} />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderTable({ rows, onRowActivate: onRowActivate });
 
     fireEvent.click(screen.getAllByText('GB3DA Demo')[0]!);
     expect(onRowActivate).toHaveBeenCalledWith(rows[0]);
@@ -155,13 +139,7 @@ describe('WirePreviewDataTable', () => {
         displayDetails: [{ label: 'Talk group', value: 'Local 9 (9) · Slot 1' }],
       },
     ];
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewDataTable rows={expandedRows} onRowActivate={vi.fn()} />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderTable({ rows: expandedRows, onRowActivate: vi.fn() });
 
     expect(screen.getAllByText('GB3DA Demo').length).toBeGreaterThan(0);
     expect(screen.getByText(/Talk group: Local 9 \(9\) · Slot 1/)).toBeInTheDocument();
@@ -194,18 +172,12 @@ describe('WirePreviewDataTable', () => {
       },
     ];
     const onRowActivate = vi.fn();
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewDataTable
-            rows={multi}
-            entityKind="channel"
-            onRowActivate={onRowActivate}
-            inclusionColumn={{ onExcludedChange: vi.fn() }}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderTable({
+      rows: multi,
+      entityKind: 'channel',
+      onRowActivate: onRowActivate,
+      inclusionColumn: { onExcludedChange: vi.fn() },
+    });
 
     expect(screen.getAllByText('2 projections').length).toBeGreaterThan(0);
     expect(screen.getByLabelText('Collapse projections for Site')).toBeInTheDocument();
@@ -233,17 +205,11 @@ describe('WirePreviewDataTable', () => {
     };
     const onExportScanListChange = vi.fn();
 
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewDataTable
-            rows={[zoneRow]}
-            onRowActivate={vi.fn()}
-            zoneScanColumn={{ layout, saving: false, onExportScanListChange }}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderTable({
+      rows: [zoneRow],
+      onRowActivate: vi.fn(),
+      zoneScanColumn: { layout, saving: false, onExportScanListChange },
+    });
 
     const toggle = screen.getByLabelText('Export Glasgow as scan list');
     expect(toggle).toBeChecked();
@@ -268,22 +234,16 @@ describe('WirePreviewDataTable', () => {
       zones: [{ id: 'zone-air', name: 'AM only', channelIds: [], exportScanList: true }],
     };
 
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewDataTable
-            rows={[zoneRow]}
-            onRowActivate={vi.fn()}
-            zoneScanColumn={{
-              layout,
-              saving: false,
-              onExportScanListChange: vi.fn(),
-              showExportScanListForZone: (zoneId) => zoneId !== 'zone-air',
-            }}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderTable({
+      rows: [zoneRow],
+      onRowActivate: vi.fn(),
+      zoneScanColumn: {
+        layout,
+        saving: false,
+        onExportScanListChange: vi.fn(),
+        showExportScanListForZone: (zoneId) => zoneId !== 'zone-air',
+      },
+    });
 
     expect(screen.queryByLabelText('Export AM only as scan list')).not.toBeInTheDocument();
     expect(screen.getByText('—')).toBeInTheDocument();
@@ -303,13 +263,7 @@ describe('WirePreviewDataTable', () => {
       excluded: false,
     };
 
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewDataTable rows={[zoneRow]} onRowActivate={vi.fn()} />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderTable({ rows: [zoneRow], onRowActivate: vi.fn() });
 
     expect(screen.getByText('Custom member order')).toBeInTheDocument();
   });
@@ -328,21 +282,15 @@ describe('WirePreviewDataTable', () => {
       excluded: false,
     };
 
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewDataTable
-            rows={[zoneRow]}
-            onRowActivate={vi.fn()}
-            reorder={{
-              orderedKeys: ['zone-1'],
-              onMove: vi.fn(),
-              onSetOrder: vi.fn(),
-            }}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderTable({
+      rows: [zoneRow],
+      onRowActivate: vi.fn(),
+      reorder: {
+        orderedKeys: ['zone-1'],
+        onMove: vi.fn(),
+        onSetOrder: vi.fn(),
+      },
+    });
 
     expect(screen.queryByText('Custom member order')).not.toBeInTheDocument();
     expect(screen.queryByText('Custom order')).not.toBeInTheDocument();

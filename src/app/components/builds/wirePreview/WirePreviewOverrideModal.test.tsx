@@ -1,7 +1,9 @@
+import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
+import { DesignSystemV2Provider } from '../../v2/index.ts';
 import WirePreviewOverrideModal from './WirePreviewOverrideModal.tsx';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
@@ -24,63 +26,72 @@ const build = {
   name: 'Test build',
 };
 
+function renderModal(props: ComponentProps<typeof WirePreviewOverrideModal>) {
+  return render(
+    <MemoryRouter>
+      <MantineProvider>
+        <DesignSystemV2Provider>
+          <WirePreviewOverrideModal {...props} />
+        </DesignSystemV2Provider>
+      </MantineProvider>
+    </MemoryRouter>,
+  );
+}
+
+function rerenderModal(
+  rerender: ReturnType<typeof render>['rerender'],
+  props: ComponentProps<typeof WirePreviewOverrideModal>,
+) {
+  rerender(
+    <MemoryRouter>
+      <MantineProvider>
+        <DesignSystemV2Provider>
+          <WirePreviewOverrideModal {...props} />
+        </DesignSystemV2Provider>
+      </MantineProvider>
+    </MemoryRouter>,
+  );
+}
+
 describe('WirePreviewOverrideModal', () => {
   it('persists skip-from-export via callback', () => {
     const onExcludedChange = vi.fn();
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewOverrideModal
-            opened
-            onClose={vi.fn()}
-            row={row}
-            build={build}
-            entityKind="talkGroup"
-            onExcludedChange={onExcludedChange}
-            onWireNameChange={vi.fn()}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderModal({
+      opened: true,
+      onClose: vi.fn(),
+      row,
+      build,
+      entityKind: 'talkGroup',
+      onExcludedChange,
+      onWireNameChange: vi.fn(),
+    });
 
     fireEvent.click(screen.getByLabelText('Skip Local 9 from export'));
     expect(onExcludedChange).toHaveBeenCalledWith(row, true);
   });
 
   it('reflects updated row props after persist', () => {
-    const { rerender } = render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewOverrideModal
-            opened
-            onClose={vi.fn()}
-            row={row}
-            build={build}
-            entityKind="talkGroup"
-            onExcludedChange={vi.fn()}
-            onWireNameChange={vi.fn()}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    const { rerender } = renderModal({
+      opened: true,
+      onClose: vi.fn(),
+      row,
+      build,
+      entityKind: 'talkGroup',
+      onExcludedChange: vi.fn(),
+      onWireNameChange: vi.fn(),
+    });
 
     expect(screen.getByLabelText('Skip Local 9 from export')).not.toBeChecked();
 
-    rerender(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewOverrideModal
-            opened
-            onClose={vi.fn()}
-            row={{ ...row, excluded: true }}
-            build={build}
-            entityKind="talkGroup"
-            onExcludedChange={vi.fn()}
-            onWireNameChange={vi.fn()}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    rerenderModal(rerender, {
+      opened: true,
+      onClose: vi.fn(),
+      row: { ...row, excluded: true },
+      build,
+      entityKind: 'talkGroup',
+      onExcludedChange: vi.fn(),
+      onWireNameChange: vi.fn(),
+    });
 
     expect(screen.getByLabelText('Skip Local 9 from export')).toBeChecked();
   });
@@ -100,22 +111,16 @@ describe('WirePreviewOverrideModal', () => {
       forceInclude: false,
     };
     const onForceIncludeChange = vi.fn();
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewOverrideModal
-            opened
-            onClose={vi.fn()}
-            row={omitZoneRow}
-            build={build}
-            entityKind="zone"
-            onExcludedChange={vi.fn()}
-            onForceIncludeChange={onForceIncludeChange}
-            onWireNameChange={vi.fn()}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderModal({
+      opened: true,
+      onClose: vi.fn(),
+      row: omitZoneRow,
+      build,
+      entityKind: 'zone',
+      onExcludedChange: vi.fn(),
+      onForceIncludeChange: onForceIncludeChange,
+      onWireNameChange: vi.fn(),
+    });
 
     expect(screen.getByLabelText('Force export PMR446 as its own zone')).toBeInTheDocument();
     expect(screen.queryByLabelText('Skip PMR446 from export')).not.toBeInTheDocument();
@@ -138,22 +143,16 @@ describe('WirePreviewOverrideModal', () => {
       omitFromExport: true,
       forceInclude: true,
     };
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewOverrideModal
-            opened
-            onClose={vi.fn()}
-            row={omitZoneRow}
-            build={build}
-            entityKind="zone"
-            onExcludedChange={vi.fn()}
-            onForceIncludeChange={vi.fn()}
-            onWireNameChange={vi.fn()}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderModal({
+      opened: true,
+      onClose: vi.fn(),
+      row: omitZoneRow,
+      build,
+      entityKind: 'zone',
+      onExcludedChange: vi.fn(),
+      onForceIncludeChange: vi.fn(),
+      onWireNameChange: vi.fn(),
+    });
 
     expect(screen.getByLabelText('Force export PMR446 as its own zone')).toBeChecked();
     expect(screen.queryByLabelText('Skip PMR446 from export')).not.toBeInTheDocument();
@@ -171,23 +170,17 @@ describe('WirePreviewOverrideModal', () => {
       hasOrderOrSlotOverride: false,
       excluded: false,
     };
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewOverrideModal
-            opened
-            onClose={vi.fn()}
-            row={zoneRow}
-            build={build}
-            entityKind="zone"
-            onExcludedChange={vi.fn()}
-            onWireNameChange={vi.fn()}
-            membersSection={<div>Members content</div>}
-            scanSection={<div>Scan content</div>}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderModal({
+      opened: true,
+      onClose: vi.fn(),
+      row: zoneRow,
+      build,
+      entityKind: 'zone',
+      onExcludedChange: vi.fn(),
+      onWireNameChange: vi.fn(),
+      membersSection: <div>Members content</div>,
+      scanSection: <div>Scan content</div>,
+    });
 
     expect(screen.getByRole('tab', { name: 'Export' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Members' })).toBeInTheDocument();
@@ -209,22 +202,16 @@ describe('WirePreviewOverrideModal', () => {
       hasOrderOrSlotOverride: false,
       excluded: false,
     };
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <WirePreviewOverrideModal
-            opened
-            onClose={vi.fn()}
-            row={zoneRow}
-            build={build}
-            entityKind="zone"
-            onExcludedChange={vi.fn()}
-            onWireNameChange={vi.fn()}
-            membersSection={<div>Members only</div>}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
-    );
+    renderModal({
+      opened: true,
+      onClose: vi.fn(),
+      row: zoneRow,
+      build,
+      entityKind: 'zone',
+      onExcludedChange: vi.fn(),
+      onWireNameChange: vi.fn(),
+      membersSection: <div>Members only</div>,
+    });
 
     expect(screen.getByRole('tab', { name: 'Export' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Members' })).toBeInTheDocument();
