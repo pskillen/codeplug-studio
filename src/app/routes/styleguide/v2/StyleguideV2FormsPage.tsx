@@ -5,6 +5,7 @@ import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
 import {
   Button,
   Checkbox,
+  FileDropzone,
   FormField,
   OverrideField,
   Pill,
@@ -24,6 +25,7 @@ export default function StyleguideV2FormsPage() {
   const [ts, setTs] = useState<'ts1' | 'ts2'>('ts2');
   const [skipScan, setSkipScan] = useState(false);
   const [selected, setSelected] = useState(true);
+  const [droppedFileName, setDroppedFileName] = useState<string | undefined>();
 
   return (
     <Page width="default">
@@ -114,6 +116,20 @@ export default function StyleguideV2FormsPage() {
             />
           ) : null}
         </OverrideField>
+      </PageSection>
+
+      <PageSection
+        title="FileDropzone"
+        description="Drag/drop + click-to-browse, collapsing to a selected-file row."
+      >
+        <FileDropzone
+          label="Drop a project YAML here"
+          hint="Single .yaml / .yml native YAML project file"
+          accept=".yaml,.yml"
+          fileName={droppedFileName}
+          onFilesSelected={([file]) => setDroppedFileName(file?.name)}
+          onClear={() => setDroppedFileName(undefined)}
+        />
       </PageSection>
 
       <PageSection
