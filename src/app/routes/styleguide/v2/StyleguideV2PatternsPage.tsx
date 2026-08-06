@@ -1,6 +1,7 @@
 import { Checkbox, Group, SimpleGrid, Text } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { FacetBar, FacetChip, SplitFilter } from '../../../components/library/FacetBar.tsx';
 import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
 import {
   ShuttleAddBar,
@@ -24,6 +25,9 @@ export default function StyleguideV2PatternsPage() {
   const [memberKeys, setMemberKeys] = useState<DemoKey[]>(['alpha', 'bravo']);
   const [memberSelection, setMemberSelection] = useState<DemoKey[]>([]);
   const [poolPick, setPoolPick] = useState<DemoKey[]>([]);
+  const [facetBands, setFacetBands] = useState<string[]>([]);
+  const [facetDuplex, setFacetDuplex] = useState<string | null>(null);
+  const [facetDistance, setFacetDistance] = useState(false);
 
   const poolKeys = useMemo(
     () => (Object.keys(CATALOG) as DemoKey[]).filter((key) => !memberKeys.includes(key)),
@@ -56,6 +60,53 @@ export default function StyleguideV2PatternsPage() {
           </>
         }
       />
+
+      <PageSection
+        title="FacetBar"
+        description="Library list filter chips and split pill (Channels list). Click an active split option again to clear the filter."
+      >
+        <FacetBar scrollable>
+          <FacetChip
+            label="All bands"
+            active={facetBands.length === 0}
+            onClick={() => setFacetBands([])}
+          />
+          <FacetChip
+            label="2m"
+            active={facetBands.includes('2m')}
+            onClick={() =>
+              setFacetBands((prev) =>
+                prev.includes('2m') ? prev.filter((id) => id !== '2m') : [...prev, '2m'],
+              )
+            }
+          />
+          <FacetChip
+            label="70cm"
+            active={facetBands.includes('70cm')}
+            onClick={() =>
+              setFacetBands((prev) =>
+                prev.includes('70cm') ? prev.filter((id) => id !== '70cm') : [...prev, '70cm'],
+              )
+            }
+          />
+          <SplitFilter
+            options={[
+              { value: 'simplex', label: 'Simplex' },
+              { value: 'split', label: 'Split' },
+            ]}
+            value={facetDuplex}
+            onChange={setFacetDuplex}
+          />
+          <FacetChip
+            label="Within 25 km"
+            active={facetDistance}
+            onClick={() => setFacetDistance((prev) => !prev)}
+          />
+        </FacetBar>
+        <Text size="sm" c="dimmed">
+          Duplex filter: {facetDuplex ?? 'none'}
+        </Text>
+      </PageSection>
 
       <PageSection
         title="ShuttleList"

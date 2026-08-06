@@ -1,8 +1,8 @@
 .banner {
   margin-bottom: 16px;
   padding: 10px 12px;
-  border-radius: var(--dsv2-radius-md);
-  background: var(--dsv2-accent-subtle);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-accent-tint-12);
   color: var(--dsv2-text-secondary);
   font-size: var(--dsv2-font-body-sm);
   line-height: 1.45;

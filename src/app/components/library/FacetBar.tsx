@@ -49,14 +49,23 @@ export interface SplitFilterOption {
 export interface SplitFilterProps {
   options: [SplitFilterOption, SplitFilterOption];
   value: string | null;
-  onChange: (value: string) => void;
+  /** Clicking the active option clears the filter (`null`). */
+  onChange: (value: string | null) => void;
   disabled?: boolean;
 }
 
 /** Two-way pill toggle (Simplex / Split) — page-local until promoted to v2 forms. */
 export function SplitFilter({ options, value, onChange, disabled }: SplitFilterProps) {
   return (
-    <div className={classes.splitFilter} role="group">
+    <div
+      className={[
+        classes.splitFilter,
+        value ? classes.splitFilterActive : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      role="group"
+    >
       {options.map((option) => (
         <button
           key={option.value}
@@ -66,7 +75,7 @@ export function SplitFilter({ options, value, onChange, disabled }: SplitFilterP
             .join(' ')}
           disabled={disabled}
           aria-pressed={value === option.value}
-          onClick={() => onChange(option.value)}
+          onClick={() => onChange(value === option.value ? null : option.value)}
         >
           {option.label}
         </button>

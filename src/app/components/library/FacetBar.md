@@ -12,7 +12,7 @@ Pill chips and a two-way split toggle matching mk2 Batch 2 facet bars. Lives und
 | ------------- | ----------------------------------------------------- |
 | `FacetBar`    | Horizontal chip row; optional `scrollable` for mobile |
 | `FacetChip`   | Single filter chip with active state                  |
-| `SplitFilter` | Two-option toggle (e.g. Simplex / Split)              |
+| `SplitFilter` | Two-option pill toggle; re-clicking the active option clears (`null`) |
 
 ## Usage
 
@@ -30,6 +30,10 @@ Pill chips and a two-way split toggle matching mk2 Batch 2 facet bars. Lives und
   />
 </FacetBar>
 ```
+
+## Styleguide
+
+Interactive demo on `/styleguide/v2/patterns` (FacetBar section).
 
 ## Related
 
