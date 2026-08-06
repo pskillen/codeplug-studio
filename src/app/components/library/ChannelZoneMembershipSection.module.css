@@ -1,0 +1,44 @@
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--dsv2-text-tertiary);
+  line-height: 1.45;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.addZone {
+  flex: 0 1 220px;
+  min-width: 160px;
+}
+
+.addButton {
+  font-size: 12.5px;
+  padding: 6px 12px;
+  border-radius: var(--dsv2-radius-control);
+  border: 1px solid var(--dsv2-border);
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-primary);
+  cursor: pointer;
+  font-family: var(--dsv2-font-family);
+}
+
+.addButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.openLink {
+  font-size: 11.5px;
+  color: var(--dsv2-accent);
+  text-decoration: none;
+}
+
+.openLink:hover {
+  text-decoration: underline;
+}

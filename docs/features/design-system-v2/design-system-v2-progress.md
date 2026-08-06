@@ -9,8 +9,9 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Slice                       | Status      | Branch / PR                                                     | Notes                                                                                                        |
 | --------------------------- | ----------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | Foundations gap-fill (#938) | Shipped     | [PR #946](https://github.com/pskillen/codeplug-studio/pull/946) | Overlays, DataTable v2 full capability set, Membership family, forms/feedback, build stubs, icon-size tokens |
-| Shell & project (#939)      | In progress | `939/pskillen/ds-r2-shell`                                      | S1–S4, P1 Home, P3 Drive modals, P4 Quick start — mk2 Batch 1 + P4                                           |
+| Shell & project (#939)      | Shipped     | merged to `main`                                                | S1–S4, P1 Home, P3 Drive modals, P4 Quick start — mk2 Batch 1 + P4                                           |
 | Library lists (#940)        | Shipped     | `940/pskillen/ds-r2-library-lists`                              | Batch 2 L1–L7, C3, C7 — v2 DataTable + L1 chrome + ModalShell bulk overlays                                  |
+| Channel editor (#941)       | In progress | `941/pskillen/ds-r2-channel-editor`                             | Batch 3 E1 — EditorHeader/StickyFooter + stacked modes + sticky footer                                       |
 
 ### #940 library lists (Batch 2)
 
@@ -33,6 +34,10 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Summary / Channels (#918–#920) | Shipped    | [PR #931](https://github.com/pskillen/codeplug-studio/pull/931) | Summary, Channels list, Channel editor on v2         |
 | Library ports (#921+)          | Superseded | `921/pskillen/design-system-v2-library`                         | Visual acceptance replaced by r2 #940                |
 
+## Next
+
+**r2 retrofit** continues with membership editors ([#942](https://github.com/pskillen/codeplug-studio/issues/942)) after [#941](https://github.com/pskillen/codeplug-studio/issues/941) merges.
+
 ## Verification
 
 ### #940 library lists
@@ -46,6 +51,20 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 - [x] `npm run format:check && npm run lint && npm run test && npm run build`
 - [x] Manual desktop + narrow pass on every new/extended `/styleguide/v2/*` page
 
-## Next
+### #941 channel editor (E1)
 
-**r2 retrofit** continues with [#941](https://github.com/pskillen/codeplug-studio/issues/941) channel editor (Batch 3) after [#939](https://github.com/pskillen/codeplug-studio/issues/939) merges.
+| Sub-slice                    | Status   | Notes                                                                            |
+| ---------------------------- | -------- | -------------------------------------------------------------------------------- |
+| Kickoff + diff checklist     | Complete | Branch `941/pskillen/ds-r2-channel-editor`                                       |
+| v2 EditorHeader/StickyFooter | Complete | Sidecars + `/styleguide/v2/navigation`                                           |
+| E1 shell + sections          | Complete | Stacked Mode settings; Identity modes; Frequency RX-first + Power; sticky footer |
+| Product panels               | Complete | Scanning / APRS / Repeater restyled into E1 chrome                               |
+
+## Verification
+
+### #941 channel editor
+
+- [x] `npm run format:check && npm run lint && npm run test && npm run build`
+- [ ] Manual desktop + narrow pass vs Batch 3 E1 frames
+
+### #940 library lists

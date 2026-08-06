@@ -25,3 +25,21 @@
 .staticValue {
   line-height: 1.4;
 }
+
+.bodyError {
+  border-color: var(--dsv2-destructive);
+}
+
+.error {
+  font-size: 11.5px;
+  color: var(--dsv2-destructive);
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
+.hint {
+  font-size: 11.5px;
+  color: var(--dsv2-text-tertiary);
+  margin-top: 5px;
+  line-height: 1.4;
+}

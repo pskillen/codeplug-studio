@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { MantineProvider } from '@mantine/core';
+import DesignSystemV2Provider from '../v2/DesignSystemV2Provider.tsx';
 import TxOffsetControls from './TxOffsetControls.tsx';
 
 describe('TxOffsetControls', () => {
   it('renders nothing without a valid RX frequency', () => {
     render(
-      <MantineProvider>
+      <DesignSystemV2Provider>
         <TxOffsetControls rxFrequencyHz={null} txFrequencyHz={null} onTxFrequencyChange={vi.fn()} />
-      </MantineProvider>,
+      </DesignSystemV2Provider>,
     );
     expect(screen.queryByText(/Offset/)).not.toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
@@ -17,13 +17,13 @@ describe('TxOffsetControls', () => {
   it('shows 2 m offsets and applies −0.6 on click', () => {
     const onTx = vi.fn();
     render(
-      <MantineProvider>
+      <DesignSystemV2Provider>
         <TxOffsetControls
           rxFrequencyHz={145_500_000}
           txFrequencyHz={145_500_000}
           onTxFrequencyChange={onTx}
         />
-      </MantineProvider>,
+      </DesignSystemV2Provider>,
     );
 
     expect(screen.getByText('===')).toBeInTheDocument();
@@ -34,20 +34,20 @@ describe('TxOffsetControls', () => {
 
   it('highlights the matching 70 cm offset', () => {
     render(
-      <MantineProvider>
+      <DesignSystemV2Provider>
         <TxOffsetControls
           rxFrequencyHz={433_000_000}
           txFrequencyHz={440_600_000}
           onTxFrequencyChange={vi.fn()}
         />
-      </MantineProvider>,
+      </DesignSystemV2Provider>,
     );
 
     const active = screen.getByRole('button', { name: '+7.6 MHz' });
-    expect(active).toHaveAttribute('data-variant', 'filled');
+    expect(active).toHaveAttribute('data-variant', 'primary');
     expect(screen.getByRole('button', { name: 'Simplex' })).toHaveAttribute(
       'data-variant',
-      'light',
+      'outline',
     );
   });
 });

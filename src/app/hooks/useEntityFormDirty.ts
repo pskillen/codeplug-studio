@@ -60,5 +60,5 @@ export function useEntityEditorUnsavedGuard<T>(buildCurrent: () => T) {
     buildCurrent,
   });
   const { modalOpen, stay, leave } = useUnsavedNavigationGuard(isDirty, permitNavigationRef);
-  return { permitNavigationOnce, modalOpen, stay, leave };
+  return { permitNavigationOnce, modalOpen, stay, leave, isDirty };
 }

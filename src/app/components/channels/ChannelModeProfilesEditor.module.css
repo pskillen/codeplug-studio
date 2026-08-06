@@ -1,0 +1,31 @@
+.stackedBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--dsv2-border-quiet);
+}
+
+.firstBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modeHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modeTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dsv2-text-secondary);
+}
+
+.empty {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0;
+}

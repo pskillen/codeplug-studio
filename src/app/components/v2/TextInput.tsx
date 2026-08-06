@@ -8,6 +8,9 @@ export interface TextInputProps extends Omit<InputHTMLAttributes<HTMLInputElemen
   mono?: boolean;
   /** `plain` — no border/padding; use inside FormField. */
   variant?: TextInputVariant;
+  /** Validation error — destructive border; use `hint` for message below. */
+  error?: boolean;
+  hint?: string;
 }
 
 /**
@@ -19,6 +22,8 @@ export default function TextInput({
   variant = 'default',
   className,
   disabled,
+  error = false,
+  hint,
   ...rest
 }: TextInputProps) {
   const inputId = useId();
@@ -26,6 +31,7 @@ export default function TextInput({
     classes.input,
     mono ? classes.mono : '',
     variant === 'plain' ? classes.plain : '',
+    error ? classes.inputError : '',
     className,
   ]
     .filter(Boolean)
@@ -35,7 +41,7 @@ export default function TextInput({
     <input id={label ? inputId : undefined} className={inputClass} disabled={disabled} {...rest} />
   );
 
-  if (!label && variant === 'plain') {
+  if (!label && variant === 'plain' && !hint) {
     return input;
   }
 
@@ -47,6 +53,7 @@ export default function TextInput({
         </label>
       ) : null}
       {input}
+      {hint ? <div className={error ? classes.error : classes.hint}>{hint}</div> : null}
     </div>
   );
 }

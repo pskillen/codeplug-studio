@@ -1,0 +1,40 @@
+.root {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px var(--dsv2-page-padding-x);
+  border-top: 1px solid var(--dsv2-border);
+  background: var(--dsv2-surface-quiet);
+  margin-top: auto;
+}
+
+.compact {
+  padding: 12px 16px;
+}
+
+.status {
+  font-size: 12px;
+  color: var(--dsv2-text-tertiary);
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+@media (max-width: 36em) {
+  .root {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .status {
+    width: 100%;
+  }
+}
