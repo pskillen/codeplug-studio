@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import type { DigitalContact } from '@core/models/library.ts';
 import type { RadioidDmrUserListing } from '@integrations/radioid/index.ts';
+import Button from '../v2/Button.tsx';
+import ConfirmModal from '../v2/ConfirmModal.tsx';
+import ModalShell from '../v2/ModalShell.tsx';
 import RadioidContactUpdateDialog from './RadioidContactUpdateDialog.tsx';
+import classes from '../repeaters/RepeaterListingUpdateDialog.module.css';
 
 export interface RadioidContactPreviewDialogProps {
   contact: DigitalContact | null;
@@ -15,14 +18,10 @@ export interface RadioidContactPreviewDialogProps {
 
 function FieldRow({ label, value }: { label: string; value: string }) {
   return (
-    <Group justify="space-between" align="flex-start" wrap="nowrap">
-      <Text size="sm" c="dimmed" w={120}>
-        {label}
-      </Text>
-      <Text size="sm" style={{ flex: 1 }}>
-        {value || '—'}
-      </Text>
-    </Group>
+    <div className={classes.fieldRow}>
+      <span className={classes.fieldLabel}>{label}</span>
+      <span className={classes.fieldValue}>{value || '—'}</span>
+    </div>
   );
 }
 
@@ -49,11 +48,11 @@ export default function RadioidContactPreviewDialog({
 
   return (
     <>
-      <Modal opened={opened} onClose={onClose} title="Library contact" size="md">
-        <Stack gap="md">
-          <Text size="sm" c="dimmed">
+      <ModalShell open={opened} onClose={onClose} title="Library contact" size="md">
+        <div className={classes.body}>
+          <p className={classes.muted}>
             This contact is already in your library. Details below are from your saved record.
-          </Text>
+          </p>
           <FieldRow label="Name" value={contact.name} />
           <FieldRow label="Callsign" value={contact.callsign} />
           <FieldRow label="DMR ID" value={String(contact.digitalId)} />
@@ -62,41 +61,33 @@ export default function RadioidContactPreviewDialog({
           <FieldRow label="Country" value={contact.country} />
           <FieldRow label="Remarks" value={contact.remarks} />
           <FieldRow label="Comment" value={contact.comment} />
-          <Group justify="flex-end">
-            <Button variant="default" onClick={onClose}>
+          <div className={classes.footer}>
+            <Button variant="secondary" onClick={onClose}>
               Close
             </Button>
             {listing ? (
-              <Button variant="light" onClick={() => setUpdateOpen(true)}>
+              <Button variant="secondary" onClick={() => setUpdateOpen(true)}>
                 Update from RadioID.net
               </Button>
             ) : null}
             <Button variant="outline" onClick={() => setOpenConfirm(true)}>
               Open in editor
             </Button>
-          </Group>
-        </Stack>
-      </Modal>
+          </div>
+        </div>
+      </ModalShell>
 
-      <Modal
-        opened={openConfirm}
+      <ConfirmModal
+        open={openConfirm}
         onClose={() => setOpenConfirm(false)}
+        onConfirm={handleOpenEditor}
         title="Leave search results?"
-        size="sm"
+        confirmLabel="Open in editor"
+        cancelLabel="Stay on search"
       >
-        <Stack gap="md">
-          <Alert color="yellow" title="Search will be lost">
-            Opening the contact editor navigates away from this page. You will need to run your
-            RadioID.net search again.
-          </Alert>
-          <Group justify="flex-end">
-            <Button variant="default" onClick={() => setOpenConfirm(false)}>
-              Stay on search
-            </Button>
-            <Button onClick={handleOpenEditor}>Open in editor</Button>
-          </Group>
-        </Stack>
-      </Modal>
+        Opening the contact editor navigates away from this page. You will need to run your
+        RadioID.net search again.
+      </ConfirmModal>
 
       {listing ? (
         <RadioidContactUpdateDialog

@@ -40,6 +40,25 @@
   opacity: 0.55;
 }
 
+.fieldRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.fieldLabel {
+  color: var(--dsv2-text-tertiary);
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.fieldValue {
+  flex: 1;
+  color: var(--dsv2-text-primary);
+}
+
 .footer {
   display: flex;
   justify-content: flex-end;

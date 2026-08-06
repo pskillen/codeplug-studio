@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { Alert, Button, Checkbox, Group, Modal, Stack, Table, Text } from '@mantine/core';
 import type { DigitalContact } from '@core/models/library.ts';
 import {
   buildDigitalContactPatchFromDiff,
@@ -9,6 +8,11 @@ import {
   type RadioidDmrUserListing,
 } from '@integrations/radioid/index.ts';
 import { persistence } from '../../state/persistence.ts';
+import Button from '../v2/Button.tsx';
+import Checkbox from '../v2/Checkbox.tsx';
+import ModalShell from '../v2/ModalShell.tsx';
+import StatusBanner from '../v2/StatusBanner.tsx';
+import classes from '../repeaters/RepeaterListingUpdateDialog.module.css';
 
 export interface RadioidContactUpdateDialogProps {
   contact: DigitalContact;
@@ -69,40 +73,43 @@ function RadioidContactUpdateDialogBody({
   }
 
   return (
-    <Stack gap="md">
+    <div className={classes.body}>
       {changedRows.length === 0 ? (
-        <Text c="dimmed">This contact already matches the RadioID.net listing.</Text>
+        <p className={classes.muted}>This contact already matches the RadioID.net listing.</p>
       ) : (
-        <Table>
-          <Table.Thead>
-            <Table.Tr>
-              <Table.Th>Apply</Table.Th>
-              <Table.Th>Field</Table.Th>
-              <Table.Th>Your contact</Table.Th>
-              <Table.Th>RadioID.net</Table.Th>
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {diffRows.map((row) => (
-              <Table.Tr key={row.field} opacity={row.changed ? 1 : 0.55}>
-                <Table.Td>
-                  <Checkbox
-                    checked={selectedFields.has(row.field)}
-                    disabled={!row.changed}
-                    onChange={(e) => toggleField(row.field, e.currentTarget.checked)}
-                  />
-                </Table.Td>
-                <Table.Td>{row.label}</Table.Td>
-                <Table.Td>{row.local}</Table.Td>
-                <Table.Td>{row.remote}</Table.Td>
-              </Table.Tr>
-            ))}
-          </Table.Tbody>
-        </Table>
+        <div className={classes.tableWrap}>
+          <table className={classes.table}>
+            <thead>
+              <tr>
+                <th>Apply</th>
+                <th>Field</th>
+                <th>Your contact</th>
+                <th>RadioID.net</th>
+              </tr>
+            </thead>
+            <tbody>
+              {diffRows.map((row) => (
+                <tr key={row.field} className={row.changed ? undefined : classes.dimRow}>
+                  <td>
+                    <Checkbox
+                      checked={selectedFields.has(row.field)}
+                      disabled={!row.changed}
+                      onCheckedChange={(checked) => toggleField(row.field, checked)}
+                      aria-label={`Apply ${row.label}`}
+                    />
+                  </td>
+                  <td>{row.label}</td>
+                  <td>{row.local}</td>
+                  <td>{row.remote}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-      {applyError ? <Alert color="red">{applyError}</Alert> : null}
-      <Group justify="flex-end">
-        <Button variant="default" onClick={onClose}>
+      {applyError ? <StatusBanner tone="warning">{applyError}</StatusBanner> : null}
+      <div className={classes.footer}>
+        <Button variant="secondary" onClick={onClose}>
           Cancel
         </Button>
         <Button
@@ -112,8 +119,8 @@ function RadioidContactUpdateDialogBody({
         >
           Apply selected
         </Button>
-      </Group>
-    </Stack>
+      </div>
+    </div>
   );
 }
 
@@ -127,7 +134,7 @@ export default function RadioidContactUpdateDialog({
   const bodyKey = listing ? `${contact.id}:${listing.id}` : 'none';
 
   return (
-    <Modal opened={opened} onClose={onClose} title="RadioID.net comparison" size="lg">
+    <ModalShell open={opened} onClose={onClose} title="RadioID.net comparison" size="lg">
       {opened && listing ? (
         <RadioidContactUpdateDialogBody
           key={bodyKey}
@@ -137,6 +144,6 @@ export default function RadioidContactUpdateDialog({
           onApplied={onApplied}
         />
       ) : null}
-    </Modal>
+    </ModalShell>
   );
 }

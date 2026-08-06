@@ -1,18 +1,8 @@
 import { useMemo, useState } from 'react';
-import {
-  Alert,
-  Anchor,
-  Autocomplete,
-  Button,
-  Group,
-  Pagination,
-  Stack,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
+import { Group, Pagination } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import type { DigitalContact } from '@core/models/library.ts';
-import { REPEATERBOOK_COUNTRY_NAMES } from '@integrations/repeaters/repeaterbook/countryNames.ts';
 import {
   findDigitalContactByDigitalId,
   mapRadioidUserToDigitalContact,
@@ -25,17 +15,31 @@ import type { RadioidBulkImportScope } from '../../lib/radioidBulkImport.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useProjects } from '../../state/useProjects.ts';
-import { DataTable, FormPage, PageSection } from '../ui/index.ts';
-import type { DataTableColumn } from '../ui/DataTable.tsx';
+import CountryComboboxField from '../directories/CountryComboboxField.tsx';
+import DirectoryIngestPage from '../directories/DirectoryIngestPage.tsx';
+import pageClasses from '../directories/DirectoryIngestPage.module.css';
+import {
+  Button,
+  DataTable,
+  FormField,
+  Panel,
+  StatusBanner,
+  TextInput,
+  type DataTableColumn,
+} from '../v2/index.ts';
 import RadioidContactBulkImportDialog from './RadioidContactBulkImportDialog.tsx';
 import RadioidContactUpdateDialog from './RadioidContactUpdateDialog.tsx';
 import RadioidContactPreviewDialog from './RadioidContactPreviewDialog.tsx';
+
+const GATED_SELECTION_CAPTION =
+  "Already-in-library rows are dimmed — use Update to refresh fields from RadioID.net. RadioID paginates server-side.";
 
 function listingKey(listing: RadioidDmrUserListing): string {
   return String(listing.id);
 }
 
 export default function RadioidContactSearch() {
+  const navigate = useNavigate();
   const { activeProjectId } = useProjects();
   const { library, reload } = useLibrary();
   const {
@@ -101,22 +105,19 @@ export default function RadioidContactSearch() {
   }, [bulkScope, listings, selectedKeys]);
 
   const columns = useMemo((): DataTableColumn<RadioidDmrUserListing>[] => {
-    function existingContact(row: RadioidDmrUserListing): DigitalContact | null {
-      return findDigitalContactByDigitalId(library.digitalContacts, row.id);
-    }
-
     return [
       {
         key: 'callsign',
         header: 'Callsign',
+        width: '100px',
         render: (row) => {
-          const existing = existingContact(row);
+          const existing = findDigitalContactByDigitalId(library.digitalContacts, row.id);
           const label = row.callsign || '—';
           if (existing) {
             return (
-              <Anchor component="button" type="button" size="sm" onClick={() => openPreview(row)}>
+              <button type="button" className="libraryListNameLink" onClick={() => openPreview(row)}>
                 {label}
-              </Anchor>
+              </button>
             );
           }
           return label;
@@ -126,13 +127,14 @@ export default function RadioidContactSearch() {
       {
         key: 'id',
         header: 'DMR ID',
+        width: '100px',
         render: (row) => {
-          const existing = existingContact(row);
+          const existing = findDigitalContactByDigitalId(library.digitalContacts, row.id);
           if (existing) {
             return (
-              <Anchor component="button" type="button" size="sm" onClick={() => openPreview(row)}>
+              <button type="button" className="libraryListNameLink" onClick={() => openPreview(row)}>
                 {row.id}
-              </Anchor>
+              </button>
             );
           }
           return row.id;
@@ -148,36 +150,41 @@ export default function RadioidContactSearch() {
       {
         key: 'city',
         header: 'City',
+        hideOnMobile: true,
         render: (row) => row.city || '—',
         sortValue: (row) => row.city,
       },
       {
         key: 'state',
         header: 'State',
+        hideOnMobile: true,
         render: (row) => row.state || '—',
         sortValue: (row) => row.state,
       },
       {
         key: 'country',
         header: 'Country',
+        hideOnMobile: true,
         render: (row) => row.country || '—',
         sortValue: (row) => row.country,
       },
       {
         key: 'actions',
         header: '',
+        width: '100px',
         hideable: false,
+        align: 'right',
         render: (row) => {
-          const existing = existingContact(row);
+          const existing = findDigitalContactByDigitalId(library.digitalContacts, row.id);
           if (existing) {
             return (
-              <Button size="xs" variant="outline" onClick={() => openUpdate(row)}>
+              <Button variant="outline" size="sm" onClick={() => openUpdate(row)}>
                 Update
               </Button>
             );
           }
           return (
-            <Button size="xs" loading={adding} onClick={() => void addSingleListing(row)}>
+            <Button size="sm" loading={adding} onClick={() => void addSingleListing(row)}>
               Add
             </Button>
           );
@@ -208,64 +215,85 @@ export default function RadioidContactSearch() {
     void search(1);
   }
 
-  const selectedListings = listings.filter((row) => selectedKeys.includes(listingKey(row)));
+  const tableCaption =
+    totalPages > 1 ? (
+      <Group justify="space-between" wrap="wrap" gap="sm">
+        <span>{totalCount.toLocaleString()} results — page {page} of {totalPages}</span>
+        <Pagination total={totalPages} value={page} onChange={goToPage} size="sm" />
+      </Group>
+    ) : (
+      GATED_SELECTION_CAPTION
+    );
 
   return (
-    <FormPage
-      title="Add contact from RadioID.net"
-      description={
+    <DirectoryIngestPage
+      crumb="Contacts"
+      crumbTo="/library/contacts"
+      title="Search RadioID.net"
+      subtitle={
         <>
           Search the worldwide{' '}
-          <Anchor href="https://www.radioid.net/" target="_blank" rel="noreferrer">
+          <a href="https://www.radioid.net/" target="_blank" rel="noreferrer" className="libraryListNameLink">
             RadioID.net
-          </Anchor>{' '}
+          </a>{' '}
           DMR user database and import private contacts into your library. Community data — verify
-          before use on air. Respect RadioID.net acceptable use and rate limits.
+          before use on air.
         </>
       }
-      onSubmit={handleSearchSubmit}
+      footer={
+        <Button variant="secondary" onClick={() => navigate('/library/contacts')}>
+          Back to library
+        </Button>
+      }
     >
-      <Stack gap="lg">
-        <Alert variant="light" color="blue" title="Directory disclaimer">
-          RadioID.net listings are community-maintained. Studio stores contacts in your
-          vendor-neutral library; format exports project metadata per build adapter.
-        </Alert>
+      <form onSubmit={handleSearchSubmit}>
+        <Panel title="Search filters">
+          <StatusBanner tone="info">
+            RadioID.net listings are community-maintained. Studio stores contacts in your
+            vendor-neutral library; format exports project metadata per build adapter.
+          </StatusBanner>
 
-        <PageSection title="Search filters">
-          <Group grow align="flex-end">
-            <Autocomplete
+          <div className={pageClasses.filterGrid}>
+            <CountryComboboxField
               label="Country"
-              placeholder="Start typing — e.g. United Kingdom"
-              data={[...REPEATERBOOK_COUNTRY_NAMES]}
               value={filters.country}
               onChange={(value) => updateFilter('country', value)}
-              limit={20}
+              className={pageClasses.filterField}
             />
-            <TextInput
-              label="State / province"
-              value={filters.state}
-              onChange={(e) => updateFilter('state', e.currentTarget.value)}
-              placeholder="Begins with…"
-            />
-            <TextInput
-              label="City"
-              value={filters.city}
-              onChange={(e) => updateFilter('city', e.currentTarget.value)}
-              placeholder="Begins with…"
-            />
-            <TextInput
-              label="Callsign"
-              value={filters.callsign}
-              onChange={(e) => updateFilter('callsign', e.currentTarget.value)}
-              placeholder="Begins with…"
-            />
-            <TextInput
-              label="DMR ID"
-              value={filters.id}
-              onChange={(e) => updateFilter('id', e.currentTarget.value)}
-            />
-          </Group>
-          <Group mt="md">
+            <FormField label="State / province" className={pageClasses.filterField}>
+              <TextInput
+                variant="plain"
+                value={filters.state}
+                onChange={(e) => updateFilter('state', e.currentTarget.value)}
+                placeholder="Begins with…"
+              />
+            </FormField>
+            <FormField label="City" className={pageClasses.filterField}>
+              <TextInput
+                variant="plain"
+                value={filters.city}
+                onChange={(e) => updateFilter('city', e.currentTarget.value)}
+                placeholder="Begins with…"
+              />
+            </FormField>
+            <FormField label="Callsign" className={pageClasses.filterField}>
+              <TextInput
+                variant="plain"
+                value={filters.callsign}
+                onChange={(e) => updateFilter('callsign', e.currentTarget.value)}
+                placeholder="Begins with…"
+              />
+            </FormField>
+            <FormField label="DMR ID" className={pageClasses.filterField}>
+              <TextInput
+                variant="plain"
+                value={filters.id}
+                onChange={(e) => updateFilter('id', e.currentTarget.value)}
+              />
+            </FormField>
+          </div>
+
+          <div className={pageClasses.filterActions}>
             <Button
               type="submit"
               loading={loading}
@@ -273,70 +301,54 @@ export default function RadioidContactSearch() {
             >
               Search
             </Button>
-          </Group>
-        </PageSection>
+          </div>
+        </Panel>
+      </form>
 
-        {error ? (
-          <Alert color="red" title="Search">
-            {error}
-          </Alert>
-        ) : null}
-        {addMessage ? (
-          <Alert color="green" title="Import">
-            {addMessage}
-          </Alert>
-        ) : null}
+      {error ? <StatusBanner tone="warning">{error}</StatusBanner> : null}
+      {addMessage ? <StatusBanner tone="success">{addMessage}</StatusBanner> : null}
 
-        {listings.length > 0 ? (
-          <PageSection title={`Results (${totalCount})`}>
-            <Group mb="md">
-              <Button disabled={totalCount === 0} onClick={() => openBulkImport('all')}>
-                Add all results ({totalCount})
-              </Button>
-              <Button
-                variant="light"
-                disabled={listings.length === 0}
-                onClick={() => openBulkImport('page')}
-              >
-                Add this page ({listings.length})
-              </Button>
-              <Button
-                variant="light"
-                disabled={selectedListings.length === 0}
-                onClick={() => openBulkImport('selected')}
-              >
-                Add selected ({selectedListings.length})
-              </Button>
-            </Group>
-            <DataTable
-              variant="embedded"
-              rows={listings}
-              rowKey={listingKey}
-              nameColumn={{
-                getName: radioidListingDisplayName,
-                getPath: () => '#',
-                render: (row) => radioidListingDisplayName(row),
-              }}
-              columns={columns}
-              selectable
-              selectedKeys={selectedKeys}
-              onSelectedKeysChange={setSelectedKeys}
-              showSearch={false}
-            />
-            {totalPages > 1 ? (
-              <Group justify="center" mt="md">
-                <Pagination total={totalPages} value={page} onChange={goToPage} />
-              </Group>
-            ) : null}
-          </PageSection>
-        ) : null}
-
-        {!loading && listings.length === 0 && !error ? (
-          <Text c="dimmed" size="sm">
-            Enter filters and search to load DMR users from RadioID.net.
-          </Text>
-        ) : null}
-      </Stack>
+      {listings.length > 0 ? (
+        <Panel title={`Results (${totalCount.toLocaleString()})`}>
+          <div className={pageClasses.filterActions} style={{ marginBottom: 12 }}>
+            <Button disabled={totalCount === 0} size="sm" onClick={() => openBulkImport('all')}>
+              Add all results ({totalCount.toLocaleString()})
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={listings.length === 0}
+              onClick={() => openBulkImport('page')}
+            >
+              Add this page ({listings.length})
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={selectedKeys.length === 0}
+              onClick={() => openBulkImport('selected')}
+            >
+              Add selected ({selectedKeys.length})
+            </Button>
+          </div>
+          <DataTable
+            variant="embedded"
+            rows={listings}
+            getRowId={listingKey}
+            columns={columns}
+            caption={tableCaption}
+            selectable
+            selectedKeys={selectedKeys}
+            onSelectionChange={setSelectedKeys}
+            isRowSelectable={(row) => !duplicateById.has(row.id)}
+            onRowActivate={(row) => {
+              if (duplicateById.has(row.id)) openPreview(row);
+            }}
+          />
+        </Panel>
+      ) : !loading && !error ? (
+        <p className={pageClasses.attribution}>Enter filters and search to load DMR users from RadioID.net.</p>
+      ) : null}
 
       {bulkScope ? (
         <RadioidContactBulkImportDialog
@@ -381,6 +393,6 @@ export default function RadioidContactSearch() {
           setPreviewOpen(false);
         }}
       />
-    </FormPage>
+    </DirectoryIngestPage>
   );
 }
