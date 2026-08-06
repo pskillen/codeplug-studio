@@ -1,0 +1,68 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px var(--dsv2-page-padding-x) 0;
+  min-width: 0;
+}
+
+.compact {
+  padding: 16px 16px 0;
+}
+
+.crumbRow {
+  min-width: 0;
+}
+
+.crumb,
+.crumbButton,
+.crumbStatic {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+  text-decoration: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: default;
+}
+
+.crumb,
+.crumbButton {
+  cursor: pointer;
+}
+
+.crumb:hover,
+.crumbButton:hover {
+  color: var(--dsv2-text-secondary);
+}
+
+.crumbIcon {
+  flex-shrink: 0;
+}
+
+.titles {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  line-height: 1.2;
+}
+
+.compact .title {
+  font-size: 18px;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+  line-height: 1.4;
+}

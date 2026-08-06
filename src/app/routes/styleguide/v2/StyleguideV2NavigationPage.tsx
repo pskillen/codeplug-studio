@@ -7,7 +7,9 @@ import {
   AppShell,
   BottomTabBar,
   ContextualStrip,
+  EditorHeader,
   SectionNav,
+  StickyFooter,
 } from '../../../components/v2/index.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 
@@ -91,7 +93,38 @@ export default function StyleguideV2NavigationPage() {
         </Stack>
       </PageSection>
 
-      <PageSection title="SectionNav" description="In-page section rail (channel editor pattern).">
+      <PageSection
+        title="EditorHeader + StickyFooter"
+        description="Batch 3 editor chrome — title crumb block and sticky save bar (E1–E8)."
+      >
+        <div
+          style={{
+            position: 'relative',
+            border: '1px solid var(--dsv2-border)',
+            borderRadius: 10,
+            overflow: 'hidden',
+            minHeight: 280,
+          }}
+        >
+          <EditorHeader
+            crumb="Channels"
+            crumbTo="/styleguide/v2/navigation"
+            title="New channel"
+            subtitle="Set up the identity, frequency and mode for this channel."
+          />
+          <div style={{ padding: '16px 32px', color: 'var(--dsv2-text-tertiary)', fontSize: 13 }}>
+            Scrollable editor panels…
+          </div>
+          <StickyFooter
+            saveLabel="Save channel"
+            dirty
+            onCancel={() => {}}
+            onSave={() => {}}
+          />
+        </div>
+      </PageSection>
+
+      <PageSection title="SectionNav" description="Legacy in-page section rail (superseded by E1 scroll layout).">
         <div
           style={{
             display: 'flex',

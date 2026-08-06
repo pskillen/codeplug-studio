@@ -72,7 +72,9 @@ Mantine `theme.components.*.defaultProps` and CSS variables are **global** if ap
 | `DataTable` (v2)         | [DataTable.md](../../../src/app/components/v2/DataTable.md)                           | Full mk2 capability fork — coexists with v1 `ui/DataTable` (#938)                     |
 | `AppShell`               | [AppShell.md](../../../src/app/components/v2/AppShell.md)                             | Top header bar (not a sidebar shell)                                                  |
 | `ContextualStrip`        | [ContextualStrip.md](../../../src/app/components/v2/ContextualStrip.md)               | Section sub-view pills under AppShell                                                 |
-| `SectionNav`             | [SectionNav.md](../../../src/app/components/v2/SectionNav.md)                         | In-page section rail                                                                  |
+| `SectionNav`             | [SectionNav.md](../../../src/app/components/v2/SectionNav.md)                         | In-page section rail (legacy mk1 editor pattern)                                      |
+| `EditorHeader`           | [EditorHeader.md](../../../src/app/components/v2/EditorHeader.md)                     | Editor title + back crumb (#941)                                                      |
+| `StickyFooter`           | [StickyFooter.md](../../../src/app/components/v2/StickyFooter.md)                     | Sticky Cancel/Save bar (#941)                                                         |
 | `BottomTabBar`           | [BottomTabBar.md](../../../src/app/components/v2/BottomTabBar.md)                     | Mobile primary nav                                                                    |
 | `ShuttleList*`           | [ShuttleList.md](../../../src/app/components/v2/ShuttleList.md)                       | Reuses list-kit — still the live pattern; not deprecated by the Membership family yet |
 | `MembershipRow`          | [MembershipRow.md](../../../src/app/components/v2/MembershipRow.md)                   | Member ("C" role) row (#938)                                                          |
@@ -94,7 +96,7 @@ Barrel: `src/app/components/v2/index.ts`.
 | `/styleguide/v2/feedback`     | StatusBanner, StatusDot, DismissibleNotice                                                                                                                                |
 | `/styleguide/v2/overlays`     | ModalShell, ConfirmModal, ProgressModal                                                                                                                                   |
 | `/styleguide/v2/membership`   | MembershipRow, MembershipPanel, MembershipPoolRow, AddMembersScreen                                                                                                       |
-| `/styleguide/v2/navigation`   | AppShell, ContextualStrip, SectionNav, BottomTabBar                                                                                                                       |
+| `/styleguide/v2/navigation`   | AppShell, ContextualStrip, EditorHeader, StickyFooter, SectionNav, BottomTabBar                                                                                           |
 | `/styleguide/v2/patterns`     | ShuttleList family                                                                                                                                                        |
 
 ## Progress tracking
