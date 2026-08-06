@@ -1,5 +1,7 @@
 import { Loader, TextInput } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   IconArrowDown,
   IconArrowUp,
@@ -8,10 +10,17 @@ import {
   IconChevronUp,
   IconSelector,
 } from '@tabler/icons-react';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { reorderSelectedKeys } from '@core/domain/zoneOrder.ts';
+import {
+  DataTableBulkReorderProvider,
+  DataTableBulkReorderSortable,
+} from '../../lib/dataTable/DataTableBulkReorder.tsx';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
+import SelectedItemDragHandle, {
+  type SelectedItemDragHandleProps,
+} from '../ui/SelectedItemDragHandle.tsx';
 import Button from './Button.tsx';
 import Checkbox from './Checkbox.tsx';
 import classes from './DataTable.module.css';
@@ -77,7 +86,7 @@ export interface DataTableProps<T> {
   onClearSelection?: () => void;
   /**
    * Locks display to `rows` order (column sort disabled) and adds a leading
-   * Order column with per-row up/down move controls.
+   * Order column with a per-row drag handle.
    */
   reorderMode?: boolean;
   onReorder?: (nextRows: T[]) => void;
@@ -127,6 +136,149 @@ function defaultCountLabel(displayed: number, total: number | undefined) {
     return `${displayed} result${displayed === 1 ? '' : 's'}`;
   }
   return `Showing ${displayed} of ${total}`;
+}
+
+interface DataTableBodyRowProps<T> {
+  flat: FlatRow<T>;
+  columns: DataTableColumn<T>[];
+  visibleColumns: DataTableColumn<T>[];
+  gridTemplateColumns: string;
+  nested: boolean;
+  selectable: boolean;
+  selected: boolean;
+  rowSelectable: boolean;
+  onToggleRow: (key: string) => void;
+  reorderMode: boolean;
+  reorderDragEnabled: boolean;
+  topLevelIndex: number;
+  isExpanded: boolean;
+  onToggleExpanded: (key: string) => void;
+  rowVariant: 'nestParent' | undefined;
+  activatable: boolean;
+  onActivate: () => void;
+}
+
+/** One data row. Always calls `useSortable` (inert when `reorderDragEnabled` is false or there's no ancestor `DndContext`) so hook order stays stable regardless of mode. */
+function DataTableBodyRow<T>({
+  flat,
+  visibleColumns,
+  gridTemplateColumns,
+  nested,
+  selectable,
+  selected,
+  rowSelectable,
+  onToggleRow,
+  reorderMode,
+  reorderDragEnabled,
+  topLevelIndex,
+  isExpanded,
+  onToggleExpanded,
+  rowVariant,
+  activatable,
+  onActivate,
+}: DataTableBodyRowProps<T>) {
+  const { row, key, depth, hasChildren } = flat;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: key, disabled: !reorderDragEnabled });
+
+  const style: CSSProperties = {
+    gridTemplateColumns,
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.65 : undefined,
+    position: 'relative',
+    zIndex: isDragging ? 1 : undefined,
+  };
+
+  const dragHandle: SelectedItemDragHandleProps | null = reorderDragEnabled
+    ? { setActivatorNodeRef, attributes, listeners, disabled: false }
+    : null;
+
+  return (
+    <div
+      ref={setNodeRef}
+      role="row"
+      className={[
+        classes.dataRow,
+        selectable && !rowSelectable ? classes.rowGated : '',
+        rowVariant === 'nestParent' ? classes.rowNestParent : '',
+        activatable ? classes.rowActivatable : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      style={style}
+      onClick={activatable ? onActivate : undefined}
+    >
+      {nested ? (
+        <div role="cell" className={classes.leadCell} style={{ paddingLeft: 6 + depth * 16 }}>
+          {hasChildren ? (
+            <button
+              type="button"
+              className={classes.expandButton}
+              aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleExpanded(key);
+              }}
+            >
+              <IconChevronRight
+                size={ICON_SIZE_NAV}
+                stroke={ICON_STROKE}
+                className={isExpanded ? classes.expandIconOpen : undefined}
+                aria-hidden
+              />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {selectable ? (
+        <div role="cell" className={classes.leadCell}>
+          {rowSelectable ? (
+            <Checkbox
+              checked={selected}
+              onCheckedChange={() => onToggleRow(key)}
+              onClick={(event) => event.stopPropagation()}
+              aria-label={`Select row ${key}`}
+            />
+          ) : null}
+        </div>
+      ) : null}
+      {reorderMode ? (
+        <div role="cell" className={classes.orderCell}>
+          {depth === 0 ? (
+            <>
+              <span className={classes.orderIndex}>{topLevelIndex + 1}</span>
+              <span onClick={(event) => event.stopPropagation()}>
+                <SelectedItemDragHandle dragHandle={dragHandle} />
+              </span>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+      {visibleColumns.map((col) => (
+        <div
+          role="cell"
+          key={col.key}
+          className={[
+            classes.dataCell,
+            col.align === 'right' ? classes.alignRight : '',
+            col.dim ? classes.dim : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {col.render(row)}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 /**
@@ -192,15 +344,24 @@ export default function DataTable<T>({
     return [...rows].sort((a, b) => direction * compareValues(sortValue(a), sortValue(b)));
   }, [reorderMode, rows, sortState, sortColumn]);
 
-  const moveRows = (keysToMove: string[], direction: 'up' | 'down') => {
+  const rowsByKey = useMemo(
+    () => new Map(rows.map((row) => [getRowId(row), row])),
+    [rows, getRowId],
+  );
+
+  const setOrder = (nextKeys: string[]) => {
     if (!onReorder) return;
-    const rowsByKey = new Map(rows.map((row) => [getRowId(row), row]));
-    const nextKeys = reorderSelectedKeys(
-      rows.map((row) => getRowId(row)),
-      new Set(keysToMove),
-      direction,
-    );
     onReorder(nextKeys.map((key) => rowsByKey.get(key)!));
+  };
+
+  const moveSelected = (keysToMove: string[], direction: 'up' | 'down') => {
+    setOrder(
+      reorderSelectedKeys(
+        rows.map((row) => getRowId(row)),
+        new Set(keysToMove),
+        direction,
+      ),
+    );
   };
 
   const displayCount = resultCount ?? sortedRows.length;
@@ -297,10 +458,15 @@ export default function DataTable<T>({
 
   const showSelectionToolbar = selectable && selectedKeys.length > 0;
 
+  const reorderableRowKeys = reorderMode
+    ? flattenedRows.filter((f) => f.depth === 0 && !f.hasChildren).map((f) => f.key)
+    : [];
+  const dragSortableKeys = onReorder ? reorderableRowKeys : [];
+
   const gridTemplateColumns = [
-    nested ? '24px' : null,
-    selectable ? '32px' : null,
-    reorderMode ? '72px' : null,
+    nested ? '36px' : null,
+    selectable ? '40px' : null,
+    reorderMode ? '68px' : null,
     ...visibleColumns.map((col) => col.width ?? '1fr'),
   ]
     .filter(Boolean)
@@ -361,7 +527,7 @@ export default function DataTable<T>({
                 type="button"
                 className={classes.moveButton}
                 aria-label="Move selected up"
-                onClick={() => moveRows(selectedKeys, 'up')}
+                onClick={() => moveSelected(selectedKeys, 'up')}
               >
                 <IconArrowUp size={14} stroke={ICON_STROKE} aria-hidden />
               </button>
@@ -369,7 +535,7 @@ export default function DataTable<T>({
                 type="button"
                 className={classes.moveButton}
                 aria-label="Move selected down"
-                onClick={() => moveRows(selectedKeys, 'down')}
+                onClick={() => moveSelected(selectedKeys, 'down')}
               >
                 <IconArrowDown size={14} stroke={ICON_STROKE} aria-hidden />
               </button>
@@ -384,9 +550,9 @@ export default function DataTable<T>({
 
       <div className={classes.table} role="table" data-scale={scale}>
         <div className={classes.headerRow} role="row" style={{ gridTemplateColumns }}>
-          {nested ? <div role="columnheader" className={classes.headerCell} /> : null}
+          {nested ? <div role="columnheader" className={classes.leadCell} /> : null}
           {selectable ? (
-            <div role="columnheader" className={classes.headerCell}>
+            <div role="columnheader" className={classes.leadCell}>
               <Checkbox
                 checked={allSelected}
                 indeterminate={someSelected}
@@ -450,120 +616,45 @@ export default function DataTable<T>({
               </div>
             </div>
           ) : (
-            flattenedRows.map((flat) => {
-              const { row, key, depth, hasChildren } = flat;
-              const rowSelectable = rowIsSelectable(row);
-              const topLevelIndex =
-                depth === 0 ? sortedRows.findIndex((r) => getRowId(r) === key) : -1;
-              const rowVariant = getRowVariant?.(row);
-              const activatable = !!onRowActivate && (!selectable || rowSelectable);
+            <DataTableBulkReorderProvider
+              sortableKeys={dragSortableKeys}
+              orderedKeys={rows.map((row) => getRowId(row))}
+              selectedKeys={selectedKeys}
+              onSetOrder={setOrder}
+            >
+              <DataTableBulkReorderSortable sortableKeys={dragSortableKeys}>
+                {flattenedRows.map((flat) => {
+                  const rowSelectable = rowIsSelectable(flat.row);
+                  const topLevelIndex =
+                    flat.depth === 0 ? rows.findIndex((r) => getRowId(r) === flat.key) : -1;
+                  const rowVariant = getRowVariant?.(flat.row);
+                  const activatable = !!onRowActivate && (!selectable || rowSelectable);
 
-              return (
-                <div
-                  key={key}
-                  role="row"
-                  className={[
-                    classes.dataRow,
-                    selectable && !rowSelectable ? classes.rowGated : '',
-                    rowVariant === 'nestParent' ? classes.rowNestParent : '',
-                    activatable ? classes.rowActivatable : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  style={{ gridTemplateColumns }}
-                  onClick={activatable ? () => onRowActivate!(row) : undefined}
-                >
-                  {nested ? (
-                    <div
-                      role="cell"
-                      className={classes.dataCell}
-                      style={{ paddingLeft: depth * 16 }}
-                    >
-                      {hasChildren ? (
-                        <button
-                          type="button"
-                          className={classes.expandButton}
-                          aria-label={expandedKeys.has(key) ? 'Collapse row' : 'Expand row'}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            toggleExpanded(key);
-                          }}
-                        >
-                          <IconChevronRight
-                            size={ICON_SIZE_NAV}
-                            stroke={ICON_STROKE}
-                            className={expandedKeys.has(key) ? classes.expandIconOpen : undefined}
-                            aria-hidden
-                          />
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {selectable ? (
-                    <div role="cell" className={classes.dataCell}>
-                      {rowSelectable ? (
-                        <Checkbox
-                          checked={selectedKeys.includes(key)}
-                          onCheckedChange={() => toggleRow(key)}
-                          onClick={(event) => event.stopPropagation()}
-                          aria-label={`Select row ${key}`}
-                        />
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {reorderMode ? (
-                    <div role="cell" className={[classes.dataCell, classes.orderCell].join(' ')}>
-                      {depth === 0 && !hasChildren ? (
-                        <>
-                          <span className={classes.orderIndex}>{topLevelIndex + 1}</span>
-                          <button
-                            type="button"
-                            className={classes.moveButton}
-                            aria-label={`Move row ${topLevelIndex + 1} up`}
-                            disabled={topLevelIndex === 0}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              moveRows([key], 'up');
-                            }}
-                          >
-                            <IconArrowUp size={12} stroke={ICON_STROKE} aria-hidden />
-                          </button>
-                          <button
-                            type="button"
-                            className={classes.moveButton}
-                            aria-label={`Move row ${topLevelIndex + 1} down`}
-                            disabled={topLevelIndex === sortedRows.length - 1}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              moveRows([key], 'down');
-                            }}
-                          >
-                            <IconArrowDown size={12} stroke={ICON_STROKE} aria-hidden />
-                          </button>
-                        </>
-                      ) : depth === 0 ? (
-                        <span className={classes.orderIndex}>{topLevelIndex + 1}</span>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {visibleColumns.map((col) => (
-                    <div
-                      key={col.key}
-                      role="cell"
-                      className={[
-                        classes.dataCell,
-                        col.align === 'right' ? classes.alignRight : '',
-                        col.dim ? classes.dim : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')}
-                    >
-                      {col.render(row)}
-                    </div>
-                  ))}
-                </div>
-              );
-            })
+                  return (
+                    <DataTableBodyRow
+                      key={flat.key}
+                      flat={flat}
+                      columns={columns}
+                      visibleColumns={visibleColumns}
+                      gridTemplateColumns={gridTemplateColumns}
+                      nested={nested}
+                      selectable={selectable}
+                      selected={selectedKeys.includes(flat.key)}
+                      rowSelectable={rowSelectable}
+                      onToggleRow={toggleRow}
+                      reorderMode={reorderMode}
+                      reorderDragEnabled={dragSortableKeys.includes(flat.key)}
+                      topLevelIndex={topLevelIndex}
+                      isExpanded={expandedKeys.has(flat.key)}
+                      onToggleExpanded={toggleExpanded}
+                      rowVariant={rowVariant}
+                      activatable={activatable}
+                      onActivate={() => onRowActivate?.(flat.row)}
+                    />
+                  );
+                })}
+              </DataTableBulkReorderSortable>
+            </DataTableBulkReorderProvider>
           )}
         </div>
       </div>

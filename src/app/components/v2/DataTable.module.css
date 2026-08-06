@@ -74,11 +74,15 @@
 .orderCell {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  padding: var(--dsv2-row-padding-y) 8px;
+  min-width: 0;
+  overflow: visible;
 }
 
 .orderIndex {
-  min-width: 16px;
+  min-width: 14px;
+  font-size: var(--dsv2-font-body-sm);
   font-variant-numeric: tabular-nums;
   color: var(--dsv2-text-tertiary);
 }
@@ -151,6 +155,21 @@
   text-transform: uppercase;
   letter-spacing: var(--dsv2-tracking-eyebrow);
   min-width: 0;
+}
+
+/**
+ * Lead columns (nested expander, checkbox) are icon/control-only — the
+ * regular 16px .headerCell/.dataCell horizontal padding leaves no room for
+ * their content inside a narrow (32-40px) column and clips it into the next
+ * column. Use a smaller, symmetric padding instead.
+ */
+.leadCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  min-width: 0;
+  overflow: visible;
 }
 
 .alignRight {

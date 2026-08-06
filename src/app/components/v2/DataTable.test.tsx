@@ -217,8 +217,7 @@ describe('DataTable v2', () => {
     expect(rowsInOrder[0]).toContain('Bravo');
   });
 
-  it('per-row move-down button calls onReorder with the swapped order', () => {
-    const onReorder = vi.fn();
+  it('shows an interactive drag handle per row (not up/down buttons) when onReorder is provided', () => {
     render(
       <DesignSystemV2Provider>
         <DataTable
@@ -226,13 +225,23 @@ describe('DataTable v2', () => {
           rows={ROWS}
           getRowId={(row) => row.id}
           reorderMode
-          onReorder={onReorder}
+          onReorder={() => undefined}
         />
       </DesignSystemV2Provider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move row 1 down' }));
-    expect(onReorder).toHaveBeenCalledWith([ROWS[1], ROWS[0], ROWS[2]]);
+    expect(screen.getAllByRole('button', { name: 'Drag to reorder' })).toHaveLength(ROWS.length);
+    expect(screen.queryByRole('button', { name: /Move row/ })).not.toBeInTheDocument();
+  });
+
+  it('drag handle is static (non-interactive) when onReorder is not provided', () => {
+    render(
+      <DesignSystemV2Provider>
+        <DataTable columns={COLUMNS} rows={ROWS} getRowId={(row) => row.id} reorderMode />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Drag to reorder' })).not.toBeInTheDocument();
   });
 
   it('bulkReorder toolbar Move up applies to all selected rows', () => {

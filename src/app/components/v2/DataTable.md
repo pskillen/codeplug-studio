@@ -36,13 +36,13 @@ The full-capability list/detail table used across library lists, wire preview, a
 
 ## Props (reorder)
 
-| Prop          | Type                      | Notes                                                                             |
-| ------------- | ------------------------- | --------------------------------------------------------------------------------- |
-| `reorderMode` | `boolean`                 | Disables column sort; locks display to `rows` order; adds a leading Order column  |
-| `onReorder`   | `(nextRows: T[]) => void` | Called by both per-row and bulk move controls with the recomputed row order       |
-| `bulkReorder` | `boolean`                 | Adds Move up/down to the selection toolbar. Requires `selectable` + `reorderMode` |
+| Prop          | Type                      | Notes                                                                                                       |
+| ------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `reorderMode` | `boolean`                 | Disables column sort; locks display to `rows` order; adds a leading Order column with a per-row drag handle |
+| `onReorder`   | `(nextRows: T[]) => void` | Called by both drag and bulk-toolbar moves with the recomputed row order                                    |
+| `bulkReorder` | `boolean`                 | Adds Move up/down to the selection toolbar. Requires `selectable` + `reorderMode`                           |
 
-Per-row and bulk moves both use the same block-move algorithm as the zone/RGL/scan membership reorder (`reorderSelectedKeys` from `@core/domain/zoneOrder.ts`) — a single row is just a one-key selection. **Scope note:** this ships up/down move controls, not drag-and-drop; the capability inventory lists a drag handle as optional ("up/down (optionally + drag handle)"). Full drag parity with `components/ui/DataTable`'s dnd-kit reorder is tracked as follow-up debt rather than forked into this CSS-grid layout in this PR. Order numbering/controls are top-level only; nested child rows and parent (has-children) rows don't reorder, matching the capability doc's "non-reorderable parents."
+Per-row reorder is a **grip drag handle** (`SelectedItemDragHandle`, the same primitive `ShuttleRow` uses), not up/down buttons — reusing the generic `DataTableBulkReorderProvider`/`DataTableBulkReorderSortable` dnd-kit wrapper and `reorderKeysByDrag`/`reorderSelectedKeys` from `@core/domain/zoneOrder.ts` (the same algorithms `components/ui/DataTable`'s bulk-reorder drag uses — not reimplemented). Dragging a selected row moves the whole selected block together. The selection toolbar additionally exposes **Move up/down buttons** for reordering the current selection without dragging (keyboard/non-pointer path), per the capability doc's "up/down (optionally + drag handle)" — both mechanisms call the same `onReorder`. Order numbering/dragging is top-level only; nested child rows and parent (has-children) rows don't reorder, matching the capability doc's "non-reorderable parents."
 
 ## Props (nesting, scale, column visibility, row activate)
 
@@ -85,6 +85,7 @@ import { DataTable, DesignSystemV2Provider } from '@app/components/v2';
 - Must render inside `DesignSystemV2Provider`.
 - Renders as a CSS Grid (`role="table"`/`"row"`/`"columnheader"`/`"cell"`), not a native `<table>`, per the DS spec's computed `gridTemplateColumns` layout.
 - Sort cycles asc → desc → unsorted (original `rows` order) per header click.
+- Lead columns (nested expander, checkbox) use a dedicated `.leadCell` style (tight, symmetric padding) rather than the regular 16px `.dataCell`/`.headerCell` padding, which doesn't leave room for icon/control-only content in a narrow column.
 - Live demos: `/styleguide/v2/data-display`
 
 ## Related
