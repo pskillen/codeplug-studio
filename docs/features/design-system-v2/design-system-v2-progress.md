@@ -15,6 +15,25 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Membership editors (#942)   | Shipped     | [PR pending]                                                    | Batch 3 E2/M1/E6/E7 — zone workspace, RGL timeslot, scan minimal M1                                          |
 | Form editors + zone (#943)  | In progress | `943/pskillen/ds-r2-form-editors`                               | Batch 3 E3–E5, E8, M2, M3 — stacked on #942 branch                                                           |
 | Builds & radio (#924)       | Shipped     | PR pending                                                      | Batch 4 B0–B12, R1, R2 — stacked on #943 branch                                                              |
+| Directories & ingest (#944) | In progress | `944/pskillen/ds-r2-directories-ingest` (stacked on #924)       | Batch 5 D1–D4, P2, C5, C6                                                                                    |
+
+### #944 directories & ingest (Batch 5 D1–D4, P2, C5, C6)
+
+| Sub-slice                | Status      | Notes                                                                                       |
+| ------------------------ | ----------- | ------------------------------------------------------------------------------------------- |
+| Kickoff + diff checklist | In progress | Branch `944/pskillen/ds-r2-directories-ingest` from `924/pskillen/ds-r2-builds-radio`       |
+
+**mk2 diff (live → Batch 5 ingest):**
+
+| ID  | Live surface                         | Gap                                                                 |
+| --- | ------------------------------------ | ------------------------------------------------------------------- |
+| D1  | `RepeaterDirectorySearch` v1 chrome  | EditorHeader + Panel filters + v2 DataTable gated select + bulk bar |
+| D2  | Provider wrappers + OpenAIP cards      | D1 variants; OpenAIP airfield layout per frame                      |
+| D3  | `RadioidContactSearch` v1              | D1 + pagination caption + ModalShell preview/update/bulk              |
+| D4  | `ChannelSetPicker` v1                  | Set picker + status pills + v2 embedded table                       |
+| P2  | `YamlFileDropzone` + Mantine overwrite | v2 `FileDropzone` + `ConfirmModal` / `ModalShell`                   |
+| C5  | Mantine `Autocomplete` in directories  | v2 `Combobox` on country/location typeaheads                        |
+| C6  | v1 YAML dropzone                       | v2 `FileDropzone` on Home + Summary import panels                   |
 
 ### #924 builds & radio (Batch 4 B0–B12, R1, R2)
 
@@ -93,7 +112,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## Next
 
-**r2 retrofit** in flight: builds & radio ([#924](https://github.com/pskillen/codeplug-studio/issues/924)) on `924/pskillen/ds-r2-builds-radio` (stacked on #943).
+**r2 retrofit** in flight: directories & ingest ([#944](https://github.com/pskillen/codeplug-studio/issues/944)) on `944/pskillen/ds-r2-directories-ingest` (stacked on [#924](https://github.com/pskillen/codeplug-studio/issues/924)).
 
 ## Verification
 
