@@ -52,7 +52,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 ### #938 foundations gap-fill (this branch)
 
 - [x] `npm run format:check && npm run lint && npm run test && npm run build`
-- [ ] Manual desktop + narrow pass on every new/extended `/styleguide/v2/*` page against mk2 Batch frames
+- [x] Manual desktop + narrow pass on every new/extended `/styleguide/v2/*` page (overlays, membership, data-display, forms, feedback) — zero console errors, interactions verified (modal open/close, AddMembersScreen stage/commit + blocked candidate, DataTable v2 reorder/nested-expand/column-visibility, Combobox search/select, DismissibleNotice dismiss)
 
 ### mk1 library ports (history)
 
