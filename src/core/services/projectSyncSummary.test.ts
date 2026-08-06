@@ -10,6 +10,8 @@ import {
   formatSyncTimestamp,
   hasPortableInterchange,
   isRemotePortableNewer,
+  isLocalPortableDirty,
+  isProjectPortableDirtyFromSeed,
   portableInterchangeLabel,
   summariseProjectAggregate,
 } from './projectSyncSummary.ts';
@@ -75,6 +77,45 @@ describe('projectSyncSummary', () => {
     expect(isRemotePortableNewer('2026-07-09T14:04:47.500Z', localSyncedAt)).toBe(false);
     expect(isRemotePortableNewer('2026-07-09T14:04:49.500Z', localSyncedAt)).toBe(true);
     expect(isRemotePortableNewer(null, localSyncedAt)).toBe(false);
+  });
+
+  it('isLocalPortableDirty ignores small edit-vs-sync skew after Drive save', () => {
+    const localSyncedAt = '2026-07-09T14:04:46.000Z';
+    expect(isLocalPortableDirty('2026-07-09T14:04:47.500Z', localSyncedAt)).toBe(false);
+    expect(isLocalPortableDirty('2026-07-09T14:04:49.500Z', localSyncedAt)).toBe(true);
+    expect(isLocalPortableDirty(null, localSyncedAt)).toBe(false);
+    expect(isLocalPortableDirty('2026-07-09T14:04:50.000Z', null)).toBe(false);
+  });
+
+  it('isProjectPortableDirtyFromSeed ignores yaml meta.updatedAt vs Drive sync skew', () => {
+    const aggregate = minimalProjectAggregate();
+    const syncedMeta = recordImportDestination(
+      aggregate.meta,
+      'googleDrive',
+      {
+        fileName: 'remote.yaml',
+        folderId: 'folder-1',
+        fileId: 'file-1',
+      },
+      '2026-07-02T10:00:00.000Z',
+    );
+    const seed = {
+      meta: {
+        ...syncedMeta,
+        updatedAt: '2099-01-01T00:00:00.000Z',
+      },
+      channels: aggregate.channels,
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups,
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+      scanLists: aggregate.scanLists,
+      aprsConfigurations: aggregate.aprsConfiguration ? [aggregate.aprsConfiguration] : [],
+      radioBuilds: aggregate.radioBuilds,
+      egressPaths: aggregate.egressPaths,
+    };
+    expect(isProjectPortableDirtyFromSeed(seed)).toBe(false);
   });
 
   it('formatSyncTimestamp uses 24-hour clock and locale-aware date order', () => {

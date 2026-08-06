@@ -105,8 +105,16 @@ function countsFromSeed(seed: ProjectSeed): ProjectSyncCounts {
 }
 
 function lastModifiedFromSeed(seed: ProjectSeed): string | null {
-  return maxIsoTimestamp([
-    seed.meta.updatedAt,
+  return maxIsoTimestamp([seed.meta.updatedAt, ...libraryUpdatedAtValues(seed)]);
+}
+
+/** Library entity edits only — excludes project meta.updatedAt (yaml header vs Drive skew). */
+function lastLibraryModifiedFromSeed(seed: ProjectSeed): string | null {
+  return maxIsoTimestamp(libraryUpdatedAtValues(seed));
+}
+
+function libraryUpdatedAtValues(seed: ProjectSeed): string[] {
+  return [
     ...(seed.channels ?? []).map((row) => row.updatedAt),
     ...(seed.zones ?? []).map((row) => row.updatedAt),
     ...(seed.talkGroups ?? []).map((row) => row.updatedAt),
@@ -117,7 +125,7 @@ function lastModifiedFromSeed(seed: ProjectSeed): string | null {
     ...(seed.aprsConfigurations ?? []).map((row) => row.updatedAt),
     ...(seed.radioBuilds ?? []).map((row) => row.updatedAt),
     ...(seed.egressPaths ?? []).map((row) => row.updatedAt),
-  ]);
+  ];
 }
 
 export function summariseProjectSeed(seed: ProjectSeed): ProjectSyncSummary {
@@ -128,6 +136,11 @@ export function summariseProjectSeed(seed: ProjectSeed): ProjectSyncSummary {
     portableSyncedAt: portableSyncedAt(seed.meta),
     counts: countsFromSeed(seed),
   };
+}
+
+/** Whether library rows changed since the last portable save (Drive / file). */
+export function isProjectPortableDirtyFromSeed(seed: ProjectSeed): boolean {
+  return isLocalPortableDirty(lastLibraryModifiedFromSeed(seed), portableSyncedAt(seed.meta));
 }
 
 export function summariseProjectAggregate(aggregate: ProjectAggregate): ProjectSyncSummary {
@@ -275,6 +288,22 @@ export function isRemotePortableNewer(
     return remoteModifiedAt > localSyncedAt;
   }
   return remoteMs > localMs + PORTABLE_SYNC_TOLERANCE_MS;
+}
+
+/** True when local library edits are newer than the last portable save (Drive / file). */
+export function isLocalPortableDirty(
+  lastModifiedAt: string | null | undefined,
+  localSyncedAt: string | null | undefined,
+): boolean {
+  if (!lastModifiedAt || !localSyncedAt) {
+    return false;
+  }
+  const lastMs = Date.parse(lastModifiedAt);
+  const syncMs = Date.parse(localSyncedAt);
+  if (Number.isNaN(lastMs) || Number.isNaN(syncMs)) {
+    return lastModifiedAt > localSyncedAt;
+  }
+  return lastMs > syncMs + PORTABLE_SYNC_TOLERANCE_MS;
 }
 
 export function hasPortableInterchange(meta: ProjectMeta): boolean {

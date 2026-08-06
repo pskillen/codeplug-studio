@@ -56,6 +56,42 @@ describe('useProjectChipStatus', () => {
     expect(result.current).toEqual({ tone: 'accent', label: 'Saving…' });
   });
 
+  it('returns quiet success when local-only and not dirty', () => {
+    const localOnly: ProjectMeta = {
+      ...baseProject,
+      interchange: undefined,
+    };
+    const { result } = renderHook(() =>
+      useProjectChipStatus({
+        project: localOnly,
+        hasActiveProject: true,
+        dirty: false,
+        saving: false,
+        driveUpdateAvailable: false,
+        driveSessionExpired: false,
+        driveLinked: false,
+      }),
+    );
+
+    expect(result.current).toEqual({ tone: 'success', label: null });
+  });
+
+  it('returns unsaved label only when dirty', () => {
+    const { result } = renderHook(() =>
+      useProjectChipStatus({
+        project: baseProject,
+        hasActiveProject: true,
+        dirty: true,
+        saving: false,
+        driveUpdateAvailable: false,
+        driveSessionExpired: false,
+        driveLinked: true,
+      }),
+    );
+
+    expect(result.current).toEqual({ tone: 'neutral', label: 'Unsaved changes' });
+  });
+
   it('returns warning for drive update', () => {
     const { result } = renderHook(() =>
       useProjectChipStatus({
