@@ -14,6 +14,38 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Channel editor (#941)       | Shipped     | [PR #951](https://github.com/pskillen/codeplug-studio/pull/951) | Batch 3 E1 — EditorHeader/StickyFooter + stacked modes + sticky footer                                       |
 | Membership editors (#942)   | Shipped     | [PR pending]                                                    | Batch 3 E2/M1/E6/E7 — zone workspace, RGL timeslot, scan minimal M1                                          |
 | Form editors + zone (#943)  | In progress | `943/pskillen/ds-r2-form-editors`                               | Batch 3 E3–E5, E8, M2, M3 — stacked on #942 branch                                                           |
+| Builds & radio (#924)       | In progress | `924/pskillen/ds-r2-builds-radio`                               | Batch 4 B0–B12, R1, R2 — stacked on #943 branch                                                              |
+
+### #924 builds & radio (Batch 4 B0–B12, R1, R2)
+
+| Sub-slice                | Status      | Notes                                                                                         |
+| ------------------------ | ----------- | --------------------------------------------------------------------------------------------- |
+| Kickoff + diff checklist | Complete    | Branch `924/pskillen/ds-r2-builds-radio` from `943/pskillen/ds-r2-form-editors`               |
+| B2 workspace shell       | Pending     | Consolidate strip → Overview / Export / Wire preview / Audit + entity chips                   |
+| B0/B1 list + new         | Pending     | Group-by-radio cards, EmptyState, page new-build                                                |
+| B3 overview              | Pending     | Identity, trait badges, danger zone                                                           |
+| B4/B5 export             | Pending     | OverrideField + pathway cards                                                                 |
+| B6–B8 wire preview       | Pending     | v2 DataTable lists + override detail                                                          |
+| B9–B12 secondary         | Pending     | Bulk, flat-memory scan, audit nesting                                                         |
+| R1/R2 radio + CPS        | Pending     | ProgressModal, WriteVerifyReport, WirePreviewTable                                            |
+
+**mk2 diff (live → Batch 4):**
+
+| ID   | Live route / surface                         | Gap                                                                 |
+| ---- | -------------------------------------------- | ------------------------------------------------------------------- |
+| B0   | `/builds` v1 ListPage + DataTable            | Card/group-by-radio list, v2 EmptyState                             |
+| B1   | `/builds/new` v1 FormPage                    | mk2 page layout, radio target cards                                 |
+| B2   | Flat `buildNavItems` strip (10+ peers)       | Four sections + wire entity chips + audit sub-chrome                |
+| B3   | `/overview` v1 FormPage                      | Dense setup, capability badges, danger panel                        |
+| B4   | Override pattern unwired                     | `OverrideField` on export + wire detail                             |
+| B5   | `/export` pathway switcher + v1 panel        | Pathway cards, projection settings persist                            |
+| B6–7 | `WirePreviewDataTable` v1 DataTable          | v2 DataTable capabilities + mk2 chrome                              |
+| B8   | Mantine `WirePreviewOverrideModal`           | mk2 override detail density                                         |
+| B9–12| bulk / scan-list / export-resolution / retain| v2 chrome under Audit nesting                                       |
+| R1   | `RadioIoProgressModal` Mantine               | v2 `ProgressModal` + `WriteVerifyReport`                            |
+| R2   | `CpsCsvPreview` Mantine Table                | v2 `WirePreviewTable` monospace dump                                |
+
+**Locked:** strip order Overview → Export → Wire preview → Audit; `/builds/:id` lands Export; Audit hosts characteristics + export-resolution + retain pages.
 
 ### #943 form editors + zone helpers (E3–E5, E8, M2, M3)
 
@@ -61,7 +93,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 
 ## Next
 
-**r2 retrofit** in flight: form editors + zone helpers ([#943](https://github.com/pskillen/codeplug-studio/issues/943)) PR open.
+**r2 retrofit** in flight: builds & radio ([#924](https://github.com/pskillen/codeplug-studio/issues/924)) on `924/pskillen/ds-r2-builds-radio` (stacked on #943).
 
 ## Verification
 
