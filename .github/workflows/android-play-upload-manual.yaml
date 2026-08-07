@@ -2,24 +2,24 @@ name: Publish Android AAB to Play Store (manual)
 
 # On-demand push of an already-built AAB artifact to a chosen Play track with
 # either draft or completed (rolled-out) release status. Does not rebuild —
-# reuses the AAB from a staging or prod android-release run.
+# reuses the AAB from a main / staging / prod android-release run.
 #
-# Use this while the Play Console app is still Draft (status=draft), to retry
-# an upload, or to force a completed rollout after the app leaves Draft —
-# without waiting for the weekly production job or a new pre-release.
+# Typical first-upload path while Play requires Internal Testing before Closed
+# Testing: source=main, track=internal, status=draft. Also useful to retry an
+# upload or force a completed rollout after the Console app leaves Draft.
 
 on:
   workflow_dispatch:
     inputs:
       track:
-        description: Play Store track API id (alpha = default Closed Testing)
+        description: Play Store track API id (internal often required before Closed Testing / alpha)
         required: true
         type: choice
         options:
-          - alpha
           - internal
+          - alpha
           - production
-        default: alpha
+        default: internal
       status:
         description: Play release status — draft while Console app is Draft; completed rolls out immediately
         required: true
@@ -33,11 +33,12 @@ on:
         required: true
         type: choice
         options:
+          - main
           - staging
           - prod
-        default: staging
+        default: main
       release_tag:
-        description: Optional GitHub release tag whose AAB to publish (e.g. 2.5.0-rc.0). Empty = newest source release run that still has the AAB artifact (failed Play publishes are OK).
+        description: Optional GitHub release tag (staging/prod only). Empty = newest source run that still has the AAB. Ignored for source=main (push builds).
         required: false
         type: string
         default: ''
@@ -71,8 +72,18 @@ jobs:
           set -euo pipefail
 
           case "${SOURCE}" in
-            staging) WORKFLOW=staging.yaml ;;
-            prod) WORKFLOW=prod.yaml ;;
+            main)
+              WORKFLOW=main.yaml
+              EVENT=push
+              ;;
+            staging)
+              WORKFLOW=staging.yaml
+              EVENT=release
+              ;;
+            prod)
+              WORKFLOW=prod.yaml
+              EVENT=release
+              ;;
             *)
               echo "::error::Unexpected source: ${SOURCE}"
               exit 1
@@ -110,10 +121,10 @@ jobs:
             printf '%s\n' "${version}"
           }
 
-          # Prefer release-triggered runs that still have the AAB artifact.
-          # Include failures: staging often fails on the Play publish step
-          # after the AAB artifact has already been uploaded.
-          CANDIDATES_JSON="$(gh run list --workflow="${WORKFLOW}" --event release \
+          # Walk recent runs for this workflow/event that still have the AAB.
+          # Include failures: staging often fails on the Play publish step after
+          # the AAB artifact has already been uploaded.
+          CANDIDATES_JSON="$(gh run list --workflow="${WORKFLOW}" --event "${EVENT}" \
             --json databaseId,headSha,conclusion --limit 50)"
 
           RUN_ID=""
@@ -121,6 +132,10 @@ jobs:
           VERSION=""
 
           if [ -n "${TAG}" ]; then
+            if [ "${SOURCE}" = "main" ]; then
+              echo "::error::release_tag is for staging/prod release builds. Leave it empty when source=main (uses latest main.yaml push with an AAB)."
+              exit 1
+            fi
             if ! git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
               echo "::error::Release tag not found: ${TAG}"
               exit 1
@@ -136,7 +151,7 @@ jobs:
             done < <(printf '%s\n' "${CANDIDATES_JSON}" | jq -r --arg sha "${TARGET_SHA}" \
               '[.[] | select(.headSha == $sha)] | .[].databaseId')
             if [ -z "${RUN_ID}" ]; then
-              echo "::error::No ${WORKFLOW} release run for tag ${TAG} (commit ${TARGET_SHA}) has unexpired artifact ${ARTIFACT}."
+              echo "::error::No ${WORKFLOW} ${EVENT} run for tag ${TAG} (commit ${TARGET_SHA}) has unexpired artifact ${ARTIFACT}."
               exit 1
             fi
             VERSION="${TAG}"
@@ -156,7 +171,7 @@ jobs:
             done < <(printf '%s\n' "${CANDIDATES_JSON}" | jq -r \
               '.[] | "\(.databaseId)\t\(.headSha)"')
             if [ -z "${RUN_ID}" ]; then
-              echo "::error::No recent ${WORKFLOW} release run has unexpired artifact ${ARTIFACT}."
+              echo "::error::No recent ${WORKFLOW} ${EVENT} run has unexpired artifact ${ARTIFACT}."
               exit 1
             fi
             echo "Using ${WORKFLOW} run ${RUN_ID} (commit ${TARGET_SHA}, version ${VERSION}) with ${ARTIFACT}"
