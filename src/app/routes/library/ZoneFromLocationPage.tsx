@@ -387,7 +387,9 @@ export default function ZoneFromLocationPage() {
               getRowId={(ch) => ch.id}
               totalRowCount={selectedRows.length}
               resultCount={selectedRows.length}
-              countLabel={`${selectedRows.length} channel${selectedRows.length === 1 ? '' : 's'}`}
+              countLabel={(displayed) =>
+                `${displayed} channel${displayed === 1 ? '' : 's'}`
+              }
               selectable
               selectedKeys={selectedChannelIds}
               onSelectionChange={setSelectedChannelIdsOverride}

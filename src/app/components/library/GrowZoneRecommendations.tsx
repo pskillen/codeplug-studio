@@ -355,7 +355,9 @@ export default function GrowZoneRecommendations() {
             getRowId={(ch) => ch.id}
             totalRowCount={suggestionRows.length}
             resultCount={filteredRows.length}
-            countLabel={`${filteredRows.length} candidate${filteredRows.length === 1 ? '' : 's'}`}
+            countLabel={(displayed) =>
+              `${displayed} candidate${displayed === 1 ? '' : 's'}`
+            }
             search={{
               value: tableSearch,
               onChange: setTableSearch,
