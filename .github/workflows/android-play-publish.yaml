@@ -90,7 +90,9 @@ jobs:
           packageName: net.mm9pdy.codeplugstudio
           releaseFiles: ./aab-download/codeplug-studio-*.aab
           track: production
-          status: completed
+          # Keep in sync with android-release.yaml — draft while the Play
+          # Console app is Draft; flip to completed after the app leaves Draft.
+          status: draft
 
       - name: Tag the published commit
         if: steps.check.outputs.should_publish == 'true'

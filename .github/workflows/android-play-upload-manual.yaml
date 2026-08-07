@@ -1,0 +1,163 @@
+name: Publish Android AAB to Play Store (manual)
+
+# On-demand push of an already-built AAB artifact to a chosen Play track with
+# either draft or completed (rolled-out) release status. Does not rebuild —
+# reuses the AAB from a staging or prod android-release run.
+#
+# Use this while the Play Console app is still Draft (status=draft), to retry
+# an upload, or to force a completed rollout after the app leaves Draft —
+# without waiting for the weekly production job or a new pre-release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: Play Store track API id (alpha = default Closed Testing)
+        required: true
+        type: choice
+        options:
+          - alpha
+          - internal
+          - production
+        default: alpha
+      status:
+        description: Play release status — draft while Console app is Draft; completed rolls out immediately
+        required: true
+        type: choice
+        options:
+          - draft
+          - completed
+        default: draft
+      source:
+        description: Which CI env's AAB artifact to upload (app-release-aab-<source>)
+        required: true
+        type: choice
+        options:
+          - staging
+          - prod
+        default: staging
+      release_tag:
+        description: Optional GitHub release tag whose AAB to publish (e.g. 2.5.0-rc.0). Empty = latest successful source deploy run.
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: android-play-upload-manual
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TRACK: ${{ inputs.track }}
+      STATUS: ${{ inputs.status }}
+      SOURCE: ${{ inputs.source }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve AAB source run
+        id: resolve
+        run: |
+          set -euo pipefail
+
+          case "${SOURCE}" in
+            staging) WORKFLOW=staging.yaml ;;
+            prod) WORKFLOW=prod.yaml ;;
+            *)
+              echo "::error::Unexpected source: ${SOURCE}"
+              exit 1
+              ;;
+          esac
+
+          ARTIFACT="app-release-aab-${SOURCE}"
+          TAG="${RELEASE_TAG#v}"
+
+          if [ -n "${TAG}" ]; then
+            if ! git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+              echo "::error::Release tag not found: ${TAG}"
+              exit 1
+            fi
+            TARGET_SHA="$(git rev-list -n 1 "${TAG}")"
+            RUN_ID="$(gh run list --workflow="${WORKFLOW}" --json databaseId,headSha,event,conclusion --limit 100 \
+              --jq --arg sha "${TARGET_SHA}" \
+              '[.[] | select(.headSha==$sha and .event=="release" and .conclusion=="success")] | first | .databaseId // empty')"
+            if [ -z "${RUN_ID}" ]; then
+              echo "::error::No successful ${WORKFLOW} release run found for tag ${TAG} (commit ${TARGET_SHA})."
+              exit 1
+            fi
+            echo "Using tag ${TAG} → commit ${TARGET_SHA} → ${WORKFLOW} run ${RUN_ID}"
+            echo "version=${TAG}" >> "$GITHUB_OUTPUT"
+            echo "target_sha=${TARGET_SHA}" >> "$GITHUB_OUTPUT"
+          else
+            RUN_ID="$(gh run list --workflow="${WORKFLOW}" --json databaseId,event,conclusion --limit 50 \
+              --jq '[.[] | select(.event=="release" and .conclusion=="success")] | first | .databaseId // empty')"
+            if [ -z "${RUN_ID}" ]; then
+              echo "::error::No successful ${WORKFLOW} release run found."
+              exit 1
+            fi
+            TARGET_SHA="$(gh run view "${RUN_ID}" --json headSha --jq .headSha)"
+            VERSION="$(git describe --tags --exact-match "${TARGET_SHA}" 2>/dev/null || true)"
+            if [ -z "${VERSION}" ]; then
+              VERSION="$(git name-rev --name-only --tags "${TARGET_SHA}" 2>/dev/null || true)"
+              VERSION="${VERSION#tags/}"
+              VERSION="${VERSION%%^*}"
+            fi
+            if [ -z "${VERSION}" ] || [ "${VERSION}" = "undefined" ]; then
+              VERSION="run-${RUN_ID}"
+            fi
+            echo "Using latest successful ${WORKFLOW} run ${RUN_ID} (commit ${TARGET_SHA}, version ${VERSION})"
+            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "target_sha=${TARGET_SHA}" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "run_id=${RUN_ID}" >> "$GITHUB_OUTPUT"
+          echo "artifact=${ARTIFACT}" >> "$GITHUB_OUTPUT"
+          echo "workflow=${WORKFLOW}" >> "$GITHUB_OUTPUT"
+
+      - name: Download AAB artifact
+        run: |
+          set -euo pipefail
+          gh run download "${{ steps.resolve.outputs.run_id }}" \
+            -n "${{ steps.resolve.outputs.artifact }}" \
+            -D ./aab-download
+          ls -la ./aab-download
+          test -n "$(ls -1 ./aab-download/codeplug-studio-*.aab 2>/dev/null | head -n 1)"
+
+      - name: Publish AAB to Play Store
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: net.mm9pdy.codeplugstudio
+          releaseFiles: ./aab-download/codeplug-studio-*.aab
+          track: ${{ inputs.track }}
+          status: ${{ inputs.status }}
+
+      - name: Tag production completed publish
+        if: ${{ inputs.track == 'production' && inputs.status == 'completed' }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.resolve.outputs.version }}"
+          SHA="${{ steps.resolve.outputs.target_sha }}"
+          case "${VERSION}" in
+            run-*|'')
+              echo "::warning::Skipping android-* tag — could not resolve a SemVer release tag for this run."
+              exit 0
+              ;;
+          esac
+          if git rev-parse -q --verify "refs/tags/android-${VERSION}" >/dev/null; then
+            echo "Tag android-${VERSION} already exists — leaving it."
+            exit 0
+          fi
+          git tag "android-${VERSION}" "${SHA}"
+          git push origin "android-${VERSION}"
+          echo "Tagged and pushed android-${VERSION}"
