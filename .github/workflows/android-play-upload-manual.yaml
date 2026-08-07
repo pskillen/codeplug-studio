@@ -2,24 +2,24 @@ name: Publish Android AAB to Play Store (manual)
 
 # On-demand push of an already-built AAB artifact to a chosen Play track with
 # either draft or completed (rolled-out) release status. Does not rebuild —
-# reuses the AAB from a staging or prod android-release run.
+# reuses the AAB from a main / staging / prod android-release run.
 #
-# Use this while the Play Console app is still Draft (status=draft), to retry
-# an upload, or to force a completed rollout after the app leaves Draft —
-# without waiting for the weekly production job or a new pre-release.
+# Typical first-upload path while Play requires Internal Testing before Closed
+# Testing: source=main, track=internal, status=draft. Also useful to retry an
+# upload or force a completed rollout after the Console app leaves Draft.
 
 on:
   workflow_dispatch:
     inputs:
       track:
-        description: Play Store track API id (alpha = default Closed Testing)
+        description: Play Store track API id (internal often required before Closed Testing / alpha)
         required: true
         type: choice
         options:
-          - alpha
           - internal
+          - alpha
           - production
-        default: alpha
+        default: internal
       status:
         description: Play release status — draft while Console app is Draft; completed rolls out immediately
         required: true
@@ -33,11 +33,12 @@ on:
         required: true
         type: choice
         options:
+          - main
           - staging
           - prod
-        default: staging
+        default: main
       release_tag:
-        description: Optional GitHub release tag whose AAB to publish (e.g. 2.5.0-rc.0). Empty = latest successful source deploy run.
+        description: Optional GitHub release tag (staging/prod only). Empty = newest source run that still has the AAB. Ignored for source=main (push builds).
         required: false
         type: string
         default: ''
@@ -71,8 +72,18 @@ jobs:
           set -euo pipefail
 
           case "${SOURCE}" in
-            staging) WORKFLOW=staging.yaml ;;
-            prod) WORKFLOW=prod.yaml ;;
+            main)
+              WORKFLOW=main.yaml
+              EVENT=push
+              ;;
+            staging)
+              WORKFLOW=staging.yaml
+              EVENT=release
+              ;;
+            prod)
+              WORKFLOW=prod.yaml
+              EVENT=release
+              ;;
             *)
               echo "::error::Unexpected source: ${SOURCE}"
               exit 1
@@ -81,45 +92,93 @@ jobs:
 
           ARTIFACT="app-release-aab-${SOURCE}"
           TAG="${RELEASE_TAG#v}"
+          REPO="${GITHUB_REPOSITORY}"
+
+          # gh --jq does not accept jq --arg flags (it treats them as the
+          # expression / subcommands). Always pipe JSON to jq instead.
+          run_has_aab() {
+            local run_id="$1"
+            local count
+            count="$(gh api "repos/${REPO}/actions/runs/${run_id}/artifacts" \
+              | jq -r --arg n "${ARTIFACT}" \
+                '[.artifacts[] | select(.name == $n and .expired == false)] | length')"
+            [ "${count}" -gt 0 ]
+          }
+
+          resolve_version_for_sha() {
+            local sha="$1"
+            local run_id="$2"
+            local version
+            version="$(git describe --tags --exact-match "${sha}" 2>/dev/null || true)"
+            if [ -z "${version}" ]; then
+              version="$(git name-rev --name-only --tags "${sha}" 2>/dev/null || true)"
+              version="${version#tags/}"
+              version="${version%%^*}"
+            fi
+            if [ -z "${version}" ] || [ "${version}" = "undefined" ]; then
+              version="run-${run_id}"
+            fi
+            printf '%s\n' "${version}"
+          }
+
+          # Walk recent runs for this workflow/event that still have the AAB.
+          # Include failures: staging often fails on the Play publish step after
+          # the AAB artifact has already been uploaded.
+          CANDIDATES_JSON="$(gh run list --workflow="${WORKFLOW}" --event "${EVENT}" \
+            --json databaseId,headSha,conclusion --limit 50)"
+
+          RUN_ID=""
+          TARGET_SHA=""
+          VERSION=""
 
           if [ -n "${TAG}" ]; then
+            if [ "${SOURCE}" = "main" ]; then
+              echo "::error::release_tag is for staging/prod release builds. Leave it empty when source=main (uses latest main.yaml push with an AAB)."
+              exit 1
+            fi
             if ! git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
               echo "::error::Release tag not found: ${TAG}"
               exit 1
             fi
             TARGET_SHA="$(git rev-list -n 1 "${TAG}")"
-            RUN_ID="$(gh run list --workflow="${WORKFLOW}" --json databaseId,headSha,event,conclusion --limit 100 \
-              --jq --arg sha "${TARGET_SHA}" \
-              '[.[] | select(.headSha==$sha and .event=="release" and .conclusion=="success")] | first | .databaseId // empty')"
+            while IFS= read -r run_id; do
+              [ -z "${run_id}" ] && continue
+              if run_has_aab "${run_id}"; then
+                RUN_ID="${run_id}"
+                break
+              fi
+              echo "Run ${run_id} matches ${TAG} but has no unexpired ${ARTIFACT} — trying next."
+            done < <(printf '%s\n' "${CANDIDATES_JSON}" | jq -r --arg sha "${TARGET_SHA}" \
+              '[.[] | select(.headSha == $sha)] | .[].databaseId')
             if [ -z "${RUN_ID}" ]; then
-              echo "::error::No successful ${WORKFLOW} release run found for tag ${TAG} (commit ${TARGET_SHA})."
+              echo "::error::No ${WORKFLOW} ${EVENT} run for tag ${TAG} (commit ${TARGET_SHA}) has unexpired artifact ${ARTIFACT}."
               exit 1
             fi
+            VERSION="${TAG}"
             echo "Using tag ${TAG} → commit ${TARGET_SHA} → ${WORKFLOW} run ${RUN_ID}"
-            echo "version=${TAG}" >> "$GITHUB_OUTPUT"
-            echo "target_sha=${TARGET_SHA}" >> "$GITHUB_OUTPUT"
           else
-            RUN_ID="$(gh run list --workflow="${WORKFLOW}" --json databaseId,event,conclusion --limit 50 \
-              --jq '[.[] | select(.event=="release" and .conclusion=="success")] | first | .databaseId // empty')"
+            while IFS= read -r line; do
+              [ -z "${line}" ] && continue
+              run_id="${line%%$'\t'*}"
+              sha="${line#*$'\t'}"
+              if run_has_aab "${run_id}"; then
+                RUN_ID="${run_id}"
+                TARGET_SHA="${sha}"
+                VERSION="$(resolve_version_for_sha "${TARGET_SHA}" "${RUN_ID}")"
+                break
+              fi
+              echo "Run ${run_id} has no unexpired ${ARTIFACT} — trying next."
+            done < <(printf '%s\n' "${CANDIDATES_JSON}" | jq -r \
+              '.[] | "\(.databaseId)\t\(.headSha)"')
             if [ -z "${RUN_ID}" ]; then
-              echo "::error::No successful ${WORKFLOW} release run found."
+              echo "::error::No recent ${WORKFLOW} ${EVENT} run has unexpired artifact ${ARTIFACT}."
               exit 1
             fi
-            TARGET_SHA="$(gh run view "${RUN_ID}" --json headSha --jq .headSha)"
-            VERSION="$(git describe --tags --exact-match "${TARGET_SHA}" 2>/dev/null || true)"
-            if [ -z "${VERSION}" ]; then
-              VERSION="$(git name-rev --name-only --tags "${TARGET_SHA}" 2>/dev/null || true)"
-              VERSION="${VERSION#tags/}"
-              VERSION="${VERSION%%^*}"
-            fi
-            if [ -z "${VERSION}" ] || [ "${VERSION}" = "undefined" ]; then
-              VERSION="run-${RUN_ID}"
-            fi
-            echo "Using latest successful ${WORKFLOW} run ${RUN_ID} (commit ${TARGET_SHA}, version ${VERSION})"
-            echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-            echo "target_sha=${TARGET_SHA}" >> "$GITHUB_OUTPUT"
+            echo "Using ${WORKFLOW} run ${RUN_ID} (commit ${TARGET_SHA}, version ${VERSION}) with ${ARTIFACT}"
           fi
 
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "target_sha=${TARGET_SHA}" >> "$GITHUB_OUTPUT"
           echo "run_id=${RUN_ID}" >> "$GITHUB_OUTPUT"
           echo "artifact=${ARTIFACT}" >> "$GITHUB_OUTPUT"
           echo "workflow=${WORKFLOW}" >> "$GITHUB_OUTPUT"

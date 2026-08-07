@@ -22,3 +22,6 @@ jobs:
     secrets: inherit
     with:
       build_env: main
+      # AAB for Play Internal Testing via android-play-upload-manual (source=main).
+      # Not published inline — Play often requires Internal before Closed Testing.
+      build_aab: true
