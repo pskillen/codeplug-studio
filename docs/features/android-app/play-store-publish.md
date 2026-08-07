@@ -37,7 +37,9 @@ Once the first Closed Testing release is live and the app status leaves Draft (t
 | `track`       | Play API track: `alpha` (Closed Testing), `internal`, or `production`                           |
 | `status`      | `draft` or `completed` (rolled out). Use `draft` while the Console app itself is still Draft.   |
 | `source`      | Artifact env: `staging` → `app-release-aab-staging`, `prod` → `app-release-aab-prod`            |
-| `release_tag` | Optional SemVer tag (e.g. `2.5.0-rc.0`). Empty = latest successful release run for that source. |
+| `release_tag` | Optional SemVer tag (e.g. `2.5.0-rc.0`). Empty = newest release run for that source that still has the AAB artifact. |
+
+Resolution walks recent `staging.yaml` / `prod.yaml` **release** runs and picks the first with an unexpired `app-release-aab-*` artifact. Failed deploy runs are eligible — staging often fails on the Play publish step after the AAB has already been uploaded. (`gh run list --jq --arg …` is avoided: `gh`'s `--jq` does not accept jq `--arg` flags.)
 
 On success with `track: production` and `status: completed`, tags `android-<semver>` the same way the weekly job does (skipped if the version cannot be resolved or the tag already exists).
 
