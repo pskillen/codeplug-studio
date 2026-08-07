@@ -18,6 +18,17 @@ Codeplug Studio ships web changes often (little and often, continuous deploy). P
 
 When `publish_to_play_track` is also set (non-empty), a further step pushes the just-built AAB to that track via [`r0adkll/upload-google-play@v1`](https://github.com/r0adkll/upload-google-play). `staging.yaml` sets this to `alpha` (Play's API id for the default Closed Testing track — confirm this against the real Play Console track once created; Play Console allows renaming/custom tracks, in which case adjust the value). `prod.yaml` leaves it empty; the weekly workflow handles Production instead.
 
+### Release `status` while the Play app is Draft
+
+Both publish steps currently set `status: draft`. The Play Developer API only allows creating **draft** releases while the Play Console app itself is still in **Draft** (error: `Only releases with status draft may be created on draft app`). CI can upload the AAB successfully; you still have to open Play Console and click **Roll out** / send for review on that draft release.
+
+Once the first Closed Testing release is live and the app status leaves Draft (typically after Google review), flip `status` to `completed` in:
+
+- [`.github/workflows/android-release.yaml`](../../../.github/workflows/android-release.yaml) (Closed Testing / staging)
+- [`.github/workflows/android-play-publish.yaml`](../../../.github/workflows/android-play-publish.yaml) (Production)
+
+…so subsequent uploads auto-roll out without a Console click.
+
 ## Weekly Production publish (`android-play-publish.yaml`)
 
 Triggers: `schedule` (Monday 09:00 UTC — adjust the cron if a different slot is preferred) and `workflow_dispatch` (manual "ship to Play now").
@@ -37,12 +48,13 @@ Because the AAB is reused from the build that already ran at release time (not r
 3. Confirm the real Play API track id for Closed Testing and adjust `staging.yaml`'s `publish_to_play_track` if it isn't `alpha`.
 4. Add at least one tester (email list or Google Group) to the Closed Testing track — Play rejects uploads to a track with no testers configured.
 5. Check repo **Settings → Actions → General → Artifact and log retention period** — org/enterprise policy can cap this below the `retention-days: 90` set explicitly in the workflow.
+6. **First live Closed Testing release:** after CI uploads a draft AAB, finish listing / Data safety / content rating in Play Console, then manually roll out that draft on Closed Testing. When the app leaves Draft, flip workflow `status` from `draft` → `completed` (see above).
 
-Until these are done, `build_aab`/artifact upload works on every run, but the `Publish AAB to Play Store track` and weekly production-push steps will fail (no valid service account credentials) — expected until Play Console setup lands.
+Until the service account secret exists, `build_aab`/artifact upload works on every run, but the Play publish steps fail on missing credentials — expected until that secret lands. With the secret present and `status: draft`, uploads succeed while the app is still Draft; auto-rollout needs the flip in step 6.
 
 ## Manual re-run
 
-- **Closed Testing:** publish a new GitHub pre-release; the existing `staging.yaml` flow builds and pushes automatically.
+- **Closed Testing:** publish a new GitHub pre-release; `staging.yaml` builds and uploads a draft release to the track. Until `status` is `completed`, finish the rollout in Play Console.
 - **Production:** `workflow_dispatch` on [`android-play-publish.yaml`](../../../.github/workflows/android-play-publish.yaml) from the Actions tab, rather than waiting for Monday — safe to run any time, it's a no-op if there's nothing newer than the last `android-*` tag.
 
 ## Verification
