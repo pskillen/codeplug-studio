@@ -17,6 +17,16 @@ on:
         required: false
         type: boolean
         default: false
+      build_aab:
+        description: Also build a signed .aab (Play Store bundle). Kept as a workflow artifact only, never attached to the Release.
+        required: false
+        type: boolean
+        default: false
+      publish_to_play_track:
+        description: Play Store track to push the built .aab to directly (e.g. alpha for Closed Testing). Empty skips publishing inline.
+        required: false
+        type: string
+        default: ''
 
 # write needed to attach APK to GitHub Releases; artifact upload works with read alone
 permissions:
@@ -126,6 +136,7 @@ jobs:
           name: app-release-apk-${{ inputs.build_env }}
           path: android/app/build/outputs/apk/release/codeplug-studio-*.apk
           if-no-files-found: error
+          retention-days: 90
 
       - name: Attach APK to GitHub Release
         if: ${{ inputs.attach_to_release }}
@@ -133,3 +144,36 @@ jobs:
         with:
           files: android/app/build/outputs/apk/release/codeplug-studio-*.apk
           fail_on_unmatched_files: true
+
+      - name: Build Release AAB
+        if: ${{ inputs.build_aab }}
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ env.ANDROID_KEYSTORE_FILE }}
+        run: |
+          cd android
+          ./gradlew bundleRelease
+          RELEASE_DIR="app/build/outputs/bundle/release"
+          SRC="$(ls -1 "${RELEASE_DIR}"/*.aab | head -n 1)"
+          DEST="${RELEASE_DIR}/codeplug-studio-${ANDROID_VERSION_NAME}.aab"
+          cp "${SRC}" "${DEST}"
+          echo "AAB_PATH=${DEST}" >> "$GITHUB_ENV"
+          echo "Built ${DEST} (versionName=${ANDROID_VERSION_NAME} versionCode=${ANDROID_VERSION_CODE} BUILD_ENV=${BUILD_ENV})"
+
+      - name: Upload AAB workflow artifact
+        if: ${{ inputs.build_aab }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-release-aab-${{ inputs.build_env }}
+          path: android/app/build/outputs/bundle/release/codeplug-studio-*.aab
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish AAB to Play Store track
+        if: ${{ inputs.build_aab && inputs.publish_to_play_track != '' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: net.mm9pdy.codeplugstudio
+          releaseFiles: android/app/build/outputs/bundle/release/codeplug-studio-*.aab
+          track: ${{ inputs.publish_to_play_track }}
+          status: completed
