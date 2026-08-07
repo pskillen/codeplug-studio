@@ -1,14 +1,5 @@
-import {
-  Autocomplete,
-  Button,
-  Group,
-  SegmentedControl,
-  SimpleGrid,
-  Stack,
-  Text,
-  TextInput,
-} from '@mantine/core';
-import { useDebouncedValue } from '@mantine/hooks';
+import { Autocomplete, Group, TextInput } from '@mantine/core';
+import { useDebouncedValue, useMediaQuery } from '@mantine/hooks';
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { addChannelsToZoneMembers } from '@core/domain/zoneMembership.ts';
@@ -19,57 +10,91 @@ import {
   zoneCentreFromPoints,
   type GeoCentre,
 } from '@core/domain/growZone.ts';
+import { haversineDistanceM } from '@core/domain/geoDistance.ts';
 import { coordsToLocator, isValidLocator, locatorToCoords } from '@core/domain/maidenhead.ts';
 import { formatDistanceM } from '@core/domain/geoDistance.ts';
 import { channelHasGeolocation } from '@core/domain/mapProjection.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import type { Channel } from '@core/models/library.ts';
-import { GeocodeError, geocodeQuery, type GeocodeProvider } from '@integrations/geocode/index.ts';
+import type { GeocodeProvider } from '@integrations/geocode/index.ts';
 import CodeplugMap from '../CodeplugMap/CodeplugMap.tsx';
-import { MapPanel } from '../v2/index.ts';
-import ModePill from '../pills/ModePill.tsx';
-import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
-import { DataTable, FormSection } from '../ui/index.ts';
-import type { DataTableColumn } from '../ui/DataTable.tsx';
-import { useMapSettings } from '../../hooks/useMapSettings.ts';
+import GeocodeCentreField from './GeocodeCentreField.tsx';
+import {
+  Button,
+  DataTable,
+  DesignSystemV2Provider,
+  EditorHeader,
+  MapPanel,
+  Panel,
+  Pill,
+  SegmentedControl,
+  type DataTableColumn,
+} from '../v2/index.ts';
+import { type ChannelMode as UiChannelMode, getModeDefinition } from '../../lib/channelModes.ts';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
+import { bandFromChannel } from '../../lib/bands.ts';
 import { channelModesForFilter } from '../../lib/channels.ts';
 import {
   channelHasLocation,
   filterChannelOptions,
   resolveChannelOptionId,
 } from '../../lib/channelLookup.ts';
+import { filterRowsByName } from '../../hooks/useListNameQuery.ts';
+import { useMapSettings } from '../../hooks/useMapSettings.ts';
 import { useZoneEdit } from '../../routes/library/zones/ZoneEditContext.tsx';
-import ZoneEditHeader from '../../routes/library/zones/ZoneEditHeader.tsx';
-import ZoneMemberEditor from './ZoneMemberEditor.tsx';
-
-const GEOCODE_PROVIDER_OPTIONS: { value: GeocodeProvider; label: string }[] = [
-  { value: 'mapbox', label: 'Mapbox' },
-  { value: 'photon', label: 'Photon (OSM)' },
-];
+import { DSV2_TOKENS } from '../../theme-v2.ts';
+import { createNameColumn } from '../../lib/libraryListTable.tsx';
+import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
+import classes from './GrowZoneRecommendations.module.css';
 
 const CHANNEL_SEARCH_DEBOUNCE_MS = 500;
 
 type SuggestionMode = 'insideHull' | 'nearLocator';
 
+function v2ModePill(mode: UiChannelMode) {
+  const def = getModeDefinition(mode);
+  const textColor =
+    mode === 'dstar' || mode === 'dmr' || mode === 'tetra'
+      ? DSV2_TOKENS.colors.pillTextLight
+      : DSV2_TOKENS.colors.pillTextDark;
+  return (
+    <Pill key={mode} tone="semantic" color={def.color} textColor={textColor}>
+      {def.label}
+    </Pill>
+  );
+}
+
+function nearestMemberDistanceM(
+  channel: Channel,
+  memberPoints: readonly (readonly [number, number])[],
+): number | null {
+  if (!channelHasGeolocation(channel) || memberPoints.length === 0) return null;
+  let min = Number.POSITIVE_INFINITY;
+  for (const [lat, lon] of memberPoints) {
+    const distanceM = haversineDistanceM(channel.location!.lat, channel.location!.lon, lat, lon);
+    if (distanceM < min) min = distanceM;
+  }
+  return min === Number.POSITIVE_INFINITY ? null : min;
+}
+
 export default function GrowZoneRecommendations() {
-  const { entity, library, members, setMembers, previewZone, setMapFilters } = useZoneEdit();
+  const { entity, library, members, setMembers, previewZone } = useZoneEdit();
   const { mapboxToken } = useMapSettings();
+  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
 
   const [mode, setMode] = useState<SuggestionMode>('insideHull');
   const [centreOverride, setCentreOverride] = useState<GeoCentre | null>(null);
   const [locator, setLocator] = useState('');
   const [locatorTouched, setLocatorTouched] = useState(false);
   const [locatorError, setLocatorError] = useState<string | null>(null);
-  const [addressQuery, setAddressQuery] = useState('');
   const [geocodeProvider, setGeocodeProvider] = useState<GeocodeProvider>(
     mapboxToken.trim() ? 'mapbox' : 'photon',
   );
-  const [geocodeLoading, setGeocodeLoading] = useState(false);
-  const [geocodeError, setGeocodeError] = useState<string | null>(null);
   const [channelSearch, setChannelSearch] = useState('');
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [debouncedChannelSearch] = useDebouncedValue(channelSearch, CHANNEL_SEARCH_DEBOUNCE_MS);
   const [selectedSuggestionIds, setSelectedSuggestionIds] = useState<string[]>([]);
+  const [tableSearch, setTableSearch] = useState('');
 
   const memberPoints = useMemo(
     () => resolveZoneMemberGeolocatedPoints(previewZone, library.zones, library.channels),
@@ -118,12 +143,24 @@ export default function GrowZoneRecommendations() {
       .filter((ch): ch is Channel => ch != null);
   }, [suggestions.channelIds, channelById]);
 
+  const filteredRows = useMemo(
+    () => filterRowsByName(suggestionRows, tableSearch, (ch) => ch.name),
+    [suggestionRows, tableSearch],
+  );
+
   const applyCentre = useCallback((lat: number, lon: number) => {
     setCentreOverride({ lat, lon });
     setLocator(coordsToLocator(lat, lon, 6));
     setLocatorTouched(true);
     setLocatorError(null);
     setMode('nearLocator');
+  }, []);
+
+  const clearCentreOverride = useCallback(() => {
+    setCentreOverride(null);
+    setLocatorTouched(false);
+    setLocator('');
+    setLocatorError(null);
   }, []);
 
   const handleLocatorChange = (value: string) => {
@@ -146,26 +183,6 @@ export default function GrowZoneRecommendations() {
     setLocatorError(null);
     setCentreOverride({ lat: coords.lat, lon: coords.lon });
     setMode('nearLocator');
-  };
-
-  const handleGeocode = async () => {
-    setGeocodeError(null);
-    setGeocodeLoading(true);
-    try {
-      const result = await geocodeQuery(addressQuery, {
-        mapboxToken,
-        provider: geocodeProvider,
-      });
-      if (!result) {
-        setGeocodeError('No results found');
-        return;
-      }
-      applyCentre(result.lat, result.lon);
-    } catch (err) {
-      setGeocodeError(err instanceof GeocodeError ? err.message : 'Geocoding failed');
-    } finally {
-      setGeocodeLoading(false);
-    }
   };
 
   const handleChannelSearchChange = (value: string) => {
@@ -191,226 +208,203 @@ export default function GrowZoneRecommendations() {
   };
 
   const tableColumns = useMemo((): DataTableColumn<Channel>[] => {
-    const cols: DataTableColumn<Channel>[] = [];
-    if (mode === 'nearLocator') {
-      cols.push({
-        key: 'distance',
-        header: 'Distance',
+    return [
+      createNameColumn<Channel>({
+        getName: (ch) => ch.name,
+        getPath: (ch) => `/library/channels/${ch.id}`,
+        sortValue: (ch) => ch.name,
+      }),
+      {
+        key: 'band',
+        header: 'Band',
+        width: '0.8fr',
         render: (ch) => {
-          const metres = suggestions.distancesM.get(ch.id);
+          const band = bandFromChannel(ch.rxFrequency, ch.txFrequency);
+          if (!band) return '—';
+          return (
+            <Pill tone="semantic" color={band.color} textColor={DSV2_TOKENS.colors.pillTextLight}>
+              {band.label}
+            </Pill>
+          );
+        },
+      },
+      {
+        key: 'mode',
+        header: 'Mode',
+        width: '0.8fr',
+        render: (ch) => (
+          <Group gap={4}>{channelModesForFilter(ch).map((modeKey) => v2ModePill(modeKey))}</Group>
+        ),
+      },
+      {
+        key: 'distance',
+        header: 'Nearest member',
+        width: '1.1fr',
+        sortable: true,
+        sortValue: (ch) => {
+          const metres =
+            suggestions.distancesM.get(ch.id) ?? nearestMemberDistanceM(ch, memberPoints);
+          return metres ?? Number.POSITIVE_INFINITY;
+        },
+        render: (ch) => {
+          const metres =
+            suggestions.distancesM.get(ch.id) ?? nearestMemberDistanceM(ch, memberPoints);
           return metres != null ? formatDistanceM(metres) : '—';
         },
-        sortValue: (ch) => suggestions.distancesM.get(ch.id) ?? Number.POSITIVE_INFINITY,
-      });
-    }
-    cols.push({
-      key: 'callsign',
-      header: 'Callsign',
-      render: (ch) => ch.callsign || '—',
-      sortValue: (ch) => ch.callsign || '',
-    });
-    cols.push({
-      key: 'mode',
-      header: 'Mode',
-      render: (ch) => (
-        <Group gap={4}>
-          {channelModesForFilter(ch).map((m) => (
-            <ModePill key={m} mode={m} />
-          ))}
-        </Group>
-      ),
-    });
-    return cols;
-  }, [mode, suggestions.distancesM]);
+      },
+    ];
+  }, [memberPoints, suggestions.distancesM]);
 
   const hullUnavailable =
     mode === 'insideHull' && (memberPoints.length === 0 || memberPoints.length === 2);
 
+  const geocodeCentre =
+    centre && mode === 'nearLocator' ? { lat: centre.lat, lon: centre.lon } : null;
+
   return (
-    <Stack gap="md">
-      <ZoneEditHeader
-        subtitle="Recommend channels inside the zone hull or near a locator."
-        backTo={`/library/zones/${entity.id}`}
-        backLabel="← Back to zone"
-      />
-
-      <FormSection title="Members">
-        <ZoneMemberEditor
-          channels={library.channels}
-          zones={library.zones}
-          editingZoneId={entity.id}
-          members={members}
-          onChange={setMembers}
-          onMapFiltersChange={setMapFilters}
-          mode="summary"
+    <DesignSystemV2Provider>
+      <div className={classes.root}>
+        <EditorHeader
+          crumb="Zones"
+          crumbTo={`/library/zones/${entity.id}`}
+          title={`Grow ${entity.name}`}
+          subtitle="Channels near this zone's existing coverage, closest first."
+          compact={isMobile}
         />
-      </FormSection>
 
-      <FormSection
-        title="Recommendations to add"
-        description="Select channels to append to zone membership. Suggestions are a snapshot — they do not update automatically when channels move."
-      >
-        <Stack gap="sm">
-          <SegmentedControl
-            value={mode}
-            onChange={(value) => setMode(value as SuggestionMode)}
-            data={[
-              { value: 'insideHull', label: 'Inside hull' },
-              { value: 'nearLocator', label: 'Near locator' },
-            ]}
-          />
-          {hullUnavailable ? (
-            <Text size="sm" c="dimmed">
-              {memberPoints.length === 0
-                ? 'Add geolocated members to enable inside-hull suggestions.'
-                : 'Inside-hull needs at least three member sites (two sites draw a line with no area). Use Near locator instead.'}
-            </Text>
-          ) : null}
+        <div className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}>
+          <Panel title="Suggestion mode">
+            <div className={classes.modeBlock}>
+              <SegmentedControl
+                options={[
+                  { value: 'insideHull', label: 'Inside hull' },
+                  { value: 'nearLocator', label: 'Near locator' },
+                ]}
+                value={mode}
+                onChange={(value) => setMode(value as SuggestionMode)}
+              />
+              {hullUnavailable ? (
+                <p className={classes.hint}>
+                  {memberPoints.length === 0
+                    ? 'Add geolocated members to enable inside-hull suggestions.'
+                    : 'Inside-hull needs at least three member sites (two sites draw a line with no area). Use Near locator instead.'}
+                </p>
+              ) : null}
+              {mode === 'nearLocator' ? (
+                <div className={classes.secondaryStack}>
+                  <GeocodeCentreField
+                    mapboxToken={mapboxToken}
+                    centre={geocodeCentre}
+                    onCentreChange={applyCentre}
+                    onClearCentre={clearCentreOverride}
+                    geocodeProvider={geocodeProvider}
+                    onGeocodeProviderChange={setGeocodeProvider}
+                  />
+                  <TextInput
+                    label="Maidenhead locator"
+                    placeholder="e.g. IO85uk"
+                    value={displayedLocator}
+                    onChange={(e) => handleLocatorChange(e.currentTarget.value)}
+                    error={locatorError}
+                    size="sm"
+                  />
+                  <div className={classes.secondaryActions}>
+                    <UseMyLocationButton onLocation={(lat, lon) => applyCentre(lat, lon)} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={!defaultCentre}
+                      onClick={() => {
+                        if (!defaultCentre) return;
+                        clearCentreOverride();
+                        setMode('nearLocator');
+                      }}
+                    >
+                      Reset to zone centre
+                    </Button>
+                  </div>
+                  <Autocomplete
+                    label="Channel with location"
+                    placeholder="Search channels with coordinates…"
+                    value={channelSearch}
+                    onChange={handleChannelSearchChange}
+                    data={channelOptions}
+                    limit={20}
+                    size="sm"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={!selectedChannel}
+                    onClick={handleApplyChannelLocation}
+                  >
+                    Use channel location
+                  </Button>
+                  <p className={classes.hint}>
+                    Default locator is the zone centre from member coordinates.{' '}
+                    <Link to="/reference/maidenhead">Maidenhead reference</Link>
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          </Panel>
+
           <DataTable
-            variant="list"
-            rows={suggestionRows}
-            rowKey={(ch) => ch.id}
-            nameColumn={{
-              getName: (ch) => ch.name,
-              getPath: (ch) => `/library/channels/${ch.id}`,
-            }}
             columns={tableColumns}
-            showSearch={false}
+            rows={filteredRows}
+            getRowId={(ch) => ch.id}
+            totalRowCount={suggestionRows.length}
+            resultCount={filteredRows.length}
+            countLabel={(displayed) => `${displayed} candidate${displayed === 1 ? '' : 's'}`}
+            search={{
+              value: tableSearch,
+              onChange: setTableSearch,
+              placeholder: 'Search candidates…',
+            }}
             selectable
             selectedKeys={selectedSuggestionIds}
-            onSelectedKeysChange={setSelectedSuggestionIds}
-            emptyState={
-              <Text size="sm" c="dimmed">
-                {mode === 'insideHull'
-                  ? 'No channels inside the zone hull'
-                  : 'No geolocated channels to rank — set a locator first'}
-              </Text>
+            onSelectionChange={setSelectedSuggestionIds}
+            bulkActions={
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!selectedSuggestionIds.length}
+                onClick={handleAddSelected}
+              >
+                Add selected to zone
+              </Button>
+            }
+            emptyMessage={
+              mode === 'insideHull'
+                ? 'No channels inside the zone hull'
+                : 'No geolocated channels to rank — set a locator first'
+            }
+            filteredEmptyMessage={
+              tableSearch.trim()
+                ? `No candidates match “${tableSearch.trim()}”.`
+                : 'No candidates match your filter.'
             }
           />
-          <Group>
-            <Button
-              type="button"
-              disabled={!selectedSuggestionIds.length}
-              onClick={handleAddSelected}
-            >
-              Add selected to zone
-            </Button>
-            <Text size="sm" c="dimmed">
-              {suggestionRows.length} suggestion{suggestionRows.length === 1 ? '' : 's'}
-            </Text>
-          </Group>
-        </Stack>
-      </FormSection>
 
-      <FormSection
-        title="Search criteria"
-        description={
-          <>
-            Default locator is the zone centre from member coordinates.{' '}
-            <Text component={Link} to="/reference/maidenhead" size="sm" inherit>
-              Maidenhead reference
-            </Text>
-          </>
-        }
-      >
-        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-          <Stack gap="sm">
-            <TextInput
-              label="Maidenhead locator"
-              placeholder="e.g. IO85uk"
-              value={displayedLocator}
-              onChange={(e) => handleLocatorChange(e.currentTarget.value)}
-              error={locatorError}
-            />
-            <UseMyLocationButton onLocation={(lat, lon) => applyCentre(lat, lon)} />
-            <Button
-              type="button"
-              variant="subtle"
-              size="compact-sm"
-              disabled={!defaultCentre}
-              onClick={() => {
-                if (!defaultCentre) return;
-                setCentreOverride(null);
-                setLocatorTouched(false);
-                setLocator('');
-                setMode('nearLocator');
-              }}
-            >
-              Reset to zone centre
-            </Button>
-          </Stack>
-
-          <Stack gap="sm">
-            <Text size="sm" c="dimmed">
-              Search by city or postcode, pick a channel, or click the map.
-            </Text>
-            <SegmentedControl
-              value={geocodeProvider}
-              onChange={(value) => setGeocodeProvider(value as GeocodeProvider)}
-              data={GEOCODE_PROVIDER_OPTIONS}
-            />
-            <Group align="flex-end" grow>
-              <TextInput
-                label="City or postcode"
-                placeholder="e.g. G1 1XQ, Glasgow"
-                value={addressQuery}
-                onChange={(e) => setAddressQuery(e.currentTarget.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    void handleGeocode();
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="light"
-                onClick={() => void handleGeocode()}
-                loading={geocodeLoading}
-              >
-                Search
-              </Button>
-            </Group>
-            {geocodeError ? (
-              <Text size="sm" c="red">
-                {geocodeError}
-              </Text>
-            ) : null}
-            <Autocomplete
-              label="Channel location"
-              placeholder="Search channels with coordinates…"
-              value={channelSearch}
-              onChange={handleChannelSearchChange}
-              data={channelOptions}
-              limit={20}
-            />
-            <Button
-              type="button"
-              variant="light"
-              disabled={!selectedChannel}
-              onClick={handleApplyChannelLocation}
-            >
-              Use channel location
-            </Button>
-          </Stack>
-        </SimpleGrid>
-      </FormSection>
-
-      <FormSection title="Map">
-        <MapPanel height={360}>
-          <CodeplugMap
-            channels={library.channels}
-            zones={library.zones}
-            allChannels={library.channels}
-            height="100%"
-            mapControlMode="zoneEmphasis"
-            emphasisZoneId={entity.id}
-            referencePosition={centre}
-            dimmedChannelIds={dimmedChannelIds}
-            onMapClick={(lat, lon) => applyCentre(lat, lon)}
-          />
-        </MapPanel>
-      </FormSection>
-    </Stack>
+          <Panel title="Map preview">
+            <div className={classes.mapWrap}>
+              <MapPanel height={isMobile ? 200 : 360}>
+                <CodeplugMap
+                  channels={library.channels}
+                  zones={library.zones}
+                  allChannels={library.channels}
+                  height="100%"
+                  mapControlMode="zoneEmphasis"
+                  emphasisZoneId={entity.id}
+                  referencePosition={centre}
+                  dimmedChannelIds={dimmedChannelIds}
+                  onMapClick={(lat, lon) => applyCentre(lat, lon)}
+                />
+              </MapPanel>
+            </div>
+          </Panel>
+        </div>
+      </div>
+    </DesignSystemV2Provider>
   );
 }

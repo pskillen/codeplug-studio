@@ -12,6 +12,20 @@
   margin-top: auto;
 }
 
+/**
+ * Mobile + BottomTabBar: dock flush above the tab bar instead of sticky inside
+ * the scrolling main padding box (which left a visible gap).
+ */
+@media (max-width: 48em) {
+  .root {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: var(--dsv2-bottom-tab-bar-height, 0);
+    margin-top: 0;
+  }
+}
+
 .compact {
   padding: 12px 16px;
 }

@@ -214,22 +214,37 @@ Channel DMR profiles reference a **digital contact** and an **RX group list** by
 
 All contextual Library destinations use `DesignSystemV2Provider` with v2 list chrome (`SearchInput` / `DataTable` `selectionChrome="v2"`) and editor shells (sticky header + `Panel` sections). Zone, RGL, and scan list membership editors use `ShuttleList*` around the existing list-kit (`SelectedItemList` / `AvailableItemPicker`) — behaviour unchanged. Maps on zone/channel list pages still embed raw `CodeplugMap` until [#925](https://github.com/pskillen/codeplug-studio/issues/925).
 
-### Talk group editor ([#110](https://github.com/pskillen/codeplug-studio/issues/110))
+### Talk group editor ([#110](https://github.com/pskillen/codeplug-studio/issues/110), r2 [#943](https://github.com/pskillen/codeplug-studio/issues/943))
 
-- **Identity:** name + optional abbreviation on one row (`TalkGroupEditor`); `TalkGroupWireNameExamples` shows informational multi-talkgroup wire-name previews at a typical 16-character limit.
-- **Mode:** `GradientSegmentedControl` with `digitalModes` scheme — segment colours match `ModePill` (`channelModes.ts`).
+- **Layout (mk2 E3):** `EditorHeader` + single `Panel` compact form + `StickyFooter` — same chrome family as channel editor ([#941](https://github.com/pskillen/codeplug-studio/issues/941)).
+- **Identity:** name, v2 `SegmentedControl` mode, talk group ID, abbreviation, comment; `TalkGroupWireNameExamples` for export shortening hints.
 - **List:** optional **Abbrev** column on `/library/talk-groups` (default visible).
 - **Persistence:** empty abbreviation omitted on save; native YAML round-trip preserves the field.
 - Sidecar: `src/app/components/library/TalkGroupWireNameExamples.md`.
 
-### Digital contact editor
+### Digital contact editor (r2 [#943](https://github.com/pskillen/codeplug-studio/issues/943))
 
-- **Identity:** `DigitalContactEditor` — Mantine `FormSection`, `TextInput`, Save/Cancel `Group` (matches talk group / channel editor shell).
-- **Mode:** `GradientSegmentedControl` with `digitalModes` scheme — same labels and colours as talk groups and `ModePill`.
+- **Layout (mk2 E4):** `EditorHeader` + compact `Panel` + `StickyFooter`.
+- **Fields:** callsign, name, country, DMR ID, mode (`SegmentedControl`), city/state, remarks, comment.
+- **RadioID:** `DismissibleNotice` when contact looks directory-sourced; `RadioidContactVerifyPanel` below the form on saved contacts.
 
-### Analog contact editor
+### Analog contact editor (r2 [#943](https://github.com/pskillen/codeplug-studio/issues/943))
 
-- **Identity:** `AnalogContactEditor` — same Mantine form shell as digital contacts (name, code, comment).
+- **Layout (mk2 E5):** `EditorHeader` + compact `Panel` + `StickyFooter`.
+- **Fields:** name, CTCSS/DCS tone (`code`), comment.
+
+### Library defaults (r2 [#943](https://github.com/pskillen/codeplug-studio/issues/943))
+
+- **Routes:** `/library/channels/defaults`, `/library/zones/defaults` — dense settings (not full editor chrome).
+- **Channel:** v2 `Panel` + `SegmentedControl` for forbid TX, TX permit, talker alias, analog squelch.
+- **Zone:** v2 `ToggleSwitch` for zone-derived scan-list include default.
+- Annotated vs mk2 E8: separate routes retained; no invented Power/Bandwidth/contact-Country defaults.
+
+### Zone-from-location & grow (M2/M3, r2 [#943](https://github.com/pskillen/codeplug-studio/issues/943))
+
+- **M2** `/library/zones/new-from-location`: `EditorHeader`, `GeocodeCentreField` (`Combobox` geocode), radius chips, v2 `DataTable` multi-select, create footer.
+- **M3** `/library/zones/:id/add-from-map`: table-first grow recommendations with distance column, multi-select + bulk add, `GeocodeCentreField` in near-locator mode.
+- Sidecar: `GrowZoneRecommendations.md`; geocode field: `GeocodeCentreField.tsx` (library glue, no sidecar).
 
 ## Data flow
 
