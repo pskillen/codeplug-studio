@@ -66,12 +66,16 @@ jobs:
         if: steps.check.outputs.should_publish == 'true'
         id: find-run
         run: |
-          RUN_ID="$(gh run list --workflow=prod.yaml --json databaseId,headSha,event,conclusion --limit 100 \
-            --jq --arg sha "${{ steps.check.outputs.target_sha }}" \
-            '[.[] | select(.headSha==$sha and .event=="release" and .conclusion=="success")] | first | .databaseId // empty')"
+          set -euo pipefail
+          TARGET_SHA="${{ steps.check.outputs.target_sha }}"
+          # gh --jq does not accept jq --arg flags — pipe to jq instead.
+          RUN_ID="$(gh run list --workflow=prod.yaml --event release \
+            --json databaseId,headSha,conclusion --limit 100 \
+            | jq -r --arg sha "${TARGET_SHA}" \
+              '[.[] | select(.headSha == $sha and .conclusion == "success")] | first | .databaseId // empty')"
 
           if [ -z "${RUN_ID}" ]; then
-            echo "::error::No successful prod.yaml run found for commit ${{ steps.check.outputs.target_sha }} (release ${{ steps.check.outputs.version }}). Cannot locate the AAB artifact."
+            echo "::error::No successful prod.yaml run found for commit ${TARGET_SHA} (release ${{ steps.check.outputs.version }}). Cannot locate the AAB artifact."
             exit 1
           fi
 
