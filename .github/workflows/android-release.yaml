@@ -176,4 +176,10 @@ jobs:
           packageName: net.mm9pdy.codeplugstudio
           releaseFiles: android/app/build/outputs/bundle/release/codeplug-studio-*.aab
           track: ${{ inputs.publish_to_play_track }}
-          status: completed
+          # Must be draft while the Play Console app itself is still Draft —
+          # the API rejects completed/inProgress for draft apps
+          # ("Only releases with status draft may be created on draft app").
+          # After the first Closed Testing release is rolled out manually and
+          # the app leaves Draft, flip this (and android-play-publish.yaml) to
+          # completed so CI can auto-roll out without a Console click.
+          status: draft
