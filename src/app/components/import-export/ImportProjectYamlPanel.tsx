@@ -5,7 +5,7 @@ import { useYamlImportResolver } from '../../hooks/useYamlImportResolver.ts';
 import DriveBrowserModal from './DriveBrowserModal.tsx';
 import GoogleDriveActionButton from './GoogleDriveActionButton.tsx';
 import InterchangeOverwriteModal from './InterchangeOverwriteModal.tsx';
-import YamlFileDropzone from './YamlFileDropzone.tsx';
+import ProjectYamlFileDropzone from './ProjectYamlFileDropzone.tsx';
 
 export default function ImportProjectYamlPanel() {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function ImportProjectYamlPanel() {
 
   return (
     <Stack gap="sm">
-      <YamlFileDropzone
+      <ProjectYamlFileDropzone
         onFileText={(text, fileName) => resolver.handleLocalFile(fileName, text)}
         disabled={resolver.importing}
         error={resolver.error}

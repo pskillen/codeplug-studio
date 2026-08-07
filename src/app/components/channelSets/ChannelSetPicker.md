@@ -22,8 +22,9 @@ Routed at `/library/channels/add-channel-set` via `AddChannelSetPage`.
 
 ## Behaviour
 
-- Set selector lists all v1 channel sets with channel counts
-- Live preview **`DataTable`** (role A embedded): per-channel checkbox (default on; skip rows disabled), name, frequency (`<MHz> simplex` for simplex rows; RX/TX column reserved for future split channels), mode, dedup status; select-all in toolbar
+- mk2 D4 layout on `DirectoryIngestPage` — filter `Panel`, v2 `DataTable` preview, status `Pill`s for dedup/skip
+- Set selector lists all channel sets with channel counts
+- Live preview table: per-channel checkbox (default on; skip rows disabled), name, frequency (`<MHz> simplex` for simplex rows; RX/TX column reserved for future split channels), mode, dedup status; selectable addable rows
 - Options: name prefix, power %, **bandwidth** (12.5 or 25 kHz), forbid transmit, optional zone
 - Persists via `persistChannelSetImport` → `putChannel` loop and optional `putZone`
 - Navigates to channels list or new zone on success

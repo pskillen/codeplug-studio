@@ -1,20 +1,14 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  Alert,
   Anchor,
-  Button,
   Card,
-  Checkbox,
   Group,
   NumberInput,
   ScrollArea,
-  SegmentedControl,
-  Select,
   SimpleGrid,
   Stack,
   Text,
-  TextInput,
 } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import { newChannel } from '@core/domain/factories.ts';
@@ -45,9 +39,21 @@ import { useLibrary } from '../../state/useLibrary.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
 import ZoneSelect from '../library/ZoneSelect.tsx';
-import { FormPage, PageSection, SplitButton } from '../ui/index.ts';
+import { SplitButton } from '../ui/index.ts';
+import DirectoryIngestPage from '../directories/DirectoryIngestPage.tsx';
+import pageClasses from '../directories/DirectoryIngestPage.module.css';
 import CodeplugMap from '../CodeplugMap/CodeplugMap.tsx';
-import { DesignSystemV2Provider, MapPanel } from '../v2/index.ts';
+import {
+  Button,
+  Checkbox,
+  FormField,
+  MapPanel,
+  Panel,
+  SegmentedControl,
+  StatusBanner,
+  TextInput,
+  ToggleSwitch,
+} from '../v2/index.ts';
 import classes from './OpenAipAirportSearch.module.css';
 
 const DEFAULT_ZONE_NAME = 'Airband';
@@ -177,7 +183,7 @@ function ImportableFrequencyRow({
       checkbox={
         <Checkbox
           checked={checked}
-          onChange={(e) => onCheckedChange(e.currentTarget.checked)}
+          onCheckedChange={onCheckedChange}
           aria-label={`Select ${proposedName}`}
         />
       }
@@ -261,9 +267,8 @@ function AirportCard({
             <Checkbox
               checked={airportFullySelected}
               indeterminate={airportPartiallySelected}
-              onChange={(e) => onToggleAirport(e.currentTarget.checked)}
+              onCheckedChange={onToggleAirport}
               aria-label={`Select all frequencies for ${airport.name}`}
-              mt={4}
               disabled={selectableKeys.length === 0}
             />
             <Stack gap={2}>
@@ -356,6 +361,7 @@ function AirportCard({
 }
 
 export default function OpenAipAirportSearch() {
+  const navigate = useNavigate();
   const search = useOpenAipAirportSearch();
   const { library, reload } = useLibrary();
   const { activeProjectId } = useProjects();
@@ -566,136 +572,131 @@ export default function OpenAipAirportSearch() {
     selectableSelectedKeys.size < selectableFrequencyKeysAll.length;
 
   return (
-    <FormPage
+    <DirectoryIngestPage
+      crumb="Channels"
+      crumbTo="/library/channels"
       title="Add airband from OpenAIP"
-      description="Search OpenAIP for airport frequencies and import RX-only AM channels into your library."
+      subtitle="Search OpenAIP for airport frequencies and import RX-only AM channels into your library."
       footer={
-        <Button variant="light" component={Link} to="/library/channels">
+        <Button variant="secondary" onClick={() => navigate('/library/channels')}>
           Back to library
         </Button>
       }
     >
-      <PageSection title="Search" description="Query OpenAIP by location or airport identifier.">
-        <Stack gap="sm">
-          {!search.hasApiKey ? (
-            <Alert color="yellow">
-              OpenAIP API key required.{' '}
-              <Anchor
-                component={Link}
-                to="/settings"
-                state={{ scrollTo: SETTINGS_OPENAIP_SECTION_ID }}
-              >
-                Add your key in Settings
-              </Anchor>
-              .
-            </Alert>
-          ) : null}
+      <Panel title="Search" sub="Query OpenAIP by location or airport identifier.">
+        {!search.hasApiKey ? (
+          <StatusBanner tone="warning">
+            OpenAIP API key required.{' '}
+            <Link
+              to="/settings"
+              state={{ scrollTo: SETTINGS_OPENAIP_SECTION_ID }}
+              className="libraryListNameLink"
+            >
+              Add your key in Settings
+            </Link>
+            .
+          </StatusBanner>
+        ) : null}
 
-          <Group align="flex-end" wrap="wrap">
+        <div className={pageClasses.filterGrid}>
+          <FormField label="Search" className={pageClasses.filterFieldWide}>
             <TextInput
-              label="Search"
+              variant="plain"
               placeholder="ICAO, IATA, airport name, locator, or town"
               value={search.query}
               onChange={(e) => search.setQuery(e.currentTarget.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void search.search();
               }}
-              style={{ flex: 1, minWidth: 220 }}
             />
+          </FormField>
+          <FormField label="Radius (km)" className={pageClasses.filterField}>
             <NumberInput
-              label="Radius (km)"
               value={search.radiusKm}
               onChange={(value) => search.setRadiusKm(typeof value === 'number' ? value : 50)}
               min={1}
               max={500}
-              style={{ width: 120 }}
+              variant="unstyled"
             />
-            <UseMyLocationButton onLocation={(lat, lon) => void handleUseMyLocation(lat, lon)} />
-            <Button
-              leftSection={<IconSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-              onClick={() => void search.search()}
-              loading={search.loading}
-              disabled={!search.hasApiKey}
-            >
-              Search
-            </Button>
-          </Group>
+          </FormField>
+        </div>
 
-          {kindHint && !search.error ? (
-            <Text size="sm" c="dimmed">
-              {kindHint}
-            </Text>
-          ) : null}
+        <div className={pageClasses.filterActions}>
+          <UseMyLocationButton onLocation={(lat, lon) => void handleUseMyLocation(lat, lon)} />
+          <Button
+            leftSection={<IconSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+            onClick={() => void search.search()}
+            loading={search.loading}
+            disabled={!search.hasApiKey}
+          >
+            Search
+          </Button>
+        </div>
 
-          {search.error ? <Alert color="red">{search.error}</Alert> : null}
-          {addError ? <Alert color="red">{addError}</Alert> : null}
-          {addMessage ? <Alert color="green">{addMessage}</Alert> : null}
-        </Stack>
-      </PageSection>
+        {kindHint && !search.error ? <p className={pageClasses.attribution}>{kindHint}</p> : null}
+        {search.error ? <StatusBanner tone="warning">{search.error}</StatusBanner> : null}
+        {addError ? <StatusBanner tone="warning">{addError}</StatusBanner> : null}
+        {addMessage ? <StatusBanner tone="success">{addMessage}</StatusBanner> : null}
+      </Panel>
 
       {search.airports.length > 0 ? (
-        <PageSection title="Results">
+        <Panel title="Results">
           <Stack gap="md">
             {mapChannels.length > 0 ? (
-              <DesignSystemV2Provider>
-                <MapPanel title="Results map" height={360}>
-                  <CodeplugMap
-                    channels={mapChannels}
-                    zones={[]}
-                    allChannels={mapChannels}
-                    height="100%"
-                  />
-                </MapPanel>
-              </DesignSystemV2Provider>
+              <MapPanel title="Results map" height={360}>
+                <CodeplugMap
+                  channels={mapChannels}
+                  zones={[]}
+                  allChannels={mapChannels}
+                  height="100%"
+                />
+              </MapPanel>
             ) : (
-              <Text size="sm" c="dimmed">
-                No geolocated airports to plot on the map.
-              </Text>
+              <p className={pageClasses.attribution}>No geolocated airports to plot on the map.</p>
             )}
 
             <Group justify="space-between" align="flex-end" wrap="wrap">
-              <Checkbox
-                label="Select all"
-                checked={allFrequenciesSelected}
-                indeterminate={someFrequenciesSelected}
-                onChange={(e) => toggleAllFrequencies(e.currentTarget.checked)}
-              />
-              <Group align="flex-end" wrap="wrap">
-                <Select
-                  label="Name prefix"
-                  data={NAME_PREFIX_OPTIONS}
-                  value={namePrefixKind}
-                  onChange={(value) =>
-                    setNamePrefixKind((value as AirbandNamePrefixKind | null) ?? 'iata')
-                  }
-                  style={{ width: 150 }}
-                />
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
                 <Checkbox
+                  checked={allFrequenciesSelected}
+                  indeterminate={someFrequenciesSelected}
+                  onCheckedChange={toggleAllFrequencies}
+                  aria-label="Select all frequencies"
+                />
+                Select all
+              </label>
+              <Group align="flex-end" wrap="wrap">
+                <FormField label="Name prefix">
+                  <SegmentedControl
+                    options={NAME_PREFIX_OPTIONS}
+                    value={namePrefixKind}
+                    onChange={(value) => setNamePrefixKind(value)}
+                  />
+                </FormField>
+                <ToggleSwitch
                   label="Add to zone"
                   checked={alsoCreateZone}
-                  onChange={(e) => setAlsoCreateZone(e.currentTarget.checked)}
+                  onChange={setAlsoCreateZone}
                 />
                 {alsoCreateZone ? (
                   <Stack gap="xs" maw={280}>
                     <SegmentedControl
-                      value={zoneTargetMode}
-                      onChange={(value) => setZoneTargetMode(value as ZoneTargetMode)}
-                      data={[
+                      options={[
                         { label: 'New zone', value: 'new' },
-                        {
-                          label: 'Existing zone',
-                          value: 'existing',
-                          disabled: library.zones.length === 0,
-                        },
+                        { label: 'Existing zone', value: 'existing' },
                       ]}
+                      value={zoneTargetMode}
+                      onChange={(value) => setZoneTargetMode(value)}
                     />
                     {zoneTargetMode === 'new' ? (
-                      <TextInput
-                        label="Zone name"
-                        value={zoneName}
-                        onChange={(e) => setZoneName(e.currentTarget.value)}
-                        placeholder={DEFAULT_ZONE_NAME}
-                      />
+                      <FormField label="Zone name">
+                        <TextInput
+                          variant="plain"
+                          value={zoneName}
+                          onChange={(e) => setZoneName(e.currentTarget.value)}
+                          placeholder={DEFAULT_ZONE_NAME}
+                        />
+                      </FormField>
                     ) : (
                       <Stack gap={4}>
                         <ZoneSelect
@@ -755,20 +756,20 @@ export default function OpenAipAirportSearch() {
               </SimpleGrid>
             </ScrollArea.Autosize>
           </Stack>
-        </PageSection>
+        </Panel>
       ) : null}
 
-      <Text size="xs" c="dimmed" mt="md">
+      <p className={pageClasses.attribution}>
         Airport data ©{' '}
-        <Anchor href="https://www.openaip.net/" target="_blank" rel="noreferrer">
+        <a href="https://www.openaip.net/" target="_blank" rel="noreferrer">
           OpenAIP
-        </Anchor>{' '}
+        </a>{' '}
         contributors. Frequencies may change with AIP amendments — RX monitoring only; not
         authoritative for aviation operations.{' '}
-        <Anchor component={Link} to="/attributions" size="xs">
+        <Link to="/attributions" className="libraryListNameLink">
           Attributions
-        </Anchor>
-      </Text>
-    </FormPage>
+        </Link>
+      </p>
+    </DirectoryIngestPage>
   );
 }

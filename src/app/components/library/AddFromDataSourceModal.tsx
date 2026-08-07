@@ -1,8 +1,9 @@
-import { Modal, SimpleGrid, ThemeIcon } from '@mantine/core';
+import { SimpleGrid } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
-import BadgeCard from '../ui/BadgeCard.tsx';
+import { DesignSystemV2Provider, ModalShell } from '../v2/index.ts';
 import { CHANNEL_ADD_SOURCES, type ChannelDataSource } from '../../lib/channelDataSources.ts';
 import type { ContactDataSource } from '../../lib/contactDataSources.ts';
+import classes from './AddFromDataSourceModal.module.css';
 
 export type AddFromDataSource = ChannelDataSource | ContactDataSource;
 
@@ -26,25 +27,40 @@ export default function AddFromDataSourceModal({
   }
 
   return (
-    <Modal opened={opened} onClose={onClose} title="Add from…" size="lg" centered>
-      <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
-        {sources.map((source) => (
-          <BadgeCard
-            key={source.id}
-            title={source.title}
-            subtitle={source.subtitle}
-            description={source.description}
-            badges={source.badges}
-            badgesTitle="Good for"
-            media={
-              <ThemeIcon size={56} radius="md" variant="light" color="brand">
-                <source.Icon size={32} stroke={1.5} />
-              </ThemeIcon>
-            }
-            onClick={() => openSource(source.path)}
-          />
-        ))}
-      </SimpleGrid>
-    </Modal>
+    <DesignSystemV2Provider>
+      <ModalShell open={opened} onClose={onClose} title="Add from…" size="lg">
+        <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="md">
+          {sources.map((source) => (
+            <button
+              key={source.id}
+              type="button"
+              className={classes.sourceCard}
+              onClick={() => openSource(source.path)}
+            >
+              <span className={classes.sourceIcon} aria-hidden>
+                <source.Icon size={28} stroke={1.5} />
+              </span>
+              <span className={classes.sourceTitle}>{source.title}</span>
+              {source.subtitle ? (
+                <span className={classes.sourceSubtitle}>{source.subtitle}</span>
+              ) : null}
+              {source.description ? (
+                <span className={classes.sourceDescription}>{source.description}</span>
+              ) : null}
+              {source.badges.length > 0 ? (
+                <span className={classes.sourceBadges}>
+                  {source.badges.map((badge) => (
+                    <span key={badge.label} className={classes.badge}>
+                      {badge.emoji ? `${badge.emoji} ` : ''}
+                      {badge.label}
+                    </span>
+                  ))}
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </SimpleGrid>
+      </ModalShell>
+    </DesignSystemV2Provider>
   );
 }

@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Alert, Button, Checkbox, Group, Modal, Progress, Stack, Text } from '@mantine/core';
+import { Progress, Stack, Text } from '@mantine/core';
 import type { DigitalContact } from '@core/models/library.ts';
 import type { RadioidDmrUserListing } from '@integrations/radioid/index.ts';
 import type { RadioidSearchFilters } from '../../hooks/useRadioidContactSearch.ts';
@@ -12,6 +12,11 @@ import {
   type RadioidBulkImportResult,
   type RadioidBulkImportScope,
 } from '../../lib/radioidBulkImport.ts';
+import Button from '../v2/Button.tsx';
+import Checkbox from '../v2/Checkbox.tsx';
+import ModalShell from '../v2/ModalShell.tsx';
+import StatusBanner from '../v2/StatusBanner.tsx';
+import classes from '../repeaters/RepeaterListingUpdateDialog.module.css';
 
 export interface RadioidContactBulkImportDialogProps {
   opened: boolean;
@@ -121,7 +126,7 @@ function RadioidContactBulkImportDialogBody({
         ? totalCount === 0
         : newCount === 0 && (!updateExisting || existingCount === 0);
     return (
-      <Stack gap="md">
+      <div className={classes.body}>
         <Text size="sm">
           Import <strong>{scopeSummary(scope, listings, totalCount, totalPages)}</strong> into your
           library.
@@ -142,70 +147,65 @@ function RadioidContactBulkImportDialogBody({
               {scope === 'all' ? ' on this page' : ''}
             </Text>
           ) : null}
-          {scope === 'all' && existingCount > 0 ? (
-            <Text size="xs" c="dimmed">
-              Existing counts on other pages are determined during import.
-            </Text>
-          ) : null}
         </Stack>
         {existingCount > 0 || (scope === 'all' && totalCount > 0) ? (
-          <Checkbox
-            label="Update existing library contacts when RadioID.net data differs"
-            checked={updateExisting}
-            onChange={(e) => setUpdateExisting(e.currentTarget.checked)}
-          />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <Checkbox
+              checked={updateExisting}
+              onCheckedChange={setUpdateExisting}
+              aria-label="Update existing library contacts when RadioID.net data differs"
+            />
+            Update existing library contacts when RadioID.net data differs
+          </label>
         ) : null}
         {!projectId ? (
-          <Alert color="red">Select an active project before importing contacts.</Alert>
+          <StatusBanner tone="warning">
+            Select an active project before importing contacts.
+          </StatusBanner>
         ) : null}
-        <Group justify="flex-end">
-          <Button variant="default" onClick={onClose}>
+        <div className={classes.footer}>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button disabled={!projectId || nothingToDo} onClick={() => void handleStart()}>
             Start import
           </Button>
-        </Group>
-      </Stack>
+        </div>
+      </div>
     );
   }
 
   if (phase === 'running') {
     return (
-      <Stack gap="md">
+      <div className={classes.body}>
         <Text size="sm">{progress?.message ?? 'Starting…'}</Text>
         <Progress value={percent} animated />
-        <Group justify="space-between">
-          <Text size="sm" c="dimmed">
-            {progress
-              ? `${progress.processed} / ${progress.total} · added ${progress.added} · updated ${progress.updated} · skipped ${progress.skipped}`
-              : 'Preparing…'}
-          </Text>
-          <Text size="sm" c="dimmed">
-            ETA {formatRadioidBulkImportEta(progress?.etaMs ?? null)}
-          </Text>
-        </Group>
-        <Group justify="flex-end">
-          <Button variant="default" color="red" onClick={handleCancelRunning}>
+        <Text size="sm" c="dimmed">
+          {progress
+            ? `${progress.processed} / ${progress.total} · added ${progress.added} · updated ${progress.updated} · skipped ${progress.skipped}`
+            : 'Preparing…'}
+          {' · ETA '}
+          {formatRadioidBulkImportEta(progress?.etaMs ?? null)}
+        </Text>
+        <div className={classes.footer}>
+          <Button variant="destructive" onClick={handleCancelRunning}>
             Cancel
           </Button>
-        </Group>
-      </Stack>
+        </div>
+      </div>
     );
   }
 
   const summary = result;
   return (
-    <Stack gap="md">
+    <div className={classes.body}>
       {summary?.error ? (
-        <Alert color="red" title="Import stopped">
-          {summary.error}
-        </Alert>
+        <StatusBanner tone="warning">Import stopped: {summary.error}</StatusBanner>
       ) : null}
       {summary?.cancelled ? (
-        <Alert color="yellow" title="Import cancelled">
-          Partial results were saved before cancellation.
-        </Alert>
+        <StatusBanner tone="warning">
+          Import cancelled — partial results were saved before cancellation.
+        </StatusBanner>
       ) : null}
       <Text size="sm">
         Added <strong>{summary?.added ?? 0}</strong>, updated{' '}
@@ -217,10 +217,10 @@ function RadioidContactBulkImportDialogBody({
         ) : null}
         .
       </Text>
-      <Group justify="flex-end">
+      <div className={classes.footer}>
         <Button onClick={onClose}>Close</Button>
-      </Group>
-    </Stack>
+      </div>
+    </div>
   );
 }
 
@@ -232,16 +232,16 @@ export default function RadioidContactBulkImportDialog({
   const bodyKey = `${rest.sessionKey}:${rest.scope}`;
 
   return (
-    <Modal
-      opened={opened}
+    <ModalShell
+      open={opened}
       onClose={onClose}
       title={scopeTitle(rest.scope)}
-      closeOnClickOutside={false}
-      closeOnEscape={false}
+      dismissible={false}
+      size="md"
     >
       {opened ? (
         <RadioidContactBulkImportDialogBody key={bodyKey} {...rest} onClose={onClose} />
       ) : null}
-    </Modal>
+    </ModalShell>
   );
 }

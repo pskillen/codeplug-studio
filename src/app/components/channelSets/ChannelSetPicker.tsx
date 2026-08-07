@@ -1,17 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import {
-  Alert,
-  Button,
-  Checkbox,
-  Group,
-  NumberInput,
-  Select,
-  Stack,
-  Switch,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { useNavigate } from 'react-router-dom';
+import { Select } from '@mantine/core';
 import { IconPlaylistAdd } from '@tabler/icons-react';
 import {
   CHANNEL_SET_DEFINITIONS,
@@ -22,8 +11,19 @@ import type { ChannelSetId } from '@core/domain/channelSets/types.ts';
 import { channelSetDefinition } from '@core/domain/channelSets/definitions.ts';
 import { buildChannelSetImportPlan } from '@core/services/channelSetImport.ts';
 import ModePill from '../pills/ModePill.tsx';
-import { FormPage, PageSection, DataTable } from '../ui/index.ts';
-import type { DataTableColumn } from '../ui/DataTable.tsx';
+import DirectoryIngestPage from '../directories/DirectoryIngestPage.tsx';
+import pageClasses from '../directories/DirectoryIngestPage.module.css';
+import {
+  Button,
+  DataTable,
+  FormField,
+  Panel,
+  Pill,
+  StatusBanner,
+  TextInput,
+  ToggleSwitch,
+  type DataTableColumn,
+} from '../v2/index.ts';
 import { hzToMhzString } from '../../lib/units.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -64,6 +64,11 @@ function previewStatusLabel(status: PreviewStatus): string {
     case 'skip_name':
       return 'Skip (name exists)';
   }
+}
+
+function previewStatusTone(status: PreviewStatus): 'success' | 'warning' | 'neutral' {
+  if (status === 'add') return 'success';
+  return 'warning';
 }
 
 function formatFrequencyCell(rxHz: number, txHz: number): string {
@@ -135,71 +140,55 @@ export default function ChannelSetPicker() {
     });
   }, [activeProjectId, setId, generateOptions, library.channels]);
 
-  const addCount = previewRows.filter(
-    (r) => r.status === 'add' && selectedIndices.has(r.index),
-  ).length;
+  const selectedKeys = useMemo(
+    () =>
+      previewRows
+        .filter((row) => row.status === 'add' && selectedIndices.has(row.index))
+        .map((row) => String(row.index)),
+    [previewRows, selectedIndices],
+  );
 
-  function toggleIndex(index: number, checked: boolean) {
-    setSelectedIndices((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(index);
-      else next.delete(index);
-      return next;
-    });
+  const addCount = selectedKeys.length;
+
+  function onSelectionChange(keys: string[]) {
+    const addable = new Set(
+      previewRows.filter((row) => row.status === 'add').map((row) => row.index),
+    );
+    setSelectedIndices(
+      new Set(keys.map((key) => Number(key)).filter((index) => addable.has(index))),
+    );
   }
-
-  function toggleAllSelectable(checked: boolean) {
-    if (checked) {
-      setSelectedIndices(
-        new Set(previewRows.filter((r) => r.status === 'add').map((r) => r.index)),
-      );
-    } else {
-      setSelectedIndices(new Set());
-    }
-  }
-
-  const selectableCount = previewRows.filter((r) => r.status === 'add').length;
-  const allSelectableChecked =
-    selectableCount > 0 &&
-    previewRows.filter((r) => r.status === 'add').every((r) => selectedIndices.has(r.index));
-  const someSelectableSelected = addCount > 0 && addCount < selectableCount;
 
   const previewColumns = useMemo((): DataTableColumn<PreviewRow>[] => {
     return [
       {
-        key: 'select',
-        header: '',
-        hideable: false,
-        render: (row) => (
-          <Checkbox
-            aria-label={`Include ${row.name}`}
-            checked={selectedIndices.has(row.index)}
-            disabled={row.status !== 'add'}
-            onChange={(e) => toggleIndex(row.index, e.currentTarget.checked)}
-          />
-        ),
+        key: 'name',
+        header: 'Name',
+        render: (row) => row.name,
+        sortValue: (row) => row.name,
       },
       {
         key: 'rxTx',
         header: 'RX / TX (MHz)',
+        hideOnMobile: true,
         render: (row) => formatFrequencyCell(row.rxHz, row.txHz),
       },
       {
         key: 'mode',
         header: 'Mode',
+        width: '80px',
         render: (row) => <ModePill mode={row.mode as 'fm'} size="xs" />,
       },
       {
         key: 'status',
         header: 'Status',
+        width: '140px',
         render: (row) => (
-          <Text size="sm" c={row.status === 'add' ? undefined : 'dimmed'}>
-            {previewStatusLabel(row.status)}
-          </Text>
+          <Pill tone={previewStatusTone(row.status)}>{previewStatusLabel(row.status)}</Pill>
         ),
       },
     ];
-  }, [selectedIndices]);
+  }, []);
 
   async function handleAdd() {
     if (!activeProjectId || addCount === 0) return;
@@ -246,119 +235,113 @@ export default function ChannelSetPicker() {
   }
 
   return (
-    <FormPage
-      title="Add channel set"
-      description="Generate standard frequency inventories into your library. Duplicate RX frequencies in the library are skipped."
+    <DirectoryIngestPage
+      crumb="Channels"
+      crumbTo="/library/channels"
+      title="Import a curated channel set"
+      subtitle="Pick a set, review what will be added, then import. Duplicate RX frequencies in the library are skipped."
+      footer={
+        <Button variant="secondary" onClick={() => navigate('/library/channels')}>
+          Cancel
+        </Button>
+      }
     >
-      <Stack gap="lg">
-        {error ? (
-          <Alert color="red" title="Could not add channel set">
-            {error}
-          </Alert>
-        ) : null}
-        {success ? (
-          <Alert color="green" title="Channel set added">
-            {success}
-          </Alert>
-        ) : null}
+      {error ? <StatusBanner tone="warning">{error}</StatusBanner> : null}
+      {success ? <StatusBanner tone="success">{success}</StatusBanner> : null}
 
-        <PageSection title="Channel set">
-          <Stack gap="md">
-            <Select
-              label="Set"
-              description={definition.description}
-              data={SET_OPTIONS}
-              value={setId}
-              onChange={(value) => {
-                if (value) {
-                  const id = value as ChannelSetId;
-                  setSetId(id);
-                  setForbidTransmit(null);
-                  setSelectedIndices(allIndices(channelSetDefinition(id).templates().length));
-                }
-              }}
-            />
-          </Stack>
-        </PageSection>
+      <Panel title="Channel set">
+        <FormField label="Set" hint={definition.description}>
+          <Select
+            data={SET_OPTIONS}
+            value={setId}
+            onChange={(value) => {
+              if (value) {
+                const id = value as ChannelSetId;
+                setSetId(id);
+                setForbidTransmit(null);
+                setSelectedIndices(allIndices(channelSetDefinition(id).templates().length));
+              }
+            }}
+            variant="unstyled"
+          />
+        </FormField>
+      </Panel>
 
-        <PageSection title="Options">
-          <Stack gap="md">
+      <Panel title="Options">
+        <div className={pageClasses.filterGrid}>
+          <FormField
+            label="Name prefix"
+            hint="Optional prefix for every generated channel name"
+            className={pageClasses.filterFieldWide}
+          >
             <TextInput
-              label="Name prefix"
-              description="Optional prefix for every generated channel name"
+              variant="plain"
               value={namePrefix}
               onChange={(e) => setNamePrefix(e.currentTarget.value)}
             />
-            <NumberInput
-              label="Power (%)"
-              description="Leave empty for radio default"
-              value={power}
-              onChange={setPower}
+          </FormField>
+          <FormField
+            label="Power (%)"
+            hint="Leave empty for radio default"
+            className={pageClasses.filterField}
+          >
+            <TextInput
+              variant="plain"
+              type="number"
               min={0}
               max={100}
-              clampBehavior="strict"
+              value={power}
+              onChange={(e) => setPower(e.currentTarget.value)}
             />
+          </FormField>
+          <FormField
+            label="Bandwidth (kHz)"
+            hint="FM channel bandwidth applied to every generated channel"
+            className={pageClasses.filterField}
+          >
             <Select
-              label="Bandwidth (kHz)"
-              description="FM channel bandwidth applied to every generated channel"
               data={BANDWIDTH_OPTIONS}
               value={bandwidthKHz}
               onChange={(value) => setBandwidthKHz(value ?? '12.5')}
+              variant="unstyled"
             />
-            <Switch
-              label="Forbid transmit"
-              description="Receive-only at export (PMR446 defaults on)"
-              checked={effectiveForbidTransmit}
-              onChange={(e) => setForbidTransmit(e.currentTarget.checked)}
+          </FormField>
+        </div>
+        <ToggleSwitch
+          label="Forbid transmit"
+          checked={effectiveForbidTransmit}
+          onChange={(checked) => setForbidTransmit(checked)}
+        />
+        <ToggleSwitch
+          label="Also create zone"
+          checked={alsoCreateZone}
+          onChange={setAlsoCreateZone}
+        />
+        {alsoCreateZone ? (
+          <FormField label="Zone name" className={pageClasses.filterField}>
+            <TextInput
+              variant="plain"
+              value={zoneName}
+              placeholder={definition.label}
+              onChange={(e) => setZoneName(e.currentTarget.value)}
             />
-            <Switch
-              label="Also create zone"
-              description="New library zone containing generated channels in set order"
-              checked={alsoCreateZone}
-              onChange={(e) => setAlsoCreateZone(e.currentTarget.checked)}
-            />
-            {alsoCreateZone ? (
-              <TextInput
-                label="Zone name"
-                value={zoneName}
-                placeholder={definition.label}
-                onChange={(e) => setZoneName(e.currentTarget.value)}
-              />
-            ) : null}
-          </Stack>
-        </PageSection>
+          </FormField>
+        ) : null}
+      </Panel>
 
-        <PageSection title={`Preview (${previewRows.length} channels)`}>
-          <DataTable
-            variant="embedded"
-            rows={previewRows}
-            rowKey={(row) => `${row.name}-${row.rxHz}`}
-            showSearch={false}
-            nameColumn={{
-              header: 'Name',
-              getName: (row) => row.name,
-              getPath: () => '#',
-              render: (row) => row.name,
-            }}
-            columns={previewColumns}
-            toolbar={
-              <Group gap="sm">
-                <Checkbox
-                  aria-label="Select all addable channels"
-                  checked={allSelectableChecked}
-                  indeterminate={someSelectableSelected}
-                  onChange={(e) => toggleAllSelectable(e.currentTarget.checked)}
-                  disabled={selectableCount === 0}
-                />
-                <Text size="sm" c="dimmed">
-                  {addCount} selected to add
-                </Text>
-              </Group>
-            }
-          />
-        </PageSection>
-
-        <Group>
+      <Panel title={`Preview (${previewRows.length} channels)`}>
+        <DataTable
+          variant="embedded"
+          rows={previewRows}
+          getRowId={(row) => String(row.index)}
+          columns={previewColumns}
+          caption={`${addCount} selected to add`}
+          selectable
+          selectedKeys={selectedKeys}
+          onSelectionChange={onSelectionChange}
+          isRowSelectable={(row) => row.status === 'add'}
+        />
+        <div className={pageClasses.filterActions} style={{ marginTop: 12 }}>
           <Button
             leftSection={<IconPlaylistAdd size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
             onClick={() => void handleAdd()}
@@ -367,11 +350,8 @@ export default function ChannelSetPicker() {
           >
             Add {addCount} channel{addCount === 1 ? '' : 's'}
           </Button>
-          <Button component={Link} to="/library/channels" variant="subtle">
-            Cancel
-          </Button>
-        </Group>
-      </Stack>
-    </FormPage>
+        </div>
+      </Panel>
+    </DirectoryIngestPage>
   );
 }

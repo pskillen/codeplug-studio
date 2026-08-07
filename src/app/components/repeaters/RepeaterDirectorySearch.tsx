@@ -1,21 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  Alert,
-  Anchor,
-  Autocomplete,
-  Button,
-  Checkbox,
-  Group,
-  Input,
-  Modal,
-  MultiSelect,
-  SegmentedControl,
-  Stack,
-  Switch,
-  Text,
-  TextInput,
-} from '@mantine/core';
+import { Anchor, MultiSelect } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import type { Channel } from '@core/models/library.ts';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
@@ -24,7 +9,6 @@ import { reverseGeocode, GeocodeError } from '@integrations/geocode/index.ts';
 import {
   normaliseRepeaterBookCountry,
   repeaterBookRegionForCountry,
-  REPEATERBOOK_COUNTRY_NAMES,
 } from '@integrations/repeaters/repeaterbook/countryNames.ts';
 import {
   repeaterListingToChannel,
@@ -49,10 +33,24 @@ import { useProjects } from '../../state/useProjects.ts';
 import { listingDisplayLocator } from '@integrations/repeaters/listingLocator.ts';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
 import { BandPillsForRepeaterListing, ModePillsForRepeaterListing } from '../pills/index.ts';
-import { FormPage, PageSection, DataTable } from '../ui/index.ts';
-import type { DataTableColumn } from '../ui/DataTable.tsx';
+import CountryComboboxField from '../directories/CountryComboboxField.tsx';
+import DirectoryIngestPage from '../directories/DirectoryIngestPage.tsx';
+import pageClasses from '../directories/DirectoryIngestPage.module.css';
 import CodeplugMap from '../CodeplugMap/CodeplugMap.tsx';
-import { DesignSystemV2Provider, MapPanel } from '../v2/index.ts';
+import {
+  Button,
+  Checkbox,
+  DataTable,
+  FormField,
+  MapPanel,
+  ModalShell,
+  Panel,
+  SegmentedControl,
+  StatusBanner,
+  TextInput,
+  ToggleSwitch,
+  type DataTableColumn,
+} from '../v2/index.ts';
 import { findChannelByCallsign } from './findChannelByCallsign.ts';
 import { buildRepeaterDirectoryRows } from './repeaterDirectoryRows.ts';
 import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
@@ -74,6 +72,11 @@ const GEOMETRY_FILTER_OPTIONS: { label: string; value: ListingGeometryFilter }[]
   { label: 'All', value: 'all' },
   { label: 'Simplex', value: 'simplex' },
   { label: 'Split', value: 'split' },
+];
+
+const REGION_OPTIONS = [
+  { label: 'North America', value: 'na' as const },
+  { label: 'Rest of world', value: 'row' as const },
 ];
 
 const SOURCE_META: Record<
@@ -107,6 +110,9 @@ const SOURCE_META: Record<
 };
 
 const UK_MODE_FILTER_OPTIONS = modeFilterOptions().filter((o) => o.value !== 'other');
+
+const GATED_SELECTION_CAPTION =
+  "Already-in-library rows are dimmed and can't be re-added — use Update to refresh their frequency/tone from the directory.";
 
 export interface RepeaterDirectorySearchProps {
   source: RepeaterSource;
@@ -146,7 +152,7 @@ export default function RepeaterDirectorySearch({
   const { library } = useLibrary();
   const search = useRepeaterDirectorySearch(source);
   const { mapboxToken } = useMapSettings();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [addedChannelIds, setAddedChannelIds] = useState<Record<string, string>>({});
   const [addMessage, setAddMessage] = useState<string | null>(null);
@@ -169,7 +175,6 @@ export default function RepeaterDirectorySearch({
   useEffect(() => {
     if (source !== 'irts') return;
     void search.search('');
-    // Load ROI catalogue on mount; filters apply on subsequent searches.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source]);
 
@@ -219,47 +224,29 @@ export default function RepeaterDirectorySearch({
     setUpdateOpen(true);
   }
 
-  function toggleRow(key: string, checked: boolean) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (checked) next.add(key);
-      else next.delete(key);
-      return next;
-    });
-  }
-
-  function toggleAll(checked: boolean) {
-    if (!checked) {
-      setSelected(new Set());
-      return;
-    }
-    const keys = rows.filter((r) => !r.existing).map((r) => r.key);
-    setSelected(new Set(keys));
-  }
-
-  const addableRows = useMemo(() => rows.filter((r) => !r.existing), [rows]);
-  const allAddableSelected =
-    addableRows.length > 0 && addableRows.every((r) => selected.has(r.key));
-  const someAddableSelected = selected.size > 0 && !allAddableSelected;
-
   const resultColumns = useMemo((): DataTableColumn<(typeof rows)[number]>[] => {
     return [
       {
-        key: 'select',
-        header: '',
-        hideable: false,
-        render: (row) => (
-          <Checkbox
-            checked={selected.has(row.key)}
-            disabled={Boolean(row.existing)}
-            onChange={(e) => toggleRow(row.key, e.currentTarget.checked)}
-            aria-label={`Select ${row.listing.callsign}`}
-          />
-        ),
+        key: 'callsign',
+        header: 'Callsign',
+        width: '120px',
+        render: (row) => {
+          const id = libraryChannelIdForRow(row);
+          if (id) {
+            return (
+              <Link to={`/library/channels/${id}`} className="libraryListNameLink">
+                {row.listing.callsign}
+              </Link>
+            );
+          }
+          return <strong>{row.listing.callsign}</strong>;
+        },
+        sortValue: (row) => row.listing.callsign,
       },
       {
         key: 'band',
         header: 'Band',
+        width: '88px',
         render: (row) => (
           <BandPillsForRepeaterListing
             rxFrequencyHz={row.listing.rxFrequencyHz}
@@ -273,85 +260,82 @@ export default function RepeaterDirectorySearch({
         key: 'location',
         header: capabilities.locationLabel,
         render: (row) => displayListingName(row.listing, useTitleCaseNames),
+        sortValue: (row) => displayListingName(row.listing, useTitleCaseNames),
       },
       {
         key: 'status',
         header: 'Status',
+        width: '100px',
         render: (row) => (
-          <Text size="sm" c={isOperationalStatus(row.listing.status) ? undefined : 'orange'}>
+          <span style={{ color: isOperationalStatus(row.listing.status) ? undefined : '#c2410c' }}>
             {displayListingStatus(row.listing, useTitleCaseNames)}
-          </Text>
+          </span>
         ),
       },
       {
         key: 'mode',
         header: 'Mode',
+        width: '100px',
+        hideOnMobile: true,
         render: (row) => <ModePillsForRepeaterListing modes={row.listing.modes} size="xs" />,
       },
       {
         key: 'frequencies',
         header: 'Frequencies',
-        render: (row) => (
-          <Text size="sm">
-            {formatListingFrequencies(row.listing.rxFrequencyHz, row.listing.txFrequencyHz)}
-          </Text>
-        ),
+        hideOnMobile: true,
+        render: (row) =>
+          formatListingFrequencies(row.listing.rxFrequencyHz, row.listing.txFrequencyHz),
       },
       {
         key: 'locator',
         header: 'Locator',
+        width: '80px',
+        hideOnMobile: true,
         render: (row) => listingDisplayLocator(row.listing) ?? '—',
       },
       {
         key: 'actions',
         header: '',
+        width: '140px',
         hideable: false,
+        align: 'right',
         render: (row) => {
           const { listing } = row;
           const isAdded = added.has(row.key);
           const libraryChannelId = libraryChannelIdForRow(row);
           if (row.existing) {
             return (
-              <Button size="compact-sm" variant="outline" onClick={() => openUpdate(listing)}>
-                Update existing
+              <Button variant="outline" size="sm" onClick={() => openUpdate(listing)}>
+                Update
               </Button>
             );
           }
           if (isAdded && libraryChannelId) {
             return (
               <Button
-                size="compact-sm"
-                variant="light"
-                component={Link}
-                to={`/library/channels/${libraryChannelId}`}
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate(`/library/channels/${libraryChannelId}`)}
               >
-                Open channel
+                Open
               </Button>
             );
           }
           return (
             <Button
-              size="compact-sm"
-              variant={isAdded ? 'light' : 'filled'}
+              variant={isAdded ? 'secondary' : 'primary'}
+              size="sm"
               disabled={isAdded || adding}
               loading={adding}
               onClick={() => void handleAdd(listing)}
             >
-              {isAdded ? 'Added' : 'Add to library'}
+              {isAdded ? 'Added' : 'Add'}
             </Button>
           );
         },
       },
     ];
-  }, [
-    selected,
-    added,
-    addedChannelIds,
-    adding,
-    capabilities.locationLabel,
-    useTitleCaseNames,
-    rows,
-  ]);
+  }, [added, addedChannelIds, adding, capabilities.locationLabel, useTitleCaseNames, rows]);
 
   async function handleAdd(listing: RepeaterListing) {
     if (!activeProjectId) return;
@@ -395,6 +379,7 @@ export default function RepeaterDirectorySearch({
     let skipped = 0;
     const warnings: string[] = [];
     let workingLibrary = library;
+    const selected = new Set(selectedKeys);
     try {
       for (const row of rows) {
         if (!selected.has(row.key)) continue;
@@ -436,7 +421,7 @@ export default function RepeaterDirectorySearch({
           ? `Added ${addedCount} channel${addedCount === 1 ? '' : 's'}${skipped ? ` (${skipped} skipped)` : ''}${warnings.length ? `. ${warnings[0]}` : ''}.`
           : 'No channels were added.',
       );
-      setSelected(new Set());
+      setSelectedKeys([]);
     } finally {
       setAdding(false);
       setTgLookupProgress(null);
@@ -490,103 +475,102 @@ export default function RepeaterDirectorySearch({
       : updateChannel;
 
   return (
-    <FormPage
+    <DirectoryIngestPage
+      crumb="Channels"
+      crumbTo="/library/channels"
       title={title}
-      description={description}
+      subtitle={description}
       footer={
-        <Button variant="light" component={Link} to="/library/channels">
+        <Button variant="secondary" onClick={() => navigate('/library/channels')}>
           Back to library
         </Button>
       }
     >
-      <PageSection
-        title="Search"
-        description={`Query ${sourceMeta.label} and add matches to your library.`}
-      >
-        <Stack gap="sm">
-          {isRepeaterbook && !search.hasToken ? (
-            <Alert color="yellow">
-              RepeaterBook token required.{' '}
-              <Anchor
-                component={Link}
-                to="/settings"
-                state={{ scrollTo: SETTINGS_REPEATERBOOK_SECTION_ID }}
-              >
-                Add your token in Settings
-              </Anchor>
-              .
-            </Alert>
-          ) : null}
+      <Panel title="Search" sub={`Query ${sourceMeta.label} and add matches to your library.`}>
+        {isRepeaterbook && !search.hasToken ? (
+          <StatusBanner tone="warning">
+            RepeaterBook token required.{' '}
+            <Link
+              to="/settings"
+              state={{ scrollTo: SETTINGS_REPEATERBOOK_SECTION_ID }}
+              className="libraryListNameLink"
+            >
+              Add your token in Settings
+            </Link>
+            .
+          </StatusBanner>
+        ) : null}
 
-          {capabilities.regionSelector ? (
-            <Group align="flex-end" wrap="wrap">
-              <Input.Wrapper label="Region">
-                <SegmentedControl
-                  value={search.region}
-                  onChange={(value) => search.setRegion(value as 'na' | 'row')}
-                  data={[
-                    { label: 'North America', value: 'na' },
-                    { label: 'Rest of world', value: 'row' },
-                  ]}
-                />
-              </Input.Wrapper>
-              {search.region === 'na' ? (
+        {capabilities.regionSelector ? (
+          <div className={pageClasses.filterGrid}>
+            <FormField label="Region" className={pageClasses.filterField}>
+              <SegmentedControl
+                options={REGION_OPTIONS}
+                value={search.region}
+                onChange={(value) => search.setRegion(value)}
+              />
+            </FormField>
+            {search.region === 'na' ? (
+              <FormField label="State ID (FIPS)" className={pageClasses.filterField}>
                 <TextInput
-                  label="State ID (FIPS)"
+                  variant="plain"
                   placeholder="e.g. 06 for California"
                   value={search.stateId}
                   onChange={(e) => search.setStateId(e.currentTarget.value)}
-                  style={{ minWidth: 160 }}
                 />
-              ) : null}
-              {capabilities.countryAutocomplete ? (
-                <Autocomplete
-                  label={search.region === 'row' ? 'Country' : 'Country (optional)'}
-                  placeholder={
-                    search.region === 'row'
-                      ? 'Start typing — e.g. United Kingdom'
-                      : 'United States or Canada'
-                  }
-                  data={[...REPEATERBOOK_COUNTRY_NAMES]}
-                  value={search.country}
-                  onChange={search.setCountry}
-                  limit={20}
-                  style={{ flex: 1, minWidth: 220 }}
-                />
-              ) : (
+              </FormField>
+            ) : null}
+            {capabilities.countryAutocomplete ? (
+              <CountryComboboxField
+                label={search.region === 'row' ? 'Country' : 'Country (optional)'}
+                value={search.country}
+                onChange={search.setCountry}
+                placeholder={
+                  search.region === 'row'
+                    ? 'Start typing — e.g. United Kingdom'
+                    : 'United States or Canada'
+                }
+                className={pageClasses.filterFieldWide}
+              />
+            ) : (
+              <FormField
+                label={search.region === 'row' ? 'Country' : 'Country (optional)'}
+                className={pageClasses.filterFieldWide}
+              >
                 <TextInput
-                  label={search.region === 'row' ? 'Country' : 'Country (optional)'}
+                  variant="plain"
                   placeholder={
                     search.region === 'row' ? 'e.g. Switzerland' : 'United States or Canada'
                   }
                   value={search.country}
                   onChange={(e) => search.setCountry(e.currentTarget.value)}
-                  style={{ flex: 1, minWidth: 180 }}
                 />
-              )}
-            </Group>
-          ) : null}
+              </FormField>
+            )}
+          </div>
+        ) : null}
 
-          {locationHint ? (
-            <Text size="sm" c="dimmed">
-              {locationHint}
-            </Text>
-          ) : null}
+        {locationHint ? <p className={pageClasses.attribution}>{locationHint}</p> : null}
 
-          {capabilities.locatorFilter ? (
+        {capabilities.locatorFilter ? (
+          <FormField
+            label="Locator filter"
+            hint="Client-side Maidenhead prefix filter (e.g. JO22) to narrow large country result sets."
+            className={pageClasses.filterField}
+          >
             <TextInput
-              label="Locator filter"
-              description="Client-side Maidenhead prefix filter (e.g. JO22) to narrow large country result sets."
+              variant="plain"
               placeholder="e.g. JO22"
               value={search.locatorFilter}
               onChange={(e) => search.setLocatorFilter(e.currentTarget.value.toUpperCase())}
-              style={{ maxWidth: 200 }}
             />
-          ) : null}
+          </FormField>
+        ) : null}
 
-          <Group align="flex-end" wrap="wrap">
+        <div className={pageClasses.filterGrid}>
+          <FormField label="Search" className={pageClasses.filterFieldWide}>
             <TextInput
-              label="Search"
+              variant="plain"
               placeholder={
                 capabilities.unifiedQuery
                   ? 'Callsign, locator, or town'
@@ -601,176 +585,158 @@ export default function RepeaterDirectorySearch({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void search.search();
               }}
-              style={{ flex: 1, minWidth: 200 }}
             />
-            {capabilities.bandFilter ? (
+          </FormField>
+          {capabilities.bandFilter ? (
+            <FormField label="Band filter" className={pageClasses.filterField}>
               <MultiSelect
-                label="Band filter"
                 placeholder="Any band"
                 data={BAND_OPTIONS}
                 value={search.bandFilter}
                 onChange={search.setBandFilter}
                 clearable
-                style={{ minWidth: 140 }}
+                variant="unstyled"
               />
-            ) : null}
-            {capabilities.geometryFilter ? (
-              <Input.Wrapper label="Geometry">
-                <SegmentedControl
-                  value={search.geometryFilter}
-                  onChange={(value) => search.setGeometryFilter(value as ListingGeometryFilter)}
-                  data={GEOMETRY_FILTER_OPTIONS}
-                  style={{ minWidth: 200 }}
-                />
-              </Input.Wrapper>
-            ) : null}
-            {capabilities.modeFilter ? (
+            </FormField>
+          ) : null}
+          {capabilities.geometryFilter ? (
+            <FormField label="Geometry" className={pageClasses.filterField}>
+              <SegmentedControl
+                options={GEOMETRY_FILTER_OPTIONS}
+                value={search.geometryFilter}
+                onChange={(value) => search.setGeometryFilter(value)}
+              />
+            </FormField>
+          ) : null}
+          {capabilities.modeFilter ? (
+            <FormField label="Mode filter" className={pageClasses.filterField}>
               <MultiSelect
-                label="Mode filter"
                 placeholder="Any mode"
                 data={UK_MODE_FILTER_OPTIONS}
                 value={search.modeFilter}
                 onChange={search.setModeFilter}
                 clearable
-                style={{ minWidth: 140 }}
+                variant="unstyled"
               />
-            ) : null}
-            {capabilities.operationalOnly ? (
-              <Switch
-                label="Operational only"
-                checked={search.operationalOnly}
-                onChange={(e) => search.setOperationalOnly(e.currentTarget.checked)}
-              />
-            ) : null}
-            {capabilities.titleCaseNames ? (
+            </FormField>
+          ) : null}
+        </div>
+
+        <div className={pageClasses.filterActions}>
+          {capabilities.operationalOnly ? (
+            <ToggleSwitch
+              label="Operational only"
+              checked={search.operationalOnly}
+              onChange={search.setOperationalOnly}
+            />
+          ) : null}
+          {capabilities.titleCaseNames ? (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
               <Checkbox
-                label="Title case names"
                 checked={search.titleCaseNames}
-                onChange={(e) => search.setTitleCaseNames(e.currentTarget.checked)}
+                onCheckedChange={search.setTitleCaseNames}
+                aria-label="Title case names"
               />
-            ) : null}
-            {isBrandmeister ? (
+              Title case names
+            </label>
+          ) : null}
+          {isBrandmeister ? (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
               <Checkbox
-                label="Import talk groups and RX group list"
                 checked={importTalkGroups}
-                onChange={(e) => setImportTalkGroups(e.currentTarget.checked)}
+                onCheckedChange={setImportTalkGroups}
+                aria-label="Import talk groups and RX group list"
               />
-            ) : null}
-            {capabilities.useMyLocation ? (
-              <UseMyLocationButton onLocation={(lat, lon) => void handleUseMyLocation(lat, lon)} />
-            ) : null}
-            <Button
-              leftSection={<IconSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-              onClick={() => void search.search()}
-              loading={search.loading}
-              disabled={isRepeaterbook && !search.hasToken}
-            >
-              Search
-            </Button>
-          </Group>
-
-          {kindHint && !search.error ? (
-            <Text size="sm" c="dimmed">
-              {kindHint}
-            </Text>
+              Import talk groups and RX group list
+            </label>
           ) : null}
-
-          {search.error ? (
-            <Alert color="red">
-              {search.error}{' '}
-              <Anchor href={sourceMeta.url} target="_blank" rel="noopener noreferrer">
-                {sourceMeta.label}
-              </Anchor>
-            </Alert>
+          {capabilities.useMyLocation ? (
+            <UseMyLocationButton onLocation={(lat, lon) => void handleUseMyLocation(lat, lon)} />
           ) : null}
+          <Button
+            leftSection={<IconSearch size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+            onClick={() => void search.search()}
+            loading={search.loading}
+            disabled={isRepeaterbook && !search.hasToken}
+          >
+            Search
+          </Button>
+        </div>
 
-          {addMessage ? <Alert color="green">{addMessage}</Alert> : null}
-        </Stack>
-      </PageSection>
+        {kindHint && !search.error ? <p className={pageClasses.attribution}>{kindHint}</p> : null}
+
+        {search.error ? (
+          <StatusBanner tone="warning">
+            {search.error}{' '}
+            <Anchor href={sourceMeta.url} target="_blank" rel="noopener noreferrer">
+              {sourceMeta.label}
+            </Anchor>
+          </StatusBanner>
+        ) : null}
+
+        {addMessage ? <StatusBanner tone="success">{addMessage}</StatusBanner> : null}
+      </Panel>
 
       {rows.length > 0 ? (
-        <PageSection title="Results">
-          <Stack gap="xs" mb="md">
-            {mapChannels.length > 0 ? (
-              <DesignSystemV2Provider>
-                <MapPanel title="Results map" height={360}>
-                  <CodeplugMap
-                    channels={mapChannels}
-                    zones={[]}
-                    allChannels={mapChannels}
-                    height="100%"
-                  />
-                </MapPanel>
-              </DesignSystemV2Provider>
-            ) : null}
-            {mapSkippedCount > 0 ? (
-              <Text size="sm" c="dimmed">
-                {mapSkippedCount} listing{mapSkippedCount === 1 ? '' : 's'} without coordinates not
-                shown on map.
-              </Text>
-            ) : null}
-          </Stack>
+        <Panel title="Results">
+          {mapChannels.length > 0 ? (
+            <MapPanel title="Results map" height={360}>
+              <CodeplugMap
+                channels={mapChannels}
+                zones={[]}
+                allChannels={mapChannels}
+                height="100%"
+              />
+            </MapPanel>
+          ) : null}
+          {mapSkippedCount > 0 ? (
+            <p className={pageClasses.attribution}>
+              {mapSkippedCount} listing{mapSkippedCount === 1 ? '' : 's'} without coordinates not
+              shown on map.
+            </p>
+          ) : null}
           <DataTable
             variant="embedded"
             rows={rows}
-            rowKey={(row) => row.key}
-            showSearch={false}
-            nameColumn={{
-              header: 'Callsign',
-              getName: (row) => row.listing.callsign,
-              getPath: (row) => {
-                const id = libraryChannelIdForRow(row);
-                return id ? `/library/channels/${id}` : '#';
-              },
-              render: (row) => {
-                const id = libraryChannelIdForRow(row);
-                if (id) {
-                  return (
-                    <Anchor component={Link} to={`/library/channels/${id}`} fw={600}>
-                      {row.listing.callsign}
-                    </Anchor>
-                  );
-                }
-                return <Text fw={600}>{row.listing.callsign}</Text>;
-              },
-            }}
+            getRowId={(row) => row.key}
             columns={resultColumns}
-            toolbar={
-              <Group justify="space-between" wrap="wrap" gap="sm">
-                <Group gap="sm">
-                  <Checkbox
-                    aria-label="Select all addable"
-                    checked={allAddableSelected}
-                    indeterminate={someAddableSelected}
-                    disabled={addableRows.length === 0}
-                    onChange={(e) => toggleAll(e.currentTarget.checked)}
-                  />
-                  <Button
-                    disabled={selected.size === 0 || adding}
-                    loading={adding}
-                    onClick={() => void handleAddSelected()}
-                  >
-                    Add selected ({selected.size})
-                  </Button>
-                </Group>
+            caption={GATED_SELECTION_CAPTION}
+            selectable
+            selectedKeys={selectedKeys}
+            onSelectionChange={setSelectedKeys}
+            isRowSelectable={(row) => !row.existing}
+            bulkActions={
+              <>
+                <Button
+                  size="sm"
+                  disabled={selectedKeys.length === 0 || adding}
+                  loading={adding}
+                  onClick={() => void handleAddSelected()}
+                >
+                  Add selected ({selectedKeys.length})
+                </Button>
                 {added.size > 0 ? (
-                  <Button variant="light" onClick={() => navigate('/library/channels')}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate('/library/channels')}
+                  >
                     View library
                   </Button>
                 ) : null}
-              </Group>
+              </>
             }
           />
-        </PageSection>
+        </Panel>
       ) : null}
 
-      <Text size="xs" c="dimmed">
+      <p className={pageClasses.attribution}>
         Data from{' '}
-        <Anchor href={sourceMeta.url} target="_blank" rel="noopener noreferrer">
+        <a href={sourceMeta.url} target="_blank" rel="noopener noreferrer">
           {sourceMeta.label}
-        </Anchor>
+        </a>
         {sourceMeta.attributionSuffix}
-      </Text>
+      </p>
 
       {dialogChannel && updateListing ? (
         <RepeaterListingUpdateDialog
@@ -782,16 +748,14 @@ export default function RepeaterDirectorySearch({
         />
       ) : null}
 
-      <Modal
-        opened={Boolean(tgLookupProgress)}
-        onClose={() => {}}
-        withCloseButton={false}
-        closeOnClickOutside={false}
-        closeOnEscape={false}
+      <ModalShell
+        open={Boolean(tgLookupProgress)}
+        onClose={() => undefined}
         title="Loading BrandMeister talk groups"
+        dismissible={false}
       >
         <BrandMeisterTalkGroupLookupProgressBar progress={tgLookupProgress} />
-      </Modal>
-    </FormPage>
+      </ModalShell>
+    </DirectoryIngestPage>
   );
 }

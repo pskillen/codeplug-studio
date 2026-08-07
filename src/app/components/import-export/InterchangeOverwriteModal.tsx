@@ -1,6 +1,11 @@
-import { Button, Modal, Stack, Text, Alert } from '@mantine/core';
 import type { ProjectSyncDiff } from '@core/services/projectSyncSummary.ts';
+import Button from '../v2/Button.tsx';
+import ConfirmModal from '../v2/ConfirmModal.tsx';
+import DesignSystemV2Provider from '../v2/DesignSystemV2Provider.tsx';
+import ModalShell from '../v2/ModalShell.tsx';
+import StatusBanner from '../v2/StatusBanner.tsx';
 import ProjectSyncDiffTable from './ProjectSyncDiffTable.tsx';
+import classes from '../repeaters/RepeaterListingUpdateDialog.module.css';
 
 export interface InterchangeOverwriteModalProps {
   opened: boolean;
@@ -31,56 +36,71 @@ export default function InterchangeOverwriteModal({
   onConfirm,
   onImportAsNew,
 }: InterchangeOverwriteModalProps) {
+  const body = (
+    <div className={classes.body}>
+      {idMismatch ? (
+        <>
+          <p className={classes.muted}>
+            The linked Drive file belongs to a different project than <strong>{projectName}</strong>
+            .
+          </p>
+          {localProjectId ? (
+            <p className={classes.muted}>Local project id: {localProjectId}</p>
+          ) : null}
+          {remoteProjectId ? (
+            <p className={classes.muted}>Remote project id: {remoteProjectId}</p>
+          ) : null}
+        </>
+      ) : (
+        <p className={classes.muted}>
+          Overwrite local copy of <strong>{projectName}</strong> with the remote YAML file?
+        </p>
+      )}
+      {diff ? <ProjectSyncDiffTable diff={diff} /> : null}
+      {error ? <StatusBanner tone="warning">Import failed: {error}</StatusBanner> : null}
+    </div>
+  );
+
   return (
-    <Modal opened={opened} onClose={onClose} title={title} centered size="lg">
-      <Stack gap="md">
-        {idMismatch ? (
-          <>
-            <Text size="sm">
-              The linked Drive file belongs to a different project than{' '}
-              <strong>{projectName}</strong>.
-            </Text>
-            <Stack gap={4}>
-              {localProjectId ? (
-                <Text size="sm" c="dimmed">
-                  Local project id: {localProjectId}
-                </Text>
-              ) : null}
-              {remoteProjectId ? (
-                <Text size="sm" c="dimmed">
-                  Remote project id: {remoteProjectId}
-                </Text>
-              ) : null}
-            </Stack>
-          </>
-        ) : (
-          <Text size="sm">
-            Overwrite local copy of <strong>{projectName}</strong> with the remote YAML file?
-          </Text>
-        )}
-        {diff ? <ProjectSyncDiffTable diff={diff} /> : null}
-        {error ? (
-          <Alert color="red" title="Import failed">
-            {error}
-          </Alert>
-        ) : null}
-        {idMismatch ? (
-          <Stack gap="xs">
-            <Button color="red" loading={loading} onClick={onConfirm}>
-              Replace local content
-            </Button>
-            {onImportAsNew ? (
-              <Button variant="light" loading={loading} onClick={onImportAsNew}>
-                Import as new project
+    <DesignSystemV2Provider>
+      {idMismatch ? (
+        <ModalShell
+          open={opened}
+          onClose={onClose}
+          title={title}
+          size="lg"
+          iconTone="warning"
+          footer={
+            <div className={classes.footer}>
+              <Button variant="secondary" onClick={onClose} disabled={loading}>
+                Cancel
               </Button>
-            ) : null}
-          </Stack>
-        ) : (
-          <Button color="red" loading={loading} onClick={onConfirm}>
-            Overwrite local copy
-          </Button>
-        )}
-      </Stack>
-    </Modal>
+              {onImportAsNew ? (
+                <Button variant="secondary" loading={loading} onClick={onImportAsNew}>
+                  Import as new project
+                </Button>
+              ) : null}
+              <Button variant="destructive" loading={loading} onClick={onConfirm}>
+                Replace local content
+              </Button>
+            </div>
+          }
+        >
+          {body}
+        </ModalShell>
+      ) : (
+        <ConfirmModal
+          open={opened}
+          onClose={onClose}
+          onConfirm={onConfirm}
+          title={title}
+          tone="destructive"
+          confirmLabel="Overwrite local copy"
+          busy={loading}
+        >
+          {body}
+        </ConfirmModal>
+      )}
+    </DesignSystemV2Provider>
   );
 }
