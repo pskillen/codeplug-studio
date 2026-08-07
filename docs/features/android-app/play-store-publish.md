@@ -2,15 +2,16 @@
 
 Part of [#890](https://github.com/pskillen/codeplug-studio/issues/890). Covers how the signed `.aab` gets built and how it reaches Google Play — listing graphics/copy live in [store-assets/README.md](store-assets/README.md); Play Console account setup (app creation, Data safety form) is separate manual work also tracked under #890.
 
-## Why two publish paths
+## Why these publish paths
 
 Codeplug Studio ships web changes often (little and often, continuous deploy). Play Store update notifications are visible to real users in a way web deploys aren't, so pushing every full release straight to Production would be noisy. The design decouples release cadence from Play update cadence, while still giving closed testers a fresh build every time:
 
-| Release type                            | AAB destination                       | Timing                                                                                         |
-| --------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Staging (GitHub pre-release)            | Play **Closed Testing** track         | Immediate — same CI run, no batching. Testers are opted in and want fresh RCs.                 |
-| Prod (GitHub full release)              | Workflow artifact only (no Play push) | —                                                                                              |
-| Latest prod release, weekly + on-demand | Play **Production** track             | Batched by [`android-play-publish.yaml`](../../../.github/workflows/android-play-publish.yaml) |
+| Release type                            | AAB destination                       | Timing                                                                                                                                             |
+| --------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Staging (GitHub pre-release)            | Play **Closed Testing** track         | Immediate — same CI run, no batching. Testers are opted in and want fresh RCs.                                                                     |
+| Prod (GitHub full release)              | Workflow artifact only (no Play push) | —                                                                                                                                                  |
+| Latest prod release, weekly + on-demand | Play **Production** track             | Batched by [`android-play-publish.yaml`](../../../.github/workflows/android-play-publish.yaml)                                                     |
+| Manual (Actions → Run workflow)         | Chosen track                          | [`android-play-upload-manual.yaml`](../../../.github/workflows/android-play-upload-manual.yaml) — pick track, draft/completed, staging or prod AAB |
 
 ## AAB build (`android-release.yaml`)
 
@@ -22,16 +23,27 @@ When `publish_to_play_track` is also set (non-empty), a further step pushes the 
 
 Both publish steps currently set `status: draft`. The Play Developer API only allows creating **draft** releases while the Play Console app itself is still in **Draft** (error: `Only releases with status draft may be created on draft app`). CI can upload the AAB successfully; you still have to open Play Console and click **Roll out** / send for review on that draft release.
 
-Once the first Closed Testing release is live and the app status leaves Draft (typically after Google review), flip `status` to `completed` in:
+Once the first Closed Testing release is live and the app status leaves Draft (typically after Google review), either:
 
-- [`.github/workflows/android-release.yaml`](../../../.github/workflows/android-release.yaml) (Closed Testing / staging)
-- [`.github/workflows/android-play-publish.yaml`](../../../.github/workflows/android-play-publish.yaml) (Production)
+- Dispatch [`android-play-upload-manual.yaml`](../../../.github/workflows/android-play-upload-manual.yaml) with `status: completed` for one-off rollouts, or
+- Flip the hardcoded `status` to `completed` in [`.github/workflows/android-release.yaml`](../../../.github/workflows/android-release.yaml) and [`.github/workflows/android-play-publish.yaml`](../../../.github/workflows/android-play-publish.yaml) so automatic paths auto-roll out without a Console click.
 
-…so subsequent uploads auto-roll out without a Console click.
+## Manual upload (`android-play-upload-manual.yaml`)
+
+`workflow_dispatch` only. Reuses an already-built AAB artifact — does not rebuild.
+
+| Input         | Meaning                                                                                         |
+| ------------- | ----------------------------------------------------------------------------------------------- |
+| `track`       | Play API track: `alpha` (Closed Testing), `internal`, or `production`                           |
+| `status`      | `draft` or `completed` (rolled out). Use `draft` while the Console app itself is still Draft.   |
+| `source`      | Artifact env: `staging` → `app-release-aab-staging`, `prod` → `app-release-aab-prod`            |
+| `release_tag` | Optional SemVer tag (e.g. `2.5.0-rc.0`). Empty = latest successful release run for that source. |
+
+On success with `track: production` and `status: completed`, tags `android-<semver>` the same way the weekly job does (skipped if the version cannot be resolved or the tag already exists).
 
 ## Weekly Production publish (`android-play-publish.yaml`)
 
-Triggers: `schedule` (Monday 09:00 UTC — adjust the cron if a different slot is preferred) and `workflow_dispatch` (manual "ship to Play now").
+Triggers: `schedule` (Monday 09:00 UTC — adjust the cron if a different slot is preferred) and `workflow_dispatch` (manual "ship latest unpublished prod to Play now" — always Production, current hardcoded status).
 
 1. Find the latest full (non-prerelease) GitHub Release via `gh release list`, SemVer-sorted.
 2. Compare it against the latest `android-<semver>` git tag (the dedup marker — not a Play API query). If not newer, exit cleanly — this is the expected no-op most weeks.
@@ -54,8 +66,9 @@ Until the service account secret exists, `build_aab`/artifact upload works on ev
 
 ## Manual re-run
 
-- **Closed Testing:** publish a new GitHub pre-release; `staging.yaml` builds and uploads a draft release to the track. Until `status` is `completed`, finish the rollout in Play Console.
-- **Production:** `workflow_dispatch` on [`android-play-publish.yaml`](../../../.github/workflows/android-play-publish.yaml) from the Actions tab, rather than waiting for Monday — safe to run any time, it's a no-op if there's nothing newer than the last `android-*` tag.
+- **Closed Testing (automatic):** publish a new GitHub pre-release; `staging.yaml` builds and uploads a draft release to the track. Until automatic `status` is `completed`, finish the rollout in Play Console — or use the manual workflow below with `status: completed` once the app has left Draft.
+- **Any track / status (manual):** Actions → **Publish Android AAB to Play Store (manual)** → choose `track`, `status`, `source`, optional `release_tag`.
+- **Production (batched):** `workflow_dispatch` on [`android-play-publish.yaml`](../../../.github/workflows/android-play-publish.yaml) from the Actions tab, rather than waiting for Monday — safe to run any time, it's a no-op if there's nothing newer than the last `android-*` tag.
 
 ## Verification
 
