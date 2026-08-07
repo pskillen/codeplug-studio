@@ -97,7 +97,7 @@ For CI test builds on `dev`, download the APK from the workflow run’s **Artifa
 
 ### AAB / Play Store publish
 
-`prod.yaml` and `staging.yaml` also build a signed `.aab` (`build_aab: true`), kept as a workflow artifact only — never attached to the GitHub Release, since nobody can install a `.aab` directly. Staging pre-releases push straight to Play's Closed Testing track inline; prod full releases are batched to Production weekly by a separate scheduled workflow, so shipping web changes often doesn't spam real users with Play update notifications. A manual Actions workflow can push any staging/prod AAB to a chosen track as `draft` or `completed`. Full design, the `android-<semver>` tag mechanism, and manual setup: [play-store-publish.md](play-store-publish.md).
+`main.yaml`, `prod.yaml`, and `staging.yaml` also build a signed `.aab` (`build_aab: true`), kept as a workflow artifact only — never attached to the GitHub Release, since nobody can install a `.aab` directly. Staging pre-releases push straight to Play's Closed Testing track inline; `main` AABs are for manual Internal Testing upload (`source=main`, `track=internal`); prod full releases are batched to Production weekly by a separate scheduled workflow, so shipping web changes often doesn't spam real users with Play update notifications. A manual Actions workflow can push a main/staging/prod AAB to a chosen track as `draft` or `completed`. Full design, the `android-<semver>` tag mechanism, and manual setup: [play-store-publish.md](play-store-publish.md).
 
 Play Store distribution is [#890](https://github.com/pskillen/codeplug-studio/issues/890).
 
