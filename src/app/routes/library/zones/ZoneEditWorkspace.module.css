@@ -1,0 +1,30 @@
+.workspace {
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+}
+
+.membersColumn {
+  flex: 1.5;
+  min-width: 0;
+}
+
+.mapColumn {
+  flex: 1;
+  min-width: 0;
+}
+
+.scanningSection {
+  scroll-margin-top: 80px;
+}
+
+@media (max-width: 48em) {
+  .workspace {
+    flex-direction: column;
+  }
+
+  .membersColumn,
+  .mapColumn {
+    width: 100%;
+  }
+}

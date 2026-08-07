@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useMediaQuery } from '@mantine/hooks';
 import type { Library, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { newZone } from '@core/domain/factories.ts';
 import {
@@ -12,14 +13,16 @@ import { validateZoneMembership } from '@core/domain/validation.ts';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
 import { UnsavedChangesModal } from '../../components/ui/index.ts';
 import {
-  Button,
   DesignSystemV2Provider,
+  EditorHeader,
   FormField,
   MapPanel,
   Panel,
+  StickyFooter,
   TextInput,
   ToggleSwitch,
 } from '../../components/v2/index.ts';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
 import ZoneMemberEditor, {
   type ZoneMemberEditorMapFilters,
@@ -45,6 +48,7 @@ export default function ZoneEditor({
 }) {
   const base = entity ?? newZone(projectId, '');
   const navigate = useNavigate();
+  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
   const location = useLocation();
   const initialChannelIds = entity === null ? readInitialChannelIds(location.state) : [];
   const [name, setName] = useState(base.name);
@@ -145,28 +149,21 @@ export default function ZoneEditor({
   return (
     <DesignSystemV2Provider>
       <div className={classes.root}>
-        <header className={classes.stickyHeader}>
-          <Link to="/library/zones" className={classes.backLink}>
-            ← Zones
-          </Link>
-          <div className={classes.headerDivider} aria-hidden />
-          <div className={classes.headerIdentity}>
-            <div className={classes.headerName}>{previewZone.name || 'Untitled zone'}</div>
-            <div className={classes.headerSubtitle}>{entity ? 'Edit zone' : 'New zone'}</div>
-          </div>
-          <div className={classes.headerActions}>
-            <Button variant="secondary" onClick={() => navigate('/library/zones')}>
-              Discard
-            </Button>
-            <Button variant="primary" onClick={handleSave} loading={saving}>
-              Save zone
-            </Button>
-          </div>
-        </header>
+        <EditorHeader
+          compact={isMobile}
+          crumb="Zones"
+          crumbTo="/library/zones"
+          title={previewZone.name || 'Untitled zone'}
+          subtitle={entity ? 'Edit zone' : 'New zone'}
+        />
 
         {displayError ? <p className={classes.error}>{displayError}</p> : null}
 
-        <div className={classes.content}>
+        <div
+          className={[classes.createScrollBody, isMobile ? classes.createScrollBodyCompact : '']
+            .filter(Boolean)
+            .join(' ')}
+        >
           <Panel title="Identity">
             <div className={classes.fieldStack}>
               <FormField label="Name">
@@ -248,6 +245,14 @@ export default function ZoneEditor({
             />
           </MapPanel>
         </div>
+
+        <StickyFooter
+          compact={isMobile}
+          saveLabel="Save zone"
+          onCancel={() => navigate('/library/zones')}
+          onSave={handleSave}
+          saving={saving}
+        />
 
         <UnsavedChangesModal opened={modalOpen} onStay={stay} onLeave={leave} />
       </div>

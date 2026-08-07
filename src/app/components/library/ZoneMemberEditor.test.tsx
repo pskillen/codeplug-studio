@@ -4,7 +4,18 @@ import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
 import type { Zone } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
+import { DesignSystemV2Provider } from '../v2/index.ts';
 import ZoneMemberEditor, { zoneMembershipExclusionLabel } from './ZoneMemberEditor.tsx';
+
+function renderEditor(ui: React.ReactElement) {
+  return render(
+    <MemoryRouter>
+      <MantineProvider>
+        <DesignSystemV2Provider>{ui}</DesignSystemV2Provider>
+      </MantineProvider>
+    </MemoryRouter>,
+  );
+}
 
 function zone(id: string, name: string, members: Zone['members']): Zone {
   return {
@@ -33,26 +44,20 @@ describe('ZoneMemberEditor cycle-closing zones', () => {
     const channels = [{ ...newChannel('p1', 'Local'), id: 'ch-1' }];
     const onChange = vi.fn();
 
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <ZoneMemberEditor
-            channels={channels}
-            zones={[glasgow, scotland]}
-            editingZoneId="z-g"
-            members={glasgow.members}
-            onChange={onChange}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
+    renderEditor(
+      <ZoneMemberEditor
+        channels={channels}
+        zones={[glasgow, scotland]}
+        editingZoneId="z-g"
+        members={glasgow.members}
+        onChange={onChange}
+      />,
     );
 
-    expect(screen.getByText('Zone: Scotland')).toBeInTheDocument();
+    expect(screen.getByText('Scotland')).toBeInTheDocument();
     expect(screen.getByText('Would create a cycle')).toBeInTheDocument();
 
-    const scotlandCheckbox = screen.getByRole('checkbox', {
-      name: /Zone Scotland unavailable: Would create a cycle/,
-    });
+    const scotlandCheckbox = screen.getByRole('checkbox', { name: 'Add Scotland' });
     expect(scotlandCheckbox).toBeDisabled();
 
     fireEvent.click(scotlandCheckbox);
@@ -65,27 +70,19 @@ describe('ZoneMemberEditor cycle-closing zones', () => {
     const parent = zone('z-p', 'Parent', [{ kind: 'zone', zoneId: 'z-c' }]);
     const onChange = vi.fn();
 
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <ZoneMemberEditor
-            channels={[]}
-            zones={[grandchild, child, parent]}
-            editingZoneId="z-p"
-            members={parent.members}
-            onChange={onChange}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
+    renderEditor(
+      <ZoneMemberEditor
+        channels={[]}
+        zones={[grandchild, child, parent]}
+        editingZoneId="z-p"
+        members={parent.members}
+        onChange={onChange}
+      />,
     );
 
-    expect(screen.getByText('Zone: Grandchild')).toBeInTheDocument();
+    expect(screen.getByText('Grandchild')).toBeInTheDocument();
     expect(screen.getByText('Already nested under this zone')).toBeInTheDocument();
-    expect(
-      screen.getByRole('checkbox', {
-        name: /Zone Grandchild unavailable: Already nested under this zone/,
-      }),
-    ).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Add Grandchild' })).toBeDisabled();
   });
 
   it('shows self greyed when editing zone and sibling zones remain addable', () => {
@@ -93,27 +90,21 @@ describe('ZoneMemberEditor cycle-closing zones', () => {
     const edinburgh = zone('z-e', 'Edinburgh', []);
     const onChange = vi.fn();
 
-    render(
-      <MemoryRouter>
-        <MantineProvider>
-          <ZoneMemberEditor
-            channels={[]}
-            zones={[glasgow, edinburgh]}
-            editingZoneId="z-g"
-            members={[]}
-            onChange={onChange}
-          />
-        </MantineProvider>
-      </MemoryRouter>,
+    renderEditor(
+      <ZoneMemberEditor
+        channels={[]}
+        zones={[glasgow, edinburgh]}
+        editingZoneId="z-g"
+        members={[]}
+        onChange={onChange}
+      />,
     );
 
-    expect(screen.getByText('Zone: Glasgow')).toBeInTheDocument();
+    expect(screen.getByText('Glasgow')).toBeInTheDocument();
     expect(screen.getByText('This zone')).toBeInTheDocument();
-    expect(
-      screen.getByRole('checkbox', { name: /Zone Glasgow unavailable: This zone/ }),
-    ).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Add Glasgow' })).toBeDisabled();
 
-    const edinburghCheckbox = screen.getByRole('checkbox', { name: 'Select zone Edinburgh' });
+    const edinburghCheckbox = screen.getByRole('checkbox', { name: 'Add Edinburgh' });
     expect(edinburghCheckbox).not.toBeDisabled();
     fireEvent.click(edinburghCheckbox);
     fireEvent.click(screen.getByRole('button', { name: /Add selected/ }));
