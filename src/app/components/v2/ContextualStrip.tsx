@@ -5,7 +5,7 @@ export interface ContextualStripProps {
   items: readonly string[];
   active?: string;
   onChange?: (item: string) => void;
-  /** Leading control in the strip row (e.g. BuildSwitcher on build detail). */
+  /** Controls before section tabs (e.g. build switcher chip). */
   leading?: ReactNode;
   className?: string;
 }
@@ -22,7 +22,12 @@ export default function ContextualStrip({
 }: ContextualStripProps) {
   return (
     <div className={[classes.root, className].filter(Boolean).join(' ')} role="tablist">
-      {leading ? <div className={classes.leading}>{leading}</div> : null}
+      {leading ? (
+        <>
+          <div className={classes.leading}>{leading}</div>
+          <div className={classes.divider} aria-hidden />
+        </>
+      ) : null}
       {items.map((item) => {
         const isActive = item === active;
         return (

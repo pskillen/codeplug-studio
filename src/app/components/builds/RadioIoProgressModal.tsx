@@ -1,10 +1,10 @@
 /**
- * Blocking modal for Web Serial read/write — steps, progress, keep-tab warning.
- * Presentational only; parent owns cancel / dismiss and phase updates from ProgressFn.
+ * Blocking modal for Web Serial read/write — uses v2 ProgressModal (R1).
  */
 
-import { Alert, Button, Group, Modal, Progress, ScrollArea, Stack, Text } from '@mantine/core';
+import { Alert, Text } from '@mantine/core';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
+import { Button, ProgressModal, type ProgressModalStep } from '../v2/index.ts';
 
 export type RadioIoOperation = 'read' | 'write';
 
@@ -18,27 +18,14 @@ export interface RadioIoProgressModalProps {
   operation: RadioIoOperation;
   phase: RadioIoProgressPhase;
   progress: ProgressUpdate | null;
-  /**
-   * Transfer checklist labels accumulated from `ProgressUpdate.stage` (e.g. Channels,
-   * Zones). Shown as extra list items between connect and save/upload.
-   */
   transferStages?: readonly string[];
-  /** True when the operator tried to navigate away while busy. */
   navigationBlocked?: boolean;
-  /** Optional post-write cross-session verify when descriptor supplies writeVerify hooks. */
   writeVerifyStatus?: RadioIoWriteVerifyStatus;
-  /**
-   * When true, operator must wait for radio restart before verify (D890, OpenGD77).
-   * When false, verify reconnects without a reboot wait (RT95, UV, DM32).
-   */
   requiresCrossSessionReconnect?: boolean;
-  /** When false during `unverified`, Verify write stays disabled (brief post-write debounce). */
   verifyButtonEnabled?: boolean;
   onVerify?: () => void;
   onCloseWithoutVerify?: () => void;
-  /** Abort in-flight transfer (shown while not complete). */
   onCancel: () => void;
-  /** Dismiss after success (`phase === 'done'`). Write keeps the modal open until this. */
   onClose?: () => void;
 }
 
@@ -123,12 +110,17 @@ function stepStatus(
   stepId: string,
   activeId: string,
   steps: readonly StepDef[],
-): 'done' | 'active' | 'pending' {
+): ProgressModalStep['status'] {
   const stepIdx = steps.findIndex((s) => s.id === stepId);
   const activeIdx = steps.findIndex((s) => s.id === activeId);
   if (stepIdx < 0 || activeIdx < 0) return 'pending';
-  if (stepIdx < activeIdx) return 'done';
-  if (stepIdx === activeIdx) return 'active';
+  if (stepIdx < activeIdx) return 'success';
+  if (stepIdx === activeIdx) {
+    if (stepId === 'done' && activeId === 'done') {
+      return 'success';
+    }
+    return 'active';
+  }
   return 'pending';
 }
 
@@ -144,14 +136,14 @@ export function writeDoneAlert(
     return {
       color: 'green',
       title: 'Write finished — verify passed',
-      body: 'Every staged block Studio transmitted matches what is on the radio now, and preserved settings are unchanged.',
+      body: 'Every staged block matches what is on the radio now.',
     };
   }
   if (writeVerifyStatus === 'failed') {
     return {
       color: 'red',
       title: 'Write verify failed',
-      body: 'Some staged blocks or preserved settings do not match. See the verify report for addresses and regions.',
+      body: 'Some staged blocks do not match. See the verify report for detail.',
     };
   }
   if (writeVerifyStatus === 'unverified') {
@@ -159,21 +151,21 @@ export function writeDoneAlert(
       color: 'blue',
       title: 'Write finished',
       body: requiresCrossSessionReconnect
-        ? 'The radio restarts after a write while flash commits. Wait until it shows its normal screen, then click Verify write to reconnect and compare memory byte-for-byte with what was transmitted.'
-        : 'Click Verify write to reconnect and compare transmitted blocks with the radio.',
+        ? 'Wait until the radio shows its normal screen, then Verify write.'
+        : 'Click Verify write to compare memory with what was transmitted.',
     };
   }
   if (writeVerifyStatus === 'verifying') {
     return {
       color: 'blue',
       title: 'Verifying write',
-      body: 'Reading modelled memory from the radio and comparing against what Studio transmitted.',
+      body: 'Reading modelled memory from the radio…',
     };
   }
   return {
     color: 'green',
     title: 'Write finished',
-    body: 'All selected blocks were sent. Review the checklist below, then close when ready.',
+    body: 'All selected blocks were sent.',
   };
 }
 
@@ -192,7 +184,7 @@ export default function RadioIoProgressModal({
   onCancel,
   onClose,
 }: RadioIoProgressModalProps) {
-  const steps = buildSteps(operation, transferStages, phase, writeVerifyStatus);
+  const stepDefs = buildSteps(operation, transferStages, phase, writeVerifyStatus);
   const activeId = activeStepId(phase, progress, transferStages, writeVerifyStatus);
   const title = operation === 'read' ? 'Reading from radio' : 'Writing to radio';
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
@@ -201,118 +193,80 @@ export default function RadioIoProgressModal({
   const awaitingVerify = writeVerifyStatus === 'unverified';
   const showPostUploadAlert = complete || verifying || writeVerifyStatus === 'unverified';
 
-  return (
-    <Modal
-      opened={opened}
-      onClose={() => undefined}
-      title={title}
-      centered
-      size="md"
-      closeOnClickOutside={false}
-      closeOnEscape={false}
-      withCloseButton={false}
-    >
-      <Stack gap="md">
-        {showPostUploadAlert ? (
-          <>
-            {(() => {
-              const alert =
-                operation === 'write'
-                  ? writeDoneAlert(writeVerifyStatus, requiresCrossSessionReconnect)
-                  : {
-                      color: 'green',
-                      title: 'Read finished',
-                      body: 'Clone image is saved on this build. You can close this dialog.',
-                    };
-              return (
-                <Alert color={alert.color} title={alert.title}>
-                  <Text size="sm">{alert.body}</Text>
-                </Alert>
-              );
-            })()}
-          </>
-        ) : (
-          <Alert color="orange" title="Keep this tab open">
-            Do not switch away, close the tab, or navigate elsewhere while the serial link is
-            active. Leaving can interrupt the transfer and leave the radio or port in a bad state.
-          </Alert>
-        )}
+  const steps: ProgressModalStep[] = stepDefs.map((step) => ({
+    id: step.id,
+    label: step.label,
+    status:
+      complete && step.id === 'done' && writeVerifyStatus === 'failed'
+        ? 'error'
+        : stepStatus(step.id, activeId, stepDefs),
+  }));
 
-        {navigationBlocked && !complete && !verifying ? (
-          <Alert color="red" title="Stay on this page">
+  const alert =
+    operation === 'write' && showPostUploadAlert
+      ? writeDoneAlert(writeVerifyStatus, requiresCrossSessionReconnect)
+      : complete && operation === 'read'
+        ? {
+            color: 'green',
+            title: 'Read finished',
+            body: 'Clone image is saved on this build.',
+          }
+        : null;
+
+  const footer = complete ? (
+    awaitingVerify ? (
+      <>
+        <Button variant="secondary" size="sm" onClick={() => onCloseWithoutVerify?.()}>
+          Skip verify
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => onVerify?.()}
+          disabled={writeVerifyStatus === 'unverified' && !verifyButtonEnabled}
+        >
+          Verify write
+        </Button>
+      </>
+    ) : (
+      <Button size="sm" onClick={() => onClose?.()}>
+        Close
+      </Button>
+    )
+  ) : (
+    <Button variant="secondary" size="sm" onClick={onCancel}>
+      Cancel
+    </Button>
+  );
+
+  const runningNote =
+    !complete && !showPostUploadAlert ? (
+      <>
+        <Text size="sm">Keep this tab open until the transfer finishes or you cancel.</Text>
+        {navigationBlocked && !verifying ? (
+          <Alert color="red" title="Stay on this page" mt="sm">
             Navigation is blocked until this transfer finishes or you cancel.
           </Alert>
         ) : null}
+      </>
+    ) : undefined;
 
-        <ScrollArea.Autosize mah={160} type="auto">
-          <Stack gap={6}>
-            {steps.map((step) => {
-              const status = stepStatus(step.id, activeId, steps);
-              return (
-                <Text
-                  key={step.id}
-                  size="sm"
-                  fw={status === 'active' ? 600 : 400}
-                  c={status === 'pending' ? 'dimmed' : undefined}
-                >
-                  {status === 'done' ? '✓ ' : status === 'active' ? '→ ' : '· '}
-                  {step.label}
-                </Text>
-              );
-            })}
-          </Stack>
-        </ScrollArea.Autosize>
-
-        {verifying ? (
-          <Stack gap={4}>
-            <Text size="sm">
-              {progress?.msg ?? 'Reading memory…'}
-              {progress ? ` (${progress.cur}/${progress.max})` : ''}
-            </Text>
-            <Progress value={percent ?? 0} animated={percent == null || percent < 100} size="lg" />
-          </Stack>
-        ) : !complete && phase === 'transfer' ? (
-          <Stack gap={4}>
-            <Text size="sm">
-              {progress?.msg ?? 'Transferring…'}
-              {progress ? ` (${progress.cur}/${progress.max})` : ''}
-            </Text>
-            <Progress value={percent ?? 0} animated={percent == null || percent < 100} size="lg" />
-          </Stack>
-        ) : !complete && !verifying ? (
-          <Text size="sm" c="dimmed">
-            {phase === 'connecting'
-              ? 'Waiting for port and radio handshake…'
-              : phase === 'preparing'
-                ? 'Building the image from this format build…'
-                : phase === 'saving'
-                  ? 'Saving hydration on the build…'
-                  : 'Transferring…'}
-          </Text>
-        ) : null}
-
-        <Group justify="flex-end">
-          {complete && awaitingVerify ? (
-            <>
-              <Button variant="default" onClick={() => onCloseWithoutVerify?.()}>
-                Skip verify
-              </Button>
-              <Button
-                onClick={() => onVerify?.()}
-                disabled={writeVerifyStatus === 'unverified' && !verifyButtonEnabled}
-              >
-                Verify write
-              </Button>
-            </>
-          ) : complete ? (
-            <Button onClick={() => onClose?.()}>Close</Button>
-          ) : (
-            <Button variant="default" color="gray" onClick={onCancel}>
-              Cancel
-            </Button>
-          )}
-        </Group>
-      </Stack>
-    </Modal>
+  return (
+    <ProgressModal
+      open={opened}
+      title={title}
+      phase={complete ? 'finished' : 'running'}
+      steps={steps}
+      progress={!complete && (phase === 'transfer' || verifying) ? percent : undefined}
+      note={runningNote}
+      summary={
+        alert ? (
+          <Alert color={alert.color} title={alert.title}>
+            <Text size="sm">{alert.body}</Text>
+          </Alert>
+        ) : null
+      }
+      footer={footer}
+      onClose={() => (complete ? onClose?.() : onCancel())}
+    />
   );
 }

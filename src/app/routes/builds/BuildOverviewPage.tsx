@@ -1,13 +1,13 @@
-import { Button, Group, List, Stack, Text, TextInput } from '@mantine/core';
+import { Stack, Text } from '@mantine/core';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { radioTargetFor } from '@core/radio-targets/index.ts';
-import { FormPage, FormSection } from '../../components/ui/index.ts';
 import { capabilityLabel } from '../../lib/buildCapabilityCopy.ts';
 import { BuildService } from '../../state/buildService.ts';
 import { persistence } from '../../state/persistence.ts';
+import { Button, Panel, Pill, TextInput } from '../../components/v2/index.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
-import { Badge } from '@mantine/core';
+import classes from './BuildOverviewPage.module.css';
 
 const buildService = new BuildService(persistence);
 
@@ -49,16 +49,17 @@ export default function BuildOverviewPage() {
   }
 
   return (
-    <FormPage
-      title={build.name}
-      description={
-        <Link to="/builds" style={{ fontSize: 'var(--mantine-font-size-sm)' }}>
-          ← Back to builds
-        </Link>
-      }
-    >
-      <Stack gap="lg">
-        <FormSection title="Identity">
+    <div className={classes.page}>
+      <div className={classes.header}>
+        <h1 className={classes.title}>Overview</h1>
+        <p className={classes.subtitle}>
+          Build identity and organisation capabilities for{' '}
+          <strong>{radioTarget?.label ?? build.radioTargetId}</strong>.
+        </p>
+      </div>
+
+      <Panel title="Identity">
+        <Stack gap="sm">
           <TextInput
             label="Name"
             value={displayName}
@@ -69,66 +70,58 @@ export default function BuildOverviewPage() {
               {error}
             </Text>
           ) : null}
-          <Group mt="sm">
+          <div className={classes.rowActions}>
             <Button loading={saving} disabled={!nameDirty} onClick={() => void handleSave()}>
-              Save
+              Save name
             </Button>
-            <Button
-              variant="outline"
-              color="red"
-              loading={deleting}
-              onClick={() => void handleDelete()}
-            >
-              Delete build
-            </Button>
-          </Group>
-        </FormSection>
+          </div>
+        </Stack>
+      </Panel>
 
-        <FormSection title="Target">
-          <Stack gap="sm">
-            <Text size="sm">
-              <Text span fw={600}>
-                Radio:{' '}
-              </Text>
-              {radioTarget?.label ?? build.radioTargetId}
-            </Text>
-            <Text size="sm" c="dimmed">
-              Export pathways (CPS file, Web Serial, …) are chosen on the{' '}
-              <Link to={`/builds/${build.id}/export`}>Export</Link> page. Profile and wire limits
-              follow the active pathway.
-            </Text>
-            {egressPaths.length > 0 ? (
-              <List size="sm" spacing={4}>
-                {egressPaths.map((path) => (
-                  <List.Item key={path.id}>
-                    {path.label ?? path.profileId}
-                    {build.defaultEgressPathId === path.id ? ' (default)' : ''}
-                  </List.Item>
-                ))}
-              </List>
-            ) : null}
-          </Stack>
-        </FormSection>
-
-        <FormSection
-          title="How this radio is organised"
-          description={
-            <Text size="sm" component="span">
-              Short labels for this radio target. See{' '}
-              <Link to={`/builds/${build.id}/characteristics`}>Radio characteristics</Link> for
-              limits, power levels, and plain-language explanations.
-            </Text>
-          }
-        >
-          <Group gap="xs">
+      <Panel title="Capabilities">
+        <Stack gap="sm">
+          <Text size="sm" c="dimmed">
+            Short labels for this radio target. See{' '}
+            <Link to={`/builds/${build.id}/characteristics`}>Radio characteristics</Link> for limits
+            and RF detail.
+          </Text>
+          <div className={classes.pills}>
             {(radioTarget?.traits ?? []).map((trait) => (
-              <Badge key={trait} variant="light">
+              <Pill key={trait} tone="neutral">
                 {capabilityLabel(trait)}
-              </Badge>
+              </Pill>
             ))}
-          </Group>
-        </FormSection>
-      </Stack>
-    </FormPage>
+          </div>
+          {egressPaths.length > 0 ? (
+            <ul className={classes.egressList}>
+              {egressPaths.map((path) => (
+                <li key={path.id}>
+                  {path.label ?? path.profileId}
+                  {build.defaultEgressPathId === path.id ? ' (default)' : ''}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <Text size="sm" c="dimmed">
+            Export pathways are chosen on <Link to={`/builds/${build.id}/export`}>Export</Link>.
+          </Text>
+        </Stack>
+      </Panel>
+
+      <Panel
+        variant="danger"
+        title="Danger zone"
+        sub="Deleting a build removes its export history and overrides. Channels and zones in your library are not affected."
+      >
+        <Button
+          variant="destructive"
+          size="sm"
+          loading={deleting}
+          onClick={() => void handleDelete()}
+        >
+          Delete build
+        </Button>
+      </Panel>
+    </div>
   );
 }

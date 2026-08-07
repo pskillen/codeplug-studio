@@ -1,4 +1,15 @@
-import { buildNavItems, pathForSwitchedBuild } from './nav.ts';
+import {
+  activeBuildSection,
+  buildAuditNavItems,
+  buildSectionNavItems,
+  BUILD_SECTION_ABOUT,
+  BUILD_SECTION_EXPORT,
+  BUILD_SECTION_EXPORT_SETTINGS,
+  BUILD_SECTION_OVERVIEW,
+  BUILD_SECTION_WIRE_PREVIEW,
+  buildNavItems,
+  pathForSwitchedBuild,
+} from './nav.ts';
 import { newFormatBuild, newRadioBuildForProfile } from '@core/domain/factories.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { describe, expect, it } from 'vitest';
@@ -37,11 +48,11 @@ function withHydration(egress: EgressPath, hydration: EgressPath['hydration']): 
 }
 
 describe('buildNavItems', () => {
-  it('puts Export first, then Setup and Radio characteristics', () => {
+  it('puts Export first, then Overview and Radio characteristics', () => {
     const build = newFormatBuild('proj', 'opengd77-1701');
     const labels = buildNavItems(build).map((item) => item.label);
     expect(labels[0]).toBe('Export');
-    expect(labels[1]).toBe('Setup');
+    expect(labels[1]).toBe('Overview');
     expect(labels[2]).toBe('Radio characteristics');
   });
 
@@ -171,6 +182,54 @@ describe('buildNavItems', () => {
   });
 });
 
+describe('buildSectionNavItems', () => {
+  it('lists mk2 section order Overview, Export, Export settings, Wire preview, About', () => {
+    const build = newFormatBuild('proj', 'opengd77-1701');
+    const labels = buildSectionNavItems(build).map((item) => item.label);
+    expect(labels).toEqual([
+      BUILD_SECTION_OVERVIEW,
+      BUILD_SECTION_EXPORT,
+      BUILD_SECTION_EXPORT_SETTINGS,
+      BUILD_SECTION_WIRE_PREVIEW,
+      BUILD_SECTION_ABOUT,
+    ]);
+  });
+});
+
+describe('activeBuildSection', () => {
+  const build = newFormatBuild('proj', 'opengd77-1701');
+
+  it('maps wire routes to wire-preview section', () => {
+    expect(activeBuildSection(`/builds/${build.id}/channels`, build.id)).toBe('wire-preview');
+    expect(activeBuildSection(`/builds/${build.id}/channels/bulk`, build.id)).toBe('wire-preview');
+  });
+
+  it('maps about routes to audit section', () => {
+    expect(activeBuildSection(`/builds/${build.id}/characteristics`, build.id)).toBe('audit');
+    expect(activeBuildSection(`/builds/${build.id}/export-resolution`, build.id)).toBe('audit');
+  });
+
+  it('maps export, export settings, and overview', () => {
+    expect(activeBuildSection(`/builds/${build.id}/export`, build.id)).toBe('export');
+    expect(activeBuildSection(`/builds/${build.id}/export/settings`, build.id)).toBe(
+      'export-settings',
+    );
+    expect(activeBuildSection(`/builds/${build.id}/overview`, build.id)).toBe('overview');
+  });
+});
+
+describe('buildAuditNavItems', () => {
+  it('includes NeonPlug settings when donor bag exists', () => {
+    const { build, egress, egressPaths } = newRadioBuildForProfile('proj', 'neonplug-dm32uv');
+    const withDonor = egressPaths.map((path) =>
+      path.id === egress.id ? withHydration(path, neonplugDonorHydration) : path,
+    );
+    expect(
+      buildAuditNavItems(build, { egressPaths: withDonor }).map((item) => item.label),
+    ).toContain('NeonPlug settings');
+  });
+});
+
 describe('pathForSwitchedBuild', () => {
   const from = newFormatBuild('proj', 'opengd77-1701');
   const toOpenGd77 = {
@@ -194,9 +253,9 @@ describe('pathForSwitchedBuild', () => {
     );
   });
 
-  it('maps nested paths to the parent nav item when present', () => {
+  it('preserves nested wire paths when the target exposes them', () => {
     expect(pathForSwitchedBuild(`/builds/${from.id}/channels/bulk`, from.id, toOpenGd77)).toBe(
-      `/builds/${toOpenGd77.id}/channels`,
+      `/builds/${toOpenGd77.id}/channels/bulk`,
     );
   });
 

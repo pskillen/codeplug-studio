@@ -26,3 +26,8 @@
 .body {
   min-width: 0;
 }
+
+.danger {
+  border-color: color-mix(in srgb, var(--dsv2-destructive) 40%, transparent);
+  background: var(--dsv2-destructive-tint);
+}

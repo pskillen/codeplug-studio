@@ -73,7 +73,10 @@ export default function StyleguideV2DataDisplayPage() {
         </SimpleGrid>
       </PageSection>
 
-      <PageSection title="Panel" description="Titled bordered section container.">
+      <PageSection
+        title="Panel"
+        description="Titled bordered section — see Containers for danger variant."
+      >
         <Panel title="Identity" sub="Optional description below the title.">
           <Text size="sm">Panel body content.</Text>
         </Panel>

@@ -1,0 +1,23 @@
+.page {
+  padding: var(--dsv2-page-padding-y) var(--dsv2-page-padding-x);
+  min-width: 0;
+}
+
+.header {
+  margin-bottom: 16px;
+}
+
+.title {
+  font-size: var(--dsv2-font-heading-md);
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: var(--dsv2-text-primary);
+}
+
+.subtitle {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0;
+  line-height: 1.45;
+  max-width: 42rem;
+}

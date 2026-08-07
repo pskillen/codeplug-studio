@@ -26,12 +26,11 @@ import { useSyncedWirePreviewRow } from '../../../components/builds/wirePreview/
 import BuildEntityExportSettingsCard, {
   type BuildEntityInclusionField,
 } from '../../../components/builds/BuildEntityExportSettingsCard.tsx';
-import { FormPage } from '../../../components/ui/index.ts';
 import { resolvedBuildExportSettings } from '../../../lib/buildExportSettingsUi.ts';
 import { useBuildWirePreview } from '../../../hooks/useBuildWirePreview.ts';
 import { BuildService } from '../../../state/buildService.ts';
 import { persistence } from '../../../state/persistence.ts';
-import { useBuildLayout } from '../BuildLayoutContext.tsx';
+import classes from './BuildWirePreviewPage.module.css';
 
 const buildService = new BuildService(persistence);
 
@@ -262,27 +261,20 @@ function BuildWirePreviewListContent({
 export default function BuildWirePreviewListPage({
   embedded,
   title,
+  description,
   ...props
 }: BuildWirePreviewListPageProps) {
-  const { build } = useBuildLayout();
-
   if (embedded) {
-    return <BuildWirePreviewListContent title={title} {...props} />;
+    return <BuildWirePreviewListContent title={title} description={description} {...props} />;
   }
 
   return (
-    <FormPage
-      title={title}
-      description={
-        <Link
-          to={`/builds/${build.id}/overview`}
-          style={{ fontSize: 'var(--mantine-font-size-sm)' }}
-        >
-          ← {build.name}
-        </Link>
-      }
-    >
+    <div className={classes.page}>
+      <div className={classes.header}>
+        <h1 className={classes.title}>{title}</h1>
+        {description ? <p className={classes.subtitle}>{description}</p> : null}
+      </div>
       <BuildWirePreviewListContent title="" {...props} />
-    </FormPage>
+    </div>
   );
 }

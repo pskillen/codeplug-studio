@@ -21,7 +21,7 @@ import type { LibrarySlice } from '@core/services/assemble.ts';
 import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
 import { BandPillForChannel } from '../../components/pills/BandPill.tsx';
-import { FormPage, FormSection } from '../../components/ui/index.ts';
+import classes from './BuildSubPage.module.css';
 import DataTable from '../../components/ui/DataTable.tsx';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { prepareBuildForFrequencyRangeExportPatch } from '../../lib/frequencyRangeExportSettingsPatch.ts';
@@ -183,20 +183,18 @@ export default function BuildFlatMemoryScanListPage() {
   }
 
   return (
-    <FormPage
-      title="Scan list"
-      description={
-        <Text size="sm" component="span">
+    <div className={classes.page}>
+      <div className={classes.header}>
+        <h1 className={classes.title}>Scan list</h1>
+        <p className={classes.subtitle}>
           Choose which memories are included when this radio scans. Memory order and names are set
           on <Link to={`/builds/${build.id}/channels`}>Channels</Link>.
-        </Text>
-      }
-    >
+        </p>
+      </div>
       <Stack gap="lg">
-        <FormSection
-          title="Default for this build"
-          description="Used when a channel’s scan setting is Default."
-        >
+        <section className={classes.panel}>
+          <h2 className={classes.panelTitle}>Default for this build</h2>
+          <p className={classes.panelHint}>Used when a channel&apos;s scan setting is Default.</p>
           <DefaultScanInclusionSegment
             value={defaultScanValue}
             formatDefault={formatDefaults.defaultScanInclusion}
@@ -210,16 +208,15 @@ export default function BuildFlatMemoryScanListPage() {
               {settingsError}
             </Text>
           ) : null}
-        </FormSection>
+        </section>
 
-        <FormSection
-          title="Per channel"
-          description={
-            memoryCount === 0
+        <section className={classes.panel}>
+          <h2 className={classes.panelTitle}>Per channel</h2>
+          <p className={classes.panelHint}>
+            {memoryCount === 0
               ? 'Add analogue channels on the Channels page first.'
-              : 'Skip scan keeps a memory out of scanning. Always scan forces it in. Default follows the setting above. Changes apply to this build only — not the library channel.'
-          }
-        >
+              : 'Skip scan keeps a memory out of scanning. Always scan forces it in. Default follows the setting above. Changes apply to this build only — not the library channel.'}
+          </p>
           {error ? (
             <Text size="sm" c="red">
               {error}
@@ -295,8 +292,8 @@ export default function BuildFlatMemoryScanListPage() {
               },
             ]}
           />
-        </FormSection>
+        </section>
       </Stack>
-    </FormPage>
+    </div>
   );
 }

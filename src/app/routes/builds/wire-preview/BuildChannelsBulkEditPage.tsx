@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Button, Group, Stack, Text } from '@mantine/core';
+import { Button as MantineButton, Group, Stack, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
 import { useBuildWirePreview } from '../../../hooks/useBuildWirePreview.ts';
 import { useUnsavedNavigationGuard } from '../../../hooks/useUnsavedNavigationGuard.ts';
 import WirePreviewBulkEditTable from '../../../components/builds/wirePreview/WirePreviewBulkEditTable.tsx';
 import UnsavedChangesModal from '../../../components/ui/UnsavedChangesModal.tsx';
-import { FormPage } from '../../../components/ui/index.ts';
 import { useBuildLayout } from '../BuildLayoutContext.tsx';
+import classes from '../BuildSubPage.module.css';
 
 export default function BuildChannelsBulkEditPage() {
   const { build } = useBuildLayout();
@@ -15,22 +15,15 @@ export default function BuildChannelsBulkEditPage() {
   const { modalOpen, stay, leave } = useUnsavedNavigationGuard(hasUnsavedWireNames);
 
   return (
-    <FormPage
-      title="Bulk edit channel export names"
-      description={
-        <Group gap="xs">
-          <Link
-            to={`/builds/${build.id}/channels`}
-            style={{ fontSize: 'var(--mantine-font-size-sm)' }}
-          >
-            ← Channels
-          </Link>
-          <Text size="sm" c="dimmed">
-            · {build.name}
-          </Text>
-        </Group>
-      }
-    >
+    <div className={classes.page}>
+      <div className={classes.header}>
+        <h1 className={classes.title}>Bulk edit channel export names</h1>
+        <p className={classes.subtitle}>
+          <Link to={`/builds/${build.id}/channels`}>← Channels</Link>
+          {' · '}
+          {build.name}
+        </p>
+      </div>
       <Stack gap="md">
         <Text size="sm" c="dimmed">
           Edit wire names and skip-from-export for many channels at once. For other overrides (scan,
@@ -50,9 +43,9 @@ export default function BuildChannelsBulkEditPage() {
           onUnsavedChangesChange={setHasUnsavedWireNames}
         />
         <Group>
-          <Button component={Link} to={`/builds/${build.id}/channels`} variant="default">
+          <MantineButton component={Link} to={`/builds/${build.id}/channels`} variant="default">
             Back to channel list
-          </Button>
+          </MantineButton>
         </Group>
       </Stack>
       <UnsavedChangesModal
@@ -62,6 +55,6 @@ export default function BuildChannelsBulkEditPage() {
         title="Unsaved wire name changes"
         message="You have unapplied wire name edits. Leave without saving?"
       />
-    </FormPage>
+    </div>
   );
 }

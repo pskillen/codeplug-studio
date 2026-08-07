@@ -8,12 +8,12 @@ Matches the design-system Library strip (Channels / Zones / …). Solid accent f
 
 ## Props
 
-| Prop       | Type                     | Notes                                                 |
-| ---------- | ------------------------ | ----------------------------------------------------- |
-| `items`    | `readonly string[]`      | Pill labels                                           |
-| `active`   | `string`                 | Selected label                                        |
-| `onChange` | `(item: string) => void` | Selection handler                                     |
-| `leading`  | `ReactNode`              | Optional leading control (e.g. compact BuildSwitcher) |
+| Prop       | Type                     | Notes                                                  |
+| ---------- | ------------------------ | ------------------------------------------------------ |
+| `items`    | `readonly string[]`      | Pill labels                                            |
+| `active`   | `string`                 | Selected label                                         |
+| `onChange` | `(item: string) => void` | Selection handler                                      |
+| `leading`  | `ReactNode`              | Optional leading control before tabs (e.g. build chip) |
 
 ## Usage
 
@@ -22,7 +22,7 @@ Matches the design-system Library strip (Channels / Zones / …). Solid accent f
   items={['Channels', 'Zones', 'Talk groups']}
   active={sub}
   onChange={setSub}
-  leading={isBuildDetail ? <BuildSwitcher compact /> : undefined}
+  leading={isBuildDetail ? <BuildStripLeading buildId={buildId} /> : undefined}
 />
 ```
 

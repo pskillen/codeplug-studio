@@ -9,7 +9,7 @@ import InterchangeOverwriteModal from '../import-export/InterchangeOverwriteModa
 
 /**
  * mk2 S4 chrome-level dismissible notices — Drive drift and session expiry.
- * Renders below the shell header, distinct from page `StatusBanner`.
+ * Renders below all chrome strips (contextual + build sub-nav), distinct from page `StatusBanner`.
  */
 export default function ChromeDismissibleNotices() {
   const { activeProject, activeProjectId } = useProjects();

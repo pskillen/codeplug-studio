@@ -21,10 +21,10 @@ describe('NewBuildPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Choose radio')).toBeInTheDocument();
+    expect(screen.getByText('Radio target')).toBeInTheDocument();
     expect(screen.getByText('Baofeng UV-5R Mini')).toBeInTheDocument();
 
-    const uv5rCard = screen.getByText('Baofeng UV-5R Mini').closest('[data-with-border]');
+    const uv5rCard = screen.getByText('Baofeng UV-5R Mini').closest('button');
     expect(uv5rCard).not.toBeNull();
     expect(uv5rCard!).toHaveTextContent('Web Serial');
     expect(uv5rCard!).toHaveTextContent('NeonPlug');
@@ -56,7 +56,7 @@ describe('NewBuildPage', () => {
 
     fireEvent.click(screen.getByText('Baofeng UV-5R Mini'));
 
-    expect(screen.getByText('Name build')).toBeInTheDocument();
+    expect(screen.getByLabelText('Build name')).toBeInTheDocument();
     expect(screen.getByLabelText('Build name')).toHaveValue('Baofeng UV-5R Mini');
   });
 });

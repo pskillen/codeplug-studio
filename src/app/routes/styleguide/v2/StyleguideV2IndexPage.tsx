@@ -34,6 +34,11 @@ const SECTIONS = [
     description: 'AppShell and BottomTabBar (fixture-driven).',
   },
   {
+    to: '/styleguide/v2/containers',
+    title: 'Containers',
+    description: 'Panel (default + danger) for section blocks and danger zone.',
+  },
+  {
     to: '/styleguide/v2/patterns',
     title: 'Patterns',
     description: 'FacetBar chips, ShuttleList family over the list-kit.',

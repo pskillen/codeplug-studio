@@ -1,10 +1,11 @@
-import { Button, Card, Group, Stack, Text, TextInput, Anchor } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { listRadioTargets, type RadioTarget } from '@core/radio-targets/index.ts';
 import { EgressPathwayPills } from '../../components/builds/EgressPathwayPills.tsx';
-import { FormPage, PageSection } from '../../components/ui/index.ts';
+import { Button, TextInput } from '../../components/v2/index.ts';
+import { Text } from '@mantine/core';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
+import classes from './NewBuildPage.module.css';
 
 type Step = 'radio' | 'name';
 
@@ -48,97 +49,86 @@ export default function NewBuildPage() {
   }
 
   return (
-    <FormPage
-      title="New build"
-      description={
-        <Anchor component={Link} to="/builds" size="sm">
+    <div className={classes.page}>
+      <div className={classes.header}>
+        <Link to="/builds" className={classes.back}>
           ← Back to builds
-        </Anchor>
-      }
-    >
-      <Stack gap="lg">
-        <Text size="sm" c="dimmed">
-          Pick the handheld or mobile you are programming. Compatible export pathways (Web Serial,
-          NeonPlug, CPS CSV, …) are seeded automatically — choose which pathway to use on Export.
-          You can create more than one build for the same radio type (for example Team A and Team
-          B).
-        </Text>
+        </Link>
+        <h1 className={classes.title}>New build</h1>
+        <p className={classes.subtitle}>
+          Choose a radio target, then give this build a name. Compatible export pathways are seeded
+          automatically — pick the pathway on Export.
+        </p>
+      </div>
 
-        {step === 'radio' ? (
-          <PageSection title="Choose radio">
-            <Stack gap="lg">
-              {groups.map(({ group, targets }) => (
-                <Stack key={group} gap="sm">
-                  <Text fw={600} size="sm">
-                    {group}
-                  </Text>
+      {step === 'radio' ? (
+        <div className={classes.section}>
+          <h2 className={classes.sectionTitle}>Radio target</h2>
+          <div className={classes.targetGroups}>
+            {groups.map(({ group, targets }) => (
+              <div key={group} className={classes.targetGroup}>
+                <div className={classes.groupLabel}>{group}</div>
+                <div className={classes.targetGrid}>
                   {targets.map((target) => (
-                    <Card
+                    <button
                       key={target.id}
-                      withBorder
-                      padding="md"
-                      style={{ cursor: 'pointer' }}
+                      type="button"
+                      className={classes.targetCard}
                       onClick={() => {
                         setRadioTargetId(target.id);
                         setName(target.label);
                         setStep('name');
                       }}
                     >
-                      <Group justify="space-between" align="flex-start" wrap="nowrap">
-                        <div>
-                          <Text fw={600} mb={4}>
-                            {target.label}
-                          </Text>
-                          <EgressPathwayPills egress={target.compatibleEgress} />
-                        </div>
-                        <Button variant="light" size="compact-sm">
-                          Select
-                        </Button>
-                      </Group>
-                    </Card>
+                      <div className={classes.targetName}>{target.label}</div>
+                      <EgressPathwayPills egress={target.compatibleEgress} />
+                    </button>
                   ))}
-                </Stack>
-              ))}
-            </Stack>
-          </PageSection>
-        ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
-        {step === 'name' && selectedTarget ? (
-          <PageSection title="Name build">
-            <Stack gap="md">
-              <Text size="sm" c="dimmed">
-                Radio: {selectedTarget.label}
+      {step === 'name' && selectedTarget ? (
+        <div className={classes.section}>
+          <h2 className={classes.sectionTitle}>Build name</h2>
+          <div className={classes.namePanel}>
+            <Text size="sm" c="dimmed">
+              Radio: {selectedTarget.label}
+            </Text>
+            <EgressPathwayPills egress={selectedTarget.compatibleEgress} />
+            <TextInput
+              label="Build name"
+              value={name}
+              onChange={(e) => setName(e.currentTarget.value)}
+            />
+            <Text size="xs" c="dimmed">
+              Defaults to the radio label — change when you run multiple builds for the same radio.
+            </Text>
+            {error ? (
+              <Text c="red" size="sm">
+                {error}
               </Text>
-              <EgressPathwayPills egress={selectedTarget.compatibleEgress} />
-              <TextInput
-                label="Build name"
-                description="Defaults to the radio label — change it when you run multiple builds for the same radio (Team A / Team B)."
-                value={name}
-                onChange={(e) => setName(e.currentTarget.value)}
-              />
-              {error ? (
-                <Text c="red" size="sm">
-                  {error}
-                </Text>
-              ) : null}
-              <Group>
-                <Button loading={creating} onClick={() => void handleCreate()}>
-                  Create build
-                </Button>
-                <Button
-                  variant="subtle"
-                  onClick={() => {
-                    setStep('radio');
-                    setRadioTargetId(null);
-                  }}
-                >
-                  ← Change radio
-                </Button>
-              </Group>
-            </Stack>
-          </PageSection>
-        ) : null}
-      </Stack>
-    </FormPage>
+            ) : null}
+            <div className={classes.actions}>
+              <Button loading={creating} onClick={() => void handleCreate()}>
+                Create build
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setStep('radio');
+                  setRadioTargetId(null);
+                }}
+              >
+                Change radio
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }

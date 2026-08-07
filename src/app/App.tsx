@@ -46,6 +46,7 @@ import StyleguideV2OverlaysPage from './routes/styleguide/v2/StyleguideV2Overlay
 import StyleguideV2MembershipPage from './routes/styleguide/v2/StyleguideV2MembershipPage.tsx';
 import StyleguideV2NavigationPage from './routes/styleguide/v2/StyleguideV2NavigationPage.tsx';
 import StyleguideV2PatternsPage from './routes/styleguide/v2/StyleguideV2PatternsPage.tsx';
+import StyleguideV2ContainersPage from './routes/styleguide/v2/StyleguideV2ContainersPage.tsx';
 import DebugIndexPage from './routes/debug/DebugIndexPage.tsx';
 import DebugIndexedDbPage from './routes/debug/DebugIndexedDbPage.tsx';
 import DebugIndexedDbStorePage from './routes/debug/DebugIndexedDbStorePage.tsx';
@@ -54,6 +55,7 @@ import DebugLocalStoragePage from './routes/debug/DebugLocalStoragePage.tsx';
 import DebugLocalStorageViewerPage from './routes/debug/DebugLocalStorageViewerPage.tsx';
 import DebugD890EraseProbePage from './routes/debug/DebugD890EraseProbePage.tsx';
 import BuildsListPage from './routes/builds/BuildsListPage.tsx';
+import BuildsV2Layout from './routes/builds/BuildsV2Layout.tsx';
 import NewBuildPage from './routes/builds/NewBuildPage.tsx';
 import BuildLayout from './routes/builds/BuildLayout.tsx';
 import BuildOverviewPage from './routes/builds/BuildOverviewPage.tsx';
@@ -62,6 +64,7 @@ import BuildNeonplugSettingsPage from './routes/builds/BuildNeonplugSettingsPage
 import BuildRadioImageSettingsPage from './routes/builds/BuildRadioImageSettingsPage.tsx';
 import BuildFlatMemoryScanListPage from './routes/builds/BuildFlatMemoryScanListPage.tsx';
 import BuildExportPage from './routes/builds/BuildExportPage.tsx';
+import BuildExportSettingsPage from './routes/builds/BuildExportSettingsPage.tsx';
 import BuildExportResolutionPage from './routes/builds/BuildExportResolutionPage.tsx';
 import BuildChannelsWirePage from './routes/builds/wire-preview/BuildChannelsWirePage.tsx';
 import BuildChannelsBulkEditPage from './routes/builds/wire-preview/BuildChannelsBulkEditPage.tsx';
@@ -111,6 +114,7 @@ export const appRouter = createBrowserRouter([
           { path: 'membership', element: <StyleguideV2MembershipPage /> },
           { path: 'navigation', element: <StyleguideV2NavigationPage /> },
           { path: 'patterns', element: <StyleguideV2PatternsPage /> },
+          { path: 'containers', element: <StyleguideV2ContainersPage /> },
         ],
       },
       { path: '/debug', element: <DebugIndexPage /> },
@@ -191,29 +195,36 @@ export const appRouter = createBrowserRouter([
             element: <AddChannelSetPage />,
           },
           { path: '/library/:kind/:id', element: <EntityEditorPage /> },
-          { path: '/builds', element: <BuildsListPage /> },
-          { path: '/builds/new', element: <NewBuildPage /> },
           {
-            path: '/builds/:id',
-            element: <BuildLayout />,
+            path: '/builds',
+            element: <BuildsV2Layout />,
             children: [
-              { index: true, element: <Navigate to="export" replace /> },
-              { path: 'overview', element: <BuildOverviewPage /> },
-              { path: 'characteristics', element: <BuildCharacteristicsPage /> },
-              { path: 'memories', element: <Navigate to="channels" replace /> },
-              { path: 'channels/bulk', element: <BuildChannelsBulkEditPage /> },
-              { path: 'channels', element: <BuildChannelsWirePage /> },
-              { path: 'scan-list', element: <BuildFlatMemoryScanListPage /> },
-              { path: 'airband', element: <BuildAirbandWirePage /> },
-              { path: 'zones', element: <BuildZonesWirePage /> },
-              { path: 'scan-lists', element: <BuildScanListsWirePage /> },
-              { path: 'talk-groups', element: <BuildTalkGroupsWirePage /> },
-              { path: 'contacts', element: <BuildContactsWirePage /> },
-              { path: 'rx-group-lists', element: <BuildRxGroupListsWirePage /> },
-              { path: 'export', element: <BuildExportPage /> },
-              { path: 'export-resolution', element: <BuildExportResolutionPage /> },
-              { path: 'neonplug-settings', element: <BuildNeonplugSettingsPage /> },
-              { path: 'radio-image', element: <BuildRadioImageSettingsPage /> },
+              { index: true, element: <BuildsListPage /> },
+              { path: 'new', element: <NewBuildPage /> },
+              {
+                path: ':id',
+                element: <BuildLayout />,
+                children: [
+                  { index: true, element: <Navigate to="export" replace /> },
+                  { path: 'overview', element: <BuildOverviewPage /> },
+                  { path: 'characteristics', element: <BuildCharacteristicsPage /> },
+                  { path: 'memories', element: <Navigate to="channels" replace /> },
+                  { path: 'channels/bulk', element: <BuildChannelsBulkEditPage /> },
+                  { path: 'channels', element: <BuildChannelsWirePage /> },
+                  { path: 'scan-list', element: <BuildFlatMemoryScanListPage /> },
+                  { path: 'airband', element: <BuildAirbandWirePage /> },
+                  { path: 'zones', element: <BuildZonesWirePage /> },
+                  { path: 'scan-lists', element: <BuildScanListsWirePage /> },
+                  { path: 'talk-groups', element: <BuildTalkGroupsWirePage /> },
+                  { path: 'contacts', element: <BuildContactsWirePage /> },
+                  { path: 'rx-group-lists', element: <BuildRxGroupListsWirePage /> },
+                  { path: 'export', element: <BuildExportPage /> },
+                  { path: 'export/settings', element: <BuildExportSettingsPage /> },
+                  { path: 'export-resolution', element: <BuildExportResolutionPage /> },
+                  { path: 'neonplug-settings', element: <BuildNeonplugSettingsPage /> },
+                  { path: 'radio-image', element: <BuildRadioImageSettingsPage /> },
+                ],
+              },
             ],
           },
           { path: '/import-export', element: <Navigate to="/summary" replace /> },

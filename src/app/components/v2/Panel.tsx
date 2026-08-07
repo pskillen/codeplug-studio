@@ -9,16 +9,30 @@ export interface PanelProps {
   sub?: string;
   children?: ReactNode;
   className?: string;
+  /** `danger` — destructive tint for irreversible actions (e.g. delete build). */
+  variant?: 'default' | 'danger';
 }
 
 /**
  * Bordered content panel with optional titled header — editor sections and summary breakdowns.
  */
-export default function Panel({ id, title, sub, children, className }: PanelProps) {
+export default function Panel({
+  id,
+  title,
+  sub,
+  children,
+  className,
+  variant = 'default',
+}: PanelProps) {
   const hasHeader = title != null;
 
   return (
-    <section id={id} className={[classes.root, className].filter(Boolean).join(' ')}>
+    <section
+      id={id}
+      className={[classes.root, variant === 'danger' ? classes.danger : '', className]
+        .filter(Boolean)
+        .join(' ')}
+    >
       {hasHeader ? (
         <h2 className={[classes.title, sub ? classes.titleWithSub : ''].filter(Boolean).join(' ')}>
           {title}

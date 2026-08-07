@@ -2,19 +2,19 @@ import ExportBuildCpsPanel from '../../components/builds/ExportBuildCpsPanel.tsx
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 import classes from './BuildExportPage.module.css';
 
-export default function BuildExportPage() {
+export default function BuildExportSettingsPage() {
   const { build } = useBuildLayout();
 
   return (
     <div className={classes.page}>
       <div className={classes.header}>
-        <h1 className={classes.title}>Export</h1>
+        <h1 className={classes.title}>Export settings</h1>
         <p className={classes.subtitle}>
-          Choose a pathway and download CPS files or write over Web Serial. Tune projection on
-          Export settings.
+          Projection defaults for this build — name modes, inclusion, expansion, and behavioural
+          overrides. Pathway choice and download actions stay on Export.
         </p>
       </div>
-      <ExportBuildCpsPanel build={build} />
+      <ExportBuildCpsPanel build={build} panelMode="settings" />
     </div>
   );
 }

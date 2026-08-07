@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Button, Group, Modal, SegmentedControl, Stack, Text } from '@mantine/core';
+import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
 import type { BuildExportSettings, RadioBuild } from '@core/models/formatBuild.ts';
 import { prepareBuildForFrequencyRangeExportPatch } from '../../lib/frequencyRangeExportSettingsPatch.ts';
-import type { EgressPath } from '@core/models/egressPath.ts';
 import { traitProfileFor } from '@core/models/traits.ts';
 import { formatCatalogEntry, getExportAdapter } from '@core/import-export/registry.ts';
 import {
@@ -18,6 +17,7 @@ import {
 import type { FormatId } from '@core/import-export/types.ts';
 import type { CpsAppExportOptions } from '../../services/buildCpsExportService.ts';
 import ExportBuildSettingsSections from './ExportBuildSettingsSections.tsx';
+import EgressPathwayCards from './EgressPathwayCards.tsx';
 import ProfilePicker from './ProfilePicker.tsx';
 import CpsCsvPreviewModal from './CpsCsvPreviewModal.tsx';
 import ExportWarningsAlert from './ExportWarningsAlert.tsx';
@@ -59,18 +59,16 @@ import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 
 export interface ExportBuildCpsPanelProps {
   build: RadioBuild;
+  /** When `settings`, only projection/inclusion controls; default is pathway delivery UI. */
+  panelMode?: 'delivery' | 'settings';
 }
 
 const buildService = new BuildService(persistence);
 
-function egressPathLabel(path: EgressPath): string {
-  if (path.label?.trim()) return path.label.trim();
-  const formatLabel = formatCatalogEntry(path.formatId as FormatId)?.label ?? path.formatId;
-  const profile = traitProfileFor(path.profileId)?.label ?? path.profileId;
-  return `${formatLabel} — ${profile}`;
-}
-
-export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps) {
+export default function ExportBuildCpsPanel({
+  build,
+  panelMode = 'delivery',
+}: ExportBuildCpsPanelProps) {
   const { activeProjectId, activeProject } = useProjects();
   const { activeEgress, egressPaths, setActiveEgressId, reloadEgressPaths } = useBuildLayout();
   const { withDriveAuthRetry } = useGoogleDrive();
@@ -422,38 +420,43 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
 
   const egressSwitcher =
     egressPaths.length > 1 ? (
-      <Stack gap={4}>
-        <Text size="sm" fw={600}>
-          Export pathway
-        </Text>
-        <SegmentedControl
-          value={activeEgress.id}
-          data={egressPaths.map((path) => ({
-            value: path.id,
-            label: egressPathLabel(path),
-          }))}
-          onChange={(id) => void handleActiveEgressChange(id)}
-        />
-      </Stack>
+      <EgressPathwayCards
+        egressPaths={egressPaths}
+        activeEgressId={activeEgress.id}
+        onSelect={(id) => void handleActiveEgressChange(id)}
+      />
     ) : null;
+
+  const settingsSections = (
+    <ExportBuildSettingsSections
+      build={build}
+      formatId={formatId}
+      saving={savingSettings}
+      settingsError={settingsError}
+      profileNameLimit={profileNameLimit}
+      resolvedSettings={resolvedSettings}
+      formatDefaults={formatDefaults}
+      defaultScanValue={defaultScanValue}
+      onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
+      onExportInclusionChange={(field, checked) => void handleExportInclusionChange(field, checked)}
+    />
+  );
+
+  if (panelMode === 'settings') {
+    if (!activeEgress) {
+      return (
+        <Alert color="gray" title="No export pathway">
+          This build has no active egress pathway. Reload the page or open Setup to restore pathways
+          for this radio.
+        </Alert>
+      );
+    }
+    return <Stack gap="sm">{settingsSections}</Stack>;
+  }
 
   if (formatId === 'radio-io') {
     return (
       <Stack gap="sm">
-        <ExportBuildSettingsSections
-          build={build}
-          formatId={formatId}
-          saving={savingSettings}
-          settingsError={settingsError}
-          profileNameLimit={profileNameLimit}
-          resolvedSettings={resolvedSettings}
-          formatDefaults={formatDefaults}
-          defaultScanValue={defaultScanValue}
-          onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
-          onExportInclusionChange={(field, checked) =>
-            void handleExportInclusionChange(field, checked)
-          }
-        />
         {egressSwitcher}
         <Text size="sm">
           Direct radio via Web Serial for{' '}
@@ -500,20 +503,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
 
     return (
       <Stack gap="sm">
-        <ExportBuildSettingsSections
-          build={build}
-          formatId={formatId}
-          saving={savingSettings}
-          settingsError={settingsError}
-          profileNameLimit={profileNameLimit}
-          resolvedSettings={resolvedSettings}
-          formatDefaults={formatDefaults}
-          defaultScanValue={defaultScanValue}
-          onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
-          onExportInclusionChange={(field, checked) =>
-            void handleExportInclusionChange(field, checked)
-          }
-        />
         {egressSwitcher}
         <Text size="sm">
           Export as{' '}
@@ -592,20 +581,6 @@ export default function ExportBuildCpsPanel({ build }: ExportBuildCpsPanelProps)
 
   return (
     <Stack gap="sm">
-      <ExportBuildSettingsSections
-        build={build}
-        formatId={formatId}
-        saving={savingSettings}
-        settingsError={settingsError}
-        profileNameLimit={profileNameLimit}
-        resolvedSettings={resolvedSettings}
-        formatDefaults={formatDefaults}
-        defaultScanValue={defaultScanValue}
-        onExportSettingsPatch={(patch) => void handleExportSettingsPatch(patch)}
-        onExportInclusionChange={(field, checked) =>
-          void handleExportInclusionChange(field, checked)
-        }
-      />
       {egressSwitcher}
       {showDm32PreferNeonPlug ? <Dm32PreferNeonPlugAlert /> : null}
       <Text size="sm">

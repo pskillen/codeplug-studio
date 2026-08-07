@@ -1,0 +1,22 @@
+.root {
+  background: var(--dsv2-surface-quiet, var(--mantine-color-gray-0));
+  border-bottom: 1px solid var(--dsv2-border, var(--mantine-color-gray-3));
+}
+
+.row {
+  padding: 0;
+}
+
+.chipBar {
+  padding: 8px 16px 0;
+}
+
+@media (min-width: 48em) {
+  .chipBar {
+    padding: 12px 32px 0;
+  }
+}
+
+.auditStrip {
+  border-bottom: none;
+}

@@ -8,13 +8,14 @@ Standard v2 content panel — `18px 20px` padding, `10px` radius, `1px` border. 
 
 ## Props
 
-| Prop        | Type        | Notes                                     |
-| ----------- | ----------- | ----------------------------------------- |
-| `id`        | `string`    | Anchor id for `SectionNav` scroll targets |
-| `title`     | `string`    | Section heading                           |
-| `sub`       | `string`    | Optional description below title          |
-| `children`  | `ReactNode` | Panel body                                |
-| `className` | `string`    | Optional root class                       |
+| Prop        | Type                    | Notes                                        |
+| ----------- | ----------------------- | -------------------------------------------- |
+| `id`        | `string`                | Anchor id for `SectionNav` scroll targets    |
+| `title`     | `string`                | Section heading                              |
+| `sub`       | `string`                | Optional description below title             |
+| `children`  | `ReactNode`             | Panel body                                   |
+| `className` | `string`                | Optional root class                          |
+| `variant`   | `'default' \| 'danger'` | `danger` — destructive tint for delete zones |
 
 ## Usage
 
@@ -32,7 +33,7 @@ import { DesignSystemV2Provider, Panel } from '@app/components/v2';
 
 - Must render inside `DesignSystemV2Provider`.
 - Title renders as `<h2>` for section semantics.
-- Live demos: `/styleguide/v2/data-display`
+- Live demos: `/styleguide/v2/containers` (danger variant), `/styleguide/v2/data-display`
 
 ## Related
 
