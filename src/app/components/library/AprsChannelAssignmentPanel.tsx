@@ -14,10 +14,16 @@ import {
   SimpleGrid,
   Stack,
   Text,
-  TextInput,
 } from '@mantine/core';
-import { GradientSegmentedControl } from '../ui/index.ts';
-import { Button, DataTable, type DataTableColumn, type DataTableSortState } from '../v2/index.ts';
+import {
+  Button,
+  DataTable,
+  Panel,
+  SearchInput,
+  SegmentedControl,
+  type DataTableColumn,
+  type DataTableSortState,
+} from '../v2/index.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
 import { createNameColumn } from '../../lib/libraryListTable.tsx';
 import {
@@ -417,135 +423,142 @@ function AprsChannelAssignmentPanelInner({
   }, [modeFilter]);
 
   return (
-    <Stack gap="md">
-      <Text size="sm" c="dimmed">
-        Assign digital APRS bindings per channel. Use the channel-type filter to include analog
-        channels when needed.
-      </Text>
-      <SimpleGrid cols={{ base: 1, xs: 2, sm: 4 }} spacing="sm">
-        <MultiSelect
-          label="Band"
-          data={bandFilterOptions}
-          value={bandFilter}
-          onChange={setBandFilter}
-          clearable
-          renderPill={({ option, onRemove }) => {
-            if (!option) return null;
-            const band = bandsById.get(String(option.value));
-            if (!band) return null;
-            return (
-              <Pill withRemoveButton onRemove={onRemove} style={bandMultiSelectPillStyle(band)}>
-                {band.label}
-              </Pill>
-            );
+    <Panel
+      title="Channel assignment"
+      sub="Assign digital APRS bindings per channel. Use the channel-type filter to include analog channels when needed."
+    >
+      <Stack gap="md">
+        <SimpleGrid cols={{ base: 1, xs: 2, sm: 4 }} spacing="sm">
+          <MultiSelect
+            label="Band"
+            data={bandFilterOptions}
+            value={bandFilter}
+            onChange={setBandFilter}
+            clearable
+            renderPill={({ option, onRemove }) => {
+              if (!option) return null;
+              const band = bandsById.get(String(option.value));
+              if (!band) return null;
+              return (
+                <Pill withRemoveButton onRemove={onRemove} style={bandMultiSelectPillStyle(band)}>
+                  {band.label}
+                </Pill>
+              );
+            }}
+            renderOption={({ option }) => (
+              <BandPill band={bandsById.get(String(option.value)) ?? null} size="xs" />
+            )}
+          />
+          <Select
+            label="Report slot"
+            data={slotFilterOptions}
+            value={slotFilter}
+            onChange={(value) => setSlotFilter(value ?? 'all')}
+          />
+          <Select
+            label="Report type"
+            data={[
+              { value: 'all', label: 'All' },
+              { value: 'off', label: 'Off' },
+              { value: 'digital', label: 'Digital' },
+            ]}
+            value={reportTypeFilter}
+            onChange={(value) => setReportTypeFilter(value ?? 'all')}
+          />
+          <Select
+            label="Receive"
+            data={[
+              { value: 'all', label: 'All' },
+              { value: 'enabled', label: 'Enabled' },
+              { value: 'disabled', label: 'Disabled' },
+            ]}
+            value={receiveFilter}
+            onChange={(value) => setReceiveFilter(value ?? 'all')}
+          />
+        </SimpleGrid>
+        <Group align="flex-end" gap="md" wrap="wrap">
+          <div>
+            <Text size="xs" c="dimmed" mb={4}>
+              Channel type
+            </Text>
+            <SegmentedControl
+              value={modeFilter}
+              onChange={(value) => setModeFilter(value as AprsAssignmentModeFilter)}
+              options={[
+                { value: 'digital', label: 'Digital' },
+                { value: 'analog', label: 'Analog' },
+                { value: 'both', label: 'Both' },
+              ]}
+            />
+          </div>
+          <div style={{ flex: 1, minWidth: '12rem' }}>
+            <SearchInput
+              value={search}
+              onChange={(event) => setSearch(event.currentTarget.value)}
+              placeholder="Filter by name or callsign"
+              aria-label="Filter channels"
+            />
+          </div>
+        </Group>
+        <DataTable
+          variant="embedded"
+          columns={columns}
+          rows={filteredRows}
+          getRowId={(row) => row.id}
+          totalRowCount={visibleChannels.length}
+          resultCount={filteredRows.length}
+          sort={sort}
+          onSortChange={(next) => {
+            if (next) setSort(next);
           }}
-          renderOption={({ option }) => (
-            <BandPill band={bandsById.get(String(option.value)) ?? null} size="xs" />
-          )}
+          selectable
+          selectedKeys={selectedKeys}
+          onSelectionChange={setSelectedKeys}
+          emptyMessage={emptyStateMessage}
+          filteredEmptyMessage={emptyStateMessage}
+          bulkActions={
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={selectedKeys.length === 0}
+              onClick={() => setBulkOpen(true)}
+            >
+              Assign slot to selected…
+            </Button>
+          }
         />
-        <Select
-          label="Report slot"
-          data={slotFilterOptions}
-          value={slotFilter}
-          onChange={(value) => setSlotFilter(value ?? 'all')}
+        <Group>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={selectedKeys.length === 0}
+            onClick={() => setSelectedKeys(filteredRows.map((row) => row.id))}
+          >
+            Select filtered
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={selectedKeys.length === 0}
+            onClick={() => setSelectedKeys([])}
+          >
+            Select none
+          </Button>
+          <Button variant="primary" size="sm" loading={saving} onClick={() => void handleSave()}>
+            Save assignments
+          </Button>
+        </Group>
+        {error ? <Alert color="red">{error}</Alert> : null}
+        {message ? <Alert color="green">{message}</Alert> : null}
+        <AprsChannelBulkAssignModal
+          opened={bulkOpen}
+          onClose={() => setBulkOpen(false)}
+          selectedCount={selectedKeys.length}
+          channelSlots={channelSlots}
+          channels={channels}
+          onApply={handleBulkApply}
         />
-        <Select
-          label="Report type"
-          data={[
-            { value: 'all', label: 'All' },
-            { value: 'off', label: 'Off' },
-            { value: 'digital', label: 'Digital' },
-          ]}
-          value={reportTypeFilter}
-          onChange={(value) => setReportTypeFilter(value ?? 'all')}
-        />
-        <Select
-          label="Receive"
-          data={[
-            { value: 'all', label: 'All' },
-            { value: 'enabled', label: 'Enabled' },
-            { value: 'disabled', label: 'Disabled' },
-          ]}
-          value={receiveFilter}
-          onChange={(value) => setReceiveFilter(value ?? 'all')}
-        />
-      </SimpleGrid>
-      <Group align="flex-end" gap="md" wrap="nowrap">
-        <GradientSegmentedControl
-          label="Channel type"
-          value={modeFilter}
-          onChange={(value) => setModeFilter(value as AprsAssignmentModeFilter)}
-          data={[
-            { value: 'digital', label: 'Digital' },
-            { value: 'analog', label: 'Analog' },
-            { value: 'both', label: 'Both' },
-          ]}
-          scheme="three"
-        />
-        <TextInput
-          label="Search"
-          placeholder="Filter by name or callsign"
-          value={search}
-          onChange={(event) => setSearch(event.currentTarget.value)}
-          style={{ flex: 1, minWidth: 0 }}
-        />
-      </Group>
-      <DataTable
-        variant="embedded"
-        columns={columns}
-        rows={filteredRows}
-        getRowId={(row) => row.id}
-        totalRowCount={visibleChannels.length}
-        resultCount={filteredRows.length}
-        sort={sort}
-        onSortChange={(next) => {
-          if (next) setSort(next);
-        }}
-        selectable
-        selectedKeys={selectedKeys}
-        onSelectionChange={setSelectedKeys}
-        emptyMessage={emptyStateMessage}
-        filteredEmptyMessage={emptyStateMessage}
-      />
-      <Group>
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={selectedKeys.length === 0}
-          onClick={() => setSelectedKeys(filteredRows.map((row) => row.id))}
-        >
-          Select filtered
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={selectedKeys.length === 0}
-          onClick={() => setSelectedKeys([])}
-        >
-          Select none
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={selectedKeys.length === 0}
-          onClick={() => setBulkOpen(true)}
-        >
-          Bulk set…
-        </Button>
-        <Button variant="primary" size="sm" loading={saving} onClick={() => void handleSave()}>
-          Save assignments
-        </Button>
-      </Group>
-      {error ? <Alert color="red">{error}</Alert> : null}
-      {message ? <Alert color="green">{message}</Alert> : null}
-      <AprsChannelBulkAssignModal
-        opened={bulkOpen}
-        onClose={() => setBulkOpen(false)}
-        selectedCount={selectedKeys.length}
-        channelSlots={channelSlots}
-        channels={channels}
-        onApply={handleBulkApply}
-      />
-    </Stack>
+      </Stack>
+    </Panel>
   );
 }

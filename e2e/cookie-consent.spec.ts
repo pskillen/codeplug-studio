@@ -21,7 +21,8 @@ test('decline hides banner, persists choice, and sends no GA traffic', async ({ 
   });
 
   await page.goto('/');
-  await page.getByRole('button', { name: 'Essential only' }).click();
+  await page.getByRole('button', { name: 'Manage' }).click();
+  await page.getByRole('button', { name: 'Reject non-essential' }).click();
   await expect(page.getByRole('dialog', { name: 'Cookie consent' })).not.toBeVisible();
 
   await page.reload();
@@ -33,7 +34,7 @@ test('decline hides banner, persists choice, and sends no GA traffic', async ({ 
 
 test('accept hides banner and persists choice', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Accept analytics' }).click();
+  await page.getByRole('button', { name: 'Accept' }).click();
   await expect(page.getByRole('dialog', { name: 'Cookie consent' })).not.toBeVisible();
 
   await page.reload();

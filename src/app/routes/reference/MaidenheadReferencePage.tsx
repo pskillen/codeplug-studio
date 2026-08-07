@@ -1,6 +1,5 @@
 import {
   Autocomplete,
-  Button,
   Group,
   Loader,
   NumberInput,
@@ -14,10 +13,10 @@ import {
 import { useDebouncedValue } from '@mantine/hooks';
 import { useCallback, useMemo, useState } from 'react';
 import MapLocationPicker from '../../components/MapLocationPicker/MapLocationPicker.tsx';
-import { DesignSystemV2Provider, MapPanel } from '../../components/v2/index.ts';
+import { DesignSystemV2Provider, MapPanel, Panel, Button } from '../../components/v2/index.ts';
 import { mapComboboxProps } from '../../theme.ts';
 import UseMyLocationButton from '../../components/UseMyLocationButton/UseMyLocationButton.tsx';
-import { FormSection, ListPage, PageSection } from '../../components/ui/index.ts';
+import { FormSection } from '../../components/ui/index.ts';
 import { useMapSettings } from '../../hooks/useMapSettings.ts';
 import {
   channelHasLocation,
@@ -35,6 +34,7 @@ import { GeocodeError, geocodeQuery, type GeocodeProvider } from '@integrations/
 import { useProjects } from '../../state/useProjects.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import MaidenheadBearingSection from './MaidenheadBearingSection.tsx';
+import classes from './MaidenheadReferencePage.module.css';
 
 type PageMode = 'convert' | 'bearing';
 
@@ -202,170 +202,180 @@ export default function MaidenheadReferencePage() {
   };
 
   return (
-    <ListPage
-      title="Maidenhead locator"
-      description="Convert a locator to coordinates, or find distance and bearing between two points."
-    >
-      <SegmentedControl
-        value={mode}
-        onChange={(value) => setMode(value as PageMode)}
-        data={MODE_OPTIONS}
-        fullWidth
-      />
+    <DesignSystemV2Provider>
+      <div className={classes.page}>
+        <h1 className={classes.title}>Maidenhead locator</h1>
+        <p className={classes.description}>
+          Convert a locator to coordinates, or find distance and bearing between two points.
+        </p>
 
-      {mode === 'convert' ? (
-        <PageSection title="Converter">
-          <Stack gap="lg">
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-              <FormSection title="Locator">
-                <TextInput
-                  label="Maidenhead locator"
-                  placeholder="e.g. IO85uk"
-                  value={locator}
-                  onChange={(e) => handleLocatorChange(e.currentTarget.value)}
-                  error={locatorError}
-                />
-                <SegmentedControl
-                  value={String(precision)}
-                  onChange={handlePrecisionChange}
-                  data={PRECISION_OPTIONS}
-                />
-              </FormSection>
-
-              <FormSection title="Coordinates">
-                <Group grow>
-                  <NumberInput
-                    label="Latitude"
-                    value={lat}
-                    onChange={handleLatChange}
-                    decimalScale={6}
-                    min={-90}
-                    max={90}
-                  />
-                  <NumberInput
-                    label="Longitude"
-                    value={lon}
-                    onChange={handleLonChange}
-                    decimalScale={6}
-                    min={-180}
-                    max={180}
-                  />
-                </Group>
-                <UseMyLocationButton onLocation={(latN, lonN) => applyCoords(latN, lonN)} />
-              </FormSection>
-            </SimpleGrid>
-
-            <Stack gap="sm">
-              <Text size="sm" c="dimmed">
-                Click the map or drag the marker to set coordinates.
-              </Text>
-              <DesignSystemV2Provider>
-                <MapPanel title="Map" height={280}>
-                  <MapLocationPicker
-                    lat={mapLat}
-                    lon={mapLon}
-                    onPick={handleMapPick}
-                    height="100%"
-                    active
-                  />
-                </MapPanel>
-              </DesignSystemV2Provider>
-            </Stack>
-
-            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
-              <Stack gap="sm">
-                <Title order={4}>Address lookup</Title>
-                <Text size="sm" c="dimmed">
-                  {hasMapboxToken
-                    ? 'Geocode an address or postcode. Choose Mapbox or Photon (OpenStreetMap).'
-                    : 'Using Photon (OpenStreetMap). Set a Mapbox token in Settings for Mapbox geocoding.'}
-                </Text>
-                <SegmentedControl
-                  value={geocodeProvider}
-                  onChange={(value) => setGeocodeProvider(value as GeocodeProvider)}
-                  data={GEOCODE_PROVIDER_OPTIONS}
-                />
-                <Group align="flex-end" grow>
-                  <TextInput
-                    label="Address or postcode"
-                    placeholder="e.g. G1 1XQ, Glasgow"
-                    value={addressQuery}
-                    onChange={(e) => setAddressQuery(e.currentTarget.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        void handleGeocode();
-                      }
-                    }}
-                  />
-                  <Button
-                    onClick={() => void handleGeocode()}
-                    loading={geocodeLoading}
-                    style={{ flexShrink: 0 }}
-                  >
-                    Look up
-                  </Button>
-                </Group>
-                {geocodeError ? (
-                  <Text size="sm" c="red">
-                    {geocodeError}
-                  </Text>
-                ) : null}
-                {geocodeLabel ? (
-                  <Text size="sm" c="dimmed">
-                    {geocodeLabel}
-                  </Text>
-                ) : null}
-              </Stack>
-
-              <Stack gap="sm">
-                <Title order={4}>Channel lookup</Title>
-                <Text size="sm" c="dimmed">
-                  {hasActiveProject
-                    ? 'Search the active project library by channel name or callsign.'
-                    : 'Open or create a project to search library channels.'}
-                </Text>
-                <Group align="flex-end" grow>
-                  <Autocomplete
-                    label="Channel"
-                    placeholder="Name or callsign"
-                    value={channelSearch}
-                    onChange={handleChannelSearchChange}
-                    onOptionSubmit={handleChannelOptionSubmit}
-                    data={channelOptions}
-                    disabled={!hasActiveProject}
-                    rightSection={channelOptionsLoading ? <Loader size={18} /> : null}
-                    filter={({ options }) => options}
-                    comboboxProps={mapComboboxProps()}
-                  />
-                  <Button
-                    onClick={handleApplyChannelLocation}
-                    disabled={!hasActiveProject || !selectedChannel || !selectedChannelHasLocation}
-                    style={{ flexShrink: 0 }}
-                  >
-                    Use location
-                  </Button>
-                </Group>
-                {selectedChannel && !selectedChannelHasLocation ? (
-                  <Text size="sm" c="dimmed">
-                    This channel has no coordinates set.
-                  </Text>
-                ) : null}
-              </Stack>
-            </SimpleGrid>
-          </Stack>
-        </PageSection>
-      ) : (
-        <PageSection title="Bearing">
-          <MaidenheadBearingSection
-            channels={channels}
-            hasActiveProject={hasActiveProject}
-            mapboxToken={mapboxToken}
-            hasMapboxToken={hasMapboxToken}
-            mapActive
+        <Stack gap="md">
+          <SegmentedControl
+            value={mode}
+            onChange={(value) => setMode(value as PageMode)}
+            data={MODE_OPTIONS}
+            fullWidth
           />
-        </PageSection>
-      )}
-    </ListPage>
+
+          {mode === 'convert' ? (
+            <Panel title="Locate">
+              <Stack gap="lg">
+                <div className={classes.locateMapGrid}>
+                  <Stack gap="md">
+                    <FormSection title="Locator">
+                      <TextInput
+                        label="Maidenhead locator"
+                        placeholder="e.g. IO85uk"
+                        value={locator}
+                        onChange={(e) => handleLocatorChange(e.currentTarget.value)}
+                        error={locatorError}
+                      />
+                      <SegmentedControl
+                        value={String(precision)}
+                        onChange={handlePrecisionChange}
+                        data={PRECISION_OPTIONS}
+                      />
+                      {locator.trim() && !locatorError ? (
+                        <div className={classes.locatorReadout}>{locator.toUpperCase()}</div>
+                      ) : null}
+                    </FormSection>
+
+                    <FormSection title="Coordinates">
+                      <Group grow>
+                        <NumberInput
+                          label="Latitude"
+                          value={lat}
+                          onChange={handleLatChange}
+                          decimalScale={6}
+                          min={-90}
+                          max={90}
+                        />
+                        <NumberInput
+                          label="Longitude"
+                          value={lon}
+                          onChange={handleLonChange}
+                          decimalScale={6}
+                          min={-180}
+                          max={180}
+                        />
+                      </Group>
+                      <UseMyLocationButton onLocation={(latN, lonN) => applyCoords(latN, lonN)} />
+                    </FormSection>
+                  </Stack>
+
+                  <MapPanel title="Map" height={220}>
+                    <MapLocationPicker
+                      lat={mapLat}
+                      lon={mapLon}
+                      onPick={handleMapPick}
+                      height="100%"
+                      active
+                    />
+                  </MapPanel>
+                </div>
+
+                <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="lg">
+                  <Stack gap="sm">
+                    <Title order={4}>Address lookup</Title>
+                    <Text size="sm" c="dimmed">
+                      {hasMapboxToken
+                        ? 'Geocode an address or postcode. Choose Mapbox or Photon (OpenStreetMap).'
+                        : 'Using Photon (OpenStreetMap). Set a Mapbox token in Settings for Mapbox geocoding.'}
+                    </Text>
+                    <SegmentedControl
+                      value={geocodeProvider}
+                      onChange={(value) => setGeocodeProvider(value as GeocodeProvider)}
+                      data={GEOCODE_PROVIDER_OPTIONS}
+                    />
+                    <Group align="flex-end" grow>
+                      <TextInput
+                        label="Address or postcode"
+                        placeholder="e.g. G1 1XQ, Glasgow"
+                        value={addressQuery}
+                        onChange={(e) => setAddressQuery(e.currentTarget.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            void handleGeocode();
+                          }
+                        }}
+                      />
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => void handleGeocode()}
+                        loading={geocodeLoading}
+                        style={{ flexShrink: 0 }}
+                      >
+                        Look up
+                      </Button>
+                    </Group>
+                    {geocodeError ? (
+                      <Text size="sm" c="red">
+                        {geocodeError}
+                      </Text>
+                    ) : null}
+                    {geocodeLabel ? (
+                      <Text size="sm" c="dimmed">
+                        {geocodeLabel}
+                      </Text>
+                    ) : null}
+                  </Stack>
+
+                  <Stack gap="sm">
+                    <Title order={4}>Channel lookup</Title>
+                    <Text size="sm" c="dimmed">
+                      {hasActiveProject
+                        ? 'Search the active project library by channel name or callsign.'
+                        : 'Open or create a project to search library channels.'}
+                    </Text>
+                    <Group align="flex-end" grow>
+                      <Autocomplete
+                        label="Channel"
+                        placeholder="Name or callsign"
+                        value={channelSearch}
+                        onChange={handleChannelSearchChange}
+                        onOptionSubmit={handleChannelOptionSubmit}
+                        data={channelOptions}
+                        disabled={!hasActiveProject}
+                        rightSection={channelOptionsLoading ? <Loader size={18} /> : null}
+                        filter={({ options }) => options}
+                        comboboxProps={mapComboboxProps()}
+                      />
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleApplyChannelLocation}
+                        disabled={
+                          !hasActiveProject || !selectedChannel || !selectedChannelHasLocation
+                        }
+                        style={{ flexShrink: 0 }}
+                      >
+                        Use location
+                      </Button>
+                    </Group>
+                    {selectedChannel && !selectedChannelHasLocation ? (
+                      <Text size="sm" c="dimmed">
+                        This channel has no coordinates set.
+                      </Text>
+                    ) : null}
+                  </Stack>
+                </SimpleGrid>
+              </Stack>
+            </Panel>
+          ) : (
+            <Panel title="Bearing">
+              <MaidenheadBearingSection
+                channels={channels}
+                hasActiveProject={hasActiveProject}
+                mapboxToken={mapboxToken}
+                hasMapboxToken={hasMapboxToken}
+                mapActive
+              />
+            </Panel>
+          )}
+        </Stack>
+      </div>
+    </DesignSystemV2Provider>
   );
 }

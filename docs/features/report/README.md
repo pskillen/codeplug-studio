@@ -8,15 +8,13 @@ Library inventory and project YAML backup for the active project. Gives operator
 
 ## Implementation status
 
-| Area                  | Status   | Notes                                                                                                         |
-| --------------------- | -------- | ------------------------------------------------------------------------------------------------------------- |
-| Entity counts         | Shipped  | Channels, talk groups, digital/analog contacts, RX group lists, zones                                         |
-| Channels by mode      | Shipped  | From the first `modeProfiles` entry per channel                                                               |
-| Channels by band      | Shipped  | Via `bandLabelForFrequencyHz` on RX frequency                                                                 |
-| Located-channel count | Shipped  | Links to the [library channels map section](../map/README.md)                                                 |
-| Integrity warnings    | Shipped  | Dangling UUID references (`findDanglingReferences`)                                                           |
-| Project interchange   | Shipped  | Native YAML import/export + Drive on Summary ([#569](https://github.com/pskillen/codeplug-studio/issues/569)) |
-| Export / print report | Deferred | No report export yet                                                                                          |
+| Area                  | Status                                                                   | Notes                                                                                                                                                                                     |
+| --------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| mk2 U1 dashboard      | Shipped ([#945](https://github.com/pskillen/codeplug-studio/issues/945)) | Count tiles, integrity banner, Library/Export shortcuts; YAML interchange below                                                                                                           |
+| Entity counts         | Shipped                                                                  | Channels, zones, talk groups, contacts, RX group lists, builds                                                                                                                            |
+| Integrity warnings    | Shipped                                                                  | Dangling UUID references (`findDanglingReferences`)                                                                                                                                       |
+| Project interchange   | Shipped                                                                  | Native YAML import/export + Drive on Summary ([#569](https://github.com/pskillen/codeplug-studio/issues/569), v2 dropzone [#944](https://github.com/pskillen/codeplug-studio/issues/944)) |
+| Export / print report | Deferred                                                                 | No report export yet                                                                                                                                                                      |
 
 ## Concepts
 

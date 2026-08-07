@@ -1,0 +1,47 @@
+.bareRoot {
+  gap: 28px;
+}
+
+.sectionTitle {
+  font-size: var(--dsv2-font-body);
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 8px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.bareTable {
+  --table-border-color: transparent;
+  background: transparent;
+}
+
+.bareTable :global(thead) {
+  border-bottom: 1px solid var(--dsv2-border);
+}
+
+.bareTable :global(th) {
+  font-size: var(--dsv2-font-body-sm);
+  font-weight: 600;
+  color: var(--dsv2-text-tertiary);
+  padding: 8px 12px 8px 0;
+  background: transparent;
+  border: none;
+}
+
+.bareTable :global(td) {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-secondary);
+  padding: 10px 12px 10px 0;
+  border: none;
+  vertical-align: top;
+}
+
+.bareTable :global(tr) {
+  border: none;
+}
+
+.rangeCell {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--dsv2-font-mono, ui-monospace, monospace);
+}

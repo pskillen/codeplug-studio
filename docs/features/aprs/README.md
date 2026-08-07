@@ -83,6 +83,7 @@ Redirects: `/library/aprs-configurations` → `/library/aprs-configuration`.
 | DM32 per-channel APRS + `APRS.md` guide                                | Shipped ([#250](https://github.com/pskillen/codeplug-studio/issues/250))                                                                                                                                                                |
 | NeonPlug DM-32UV APRS → `radioSettings` (merge-export)                 | Shipped ([#559](https://github.com/pskillen/codeplug-studio/issues/559))                                                                                                                                                                |
 | AT-D890UV Web Serial digital APRS Write                                | Shipped ([#758](https://github.com/pskillen/codeplug-studio/issues/758)) — modelled globals + channel bindings; RX filters / analog identity RMW; hardware verify pending — [aprs.md](../../reference/radios/anytone/at-d890uv/aprs.md) |
+| mk2 A1 configuration chrome (r2 #945)                                  | Shipped                                                                                                                                                                                                                                 | v2 slots `Panel`/`DataTable`/`ModalShell`/`EmptyState`; assignment matrix `SearchInput` + bulk toolbar ([#945](https://github.com/pskillen/codeplug-studio/issues/945)) |
 
 ---
 

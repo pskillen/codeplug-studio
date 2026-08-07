@@ -1,0 +1,73 @@
+.ribbon {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 1rem;
+  z-index: 200;
+  padding: 0 var(--dsv2-page-padding-x);
+  pointer-events: none;
+}
+
+.inner {
+  pointer-events: auto;
+  max-width: 48rem;
+  margin-inline: auto;
+  padding: 14px 16px;
+  background: var(--dsv2-surface-quiet, var(--dsv2-surface));
+  border-top: 1px solid var(--dsv2-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.copy {
+  color: var(--dsv2-text-secondary);
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.prefs {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-top: 4px;
+}
+
+.prefRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.expanded .inner {
+  max-width: 520px;
+}
+
+.expanded .actions {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+@media (max-width: 48em) {
+  .ribbon {
+    bottom: var(--dsv2-bottom-tab-bar-height, 0);
+    padding-bottom: 8px;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .expanded .copy {
+    margin-bottom: 16px;
+  }
+}

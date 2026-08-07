@@ -177,7 +177,7 @@ describe('App', () => {
     const banner = screen.getByRole('dialog', { name: 'Cookie consent' });
     expect(banner).toBeInTheDocument();
 
-    fireEvent.click(within(banner).getByRole('button', { name: 'Accept analytics' }));
+    fireEvent.click(within(banner).getByRole('button', { name: 'Accept' }));
     expect(screen.queryByRole('dialog', { name: 'Cookie consent' })).not.toBeInTheDocument();
     expect(localStorage.getItem(ANALYTICS_CONSENT_KEY)).toContain('accepted');
   });
