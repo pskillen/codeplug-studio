@@ -4,9 +4,7 @@ import { Link } from 'react-router-dom';
 import type { Channel, Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
-import {
-  setChannelMemberIncludeInScanList,
-} from '@core/domain/zoneMembership.ts';
+import { setChannelMemberIncludeInScanList } from '@core/domain/zoneMembership.ts';
 import type { IncludeInZoneDerivedScanListOverride } from '@core/models/zoneBehaviourDefaults.ts';
 import { reorderSelectedKeys } from '@core/domain/zoneOrder.ts';
 import { sortZoneMembersByMode } from '@core/domain/membershipSort.ts';
