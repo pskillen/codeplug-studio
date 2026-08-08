@@ -73,7 +73,9 @@ Import icons by name per file — e.g. `import { IconSettings } from '@tabler/ic
 
 ## Primary + contextual navigation
 
-Desktop (`sm+`): v2 `AppShell` top tabs. Narrow viewports: `BottomTabBar` instead of the tab row. Section sub-views use a horizontally scrollable `ContextualStrip` (Library entity types, Tools, Help, build detail, …).
+Desktop (`sm+`): v2 `AppShell` top tabs. Narrow viewports: `BottomTabBar` instead of the tab row — elevated chrome (accent top border, upward shadow, surface background) so primary nav is discoverable ([#962](https://github.com/pskillen/codeplug-studio/issues/962)). Section sub-views use a horizontally scrollable `ContextualStrip` (Library entity types, Tools, Help, build detail, …).
+
+Wide `DataTable` (v2) layouts scroll horizontally inside the table shell on narrow viewports; flexible columns keep an `8rem` min floor so overflow engages ([#962](https://github.com/pskillen/codeplug-studio/issues/962)).
 
 Strip destinations: `src/app/nav/contextualStripItems.ts` and `useBuildContextualStrip` for trait-shaped build nav. Filter state prefers URL search params where implemented.
 

@@ -10,7 +10,7 @@ The full-capability list/detail table used across library lists, wire preview, a
 
 | Prop                    | Type                                            | Notes                                                                  |
 | ----------------------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
-| `columns`               | `DataTableColumn<T>[]`                          | `{ key, header, render, width?, align?, sortable?, sortValue?, dim? }` |
+| `columns`               | `DataTableColumn<T>[]`                          | `{ key, header, render, width?, align?, sortable?, sortValue?, dim? }` — default track `minmax(8rem, 1fr)` |
 | `rows`                  | `T[]`                                           | Required                                                               |
 | `getRowId`              | `(row: T) => string`                            | Required                                                               |
 | `variant`               | `'list' \| 'embedded'`                          | Default `list`                                                         |
@@ -86,6 +86,7 @@ import { DataTable, DesignSystemV2Provider } from '@app/components/v2';
 - Renders as a CSS Grid (`role="table"`/`"row"`/`"columnheader"`/`"cell"`), not a native `<table>`, per the DS spec's computed `gridTemplateColumns` layout.
 - Sort cycles asc → desc → unsorted (original `rows` order) per header click.
 - Lead columns (nested expander, checkbox) use a dedicated `.leadCell` style (tight, symmetric padding) rather than the regular 16px `.dataCell`/`.headerCell` padding, which doesn't leave room for icon/control-only content in a narrow column.
+- The table shell uses `overflow: auto` with touch momentum scrolling. Flexible columns default to `minmax(8rem, 1fr)` so wide layouts scroll horizontally on mobile instead of crushing every column ([#962](https://github.com/pskillen/codeplug-studio/issues/962)). Prefer `hideOnMobile` / column visibility for intentional collapse; when columns stay visible, horizontal swipe must work.
 - Live demos: `/styleguide/v2/data-display`
 
 ## Related
