@@ -20,7 +20,8 @@ export interface BottomTabBarProps {
 
 /**
  * Mobile bottom tab bar. Presentational / fixture-driven in #916; real route
- * wiring lands in the chrome port (#917).
+ * wiring lands in the chrome port (#917). Elevated chrome (#962) so primary
+ * nav is discoverable on narrow viewports.
  */
 export default function BottomTabBar({
   items,
