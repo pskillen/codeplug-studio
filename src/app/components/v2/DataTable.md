@@ -8,20 +8,20 @@ The full-capability list/detail table used across library lists, wire preview, a
 
 ## Props (core)
 
-| Prop                    | Type                                            | Notes                                                                  |
-| ----------------------- | ----------------------------------------------- | ---------------------------------------------------------------------- |
+| Prop                    | Type                                            | Notes                                                                                                      |
+| ----------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `columns`               | `DataTableColumn<T>[]`                          | `{ key, header, render, width?, align?, sortable?, sortValue?, dim? }` — default track `minmax(8rem, 1fr)` |
-| `rows`                  | `T[]`                                           | Required                                                               |
-| `getRowId`              | `(row: T) => string`                            | Required                                                               |
-| `variant`               | `'list' \| 'embedded'`                          | Default `list`                                                         |
-| `caption`               | `ReactNode`                                     | Footer caption text                                                    |
-| `emptyMessage`          | `ReactNode`                                     | Default `No items`                                                     |
-| `filteredEmptyMessage`  | `ReactNode`                                     | Shown instead when `totalRowCount > 0` but `rows` is empty             |
-| `sort` / `onSortChange` | `DataTableSortState \| null` / `(sort) => void` | Controlled sort; uncontrolled if omitted                               |
-| `search`                | `{ value, onChange, placeholder?, pending? }`   | Toolbar search input                                                   |
-| `totalRowCount`         | `number`                                        | Drives "Showing N of M" / filtered-empty detection                     |
-| `resultCount`           | `number`                                        | Displayed count override                                               |
-| `countLabel`            | `(displayed, total) => ReactNode`               | Custom count copy                                                      |
+| `rows`                  | `T[]`                                           | Required                                                                                                   |
+| `getRowId`              | `(row: T) => string`                            | Required                                                                                                   |
+| `variant`               | `'list' \| 'embedded'`                          | Default `list`                                                                                             |
+| `caption`               | `ReactNode`                                     | Footer caption text                                                                                        |
+| `emptyMessage`          | `ReactNode`                                     | Default `No items`                                                                                         |
+| `filteredEmptyMessage`  | `ReactNode`                                     | Shown instead when `totalRowCount > 0` but `rows` is empty                                                 |
+| `sort` / `onSortChange` | `DataTableSortState \| null` / `(sort) => void` | Controlled sort; uncontrolled if omitted                                                                   |
+| `search`                | `{ value, onChange, placeholder?, pending? }`   | Toolbar search input                                                                                       |
+| `totalRowCount`         | `number`                                        | Drives "Showing N of M" / filtered-empty detection                                                         |
+| `resultCount`           | `number`                                        | Displayed count override                                                                                   |
+| `countLabel`            | `(displayed, total) => ReactNode`               | Custom count copy                                                                                          |
 
 ## Props (selection)
 
