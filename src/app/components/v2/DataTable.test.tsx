@@ -355,4 +355,16 @@ describe('DataTable v2', () => {
 
     expect(screen.getByRole('table')).toHaveAttribute('data-scale', 'extreme');
   });
+
+  it('uses a minmax floor for flexible columns so wide tables can scroll horizontally', () => {
+    render(
+      <DesignSystemV2Provider>
+        <DataTable columns={COLUMNS} rows={ROWS} getRowId={(row) => row.id} />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.getAllByRole('row')[0]).toHaveStyle({
+      gridTemplateColumns: 'minmax(8rem, 1fr) minmax(8rem, 1fr)',
+    });
+  });
 });

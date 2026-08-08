@@ -165,7 +165,7 @@ export default function StyleguideV2DataDisplayPage() {
 
       <PageSection
         title="DataTable (v2)"
-        description="New v2 port: sort, search, counts. Fork of the DS spec — selection/reorder/nesting land in later commits."
+        description="New v2 port: sort, search, counts. Wide demos scroll horizontally on narrow viewports (overflow-x on the table shell)."
       >
         <DataTableV2
           rows={filteredDataTableRows}
@@ -196,6 +196,25 @@ export default function StyleguideV2DataDisplayPage() {
               sortValue: (row) => row.name,
             },
             {
+              key: 'band',
+              header: 'Band',
+              render: () => '2m',
+              width: '5rem',
+            },
+            {
+              key: 'mode',
+              header: 'Mode',
+              render: () => 'DMR',
+              width: '5rem',
+            },
+            {
+              key: 'rxTx',
+              header: 'RX / TX',
+              render: () => '145.500 / 145.500',
+              width: '11rem',
+              dim: true,
+            },
+            {
               key: 'score',
               header: 'Score',
               render: (row) => row.score,
@@ -206,7 +225,7 @@ export default function StyleguideV2DataDisplayPage() {
               dim: true,
             },
           ]}
-          caption="Header click cycles ascending → descending → unsorted."
+          caption="Header click cycles ascending → descending → unsorted. On mobile, swipe the table sideways to reach trailing columns."
         />
       </PageSection>
 

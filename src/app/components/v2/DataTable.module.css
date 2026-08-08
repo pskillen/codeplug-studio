@@ -120,6 +120,8 @@
   border: 1px solid var(--dsv2-border);
   border-radius: var(--dsv2-radius-panel);
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 [data-variant='embedded'] .table {

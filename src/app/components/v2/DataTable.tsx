@@ -29,7 +29,11 @@ export interface DataTableColumn<T> {
   key: string;
   header: ReactNode;
   render: (row: T) => ReactNode;
-  /** CSS grid track for this column, e.g. `'120px'`. Defaults to `'1fr'`. */
+  /**
+   * CSS grid track for this column, e.g. `'120px'`.
+   * Defaults to `'minmax(8rem, 1fr)'` so flexible columns keep a readable
+   * floor and wide tables overflow horizontally instead of crushing cells.
+   */
   width?: string;
   align?: 'left' | 'right' | 'center';
   sortable?: boolean;
@@ -468,7 +472,9 @@ export default function DataTable<T>({
     nested ? '36px' : null,
     selectable ? '40px' : null,
     reorderMode ? '68px' : null,
-    ...visibleColumns.map((col) => col.width ?? '1fr'),
+    // Flexible default uses a min floor so overflow:auto on .table can scroll
+    // horizontally on narrow viewports instead of collapsing every column.
+    ...visibleColumns.map((col) => col.width ?? 'minmax(8rem, 1fr)'),
   ]
     .filter(Boolean)
     .join(' ');
