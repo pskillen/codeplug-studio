@@ -10,14 +10,14 @@ Tier-1 hub for the **Tracking Dashboard** — client-side pass prediction (SGP4)
 
 ## Implementation status
 
-| Area                               | Status      | Notes                                                                                                                                    |
-| ---------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| Observer location settings         | Shipped     | [#862](https://github.com/pskillen/codeplug-studio/issues/862) — geolocation, Maidenhead, Nominatim address search, and minimap pin drop |
-| SGP4 pass prediction (Web Worker)  | Shipped     | [#863](https://github.com/pskillen/codeplug-studio/issues/863) — `satellite.js`                                                          |
-| SatNOGS transmitters proxy + merge | Not started | [#864](https://github.com/pskillen/codeplug-studio/issues/864)                                                                           |
-| Tracking Dashboard + pass grid     | Shipped     | [#865](https://github.com/pskillen/codeplug-studio/issues/865)                                                                           |
-| 3D orbital globe                   | Not started | [#866](https://github.com/pskillen/codeplug-studio/issues/866)                                                                           |
-| 2D ground-track map                | Shipped     | [#867](https://github.com/pskillen/codeplug-studio/issues/867) — no 3D/2D toggle shipped (nothing to toggle to until #866 lands)         |
+| Area                               | Status      | Notes                                                                                                                                                                      |
+| ---------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Observer location settings         | Shipped     | [#862](https://github.com/pskillen/codeplug-studio/issues/862) — geolocation, Maidenhead, Nominatim address search, and minimap pin drop                                   |
+| SGP4 pass prediction (Web Worker)  | Shipped     | [#863](https://github.com/pskillen/codeplug-studio/issues/863) — `satellite.js`                                                                                            |
+| SatNOGS transmitters proxy + merge | Not started | [#864](https://github.com/pskillen/codeplug-studio/issues/864)                                                                                                             |
+| Tracking Dashboard + pass grid     | Shipped     | [#865](https://github.com/pskillen/codeplug-studio/issues/865); satellite filter + manual look-ahead window [#980](https://github.com/pskillen/codeplug-studio/issues/980) |
+| 3D orbital globe                   | Not started | [#866](https://github.com/pskillen/codeplug-studio/issues/866)                                                                                                             |
+| 2D ground-track map                | Shipped     | [#867](https://github.com/pskillen/codeplug-studio/issues/867) — no 3D/2D toggle shipped (nothing to toggle to until #866 lands)                                           |
 
 ---
 
@@ -35,6 +35,7 @@ Tier-1 hub for the **Tracking Dashboard** — client-side pass prediction (SGP4)
 - **Client-only** — Orbital math and visualization run in the browser (Web Workers for pass sweeps); no Studio backend.
 - **Depends on keps library** — Enabled satellites and TLEs come from [#848](https://github.com/pskillen/codeplug-studio/issues/848); this epic adds prediction and visualization only.
 - **Styleguide** — Follow Studio map/list chrome; design-doc “neon war room” visuals are illustrative, not a theme mandate.
+- **Pass grid filters** — client-only, applied to the already-computed pass list (no Worker re-run): a min-elevation filter and a satellite multi-select-with-search filter (`src/app/routes/tracking/SatelliteFilter.tsx`). The look-ahead window (default 72h) is a user-adjustable control on the dashboard, debounced 300ms before triggering a new Worker pass-prediction sweep.
 
 ---
 
