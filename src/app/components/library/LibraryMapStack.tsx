@@ -26,7 +26,7 @@ export default function LibraryMapStack({
   className,
 }: LibraryMapStackProps) {
   const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
-  const [mapVisible, setMapVisible] = useState(false);
+  const [mapVisible, setMapVisible] = useState(true);
   const showMap = !isMobile || !mobileMapToggle || mapVisible;
 
   if (layout === 'split' && !isMobile) {

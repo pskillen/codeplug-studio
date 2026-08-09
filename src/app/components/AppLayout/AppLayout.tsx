@@ -163,7 +163,10 @@ function AppLayoutShell() {
         mobile={compactChip}
         projects={projects}
         activeProjectId={activeProjectId}
-        onSwitchProject={switchProject}
+        onSwitchProject={(id) => {
+          switchProject(id);
+          navigate('/library/channels');
+        }}
         onNewProject={() => {
           setSwitcherOpen(false);
           navigate('/');

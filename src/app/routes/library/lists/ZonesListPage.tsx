@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
 import { IconMapPin, IconPlus } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import type { Zone } from '@core/models/library.ts';
@@ -23,6 +24,7 @@ import {
 import { filterRowsByName, useListNameQuery } from '../../../hooks/useListNameQuery.ts';
 import { createNameColumn } from '../../../lib/libraryListTable.tsx';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../../lib/breakpoints.ts';
 import { useOperatorPosition } from '../../../state/operatorPosition.tsx';
 import { persistence } from '../../../state/persistence.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
@@ -38,6 +40,7 @@ export default function ZonesListPage() {
     useListNameQuery('zones');
   const [savingOrder, setSavingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
+  const isMobileMap = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
 
   const orderedZones = useMemo(() => sortZonesByExportOrder(zones), [zones]);
   const filtered = useMemo(
@@ -175,7 +178,7 @@ export default function ZonesListPage() {
       </div>
       <MapPanel
         title="Zone map"
-        height={420}
+        height={isMobileMap ? 560 : 420}
         legend={
           mapSkipped.length > 0 ? (
             <p className={classes.mapSkipped}>

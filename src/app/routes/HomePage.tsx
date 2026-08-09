@@ -1,5 +1,6 @@
 import { IconRadio } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DesignSystemV2Provider,
   Button,
@@ -26,6 +27,7 @@ export default function HomePage() {
     renameProject,
     deleteProject,
   } = useProjects();
+  const navigate = useNavigate();
   const statsMap = useProjectStatsMap(projects);
   const importRef = useRef<HTMLDivElement>(null);
 
@@ -140,7 +142,10 @@ export default function HomePage() {
                     project={project}
                     isActive={project.projectId === activeProjectId}
                     statsLabel={statsMap[project.projectId] ?? null}
-                    onOpen={() => switchProject(project.projectId)}
+                    onOpen={() => {
+                      switchProject(project.projectId);
+                      navigate('/library/channels');
+                    }}
                     onRename={() => {
                       setRenameTarget({ id: project.projectId, name: project.name });
                       setRenameValue(project.name);

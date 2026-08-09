@@ -123,6 +123,8 @@ export default function QuickProjectSwitcher({
           size="auto"
           withCloseButton={false}
           padding={0}
+          withinPortal
+          portalProps={{ target: DSV2_SCOPE_SELECTOR }}
           styles={{
             content: { background: 'transparent', boxShadow: 'none' },
             body: { padding: 0 },
