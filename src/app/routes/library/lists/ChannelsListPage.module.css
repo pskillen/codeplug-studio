@@ -78,3 +78,37 @@
   font-size: var(--dsv2-font-body-sm);
   color: var(--dsv2-text-tertiary);
 }
+
+.groupModeControl {
+  margin-bottom: 14px;
+}
+
+.zoneGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.zoneGroupsEmpty {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+.zoneSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.zoneSectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dsv2-text-secondary);
+  margin: 0;
+}
+
+.zoneCardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}

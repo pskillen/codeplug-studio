@@ -17,6 +17,7 @@ import {
   DismissibleNotice,
   MapPanel,
   Pill,
+  SegmentedControl,
   type DataTableColumn,
   type DataTableSortState as V2Sort,
 } from '../../../components/v2/index.ts';
@@ -80,7 +81,15 @@ import {
   formatAprsAssignmentSummary,
 } from '../../../lib/aprsBindingHelpers.ts';
 import pageClasses from '../../../components/library/LibraryInventoryPage.module.css';
+import { groupChannelsByZone } from './groupChannelsByZone.ts';
 import classes from './ChannelsListPage.module.css';
+
+const CHANNEL_GROUP_MODE_OPTIONS = [
+  { value: 'list', label: 'List' },
+  { value: 'zone', label: 'Group by zone' },
+] as const;
+
+type ChannelGroupMode = (typeof CHANNEL_GROUP_MODE_OPTIONS)[number]['value'];
 
 function percentLabel(value: number | null): string {
   if (value == null) return '—';
@@ -111,6 +120,7 @@ export default function ChannelsListPage() {
   const isMobileTable = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
   const filtered = useFilteredChannels(channels, query, position, { skipSort: true });
   const [columnSortOverride, setColumnSortOverride] = usePersistedChannelColumnSort();
+  const [groupMode, setGroupMode] = useState<ChannelGroupMode>('list');
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [addFromOpen, setAddFromOpen] = useState(false);
@@ -350,6 +360,17 @@ export default function ChannelsListPage() {
     [optionalColumnDefs, visibleKeys],
   );
 
+  // Zone is already the section heading in grouped card sections — redundant as a field row there.
+  const zoneGroupFieldColumns = useMemo(
+    () => fieldColumns.filter((col) => col.key !== 'zones'),
+    [fieldColumns],
+  );
+
+  const zoneGroups = useMemo(
+    () => (groupMode === 'zone' ? groupChannelsByZone(filtered, zones) : null),
+    [groupMode, filtered, zones],
+  );
+
   const selectedChannels = useMemo(() => {
     const selectedSet = new Set(selectedKeys);
     return filtered.filter((ch) => selectedSet.has(ch.id));
@@ -389,6 +410,11 @@ export default function ChannelsListPage() {
   const distanceSortPending = query.sortMode === 'distance' && !position;
   const mapChannels = filtered;
   const { skipped } = applyFilters(filtered, { requireUseLocation: true, skipZero: true });
+
+  const channelsEmptyMessage = 'No channels in this project yet.';
+  const channelsFilteredEmptyMessage = query.nameFilter.trim()
+    ? `No channels match “${query.nameFilter.trim()}”.`
+    : 'No channels match your filters.';
 
   const listActions = (
     <div className={pageClasses.toolbarActions}>
@@ -434,53 +460,76 @@ export default function ChannelsListPage() {
 
       <ChannelListFilters />
 
-      <DataTable
-        columns={columns}
-        rows={filtered}
-        getRowId={(ch) => ch.id}
-        totalRowCount={channels.length}
-        visibleKeys={visibleKeys}
-        onVisibleKeysChange={setVisibleKeys}
-        search={{
-          value: query.nameFilterInput,
-          onChange: query.setNameFilter,
-          placeholder: 'Filter name or callsign…',
-          pending: query.nameFilterPending,
-        }}
-        sort={v1SortToV2(effectiveV1Sort)}
-        onSortChange={handleSortChange}
-        selectable
-        selectedKeys={selectedKeys}
-        onSelectionChange={setSelectedKeys}
-        bulkActions={
-          <>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={selectedKeys.length === 0}
-              onClick={handleBulkEdit}
-            >
-              Bulk edit
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={selectedKeys.length === 0}
-              onClick={handleCreateZoneFromSelected}
-            >
-              New zone from selection
-            </Button>
-          </>
-        }
-        emptyMessage="No channels in this project yet."
-        filteredEmptyMessage={
-          query.nameFilter.trim()
-            ? `No channels match “${query.nameFilter.trim()}”.`
-            : 'No channels match your filters.'
-        }
-        onRowActivate={(ch) => navigate(`/library/channels/${ch.id}`)}
-        mobileCard={(ch) => <ChannelCard channel={ch} fieldColumns={fieldColumns} />}
+      <SegmentedControl
+        value={groupMode}
+        onChange={setGroupMode}
+        options={CHANNEL_GROUP_MODE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+        className={classes.groupModeControl}
       />
+
+      {groupMode === 'zone' ? (
+        <div className={classes.zoneGroups}>
+          {zoneGroups!.length === 0 ? (
+            <p className={classes.zoneGroupsEmpty}>
+              {channels.length === 0 ? channelsEmptyMessage : channelsFilteredEmptyMessage}
+            </p>
+          ) : null}
+          {zoneGroups!.map((group) => (
+            <section key={group.key} className={classes.zoneSection}>
+              <h2 className={classes.zoneSectionTitle}>{group.zone?.name ?? 'No Zone'}</h2>
+              <div className={classes.zoneCardGrid}>
+                {group.channels.map((ch) => (
+                  <ChannelCard key={ch.id} channel={ch} fieldColumns={zoneGroupFieldColumns} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={filtered}
+          getRowId={(ch) => ch.id}
+          totalRowCount={channels.length}
+          visibleKeys={visibleKeys}
+          onVisibleKeysChange={setVisibleKeys}
+          search={{
+            value: query.nameFilterInput,
+            onChange: query.setNameFilter,
+            placeholder: 'Filter name or callsign…',
+            pending: query.nameFilterPending,
+          }}
+          sort={v1SortToV2(effectiveV1Sort)}
+          onSortChange={handleSortChange}
+          selectable
+          selectedKeys={selectedKeys}
+          onSelectionChange={setSelectedKeys}
+          bulkActions={
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={selectedKeys.length === 0}
+                onClick={handleBulkEdit}
+              >
+                Bulk edit
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={selectedKeys.length === 0}
+                onClick={handleCreateZoneFromSelected}
+              >
+                New zone from selection
+              </Button>
+            </>
+          }
+          emptyMessage={channelsEmptyMessage}
+          filteredEmptyMessage={channelsFilteredEmptyMessage}
+          onRowActivate={(ch) => navigate(`/library/channels/${ch.id}`)}
+          mobileCard={(ch) => <ChannelCard channel={ch} fieldColumns={fieldColumns} />}
+        />
+      )}
 
       <ChannelBulkEditModal
         opened={bulkEditOpen}
