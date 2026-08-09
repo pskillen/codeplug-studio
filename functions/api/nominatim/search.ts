@@ -4,7 +4,10 @@ import {
   rejectResponse,
   resolveAllowedRequestOrigin,
 } from '../../lib/codeplugOrigin.ts';
-import { buildNominatimSearchUpstreamUrl, NOMINATIM_USER_AGENT } from '../../lib/nominatimUpstream.ts';
+import {
+  buildNominatimSearchUpstreamUrl,
+  NOMINATIM_USER_AGENT,
+} from '../../lib/nominatimUpstream.ts';
 
 /**
  * Same-origin CORS bridge for OpenStreetMap Nominatim address search. Upstream is public

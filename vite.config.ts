@@ -3,6 +3,7 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { REPEATERBOOK_USER_AGENT } from './src/integrations/repeaters/repeaterbook/constants';
+import { NOMINATIM_USER_AGENT } from './src/integrations/geocoding/nominatimConstants';
 
 const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
 
@@ -71,6 +72,16 @@ export default defineConfig(({ mode }) => {
           target: 'https://www.amsat.org',
           changeOrigin: true,
           rewrite: () => '/tle/current/nasabare.txt',
+        },
+        '/api/nominatim': {
+          target: 'https://nominatim.openstreetmap.org',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/nominatim/, ''),
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.setHeader('User-Agent', NOMINATIM_USER_AGENT);
+            });
+          },
         },
       },
     },

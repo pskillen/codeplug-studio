@@ -23,7 +23,10 @@ describe('onRequestOptions', () => {
 
   it('rejects an unrecognised origin', async () => {
     const response = await onRequestOptions({
-      request: requestWithOrigin('https://codeplug.mm9pdy.net/api/nominatim/search', 'https://evil.com'),
+      request: requestWithOrigin(
+        'https://codeplug.mm9pdy.net/api/nominatim/search',
+        'https://evil.com',
+      ),
     });
     expect(response.status).toBe(403);
   });
@@ -73,10 +76,7 @@ describe('onRequestGet', () => {
   });
 
   it('returns 502 when the upstream request throws', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockRejectedValue(new Error('network down')),
-    );
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')));
 
     const response = await onRequestGet({
       request: requestWithOrigin('https://codeplug.mm9pdy.net/api/nominatim/search?q=Glasgow'),
