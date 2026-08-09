@@ -19,12 +19,18 @@ export interface UseTrackingPassesResult {
   hasEnabledSatellites: boolean;
 }
 
-const WINDOW_HOURS = 72;
+export const DEFAULT_WINDOW_HOURS = 72;
 const STEP_MINUTES = 1;
 const DEBOUNCE_MS = 300;
 
-/** Upcoming passes over the next ~72h for every enabled satellite in the project library. */
-export function useTrackingPasses(): UseTrackingPassesResult {
+/**
+ * Upcoming passes for every enabled satellite in the project library, over a
+ * caller-supplied look-ahead window (hours from now). Defaults to
+ * `DEFAULT_WINDOW_HOURS` (72h) when omitted.
+ */
+export function useTrackingPasses(
+  windowHours: number = DEFAULT_WINDOW_HOURS,
+): UseTrackingPassesResult {
   const { library } = useLibrary();
   const { settings } = useTrackingSettings();
   const [passes, setPasses] = useState<SatellitePassRow[]>([]);
@@ -53,7 +59,7 @@ export function useTrackingPasses(): UseTrackingPassesResult {
         setLoading(true);
         setError(null);
         const fromAt = new Date().toISOString();
-        const toAt = new Date(Date.now() + WINDOW_HOURS * 60 * 60 * 1000).toISOString();
+        const toAt = new Date(Date.now() + windowHours * 60 * 60 * 1000).toISOString();
         const observer = { latDeg: observerLocation.lat, lonDeg: observerLocation.lon };
 
         try {
@@ -90,7 +96,7 @@ export function useTrackingPasses(): UseTrackingPassesResult {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [enabledSatellites, observerLocation]);
+  }, [enabledSatellites, observerLocation, windowHours]);
 
   return {
     passes,

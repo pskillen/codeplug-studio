@@ -1,16 +1,28 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import LibraryInventoryHeader from '../../components/library/LibraryInventoryHeader.tsx';
-import { DesignSystemV2Provider } from '../../components/v2/index.ts';
+import { DesignSystemV2Provider, TextInput } from '../../components/v2/index.ts';
 import SatelliteTrackMap, {
   type SelectedPass,
 } from '../../components/SatelliteTrackMap/SatelliteTrackMap.tsx';
 import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import ObserverLocationSettings from './ObserverLocationSettings.tsx';
 import PassGrid from './PassGrid.tsx';
-import { useTrackingPasses, type SatellitePassRow } from './useTrackingPasses.ts';
+import {
+  DEFAULT_WINDOW_HOURS,
+  useTrackingPasses,
+  type SatellitePassRow,
+} from './useTrackingPasses.ts';
 import classes from './TrackingDashboardPage.module.css';
 import libraryPageClasses from '../../components/library/LibraryInventoryPage.module.css';
+
+const MIN_WINDOW_HOURS = 1;
+const MAX_WINDOW_HOURS = 168;
+
+function clampWindowHours(value: number): number {
+  if (Number.isNaN(value)) return DEFAULT_WINDOW_HOURS;
+  return Math.min(MAX_WINDOW_HOURS, Math.max(MIN_WINDOW_HOURS, value));
+}
 
 function toSelectedPass(row: SatellitePassRow): SelectedPass {
   return {
@@ -23,7 +35,9 @@ function toSelectedPass(row: SatellitePassRow): SelectedPass {
 }
 
 export default function TrackingDashboardPage() {
-  const { passes, loading, error, hasObserver, hasEnabledSatellites } = useTrackingPasses();
+  const [windowHours, setWindowHours] = useState(DEFAULT_WINDOW_HOURS);
+  const { passes, loading, error, hasObserver, hasEnabledSatellites } =
+    useTrackingPasses(windowHours);
   const { settings } = useTrackingSettings();
   const [selectedPass, setSelectedPass] = useState<SelectedPass | null>(null);
 
@@ -32,10 +46,21 @@ export default function TrackingDashboardPage() {
       <div className={libraryPageClasses.page}>
         <LibraryInventoryHeader
           title="Tracking Dashboard"
-          subtitle="Upcoming satellite passes over the next 72 hours."
+          subtitle={`Upcoming satellite passes over the next ${windowHours} hours.`}
         />
 
         <ObserverLocationSettings />
+
+        <div className={classes.windowControl}>
+          <TextInput
+            label="Look ahead (hours)"
+            type="number"
+            min={MIN_WINDOW_HOURS}
+            max={MAX_WINDOW_HOURS}
+            value={windowHours}
+            onChange={(event) => setWindowHours(clampWindowHours(Number(event.target.value)))}
+          />
+        </div>
 
         <div className={classes.map}>
           <SatelliteTrackMap observer={settings?.location ?? null} selectedPass={selectedPass} />
@@ -55,6 +80,7 @@ export default function TrackingDashboardPage() {
             passes={passes}
             loading={loading}
             error={error}
+            windowLabel={`${windowHours} hours`}
             onSelectPass={(row) => setSelectedPass(toSelectedPass(row))}
           />
         )}

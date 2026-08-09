@@ -33,7 +33,7 @@ describe('PassGrid', () => {
   it('shows every pass with no filters applied', () => {
     render(
       <DesignSystemV2Provider>
-        <PassGrid passes={PASSES} loading={false} error={null} />
+        <PassGrid passes={PASSES} loading={false} error={null} windowLabel="72 hours" />
       </DesignSystemV2Provider>,
     );
 
@@ -44,7 +44,7 @@ describe('PassGrid', () => {
   it('narrows rows to the checked satellites', () => {
     render(
       <DesignSystemV2Provider>
-        <PassGrid passes={PASSES} loading={false} error={null} />
+        <PassGrid passes={PASSES} loading={false} error={null} windowLabel="72 hours" />
       </DesignSystemV2Provider>,
     );
 
@@ -57,7 +57,7 @@ describe('PassGrid', () => {
   it('combines the satellite filter with the min-elevation filter', () => {
     render(
       <DesignSystemV2Provider>
-        <PassGrid passes={PASSES} loading={false} error={null} />
+        <PassGrid passes={PASSES} loading={false} error={null} windowLabel="72 hours" />
       </DesignSystemV2Provider>,
     );
 
@@ -65,5 +65,17 @@ describe('PassGrid', () => {
 
     expect(screen.getByRole('cell', { name: 'ISS' })).toBeInTheDocument();
     expect(screen.queryByRole('cell', { name: 'AO-91' })).not.toBeInTheDocument();
+  });
+
+  it('uses the dynamic window label in the empty-state message', () => {
+    render(
+      <DesignSystemV2Provider>
+        <PassGrid passes={[]} loading={false} error={null} windowLabel="6 hours" />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(
+      screen.getByText('No upcoming passes in the next 6 hours for your enabled satellites.'),
+    ).toBeInTheDocument();
   });
 });

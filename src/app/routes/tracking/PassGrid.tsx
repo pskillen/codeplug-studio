@@ -30,9 +30,17 @@ export interface PassGridProps {
   loading: boolean;
   error: string | null;
   onSelectPass?: (row: SatellitePassRow) => void;
+  /** Look-ahead window used only for the empty-state copy, e.g. "72 hours". */
+  windowLabel: string;
 }
 
-export default function PassGrid({ passes, loading, error, onSelectPass }: PassGridProps) {
+export default function PassGrid({
+  passes,
+  loading,
+  error,
+  onSelectPass,
+  windowLabel,
+}: PassGridProps) {
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'aos', direction: 'asc' });
   const [minElevation, setMinElevation] = useState('');
   const [selectedSatelliteIds, setSelectedSatelliteIds] = useState<Set<string>>(new Set());
@@ -130,7 +138,7 @@ export default function PassGrid({ passes, loading, error, onSelectPass }: PassG
         emptyMessage={
           loading
             ? 'Computing passes…'
-            : 'No upcoming passes in the next 72 hours for your enabled satellites.'
+            : `No upcoming passes in the next ${windowLabel} for your enabled satellites.`
         }
         filteredEmptyMessage={
           hasActiveFilter ? 'No passes match the current filters.' : 'No passes to show.'
