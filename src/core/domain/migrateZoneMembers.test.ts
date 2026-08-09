@@ -43,6 +43,7 @@ describe('migrateZoneMemberEntries', () => {
       aprsConfiguration: null,
       radioBuilds: [],
       egressPaths: [],
+      trackingSettings: null,
     } satisfies ProjectAggregate;
 
     const migrated = migrateZoneMemberEntries(aggregate);

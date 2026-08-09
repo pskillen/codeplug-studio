@@ -2,6 +2,7 @@ import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { Satellite } from '@core/models/satellite.ts';
+import type { TrackingSettings } from '@core/models/trackingSettings.ts';
 import type {
   AnalogContact,
   Channel,
@@ -35,6 +36,8 @@ export interface StudioProjectDocument {
   library: Library;
   radioBuilds: RadioBuild[];
   egressPaths: EgressPath[];
+  /** Tracking-dashboard observer location — not vendor-neutral library RF content. */
+  trackingSettings: TrackingSettings | null;
 }
 
 /**
@@ -58,6 +61,8 @@ export interface ProjectAggregate {
   aprsConfiguration: AprsConfiguration | null;
   radioBuilds: RadioBuild[];
   egressPaths: EgressPath[];
+  /** Tracking-dashboard observer location — not vendor-neutral library RF content. */
+  trackingSettings: TrackingSettings | null;
 }
 
 export function emptyLibrary(): Library {
@@ -100,6 +105,7 @@ export function documentFromAggregate(aggregate: ProjectAggregate): StudioProjec
     },
     radioBuilds: aggregate.radioBuilds,
     egressPaths: aggregate.egressPaths,
+    trackingSettings: aggregate.trackingSettings,
   };
 }
 
@@ -125,5 +131,6 @@ export function aggregateFromDocument(doc: StudioProjectDocument): ProjectAggreg
     aprsConfiguration: doc.library.aprsConfiguration ?? null,
     radioBuilds: doc.radioBuilds,
     egressPaths: doc.egressPaths,
+    trackingSettings: doc.trackingSettings ?? null,
   };
 }

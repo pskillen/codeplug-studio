@@ -17,6 +17,7 @@ export function aggregateToSeed(aggregate: ProjectAggregate): ProjectSeed {
     scanLists: aggregate.scanLists,
     aprsConfigurations: aggregate.aprsConfiguration ? [aggregate.aprsConfiguration] : [],
     satellites: aggregate.satellites,
+    trackingSettings: aggregate.trackingSettings ? [aggregate.trackingSettings] : [],
     radioBuilds: aggregate.radioBuilds,
     egressPaths: aggregate.egressPaths,
   };
@@ -38,6 +39,7 @@ export function seedToAggregate(seed: ProjectSeed): ProjectAggregate {
     scanLists: seed.scanLists ?? [],
     aprsConfiguration: seed.aprsConfigurations?.[0] ?? null,
     satellites: seed.satellites ?? [],
+    trackingSettings: seed.trackingSettings?.[0] ?? null,
     radioBuilds: seed.radioBuilds ?? [],
     egressPaths: seed.egressPaths ?? [],
   });
@@ -59,6 +61,8 @@ export function reassignSeedProjectId(seed: ProjectSeed, projectId: string = new
     rxGroupLists: withProject(seed.rxGroupLists),
     scanLists: withProject(seed.scanLists),
     aprsConfigurations: withProject(seed.aprsConfigurations),
+    satellites: withProject(seed.satellites),
+    trackingSettings: withProject(seed.trackingSettings),
     radioBuilds: withProject(seed.radioBuilds),
     egressPaths: withProject(seed.egressPaths),
   };
@@ -79,6 +83,8 @@ export function normaliseSeedForProject(seed: ProjectSeed, projectId: string): P
     rxGroupLists: withProject(seed.rxGroupLists),
     scanLists: withProject(seed.scanLists),
     aprsConfigurations: withProject(seed.aprsConfigurations),
+    satellites: withProject(seed.satellites),
+    trackingSettings: withProject(seed.trackingSettings),
     radioBuilds: withProject(seed.radioBuilds),
     egressPaths: withProject(seed.egressPaths),
   };

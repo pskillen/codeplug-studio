@@ -2,6 +2,7 @@ import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { Satellite } from '@core/models/satellite.ts';
+import type { TrackingSettings } from '@core/models/trackingSettings.ts';
 import type {
   AnalogContact,
   Channel,
@@ -56,6 +57,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   private scanLists: RowMap<ScanList> = new Map();
   private aprsConfigurations: RowMap<AprsConfiguration> = new Map();
   private satellites: RowMap<Satellite> = new Map();
+  private trackingSettings: RowMap<TrackingSettings> = new Map();
   private radioBuilds: RowMap<RadioBuild> = new Map();
   private egressPaths: RowMap<EgressPath> = new Map();
   private listeners = new Set<PersistenceListener>();
@@ -272,6 +274,27 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     return this.listRows(this.satellites, projectId);
   }
 
+  async getTrackingSettings(projectId: string, id: string): Promise<TrackingSettings | null> {
+    return this.trackingSettings.get(rowKey(projectId, id)) ?? null;
+  }
+
+  async putTrackingSettings(
+    row: TrackingSettings,
+    expectedRevision: number | null,
+  ): Promise<PutResult> {
+    const existing = await this.listTrackingSettings(row.projectId);
+    for (const settings of existing) {
+      if (settings.id !== row.id) {
+        await this.deleteEntity(row.projectId, 'trackingSettings', settings.id);
+      }
+    }
+    return this.putRow('trackingSettings', this.trackingSettings, row, expectedRevision);
+  }
+
+  async listTrackingSettings(projectId: string): Promise<TrackingSettings[]> {
+    return this.listRows(this.trackingSettings, projectId);
+  }
+
   async getRadioBuild(projectId: string, id: string): Promise<RadioBuild | null> {
     const row = this.radioBuilds.get(rowKey(projectId, id));
     return row ? readRadioBuildRow(row) : null;
@@ -328,6 +351,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       scanLists,
       aprsConfigurations,
       satellites,
+      trackingSettings,
       radioBuilds,
       egressPaths,
     ] = await Promise.all([
@@ -340,6 +364,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       this.listScanLists(projectId),
       this.listAprsConfigurations(projectId),
       this.listSatellites(projectId),
+      this.listTrackingSettings(projectId),
       this.listRadioBuilds(projectId),
       this.listEgressPaths(projectId),
     ]);
@@ -354,6 +379,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       scanLists,
       aprsConfigurations,
       satellites,
+      trackingSettings,
       radioBuilds,
       egressPaths,
     };
@@ -422,6 +448,9 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     for (const row of seed.satellites ?? []) {
       this.satellites.set(rowKey(row.projectId, row.id), { ...row });
     }
+    for (const row of seed.trackingSettings ?? []) {
+      this.trackingSettings.set(rowKey(row.projectId, row.id), { ...row });
+    }
     for (const row of seed.radioBuilds ?? []) {
       this.radioBuilds.set(rowKey(row.projectId, row.id), { ...row });
     }
@@ -442,6 +471,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       this.scanLists,
       this.aprsConfigurations,
       this.satellites,
+      this.trackingSettings,
       this.radioBuilds,
       this.egressPaths,
     ]) {
@@ -511,6 +541,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     | ScanList
     | AprsConfiguration
     | Satellite
+    | TrackingSettings
     | RadioBuild
     | EgressPath
   > | null {
@@ -533,6 +564,8 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
         return this.aprsConfigurations;
       case 'satellite':
         return this.satellites;
+      case 'trackingSettings':
+        return this.trackingSettings;
       case 'radioBuild':
         return this.radioBuilds;
       case 'egressPath':

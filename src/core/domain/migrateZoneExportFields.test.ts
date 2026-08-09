@@ -128,6 +128,7 @@ describe('migrateZoneExportFields', () => {
       aprsConfiguration: null,
       radioBuilds: [dm32Build()],
       egressPaths: [],
+      trackingSettings: null,
     });
 
     expect(result.zones[0]).not.toHaveProperty('exportScanList');

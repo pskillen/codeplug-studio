@@ -7,6 +7,7 @@ import {
   newRadioBuildWithEgresses,
   newSatellite,
   newTalkGroup,
+  newTrackingSettings,
 } from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from './inMemory.ts';
 import type { PersistenceChange } from './types.ts';
@@ -337,5 +338,21 @@ describe('InMemoryProjectPersistence', () => {
       name: 'ISS (ZARYA) refreshed',
       enabled: false,
     });
+  });
+
+  it('putTrackingSettings replaces the singleton row for the project', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+
+    const first = newTrackingSettings(meta.projectId, { maidenheadLocator: 'IO85' });
+    const second = newTrackingSettings(meta.projectId, { maidenheadLocator: 'IO86' });
+    await store.putTrackingSettings(first, null);
+    await store.putTrackingSettings(second, null);
+
+    const rows = await store.listTrackingSettings(meta.projectId);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.maidenheadLocator).toBe('IO86');
+    expect(await store.getTrackingSettings(meta.projectId, first.id)).toBeNull();
   });
 });

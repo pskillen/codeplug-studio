@@ -1,0 +1,15 @@
+.current {
+  margin: 0 0 12px;
+}
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.error {
+  color: var(--dsv2-warning);
+  font-size: 0.85em;
+}

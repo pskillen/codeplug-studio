@@ -13,6 +13,7 @@ import type {
 } from '@core/models/library.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { Satellite } from '@core/models/satellite.ts';
+import type { TrackingSettings } from '@core/models/trackingSettings.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { initialRevision } from '@core/models/revision.ts';
 
@@ -30,6 +31,7 @@ export const FIXTURE_EGRESS_PATH_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 export const FIXTURE_RADIO_TARGET_ID = 'baofeng-dm1701';
 export const FIXTURE_APRS_CONFIG_ID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 export const FIXTURE_SATELLITE_ID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+export const FIXTURE_TRACKING_SETTINGS_ID = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
 export const FIXTURE_CHILD_ZONE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 export const FIXTURE_PARENT_ZONE_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
@@ -72,6 +74,7 @@ export function minimalProjectAggregate(): ProjectAggregate {
     aprsConfiguration: null,
     radioBuilds: [],
     egressPaths: [],
+    trackingSettings: null,
   };
 }
 
@@ -211,6 +214,13 @@ export function fullLibraryAggregate(): ProjectAggregate {
     revolutionNumber: 43000,
   };
 
+  const trackingSettings: TrackingSettings = {
+    ...rowMeta(projectId, FIXTURE_TRACKING_SETTINGS_ID),
+    positionSource: 'maidenhead',
+    location: { lat: 55.9533, lon: -3.1883 },
+    maidenheadLocator: 'IO85vs',
+  };
+
   const zone: Zone = {
     ...rowMeta(projectId, FIXTURE_ZONE_ID),
     name: 'Edinburgh',
@@ -242,6 +252,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
     aprsConfiguration,
     radioBuilds: [],
     egressPaths: [],
+    trackingSettings,
   };
 }
 

@@ -22,6 +22,10 @@ import type { EgressKind, EgressPath } from '@core/models/egressPath.ts';
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { Satellite, SatelliteSource } from '@core/models/satellite.ts';
 import type {
+  ObserverPositionSource,
+  TrackingSettings,
+} from '@core/models/trackingSettings.ts';
+import type {
   AprsPositionSource,
   AprsPttMode,
   AprsReportType,
@@ -757,6 +761,41 @@ function parseSatellite(raw: unknown, index: number): Satellite {
     bstar: expectNumber(record.bstar, `${label}.bstar`),
     elementSetNumber: expectNumber(record.elementSetNumber, `${label}.elementSetNumber`),
     revolutionNumber: expectNumber(record.revolutionNumber, `${label}.revolutionNumber`),
+  };
+}
+
+function parseObserverPositionSource(raw: unknown, label: string): ObserverPositionSource {
+  const value = expectString(raw, label);
+  if (
+    value !== 'geolocation' &&
+    value !== 'maidenhead' &&
+    value !== 'address' &&
+    value !== 'map'
+  ) {
+    throw new NativeYamlImportError(`${label} is invalid: ${value}`);
+  }
+  return value;
+}
+
+function parseTrackingSettings(raw: unknown, label: string): TrackingSettings {
+  const record = expectRecord(raw, label);
+  const locationRaw = record.location;
+  let location: TrackingSettings['location'] = null;
+  if (locationRaw !== undefined && locationRaw !== null) {
+    const loc = expectRecord(locationRaw, `${label}.location`);
+    location = {
+      lat: expectNumber(loc.lat, `${label}.location.lat`),
+      lon: expectNumber(loc.lon, `${label}.location.lon`),
+    };
+  }
+  return {
+    ...parsePersistableRow(record, label),
+    positionSource: parseObserverPositionSource(record.positionSource, `${label}.positionSource`),
+    location,
+    maidenheadLocator: expectNullableString(
+      record.maidenheadLocator,
+      `${label}.maidenheadLocator`,
+    ),
   };
 }
 
@@ -1552,6 +1591,7 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 23 &&
     studioSchemaVersion !== 22 &&
     studioSchemaVersion !== 21 &&
     studioSchemaVersion !== 20 &&
@@ -1574,12 +1614,16 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 
   const project = parseProjectMeta(document.project);
   const library = parseLibrary(document.library, studioSchemaVersion);
+  const trackingSettings =
+    document.trackingSettings === undefined || document.trackingSettings === null
+      ? null
+      : parseTrackingSettings(document.trackingSettings, 'trackingSettings');
 
   const warnings: string[] = [];
   let radioBuilds: RadioBuild[];
@@ -1614,6 +1658,7 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
     ...(library.aprsConfiguration ? [library.aprsConfiguration] : []),
     ...radioBuilds,
     ...egressPaths,
+    ...(trackingSettings ? [trackingSettings] : []),
   ];
 
   assertProjectId(allRows, project.id, 'row');
@@ -1630,6 +1675,9 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
   }
   assertUniqueIds(radioBuilds, 'radioBuilds');
   assertUniqueIds(egressPaths, 'egressPaths');
+  if (trackingSettings) {
+    assertUniqueIds([trackingSettings], 'trackingSettings');
+  }
 
   validateForeignKeys(library, radioBuilds, egressPaths);
 
@@ -1653,6 +1701,7 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
     aprsConfiguration: library.aprsConfiguration,
     radioBuilds,
     egressPaths,
+    trackingSettings,
   });
 
   return { aggregate, warnings };

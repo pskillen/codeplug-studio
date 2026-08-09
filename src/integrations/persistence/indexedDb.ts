@@ -3,6 +3,7 @@ import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { Satellite } from '@core/models/satellite.ts';
+import type { TrackingSettings } from '@core/models/trackingSettings.ts';
 import type {
   AnalogContact,
   Channel,
@@ -345,6 +346,29 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     return this.listRows<Satellite>('satellite', projectId);
   }
 
+  async getTrackingSettings(projectId: string, id: string): Promise<TrackingSettings | null> {
+    return this.getRow<TrackingSettings>('trackingSettings', projectId, id);
+  }
+  async putTrackingSettings(
+    row: TrackingSettings,
+    expectedRevision: number | null,
+  ): Promise<PutResult> {
+    const existing = await this.listTrackingSettings(row.projectId);
+    for (const settings of existing) {
+      if (settings.id !== row.id) {
+        await this.deleteEntity(row.projectId, 'trackingSettings', settings.id);
+      }
+    }
+    return this.putRow('trackingSettings', row, expectedRevision);
+  }
+  async listTrackingSettings(projectId: string): Promise<TrackingSettings[]> {
+    const db = await this.db();
+    const storeName = STORES.trackingSettings;
+    const tx = db.transaction(storeName, 'readonly');
+    const index = tx.objectStore(storeName).index('byProject');
+    return promisifyRequest<TrackingSettings[]>(index.getAll(projectId));
+  }
+
   async getRadioBuild(projectId: string, id: string): Promise<RadioBuild | null> {
     const row = await this.getRow<RadioBuild>('radioBuild', projectId, id);
     return row ? readRadioBuildRow(row) : null;
@@ -411,6 +435,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       scanLists,
       aprsConfigurations,
       satellites,
+      trackingSettings,
       radioBuilds,
       egressPaths,
     ] = await Promise.all([
@@ -423,6 +448,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       this.listScanLists(projectId),
       this.listAprsConfigurations(projectId),
       this.listSatellites(projectId),
+      this.listTrackingSettings(projectId),
       this.listRadioBuilds(projectId),
       this.listEgressPaths(projectId),
     ]);
@@ -437,6 +463,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       scanLists,
       aprsConfigurations,
       satellites,
+      trackingSettings,
       radioBuilds,
       egressPaths,
     };
@@ -456,6 +483,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'scanList', rows: seed.scanLists ?? [] },
       { kind: 'aprsConfiguration', rows: seed.aprsConfigurations ?? [] },
       { kind: 'satellite', rows: seed.satellites ?? [] },
+      { kind: 'trackingSettings', rows: seed.trackingSettings ?? [] },
       { kind: 'radioBuild', rows: seed.radioBuilds ?? [] },
       { kind: 'egressPath', rows: seed.egressPaths ?? [] },
     ];
@@ -514,6 +542,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'scanList', rows: seed.scanLists ?? [] },
       { kind: 'aprsConfiguration', rows: seed.aprsConfigurations ?? [] },
       { kind: 'satellite', rows: seed.satellites ?? [] },
+      { kind: 'trackingSettings', rows: seed.trackingSettings ?? [] },
       { kind: 'radioBuild', rows: seed.radioBuilds ?? [] },
       { kind: 'egressPath', rows: seed.egressPaths ?? [] },
     ];

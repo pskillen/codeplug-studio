@@ -61,6 +61,7 @@ describe('migrateBuildScanListsToLibrary', () => {
         },
       ],
       egressPaths: [],
+      trackingSettings: null,
     });
 
     expect(aggregate.scanLists).toHaveLength(1);

@@ -177,5 +177,6 @@ export function migrateAprsSingletonAggregate(aggregate: ProjectAggregate): Proj
     zoneDefaults: library.zoneDefaults,
     radioBuilds: migrateAprsSingletonRadioBuilds(aggregate.radioBuilds as LegacyRadioBuild[]),
     egressPaths: aggregate.egressPaths,
+    trackingSettings: aggregate.trackingSettings,
   };
 }

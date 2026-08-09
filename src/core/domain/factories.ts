@@ -2,6 +2,7 @@ import { newId } from '../models/ids.ts';
 import type { BuildEntityOverride, EgressPath, RadioBuild } from '../models/index.ts';
 import type { ProjectMeta } from '../models/project.ts';
 import type { Satellite } from '../models/satellite.ts';
+import type { TrackingSettings } from '../models/trackingSettings.ts';
 import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '../models/channelBehaviourDefaults.ts';
 import { DEFAULT_ZONE_BEHAVIOUR_DEFAULTS } from '../models/zoneBehaviourDefaults.ts';
 import type {
@@ -359,6 +360,23 @@ export function newSatellite(
     bstar: 0.00030589,
     elementSetNumber: 999,
     revolutionNumber: 43000,
+    ...overrides,
+  };
+}
+
+export function newTrackingSettings(
+  projectId: string,
+  overrides: Partial<TrackingSettings> = {},
+): TrackingSettings {
+  const now = isoNow();
+  return {
+    id: newId(),
+    projectId,
+    revision: initialRevision(),
+    updatedAt: now,
+    positionSource: 'maidenhead',
+    location: null,
+    maidenheadLocator: null,
     ...overrides,
   };
 }

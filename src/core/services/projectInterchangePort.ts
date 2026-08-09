@@ -11,6 +11,7 @@ import type {
 } from '@core/models/library.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { Satellite } from '@core/models/satellite.ts';
+import type { TrackingSettings } from '@core/models/trackingSettings.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 
 export type PutResult =
@@ -28,6 +29,7 @@ export interface ProjectSeed {
   scanLists?: ScanList[];
   aprsConfigurations?: AprsConfiguration[];
   satellites?: Satellite[];
+  trackingSettings?: TrackingSettings[];
   radioBuilds?: RadioBuild[];
   egressPaths?: EgressPath[];
 }

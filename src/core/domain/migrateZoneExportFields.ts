@@ -183,6 +183,7 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
         zoneDefaults: migratedLibrary.zoneDefaults,
         radioBuilds,
         egressPaths: withMembers.egressPaths,
+        trackingSettings: withMembers.trackingSettings,
       }),
     ),
   );
