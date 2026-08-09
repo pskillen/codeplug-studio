@@ -6,8 +6,13 @@
 
 .filters {
   display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 12px;
-  max-width: 200px;
+}
+
+.filters > * {
+  max-width: 280px;
 }
 
 .dateTimeCell {

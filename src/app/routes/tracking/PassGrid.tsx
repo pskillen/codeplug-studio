@@ -5,6 +5,7 @@ import {
   type DataTableColumn,
   type DataTableSortState,
 } from '../../components/v2/index.ts';
+import SatelliteFilter from './SatelliteFilter.tsx';
 import type { SatellitePassRow } from './useTrackingPasses.ts';
 import classes from './PassGrid.module.css';
 
@@ -34,6 +35,7 @@ export interface PassGridProps {
 export default function PassGrid({ passes, loading, error, onSelectPass }: PassGridProps) {
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'aos', direction: 'asc' });
   const [minElevation, setMinElevation] = useState('');
+  const [selectedSatelliteIds, setSelectedSatelliteIds] = useState<Set<string>>(new Set());
 
   const columns = useMemo((): DataTableColumn<SatellitePassRow>[] => {
     return [
@@ -75,11 +77,30 @@ export default function PassGrid({ passes, loading, error, onSelectPass }: PassG
     ];
   }, []);
 
+  const satelliteOptions = useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const pass of passes) {
+      if (!byId.has(pass.satelliteId)) byId.set(pass.satelliteId, pass.satelliteName);
+    }
+    return Array.from(byId, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [passes]);
+
   const minElevationValue = Number.parseFloat(minElevation);
   const filtered = useMemo(() => {
-    if (Number.isNaN(minElevationValue)) return passes;
-    return passes.filter((pass) => pass.maxElevationDeg >= minElevationValue);
-  }, [passes, minElevationValue]);
+    return passes.filter((pass) => {
+      if (!Number.isNaN(minElevationValue) && pass.maxElevationDeg < minElevationValue) {
+        return false;
+      }
+      if (selectedSatelliteIds.size > 0 && !selectedSatelliteIds.has(pass.satelliteId)) {
+        return false;
+      }
+      return true;
+    });
+  }, [passes, minElevationValue, selectedSatelliteIds]);
+
+  const hasActiveFilter = !Number.isNaN(minElevationValue) || selectedSatelliteIds.size > 0;
 
   return (
     <div className={classes.wrapper}>
@@ -90,6 +111,11 @@ export default function PassGrid({ passes, loading, error, onSelectPass }: PassG
           placeholder="0"
           value={minElevation}
           onChange={(event) => setMinElevation(event.target.value)}
+        />
+        <SatelliteFilter
+          options={satelliteOptions}
+          selectedIds={selectedSatelliteIds}
+          onChange={setSelectedSatelliteIds}
         />
       </div>
       {error ? <p className={classes.error}>{error}</p> : null}
@@ -106,7 +132,9 @@ export default function PassGrid({ passes, loading, error, onSelectPass }: PassG
             ? 'Computing passes…'
             : 'No upcoming passes in the next 72 hours for your enabled satellites.'
         }
-        filteredEmptyMessage="No passes match the current elevation filter."
+        filteredEmptyMessage={
+          hasActiveFilter ? 'No passes match the current filters.' : 'No passes to show.'
+        }
       />
     </div>
   );
