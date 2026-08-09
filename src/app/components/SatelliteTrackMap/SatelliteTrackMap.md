@@ -10,8 +10,8 @@
 | --------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `observer`      | `{ lat: number; lon: number } \| null` | Observer location marker; included in auto-fit bounds when set                                         |
 | `selectedPass`  | `SelectedPass \| null`                 | `{ satelliteName, tleLine1, tleLine2, aosAt, losAt }` — `null` shows a hint overlay instead of a track |
-| `drawBehindMin` | `number` (optional, default `0`)       | Minutes to extend the drawn track **before** `aosAt`, relative to the pass window                       |
-| `drawAheadMin`  | `number` (optional, default `0`)       | Minutes to extend the drawn track **past** `losAt`, relative to the pass window                         |
+| `drawBehindMin` | `number` (optional, default `0`)       | Minutes to extend the drawn track **before** `aosAt`, relative to the pass window                      |
+| `drawAheadMin`  | `number` (optional, default `0`)       | Minutes to extend the drawn track **past** `losAt`, relative to the pass window                        |
 
 ## Usage
 
