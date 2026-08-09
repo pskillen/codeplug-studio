@@ -422,7 +422,7 @@ describe('DataTable v2', () => {
     expect(screen.getByText('Bravo')).toBeInTheDocument();
   });
 
-  it('keeps selection and row activation working with mobileCard on a mobile viewport', () => {
+  it('hides selection checkboxes but keeps row activation working with mobileCard on a mobile viewport', () => {
     mockMobileViewport();
     const onSelectionChange = vi.fn();
     const onRowActivate = vi.fn();
@@ -441,8 +441,8 @@ describe('DataTable v2', () => {
       </DesignSystemV2Provider>,
     );
 
-    fireEvent.click(screen.getByLabelText('Select row 1'));
-    expect(onSelectionChange).toHaveBeenCalledWith(['1']);
+    expect(screen.queryByLabelText('Select row 1')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Select all rows')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Card: Bravo'));
     expect(onRowActivate).toHaveBeenCalledWith(ROWS[0]);

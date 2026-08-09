@@ -112,8 +112,8 @@ export interface DataTableProps<T> {
    * Replaces the per-column grid cells with this card render on narrow
    * viewports (below `MOBILE_MAX_WIDTH_MEDIA_QUERY`) — an alternative to
    * horizontal scroll / `hideOnMobile` column collapsing for wide tables.
-   * The selection checkbox and `onRowActivate` keep working; column sort
-   * headers and `nested`/`reorderMode` cells are hidden while this is active.
+   * `onRowActivate` keeps working; selection checkboxes, column sort headers,
+   * and `nested`/`reorderMode` cells are hidden while this is active.
    */
   mobileCard?: (row: T) => ReactNode;
   className?: string;
@@ -271,7 +271,7 @@ function DataTableBodyRow<T>({
           ) : null}
         </div>
       ) : null}
-      {selectable ? (
+      {selectable && !useCardLayout ? (
         <div role="cell" className={classes.leadCell}>
           {rowSelectable ? (
             <Checkbox
@@ -502,7 +502,7 @@ export default function DataTable<T>({
   const dragSortableKeys = onReorder ? reorderableRowKeys : [];
 
   const gridTemplateColumns = useCardLayout
-    ? [selectable ? '40px' : null, '1fr'].filter(Boolean).join(' ')
+    ? '1fr'
     : [
         nested ? '36px' : null,
         selectable ? '40px' : null,
@@ -595,7 +595,7 @@ export default function DataTable<T>({
           {!useCardLayout && nested ? (
             <div role="columnheader" className={classes.leadCell} />
           ) : null}
-          {selectable ? (
+          {selectable && !useCardLayout ? (
             <div role="columnheader" className={classes.leadCell}>
               <Checkbox
                 checked={allSelected}
