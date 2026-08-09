@@ -55,6 +55,16 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/radioid/, '/api'),
         },
+        '/api/celestrak/amateur': {
+          target: 'https://celestrak.org',
+          changeOrigin: true,
+          rewrite: () => '/NORAD/elements/gp.php?GROUP=amateur&FORMAT=tle',
+        },
+        '/api/amsat/nasabare': {
+          target: 'https://www.amsat.org',
+          changeOrigin: true,
+          rewrite: () => '/tle/current/nasabare.txt',
+        },
       },
     },
     plugins: [react()],

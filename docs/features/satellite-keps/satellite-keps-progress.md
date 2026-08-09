@@ -33,7 +33,20 @@
 
 ## Slice 2: CelesTrak/AMSAT fetch proxy + client (#851)
 
-**Status:** Not started
+**Status:** Complete (pending merge)
+
+**Delivered**
+
+- `functions/api/celestrak/amateur.ts`, `functions/api/amsat/nasabare.ts` — same-origin CORS bridge Pages Functions, mirroring `functions/api/irts/repeaters.ts`.
+- `vite.config.ts` — matching local dev-proxy entries for both endpoints.
+- `src/integrations/satellites/{types,rateLimit,sessionCache,directoryFetch,testHelpers}.ts` — mirrors the `src/integrations/repeaters/*` stack (cache TTL, 429 cooldown, stale-cache fallback).
+- `src/integrations/satellites/{celestrakClient,amsatClient}.ts` — one function each, raw TLE text via `resolveApiUrl`.
+- `src/integrations/satellites/fetchSatelliteSet.ts` — tries CelesTrak, falls back to AMSAT on any failure, feeds the result through `parseTleBlock` (#850).
+
+**Verify**
+
+- `npx vitest run src/integrations/satellites/` — 10/10 passing (cache hit/miss, refresh bypass, HTTP/network/429 failures, CelesTrak→AMSAT fallback).
+- `npx vitest run src/integrations/http/ src/integrations/repeaters/` — 126/126 passing, no regressions from the shared `sessionCache.ts` prefix additions.
 
 ---
 
