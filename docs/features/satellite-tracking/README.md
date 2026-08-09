@@ -3,7 +3,8 @@
 Tier-1 hub for the **Tracking Dashboard** — client-side pass prediction (SGP4), observer location, SatNOGS-augmented pass grids, and 3D/2D orbital visualization. Consumes curated TLEs from the [Satellite keps](../satellite-keps/) library; does not write keps to radios.
 
 **Tracking:** Epic [#860](https://github.com/pskillen/codeplug-studio/issues/860) (child of Milestone 2 [#495](https://github.com/pskillen/codeplug-studio/issues/495))  
-**Depends on:** [#848](https://github.com/pskillen/codeplug-studio/issues/848) curated TLEs (at least #850–#853; frequencies when #854 lands)
+**Depends on:** [#848](https://github.com/pskillen/codeplug-studio/issues/848) curated TLEs (at least #850–#853; frequencies when #854 lands)  
+**Navigation:** reached from the Tools strip (`Tools → Tracking Dashboard`, `/tracking`), not a top-level tab — [#978](https://github.com/pskillen/codeplug-studio/issues/978)
 
 ---
 
