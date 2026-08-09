@@ -18,6 +18,17 @@ function rewriteRepeaterBookExportProxyPath(proxyPath: string): string {
   return rest ? `${upstreamPath}?${rest}` : upstreamPath;
 }
 
+// Mirrors buildNominatimSearchUpstreamUrl in functions/lib/nominatimUpstream.ts — without a
+// pinned `format`, Nominatim serves its interactive HTML search UI (redirecting to
+// /ui/search.html) instead of JSON, which then fails as a cross-origin navigation.
+function rewriteNominatimSearchProxyPath(proxyPath: string): string {
+  const queryStart = proxyPath.indexOf('?');
+  const query = queryStart >= 0 ? proxyPath.slice(queryStart + 1) : '';
+  const params = new URLSearchParams(query);
+  params.set('format', 'jsonv2');
+  return `/search?${params.toString()}`;
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const buildEnv = env.BUILD_ENV || process.env.BUILD_ENV || 'local';
@@ -73,10 +84,10 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: () => '/tle/current/nasabare.txt',
         },
-        '/api/nominatim': {
+        '/api/nominatim/search': {
           target: 'https://nominatim.openstreetmap.org',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/nominatim/, ''),
+          rewrite: rewriteNominatimSearchProxyPath,
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyReq) => {
               proxyReq.setHeader('User-Agent', NOMINATIM_USER_AGENT);
