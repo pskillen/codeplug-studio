@@ -26,10 +26,15 @@ export default function ObserverLocationSettings() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLocating(false);
+        const computedLocator = coordsToLocator(
+          position.coords.latitude,
+          position.coords.longitude,
+        );
+        setLocatorInput(computedLocator);
         void save({
           positionSource: 'geolocation',
           location: { lat: position.coords.latitude, lon: position.coords.longitude },
-          maidenheadLocator: coordsToLocator(position.coords.latitude, position.coords.longitude),
+          maidenheadLocator: computedLocator,
         });
       },
       (error) => {
