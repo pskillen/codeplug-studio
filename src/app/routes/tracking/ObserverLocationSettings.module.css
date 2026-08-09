@@ -13,3 +13,14 @@
   color: var(--dsv2-warning);
   font-size: 0.85em;
 }
+
+.section {
+  margin-top: 16px;
+}
+
+.sectionLabel {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.85em;
+  color: var(--dsv2-text-secondary);
+}
