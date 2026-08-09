@@ -17,7 +17,7 @@ Tier-1 hub for the **Tracking Dashboard** — client-side pass prediction (SGP4)
 | SatNOGS transmitters proxy + merge | Not started | [#864](https://github.com/pskillen/codeplug-studio/issues/864)                                                                                                             |
 | Tracking Dashboard + pass grid     | Shipped     | [#865](https://github.com/pskillen/codeplug-studio/issues/865); satellite filter + manual look-ahead window [#980](https://github.com/pskillen/codeplug-studio/issues/980) |
 | 3D orbital globe                   | Not started | [#866](https://github.com/pskillen/codeplug-studio/issues/866)                                                                                                             |
-| 2D ground-track map                | Shipped     | [#867](https://github.com/pskillen/codeplug-studio/issues/867) — no 3D/2D toggle shipped (nothing to toggle to until #866 lands)                                           |
+| 2D ground-track map                | Shipped     | [#867](https://github.com/pskillen/codeplug-studio/issues/867) — no 3D/2D toggle shipped (nothing to toggle to until #866 lands); configurable draw-ahead/behind window [#998](https://github.com/pskillen/codeplug-studio/issues/998) |
 
 ---
 
