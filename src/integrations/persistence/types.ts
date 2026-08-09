@@ -143,10 +143,7 @@ export interface ProjectPersistence {
   listSatellites(projectId: string): Promise<Satellite[]>;
 
   getTrackingSettings(projectId: string, id: string): Promise<TrackingSettings | null>;
-  putTrackingSettings(
-    row: TrackingSettings,
-    expectedRevision: number | null,
-  ): Promise<PutResult>;
+  putTrackingSettings(row: TrackingSettings, expectedRevision: number | null): Promise<PutResult>;
   listTrackingSettings(projectId: string): Promise<TrackingSettings[]>;
 
   getRadioBuild(projectId: string, id: string): Promise<RadioBuild | null>;

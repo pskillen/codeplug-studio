@@ -21,10 +21,7 @@ import type {
 import type { EgressKind, EgressPath } from '@core/models/egressPath.ts';
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { Satellite, SatelliteSource } from '@core/models/satellite.ts';
-import type {
-  ObserverPositionSource,
-  TrackingSettings,
-} from '@core/models/trackingSettings.ts';
+import type { ObserverPositionSource, TrackingSettings } from '@core/models/trackingSettings.ts';
 import type {
   AprsPositionSource,
   AprsPttMode,
@@ -766,12 +763,7 @@ function parseSatellite(raw: unknown, index: number): Satellite {
 
 function parseObserverPositionSource(raw: unknown, label: string): ObserverPositionSource {
   const value = expectString(raw, label);
-  if (
-    value !== 'geolocation' &&
-    value !== 'maidenhead' &&
-    value !== 'address' &&
-    value !== 'map'
-  ) {
+  if (value !== 'geolocation' && value !== 'maidenhead' && value !== 'address' && value !== 'map') {
     throw new NativeYamlImportError(`${label} is invalid: ${value}`);
   }
   return value;
@@ -792,10 +784,7 @@ function parseTrackingSettings(raw: unknown, label: string): TrackingSettings {
     ...parsePersistableRow(record, label),
     positionSource: parseObserverPositionSource(record.positionSource, `${label}.positionSource`),
     location,
-    maidenheadLocator: expectNullableString(
-      record.maidenheadLocator,
-      `${label}.maidenheadLocator`,
-    ),
+    maidenheadLocator: expectNullableString(record.maidenheadLocator, `${label}.maidenheadLocator`),
   };
 }
 

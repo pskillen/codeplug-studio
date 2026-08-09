@@ -6,20 +6,17 @@
 
 ## Props
 
-| Prop           | Type                            | Notes                                                                          |
-| -------------- | -------------------------------- | ------------------------------------------------------------------------------- |
-| `observer`     | `{ lat: number; lon: number } \| null` | Observer location marker; included in auto-fit bounds when set                  |
-| `selectedPass` | `SelectedPass \| null`           | `{ satelliteName, tleLine1, tleLine2, aosAt, losAt }` — `null` shows a hint overlay instead of a track |
+| Prop           | Type                                   | Notes                                                                                                  |
+| -------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `observer`     | `{ lat: number; lon: number } \| null` | Observer location marker; included in auto-fit bounds when set                                         |
+| `selectedPass` | `SelectedPass \| null`                 | `{ satelliteName, tleLine1, tleLine2, aosAt, losAt }` — `null` shows a hint overlay instead of a track |
 
 ## Usage
 
 ```tsx
 import SatelliteTrackMap from '../../components/SatelliteTrackMap/SatelliteTrackMap.tsx';
 
-<SatelliteTrackMap
-  observer={settings?.location ?? null}
-  selectedPass={selectedPass}
-/>
+<SatelliteTrackMap observer={settings?.location ?? null} selectedPass={selectedPass} />;
 ```
 
 ## Behaviour
