@@ -1,4 +1,4 @@
-import { Alert } from '@mantine/core';
+import { Alert, Loader, TextInput } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
 import { useCallback, useMemo, useState } from 'react';
@@ -460,6 +460,15 @@ export default function ChannelsListPage() {
 
       <ChannelListFilters />
 
+      <TextInput
+        value={query.nameFilterInput}
+        onChange={(event) => query.setNameFilter(event.currentTarget.value)}
+        placeholder="Filter name or callsign…"
+        rightSection={query.nameFilterPending ? <Loader size={16} /> : undefined}
+        aria-label="Search table"
+        className={classes.search}
+      />
+
       <SegmentedControl
         value={groupMode}
         onChange={setGroupMode}
@@ -493,12 +502,6 @@ export default function ChannelsListPage() {
           totalRowCount={channels.length}
           visibleKeys={visibleKeys}
           onVisibleKeysChange={setVisibleKeys}
-          search={{
-            value: query.nameFilterInput,
-            onChange: query.setNameFilter,
-            placeholder: 'Filter name or callsign…',
-            pending: query.nameFilterPending,
-          }}
           sort={v1SortToV2(effectiveV1Sort)}
           onSortChange={handleSortChange}
           selectable

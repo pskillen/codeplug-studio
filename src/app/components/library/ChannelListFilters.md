@@ -1,6 +1,6 @@
 # ChannelListFilters
 
-Band, mode, simplex/split, and distance-radius filters for `/library/channels`. Name/callsign search is on the list `DataTable` only (no duplicate in section nav).
+Band, mode, simplex/split, and distance-radius filters for `/library/channels`. Name/callsign search is a page-level field in `ChannelsListPage` (shared by List and Group by zone display modes, not `DataTable`'s own toolbar search) — no duplicate in section nav.
 
 ## Usage
 

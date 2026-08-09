@@ -79,6 +79,11 @@
   color: var(--dsv2-text-tertiary);
 }
 
+.search {
+  width: 100%;
+  margin-bottom: 14px;
+}
+
 .groupModeControl {
   margin-bottom: 14px;
 }
