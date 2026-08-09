@@ -134,7 +134,7 @@ describe('DriveSessionProvider', () => {
     expect(listChildren).toHaveBeenCalledTimes(2);
   });
 
-  it('marks sessionExpired when timer fires for expired token', () => {
+  it('marks sessionExpired when timer fires for expired token', async () => {
     vi.useFakeTimers();
     saveDriveSession({
       accessToken: 'ya29.test',
@@ -149,12 +149,103 @@ describe('DriveSessionProvider', () => {
 
     const { result } = renderHook(() => useDriveSessionContext(), { wrapper: wrapper(port) });
 
-    act(() => {
-      vi.advanceTimersByTime(31_000);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(31_000);
     });
 
     expect(result.current.sessionExpired).toBe(true);
     expect(result.current.connected).toBe(false);
+
+    vi.useRealTimers();
+  });
+
+  it('silently refreshes and reschedules when refreshSilently succeeds', async () => {
+    vi.useFakeTimers();
+    saveDriveSession({
+      accessToken: 'ya29.test',
+      expiresAt: Date.now() + 30_000,
+      accountEmail: 'op@example.com',
+    });
+
+    const refreshSilently = vi.fn(async () => {
+      saveDriveSession({
+        accessToken: 'ya29.refreshed',
+        expiresAt: Date.now() + 3_600_000,
+        accountEmail: 'op@example.com',
+      });
+      return true;
+    });
+    const port = createPort({
+      isConnected: vi.fn(() => true),
+      getAccountLabel: () => 'op@example.com',
+      refreshSilently,
+    });
+
+    const { result } = renderHook(() => useDriveSessionContext(), { wrapper: wrapper(port) });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(31_000);
+    });
+
+    expect(refreshSilently).toHaveBeenCalledOnce();
+    expect(result.current.sessionExpired).toBe(false);
+
+    vi.useRealTimers();
+  });
+
+  it('falls back to sessionExpired when refreshSilently is unavailable', async () => {
+    vi.useFakeTimers();
+    saveDriveSession({
+      accessToken: 'ya29.test',
+      expiresAt: Date.now() + 30_000,
+      accountEmail: 'op@example.com',
+    });
+
+    const port = createPort({
+      isConnected: vi.fn(() => false),
+      getAccountLabel: () => null,
+    });
+
+    const { result } = renderHook(() => useDriveSessionContext(), { wrapper: wrapper(port) });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(31_000);
+    });
+
+    expect(result.current.sessionExpired).toBe(true);
+
+    vi.useRealTimers();
+  });
+
+  it('attempts a silent refresh immediately for an already-expired session', async () => {
+    vi.useFakeTimers();
+    saveDriveSession({
+      accessToken: 'ya29.test',
+      expiresAt: Date.now() - 30_000,
+      accountEmail: 'op@example.com',
+    });
+
+    const refreshSilently = vi.fn(async () => {
+      saveDriveSession({
+        accessToken: 'ya29.refreshed',
+        expiresAt: Date.now() + 3_600_000,
+        accountEmail: 'op@example.com',
+      });
+      return true;
+    });
+    const port = createPort({
+      isConnected: vi.fn(() => true),
+      getAccountLabel: () => 'op@example.com',
+      refreshSilently,
+    });
+
+    renderHook(() => useDriveSessionContext(), { wrapper: wrapper(port) });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(refreshSilently).toHaveBeenCalledOnce();
 
     vi.useRealTimers();
   });

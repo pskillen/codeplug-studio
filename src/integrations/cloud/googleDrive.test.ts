@@ -3,6 +3,7 @@ import { createGoogleDrivePort } from './googleDrive.ts';
 import { clearDriveSession, loadDriveSession, saveDriveSession } from './drivePrefs.ts';
 import { DriveAuthError, DriveCancelledError, DriveConfigError } from './driveTypes.ts';
 import type { DriveApiClient } from './driveApi.ts';
+import type { DriveAuthProvider } from './driveAuthProvider.ts';
 import type { GoogleIdentityClient } from './loadGoogleIdentity.ts';
 import { createWebAuthProvider } from './webGoogleAuth.ts';
 
@@ -175,5 +176,61 @@ describe('googleDrive port', () => {
       fetchImpl: fetch,
     });
     await expect(port.readFile('file-1')).rejects.toBeInstanceOf(DriveAuthError);
+  });
+
+  it('refreshSilently resolves true when session is already valid', async () => {
+    saveDriveSession({
+      accessToken: 'ya29.test',
+      expiresAt: Date.now() + 3_600_000,
+    });
+    const port = createGoogleDrivePort({
+      api,
+      authProvider: createWebAuthProvider({ loadIdentity: async () => identity }),
+      getClientId: () => 'client-id',
+      fetchImpl: fetch,
+    });
+    await expect(port.refreshSilently?.()).resolves.toBe(true);
+  });
+
+  it('refreshSilently resolves false when expired and no refresh is possible', async () => {
+    saveDriveSession({
+      accessToken: 'ya29.test',
+      expiresAt: Date.now() - 1,
+    });
+    const port = createGoogleDrivePort({
+      api,
+      authProvider: createWebAuthProvider({ loadIdentity: async () => identity }),
+      getClientId: () => 'client-id',
+      fetchImpl: fetch,
+    });
+    await expect(port.refreshSilently?.()).resolves.toBe(false);
+  });
+
+  it('refreshSilently resolves true and persists a new session when tryRefresh succeeds', async () => {
+    saveDriveSession({
+      accessToken: 'stale-token',
+      expiresAt: Date.now() - 1,
+      refreshToken: 'refresh-token',
+    });
+    const nativeLikeAuthProvider: DriveAuthProvider = {
+      authorize: vi.fn(async () => {
+        throw new Error('authorize should not be called during a silent refresh');
+      }),
+      revoke: vi.fn(async () => undefined),
+      tryRefresh: vi.fn(async () => ({
+        accessToken: 'fresh-token',
+        expiresAt: Date.now() + 3_600_000,
+        refreshToken: 'refresh-token',
+      })),
+    };
+    const port = createGoogleDrivePort({
+      api,
+      authProvider: nativeLikeAuthProvider,
+      getClientId: () => 'android-client-id',
+      fetchImpl: fetch,
+    });
+    await expect(port.refreshSilently?.()).resolves.toBe(true);
+    expect(nativeLikeAuthProvider.tryRefresh).toHaveBeenCalledOnce();
+    expect(loadDriveSession()?.accessToken).toBe('fresh-token');
   });
 });

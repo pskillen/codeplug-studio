@@ -68,6 +68,7 @@ export default function DriveSessionProvider({
   const [error, setError] = useState<string | null>(null);
   const [sessionExpired, setSessionExpired] = useState(false);
   const expiryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleExpiryRefreshRef = useRef<() => void>(() => {});
   const isConfigured = Boolean(getActiveGoogleClientId());
 
   const refresh = useCallback(() => {
@@ -91,22 +92,32 @@ export default function DriveSessionProvider({
     const session = loadDriveSession();
     const msUntilExpiry = msUntilDriveSessionExpiry(session);
     if (msUntilExpiry === null) return;
-    if (msUntilExpiry <= 0) {
-      setTimeout(() => {
+
+    const onExpiryTimer = () => {
+      void (async () => {
+        const refreshed = (await port.refreshSilently?.()) ?? false;
+        if (refreshed) {
+          refresh();
+          scheduleExpiryRefreshRef.current();
+          return;
+        }
         refresh();
         if (!port.isConnected()) {
           setSessionExpired(true);
         }
-      }, 0);
+      })();
+    };
+
+    if (msUntilExpiry <= 0) {
+      setTimeout(onExpiryTimer, 0);
       return;
     }
-    expiryTimerRef.current = setTimeout(() => {
-      refresh();
-      if (!port.isConnected()) {
-        setSessionExpired(true);
-      }
-    }, msUntilExpiry + 50);
+    expiryTimerRef.current = setTimeout(onExpiryTimer, msUntilExpiry + 50);
   }, [clearExpiryTimer, port, refresh]);
+
+  useEffect(() => {
+    scheduleExpiryRefreshRef.current = scheduleExpiryRefresh;
+  }, [scheduleExpiryRefresh]);
 
   const invalidateSession = useCallback(() => {
     handleDriveAuthFailure(new DriveAuthError());
