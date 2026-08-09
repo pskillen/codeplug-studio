@@ -20,14 +20,16 @@ export interface ObserverLocationMapProps {
   onChange: (lat: number, lon: number) => void;
 }
 
-/** Draggable pin marker — mirrors `SatelliteTrackMap`'s `observerDivIcon` convention. */
-function pinDivIcon(): L.DivIcon {
-  return L.divIcon({
-    className: classes.pinMarkerWrap,
-    html: `<div class="${classes.pinMarker}"><div class="${classes.pinDot}"></div></div>`,
-    iconAnchor: [6, 6],
-  });
-}
+// Module-level singleton — mirrors SatelliteTrackMap's `observerDivIcon` convention, but
+// built once rather than called per render. react-leaflet's Marker diffs `icon` by
+// reference and calls `marker.setIcon()` whenever it changes; a fresh L.DivIcon on every
+// render made that fire on every re-render, including mid-drag, which corrupted Leaflet's
+// internal drag state and crashed the map (caught only via live browser testing).
+const PIN_ICON: L.DivIcon = L.divIcon({
+  className: classes.pinMarkerWrap,
+  html: `<div class="${classes.pinMarker}"><div class="${classes.pinDot}"></div></div>`,
+  iconAnchor: [6, 6],
+});
 
 function ClickToPlace({ onPlace }: { onPlace: (lat: number, lon: number) => void }) {
   useMapEvents({
@@ -75,7 +77,7 @@ export default function ObserverLocationMap({ value, onChange }: ObserverLocatio
           <Marker
             position={[value.lat, value.lon]}
             draggable
-            icon={pinDivIcon()}
+            icon={PIN_ICON}
             eventHandlers={{
               dragend: (event) => {
                 const marker = event.target as L.Marker;
