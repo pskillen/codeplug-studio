@@ -43,7 +43,20 @@
 
 ## Slice 6: SGP4 pass-prediction Web Worker (#863)
 
-**Status:** Not started
+**Status:** Complete (pending merge)
+
+**Delivered**
+
+- Added `satellite.js@7.1.0` dependency (zero-dep, safe in `core` — same category as existing `fflate`/`js-yaml`).
+- `src/core/domain/satelliteTracking/{types,passPrediction}.ts` — pure `computePassesForSatellite(tleLine1, tleLine2, observer, window)`; sweeps at a configurable step (default 1 min), tracks elevation-crossing AOS/max-elevation/LOS. Deterministic (`fromAt`/`toAt` injected, never `Date.now()`), no DOM/Worker globals.
+- `src/integrations/satelliteTracking/{protocol,passPredictionWorker,passPredictionClient}.ts` — **first Web Worker in this repo**. Client correlates concurrent requests by id, handles worker errors, lazily creates/terminates.
+
+**Verify**
+
+- `computePassesForSatellite` tested directly (no Worker) against a genuine geometric invariant: an observer placed at the real ISS TLE's own subsatellite point (computed independently via `eciToGeodetic`) sees >75° elevation at that instant — this is real known-answer verification (the "answer" comes from orbital geometry, not from copying the function's own output), not a tautology.
+- `PassPredictionClient` tested with a mocked `Worker` global (6 tests: resolve/reject/concurrent-correlation/reuse/error-fanout/terminate) — vitest doesn't need a real worker thread to verify the request/response correlation logic, which is where the actual business logic lives.
+- **Still to verify:** a production `vite build` emitting a genuine separate worker chunk with the `@core` alias resolving inside it — current build tree-shakes `passPredictionClient.ts` entirely since nothing imports it yet (expected; nothing wires it into the UI until slice 7). Re-verify once slice 7 lands.
+- `npx vitest run` — 2516 tests passing. `npx tsc --noEmit -p tsconfig.app.json` — 0 errors. Lint/format clean.
 
 ---
 
