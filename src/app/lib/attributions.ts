@@ -75,6 +75,22 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
     usedIn: ['Tracking Dashboard → Observer location → Search address'],
   },
   {
+    id: 'celestrak',
+    name: 'CelesTrak',
+    description:
+      'Amateur-satellite TLE (Keplerian element) feed — primary source for the Satellite Keps library. Requests go through the Studio same-origin proxy; no operator API key required.',
+    homeUrl: 'https://celestrak.org/',
+    usedIn: ['Satellite Keps library refresh'],
+  },
+  {
+    id: 'amsat',
+    name: 'AMSAT',
+    description:
+      'Amateur-satellite TLE feed — fallback source for the Satellite Keps library when CelesTrak is unreachable. Requests go through the Studio same-origin proxy; no operator API key required.',
+    homeUrl: 'https://www.amsat.org/',
+    usedIn: ['Satellite Keps library refresh (fallback)'],
+  },
+  {
     id: 'radioid',
     name: 'RadioID.net',
     description:
