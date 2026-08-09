@@ -8,9 +8,9 @@
 
 ## Overall status
 
-**Status:** Complete (pending merge) — full plan shipped: satellite keps library, observer location, SGP4 pass prediction, Tracking Dashboard, and 2D ground-track map, all live-verified end-to-end in a real browser against real CelesTrak data.
+**Status:** MVP complete and merged (PR [#975](https://github.com/pskillen/codeplug-studio/pull/975)) — satellite keps library, observer location (geolocation + Maidenhead), SGP4 pass prediction, Tracking Dashboard, and 2D ground-track map, all live-verified end-to-end in a real browser against real CelesTrak data. Slice 5b (Nominatim address search + minimap pin) was deferred out of that PR and completed separately below on `862/pskillen/nominatim-address-search`.
 
-**Branch:** `848/pskillen/satellite-keps-and-tracking-mvp`
+**Branch:** `848/pskillen/satellite-keps-and-tracking-mvp` (merged); Slice 5b on `862/pskillen/nominatim-address-search`
 
 ---
 
@@ -37,7 +37,21 @@
 
 ## Slice 5b: Nominatim address search + minimap pin (#862 stretch)
 
-**Status:** Not started
+**Status:** Complete (branch `862/pskillen/nominatim-address-search`)
+
+**Delivered**
+
+- `functions/api/nominatim/search.ts` + `functions/lib/nominatimUpstream.ts` — same-origin CORS bridge for OpenStreetMap Nominatim address search, mirroring the CelesTrak/RepeaterBook proxy shape. Sets an identifying `User-Agent` per Nominatim's usage policy (RepeaterBook is the only other proxy in this repo that needs one); no server-side rate limiting, matching every other proxy — Nominatim's 1 req/s policy is enforced client-side via debounce.
+- `vite.config.ts` — matching dev-proxy entry; **live-browser testing caught a real bug** here: the dev proxy forwarded the client's query params as-is without pinning `format=jsonv2`, so Nominatim served its interactive HTML search UI (redirecting to `/ui/search.html`) instead of JSON, which then failed CORS. Fixed to mirror `buildNominatimSearchUpstreamUrl`'s behaviour.
+- `src/integrations/geocoding/{nominatimConstants,nominatimClient}.ts` — debounced-by-caller search client; only the search term and a result-count cap are ever sent (no operator/project data).
+- `ObserverLocationSettings.tsx` — added a Nominatim search `Combobox` (reused from `v2/`) and `ObserverLocationMap.tsx`, a new sibling to `SatelliteTrackMap` (interactive minimap: click to place a pin, drag to adjust), both saving through the same `save()` helper already used by the geolocation/Maidenhead inputs.
+- **Second real bug caught by live-browser drag testing:** `icon={pinDivIcon()}` called inline in JSX built a brand-new `L.DivIcon` on every render; react-leaflet's `Marker` diffs `icon` by reference and calls `marker.setIcon()` whenever it changes, so this fired on every re-render — including mid-drag, corrupting Leaflet's internal drag state and crashing the map. Fixed by hoisting the icon to a module-level singleton. (`SatelliteTrackMap`'s `observerDivIcon()` has the same inline-call pattern but is not draggable, so it doesn't hit this failure mode — flagged as a follow-up, not fixed here.)
+- Backfilled `docs/reference/remote-directories/{nominatim,celestrak,amsat}/README.md` and `attributions.ts` rows — CelesTrak/AMSAT shipped under #851 without either, unlike every other remote source in this repo.
+
+**Verify**
+
+- Live-tested end-to-end in a real browser against the real Nominatim API: searched "Glasgow", selected a result, confirmed `TrackingSettings.location`/`maidenheadLocator` updated and persisted across reload, and the minimap recentred/zoomed to the pin. Click-to-place verified via a dispatched click (both a raw DOM click and the tool's coordinate-based click). Drag-to-adjust verified by direct DOM event simulation once the icon-reference bug above was found and fixed; the automation harness's synthetic mouse-drag sequence itself could not be fully exercised end-to-end (confirmed environment-specific — panning the base map via the same synthetic sequence hits an identical crash in Leaflet's own code, unrelated to this component).
+- `npm run format:check && npm run lint && npm run test && npm run build` — all green.
 
 ---
 

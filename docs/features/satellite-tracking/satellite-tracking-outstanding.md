@@ -14,4 +14,4 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 ## Discovered during execution
 
-_(none yet)_
+- **`SatelliteTrackMap`'s `observerDivIcon()` recreates its `L.DivIcon` on every render** (called inline in JSX, same pattern that broke `ObserverLocationMap`'s draggable pin — see slice 5b above). That marker isn't draggable today so it doesn't hit the same crash, but it's still wasteful and worth hoisting to a module-level singleton if that component is touched again. Not fixed here — out of scope for slice 5b.
