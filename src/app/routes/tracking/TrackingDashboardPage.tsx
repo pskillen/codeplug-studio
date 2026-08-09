@@ -18,10 +18,17 @@ import libraryPageClasses from '../../components/library/LibraryInventoryPage.mo
 
 const MIN_WINDOW_HOURS = 1;
 const MAX_WINDOW_HOURS = 168;
+const MIN_DRAW_MIN = 0;
+const MAX_DRAW_MIN = 60;
 
 function clampWindowHours(value: number): number {
   if (Number.isNaN(value)) return DEFAULT_WINDOW_HOURS;
   return Math.min(MAX_WINDOW_HOURS, Math.max(MIN_WINDOW_HOURS, value));
+}
+
+function clampDrawMin(value: number): number {
+  if (Number.isNaN(value)) return 0;
+  return Math.min(MAX_DRAW_MIN, Math.max(MIN_DRAW_MIN, value));
 }
 
 function toSelectedPass(row: SatellitePassRow): SelectedPass {
@@ -40,6 +47,8 @@ export default function TrackingDashboardPage() {
     useTrackingPasses(windowHours);
   const { settings } = useTrackingSettings();
   const [selectedPass, setSelectedPass] = useState<SelectedPass | null>(null);
+  const [drawBehindMin, setDrawBehindMin] = useState(0);
+  const [drawAheadMin, setDrawAheadMin] = useState(0);
 
   return (
     <DesignSystemV2Provider>
@@ -62,8 +71,32 @@ export default function TrackingDashboardPage() {
           />
         </div>
 
+        <div className={classes.drawWindowControl}>
+          <TextInput
+            label="Extend before AOS (min)"
+            type="number"
+            min={MIN_DRAW_MIN}
+            max={MAX_DRAW_MIN}
+            value={drawBehindMin}
+            onChange={(event) => setDrawBehindMin(clampDrawMin(Number(event.target.value)))}
+          />
+          <TextInput
+            label="Extend after LOS (min)"
+            type="number"
+            min={MIN_DRAW_MIN}
+            max={MAX_DRAW_MIN}
+            value={drawAheadMin}
+            onChange={(event) => setDrawAheadMin(clampDrawMin(Number(event.target.value)))}
+          />
+        </div>
+
         <div className={classes.map}>
-          <SatelliteTrackMap observer={settings?.location ?? null} selectedPass={selectedPass} />
+          <SatelliteTrackMap
+            observer={settings?.location ?? null}
+            selectedPass={selectedPass}
+            drawBehindMin={drawBehindMin}
+            drawAheadMin={drawAheadMin}
+          />
         </div>
 
         {!hasEnabledSatellites ? (
