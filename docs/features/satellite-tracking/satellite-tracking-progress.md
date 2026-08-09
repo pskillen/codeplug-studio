@@ -8,7 +8,7 @@
 
 ## Overall status
 
-**Status:** In progress — Milestone A (satellite-keps library) shipped; observer location settings (5a) shipped
+**Status:** Complete (pending merge) — full plan shipped: satellite keps library, observer location, SGP4 pass prediction, Tracking Dashboard, and 2D ground-track map, all live-verified end-to-end in a real browser against real CelesTrak data.
 
 **Branch:** `848/pskillen/satellite-keps-and-tracking-mvp`
 
@@ -83,7 +83,24 @@
 
 ## Slice 8: 2D ground-track map (#867)
 
-**Status:** Not started
+**Status:** Complete (pending merge)
+
+**Delivered**
+
+- `src/core/domain/satelliteTracking/groundTrack.ts` — pure `sampleGroundTrack(tleLine1, tleLine2, fromAt, toAt, stepSec)` (30s default step), reusing the same satellite.js propagation chain as `passPrediction.ts`; returns the shared `LatLon` type from `src/core/domain/geo.ts`.
+- `src/app/components/SatelliteTrackMap/SatelliteTrackMap.tsx` (+ sidecar) — new sibling to `CodeplugMap` (not an extension of it), react-leaflet `MapContainer`/`TileLayer`/`Polyline` + observer `L.divIcon` marker, auto-fit via the shared `computeMapView` helper. **Antimeridian handling:** the track is split into separate `Polyline` segments wherever consecutive samples' longitude delta exceeds 180° — verified against ES'HAIL 2's (geostationary, effectively fixed longitude) and a LEO pass in the live browser check.
+- `PassGrid` row click (`onRowActivate`) → `TrackingDashboardPage` holds `selectedPass` state → `SatelliteTrackMap` draws that specific pass's AOS→LOS ground track.
+- **No 3D/2D toggle** — no 3D globe exists in this plan's scope (#866 deferred); noted explicitly in the hub's Out of scope section rather than shipping a dead control.
+
+**Verify**
+
+- `computeGroundTrack` unit-tested (valid lat/lon range at every step; satellite genuinely moves between samples — not a stationary/broken propagation).
+- Live-verified in a real browser: clicked a real pass row (CUBESAT XI-V) and confirmed a real SVG polyline rendered on the Leaflet map with the observer marker, auto-fit to show both.
+- `npx vitest run` — 2518 tests passing. `npx tsc --noEmit -p tsconfig.app.json` — 0 errors. `npm run build` — succeeds, worker chunk unaffected. Lint/format clean.
+
+---
+
+**All 8 slices of the satellite-keps/satellite-tracking MVP plan are complete.** An operator can: refresh and curate a satellite library from CelesTrak/AMSAT, set an observer location, see upcoming passes for enabled satellites computed off the main thread, and preview any pass's ground track on a 2D map — all live-verified end-to-end against real orbital data in a real browser.
 
 ---
 

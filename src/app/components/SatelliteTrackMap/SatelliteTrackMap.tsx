@@ -1,0 +1,120 @@
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import { useEffect, useMemo } from 'react';
+import { MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet';
+import type { LatLon } from '@core/domain/geo.ts';
+import { computeMapView } from '@core/domain/mapView.ts';
+import { sampleGroundTrack } from '@core/domain/satelliteTracking/groundTrack.ts';
+import classes from './SatelliteTrackMap.module.css';
+
+const GROUND_TRACK_STEP_SEC = 30;
+const DEFAULT_CENTER: LatLon = [20, 0];
+const DEFAULT_ZOOM = 2;
+
+export interface SelectedPass {
+  satelliteName: string;
+  tleLine1: string;
+  tleLine2: string;
+  aosAt: string;
+  losAt: string;
+}
+
+export interface SatelliteTrackMapProps {
+  observer: { lat: number; lon: number } | null;
+  selectedPass: SelectedPass | null;
+}
+
+/** Split a ground track wherever consecutive samples cross the antimeridian. */
+function splitAtAntimeridian(points: LatLon[]): LatLon[][] {
+  if (points.length === 0) return [];
+  const segments: LatLon[][] = [[points[0]!]];
+  for (let i = 1; i < points.length; i += 1) {
+    const [, prevLon] = points[i - 1]!;
+    const point = points[i]!;
+    if (Math.abs(point[1] - prevLon) > 180) {
+      segments.push([point]);
+    } else {
+      segments[segments.length - 1]!.push(point);
+    }
+  }
+  return segments;
+}
+
+function observerDivIcon(): L.DivIcon {
+  return L.divIcon({
+    className: classes.observerMarkerWrap,
+    html: `<div class="${classes.observerMarker}"><div class="${classes.observerDot}"></div></div>`,
+    iconAnchor: [6, 6],
+  });
+}
+
+function MapViewController({ points }: { points: LatLon[] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const action = computeMapView(points, { padding: [40, 40], maxZoom: 8, singlePointZoom: 4 });
+    if (!action) return;
+    if (action.type === 'setView') {
+      map.setView(action.center, action.zoom);
+      return;
+    }
+    map.fitBounds(L.latLngBounds(action.southWest, action.northEast), {
+      padding: action.padding,
+      maxZoom: action.maxZoom,
+    });
+  }, [map, points]);
+
+  return null;
+}
+
+/**
+ * 2D ground-track preview for a selected satellite pass. New sibling to
+ * `CodeplugMap` (that component is tightly coupled to Channel/Zone domain) —
+ * reuses `computeMapView` for auto-fit bounds and the same `L.divIcon`
+ * marker convention.
+ */
+export default function SatelliteTrackMap({ observer, selectedPass }: SatelliteTrackMapProps) {
+  const segments = useMemo(() => {
+    if (!selectedPass) return [];
+    const points = sampleGroundTrack(
+      selectedPass.tleLine1,
+      selectedPass.tleLine2,
+      selectedPass.aosAt,
+      selectedPass.losAt,
+      GROUND_TRACK_STEP_SEC,
+    );
+    return splitAtAntimeridian(points);
+  }, [selectedPass]);
+
+  const boundsPoints = useMemo(() => {
+    const points = segments.flat();
+    if (observer) points.push([observer.lat, observer.lon]);
+    return points;
+  }, [segments, observer]);
+
+  return (
+    <div className={classes.wrapper}>
+      <MapContainer
+        center={DEFAULT_CENTER}
+        zoom={DEFAULT_ZOOM}
+        className={classes.map}
+        scrollWheelZoom
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        {observer ? (
+          <Marker position={[observer.lat, observer.lon]} icon={observerDivIcon()} />
+        ) : null}
+        {segments.map((segment, index) => (
+          <Polyline key={index} positions={segment} pathOptions={{ color: '#4d7cff', weight: 2 }} />
+        ))}
+        <MapViewController points={boundsPoints} />
+      </MapContainer>
+      {!selectedPass ? (
+        <p className={classes.hint}>Select a pass below to preview its ground track.</p>
+      ) : null}
+    </div>
+  );
+}

@@ -1,0 +1,42 @@
+.wrapper {
+  position: relative;
+}
+
+.map {
+  height: 320px;
+  width: 100%;
+  border-radius: 8px;
+}
+
+.hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: var(--dsv2-text-secondary);
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  border-radius: 8px;
+}
+
+.observerMarkerWrap {
+  background: transparent;
+  border: none;
+}
+
+.observerMarker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.observerDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #4dabf7;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.4);
+}

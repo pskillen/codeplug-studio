@@ -7,6 +7,8 @@ import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 export interface SatellitePassRow extends PassResult {
   satelliteId: string;
   satelliteName: string;
+  tleLine1: string;
+  tleLine2: string;
 }
 
 export interface UseTrackingPassesResult {
@@ -67,6 +69,8 @@ export function useTrackingPasses(): UseTrackingPassesResult {
                 ...result,
                 satelliteId: satellite.id,
                 satelliteName: satellite.name,
+                tleLine1: satellite.tleLine1,
+                tleLine2: satellite.tleLine2,
               }));
             }),
           );

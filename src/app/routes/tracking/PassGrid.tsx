@@ -28,9 +28,10 @@ export interface PassGridProps {
   passes: SatellitePassRow[];
   loading: boolean;
   error: string | null;
+  onSelectPass?: (row: SatellitePassRow) => void;
 }
 
-export default function PassGrid({ passes, loading, error }: PassGridProps) {
+export default function PassGrid({ passes, loading, error, onSelectPass }: PassGridProps) {
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'aos', direction: 'asc' });
   const [minElevation, setMinElevation] = useState('');
 
@@ -99,6 +100,7 @@ export default function PassGrid({ passes, loading, error }: PassGridProps) {
         totalRowCount={passes.length}
         sort={sort}
         onSortChange={setSort}
+        onRowActivate={onSelectPass}
         emptyMessage={
           loading
             ? 'Computing passes…'
