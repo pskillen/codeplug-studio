@@ -216,6 +216,10 @@
   border-bottom: none;
 }
 
+.dataRowCard {
+  align-items: start;
+}
+
 .rowGated {
   opacity: 0.45;
 }
@@ -267,6 +271,12 @@
   align-items: center;
   justify-content: flex-end;
   padding: var(--dsv2-row-padding-y) 12px var(--dsv2-row-padding-y) var(--dsv2-space-3);
+}
+
+.cardCell {
+  padding: var(--dsv2-row-padding-y) var(--dsv2-row-padding-x);
+  min-width: 0;
+  overflow: visible;
 }
 
 .emptyRow {

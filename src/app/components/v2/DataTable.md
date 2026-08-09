@@ -55,8 +55,13 @@ Per-row reorder is a **grip drag handle** (`SelectedItemDragHandle`, the same pr
 | `onVisibleKeysChange` | `(keys: string[]) => void`              | Paired with the "Show/hide cols" toggle                                                             |
 | `onRowActivate`       | `(row: T) => void`                      | Makes rows clickable; disabled for rows failing `isRowSelectable` when `selectable` is set          |
 | `getRowVariant`       | `(row: T) => 'nestParent' \| undefined` | `'nestParent'` gives the row a quiet background                                                     |
+| `mobileCard`          | `(row: T) => ReactNode`                 | Replaces per-column grid cells with this card render on narrow viewports — see below                |
 
 Column-level `hideable`/`defaultVisible`/`hideOnMobile` live on `DataTableColumn`. Mobile collapse uses `useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY)` (viewport-width based, matching the existing `components/ui/DataTable` convention) rather than a per-instance `ResizeObserver` — a deliberate deviation from the DS bundle's approach for consistency with how this codebase already solves the same problem. The column-visibility toggle is a small self-contained dropdown (not Mantine `Popover`) — `Popover.Target` requires a ref-forwarding child and `v2/Button` doesn't forward refs, so a custom absolutely-positioned panel was simpler and more testable than fixing that dependency chain.
+
+### Mobile card rows
+
+When `mobileCard` is set **and** the table is at the mobile breakpoint, each row renders the selection checkbox (if `selectable`) plus a single cell containing `mobileCard(row)`, instead of one grid cell per visible column — an alternative to horizontal scroll / `hideOnMobile` collapsing for tables too wide to read comfortably on a phone (channels list, [#967](https://github.com/pskillen/codeplug-studio/issues/967)). Column sort headers are hidden in this mode (the "select all" checkbox header still shows); `onRowActivate` and selection keep working exactly as in the normal grid layout. `nested` and `reorderMode` are not exercised together with `mobileCard` by any current consumer. `sortRowsByColumn` (exported alongside `DataTableColumn`) is available for consumers that need to pre-sort rows the same way `DataTable` does, e.g. to render an alternate layout for the same data outside the table.
 
 ## Usage
 

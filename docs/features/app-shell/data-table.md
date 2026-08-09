@@ -52,6 +52,7 @@ Dev demos: `/styleguide` (unlinked).
 | `virtualizeOverscan`        | Extra rows rendered outside viewport (default 20)                                              |
 | `orderMode`                 | Lock: no column sort; keep `rows` order                                                        |
 | `storedOrder`               | Export/agreed order as default sort + restore control when drifted (Zones list)                |
+| `mobileCard` (v2 `DataTable` only) | Replaces per-column grid cells with a card render at the mobile breakpoint — see [DataTable.md](../../../src/app/components/v2/DataTable.md#mobile-card-rows) |
 
 List layout: full-width search → result count row (with optional restore + column picker) → table → footer toolbar.
 
