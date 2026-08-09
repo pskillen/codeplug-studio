@@ -118,12 +118,28 @@ interface FlatRow<T> {
   hasChildren: boolean;
 }
 
-function compareValues(a: string | number | null, b: string | number | null): number {
+export function compareDataTableValues(
+  a: string | number | null,
+  b: string | number | null,
+): number {
   if (a == null && b == null) return 0;
   if (a == null) return -1;
   if (b == null) return 1;
   if (typeof a === 'number' && typeof b === 'number') return a - b;
   return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
+}
+
+/** Sorts `rows` by the `DataTableColumn` matching `sort.key`, using that column's `sortValue`. Shared by `DataTable`'s own sort and any consumer rendering an alternate (e.g. card) layout for the same rows/columns/sort state. */
+export function sortRowsByColumn<T>(
+  rows: T[],
+  columns: DataTableColumn<T>[],
+  sort: DataTableSortState | null | undefined,
+): T[] {
+  const sortColumn = sort ? columns.find((col) => col.key === sort.key) : undefined;
+  if (!sort || !sortColumn?.sortValue) return rows;
+  const { sortValue } = sortColumn;
+  const direction = sort.direction === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => direction * compareDataTableValues(sortValue(a), sortValue(b)));
 }
 
 function nextSortDirection(
@@ -340,14 +356,10 @@ export default function DataTable<T>({
     applySort(nextSortDirection(sortState, key));
   };
 
-  const sortColumn = sortState ? columns.find((col) => col.key === sortState.key) : undefined;
-
   const sortedRows = useMemo(() => {
-    if (reorderMode || !sortState || !sortColumn?.sortValue) return rows;
-    const { sortValue } = sortColumn;
-    const direction = sortState.direction === 'asc' ? 1 : -1;
-    return [...rows].sort((a, b) => direction * compareValues(sortValue(a), sortValue(b)));
-  }, [reorderMode, rows, sortState, sortColumn]);
+    if (reorderMode) return rows;
+    return sortRowsByColumn(rows, columns, sortState);
+  }, [reorderMode, rows, columns, sortState]);
 
   const rowsByKey = useMemo(
     () => new Map(rows.map((row) => [getRowId(row), row])),
