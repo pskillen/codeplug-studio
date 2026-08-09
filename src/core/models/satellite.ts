@@ -31,4 +31,15 @@ export interface Satellite extends PersistableRow {
   bstar: number;
   elementSetNumber: number;
   revolutionNumber: number;
+
+  /**
+   * Optional operator-entered uplink/downlink metadata for satellite QSOs — vendor-neutral
+   * scalars, no radio-specific caps or NORAD allowlists. Frequencies in Hz (same convention as
+   * `Channel.rxFrequency`/`txFrequency`); tones in Hz (CTCSS). `null`/`undefined` = not set.
+   * Radio write-packing of these fields is out of scope here (#855–#859).
+   */
+  uplinkHz?: number | null;
+  downlinkHz?: number | null;
+  uplinkToneHz?: number | null;
+  downlinkToneHz?: number | null;
 }
