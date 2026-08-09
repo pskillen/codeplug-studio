@@ -43,6 +43,13 @@ export interface GoogleDrivePort {
     fileId?: string;
   }): Promise<DriveFileMetadata>;
   getFileMetadata(fileId: string): Promise<DriveFileMetadata>;
+  /**
+   * Silent, non-interactive refresh attempt ahead of expiry. Resolves true if the
+   * session is valid afterwards (already valid, or refreshed); false if interactive
+   * re-auth is required (e.g. web has no refresh token, or native refresh failed).
+   * Never throws.
+   */
+  refreshSilently?(): Promise<boolean>;
 }
 
 export interface GoogleDriveDeps {
@@ -178,6 +185,16 @@ export function createGoogleDrivePort(deps?: Partial<GoogleDriveDeps>): GoogleDr
     async getFileMetadata(fileId) {
       const session = await getValidSession();
       return resolved.api.getFileMetadata(fileId, session.accessToken);
+    },
+
+    async refreshSilently() {
+      try {
+        await getValidSession();
+        return true;
+      } catch (err) {
+        if (err instanceof DriveAuthError) return false;
+        throw err;
+      }
     },
   };
 }
