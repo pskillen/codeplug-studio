@@ -72,6 +72,7 @@ describe('migrateZoneExportFields', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      satellites: [],
       channelDefaults: {
         forbidTransmit: false,
         txPermit: 'permitAlways',
@@ -117,6 +118,7 @@ describe('migrateZoneExportFields', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      satellites: [],
       channelDefaults: {
         forbidTransmit: false,
         txPermit: 'permitAlways',

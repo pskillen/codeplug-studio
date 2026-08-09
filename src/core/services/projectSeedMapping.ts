@@ -16,6 +16,7 @@ export function aggregateToSeed(aggregate: ProjectAggregate): ProjectSeed {
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: aggregate.scanLists,
     aprsConfigurations: aggregate.aprsConfiguration ? [aggregate.aprsConfiguration] : [],
+    satellites: aggregate.satellites,
     radioBuilds: aggregate.radioBuilds,
     egressPaths: aggregate.egressPaths,
   };
@@ -36,6 +37,7 @@ export function seedToAggregate(seed: ProjectSeed): ProjectAggregate {
     rxGroupLists: seed.rxGroupLists ?? [],
     scanLists: seed.scanLists ?? [],
     aprsConfiguration: seed.aprsConfigurations?.[0] ?? null,
+    satellites: seed.satellites ?? [],
     radioBuilds: seed.radioBuilds ?? [],
     egressPaths: seed.egressPaths ?? [],
   });

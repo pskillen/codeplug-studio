@@ -16,6 +16,7 @@ export function assertSeedProjectId(projectId: string, seed: ProjectSeed): void 
     ...(seed.rxGroupLists ?? []),
     ...(seed.scanLists ?? []),
     ...(seed.aprsConfigurations ?? []),
+    ...(seed.satellites ?? []),
     ...(seed.radioBuilds ?? []),
     ...(seed.egressPaths ?? []),
   ];
@@ -41,6 +42,7 @@ export function seedFromAggregate(aggregate: ProjectAggregate): ProjectSeed {
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: aggregate.scanLists,
     aprsConfigurations: aggregate.aprsConfiguration ? [aggregate.aprsConfiguration] : [],
+    satellites: aggregate.satellites,
     radioBuilds: aggregate.radioBuilds,
     egressPaths: aggregate.egressPaths,
   };
@@ -57,6 +59,7 @@ export function aggregateFromSeed(seed: ProjectSeed): ProjectAggregate {
     rxGroupLists: seed.rxGroupLists ?? [],
     scanLists: seed.scanLists ?? [],
     aprsConfiguration: seed.aprsConfigurations?.[0] ?? null,
+    satellites: seed.satellites ?? [],
     radioBuilds: seed.radioBuilds ?? [],
     egressPaths: seed.egressPaths ?? [],
   };

@@ -121,6 +121,7 @@ export function migrateAprsSingletonLibrary(library: LegacyLibrary): Library {
     analogContacts: library.analogContacts,
     rxGroupLists: library.rxGroupLists,
     scanLists: library.scanLists,
+    satellites: library.satellites,
     aprsConfiguration,
     channelDefaults: normalizeChannelBehaviourDefaults(library.channelDefaults),
     zoneDefaults: normalizeZoneBehaviourDefaults(library.zoneDefaults),
@@ -146,6 +147,7 @@ export function migrateAprsSingletonAggregate(aggregate: ProjectAggregate): Proj
     analogContacts: aggregate.analogContacts,
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: aggregate.scanLists,
+    satellites: aggregate.satellites,
     aprsConfigurations: (
       aggregate as ProjectAggregate & { aprsConfigurations?: AprsConfiguration[] }
     ).aprsConfigurations,
@@ -169,6 +171,7 @@ export function migrateAprsSingletonAggregate(aggregate: ProjectAggregate): Proj
     analogContacts: library.analogContacts,
     rxGroupLists: library.rxGroupLists,
     scanLists: library.scanLists,
+    satellites: library.satellites,
     aprsConfiguration: library.aprsConfiguration,
     channelDefaults: library.channelDefaults,
     zoneDefaults: library.zoneDefaults,

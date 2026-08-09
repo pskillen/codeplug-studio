@@ -10,6 +10,7 @@ import type {
   Zone,
 } from '@core/models/library.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
+import type { Satellite } from '@core/models/satellite.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 
 export type PutResult =
@@ -26,6 +27,7 @@ export interface ProjectSeed {
   rxGroupLists?: RxGroupList[];
   scanLists?: ScanList[];
   aprsConfigurations?: AprsConfiguration[];
+  satellites?: Satellite[];
   radioBuilds?: RadioBuild[];
   egressPaths?: EgressPath[];
 }

@@ -38,6 +38,12 @@ export const LIBRARY_KINDS: LibraryKindMeta[] = [
     plural: 'APRS configuration',
   },
   { kind: 'zone', slug: 'zones', label: 'Zone', plural: 'Zones' },
+  {
+    kind: 'satellite',
+    slug: 'satellite-keps',
+    label: 'Satellite',
+    plural: 'Satellite Keps',
+  },
 ];
 
 export function kindBySlug(slug: string): LibraryKindMeta | undefined {
@@ -70,6 +76,8 @@ export function entitiesForKind(library: Library, kind: LibraryEntityKind): Name
       return library.aprsConfiguration ? [library.aprsConfiguration] : [];
     case 'zone':
       return library.zones;
+    case 'satellite':
+      return library.satellites;
   }
 }
 
@@ -114,6 +122,11 @@ export function describeEntity(library: Library, kind: LibraryEntityKind, id: st
     case 'zone': {
       const z = library.zones.find((x) => x.id === id);
       return z ? `${z.members.length} channel(s)` : '';
+    }
+    case 'satellite': {
+      const s = library.satellites.find((x) => x.id === id);
+      if (!s) return '';
+      return `NORAD ${s.noradId} · ${s.enabled ? 'enabled' : 'disabled'}`;
     }
   }
 }

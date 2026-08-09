@@ -30,6 +30,7 @@ function library(zones: Zone[], channelIds: string[] = []): Library {
     digitalContacts: [],
     rxGroupLists: [],
     scanLists: [],
+    satellites: [],
     channelDefaults: {
       forbidTransmit: false,
       txPermit: 'permitAlways',

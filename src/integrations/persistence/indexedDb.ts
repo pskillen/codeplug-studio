@@ -2,6 +2,7 @@ import { STUDIO_SCHEMA_VERSION } from '@core/models/schemaVersion.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
+import type { Satellite } from '@core/models/satellite.ts';
 import type {
   AnalogContact,
   Channel,
@@ -23,6 +24,7 @@ import type {
   ProjectPersistence,
   ProjectSeed,
   PutResult,
+  SatellitePut,
 } from './types.ts';
 import { DEFAULT_DB_NAME, STORES, STORE_NAMES } from './stores.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
@@ -291,6 +293,58 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     return this.listRows<AprsConfiguration>('aprsConfiguration', projectId);
   }
 
+  async getSatellite(projectId: string, id: string): Promise<Satellite | null> {
+    return this.getRow<Satellite>('satellite', projectId, id);
+  }
+  async putSatellite(row: Satellite, expectedRevision: number | null): Promise<PutResult> {
+    return this.putRow('satellite', row, expectedRevision);
+  }
+  async putSatellitesBatch(puts: SatellitePut[]): Promise<BatchPutResult> {
+    if (puts.length === 0) return { results: [] };
+
+    const db = await this.db();
+    const storeName = STORES.satellite;
+    const results: BatchPutItemResult[] = new Array(puts.length);
+    let anySuccess = false;
+    const projectId = puts[0]!.row.projectId;
+    const firstId = puts[0]!.row.id;
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const os = tx.objectStore(storeName);
+
+      for (let i = 0; i < puts.length; i++) {
+        const { row, expectedRevision } = puts[i]!;
+        const getReq = os.get([row.projectId, row.id]);
+        getReq.onsuccess = () => {
+          const stored = getReq.result as Satellite | undefined;
+          if (stored && expectedRevision !== null && stored.revision !== expectedRevision) {
+            results[i] = { ok: false, reason: 'revision_conflict' };
+            return;
+          }
+          const revision = stored ? nextRevision(stored.revision) : row.revision;
+          const updated = { ...row, revision, updatedAt: isoNow() };
+          os.put(updated);
+          results[i] = { ok: true, revision };
+          anySuccess = true;
+        };
+        getReq.onerror = () => reject(getReq.error);
+      }
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+
+    if (anySuccess) {
+      this.emit({ projectId, kind: 'satellite', id: firstId, op: 'put' });
+    }
+    return { results };
+  }
+  async listSatellites(projectId: string): Promise<Satellite[]> {
+    return this.listRows<Satellite>('satellite', projectId);
+  }
+
   async getRadioBuild(projectId: string, id: string): Promise<RadioBuild | null> {
     const row = await this.getRow<RadioBuild>('radioBuild', projectId, id);
     return row ? readRadioBuildRow(row) : null;
@@ -356,6 +410,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       rxGroupLists,
       scanLists,
       aprsConfigurations,
+      satellites,
       radioBuilds,
       egressPaths,
     ] = await Promise.all([
@@ -367,6 +422,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       this.listRxGroupLists(projectId),
       this.listScanLists(projectId),
       this.listAprsConfigurations(projectId),
+      this.listSatellites(projectId),
       this.listRadioBuilds(projectId),
       this.listEgressPaths(projectId),
     ]);
@@ -380,6 +436,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       rxGroupLists,
       scanLists,
       aprsConfigurations,
+      satellites,
       radioBuilds,
       egressPaths,
     };
@@ -398,6 +455,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'rxGroupList', rows: seed.rxGroupLists ?? [] },
       { kind: 'scanList', rows: seed.scanLists ?? [] },
       { kind: 'aprsConfiguration', rows: seed.aprsConfigurations ?? [] },
+      { kind: 'satellite', rows: seed.satellites ?? [] },
       { kind: 'radioBuild', rows: seed.radioBuilds ?? [] },
       { kind: 'egressPath', rows: seed.egressPaths ?? [] },
     ];
@@ -455,6 +513,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'rxGroupList', rows: seed.rxGroupLists ?? [] },
       { kind: 'scanList', rows: seed.scanLists ?? [] },
       { kind: 'aprsConfiguration', rows: seed.aprsConfigurations ?? [] },
+      { kind: 'satellite', rows: seed.satellites ?? [] },
       { kind: 'radioBuild', rows: seed.radioBuilds ?? [] },
       { kind: 'egressPath', rows: seed.egressPaths ?? [] },
     ];

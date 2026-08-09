@@ -5,6 +5,7 @@ import {
   newDigitalContact,
   newProjectMeta,
   newRadioBuildWithEgresses,
+  newSatellite,
   newTalkGroup,
 } from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from './inMemory.ts';
@@ -310,5 +311,31 @@ describe('InMemoryProjectPersistence', () => {
     expect(await store.listTalkGroups(meta.projectId)).toHaveLength(0);
     expect(await store.listRadioBuilds(meta.projectId)).toHaveLength(0);
     expect(await store.listEgressPaths(meta.projectId)).toHaveLength(0);
+  });
+
+  it('putSatellitesBatch writes a refresh in one call, preserving enable state', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+
+    const iss = newSatellite(meta.projectId, 'ISS (ZARYA)', 25544, { enabled: false });
+    await store.putSatellite(iss, null);
+    const stored = (await store.listSatellites(meta.projectId))[0]!;
+
+    const batch = await store.putSatellitesBatch([
+      { row: { ...stored, name: 'ISS (ZARYA) refreshed' }, expectedRevision: stored.revision },
+      { row: newSatellite(meta.projectId, 'AO-91', 43017), expectedRevision: null },
+    ]);
+
+    expect(batch.results).toEqual([
+      { ok: true, revision: 2 },
+      { ok: true, revision: 1 },
+    ]);
+    const sats = await store.listSatellites(meta.projectId);
+    expect(sats).toHaveLength(2);
+    expect(sats.find((s) => s.noradId === 25544)).toMatchObject({
+      name: 'ISS (ZARYA) refreshed',
+      enabled: false,
+    });
   });
 });

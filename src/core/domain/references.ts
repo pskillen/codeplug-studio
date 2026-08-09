@@ -14,7 +14,7 @@ export interface EntityReference {
 
 /** Target of a reference scan: a library entity addressed by kind + UUID id. */
 export interface ReferenceTarget {
-  kind: EntityRefKind | 'rxGroupList' | 'scanList' | 'zone' | 'aprsConfiguration';
+  kind: EntityRefKind | 'rxGroupList' | 'scanList' | 'zone' | 'aprsConfiguration' | 'satellite';
   id: string;
 }
 
@@ -181,6 +181,7 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
   const zoneIds = new Set(library.zones.map((z) => z.id));
 
   const scanListIds = new Set(library.scanLists.map((s) => s.id));
+  const satelliteIds = new Set(library.satellites.map((s) => s.id));
 
   const hasTarget = (target: ReferenceTarget): boolean => {
     switch (target.kind) {
@@ -200,6 +201,8 @@ export function findDanglingReferences(library: Library): DanglingReference[] {
         return scanListIds.has(target.id);
       case 'aprsConfiguration':
         return library.aprsConfiguration?.id === target.id;
+      case 'satellite':
+        return satelliteIds.has(target.id);
     }
   };
 

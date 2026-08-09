@@ -13,6 +13,7 @@ export const STORES: Record<EntityKind, string> = {
   rxGroupList: 'rxGroupLists',
   scanList: 'scanLists',
   aprsConfiguration: 'aprsConfigurations',
+  satellite: 'satellites',
   radioBuild: 'radioBuilds',
   egressPath: 'egressPaths',
 };

@@ -150,6 +150,7 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
     analogContacts: withMembers.analogContacts,
     rxGroupLists: withMembers.rxGroupLists,
     scanLists: withMembers.scanLists ?? [],
+    satellites: withMembers.satellites,
     aprsConfiguration:
       withMembers.aprsConfiguration ??
       (withMembers as { aprsConfigurations?: AprsConfiguration[] }).aprsConfigurations?.[0] ??
@@ -176,6 +177,7 @@ export function migrateProjectAggregate(aggregate: ProjectAggregate): ProjectAgg
         analogContacts: migratedLibrary.analogContacts,
         rxGroupLists: migratedLibrary.rxGroupLists,
         scanLists: migratedLibrary.scanLists,
+        satellites: migratedLibrary.satellites,
         aprsConfiguration: migratedLibrary.aprsConfiguration,
         channelDefaults: migratedLibrary.channelDefaults,
         zoneDefaults: migratedLibrary.zoneDefaults,
