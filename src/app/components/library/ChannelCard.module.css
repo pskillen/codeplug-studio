@@ -1,0 +1,50 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-surface);
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.name {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--dsv2-text-primary);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.fieldLabel {
+  flex: 0 0 auto;
+  min-width: 6.5rem;
+  color: var(--dsv2-text-tertiary);
+}
+
+.fieldValue {
+  margin: 0;
+  min-width: 0;
+  color: var(--dsv2-text-primary);
+}
