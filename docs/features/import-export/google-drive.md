@@ -2,7 +2,7 @@
 
 Open native YAML projects and save exports back to a Studio-owned Drive folder — without leaving the Studio SPA.
 
-**Tracking:** [#61](https://github.com/pskillen/codeplug-studio/issues/61) · [#62](https://github.com/pskillen/codeplug-studio/issues/62) · [#285](https://github.com/pskillen/codeplug-studio/issues/285) · [#286](https://github.com/pskillen/codeplug-studio/issues/286) · [#361](https://github.com/pskillen/codeplug-studio/issues/361) · [#368](https://github.com/pskillen/codeplug-studio/issues/368) · [#477](https://github.com/pskillen/codeplug-studio/issues/477) · [#909](https://github.com/pskillen/codeplug-studio/issues/909) · Epic [#35](https://github.com/pskillen/codeplug-studio/issues/35)
+**Tracking:** [#61](https://github.com/pskillen/codeplug-studio/issues/61) · [#62](https://github.com/pskillen/codeplug-studio/issues/62) · [#285](https://github.com/pskillen/codeplug-studio/issues/285) · [#286](https://github.com/pskillen/codeplug-studio/issues/286) · [#361](https://github.com/pskillen/codeplug-studio/issues/361) · [#368](https://github.com/pskillen/codeplug-studio/issues/368) · [#477](https://github.com/pskillen/codeplug-studio/issues/477) · [#909](https://github.com/pskillen/codeplug-studio/issues/909) · [#966](https://github.com/pskillen/codeplug-studio/issues/966) · Epic [#35](https://github.com/pskillen/codeplug-studio/issues/35)
 
 **Source:** `src/integrations/cloud/`, `src/app/components/import-export/`, Settings
 
@@ -61,7 +61,9 @@ Implementation: `nativeGoogleAuth.ts`, `nativeAuthRedirect.ts`, `nativeGoogleDri
 - [ ] Background app mid-consent, resume — session completes
 - [ ] Force-kill mid-consent, relaunch — cold-start redirect completes auth
 - [ ] Disconnect / revoke
-- [ ] Token expiry + silent refresh (wait or shorten expiry in test)
+- [ ] Idle past expiry while foregrounded (shorten expiry for the test build) — session renews silently, no consent screen, no Google security email ([#966](https://github.com/pskillen/codeplug-studio/issues/966))
+- [ ] Background the app past expiry, then resume — same silent renewal, no consent screen
+- [ ] Revoke access from the Google account externally, then trigger a Drive action — exactly one interactive consent screen, not a loop
 - [ ] Denied consent — no error storm; can retry
 
 ## OAuth scope
@@ -76,18 +78,19 @@ Operators who want to open a YAML they didn't create via Studio need to move/cop
 
 ## Port API (`GoogleDrivePort`)
 
-| Method                                                | Purpose                                                                                                 |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `connect()`                                           | OAuth token flow (GIS on web; PKCE + Custom Tabs on Android); also resolves/creates the app root folder |
-| `disconnect()`                                        | Revoke token + clear session                                                                            |
-| `isConnected()`                                       | Session present and not expired                                                                         |
-| `getAccountLabel()`                                   | Connected Google account email                                                                          |
-| `getAppRootFolderId()`                                | Resolved "Codeplug Studio" folder id from the last connect                                              |
-| `listChildren(parentId)`                              | Folders + `.yaml` / `.yml` files                                                                        |
-| `createFolder(parentId, name)`                        | New folder in parent                                                                                    |
-| `readFile(fileId)`                                    | Download file text                                                                                      |
-| `writeFile({ parentId, fileName, content, fileId? })` | Create or overwrite YAML                                                                                |
-| `getFileMetadata(fileId)`                             | Name, parents, modified time                                                                            |
+| Method                                                | Purpose                                                                                                                                                          |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `connect()`                                           | OAuth token flow (GIS on web; PKCE + Custom Tabs on Android); also resolves/creates the app root folder                                                          |
+| `disconnect()`                                        | Revoke token + clear session                                                                                                                                     |
+| `isConnected()`                                       | Session present and not expired                                                                                                                                  |
+| `getAccountLabel()`                                   | Connected Google account email                                                                                                                                   |
+| `getAppRootFolderId()`                                | Resolved "Codeplug Studio" folder id from the last connect                                                                                                       |
+| `listChildren(parentId)`                              | Folders + `.yaml` / `.yml` files                                                                                                                                 |
+| `createFolder(parentId, name)`                        | New folder in parent                                                                                                                                             |
+| `readFile(fileId)`                                    | Download file text                                                                                                                                               |
+| `writeFile({ parentId, fileName, content, fileId? })` | Create or overwrite YAML                                                                                                                                         |
+| `getFileMetadata(fileId)`                             | Name, parents, modified time                                                                                                                                     |
+| `refreshSilently()`                                   | Non-interactive refresh attempt ahead of expiry — native: uses the stored `refresh_token`; web: always resolves `false` (GIS implicit flow has no refresh token) |
 
 Implementation: `src/integrations/cloud/googleDrive.ts`, `src/integrations/cloud/driveApi.ts`.
 
@@ -119,9 +122,11 @@ Implementation: `src/integrations/cloud/googleDrive.ts`, `src/integrations/cloud
 
 `DriveSessionProvider` is the single source of truth for OAuth state:
 
-- Revalidates on window focus and before token expiry
+- A timer scheduled at `expiresAt − DRIVE_TOKEN_REFRESH_BUFFER_MS` (and re-checked on window focus/visibility) calls `port.refreshSilently()` first; on native this is a real silent `refresh_token` exchange, and success reschedules the next timer, keeping the session alive indefinitely without interaction. On web it's a no-op (no refresh token in the GIS implicit flow) and falls straight through to the behaviour below.
 - `withDriveAuthRetry` clears stale sessions on 401 and reconnects inline
 - Expired sessions show inline beside sidebar Drive controls; any Drive action button click reconnects
+
+**Why ([#966](https://github.com/pskillen/codeplug-studio/issues/966)):** before this, native never refreshed proactively — the first Drive action after any 1-hour expiry (including after backgrounding/resuming the app) fell through to the fully interactive `authorize()` flow, which forces `prompt: 'consent'` on Android. Google's account security treats that as a new sign-in and emails a warning, roughly once per token lifetime. The interactive fallback is now only reached once the stored refresh token itself is actually invalid.
 
 ### Drive browser modal
 
