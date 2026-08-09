@@ -38,6 +38,7 @@ describe('contextualStripItems', () => {
       'Receive group lists',
       'Scan lists',
       'APRS setup',
+      'Satellite Keps',
     ]);
   });
 

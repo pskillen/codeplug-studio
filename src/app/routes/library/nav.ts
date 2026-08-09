@@ -69,6 +69,14 @@ export const LIBRARY_NAV: LibraryNavEntry[] = [
     sectionNavTitle: 'APRS configuration',
     icon: entityNavIcons.aprsConfiguration,
   },
+  {
+    label: 'Satellite',
+    plural: 'Satellite Keps',
+    listPath: '/library/satellite-keps',
+    editorSlugs: ['satellite-keps'],
+    sectionNavTitle: 'Satellite Keps',
+    icon: entityNavIcons.satellites,
+  },
 ];
 
 export function listPathForEditorSlug(slug: string): string {

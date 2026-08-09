@@ -10,10 +10,10 @@ Tier-1 hub for **satellite Keplerian elements (keps / TLEs)** in Codeplug Studio
 
 | Area                                  | Status      | Notes                                                                                                                           |
 | ------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| TLE parse + orbital model             | Not started | [#850](https://github.com/pskillen/codeplug-studio/issues/850)                                                                  |
-| CelesTrak / AMSAT fetch (Pages proxy) | Not started | [#851](https://github.com/pskillen/codeplug-studio/issues/851) — Space-Track deferred                                           |
-| Curated library persistence           | Not started | [#852](https://github.com/pskillen/codeplug-studio/issues/852)                                                                  |
-| Satellite Keps library UI             | Not started | [#853](https://github.com/pskillen/codeplug-studio/issues/853) — [feature-design.md](feature-design.md) §§7–9                   |
+| TLE parse + orbital model             | Shipped     | [#850](https://github.com/pskillen/codeplug-studio/issues/850)                                                                  |
+| CelesTrak / AMSAT fetch (Pages proxy) | Shipped     | [#851](https://github.com/pskillen/codeplug-studio/issues/851) — Space-Track deferred                                           |
+| Curated library persistence           | Shipped     | [#852](https://github.com/pskillen/codeplug-studio/issues/852)                                                                  |
+| Satellite Keps library UI             | Shipped     | [#853](https://github.com/pskillen/codeplug-studio/issues/853) — [feature-design.md](feature-design.md) §§7–9                   |
 | Uplink / downlink metadata            | Not started | [#854](https://github.com/pskillen/codeplug-studio/issues/854)                                                                  |
 | Anytone D890 wire docs + write        | Not started | [#855](https://github.com/pskillen/codeplug-studio/issues/855) → [#856](https://github.com/pskillen/codeplug-studio/issues/856) |
 | OpenGD77 orbital wire docs + write    | Not started | [#857](https://github.com/pskillen/codeplug-studio/issues/857) → [#858](https://github.com/pskillen/codeplug-studio/issues/858) |

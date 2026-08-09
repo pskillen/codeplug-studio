@@ -8,7 +8,7 @@
 
 ## Overall status
 
-**Status:** In progress
+**Status:** Milestone A complete (pending merge) — Satellite Keps library shippable end-to-end
 
 **Branch:** `848/pskillen/satellite-keps-and-tracking-mvp`
 
@@ -72,7 +72,27 @@
 
 ## Slice 4: Satellite Keps library list UI (#853)
 
-**Status:** Not started
+**Status:** Complete (pending merge)
+
+**Delivered**
+
+- `src/app/routes/library/lists/SatelliteKepsListPage.tsx` — new Library section tab; `DataTable` v2 (name/NORAD id/epoch/source/enable-toggle/delete), search, sort, empty states.
+- "Update from CelesTrak/AMSAT" header action: `fetchSatelliteSet` → `mergeSatelliteSet` → `putSatellitesBatch`, then `ProjectMeta.satelliteLibraryLastUpdated` timestamp (stale-styled after 7 days).
+- Nav wiring: `registry.ts` (`LIBRARY_KINDS` + `entitiesForKind`/`describeEntity` cases), `nav.ts` (`LIBRARY_NAV` entry), `contextualStripItems.ts` (the actual visible section-nav strip — separate from `LIBRARY_NAV`, easy to miss), `entityNavIcons.ts` (`IconPlanet`, distinct from `aprsConfiguration`'s `IconSatellite`), `App.tsx` route.
+- No write-to-radio control anywhere on this page (explicitly out of scope for this plan — omitted, not a disabled placeholder).
+
+**Bug caught and fixed during browser verification:** the "Last updated" indicator didn't update after a refresh because `ProjectProvider`'s `activeProject` is a snapshot loaded once (not re-fetched on every persistence change) — fixed by calling `refreshProjects()` after the `putProjectMeta` write in the refresh handler.
+
+**Verify**
+
+- Live-tested against the real CelesTrak endpoint via the Vite dev proxy (`GET /api/celestrak/amateur → 200`): fetched 97 real amateur satellites (ISS (ZARYA), SWISSCUBE, etc.), persisted, survived a full page reload.
+- Confirmed the core acceptance criterion end-to-end: disabled a satellite, re-ran "Update from CelesTrak/AMSAT", confirmed `enabled: false` and the row count were preserved across the merge (no duplicate rows, count stayed at 97).
+- Search/filter, sort, and delete (shared `EntityListRowDeleteAction`) all wired through already-tested shared components.
+- `npx vitest run` — 399 files / 2505 tests passing. `npx tsc --noEmit -p tsconfig.app.json` — 0 errors. Lint/format clean.
+
+---
+
+**Milestone A (Satellite Keps library, #850–#853) is complete** — an operator can refresh, curate, and persist a satellite library end-to-end. Radio write (#854–#859) remains out of scope for this plan.
 
 ---
 

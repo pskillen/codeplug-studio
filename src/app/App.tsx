@@ -23,6 +23,7 @@ import TalkGroupsListPage from './routes/library/lists/TalkGroupsListPage.tsx';
 import ContactsListPage from './routes/library/lists/ContactsListPage.tsx';
 import RxGroupListsListPage from './routes/library/lists/RxGroupListsListPage.tsx';
 import ScanListsListPage from './routes/library/lists/ScanListsListPage.tsx';
+import SatelliteKepsListPage from './routes/library/lists/SatelliteKepsListPage.tsx';
 import AprsConfigurationPage from './routes/library/AprsConfigurationPage.tsx';
 import ChannelDefaultsPage from './routes/library/ChannelDefaultsPage.tsx';
 import ZoneDefaultsPage from './routes/library/ZoneDefaultsPage.tsx';
@@ -161,6 +162,7 @@ export const appRouter = createBrowserRouter([
           },
           { path: '/library/rx-group-lists', element: <RxGroupListsListPage /> },
           { path: '/library/scan-lists', element: <ScanListsListPage /> },
+          { path: '/library/satellite-keps', element: <SatelliteKepsListPage /> },
           { path: '/library/aprs-configuration', element: <AprsConfigurationPage /> },
           {
             path: '/library/aprs-configurations',
