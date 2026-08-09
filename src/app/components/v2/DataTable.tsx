@@ -108,6 +108,14 @@ export interface DataTableProps<T> {
   onRowActivate?: (row: T) => void;
   /** `'nestParent'` gives the row a quiet background. */
   getRowVariant?: (row: T) => 'nestParent' | undefined;
+  /**
+   * Replaces the per-column grid cells with this card render on narrow
+   * viewports (below `MOBILE_MAX_WIDTH_MEDIA_QUERY`) — an alternative to
+   * horizontal scroll / `hideOnMobile` column collapsing for wide tables.
+   * `onRowActivate` keeps working; selection checkboxes, column sort headers,
+   * and `nested`/`reorderMode` cells are hidden while this is active.
+   */
+  mobileCard?: (row: T) => ReactNode;
   className?: string;
 }
 
@@ -118,12 +126,28 @@ interface FlatRow<T> {
   hasChildren: boolean;
 }
 
-function compareValues(a: string | number | null, b: string | number | null): number {
+export function compareDataTableValues(
+  a: string | number | null,
+  b: string | number | null,
+): number {
   if (a == null && b == null) return 0;
   if (a == null) return -1;
   if (b == null) return 1;
   if (typeof a === 'number' && typeof b === 'number') return a - b;
   return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
+}
+
+/** Sorts `rows` by the `DataTableColumn` matching `sort.key`, using that column's `sortValue`. Shared by `DataTable`'s own sort and any consumer rendering an alternate (e.g. card) layout for the same rows/columns/sort state. */
+export function sortRowsByColumn<T>(
+  rows: T[],
+  columns: DataTableColumn<T>[],
+  sort: DataTableSortState | null | undefined,
+): T[] {
+  const sortColumn = sort ? columns.find((col) => col.key === sort.key) : undefined;
+  if (!sort || !sortColumn?.sortValue) return rows;
+  const { sortValue } = sortColumn;
+  const direction = sort.direction === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => direction * compareDataTableValues(sortValue(a), sortValue(b)));
 }
 
 function nextSortDirection(
@@ -160,6 +184,8 @@ interface DataTableBodyRowProps<T> {
   rowVariant: 'nestParent' | undefined;
   activatable: boolean;
   onActivate: () => void;
+  useCardLayout: boolean;
+  mobileCard: ((row: T) => ReactNode) | undefined;
 }
 
 /** One data row. Always calls `useSortable` (inert when `reorderDragEnabled` is false or there's no ancestor `DndContext`) so hook order stays stable regardless of mode. */
@@ -180,6 +206,8 @@ function DataTableBodyRow<T>({
   rowVariant,
   activatable,
   onActivate,
+  useCardLayout,
+  mobileCard,
 }: DataTableBodyRowProps<T>) {
   const { row, key, depth, hasChildren } = flat;
   const {
@@ -211,6 +239,7 @@ function DataTableBodyRow<T>({
       role="row"
       className={[
         classes.dataRow,
+        useCardLayout ? classes.dataRowCard : '',
         selectable && !rowSelectable ? classes.rowGated : '',
         rowVariant === 'nestParent' ? classes.rowNestParent : '',
         activatable ? classes.rowActivatable : '',
@@ -220,7 +249,7 @@ function DataTableBodyRow<T>({
       style={style}
       onClick={activatable ? onActivate : undefined}
     >
-      {nested ? (
+      {!useCardLayout && nested ? (
         <div role="cell" className={classes.leadCell} style={{ paddingLeft: 6 + depth * 16 }}>
           {hasChildren ? (
             <button
@@ -242,7 +271,7 @@ function DataTableBodyRow<T>({
           ) : null}
         </div>
       ) : null}
-      {selectable ? (
+      {selectable && !useCardLayout ? (
         <div role="cell" className={classes.leadCell}>
           {rowSelectable ? (
             <Checkbox
@@ -254,7 +283,7 @@ function DataTableBodyRow<T>({
           ) : null}
         </div>
       ) : null}
-      {reorderMode ? (
+      {!useCardLayout && reorderMode ? (
         <div role="cell" className={classes.orderCell}>
           {depth === 0 ? (
             <>
@@ -266,22 +295,28 @@ function DataTableBodyRow<T>({
           ) : null}
         </div>
       ) : null}
-      {visibleColumns.map((col) => (
-        <div
-          role="cell"
-          key={col.key}
-          className={[
-            classes.dataCell,
-            col.key === 'actions' ? classes.actionCell : '',
-            col.align === 'right' ? classes.alignRight : '',
-            col.dim ? classes.dim : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-        >
-          {col.render(row)}
+      {useCardLayout ? (
+        <div role="cell" className={classes.cardCell}>
+          {mobileCard!(row)}
         </div>
-      ))}
+      ) : (
+        visibleColumns.map((col) => (
+          <div
+            role="cell"
+            key={col.key}
+            className={[
+              classes.dataCell,
+              col.key === 'actions' ? classes.actionCell : '',
+              col.align === 'right' ? classes.alignRight : '',
+              col.dim ? classes.dim : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
+            {col.render(row)}
+          </div>
+        ))
+      )}
     </div>
   );
 }
@@ -322,6 +357,7 @@ export default function DataTable<T>({
   onVisibleKeysChange,
   onRowActivate,
   getRowVariant,
+  mobileCard,
   className,
 }: DataTableProps<T>) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
@@ -340,14 +376,10 @@ export default function DataTable<T>({
     applySort(nextSortDirection(sortState, key));
   };
 
-  const sortColumn = sortState ? columns.find((col) => col.key === sortState.key) : undefined;
-
   const sortedRows = useMemo(() => {
-    if (reorderMode || !sortState || !sortColumn?.sortValue) return rows;
-    const { sortValue } = sortColumn;
-    const direction = sortState.direction === 'asc' ? 1 : -1;
-    return [...rows].sort((a, b) => direction * compareValues(sortValue(a), sortValue(b)));
-  }, [reorderMode, rows, sortState, sortColumn]);
+    if (reorderMode) return rows;
+    return sortRowsByColumn(rows, columns, sortState);
+  }, [reorderMode, rows, columns, sortState]);
 
   const rowsByKey = useMemo(
     () => new Map(rows.map((row) => [getRowId(row), row])),
@@ -375,6 +407,7 @@ export default function DataTable<T>({
   const showMetaRow = !!search || totalRowCount !== undefined || resultCount !== undefined;
 
   const isMobileViewport = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
+  const useCardLayout = !!mobileCard && isMobileViewport;
 
   const hideableDefs = columns.filter((col) => col.hideable);
   const [internalVisibleKeys, setInternalVisibleKeys] = useState<string[]>(() =>
@@ -468,16 +501,18 @@ export default function DataTable<T>({
     : [];
   const dragSortableKeys = onReorder ? reorderableRowKeys : [];
 
-  const gridTemplateColumns = [
-    nested ? '36px' : null,
-    selectable ? '40px' : null,
-    reorderMode ? '68px' : null,
-    // Flexible default uses a min floor so overflow:auto on .table can scroll
-    // horizontally on narrow viewports instead of collapsing every column.
-    ...visibleColumns.map((col) => col.width ?? 'minmax(8rem, 1fr)'),
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const gridTemplateColumns = useCardLayout
+    ? '1fr'
+    : [
+        nested ? '36px' : null,
+        selectable ? '40px' : null,
+        reorderMode ? '68px' : null,
+        // Flexible default uses a min floor so overflow:auto on .table can scroll
+        // horizontally on narrow viewports instead of collapsing every column.
+        ...visibleColumns.map((col) => col.width ?? 'minmax(8rem, 1fr)'),
+      ]
+        .filter(Boolean)
+        .join(' ');
 
   return (
     <div className={[classes.root, className].filter(Boolean).join(' ')} data-variant={variant}>
@@ -557,8 +592,10 @@ export default function DataTable<T>({
 
       <div className={classes.table} role="table" data-scale={scale}>
         <div className={classes.headerRow} role="row" style={{ gridTemplateColumns }}>
-          {nested ? <div role="columnheader" className={classes.leadCell} /> : null}
-          {selectable ? (
+          {!useCardLayout && nested ? (
+            <div role="columnheader" className={classes.leadCell} />
+          ) : null}
+          {selectable && !useCardLayout ? (
             <div role="columnheader" className={classes.leadCell}>
               <Checkbox
                 checked={allSelected}
@@ -568,55 +605,56 @@ export default function DataTable<T>({
               />
             </div>
           ) : null}
-          {reorderMode ? (
+          {!useCardLayout && reorderMode ? (
             <div role="columnheader" className={classes.headerCell}>
               Order
             </div>
           ) : null}
-          {visibleColumns.map((col) => {
-            const active = sortState?.key === col.key;
-            const Icon = active
-              ? sortState!.direction === 'asc'
-                ? IconChevronUp
-                : IconChevronDown
-              : IconSelector;
-            const sortable = !reorderMode && col.sortable !== false && !!col.sortValue;
+          {!useCardLayout &&
+            visibleColumns.map((col) => {
+              const active = sortState?.key === col.key;
+              const Icon = active
+                ? sortState!.direction === 'asc'
+                  ? IconChevronUp
+                  : IconChevronDown
+                : IconSelector;
+              const sortable = !reorderMode && col.sortable !== false && !!col.sortValue;
 
-            return (
-              <div
-                key={col.key}
-                role="columnheader"
-                aria-sort={
-                  active ? (sortState!.direction === 'asc' ? 'ascending' : 'descending') : 'none'
-                }
-                className={[
-                  classes.headerCell,
-                  col.key === 'actions' ? classes.actionCell : '',
-                  col.align === 'right' ? classes.alignRight : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                {sortable ? (
-                  <button
-                    type="button"
-                    className={classes.sortButton}
-                    onClick={() => handleSort(col.key)}
-                  >
-                    <span>{col.header}</span>
-                    <Icon
-                      size={14}
-                      stroke={ICON_STROKE}
-                      className={active ? classes.sortIconActive : classes.sortIcon}
-                      aria-hidden
-                    />
-                  </button>
-                ) : (
-                  col.header
-                )}
-              </div>
-            );
-          })}
+              return (
+                <div
+                  key={col.key}
+                  role="columnheader"
+                  aria-sort={
+                    active ? (sortState!.direction === 'asc' ? 'ascending' : 'descending') : 'none'
+                  }
+                  className={[
+                    classes.headerCell,
+                    col.key === 'actions' ? classes.actionCell : '',
+                    col.align === 'right' ? classes.alignRight : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
+                  {sortable ? (
+                    <button
+                      type="button"
+                      className={classes.sortButton}
+                      onClick={() => handleSort(col.key)}
+                    >
+                      <span>{col.header}</span>
+                      <Icon
+                        size={14}
+                        stroke={ICON_STROKE}
+                        className={active ? classes.sortIconActive : classes.sortIcon}
+                        aria-hidden
+                      />
+                    </button>
+                  ) : (
+                    col.header
+                  )}
+                </div>
+              );
+            })}
         </div>
 
         <div className={classes.body}>
@@ -661,6 +699,8 @@ export default function DataTable<T>({
                       rowVariant={rowVariant}
                       activatable={activatable}
                       onActivate={() => onRowActivate?.(flat.row)}
+                      useCardLayout={useCardLayout}
+                      mobileCard={mobileCard}
                     />
                   );
                 })}

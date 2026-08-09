@@ -1,7 +1,23 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import DataTable, { type DataTableColumn } from './DataTable.tsx';
 import DesignSystemV2Provider from './DesignSystemV2Provider.tsx';
+
+function mockMobileViewport() {
+  vi.spyOn(window, 'matchMedia').mockImplementation(
+    (query: string) =>
+      ({
+        matches: true,
+        media: query,
+        onchange: null,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        dispatchEvent: () => false,
+      }) as MediaQueryList,
+  );
+}
 
 interface Row {
   id: string;
@@ -33,6 +49,10 @@ const COLUMNS: DataTableColumn<Row>[] = [
 ];
 
 describe('DataTable v2', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('renders every row and column', () => {
     render(
       <DesignSystemV2Provider>
@@ -366,5 +386,65 @@ describe('DataTable v2', () => {
     expect(screen.getAllByRole('row')[0]).toHaveStyle({
       gridTemplateColumns: 'minmax(8rem, 1fr) minmax(8rem, 1fr)',
     });
+  });
+
+  it('renders mobileCard instead of column cells on a mobile viewport', () => {
+    mockMobileViewport();
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={ROWS}
+          getRowId={(row) => row.id}
+          mobileCard={(row) => <div>Card: {row.name}</div>}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.getByText('Card: Bravo')).toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Name' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('columnheader', { name: 'Score' })).not.toBeInTheDocument();
+  });
+
+  it('ignores mobileCard on a desktop viewport, rendering normal columns', () => {
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={ROWS}
+          getRowId={(row) => row.id}
+          mobileCard={(row) => <div>Card: {row.name}</div>}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.queryByText('Card: Bravo')).not.toBeInTheDocument();
+    expect(screen.getByText('Bravo')).toBeInTheDocument();
+  });
+
+  it('hides selection checkboxes but keeps row activation working with mobileCard on a mobile viewport', () => {
+    mockMobileViewport();
+    const onSelectionChange = vi.fn();
+    const onRowActivate = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={ROWS}
+          getRowId={(row) => row.id}
+          selectable
+          selectedKeys={[]}
+          onSelectionChange={onSelectionChange}
+          onRowActivate={onRowActivate}
+          mobileCard={(row) => <div>Card: {row.name}</div>}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.queryByLabelText('Select row 1')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Select all rows')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Card: Bravo'));
+    expect(onRowActivate).toHaveBeenCalledWith(ROWS[0]);
   });
 });
