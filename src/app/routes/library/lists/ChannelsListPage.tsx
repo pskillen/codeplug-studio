@@ -530,7 +530,7 @@ export default function ChannelsListPage() {
       </div>
       <MapPanel
         title="Channel locations"
-        height={420}
+        height={isMobileTable ? 560 : 420}
         legend={
           skipped.length > 0 ? (
             <span>

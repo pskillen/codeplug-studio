@@ -48,6 +48,7 @@ Tiles: OpenStreetMap via react-leaflet. Leaflet default marker assets are not us
 
 ## Related
 
+- [LibraryMapStack](../../../src/app/components/library/LibraryMapStack.md) — list+map composition, mobile toggle (visible by default)
 - [channels.md](channels.md) — marker filters, labels, popups
 - [zones.md](zones.md) — hull geometry, member resolution
 - [#261](https://github.com/pskillen/codeplug-studio/issues/261) — `hideFromInternalMap` channel flag (Location tab checkbox)
