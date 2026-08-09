@@ -15,7 +15,6 @@ describe('primaryNavItems', () => {
       'Library',
       'Tools',
       'Export for radio',
-      'Tracking Dashboard',
       'Help',
     ]);
   });
@@ -24,12 +23,7 @@ describe('primaryNavItems', () => {
     const tools = primaryNavItems.find((i) => i.label === 'Tools');
     expect(tools?.to).toBe('/reference');
     expect(tools?.requiresProject).toBeFalsy();
-    expect(projectNavItems.map((i) => i.label)).toEqual([
-      'Summary',
-      'Library',
-      'Export for radio',
-      'Tracking Dashboard',
-    ]);
+    expect(projectNavItems.map((i) => i.label)).toEqual(['Summary', 'Library', 'Export for radio']);
   });
 });
 
@@ -51,6 +45,16 @@ describe('contextualStripItems', () => {
   it('resolves Tools and Help strips', () => {
     expect(resolveContextualStripItems('/reference/bands')).toEqual(toolsStripItems);
     expect(resolveContextualStripItems('/attributions')).toEqual(helpStripItems);
+  });
+
+  it('includes Tracking Dashboard in the Tools strip and resolves it from /tracking', () => {
+    expect(toolsStripItems.map((i) => i.label)).toEqual([
+      'Maidenhead locator',
+      'Band plan',
+      'Tracking Dashboard',
+    ]);
+    expect(toolsStripItems.find((i) => i.label === 'Tracking Dashboard')?.to).toBe('/tracking');
+    expect(resolveContextualStripItems('/tracking')).toEqual(toolsStripItems);
   });
 
   it('picks the active strip label by longest path match', () => {
