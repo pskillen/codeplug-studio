@@ -28,6 +28,7 @@ import AprsConfigurationPage from './routes/library/AprsConfigurationPage.tsx';
 import ChannelDefaultsPage from './routes/library/ChannelDefaultsPage.tsx';
 import ZoneDefaultsPage from './routes/library/ZoneDefaultsPage.tsx';
 import SummaryPage from './routes/SummaryPage.tsx';
+import TrackingDashboardPage from './routes/tracking/TrackingDashboardPage.tsx';
 import BandsReferencePage from './routes/reference/BandsReferencePage.tsx';
 import MaidenheadReferencePage from './routes/reference/MaidenheadReferencePage.tsx';
 import ReferenceIndexPage from './routes/reference/ReferenceIndexPage.tsx';
@@ -231,6 +232,7 @@ export const appRouter = createBrowserRouter([
           },
           { path: '/import-export', element: <Navigate to="/summary" replace /> },
           { path: '/summary', element: <SummaryPage /> },
+          { path: '/tracking', element: <TrackingDashboardPage /> },
           { path: '/reports', element: <Navigate to="/summary" replace /> },
           { path: '/map', element: <MapRedirect /> },
         ],

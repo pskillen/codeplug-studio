@@ -12,9 +12,9 @@ Tier-1 hub for the **Tracking Dashboard** — client-side pass prediction (SGP4)
 | Area                               | Status      | Notes                                                                                                                                     |
 | ---------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | Observer location settings         | In progress | [#862](https://github.com/pskillen/codeplug-studio/issues/862) — geolocation + Maidenhead shipped; Nominatim search + minimap pin pending |
-| SGP4 pass prediction (Web Worker)  | Not started | [#863](https://github.com/pskillen/codeplug-studio/issues/863) — `satellite.js`                                                           |
+| SGP4 pass prediction (Web Worker)  | Shipped     | [#863](https://github.com/pskillen/codeplug-studio/issues/863) — `satellite.js`                                                           |
 | SatNOGS transmitters proxy + merge | Not started | [#864](https://github.com/pskillen/codeplug-studio/issues/864)                                                                            |
-| Tracking Dashboard + pass grid     | Not started | [#865](https://github.com/pskillen/codeplug-studio/issues/865)                                                                            |
+| Tracking Dashboard + pass grid     | Shipped     | [#865](https://github.com/pskillen/codeplug-studio/issues/865)                                                                            |
 | 3D orbital globe                   | Not started | [#866](https://github.com/pskillen/codeplug-studio/issues/866)                                                                            |
 | 2D ground-track map + toggle       | Not started | [#867](https://github.com/pskillen/codeplug-studio/issues/867)                                                                            |
 

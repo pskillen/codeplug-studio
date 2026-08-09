@@ -27,6 +27,13 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: '/',
+    // Top-level await (used transitively by satellite.js's optional WASM build inside
+    // the pass-prediction worker, see #863) needs a baseline newer than Vite's default
+    // target. The app already requires Web Serial (Chromium-only, recent versions) for
+    // radio writes, so this is not a meaningful new constraint.
+    build: {
+      target: 'es2022',
+    },
     server: {
       // Allow ngrok public hostnames when tunneling local Vite (Run Dev Server).
       allowedHosts: ['.ngrok-free.app', '.ngrok-free.dev', '.ngrok.app', '.ngrok.io'],
@@ -66,6 +73,17 @@ export default defineConfig(({ mode }) => {
           rewrite: () => '/tle/current/nasabare.txt',
         },
       },
+    },
+    worker: {
+      // Default 'iife' worker output can't support the top-level await pulled in
+      // transitively by satellite.js's optional WASM build (see #863).
+      format: 'es',
+    },
+    optimizeDeps: {
+      // esbuild's dep pre-bundler hangs on satellite.js's lazily-imported WASM
+      // submodules (Node-only `#wasm-*` subpath imports, never actually called by
+      // this app). It's pure ESM already, so serve it directly instead (see #863).
+      exclude: ['satellite.js'],
     },
     plugins: [react()],
     resolve: {

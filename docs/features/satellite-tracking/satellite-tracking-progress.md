@@ -62,7 +62,22 @@
 
 ## Slice 7: Tracking Dashboard shell + pass grid (#865)
 
-**Status:** Not started
+**Status:** Complete (pending merge)
+
+**Delivered**
+
+- `/tracking` primary-nav route (requires active project, matching `/builds`), `TrackingDashboardPage.tsx` (observer settings + map placeholder + pass grid), `PassGrid.tsx` (DataTable v2: satellite/AOS/LOS/duration/max-elevation, min-elevation filter, sortable, default AOS-ascending), `useTrackingPasses.ts` (debounced hook wiring `useLibrary()` + `useTrackingSettings()` into `passPredictionClient`, one worker request per enabled satellite via `Promise.all`).
+- Freq/mode/status-from-SatNOGS columns omitted per plan (#854/#864 out of scope) — actionable empty states instead (deep-link to Satellite Keps / prompt to set observer location).
+
+**Two real build/dev-tooling bugs found and fixed while verifying in a live browser** (exactly the "new bundling territory" risk flagged in slice 6's plan):
+
+1. **Production build failure:** Vite's default `iife` worker output format can't support the top-level await pulled in transitively by `satellite.js`'s optional WASM build. Fixed with `worker: { format: 'es' }` + `build: { target: 'es2022' }` in `vite.config.ts` (the app already requires Web Serial — Chromium-only, recent versions — so this isn't a meaningful new browser-support constraint).
+2. **Dev-server-only failure:** Vite's esbuild dependency pre-bundler hung/504'd specifically on `satellite.js` (Node-only `#wasm-*` subpath imports in its `package.json` "imports" map, never actually invoked by this app, seemingly confuse esbuild's scanner). Fixed with `optimizeDeps: { exclude: ['satellite.js'] }` — it's pure ESM already, so Vite serves it directly without pre-bundling.
+
+**Verify**
+
+- Live-tested end-to-end in a real browser against the live CelesTrak-fetched satellite set (~90 enabled satellites): observer location persisted and displayed correctly; **2185+ real computed passes** rendered via the actual Web Worker (not mocked) — confirmed real orbital mechanics results (e.g. a correctly-handled geostationary edge case for Es'hail 2/QO-100 spanning the full 72h window as one continuous pass, since it never sets below the horizon).
+- `npx vitest run` — 2516 tests passing. `npx tsc --noEmit -p tsconfig.app.json` — 0 errors. `npm run build` — succeeds, emits a genuine separate `passPredictionWorker-*.js` chunk (~22 kB) now that something actually imports the client. Lint/format clean.
 
 ---
 
