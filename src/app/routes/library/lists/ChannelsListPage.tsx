@@ -24,6 +24,7 @@ import { DSV2_TOKENS } from '../../../theme-v2.ts';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import AddFromDataSourceModal from '../../../components/library/AddFromDataSourceModal.tsx';
 import ChannelBulkEditModal from '../../../components/library/ChannelBulkEditModal.tsx';
+import ChannelCard from '../../../components/library/ChannelCard.tsx';
 import ChannelListDeleteAction from '../../../components/library/ChannelListDeleteAction.tsx';
 import ChannelListFilters from '../../../components/library/ChannelListFilters.tsx';
 import ChannelZonesListCell from '../../../components/library/ChannelZonesListCell.tsx';
@@ -328,23 +329,6 @@ export default function ChannelsListPage() {
     const nameColumn = createNameColumn<Channel>({
       getName: (ch) => ch.name || '—',
       getPath: (ch) => `/library/channels/${ch.id}`,
-      render: isMobileTable
-        ? (ch) => {
-            const zoneNames = zonesWithDirectChannelMember(ch.id, zones)
-              .map((z) => z.name)
-              .join(', ');
-            const power = percentLabel(ch.power);
-            const secondary = [ch.callsign, power !== '—' ? `Power ${power}` : null, zoneNames]
-              .filter(Boolean)
-              .join(' · ');
-            return (
-              <div className={classes.nameCell}>
-                <div className={classes.namePrimary}>{ch.name || '—'}</div>
-                {secondary ? <div className={classes.nameMeta}>{secondary}</div> : null}
-              </div>
-            );
-          }
-        : undefined,
     });
 
     return [
@@ -359,7 +343,12 @@ export default function ChannelsListPage() {
         render: (ch: Channel) => <ChannelListDeleteAction channel={ch} />,
       },
     ];
-  }, [isMobileTable, optionalColumnDefs, zones]);
+  }, [optionalColumnDefs]);
+
+  const fieldColumns = useMemo(
+    () => optionalColumnDefs.filter((col) => visibleKeys.includes(col.key)),
+    [optionalColumnDefs, visibleKeys],
+  );
 
   const selectedChannels = useMemo(() => {
     const selectedSet = new Set(selectedKeys);
@@ -490,6 +479,7 @@ export default function ChannelsListPage() {
             : 'No channels match your filters.'
         }
         onRowActivate={(ch) => navigate(`/library/channels/${ch.id}`)}
+        mobileCard={(ch) => <ChannelCard channel={ch} fieldColumns={fieldColumns} />}
       />
 
       <ChannelBulkEditModal

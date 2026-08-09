@@ -78,6 +78,7 @@ Shared L1 chrome: `LibraryInventoryHeader`, optional `FacetBar` (channels), `Lib
   - **New zone from selected** — navigates to zone editor with members pre-filled in table order.
 - **Zones** column — direct zone badges (link to zone editor), **Not in a zone** / **Nested only** when applicable ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).
 - **Delete** row action — removes channel; offers remove-from-zones cascade when blocked by zone membership.
+- **Mobile card rows (trial, [#967](https://github.com/pskillen/codeplug-studio/issues/967))** — below the mobile breakpoint, rows render as `ChannelCard`s (name/callsign header, one labeled row per currently-visible optional column, delete action) via `DataTable`'s `mobileCard` prop instead of the horizontally-scrolling grid. View/navigate/delete-one only — no selection checkbox, so Bulk edit and New zone from selected stay desktop-table-only. See [ChannelCard.md](../../../src/app/components/library/ChannelCard.md) and [DataTable.md](../../../src/app/components/v2/DataTable.md#mobile-card-rows).
 
 ### Zone member editor (#25, #157, #180)
 
