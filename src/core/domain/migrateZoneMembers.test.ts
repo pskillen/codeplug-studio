@@ -33,6 +33,7 @@ describe('migrateZoneMemberEntries', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      satellites: [],
       channelDefaults: {
         forbidTransmit: false,
         txPermit: 'permitAlways',
@@ -42,6 +43,7 @@ describe('migrateZoneMemberEntries', () => {
       aprsConfiguration: null,
       radioBuilds: [],
       egressPaths: [],
+      trackingSettings: null,
     } satisfies ProjectAggregate;
 
     const migrated = migrateZoneMemberEntries(aggregate);

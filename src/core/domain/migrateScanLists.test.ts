@@ -27,6 +27,7 @@ describe('migrateBuildScanListsToLibrary', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      satellites: [],
       channelDefaults: {
         forbidTransmit: false,
         txPermit: 'permitAlways',
@@ -60,6 +61,7 @@ describe('migrateBuildScanListsToLibrary', () => {
         },
       ],
       egressPaths: [],
+      trackingSettings: null,
     });
 
     expect(aggregate.scanLists).toHaveLength(1);

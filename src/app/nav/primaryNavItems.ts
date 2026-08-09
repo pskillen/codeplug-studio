@@ -4,6 +4,7 @@ import {
   IconHammer,
   IconHelp,
   IconHome,
+  IconSatellite,
   IconTool,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
@@ -42,6 +43,7 @@ export const primaryNavItems: PrimaryNavItem[] = [
   },
   { to: '/reference', label: 'Tools', icon: IconTool },
   { to: '/builds', label: 'Export for radio', icon: IconHammer, requiresProject: true },
+  { to: '/tracking', label: 'Tracking Dashboard', icon: IconSatellite, requiresProject: true },
   { to: '/help', label: 'Help', icon: IconHelp },
 ];
 

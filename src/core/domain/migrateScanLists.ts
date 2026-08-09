@@ -81,6 +81,7 @@ export function migrateBuildScanListsToLibrary(aggregate: ProjectAggregate): Pro
     analogContacts: aggregate.analogContacts,
     rxGroupLists: aggregate.rxGroupLists,
     scanLists: [...scanListsById.values()],
+    satellites: aggregate.satellites,
     aprsConfiguration: aggregate.aprsConfiguration ?? null,
     channelDefaults: normalizeChannelBehaviourDefaults(
       aggregate.channelDefaults ?? aggregate.meta.channelDefaults,

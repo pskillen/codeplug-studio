@@ -1,6 +1,8 @@
 import { newId } from '../models/ids.ts';
 import type { BuildEntityOverride, EgressPath, RadioBuild } from '../models/index.ts';
 import type { ProjectMeta } from '../models/project.ts';
+import type { Satellite } from '../models/satellite.ts';
+import type { TrackingSettings } from '../models/trackingSettings.ts';
 import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '../models/channelBehaviourDefaults.ts';
 import { DEFAULT_ZONE_BEHAVIOUR_DEFAULTS } from '../models/zoneBehaviourDefaults.ts';
 import type {
@@ -31,6 +33,7 @@ export function emptyLibrary(): Library {
     rxGroupLists: [],
     scanLists: [],
     zones: [],
+    satellites: [],
     aprsConfiguration: null,
     channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS },
     zoneDefaults: { ...DEFAULT_ZONE_BEHAVIOUR_DEFAULTS },
@@ -324,5 +327,56 @@ export function newZone(projectId: string, name: string): Zone {
     name,
     members: [],
     comment: '',
+  };
+}
+
+/** Test/seed helper — decoded fields correspond to the fixture TLE lines. */
+export function newSatellite(
+  projectId: string,
+  name: string,
+  noradId: number,
+  overrides: Partial<Satellite> = {},
+): Satellite {
+  const now = isoNow();
+  return {
+    id: newId(),
+    projectId,
+    revision: initialRevision(),
+    updatedAt: now,
+    name,
+    noradId,
+    enabled: true,
+    source: 'celestrak',
+    tleLine1: '1 25544U 98067A   24045.51782528  .00016717 00000-0   30589-3 0  9993',
+    tleLine2: '2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.4956032 430001',
+    epoch: '2024-02-14T12:25:40.104Z',
+    classification: 'U',
+    inclinationDeg: 51.6416,
+    raanDeg: 247.4627,
+    eccentricity: 0.0006703,
+    argPerigeeDeg: 130.536,
+    meanAnomalyDeg: 325.0288,
+    meanMotionRevPerDay: 15.4956032,
+    bstar: 0.00030589,
+    elementSetNumber: 999,
+    revolutionNumber: 43000,
+    ...overrides,
+  };
+}
+
+export function newTrackingSettings(
+  projectId: string,
+  overrides: Partial<TrackingSettings> = {},
+): TrackingSettings {
+  const now = isoNow();
+  return {
+    id: newId(),
+    projectId,
+    revision: initialRevision(),
+    updatedAt: now,
+    positionSource: 'maidenhead',
+    location: null,
+    maidenheadLocator: null,
+    ...overrides,
   };
 }

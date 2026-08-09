@@ -1,6 +1,8 @@
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
+import type { Satellite } from '@core/models/satellite.ts';
+import type { TrackingSettings } from '@core/models/trackingSettings.ts';
 import type {
   AnalogContact,
   Channel,
@@ -17,6 +19,11 @@ export type PutResult =
 
 export type DigitalContactPut = {
   row: DigitalContact;
+  expectedRevision: number | null;
+};
+
+export type SatellitePut = {
+  row: Satellite;
   expectedRevision: number | null;
 };
 
@@ -37,11 +44,19 @@ export type EntityKind =
   | 'rxGroupList'
   | 'scanList'
   | 'aprsConfiguration'
+  | 'satellite'
+  | 'trackingSettings'
   | 'radioBuild'
   | 'egressPath';
 
-/** Library entity kinds (everything except project metadata and build/egress rows). */
-export type LibraryEntityKind = Exclude<EntityKind, 'project' | 'radioBuild' | 'egressPath'>;
+/**
+ * Library entity kinds (everything except project metadata, build/egress rows,
+ * and `trackingSettings` — a tracking-dashboard preference, not library content).
+ */
+export type LibraryEntityKind = Exclude<
+  EntityKind,
+  'project' | 'radioBuild' | 'egressPath' | 'trackingSettings'
+>;
 
 /** Cross-tab / same-tab change notification emitted on every write or delete. */
 export interface PersistenceChange {
@@ -63,6 +78,8 @@ export interface ProjectSeed {
   rxGroupLists?: RxGroupList[];
   scanLists?: ScanList[];
   aprsConfigurations?: AprsConfiguration[];
+  satellites?: Satellite[];
+  trackingSettings?: TrackingSettings[];
   radioBuilds?: RadioBuild[];
   egressPaths?: EgressPath[];
 }
@@ -118,6 +135,16 @@ export interface ProjectPersistence {
   getAprsConfiguration(projectId: string, id: string): Promise<AprsConfiguration | null>;
   putAprsConfiguration(row: AprsConfiguration, expectedRevision: number | null): Promise<PutResult>;
   listAprsConfigurations(projectId: string): Promise<AprsConfiguration[]>;
+
+  getSatellite(projectId: string, id: string): Promise<Satellite | null>;
+  putSatellite(row: Satellite, expectedRevision: number | null): Promise<PutResult>;
+  /** Write a refreshed satellite set in one transaction (see mergeSatelliteSet). */
+  putSatellitesBatch(puts: SatellitePut[]): Promise<BatchPutResult>;
+  listSatellites(projectId: string): Promise<Satellite[]>;
+
+  getTrackingSettings(projectId: string, id: string): Promise<TrackingSettings | null>;
+  putTrackingSettings(row: TrackingSettings, expectedRevision: number | null): Promise<PutResult>;
+  listTrackingSettings(projectId: string): Promise<TrackingSettings[]>;
 
   getRadioBuild(projectId: string, id: string): Promise<RadioBuild | null>;
   putRadioBuild(row: RadioBuild, expectedRevision: number | null): Promise<PutResult>;

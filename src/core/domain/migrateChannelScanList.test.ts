@@ -29,6 +29,7 @@ describe('migrateChannelScanListFromBuildOverrides', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      satellites: [],
       channelDefaults: {
         forbidTransmit: false,
         txPermit: 'permitAlways',
@@ -48,6 +49,7 @@ describe('migrateChannelScanListFromBuildOverrides', () => {
         },
       ],
       egressPaths: [],
+      trackingSettings: null,
     });
 
     expect(result.channels[0]?.scanListId).toBe(SCAN_LIST_ID);

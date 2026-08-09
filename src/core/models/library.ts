@@ -22,6 +22,7 @@ import type {
   ZoneBehaviourDefaults,
 } from './zoneBehaviourDefaults.ts';
 import type { ChannelAprsBinding } from './aprs.ts';
+import type { Satellite } from './satellite.ts';
 
 export type {
   ChannelMode,
@@ -214,6 +215,7 @@ export interface Library {
   rxGroupLists: RxGroupList[];
   scanLists: ScanList[];
   zones: Zone[];
+  satellites: Satellite[];
   aprsConfiguration: AprsConfiguration | null;
   /** Library-wide channel behavioural defaults (also persisted on project meta). */
   channelDefaults: ChannelBehaviourDefaults;

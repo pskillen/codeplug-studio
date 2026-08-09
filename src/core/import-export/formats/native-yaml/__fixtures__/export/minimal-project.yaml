@@ -10,6 +10,7 @@ library:
   channels: []
   digitalContacts: []
   rxGroupLists: []
+  satellites: []
   scanLists: []
   talkGroups: []
   zoneDefaults:
@@ -34,4 +35,5 @@ project:
     includeInZoneDerivedScanList: true
 radioBuilds: []
 schemaVersion: 1
-studioSchemaVersion: 22
+studioSchemaVersion: 24
+trackingSettings: null

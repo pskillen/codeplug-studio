@@ -76,17 +76,19 @@ CPS format destination keys (e.g. `opengd77`) are reserved for Phase 4+.
 
 ## `library` object
 
-| Key               | Type               |
-| ----------------- | ------------------ |
-| `channels`        | `Channel[]`        |
-| `zones`           | `Zone[]`           |
-| `talkGroups`      | `TalkGroup[]`      |
-| `digitalContacts` | `DigitalContact[]` |
-| `analogContacts`  | `AnalogContact[]`  |
-| `rxGroupLists`    | `RxGroupList[]`    |
-| `scanLists`       | `ScanList[]`       |
+| Key                 | Type                        |
+| ------------------- | --------------------------- |
+| `channels`          | `Channel[]`                 |
+| `zones`             | `Zone[]`                    |
+| `talkGroups`        | `TalkGroup[]`               |
+| `digitalContacts`   | `DigitalContact[]`          |
+| `analogContacts`    | `AnalogContact[]`           |
+| `rxGroupLists`      | `RxGroupList[]`             |
+| `scanLists`         | `ScanList[]`                |
+| `satellites`        | `Satellite[]`               |
+| `aprsConfiguration` | `AprsConfiguration \| null` |
 
-Arrays may be empty. Serialiser emits all seven keys.
+Arrays may be empty; `aprsConfiguration` may be `null`. Serialiser emits all keys.
 
 ### `Channel`
 
@@ -157,6 +159,40 @@ DM32 zone export flags (`exportScanList`, `scanCarrierFrequencyHz`) live on **`z
 | _(persistable row)_ |            |
 | `name`              | string     |
 | `memberChannelIds`  | `string[]` |
+
+### `AprsConfiguration`
+
+Singleton (at most one per project) — `library.aprsConfiguration`, or `null` when unset.
+
+| Field                 | Type                           | Nullable |
+| --------------------- | ------------------------------ | -------- |
+| _(persistable row)_   |                                |          |
+| `name`                | string                         | no       |
+| `comment`             | string                         | no       |
+| `manualTxIntervalSec` | number                         | yes      |
+| `autoTxIntervalSec`   | number                         | yes      |
+| `positionSource`      | `gps` \| `fixed`               | no       |
+| `fixedLocation`       | `{ lat: number; lon: number }` | yes      | Used when `positionSource` is `fixed` |
+| `channelSlots`        | `AprsChannelSlot[]`            | no       |
+
+`AprsChannelSlot`: `{ channelRef: EntityRef | null; timeslot: 1 | 2 | null; targetDmrId: number | null; callType: string }`. Landed as a singleton in schema v17 — v16-and-earlier documents carry a legacy `aprsConfigurations[]` array instead; import takes the first entry.
+
+### `Satellite`
+
+Curated per-project amateur satellite keps (TLE-derived orbitals) — see [satellite-keps](../../../features/satellite-keps/README.md).
+
+| Field                                                                                                          | Type                   | Notes                                                                                            |
+| -------------------------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------ |
+| _(persistable row)_                                                                                            |                        |                                                                                                  |
+| `name`                                                                                                         | string                 | Display name from the TLE feed (e.g. `ISS (ZARYA)`)                                              |
+| `noradId`                                                                                                      | integer                | NORAD catalog id — merge/refresh key                                                             |
+| `enabled`                                                                                                      | boolean                | Curated on/off toggle; preserved across refreshes                                                |
+| `source`                                                                                                       | `celestrak` \| `amsat` | Upstream the element set was last fetched from                                                   |
+| `tleLine1`, `tleLine2`                                                                                         | string (69 chars each) | Raw TLE data lines — propagation source of truth; never re-derived from the decoded fields below |
+| `epoch`                                                                                                        | string (ISO 8601)      | Element set validity timestamp                                                                   |
+| `classification`                                                                                               | string                 | TLE classification column (`U`/`C`/`S`)                                                          |
+| `inclinationDeg`, `raanDeg`, `eccentricity`, `argPerigeeDeg`, `meanAnomalyDeg`, `meanMotionRevPerDay`, `bstar` | number                 | Decoded Keplerian elements — display only                                                        |
+| `elementSetNumber`, `revolutionNumber`                                                                         | integer                | Decoded TLE housekeeping fields                                                                  |
 
 ### `EntityRef`
 

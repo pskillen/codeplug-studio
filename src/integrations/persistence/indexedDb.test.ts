@@ -6,7 +6,9 @@ import {
   newDigitalContact,
   newProjectMeta,
   newRadioBuildWithEgresses,
+  newSatellite,
   newTalkGroup,
+  newTrackingSettings,
 } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
 import { IndexedDbProjectPersistence } from './indexedDb.ts';
@@ -384,5 +386,59 @@ describe('IndexedDbProjectPersistence', () => {
     expect(await store.listTalkGroups(meta.projectId)).toHaveLength(0);
     expect(await store.listRadioBuilds(meta.projectId)).toHaveLength(0);
     expect(await store.listEgressPaths(meta.projectId)).toHaveLength(0);
+  });
+
+  it('persists satellites and lists them sorted by name', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+
+    await store.putSatellite(newSatellite(meta.projectId, 'AO-91', 43017), null);
+    await store.putSatellite(newSatellite(meta.projectId, 'ISS (ZARYA)', 25544), null);
+
+    const sats = await store.listSatellites(meta.projectId);
+    expect(sats.map((s) => s.name)).toEqual(['AO-91', 'ISS (ZARYA)']);
+  });
+
+  it('putSatellitesBatch writes a refresh in one transaction, preserving enable state', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+
+    const iss = newSatellite(meta.projectId, 'ISS (ZARYA)', 25544, { enabled: false });
+    await store.putSatellite(iss, null);
+    const stored = (await store.listSatellites(meta.projectId))[0]!;
+
+    const batch = await store.putSatellitesBatch([
+      { row: { ...stored, name: 'ISS (ZARYA) refreshed' }, expectedRevision: stored.revision },
+      { row: newSatellite(meta.projectId, 'AO-91', 43017), expectedRevision: null },
+    ]);
+
+    expect(batch.results).toEqual([
+      { ok: true, revision: 2 },
+      { ok: true, revision: 1 },
+    ]);
+    const sats = await store.listSatellites(meta.projectId);
+    expect(sats).toHaveLength(2);
+    expect(sats.find((s) => s.noradId === 25544)).toMatchObject({
+      name: 'ISS (ZARYA) refreshed',
+      enabled: false,
+    });
+  });
+
+  it('putTrackingSettings replaces the singleton row for the project', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    await store.seedProject({ meta });
+
+    const first = newTrackingSettings(meta.projectId, { maidenheadLocator: 'IO85' });
+    const second = newTrackingSettings(meta.projectId, { maidenheadLocator: 'IO86' });
+    await store.putTrackingSettings(first, null);
+    await store.putTrackingSettings(second, null);
+
+    const rows = await store.listTrackingSettings(meta.projectId);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.maidenheadLocator).toBe('IO86');
+    expect(await store.getTrackingSettings(meta.projectId, first.id)).toBeNull();
   });
 });

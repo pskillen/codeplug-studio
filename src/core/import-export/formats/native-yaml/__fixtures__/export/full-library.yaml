@@ -116,6 +116,28 @@ library:
       projectId: 11111111-1111-4111-8111-111111111111
       revision: 1
       updatedAt: 2026-07-02T10:00:00.000Z
+  satellites:
+    - argPerigeeDeg: 130.536
+      bstar: 0.00030589
+      classification: U
+      eccentricity: 0.0006703
+      elementSetNumber: 999
+      enabled: true
+      epoch: 2024-02-14T12:25:40.104Z
+      id: eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee
+      inclinationDeg: 51.6416
+      meanAnomalyDeg: 325.0288
+      meanMotionRevPerDay: 15.4956032
+      name: ISS (ZARYA)
+      noradId: 25544
+      projectId: 11111111-1111-4111-8111-111111111111
+      raanDeg: 247.4627
+      revision: 1
+      revolutionNumber: 43000
+      source: celestrak
+      tleLine1: 1 25544U 98067A   24045.51782528  .00016717 00000-0   30589-3 0  9993
+      tleLine2: 2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.4956032 430001
+      updatedAt: 2026-07-02T10:00:00.000Z
   scanLists: []
   talkGroups:
     - abbreviation: Sco
@@ -158,4 +180,14 @@ project:
     includeInZoneDerivedScanList: true
 radioBuilds: []
 schemaVersion: 1
-studioSchemaVersion: 22
+studioSchemaVersion: 24
+trackingSettings:
+  id: ffffffff-ffff-4fff-8fff-ffffffffffff
+  location:
+    lat: 55.9533
+    lon: -3.1883
+  maidenheadLocator: IO85vs
+  positionSource: maidenhead
+  projectId: 11111111-1111-4111-8111-111111111111
+  revision: 1
+  updatedAt: 2026-07-02T10:00:00.000Z

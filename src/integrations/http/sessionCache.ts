@@ -6,6 +6,8 @@ export const BRANDMEISTER_CACHE_PREFIX = 'bm-api:';
 export const REPEATERBOOK_CACHE_PREFIX = 'rb-api:';
 export const IRTS_CACHE_PREFIX = 'irts-api:';
 export const PHOTON_CACHE_PREFIX = 'photon-api:';
+export const CELESTRAK_CACHE_PREFIX = 'celestrak-api:';
+export const AMSAT_CACHE_PREFIX = 'amsat-api:';
 
 interface CacheEntry {
   body: string;

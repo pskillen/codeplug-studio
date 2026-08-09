@@ -17,6 +17,7 @@ export const libraryStripItems: readonly ContextualStripItem[] = [
   { label: 'Receive group lists', to: '/library/rx-group-lists' },
   { label: 'Scan lists', to: '/library/scan-lists' },
   { label: 'APRS setup', to: '/library/aprs-configuration' },
+  { label: 'Satellite Keps', to: '/library/satellite-keps' },
 ];
 
 export const toolsStripItems: readonly ContextualStripItem[] = [

@@ -14,4 +14,6 @@ export interface ProjectMeta extends PersistableRow {
   channelDefaults?: ChannelBehaviourDefaults;
   /** Persisted library zone behavioural defaults (mirrored on `Library.zoneDefaults`). */
   zoneDefaults?: ZoneBehaviourDefaults;
+  /** ISO 8601 timestamp of the last successful satellite keps refresh, or unset. */
+  satelliteLibraryLastUpdated?: string | null;
 }

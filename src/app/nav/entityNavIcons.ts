@@ -5,6 +5,7 @@ import {
   IconBroadcast,
   IconListDetails,
   IconMap2,
+  IconPlanet,
   IconRadar,
   IconSatellite,
   IconUsersGroup,
@@ -22,6 +23,7 @@ export const entityNavIcons = {
   rxGroupLists: IconListDetails,
   scanLists: IconRadar,
   aprsConfiguration: IconSatellite,
+  satellites: IconPlanet,
   channelDefaults: IconAdjustments,
   zoneDefaults: IconAdjustments,
 } as const satisfies Record<string, TablerIcon>;

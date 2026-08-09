@@ -1,6 +1,8 @@
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
+import type { Satellite } from '@core/models/satellite.ts';
+import type { TrackingSettings } from '@core/models/trackingSettings.ts';
 import type {
   AnalogContact,
   Channel,
@@ -34,6 +36,8 @@ export interface StudioProjectDocument {
   library: Library;
   radioBuilds: RadioBuild[];
   egressPaths: EgressPath[];
+  /** Tracking-dashboard observer location — not vendor-neutral library RF content. */
+  trackingSettings: TrackingSettings | null;
 }
 
 /**
@@ -53,9 +57,12 @@ export interface ProjectAggregate {
   analogContacts: AnalogContact[];
   rxGroupLists: RxGroupList[];
   scanLists: ScanList[];
+  satellites: Satellite[];
   aprsConfiguration: AprsConfiguration | null;
   radioBuilds: RadioBuild[];
   egressPaths: EgressPath[];
+  /** Tracking-dashboard observer location — not vendor-neutral library RF content. */
+  trackingSettings: TrackingSettings | null;
 }
 
 export function emptyLibrary(): Library {
@@ -67,6 +74,7 @@ export function emptyLibrary(): Library {
     rxGroupLists: [],
     scanLists: [],
     zones: [],
+    satellites: [],
     aprsConfiguration: null,
     channelDefaults: { ...DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS },
     zoneDefaults: { ...DEFAULT_ZONE_BEHAVIOUR_DEFAULTS },
@@ -86,6 +94,7 @@ export function documentFromAggregate(aggregate: ProjectAggregate): StudioProjec
       analogContacts: aggregate.analogContacts,
       rxGroupLists: aggregate.rxGroupLists,
       scanLists: aggregate.scanLists,
+      satellites: aggregate.satellites,
       aprsConfiguration: aggregate.aprsConfiguration,
       channelDefaults: normalizeChannelBehaviourDefaults(
         aggregate.meta.channelDefaults ?? aggregate.channelDefaults,
@@ -96,6 +105,7 @@ export function documentFromAggregate(aggregate: ProjectAggregate): StudioProjec
     },
     radioBuilds: aggregate.radioBuilds,
     egressPaths: aggregate.egressPaths,
+    trackingSettings: aggregate.trackingSettings,
   };
 }
 
@@ -117,8 +127,10 @@ export function aggregateFromDocument(doc: StudioProjectDocument): ProjectAggreg
     analogContacts: doc.library.analogContacts,
     rxGroupLists: doc.library.rxGroupLists,
     scanLists: doc.library.scanLists ?? [],
+    satellites: doc.library.satellites ?? [],
     aprsConfiguration: doc.library.aprsConfiguration ?? null,
     radioBuilds: doc.radioBuilds,
     egressPaths: doc.egressPaths,
+    trackingSettings: doc.trackingSettings ?? null,
   };
 }

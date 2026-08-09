@@ -72,6 +72,7 @@ describe('migrateZoneExportFields', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      satellites: [],
       channelDefaults: {
         forbidTransmit: false,
         txPermit: 'permitAlways',
@@ -117,6 +118,7 @@ describe('migrateZoneExportFields', () => {
       analogContacts: [],
       rxGroupLists: [],
       scanLists: [],
+      satellites: [],
       channelDefaults: {
         forbidTransmit: false,
         txPermit: 'permitAlways',
@@ -126,6 +128,7 @@ describe('migrateZoneExportFields', () => {
       aprsConfiguration: null,
       radioBuilds: [dm32Build()],
       egressPaths: [],
+      trackingSettings: null,
     });
 
     expect(result.zones[0]).not.toHaveProperty('exportScanList');

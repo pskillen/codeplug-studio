@@ -1,0 +1,8 @@
+.empty {
+  color: var(--dsv2-text-secondary);
+  margin: 16px 0;
+}
+
+.map {
+  margin: 16px 0;
+}

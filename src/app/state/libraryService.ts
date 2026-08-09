@@ -39,6 +39,7 @@ export class LibraryService {
       rxGroupLists,
       scanLists,
       aprsConfigurations,
+      satellites,
     ] = await Promise.all([
       this.persistence.loadProjectMeta(projectId),
       this.persistence.listChannels(projectId),
@@ -49,6 +50,7 @@ export class LibraryService {
       this.persistence.listRxGroupLists(projectId),
       this.persistence.listScanLists(projectId),
       this.persistence.listAprsConfigurations(projectId),
+      this.persistence.listSatellites(projectId),
     ]);
     const aprsConfiguration = aprsConfigurations[0] ?? null;
     const channelDefaults = normalizeChannelBehaviourDefaults(meta?.channelDefaults);
@@ -61,6 +63,7 @@ export class LibraryService {
       analogContacts,
       rxGroupLists,
       scanLists,
+      satellites,
       aprsConfiguration,
       channelDefaults,
       zoneDefaults,

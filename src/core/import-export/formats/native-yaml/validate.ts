@@ -20,6 +20,8 @@ import type {
 } from '@core/models/radioBuild.ts';
 import type { EgressKind, EgressPath } from '@core/models/egressPath.ts';
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
+import type { Satellite, SatelliteSource } from '@core/models/satellite.ts';
+import type { ObserverPositionSource, TrackingSettings } from '@core/models/trackingSettings.ts';
 import type {
   AprsPositionSource,
   AprsPttMode,
@@ -726,6 +728,66 @@ function parseScanList(raw: unknown, index: number): ScanList {
   };
 }
 
+function parseSatelliteSource(raw: unknown, label: string): SatelliteSource {
+  const value = expectString(raw, label);
+  if (value !== 'celestrak' && value !== 'amsat') {
+    throw new NativeYamlImportError(`${label} is invalid: ${value}`);
+  }
+  return value;
+}
+
+function parseSatellite(raw: unknown, index: number): Satellite {
+  const label = `library.satellites[${index}]`;
+  const record = expectRecord(raw, label);
+  return {
+    ...parsePersistableRow(record, label),
+    name: expectString(record.name, `${label}.name`),
+    noradId: expectNumber(record.noradId, `${label}.noradId`),
+    enabled: expectBoolean(record.enabled, `${label}.enabled`),
+    source: parseSatelliteSource(record.source, `${label}.source`),
+    tleLine1: expectString(record.tleLine1, `${label}.tleLine1`),
+    tleLine2: expectString(record.tleLine2, `${label}.tleLine2`),
+    epoch: expectString(record.epoch, `${label}.epoch`),
+    classification: expectString(record.classification, `${label}.classification`),
+    inclinationDeg: expectNumber(record.inclinationDeg, `${label}.inclinationDeg`),
+    raanDeg: expectNumber(record.raanDeg, `${label}.raanDeg`),
+    eccentricity: expectNumber(record.eccentricity, `${label}.eccentricity`),
+    argPerigeeDeg: expectNumber(record.argPerigeeDeg, `${label}.argPerigeeDeg`),
+    meanAnomalyDeg: expectNumber(record.meanAnomalyDeg, `${label}.meanAnomalyDeg`),
+    meanMotionRevPerDay: expectNumber(record.meanMotionRevPerDay, `${label}.meanMotionRevPerDay`),
+    bstar: expectNumber(record.bstar, `${label}.bstar`),
+    elementSetNumber: expectNumber(record.elementSetNumber, `${label}.elementSetNumber`),
+    revolutionNumber: expectNumber(record.revolutionNumber, `${label}.revolutionNumber`),
+  };
+}
+
+function parseObserverPositionSource(raw: unknown, label: string): ObserverPositionSource {
+  const value = expectString(raw, label);
+  if (value !== 'geolocation' && value !== 'maidenhead' && value !== 'address' && value !== 'map') {
+    throw new NativeYamlImportError(`${label} is invalid: ${value}`);
+  }
+  return value;
+}
+
+function parseTrackingSettings(raw: unknown, label: string): TrackingSettings {
+  const record = expectRecord(raw, label);
+  const locationRaw = record.location;
+  let location: TrackingSettings['location'] = null;
+  if (locationRaw !== undefined && locationRaw !== null) {
+    const loc = expectRecord(locationRaw, `${label}.location`);
+    location = {
+      lat: expectNumber(loc.lat, `${label}.location.lat`),
+      lon: expectNumber(loc.lon, `${label}.location.lon`),
+    };
+  }
+  return {
+    ...parsePersistableRow(record, label),
+    positionSource: parseObserverPositionSource(record.positionSource, `${label}.positionSource`),
+    location,
+    maidenheadLocator: expectNullableString(record.maidenheadLocator, `${label}.maidenheadLocator`),
+  };
+}
+
 function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
   const record = expectRecord(raw, 'library');
   const channels = expectArray(record.channels, 'library.channels').map((row, index) =>
@@ -751,6 +813,12 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
       ? []
       : expectArray(record.scanLists, 'library.scanLists').map((row, index) =>
           parseScanList(row, index),
+        );
+  const satellites =
+    record.satellites === undefined || record.satellites === null
+      ? []
+      : expectArray(record.satellites, 'library.satellites').map((row, index) =>
+          parseSatellite(row, index),
         );
   // Singleton `aprsConfiguration` landed in schema v17. Compare against that floor — not
   // `STUDIO_SCHEMA_VERSION` — so v17 YAML keeps its slots after later schema bumps (v18+).
@@ -780,6 +848,7 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
     analogContacts,
     rxGroupLists,
     scanLists,
+    satellites,
     aprsConfiguration,
     aprsConfigurations: legacyAprsConfigurations,
   };
@@ -1511,6 +1580,8 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 23 &&
+    studioSchemaVersion !== 22 &&
     studioSchemaVersion !== 21 &&
     studioSchemaVersion !== 20 &&
     studioSchemaVersion !== 19 &&
@@ -1532,12 +1603,16 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 
   const project = parseProjectMeta(document.project);
   const library = parseLibrary(document.library, studioSchemaVersion);
+  const trackingSettings =
+    document.trackingSettings === undefined || document.trackingSettings === null
+      ? null
+      : parseTrackingSettings(document.trackingSettings, 'trackingSettings');
 
   const warnings: string[] = [];
   let radioBuilds: RadioBuild[];
@@ -1568,9 +1643,11 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
     ...library.analogContacts,
     ...library.rxGroupLists,
     ...library.scanLists,
+    ...library.satellites,
     ...(library.aprsConfiguration ? [library.aprsConfiguration] : []),
     ...radioBuilds,
     ...egressPaths,
+    ...(trackingSettings ? [trackingSettings] : []),
   ];
 
   assertProjectId(allRows, project.id, 'row');
@@ -1581,11 +1658,15 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
   assertUniqueIds(library.analogContacts, 'library.analogContacts');
   assertUniqueIds(library.rxGroupLists, 'library.rxGroupLists');
   assertUniqueIds(library.scanLists, 'library.scanLists');
+  assertUniqueIds(library.satellites, 'library.satellites');
   if (library.aprsConfiguration) {
     assertUniqueIds([library.aprsConfiguration], 'library.aprsConfiguration');
   }
   assertUniqueIds(radioBuilds, 'radioBuilds');
   assertUniqueIds(egressPaths, 'egressPaths');
+  if (trackingSettings) {
+    assertUniqueIds([trackingSettings], 'trackingSettings');
+  }
 
   validateForeignKeys(library, radioBuilds, egressPaths);
 
@@ -1605,9 +1686,11 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
     analogContacts: library.analogContacts,
     rxGroupLists: library.rxGroupLists,
     scanLists: library.scanLists,
+    satellites: library.satellites,
     aprsConfiguration: library.aprsConfiguration,
     radioBuilds,
     egressPaths,
+    trackingSettings,
   });
 
   return { aggregate, warnings };
