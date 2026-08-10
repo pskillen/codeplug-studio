@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { IconRefresh, IconTelescope } from '@tabler/icons-react';
 import type { Satellite } from '@core/models/satellite.ts';
 import { isoNow } from '@core/models/revision.ts';
+import { mergeSatnogsTransmittersIntoSatellite } from '@core/domain/satnogs/mergeSatnogsTransmitters.ts';
 import { fetchSatelliteSet } from '@integrations/satellites/fetchSatelliteSet.ts';
 import { mergeSatelliteSet } from '@integrations/satellites/mergeSatelliteSet.ts';
+import { fetchSatnogsEnrichmentForNoradIds } from '@integrations/satellites/satnogsClient.ts';
 import EntityListRowDeleteAction from '../../../components/library/EntityListRowDeleteAction.tsx';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
 import {
@@ -22,7 +24,6 @@ import { v1SortToV2, v2SortToV1 } from '../../../lib/libraryListTable.tsx';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { persistence } from '../../../state/persistence.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
-import { useSatelliteEnrichment } from '../../../state/satelliteEnrichment.tsx';
 import { useProjects } from '../../../state/useProjects.ts';
 import classes from '../../../components/library/LibraryInventoryPage.module.css';
 import staleClasses from './SatelliteKepsListPage.module.css';
@@ -40,7 +41,6 @@ function formatLastUpdated(iso: string | null | undefined): { label: string; sta
 export default function SatelliteKepsListPage() {
   const { library, loading, projectId, reload } = useLibrary();
   const { activeProject, refreshProjects } = useProjects();
-  const { refreshEnrichmentForNoradIds } = useSatelliteEnrichment();
   const navigate = useNavigate();
   const { satellites } = library;
   const [refreshing, setRefreshing] = useState(false);
@@ -86,11 +86,33 @@ export default function SatelliteKepsListPage() {
 
       const noradIds = merged.rows.map((row) => row.noradId);
       if (noradIds.length > 0) {
-        const satnogs = await refreshEnrichmentForNoradIds(noradIds, { refresh: true });
-        if (satnogs.failures.length > 0) {
+        const { entries: satnogsEntries, failures } = await fetchSatnogsEnrichmentForNoradIds(
+          noradIds,
+          { refresh: true },
+        );
+        if (failures.length > 0) {
           setSatnogsWarning(
-            `TLE refresh succeeded, but SatNOGS enrichment failed for ${satnogs.failures.length} satellite(s).`,
+            `TLE refresh succeeded, but SatNOGS enrichment failed for ${failures.length} satellite(s).`,
           );
+        }
+        if (satnogsEntries.length > 0) {
+          // Re-read current rows (with up-to-date revisions) — the TLE-refresh batch above
+          // may have bumped revisions, and `library.satellites` in this closure is stale.
+          const current = await persistence.listSatellites(projectId);
+          const byNoradId = new Map(current.map((row) => [row.noradId, row]));
+          const puts: { row: Satellite; expectedRevision: number | null }[] = [];
+          for (const entry of satnogsEntries) {
+            const satellite = byNoradId.get(entry.noradId);
+            if (!satellite) continue;
+            const result = mergeSatnogsTransmittersIntoSatellite(satellite, entry.transmitters);
+            if (result.added + result.updated > 0) {
+              puts.push({ row: result.satellite, expectedRevision: satellite.revision });
+            }
+          }
+          if (puts.length > 0) {
+            await persistence.putSatellitesBatch(puts);
+            await reload();
+          }
         }
       }
     } catch (err) {

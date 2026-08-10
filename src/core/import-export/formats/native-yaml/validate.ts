@@ -21,6 +21,11 @@ import type {
 import type { EgressKind, EgressPath } from '@core/models/egressPath.ts';
 import type { AprsChannelSlot, AprsConfiguration, ChannelAprsBinding } from '@core/models/aprs.ts';
 import type { Satellite, SatelliteSource } from '@core/models/satellite.ts';
+import type {
+  SatelliteTransmitter,
+  SatelliteTransmitterSource,
+} from '@core/models/satelliteTransmitter.ts';
+import { newId } from '@core/models/ids.ts';
 import type { ObserverPositionSource, TrackingSettings } from '@core/models/trackingSettings.ts';
 import type {
   AprsPositionSource,
@@ -85,6 +90,7 @@ import {
   NativeYamlImportError,
   expectArray,
   expectBoolean,
+  expectNullableBoolean,
   expectNullableNumber,
   expectNullableString,
   expectNumber,
@@ -736,7 +742,79 @@ function parseSatelliteSource(raw: unknown, label: string): SatelliteSource {
   return value;
 }
 
-function parseSatellite(raw: unknown, index: number): Satellite {
+function parseSatelliteTransmitterSource(raw: unknown, label: string): SatelliteTransmitterSource {
+  const value = expectString(raw, label);
+  if (value !== 'manual' && value !== 'satnogs') {
+    throw new NativeYamlImportError(`${label} is invalid: ${value}`);
+  }
+  return value;
+}
+
+function parseSatelliteTransmitter(raw: unknown, label: string): SatelliteTransmitter {
+  const record = expectRecord(raw, label);
+  return {
+    id: expectString(record.id, `${label}.id`),
+    label: expectString(record.label, `${label}.label`),
+    mode: expectNullableString(record.mode, `${label}.mode`),
+    uplinkHz: expectNullableNumber(record.uplinkHz, `${label}.uplinkHz`),
+    downlinkHz: expectNullableNumber(record.downlinkHz, `${label}.downlinkHz`),
+    uplinkToneHz: expectNullableNumber(record.uplinkToneHz, `${label}.uplinkToneHz`),
+    downlinkToneHz: expectNullableNumber(record.downlinkToneHz, `${label}.downlinkToneHz`),
+    source: parseSatelliteTransmitterSource(record.source, `${label}.source`),
+    satnogsUuid: expectNullableString(record.satnogsUuid, `${label}.satnogsUuid`),
+    satnogsAlive: expectNullableBoolean(record.satnogsAlive, `${label}.satnogsAlive`),
+    satnogsStatus: expectNullableString(record.satnogsStatus, `${label}.satnogsStatus`),
+    satnogsSyncedAt: expectNullableString(record.satnogsSyncedAt, `${label}.satnogsSyncedAt`),
+    dismissed: expectBoolean(record.dismissed, `${label}.dismissed`),
+  };
+}
+
+/**
+ * Prior to schema v26, `Satellite` carried bare `uplinkHz`/`downlinkHz`/`uplinkToneHz`/
+ * `downlinkToneHz` scalars instead of a `transmitters` array. Synthesize a single manual
+ * transmitter from those legacy fields (or an empty array when all four were unset) so
+ * pre-migration projects keep importing.
+ */
+const SATELLITE_TRANSMITTERS_MIN_SCHEMA = 26;
+
+function parseLegacySatelliteTransmitters(
+  record: Record<string, unknown>,
+  label: string,
+): SatelliteTransmitter[] {
+  const uplinkHz = expectNullableNumber(record.uplinkHz, `${label}.uplinkHz`);
+  const downlinkHz = expectNullableNumber(record.downlinkHz, `${label}.downlinkHz`);
+  const uplinkToneHz = expectNullableNumber(record.uplinkToneHz, `${label}.uplinkToneHz`);
+  const downlinkToneHz = expectNullableNumber(record.downlinkToneHz, `${label}.downlinkToneHz`);
+
+  if (
+    uplinkHz === null &&
+    downlinkHz === null &&
+    uplinkToneHz === null &&
+    downlinkToneHz === null
+  ) {
+    return [];
+  }
+
+  return [
+    {
+      id: newId(),
+      label: 'Transmitter',
+      mode: null,
+      uplinkHz,
+      downlinkHz,
+      uplinkToneHz,
+      downlinkToneHz,
+      source: 'manual',
+      satnogsUuid: null,
+      satnogsAlive: null,
+      satnogsStatus: null,
+      satnogsSyncedAt: null,
+      dismissed: false,
+    },
+  ];
+}
+
+function parseSatellite(raw: unknown, index: number, studioSchemaVersion: number): Satellite {
   const label = `library.satellites[${index}]`;
   const record = expectRecord(raw, label);
   return {
@@ -758,10 +836,12 @@ function parseSatellite(raw: unknown, index: number): Satellite {
     bstar: expectNumber(record.bstar, `${label}.bstar`),
     elementSetNumber: expectNumber(record.elementSetNumber, `${label}.elementSetNumber`),
     revolutionNumber: expectNumber(record.revolutionNumber, `${label}.revolutionNumber`),
-    uplinkHz: expectNullableNumber(record.uplinkHz, `${label}.uplinkHz`),
-    downlinkHz: expectNullableNumber(record.downlinkHz, `${label}.downlinkHz`),
-    uplinkToneHz: expectNullableNumber(record.uplinkToneHz, `${label}.uplinkToneHz`),
-    downlinkToneHz: expectNullableNumber(record.downlinkToneHz, `${label}.downlinkToneHz`),
+    transmitters:
+      studioSchemaVersion < SATELLITE_TRANSMITTERS_MIN_SCHEMA
+        ? parseLegacySatelliteTransmitters(record, label)
+        : expectArray(record.transmitters, `${label}.transmitters`).map((row, transmitterIndex) =>
+            parseSatelliteTransmitter(row, `${label}.transmitters[${transmitterIndex}]`),
+          ),
   };
 }
 
@@ -822,7 +902,7 @@ function parseLibrary(raw: unknown, studioSchemaVersion: number): Library {
     record.satellites === undefined || record.satellites === null
       ? []
       : expectArray(record.satellites, 'library.satellites').map((row, index) =>
-          parseSatellite(row, index),
+          parseSatellite(row, index, studioSchemaVersion),
         );
   // Singleton `aprsConfiguration` landed in schema v17. Compare against that floor — not
   // `STUDIO_SCHEMA_VERSION` — so v17 YAML keeps its slots after later schema bumps (v18+).
@@ -1584,6 +1664,7 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 25 &&
     studioSchemaVersion !== 24 &&
     studioSchemaVersion !== 23 &&
     studioSchemaVersion !== 22 &&
@@ -1608,7 +1689,7 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 

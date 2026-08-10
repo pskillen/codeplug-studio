@@ -1,21 +1,11 @@
 import type { Satellite } from '@core/models/satellite.ts';
-import type { SatelliteEnrichment } from '@core/models/satelliteEnrichment.ts';
 import { satelliteHasFrequencies } from './satelliteFrequencies.ts';
 
 /** Enabled satellites that pass the TX/RX frequency qualification check. */
-export function computeFrequencyQualifiedSatelliteIds(
-  enabledSatellites: Satellite[],
-  getEnrichmentForNoradId: (noradId: number) => SatelliteEnrichment | null,
-): Set<string> {
+export function computeFrequencyQualifiedSatelliteIds(enabledSatellites: Satellite[]): Set<string> {
   const ids = new Set<string>();
   for (const satellite of enabledSatellites) {
-    if (
-      satelliteHasFrequencies(
-        satellite.uplinkHz,
-        satellite.downlinkHz,
-        getEnrichmentForNoradId(satellite.noradId),
-      )
-    ) {
+    if (satelliteHasFrequencies(satellite.transmitters)) {
       ids.add(satellite.id);
     }
   }

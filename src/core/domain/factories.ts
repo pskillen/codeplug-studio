@@ -360,6 +360,7 @@ export function newSatellite(
     bstar: 0.00030589,
     elementSetNumber: 999,
     revolutionNumber: 43000,
+    transmitters: [],
     ...overrides,
   };
 }

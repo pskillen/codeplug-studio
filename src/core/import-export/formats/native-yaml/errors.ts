@@ -62,3 +62,8 @@ export function expectNullableNumber(value: unknown, label: string): number | nu
   if (isNullish(value)) return null;
   return expectNumber(value, label);
 }
+
+export function expectNullableBoolean(value: unknown, label: string): boolean | null {
+  if (isNullish(value)) return null;
+  return expectBoolean(value, label);
+}

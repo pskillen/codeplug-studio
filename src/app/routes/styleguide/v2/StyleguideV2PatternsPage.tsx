@@ -191,22 +191,36 @@ export default function StyleguideV2PatternsPage() {
             nextPass={UPCOMING_PASS_DEMO}
             nowMs={NEXT_PASS_DEMO_NOW_MS}
             hasObserver
-            uplinkHz={145_990_000}
-            downlinkHz={437_800_000}
-            uplinkToneHz={67}
-            downlinkToneHz={null}
-            mode="FM"
+            transmitters={[
+              {
+                id: 'demo-iss-fm-repeater',
+                label: 'FM repeater',
+                mode: 'FM',
+                uplinkHz: 145_990_000,
+                downlinkHz: 437_800_000,
+                uplinkToneHz: 67,
+                downlinkToneHz: null,
+              },
+            ]}
           />
           <NextPassCard
             satelliteName="AO-91"
             nextPass={ACTIVE_PASS_DEMO}
             nowMs={NEXT_PASS_DEMO_NOW_MS}
             hasObserver
-            uplinkHz={435_250_000}
-            downlinkHz={145_960_000}
-            mode="FM"
-            dopplerUplinkHz={435_240_600}
-            dopplerDownlinkHz={145_963_400}
+            transmitters={[
+              {
+                id: 'demo-ao91-fm-repeater',
+                label: 'FM repeater',
+                mode: 'FM',
+                uplinkHz: 435_250_000,
+                downlinkHz: 145_960_000,
+                uplinkToneHz: null,
+                downlinkToneHz: null,
+                dopplerUplinkHz: 435_240_600,
+                dopplerDownlinkHz: 145_963_400,
+              },
+            ]}
           />
         </SimpleGrid>
       </PageSection>

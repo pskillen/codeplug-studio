@@ -10,7 +10,6 @@ import App from './App.tsx';
 import ProjectProvider from './state/ProjectProvider.tsx';
 import DriveSessionProvider from './state/DriveSessionProvider.tsx';
 import { OperatorPositionProvider } from './state/operatorPosition.tsx';
-import { SatelliteEnrichmentProvider } from './state/satelliteEnrichment.tsx';
 import { theme } from './theme.ts';
 
 if (isNativeApp()) {
@@ -29,9 +28,7 @@ createRoot(root).render(
       <ProjectProvider>
         <DriveSessionProvider>
           <OperatorPositionProvider>
-            <SatelliteEnrichmentProvider>
-              <App />
-            </SatelliteEnrichmentProvider>
+            <App />
           </OperatorPositionProvider>
         </DriveSessionProvider>
       </ProjectProvider>

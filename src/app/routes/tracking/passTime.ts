@@ -1,5 +1,4 @@
 import type { PassResult } from '@core/domain/satelliteTracking/types.ts';
-import type { SatelliteTransmitterInfo } from '@core/models/satelliteEnrichment.ts';
 
 /** Whether wall-clock `nowMs` falls inside a pass window [AOS, LOS). */
 export function isPassActive(nowMs: number, aosAt: string, losAt: string): boolean {
@@ -83,19 +82,4 @@ export function formatNextPassCountdown(
     return `AOS ${formatCountdownMmSs(aosMs - nowMs)}`;
   }
   return null;
-}
-
-/**
- * Best-effort transmitter mode for display (e.g. on `NextPassCard`) — SatNOGS enrichment is
- * session-scoped and not persisted onto `Satellite` (there is no `Satellite.mode` field), so
- * this picks the first `alive` transmitter's mode, falling back to the first transmitter, and
- * `null` when no enrichment/transmitters are available. Not an authoritative per-satellite
- * setting, just a convenience summary of whatever SatNOGS last reported.
- */
-export function pickPrimaryTransmitterMode(
-  transmitters: SatelliteTransmitterInfo[] | undefined,
-): string | null {
-  if (!transmitters || transmitters.length === 0) return null;
-  const alive = transmitters.find((transmitter) => transmitter.alive);
-  return (alive ?? transmitters[0])?.mode ?? null;
 }

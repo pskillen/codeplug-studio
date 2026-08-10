@@ -78,9 +78,9 @@ Additional upstream fields (`mode_id`, `baud`, `service`, `iaru_coordination`, `
 | `status`       | `status` (free text, e.g. `active`/`inactive`/`invalid`)                                                                                                         |
 | `norad_cat_id` | Merge key — grouped by [`groupSatnogsTransmittersByNoradId`](../../../../src/core/domain/satnogs/parseSatnogsTransmitters.ts), not copied onto the record itself |
 
-## Merge into the enrichment set
+## Merge into the satellite's transmitters
 
-[`mergeSatelliteEnrichmentSet`](../../../../src/integrations/satellites/mergeSatelliteEnrichment.ts) keys by `noradId`, mirroring [`mergeSatelliteSet`](../../../../src/integrations/satellites/mergeSatelliteSet.ts)'s shape: new NORAD ids are added, a satellite whose transmitter set actually differs (order-independent comparison) is updated, and satellites absent from the fresh fetch are **kept, not deleted**. It is a distinct function rather than an overload — the payload (transmitters, not TLE lines) and the "did this change" comparison are different enough to warrant it.
+[`mergeSatnogsTransmittersIntoSatellite`](../../../../src/core/domain/satnogs/mergeSatnogsTransmitters.ts) merges freshly-fetched transmitter data directly into the persisted `Satellite.transmitters` list, matched by SatNOGS UUID (`satnogsUuid`): a fetched transmitter matching an existing `source: 'satnogs'` row updates that row in place, a fetched transmitter with no match is appended as a new row, and manually-added or previously-dismissed rows are left untouched.
 
 **Out of scope for this integration (data-availability only):** wiring merged transmitter/mode/status data into `PassGrid` columns — see [satellite tracking hub](../../../features/satellite-tracking/README.md).
 
@@ -89,7 +89,7 @@ Additional upstream fields (`mode_id`, `baud`, `service`, `iaru_coordination`, `
 Studio:
 
 - Records a per-provider cooldown on HTTP 429 (honours `Retry-After` when present), keyed separately from CelesTrak/AMSAT under the `SatelliteEnrichmentSource` `'satnogs'`.
-- Serves stale session-cached results on 429 when available.
+- Serves stale cached results on 429 when available.
 - Does not auto-retry refresh requests.
 
 ## Attribution

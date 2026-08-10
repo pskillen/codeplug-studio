@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import { NativeYamlImportError } from './errors.ts';
 import { parseProjectDocument, parseProjectDocumentWithWarnings } from './parse.ts';
 import {
@@ -35,7 +36,15 @@ describe('native-yaml parse', () => {
   });
 
   it('parses valid full library fixture', () => {
-    aggregateEqual(parseProjectDocument(readFixture('valid-full.yaml')), fullLibraryAggregate());
+    // valid-full.yaml is a pre-schema-26 (v15) golden fixture with no legacy uplink/downlink
+    // scalars set, so migration yields an empty transmitters array — unlike
+    // `fullLibraryAggregate()`, which models a satellite with one transmitter for the
+    // export-golden-fixture tests.
+    const expected = fullLibraryAggregate();
+    aggregateEqual(parseProjectDocument(readFixture('valid-full.yaml')), {
+      ...expected,
+      satellites: expected.satellites.map((satellite) => ({ ...satellite, transmitters: [] })),
+    });
   });
 
   it('parses nested zone members via serialised round-trip', () => {
@@ -89,31 +98,65 @@ describe('native-yaml parse', () => {
     expect(parsed.channels[0]?.hideFromInternalMap).toBe(true);
   });
 
-  it('round-trips satellite uplink/downlink metadata when set', () => {
-    const aggregate = fullLibraryAggregate();
-    const withMetadata = {
-      ...aggregate,
-      satellites: aggregate.satellites.map((sat) => ({
-        ...sat,
-        uplinkHz: 145_990_000,
-        downlinkHz: 437_800_000,
-        uplinkToneHz: 67,
-        downlinkToneHz: 88.5,
-      })),
+  function makeTransmitter(index: number): SatelliteTransmitter {
+    return {
+      id: `transmitter-${index}`,
+      label: `Transmitter ${index}`,
+      mode: index % 2 === 0 ? 'FM' : 'BPSK',
+      uplinkHz: 145_990_000 + index,
+      downlinkHz: 437_800_000 + index,
+      uplinkToneHz: index === 0 ? 67 : null,
+      downlinkToneHz: index === 1 ? 88.5 : null,
+      source: index === 0 ? 'manual' : 'satnogs',
+      satnogsUuid: index === 0 ? null : `satnogs-uuid-${index}`,
+      satnogsAlive: index === 0 ? null : true,
+      satnogsStatus: index === 0 ? null : 'active',
+      satnogsSyncedAt: index === 0 ? null : '2026-08-10T00:00:00.000Z',
+      dismissed: false,
     };
-    const parsed = parseProjectDocument(serialiseProject(withMetadata));
-    expect(parsed.satellites[0]?.uplinkHz).toBe(145_990_000);
-    expect(parsed.satellites[0]?.downlinkHz).toBe(437_800_000);
-    expect(parsed.satellites[0]?.uplinkToneHz).toBe(67);
-    expect(parsed.satellites[0]?.downlinkToneHz).toBe(88.5);
+  }
+
+  it.each([0, 1, 3])(
+    'round-trips satellite transmitters losslessly with %i transmitters',
+    (count) => {
+      const aggregate = fullLibraryAggregate();
+      const transmitters = Array.from({ length: count }, (_, index) => makeTransmitter(index));
+      const withMetadata = {
+        ...aggregate,
+        satellites: aggregate.satellites.map((sat) => ({ ...sat, transmitters })),
+      };
+      const parsed = parseProjectDocument(serialiseProject(withMetadata));
+      expect(parsed.satellites[0]?.transmitters).toEqual(transmitters);
+    },
+  );
+
+  it('migrates a pre-schema-26 satellite to an empty transmitters array when unset', () => {
+    const parsed = parseProjectDocument(readFixture('valid-full.yaml'));
+    expect(parsed.satellites[0]?.transmitters).toEqual([]);
   });
 
-  it('defaults satellite uplink/downlink metadata to null when omitted (pre-#854 exports)', () => {
-    const parsed = parseProjectDocument(readFixture('valid-full.yaml'));
-    expect(parsed.satellites[0]?.uplinkHz).toBeNull();
-    expect(parsed.satellites[0]?.downlinkHz).toBeNull();
-    expect(parsed.satellites[0]?.uplinkToneHz).toBeNull();
-    expect(parsed.satellites[0]?.downlinkToneHz).toBeNull();
+  it('migrates a pre-schema-26 satellite with legacy scalar fields into one manual transmitter', () => {
+    const legacyYaml = readFixture('valid-full.yaml').replace(
+      '    - argPerigeeDeg: 130.536',
+      [
+        '    - argPerigeeDeg: 130.536',
+        '      uplinkHz: 145990000',
+        '      downlinkHz: 437800000',
+        '      uplinkToneHz: 67',
+        '      downlinkToneHz: null',
+      ].join('\n'),
+    );
+    const parsed = parseProjectDocument(legacyYaml);
+    expect(parsed.satellites[0]?.transmitters).toHaveLength(1);
+    const transmitter = parsed.satellites[0]?.transmitters[0];
+    expect(transmitter?.uplinkHz).toBe(145_990_000);
+    expect(transmitter?.downlinkHz).toBe(437_800_000);
+    expect(transmitter?.uplinkToneHz).toBe(67);
+    expect(transmitter?.downlinkToneHz).toBeNull();
+    expect(transmitter?.source).toBe('manual');
+    expect(transmitter?.dismissed).toBe(false);
+    expect(typeof transmitter?.id).toBe('string');
+    expect(transmitter?.id.length).toBeGreaterThan(0);
   });
 
   it('rejects corrupt YAML', () => {
@@ -164,6 +207,14 @@ describe('native-yaml validate', () => {
     const priorVersionYaml = readFixture('valid-full.yaml').replace(
       'studioSchemaVersion: 15',
       'studioSchemaVersion: 24',
+    );
+    expect(() => validateDocument(parseYamlTree(priorVersionYaml))).not.toThrow();
+  });
+
+  it('accepts the prior studioSchemaVersion (pre-transmitters-array bump) via the allowlist chain', () => {
+    const priorVersionYaml = readFixture('valid-full.yaml').replace(
+      'studioSchemaVersion: 15',
+      'studioSchemaVersion: 25',
     );
     expect(() => validateDocument(parseYamlTree(priorVersionYaml))).not.toThrow();
   });
