@@ -1,52 +1,32 @@
 import { describe, expect, it } from 'vitest';
-import type { SatelliteTransmitterInfo } from '@core/models/satelliteEnrichment.ts';
+import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import {
   FREQUENCY_FIELD_ERROR,
   TONE_FIELD_ERROR,
   fieldError,
-  sortTransmittersAliveFirst,
-  transmitterLabel,
+  formatSatnogsSyncedAt,
+  transmitterSourceLabel,
+  visibleTransmitters,
 } from './satelliteEditorHelpers.ts';
 
-function transmitter(overrides: Partial<SatelliteTransmitterInfo> = {}): SatelliteTransmitterInfo {
+function transmitter(overrides: Partial<SatelliteTransmitter> = {}): SatelliteTransmitter {
   return {
-    uuid: 'tx-1',
-    description: 'FM repeater',
+    id: 'tx-1',
+    label: 'FM repeater',
     mode: 'FM',
-    downlinkHz: 145_800_000,
     uplinkHz: 145_200_000,
-    alive: true,
-    status: 'active',
+    downlinkHz: 145_800_000,
+    uplinkToneHz: null,
+    downlinkToneHz: null,
+    source: 'manual',
+    satnogsUuid: null,
+    satnogsAlive: null,
+    satnogsStatus: null,
+    satnogsSyncedAt: null,
+    dismissed: false,
     ...overrides,
   };
 }
-
-describe('transmitterLabel', () => {
-  it('includes description and mode', () => {
-    expect(transmitterLabel(transmitter())).toBe('FM repeater — FM');
-  });
-
-  it('falls back to "unknown mode" when mode is null', () => {
-    expect(transmitterLabel(transmitter({ mode: null }))).toBe('FM repeater — unknown mode');
-  });
-
-  it('flags inactive transmitters', () => {
-    expect(transmitterLabel(transmitter({ alive: false }))).toBe('FM repeater — FM (inactive)');
-  });
-});
-
-describe('sortTransmittersAliveFirst', () => {
-  it('sorts alive transmitters before inactive ones without reordering within each group', () => {
-    const dead1 = transmitter({ uuid: 'dead-1', alive: false });
-    const alive1 = transmitter({ uuid: 'alive-1', alive: true });
-    const dead2 = transmitter({ uuid: 'dead-2', alive: false });
-    const alive2 = transmitter({ uuid: 'alive-2', alive: true });
-
-    const sorted = sortTransmittersAliveFirst([dead1, alive1, dead2, alive2]);
-
-    expect(sorted.map((t) => t.uuid)).toEqual(['alive-1', 'alive-2', 'dead-1', 'dead-2']);
-  });
-});
 
 describe('fieldError', () => {
   it('returns undefined for blank input', () => {
@@ -61,5 +41,53 @@ describe('fieldError', () => {
   it('returns the message when non-blank input failed to parse', () => {
     expect(fieldError('-1', null, FREQUENCY_FIELD_ERROR)).toBe(FREQUENCY_FIELD_ERROR);
     expect(fieldError('abc', null, TONE_FIELD_ERROR)).toBe(TONE_FIELD_ERROR);
+  });
+});
+
+describe('visibleTransmitters', () => {
+  it('filters out dismissed rows', () => {
+    const kept = transmitter({ id: 'kept' });
+    const dismissed = transmitter({ id: 'dismissed', dismissed: true });
+
+    expect(visibleTransmitters([kept, dismissed])).toEqual([kept]);
+  });
+
+  it('keeps manual and non-dismissed satnogs rows', () => {
+    const manual = transmitter({ id: 'manual', source: 'manual' });
+    const satnogs = transmitter({ id: 'satnogs', source: 'satnogs', dismissed: false });
+
+    expect(visibleTransmitters([manual, satnogs])).toEqual([manual, satnogs]);
+  });
+});
+
+describe('formatSatnogsSyncedAt', () => {
+  it('returns a placeholder for null', () => {
+    expect(formatSatnogsSyncedAt(null)).toBe('not yet synced');
+  });
+
+  it('returns a placeholder for an unparsable value', () => {
+    expect(formatSatnogsSyncedAt('not-a-date')).toBe('not yet synced');
+  });
+
+  it('formats a valid ISO timestamp', () => {
+    const iso = '2026-01-01T00:00:00.000Z';
+    expect(formatSatnogsSyncedAt(iso)).toBe(new Date(iso).toLocaleString());
+  });
+});
+
+describe('transmitterSourceLabel', () => {
+  it('labels manual rows plainly', () => {
+    expect(transmitterSourceLabel(transmitter({ source: 'manual' }))).toBe('Manual');
+  });
+
+  it('labels satnogs rows with the sync time', () => {
+    const iso = '2026-01-01T00:00:00.000Z';
+    const label = transmitterSourceLabel(transmitter({ source: 'satnogs', satnogsSyncedAt: iso }));
+    expect(label).toBe(`SatNOGS · synced ${new Date(iso).toLocaleString()}`);
+  });
+
+  it('labels never-synced satnogs rows', () => {
+    const label = transmitterSourceLabel(transmitter({ source: 'satnogs', satnogsSyncedAt: null }));
+    expect(label).toBe('SatNOGS · synced not yet synced');
   });
 });

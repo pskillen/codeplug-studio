@@ -1,17 +1,4 @@
-import type { SatelliteTransmitterInfo } from '@core/models/satelliteEnrichment.ts';
-
-export function transmitterLabel(transmitter: SatelliteTransmitterInfo): string {
-  const modeLabel = transmitter.mode ?? 'unknown mode';
-  const suffix = transmitter.alive ? '' : ' (inactive)';
-  return `${transmitter.description} — ${modeLabel}${suffix}`;
-}
-
-/** Alive transmitters first, both groups otherwise in upstream order. */
-export function sortTransmittersAliveFirst(
-  transmitters: SatelliteTransmitterInfo[],
-): SatelliteTransmitterInfo[] {
-  return [...transmitters].sort((a, b) => Number(b.alive) - Number(a.alive));
-}
+import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 
 export const FREQUENCY_FIELD_ERROR = 'Enter a positive frequency in MHz.';
 export const TONE_FIELD_ERROR = 'Enter a positive tone in Hz.';
@@ -26,4 +13,28 @@ export function fieldError(
   message: string,
 ): string | undefined {
   return rawValue.trim() !== '' && parsed === null ? message : undefined;
+}
+
+/**
+ * Rows the operator sees in the editor list — dismissed `source: 'satnogs'` rows stay in the
+ * underlying `satellite.transmitters` array (so a later SatNOGS merge can keep refreshing their
+ * data without resurrecting them, see `mergeSatnogsTransmittersIntoSatellite`) but are hidden
+ * from the editable list.
+ */
+export function visibleTransmitters(transmitters: SatelliteTransmitter[]): SatelliteTransmitter[] {
+  return transmitters.filter((t) => !t.dismissed);
+}
+
+/** Absolute local timestamp for a `satnogsSyncedAt` value, or a placeholder when never synced. */
+export function formatSatnogsSyncedAt(iso: string | null): string {
+  if (!iso) return 'not yet synced';
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return 'not yet synced';
+  return at.toLocaleString();
+}
+
+/** Small badge/caption text for a transmitter row's source. */
+export function transmitterSourceLabel(transmitter: SatelliteTransmitter): string {
+  if (transmitter.source === 'manual') return 'Manual';
+  return `SatNOGS · synced ${formatSatnogsSyncedAt(transmitter.satnogsSyncedAt)}`;
 }
