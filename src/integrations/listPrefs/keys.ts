@@ -22,4 +22,8 @@ export function channelListColumnsSchemaKey(projectId: string): string {
   return `${APP_PREFIX}channels.${projectId}.columns-schema`;
 }
 
+export function trackingDashboardPrefsKey(projectId: string): string {
+  return `${APP_PREFIX}tracking-dashboard.${projectId}`;
+}
+
 export const LIST_PREFS_STORAGE_PREFIX = APP_PREFIX;

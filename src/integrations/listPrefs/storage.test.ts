@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { channelListPrefsKey, entityListPrefsKey } from './keys.ts';
+import { channelListPrefsKey, entityListPrefsKey, trackingDashboardPrefsKey } from './keys.ts';
 import {
   loadChannelListPrefs,
+  loadTrackingDashboardPrefs,
   mergeChannelListPrefs,
   mergeEntityListPrefs,
+  mergeTrackingDashboardPrefs,
   saveChannelListPrefs,
+  saveTrackingDashboardPrefs,
 } from './storage.ts';
 
 function createLocalStorageMock() {
@@ -60,6 +63,36 @@ describe('listPrefs storage', () => {
     expect(JSON.parse(localStorage.getItem(entityListPrefsKey('talk-groups', 'proj-1'))!)).toEqual({
       q: 'local',
     });
+  });
+
+  it('returns null when tracking dashboard prefs are missing', () => {
+    expect(loadTrackingDashboardPrefs('proj-1')).toBeNull();
+  });
+
+  it('round-trips tracking dashboard prefs', () => {
+    saveTrackingDashboardPrefs('proj-1', {
+      windowHours: 24,
+      minElevation: '10',
+      onlyWithFrequencies: false,
+      selectedSatelliteIds: ['sat-1', 'sat-2'],
+    });
+    expect(loadTrackingDashboardPrefs('proj-1')).toEqual({
+      windowHours: 24,
+      minElevation: '10',
+      onlyWithFrequencies: false,
+      selectedSatelliteIds: ['sat-1', 'sat-2'],
+    });
+  });
+
+  it('mergeTrackingDashboardPrefs patches existing prefs and isolates by project', () => {
+    saveTrackingDashboardPrefs('proj-1', { windowHours: 12, drawBehindMin: 5 });
+    const next = mergeTrackingDashboardPrefs('proj-1', { windowHours: 48 });
+    expect(next).toEqual({ windowHours: 48, drawBehindMin: 5 });
+    expect(JSON.parse(localStorage.getItem(trackingDashboardPrefsKey('proj-1'))!)).toEqual({
+      windowHours: 48,
+      drawBehindMin: 5,
+    });
+    expect(loadTrackingDashboardPrefs('proj-2')).toBeNull();
   });
 });
 
