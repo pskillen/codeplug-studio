@@ -18,8 +18,7 @@ function observeScrollportRect(
 
   const getRect = () => ({
     width: element.clientWidth,
-    height:
-      element.clientHeight > 0 ? element.clientHeight : EXTREME_SCALE_SCROLLPORT_HEIGHT,
+    height: element.clientHeight > 0 ? element.clientHeight : EXTREME_SCALE_SCROLLPORT_HEIGHT,
   });
 
   cb(getRect());

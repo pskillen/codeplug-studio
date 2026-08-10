@@ -1,6 +1,8 @@
 import type { LatLon } from '@core/domain/geo.ts';
+import type { OrbitSample } from '@core/domain/satelliteTracking/groundTrack.ts';
 import { computeSatelliteFootprint } from '@core/domain/satelliteTracking/footprint.ts';
 import { computeGlobeOrbitTrail } from './orbitTrail.ts';
+import { altitudeKmToGlobeRadiusUnits } from './globeAltitude.ts';
 import type { LiveSatellitePosition } from './useLiveSatellitePositions.ts';
 
 export interface GlobeSatellite {
@@ -47,20 +49,27 @@ export interface GlobeObserver {
   lon: number;
 }
 
-function toPathPoints(latLons: LatLon[], altitude: number): [number, number, number][] {
+function toSurfacePathPoints(latLons: LatLon[], altitude: number): [number, number, number][] {
   return latLons.map(([lat, lon]) => [lat, lon, altitude]);
+}
+
+function orbitSamplesToPathPoints(samples: OrbitSample[]): [number, number, number][] {
+  return samples.map((sample) => [
+    sample.lat,
+    sample.lon,
+    altitudeKmToGlobeRadiusUnits(sample.altitudeKm),
+  ]);
 }
 
 const POSITION_EPSILON_DEG = 1e-4;
 const ALTITUDE_EPSILON_KM = 0.01;
 
-/** When the pass-grid filter is active, only render these satellites on the globe. */
-export function filterGlobeSatellitesBySelection(
+/** When an interest filter is active, only render these satellites on the globe. */
+export function filterGlobeSatellitesByInterest(
   satellites: GlobeSatellite[],
-  selectedSatelliteIds: Set<string>,
+  interestedSatelliteIds: Set<string>,
 ): GlobeSatellite[] {
-  if (selectedSatelliteIds.size === 0) return satellites;
-  return satellites.filter((satellite) => selectedSatelliteIds.has(satellite.id));
+  return satellites.filter((satellite) => interestedSatelliteIds.has(satellite.id));
 }
 
 function globePointNearlyEqual(a: GlobePoint, b: GlobePoint): boolean {
@@ -147,12 +156,12 @@ export function computeGlobeTrailPaths(
     paths.push({
       kind: 'trail-past',
       satelliteId: satellite.id,
-      points: toPathPoints(trail.pastPoints, 0),
+      points: orbitSamplesToPathPoints(trail.pastPoints),
     });
     paths.push({
       kind: 'trail-future',
       satelliteId: satellite.id,
-      points: toPathPoints(trail.futurePoints, 0),
+      points: orbitSamplesToPathPoints(trail.futurePoints),
     });
   }
   return paths;
@@ -174,7 +183,7 @@ export function computeGlobePointsAndFootprints(
   observer: GlobeObserver | null,
   satellites: GlobeSatellite[],
   livePositions: Map<string, LiveSatellitePosition>,
-  selectedSatelliteIds: Set<string>,
+  highlightedSatelliteIds: Set<string>,
 ): GlobePointsAndFootprints {
   const points: GlobePoint[] = [];
   const footprintPaths: GlobePath[] = [];
@@ -195,7 +204,8 @@ export function computeGlobePointsAndFootprints(
     const live = livePositions.get(satellite.id);
     if (!live) continue;
 
-    const selected = selectedSatelliteIds.size === 0 || selectedSatelliteIds.has(satellite.id);
+    const selected =
+      highlightedSatelliteIds.size === 0 || highlightedSatelliteIds.has(satellite.id);
     points.push({
       kind: 'satellite',
       id: satellite.id,
@@ -211,7 +221,7 @@ export function computeGlobePointsAndFootprints(
       footprintPaths.push({
         kind: 'footprint',
         satelliteId: satellite.id,
-        points: toPathPoints(footprint.points, 0),
+        points: toSurfacePathPoints(footprint.points, 0),
       });
     }
   }
@@ -229,14 +239,14 @@ export function buildGlobeData(
   observer: GlobeObserver | null,
   satellites: GlobeSatellite[],
   livePositions: Map<string, LiveSatellitePosition>,
-  selectedSatelliteIds: Set<string>,
+  highlightedSatelliteIds: Set<string>,
   anchorAtMs: number,
 ): GlobeData {
   const { points, footprintPaths } = computeGlobePointsAndFootprints(
     observer,
     satellites,
     livePositions,
-    selectedSatelliteIds,
+    highlightedSatelliteIds,
   );
   const trailPaths = computeGlobeTrailPaths(satellites, anchorAtMs);
   return { points, paths: [...trailPaths, ...footprintPaths] };

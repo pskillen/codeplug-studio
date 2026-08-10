@@ -3,13 +3,14 @@ import Globe from 'react-globe.gl';
 import {
   computeGlobePointsAndFootprints,
   computeGlobeTrailPaths,
-  filterGlobeSatellitesBySelection,
+  filterGlobeSatellitesByInterest,
   type GlobeObserver,
   type GlobePath,
   type GlobePoint,
   type GlobeSatellite,
 } from './buildGlobeData.ts';
 import { useLiveSatellitePositions } from './useLiveSatellitePositions.ts';
+import { altitudeKmToGlobeRadiusUnits } from './globeAltitude.ts';
 import classes from './SatelliteGlobe.module.css';
 
 const GLOBE_IMAGE_URL = '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
@@ -23,8 +24,10 @@ const TRAIL_COLOR = 'rgba(77, 124, 255, 0.8)';
 export interface SatelliteGlobeProps {
   observer: GlobeObserver | null;
   satellites: GlobeSatellite[];
-  /** Satellite ids the pass grid is currently filtered to. Empty set = no filter (all shown at full brightness). */
-  selectedSatelliteIds: Set<string>;
+  /** Dashboard interest filter — only these satellites render (dots, trails, footprints). */
+  interestedSatelliteIds: Set<string>;
+  /** Pass-grid multi-select / globe click — highlights matching dots when non-empty. */
+  highlightedSatelliteIds: Set<string>;
   /** Click a satellite dot to filter the pass grid to it (toggles off if it's the only one already selected). */
   onSelectSatellite: (satelliteId: string) => void;
 }
@@ -42,6 +45,12 @@ function pointRadius(point: object): number {
   const p = point as GlobePoint;
   if (p.kind === 'observer') return 0.35;
   return 0.4;
+}
+
+function pointAltitude(point: object): number {
+  const p = point as GlobePoint;
+  if (p.kind === 'observer') return 0;
+  return altitudeKmToGlobeRadiusUnits(p.altitudeKm);
 }
 
 function pathColor(path: object): string {
@@ -71,7 +80,8 @@ function pathDashGap(path: object): number {
 export default function SatelliteGlobe({
   observer,
   satellites,
-  selectedSatelliteIds,
+  interestedSatelliteIds,
+  highlightedSatelliteIds,
   onSelectSatellite,
 }: SatelliteGlobeProps) {
   // Anchor instant for the orbit-trail window, fixed at mount so trails don't resample on
@@ -97,8 +107,8 @@ export default function SatelliteGlobe({
   }, []);
 
   const visibleSatellites = useMemo(
-    () => filterGlobeSatellitesBySelection(satellites, selectedSatelliteIds),
-    [satellites, selectedSatelliteIds],
+    () => filterGlobeSatellitesByInterest(satellites, interestedSatelliteIds),
+    [satellites, interestedSatelliteIds],
   );
 
   const livePositions = useLiveSatellitePositions(visibleSatellites);
@@ -119,9 +129,9 @@ export default function SatelliteGlobe({
         observer,
         visibleSatellites,
         livePositions,
-        selectedSatelliteIds,
+        highlightedSatelliteIds,
       ),
-    [observer, visibleSatellites, livePositions, selectedSatelliteIds],
+    [observer, visibleSatellites, livePositions, highlightedSatelliteIds],
   );
 
   const paths = useMemo(() => [...trailPaths, ...footprintPaths], [trailPaths, footprintPaths]);
@@ -147,7 +157,7 @@ export default function SatelliteGlobe({
         pointLng="lng"
         pointColor={pointColor}
         pointRadius={pointRadius}
-        pointAltitude={0.01}
+        pointAltitude={pointAltitude}
         pointLabel={(point: object) => (point as GlobePoint).name}
         onPointClick={handlePointClick}
         pathsData={paths}
@@ -159,6 +169,7 @@ export default function SatelliteGlobe({
         pathDashLength={pathDashLength}
         pathDashGap={pathDashGap}
         pathStroke={1}
+        pathTransitionDuration={0}
       />
       {!hasLivePositions ? (
         <p className={classes.hint}>Acquiring live satellite positions…</p>

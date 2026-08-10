@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  filterGlobeSatellitesBySelection,
+  filterGlobeSatellitesByInterest,
   stabilizeGlobePointsAndFootprints,
   type GlobePoint,
   type GlobePointsAndFootprints,
@@ -22,14 +22,14 @@ const satelliteB = {
   meanMotionRevPerDay: 14,
 };
 
-describe('filterGlobeSatellitesBySelection', () => {
-  it('returns all satellites when the filter set is empty', () => {
-    const result = filterGlobeSatellitesBySelection([satelliteA, satelliteB], new Set());
+describe('filterGlobeSatellitesByInterest', () => {
+  it('returns only interested satellites', () => {
+    const result = filterGlobeSatellitesByInterest([satelliteA, satelliteB], new Set(['a', 'b']));
     expect(result).toHaveLength(2);
   });
 
-  it('returns only selected satellites when the filter set is non-empty', () => {
-    const result = filterGlobeSatellitesBySelection([satelliteA, satelliteB], new Set(['a']));
+  it('omits satellites outside the interest set', () => {
+    const result = filterGlobeSatellitesByInterest([satelliteA, satelliteB], new Set(['a']));
     expect(result.map((s) => s.id)).toEqual(['a']);
   });
 });
