@@ -1,9 +1,11 @@
 import { Checkbox, Group, SimpleGrid, Text } from '@mantine/core';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import type { PassResult } from '@core/domain/satelliteTracking/types.ts';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import BuildListCard, { BuildsListSection } from '../../../components/builds/BuildListCard.tsx';
 import { FacetBar, FacetChip, SplitFilter } from '../../../components/library/FacetBar.tsx';
+import NextPassCard from '../../../components/NextPassCard/NextPassCard.tsx';
 import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
 import {
   SegmentedControl,
@@ -29,6 +31,24 @@ const DEMO_BUILDS = (() => {
     { ...dm1701.build, id: 'styleguide-build-dm1701', name: 'DM-1701 field kit' },
   ];
 })();
+
+const NEXT_PASS_DEMO_NOW_MS = Date.now();
+
+const UPCOMING_PASS_DEMO: PassResult = {
+  aosAt: new Date(NEXT_PASS_DEMO_NOW_MS + 8 * 60 * 1000).toISOString(),
+  losAt: new Date(NEXT_PASS_DEMO_NOW_MS + 18 * 60 * 1000).toISOString(),
+  maxElevationAt: new Date(NEXT_PASS_DEMO_NOW_MS + 13 * 60 * 1000).toISOString(),
+  maxElevationDeg: 38.4,
+  durationSec: 600,
+};
+
+const ACTIVE_PASS_DEMO: PassResult = {
+  aosAt: new Date(NEXT_PASS_DEMO_NOW_MS - 3 * 60 * 1000).toISOString(),
+  losAt: new Date(NEXT_PASS_DEMO_NOW_MS + 4 * 60 * 1000).toISOString(),
+  maxElevationAt: new Date(NEXT_PASS_DEMO_NOW_MS - 1 * 60 * 1000).toISOString(),
+  maxElevationDeg: 61.2,
+  durationSec: 420,
+};
 
 const CATALOG: Record<string, { label: string; subtitle: string }> = {
   alpha: { label: 'GB3DA Stornoway', subtitle: '145.575 / 145.175 MHz' },
@@ -159,6 +179,36 @@ export default function StyleguideV2PatternsPage() {
             ))}
           </BuildsListSection>
         )}
+      </PageSection>
+
+      <PageSection
+        title="Satellite tracking — next pass card"
+        description="Highlighted next-pass summary for the satellite detail page. Modeled on the build card above as a sibling pattern, not a reuse of it."
+      >
+        <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+          <NextPassCard
+            satelliteName="ISS (ZARYA)"
+            nextPass={UPCOMING_PASS_DEMO}
+            nowMs={NEXT_PASS_DEMO_NOW_MS}
+            hasObserver
+            uplinkHz={145_990_000}
+            downlinkHz={437_800_000}
+            uplinkToneHz={67}
+            downlinkToneHz={null}
+            mode="FM"
+          />
+          <NextPassCard
+            satelliteName="AO-91"
+            nextPass={ACTIVE_PASS_DEMO}
+            nowMs={NEXT_PASS_DEMO_NOW_MS}
+            hasObserver
+            uplinkHz={435_250_000}
+            downlinkHz={145_960_000}
+            mode="FM"
+            dopplerUplinkHz={435_240_600}
+            dopplerDownlinkHz={145_963_400}
+          />
+        </SimpleGrid>
       </PageSection>
 
       <PageSection
