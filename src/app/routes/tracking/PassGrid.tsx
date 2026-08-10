@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   DataTable,
   TextInput,
@@ -44,6 +45,7 @@ export default function PassGrid({
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'aos', direction: 'asc' });
   const [minElevation, setMinElevation] = useState('');
   const [selectedSatelliteIds, setSelectedSatelliteIds] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
 
   const columns = useMemo((): DataTableColumn<SatellitePassRow>[] => {
     return [
@@ -52,7 +54,18 @@ export default function PassGrid({
         header: 'Satellite',
         sortable: true,
         sortValue: (row) => row.satelliteName,
-        render: (row) => row.satelliteName,
+        render: (row) => (
+          <button
+            type="button"
+            className={classes.satelliteLink}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/tracking/satellites/${row.satelliteId}`);
+            }}
+          >
+            {row.satelliteName}
+          </button>
+        ),
       },
       {
         key: 'aos',
@@ -83,7 +96,7 @@ export default function PassGrid({
         render: (row) => `${row.maxElevationDeg.toFixed(1)}°`,
       },
     ];
-  }, []);
+  }, [navigate]);
 
   const satelliteOptions = useMemo(() => {
     const byId = new Map<string, string>();

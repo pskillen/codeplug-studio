@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IconRefresh } from '@tabler/icons-react';
+import { IconRefresh, IconTelescope } from '@tabler/icons-react';
 import type { Satellite } from '@core/models/satellite.ts';
 import { isoNow } from '@core/models/revision.ts';
 import { fetchSatelliteSet } from '@integrations/satellites/fetchSatelliteSet.ts';
@@ -11,6 +11,7 @@ import {
   Button,
   DataTable,
   DesignSystemV2Provider,
+  RowActionIcon,
   ToggleSwitch,
   type DataTableColumn,
 } from '../../../components/v2/index.ts';
@@ -131,13 +132,20 @@ export default function SatelliteKepsListPage() {
         key: 'actions',
         header: '',
         hideable: false,
-        width: '52px',
+        width: '84px',
         render: (r) => (
-          <EntityListRowDeleteAction kind="satellite" entityId={r.id} label={r.name} />
+          <span className={staleClasses.rowActions}>
+            <RowActionIcon
+              label={`View ${r.name} detail`}
+              icon={<IconTelescope size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+              onClick={() => navigate(`/tracking/satellites/${r.id}`)}
+            />
+            <EntityListRowDeleteAction kind="satellite" entityId={r.id} label={r.name} />
+          </span>
         ),
       },
     ];
-  }, []);
+  }, [navigate]);
 
   const enabledCount = satellites.filter((s) => s.enabled).length;
   const { label: lastUpdatedLabel, stale } = formatLastUpdated(

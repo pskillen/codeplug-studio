@@ -29,3 +29,18 @@
 .error {
   color: var(--dsv2-warning);
 }
+
+.satelliteLink {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--dsv2-accent);
+  cursor: pointer;
+  text-align: left;
+}
+
+.satelliteLink:hover {
+  text-decoration: underline;
+}
