@@ -10,7 +10,7 @@ import { useLibrary } from '../../state/useLibrary.ts';
 import { useSatelliteEnrichment } from '../../state/satelliteEnrichment.tsx';
 import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import libraryPageClasses from '../../components/library/LibraryInventoryPage.module.css';
-import { isPassActive, pickPrimaryTransmitterMode } from './passTime.ts';
+import { isPassActive } from './passTime.ts';
 import SatelliteDetailPanel from './SatelliteDetailPanel.tsx';
 import SatellitePassList from './SatellitePassList.tsx';
 import { useDopplerShiftedFrequencies } from './useDopplerShiftedFrequencies.ts';
@@ -29,13 +29,12 @@ export default function SatelliteDetailPage() {
   const { satelliteId } = useParams();
   const navigate = useNavigate();
   const { library, loading } = useLibrary();
-  const { getEnrichmentForNoradId, refreshEnrichmentForNoradIds } = useSatelliteEnrichment();
+  const { refreshEnrichmentForNoradIds } = useSatelliteEnrichment();
   const [refreshingSatnogs, setRefreshingSatnogs] = useState(false);
   const [satnogsError, setSatnogsError] = useState<string | null>(null);
   const satellite = satelliteId
     ? (library.satellites.find((s) => s.id === satelliteId) ?? null)
     : null;
-  const enrichment = satellite ? getEnrichmentForNoradId(satellite.noradId) : null;
 
   async function handleRefreshSatnogs() {
     if (!satellite) return;
@@ -75,17 +74,17 @@ export default function SatelliteDetailPage() {
     : null;
   const nextPass = future.passes[0] ?? null;
   const nextPassActive = nextPass ? isPassActive(nowMs, nextPass.aosAt, nextPass.losAt) : false;
-  // Minimal single-transmitter fix — full multi-transmitter support lands in phase 5.
-  const firstTransmitter = satellite?.transmitters[0];
   const doppler = useDopplerShiftedFrequencies(
     satellite,
-    firstTransmitter?.uplinkHz,
-    firstTransmitter?.downlinkHz,
+    (satellite?.transmitters ?? []).map((t) => ({
+      id: t.id,
+      uplinkHz: t.uplinkHz,
+      downlinkHz: t.downlinkHz,
+    })),
     observerLocation,
     nextPassActive,
     nowMs,
   );
-  const primaryMode = pickPrimaryTransmitterMode(enrichment?.transmitters);
 
   if (loading) {
     return (
@@ -143,13 +142,22 @@ export default function SatelliteDetailPage() {
           nextPass={nextPass}
           nowMs={nowMs}
           hasObserver={future.hasObserver}
-          uplinkHz={firstTransmitter?.uplinkHz ?? null}
-          downlinkHz={firstTransmitter?.downlinkHz ?? null}
-          uplinkToneHz={firstTransmitter?.uplinkToneHz ?? null}
-          downlinkToneHz={firstTransmitter?.downlinkToneHz ?? null}
-          mode={primaryMode}
-          dopplerUplinkHz={doppler.uplinkHz}
-          dopplerDownlinkHz={doppler.downlinkHz}
+          transmitters={satellite.transmitters
+            .filter((t) => !t.dismissed)
+            .map((t) => {
+              const shifted = doppler.find((d) => d.id === t.id);
+              return {
+                id: t.id,
+                label: t.label,
+                mode: t.mode,
+                uplinkHz: t.uplinkHz,
+                downlinkHz: t.downlinkHz,
+                uplinkToneHz: t.uplinkToneHz,
+                downlinkToneHz: t.downlinkToneHz,
+                dopplerUplinkHz: shifted?.uplinkHz ?? null,
+                dopplerDownlinkHz: shifted?.downlinkHz ?? null,
+              };
+            })}
           upcomingPassesAnchorId={UPCOMING_PASSES_ANCHOR_ID}
         />
 
