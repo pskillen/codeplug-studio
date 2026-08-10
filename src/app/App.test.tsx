@@ -14,6 +14,7 @@ import App, { appRouter } from './App.tsx';
 import ProjectProvider from './state/ProjectProvider.tsx';
 import DriveSessionProvider from './state/DriveSessionProvider.tsx';
 import { OperatorPositionProvider } from './state/operatorPosition.tsx';
+import { SatelliteEnrichmentProvider } from './state/satelliteEnrichment.tsx';
 import { persistence } from './state/persistence.ts';
 import { theme } from './theme.ts';
 
@@ -82,7 +83,9 @@ function renderApp(initialRoute = '/') {
       <ProjectProvider>
         <DriveSessionProvider>
           <OperatorPositionProvider>
-            <App />
+            <SatelliteEnrichmentProvider>
+              <App />
+            </SatelliteEnrichmentProvider>
           </OperatorPositionProvider>
         </DriveSessionProvider>
       </ProjectProvider>
