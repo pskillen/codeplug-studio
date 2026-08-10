@@ -9,8 +9,8 @@ const SATNOGS_TRANSMITTERS_UPSTREAM = 'https://db.satnogs.org/api/transmitters/'
 
 /**
  * Same-origin CORS bridge for the SatNOGS DB transmitters endpoint. Upstream is public;
- * no secrets or operator API keys. Studio forwards `norad_cat_id` (and any other supported
- * query params, e.g. `format=json`) straight through — see
+ * no secrets or operator API keys. Studio forwards `satellite__norad_cat_id` (and any other
+ * supported query params, e.g. `format=json`) straight through — see
  * docs/reference/remote-directories/satnogs/README.md for the full param/response reference.
  */
 export async function onRequestOptions(context: { request: Request }): Promise<Response> {

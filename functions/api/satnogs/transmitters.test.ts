@@ -36,7 +36,7 @@ describe('onRequestGet', () => {
   it('rejects an unrecognised origin', async () => {
     const response = await onRequestGet({
       request: requestWithOrigin(
-        'https://codeplug.mm9pdy.net/api/satnogs/transmitters?norad_cat_id=25544',
+        'https://codeplug.mm9pdy.net/api/satnogs/transmitters?satellite__norad_cat_id=25544',
         'https://evil.com',
       ),
     });
@@ -52,7 +52,7 @@ describe('onRequestGet', () => {
 
     const response = await onRequestGet({
       request: requestWithOrigin(
-        'https://codeplug.mm9pdy.net/api/satnogs/transmitters?norad_cat_id=25544',
+        'https://codeplug.mm9pdy.net/api/satnogs/transmitters?satellite__norad_cat_id=25544',
       ),
     });
 
@@ -62,7 +62,7 @@ describe('onRequestGet', () => {
 
     const [upstreamUrl] = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(upstreamUrl).toContain('db.satnogs.org/api/transmitters/');
-    expect(upstreamUrl).toContain('norad_cat_id=25544');
+    expect(upstreamUrl).toContain('satellite__norad_cat_id=25544');
     expect(upstreamUrl).toContain('format=json');
   });
 
@@ -72,7 +72,7 @@ describe('onRequestGet', () => {
 
     await onRequestGet({
       request: requestWithOrigin(
-        'https://codeplug.mm9pdy.net/api/satnogs/transmitters?norad_cat_id=25544&format=json',
+        'https://codeplug.mm9pdy.net/api/satnogs/transmitters?satellite__norad_cat_id=25544&format=json',
       ),
     });
 
@@ -86,7 +86,7 @@ describe('onRequestGet', () => {
 
     const response = await onRequestGet({
       request: requestWithOrigin(
-        'https://codeplug.mm9pdy.net/api/satnogs/transmitters?norad_cat_id=25544',
+        'https://codeplug.mm9pdy.net/api/satnogs/transmitters?satellite__norad_cat_id=25544',
       ),
     });
 
@@ -98,7 +98,7 @@ describe('onRequestGet', () => {
 
     const response = await onRequestGet({
       request: requestWithOrigin(
-        'https://codeplug.mm9pdy.net/api/satnogs/transmitters?norad_cat_id=25544',
+        'https://codeplug.mm9pdy.net/api/satnogs/transmitters?satellite__norad_cat_id=25544',
       ),
     });
 

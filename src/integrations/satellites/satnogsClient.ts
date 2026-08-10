@@ -15,8 +15,13 @@ export async function fetchSatnogsTransmittersForNoradId(
   noradId: number,
   options?: { refresh?: boolean },
 ): Promise<SatnogsTransmitterRaw[]> {
+  // `satellite__norad_cat_id` — not `norad_cat_id` — is the actual filterable field on
+  // SatNOGS DB's transmitters endpoint; `norad_cat_id` appears in every response record but
+  // is a read-only field on the related satellite, not a query filter, and is silently
+  // ignored (returning the full unfiltered list) if used directly. Verified against the live
+  // API — see docs/reference/remote-directories/satnogs/README.md.
   const url = resolveApiUrl(
-    `${SATNOGS_TRANSMITTERS_API_PATH}?norad_cat_id=${encodeURIComponent(String(noradId))}`,
+    `${SATNOGS_TRANSMITTERS_API_PATH}?satellite__norad_cat_id=${encodeURIComponent(String(noradId))}`,
   );
   const { body, status } = await fetchSatelliteDirectoryText(url, {
     provider: 'satnogs',

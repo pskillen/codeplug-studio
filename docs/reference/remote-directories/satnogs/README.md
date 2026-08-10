@@ -28,21 +28,21 @@ SatNOGS DB does not send `Access-Control-Allow-Origin` for browser direct fetch.
 
 | Property    | Value                                                                                                     |
 | ----------- | --------------------------------------------------------------------------------------------------------- |
-| Studio path | `GET /api/satnogs/transmitters?norad_cat_id=<id>`                                                         |
+| Studio path | `GET /api/satnogs/transmitters?satellite__norad_cat_id=<id>`                                              |
 | Upstream    | `https://db.satnogs.org/api/transmitters/`                                                                |
 | Auth        | None (public upstream; no operator API key)                                                               |
 | Cache       | `Cache-Control: public, max-age=3600`                                                                     |
 | Origin gate | Shared allowlist with CelesTrak/AMSAT/RadioID/RepeaterBook — deploy hostnames and `http://localhost:5173` |
 | Local dev   | Vite `server.proxy` rewrites `/api/satnogs/transmitters` → `/api/transmitters/` on `db.satnogs.org`       |
 
-Deployed via [`functions/api/satnogs/transmitters.ts`](../../../../functions/api/satnogs/transmitters.ts) on every Cloudflare Pages environment. The proxy pins `format=json` on the upstream request (SatNOGS DB's Django REST Framework browsable API serves HTML without an explicit `format`), and forwards any other query params (notably `norad_cat_id`) straight through.
+Deployed via [`functions/api/satnogs/transmitters.ts`](../../../../functions/api/satnogs/transmitters.ts) on every Cloudflare Pages environment. The proxy pins `format=json` on the upstream request (SatNOGS DB's Django REST Framework browsable API serves HTML without an explicit `format`), and forwards any other query params (notably `satellite__norad_cat_id`) straight through.
 
 ## Query parameters
 
-| Param          | Use                                                                          |
-| -------------- | ---------------------------------------------------------------------------- |
-| `norad_cat_id` | Filter transmitters to one satellite's NORAD catalog id — Studio's merge key |
-| `format`       | Pinned to `json` by the proxy unless the caller sets it explicitly           |
+| Param                     | Use                                                                                                                                                                                                                                                                                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `satellite__norad_cat_id` | Filter transmitters to one satellite's NORAD catalog id — Studio's merge key. **Not** `norad_cat_id` — that name appears on every response record but is a read-only field on the related satellite, not a query filter; using it directly returns the full, unfiltered transmitter list (verified against the live API). |
+| `format`                  | Pinned to `json` by the proxy unless the caller sets it explicitly                                                                                                                                                                                                                                                        |
 
 Studio fetches one NORAD id per request — SatNOGS DB's transmitter filter takes a single id, not a batch. `fetchSatnogsEnrichmentForNoradIds` (`src/integrations/satellites/satnogsClient.ts`) fans out one request per satellite and collects per-id failures without aborting the whole batch.
 
