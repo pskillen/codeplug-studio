@@ -41,13 +41,15 @@ function DateTimeCell({
 
 export interface PassGridProps {
   passes: SatellitePassRow[];
+  /** Unfiltered pass list for per-satellite next-pass countdown (defaults to `passes`). */
+  allPasses?: SatellitePassRow[];
   loading: boolean;
   error: string | null;
   onSelectPass?: (row: SatellitePassRow) => void;
   /** Look-ahead window used only for the empty-state copy, e.g. "72 hours". */
   windowLabel: string;
-  /** Min-elevation client filter (degrees). Empty string = no filter. */
-  minElevation?: string;
+  /** When true, show the filtered-empty message instead of the global empty message. */
+  hasActiveFilter?: boolean;
   /**
    * Satellite multi-select filter state. Lifted to `TrackingDashboardPage` (rather than kept
    * local to this component) so `SatelliteGlobe` can also read/write it — clicking a
@@ -60,11 +62,13 @@ export interface PassGridProps {
 
 export default function PassGrid({
   passes,
+  allPasses,
+  totalRowCount,
   loading,
   error,
   onSelectPass,
   windowLabel,
-  minElevation = '',
+  hasActiveFilter = false,
   selectedSatelliteIds: selectedSatelliteIdsProp,
 }: PassGridProps) {
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'aos', direction: 'asc' });
@@ -72,7 +76,10 @@ export default function PassGrid({
   const navigate = useNavigate();
   const nowMs = useNowTick();
 
-  const nextPassMap = useMemo(() => nextPassBySatelliteId(passes), [passes]);
+  const nextPassMap = useMemo(
+    () => nextPassBySatelliteId(allPasses ?? passes),
+    [allPasses, passes],
+  );
 
   const columns = useMemo((): DataTableColumn<SatellitePassRow>[] => {
     return [
@@ -134,29 +141,16 @@ export default function PassGrid({
     ];
   }, [navigate, nextPassMap, nowMs]);
 
-  const minElevationValue = Number.parseFloat(minElevation);
-  const filtered = useMemo(() => {
-    return passes.filter((pass) => {
-      if (!Number.isNaN(minElevationValue) && pass.maxElevationDeg < minElevationValue) {
-        return false;
-      }
-      if (selectedSatelliteIds.size > 0 && !selectedSatelliteIds.has(pass.satelliteId)) {
-        return false;
-      }
-      return true;
-    });
-  }, [passes, minElevationValue, selectedSatelliteIds]);
-
-  const hasActiveFilter = !Number.isNaN(minElevationValue) || selectedSatelliteIds.size > 0;
+  const displayTotal = totalRowCount ?? passes.length;
 
   return (
     <div className={classes.wrapper}>
       {error ? <p className={classes.error}>{error}</p> : null}
       <DataTable
         columns={columns}
-        rows={filtered}
+        rows={passes}
         getRowId={(row) => `${row.satelliteId}:${row.aosAt}`}
-        totalRowCount={passes.length}
+        totalRowCount={displayTotal}
         sort={sort}
         onSortChange={setSort}
         onRowActivate={onSelectPass}

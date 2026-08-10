@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import DesignSystemV2Provider from '../../components/v2/DesignSystemV2Provider.tsx';
+import { filterTrackingPasses } from './passTime.ts';
 import PassGrid from './PassGrid.tsx';
 import type { SatellitePassRow } from './useTrackingPasses.ts';
 
@@ -44,15 +45,18 @@ describe('PassGrid', () => {
     expect(screen.getByRole('cell', { name: 'AO-91' })).toBeInTheDocument();
   });
 
-  it('narrows rows to the checked satellites', () => {
+  it('renders only the pre-filtered satellite rows passed from the dashboard', () => {
     render(
       <MemoryRouter>
         <DesignSystemV2Provider>
           <PassGrid
-            passes={PASSES}
+            passes={PASSES.filter((pass) => pass.satelliteId === 'sat-1')}
+            allPasses={PASSES}
+            totalRowCount={PASSES.length}
             loading={false}
             error={null}
             windowLabel="72 hours"
+            hasActiveFilter
             selectedSatelliteIds={new Set(['sat-1'])}
           />
         </DesignSystemV2Provider>
@@ -63,16 +67,19 @@ describe('PassGrid', () => {
     expect(screen.queryByRole('cell', { name: 'AO-91' })).not.toBeInTheDocument();
   });
 
-  it('combines the satellite filter with the min-elevation filter', () => {
+  it('renders only passes that survive the shared min-elevation filter', () => {
+    const filtered = filterTrackingPasses(PASSES, '20', new Set());
     render(
       <MemoryRouter>
         <DesignSystemV2Provider>
           <PassGrid
-            passes={PASSES}
+            passes={filtered}
+            allPasses={PASSES}
+            totalRowCount={PASSES.length}
             loading={false}
             error={null}
             windowLabel="72 hours"
-            minElevation="20"
+            hasActiveFilter
           />
         </DesignSystemV2Provider>
       </MemoryRouter>,

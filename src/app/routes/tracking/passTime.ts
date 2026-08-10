@@ -12,6 +12,28 @@ export interface PassWithSatelliteId extends PassResult {
   satelliteId: string;
 }
 
+export interface PassWithElevation extends PassWithSatelliteId {
+  maxElevationDeg: number;
+}
+
+/** Client-side pass filters shared by the pass grid and ground-track map. */
+export function filterTrackingPasses<T extends PassWithElevation>(
+  passes: T[],
+  minElevation: string,
+  selectedSatelliteIds: Set<string>,
+): T[] {
+  const minElevationValue = Number.parseFloat(minElevation);
+  return passes.filter((pass) => {
+    if (!Number.isNaN(minElevationValue) && pass.maxElevationDeg < minElevationValue) {
+      return false;
+    }
+    if (selectedSatelliteIds.size > 0 && !selectedSatelliteIds.has(pass.satelliteId)) {
+      return false;
+    }
+    return true;
+  });
+}
+
 /**
  * Earliest upcoming pass per satellite (by AOS). When multiple rows share a satellite,
  * keeps the one with the smallest `aosAt`.

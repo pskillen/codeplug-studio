@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  filterTrackingPasses,
   formatCountdown,
   formatNextPassCountdown,
   isPassActive,
@@ -28,6 +29,32 @@ describe('isPassActive', () => {
 
   it('returns false for invalid ISO strings', () => {
     expect(isPassActive(Date.now(), 'invalid', los)).toBe(false);
+  });
+});
+
+describe('filterTrackingPasses', () => {
+  const passes = [
+    {
+      satelliteId: 'a',
+      aosAt: '2026-08-10T01:00:00.000Z',
+      losAt: '2026-08-10T01:10:00.000Z',
+      maxElevationAt: '',
+      maxElevationDeg: 40,
+      durationSec: 600,
+    },
+    {
+      satelliteId: 'b',
+      aosAt: '2026-08-10T02:00:00.000Z',
+      losAt: '2026-08-10T02:10:00.000Z',
+      maxElevationAt: '',
+      maxElevationDeg: 10,
+      durationSec: 600,
+    },
+  ];
+
+  it('filters by min elevation and satellite selection', () => {
+    const result = filterTrackingPasses(passes, '20', new Set(['a']));
+    expect(result.map((pass) => pass.satelliteId)).toEqual(['a']);
   });
 });
 

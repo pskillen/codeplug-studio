@@ -15,6 +15,7 @@ import {
   useTrackingPasses,
   type SatellitePassRow,
 } from './useTrackingPasses.ts';
+import { filterTrackingPasses, nextPassBySatelliteId } from './passTime.ts';
 import classes from './TrackingDashboardPage.module.css';
 import libraryPageClasses from '../../components/library/LibraryInventoryPage.module.css';
 
@@ -92,6 +93,20 @@ export default function TrackingDashboardPage() {
     });
   };
 
+  const minElevationValue = Number.parseFloat(minElevation);
+  const hasActiveFilter =
+    !Number.isNaN(minElevationValue) || selectedSatelliteIds.size > 0;
+
+  const filteredPasses = useMemo(
+    () => filterTrackingPasses(passes, minElevation, selectedSatelliteIds),
+    [passes, minElevation, selectedSatelliteIds],
+  );
+
+  const defaultMapPasses = useMemo(() => {
+    const nextMap = nextPassBySatelliteId(filteredPasses);
+    return Array.from(nextMap.values()).map(toSelectedPass);
+  }, [filteredPasses]);
+
   return (
     <DesignSystemV2Provider>
       <div className={libraryPageClasses.page}>
@@ -150,6 +165,7 @@ export default function TrackingDashboardPage() {
           <SatelliteTrackMap
             observer={settings?.location ?? null}
             selectedPass={selectedPass}
+            defaultPasses={defaultMapPasses}
             drawBehindMin={drawBehindMin}
             drawAheadMin={drawAheadMin}
           />
@@ -179,11 +195,13 @@ export default function TrackingDashboardPage() {
           </p>
         ) : (
           <PassGrid
-            passes={passes}
+            passes={filteredPasses}
+            allPasses={passes}
+            totalRowCount={passes.length}
             loading={loading}
             error={error}
             windowLabel={`${windowHours} hours`}
-            minElevation={minElevation}
+            hasActiveFilter={hasActiveFilter}
             onSelectPass={(row) => setSelectedPass(toSelectedPass(row))}
             selectedSatelliteIds={selectedSatelliteIds}
             onSelectedSatelliteIdsChange={setSelectedSatelliteIds}
