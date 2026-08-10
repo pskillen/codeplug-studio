@@ -161,14 +161,14 @@ Three-PR arc adding a per-satellite detail page reachable from the Satellite Kep
 
 ---
 
-## Wave 1 post-MVP polish (in flight)
+## Wave 1 post-MVP polish
 
-**Plan:** `satellite_wave_1_fixes` — five independent PRs from [follow-up-tickets.md](../../../tmp/features/satellite-followups/follow-up-tickets.md).
+**Plan:** `satellite_wave_1_fixes` — five stacked PRs from [follow-up-tickets.md](../../../tmp/features/satellite-followups/follow-up-tickets.md). Merge in order (#1025 → #1026 → #1027 → #1028 → #1029).
 
-| Phase | Issue                                                                                  | Status                                        |
-| ----- | -------------------------------------------------------------------------------------- | --------------------------------------------- |
-| 1     | [#1012](https://github.com/pskillen/codeplug-studio/issues/1012) SatNOGS UI wiring     | In progress — `1012/pskillen/satnogs-ui-wire` |
-| 2     | [#1013](https://github.com/pskillen/codeplug-studio/issues/1013) Globe code-split      | Pending                                       |
-| 3     | [#1016](https://github.com/pskillen/codeplug-studio/issues/1016) Dashboard layout      | Pending                                       |
-| 4     | [#1018](https://github.com/pskillen/codeplug-studio/issues/1018) Map camera fit        | Pending                                       |
-| 5     | [#1019](https://github.com/pskillen/codeplug-studio/issues/1019) World-copy pass lines | Pending                                       |
+| Phase | Issue | Status |
+| --- | --- | --- |
+| 1 | [#1012](https://github.com/pskillen/codeplug-studio/issues/1012) SatNOGS UI wiring | PR [#1025](https://github.com/pskillen/codeplug-studio/pull/1025) |
+| 2 | [#1013](https://github.com/pskillen/codeplug-studio/issues/1013) Globe code-split | PR [#1026](https://github.com/pskillen/codeplug-studio/pull/1026) |
+| 3 | [#1016](https://github.com/pskillen/codeplug-studio/issues/1016) Dashboard layout | PR [#1027](https://github.com/pskillen/codeplug-studio/pull/1027) |
+| 4 | [#1018](https://github.com/pskillen/codeplug-studio/issues/1018) Map camera fit | PR [#1028](https://github.com/pskillen/codeplug-studio/pull/1028) |
+| 5 | [#1019](https://github.com/pskillen/codeplug-studio/issues/1019) World-copy pass lines | PR [#1029](https://github.com/pskillen/codeplug-studio/pull/1029) |
