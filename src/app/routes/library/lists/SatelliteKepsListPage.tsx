@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { IconRefresh } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
+import { IconRefresh, IconTelescope } from '@tabler/icons-react';
 import type { Satellite } from '@core/models/satellite.ts';
 import { isoNow } from '@core/models/revision.ts';
 import { fetchSatelliteSet } from '@integrations/satellites/fetchSatelliteSet.ts';
@@ -10,6 +11,7 @@ import {
   Button,
   DataTable,
   DesignSystemV2Provider,
+  RowActionIcon,
   ToggleSwitch,
   type DataTableColumn,
 } from '../../../components/v2/index.ts';
@@ -37,6 +39,7 @@ function formatLastUpdated(iso: string | null | undefined): { label: string; sta
 export default function SatelliteKepsListPage() {
   const { library, loading, projectId, reload } = useLibrary();
   const { activeProject, refreshProjects } = useProjects();
+  const navigate = useNavigate();
   const { satellites } = library;
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
@@ -116,24 +119,33 @@ export default function SatelliteKepsListPage() {
         header: 'Enabled',
         width: '90px',
         render: (r) => (
-          <ToggleSwitch
-            checked={r.enabled}
-            onChange={(next) => void handleToggle(r, next)}
-            aria-label={`Enable ${r.name}`}
-          />
+          <span onClick={(e) => e.stopPropagation()}>
+            <ToggleSwitch
+              checked={r.enabled}
+              onChange={(next) => void handleToggle(r, next)}
+              aria-label={`Enable ${r.name}`}
+            />
+          </span>
         ),
       },
       {
         key: 'actions',
         header: '',
         hideable: false,
-        width: '52px',
+        width: '84px',
         render: (r) => (
-          <EntityListRowDeleteAction kind="satellite" entityId={r.id} label={r.name} />
+          <span className={staleClasses.rowActions}>
+            <RowActionIcon
+              label={`View ${r.name} detail`}
+              icon={<IconTelescope size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+              onClick={() => navigate(`/tracking/satellites/${r.id}`)}
+            />
+            <EntityListRowDeleteAction kind="satellite" entityId={r.id} label={r.name} />
+          </span>
         ),
       },
     ];
-  }, []);
+  }, [navigate]);
 
   const enabledCount = satellites.filter((s) => s.enabled).length;
   const { label: lastUpdatedLabel, stale } = formatLastUpdated(
@@ -200,6 +212,7 @@ export default function SatelliteKepsListPage() {
             const v1 = v2SortToV1(next);
             if (v1) setSort(v1);
           }}
+          onRowActivate={(r) => navigate(`/library/satellite-keps/${r.id}`)}
           emptyMessage="No satellites yet. Use “Update from CelesTrak/AMSAT” to fetch the amateur satellite list."
           filteredEmptyMessage={
             nameFilter.trim()

@@ -13,3 +13,9 @@
   font-size: 0.85em;
   margin-top: 4px;
 }
+
+.rowActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

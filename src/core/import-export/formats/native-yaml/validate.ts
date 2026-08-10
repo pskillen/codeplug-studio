@@ -758,6 +758,10 @@ function parseSatellite(raw: unknown, index: number): Satellite {
     bstar: expectNumber(record.bstar, `${label}.bstar`),
     elementSetNumber: expectNumber(record.elementSetNumber, `${label}.elementSetNumber`),
     revolutionNumber: expectNumber(record.revolutionNumber, `${label}.revolutionNumber`),
+    uplinkHz: expectNullableNumber(record.uplinkHz, `${label}.uplinkHz`),
+    downlinkHz: expectNullableNumber(record.downlinkHz, `${label}.downlinkHz`),
+    uplinkToneHz: expectNullableNumber(record.uplinkToneHz, `${label}.uplinkToneHz`),
+    downlinkToneHz: expectNullableNumber(record.downlinkToneHz, `${label}.downlinkToneHz`),
   };
 }
 
@@ -1580,6 +1584,7 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
   const studioSchemaVersion = document.studioSchemaVersion;
   if (
     studioSchemaVersion !== STUDIO_SCHEMA_VERSION &&
+    studioSchemaVersion !== 24 &&
     studioSchemaVersion !== 23 &&
     studioSchemaVersion !== 22 &&
     studioSchemaVersion !== 21 &&
@@ -1603,7 +1608,7 @@ export function validateDocument(raw: unknown): ValidateDocumentResult {
     studioSchemaVersion !== 2
   ) {
     throw new NativeYamlImportError(
-      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
+      `Unsupported studioSchemaVersion: ${String(studioSchemaVersion)} (expected ${STUDIO_SCHEMA_VERSION}, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 10, 9, 8, 7, 6, 5, 4, 3, or 2)`,
     );
   }
 

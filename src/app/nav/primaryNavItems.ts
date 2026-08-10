@@ -4,7 +4,6 @@ import {
   IconHammer,
   IconHelp,
   IconHome,
-  IconSatellite,
   IconTool,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
@@ -31,6 +30,10 @@ export interface PrimaryNavItem {
  * Top-level chrome tabs — design-system order (Summary → Library → Tools →
  * Export for radio → Help). Routes stay at existing paths (`/reference` for
  * Tools) so deep links and RequireActiveProject guards do not change.
+ *
+ * Tracking Dashboard (`/tracking`) is reachable from the Tools contextual
+ * strip (`toolsStripItems` in `contextualStripItems.ts`), not as a top-level
+ * tab — the route itself still requires an active project.
  */
 export const primaryNavItems: PrimaryNavItem[] = [
   { to: '/summary', label: 'Summary', icon: IconChartBar, requiresProject: true },
@@ -43,7 +46,6 @@ export const primaryNavItems: PrimaryNavItem[] = [
   },
   { to: '/reference', label: 'Tools', icon: IconTool },
   { to: '/builds', label: 'Export for radio', icon: IconHammer, requiresProject: true },
-  { to: '/tracking', label: 'Tracking Dashboard', icon: IconSatellite, requiresProject: true },
   { to: '/help', label: 'Help', icon: IconHelp },
 ];
 

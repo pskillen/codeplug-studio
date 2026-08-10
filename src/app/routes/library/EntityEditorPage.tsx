@@ -14,6 +14,7 @@ import ZoneEditor from './ZoneEditor.tsx';
 import { TalkGroupEditor } from './TalkGroupEditor.tsx';
 import { DigitalContactEditor } from './DigitalContactEditor.tsx';
 import { AnalogContactEditor } from './AnalogContactEditor.tsx';
+import { SatelliteEditor } from './SatelliteEditor.tsx';
 
 const V2_SELF_SHELLED_EDITORS = new Set<LibraryEntityKind>([
   'channel',
@@ -22,6 +23,7 @@ const V2_SELF_SHELLED_EDITORS = new Set<LibraryEntityKind>([
   'digitalContact',
   'analogContact',
   'scanList',
+  'satellite',
 ]);
 
 export default function EntityEditorPage() {
@@ -165,6 +167,22 @@ export default function EntityEditorPage() {
           return <Navigate to={`/library/zones/${entityId}`} replace />;
         }
         return <ZoneEditor projectId={projectId} library={library} entity={null} />;
+      case 'satellite': {
+        // Satellite rows are only ever created via the CelesTrak/AMSAT refresh flow on the list
+        // page — there is no "new satellite" editor mode.
+        const satelliteEntity = entityId
+          ? (library.satellites.find((s) => s.id === entityId) ?? null)
+          : null;
+        if (!satelliteEntity) {
+          return <Navigate to="/library/satellite-keps" replace />;
+        }
+        return (
+          <SatelliteEditor
+            key={`${satelliteEntity.id}:${satelliteEntity.revision}`}
+            entity={satelliteEntity}
+          />
+        );
+      }
     }
   }
 }

@@ -23,6 +23,7 @@ export const libraryStripItems: readonly ContextualStripItem[] = [
 export const toolsStripItems: readonly ContextualStripItem[] = [
   { label: 'Maidenhead locator', to: '/reference/maidenhead' },
   { label: 'Band plan', to: '/reference/bands' },
+  { label: 'Tracking Dashboard', to: '/tracking' },
 ];
 
 export const helpStripItems: readonly ContextualStripItem[] = [
@@ -49,7 +50,9 @@ export function resolveContextualStripItems(
   pathname: string,
 ): readonly ContextualStripItem[] | null {
   if (pathname.startsWith('/library')) return libraryStripItems;
-  if (pathname.startsWith('/reference')) return toolsStripItems;
+  if (pathname.startsWith('/reference') || pathname.startsWith('/tracking')) {
+    return toolsStripItems;
+  }
   if (pathname.startsWith('/help') || pathname.startsWith('/attributions')) {
     return helpStripItems;
   }

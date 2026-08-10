@@ -212,6 +212,10 @@ export function fullLibraryAggregate(): ProjectAggregate {
     bstar: 0.00030589,
     elementSetNumber: 999,
     revolutionNumber: 43000,
+    uplinkHz: null,
+    downlinkHz: null,
+    uplinkToneHz: null,
+    downlinkToneHz: null,
   };
 
   const trackingSettings: TrackingSettings = {

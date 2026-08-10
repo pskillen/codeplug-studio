@@ -6,3 +6,17 @@
 .map {
   margin: 16px 0;
 }
+
+.windowControl {
+  max-width: 200px;
+}
+
+.drawWindowControl {
+  display: flex;
+  gap: 16px;
+  max-width: 420px;
+}
+
+.drawWindowControl > * {
+  flex: 1;
+}

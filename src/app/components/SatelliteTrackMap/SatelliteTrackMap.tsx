@@ -5,6 +5,7 @@ import { MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet
 import type { LatLon } from '@core/domain/geo.ts';
 import { computeMapView } from '@core/domain/mapView.ts';
 import { sampleGroundTrack } from '@core/domain/satelliteTracking/groundTrack.ts';
+import { observerDivIcon, splitAtAntimeridian } from './mapHelpers.ts';
 import classes from './SatelliteTrackMap.module.css';
 
 const GROUND_TRACK_STEP_SEC = 30;
@@ -22,30 +23,27 @@ export interface SelectedPass {
 export interface SatelliteTrackMapProps {
   observer: { lat: number; lon: number } | null;
   selectedPass: SelectedPass | null;
+  /** Minutes to extend the drawn track before the pass's `aosAt`. Default 0 (strict AOS start). */
+  drawBehindMin?: number;
+  /** Minutes to extend the drawn track past the pass's `losAt`. Default 0 (strict LOS end). */
+  drawAheadMin?: number;
 }
 
-/** Split a ground track wherever consecutive samples cross the antimeridian. */
-function splitAtAntimeridian(points: LatLon[]): LatLon[][] {
-  if (points.length === 0) return [];
-  const segments: LatLon[][] = [[points[0]!]];
-  for (let i = 1; i < points.length; i += 1) {
-    const [, prevLon] = points[i - 1]!;
-    const point = points[i]!;
-    if (Math.abs(point[1] - prevLon) > 180) {
-      segments.push([point]);
-    } else {
-      segments[segments.length - 1]!.push(point);
-    }
-  }
-  return segments;
-}
-
-function observerDivIcon(): L.DivIcon {
-  return L.divIcon({
-    className: classes.observerMarkerWrap,
-    html: `<div class="${classes.observerMarker}"><div class="${classes.observerDot}"></div></div>`,
-    iconAnchor: [6, 6],
-  });
+/**
+ * Compute the sampling bounds for a ground track given the pass window and the
+ * operator's draw-ahead/draw-behind extension. `drawBehindMin` pushes the start
+ * earlier than `aosAt`; `drawAheadMin` pushes the end later than `losAt` — both
+ * relative to the pass window, not wall-clock "now".
+ */
+export function computeTrackBounds(
+  aosAt: string,
+  losAt: string,
+  drawBehindMin: number,
+  drawAheadMin: number,
+): { fromAt: string; toAt: string } {
+  const fromAt = new Date(new Date(aosAt).getTime() - drawBehindMin * 60_000).toISOString();
+  const toAt = new Date(new Date(losAt).getTime() + drawAheadMin * 60_000).toISOString();
+  return { fromAt, toAt };
 }
 
 function MapViewController({ points }: { points: LatLon[] }) {
@@ -73,18 +71,29 @@ function MapViewController({ points }: { points: LatLon[] }) {
  * reuses `computeMapView` for auto-fit bounds and the same `L.divIcon`
  * marker convention.
  */
-export default function SatelliteTrackMap({ observer, selectedPass }: SatelliteTrackMapProps) {
+export default function SatelliteTrackMap({
+  observer,
+  selectedPass,
+  drawBehindMin = 0,
+  drawAheadMin = 0,
+}: SatelliteTrackMapProps) {
   const segments = useMemo(() => {
     if (!selectedPass) return [];
+    const { fromAt, toAt } = computeTrackBounds(
+      selectedPass.aosAt,
+      selectedPass.losAt,
+      drawBehindMin,
+      drawAheadMin,
+    );
     const points = sampleGroundTrack(
       selectedPass.tleLine1,
       selectedPass.tleLine2,
-      selectedPass.aosAt,
-      selectedPass.losAt,
+      fromAt,
+      toAt,
       GROUND_TRACK_STEP_SEC,
     );
     return splitAtAntimeridian(points);
-  }, [selectedPass]);
+  }, [selectedPass, drawBehindMin, drawAheadMin]);
 
   const boundsPoints = useMemo(() => {
     const points = segments.flat();

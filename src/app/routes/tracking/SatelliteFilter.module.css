@@ -1,0 +1,43 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+  max-width: 280px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  padding: 8px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--dsv2-font-body);
+  cursor: pointer;
+}
+
+.empty {
+  color: var(--dsv2-text-secondary);
+  font-size: var(--dsv2-font-body);
+  margin: 0;
+}
+
+.clearButton {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--dsv2-accent, var(--dsv2-text-primary));
+  font-size: var(--dsv2-font-body);
+  cursor: pointer;
+  text-decoration: underline;
+}

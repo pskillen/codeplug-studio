@@ -3,6 +3,7 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { REPEATERBOOK_USER_AGENT } from './src/integrations/repeaters/repeaterbook/constants';
+import { NOMINATIM_USER_AGENT } from './src/integrations/geocoding/nominatimConstants';
 
 const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
 
@@ -15,6 +16,17 @@ function rewriteRepeaterBookExportProxyPath(proxyPath: string): string {
   const upstreamPath = region === 'row' ? '/api/exportROW.php' : '/api/export.php';
   const rest = params.toString();
   return rest ? `${upstreamPath}?${rest}` : upstreamPath;
+}
+
+// Mirrors buildNominatimSearchUpstreamUrl in functions/lib/nominatimUpstream.ts — without a
+// pinned `format`, Nominatim serves its interactive HTML search UI (redirecting to
+// /ui/search.html) instead of JSON, which then fails as a cross-origin navigation.
+function rewriteNominatimSearchProxyPath(proxyPath: string): string {
+  const queryStart = proxyPath.indexOf('?');
+  const query = queryStart >= 0 ? proxyPath.slice(queryStart + 1) : '';
+  const params = new URLSearchParams(query);
+  params.set('format', 'jsonv2');
+  return `/search?${params.toString()}`;
 }
 
 export default defineConfig(({ mode }) => {
@@ -71,6 +83,22 @@ export default defineConfig(({ mode }) => {
           target: 'https://www.amsat.org',
           changeOrigin: true,
           rewrite: () => '/tle/current/nasabare.txt',
+        },
+        '/api/satnogs/transmitters': {
+          target: 'https://db.satnogs.org',
+          changeOrigin: true,
+          rewrite: (proxyPath) =>
+            proxyPath.replace(/^\/api\/satnogs\/transmitters/, '/api/transmitters/'),
+        },
+        '/api/nominatim/search': {
+          target: 'https://nominatim.openstreetmap.org',
+          changeOrigin: true,
+          rewrite: rewriteNominatimSearchProxyPath,
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.setHeader('User-Agent', NOMINATIM_USER_AGENT);
+            });
+          },
         },
       },
     },

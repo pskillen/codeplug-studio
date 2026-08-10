@@ -66,6 +66,40 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
     usedIn: ['Codeplug map', 'Town geocode fallback', 'Maidenhead reference'],
   },
   {
+    id: 'nominatim',
+    name: 'OpenStreetMap / Nominatim',
+    description:
+      'Address and place search for the Tracking Dashboard observer location. Requests go through the Studio same-origin proxy; no operator API key required.',
+    homeUrl: 'https://nominatim.openstreetmap.org/',
+    termsUrl: 'https://operations.osmfoundation.org/policies/nominatim/',
+    usedIn: ['Tracking Dashboard → Observer location → Search address'],
+  },
+  {
+    id: 'celestrak',
+    name: 'CelesTrak',
+    description:
+      'Amateur-satellite TLE (Keplerian element) feed — primary source for the Satellite Keps library. Requests go through the Studio same-origin proxy; no operator API key required.',
+    homeUrl: 'https://celestrak.org/',
+    usedIn: ['Satellite Keps library refresh'],
+  },
+  {
+    id: 'amsat',
+    name: 'AMSAT',
+    description:
+      'Amateur-satellite TLE feed — fallback source for the Satellite Keps library when CelesTrak is unreachable. Requests go through the Studio same-origin proxy; no operator API key required.',
+    homeUrl: 'https://www.amsat.org/',
+    usedIn: ['Satellite Keps library refresh (fallback)'],
+  },
+  {
+    id: 'satnogs',
+    name: 'SatNOGS DB (Libre Space Foundation)',
+    description:
+      'Community-maintained satellite transmitter, mode, and operational-status database — merged onto library satellites by NORAD id. Requests go through the Studio same-origin proxy; no operator API key required. Data is CC BY-SA 4.0.',
+    homeUrl: 'https://db.satnogs.org/',
+    termsUrl: 'https://db.satnogs.org/about/',
+    usedIn: ['Satellite Keps library — SatNOGS transmitter/mode/status enrichment'],
+  },
+  {
     id: 'radioid',
     name: 'RadioID.net',
     description:

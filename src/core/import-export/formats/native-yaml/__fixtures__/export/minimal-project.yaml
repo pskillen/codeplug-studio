@@ -35,5 +35,5 @@ project:
     includeInZoneDerivedScanList: true
 radioBuilds: []
 schemaVersion: 1
-studioSchemaVersion: 24
+studioSchemaVersion: 25
 trackingSettings: null

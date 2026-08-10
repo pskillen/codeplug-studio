@@ -4,6 +4,16 @@ import type { PersistableRow } from './revision.ts';
 export type SatelliteSource = 'celestrak' | 'amsat';
 
 /**
+ * Upstream **enrichment** source for transmitter/mode/operational-status data — a distinct
+ * question from `SatelliteSource` above (where a satellite's TLE came from). A satellite
+ * whose transmitter data was merged from SatNOGS does not have a TLE from SatNOGS, so this
+ * is kept as a sibling type rather than folded into `SatelliteSource`. Fetched and merged
+ * live per session (see `src/integrations/satellites/mergeSatelliteEnrichment.ts`) — not
+ * persisted as part of the `Satellite` shape.
+ */
+export type SatelliteEnrichmentSource = 'satnogs';
+
+/**
  * Vendor-neutral satellite orbital record. `tleLine1`/`tleLine2` are the
  * persisted source of truth for propagation (satellite.js re-derives a
  * `satrec` from the raw lines) — the decoded fields below are for display
@@ -31,4 +41,15 @@ export interface Satellite extends PersistableRow {
   bstar: number;
   elementSetNumber: number;
   revolutionNumber: number;
+
+  /**
+   * Optional operator-entered uplink/downlink metadata for satellite QSOs — vendor-neutral
+   * scalars, no radio-specific caps or NORAD allowlists. Frequencies in Hz (same convention as
+   * `Channel.rxFrequency`/`txFrequency`); tones in Hz (CTCSS). `null`/`undefined` = not set.
+   * Radio write-packing of these fields is out of scope here (#855–#859).
+   */
+  uplinkHz?: number | null;
+  downlinkHz?: number | null;
+  uplinkToneHz?: number | null;
+  downlinkToneHz?: number | null;
 }

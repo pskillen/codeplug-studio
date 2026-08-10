@@ -89,6 +89,33 @@ describe('native-yaml parse', () => {
     expect(parsed.channels[0]?.hideFromInternalMap).toBe(true);
   });
 
+  it('round-trips satellite uplink/downlink metadata when set', () => {
+    const aggregate = fullLibraryAggregate();
+    const withMetadata = {
+      ...aggregate,
+      satellites: aggregate.satellites.map((sat) => ({
+        ...sat,
+        uplinkHz: 145_990_000,
+        downlinkHz: 437_800_000,
+        uplinkToneHz: 67,
+        downlinkToneHz: 88.5,
+      })),
+    };
+    const parsed = parseProjectDocument(serialiseProject(withMetadata));
+    expect(parsed.satellites[0]?.uplinkHz).toBe(145_990_000);
+    expect(parsed.satellites[0]?.downlinkHz).toBe(437_800_000);
+    expect(parsed.satellites[0]?.uplinkToneHz).toBe(67);
+    expect(parsed.satellites[0]?.downlinkToneHz).toBe(88.5);
+  });
+
+  it('defaults satellite uplink/downlink metadata to null when omitted (pre-#854 exports)', () => {
+    const parsed = parseProjectDocument(readFixture('valid-full.yaml'));
+    expect(parsed.satellites[0]?.uplinkHz).toBeNull();
+    expect(parsed.satellites[0]?.downlinkHz).toBeNull();
+    expect(parsed.satellites[0]?.uplinkToneHz).toBeNull();
+    expect(parsed.satellites[0]?.downlinkToneHz).toBeNull();
+  });
+
   it('rejects corrupt YAML', () => {
     expect(() => parseProjectDocument(readFixture('corrupt.yaml'))).toThrow(NativeYamlImportError);
     expect(() => parseProjectDocument(readFixture('corrupt.yaml'))).toThrow(/Invalid YAML syntax/);
@@ -131,6 +158,14 @@ describe('native-yaml validate', () => {
     expect(() => validateDocument(parseYamlTree(readFixture('version-mismatch.yaml')))).toThrow(
       /Unsupported studioSchemaVersion/,
     );
+  });
+
+  it('accepts the prior studioSchemaVersion (pre-#854 bump) via the allowlist chain', () => {
+    const priorVersionYaml = readFixture('valid-full.yaml').replace(
+      'studioSchemaVersion: 15',
+      'studioSchemaVersion: 24',
+    );
+    expect(() => validateDocument(parseYamlTree(priorVersionYaml))).not.toThrow();
   });
 
   it('drops legacy formatBuilds with a warning instead of validating their FKs', () => {

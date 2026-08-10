@@ -19,3 +19,16 @@ export function parseOptionalInt(value: string): number | null {
   const n = Number(trimmed);
   return Number.isFinite(n) ? Math.trunc(n) : null;
 }
+
+/** Parses a decimal number (e.g. a CTCSS tone in Hz) from a form field; blank/invalid → null. */
+export function parseOptionalFloat(value: string): number | null {
+  const trimmed = value.trim();
+  if (trimmed === '') return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Formats an optional Hz value as a plain decimal string for a form field (e.g. a tone). */
+export function optionalNumberToString(value: number | null | undefined): string {
+  return value === null || value === undefined ? '' : String(value);
+}
