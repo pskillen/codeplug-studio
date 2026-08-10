@@ -2,13 +2,13 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   DataTable,
-  TextInput,
   type DataTableColumn,
   type DataTableSortState,
 } from '../../components/v2/index.ts';
-import SatelliteFilter from './SatelliteFilter.tsx';
 import type { SatellitePassRow } from './useTrackingPasses.ts';
 import classes from './PassGrid.module.css';
+
+const EMPTY_SATELLITE_FILTER = new Set<string>();
 
 function formatDurationSec(durationSec: number): string {
   const minutes = Math.floor(durationSec / 60);
@@ -33,6 +33,8 @@ export interface PassGridProps {
   onSelectPass?: (row: SatellitePassRow) => void;
   /** Look-ahead window used only for the empty-state copy, e.g. "72 hours". */
   windowLabel: string;
+  /** Min-elevation client filter (degrees). Empty string = no filter. */
+  minElevation?: string;
   /**
    * Satellite multi-select filter state. Lifted to `TrackingDashboardPage` (rather than kept
    * local to this component) so `SatelliteGlobe` can also read/write it — clicking a
@@ -49,17 +51,11 @@ export default function PassGrid({
   error,
   onSelectPass,
   windowLabel,
+  minElevation = '',
   selectedSatelliteIds: selectedSatelliteIdsProp,
-  onSelectedSatelliteIdsChange,
 }: PassGridProps) {
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'aos', direction: 'asc' });
-  const [minElevation, setMinElevation] = useState('');
-  const [uncontrolledSelectedSatelliteIds, setUncontrolledSelectedSatelliteIds] = useState<
-    Set<string>
-  >(new Set());
-  const selectedSatelliteIds = selectedSatelliteIdsProp ?? uncontrolledSelectedSatelliteIds;
-  const setSelectedSatelliteIds =
-    onSelectedSatelliteIdsChange ?? setUncontrolledSelectedSatelliteIds;
+  const selectedSatelliteIds = selectedSatelliteIdsProp ?? EMPTY_SATELLITE_FILTER;
   const navigate = useNavigate();
 
   const columns = useMemo((): DataTableColumn<SatellitePassRow>[] => {
@@ -113,16 +109,6 @@ export default function PassGrid({
     ];
   }, [navigate]);
 
-  const satelliteOptions = useMemo(() => {
-    const byId = new Map<string, string>();
-    for (const pass of passes) {
-      if (!byId.has(pass.satelliteId)) byId.set(pass.satelliteId, pass.satelliteName);
-    }
-    return Array.from(byId, ([id, name]) => ({ id, name })).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    );
-  }, [passes]);
-
   const minElevationValue = Number.parseFloat(minElevation);
   const filtered = useMemo(() => {
     return passes.filter((pass) => {
@@ -140,20 +126,6 @@ export default function PassGrid({
 
   return (
     <div className={classes.wrapper}>
-      <div className={classes.filters}>
-        <TextInput
-          label="Min elevation (°)"
-          type="number"
-          placeholder="0"
-          value={minElevation}
-          onChange={(event) => setMinElevation(event.target.value)}
-        />
-        <SatelliteFilter
-          options={satelliteOptions}
-          selectedIds={selectedSatelliteIds}
-          onChange={setSelectedSatelliteIds}
-        />
-      </div>
       {error ? <p className={classes.error}>{error}</p> : null}
       <DataTable
         columns={columns}
