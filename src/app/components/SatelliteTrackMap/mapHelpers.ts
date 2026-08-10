@@ -22,6 +22,50 @@ export function splitAtAntimeridian(points: LatLon[]): LatLon[][] {
   return segments;
 }
 
+/**
+ * Split a **closed ring** (e.g. a footprint circle, first point === last) wherever it crosses
+ * the antimeridian, closing each resulting fragment against the ±180° edge instead of relying
+ * on Leaflet `Polygon`'s naive last→first auto-close — which, for an open arc produced by
+ * `splitAtAntimeridian`, draws a spurious chord straight across the map (the "mangled" footprint
+ * circle bug). At each crossing, a synthetic boundary vertex is inserted at the interpolated
+ * latitude on both sides of the seam (±180° respectively), so a fragment's own first/last points
+ * always share the same antimeridian-side longitude and Leaflet's auto-close draws a short,
+ * correct edge along the meridian. Because the ring is closed, the raw first and last fragments
+ * (split only by the array boundary, not a real crossing) are merged back into one.
+ */
+export function splitRingAtAntimeridian(points: LatLon[]): LatLon[][] {
+  if (points.length === 0) return [];
+  const segments: LatLon[][] = [[points[0]!]];
+  for (let i = 1; i < points.length; i += 1) {
+    const [prevLat, prevLon] = points[i - 1]!;
+    const [nextLat, nextLon] = points[i]!;
+    const delta = nextLon - prevLon;
+    if (Math.abs(delta) > 180) {
+      const wrapsUp = delta < -180;
+      const boundaryOut = wrapsUp ? 180 : -180;
+      const boundaryIn = wrapsUp ? -180 : 180;
+      const unwrappedNextLon = wrapsUp ? nextLon + 360 : nextLon - 360;
+      const t = (boundaryOut - prevLon) / (unwrappedNextLon - prevLon);
+      const crossingLat = prevLat + t * (nextLat - prevLat);
+      segments[segments.length - 1]!.push([crossingLat, boundaryOut]);
+      segments.push([
+        [crossingLat, boundaryIn],
+        [nextLat, nextLon],
+      ]);
+    } else {
+      segments[segments.length - 1]!.push([nextLat, nextLon]);
+    }
+  }
+
+  if (segments.length > 1) {
+    const first = segments.shift()!;
+    const last = segments.pop()!;
+    segments.push([...last, ...first.slice(1)]);
+  }
+
+  return segments;
+}
+
 const DEFAULT_WORLD_COPY_OFFSETS = [-360, 0, 360] as const;
 
 export interface WorldCopySegment {

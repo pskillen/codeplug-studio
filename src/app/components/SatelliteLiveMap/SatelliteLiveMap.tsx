@@ -6,8 +6,8 @@ import type { LatLon } from '@core/domain/geo.ts';
 import { computeMapView } from '@core/domain/mapView.ts';
 import { computeSatelliteFootprint } from '@core/domain/satelliteTracking/footprint.ts';
 import {
-  splitAtAntimeridian,
   duplicateSegmentsForWorldCopies,
+  splitRingAtAntimeridian,
 } from '../SatelliteTrackMap/mapHelpers.ts';
 import { useLiveSatellitePosition } from '../../routes/tracking/useLiveSatellitePosition.ts';
 import { computeOrbitTrailSegments } from './orbitTrail.ts';
@@ -97,10 +97,16 @@ export default function SatelliteLiveMap({
   );
 
   // Footprint circles can themselves cross the antimeridian (e.g. a satellite near the date
-  // line, or a wide footprint at high latitude) — split the same way as the ground track.
+  // line, or a wide footprint at high latitude). Unlike the ground track/orbit trail, the
+  // footprint is a *closed ring* — splitRingAtAntimeridian closes each fragment against the
+  // seam instead of leaving an open arc for Leaflet's Polygon to auto-close incorrectly.
   const footprintSegments = useMemo(
-    () => (footprint ? splitAtAntimeridian(footprint.points) : []),
+    () => (footprint ? splitRingAtAntimeridian(footprint.points) : []),
     [footprint],
+  );
+  const renderedFootprintSegments = useMemo(
+    () => duplicateSegmentsForWorldCopies(footprintSegments),
+    [footprintSegments],
   );
 
   const boundsPoints = useMemo(() => {
@@ -135,10 +141,10 @@ export default function SatelliteLiveMap({
             pathOptions={{ color: '#4d7cff', weight: 2 }}
           />
         ))}
-        {footprintSegments.map((segment, index) => (
+        {renderedFootprintSegments.map((copy, index) => (
           <Polygon
-            key={`footprint-${index}`}
-            positions={segment}
+            key={`footprint-${copy.worldOffset}-${index}`}
+            positions={copy.segment}
             pathOptions={{ color: '#f7b84d', weight: 1, fillOpacity: 0.08 }}
           />
         ))}

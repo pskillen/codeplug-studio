@@ -31,15 +31,15 @@ import SatelliteLiveMap from '../../components/SatelliteLiveMap/SatelliteLiveMap
 - **Live position:** `useLiveSatellitePosition` (`src/app/routes/tracking/useLiveSatellitePosition.ts`) re-propagates the subsatellite point every 2 seconds by default; the marker (amber dot, distinct from `SatelliteTrackMap`'s blue observer dot) is hidden and an "Acquiring live position for `<name>`…" hint shown until the first propagation resolves.
 - **Footprint circle:** `computeSatelliteFootprint` (`src/core/domain/satelliteTracking/footprint.ts`) is recomputed every time the live position updates, so the visible-horizon circle tracks the marker.
 - **Orbit trails:** `computeOrbitTrailSegments` (`./orbitTrail.ts`) derives `periodMinutes = 1440 / meanMotionRevPerDay` and samples 1.5 orbital periods ahead (solid) and 1.5 periods behind (dashed via Leaflet's `dashArray`) from an anchor instant fixed at mount — the trail window doesn't resample on every live-position poll tick, only the marker/footprint move within it.
-- **Antimeridian handling:** `splitAtAntimeridian` (`../SatelliteTrackMap/mapHelpers.ts`) is applied **independently** to the future segment, the past segment, and the footprint circle — each is its own non-adjacent sample set, so splitting one combined polyline would not be equivalent.
-- **World-copy duplication:** orbit-trail polylines are duplicated at `lng ± 360°` via `duplicateSegmentsForWorldCopies` so trails stay visible when the map shows repeated world copies at low zoom.
+- **Antimeridian handling:** `splitAtAntimeridian` (`../SatelliteTrackMap/mapHelpers.ts`) is applied **independently** to the future segment and the past segment — open polylines, each its own non-adjacent sample set. The footprint circle is a **closed ring** instead, so it uses the ring-aware `splitRingAtAntimeridian` (same file) — a fragment split by `splitAtAntimeridian` alone would still be an open arc, and Leaflet's `Polygon` auto-closes each fragment with a straight last→first edge, producing a self-intersecting shape when the ring crosses ±180°. `splitRingAtAntimeridian` inserts interpolated boundary vertices at the seam so each fragment is already closed against the same antimeridian side at both ends.
+- **World-copy duplication:** orbit-trail polylines and footprint-circle fragments are all duplicated at `lng ± 360°` via `duplicateSegmentsForWorldCopies` so they stay visible when the map shows repeated world copies at low zoom.
 - **Auto-fit:** the map view fits to the current footprint circle (falling back to just the live position, then a world view) via the same `computeMapView` helper `SatelliteTrackMap` uses — trail segments are drawn but excluded from the fit bounds, since including a full 3-orbit ribbon would zoom out too far to see the marker/footprint clearly.
 
 ## Related
 
 - [Satellite tracking feature hub](../../../../docs/features/satellite-tracking/README.md)
 - [`SatelliteTrackMap`](../SatelliteTrackMap/SatelliteTrackMap.md) — sibling component for single-pass ground-track preview; shares `mapHelpers.ts`
-- [`mapHelpers.ts`](../SatelliteTrackMap/mapHelpers.ts) — shared `splitAtAntimeridian`
+- [`mapHelpers.ts`](../SatelliteTrackMap/mapHelpers.ts) — shared `splitAtAntimeridian` (open paths) and `splitRingAtAntimeridian` (closed rings, e.g. this component's footprint circle)
 - [`orbitTrail.ts`](./orbitTrail.ts) — pure orbit-trail segment computation
 - [`footprint.ts`](../../../core/domain/satelliteTracking/footprint.ts) — pure footprint-circle computation
 - [`useLiveSatellitePosition.ts`](../../routes/tracking/useLiveSatellitePosition.ts) — live position polling hook
