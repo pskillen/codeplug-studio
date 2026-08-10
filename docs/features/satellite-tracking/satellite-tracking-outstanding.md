@@ -4,7 +4,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 **Tracking:** [codeplug-studio#860](https://github.com/pskillen/codeplug-studio/issues/860)
 
-**Status:** Wave 1 post-MVP polish in flight — see [satellite-tracking-progress.md](satellite-tracking-progress.md) § Wave 1.
+**Status:** Wave 2 post-MVP polish in flight — see [satellite-tracking-progress.md](satellite-tracking-progress.md) § Wave 2.
 
 ---
 
