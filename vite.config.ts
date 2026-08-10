@@ -84,6 +84,12 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: () => '/tle/current/nasabare.txt',
         },
+        '/api/satnogs/transmitters': {
+          target: 'https://db.satnogs.org',
+          changeOrigin: true,
+          rewrite: (proxyPath) =>
+            proxyPath.replace(/^\/api\/satnogs\/transmitters/, '/api/transmitters/'),
+        },
         '/api/nominatim/search': {
           target: 'https://nominatim.openstreetmap.org',
           changeOrigin: true,
