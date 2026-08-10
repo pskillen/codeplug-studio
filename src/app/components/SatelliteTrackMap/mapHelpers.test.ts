@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { LatLon } from '@core/domain/geo.ts';
-import { duplicateSegmentsForWorldCopies, splitAtAntimeridian } from './mapHelpers.ts';
+import {
+  duplicateSegmentsForWorldCopies,
+  splitAtAntimeridian,
+  splitRingAtAntimeridian,
+} from './mapHelpers.ts';
 
 describe('duplicateSegmentsForWorldCopies', () => {
   const segment: LatLon[] = [
@@ -28,5 +32,54 @@ describe('duplicateSegmentsForWorldCopies', () => {
 
     expect(segments).toHaveLength(2);
     expect(copies).toHaveLength(6);
+  });
+});
+
+describe('splitRingAtAntimeridian', () => {
+  it('returns the ring unsplit when it never crosses the antimeridian', () => {
+    const ring: LatLon[] = [
+      [0, 10],
+      [5, 15],
+      [0, 20],
+      [-5, 15],
+      [0, 10],
+    ];
+    expect(splitRingAtAntimeridian(ring)).toEqual([ring]);
+  });
+
+  it('splits a ring that crosses the antimeridian twice into two closed fragments', () => {
+    // A rectangular "ring" straddling the antimeridian: crosses eastbound (170 -> -170) once
+    // and westbound (-170 -> 170) once, closing back to its start.
+    const ring: LatLon[] = [
+      [10, 170],
+      [10, -170],
+      [-10, -170],
+      [-10, 170],
+      [10, 170],
+    ];
+
+    const fragments = splitRingAtAntimeridian(ring);
+
+    expect(fragments).toHaveLength(2);
+    for (const fragment of fragments) {
+      // Each fragment is closed against the same antimeridian side at both ends.
+      const firstLon = fragment[0]![1];
+      const lastLon = fragment[fragment.length - 1]![1];
+      expect(Math.abs(firstLon)).toBe(180);
+      expect(firstLon).toBe(lastLon);
+      // Every latitude stays within the source ring's range.
+      for (const [lat] of fragment) {
+        expect(lat).toBeGreaterThanOrEqual(-10);
+        expect(lat).toBeLessThanOrEqual(10);
+      }
+    }
+
+    // The two fragments sit on opposite sides of the seam.
+    const sides = fragments.map((fragment) => Math.sign(fragment[0]![1]));
+    expect(new Set(sides).size).toBe(2);
+  });
+
+  it('handles an empty ring', () => {
+    expect(splitRingAtAntimeridian([])).toEqual([]);
   });
 });
