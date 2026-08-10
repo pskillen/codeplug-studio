@@ -52,11 +52,6 @@ vi.mock('../../state/useLibrary.ts', () => ({
   useLibrary: () => mockUseLibrary(),
 }));
 
-const mockUseSatelliteEnrichment = vi.fn();
-vi.mock('../../state/satelliteEnrichment.tsx', () => ({
-  useSatelliteEnrichment: () => mockUseSatelliteEnrichment(),
-}));
-
 const mockUsePassesForSatellite = vi.fn();
 vi.mock('./usePassesForSatellite.ts', () => ({
   usePassesForSatellite: (...args: unknown[]) => mockUsePassesForSatellite(...args),
@@ -81,12 +76,6 @@ function renderAt(path: string) {
 
 describe('SatelliteDetailPage', () => {
   beforeEach(() => {
-    mockUseSatelliteEnrichment.mockReturnValue({
-      enrichment: [],
-      getEnrichmentForNoradId: () => null,
-      refreshEnrichmentForNoradIds: vi.fn(),
-      clearEnrichment: vi.fn(),
-    });
     mockUseTrackingSettings.mockReturnValue({
       settings: null,
       loading: false,
@@ -98,6 +87,7 @@ describe('SatelliteDetailPage', () => {
     mockUseLibrary.mockReturnValue({
       library: { ...emptyLibrary(), satellites: [SATELLITE] },
       loading: false,
+      reload: vi.fn(),
     });
     mockUsePassesForSatellite.mockReturnValue({
       passes: [],
@@ -122,6 +112,7 @@ describe('SatelliteDetailPage', () => {
     mockUseLibrary.mockReturnValue({
       library: { ...emptyLibrary(), satellites: [SATELLITE] },
       loading: false,
+      reload: vi.fn(),
     });
     mockUsePassesForSatellite.mockReturnValue({
       passes: [],
@@ -152,6 +143,7 @@ describe('SatelliteDetailPage', () => {
     mockUseLibrary.mockReturnValue({
       library: { ...emptyLibrary(), satellites: [SATELLITE] },
       loading: false,
+      reload: vi.fn(),
     });
     mockUsePassesForSatellite.mockReturnValue({
       passes: [
@@ -182,6 +174,7 @@ describe('SatelliteDetailPage', () => {
     mockUseLibrary.mockReturnValue({
       library: { ...emptyLibrary(), satellites: [SATELLITE] },
       loading: false,
+      reload: vi.fn(),
     });
     mockUsePassesForSatellite.mockReturnValue({
       passes: [],
@@ -200,6 +193,7 @@ describe('SatelliteDetailPage', () => {
     mockUseLibrary.mockReturnValue({
       library: emptyLibrary(),
       loading: true,
+      reload: vi.fn(),
     });
     mockUsePassesForSatellite.mockReturnValue({
       passes: [],

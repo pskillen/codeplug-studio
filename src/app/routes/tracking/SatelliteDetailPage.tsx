@@ -1,13 +1,16 @@
 import { Suspense, lazy, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { IconRefresh } from '@tabler/icons-react';
+import { mergeSatnogsTransmittersIntoSatellite } from '@core/domain/satnogs/mergeSatnogsTransmitters.ts';
+import { mapSatnogsTransmitter } from '@core/domain/satnogs/parseSatnogsTransmitters.ts';
+import { fetchSatnogsTransmittersForNoradId } from '@integrations/satellites/satnogsClient.ts';
 import LibraryInventoryHeader from '../../components/library/LibraryInventoryHeader.tsx';
 import NextPassCard from '../../components/NextPassCard/NextPassCard.tsx';
 import SatelliteLiveMap from '../../components/SatelliteLiveMap/SatelliteLiveMap.tsx';
 import { Button, DesignSystemV2Provider } from '../../components/v2/index.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
+import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
-import { useSatelliteEnrichment } from '../../state/satelliteEnrichment.tsx';
 import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import libraryPageClasses from '../../components/library/LibraryInventoryPage.module.css';
 import { isPassActive } from './passTime.ts';
@@ -28,8 +31,7 @@ const PAST_WINDOW_HOURS = 72;
 export default function SatelliteDetailPage() {
   const { satelliteId } = useParams();
   const navigate = useNavigate();
-  const { library, loading } = useLibrary();
-  const { refreshEnrichmentForNoradIds } = useSatelliteEnrichment();
+  const { library, loading, reload } = useLibrary();
   const [refreshingSatnogs, setRefreshingSatnogs] = useState(false);
   const [satnogsError, setSatnogsError] = useState<string | null>(null);
   const satellite = satelliteId
@@ -41,10 +43,13 @@ export default function SatelliteDetailPage() {
     setRefreshingSatnogs(true);
     setSatnogsError(null);
     try {
-      const result = await refreshEnrichmentForNoradIds([satellite.noradId], { refresh: true });
-      if (result.failures.length > 0) {
-        setSatnogsError(result.failures[0]?.message ?? 'SatNOGS refresh failed.');
-      }
+      const raw = await fetchSatnogsTransmittersForNoradId(satellite.noradId, { refresh: true });
+      const merged = mergeSatnogsTransmittersIntoSatellite(
+        satellite,
+        raw.map(mapSatnogsTransmitter),
+      );
+      await persistence.putSatellite(merged.satellite, satellite.revision);
+      await reload();
     } catch (err) {
       setSatnogsError(err instanceof Error ? err.message : 'SatNOGS refresh failed.');
     } finally {
