@@ -5,7 +5,11 @@ import { MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents } from 
 import type { LatLon } from '@core/domain/geo.ts';
 import { computeMapView } from '@core/domain/mapView.ts';
 import { sampleGroundTrack } from '@core/domain/satelliteTracking/groundTrack.ts';
-import { observerDivIcon, splitAtAntimeridian } from './mapHelpers.ts';
+import {
+  observerDivIcon,
+  duplicateSegmentsForWorldCopies,
+  splitAtAntimeridian,
+} from './mapHelpers.ts';
 import classes from './SatelliteTrackMap.module.css';
 
 const GROUND_TRACK_STEP_SEC = 30;
@@ -122,6 +126,8 @@ export default function SatelliteTrackMap({
     return splitAtAntimeridian(points);
   }, [selectedPass, drawBehindMin, drawAheadMin]);
 
+  const renderedSegments = useMemo(() => duplicateSegmentsForWorldCopies(segments), [segments]);
+
   const boundsPoints = useMemo(() => {
     const points = segments.flat();
     if (observer) points.push([observer.lat, observer.lon]);
@@ -147,8 +153,12 @@ export default function SatelliteTrackMap({
         {observer ? (
           <Marker position={[observer.lat, observer.lon]} icon={observerDivIcon()} />
         ) : null}
-        {segments.map((segment, index) => (
-          <Polyline key={index} positions={segment} pathOptions={{ color: '#4d7cff', weight: 2 }} />
+        {renderedSegments.map((copy, index) => (
+          <Polyline
+            key={`${copy.worldOffset}-${index}`}
+            positions={copy.segment}
+            pathOptions={{ color: '#4d7cff', weight: 2 }}
+          />
         ))}
         <MapViewController points={boundsPoints} passKey={passKey} />
       </MapContainer>

@@ -32,6 +32,7 @@ import SatelliteLiveMap from '../../components/SatelliteLiveMap/SatelliteLiveMap
 - **Footprint circle:** `computeSatelliteFootprint` (`src/core/domain/satelliteTracking/footprint.ts`) is recomputed every time the live position updates, so the visible-horizon circle tracks the marker.
 - **Orbit trails:** `computeOrbitTrailSegments` (`./orbitTrail.ts`) derives `periodMinutes = 1440 / meanMotionRevPerDay` and samples 1.5 orbital periods ahead (solid) and 1.5 periods behind (dashed via Leaflet's `dashArray`) from an anchor instant fixed at mount — the trail window doesn't resample on every live-position poll tick, only the marker/footprint move within it.
 - **Antimeridian handling:** `splitAtAntimeridian` (`../SatelliteTrackMap/mapHelpers.ts`) is applied **independently** to the future segment, the past segment, and the footprint circle — each is its own non-adjacent sample set, so splitting one combined polyline would not be equivalent.
+- **World-copy duplication:** orbit-trail polylines are duplicated at `lng ± 360°` via `duplicateSegmentsForWorldCopies` so trails stay visible when the map shows repeated world copies at low zoom.
 - **Auto-fit:** the map view fits to the current footprint circle (falling back to just the live position, then a world view) via the same `computeMapView` helper `SatelliteTrackMap` uses — trail segments are drawn but excluded from the fit bounds, since including a full 3-orbit ribbon would zoom out too far to see the marker/footprint clearly.
 
 ## Related
