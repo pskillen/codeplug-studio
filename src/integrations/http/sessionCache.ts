@@ -9,6 +9,7 @@ export const PHOTON_CACHE_PREFIX = 'photon-api:';
 export const CELESTRAK_CACHE_PREFIX = 'celestrak-api:';
 export const AMSAT_CACHE_PREFIX = 'amsat-api:';
 export const NOMINATIM_CACHE_PREFIX = 'nominatim-api:';
+export const SATNOGS_CACHE_PREFIX = 'satnogs-api:';
 
 interface CacheEntry {
   body: string;

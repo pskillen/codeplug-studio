@@ -9,7 +9,12 @@ export type {
   ProjectInterchange,
 } from './interchange.ts';
 export { type AprsConfiguration, type AprsChannelSlot, type ChannelAprsBinding } from './aprs.ts';
-export { type Satellite, type SatelliteSource } from './satellite.ts';
+export {
+  type Satellite,
+  type SatelliteSource,
+  type SatelliteEnrichmentSource,
+} from './satellite.ts';
+export { type SatelliteEnrichment, type SatelliteTransmitterInfo } from './satelliteEnrichment.ts';
 export { type TrackingSettings, type ObserverPositionSource } from './trackingSettings.ts';
 export {
   type Channel,

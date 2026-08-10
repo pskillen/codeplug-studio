@@ -1,10 +1,9 @@
-import type { SatelliteSource } from '@core/models/satellite.ts';
 import { fetchCachedText } from '../http/cachedFetch.ts';
-import { rateLimitMessage } from './rateLimit.ts';
+import { rateLimitMessage, type SatelliteRateLimitProvider } from './rateLimit.ts';
 import { SatelliteDirectoryError } from './types.ts';
 
 export interface DirectoryFetchOptions {
-  provider: SatelliteSource;
+  provider: SatelliteRateLimitProvider;
   cachePrefix: string;
   cacheKeySuffix?: string;
   init?: RequestInit;
