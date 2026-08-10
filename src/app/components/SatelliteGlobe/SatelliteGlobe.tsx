@@ -17,9 +17,6 @@ const GLOBE_IMAGE_URL = '//unpkg.com/three-globe/example/img/earth-blue-marble.j
 const BACKGROUND_COLOR = '#000011';
 
 const OBSERVER_COLOR = '#4d7cff';
-const SATELLITE_COLOR = '#f7b84d';
-const FOOTPRINT_COLOR = 'rgba(247, 184, 77, 0.5)';
-const TRAIL_COLOR = 'rgba(77, 124, 255, 0.8)';
 
 export interface SatelliteGlobeProps {
   observer: GlobeObserver | null;
@@ -38,7 +35,7 @@ export interface SatelliteGlobeProps {
 function pointColor(point: object): string {
   const p = point as GlobePoint;
   if (p.kind === 'observer') return OBSERVER_COLOR;
-  return SATELLITE_COLOR;
+  return p.color;
 }
 
 function pointRadius(point: object): number {
@@ -54,7 +51,7 @@ function pointAltitude(point: object): number {
 }
 
 function pathColor(path: object): string {
-  return (path as GlobePath).kind === 'footprint' ? FOOTPRINT_COLOR : TRAIL_COLOR;
+  return (path as GlobePath).color;
 }
 
 function pathDashLength(path: object): number {

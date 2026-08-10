@@ -30,6 +30,7 @@ const satellites: GlobeSatellite[] = [
   {
     id: 'iss',
     name: 'ISS',
+    noradId: 25544,
     tleLine1: ISS_LINE_1,
     tleLine2: ISS_LINE_2,
     meanMotionRevPerDay: 15.4956032,
@@ -37,6 +38,7 @@ const satellites: GlobeSatellite[] = [
   {
     id: 'so-50',
     name: 'SO-50',
+    noradId: 27607,
     tleLine1: SO_50_LINE_1,
     tleLine2: SO_50_LINE_2,
     meanMotionRevPerDay: 14.79,

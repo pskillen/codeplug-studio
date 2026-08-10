@@ -4,10 +4,15 @@ import { computeSatelliteFootprint } from '@core/domain/satelliteTracking/footpr
 import { computeGlobeOrbitTrail } from './orbitTrail.ts';
 import { altitudeKmToGlobeRadiusUnits } from './globeAltitude.ts';
 import type { LiveSatellitePosition } from './useLiveSatellitePositions.ts';
+import { colorForNoradId } from '@core/domain/satelliteTracking/satelliteColor.ts';
+
+/** Matches the observer marker colour used by `SatelliteGlobe.tsx`. */
+const OBSERVER_POINT_COLOR = '#4d7cff';
 
 export interface GlobeSatellite {
   id: string;
   name: string;
+  noradId: number;
   tleLine1: string;
   tleLine2: string;
   meanMotionRevPerDay: number;
@@ -23,6 +28,8 @@ export interface GlobePoint {
   lng: number;
   altitudeKm: number;
   selected: boolean;
+  /** Opaque CSS colour for satellite markers; unused for the observer. */
+  color: string;
 }
 
 export type GlobePathKind = 'trail-past' | 'trail-future' | 'footprint';
@@ -32,6 +39,8 @@ export interface GlobePath {
   satelliteId: string;
   /** `[lat, lng, altitude]` triples — altitude is a fraction of globe radius (react-globe.gl convention). */
   points: [number, number, number][];
+  /** CSS colour for this path (footprints may use alpha). */
+  color: string;
 }
 
 export interface GlobeData {
@@ -78,6 +87,7 @@ function globePointNearlyEqual(a: GlobePoint, b: GlobePoint): boolean {
     a.id === b.id &&
     a.name === b.name &&
     a.selected === b.selected &&
+    a.color === b.color &&
     Math.abs(a.lat - b.lat) < POSITION_EPSILON_DEG &&
     Math.abs(a.lng - b.lng) < POSITION_EPSILON_DEG &&
     Math.abs(a.altitudeKm - b.altitudeKm) < ALTITUDE_EPSILON_KM
@@ -85,7 +95,7 @@ function globePointNearlyEqual(a: GlobePoint, b: GlobePoint): boolean {
 }
 
 function globePathNearlyEqual(a: GlobePath, b: GlobePath): boolean {
-  if (a.kind !== b.kind || a.satelliteId !== b.satelliteId) return false;
+  if (a.kind !== b.kind || a.satelliteId !== b.satelliteId || a.color !== b.color) return false;
   if (a.points.length !== b.points.length) return false;
   for (let i = 0; i < a.points.length; i++) {
     const [alat, alng, aalt] = a.points[i];
@@ -153,15 +163,19 @@ export function computeGlobeTrailPaths(
       satellite.meanMotionRevPerDay,
       anchorAtMs,
     );
+    const color = colorForNoradId(satellite.noradId);
+    const pastColor = colorForNoradId(satellite.noradId, 0.55);
     paths.push({
       kind: 'trail-past',
       satelliteId: satellite.id,
       points: orbitSamplesToPathPoints(trail.pastPoints),
+      color: pastColor,
     });
     paths.push({
       kind: 'trail-future',
       satelliteId: satellite.id,
       points: orbitSamplesToPathPoints(trail.futurePoints),
+      color,
     });
   }
   return paths;
@@ -197,6 +211,7 @@ export function computeGlobePointsAndFootprints(
       lng: observer.lon,
       altitudeKm: 0,
       selected: false,
+      color: OBSERVER_POINT_COLOR,
     });
   }
 
@@ -206,6 +221,7 @@ export function computeGlobePointsAndFootprints(
 
     const selected =
       highlightedSatelliteIds.size === 0 || highlightedSatelliteIds.has(satellite.id);
+    const color = colorForNoradId(satellite.noradId);
     points.push({
       kind: 'satellite',
       id: satellite.id,
@@ -214,6 +230,7 @@ export function computeGlobePointsAndFootprints(
       lng: live.position[1],
       altitudeKm: live.altitudeKm,
       selected,
+      color,
     });
 
     const footprint = computeSatelliteFootprint(satellite.tleLine1, satellite.tleLine2, live.at);
@@ -222,6 +239,7 @@ export function computeGlobePointsAndFootprints(
         kind: 'footprint',
         satelliteId: satellite.id,
         points: toSurfacePathPoints(footprint.points, 0),
+        color: colorForNoradId(satellite.noradId, 0.45),
       });
     }
   }

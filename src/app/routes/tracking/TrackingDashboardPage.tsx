@@ -50,6 +50,7 @@ function clampDrawMin(value: number): number {
 function toSelectedPass(row: SatellitePassRow): SelectedPass {
   return {
     satelliteName: row.satelliteName,
+    noradId: row.noradId,
     tleLine1: row.tleLine1,
     tleLine2: row.tleLine2,
     aosAt: row.aosAt,
@@ -89,6 +90,7 @@ export default function TrackingDashboardPage() {
       enabledSatelliteRecords.map((satellite) => ({
         id: satellite.id,
         name: satellite.name,
+        noradId: satellite.noradId,
         tleLine1: satellite.tleLine1,
         tleLine2: satellite.tleLine2,
         meanMotionRevPerDay: satellite.meanMotionRevPerDay,

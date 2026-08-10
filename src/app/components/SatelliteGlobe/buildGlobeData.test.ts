@@ -9,6 +9,7 @@ import {
 const satelliteA = {
   id: 'a',
   name: 'A',
+  noradId: 1,
   tleLine1: '1',
   tleLine2: '2',
   meanMotionRevPerDay: 15,
@@ -17,6 +18,7 @@ const satelliteA = {
 const satelliteB = {
   id: 'b',
   name: 'B',
+  noradId: 2,
   tleLine1: '3',
   tleLine2: '4',
   meanMotionRevPerDay: 14,
@@ -43,6 +45,7 @@ describe('stabilizeGlobePointsAndFootprints', () => {
     lng: 20,
     altitudeKm: 400,
     selected: true,
+    color: '#c45a2a',
   };
 
   const geometry: GlobePointsAndFootprints = {
@@ -51,6 +54,7 @@ describe('stabilizeGlobePointsAndFootprints', () => {
       {
         kind: 'footprint',
         satelliteId: 'iss',
+        color: 'rgba(196, 90, 42, 0.45)',
         points: [
           [10, 20, 0],
           [11, 21, 0],
@@ -70,6 +74,7 @@ describe('stabilizeGlobePointsAndFootprints', () => {
         {
           kind: 'footprint',
           satelliteId: 'iss',
+          color: 'rgba(196, 90, 42, 0.45)',
           points: [
             [10, 20, 0],
             [11, 21, 0],
