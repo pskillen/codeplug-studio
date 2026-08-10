@@ -325,6 +325,22 @@ describe('DataTable v2', () => {
     expect(screen.getAllByRole('row')[2]!.className).not.toMatch(/rowNestParent/);
   });
 
+  it('getRowVariant("active") applies the accent-tint row class', () => {
+    render(
+      <DesignSystemV2Provider>
+        <DataTable
+          columns={COLUMNS}
+          rows={ROWS}
+          getRowId={(row) => row.id}
+          getRowVariant={(row) => (row.id === '2' ? 'active' : undefined)}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.getAllByRole('row')[2]!.className).toMatch(/rowActive/);
+    expect(screen.getAllByRole('row')[1]!.className).not.toMatch(/rowActive/);
+  });
+
   it('nested rows expand to show children and collapse again', () => {
     const parentRows = [{ id: 'p1', name: 'Zone A', score: 0 }];
     const children: Record<string, Row[]> = {

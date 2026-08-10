@@ -106,8 +106,8 @@ export interface DataTableProps<T> {
   onVisibleKeysChange?: (keys: string[]) => void;
   /** Makes rows clickable; disabled for rows failing `isRowSelectable` when `selectable` is set. */
   onRowActivate?: (row: T) => void;
-  /** `'nestParent'` gives the row a quiet background. */
-  getRowVariant?: (row: T) => 'nestParent' | undefined;
+  /** `'nestParent'` quiet background; `'active'` highlight for live in-progress rows (e.g. above-horizon passes). */
+  getRowVariant?: (row: T) => 'nestParent' | 'active' | undefined;
   /**
    * Replaces the per-column grid cells with this card render on narrow
    * viewports (below `MOBILE_MAX_WIDTH_MEDIA_QUERY`) — an alternative to
@@ -181,7 +181,7 @@ interface DataTableBodyRowProps<T> {
   topLevelIndex: number;
   isExpanded: boolean;
   onToggleExpanded: (key: string) => void;
-  rowVariant: 'nestParent' | undefined;
+  rowVariant: 'nestParent' | 'active' | undefined;
   activatable: boolean;
   onActivate: () => void;
   useCardLayout: boolean;
@@ -242,6 +242,7 @@ function DataTableBodyRow<T>({
         useCardLayout ? classes.dataRowCard : '',
         selectable && !rowSelectable ? classes.rowGated : '',
         rowVariant === 'nestParent' ? classes.rowNestParent : '',
+        rowVariant === 'active' ? classes.rowActive : '',
         activatable ? classes.rowActivatable : '',
       ]
         .filter(Boolean)

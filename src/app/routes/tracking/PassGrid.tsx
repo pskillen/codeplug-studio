@@ -5,7 +5,13 @@ import {
   type DataTableColumn,
   type DataTableSortState,
 } from '../../components/v2/index.ts';
+import {
+  formatNextPassCountdown,
+  isPassActive,
+  nextPassBySatelliteId,
+} from './passTime.ts';
 import type { SatellitePassRow } from './useTrackingPasses.ts';
+import { useNowTick } from './useNowTick.ts';
 import classes from './PassGrid.module.css';
 
 const EMPTY_SATELLITE_FILTER = new Set<string>();
@@ -16,12 +22,19 @@ function formatDurationSec(durationSec: number): string {
   return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
 }
 
-function DateTimeCell({ iso }: { iso: string }) {
+function DateTimeCell({
+  iso,
+  countdown,
+}: {
+  iso: string;
+  countdown?: string | null;
+}) {
   const date = new Date(iso);
   return (
     <div className={classes.dateTimeCell}>
       <span>{date.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</span>
       <span className={classes.utc}>{date.toISOString().slice(11, 16)} UTC</span>
+      {countdown ? <span className={classes.countdown}>{countdown}</span> : null}
     </div>
   );
 }
@@ -57,6 +70,9 @@ export default function PassGrid({
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'aos', direction: 'asc' });
   const selectedSatelliteIds = selectedSatelliteIdsProp ?? EMPTY_SATELLITE_FILTER;
   const navigate = useNavigate();
+  const nowMs = useNowTick();
+
+  const nextPassMap = useMemo(() => nextPassBySatelliteId(passes), [passes]);
 
   const columns = useMemo((): DataTableColumn<SatellitePassRow>[] => {
     return [
@@ -65,18 +81,27 @@ export default function PassGrid({
         header: 'Satellite',
         sortable: true,
         sortValue: (row) => row.satelliteName,
-        render: (row) => (
-          <button
-            type="button"
-            className={classes.satelliteLink}
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/tracking/satellites/${row.satelliteId}`);
-            }}
-          >
-            {row.satelliteName}
-          </button>
-        ),
+        render: (row) => {
+          const next = nextPassMap.get(row.satelliteId);
+          const isNextForSat = next?.aosAt === row.aosAt;
+          const countdown =
+            isNextForSat ? formatNextPassCountdown(nowMs, row.aosAt, row.losAt) : null;
+          return (
+            <div className={classes.satelliteCell}>
+              <button
+                type="button"
+                className={classes.satelliteLink}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/tracking/satellites/${row.satelliteId}`);
+                }}
+              >
+                {row.satelliteName}
+              </button>
+              {countdown ? <span className={classes.countdown}>{countdown}</span> : null}
+            </div>
+          );
+        },
       },
       {
         key: 'aos',
@@ -107,7 +132,7 @@ export default function PassGrid({
         render: (row) => `${row.maxElevationDeg.toFixed(1)}°`,
       },
     ];
-  }, [navigate]);
+  }, [navigate, nextPassMap, nowMs]);
 
   const minElevationValue = Number.parseFloat(minElevation);
   const filtered = useMemo(() => {
@@ -135,6 +160,9 @@ export default function PassGrid({
         sort={sort}
         onSortChange={setSort}
         onRowActivate={onSelectPass}
+        getRowVariant={(row) =>
+          isPassActive(nowMs, row.aosAt, row.losAt) ? 'active' : undefined
+        }
         emptyMessage={
           loading
             ? 'Computing passes…'
