@@ -5,16 +5,10 @@ import {
   type DataTableColumn,
   type DataTableSortState,
 } from '../../components/v2/index.ts';
-import {
-  formatNextPassCountdown,
-  isPassActive,
-  nextPassBySatelliteId,
-} from './passTime.ts';
+import { formatNextPassCountdown, isPassActive, nextPassBySatelliteId } from './passTime.ts';
 import type { SatellitePassRow } from './useTrackingPasses.ts';
 import { useNowTick } from './useNowTick.ts';
 import classes from './PassGrid.module.css';
-
-const EMPTY_SATELLITE_FILTER = new Set<string>();
 
 function formatDurationSec(durationSec: number): string {
   const minutes = Math.floor(durationSec / 60);
@@ -22,13 +16,7 @@ function formatDurationSec(durationSec: number): string {
   return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
 }
 
-function DateTimeCell({
-  iso,
-  countdown,
-}: {
-  iso: string;
-  countdown?: string | null;
-}) {
+function DateTimeCell({ iso, countdown }: { iso: string; countdown?: string | null }) {
   const date = new Date(iso);
   return (
     <div className={classes.dateTimeCell}>
@@ -43,6 +31,8 @@ export interface PassGridProps {
   passes: SatellitePassRow[];
   /** Unfiltered pass list for per-satellite next-pass countdown (defaults to `passes`). */
   allPasses?: SatellitePassRow[];
+  /** Unfiltered pass count for the "Showing X of Y" label when filters are active. */
+  totalRowCount?: number;
   loading: boolean;
   error: string | null;
   onSelectPass?: (row: SatellitePassRow) => void;
@@ -50,14 +40,6 @@ export interface PassGridProps {
   windowLabel: string;
   /** When true, show the filtered-empty message instead of the global empty message. */
   hasActiveFilter?: boolean;
-  /**
-   * Satellite multi-select filter state. Lifted to `TrackingDashboardPage` (rather than kept
-   * local to this component) so `SatelliteGlobe` can also read/write it — clicking a
-   * satellite dot on the globe filters this grid to it. Defaults to an internal empty
-   * selection when the caller doesn't lift the state (e.g. tests exercising the grid alone).
-   */
-  selectedSatelliteIds?: Set<string>;
-  onSelectedSatelliteIdsChange?: (next: Set<string>) => void;
 }
 
 export default function PassGrid({
@@ -69,10 +51,8 @@ export default function PassGrid({
   onSelectPass,
   windowLabel,
   hasActiveFilter = false,
-  selectedSatelliteIds: selectedSatelliteIdsProp,
 }: PassGridProps) {
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'aos', direction: 'asc' });
-  const selectedSatelliteIds = selectedSatelliteIdsProp ?? EMPTY_SATELLITE_FILTER;
   const navigate = useNavigate();
   const nowMs = useNowTick();
 
@@ -91,8 +71,9 @@ export default function PassGrid({
         render: (row) => {
           const next = nextPassMap.get(row.satelliteId);
           const isNextForSat = next?.aosAt === row.aosAt;
-          const countdown =
-            isNextForSat ? formatNextPassCountdown(nowMs, row.aosAt, row.losAt) : null;
+          const countdown = isNextForSat
+            ? formatNextPassCountdown(nowMs, row.aosAt, row.losAt)
+            : null;
           return (
             <div className={classes.satelliteCell}>
               <button
@@ -154,9 +135,7 @@ export default function PassGrid({
         sort={sort}
         onSortChange={setSort}
         onRowActivate={onSelectPass}
-        getRowVariant={(row) =>
-          isPassActive(nowMs, row.aosAt, row.losAt) ? 'active' : undefined
-        }
+        getRowVariant={(row) => (isPassActive(nowMs, row.aosAt, row.losAt) ? 'active' : undefined)}
         emptyMessage={
           loading
             ? 'Computing passes…'

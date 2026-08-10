@@ -57,7 +57,6 @@ describe('PassGrid', () => {
             error={null}
             windowLabel="72 hours"
             hasActiveFilter
-            selectedSatelliteIds={new Set(['sat-1'])}
           />
         </DesignSystemV2Provider>
       </MemoryRouter>,

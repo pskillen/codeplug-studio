@@ -16,13 +16,7 @@ function formatDurationSec(durationSec: number): string {
   return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
 }
 
-function DateTimeCell({
-  iso,
-  countdown,
-}: {
-  iso: string;
-  countdown?: string | null;
-}) {
+function DateTimeCell({ iso, countdown }: { iso: string; countdown?: string | null }) {
   const date = new Date(iso);
   return (
     <div className={classes.dateTimeCell}>

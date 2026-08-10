@@ -58,12 +58,7 @@ function samplePassSegments(
   drawBehindMin: number,
   drawAheadMin: number,
 ): LatLon[][] {
-  const { fromAt, toAt } = computeTrackBounds(
-    pass.aosAt,
-    pass.losAt,
-    drawBehindMin,
-    drawAheadMin,
-  );
+  const { fromAt, toAt } = computeTrackBounds(pass.aosAt, pass.losAt, drawBehindMin, drawAheadMin);
   const points = sampleGroundTrack(
     pass.tleLine1,
     pass.tleLine2,
@@ -192,9 +187,7 @@ export default function SatelliteTrackMap({
         <MapViewController points={boundsPoints} passKey={passKey} />
       </MapContainer>
       {!selectedPass && defaultPasses.length === 0 ? (
-        <p className={classes.hint}>
-          No upcoming passes to preview for the current filter window.
-        </p>
+        <p className={classes.hint}>No upcoming passes to preview for the current filter window.</p>
       ) : null}
     </div>
   );

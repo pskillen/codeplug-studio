@@ -6,12 +6,12 @@
 
 ## Props
 
-| Prop                   | Type                            | Notes                                                                                        |
-| ---------------------- | ------------------------------- | -------------------------------------------------------------------------------------------- |
-| `observer`             | `LatLon \| null`                | Observer marker location, from `TrackingSettings`. `null` — no observer point.               |
-| `satellites`           | `GlobeSatellite[]`              | Enabled satellites: `{ id, name, tleLine1, tleLine2, meanMotionRevPerDay }`.                 |
-| `selectedSatelliteIds` | `Set<string>`                   | Pass-grid satellite filter. Empty set = no filter (all enabled satellites render).           |
-| `onSelectSatellite`    | `(satelliteId: string) => void` | Called when a satellite dot is clicked — wire to the same filter state `PassGrid` reads.     |
+| Prop                   | Type                            | Notes                                                                                    |
+| ---------------------- | ------------------------------- | ---------------------------------------------------------------------------------------- |
+| `observer`             | `LatLon \| null`                | Observer marker location, from `TrackingSettings`. `null` — no observer point.           |
+| `satellites`           | `GlobeSatellite[]`              | Enabled satellites: `{ id, name, tleLine1, tleLine2, meanMotionRevPerDay }`.             |
+| `selectedSatelliteIds` | `Set<string>`                   | Pass-grid satellite filter. Empty set = no filter (all enabled satellites render).       |
+| `onSelectSatellite`    | `(satelliteId: string) => void` | Called when a satellite dot is clicked — wire to the same filter state `PassGrid` reads. |
 
 ## Usage
 
@@ -35,7 +35,7 @@ const SatelliteGlobe = lazy(() => import('../../components/SatelliteGlobe/Satell
 - **Live positions:** `useLiveSatellitePositions.ts` — a multi-satellite sibling to `useLiveSatellitePosition` (`src/app/routes/tracking/useLiveSatellitePosition.ts`, single-satellite, built for the detail page). Calling that hook once per array entry would violate the rules of hooks, so this variant re-propagates every **visible** enabled satellite on one shared **10-second** poll interval instead, keyed by satellite `id`. Position map entries are reused when subsatellite geometry is unchanged between ticks so downstream memoization stays stable.
 - **Orbit trails:** `orbitTrail.ts#computeGlobeOrbitTrail` — a ~90-minute window (one full orbital period, half ahead of an anchor instant fixed at mount, half behind), derived per-satellite via `periodMinutes = 1440 / meanMotionRevPerDay` (same formula as `SatelliteLiveMap/orbitTrail.ts`, not reused directly — that function hardcodes a 1.5-orbit window and antimeridian-split segments this component doesn't need).
 - **Footprint circle:** `computeSatelliteFootprint` (`src/core/domain/satelliteTracking/footprint.ts`) reused directly, recomputed whenever a satellite's live position updates. Only drawn once a satellite has a resolved live position.
-- **Point/path data:** `buildGlobeData.ts` computes `react-globe.gl`'s `pointsData`/`pathsData` shapes — kept separate from the component so it's unit-testable without a WebGL context (jsdom has none). Split into two pieces the component memoizes independently: `computeGlobeTrailPaths(satellites, anchorAt)` (orbit trails only) and `computeGlobePointsAndFootprints(observer, satellites, livePositions, selectedSatelliteIds)` (observer/satellite dots + footprint circles). `stabilizeGlobePointsAndFootprints` reuses prior object references when geometry is unchanged so Kapsule does not restart animations every poll. Trails only recompute when the visible-satellite set changes; footprints recompute every tick as before.
+- **Point/path data:** `buildGlobeData.ts` computes `react-globe.gl`'s `pointsData`/`pathsData` shapes — kept separate from the component so it's unit-testable without a WebGL context (jsdom has none). Split into two pieces the component memoizes independently: `computeGlobeTrailPaths(satellites, anchorAt)` (orbit trails only) and `computeGlobePointsAndFootprints(observer, satellites, livePositions, selectedSatelliteIds)` (observer/satellite dots + footprint circles). `useLiveSatellitePositions` reuses prior `Map` and position object references when subsatellite geometry is unchanged between polls so memoized geometry does not restart Kapsule animations unnecessarily. Trails only recompute when the visible-satellite set changes; footprints recompute when live positions update.
 - **Pass-grid filter:** when `selectedSatelliteIds` is non-empty, non-selected satellites are **hidden** (dots, trails, and footprints omitted via `filterGlobeSatellitesBySelection`) rather than dimmed. An empty filter set preserves the "show everything" behaviour.
 - **Click-to-filter:** clicking a satellite dot calls `onSelectSatellite`; `TrackingDashboardPage` toggles the shared filter set (select-only-this, or clear if it's already the sole selection) that both the globe and `PassGrid` read.
 - **Sizing:** `react-globe.gl` defaults its canvas to the _window's_ size, not its container's. A `ResizeObserver` on the wrapper measures the actual panel size and passes it as explicit `width`/`height`.

@@ -94,8 +94,7 @@ export default function TrackingDashboardPage() {
   };
 
   const minElevationValue = Number.parseFloat(minElevation);
-  const hasActiveFilter =
-    !Number.isNaN(minElevationValue) || selectedSatelliteIds.size > 0;
+  const hasActiveFilter = !Number.isNaN(minElevationValue) || selectedSatelliteIds.size > 0;
 
   const filteredPasses = useMemo(
     () => filterTrackingPasses(passes, minElevation, selectedSatelliteIds),
@@ -203,8 +202,6 @@ export default function TrackingDashboardPage() {
             windowLabel={`${windowHours} hours`}
             hasActiveFilter={hasActiveFilter}
             onSelectPass={(row) => setSelectedPass(toSelectedPass(row))}
-            selectedSatelliteIds={selectedSatelliteIds}
-            onSelectedSatelliteIdsChange={setSelectedSatelliteIds}
           />
         )}
       </div>

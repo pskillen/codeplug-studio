@@ -126,9 +126,7 @@ describe('formatNextPassCountdown', () => {
   });
 
   it('returns countdown to AOS before pass', () => {
-    expect(
-      formatNextPassCountdown(Date.parse('2026-08-10T11:59:30.000Z'), aos, los),
-    ).toBe('30s');
+    expect(formatNextPassCountdown(Date.parse('2026-08-10T11:59:30.000Z'), aos, los)).toBe('30s');
   });
 
   it('returns null after LOS', () => {

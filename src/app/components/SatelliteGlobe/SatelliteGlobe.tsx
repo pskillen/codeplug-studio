@@ -4,7 +4,6 @@ import {
   computeGlobePointsAndFootprints,
   computeGlobeTrailPaths,
   filterGlobeSatellitesBySelection,
-  stabilizeGlobePointsAndFootprints,
   type GlobeObserver,
   type GlobePath,
   type GlobePoint,
@@ -104,8 +103,6 @@ export default function SatelliteGlobe({
 
   const livePositions = useLiveSatellitePositions(visibleSatellites);
 
-  const stableGeometryRef = useRef({ points: [] as GlobePoint[], footprintPaths: [] as GlobePath[] });
-
   // Trails are SGP4-sampled at ~180 points each and don't depend on the live-position poll
   // (the window is anchored at mount) — memoized separately from `livePositions` so a poll
   // tick doesn't redo that work for every enabled satellite. See computeGlobeTrailPaths's
@@ -116,17 +113,16 @@ export default function SatelliteGlobe({
     [visibleSatellites, anchorAt],
   );
 
-  const { points, footprintPaths } = useMemo(() => {
-    const raw = computeGlobePointsAndFootprints(
-      observer,
-      visibleSatellites,
-      livePositions,
-      selectedSatelliteIds,
-    );
-    const stabilized = stabilizeGlobePointsAndFootprints(raw, stableGeometryRef.current);
-    stableGeometryRef.current = stabilized;
-    return stabilized;
-  }, [observer, visibleSatellites, livePositions, selectedSatelliteIds]);
+  const { points, footprintPaths } = useMemo(
+    () =>
+      computeGlobePointsAndFootprints(
+        observer,
+        visibleSatellites,
+        livePositions,
+        selectedSatelliteIds,
+      ),
+    [observer, visibleSatellites, livePositions, selectedSatelliteIds],
+  );
 
   const paths = useMemo(() => [...trailPaths, ...footprintPaths], [trailPaths, footprintPaths]);
 

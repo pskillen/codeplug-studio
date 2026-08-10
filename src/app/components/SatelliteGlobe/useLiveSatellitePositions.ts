@@ -7,10 +7,7 @@ const DEFAULT_POLL_INTERVAL_MS = 10000;
 const POSITION_EPSILON_DEG = 1e-4;
 const ALTITUDE_EPSILON_KM = 0.01;
 
-function livePositionNearlyEqual(
-  a: LiveSatellitePosition,
-  b: LiveSatellitePosition,
-): boolean {
+function livePositionNearlyEqual(a: LiveSatellitePosition, b: LiveSatellitePosition): boolean {
   return (
     Math.abs(a.position[0] - b.position[0]) < POSITION_EPSILON_DEG &&
     Math.abs(a.position[1] - b.position[1]) < POSITION_EPSILON_DEG &&
@@ -82,6 +79,12 @@ export function useLiveSatellitePositions(
             id,
             previous && livePositionNearlyEqual(previous, candidate) ? previous : candidate,
           );
+        }
+        if (
+          prev.size === next.size &&
+          [...next.entries()].every(([id, value]) => prev.get(id) === value)
+        ) {
+          return prev;
         }
         return next;
       });
