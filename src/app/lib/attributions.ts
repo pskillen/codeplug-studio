@@ -91,6 +91,15 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
     usedIn: ['Satellite Keps library refresh (fallback)'],
   },
   {
+    id: 'satnogs',
+    name: 'SatNOGS DB (Libre Space Foundation)',
+    description:
+      'Community-maintained satellite transmitter, mode, and operational-status database — merged onto library satellites by NORAD id. Requests go through the Studio same-origin proxy; no operator API key required. Data is CC BY-SA 4.0.',
+    homeUrl: 'https://db.satnogs.org/',
+    termsUrl: 'https://db.satnogs.org/about/',
+    usedIn: ['Satellite Keps library — SatNOGS transmitter/mode/status enrichment'],
+  },
+  {
     id: 'radioid',
     name: 'RadioID.net',
     description:

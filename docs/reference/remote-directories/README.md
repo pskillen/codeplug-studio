@@ -13,5 +13,6 @@ Tier-3 references for **external directory / API** wire shapes used by Studio in
 | Nominatim          | [nominatim/](nominatim/README.md)       |
 | CelesTrak          | [celestrak/](celestrak/README.md)       |
 | AMSAT              | [amsat/](amsat/README.md)               |
+| SatNOGS            | [satnogs/](satnogs/README.md)           |
 
 Feature hubs: [repeater-directories](../../features/repeater-directories/README.md), [contact-directories](../../features/contact-directories/README.md), [aviation](../../features/aviation/README.md).

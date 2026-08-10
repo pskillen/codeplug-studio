@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { SatnogsTransmitterRaw } from './satnogsTypes.ts';
-import { groupSatnogsTransmittersByNoradId, mapSatnogsTransmitter } from './parseSatnogsTransmitters.ts';
+import {
+  groupSatnogsTransmittersByNoradId,
+  mapSatnogsTransmitter,
+} from './parseSatnogsTransmitters.ts';
 
 function raw(overrides: Partial<SatnogsTransmitterRaw> = {}): SatnogsTransmitterRaw {
   return {
@@ -41,10 +44,7 @@ describe('mapSatnogsTransmitter', () => {
 
 describe('groupSatnogsTransmittersByNoradId', () => {
   it('groups multiple transmitters for the same satellite together', () => {
-    const grouped = groupSatnogsTransmittersByNoradId([
-      raw({ uuid: 't1' }),
-      raw({ uuid: 't2' }),
-    ]);
+    const grouped = groupSatnogsTransmittersByNoradId([raw({ uuid: 't1' }), raw({ uuid: 't2' })]);
     expect(grouped).toHaveLength(1);
     expect(grouped[0]).toMatchObject({ noradId: 25544 });
     expect(grouped[0].transmitters).toHaveLength(2);

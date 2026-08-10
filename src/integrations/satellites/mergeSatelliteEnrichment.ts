@@ -1,6 +1,9 @@
 import type { ParsedSatnogsEnrichmentEntry } from '@core/domain/satnogs/parseSatnogsTransmitters.ts';
 import { isoNow } from '@core/models/revision.ts';
-import type { SatelliteEnrichment, SatelliteTransmitterInfo } from '@core/models/satelliteEnrichment.ts';
+import type {
+  SatelliteEnrichment,
+  SatelliteTransmitterInfo,
+} from '@core/models/satelliteEnrichment.ts';
 
 export interface MergeSatelliteEnrichmentResult {
   rows: SatelliteEnrichment[];

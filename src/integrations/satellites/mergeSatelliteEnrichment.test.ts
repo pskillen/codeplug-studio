@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { ParsedSatnogsEnrichmentEntry } from '@core/domain/satnogs/parseSatnogsTransmitters.ts';
-import type { SatelliteEnrichment, SatelliteTransmitterInfo } from '@core/models/satelliteEnrichment.ts';
+import type {
+  SatelliteEnrichment,
+  SatelliteTransmitterInfo,
+} from '@core/models/satelliteEnrichment.ts';
 import { mergeSatelliteEnrichmentSet } from './mergeSatelliteEnrichment.ts';
 
 function transmitter(overrides: Partial<SatelliteTransmitterInfo> = {}): SatelliteTransmitterInfo {
@@ -16,7 +19,9 @@ function transmitter(overrides: Partial<SatelliteTransmitterInfo> = {}): Satelli
   };
 }
 
-function entry(overrides: Partial<ParsedSatnogsEnrichmentEntry> = {}): ParsedSatnogsEnrichmentEntry {
+function entry(
+  overrides: Partial<ParsedSatnogsEnrichmentEntry> = {},
+): ParsedSatnogsEnrichmentEntry {
   return {
     noradId: 25544,
     transmitters: [transmitter()],
