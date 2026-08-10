@@ -241,29 +241,31 @@ export default function TrackingDashboardPage() {
           </div>
         </Panel>
 
-        <div className={classes.map}>
-          <SatelliteTrackMap
-            observer={settings?.location ?? null}
-            selectedPass={selectedPass}
-            defaultPasses={defaultMapPasses}
-            drawBehindMin={drawBehindMin}
-            drawAheadMin={drawAheadMin}
-          />
-        </div>
+        <div className={classes.mapAndGlobe}>
+          <div className={classes.map}>
+            <SatelliteTrackMap
+              observer={settings?.location ?? null}
+              selectedPass={selectedPass}
+              defaultPasses={defaultMapPasses}
+              drawBehindMin={drawBehindMin}
+              drawAheadMin={drawAheadMin}
+            />
+          </div>
 
-        {hasEnabledSatellites ? (
-          <Panel title="Orbital globe" sub="Click a satellite to filter the pass grid to it.">
-            <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
-              <SatelliteGlobe
-                observer={settings?.location ?? null}
-                satellites={enabledSatellites}
-                interestedSatelliteIds={interestedSatelliteIds}
-                highlightedSatelliteIds={selectedSatelliteIds}
-                onSelectSatellite={handleSelectSatelliteFromGlobe}
-              />
-            </Suspense>
-          </Panel>
-        ) : null}
+          {hasEnabledSatellites ? (
+            <Panel title="Orbital globe" sub="Click a satellite to filter the pass grid to it.">
+              <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
+                <SatelliteGlobe
+                  observer={settings?.location ?? null}
+                  satellites={enabledSatellites}
+                  interestedSatelliteIds={interestedSatelliteIds}
+                  highlightedSatelliteIds={selectedSatelliteIds}
+                  onSelectSatellite={handleSelectSatelliteFromGlobe}
+                />
+              </Suspense>
+            </Panel>
+          ) : null}
+        </div>
 
         {!hasEnabledSatellites ? (
           <p className={classes.empty}>

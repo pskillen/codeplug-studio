@@ -3,8 +3,21 @@
   margin: 16px 0;
 }
 
-.map {
+.mapAndGlobe {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
   margin: 16px 0;
+}
+
+@media (max-width: 900px) {
+  .mapAndGlobe {
+    grid-template-columns: 1fr;
+  }
+}
+
+.map {
+  min-width: 0;
 }
 
 .calculatePasses {
