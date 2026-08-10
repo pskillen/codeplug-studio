@@ -23,7 +23,7 @@ describe('theme-v2 tokens', () => {
     expect(DSV2_TOKENS.spacing['1']).toBe('4px');
     expect(DSV2_TOKENS.spacing['10']).toBe('32px');
     expect(DSV2_TOKENS.spacing.pagePaddingX).toBe('32px');
-    expect(DSV2_TOKENS.spacing.pagePaddingXMobile).toBe('12px');
+    expect(DSV2_TOKENS.spacing.pagePaddingXMobile).toBe('8px');
     expect(DSV2_TOKENS.spacing.panelPaddingY).toBe('18px');
     expect(DSV2_TOKENS.spacing.panelPaddingX).toBe('20px');
     expect(DSV2_TOKENS.radii.control).toBe('8px');

@@ -75,7 +75,7 @@ Import icons by name per file — e.g. `import { IconSettings } from '@tabler/ic
 
 Desktop (`sm+`): v2 `AppShell` top tabs. Narrow viewports: `BottomTabBar` instead of the tab row — elevated chrome (accent top border, upward shadow, surface background) so primary nav is discoverable ([#962](https://github.com/pskillen/codeplug-studio/issues/962)). Section sub-views use a horizontally scrollable `ContextualStrip` (Library entity types, Tools, Help, build detail, …).
 
-Wide `DataTable` (v2) layouts scroll horizontally inside the table shell on narrow viewports; flexible columns keep an `8rem` min floor so overflow engages ([#962](https://github.com/pskillen/codeplug-studio/issues/962)). Page horizontal gutters tighten on narrow viewports (`--dsv2-page-padding-x`: 12px at ≤48em, 32px above) so tables reclaim usable width ([#1024](https://github.com/pskillen/codeplug-studio/issues/1024)).
+Wide `DataTable` (v2) layouts scroll horizontally inside the table shell on narrow viewports; flexible columns keep an `8rem` min floor so overflow engages ([#962](https://github.com/pskillen/codeplug-studio/issues/962)). Page horizontal gutters tighten on narrow viewports (`--dsv2-page-padding-x`: 8px at ≤48em, 32px above); list-variant tables bleed their grid to the viewport edge while filters and titles stay inset ([#1024](https://github.com/pskillen/codeplug-studio/issues/1024)). Maps on library list pages keep the page gutter — they do not edge-bleed.
 
 Strip destinations: `src/app/nav/contextualStripItems.ts` and `useBuildContextualStrip` for trait-shaped build nav. Filter state prefers URL search params where implemented.
 

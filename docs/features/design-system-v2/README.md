@@ -42,7 +42,7 @@ Mantine `theme.components.*.defaultProps` and CSS variables are **global** if ap
 
 `theme.radius` is remapped in the v2 override so reused shells (`DataTable`, `PageSection` `Paper`) pick up v2 corners. `theme.spacing` is **not** remapped — net-new components use `--dsv2-space-*` / `DSV2_TOKENS.spacing` in CSS modules (accepted #916 gap).
 
-**Page gutters:** `--dsv2-page-padding-x` is **32px** by default (`DSV2_TOKENS.spacing.pagePaddingX`) and **12px** at ≤48em via `dsv2-responsive.css` on `.dsv2-scope` ([#1024](https://github.com/pskillen/codeplug-studio/issues/1024)). List pages, chrome strips, StickyFooter, and editors all consume this token — AppLayout `<main>` does not add horizontal padding.
+**Page gutters:** `--dsv2-page-padding-x` is **32px** by default (`DSV2_TOKENS.spacing.pagePaddingX`) and **8px** at ≤48em via `dsv2-responsive.css` on `.dsv2-scope` ([#1024](https://github.com/pskillen/codeplug-studio/issues/1024)). List pages, chrome strips, StickyFooter, and editors consume this token — AppLayout `<main>` does not add horizontal padding. v2 `DataTable` (`variant="list"`) bleeds its `.table` shell to the viewport edge on narrow viewports while filters and titles stay inset.
 
 ## Component map
 

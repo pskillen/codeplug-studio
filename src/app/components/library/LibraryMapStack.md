@@ -23,7 +23,7 @@
 - On mobile (`mobileMapToggle` true), the map pane is **visible by default** — it starts expanded so nearby-repeater/geographic context is discoverable immediately, and can be collapsed via the "Hide map" toggle.
 - On desktop, or when `mobileMapToggle` is false, the map always renders (toggle row is not shown).
 - `split` layout on desktop renders list and map as flex siblings; on mobile it falls back to the same stacked + toggle behaviour as `stacked`.
-- On mobile, the map pane bleeds to the viewport edge (negative margin cancelling `--dsv2-page-padding-x`) instead of sitting inset inside the page gutter — small screens are scarce real estate and the map is the one element on these pages worth going edge-to-edge for. AppLayout `<main>` no longer adds horizontal padding; the bleed tracks the responsive page gutter token ([#1024](https://github.com/pskillen/codeplug-studio/issues/1024)). Callers should pass a taller `height` on the `MapPanel` child at mobile widths (e.g. `height={isMobile ? 560 : 420}`) so the extra width isn't paired with a cramped, wide-but-short map.
+- On mobile, the map pane stays inside the page gutter (same horizontal inset as list chrome) so there is scrollable margin beside the map and the panel keeps its rounded border ([#1024](https://github.com/pskillen/codeplug-studio/issues/1024)). Callers should pass a taller `height` on the `MapPanel` child at mobile widths (e.g. `height={isMobile ? 560 : 420}`) so the map is not cramped vertically.
 
 ## Related
 

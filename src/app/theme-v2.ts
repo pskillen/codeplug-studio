@@ -97,8 +97,8 @@ export const DSV2_TOKENS = {
     '9': '24px',
     '10': '32px',
     pagePaddingX: '32px',
-    /** Narrow viewports — matches `--dsv2-space-5` (#1024). */
-    pagePaddingXMobile: '12px',
+    /** Narrow viewports — matches `--dsv2-space-3` (#1024). */
+    pagePaddingXMobile: '8px',
     pagePaddingY: '26px',
     /** DS `--panel-padding: 18px 20px` → y x */
     panelPaddingY: '18px',

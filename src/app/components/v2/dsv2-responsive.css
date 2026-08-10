@@ -4,6 +4,6 @@
  */
 @media (max-width: 48em) {
   .dsv2-scope {
-    --dsv2-page-padding-x: 12px;
+    --dsv2-page-padding-x: 8px;
   }
 }

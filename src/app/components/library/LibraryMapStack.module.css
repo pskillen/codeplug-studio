@@ -39,10 +39,4 @@
   .mapCollapsed {
     display: none;
   }
-
-  /* Bleed the map to the viewport edge on mobile — reclaims the page gutter
-     so the map isn't squeezed inside two layers of padding on small screens. */
-  .mapPane {
-    margin-inline: calc(var(--dsv2-page-padding-x) * -1);
-  }
 }
