@@ -6,13 +6,13 @@
 
 ## Props
 
-| Prop            | Type                                   | Notes                                                                                      |
-| --------------- | -------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `observer`      | `{ lat: number; lon: number } \| null` | Observer location marker; included in auto-fit bounds when set                             |
-| `selectedPass`  | `SelectedPass \| null`                 | When set, draws only this pass (overrides `defaultPasses`)                                 |
-| `defaultPasses` | `SelectedPass[]` (optional)            | Next pass per satellite when a pass-grid satellite filter is active and no row is selected |
-| `drawBehindMin` | `number` (optional, default `0`)       | Minutes to extend the drawn track **before** `aosAt`, relative to the pass window          |
-| `drawAheadMin`  | `number` (optional, default `0`)       | Minutes to extend the drawn track **past** `losAt`, relative to the pass window            |
+| Prop            | Type                                   | Notes                                                                                                          |
+| --------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `observer`      | `{ lat: number; lon: number } \| null` | Observer location marker; included in auto-fit bounds when set                                                 |
+| `selectedPass`  | `SelectedPass \| null`                 | When set, draws only this pass (overrides `defaultPasses`). Includes `noradId` for per-satellite track colour. |
+| `defaultPasses` | `SelectedPass[]` (optional)            | Next pass per satellite when a pass-grid satellite filter is active and no row is selected                     |
+| `drawBehindMin` | `number` (optional, default `0`)       | Minutes to extend the drawn track **before** `aosAt`, relative to the pass window                              |
+| `drawAheadMin`  | `number` (optional, default `0`)       | Minutes to extend the drawn track **past** `losAt`, relative to the pass window                                |
 
 ## Usage
 
@@ -24,7 +24,7 @@ import SatelliteTrackMap from '../../components/SatelliteTrackMap/SatelliteTrack
 
 ## Behaviour
 
-- Ground track is sampled via `sampleGroundTrack` (`src/core/domain/satelliteTracking/groundTrack.ts`) at 30-second steps between the pass's `aosAt` and `losAt`, extended by `drawBehindMin`/`drawAheadMin` (see `computeTrackBounds` in `SatelliteTrackMap.tsx`).
+- Ground track is sampled via `sampleGroundTrack` (`src/core/domain/satelliteTracking/groundTrack.ts`) at 30-second steps between the pass's `aosAt` and `losAt`, extended by `drawBehindMin`/`drawAheadMin` (see `computeTrackBounds` in `SatelliteTrackMap.tsx`). Polyline colour comes from `colorForNoradId(pass.noradId)` so multi-satellite default tracks stay distinguishable and match the pass grid / 3D globe.
 - **Draw-ahead/behind semantics:** "ahead" and "behind" are relative to the **pass window** (AOS/LOS), not to current wall-clock time — this stays well-defined when previewing a past or future pass. `drawBehindMin` pushes the sampled start earlier than `aosAt`; `drawAheadMin` pushes the sampled end later than `losAt`. Both default to `0`, preserving strict AOS-to-LOS drawing until the operator adjusts the controls (labelled "Extend before AOS (min)" / "Extend after LOS (min)" on the Tracking Dashboard).
 - **Antimeridian handling:** the track is split into separate `Polyline` segments wherever consecutive samples' longitude delta exceeds 180° — LEO ground tracks routinely cross ±180°, and a single polyline would otherwise draw a spurious line across the whole map. This still applies to the full extended range, not just the strict AOS→LOS segment. `splitAtAntimeridian` and the observer `L.DivIcon` builder (`observerDivIcon`, a module-level singleton — not rebuilt per render) live in [`mapHelpers.ts`](./mapHelpers.ts), shared with the satellite detail page's live map.
 - **World-copy duplication:** after antimeridian splitting, each segment is also drawn at `lng ± 360°` via `duplicateSegmentsForWorldCopies` so pass lines remain visible when Leaflet's tile layer wraps at low zoom (a separate problem from the antimeridian stretch fix).

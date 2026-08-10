@@ -8,6 +8,7 @@ import {
 import { formatNextPassCountdown, isPassActive, nextPassBySatelliteId } from './passTime.ts';
 import type { SatellitePassRow } from './useTrackingPasses.ts';
 import { useNowTick } from './useNowTick.ts';
+import { colorForNoradId } from '@core/domain/satelliteTracking/satelliteColor.ts';
 import classes from './PassGrid.module.css';
 
 const PassGridTickContext = createContext(0);
@@ -45,16 +46,23 @@ function SatelliteNameCell({
 
   return (
     <div className={classes.satelliteCell}>
-      <button
-        type="button"
-        className={classes.satelliteLink}
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate(`/tracking/satellites/${row.satelliteId}`);
-        }}
-      >
-        {row.satelliteName}
-      </button>
+      <div className={classes.satelliteHeader}>
+        <span
+          className={classes.colorSwatch}
+          style={{ backgroundColor: colorForNoradId(row.noradId) }}
+          aria-hidden
+        />
+        <button
+          type="button"
+          className={classes.satelliteLink}
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/tracking/satellites/${row.satelliteId}`);
+          }}
+        >
+          {row.satelliteName}
+        </button>
+      </div>
       {countdown ? <span className={classes.countdown}>{countdown}</span> : null}
     </div>
   );

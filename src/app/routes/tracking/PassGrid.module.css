@@ -52,6 +52,19 @@
   align-items: flex-start;
 }
 
+.satelliteHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.colorSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
 .countdown {
   font-size: 0.85em;
   color: var(--dsv2-text-secondary);

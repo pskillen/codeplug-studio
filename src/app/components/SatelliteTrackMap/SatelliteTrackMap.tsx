@@ -10,6 +10,7 @@ import {
   duplicateSegmentsForWorldCopies,
   splitAtAntimeridian,
 } from './mapHelpers.ts';
+import { colorForNoradId } from '@core/domain/satelliteTracking/satelliteColor.ts';
 import classes from './SatelliteTrackMap.module.css';
 
 const GROUND_TRACK_STEP_SEC = 30;
@@ -18,6 +19,7 @@ const DEFAULT_ZOOM = 2;
 
 export interface SelectedPass {
   satelliteName: string;
+  noradId: number;
   tleLine1: string;
   tleLine2: string;
   aosAt: string;
@@ -138,6 +140,7 @@ export default function SatelliteTrackMap({
       const segments = samplePassSegments(pass, drawBehindMin, drawAheadMin);
       return {
         key: `${pass.satelliteName}:${pass.aosAt}:${pass.losAt}`,
+        color: colorForNoradId(pass.noradId),
         rendered: duplicateSegmentsForWorldCopies(segments),
       };
     });
@@ -180,7 +183,7 @@ export default function SatelliteTrackMap({
             <Polyline
               key={`${layer.key}:${copy.worldOffset}-${index}`}
               positions={copy.segment}
-              pathOptions={{ color: '#4d7cff', weight: 2 }}
+              pathOptions={{ color: layer.color, weight: 2 }}
             />
           )),
         )}
