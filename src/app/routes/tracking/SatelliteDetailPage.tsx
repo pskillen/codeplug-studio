@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { IconRefresh } from '@tabler/icons-react';
 import LibraryInventoryHeader from '../../components/library/LibraryInventoryHeader.tsx';
 import SatelliteLiveMap from '../../components/SatelliteLiveMap/SatelliteLiveMap.tsx';
 import { Button, DesignSystemV2Provider } from '../../components/v2/index.ts';
+import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
+import { useSatelliteEnrichment } from '../../state/satelliteEnrichment.tsx';
 import libraryPageClasses from '../../components/library/LibraryInventoryPage.module.css';
 import SatelliteDetailPanel from './SatelliteDetailPanel.tsx';
 import SatellitePassList from './SatellitePassList.tsx';
@@ -17,9 +20,29 @@ export default function SatelliteDetailPage() {
   const { satelliteId } = useParams();
   const navigate = useNavigate();
   const { library, loading } = useLibrary();
+  const { getEnrichmentForNoradId, refreshEnrichmentForNoradIds } = useSatelliteEnrichment();
+  const [refreshingSatnogs, setRefreshingSatnogs] = useState(false);
+  const [satnogsError, setSatnogsError] = useState<string | null>(null);
   const satellite = satelliteId
     ? (library.satellites.find((s) => s.id === satelliteId) ?? null)
     : null;
+  const enrichment = satellite ? getEnrichmentForNoradId(satellite.noradId) : null;
+
+  async function handleRefreshSatnogs() {
+    if (!satellite) return;
+    setRefreshingSatnogs(true);
+    setSatnogsError(null);
+    try {
+      const result = await refreshEnrichmentForNoradIds([satellite.noradId], { refresh: true });
+      if (result.failures.length > 0) {
+        setSatnogsError(result.failures[0]?.message ?? 'SatNOGS refresh failed.');
+      }
+    } catch (err) {
+      setSatnogsError(err instanceof Error ? err.message : 'SatNOGS refresh failed.');
+    } finally {
+      setRefreshingSatnogs(false);
+    }
+  }
 
   // Fixed at mount rather than recomputed every render — the pass lists refresh via the
   // hook's own debounce/effect cycle, not by chasing a moving "now" on each render.
@@ -67,16 +90,27 @@ export default function SatelliteDetailPage() {
           title={satellite.name}
           subtitle={`NORAD ${satellite.noradId}`}
           actions={
-            <Button
-              variant="secondary"
-              onClick={() => navigate(`/library/satellite-keps/${satellite.id}`)}
-            >
-              Edit uplink/downlink…
-            </Button>
+            <>
+              <Button
+                variant="secondary"
+                leftSection={<IconRefresh size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+                onClick={() => void handleRefreshSatnogs()}
+                disabled={refreshingSatnogs}
+              >
+                {refreshingSatnogs ? 'Refreshing SatNOGS…' : 'Refresh SatNOGS'}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => navigate(`/library/satellite-keps/${satellite.id}`)}
+              >
+                Edit uplink/downlink…
+              </Button>
+            </>
           }
         />
+        {satnogsError ? <p className={classes.satnogsError}>{satnogsError}</p> : null}
 
-        <SatelliteDetailPanel satellite={satellite} />
+        <SatelliteDetailPanel satellite={satellite} enrichment={enrichment} />
 
         <SatelliteLiveMap
           satelliteName={satellite.name}

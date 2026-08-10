@@ -5,7 +5,10 @@ import { MapContainer, Marker, Polygon, Polyline, TileLayer, useMap } from 'reac
 import type { LatLon } from '@core/domain/geo.ts';
 import { computeMapView } from '@core/domain/mapView.ts';
 import { computeSatelliteFootprint } from '@core/domain/satelliteTracking/footprint.ts';
-import { splitAtAntimeridian } from '../SatelliteTrackMap/mapHelpers.ts';
+import {
+  splitAtAntimeridian,
+  duplicateSegmentsForWorldCopies,
+} from '../SatelliteTrackMap/mapHelpers.ts';
 import { useLiveSatellitePosition } from '../../routes/tracking/useLiveSatellitePosition.ts';
 import { computeOrbitTrailSegments } from './orbitTrail.ts';
 import classes from './SatelliteLiveMap.module.css';
@@ -84,6 +87,15 @@ export default function SatelliteLiveMap({
     [tleLine1, tleLine2, meanMotionRevPerDay, anchorAt],
   );
 
+  const renderedPastSegments = useMemo(
+    () => duplicateSegmentsForWorldCopies(pastSegments),
+    [pastSegments],
+  );
+  const renderedFutureSegments = useMemo(
+    () => duplicateSegmentsForWorldCopies(futureSegments),
+    [futureSegments],
+  );
+
   // Footprint circles can themselves cross the antimeridian (e.g. a satellite near the date
   // line, or a wide footprint at high latitude) — split the same way as the ground track.
   const footprintSegments = useMemo(
@@ -109,17 +121,17 @@ export default function SatelliteLiveMap({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {pastSegments.map((segment, index) => (
+        {renderedPastSegments.map((copy, index) => (
           <Polyline
-            key={`past-${index}`}
-            positions={segment}
+            key={`past-${copy.worldOffset}-${index}`}
+            positions={copy.segment}
             pathOptions={{ color: '#4d7cff', weight: 2, dashArray: '6, 6' }}
           />
         ))}
-        {futureSegments.map((segment, index) => (
+        {renderedFutureSegments.map((copy, index) => (
           <Polyline
-            key={`future-${index}`}
-            positions={segment}
+            key={`future-${copy.worldOffset}-${index}`}
+            positions={copy.segment}
             pathOptions={{ color: '#4d7cff', weight: 2 }}
           />
         ))}

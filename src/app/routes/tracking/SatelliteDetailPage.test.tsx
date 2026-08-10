@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Satellite } from '@core/models/satellite.ts';
 import { emptyLibrary } from '@core/domain/factories.ts';
 import SatelliteDetailPage from './SatelliteDetailPage.tsx';
@@ -39,6 +39,11 @@ vi.mock('../../state/useLibrary.ts', () => ({
   useLibrary: () => mockUseLibrary(),
 }));
 
+const mockUseSatelliteEnrichment = vi.fn();
+vi.mock('../../state/satelliteEnrichment.tsx', () => ({
+  useSatelliteEnrichment: () => mockUseSatelliteEnrichment(),
+}));
+
 const mockUsePassesForSatellite = vi.fn();
 vi.mock('./usePassesForSatellite.ts', () => ({
   usePassesForSatellite: (...args: unknown[]) => mockUsePassesForSatellite(...args),
@@ -57,6 +62,15 @@ function renderAt(path: string) {
 }
 
 describe('SatelliteDetailPage', () => {
+  beforeEach(() => {
+    mockUseSatelliteEnrichment.mockReturnValue({
+      enrichment: [],
+      getEnrichmentForNoradId: () => null,
+      refreshEnrichmentForNoradIds: vi.fn(),
+      clearEnrichment: vi.fn(),
+    });
+  });
+
   it('renders the detail panel fields for a known satellite', () => {
     mockUseLibrary.mockReturnValue({
       library: { ...emptyLibrary(), satellites: [SATELLITE] },

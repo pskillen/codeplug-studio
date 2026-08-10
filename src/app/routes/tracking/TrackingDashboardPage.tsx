@@ -1,15 +1,15 @@
-import { useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LibraryInventoryHeader from '../../components/library/LibraryInventoryHeader.tsx';
 import { DesignSystemV2Provider, Panel, TextInput } from '../../components/v2/index.ts';
 import SatelliteTrackMap, {
   type SelectedPass,
 } from '../../components/SatelliteTrackMap/SatelliteTrackMap.tsx';
-import SatelliteGlobe from '../../components/SatelliteGlobe/SatelliteGlobe.tsx';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import ObserverLocationSettings from './ObserverLocationSettings.tsx';
 import PassGrid from './PassGrid.tsx';
+import SatelliteFilter from './SatelliteFilter.tsx';
 import {
   DEFAULT_WINDOW_HOURS,
   useTrackingPasses,
@@ -17,6 +17,8 @@ import {
 } from './useTrackingPasses.ts';
 import classes from './TrackingDashboardPage.module.css';
 import libraryPageClasses from '../../components/library/LibraryInventoryPage.module.css';
+
+const SatelliteGlobe = lazy(() => import('../../components/SatelliteGlobe/SatelliteGlobe.tsx'));
 
 const MIN_WINDOW_HOURS = 1;
 const MAX_WINDOW_HOURS = 168;
@@ -52,6 +54,7 @@ export default function TrackingDashboardPage() {
   const [selectedPass, setSelectedPass] = useState<SelectedPass | null>(null);
   const [drawBehindMin, setDrawBehindMin] = useState(0);
   const [drawAheadMin, setDrawAheadMin] = useState(0);
+  const [minElevation, setMinElevation] = useState('');
   // Satellite multi-select filter, shared by the globe and the pass grid — a globe click
   // narrows the grid, and (via SatelliteFilter, still owned inside PassGrid) a grid checkbox
   // narrows the globe's highlighted dots.
@@ -71,6 +74,16 @@ export default function TrackingDashboardPage() {
     [library.satellites],
   );
 
+  const satelliteFilterOptions = useMemo(() => {
+    const byId = new Map<string, string>();
+    for (const pass of passes) {
+      if (!byId.has(pass.satelliteId)) byId.set(pass.satelliteId, pass.satelliteName);
+    }
+    return Array.from(byId, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [passes]);
+
   const handleSelectSatelliteFromGlobe = (satelliteId: string) => {
     setSelectedSatelliteIds((current) => {
       // Toggle off if this satellite is already the sole filter; otherwise narrow to it.
@@ -89,35 +102,49 @@ export default function TrackingDashboardPage() {
 
         <ObserverLocationSettings />
 
-        <div className={classes.windowControl}>
-          <TextInput
-            label="Look ahead (hours)"
-            type="number"
-            min={MIN_WINDOW_HOURS}
-            max={MAX_WINDOW_HOURS}
-            value={windowHours}
-            onChange={(event) => setWindowHours(clampWindowHours(Number(event.target.value)))}
-          />
-        </div>
-
-        <div className={classes.drawWindowControl}>
-          <TextInput
-            label="Extend before AOS (min)"
-            type="number"
-            min={MIN_DRAW_MIN}
-            max={MAX_DRAW_MIN}
-            value={drawBehindMin}
-            onChange={(event) => setDrawBehindMin(clampDrawMin(Number(event.target.value)))}
-          />
-          <TextInput
-            label="Extend after LOS (min)"
-            type="number"
-            min={MIN_DRAW_MIN}
-            max={MAX_DRAW_MIN}
-            value={drawAheadMin}
-            onChange={(event) => setDrawAheadMin(clampDrawMin(Number(event.target.value)))}
-          />
-        </div>
+        <Panel
+          title="Calculate passes"
+          sub="Pass prediction window and client-side filters for the grid below."
+        >
+          <div className={classes.calculatePasses}>
+            <TextInput
+              label="Look ahead (hours)"
+              type="number"
+              min={MIN_WINDOW_HOURS}
+              max={MAX_WINDOW_HOURS}
+              value={windowHours}
+              onChange={(event) => setWindowHours(clampWindowHours(Number(event.target.value)))}
+            />
+            <TextInput
+              label="Extend before AOS (min)"
+              type="number"
+              min={MIN_DRAW_MIN}
+              max={MAX_DRAW_MIN}
+              value={drawBehindMin}
+              onChange={(event) => setDrawBehindMin(clampDrawMin(Number(event.target.value)))}
+            />
+            <TextInput
+              label="Extend after LOS (min)"
+              type="number"
+              min={MIN_DRAW_MIN}
+              max={MAX_DRAW_MIN}
+              value={drawAheadMin}
+              onChange={(event) => setDrawAheadMin(clampDrawMin(Number(event.target.value)))}
+            />
+            <TextInput
+              label="Min elevation (°)"
+              type="number"
+              placeholder="0"
+              value={minElevation}
+              onChange={(event) => setMinElevation(event.target.value)}
+            />
+            <SatelliteFilter
+              options={satelliteFilterOptions}
+              selectedIds={selectedSatelliteIds}
+              onChange={setSelectedSatelliteIds}
+            />
+          </div>
+        </Panel>
 
         <div className={classes.map}>
           <SatelliteTrackMap
@@ -130,12 +157,14 @@ export default function TrackingDashboardPage() {
 
         {hasEnabledSatellites ? (
           <Panel title="Orbital globe" sub="Click a satellite to filter the pass grid to it.">
-            <SatelliteGlobe
-              observer={settings?.location ?? null}
-              satellites={enabledSatellites}
-              selectedSatelliteIds={selectedSatelliteIds}
-              onSelectSatellite={handleSelectSatelliteFromGlobe}
-            />
+            <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
+              <SatelliteGlobe
+                observer={settings?.location ?? null}
+                satellites={enabledSatellites}
+                selectedSatelliteIds={selectedSatelliteIds}
+                onSelectSatellite={handleSelectSatelliteFromGlobe}
+              />
+            </Suspense>
           </Panel>
         ) : null}
 
@@ -154,6 +183,7 @@ export default function TrackingDashboardPage() {
             loading={loading}
             error={error}
             windowLabel={`${windowHours} hours`}
+            minElevation={minElevation}
             onSelectPass={(row) => setSelectedPass(toSelectedPass(row))}
             selectedSatelliteIds={selectedSatelliteIds}
             onSelectedSatelliteIdsChange={setSelectedSatelliteIds}

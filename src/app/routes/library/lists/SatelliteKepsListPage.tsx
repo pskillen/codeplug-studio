@@ -22,6 +22,7 @@ import { v1SortToV2, v2SortToV1 } from '../../../lib/libraryListTable.tsx';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { persistence } from '../../../state/persistence.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
+import { useSatelliteEnrichment } from '../../../state/satelliteEnrichment.tsx';
 import { useProjects } from '../../../state/useProjects.ts';
 import classes from '../../../components/library/LibraryInventoryPage.module.css';
 import staleClasses from './SatelliteKepsListPage.module.css';
@@ -39,10 +40,12 @@ function formatLastUpdated(iso: string | null | undefined): { label: string; sta
 export default function SatelliteKepsListPage() {
   const { library, loading, projectId, reload } = useLibrary();
   const { activeProject, refreshProjects } = useProjects();
+  const { refreshEnrichmentForNoradIds } = useSatelliteEnrichment();
   const navigate = useNavigate();
   const { satellites } = library;
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [satnogsWarning, setSatnogsWarning] = useState<string | null>(null);
   const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
     useListNameQuery('satellite-keps');
   const [sort, setSort] = usePersistedEntityListSort('satellite-keps', {
@@ -62,6 +65,7 @@ export default function SatelliteKepsListPage() {
     if (!projectId) return;
     setRefreshing(true);
     setRefreshError(null);
+    setSatnogsWarning(null);
     try {
       const { source, entries } = await fetchSatelliteSet({ refresh: true });
       const merged = mergeSatelliteSet(library.satellites, entries, source, projectId);
@@ -79,6 +83,16 @@ export default function SatelliteKepsListPage() {
         await refreshProjects();
       }
       await reload();
+
+      const noradIds = merged.rows.map((row) => row.noradId);
+      if (noradIds.length > 0) {
+        const satnogs = await refreshEnrichmentForNoradIds(noradIds, { refresh: true });
+        if (satnogs.failures.length > 0) {
+          setSatnogsWarning(
+            `TLE refresh succeeded, but SatNOGS enrichment failed for ${satnogs.failures.length} satellite(s).`,
+          );
+        }
+      }
     } catch (err) {
       setRefreshError(err instanceof Error ? err.message : 'Failed to refresh satellites.');
     } finally {
@@ -195,6 +209,7 @@ export default function SatelliteKepsListPage() {
           actions={listActions}
         />
         {refreshError ? <p className={staleClasses.refreshError}>{refreshError}</p> : null}
+        {satnogsWarning ? <p className={staleClasses.refreshError}>{satnogsWarning}</p> : null}
 
         <DataTable
           columns={columns}

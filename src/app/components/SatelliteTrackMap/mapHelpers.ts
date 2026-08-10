@@ -22,6 +22,37 @@ export function splitAtAntimeridian(points: LatLon[]): LatLon[][] {
   return segments;
 }
 
+const DEFAULT_WORLD_COPY_OFFSETS = [-360, 0, 360] as const;
+
+export interface WorldCopySegment {
+  segment: LatLon[];
+  worldOffset: number;
+}
+
+/**
+ * Duplicate antimeridian-split segments at `lng ± 360°` so pass lines remain visible when
+ * Leaflet's tile layer wraps and shows multiple world copies at low zoom. Apply **after**
+ * `splitAtAntimeridian` — this is unrelated to the ±180° stretch fix.
+ */
+export function duplicateSegmentsForWorldCopies(
+  segments: LatLon[][],
+  worldOffsets: readonly number[] = DEFAULT_WORLD_COPY_OFFSETS,
+): WorldCopySegment[] {
+  const copies: WorldCopySegment[] = [];
+  for (const segment of segments) {
+    for (const worldOffset of worldOffsets) {
+      copies.push({
+        worldOffset,
+        segment:
+          worldOffset === 0
+            ? segment
+            : segment.map(([lat, lon]) => [lat, lon + worldOffset] as LatLon),
+      });
+    }
+  }
+  return copies;
+}
+
 /**
  * Observer-location marker icon. Hoisted to a module-level singleton (rather than built
  * inline in JSX on every render) — the icon is static, so there's no reason to reconstruct

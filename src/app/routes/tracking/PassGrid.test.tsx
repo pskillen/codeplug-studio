@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import DesignSystemV2Provider from '../../components/v2/DesignSystemV2Provider.tsx';
@@ -48,12 +48,16 @@ describe('PassGrid', () => {
     render(
       <MemoryRouter>
         <DesignSystemV2Provider>
-          <PassGrid passes={PASSES} loading={false} error={null} windowLabel="72 hours" />
+          <PassGrid
+            passes={PASSES}
+            loading={false}
+            error={null}
+            windowLabel="72 hours"
+            selectedSatelliteIds={new Set(['sat-1'])}
+          />
         </DesignSystemV2Provider>
       </MemoryRouter>,
     );
-
-    fireEvent.click(screen.getByLabelText('ISS'));
 
     expect(screen.getByRole('cell', { name: 'ISS' })).toBeInTheDocument();
     expect(screen.queryByRole('cell', { name: 'AO-91' })).not.toBeInTheDocument();
@@ -63,12 +67,16 @@ describe('PassGrid', () => {
     render(
       <MemoryRouter>
         <DesignSystemV2Provider>
-          <PassGrid passes={PASSES} loading={false} error={null} windowLabel="72 hours" />
+          <PassGrid
+            passes={PASSES}
+            loading={false}
+            error={null}
+            windowLabel="72 hours"
+            minElevation="20"
+          />
         </DesignSystemV2Provider>
       </MemoryRouter>,
     );
-
-    fireEvent.change(screen.getByLabelText('Min elevation (°)'), { target: { value: '20' } });
 
     expect(screen.getByRole('cell', { name: 'ISS' })).toBeInTheDocument();
     expect(screen.queryByRole('cell', { name: 'AO-91' })).not.toBeInTheDocument();

@@ -2,6 +2,21 @@
   margin: 0 0 12px;
 }
 
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.inputsColumn {
+  min-width: 0;
+}
+
+.mapColumn {
+  min-width: 0;
+}
+
 .row {
   display: flex;
   align-items: flex-end;
@@ -23,4 +38,10 @@
   margin-bottom: 6px;
   font-size: 0.85em;
   color: var(--dsv2-text-secondary);
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
 }

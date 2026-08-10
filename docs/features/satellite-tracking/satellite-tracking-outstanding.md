@@ -4,7 +4,7 @@ Items **skipped**, **incomplete**, or **discovered during execution** — not th
 
 **Tracking:** [codeplug-studio#860](https://github.com/pskillen/codeplug-studio/issues/860)
 
-**Status: closed out.** Nothing outstanding as of [#866](https://github.com/pskillen/codeplug-studio/issues/866) (the epic's final phase). Both items deferred below have since shipped under their own tickets, and no execution-time debt remains.
+**Status:** Wave 1 post-MVP polish in flight — see [satellite-tracking-progress.md](satellite-tracking-progress.md) § Wave 1.
 
 ---
 

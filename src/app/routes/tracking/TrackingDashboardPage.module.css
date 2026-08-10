@@ -7,16 +7,23 @@
   margin: 16px 0;
 }
 
-.windowControl {
-  max-width: 200px;
-}
-
-.drawWindowControl {
+.calculatePasses {
   display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
   gap: 16px;
-  max-width: 420px;
 }
 
-.drawWindowControl > * {
-  flex: 1;
+.calculatePasses > * {
+  flex: 1 1 180px;
+  max-width: 280px;
+}
+
+.globeLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  color: var(--dsv2-text-secondary);
+  font-size: 0.95em;
 }

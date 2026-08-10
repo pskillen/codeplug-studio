@@ -158,3 +158,17 @@ Three-PR arc adding a per-satellite detail page reachable from the Satellite Kep
 **Verify:** `SatelliteGlobe.test.tsx` mocks `react-globe.gl` to a stub component and asserts the `pointsData`/`pathsData`/`onPointClick` props it's called with (state/prop wiring, not rendered 3D output — WebGL doesn't run in jsdom). Live-verified in a real browser: globe rendered with the Earth texture, observer marker, live-moving satellite dots, visible orbit trails and footprint circles, and confirmed a globe click narrows the pass grid.
 
 **This closes the satellite-tracking epic's post-MVP follow-up series (#860) — every child ticket filed for the epic (#862, #863, #864, #865/#980, #866, #867/#998, #1002/#1003/#1005/#1007) has shipped, aside from the newly-filed #1009 toggle follow-up.**
+
+---
+
+## Wave 1 post-MVP polish
+
+**Plan:** `satellite_wave_1_fixes` — five stacked PRs from [follow-up-tickets.md](../../../tmp/features/satellite-followups/follow-up-tickets.md). Merge in order (#1025 → #1026 → #1027 → #1028 → #1029).
+
+| Phase | Issue                                                                                  | Status                                                            |
+| ----- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 1     | [#1012](https://github.com/pskillen/codeplug-studio/issues/1012) SatNOGS UI wiring     | PR [#1025](https://github.com/pskillen/codeplug-studio/pull/1025) |
+| 2     | [#1013](https://github.com/pskillen/codeplug-studio/issues/1013) Globe code-split      | PR [#1026](https://github.com/pskillen/codeplug-studio/pull/1026) |
+| 3     | [#1016](https://github.com/pskillen/codeplug-studio/issues/1016) Dashboard layout      | PR [#1027](https://github.com/pskillen/codeplug-studio/pull/1027) |
+| 4     | [#1018](https://github.com/pskillen/codeplug-studio/issues/1018) Map camera fit        | PR [#1028](https://github.com/pskillen/codeplug-studio/pull/1028) |
+| 5     | [#1019](https://github.com/pskillen/codeplug-studio/issues/1019) World-copy pass lines | PR [#1029](https://github.com/pskillen/codeplug-studio/pull/1029) |

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-3D orbital globe for the Tracking Dashboard (`TrackingDashboardPage.tsx`) — an observer marker, every enabled satellite as a live-moving dot, a ~90-minute orbit trail per satellite, and a visible-horizon footprint circle per satellite with a resolved live position. Renders with [`react-globe.gl`](https://github.com/vasturiano/react-globe.gl) (`three`/`three-globe` underneath). Sibling to [`SatelliteLiveMap`](../SatelliteLiveMap/SatelliteLiveMap.md) (2D Leaflet, single-satellite detail page) rather than a shared component — a 3D globe wraps longitude natively, so none of `SatelliteTrackMap/mapHelpers.ts`'s antimeridian-splitting applies, and this component tracks many satellites at once instead of one.
+3D orbital globe for the Tracking Dashboard (`TrackingDashboardPage.tsx`) — an observer marker, every enabled satellite as a live-moving dot, a ~90-minute orbit trail per satellite, and a visible-horizon footprint circle per satellite with a resolved live position. Renders with [`react-globe.gl`](https://github.com/vasturiano/react-globe.gl) (`three`/`three-globe` underneath). **Code-split:** `TrackingDashboardPage` lazy-loads this component behind `React.Suspense` so `three`/`react-globe.gl` are not in the main bundle for visitors who never open `/tracking`. Sibling to [`SatelliteLiveMap`](../SatelliteLiveMap/SatelliteLiveMap.md) (2D Leaflet, single-satellite detail page) rather than a shared component — a 3D globe wraps longitude natively, so none of `SatelliteTrackMap/mapHelpers.ts`'s antimeridian-splitting applies, and this component tracks many satellites at once instead of one.
 
 ## Props
 
@@ -16,14 +16,18 @@
 ## Usage
 
 ```tsx
-import SatelliteGlobe from '../../components/SatelliteGlobe/SatelliteGlobe.tsx';
+import { lazy, Suspense } from 'react';
 
-<SatelliteGlobe
-  observer={settings?.location ?? null}
-  satellites={enabledSatellites}
-  selectedSatelliteIds={selectedSatelliteIds}
-  onSelectSatellite={handleSelectSatelliteFromGlobe}
-/>;
+const SatelliteGlobe = lazy(() => import('../../components/SatelliteGlobe/SatelliteGlobe.tsx'));
+
+<Suspense fallback={<div>Loading 3D globe…</div>}>
+  <SatelliteGlobe
+    observer={settings?.location ?? null}
+    satellites={enabledSatellites}
+    selectedSatelliteIds={selectedSatelliteIds}
+    onSelectSatellite={handleSelectSatelliteFromGlobe}
+  />
+</Suspense>;
 ```
 
 ## Behaviour

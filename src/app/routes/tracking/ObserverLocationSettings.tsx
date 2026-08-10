@@ -163,46 +163,50 @@ export default function ObserverLocationSettings() {
 
   return (
     <Panel title="Observer location" sub="Used to calculate satellite pass times for this project.">
-      <p className={classes.current}>
-        Current: <strong>{loading ? 'Loading…' : currentLabel}</strong>
-      </p>
+      <div className={classes.layout}>
+        <div className={classes.inputsColumn}>
+          <p className={classes.current}>
+            Current: <strong>{loading ? 'Loading…' : currentLabel}</strong>
+          </p>
 
-      <div className={classes.row}>
-        <Button variant="secondary" onClick={handleUseGeolocation} disabled={locating}>
-          {locating ? 'Locating…' : 'Use my location'}
-        </Button>
-        {geoError ? <span className={classes.error}>{geoError}</span> : null}
-      </div>
+          <div className={classes.row}>
+            <Button variant="secondary" onClick={handleUseGeolocation} disabled={locating}>
+              {locating ? 'Locating…' : 'Use my location'}
+            </Button>
+            {geoError ? <span className={classes.error}>{geoError}</span> : null}
+          </div>
 
-      <div className={classes.row}>
-        <TextInput
-          label="Maidenhead locator"
-          placeholder="IO85vs"
-          value={locatorInput}
-          onChange={(event) => setLocatorInput(event.target.value)}
-        />
-        <Button variant="secondary" onClick={handleSetLocator}>
-          Set
-        </Button>
-      </div>
-      {locatorError ? <span className={classes.error}>{locatorError}</span> : null}
+          <div className={classes.row}>
+            <TextInput
+              label="Maidenhead locator"
+              placeholder="IO85vs"
+              value={locatorInput}
+              onChange={(event) => setLocatorInput(event.target.value)}
+            />
+            <Button variant="secondary" onClick={handleSetLocator}>
+              Set
+            </Button>
+          </div>
+          {locatorError ? <span className={classes.error}>{locatorError}</span> : null}
 
-      <div className={classes.section}>
-        <span className={classes.sectionLabel}>Search address</span>
-        <Combobox
-          inputValue={addressQuery}
-          onInputChange={setAddressQuery}
-          options={addressComboboxOptions}
-          loading={addressLoading}
-          onSelect={handleSelectAddress}
-          placeholder="Search an address or place…"
-          emptyMessage={addressEmptyMessage}
-        />
-      </div>
+          <div className={classes.section}>
+            <span className={classes.sectionLabel}>Search address</span>
+            <Combobox
+              inputValue={addressQuery}
+              onInputChange={setAddressQuery}
+              options={addressComboboxOptions}
+              loading={addressLoading}
+              onSelect={handleSelectAddress}
+              placeholder="Search an address or place…"
+              emptyMessage={addressEmptyMessage}
+            />
+          </div>
+        </div>
 
-      <div className={classes.section}>
-        <span className={classes.sectionLabel}>Or drop a pin</span>
-        <ObserverLocationMap value={settings?.location ?? null} onChange={handleMapChange} />
+        <div className={classes.mapColumn}>
+          <span className={classes.sectionLabel}>Or drop a pin</span>
+          <ObserverLocationMap value={settings?.location ?? null} onChange={handleMapChange} />
+        </div>
       </div>
     </Panel>
   );
