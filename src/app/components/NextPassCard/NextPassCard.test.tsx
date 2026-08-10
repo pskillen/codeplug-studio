@@ -92,4 +92,25 @@ describe('NextPassCard', () => {
     );
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
   });
+
+  it('renders the upcoming-passes jump link regardless of empty state, when an anchor id is given', () => {
+    render(
+      <NextPassCard
+        satelliteName="ISS"
+        nextPass={null}
+        nowMs={NOW_MS}
+        hasObserver={false}
+        upcomingPassesAnchorId="upcoming-passes"
+      />,
+    );
+    const link = screen.getByRole('link', { name: /jump to upcoming passes/i });
+    expect(link).toHaveAttribute('href', '#upcoming-passes');
+  });
+
+  it('omits the jump link when no anchor id is given', () => {
+    render(
+      <NextPassCard satelliteName="ISS" nextPass={UPCOMING_PASS} nowMs={NOW_MS} hasObserver />,
+    );
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
 });

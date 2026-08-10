@@ -3,7 +3,10 @@
 }
 
 .map {
-  height: 320px;
+  /* --satellite-live-panel-height is set by SatelliteDetailPage's .mapAndGlobe on desktop
+     widths so this map and the adjacent SatelliteGlobe render at the same height; unset
+     (falls back to 320px) everywhere else, including this component's other usages. */
+  height: var(--satellite-live-panel-height, 320px);
   width: 100%;
   border-radius: 8px;
 }

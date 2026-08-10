@@ -94,3 +94,22 @@
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
+
+/* Mobile-only — the caller's desktop layout keeps the upcoming-passes table close enough
+   that a jump link isn't needed there. Matches the satellite detail page's own stacked-layout
+   breakpoint, since that's what makes the table far enough away to warrant this link. */
+.jumpLink {
+  display: none;
+  font-size: 13px;
+  color: var(--dsv2-accent);
+}
+
+.jumpLink:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .jumpLink {
+    display: inline-block;
+  }
+}

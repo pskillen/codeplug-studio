@@ -25,6 +25,15 @@ export default function StyleguideV2ContainersPage() {
       </PageSection>
 
       <PageSection
+        title="Panel (collapsible)"
+        description="Disclosure header — e.g. defaulting a long section closed on narrow viewports (satellite detail page's Orbital elements)."
+      >
+        <Panel title="Orbital elements" collapsible defaultCollapsed>
+          <Text size="sm">Starts collapsed; click the title to expand.</Text>
+        </Panel>
+      </PageSection>
+
+      <PageSection
         title="Panel (danger)"
         description="Destructive tint for irreversible actions — delete build, remove project data."
       >

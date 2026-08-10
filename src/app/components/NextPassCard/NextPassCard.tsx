@@ -21,6 +21,13 @@ export interface NextPassCardProps {
   dopplerUplinkHz?: number | null;
   /** Doppler-corrected downlink, shown only while a pass is active. */
   dopplerDownlinkHz?: number | null;
+  /**
+   * Anchor id of the page's "Upcoming passes" table — when set, renders a mobile-only "Jump to
+   * upcoming passes" link so the countdown/AOS/LOS above stays reachable without scrolling past
+   * the rest of the page first. Hidden above the desktop breakpoint, where the table is already
+   * close by.
+   */
+  upcomingPassesAnchorId?: string;
 }
 
 function formatOptionalMhz(hz: number | null | undefined): string {
@@ -59,6 +66,7 @@ export default function NextPassCard({
   mode,
   dopplerUplinkHz,
   dopplerDownlinkHz,
+  upcomingPassesAnchorId,
 }: NextPassCardProps) {
   const active = nextPass ? isPassActive(nowMs, nextPass.aosAt, nextPass.losAt) : false;
   const countdown = nextPass
@@ -127,6 +135,12 @@ export default function NextPassCard({
           </div>
         </>
       )}
+
+      {upcomingPassesAnchorId ? (
+        <a href={`#${upcomingPassesAnchorId}`} className={classes.jumpLink}>
+          Jump to upcoming passes ↓
+        </a>
+      ) : null}
     </div>
   );
 }

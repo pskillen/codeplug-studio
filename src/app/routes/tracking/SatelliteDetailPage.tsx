@@ -20,6 +20,8 @@ import classes from './SatelliteDetailPage.module.css';
 
 const SatelliteGlobe = lazy(() => import('../../components/SatelliteGlobe/SatelliteGlobe.tsx'));
 
+const UPCOMING_PASSES_ANCHOR_ID = 'upcoming-passes';
+
 const FUTURE_WINDOW_HOURS = 72;
 const PAST_WINDOW_HOURS = 72;
 
@@ -146,6 +148,7 @@ export default function SatelliteDetailPage() {
           mode={primaryMode}
           dopplerUplinkHz={doppler.uplinkHz}
           dopplerDownlinkHz={doppler.downlinkHz}
+          upcomingPassesAnchorId={UPCOMING_PASSES_ANCHOR_ID}
         />
 
         <SatelliteDetailPanel satellite={satellite} enrichment={enrichment} />
@@ -157,28 +160,31 @@ export default function SatelliteDetailPage() {
             tleLine2={satellite.tleLine2}
             meanMotionRevPerDay={satellite.meanMotionRevPerDay}
           />
-          <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
-            <SatelliteGlobe
-              observer={settings?.location ?? null}
-              satellites={[
-                {
-                  id: satellite.id,
-                  name: satellite.name,
-                  noradId: satellite.noradId,
-                  tleLine1: satellite.tleLine1,
-                  tleLine2: satellite.tleLine2,
-                  meanMotionRevPerDay: satellite.meanMotionRevPerDay,
-                },
-              ]}
-              interestedSatelliteIds={new Set([satellite.id])}
-              highlightedSatelliteIds={new Set()}
-              pollIntervalMs={2000}
-            />
-          </Suspense>
+          <div className={classes.globeContainer}>
+            <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
+              <SatelliteGlobe
+                observer={settings?.location ?? null}
+                satellites={[
+                  {
+                    id: satellite.id,
+                    name: satellite.name,
+                    noradId: satellite.noradId,
+                    tleLine1: satellite.tleLine1,
+                    tleLine2: satellite.tleLine2,
+                    meanMotionRevPerDay: satellite.meanMotionRevPerDay,
+                  },
+                ]}
+                interestedSatelliteIds={new Set([satellite.id])}
+                highlightedSatelliteIds={new Set()}
+                pollIntervalMs={2000}
+              />
+            </Suspense>
+          </div>
         </div>
 
         <div className={classes.passLists}>
           <SatellitePassList
+            id={UPCOMING_PASSES_ANCHOR_ID}
             title="Upcoming passes"
             emptyMessage={`No upcoming passes in the next ${FUTURE_WINDOW_HOURS} hours.`}
             passes={future.passes}

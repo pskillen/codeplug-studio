@@ -27,6 +27,31 @@
   min-width: 0;
 }
 
+.collapseToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.chevron {
+  flex-shrink: 0;
+  transition: transform 120ms ease;
+}
+
+.chevronCollapsed {
+  transform: rotate(-90deg);
+}
+
 .danger {
   border-color: color-mix(in srgb, var(--dsv2-destructive) 40%, transparent);
   background: var(--dsv2-destructive-tint);

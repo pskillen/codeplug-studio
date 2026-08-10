@@ -1,9 +1,11 @@
+import { useMediaQuery } from '@mantine/hooks';
 import type { Satellite } from '@core/models/satellite.ts';
 import type {
   SatelliteEnrichment,
   SatelliteTransmitterInfo,
 } from '@core/models/satelliteEnrichment.ts';
 import { Panel } from '../../components/v2/index.ts';
+import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { hzToMhzString, optionalNumberToString } from '../../lib/units.ts';
 import classes from './SatelliteDetailPanel.module.css';
 
@@ -59,9 +61,21 @@ export default function SatelliteDetailPanel({
   satellite: Satellite;
   enrichment: SatelliteEnrichment | null;
 }) {
+  // Read synchronously on the first render (`getInitialValueInEffect: false`) — Panel's
+  // `defaultCollapsed` is only consumed once, at its own mount, so the default async
+  // (post-mount-effect) resolution would arrive one render too late to matter.
+  const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY, false, {
+    getInitialValueInEffect: false,
+  });
+
   return (
     <>
-      <Panel title="Orbital elements" sub={`Epoch ${new Date(satellite.epoch).toLocaleString()}`}>
+      <Panel
+        title="Orbital elements"
+        sub={`Epoch ${new Date(satellite.epoch).toLocaleString()}`}
+        collapsible
+        defaultCollapsed={isMobile}
+      >
         <div className={classes.grid}>
           <Field label="NORAD ID" value={String(satellite.noradId)} />
           <Field label="Source" value={satellite.source === 'celestrak' ? 'CelesTrak' : 'AMSAT'} />

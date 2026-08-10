@@ -6,19 +6,20 @@ Highlighted "next pass" summary card for a single satellite — AOS/LOS/max-elev
 
 ## Props
 
-| Prop                | Type                 | Notes                                                                                                                                           |
-| ------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `satelliteName`     | `string`             | —                                                                                                                                               |
-| `nextPass`          | `PassResult \| null` | Earliest upcoming pass, or `null` if none in the current look-ahead window                                                                      |
-| `nowMs`             | `number`             | Caller-supplied clock tick (e.g. `useNowTick`) — keeps the card a pure function of props                                                        |
-| `hasObserver`       | `boolean`            | Distinguishes "no observer configured" from "observer set, but no pass in this window"                                                          |
-| `uplinkHz`          | `number \| null`     | Static, from `Satellite.uplinkHz`                                                                                                               |
-| `downlinkHz`        | `number \| null`     | Static, from `Satellite.downlinkHz`                                                                                                             |
-| `uplinkToneHz`      | `number \| null`     | Static, from `Satellite.uplinkToneHz`                                                                                                           |
-| `downlinkToneHz`    | `number \| null`     | Static, from `Satellite.downlinkToneHz`                                                                                                         |
-| `mode`              | `string \| null`     | Best-effort, sourced from SatNOGS enrichment (`SatelliteEnrichment.transmitters[].mode`) — **not** a persisted `Satellite` field, see Behaviour |
-| `dopplerUplinkHz`   | `number \| null`     | Doppler-corrected uplink — rendered only while the pass is active                                                                               |
-| `dopplerDownlinkHz` | `number \| null`     | Doppler-corrected downlink — rendered only while the pass is active                                                                             |
+| Prop                     | Type                 | Notes                                                                                                                                           |
+| ------------------------ | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `satelliteName`          | `string`             | —                                                                                                                                               |
+| `nextPass`               | `PassResult \| null` | Earliest upcoming pass, or `null` if none in the current look-ahead window                                                                      |
+| `nowMs`                  | `number`             | Caller-supplied clock tick (e.g. `useNowTick`) — keeps the card a pure function of props                                                        |
+| `hasObserver`            | `boolean`            | Distinguishes "no observer configured" from "observer set, but no pass in this window"                                                          |
+| `uplinkHz`               | `number \| null`     | Static, from `Satellite.uplinkHz`                                                                                                               |
+| `downlinkHz`             | `number \| null`     | Static, from `Satellite.downlinkHz`                                                                                                             |
+| `uplinkToneHz`           | `number \| null`     | Static, from `Satellite.uplinkToneHz`                                                                                                           |
+| `downlinkToneHz`         | `number \| null`     | Static, from `Satellite.downlinkToneHz`                                                                                                         |
+| `mode`                   | `string \| null`     | Best-effort, sourced from SatNOGS enrichment (`SatelliteEnrichment.transmitters[].mode`) — **not** a persisted `Satellite` field, see Behaviour |
+| `dopplerUplinkHz`        | `number \| null`     | Doppler-corrected uplink — rendered only while the pass is active                                                                               |
+| `dopplerDownlinkHz`      | `number \| null`     | Doppler-corrected downlink — rendered only while the pass is active                                                                             |
+| `upcomingPassesAnchorId` | `string`             | When set, renders a mobile-only "Jump to upcoming passes" link pointing at `#<id>` — see Behaviour                                              |
 
 ## Usage
 
@@ -47,6 +48,7 @@ import NextPassCard from '../../components/NextPassCard/NextPassCard.tsx';
 - **No persisted `mode` field:** `Satellite` has no `mode` field — the `mode` prop is expected to be sourced from session-scoped SatNOGS enrichment (first `alive` transmitter, falling back to the first transmitter) by the caller, not a real per-satellite setting. Renders `—` when absent.
 - **Doppler shading:** `dopplerUplinkHz`/`dopplerDownlinkHz` render only when the pass is active _and_ the caller supplies a non-null value — a small accent-tinted chip beneath the static frequency, visually distinguishing the live-corrected value from the static one rather than replacing it.
 - **Empty states:** distinct messages for "no observer location configured" vs. "observer configured, but no pass in the current look-ahead window" — never renders a blank card.
+- **Jump-to-passes link:** rendered whenever `upcomingPassesAnchorId` is set — independent of the empty/happy-path branch above it, since the target table exists on the page either way. CSS-hidden above the satellite detail page's own 900px stacked-layout breakpoint (`NextPassCard.module.css`), where the table is already close enough not to need it.
 
 ## Related
 

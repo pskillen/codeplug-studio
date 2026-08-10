@@ -1,6 +1,8 @@
 .wrapper {
   position: relative;
-  height: 420px;
+  /* See SatelliteLiveMap.module.css's .map for why this reads the same custom property —
+     kept independent defaults (420px here) so the dashboard's standalone usage is unaffected. */
+  height: var(--satellite-live-panel-height, 420px);
   width: 100%;
   border-radius: 8px;
   overflow: hidden;
