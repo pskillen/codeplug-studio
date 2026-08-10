@@ -67,6 +67,25 @@
   gap: 10px;
 }
 
+.transmitterBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--dsv2-border);
+}
+
+.transmitterBlock:first-of-type {
+  padding-top: 0;
+  border-top: none;
+}
+
+.transmitterLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsv2-text-secondary);
+}
+
 .field {
   display: flex;
   flex-direction: column;
