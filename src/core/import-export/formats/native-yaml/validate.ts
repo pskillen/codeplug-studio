@@ -758,6 +758,10 @@ function parseSatellite(raw: unknown, index: number): Satellite {
     bstar: expectNumber(record.bstar, `${label}.bstar`),
     elementSetNumber: expectNumber(record.elementSetNumber, `${label}.elementSetNumber`),
     revolutionNumber: expectNumber(record.revolutionNumber, `${label}.revolutionNumber`),
+    uplinkHz: expectNullableNumber(record.uplinkHz, `${label}.uplinkHz`),
+    downlinkHz: expectNullableNumber(record.downlinkHz, `${label}.downlinkHz`),
+    uplinkToneHz: expectNullableNumber(record.uplinkToneHz, `${label}.uplinkToneHz`),
+    downlinkToneHz: expectNullableNumber(record.downlinkToneHz, `${label}.downlinkToneHz`),
   };
 }
 
