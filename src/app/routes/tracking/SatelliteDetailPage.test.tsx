@@ -28,10 +28,23 @@ const SATELLITE: Satellite = {
   bstar: 0.0002,
   elementSetNumber: 999,
   revolutionNumber: 12345,
-  uplinkHz: 145_800_000,
-  downlinkHz: 437_800_000,
-  uplinkToneHz: 67.0,
-  downlinkToneHz: null,
+  transmitters: [
+    {
+      id: 'transmitter-1',
+      label: 'Transmitter',
+      mode: null,
+      uplinkHz: 145_800_000,
+      downlinkHz: 437_800_000,
+      uplinkToneHz: 67.0,
+      downlinkToneHz: null,
+      source: 'manual',
+      satnogsUuid: null,
+      satnogsAlive: null,
+      satnogsStatus: null,
+      satnogsSyncedAt: null,
+      dismissed: false,
+    },
+  ],
 };
 
 const mockUseLibrary = vi.fn();

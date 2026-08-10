@@ -29,8 +29,26 @@ function satellite(id: string, noradId: number, uplinkHz: number | null = null):
     bstar: 0,
     elementSetNumber: 1,
     revolutionNumber: 1,
-    uplinkHz,
-    downlinkHz: null,
+    transmitters:
+      uplinkHz === null
+        ? []
+        : [
+            {
+              id: `${id}-transmitter-1`,
+              label: 'Transmitter',
+              mode: null,
+              uplinkHz,
+              downlinkHz: null,
+              uplinkToneHz: null,
+              downlinkToneHz: null,
+              source: 'manual',
+              satnogsUuid: null,
+              satnogsAlive: null,
+              satnogsStatus: null,
+              satnogsSyncedAt: null,
+              dismissed: false,
+            },
+          ],
   };
 }
 

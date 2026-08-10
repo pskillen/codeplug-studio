@@ -3,6 +3,8 @@ import { Select } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import type { Satellite } from '@core/models/satellite.ts';
+import { newId } from '@core/models/ids.ts';
+import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
 import { UnsavedChangesModal } from '../../components/ui/index.ts';
 import {
@@ -45,10 +47,16 @@ function satelliteSubtitle(entity: Satellite): string {
  * runs in a "new entity" mode.
  */
 export function SatelliteEditor({ entity }: { entity: Satellite }) {
-  const [uplink, setUplink] = useState(hzToMhzString(entity.uplinkHz ?? null));
-  const [downlink, setDownlink] = useState(hzToMhzString(entity.downlinkHz ?? null));
-  const [uplinkTone, setUplinkTone] = useState(optionalNumberToString(entity.uplinkToneHz));
-  const [downlinkTone, setDownlinkTone] = useState(optionalNumberToString(entity.downlinkToneHz));
+  // Minimal single-transmitter fix — real multi-transmitter editor UI lands in phase 3.
+  const firstTransmitter = entity.transmitters[0];
+  const [uplink, setUplink] = useState(hzToMhzString(firstTransmitter?.uplinkHz ?? null));
+  const [downlink, setDownlink] = useState(hzToMhzString(firstTransmitter?.downlinkHz ?? null));
+  const [uplinkTone, setUplinkTone] = useState(
+    optionalNumberToString(firstTransmitter?.uplinkToneHz ?? null),
+  );
+  const [downlinkTone, setDownlinkTone] = useState(
+    optionalNumberToString(firstTransmitter?.downlinkToneHz ?? null),
+  );
   const { save, saving, error } = useEntitySave('satellite-keps');
   const navigate = useNavigate();
   const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
@@ -78,12 +86,28 @@ export function SatelliteEditor({ entity }: { entity: Satellite }) {
   );
 
   function buildRow(): Satellite {
+    const uplinkHz = mhzStringToHz(uplink);
+    const downlinkHz = mhzStringToHz(downlink);
+    const uplinkToneHz = parseOptionalFloat(uplinkTone);
+    const downlinkToneHz = parseOptionalFloat(downlinkTone);
+    const updatedTransmitter: SatelliteTransmitter = {
+      id: firstTransmitter?.id ?? newId(),
+      label: firstTransmitter?.label ?? 'Transmitter',
+      mode: firstTransmitter?.mode ?? null,
+      uplinkHz,
+      downlinkHz,
+      uplinkToneHz,
+      downlinkToneHz,
+      source: firstTransmitter?.source ?? 'manual',
+      satnogsUuid: firstTransmitter?.satnogsUuid ?? null,
+      satnogsAlive: firstTransmitter?.satnogsAlive ?? null,
+      satnogsStatus: firstTransmitter?.satnogsStatus ?? null,
+      satnogsSyncedAt: firstTransmitter?.satnogsSyncedAt ?? null,
+      dismissed: firstTransmitter?.dismissed ?? false,
+    };
     return {
       ...entity,
-      uplinkHz: mhzStringToHz(uplink),
-      downlinkHz: mhzStringToHz(downlink),
-      uplinkToneHz: parseOptionalFloat(uplinkTone),
-      downlinkToneHz: parseOptionalFloat(downlinkTone),
+      transmitters: [updatedTransmitter, ...entity.transmitters.slice(1)],
     };
   }
 

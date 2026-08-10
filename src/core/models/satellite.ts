@@ -1,4 +1,5 @@
 import type { PersistableRow } from './revision.ts';
+import type { SatelliteTransmitter } from './satelliteTransmitter.ts';
 
 /** Upstream TLE source a satellite row was last refreshed from. */
 export type SatelliteSource = 'celestrak' | 'amsat';
@@ -43,13 +44,9 @@ export interface Satellite extends PersistableRow {
   revolutionNumber: number;
 
   /**
-   * Optional operator-entered uplink/downlink metadata for satellite QSOs — vendor-neutral
-   * scalars, no radio-specific caps or NORAD allowlists. Frequencies in Hz (same convention as
-   * `Channel.rxFrequency`/`txFrequency`); tones in Hz (CTCSS). `null`/`undefined` = not set.
-   * Radio write-packing of these fields is out of scope here (#855–#859).
+   * Onboard transmitters/transponders/beacons — vendor-neutral, no radio-specific caps or
+   * NORAD allowlists. Always an array; `[]` when nothing is known. Radio write-packing of
+   * these fields is out of scope here (#855–#859).
    */
-  uplinkHz?: number | null;
-  downlinkHz?: number | null;
-  uplinkToneHz?: number | null;
-  downlinkToneHz?: number | null;
+  transmitters: SatelliteTransmitter[];
 }

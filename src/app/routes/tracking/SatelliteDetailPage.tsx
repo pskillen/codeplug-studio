@@ -75,10 +75,12 @@ export default function SatelliteDetailPage() {
     : null;
   const nextPass = future.passes[0] ?? null;
   const nextPassActive = nextPass ? isPassActive(nowMs, nextPass.aosAt, nextPass.losAt) : false;
+  // Minimal single-transmitter fix — full multi-transmitter support lands in phase 5.
+  const firstTransmitter = satellite?.transmitters[0];
   const doppler = useDopplerShiftedFrequencies(
     satellite,
-    satellite?.uplinkHz,
-    satellite?.downlinkHz,
+    firstTransmitter?.uplinkHz,
+    firstTransmitter?.downlinkHz,
     observerLocation,
     nextPassActive,
     nowMs,
@@ -141,10 +143,10 @@ export default function SatelliteDetailPage() {
           nextPass={nextPass}
           nowMs={nowMs}
           hasObserver={future.hasObserver}
-          uplinkHz={satellite.uplinkHz}
-          downlinkHz={satellite.downlinkHz}
-          uplinkToneHz={satellite.uplinkToneHz}
-          downlinkToneHz={satellite.downlinkToneHz}
+          uplinkHz={firstTransmitter?.uplinkHz ?? null}
+          downlinkHz={firstTransmitter?.downlinkHz ?? null}
+          uplinkToneHz={firstTransmitter?.uplinkToneHz ?? null}
+          downlinkToneHz={firstTransmitter?.downlinkToneHz ?? null}
           mode={primaryMode}
           dopplerUplinkHz={doppler.uplinkHz}
           dopplerDownlinkHz={doppler.downlinkHz}

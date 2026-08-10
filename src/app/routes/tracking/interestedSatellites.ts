@@ -9,10 +9,12 @@ export function computeFrequencyQualifiedSatelliteIds(
 ): Set<string> {
   const ids = new Set<string>();
   for (const satellite of enabledSatellites) {
+    // Minimal single-transmitter fix — full multi-transmitter support lands in phase 5.
+    const firstTransmitter = satellite.transmitters[0];
     if (
       satelliteHasFrequencies(
-        satellite.uplinkHz,
-        satellite.downlinkHz,
+        firstTransmitter?.uplinkHz,
+        firstTransmitter?.downlinkHz,
         getEnrichmentForNoradId(satellite.noradId),
       )
     ) {

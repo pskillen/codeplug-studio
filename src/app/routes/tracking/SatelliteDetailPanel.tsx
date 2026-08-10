@@ -96,10 +96,23 @@ export default function SatelliteDetailPanel({
 
         <h3 className={classes.subheading}>Uplink / downlink</h3>
         <div className={classes.grid}>
-          <Field label="Uplink frequency" value={formatOptionalMhz(satellite.uplinkHz)} />
-          <Field label="Downlink frequency" value={formatOptionalMhz(satellite.downlinkHz)} />
-          <Field label="Uplink tone" value={formatOptionalHz(satellite.uplinkToneHz)} />
-          <Field label="Downlink tone" value={formatOptionalHz(satellite.downlinkToneHz)} />
+          {/* Minimal single-transmitter fix — full multi-transmitter panel lands in phase 4. */}
+          <Field
+            label="Uplink frequency"
+            value={formatOptionalMhz(satellite.transmitters[0]?.uplinkHz ?? null)}
+          />
+          <Field
+            label="Downlink frequency"
+            value={formatOptionalMhz(satellite.transmitters[0]?.downlinkHz ?? null)}
+          />
+          <Field
+            label="Uplink tone"
+            value={formatOptionalHz(satellite.transmitters[0]?.uplinkToneHz ?? null)}
+          />
+          <Field
+            label="Downlink tone"
+            value={formatOptionalHz(satellite.transmitters[0]?.downlinkToneHz ?? null)}
+          />
         </div>
       </Panel>
 

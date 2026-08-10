@@ -39,6 +39,7 @@ export function mergeSatelliteSet(
         updatedAt: isoNow(),
         enabled: true,
         source,
+        transmitters: [],
       });
       added += 1;
       continue;
@@ -54,6 +55,7 @@ export function mergeSatelliteSet(
       updatedAt: match.updatedAt,
       enabled: match.enabled,
       source,
+      transmitters: match.transmitters,
     });
     if (changed) {
       updated += 1;

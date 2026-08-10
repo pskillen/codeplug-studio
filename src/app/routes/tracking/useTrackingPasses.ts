@@ -88,8 +88,9 @@ export function useTrackingPasses(
                 noradId: satellite.noradId,
                 tleLine1: satellite.tleLine1,
                 tleLine2: satellite.tleLine2,
-                satelliteUplinkHz: satellite.uplinkHz ?? null,
-                satelliteDownlinkHz: satellite.downlinkHz ?? null,
+                // Minimal single-transmitter fix — full multi-transmitter support lands in phase 5.
+                satelliteUplinkHz: satellite.transmitters[0]?.uplinkHz ?? null,
+                satelliteDownlinkHz: satellite.transmitters[0]?.downlinkHz ?? null,
               }));
             }),
           );
