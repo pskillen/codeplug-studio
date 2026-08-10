@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { PassResult } from '@core/domain/satelliteTracking/types.ts';
-import { passPredictionClient } from '@integrations/satelliteTracking/passPredictionClient.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
+import { PASS_PREDICTION_DEBOUNCE_MS, requestSatellitePasses } from './usePassesForSatellite.ts';
 
 export interface SatellitePassRow extends PassResult {
   satelliteId: string;
@@ -20,8 +20,6 @@ export interface UseTrackingPassesResult {
 }
 
 export const DEFAULT_WINDOW_HOURS = 72;
-const STEP_MINUTES = 1;
-const DEBOUNCE_MS = 300;
 
 /**
  * Upcoming passes for every enabled satellite in the project library, over a
@@ -65,11 +63,11 @@ export function useTrackingPasses(
         try {
           const perSatellite = await Promise.all(
             enabledSatellites.map(async (satellite) => {
-              const results = await passPredictionClient.requestPasses(
+              const results = await requestSatellitePasses(
                 satellite.tleLine1,
                 satellite.tleLine2,
                 observer,
-                { fromAt, toAt, stepMinutes: STEP_MINUTES },
+                { fromAt, toAt },
               );
               return results.map((result) => ({
                 ...result,
@@ -90,7 +88,7 @@ export function useTrackingPasses(
         }
       };
       void run();
-    }, DEBOUNCE_MS);
+    }, PASS_PREDICTION_DEBOUNCE_MS);
 
     return () => {
       cancelled = true;

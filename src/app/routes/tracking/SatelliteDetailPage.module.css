@@ -1,0 +1,11 @@
+.passLists {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .passLists {
+    grid-template-columns: 1fr;
+  }
+}
