@@ -6,12 +6,13 @@
 
 ## Props
 
-| Prop            | Type                                   | Notes                                                                                                  |
-| --------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `observer`      | `{ lat: number; lon: number } \| null` | Observer location marker; included in auto-fit bounds when set                                         |
-| `selectedPass`  | `SelectedPass \| null`                 | `{ satelliteName, tleLine1, tleLine2, aosAt, losAt }` — `null` shows a hint overlay instead of a track |
-| `drawBehindMin` | `number` (optional, default `0`)       | Minutes to extend the drawn track **before** `aosAt`, relative to the pass window                      |
-| `drawAheadMin`  | `number` (optional, default `0`)       | Minutes to extend the drawn track **past** `losAt`, relative to the pass window                        |
+| Prop            | Type                                   | Notes                                                                                      |
+| --------------- | -------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `observer`      | `{ lat: number; lon: number } \| null` | Observer location marker; included in auto-fit bounds when set                             |
+| `selectedPass`  | `SelectedPass \| null`                 | When set, draws only this pass (overrides `defaultPasses`)                                 |
+| `defaultPasses` | `SelectedPass[]` (optional)            | Next pass per satellite when a pass-grid satellite filter is active and no row is selected |
+| `drawBehindMin` | `number` (optional, default `0`)       | Minutes to extend the drawn track **before** `aosAt`, relative to the pass window          |
+| `drawAheadMin`  | `number` (optional, default `0`)       | Minutes to extend the drawn track **past** `losAt`, relative to the pass window            |
 
 ## Usage
 
@@ -29,7 +30,7 @@ import SatelliteTrackMap from '../../components/SatelliteTrackMap/SatelliteTrack
 - **World-copy duplication:** after antimeridian splitting, each segment is also drawn at `lng ± 360°` via `duplicateSegmentsForWorldCopies` so pass lines remain visible when Leaflet's tile layer wraps at low zoom (a separate problem from the antimeridian stretch fix).
 - No 3D/2D toggle — there is no 3D globe in this plan's scope ([#866](https://github.com/pskillen/codeplug-studio/issues/866) deferred); a visible-but-dead control would be worse than no control.
 - **Camera auto-fit:** `MapViewController` fits bounds to the sampled track plus the observer on initial pass selection. After the operator pans or zooms, auto-fit is suppressed until they select a different pass — draw-ahead/behind tweaks and live track refreshes no longer fight manual camera control.
-- With no `selectedPass`, the map still renders (centered on a world view) with a "Select a pass below" hint overlay.
+- With no `selectedPass`, draws every entry in `defaultPasses` when the dashboard has an active satellite filter (empty filter = no auto-draw — ground-track sampling is expensive). The hint overlay appears when both `selectedPass` and `defaultPasses` are empty.
 
 ## Related
 

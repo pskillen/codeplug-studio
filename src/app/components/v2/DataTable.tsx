@@ -16,6 +16,8 @@ import {
   DataTableBulkReorderProvider,
   DataTableBulkReorderSortable,
 } from '../../lib/dataTable/DataTableBulkReorder.tsx';
+import { useVirtualDataTableRows } from '../../lib/dataTable/useVirtualDataTableRows.ts';
+import type { DataTableVirtualizeMode } from '../../lib/dataTable/virtualization.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import SelectedItemDragHandle, {
@@ -101,13 +103,17 @@ export interface DataTableProps<T> {
   getChildren?: (row: T) => T[] | undefined;
   /** `'extreme'` adds a sticky header and a max-height scroll region for dense tables. */
   scale?: 'default' | 'extreme';
+  /** Window tbody rows when the row count is large. `'extreme'` scale forces this on. */
+  virtualize?: DataTableVirtualizeMode;
+  estimatedRowHeight?: number;
+  virtualizeOverscan?: number;
   /** Controlled column visibility for `hideable` columns; uncontrolled (per-column `defaultVisible`) if omitted. */
   visibleKeys?: string[];
   onVisibleKeysChange?: (keys: string[]) => void;
   /** Makes rows clickable; disabled for rows failing `isRowSelectable` when `selectable` is set. */
   onRowActivate?: (row: T) => void;
-  /** `'nestParent'` gives the row a quiet background. */
-  getRowVariant?: (row: T) => 'nestParent' | undefined;
+  /** `'nestParent'` quiet background; `'active'` highlight for live in-progress rows (e.g. above-horizon passes). */
+  getRowVariant?: (row: T) => 'nestParent' | 'active' | undefined;
   /**
    * Replaces the per-column grid cells with this card render on narrow
    * viewports (below `MOBILE_MAX_WIDTH_MEDIA_QUERY`) — an alternative to
@@ -181,7 +187,7 @@ interface DataTableBodyRowProps<T> {
   topLevelIndex: number;
   isExpanded: boolean;
   onToggleExpanded: (key: string) => void;
-  rowVariant: 'nestParent' | undefined;
+  rowVariant: 'nestParent' | 'active' | undefined;
   activatable: boolean;
   onActivate: () => void;
   useCardLayout: boolean;
@@ -242,6 +248,7 @@ function DataTableBodyRow<T>({
         useCardLayout ? classes.dataRowCard : '',
         selectable && !rowSelectable ? classes.rowGated : '',
         rowVariant === 'nestParent' ? classes.rowNestParent : '',
+        rowVariant === 'active' ? classes.rowActive : '',
         activatable ? classes.rowActivatable : '',
       ]
         .filter(Boolean)
@@ -353,6 +360,9 @@ export default function DataTable<T>({
   nested = false,
   getChildren,
   scale = 'default',
+  virtualize = 'auto',
+  estimatedRowHeight,
+  virtualizeOverscan,
   visibleKeys: controlledVisibleKeys,
   onVisibleKeysChange,
   onRowActivate,
@@ -501,6 +511,22 @@ export default function DataTable<T>({
     : [];
   const dragSortableKeys = onReorder ? reorderableRowKeys : [];
 
+  const effectiveVirtualize: DataTableVirtualizeMode =
+    nested || (dragSortableKeys.length > 0 && onReorder)
+      ? false
+      : scale === 'extreme'
+        ? true
+        : virtualize;
+
+  const { scrollRef, virtualized, virtualRows, paddingTop, paddingBottom } =
+    useVirtualDataTableRows({
+      rowCount: flattenedRows.length,
+      virtualize: effectiveVirtualize,
+      estimatedRowHeight,
+      virtualizeOverscan,
+      hasRowActivate: onRowActivate !== undefined,
+    });
+
   const gridTemplateColumns = useCardLayout
     ? '1fr'
     : [
@@ -590,7 +616,13 @@ export default function DataTable<T>({
         </div>
       ) : null}
 
-      <div className={classes.table} role="table" data-scale={scale}>
+      <div
+        className={classes.table}
+        role="table"
+        data-scale={scale}
+        ref={scrollRef}
+        data-virtualized={virtualized || undefined}
+      >
         <div className={classes.headerRow} role="row" style={{ gridTemplateColumns }}>
           {!useCardLayout && nested ? (
             <div role="columnheader" className={classes.leadCell} />
@@ -672,7 +704,17 @@ export default function DataTable<T>({
               onSetOrder={setOrder}
             >
               <DataTableBulkReorderSortable sortableKeys={dragSortableKeys}>
-                {flattenedRows.map((flat) => {
+                {virtualized && paddingTop > 0 ? (
+                  <div
+                    className={classes.virtualSpacer}
+                    style={{ height: paddingTop }}
+                    aria-hidden
+                  />
+                ) : null}
+                {(virtualized
+                  ? virtualRows.map((virtualRow) => flattenedRows[virtualRow.index]!)
+                  : flattenedRows
+                ).map((flat) => {
                   const rowSelectable = rowIsSelectable(flat.row);
                   const topLevelIndex =
                     flat.depth === 0 ? rows.findIndex((r) => getRowId(r) === flat.key) : -1;
@@ -704,6 +746,13 @@ export default function DataTable<T>({
                     />
                   );
                 })}
+                {virtualized && paddingBottom > 0 ? (
+                  <div
+                    className={classes.virtualSpacer}
+                    style={{ height: paddingBottom }}
+                    aria-hidden
+                  />
+                ) : null}
               </DataTableBulkReorderSortable>
             </DataTableBulkReorderProvider>
           )}

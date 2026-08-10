@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import DesignSystemV2Provider from '../../components/v2/DesignSystemV2Provider.tsx';
+import { filterTrackingPasses } from './passTime.ts';
 import PassGrid from './PassGrid.tsx';
 import type { SatellitePassRow } from './useTrackingPasses.ts';
 
@@ -9,8 +10,16 @@ const PASSES: SatellitePassRow[] = [
   {
     satelliteId: 'sat-1',
     satelliteName: 'ISS',
+    noradId: 25544,
     tleLine1: '',
     tleLine2: '',
+    satelliteUplinkHz: null,
+    satelliteDownlinkHz: null,
+    hasFrequencies: false,
+    txDisplay: '—',
+    rxDisplay: '—',
+    txSortHz: null,
+    rxSortHz: null,
     aosAt: '2026-08-10T01:00:00.000Z',
     losAt: '2026-08-10T01:10:00.000Z',
     maxElevationAt: '2026-08-10T01:05:00.000Z',
@@ -20,8 +29,16 @@ const PASSES: SatellitePassRow[] = [
   {
     satelliteId: 'sat-2',
     satelliteName: 'AO-91',
+    noradId: 43017,
     tleLine1: '',
     tleLine2: '',
+    satelliteUplinkHz: null,
+    satelliteDownlinkHz: null,
+    hasFrequencies: false,
+    txDisplay: '—',
+    rxDisplay: '—',
+    txSortHz: null,
+    rxSortHz: null,
     aosAt: '2026-08-10T02:00:00.000Z',
     losAt: '2026-08-10T02:08:00.000Z',
     maxElevationAt: '2026-08-10T02:04:00.000Z',
@@ -44,16 +61,18 @@ describe('PassGrid', () => {
     expect(screen.getByRole('cell', { name: 'AO-91' })).toBeInTheDocument();
   });
 
-  it('narrows rows to the checked satellites', () => {
+  it('renders only the pre-filtered satellite rows passed from the dashboard', () => {
     render(
       <MemoryRouter>
         <DesignSystemV2Provider>
           <PassGrid
-            passes={PASSES}
+            passes={PASSES.filter((pass) => pass.satelliteId === 'sat-1')}
+            allPasses={PASSES}
+            totalRowCount={PASSES.length}
             loading={false}
             error={null}
             windowLabel="72 hours"
-            selectedSatelliteIds={new Set(['sat-1'])}
+            hasActiveFilter
           />
         </DesignSystemV2Provider>
       </MemoryRouter>,
@@ -63,16 +82,19 @@ describe('PassGrid', () => {
     expect(screen.queryByRole('cell', { name: 'AO-91' })).not.toBeInTheDocument();
   });
 
-  it('combines the satellite filter with the min-elevation filter', () => {
+  it('renders only passes that survive the shared min-elevation filter', () => {
+    const filtered = filterTrackingPasses(PASSES, '20', new Set(['sat-1', 'sat-2']));
     render(
       <MemoryRouter>
         <DesignSystemV2Provider>
           <PassGrid
-            passes={PASSES}
+            passes={filtered}
+            allPasses={PASSES}
+            totalRowCount={PASSES.length}
             loading={false}
             error={null}
             windowLabel="72 hours"
-            minElevation="20"
+            hasActiveFilter
           />
         </DesignSystemV2Provider>
       </MemoryRouter>,

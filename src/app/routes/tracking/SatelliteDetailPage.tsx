@@ -127,6 +127,7 @@ export default function SatelliteDetailPage() {
             loading={future.loading}
             error={future.error}
             hasObserver={future.hasObserver}
+            countdownRowLimit={3}
           />
           <SatellitePassList
             title="Past passes"

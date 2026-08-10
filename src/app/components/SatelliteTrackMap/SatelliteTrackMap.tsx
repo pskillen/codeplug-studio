@@ -26,7 +26,10 @@ export interface SelectedPass {
 
 export interface SatelliteTrackMapProps {
   observer: { lat: number; lon: number } | null;
+  /** When set, draws only this pass and overrides `defaultPasses`. */
   selectedPass: SelectedPass | null;
+  /** Next pass per filtered satellite when no row is selected. */
+  defaultPasses?: SelectedPass[];
   /** Minutes to extend the drawn track before the pass's `aosAt`. Default 0 (strict AOS start). */
   drawBehindMin?: number;
   /** Minutes to extend the drawn track past the pass's `losAt`. Default 0 (strict LOS end). */
@@ -50,12 +53,28 @@ export function computeTrackBounds(
   return { fromAt, toAt };
 }
 
+function samplePassSegments(
+  pass: SelectedPass,
+  drawBehindMin: number,
+  drawAheadMin: number,
+): LatLon[][] {
+  const { fromAt, toAt } = computeTrackBounds(pass.aosAt, pass.losAt, drawBehindMin, drawAheadMin);
+  const points = sampleGroundTrack(
+    pass.tleLine1,
+    pass.tleLine2,
+    fromAt,
+    toAt,
+    GROUND_TRACK_STEP_SEC,
+  );
+  return splitAtAntimeridian(points);
+}
+
 function MapViewController({
   points,
   passKey,
 }: {
   points: LatLon[];
-  /** Stable identity for the selected pass — a change clears manual pan/zoom and re-fits. */
+  /** Stable identity for the selected/default pass set — a change clears manual pan/zoom and re-fits. */
   passKey: string | null;
 }) {
   const map = useMap();
@@ -105,38 +124,41 @@ function MapViewController({
 export default function SatelliteTrackMap({
   observer,
   selectedPass,
+  defaultPasses = [],
   drawBehindMin = 0,
   drawAheadMin = 0,
 }: SatelliteTrackMapProps) {
-  const segments = useMemo(() => {
-    if (!selectedPass) return [];
-    const { fromAt, toAt } = computeTrackBounds(
-      selectedPass.aosAt,
-      selectedPass.losAt,
-      drawBehindMin,
-      drawAheadMin,
-    );
-    const points = sampleGroundTrack(
-      selectedPass.tleLine1,
-      selectedPass.tleLine2,
-      fromAt,
-      toAt,
-      GROUND_TRACK_STEP_SEC,
-    );
-    return splitAtAntimeridian(points);
-  }, [selectedPass, drawBehindMin, drawAheadMin]);
+  const passesToDraw = useMemo(
+    () => (selectedPass ? [selectedPass] : defaultPasses),
+    [selectedPass, defaultPasses],
+  );
 
-  const renderedSegments = useMemo(() => duplicateSegmentsForWorldCopies(segments), [segments]);
+  const trackLayers = useMemo(() => {
+    return passesToDraw.map((pass) => {
+      const segments = samplePassSegments(pass, drawBehindMin, drawAheadMin);
+      return {
+        key: `${pass.satelliteName}:${pass.aosAt}:${pass.losAt}`,
+        rendered: duplicateSegmentsForWorldCopies(segments),
+      };
+    });
+  }, [passesToDraw, drawBehindMin, drawAheadMin]);
 
   const boundsPoints = useMemo(() => {
-    const points = segments.flat();
+    const points: LatLon[] = [];
+    for (const layer of trackLayers) {
+      for (const copy of layer.rendered) {
+        points.push(...copy.segment);
+      }
+    }
     if (observer) points.push([observer.lat, observer.lon]);
     return points;
-  }, [segments, observer]);
+  }, [trackLayers, observer]);
 
   const passKey = selectedPass
     ? `${selectedPass.satelliteName}:${selectedPass.aosAt}:${selectedPass.losAt}`
-    : null;
+    : defaultPasses.length > 0
+      ? defaultPasses.map((pass) => `${pass.satelliteName}:${pass.aosAt}`).join('|')
+      : null;
 
   return (
     <div className={classes.wrapper}>
@@ -153,17 +175,21 @@ export default function SatelliteTrackMap({
         {observer ? (
           <Marker position={[observer.lat, observer.lon]} icon={observerDivIcon()} />
         ) : null}
-        {renderedSegments.map((copy, index) => (
-          <Polyline
-            key={`${copy.worldOffset}-${index}`}
-            positions={copy.segment}
-            pathOptions={{ color: '#4d7cff', weight: 2 }}
-          />
-        ))}
+        {trackLayers.flatMap((layer) =>
+          layer.rendered.map((copy, index) => (
+            <Polyline
+              key={`${layer.key}:${copy.worldOffset}-${index}`}
+              positions={copy.segment}
+              pathOptions={{ color: '#4d7cff', weight: 2 }}
+            />
+          )),
+        )}
         <MapViewController points={boundsPoints} passKey={passKey} />
       </MapContainer>
-      {!selectedPass ? (
-        <p className={classes.hint}>Select a pass below to preview its ground track.</p>
+      {!selectedPass && defaultPasses.length === 0 ? (
+        <p className={classes.hint}>
+          Select satellites in the filter or a pass row below to preview a ground track.
+        </p>
       ) : null}
     </div>
   );

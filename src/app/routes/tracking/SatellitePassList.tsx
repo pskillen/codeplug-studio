@@ -1,5 +1,13 @@
+import { useMemo, useState } from 'react';
 import type { PassResult } from '@core/domain/satelliteTracking/types.ts';
-import { DataTable, Panel, type DataTableColumn } from '../../components/v2/index.ts';
+import {
+  DataTable,
+  Panel,
+  type DataTableColumn,
+  type DataTableSortState,
+} from '../../components/v2/index.ts';
+import { formatNextPassCountdown, isPassActive } from './passTime.ts';
+import { useNowTick } from './useNowTick.ts';
 import classes from './PassGrid.module.css';
 
 function formatDurationSec(durationSec: number): string {
@@ -8,12 +16,13 @@ function formatDurationSec(durationSec: number): string {
   return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
 }
 
-function DateTimeCell({ iso }: { iso: string }) {
+function DateTimeCell({ iso, countdown }: { iso: string; countdown?: string | null }) {
   const date = new Date(iso);
   return (
     <div className={classes.dateTimeCell}>
       <span>{date.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</span>
       <span className={classes.utc}>{date.toISOString().slice(11, 16)} UTC</span>
+      {countdown ? <span className={classes.countdown}>{countdown}</span> : null}
     </div>
   );
 }
@@ -25,6 +34,8 @@ export interface SatellitePassListProps {
   error: string | null;
   hasObserver: boolean;
   emptyMessage: string;
+  /** When set, show a live countdown on the AOS column for the first N passes (by AOS order). */
+  countdownRowLimit?: number;
 }
 
 /**
@@ -39,37 +50,58 @@ export default function SatellitePassList({
   error,
   hasObserver,
   emptyMessage,
+  countdownRowLimit = 0,
 }: SatellitePassListProps) {
-  const columns: DataTableColumn<PassResult>[] = [
-    {
-      key: 'aos',
-      header: 'AOS',
-      sortable: true,
-      sortValue: (row) => row.aosAt,
-      render: (row) => <DateTimeCell iso={row.aosAt} />,
-    },
-    {
-      key: 'los',
-      header: 'LOS',
-      sortable: true,
-      sortValue: (row) => row.losAt,
-      render: (row) => <DateTimeCell iso={row.losAt} />,
-    },
-    {
-      key: 'duration',
-      header: 'Duration',
-      sortable: true,
-      sortValue: (row) => row.durationSec,
-      render: (row) => formatDurationSec(row.durationSec),
-    },
-    {
-      key: 'maxElevation',
-      header: 'Max elevation',
-      sortable: true,
-      sortValue: (row) => row.maxElevationDeg,
-      render: (row) => `${row.maxElevationDeg.toFixed(1)}°`,
-    },
-  ];
+  const [sort, setSort] = useState<DataTableSortState | null>({ key: 'aos', direction: 'asc' });
+  const nowMs = useNowTick();
+
+  const countdownAosSet = useMemo(() => {
+    if (countdownRowLimit <= 0) return new Set<string>();
+    const sorted = [...passes].sort((a, b) => a.aosAt.localeCompare(b.aosAt));
+    const set = new Set<string>();
+    for (let i = 0; i < Math.min(countdownRowLimit, sorted.length); i++) {
+      set.add(sorted[i].aosAt);
+    }
+    return set;
+  }, [passes, countdownRowLimit]);
+
+  const columns = useMemo((): DataTableColumn<PassResult>[] => {
+    return [
+      {
+        key: 'aos',
+        header: 'AOS',
+        sortable: true,
+        sortValue: (row) => row.aosAt,
+        render: (row) => {
+          const countdown = countdownAosSet.has(row.aosAt)
+            ? formatNextPassCountdown(nowMs, row.aosAt, row.losAt)
+            : null;
+          return <DateTimeCell iso={row.aosAt} countdown={countdown} />;
+        },
+      },
+      {
+        key: 'los',
+        header: 'LOS',
+        sortable: true,
+        sortValue: (row) => row.losAt,
+        render: (row) => <DateTimeCell iso={row.losAt} />,
+      },
+      {
+        key: 'duration',
+        header: 'Duration',
+        sortable: true,
+        sortValue: (row) => row.durationSec,
+        render: (row) => formatDurationSec(row.durationSec),
+      },
+      {
+        key: 'maxElevation',
+        header: 'Max elevation',
+        sortable: true,
+        sortValue: (row) => row.maxElevationDeg,
+        render: (row) => `${row.maxElevationDeg.toFixed(1)}°`,
+      },
+    ];
+  }, [countdownAosSet, nowMs]);
 
   return (
     <Panel title={title}>
@@ -85,6 +117,11 @@ export default function SatellitePassList({
             rows={passes}
             getRowId={(row) => `${row.aosAt}:${row.losAt}`}
             totalRowCount={passes.length}
+            sort={sort}
+            onSortChange={setSort}
+            getRowVariant={(row) =>
+              isPassActive(nowMs, row.aosAt, row.losAt) ? 'active' : undefined
+            }
             emptyMessage={loading ? 'Computing passes…' : emptyMessage}
           />
         </>

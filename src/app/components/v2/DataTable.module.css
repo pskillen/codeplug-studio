@@ -221,6 +221,10 @@
   flex-direction: column;
 }
 
+.virtualSpacer {
+  flex: none;
+}
+
 .dataRow {
   display: grid;
   align-items: center;
@@ -241,6 +245,10 @@
 
 .rowNestParent {
   background: var(--dsv2-surface-quiet);
+}
+
+.rowActive {
+  background: color-mix(in srgb, var(--dsv2-accent) 12%, transparent);
 }
 
 .rowActivatable {

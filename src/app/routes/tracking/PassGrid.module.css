@@ -44,3 +44,16 @@
 .satelliteLink:hover {
   text-decoration: underline;
 }
+
+.satelliteCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+}
+
+.countdown {
+  font-size: 0.85em;
+  color: var(--dsv2-text-secondary);
+  font-variant-numeric: tabular-nums;
+}

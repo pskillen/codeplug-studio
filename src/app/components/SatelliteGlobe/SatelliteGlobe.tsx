@@ -3,28 +3,31 @@ import Globe from 'react-globe.gl';
 import {
   computeGlobePointsAndFootprints,
   computeGlobeTrailPaths,
+  filterGlobeSatellitesByInterest,
   type GlobeObserver,
   type GlobePath,
   type GlobePoint,
   type GlobeSatellite,
 } from './buildGlobeData.ts';
 import { useLiveSatellitePositions } from './useLiveSatellitePositions.ts';
+import { altitudeKmToGlobeRadiusUnits } from './globeAltitude.ts';
 import classes from './SatelliteGlobe.module.css';
 
 const GLOBE_IMAGE_URL = '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
 const BACKGROUND_COLOR = '#000011';
 
 const OBSERVER_COLOR = '#4d7cff';
-const SATELLITE_SELECTED_COLOR = '#f7b84d';
-const SATELLITE_DIMMED_COLOR = '#6b6b6b';
+const SATELLITE_COLOR = '#f7b84d';
 const FOOTPRINT_COLOR = 'rgba(247, 184, 77, 0.5)';
 const TRAIL_COLOR = 'rgba(77, 124, 255, 0.8)';
 
 export interface SatelliteGlobeProps {
   observer: GlobeObserver | null;
   satellites: GlobeSatellite[];
-  /** Satellite ids the pass grid is currently filtered to. Empty set = no filter (all shown at full brightness). */
-  selectedSatelliteIds: Set<string>;
+  /** Dashboard interest filter — only these satellites render (dots, trails, footprints). */
+  interestedSatelliteIds: Set<string>;
+  /** Pass-grid multi-select / globe click — highlights matching dots when non-empty. */
+  highlightedSatelliteIds: Set<string>;
   /** Click a satellite dot to filter the pass grid to it (toggles off if it's the only one already selected). */
   onSelectSatellite: (satelliteId: string) => void;
 }
@@ -35,13 +38,19 @@ export interface SatelliteGlobeProps {
 function pointColor(point: object): string {
   const p = point as GlobePoint;
   if (p.kind === 'observer') return OBSERVER_COLOR;
-  return p.selected ? SATELLITE_SELECTED_COLOR : SATELLITE_DIMMED_COLOR;
+  return SATELLITE_COLOR;
 }
 
 function pointRadius(point: object): number {
   const p = point as GlobePoint;
   if (p.kind === 'observer') return 0.35;
-  return p.selected ? 0.4 : 0.28;
+  return 0.4;
+}
+
+function pointAltitude(point: object): number {
+  const p = point as GlobePoint;
+  if (p.kind === 'observer') return 0;
+  return altitudeKmToGlobeRadiusUnits(p.altitudeKm);
 }
 
 function pathColor(path: object): string {
@@ -71,7 +80,8 @@ function pathDashGap(path: object): number {
 export default function SatelliteGlobe({
   observer,
   satellites,
-  selectedSatelliteIds,
+  interestedSatelliteIds,
+  highlightedSatelliteIds,
   onSelectSatellite,
 }: SatelliteGlobeProps) {
   // Anchor instant for the orbit-trail window, fixed at mount so trails don't resample on
@@ -96,7 +106,12 @@ export default function SatelliteGlobe({
     return () => resizeObserver.disconnect();
   }, []);
 
-  const livePositions = useLiveSatellitePositions(satellites);
+  const visibleSatellites = useMemo(
+    () => filterGlobeSatellitesByInterest(satellites, interestedSatelliteIds),
+    [satellites, interestedSatelliteIds],
+  );
+
+  const livePositions = useLiveSatellitePositions(visibleSatellites);
 
   // Trails are SGP4-sampled at ~180 points each and don't depend on the live-position poll
   // (the window is anchored at mount) — memoized separately from `livePositions` so a poll
@@ -104,14 +119,19 @@ export default function SatelliteGlobe({
   // doc comment: with dozens of enabled satellites, sharing one dependency array here stalled
   // the main thread in live-browser testing.
   const trailPaths = useMemo(
-    () => computeGlobeTrailPaths(satellites, anchorAt),
-    [satellites, anchorAt],
+    () => computeGlobeTrailPaths(visibleSatellites, anchorAt),
+    [visibleSatellites, anchorAt],
   );
 
   const { points, footprintPaths } = useMemo(
     () =>
-      computeGlobePointsAndFootprints(observer, satellites, livePositions, selectedSatelliteIds),
-    [observer, satellites, livePositions, selectedSatelliteIds],
+      computeGlobePointsAndFootprints(
+        observer,
+        visibleSatellites,
+        livePositions,
+        highlightedSatelliteIds,
+      ),
+    [observer, visibleSatellites, livePositions, highlightedSatelliteIds],
   );
 
   const paths = useMemo(() => [...trailPaths, ...footprintPaths], [trailPaths, footprintPaths]);
@@ -122,7 +142,7 @@ export default function SatelliteGlobe({
     onSelectSatellite(globePoint.id);
   };
 
-  const hasLivePositions = satellites.length === 0 || livePositions.size > 0;
+  const hasLivePositions = visibleSatellites.length === 0 || livePositions.size > 0;
 
   return (
     <div className={classes.wrapper} ref={containerRef}>
@@ -137,9 +157,12 @@ export default function SatelliteGlobe({
         pointLng="lng"
         pointColor={pointColor}
         pointRadius={pointRadius}
-        pointAltitude={0.01}
+        pointAltitude={pointAltitude}
         pointLabel={(point: object) => (point as GlobePoint).name}
         onPointClick={handlePointClick}
+        // Zero every layer transition so live-position polls snap geometry instead of
+        // morphing (points default to 1000ms — very visible now that dots sit at altitude).
+        pointsTransitionDuration={0}
         pathsData={paths}
         pathPoints="points"
         pathPointLat={(p: unknown) => (p as [number, number, number])[0]}
@@ -148,7 +171,11 @@ export default function SatelliteGlobe({
         pathColor={pathColor}
         pathDashLength={pathDashLength}
         pathDashGap={pathDashGap}
+        pathDashAnimateTime={0}
         pathStroke={1}
+        pathTransitionDuration={0}
+        arcsTransitionDuration={0}
+        labelsTransitionDuration={0}
       />
       {!hasLivePositions ? (
         <p className={classes.hint}>Acquiring live satellite positions…</p>

@@ -172,3 +172,15 @@ Three-PR arc adding a per-satellite detail page reachable from the Satellite Kep
 | 3     | [#1016](https://github.com/pskillen/codeplug-studio/issues/1016) Dashboard layout      | PR [#1027](https://github.com/pskillen/codeplug-studio/pull/1027) |
 | 4     | [#1018](https://github.com/pskillen/codeplug-studio/issues/1018) Map camera fit        | PR [#1028](https://github.com/pskillen/codeplug-studio/pull/1028) |
 | 5     | [#1019](https://github.com/pskillen/codeplug-studio/issues/1019) World-copy pass lines | PR [#1029](https://github.com/pskillen/codeplug-studio/pull/1029) |
+
+---
+
+## Wave 2 post-MVP polish
+
+**Plan:** `satellite_wave_2_fixes` — one PR from [follow-up-tickets.md](../../../tmp/features/satellite-followups/follow-up-tickets.md) Wave 2.
+
+| Phase | Issue                                                                                         | Status                                           |
+| ----- | --------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| 6     | [#1014](https://github.com/pskillen/codeplug-studio/issues/1014) Globe throttle + filter-hide | Branch `1014/pskillen/wave2-globe-countdown-map` |
+| 7     | [#1015](https://github.com/pskillen/codeplug-studio/issues/1015) Countdown + row highlight    | same PR                                          |
+| 8     | [#1017](https://github.com/pskillen/codeplug-studio/issues/1017) Default ground-track map     | same PR                                          |

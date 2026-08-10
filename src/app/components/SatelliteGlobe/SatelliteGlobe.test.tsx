@@ -49,7 +49,8 @@ function renderGlobe(overrides: Partial<React.ComponentProps<typeof SatelliteGlo
     <SatelliteGlobe
       observer={{ lat: 52.5, lon: -8.6 }}
       satellites={satellites}
-      selectedSatelliteIds={new Set()}
+      interestedSatelliteIds={new Set(['iss', 'so-50'])}
+      highlightedSatelliteIds={new Set()}
       onSelectSatellite={onSelectSatellite}
       {...overrides}
     />,
@@ -108,7 +109,7 @@ describe('SatelliteGlobe', () => {
     expect(onSelectSatellite).not.toHaveBeenCalled();
   });
 
-  it('marks non-selected satellites as unselected when the pass-grid filter narrows to one satellite', () => {
+  it('hides satellites outside the interest set', () => {
     mockUseLiveSatellitePositions.mockReturnValue(
       new Map<string, LiveSatellitePosition>([
         ['iss', { position: [10, 20], altitudeKm: 420, at: '2024-02-14T18:00:00.000Z' }],
@@ -116,11 +117,18 @@ describe('SatelliteGlobe', () => {
       ]),
     );
 
-    renderGlobe({ selectedSatelliteIds: new Set(['iss']) });
+    renderGlobe({
+      interestedSatelliteIds: new Set(['iss']),
+      highlightedSatelliteIds: new Set(['iss']),
+    });
 
-    const points = lastGlobeProps?.pointsData as { id: string; selected: boolean }[];
-    expect(points.find((p) => p.id === 'iss')?.selected).toBe(true);
-    expect(points.find((p) => p.id === 'so-50')?.selected).toBe(false);
+    const points = lastGlobeProps?.pointsData as { id: string }[];
+    expect(points.map((p) => p.id)).toEqual(expect.arrayContaining(['observer', 'iss']));
+    expect(points.find((p) => p.id === 'so-50')).toBeUndefined();
+
+    const paths = lastGlobeProps?.pathsData as { kind: string; satelliteId: string }[];
+    expect(paths.every((p) => p.satelliteId === 'iss')).toBe(true);
+    expect(paths.some((p) => p.satelliteId === 'so-50')).toBe(false);
   });
 
   it('renders no observer point when the tracking settings have no location', () => {

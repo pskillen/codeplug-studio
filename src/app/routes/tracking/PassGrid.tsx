@@ -1,14 +1,20 @@
-import { useMemo, useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   DataTable,
   type DataTableColumn,
   type DataTableSortState,
 } from '../../components/v2/index.ts';
+import { formatNextPassCountdown, isPassActive, nextPassBySatelliteId } from './passTime.ts';
 import type { SatellitePassRow } from './useTrackingPasses.ts';
+import { useNowTick } from './useNowTick.ts';
 import classes from './PassGrid.module.css';
 
-const EMPTY_SATELLITE_FILTER = new Set<string>();
+const PassGridTickContext = createContext(0);
+
+function usePassGridTick(): number {
+  return useContext(PassGridTickContext);
+}
 
 function formatDurationSec(durationSec: number): string {
   const minutes = Math.floor(durationSec / 60);
@@ -26,37 +32,66 @@ function DateTimeCell({ iso }: { iso: string }) {
   );
 }
 
+function SatelliteNameCell({
+  row,
+  showCountdown,
+}: {
+  row: SatellitePassRow;
+  showCountdown: boolean;
+}) {
+  const navigate = useNavigate();
+  const nowMs = usePassGridTick();
+  const countdown = showCountdown ? formatNextPassCountdown(nowMs, row.aosAt, row.losAt) : null;
+
+  return (
+    <div className={classes.satelliteCell}>
+      <button
+        type="button"
+        className={classes.satelliteLink}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate(`/tracking/satellites/${row.satelliteId}`);
+        }}
+      >
+        {row.satelliteName}
+      </button>
+      {countdown ? <span className={classes.countdown}>{countdown}</span> : null}
+    </div>
+  );
+}
+
 export interface PassGridProps {
   passes: SatellitePassRow[];
+  /** Unfiltered pass list for per-satellite next-pass countdown (defaults to `passes`). */
+  allPasses?: SatellitePassRow[];
+  /** Unfiltered pass count for the "Showing X of Y" label when filters are active. */
+  totalRowCount?: number;
   loading: boolean;
   error: string | null;
   onSelectPass?: (row: SatellitePassRow) => void;
-  /** Look-ahead window used only for the empty-state copy, e.g. "72 hours". */
+  /** Look-ahead window used only for the empty-state copy, e.g. "12 hours". */
   windowLabel: string;
-  /** Min-elevation client filter (degrees). Empty string = no filter. */
-  minElevation?: string;
-  /**
-   * Satellite multi-select filter state. Lifted to `TrackingDashboardPage` (rather than kept
-   * local to this component) so `SatelliteGlobe` can also read/write it — clicking a
-   * satellite dot on the globe filters this grid to it. Defaults to an internal empty
-   * selection when the caller doesn't lift the state (e.g. tests exercising the grid alone).
-   */
-  selectedSatelliteIds?: Set<string>;
-  onSelectedSatelliteIdsChange?: (next: Set<string>) => void;
+  /** When true, show the filtered-empty message instead of the global empty message. */
+  hasActiveFilter?: boolean;
 }
 
 export default function PassGrid({
   passes,
+  allPasses,
+  totalRowCount,
   loading,
   error,
   onSelectPass,
   windowLabel,
-  minElevation = '',
-  selectedSatelliteIds: selectedSatelliteIdsProp,
+  hasActiveFilter = false,
 }: PassGridProps) {
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'aos', direction: 'asc' });
-  const selectedSatelliteIds = selectedSatelliteIdsProp ?? EMPTY_SATELLITE_FILTER;
-  const navigate = useNavigate();
+  const nowMs = useNowTick();
+
+  const nextPassMap = useMemo(
+    () => nextPassBySatelliteId(allPasses ?? passes),
+    [allPasses, passes],
+  );
 
   const columns = useMemo((): DataTableColumn<SatellitePassRow>[] => {
     return [
@@ -65,18 +100,25 @@ export default function PassGrid({
         header: 'Satellite',
         sortable: true,
         sortValue: (row) => row.satelliteName,
-        render: (row) => (
-          <button
-            type="button"
-            className={classes.satelliteLink}
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/tracking/satellites/${row.satelliteId}`);
-            }}
-          >
-            {row.satelliteName}
-          </button>
-        ),
+        render: (row) => {
+          const next = nextPassMap.get(row.satelliteId);
+          const isNextForSat = next?.aosAt === row.aosAt;
+          return <SatelliteNameCell row={row} showCountdown={isNextForSat} />;
+        },
+      },
+      {
+        key: 'tx',
+        header: 'TX',
+        sortable: true,
+        sortValue: (row) => row.txSortHz ?? -1,
+        render: (row) => row.txDisplay,
+      },
+      {
+        key: 'rx',
+        header: 'RX',
+        sortable: true,
+        sortValue: (row) => row.rxSortHz ?? -1,
+        render: (row) => row.rxDisplay,
       },
       {
         key: 'aos',
@@ -107,43 +149,38 @@ export default function PassGrid({
         render: (row) => `${row.maxElevationDeg.toFixed(1)}°`,
       },
     ];
-  }, [navigate]);
+  }, [nextPassMap]);
 
-  const minElevationValue = Number.parseFloat(minElevation);
-  const filtered = useMemo(() => {
-    return passes.filter((pass) => {
-      if (!Number.isNaN(minElevationValue) && pass.maxElevationDeg < minElevationValue) {
-        return false;
-      }
-      if (selectedSatelliteIds.size > 0 && !selectedSatelliteIds.has(pass.satelliteId)) {
-        return false;
-      }
-      return true;
-    });
-  }, [passes, minElevationValue, selectedSatelliteIds]);
-
-  const hasActiveFilter = !Number.isNaN(minElevationValue) || selectedSatelliteIds.size > 0;
+  const displayTotal = totalRowCount ?? passes.length;
 
   return (
-    <div className={classes.wrapper}>
-      {error ? <p className={classes.error}>{error}</p> : null}
-      <DataTable
-        columns={columns}
-        rows={filtered}
-        getRowId={(row) => `${row.satelliteId}:${row.aosAt}`}
-        totalRowCount={passes.length}
-        sort={sort}
-        onSortChange={setSort}
-        onRowActivate={onSelectPass}
-        emptyMessage={
-          loading
-            ? 'Computing passes…'
-            : `No upcoming passes in the next ${windowLabel} for your enabled satellites.`
-        }
-        filteredEmptyMessage={
-          hasActiveFilter ? 'No passes match the current filters.' : 'No passes to show.'
-        }
-      />
-    </div>
+    <PassGridTickContext.Provider value={nowMs}>
+      <div className={classes.wrapper}>
+        {error ? <p className={classes.error}>{error}</p> : null}
+        <DataTable
+          columns={columns}
+          rows={passes}
+          getRowId={(row) => `${row.satelliteId}:${row.aosAt}`}
+          totalRowCount={displayTotal}
+          sort={sort}
+          onSortChange={setSort}
+          onRowActivate={onSelectPass}
+          scale="extreme"
+          virtualize="auto"
+          estimatedRowHeight={52}
+          getRowVariant={(row) =>
+            isPassActive(nowMs, row.aosAt, row.losAt) ? 'active' : undefined
+          }
+          emptyMessage={
+            loading
+              ? 'Computing passes…'
+              : `No upcoming passes in the next ${windowLabel} for your enabled satellites.`
+          }
+          filteredEmptyMessage={
+            hasActiveFilter ? 'No passes match the current filters.' : 'No passes to show.'
+          }
+        />
+      </div>
+    </PassGridTickContext.Provider>
   );
 }
