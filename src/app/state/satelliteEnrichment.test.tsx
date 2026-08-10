@@ -2,7 +2,11 @@ import { renderHook, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { SatelliteTransmitterInfo } from '@core/models/satelliteEnrichment.ts';
-import { SatelliteEnrichmentProvider, useSatelliteEnrichment } from './satelliteEnrichment.tsx';
+import {
+  SatelliteEnrichmentProvider,
+  useSatelliteEnrichment,
+  type RefreshSatnogsEnrichmentResult,
+} from './satelliteEnrichment.tsx';
 
 const mockFetch = vi.fn();
 vi.mock('@integrations/satellites/satnogsClient.ts', () => ({
@@ -62,9 +66,7 @@ describe('useSatelliteEnrichment', () => {
 
     const { result } = renderHook(() => useSatelliteEnrichment(), { wrapper });
 
-    let refreshResult: Awaited<
-      ReturnType<typeof result.current.refreshEnrichmentForNoradIds>
-    > | null = null;
+    let refreshResult: RefreshSatnogsEnrichmentResult | undefined;
     await act(async () => {
       refreshResult = await result.current.refreshEnrichmentForNoradIds([25544, 99999]);
     });
