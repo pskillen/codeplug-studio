@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { IconRefresh } from '@tabler/icons-react';
 import type { Satellite } from '@core/models/satellite.ts';
 import { isoNow } from '@core/models/revision.ts';
@@ -37,6 +38,7 @@ function formatLastUpdated(iso: string | null | undefined): { label: string; sta
 export default function SatelliteKepsListPage() {
   const { library, loading, projectId, reload } = useLibrary();
   const { activeProject, refreshProjects } = useProjects();
+  const navigate = useNavigate();
   const { satellites } = library;
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
@@ -116,11 +118,13 @@ export default function SatelliteKepsListPage() {
         header: 'Enabled',
         width: '90px',
         render: (r) => (
-          <ToggleSwitch
-            checked={r.enabled}
-            onChange={(next) => void handleToggle(r, next)}
-            aria-label={`Enable ${r.name}`}
-          />
+          <span onClick={(e) => e.stopPropagation()}>
+            <ToggleSwitch
+              checked={r.enabled}
+              onChange={(next) => void handleToggle(r, next)}
+              aria-label={`Enable ${r.name}`}
+            />
+          </span>
         ),
       },
       {
@@ -200,6 +204,7 @@ export default function SatelliteKepsListPage() {
             const v1 = v2SortToV1(next);
             if (v1) setSort(v1);
           }}
+          onRowActivate={(r) => navigate(`/library/satellite-keps/${r.id}`)}
           emptyMessage="No satellites yet. Use “Update from CelesTrak/AMSAT” to fetch the amateur satellite list."
           filteredEmptyMessage={
             nameFilter.trim()
