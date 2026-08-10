@@ -14,7 +14,7 @@
    panels line up; left unset on mobile so each keeps its own (smaller) default height. */
 @media (min-width: 901px) {
   .mapAndGlobe {
-    --satellite-live-panel-height: 420px;
+    --satellite-panel-height: 420px;
   }
 }
 
@@ -29,7 +29,7 @@
   align-items: center;
   justify-content: center;
   min-height: 420px;
-  height: var(--satellite-live-panel-height, 420px);
+  height: var(--satellite-panel-height, 420px);
   border-radius: 8px;
   background: #000011;
   color: var(--dsv2-text-tertiary);

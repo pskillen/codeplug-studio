@@ -1,8 +1,9 @@
 .wrapper {
   position: relative;
-  /* See SatelliteLiveMap.module.css's .map for why this reads the same custom property —
-     kept independent defaults (420px here) so the dashboard's standalone usage is unaffected. */
-  height: var(--satellite-live-panel-height, 420px);
+  /* Set by the hosting page's .mapAndGlobe container on desktop widths (both
+     TrackingDashboardPage and SatelliteDetailPage use this component) so it matches the
+     adjacent 2D map's height; falls back to this component's own 420px default otherwise. */
+  height: var(--satellite-panel-height, 420px);
   width: 100%;
   border-radius: 8px;
   overflow: hidden;

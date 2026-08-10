@@ -242,15 +242,17 @@ export default function TrackingDashboardPage() {
         </Panel>
 
         <div className={classes.mapAndGlobe}>
-          <div className={classes.map}>
-            <SatelliteTrackMap
-              observer={settings?.location ?? null}
-              selectedPass={selectedPass}
-              defaultPasses={defaultMapPasses}
-              drawBehindMin={drawBehindMin}
-              drawAheadMin={drawAheadMin}
-            />
-          </div>
+          <Panel title="Ground track" sub="Preview a selected pass's ground track.">
+            <div className={classes.map}>
+              <SatelliteTrackMap
+                observer={settings?.location ?? null}
+                selectedPass={selectedPass}
+                defaultPasses={defaultMapPasses}
+                drawBehindMin={drawBehindMin}
+                drawAheadMin={drawAheadMin}
+              />
+            </div>
+          </Panel>
 
           {hasEnabledSatellites ? (
             <Panel title="Orbital globe" sub="Click a satellite to filter the pass grid to it.">
