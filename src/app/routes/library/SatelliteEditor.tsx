@@ -3,7 +3,6 @@ import { Select } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { useNavigate } from 'react-router-dom';
 import type { Satellite } from '@core/models/satellite.ts';
-import type { SatelliteTransmitterInfo } from '@core/models/satelliteEnrichment.ts';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
 import { UnsavedChangesModal } from '../../components/ui/index.ts';
 import {
@@ -24,34 +23,19 @@ import {
 } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useSatelliteEnrichment } from '../../state/satelliteEnrichment.tsx';
+import {
+  FREQUENCY_FIELD_ERROR,
+  TONE_FIELD_ERROR,
+  fieldError,
+  sortTransmittersAliveFirst,
+  transmitterLabel,
+} from './satelliteEditorHelpers.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import classes from './CompactFormEditor.module.css';
 
 function satelliteSubtitle(entity: Satellite): string {
   const sourceLabel = entity.source === 'celestrak' ? 'CelesTrak' : 'AMSAT';
   return `NORAD ${entity.noradId} · ${sourceLabel} · ${entity.enabled ? 'enabled' : 'disabled'}`;
-}
-
-function transmitterLabel(transmitter: SatelliteTransmitterInfo): string {
-  const modeLabel = transmitter.mode ?? 'unknown mode';
-  const suffix = transmitter.alive ? '' : ' (inactive)';
-  return `${transmitter.description} — ${modeLabel}${suffix}`;
-}
-
-/** Alive transmitters first, both groups otherwise in upstream order. */
-function sortTransmittersAliveFirst(
-  transmitters: SatelliteTransmitterInfo[],
-): SatelliteTransmitterInfo[] {
-  return [...transmitters].sort((a, b) => Number(b.alive) - Number(a.alive));
-}
-
-const FREQUENCY_FIELD_ERROR = 'Enter a positive frequency in MHz.';
-const TONE_FIELD_ERROR = 'Enter a positive tone in Hz.';
-
-/** Non-blocking inline validation: only surfaces once the operator has typed something that
- * fails to parse (covers both non-numeric entry and the out-of-range rejection in units.ts). */
-function fieldError(rawValue: string, parsed: number | null, message: string): string | undefined {
-  return rawValue.trim() !== '' && parsed === null ? message : undefined;
 }
 
 /**

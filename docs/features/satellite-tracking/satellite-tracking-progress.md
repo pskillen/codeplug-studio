@@ -184,3 +184,14 @@ Three-PR arc adding a per-satellite detail page reachable from the Satellite Kep
 | 6     | [#1014](https://github.com/pskillen/codeplug-studio/issues/1014) Globe throttle + filter-hide | Branch `1014/pskillen/wave2-globe-countdown-map` |
 | 7     | [#1015](https://github.com/pskillen/codeplug-studio/issues/1015) Countdown + row highlight    | same PR                                          |
 | 8     | [#1017](https://github.com/pskillen/codeplug-studio/issues/1017) Default ground-track map     | same PR                                          |
+
+---
+
+## Wave 3 post-MVP polish
+
+**Plan:** `satellite-keps-post-mvp-sleepy-treasure` — one PR from [follow-up-tickets.md](../../../tmp/features/satellite-followups/follow-up-tickets.md) Wave 3 (a single ticket, #1020), bundled with a drive-by fix for a footprint-circle antimeridian rendering bug found during this pass (no tracking issue — root cause and fix documented in the PR itself).
+
+| Phase | Issue                                                                                                          | Status                                                  |
+| ----- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| 9     | [#1020](https://github.com/pskillen/codeplug-studio/issues/1020) SatNOGS transmitter picker + range validation | Branch `1020/pskillen/satnogs-picker-and-footprint-fix` |
+| —     | Drive-by: `SatelliteLiveMap` footprint circle mangled at the antimeridian (no issue)                           | same PR                                                 |
