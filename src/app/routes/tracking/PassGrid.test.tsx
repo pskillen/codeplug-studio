@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import DesignSystemV2Provider from '../../components/v2/DesignSystemV2Provider.tsx';
 import PassGrid from './PassGrid.tsx';
 import type { SatellitePassRow } from './useTrackingPasses.ts';
@@ -32,9 +33,11 @@ const PASSES: SatellitePassRow[] = [
 describe('PassGrid', () => {
   it('shows every pass with no filters applied', () => {
     render(
-      <DesignSystemV2Provider>
-        <PassGrid passes={PASSES} loading={false} error={null} windowLabel="72 hours" />
-      </DesignSystemV2Provider>,
+      <MemoryRouter>
+        <DesignSystemV2Provider>
+          <PassGrid passes={PASSES} loading={false} error={null} windowLabel="72 hours" />
+        </DesignSystemV2Provider>
+      </MemoryRouter>,
     );
 
     expect(screen.getByRole('cell', { name: 'ISS' })).toBeInTheDocument();
@@ -43,9 +46,11 @@ describe('PassGrid', () => {
 
   it('narrows rows to the checked satellites', () => {
     render(
-      <DesignSystemV2Provider>
-        <PassGrid passes={PASSES} loading={false} error={null} windowLabel="72 hours" />
-      </DesignSystemV2Provider>,
+      <MemoryRouter>
+        <DesignSystemV2Provider>
+          <PassGrid passes={PASSES} loading={false} error={null} windowLabel="72 hours" />
+        </DesignSystemV2Provider>
+      </MemoryRouter>,
     );
 
     fireEvent.click(screen.getByLabelText('ISS'));
@@ -56,9 +61,11 @@ describe('PassGrid', () => {
 
   it('combines the satellite filter with the min-elevation filter', () => {
     render(
-      <DesignSystemV2Provider>
-        <PassGrid passes={PASSES} loading={false} error={null} windowLabel="72 hours" />
-      </DesignSystemV2Provider>,
+      <MemoryRouter>
+        <DesignSystemV2Provider>
+          <PassGrid passes={PASSES} loading={false} error={null} windowLabel="72 hours" />
+        </DesignSystemV2Provider>
+      </MemoryRouter>,
     );
 
     fireEvent.change(screen.getByLabelText('Min elevation (°)'), { target: { value: '20' } });
@@ -69,9 +76,11 @@ describe('PassGrid', () => {
 
   it('uses the dynamic window label in the empty-state message', () => {
     render(
-      <DesignSystemV2Provider>
-        <PassGrid passes={[]} loading={false} error={null} windowLabel="6 hours" />
-      </DesignSystemV2Provider>,
+      <MemoryRouter>
+        <DesignSystemV2Provider>
+          <PassGrid passes={[]} loading={false} error={null} windowLabel="6 hours" />
+        </DesignSystemV2Provider>
+      </MemoryRouter>,
     );
 
     expect(
