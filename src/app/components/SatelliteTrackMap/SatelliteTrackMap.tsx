@@ -1,7 +1,7 @@
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect, useMemo } from 'react';
-import { MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet';
+import { useEffect, useMemo, useRef } from 'react';
+import { MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import type { LatLon } from '@core/domain/geo.ts';
 import { computeMapView } from '@core/domain/mapView.ts';
 import { sampleGroundTrack } from '@core/domain/satelliteTracking/groundTrack.ts';
@@ -46,10 +46,37 @@ export function computeTrackBounds(
   return { fromAt, toAt };
 }
 
-function MapViewController({ points }: { points: LatLon[] }) {
+function MapViewController({
+  points,
+  passKey,
+}: {
+  points: LatLon[];
+  /** Stable identity for the selected pass — a change clears manual pan/zoom and re-fits. */
+  passKey: string | null;
+}) {
   const map = useMap();
+  const userInteractedRef = useRef(false);
+  const lastPassKeyRef = useRef<string | null>(null);
+
+  useMapEvents({
+    dragstart: () => {
+      userInteractedRef.current = true;
+    },
+    zoomstart: () => {
+      userInteractedRef.current = true;
+    },
+  });
 
   useEffect(() => {
+    if (passKey !== lastPassKeyRef.current) {
+      lastPassKeyRef.current = passKey;
+      userInteractedRef.current = false;
+    }
+  }, [passKey]);
+
+  useEffect(() => {
+    if (userInteractedRef.current) return;
+
     const action = computeMapView(points, { padding: [40, 40], maxZoom: 8, singlePointZoom: 4 });
     if (!action) return;
     if (action.type === 'setView') {
@@ -60,7 +87,7 @@ function MapViewController({ points }: { points: LatLon[] }) {
       padding: action.padding,
       maxZoom: action.maxZoom,
     });
-  }, [map, points]);
+  }, [map, points, passKey]);
 
   return null;
 }
@@ -101,6 +128,10 @@ export default function SatelliteTrackMap({
     return points;
   }, [segments, observer]);
 
+  const passKey = selectedPass
+    ? `${selectedPass.satelliteName}:${selectedPass.aosAt}:${selectedPass.losAt}`
+    : null;
+
   return (
     <div className={classes.wrapper}>
       <MapContainer
@@ -119,7 +150,7 @@ export default function SatelliteTrackMap({
         {segments.map((segment, index) => (
           <Polyline key={index} positions={segment} pathOptions={{ color: '#4d7cff', weight: 2 }} />
         ))}
-        <MapViewController points={boundsPoints} />
+        <MapViewController points={boundsPoints} passKey={passKey} />
       </MapContainer>
       {!selectedPass ? (
         <p className={classes.hint}>Select a pass below to preview its ground track.</p>
