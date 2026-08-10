@@ -160,6 +160,9 @@ export default function SatelliteGlobe({
         pointAltitude={pointAltitude}
         pointLabel={(point: object) => (point as GlobePoint).name}
         onPointClick={handlePointClick}
+        // Zero every layer transition so live-position polls snap geometry instead of
+        // morphing (points default to 1000ms — very visible now that dots sit at altitude).
+        pointsTransitionDuration={0}
         pathsData={paths}
         pathPoints="points"
         pathPointLat={(p: unknown) => (p as [number, number, number])[0]}
@@ -168,8 +171,11 @@ export default function SatelliteGlobe({
         pathColor={pathColor}
         pathDashLength={pathDashLength}
         pathDashGap={pathDashGap}
+        pathDashAnimateTime={0}
         pathStroke={1}
         pathTransitionDuration={0}
+        arcsTransitionDuration={0}
+        labelsTransitionDuration={0}
       />
       {!hasLivePositions ? (
         <p className={classes.hint}>Acquiring live satellite positions…</p>
