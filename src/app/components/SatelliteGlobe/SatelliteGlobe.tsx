@@ -26,7 +26,13 @@ export interface SatelliteGlobeProps {
   /** Pass-grid multi-select / globe click — highlights matching dots when non-empty. */
   highlightedSatelliteIds: Set<string>;
   /** Click a satellite dot to filter the pass grid to it (toggles off if it's the only one already selected). */
-  onSelectSatellite: (satelliteId: string) => void;
+  onSelectSatellite?: (satelliteId: string) => void;
+  /**
+   * Live-position poll cadence, ms. Defaults to `useLiveSatellitePositions`'s own 10s default
+   * (dashboard behavior, unchanged) — a single-satellite caller (e.g. the detail page) can pass
+   * a faster interval to match an adjacent 2D map's cadence.
+   */
+  pollIntervalMs?: number;
 }
 
 // react-globe.gl's accessor props are typed `(obj: object) => T` (it's a generic Kapsule
@@ -80,6 +86,7 @@ export default function SatelliteGlobe({
   interestedSatelliteIds,
   highlightedSatelliteIds,
   onSelectSatellite,
+  pollIntervalMs,
 }: SatelliteGlobeProps) {
   // Anchor instant for the orbit-trail window, fixed at mount so trails don't resample on
   // every live-position poll tick — same convention as SatelliteLiveMap.
@@ -108,7 +115,7 @@ export default function SatelliteGlobe({
     [satellites, interestedSatelliteIds],
   );
 
-  const livePositions = useLiveSatellitePositions(visibleSatellites);
+  const livePositions = useLiveSatellitePositions(visibleSatellites, pollIntervalMs);
 
   // Trails are SGP4-sampled at ~180 points each and don't depend on the live-position poll
   // (the window is anchored at mount) — memoized separately from `livePositions` so a poll
@@ -136,7 +143,7 @@ export default function SatelliteGlobe({
   const handlePointClick = (point: object) => {
     const globePoint = point as GlobePoint;
     if (globePoint.kind !== 'satellite') return;
-    onSelectSatellite(globePoint.id);
+    onSelectSatellite?.(globePoint.id);
   };
 
   const hasLivePositions = visibleSatellites.length === 0 || livePositions.size > 0;

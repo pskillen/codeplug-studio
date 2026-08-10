@@ -2,17 +2,25 @@
 
 ## Purpose
 
-3D orbital globe for the Tracking Dashboard (`TrackingDashboardPage.tsx`) — an observer marker, every enabled satellite as a live-moving dot, a ~90-minute orbit trail per satellite, and a visible-horizon footprint circle per satellite with a resolved live position. Renders with [`react-globe.gl`](https://github.com/vasturiano/react-globe.gl) (`three`/`three-globe` underneath). **Code-split:** `TrackingDashboardPage` lazy-loads this component behind `React.Suspense` so `three`/`react-globe.gl` are not in the main bundle for visitors who never open `/tracking`. Sibling to [`SatelliteLiveMap`](../SatelliteLiveMap/SatelliteLiveMap.md) (2D Leaflet, single-satellite detail page) rather than a shared component — a 3D globe wraps longitude natively, so none of `SatelliteTrackMap/mapHelpers.ts`'s antimeridian-splitting applies, and this component tracks many satellites at once instead of one.
+3D orbital globe — an observer marker, every visible satellite as a live-moving dot, a ~90-minute orbit trail per satellite, and a visible-horizon footprint circle per satellite with a resolved live position. Renders with [`react-globe.gl`](https://github.com/vasturiano/react-globe.gl) (`three`/`three-globe` underneath). **Code-split:** both callers below lazy-load this component behind `React.Suspense` so `three`/`react-globe.gl` are not in the main bundle for visitors who never open a page that uses it.
+
+Two callers today:
+
+- **`TrackingDashboardPage.tsx`** — multi-satellite, default 10s poll, click-to-filter wired to the pass grid.
+- **`SatelliteDetailPage.tsx`** — narrowed to a single satellite (`satellites={[satellite]}`, `interestedSatelliteIds={new Set([satellite.id])}`), `pollIntervalMs={2000}` to match the adjacent `SatelliteLiveMap`'s cadence, no `onSelectSatellite` (nothing to filter on a single-satellite page).
+
+Nothing in this component assumes multiple satellites — no count-based caps, no legend/filter chrome baked in (all of that lives in the caller). Still a **sibling** to [`SatelliteLiveMap`](../SatelliteLiveMap/SatelliteLiveMap.md) rather than a shared 2D/3D component — a 3D globe wraps longitude natively, so none of `SatelliteTrackMap/mapHelpers.ts`'s antimeridian-splitting applies here.
 
 ## Props
 
-| Prop                      | Type                            | Notes                                                                                    |
-| ------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------- |
-| `observer`                | `LatLon \| null`                | Observer marker location, from `TrackingSettings`. `null` — no observer point.           |
-| `satellites`              | `GlobeSatellite[]`              | Enabled satellites: `{ id, name, tleLine1, tleLine2, meanMotionRevPerDay }`.             |
-| `interestedSatelliteIds`  | `Set<string>`                   | Dashboard interest filter — only these satellites render (dots, trails, footprints).     |
-| `highlightedSatelliteIds` | `Set<string>`                   | Pass-grid multi-select highlight. Empty set = no dot emphasis.                           |
-| `onSelectSatellite`       | `(satelliteId: string) => void` | Called when a satellite dot is clicked — wire to the same filter state `PassGrid` reads. |
+| Prop                      | Type                                           | Notes                                                                                                                                                                      |
+| ------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `observer`                | `LatLon \| null`                               | Observer marker location, from `TrackingSettings`. `null` — no observer point.                                                                                             |
+| `satellites`              | `GlobeSatellite[]`                             | Enabled satellites: `{ id, name, tleLine1, tleLine2, meanMotionRevPerDay }`.                                                                                               |
+| `interestedSatelliteIds`  | `Set<string>`                                  | Dashboard interest filter — only these satellites render (dots, trails, footprints).                                                                                       |
+| `highlightedSatelliteIds` | `Set<string>`                                  | Pass-grid multi-select highlight. Empty set = no dot emphasis.                                                                                                             |
+| `onSelectSatellite`       | `(satelliteId: string) => void` \| `undefined` | Called when a satellite dot is clicked — wire to the same filter state `PassGrid` reads. Optional: omit on a single-satellite page where there's nothing to select-filter. |
+| `pollIntervalMs`          | `number` \| `undefined`                        | Live-position poll cadence. Defaults to `useLiveSatellitePositions`'s own 10s default (dashboard, unchanged) — pass a smaller value to match a page's other live surfaces. |
 
 ## Usage
 
@@ -32,9 +40,23 @@ const SatelliteGlobe = lazy(() => import('../../components/SatelliteGlobe/Satell
 </Suspense>;
 ```
 
+Single-satellite detail-page usage:
+
+```tsx
+<Suspense fallback={<div>Loading 3D globe…</div>}>
+  <SatelliteGlobe
+    observer={settings?.location ?? null}
+    satellites={[detailSatellite]}
+    interestedSatelliteIds={new Set([detailSatellite.id])}
+    highlightedSatelliteIds={new Set()}
+    pollIntervalMs={2000}
+  />
+</Suspense>
+```
+
 ## Behaviour
 
-- **Live positions:** `useLiveSatellitePositions.ts` — a multi-satellite sibling to `useLiveSatellitePosition` (`src/app/routes/tracking/useLiveSatellitePosition.ts`, single-satellite, built for the detail page). Calling that hook once per array entry would violate the rules of hooks, so this variant re-propagates every **visible** enabled satellite on one shared **10-second** poll interval instead, keyed by satellite `id`. Position map entries are reused when subsatellite geometry is unchanged between ticks so downstream memoization stays stable. Satellite dots render at WGS84 altitude (`altitudeKm` → globe-radius units via `globeAltitude.ts`) and use a per-satellite colour from `colorForNoradId` (`src/core/domain/satelliteTracking/satelliteColor.ts`).
+- **Live positions:** `useLiveSatellitePositions.ts` — a multi-satellite sibling to `useLiveSatellitePosition` (`src/app/routes/tracking/useLiveSatellitePosition.ts`, single-satellite, built for the detail page). Calling that hook once per array entry would violate the rules of hooks, so this variant re-propagates every **visible** satellite on one shared poll interval instead (10s default, overridable via `pollIntervalMs`), keyed by satellite `id`. Position map entries are reused when subsatellite geometry is unchanged between ticks so downstream memoization stays stable. Satellite dots render at WGS84 altitude (`altitudeKm` → globe-radius units via `globeAltitude.ts`) and use a per-satellite colour from `colorForNoradId` (`src/core/domain/satelliteTracking/satelliteColor.ts`).
 - **Orbit trails:** `orbitTrail.ts#computeGlobeOrbitTrail` — a ~90-minute window (one full orbital period, half ahead of an anchor instant fixed at mount, half behind), derived per-satellite via `periodMinutes = 1440 / meanMotionRevPerDay` (same formula as `SatelliteLiveMap/orbitTrail.ts`, not reused directly — that function hardcodes a 1.5-orbit window and antimeridian-split segments this component doesn't need). Trail paths use sampled WGS84 altitude at each step (`sampleOrbitTrack`), converted to globe-radius units via `globeAltitude.ts`.
 - **Footprint circle:** `computeSatelliteFootprint` (`src/core/domain/satelliteTracking/footprint.ts`) reused directly, recomputed whenever a satellite's live position updates. Only drawn once a satellite has a resolved live position. All used layer transition durations (`pointsTransitionDuration`, `pathTransitionDuration`, `pathDashAnimateTime`, plus unused `arcs`/`labels` for belt-and-braces) are set to `0` so poll updates snap instead of morphing.
 - **Point/path data:** `buildGlobeData.ts` computes `react-globe.gl`'s `pointsData`/`pathsData` shapes — kept separate from the component so it's unit-testable without a WebGL context (jsdom has none). Split into two pieces the component memoizes independently: `computeGlobeTrailPaths(satellites, anchorAt)` (orbit trails only) and `computeGlobePointsAndFootprints(observer, satellites, livePositions, highlightedSatelliteIds)` (observer/satellite dots + footprint circles). `useLiveSatellitePositions` reuses prior `Map` and position object references when subsatellite geometry is unchanged between polls so memoized geometry does not restart Kapsule animations unnecessarily. Trails only recompute when the visible-satellite set changes; footprints recompute when live positions update.
@@ -52,5 +74,6 @@ const SatelliteGlobe = lazy(() => import('../../components/SatelliteGlobe/Satell
 - [`SatelliteLiveMap`](../SatelliteLiveMap/SatelliteLiveMap.md) — 2D sibling for the single-satellite detail page
 - [`footprint.ts`](../../../core/domain/satelliteTracking/footprint.ts) — pure footprint-circle computation, reused directly
 - [`groundTrack.ts`](../../../core/domain/satelliteTracking/groundTrack.ts) — pure ground-track sampling, reused via `orbitTrail.ts`
-- [`TrackingDashboardPage.tsx`](../../routes/tracking/TrackingDashboardPage.tsx) — hosts the globe and owns the shared satellite-filter state
-- [`PassGrid.tsx`](../../routes/tracking/PassGrid.tsx) — reads the same filter state, filtered by a globe click
+- [`TrackingDashboardPage.tsx`](../../routes/tracking/TrackingDashboardPage.tsx) — multi-satellite caller, owns the shared satellite-filter state
+- [`PassGrid.tsx`](../../routes/tracking/PassGrid.tsx) — reads the same filter state, filtered by a globe click on the dashboard
+- [`SatelliteDetailPage.tsx`](../../routes/tracking/SatelliteDetailPage.tsx) — single-satellite caller, narrowed `satellites`/`interestedSatelliteIds`, faster `pollIntervalMs`, no `onSelectSatellite`

@@ -4,6 +4,23 @@
   gap: 16px;
 }
 
+.mapAndGlobe {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.globeLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  border-radius: 8px;
+  background: #000011;
+  color: var(--dsv2-text-tertiary);
+  font-size: 13px;
+}
+
 .satnogsError {
   color: var(--dsv2-warning);
   font-size: 0.9em;
@@ -12,6 +29,10 @@
 
 @media (max-width: 900px) {
   .passLists {
+    grid-template-columns: 1fr;
+  }
+
+  .mapAndGlobe {
     grid-template-columns: 1fr;
   }
 }
