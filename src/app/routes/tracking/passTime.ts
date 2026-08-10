@@ -49,24 +49,16 @@ export function nextPassBySatelliteId<T extends PassWithSatelliteId>(passes: T[]
   return byId;
 }
 
-/** Compact human-readable countdown from a positive duration in milliseconds. */
-export function formatCountdown(durationMs: number): string {
-  if (durationMs <= 0) return '0s';
-  const totalSec = Math.ceil(durationMs / 1000);
-  const hours = Math.floor(totalSec / 3600);
-  const minutes = Math.floor((totalSec % 3600) / 60);
+/** `mm:ss` countdown (minutes may exceed 59 for long windows). */
+export function formatCountdownMmSs(durationMs: number): string {
+  const totalSec = Math.max(0, Math.ceil(durationMs / 1000));
+  const minutes = Math.floor(totalSec / 60);
   const seconds = totalSec % 60;
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${seconds}s`;
-  }
-  if (minutes > 0) {
-    return `${minutes}m ${seconds}s`;
-  }
-  return `${seconds}s`;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 /**
- * Label for the next pass of a satellite: "In pass" when active, otherwise countdown to AOS.
+ * Label for the next pass of a satellite: `LOS mm:ss` when active, `AOS mm:ss` before AOS.
  */
 export function formatNextPassCountdown(
   nowMs: number,
@@ -77,10 +69,10 @@ export function formatNextPassCountdown(
   const losMs = Date.parse(losAt);
   if (Number.isNaN(aosMs) || Number.isNaN(losMs)) return null;
   if (isPassActive(nowMs, aosAt, losAt)) {
-    return 'In pass';
+    return `LOS ${formatCountdownMmSs(losMs - nowMs)}`;
   }
   if (nowMs < aosMs) {
-    return formatCountdown(aosMs - nowMs);
+    return `AOS ${formatCountdownMmSs(aosMs - nowMs)}`;
   }
   return null;
 }

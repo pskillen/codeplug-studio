@@ -102,9 +102,12 @@ export default function TrackingDashboardPage() {
   );
 
   const defaultMapPasses = useMemo(() => {
+    // Ground-track sampling is expensive — only auto-draw when the operator has narrowed
+    // the satellite filter. With no filter, wait for an explicit pass row selection.
+    if (selectedSatelliteIds.size === 0) return [];
     const nextMap = nextPassBySatelliteId(filteredPasses);
     return Array.from(nextMap.values()).map(toSelectedPass);
-  }, [filteredPasses]);
+  }, [filteredPasses, selectedSatelliteIds]);
 
   return (
     <DesignSystemV2Provider>

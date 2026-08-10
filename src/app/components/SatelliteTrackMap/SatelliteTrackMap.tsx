@@ -187,7 +187,9 @@ export default function SatelliteTrackMap({
         <MapViewController points={boundsPoints} passKey={passKey} />
       </MapContainer>
       {!selectedPass && defaultPasses.length === 0 ? (
-        <p className={classes.hint}>No upcoming passes to preview for the current filter window.</p>
+        <p className={classes.hint}>
+          Select satellites in the filter or a pass row below to preview a ground track.
+        </p>
       ) : null}
     </div>
   );

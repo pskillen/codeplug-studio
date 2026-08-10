@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   filterTrackingPasses,
-  formatCountdown,
+  formatCountdownMmSs,
   formatNextPassCountdown,
   isPassActive,
   nextPassBySatelliteId,
@@ -96,22 +96,22 @@ describe('nextPassBySatelliteId', () => {
   });
 });
 
-describe('formatCountdown', () => {
-  it('formats hours, minutes, and seconds', () => {
-    expect(formatCountdown(3661000)).toBe('1h 1m 1s');
-  });
-
-  it('formats minutes and seconds without hours', () => {
-    expect(formatCountdown(125000)).toBe('2m 5s');
+describe('formatCountdownMmSs', () => {
+  it('formats minutes and zero-padded seconds', () => {
+    expect(formatCountdownMmSs(125000)).toBe('2:05');
   });
 
   it('formats seconds only', () => {
-    expect(formatCountdown(45000)).toBe('45s');
+    expect(formatCountdownMmSs(45000)).toBe('0:45');
   });
 
-  it('returns 0s for zero or negative duration', () => {
-    expect(formatCountdown(0)).toBe('0s');
-    expect(formatCountdown(-100)).toBe('0s');
+  it('allows minutes above 59', () => {
+    expect(formatCountdownMmSs(3661000)).toBe('61:01');
+  });
+
+  it('returns 0:00 for zero or negative duration', () => {
+    expect(formatCountdownMmSs(0)).toBe('0:00');
+    expect(formatCountdownMmSs(-100)).toBe('0:00');
   });
 });
 
@@ -119,14 +119,16 @@ describe('formatNextPassCountdown', () => {
   const aos = '2026-08-10T12:00:00.000Z';
   const los = '2026-08-10T12:30:00.000Z';
 
-  it('returns In pass when active', () => {
+  it('returns LOS mm:ss when active', () => {
     expect(formatNextPassCountdown(Date.parse('2026-08-10T12:10:00.000Z'), aos, los)).toBe(
-      'In pass',
+      'LOS 20:00',
     );
   });
 
-  it('returns countdown to AOS before pass', () => {
-    expect(formatNextPassCountdown(Date.parse('2026-08-10T11:59:30.000Z'), aos, los)).toBe('30s');
+  it('returns AOS mm:ss before pass', () => {
+    expect(formatNextPassCountdown(Date.parse('2026-08-10T11:59:30.000Z'), aos, los)).toBe(
+      'AOS 0:30',
+    );
   });
 
   it('returns null after LOS', () => {
