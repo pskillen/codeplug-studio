@@ -2,10 +2,7 @@ import { renderHook, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { SatelliteTransmitterInfo } from '@core/models/satelliteEnrichment.ts';
-import {
-  SatelliteEnrichmentProvider,
-  useSatelliteEnrichment,
-} from './satelliteEnrichment.tsx';
+import { SatelliteEnrichmentProvider, useSatelliteEnrichment } from './satelliteEnrichment.tsx';
 
 const mockFetch = vi.fn();
 vi.mock('@integrations/satellites/satnogsClient.ts', () => ({
