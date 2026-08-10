@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import LibraryInventoryHeader from '../../components/library/LibraryInventoryHeader.tsx';
+import SatelliteLiveMap from '../../components/SatelliteLiveMap/SatelliteLiveMap.tsx';
 import { Button, DesignSystemV2Provider } from '../../components/v2/index.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import libraryPageClasses from '../../components/library/LibraryInventoryPage.module.css';
@@ -76,6 +77,13 @@ export default function SatelliteDetailPage() {
         />
 
         <SatelliteDetailPanel satellite={satellite} />
+
+        <SatelliteLiveMap
+          satelliteName={satellite.name}
+          tleLine1={satellite.tleLine1}
+          tleLine2={satellite.tleLine2}
+          meanMotionRevPerDay={satellite.meanMotionRevPerDay}
+        />
 
         <div className={classes.passLists}>
           <SatellitePassList
