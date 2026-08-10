@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LibraryInventoryHeader from '../../components/library/LibraryInventoryHeader.tsx';
-import { DesignSystemV2Provider, TextInput } from '../../components/v2/index.ts';
+import { DesignSystemV2Provider, Panel, TextInput } from '../../components/v2/index.ts';
 import SatelliteTrackMap, {
   type SelectedPass,
 } from '../../components/SatelliteTrackMap/SatelliteTrackMap.tsx';
+import SatelliteGlobe from '../../components/SatelliteGlobe/SatelliteGlobe.tsx';
+import { useLibrary } from '../../state/useLibrary.ts';
 import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import ObserverLocationSettings from './ObserverLocationSettings.tsx';
 import PassGrid from './PassGrid.tsx';
@@ -46,9 +48,36 @@ export default function TrackingDashboardPage() {
   const { passes, loading, error, hasObserver, hasEnabledSatellites } =
     useTrackingPasses(windowHours);
   const { settings } = useTrackingSettings();
+  const { library } = useLibrary();
   const [selectedPass, setSelectedPass] = useState<SelectedPass | null>(null);
   const [drawBehindMin, setDrawBehindMin] = useState(0);
   const [drawAheadMin, setDrawAheadMin] = useState(0);
+  // Satellite multi-select filter, shared by the globe and the pass grid — a globe click
+  // narrows the grid, and (via SatelliteFilter, still owned inside PassGrid) a grid checkbox
+  // narrows the globe's highlighted dots.
+  const [selectedSatelliteIds, setSelectedSatelliteIds] = useState<Set<string>>(new Set());
+
+  const enabledSatellites = useMemo(
+    () =>
+      library.satellites
+        .filter((satellite) => satellite.enabled)
+        .map((satellite) => ({
+          id: satellite.id,
+          name: satellite.name,
+          tleLine1: satellite.tleLine1,
+          tleLine2: satellite.tleLine2,
+          meanMotionRevPerDay: satellite.meanMotionRevPerDay,
+        })),
+    [library.satellites],
+  );
+
+  const handleSelectSatelliteFromGlobe = (satelliteId: string) => {
+    setSelectedSatelliteIds((current) => {
+      // Toggle off if this satellite is already the sole filter; otherwise narrow to it.
+      if (current.size === 1 && current.has(satelliteId)) return new Set();
+      return new Set([satelliteId]);
+    });
+  };
 
   return (
     <DesignSystemV2Provider>
@@ -99,6 +128,17 @@ export default function TrackingDashboardPage() {
           />
         </div>
 
+        {hasEnabledSatellites ? (
+          <Panel title="Orbital globe" sub="Click a satellite to filter the pass grid to it.">
+            <SatelliteGlobe
+              observer={settings?.location ?? null}
+              satellites={enabledSatellites}
+              selectedSatelliteIds={selectedSatelliteIds}
+              onSelectSatellite={handleSelectSatelliteFromGlobe}
+            />
+          </Panel>
+        ) : null}
+
         {!hasEnabledSatellites ? (
           <p className={classes.empty}>
             No enabled satellites yet.{' '}
@@ -115,6 +155,8 @@ export default function TrackingDashboardPage() {
             error={error}
             windowLabel={`${windowHours} hours`}
             onSelectPass={(row) => setSelectedPass(toSelectedPass(row))}
+            selectedSatelliteIds={selectedSatelliteIds}
+            onSelectedSatelliteIdsChange={setSelectedSatelliteIds}
           />
         )}
       </div>

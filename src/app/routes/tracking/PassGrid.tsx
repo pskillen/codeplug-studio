@@ -33,6 +33,14 @@ export interface PassGridProps {
   onSelectPass?: (row: SatellitePassRow) => void;
   /** Look-ahead window used only for the empty-state copy, e.g. "72 hours". */
   windowLabel: string;
+  /**
+   * Satellite multi-select filter state. Lifted to `TrackingDashboardPage` (rather than kept
+   * local to this component) so `SatelliteGlobe` can also read/write it — clicking a
+   * satellite dot on the globe filters this grid to it. Defaults to an internal empty
+   * selection when the caller doesn't lift the state (e.g. tests exercising the grid alone).
+   */
+  selectedSatelliteIds?: Set<string>;
+  onSelectedSatelliteIdsChange?: (next: Set<string>) => void;
 }
 
 export default function PassGrid({
@@ -41,10 +49,17 @@ export default function PassGrid({
   error,
   onSelectPass,
   windowLabel,
+  selectedSatelliteIds: selectedSatelliteIdsProp,
+  onSelectedSatelliteIdsChange,
 }: PassGridProps) {
   const [sort, setSort] = useState<DataTableSortState | null>({ key: 'aos', direction: 'asc' });
   const [minElevation, setMinElevation] = useState('');
-  const [selectedSatelliteIds, setSelectedSatelliteIds] = useState<Set<string>>(new Set());
+  const [uncontrolledSelectedSatelliteIds, setUncontrolledSelectedSatelliteIds] = useState<
+    Set<string>
+  >(new Set());
+  const selectedSatelliteIds = selectedSatelliteIdsProp ?? uncontrolledSelectedSatelliteIds;
+  const setSelectedSatelliteIds =
+    onSelectedSatelliteIdsChange ?? setUncontrolledSelectedSatelliteIds;
   const navigate = useNavigate();
 
   const columns = useMemo((): DataTableColumn<SatellitePassRow>[] => {
