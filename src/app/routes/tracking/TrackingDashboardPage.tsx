@@ -1,11 +1,12 @@
 import { Suspense, lazy, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LibraryInventoryHeader from '../../components/library/LibraryInventoryHeader.tsx';
-import { DesignSystemV2Provider, Panel, TextInput } from '../../components/v2/index.ts';
+import { Checkbox, DesignSystemV2Provider, Panel, TextInput } from '../../components/v2/index.ts';
 import SatelliteTrackMap, {
   type SelectedPass,
 } from '../../components/SatelliteTrackMap/SatelliteTrackMap.tsx';
 import { useLibrary } from '../../state/useLibrary.ts';
+import { useSatelliteEnrichment } from '../../state/satelliteEnrichment.tsx';
 import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import ObserverLocationSettings from './ObserverLocationSettings.tsx';
 import PassGrid from './PassGrid.tsx';
@@ -15,7 +16,17 @@ import {
   useTrackingPasses,
   type SatellitePassRow,
 } from './useTrackingPasses.ts';
-import { filterTrackingPasses, nextPassBySatelliteId } from './passTime.ts';
+import {
+  filterTrackingPasses,
+  filterPassesToInterestedSatellites,
+  nextPassBySatelliteId,
+} from './passTime.ts';
+import { enrichPassRowsWithFrequencies } from './satelliteFrequencies.ts';
+import {
+  computeFrequencyQualifiedSatelliteIds,
+  computeInterestedSatelliteIds,
+  hasSatelliteInterestFilter,
+} from './interestedSatellites.ts';
 import classes from './TrackingDashboardPage.module.css';
 import libraryPageClasses from '../../components/library/LibraryInventoryPage.module.css';
 
@@ -48,42 +59,88 @@ function toSelectedPass(row: SatellitePassRow): SelectedPass {
 
 export default function TrackingDashboardPage() {
   const [windowHours, setWindowHours] = useState(DEFAULT_WINDOW_HOURS);
-  const { passes, loading, error, hasObserver, hasEnabledSatellites } =
-    useTrackingPasses(windowHours);
+  const {
+    passes: basePasses,
+    loading,
+    error,
+    hasObserver,
+    hasEnabledSatellites,
+  } = useTrackingPasses(windowHours);
   const { settings } = useTrackingSettings();
   const { library } = useLibrary();
+  const { getEnrichmentForNoradId } = useSatelliteEnrichment();
   const [selectedPass, setSelectedPass] = useState<SelectedPass | null>(null);
   const [drawBehindMin, setDrawBehindMin] = useState(0);
   const [drawAheadMin, setDrawAheadMin] = useState(0);
   const [minElevation, setMinElevation] = useState('');
+  const [onlyWithFrequencies, setOnlyWithFrequencies] = useState(true);
   // Satellite multi-select filter, shared by the globe and the pass grid — a globe click
   // narrows the grid, and (via SatelliteFilter, still owned inside PassGrid) a grid checkbox
   // narrows the globe's highlighted dots.
   const [selectedSatelliteIds, setSelectedSatelliteIds] = useState<Set<string>>(new Set());
 
+  const enabledSatelliteRecords = useMemo(
+    () => library.satellites.filter((satellite) => satellite.enabled),
+    [library.satellites],
+  );
+
   const enabledSatellites = useMemo(
     () =>
-      library.satellites
-        .filter((satellite) => satellite.enabled)
-        .map((satellite) => ({
-          id: satellite.id,
-          name: satellite.name,
-          tleLine1: satellite.tleLine1,
-          tleLine2: satellite.tleLine2,
-          meanMotionRevPerDay: satellite.meanMotionRevPerDay,
-        })),
-    [library.satellites],
+      enabledSatelliteRecords.map((satellite) => ({
+        id: satellite.id,
+        name: satellite.name,
+        tleLine1: satellite.tleLine1,
+        tleLine2: satellite.tleLine2,
+        meanMotionRevPerDay: satellite.meanMotionRevPerDay,
+      })),
+    [enabledSatelliteRecords],
+  );
+
+  const enabledSatelliteIds = useMemo(
+    () => new Set(enabledSatelliteRecords.map((satellite) => satellite.id)),
+    [enabledSatelliteRecords],
+  );
+
+  const frequencyQualifiedSatelliteIds = useMemo(
+    () => computeFrequencyQualifiedSatelliteIds(enabledSatelliteRecords, getEnrichmentForNoradId),
+    [enabledSatelliteRecords, getEnrichmentForNoradId],
+  );
+
+  const interestedSatelliteIds = useMemo(
+    () =>
+      computeInterestedSatelliteIds(
+        enabledSatelliteIds,
+        frequencyQualifiedSatelliteIds,
+        selectedSatelliteIds,
+        onlyWithFrequencies,
+      ),
+    [
+      enabledSatelliteIds,
+      frequencyQualifiedSatelliteIds,
+      selectedSatelliteIds,
+      onlyWithFrequencies,
+    ],
+  );
+
+  const satelliteInterestFilterActive = hasSatelliteInterestFilter(
+    onlyWithFrequencies,
+    selectedSatelliteIds,
   );
 
   const satelliteFilterOptions = useMemo(() => {
     const byId = new Map<string, string>();
-    for (const pass of passes) {
+    for (const pass of basePasses) {
       if (!byId.has(pass.satelliteId)) byId.set(pass.satelliteId, pass.satelliteName);
     }
     return Array.from(byId, ([id, name]) => ({ id, name })).sort((a, b) =>
       a.name.localeCompare(b.name),
     );
-  }, [passes]);
+  }, [basePasses]);
+
+  const passes = useMemo(
+    () => enrichPassRowsWithFrequencies(basePasses, getEnrichmentForNoradId),
+    [basePasses, getEnrichmentForNoradId],
+  );
 
   const handleSelectSatelliteFromGlobe = (satelliteId: string) => {
     setSelectedSatelliteIds((current) => {
@@ -94,20 +151,25 @@ export default function TrackingDashboardPage() {
   };
 
   const minElevationValue = Number.parseFloat(minElevation);
-  const hasActiveFilter = !Number.isNaN(minElevationValue) || selectedSatelliteIds.size > 0;
+  const hasActiveFilter = !Number.isNaN(minElevationValue) || satelliteInterestFilterActive;
+
+  const passesInInterestScope = useMemo(
+    () => filterPassesToInterestedSatellites(passes, interestedSatelliteIds),
+    [passes, interestedSatelliteIds],
+  );
 
   const filteredPasses = useMemo(
-    () => filterTrackingPasses(passes, minElevation, selectedSatelliteIds),
-    [passes, minElevation, selectedSatelliteIds],
+    () => filterTrackingPasses(passes, minElevation, interestedSatelliteIds),
+    [passes, minElevation, interestedSatelliteIds],
   );
 
   const defaultMapPasses = useMemo(() => {
-    // Ground-track sampling is expensive — only auto-draw when the operator has narrowed
-    // the satellite filter. With no filter, wait for an explicit pass row selection.
-    if (selectedSatelliteIds.size === 0) return [];
+    // Ground-track sampling is expensive — auto-draw next pass per interested satellite when
+    // satellite-level filters are active (frequency toggle or multi-select).
+    if (!satelliteInterestFilterActive) return [];
     const nextMap = nextPassBySatelliteId(filteredPasses);
     return Array.from(nextMap.values()).map(toSelectedPass);
-  }, [filteredPasses, selectedSatelliteIds]);
+  }, [filteredPasses, satelliteInterestFilterActive]);
 
   return (
     <DesignSystemV2Provider>
@@ -160,6 +222,10 @@ export default function TrackingDashboardPage() {
               selectedIds={selectedSatelliteIds}
               onChange={setSelectedSatelliteIds}
             />
+            <label className={classes.frequencyFilter}>
+              <Checkbox checked={onlyWithFrequencies} onCheckedChange={setOnlyWithFrequencies} />
+              <span>Only passes with TX/RX frequencies</span>
+            </label>
           </div>
         </Panel>
 
@@ -179,7 +245,8 @@ export default function TrackingDashboardPage() {
               <SatelliteGlobe
                 observer={settings?.location ?? null}
                 satellites={enabledSatellites}
-                selectedSatelliteIds={selectedSatelliteIds}
+                interestedSatelliteIds={interestedSatelliteIds}
+                highlightedSatelliteIds={selectedSatelliteIds}
                 onSelectSatellite={handleSelectSatelliteFromGlobe}
               />
             </Suspense>
@@ -199,7 +266,9 @@ export default function TrackingDashboardPage() {
           <PassGrid
             passes={filteredPasses}
             allPasses={passes}
-            totalRowCount={passes.length}
+            totalRowCount={
+              satelliteInterestFilterActive ? passesInInterestScope.length : passes.length
+            }
             loading={loading}
             error={error}
             windowLabel={`${windowHours} hours`}

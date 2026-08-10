@@ -4,15 +4,27 @@ import { useLibrary } from '../../state/useLibrary.ts';
 import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import { PASS_PREDICTION_DEBOUNCE_MS, requestSatellitePasses } from './usePassesForSatellite.ts';
 
-export interface SatellitePassRow extends PassResult {
+/** Pass prediction row before SatNOGS enrichment is merged for grid display/filtering. */
+export interface SatellitePassBaseRow extends PassResult {
   satelliteId: string;
   satelliteName: string;
+  noradId: number;
   tleLine1: string;
   tleLine2: string;
+  satelliteUplinkHz: number | null;
+  satelliteDownlinkHz: number | null;
+}
+
+export interface SatellitePassRow extends SatellitePassBaseRow {
+  hasFrequencies: boolean;
+  txDisplay: string;
+  rxDisplay: string;
+  txSortHz: number | null;
+  rxSortHz: number | null;
 }
 
 export interface UseTrackingPassesResult {
-  passes: SatellitePassRow[];
+  passes: SatellitePassBaseRow[];
   loading: boolean;
   error: string | null;
   hasObserver: boolean;
@@ -31,7 +43,7 @@ export function useTrackingPasses(
 ): UseTrackingPassesResult {
   const { library } = useLibrary();
   const { settings } = useTrackingSettings();
-  const [passes, setPasses] = useState<SatellitePassRow[]>([]);
+  const [passes, setPasses] = useState<SatellitePassBaseRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,8 +85,11 @@ export function useTrackingPasses(
                 ...result,
                 satelliteId: satellite.id,
                 satelliteName: satellite.name,
+                noradId: satellite.noradId,
                 tleLine1: satellite.tleLine1,
                 tleLine2: satellite.tleLine2,
+                satelliteUplinkHz: satellite.uplinkHz ?? null,
+                satelliteDownlinkHz: satellite.downlinkHz ?? null,
               }));
             }),
           );

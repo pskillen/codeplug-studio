@@ -10,8 +10,16 @@ const PASSES: SatellitePassRow[] = [
   {
     satelliteId: 'sat-1',
     satelliteName: 'ISS',
+    noradId: 25544,
     tleLine1: '',
     tleLine2: '',
+    satelliteUplinkHz: null,
+    satelliteDownlinkHz: null,
+    hasFrequencies: false,
+    txDisplay: '—',
+    rxDisplay: '—',
+    txSortHz: null,
+    rxSortHz: null,
     aosAt: '2026-08-10T01:00:00.000Z',
     losAt: '2026-08-10T01:10:00.000Z',
     maxElevationAt: '2026-08-10T01:05:00.000Z',
@@ -21,8 +29,16 @@ const PASSES: SatellitePassRow[] = [
   {
     satelliteId: 'sat-2',
     satelliteName: 'AO-91',
+    noradId: 43017,
     tleLine1: '',
     tleLine2: '',
+    satelliteUplinkHz: null,
+    satelliteDownlinkHz: null,
+    hasFrequencies: false,
+    txDisplay: '—',
+    rxDisplay: '—',
+    txSortHz: null,
+    rxSortHz: null,
     aosAt: '2026-08-10T02:00:00.000Z',
     losAt: '2026-08-10T02:08:00.000Z',
     maxElevationAt: '2026-08-10T02:04:00.000Z',
@@ -67,7 +83,7 @@ describe('PassGrid', () => {
   });
 
   it('renders only passes that survive the shared min-elevation filter', () => {
-    const filtered = filterTrackingPasses(PASSES, '20', new Set());
+    const filtered = filterTrackingPasses(PASSES, '20', new Set(['sat-1', 'sat-2']));
     render(
       <MemoryRouter>
         <DesignSystemV2Provider>

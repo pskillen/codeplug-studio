@@ -52,7 +52,7 @@ describe('filterTrackingPasses', () => {
     },
   ];
 
-  it('filters by min elevation and satellite selection', () => {
+  it('filters by min elevation and interested satellites', () => {
     const result = filterTrackingPasses(passes, '20', new Set(['a']));
     expect(result.map((pass) => pass.satelliteId)).toEqual(['a']);
   });

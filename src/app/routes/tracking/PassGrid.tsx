@@ -107,6 +107,20 @@ export default function PassGrid({
         },
       },
       {
+        key: 'tx',
+        header: 'TX',
+        sortable: true,
+        sortValue: (row) => row.txSortHz ?? -1,
+        render: (row) => row.txDisplay,
+      },
+      {
+        key: 'rx',
+        header: 'RX',
+        sortable: true,
+        sortValue: (row) => row.rxSortHz ?? -1,
+        render: (row) => row.rxDisplay,
+      },
+      {
         key: 'aos',
         header: 'AOS',
         sortable: true,

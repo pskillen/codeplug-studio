@@ -20,18 +20,25 @@ export interface PassWithElevation extends PassWithSatelliteId {
 export function filterTrackingPasses<T extends PassWithElevation>(
   passes: T[],
   minElevation: string,
-  selectedSatelliteIds: Set<string>,
+  interestedSatelliteIds: Set<string>,
 ): T[] {
   const minElevationValue = Number.parseFloat(minElevation);
   return passes.filter((pass) => {
     if (!Number.isNaN(minElevationValue) && pass.maxElevationDeg < minElevationValue) {
       return false;
     }
-    if (selectedSatelliteIds.size > 0 && !selectedSatelliteIds.has(pass.satelliteId)) {
+    if (!interestedSatelliteIds.has(pass.satelliteId)) {
       return false;
     }
     return true;
   });
+}
+
+export function filterPassesToInterestedSatellites<T extends PassWithSatelliteId>(
+  passes: T[],
+  interestedSatelliteIds: Set<string>,
+): T[] {
+  return passes.filter((pass) => interestedSatelliteIds.has(pass.satelliteId));
 }
 
 /**
