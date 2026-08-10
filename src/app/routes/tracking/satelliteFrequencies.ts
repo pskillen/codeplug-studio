@@ -1,17 +1,12 @@
-import type { SatelliteEnrichment } from '@core/models/satelliteEnrichment.ts';
+import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import { hzToMhzString } from '../../lib/units.ts';
 import type { SatellitePassBaseRow, SatellitePassRow } from './useTrackingPasses.ts';
 
-/**
- * Stop-gap until SatNOGS enrichment merges uplink/downlink onto `Satellite` (#864): the pass
- * grid reads frequencies from both the library satellite record and session-scoped SatNOGS
- * transmitter rows, and treats either source as sufficient for the "has frequencies" filter.
- */
 export interface PassFrequencyFields {
   hasFrequencies: boolean;
-  /** Operator TX — satellite uplink centre frequency. */
+  /** Operator TX — satellite uplink centre frequency (or frequencies, one per transmitter). */
   txDisplay: string;
-  /** Operator RX — satellite downlink centre frequency. */
+  /** Operator RX — satellite downlink centre frequency (or frequencies, one per transmitter). */
   rxDisplay: string;
   txSortHz: number | null;
   rxSortHz: number | null;
@@ -29,73 +24,32 @@ function uniqueMhzLabels(hzValues: number[]): string[] {
   return labels;
 }
 
-function collectSatnogsUplinkHz(enrichment: SatelliteEnrichment | null): number[] {
-  if (!enrichment) return [];
-  return enrichment.transmitters
-    .map((transmitter) => transmitter.uplinkHz)
-    .filter((hz): hz is number => hz !== null);
-}
-
-function collectSatnogsDownlinkHz(enrichment: SatelliteEnrichment | null): number[] {
-  if (!enrichment) return [];
-  return enrichment.transmitters
-    .map((transmitter) => transmitter.downlinkHz)
-    .filter((hz): hz is number => hz !== null);
-}
-
-function formatFrequencyColumn(
-  satelliteHz: number | null | undefined,
-  satnogsHz: number[],
-): string {
-  const parts = uniqueMhzLabels(satelliteHz != null ? [satelliteHz, ...satnogsHz] : satnogsHz);
-  return parts.length > 0 ? parts.join(' · ') : '—';
-}
-
-function firstSortHz(satelliteHz: number | null | undefined, satnogsHz: number[]): number | null {
-  if (satelliteHz != null) return satelliteHz;
-  if (satnogsHz.length === 0) return null;
-  return Math.min(...satnogsHz);
-}
-
-export function satelliteHasFrequencies(
-  satelliteUplinkHz: number | null | undefined,
-  satelliteDownlinkHz: number | null | undefined,
-  enrichment: SatelliteEnrichment | null,
-): boolean {
-  if (satelliteUplinkHz != null || satelliteDownlinkHz != null) return true;
-  if (!enrichment) return false;
-  return enrichment.transmitters.some(
-    (transmitter) => transmitter.uplinkHz !== null || transmitter.downlinkHz !== null,
-  );
+export function satelliteHasFrequencies(transmitters: SatelliteTransmitter[]): boolean {
+  return transmitters.some((t) => !t.dismissed && (t.uplinkHz !== null || t.downlinkHz !== null));
 }
 
 export function resolvePassFrequencyFields(
-  satelliteUplinkHz: number | null | undefined,
-  satelliteDownlinkHz: number | null | undefined,
-  enrichment: SatelliteEnrichment | null,
+  transmitters: SatelliteTransmitter[],
 ): PassFrequencyFields {
-  const satnogsUplinkHz = collectSatnogsUplinkHz(enrichment);
-  const satnogsDownlinkHz = collectSatnogsDownlinkHz(enrichment);
-
+  const visible = transmitters.filter((t) => !t.dismissed);
+  const uplinkHzValues = visible.map((t) => t.uplinkHz).filter((hz): hz is number => hz !== null);
+  const downlinkHzValues = visible
+    .map((t) => t.downlinkHz)
+    .filter((hz): hz is number => hz !== null);
+  const txLabels = uniqueMhzLabels(uplinkHzValues);
+  const rxLabels = uniqueMhzLabels(downlinkHzValues);
   return {
-    hasFrequencies: satelliteHasFrequencies(satelliteUplinkHz, satelliteDownlinkHz, enrichment),
-    txDisplay: formatFrequencyColumn(satelliteUplinkHz, satnogsUplinkHz),
-    rxDisplay: formatFrequencyColumn(satelliteDownlinkHz, satnogsDownlinkHz),
-    txSortHz: firstSortHz(satelliteUplinkHz, satnogsUplinkHz),
-    rxSortHz: firstSortHz(satelliteDownlinkHz, satnogsDownlinkHz),
+    hasFrequencies: satelliteHasFrequencies(transmitters),
+    txDisplay: txLabels.length > 0 ? txLabels.join(' · ') : '—',
+    rxDisplay: rxLabels.length > 0 ? rxLabels.join(' · ') : '—',
+    txSortHz: uplinkHzValues.length > 0 ? Math.min(...uplinkHzValues) : null,
+    rxSortHz: downlinkHzValues.length > 0 ? Math.min(...downlinkHzValues) : null,
   };
 }
 
-export function enrichPassRowsWithFrequencies(
-  passes: SatellitePassBaseRow[],
-  getEnrichmentForNoradId: (noradId: number) => SatelliteEnrichment | null,
-): SatellitePassRow[] {
+export function enrichPassRowsWithFrequencies(passes: SatellitePassBaseRow[]): SatellitePassRow[] {
   return passes.map((pass) => ({
     ...pass,
-    ...resolvePassFrequencyFields(
-      pass.satelliteUplinkHz,
-      pass.satelliteDownlinkHz,
-      getEnrichmentForNoradId(pass.noradId),
-    ),
+    ...resolvePassFrequencyFields(pass.satelliteTransmitters),
   }));
 }
