@@ -1,5 +1,10 @@
-import { channelListPrefsKey, entityListPrefsKey } from './keys.ts';
-import type { ChannelListPrefs, EntityListEntity, EntityListPrefs } from './types.ts';
+import { channelListPrefsKey, entityListPrefsKey, trackingDashboardPrefsKey } from './keys.ts';
+import type {
+  ChannelListPrefs,
+  EntityListEntity,
+  EntityListPrefs,
+  TrackingDashboardPrefs,
+} from './types.ts';
 
 function readJson<T>(key: string): T | null {
   try {
@@ -60,5 +65,23 @@ export function mergeEntityListPrefs(
   const current = loadEntityListPrefs(entity, projectId) ?? {};
   const next = { ...current, ...patch };
   saveEntityListPrefs(entity, projectId, next);
+  return next;
+}
+
+export function loadTrackingDashboardPrefs(projectId: string): TrackingDashboardPrefs | null {
+  return readJson<TrackingDashboardPrefs>(trackingDashboardPrefsKey(projectId));
+}
+
+export function saveTrackingDashboardPrefs(projectId: string, prefs: TrackingDashboardPrefs): void {
+  writeJson(trackingDashboardPrefsKey(projectId), prefs);
+}
+
+export function mergeTrackingDashboardPrefs(
+  projectId: string,
+  patch: Partial<TrackingDashboardPrefs>,
+): TrackingDashboardPrefs {
+  const current = loadTrackingDashboardPrefs(projectId) ?? {};
+  const next = { ...current, ...patch };
+  saveTrackingDashboardPrefs(projectId, next);
   return next;
 }

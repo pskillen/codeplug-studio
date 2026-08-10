@@ -1,17 +1,26 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { IconRefresh } from '@tabler/icons-react';
 import LibraryInventoryHeader from '../../components/library/LibraryInventoryHeader.tsx';
+import NextPassCard from '../../components/NextPassCard/NextPassCard.tsx';
 import SatelliteLiveMap from '../../components/SatelliteLiveMap/SatelliteLiveMap.tsx';
 import { Button, DesignSystemV2Provider } from '../../components/v2/index.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useSatelliteEnrichment } from '../../state/satelliteEnrichment.tsx';
+import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import libraryPageClasses from '../../components/library/LibraryInventoryPage.module.css';
+import { isPassActive, pickPrimaryTransmitterMode } from './passTime.ts';
 import SatelliteDetailPanel from './SatelliteDetailPanel.tsx';
 import SatellitePassList from './SatellitePassList.tsx';
+import { useDopplerShiftedFrequencies } from './useDopplerShiftedFrequencies.ts';
+import { useNowTick } from './useNowTick.ts';
 import { usePassesForSatellite } from './usePassesForSatellite.ts';
 import classes from './SatelliteDetailPage.module.css';
+
+const SatelliteGlobe = lazy(() => import('../../components/SatelliteGlobe/SatelliteGlobe.tsx'));
+
+const UPCOMING_PASSES_ANCHOR_ID = 'upcoming-passes';
 
 const FUTURE_WINDOW_HOURS = 72;
 const PAST_WINDOW_HOURS = 72;
@@ -58,6 +67,23 @@ export default function SatelliteDetailPage() {
 
   const future = usePassesForSatellite(satellite, futureWindow);
   const past = usePassesForSatellite(satellite, pastWindow);
+
+  const nowMs = useNowTick(1000);
+  const { settings } = useTrackingSettings();
+  const observerLocation = settings?.location
+    ? { latDeg: settings.location.lat, lonDeg: settings.location.lon }
+    : null;
+  const nextPass = future.passes[0] ?? null;
+  const nextPassActive = nextPass ? isPassActive(nowMs, nextPass.aosAt, nextPass.losAt) : false;
+  const doppler = useDopplerShiftedFrequencies(
+    satellite,
+    satellite?.uplinkHz,
+    satellite?.downlinkHz,
+    observerLocation,
+    nextPassActive,
+    nowMs,
+  );
+  const primaryMode = pickPrimaryTransmitterMode(enrichment?.transmitters);
 
   if (loading) {
     return (
@@ -110,17 +136,55 @@ export default function SatelliteDetailPage() {
         />
         {satnogsError ? <p className={classes.satnogsError}>{satnogsError}</p> : null}
 
+        <NextPassCard
+          satelliteName={satellite.name}
+          nextPass={nextPass}
+          nowMs={nowMs}
+          hasObserver={future.hasObserver}
+          uplinkHz={satellite.uplinkHz}
+          downlinkHz={satellite.downlinkHz}
+          uplinkToneHz={satellite.uplinkToneHz}
+          downlinkToneHz={satellite.downlinkToneHz}
+          mode={primaryMode}
+          dopplerUplinkHz={doppler.uplinkHz}
+          dopplerDownlinkHz={doppler.downlinkHz}
+          upcomingPassesAnchorId={UPCOMING_PASSES_ANCHOR_ID}
+        />
+
         <SatelliteDetailPanel satellite={satellite} enrichment={enrichment} />
 
-        <SatelliteLiveMap
-          satelliteName={satellite.name}
-          tleLine1={satellite.tleLine1}
-          tleLine2={satellite.tleLine2}
-          meanMotionRevPerDay={satellite.meanMotionRevPerDay}
-        />
+        <div className={classes.mapAndGlobe}>
+          <SatelliteLiveMap
+            satelliteName={satellite.name}
+            tleLine1={satellite.tleLine1}
+            tleLine2={satellite.tleLine2}
+            meanMotionRevPerDay={satellite.meanMotionRevPerDay}
+          />
+          <div className={classes.globeContainer}>
+            <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
+              <SatelliteGlobe
+                observer={settings?.location ?? null}
+                satellites={[
+                  {
+                    id: satellite.id,
+                    name: satellite.name,
+                    noradId: satellite.noradId,
+                    tleLine1: satellite.tleLine1,
+                    tleLine2: satellite.tleLine2,
+                    meanMotionRevPerDay: satellite.meanMotionRevPerDay,
+                  },
+                ]}
+                interestedSatelliteIds={new Set([satellite.id])}
+                highlightedSatelliteIds={new Set()}
+                pollIntervalMs={2000}
+              />
+            </Suspense>
+          </div>
+        </div>
 
         <div className={classes.passLists}>
           <SatellitePassList
+            id={UPCOMING_PASSES_ANCHOR_ID}
             title="Upcoming passes"
             emptyMessage={`No upcoming passes in the next ${FUTURE_WINDOW_HOURS} hours.`}
             passes={future.passes}

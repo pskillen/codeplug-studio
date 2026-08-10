@@ -28,6 +28,8 @@ function DateTimeCell({ iso, countdown }: { iso: string; countdown?: string | nu
 }
 
 export interface SatellitePassListProps {
+  /** Anchor target id, e.g. for NextPassCard's mobile "jump to upcoming passes" link. */
+  id?: string;
   title: string;
   passes: PassResult[];
   loading: boolean;
@@ -44,6 +46,7 @@ export interface SatellitePassListProps {
  * name column, since every row here is already scoped to one satellite.
  */
 export default function SatellitePassList({
+  id,
   title,
   passes,
   loading,
@@ -104,7 +107,7 @@ export default function SatellitePassList({
   }, [countdownAosSet, nowMs]);
 
   return (
-    <Panel title={title}>
+    <Panel id={id} title={title}>
       {!hasObserver ? (
         <p className={classes.error}>
           Set an observer location on the Tracking Dashboard to calculate passes.

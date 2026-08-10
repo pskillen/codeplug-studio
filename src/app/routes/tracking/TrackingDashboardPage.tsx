@@ -16,6 +16,7 @@ import {
   useTrackingPasses,
   type SatellitePassRow,
 } from './useTrackingPasses.ts';
+import { useTrackingDashboardFilters } from './useTrackingDashboardFilters.ts';
 import {
   filterTrackingPasses,
   filterPassesToInterestedSatellites,
@@ -59,7 +60,23 @@ function toSelectedPass(row: SatellitePassRow): SelectedPass {
 }
 
 export default function TrackingDashboardPage() {
-  const [windowHours, setWindowHours] = useState(DEFAULT_WINDOW_HOURS);
+  const {
+    windowHours,
+    drawBehindMin,
+    drawAheadMin,
+    minElevation,
+    onlyWithFrequencies,
+    // Satellite multi-select filter, shared by the globe and the pass grid — a globe click
+    // narrows the grid, and (via SatelliteFilter, still owned inside PassGrid) a grid checkbox
+    // narrows the globe's highlighted dots.
+    selectedSatelliteIds,
+    setWindowHours,
+    setDrawBehindMin,
+    setDrawAheadMin,
+    setMinElevation,
+    setOnlyWithFrequencies,
+    setSelectedSatelliteIds,
+  } = useTrackingDashboardFilters();
   const {
     passes: basePasses,
     loading,
@@ -71,14 +88,6 @@ export default function TrackingDashboardPage() {
   const { library } = useLibrary();
   const { getEnrichmentForNoradId } = useSatelliteEnrichment();
   const [selectedPass, setSelectedPass] = useState<SelectedPass | null>(null);
-  const [drawBehindMin, setDrawBehindMin] = useState(0);
-  const [drawAheadMin, setDrawAheadMin] = useState(0);
-  const [minElevation, setMinElevation] = useState('');
-  const [onlyWithFrequencies, setOnlyWithFrequencies] = useState(true);
-  // Satellite multi-select filter, shared by the globe and the pass grid — a globe click
-  // narrows the grid, and (via SatelliteFilter, still owned inside PassGrid) a grid checkbox
-  // narrows the globe's highlighted dots.
-  const [selectedSatelliteIds, setSelectedSatelliteIds] = useState<Set<string>>(new Set());
 
   const enabledSatelliteRecords = useMemo(
     () => library.satellites.filter((satellite) => satellite.enabled),
@@ -145,11 +154,12 @@ export default function TrackingDashboardPage() {
   );
 
   const handleSelectSatelliteFromGlobe = (satelliteId: string) => {
-    setSelectedSatelliteIds((current) => {
-      // Toggle off if this satellite is already the sole filter; otherwise narrow to it.
-      if (current.size === 1 && current.has(satelliteId)) return new Set();
-      return new Set([satelliteId]);
-    });
+    // Toggle off if this satellite is already the sole filter; otherwise narrow to it.
+    if (selectedSatelliteIds.size === 1 && selectedSatelliteIds.has(satelliteId)) {
+      setSelectedSatelliteIds(new Set());
+    } else {
+      setSelectedSatelliteIds(new Set([satelliteId]));
+    }
   };
 
   const minElevationValue = Number.parseFloat(minElevation);
@@ -231,29 +241,33 @@ export default function TrackingDashboardPage() {
           </div>
         </Panel>
 
-        <div className={classes.map}>
-          <SatelliteTrackMap
-            observer={settings?.location ?? null}
-            selectedPass={selectedPass}
-            defaultPasses={defaultMapPasses}
-            drawBehindMin={drawBehindMin}
-            drawAheadMin={drawAheadMin}
-          />
-        </div>
-
-        {hasEnabledSatellites ? (
-          <Panel title="Orbital globe" sub="Click a satellite to filter the pass grid to it.">
-            <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
-              <SatelliteGlobe
+        <div className={classes.mapAndGlobe}>
+          <Panel title="Ground track" sub="Preview a selected pass's ground track.">
+            <div className={classes.map}>
+              <SatelliteTrackMap
                 observer={settings?.location ?? null}
-                satellites={enabledSatellites}
-                interestedSatelliteIds={interestedSatelliteIds}
-                highlightedSatelliteIds={selectedSatelliteIds}
-                onSelectSatellite={handleSelectSatelliteFromGlobe}
+                selectedPass={selectedPass}
+                defaultPasses={defaultMapPasses}
+                drawBehindMin={drawBehindMin}
+                drawAheadMin={drawAheadMin}
               />
-            </Suspense>
+            </div>
           </Panel>
-        ) : null}
+
+          {hasEnabledSatellites ? (
+            <Panel title="Orbital globe" sub="Click a satellite to filter the pass grid to it.">
+              <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
+                <SatelliteGlobe
+                  observer={settings?.location ?? null}
+                  satellites={enabledSatellites}
+                  interestedSatelliteIds={interestedSatelliteIds}
+                  highlightedSatelliteIds={selectedSatelliteIds}
+                  onSelectSatellite={handleSelectSatelliteFromGlobe}
+                />
+              </Suspense>
+            </Panel>
+          ) : null}
+        </div>
 
         {!hasEnabledSatellites ? (
           <p className={classes.empty}>

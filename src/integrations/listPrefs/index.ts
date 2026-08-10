@@ -6,6 +6,7 @@ export {
   entityListColumnsKey,
   entityListPrefsKey,
   LIST_PREFS_STORAGE_PREFIX,
+  trackingDashboardPrefsKey,
 } from './keys.ts';
 export {
   loadChannelVisibleColumns,
@@ -16,10 +17,13 @@ export {
 export {
   loadChannelListPrefs,
   loadEntityListPrefs,
+  loadTrackingDashboardPrefs,
   mergeChannelListPrefs,
   mergeEntityListPrefs,
+  mergeTrackingDashboardPrefs,
   saveChannelListPrefs,
   saveEntityListPrefs,
+  saveTrackingDashboardPrefs,
 } from './storage.ts';
 export type {
   ChannelListPrefs,
@@ -28,4 +32,5 @@ export type {
   DataTableSortState,
   EntityListEntity,
   EntityListPrefs,
+  TrackingDashboardPrefs,
 } from './types.ts';

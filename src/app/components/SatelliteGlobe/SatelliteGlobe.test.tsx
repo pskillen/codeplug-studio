@@ -141,4 +141,41 @@ describe('SatelliteGlobe', () => {
     const points = lastGlobeProps?.pointsData as { kind: string }[];
     expect(points.find((p) => p.kind === 'observer')).toBeUndefined();
   });
+
+  it('passes a custom pollIntervalMs through to useLiveSatellitePositions, single-satellite usage', () => {
+    mockUseLiveSatellitePositions.mockReturnValue(new Map());
+
+    const soloSatellite = satellites.slice(0, 1);
+    render(
+      <SatelliteGlobe
+        observer={null}
+        satellites={soloSatellite}
+        interestedSatelliteIds={new Set(['iss'])}
+        highlightedSatelliteIds={new Set()}
+        pollIntervalMs={2000}
+      />,
+    );
+
+    expect(mockUseLiveSatellitePositions).toHaveBeenCalledWith(soloSatellite, 2000);
+  });
+
+  it('does not throw when a satellite point is clicked without an onSelectSatellite handler', () => {
+    mockUseLiveSatellitePositions.mockReturnValue(
+      new Map<string, LiveSatellitePosition>([
+        ['iss', { position: [10, 20], altitudeKm: 420, at: '2024-02-14T18:00:00.000Z' }],
+      ]),
+    );
+
+    render(
+      <SatelliteGlobe
+        observer={null}
+        satellites={satellites.slice(0, 1)}
+        interestedSatelliteIds={new Set(['iss'])}
+        highlightedSatelliteIds={new Set()}
+      />,
+    );
+
+    const onPointClick = lastGlobeProps?.onPointClick as (point: object) => void;
+    expect(() => onPointClick({ kind: 'satellite', id: 'iss', name: 'ISS' })).not.toThrow();
+  });
 });

@@ -1,0 +1,115 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-surface);
+  transition:
+    border-color 120ms ease,
+    background 120ms ease;
+}
+
+.active {
+  border-color: var(--dsv2-accent-border);
+  background: color-mix(in srgb, var(--dsv2-accent) 12%, var(--dsv2-surface));
+}
+
+.topRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dsv2-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.subtitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+}
+
+.activeBadge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--dsv2-accent);
+  color: var(--dsv2-surface);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.countdown {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dsv2-text-secondary);
+}
+
+.empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--dsv2-text-tertiary);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.label {
+  font-size: 11px;
+  color: var(--dsv2-text-tertiary);
+}
+
+.value {
+  font-size: 14px;
+  color: var(--dsv2-text-primary);
+}
+
+.dopplerValue {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  width: fit-content;
+  background: color-mix(in srgb, var(--dsv2-accent) 18%, transparent);
+  color: var(--dsv2-text-primary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Mobile-only — the caller's desktop layout keeps the upcoming-passes table close enough
+   that a jump link isn't needed there. Matches the satellite detail page's own stacked-layout
+   breakpoint, since that's what makes the table far enough away to warrant this link. */
+.jumpLink {
+  display: none;
+  font-size: 13px;
+  color: var(--dsv2-accent);
+}
+
+.jumpLink:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .jumpLink {
+    display: inline-block;
+  }
+}

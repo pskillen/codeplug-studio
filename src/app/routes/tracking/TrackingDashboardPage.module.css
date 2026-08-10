@@ -3,8 +3,30 @@
   margin: 16px 0;
 }
 
-.map {
+.mapAndGlobe {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
   margin: 16px 0;
+}
+
+/* Desktop only — matches the ground-track map and orbital globe to the same height so the two
+   panels line up; left unset on mobile so each keeps its own (smaller) default height. Same
+   pattern as SatelliteDetailPage's .mapAndGlobe. */
+@media (min-width: 901px) {
+  .mapAndGlobe {
+    --satellite-panel-height: 420px;
+  }
+}
+
+@media (max-width: 900px) {
+  .mapAndGlobe {
+    grid-template-columns: 1fr;
+  }
+}
+
+.map {
+  min-width: 0;
 }
 
 .calculatePasses {

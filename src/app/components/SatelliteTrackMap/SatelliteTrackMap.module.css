@@ -3,7 +3,9 @@
 }
 
 .map {
-  height: 320px;
+  /* Set by TrackingDashboardPage's .mapAndGlobe on desktop widths so this map and the
+     adjacent SatelliteGlobe render at the same height; unset (falls back to 320px) on mobile. */
+  height: var(--satellite-panel-height, 320px);
   width: 100%;
   border-radius: 8px;
 }

@@ -32,3 +32,12 @@ export interface EntityListPrefs {
   q?: string;
   columnSort?: DataTableSortState;
 }
+
+export interface TrackingDashboardPrefs {
+  windowHours?: number;
+  drawBehindMin?: number;
+  drawAheadMin?: number;
+  minElevation?: string;
+  onlyWithFrequencies?: boolean;
+  selectedSatelliteIds?: string[];
+}

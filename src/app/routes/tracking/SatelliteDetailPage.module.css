@@ -4,6 +4,38 @@
   gap: 16px;
 }
 
+.mapAndGlobe {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Desktop only — matches SatelliteLiveMap and SatelliteGlobe to the same height so the two
+   panels line up; left unset on mobile so each keeps its own (smaller) default height. */
+@media (min-width: 901px) {
+  .mapAndGlobe {
+    --satellite-panel-height: 420px;
+  }
+}
+
+.globeContainer {
+  border: 1px solid var(--dsv2-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.globeLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  height: var(--satellite-panel-height, 420px);
+  border-radius: 8px;
+  background: #000011;
+  color: var(--dsv2-text-tertiary);
+  font-size: 13px;
+}
+
 .satnogsError {
   color: var(--dsv2-warning);
   font-size: 0.9em;
@@ -12,6 +44,10 @@
 
 @media (max-width: 900px) {
   .passLists {
+    grid-template-columns: 1fr;
+  }
+
+  .mapAndGlobe {
     grid-template-columns: 1fr;
   }
 }
