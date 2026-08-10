@@ -121,3 +121,21 @@
 ## Next
 
 - Blocked on Milestone A (satellite-keps library, #850–#853) landing first in the same branch.
+
+---
+
+## Slice 9: Satellite detail page (#1002, phases 8a/8b/8c)
+
+**Status:** Complete — umbrella #1002 closed by phase 8c.
+
+Three-PR arc adding a per-satellite detail page reachable from the Satellite Keps list and the Tracking Dashboard pass grid, split because it was substantial:
+
+- **8a — route shell + detail panel + pass lists (#1003):** `/tracking/satellites/:satelliteId` route (`SatelliteDetailPage.tsx`); static `SatelliteDetailPanel` (decoded Keplerian fields, uplink/downlink/tone metadata from #854); `usePassesForSatellite` hook (extracted, shared with `useTrackingPasses.ts`) driving future/past pass lists (`SatellitePassList.tsx`) over the existing SGP4 Worker plumbing.
+- **8b — live position + footprint circle math (#1005):** `src/core/domain/satelliteTracking/footprint.ts` — pure `computeSatelliteFootprint`, matching `passPrediction.ts`/`groundTrack.ts`'s hand-rolled great-circle style (radio-horizon angular radius from altitude, `sampleGreatCircle` bearing walk). `useLiveSatellitePosition` hook (`src/app/routes/tracking/`) polling `satellite.js` `propagate` every 2s. Extracted `SatelliteTrackMap`'s antimeridian-split and marker-icon helpers into `SatelliteTrackMap/mapHelpers.ts` for reuse — no map rendering yet.
+- **8c — orbit trails + live map component (#1007, this slice):** `src/app/components/SatelliteLiveMap/orbitTrail.ts` — pure `computeOrbitTrailSegments`, deriving `periodMinutes = 1440 / meanMotionRevPerDay` and sampling 1.5 orbits ahead/behind via `sampleGroundTrack`, antimeridian-split **independently** per segment (not as one combined polyline — the two windows are non-adjacent). New `SatelliteLiveMap` component (sibling to `SatelliteTrackMap`, not a mode-switch on it) composing the live marker, footprint circle, and both trail segments; wired into `SatelliteDetailPage` as the page's map.
+
+**Delivered:** an operator can open any library satellite's detail page and see its orbital elements, uplink/downlink metadata, upcoming/past passes, and a live 2D map showing the current subsatellite position, its visible-horizon footprint, and 1.5-orbit ahead/behind ground tracks (solid/dashed) — all client-side, no backend.
+
+**Verify (8c):** `computeOrbitTrailSegments` unit-tested (valid lat/lon at every sample; sample count matches the expected 1.5-period window; antimeridian split boundaries are genuine >180° longitude jumps, future and past checked independently). `SatelliteLiveMap` component-tested with a mocked `useLiveSatellitePosition` and mocked `react-leaflet` primitives (live marker, footprint segment(s), and both trail-segment kinds render; hint text and no marker before the first live position resolves). Live-verified in a real browser: opened a real satellite's detail page, watched the amber marker move over successive polls, confirmed the footprint circle rendered as a plausible circle, and confirmed the solid/dashed split between the future and past trail segments.
+
+**Out of scope (deferred):** 3D globe rendering (#866) — depends on this slice for `footprint.ts` and the orbit-period math instead of re-deriving them.
