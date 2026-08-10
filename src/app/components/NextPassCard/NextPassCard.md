@@ -6,28 +6,28 @@ Highlighted "next pass" summary card for a single satellite — AOS/LOS/max-elev
 
 ## Props
 
-| Prop                     | Type                          | Notes                                                                                                                        |
-| ------------------------ | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `satelliteName`          | `string`                      | —                                                                                                                             |
-| `nextPass`               | `PassResult \| null`          | Earliest upcoming pass, or `null` if none in the current look-ahead window                                                   |
-| `nowMs`                  | `number`                      | Caller-supplied clock tick (e.g. `useNowTick`) — keeps the card a pure function of props                                     |
-| `hasObserver`            | `boolean`                     | Distinguishes "no observer configured" from "observer set, but no pass in this window"                                       |
-| `transmitters`           | `NextPassCardTransmitter[]`   | One entry per `Satellite.transmitters` row to render — empty array renders a "No transmitter data" message instead of a grid |
-| `upcomingPassesAnchorId` | `string`                      | When set, renders a mobile-only "Jump to upcoming passes" link pointing at `#<id>` — see Behaviour                            |
+| Prop                     | Type                        | Notes                                                                                                                        |
+| ------------------------ | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `satelliteName`          | `string`                    | —                                                                                                                            |
+| `nextPass`               | `PassResult \| null`        | Earliest upcoming pass, or `null` if none in the current look-ahead window                                                   |
+| `nowMs`                  | `number`                    | Caller-supplied clock tick (e.g. `useNowTick`) — keeps the card a pure function of props                                     |
+| `hasObserver`            | `boolean`                   | Distinguishes "no observer configured" from "observer set, but no pass in this window"                                       |
+| `transmitters`           | `NextPassCardTransmitter[]` | One entry per `Satellite.transmitters` row to render — empty array renders a "No transmitter data" message instead of a grid |
+| `upcomingPassesAnchorId` | `string`                    | When set, renders a mobile-only "Jump to upcoming passes" link pointing at `#<id>` — see Behaviour                           |
 
 ### `NextPassCardTransmitter`
 
-| Field                | Type              | Notes                                                                                        |
-| --------------------- | ----------------- | ---------------------------------------------------------------------------------------------- |
-| `id`                  | `string`          | React key — matches the source `SatelliteTransmitter.id`                                      |
-| `label`               | `string`          | Rendered as the block heading                                                                 |
-| `mode`                | `string \| null`  | Real per-transmitter model field (`SatelliteTransmitter.mode`) — renders `—` when null         |
-| `uplinkHz`            | `number \| null`  | Static uplink                                                                                  |
-| `downlinkHz`          | `number \| null`  | Static downlink                                                                                |
-| `uplinkToneHz`        | `number \| null`  | Static CTCSS uplink tone                                                                       |
-| `downlinkToneHz`      | `number \| null`  | Static CTCSS downlink tone                                                                     |
-| `dopplerUplinkHz`     | `number \| null`  | Doppler-corrected uplink for this transmitter — rendered only while the pass is active         |
-| `dopplerDownlinkHz`   | `number \| null`  | Doppler-corrected downlink for this transmitter — rendered only while the pass is active       |
+| Field               | Type             | Notes                                                                                    |
+| ------------------- | ---------------- | ---------------------------------------------------------------------------------------- |
+| `id`                | `string`         | React key — matches the source `SatelliteTransmitter.id`                                 |
+| `label`             | `string`         | Rendered as the block heading                                                            |
+| `mode`              | `string \| null` | Real per-transmitter model field (`SatelliteTransmitter.mode`) — renders `—` when null   |
+| `uplinkHz`          | `number \| null` | Static uplink                                                                            |
+| `downlinkHz`        | `number \| null` | Static downlink                                                                          |
+| `uplinkToneHz`      | `number \| null` | Static CTCSS uplink tone                                                                 |
+| `downlinkToneHz`    | `number \| null` | Static CTCSS downlink tone                                                               |
+| `dopplerUplinkHz`   | `number \| null` | Doppler-corrected uplink for this transmitter — rendered only while the pass is active   |
+| `dopplerDownlinkHz` | `number \| null` | Doppler-corrected downlink for this transmitter — rendered only while the pass is active |
 
 ## Usage
 
