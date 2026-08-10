@@ -2,14 +2,19 @@ import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { IconRefresh } from '@tabler/icons-react';
 import LibraryInventoryHeader from '../../components/library/LibraryInventoryHeader.tsx';
+import NextPassCard from '../../components/NextPassCard/NextPassCard.tsx';
 import SatelliteLiveMap from '../../components/SatelliteLiveMap/SatelliteLiveMap.tsx';
 import { Button, DesignSystemV2Provider } from '../../components/v2/index.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useSatelliteEnrichment } from '../../state/satelliteEnrichment.tsx';
+import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import libraryPageClasses from '../../components/library/LibraryInventoryPage.module.css';
+import { isPassActive, pickPrimaryTransmitterMode } from './passTime.ts';
 import SatelliteDetailPanel from './SatelliteDetailPanel.tsx';
 import SatellitePassList from './SatellitePassList.tsx';
+import { useDopplerShiftedFrequencies } from './useDopplerShiftedFrequencies.ts';
+import { useNowTick } from './useNowTick.ts';
 import { usePassesForSatellite } from './usePassesForSatellite.ts';
 import classes from './SatelliteDetailPage.module.css';
 
@@ -58,6 +63,23 @@ export default function SatelliteDetailPage() {
 
   const future = usePassesForSatellite(satellite, futureWindow);
   const past = usePassesForSatellite(satellite, pastWindow);
+
+  const nowMs = useNowTick(1000);
+  const { settings } = useTrackingSettings();
+  const observerLocation = settings?.location
+    ? { latDeg: settings.location.lat, lonDeg: settings.location.lon }
+    : null;
+  const nextPass = future.passes[0] ?? null;
+  const nextPassActive = nextPass ? isPassActive(nowMs, nextPass.aosAt, nextPass.losAt) : false;
+  const doppler = useDopplerShiftedFrequencies(
+    satellite,
+    satellite?.uplinkHz,
+    satellite?.downlinkHz,
+    observerLocation,
+    nextPassActive,
+    nowMs,
+  );
+  const primaryMode = pickPrimaryTransmitterMode(enrichment?.transmitters);
 
   if (loading) {
     return (
@@ -109,6 +131,20 @@ export default function SatelliteDetailPage() {
           }
         />
         {satnogsError ? <p className={classes.satnogsError}>{satnogsError}</p> : null}
+
+        <NextPassCard
+          satelliteName={satellite.name}
+          nextPass={nextPass}
+          nowMs={nowMs}
+          hasObserver={future.hasObserver}
+          uplinkHz={satellite.uplinkHz}
+          downlinkHz={satellite.downlinkHz}
+          uplinkToneHz={satellite.uplinkToneHz}
+          downlinkToneHz={satellite.downlinkToneHz}
+          mode={primaryMode}
+          dopplerUplinkHz={doppler.uplinkHz}
+          dopplerDownlinkHz={doppler.downlinkHz}
+        />
 
         <SatelliteDetailPanel satellite={satellite} enrichment={enrichment} />
 

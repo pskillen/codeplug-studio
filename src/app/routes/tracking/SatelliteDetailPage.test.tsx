@@ -49,6 +49,11 @@ vi.mock('./usePassesForSatellite.ts', () => ({
   usePassesForSatellite: (...args: unknown[]) => mockUsePassesForSatellite(...args),
 }));
 
+const mockUseTrackingSettings = vi.fn();
+vi.mock('../../state/useTrackingSettings.ts', () => ({
+  useTrackingSettings: () => mockUseTrackingSettings(),
+}));
+
 function renderAt(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
@@ -69,6 +74,11 @@ describe('SatelliteDetailPage', () => {
       refreshEnrichmentForNoradIds: vi.fn(),
       clearEnrichment: vi.fn(),
     });
+    mockUseTrackingSettings.mockReturnValue({
+      settings: null,
+      loading: false,
+      save: vi.fn(),
+    });
   });
 
   it('renders the detail panel fields for a known satellite', () => {
@@ -85,12 +95,13 @@ describe('SatelliteDetailPage', () => {
 
     renderAt('/tracking/satellites/sat-1');
 
-    expect(screen.getByText('ISS')).toBeInTheDocument();
+    expect(screen.getAllByText('ISS').length).toBeGreaterThan(0);
     expect(screen.getByText('NORAD 25544')).toBeInTheDocument();
     expect(screen.getByText('25544')).toBeInTheDocument();
-    expect(screen.getByText('145.8 MHz')).toBeInTheDocument();
-    expect(screen.getByText('437.8 MHz')).toBeInTheDocument();
-    expect(screen.getByText('67 Hz')).toBeInTheDocument();
+    // Static uplink/downlink/tone now render on both SatelliteDetailPanel and NextPassCard.
+    expect(screen.getAllByText('145.8 MHz').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('437.8 MHz').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('67 Hz').length).toBeGreaterThan(0);
     expect(screen.getByText('Not set')).toBeInTheDocument();
   });
 
@@ -122,6 +133,36 @@ describe('SatelliteDetailPage', () => {
     expect(windows.some((w) => w.fromAt < w.toAt && new Date(w.toAt).getTime() <= Date.now())).toBe(
       true,
     );
+  });
+
+  it('highlights the next-pass card as above-horizon during an active pass with an observer set', () => {
+    mockUseLibrary.mockReturnValue({
+      library: { ...emptyLibrary(), satellites: [SATELLITE] },
+      loading: false,
+    });
+    mockUsePassesForSatellite.mockReturnValue({
+      passes: [
+        {
+          aosAt: new Date(Date.now() - 60_000).toISOString(),
+          losAt: new Date(Date.now() + 60_000).toISOString(),
+          maxElevationAt: new Date().toISOString(),
+          maxElevationDeg: 45,
+          durationSec: 120,
+        },
+      ],
+      loading: false,
+      error: null,
+      hasObserver: true,
+    });
+    mockUseTrackingSettings.mockReturnValue({
+      settings: { location: { lat: 51.5, lon: -0.1 } },
+      loading: false,
+      save: vi.fn(),
+    });
+
+    renderAt('/tracking/satellites/sat-1');
+
+    expect(screen.getByText(/above horizon/i)).toBeInTheDocument();
   });
 
   it('shows a not-found message for an unknown satellite id', () => {

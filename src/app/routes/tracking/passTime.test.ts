@@ -1,11 +1,26 @@
 import { describe, expect, it } from 'vitest';
+import type { SatelliteTransmitterInfo } from '@core/models/satelliteEnrichment.ts';
 import {
   filterTrackingPasses,
   formatCountdownMmSs,
   formatNextPassCountdown,
   isPassActive,
   nextPassBySatelliteId,
+  pickPrimaryTransmitterMode,
 } from './passTime.ts';
+
+function transmitter(overrides: Partial<SatelliteTransmitterInfo>): SatelliteTransmitterInfo {
+  return {
+    uuid: 'demo',
+    description: '',
+    mode: null,
+    downlinkHz: null,
+    uplinkHz: null,
+    alive: false,
+    status: null,
+    ...overrides,
+  };
+}
 
 describe('isPassActive', () => {
   const aos = '2026-08-10T12:00:00.000Z';
@@ -133,5 +148,33 @@ describe('formatNextPassCountdown', () => {
 
   it('returns null after LOS', () => {
     expect(formatNextPassCountdown(Date.parse('2026-08-10T13:00:00.000Z'), aos, los)).toBeNull();
+  });
+});
+
+describe('pickPrimaryTransmitterMode', () => {
+  it('returns null when there are no transmitters', () => {
+    expect(pickPrimaryTransmitterMode(undefined)).toBeNull();
+    expect(pickPrimaryTransmitterMode([])).toBeNull();
+  });
+
+  it('prefers the first alive transmitter over earlier dead ones', () => {
+    const transmitters = [
+      transmitter({ mode: 'CW', alive: false }),
+      transmitter({ mode: 'FM', alive: true }),
+      transmitter({ mode: 'BPSK', alive: true }),
+    ];
+    expect(pickPrimaryTransmitterMode(transmitters)).toBe('FM');
+  });
+
+  it('falls back to the first transmitter when none are alive', () => {
+    const transmitters = [
+      transmitter({ mode: 'CW', alive: false }),
+      transmitter({ mode: 'FM', alive: false }),
+    ];
+    expect(pickPrimaryTransmitterMode(transmitters)).toBe('CW');
+  });
+
+  it('returns null when the chosen transmitter has no mode', () => {
+    expect(pickPrimaryTransmitterMode([transmitter({ mode: null, alive: true })])).toBeNull();
   });
 });

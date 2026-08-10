@@ -20,6 +20,8 @@ Tier-1 hub for the **Tracking Dashboard** — client-side pass prediction (SGP4)
 | 3D orbital globe                   | Shipped | [#866](https://github.com/pskillen/codeplug-studio/issues/866) — observer marker, live satellite dots, ~90-minute orbit trails, footprint circles (`SatelliteGlobe`); lazy-loaded on `/tracking` ([#1013](https://github.com/pskillen/codeplug-studio/issues/1013)); pass-grid filter hides non-selected satellites ([#1014](https://github.com/pskillen/codeplug-studio/issues/1014)); 10s live poll with stable geometry refs |
 | 2D ground-track map                | Shipped | [#867](https://github.com/pskillen/codeplug-studio/issues/867) — configurable draw-ahead/behind [#998](https://github.com/pskillen/codeplug-studio/issues/998); auto-draws next pass per satellite only when the pass-grid satellite filter is active ([#1017](https://github.com/pskillen/codeplug-studio/issues/1017)); both viewports as separate panels — [#1009](https://github.com/pskillen/codeplug-studio/issues/1009)  |
 | Satellite detail page              | Shipped | [#1002](https://github.com/pskillen/codeplug-studio/issues/1002) — route, static detail panel, and future/past pass lists ([#1003](https://github.com/pskillen/codeplug-studio/issues/1003)); live position + footprint circle math ([#1005](https://github.com/pskillen/codeplug-studio/issues/1005)); orbit trails + live map component ([#1007](https://github.com/pskillen/codeplug-studio/issues/1007))                    |
+| Next pass card                     | Shipped | [#1021](https://github.com/pskillen/codeplug-studio/issues/1021) — `NextPassCard`, top of the satellite detail page and demoed in the styleguide; above-horizon highlight shares `isPassActive`/`formatNextPassCountdown` with the pass grid                                                                                                                                                                                    |
+| Doppler-corrected frequencies      | Shipped | [#1023](https://github.com/pskillen/codeplug-studio/issues/1023) — `dopplerShift.ts` (wraps `satellite.js`'s own `dopplerFactor`); shown on the Next Pass card, shaded, only while a pass is active                                                                                                                                                                                                                             |
 
 ---
 
@@ -46,7 +48,6 @@ Tier-1 hub for the **Tracking Dashboard** — client-side pass prediction (SGP4)
 
 - Radio keps write ([#848](https://github.com/pskillen/codeplug-studio/issues/848))
 - Space-Track.org
-- Doppler UI beyond pass times
 - Offline / paid map tile productization
 - 3D/2D viewport toggle — both viewports exist as of [#866](https://github.com/pskillen/codeplug-studio/issues/866), so the toggle is technically unblocked, but building it is tracked separately as [#1009](https://github.com/pskillen/codeplug-studio/issues/1009), not part of this epic's shipped scope
 - SatNOGS-sourced mode/status/frequency columns in the pass grid ([#864](https://github.com/pskillen/codeplug-studio/issues/864))
