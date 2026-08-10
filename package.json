@@ -43,9 +43,11 @@
     "leaflet": "^1.9.4",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-globe.gl": "^2.38.0",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.6.2",
     "satellite.js": "^7.1.0",
+    "three": "^0.185.1",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
