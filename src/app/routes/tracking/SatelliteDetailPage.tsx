@@ -153,7 +153,7 @@ export default function SatelliteDetailPage() {
           upcomingPassesAnchorId={UPCOMING_PASSES_ANCHOR_ID}
         />
 
-        <SatelliteDetailPanel satellite={satellite} enrichment={enrichment} />
+        <SatelliteDetailPanel satellite={satellite} />
 
         <div className={classes.mapAndGlobe}>
           <SatelliteLiveMap

@@ -19,12 +19,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.subheading {
-  margin: 20px 0 12px;
-  font-size: 0.95em;
-  color: var(--dsv2-text-secondary);
-}
-
 .transmitterList {
   display: flex;
   flex-direction: column;
@@ -42,11 +36,20 @@
 }
 
 .transmitterTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   font-weight: 600;
   margin-bottom: 8px;
 }
 
-.emptyEnrichment {
+.sourceBadge {
+  font-weight: 400;
+  font-size: 0.8em;
+  color: var(--dsv2-text-secondary);
+}
+
+.emptyTransmitters {
   margin: 0;
   color: var(--dsv2-text-secondary);
   font-size: 0.9em;
