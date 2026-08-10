@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { PassResult } from '@core/domain/satelliteTracking/types.ts';
+import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import { PASS_PREDICTION_DEBOUNCE_MS, requestSatellitePasses } from './usePassesForSatellite.ts';
 
-/** Pass prediction row before SatNOGS enrichment is merged for grid display/filtering. */
+/** Pass prediction row before frequency display fields are resolved for grid display/filtering. */
 export interface SatellitePassBaseRow extends PassResult {
   satelliteId: string;
   satelliteName: string;
   noradId: number;
   tleLine1: string;
   tleLine2: string;
-  satelliteUplinkHz: number | null;
-  satelliteDownlinkHz: number | null;
+  satelliteTransmitters: SatelliteTransmitter[];
 }
 
 export interface SatellitePassRow extends SatellitePassBaseRow {
@@ -88,9 +88,7 @@ export function useTrackingPasses(
                 noradId: satellite.noradId,
                 tleLine1: satellite.tleLine1,
                 tleLine2: satellite.tleLine2,
-                // Minimal single-transmitter fix — full multi-transmitter support lands in phase 5.
-                satelliteUplinkHz: satellite.transmitters[0]?.uplinkHz ?? null,
-                satelliteDownlinkHz: satellite.transmitters[0]?.downlinkHz ?? null,
+                satelliteTransmitters: satellite.transmitters,
               }));
             }),
           );

@@ -6,7 +6,6 @@ import SatelliteTrackMap, {
   type SelectedPass,
 } from '../../components/SatelliteTrackMap/SatelliteTrackMap.tsx';
 import { useLibrary } from '../../state/useLibrary.ts';
-import { useSatelliteEnrichment } from '../../state/satelliteEnrichment.tsx';
 import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import ObserverLocationSettings from './ObserverLocationSettings.tsx';
 import PassGrid from './PassGrid.tsx';
@@ -86,7 +85,6 @@ export default function TrackingDashboardPage() {
   } = useTrackingPasses(windowHours);
   const { settings } = useTrackingSettings();
   const { library } = useLibrary();
-  const { getEnrichmentForNoradId } = useSatelliteEnrichment();
   const [selectedPass, setSelectedPass] = useState<SelectedPass | null>(null);
 
   const enabledSatelliteRecords = useMemo(
@@ -113,8 +111,8 @@ export default function TrackingDashboardPage() {
   );
 
   const frequencyQualifiedSatelliteIds = useMemo(
-    () => computeFrequencyQualifiedSatelliteIds(enabledSatelliteRecords, getEnrichmentForNoradId),
-    [enabledSatelliteRecords, getEnrichmentForNoradId],
+    () => computeFrequencyQualifiedSatelliteIds(enabledSatelliteRecords),
+    [enabledSatelliteRecords],
   );
 
   const interestedSatelliteIds = useMemo(
@@ -148,10 +146,7 @@ export default function TrackingDashboardPage() {
     );
   }, [basePasses]);
 
-  const passes = useMemo(
-    () => enrichPassRowsWithFrequencies(basePasses, getEnrichmentForNoradId),
-    [basePasses, getEnrichmentForNoradId],
-  );
+  const passes = useMemo(() => enrichPassRowsWithFrequencies(basePasses), [basePasses]);
 
   const handleSelectSatelliteFromGlobe = (satelliteId: string) => {
     // Toggle off if this satellite is already the sole filter; otherwise narrow to it.

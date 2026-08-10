@@ -53,33 +53,14 @@ function satellite(id: string, noradId: number, uplinkHz: number | null = null):
 }
 
 describe('computeFrequencyQualifiedSatelliteIds', () => {
-  it('includes satellites with library uplink/downlink set', () => {
-    const ids = computeFrequencyQualifiedSatelliteIds([satellite('a', 1, 145_990_000)], () => null);
+  it('includes satellites with a transmitter uplink/downlink set', () => {
+    const ids = computeFrequencyQualifiedSatelliteIds([satellite('a', 1, 145_990_000)]);
     expect([...ids]).toEqual(['a']);
   });
 
-  it('includes satellites with SatNOGS transmitter frequencies', () => {
-    const ids = computeFrequencyQualifiedSatelliteIds([satellite('b', 2)], (noradId) =>
-      noradId === 2
-        ? {
-            noradId: 2,
-            source: 'satnogs',
-            fetchedAt: '2026-08-10T12:00:00.000Z',
-            transmitters: [
-              {
-                uuid: 'x',
-                description: 'FM',
-                mode: 'FM',
-                uplinkHz: null,
-                downlinkHz: 145_800_000,
-                alive: true,
-                status: 'active',
-              },
-            ],
-          }
-        : null,
-    );
-    expect([...ids]).toEqual(['b']);
+  it('excludes satellites with no transmitters or no transmitter frequencies', () => {
+    const ids = computeFrequencyQualifiedSatelliteIds([satellite('b', 2)]);
+    expect([...ids]).toEqual([]);
   });
 });
 
