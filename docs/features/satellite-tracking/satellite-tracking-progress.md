@@ -139,3 +139,22 @@ Three-PR arc adding a per-satellite detail page reachable from the Satellite Kep
 **Verify (8c):** `computeOrbitTrailSegments` unit-tested (valid lat/lon at every sample; sample count matches the expected 1.5-period window; antimeridian split boundaries are genuine >180° longitude jumps, future and past checked independently). `SatelliteLiveMap` component-tested with a mocked `useLiveSatellitePosition` and mocked `react-leaflet` primitives (live marker, footprint segment(s), and both trail-segment kinds render; hint text and no marker before the first live position resolves). Live-verified in a real browser: opened a real satellite's detail page, watched the amber marker move over successive polls, confirmed the footprint circle rendered as a plausible circle, and confirmed the solid/dashed split between the future and past trail segments.
 
 **Out of scope (deferred):** 3D globe rendering (#866) — depends on this slice for `footprint.ts` and the orbit-period math instead of re-deriving them.
+
+---
+
+## Slice 10: 3D orbital globe (#866) — final phase
+
+**Status:** Complete — closes out the Tracking Dashboard epic (#860).
+
+- **`react-globe.gl` + `three`** added as new dependencies — a visible bundle-size increase, tracked in the PR description as an intentional trade-off.
+- **`src/app/components/SatelliteGlobe/`** — new component, sibling to `SatelliteLiveMap` rather than a shared abstraction (a 3D globe handles antimeridian wraparound natively, so none of `SatelliteTrackMap/mapHelpers.ts`'s splitting logic applies, and this component tracks many satellites at once instead of one):
+  - `useLiveSatellitePositions.ts` — multi-satellite sibling to the single-satellite `useLiveSatellitePosition` hook from slice 9 (8b); calling that hook once per array entry would violate the rules of hooks, so this variant shares one poll interval across all enabled satellites.
+  - `orbitTrail.ts#computeGlobeOrbitTrail` — ~90-minute window (one full orbital period, not slice 9's 1.5-orbit window), still derived per-satellite via `periodMinutes = 1440 / meanMotionRevPerDay` and `sampleGroundTrack`.
+  - `computeSatelliteFootprint` (slice 9 / 8b) reused directly for the footprint circle, no reimplementation.
+  - `buildGlobeData.ts` — pure `pointsData`/`pathsData` computation, kept separate from the component so it's unit-testable without a WebGL context.
+- **Click-to-filter:** `PassGrid`'s satellite multi-select filter state was lifted from local `useState` up to `TrackingDashboardPage` (with an uncontrolled fallback so `PassGrid.test.tsx` needed no changes) so `SatelliteGlobe` and `PassGrid` share it — clicking a satellite dot on the globe narrows the grid.
+- **Follow-up filed:** [#1009](https://github.com/pskillen/codeplug-studio/issues/1009) — 3D/2D viewport toggle, newly unblocked now both viewports exist, but out of this ticket's scope.
+
+**Verify:** `SatelliteGlobe.test.tsx` mocks `react-globe.gl` to a stub component and asserts the `pointsData`/`pathsData`/`onPointClick` props it's called with (state/prop wiring, not rendered 3D output — WebGL doesn't run in jsdom). Live-verified in a real browser: globe rendered with the Earth texture, observer marker, live-moving satellite dots, visible orbit trails and footprint circles, and confirmed a globe click narrows the pass grid.
+
+**This closes the satellite-tracking epic's post-MVP follow-up series (#860) — every child ticket filed for the epic (#862, #863, #864, #865/#980, #866, #867/#998, #1002/#1003/#1005/#1007) has shipped, aside from the newly-filed #1009 toggle follow-up.**
