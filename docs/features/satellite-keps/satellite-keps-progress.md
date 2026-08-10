@@ -96,6 +96,31 @@
 
 ---
 
+## Slice 5: Uplink/downlink metadata (#854)
+
+**Status:** Complete (pending merge)
+
+**Delivered**
+
+- `src/core/models/satellite.ts` — optional `uplinkHz`/`downlinkHz`/`uplinkToneHz`/`downlinkToneHz` scalars on `Satellite`. Vendor-neutral: plain Hz numbers, no radio caps, enums, or NORAD allowlists. Frequencies use the same Hz convention as `Channel.rxFrequency`/`txFrequency`; tones are plain Hz (CTCSS).
+- `STUDIO_SCHEMA_VERSION` bumped 24 → 25; `validateDocument`'s allowlist `!==` chain in `src/core/import-export/formats/native-yaml/validate.ts` extended with 24 so older exports keep importing.
+- `parseSatellite` in `validate.ts` reads the four new fields (`expectNullableNumber`, defaulting to `null` when omitted); `serialiseProject` needed no change — the native-yaml writer is a pass-through object dump, so new `Satellite` fields flow through automatically.
+- Regenerated the three golden export fixtures (`__fixtures__/export/*.yaml`) for the schema bump, via a temporary vitest script (`writeFileSync` over the fixtures, run once, deleted before commit — not checked in).
+- New `SatelliteEditor.tsx` (self-shelled V2 editor, following the `AnalogContactEditor`/`TalkGroupEditor` pattern) wired into `EntityEditorPage.tsx` under the existing `/library/:kind/:id` route. Satellite rows are only ever created via the CelesTrak/AMSAT refresh flow (never through this editor), so there is no "new satellite" mode — navigating to `/library/satellite-keps/new` (or an id that doesn't resolve) redirects back to the list.
+- `SatelliteKepsListPage.tsx` rows now navigate to the editor via `onRowActivate`; the `enabled` toggle cell got a `stopPropagation` wrapper so it keeps working standalone.
+- `src/app/lib/units.ts` gained `parseOptionalFloat`/`optionalNumberToString` for the plain-Hz tone fields (frequency fields reuse the existing `hzToMhzString`/`mhzStringToHz` pair).
+
+**Verify**
+
+- `npx vitest run` — 407 files / 2550 tests passing (2551 incl. 1 skipped), 0 regressions. Caught and fixed a stale hardcoded `STUDIO_SCHEMA_VERSION` expectation in `src/core/models/traits.test.ts` (unrelated pre-existing test, broken by the version bump).
+- `npx tsc --noEmit -p tsconfig.app.json` — 0 errors. `npx eslint` / `npx prettier --check` — clean on all touched files.
+- Native-yaml coverage: round-trips uplink/downlink/tone when set, defaults to `null` for pre-#854 exports that omit the fields, and the schema-version allowlist accepts the newly-added prior version (24).
+- Live browser verification (edit → reload → confirm persistence) was not run in this environment (dev server port already held by a concurrent worktree); the save path is the identical `useEntitySave`/`persistence.putSatellite` pattern already proven by `AnalogContactEditor`/`TalkGroupEditor` and is covered indirectly by the native-yaml round-trip tests above.
+
+**Explicitly out of scope (per ticket):** any radio write-packer consuming these fields (#855–#859), hard-limiting the library to a vendor's NORAD allowlist, curated starter frequency metadata.
+
+---
+
 ## Next
 
-- Start Slice 1 (core TLE parser + orbital model).
+- Radio write-packing for uplink/downlink metadata (#855–#859) — not started.
