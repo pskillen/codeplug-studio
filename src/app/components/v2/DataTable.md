@@ -46,16 +46,18 @@ Per-row reorder is a **grip drag handle** (`SelectedItemDragHandle`, the same pr
 
 ## Props (nesting, scale, column visibility, row activate)
 
-| Prop                  | Type                                                | Notes                                                                                                         |
-| --------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `nested`              | `boolean`                                           | Adds an expand/collapse lead column                                                                           |
-| `getChildren`         | `(row: T) => T[] \| undefined`                      | Recursive — expanded children render indented (16px per depth)                                                |
-| `scale`               | `'default' \| 'extreme'`                            | `'extreme'` adds a sticky header + 440px max-height scroll region for dense tables                            |
-| `visibleKeys`         | `string[]`                                          | Controlled visibility for `hideable` columns; uncontrolled (per-column `defaultVisible`) if omitted           |
-| `onVisibleKeysChange` | `(keys: string[]) => void`                          | Paired with the "Show/hide cols" toggle                                                                       |
-| `onRowActivate`       | `(row: T) => void`                                  | Makes rows clickable; disabled for rows failing `isRowSelectable` when `selectable` is set                    |
-| `getRowVariant`       | `(row: T) => 'nestParent' \| 'active' \| undefined` | `'nestParent'` quiet background; `'active'` accent tint for live in-progress rows (e.g. above-horizon passes) |
-| `mobileCard`          | `(row: T) => ReactNode`                             | Replaces per-column grid cells with this card render on narrow viewports — see below                          |
+| Prop                                        | Type                                                | Notes                                                                                                         |
+| ------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `nested`                                    | `boolean`                                           | Adds an expand/collapse lead column                                                                           |
+| `getChildren`                               | `(row: T) => T[] \| undefined`                      | Recursive — expanded children render indented (16px per depth)                                                |
+| `scale`                                     | `'default' \| 'extreme'`                            | `'extreme'` adds a sticky header + 440px max-height scroll region for dense tables                            |
+| `virtualize`                                | `boolean \| 'auto'`                                 | Default `'auto'` — window tbody when `rows.length >= 75`; `'extreme'` scale forces virtualization on          |
+| `estimatedRowHeight` / `virtualizeOverscan` | `number`                                            | Virtualizer tuning (see `src/app/lib/dataTable/virtualization.ts`)                                            |
+| `visibleKeys`                               | `string[]`                                          | Controlled visibility for `hideable` columns; uncontrolled (per-column `defaultVisible`) if omitted           |
+| `onVisibleKeysChange`                       | `(keys: string[]) => void`                          | Paired with the "Show/hide cols" toggle                                                                       |
+| `onRowActivate`                             | `(row: T) => void`                                  | Makes rows clickable; disabled for rows failing `isRowSelectable` when `selectable` is set                    |
+| `getRowVariant`                             | `(row: T) => 'nestParent' \| 'active' \| undefined` | `'nestParent'` quiet background; `'active'` accent tint for live in-progress rows (e.g. above-horizon passes) |
+| `mobileCard`                                | `(row: T) => ReactNode`                             | Replaces per-column grid cells with this card render on narrow viewports — see below                          |
 
 Column-level `hideable`/`defaultVisible`/`hideOnMobile` live on `DataTableColumn`. Mobile collapse uses `useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY)` (viewport-width based, matching the existing `components/ui/DataTable` convention) rather than a per-instance `ResizeObserver` — a deliberate deviation from the DS bundle's approach for consistency with how this codebase already solves the same problem. The column-visibility toggle is a small self-contained dropdown (not Mantine `Popover`) — `Popover.Target` requires a ref-forwarding child and `v2/Button` doesn't forward refs, so a custom absolutely-positioned panel was simpler and more testable than fixing that dependency chain.
 

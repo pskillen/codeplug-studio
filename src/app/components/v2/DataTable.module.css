@@ -221,6 +221,10 @@
   flex-direction: column;
 }
 
+.virtualSpacer {
+  flex: none;
+}
+
 .dataRow {
   display: grid;
   align-items: center;

@@ -19,12 +19,12 @@ export interface UseTrackingPassesResult {
   hasEnabledSatellites: boolean;
 }
 
-export const DEFAULT_WINDOW_HOURS = 72;
+export const DEFAULT_WINDOW_HOURS = 12;
 
 /**
  * Upcoming passes for every enabled satellite in the project library, over a
  * caller-supplied look-ahead window (hours from now). Defaults to
- * `DEFAULT_WINDOW_HOURS` (72h) when omitted.
+ * `DEFAULT_WINDOW_HOURS` (12h) when omitted.
  */
 export function useTrackingPasses(
   windowHours: number = DEFAULT_WINDOW_HOURS,

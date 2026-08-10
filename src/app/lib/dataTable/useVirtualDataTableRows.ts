@@ -1,12 +1,38 @@
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useVirtualizer, type Virtualizer } from '@tanstack/react-virtual';
 import { useRef } from 'react';
 import {
   DEFAULT_ACTIVATE_ROW_HEIGHT,
   DEFAULT_LIST_ROW_HEIGHT,
   DEFAULT_VIRTUAL_OVERSCAN,
+  EXTREME_SCALE_SCROLLPORT_HEIGHT,
   resolveDataTableVirtualization,
   type DataTableVirtualizeMode,
 } from './virtualization.ts';
+
+function observeScrollportRect(
+  instance: Virtualizer<HTMLDivElement, Element>,
+  cb: (rect: { width: number; height: number }) => void,
+) {
+  const element = instance.scrollElement;
+  if (!element) return;
+
+  const getRect = () => ({
+    width: element.clientWidth,
+    height:
+      element.clientHeight > 0 ? element.clientHeight : EXTREME_SCALE_SCROLLPORT_HEIGHT,
+  });
+
+  cb(getRect());
+
+  const observer = new ResizeObserver(() => {
+    cb(getRect());
+  });
+  observer.observe(element);
+
+  return () => {
+    observer.disconnect();
+  };
+}
 
 export interface UseVirtualDataTableRowsOptions {
   rowCount: number;
@@ -33,6 +59,7 @@ export function useVirtualDataTableRows({
     getScrollElement: () => scrollRef.current,
     estimateSize: () => rowHeight,
     overscan: virtualizeOverscan ?? DEFAULT_VIRTUAL_OVERSCAN,
+    observeElementRect: observeScrollportRect,
   });
 
   const virtualRows = virtualized ? rowVirtualizer.getVirtualItems() : [];

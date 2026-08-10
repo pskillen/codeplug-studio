@@ -463,4 +463,20 @@ describe('DataTable v2', () => {
     fireEvent.click(screen.getByText('Card: Bravo'));
     expect(onRowActivate).toHaveBeenCalledWith(ROWS[0]);
   });
+
+  it('virtualizes large lists when virtualize is true', () => {
+    const rows = Array.from({ length: 200 }, (_, index) => ({
+      id: String(index),
+      name: `Row ${index}`,
+      score: index,
+    }));
+    render(
+      <DesignSystemV2Provider>
+        <DataTable columns={COLUMNS} rows={rows} getRowId={(row) => row.id} virtualize />
+      </DesignSystemV2Provider>,
+    );
+
+    expect(document.querySelector('[data-virtualized="true"]')).not.toBeNull();
+    expect(screen.getAllByRole('row').length).toBeLessThan(rows.length);
+  });
 });
