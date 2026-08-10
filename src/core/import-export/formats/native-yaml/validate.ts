@@ -750,10 +750,7 @@ function parseSatelliteTransmitterSource(raw: unknown, label: string): Satellite
   return value;
 }
 
-function parseSatelliteTransmitter(
-  raw: unknown,
-  label: string,
-): SatelliteTransmitter {
+function parseSatelliteTransmitter(raw: unknown, label: string): SatelliteTransmitter {
   const record = expectRecord(raw, label);
   return {
     id: expectString(record.id, `${label}.id`),

@@ -34,6 +34,7 @@ export const FIXTURE_SATELLITE_ID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 export const FIXTURE_TRACKING_SETTINGS_ID = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
 export const FIXTURE_CHILD_ZONE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 export const FIXTURE_PARENT_ZONE_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+export const FIXTURE_SATELLITE_TRANSMITTER_ID = '12121212-1212-4212-8212-121212121212';
 
 function rowMeta(projectId: string, id: string) {
   return {
@@ -212,10 +213,23 @@ export function fullLibraryAggregate(): ProjectAggregate {
     bstar: 0.00030589,
     elementSetNumber: 999,
     revolutionNumber: 43000,
-    uplinkHz: null,
-    downlinkHz: null,
-    uplinkToneHz: null,
-    downlinkToneHz: null,
+    transmitters: [
+      {
+        id: FIXTURE_SATELLITE_TRANSMITTER_ID,
+        label: 'FM Voice Repeater',
+        mode: 'FM',
+        uplinkHz: 145_990_000,
+        downlinkHz: 437_800_000,
+        uplinkToneHz: 67.0,
+        downlinkToneHz: null,
+        source: 'manual',
+        satnogsUuid: null,
+        satnogsAlive: null,
+        satnogsStatus: null,
+        satnogsSyncedAt: null,
+        dismissed: false,
+      },
+    ],
   };
 
   const trackingSettings: TrackingSettings = {
