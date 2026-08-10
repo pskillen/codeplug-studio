@@ -133,9 +133,7 @@ export default function SatelliteLiveMap({
         {live ? <Marker position={live.position} icon={SATELLITE_DIV_ICON} /> : null}
         <MapViewController points={boundsPoints} />
       </MapContainer>
-      {!live ? (
-        <p className={classes.hint}>Acquiring live position for {satelliteName}…</p>
-      ) : null}
+      {!live ? <p className={classes.hint}>Acquiring live position for {satelliteName}…</p> : null}
     </div>
   );
 }

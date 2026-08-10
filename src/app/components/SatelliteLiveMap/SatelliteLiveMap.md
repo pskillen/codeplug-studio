@@ -6,12 +6,12 @@ Live position + visible-horizon footprint + orbit-trail map for the satellite de
 
 ## Props
 
-| Prop                   | Type     | Notes                                                                             |
-| ----------------------- | -------- | ---------------------------------------------------------------------------------- |
-| `satelliteName`         | `string` | Shown in the "Acquiring live position…" hint before the first propagation resolves |
-| `tleLine1`              | `string` | Raw TLE line 1 — propagation source of truth                                       |
-| `tleLine2`              | `string` | Raw TLE line 2                                                                      |
-| `meanMotionRevPerDay`   | `number` | Orbital mean motion (already decoded on `Satellite`); used to derive the orbit-trail time window |
+| Prop                  | Type     | Notes                                                                                            |
+| --------------------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `satelliteName`       | `string` | Shown in the "Acquiring live position…" hint before the first propagation resolves               |
+| `tleLine1`            | `string` | Raw TLE line 1 — propagation source of truth                                                     |
+| `tleLine2`            | `string` | Raw TLE line 2                                                                                   |
+| `meanMotionRevPerDay` | `number` | Orbital mean motion (already decoded on `Satellite`); used to derive the orbit-trail time window |
 
 ## Usage
 
