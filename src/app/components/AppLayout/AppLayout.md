@@ -26,6 +26,8 @@ None. Rendered as a layout route element; child routes render through `<Outlet /
 - Project chip navigates home (`/`) to switch projects. Drive save/check sits in `rightExtra`. Settings and Debug live in the avatar overflow menu.
 - `ContextualStrip` shows Library / Tools / Help / Settings / Debug / build-detail sub-routes. Build detail also mounts compact `BuildSwitcher` as the strip leading control.
 - Below Mantine `sm` (768px), top tabs hide and `BottomTabBar` mirrors the same destinations. The shell locks to `100dvh` with scrollable `<main>` so the tab bar stays on the viewport (not the document end).
+- `<main>` applies **block-only** padding (`padding-block: var(--mantine-spacing-md)`; `padding-inline: 0`). Horizontal gutters live on page modules via `--dsv2-page-padding-x` (8px at ≤48em, 32px above — [#1024](https://github.com/pskillen/codeplug-studio/issues/1024)). List `DataTable` grids bleed to the viewport edge on narrow viewports; maps and chrome stay inset. Editors that need to cancel shell block padding use `margin-block: calc(-1 * var(--mantine-spacing-md))`.
+- `pageContent` is full width below `62em`; from `62em` up it is **75%** centered (matches `ABOVE_TABLET_MIN_WIDTH_MEDIA_QUERY`).
 - `DriveRefreshProvider` wraps the shell so Drive controls and `RefreshFromDriveBanner` share remote-check state.
 - `RequireActiveProject` still gates library / summary / builds routes.
 

@@ -22,7 +22,9 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  padding: var(--mantine-spacing-md);
+  /* Horizontal gutters live on page modules via --dsv2-page-padding-x (#1024). */
+  padding-block: var(--mantine-spacing-md);
+  padding-inline: 0;
 }
 
 .mainScroll {

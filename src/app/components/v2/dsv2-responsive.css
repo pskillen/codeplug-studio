@@ -1,0 +1,9 @@
+/**
+ * Responsive v2 layout tokens — applied on every `.dsv2-scope` wrapper.
+ * Breakpoint matches `MOBILE_MAX_WIDTH_MEDIA_QUERY` in `src/app/lib/breakpoints.ts`.
+ */
+@media (max-width: 48em) {
+  .dsv2-scope {
+    --dsv2-page-padding-x: 8px;
+  }
+}

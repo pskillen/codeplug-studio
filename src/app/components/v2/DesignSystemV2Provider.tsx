@@ -1,6 +1,7 @@
 import { MantineProvider } from '@mantine/core';
 import type { ReactNode } from 'react';
 import { DSV2_SCOPE_SELECTOR, dsv2CssVariablesResolver, themeV2 } from '../../theme-v2.ts';
+import './dsv2-responsive.css';
 
 export interface DesignSystemV2ProviderProps {
   children: ReactNode;
