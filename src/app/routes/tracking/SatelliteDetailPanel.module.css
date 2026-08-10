@@ -24,3 +24,30 @@
   font-size: 0.95em;
   color: var(--dsv2-text-secondary);
 }
+
+.transmitterList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.transmitter {
+  padding-top: 4px;
+  border-top: 1px solid var(--dsv2-border-subtle);
+}
+
+.transmitter:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.transmitterTitle {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.emptyEnrichment {
+  margin: 0;
+  color: var(--dsv2-text-secondary);
+  font-size: 0.9em;
+}

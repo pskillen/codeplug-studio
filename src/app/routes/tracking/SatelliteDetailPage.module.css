@@ -4,6 +4,12 @@
   gap: 16px;
 }
 
+.satnogsError {
+  color: var(--dsv2-warning);
+  font-size: 0.9em;
+  margin: 0 0 12px;
+}
+
 @media (max-width: 900px) {
   .passLists {
     grid-template-columns: 1fr;
