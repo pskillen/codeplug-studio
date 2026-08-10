@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   DataTable,
   type DataTableColumn,
@@ -40,7 +40,6 @@ function SatelliteNameCell({
   row: SatellitePassRow;
   showCountdown: boolean;
 }) {
-  const navigate = useNavigate();
   const nowMs = usePassGridTick();
   const countdown = showCountdown ? formatNextPassCountdown(nowMs, row.aosAt, row.losAt) : null;
 
@@ -52,16 +51,17 @@ function SatelliteNameCell({
           style={{ backgroundColor: colorForNoradId(row.noradId) }}
           aria-hidden
         />
-        <button
-          type="button"
+        {/* Real <Link>, not a button+navigate() — a row-level onClick still activates the row
+            (see DataTable's `onActivate`), so ctrl/middle/right-click "open in new tab" only
+            works here if this is a genuine anchor; stopPropagation keeps a plain click from
+            also firing the row's onSelectPass. */}
+        <Link
+          to={`/tracking/satellites/${row.satelliteId}`}
           className={classes.satelliteLink}
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/tracking/satellites/${row.satelliteId}`);
-          }}
+          onClick={(e) => e.stopPropagation()}
         >
           {row.satelliteName}
-        </button>
+        </Link>
       </div>
       {countdown ? <span className={classes.countdown}>{countdown}</span> : null}
     </div>

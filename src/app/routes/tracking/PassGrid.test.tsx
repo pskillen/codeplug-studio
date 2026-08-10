@@ -61,6 +61,19 @@ describe('PassGrid', () => {
     expect(screen.getByRole('cell', { name: 'AO-91' })).toBeInTheDocument();
   });
 
+  it('renders the satellite name as a real link, not a click-handler button, so ctrl/middle/right-click open-in-new-tab works', () => {
+    render(
+      <MemoryRouter>
+        <DesignSystemV2Provider>
+          <PassGrid passes={PASSES} loading={false} error={null} windowLabel="72 hours" />
+        </DesignSystemV2Provider>
+      </MemoryRouter>,
+    );
+
+    const link = screen.getByRole('link', { name: 'ISS' });
+    expect(link).toHaveAttribute('href', '/tracking/satellites/sat-1');
+  });
+
   it('renders only the pre-filtered satellite rows passed from the dashboard', () => {
     render(
       <MemoryRouter>
