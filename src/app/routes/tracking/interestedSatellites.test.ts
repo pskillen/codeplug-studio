@@ -9,6 +9,9 @@ import {
 function satellite(id: string, noradId: number, uplinkHz: number | null = null): Satellite {
   return {
     id,
+    projectId: 'project-1',
+    revision: 1,
+    updatedAt: '2026-01-01T00:00:00.000Z',
     name: id,
     noradId,
     enabled: true,
