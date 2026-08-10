@@ -2,7 +2,21 @@ import { useEffect, useState } from 'react';
 import { eciToGeodetic, gstime, propagate, radiansToDegrees, twoline2satrec } from 'satellite.js';
 import type { LatLon } from '@core/domain/geo.ts';
 
-const DEFAULT_POLL_INTERVAL_MS = 2000;
+const DEFAULT_POLL_INTERVAL_MS = 10000;
+
+const POSITION_EPSILON_DEG = 1e-4;
+const ALTITUDE_EPSILON_KM = 0.01;
+
+function livePositionNearlyEqual(
+  a: LiveSatellitePosition,
+  b: LiveSatellitePosition,
+): boolean {
+  return (
+    Math.abs(a.position[0] - b.position[0]) < POSITION_EPSILON_DEG &&
+    Math.abs(a.position[1] - b.position[1]) < POSITION_EPSILON_DEG &&
+    Math.abs(a.altitudeKm - b.altitudeKm) < ALTITUDE_EPSILON_KM
+  );
+}
 
 export interface GlobeSatelliteInput {
   id: string;
@@ -52,18 +66,25 @@ export function useLiveSatellitePositions(
     const tick = () => {
       const date = new Date();
       const gmst = gstime(date);
-      const next = new Map<string, LiveSatellitePosition>();
-      for (const { id, satrec } of satrecs) {
-        const positionAndVelocity = propagate(satrec, date);
-        if (!positionAndVelocity?.position) continue;
-        const geodetic = eciToGeodetic(positionAndVelocity.position, gmst);
-        next.set(id, {
-          position: [radiansToDegrees(geodetic.latitude), radiansToDegrees(geodetic.longitude)],
-          altitudeKm: geodetic.height,
-          at: date.toISOString(),
-        });
-      }
-      setPositions(next);
+      setPositions((prev) => {
+        const next = new Map<string, LiveSatellitePosition>();
+        for (const { id, satrec } of satrecs) {
+          const positionAndVelocity = propagate(satrec, date);
+          if (!positionAndVelocity?.position) continue;
+          const geodetic = eciToGeodetic(positionAndVelocity.position, gmst);
+          const candidate: LiveSatellitePosition = {
+            position: [radiansToDegrees(geodetic.latitude), radiansToDegrees(geodetic.longitude)],
+            altitudeKm: geodetic.height,
+            at: date.toISOString(),
+          };
+          const previous = prev.get(id);
+          next.set(
+            id,
+            previous && livePositionNearlyEqual(previous, candidate) ? previous : candidate,
+          );
+        }
+        return next;
+      });
     };
 
     // Deferred a tick, matching `useLiveSatellitePosition`'s no-sync-setState-in-effect

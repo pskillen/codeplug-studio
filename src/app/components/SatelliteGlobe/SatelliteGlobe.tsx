@@ -3,6 +3,8 @@ import Globe from 'react-globe.gl';
 import {
   computeGlobePointsAndFootprints,
   computeGlobeTrailPaths,
+  filterGlobeSatellitesBySelection,
+  stabilizeGlobePointsAndFootprints,
   type GlobeObserver,
   type GlobePath,
   type GlobePoint,
@@ -15,8 +17,7 @@ const GLOBE_IMAGE_URL = '//unpkg.com/three-globe/example/img/earth-blue-marble.j
 const BACKGROUND_COLOR = '#000011';
 
 const OBSERVER_COLOR = '#4d7cff';
-const SATELLITE_SELECTED_COLOR = '#f7b84d';
-const SATELLITE_DIMMED_COLOR = '#6b6b6b';
+const SATELLITE_COLOR = '#f7b84d';
 const FOOTPRINT_COLOR = 'rgba(247, 184, 77, 0.5)';
 const TRAIL_COLOR = 'rgba(77, 124, 255, 0.8)';
 
@@ -35,13 +36,13 @@ export interface SatelliteGlobeProps {
 function pointColor(point: object): string {
   const p = point as GlobePoint;
   if (p.kind === 'observer') return OBSERVER_COLOR;
-  return p.selected ? SATELLITE_SELECTED_COLOR : SATELLITE_DIMMED_COLOR;
+  return SATELLITE_COLOR;
 }
 
 function pointRadius(point: object): number {
   const p = point as GlobePoint;
   if (p.kind === 'observer') return 0.35;
-  return p.selected ? 0.4 : 0.28;
+  return 0.4;
 }
 
 function pathColor(path: object): string {
@@ -96,7 +97,14 @@ export default function SatelliteGlobe({
     return () => resizeObserver.disconnect();
   }, []);
 
-  const livePositions = useLiveSatellitePositions(satellites);
+  const visibleSatellites = useMemo(
+    () => filterGlobeSatellitesBySelection(satellites, selectedSatelliteIds),
+    [satellites, selectedSatelliteIds],
+  );
+
+  const livePositions = useLiveSatellitePositions(visibleSatellites);
+
+  const stableGeometryRef = useRef({ points: [] as GlobePoint[], footprintPaths: [] as GlobePath[] });
 
   // Trails are SGP4-sampled at ~180 points each and don't depend on the live-position poll
   // (the window is anchored at mount) — memoized separately from `livePositions` so a poll
@@ -104,15 +112,21 @@ export default function SatelliteGlobe({
   // doc comment: with dozens of enabled satellites, sharing one dependency array here stalled
   // the main thread in live-browser testing.
   const trailPaths = useMemo(
-    () => computeGlobeTrailPaths(satellites, anchorAt),
-    [satellites, anchorAt],
+    () => computeGlobeTrailPaths(visibleSatellites, anchorAt),
+    [visibleSatellites, anchorAt],
   );
 
-  const { points, footprintPaths } = useMemo(
-    () =>
-      computeGlobePointsAndFootprints(observer, satellites, livePositions, selectedSatelliteIds),
-    [observer, satellites, livePositions, selectedSatelliteIds],
-  );
+  const { points, footprintPaths } = useMemo(() => {
+    const raw = computeGlobePointsAndFootprints(
+      observer,
+      visibleSatellites,
+      livePositions,
+      selectedSatelliteIds,
+    );
+    const stabilized = stabilizeGlobePointsAndFootprints(raw, stableGeometryRef.current);
+    stableGeometryRef.current = stabilized;
+    return stabilized;
+  }, [observer, visibleSatellites, livePositions, selectedSatelliteIds]);
 
   const paths = useMemo(() => [...trailPaths, ...footprintPaths], [trailPaths, footprintPaths]);
 
@@ -122,7 +136,7 @@ export default function SatelliteGlobe({
     onSelectSatellite(globePoint.id);
   };
 
-  const hasLivePositions = satellites.length === 0 || livePositions.size > 0;
+  const hasLivePositions = visibleSatellites.length === 0 || livePositions.size > 0;
 
   return (
     <div className={classes.wrapper} ref={containerRef}>
