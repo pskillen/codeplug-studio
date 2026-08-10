@@ -13,8 +13,8 @@ export interface MergeSatnogsTransmittersResult {
 
 /**
  * Merge freshly-fetched SatNOGS transmitter data directly into `satellite.transmitters`,
- * matched by SatNOGS UUID (`satnogsUuid`) — the persisted replacement for the old session-cache
- * merge in `mergeSatelliteEnrichment.ts`. Semantics:
+ * matched by SatNOGS UUID (`satnogsUuid`) — the persisted replacement for the removed
+ * session-cache merge that previously lived in `mergeSatelliteEnrichment.ts`. Semantics:
  *  - A fetched transmitter matching an existing `source: 'satnogs'` row (by `satnogsUuid`)
  *    updates that row's `mode`/`uplinkHz`/`downlinkHz`/`satnogsAlive`/`satnogsStatus`/
  *    `satnogsSyncedAt` in place. It never overwrites `label` (frozen after first sync — see

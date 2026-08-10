@@ -14,7 +14,7 @@ export {
   type SatelliteSource,
   type SatelliteEnrichmentSource,
 } from './satellite.ts';
-export { type SatelliteEnrichment, type SatelliteTransmitterInfo } from './satelliteEnrichment.ts';
+export { type SatelliteTransmitterInfo } from './satelliteEnrichment.ts';
 export { type TrackingSettings, type ObserverPositionSource } from './trackingSettings.ts';
 export {
   type Channel,

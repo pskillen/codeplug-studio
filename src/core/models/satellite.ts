@@ -8,9 +8,10 @@ export type SatelliteSource = 'celestrak' | 'amsat';
  * Upstream **enrichment** source for transmitter/mode/operational-status data — a distinct
  * question from `SatelliteSource` above (where a satellite's TLE came from). A satellite
  * whose transmitter data was merged from SatNOGS does not have a TLE from SatNOGS, so this
- * is kept as a sibling type rather than folded into `SatelliteSource`. Fetched and merged
- * live per session (see `src/integrations/satellites/mergeSatelliteEnrichment.ts`) — not
- * persisted as part of the `Satellite` shape.
+ * is kept as a sibling type rather than folded into `SatelliteSource`. Used to identify the
+ * SatNOGS upstream for rate-limiting (see `src/integrations/satellites/rateLimit.ts`);
+ * transmitters merged from this source are persisted directly on `Satellite.transmitters`
+ * (see `src/core/domain/satnogs/mergeSatnogsTransmitters.ts`), not tracked separately.
  */
 export type SatelliteEnrichmentSource = 'satnogs';
 
