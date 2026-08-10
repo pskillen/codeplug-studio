@@ -1,11 +1,10 @@
-import { useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LibraryInventoryHeader from '../../components/library/LibraryInventoryHeader.tsx';
 import { DesignSystemV2Provider, Panel, TextInput } from '../../components/v2/index.ts';
 import SatelliteTrackMap, {
   type SelectedPass,
 } from '../../components/SatelliteTrackMap/SatelliteTrackMap.tsx';
-import SatelliteGlobe from '../../components/SatelliteGlobe/SatelliteGlobe.tsx';
 import { useLibrary } from '../../state/useLibrary.ts';
 import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import ObserverLocationSettings from './ObserverLocationSettings.tsx';
@@ -17,6 +16,8 @@ import {
 } from './useTrackingPasses.ts';
 import classes from './TrackingDashboardPage.module.css';
 import libraryPageClasses from '../../components/library/LibraryInventoryPage.module.css';
+
+const SatelliteGlobe = lazy(() => import('../../components/SatelliteGlobe/SatelliteGlobe.tsx'));
 
 const MIN_WINDOW_HOURS = 1;
 const MAX_WINDOW_HOURS = 168;
@@ -130,12 +131,14 @@ export default function TrackingDashboardPage() {
 
         {hasEnabledSatellites ? (
           <Panel title="Orbital globe" sub="Click a satellite to filter the pass grid to it.">
-            <SatelliteGlobe
-              observer={settings?.location ?? null}
-              satellites={enabledSatellites}
-              selectedSatelliteIds={selectedSatelliteIds}
-              onSelectSatellite={handleSelectSatelliteFromGlobe}
-            />
+            <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
+              <SatelliteGlobe
+                observer={settings?.location ?? null}
+                satellites={enabledSatellites}
+                selectedSatelliteIds={selectedSatelliteIds}
+                onSelectSatellite={handleSelectSatelliteFromGlobe}
+              />
+            </Suspense>
           </Panel>
         ) : null}
 

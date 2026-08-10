@@ -20,3 +20,12 @@
 .drawWindowControl > * {
   flex: 1;
 }
+
+.globeLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  color: var(--dsv2-text-secondary);
+  font-size: 0.95em;
+}
