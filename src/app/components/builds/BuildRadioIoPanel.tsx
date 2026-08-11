@@ -3,16 +3,21 @@
  * for egress pathways with a registered radio adapter.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
 import {
   ModalShell,
   WriteVerifyReport as WriteVerifyReportV2,
   Button as V2Button,
+  Panel,
+  DataTable,
+  type DataTableColumn,
 } from '../v2/index.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
+import type { Satellite } from '@core/models/satellite.ts';
+import type { SatelliteWritePreviewEntry } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import type {
   WriteVerifyPendingPayload,
@@ -64,6 +69,7 @@ import {
 import {
   getSatelliteKepsWriteAdapter,
   getSatelliteKepsWriteCapacity,
+  getSatelliteKepsWritePreview,
   type SatelliteKepsWriteResult,
 } from '../../services/satelliteKepsWriteAdapters.ts';
 
@@ -103,6 +109,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [writeVerifyStatus, setWriteVerifyStatus] = useState<RadioIoWriteVerifyStatus>('none');
   const [verifyButtonEnabled, setVerifyButtonEnabled] = useState(false);
   const [verifyResult, setVerifyResult] = useState<WriteVerifyResult | null>(null);
+  const [enabledSatellites, setEnabledSatellites] = useState<Satellite[]>([]);
 
   const serialOk = isRadioSerialSupported();
   const descriptor = descriptors[0];
@@ -116,6 +123,60 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const kepsWriteFn = getSatelliteKepsWriteAdapter(egress.profileId);
   /** Pre-flight capacity check for the keps write (#1068) — undefined when unknown for this profile. */
   const kepsCapacity = getSatelliteKepsWriteCapacity(egress.profileId);
+  /** Live write preview (#1074) — undefined when this profile has no registered preview function. */
+  const kepsPreview = getSatelliteKepsWritePreview(egress.profileId);
+
+  /**
+   * Live-loaded enabled satellites for the write preview below — separate from
+   * `handleWriteKeps`'s own `persistence.listSatellites` call, which only runs on click.
+   * Re-runs on `activeProjectId` change and on any persisted change for this project (library
+   * edits elsewhere, e.g. toggling `enabled` on the Satellite Keps list), so the preview stays
+   * live without requiring a Read/Write session.
+   */
+  useEffect(() => {
+    if (!activeProjectId || !kepsPreview) {
+      return;
+    }
+    let cancelled = false;
+    const load = async () => {
+      const all = await persistence.listSatellites(activeProjectId);
+      if (!cancelled) setEnabledSatellites(all.filter((s) => s.enabled));
+    };
+    void load();
+    const unsubscribe = persistence.subscribe((change) => {
+      if (!cancelled && change.projectId === activeProjectId) {
+        void load();
+      }
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [activeProjectId, kepsPreview]);
+
+  const previewEntries = useMemo<SatelliteWritePreviewEntry[]>(
+    () => (kepsPreview ? kepsPreview(enabledSatellites) : []),
+    [kepsPreview, enabledSatellites],
+  );
+
+  const previewColumns = useMemo<DataTableColumn<SatelliteWritePreviewEntry>[]>(
+    () => [
+      { key: 'satelliteName', header: 'Satellite', render: (r) => r.satelliteName },
+      { key: 'encodedName', header: 'Encoded name', render: (r) => r.encodedName },
+      { key: 'mode', header: 'Mode', render: (r) => r.mode ?? '—' },
+      {
+        key: 'uplinkHz',
+        header: 'Uplink',
+        render: (r) => (r.uplinkHz != null ? `${(r.uplinkHz / 1e6).toFixed(4)} MHz` : '—'),
+      },
+      {
+        key: 'downlinkHz',
+        header: 'Downlink',
+        render: (r) => (r.downlinkHz != null ? `${(r.downlinkHz / 1e6).toFixed(4)} MHz` : '—'),
+      },
+    ],
+    [],
+  );
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
 
@@ -598,6 +659,22 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         <Alert color="yellow" title="Write capacity">
           <Text size="sm">{kepsCapacityWarning}</Text>
         </Alert>
+      ) : null}
+      {kepsPreview ? (
+        <Panel title="Preview satellites to write" collapsible defaultCollapsed>
+          <Text size="sm" c="dimmed" mb="xs">
+            Exactly what a Write Keps would send right now, from the library's current enabled
+            satellites — no session or write required. "Encoded name" is the 8-character value
+            truncated for the radio's name field.
+          </Text>
+          <DataTable
+            columns={previewColumns}
+            rows={previewEntries}
+            getRowId={(r) => `${r.satelliteId}-${r.transmitterId}`}
+            totalRowCount={previewEntries.length}
+            emptyMessage="No satellites are currently eligible to write."
+          />
+        </Panel>
       ) : null}
       {kepsWriteSummary ? (
         <Alert

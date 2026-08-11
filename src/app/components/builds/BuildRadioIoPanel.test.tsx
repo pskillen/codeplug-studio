@@ -49,10 +49,15 @@ const kepsWriteFn = vi.fn(
 // directly; the capacity-warning test below overrides this before rendering.
 let kepsCapacityStub: { max: number; countEligible: (s: readonly unknown[]) => number } | undefined;
 
+// Mutable per-test preview stub (#1074) — undefined by default so the preview Panel doesn't
+// render for tests unrelated to it; the preview-specific describe block below overrides this.
+let kepsPreviewStub: ((satellites: readonly Satellite[]) => unknown[]) | undefined;
+
 vi.mock('../../services/satelliteKepsWriteAdapters.ts', () => ({
   getSatelliteKepsWriteAdapter: (profileId: string) =>
     profileId === 'radio-io-at-d890uv' ? kepsWriteFn : undefined,
   getSatelliteKepsWriteCapacity: () => kepsCapacityStub,
+  getSatelliteKepsWritePreview: () => kepsPreviewStub,
 }));
 
 vi.mock('../../hooks/useUnsavedNavigationGuard.ts', () => ({
@@ -91,6 +96,7 @@ const satellite: Satellite = {
 vi.mock('../../state/persistence.ts', () => ({
   persistence: {
     listSatellites: vi.fn(async () => [satellite]),
+    subscribe: vi.fn(() => () => {}),
   },
 }));
 
@@ -160,5 +166,35 @@ describe('BuildRadioIoPanel — Write Keps capacity pre-flight (#1068)', () => {
     } finally {
       kepsCapacityStub = undefined;
     }
+  });
+});
+
+describe('BuildRadioIoPanel — satellite write preview (#1074)', () => {
+  it('renders the live preview table when a preview function is registered for the profile', async () => {
+    kepsPreviewStub = (satellites) =>
+      satellites.map((s) => ({
+        satelliteId: s.id,
+        satelliteName: s.name,
+        transmitterId: 'tx-1',
+        transmitterLabel: 'FM',
+        mode: 'FM',
+        encodedName: 'ISS',
+        uplinkHz: 145_850_000,
+        downlinkHz: 436_795_000,
+      }));
+    try {
+      renderPanel();
+      expect(screen.getByText('Preview satellites to write')).toBeInTheDocument();
+      // Collapsible panel defaults collapsed — expand it before asserting row content.
+      fireEvent.click(screen.getByText('Preview satellites to write'));
+      await waitFor(() => expect(screen.getAllByText('ISS').length).toBeGreaterThan(0));
+    } finally {
+      kepsPreviewStub = undefined;
+    }
+  });
+
+  it('does not render the preview panel when the profile has no registered preview function', () => {
+    renderPanel();
+    expect(screen.queryByText('Preview satellites to write')).not.toBeInTheDocument();
   });
 });
