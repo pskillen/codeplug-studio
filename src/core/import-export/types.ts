@@ -123,6 +123,14 @@ export interface CpsExportOptions {
   zoneBehaviourContext?: ZoneBehaviourContext;
   /** Project display name — used for Anytone `.LST` manifest filename stem. */
   projectName?: string;
+  /** AT-D890UV scan-list Look Back Time A[s] (0.5–5.0). From build exportSettings. */
+  scanListLookBackASeconds?: number;
+  /** AT-D890UV scan-list Look Back Time B[s] (0.5–5.0). From build exportSettings. */
+  scanListLookBackBSeconds?: number;
+  /** AT-D890UV scan-list Dropout Delay Time[s] (0.1–5.0). From build exportSettings. */
+  scanListDropoutDelaySeconds?: number;
+  /** AT-D890UV scan-list Dwell Time[s] (0.1–5.0). From build exportSettings. */
+  scanListDwellTimeSeconds?: number;
 }
 
 export interface ImportDocumentResult extends ExportResult {

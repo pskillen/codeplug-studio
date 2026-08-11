@@ -68,6 +68,18 @@ function storedToCpsOptions(stored: BuildExportSettings): CpsExportOptions {
   if (stored.defaultScanInclusion !== undefined) {
     options.defaultScanInclusion = stored.defaultScanInclusion;
   }
+  if (stored.scanListLookBackASeconds !== undefined) {
+    options.scanListLookBackASeconds = stored.scanListLookBackASeconds;
+  }
+  if (stored.scanListLookBackBSeconds !== undefined) {
+    options.scanListLookBackBSeconds = stored.scanListLookBackBSeconds;
+  }
+  if (stored.scanListDropoutDelaySeconds !== undefined) {
+    options.scanListDropoutDelaySeconds = stored.scanListDropoutDelaySeconds;
+  }
+  if (stored.scanListDwellTimeSeconds !== undefined) {
+    options.scanListDwellTimeSeconds = stored.scanListDwellTimeSeconds;
+  }
   return options;
 }
 
