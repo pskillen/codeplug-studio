@@ -769,6 +769,12 @@ function parseSatelliteTransmitter(raw: unknown, label: string): SatelliteTransm
     satnogsStatus: expectNullableString(record.satnogsStatus, `${label}.satnogsStatus`),
     satnogsSyncedAt: expectNullableString(record.satnogsSyncedAt, `${label}.satnogsSyncedAt`),
     dismissed: expectBoolean(record.dismissed, `${label}.dismissed`),
+    // No existing saved document has `includeInWrite` in it yet (the field didn't exist when
+    // they were written) — default to `true` when absent rather than requiring the key.
+    includeInWrite:
+      record.includeInWrite === undefined
+        ? true
+        : expectBoolean(record.includeInWrite, `${label}.includeInWrite`),
   };
 }
 

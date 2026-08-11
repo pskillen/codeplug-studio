@@ -1,5 +1,6 @@
 import { synthesizeLegacySatelliteTransmitters } from '@core/domain/satellite/legacySatelliteTransmitters.ts';
 import type { Satellite } from '@core/models/satellite.ts';
+import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 
 /**
  * Shape of a satellite row saved before schema v26 (see
@@ -7,9 +8,13 @@ import type { Satellite } from '@core/models/satellite.ts';
  * instead of a `transmitters` array. IndexedDB never re-parses rows through the native-yaml
  * import/export migration on load, so a project saved locally before this schema bump still has
  * this legacy shape sitting in the browser's object store.
+ *
+ * `transmitters` entries are typed as `Partial<SatelliteTransmitter>` rather than the full type
+ * because a row already in a user's IndexedDB from before `includeInWrite` existed has real
+ * `transmitters` entries that lack that field entirely — see `readSatelliteRow` below.
  */
 type LegacySatelliteRow = Omit<Satellite, 'transmitters'> & {
-  transmitters?: Satellite['transmitters'];
+  transmitters?: Partial<SatelliteTransmitter>[];
   uplinkHz?: number | null;
   downlinkHz?: number | null;
   uplinkToneHz?: number | null;
@@ -19,7 +24,13 @@ type LegacySatelliteRow = Omit<Satellite, 'transmitters'> & {
 /** Normalise legacy or partial satellite rows read from storage. */
 export function readSatelliteRow(row: LegacySatelliteRow): Satellite {
   if (Array.isArray(row.transmitters)) {
-    return row as Satellite;
+    return {
+      ...row,
+      transmitters: row.transmitters.map((t) => ({
+        ...t,
+        includeInWrite: t.includeInWrite ?? true,
+      })),
+    } as Satellite;
   }
 
   const { uplinkHz, downlinkHz, uplinkToneHz, downlinkToneHz, ...rest } = row;

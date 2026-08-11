@@ -24,6 +24,7 @@ function transmitter(overrides: Partial<SatelliteTransmitter> = {}): SatelliteTr
     satnogsStatus: null,
     satnogsSyncedAt: null,
     dismissed: false,
+    includeInWrite: true,
     ...overrides,
   };
 }

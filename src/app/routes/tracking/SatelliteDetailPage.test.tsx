@@ -43,6 +43,7 @@ const SATELLITE: Satellite = {
       satnogsStatus: null,
       satnogsSyncedAt: null,
       dismissed: false,
+      includeInWrite: true,
     },
   ],
 };
