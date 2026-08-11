@@ -1,18 +1,20 @@
 import type { LatLon } from './geo.ts';
 
+export type FitBoundsMapViewAction = {
+  type: 'fitBounds';
+  southWest: LatLon;
+  northEast: LatLon;
+  padding: [number, number];
+  maxZoom: number;
+};
+
 export type MapViewAction =
   | {
       type: 'setView';
       center: LatLon;
       zoom: number;
     }
-  | {
-      type: 'fitBounds';
-      southWest: LatLon;
-      northEast: LatLon;
-      padding: [number, number];
-      maxZoom: number;
-    };
+  | FitBoundsMapViewAction;
 
 export function collectMapPoints(
   groups: { location: { lat: number; lon: number } | null }[][],
@@ -91,7 +93,7 @@ export function computeWorldRepeatMapView(
     padding?: [number, number];
     maxZoom?: number;
   } = {},
-): MapViewAction {
+): FitBoundsMapViewAction {
   return {
     type: 'fitBounds',
     southWest: WORLD_REPEAT_SOUTH_WEST,
