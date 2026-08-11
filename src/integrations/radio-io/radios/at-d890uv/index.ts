@@ -13,8 +13,10 @@ export {
 export {
   encodeSatelliteRecord,
   isWriteEligible as isAtD890SatelliteWriteEligible,
+  listCapabilitySkippedTransmitters,
   packSatelliteWriteRecords,
   SATELLITE_RECORD_BYTES,
+  type CapabilitySkippedTransmitter,
   type SatelliteWriteRecord,
 } from './satelliteCodec.ts';
 export { uploadAtD890SatelliteRecords } from './satelliteWrite.ts';

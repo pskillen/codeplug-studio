@@ -38,12 +38,14 @@
  */
 
 import type { Satellite } from '@core/models/satellite.ts';
+import { isTransmitterWriteEligible } from '@core/domain/satellite/transmitterWriteEligibility.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import {
   AT_D890_SATELLITE,
+  listCapabilitySkippedTransmitters,
   packSatelliteWriteRecords,
   uploadAtD890SatelliteRecords,
-  type SatelliteWriteRecord,
+  type CapabilitySkippedTransmitter,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { ProgressFn, RadioSession } from '@integrations/radio-io/index.ts';
 import { RadioWriteBlockedError } from './radioIoSession.ts';
@@ -53,15 +55,27 @@ export interface WriteSatellitesToRadioResult {
   written: number;
   /** Satellites with zero eligible transmitters — not an error, just nothing to write. */
   skipped: { satelliteId: string; reason: string }[];
+  /**
+   * Individual transmitters that would otherwise have been written but were dropped because
+   * the D890 doesn't support their `mode` (#1068) — distinct from `skipped` above, which is
+   * satellite-level ("nothing at all to write for this satellite").
+   */
+  skippedTransmitters: CapabilitySkippedTransmitter[];
 }
 
+/**
+ * Satellites with no generically write-eligible transmitter at all (`isTransmitterWriteEligible`
+ * false for every transmitter — disabled satellite, opted-out/dismissed transmitters, or none).
+ * Checked against the generic predicate directly, not "did this satellite end up with a wire
+ * record" — a satellite whose only eligible transmitter was capability-filtered (#1068) already
+ * has its own specific reason in `skippedTransmitters`, so it is intentionally not duplicated
+ * here with the generic "no write-eligible transmitters" reason.
+ */
 function skippedSatellites(
   satellites: readonly Satellite[],
-  records: readonly SatelliteWriteRecord[],
 ): { satelliteId: string; reason: string }[] {
-  const writtenSatelliteIds = new Set(records.map((r) => r.satelliteId));
   return satellites
-    .filter((s) => !writtenSatelliteIds.has(s.id))
+    .filter((s) => !s.transmitters.some((t) => isTransmitterWriteEligible(s, t)))
     .map((s) => ({ satelliteId: s.id, reason: 'No write-eligible transmitters.' }));
 }
 
@@ -101,6 +115,7 @@ export async function writeSatellitesToRadio(
 
   return {
     written: records.length,
-    skipped: skippedSatellites(satellites, records),
+    skipped: skippedSatellites(satellites),
+    skippedTransmitters: listCapabilitySkippedTransmitters(satellites),
   };
 }

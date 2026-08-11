@@ -3,6 +3,7 @@ import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import {
   encodeSatelliteRecord,
+  listCapabilitySkippedTransmitters,
   packSatelliteWriteRecords,
   SATELLITE_RECORD_BYTES,
 } from './satelliteCodec.ts';
@@ -211,5 +212,53 @@ describe('packSatelliteWriteRecords', () => {
     expect(records).toHaveLength(1);
     expect(records[0]!.address).toBe(BASE);
     expect(records[0]!.satelliteId).toBe('sat-b');
+  });
+
+  it('excludes a transmitter whose mode is on the D890 denylist (#1068)', () => {
+    const satellites = [makeSatellite({ transmitters: [makeTransmitter({ mode: 'SSTV' })] })];
+    expect(packSatelliteWriteRecords(satellites, BASE, STRIDE)).toHaveLength(0);
+  });
+
+  it('still writes an includeInWrite:false transmitter for the generic reason, not capability', () => {
+    // An opted-out transmitter is skipped whether or not its mode would also be unsupported —
+    // confirms the generic and capability checks are independent, not conflated.
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        transmitters: [makeTransmitter({ id: 'tx-a', includeInWrite: false, mode: 'FM' })],
+      }),
+    ];
+    expect(packSatelliteWriteRecords(satellites, BASE, STRIDE)).toHaveLength(0);
+    expect(listCapabilitySkippedTransmitters(satellites)).toHaveLength(0);
+  });
+});
+
+describe('listCapabilitySkippedTransmitters', () => {
+  it('reports a generically-eligible SSTV transmitter with a specific reason', () => {
+    const satellites = [
+      makeSatellite({ id: 'sat-a', transmitters: [makeTransmitter({ id: 'tx-a', mode: 'SSTV' })] }),
+    ];
+    const skipped = listCapabilitySkippedTransmitters(satellites);
+    expect(skipped).toEqual([
+      {
+        satelliteId: 'sat-a',
+        transmitterId: 'tx-a',
+        reason: expect.stringContaining('SSTV'),
+      },
+    ]);
+  });
+
+  it('does not report a transmitter that is generically ineligible for an unrelated reason', () => {
+    const satellites = [
+      makeSatellite({
+        transmitters: [makeTransmitter({ mode: 'SSTV', includeInWrite: false })],
+      }),
+    ];
+    expect(listCapabilitySkippedTransmitters(satellites)).toHaveLength(0);
+  });
+
+  it('does not report a supported-mode transmitter', () => {
+    const satellites = [makeSatellite({ transmitters: [makeTransmitter({ mode: 'FM' })] })];
+    expect(listCapabilitySkippedTransmitters(satellites)).toHaveLength(0);
   });
 });

@@ -130,6 +130,33 @@ describe('writeSatellitesToRadio', () => {
     expect(result.skipped).toEqual([
       { satelliteId: 'sat-none', reason: 'No write-eligible transmitters.' },
     ]);
+    expect(result.skippedTransmitters).toHaveLength(0);
+  });
+
+  it('reports a D890-unsupported-mode transmitter in skippedTransmitters, not skipped (#1068)', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.readResponder = (_addr, len) => new Uint8Array(len).fill(0xff);
+    pipe.autoAckWrites = true;
+
+    const satellite = makeSatellite({
+      id: 'sat-sstv',
+      transmitters: [makeTransmitter({ id: 'tx-sstv', mode: 'SSTV' })],
+    });
+
+    const result = await writeSatellitesToRadio(fakeSession(pipe), [satellite]);
+
+    expect(result.written).toBe(0);
+    // Satellite-level "no eligible transmitters" is generic-eligibility only — a satellite
+    // whose sole transmitter was capability-filtered gets the specific reason below instead,
+    // not a duplicate generic one.
+    expect(result.skipped).toHaveLength(0);
+    expect(result.skippedTransmitters).toEqual([
+      {
+        satelliteId: 'sat-sstv',
+        transmitterId: 'tx-sstv',
+        reason: expect.stringContaining('SSTV'),
+      },
+    ]);
   });
 
   it('refuses to write when eligible transmitters exceed capacity, before any frame is sent', async () => {
