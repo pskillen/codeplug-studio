@@ -103,7 +103,11 @@ export function mergeChannelsIntoAtD890uvHydration(
     next = encodeZonesIntoAtD890Image(next, organisation.zones);
   }
   if (organisation?.scanLists) {
-    next = encodeScanListsIntoAtD890Image(next, organisation.scanLists);
+    next = encodeScanListsIntoAtD890Image(
+      next,
+      organisation.scanLists,
+      organisation.atD890ScanListTiming,
+    );
   }
   // Product rule (#756): AmAir and AmZone Write together, or leave both alone.
   if (organisation?.amAirChannels && organisation?.amZones) {

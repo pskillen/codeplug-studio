@@ -49,7 +49,7 @@ describe('scanListCodec', () => {
     expect(readU16Le(record, 0x4)).toBe(PRIORITY_OFF);
   });
 
-  it('pins timing fields to 3.0 s (deciseconds)', () => {
+  it('pins timing fields to 3.0 s (deciseconds) when unset', () => {
     const record = encodeAtD890ScanListRecord({
       wireName: 'Scan',
       listIndex: 1,
@@ -59,6 +59,26 @@ describe('scanListCodec', () => {
     expect(readU16Le(record, 0x8)).toBe(AT_D890_SCAN_TIMING_DECISECONDS);
     expect(readU16Le(record, 0xa)).toBe(AT_D890_SCAN_TIMING_DECISECONDS);
     expect(readU16Le(record, 0xc)).toBe(AT_D890_SCAN_TIMING_DECISECONDS);
+  });
+
+  it('writes custom timing deciseconds when provided', () => {
+    const record = encodeAtD890ScanListRecord(
+      {
+        wireName: 'Scan',
+        listIndex: 1,
+        channelNumbers: [1],
+      },
+      {
+        lookBackA: 25,
+        lookBackB: 40,
+        dropoutDelay: 15,
+        dwellTime: 31,
+      },
+    );
+    expect(readU16Le(record, 0x6)).toBe(25);
+    expect(readU16Le(record, 0x8)).toBe(40);
+    expect(readU16Le(record, 0xa)).toBe(15);
+    expect(readU16Le(record, 0xc)).toBe(31);
   });
 
   it('writes revert channel at 0xF8 and does not use member slot 50 as revert', () => {

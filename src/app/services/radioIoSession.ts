@@ -5,6 +5,7 @@
 
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
+import { resolveAtD890ScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import {
   isRadioCloneHydrationBag,
@@ -257,10 +258,14 @@ export function prepareRadioWriteImage(
     profileId: egress.profileId,
   });
   const projection = buildRadioWriteProjection(assembled, build, library, egress);
+  const organisation: RadioWriteOrganisation = { ...projection.organisation };
+  if (build.radioTargetId === 'anytone-at-d890uv') {
+    organisation.atD890ScanListTiming = resolveAtD890ScanListTiming(build.exportSettings).deciseconds;
+  }
   return {
-    image: mergeChannelsForWrite(egress, hydration, projection.channels, projection.organisation),
+    image: mergeChannelsForWrite(egress, hydration, projection.channels, organisation),
     warnings: projection.warnings,
-    organisation: projection.organisation,
+    organisation,
   };
 }
 
