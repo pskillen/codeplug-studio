@@ -23,12 +23,12 @@ Tier-1 hub for **satellite Keplerian elements (keps / TLEs)** in Codeplug Studio
 
 ## Documentation map
 
-| Doc                                                         | Role                                                                                                           |
-| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| [feature-design.md](feature-design.md)                      | Problem space, TLE sources, Keplerian definitions, UX workflows                                                |
-| [Satellite tracking](../satellite-tracking/)                | Post-MVP pass prediction + Tracking Dashboard ([#860](https://github.com/pskillen/codeplug-studio/issues/860)) |
-| `docs/reference/radios/anytone/at-d890uv/satellite-keps.md` | Planned — D890 memory / write protocol                                                                         |
-| `docs/reference/radios/opengd77/satellite-orbitals.md`      | Planned — shared OpenGD77 satellite bank                                                                       |
+| Doc                                                                                                                     | Role                                                                                                                                                            |
+| ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [feature-design.md](feature-design.md)                                                                                  | Problem space, TLE sources, Keplerian definitions, UX workflows                                                                                                 |
+| [Satellite tracking](../satellite-tracking/)                                                                            | Post-MVP pass prediction + Tracking Dashboard ([#860](https://github.com/pskillen/codeplug-studio/issues/860))                                                  |
+| [docs/reference/radios/anytone/at-d890uv/satellite-keps.md](../../reference/radios/anytone/at-d890uv/satellite-keps.md) | D890 memory / write protocol — GPL-source-inferred (anytone-cps + qdmr), not hardware-verified ([#855](https://github.com/pskillen/codeplug-studio/issues/855)) |
+| `docs/reference/radios/opengd77/satellite-orbitals.md`                                                                  | Planned — shared OpenGD77 satellite bank                                                                                                                        |
 
 ---
 
