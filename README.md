@@ -43,7 +43,7 @@ Every radio below can be written directly from your browser over Web Serial. How
 
 \* UV-21Pro V2 Web Serial write doesn't encode AM mode yet (FM/NFM only), and hardware round-trip verification is still pending.
 
-Other integrations: Google Drive save/load is shipped; OneDrive and Dropbox are planned. Satellite keps and pass-prediction tracking are on the roadmap, not started.
+Other integrations: Google Drive save/load is shipped; OneDrive and Dropbox are planned. Satellite keps (fetch, curate, and write to the Anytone AT-D890UV over Web Serial) and pass-prediction tracking are shipped — see [docs/features/satellite-keps/](docs/features/satellite-keps/README.md); OpenGD77 keps write is still on the roadmap.
 
 Full context for a newcomer or an agent picking this up cold: [docs/product-brief.md](docs/product-brief.md).
 

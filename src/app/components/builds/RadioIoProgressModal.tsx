@@ -6,7 +6,12 @@ import { Alert, Text } from '@mantine/core';
 import type { ProgressUpdate } from '@integrations/radio-io/types.ts';
 import { Button, ProgressModal, type ProgressModalStep } from '../v2/index.ts';
 
-export type RadioIoOperation = 'read' | 'write';
+/**
+ * `'keps-write'` is a distinct operation from `'write'` (#859) — a satellite-keps upload has
+ * no assemble-channels-into-image step, no write-verify concept, and no coverage table, so it
+ * gets its own step list/title rather than reusing `'write'`'s codeplug-shaped copy.
+ */
+export type RadioIoOperation = 'read' | 'write' | 'keps-write';
 
 export type RadioIoProgressPhase =
   'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
@@ -69,6 +74,19 @@ function buildSteps(
         ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
         : [{ id: 'transfer', label: 'Upload to radio' }]),
     ];
+    return steps;
+  }
+  if (operation === 'keps-write') {
+    const steps: StepDef[] = [
+      { id: 'connecting', label: 'Connect and handshake' },
+      { id: 'preparing', label: 'Pack satellite records' },
+      ...(transferStages.length > 0
+        ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
+        : [{ id: 'transfer', label: 'Upload to radio' }]),
+    ];
+    if (phase === 'done') {
+      steps.push({ id: 'done', label: 'Keps write complete' });
+    }
     return steps;
   }
   const steps: StepDef[] = [
@@ -186,7 +204,12 @@ export default function RadioIoProgressModal({
 }: RadioIoProgressModalProps) {
   const stepDefs = buildSteps(operation, transferStages, phase, writeVerifyStatus);
   const activeId = activeStepId(phase, progress, transferStages, writeVerifyStatus);
-  const title = operation === 'read' ? 'Reading from radio' : 'Writing to radio';
+  const title =
+    operation === 'read'
+      ? 'Reading from radio'
+      : operation === 'keps-write'
+        ? 'Writing keps to radio'
+        : 'Writing to radio';
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
   const complete = phase === 'done';
   const verifying = phase === 'verifying' || writeVerifyStatus === 'verifying';
@@ -211,7 +234,13 @@ export default function RadioIoProgressModal({
             title: 'Read finished',
             body: 'Clone image is saved on this build.',
           }
-        : null;
+        : complete && operation === 'keps-write'
+          ? {
+              color: 'green',
+              title: 'Keps write finished',
+              body: 'Satellite records were sent to the radio.',
+            }
+          : null;
 
   const footer = complete ? (
     awaitingVerify ? (

@@ -1,16 +1,20 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IconRefresh, IconTelescope } from '@tabler/icons-react';
+import { Group, Select } from '@mantine/core';
+import { IconRefresh, IconTelescope, IconUpload } from '@tabler/icons-react';
 import type { Satellite } from '@core/models/satellite.ts';
 import { isoNow } from '@core/models/revision.ts';
 import { mergeSatnogsTransmittersIntoSatellite } from '@core/domain/satnogs/mergeSatnogsTransmitters.ts';
+import { isAtD890SatelliteWriteEligible } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import { fetchSatelliteSet } from '@integrations/satellites/fetchSatelliteSet.ts';
 import { mergeSatelliteSet } from '@integrations/satellites/mergeSatelliteSet.ts';
 import { fetchSatnogsEnrichmentForNoradIds } from '@integrations/satellites/satnogsClient.ts';
 import EntityListRowDeleteAction from '../../../components/library/EntityListRowDeleteAction.tsx';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
+import SatelliteKepsWriteTargetModal from '../../../components/SatelliteKepsWriteTargetModal/SatelliteKepsWriteTargetModal.tsx';
 import {
   Button,
+  CountTile,
   DataTable,
   DesignSystemV2Provider,
   RowActionIcon,
@@ -26,6 +30,11 @@ import { persistence } from '../../../state/persistence.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
 import { useProjects } from '../../../state/useProjects.ts';
 import classes from '../../../components/library/LibraryInventoryPage.module.css';
+import {
+  distinctVisibleModes,
+  formatFrequenciesCell,
+  satelliteHasVisibleMode,
+} from './satelliteKepsListHelpers.ts';
 import staleClasses from './SatelliteKepsListPage.module.css';
 
 const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
@@ -46,19 +55,51 @@ export default function SatelliteKepsListPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [satnogsWarning, setSatnogsWarning] = useState<string | null>(null);
+  const [writeModalOpen, setWriteModalOpen] = useState(false);
+  const [bulkToggling, setBulkToggling] = useState(false);
+  const [modeFilter, setModeFilter] = useState<string | null>(null);
   const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
     useListNameQuery('satellite-keps');
   const [sort, setSort] = usePersistedEntityListSort('satellite-keps', {
     columnKey: DATATABLE_NAME_SORT_KEY,
     direction: 'asc',
   });
-  const filtered = useMemo(
+  const nameFiltered = useMemo(
     () => filterRowsByName(satellites, nameFilter, (r) => r.name),
     [satellites, nameFilter],
   );
+  /**
+   * Available modes for the "satellites with mode" filter — deliberately built from
+   * non-dismissed transmitters (`distinctVisibleModes`), not write-eligibility
+   * (`isAtD890SatelliteWriteEligible`), which also folds in `Satellite.enabled` and
+   * `includeInWrite` and would hide modes belonging to a currently-disabled satellite.
+   */
+  const availableModes = useMemo(() => distinctVisibleModes(satellites), [satellites]);
+  const filtered = useMemo(() => {
+    if (!modeFilter) return nameFiltered;
+    return nameFiltered.filter((s) => satelliteHasVisibleMode(s, modeFilter));
+  }, [nameFiltered, modeFilter]);
 
   async function handleToggle(satellite: Satellite, enabled: boolean) {
     await persistence.putSatellite({ ...satellite, enabled }, satellite.revision);
+  }
+
+  const allVisibleEnabled = filtered.length > 0 && filtered.every((s) => s.enabled);
+
+  /** Enable/disable every currently-**visible** (search + mode filtered) row in one batch. */
+  async function handleToggleAllVisible() {
+    if (filtered.length === 0 || bulkToggling) return;
+    const nextEnabled = !allVisibleEnabled;
+    const puts = filtered
+      .filter((s) => s.enabled !== nextEnabled)
+      .map((s) => ({ row: { ...s, enabled: nextEnabled }, expectedRevision: s.revision }));
+    if (puts.length === 0) return;
+    setBulkToggling(true);
+    try {
+      await persistence.putSatellitesBatch(puts);
+    } finally {
+      setBulkToggling(false);
+    }
   }
 
   async function handleRefresh() {
@@ -146,9 +187,9 @@ export default function SatelliteKepsListPage() {
         render: (r) => new Date(r.epoch).toLocaleDateString(),
       },
       {
-        key: 'source',
-        header: 'Source',
-        render: (r) => (r.source === 'celestrak' ? 'CelesTrak' : 'AMSAT'),
+        key: 'frequencies',
+        header: 'Frequencies',
+        render: (r) => formatFrequenciesCell(r),
       },
       {
         key: 'enabled',
@@ -172,9 +213,9 @@ export default function SatelliteKepsListPage() {
         render: (r) => (
           <span className={staleClasses.rowActions}>
             <RowActionIcon
-              label={`View ${r.name} detail`}
+              label={`Edit ${r.name} frequencies`}
               icon={<IconTelescope size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-              onClick={() => navigate(`/tracking/satellites/${r.id}`)}
+              onClick={() => navigate(`/library/satellite-keps/${r.id}`)}
             />
             <EntityListRowDeleteAction kind="satellite" entityId={r.id} label={r.name} />
           </span>
@@ -184,19 +225,40 @@ export default function SatelliteKepsListPage() {
   }, [navigate]);
 
   const enabledCount = satellites.filter((s) => s.enabled).length;
+  /**
+   * "Enabled radios" — write-eligible transmitters across the whole library, per the
+   * operator's vocabulary ("radio" == transmitter that would actually be written). Mirrors
+   * `writeSatellitesToRadio`/`packSatelliteWriteRecords`'s own eligibility predicate
+   * (`Satellite.enabled && transmitter.includeInWrite && !transmitter.dismissed`) rather than
+   * inventing a new one — see the flagged concern in the PR about this predicate currently
+   * living in a D890-specific module despite being vendor-neutral in substance.
+   */
+  const enabledTransmitterCount = satellites.reduce(
+    (sum, s) => sum + s.transmitters.filter((t) => isAtD890SatelliteWriteEligible(s, t)).length,
+    0,
+  );
   const { label: lastUpdatedLabel, stale } = formatLastUpdated(
     activeProject?.satelliteLibraryLastUpdated,
   );
 
   const listActions = (
-    <Button
-      variant="primary"
-      leftSection={<IconRefresh size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-      onClick={() => void handleRefresh()}
-      disabled={refreshing}
-    >
-      {refreshing ? 'Updating…' : 'Update from CelesTrak/AMSAT'}
-    </Button>
+    <Group gap="xs" wrap="nowrap">
+      <Button
+        variant="secondary"
+        leftSection={<IconUpload size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => setWriteModalOpen(true)}
+      >
+        Write Keps to Radio
+      </Button>
+      <Button
+        variant="primary"
+        leftSection={<IconRefresh size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => void handleRefresh()}
+        disabled={refreshing}
+      >
+        {refreshing ? 'Updating…' : 'Update from CelesTrak/AMSAT'}
+      </Button>
+    </Group>
   );
 
   if (loading) {
@@ -233,6 +295,32 @@ export default function SatelliteKepsListPage() {
         {refreshError ? <p className={staleClasses.refreshError}>{refreshError}</p> : null}
         {satnogsWarning ? <p className={staleClasses.refreshError}>{satnogsWarning}</p> : null}
 
+        <div className={staleClasses.summaryGrid}>
+          <CountTile value={enabledCount} total={satellites.length} label="Enabled satellites" />
+          <CountTile value={enabledTransmitterCount} label="Enabled radios" />
+        </div>
+
+        <div className={staleClasses.toolbarRow}>
+          <Select
+            data={availableModes}
+            value={modeFilter}
+            onChange={setModeFilter}
+            placeholder="All modes"
+            clearable
+            size="sm"
+            aria-label="Filter by mode"
+            className={staleClasses.modeFilter}
+          />
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => void handleToggleAllVisible()}
+            disabled={filtered.length === 0 || bulkToggling}
+          >
+            {allVisibleEnabled ? 'Disable all visible' : 'Enable all visible'}
+          </Button>
+        </div>
+
         <DataTable
           columns={columns}
           rows={filtered}
@@ -249,7 +337,7 @@ export default function SatelliteKepsListPage() {
             const v1 = v2SortToV1(next);
             if (v1) setSort(v1);
           }}
-          onRowActivate={(r) => navigate(`/library/satellite-keps/${r.id}`)}
+          onRowActivate={(r) => navigate(`/tracking/satellites/${r.id}`)}
           emptyMessage="No satellites yet. Use “Update from CelesTrak/AMSAT” to fetch the amateur satellite list."
           filteredEmptyMessage={
             nameFilter.trim()
@@ -258,6 +346,11 @@ export default function SatelliteKepsListPage() {
           }
         />
       </div>
+      <SatelliteKepsWriteTargetModal
+        opened={writeModalOpen}
+        onClose={() => setWriteModalOpen(false)}
+        projectId={projectId}
+      />
     </DesignSystemV2Provider>
   );
 }

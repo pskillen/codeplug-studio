@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RadioProtocolError } from '../../kit/errors.ts';
-import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
+import { AT_D890_LIMITS, AT_D890_SATELLITE, D890_MAP } from './constants.ts';
 import {
   channelPrimaryAddress,
   channelSecondaryAddress,
@@ -40,6 +40,24 @@ describe('AT_D890 writable extents', () => {
 
   it('excludes AmAir VFO (retain-only companion of the programmable bank)', () => {
     expect(isAtD890WritableAddress(D890_MAP.AmAirVfo)).toBe(false);
+  });
+
+  it('SatelliteData: base address and every address within MAX_SATELLITES * stride is writable', () => {
+    const { BASE_ADDRESS, RECORD_STRIDE } = AT_D890_SATELLITE;
+    const extentLength = RECORD_STRIDE * AT_D890_LIMITS.MAX_SATELLITES;
+
+    expect(isAtD890WritableAddress(BASE_ADDRESS)).toBe(true);
+    expect(isAtD890WritableAddress(BASE_ADDRESS + extentLength - 1)).toBe(true);
+    // Spot-check a mid-extent record boundary too, not just the ends.
+    expect(isAtD890WritableAddress(BASE_ADDRESS + RECORD_STRIDE * 3)).toBe(true);
+  });
+
+  it('SatelliteData: the address immediately before/after the extent is not writable', () => {
+    const { BASE_ADDRESS, RECORD_STRIDE } = AT_D890_SATELLITE;
+    const extentLength = RECORD_STRIDE * AT_D890_LIMITS.MAX_SATELLITES;
+
+    expect(isAtD890WritableAddress(BASE_ADDRESS - 1)).toBe(false);
+    expect(isAtD890WritableAddress(BASE_ADDRESS + extentLength)).toBe(false);
   });
 
   it('excludes LocalInfo and optional settings', () => {

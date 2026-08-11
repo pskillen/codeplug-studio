@@ -61,6 +61,7 @@ import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from '../../services/radioWriteEnvGate.ts';
+import { getSatelliteKepsWriteAdapter } from '../../services/satelliteKepsWriteAdapters.ts';
 
 export interface BuildRadioIoPanelProps {
   build: RadioBuild;
@@ -89,6 +90,10 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [writeWarnings, setWriteWarnings] = useState<string[]>([]);
+  const [kepsWriteSummary, setKepsWriteSummary] = useState<{
+    written: number;
+    skipped: { satelliteId: string; reason: string }[];
+  } | null>(null);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [transferStages, setTransferStages] = useState<string[]>([]);
   const [lastFirmware, setLastFirmware] = useState<string | undefined>();
@@ -105,6 +110,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const writeHidden = writeGate === 'hidden';
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);
+  /** Workflow B (#859): contextual "Write Keps" button, gated on a registered adapter. */
+  const kepsWriteFn = getSatelliteKepsWriteAdapter(egress.profileId);
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
 
@@ -163,6 +170,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     setWriteVerifyStatus('none');
     setVerifyButtonEnabled(false);
     setVerifyResult(null);
+    setKepsWriteSummary(null);
     verifyStartedRef.current = false;
     verifyReadActiveRef.current = false;
     clearPendingVerify();
@@ -316,6 +324,46 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     }
   }
 
+  /**
+   * Workflow B (#859 design §8): "Write Keps" alongside the primary Write/Read buttons.
+   * Bypasses the target-selection modal Workflow A uses (`SatelliteKepsWriteTargetModal`) —
+   * this build's egress/radio is already known. Shares this panel's `busy`/`operation` state
+   * with `handleRead`/`handleWrite` (see design §9 "disable the adjacent button"), so the
+   * existing `disabled={!serialOk || busy}` on those buttons — and this one — is the whole
+   * same-tab serial-lock mechanism; no separate lock primitive.
+   */
+  async function handleWriteKeps() {
+    if (!kepsWriteFn) return;
+    beginBusy('keps-write');
+    try {
+      if (!activeProjectId) {
+        throw new Error('No active project.');
+      }
+      const allSatellites = await persistence.listSatellites(activeProjectId);
+      const satellites = allSatellites.filter((s) => s.enabled);
+      setPhase('preparing');
+      const session = await ensureSession(true);
+      setPhase('transfer');
+      const result = await kepsWriteFn(session, satellites, {
+        onProgress,
+        signal: abortRef.current!.signal,
+      });
+      setKepsWriteSummary(result);
+      await releaseSession();
+      setPhase('done');
+    } catch (err) {
+      if (err instanceof RadioWriteBlockedError) {
+        setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+      await releaseSession();
+      setBusy(false);
+      setProgress(null);
+      abortRef.current = null;
+    }
+  }
+
   function resetProgressState(): void {
     setBusy(false);
     setProgress(null);
@@ -446,6 +494,16 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             Write to radio
           </Button>
         ) : null}
+        {kepsWriteFn && !writeHidden ? (
+          <Button
+            size="xs"
+            variant="light"
+            disabled={!serialOk || busy}
+            onClick={() => void handleWriteKeps()}
+          >
+            Write Keps
+          </Button>
+        ) : null}
         <Button
           size="xs"
           variant="subtle"
@@ -505,6 +563,18 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             {writeWarnings.map((line, index) => (
               <Text key={`write-warning-${index}`} size="sm">
                 {line}
+              </Text>
+            ))}
+          </Stack>
+        </Alert>
+      ) : null}
+      {kepsWriteSummary ? (
+        <Alert color={kepsWriteSummary.skipped.length > 0 ? 'yellow' : 'green'} title="Keps write">
+          <Stack gap={4}>
+            <Text size="sm">{kepsWriteSummary.written} satellite(s) written.</Text>
+            {kepsWriteSummary.skipped.map((s) => (
+              <Text key={`keps-skipped-${s.satelliteId}`} size="sm" c="dimmed">
+                Skipped {s.satelliteId}: {s.reason}
               </Text>
             ))}
           </Stack>

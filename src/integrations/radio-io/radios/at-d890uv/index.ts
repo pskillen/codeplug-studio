@@ -6,9 +6,18 @@ export {
   AT_D890_BLOCK_SIZE,
   AT_D890_CONNECTION,
   AT_D890_LIMITS,
+  AT_D890_SATELLITE,
   AT_D890UV_MODEL_IDS,
   D890_MAP,
 } from './constants.ts';
+export {
+  encodeSatelliteRecord,
+  isWriteEligible as isAtD890SatelliteWriteEligible,
+  packSatelliteWriteRecords,
+  SATELLITE_RECORD_BYTES,
+  type SatelliteWriteRecord,
+} from './satelliteCodec.ts';
+export { uploadAtD890SatelliteRecords } from './satelliteWrite.ts';
 export { createAtD890uvProtocol, AtD890uvProtocol, type AtD890DownloadCache } from './protocol.ts';
 export { AT_D890UV_DESCRIPTOR, AT_D890UV_MODEL_ID } from './descriptor.ts';
 export {

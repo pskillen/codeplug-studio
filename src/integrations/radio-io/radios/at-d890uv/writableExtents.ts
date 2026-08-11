@@ -10,7 +10,12 @@ import {
   isAtD890ChannelDataRealAddress,
 } from './channelDataGeometry.ts';
 import { eraseUnitBaseFor, isAtD890EraseUnitBookkeepingAddress } from './eraseUnits.ts';
-import { AT_D890_LIMITS, AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
+import {
+  AT_D890_LIMITS,
+  AT_D890_SAFE_SKIP_WRITE_ADDR,
+  AT_D890_SATELLITE,
+  D890_MAP,
+} from './constants.ts';
 
 export interface AtD890MemoryExtent {
   id: string;
@@ -112,6 +117,11 @@ export const AT_D890_WRITABLE_EXTENTS: readonly AtD890MemoryExtent[] = [
     id: 'AmZoneData',
     start: D890_MAP.AmZoneData,
     length: D890_MAP.AmZoneDataStride * D890_MAP.AmZoneCount,
+  },
+  {
+    id: 'SatelliteData',
+    start: AT_D890_SATELLITE.BASE_ADDRESS,
+    length: AT_D890_SATELLITE.RECORD_STRIDE * AT_D890_LIMITS.MAX_SATELLITES,
   },
 ] as const;
 

@@ -37,6 +37,7 @@ export const AT_D890_CONNECTION = {
 
 export const AT_D890_LIMITS = {
   MAX_CHANNELS: AT_D890UV_LIMITS.CHANNEL_MAX,
+  MAX_SATELLITES: AT_D890UV_LIMITS.SATELLITE_MAX,
   CHANNEL_SET_BYTES: 0x200,
   ZONE_SET_BYTES: 0x20,
   ZONE_MEMBERS_BYTES: 0x200,
@@ -201,6 +202,22 @@ export const D890_MAP = {
   DigitalContactOrderBlockStride: 0x8_0000,
   /** Order-table entry: `u32` key (`(radioId<<1)|callType`) + `u32` data offset. */
   DigitalContactOrderEntrySize: 8,
+} as const;
+
+/**
+ * Satellite keps write region (#856). Deliberately **not** part of `D890_MAP` above:
+ * anytone-cps's own `Device::writeSatelliteData()` uses `0x4a80000` as a bare literal, not a
+ * struct field on `D890_MAP` — see docs/reference/radios/anytone/at-d890uv/satellite-keps.md
+ * ("Base address is D890-only and resolved, not carried over from another model"). Kept as a
+ * sibling constant rather than folded into `D890_MAP` to preserve that source fact.
+ *
+ * Base address `0x4a80000` is erase-unit-aligned (unit 298 of `0x40000`-byte units) and sits
+ * in a 59-unit gap (259-317) with no other `D890_MAP`-declared neighbour on either side — see
+ * the doc's "Erase-unit safety" section. Not hardware-verified.
+ */
+export const AT_D890_SATELLITE = {
+  BASE_ADDRESS: 0x4a8_0000,
+  RECORD_STRIDE: 0x200,
 } as const;
 
 /** Virtual MemoryMap span (absolute addresses; base 0). */

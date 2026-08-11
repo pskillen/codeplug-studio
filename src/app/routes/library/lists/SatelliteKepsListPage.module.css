@@ -19,3 +19,31 @@
   align-items: center;
   gap: 4px;
 }
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 160px));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.toolbarRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.modeFilter {
+  width: 180px;
+}
+
+@media (max-width: 640px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolbarRow {
+    flex-wrap: wrap;
+  }
+}
