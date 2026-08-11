@@ -214,6 +214,39 @@ export function encodeSatelliteRecord(
   return data;
 }
 
+/** One `(satellite, transmitter)` pair as it would be written, without encoding wire bytes. */
+export interface SatelliteWritePreviewEntry {
+  satelliteId: string;
+  satelliteName: string;
+  transmitterId: string;
+  transmitterLabel: string;
+  mode: string | null;
+  /** Exactly what encodeName() would write to the 8-byte name field, trimmed of padding. */
+  encodedName: string;
+  uplinkHz: number | null;
+  downlinkHz: number | null;
+}
+
+/**
+ * Everything `packSatelliteWriteRecords` would write, in the same wire order, without encoding
+ * bytes — lets the UI show operators what would go to the radio before/without triggering an
+ * actual write (#1074).
+ */
+export function previewSatelliteWriteRecords(
+  satellites: readonly Satellite[],
+): SatelliteWritePreviewEntry[] {
+  return listEligiblePairs(satellites).map(({ satellite, transmitter }) => ({
+    satelliteId: satellite.id,
+    satelliteName: satellite.name,
+    transmitterId: transmitter.id,
+    transmitterLabel: transmitter.label,
+    mode: transmitter.mode,
+    encodedName: encodeName(satellite, transmitter).trimEnd(),
+    uplinkHz: transmitter.uplinkHz,
+    downlinkHz: transmitter.downlinkHz,
+  }));
+}
+
 /**
  * Pack all write-eligible `(satellite, transmitter)` pairs into sequential wire records.
  * Iterates in existing array order (no sort) — matching anytone-cps's own list-order write.

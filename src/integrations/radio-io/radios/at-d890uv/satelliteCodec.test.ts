@@ -5,6 +5,7 @@ import {
   encodeSatelliteRecord,
   listCapabilitySkippedTransmitters,
   packSatelliteWriteRecords,
+  previewSatelliteWriteRecords,
   SATELLITE_RECORD_BYTES,
 } from './satelliteCodec.ts';
 
@@ -230,6 +231,40 @@ describe('packSatelliteWriteRecords', () => {
     ];
     expect(packSatelliteWriteRecords(satellites, BASE, STRIDE)).toHaveLength(0);
     expect(listCapabilitySkippedTransmitters(satellites)).toHaveLength(0);
+  });
+});
+
+describe('previewSatelliteWriteRecords', () => {
+  it('returns one entry per write-eligible transmitter, with the encoded name matching the packed record', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        name: 'International Space Station',
+        transmitters: [
+          makeTransmitter({ id: 'tx-a', label: 'FM Voice Repeater' }),
+          makeTransmitter({ id: 'tx-b', label: 'CW', includeInWrite: false }),
+        ],
+      }),
+    ];
+
+    const preview = previewSatelliteWriteRecords(satellites);
+    expect(preview).toHaveLength(1);
+
+    const [entry] = preview;
+    expect(entry).toEqual({
+      satelliteId: 'sat-a',
+      satelliteName: 'International Space Station',
+      transmitterId: 'tx-a',
+      transmitterLabel: 'FM Voice Repeater',
+      mode: 'FM',
+      encodedName: 'Internat',
+      uplinkHz: 145_850_000,
+      downlinkHz: 436_795_000,
+    });
+
+    const [record] = packSatelliteWriteRecords(satellites, 0, SATELLITE_RECORD_BYTES);
+    const packedName = new TextDecoder().decode(record!.bytes.subarray(0x00, 0x08)).trimEnd();
+    expect(entry!.encodedName).toBe(packedName);
   });
 });
 
