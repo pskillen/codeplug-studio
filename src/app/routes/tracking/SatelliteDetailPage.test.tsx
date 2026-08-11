@@ -6,10 +6,14 @@ import type { Satellite } from '@core/models/satellite.ts';
 import { emptyLibrary } from '@core/domain/factories.ts';
 import SatelliteDetailPage from './SatelliteDetailPage.tsx';
 
-const mockPutSatellite = vi.fn(async () => {});
+const mockPutSatellite = vi.fn(async (satellite: Satellite, expectedRevision: number | null) => {
+  void expectedRevision;
+  return { ok: true, revision: satellite.revision } as const;
+});
 vi.mock('../../state/persistence.ts', () => ({
   persistence: {
-    putSatellite: (...args: unknown[]) => mockPutSatellite(...args),
+    putSatellite: (satellite: Satellite, expectedRevision: number | null) =>
+      mockPutSatellite(satellite, expectedRevision),
   },
 }));
 
@@ -224,9 +228,9 @@ describe('SatelliteDetailPage', () => {
     await waitFor(() => expect(mockPutSatellite).toHaveBeenCalledTimes(1));
     const [updated, expectedRevision] = mockPutSatellite.mock.calls[0]!;
     expect(expectedRevision).toBe(SATELLITE.revision);
-    expect((updated as Satellite).transmitters[0]!.includeInWrite).toBe(false);
+    expect(updated.transmitters[0]!.includeInWrite).toBe(false);
     // Only the toggled transmitter's includeInWrite changed — nothing else on the row.
-    expect((updated as Satellite).transmitters[0]!.label).toBe('Transmitter');
+    expect(updated.transmitters[0]!.label).toBe('Transmitter');
     await waitFor(() => expect(reload).toHaveBeenCalled());
   });
 
