@@ -66,6 +66,7 @@ export function mergeSatnogsTransmittersIntoSatellite(
         satnogsStatus: info.status,
         satnogsSyncedAt: fetchedAt,
         dismissed: false,
+        includeInWrite: true,
       };
     }
     const changed =

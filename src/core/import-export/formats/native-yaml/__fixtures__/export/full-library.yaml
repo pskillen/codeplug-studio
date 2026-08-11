@@ -142,6 +142,7 @@ library:
           downlinkHz: 437800000
           downlinkToneHz: null
           id: 12121212-1212-4212-8212-121212121212
+          includeInWrite: true
           label: FM Voice Repeater
           mode: FM
           satnogsAlive: null

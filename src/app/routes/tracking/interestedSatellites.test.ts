@@ -47,6 +47,7 @@ function satellite(id: string, noradId: number, uplinkHz: number | null = null):
               satnogsStatus: null,
               satnogsSyncedAt: null,
               dismissed: false,
+              includeInWrite: true,
             },
           ],
   };

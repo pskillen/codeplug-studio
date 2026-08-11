@@ -228,6 +228,7 @@ export function fullLibraryAggregate(): ProjectAggregate {
         satnogsStatus: null,
         satnogsSyncedAt: null,
         dismissed: false,
+        includeInWrite: true,
       },
     ],
   };

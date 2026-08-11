@@ -24,6 +24,15 @@
   color: var(--dsv2-text-tertiary);
 }
 
+.includeInWriteLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;

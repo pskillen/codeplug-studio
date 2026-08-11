@@ -113,6 +113,7 @@ describe('native-yaml parse', () => {
       satnogsStatus: index === 0 ? null : 'active',
       satnogsSyncedAt: index === 0 ? null : '2026-08-10T00:00:00.000Z',
       dismissed: false,
+      includeInWrite: index % 2 === 0,
     };
   }
 
@@ -129,6 +130,34 @@ describe('native-yaml parse', () => {
       expect(parsed.satellites[0]?.transmitters).toEqual(transmitters);
     },
   );
+
+  it('defaults includeInWrite to true when absent from a saved v26 document', () => {
+    const aggregate = fullLibraryAggregate();
+    const transmitter = { ...makeTransmitter(0), includeInWrite: false };
+    const withMetadata = {
+      ...aggregate,
+      satellites: aggregate.satellites.map((sat) => ({ ...sat, transmitters: [transmitter] })),
+    };
+    const serialised = serialiseProject(withMetadata);
+    // Simulate a document saved before `includeInWrite` existed: strip the line entirely
+    // rather than setting it explicitly, so the parser must default-if-missing.
+    const withoutField = serialised.replace(/\s*includeInWrite: false\n/, '\n');
+    expect(withoutField).not.toContain('includeInWrite');
+
+    const parsed = parseProjectDocument(withoutField);
+    expect(parsed.satellites[0]?.transmitters[0]?.includeInWrite).toBe(true);
+  });
+
+  it('parses an explicit includeInWrite: false without defaulting it away', () => {
+    const aggregate = fullLibraryAggregate();
+    const transmitter = { ...makeTransmitter(0), includeInWrite: false };
+    const withMetadata = {
+      ...aggregate,
+      satellites: aggregate.satellites.map((sat) => ({ ...sat, transmitters: [transmitter] })),
+    };
+    const parsed = parseProjectDocument(serialiseProject(withMetadata));
+    expect(parsed.satellites[0]?.transmitters[0]?.includeInWrite).toBe(false);
+  });
 
   it('migrates a pre-schema-26 satellite to an empty transmitters array when unset', () => {
     const parsed = parseProjectDocument(readFixture('valid-full.yaml'));

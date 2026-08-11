@@ -60,6 +60,7 @@ function satnogsRow(overrides: Partial<SatelliteTransmitter> = {}): SatelliteTra
     satnogsStatus: 'active',
     satnogsSyncedAt: '2024-01-01T00:00:00.000Z',
     dismissed: false,
+    includeInWrite: true,
     ...overrides,
   };
 }
@@ -210,5 +211,26 @@ describe('mergeSatnogsTransmittersIntoSatellite', () => {
 
     expect(result.satellite.transmitters.some((t) => t.id === 'stale-1')).toBe(true);
     expect(result.satellite.transmitters).toHaveLength(2);
+  });
+
+  it('defaults includeInWrite to true on a newly appended row', () => {
+    const result = mergeSatnogsTransmittersIntoSatellite(
+      satellite([]),
+      [transmitterInfo({ uuid: 'uuid-1' })],
+      '2024-06-01T00:00:00.000Z',
+    );
+
+    expect(result.satellite.transmitters[0].includeInWrite).toBe(true);
+  });
+
+  it('never touches includeInWrite on an existing row, even when other fields change', () => {
+    const optedOut = satnogsRow({ satnogsUuid: 'uuid-1', includeInWrite: false });
+    const result = mergeSatnogsTransmittersIntoSatellite(
+      satellite([optedOut]),
+      [transmitterInfo({ uuid: 'uuid-1', downlinkHz: 145900000 })],
+      '2024-06-01T00:00:00.000Z',
+    );
+
+    expect(result.satellite.transmitters[0].includeInWrite).toBe(false);
   });
 });

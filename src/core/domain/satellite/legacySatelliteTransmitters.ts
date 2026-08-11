@@ -52,6 +52,7 @@ export function synthesizeLegacySatelliteTransmitters(
       satnogsStatus: null,
       satnogsSyncedAt: null,
       dismissed: false,
+      includeInWrite: true,
     },
   ];
 }

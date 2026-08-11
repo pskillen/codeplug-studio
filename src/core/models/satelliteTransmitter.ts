@@ -44,4 +44,14 @@ export interface SatelliteTransmitter {
    * Always `false` for manual rows (manual delete is a real array removal, not a dismiss flag).
    */
   dismissed: boolean;
+
+  /**
+   * Whether this transmitter should be included the next time this satellite's keps are
+   * written to a radio (e.g. Anytone D890, #856). Defaults to `true` — a newly added or
+   * SatNOGS-synced transmitter is write-eligible until an operator opts it out. Independent
+   * of `dismissed` (editor-visibility) and `Satellite.enabled` (library-wide inclusion) —
+   * all three answer different questions; see the doc comment on `dismissed` above for why
+   * they don't collapse into one flag.
+   */
+  includeInWrite: boolean;
 }
