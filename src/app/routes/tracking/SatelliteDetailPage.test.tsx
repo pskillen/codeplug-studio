@@ -1,10 +1,21 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Satellite } from '@core/models/satellite.ts';
 import { emptyLibrary } from '@core/domain/factories.ts';
 import SatelliteDetailPage from './SatelliteDetailPage.tsx';
+
+const mockPutSatellite = vi.fn(async (satellite: Satellite, expectedRevision: number | null) => {
+  void expectedRevision;
+  return { ok: true, revision: satellite.revision } as const;
+});
+vi.mock('../../state/persistence.ts', () => ({
+  persistence: {
+    putSatellite: (satellite: Satellite, expectedRevision: number | null) =>
+      mockPutSatellite(satellite, expectedRevision),
+  },
+}));
 
 const SATELLITE: Satellite = {
   id: 'sat-1',
@@ -188,6 +199,82 @@ describe('SatelliteDetailPage', () => {
 
     expect(screen.getByText('Satellite not found')).toBeInTheDocument();
     expect(screen.getByText('Back to Satellite Keps')).toBeInTheDocument();
+  });
+
+  it('persists a transmitter include-in-write toggle from the detail panel (#1067)', async () => {
+    const reload = vi.fn();
+    mockPutSatellite.mockClear();
+    mockUseLibrary.mockReturnValue({
+      library: { ...emptyLibrary(), satellites: [SATELLITE] },
+      loading: false,
+      reload,
+    });
+    mockUsePassesForSatellite.mockReturnValue({
+      passes: [],
+      loading: false,
+      error: null,
+      hasObserver: true,
+    });
+
+    renderAt('/tracking/satellites/sat-1');
+
+    const toggle = screen.getByRole('checkbox', {
+      name: 'Include Transmitter in radio write',
+    });
+    expect(toggle).toBeChecked();
+
+    fireEvent.click(toggle);
+
+    await waitFor(() => expect(mockPutSatellite).toHaveBeenCalledTimes(1));
+    const [updated, expectedRevision] = mockPutSatellite.mock.calls[0]!;
+    expect(expectedRevision).toBe(SATELLITE.revision);
+    expect(updated.transmitters[0]!.includeInWrite).toBe(false);
+    // Only the toggled transmitter's includeInWrite changed — nothing else on the row.
+    expect(updated.transmitters[0]!.label).toBe('Transmitter');
+    await waitFor(() => expect(reload).toHaveBeenCalled());
+  });
+
+  it('bulk-selects/deselects visible transmitters for radio write (#1067 follow-up)', async () => {
+    const reload = vi.fn();
+    mockPutSatellite.mockClear();
+    const satelliteWithTwoTransmitters: Satellite = {
+      ...SATELLITE,
+      transmitters: [
+        { ...SATELLITE.transmitters[0]!, id: 't1', includeInWrite: true },
+        { ...SATELLITE.transmitters[0]!, id: 't2', includeInWrite: false },
+        // Dismissed transmitters aren't rendered and must be left untouched by bulk actions.
+        { ...SATELLITE.transmitters[0]!, id: 't3', includeInWrite: true, dismissed: true },
+      ],
+    };
+    mockUseLibrary.mockReturnValue({
+      library: { ...emptyLibrary(), satellites: [satelliteWithTwoTransmitters] },
+      loading: false,
+      reload,
+    });
+    mockUsePassesForSatellite.mockReturnValue({
+      passes: [],
+      loading: false,
+      error: null,
+      hasObserver: true,
+    });
+
+    renderAt('/tracking/satellites/sat-1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select none' }));
+
+    await waitFor(() => expect(mockPutSatellite).toHaveBeenCalledTimes(1));
+    const [updated] = mockPutSatellite.mock.calls[0]!;
+    expect(updated.transmitters.find((t: { id: string }) => t.id === 't1')!.includeInWrite).toBe(
+      false,
+    );
+    expect(updated.transmitters.find((t: { id: string }) => t.id === 't2')!.includeInWrite).toBe(
+      false,
+    );
+    // Dismissed transmitter is untouched by the bulk action.
+    expect(updated.transmitters.find((t: { id: string }) => t.id === 't3')!.includeInWrite).toBe(
+      true,
+    );
+    await waitFor(() => expect(reload).toHaveBeenCalled());
   });
 
   it('shows a loading state while the library is loading', () => {

@@ -11,12 +11,19 @@
  */
 
 import type { Satellite } from '@core/models/satellite.ts';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import type { ProgressFn, RadioSession } from '@integrations/radio-io/index.ts';
-import { writeSatellitesToRadio } from './radioIoAtD890SatelliteWrite.ts';
+import type { CapabilitySkippedTransmitter } from '@integrations/radio-io/radios/at-d890uv/index.ts';
+import {
+  countWriteEligibleSatelliteRecords,
+  writeSatellitesToRadio,
+} from './radioIoAtD890SatelliteWrite.ts';
 
 export interface SatelliteKepsWriteResult {
   written: number;
   skipped: { satelliteId: string; reason: string }[];
+  /** Transmitters skipped for a radio-capability reason (e.g. unsupported mode), #1068. */
+  skippedTransmitters: CapabilitySkippedTransmitter[];
 }
 
 export type SatelliteKepsWriteFn = (
@@ -40,4 +47,30 @@ export function hasSatelliteKepsWriteAdapter(profileId: string): boolean {
 
 export function getSatelliteKepsWriteAdapter(profileId: string): SatelliteKepsWriteFn | undefined {
   return SATELLITE_KEPS_WRITE_ADAPTERS[profileId];
+}
+
+export interface SatelliteKepsWriteCapacity {
+  /** Cap this profile's radio enforces on write-eligible `(satellite, transmitter)` records. */
+  max: number;
+  /** Non-throwing count of records the current library would produce for this profile. */
+  countEligible: (satellites: readonly Satellite[]) => number;
+}
+
+/**
+ * Registry of profileIds with a known write-capacity ceiling (#1068) — parallel to
+ * `SATELLITE_KEPS_WRITE_ADAPTERS` above, split out so a UI pre-flight check
+ * (`BuildRadioIoPanel.tsx`) can warn before opening a session, without duplicating each
+ * adapter's own eligibility/capability filtering logic.
+ */
+export const SATELLITE_KEPS_WRITE_CAPACITY: Readonly<Record<string, SatelliteKepsWriteCapacity>> = {
+  'radio-io-at-d890uv': {
+    max: AT_D890UV_LIMITS.SATELLITE_MAX,
+    countEligible: countWriteEligibleSatelliteRecords,
+  },
+};
+
+export function getSatelliteKepsWriteCapacity(
+  profileId: string,
+): SatelliteKepsWriteCapacity | undefined {
+  return SATELLITE_KEPS_WRITE_CAPACITY[profileId];
 }

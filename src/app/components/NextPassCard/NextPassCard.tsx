@@ -1,5 +1,10 @@
 import type { PassResult } from '@core/domain/satelliteTracking/types.ts';
-import { formatNextPassCountdown, isPassActive } from '../../routes/tracking/passTime.ts';
+import {
+  formatLocalClockTime,
+  formatNextPassCountdown,
+  formatUtcClockTime,
+  isPassActive,
+} from '../../routes/tracking/passTime.ts';
 import { hzToMhzString, optionalNumberToString } from '../../lib/units.ts';
 import classes from './NextPassCard.module.css';
 
@@ -45,14 +50,6 @@ function formatOptionalHz(hz: number | null | undefined): string {
   return value === '' ? '—' : `${value} Hz`;
 }
 
-function formatClockTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-}
-
 /**
  * Highlighted "next pass" summary card — AOS/LOS/max-elevation, then one block per transmitter
  * with its static uplink/downlink/tone/mode, and (while the pass is active) Doppler-corrected
@@ -93,11 +90,13 @@ export default function NextPassCard({
           <div className={classes.grid}>
             <div className={classes.field}>
               <span className={classes.label}>AOS</span>
-              <span className={classes.value}>{formatClockTime(nextPass.aosAt)}</span>
+              <span className={classes.value}>{formatLocalClockTime(nextPass.aosAt)} local</span>
+              <span className={classes.utcValue}>{formatUtcClockTime(nextPass.aosAt)} UTC</span>
             </div>
             <div className={classes.field}>
               <span className={classes.label}>LOS</span>
-              <span className={classes.value}>{formatClockTime(nextPass.losAt)}</span>
+              <span className={classes.value}>{formatLocalClockTime(nextPass.losAt)} local</span>
+              <span className={classes.utcValue}>{formatUtcClockTime(nextPass.losAt)} UTC</span>
             </div>
             <div className={classes.field}>
               <span className={classes.label}>Max elevation</span>

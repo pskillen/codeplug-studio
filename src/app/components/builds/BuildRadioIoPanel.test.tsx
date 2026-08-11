@@ -44,9 +44,15 @@ const kepsWriteFn = vi.fn(
   () => new Promise(() => {}), // never resolves — we only assert the disabled state mid-flight
 );
 
+// Mutable per-test capacity stub (#1068) — most tests want no ceiling registered (undefined),
+// so the pre-flight capacity check is a no-op and clicking "Write Keps" reaches kepsWriteFn
+// directly; the capacity-warning test below overrides this before rendering.
+let kepsCapacityStub: { max: number; countEligible: (s: readonly unknown[]) => number } | undefined;
+
 vi.mock('../../services/satelliteKepsWriteAdapters.ts', () => ({
   getSatelliteKepsWriteAdapter: (profileId: string) =>
     profileId === 'radio-io-at-d890uv' ? kepsWriteFn : undefined,
+  getSatelliteKepsWriteCapacity: () => kepsCapacityStub,
 }));
 
 vi.mock('../../hooks/useUnsavedNavigationGuard.ts', () => ({
@@ -136,5 +142,23 @@ describe('BuildRadioIoPanel — Write Keps (#859)', () => {
     await waitFor(() => expect(kepsWriteFn).toHaveBeenCalled());
     expect(readButton).toBeDisabled();
     expect(writeKepsButton).toBeDisabled();
+  });
+});
+
+describe('BuildRadioIoPanel — Write Keps capacity pre-flight (#1068)', () => {
+  it('shows a capacity warning and never calls kepsWriteFn or opens a session when over capacity', async () => {
+    const callsBefore = kepsWriteFn.mock.calls.length;
+    kepsCapacityStub = { max: 0, countEligible: () => 1 };
+    try {
+      renderPanel();
+      fireEvent.click(screen.getByRole('button', { name: 'Write Keps' }));
+
+      await waitFor(() => expect(screen.getByText(/only supports 0/)).toBeInTheDocument());
+      expect(kepsWriteFn.mock.calls.length).toBe(callsBefore);
+      // Buttons stay enabled — no session was opened, no busy state entered.
+      expect(screen.getByRole('button', { name: 'Read from radio' })).not.toBeDisabled();
+    } finally {
+      kepsCapacityStub = undefined;
+    }
   });
 });

@@ -6,6 +6,7 @@ import {
   distinctVisibleModes,
   formatFrequenciesCell,
   satelliteHasVisibleMode,
+  transmitterWriteEligibleCount,
 } from './satelliteKepsListHelpers.ts';
 
 function transmitter(overrides: Partial<SatelliteTransmitter> = {}): SatelliteTransmitter {
@@ -158,5 +159,34 @@ describe('satelliteHasVisibleMode', () => {
   it('does not match a dismissed transmitter', () => {
     const s = satellite({ transmitters: [transmitter({ mode: 'FM', dismissed: true })] });
     expect(satelliteHasVisibleMode(s, 'FM')).toBe(false);
+  });
+});
+
+describe('transmitterWriteEligibleCount', () => {
+  it('returns 0/0 for a satellite with no transmitters', () => {
+    expect(transmitterWriteEligibleCount(satellite({ transmitters: [] }))).toEqual({
+      eligible: 0,
+      total: 0,
+    });
+  });
+
+  it('counts write-eligible transmitters over non-dismissed transmitters', () => {
+    const s = satellite({
+      transmitters: [
+        transmitter({ id: 'tx-a' }),
+        transmitter({ id: 'tx-b', includeInWrite: false }),
+        transmitter({ id: 'tx-c' }),
+        transmitter({ id: 'tx-d', dismissed: true }),
+      ],
+    });
+    expect(transmitterWriteEligibleCount(s)).toEqual({ eligible: 2, total: 3 });
+  });
+
+  it('reports 0 eligible when the satellite itself is disabled, but keeps the visible total', () => {
+    const s = satellite({
+      enabled: false,
+      transmitters: [transmitter({ id: 'tx-a' }), transmitter({ id: 'tx-b' })],
+    });
+    expect(transmitterWriteEligibleCount(s)).toEqual({ eligible: 0, total: 2 });
   });
 });

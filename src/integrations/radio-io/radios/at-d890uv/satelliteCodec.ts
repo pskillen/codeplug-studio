@@ -9,6 +9,8 @@
 
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
+import { isTransmitterWriteEligible } from '@core/domain/satellite/transmitterWriteEligibility.ts';
+import { isModeSupportedByAtD890 } from '@core/radios/anytone/at-d890uv/satelliteCapability.ts';
 import { ctcssIndexFromHz } from './ctcssToneTable.ts';
 
 /** Wire record size — zero-initialized before fields are written (satellite-keps.md). */
@@ -25,30 +27,61 @@ export interface SatelliteWriteRecord {
 /**
  * Which `(satellite, transmitter)` pairs get a wire record.
  *
- * The `!dismissed` clause is a judgment call, flagged as such in the #856 planning notes:
- * dismissed rows are hidden from the SatelliteEditor UI, and this codec's position is that
- * they should not silently reach the radio either — a dismissed row reads as "the operator
- * doesn't want this one" even though `includeInWrite` was never explicitly flipped off.
+ * This is the vendor-neutral `isTransmitterWriteEligible` predicate
+ * (`src/core/domain/satellite/transmitterWriteEligibility.ts`), kept under this name for the
+ * D890 codec's existing internal call sites and the `isAtD890SatelliteWriteEligible` external
+ * re-export (`./index.ts`). See that module's doc comment for the `!dismissed` judgment call.
  */
-export function isWriteEligible(satellite: Satellite, transmitter: SatelliteTransmitter): boolean {
-  return satellite.enabled && transmitter.includeInWrite && !transmitter.dismissed;
-}
+export const isWriteEligible = isTransmitterWriteEligible;
 
 interface EligiblePair {
   satellite: Satellite;
   transmitter: SatelliteTransmitter;
 }
 
+/** A generically write-eligible transmitter skipped because the D890 can't use its `mode`. */
+export interface CapabilitySkippedTransmitter {
+  satelliteId: string;
+  transmitterId: string;
+  reason: string;
+}
+
 function listEligiblePairs(satellites: readonly Satellite[]): EligiblePair[] {
   const pairs: EligiblePair[] = [];
   for (const satellite of satellites) {
     for (const transmitter of satellite.transmitters) {
-      if (isWriteEligible(satellite, transmitter)) {
+      if (isWriteEligible(satellite, transmitter) && isModeSupportedByAtD890(transmitter.mode)) {
         pairs.push({ satellite, transmitter });
       }
     }
   }
   return pairs;
+}
+
+/**
+ * Generically write-eligible `(satellite, transmitter)` pairs that `packSatelliteWriteRecords`
+ * drops for a D890-specific reason: the transmitter's `mode` is on the D890 mode denylist
+ * (`isModeSupportedByAtD890`, #1068) — distinct from `WriteSatellitesToRadioResult.skipped`
+ * (satellite-level, "no eligible transmitters at all", #856).
+ */
+export function listCapabilitySkippedTransmitters(
+  satellites: readonly Satellite[],
+): CapabilitySkippedTransmitter[] {
+  const skipped: CapabilitySkippedTransmitter[] = [];
+  for (const satellite of satellites) {
+    for (const transmitter of satellite.transmitters) {
+      if (isWriteEligible(satellite, transmitter) && !isModeSupportedByAtD890(transmitter.mode)) {
+        skipped.push({
+          satelliteId: satellite.id,
+          transmitterId: transmitter.id,
+          reason:
+            `${transmitter.mode ?? 'unknown mode'} not supported by Anytone D890 ` +
+            `(placeholder pending hardware confirmation).`,
+        });
+      }
+    }
+  }
+  return skipped;
 }
 
 /**

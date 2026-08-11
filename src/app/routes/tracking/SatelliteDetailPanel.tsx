@@ -1,10 +1,11 @@
 import { useMediaQuery } from '@mantine/hooks';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
-import { Panel } from '../../components/v2/index.ts';
+import { Button, Checkbox, Panel } from '../../components/v2/index.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { hzToMhzString, optionalNumberToString } from '../../lib/units.ts';
 import { transmitterSourceLabel, visibleTransmitters } from '../library/satelliteEditorHelpers.ts';
+import { formatLocalClockTime, formatUtcClockTime } from './passTime.ts';
 import classes from './SatelliteDetailPanel.module.css';
 
 function Field({ label, value }: { label: string; value: string }) {
@@ -26,12 +27,34 @@ function formatOptionalHz(hz: number | null | undefined): string {
   return value === '' ? 'Not set' : `${value} Hz`;
 }
 
-function TransmitterCard({ transmitter }: { transmitter: SatelliteTransmitter }) {
+/** Local + UTC, both 24-hour — matches the AOS/LOS convention used elsewhere on this page. */
+function formatEpochLabel(iso: string): string {
+  const localDate = new Date(iso).toLocaleDateString(undefined, { dateStyle: 'short' });
+  return `Epoch ${localDate} ${formatLocalClockTime(iso)} local · ${formatUtcClockTime(iso)} UTC`;
+}
+
+function TransmitterCard({
+  transmitter,
+  onToggleIncludeInWrite,
+}: {
+  transmitter: SatelliteTransmitter;
+  onToggleIncludeInWrite?: (transmitterId: string, includeInWrite: boolean) => void;
+}) {
   return (
     <div className={classes.transmitter}>
       <div className={classes.transmitterTitle}>
         {transmitter.label || 'Transmitter'}
         <span className={classes.sourceBadge}>{transmitterSourceLabel(transmitter)}</span>
+        {onToggleIncludeInWrite ? (
+          <label className={classes.includeInWriteLabel}>
+            <Checkbox
+              checked={transmitter.includeInWrite}
+              onCheckedChange={(checked) => onToggleIncludeInWrite(transmitter.id, checked)}
+              aria-label={`Include ${transmitter.label || 'transmitter'} in radio write`}
+            />
+            Include in radio write
+          </label>
+        ) : null}
       </div>
       <div className={classes.grid}>
         <Field label="Mode" value={transmitter.mode ?? '—'} />
@@ -45,12 +68,28 @@ function TransmitterCard({ transmitter }: { transmitter: SatelliteTransmitter })
 }
 
 /**
- * Static Keplerian + transmitters detail panel for a single satellite. Read-only — editing
- * transmitter label/mode/frequency/tone metadata happens on the Satellite Keps editor
- * (`src/app/routes/library/SatelliteEditor.tsx`); orbital elements are only ever refreshed from
- * CelesTrak/AMSAT, never edited by hand.
+ * Static Keplerian + transmitters detail panel for a single satellite. Mostly read-only:
+ * editing transmitter label/mode/frequency/tone metadata still happens only on the Satellite
+ * Keps editor (`src/app/routes/library/SatelliteEditor.tsx`), and orbital elements are only
+ * ever refreshed from CelesTrak/AMSAT, never edited by hand. The one interactive control here
+ * is the per-transmitter "Include in radio write" toggle (#1067), shown when the caller passes
+ * `onToggleIncludeInWrite` — it mirrors `SatelliteTransmitter.includeInWrite`, the same field
+ * `SatelliteEditor.tsx` toggles, so edits made from either surface stay consistent. When the
+ * caller also passes `onBulkToggleIncludeInWrite`, a "Select all" / "Select none" pair renders
+ * above the transmitter list — satellites like the ISS can carry 50+ transmitters, where
+ * toggling each one by hand isn't practical.
  */
-export default function SatelliteDetailPanel({ satellite }: { satellite: Satellite }) {
+export default function SatelliteDetailPanel({
+  satellite,
+  onToggleIncludeInWrite,
+  onBulkToggleIncludeInWrite,
+}: {
+  satellite: Satellite;
+  onToggleIncludeInWrite?: (transmitterId: string, includeInWrite: boolean) => void;
+  /** "Select all" / "Select none" for the write-inclusion checkboxes below — satellites with
+   *  many transmitters (e.g. the ISS, 50+) make toggling each one individually impractical. */
+  onBulkToggleIncludeInWrite?: (includeInWrite: boolean) => void;
+}) {
   // Read synchronously on the first render (`getInitialValueInEffect: false`) — Panel's
   // `defaultCollapsed` is only consumed once, at its own mount, so the default async
   // (post-mount-effect) resolution would arrive one render too late to matter.
@@ -64,7 +103,7 @@ export default function SatelliteDetailPanel({ satellite }: { satellite: Satelli
     <>
       <Panel
         title="Orbital elements"
-        sub={`Epoch ${new Date(satellite.epoch).toLocaleString()}`}
+        sub={formatEpochLabel(satellite.epoch)}
         collapsible
         defaultCollapsed={isMobile}
       >
@@ -93,11 +132,27 @@ export default function SatelliteDetailPanel({ satellite }: { satellite: Satelli
             No transmitter data yet. Add one on the Satellite Keps editor, or refresh from SatNOGS.
           </p>
         ) : (
-          <div className={classes.transmitterList}>
-            {transmitters.map((transmitter) => (
-              <TransmitterCard key={transmitter.id} transmitter={transmitter} />
-            ))}
-          </div>
+          <>
+            {onBulkToggleIncludeInWrite ? (
+              <div className={classes.bulkActions}>
+                <Button variant="ghost" size="sm" onClick={() => onBulkToggleIncludeInWrite(true)}>
+                  Select all
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => onBulkToggleIncludeInWrite(false)}>
+                  Select none
+                </Button>
+              </div>
+            ) : null}
+            <div className={classes.transmitterList}>
+              {transmitters.map((transmitter) => (
+                <TransmitterCard
+                  key={transmitter.id}
+                  transmitter={transmitter}
+                  onToggleIncludeInWrite={onToggleIncludeInWrite}
+                />
+              ))}
+            </div>
+          </>
         )}
       </Panel>
     </>

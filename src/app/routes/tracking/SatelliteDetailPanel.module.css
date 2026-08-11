@@ -19,6 +19,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+.bulkActions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 .transmitterList {
   display: flex;
   flex-direction: column;
@@ -47,6 +53,17 @@
   font-weight: 400;
   font-size: 0.8em;
   color: var(--dsv2-text-secondary);
+}
+
+.includeInWriteLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+  margin-left: auto;
 }
 
 .emptyTransmitters {

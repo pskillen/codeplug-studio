@@ -83,3 +83,28 @@ export function formatNextPassCountdown(
   }
   return null;
 }
+
+/**
+ * `hour12: false` + `hourCycle: 'h23'` — `toLocaleTimeString([], { hour: '2-digit', ... })`
+ * without an explicit hour cycle falls back to the runtime's default locale, which for en-US
+ * zero-pads a 12-hour AM/PM hour (producing invalid-looking output like "04:49:52 PM"). Pass
+ * types always show both local and UTC clocks now, and always in 24-hour form — see
+ * `formatLocalClockTime`/`formatUtcClockTime` below.
+ */
+const CLOCK_TIME_FORMAT_OPTIONS: Intl.DateTimeFormatOptions = {
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+  hourCycle: 'h23',
+};
+
+/** `HH:mm:ss`, 24-hour, in the browser's local time zone. */
+export function formatLocalClockTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], CLOCK_TIME_FORMAT_OPTIONS);
+}
+
+/** `HH:mm:ss`, 24-hour, in UTC. */
+export function formatUtcClockTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { ...CLOCK_TIME_FORMAT_OPTIONS, timeZone: 'UTC' });
+}

@@ -24,6 +24,31 @@ Inclusive MHz bands used when filtering build lists and export ([#612](https://g
 
 Source: Studio Anytone bank docs + common CPS clamps.
 
+### Satellite transmitter mode support (Studio write eligibility) — placeholder, not hardware-verified
+
+Distinct question from the frequency-range table above: that table filters standard DMR/FM/AM
+**channel** RF band and TX eligibility, not which **demodulation modes** the D890 can use to
+track a satellite transmitter/transponder ([#1068](https://github.com/pskillen/codeplug-studio/issues/1068)).
+Neither anytone-cps nor qdmr GPL source declares a satellite-mode capability list at all — this
+is a genuine absence, not a narrower table this doc simply hasn't ported yet, so there is nothing
+to reuse or cross-check against here.
+
+Studio ships a small **denylist** of modes believed unsupported (`isModeSupportedByAtD890`,
+`src/core/radios/anytone/at-d890uv/satelliteCapability.ts`), on the reasoning that the D890 is a
+DMR/analog-FM handheld with no documented SSB/CW/digital-transponder demodulation hardware. A
+denylist (rather than an allowlist) is deliberate: `SatelliteTransmitter.mode` is free text with
+no closed taxonomy, so an allowlist would silently reject any mode spelling Studio hasn't seen.
+Unknown/unrecognised mode strings default to **supported**.
+
+| Mode  | Supported? | Basis                                                             |
+| ----- | ---------- | ----------------------------------------------------------------- |
+| FM    | Yes        | Native D890 demodulation                                          |
+| DMR   | Yes        | Native D890 demodulation                                          |
+| SSTV  | **No**     | Placeholder — issue's own example; image mode, no D890 demod path |
+| SSB   | **No**     | Placeholder — no documented SSB demodulation on this handheld     |
+| CW    | **No**     | Placeholder — no documented CW demodulation on this handheld      |
+| other | Yes        | Unrecognised — defaults to supported, not silently dropped        |
+
 ## Related
 
 - [limits.md](limits.md) · [power.md](power.md)

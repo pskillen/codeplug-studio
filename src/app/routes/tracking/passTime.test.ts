@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   filterTrackingPasses,
   formatCountdownMmSs,
+  formatLocalClockTime,
   formatNextPassCountdown,
+  formatUtcClockTime,
   isPassActive,
   nextPassBySatelliteId,
 } from './passTime.ts';
@@ -133,5 +135,27 @@ describe('formatNextPassCountdown', () => {
 
   it('returns null after LOS', () => {
     expect(formatNextPassCountdown(Date.parse('2026-08-10T13:00:00.000Z'), aos, los)).toBeNull();
+  });
+});
+
+describe('formatUtcClockTime', () => {
+  it('formats a 24-hour HH:mm:ss in UTC, never AM/PM', () => {
+    expect(formatUtcClockTime('2026-08-10T16:49:52.000Z')).toBe('16:49:52');
+  });
+
+  it('zero-pads midnight as 00, not 24', () => {
+    expect(formatUtcClockTime('2026-08-10T00:05:09.000Z')).toBe('00:05:09');
+  });
+});
+
+describe('formatLocalClockTime', () => {
+  const iso = '2026-08-10T16:49:52.000Z';
+
+  it('never renders AM/PM', () => {
+    expect(formatLocalClockTime(iso)).not.toMatch(/AM|PM/i);
+  });
+
+  it("renders 24-hour HH:mm:ss regardless of the test runner's local time zone", () => {
+    expect(formatLocalClockTime(iso)).toMatch(/^\d{2}:\d{2}:\d{2}$/);
   });
 });

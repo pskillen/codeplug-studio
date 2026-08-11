@@ -78,6 +78,43 @@ export default function SatelliteDetailPage() {
     }
   }
 
+  /**
+   * Per-transmitter "Include in radio write" toggle from the tracking detail panel (#1067) —
+   * mirrors `handleRefreshSatnogs`'s merge-and-persist-then-reload shape rather than inventing
+   * a new one. Only touches the one transmitter's `includeInWrite`; every other field on the
+   * satellite/transmitter is untouched.
+   */
+  async function handleToggleTransmitterIncludeInWrite(
+    transmitterId: string,
+    includeInWrite: boolean,
+  ) {
+    if (!satellite) return;
+    const updated = {
+      ...satellite,
+      transmitters: satellite.transmitters.map((t) =>
+        t.id === transmitterId ? { ...t, includeInWrite } : t,
+      ),
+    };
+    await persistence.putSatellite(updated, satellite.revision);
+    await reload();
+  }
+
+  /**
+   * "Select all" / "Select none" for the write-inclusion toggles (#1067 follow-up) — satellites
+   * with many transmitters (e.g. the ISS, 50+) make toggling each one individually impractical.
+   * Only touches visible (non-dismissed) transmitters, matching what `SatelliteDetailPanel`
+   * actually renders — a dismissed transmitter's `includeInWrite` is left untouched.
+   */
+  async function handleBulkToggleTransmitterIncludeInWrite(includeInWrite: boolean) {
+    if (!satellite) return;
+    const updated = {
+      ...satellite,
+      transmitters: satellite.transmitters.map((t) => (t.dismissed ? t : { ...t, includeInWrite })),
+    };
+    await persistence.putSatellite(updated, satellite.revision);
+    await reload();
+  }
+
   // Fixed at mount rather than recomputed every render — the pass lists refresh via the
   // hook's own debounce/effect cycle, not by chasing a moving "now" on each render.
   const [now] = useState(() => Date.now());
@@ -187,7 +224,15 @@ export default function SatelliteDetailPage() {
           upcomingPassesAnchorId={UPCOMING_PASSES_ANCHOR_ID}
         />
 
-        <SatelliteDetailPanel satellite={satellite} />
+        <SatelliteDetailPanel
+          satellite={satellite}
+          onToggleIncludeInWrite={(transmitterId, includeInWrite) =>
+            void handleToggleTransmitterIncludeInWrite(transmitterId, includeInWrite)
+          }
+          onBulkToggleIncludeInWrite={(includeInWrite) =>
+            void handleBulkToggleTransmitterIncludeInWrite(includeInWrite)
+          }
+        />
 
         <div className={classes.mapAndGlobe}>
           <div className={classes.mapViewport}>
