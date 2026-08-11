@@ -5,17 +5,25 @@ import {
 } from '@integrations/listPrefs/index.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import { DEFAULT_WINDOW_HOURS } from './useTrackingPasses.ts';
+import {
+  DEFAULT_GLOBE_LOOK_AHEAD_MIN,
+  DEFAULT_GLOBE_LOOK_BEHIND_MIN,
+} from '../../components/SatelliteGlobe/orbitTrail.ts';
 
 export interface TrackingDashboardFilters {
   windowHours: number;
   drawBehindMin: number;
   drawAheadMin: number;
+  globeLookBehindMin: number;
+  globeLookAheadMin: number;
   minElevation: string;
   onlyWithFrequencies: boolean;
   selectedSatelliteIds: Set<string>;
   setWindowHours: (value: number) => void;
   setDrawBehindMin: (value: number) => void;
   setDrawAheadMin: (value: number) => void;
+  setGlobeLookBehindMin: (value: number) => void;
+  setGlobeLookAheadMin: (value: number) => void;
   setMinElevation: (value: string) => void;
   setOnlyWithFrequencies: (value: boolean) => void;
   setSelectedSatelliteIds: (value: Set<string>) => void;
@@ -34,6 +42,8 @@ export function useTrackingDashboardFilters(): TrackingDashboardFilters {
   const [windowHours, setWindowHoursState] = useState(DEFAULT_WINDOW_HOURS);
   const [drawBehindMin, setDrawBehindMinState] = useState(0);
   const [drawAheadMin, setDrawAheadMinState] = useState(0);
+  const [globeLookBehindMin, setGlobeLookBehindMinState] = useState(DEFAULT_GLOBE_LOOK_BEHIND_MIN);
+  const [globeLookAheadMin, setGlobeLookAheadMinState] = useState(DEFAULT_GLOBE_LOOK_AHEAD_MIN);
   const [minElevation, setMinElevationState] = useState('');
   const [onlyWithFrequencies, setOnlyWithFrequenciesState] = useState(true);
   const [selectedSatelliteIds, setSelectedSatelliteIdsState] = useState<Set<string>>(new Set());
@@ -52,6 +62,12 @@ export function useTrackingDashboardFilters(): TrackingDashboardFilters {
     if (stored.windowHours !== undefined) setWindowHoursState(stored.windowHours);
     if (stored.drawBehindMin !== undefined) setDrawBehindMinState(stored.drawBehindMin);
     if (stored.drawAheadMin !== undefined) setDrawAheadMinState(stored.drawAheadMin);
+    if (stored.globeLookBehindMin !== undefined) {
+      setGlobeLookBehindMinState(stored.globeLookBehindMin);
+    }
+    if (stored.globeLookAheadMin !== undefined) {
+      setGlobeLookAheadMinState(stored.globeLookAheadMin);
+    }
     if (stored.minElevation !== undefined) setMinElevationState(stored.minElevation);
     if (stored.onlyWithFrequencies !== undefined) {
       setOnlyWithFrequenciesState(stored.onlyWithFrequencies);
@@ -71,6 +87,8 @@ export function useTrackingDashboardFilters(): TrackingDashboardFilters {
     windowHours,
     drawBehindMin,
     drawAheadMin,
+    globeLookBehindMin,
+    globeLookAheadMin,
     minElevation,
     onlyWithFrequencies,
     selectedSatelliteIds,
@@ -85,6 +103,14 @@ export function useTrackingDashboardFilters(): TrackingDashboardFilters {
     setDrawAheadMin: (value) => {
       setDrawAheadMinState(value);
       persist({ drawAheadMin: value });
+    },
+    setGlobeLookBehindMin: (value) => {
+      setGlobeLookBehindMinState(value);
+      persist({ globeLookBehindMin: value });
+    },
+    setGlobeLookAheadMin: (value) => {
+      setGlobeLookAheadMinState(value);
+      persist({ globeLookAheadMin: value });
     },
     setMinElevation: (value) => {
       setMinElevationState(value);

@@ -29,6 +29,23 @@
   min-width: 0;
 }
 
+.mapViewport {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.renderControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.renderControls > * {
+  flex: 1 1 160px;
+  max-width: 220px;
+}
+
 .calculatePasses {
   display: flex;
   flex-wrap: wrap;

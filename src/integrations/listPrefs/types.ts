@@ -37,6 +37,8 @@ export interface TrackingDashboardPrefs {
   windowHours?: number;
   drawBehindMin?: number;
   drawAheadMin?: number;
+  globeLookBehindMin?: number;
+  globeLookAheadMin?: number;
   minElevation?: string;
   onlyWithFrequencies?: boolean;
   selectedSatelliteIds?: string[];
