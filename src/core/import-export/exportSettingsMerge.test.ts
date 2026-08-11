@@ -90,4 +90,21 @@ describe('mergeExportOptions', () => {
     expect(options.profileId).toBe('chirp-uv5r');
     expect(options.shortenNames).toBe(true);
   });
+
+  it('passes AT-D890UV scan-list timing from build exportSettings', () => {
+    const build = {
+      ...newFormatBuild('proj', 'anytone-at-d890uv'),
+      exportSettings: {
+        scanListLookBackASeconds: 2.5,
+        scanListLookBackBSeconds: 4,
+        scanListDropoutDelaySeconds: 1.5,
+        scanListDwellTimeSeconds: 3.1,
+      },
+    };
+    const options = mergeExportOptions(build, 'anytone');
+    expect(options.scanListLookBackASeconds).toBe(2.5);
+    expect(options.scanListLookBackBSeconds).toBe(4);
+    expect(options.scanListDropoutDelaySeconds).toBe(1.5);
+    expect(options.scanListDwellTimeSeconds).toBe(3.1);
+  });
 });

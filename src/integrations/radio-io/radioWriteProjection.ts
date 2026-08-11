@@ -5,6 +5,7 @@
  */
 
 import type { RadioChannelDto } from './radioChannelDto.ts';
+import type { AtD890ResolvedScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 
 /** Zone membership as radio channel numbers (1-based). */
 export interface RadioZoneDto {
@@ -149,6 +150,10 @@ export interface RadioWriteOrganisation {
    * AT-D890UV AM airband zones. Omit (with `amAirChannels`) to retain radio state.
    */
   amZones?: readonly RadioAmZoneDto[];
+  /**
+   * AT-D890UV scan-list timing deciseconds for all lists when build exportSettings override ([#1069](https://github.com/pskillen/codeplug-studio/issues/1069)).
+   */
+  atD890ScanListTiming?: AtD890ResolvedScanListTiming['deciseconds'];
 }
 
 /**

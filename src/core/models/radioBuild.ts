@@ -54,6 +54,14 @@ export interface BuildExportSettings {
    * hidden from Radio Build lists and omitted from export.
    */
   hideChannelsOutsideFrequencyRange?: boolean;
+  /** AT-D890UV `ScanList.CSV` Look Back Time A[s] (0.5–5.0). Unset → 3.0 s. */
+  scanListLookBackASeconds?: number;
+  /** AT-D890UV `ScanList.CSV` Look Back Time B[s] (0.5–5.0). Unset → 3.0 s. */
+  scanListLookBackBSeconds?: number;
+  /** AT-D890UV `ScanList.CSV` Dropout Delay Time[s] (0.1–5.0). Unset → 3.0 s. */
+  scanListDropoutDelaySeconds?: number;
+  /** AT-D890UV `ScanList.CSV` Dwell Time[s] (0.1–5.0). Unset → 3.0 s. */
+  scanListDwellTimeSeconds?: number;
 }
 
 /**

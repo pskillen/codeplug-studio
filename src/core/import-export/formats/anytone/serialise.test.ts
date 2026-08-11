@@ -991,4 +991,100 @@ describe('anytone serialise', () => {
     expect(members).toContain('GB3AO Aboyne');
     expect(members).not.toContain('Aboyne Info');
   });
+
+  it('applies build scan-list timing to every ScanList.CSV row', () => {
+    const tg = newTalkGroup(PROJECT_ID, 'TG Alpha', 2355);
+    const libraryScanListId = 'scan-lib';
+    const ch1: Channel = {
+      ...newChannel(PROJECT_ID, 'Channel 1'),
+      scanListId: libraryScanListId,
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 2 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const ch2: Channel = {
+      ...newChannel(PROJECT_ID, 'Channel 2'),
+      rxFrequency: 155_000_000,
+      txFrequency: 155_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg.id },
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const zone = {
+      ...newZone(PROJECT_ID, 'Zone A'),
+      members: [
+        { kind: 'channel' as const, channelId: ch1.id },
+        { kind: 'channel' as const, channelId: ch2.id },
+      ],
+    };
+    const scanList = {
+      ...newScanList(PROJECT_ID, 'Library SCL'),
+      id: libraryScanListId,
+      memberChannelIds: [ch1.id],
+    };
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [ch2.id], exportScanList: true }],
+          },
+        ],
+      },
+      exportSettings: {
+        exportZoneDerivedScanLists: true,
+        scanListLookBackASeconds: 2.5,
+        scanListLookBackBSeconds: 4,
+        scanListDropoutDelaySeconds: 1.5,
+        scanListDwellTimeSeconds: 3.1,
+      },
+    };
+    const library = {
+      channels: [ch1, ch2],
+      zones: [zone],
+      talkGroups: [tg],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [scanList],
+    };
+
+    const assembled = assemble(build, library);
+    const files = serialiseAnytoneFiles(assembled, library, {
+      exportZoneDerivedScanLists: true,
+      scanListLookBackASeconds: 2.5,
+      scanListLookBackBSeconds: 4,
+      scanListDropoutDelaySeconds: 1.5,
+      scanListDwellTimeSeconds: 3.1,
+    });
+    const scanTable = csvToTable(files['ScanList.CSV']);
+    const lookBackA = scanTable.headers.indexOf('Look Back Time A[s]');
+    const lookBackB = scanTable.headers.indexOf('Look Back Time B[s]');
+    const dropout = scanTable.headers.indexOf('Dropout Delay Time[s]');
+    const dwell = scanTable.headers.indexOf('Dwell Time[s]');
+    expect(scanTable.rows.length).toBe(2);
+    for (const row of scanTable.rows) {
+      expect(row[lookBackA]).toBe('2.5');
+      expect(row[lookBackB]).toBe('4.0');
+      expect(row[dropout]).toBe('1.5');
+      expect(row[dwell]).toBe('3.1');
+    }
+  });
 });

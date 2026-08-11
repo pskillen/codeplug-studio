@@ -1128,6 +1128,33 @@ function parseExportSettings(raw: unknown, label: string): BuildExportSettings |
       `${label}.hideChannelsOutsideFrequencyRange`,
     );
   }
+  if (record.scanListLookBackASeconds !== undefined && record.scanListLookBackASeconds !== null) {
+    settings.scanListLookBackASeconds = expectNumber(
+      record.scanListLookBackASeconds,
+      `${label}.scanListLookBackASeconds`,
+    );
+  }
+  if (record.scanListLookBackBSeconds !== undefined && record.scanListLookBackBSeconds !== null) {
+    settings.scanListLookBackBSeconds = expectNumber(
+      record.scanListLookBackBSeconds,
+      `${label}.scanListLookBackBSeconds`,
+    );
+  }
+  if (
+    record.scanListDropoutDelaySeconds !== undefined &&
+    record.scanListDropoutDelaySeconds !== null
+  ) {
+    settings.scanListDropoutDelaySeconds = expectNumber(
+      record.scanListDropoutDelaySeconds,
+      `${label}.scanListDropoutDelaySeconds`,
+    );
+  }
+  if (record.scanListDwellTimeSeconds !== undefined && record.scanListDwellTimeSeconds !== null) {
+    settings.scanListDwellTimeSeconds = expectNumber(
+      record.scanListDwellTimeSeconds,
+      `${label}.scanListDwellTimeSeconds`,
+    );
+  }
   return Object.keys(settings).length > 0 ? settings : undefined;
 }
 

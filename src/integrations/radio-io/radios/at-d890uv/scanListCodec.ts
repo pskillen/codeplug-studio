@@ -5,7 +5,10 @@
 import type { MemoryMap } from '../../types.ts';
 import type { RadioScanListDto } from '../../radioWriteProjection.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
-import { AT_D890_SCAN_TIMING_DECISECONDS } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
+import {
+  AT_D890_SCAN_TIMING_DECISECONDS,
+  type AtD890ResolvedScanListTiming,
+} from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import { clearBitmapBitsBelow, setBitmapBit } from './bitmap.ts';
 import { toAtD890ChannelIndex } from './channelIndex.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
@@ -31,16 +34,31 @@ const AT_D890_SCAN_REVERT_CHANNEL = 0x01;
 /** Member array: `SCAN_LIST_MEMBERS_MAX` × u16 at `+0x30` through `+0xF7`. */
 const AT_D890_SCAN_MEMBER_BYTES = AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX * 2;
 
-export function encodeAtD890ScanListRecord(scan: RadioScanListDto): Uint8Array {
+export type AtD890ScanListTimingDeciseconds = AtD890ResolvedScanListTiming['deciseconds'];
+
+function defaultScanListTimingDeciseconds(): AtD890ScanListTimingDeciseconds {
+  return {
+    lookBackA: AT_D890_SCAN_TIMING_DECISECONDS,
+    lookBackB: AT_D890_SCAN_TIMING_DECISECONDS,
+    dropoutDelay: AT_D890_SCAN_TIMING_DECISECONDS,
+    dwellTime: AT_D890_SCAN_TIMING_DECISECONDS,
+  };
+}
+
+export function encodeAtD890ScanListRecord(
+  scan: RadioScanListDto,
+  timing?: AtD890ScanListTimingDeciseconds,
+): Uint8Array {
+  const resolved = timing ?? defaultScanListTimingDeciseconds();
   const data = new Uint8Array(AT_D890_LIMITS.SCAN_LIST_RECORD_SIZE);
   data.fill(0);
   data[0x1] = 0;
   writeU16Le(data, 0x2, AT_D890_SCAN_PRIORITY_OFF);
   writeU16Le(data, 0x4, AT_D890_SCAN_PRIORITY_OFF);
-  writeU16Le(data, 0x6, AT_D890_SCAN_TIMING_DECISECONDS);
-  writeU16Le(data, 0x8, AT_D890_SCAN_TIMING_DECISECONDS);
-  writeU16Le(data, 0xa, AT_D890_SCAN_TIMING_DECISECONDS);
-  writeU16Le(data, 0xc, AT_D890_SCAN_TIMING_DECISECONDS);
+  writeU16Le(data, 0x6, resolved.lookBackA);
+  writeU16Le(data, 0x8, resolved.lookBackB);
+  writeU16Le(data, 0xa, resolved.dropoutDelay);
+  writeU16Le(data, 0xc, resolved.dwellTime);
   data.set(encodeWideCharName(scan.wireName, 0x20), 0xe);
   const members = new Uint8Array(AT_D890_SCAN_MEMBER_BYTES);
   members.fill(0xff);
@@ -79,6 +97,7 @@ export function refreshScanListSetFromRadioBase(image: MemoryMap, freshRadioSet:
 export function encodeScanListsIntoAtD890Image(
   image: MemoryMap,
   scanLists: readonly RadioScanListDto[],
+  timing?: AtD890ScanListTimingDeciseconds,
 ): MemoryMap {
   const set = image.get(D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES).slice();
   clearBitmapBitsBelow(set, AT_D890UV_LIMITS.SCAN_LISTS_MAX);
@@ -91,7 +110,7 @@ export function encodeScanListsIntoAtD890Image(
     if (idx < 0) continue;
     if (scan.channelNumbers.length === 0) continue;
     setBitmapBit(set, idx, true);
-    const record = encodeAtD890ScanListRecord(scan);
+    const record = encodeAtD890ScanListRecord(scan, timing);
     image.set(scanListAddress(idx), record.subarray(0, AT_D890_LIMITS.SCAN_LIST_STRIDE));
   }
   image.set(D890_MAP.ScanListSet, set);

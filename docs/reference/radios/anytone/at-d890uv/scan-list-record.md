@@ -81,7 +81,7 @@ Official CPS writes the **full `0x200` stride**, zero-filled past `0xF9`.
 - **Members:** global 0-based channel indices (`toAtD890ChannelIndex`).
 - **Priority 1 / 2:** `0xffff` (Off) until library modelling ([#572](https://github.com/pskillen/codeplug-studio/issues/572)).
 - **Revert:** `0x01` (_Selected + TalkBack_) — matches CPS default on imported lists.
-- **Timing (all four):** `30` deciseconds (3.0 s) — temporary pin until [#572](https://github.com/pskillen/codeplug-studio/issues/572); shared with CSV via `scanListWireDefaults.ts`.
+- **Timing (all four):** `30` deciseconds (3.0 s) when build `exportSettings` unset; override via Export settings ([#1069](https://github.com/pskillen/codeplug-studio/issues/1069)); shared with CSV via `resolveAtD890ScanListTiming` / `scanListWireDefaults.ts`. Per-list library settings: [#572](https://github.com/pskillen/codeplug-studio/issues/572).
 - **Channel scan-list FK:** zone-derived FK on **carriers only** on Web Serial; see [zone-derived-scan-lists.md](../../../zone-derived-scan-lists.md). Library lists on serial: [#843](https://github.com/pskillen/codeplug-studio/issues/843).
 
 Codec: `src/integrations/radio-io/radios/at-d890uv/scanListCodec.ts`.

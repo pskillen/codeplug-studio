@@ -1,12 +1,15 @@
 import { NumberInput, Stack, Switch, Text } from '@mantine/core';
+import { useCallback } from 'react';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import { FieldCard } from '../fields/Fields.tsx';
+import AtD890ScanListTimingFields from './AtD890ScanListTimingFields.tsx';
 import ExportNameModeSelect from './ExportNameModeSelect.tsx';
 import DigitalContactExportNameModeSelect from './DigitalContactExportNameModeSelect.tsx';
 import ExportSettingsSubheading from './ExportSettingsSubheading.tsx';
 import ChannelBehaviourExportOverrides from './ChannelBehaviourExportOverrides.tsx';
 import ZoneBehaviourExportOverrides from './ZoneBehaviourExportOverrides.tsx';
 import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
+import { useDebouncedOptionalNumberField } from '../../hooks/useDebouncedOptionalNumberField.ts';
 import type { ExportBuildSettingsSectionsProps } from './ExportBuildSettingsSections.tsx';
 
 type ExportAnytoneSettingsSectionsProps = Pick<
@@ -30,6 +33,18 @@ export default function ExportAnytoneSettingsSections({
   onExportInclusionChange,
 }: ExportAnytoneSettingsSectionsProps) {
   const showChannelExpansion = hasMxNChannelExpansion(build.radioTargetId);
+  const showD890ScanListTiming = build.radioTargetId === 'anytone-at-d890uv';
+
+  const commitMaxNameLength = useCallback(
+    (value: number | undefined) => {
+      onExportSettingsPatch({ maxNameLength: value ?? null });
+    },
+    [onExportSettingsPatch],
+  );
+  const maxNameLengthField = useDebouncedOptionalNumberField(
+    resolvedSettings.maxNameLength ?? undefined,
+    commitMaxNameLength,
+  );
 
   return (
     <Stack gap="md">
@@ -70,18 +85,10 @@ export default function ExportAnytoneSettingsSections({
           placeholder={profileNameLimit != null ? String(profileNameLimit) : 'Profile default'}
           min={1}
           max={64}
-          value={resolvedSettings.maxNameLength ?? ''}
-          disabled={saving || !resolvedSettings.shortenNames}
-          onChange={(value) => {
-            if (value === '' || value == null) {
-              onExportSettingsPatch({ maxNameLength: null });
-              return;
-            }
-            const n = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
-            onExportSettingsPatch({
-              maxNameLength: Number.isFinite(n) && n > 0 ? n : null,
-            });
-          }}
+          value={maxNameLengthField.value}
+          disabled={!resolvedSettings.shortenNames}
+          onChange={maxNameLengthField.setValue}
+          onBlur={maxNameLengthField.flush}
         />
 
         <ExportSettingsSubheading>Channel wire names</ExportSettingsSubheading>
@@ -170,6 +177,12 @@ export default function ExportAnytoneSettingsSections({
           disabled={saving}
           onPatch={onExportSettingsPatch}
         />
+        {showD890ScanListTiming ? (
+          <AtD890ScanListTimingFields
+            exportSettings={build.exportSettings}
+            onPatch={onExportSettingsPatch}
+          />
+        ) : null}
         <Text size="sm" c="dimmed">
           Library scan list membership is edited under Library → Scan lists. Per-channel scan list
           assignment is on the Channels wire page.

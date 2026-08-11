@@ -59,7 +59,7 @@ Projects with build-scoped `ScanListsLayout` sections hoist entries into `librar
 
 ## Scan resume and hang-time concepts
 
-Library scan lists today model **membership and naming** only. CPS formats may also expose scan **resume mode** (time-operated, carrier-operated, search/stop) and **hang-time / priority sample** intervals. Those are format-specific wire columns — do not bake vendor labels into the library entity. For Anytone AT-D890UV terminology and contested Dropout vs Dwell semantics, see the tier-3 [scan-lists translation map](../../reference/export-formats/anytone/scan-lists.md).
+Library scan lists today model **membership and naming** only. CPS formats may also expose scan **resume mode** (time-operated, carrier-operated, search/stop) and **hang-time / priority sample** intervals. Those are format-specific wire columns — do not bake vendor labels into the library entity. For Anytone AT-D890UV, interim **build export settings** ([#1069](https://github.com/pskillen/codeplug-studio/issues/1069)) apply one timing set to all scan lists on export; per-list library settings remain [#572](https://github.com/pskillen/codeplug-studio/issues/572). For terminology and contested Dropout vs Dwell semantics, see the tier-3 [scan-lists translation map](../../reference/export-formats/anytone/scan-lists.md).
 
 ## Related
 

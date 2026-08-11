@@ -28,7 +28,10 @@ import {
 import { formatCsv } from './csvWrite.ts';
 import { serialiseAnytoneChannelRow } from './channelWire.ts';
 import type { ChannelModeProfileDMR } from '@core/models/library.ts';
-import { AT_D890_SCAN_TIMING_SECONDS_CSV } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
+import {
+  resolveAtD890ScanListTiming,
+  type AtD890ResolvedScanListTiming,
+} from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import {
   buildAnytoneExportWireContext,
   padReceiveBankName,
@@ -207,11 +210,22 @@ export function serialiseAmZonesCsv(
   return formatCsv(AM_ZONE_HEADERS, rows);
 }
 
+function scanListTimingFromOptions(options?: CpsExportOptions): AtD890ResolvedScanListTiming {
+  return resolveAtD890ScanListTiming({
+    scanListLookBackASeconds: options?.scanListLookBackASeconds,
+    scanListLookBackBSeconds: options?.scanListLookBackBSeconds,
+    scanListDropoutDelaySeconds: options?.scanListDropoutDelaySeconds,
+    scanListDwellTimeSeconds: options?.scanListDwellTimeSeconds,
+  });
+}
+
 function serialiseScanListsCsv(
   assembled: AssembledBuild,
   context: AnytoneExportWireContext,
+  options?: CpsExportOptions,
 ): string {
   const channels = channelFrequencyById(assembled);
+  const timing = scanListTimingFromOptions(options);
   const rows = assembled.scanLists.map((scanList, index) => {
     const zoneId = zoneIdFromDerivedScanListId(scanList.scanListId);
     const projection =
@@ -250,10 +264,10 @@ function serialiseScanListsCsv(
       [SCAN_LIST_COL.priority2Rx]: '',
       [SCAN_LIST_COL.priority2Tx]: '',
       [SCAN_LIST_COL.revertChannel]: 'Selected + TalkBack',
-      [SCAN_LIST_COL.lookBackA]: AT_D890_SCAN_TIMING_SECONDS_CSV,
-      [SCAN_LIST_COL.lookBackB]: AT_D890_SCAN_TIMING_SECONDS_CSV,
-      [SCAN_LIST_COL.dropoutDelay]: AT_D890_SCAN_TIMING_SECONDS_CSV,
-      [SCAN_LIST_COL.dwellTime]: AT_D890_SCAN_TIMING_SECONDS_CSV,
+      [SCAN_LIST_COL.lookBackA]: timing.csv.lookBackA,
+      [SCAN_LIST_COL.lookBackB]: timing.csv.lookBackB,
+      [SCAN_LIST_COL.dropoutDelay]: timing.csv.dropoutDelay,
+      [SCAN_LIST_COL.dwellTime]: timing.csv.dwellTime,
     });
   });
   return formatCsv(SCAN_LIST_HEADERS, rows);
@@ -397,7 +411,7 @@ export function serialiseAnytoneFiles(
       exportPrep.carrierPrependByZoneId,
       options?.channelBehaviourContext,
     ),
-    'ScanList.CSV': serialiseScanListsCsv(exportAssembly, ctx),
+    'ScanList.CSV': serialiseScanListsCsv(exportAssembly, ctx, options),
     'DMRTalkGroups.CSV': serialiseTalkGroupsCsv(exportAssembly, ctx),
     'DMRDigitalContactList.CSV': serialiseDigitalContactsCsv(exportAssembly, ctx),
     'DMRReceiveGroupCallList.CSV': serialiseRxGroupListsCsv(exportAssembly, ctx),
