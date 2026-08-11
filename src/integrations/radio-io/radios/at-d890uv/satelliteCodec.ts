@@ -233,6 +233,19 @@ export interface SatelliteWritePreviewEntry {
   encodedName: string;
   uplinkHz: number | null;
   downlinkHz: number | null;
+  /** True when encodedName lost information relative to the full name (+label, if it had room). */
+  nameTruncated: boolean;
+}
+
+/**
+ * The untruncated source string `encodeName` draws from — `satellite.name` alone once it
+ * already fills the 8-byte budget, otherwise `name + " " + label` (#1075). Comparing
+ * `encodeName`'s trimmed output against this tells the UI whether the write dropped
+ * information, without duplicating `encodeName`'s own budget-allocation branch a second time.
+ */
+function nameEncodingSource(satellite: Satellite, transmitter: SatelliteTransmitter): string {
+  const name = satellite.name.trim();
+  return name.length >= 8 ? name : `${name} ${transmitter.label}`.trim();
 }
 
 /**
@@ -243,16 +256,20 @@ export interface SatelliteWritePreviewEntry {
 export function previewSatelliteWriteRecords(
   satellites: readonly Satellite[],
 ): SatelliteWritePreviewEntry[] {
-  return listEligiblePairs(satellites).map(({ satellite, transmitter }) => ({
-    satelliteId: satellite.id,
-    satelliteName: satellite.name,
-    transmitterId: transmitter.id,
-    transmitterLabel: transmitter.label,
-    mode: transmitter.mode,
-    encodedName: encodeName(satellite, transmitter).trimEnd(),
-    uplinkHz: transmitter.uplinkHz,
-    downlinkHz: transmitter.downlinkHz,
-  }));
+  return listEligiblePairs(satellites).map(({ satellite, transmitter }) => {
+    const encodedName = encodeName(satellite, transmitter).trimEnd();
+    return {
+      satelliteId: satellite.id,
+      satelliteName: satellite.name,
+      transmitterId: transmitter.id,
+      transmitterLabel: transmitter.label,
+      mode: transmitter.mode,
+      encodedName,
+      uplinkHz: transmitter.uplinkHz,
+      downlinkHz: transmitter.downlinkHz,
+      nameTruncated: encodedName !== nameEncodingSource(satellite, transmitter),
+    };
+  });
 }
 
 /**

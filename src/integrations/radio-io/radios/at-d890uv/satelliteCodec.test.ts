@@ -270,11 +270,38 @@ describe('previewSatelliteWriteRecords', () => {
       encodedName: 'Internat',
       uplinkHz: 145_850_000,
       downlinkHz: 436_795_000,
+      nameTruncated: true,
     });
 
     const [record] = packSatelliteWriteRecords(satellites, 0, SATELLITE_RECORD_BYTES);
     const packedName = new TextDecoder().decode(record!.bytes.subarray(0x00, 0x08)).trimEnd();
     expect(entry!.encodedName).toBe(packedName);
+  });
+
+  it('flags nameTruncated true when satellite.name alone is >= 8 chars (#1075)', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        name: 'CUBESAT XI-V',
+        transmitters: [makeTransmitter({ id: 'tx-a', label: 'CW' })],
+      }),
+    ];
+    const [entry] = previewSatelliteWriteRecords(satellites);
+    expect(entry!.encodedName).toBe('CUBESAT');
+    expect(entry!.nameTruncated).toBe(true);
+  });
+
+  it('flags nameTruncated false when name + label both fit within 8 bytes', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        name: 'AO',
+        transmitters: [makeTransmitter({ id: 'tx-a', label: '27' })],
+      }),
+    ];
+    const [entry] = previewSatelliteWriteRecords(satellites);
+    expect(entry!.encodedName).toBe('AO 27');
+    expect(entry!.nameTruncated).toBe(false);
   });
 });
 
