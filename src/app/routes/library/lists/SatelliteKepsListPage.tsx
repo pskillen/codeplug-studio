@@ -34,6 +34,7 @@ import {
   distinctVisibleModes,
   formatFrequenciesCell,
   satelliteHasVisibleMode,
+  transmitterWriteEligibleCount,
 } from './satelliteKepsListHelpers.ts';
 import staleClasses from './SatelliteKepsListPage.module.css';
 
@@ -190,6 +191,15 @@ export default function SatelliteKepsListPage() {
         key: 'frequencies',
         header: 'Frequencies',
         render: (r) => formatFrequenciesCell(r),
+      },
+      {
+        key: 'writeEligible',
+        header: 'Radios for write',
+        width: '110px',
+        render: (r) => {
+          const { eligible, total } = transmitterWriteEligibleCount(r);
+          return `${eligible}/${total}`;
+        },
       },
       {
         key: 'enabled',

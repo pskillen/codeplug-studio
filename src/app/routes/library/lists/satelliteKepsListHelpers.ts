@@ -6,6 +6,7 @@
  */
 
 import type { Satellite } from '@core/models/satellite.ts';
+import { isTransmitterWriteEligible } from '@core/domain/satellite/transmitterWriteEligibility.ts';
 import { hzToMhzString } from '../../../lib/units.ts';
 import { visibleTransmitters } from '../satelliteEditorHelpers.ts';
 
@@ -51,4 +52,22 @@ export function distinctVisibleModes(satellites: readonly Satellite[]): string[]
 /** Whether `satellite` has at least one non-dismissed transmitter matching `mode`. */
 export function satelliteHasVisibleMode(satellite: Satellite, mode: string): boolean {
   return visibleTransmitters(satellite.transmitters).some((t) => t.mode === mode);
+}
+
+/**
+ * "N/M enabled" write-eligible-transmitter summary for one satellite row (#1067) — count of
+ * `isTransmitterWriteEligible` transmitters over count of non-dismissed transmitters. Uses the
+ * vendor-neutral predicate directly (not a D890-specific alias): this column answers "how many
+ * radios on this satellite are currently marked for write," a generic library question, not
+ * "would a specific target radio accept them" (that's the D890 mode-capability filter, shown
+ * only in the Export write UI where a target radio is actually known — see
+ * `src/core/radios/anytone/at-d890uv/satelliteCapability.ts`).
+ */
+export function transmitterWriteEligibleCount(satellite: Satellite): {
+  eligible: number;
+  total: number;
+} {
+  const visible = visibleTransmitters(satellite.transmitters);
+  const eligible = visible.filter((t) => isTransmitterWriteEligible(satellite, t)).length;
+  return { eligible, total: visible.length };
 }
