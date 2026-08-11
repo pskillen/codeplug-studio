@@ -11,6 +11,7 @@ import {
   newTrackingSettings,
 } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
+import type { Satellite } from '@core/models/satellite.ts';
 import { IndexedDbProjectPersistence } from './indexedDb.ts';
 import type { PersistenceChange } from './types.ts';
 
@@ -70,6 +71,51 @@ describe('IndexedDbProjectPersistence', () => {
     const loaded = await store.getChannel(meta.projectId, channel.id);
     expect(loaded?.scanInclusion).toBe('skip');
     expect(loaded).not.toHaveProperty('scanSkip');
+  });
+
+  it('synthesizes transmitters when reading pre-v26 legacy satellite rows', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    const satellite = newSatellite(meta.projectId, 'ISS', 25544);
+    const { transmitters: _transmitters, ...legacyRow } = satellite;
+    void _transmitters;
+    const legacyStoredRow = {
+      ...legacyRow,
+      uplinkHz: 145_990_000,
+      downlinkHz: 437_800_000,
+      uplinkToneHz: 67,
+      downlinkToneHz: null,
+    };
+    await store.seedProject({
+      meta,
+      // Pre-schema-v26 rows persisted with scalar uplink/downlink/tone fields, no transmitters.
+      satellites: [legacyStoredRow as unknown as Satellite],
+    });
+
+    const loaded = await store.getSatellite(meta.projectId, satellite.id);
+    expect(loaded?.transmitters).toHaveLength(1);
+    expect(loaded?.transmitters[0]).toMatchObject({
+      label: 'Transmitter',
+      source: 'manual',
+      uplinkHz: 145_990_000,
+      downlinkHz: 437_800_000,
+      uplinkToneHz: 67,
+      downlinkToneHz: null,
+    });
+    expect(loaded).not.toHaveProperty('uplinkHz');
+
+    const listed = await store.listSatellites(meta.projectId);
+    expect(listed[0]?.transmitters).toHaveLength(1);
+  });
+
+  it('leaves already-migrated satellite rows with a transmitters array untouched', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Test');
+    const satellite = newSatellite(meta.projectId, 'ISS', 25544);
+    await store.seedProject({ meta, satellites: [satellite] });
+
+    const loaded = await store.getSatellite(meta.projectId, satellite.id);
+    expect(loaded?.transmitters).toEqual(satellite.transmitters);
   });
 
   it('migrates legacy ssb-usb mode profiles on read', async () => {

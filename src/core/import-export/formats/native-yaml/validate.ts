@@ -25,7 +25,10 @@ import type {
   SatelliteTransmitter,
   SatelliteTransmitterSource,
 } from '@core/models/satelliteTransmitter.ts';
-import { newId } from '@core/models/ids.ts';
+import {
+  SATELLITE_TRANSMITTERS_MIN_SCHEMA,
+  synthesizeLegacySatelliteTransmitters,
+} from '@core/domain/satellite/legacySatelliteTransmitters.ts';
 import type { ObserverPositionSource, TrackingSettings } from '@core/models/trackingSettings.ts';
 import type {
   AprsPositionSource,
@@ -773,45 +776,21 @@ function parseSatelliteTransmitter(raw: unknown, label: string): SatelliteTransm
  * Prior to schema v26, `Satellite` carried bare `uplinkHz`/`downlinkHz`/`uplinkToneHz`/
  * `downlinkToneHz` scalars instead of a `transmitters` array. Synthesize a single manual
  * transmitter from those legacy fields (or an empty array when all four were unset) so
- * pre-migration projects keep importing.
+ * pre-migration projects keep importing. Synthesis itself lives in
+ * `@core/domain/satellite/legacySatelliteTransmitters.ts`, shared with the IndexedDB row
+ * reader (`src/integrations/persistence/satelliteRow.ts`) — a satellite already persisted to a
+ * browser's local project never passes through this file-import parser.
  */
-const SATELLITE_TRANSMITTERS_MIN_SCHEMA = 26;
-
 function parseLegacySatelliteTransmitters(
   record: Record<string, unknown>,
   label: string,
 ): SatelliteTransmitter[] {
-  const uplinkHz = expectNullableNumber(record.uplinkHz, `${label}.uplinkHz`);
-  const downlinkHz = expectNullableNumber(record.downlinkHz, `${label}.downlinkHz`);
-  const uplinkToneHz = expectNullableNumber(record.uplinkToneHz, `${label}.uplinkToneHz`);
-  const downlinkToneHz = expectNullableNumber(record.downlinkToneHz, `${label}.downlinkToneHz`);
-
-  if (
-    uplinkHz === null &&
-    downlinkHz === null &&
-    uplinkToneHz === null &&
-    downlinkToneHz === null
-  ) {
-    return [];
-  }
-
-  return [
-    {
-      id: newId(),
-      label: 'Transmitter',
-      mode: null,
-      uplinkHz,
-      downlinkHz,
-      uplinkToneHz,
-      downlinkToneHz,
-      source: 'manual',
-      satnogsUuid: null,
-      satnogsAlive: null,
-      satnogsStatus: null,
-      satnogsSyncedAt: null,
-      dismissed: false,
-    },
-  ];
+  return synthesizeLegacySatelliteTransmitters({
+    uplinkHz: expectNullableNumber(record.uplinkHz, `${label}.uplinkHz`),
+    downlinkHz: expectNullableNumber(record.downlinkHz, `${label}.downlinkHz`),
+    uplinkToneHz: expectNullableNumber(record.uplinkToneHz, `${label}.uplinkToneHz`),
+    downlinkToneHz: expectNullableNumber(record.downlinkToneHz, `${label}.downlinkToneHz`),
+  });
 }
 
 function parseSatellite(raw: unknown, index: number, studioSchemaVersion: number): Satellite {

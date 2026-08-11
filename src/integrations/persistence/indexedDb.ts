@@ -31,6 +31,7 @@ import { DEFAULT_DB_NAME, STORES, STORE_NAMES } from './stores.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
 import { readRadioBuildRow } from './radioBuildRow.ts';
+import { readSatelliteRow } from './satelliteRow.ts';
 
 /** Legacy IndexedDB store name dropped in schema v22 (#654) — no build data migration. */
 const LEGACY_FORMAT_BUILDS_STORE = 'formatBuilds';
@@ -295,7 +296,8 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
 
   async getSatellite(projectId: string, id: string): Promise<Satellite | null> {
-    return this.getRow<Satellite>('satellite', projectId, id);
+    const row = await this.getRow<Satellite>('satellite', projectId, id);
+    return row ? readSatelliteRow(row) : null;
   }
   async putSatellite(row: Satellite, expectedRevision: number | null): Promise<PutResult> {
     return this.putRow('satellite', row, expectedRevision);
@@ -343,7 +345,8 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     return { results };
   }
   async listSatellites(projectId: string): Promise<Satellite[]> {
-    return this.listRows<Satellite>('satellite', projectId);
+    const rows = await this.listRows<Satellite>('satellite', projectId);
+    return rows.map(readSatelliteRow);
   }
 
   async getTrackingSettings(projectId: string, id: string): Promise<TrackingSettings | null> {
