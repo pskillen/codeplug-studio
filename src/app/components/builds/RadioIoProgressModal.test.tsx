@@ -223,4 +223,35 @@ describe('RadioIoProgressModal', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Verify write' }));
     expect(onVerify).toHaveBeenCalledTimes(1);
   });
+
+  it('shows a distinct title and step list for keps-write (#859)', () => {
+    renderModal({
+      opened: true,
+      operation: 'keps-write',
+      phase: 'transfer',
+      progress: { cur: 1, max: 1, msg: 'Uploading satellite records' },
+      onCancel: vi.fn(),
+    });
+
+    expect(screen.getByText('Writing keps to radio')).toBeInTheDocument();
+    expect(screen.getByText('Pack satellite records')).toBeInTheDocument();
+    expect(screen.queryByText(/Assemble channels into image/i)).not.toBeInTheDocument();
+  });
+
+  it('shows a keps-write done alert with no verify actions', () => {
+    const onClose = vi.fn();
+    renderModal({
+      opened: true,
+      operation: 'keps-write',
+      phase: 'done',
+      progress: null,
+      onCancel: vi.fn(),
+      onClose,
+    });
+
+    expect(screen.getByText('Keps write finished')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Verify write' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });
