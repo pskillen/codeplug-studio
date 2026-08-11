@@ -182,13 +182,17 @@ declare, for the Anytone models it does support:
 D890 appears in none of qdmr's Anytone satellite-config classes or radio files — it is simply not a qdmr-supported
 target for this feature.
 
-**Recommendation for [#856](https://github.com/pskillen/codeplug-studio/issues/856):** no D890 firmware cap is
-known from either GPL source. Studio should still enforce _some_ ceiling to avoid an unbounded write into unit
-298 (which — see erase-unit safety above — physically holds up to 512 records before spilling into unit 299, an
-undeclared region). qdmr's smallest explicit Anytone cap (D168UV, 25) is a more conservative and better-justified
-placeholder than an arbitrary round number, precisely because it's a real vendor-adjacent tool's judgment call for
-a sibling radio in the same family, not a Studio guess — but it is **not** a D890-verified number and should be
-labelled as a placeholder pending hardware confirmation, not treated as ground truth.
+**Recommendation for [#856](https://github.com/pskillen/codeplug-studio/issues/856)/[#1068](https://github.com/pskillen/codeplug-studio/issues/1068):**
+no D890 firmware cap is known from either GPL source. Studio should still enforce _some_ ceiling to avoid an
+unbounded write into unit 298 (which — see erase-unit safety above — physically holds up to 512 records before
+spilling into unit 299, an undeclared region). `AT_D890UV_LIMITS.SATELLITE_MAX` is set to **50 transmitter
+records** — a Studio-chosen placeholder roughly midway between qdmr's smallest (D168UV, 25) and largest
+(DMR6X2UV, 200) declared Anytone-family satellite caps in the table above, on the reasoning that a family-wide
+range is a somewhat better-informed midpoint than either bound alone, though this is still **not** a D890-verified
+number and should be labelled as a placeholder pending hardware confirmation, not treated as ground truth. Note
+this cap counts write **records** — one per eligible `(satellite, transmitter)` pair emitted by
+`packSatelliteWriteRecords` — not distinct satellites; a satellite with two enabled transmitters consumes two
+slots against this limit.
 
 ## qdmr cross-check — record layout matches closely; base address cannot be directly compared
 

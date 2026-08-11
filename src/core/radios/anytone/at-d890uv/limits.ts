@@ -22,12 +22,14 @@ export const AT_D890UV_LIMITS = {
   /** AmZone member slots — narrower than DMR ZONE_MEMBERS_MAX. */
   AM_ZONE_MEMBERS_MAX: 32,
   /**
-   * Satellite keps write cap (#856). No D890 firmware ceiling is known — anytone-cps's own
-   * `SatelliteTableModel`/`writeSatelliteData()` iterate an unbounded list. This is qdmr's
-   * smallest declared Anytone-family satellite cap (D168UV, a sibling radio), used as an
-   * informed placeholder pending hardware confirmation — see
+   * Satellite keps write cap — this is a **transmitter/record** cap, not a satellite cap
+   * (`packSatelliteWriteRecords` emits one wire record per eligible `(satellite, transmitter)`
+   * pair, #856/#1068). No D890 firmware ceiling is known — anytone-cps's own
+   * `SatelliteTableModel`/`writeSatelliteData()` iterate an unbounded list. `50` is a
+   * Studio-chosen placeholder roughly midway between qdmr's smallest (D168UV, 25) and largest
+   * (DMR6X2UV, 200) declared Anytone-family satellite caps — not itself hardware-verified, and
+   * not a more confident number than the previous `25` placeholder it replaces. See
    * docs/reference/radios/anytone/at-d890uv/satellite-keps.md ("Max satellite count").
-   * NOT a D890-verified number.
    */
-  SATELLITE_MAX: 25,
+  SATELLITE_MAX: 50,
 } as const;
