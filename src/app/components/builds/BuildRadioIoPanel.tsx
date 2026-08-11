@@ -5,7 +5,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
+import { Alert, Anchor, Button, Group, Stack, Text, Tooltip } from '@mantine/core';
+import { IconAlertTriangle } from '@tabler/icons-react';
 import {
   ModalShell,
   WriteVerifyReport as WriteVerifyReportV2,
@@ -24,6 +25,7 @@ import type {
   WriteVerifyResult,
 } from '@integrations/radio-io/writeVerify.ts';
 import { findAttribution } from '../../lib/attributions.ts';
+import { ICON_STROKE } from '../../lib/iconSizes.ts';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
 import { BuildService } from '../../state/buildService.ts';
@@ -162,7 +164,25 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const previewColumns = useMemo<DataTableColumn<SatelliteWritePreviewEntry>[]>(
     () => [
       { key: 'satelliteName', header: 'Satellite', render: (r) => r.satelliteName },
-      { key: 'encodedName', header: 'Encoded name', render: (r) => r.encodedName },
+      {
+        key: 'encodedName',
+        header: 'Encoded name',
+        render: (r) => (
+          <Group gap={6} wrap="nowrap">
+            <Text size="sm">{r.encodedName}</Text>
+            {r.nameTruncated ? (
+              <Tooltip label="Shortened to fit the radio's 8-character name field">
+                <IconAlertTriangle
+                  size={14}
+                  stroke={ICON_STROKE}
+                  color="var(--mantine-color-orange-6)"
+                  aria-label="Name truncated"
+                />
+              </Tooltip>
+            ) : null}
+          </Group>
+        ),
+      },
       { key: 'mode', header: 'Mode', render: (r) => r.mode ?? '—' },
       {
         key: 'uplinkHz',
@@ -665,7 +685,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           <Text size="sm" c="dimmed" mb="xs">
             Exactly what a Write Keps would send right now, from the library's current enabled
             satellites — no session or write required. "Encoded name" is the 8-character value
-            truncated for the radio's name field.
+            written to the radio's name field; a warning icon marks rows where that value was
+            shortened from the satellite's full name (and transmitter label, when there was room).
           </Text>
           <DataTable
             columns={previewColumns}

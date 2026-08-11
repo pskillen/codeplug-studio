@@ -197,4 +197,49 @@ describe('BuildRadioIoPanel — satellite write preview (#1074)', () => {
     renderPanel();
     expect(screen.queryByText('Preview satellites to write')).not.toBeInTheDocument();
   });
+
+  it('shows a truncation indicator on a row with nameTruncated true (#1075)', async () => {
+    kepsPreviewStub = (satellites) =>
+      satellites.map((s) => ({
+        satelliteId: s.id,
+        satelliteName: s.name,
+        transmitterId: 'tx-1',
+        transmitterLabel: 'FM',
+        mode: 'FM',
+        encodedName: 'CUBESAT',
+        uplinkHz: 145_850_000,
+        downlinkHz: 436_795_000,
+        nameTruncated: true,
+      }));
+    try {
+      renderPanel();
+      fireEvent.click(screen.getByText('Preview satellites to write'));
+      await waitFor(() => expect(screen.getByLabelText('Name truncated')).toBeInTheDocument());
+    } finally {
+      kepsPreviewStub = undefined;
+    }
+  });
+
+  it('does not show a truncation indicator on a row with nameTruncated false', async () => {
+    kepsPreviewStub = (satellites) =>
+      satellites.map((s) => ({
+        satelliteId: s.id,
+        satelliteName: s.name,
+        transmitterId: 'tx-1',
+        transmitterLabel: 'FM',
+        mode: 'FM',
+        encodedName: 'ISS',
+        uplinkHz: 145_850_000,
+        downlinkHz: 436_795_000,
+        nameTruncated: false,
+      }));
+    try {
+      renderPanel();
+      fireEvent.click(screen.getByText('Preview satellites to write'));
+      await waitFor(() => expect(screen.getAllByText('ISS').length).toBeGreaterThan(0));
+      expect(screen.queryByLabelText('Name truncated')).not.toBeInTheDocument();
+    } finally {
+      kepsPreviewStub = undefined;
+    }
+  });
 });
