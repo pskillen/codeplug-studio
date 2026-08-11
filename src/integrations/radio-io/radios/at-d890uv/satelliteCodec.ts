@@ -9,6 +9,7 @@
 
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
+import { isTransmitterWriteEligible } from '@core/domain/satellite/transmitterWriteEligibility.ts';
 import { ctcssIndexFromHz } from './ctcssToneTable.ts';
 
 /** Wire record size — zero-initialized before fields are written (satellite-keps.md). */
@@ -25,14 +26,12 @@ export interface SatelliteWriteRecord {
 /**
  * Which `(satellite, transmitter)` pairs get a wire record.
  *
- * The `!dismissed` clause is a judgment call, flagged as such in the #856 planning notes:
- * dismissed rows are hidden from the SatelliteEditor UI, and this codec's position is that
- * they should not silently reach the radio either — a dismissed row reads as "the operator
- * doesn't want this one" even though `includeInWrite` was never explicitly flipped off.
+ * This is the vendor-neutral `isTransmitterWriteEligible` predicate
+ * (`src/core/domain/satellite/transmitterWriteEligibility.ts`), kept under this name for the
+ * D890 codec's existing internal call sites and the `isAtD890SatelliteWriteEligible` external
+ * re-export (`./index.ts`). See that module's doc comment for the `!dismissed` judgment call.
  */
-export function isWriteEligible(satellite: Satellite, transmitter: SatelliteTransmitter): boolean {
-  return satellite.enabled && transmitter.includeInWrite && !transmitter.dismissed;
-}
+export const isWriteEligible = isTransmitterWriteEligible;
 
 interface EligiblePair {
   satellite: Satellite;
