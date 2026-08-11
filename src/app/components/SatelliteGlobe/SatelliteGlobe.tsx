@@ -9,6 +9,10 @@ import {
   type GlobePoint,
   type GlobeSatellite,
 } from './buildGlobeData.ts';
+import {
+  DEFAULT_GLOBE_LOOK_AHEAD_MIN,
+  DEFAULT_GLOBE_LOOK_BEHIND_MIN,
+} from './orbitTrail.ts';
 import { useLiveSatellitePositions } from './useLiveSatellitePositions.ts';
 import { altitudeKmToGlobeRadiusUnits } from './globeAltitude.ts';
 import classes from './SatelliteGlobe.module.css';
@@ -17,6 +21,11 @@ const GLOBE_IMAGE_URL = '//unpkg.com/three-globe/example/img/earth-blue-marble.j
 const BACKGROUND_COLOR = '#000011';
 
 const OBSERVER_COLOR = '#4d7cff';
+/** Opaque gray for trail fade endpoints (FatLine paths do not support alpha). */
+const TRAIL_FADE_GRAY = '#888888';
+/** Short repeating dash for look-behind trails — whole-path ratios hide most of the path. */
+const TRAIL_PAST_DASH_LENGTH = 0.02;
+const TRAIL_PAST_DASH_GAP = 0.02;
 
 export interface SatelliteGlobeProps {
   observer: GlobeObserver | null;
@@ -33,6 +42,10 @@ export interface SatelliteGlobeProps {
    * a faster interval to match an adjacent 2D map's cadence.
    */
   pollIntervalMs?: number;
+  /** Wall-clock minutes to draw behind the mount anchor. Dashboard default 15. */
+  lookBehindMin?: number;
+  /** Wall-clock minutes to draw ahead of the mount anchor. Dashboard default 30. */
+  lookAheadMin?: number;
 }
 
 // react-globe.gl's accessor props are typed `(obj: object) => T` (it's a generic Kapsule
@@ -56,16 +69,20 @@ function pointAltitude(point: object): number {
   return altitudeKmToGlobeRadiusUnits(p.altitudeKm);
 }
 
-function pathColor(path: object): string {
-  return (path as GlobePath).color;
+function pathColor(path: object): string | string[] {
+  const globePath = path as GlobePath;
+  if (globePath.kind === 'footprint') return globePath.color;
+  if (globePath.kind === 'trail-past') return [TRAIL_FADE_GRAY, globePath.color];
+  if (globePath.kind === 'trail-future') return [globePath.color, TRAIL_FADE_GRAY];
+  return globePath.color;
 }
 
 function pathDashLength(path: object): number {
-  return (path as GlobePath).kind === 'trail-past' ? 0.4 : 1;
+  return (path as GlobePath).kind === 'trail-past' ? TRAIL_PAST_DASH_LENGTH : 1;
 }
 
 function pathDashGap(path: object): number {
-  return (path as GlobePath).kind === 'trail-past' ? 0.6 : 0;
+  return (path as GlobePath).kind === 'trail-past' ? TRAIL_PAST_DASH_GAP : 0;
 }
 
 /**
@@ -87,6 +104,8 @@ export default function SatelliteGlobe({
   highlightedSatelliteIds,
   onSelectSatellite,
   pollIntervalMs,
+  lookBehindMin = DEFAULT_GLOBE_LOOK_BEHIND_MIN,
+  lookAheadMin = DEFAULT_GLOBE_LOOK_AHEAD_MIN,
 }: SatelliteGlobeProps) {
   // Anchor instant for the orbit-trail window, fixed at mount so trails don't resample on
   // every live-position poll tick — same convention as SatelliteLiveMap.
@@ -123,8 +142,12 @@ export default function SatelliteGlobe({
   // doc comment: with dozens of enabled satellites, sharing one dependency array here stalled
   // the main thread in live-browser testing.
   const trailPaths = useMemo(
-    () => computeGlobeTrailPaths(visibleSatellites, anchorAt),
-    [visibleSatellites, anchorAt],
+    () =>
+      computeGlobeTrailPaths(visibleSatellites, anchorAt, {
+        lookBehindMin,
+        lookAheadMin,
+      }),
+    [visibleSatellites, anchorAt, lookBehindMin, lookAheadMin],
   );
 
   const { points, footprintPaths } = useMemo(

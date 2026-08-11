@@ -2,37 +2,35 @@ import { sampleOrbitTrack, type OrbitSample } from '@core/domain/satelliteTracki
 
 const DEFAULT_GROUND_TRACK_STEP_SEC = 30;
 
+/** Dashboard default — look-behind window in wall-clock minutes. */
+export const DEFAULT_GLOBE_LOOK_BEHIND_MIN = 15;
+/** Dashboard default — look-ahead window in wall-clock minutes. */
+export const DEFAULT_GLOBE_LOOK_AHEAD_MIN = 30;
+
 export interface GlobeOrbitTrail {
-  /** Orbit ahead of the anchor instant, half the orbital period — draw solid. */
+  /** Orbit ahead of the anchor instant — draw solid, fading to gray. */
   futurePoints: OrbitSample[];
-  /** Orbit behind the anchor instant, half the orbital period — draw dashed. */
+  /** Orbit behind the anchor instant — draw dashed, fading from gray. */
   pastPoints: OrbitSample[];
 }
 
 /**
- * Compute a ~90-minute orbit trail (one full orbital period, half ahead of the anchor
- * instant and half behind) for the 3D globe. Sibling to
- * `SatelliteLiveMap/orbitTrail.ts#computeOrbitTrailSegments`, not a reuse of it directly:
- * that function hardcodes a 1.5-orbit window and returns antimeridian-split segments for
- * Leaflet polylines, neither of which fits here — a 3D globe wraps longitude natively, and
- * this ticket wants a single-orbit ~90-minute trail rather than 1.5 orbits. Both functions
- * share the same underlying `sampleOrbitTrack` core call and the same
- * `periodMinutes = 1440 / meanMotionRevPerDay` derivation — a typical LEO period is close to
- * 90 minutes, but it's computed per-satellite here, never hardcoded.
+ * Compute orbit-trail samples for the 3D globe, anchored at `anchorAtMs` (typically mount
+ * time). Windows are wall-clock minutes relative to the anchor, not orbital periods — sibling
+ * to `SatelliteLiveMap/orbitTrail.ts#computeOrbitTrailSegments`, which uses orbit multiples
+ * and antimeridian-split ground tracks for Leaflet.
  */
 export function computeGlobeOrbitTrail(
   tleLine1: string,
   tleLine2: string,
-  meanMotionRevPerDay: number,
   anchorAtMs: number,
+  lookBehindMin: number,
+  lookAheadMin: number,
   stepSec: number = DEFAULT_GROUND_TRACK_STEP_SEC,
 ): GlobeOrbitTrail {
-  const periodMinutes = 1440 / meanMotionRevPerDay;
-  const halfWindowMs = (periodMinutes / 2) * 60_000;
-
   const anchorIso = new Date(anchorAtMs).toISOString();
-  const futureToIso = new Date(anchorAtMs + halfWindowMs).toISOString();
-  const pastFromIso = new Date(anchorAtMs - halfWindowMs).toISOString();
+  const futureToIso = new Date(anchorAtMs + lookAheadMin * 60_000).toISOString();
+  const pastFromIso = new Date(anchorAtMs - lookBehindMin * 60_000).toISOString();
 
   return {
     futurePoints: sampleOrbitTrack(tleLine1, tleLine2, anchorIso, futureToIso, stepSec),

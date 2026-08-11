@@ -1,7 +1,11 @@
 import type { LatLon } from '@core/domain/geo.ts';
 import type { OrbitSample } from '@core/domain/satelliteTracking/groundTrack.ts';
 import { computeSatelliteFootprint } from '@core/domain/satelliteTracking/footprint.ts';
-import { computeGlobeOrbitTrail } from './orbitTrail.ts';
+import {
+  computeGlobeOrbitTrail,
+  DEFAULT_GLOBE_LOOK_AHEAD_MIN,
+  DEFAULT_GLOBE_LOOK_BEHIND_MIN,
+} from './orbitTrail.ts';
 import { altitudeKmToGlobeRadiusUnits } from './globeAltitude.ts';
 import type { LiveSatellitePosition } from './useLiveSatellitePositions.ts';
 import { colorForNoradId } from '@core/domain/satelliteTracking/satelliteColor.ts';
@@ -46,6 +50,11 @@ export interface GlobePath {
 export interface GlobeData {
   points: GlobePoint[];
   paths: GlobePath[];
+}
+
+export interface GlobeTrailOptions {
+  lookBehindMin?: number;
+  lookAheadMin?: number;
 }
 
 /**
@@ -154,22 +163,25 @@ export function stabilizeGlobePointsAndFootprints(
 export function computeGlobeTrailPaths(
   satellites: GlobeSatellite[],
   anchorAtMs: number,
+  options: GlobeTrailOptions = {},
 ): GlobePath[] {
+  const lookBehindMin = options.lookBehindMin ?? DEFAULT_GLOBE_LOOK_BEHIND_MIN;
+  const lookAheadMin = options.lookAheadMin ?? DEFAULT_GLOBE_LOOK_AHEAD_MIN;
   const paths: GlobePath[] = [];
   for (const satellite of satellites) {
     const trail = computeGlobeOrbitTrail(
       satellite.tleLine1,
       satellite.tleLine2,
-      satellite.meanMotionRevPerDay,
       anchorAtMs,
+      lookBehindMin,
+      lookAheadMin,
     );
     const color = colorForNoradId(satellite.noradId);
-    const pastColor = colorForNoradId(satellite.noradId, 0.55);
     paths.push({
       kind: 'trail-past',
       satelliteId: satellite.id,
       points: orbitSamplesToPathPoints(trail.pastPoints),
-      color: pastColor,
+      color,
     });
     paths.push({
       kind: 'trail-future',
@@ -259,6 +271,7 @@ export function buildGlobeData(
   livePositions: Map<string, LiveSatellitePosition>,
   highlightedSatelliteIds: Set<string>,
   anchorAtMs: number,
+  trailOptions: GlobeTrailOptions = {},
 ): GlobeData {
   const { points, footprintPaths } = computeGlobePointsAndFootprints(
     observer,
@@ -266,6 +279,6 @@ export function buildGlobeData(
     livePositions,
     highlightedSatelliteIds,
   );
-  const trailPaths = computeGlobeTrailPaths(satellites, anchorAtMs);
+  const trailPaths = computeGlobeTrailPaths(satellites, anchorAtMs, trailOptions);
   return { points, paths: [...trailPaths, ...footprintPaths] };
 }
