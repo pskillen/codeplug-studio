@@ -11,7 +11,7 @@ Reused as-is for satellite-keps writes (#859, Workflow A + B) — `operation: 'k
 | Prop                   | Type                                                                             | Description                                                      |
 | ---------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `opened`               | `boolean`                                                                        | Show while an operation is in progress                           |
-| `operation`            | `'read' \| 'write' \| 'keps-write'`                                             | Chooses step list and title                                      |
+| `operation`            | `'read' \| 'write' \| 'keps-write'`                                              | Chooses step list and title                                      |
 | `phase`                | `'connecting' \| 'preparing' \| 'transfer' \| 'saving' \| 'verifying' \| 'done'` | Active coarse phase                                              |
 | `progress`             | `ProgressUpdate \| null`                                                         | Block-level progress during `transfer` (`msg`, optional `stage`) |
 | `transferStages`       | `readonly string[]`                                                              | Checklist labels accumulated from `progress.stage`               |

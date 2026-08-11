@@ -62,11 +62,7 @@ describe('SatelliteKepsWriteTargetModal — Workflow A target list (#859)', () =
   });
 
   it('does not list a build whose egress profile has no registered keps-write adapter', async () => {
-    const { build, egress } = newRadioBuildForProfile(
-      'project-1',
-      'radio-io-dm32uv',
-      'My DM-32',
-    );
+    const { build, egress } = newRadioBuildForProfile('project-1', 'radio-io-dm32uv', 'My DM-32');
     listRadioBuilds.mockResolvedValueOnce([build]);
     listEgressPaths.mockResolvedValueOnce([egress]);
 

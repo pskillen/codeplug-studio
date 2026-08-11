@@ -89,10 +89,7 @@ vi.mock('../../state/persistence.ts', () => ({
 }));
 
 function renderPanel() {
-  const { build, egress, egressPaths } = newRadioBuildForProfile(
-    'project-1',
-    'radio-io-at-d890uv',
-  );
+  const { build, egress, egressPaths } = newRadioBuildForProfile('project-1', 'radio-io-at-d890uv');
   const layoutValue = {
     build,
     buildId: build.id,

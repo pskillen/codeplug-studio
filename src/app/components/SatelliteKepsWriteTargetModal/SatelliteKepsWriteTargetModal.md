@@ -6,11 +6,11 @@ Workflow A (#859, [feature-design.md §8](../../../../docs/features/satellite-ke
 
 ## Props
 
-| Prop        | Type              | Description                                                             |
-| ----------- | ----------------- | ------------------------------------------------------------------------ |
-| `opened`    | `boolean`         | Show the flow. Internally, the component only mounts while `true` — each open is a fresh mount, so there is no separate "reset on reopen" effect. |
-| `onClose`   | `() => void`      | Dismiss the whole flow (target select, or after a completed/cancelled write) |
-| `projectId` | `string \| null`  | Active project — needed to list builds/egress paths and enabled satellites |
+| Prop        | Type             | Description                                                                                                                                       |
+| ----------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `opened`    | `boolean`        | Show the flow. Internally, the component only mounts while `true` — each open is a fresh mount, so there is no separate "reset on reopen" effect. |
+| `onClose`   | `() => void`     | Dismiss the whole flow (target select, or after a completed/cancelled write)                                                                      |
+| `projectId` | `string \| null` | Active project — needed to list builds/egress paths and enabled satellites                                                                        |
 
 ## Usage
 
@@ -25,7 +25,7 @@ Workflow A (#859, [feature-design.md §8](../../../../docs/features/satellite-ke
 ## Behaviour
 
 - **Target list:** "Recommended / Your radios" enumerates the project's `RadioBuild`s with a `web-serial` `EgressPath` whose `profileId` is registered in `hasSatelliteKepsWriteAdapter` (`src/app/services/satelliteKepsWriteAdapters.ts`). "Other supported radios" lists the registry's remaining compatible profiles from `listRadioDescriptors()`, deduplicated by `profileId` against anything already shown under "Your radios".
-- **Connect:** reuses `openRadioSessionForEgress` (`src/app/services/radioIoSession.ts`) — the same connect path `BuildRadioIoPanel` uses. A "Your radios" selection passes its real persisted `EgressPath`; an "Other supported radios" selection builds an **unpersisted, ad-hoc `EgressPath` stub** (`id: ''`, `revision: 0`, …) carrying only `formatId`/`profileId`. This is safe *only* because the satellite-keps write path never reads `egress.hydration` — it must not be copied for a codeplug write.
+- **Connect:** reuses `openRadioSessionForEgress` (`src/app/services/radioIoSession.ts`) — the same connect path `BuildRadioIoPanel` uses. A "Your radios" selection passes its real persisted `EgressPath`; an "Other supported radios" selection builds an **unpersisted, ad-hoc `EgressPath` stub** (`id: ''`, `revision: 0`, …) carrying only `formatId`/`profileId`. This is safe _only_ because the satellite-keps write path never reads `egress.hydration` — it must not be copied for a codeplug write.
 - **Write:** looks up the profile's adapter via `getSatelliteKepsWriteAdapter` and uploads the project's **enabled** satellites (`persistence.listSatellites`, filtered).
 - **Progress:** [`RadioIoProgressModal`](../builds/RadioIoProgressModal.md) with `operation="keps-write"` — the same distinct step list/title Workflow B uses, not the codeplug write's shell.
 - **Prod gate:** respects `resolveRadioWriteGate`/`resolveRadioWriteProdDisabledMessage` exactly as `BuildRadioIoPanel` does before opening a port.

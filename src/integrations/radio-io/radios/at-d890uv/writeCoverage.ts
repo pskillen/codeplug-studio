@@ -4,11 +4,7 @@
  */
 
 export type AtD890WriteCoverageStatus =
-  | 'written'
-  | 'planned'
-  | 'leftAlone'
-  | 'preserved'
-  | 'separateWrite';
+  'written' | 'planned' | 'leftAlone' | 'preserved' | 'separateWrite';
 
 export interface AtD890WriteCoverageRow {
   label: string;
@@ -21,7 +17,7 @@ export const AT_D890_WRITE_COVERAGE_STATUS_LABEL: Record<AtD890WriteCoverageStat
   leftAlone: 'Left alone',
   preserved: 'Carried through erase unchanged',
   /** Satellite keps (#859) — its own PROGRAM session, not part of this codeplug Write. */
-  separateWrite: "Updated separately via “Write Keps”",
+  separateWrite: 'Updated separately via “Write Keps”',
 };
 
 /** Rows for Export Web Serial — aligned with v1 Write allow-list and deferred banks. */
