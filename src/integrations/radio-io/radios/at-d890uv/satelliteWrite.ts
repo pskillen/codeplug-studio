@@ -14,11 +14,7 @@ import type { BytePipe, ProgressFn } from '../../types.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { atD890ReadMemory, atD890WriteMemory } from './connection.ts';
 import { AT_D890_BLOCK_SIZE } from './constants.ts';
-import {
-  eraseUnitBaseFor,
-  listTouchedEraseUnits,
-  readSpanForEraseUnit,
-} from './eraseUnits.ts';
+import { eraseUnitBaseFor, listTouchedEraseUnits, readSpanForEraseUnit } from './eraseUnits.ts';
 import {
   assertPreservedBytesMatchFreshRead,
   listSparseStagingChunks,

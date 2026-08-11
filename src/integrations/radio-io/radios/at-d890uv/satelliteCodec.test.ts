@@ -60,7 +60,10 @@ function makeTransmitter(overrides: Partial<SatelliteTransmitter> = {}): Satelli
 
 function readU32Le(data: Uint8Array, offset: number): number {
   return (
-    (data[offset]! | (data[offset + 1]! << 8) | (data[offset + 2]! << 16) | (data[offset + 3]! << 24)) >>>
+    (data[offset]! |
+      (data[offset + 1]! << 8) |
+      (data[offset + 2]! << 16) |
+      (data[offset + 3]! << 24)) >>>
     0
   );
 }

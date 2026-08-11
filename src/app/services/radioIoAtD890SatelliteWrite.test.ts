@@ -4,7 +4,11 @@ import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts'
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { AT_D890_SATELLITE } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { AtD890ScriptedPipe } from '@integrations/radio-io/radios/at-d890uv/__fixtures__/scriptedPipe.ts';
-import type { CloneImageRadio, RadioDescriptor, RadioSession } from '@integrations/radio-io/types.ts';
+import type {
+  CloneImageRadio,
+  RadioDescriptor,
+  RadioSession,
+} from '@integrations/radio-io/types.ts';
 import { RadioWriteBlockedError } from './radioIoSession.ts';
 import { writeSatellitesToRadio } from './radioIoAtD890SatelliteWrite.ts';
 

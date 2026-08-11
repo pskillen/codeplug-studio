@@ -81,7 +81,9 @@ describe('uploadAtD890SatelliteRecords', () => {
     const satellite = makeSatellite();
     const transmitter = makeTransmitter();
     const bytes = encodeSatelliteRecord(satellite, transmitter);
-    const records = [{ satelliteId: satellite.id, transmitterId: transmitter.id, address: BASE, bytes }];
+    const records = [
+      { satelliteId: satellite.id, transmitterId: transmitter.id, address: BASE, bytes },
+    ];
 
     await uploadAtD890SatelliteRecords(pipe, records);
 
@@ -108,7 +110,12 @@ describe('uploadAtD890SatelliteRecords', () => {
     const txA = makeTransmitter({ id: 'tx-a' });
     const txB = makeTransmitter({ id: 'tx-b', label: 'CW' });
     const records = [
-      { satelliteId: satellite.id, transmitterId: txA.id, address: BASE, bytes: encodeSatelliteRecord(satellite, txA) },
+      {
+        satelliteId: satellite.id,
+        transmitterId: txA.id,
+        address: BASE,
+        bytes: encodeSatelliteRecord(satellite, txA),
+      },
       {
         satelliteId: satellite.id,
         transmitterId: txB.id,
@@ -149,7 +156,9 @@ describe('uploadAtD890SatelliteRecords', () => {
     const satellite = makeSatellite();
     const transmitter = makeTransmitter();
     const bytes = encodeSatelliteRecord(satellite, transmitter);
-    const records = [{ satelliteId: satellite.id, transmitterId: transmitter.id, address: BASE, bytes }];
+    const records = [
+      { satelliteId: satellite.id, transmitterId: transmitter.id, address: BASE, bytes },
+    ];
 
     await uploadAtD890SatelliteRecords(pipe, records);
 
