@@ -3,29 +3,22 @@
  * for egress pathways with a registered radio adapter.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Anchor, Button, Group, Stack, Text, Tooltip } from '@mantine/core';
-import { IconAlertTriangle } from '@tabler/icons-react';
+import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
 import {
   ModalShell,
   WriteVerifyReport as WriteVerifyReportV2,
   Button as V2Button,
-  Panel,
-  DataTable,
-  type DataTableColumn,
 } from '../v2/index.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
-import type { Satellite } from '@core/models/satellite.ts';
-import type { SatelliteWritePreviewEntry } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import type {
   WriteVerifyPendingPayload,
   WriteVerifyResult,
 } from '@integrations/radio-io/writeVerify.ts';
 import { findAttribution } from '../../lib/attributions.ts';
-import { ICON_STROKE } from '../../lib/iconSizes.ts';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
 import { BuildService } from '../../state/buildService.ts';
@@ -68,12 +61,7 @@ import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from '../../services/radioWriteEnvGate.ts';
-import {
-  getSatelliteKepsWriteAdapter,
-  getSatelliteKepsWriteCapacity,
-  getSatelliteKepsWritePreview,
-  type SatelliteKepsWriteResult,
-} from '../../services/satelliteKepsWriteAdapters.ts';
+import { hasSatelliteKepsWriteAdapter } from '../../services/satelliteKepsWriteAdapters.ts';
 
 export interface BuildRadioIoPanelProps {
   build: RadioBuild;
@@ -102,8 +90,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [writeWarnings, setWriteWarnings] = useState<string[]>([]);
-  const [kepsWriteSummary, setKepsWriteSummary] = useState<SatelliteKepsWriteResult | null>(null);
-  const [kepsCapacityWarning, setKepsCapacityWarning] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [transferStages, setTransferStages] = useState<string[]>([]);
   const [lastFirmware, setLastFirmware] = useState<string | undefined>();
@@ -111,7 +97,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [writeVerifyStatus, setWriteVerifyStatus] = useState<RadioIoWriteVerifyStatus>('none');
   const [verifyButtonEnabled, setVerifyButtonEnabled] = useState(false);
   const [verifyResult, setVerifyResult] = useState<WriteVerifyResult | null>(null);
-  const [enabledSatellites, setEnabledSatellites] = useState<Satellite[]>([]);
 
   const serialOk = isRadioSerialSupported();
   const descriptor = descriptors[0];
@@ -121,82 +106,13 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const writeHidden = writeGate === 'hidden';
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);
-  /** Workflow B (#859): contextual "Write Keps" button, gated on a registered adapter. */
-  const kepsWriteFn = getSatelliteKepsWriteAdapter(egress.profileId);
-  /** Pre-flight capacity check for the keps write (#1068) — undefined when unknown for this profile. */
-  const kepsCapacity = getSatelliteKepsWriteCapacity(egress.profileId);
-  /** Live write preview (#1074) — undefined when this profile has no registered preview function. */
-  const kepsPreview = getSatelliteKepsWritePreview(egress.profileId);
-
   /**
-   * Live-loaded enabled satellites for the write preview below — separate from
-   * `handleWriteKeps`'s own `persistence.listSatellites` call, which only runs on click.
-   * Re-runs on `activeProjectId` change and on any persisted change for this project (library
-   * edits elsewhere, e.g. toggling `enabled` on the Satellite Keps list), so the preview stays
-   * live without requiring a Read/Write session.
+   * Workflow B (#859, promoted to its own tab by #1085): "Write Keps…" now links to the
+   * dedicated Satellite Keps tab (`/builds/:id/satellite-keps`, `BuildSatelliteKepsPage`) instead
+   * of triggering the write inline — gated the same way, on a registered adapter for this egress
+   * profile.
    */
-  useEffect(() => {
-    if (!activeProjectId || !kepsPreview) {
-      return;
-    }
-    let cancelled = false;
-    const load = async () => {
-      const all = await persistence.listSatellites(activeProjectId);
-      if (!cancelled) setEnabledSatellites(all.filter((s) => s.enabled));
-    };
-    void load();
-    const unsubscribe = persistence.subscribe((change) => {
-      if (!cancelled && change.projectId === activeProjectId) {
-        void load();
-      }
-    });
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
-  }, [activeProjectId, kepsPreview]);
-
-  const previewEntries = useMemo<SatelliteWritePreviewEntry[]>(
-    () => (kepsPreview ? kepsPreview(enabledSatellites) : []),
-    [kepsPreview, enabledSatellites],
-  );
-
-  const previewColumns = useMemo<DataTableColumn<SatelliteWritePreviewEntry>[]>(
-    () => [
-      { key: 'satelliteName', header: 'Satellite', render: (r) => r.satelliteName },
-      {
-        key: 'encodedName',
-        header: 'Encoded name',
-        render: (r) => (
-          <Group gap={6} wrap="nowrap">
-            <Text size="sm">{r.encodedName}</Text>
-            {r.nameTruncated ? (
-              <Tooltip label="Shortened to fit the radio's 8-character name field">
-                <IconAlertTriangle
-                  size={14}
-                  stroke={ICON_STROKE}
-                  color="var(--mantine-color-orange-6)"
-                  aria-label="Name truncated"
-                />
-              </Tooltip>
-            ) : null}
-          </Group>
-        ),
-      },
-      { key: 'mode', header: 'Mode', render: (r) => r.mode ?? '—' },
-      {
-        key: 'uplinkHz',
-        header: 'Uplink',
-        render: (r) => (r.uplinkHz != null ? `${(r.uplinkHz / 1e6).toFixed(4)} MHz` : '—'),
-      },
-      {
-        key: 'downlinkHz',
-        header: 'Downlink',
-        render: (r) => (r.downlinkHz != null ? `${(r.downlinkHz / 1e6).toFixed(4)} MHz` : '—'),
-      },
-    ],
-    [],
-  );
+  const showsWriteKepsLink = hasSatelliteKepsWriteAdapter(egress.profileId);
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
 
@@ -255,8 +171,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     setWriteVerifyStatus('none');
     setVerifyButtonEnabled(false);
     setVerifyResult(null);
-    setKepsWriteSummary(null);
-    setKepsCapacityWarning(null);
     verifyStartedRef.current = false;
     verifyReadActiveRef.current = false;
     clearPendingVerify();
@@ -410,67 +324,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     }
   }
 
-  /**
-   * Workflow B (#859 design §8): "Write Keps" alongside the primary Write/Read buttons.
-   * Bypasses the target-selection modal Workflow A uses (`SatelliteKepsWriteTargetModal`) —
-   * this build's egress/radio is already known. Shares this panel's `busy`/`operation` state
-   * with `handleRead`/`handleWrite` (see design §9 "disable the adjacent button"), so the
-   * existing `disabled={!serialOk || busy}` on those buttons — and this one — is the whole
-   * same-tab serial-lock mechanism; no separate lock primitive.
-   */
-  async function handleWriteKeps() {
-    if (!kepsWriteFn) return;
-    if (!activeProjectId) {
-      setError('No active project.');
-      return;
-    }
-
-    const allSatellites = await persistence.listSatellites(activeProjectId);
-    const satellites = allSatellites.filter((s) => s.enabled);
-
-    // Pre-flight capacity check (#1068) — computed before ensureSession/opening the serial
-    // session, so an over-capacity library never pays for a session open it can't use. This
-    // mirrors the hard block writeSatellitesToRadio itself enforces (no partial write); the
-    // point here is surfacing that same fact earlier, not changing the underlying behavior.
-    if (kepsCapacity) {
-      const eligibleCount = kepsCapacity.countEligible(satellites);
-      if (eligibleCount > kepsCapacity.max) {
-        setKepsCapacityWarning(
-          `${eligibleCount} transmitter(s) are eligible to write, but this radio only supports ` +
-            `${kepsCapacity.max} (placeholder pending hardware confirmation — see ` +
-            `docs/reference/radios/anytone/at-d890uv/satellite-keps.md). Deselect some ` +
-            `satellites or transmitters in the library before writing.`,
-        );
-        return;
-      }
-    }
-    setKepsCapacityWarning(null);
-
-    beginBusy('keps-write');
-    try {
-      setPhase('preparing');
-      const session = await ensureSession(true);
-      setPhase('transfer');
-      const result = await kepsWriteFn(session, satellites, {
-        onProgress,
-        signal: abortRef.current!.signal,
-      });
-      setKepsWriteSummary(result);
-      await releaseSession();
-      setPhase('done');
-    } catch (err) {
-      if (err instanceof RadioWriteBlockedError) {
-        setError(err.message);
-      } else {
-        setError(err instanceof Error ? err.message : String(err));
-      }
-      await releaseSession();
-      setBusy(false);
-      setProgress(null);
-      abortRef.current = null;
-    }
-  }
-
   function resetProgressState(): void {
     setBusy(false);
     setProgress(null);
@@ -601,14 +454,14 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             Write to radio
           </Button>
         ) : null}
-        {kepsWriteFn && !writeHidden ? (
+        {showsWriteKepsLink && !writeHidden ? (
           <Button
             size="xs"
             variant="light"
-            disabled={!serialOk || busy}
-            onClick={() => void handleWriteKeps()}
+            component={Link}
+            to={`/builds/${build.id}/satellite-keps`}
           >
-            Write Keps
+            Write Keps…
           </Button>
         ) : null}
         <Button
@@ -675,53 +528,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           </Stack>
         </Alert>
       ) : null}
-      {kepsCapacityWarning ? (
-        <Alert color="yellow" title="Write capacity">
-          <Text size="sm">{kepsCapacityWarning}</Text>
-        </Alert>
-      ) : null}
-      {kepsPreview ? (
-        <Panel title="Preview satellites to write" collapsible defaultCollapsed>
-          <Text size="sm" c="dimmed" mb="xs">
-            Exactly what a Write Keps would send right now, from the library's current enabled
-            satellites — no session or write required. "Encoded name" is the 8-character value
-            written to the radio's name field; a warning icon marks rows where that value was
-            shortened from the satellite's full name (and transmitter label, when there was room).
-          </Text>
-          <DataTable
-            columns={previewColumns}
-            rows={previewEntries}
-            getRowId={(r) => `${r.satelliteId}-${r.transmitterId}`}
-            totalRowCount={previewEntries.length}
-            emptyMessage="No satellites are currently eligible to write."
-          />
-        </Panel>
-      ) : null}
-      {kepsWriteSummary ? (
-        <Alert
-          color={
-            kepsWriteSummary.skipped.length > 0 || kepsWriteSummary.skippedTransmitters.length > 0
-              ? 'yellow'
-              : 'green'
-          }
-          title="Keps write"
-        >
-          <Stack gap={4}>
-            <Text size="sm">{kepsWriteSummary.written} transmitter(s) written.</Text>
-            {kepsWriteSummary.skipped.map((s) => (
-              <Text key={`keps-skipped-${s.satelliteId}`} size="sm" c="dimmed">
-                Skipped {s.satelliteId}: {s.reason}
-              </Text>
-            ))}
-            {kepsWriteSummary.skippedTransmitters.map((s) => (
-              <Text key={`keps-skipped-tx-${s.transmitterId}`} size="sm" c="dimmed">
-                Skipped {s.satelliteId} / {s.transmitterId}: {s.reason}
-              </Text>
-            ))}
-          </Stack>
-        </Alert>
-      ) : null}
-
       <RadioIoProgressModal
         opened={busy}
         operation={operation}
