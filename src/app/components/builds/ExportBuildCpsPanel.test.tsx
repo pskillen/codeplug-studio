@@ -255,6 +255,15 @@ describe('ExportBuildCpsPanel', () => {
     expect(screen.getByText(/Export zone-derived scan lists/i)).toBeInTheDocument();
   });
 
+  it('shows AT-D890UV scan list timing fields on export settings', async () => {
+    renderExportPanel('anytone-at-d890uv', { panelMode: 'settings' });
+
+    expect(await screen.findByLabelText('Look Back Time A[s]')).toBeInTheDocument();
+    expect(screen.getByLabelText('Look Back Time B[s]')).toBeInTheDocument();
+    expect(screen.getByLabelText('Dropout Delay Time[s]')).toBeInTheDocument();
+    expect(screen.getByLabelText('Dwell Time[s]')).toBeInTheDocument();
+  });
+
   it('opens CSV preview modal with per-file tabs after Preview CSV', async () => {
     renderExportPanel('opengd77-1701');
 

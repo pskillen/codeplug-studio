@@ -28,6 +28,7 @@ Grouped export preference controls on the build **Export** page.
 - **Channel expansion** appears when the radio target includes `mxnChannelExpansion`. Labels use [DESIGN.md — Glossary](../../../DESIGN.md#glossary) terminology (`m×n channel expansion`).
 - **Scratch channels** toggle is enabled only when m×n expansion is on; turning expansion off clears scratch.
 - Zone-derived scan list toggle is shown when the radio catalog lists a `dm32` or `anytone` compatible egress.
+- **AT-D890UV** scan-list timing fields live in `ExportAnytoneSettingsSections` (not this wrapper).
 
 ## Related
 
