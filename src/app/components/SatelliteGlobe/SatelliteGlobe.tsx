@@ -10,6 +10,7 @@ import {
   type GlobeSatellite,
 } from './buildGlobeData.ts';
 import { DEFAULT_GLOBE_LOOK_AHEAD_MIN, DEFAULT_GLOBE_LOOK_BEHIND_MIN } from './orbitTrail.ts';
+import { globePathDashGap, globePathDashLength } from './globePathDash.ts';
 import { useLiveSatellitePositions } from './useLiveSatellitePositions.ts';
 import { altitudeKmToGlobeRadiusUnits } from './globeAltitude.ts';
 import classes from './SatelliteGlobe.module.css';
@@ -20,9 +21,6 @@ const BACKGROUND_COLOR = '#000011';
 const OBSERVER_COLOR = '#4d7cff';
 /** Opaque gray for trail fade endpoints (FatLine paths do not support alpha). */
 const TRAIL_FADE_GRAY = '#888888';
-/** Short repeating dash for look-behind trails — whole-path ratios hide most of the path. */
-const TRAIL_PAST_DASH_LENGTH = 0.02;
-const TRAIL_PAST_DASH_GAP = 0.02;
 
 export interface SatelliteGlobeProps {
   observer: GlobeObserver | null;
@@ -75,11 +73,11 @@ function pathColor(path: object): string | string[] {
 }
 
 function pathDashLength(path: object): number {
-  return (path as GlobePath).kind === 'trail-past' ? TRAIL_PAST_DASH_LENGTH : 1;
+  return globePathDashLength(path as GlobePath);
 }
 
 function pathDashGap(path: object): number {
-  return (path as GlobePath).kind === 'trail-past' ? TRAIL_PAST_DASH_GAP : 0;
+  return globePathDashGap(path as GlobePath);
 }
 
 /**

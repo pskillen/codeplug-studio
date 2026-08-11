@@ -106,10 +106,21 @@ describe('SatelliteGlobe', () => {
 
     expect(pathColor(past)).toEqual(['#888888', past.color]);
     expect(pathColor(future)).toEqual([future.color, '#888888']);
-    expect(pathDashLength(past)).toBe(0.02);
-    expect(pathDashGap(past)).toBe(0.02);
+    expect(pathDashLength(past)).toBeGreaterThan(0);
+    expect(pathDashLength(past)).toBeLessThan(1);
+    expect(pathDashGap(past)).toBeGreaterThan(0);
     expect(pathDashLength(future)).toBe(1);
     expect(pathDashGap(future)).toBe(0);
+  });
+
+  it('still renders the future trail when look behind is zero', () => {
+    mockUseLiveSatellitePositions.mockReturnValue(new Map());
+
+    renderGlobe({ lookBehindMin: 0, lookAheadMin: 30 });
+
+    const paths = lastGlobeProps?.pathsData as { kind: string }[];
+    expect(paths.some((p) => p.kind === 'trail-future')).toBe(true);
+    expect(paths.some((p) => p.kind === 'trail-past')).toBe(false);
   });
 
   it('omits satellite points until a live position resolves, but still includes orbit trails', () => {
@@ -122,8 +133,8 @@ describe('SatelliteGlobe', () => {
     expect(points.find((p) => p.kind === 'observer')).toBeDefined();
 
     const paths = lastGlobeProps?.pathsData as { kind: string; satelliteId: string }[];
-    expect(paths.filter((p) => p.kind === 'trail-past')).toHaveLength(2);
-    expect(paths.filter((p) => p.kind === 'trail-future')).toHaveLength(2);
+    expect(paths.filter((p) => p.kind === 'trail-past').length).toBeGreaterThanOrEqual(1);
+    expect(paths.filter((p) => p.kind === 'trail-future').length).toBeGreaterThanOrEqual(1);
     expect(paths.some((p) => p.kind === 'footprint')).toBe(false);
 
     expect(screen.getByText('Acquiring live satellite positions…')).toBeInTheDocument();

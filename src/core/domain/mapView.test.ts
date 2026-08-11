@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { collectMapPoints, computeMapView } from './mapView.ts';
+import { collectMapPoints, computeMapView, computeWorldRepeatMapView } from './mapView.ts';
 
 describe('computeMapView', () => {
   it('returns null for no points', () => {
@@ -31,6 +31,18 @@ describe('computeMapView', () => {
       northEast: [57.0, -3.0],
       padding: [48, 48],
       maxZoom: 11,
+    });
+  });
+});
+
+describe('computeWorldRepeatMapView', () => {
+  it('fits one horizontal world repeat with modest padding', () => {
+    expect(computeWorldRepeatMapView({ padding: [12, 12], maxZoom: 3 })).toEqual({
+      type: 'fitBounds',
+      southWest: [-60, -180],
+      northEast: [60, 180],
+      padding: [12, 12],
+      maxZoom: 3,
     });
   });
 });

@@ -177,18 +177,22 @@ export function computeGlobeTrailPaths(
       lookAheadMin,
     );
     const color = colorForNoradId(satellite.noradId);
-    paths.push({
-      kind: 'trail-past',
-      satelliteId: satellite.id,
-      points: orbitSamplesToPathPoints(trail.pastPoints),
-      color,
-    });
-    paths.push({
-      kind: 'trail-future',
-      satelliteId: satellite.id,
-      points: orbitSamplesToPathPoints(trail.futurePoints),
-      color,
-    });
+    if (trail.pastPoints.length >= 2) {
+      paths.push({
+        kind: 'trail-past',
+        satelliteId: satellite.id,
+        points: orbitSamplesToPathPoints(trail.pastPoints),
+        color,
+      });
+    }
+    if (trail.futurePoints.length >= 2) {
+      paths.push({
+        kind: 'trail-future',
+        satelliteId: satellite.id,
+        points: orbitSamplesToPathPoints(trail.futurePoints),
+        color,
+      });
+    }
   }
   return paths;
 }

@@ -1,9 +1,9 @@
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, Marker, Polygon, Polyline, TileLayer, useMap } from 'react-leaflet';
 import type { LatLon } from '@core/domain/geo.ts';
-import { computeMapView } from '@core/domain/mapView.ts';
+import { computeWorldRepeatMapView } from '@core/domain/mapView.ts';
 import { computeSatelliteFootprint } from '@core/domain/satelliteTracking/footprint.ts';
 import {
   duplicateSegmentsForWorldCopies,
@@ -39,21 +39,20 @@ export interface SatelliteLiveMapProps {
   orbitTrailMultiple?: number;
 }
 
-function MapViewController({ points }: { points: LatLon[] }) {
+function MapViewController() {
   const map = useMap();
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    const action = computeMapView(points, { padding: [40, 40], maxZoom: 7, singlePointZoom: 3 });
-    if (!action) return;
-    if (action.type === 'setView') {
-      map.setView(action.center, action.zoom);
-      return;
-    }
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    const action = computeWorldRepeatMapView({ padding: [12, 12], maxZoom: 3 });
     map.fitBounds(L.latLngBounds(action.southWest, action.northEast), {
       padding: action.padding,
       maxZoom: action.maxZoom,
     });
-  }, [map, points]);
+  }, [map]);
 
   return null;
 }
@@ -120,12 +119,6 @@ export default function SatelliteLiveMap({
     [footprintSegments],
   );
 
-  const boundsPoints = useMemo(() => {
-    if (footprint) return footprint.points;
-    if (live) return [live.position];
-    return [];
-  }, [footprint, live]);
-
   return (
     <div className={classes.wrapper}>
       <MapContainer
@@ -160,7 +153,7 @@ export default function SatelliteLiveMap({
           />
         ))}
         {live ? <Marker position={live.position} icon={SATELLITE_DIV_ICON} /> : null}
-        <MapViewController points={boundsPoints} />
+        <MapViewController />
       </MapContainer>
       {!live ? <p className={classes.hint}>Acquiring live position for {satelliteName}…</p> : null}
     </div>
