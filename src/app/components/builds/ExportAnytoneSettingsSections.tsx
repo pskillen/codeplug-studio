@@ -1,13 +1,15 @@
 import { NumberInput, Stack, Switch, Text } from '@mantine/core';
+import { useCallback } from 'react';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
-import { AT_D890_SCAN_TIMING_SECONDS_CSV } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import { FieldCard } from '../fields/Fields.tsx';
+import AtD890ScanListTimingFields from './AtD890ScanListTimingFields.tsx';
 import ExportNameModeSelect from './ExportNameModeSelect.tsx';
 import DigitalContactExportNameModeSelect from './DigitalContactExportNameModeSelect.tsx';
 import ExportSettingsSubheading from './ExportSettingsSubheading.tsx';
 import ChannelBehaviourExportOverrides from './ChannelBehaviourExportOverrides.tsx';
 import ZoneBehaviourExportOverrides from './ZoneBehaviourExportOverrides.tsx';
 import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
+import { useDebouncedOptionalNumberField } from '../../hooks/useDebouncedOptionalNumberField.ts';
 import type { ExportBuildSettingsSectionsProps } from './ExportBuildSettingsSections.tsx';
 
 type ExportAnytoneSettingsSectionsProps = Pick<
@@ -21,26 +23,6 @@ type ExportAnytoneSettingsSectionsProps = Pick<
   | 'onExportInclusionChange'
 >;
 
-type ScanListTimingField =
-  | 'scanListLookBackASeconds'
-  | 'scanListLookBackBSeconds'
-  | 'scanListDropoutDelaySeconds'
-  | 'scanListDwellTimeSeconds';
-
-function patchOptionalScanTimingSeconds(
-  field: ScanListTimingField,
-  value: string | number,
-  onPatch: ExportAnytoneSettingsSectionsProps['onExportSettingsPatch'],
-): void {
-  if (value === '' || value == null) {
-    onPatch({ [field]: undefined });
-    return;
-  }
-  const n = typeof value === 'number' ? value : Number.parseFloat(String(value));
-  if (!Number.isFinite(n)) return;
-  onPatch({ [field]: n });
-}
-
 export default function ExportAnytoneSettingsSections({
   build,
   saving,
@@ -52,7 +34,17 @@ export default function ExportAnytoneSettingsSections({
 }: ExportAnytoneSettingsSectionsProps) {
   const showChannelExpansion = hasMxNChannelExpansion(build.radioTargetId);
   const showD890ScanListTiming = build.radioTargetId === 'anytone-at-d890uv';
-  const exportSettings = build.exportSettings ?? {};
+
+  const commitMaxNameLength = useCallback(
+    (value: number | undefined) => {
+      onExportSettingsPatch({ maxNameLength: value ?? null });
+    },
+    [onExportSettingsPatch],
+  );
+  const maxNameLengthField = useDebouncedOptionalNumberField(
+    resolvedSettings.maxNameLength ?? undefined,
+    commitMaxNameLength,
+  );
 
   return (
     <Stack gap="md">
@@ -93,18 +85,10 @@ export default function ExportAnytoneSettingsSections({
           placeholder={profileNameLimit != null ? String(profileNameLimit) : 'Profile default'}
           min={1}
           max={64}
-          value={resolvedSettings.maxNameLength ?? ''}
-          disabled={saving || !resolvedSettings.shortenNames}
-          onChange={(value) => {
-            if (value === '' || value == null) {
-              onExportSettingsPatch({ maxNameLength: null });
-              return;
-            }
-            const n = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
-            onExportSettingsPatch({
-              maxNameLength: Number.isFinite(n) && n > 0 ? n : null,
-            });
-          }}
+          value={maxNameLengthField.value}
+          disabled={!resolvedSettings.shortenNames}
+          onChange={maxNameLengthField.setValue}
+          onBlur={maxNameLengthField.flush}
         />
 
         <ExportSettingsSubheading>Channel wire names</ExportSettingsSubheading>
@@ -194,85 +178,10 @@ export default function ExportAnytoneSettingsSections({
           onPatch={onExportSettingsPatch}
         />
         {showD890ScanListTiming ? (
-          <>
-            <ExportSettingsSubheading>Scan list timing</ExportSettingsSubheading>
-            <Text size="sm" c="dimmed">
-              Applied to every library and zone-derived scan list on export. Empty fields use{' '}
-              {AT_D890_SCAN_TIMING_SECONDS_CSV} s.
-            </Text>
-            <NumberInput
-              label="Look Back Time A[s]"
-              description="Priority sample interval A (0.5–5.0 s)"
-              decimalScale={1}
-              step={0.1}
-              min={0.5}
-              max={5}
-              value={exportSettings.scanListLookBackASeconds ?? ''}
-              placeholder={AT_D890_SCAN_TIMING_SECONDS_CSV}
-              disabled={saving}
-              onChange={(value) =>
-                patchOptionalScanTimingSeconds(
-                  'scanListLookBackASeconds',
-                  value,
-                  onExportSettingsPatch,
-                )
-              }
-            />
-            <NumberInput
-              label="Look Back Time B[s]"
-              description="Priority sample interval B (0.5–5.0 s)"
-              decimalScale={1}
-              step={0.1}
-              min={0.5}
-              max={5}
-              value={exportSettings.scanListLookBackBSeconds ?? ''}
-              placeholder={AT_D890_SCAN_TIMING_SECONDS_CSV}
-              disabled={saving}
-              onChange={(value) =>
-                patchOptionalScanTimingSeconds(
-                  'scanListLookBackBSeconds',
-                  value,
-                  onExportSettingsPatch,
-                )
-              }
-            />
-            <NumberInput
-              label="Dropout Delay Time[s]"
-              description="Post-reply resume delay (0.1–5.0 s)"
-              decimalScale={1}
-              step={0.1}
-              min={0.1}
-              max={5}
-              value={exportSettings.scanListDropoutDelaySeconds ?? ''}
-              placeholder={AT_D890_SCAN_TIMING_SECONDS_CSV}
-              disabled={saving}
-              onChange={(value) =>
-                patchOptionalScanTimingSeconds(
-                  'scanListDropoutDelaySeconds',
-                  value,
-                  onExportSettingsPatch,
-                )
-              }
-            />
-            <NumberInput
-              label="Dwell Time[s]"
-              description="Post-transmit resume delay (0.1–5.0 s)"
-              decimalScale={1}
-              step={0.1}
-              min={0.1}
-              max={5}
-              value={exportSettings.scanListDwellTimeSeconds ?? ''}
-              placeholder={AT_D890_SCAN_TIMING_SECONDS_CSV}
-              disabled={saving}
-              onChange={(value) =>
-                patchOptionalScanTimingSeconds(
-                  'scanListDwellTimeSeconds',
-                  value,
-                  onExportSettingsPatch,
-                )
-              }
-            />
-          </>
+          <AtD890ScanListTimingFields
+            exportSettings={build.exportSettings}
+            onPatch={onExportSettingsPatch}
+          />
         ) : null}
         <Text size="sm" c="dimmed">
           Library scan list membership is edited under Library → Scan lists. Per-channel scan list
