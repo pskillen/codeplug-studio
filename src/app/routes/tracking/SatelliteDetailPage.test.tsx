@@ -1,10 +1,17 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Satellite } from '@core/models/satellite.ts';
 import { emptyLibrary } from '@core/domain/factories.ts';
 import SatelliteDetailPage from './SatelliteDetailPage.tsx';
+
+const mockPutSatellite = vi.fn(async () => {});
+vi.mock('../../state/persistence.ts', () => ({
+  persistence: {
+    putSatellite: (...args: unknown[]) => mockPutSatellite(...args),
+  },
+}));
 
 const SATELLITE: Satellite = {
   id: 'sat-1',
@@ -188,6 +195,39 @@ describe('SatelliteDetailPage', () => {
 
     expect(screen.getByText('Satellite not found')).toBeInTheDocument();
     expect(screen.getByText('Back to Satellite Keps')).toBeInTheDocument();
+  });
+
+  it('persists a transmitter include-in-write toggle from the detail panel (#1067)', async () => {
+    const reload = vi.fn();
+    mockPutSatellite.mockClear();
+    mockUseLibrary.mockReturnValue({
+      library: { ...emptyLibrary(), satellites: [SATELLITE] },
+      loading: false,
+      reload,
+    });
+    mockUsePassesForSatellite.mockReturnValue({
+      passes: [],
+      loading: false,
+      error: null,
+      hasObserver: true,
+    });
+
+    renderAt('/tracking/satellites/sat-1');
+
+    const toggle = screen.getByRole('checkbox', {
+      name: 'Include Transmitter in radio write',
+    });
+    expect(toggle).toBeChecked();
+
+    fireEvent.click(toggle);
+
+    await waitFor(() => expect(mockPutSatellite).toHaveBeenCalledTimes(1));
+    const [updated, expectedRevision] = mockPutSatellite.mock.calls[0]!;
+    expect(expectedRevision).toBe(SATELLITE.revision);
+    expect((updated as Satellite).transmitters[0]!.includeInWrite).toBe(false);
+    // Only the toggled transmitter's includeInWrite changed — nothing else on the row.
+    expect((updated as Satellite).transmitters[0]!.label).toBe('Transmitter');
+    await waitFor(() => expect(reload).toHaveBeenCalled());
   });
 
   it('shows a loading state while the library is loading', () => {

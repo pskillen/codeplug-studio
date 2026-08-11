@@ -78,6 +78,27 @@ export default function SatelliteDetailPage() {
     }
   }
 
+  /**
+   * Per-transmitter "Include in radio write" toggle from the tracking detail panel (#1067) —
+   * mirrors `handleRefreshSatnogs`'s merge-and-persist-then-reload shape rather than inventing
+   * a new one. Only touches the one transmitter's `includeInWrite`; every other field on the
+   * satellite/transmitter is untouched.
+   */
+  async function handleToggleTransmitterIncludeInWrite(
+    transmitterId: string,
+    includeInWrite: boolean,
+  ) {
+    if (!satellite) return;
+    const updated = {
+      ...satellite,
+      transmitters: satellite.transmitters.map((t) =>
+        t.id === transmitterId ? { ...t, includeInWrite } : t,
+      ),
+    };
+    await persistence.putSatellite(updated, satellite.revision);
+    await reload();
+  }
+
   // Fixed at mount rather than recomputed every render — the pass lists refresh via the
   // hook's own debounce/effect cycle, not by chasing a moving "now" on each render.
   const [now] = useState(() => Date.now());
@@ -187,7 +208,12 @@ export default function SatelliteDetailPage() {
           upcomingPassesAnchorId={UPCOMING_PASSES_ANCHOR_ID}
         />
 
-        <SatelliteDetailPanel satellite={satellite} />
+        <SatelliteDetailPanel
+          satellite={satellite}
+          onToggleIncludeInWrite={(transmitterId, includeInWrite) =>
+            void handleToggleTransmitterIncludeInWrite(transmitterId, includeInWrite)
+          }
+        />
 
         <div className={classes.mapAndGlobe}>
           <div className={classes.mapViewport}>

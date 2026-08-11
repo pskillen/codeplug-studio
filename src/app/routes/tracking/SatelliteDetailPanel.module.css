@@ -49,6 +49,17 @@
   color: var(--dsv2-text-secondary);
 }
 
+.includeInWriteLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+  margin-left: auto;
+}
+
 .emptyTransmitters {
   margin: 0;
   color: var(--dsv2-text-secondary);
