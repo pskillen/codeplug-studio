@@ -211,10 +211,24 @@ export async function readRadioHydrationForBuild(
   };
 }
 
+/** Structured capacity info for a blocked write — lets the UI format design-exact copy (§9). */
+export interface RadioWriteBlockedCapacity {
+  /** Count the operator selected/enabled. */
+  selected: number;
+  /** The radio's hard cap for this record type. */
+  max: number;
+  /** Human label for the target radio, e.g. `descriptor.label`. */
+  radioLabel: string;
+}
+
 export class RadioWriteBlockedError extends Error {
-  constructor(message: string) {
+  /** Present when the block reason is a cardinality overage (#859 §9) — absent otherwise. */
+  readonly capacity?: RadioWriteBlockedCapacity;
+
+  constructor(message: string, capacity?: RadioWriteBlockedCapacity) {
     super(message);
     this.name = 'RadioWriteBlockedError';
+    this.capacity = capacity;
   }
 }
 

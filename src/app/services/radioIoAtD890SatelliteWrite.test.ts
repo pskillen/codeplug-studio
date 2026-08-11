@@ -147,6 +147,35 @@ describe('writeSatellitesToRadio', () => {
     expect(pipe.writes).toHaveLength(0);
   });
 
+  it('carries structured capacity info on the blocked-write error (#859 §9)', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.readResponder = (_addr, len) => new Uint8Array(len).fill(0xff);
+    pipe.autoAckWrites = true;
+
+    const overCapacity = Array.from({ length: AT_D890UV_LIMITS.SATELLITE_MAX + 1 }, (_, i) =>
+      makeSatellite({ id: `sat-${i}`, transmitters: [makeTransmitter({ id: `tx-${i}` })] }),
+    );
+
+    try {
+      await writeSatellitesToRadio(fakeSession(pipe), overCapacity);
+      expect.unreachable('expected RadioWriteBlockedError');
+    } catch (err) {
+      expect(err).toBeInstanceOf(RadioWriteBlockedError);
+      const blocked = err as RadioWriteBlockedError;
+      expect(blocked.capacity).toEqual({
+        selected: AT_D890UV_LIMITS.SATELLITE_MAX + 1,
+        max: AT_D890UV_LIMITS.SATELLITE_MAX,
+        radioLabel: 'D890',
+      });
+      expect(blocked.message).toBe(
+        `You have selected ${AT_D890UV_LIMITS.SATELLITE_MAX + 1} satellites, but the D890 only ` +
+          `supports ${AT_D890UV_LIMITS.SATELLITE_MAX} (placeholder pending hardware ` +
+          'confirmation — see docs/reference/radios/anytone/at-d890uv/satellite-keps.md). ' +
+          'Please deselect some satellites in the library.',
+      );
+    }
+  });
+
   it('writes sequential records at AT_D890_SATELLITE.BASE_ADDRESS + i * RECORD_STRIDE', async () => {
     const pipe = new AtD890ScriptedPipe();
     pipe.readResponder = (_addr, len) => new Uint8Array(len).fill(0xff);

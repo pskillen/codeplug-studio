@@ -84,10 +84,13 @@ export async function writeSatellitesToRadio(
 
   // Capacity check before touching the serial port — no partial write.
   if (records.length > AT_D890UV_LIMITS.SATELLITE_MAX) {
+    const radioLabel = session.descriptor.label;
     throw new RadioWriteBlockedError(
-      `Satellite write refused: ${records.length} write-eligible transmitter(s) exceed the ` +
-        `D890 satellite capacity (${AT_D890UV_LIMITS.SATELLITE_MAX}, placeholder pending ` +
-        `hardware confirmation — see docs/reference/radios/anytone/at-d890uv/satellite-keps.md).`,
+      `You have selected ${records.length} satellites, but the ${radioLabel} only supports ` +
+        `${AT_D890UV_LIMITS.SATELLITE_MAX} (placeholder pending hardware confirmation — see ` +
+        `docs/reference/radios/anytone/at-d890uv/satellite-keps.md). Please deselect some ` +
+        `satellites in the library.`,
+      { selected: records.length, max: AT_D890UV_LIMITS.SATELLITE_MAX, radioLabel },
     );
   }
 
