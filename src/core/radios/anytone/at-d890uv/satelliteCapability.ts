@@ -43,11 +43,7 @@ const AT_D890_SUPPORTED_SATELLITE_MODES: readonly string[] = [
 ];
 
 function normalizeMode(mode: string): string {
-  return mode
-    .trim()
-    .toUpperCase()
-    .replace(/[-_]/g, ' ')
-    .replace(/\s+/g, ' ');
+  return mode.trim().toUpperCase().replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
 }
 
 /**

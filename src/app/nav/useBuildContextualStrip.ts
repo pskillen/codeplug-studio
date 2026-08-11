@@ -18,9 +18,12 @@ export function useBuildContextualStrip(pathname: string): readonly ContextualSt
 
   return useMemo(() => {
     if (!buildId || !build) return null;
-    return buildSectionNavItems(build).map((item) => ({
+    return buildSectionNavItems(build, {
+      egressPaths: layout?.egressPaths,
+      activeEgress: layout?.activeEgress,
+    }).map((item) => ({
       label: item.label,
       to: item.path,
     }));
-  }, [build, buildId]);
+  }, [build, buildId, layout?.egressPaths, layout?.activeEgress]);
 }

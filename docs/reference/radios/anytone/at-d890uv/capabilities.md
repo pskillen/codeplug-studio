@@ -36,7 +36,7 @@ against here.
 
 **#1086 reversed the original approach.** The #1068 implementation shipped a small **denylist**
 of modes believed unsupported (`SSTV`/`SSB`/`CW`), with unrecognised mode strings defaulting to
-*supported* — a placeholder guess made with no hardware access, deliberately permissive because
+_supported_ — a placeholder guess made with no hardware access, deliberately permissive because
 there was no positive evidence either way. An operator has since **directly confirmed on real
 D890 hardware** that satellite tracking only works with **FM** (and narrowband-FM spellings) —
 other modes, including some the old denylist didn't even cover (GMSK, AFSK, DUV), silently failed
@@ -46,17 +46,17 @@ FM-family mode strings, and unrecognised/unknown mode strings now default to **N
 an intentional reversal of the previous default, made because real hardware evidence now points
 at a narrow FM-only capability rather than "no evidence either way."
 
-| Mode                              | Supported? | Basis                                                                                                         |
-| ---------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------- |
-| FM                                 | Yes        | Directly confirmed on real D890 hardware (#1086)                                                              |
-| FMN / NFM / FM Narrow / Narrow FM  | Yes        | Reasonable narrowband-FM spelling variant of the confirmed FM family — not independently hardware-confirmed  |
-| GMSK                               | **No**     | Operator-reported failing on real hardware (#1086)                                                            |
-| AFSK                               | **No**     | Operator-reported failing on real hardware (#1086)                                                            |
-| DUV                                 | **No**     | Operator-reported failing on real hardware (#1086)                                                            |
-| SSTV                                | **No**     | Not FM-family; previously denylisted, still unsupported                                                       |
-| SSB                                 | **No**     | Not FM-family; previously denylisted, still unsupported                                                       |
-| CW                                  | **No**     | Not FM-family; previously denylisted, still unsupported                                                       |
-| other / unrecognised                | **No**     | Not on the FM-family allowlist — defaults to unsupported (reversed from #1068)                                |
+| Mode                              | Supported? | Basis                                                                                                       |
+| --------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
+| FM                                | Yes        | Directly confirmed on real D890 hardware (#1086)                                                            |
+| FMN / NFM / FM Narrow / Narrow FM | Yes        | Reasonable narrowband-FM spelling variant of the confirmed FM family — not independently hardware-confirmed |
+| GMSK                              | **No**     | Operator-reported failing on real hardware (#1086)                                                          |
+| AFSK                              | **No**     | Operator-reported failing on real hardware (#1086)                                                          |
+| DUV                               | **No**     | Operator-reported failing on real hardware (#1086)                                                          |
+| SSTV                              | **No**     | Not FM-family; previously denylisted, still unsupported                                                     |
+| SSB                               | **No**     | Not FM-family; previously denylisted, still unsupported                                                     |
+| CW                                | **No**     | Not FM-family; previously denylisted, still unsupported                                                     |
+| other / unrecognised              | **No**     | Not on the FM-family allowlist — defaults to unsupported (reversed from #1068)                              |
 
 Note: `DMR` satellite transmitters are out of scope for this table — the D890's satellite write
 path targets analogue FM transponders/repeaters, and `SatelliteTransmitter.mode` here refers to
