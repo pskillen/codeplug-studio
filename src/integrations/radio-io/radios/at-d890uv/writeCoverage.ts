@@ -3,7 +3,12 @@
  * Single source for the "What Write updates" table — no hex addresses.
  */
 
-export type AtD890WriteCoverageStatus = 'written' | 'planned' | 'leftAlone' | 'preserved';
+export type AtD890WriteCoverageStatus =
+  | 'written'
+  | 'planned'
+  | 'leftAlone'
+  | 'preserved'
+  | 'separateWrite';
 
 export interface AtD890WriteCoverageRow {
   label: string;
@@ -15,6 +20,8 @@ export const AT_D890_WRITE_COVERAGE_STATUS_LABEL: Record<AtD890WriteCoverageStat
   planned: 'Not supported yet',
   leftAlone: 'Left alone',
   preserved: 'Carried through erase unchanged',
+  /** Satellite keps (#859) — its own PROGRAM session, not part of this codeplug Write. */
+  separateWrite: "Updated separately via “Write Keps”",
 };
 
 /** Rows for Export Web Serial — aligned with v1 Write allow-list and deferred banks. */
@@ -29,6 +36,7 @@ export const AT_D890_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow[] = [
   { label: 'Digital APRS settings', status: 'written' },
   { label: 'AM airband', status: 'written' },
   { label: 'AM airband zones', status: 'written' },
+  { label: 'Satellite keps', status: 'separateWrite' },
   { label: 'Broadcast FM', status: 'planned' },
   { label: 'Digital contacts', status: 'planned' },
   { label: 'Boot images', status: 'planned' },
