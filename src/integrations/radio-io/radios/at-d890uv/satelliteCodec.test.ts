@@ -104,9 +104,19 @@ describe('encodeSatelliteRecord', () => {
       makeSatellite({ name: 'International Space Station' }),
       makeTransmitter({ label: 'FM Voice Repeater' }),
     );
-    // Truncated to exactly 8 ASCII chars, no padding needed since it's already full.
+    // Name alone already consumes all 8 bytes — label gets no room, same as before the
+    // name-first budget fix (#1075).
     expect(long.subarray(0x00, 0x08).length).toBe(8);
     expect(new TextDecoder().decode(long.subarray(0x00, 0x08))).toBe('Internat');
+  });
+
+  it('gives satellite.name first claim on the 8-byte budget, then fills remaining bytes with the label (#1075)', () => {
+    // "AO-27" is 5 chars, leaving 3 bytes: one separator space + 1 char of the label.
+    const record = encodeSatelliteRecord(
+      makeSatellite({ name: 'AO-27' }),
+      makeTransmitter({ label: 'X' }),
+    );
+    expect(new TextDecoder().decode(record.subarray(0x00, 0x08))).toBe('AO-27 X ');
   });
 
   it('encodes RX=downlink / TX=uplink frequency as deci-Hz, little-endian u32', () => {

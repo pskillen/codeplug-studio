@@ -160,12 +160,20 @@ function hzToDeciHz(hz: number | null): number {
 
 /**
  * Combined name field is 8 bytes — tight for "<satellite name> <transmitter label>".
- * Truncate to 8 ASCII chars, left-justified, space-padded, matching satellite-keps.md's
- * `leftJustified(8, ' ')` convention. Satellite/transmitter names are typically plain ASCII
- * (e.g. "ISS", "AO-27"), so non-ASCII handling is not modelled here.
+ * `satellite.name` gets first claim on all 8 bytes; `transmitter.label` only gets to
+ * contribute when the name leaves room (#1075 — see satellite-keps.md's "Name field"
+ * section for the anytone-cps `Satellite::encode()` cross-check: the vendor's own model has
+ * no transmitter/label concept at all, so this combining rule is Studio-only, not
+ * vendor-verified).
+ *
+ * Deliberately still a hard byte-slice — no word-boundary search — matching
+ * satellite-keps.md's `leftJustified(8, ' ')` convention. Satellite/transmitter names are
+ * typically plain ASCII (e.g. "ISS", "AO-27"), so non-ASCII handling is not modelled here.
  */
 function encodeName(satellite: Satellite, transmitter: SatelliteTransmitter): string {
-  const combined = `${satellite.name} ${transmitter.label}`.trim();
+  const name = satellite.name.trim();
+  if (name.length >= 8) return name.slice(0, 8).padEnd(8, ' ');
+  const combined = `${name} ${transmitter.label}`.trim();
   return combined.slice(0, 8).padEnd(8, ' ');
 }
 
