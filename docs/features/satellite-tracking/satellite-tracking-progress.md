@@ -163,7 +163,7 @@ Three-PR arc adding a per-satellite detail page reachable from the Satellite Kep
 
 ## Wave 1 post-MVP polish
 
-**Plan:** `satellite_wave_1_fixes` — five stacked PRs from [follow-up-tickets.md](../../../tmp/features/satellite-followups/follow-up-tickets.md). Merge in order (#1025 → #1026 → #1027 → #1028 → #1029).
+**Plan:** `satellite_wave_1_fixes` — five stacked PRs from [follow-up-tickets.md](../../../tmp/features/satellite/mvp-followups/follow-up-tickets.md). Merge in order (#1025 → #1026 → #1027 → #1028 → #1029).
 
 | Phase | Issue                                                                                  | Status                                                            |
 | ----- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
@@ -177,7 +177,7 @@ Three-PR arc adding a per-satellite detail page reachable from the Satellite Kep
 
 ## Wave 2 post-MVP polish
 
-**Plan:** `satellite_wave_2_fixes` — one PR from [follow-up-tickets.md](../../../tmp/features/satellite-followups/follow-up-tickets.md) Wave 2.
+**Plan:** `satellite_wave_2_fixes` — one PR from [follow-up-tickets.md](../../../tmp/features/satellite/mvp-followups/follow-up-tickets.md) Wave 2.
 
 | Phase | Issue                                                                                         | Status                                           |
 | ----- | --------------------------------------------------------------------------------------------- | ------------------------------------------------ |
@@ -189,7 +189,7 @@ Three-PR arc adding a per-satellite detail page reachable from the Satellite Kep
 
 ## Wave 3 post-MVP polish
 
-**Plan:** `satellite-keps-post-mvp-sleepy-treasure` — one PR from [follow-up-tickets.md](../../../tmp/features/satellite-followups/follow-up-tickets.md) Wave 3 (a single ticket, #1020), bundled with a drive-by fix for a footprint-circle antimeridian rendering bug found during this pass (no tracking issue — root cause and fix documented in the PR itself).
+**Plan:** `satellite-keps-post-mvp-sleepy-treasure` — one PR from [follow-up-tickets.md](../../../tmp/features/satellite/mvp-followups/follow-up-tickets.md) Wave 3 (a single ticket, #1020), bundled with a drive-by fix for a footprint-circle antimeridian rendering bug found during this pass (no tracking issue — root cause and fix documented in the PR itself).
 
 | Phase | Issue                                                                                                          | Status                                                  |
 | ----- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
