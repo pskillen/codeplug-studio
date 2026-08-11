@@ -85,7 +85,7 @@ binary conversion).
 
 | Offset         | Length        | Field                                    | Encoding                                                                                                    |
 | -------------- | ------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `0x00`         | 8             | Name                                     | ASCII, left-justified, space-padded (`leftJustified(8, ' ')`) — Studio-only combining rule, see note below   |
+| `0x00`         | 8             | Name                                     | ASCII, left-justified, space-padded (`leftJustified(8, ' ')`) — Studio-only combining rule, see note below  |
 | `0x08`         | 14 (see note) | Epoch                                    | Raw TLE substring, ASCII, space-padded                                                                      |
 | `0x16`         | 11            | Mean motion derivative                   | Raw TLE substring, ASCII, right-justified, space-padded                                                     |
 | `0x21`         | 8             | Inclination                              | Raw TLE substring, right-justified                                                                          |
