@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Group, Select } from '@mantine/core';
+import { Group, Select, Tooltip } from '@mantine/core';
 import { IconRefresh, IconTelescope, IconUpload } from '@tabler/icons-react';
 import type { Satellite } from '@core/models/satellite.ts';
 import { isoNow } from '@core/models/revision.ts';
@@ -194,7 +194,15 @@ export default function SatelliteKepsListPage() {
       },
       {
         key: 'writeEligible',
-        header: 'Radios for write',
+        header: (
+          <Tooltip
+            label="Transmitters marked “include in radio write”. Whether a specific radio can actually use each one (e.g. mode support) is checked when you write to that radio."
+            multiline
+            w={260}
+          >
+            <span>Marked for write</span>
+          </Tooltip>
+        ),
         width: '110px',
         render: (r) => {
           const { eligible, total } = transmitterWriteEligibleCount(r);
