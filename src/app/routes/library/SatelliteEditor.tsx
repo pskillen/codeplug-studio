@@ -12,6 +12,7 @@ import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx'
 import { UnsavedChangesModal } from '../../components/ui/index.ts';
 import {
   Button,
+  Checkbox,
   DesignSystemV2Provider,
   EditorHeader,
   FormField,
@@ -65,6 +66,7 @@ interface TransmitterDraft {
   satnogsStatus: string | null;
   satnogsSyncedAt: string | null;
   dismissed: boolean;
+  includeInWrite: boolean;
 }
 
 function toDraft(transmitter: SatelliteTransmitter): TransmitterDraft {
@@ -82,6 +84,7 @@ function toDraft(transmitter: SatelliteTransmitter): TransmitterDraft {
     satnogsStatus: transmitter.satnogsStatus,
     satnogsSyncedAt: transmitter.satnogsSyncedAt,
     dismissed: transmitter.dismissed,
+    includeInWrite: transmitter.includeInWrite,
   };
 }
 
@@ -100,6 +103,7 @@ function fromDraft(draft: TransmitterDraft): SatelliteTransmitter {
     satnogsStatus: draft.satnogsStatus,
     satnogsSyncedAt: draft.satnogsSyncedAt,
     dismissed: draft.dismissed,
+    includeInWrite: draft.includeInWrite,
   };
 }
 
@@ -118,6 +122,7 @@ function newManualDraft(): TransmitterDraft {
     satnogsStatus: null,
     satnogsSyncedAt: null,
     dismissed: false,
+    includeInWrite: true,
   };
 }
 
@@ -248,6 +253,16 @@ export function SatelliteEditor({ entity }: { entity: Satellite }) {
                       <span className={rowClasses.sourceBadge}>
                         {transmitterSourceLabel(fromDraft(row))}
                       </span>
+                      <label className={rowClasses.includeInWriteLabel}>
+                        <Checkbox
+                          checked={row.includeInWrite}
+                          onCheckedChange={(checked) =>
+                            updateTransmitter(row.id, { includeInWrite: checked })
+                          }
+                          aria-label="Include in radio write"
+                        />
+                        Include in radio write
+                      </label>
                       <RowActionIcon
                         icon={<IconTrash size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
                         label="Delete transmitter"
