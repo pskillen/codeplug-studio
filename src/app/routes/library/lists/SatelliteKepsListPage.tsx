@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IconRefresh, IconTelescope } from '@tabler/icons-react';
+import { Group } from '@mantine/core';
+import { IconRefresh, IconTelescope, IconUpload } from '@tabler/icons-react';
 import type { Satellite } from '@core/models/satellite.ts';
 import { isoNow } from '@core/models/revision.ts';
 import { mergeSatnogsTransmittersIntoSatellite } from '@core/domain/satnogs/mergeSatnogsTransmitters.ts';
@@ -9,6 +10,7 @@ import { mergeSatelliteSet } from '@integrations/satellites/mergeSatelliteSet.ts
 import { fetchSatnogsEnrichmentForNoradIds } from '@integrations/satellites/satnogsClient.ts';
 import EntityListRowDeleteAction from '../../../components/library/EntityListRowDeleteAction.tsx';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
+import SatelliteKepsWriteTargetModal from '../../../components/SatelliteKepsWriteTargetModal/SatelliteKepsWriteTargetModal.tsx';
 import {
   Button,
   DataTable,
@@ -46,6 +48,7 @@ export default function SatelliteKepsListPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [satnogsWarning, setSatnogsWarning] = useState<string | null>(null);
+  const [writeModalOpen, setWriteModalOpen] = useState(false);
   const { nameFilter, nameFilterInput, nameFilterPending, setNameFilter } =
     useListNameQuery('satellite-keps');
   const [sort, setSort] = usePersistedEntityListSort('satellite-keps', {
@@ -189,14 +192,23 @@ export default function SatelliteKepsListPage() {
   );
 
   const listActions = (
-    <Button
-      variant="primary"
-      leftSection={<IconRefresh size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-      onClick={() => void handleRefresh()}
-      disabled={refreshing}
-    >
-      {refreshing ? 'Updating…' : 'Update from CelesTrak/AMSAT'}
-    </Button>
+    <Group gap="xs" wrap="nowrap">
+      <Button
+        variant="secondary"
+        leftSection={<IconUpload size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => setWriteModalOpen(true)}
+      >
+        Write Keps to Radio
+      </Button>
+      <Button
+        variant="primary"
+        leftSection={<IconRefresh size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+        onClick={() => void handleRefresh()}
+        disabled={refreshing}
+      >
+        {refreshing ? 'Updating…' : 'Update from CelesTrak/AMSAT'}
+      </Button>
+    </Group>
   );
 
   if (loading) {
@@ -258,6 +270,11 @@ export default function SatelliteKepsListPage() {
           }
         />
       </div>
+      <SatelliteKepsWriteTargetModal
+        opened={writeModalOpen}
+        onClose={() => setWriteModalOpen(false)}
+        projectId={projectId}
+      />
     </DesignSystemV2Provider>
   );
 }
