@@ -44,7 +44,7 @@ Each time this skill is invoked (possibly in a brand-new session with no memory 
 
 ```
 tmp/features/<name>/
-  something.md                     # user's brainstorm — theirs, not yours (step 1)
+  something.md                     # optional: user's brainstorm/handover file, if they have one — step 1
   hl-delivery-plan.md               # high-level delivery / design plan (step 2)
   ticket-management.md              # ticket breakdown (step 4)
   phase-plan.md                     # phases: sequencing, branches, delivery model (step 4)
@@ -65,7 +65,7 @@ tmp/features/<name>/
 
 | What exists on disk | State | What's likely being asked next |
 |---|---|---|
-| Nothing, or just an empty dir | Not started | Ask the user to brainstorm first (or help them draft `something.md` collaboratively) — do not skip straight to a delivery plan from a one-line request. |
+| Nothing, or just an empty dir | Not started | Ask what's driving this round of planning — do they have a brainstorm/handover file to drop in (`something.md`), or is the input already something concrete (filed tickets, a PR discussion, a paragraph in chat)? Don't skip straight to a delivery plan from a one-line request, but don't demand a `something.md` file exist first either — see the note below. |
 | `something.md` only | Brainstormed | Draft `hl-delivery-plan.md` — [reference](references/hl-delivery-plan.md). |
 | `hl-delivery-plan.md` exists, no ticket/phase files | Design under review | Either revise the design doc in place (small ask), or — if asked — move to ticket/phase breakdown. |
 | `ticket-management.md` + `phase-plan.md` exist, no GitHub issues linked | Breakdown under review | Revise in place, or — if asked — file the GitHub issues. |
@@ -80,9 +80,13 @@ If a file at the "current" state has open questions or a "not yet decided" marke
 
 ## The steps
 
-### 1. Brainstorm (`something.md`) — user-authored
+### 1. Brainstorm (`something.md`) — user-authored, optional
 
-This is the user's own scratch thinking: thoughts, feelings, expected outcomes, half-formed constraints. You may be asked to help write it, but treat its content as ground truth for intent even where it's messy or contradictory — surface contradictions rather than silently resolving them in the next step.
+`something.md` is a **placeholder name** for whatever brainstorm/handover input the user actually has — their own scratch thinking, a prior session's handover doc, a pasted Slack thread, anything. When they hand you a file, save it under that name (or its own real name — no need to rename) and treat its content as ground truth for intent even where it's messy or contradictory; surface contradictions rather than silently resolving them in the next step.
+
+**Don't manufacture this file when the user doesn't have one.** If the planning input is already concrete — e.g. a set of filed GitHub issues, a short chat message, a decision made earlier in the conversation — go straight to step 2 using that input directly. Asking "do you have a brainstorm doc?" when they've already given you everything needed is friction, not process.
+
+The one exception worth keeping: if capturing the user's own asks verbatim (their exact wording, sequencing notes, or observations) would otherwise be lost or paraphrased away by the time you write `hl-delivery-plan.md`, it's fine to write a short `something.md` that quotes them directly — this preserves their framing as a citable artifact for the rest of the series, not because the step is mandatory. Use judgment: a one-line request doesn't need this; several paragraphs of nuanced observations worth quoting later probably do.
 
 ### 2. High-level delivery plan (`hl-delivery-plan.md`)
 
