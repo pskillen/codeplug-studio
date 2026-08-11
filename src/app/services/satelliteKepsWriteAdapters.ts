@@ -13,7 +13,11 @@
 import type { Satellite } from '@core/models/satellite.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import type { ProgressFn, RadioSession } from '@integrations/radio-io/index.ts';
-import type { CapabilitySkippedTransmitter } from '@integrations/radio-io/radios/at-d890uv/index.ts';
+import {
+  previewSatelliteWriteRecords,
+  type CapabilitySkippedTransmitter,
+  type SatelliteWritePreviewEntry,
+} from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import {
   countWriteEligibleSatelliteRecords,
   writeSatellitesToRadio,
@@ -73,4 +77,24 @@ export function getSatelliteKepsWriteCapacity(
   profileId: string,
 ): SatelliteKepsWriteCapacity | undefined {
   return SATELLITE_KEPS_WRITE_CAPACITY[profileId];
+}
+
+export type SatelliteKepsWritePreviewFn = (
+  satellites: readonly Satellite[],
+) => SatelliteWritePreviewEntry[];
+
+/**
+ * Registry of profileIds with a live write-preview function (#1074) — parallel to
+ * `SATELLITE_KEPS_WRITE_ADAPTERS`/`SATELLITE_KEPS_WRITE_CAPACITY` above, so the export page can
+ * render exactly what a write would send before/without opening a session.
+ */
+export const SATELLITE_KEPS_WRITE_PREVIEW: Readonly<Record<string, SatelliteKepsWritePreviewFn>> =
+  {
+    'radio-io-at-d890uv': previewSatelliteWriteRecords,
+  };
+
+export function getSatelliteKepsWritePreview(
+  profileId: string,
+): SatelliteKepsWritePreviewFn | undefined {
+  return SATELLITE_KEPS_WRITE_PREVIEW[profileId];
 }

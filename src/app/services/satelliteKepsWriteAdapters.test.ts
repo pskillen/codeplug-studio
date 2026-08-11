@@ -3,8 +3,10 @@ import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import {
   getSatelliteKepsWriteAdapter,
   getSatelliteKepsWriteCapacity,
+  getSatelliteKepsWritePreview,
   hasSatelliteKepsWriteAdapter,
   SATELLITE_KEPS_WRITE_ADAPTERS,
+  SATELLITE_KEPS_WRITE_PREVIEW,
 } from './satelliteKepsWriteAdapters.ts';
 
 describe('satelliteKepsWriteAdapters', () => {
@@ -30,5 +32,17 @@ describe('getSatelliteKepsWriteCapacity (#1068)', () => {
 
   it('is undefined for a profile with no registered capacity ceiling', () => {
     expect(getSatelliteKepsWriteCapacity('radio-io-opengd77-dm1701')).toBeUndefined();
+  });
+});
+
+describe('getSatelliteKepsWritePreview (#1074)', () => {
+  it('has a preview function registered for the AT-D890UV profile', () => {
+    expect(getSatelliteKepsWritePreview('radio-io-at-d890uv')).toBe(
+      SATELLITE_KEPS_WRITE_PREVIEW['radio-io-at-d890uv'],
+    );
+  });
+
+  it('is undefined for a profile with no registered preview function', () => {
+    expect(getSatelliteKepsWritePreview('radio-io-opengd77-dm1701')).toBeUndefined();
   });
 });

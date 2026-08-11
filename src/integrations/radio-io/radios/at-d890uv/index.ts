@@ -15,8 +15,10 @@ export {
   isWriteEligible as isAtD890SatelliteWriteEligible,
   listCapabilitySkippedTransmitters,
   packSatelliteWriteRecords,
+  previewSatelliteWriteRecords,
   SATELLITE_RECORD_BYTES,
   type CapabilitySkippedTransmitter,
+  type SatelliteWritePreviewEntry,
   type SatelliteWriteRecord,
 } from './satelliteCodec.ts';
 export { uploadAtD890SatelliteRecords } from './satelliteWrite.ts';
