@@ -82,7 +82,10 @@ describe('SatelliteGlobe', () => {
 
     renderGlobe({ lookBehindMin: 20, lookAheadMin: 45 });
 
-    const paths = lastGlobeProps?.pathsData as { kind: string; points: [number, number, number][] }[];
+    const paths = lastGlobeProps?.pathsData as {
+      kind: string;
+      points: [number, number, number][];
+    }[];
     const past = paths.find((p) => p.kind === 'trail-past');
     const future = paths.find((p) => p.kind === 'trail-future');
     expect(past?.points.length).toBeGreaterThan(1);

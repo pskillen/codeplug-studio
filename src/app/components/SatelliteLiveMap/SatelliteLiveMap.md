@@ -12,7 +12,7 @@ Live position + visible-horizon footprint + orbit-trail map for the satellite de
 | `tleLine1`            | `string` | Raw TLE line 1 — propagation source of truth                                                     |
 | `tleLine2`            | `string` | Raw TLE line 2                                                                                   |
 | `meanMotionRevPerDay` | `number` | Orbital mean motion (already decoded on `Satellite`); used to derive the orbit-trail time window |
-| `orbitTrailMultiple`  | `number` | Orbital periods to draw ahead and behind the mount anchor. Default **1.5** each way.            |
+| `orbitTrailMultiple`  | `number` | Orbital periods to draw ahead and behind the mount anchor. Default **1.5** each way.             |
 
 ## Usage
 

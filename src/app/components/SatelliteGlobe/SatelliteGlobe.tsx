@@ -9,10 +9,7 @@ import {
   type GlobePoint,
   type GlobeSatellite,
 } from './buildGlobeData.ts';
-import {
-  DEFAULT_GLOBE_LOOK_AHEAD_MIN,
-  DEFAULT_GLOBE_LOOK_BEHIND_MIN,
-} from './orbitTrail.ts';
+import { DEFAULT_GLOBE_LOOK_AHEAD_MIN, DEFAULT_GLOBE_LOOK_BEHIND_MIN } from './orbitTrail.ts';
 import { useLiveSatellitePositions } from './useLiveSatellitePositions.ts';
 import { altitudeKmToGlobeRadiusUnits } from './globeAltitude.ts';
 import classes from './SatelliteGlobe.module.css';

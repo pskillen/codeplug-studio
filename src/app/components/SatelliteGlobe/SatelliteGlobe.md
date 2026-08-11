@@ -21,8 +21,8 @@ Nothing in this component assumes multiple satellites — no count-based caps, n
 | `highlightedSatelliteIds` | `Set<string>`                                  | Pass-grid multi-select highlight. Empty set = no dot emphasis.                                                                                                             |
 | `onSelectSatellite`       | `(satelliteId: string) => void` \| `undefined` | Called when a satellite dot is clicked — wire to the same filter state `PassGrid` reads. Optional: omit on a single-satellite page where there's nothing to select-filter. |
 | `pollIntervalMs`          | `number` \| `undefined`                        | Live-position poll cadence. Defaults to `useLiveSatellitePositions`'s own 10s default (dashboard, unchanged) — pass a smaller value to match a page's other live surfaces. |
-| `lookBehindMin`           | `number` \| `undefined`                        | Wall-clock minutes to draw behind the mount anchor. Dashboard default **15**; detail page passes **30**.                                                                     |
-| `lookAheadMin`            | `number` \| `undefined`                        | Wall-clock minutes to draw ahead of the mount anchor. Dashboard default **30**; detail page passes **60**.                                                                |
+| `lookBehindMin`           | `number` \| `undefined`                        | Wall-clock minutes to draw behind the mount anchor. Dashboard default **15**; detail page passes **30**.                                                                   |
+| `lookAheadMin`            | `number` \| `undefined`                        | Wall-clock minutes to draw ahead of the mount anchor. Dashboard default **30**; detail page passes **60**.                                                                 |
 
 ## Usage
 
