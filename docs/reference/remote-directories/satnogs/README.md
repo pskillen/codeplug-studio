@@ -18,9 +18,9 @@ This is a **remote directory / enrichment feed**, not a CPS wire format. HTTP pr
 
 ## Enrichment, not a TLE source
 
-SatNOGS answers a different question from [CelesTrak](../celestrak/README.md)/[AMSAT](../amsat/README.md): those feeds are the source of a satellite's **TLE** (`SatelliteSource` = `'celestrak' | 'amsat'`); SatNOGS supplies **transmitter/mode/operational-status** data for satellites already curated from a TLE source. Because these are different provenance questions, Studio models them with a separate `SatelliteEnrichmentSource` type (`'satnogs'`) rather than adding `'satnogs'` as a third `SatelliteSource` value — a satellite enriched from SatNOGS did not get its TLE from SatNOGS.
+SatNOGS answers a different question from [CelesTrak](../celestrak/README.md)/[AMSAT](../amsat/README.md): those feeds are the source of a satellite's **TLE** (`SatelliteSource` = `'celestrak' | 'amsat'`); SatNOGS supplies **transmitter/mode/operational-status** data for satellites already curated from a TLE source. Because these are different provenance questions, Studio tracks SatNOGS-derived rows with a per-transmitter `SatelliteTransmitter.source` value (`'satnogs'`, alongside `'manual'`) rather than adding `'satnogs'` as a third `SatelliteSource` value — a satellite enriched from SatNOGS did not get its TLE from SatNOGS.
 
-Enrichment data is **fetched and merged live per session**, not persisted as part of the `Satellite` model or the native-yaml project document — there is no `STUDIO_SCHEMA_VERSION` impact from this feed.
+Enrichment data merges directly into the persisted `Satellite.transmitters[]` list, keyed by SatNOGS transmitter UUID (`satnogsUuid`) — it is part of the `Satellite` model and the native-yaml project document, not a session-only cache. Manual rows and previously-synced labels are never overwritten by a refresh.
 
 ## CORS bridge (Studio)
 
