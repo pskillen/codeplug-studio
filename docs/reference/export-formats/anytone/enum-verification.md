@@ -93,16 +93,16 @@ Official CPS exports append `Channel.CSV` slots `4001` / `4002` (VFO A/B). **Stu
 
 ## `ScanList.CSV`
 
-| Column                     | Status   | Values observed / confirmed                                                           | Studio default        |
-| -------------------------- | -------- | ------------------------------------------------------------------------------------- | --------------------- |
-| `Scan Mode`                | Observed | `Off`; resume modes `TO` (time-operated), `CO` (carrier-operated), `SE` (search/stop) | `Off`                 |
-| `Priority Channel Select`  | Observed | `Off` (+ enabled variants when priority used)                                         | `Off`                 |
-| `Priority Channel 1` / `2` | Observed | `Off` or channel name                                                                 | `Off`                 |
-| `Revert Channel`           | Observed | `Selected`, `Selected + TalkBack`, `Last Called`, `Last Used`                         | `Selected + TalkBack` |
-| `Look Back Time A[s]`      | Observed | Priority sample interval 1; bound **0.5–5.0** s                                       | `5.0`                 |
-| `Look Back Time B[s]`      | Observed | Priority sample interval 2; bound **0.5–5.0** s                                       | `5.0`                 |
-| `Dropout Delay Time[s]`    | Observed | Post-reply hang (CPS docs); bound **0.1–5.0** s — semantics contested                 | `5.0`                 |
-| `Dwell Time[s]`            | Observed | Post-transmit hang (CPS docs); bound **0.1–5.0** s — semantics contested              | `5.0`                 |
+| Column                     | Status   | Values observed / confirmed                                                           | Studio default                                                                          |
+| -------------------------- | -------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `Scan Mode`                | Observed | `Off`; resume modes `TO` (time-operated), `CO` (carrier-operated), `SE` (search/stop) | `Off`                                                                                   |
+| `Priority Channel Select`  | Observed | `Off` (+ enabled variants when priority used)                                         | `Off`                                                                                   |
+| `Priority Channel 1` / `2` | Observed | `Off` or channel name                                                                 | `Off`                                                                                   |
+| `Revert Channel`           | Observed | `Selected`, `Selected + TalkBack`, `Last Called`, `Last Used`                         | `Selected + TalkBack`                                                                   |
+| `Look Back Time A[s]`      | Observed | Priority sample interval 1; bound **0.5–5.0** s                                       | `3.0` (build override [#1069](https://github.com/pskillen/codeplug-studio/issues/1069)) |
+| `Look Back Time B[s]`      | Observed | Priority sample interval 2; bound **0.5–5.0** s                                       | `3.0`                                                                                   |
+| `Dropout Delay Time[s]`    | Observed | Post-reply hang (CPS docs); bound **0.1–5.0** s — semantics contested                 | `3.0`                                                                                   |
+| `Dwell Time[s]`            | Observed | Post-transmit hang (CPS docs); bound **0.1–5.0** s — semantics contested              | `3.0`                                                                                   |
 
 Terminology map (vendor → industry): [scan-lists.md](scan-lists.md).
 

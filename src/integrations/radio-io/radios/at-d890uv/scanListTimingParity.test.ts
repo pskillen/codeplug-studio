@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveAtD890ScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
-import { encodeAtD890ScanListRecord } from '@integrations/radio-io/radios/at-d890uv/scanListCodec.ts';
+import { encodeAtD890ScanListRecord } from './scanListCodec.ts';
 
 function readU16Le(buf: Uint8Array, offset: number): number {
   return buf[offset]! | (buf[offset + 1]! << 8);

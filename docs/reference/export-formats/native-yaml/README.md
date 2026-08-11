@@ -224,7 +224,7 @@ Curated per-project amateur satellite keps (TLE-derived orbitals) — see [satel
 | `exportSettings`                | `BuildExportSettings` (optional) |
 | `cpsWireHydration`              | `CpsWireHydration` (optional)    |
 
-`exportSettings` fields: `defaultScanInclusion`, `shortenNames`, `maxNameLength`, `nameModeOverride`, `useChannelAbbreviation`, `useTalkGroupAbbreviation`, `exportZoneDerivedScanLists`, `expandModes`, `expandRxGroupLists`, …
+`exportSettings` fields: `defaultScanInclusion`, `shortenNames`, `maxNameLength`, `nameModeOverride`, `useChannelAbbreviation`, `useTalkGroupAbbreviation`, `exportZoneDerivedScanLists`, `expandModes`, `expandRxGroupLists`, `scanListLookBackASeconds`, `scanListLookBackBSeconds`, `scanListDropoutDelaySeconds`, `scanListDwellTimeSeconds` (AT-D890UV scan-list timing — [#1069](https://github.com/pskillen/codeplug-studio/issues/1069)), …
 
 `cpsWireHydration` is a labelled escape hatch for unmodelled CPS donor/retain bags used at merge export (`formatId` discriminant + opaque `retain`). NeonPlug bags use `formatId: neonplug` — see [neonplug/merge.md](../neonplug/merge.md). Not wire-stash for modelled library entities. **Required interchange behaviour:** when present on a build, native YAML export must emit it and import must restore it on the corresponding `formatBuilds[]` row.
 

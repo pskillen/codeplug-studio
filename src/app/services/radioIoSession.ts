@@ -260,7 +260,9 @@ export function prepareRadioWriteImage(
   const projection = buildRadioWriteProjection(assembled, build, library, egress);
   const organisation: RadioWriteOrganisation = { ...projection.organisation };
   if (build.radioTargetId === 'anytone-at-d890uv') {
-    organisation.atD890ScanListTiming = resolveAtD890ScanListTiming(build.exportSettings).deciseconds;
+    organisation.atD890ScanListTiming = resolveAtD890ScanListTiming(
+      build.exportSettings,
+    ).deciseconds;
   }
   return {
     image: mergeChannelsForWrite(egress, hydration, projection.channels, organisation),
