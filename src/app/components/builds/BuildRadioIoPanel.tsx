@@ -61,7 +61,11 @@ import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from '../../services/radioWriteEnvGate.ts';
-import { getSatelliteKepsWriteAdapter } from '../../services/satelliteKepsWriteAdapters.ts';
+import {
+  getSatelliteKepsWriteAdapter,
+  getSatelliteKepsWriteCapacity,
+  type SatelliteKepsWriteResult,
+} from '../../services/satelliteKepsWriteAdapters.ts';
 
 export interface BuildRadioIoPanelProps {
   build: RadioBuild;
@@ -90,10 +94,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [writeWarnings, setWriteWarnings] = useState<string[]>([]);
-  const [kepsWriteSummary, setKepsWriteSummary] = useState<{
-    written: number;
-    skipped: { satelliteId: string; reason: string }[];
-  } | null>(null);
+  const [kepsWriteSummary, setKepsWriteSummary] = useState<SatelliteKepsWriteResult | null>(null);
+  const [kepsCapacityWarning, setKepsCapacityWarning] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [transferStages, setTransferStages] = useState<string[]>([]);
   const [lastFirmware, setLastFirmware] = useState<string | undefined>();
@@ -112,6 +114,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const hasHydration = buildHasRadioCloneHydration(egress);
   /** Workflow B (#859): contextual "Write Keps" button, gated on a registered adapter. */
   const kepsWriteFn = getSatelliteKepsWriteAdapter(egress.profileId);
+  /** Pre-flight capacity check for the keps write (#1068) — undefined when unknown for this profile. */
+  const kepsCapacity = getSatelliteKepsWriteCapacity(egress.profileId);
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
 
@@ -171,6 +175,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     setVerifyButtonEnabled(false);
     setVerifyResult(null);
     setKepsWriteSummary(null);
+    setKepsCapacityWarning(null);
     verifyStartedRef.current = false;
     verifyReadActiveRef.current = false;
     clearPendingVerify();
@@ -334,13 +339,34 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
    */
   async function handleWriteKeps() {
     if (!kepsWriteFn) return;
+    if (!activeProjectId) {
+      setError('No active project.');
+      return;
+    }
+
+    const allSatellites = await persistence.listSatellites(activeProjectId);
+    const satellites = allSatellites.filter((s) => s.enabled);
+
+    // Pre-flight capacity check (#1068) — computed before ensureSession/opening the serial
+    // session, so an over-capacity library never pays for a session open it can't use. This
+    // mirrors the hard block writeSatellitesToRadio itself enforces (no partial write); the
+    // point here is surfacing that same fact earlier, not changing the underlying behavior.
+    if (kepsCapacity) {
+      const eligibleCount = kepsCapacity.countEligible(satellites);
+      if (eligibleCount > kepsCapacity.max) {
+        setKepsCapacityWarning(
+          `${eligibleCount} transmitter(s) are eligible to write, but this radio only supports ` +
+            `${kepsCapacity.max} (placeholder pending hardware confirmation — see ` +
+            `docs/reference/radios/anytone/at-d890uv/satellite-keps.md). Deselect some ` +
+            `satellites or transmitters in the library before writing.`,
+        );
+        return;
+      }
+    }
+    setKepsCapacityWarning(null);
+
     beginBusy('keps-write');
     try {
-      if (!activeProjectId) {
-        throw new Error('No active project.');
-      }
-      const allSatellites = await persistence.listSatellites(activeProjectId);
-      const satellites = allSatellites.filter((s) => s.enabled);
       setPhase('preparing');
       const session = await ensureSession(true);
       setPhase('transfer');
@@ -568,13 +594,30 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           </Stack>
         </Alert>
       ) : null}
+      {kepsCapacityWarning ? (
+        <Alert color="yellow" title="Write capacity">
+          <Text size="sm">{kepsCapacityWarning}</Text>
+        </Alert>
+      ) : null}
       {kepsWriteSummary ? (
-        <Alert color={kepsWriteSummary.skipped.length > 0 ? 'yellow' : 'green'} title="Keps write">
+        <Alert
+          color={
+            kepsWriteSummary.skipped.length > 0 || kepsWriteSummary.skippedTransmitters.length > 0
+              ? 'yellow'
+              : 'green'
+          }
+          title="Keps write"
+        >
           <Stack gap={4}>
-            <Text size="sm">{kepsWriteSummary.written} satellite(s) written.</Text>
+            <Text size="sm">{kepsWriteSummary.written} transmitter(s) written.</Text>
             {kepsWriteSummary.skipped.map((s) => (
               <Text key={`keps-skipped-${s.satelliteId}`} size="sm" c="dimmed">
                 Skipped {s.satelliteId}: {s.reason}
+              </Text>
+            ))}
+            {kepsWriteSummary.skippedTransmitters.map((s) => (
+              <Text key={`keps-skipped-tx-${s.transmitterId}`} size="sm" c="dimmed">
+                Skipped {s.satelliteId} / {s.transmitterId}: {s.reason}
               </Text>
             ))}
           </Stack>

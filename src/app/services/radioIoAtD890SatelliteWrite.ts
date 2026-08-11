@@ -80,6 +80,17 @@ function skippedSatellites(
 }
 
 /**
+ * Non-throwing "how many wire records would this write" count — the same eligibility +
+ * capability filtering `packSatelliteWriteRecords` applies, without requiring an open
+ * `RadioSession` or a base address. Lets UI (`BuildRadioIoPanel.tsx`, #1068) show a pre-flight
+ * capacity warning before the operator commits to opening a serial session, instead of only
+ * discovering the `RadioWriteBlockedError` after a session is already open.
+ */
+export function countWriteEligibleSatelliteRecords(satellites: readonly Satellite[]): number {
+  return packSatelliteWriteRecords(satellites, 0, 0).length;
+}
+
+/**
  * Write satellite keps to a connected AT-D890UV.
  *
  * Only supports the D890 today — this function is not multi-radio. Callers are responsible
