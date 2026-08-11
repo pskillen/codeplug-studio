@@ -19,6 +19,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+.bulkActions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 .transmitterList {
   display: flex;
   flex-direction: column;

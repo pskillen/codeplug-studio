@@ -99,6 +99,22 @@ export default function SatelliteDetailPage() {
     await reload();
   }
 
+  /**
+   * "Select all" / "Select none" for the write-inclusion toggles (#1067 follow-up) — satellites
+   * with many transmitters (e.g. the ISS, 50+) make toggling each one individually impractical.
+   * Only touches visible (non-dismissed) transmitters, matching what `SatelliteDetailPanel`
+   * actually renders — a dismissed transmitter's `includeInWrite` is left untouched.
+   */
+  async function handleBulkToggleTransmitterIncludeInWrite(includeInWrite: boolean) {
+    if (!satellite) return;
+    const updated = {
+      ...satellite,
+      transmitters: satellite.transmitters.map((t) => (t.dismissed ? t : { ...t, includeInWrite })),
+    };
+    await persistence.putSatellite(updated, satellite.revision);
+    await reload();
+  }
+
   // Fixed at mount rather than recomputed every render — the pass lists refresh via the
   // hook's own debounce/effect cycle, not by chasing a moving "now" on each render.
   const [now] = useState(() => Date.now());
@@ -212,6 +228,9 @@ export default function SatelliteDetailPage() {
           satellite={satellite}
           onToggleIncludeInWrite={(transmitterId, includeInWrite) =>
             void handleToggleTransmitterIncludeInWrite(transmitterId, includeInWrite)
+          }
+          onBulkToggleIncludeInWrite={(includeInWrite) =>
+            void handleBulkToggleTransmitterIncludeInWrite(includeInWrite)
           }
         />
 

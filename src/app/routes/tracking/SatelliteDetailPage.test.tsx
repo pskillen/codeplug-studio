@@ -234,6 +234,49 @@ describe('SatelliteDetailPage', () => {
     await waitFor(() => expect(reload).toHaveBeenCalled());
   });
 
+  it('bulk-selects/deselects visible transmitters for radio write (#1067 follow-up)', async () => {
+    const reload = vi.fn();
+    mockPutSatellite.mockClear();
+    const satelliteWithTwoTransmitters: Satellite = {
+      ...SATELLITE,
+      transmitters: [
+        { ...SATELLITE.transmitters[0]!, id: 't1', includeInWrite: true },
+        { ...SATELLITE.transmitters[0]!, id: 't2', includeInWrite: false },
+        // Dismissed transmitters aren't rendered and must be left untouched by bulk actions.
+        { ...SATELLITE.transmitters[0]!, id: 't3', includeInWrite: true, dismissed: true },
+      ],
+    };
+    mockUseLibrary.mockReturnValue({
+      library: { ...emptyLibrary(), satellites: [satelliteWithTwoTransmitters] },
+      loading: false,
+      reload,
+    });
+    mockUsePassesForSatellite.mockReturnValue({
+      passes: [],
+      loading: false,
+      error: null,
+      hasObserver: true,
+    });
+
+    renderAt('/tracking/satellites/sat-1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select none' }));
+
+    await waitFor(() => expect(mockPutSatellite).toHaveBeenCalledTimes(1));
+    const [updated] = mockPutSatellite.mock.calls[0]!;
+    expect(updated.transmitters.find((t: { id: string }) => t.id === 't1')!.includeInWrite).toBe(
+      false,
+    );
+    expect(updated.transmitters.find((t: { id: string }) => t.id === 't2')!.includeInWrite).toBe(
+      false,
+    );
+    // Dismissed transmitter is untouched by the bulk action.
+    expect(updated.transmitters.find((t: { id: string }) => t.id === 't3')!.includeInWrite).toBe(
+      true,
+    );
+    await waitFor(() => expect(reload).toHaveBeenCalled());
+  });
+
   it('shows a loading state while the library is loading', () => {
     mockUseLibrary.mockReturnValue({
       library: emptyLibrary(),

@@ -1,10 +1,11 @@
 import { useMediaQuery } from '@mantine/hooks';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
-import { Checkbox, Panel } from '../../components/v2/index.ts';
+import { Button, Checkbox, Panel } from '../../components/v2/index.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { hzToMhzString, optionalNumberToString } from '../../lib/units.ts';
 import { transmitterSourceLabel, visibleTransmitters } from '../library/satelliteEditorHelpers.ts';
+import { formatLocalClockTime, formatUtcClockTime } from './passTime.ts';
 import classes from './SatelliteDetailPanel.module.css';
 
 function Field({ label, value }: { label: string; value: string }) {
@@ -24,6 +25,12 @@ function formatOptionalMhz(hz: number | null | undefined): string {
 function formatOptionalHz(hz: number | null | undefined): string {
   const value = optionalNumberToString(hz);
   return value === '' ? 'Not set' : `${value} Hz`;
+}
+
+/** Local + UTC, both 24-hour — matches the AOS/LOS convention used elsewhere on this page. */
+function formatEpochLabel(iso: string): string {
+  const localDate = new Date(iso).toLocaleDateString(undefined, { dateStyle: 'short' });
+  return `Epoch ${localDate} ${formatLocalClockTime(iso)} local · ${formatUtcClockTime(iso)} UTC`;
 }
 
 function TransmitterCard({
@@ -67,14 +74,21 @@ function TransmitterCard({
  * ever refreshed from CelesTrak/AMSAT, never edited by hand. The one interactive control here
  * is the per-transmitter "Include in radio write" toggle (#1067), shown when the caller passes
  * `onToggleIncludeInWrite` — it mirrors `SatelliteTransmitter.includeInWrite`, the same field
- * `SatelliteEditor.tsx` toggles, so edits made from either surface stay consistent.
+ * `SatelliteEditor.tsx` toggles, so edits made from either surface stay consistent. When the
+ * caller also passes `onBulkToggleIncludeInWrite`, a "Select all" / "Select none" pair renders
+ * above the transmitter list — satellites like the ISS can carry 50+ transmitters, where
+ * toggling each one by hand isn't practical.
  */
 export default function SatelliteDetailPanel({
   satellite,
   onToggleIncludeInWrite,
+  onBulkToggleIncludeInWrite,
 }: {
   satellite: Satellite;
   onToggleIncludeInWrite?: (transmitterId: string, includeInWrite: boolean) => void;
+  /** "Select all" / "Select none" for the write-inclusion checkboxes below — satellites with
+   *  many transmitters (e.g. the ISS, 50+) make toggling each one individually impractical. */
+  onBulkToggleIncludeInWrite?: (includeInWrite: boolean) => void;
 }) {
   // Read synchronously on the first render (`getInitialValueInEffect: false`) — Panel's
   // `defaultCollapsed` is only consumed once, at its own mount, so the default async
@@ -89,7 +103,7 @@ export default function SatelliteDetailPanel({
     <>
       <Panel
         title="Orbital elements"
-        sub={`Epoch ${new Date(satellite.epoch).toLocaleString()}`}
+        sub={formatEpochLabel(satellite.epoch)}
         collapsible
         defaultCollapsed={isMobile}
       >
@@ -118,15 +132,27 @@ export default function SatelliteDetailPanel({
             No transmitter data yet. Add one on the Satellite Keps editor, or refresh from SatNOGS.
           </p>
         ) : (
-          <div className={classes.transmitterList}>
-            {transmitters.map((transmitter) => (
-              <TransmitterCard
-                key={transmitter.id}
-                transmitter={transmitter}
-                onToggleIncludeInWrite={onToggleIncludeInWrite}
-              />
-            ))}
-          </div>
+          <>
+            {onBulkToggleIncludeInWrite ? (
+              <div className={classes.bulkActions}>
+                <Button variant="ghost" size="sm" onClick={() => onBulkToggleIncludeInWrite(true)}>
+                  Select all
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => onBulkToggleIncludeInWrite(false)}>
+                  Select none
+                </Button>
+              </div>
+            ) : null}
+            <div className={classes.transmitterList}>
+              {transmitters.map((transmitter) => (
+                <TransmitterCard
+                  key={transmitter.id}
+                  transmitter={transmitter}
+                  onToggleIncludeInWrite={onToggleIncludeInWrite}
+                />
+              ))}
+            </div>
+          </>
         )}
       </Panel>
     </>

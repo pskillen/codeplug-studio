@@ -6,7 +6,12 @@ import {
   type DataTableColumn,
   type DataTableSortState,
 } from '../../components/v2/index.ts';
-import { formatNextPassCountdown, isPassActive } from './passTime.ts';
+import {
+  formatLocalClockTime,
+  formatNextPassCountdown,
+  formatUtcClockTime,
+  isPassActive,
+} from './passTime.ts';
 import { useNowTick } from './useNowTick.ts';
 import classes from './PassGrid.module.css';
 
@@ -18,10 +23,13 @@ function formatDurationSec(durationSec: number): string {
 
 function DateTimeCell({ iso, countdown }: { iso: string; countdown?: string | null }) {
   const date = new Date(iso);
+  const localDate = date.toLocaleDateString(undefined, { dateStyle: 'short' });
   return (
     <div className={classes.dateTimeCell}>
-      <span>{date.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</span>
-      <span className={classes.utc}>{date.toISOString().slice(11, 16)} UTC</span>
+      <span>
+        {localDate} {formatLocalClockTime(iso)} local
+      </span>
+      <span className={classes.utc}>{formatUtcClockTime(iso)} UTC</span>
       {countdown ? <span className={classes.countdown}>{countdown}</span> : null}
     </div>
   );
