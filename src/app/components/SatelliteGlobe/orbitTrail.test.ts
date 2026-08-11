@@ -66,4 +66,32 @@ describe('computeGlobeOrbitTrail', () => {
     expect(pastLast.lon).toBeCloseTo(futureFirst.lon, 4);
     expect(pastLast.altitudeKm).toBeCloseTo(futureFirst.altitudeKm, 1);
   });
+
+  it('omits the past side when lookBehindMin is zero but still samples future', () => {
+    const { futurePoints, pastPoints } = computeGlobeOrbitTrail(
+      ISS_LINE_1,
+      ISS_LINE_2,
+      ANCHOR_MS,
+      0,
+      30,
+      60,
+    );
+
+    expect(pastPoints).toEqual([]);
+    expect(futurePoints.length).toBeGreaterThan(1);
+  });
+
+  it('omits the future side when lookAheadMin is zero but still samples past', () => {
+    const { futurePoints, pastPoints } = computeGlobeOrbitTrail(
+      ISS_LINE_1,
+      ISS_LINE_2,
+      ANCHOR_MS,
+      15,
+      0,
+      60,
+    );
+
+    expect(futurePoints).toEqual([]);
+    expect(pastPoints.length).toBeGreaterThan(1);
+  });
 });

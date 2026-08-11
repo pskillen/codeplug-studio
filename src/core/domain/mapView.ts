@@ -1,18 +1,20 @@
 import type { LatLon } from './geo.ts';
 
+export type FitBoundsMapViewAction = {
+  type: 'fitBounds';
+  southWest: LatLon;
+  northEast: LatLon;
+  padding: [number, number];
+  maxZoom: number;
+};
+
 export type MapViewAction =
   | {
       type: 'setView';
       center: LatLon;
       zoom: number;
     }
-  | {
-      type: 'fitBounds';
-      southWest: LatLon;
-      northEast: LatLon;
-      padding: [number, number];
-      maxZoom: number;
-    };
+  | FitBoundsMapViewAction;
 
 export function collectMapPoints(
   groups: { location: { lat: number; lon: number } | null }[][],
@@ -75,5 +77,28 @@ export function computeMapView(
     northEast: [maxLat, maxLon],
     padding: options.padding,
     maxZoom: options.maxZoom,
+  };
+}
+
+/** Bounds for one horizontal world repeat (excludes extreme polar caps). */
+const WORLD_REPEAT_SOUTH_WEST: LatLon = [-60, -180];
+const WORLD_REPEAT_NORTH_EAST: LatLon = [60, 180];
+
+/**
+ * Fit one world repeat to the map viewport — default for satellite tracking maps before
+ * a specific pass/track is selected.
+ */
+export function computeWorldRepeatMapView(
+  options: {
+    padding?: [number, number];
+    maxZoom?: number;
+  } = {},
+): FitBoundsMapViewAction {
+  return {
+    type: 'fitBounds',
+    southWest: WORLD_REPEAT_SOUTH_WEST,
+    northEast: WORLD_REPEAT_NORTH_EAST,
+    padding: options.padding ?? [12, 12],
+    maxZoom: options.maxZoom ?? 3,
   };
 }

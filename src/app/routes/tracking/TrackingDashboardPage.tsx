@@ -27,6 +27,12 @@ import {
   computeInterestedSatelliteIds,
   hasSatelliteInterestFilter,
 } from './interestedSatellites.ts';
+import {
+  clampGlobeTrailMinutes,
+  GLOBE_TRAIL_STEP_MIN,
+  MAX_GLOBE_TRAIL_MIN,
+  MIN_GLOBE_TRAIL_MIN,
+} from '../../components/SatelliteGlobe/orbitTrail.ts';
 import classes from './TrackingDashboardPage.module.css';
 import libraryPageClasses from '../../components/library/LibraryInventoryPage.module.css';
 
@@ -36,8 +42,6 @@ const MIN_WINDOW_HOURS = 1;
 const MAX_WINDOW_HOURS = 168;
 const MIN_DRAW_MIN = 0;
 const MAX_DRAW_MIN = 60;
-const MIN_GLOBE_TRAIL_MIN = 0;
-const MAX_GLOBE_TRAIL_MIN = 180;
 
 function clampWindowHours(value: number): number {
   if (Number.isNaN(value)) return DEFAULT_WINDOW_HOURS;
@@ -47,11 +51,6 @@ function clampWindowHours(value: number): number {
 function clampDrawMin(value: number): number {
   if (Number.isNaN(value)) return 0;
   return Math.min(MAX_DRAW_MIN, Math.max(MIN_DRAW_MIN, value));
-}
-
-function clampGlobeTrailMin(value: number, fallback: number): number {
-  if (Number.isNaN(value)) return fallback;
-  return Math.min(MAX_GLOBE_TRAIL_MIN, Math.max(MIN_GLOBE_TRAIL_MIN, value));
 }
 
 function toSelectedPass(row: SatellitePassRow): SelectedPass {
@@ -284,10 +283,11 @@ export default function TrackingDashboardPage() {
                     type="number"
                     min={MIN_GLOBE_TRAIL_MIN}
                     max={MAX_GLOBE_TRAIL_MIN}
+                    step={GLOBE_TRAIL_STEP_MIN}
                     value={globeLookBehindMin}
                     onChange={(event) =>
                       setGlobeLookBehindMin(
-                        clampGlobeTrailMin(Number(event.target.value), globeLookBehindMin),
+                        clampGlobeTrailMinutes(Number(event.target.value), globeLookBehindMin),
                       )
                     }
                   />
@@ -296,10 +296,11 @@ export default function TrackingDashboardPage() {
                     type="number"
                     min={MIN_GLOBE_TRAIL_MIN}
                     max={MAX_GLOBE_TRAIL_MIN}
+                    step={GLOBE_TRAIL_STEP_MIN}
                     value={globeLookAheadMin}
                     onChange={(event) =>
                       setGlobeLookAheadMin(
-                        clampGlobeTrailMin(Number(event.target.value), globeLookAheadMin),
+                        clampGlobeTrailMinutes(Number(event.target.value), globeLookAheadMin),
                       )
                     }
                   />

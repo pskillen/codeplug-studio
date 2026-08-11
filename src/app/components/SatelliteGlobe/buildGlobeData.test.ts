@@ -44,6 +44,16 @@ describe('computeGlobeTrailPaths', () => {
     expect(past?.color).toMatch(/^#[0-9a-f]{6}$/i);
     expect(future?.color).toBe(past?.color);
   });
+
+  it('omits a trail side when its minute window is zero', () => {
+    const paths = computeGlobeTrailPaths([satelliteA], ANCHOR_MS, {
+      lookBehindMin: 0,
+      lookAheadMin: 30,
+    });
+
+    expect(paths).toHaveLength(1);
+    expect(paths[0]?.kind).toBe('trail-future');
+  });
 });
 
 describe('filterGlobeSatellitesByInterest', () => {

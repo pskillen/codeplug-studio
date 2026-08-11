@@ -3,7 +3,7 @@ import L from 'leaflet';
 import { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import type { LatLon } from '@core/domain/geo.ts';
-import { computeMapView } from '@core/domain/mapView.ts';
+import { computeMapView, computeWorldRepeatMapView } from '@core/domain/mapView.ts';
 import { sampleGroundTrack } from '@core/domain/satelliteTracking/groundTrack.ts';
 import {
   observerDivIcon,
@@ -74,10 +74,13 @@ function samplePassSegments(
 function MapViewController({
   points,
   passKey,
+  fitToPass,
 }: {
   points: LatLon[];
   /** Stable identity for the selected/default pass set — a change clears manual pan/zoom and re-fits. */
   passKey: string | null;
+  /** When false, show one world repeat instead of fitting track bounds. */
+  fitToPass: boolean;
 }) {
   const map = useMap();
   const userInteractedRef = useRef(false);
@@ -102,7 +105,9 @@ function MapViewController({
   useEffect(() => {
     if (userInteractedRef.current) return;
 
-    const action = computeMapView(points, { padding: [40, 40], maxZoom: 8, singlePointZoom: 4 });
+    const action = fitToPass
+      ? computeMapView(points, { padding: [40, 40], maxZoom: 8, singlePointZoom: 4 })
+      : computeWorldRepeatMapView({ padding: [12, 12], maxZoom: 3 });
     if (!action) return;
     if (action.type === 'setView') {
       map.setView(action.center, action.zoom);
@@ -112,7 +117,7 @@ function MapViewController({
       padding: action.padding,
       maxZoom: action.maxZoom,
     });
-  }, [map, points, passKey]);
+  }, [map, points, passKey, fitToPass]);
 
   return null;
 }
@@ -187,7 +192,11 @@ export default function SatelliteTrackMap({
             />
           )),
         )}
-        <MapViewController points={boundsPoints} passKey={passKey} />
+        <MapViewController
+          points={boundsPoints}
+          passKey={passKey}
+          fitToPass={selectedPass !== null}
+        />
       </MapContainer>
       {!selectedPass && defaultPasses.length === 0 ? (
         <p className={classes.hint}>

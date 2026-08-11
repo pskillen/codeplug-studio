@@ -20,6 +20,12 @@ import { useDopplerShiftedFrequencies } from './useDopplerShiftedFrequencies.ts'
 import { useNowTick } from './useNowTick.ts';
 import { usePassesForSatellite } from './usePassesForSatellite.ts';
 import { DEFAULT_ORBIT_TRAIL_MULTIPLE } from '../../components/SatelliteLiveMap/orbitTrail.ts';
+import {
+  clampGlobeTrailMinutes,
+  GLOBE_TRAIL_STEP_MIN,
+  MAX_GLOBE_TRAIL_MIN,
+  MIN_GLOBE_TRAIL_MIN,
+} from '../../components/SatelliteGlobe/orbitTrail.ts';
 import classes from './SatelliteDetailPage.module.css';
 
 const SatelliteGlobe = lazy(() => import('../../components/SatelliteGlobe/SatelliteGlobe.tsx'));
@@ -30,16 +36,9 @@ const FUTURE_WINDOW_HOURS = 72;
 const PAST_WINDOW_HOURS = 72;
 const DETAIL_GLOBE_LOOK_BEHIND_MIN = 30;
 const DETAIL_GLOBE_LOOK_AHEAD_MIN = 60;
-const MIN_GLOBE_TRAIL_MIN = 0;
-const MAX_GLOBE_TRAIL_MIN = 180;
 const MIN_ORBIT_TRAIL_MULTIPLE = 0.25;
 const MAX_ORBIT_TRAIL_MULTIPLE = 3;
 const ORBIT_TRAIL_STEP = 0.25;
-
-function clampGlobeTrailMin(value: number, fallback: number): number {
-  if (Number.isNaN(value)) return fallback;
-  return Math.min(MAX_GLOBE_TRAIL_MIN, Math.max(MIN_GLOBE_TRAIL_MIN, value));
-}
 
 function clampOrbitTrailMultiple(value: number): number {
   if (Number.isNaN(value)) return DEFAULT_ORBIT_TRAIL_MULTIPLE;
@@ -242,10 +241,11 @@ export default function SatelliteDetailPage() {
                 type="number"
                 min={MIN_GLOBE_TRAIL_MIN}
                 max={MAX_GLOBE_TRAIL_MIN}
+                step={GLOBE_TRAIL_STEP_MIN}
                 value={globeLookBehindMin}
                 onChange={(event) =>
                   setGlobeLookBehindMin(
-                    clampGlobeTrailMin(Number(event.target.value), globeLookBehindMin),
+                    clampGlobeTrailMinutes(Number(event.target.value), globeLookBehindMin),
                   )
                 }
               />
@@ -254,10 +254,11 @@ export default function SatelliteDetailPage() {
                 type="number"
                 min={MIN_GLOBE_TRAIL_MIN}
                 max={MAX_GLOBE_TRAIL_MIN}
+                step={GLOBE_TRAIL_STEP_MIN}
                 value={globeLookAheadMin}
                 onChange={(event) =>
                   setGlobeLookAheadMin(
-                    clampGlobeTrailMin(Number(event.target.value), globeLookAheadMin),
+                    clampGlobeTrailMinutes(Number(event.target.value), globeLookAheadMin),
                   )
                 }
               />
