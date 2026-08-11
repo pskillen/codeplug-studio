@@ -10,6 +10,24 @@
   gap: 16px;
 }
 
+.mapViewport {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.renderControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.renderControls > * {
+  flex: 1 1 160px;
+  max-width: 220px;
+}
+
 /* Desktop only — matches SatelliteLiveMap and SatelliteGlobe to the same height so the two
    panels line up; left unset on mobile so each keeps its own (smaller) default height. */
 @media (min-width: 901px) {

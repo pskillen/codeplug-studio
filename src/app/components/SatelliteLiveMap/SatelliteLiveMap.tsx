@@ -10,7 +10,7 @@ import {
   splitRingAtAntimeridian,
 } from '../SatelliteTrackMap/mapHelpers.ts';
 import { useLiveSatellitePosition } from '../../routes/tracking/useLiveSatellitePosition.ts';
-import { computeOrbitTrailSegments } from './orbitTrail.ts';
+import { computeOrbitTrailSegments, DEFAULT_ORBIT_TRAIL_MULTIPLE } from './orbitTrail.ts';
 import classes from './SatelliteLiveMap.module.css';
 
 const DEFAULT_CENTER: LatLon = [20, 0];
@@ -35,6 +35,8 @@ export interface SatelliteLiveMapProps {
   tleLine2: string;
   /** Orbital mean motion, revolutions/day — used to derive the orbit-trail time window. */
   meanMotionRevPerDay: number;
+  /** Orbital periods to draw ahead and behind the anchor. Default 1.5 each way. */
+  orbitTrailMultiple?: number;
 }
 
 function MapViewController({ points }: { points: LatLon[] }) {
@@ -69,6 +71,7 @@ export default function SatelliteLiveMap({
   tleLine1,
   tleLine2,
   meanMotionRevPerDay,
+  orbitTrailMultiple = DEFAULT_ORBIT_TRAIL_MULTIPLE,
 }: SatelliteLiveMapProps) {
   // Anchor instant for the orbit-trail window, fixed at mount (not recomputed on every
   // live-position poll tick) — the trail is a stable "1.5 orbits either side of roughly now"
@@ -83,8 +86,16 @@ export default function SatelliteLiveMap({
   }, [tleLine1, tleLine2, live]);
 
   const { futureSegments, pastSegments } = useMemo(
-    () => computeOrbitTrailSegments(tleLine1, tleLine2, meanMotionRevPerDay, anchorAt),
-    [tleLine1, tleLine2, meanMotionRevPerDay, anchorAt],
+    () =>
+      computeOrbitTrailSegments(
+        tleLine1,
+        tleLine2,
+        meanMotionRevPerDay,
+        anchorAt,
+        undefined,
+        orbitTrailMultiple,
+      ),
+    [tleLine1, tleLine2, meanMotionRevPerDay, anchorAt, orbitTrailMultiple],
   );
 
   const renderedPastSegments = useMemo(
