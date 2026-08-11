@@ -71,7 +71,7 @@ A "war room" style visualization of the Earth, providing an intuitive understand
 - **User Location:** A distinct glowing beacon or marker on the globe.
 - **Satellite Rendering:**
   - Render selected satellites as moving icons or dots.
-  - **Orbit Trails:** Draw a line showing the predicted path for the next 90 minutes (one orbit).
+  - **Orbit Trails:** Draw configurable look-ahead/look-behind trails on the 3D globe (wall-clock minutes, fade-to-gray styling) and orbit-multiple ribbons on the detail 2D live map.
   - **Footprint (Visibility Circle):** A translucent colored circle projected onto the Earth's surface directly beneath the satellite. If the user's location falls within this circle, they have AOS.
 - **Interactivity:** Clicking a satellite on the globe filters the 2D Pass Data Grid below it to show only that specific satellite's upcoming passes.
 

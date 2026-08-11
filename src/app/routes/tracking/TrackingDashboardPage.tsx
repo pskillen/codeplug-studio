@@ -36,6 +36,8 @@ const MIN_WINDOW_HOURS = 1;
 const MAX_WINDOW_HOURS = 168;
 const MIN_DRAW_MIN = 0;
 const MAX_DRAW_MIN = 60;
+const MIN_GLOBE_TRAIL_MIN = 0;
+const MAX_GLOBE_TRAIL_MIN = 180;
 
 function clampWindowHours(value: number): number {
   if (Number.isNaN(value)) return DEFAULT_WINDOW_HOURS;
@@ -45,6 +47,11 @@ function clampWindowHours(value: number): number {
 function clampDrawMin(value: number): number {
   if (Number.isNaN(value)) return 0;
   return Math.min(MAX_DRAW_MIN, Math.max(MIN_DRAW_MIN, value));
+}
+
+function clampGlobeTrailMin(value: number, fallback: number): number {
+  if (Number.isNaN(value)) return fallback;
+  return Math.min(MAX_GLOBE_TRAIL_MIN, Math.max(MIN_GLOBE_TRAIL_MIN, value));
 }
 
 function toSelectedPass(row: SatellitePassRow): SelectedPass {
@@ -63,6 +70,8 @@ export default function TrackingDashboardPage() {
     windowHours,
     drawBehindMin,
     drawAheadMin,
+    globeLookBehindMin,
+    globeLookAheadMin,
     minElevation,
     onlyWithFrequencies,
     // Satellite multi-select filter, shared by the globe and the pass grid — a globe click
@@ -72,6 +81,8 @@ export default function TrackingDashboardPage() {
     setWindowHours,
     setDrawBehindMin,
     setDrawAheadMin,
+    setGlobeLookBehindMin,
+    setGlobeLookAheadMin,
     setMinElevation,
     setOnlyWithFrequencies,
     setSelectedSatelliteIds,
@@ -202,22 +213,6 @@ export default function TrackingDashboardPage() {
               onChange={(event) => setWindowHours(clampWindowHours(Number(event.target.value)))}
             />
             <TextInput
-              label="Extend before AOS (min)"
-              type="number"
-              min={MIN_DRAW_MIN}
-              max={MAX_DRAW_MIN}
-              value={drawBehindMin}
-              onChange={(event) => setDrawBehindMin(clampDrawMin(Number(event.target.value)))}
-            />
-            <TextInput
-              label="Extend after LOS (min)"
-              type="number"
-              min={MIN_DRAW_MIN}
-              max={MAX_DRAW_MIN}
-              value={drawAheadMin}
-              onChange={(event) => setDrawAheadMin(clampDrawMin(Number(event.target.value)))}
-            />
-            <TextInput
               label="Min elevation (°)"
               type="number"
               placeholder="0"
@@ -238,28 +233,78 @@ export default function TrackingDashboardPage() {
 
         <div className={classes.mapAndGlobe}>
           <Panel title="Ground track" sub="Preview a selected pass's ground track.">
-            <div className={classes.map}>
-              <SatelliteTrackMap
-                observer={settings?.location ?? null}
-                selectedPass={selectedPass}
-                defaultPasses={defaultMapPasses}
-                drawBehindMin={drawBehindMin}
-                drawAheadMin={drawAheadMin}
-              />
+            <div className={classes.mapViewport}>
+              <div className={classes.map}>
+                <SatelliteTrackMap
+                  observer={settings?.location ?? null}
+                  selectedPass={selectedPass}
+                  defaultPasses={defaultMapPasses}
+                  drawBehindMin={drawBehindMin}
+                  drawAheadMin={drawAheadMin}
+                />
+              </div>
+              <div className={classes.renderControls}>
+                <TextInput
+                  label="Extend before AOS (min)"
+                  type="number"
+                  min={MIN_DRAW_MIN}
+                  max={MAX_DRAW_MIN}
+                  value={drawBehindMin}
+                  onChange={(event) => setDrawBehindMin(clampDrawMin(Number(event.target.value)))}
+                />
+                <TextInput
+                  label="Extend after LOS (min)"
+                  type="number"
+                  min={MIN_DRAW_MIN}
+                  max={MAX_DRAW_MIN}
+                  value={drawAheadMin}
+                  onChange={(event) => setDrawAheadMin(clampDrawMin(Number(event.target.value)))}
+                />
+              </div>
             </div>
           </Panel>
 
           {hasEnabledSatellites ? (
             <Panel title="Orbital globe" sub="Click a satellite to filter the pass grid to it.">
-              <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
-                <SatelliteGlobe
-                  observer={settings?.location ?? null}
-                  satellites={enabledSatellites}
-                  interestedSatelliteIds={interestedSatelliteIds}
-                  highlightedSatelliteIds={selectedSatelliteIds}
-                  onSelectSatellite={handleSelectSatelliteFromGlobe}
-                />
-              </Suspense>
+              <div className={classes.mapViewport}>
+                <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
+                  <SatelliteGlobe
+                    observer={settings?.location ?? null}
+                    satellites={enabledSatellites}
+                    interestedSatelliteIds={interestedSatelliteIds}
+                    highlightedSatelliteIds={selectedSatelliteIds}
+                    onSelectSatellite={handleSelectSatelliteFromGlobe}
+                    lookBehindMin={globeLookBehindMin}
+                    lookAheadMin={globeLookAheadMin}
+                  />
+                </Suspense>
+                <div className={classes.renderControls}>
+                  <TextInput
+                    label="Look behind (min)"
+                    type="number"
+                    min={MIN_GLOBE_TRAIL_MIN}
+                    max={MAX_GLOBE_TRAIL_MIN}
+                    value={globeLookBehindMin}
+                    onChange={(event) =>
+                      setGlobeLookBehindMin(
+                        clampGlobeTrailMin(Number(event.target.value), globeLookBehindMin),
+                      )
+                    }
+                  />
+                  <TextInput
+                    label="Look ahead (min)"
+                    type="number"
+                    min={MIN_GLOBE_TRAIL_MIN}
+                    max={MAX_GLOBE_TRAIL_MIN}
+                    value={globeLookAheadMin}
+                    onChange={(event) =>
+                      setGlobeLookAheadMin(
+                        clampGlobeTrailMin(Number(event.target.value), globeLookAheadMin),
+                      )
+                    }
+                  />
+                </div>
+              </div>
             </Panel>
           ) : null}
         </div>

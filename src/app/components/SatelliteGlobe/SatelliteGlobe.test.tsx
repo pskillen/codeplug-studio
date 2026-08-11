@@ -77,6 +77,41 @@ describe('SatelliteGlobe', () => {
     expect(points.map((p) => p.id)).toEqual(expect.arrayContaining(['iss', 'so-50']));
   });
 
+  it('passes lookBehindMin and lookAheadMin through to trail path computation', () => {
+    mockUseLiveSatellitePositions.mockReturnValue(new Map());
+
+    renderGlobe({ lookBehindMin: 20, lookAheadMin: 45 });
+
+    const paths = lastGlobeProps?.pathsData as {
+      kind: string;
+      points: [number, number, number][];
+    }[];
+    const past = paths.find((p) => p.kind === 'trail-past');
+    const future = paths.find((p) => p.kind === 'trail-future');
+    expect(past?.points.length).toBeGreaterThan(1);
+    expect(future?.points.length).toBeGreaterThan(past!.points.length);
+  });
+
+  it('uses gradient path colours and short dashes for past trails', () => {
+    mockUseLiveSatellitePositions.mockReturnValue(new Map());
+
+    renderGlobe();
+
+    const pathColor = lastGlobeProps?.pathColor as (path: object) => string | string[];
+    const pathDashLength = lastGlobeProps?.pathDashLength as (path: object) => number;
+    const pathDashGap = lastGlobeProps?.pathDashGap as (path: object) => number;
+    const paths = lastGlobeProps?.pathsData as { kind: string; color: string }[];
+    const past = paths.find((p) => p.kind === 'trail-past')!;
+    const future = paths.find((p) => p.kind === 'trail-future')!;
+
+    expect(pathColor(past)).toEqual(['#888888', past.color]);
+    expect(pathColor(future)).toEqual([future.color, '#888888']);
+    expect(pathDashLength(past)).toBe(0.02);
+    expect(pathDashGap(past)).toBe(0.02);
+    expect(pathDashLength(future)).toBe(1);
+    expect(pathDashGap(future)).toBe(0);
+  });
+
   it('omits satellite points until a live position resolves, but still includes orbit trails', () => {
     mockUseLiveSatellitePositions.mockReturnValue(new Map());
 

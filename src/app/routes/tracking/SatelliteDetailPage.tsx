@@ -7,7 +7,7 @@ import { fetchSatnogsTransmittersForNoradId } from '@integrations/satellites/sat
 import LibraryInventoryHeader from '../../components/library/LibraryInventoryHeader.tsx';
 import NextPassCard from '../../components/NextPassCard/NextPassCard.tsx';
 import SatelliteLiveMap from '../../components/SatelliteLiveMap/SatelliteLiveMap.tsx';
-import { Button, DesignSystemV2Provider } from '../../components/v2/index.ts';
+import { Button, DesignSystemV2Provider, TextInput } from '../../components/v2/index.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { persistence } from '../../state/persistence.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
@@ -19,6 +19,7 @@ import SatellitePassList from './SatellitePassList.tsx';
 import { useDopplerShiftedFrequencies } from './useDopplerShiftedFrequencies.ts';
 import { useNowTick } from './useNowTick.ts';
 import { usePassesForSatellite } from './usePassesForSatellite.ts';
+import { DEFAULT_ORBIT_TRAIL_MULTIPLE } from '../../components/SatelliteLiveMap/orbitTrail.ts';
 import classes from './SatelliteDetailPage.module.css';
 
 const SatelliteGlobe = lazy(() => import('../../components/SatelliteGlobe/SatelliteGlobe.tsx'));
@@ -27,6 +28,24 @@ const UPCOMING_PASSES_ANCHOR_ID = 'upcoming-passes';
 
 const FUTURE_WINDOW_HOURS = 72;
 const PAST_WINDOW_HOURS = 72;
+const DETAIL_GLOBE_LOOK_BEHIND_MIN = 30;
+const DETAIL_GLOBE_LOOK_AHEAD_MIN = 60;
+const MIN_GLOBE_TRAIL_MIN = 0;
+const MAX_GLOBE_TRAIL_MIN = 180;
+const MIN_ORBIT_TRAIL_MULTIPLE = 0.25;
+const MAX_ORBIT_TRAIL_MULTIPLE = 3;
+const ORBIT_TRAIL_STEP = 0.25;
+
+function clampGlobeTrailMin(value: number, fallback: number): number {
+  if (Number.isNaN(value)) return fallback;
+  return Math.min(MAX_GLOBE_TRAIL_MIN, Math.max(MIN_GLOBE_TRAIL_MIN, value));
+}
+
+function clampOrbitTrailMultiple(value: number): number {
+  if (Number.isNaN(value)) return DEFAULT_ORBIT_TRAIL_MULTIPLE;
+  const clamped = Math.min(MAX_ORBIT_TRAIL_MULTIPLE, Math.max(MIN_ORBIT_TRAIL_MULTIPLE, value));
+  return Math.round(clamped / ORBIT_TRAIL_STEP) * ORBIT_TRAIL_STEP;
+}
 
 export default function SatelliteDetailPage() {
   const { satelliteId } = useParams();
@@ -34,6 +53,9 @@ export default function SatelliteDetailPage() {
   const { library, loading, reload } = useLibrary();
   const [refreshingSatnogs, setRefreshingSatnogs] = useState(false);
   const [satnogsError, setSatnogsError] = useState<string | null>(null);
+  const [globeLookBehindMin, setGlobeLookBehindMin] = useState(DETAIL_GLOBE_LOOK_BEHIND_MIN);
+  const [globeLookAheadMin, setGlobeLookAheadMin] = useState(DETAIL_GLOBE_LOOK_AHEAD_MIN);
+  const [orbitTrailMultiple, setOrbitTrailMultiple] = useState(DEFAULT_ORBIT_TRAIL_MULTIPLE);
   const satellite = satelliteId
     ? (library.satellites.find((s) => s.id === satelliteId) ?? null)
     : null;
@@ -169,31 +191,77 @@ export default function SatelliteDetailPage() {
         <SatelliteDetailPanel satellite={satellite} />
 
         <div className={classes.mapAndGlobe}>
-          <SatelliteLiveMap
-            satelliteName={satellite.name}
-            tleLine1={satellite.tleLine1}
-            tleLine2={satellite.tleLine2}
-            meanMotionRevPerDay={satellite.meanMotionRevPerDay}
-          />
-          <div className={classes.globeContainer}>
-            <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
-              <SatelliteGlobe
-                observer={settings?.location ?? null}
-                satellites={[
-                  {
-                    id: satellite.id,
-                    name: satellite.name,
-                    noradId: satellite.noradId,
-                    tleLine1: satellite.tleLine1,
-                    tleLine2: satellite.tleLine2,
-                    meanMotionRevPerDay: satellite.meanMotionRevPerDay,
-                  },
-                ]}
-                interestedSatelliteIds={new Set([satellite.id])}
-                highlightedSatelliteIds={new Set()}
-                pollIntervalMs={2000}
+          <div className={classes.mapViewport}>
+            <SatelliteLiveMap
+              satelliteName={satellite.name}
+              tleLine1={satellite.tleLine1}
+              tleLine2={satellite.tleLine2}
+              meanMotionRevPerDay={satellite.meanMotionRevPerDay}
+              orbitTrailMultiple={orbitTrailMultiple}
+            />
+            <div className={classes.renderControls}>
+              <TextInput
+                label="Orbits ahead/behind"
+                type="number"
+                min={MIN_ORBIT_TRAIL_MULTIPLE}
+                max={MAX_ORBIT_TRAIL_MULTIPLE}
+                step={ORBIT_TRAIL_STEP}
+                value={orbitTrailMultiple}
+                onChange={(event) =>
+                  setOrbitTrailMultiple(clampOrbitTrailMultiple(Number(event.target.value)))
+                }
               />
-            </Suspense>
+            </div>
+          </div>
+          <div className={classes.mapViewport}>
+            <div className={classes.globeContainer}>
+              <Suspense fallback={<div className={classes.globeLoading}>Loading 3D globe…</div>}>
+                <SatelliteGlobe
+                  observer={settings?.location ?? null}
+                  satellites={[
+                    {
+                      id: satellite.id,
+                      name: satellite.name,
+                      noradId: satellite.noradId,
+                      tleLine1: satellite.tleLine1,
+                      tleLine2: satellite.tleLine2,
+                      meanMotionRevPerDay: satellite.meanMotionRevPerDay,
+                    },
+                  ]}
+                  interestedSatelliteIds={new Set([satellite.id])}
+                  highlightedSatelliteIds={new Set()}
+                  pollIntervalMs={2000}
+                  lookBehindMin={globeLookBehindMin}
+                  lookAheadMin={globeLookAheadMin}
+                />
+              </Suspense>
+            </div>
+            <div className={classes.renderControls}>
+              <TextInput
+                label="Look behind (min)"
+                type="number"
+                min={MIN_GLOBE_TRAIL_MIN}
+                max={MAX_GLOBE_TRAIL_MIN}
+                value={globeLookBehindMin}
+                onChange={(event) =>
+                  setGlobeLookBehindMin(
+                    clampGlobeTrailMin(Number(event.target.value), globeLookBehindMin),
+                  )
+                }
+              />
+              <TextInput
+                label="Look ahead (min)"
+                type="number"
+                min={MIN_GLOBE_TRAIL_MIN}
+                max={MAX_GLOBE_TRAIL_MIN}
+                value={globeLookAheadMin}
+                onChange={(event) =>
+                  setGlobeLookAheadMin(
+                    clampGlobeTrailMin(Number(event.target.value), globeLookAheadMin),
+                  )
+                }
+              />
+            </div>
           </div>
         </div>
 

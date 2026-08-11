@@ -1,18 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import {
+  computeGlobeTrailPaths,
   filterGlobeSatellitesByInterest,
   stabilizeGlobePointsAndFootprints,
   type GlobePoint,
   type GlobePointsAndFootprints,
 } from './buildGlobeData.ts';
 
+const ISS_LINE_1 = '1 25544U 98067A   24045.51782528  .00016717 00000-0   30589-3 0  9993';
+const ISS_LINE_2 = '2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.4956032 430001';
+const ANCHOR_MS = new Date('2024-02-14T18:00:00.000Z').getTime();
+
 const satelliteA = {
   id: 'a',
   name: 'A',
-  noradId: 1,
-  tleLine1: '1',
-  tleLine2: '2',
-  meanMotionRevPerDay: 15,
+  noradId: 25544,
+  tleLine1: ISS_LINE_1,
+  tleLine2: ISS_LINE_2,
+  meanMotionRevPerDay: 15.4956032,
 };
 
 const satelliteB = {
@@ -23,6 +28,23 @@ const satelliteB = {
   tleLine2: '4',
   meanMotionRevPerDay: 14,
 };
+
+describe('computeGlobeTrailPaths', () => {
+  it('returns past and future paths per satellite with opaque base colours', () => {
+    const paths = computeGlobeTrailPaths([satelliteA], ANCHOR_MS, {
+      lookBehindMin: 15,
+      lookAheadMin: 30,
+    });
+
+    expect(paths).toHaveLength(2);
+    const past = paths.find((p) => p.kind === 'trail-past');
+    const future = paths.find((p) => p.kind === 'trail-future');
+    expect(past?.points.length).toBeGreaterThan(1);
+    expect(future?.points.length).toBeGreaterThan(1);
+    expect(past?.color).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(future?.color).toBe(past?.color);
+  });
+});
 
 describe('filterGlobeSatellitesByInterest', () => {
   it('returns only interested satellites', () => {

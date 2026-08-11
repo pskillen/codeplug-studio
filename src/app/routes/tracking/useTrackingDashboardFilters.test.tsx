@@ -9,6 +9,10 @@ import type { ProjectMeta } from '@core/models/project.ts';
 import { ProjectContext, type ProjectContextValue } from '../../state/ProjectContext.ts';
 import { DEFAULT_WINDOW_HOURS } from './useTrackingPasses.ts';
 import { useTrackingDashboardFilters } from './useTrackingDashboardFilters.ts';
+import {
+  DEFAULT_GLOBE_LOOK_AHEAD_MIN,
+  DEFAULT_GLOBE_LOOK_BEHIND_MIN,
+} from '../../components/SatelliteGlobe/orbitTrail.ts';
 
 const TEST_PROJECT_ID = 'project-test-1';
 
@@ -80,6 +84,8 @@ describe('useTrackingDashboardFilters', () => {
     expect(result.current.windowHours).toBe(DEFAULT_WINDOW_HOURS);
     expect(result.current.drawBehindMin).toBe(0);
     expect(result.current.drawAheadMin).toBe(0);
+    expect(result.current.globeLookBehindMin).toBe(DEFAULT_GLOBE_LOOK_BEHIND_MIN);
+    expect(result.current.globeLookAheadMin).toBe(DEFAULT_GLOBE_LOOK_AHEAD_MIN);
     expect(result.current.minElevation).toBe('');
     expect(result.current.onlyWithFrequencies).toBe(true);
     expect(result.current.selectedSatelliteIds).toEqual(new Set());
@@ -90,6 +96,8 @@ describe('useTrackingDashboardFilters', () => {
       windowHours: 24,
       drawBehindMin: 5,
       drawAheadMin: 10,
+      globeLookBehindMin: 20,
+      globeLookAheadMin: 45,
       minElevation: '15',
       onlyWithFrequencies: false,
       selectedSatelliteIds: ['sat-1'],
@@ -102,6 +110,8 @@ describe('useTrackingDashboardFilters', () => {
     await waitFor(() => expect(result.current.windowHours).toBe(24));
     expect(result.current.drawBehindMin).toBe(5);
     expect(result.current.drawAheadMin).toBe(10);
+    expect(result.current.globeLookBehindMin).toBe(20);
+    expect(result.current.globeLookAheadMin).toBe(45);
     expect(result.current.minElevation).toBe('15');
     expect(result.current.onlyWithFrequencies).toBe(false);
     expect(result.current.selectedSatelliteIds).toEqual(new Set(['sat-1']));
@@ -114,6 +124,8 @@ describe('useTrackingDashboardFilters', () => {
 
     act(() => {
       result.current.setWindowHours(48);
+      result.current.setGlobeLookBehindMin(25);
+      result.current.setGlobeLookAheadMin(50);
       result.current.setMinElevation('20');
       result.current.setOnlyWithFrequencies(false);
       result.current.setSelectedSatelliteIds(new Set(['sat-2', 'sat-3']));
@@ -122,6 +134,8 @@ describe('useTrackingDashboardFilters', () => {
     expect(result.current.windowHours).toBe(48);
     expect(loadTrackingDashboardPrefs(TEST_PROJECT_ID)).toEqual({
       windowHours: 48,
+      globeLookBehindMin: 25,
+      globeLookAheadMin: 50,
       minElevation: '20',
       onlyWithFrequencies: false,
       selectedSatelliteIds: ['sat-2', 'sat-3'],

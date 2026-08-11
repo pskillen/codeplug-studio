@@ -32,7 +32,8 @@ describe('computeOrbitTrailSegments', () => {
   it('covers roughly 1.5 orbital periods on each side of the anchor', () => {
     // ISS period ~= 1440 / 15.4956032 ~= 92.9 minutes; 1.5 periods ~= 139.4 minutes.
     const periodMinutes = 1440 / ISS_MEAN_MOTION_REV_PER_DAY;
-    const expectedWindowMs = 1.5 * periodMinutes * 60_000;
+    const orbitTrailMultiple = 1.5;
+    const expectedWindowMs = orbitTrailMultiple * periodMinutes * 60_000;
 
     const stepSec = 120;
     const { futureSegments, pastSegments } = computeOrbitTrailSegments(
@@ -41,6 +42,7 @@ describe('computeOrbitTrailSegments', () => {
       ISS_MEAN_MOTION_REV_PER_DAY,
       ANCHOR_MS,
       stepSec,
+      orbitTrailMultiple,
     );
 
     const futureSampleCount = futureSegments.reduce((sum, segment) => sum + segment.length, 0);
@@ -51,6 +53,39 @@ describe('computeOrbitTrailSegments', () => {
     // count across all segments should match an unsplit sweep over the same window.
     expect(futureSampleCount).toBeCloseTo(expectedSampleCount, 0);
     expect(pastSampleCount).toBeCloseTo(expectedSampleCount, 0);
+  });
+
+  it('scales the window with orbitTrailMultiple', () => {
+    const periodMinutes = 1440 / ISS_MEAN_MOTION_REV_PER_DAY;
+    const stepSec = 120;
+    const shortMultiple = 0.5;
+    const longMultiple = 2;
+
+    const short = computeOrbitTrailSegments(
+      ISS_LINE_1,
+      ISS_LINE_2,
+      ISS_MEAN_MOTION_REV_PER_DAY,
+      ANCHOR_MS,
+      stepSec,
+      shortMultiple,
+    );
+    const long = computeOrbitTrailSegments(
+      ISS_LINE_1,
+      ISS_LINE_2,
+      ISS_MEAN_MOTION_REV_PER_DAY,
+      ANCHOR_MS,
+      stepSec,
+      longMultiple,
+    );
+
+    const shortFutureCount = short.futureSegments.reduce((sum, segment) => sum + segment.length, 0);
+    const longFutureCount = long.futureSegments.reduce((sum, segment) => sum + segment.length, 0);
+
+    expect(longFutureCount).toBeGreaterThan(shortFutureCount);
+    expect(shortFutureCount).toBeCloseTo(
+      Math.floor((shortMultiple * periodMinutes * 60_000) / (stepSec * 1000)) + 1,
+      0,
+    );
   });
 
   it('splits future and past ground tracks independently at the antimeridian', () => {
