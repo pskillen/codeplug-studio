@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
+import DesignSystemV2Provider from '../../v2/DesignSystemV2Provider.tsx';
 import WirePreviewBulkEditTable from './WirePreviewBulkEditTable.tsx';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 
@@ -36,7 +37,9 @@ describe('WirePreviewBulkEditTable', () => {
     return render(
       <MemoryRouter>
         <MantineProvider>
-          <WirePreviewBulkEditTable {...props} />
+          <DesignSystemV2Provider>
+            <WirePreviewBulkEditTable {...props} />
+          </DesignSystemV2Provider>
         </MantineProvider>
       </MemoryRouter>,
     );
@@ -50,7 +53,7 @@ describe('WirePreviewBulkEditTable', () => {
       onWireNameChange: vi.fn(),
     });
 
-    expect(screen.getByText('Skip from export', { selector: 'th' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Skip from export' })).toBeInTheDocument();
     expect(screen.getAllByText('GB3DA Demo').length).toBeGreaterThan(0);
     expect(screen.getByText('Excluded channel')).toBeInTheDocument();
     expect(screen.getByLabelText('Skip GB3DA Demo from export')).not.toBeChecked();
