@@ -49,7 +49,7 @@ that produces a "suggestion" that is really `shorten(override)` in disguise.
 ## Suggestions
 
 A row may offer **zero, one, or several** candidate strings from the pure
-generator (e.g. a single default; or "Familiar" + "OSCAR" alternates).
+generator (e.g. a single Suggestion; or "Familiar" + "OSCAR" alternates).
 Render each as a **clickable, link-styled** string near the input.
 
 **Clicking a suggestion only fills the draft input.** It must **not** commit
@@ -61,7 +61,7 @@ that is the anti-pattern to fix, not the pattern to copy.)
 
 ### List / read-only surfaces
 
-Show the **effective** name only. No "Default:" or suggestion subline, no
+Show the **effective** name only. No "Suggestion:" subline, no
 generated-name preview. If the operator wants to see or change the
 generated value, they open the edit surface. In some situations we show
 the library (original unshortened) and override in e.g. a table - this is
@@ -111,7 +111,7 @@ full catalogue with file/line evidence. Headlines:
 - Generator input includes this row's own override (or an already-folded
   `assembled` value), so the "suggestion" isn't pure.
 - Bulk-edit surface applies changes per row instead of one page-level Save.
-- List view renders a suggestion/Default subline under the effective name.
+- List view renders a Suggestion subline under the effective name.
 - Preview and the actual export/write path disagree on whether an override
   gets shortened/uniquified.
 - A serial/radio-io egress path ignores build export settings that the CPS
