@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { D890_MAP } from './constants.ts';
-import { cacheFromBag, mergeChannelsIntoAtD890uvHydration } from './hydration.ts';
+import {
+  cacheFromBag,
+  mergeChannelsIntoAtD890uvHydration,
+  assembleAtD890WriteImage,
+} from './hydration.ts';
 import { createRadioCloneHydrationBagFromBlocks } from '@core/models/radioCloneHydration.ts';
 import { AT_D890UV_MODEL_ID } from './hydration.ts';
 import { listSetBits } from './bitmap.ts';
@@ -86,6 +90,27 @@ describe('mergeChannelsIntoAtD890uvHydration', () => {
     });
     const tgSet = image.get(D890_MAP.TalkgroupSet, 0x4f0);
     expect(listSetBits(tgSet, true)).toEqual([0]);
+  });
+});
+
+describe('assembleAtD890WriteImage', () => {
+  it('encodes a lone channel without hydration blocks', () => {
+    const image = assembleAtD890WriteImage([
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'CH1',
+        rxHz: 145_500_000,
+        txHz: 145_500_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'FM',
+        mode: 'analog',
+      },
+    ]);
+    const set = image.get(D890_MAP.ChannelSet, 0x200);
+    expect(set[0]! & 1).toBe(1);
   });
 });
 

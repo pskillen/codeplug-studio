@@ -9,19 +9,10 @@ import {
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
-import {
-  extractAtD890uvHydrationFromProtocol,
-  mergeChannelsIntoAtD890uvHydration,
-} from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
-import type { AtD890DownloadCache } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
-import { createMemoryMap } from '@integrations/radio-io/kit/memoryMap.ts';
-import type {
-  CloneImageRadio,
-  MemoryMap,
-  RadioDescriptor,
-  RadioSession,
-} from '@integrations/radio-io/types.ts';
-import { RadioWriteBlockedError, writeBuildToRadio } from './radioIoSession.ts';
+import { assembleAtD890WriteImage } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
+import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
+import type { CloneImageRadio, MemoryMap, RadioSession } from '@integrations/radio-io/types.ts';
+import { prepareRadioWriteImage, writeBuildToRadio } from './radioIoSession.ts';
 import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
 import { assemble } from '@core/services/assemble.ts';
 
@@ -38,71 +29,32 @@ function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
   };
 }
 
-describe('AT-D890UV write via hydration merge', () => {
-  it('blocks write without hydration', async () => {
-    const radio: CloneImageRadio = {
-      connect: vi.fn(),
-      disconnect: vi.fn(),
-      download: vi.fn(),
-      upload: vi.fn(),
-      decodeChannels: () => [],
-      encodeChannels: (img) => img,
-      readFirmware: () => undefined,
-    };
-    const descriptor: RadioDescriptor = {
-      modelIds: ['AT-D890UV'],
-      label: 'D890',
-      supportsBle: false,
-      protocolFactory: () => radio,
-      capabilities: {
-        maxChannels: 4000,
-        supportsZones: true,
-        supportsScanLists: true,
-        analogOnly: false,
-      },
-      attributionIds: [],
-      compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-at-d890uv' }],
-      writeStrategy: 'selective-ranges',
-      hydrationRequiredForWrite: true,
-      baudRate: 921600,
-      hydration: {
-        extractHydration: () => {
-          throw new Error('unused');
-        },
-        mergeChannelsIntoHydration: mergeChannelsIntoAtD890uvHydration,
-      },
-    };
-    const session: RadioSession = {
-      descriptor,
-      pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
-      radio,
+describe('AT-D890UV write without persisted hydration', () => {
+  it('prepares write image without egress hydration bag', async () => {
+    const ch = {
+      ...newChannel('p1', 'TEST'),
+      id: 'ch-1',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
     };
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
-    await expect(writeBuildToRadio(session, build, egress, emptyLibrary())).rejects.toBeInstanceOf(
-      RadioWriteBlockedError,
+    const { image } = await prepareRadioWriteImage(
+      {
+        ...build,
+        channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
+      },
+      egress,
+      emptyLibrary([ch]),
     );
+    const channelSet = image.get(D890_MAP.ChannelSet, 0x200);
+    expect(channelSet[0]! & 1).toBe(1);
   });
 
-  it('seeds protocol and uploads merged sparse image', async () => {
-    const channelSet = new Uint8Array(0x200);
-    const cache: AtD890DownloadCache = {
-      blocks: new Map([
-        [D890_MAP.LocalInfo, new Uint8Array(0x100).fill(0xff)],
-        [D890_MAP.ChannelSet, channelSet],
-        [D890_MAP.ZoneSet, new Uint8Array(0x20)],
-        [D890_MAP.ZoneHide, new Uint8Array(0x20)],
-        [D890_MAP.ZoneAChannel, new Uint8Array(0x200)],
-        [D890_MAP.ZoneBChannel, new Uint8Array(0x200)],
-        [D890_MAP.ScanListSet, new Uint8Array(0x20)],
-        [D890_MAP.TalkgroupSet, new Uint8Array(0x4f0).fill(0xff)],
-        [D890_MAP.ReceiveGroupSet, new Uint8Array(0x20)],
-        [D890_MAP.RadioIdSet, new Uint8Array(0x20)],
-        [D890_MAP.MasterIdData, new Uint8Array(0x40)],
-      ]),
-    };
-    const image = createMemoryMap(0x1000);
-    const hydration = extractAtD890uvHydrationFromProtocol(image, cache);
-
+  it('writes without persisted hydration and sets upload bank intent only', async () => {
     const upload = vi.fn(async (_img: MemoryMap) => {
       void _img;
     });
@@ -116,25 +68,11 @@ describe('AT-D890UV write via hydration merge', () => {
       encodeChannels: (img) => img,
       readFirmware: () => undefined,
     };
-    const descriptor: RadioDescriptor = {
-      modelIds: ['AT-D890UV'],
-      label: 'D890',
-      supportsBle: false,
+    const descriptor = {
+      ...AT_D890UV_DESCRIPTOR,
       protocolFactory: () => radio,
-      capabilities: {
-        maxChannels: 4000,
-        supportsZones: true,
-        supportsScanLists: true,
-        analogOnly: false,
-      },
-      attributionIds: ['anytone-cps'],
-      compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-at-d890uv' }],
-      writeStrategy: 'selective-ranges',
-      hydrationRequiredForWrite: true,
-      baudRate: 921600,
       hydration: {
-        extractHydration: () => hydration,
-        mergeChannelsIntoHydration: mergeChannelsIntoAtD890uvHydration,
+        ...AT_D890UV_DESCRIPTOR.hydration,
         seedProtocolForUpload,
       },
     };
@@ -160,11 +98,33 @@ describe('AT-D890UV write via hydration merge', () => {
         ...build,
         channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
       },
-      { ...egress, hydration },
+      egress,
       emptyLibrary([ch]),
     );
     expect(upload).toHaveBeenCalledTimes(1);
     expect(seedProtocolForUpload).toHaveBeenCalledTimes(1);
+    const seedArgs = seedProtocolForUpload.mock.calls[0]!;
+    expect(seedArgs[1]).toBeFalsy();
+  });
+});
+
+describe('assembleAtD890WriteImage', () => {
+  it('encodes channels without a hydration base image', () => {
+    const image = assembleAtD890WriteImage([
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'CH1',
+        rxHz: 145_500_000,
+        txHz: 145_500_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'FM',
+        mode: 'analog',
+      },
+    ]);
+    expect(image.get(D890_MAP.ChannelSet, 0x200)[0]! & 1).toBe(1);
   });
 });
 

@@ -383,26 +383,44 @@ describe('AtD890uvProtocol', () => {
     expect(collectAtD890WriteDataAddresses(pipe)).toHaveLength(0);
   });
 
-  it('refuses upload when LocalInfo serial does not match hydration stash', async () => {
+  it('refuses upload when LocalInfo serial reads erased', async () => {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890ConnectWithNegotiation(pipe);
     const radio = new AtD890uvProtocol();
     await radio.connect(pipe);
-    scriptAtD890UploadReadResponder(pipe, channelUploadMemory('LIVE-RADIO-XYZ'));
+    const erasedLocal = new Uint8Array(D890_MAP.LocalInfoLength).fill(0xff);
+    const memory = channelUploadMemory();
+    memory.set(D890_MAP.LocalInfo, erasedLocal);
+    scriptAtD890UploadReadResponder(pipe, memory);
 
-    const image = seedChannelZeroUpload(radio, 'STASH-RADIO-ABC');
+    const image = seedChannelZeroUpload(radio);
 
-    await expect(radio.upload(image, {})).rejects.toThrow(/serial/);
+    await expect(radio.upload(image, {})).rejects.toThrow(/LocalInfo reads erased/);
     expect(collectAtD890WriteDataAddresses(pipe)).toHaveLength(0);
   });
 
-  it('rejects upload without seeded blocks', async () => {
+  it('uploads from assembled write image without prior Read hydration cache', async () => {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890ConnectWithNegotiation(pipe);
     const radio = new AtD890uvProtocol();
     await radio.connect(pipe);
+    scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
+
+    const channelSet = new Uint8Array(0x200);
+    setBitmapBit(channelSet, 0, true);
+    const primary = new Uint8Array(0x40);
+    primary.set(encodeBcdFrequencyHz(145_520_000), 0);
+    const secondary = new Uint8Array(0x40);
     const image = createMemoryMap(AT_D890_MAP_SIZE);
-    await expect(radio.upload(image, {})).rejects.toThrow(/no sparse blocks/);
+    image.set(D890_MAP.ChannelSet, channelSet);
+    image.set(channelPrimaryAddress(0), primary);
+    image.set(channelSecondaryAddress(0), secondary);
+
+    enableAtD890AutoWriteAck(pipe);
+    await radio.upload(image, {});
+
+    expect(collectAtD890WriteDataAddresses(pipe).length).toBeGreaterThan(0);
+    expect(radio.getDownloadCache()?.blocks.has(D890_MAP.LocalInfo)).toBe(false);
   });
 
   it('exposes pre-Write sentinel snapshot after upload', async () => {
