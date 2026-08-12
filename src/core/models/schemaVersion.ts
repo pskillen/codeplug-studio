@@ -1,1 +1,1 @@
-export const STUDIO_SCHEMA_VERSION = 27;
+export const STUDIO_SCHEMA_VERSION = 28;

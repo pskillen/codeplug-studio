@@ -31,6 +31,13 @@ import type {
   SatellitePut,
 } from './types.ts';
 import { DEFAULT_DB_NAME, DIRECTORY_STORES, STORES, STORE_NAMES } from './stores.ts';
+import {
+  directoryPrefixUpperBound,
+  directoryProjectNameRangeUpper,
+  matchesDirectoryFilters,
+  type DigitalIdDirectoryPageQuery,
+  type DigitalIdDirectoryPageResult,
+} from './digitalIdDirectoryQuery.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
 import { readRadioBuildRow } from './radioBuildRow.ts';
@@ -52,6 +59,150 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+}
+
+function ensureDigitalIdDirectoryIndexes(os: IDBObjectStore): void {
+  if (!os.indexNames.contains('byProject')) {
+    os.createIndex('byProject', 'projectId', { unique: false });
+  }
+  if (!os.indexNames.contains('byProjectCallsign')) {
+    os.createIndex('byProjectCallsign', ['projectId', 'callsign'], { unique: false });
+  }
+  if (!os.indexNames.contains('byProjectName')) {
+    os.createIndex('byProjectName', ['projectId', 'name'], { unique: false });
+  }
+  if (!os.indexNames.contains('byProjectCountry')) {
+    os.createIndex('byProjectCountry', ['projectId', 'country'], { unique: false });
+  }
+}
+
+type DirectoryScanSource = {
+  readonly source: IDBObjectStore | IDBIndex;
+  readonly range: IDBKeyRange | undefined;
+  readonly needsClientFilter: boolean;
+};
+
+function planDirectoryScan(
+  os: IDBObjectStore,
+  query: DigitalIdDirectoryPageQuery,
+): DirectoryScanSource {
+  const { projectId, callsignPrefix, namePrefix, countryEquals, orderBy = 'name' } = query;
+  const activeFilters =
+    (callsignPrefix !== undefined ? 1 : 0) +
+    (namePrefix !== undefined ? 1 : 0) +
+    (countryEquals !== undefined ? 1 : 0);
+  const needsClientFilter = activeFilters > 1;
+
+  if (callsignPrefix !== undefined) {
+    return {
+      source: os.index('byProjectCallsign'),
+      range: IDBKeyRange.bound(
+        [projectId, callsignPrefix],
+        [projectId, directoryPrefixUpperBound(callsignPrefix)],
+      ),
+      needsClientFilter,
+    };
+  }
+  if (namePrefix !== undefined) {
+    return {
+      source: os.index('byProjectName'),
+      range: IDBKeyRange.bound(
+        [projectId, namePrefix],
+        [projectId, directoryPrefixUpperBound(namePrefix)],
+      ),
+      needsClientFilter,
+    };
+  }
+  if (countryEquals !== undefined) {
+    return {
+      source: os.index('byProjectCountry'),
+      range: IDBKeyRange.only([projectId, countryEquals]),
+      needsClientFilter,
+    };
+  }
+
+  if (orderBy === 'digitalId') {
+    return {
+      source: os,
+      range: IDBKeyRange.bound([projectId, 0], [projectId, Number.MAX_SAFE_INTEGER]),
+      needsClientFilter: false,
+    };
+  }
+  if (orderBy === 'callsign') {
+    return {
+      source: os.index('byProjectCallsign'),
+      range: IDBKeyRange.bound([projectId, ''], directoryProjectNameRangeUpper(projectId)),
+      needsClientFilter: false,
+    };
+  }
+  return {
+    source: os.index('byProjectName'),
+    range: IDBKeyRange.bound([projectId, ''], directoryProjectNameRangeUpper(projectId)),
+    needsClientFilter: false,
+  };
+}
+
+async function idbCountMatchingDirectoryRows(
+  scan: DirectoryScanSource,
+  query: DigitalIdDirectoryPageQuery,
+): Promise<number> {
+  if (!scan.needsClientFilter && scan.range === undefined) {
+    return promisifyRequest(scan.source.count());
+  }
+  if (!scan.needsClientFilter && scan.range !== undefined) {
+    return promisifyRequest(scan.source.count(scan.range));
+  }
+
+  let total = 0;
+  await new Promise<void>((resolve, reject) => {
+    const req = scan.source.openCursor(scan.range);
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) {
+        resolve();
+        return;
+      }
+      const row = cursor.value as DigitalIdDirectoryEntry;
+      if (matchesDirectoryFilters(row, query)) total += 1;
+      cursor.continue();
+    };
+    req.onerror = () => reject(req.error);
+  });
+  return total;
+}
+
+async function idbCollectDirectoryPage(
+  scan: DirectoryScanSource,
+  query: DigitalIdDirectoryPageQuery,
+): Promise<DigitalIdDirectoryEntry[]> {
+  const rows: DigitalIdDirectoryEntry[] = [];
+  let matchedIndex = 0;
+
+  await new Promise<void>((resolve, reject) => {
+    const req = scan.source.openCursor(scan.range);
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) {
+        resolve();
+        return;
+      }
+      const row = cursor.value as DigitalIdDirectoryEntry;
+      if (matchesDirectoryFilters(row, query)) {
+        if (matchedIndex >= query.offset && rows.length < query.limit) {
+          rows.push(row);
+        }
+        matchedIndex += 1;
+      }
+      if (rows.length >= query.limit) {
+        resolve();
+        return;
+      }
+      cursor.continue();
+    };
+    req.onerror = () => reject(req.error);
+  });
+
+  return rows;
 }
 
 /**
@@ -125,7 +276,10 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
         const directoryStore = DIRECTORY_STORES.digitalIdDirectory;
         if (!db.objectStoreNames.contains(directoryStore)) {
           const os = db.createObjectStore(directoryStore, { keyPath: ['projectId', 'digitalId'] });
-          os.createIndex('byProject', 'projectId', { unique: false });
+          ensureDigitalIdDirectoryIndexes(os);
+        } else {
+          const os = request.transaction!.objectStore(directoryStore);
+          ensureDigitalIdDirectoryIndexes(os);
         }
       };
       request.onsuccess = () => resolve(request.result);
@@ -289,12 +443,53 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
 
   async listDigitalIdDirectoryEntries(projectId: string): Promise<DigitalIdDirectoryEntry[]> {
+    const page = await this.queryDigitalIdDirectoryPage({
+      projectId,
+      offset: 0,
+      limit: Number.MAX_SAFE_INTEGER,
+      orderBy: 'name',
+    });
+    return page.rows;
+  }
+
+  async queryDigitalIdDirectoryPage(
+    args: DigitalIdDirectoryPageQuery,
+  ): Promise<DigitalIdDirectoryPageResult> {
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction(storeName, 'readonly');
+    const os = tx.objectStore(storeName);
+    const scan = planDirectoryScan(os, args);
+    const [rows, total] = await Promise.all([
+      idbCollectDirectoryPage(scan, args),
+      idbCountMatchingDirectoryRows(scan, args),
+    ]);
+    return { rows, total };
+  }
+
+  async iterateDigitalIdDirectory(
+    projectId: string,
+    onRow: (row: DigitalIdDirectoryEntry) => void | Promise<void>,
+  ): Promise<void> {
     const db = await this.db();
     const storeName = DIRECTORY_STORES.digitalIdDirectory;
     const tx = db.transaction(storeName, 'readonly');
     const index = tx.objectStore(storeName).index('byProject');
-    const rows = await promisifyRequest<DigitalIdDirectoryEntry[]>(index.getAll(projectId));
-    return rows.sort((a, b) => a.name.localeCompare(b.name));
+
+    await new Promise<void>((resolve, reject) => {
+      const req = index.openCursor(IDBKeyRange.only(projectId));
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (!cursor) {
+          resolve();
+          return;
+        }
+        Promise.resolve(onRow(cursor.value as DigitalIdDirectoryEntry))
+          .then(() => cursor.continue())
+          .catch(reject);
+      };
+      req.onerror = () => reject(req.error);
+    });
   }
 
   async getDigitalIdDirectoryEntry(
