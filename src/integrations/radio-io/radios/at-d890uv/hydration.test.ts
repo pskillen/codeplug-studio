@@ -111,6 +111,8 @@ describe('assembleAtD890WriteImage', () => {
     ]);
     const set = image.get(D890_MAP.ChannelSet, 0x200);
     expect(set[0]! & 1).toBe(1);
+    const radioIdSet = image.get(D890_MAP.RadioIdSet, 0x20);
+    expect(radioIdSet.every((b) => b === 0)).toBe(true);
   });
 
   it('clears ZoneHide bits for occupied zones on a 0xff assemble base', () => {

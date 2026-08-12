@@ -105,8 +105,8 @@ function encodeAtD890ProjectionOntoImage(
   if (organisation?.rxGroups) {
     next = encodeRxGroupsIntoAtD890Image(next, organisation.rxGroups);
   }
+  next = encodeRadioIdsIntoAtD890Image(next, organisation?.radioIds ?? []);
   if (organisation?.radioIds) {
-    next = encodeRadioIdsIntoAtD890Image(next, organisation.radioIds);
     next = encodeMasterIdIntoAtD890Image(next, organisation.radioIds);
   }
   next = encodeChannelsIntoAtD890Image(next, channels);

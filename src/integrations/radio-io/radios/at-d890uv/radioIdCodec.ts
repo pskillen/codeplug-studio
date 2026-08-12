@@ -25,15 +25,27 @@ export function encodeAtD890RadioIdRecord(rid: RadioRadioIdDto): Uint8Array {
   return data;
 }
 
+function isAllFf(data: Uint8Array): boolean {
+  return data.every((b) => b === 0xff);
+}
+
 export function encodeRadioIdsIntoAtD890Image(
   image: MemoryMap,
   radioIds: readonly RadioRadioIdDto[],
 ): MemoryMap {
-  // Empty projection must not wipe a hydrated RadioId bank (channels often omit dmrId).
-  if (!radioIds.some((rid) => rid.dmrId > 0)) {
+  const set = image.get(D890_MAP.RadioIdSet, AT_D890_LIMITS.RADIO_ID_SET_BYTES).slice();
+  const hasIds = radioIds.some((rid) => rid.dmrId > 0);
+  if (!hasIds) {
+    // Empty projection must not wipe a hydrated RadioId bank (channels often omit dmrId).
+    // Assemble-from-0xff is not hydration — leaving all-set occupancy makes every ID slot
+    // look occupied after RMW erase of 0x3480000 (#1129).
+    if (!isAllFf(set)) {
+      return image;
+    }
+    clearBitmap(set);
+    image.set(D890_MAP.RadioIdSet, set);
     return image;
   }
-  const set = image.get(D890_MAP.RadioIdSet, AT_D890_LIMITS.RADIO_ID_SET_BYTES).slice();
   clearBitmap(set);
   const max = set.length * 8;
   for (let i = 0; i < max; i++) {
