@@ -22,6 +22,12 @@
  * unsupported is the safer and more accurate choice.
  */
 
+import { frequencyInRange } from '@core/domain/channelEligibility.ts';
+import {
+  getRadioRfCapabilities,
+  type RadioFrequencyRange,
+} from '@core/radio-targets/rfCapabilities.ts';
+
 /**
  * FM-family mode spellings confirmed (by direct operator hardware testing, #1086) to work for
  * D890 satellite tracking. `SatelliteTransmitter.mode` is free text sourced from SatNOGS or
@@ -56,4 +62,43 @@ export function isModeSupportedByAtD890(mode: string | null | undefined): boolea
   if (!mode) return true;
   const normalized = normalizeMode(mode);
   return AT_D890_SUPPORTED_SATELLITE_MODES.includes(normalized);
+}
+
+/**
+ * Which rows of the D890's "Frequency ranges (Studio eligibility)" table
+ * (`docs/reference/radios/anytone/at-d890uv/capabilities.md`, #612;
+ * `src/core/radio-targets/rfCapabilities.ts`'s `AT_D890UV.frequencyRanges`) are relevant to
+ * satellite uplink/downlink gating (#1085 follow-up).
+ *
+ * That table has four rows: 136-174 MHz (FM/DMR, TX), 400-480 MHz (FM/DMR, TX), 108-136 MHz
+ * (AM, TX), and 87.5-108 MHz (FM, receive-only broadcast band). Satellites don't operate in
+ * the AM airband or FM broadcast ranges, and satellite tracking here is FM-only per
+ * `isModeSupportedByAtD890`'s own hardware-confirmed allowlist — so only the two amateur
+ * ham-band rows that carry `fm` and allow TX (136-174 MHz / two-meter, and 400-480 MHz /
+ * 70cm) are plausible satellite uplink/downlink ranges. The AM and broadcast-FM rows are
+ * deliberately excluded, not merely forgotten.
+ */
+function isSatelliteRelevantBand(band: RadioFrequencyRange): boolean {
+  return band.txAllowed !== false && band.modes.includes('fm');
+}
+
+/**
+ * Whether `hz` (an uplink or downlink frequency) falls inside one of the D890's ham-band TX
+ * ranges plausible for satellite work. `null`/unset frequencies return `true` — same "don't
+ * guess, don't disqualify on missing data" principle as `isModeSupportedByAtD890`'s null
+ * handling: Studio has no positive evidence against an unset frequency, so it does not reject
+ * on that basis alone.
+ *
+ * Hz -> MHz conversion mirrors `channelEligibility.ts`'s own `rxFrequencyMhz` (bare
+ * `hz / 1_000_000` division, no rounding) to stay consistent with the existing channel
+ * frequency-eligibility check this reuses `frequencyInRange` from.
+ */
+export function isFrequencyInD890SatelliteRange(hz: number | null | undefined): boolean {
+  if (hz == null) return true;
+  const mhz = hz / 1_000_000;
+  const caps = getRadioRfCapabilities('anytone-at-d890uv');
+  if (!caps) return true;
+  return caps.frequencyRanges
+    .filter(isSatelliteRelevantBand)
+    .some((band) => frequencyInRange(mhz, band));
 }

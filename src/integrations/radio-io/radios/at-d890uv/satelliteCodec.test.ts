@@ -230,6 +230,37 @@ describe('packSatelliteWriteRecords', () => {
     expect(packSatelliteWriteRecords(satellites, BASE, STRIDE)).toHaveLength(0);
   });
 
+  it('excludes a transmitter with an out-of-ham-band L-band uplink, even with a supported FM mode (#1085 follow-up)', () => {
+    // 1269 MHz is a genuinely realistic satellite uplink (L-band, common on real linear
+    // transponders) — well outside the D890's 136-174/400-480 MHz ham-band TX ranges.
+    const satellites = [
+      makeSatellite({
+        transmitters: [makeTransmitter({ mode: 'FM', uplinkHz: 1_269_000_000 })],
+      }),
+    ];
+    expect(packSatelliteWriteRecords(satellites, BASE, STRIDE)).toHaveLength(0);
+  });
+
+  it('does not exclude a transmitter with both uplink and downlink unset (frequency grounds alone)', () => {
+    const satellites = [
+      makeSatellite({
+        transmitters: [makeTransmitter({ mode: 'FM', uplinkHz: null, downlinkHz: null })],
+      }),
+    ];
+    expect(packSatelliteWriteRecords(satellites, BASE, STRIDE)).toHaveLength(1);
+  });
+
+  it('keeps a transmitter with in-range uplink/downlink and FM mode', () => {
+    const satellites = [
+      makeSatellite({
+        transmitters: [
+          makeTransmitter({ mode: 'FM', uplinkHz: 145_850_000, downlinkHz: 436_795_000 }),
+        ],
+      }),
+    ];
+    expect(packSatelliteWriteRecords(satellites, BASE, STRIDE)).toHaveLength(1);
+  });
+
   it('still writes an includeInWrite:false transmitter for the generic reason, not capability', () => {
     // An opted-out transmitter is skipped whether or not its mode would also be unsupported —
     // confirms the generic and capability checks are independent, not conflated.
@@ -332,5 +363,40 @@ describe('listCapabilitySkippedTransmitters', () => {
   it('does not report a supported-mode transmitter', () => {
     const satellites = [makeSatellite({ transmitters: [makeTransmitter({ mode: 'FM' })] })];
     expect(listCapabilitySkippedTransmitters(satellites)).toHaveLength(0);
+  });
+
+  it('reports an out-of-ham-band uplink with its own distinct reason, not the mode reason', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        transmitters: [makeTransmitter({ id: 'tx-a', mode: 'FM', uplinkHz: 1_269_000_000 })],
+      }),
+    ];
+    const skipped = listCapabilitySkippedTransmitters(satellites);
+    expect(skipped).toEqual([
+      {
+        satelliteId: 'sat-a',
+        transmitterId: 'tx-a',
+        reason: expect.stringContaining('Uplink'),
+      },
+    ]);
+    expect(skipped[0]!.reason).not.toContain('not supported by Anytone D890');
+  });
+
+  it('reports an out-of-ham-band downlink separately from an out-of-ham-band uplink', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        transmitters: [makeTransmitter({ id: 'tx-a', mode: 'FM', downlinkHz: 2_400_000_000 })],
+      }),
+    ];
+    const skipped = listCapabilitySkippedTransmitters(satellites);
+    expect(skipped).toEqual([
+      {
+        satelliteId: 'sat-a',
+        transmitterId: 'tx-a',
+        reason: expect.stringContaining('Downlink'),
+      },
+    ]);
   });
 });

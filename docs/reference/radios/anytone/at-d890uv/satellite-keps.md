@@ -214,6 +214,14 @@ this cap counts write **records** — one per eligible `(satellite, transmitter)
 `packSatelliteWriteRecords` — not distinct satellites; a satellite with two enabled transmitters consumes two
 slots against this limit.
 
+**"Eligible" also includes a frequency-range gate (#1085 follow-up), not only mode.** In addition to the
+FM-family mode allowlist, `packSatelliteWriteRecords`/`listEligiblePairs` (`satelliteCodec.ts`) now also require
+a transmitter's uplink and downlink (when set) to fall inside the D890's own ham-band TX ranges — see
+[capabilities.md — Satellite transmitter frequency-range support](capabilities.md#satellite-transmitter-frequency-range-support-studio-write-eligibility)
+for the exact ranges and reasoning. This affects the satellite-record count above the same way the mode filter
+does: a generically write-eligible transmitter with an out-of-range frequency (e.g. an L-band uplink) consumes
+no slot at all, rather than being written and later rejected by the radio.
+
 ## qdmr cross-check — record layout matches closely; base address cannot be directly compared
 
 qdmr's `AnytoneSatelliteConfig::SatelliteElement` (`lib/anytone_satelliteconfig.hh`) independently declares a

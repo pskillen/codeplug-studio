@@ -63,6 +63,24 @@ path targets analogue FM transponders/repeaters, and `SatelliteTransmitter.mode`
 the transponder's downlink demodulation mode, not the D890's DMR channel capability described
 elsewhere in this document.
 
+### Satellite transmitter frequency-range support (Studio write eligibility)
+
+In addition to the mode allowlist above, a satellite transmitter's uplink and downlink
+frequencies (when set) are checked against the D890's own **ham-band TX** rows from the
+"Frequency ranges (Studio eligibility)" table above — 136–174 MHz and 400–480 MHz. The AM
+airband (108–136 MHz) and receive-only FM broadcast (87.5–108 MHz) rows from that same table
+are deliberately excluded here: satellites don't operate in either, and satellite tracking on
+this radio is FM-only per the mode table above.
+
+Either frequency being unset does not disqualify the transmitter on its own — same "no positive
+evidence, don't guess" principle as the mode check's null handling. A transmitter needs **both**
+its uplink and downlink (whichever are set) inside those two ranges to remain write-eligible;
+an out-of-range value (e.g. an L-band uplink around 1269 MHz, common on real linear
+transponders) excludes it, with a distinct skip reason from the mode check
+(`isFrequencyInD890SatelliteRange`, `src/core/radios/anytone/at-d890uv/satelliteCapability.ts`).
+See [satellite-keps.md](satellite-keps.md) for where this filter sits in the overall write
+pipeline.
+
 ## Related
 
 - [limits.md](limits.md) · [power.md](power.md)

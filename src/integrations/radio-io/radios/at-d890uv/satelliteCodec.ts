@@ -10,7 +10,10 @@
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import { isTransmitterWriteEligible } from '@core/domain/satellite/transmitterWriteEligibility.ts';
-import { isModeSupportedByAtD890 } from '@core/radios/anytone/at-d890uv/satelliteCapability.ts';
+import {
+  isFrequencyInD890SatelliteRange,
+  isModeSupportedByAtD890,
+} from '@core/radios/anytone/at-d890uv/satelliteCapability.ts';
 import { ctcssIndexFromHz } from './ctcssToneTable.ts';
 
 /** Wire record size — zero-initialized before fields are written (satellite-keps.md). */
@@ -46,11 +49,27 @@ export interface CapabilitySkippedTransmitter {
   reason: string;
 }
 
+/**
+ * A transmitter's uplink AND downlink (when set) must both fall inside the D890's ham-band
+ * TX ranges — see `isFrequencyInD890SatelliteRange`'s doc comment for which rows apply and
+ * why. Either frequency being unset does not disqualify on its own.
+ */
+function isFrequencyEligibleForAtD890(transmitter: SatelliteTransmitter): boolean {
+  return (
+    isFrequencyInD890SatelliteRange(transmitter.uplinkHz) &&
+    isFrequencyInD890SatelliteRange(transmitter.downlinkHz)
+  );
+}
+
 function listEligiblePairs(satellites: readonly Satellite[]): EligiblePair[] {
   const pairs: EligiblePair[] = [];
   for (const satellite of satellites) {
     for (const transmitter of satellite.transmitters) {
-      if (isWriteEligible(satellite, transmitter) && isModeSupportedByAtD890(transmitter.mode)) {
+      if (
+        isWriteEligible(satellite, transmitter) &&
+        isModeSupportedByAtD890(transmitter.mode) &&
+        isFrequencyEligibleForAtD890(transmitter)
+      ) {
         pairs.push({ satellite, transmitter });
       }
     }
@@ -58,11 +77,19 @@ function listEligiblePairs(satellites: readonly Satellite[]): EligiblePair[] {
   return pairs;
 }
 
+/** MHz, matching `isFrequencyInD890SatelliteRange`'s bare `hz / 1_000_000` conversion. */
+function formatMhz(hz: number): string {
+  return `${(hz / 1_000_000).toFixed(4).replace(/0+$/, '').replace(/\.$/, '')} MHz`;
+}
+
 /**
  * Generically write-eligible `(satellite, transmitter)` pairs that `packSatelliteWriteRecords`
- * drops for a D890-specific reason: the transmitter's `mode` is on the D890 mode denylist
- * (`isModeSupportedByAtD890`, #1068) — distinct from `WriteSatellitesToRadioResult.skipped`
- * (satellite-level, "no eligible transmitters at all", #856).
+ * drops for a D890-specific reason: either the transmitter's `mode` is not on the D890 mode
+ * allowlist (`isModeSupportedByAtD890`, #1068/#1086), or its uplink/downlink frequency falls
+ * outside the D890's ham-band TX ranges (`isFrequencyInD890SatelliteRange`, #1085 follow-up) —
+ * each reported with its own distinct reason string, not conflated. Distinct from
+ * `WriteSatellitesToRadioResult.skipped` (satellite-level, "no eligible transmitters at all",
+ * #856).
  */
 export function listCapabilitySkippedTransmitters(
   satellites: readonly Satellite[],
@@ -70,13 +97,37 @@ export function listCapabilitySkippedTransmitters(
   const skipped: CapabilitySkippedTransmitter[] = [];
   for (const satellite of satellites) {
     for (const transmitter of satellite.transmitters) {
-      if (isWriteEligible(satellite, transmitter) && !isModeSupportedByAtD890(transmitter.mode)) {
+      if (!isWriteEligible(satellite, transmitter)) continue;
+
+      if (!isModeSupportedByAtD890(transmitter.mode)) {
         skipped.push({
           satelliteId: satellite.id,
           transmitterId: transmitter.id,
           reason:
             `${transmitter.mode ?? 'unknown mode'} not supported by Anytone D890 ` +
             `(placeholder pending hardware confirmation).`,
+        });
+        continue;
+      }
+
+      if (!isFrequencyInD890SatelliteRange(transmitter.uplinkHz)) {
+        skipped.push({
+          satelliteId: satellite.id,
+          transmitterId: transmitter.id,
+          reason:
+            `Uplink ${formatMhz(transmitter.uplinkHz!)} outside Anytone D890 ham-band range ` +
+            `(136-174/400-480 MHz).`,
+        });
+        continue;
+      }
+
+      if (!isFrequencyInD890SatelliteRange(transmitter.downlinkHz)) {
+        skipped.push({
+          satelliteId: satellite.id,
+          transmitterId: transmitter.id,
+          reason:
+            `Downlink ${formatMhz(transmitter.downlinkHz!)} outside Anytone D890 ham-band range ` +
+            `(136-174/400-480 MHz).`,
         });
       }
     }
