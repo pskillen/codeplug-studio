@@ -102,7 +102,7 @@ The zone editor map uses **Draw this zone** / **Draw other zones** controls: the
 
 Digital and analog contacts remain separate models and editor slugs (`digital-contacts`, `analog-contacts`); the combined `/library/contacts` list page is a UX grouping only. Each section has its own `DataTable`, name filter (`dq` / `aq` URL params), and persisted column sort.
 
-Digital contacts support enriched metadata (callsign, city, state, country, remarks) in the editor ([#377](https://github.com/pskillen/codeplug-studio/issues/377)). Bulk RadioID.net import writes the **digital ID directory** shadow store ([#985](https://github.com/pskillen/codeplug-studio/issues/985)) at `/library/contacts/directory`; copy rows into library contacts when needed. **Digital ID directory** in the Contacts header links there.
+Digital contacts support enriched metadata (callsign, city, state, country, remarks) in the editor ([#377](https://github.com/pskillen/codeplug-studio/issues/377)). Bulk RadioID.net import writes the **digital ID directory** shadow store ([#985](https://github.com/pskillen/codeplug-studio/issues/985)) at `/library/contacts/directory`; copy rows into library contacts when needed, or project the shadow into CPS / Web Serial without copying — see [contact-directories](../contact-directories/README.md). **Digital ID directory** in the Contacts header links there.
 
 **Delete all** ([#427](https://github.com/pskillen/codeplug-studio/issues/427)) — digital section toolbar only (disabled at 0). Clears **library** contacts only. **Clear directory** on the directory page wipes the shadow partition without touching library rows.
 

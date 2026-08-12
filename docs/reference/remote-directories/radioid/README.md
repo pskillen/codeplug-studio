@@ -1,8 +1,6 @@
 # RadioID.net reference
 
-Authoritative reference for the **RadioID.net** DMR user API used by Codeplug Studio for private contact directory import.
-
-This is a **remote directory API**, not a CPS wire format. HTTP proxy, JSON parse, and normalisation live in [`src/integrations/radioid/`](../../../../src/integrations/radioid/). Feature behaviour: [contact directories](../../../features/contact-directories/README.md).
+Authoritative reference for the **RadioID.net** DMR user API used by Codeplug Studio. Search and bulk import land in the **digital ID directory shadow** (`digitalIdDirectory` IndexedDB partition) — not directly in library contacts. Operators copy rows into the library or project the shadow at CPS export / Web Serial Write. Feature behaviour: [contact directories](../../../features/contact-directories/README.md).
 
 ## Source
 
