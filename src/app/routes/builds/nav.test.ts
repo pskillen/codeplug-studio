@@ -121,10 +121,7 @@ describe('buildNavItems', () => {
   });
 
   it('includes Radio Info for OpenGD77 DM-1701 Web Serial builds', () => {
-    const { build, egressPaths } = newRadioBuildForProfile(
-      'proj',
-      'radio-io-opengd77-1701',
-    );
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-opengd77-1701');
     const csvActive = egressPaths.find((path) => path.formatId === 'opengd77') ?? egressPaths[0]!;
     const labels = buildNavItems(build, {
       egressPaths,
