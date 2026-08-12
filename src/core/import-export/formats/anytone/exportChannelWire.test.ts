@@ -38,7 +38,7 @@ describe('anytoneChannelWireName', () => {
     expect(warnings.some((w) => w.includes('exported as'))).toBe(true);
   });
 
-  it('keeps explicit wire overrides verbatim and warns when over limit', () => {
+  it('hard-truncates explicit wire overrides and warns when over limit', () => {
     const channel = dmrChannel('Short');
     const warnings: string[] = [];
     const override = 'This override is way too long';
@@ -48,9 +48,11 @@ describe('anytoneChannelWireName', () => {
       { profileId: 'anytone-at-d890uv', shortenNames: true },
     );
 
-    expect(wireName).toBe(override);
+    expect(wireName).toBe(override.slice(0, 16));
+    expect(wireName.length).toBe(16);
     expect(warnings.some((w) => w.includes('exceeds 16 characters'))).toBe(true);
     expect(warnings.some((w) => w.includes(override))).toBe(true);
+    expect(warnings.some((w) => w.includes('exported as'))).toBe(false);
   });
 
   it('keeps full name under limit when abbreviation is set (useChannelAbbreviation on)', () => {
@@ -100,6 +102,28 @@ describe('anytoneChannelWireName', () => {
       { profileId: 'anytone-at-d890uv', shortenNames: true },
     );
 
+    expect(exportName).toBe(preview);
+  });
+
+  it('matches preview when nameModeOverride is name_only', () => {
+    const channel = dmrChannel('Glasgow');
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      exportSettings: { nameModeOverride: 'name_only' as const },
+    };
+    const options = {
+      profileId: 'anytone-at-d890uv',
+      shortenNames: true,
+      nameModeOverride: 'name_only' as const,
+    };
+    const preview = previewGeneratedChannelWireName(channel, build, options);
+    const exportName = anytoneChannelWireName(
+      { entity: channel, wireName: 'unused' },
+      { reserved: new Set() },
+      options,
+    );
+
+    expect(preview).toBe('Glasgow');
     expect(exportName).toBe(preview);
   });
 });

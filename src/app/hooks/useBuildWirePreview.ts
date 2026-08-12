@@ -192,6 +192,23 @@ export function useBuildWirePreview(
     [entityKind, persistBuild],
   );
 
+  const setRowWireNames = useCallback(
+    (entries: { row: WirePreviewRow; wireName: string }[]) => {
+      const field = overrideFieldForEntityKind(entityKind);
+      void persistBuild((current) => {
+        let next = current;
+        for (const { row, wireName } of entries) {
+          const trimmed = wireName.trim();
+          const existing = overrideByEntityId(next[field]).get(row.key)?.wireName?.trim();
+          if ((existing ?? '') === trimmed) continue;
+          next = buildService.withWireNameOverride(next, field, row.key, wireName);
+        }
+        return next;
+      });
+    },
+    [entityKind, persistBuild],
+  );
+
   const setEntityOrder = useCallback(
     (orderedEntityIds: string[]) => {
       const field = overrideFieldForEntityKind(entityKind);
@@ -249,6 +266,7 @@ export function useBuildWirePreview(
     setRowExcluded,
     setRowForceIncluded,
     setRowWireName,
+    setRowWireNames,
     setEntityOrder,
     clearEntityOrderOverrides,
     moveEntity,

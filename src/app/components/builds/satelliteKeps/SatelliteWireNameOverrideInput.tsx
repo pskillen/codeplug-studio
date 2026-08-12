@@ -40,11 +40,10 @@ export function SatelliteWireNameOverrideInput({
 
   const applySuggestion = (value: string) => {
     setDraft(value);
-    onWireNameChange(value);
   };
 
   const clearOverride = () => {
-    setDraft(suggestedFamiliar);
+    setDraft('');
     onWireNameChange('');
   };
 
@@ -99,7 +98,7 @@ export function SatelliteWireNameOverrideInput({
       <Text size="xs" c="dimmed">
         Familiar:{' '}
         <SuggestionButton
-          label="Store familiar suggestion"
+          label="Use this suggested name"
           onClick={() => applySuggestion(suggestedFamiliar)}
         >
           {suggestedFamiliar}
@@ -109,7 +108,7 @@ export function SatelliteWireNameOverrideInput({
             {' · '}
             OSCAR:{' '}
             <SuggestionButton
-              label="Store OSCAR suggestion"
+              label="Use this suggested name"
               onClick={() => applySuggestion(suggestedOscar)}
             >
               {suggestedOscar}

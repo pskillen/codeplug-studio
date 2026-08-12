@@ -50,7 +50,9 @@ describe('exportBuildAll', () => {
     expect(
       result.warnings.filter((warning) => warning.startsWith(longNameWarningPrefix)),
     ).toHaveLength(1);
-    expect(result.warnings.some((warning) => warning.includes('exported as'))).toBe(true);
+    // Override path hard-truncates — warn without smart-shorten "exported as" wording.
+    expect(result.warnings.some((warning) => warning.includes('exported as'))).toBe(false);
+    expect(result.warnings.some((warning) => warning.startsWith(longNameWarningPrefix))).toBe(true);
   });
 
   it('returns each build-wide DM32 zone cap warning once across all CSV files', () => {

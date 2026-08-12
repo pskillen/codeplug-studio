@@ -17,6 +17,17 @@ export function resolveProfileLabel(profileId: string | undefined): string | und
   return undefined;
 }
 
+/** Warn when uniquify appended a disambiguation suffix because the candidate was already reserved. */
+export function pushWireNameCollisionWarning(
+  warnings: string[],
+  params: { entityKind: WireNameEntityKind; candidate: string; disambiguated: string },
+): void {
+  if (params.disambiguated === params.candidate) return;
+  warnings.push(
+    `${params.entityKind} wire name "${params.candidate}" collided with another exported name; disambiguated as "${params.disambiguated}"`,
+  );
+}
+
 /** Warn when a wire name exceeds the profile limit, including the export-shortened form when applicable. */
 export function pushWireNameLengthWarning(
   warnings: string[],

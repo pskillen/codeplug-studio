@@ -77,6 +77,8 @@ export function librarySliceFrom(library: Library): LibrarySlice {
 export interface AssembledEntity<T> {
   entity: T;
   wireName: string;
+  /** Set when the build has an explicit wire name override for this entity. */
+  wireNameOverride?: string;
 }
 
 export interface AssembledChannel {
@@ -98,12 +100,16 @@ export interface AssembledChannel {
 export interface AssembledScanList {
   scanListId: string;
   wireName: string;
+  /** Set when the build has an explicit scan-list wire name override. */
+  wireNameOverride?: string;
   memberChannelIds: string[];
 }
 
 export interface AssembledZone {
   zoneId: string;
   wireName: string;
+  /** Set when the build has an explicit zone wire name override. */
+  wireNameOverride?: string;
   /** Ordered channel ids — wire names resolved at serialise/expansion time. */
   memberChannelIds: string[];
 }
@@ -267,9 +273,11 @@ function assembleScanLists(
     if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(entry.id)) {
       continue;
     }
+    const wireNameOverride = overrideByEntityId(overrides).get(entry.id)?.wireName?.trim();
     assembled.push({
       scanListId: entry.id,
       wireName: resolveOverrideWireName(overrides, entry.id, entry.name),
+      wireNameOverride,
       memberChannelIds,
     });
   }
@@ -393,9 +401,11 @@ function assembleZones(
     if (memberChannelIds.length === 0 && !overrideByEntityId(overrides).has(libraryZone.id)) {
       continue;
     }
+    const wireNameOverride = overrideByEntityId(overrides).get(libraryZone.id)?.wireName?.trim();
     assembled.push({
       zoneId: libraryZone.id,
       wireName: resolveOverrideWireName(overrides, libraryZone.id, libraryZone.name),
+      wireNameOverride,
       memberChannelIds,
     });
   }
@@ -428,9 +438,11 @@ function assembleEntityList<T extends { id: string; name: string }>(
     const referenced = candidateIds.has(entityId);
     const hasOverride = overrideMap.has(entityId);
     if (!referenced && !hasOverride && !includeUnlinkedLibrary) continue;
+    const wireNameOverride = overrideMap.get(entityId)?.wireName?.trim();
     assembled.push({
       entity,
       wireName: resolveOverrideWireName(overrides, entity.id, entity.name),
+      wireNameOverride,
     });
   }
   return assembled;

@@ -2,6 +2,8 @@ export interface WireNameShortening {
   original: string;
   exported: string;
   stillExceedsLimit: boolean;
+  /** True when the name was disambiguated due to a collision with another exported name. */
+  isCollision?: boolean;
 }
 
 export interface WireNameShorteningGroup {
@@ -46,7 +48,10 @@ export interface FormattedExportWarnings {
   /** Orphan / unlinked inclusion lines — folded as one accordion section. */
   unlinkedGroup: UnlinkedExportGroup | null;
   memberCapGroups: MemberCapGroup[];
-  shortenedGroups: WireNameShorteningGroup[];
+  /** Real problems: still too long after shortening, or shortening disabled while over the limit. */
+  shortenedProblemGroups: WireNameShorteningGroup[];
+  /** Clean, successful shortens — no data loss, no conflict. Shown separately, never as a "warning." */
+  shortenedInfoGroups: WireNameShorteningGroup[];
 }
 
 const UNLINKED_EXPORT_RE =
@@ -62,6 +67,9 @@ const SHORTENED_STILL_TOO_LONG_RE =
 
 const UNSHORTENED_OVER_LIMIT_RE =
   /^(.+?) wire name "(.+)" exceeds (\d+) characters(?: for (.+?))?$/;
+
+const COLLISION_RE =
+  /^(.+?) wire name "(.+)" collided with another exported name; disambiguated as "(.+)"$/;
 
 const ZONE_EXPANDED_SCAN_CAP_RE = /^Zone "(.+)" has (\d+) expanded members \(scan cap (\d+)\)$/;
 
@@ -84,6 +92,16 @@ const SHORTENED_GROUP_TITLES: Record<string, string> = {
   'RX group list': 'RX group list names shortened',
   Contact: 'Contact names shortened',
   'Wire name': 'Wire names shortened',
+};
+
+const COLLISION_GROUP_TITLES: Record<string, string> = {
+  Channel: 'Channel name collisions',
+  'Talk group': 'Talk group name collisions',
+  Zone: 'Zone name collisions',
+  'Scan list': 'Scan list name collisions',
+  'RX group list': 'RX group list name collisions',
+  Contact: 'Contact name collisions',
+  'Wire name': 'Wire name collisions',
 };
 
 const MEMBER_CAP_GROUP_TITLES: Record<MemberCapWarningKind, string> = {
@@ -122,8 +140,15 @@ function memberCapGroupKey(kind: MemberCapWarningKind, cap: number, profileLabel
   return `${kind}\0${cap}\0${profileLabel ?? ''}`;
 }
 
-function wireNameGroupTitle(entityKind: string): string {
+function wireNameGroupTitle(entityKind: string, isCollision = false): string {
+  if (isCollision) {
+    return COLLISION_GROUP_TITLES[entityKind] ?? `${entityKind} name collisions`;
+  }
   return SHORTENED_GROUP_TITLES[entityKind] ?? `${entityKind} names shortened`;
+}
+
+function introForCollisionWireNameGroup(entityKind: string): string {
+  return `The following ${entityKind.toLowerCase()} names collided with another exported name and were disambiguated:`;
 }
 
 function introForWireNameGroup(maxLen: number, profileLabel?: string): string {
@@ -292,6 +317,27 @@ export function formatExportWarnings(warnings: string[]): FormattedExportWarning
       continue;
     }
 
+    const collision = warning.match(COLLISION_RE);
+    if (collision) {
+      const [, entityKind, candidate, disambiguated] = collision;
+      const key = wireNameGroupKey(entityKind!, 0, 'collision');
+      const group = shortenedGroupsMap.get(key) ?? {
+        entityKind: entityKind!,
+        title: wireNameGroupTitle(entityKind!, true),
+        maxLen: 0,
+        profileLabel: undefined,
+        items: [],
+      };
+      group.items.push({
+        original: candidate!,
+        exported: disambiguated!,
+        stillExceedsLimit: true,
+        isCollision: true,
+      });
+      shortenedGroupsMap.set(key, group);
+      continue;
+    }
+
     const overLimit = warning.match(UNSHORTENED_OVER_LIMIT_RE);
     if (overLimit) {
       const [, entityKind, original, maxLenText, profileLabel] = overLimit;
@@ -344,15 +390,37 @@ export function formatExportWarnings(warnings: string[]): FormattedExportWarning
       return (a.profileLabel ?? '').localeCompare(b.profileLabel ?? '');
     });
 
+  const shortenedProblemGroups: WireNameShorteningGroup[] = [];
+  const shortenedInfoGroups: WireNameShorteningGroup[] = [];
+  for (const group of shortenedGroups) {
+    const problemItems = group.items.filter((item) => item.stillExceedsLimit);
+    const infoItems = group.items.filter((item) => !item.stillExceedsLimit);
+    if (problemItems.length > 0) {
+      shortenedProblemGroups.push({ ...group, items: problemItems });
+    }
+    if (infoItems.length > 0) {
+      shortenedInfoGroups.push({ ...group, items: infoItems });
+    }
+  }
+
   const unlinkedGroup: UnlinkedExportGroup | null =
     unlinkedItems.length > 0 ? { title: UNLINKED_GROUP_TITLE, items: unlinkedItems } : null;
 
-  return { general, unlinkedGroup, memberCapGroups, shortenedGroups };
+  return {
+    general,
+    unlinkedGroup,
+    memberCapGroups,
+    shortenedProblemGroups,
+    shortenedInfoGroups,
+  };
 }
 
 export function wireNameShorteningIntro(group: WireNameShorteningGroup): string {
+  if (group.items.every((item) => item.isCollision)) {
+    return introForCollisionWireNameGroup(group.entityKind);
+  }
   const hasOnlyUnshortened = group.items.every(
-    (item) => item.stillExceedsLimit && item.exported === item.original,
+    (item) => item.stillExceedsLimit && item.exported === item.original && !item.isCollision,
   );
   return hasOnlyUnshortened
     ? introForUnshortenedWireNameGroup(group.maxLen, group.profileLabel)

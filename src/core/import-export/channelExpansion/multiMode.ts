@@ -33,6 +33,7 @@ export function expandChannelWireRows(
   profileId?: string,
   reserved = new Set<string>(),
   warnings: string[] = [],
+  isOverride = false,
 ): ExpandedChannelWireRow[] {
   const composedBase = baseWireName?.trim() || composeExportWireName(channel, options);
   const profiles =
@@ -47,6 +48,8 @@ export function expandChannelWireRows(
       options,
       profileId,
       warnings,
+      true,
+      isOverride,
     );
     return [
       {
@@ -69,6 +72,8 @@ export function expandChannelWireRows(
       options,
       profileId,
       warnings,
+      true,
+      isOverride,
     );
     return {
       sourceChannelId: channel.id,

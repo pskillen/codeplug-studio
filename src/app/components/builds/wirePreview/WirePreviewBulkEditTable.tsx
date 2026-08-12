@@ -1,43 +1,48 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Switch, Text } from '@mantine/core';
+import type { Dispatch, SetStateAction } from 'react';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { DataTable, type DataTableColumn } from '../../v2/index.ts';
 import { createNameColumn } from '../../../lib/libraryListTable.tsx';
 import { WireNameOverrideInput } from './WireNameOverrideInput.tsx';
-import { rowEffectivelyIncluded } from './wirePreviewRowUtils.ts';
+import { rowEffectivelyIncluded, wireNameCommittedValue } from './wirePreviewRowUtils.ts';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
 
 export interface WirePreviewBulkEditTableProps {
   rows: WirePreviewRow[];
   nameLimit?: number;
   onExcludedChange: (row: WirePreviewRow, excluded: boolean) => void;
-  onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
-  onUnsavedChangesChange?: (hasUnsaved: boolean) => void;
+  /** Parent-owned pending drafts keyed by row `key`. */
+  onPendingWireNamesChange: Dispatch<SetStateAction<Map<string, string>>>;
+  /**
+   * Increment after a page-level Save to remount draft inputs once commits
+   * have been queued (parent clears pending in the same turn).
+   */
+  draftEpoch?: number;
 }
 
 export default function WirePreviewBulkEditTable({
   rows,
   nameLimit,
   onExcludedChange,
-  onWireNameChange,
-  onUnsavedChangesChange,
+  onPendingWireNamesChange,
+  draftEpoch = 0,
 }: WirePreviewBulkEditTableProps) {
-  const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(() => new Set());
-
-  useEffect(() => {
-    onUnsavedChangesChange?.(dirtyKeys.size > 0);
-  }, [dirtyKeys, onUnsavedChangesChange]);
-
-  const setRowDirty = (key: string, dirty: boolean) => {
-    setDirtyKeys((prev) => {
-      const has = prev.has(key);
-      if (dirty === has) return prev;
-      const next = new Set(prev);
-      if (dirty) next.add(key);
-      else next.delete(key);
-      return next;
-    });
-  };
+  const setRowDraft = useCallback(
+    (row: WirePreviewRow, draft: string) => {
+      onPendingWireNamesChange((prev) => {
+        const committed = wireNameCommittedValue(row);
+        const next = new Map(prev);
+        if (draft === committed) {
+          next.delete(row.key);
+        } else {
+          next.set(row.key, draft);
+        }
+        return next;
+      });
+    },
+    [onPendingWireNamesChange],
+  );
 
   const columns = useMemo((): DataTableColumn<WirePreviewRow>[] => {
     return [
@@ -69,19 +74,21 @@ export default function WirePreviewBulkEditTable({
           const effectivelyIncluded = rowEffectivelyIncluded(row);
           return (
             <WireNameOverrideInput
-              key={`${row.key}:${row.hasWireNameOverride ? row.effectiveWireName : ''}`}
+              key={`${row.key}:${draftEpoch}:${row.hasWireNameOverride ? row.effectiveWireName : ''}`}
               row={row}
               nameLimit={nameLimit}
               excluded={!effectivelyIncluded}
-              clickableDefaultWireName
-              onWireNameChange={onWireNameChange}
-              onDirtyChange={(dirty) => setRowDirty(row.key, dirty)}
+              clickableSuggestionWireName
+              deferCommit
+              onWireNameChange={() => {}}
+              onDraftChange={(draft) => setRowDraft(row, draft)}
+              onDirtyChange={() => {}}
             />
           );
         },
       },
     ];
-  }, [nameLimit, onExcludedChange, onWireNameChange]);
+  }, [nameLimit, onExcludedChange, draftEpoch, setRowDraft]);
 
   if (rows.length === 0) {
     return (

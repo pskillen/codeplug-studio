@@ -19,6 +19,7 @@ export function zoneExportMemberNames(
   for (const channelId of zone.memberChannelIds) {
     const channel = channelById.get(channelId);
     if (!channel) continue;
+    const assembledChannel = assembled.channels.find((row) => row.entity.id === channelId);
     const baseWireName = wireById.get(channelId);
     const rows = expandOpenGd77ChannelWireRows(
       channel,
@@ -27,6 +28,8 @@ export function zoneExportMemberNames(
       options,
       assembled.profileId,
       reserved,
+      [],
+      Boolean(assembledChannel?.wireNameOverride?.trim()),
     );
     for (const row of rows) {
       if (isProjectionExcluded(options?.channelOverrides, row.key, channelId)) continue;

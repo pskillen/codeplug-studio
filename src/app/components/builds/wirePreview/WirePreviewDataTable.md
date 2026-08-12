@@ -1,6 +1,6 @@
 ## Purpose
 
-Read-only wire preview list for build entity routes. Shows library label, generated/effective wire name, and export-status badges. Row click opens `WirePreviewOverrideModal`.
+Read-only wire preview list for build entity routes. Shows library label, effective wire name (override or generated), and export-status badges. Row click opens `WirePreviewOverrideModal`. List cells show the effective name only — no Suggestion/generated subline (edit surfaces show the suggestion).
 
 **Tracking:** [#349](https://github.com/pskillen/codeplug-studio/issues/349)
 

@@ -1,10 +1,10 @@
 import type { TalkGroup } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import { finalizeWireName, uniqueWireName } from './shortenName.ts';
+import { finalizeWireName, hardTruncateUniqueWireName, uniqueWireName } from './shortenName.ts';
 import { sanitiseAsciiWireString } from '../sanitiseAsciiWireString.ts';
 import { resolveMaxNameLength } from './exportWireNames.ts';
-import { pushWireNameLengthWarning } from './wireNameWarning.ts';
+import { pushWireNameCollisionWarning, pushWireNameLengthWarning } from './wireNameWarning.ts';
 
 export type TalkGroupWireNameMap = ReadonlyMap<string, string>;
 
@@ -20,15 +20,49 @@ export function applyTalkGroupWireNameLimits(
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
   warnings: string[],
+  /** Override profile `nameLimit` (e.g. radio-io talk-group field width). */
+  maxLenOverride?: number,
+  isOverride = false,
 ): string {
-  const maxLen = resolveMaxNameLength(profileId ?? options?.profileId, options);
+  const maxLen = maxLenOverride ?? resolveMaxNameLength(profileId ?? options?.profileId, options);
   const shorten = options?.shortenNames !== false;
   const original = baseWireName.trim();
   let base = original;
 
-  if (!shorten || maxLen == null) {
-    const name = sanitiseAsciiWireString(uniqueWireName(base, reserved));
+  if (isOverride || !shorten || maxLen == null) {
+    if (isOverride && maxLen != null) {
+      const {
+        name: truncated,
+        collided,
+        stem,
+      } = hardTruncateUniqueWireName(base, reserved, maxLen, true);
+      const name = sanitiseAsciiWireString(truncated);
+      if (collided) {
+        pushWireNameCollisionWarning(warnings, {
+          entityKind: 'Talk group',
+          candidate: stem,
+          disambiguated: name,
+        });
+      }
+      pushWireNameLengthWarning(warnings, {
+        entityKind: 'Talk group',
+        original,
+        exported: name,
+        maxLen,
+        profileId: profileId ?? options?.profileId,
+        shortenEnabled: false,
+      });
+      return name;
+    }
+
+    const uniquified = uniqueWireName(base, reserved);
+    const name = sanitiseAsciiWireString(uniquified);
     reserved.add(name);
+    pushWireNameCollisionWarning(warnings, {
+      entityKind: 'Talk group',
+      candidate: base,
+      disambiguated: name,
+    });
     if (maxLen != null) {
       pushWireNameLengthWarning(warnings, {
         entityKind: 'Talk group',
@@ -47,9 +81,21 @@ export function applyTalkGroupWireNameLimits(
     base = abbrev;
   }
 
-  const exported = sanitiseAsciiWireString(
-    finalizeWireName(base, reserved, maxLen, { allowCallsignSuffixDowngrade: false }),
-  );
+  const {
+    name: finalized,
+    collided,
+    stem,
+  } = finalizeWireName(base, reserved, maxLen, {
+    allowCallsignSuffixDowngrade: false,
+  });
+  const exported = sanitiseAsciiWireString(finalized);
+  if (collided) {
+    pushWireNameCollisionWarning(warnings, {
+      entityKind: 'Talk group',
+      candidate: stem,
+      disambiguated: exported,
+    });
+  }
   pushWireNameLengthWarning(warnings, {
     entityKind: 'Talk group',
     original,
@@ -73,9 +119,19 @@ export function buildTalkGroupWireNameMap(
   const map = new Map<string, string>();
 
   for (const row of assembled.talkGroups) {
+    const isOverride = Boolean(row.wireNameOverride?.trim());
     map.set(
       row.entity.id,
-      applyTalkGroupWireNameLimits(row.wireName, row.entity, reserved, options, profileId, sink),
+      applyTalkGroupWireNameLimits(
+        row.wireName,
+        row.entity,
+        reserved,
+        options,
+        profileId,
+        sink,
+        undefined,
+        isOverride,
+      ),
     );
   }
 

@@ -4,8 +4,11 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
 import { resolveMaxNameLength } from './channelExpansion/exportWireNames.ts';
 import { sanitiseAsciiWireString } from './sanitiseAsciiWireString.ts';
-import { finalizeWireName } from './channelExpansion/shortenName.ts';
-import { pushWireNameLengthWarning } from './channelExpansion/wireNameWarning.ts';
+import { finalizeWireName, hardTruncateUniqueWireName } from './channelExpansion/shortenName.ts';
+import {
+  pushWireNameCollisionWarning,
+  pushWireNameLengthWarning,
+} from './channelExpansion/wireNameWarning.ts';
 
 /** How library contact fields compose CPS wire `Name` at export (Anytone, OpenGD77, …). */
 export type DigitalContactExportNameMode = 'name' | 'callsign' | 'callsign-name';
@@ -68,12 +71,33 @@ export function applyDigitalContactExportWireName(
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
   warnings: string[],
+  isOverride = false,
 ): string {
   const maxLen = resolveMaxNameLength(profileId ?? options?.profileId, options);
   const shorten = options?.shortenNames !== false;
   const original = baseWireName.trim();
 
-  if (!shorten || maxLen == null) {
+  if (isOverride || !shorten || maxLen == null) {
+    if (isOverride && maxLen != null) {
+      const localReserved = new Set<string>();
+      const { name: truncated } = hardTruncateUniqueWireName(
+        original,
+        localReserved,
+        maxLen,
+        false,
+      );
+      const exported = sanitiseAsciiWireString(truncated);
+      pushWireNameLengthWarning(warnings, {
+        entityKind: 'Contact',
+        original,
+        exported,
+        maxLen,
+        profileId: profileId ?? options?.profileId,
+        shortenEnabled: false,
+      });
+      return exported;
+    }
+
     const exported = sanitiseAsciiWireString(original);
     if (maxLen != null && exported.length > maxLen) {
       pushWireNameLengthWarning(warnings, {
@@ -90,9 +114,21 @@ export function applyDigitalContactExportWireName(
   }
 
   const localReserved = new Set<string>();
-  const exported = sanitiseAsciiWireString(
-    finalizeWireName(original, localReserved, maxLen, { allowCallsignSuffixDowngrade: false }),
-  );
+  const {
+    name: finalized,
+    collided,
+    stem,
+  } = finalizeWireName(original, localReserved, maxLen, {
+    allowCallsignSuffixDowngrade: false,
+  });
+  const exported = sanitiseAsciiWireString(finalized);
+  if (collided) {
+    pushWireNameCollisionWarning(warnings, {
+      entityKind: 'Contact',
+      candidate: stem,
+      disambiguated: exported,
+    });
+  }
   pushWireNameLengthWarning(warnings, {
     entityKind: 'Contact',
     original,
@@ -104,14 +140,19 @@ export function applyDigitalContactExportWireName(
   return exported;
 }
 
+/** Pure library-field base for analog contact CPS names — never reads overrides. */
+export function analogContactExportBaseName(contact: { name: string }): string {
+  const name = contact.name.trim();
+  return name || 'Untitled contact';
+}
+
 export function resolveAnalogContactExportBaseName(
   contact: { id: string; name: string },
   contactOverrides: readonly BuildEntityOverride[] | undefined,
 ): string {
   const override = overrideByEntityId(contactOverrides).get(contact.id)?.wireName?.trim();
   if (override) return override;
-  const name = contact.name.trim();
-  return name || 'Untitled contact';
+  return analogContactExportBaseName(contact);
 }
 
 export function buildDigitalContactExportWireNameMap(
@@ -122,10 +163,16 @@ export function buildDigitalContactExportWireNameMap(
   warnings: string[],
 ): Map<string, string> {
   const mode = options?.digitalContactExportNameMode ?? DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE;
+  const overrideMap = overrideByEntityId(contactOverrides);
   const map = new Map<string, string>();
   for (const row of contacts) {
-    const base = resolveDigitalContactExportBaseName(row.entity, contactOverrides, mode);
-    map.set(row.entity.id, applyDigitalContactExportWireName(base, options, profileId, warnings));
+    const override = overrideMap.get(row.entity.id)?.wireName?.trim();
+    const isOverride = Boolean(override);
+    const base = isOverride ? override! : digitalContactExportBaseName(row.entity, mode);
+    map.set(
+      row.entity.id,
+      applyDigitalContactExportWireName(base, options, profileId, warnings, isOverride),
+    );
   }
   return map;
 }

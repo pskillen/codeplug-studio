@@ -107,12 +107,12 @@ Export as fixture defaults / skip (amateur product) — full checklist: [enum-ve
 
 ## Wire rules
 
-| Rule                  | Detail                                                              |
-| --------------------- | ------------------------------------------------------------------- |
-| Name length           | `Channel Name` ≤ profile limit (16 on AT-D890UV)                    |
-| Scan List FK          | Must match `ScanList.CSV` `Scan List Name` or sentinel `None`       |
-| Receive Group List FK | Must match `Group Name` or sentinel `None`                          |
-| Contact/Talk Group FK | Must match talk-group or digital-contact `Name` when not a sentinel |
+| Rule                  | Detail                                                                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Name length           | `Channel Name` ≤ profile limit (16 on AT-D890UV). Generated names may smart-shorten; **overrides hard-truncate** (other formats now match). |
+| Scan List FK          | Must match `ScanList.CSV` `Scan List Name` or sentinel `None`                                                                               |
+| Receive Group List FK | Must match `Group Name` or sentinel `None`                                                                                                  |
+| Contact/Talk Group FK | Must match talk-group or digital-contact `Name` when not a sentinel                                                                         |
 
 ## Related
 

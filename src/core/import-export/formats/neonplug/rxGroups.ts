@@ -54,6 +54,7 @@ export function serialiseNeonplugRxGroups(
       warnings,
       'RX group list',
       profile.rxGroupListNameLimit,
+      Boolean(row.wireNameOverride?.trim()),
     );
 
     const index = rxGroups.length;

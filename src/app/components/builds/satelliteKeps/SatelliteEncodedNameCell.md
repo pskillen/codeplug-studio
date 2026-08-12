@@ -13,7 +13,7 @@ Shows the effective encoded name with truncation hint and an edit affordance. In
 | `entry`             | `SatelliteWritePreviewEntry` | Preview row for this transmitter              |
 | `nameLimit`         | `number`                     | Max encoded name length from radio limits     |
 | `editing`           | `boolean`                    | When true, shows the inline override editor   |
-| `committedWireName` | `string`                     | Current persisted or generated encoded name   |
+| `committedWireName` | `string`                     | Persisted override, or `''` when none is set  |
 | `onStartEdit`       | `() => void`                 | Opens edit mode                               |
 | `onCancelEdit`      | `() => void`                 | Closes edit mode without saving               |
 | `onWireNameChange`  | `(wireName: string) => void` | Apply or Reset — empty string clears override |

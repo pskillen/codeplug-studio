@@ -462,7 +462,7 @@ describe('OpenGD77 export serialise', () => {
     expect(result.files['TG_Lists.csv']).toContain('Scotland TG');
   });
 
-  it('export warnings surface long wire names', () => {
+  it('export warnings surface long wire name overrides without smart-shortening', () => {
     const assembled = loadAssembled();
     const longName = 'ThisNameIsWayTooLong';
     assembled.channels[0] = {
@@ -473,7 +473,8 @@ describe('OpenGD77 export serialise', () => {
     };
     const warnings = collectOpenGd77ExportWarnings(assembled);
     expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings.some((w) => w.includes('exported as'))).toBe(true);
+    expect(warnings.some((w) => w.includes('exceeds'))).toBe(true);
+    expect(warnings.some((w) => w.includes('exported as'))).toBe(false);
   });
 
   it('channels CSV is self-consistent when re-exported from same projection', () => {

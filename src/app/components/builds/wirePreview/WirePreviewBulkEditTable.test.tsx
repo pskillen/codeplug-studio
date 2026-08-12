@@ -1,4 +1,5 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, Dispatch, SetStateAction } from 'react';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
@@ -33,12 +34,33 @@ const rows: WirePreviewRow[] = [
 ];
 
 describe('WirePreviewBulkEditTable', () => {
-  function renderTable(props: ComponentProps<typeof WirePreviewBulkEditTable>) {
+  function ControlledTable(
+    props: Omit<ComponentProps<typeof WirePreviewBulkEditTable>, 'onPendingWireNamesChange'> & {
+      onPendingWireNamesChange?: Dispatch<SetStateAction<Map<string, string>>>;
+    },
+  ) {
+    const [, setPending] = useState<Map<string, string>>(() => new Map());
+    return (
+      <WirePreviewBulkEditTable
+        {...props}
+        onPendingWireNamesChange={(update) => {
+          setPending(update);
+          props.onPendingWireNamesChange?.(update);
+        }}
+      />
+    );
+  }
+
+  function renderTable(
+    props: Omit<ComponentProps<typeof WirePreviewBulkEditTable>, 'onPendingWireNamesChange'> & {
+      onPendingWireNamesChange?: Dispatch<SetStateAction<Map<string, string>>>;
+    },
+  ) {
     return render(
       <MemoryRouter>
         <MantineProvider>
           <DesignSystemV2Provider>
-            <WirePreviewBulkEditTable {...props} />
+            <ControlledTable {...props} />
           </DesignSystemV2Provider>
         </MantineProvider>
       </MemoryRouter>,
@@ -50,7 +72,6 @@ describe('WirePreviewBulkEditTable', () => {
       rows,
       nameLimit: 16,
       onExcludedChange: vi.fn(),
-      onWireNameChange: vi.fn(),
     });
 
     expect(screen.getByRole('columnheader', { name: 'Skip from export' })).toBeInTheDocument();
@@ -65,7 +86,6 @@ describe('WirePreviewBulkEditTable', () => {
     renderTable({
       rows: [rows[0]!],
       onExcludedChange,
-      onWireNameChange: vi.fn(),
     });
 
     fireEvent.click(screen.getByLabelText('Skip GB3DA Demo from export'));
@@ -76,7 +96,6 @@ describe('WirePreviewBulkEditTable', () => {
     renderTable({
       rows,
       onExcludedChange: vi.fn(),
-      onWireNameChange: vi.fn(),
     });
 
     const links = screen.getAllByRole('link', { name: 'Edit in library' });
@@ -85,68 +104,56 @@ describe('WirePreviewBulkEditTable', () => {
     expect(links[1]).toHaveAttribute('href', '/library/channels/ch-2');
   });
 
-  it('commits wire name only when apply is clicked', () => {
-    const onWireNameChange = vi.fn();
+  it('accumulates pending wire names without a per-row Apply control', () => {
+    const onPendingWireNamesChange = vi.fn();
     renderTable({
       rows,
       onExcludedChange: vi.fn(),
-      onWireNameChange,
+      onPendingWireNamesChange,
     });
+
+    expect(screen.queryByLabelText('Apply wire name')).not.toBeInTheDocument();
 
     const input = screen.getByPlaceholderText('GB3DA Demo');
     fireEvent.change(input, { target: { value: 'Custom' } });
-    expect(onWireNameChange).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByLabelText('Apply wire name'));
-    expect(onWireNameChange).toHaveBeenCalledWith(rows[0], 'Custom');
+    const update = onPendingWireNamesChange.mock.calls.at(-1)?.[0] as (
+      prev: Map<string, string>,
+    ) => Map<string, string>;
+    expect(update(new Map()).get('ch-1')).toBe('Custom');
+    expect(screen.queryByLabelText('Apply wire name')).not.toBeInTheDocument();
   });
 
-  it('reverts draft wire name without persisting', () => {
-    const onWireNameChange = vi.fn();
+  it('fills the draft from Suggestion without a per-row Apply', () => {
+    const onPendingWireNamesChange = vi.fn();
     renderTable({
       rows,
       onExcludedChange: vi.fn(),
-      onWireNameChange,
-    });
-
-    const input = screen.getByPlaceholderText('GB3DA Demo');
-    fireEvent.change(input, { target: { value: 'Custom' } });
-    fireEvent.click(screen.getByLabelText('Revert wire name'));
-
-    expect(onWireNameChange).not.toHaveBeenCalled();
-    expect(input).toHaveValue('');
-  });
-
-  it('applies generated wire name when default label is clicked', () => {
-    const onWireNameChange = vi.fn();
-    renderTable({
-      rows,
-      onExcludedChange: vi.fn(),
-      onWireNameChange,
+      onPendingWireNamesChange,
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'GB3DA Demo' }));
-    expect(onWireNameChange).toHaveBeenCalledWith(rows[0], 'GB3DA Demo');
     expect(screen.getByPlaceholderText('GB3DA Demo')).toHaveValue('GB3DA Demo');
+    const update = onPendingWireNamesChange.mock.calls.at(-1)?.[0] as (
+      prev: Map<string, string>,
+    ) => Map<string, string>;
+    expect(update(new Map()).get('ch-1')).toBe('GB3DA Demo');
   });
 
-  it('reports unapplied wire name drafts', () => {
-    const onUnsavedChangesChange = vi.fn();
+  it('reports pending drafts via onPendingWireNamesChange', () => {
+    const onPendingWireNamesChange = vi.fn();
     renderTable({
       rows,
       onExcludedChange: vi.fn(),
-      onWireNameChange: vi.fn(),
-      onUnsavedChangesChange,
+      onPendingWireNamesChange,
     });
-
-    expect(onUnsavedChangesChange).toHaveBeenCalledWith(false);
 
     fireEvent.change(screen.getByPlaceholderText('GB3DA Demo'), {
       target: { value: 'Custom' },
     });
-    expect(onUnsavedChangesChange).toHaveBeenLastCalledWith(true);
-
-    fireEvent.click(screen.getByLabelText('Revert wire name'));
-    expect(onUnsavedChangesChange).toHaveBeenLastCalledWith(false);
+    const update = onPendingWireNamesChange.mock.calls.at(-1)?.[0] as (
+      prev: Map<string, string>,
+    ) => Map<string, string>;
+    expect(update(new Map()).get('ch-1')).toBe('Custom');
   });
 });

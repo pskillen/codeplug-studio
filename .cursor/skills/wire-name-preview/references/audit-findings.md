@@ -38,12 +38,13 @@ Full working notes (not shipped, gitignored under `tmp/`):
   into the shortener before showing it as a "suggestion." Contacts:
   `resolveDigitalContactExportBaseName` returns the override first if set.
   Only the plain channel path (`previewGeneratedChannelWireName`) is pure.
-- **Suggestion click commits immediately.** `WireNameOverrideInput.applyDefault`
-  calls `onWireNameChange` (persists) as soon as the "Default" link is
-  clicked — should only fill the draft.
-- **List shows a suggestion subline.** `WirePreviewDataTable` renders
-  `Default: {generatedWireName}` under the effective name whenever an
-  override is set; list surfaces should show effective-only.
+- **Suggestion click commits immediately.** `WireNameOverrideInput.applySuggestion`
+  historically called `onWireNameChange` (persists) as soon as the Suggestion
+  link was clicked — should only fill the draft.
+- **List shows a suggestion subline.** `WirePreviewDataTable` historically
+  rendered `Suggestion: {generatedWireName}` (then labelled Default) under the
+  effective name whenever an override is set; list surfaces should show
+  effective-only.
 - **Bulk edit applies per row.** `WirePreviewBulkEditTable` uses the same
   per-row Apply/Revert as the single-item modal; there is no single
   page-level Save that commits every dirty row together.

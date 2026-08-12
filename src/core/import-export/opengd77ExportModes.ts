@@ -58,6 +58,7 @@ export function expandOpenGd77ChannelWireRows(
   profileId?: string,
   reserved = new Set<string>(),
   warnings: string[] = [],
+  isOverride = false,
 ): ExpandedChannelWireRow[] {
   const filtered = filterOpenGd77ExportChannel(channel, warnings);
   if (!filtered) return [];
@@ -69,5 +70,6 @@ export function expandOpenGd77ChannelWireRows(
     profileId,
     reserved,
     warnings,
+    isOverride,
   );
 }
