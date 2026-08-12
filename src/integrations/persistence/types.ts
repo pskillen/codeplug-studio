@@ -14,6 +14,10 @@ import type {
 } from '@core/models/library.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
+import type {
+  DigitalIdDirectoryPageQuery,
+  DigitalIdDirectoryPageResult,
+} from './digitalIdDirectoryQuery.ts';
 
 export type PutResult =
   { ok: true; revision: number } | { ok: false; reason: 'revision_conflict' | 'not_found' };
@@ -77,6 +81,12 @@ export interface DirectoryPersistenceChange {
 }
 
 export type DirectoryPersistenceListener = (change: DirectoryPersistenceChange) => void;
+
+export type {
+  DigitalIdDirectoryOrderBy,
+  DigitalIdDirectoryPageQuery,
+  DigitalIdDirectoryPageResult,
+} from './digitalIdDirectoryQuery.ts';
 
 export interface ProjectSeed {
   meta: ProjectMeta;
@@ -174,7 +184,18 @@ export interface ProjectPersistence {
   putDigitalIdDirectoryEntriesBatch(
     entries: readonly DigitalIdDirectoryEntry[],
   ): Promise<{ written: number }>;
+  /**
+   * Full partition hydrate — for tests and export streaming only.
+   * App UI must use {@link queryDigitalIdDirectoryPage} instead.
+   */
   listDigitalIdDirectoryEntries(projectId: string): Promise<DigitalIdDirectoryEntry[]>;
+  queryDigitalIdDirectoryPage(
+    args: DigitalIdDirectoryPageQuery,
+  ): Promise<DigitalIdDirectoryPageResult>;
+  iterateDigitalIdDirectory(
+    projectId: string,
+    onRow: (row: DigitalIdDirectoryEntry) => void | Promise<void>,
+  ): Promise<void>;
   getDigitalIdDirectoryEntry(
     projectId: string,
     digitalId: number,

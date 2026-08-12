@@ -19,6 +19,8 @@ import type {
   BatchPutItemResult,
   BatchPutResult,
   DigitalContactPut,
+  DigitalIdDirectoryPageQuery,
+  DigitalIdDirectoryPageResult,
   DirectoryPersistenceChange,
   DirectoryPersistenceListener,
   EntityKind,
@@ -29,6 +31,7 @@ import type {
   PutResult,
   SatellitePut,
 } from './types.ts';
+import { queryDigitalIdDirectoryPageInMemory } from './digitalIdDirectoryQuery.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
 import { readRadioBuildRow } from './radioBuildRow.ts';
@@ -204,9 +207,30 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   }
 
   async listDigitalIdDirectoryEntries(projectId: string): Promise<DigitalIdDirectoryEntry[]> {
-    return [...this.digitalIdDirectory.values()]
+    return queryDigitalIdDirectoryPageInMemory(this.digitalIdDirectory.values(), {
+      projectId,
+      offset: 0,
+      limit: Number.MAX_SAFE_INTEGER,
+      orderBy: 'name',
+    }).rows;
+  }
+
+  async queryDigitalIdDirectoryPage(
+    args: DigitalIdDirectoryPageQuery,
+  ): Promise<DigitalIdDirectoryPageResult> {
+    return queryDigitalIdDirectoryPageInMemory(this.digitalIdDirectory.values(), args);
+  }
+
+  async iterateDigitalIdDirectory(
+    projectId: string,
+    onRow: (row: DigitalIdDirectoryEntry) => void | Promise<void>,
+  ): Promise<void> {
+    const rows = [...this.digitalIdDirectory.values()]
       .filter((row) => row.projectId === projectId)
       .sort((a, b) => a.name.localeCompare(b.name));
+    for (const row of rows) {
+      await onRow(row);
+    }
   }
 
   async getDigitalIdDirectoryEntry(
