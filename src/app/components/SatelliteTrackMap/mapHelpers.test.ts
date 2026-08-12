@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { LatLon } from '@core/domain/geo.ts';
 import {
   duplicateSegmentsForWorldCopies,
+  nearestLongitudeShift,
   splitAtAntimeridian,
   splitRingAtAntimeridian,
+  unwrapLongitudes,
 } from './mapHelpers.ts';
 
 describe('duplicateSegmentsForWorldCopies', () => {
@@ -32,6 +34,89 @@ describe('duplicateSegmentsForWorldCopies', () => {
 
     expect(segments).toHaveLength(2);
     expect(copies).toHaveLength(6);
+  });
+});
+
+describe('unwrapLongitudes', () => {
+  it('returns points unchanged when there is no antimeridian crossing', () => {
+    const points: LatLon[] = [
+      [0, 10],
+      [1, 15],
+      [2, 20],
+    ];
+    expect(unwrapLongitudes(points)).toEqual(points);
+  });
+
+  it('continues eastward past +180 instead of jumping back to -180', () => {
+    const points: LatLon[] = [
+      [0, 170],
+      [0, 179],
+      [0, -179],
+      [0, -170],
+    ];
+    expect(unwrapLongitudes(points)).toEqual([
+      [0, 170],
+      [0, 179],
+      [0, 181],
+      [0, 190],
+    ]);
+  });
+
+  it('continues westward past -180 instead of jumping back to +180', () => {
+    const points: LatLon[] = [
+      [0, -170],
+      [0, -179],
+      [0, 179],
+      [0, 170],
+    ];
+    expect(unwrapLongitudes(points)).toEqual([
+      [0, -170],
+      [0, -179],
+      [0, -181],
+      [0, -190],
+    ]);
+  });
+
+  it('carries the accumulated shift forward for points sampled after the crossing', () => {
+    // One eastward crossing (170 -> 179 -> -179 -> -170, matching the case above, unwrapped to
+    // 190), then two more small eastward steps with no further crossing — the +360 correction
+    // from the earlier crossing must still apply to them.
+    const points: LatLon[] = [
+      [0, 170],
+      [0, 179],
+      [0, -179],
+      [0, -170],
+      [0, -160],
+      [0, -150],
+    ];
+    const unwrapped = unwrapLongitudes(points);
+    expect(unwrapped.map((p) => p[1])).toEqual([170, 179, 181, 190, 200, 210]);
+  });
+
+  it('handles empty and single-point input', () => {
+    expect(unwrapLongitudes([])).toEqual([]);
+    expect(unwrapLongitudes([[5, 175]])).toEqual([[5, 175]]);
+  });
+});
+
+describe('nearestLongitudeShift', () => {
+  it('returns 0 when the point is already closest to the reference', () => {
+    expect(nearestLongitudeShift(-5, -2)).toBe(0);
+  });
+
+  it('picks +360 when the raw point sits far west of the reference', () => {
+    // Raw point at -170, reference at 170: -170 is 340 away directly, but only 20 away as +360.
+    expect(nearestLongitudeShift(-170, 170)).toBe(360);
+  });
+
+  it('picks -360 when the raw point sits far east of the reference', () => {
+    // Raw point at 170, reference at -170: 170 is 340 away directly, but only 20 away as -360.
+    expect(nearestLongitudeShift(170, -170)).toBe(-360);
+  });
+
+  it('picks a shift beyond a single world-copy when the raw point is many laps away', () => {
+    // Raw point unwrapped to 600 (well over a lap and a half east), reference at 10.
+    expect(nearestLongitudeShift(600, 10)).toBe(-720);
   });
 });
 

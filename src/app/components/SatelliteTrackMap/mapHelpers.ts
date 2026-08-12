@@ -111,3 +111,54 @@ const OBSERVER_DIV_ICON = L.divIcon({
 export function observerDivIcon(): L.DivIcon {
   return OBSERVER_DIV_ICON;
 }
+
+/**
+ * Standard longitude-unwrap: walks consecutive samples and accumulates a running multiple-of-360
+ * correction so the delta between any two consecutive points never exceeds 180° in magnitude —
+ * i.e. turns antimeridian-crossing raw samples (each individually wrapped to ±180° by
+ * `satellite.js`) into one continuous coordinate sequence with no artificial jump, instead of
+ * `splitAtAntimeridian`'s "cut into separate segments" approach. Used by `SatelliteTrackMap` to
+ * draw a pass's solid track + dotted approach + live marker as a single continuous line (#1094
+ * follow-up) rather than three independently-clipped, triple-duplicated pieces that rarely lined
+ * up. Empty/single-point input passes through unchanged.
+ */
+export function unwrapLongitudes(points: LatLon[]): LatLon[] {
+  if (points.length === 0) return [];
+  const result: LatLon[] = [[points[0]![0], points[0]![1]]];
+  for (let i = 1; i < points.length; i += 1) {
+    const [lat, lon] = points[i]!;
+    const prevRawLon = points[i - 1]![1];
+    let delta = lon - prevRawLon;
+    if (delta > 180) delta -= 360;
+    else if (delta < -180) delta += 360;
+    const prevUnwrappedLon = result[i - 1]![1];
+    result.push([lat, prevUnwrappedLon + delta]);
+  }
+  return result;
+}
+
+/**
+ * The multiple of 360° that brings `lon` closest to `referenceLon` — i.e. `lon + shift` lands in
+ * `(referenceLon - 180, referenceLon + 180]`. General nearest-world-copy math (any multiple, not
+ * just `-360`/`0`/`+360`), replacing the old `chooseWorldCopyOffset`'s small-candidate-array
+ * approach now that `SatelliteTrackMap` shifts a whole unwrapped pass as one unit anchored on its
+ * own track rather than snapping a lone marker to the nearest of a few fixed repeats.
+ */
+export function nearestLongitudeShift(lon: number, referenceLon: number): number {
+  return Math.round((referenceLon - lon) / 360) * 360;
+}
+
+/**
+ * Live-position marker icon for a satellite's current subsatellite point, tinted per-satellite
+ * via `color` (expected: `colorForNoradId(noradId, <reduced alpha>)`, matching the de-emphasised
+ * hue family the dotted approach track uses). Unlike `observerDivIcon`, this isn't a module-level
+ * singleton — colour varies per satellite — so callers should memoize per `noradId` (not per
+ * render/poll tick) to avoid the `Marker` icon-identity churn `SatelliteLiveMap` guards against.
+ */
+export function liveSatelliteDivIcon(color: string): L.DivIcon {
+  return L.divIcon({
+    className: classes.liveMarkerWrap,
+    html: `<div class="${classes.liveMarker}" style="background:${color}"></div>`,
+    iconAnchor: [6, 6],
+  });
+}

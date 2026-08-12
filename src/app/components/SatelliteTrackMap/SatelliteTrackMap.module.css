@@ -42,3 +42,19 @@
   border: 2px solid #fff;
   box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.4);
 }
+
+.liveMarkerWrap {
+  background: transparent;
+  border: none;
+}
+
+/* Smaller than .observerDot / SatelliteLiveMap's .satelliteDot — reads as de-emphasised
+   current-position context, not a focal marker; colour comes from the inline `style`
+   `liveSatelliteDivIcon` sets per satellite. A white border keeps it visible against light
+   and dark basemap tiles alike — #1094 review feedback: the marker was too subtle without one. */
+.liveMarker {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+}
