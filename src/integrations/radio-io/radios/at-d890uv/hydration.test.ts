@@ -112,6 +112,31 @@ describe('assembleAtD890WriteImage', () => {
     const set = image.get(D890_MAP.ChannelSet, 0x200);
     expect(set[0]! & 1).toBe(1);
   });
+
+  it('clears ZoneHide bits for occupied zones on a 0xff assemble base', () => {
+    const image = assembleAtD890WriteImage(
+      [
+        {
+          slotIndex: 1,
+          empty: false,
+          wireName: 'CH1',
+          rxHz: 145_500_000,
+          txHz: 145_500_000,
+          rxTone: { kind: 'none' },
+          txTone: { kind: 'none' },
+          powerPercent: 100,
+          bandwidth: 'FM',
+          mode: 'analog',
+        },
+      ],
+      { zones: [{ wireName: 'Local', channelNumbers: [1] }] },
+    );
+    const zoneSet = image.get(D890_MAP.ZoneSet, 0x20);
+    const zoneHide = image.get(D890_MAP.ZoneHide, 0x20);
+    expect(listSetBits(zoneSet)).toEqual([0]);
+    expect(zoneHide[0]! & 1).toBe(0);
+    expect(listSetBits(zoneHide)).toEqual([]);
+  });
 });
 
 describe('cacheFromBag', () => {

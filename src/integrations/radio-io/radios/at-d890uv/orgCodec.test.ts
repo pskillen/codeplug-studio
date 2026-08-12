@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { D890_MAP } from './constants.ts';
-import { encodeZonesIntoAtD890Image } from './zoneCodec.ts';
+import {
+  assertAtD890HasVisibleZones,
+  countAtD890VisibleZones,
+  encodeZonesIntoAtD890Image,
+  listZoneMemberIndicesFromCache,
+} from './zoneCodec.ts';
 import { encodeTalkgroupsIntoAtD890Image } from './talkGroupCodec.ts';
 import { listSetBits } from './bitmap.ts';
-import { listZoneMemberIndicesFromCache } from './zoneCodec.ts';
 import { mergeChannelsIntoAtD890uvHydration } from './hydration.ts';
 import { createRadioCloneHydrationBagFromBlocks } from '@core/models/radioCloneHydration.ts';
 import { AT_D890UV_MODEL_ID } from './hydration.ts';
@@ -72,6 +76,49 @@ describe('zoneCodec', () => {
       expect(readU16Le(outA, i * 2)).toBe(0);
       expect(readU16Le(outB, i * 2)).toBe(0);
     }
+  });
+
+  it('clears ZoneHide even when the image was filled with 0xff', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    encodeZonesIntoAtD890Image(image, [
+      { wireName: 'Z1', channelNumbers: [1] },
+      { wireName: 'Z2', channelNumbers: [2] },
+    ]);
+    const zoneSet = image.get(D890_MAP.ZoneSet, 0x20);
+    const zoneHide = image.get(D890_MAP.ZoneHide, 0x20);
+    expect(listSetBits(zoneSet)).toEqual([0, 1]);
+    expect(listSetBits(zoneHide)).toEqual([]);
+    expect(zoneHide.every((b) => b === 0)).toBe(true);
+  });
+
+  it('counts occupied zones that are not hidden as visible', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    encodeZonesIntoAtD890Image(image, [{ wireName: 'Z1', channelNumbers: [1] }]);
+    expect(countAtD890VisibleZones(image)).toBe(1);
+    expect(() => assertAtD890HasVisibleZones(image)).not.toThrow();
+  });
+
+  it('refuses when ZoneSet is empty', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    encodeZonesIntoAtD890Image(image, []);
+    expect(countAtD890VisibleZones(image)).toBe(0);
+    expect(() => assertAtD890HasVisibleZones(image)).toThrow(/at least one visible zone/);
+  });
+
+  it('refuses when occupied zones are all hidden', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0);
+    const zoneSet = new Uint8Array(0x20);
+    zoneSet[0] = 0x01;
+    const zoneHide = new Uint8Array(0x20);
+    zoneHide[0] = 0x01;
+    image.set(D890_MAP.ZoneSet, zoneSet);
+    image.set(D890_MAP.ZoneHide, zoneHide);
+    expect(countAtD890VisibleZones(image)).toBe(0);
+    expect(() => assertAtD890HasVisibleZones(image)).toThrow(/ZoneHide/);
   });
 });
 

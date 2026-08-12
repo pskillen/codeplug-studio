@@ -1,9 +1,13 @@
 /**
  * AT-D890UV zone encode — ZoneSet, names, membership, A/B tables.
+ *
+ * Occupied zones are visible unless we model hide (we do not today). Assemble-from-0xff
+ * must not leave ZoneHide all-set — firmware treats that as zero visible zones (#1125).
  */
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioZoneDto } from '../../radioWriteProjection.ts';
+import { RadioProtocolError } from '../../kit/errors.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { clearBitmap, listSetBits, setBitmapBit } from './bitmap.ts';
 import { AT_D890_INVALID_U16, AT_D890_LIMITS, D890_MAP } from './constants.ts';
@@ -42,6 +46,9 @@ export function encodeZonesIntoAtD890Image(
   const zoneA = image.get(D890_MAP.ZoneAChannel, D890_MAP.ZoneTableBytes).slice();
   const zoneB = image.get(D890_MAP.ZoneBChannel, D890_MAP.ZoneTableBytes).slice();
   clearBitmap(zoneSet);
+  // Do not copy 0xff assemble fill (or live hide bits). Occupied zones are visible
+  // until the projection models hide.
+  clearBitmap(zoneHide);
 
   const maxZones = AT_D890UV_LIMITS.ZONE_MAX;
   for (let i = 0; i < maxZones; i++) {
@@ -63,7 +70,6 @@ export function encodeZonesIntoAtD890Image(
     image.set(zoneChannelsAddress(zIdx), encodeAtD890ZoneMembership(zone.channelNumbers));
     writeU16Le(zoneA, zIdx * 2, 0);
     writeU16Le(zoneB, zIdx * 2, zone.channelNumbers.length > 1 ? 1 : 0);
-    void zoneHide;
   });
 
   image.set(D890_MAP.ZoneSet, zoneSet);
@@ -71,6 +77,27 @@ export function encodeZonesIntoAtD890Image(
   image.set(D890_MAP.ZoneAChannel, zoneA);
   image.set(D890_MAP.ZoneBChannel, zoneB);
   return image;
+}
+
+/** Occupied ZoneSet bits whose ZoneHide bit is clear. */
+export function countAtD890VisibleZones(image: MemoryMap): number {
+  const zoneSet = image.get(D890_MAP.ZoneSet, AT_D890_LIMITS.ZONE_SET_BYTES);
+  const hidden = new Set(listSetBits(image.get(D890_MAP.ZoneHide, AT_D890_LIMITS.ZONE_SET_BYTES)));
+  let visible = 0;
+  for (const idx of listSetBits(zoneSet)) {
+    if (!hidden.has(idx)) visible += 1;
+  }
+  return visible;
+}
+
+export const AT_D890_ZERO_VISIBLE_ZONES_MESSAGE =
+  'This radio needs at least one visible zone. The AT-D890UV rejects a codeplug with no visible zones (empty ZoneSet, or every occupied zone hidden in ZoneHide) and shows Program Error Please Initialize The Radio, which erases the radio. Add a zone to the build before Write.';
+
+/** Refuse Write when the image would present zero visible zones to firmware (#1125, #880). */
+export function assertAtD890HasVisibleZones(image: MemoryMap): void {
+  if (countAtD890VisibleZones(image) === 0) {
+    throw new RadioProtocolError(AT_D890_ZERO_VISIBLE_ZONES_MESSAGE);
+  }
 }
 
 export function syncZoneRegionsToCache(cache: AtD890DownloadCache, image: MemoryMap): void {
