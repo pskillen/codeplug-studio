@@ -4,6 +4,7 @@ import { IconId, IconSearch } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { DigitalIdDirectoryOrderBy } from '@integrations/persistence/index.ts';
+import DigitalIdDirectoryDetailDrawer from '../../../components/contacts/DigitalIdDirectoryDetailDrawer.tsx';
 import CountryComboboxField from '../../../components/directories/CountryComboboxField.tsx';
 import pageClasses from '../../../components/directories/DirectoryIngestPage.module.css';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
@@ -23,18 +24,12 @@ import { useDigitalIdDirectoryPage } from '../../../hooks/useDigitalIdDirectoryP
 import { v1SortToV2, v2SortToV1 } from '../../../lib/libraryListTable.tsx';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useProjects } from '../../../state/useProjects.ts';
+import { useLibrary } from '../../../state/useLibrary.ts';
 import classes from '../../../components/library/LibraryInventoryPage.module.css';
 
 const PAGE_SIZE = 50;
 
 const ORDER_BY_KEYS = new Set<string>(['digitalId', 'callsign', 'name']);
-
-function sortToOrderBy(sort: DataTableSortState | null): DigitalIdDirectoryOrderBy {
-  if (sort && ORDER_BY_KEYS.has(sort.key)) {
-    return sort.key as DigitalIdDirectoryOrderBy;
-  }
-  return 'name';
-}
 
 function orderByToSort(orderBy: DigitalIdDirectoryOrderBy): DataTableSortState {
   return { key: orderBy, direction: 'asc' };
@@ -43,11 +38,14 @@ function orderByToSort(orderBy: DigitalIdDirectoryOrderBy): DataTableSortState {
 export default function DigitalIdDirectoryListPage() {
   const navigate = useNavigate();
   const { activeProjectId } = useProjects();
+  const { library, reload } = useLibrary();
   const [page, setPage] = useState(1);
   const [orderBy, setOrderBy] = useState<DigitalIdDirectoryOrderBy>('name');
   const [callsignPrefix, setCallsignPrefix] = useState('');
   const [namePrefix, setNamePrefix] = useState('');
   const [countryEquals, setCountryEquals] = useState('');
+  const [detailEntry, setDetailEntry] = useState<DigitalIdDirectoryEntry | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const filters = useMemo(
     () => ({
@@ -232,6 +230,10 @@ export default function DigitalIdDirectoryListPage() {
               filteredEmptyMessage={
                 hasFilters ? 'No directory rows match your filters.' : 'No directory rows yet.'
               }
+              onRowActivate={(row) => {
+                setDetailEntry(row);
+                setDetailOpen(true);
+              }}
             />
 
             {loading ? (
@@ -241,6 +243,13 @@ export default function DigitalIdDirectoryListPage() {
             ) : null}
           </Panel>
         )}
+        <DigitalIdDirectoryDetailDrawer
+          entry={detailEntry}
+          libraryContacts={library.digitalContacts}
+          opened={detailOpen}
+          onClose={() => setDetailOpen(false)}
+          onCopied={() => void reload()}
+        />
       </div>
     </DesignSystemV2Provider>
   );

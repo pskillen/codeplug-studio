@@ -26,6 +26,7 @@ export {
   findDigitalContactByDigitalId,
 } from './findDigitalContact.ts';
 export { mapRadioidUserToDigitalContact } from './mapToDigitalContact.ts';
+export { mapDirectoryEntryToDigitalContact } from './mapDirectoryEntryToDigitalContact.ts';
 export {
   applyRadioidListingToDirectoryEntry,
   mapRadioidUserToDirectoryEntry,
