@@ -25,6 +25,8 @@ IndexedDB remains the live edit store with per-entity revision concurrency. YAML
 | `library`      | `Library`       | Channels, zones, contacts, talk groups, RX lists                          |
 | `formatBuilds` | `FormatBuild[]` | Per-target builds with selections, overrides, trait layout                |
 
+The **RadioID directory shadow** (`digitalIdDirectory` IndexedDB partition) is **not** part of native YAML or Google Drive portable sync — use the separate local directory interchange on the Digital ID directory page ([#986](https://github.com/pskillen/codeplug-studio/issues/986)–[#988](https://github.com/pskillen/codeplug-studio/issues/988)).
+
 Envelope fields `schemaVersion` and `studioSchemaVersion` are documented in the tier 3 reference.
 
 ## Code anchors

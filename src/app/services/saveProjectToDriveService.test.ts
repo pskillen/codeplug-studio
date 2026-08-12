@@ -60,6 +60,48 @@ describe('saveProjectToDriveService', () => {
     expect(updated?.interchange?.googleDrive?.exportedAt).toBe('2026-07-09T14:04:50.000Z');
   });
 
+  it('uploads project YAML without directory shadow rows', async () => {
+    const meta = recordExportDestination(newProjectMeta('Demo'), 'googleDrive', {
+      fileName: 'demo.yaml',
+      folderId: 'folder-1',
+      fileId: 'file-1',
+    });
+    await persistence.seedProject({ meta, digitalContacts: [] });
+    await persistence.putDigitalIdDirectoryEntriesBatch([
+      {
+        projectId: meta.projectId,
+        digitalId: 424242,
+        mode: 'dmr',
+        callsign: 'SHADOW',
+        name: 'Not in Drive',
+        city: '',
+        state: '',
+        country: '',
+      },
+    ]);
+
+    let uploadedContent = '';
+    const writeFile = vi.fn(async (params: { content: string }) => {
+      uploadedContent = params.content;
+      return {
+        id: 'file-1',
+        name: 'demo.yaml',
+        mimeType: 'application/yaml',
+        modifiedTime: '2026-07-09T14:04:50.000Z',
+      };
+    });
+    const port = mockDrivePort({ writeFile });
+    await saveProjectToDrive(port, {
+      projectId: meta.projectId,
+      drive: meta.interchange!.googleDrive!,
+    });
+
+    expect(writeFile).toHaveBeenCalledTimes(1);
+    expect(uploadedContent).not.toContain('digitalIdDirectory');
+    expect(uploadedContent).not.toContain('424242');
+    expect(uploadedContent).not.toContain('Not in Drive');
+  });
+
   it('falls back to metadata when write response lacks modifiedTime', async () => {
     const meta = recordExportDestination(newProjectMeta('Demo'), 'googleDrive', {
       fileName: 'demo.yaml',
