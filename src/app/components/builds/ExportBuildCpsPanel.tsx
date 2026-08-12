@@ -431,6 +431,7 @@ export default function ExportBuildCpsPanel({
     <ExportBuildSettingsSections
       build={build}
       formatId={formatId}
+      profileId={formatId === 'chirp' ? chirpExportProfileId : profileId}
       saving={savingSettings}
       settingsError={settingsError}
       profileNameLimit={profileNameLimit}

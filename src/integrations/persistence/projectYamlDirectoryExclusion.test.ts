@@ -47,4 +47,30 @@ describe('project YAML directory shadow exclusion', () => {
     expect(parsed.library?.digitalContacts?.[0]?.digitalId).toBe(111);
     expect(parsed.library?.digitalContacts?.[0]?.name).toBe('Library only');
   });
+
+  it('keeps project YAML size stable when directory shadow grows', async () => {
+    const store = new InMemoryProjectPersistence();
+    const port = asPort(store);
+    const meta = newProjectMeta('Size test');
+    await store.seedProject({
+      meta,
+      digitalContacts: [newDigitalContact(meta.projectId, 'One', 1)],
+    });
+
+    const smallExport = await exportProjectYaml(port, meta.projectId);
+    const manyRows = Array.from({ length: 500 }, (_, index) => ({
+      projectId: meta.projectId,
+      digitalId: 1_000_000 + index,
+      mode: 'dmr' as const,
+      callsign: `CALL${index}`,
+      name: `Shadow ${index}`,
+      city: '',
+      state: '',
+      country: '',
+    }));
+    await store.putDigitalIdDirectoryEntriesBatch(manyRows);
+
+    const largeDirectoryExport = await exportProjectYaml(port, meta.projectId);
+    expect(largeDirectoryExport.content.length).toBe(smallExport.content.length);
+  });
 });

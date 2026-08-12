@@ -1,6 +1,9 @@
 import type { ChannelBehaviourContext } from './channelBehaviourDefaults/resolve.ts';
 import type { ZoneBehaviourContext } from './zoneBehaviourDefaults/resolve.ts';
 import type { DefaultScanInclusion } from '@core/models/formatBuild.ts';
+import type { CpsDirectoryProjectionPayload } from '@core/domain/cpsDigitalDirectoryProjection.ts';
+import type { DualBankRadioWriteOptions } from '@core/domain/digitalIdDirectoryProjection.ts';
+import type { SingleBankDigitalProjectionMode } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
 import type { DigitalContactExportNameMode } from './digitalContactExportName.ts';
 
@@ -131,6 +134,12 @@ export interface CpsExportOptions {
   scanListDropoutDelaySeconds?: number;
   /** AT-D890UV scan-list Dwell Time[s] (0.1–5.0). From build exportSettings. */
   scanListDwellTimeSeconds?: number;
+  /** Runtime directory shadow projection — populated by app layer before serialise. */
+  directoryProjection?: CpsDirectoryProjectionPayload;
+  /** Persisted dual-bank CPS preferences (mirrors Web Serial Write defaults). */
+  cpsDualBankDirectory?: DualBankRadioWriteOptions;
+  /** Persisted single-bank CPS projection mode (Anytone). */
+  cpsSingleBankProjectionMode?: SingleBankDigitalProjectionMode;
 }
 
 export interface ImportDocumentResult extends ExportResult {

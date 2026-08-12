@@ -15,6 +15,7 @@ import { downloadTextFile, downloadZip } from '@integrations/download/browserDow
 import { googleDrivePort } from '@integrations/cloud/index.ts';
 import { persistence } from '../state/persistence.ts';
 import { loadLibrarySlice } from '../lib/loadLibrarySlice.ts';
+import { enrichCpsExportOptionsWithDirectory } from './cpsDirectoryExport.ts';
 
 export interface CpsDriveUploadTarget {
   folderId: string;
@@ -70,6 +71,25 @@ async function mergeProjectExportOptions(
   return { ...options, projectName: meta.name };
 }
 
+async function mergeCpsExportOptions(
+  store: ProjectPersistence,
+  projectId: string,
+  build: RadioBuild,
+  egress: EgressPath,
+  library: Awaited<ReturnType<typeof loadLibrarySlice>>,
+  options?: CpsExportOptions,
+): Promise<CpsExportOptions> {
+  const withProjectName = await mergeProjectExportOptions(store, projectId, options);
+  return enrichCpsExportOptionsWithDirectory(
+    store,
+    projectId,
+    build,
+    egress,
+    library,
+    withProjectName,
+  );
+}
+
 function slugifyFileName(name: string): string {
   return (
     name
@@ -113,7 +133,14 @@ export async function previewCpsExport(
   const { egressId, cpsOptions } = stripAppOptions(options);
   const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
   const library = await loadLibrarySlice(store, projectId);
-  const exportOptions = await mergeProjectExportOptions(store, projectId, cpsOptions);
+  const exportOptions = await mergeCpsExportOptions(
+    store,
+    projectId,
+    build,
+    egress,
+    library,
+    cpsOptions,
+  );
   const result = exportBuildAll({ build, egress, library, options: exportOptions });
   return {
     files: result.files,
@@ -132,7 +159,14 @@ export async function listCpsExportFileNames(
   const { egressId, cpsOptions } = stripAppOptions(options);
   const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
   const library = await loadLibrarySlice(store, projectId);
-  const exportOptions = await mergeProjectExportOptions(store, projectId, cpsOptions);
+  const exportOptions = await mergeCpsExportOptions(
+    store,
+    projectId,
+    build,
+    egress,
+    library,
+    cpsOptions,
+  );
   return listExportBuildFileNames({ build, egress, library, options: exportOptions });
 }
 
@@ -146,7 +180,15 @@ export async function previewCpsSingleFile(
   const { egressId, cpsOptions } = stripAppOptions(options);
   const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
   const library = await loadLibrarySlice(store, projectId);
-  const result = exportBuildSingleFile({ build, egress, library, options: cpsOptions });
+  const exportOptions = await mergeCpsExportOptions(
+    store,
+    projectId,
+    build,
+    egress,
+    library,
+    cpsOptions,
+  );
+  const result = exportBuildSingleFile({ build, egress, library, options: exportOptions });
   const fileName = cpsOptions.fileName ?? result.fileName;
   return {
     files: result.files,
@@ -166,7 +208,14 @@ export async function downloadCpsFile(
   const { egressId, cpsOptions } = stripAppOptions(options);
   const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
   const library = await loadLibrarySlice(store, projectId);
-  const exportOptions = await mergeProjectExportOptions(store, projectId, cpsOptions);
+  const exportOptions = await mergeCpsExportOptions(
+    store,
+    projectId,
+    build,
+    egress,
+    library,
+    cpsOptions,
+  );
   const result = exportBuildFile({ build, egress, library, fileName, options: exportOptions });
   downloadTextFile(result.content, fileName);
   return { warnings: result.warnings };
@@ -182,7 +231,15 @@ export async function downloadCpsSingleFile(
   const { egressId, cpsOptions } = stripAppOptions(options);
   const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
   const library = await loadLibrarySlice(store, projectId);
-  const result = exportBuildSingleFile({ build, egress, library, options: cpsOptions });
+  const exportOptions = await mergeCpsExportOptions(
+    store,
+    projectId,
+    build,
+    egress,
+    library,
+    cpsOptions,
+  );
+  const result = exportBuildSingleFile({ build, egress, library, options: exportOptions });
   const fileName = cpsOptions.fileName ?? result.fileName;
   downloadTextFile(result.content, fileName);
   return { warnings: result.warnings };
@@ -225,7 +282,14 @@ export async function buildCpsZipBytes(
   const cpsOptions: CpsExportOptions = rest;
   const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);
   const library = await loadLibrarySlice(store, projectId);
-  const exportOptions = await mergeProjectExportOptions(store, projectId, cpsOptions);
+  const exportOptions = await mergeCpsExportOptions(
+    store,
+    projectId,
+    build,
+    egress,
+    library,
+    cpsOptions,
+  );
   const result = exportBuildZip({
     build,
     egress,

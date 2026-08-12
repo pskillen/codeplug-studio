@@ -35,11 +35,26 @@ export interface CollectDualBankDirectorySliceArgs {
   store: ProjectPersistence;
   projectId: string;
   library: LibrarySlice;
+  /** CPS `formatId` or Web Serial `egressProfileId` — used to pick directory bank targets. */
+  formatId?: string;
   egressProfileId: string;
   options: DualBankRadioWriteOptions;
   maxRadioIds?: number;
   maxDirectoryContacts?: number;
   warnings: string[];
+}
+
+function dualBankDirectoryTargets(
+  formatId: string | undefined,
+  egressProfileId: string,
+): { forDm32: boolean; forOpenGd77: boolean } {
+  if (formatId === 'dm32' || egressProfileId === 'radio-io-dm32uv') {
+    return { forDm32: true, forOpenGd77: false };
+  }
+  if (formatId === 'opengd77' || isOpenGd77RadioIoEgress(egressProfileId)) {
+    return { forDm32: false, forOpenGd77: true };
+  }
+  return { forDm32: false, forOpenGd77: false };
 }
 
 export async function collectDualBankDirectorySlice(
@@ -50,8 +65,7 @@ export async function collectDualBankDirectorySlice(
   }
 
   const libraryIds = libraryDigitalIdSet(args.library.digitalContacts);
-  const forDm32 = args.egressProfileId === 'radio-io-dm32uv';
-  const forOpenGd77 = isOpenGd77RadioIoEgress(args.egressProfileId);
+  const { forDm32, forOpenGd77 } = dualBankDirectoryTargets(args.formatId, args.egressProfileId);
   if (!forDm32 && !forOpenGd77) {
     return { radioIds: [], digitalContacts: [] };
   }

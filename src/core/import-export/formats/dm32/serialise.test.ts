@@ -15,10 +15,11 @@ import {
 } from '@core/domain/factories.ts';
 import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
-import { serialiseDm32Files } from './serialise.ts';
+import { serialiseDm32Files, resolveDm32ExportFileNames } from './serialise.ts';
+import { DM32_DMR_ID_FILE_NAME } from './columns.ts';
+import { parseCsv } from '@core/import-export/csvParse.ts';
 import { collectDm32ExportWarnings } from './warnings.ts';
 import { CHANNEL_COL, ZONE_COL, SCAN_COL, RX_GROUP_LIST_COL, CONTACT_COL } from './columns.ts';
-import { parseCsv } from '@core/import-export/csvParse.ts';
 import { minimalDm32Bundle } from '../../../../test/dm32/bundles.ts';
 import {
   minimalDm32ExportBuild,
@@ -741,5 +742,30 @@ describe('DM32 export serialise', () => {
       const fixtureCsv = readFileSync(join(fixtureDir, fileName), 'utf8');
       expect(compareCsvHeaders(fixtureCsv, exported[fileName]!)).toBe(true);
     }
+  });
+
+  it('emits DMR-ID.csv when directory projection requests operator radio IDs', () => {
+    const build = minimalDm32ExportBuild();
+    const library = minimalDm32ExportLibrary();
+    const assembled = { ...assemble(build, library, DM32_PROJECTION), library };
+    const options = {
+      directoryProjection: {
+        dualBank: {
+          includeLibraryContacts: false,
+          directoryDigitalContacts: [],
+          dm32RadioIds: [
+            { dmrId: 2_357_910, name: 'Paddy MM9DY' },
+            { dmrId: 123, name: 'Dir only' },
+          ],
+          includeDm32RadioIdFile: true,
+        },
+      },
+    };
+    expect(resolveDm32ExportFileNames(assembled, options)).toContain(DM32_DMR_ID_FILE_NAME);
+    const files = serialiseDm32Files(assembled, library, options);
+    const rows = parseCsv(files[DM32_DMR_ID_FILE_NAME]!);
+    expect(rows[1]).toEqual(['1', '2357910', 'Paddy MM9DY']);
+    expect(rows[2]).toEqual(['2', '123', 'Dir only']);
+    expect(files['Contacts.csv']).not.toContain('Dir only');
   });
 });

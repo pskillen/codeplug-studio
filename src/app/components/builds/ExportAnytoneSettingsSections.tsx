@@ -8,6 +8,7 @@ import DigitalContactExportNameModeSelect from './DigitalContactExportNameModeSe
 import ExportSettingsSubheading from './ExportSettingsSubheading.tsx';
 import ChannelBehaviourExportOverrides from './ChannelBehaviourExportOverrides.tsx';
 import ZoneBehaviourExportOverrides from './ZoneBehaviourExportOverrides.tsx';
+import ExportDirectoryProjectionFields from './ExportDirectoryProjectionFields.tsx';
 import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
 import { useDebouncedOptionalNumberField } from '../../hooks/useDebouncedOptionalNumberField.ts';
 import type { ExportBuildSettingsSectionsProps } from './ExportBuildSettingsSections.tsx';
@@ -15,6 +16,7 @@ import type { ExportBuildSettingsSectionsProps } from './ExportBuildSettingsSect
 type ExportAnytoneSettingsSectionsProps = Pick<
   ExportBuildSettingsSectionsProps,
   | 'build'
+  | 'profileId'
   | 'saving'
   | 'settingsError'
   | 'profileNameLimit'
@@ -25,6 +27,7 @@ type ExportAnytoneSettingsSectionsProps = Pick<
 
 export default function ExportAnytoneSettingsSections({
   build,
+  profileId,
   saving,
   settingsError,
   profileNameLimit,
@@ -240,6 +243,14 @@ export default function ExportAnytoneSettingsSections({
           }
         />
       </FieldCard>
+
+      <ExportDirectoryProjectionFields
+        build={build}
+        formatId="anytone"
+        profileId={profileId}
+        saving={saving}
+        onPatch={onExportSettingsPatch}
+      />
 
       <FieldCard
         title="RX group lists"
