@@ -34,10 +34,12 @@ import {
 } from '../../services/radioIoSession.ts';
 import { resolveRadioWriteGate } from '../../services/radioWriteEnvGate.ts';
 import {
+  getSatelliteKepsExclusions,
   getSatelliteKepsWriteAdapter,
   getSatelliteKepsWriteCapacity,
   getSatelliteKepsWritePreview,
   hasSatelliteKepsWriteAdapter,
+  type SatelliteKepsExclusion,
   type SatelliteKepsWriteResult,
 } from '../../services/satelliteKepsWriteAdapters.ts';
 import RadioIoProgressModal, {
@@ -101,14 +103,17 @@ export default function BuildSatelliteKepsPage() {
   const kepsWriteFn = egress ? getSatelliteKepsWriteAdapter(egress.profileId) : undefined;
   const kepsCapacity = egress ? getSatelliteKepsWriteCapacity(egress.profileId) : undefined;
   const kepsPreview = egress ? getSatelliteKepsWritePreview(egress.profileId) : undefined;
+  const kepsExclusions = egress ? getSatelliteKepsExclusions(egress.profileId) : undefined;
 
   /**
-   * Live-loaded enabled satellites for the preview — re-runs on `activeProjectId` change and on
-   * any persisted change for this project, so the preview stays live without a Write Keps or
-   * page reload. Moved verbatim from `BuildRadioIoPanel` (#1074/#1085).
+   * Live-loaded enabled satellites for the preview and the "Excluded from write" panel below
+   * (#1085 follow-up) — re-runs on `activeProjectId` change and on any persisted change for
+   * this project, so both stay live without a Write Keps or page reload. Gated on either
+   * function being registered, not just `kepsPreview`, so a profile with only one of the two
+   * still gets live data. Moved verbatim from `BuildRadioIoPanel` (#1074/#1085).
    */
   useEffect(() => {
-    if (!activeProjectId || !kepsPreview) {
+    if (!activeProjectId || (!kepsPreview && !kepsExclusions)) {
       return;
     }
     let cancelled = false;
@@ -126,11 +131,49 @@ export default function BuildSatelliteKepsPage() {
       cancelled = true;
       unsubscribe();
     };
-  }, [activeProjectId, kepsPreview]);
+  }, [activeProjectId, kepsPreview, kepsExclusions]);
 
   const previewEntries = useMemo<SatelliteWritePreviewEntry[]>(
     () => (kepsPreview ? kepsPreview(enabledSatellites) : []),
     [kepsPreview, enabledSatellites],
+  );
+
+  /**
+   * Live "why did this enabled satellite/transmitter not show up in the preview above" (#1085
+   * follow-up) — computed the same way `previewEntries` is, from the same `enabledSatellites`,
+   * so it updates as the operator toggles satellites/transmitters, no session or write required.
+   * Resolves display names locally rather than in the pure `getSatelliteKepsExclusions` function
+   * so that function can stay in `src/app/services/` without a UI-shaped return type.
+   */
+  interface ResolvedExclusion extends SatelliteKepsExclusion {
+    satelliteName: string;
+    transmitterLabel: string | null;
+  }
+  const exclusionEntries = useMemo<ResolvedExclusion[]>(() => {
+    if (!kepsExclusions) return [];
+    const satelliteById = new Map(enabledSatellites.map((s) => [s.id, s]));
+    return kepsExclusions(enabledSatellites).map((exclusion) => {
+      const satellite = satelliteById.get(exclusion.satelliteId);
+      const transmitter = satellite?.transmitters.find((t) => t.id === exclusion.transmitterId);
+      return {
+        ...exclusion,
+        satelliteName: satellite?.name ?? exclusion.satelliteId,
+        transmitterLabel: transmitter?.label ?? null,
+      };
+    });
+  }, [kepsExclusions, enabledSatellites]);
+
+  const exclusionColumns = useMemo<DataTableColumn<ResolvedExclusion>[]>(
+    () => [
+      { key: 'satelliteName', header: 'Satellite', render: (r) => r.satelliteName },
+      {
+        key: 'transmitterLabel',
+        header: 'Transmitter',
+        render: (r) => r.transmitterLabel ?? '—',
+      },
+      { key: 'reason', header: 'Reason', render: (r) => r.reason },
+    ],
+    [],
   );
 
   const previewColumns = useMemo<DataTableColumn<SatelliteWritePreviewEntry>[]>(
@@ -304,6 +347,21 @@ export default function BuildSatelliteKepsPage() {
             emptyMessage="No satellites are currently eligible to write."
           />
         </Panel>
+        {exclusionEntries.length > 0 ? (
+          <Panel title="Excluded from write" collapsible defaultCollapsed>
+            <Text size="sm" c="dimmed" mb="xs">
+              Enabled satellites/transmitters that would not appear in the preview above, and why —
+              computed live from the library, no session or write required.
+            </Text>
+            <DataTable
+              columns={exclusionColumns}
+              rows={exclusionEntries}
+              getRowId={(r) => `${r.satelliteId}-${r.transmitterId ?? 'satellite'}`}
+              totalRowCount={exclusionEntries.length}
+              emptyMessage="Nothing excluded."
+            />
+          </Panel>
+        ) : null}
         {kepsWriteFn && !writeHidden ? (
           <Group>
             <Button

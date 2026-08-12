@@ -71,7 +71,7 @@ export interface WriteSatellitesToRadioResult {
  * has its own specific reason in `skippedTransmitters`, so it is intentionally not duplicated
  * here with the generic "no write-eligible transmitters" reason.
  */
-function skippedSatellites(
+export function skippedSatellites(
   satellites: readonly Satellite[],
 ): { satelliteId: string; reason: string }[] {
   return satellites

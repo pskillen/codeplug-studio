@@ -45,6 +45,7 @@ const kepsWriteFn = vi.fn(
 
 let kepsCapacityStub: { max: number; countEligible: (s: readonly unknown[]) => number } | undefined;
 let kepsPreviewStub: ((satellites: readonly Satellite[]) => unknown[]) | undefined;
+let kepsExclusionsStub: ((satellites: readonly Satellite[]) => unknown[]) | undefined;
 
 vi.mock('../../services/satelliteKepsWriteAdapters.ts', () => ({
   hasSatelliteKepsWriteAdapter: (profileId: string) => profileId === 'radio-io-at-d890uv',
@@ -52,6 +53,7 @@ vi.mock('../../services/satelliteKepsWriteAdapters.ts', () => ({
     profileId === 'radio-io-at-d890uv' ? kepsWriteFn : undefined,
   getSatelliteKepsWriteCapacity: () => kepsCapacityStub,
   getSatelliteKepsWritePreview: () => kepsPreviewStub,
+  getSatelliteKepsExclusions: () => kepsExclusionsStub,
 }));
 
 vi.mock('../../hooks/useUnsavedNavigationGuard.ts', () => ({
@@ -215,6 +217,43 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
       expect(screen.queryByLabelText('Name truncated')).not.toBeInTheDocument();
     } finally {
       kepsPreviewStub = undefined;
+    }
+  });
+});
+
+describe('BuildSatelliteKepsPage — Excluded from write (#1085 follow-up)', () => {
+  it('does not render the Excluded from write panel when nothing is excluded', async () => {
+    kepsExclusionsStub = () => [];
+    try {
+      renderPage();
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Write Keps' })).toBeInTheDocument(),
+      );
+      expect(screen.queryByText('Excluded from write')).not.toBeInTheDocument();
+    } finally {
+      kepsExclusionsStub = undefined;
+    }
+  });
+
+  it('renders excluded satellites/transmitters with their reason, collapsed by default', async () => {
+    kepsExclusionsStub = (satellites) =>
+      satellites.map((s) => ({
+        satelliteId: s.id,
+        transmitterId: 'tx-1',
+        reason: 'SSTV not supported by Anytone D890.',
+      }));
+    try {
+      renderPage();
+      await waitFor(() => expect(screen.getByText('Excluded from write')).toBeInTheDocument());
+      // Collapsed by default — reason text is not visible until expanded.
+      expect(screen.queryByText('SSTV not supported by Anytone D890.')).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('Excluded from write'));
+      await waitFor(() =>
+        expect(screen.getByText('SSTV not supported by Anytone D890.')).toBeInTheDocument(),
+      );
+    } finally {
+      kepsExclusionsStub = undefined;
     }
   });
 });
