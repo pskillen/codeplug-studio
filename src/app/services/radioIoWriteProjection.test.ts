@@ -698,4 +698,56 @@ describe('buildRadioWriteProjection', () => {
       }),
     ).toThrow(/Missing export limits/);
   });
+
+  it('honours build exportSettings for talk-group abbreviation on Web Serial write', () => {
+    const ch = withExportEligibleDefaults({
+      ...newChannel('p1', 'A'),
+      id: 'ch-a',
+      rxFrequency: 145_000_000,
+      txFrequency: 145_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup', id: 'tg-long' },
+          rxGroupListId: null,
+        },
+      ],
+    });
+    const tg = {
+      ...newTalkGroup('p1', 'Scotland West Region', 23559),
+      id: 'tg-long',
+      abbreviation: 'Scot West',
+    };
+    const library = {
+      ...emptyLibrary([ch]),
+      talkGroups: [tg],
+    };
+    const { build: baseBuild, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
+    const withAbbrev = {
+      ...baseBuild,
+      exportSettings: { shortenNames: true, useTalkGroupAbbreviation: true },
+    };
+    const withoutAbbrev = {
+      ...baseBuild,
+      exportSettings: { shortenNames: true, useTalkGroupAbbreviation: false },
+    };
+    const assembledWith = assemble(withAbbrev, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const assembledWithout = assemble(withoutAbbrev, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+
+    const projWith = buildRadioWriteProjection(assembledWith, withAbbrev, library, egress);
+    const projWithout = buildRadioWriteProjection(assembledWithout, withoutAbbrev, library, egress);
+
+    expect(projWith.organisation.talkGroups?.[0]?.wireName).toBe('Scot West');
+    expect(projWithout.organisation.talkGroups?.[0]?.wireName).not.toBe('Scot West');
+    expect(projWithout.organisation.talkGroups?.[0]?.wireName.length).toBeLessThanOrEqual(16);
+  });
 });

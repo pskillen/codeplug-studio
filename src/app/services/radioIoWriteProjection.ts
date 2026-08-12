@@ -19,6 +19,7 @@ import {
 import type { FormatId } from '@core/import-export/types.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
+import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import {
   buildTalkGroupTimeslotCloneIndex,
   profileHasTalkGroupTimeslotClones,
@@ -315,6 +316,7 @@ function buildDm32Organisation(
               warnings,
               'Scan list',
               nameLengthScanList,
+              Boolean(zone.wireNameOverride?.trim()),
             );
             scanLists.push({
               wireName: scanName,
@@ -347,6 +349,7 @@ function buildDm32Organisation(
       warnings,
       'Zone',
       nameLengthZone,
+      Boolean(zone.wireNameOverride?.trim()),
     );
 
     zones.push({ wireName, channelNumbers });
@@ -379,6 +382,7 @@ function buildDm32Organisation(
 
 function buildTalkGroupsAndRx(
   assembled: AssembledBuild,
+  build: RadioBuild,
   egress: RadioWireEgressIds,
   warnings: string[],
 ): {
@@ -388,6 +392,7 @@ function buildTalkGroupsAndRx(
   fkMaps: RadioChannelFkMaps;
 } {
   const limits = requireProfileExportLimits(egress);
+  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const nameLen = requireNumericLimit(limits.nameLengthTalkGroup, 'nameLengthTalkGroup', egress);
   const maxTalkGroups = requireNumericLimit(limits.maxTalkGroups, 'maxTalkGroups', egress);
   const maxDigitalContacts =
@@ -408,14 +413,15 @@ function buildTalkGroupsAndRx(
 
   for (const row of assembled.talkGroups) {
     if (talkGroups.length >= maxTalkGroups) break;
-    const wireName = applyListWireNameLimits(
+    const wireName = applyTalkGroupWireNameLimits(
       row.wireName,
+      row.entity,
       reservedTg,
-      undefined,
+      merged,
       egress.profileId,
       warnings,
-      'Talk group',
       nameLen,
+      Boolean(row.wireNameOverride?.trim()),
     );
     const index = talkGroups.length + 1;
     talkGroups.push({
@@ -440,11 +446,12 @@ function buildTalkGroupsAndRx(
     const wireName = applyListWireNameLimits(
       row.wireName,
       reservedDc,
-      undefined,
+      merged,
       egress.profileId,
       warnings,
       'Contact',
       nameLen,
+      Boolean(row.wireNameOverride?.trim()),
     );
     digitalContacts.push({
       wireName,
@@ -472,11 +479,12 @@ function buildTalkGroupsAndRx(
     const wireName = applyListWireNameLimits(
       row.wireName,
       reservedRx,
-      undefined,
+      merged,
       egress.profileId,
       warnings,
       'RX group list',
       nameLenRx,
+      Boolean(row.wireNameOverride?.trim()),
     );
     const memberDigitalIds: number[] = [];
     const useTalkgroupBankSlots = egress.profileId === 'radio-io-at-d890uv';
@@ -699,6 +707,7 @@ function radioAprsFromAnytoneLibrary(
 
 function buildOpenGd77ContactsAndRx(
   assembled: AssembledBuild,
+  build: RadioBuild,
   egress: RadioWireEgressIds,
   warnings: string[],
 ): {
@@ -708,6 +717,7 @@ function buildOpenGd77ContactsAndRx(
   fkMaps: RadioChannelFkMaps;
 } {
   const limits = requireProfileExportLimits(egress);
+  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const nameLen = requireNumericLimit(limits.nameLengthTalkGroup, 'nameLengthTalkGroup', egress);
   const nameLenRx = requireNumericLimit(
     limits.nameLengthRxGroupList,
@@ -727,14 +737,15 @@ function buildOpenGd77ContactsAndRx(
   for (const row of assembled.talkGroups) {
     baseWireNames.set(
       row.entity.id,
-      applyListWireNameLimits(
+      applyTalkGroupWireNameLimits(
         row.wireName,
+        row.entity,
         reservedTg,
-        undefined,
+        merged,
         egress.profileId,
         warnings,
-        'Talk group',
         nameLen,
+        Boolean(row.wireNameOverride?.trim()),
       ),
     );
   }
@@ -783,11 +794,12 @@ function buildOpenGd77ContactsAndRx(
     const wireName = applyListWireNameLimits(
       row.wireName,
       reservedDc,
-      undefined,
+      merged,
       egress.profileId,
       warnings,
       'Contact',
       nameLen,
+      Boolean(row.wireNameOverride?.trim()),
     );
     digitalContacts.push({
       wireName,
@@ -811,11 +823,12 @@ function buildOpenGd77ContactsAndRx(
     const wireName = applyListWireNameLimits(
       row.wireName,
       reservedRx,
-      undefined,
+      merged,
       egress.profileId,
       warnings,
       'RX group list',
       nameLenRx,
+      Boolean(row.wireNameOverride?.trim()),
     );
     const memberDigitalIds: number[] = [];
     for (const member of row.entity.members) {
@@ -858,11 +871,13 @@ function buildOpenGd77ContactsAndRx(
 
 function buildOpenGd77Zones(
   assembled: AssembledBuild,
+  build: RadioBuild,
   egress: RadioWireEgressIds,
   numbersBySourceChannelId: Map<string, number[]>,
   warnings: string[],
 ): RadioZoneDto[] {
   const limits = requireProfileExportLimits(egress);
+  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const maxZones = requireNumericLimit(limits.maxZones, 'maxZones', egress);
   const zoneMembersCap = requireNumericLimit(limits.zoneMembers, 'zoneMembers', egress);
   const nameLengthZone = requireNumericLimit(limits.nameLengthZone, 'nameLengthZone', egress);
@@ -886,11 +901,12 @@ function buildOpenGd77Zones(
     const wireName = applyListWireNameLimits(
       zone.wireName,
       reservedZoneNames,
-      undefined,
+      merged,
       egress.profileId,
       warnings,
       'Zone',
       nameLengthZone,
+      Boolean(zone.wireNameOverride?.trim()),
     );
     zones.push({ wireName, channelNumbers });
   }
@@ -1069,11 +1085,12 @@ function buildAtD890AmAirOrganisation(
     const wireName = applyListWireNameLimits(
       row.wireName,
       reservedNames,
-      undefined,
+      merged,
       egress.profileId,
       warnings,
       'Channel',
       nameLen,
+      Boolean(row.wireNameOverride?.trim()),
     );
     amAirChannels.push({
       slotIndex: slot,
@@ -1110,11 +1127,12 @@ function buildAtD890AmAirOrganisation(
     const wireName = applyListWireNameLimits(
       original?.wireName ?? partitioned.zoneId,
       reservedZoneNames,
-      undefined,
+      merged,
       egress.profileId,
       warnings,
       'Zone',
       nameLen,
+      Boolean(original?.wireNameOverride?.trim()),
     );
     amZones.push({ wireName, channelNumbers, aChannelMemberIndex: 0 });
   }
@@ -1143,7 +1161,7 @@ export function buildRadioWriteProjection(
   let dm32RadioIds: RadioRadioIdDto[] = [];
 
   if (egress.profileId === 'radio-io-dm32uv' || egress.profileId === 'radio-io-at-d890uv') {
-    const tgRx = buildTalkGroupsAndRx(assembled, egress, warnings);
+    const tgRx = buildTalkGroupsAndRx(assembled, build, egress, warnings);
     talkGroups = tgRx.talkGroups;
     rxGroups = tgRx.rxGroups;
     digitalContacts = tgRx.digitalContacts;
@@ -1157,7 +1175,7 @@ export function buildRadioWriteProjection(
       };
     }
   } else if (isOpenGd77RadioIoEgress(egress.profileId)) {
-    const tgRx = buildOpenGd77ContactsAndRx(assembled, egress, warnings);
+    const tgRx = buildOpenGd77ContactsAndRx(assembled, build, egress, warnings);
     talkGroups = tgRx.talkGroups;
     rxGroups = tgRx.rxGroups;
     digitalContacts = tgRx.digitalContacts;
@@ -1245,7 +1263,7 @@ export function buildRadioWriteProjection(
       egress.profileId,
     );
     organisation = {
-      zones: buildOpenGd77Zones(assembled, egress, numbersBySourceChannelId, warnings),
+      zones: buildOpenGd77Zones(assembled, build, egress, numbersBySourceChannelId, warnings),
       talkGroups,
       rxGroups,
       digitalContacts,
