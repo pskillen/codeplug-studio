@@ -52,6 +52,8 @@ Each eligible `(satellite, transmitter)` pair then gets an **encoded name**: fam
 - **Familiar** — familiar-path short name + label combine.
 - **OSCAR** — Tier A alias + label combine when the library name has an OSCAR parenthetical; hidden when absent.
 
+These suggestion strings are **pre-`~N` disambiguation**: they match `encodeSatelliteTransmitterWireName` on the familiar/OSCAR short name alone. Whole-set uniqueness may still append `~2`, `~3`, … to the **effective** generated `encodedName` via `disambiguateEncoded` in `resolveSatelliteTransmitterWriteNames` when two auto-generated rows collide. The UI suggestions intentionally stay on the undecorated familiar/OSCAR forms so the operator can pin a clean name; the live effective cell (and write path) show the disambiguated value when no override is set.
+
 Auto-generated encoded names stay unique within the write set. **Manual overrides may duplicate** — the UI shows a non-blocking warning; write is not blocked.
 
 ---
@@ -62,8 +64,8 @@ On **Build → Satellite keps → Preview satellites to write**:
 
 - Expand a spacecraft row to see each transmitter (radio).
 - Click **Edit** beside the encoded name to open the inline editor.
-- **Familiar** / **OSCAR** (when present) store that suggestion as an explicit override.
-- **Reset** clears the override so the name tracks live generation again.
+- **Familiar** / **OSCAR** (when present) fill the draft only — they do not persist until **Apply**.
+- **Reset** clears the override immediately so the name tracks live generation again, and empties the draft (placeholder shows Familiar).
 - Manual edit + Apply persists a custom full encoded name.
 - Duplicate encoded names across transmitters show a yellow **Duplicate encoded names** alert (informational only).
 

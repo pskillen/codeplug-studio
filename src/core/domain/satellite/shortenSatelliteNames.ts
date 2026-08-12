@@ -9,7 +9,7 @@ export interface ShortenSatelliteNameInput {
 
 export interface ShortenSatelliteNameResult {
   shortName: string;
-  /** Algorithm suggestion ignoring stored override — shown as Default in the UI. */
+  /** Algorithm suggestion ignoring stored override — Familiar/OSCAR UI suggestions derive from this path. */
   generatedShortName: string;
   /** Best familiar-path short name (no OSCAR/catalogue/alternate alias tier). */
   suggestedFamiliar: string;
