@@ -6,6 +6,7 @@ import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts
 import type { DigitalIdDirectoryOrderBy } from '@integrations/persistence/index.ts';
 import DigitalIdDirectoryDetailDrawer from '../../../components/contacts/DigitalIdDirectoryDetailDrawer.tsx';
 import ClearDigitalIdDirectoryDialog from '../../../components/contacts/ClearDigitalIdDirectoryDialog.tsx';
+import DigitalIdDirectoryInterchangeToolbar from '../../../components/contacts/DigitalIdDirectoryInterchangeToolbar.tsx';
 import CountryComboboxField from '../../../components/directories/CountryComboboxField.tsx';
 import pageClasses from '../../../components/directories/DirectoryIngestPage.module.css';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
@@ -158,6 +159,13 @@ export default function DigitalIdDirectoryListPage() {
         </p>
 
         {error ? <StatusBanner tone="warning">{error}</StatusBanner> : null}
+
+        <DigitalIdDirectoryInterchangeToolbar
+          projectId={activeProjectId}
+          onImported={() => {
+            setPage(1);
+          }}
+        />
 
         {total === 0 && !loading && !hasFilters ? (
           <EmptyState
