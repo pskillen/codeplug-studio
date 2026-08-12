@@ -12,7 +12,7 @@ import type {
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
-import type { ProjectMeta } from '@core/models/project.ts';
+import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 
 export type PutResult =
   { ok: true; revision: number } | { ok: false; reason: 'revision_conflict' | 'not_found' };
@@ -67,6 +67,15 @@ export interface PersistenceChange {
 }
 
 export type PersistenceListener = (change: PersistenceChange) => void;
+
+/** Change notification for directory shadow rows — separate from {@link EntityKind} seed entities. */
+export interface DirectoryPersistenceChange {
+  projectId: string;
+  digitalId: number;
+  op: 'put' | 'delete';
+}
+
+export type DirectoryPersistenceListener = (change: DirectoryPersistenceChange) => void;
 
 export interface ProjectSeed {
   meta: ProjectMeta;
@@ -161,6 +170,17 @@ export interface ProjectPersistence {
   loadProjectSeed(projectId: string): Promise<ProjectSeed | null>;
   replaceProject(projectId: string, seed: ProjectSeed): Promise<void>;
 
+  putDigitalIdDirectoryEntriesBatch(
+    entries: readonly DigitalIdDirectoryEntry[],
+  ): Promise<{ written: number }>;
+  listDigitalIdDirectoryEntries(projectId: string): Promise<DigitalIdDirectoryEntry[]>;
+  getDigitalIdDirectoryEntry(
+    projectId: string,
+    digitalId: number,
+  ): Promise<DigitalIdDirectoryEntry | null>;
+  deleteDigitalIdDirectoryForProject(projectId: string): Promise<{ deletedCount: number }>;
+  countDigitalIdDirectoryEntries(projectId: string): Promise<number>;
+
   /**
    * Run writes without per-operation change notifications; emit once when the
    * outermost nested call completes (if any writes occurred).
@@ -169,4 +189,10 @@ export interface ProjectPersistence {
 
   /** Subscribe to change notifications. Returns an unsubscribe function. */
   subscribe(listener: PersistenceListener): () => void;
+
+  /**
+   * Subscribe to directory shadow change notifications (not emitted on {@link subscribe}).
+   * Returns an unsubscribe function.
+   */
+  subscribeDirectory(listener: DirectoryPersistenceListener): () => void;
 }

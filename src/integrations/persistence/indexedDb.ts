@@ -13,12 +13,14 @@ import type {
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
-import type { ProjectMeta } from '@core/models/project.ts';
+import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
 import type {
   BatchPutItemResult,
   BatchPutResult,
   DigitalContactPut,
+  DirectoryPersistenceChange,
+  DirectoryPersistenceListener,
   EntityKind,
   PersistenceChange,
   PersistenceListener,
@@ -63,7 +65,9 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   private readonly dbName: string;
   private dbPromise: Promise<IDBDatabase> | null = null;
   private readonly listeners = new Set<PersistenceListener>();
+  private readonly directoryListeners = new Set<DirectoryPersistenceListener>();
   private readonly channel: BroadcastChannel | null;
+  private readonly directoryChannel: BroadcastChannel | null;
   private notificationDepth = 0;
   private suppressedProjectId: string | null = null;
 
@@ -73,9 +77,18 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       typeof BroadcastChannel !== 'undefined'
         ? new BroadcastChannel(`${dbName}:persistence`)
         : null;
+    this.directoryChannel =
+      typeof BroadcastChannel !== 'undefined'
+        ? new BroadcastChannel(`${dbName}:directory`)
+        : null;
     if (this.channel) {
       this.channel.onmessage = (event: MessageEvent<PersistenceChange>) => {
         this.notifyLocal(event.data);
+      };
+    }
+    if (this.directoryChannel) {
+      this.directoryChannel.onmessage = (event: MessageEvent<DirectoryPersistenceChange>) => {
+        this.notifyDirectoryLocal(event.data);
       };
     }
   }
@@ -249,6 +262,90 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
   async listDigitalContacts(projectId: string): Promise<DigitalContact[]> {
     return this.listRows<DigitalContact>('digitalContact', projectId);
+  }
+
+  async putDigitalIdDirectoryEntriesBatch(
+    entries: readonly DigitalIdDirectoryEntry[],
+  ): Promise<{ written: number }> {
+    if (entries.length === 0) return { written: 0 };
+
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const projectId = entries[0]!.projectId;
+    const firstDigitalId = entries[0]!.digitalId;
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const os = tx.objectStore(storeName);
+      for (const entry of entries) {
+        os.put(entry);
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+
+    this.emitDirectory({ projectId, digitalId: firstDigitalId, op: 'put' });
+    return { written: entries.length };
+  }
+
+  async listDigitalIdDirectoryEntries(projectId: string): Promise<DigitalIdDirectoryEntry[]> {
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction(storeName, 'readonly');
+    const index = tx.objectStore(storeName).index('byProject');
+    const rows = await promisifyRequest<DigitalIdDirectoryEntry[]>(index.getAll(projectId));
+    return rows.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  async getDigitalIdDirectoryEntry(
+    projectId: string,
+    digitalId: number,
+  ): Promise<DigitalIdDirectoryEntry | null> {
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction(storeName, 'readonly');
+    const row = await promisifyRequest<DigitalIdDirectoryEntry | undefined>(
+      tx.objectStore(storeName).get([projectId, digitalId]),
+    );
+    return row ?? null;
+  }
+
+  async deleteDigitalIdDirectoryForProject(projectId: string): Promise<{ deletedCount: number }> {
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    let deletedCount = 0;
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const os = tx.objectStore(storeName);
+      const req = os.index('byProject').openKeyCursor(IDBKeyRange.only(projectId));
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (cursor) {
+          os.delete(cursor.primaryKey);
+          deletedCount += 1;
+          cursor.continue();
+        }
+      };
+      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+
+    if (deletedCount > 0) {
+      this.emitDirectory({ projectId, digitalId: 0, op: 'delete' });
+    }
+    return { deletedCount };
+  }
+
+  async countDigitalIdDirectoryEntries(projectId: string): Promise<number> {
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction(storeName, 'readonly');
+    const index = tx.objectStore(storeName).index('byProject');
+    return promisifyRequest(index.count(projectId));
   }
 
   async getAnalogContact(projectId: string, id: string): Promise<AnalogContact | null> {
@@ -589,9 +686,17 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     };
   }
 
+  subscribeDirectory(listener: DirectoryPersistenceListener): () => void {
+    this.directoryListeners.add(listener);
+    return () => {
+      this.directoryListeners.delete(listener);
+    };
+  }
+
   /** Release the BroadcastChannel. Mainly for tests / teardown. */
   close(): void {
     this.channel?.close();
+    this.directoryChannel?.close();
   }
 
   private async getRow<T>(kind: EntityKind, projectId: string, id: string): Promise<T | null> {
@@ -688,6 +793,17 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
 
   private notifyLocal(change: PersistenceChange): void {
     for (const listener of this.listeners) {
+      listener(change);
+    }
+  }
+
+  private emitDirectory(change: DirectoryPersistenceChange): void {
+    this.notifyDirectoryLocal(change);
+    this.directoryChannel?.postMessage(change);
+  }
+
+  private notifyDirectoryLocal(change: DirectoryPersistenceChange): void {
+    for (const listener of this.directoryListeners) {
       listener(change);
     }
   }
