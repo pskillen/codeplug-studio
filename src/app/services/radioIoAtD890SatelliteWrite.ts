@@ -37,6 +37,7 @@
  * `closeRadioSession()` exits it — this module does not open or close PROGRAM mode itself.
  */
 
+import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import { isTransmitterWriteEligible } from '@core/domain/satellite/transmitterWriteEligibility.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
@@ -99,12 +100,17 @@ export function countWriteEligibleSatelliteRecords(satellites: readonly Satellit
 export async function writeSatellitesToRadio(
   session: RadioSession,
   satellites: readonly Satellite[],
-  opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
+  opts?: {
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
+    satelliteOverrides?: readonly BuildEntityOverride[];
+  },
 ): Promise<WriteSatellitesToRadioResult> {
   const records = packSatelliteWriteRecords(
     satellites,
     AT_D890_SATELLITE.BASE_ADDRESS,
     AT_D890_SATELLITE.RECORD_STRIDE,
+    { satelliteOverrides: opts?.satelliteOverrides },
   );
 
   // Capacity check before touching the serial port — no partial write.

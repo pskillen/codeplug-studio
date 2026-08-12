@@ -46,6 +46,7 @@ function dm32Build(): RadioBuild {
     rxGroupListOverrides: [],
     contactOverrides: [],
     scanListOverrides: [],
+    satelliteOverrides: [],
     exportUnlinkedChannels: true,
     exportUnlinkedTalkGroups: true,
     exportUnlinkedRxGroupLists: true,

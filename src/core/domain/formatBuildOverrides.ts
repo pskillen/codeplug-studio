@@ -10,7 +10,8 @@ export type OverrideField =
   | 'scanListOverrides'
   | 'talkGroupOverrides'
   | 'rxGroupListOverrides'
-  | 'contactOverrides';
+  | 'contactOverrides'
+  | 'satelliteOverrides';
 
 /** @deprecated Legacy import shape — migrated to {@link BuildEntityOverride}. */
 export interface LegacyEntitySelection {

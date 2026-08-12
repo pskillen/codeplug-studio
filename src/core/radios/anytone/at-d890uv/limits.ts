@@ -32,4 +32,6 @@ export const AT_D890UV_LIMITS = {
    * docs/reference/radios/anytone/at-d890uv/satellite-keps.md ("Max satellite count").
    */
   SATELLITE_MAX: 50,
+  /** 8-byte ASCII name field at record offset 0x00 — see satellite-keps.md. */
+  SATELLITE_NAME_LENGTH: 8,
 } as const;

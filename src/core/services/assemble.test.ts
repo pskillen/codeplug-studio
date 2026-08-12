@@ -309,6 +309,7 @@ describe('assemble', () => {
       analogContactSelections: [],
       contactOverrides: [],
       scanListOverrides: [],
+      satelliteOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -393,6 +394,7 @@ describe('assemble', () => {
       analogContactSelections: [],
       contactOverrides: [],
       scanListOverrides: [],
+      satelliteOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -460,6 +462,7 @@ describe('assemble', () => {
       analogContactSelections: [],
       contactOverrides: [],
       scanListOverrides: [],
+      satelliteOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -525,6 +528,7 @@ describe('assemble', () => {
       analogContactSelections: [],
       contactOverrides: [],
       scanListOverrides: [],
+      satelliteOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -593,6 +597,7 @@ describe('assemble', () => {
       analogContactSelections: [],
       contactOverrides: [],
       scanListOverrides: [],
+      satelliteOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -647,6 +652,7 @@ describe('assemble', () => {
       analogContactSelections: [],
       contactOverrides: [],
       scanListOverrides: [],
+      satelliteOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -698,6 +704,7 @@ describe('assemble', () => {
       analogContactSelections: [],
       contactOverrides: [],
       scanListOverrides: [],
+      satelliteOverrides: [],
     };
 
     const projection = assemble(build, library);
@@ -758,6 +765,7 @@ describe('assemble', () => {
       rxGroupListOverrides: [],
       contactOverrides: [],
       scanListOverrides: [],
+      satelliteOverrides: [],
     };
 
     const projection = assemble(build, library);

@@ -101,6 +101,8 @@ export interface DataTableProps<T> {
   /** Expand/collapse lead column, recursing into `getChildren(row)` for expanded parents. */
   nested?: boolean;
   getChildren?: (row: T) => T[] | undefined;
+  /** Parent row keys expanded on first render when `nested` is set. */
+  defaultExpandedKeys?: string[];
   /** `'extreme'` adds a sticky header and a max-height scroll region for dense tables. */
   scale?: 'default' | 'extreme';
   /** Window tbody rows when the row count is large. `'extreme'` scale forces this on. */
@@ -359,6 +361,7 @@ export default function DataTable<T>({
   bulkReorder = false,
   nested = false,
   getChildren,
+  defaultExpandedKeys,
   scale = 'default',
   virtualize = 'auto',
   estimatedRowHeight,
@@ -442,7 +445,9 @@ export default function DataTable<T>({
     return true;
   });
 
-  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(
+    () => new Set(defaultExpandedKeys ?? []),
+  );
   const toggleExpanded = (key: string) => {
     setExpandedKeys((prev) => {
       const next = new Set(prev);

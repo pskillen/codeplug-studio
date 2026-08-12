@@ -118,6 +118,7 @@ export function libraryAndBuildFromChirpFixture(
     rxGroupListOverrides: [],
     contactOverrides: [],
     scanListOverrides: [],
+    satelliteOverrides: [],
     exportSettings: { shortenNames: false },
   };
 

@@ -10,6 +10,7 @@
  * rewrite of the write workflows.
  */
 
+import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import type { ProgressFn, RadioSession } from '@integrations/radio-io/index.ts';
@@ -35,7 +36,11 @@ export interface SatelliteKepsWriteResult {
 export type SatelliteKepsWriteFn = (
   session: RadioSession,
   satellites: readonly Satellite[],
-  opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
+  opts?: {
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
+    satelliteOverrides?: readonly BuildEntityOverride[];
+  },
 ) => Promise<SatelliteKepsWriteResult>;
 
 /**
@@ -81,8 +86,13 @@ export function getSatelliteKepsWriteCapacity(
   return SATELLITE_KEPS_WRITE_CAPACITY[profileId];
 }
 
+export interface SatelliteKepsWritePreviewOptions {
+  satelliteOverrides?: readonly BuildEntityOverride[];
+}
+
 export type SatelliteKepsWritePreviewFn = (
   satellites: readonly Satellite[],
+  options?: SatelliteKepsWritePreviewOptions,
 ) => SatelliteWritePreviewEntry[];
 
 /**
@@ -91,7 +101,10 @@ export type SatelliteKepsWritePreviewFn = (
  * render exactly what a write would send before/without opening a session.
  */
 export const SATELLITE_KEPS_WRITE_PREVIEW: Readonly<Record<string, SatelliteKepsWritePreviewFn>> = {
-  'radio-io-at-d890uv': previewSatelliteWriteRecords,
+  'radio-io-at-d890uv': (satellites, options) =>
+    previewSatelliteWriteRecords(satellites, {
+      satelliteOverrides: options?.satelliteOverrides,
+    }),
 };
 
 export function getSatelliteKepsWritePreview(

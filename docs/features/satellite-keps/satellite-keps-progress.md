@@ -154,6 +154,17 @@ Found via live user report, not part of any plan: #1037's native-yaml migration 
 
 ---
 
+## #1090 — Satellite name shortening
+
+**Status:** Complete — [PR #1096](https://github.com/pskillen/codeplug-studio/pull/1096)
+
+- Core `shortenSatelliteNames()` + `resolveSatelliteTransmitterWriteNames()` + collision helper + tests.
+- `RadioBuild.satelliteOverrides` keyed by transmitter id (full encoded field); D890 pack/preview/write.
+- Inline encoded-name editor on nested preview (`SatelliteEncodedNameCell`); Familiar/OSCAR suggestions; duplicate warning.
+- Docs: [name-shortening.md](name-shortening.md), hub + component sidecars.
+
+---
+
 ## Next
 
 - Radio write-packing for uplink/downlink metadata (#855–#859) — not started. See `tmp/features/satellite/d890-keps-upload/plan.md` (Part B) and its [multi-radio-handover.md](../../../tmp/features/satellite/d890-keps-upload/multi-radio-handover.md) for the current model shape this work inherits.
