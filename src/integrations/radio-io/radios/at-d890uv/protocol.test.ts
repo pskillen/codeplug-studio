@@ -21,6 +21,7 @@ import { AT_D890_MAP_SIZE, AT_D890_SAFE_SKIP_WRITE_ADDR } from './constants.ts';
 import { encodeBcdFrequencyHz } from './bcd.ts';
 import { setBitmapBit } from './bitmap.ts';
 import { channelPrimaryAddress, channelSecondaryAddress } from './memory.ts';
+import { assembleAtD890WriteImage } from './hydration.ts';
 
 import { isAtD890EraseUnitBookkeepingAddress, listTouchedEraseUnits } from './eraseUnits.ts';
 
@@ -406,15 +407,21 @@ describe('AtD890uvProtocol', () => {
     await radio.connect(pipe);
     scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
 
-    const channelSet = new Uint8Array(0x200);
-    setBitmapBit(channelSet, 0, true);
-    const primary = new Uint8Array(0x40);
-    primary.set(encodeBcdFrequencyHz(145_520_000), 0);
-    const secondary = new Uint8Array(0x40);
-    const image = createMemoryMap(AT_D890_MAP_SIZE);
-    image.set(D890_MAP.ChannelSet, channelSet);
-    image.set(channelPrimaryAddress(0), primary);
-    image.set(channelSecondaryAddress(0), secondary);
+    // Match assembleAtD890WriteImage — 0xff base so inverted TalkgroupSet is empty.
+    const image = assembleAtD890WriteImage([
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'CH0',
+        rxHz: 145_520_000,
+        txHz: 145_520_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'FM',
+        mode: 'analog',
+      },
+    ]);
 
     enableAtD890AutoWriteAck(pipe);
     await radio.upload(image, {});
