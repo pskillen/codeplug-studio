@@ -10,8 +10,9 @@
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
-import { resolveSatelliteWriteNames } from '@core/domain/satellite/resolveSatelliteWriteNames.ts';
-import type { ShortenSatelliteNameResult } from '@core/domain/satellite/shortenSatelliteNames.ts';
+import { resolveSatelliteTransmitterWriteNames } from '@core/domain/satellite/resolveSatelliteTransmitterWriteNames.ts';
+import type { SatelliteTransmitterWriteNameResult } from '@core/domain/satellite/resolveSatelliteTransmitterWriteNames.ts';
+import { encodeSatelliteTransmitterWireName } from '@core/domain/satellite/encodeSatelliteTransmitterWireName.ts';
 import { isTransmitterWriteEligible } from '@core/domain/satellite/transmitterWriteEligibility.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import {
@@ -42,21 +43,23 @@ export interface SatelliteWriteRecord {
 export const isWriteEligible = isTransmitterWriteEligible;
 
 export interface SatelliteWriteOptions {
-  /** Pre-resolved short names; when omitted, computed from `satellites` + `satelliteOverrides`. */
-  wireNamesBySatelliteId?: ReadonlyMap<string, ShortenSatelliteNameResult>;
+  /** Pre-resolved per-transmitter names; when omitted, computed from `satellites` + `satelliteOverrides`. */
+  wireNamesByTransmitterId?: ReadonlyMap<string, SatelliteTransmitterWriteNameResult>;
+  /** Sparse overrides keyed by transmitter id; `wireName` is the full encoded name field. */
   satelliteOverrides?: readonly BuildEntityOverride[];
   maxNameLength?: number;
 }
 
-function resolveWireNames(
+function resolveTransmitterWireNames(
   satellites: readonly Satellite[],
   options?: SatelliteWriteOptions,
-): Map<string, ShortenSatelliteNameResult> {
-  if (options?.wireNamesBySatelliteId) {
-    return new Map(options.wireNamesBySatelliteId);
+): Map<string, SatelliteTransmitterWriteNameResult> {
+  if (options?.wireNamesByTransmitterId) {
+    return new Map(options.wireNamesByTransmitterId);
   }
   const maxLength = options?.maxNameLength ?? AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH;
-  return resolveSatelliteWriteNames(satellites, options?.satelliteOverrides, { maxLength });
+  const pairs = listEligiblePairs(satellites);
+  return resolveSatelliteTransmitterWriteNames(pairs, options?.satelliteOverrides, { maxLength });
 }
 
 /** A generically write-eligible transmitter skipped because the D890 can't use its `mode`. */
@@ -99,14 +102,23 @@ interface EligiblePair {
   transmitter: SatelliteTransmitter;
 }
 
-function wireNameForSatellite(
+function wireNameForTransmitter(
+  transmitterId: string,
   satellite: Satellite,
-  wireNames: ReadonlyMap<string, ShortenSatelliteNameResult>,
-): ShortenSatelliteNameResult {
+  wireNames: ReadonlyMap<string, SatelliteTransmitterWriteNameResult>,
+  maxNameLength: number,
+): SatelliteTransmitterWriteNameResult {
   return (
-    wireNames.get(satellite.id) ?? {
-      shortName: satellite.name.trim().slice(0, AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH),
-      generatedShortName: satellite.name.trim().slice(0, AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH),
+    wireNames.get(transmitterId) ?? {
+      satelliteId: satellite.id,
+      transmitterId,
+      encodedName: satellite.name.trim().slice(0, maxNameLength),
+      generatedEncodedName: satellite.name.trim().slice(0, maxNameLength),
+      satelliteShortName: satellite.name.trim().slice(0, maxNameLength),
+      suggestedFamiliarShort: satellite.name.trim().slice(0, maxNameLength),
+      suggestedOscarShort: null,
+      suggestedFamiliarEncoded: satellite.name.trim().slice(0, maxNameLength),
+      suggestedOscarEncoded: null,
       fromOverride: false,
     }
   );
@@ -261,10 +273,11 @@ function encodeName(
   transmitter: SatelliteTransmitter,
   maxNameLength: number,
 ): string {
-  const name = effectiveSatelliteName.trim();
-  if (name.length >= maxNameLength) return name.slice(0, maxNameLength).padEnd(maxNameLength, ' ');
-  const combined = `${name} ${transmitter.label}`.trim();
-  return combined.slice(0, maxNameLength).padEnd(maxNameLength, ' ');
+  return encodeSatelliteTransmitterWireName(
+    effectiveSatelliteName,
+    transmitter.label,
+    maxNameLength,
+  ).padEnd(maxNameLength, ' ');
 }
 
 /** CTCSS/DCS type byte: `0` none, `1` CTCSS, `2` DCS. Satellite transmitters have no DCS field. */
@@ -281,13 +294,22 @@ function toneIndexByte(toneHz: number | null): number {
 export function encodeSatelliteRecord(
   satellite: Satellite,
   transmitter: SatelliteTransmitter,
-  opts?: { effectiveSatelliteName?: string; maxNameLength?: number },
+  opts?: {
+    effectiveSatelliteName?: string;
+    /** Full encoded name field — skips combine when set (operator override). */
+    effectiveEncodedName?: string;
+    maxNameLength?: number;
+  },
 ): Uint8Array {
   const data = new Uint8Array(SATELLITE_RECORD_BYTES);
   const maxNameLength = opts?.maxNameLength ?? AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH;
   const effectiveName = opts?.effectiveSatelliteName ?? satellite.name.trim();
+  const nameField =
+    opts?.effectiveEncodedName != null
+      ? opts.effectiveEncodedName.slice(0, maxNameLength).padEnd(maxNameLength, ' ')
+      : encodeName(effectiveName, transmitter, maxNameLength);
 
-  writeAsciiField(data, 0x00, encodeName(effectiveName, transmitter, maxNameLength), maxNameLength);
+  writeAsciiField(data, 0x00, nameField, maxNameLength);
   writeAsciiField(data, 0x08, tleEpoch(satellite.tleLine1), 14);
   writeAsciiField(data, 0x16, tleMeanMotionDerivative(satellite.tleLine1), 11);
   writeAsciiField(data, 0x21, tleInclination(satellite.tleLine2), 8);
@@ -324,10 +346,12 @@ export interface SatelliteWritePreviewEntry {
   mode: string | null;
   /** Exactly what encodeName() would write to the name field, trimmed of padding. */
   encodedName: string;
-  /** Short satellite wire name before optional transmitter label suffix. */
+  /** Short satellite portion used when no override (for truncation hints). */
   satelliteWireName: string;
-  /** Algorithm default short name (ignoring build override). */
+  /** Familiar-path encoded suggestion (ignoring build override). */
   generatedWireName: string;
+  suggestedFamiliarEncoded: string;
+  suggestedOscarEncoded: string | null;
   hasWireNameOverride: boolean;
   uplinkHz: number | null;
   downlinkHz: number | null;
@@ -361,11 +385,11 @@ export function previewSatelliteWriteRecords(
   options?: SatelliteWriteOptions,
 ): SatelliteWritePreviewEntry[] {
   const maxNameLength = options?.maxNameLength ?? AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH;
-  const wireNames = resolveWireNames(satellites, options);
+  const wireNames = resolveTransmitterWireNames(satellites, options);
   return listEligiblePairs(satellites).map(({ satellite, transmitter }) => {
-    const resolved = wireNameForSatellite(satellite, wireNames);
-    const encodedName = encodeName(resolved.shortName, transmitter, maxNameLength).trimEnd();
-    const source = nameEncodingSource(resolved.shortName, transmitter);
+    const resolved = wireNameForTransmitter(transmitter.id, satellite, wireNames, maxNameLength);
+    const encodedName = resolved.encodedName.trimEnd();
+    const source = nameEncodingSource(resolved.satelliteShortName, transmitter);
     return {
       satelliteId: satellite.id,
       satelliteName: satellite.name,
@@ -373,14 +397,16 @@ export function previewSatelliteWriteRecords(
       transmitterLabel: transmitter.label,
       mode: transmitter.mode,
       encodedName,
-      satelliteWireName: resolved.shortName,
-      generatedWireName: resolved.generatedShortName,
+      satelliteWireName: resolved.satelliteShortName,
+      generatedWireName: resolved.generatedEncodedName,
+      suggestedFamiliarEncoded: resolved.suggestedFamiliarEncoded,
+      suggestedOscarEncoded: resolved.suggestedOscarEncoded,
       hasWireNameOverride: resolved.fromOverride,
       uplinkHz: transmitter.uplinkHz,
       downlinkHz: transmitter.downlinkHz,
       nameTruncated:
-        resolved.shortName !== satellite.name.trim() ||
-        encodedName !== source.slice(0, maxNameLength),
+        resolved.satelliteShortName !== satellite.name.trim() ||
+        (!resolved.fromOverride && encodedName !== source.slice(0, maxNameLength)),
     };
   });
 }
@@ -396,16 +422,16 @@ export function packSatelliteWriteRecords(
   options?: SatelliteWriteOptions,
 ): SatelliteWriteRecord[] {
   const maxNameLength = options?.maxNameLength ?? AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH;
-  const wireNames = resolveWireNames(satellites, options);
+  const wireNames = resolveTransmitterWireNames(satellites, options);
   const pairs = listEligiblePairs(satellites);
   return pairs.map(({ satellite, transmitter }, index) => {
-    const resolved = wireNameForSatellite(satellite, wireNames);
+    const resolved = wireNameForTransmitter(transmitter.id, satellite, wireNames, maxNameLength);
     return {
       satelliteId: satellite.id,
       transmitterId: transmitter.id,
       address: baseAddress + index * recordStride,
       bytes: encodeSatelliteRecord(satellite, transmitter, {
-        effectiveSatelliteName: resolved.shortName,
+        effectiveEncodedName: resolved.encodedName,
         maxNameLength,
       }),
     };

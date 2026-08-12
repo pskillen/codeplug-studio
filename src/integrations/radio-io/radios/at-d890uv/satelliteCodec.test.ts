@@ -301,6 +301,8 @@ describe('previewSatelliteWriteRecords', () => {
       encodedName: 'INTERNAT',
       satelliteWireName: 'INTERNAT',
       generatedWireName: 'INTERNAT',
+      suggestedFamiliarEncoded: 'INTERNAT',
+      suggestedOscarEncoded: null,
       hasWireNameOverride: false,
       uplinkHz: 145_850_000,
       downlinkHz: 436_795_000,
@@ -336,6 +338,23 @@ describe('previewSatelliteWriteRecords', () => {
     const [entry] = previewSatelliteWriteRecords(satellites);
     expect(entry!.encodedName).toBe('AO 27');
     expect(entry!.nameTruncated).toBe(false);
+  });
+
+  it('uses transmitter-keyed override as the exact encoded field', () => {
+    const satellites = [
+      makeSatellite({
+        transmitters: [makeTransmitter({ id: 'tx-a', label: 'FM' })],
+      }),
+    ];
+    const overrides = [{ libraryEntityId: 'tx-a', wireName: 'CUSTOM' }];
+    const [entry] = previewSatelliteWriteRecords(satellites, { satelliteOverrides: overrides });
+    expect(entry!.encodedName).toBe('CUSTOM');
+    expect(entry!.hasWireNameOverride).toBe(true);
+
+    const [record] = packSatelliteWriteRecords(satellites, 0, SATELLITE_RECORD_BYTES, {
+      satelliteOverrides: overrides,
+    });
+    expect(new TextDecoder().decode(record!.bytes.subarray(0x00, 0x08)).trimEnd()).toBe('CUSTOM');
   });
 });
 
