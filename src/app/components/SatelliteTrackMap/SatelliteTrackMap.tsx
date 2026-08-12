@@ -26,18 +26,16 @@ const DEFAULT_ZOOM = 2;
 const MAX_APPROACH_SPAN_MS = 3 * 60 * 60 * 1000;
 
 /** Alpha for the live marker and dotted approach track — de-emphasised relative to the solid
- * AOS→LOS colour, but not so low it disappears; the dark casing strokes underneath both lines
- * (below) carry the actual hue-independent contrast. */
+ * AOS→LOS colour, but not so low it disappears. */
 const LIVE_POSITION_ALPHA = 0.8;
 
-/** Neutral dark "casing" strokes drawn under the coloured lines so pale/light hues (e.g. yellow,
- * light green) stay legible against the light OSM basemap regardless of colorForNoradId's output
- * — alpha-blending a light colour onto a light background can never produce enough contrast on
- * its own. Applied to both the solid AOS→LOS line and the dashed approach line (#1094 review). */
+/** Neutral dark "casing" stroke drawn under the solid AOS→LOS line so pale/light hues (e.g.
+ * yellow, light green) stay legible against the light OSM basemap regardless of
+ * `colorForNoradId`'s output — alpha-blending a light colour onto a light background can never
+ * produce enough contrast on its own. Only the solid line gets a casing (#1094 review) — the same
+ * treatment on the thinner dashed approach line reads as too heavy/chunky. */
 const MAIN_CASING_COLOR = 'rgba(0, 0, 0, 0.5)';
 const MAIN_CASING_WEIGHT = 4;
-const APPROACH_CASING_COLOR = 'rgba(0, 0, 0, 0.45)';
-const APPROACH_CASING_WEIGHT = 3.5;
 const APPROACH_DASH = '5, 5';
 
 export interface SelectedPass {
@@ -342,20 +340,10 @@ export default function SatelliteTrackMap({
               </>
             ) : null}
             {visual.approachPoints.length > 1 ? (
-              <>
-                <Polyline
-                  positions={visual.approachPoints}
-                  pathOptions={{
-                    color: APPROACH_CASING_COLOR,
-                    weight: APPROACH_CASING_WEIGHT,
-                    dashArray: APPROACH_DASH,
-                  }}
-                />
-                <Polyline
-                  positions={visual.approachPoints}
-                  pathOptions={{ color: visual.approachColor, weight: 2, dashArray: APPROACH_DASH }}
-                />
-              </>
+              <Polyline
+                positions={visual.approachPoints}
+                pathOptions={{ color: visual.approachColor, weight: 2, dashArray: APPROACH_DASH }}
+              />
             ) : null}
             {visual.markerPoint && visual.icon ? (
               <Marker position={visual.markerPoint} icon={visual.icon} />
