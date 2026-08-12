@@ -29,6 +29,7 @@ Many CPS suites (OpenGD77, qDMR, …) offer one-click DMR ID import. **Anytone C
 | Directory shadow paged IDB queries              | Shipped  | [#989](https://github.com/pskillen/codeplug-studio/issues/989) — `queryDigitalIdDirectoryPage` + `useDigitalIdDirectoryPage`; full directory hydrate into React state is forbidden for browsing UI                                                                           |
 | Directory local interchange (YAML/CSV/zip)      | Shipped  | [#986](https://github.com/pskillen/codeplug-studio/issues/986)–[#988](https://github.com/pskillen/codeplug-studio/issues/988) — Drive/native YAML never include shadow; local download/import + zip with project YAML                                                        |
 | Write gating (`SeparateDigitalIdList` trait)    | Shipped  | [#990](https://github.com/pskillen/codeplug-studio/issues/990) trait stamps; [#991](https://github.com/pskillen/codeplug-studio/issues/991) dual-bank Web Serial Write on DM-32 / OpenGD77 — see table below                                                                 |
+| Single-bank Web Serial Write (AT-D890)          | Shipped  | [#992](https://github.com/pskillen/codeplug-studio/issues/992), [#994](https://github.com/pskillen/codeplug-studio/issues/994) — projection modes + streamed directory encode into `DigitalContact*` — see table below                                                       |
 
 ## Documentation map
 
@@ -85,6 +86,15 @@ Radios with trait `separateDigitalIdList` expose separate **library contact** an
 | **Write digital ID list**     | Off by default   | On (primary)         |
 
 DM-32 maps directory rows to the operator radio-ID bank (`0x67`); OpenGD77 maps them as private contacts in the DMR contact bank. Large directory writes stream from IndexedDB — see `collectDualBankDirectorySlice` ([#991](https://github.com/pskillen/codeplug-studio/issues/991)).
+
+### Single-bank Web Serial Write (no `SeparateDigitalIdList`)
+
+Anytone AT-D890UV uses **one** digital contact bank (`DigitalContact*` regions) for library contacts and the directory shadow. `BuildRadioIoPanel` offers a **Codeplug Write projection** select (contacts only · directory only · merge · skip) and **Write digital ID list** (same modes except skip; replaces the radio bank). Overlap rule matches dual-bank: merge skips directory rows whose `digitalId` is already on a library contact. Directory rows stream from IndexedDB via `iterateDigitalIdDirectory` — only a `Set` of library `digitalId`s is held in memory during encode ([#994](https://github.com/pskillen/codeplug-studio/issues/994)); see `collectSingleBankDigitalContacts` ([#992](https://github.com/pskillen/codeplug-studio/issues/992)).
+
+| Action                        | Projection options                                              |
+| ----------------------------- | --------------------------------------------------------------- |
+| **Write to radio** (codeplug) | Contacts only · Directory only · Merge · **Skip**               |
+| **Write digital ID list**     | Contacts only · Directory only · Merge (no Skip; bank replaced) |
 
 ## Related
 
