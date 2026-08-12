@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { newDigitalContact } from '@core/domain/factories.ts';
 import {
+  analogContactExportBaseName,
   applyDigitalContactExportWireName,
   digitalContactExportBaseName,
+  resolveAnalogContactExportBaseName,
   resolveDigitalContactExportBaseName,
 } from './digitalContactExportName.ts';
 
@@ -34,6 +36,33 @@ describe('resolveDigitalContactExportBaseName', () => {
       'callsign',
     );
     expect(name).toBe('Custom');
+  });
+});
+
+describe('analogContactExportBaseName', () => {
+  it('uses trimmed library name', () => {
+    expect(analogContactExportBaseName({ name: '  DTMF Pad  ' })).toBe('DTMF Pad');
+  });
+
+  it('falls back when name is empty', () => {
+    expect(analogContactExportBaseName({ name: '   ' })).toBe('Untitled contact');
+  });
+});
+
+describe('resolveAnalogContactExportBaseName', () => {
+  it('prefers build wire name override', () => {
+    expect(
+      resolveAnalogContactExportBaseName(
+        { id: 'c1', name: 'DTMF Pad' },
+        [{ libraryEntityId: 'c1', wireName: 'Custom' }],
+      ),
+    ).toBe('Custom');
+  });
+
+  it('falls back to pure base name without override', () => {
+    expect(resolveAnalogContactExportBaseName({ id: 'c1', name: 'DTMF Pad' }, undefined)).toBe(
+      'DTMF Pad',
+    );
   });
 });
 

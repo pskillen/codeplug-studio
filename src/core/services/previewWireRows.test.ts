@@ -5,13 +5,20 @@ import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import {
+  newAnalogContact,
   newChannel,
+  newDigitalContact,
   newFormatBuild,
   newRadioBuild,
   newRxGroupList,
+  newScanList,
   newTalkGroup,
   newZone,
 } from '@core/domain/factories.ts';
+import {
+  analogContactExportBaseName,
+  digitalContactExportBaseName,
+} from '@core/import-export/digitalContactExportName.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import {
@@ -1089,6 +1096,140 @@ describe('previewWireRows', () => {
     const row = previewWireRows(build, library, 'zone')[0];
     expect(row?.hasMemberOrderOverride).toBe(true);
     expect(row?.hasOrderOrSlotOverride).toBe(false);
+  });
+
+  it('keeps zone generated wire name pure when override is set', () => {
+    const projectId = 'proj-zone-purity';
+    const zone = newZone(projectId, 'Library Zone Name');
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701'),
+      zoneOverrides: [{ libraryEntityId: zone.id, wireName: 'Pinned Override' }],
+    };
+    const library = {
+      channels: [],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const rows = previewWireRows(build, library, 'zone', { shortenNames: false });
+    const row = rows.find((entry) => entry.libraryEntityId === zone.id);
+    expect(row?.generatedWireName).toBe('Library Zone Name');
+    expect(row?.effectiveWireName).toBe('Pinned Override');
+    expect(row?.hasWireNameOverride).toBe(true);
+  });
+
+  it('keeps scan list generated wire name pure when override is set', () => {
+    const projectId = 'proj-scan-purity';
+    const scanList = newScanList(projectId, 'Library Scan Name');
+    const build = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      scanListOverrides: [{ libraryEntityId: scanList.id, wireName: 'Pinned Scan' }],
+    };
+    const library = {
+      channels: [],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [scanList],
+    };
+
+    const rows = previewWireRows(build, library, 'scanList', {
+      formatId: 'anytone',
+      profileId: 'anytone-at-d890uv',
+      shortenNames: false,
+    });
+    const row = rows.find((entry) => entry.libraryEntityId === scanList.id);
+    expect(row?.generatedWireName).toBe('Library Scan Name');
+    expect(row?.effectiveWireName).toBe('Pinned Scan');
+    expect(row?.hasWireNameOverride).toBe(true);
+  });
+
+  it('keeps RX group list generated wire name pure when override is set', () => {
+    const projectId = 'proj-rxlist-purity';
+    const list = newRxGroupList(projectId, 'Library RX List');
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701'),
+      rxGroupListOverrides: [{ libraryEntityId: list.id, wireName: 'Pinned RX' }],
+    };
+    const library = {
+      channels: [],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [list],
+      scanLists: [],
+    };
+
+    const rows = previewWireRows(build, library, 'rxGroupList', { shortenNames: false });
+    const row = rows.find((entry) => entry.libraryEntityId === list.id);
+    expect(row?.generatedWireName).toBe('Library RX List');
+    expect(row?.effectiveWireName).toBe('Pinned RX');
+    expect(row?.hasWireNameOverride).toBe(true);
+  });
+
+  it('keeps digital contact generated wire name pure when override is set', () => {
+    const projectId = 'proj-digital-contact-purity';
+    const contact = {
+      ...newDigitalContact(projectId, 'Ada', 1234567),
+      callsign: 'M7ABC',
+    };
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701'),
+      contactOverrides: [{ libraryEntityId: contact.id, wireName: 'Pinned Contact' }],
+    };
+    const library = {
+      channels: [],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [contact],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const rows = previewWireRows(build, library, 'contact', {
+      formatId: 'opengd77',
+      digitalContactExportNameMode: 'callsign-name',
+      shortenNames: false,
+    });
+    const row = rows.find((entry) => entry.libraryEntityId === contact.id);
+    expect(row?.generatedWireName).toBe(digitalContactExportBaseName(contact, 'callsign-name'));
+    expect(row?.effectiveWireName).toBe('Pinned Contact');
+    expect(row?.hasWireNameOverride).toBe(true);
+  });
+
+  it('keeps analog contact generated wire name pure when override is set', () => {
+    const projectId = 'proj-analog-contact-purity';
+    const contact = newAnalogContact(projectId, 'DTMF Pad');
+    const build = {
+      ...newFormatBuild(projectId, 'opengd77-1701'),
+      contactOverrides: [{ libraryEntityId: contact.id, wireName: 'Pinned Analog' }],
+    };
+    const library = {
+      channels: [],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [contact],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const rows = previewWireRows(build, library, 'contact', {
+      formatId: 'opengd77',
+      shortenNames: false,
+    });
+    const row = rows.find((entry) => entry.libraryEntityId === contact.id);
+    expect(row?.generatedWireName).toBe(analogContactExportBaseName(contact));
+    expect(row?.effectiveWireName).toBe('Pinned Analog');
+    expect(row?.hasWireNameOverride).toBe(true);
   });
 
   it('hides AM airband channels on OpenGD77 DM-1701 wire preview', () => {

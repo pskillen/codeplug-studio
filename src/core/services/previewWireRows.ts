@@ -28,9 +28,9 @@ import {
   formatUsesListNameShortening,
 } from '@core/import-export/channelExpansion/listWireNames.ts';
 import {
+  analogContactExportBaseName,
   applyDigitalContactExportWireName,
-  resolveAnalogContactExportBaseName,
-  resolveDigitalContactExportBaseName,
+  digitalContactExportBaseName,
 } from '@core/import-export/digitalContactExportName.ts';
 import {
   assemble,
@@ -516,10 +516,8 @@ export function previewWireRows(
         const omitFromExport = zone.omitFromExport === true;
         const forceInclude = isEntityForceIncluded(build.zoneOverrides, zone.id);
         const zoneDirectMembers = zoneDirectMembersPreview(zone, library, build);
-        const assembledZone = projection.zones.find((row) => row.zoneId === zone.id);
-        const baseWireName = assembledZone?.wireName ?? zone.name;
         const generatedWireName = shortenListNames
-          ? applyListWireNameLimits(baseWireName, reserved!, _options, profileId, warnings)
+          ? applyListWireNameLimits(zone.name, reserved!, _options, profileId, warnings)
           : zone.name;
         const layoutEntry = zoneGrouping?.zones.find((entry) => entry.id === zone.id);
         return {
@@ -550,9 +548,8 @@ export function previewWireRows(
       return library.scanLists.map((entry) => {
         const assembled = projection.scanLists.find((row) => row.scanListId === entry.id);
         const memberCount = entry.memberChannelIds.length;
-        const baseWireName = assembled?.wireName ?? entry.name;
         const generatedWireName = shortenListNames
-          ? applyListWireNameLimits(baseWireName, reserved!, _options, profileId, warnings)
+          ? applyListWireNameLimits(entry.name, reserved!, _options, profileId, warnings)
           : entry.name;
         return previewRow(
           entry.id,
@@ -607,12 +604,11 @@ export function previewWireRows(
     case 'contact': {
       const shortenContacts = formatId === 'anytone' || formatId === 'opengd77';
       const mode = _options?.digitalContactExportNameMode ?? 'name';
-      const contactOverrides = _options?.contactOverrides ?? build.contactOverrides;
       const warnings: string[] = [];
       const rows: WirePreviewRow[] = [];
       for (const contact of library.digitalContacts) {
         const assembled = projection.digitalContacts.find((row) => row.entity.id === contact.id);
-        const baseWireName = resolveDigitalContactExportBaseName(contact, contactOverrides, mode);
+        const baseWireName = digitalContactExportBaseName(contact, mode);
         const generatedWireName = shortenContacts
           ? applyDigitalContactExportWireName(baseWireName, _options, profileId, warnings)
           : contact.name;
@@ -632,7 +628,7 @@ export function previewWireRows(
       }
       for (const contact of library.analogContacts) {
         const assembled = projection.analogContacts.find((row) => row.entity.id === contact.id);
-        const baseWireName = resolveAnalogContactExportBaseName(contact, contactOverrides);
+        const baseWireName = analogContactExportBaseName(contact);
         const generatedWireName = shortenContacts
           ? applyDigitalContactExportWireName(baseWireName, _options, profileId, warnings)
           : contact.name;
@@ -656,9 +652,8 @@ export function previewWireRows(
       const warnings: string[] = [];
       return library.rxGroupLists.map((list) => {
         const assembled = projection.rxGroupLists.find((row) => row.entity.id === list.id);
-        const baseWireName = assembled?.wireName ?? list.name;
         const generatedWireName = shortenListNames
-          ? applyListWireNameLimits(baseWireName, reserved!, _options, profileId, warnings)
+          ? applyListWireNameLimits(list.name, reserved!, _options, profileId, warnings)
           : list.name;
         return previewRow(
           list.id,

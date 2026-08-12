@@ -104,14 +104,19 @@ export function applyDigitalContactExportWireName(
   return exported;
 }
 
+/** Pure library-field base for analog contact CPS names — never reads overrides. */
+export function analogContactExportBaseName(contact: { name: string }): string {
+  const name = contact.name.trim();
+  return name || 'Untitled contact';
+}
+
 export function resolveAnalogContactExportBaseName(
   contact: { id: string; name: string },
   contactOverrides: readonly BuildEntityOverride[] | undefined,
 ): string {
   const override = overrideByEntityId(contactOverrides).get(contact.id)?.wireName?.trim();
   if (override) return override;
-  const name = contact.name.trim();
-  return name || 'Untitled contact';
+  return analogContactExportBaseName(contact);
 }
 
 export function buildDigitalContactExportWireNameMap(
