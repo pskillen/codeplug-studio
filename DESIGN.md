@@ -230,6 +230,7 @@ Known traits (initial set — expect more):
 | **Multi talk group per channel** | One RF channel; operator picks repeater + TG (or contact) on channel                                  | OpenGD77-style DMR                   |
 | **Talk group timeslot clones**   | Export/Write emits up to two contact-bank rows per TG (`TS1`/`TS2`) when RGL members need per-slot RX | OpenGD77 / OpenUV380 firmware        |
 | **m×n channel expansion**        | Radio requires one memory per repeater×talkgroup pair                                                 | DM32, Most commerical digital radios |
+| **Separate digital ID list**     | Contact list and digital ID list are distinct firmware banks; Write UX treats them separately         | OpenGD77, DM-32 (not Anytone AT-D890; N/A on analogue-only rigs) |
 
 Most target radios are a **permutation** of these (plus caps: max channels, max zones, name length, …). Caps belong at the wire adapter / profile; traits belong in shared build model + UI modules.
 
