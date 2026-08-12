@@ -1,10 +1,7 @@
 import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
-import {
-  shortenSatelliteNames,
-  type ShortenSatelliteNameResult,
-} from './shortenSatelliteNames.ts';
+import { shortenSatelliteNames, type ShortenSatelliteNameResult } from './shortenSatelliteNames.ts';
 
 export interface ResolveSatelliteWriteNamesOptions {
   maxLength: number;

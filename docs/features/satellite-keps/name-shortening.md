@@ -15,13 +15,13 @@ Amateur spacecraft names are often longer than a radio's name field (8 character
 
 ## Where it runs
 
-| Layer | Responsibility |
-| --- | --- |
-| **Library** | `Satellite.name` stays unbounded — full Celestrak `OBJECT_NAME`. |
-| **Core** | `shortenSatelliteNames()` — vendor-neutral whole-set assignment (`src/core/domain/satellite/shortenSatelliteNames.ts`). |
-| **Build** | `RadioBuild.satelliteOverrides[]` — sparse `wireName` pins per satellite (`libraryEntityId` = satellite UUID). |
-| **App** | **Satellite keps** build tab — Wire names panel with Default / Reset ([`SatelliteWireNameOverrideInput`](../../../src/app/components/builds/satelliteKeps/SatelliteWireNameOverrideInput.tsx)). |
-| **Radio-io** | D890 `packSatelliteWriteRecords` / `previewSatelliteWriteRecords` consume resolved short names, then optionally append transmitter label in leftover bytes. |
+| Layer        | Responsibility                                                                                                                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Library**  | `Satellite.name` stays unbounded — full Celestrak `OBJECT_NAME`.                                                                                                                                |
+| **Core**     | `shortenSatelliteNames()` — vendor-neutral whole-set assignment (`src/core/domain/satellite/shortenSatelliteNames.ts`).                                                                         |
+| **Build**    | `RadioBuild.satelliteOverrides[]` — sparse `wireName` pins per satellite (`libraryEntityId` = satellite UUID).                                                                                  |
+| **App**      | **Satellite keps** build tab — Wire names panel with Default / Reset ([`SatelliteWireNameOverrideInput`](../../../src/app/components/builds/satelliteKeps/SatelliteWireNameOverrideInput.tsx)). |
+| **Radio-io** | D890 `packSatelliteWriteRecords` / `previewSatelliteWriteRecords` consume resolved short names, then optionally append transmitter label in leftover bytes.                                     |
 
 Workflow A (library **Write Keps**) has no build context — names are computed ephemerally per write with no override UI.
 

@@ -287,12 +287,7 @@ export function encodeSatelliteRecord(
   const maxNameLength = opts?.maxNameLength ?? AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH;
   const effectiveName = opts?.effectiveSatelliteName ?? satellite.name.trim();
 
-  writeAsciiField(
-    data,
-    0x00,
-    encodeName(effectiveName, transmitter, maxNameLength),
-    maxNameLength,
-  );
+  writeAsciiField(data, 0x00, encodeName(effectiveName, transmitter, maxNameLength), maxNameLength);
   writeAsciiField(data, 0x08, tleEpoch(satellite.tleLine1), 14);
   writeAsciiField(data, 0x16, tleMeanMotionDerivative(satellite.tleLine1), 11);
   writeAsciiField(data, 0x21, tleInclination(satellite.tleLine2), 8);
@@ -384,7 +379,8 @@ export function previewSatelliteWriteRecords(
       uplinkHz: transmitter.uplinkHz,
       downlinkHz: transmitter.downlinkHz,
       nameTruncated:
-        resolved.shortName !== satellite.name.trim() || encodedName !== source.slice(0, maxNameLength),
+        resolved.shortName !== satellite.name.trim() ||
+        encodedName !== source.slice(0, maxNameLength),
     };
   });
 }

@@ -46,7 +46,7 @@ describe('shortenSatelliteNames — familiar-name-first', () => {
     ['ISS (ZARYA)', 'ISS'],
     ['XW-3 (CAS-9)', 'XW-3'],
     ['TEVEL2-4', 'TEVEL2-4'],
-    ['ES\'HAIL 2', 'ESHAIL 2'],
+    ["ES'HAIL 2", 'ESHAIL 2'],
     ['GEOSCAN 6 (RS92S6)', 'GEOSCA 6'],
     ['MONITOR-3 (RS58S)', 'MONITO-3'],
     ['DUCHIFAT-1', 'DUCHIF-1'],

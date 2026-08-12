@@ -45,7 +45,9 @@ const kepsWriteFn = vi.fn(
 );
 
 let kepsCapacityStub: { max: number; countEligible: (s: readonly unknown[]) => number } | undefined;
-let kepsPreviewStub: ((satellites: readonly Satellite[]) => unknown[]) | undefined;
+let kepsPreviewStub:
+  | ((satellites: readonly Satellite[], options?: { satelliteOverrides?: unknown[] }) => unknown[])
+  | undefined;
 let kepsExclusionsStub: ((satellites: readonly Satellite[]) => unknown[]) | undefined;
 
 vi.mock('../../services/satelliteKepsWriteAdapters.ts', () => ({
@@ -208,21 +210,22 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
   });
 
   it('passes build satelliteOverrides to the preview function', async () => {
-    const previewSpy = vi.fn((satellites: readonly Satellite[]) =>
-      satellites.map((s) => ({
-        satelliteId: s.id,
-        satelliteName: s.name,
-        transmitterId: 'tx-1',
-        transmitterLabel: 'FM',
-        mode: 'FM',
-        encodedName: 'ISS',
-        satelliteWireName: 'ISS',
-        generatedWireName: 'ISS',
-        hasWireNameOverride: false,
-        uplinkHz: null,
-        downlinkHz: null,
-        nameTruncated: false,
-      })),
+    const previewSpy = vi.fn(
+      (_satellites: readonly Satellite[], _options?: { satelliteOverrides?: unknown[] }) =>
+        _satellites.map((s) => ({
+          satelliteId: s.id,
+          satelliteName: s.name,
+          transmitterId: 'tx-1',
+          transmitterLabel: 'FM',
+          mode: 'FM',
+          encodedName: 'ISS',
+          satelliteWireName: 'ISS',
+          generatedWireName: 'ISS',
+          hasWireNameOverride: false,
+          uplinkHz: null,
+          downlinkHz: null,
+          nameTruncated: false,
+        })),
     );
     kepsPreviewStub = previewSpy;
     try {

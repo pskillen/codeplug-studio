@@ -1,12 +1,4 @@
-import {
-  ActionIcon,
-  Group,
-  Stack,
-  Text,
-  TextInput,
-  Tooltip,
-  UnstyledButton,
-} from '@mantine/core';
+import { ActionIcon, Group, Stack, Text, TextInput, Tooltip, UnstyledButton } from '@mantine/core';
 import { IconCheck, IconX } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../../lib/iconSizes.ts';
@@ -26,10 +18,6 @@ export function SatelliteWireNameOverrideInput({
 }) {
   const [draft, setDraft] = useState(committedWireName ?? '');
   const dirty = draft !== committedWireName;
-
-  useEffect(() => {
-    setDraft(committedWireName);
-  }, [committedWireName]);
 
   useEffect(() => {
     onDirtyChange?.(dirty);

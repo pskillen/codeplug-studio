@@ -191,7 +191,7 @@ function buildCandidateLadder(
 
   push(separatorSqueezeCandidate(parsed, maxLength, isAllowedChar));
 
-  push(headShortenCandidate(parsed, maxLength, seriesGroups, isAllowedChar));
+  push(headShortenCandidate(parsed, maxLength, seriesGroups));
 
   if (parsed.alias) {
     if (parsed.aliasTier === 'oscar') push(parsed.alias.toUpperCase());
@@ -274,10 +274,7 @@ export function shortenSatelliteNames(
   const ladders = new Map<string, string[]>();
   for (const input of inputs) {
     const parsed = parsedById.get(input.id)!;
-    ladders.set(
-      input.id,
-      buildCandidateLadder(parsed, maxLength, seriesGroups, isAllowedChar),
-    );
+    ladders.set(input.id, buildCandidateLadder(parsed, maxLength, seriesGroups, isAllowedChar));
   }
 
   const reserved = new Set<string>();
@@ -286,13 +283,7 @@ export function shortenSatelliteNames(
     if (override) reserved.add(override);
   }
 
-  const generated = assignGeneratedNames(
-    inputs,
-    parsedById,
-    ladders,
-    maxLength,
-    new Set(),
-  );
+  const generated = assignGeneratedNames([...inputs], parsedById, ladders, maxLength, reserved);
 
   const results = new Map<string, ShortenSatelliteNameResult>();
   for (const input of inputs) {

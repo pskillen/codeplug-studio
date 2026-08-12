@@ -32,12 +32,7 @@ function classifyAlias(alias: string): AliasTier {
 
 /** Uppercase, fold common accents, collapse whitespace. */
 export function normaliseSatelliteName(name: string): string {
-  return name
-    .normalize('NFD')
-    .replace(/\p{M}/gu, '')
-    .toUpperCase()
-    .replace(/\s+/g, ' ')
-    .trim();
+  return name.normalize('NFD').replace(/\p{M}/gu, '').toUpperCase().replace(/\s+/g, ' ').trim();
 }
 
 function extractAlias(raw: string): { base: string; alias: string | null } {
@@ -51,7 +46,9 @@ function splitComposite(raw: string): string {
   return amp >= 0 ? raw.slice(0, amp).trim() : raw.trim();
 }
 
-function splitHeadIndex(base: string): Pick<ParsedSatelliteName, 'head' | 'index' | 'indexSeparator'> {
+function splitHeadIndex(
+  base: string,
+): Pick<ParsedSatelliteName, 'head' | 'index' | 'indexSeparator'> {
   const digitMatch = base.match(DIGIT_INDEX_PATTERN);
   if (digitMatch && digitMatch.index !== undefined) {
     const index = digitMatch[1]!;

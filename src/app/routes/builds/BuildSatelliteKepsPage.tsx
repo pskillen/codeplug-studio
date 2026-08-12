@@ -414,6 +414,7 @@ export default function BuildSatelliteKepsPage() {
                     {row.satelliteName}
                   </Text>
                   <SatelliteWireNameOverrideInput
+                    key={`${row.satelliteId}-${row.committedWireName}`}
                     committedWireName={row.committedWireName}
                     generatedWireName={row.generatedWireName}
                     nameLimit={AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH}
