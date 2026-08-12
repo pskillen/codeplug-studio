@@ -71,6 +71,25 @@ describe('RadioIoProgressModal', () => {
     expect(screen.getByText('Zones')).toBeInTheDocument();
   });
 
+  it('shows OpenGD77 pre-write read stage during write upload', () => {
+    renderModal({
+      opened: true,
+      operation: 'write',
+      phase: 'transfer',
+      progress: {
+        cur: 512,
+        max: 1024,
+        msg: 'Reading FLASH 0x3780',
+        stage: 'Pre-write read',
+      },
+      transferStages: ['Pre-write read', 'FLASH sectors'],
+      onCancel: vi.fn(),
+    });
+
+    expect(screen.getByText('Pre-write read')).toBeInTheDocument();
+    expect(screen.getByText('FLASH sectors')).toBeInTheDocument();
+  });
+
   it('keeps write checklist and shows Close when done', () => {
     const onClose = vi.fn();
     renderModal({
