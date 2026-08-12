@@ -10,6 +10,7 @@ import { channelDisplayLabel, defaultChannelWireName } from '@core/domain/channe
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import {
   expandAllMxNChannels,
+  type ExpandAllMxNChannelsArgs,
   type ExpandedMxNChannelRow,
 } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { resolveAnytoneSiteWireName } from '@core/services/anytoneChannelExpansion.ts';
@@ -262,6 +263,28 @@ function mxnExpansionDisplayDetails(
   return undefined;
 }
 
+/**
+ * Preview-only site-name resolver for m×n expansion.
+ * Strips this row's override so suggestions stay pure (export still prefers overrides).
+ */
+function purePreviewMxNSiteWireName(
+  formatId: string,
+): NonNullable<ExpandAllMxNChannelsArgs['resolveSiteWireName']> {
+  if (formatId === 'anytone') {
+    return (assembledChannel, ctx) =>
+      resolveAnytoneSiteWireName(
+        {
+          ...assembledChannel,
+          wireNameOverride: undefined,
+          // assemble folds override into wireName — restore pure library compose
+          wireName: defaultChannelWireName(assembledChannel.entity),
+        },
+        ctx,
+      );
+  }
+  return (assembledChannel) => defaultChannelWireName(assembledChannel.entity);
+}
+
 export function previewWireRows(
   build: RadioBuild,
   library: LibrarySlice,
@@ -359,7 +382,7 @@ export function previewWireRows(
           radioTargetId: build.radioTargetId,
           options: mxnOptions,
           warnings,
-          resolveSiteWireName: formatId === 'anytone' ? resolveAnytoneSiteWireName : undefined,
+          resolveSiteWireName: purePreviewMxNSiteWireName(formatId),
         });
         const expandedByChannelId = new Map<string, ExpandedMxNChannelRow[]>();
         for (const generated of expanded) {

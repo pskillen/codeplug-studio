@@ -1098,6 +1098,152 @@ describe('previewWireRows', () => {
     expect(row?.hasOrderOrSlotOverride).toBe(false);
   });
 
+  it('keeps anytone m×n channel generated wire name pure when override is set', () => {
+    const projectId = 'proj-anytone-mxn-purity';
+    const channel: Channel = {
+      ...newChannel(projectId, 'Very Long Channel Name That Exceeds Limit'),
+      callsign: 'GB3GL',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 2 as const,
+          dmrId: 1234567,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const zone = {
+      ...newZone(projectId, 'Zone A'),
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
+    };
+    const baseBuild = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [channel.id] }],
+          },
+        ],
+      },
+    };
+    const library = {
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const egress = { formatId: 'anytone' as const, profileId: 'anytone-at-d890uv' };
+
+    const pureSuggestion = previewWireRows(baseBuild, library, 'channel', egress)[0]
+      ?.generatedWireName;
+    const overridden = {
+      ...baseBuild,
+      channelOverrides: [{ libraryEntityId: channel.id, wireName: 'Pinned Override Name' }],
+    };
+    const row = previewWireRows(overridden, library, 'channel', egress)[0];
+
+    expect(pureSuggestion).toBeTruthy();
+    expect(row?.generatedWireName).toBe(pureSuggestion);
+    expect(row?.generatedWireName).not.toBe('Pinned Override Name');
+    expect(row?.effectiveWireName).toBe('Pinned Override Name');
+    expect(row?.hasWireNameOverride).toBe(true);
+  });
+
+  it('keeps anytone airband channel generated wire name pure when override is set', () => {
+    const projectId = 'proj-anytone-airband-purity';
+    const air: Channel = {
+      ...newChannel(projectId, 'Heathrow Tower Long Name'),
+      callsign: 'EGLL',
+      rxFrequency: 118_800_000,
+      txFrequency: null,
+      forbidTransmit: 'forbid',
+      modeProfiles: [defaultModeProfile('am')],
+    };
+    const baseBuild = newFormatBuild(projectId, 'anytone-at-d890uv');
+    const library = {
+      channels: [air],
+      zones: [],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const egress = { formatId: 'anytone' as const, profileId: 'anytone-at-d890uv' };
+
+    const pureSuggestion = previewWireRows(baseBuild, library, 'channel', egress, 'airband')[0]
+      ?.generatedWireName;
+    const overridden = {
+      ...baseBuild,
+      channelOverrides: [{ libraryEntityId: air.id, wireName: 'Pinned Airband' }],
+    };
+    const row = previewWireRows(overridden, library, 'channel', egress, 'airband')[0];
+
+    expect(pureSuggestion).toBeTruthy();
+    expect(row?.generatedWireName).toBe(pureSuggestion);
+    expect(row?.generatedWireName).not.toBe('Pinned Airband');
+    expect(row?.effectiveWireName).toBe('Pinned Airband');
+    expect(row?.hasWireNameOverride).toBe(true);
+  });
+
+  it('keeps dm32 m×n channel generated wire name pure when override is set', () => {
+    const projectId = 'proj-dm32-mxn-purity';
+    const channel = withExportEligibleDefaults({
+      ...newChannel(projectId, 'Library Channel Name'),
+      callsign: 'GB7XX',
+      rxFrequency: 430_000_000,
+      txFrequency: 430_000_000,
+      modeProfiles: [defaultModeProfile('dmr')],
+    });
+    const zone = {
+      ...newZone(projectId, 'Zone A'),
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
+    };
+    const baseBuild = {
+      ...newFormatBuild(projectId, 'dm32-baofeng-dm32uv', 'DM32 purity'),
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [channel.id] }],
+          },
+        ],
+      },
+    };
+    const library = {
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+    const egress = { formatId: 'dm32' as const, profileId: 'dm32-baofeng-dm32uv' };
+
+    const pureSuggestion = previewWireRows(baseBuild, library, 'channel', egress)[0]
+      ?.generatedWireName;
+    const overridden = {
+      ...baseBuild,
+      channelOverrides: [{ libraryEntityId: channel.id, wireName: 'Pinned DM32' }],
+    };
+    const row = previewWireRows(overridden, library, 'channel', egress)[0];
+
+    expect(pureSuggestion).toBeTruthy();
+    expect(row?.generatedWireName).toBe(pureSuggestion);
+    expect(row?.generatedWireName).not.toBe('Pinned DM32');
+    expect(row?.effectiveWireName).toBe('Pinned DM32');
+    expect(row?.hasWireNameOverride).toBe(true);
+  });
+
   it('keeps zone generated wire name pure when override is set', () => {
     const projectId = 'proj-zone-purity';
     const zone = newZone(projectId, 'Library Zone Name');
