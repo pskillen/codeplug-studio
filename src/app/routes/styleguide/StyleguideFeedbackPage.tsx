@@ -17,7 +17,10 @@ export default function StyleguideFeedbackPage() {
         </Stack>
       </StyleguideSection>
 
-      <StyleguideSection title="StatusDot" description="Compact inline status — write/sync/verify state.">
+      <StyleguideSection
+        title="StatusDot"
+        description="Compact inline status — write/sync/verify state."
+      >
         <Group gap="md">
           <StatusDot label="Verified" tone="success" />
           <StatusDot label="Pending" tone="neutral" />

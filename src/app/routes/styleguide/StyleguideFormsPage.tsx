@@ -165,7 +165,10 @@ export default function StyleguideFormsPage() {
           </Pill>
         </Group>
       </StyleguideSection>
-      <StyleguideSection title="PercentLevelSlider" description="Power/squelch percentage with radio-default checkbox.">
+      <StyleguideSection
+        title="PercentLevelSlider"
+        description="Power/squelch percentage with radio-default checkbox."
+      >
         <PercentLevelSlider label="Power" value={50} onChange={() => undefined} />
       </StyleguideSection>
     </StyleguidePageShell>

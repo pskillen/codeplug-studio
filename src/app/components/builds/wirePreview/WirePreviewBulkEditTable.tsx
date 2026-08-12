@@ -91,12 +91,5 @@ export default function WirePreviewBulkEditTable({
     );
   }
 
-  return (
-    <DataTable
-      variant="embedded"
-      rows={rows}
-      getRowId={(row) => row.key}
-      columns={columns}
-    />
-  );
+  return <DataTable variant="embedded" rows={rows} getRowId={(row) => row.key} columns={columns} />;
 }

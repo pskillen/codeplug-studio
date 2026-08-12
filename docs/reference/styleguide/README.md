@@ -23,24 +23,24 @@ This is **not** user-facing help copy. For wording aimed at operators, use [help
 | [lists-and-ordering.md](lists-and-ordering.md)                              | Roles A/B/C/D, `reorderMode` / `storedOrder`, permanent Sort…, gold references |
 | [display.md](display.md)                                                    | Frequencies, bands, modes, icons, two-section nav                              |
 | [list-kit-roles.md](../../features/app-shell/list-kit-roles.md)             | Surface → role inventory (tier 1 feature deep dive)                            |
-| [data-table.md](../../features/app-shell/data-table.md)                     | v2 `DataTable` props, list prefs, virtualisation                              |
-| [design-system-v2](../../features/design-system-v2/README.md)                 | Theme, component map, implementation status                                    |
+| [data-table.md](../../features/app-shell/data-table.md)                     | v2 `DataTable` props, list prefs, virtualisation                               |
+| [design-system-v2](../../features/design-system-v2/README.md)               | Theme, component map, implementation status                                    |
 | [help writing styleguide](../writing-styleguide/help-writing-styleguide.md) | Operator-facing prose                                                          |
 
 ## Common UI categories
 
 Name the job first, then pick a shell.
 
-| Category                   | Job                                              | Typical shell                                              | Gold reference                                                 |
-| -------------------------- | ------------------------------------------------ | ---------------------------------------------------------- | -------------------------------------------------------------- |
-| **Entity inventory**       | Browse / filter / open library or build entities | **A** — v2 `DataTable` `variant="list"`                    | Library → Channels                                             |
-| **Extreme inventory**      | Same look as A; very large N                     | **D** — v2 `DataTable` `scale="extreme"`                   | Library → Contacts (digital)                                   |
-| **Agreed-order inventory** | List's job is export / model order               | **A** + `reorderMode` (+ arrows / Sort…)                   | Library → Zones                                                |
-| **Membership**             | Curate ordered members of a container            | **B** + **C** — `MembershipPanel` + `AddMembersScreen`   | Zones → Edit members; RGL / scan list editors                  |
-| **Embedded inventory**     | Compact table inside a form / wizard             | **A** — v2 `DataTable` `variant="embedded"`                | Channel set preview; repeater results                          |
-| **Entity form**            | Create / edit one entity                         | `EditorHeader` + `Panel` sections (or `FormPage` holdout)  | Channel / zone editors                                         |
-| **List page chrome**       | Title + intro + table                            | `LibraryInventoryHeader` + v2 list chrome                    | Entity list routes                                             |
-| **Specialised**            | Diff matrices, CPS spreadsheets, config grids    | Keep custom — document why                                 | Field-diff; export resolution; CPS CSV                         |
+| Category                   | Job                                              | Typical shell                                             | Gold reference                                |
+| -------------------------- | ------------------------------------------------ | --------------------------------------------------------- | --------------------------------------------- |
+| **Entity inventory**       | Browse / filter / open library or build entities | **A** — v2 `DataTable` `variant="list"`                   | Library → Channels                            |
+| **Extreme inventory**      | Same look as A; very large N                     | **D** — v2 `DataTable` `scale="extreme"`                  | Library → Contacts (digital)                  |
+| **Agreed-order inventory** | List's job is export / model order               | **A** + `reorderMode` (+ arrows / Sort…)                  | Library → Zones                               |
+| **Membership**             | Curate ordered members of a container            | **B** + **C** — `MembershipPanel` + `AddMembersScreen`    | Zones → Edit members; RGL / scan list editors |
+| **Embedded inventory**     | Compact table inside a form / wizard             | **A** — v2 `DataTable` `variant="embedded"`               | Channel set preview; repeater results         |
+| **Entity form**            | Create / edit one entity                         | `EditorHeader` + `Panel` sections (or `FormPage` holdout) | Channel / zone editors                        |
+| **List page chrome**       | Title + intro + table                            | `LibraryInventoryHeader` + v2 list chrome                 | Entity list routes                            |
+| **Specialised**            | Diff matrices, CPS spreadsheets, config grids    | Keep custom — document why                                | Field-diff; export resolution; CPS CSV        |
 
 Do **not** invent a fifth list look-and-feel for ordinary inventory. Prefer kit shells.
 
@@ -74,22 +74,22 @@ Details and prop names: [lists-and-ordering.md](lists-and-ordering.md).
 
 ### Permanent Sort…
 
-| Rule                         | Detail                                                                                                  |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **Control**                  | `MembershipSortMenu` — confirm dialog; **rewrites** model order                                         |
-| **Label**                    | Name the noun: **Sort zones…**, **Sort channels…** — not bare **Sort…** when the entity is clear        |
-| **Placement (list pages)**   | Left-aligned `Group` **above** the `DataTable` (see Zones list)                                         |
-| **Placement (membership C)** | `MembershipPanel` toolbar — rendered **above** the scroll body (same visual band as Zones list Sort)    |
-| **Not**                      | Temporary browse sort; do not invent per-page sort chrome                                               |
+| Rule                         | Detail                                                                                               |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Control**                  | `MembershipSortMenu` — confirm dialog; **rewrites** model order                                      |
+| **Label**                    | Name the noun: **Sort zones…**, **Sort channels…** — not bare **Sort…** when the entity is clear     |
+| **Placement (list pages)**   | Left-aligned `Group` **above** the `DataTable` (see Zones list)                                      |
+| **Placement (membership C)** | `MembershipPanel` toolbar — rendered **above** the scroll body (same visual band as Zones list Sort) |
+| **Not**                      | Temporary browse sort; do not invent per-page sort chrome                                            |
 
 Permanent Sort… is distinct from DataTable column headers (browse) and from `storedOrder` restore (hybrid browse).
 
 ### Remove from list vs delete entity
 
-| Action                     | Icon        | Style                                                      | When                                                       |
-| -------------------------- | ----------- | ---------------------------------------------------------- | ---------------------------------------------------------- |
-| **Remove from membership** | `IconTrash` | `RowActionIcon` / subtle red                               | Zone / scan member rows — leaves the entity in the library |
-| **Delete entity**          | `IconTrash` | Same styling via `EntityListDeleteAction`                  | Library list rows — deletes the entity (confirm flow)      |
+| Action                     | Icon        | Style                                     | When                                                       |
+| -------------------------- | ----------- | ----------------------------------------- | ---------------------------------------------------------- |
+| **Remove from membership** | `IconTrash` | `RowActionIcon` / subtle red              | Zone / scan member rows — leaves the entity in the library |
+| **Delete entity**          | `IconTrash` | Same styling via `EntityListDeleteAction` | Library list rows — deletes the entity (confirm flow)      |
 
 Prefer trash over `IconX` for membership remove so chrome matches entity lists. Aria / tooltip should say **Remove from …**, not **Delete**, when the entity survives.
 
@@ -114,12 +114,12 @@ When a find-in-list or name filter is active, **disable reorder** (drag, arrows,
 
 ## Page shells
 
-| Shell              | Use                                                                                |
-| ------------------ | ---------------------------------------------------------------------------------- |
-| `LibraryInventoryHeader` + v2 list chrome | Top-level entity inventories                              |
-| `EditorHeader` + `Panel` | Entity create/edit; back crumb in header                              |
-| `FormPage` (holdout) | Build settings and some loading shells — migrate in [#1097](https://github.com/pskillen/codeplug-studio/issues/1097) |
-| Section nav        | Per-area secondary nav — registry titles should match list page titles             |
+| Shell                                     | Use                                                                                                                  |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `LibraryInventoryHeader` + v2 list chrome | Top-level entity inventories                                                                                         |
+| `EditorHeader` + `Panel`                  | Entity create/edit; back crumb in header                                                                             |
+| `FormPage` (holdout)                      | Build settings and some loading shells — migrate in [#1097](https://github.com/pskillen/codeplug-studio/issues/1097) |
+| Section nav                               | Per-area secondary nav — registry titles should match list page titles                                               |
 
 **Maps and membership:** Put map + location controls in a titled `Panel` (e.g. **Map**) below the primary `DataTable` / form — do not leave them loose in the same stack as the table so chrome bleeds across jobs. On membership editors, **In this…** (C) and pool add (B) use `MembershipPanel` + `AddMembersScreen`. Gold: Library → Channels / Zones lists; Zones → Edit (Members + Map); Scan list edit.
 

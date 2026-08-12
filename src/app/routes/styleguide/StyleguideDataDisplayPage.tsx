@@ -108,7 +108,10 @@ export default function StyleguideDataDisplayPage() {
         </Group>
       </StyleguideSection>
 
-      <StyleguideSection title="RowActionIcon" description="Icon-only row action, stops propagation.">
+      <StyleguideSection
+        title="RowActionIcon"
+        description="Icon-only row action, stops propagation."
+      >
         <Group gap="xs">
           <RowActionIcon
             icon={<IconPencil size={ICON_SIZE_ACTION} />}

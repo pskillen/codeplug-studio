@@ -39,8 +39,14 @@ export default function StyleguideOverlaysPage() {
   const [errorOpen, setErrorOpen] = useState(false);
 
   return (
-    <StyleguidePageShell title="Overlays" description="ModalShell, ConfirmModal, and ProgressModal.">
-      <StyleguideSection title="ModalShell" description="Base overlay shell: icon, title, body, footer.">
+    <StyleguidePageShell
+      title="Overlays"
+      description="ModalShell, ConfirmModal, and ProgressModal."
+    >
+      <StyleguideSection
+        title="ModalShell"
+        description="Base overlay shell: icon, title, body, footer."
+      >
         <Group gap="sm">
           <Button variant="secondary" onClick={() => setShellOpen(true)}>
             Open ModalShell

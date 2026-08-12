@@ -4,12 +4,12 @@ Deep dive for list kit roles and export / membership ordering. Hub: [README.md](
 
 ## Roles at a glance
 
-| Role  | Name              | Shell                         | Cardinality        | Mutates agreed order?                     |
-| ----- | ----------------- | ----------------------------- | ------------------ | ----------------------------------------- |
-| **A** | Entity list       | `DataTable`                   | Hundreds–thousands | Only if `reorderMode` + consumer controls |
-| **B** | Member picker     | `AddMembersScreen` / pool rows | High (pool)        | No — stages adds only                     |
+| Role  | Name              | Shell                               | Cardinality        | Mutates agreed order?                     |
+| ----- | ----------------- | ----------------------------------- | ------------------ | ----------------------------------------- |
+| **A** | Entity list       | `DataTable`                         | Hundreds–thousands | Only if `reorderMode` + consumer controls |
+| **B** | Member picker     | `AddMembersScreen` / pool rows      | High (pool)        | No — stages adds only                     |
 | **C** | Membership list   | `MembershipPanel` + `MembershipRow` | Typically &lt;100  | Yes — drag / move / permanent Sort…       |
-| **D** | Extreme inventory | `DataTable` `scale="extreme"` | Up to ~200k        | Same as A; prefer cheap cells             |
+| **D** | Extreme inventory | `DataTable` `scale="extreme"`       | Up to ~200k        | Same as A; prefer cheap cells             |
 
 ```text
 B  Member picker  ──add──►  C  Membership list
@@ -25,19 +25,19 @@ Gold references: Channels (A), Zone member editor (Membership B+C), digital Cont
 
 Prefer these names in code and docs.
 
-| Tool                                  | Where                                                                                   | Mutates model?  | Use when                                                                                          |
-| ------------------------------------- | --------------------------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------- |
-| **`reorderMode`** (alias `orderMode`) | `DataTable`                                                                             | No by itself    | List’s **only** job is agreed/export order (Zones; wire preview when order arrows present)        |
-| **Arrows / Move**                     | Consumer column or C builtins                                                           | Yes             | Reorder one step; disable while filter active                                                     |
-| **Per-row arrows (C)**                | `onMoveItem` + `SelectedItemRowMoveButtons`                                             | Yes             | Role C when selection Move alone is easy to miss (e.g. build zone Members)                        |
+| Tool                                  | Where                                                                                                   | Mutates model?  | Use when                                                                                          |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------- |
+| **`reorderMode`** (alias `orderMode`) | `DataTable`                                                                                             | No by itself    | List’s **only** job is agreed/export order (Zones; wire preview when order arrows present)        |
+| **Arrows / Move**                     | Consumer column or C builtins                                                                           | Yes             | Reorder one step; disable while filter active                                                     |
+| **Per-row arrows (C)**                | `onMoveItem` + `SelectedItemRowMoveButtons`                                                             | Yes             | Role C when selection Move alone is easy to miss (e.g. build zone Members)                        |
 | **Drag**                              | C `MembershipRow` drag handle (`SelectedItemDragHandle`); A `bulkReorder` + drag handle in Order column | Yes             | Membership lists; large export-order DataTables (`bulkReorder`); `reorderDisabled` while filtered |
-| **`MembershipSortMenu`**              | Above list / C toolbar                                                                  | Yes (confirm)   | Permanent rewrite by name / callsign / …; flat-memory also **Sort selection…** (selected only)    |
-| **`ExportOrderSelectMenu`**           | Flat-memory Channels toolbar (beside Sort…)                                             | No              | Toggle-select by band / FM·AM / simplex·split before drag, Move, or Sort selection…               |
-| **`CopyOrderFromBuildMenu`**          | Flat-memory Channels toolbar (beside Select…)                                           | Yes (confirm)   | Copy memory order from another same-project `FlatMemoryList` build by library channel UUID        |
-| **`bulkReorder`**                     | `DataTable`                                                                             | Yes             | Multi-select + drag + toolbar Move for large `reorderMode` lists                                  |
-| **`storedOrder`**                     | `DataTable`                                                                             | No — display    | Hybrid: temporary natural sorts + **Return to export order**                                      |
-| **Reset to library order**            | Wire preview banner                                                                     | Yes (confirm)   | Clear build `orderOrSlot` / zone member layout hint — **not** `storedOrder` restore               |
-| **Column sorts**                      | `DataTable` browse                                                                      | No — prefs only | Ordinary A lists without agreed order                                                             |
+| **`MembershipSortMenu`**              | Above list / C toolbar                                                                                  | Yes (confirm)   | Permanent rewrite by name / callsign / …; flat-memory also **Sort selection…** (selected only)    |
+| **`ExportOrderSelectMenu`**           | Flat-memory Channels toolbar (beside Sort…)                                                             | No              | Toggle-select by band / FM·AM / simplex·split before drag, Move, or Sort selection…               |
+| **`CopyOrderFromBuildMenu`**          | Flat-memory Channels toolbar (beside Select…)                                                           | Yes (confirm)   | Copy memory order from another same-project `FlatMemoryList` build by library channel UUID        |
+| **`bulkReorder`**                     | `DataTable`                                                                                             | Yes             | Multi-select + drag + toolbar Move for large `reorderMode` lists                                  |
+| **`storedOrder`**                     | `DataTable`                                                                                             | No — display    | Hybrid: temporary natural sorts + **Return to export order**                                      |
+| **Reset to library order**            | Wire preview banner                                                                                     | Yes (confirm)   | Clear build `orderOrSlot` / zone member layout hint — **not** `storedOrder` restore               |
+| **Column sorts**                      | `DataTable` browse                                                                                      | No — prefs only | Ordinary A lists without agreed order                                                             |
 
 ### Rules
 

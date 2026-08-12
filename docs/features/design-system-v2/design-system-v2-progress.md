@@ -134,7 +134,7 @@ Execution log for [epic #915](https://github.com/pskillen/codeplug-studio/issues
 | Summary / Channels (#918–#920) | Shipped    | [PR #931](https://github.com/pskillen/codeplug-studio/pull/931) | Summary, Channels list, Channel editor on v2         |
 | Library ports (#921+)          | Superseded | `921/pskillen/design-system-v2-library`                         | Visual acceptance replaced by r2 #940                |
 
-| Retire v1 styleguide (#927)    | Shipped     | `927/pskillen/retire-v1-styleguide`                             | v1 ui deletes, `/styleguide` v2 hub, retained holdouts → #1097                                              |
+| Retire v1 styleguide (#927) | Shipped | `927/pskillen/retire-v1-styleguide` | v1 ui deletes, `/styleguide` v2 hub, retained holdouts → #1097 |
 
 ## Next
 

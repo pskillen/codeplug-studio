@@ -45,7 +45,10 @@ export default function StyleguideNavigationPage() {
   const [bottom, setBottom] = useState<string>('library');
 
   return (
-    <StyleguidePageShell title="Navigation" description="App chrome and editor navigation patterns.">
+    <StyleguidePageShell
+      title="Navigation"
+      description="App chrome and editor navigation patterns."
+    >
       <StyleguideSection
         title="AppShell + ContextualStrip"
         description="Design-system top header (not a sidebar shell). Narrow viewports hide top tabs — use BottomTabBar."

@@ -124,65 +124,6 @@ export default function BuildFlatMemoryScanListPage() {
     [build, librarySlice],
   );
 
-  if (!radioTargetHasTrait(build.radioTargetId, BuildCapabilityTrait.PerChannelScanFlag)) {
-    return <Navigate to={`/builds/${build.id}/channels`} replace />;
-  }
-
-  async function handleExportSettingsPatch(patch: Partial<BuildExportSettings>) {
-    setSavingSettings(true);
-    setSettingsError(null);
-    const prepared = await prepareBuildForFrequencyRangeExportPatch(buildRef.current, patch, {
-      buildService,
-      loadLibrary: async () =>
-        activeProjectId ? loadLibrarySlice(persistence, activeProjectId) : null,
-    });
-    if (prepared.status === 'cancelled') {
-      setSavingSettings(false);
-      return;
-    }
-    if (prepared.status === 'error') {
-      setSavingSettings(false);
-      setSettingsError(prepared.message);
-      return;
-    }
-    const result = await putBuild(prepared.build, buildRef.current.revision);
-    setSavingSettings(false);
-    if (result.ok) {
-      const saved = { ...prepared.build, revision: result.revision };
-      buildRef.current = saved;
-      setSavedBuild(saved);
-    } else {
-      setSettingsError(
-        result.reason === 'revision_conflict'
-          ? 'Build changed elsewhere — reload and try again.'
-          : 'Could not save scan default.',
-      );
-    }
-  }
-
-  async function updateChannelScan(channelId: string, scanInclusion: ScanInclusion) {
-    const current =
-      overrideScanInclusion(buildRef.current.channelOverrides, channelId) ??
-      channelById.get(channelId)?.scanInclusion;
-    if (current === scanInclusion) return;
-    setSaving(true);
-    setError(null);
-    const next = buildService.withScanInclusionOverride(buildRef.current, channelId, scanInclusion);
-    const result = await putBuild(next, buildRef.current.revision);
-    setSaving(false);
-    if (result.ok) {
-      const saved = { ...next, revision: result.revision };
-      buildRef.current = saved;
-      setSavedBuild(saved);
-    } else {
-      setError(
-        result.reason === 'revision_conflict'
-          ? 'Build changed elsewhere — reload and try again.'
-          : 'Could not save scan setting.',
-      );
-    }
-  }
-
   const columns = useMemo((): DataTableColumn<ScanListRow>[] => {
     return [
       createNameColumn<ScanListRow>({
@@ -241,7 +182,66 @@ export default function BuildFlatMemoryScanListPage() {
         },
       },
     ];
-  }, [build.channelOverrides, scanContext, saving]);
+  }, [build.channelOverrides, scanContext, saving, channelById]);
+
+  if (!radioTargetHasTrait(build.radioTargetId, BuildCapabilityTrait.PerChannelScanFlag)) {
+    return <Navigate to={`/builds/${build.id}/channels`} replace />;
+  }
+
+  async function handleExportSettingsPatch(patch: Partial<BuildExportSettings>) {
+    setSavingSettings(true);
+    setSettingsError(null);
+    const prepared = await prepareBuildForFrequencyRangeExportPatch(buildRef.current, patch, {
+      buildService,
+      loadLibrary: async () =>
+        activeProjectId ? loadLibrarySlice(persistence, activeProjectId) : null,
+    });
+    if (prepared.status === 'cancelled') {
+      setSavingSettings(false);
+      return;
+    }
+    if (prepared.status === 'error') {
+      setSavingSettings(false);
+      setSettingsError(prepared.message);
+      return;
+    }
+    const result = await putBuild(prepared.build, buildRef.current.revision);
+    setSavingSettings(false);
+    if (result.ok) {
+      const saved = { ...prepared.build, revision: result.revision };
+      buildRef.current = saved;
+      setSavedBuild(saved);
+    } else {
+      setSettingsError(
+        result.reason === 'revision_conflict'
+          ? 'Build changed elsewhere — reload and try again.'
+          : 'Could not save scan default.',
+      );
+    }
+  }
+
+  async function updateChannelScan(channelId: string, scanInclusion: ScanInclusion) {
+    const current =
+      overrideScanInclusion(buildRef.current.channelOverrides, channelId) ??
+      channelById.get(channelId)?.scanInclusion;
+    if (current === scanInclusion) return;
+    setSaving(true);
+    setError(null);
+    const next = buildService.withScanInclusionOverride(buildRef.current, channelId, scanInclusion);
+    const result = await putBuild(next, buildRef.current.revision);
+    setSaving(false);
+    if (result.ok) {
+      const saved = { ...next, revision: result.revision };
+      buildRef.current = saved;
+      setSavedBuild(saved);
+    } else {
+      setError(
+        result.reason === 'revision_conflict'
+          ? 'Build changed elsewhere — reload and try again.'
+          : 'Could not save scan setting.',
+      );
+    }
+  }
 
   return (
     <div className={classes.page}>

@@ -49,7 +49,10 @@ export default function StyleguidePatternsPage() {
   const [buildGroupMode, setBuildGroupMode] = useState<'radio' | 'list'>('radio');
 
   return (
-    <StyleguidePageShell title="Patterns" description="Product-specific compositions built from v2 primitives.">
+    <StyleguidePageShell
+      title="Patterns"
+      description="Product-specific compositions built from v2 primitives."
+    >
       <StyleguideSection
         title="FacetBar"
         description="Library list filter chips and split pill (Channels list). Click an active split option again to clear the filter."
