@@ -1,14 +1,14 @@
-import type { DigitalContact } from '@core/models/library.ts';
+import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import {
-  applyRadioidListingUpdates,
+  applyRadioidListingToDirectoryEntry,
   buildRadioidDmrUserSearchParams,
-  mapRadioidUserToDigitalContact,
+  mapRadioidUserToDirectoryEntry,
   RadioidDirectoryError,
   searchRadioidDmrUsers,
   type RadioidDmrUserListing,
   type RadioidSearchFilterInput,
 } from '@integrations/radioid/index.ts';
-import type { DigitalContactPut, ProjectPersistence } from '@integrations/persistence/types.ts';
+import type { ProjectPersistence } from '@integrations/persistence/types.ts';
 
 export type RadioidBulkImportScope = 'page' | 'selected' | 'all';
 
@@ -38,7 +38,6 @@ export interface RadioidBulkImportOptions {
   scope: RadioidBulkImportScope;
   updateExisting: boolean;
   projectId: string;
-  contacts: readonly DigitalContact[];
   listings?: readonly RadioidDmrUserListing[];
   filters?: RadioidSearchFilterInput;
   totalPages?: number;
@@ -53,13 +52,15 @@ type ListingWriteOutcome = 'added' | 'updated';
 interface PendingListingWrite {
   digitalId: number;
   outcome: ListingWriteOutcome;
-  put: DigitalContactPut;
+  entry: DigitalIdDirectoryEntry;
 }
 
-function contactMapFromLibrary(contacts: readonly DigitalContact[]): Map<number, DigitalContact> {
-  const map = new Map<number, DigitalContact>();
-  for (const contact of contacts) {
-    map.set(contact.digitalId, contact);
+function directoryMapFromRows(
+  entries: readonly DigitalIdDirectoryEntry[],
+): Map<number, DigitalIdDirectoryEntry> {
+  const map = new Map<number, DigitalIdDirectoryEntry>();
+  for (const entry of entries) {
+    map.set(entry.digitalId, entry);
   }
   return map;
 }
@@ -74,26 +75,25 @@ function estimateEtaMs(startedAt: number, processed: number, total: number): num
 
 function prepareListingWrite(
   listing: RadioidDmrUserListing,
-  contactByDigitalId: Map<number, DigitalContact>,
+  entryByDigitalId: Map<number, DigitalIdDirectoryEntry>,
   options: Pick<RadioidBulkImportOptions, 'projectId' | 'updateExisting'>,
 ): PendingListingWrite | null {
-  const existing = contactByDigitalId.get(listing.id);
+  const existing = entryByDigitalId.get(listing.id);
   if (existing) {
     if (!options.updateExisting) return null;
-    const patched = applyRadioidListingUpdates(existing, listing);
+    const patched = applyRadioidListingToDirectoryEntry(existing, listing);
     if (!patched) return null;
     return {
       digitalId: listing.id,
       outcome: 'updated',
-      put: { row: patched, expectedRevision: existing.revision },
+      entry: patched,
     };
   }
 
-  const contact = mapRadioidUserToDigitalContact(listing, options.projectId);
   return {
     digitalId: listing.id,
     outcome: 'added',
-    put: { row: contact, expectedRevision: null },
+    entry: mapRadioidUserToDirectoryEntry(listing, options.projectId),
   };
 }
 
@@ -110,22 +110,20 @@ function reportProgress(
 
 async function persistListingBatch(
   pending: readonly PendingListingWrite[],
-  contactByDigitalId: Map<number, DigitalContact>,
+  entryByDigitalId: Map<number, DigitalIdDirectoryEntry>,
   persistence: ProjectPersistence,
   counts: Pick<RadioidBulkImportResult, 'added' | 'updated' | 'failed'>,
 ): Promise<void> {
   if (pending.length === 0) return;
 
-  const batch = await persistence.putDigitalContactsBatch(pending.map((item) => item.put));
-  for (let i = 0; i < pending.length; i++) {
-    const item = pending[i]!;
-    const result = batch.results[i];
-    if (!result?.ok) {
-      counts.failed += 1;
-      continue;
+  try {
+    await persistence.putDigitalIdDirectoryEntriesBatch(pending.map((item) => item.entry));
+    for (const item of pending) {
+      counts[item.outcome] += 1;
+      entryByDigitalId.set(item.digitalId, item.entry);
     }
-    counts[item.outcome] += 1;
-    contactByDigitalId.set(item.digitalId, { ...item.put.row, revision: result.revision });
+  } catch {
+    counts.failed += pending.length;
   }
 }
 
@@ -139,7 +137,10 @@ async function runRadioidBulkImportInner(
   options: RadioidBulkImportOptions,
 ): Promise<RadioidBulkImportResult> {
   const startedAt = Date.now();
-  const contactByDigitalId = contactMapFromLibrary(options.contacts);
+  const existingEntries = await options.persistence.listDigitalIdDirectoryEntries(
+    options.projectId,
+  );
+  const entryByDigitalId = directoryMapFromRows(existingEntries);
   const counts = { added: 0, updated: 0, skipped: 0, failed: 0 };
   let processed = 0;
   let cancelled = false;
@@ -160,7 +161,7 @@ async function runRadioidBulkImportInner(
         break;
       }
 
-      const write = prepareListingWrite(listing, contactByDigitalId, options);
+      const write = prepareListingWrite(listing, entryByDigitalId, options);
       if (!write) {
         counts.skipped += 1;
         processed += 1;
@@ -170,7 +171,7 @@ async function runRadioidBulkImportInner(
     }
 
     if (pending.length > 0) {
-      await persistListingBatch(pending, contactByDigitalId, options.persistence, counts);
+      await persistListingBatch(pending, entryByDigitalId, options.persistence, counts);
       processed += pending.length;
     }
 
@@ -254,13 +255,12 @@ async function runRadioidBulkImportInner(
 
 export function countRadioidBulkImportTargets(
   listings: readonly RadioidDmrUserListing[],
-  contacts: readonly DigitalContact[],
+  existingDigitalIds: ReadonlySet<number>,
 ): { newCount: number; existingCount: number } {
-  const existingIds = new Set(contacts.map((c) => c.digitalId));
   let newCount = 0;
   let existingCount = 0;
   for (const listing of listings) {
-    if (existingIds.has(listing.id)) existingCount += 1;
+    if (existingDigitalIds.has(listing.id)) existingCount += 1;
     else newCount += 1;
   }
   return { newCount, existingCount };

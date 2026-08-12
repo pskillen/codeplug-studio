@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { searchRadioidDmrUsers } from './client.ts';
 import { mapRadioidUserToDigitalContact } from './mapToDigitalContact.ts';
+import { mapRadioidUserToDirectoryEntry } from './mapToDirectoryEntry.ts';
 import { findDigitalContactByDigitalId } from './findDigitalContact.ts';
 
 const FIXTURE_RESPONSE = {
@@ -82,6 +83,35 @@ describe('mapRadioidUserToDigitalContact', () => {
       'project-1',
     );
     expect(contact.name).toBe('M1ABC');
+  });
+});
+
+describe('mapRadioidUserToDirectoryEntry', () => {
+  it('maps listing metadata into a directory shadow row', () => {
+    const entry = mapRadioidUserToDirectoryEntry(
+      {
+        id: 3109478,
+        callsign: 'W1AW',
+        fname: 'Hiram',
+        surname: 'Percy',
+        name: 'Hiram',
+        city: 'Newington',
+        state: 'Connecticut',
+        country: 'United States',
+      },
+      'project-1',
+    );
+    expect(entry).toMatchObject({
+      projectId: 'project-1',
+      digitalId: 3109478,
+      mode: 'dmr',
+      name: 'Hiram Percy',
+      callsign: 'W1AW',
+      city: 'Newington',
+      state: 'Connecticut',
+      country: 'United States',
+    });
+    expect(entry.fetchedAt).toBeTruthy();
   });
 });
 

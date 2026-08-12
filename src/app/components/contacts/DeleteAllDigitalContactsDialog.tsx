@@ -42,7 +42,8 @@ function DeleteAllDigitalContactsDialogBody({
       </Text>
       <Text size="sm" c="dimmed">
         Channel DMR contact references and digital members of RX group lists will be cleared. Analog
-        contacts are not affected.
+        contacts are not affected. Your local RadioID directory shadow store is separate and is not
+        cleared by this action.
       </Text>
 
       <Checkbox

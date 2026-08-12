@@ -37,6 +37,7 @@ import {
 } from '@core/import-export/formats/anytone/lstManifest.ts';
 import { resolveEffectiveExportFileNames } from '@core/import-export/exportFileNames.ts';
 import { dedupeWarnings } from '@core/import-export/dedupeWarnings.ts';
+import { applyCpsDigitalDirectoryProjection } from '@core/domain/cpsDigitalDirectoryProjection.ts';
 import type { CpsExportOptions, ExportResult, FormatId } from '@core/import-export/types.ts';
 import {
   assemble,
@@ -98,6 +99,25 @@ export interface ExportBuildAllResult {
 
 export { mergeExportOptions };
 
+function assembleForExport(
+  build: RadioBuild,
+  library: LibrarySlice,
+  egress: EgressPath,
+  exportOptions: CpsExportOptions,
+): { assembled: AssembledBuild; projectionWarnings: string[] } {
+  const projection = assemble(build, library, {
+    formatId: egress.formatId,
+    profileId: egress.profileId,
+  });
+  const baseAssembled = {
+    ...projection,
+    library,
+    zoneGrouping: findZoneGroupingSection(build),
+  };
+  const { assembled, warnings } = applyCpsDigitalDirectoryProjection(baseAssembled, exportOptions);
+  return { assembled, projectionWarnings: warnings };
+}
+
 /** Merge build export settings with egress identity (profileId for wire name limits). */
 function exportOptionsForEgress(
   build: RadioBuild,
@@ -150,15 +170,7 @@ export function listExportBuildFileNames({
   options,
 }: Omit<ExportBuildParams, 'fileName'>): readonly string[] {
   const exportOptions = exportOptionsForEgress(build, egress, options, library);
-  const projection = assemble(build, library, {
-    formatId: egress.formatId,
-    profileId: egress.profileId,
-  });
-  const assembled = {
-    ...projection,
-    library,
-    zoneGrouping: findZoneGroupingSection(build),
-  };
+  const { assembled } = assembleForExport(build, library, egress, exportOptions);
   const csvFileNames = resolveEffectiveExportFileNames(
     egress.formatId as FormatId,
     assembled,
@@ -176,15 +188,12 @@ export function exportBuildFile({
   options,
 }: ExportBuildParams): ExportResult & { content: string; assembled: AssembledBuild } {
   const exportOptions = exportOptionsForEgress(build, egress, options, library);
-  const projection = assemble(build, library, {
-    formatId: egress.formatId,
-    profileId: egress.profileId,
-  });
-  const assembled = {
-    ...projection,
+  const { assembled, projectionWarnings } = assembleForExport(
+    build,
     library,
-    zoneGrouping: findZoneGroupingSection(build),
-  };
+    egress,
+    exportOptions,
+  );
   const adapter = getExportAdapter(egress.formatId as FormatId);
   if (!isMultiFileExportAdapter(adapter)) {
     throw new Error(`Format ${egress.formatId} does not support multi-file CPS export`);
@@ -202,6 +211,7 @@ export function exportBuildFile({
 
   const result = adapter.serialiseFile(assembled, fileName, exportOptions);
   const warnings = dedupeWarnings([
+    ...projectionWarnings,
     ...exportInclusionWarnings(build, library, assembled),
     ...adapter.collectExportWarnings(assembled, exportOptions),
     ...result.warnings,
@@ -217,15 +227,12 @@ export function exportBuildAll({
   options,
 }: Omit<ExportBuildParams, 'fileName'>): ExportBuildAllResult {
   const exportOptions = exportOptionsForEgress(build, egress, options, library);
-  const projection = assemble(build, library, {
-    formatId: egress.formatId,
-    profileId: egress.profileId,
-  });
-  const assembled = {
-    ...projection,
+  const { assembled, projectionWarnings } = assembleForExport(
+    build,
     library,
-    zoneGrouping: findZoneGroupingSection(build),
-  };
+    egress,
+    exportOptions,
+  );
   const adapter = getExportAdapter(egress.formatId as FormatId);
   if (!isMultiFileExportAdapter(adapter)) {
     throw new Error(`Format ${egress.formatId} does not support multi-file CPS export`);
@@ -233,6 +240,7 @@ export function exportBuildAll({
 
   const files: Record<string, string> = {};
   const warnings: string[] = [
+    ...projectionWarnings,
     ...exportInclusionWarnings(build, library, assembled),
     ...adapter.collectExportWarnings(assembled, exportOptions),
   ];
@@ -265,15 +273,12 @@ export function exportBuildSingleFile({
   content: string;
 } {
   const exportOptions = exportOptionsForEgress(build, egress, options, library);
-  const projection = assemble(build, library, {
-    formatId: egress.formatId,
-    profileId: egress.profileId,
-  });
-  const assembled = {
-    ...projection,
+  const { assembled, projectionWarnings } = assembleForExport(
+    build,
     library,
-    zoneGrouping: findZoneGroupingSection(build),
-  };
+    egress,
+    exportOptions,
+  );
   const adapter = getExportAdapter(egress.formatId as FormatId);
   if (!isSingleFileCpsExportAdapter(adapter)) {
     throw new Error(`Format ${egress.formatId} does not support single-file CPS export`);
@@ -283,6 +288,7 @@ export function exportBuildSingleFile({
     options?.fileName ?? adapter.defaultFileName(exportOptions.profileId ?? egress.profileId);
   const result = adapter.serialise(assembled, exportOptions);
   const warnings = dedupeWarnings([
+    ...projectionWarnings,
     ...exportInclusionWarnings(build, library, assembled),
     ...result.warnings,
   ]);

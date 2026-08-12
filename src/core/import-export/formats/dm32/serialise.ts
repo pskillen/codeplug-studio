@@ -16,8 +16,11 @@ import {
   CHANNEL_HEADERS,
   CONTACT_COL,
   CONTACT_HEADERS,
+  DMR_ID_COL,
+  DMR_ID_HEADERS,
   DTMF_CONTACT_COL,
   DTMF_CONTACT_HEADERS,
+  DM32_DMR_ID_FILE_NAME,
   DM32_EXPORT_FILE_NAMES,
   RX_GROUP_LIST_COL,
   RX_GROUP_LIST_HEADERS,
@@ -42,6 +45,7 @@ import type { SyntheticScanCarrier } from '@core/import-export/formats/dm32/zone
 
 export type Dm32ExportFiles = Record<Dm32ExportFileName, string> & {
   [DM32_APRS_GUIDE_FILE_NAME]?: string;
+  [DM32_DMR_ID_FILE_NAME]?: string;
 };
 
 function padRow(headers: string[], values: Record<string, string>): string[] {
@@ -272,6 +276,19 @@ export function serialiseDmrContacts(assembled: AssembledBuild): string {
   return formatCsv(CONTACT_HEADERS, rows);
 }
 
+export function serialiseDm32RadioIds(
+  radioIds: readonly { dmrId: number; name: string }[],
+): string {
+  const rows = radioIds.map((entry, index) =>
+    padRow(DMR_ID_HEADERS, {
+      [DMR_ID_COL.number]: String(index + 1),
+      [DMR_ID_COL.radioId]: String(entry.dmrId),
+      [DMR_ID_COL.radioName]: entry.name,
+    }),
+  );
+  return formatCsv(DMR_ID_HEADERS, rows);
+}
+
 export function serialiseDtmfContacts(assembled: AssembledBuild): string {
   const rows = assembled.analogContacts.map((contact, i) =>
     padRow(DTMF_CONTACT_HEADERS, {
@@ -418,6 +435,11 @@ export function serialiseDm32Files(
     'Scan.csv': serialiseScanCsv(scanExport),
   };
 
+  const dm32RadioIds = options?.directoryProjection?.dualBank?.dm32RadioIds;
+  if (options?.directoryProjection?.dualBank?.includeDm32RadioIdFile) {
+    files[DM32_DMR_ID_FILE_NAME] = serialiseDm32RadioIds(dm32RadioIds ?? []);
+  }
+
   const aprsGuide = buildDm32AprsGuide(exportAssembled);
   if (aprsGuide) {
     files[DM32_APRS_GUIDE_FILE_NAME] = aprsGuide.markdown;
@@ -426,12 +448,18 @@ export function serialiseDm32Files(
   return files;
 }
 
-export function resolveDm32ExportFileNames(assembled: AssembledBuild): string[] {
+export function resolveDm32ExportFileNames(
+  assembled: AssembledBuild,
+  options?: CpsExportOptions,
+): string[] {
   const names: string[] = [...DM32_EXPORT_FILE_NAMES];
+  if (options?.directoryProjection?.dualBank?.includeDm32RadioIdFile) {
+    names.push(DM32_DMR_ID_FILE_NAME);
+  }
   if (hasDm32AprsGuide(assembled)) {
     names.push(DM32_APRS_GUIDE_FILE_NAME);
   }
   return names;
 }
 
-export { DM32_EXPORT_FILE_NAMES, DM32_APRS_GUIDE_FILE_NAME };
+export { DM32_EXPORT_FILE_NAMES, DM32_APRS_GUIDE_FILE_NAME, DM32_DMR_ID_FILE_NAME };

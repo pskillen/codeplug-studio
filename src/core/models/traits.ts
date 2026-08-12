@@ -14,6 +14,11 @@ export const BuildCapabilityTrait = {
    */
   TalkGroupTimeslotClones: 'talkGroupTimeslotClones',
   MxNChannelExpansion: 'mxnChannelExpansion',
+  /**
+   * Firmware exposes a contact list bank separate from a digital ID list bank.
+   * Gates dual-bank vs single-bank Write / CPS projection UX.
+   */
+  SeparateDigitalIdList: 'separateDigitalIdList',
 } as const;
 
 export type BuildCapabilityTrait = (typeof BuildCapabilityTrait)[keyof typeof BuildCapabilityTrait];
@@ -35,6 +40,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
       BuildCapabilityTrait.TalkGroupTimeslotClones,
+      BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
   'opengd77-md9600': {
@@ -46,6 +52,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
       BuildCapabilityTrait.TalkGroupTimeslotClones,
+      BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
   'dm32-baofeng-dm32uv': {
@@ -56,6 +63,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ScanLists,
       BuildCapabilityTrait.MxNChannelExpansion,
+      BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
   'chirp-uv5r': {
@@ -94,6 +102,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ScanLists,
       BuildCapabilityTrait.MxNChannelExpansion,
+      BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
   'neonplug-uv5rmini': {
@@ -132,6 +141,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneGrouping,
       BuildCapabilityTrait.ScanLists,
       BuildCapabilityTrait.MxNChannelExpansion,
+      BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
   /** Web Serial direct-write — Anytone AT-D890UV sparse D890_MAP. */
@@ -155,6 +165,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
       BuildCapabilityTrait.TalkGroupTimeslotClones,
+      BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
   /** Web Serial direct-write — OpenGD77 / OpenUV380 (MD-9600 / RT-90). */
@@ -167,6 +178,7 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.ZoneAsScanList,
       BuildCapabilityTrait.MultiTalkGroupPerChannel,
       BuildCapabilityTrait.TalkGroupTimeslotClones,
+      BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
 };

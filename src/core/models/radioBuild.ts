@@ -4,6 +4,10 @@ import type {
   DigitalContactExportNameMode,
 } from '@core/import-export/types.ts';
 import type {
+  DualBankRadioWriteOptions,
+  SingleBankDigitalProjectionMode,
+} from '@core/domain/digitalIdDirectoryProjection.ts';
+import type {
   AnalogSquelchMode,
   EffectiveForbidTransmit,
   SendTalkerAliasMode,
@@ -62,6 +66,10 @@ export interface BuildExportSettings {
   scanListDropoutDelaySeconds?: number;
   /** AT-D890UV `ScanList.CSV` Dwell Time[s] (0.1–5.0). Unset → 3.0 s. */
   scanListDwellTimeSeconds?: number;
+  /** CPS export: dual-bank directory toggles (`SeparateDigitalIdList` profiles). */
+  cpsDualBankDirectory?: DualBankRadioWriteOptions;
+  /** CPS export: single-bank digital contact projection (Anytone). */
+  cpsSingleBankProjectionMode?: SingleBankDigitalProjectionMode;
 }
 
 /**

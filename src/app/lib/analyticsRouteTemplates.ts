@@ -10,6 +10,7 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/library/channels/add-from-openaip',
   '/library/channels/add-from-brandmeister',
   '/library/contacts/add-from-radioid',
+  '/library/contacts/directory',
   '/library/channels/add-channel-set',
   '/library/channels/defaults',
   '/library/zones/defaults',

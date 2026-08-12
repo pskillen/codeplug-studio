@@ -12,7 +12,7 @@ import { nextRevision, initialRevision } from './revision.ts';
 
 describe('schemaVersion', () => {
   it('starts at 4', () => {
-    expect(STUDIO_SCHEMA_VERSION).toBe(26);
+    expect(STUDIO_SCHEMA_VERSION).toBe(28);
   });
 });
 
@@ -56,6 +56,46 @@ describe('trait profiles', () => {
     const profile = traitProfileFor('dm32-baofeng-dm32uv');
     expect(profile?.traits).toContain(BuildCapabilityTrait.ScanLists);
     expect(profile?.traits).not.toContain(BuildCapabilityTrait.DedicatedScanLists);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.SeparateDigitalIdList);
+  });
+
+  it('stamps dual-bank digital ID list trait on OpenGD77 and DM-32 profiles', () => {
+    const dualBankProfileIds = [
+      'opengd77-1701',
+      'opengd77-md9600',
+      'dm32-baofeng-dm32uv',
+      'neonplug-dm32uv',
+      'radio-io-dm32uv',
+      'radio-io-opengd77-1701',
+      'radio-io-opengd77-md9600',
+    ] as const;
+    for (const profileId of dualBankProfileIds) {
+      const profile = traitProfileFor(profileId);
+      expect(profile?.traits).toContain(BuildCapabilityTrait.SeparateDigitalIdList);
+    }
+  });
+
+  it('does not stamp separate digital ID list on single-bank Anytone profiles', () => {
+    for (const profileId of ['anytone-at-d890uv', 'radio-io-at-d890uv'] as const) {
+      const profile = traitProfileFor(profileId);
+      expect(profile?.traits).not.toContain(BuildCapabilityTrait.SeparateDigitalIdList);
+    }
+  });
+
+  it('does not stamp separate digital ID list on analog-only profiles', () => {
+    const analogProfileIds = [
+      'chirp-uv5r',
+      'chirp-rt95',
+      'chirp-uv21',
+      'neonplug-uv5rmini',
+      'radio-io-uv5r-mini',
+      'radio-io-rt95',
+      'radio-io-uv21',
+    ] as const;
+    for (const profileId of analogProfileIds) {
+      const profile = traitProfileFor(profileId);
+      expect(profile?.traits).not.toContain(BuildCapabilityTrait.SeparateDigitalIdList);
+    }
   });
 
   it('registers neonplug-dm32uv with zone grouping, scan lists, and m×n expansion', () => {

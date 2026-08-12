@@ -80,6 +80,12 @@ function storedToCpsOptions(stored: BuildExportSettings): CpsExportOptions {
   if (stored.scanListDwellTimeSeconds !== undefined) {
     options.scanListDwellTimeSeconds = stored.scanListDwellTimeSeconds;
   }
+  if (stored.cpsDualBankDirectory !== undefined) {
+    options.cpsDualBankDirectory = stored.cpsDualBankDirectory;
+  }
+  if (stored.cpsSingleBankProjectionMode !== undefined) {
+    options.cpsSingleBankProjectionMode = stored.cpsSingleBankProjectionMode;
+  }
   return options;
 }
 

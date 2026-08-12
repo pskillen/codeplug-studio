@@ -13,12 +13,15 @@ import type {
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
+import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
 import type {
   BatchPutItemResult,
   BatchPutResult,
   DigitalContactPut,
+  DirectoryPersistenceChange,
+  DirectoryPersistenceListener,
   EntityKind,
   PersistenceChange,
   PersistenceListener,
@@ -27,7 +30,14 @@ import type {
   PutResult,
   SatellitePut,
 } from './types.ts';
-import { DEFAULT_DB_NAME, STORES, STORE_NAMES } from './stores.ts';
+import { DEFAULT_DB_NAME, DIRECTORY_STORES, STORES, STORE_NAMES } from './stores.ts';
+import {
+  directoryPrefixUpperBound,
+  directoryProjectNameRangeUpper,
+  matchesDirectoryFilters,
+  type DigitalIdDirectoryPageQuery,
+  type DigitalIdDirectoryPageResult,
+} from './digitalIdDirectoryQuery.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
 import { readRadioBuildRow } from './radioBuildRow.ts';
@@ -51,6 +61,150 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
   });
 }
 
+function ensureDigitalIdDirectoryIndexes(os: IDBObjectStore): void {
+  if (!os.indexNames.contains('byProject')) {
+    os.createIndex('byProject', 'projectId', { unique: false });
+  }
+  if (!os.indexNames.contains('byProjectCallsign')) {
+    os.createIndex('byProjectCallsign', ['projectId', 'callsign'], { unique: false });
+  }
+  if (!os.indexNames.contains('byProjectName')) {
+    os.createIndex('byProjectName', ['projectId', 'name'], { unique: false });
+  }
+  if (!os.indexNames.contains('byProjectCountry')) {
+    os.createIndex('byProjectCountry', ['projectId', 'country'], { unique: false });
+  }
+}
+
+type DirectoryScanSource = {
+  readonly source: IDBObjectStore | IDBIndex;
+  readonly range: IDBKeyRange | undefined;
+  readonly needsClientFilter: boolean;
+};
+
+function planDirectoryScan(
+  os: IDBObjectStore,
+  query: DigitalIdDirectoryPageQuery,
+): DirectoryScanSource {
+  const { projectId, callsignPrefix, namePrefix, countryEquals, orderBy = 'name' } = query;
+  const activeFilters =
+    (callsignPrefix !== undefined ? 1 : 0) +
+    (namePrefix !== undefined ? 1 : 0) +
+    (countryEquals !== undefined ? 1 : 0);
+  const needsClientFilter = activeFilters > 1;
+
+  if (callsignPrefix !== undefined) {
+    return {
+      source: os.index('byProjectCallsign'),
+      range: IDBKeyRange.bound(
+        [projectId, callsignPrefix],
+        [projectId, directoryPrefixUpperBound(callsignPrefix)],
+      ),
+      needsClientFilter,
+    };
+  }
+  if (namePrefix !== undefined) {
+    return {
+      source: os.index('byProjectName'),
+      range: IDBKeyRange.bound(
+        [projectId, namePrefix],
+        [projectId, directoryPrefixUpperBound(namePrefix)],
+      ),
+      needsClientFilter,
+    };
+  }
+  if (countryEquals !== undefined) {
+    return {
+      source: os.index('byProjectCountry'),
+      range: IDBKeyRange.only([projectId, countryEquals]),
+      needsClientFilter,
+    };
+  }
+
+  if (orderBy === 'digitalId') {
+    return {
+      source: os,
+      range: IDBKeyRange.bound([projectId, 0], [projectId, Number.MAX_SAFE_INTEGER]),
+      needsClientFilter: false,
+    };
+  }
+  if (orderBy === 'callsign') {
+    return {
+      source: os.index('byProjectCallsign'),
+      range: IDBKeyRange.bound([projectId, ''], directoryProjectNameRangeUpper(projectId)),
+      needsClientFilter: false,
+    };
+  }
+  return {
+    source: os.index('byProjectName'),
+    range: IDBKeyRange.bound([projectId, ''], directoryProjectNameRangeUpper(projectId)),
+    needsClientFilter: false,
+  };
+}
+
+async function idbCountMatchingDirectoryRows(
+  scan: DirectoryScanSource,
+  query: DigitalIdDirectoryPageQuery,
+): Promise<number> {
+  if (!scan.needsClientFilter && scan.range === undefined) {
+    return promisifyRequest(scan.source.count());
+  }
+  if (!scan.needsClientFilter && scan.range !== undefined) {
+    return promisifyRequest(scan.source.count(scan.range));
+  }
+
+  let total = 0;
+  await new Promise<void>((resolve, reject) => {
+    const req = scan.source.openCursor(scan.range);
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) {
+        resolve();
+        return;
+      }
+      const row = cursor.value as DigitalIdDirectoryEntry;
+      if (matchesDirectoryFilters(row, query)) total += 1;
+      cursor.continue();
+    };
+    req.onerror = () => reject(req.error);
+  });
+  return total;
+}
+
+async function idbCollectDirectoryPage(
+  scan: DirectoryScanSource,
+  query: DigitalIdDirectoryPageQuery,
+): Promise<DigitalIdDirectoryEntry[]> {
+  const rows: DigitalIdDirectoryEntry[] = [];
+  let matchedIndex = 0;
+
+  await new Promise<void>((resolve, reject) => {
+    const req = scan.source.openCursor(scan.range);
+    req.onsuccess = () => {
+      const cursor = req.result;
+      if (!cursor) {
+        resolve();
+        return;
+      }
+      const row = cursor.value as DigitalIdDirectoryEntry;
+      if (matchesDirectoryFilters(row, query)) {
+        if (matchedIndex >= query.offset && rows.length < query.limit) {
+          rows.push(row);
+        }
+        matchedIndex += 1;
+      }
+      if (rows.length >= query.limit) {
+        resolve();
+        return;
+      }
+      cursor.continue();
+    };
+    req.onerror = () => reject(req.error);
+  });
+
+  return rows;
+}
+
 /**
  * IndexedDB implementation of {@link ProjectPersistence}. Stores one row per
  * entity (keyed by `[projectId, id]`) across per-kind object stores, enforces
@@ -63,7 +217,9 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   private readonly dbName: string;
   private dbPromise: Promise<IDBDatabase> | null = null;
   private readonly listeners = new Set<PersistenceListener>();
+  private readonly directoryListeners = new Set<DirectoryPersistenceListener>();
   private readonly channel: BroadcastChannel | null;
+  private readonly directoryChannel: BroadcastChannel | null;
   private notificationDepth = 0;
   private suppressedProjectId: string | null = null;
 
@@ -73,9 +229,16 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       typeof BroadcastChannel !== 'undefined'
         ? new BroadcastChannel(`${dbName}:persistence`)
         : null;
+    this.directoryChannel =
+      typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(`${dbName}:directory`) : null;
     if (this.channel) {
       this.channel.onmessage = (event: MessageEvent<PersistenceChange>) => {
         this.notifyLocal(event.data);
+      };
+    }
+    if (this.directoryChannel) {
+      this.directoryChannel.onmessage = (event: MessageEvent<DirectoryPersistenceChange>) => {
+        this.notifyDirectoryLocal(event.data);
       };
     }
   }
@@ -109,6 +272,14 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
               os.createIndex('byRadioBuild', ['projectId', 'radioBuildId'], { unique: false });
             }
           }
+        }
+        const directoryStore = DIRECTORY_STORES.digitalIdDirectory;
+        if (!db.objectStoreNames.contains(directoryStore)) {
+          const os = db.createObjectStore(directoryStore, { keyPath: ['projectId', 'digitalId'] });
+          ensureDigitalIdDirectoryIndexes(os);
+        } else {
+          const os = request.transaction!.objectStore(directoryStore);
+          ensureDigitalIdDirectoryIndexes(os);
         }
       };
       request.onsuccess = () => resolve(request.result);
@@ -244,6 +415,131 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
   async listDigitalContacts(projectId: string): Promise<DigitalContact[]> {
     return this.listRows<DigitalContact>('digitalContact', projectId);
+  }
+
+  async putDigitalIdDirectoryEntriesBatch(
+    entries: readonly DigitalIdDirectoryEntry[],
+  ): Promise<{ written: number }> {
+    if (entries.length === 0) return { written: 0 };
+
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const projectId = entries[0]!.projectId;
+    const firstDigitalId = entries[0]!.digitalId;
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const os = tx.objectStore(storeName);
+      for (const entry of entries) {
+        os.put(entry);
+      }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+
+    this.emitDirectory({ projectId, digitalId: firstDigitalId, op: 'put' });
+    return { written: entries.length };
+  }
+
+  async listDigitalIdDirectoryEntries(projectId: string): Promise<DigitalIdDirectoryEntry[]> {
+    const page = await this.queryDigitalIdDirectoryPage({
+      projectId,
+      offset: 0,
+      limit: Number.MAX_SAFE_INTEGER,
+      orderBy: 'name',
+    });
+    return page.rows;
+  }
+
+  async queryDigitalIdDirectoryPage(
+    args: DigitalIdDirectoryPageQuery,
+  ): Promise<DigitalIdDirectoryPageResult> {
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction(storeName, 'readonly');
+    const os = tx.objectStore(storeName);
+    const scan = planDirectoryScan(os, args);
+    const [rows, total] = await Promise.all([
+      idbCollectDirectoryPage(scan, args),
+      idbCountMatchingDirectoryRows(scan, args),
+    ]);
+    return { rows, total };
+  }
+
+  async iterateDigitalIdDirectory(
+    projectId: string,
+    onRow: (row: DigitalIdDirectoryEntry) => void | Promise<void>,
+  ): Promise<void> {
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction(storeName, 'readonly');
+    const index = tx.objectStore(storeName).index('byProject');
+
+    await new Promise<void>((resolve, reject) => {
+      const req = index.openCursor(IDBKeyRange.only(projectId));
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (!cursor) {
+          resolve();
+          return;
+        }
+        Promise.resolve(onRow(cursor.value as DigitalIdDirectoryEntry))
+          .then(() => cursor.continue())
+          .catch(reject);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async getDigitalIdDirectoryEntry(
+    projectId: string,
+    digitalId: number,
+  ): Promise<DigitalIdDirectoryEntry | null> {
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction(storeName, 'readonly');
+    const row = await promisifyRequest<DigitalIdDirectoryEntry | undefined>(
+      tx.objectStore(storeName).get([projectId, digitalId]),
+    );
+    return row ?? null;
+  }
+
+  async deleteDigitalIdDirectoryForProject(projectId: string): Promise<{ deletedCount: number }> {
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    let deletedCount = 0;
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const os = tx.objectStore(storeName);
+      const req = os.index('byProject').openKeyCursor(IDBKeyRange.only(projectId));
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (cursor) {
+          os.delete(cursor.primaryKey);
+          deletedCount += 1;
+          cursor.continue();
+        }
+      };
+      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+
+    if (deletedCount > 0) {
+      this.emitDirectory({ projectId, digitalId: 0, op: 'delete' });
+    }
+    return { deletedCount };
+  }
+
+  async countDigitalIdDirectoryEntries(projectId: string): Promise<number> {
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction(storeName, 'readonly');
+    const index = tx.objectStore(storeName).index('byProject');
+    return promisifyRequest(index.count(projectId));
   }
 
   async getAnalogContact(projectId: string, id: string): Promise<AnalogContact | null> {
@@ -584,9 +880,17 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     };
   }
 
+  subscribeDirectory(listener: DirectoryPersistenceListener): () => void {
+    this.directoryListeners.add(listener);
+    return () => {
+      this.directoryListeners.delete(listener);
+    };
+  }
+
   /** Release the BroadcastChannel. Mainly for tests / teardown. */
   close(): void {
     this.channel?.close();
+    this.directoryChannel?.close();
   }
 
   private async getRow<T>(kind: EntityKind, projectId: string, id: string): Promise<T | null> {
@@ -683,6 +987,17 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
 
   private notifyLocal(change: PersistenceChange): void {
     for (const listener of this.listeners) {
+      listener(change);
+    }
+  }
+
+  private emitDirectory(change: DirectoryPersistenceChange): void {
+    this.notifyDirectoryLocal(change);
+    this.directoryChannel?.postMessage(change);
+  }
+
+  private notifyDirectoryLocal(change: DirectoryPersistenceChange): void {
+    for (const listener of this.directoryListeners) {
       listener(change);
     }
   }

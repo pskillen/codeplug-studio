@@ -12,12 +12,17 @@ import type {
   TalkGroup,
   Zone,
 } from '@core/models/library.ts';
+import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
 import type {
   BatchPutItemResult,
   BatchPutResult,
   DigitalContactPut,
+  DigitalIdDirectoryPageQuery,
+  DigitalIdDirectoryPageResult,
+  DirectoryPersistenceChange,
+  DirectoryPersistenceListener,
   EntityKind,
   PersistenceChange,
   PersistenceListener,
@@ -26,6 +31,7 @@ import type {
   PutResult,
   SatellitePut,
 } from './types.ts';
+import { queryDigitalIdDirectoryPageInMemory } from './digitalIdDirectoryQuery.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
 import { readRadioBuildRow } from './radioBuildRow.ts';
@@ -34,6 +40,10 @@ type RowMap<T extends { id: string; projectId: string }> = Map<string, T>;
 
 function rowKey(projectId: string, id: string): string {
   return `${projectId}:${id}`;
+}
+
+function directoryRowKey(projectId: string, digitalId: number): string {
+  return `${projectId}:${digitalId}`;
 }
 
 function checkRevision<T extends { revision: number }>(
@@ -60,7 +70,9 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   private trackingSettings: RowMap<TrackingSettings> = new Map();
   private radioBuilds: RowMap<RadioBuild> = new Map();
   private egressPaths: RowMap<EgressPath> = new Map();
+  private digitalIdDirectory: Map<string, DigitalIdDirectoryEntry> = new Map();
   private listeners = new Set<PersistenceListener>();
+  private directoryListeners = new Set<DirectoryPersistenceListener>();
   private notificationDepth = 0;
   private suppressedProjectId: string | null = null;
 
@@ -179,6 +191,75 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
 
   async listDigitalContacts(projectId: string): Promise<DigitalContact[]> {
     return this.listRows(this.digitalContacts, projectId);
+  }
+
+  async putDigitalIdDirectoryEntriesBatch(
+    entries: readonly DigitalIdDirectoryEntry[],
+  ): Promise<{ written: number }> {
+    if (entries.length === 0) return { written: 0 };
+
+    for (const entry of entries) {
+      this.digitalIdDirectory.set(directoryRowKey(entry.projectId, entry.digitalId), { ...entry });
+    }
+    const first = entries[0]!;
+    this.emitDirectory({ projectId: first.projectId, digitalId: first.digitalId, op: 'put' });
+    return { written: entries.length };
+  }
+
+  async listDigitalIdDirectoryEntries(projectId: string): Promise<DigitalIdDirectoryEntry[]> {
+    return queryDigitalIdDirectoryPageInMemory(this.digitalIdDirectory.values(), {
+      projectId,
+      offset: 0,
+      limit: Number.MAX_SAFE_INTEGER,
+      orderBy: 'name',
+    }).rows;
+  }
+
+  async queryDigitalIdDirectoryPage(
+    args: DigitalIdDirectoryPageQuery,
+  ): Promise<DigitalIdDirectoryPageResult> {
+    return queryDigitalIdDirectoryPageInMemory(this.digitalIdDirectory.values(), args);
+  }
+
+  async iterateDigitalIdDirectory(
+    projectId: string,
+    onRow: (row: DigitalIdDirectoryEntry) => void | Promise<void>,
+  ): Promise<void> {
+    const rows = [...this.digitalIdDirectory.values()]
+      .filter((row) => row.projectId === projectId)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    for (const row of rows) {
+      await onRow(row);
+    }
+  }
+
+  async getDigitalIdDirectoryEntry(
+    projectId: string,
+    digitalId: number,
+  ): Promise<DigitalIdDirectoryEntry | null> {
+    return this.digitalIdDirectory.get(directoryRowKey(projectId, digitalId)) ?? null;
+  }
+
+  async deleteDigitalIdDirectoryForProject(projectId: string): Promise<{ deletedCount: number }> {
+    let deletedCount = 0;
+    for (const [key, row] of [...this.digitalIdDirectory.entries()]) {
+      if (row.projectId === projectId) {
+        this.digitalIdDirectory.delete(key);
+        deletedCount += 1;
+      }
+    }
+    if (deletedCount > 0) {
+      this.emitDirectory({ projectId, digitalId: 0, op: 'delete' });
+    }
+    return { deletedCount };
+  }
+
+  async countDigitalIdDirectoryEntries(projectId: string): Promise<number> {
+    let count = 0;
+    for (const row of this.digitalIdDirectory.values()) {
+      if (row.projectId === projectId) count += 1;
+    }
+    return count;
   }
 
   async getAnalogContact(projectId: string, id: string): Promise<AnalogContact | null> {
@@ -418,6 +499,13 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     };
   }
 
+  subscribeDirectory(listener: DirectoryPersistenceListener): () => void {
+    this.directoryListeners.add(listener);
+    return () => {
+      this.directoryListeners.delete(listener);
+    };
+  }
+
   private writeSeed(seed: ProjectSeed): void {
     const { meta } = seed;
     this.projects.set(rowKey(meta.projectId, meta.id), { ...meta });
@@ -493,6 +581,12 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
 
   private emitImmediate(change: PersistenceChange): void {
     for (const listener of this.listeners) {
+      listener(change);
+    }
+  }
+
+  private emitDirectory(change: DirectoryPersistenceChange): void {
+    for (const listener of this.directoryListeners) {
       listener(change);
     }
   }

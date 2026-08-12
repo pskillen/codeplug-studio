@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Search UI for importing DMR private contacts from RadioID.net into the vendor-neutral library.
+Search UI for importing DMR IDs from RadioID.net into the local **digital ID directory shadow store**.
 
 ## Props
 
@@ -22,14 +22,14 @@ export default function AddFromRadioidPage() {
 
 - Filter form (broad → narrow): country autocomplete (RepeaterBook country list), state, city, callsign, DMR ID.
 - Results `DataTable` with row selection; bulk actions above the table open `RadioidContactBulkImportDialog`:
-  - **Add all results** — fetches every paginated page from RadioID.net
-  - **Add this page** — current page only
-  - **Add selected** — checked rows only
-- Bulk modal: confirm counts, optional **update existing** checkbox, progress bar with ETA, cancel mid-run.
-- Per row: **Add** for new contacts; **Update** opens `RadioidContactUpdateDialog` when `digitalId` already exists.
+  - **Import all results** — fetches every paginated page from RadioID.net into the directory shadow
+  - **Import this page** — current page only
+  - **Import selected** — checked rows only
+- Bulk modal: confirm directory counts, optional **update existing** checkbox, progress bar with ETA, cancel mid-run.
+- Per row: **Add** saves a new directory row; **In directory** when the ID is already staged; **Update** opens `RadioidContactUpdateDialog` when the ID exists as a **library** contact.
 - Callsign and DMR ID links open `RadioidContactPreviewDialog` (view-only library record) so search results are preserved.
 - Preview modal: **Update from RadioID.net**, **Open in editor** (warns that search will be lost).
-- Duplicate gate matches on `digitalId` only.
+- Bulk duplicate gate matches on directory `digitalId`; library preview/update still uses library contacts.
 - Session cache and rate-limit cooldown via `@integrations/radioid` client.
 
 ## Related

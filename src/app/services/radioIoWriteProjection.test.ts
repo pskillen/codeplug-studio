@@ -750,4 +750,76 @@ describe('buildRadioWriteProjection', () => {
     expect(projWithout.organisation.talkGroups?.[0]?.wireName).not.toBe('Scot West');
     expect(projWithout.organisation.talkGroups?.[0]?.wireName.length).toBeLessThanOrEqual(16);
   });
+
+  it('projects directory radio IDs for DM-32 digital ID list Write', () => {
+    const ch = withExportEligibleDefaults({
+      ...newChannel('p1', 'A'),
+      id: 'ch-a',
+      rxFrequency: 145_000_000,
+      txFrequency: 145_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 999,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    });
+    const library = emptyLibrary([ch]);
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress, {
+      dualBank: {
+        mode: 'digitalIdList',
+        options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
+        directorySlice: {
+          radioIds: [{ index: 0, dmrId: 4242, name: 'DirUser' }],
+          digitalContacts: [],
+        },
+      },
+    });
+    expect(projection.organisation.radioIds).toEqual([{ index: 0, dmrId: 4242, name: 'DirUser' }]);
+    expect(projection.organisation.digitalContacts).toEqual([]);
+    expect(projection.organisation.radioIds?.some((r) => r.dmrId === 999)).toBe(false);
+  });
+
+  it('omits library digital contacts when dual-bank toggle is off', () => {
+    const dc = { ...newDigitalContact('p1', 'Alice', 1001, 'dmr'), id: 'dc-1' };
+    const library = { ...emptyLibrary(), digitalContacts: [dc] };
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress, {
+      dualBank: {
+        mode: 'codeplug',
+        options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
+        directorySlice: {
+          radioIds: [],
+          digitalContacts: [
+            {
+              wireName: 'Dir',
+              digitalId: 2002,
+              callsign: 'D1',
+              city: '',
+              province: '',
+              country: '',
+              remark: '',
+            },
+          ],
+        },
+      },
+    });
+    expect(projection.organisation.digitalContacts).toEqual([
+      expect.objectContaining({ digitalId: 2002, wireName: 'Dir' }),
+    ]);
+    expect(projection.organisation.digitalContacts?.some((c) => c.digitalId === 1001)).toBe(false);
+  });
 });

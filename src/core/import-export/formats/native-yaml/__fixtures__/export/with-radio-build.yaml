@@ -247,7 +247,7 @@ radioBuilds:
       - libraryEntityId: 44444444-4444-4444-8444-444444444444
         wireName: Edinburgh
 schemaVersion: 1
-studioSchemaVersion: 26
+studioSchemaVersion: 28
 trackingSettings:
   id: ffffffff-ffff-4fff-8fff-ffffffffffff
   location:

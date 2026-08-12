@@ -248,6 +248,15 @@ describe('native-yaml validate', () => {
     expect(() => validateDocument(parseYamlTree(priorVersionYaml))).not.toThrow();
   });
 
+  it('accepts the prior studioSchemaVersion (pre-directory-shadow bump) via the allowlist chain', () => {
+    const exportFixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__fixtures__/export');
+    const priorVersionYaml = readFileSync(
+      join(exportFixturesDir, 'minimal-project.yaml'),
+      'utf8',
+    ).replace('studioSchemaVersion: 28', 'studioSchemaVersion: 26');
+    expect(() => validateDocument(parseYamlTree(priorVersionYaml))).not.toThrow();
+  });
+
   it('drops legacy formatBuilds with a warning instead of validating their FKs', () => {
     const { aggregate, warnings } = parseProjectDocumentWithWarnings(readFixture('broken-fk.yaml'));
     expect(aggregate.radioBuilds).toEqual([]);

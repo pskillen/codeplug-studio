@@ -34,4 +34,6 @@ export const AT_D890UV_LIMITS = {
   SATELLITE_MAX: 50,
   /** 8-byte ASCII name field at record offset 0x00 — see satellite-keps.md. */
   SATELLITE_NAME_LENGTH: 8,
+  /** Digital contact bank — vendor programming guide (500k lookup table). */
+  DIGITAL_CONTACTS_MAX: 500_000,
 } as const;

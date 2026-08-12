@@ -29,8 +29,8 @@ export const dm32ExportAdapter: MultiFileExportAdapter = {
     exportZoneDerivedScanLists: true,
   },
   fileNames: DM32_EXPORT_FILE_NAMES,
-  resolveExportFileNames(assembled) {
-    return resolveDm32ExportFileNames(assembled);
+  resolveExportFileNames(assembled, options) {
+    return resolveDm32ExportFileNames(assembled, options);
   },
   collectExportWarnings(assembled, options?: CpsExportOptions) {
     const library = requireLibrary(assembled.library);

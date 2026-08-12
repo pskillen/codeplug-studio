@@ -109,7 +109,17 @@ export const SCAN_COL = {
 
 export const SCAN_HEADERS: string[] = Object.values(SCAN_COL);
 
+export const DMR_ID_COL = {
+  number: 'No.',
+  radioId: 'Radio ID',
+  radioName: 'Radio Name',
+} as const;
+
+export const DMR_ID_HEADERS: string[] = Object.values(DMR_ID_COL);
+
 /** DM32 export file names (v1.60 PascalCase). */
+export const DM32_DMR_ID_FILE_NAME = 'DMR-ID.csv' as const;
+
 export const DM32_EXPORT_FILE_NAMES = [
   'Channels.csv',
   'Zones.csv',

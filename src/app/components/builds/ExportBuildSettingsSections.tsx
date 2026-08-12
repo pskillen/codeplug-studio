@@ -18,6 +18,7 @@ import FrequencyRangeEligibilityFields from './FrequencyRangeEligibilityFields.t
 import DefaultScanInclusionSegment from './DefaultScanInclusionSegment.tsx';
 import ChannelBehaviourExportOverrides from './ChannelBehaviourExportOverrides.tsx';
 import ZoneBehaviourExportOverrides from './ZoneBehaviourExportOverrides.tsx';
+import ExportDirectoryProjectionFields from './ExportDirectoryProjectionFields.tsx';
 import type { ResolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
 
@@ -25,6 +26,8 @@ export interface ExportBuildSettingsSectionsProps {
   build: FormatBuild;
   /** Active egress format — pathway copy only (e.g. naming card wording). */
   formatId: string;
+  /** Active egress profile — directory projection trait gates. */
+  profileId: string;
   saving: boolean;
   settingsError: string | null;
   profileNameLimit?: number;
@@ -46,6 +49,7 @@ export interface ExportBuildSettingsSectionsProps {
 export default function ExportBuildSettingsSections({
   build,
   formatId,
+  profileId,
   saving,
   settingsError,
   profileNameLimit,
@@ -67,6 +71,7 @@ export default function ExportBuildSettingsSections({
         />
         <ExportAnytoneSettingsSections
           build={build}
+          profileId={profileId}
           saving={saving}
           settingsError={settingsError}
           profileNameLimit={profileNameLimit}
@@ -182,6 +187,14 @@ export default function ExportBuildSettingsSections({
           />
         </FieldCard>
       ) : null}
+
+      <ExportDirectoryProjectionFields
+        build={build}
+        formatId={formatId}
+        profileId={profileId}
+        saving={saving}
+        onPatch={onExportSettingsPatch}
+      />
 
       <FieldCard
         title="Naming"

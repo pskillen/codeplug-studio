@@ -38,8 +38,27 @@ import type {
   WriteVerifyPendingPayload,
   WriteVerifyResult,
 } from '@integrations/radio-io/writeVerify.ts';
-import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
+import {
+  buildRadioWriteProjection,
+  type BuildRadioWriteProjectionContext,
+} from './radioIoWriteProjection.ts';
 import type { RadioWriteOrganisation } from '@integrations/radio-io/radioWriteProjection.ts';
+import {
+  collectDualBankDirectorySlice,
+  type DualBankRadioWritePrepareOptions,
+} from './dualBankRadioWrite.ts';
+import {
+  collectSingleBankDigitalContacts,
+  type SingleBankRadioWritePrepareOptions,
+} from './singleBankRadioWrite.ts';
+import { uploadAtD890DigitalContactsForWrite } from './radioIoAtD890DigitalContactWrite.ts';
+import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
+import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+import type { ProjectedDigitalContactRow } from '@core/domain/digitalIdDirectoryProjection.ts';
+import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
+import type { FormatId } from '@core/import-export/types.ts';
+import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
@@ -238,11 +257,17 @@ export class RadioWriteBlockedError extends Error {
  * Call before opening a Web Serial session on Write so the radio is not left
  * in program mode during CPU-heavy assemble (UV-5R Mini times out quickly).
  */
-export function prepareRadioWriteImage(
+export async function prepareRadioWriteImage(
   build: RadioBuild,
   egress: EgressPath,
   library: LibrarySlice,
-): { image: MemoryMap; warnings: string[]; organisation: RadioWriteOrganisation } {
+  opts?: {
+    dualBank?: DualBankRadioWritePrepareOptions;
+    singleBank?: SingleBankRadioWritePrepareOptions;
+    persistence?: ProjectPersistence;
+    projectId?: string;
+  },
+): Promise<{ image: MemoryMap; warnings: string[]; organisation: RadioWriteOrganisation }> {
   const descriptor = descriptorsForEgress(egress)[0];
   if (descriptor && resolveRadioWriteGate(descriptor) === 'hidden') {
     throw new RadioWriteBlockedError(resolveRadioWriteProdDisabledMessage(egress.profileId));
@@ -257,7 +282,92 @@ export function prepareRadioWriteImage(
     formatId: egress.formatId,
     profileId: egress.profileId,
   });
-  const projection = buildRadioWriteProjection(assembled, build, library, egress);
+
+  let projectionContext: BuildRadioWriteProjectionContext | undefined;
+  const projectionWarnings: string[] = [];
+  if (opts?.dualBank) {
+    const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
+    const maxRadioIds = typeof limits?.maxRadioIds === 'number' ? limits.maxRadioIds : undefined;
+    const maxDirectoryContacts =
+      typeof limits?.maxContacts === 'number' ? limits.maxContacts : undefined;
+    const directorySlice =
+      opts.persistence && opts.projectId
+        ? await collectDualBankDirectorySlice({
+            store: opts.persistence,
+            projectId: opts.projectId,
+            library,
+            egressProfileId: egress.profileId,
+            options: opts.dualBank.options,
+            maxRadioIds,
+            maxDirectoryContacts,
+            warnings: projectionWarnings,
+          })
+        : { radioIds: [], digitalContacts: [] };
+    projectionContext = {
+      dualBank: {
+        mode: opts.dualBank.mode,
+        options: opts.dualBank.options,
+        directorySlice,
+      },
+    };
+  } else if (opts?.singleBank && egress.profileId === 'radio-io-at-d890uv') {
+    const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
+    const maxContacts =
+      typeof limits?.maxContacts === 'number'
+        ? limits.maxContacts
+        : AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX;
+    const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
+    const reserved = new Set<string>();
+    const nameLen = AT_D890UV_LIMITS.NAME_LENGTH;
+    const digitalContacts =
+      opts.persistence && opts.projectId
+        ? await collectSingleBankDigitalContacts({
+            store: opts.persistence,
+            projectId: opts.projectId,
+            assembled,
+            projectionMode: opts.singleBank.projectionMode,
+            maxContacts,
+            warnings: projectionWarnings,
+            mapLibraryRow: (row) => {
+              const wireName = applyListWireNameLimits(
+                row.wireName,
+                reserved,
+                merged,
+                egress.profileId,
+                projectionWarnings,
+                'Contact',
+                nameLen,
+                Boolean(row.wireNameOverride?.trim()),
+              );
+              return {
+                digitalId: row.entity.digitalId,
+                wireName,
+                callsign: row.entity.callsign ?? '',
+                city: row.entity.city ?? '',
+                province: row.entity.state ?? '',
+                country: row.entity.country ?? '',
+                remark: row.entity.remarks ?? '',
+              } satisfies ProjectedDigitalContactRow;
+            },
+          })
+        : undefined;
+    projectionContext = {
+      singleBank: {
+        mode: opts.singleBank.mode,
+        projectionMode: opts.singleBank.projectionMode,
+        digitalContacts,
+      },
+    };
+  }
+
+  const projection = buildRadioWriteProjection(
+    assembled,
+    build,
+    library,
+    egress,
+    projectionContext,
+  );
+  const warnings = [...projectionWarnings, ...projection.warnings];
   const organisation: RadioWriteOrganisation = { ...projection.organisation };
   if (build.radioTargetId === 'anytone-at-d890uv') {
     organisation.atD890ScanListTiming = resolveAtD890ScanListTiming(
@@ -266,7 +376,7 @@ export function prepareRadioWriteImage(
   }
   return {
     image: mergeChannelsForWrite(egress, hydration, projection.channels, organisation),
-    warnings: projection.warnings,
+    warnings,
     organisation,
   };
 }
@@ -304,13 +414,16 @@ export async function writeBuildToRadio(
       'Read from the radio first so Studio can preserve unmodelled settings, then write.',
     );
   }
-  const { image, warnings, organisation } = prepareRadioWriteImage(build, egress, library);
+  const { image, warnings, organisation } = await prepareRadioWriteImage(build, egress, library);
   session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration!, organisation);
   setCachedImage(session, image);
   await session.radio.upload(image, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
+  if (egress.profileId === 'radio-io-at-d890uv') {
+    await uploadAtD890DigitalContactsForWrite(session, organisation.digitalContacts, opts);
+  }
   return { warnings };
 }
 
@@ -339,6 +452,9 @@ export async function uploadPreparedRadioWrite(
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
+  if (egress.profileId === 'radio-io-at-d890uv') {
+    await uploadAtD890DigitalContactsForWrite(session, opts?.organisation?.digitalContacts, opts);
+  }
   const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
   return captured ? { writeVerifyPending: captured } : {};
 }

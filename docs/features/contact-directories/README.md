@@ -1,6 +1,6 @@
 # Contact directories
 
-Tier-1 reference for **DMR digital contact / ID directory** workflows — searching remote ID databases and importing private contacts into the vendor-neutral library.
+Tier-1 reference for **DMR digital contact / ID directory** workflows — searching remote ID databases and staging IDs in the local directory shadow before copying into the vendor-neutral library.
 
 **Tracking:** [#374](https://github.com/pskillen/codeplug-studio/issues/374) (epic, parent [#272](https://github.com/pskillen/codeplug-studio/issues/272)) · [#377](https://github.com/pskillen/codeplug-studio/issues/377)–[#379](https://github.com/pskillen/codeplug-studio/issues/379) · Anytone export [#376](https://github.com/pskillen/codeplug-studio/issues/376)
 
@@ -8,7 +8,7 @@ Tier-1 reference for **DMR digital contact / ID directory** workflows — search
 
 ## Problem
 
-Many CPS suites (OpenGD77, qDMR, …) offer one-click DMR ID import. **Anytone CPS does not** — operators download CSV from e.g. RadioID.net and manually rewrite columns for `DMRDigitalContactList.CSV`. Studio fetches provider data at the integration boundary, stores enriched contacts in the library, and lets format exports project wire columns.
+Many CPS suites (OpenGD77, qDMR, …) offer one-click DMR ID import. **Anytone CPS does not** — operators download CSV from e.g. RadioID.net and manually rewrite columns for `DMRDigitalContactList.CSV`. Studio fetches provider data at the integration boundary, stages enriched IDs in the **directory shadow store**, and lets operators copy rows into library contacts for format export.
 
 ## Implementation status
 
@@ -17,12 +17,21 @@ Many CPS suites (OpenGD77, qDMR, …) offer one-click DMR ID import. **Anytone C
 | `DigitalContact` metadata model                 | Shipped  | [#377](https://github.com/pskillen/codeplug-studio/issues/377) — callsign, city, state, country, remarks                                                                                                                                                                     |
 | Digital contact CRUD UI                         | Shipped  | [#378](https://github.com/pskillen/codeplug-studio/issues/378) — editor + list columns                                                                                                                                                                                       |
 | RadioID.net search + import                     | Shipped  | [#379](https://github.com/pskillen/codeplug-studio/issues/379) — bulk add, update/compare, preview modal; [#385](https://github.com/pskillen/codeplug-studio/issues/385) batched persistence; mk2 D3 chrome ([#944](https://github.com/pskillen/codeplug-studio/issues/944)) |
-| RadioID.net update on contact editor            | Shipped  | `RadioidContactVerifyPanel` on digital contact editor                                                                                                                                                                                                                        |
-| Delete all digital contacts                     | Shipped  | [#427](https://github.com/pskillen/codeplug-studio/issues/427) — checkbox-gated wipe after huge imports; cascade-clears channel/`RX` refs                                                                                                                                    |
+| RadioID.net bulk import → directory shadow      | Shipped  | [#983](https://github.com/pskillen/codeplug-studio/issues/983), [#984](https://github.com/pskillen/codeplug-studio/issues/984) — search/bulk/single-row import writes `digitalIdDirectory` only; library copy deferred to directory UI (phase 5)                             |
+| Directory viewer + copy to library              | Shipped  | [#985](https://github.com/pskillen/codeplug-studio/issues/985) — paged browse at `/library/contacts/directory`; copy creates new library `DigitalContact`; clear wipes shadow only                                                                                           |
+| RadioID.net update on contact editor            | Shipped  | `RadioidContactVerifyPanel` on digital contact editor — updates **library** rows only                                                                                                                                                                                        |
+| Delete all digital contacts                     | Shipped  | [#427](https://github.com/pskillen/codeplug-studio/issues/427) — checkbox-gated wipe of **library** digital contacts; does not clear the directory shadow store                                                                                                              |
 | Anytone `DMRDigitalContactList` metadata export | Shipped  | [#376](https://github.com/pskillen/codeplug-studio/issues/376)                                                                                                                                                                                                               |
-| OpenGD77 / DM32 contact metadata export         | Deferred | Separate format tickets; model ready                                                                                                                                                                                                                                         |
+| OpenGD77 / DM32 contact metadata export         | Shipped  | Library + directory CPS projection ([#993](https://github.com/pskillen/codeplug-studio/issues/993)) — OpenGD77 `Contacts.csv`, DM32 `Contacts.csv` + conditional `DMR-ID.csv`; wire detail in format references                                                              |
+| CPS directory projection (dual / single bank)   | Shipped  | [#993](https://github.com/pskillen/codeplug-studio/issues/993) — Build → Export settings; streams shadow rows; library wins on `digitalId` overlap — mirrors Web Serial Write modes                                                                                          |
+| Mobile / project YAML size smoke                | Shipped  | [#996](https://github.com/pskillen/codeplug-studio/issues/996) — automated: directory excluded from project YAML; size stable vs row count (`projectYamlDirectoryExclusion.test.ts`)                                                                                         |
 | Additional ID providers                         | Deferred | One ticket per source after radioid.net                                                                                                                                                                                                                                      |
 | IndexedDB-primary contact browsing              | Deferred | [#428](https://github.com/pskillen/codeplug-studio/issues/428) — investigation; complements [#387](https://github.com/pskillen/codeplug-studio/issues/387) YAML split                                                                                                        |
+| Directory shadow IDB store                      | Shipped  | Foundation ([#982](https://github.com/pskillen/codeplug-studio/issues/982), epic [#981](https://github.com/pskillen/codeplug-studio/issues/981)) — separate `digitalIdDirectory` store keyed by `(projectId, digitalId)`; excluded from project seed                         |
+| Directory shadow paged IDB queries              | Shipped  | [#989](https://github.com/pskillen/codeplug-studio/issues/989) — `queryDigitalIdDirectoryPage` + `useDigitalIdDirectoryPage`; full directory hydrate into React state is forbidden for browsing UI                                                                           |
+| Directory local interchange (YAML/CSV/zip)      | Shipped  | [#986](https://github.com/pskillen/codeplug-studio/issues/986)–[#988](https://github.com/pskillen/codeplug-studio/issues/988) — Drive/native YAML never include shadow; local download/import + zip with project YAML                                                        |
+| Write gating (`SeparateDigitalIdList` trait)    | Shipped  | [#990](https://github.com/pskillen/codeplug-studio/issues/990) trait stamps; [#991](https://github.com/pskillen/codeplug-studio/issues/991) dual-bank Web Serial Write on DM-32 / OpenGD77 — see table below                                                                 |
+| Single-bank Web Serial Write (AT-D890)          | Shipped  | [#992](https://github.com/pskillen/codeplug-studio/issues/992), [#994](https://github.com/pskillen/codeplug-studio/issues/994) — projection modes + streamed directory encode into `DigitalContact*` — see table below                                                       |
 
 ## Documentation map
 
@@ -38,28 +47,57 @@ Shipped core path — remaining scale work under epic [#374](https://github.com/
 
 ## Workflows
 
-| Workflow                    | Entry                                            | Behaviour                                                                                                                                                                                |
-| --------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Import from RadioID.net** | Library → Contacts → **Add from…** → RadioID.net | Search by country → callsign/ID; bulk **Add all results** (paginated), **Add this page**, or **Add selected** via confirm/progress modal; preview/update when contact already in library |
-| **Update from directory**   | Search results **Update** or contact editor      | Field-level diff vs RadioID.net listing (`RadioidContactUpdateDialog`)                                                                                                                   |
-| **Edit metadata**           | `/library/digital-contacts/:id`                  | Manual CRUD for all enriched fields                                                                                                                                                      |
-| **Delete all digital**      | Library → Contacts → **Delete all**              | Checkbox-gated modal; cascade-clears channel/`RX` refs then wipes the digital contact store ([#427](https://github.com/pskillen/codeplug-studio/issues/427))                             |
-| **Export to Anytone**       | Build export                                     | `DMRDigitalContactList.CSV` projects library metadata; **Contact export name style** on Build → Contacts or Export chooses how `Name` is composed (`name`, `callsign`, `callsign-name`)  |
+| Workflow                      | Entry                                         | Behaviour                                                                                                                                                                                                                                                                    |
+| ----------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Browse directory**          | Library → Contacts → **Digital ID directory** | Paged read-only list of shadow rows; prefix filters; row details; **Copy to library** (new UUID); **Clear directory** wipes shadow only                                                                                                                                      |
+| **Import from RadioID.net**   | Directory → **Fetch from RadioID.net**        | Search by country → callsign/ID; bulk **Import all results** (paginated), **Import this page**, or **Import selected** into the **directory shadow**; preview/update when contact already in library                                                                         |
+| **Copy to library**           | Directory row details                         | Creates a new `DigitalContact` when `digitalId` is not already in the library; duplicate `digitalId` blocks copy and offers open-existing                                                                                                                                    |
+| **Update from directory**     | Search results **Update** or contact editor   | Field-level diff vs RadioID.net listing (`RadioidContactUpdateDialog`) — **library** contacts only                                                                                                                                                                           |
+| **Edit metadata**             | `/library/digital-contacts/:id`               | Manual CRUD for all enriched fields                                                                                                                                                                                                                                          |
+| **Delete all digital**        | Library → Contacts → **Delete all**           | Checkbox-gated modal; clears **library** digital contacts only (directory shadow is separate); cascade-clears channel/`RX` refs ([#427](https://github.com/pskillen/codeplug-studio/issues/427))                                                                             |
+| **Clear directory**           | Directory → **Clear directory**               | Checkbox-gated modal; wipes **shadow** `digitalIdDirectory` partition only — library contacts unchanged                                                                                                                                                                      |
+| **Local directory backup**    | Directory toolbar                             | Download shadow as YAML or CSV; optional import upserts by `digitalId`; zip bundles project native YAML + directory file — **never** uploaded to Google Drive automatically                                                                                                  |
+| **Export CPS with directory** | Build → Export → settings                     | **Digital ID directory** card: dual-bank toggles (OpenGD77, DM32) or single-bank projection select (Anytone). Defaults: library contacts on, directory off — same as Web Serial Write. DM32 emits `DMR-ID.csv` when directory is included.                                   |
+| **Write digital ID list**     | Build → Export → Web Serial                   | Trait `separateDigitalIdList` radios (DM-32, OpenGD77 1701/MD-9600): **Write digital ID list** streams shadow rows into the firmware digital-ID bank; **Write to radio** defaults library contacts on, directory off — see [radio-read-write](../radio-read-write/README.md) |
+| **Export to Anytone**         | Build export                                  | `DMRDigitalContactList.CSV` projects library metadata and/or directory shadow per **Digital contact projection** on Build → Export; **Contact export name style** chooses how `Name` is composed (`name`, `callsign`, `callsign-name`)                                       |
 
 ### Routes
 
-- `/library/contacts/add-from-radioid`
+- `/library/contacts/directory` — browse shadow store (paged)
+- `/library/contacts/add-from-radioid` — fetch/import from RadioID.net into shadow store
 
 ## Architecture
 
-- Provider HTTP client in `src/integrations/radioid/` — maps API rows → `DigitalContact` at boundary.
+- Provider HTTP client in `src/integrations/radioid/` — maps API rows → directory shadow entries at boundary (`mapRadioidUserToDirectoryEntry`); library mapping (`mapRadioidUserToDigitalContact` / `mapDirectoryEntryToDigitalContact`) for copy-to-library and verify flows.
 - CORS bridge: `GET /api/radioid/dmr/user/` (trailing slash required; Pages Function + Vite dev proxy) — see [radioid reference](../../reference/remote-directories/radioid/README.md).
 - UUID `id` FKs internally; wire names only on format build export.
 - **Contact export name style** is an export-time build setting (not import-time): library stores `name` and `callsign` separately; Anytone/OpenGD77 export composes CPS `Name` per `exportSettings.digitalContactExportNameMode`.
-- Duplicate import gate: match on `digitalId` (not display `name`).
-- **Bulk import persistence:** **Add all results** writes contacts in batched IndexedDB transactions (one batch per RadioID.net results page, up to 100 rows) inside `runWithoutNotifications` so the library reloads once when import completes — suitable for country-scale imports (10k+ IDs).
-- **Delete all recovery:** when a huge import leaves the tab unusable, **Delete all** clears the digital contact partition via `deleteDigitalContactsForProject` (IDB key cursor — no full hydrate for delete) after cascade-clearing refs. This is a stopgap until IndexedDB-primary browsing ([#428](https://github.com/pskillen/codeplug-studio/issues/428)).
+- Duplicate import gate (directory): match on `digitalId` in the shadow store (not display `name`).
+- **Bulk import persistence:** **Import all results** writes directory rows in batched IndexedDB transactions (one batch per RadioID.net results page, up to 100 rows) inside `runWithoutNotifications` so library state is unchanged; directory listeners refresh counts when import completes — suitable for country-scale imports (10k+ IDs).
+- **Directory browsing scale:** local shadow rows are loaded through IndexedDB cursors via `queryDigitalIdDirectoryPage` ([#989](https://github.com/pskillen/codeplug-studio/issues/989)) — UI must not `getAll` the partition into React state; prefix filters are case-sensitive on stored values (no normalized lowercase index in v1).
+- **Portable interchange:** native project YAML and Google Drive sync include **library rows only** — the directory shadow is excluded from `ProjectSeed` / `ProjectAggregate`. Operators may optionally download or import a separate directory file (YAML or CSV) or a local zip containing project YAML plus directory file ([#986](https://github.com/pskillen/codeplug-studio/issues/986)–[#988](https://github.com/pskillen/codeplug-studio/issues/988)). Large directory exports buffer all shadow rows in memory before download.
+- **Delete all recovery:** when a huge **library** import leaves the tab unusable, **Delete all** clears the digital contact partition via `deleteDigitalContactsForProject` (IDB key cursor — no full hydrate for delete) after cascade-clearing refs. This does **not** clear RadioID directory downloads. IndexedDB-primary browsing ([#428](https://github.com/pskillen/codeplug-studio/issues/428)) remains deferred.
 - Session cache (≤5 min) + per-provider rate-limit cooldown after HTTP 429.
+
+### Dual-bank Web Serial Write (`SeparateDigitalIdList`)
+
+Radios with trait `separateDigitalIdList` expose separate **library contact** and **digital ID directory** banks on Write. Overlap rule: when both contribute, directory rows whose `digitalId` matches a library digital contact are skipped (library wins).
+
+| Action                        | Library contacts | Digital ID directory |
+| ----------------------------- | ---------------- | -------------------- |
+| **Write to radio** (codeplug) | On by default    | Off by default       |
+| **Write digital ID list**     | Off by default   | On (primary)         |
+
+DM-32 maps directory rows to the operator radio-ID bank (`0x67`) on Web Serial Write; **CPS export** writes the same rows to `DMR-ID.csv` when **Include digital ID directory** is on. OpenGD77 maps them as private contacts in `Contacts.csv`. Large directory writes stream from IndexedDB — see `collectDualBankDirectorySlice` ([#991](https://github.com/pskillen/codeplug-studio/issues/991)) and CPS `enrichCpsExportOptionsWithDirectory` ([#993](https://github.com/pskillen/codeplug-studio/issues/993)).
+
+### Single-bank Web Serial Write (no `SeparateDigitalIdList`)
+
+Anytone AT-D890UV uses **one** digital contact bank (`DigitalContact*` regions) for library contacts and the directory shadow. `BuildRadioIoPanel` offers a **Codeplug Write projection** select (contacts only · directory only · merge · skip) and **Write digital ID list** (same modes except skip; replaces the radio bank). **CPS export** uses the same modes on Build → Export → **Digital ID directory** (skip omits `DMRDigitalContactList.CSV` rows). Overlap rule matches dual-bank: merge skips directory rows whose `digitalId` is already on a library contact. Directory rows stream from IndexedDB via `iterateDigitalIdDirectory` — only a `Set` of library `digitalId`s is held in memory during encode ([#994](https://github.com/pskillen/codeplug-studio/issues/994)); see `collectSingleBankDigitalContacts` ([#992](https://github.com/pskillen/codeplug-studio/issues/992)) / `enrichCpsExportOptionsWithDirectory` ([#993](https://github.com/pskillen/codeplug-studio/issues/993)).
+
+| Action                        | Projection options                                              |
+| ----------------------------- | --------------------------------------------------------------- |
+| **Write to radio** (codeplug) | Contacts only · Directory only · Merge · **Skip**               |
+| **Write digital ID list**     | Contacts only · Directory only · Merge (no Skip; bank replaced) |
 
 ## Related
 

@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Group, Pagination } from '@mantine/core';
+import { Group, Pagination, Text } from '@mantine/core';
 import { IconSearch } from '@tabler/icons-react';
 import type { DigitalContact } from '@core/models/library.ts';
 import {
   findDigitalContactByDigitalId,
-  mapRadioidUserToDigitalContact,
+  mapRadioidUserToDirectoryEntry,
   radioidListingDisplayName,
   type RadioidDmrUserListing,
 } from '@integrations/radioid/index.ts';
@@ -32,7 +32,9 @@ import RadioidContactUpdateDialog from './RadioidContactUpdateDialog.tsx';
 import RadioidContactPreviewDialog from './RadioidContactPreviewDialog.tsx';
 
 const GATED_SELECTION_CAPTION =
-  'Already-in-library rows are dimmed — use Update to refresh fields from RadioID.net. RadioID paginates server-side.';
+  'IDs already in your directory are dimmed for bulk import. Library contacts use Update to refresh from RadioID.net. RadioID paginates server-side.';
+
+const EMPTY_DIRECTORY_IDS = new Set<number>();
 
 function listingKey(listing: RadioidDmrUserListing): string {
   return String(listing.id);
@@ -66,6 +68,10 @@ export default function RadioidContactSearch() {
   const [bulkScope, setBulkScope] = useState<RadioidBulkImportScope | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkSessionKey, setBulkSessionKey] = useState(0);
+  const [directoryDigitalIds, setDirectoryDigitalIds] =
+    useState<ReadonlySet<number>>(EMPTY_DIRECTORY_IDS);
+
+  const directoryIdsForImport = activeProjectId ? directoryDigitalIds : EMPTY_DIRECTORY_IDS;
 
   const duplicateById = useMemo(() => {
     const map = new Map<number, string>();
@@ -74,6 +80,31 @@ export default function RadioidContactSearch() {
     }
     return map;
   }, [library.digitalContacts]);
+
+  useEffect(() => {
+    if (!activeProjectId) return;
+    const projectId = activeProjectId;
+
+    let cancelled = false;
+
+    async function loadDirectoryIds() {
+      const entries = await persistence.listDigitalIdDirectoryEntries(projectId);
+      if (cancelled) return;
+      setDirectoryDigitalIds(new Set(entries.map((entry) => entry.digitalId)));
+    }
+
+    void loadDirectoryIds();
+    const unsubscribe = persistence.subscribeDirectory((change) => {
+      if (change.projectId === projectId) {
+        void loadDirectoryIds();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [activeProjectId]);
 
   function openPreview(row: RadioidDmrUserListing) {
     const existing = findDigitalContactByDigitalId(library.digitalContacts, row.id);
@@ -184,11 +215,19 @@ export default function RadioidContactSearch() {
         align: 'right',
         render: (row) => {
           const existing = findDigitalContactByDigitalId(library.digitalContacts, row.id);
+          const inDirectory = directoryIdsForImport.has(row.id);
           if (existing) {
             return (
               <Button variant="outline" size="sm" onClick={() => openUpdate(row)}>
                 Update
               </Button>
+            );
+          }
+          if (inDirectory) {
+            return (
+              <Text size="sm" c="dimmed">
+                In directory
+              </Text>
             );
           }
           return (
@@ -199,20 +238,20 @@ export default function RadioidContactSearch() {
         },
       },
     ];
-  }, [adding, library.digitalContacts]);
+  }, [adding, directoryIdsForImport, library.digitalContacts]);
 
   async function addSingleListing(row: RadioidDmrUserListing) {
-    if (!activeProjectId || duplicateById.has(row.id)) return;
+    if (!activeProjectId || directoryIdsForImport.has(row.id)) return;
 
     setAdding(true);
     setAddMessage(null);
     try {
-      const contact = mapRadioidUserToDigitalContact(row, activeProjectId);
-      await persistence.putDigitalContact(contact, null);
-      await reload();
-      setAddMessage('Added 1 digital contact to your library.');
+      const entry = mapRadioidUserToDirectoryEntry(row, activeProjectId);
+      await persistence.putDigitalIdDirectoryEntriesBatch([entry]);
+      setDirectoryDigitalIds((ids) => new Set([...ids, row.id]));
+      setAddMessage('Added 1 ID to your local directory.');
     } catch {
-      setAddMessage('Could not save the contact — try again.');
+      setAddMessage('Could not save the directory row — try again.');
     } finally {
       setAdding(false);
     }
@@ -237,8 +276,8 @@ export default function RadioidContactSearch() {
 
   return (
     <DirectoryIngestPage
-      crumb="Contacts"
-      crumbTo="/library/contacts"
+      crumb="Directory"
+      crumbTo="/library/contacts/directory"
       title="Search RadioID.net"
       subtitle={
         <>
@@ -251,21 +290,23 @@ export default function RadioidContactSearch() {
           >
             RadioID.net
           </a>{' '}
-          DMR user database and import private contacts into your library. Community data — verify
+          DMR user database and import IDs into your local <strong>digital ID directory</strong>{' '}
+          (shadow store). Copy into library contacts later when needed. Community data — verify
           before use on air.
         </>
       }
       footer={
-        <Button variant="secondary" onClick={() => navigate('/library/contacts')}>
-          Back to library
+        <Button variant="secondary" onClick={() => navigate('/library/contacts/directory')}>
+          Back to directory
         </Button>
       }
     >
       <form onSubmit={handleSearchSubmit}>
         <Panel title="Search filters">
           <StatusBanner tone="info">
-            RadioID.net listings are community-maintained. Studio stores contacts in your
-            vendor-neutral library; format exports project metadata per build adapter.
+            RadioID.net listings are community-maintained. Bulk and single-row import saves to your
+            local digital ID directory shadow store — not library contacts. Use library Update for
+            contacts you have already copied.
           </StatusBanner>
 
           <div className={pageClasses.filterGrid}>
@@ -327,7 +368,7 @@ export default function RadioidContactSearch() {
         <Panel title={`Results (${totalCount.toLocaleString()})`}>
           <div className={pageClasses.filterActions} style={{ marginBottom: 12 }}>
             <Button disabled={totalCount === 0} size="sm" onClick={() => openBulkImport('all')}>
-              Add all results ({totalCount.toLocaleString()})
+              Import all results ({totalCount.toLocaleString()})
             </Button>
             <Button
               variant="secondary"
@@ -335,7 +376,7 @@ export default function RadioidContactSearch() {
               disabled={listings.length === 0}
               onClick={() => openBulkImport('page')}
             >
-              Add this page ({listings.length})
+              Import this page ({listings.length})
             </Button>
             <Button
               variant="secondary"
@@ -343,7 +384,7 @@ export default function RadioidContactSearch() {
               disabled={selectedKeys.length === 0}
               onClick={() => openBulkImport('selected')}
             >
-              Add selected ({selectedKeys.length})
+              Import selected ({selectedKeys.length})
             </Button>
           </div>
           <DataTable
@@ -355,7 +396,7 @@ export default function RadioidContactSearch() {
             selectable
             selectedKeys={selectedKeys}
             onSelectionChange={setSelectedKeys}
-            isRowSelectable={(row) => !duplicateById.has(row.id)}
+            isRowSelectable={(row) => !directoryIdsForImport.has(row.id)}
             onRowActivate={(row) => {
               if (duplicateById.has(row.id)) openPreview(row);
             }}
@@ -372,7 +413,6 @@ export default function RadioidContactSearch() {
           opened={bulkOpen}
           onClose={() => setBulkOpen(false)}
           onComplete={() => {
-            void reload();
             setSelectedKeys([]);
             setAddMessage(null);
           }}
@@ -383,7 +423,7 @@ export default function RadioidContactSearch() {
           totalPages={totalPages}
           totalCount={totalCount}
           projectId={activeProjectId}
-          contacts={library.digitalContacts}
+          existingDirectoryDigitalIds={directoryIdsForImport}
         />
       ) : null}
 

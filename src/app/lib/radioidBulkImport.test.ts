@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { newDigitalContact } from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/index.ts';
 import {
   countRadioidBulkImportTargets,
@@ -42,13 +41,12 @@ import { searchRadioidDmrUsers } from '@integrations/radioid/index.ts';
 const mockSearch = vi.mocked(searchRadioidDmrUsers);
 
 describe('countRadioidBulkImportTargets', () => {
-  it('counts new vs existing by digitalId', () => {
-    const existing = { ...newDigitalContact('p1', 'Old', 1234567, 'dmr'), callsign: 'M7ABC' };
-    expect(countRadioidBulkImportTargets([listing], [existing])).toEqual({
+  it('counts new vs existing by digitalId in the directory', () => {
+    expect(countRadioidBulkImportTargets([listing], new Set([1234567]))).toEqual({
       newCount: 0,
       existingCount: 1,
     });
-    expect(countRadioidBulkImportTargets([listing], [])).toEqual({
+    expect(countRadioidBulkImportTargets([listing], new Set())).toEqual({
       newCount: 1,
       existingCount: 0,
     });
@@ -64,15 +62,16 @@ describe('formatRadioidBulkImportEta', () => {
 });
 
 describe('runRadioidBulkImport', () => {
-  it('adds new contacts for page scope', async () => {
+  it('adds new directory entries for page scope', async () => {
     const persistence = new InMemoryProjectPersistence();
     const progress: number[] = [];
+    const contactBatchSpy = vi.spyOn(persistence, 'putDigitalContactsBatch');
+    const directoryBatchSpy = vi.spyOn(persistence, 'putDigitalIdDirectoryEntriesBatch');
 
     const result = await runRadioidBulkImport({
       scope: 'page',
       updateExisting: false,
       projectId: 'p1',
-      contacts: [],
       listings: [listing],
       persistence,
       onProgress: (p) => progress.push(p.processed),
@@ -80,60 +79,71 @@ describe('runRadioidBulkImport', () => {
 
     expect(result).toMatchObject({ added: 1, updated: 0, skipped: 0, failed: 0, error: null });
     expect(progress).toContain(1);
-    const saved = await persistence.listDigitalContacts('p1');
+    expect(contactBatchSpy).not.toHaveBeenCalled();
+    expect(directoryBatchSpy).toHaveBeenCalledTimes(1);
+    const saved = await persistence.listDigitalIdDirectoryEntries('p1');
     expect(saved).toHaveLength(1);
     expect(saved[0]?.digitalId).toBe(1234567);
     expect(saved[0]?.city).toBe('London');
+    expect(await persistence.listDigitalContacts('p1')).toHaveLength(0);
   });
 
-  it('updates existing contacts when enabled', async () => {
+  it('updates existing directory entries when enabled', async () => {
     const persistence = new InMemoryProjectPersistence();
-    const existing = {
-      ...newDigitalContact('p1', 'Ada Lovelace', 1234567, 'dmr'),
-      callsign: 'M7ABC',
-      city: 'Old City',
-      country: 'United Kingdom',
-    };
-    await persistence.putDigitalContact(existing, null);
+    await persistence.putDigitalIdDirectoryEntriesBatch([
+      {
+        projectId: 'p1',
+        digitalId: 1234567,
+        mode: 'dmr',
+        name: 'Ada Lovelace',
+        callsign: 'M7ABC',
+        city: 'Old City',
+        state: 'England',
+        country: 'United Kingdom',
+      },
+    ]);
 
     const result = await runRadioidBulkImport({
       scope: 'page',
       updateExisting: true,
       projectId: 'p1',
-      contacts: [existing],
       listings: [listing],
       persistence,
       onProgress: () => {},
     });
 
     expect(result).toMatchObject({ added: 0, updated: 1, skipped: 0, failed: 0 });
-    const saved = await persistence.listDigitalContacts('p1');
-    expect(saved[0]?.city).toBe('London');
+    const saved = await persistence.getDigitalIdDirectoryEntry('p1', 1234567);
+    expect(saved?.city).toBe('London');
   });
 
-  it('skips existing contacts when updateExisting is false', async () => {
+  it('skips existing directory entries when updateExisting is false', async () => {
     const persistence = new InMemoryProjectPersistence();
-    const existing = {
-      ...newDigitalContact('p1', 'Ada Lovelace', 1234567, 'dmr'),
-      callsign: 'M7ABC',
-      city: 'Old City',
-      country: 'United Kingdom',
-    };
-    await persistence.putDigitalContact(existing, null);
+    await persistence.putDigitalIdDirectoryEntriesBatch([
+      {
+        projectId: 'p1',
+        digitalId: 1234567,
+        mode: 'dmr',
+        name: 'Ada Lovelace',
+        callsign: 'M7ABC',
+        city: 'Old City',
+        state: 'England',
+        country: 'United Kingdom',
+      },
+    ]);
 
     const result = await runRadioidBulkImport({
       scope: 'page',
       updateExisting: false,
       projectId: 'p1',
-      contacts: [existing],
       listings: [listing],
       persistence,
       onProgress: () => {},
     });
 
     expect(result).toMatchObject({ added: 0, updated: 0, skipped: 1, failed: 0 });
-    const saved = await persistence.listDigitalContacts('p1');
-    expect(saved[0]?.city).toBe('Old City');
+    const saved = await persistence.getDigitalIdDirectoryEntry('p1', 1234567);
+    expect(saved?.city).toBe('Old City');
   });
 
   it('imports all scope across multiple fetched pages', async () => {
@@ -154,13 +164,13 @@ describe('runRadioidBulkImport', () => {
         pages: 2,
       });
 
-    const batchSpy = vi.spyOn(persistence, 'putDigitalContactsBatch');
+    const contactBatchSpy = vi.spyOn(persistence, 'putDigitalContactsBatch');
+    const directoryBatchSpy = vi.spyOn(persistence, 'putDigitalIdDirectoryEntriesBatch');
 
     const result = await runRadioidBulkImport({
       scope: 'all',
       updateExisting: false,
       projectId: 'p1',
-      contacts: [],
       filters: {
         id: '',
         callsign: '',
@@ -176,27 +186,33 @@ describe('runRadioidBulkImport', () => {
 
     expect(result).toMatchObject({ added: 2, updated: 0, skipped: 0, failed: 0, error: null });
     expect(mockSearch).toHaveBeenCalledTimes(2);
-    expect(batchSpy).toHaveBeenCalledTimes(2);
-    const saved = await persistence.listDigitalContacts('p1');
-    expect(saved).toHaveLength(2);
+    expect(contactBatchSpy).not.toHaveBeenCalled();
+    expect(directoryBatchSpy).toHaveBeenCalledTimes(2);
+    expect(await persistence.listDigitalIdDirectoryEntries('p1')).toHaveLength(2);
+    expect(await persistence.listDigitalContacts('p1')).toHaveLength(0);
   });
 
-  it('emits one persistence notification for the whole import', async () => {
+  it('does not emit library persistence notifications for directory import', async () => {
     const persistence = new InMemoryProjectPersistence();
-    const changes: { kind: string }[] = [];
-    const unsubscribe = persistence.subscribe((change) => changes.push(change));
+    const libraryChanges: unknown[] = [];
+    const directoryChanges: unknown[] = [];
+    const unsubscribeLibrary = persistence.subscribe((change) => libraryChanges.push(change));
+    const unsubscribeDirectory = persistence.subscribeDirectory((change) =>
+      directoryChanges.push(change),
+    );
 
     await runRadioidBulkImport({
       scope: 'page',
       updateExisting: false,
       projectId: 'p1',
-      contacts: [],
       listings: [listing, listingTwo],
       persistence,
       onProgress: () => {},
     });
 
-    unsubscribe();
-    expect(changes).toEqual([{ projectId: 'p1', kind: 'project', id: 'p1', op: 'put' }]);
+    unsubscribeLibrary();
+    unsubscribeDirectory();
+    expect(libraryChanges).toEqual([]);
+    expect(directoryChanges).toEqual([{ projectId: 'p1', digitalId: 1234567, op: 'put' }]);
   });
 });
