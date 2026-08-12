@@ -1174,6 +1174,7 @@ function parseRadioBuild(raw: unknown, index: number): RadioBuild {
     talkGroupOverrides: parseOverrideField(record, 'talkGroupOverrides', label),
     rxGroupListOverrides: parseOverrideField(record, 'rxGroupListOverrides', label),
     contactOverrides: parseOverrideField(record, 'contactOverrides', label),
+    satelliteOverrides: parseOverrideField(record, 'satelliteOverrides', label),
     ...(record.exportUnlinkedChannels !== undefined && record.exportUnlinkedChannels !== null
       ? {
           exportUnlinkedChannels: expectBoolean(

@@ -91,6 +91,7 @@ export function migrateFormatBuild(
       build.contactOverrides ?? [],
       contactIds,
     ),
+    satelliteOverrides: build.satelliteOverrides ?? [],
   };
 }
 
@@ -101,7 +102,8 @@ function missingOverrideFields(build: LegacyRadioBuild): boolean {
     build.scanListOverrides === undefined ||
     build.talkGroupOverrides === undefined ||
     build.rxGroupListOverrides === undefined ||
-    build.contactOverrides === undefined
+    build.contactOverrides === undefined ||
+    build.satelliteOverrides === undefined
   );
 }
 
@@ -141,6 +143,7 @@ export function normalizeFormatBuildFields(build: LegacyRadioBuild): RadioBuild 
         libraryEntityId: row.libraryEntityId,
         wireName: row.overrides.name,
       })),
+    satelliteOverrides: build.satelliteOverrides ?? [],
     exportUnlinkedChannels: build.exportUnlinkedChannels ?? true,
     exportUnlinkedTalkGroups: build.exportUnlinkedTalkGroups ?? true,
     exportUnlinkedRxGroupLists: build.exportUnlinkedRxGroupLists ?? true,

@@ -47,6 +47,7 @@ function emptyRadioBuildOverrides(): {
   talkGroupOverrides: BuildEntityOverride[];
   rxGroupListOverrides: BuildEntityOverride[];
   contactOverrides: BuildEntityOverride[];
+  satelliteOverrides: BuildEntityOverride[];
 } {
   return {
     channelOverrides: [],
@@ -55,6 +56,7 @@ function emptyRadioBuildOverrides(): {
     talkGroupOverrides: [],
     rxGroupListOverrides: [],
     contactOverrides: [],
+    satelliteOverrides: [],
   };
 }
 
