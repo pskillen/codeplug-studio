@@ -159,48 +159,51 @@ describe('BuildSatelliteKepsPage — capacity pre-flight (#1068)', () => {
   });
 });
 
+function previewEntry(overrides: Record<string, unknown> = {}) {
+  return {
+    satelliteId: 'sat-1',
+    satelliteName: 'ISS',
+    transmitterId: 'tx-1',
+    transmitterLabel: 'FM',
+    mode: 'FM',
+    encodedName: 'ISS',
+    satelliteWireName: 'ISS',
+    generatedWireName: 'ISS',
+    suggestedFamiliarEncoded: 'ISS',
+    suggestedOscarEncoded: null,
+    hasWireNameOverride: false,
+    uplinkHz: 145_850_000,
+    downlinkHz: 436_795_000,
+    nameTruncated: false,
+    ...overrides,
+  };
+}
+
 describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
   it('renders the live preview table when a preview function is registered for the profile', async () => {
-    kepsPreviewStub = (satellites) =>
-      satellites.map((s) => ({
-        satelliteId: s.id,
-        satelliteName: s.name,
-        transmitterId: 'tx-1',
-        transmitterLabel: 'FM',
-        mode: 'FM',
-        encodedName: 'ISS',
-        satelliteWireName: 'ISS',
-        generatedWireName: 'ISS',
-        hasWireNameOverride: false,
-        uplinkHz: 145_850_000,
-        downlinkHz: 436_795_000,
-        nameTruncated: false,
-      }));
+    kepsPreviewStub = (satellites) => satellites.map(() => previewEntry());
     try {
       renderPage();
       expect(screen.getByText('Preview satellites to write')).toBeInTheDocument();
-      await waitFor(() => expect(screen.getAllByText('ISS').length).toBeGreaterThan(0));
+      await waitFor(() => {
+        expect(screen.getAllByText('ISS').length).toBeGreaterThanOrEqual(1);
+        expect(screen.getAllByText('FM').length).toBeGreaterThanOrEqual(1);
+      });
     } finally {
       kepsPreviewStub = undefined;
     }
   });
 
   it('shows a truncation indicator on a row with nameTruncated true (#1075)', async () => {
-    kepsPreviewStub = (satellites) =>
-      satellites.map((s) => ({
-        satelliteId: s.id,
-        satelliteName: s.name,
-        transmitterId: 'tx-1',
-        transmitterLabel: 'FM',
-        mode: 'FM',
+    kepsPreviewStub = () => [
+      previewEntry({
         encodedName: 'CUBESAT',
         satelliteWireName: 'CUBESAT',
         generatedWireName: 'CUBESAT',
-        hasWireNameOverride: false,
-        uplinkHz: 145_850_000,
-        downlinkHz: 436_795_000,
+        suggestedFamiliarEncoded: 'CUBESAT',
         nameTruncated: true,
-      }));
+      }),
+    ];
     try {
       renderPage();
       await waitFor(() => expect(screen.getByLabelText('Name truncated')).toBeInTheDocument());
@@ -211,21 +214,9 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
 
   it('passes build satelliteOverrides to the preview function', async () => {
     const previewSpy = vi.fn(
-      (_satellites: readonly Satellite[], _options?: { satelliteOverrides?: unknown[] }) =>
-        _satellites.map((s) => ({
-          satelliteId: s.id,
-          satelliteName: s.name,
-          transmitterId: 'tx-1',
-          transmitterLabel: 'FM',
-          mode: 'FM',
-          encodedName: 'ISS',
-          satelliteWireName: 'ISS',
-          generatedWireName: 'ISS',
-          hasWireNameOverride: false,
-          uplinkHz: null,
-          downlinkHz: null,
-          nameTruncated: false,
-        })),
+      (_satellites: readonly Satellite[], _options?: { satelliteOverrides?: unknown[] }) => [
+        previewEntry({ uplinkHz: null, downlinkHz: null }),
+      ],
     );
     kepsPreviewStub = previewSpy;
     try {
@@ -237,36 +228,45 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
     }
   });
 
-  it('applies Default to pin a generated wire name', async () => {
-    kepsPreviewStub = (satellites) =>
-      satellites.map((s) => ({
-        satelliteId: s.id,
-        satelliteName: s.name,
-        transmitterId: 'tx-1',
-        transmitterLabel: 'FM',
-        mode: 'FM',
+  it('pins Familiar suggestion from inline encoded-name editor', async () => {
+    kepsPreviewStub = () => [
+      previewEntry({
         encodedName: 'GEOSCA 1',
         satelliteWireName: 'GEOSCA 1',
         generatedWireName: 'GEOSCA 1',
-        hasWireNameOverride: false,
-        uplinkHz: null,
-        downlinkHz: null,
+        suggestedFamiliarEncoded: 'GEOSCA 1',
         nameTruncated: true,
-      }));
+      }),
+    ];
     try {
       renderPage();
-      await waitFor(() => expect(screen.getByText('Wire names')).toBeInTheDocument());
+      await waitFor(() => expect(screen.getByText('GEOSCA 1')).toBeInTheDocument());
+      fireEvent.click(screen.getByRole('button', { name: 'Edit encoded name' }));
       fireEvent.click(screen.getByRole('button', { name: 'GEOSCA 1' }));
       await waitFor(() =>
         expect(persistence.putRadioBuild).toHaveBeenCalledWith(
           expect.objectContaining({
             satelliteOverrides: expect.arrayContaining([
-              expect.objectContaining({ libraryEntityId: 'sat-1', wireName: 'GEOSCA 1' }),
+              expect.objectContaining({ libraryEntityId: 'tx-1', wireName: 'GEOSCA 1' }),
             ]),
           }),
           expect.anything(),
         ),
       );
+    } finally {
+      kepsPreviewStub = undefined;
+    }
+  });
+
+  it('shows a non-blocking warning when encoded names collide', async () => {
+    kepsPreviewStub = () => [
+      previewEntry({ transmitterId: 'tx-1', transmitterLabel: 'FM A', encodedName: 'SAME' }),
+      previewEntry({ transmitterId: 'tx-2', transmitterLabel: 'FM B', encodedName: 'SAME' }),
+    ];
+    try {
+      renderPage();
+      await waitFor(() => expect(screen.getByText('Duplicate encoded names')).toBeInTheDocument());
+      expect(screen.getByText(/"SAME"/)).toBeInTheDocument();
     } finally {
       kepsPreviewStub = undefined;
     }

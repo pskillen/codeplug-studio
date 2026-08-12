@@ -109,7 +109,7 @@ export interface RadioBuild extends PersistableRow {
   talkGroupOverrides: BuildEntityOverride[];
   rxGroupListOverrides: BuildEntityOverride[];
   contactOverrides: BuildEntityOverride[];
-  /** Per-satellite wire name overrides for keps write (sparse — no row → generated short name). */
+  /** Per-transmitter encoded wire name overrides for keps write (sparse — `libraryEntityId` = transmitter id). */
   satelliteOverrides: BuildEntityOverride[];
   /** Include library channels not in any zone member list. Default true. */
   exportUnlinkedChannels?: boolean;

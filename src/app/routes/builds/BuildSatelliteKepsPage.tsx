@@ -13,9 +13,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Alert, Group, Stack, Text, Tooltip } from '@mantine/core';
-import { IconAlertTriangle } from '@tabler/icons-react';
+import { Alert, Group, Stack, Text } from '@mantine/core';
 import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
+import { findEncodedNameCollisions } from '@core/domain/satellite/findEncodedNameCollisions.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
@@ -23,8 +23,7 @@ import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import type { SatelliteWritePreviewEntry } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { Button, DataTable, Panel, type DataTableColumn } from '../../components/v2/index.ts';
-import { SatelliteWireNameOverrideInput } from '../../components/builds/satelliteKeps/SatelliteWireNameOverrideInput.tsx';
-import { ICON_STROKE } from '../../lib/iconSizes.ts';
+import { SatelliteEncodedNameCell } from '../../components/builds/satelliteKeps/SatelliteEncodedNameCell.tsx';
 import { resolveOptimisticBuild } from '../../lib/resolveOptimisticBuild.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -71,6 +70,24 @@ function resolveSatelliteKepsEgress(
   return egressPaths.find((path) => hasSatelliteKepsWriteAdapter(path.profileId)) ?? null;
 }
 
+type SatellitePreviewParentRow = {
+  kind: 'parent';
+  id: string;
+  satelliteName: string;
+  children: SatellitePreviewChildRow[];
+};
+
+type SatellitePreviewChildRow = SatelliteWritePreviewEntry & {
+  kind: 'child';
+  id: string;
+};
+
+type SatellitePreviewRow = SatellitePreviewParentRow | SatellitePreviewChildRow;
+
+function isPreviewParentRow(row: SatellitePreviewRow): row is SatellitePreviewParentRow {
+  return row.kind === 'parent';
+}
+
 export default function BuildSatelliteKepsPage() {
   const { build: contextBuild, egressPaths, activeEgress } = useBuildLayout();
   const buildRef = useRef(contextBuild);
@@ -98,14 +115,17 @@ export default function BuildSatelliteKepsPage() {
     void run();
   }, []);
 
-  const setSatelliteWireName = useCallback(
-    (satelliteId: string, wireName: string) => {
+  const setTransmitterWireName = useCallback(
+    (transmitterId: string, wireName: string) => {
       void persistBuild((current) =>
-        buildService.withWireNameOverride(current, 'satelliteOverrides', satelliteId, wireName),
+        buildService.withWireNameOverride(current, 'satelliteOverrides', transmitterId, wireName),
       );
+      setEditingTransmitterId(null);
     },
     [persistBuild],
   );
+
+  const [editingTransmitterId, setEditingTransmitterId] = useState<string | null>(null);
 
   const sessionRef = useRef<RadioSession | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -180,28 +200,57 @@ export default function BuildSatelliteKepsPage() {
     [kepsPreview, enabledSatellites, build.satelliteOverrides],
   );
 
-  const satelliteWireNameRows = useMemo(() => {
-    const seen = new Set<string>();
-    const rows: {
-      satelliteId: string;
-      satelliteName: string;
-      generatedWireName: string;
-      committedWireName: string;
-    }[] = [];
-    const overrides = overrideByEntityId(build.satelliteOverrides);
+  const previewTreeRows = useMemo<SatellitePreviewParentRow[]>(() => {
+    const parents: SatellitePreviewParentRow[] = [];
+    const parentById = new Map<string, SatellitePreviewParentRow>();
     for (const entry of previewEntries) {
-      if (seen.has(entry.satelliteId)) continue;
-      seen.add(entry.satelliteId);
-      const override = overrides.get(entry.satelliteId)?.wireName?.trim();
-      rows.push({
-        satelliteId: entry.satelliteId,
-        satelliteName: entry.satelliteName,
-        generatedWireName: entry.generatedWireName ?? entry.satelliteWireName ?? entry.encodedName,
-        committedWireName: override ?? entry.generatedWireName ?? entry.satelliteWireName,
+      let parent = parentById.get(entry.satelliteId);
+      if (!parent) {
+        parent = {
+          kind: 'parent',
+          id: entry.satelliteId,
+          satelliteName: entry.satelliteName,
+          children: [],
+        };
+        parentById.set(entry.satelliteId, parent);
+        parents.push(parent);
+      }
+      parent.children.push({
+        kind: 'child',
+        id: `${entry.satelliteId}-${entry.transmitterId}`,
+        ...entry,
       });
     }
-    return rows;
-  }, [previewEntries, build.satelliteOverrides]);
+    return parents;
+  }, [previewEntries]);
+
+  const previewDefaultExpandedKeys = useMemo(
+    () => previewTreeRows.map((row) => row.id),
+    [previewTreeRows],
+  );
+
+  const transmitterOverrides = useMemo(
+    () => overrideByEntityId(build.satelliteOverrides),
+    [build.satelliteOverrides],
+  );
+
+  const collisionWarning = useMemo(() => {
+    const groups = findEncodedNameCollisions(
+      previewEntries.map((entry) => ({
+        id: entry.transmitterId,
+        encodedName: entry.encodedName,
+      })),
+    );
+    if (groups.length === 0) return null;
+    return groups
+      .map((group) => {
+        const labels = group.ids
+          .map((id) => previewEntries.find((e) => e.transmitterId === id)?.transmitterLabel ?? id)
+          .join(', ');
+        return `"${group.encodedName}" — ${labels}`;
+      })
+      .join('; ');
+  }, [previewEntries]);
 
   /**
    * Live "why did this enabled satellite/transmitter not show up in the preview above" (#1085
@@ -241,41 +290,56 @@ export default function BuildSatelliteKepsPage() {
     [],
   );
 
-  const previewColumns = useMemo<DataTableColumn<SatelliteWritePreviewEntry>[]>(
+  const previewColumns = useMemo<DataTableColumn<SatellitePreviewRow>[]>(
     () => [
-      { key: 'satelliteName', header: 'Satellite', render: (r) => r.satelliteName },
+      {
+        key: 'name',
+        header: 'Satellite',
+        render: (r) => (isPreviewParentRow(r) ? r.satelliteName : r.transmitterLabel),
+      },
       {
         key: 'encodedName',
         header: 'Encoded name',
-        render: (r) => (
-          <Group gap={6} wrap="nowrap">
-            <Text size="sm">{r.encodedName}</Text>
-            {r.nameTruncated ? (
-              <Tooltip label="Shortened to fit the radio's 8-character name field">
-                <IconAlertTriangle
-                  size={14}
-                  stroke={ICON_STROKE}
-                  color="var(--mantine-color-orange-6)"
-                  aria-label="Name truncated"
-                />
-              </Tooltip>
-            ) : null}
-          </Group>
-        ),
+        render: (r) => {
+          if (isPreviewParentRow(r)) return '—';
+          const override = transmitterOverrides.get(r.transmitterId)?.wireName?.trim();
+          const committed = override ?? r.encodedName;
+          return (
+            <SatelliteEncodedNameCell
+              entry={r}
+              nameLimit={AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH}
+              editing={editingTransmitterId === r.transmitterId}
+              committedWireName={committed}
+              onStartEdit={() => setEditingTransmitterId(r.transmitterId)}
+              onCancelEdit={() => setEditingTransmitterId(null)}
+              onWireNameChange={(wireName) => setTransmitterWireName(r.transmitterId, wireName)}
+            />
+          );
+        },
       },
-      { key: 'mode', header: 'Mode', render: (r) => r.mode ?? '—' },
+      {
+        key: 'mode',
+        header: 'Mode',
+        render: (r) => (isPreviewParentRow(r) ? '—' : (r.mode ?? '—')),
+      },
       {
         key: 'uplinkHz',
         header: 'Uplink',
-        render: (r) => (r.uplinkHz != null ? `${(r.uplinkHz / 1e6).toFixed(4)} MHz` : '—'),
+        render: (r) =>
+          isPreviewParentRow(r) || r.uplinkHz == null
+            ? '—'
+            : `${(r.uplinkHz / 1e6).toFixed(4)} MHz`,
       },
       {
         key: 'downlinkHz',
         header: 'Downlink',
-        render: (r) => (r.downlinkHz != null ? `${(r.downlinkHz / 1e6).toFixed(4)} MHz` : '—'),
+        render: (r) =>
+          isPreviewParentRow(r) || r.downlinkHz == null
+            ? '—'
+            : `${(r.downlinkHz / 1e6).toFixed(4)} MHz`,
       },
     ],
-    [],
+    [editingTransmitterId, setTransmitterWireName, transmitterOverrides],
   );
 
   function onProgress(p: ProgressUpdate) {
@@ -397,46 +461,27 @@ export default function BuildSatelliteKepsPage() {
       </div>
       <Stack gap="md">
         {!serialOk ? <Alert color="yellow">{getRadioSerialUnsupportedMessage()}</Alert> : null}
-        <Panel title="Wire names">
-          <Text size="sm" c="dimmed" mb="xs">
-            Short names written to the radio for each satellite in this build. Overrides are saved
-            on the build; click <strong>Default</strong> to pin the generated suggestion.
-          </Text>
-          {satelliteWireNameRows.length === 0 ? (
-            <Text size="sm" c="dimmed">
-              No satellites are currently eligible to write.
-            </Text>
-          ) : (
-            <Stack gap="md">
-              {satelliteWireNameRows.map((row) => (
-                <div key={row.satelliteId}>
-                  <Text size="sm" fw={500} mb={4}>
-                    {row.satelliteName}
-                  </Text>
-                  <SatelliteWireNameOverrideInput
-                    key={`${row.satelliteId}-${row.committedWireName}`}
-                    committedWireName={row.committedWireName}
-                    generatedWireName={row.generatedWireName}
-                    nameLimit={AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH}
-                    onWireNameChange={(wireName) => setSatelliteWireName(row.satelliteId, wireName)}
-                  />
-                </div>
-              ))}
-            </Stack>
-          )}
-        </Panel>
         <Panel title="Preview satellites to write">
           <Text size="sm" c="dimmed" mb="xs">
             Exactly what a Write Keps would send right now, from the library&apos;s current enabled
-            satellites — no session or write required. &quot;Encoded name&quot; is the 8-character
-            value written to the radio&apos;s name field; a warning icon marks rows where that value
-            was shortened from the satellite&apos;s full name (and transmitter label, when there was
-            room).
+            satellites — no session or write required. Expand a spacecraft to see each transmitter
+            (radio) row. Use the edit control beside an encoded name to pin Familiar or OSCAR
+            suggestions, or type a custom name (≤8 characters).
           </Text>
+          {collisionWarning ? (
+            <Alert color="yellow" title="Duplicate encoded names" mb="sm">
+              <Text size="sm">{collisionWarning}</Text>
+            </Alert>
+          ) : null}
           <DataTable
+            key={previewDefaultExpandedKeys.join(',') || 'empty'}
             columns={previewColumns}
-            rows={previewEntries}
-            getRowId={(r) => `${r.satelliteId}-${r.transmitterId}`}
+            rows={previewTreeRows}
+            getRowId={(r) => r.id}
+            nested
+            getChildren={(r) => (isPreviewParentRow(r) ? r.children : undefined)}
+            getRowVariant={(r) => (isPreviewParentRow(r) ? 'nestParent' : undefined)}
+            defaultExpandedKeys={previewDefaultExpandedKeys}
             totalRowCount={previewEntries.length}
             emptyMessage="No satellites are currently eligible to write."
           />

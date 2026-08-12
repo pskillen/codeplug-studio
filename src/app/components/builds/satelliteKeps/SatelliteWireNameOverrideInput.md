@@ -1,38 +1,30 @@
 # SatelliteWireNameOverrideInput
 
+Inline editor for a per-transmitter encoded wire name on the build Satellite keps tab.
+
 ## Purpose
 
-Editable wire-name field for a satellite on the build **Satellite keps** tab (#1090). Mirrors channel wire preview: draft/apply/revert, clickable **Default** to pin the generated short name, and **Reset** to drop the build override.
+Lets operators pin **Familiar** or **OSCAR** suggestions, type a custom ≤`N`-character name, or **Reset** to generated defaults. Overrides persist on `RadioBuild.satelliteOverrides` keyed by transmitter id.
 
 ## Props
 
-| Prop                | Type                         | Description                                                               |
-| ------------------- | ---------------------------- | ------------------------------------------------------------------------- |
-| `committedWireName` | `string`                     | Value last saved on the build (override or live generated).               |
-| `generatedWireName` | `string`                     | Algorithm default from `shortenSatelliteNames` for the current write set. |
-| `nameLimit`         | `number`                     | Radio name field ceiling (from limits module).                            |
-| `onWireNameChange`  | `(wireName: string) => void` | Apply (`wireName`) or clear override (`''`).                              |
-| `onDirtyChange`     | `(dirty: boolean) => void`   | Optional dirty-state callback.                                            |
-
-## Usage
-
-```tsx
-<SatelliteWireNameOverrideInput
-  committedWireName={committed}
-  generatedWireName={entry.generatedWireName}
-  nameLimit={AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH}
-  onWireNameChange={(wireName) => persistOverride(satelliteId, wireName)}
-/>
-```
+| Prop                 | Type                         | Description                                                |
+| -------------------- | ---------------------------- | ---------------------------------------------------------- |
+| `committedWireName`  | `string`                     | Current effective encoded name                             |
+| `suggestedFamiliar`  | `string`                     | Familiar-path encoded suggestion for this transmitter      |
+| `suggestedOscar`     | `string \| null` (optional)  | OSCAR encoded suggestion when the spacecraft has Tier A    |
+| `nameLimit`          | `number`                     | Max length from radio limits (e.g. 8 on D890)              |
+| `onWireNameChange`   | `(wireName: string) => void` | Apply suggestion or custom text; `''` clears override      |
+| `onDirtyChange`      | `(dirty: boolean) => void`   | Optional dirty-state callback                              |
+| `onCancel`           | `() => void`                 | Optional cancel callback (Escape / X)                    |
 
 ## Behaviour
 
-- Placeholder shows `generatedWireName` when the field is empty.
-- **Default** stores `generatedWireName` as an explicit `satelliteOverrides` entry.
-- **Reset** clears the override so the name tracks live generation again.
-- Apply is disabled when the draft exceeds `nameLimit`.
+- Apply (check) commits draft when changed and within `nameLimit`.
+- **Familiar** / **OSCAR** underlined links store that suggestion as an explicit override.
+- **Reset** clears the build override so the name tracks live generation again.
 
 ## Related
 
-- [Satellite keps feature hub](../../../../docs/features/satellite-keps/README.md)
-- [WireNameOverrideInput](../wirePreview/WireNameOverrideInput.tsx) — channel wire preview analogue
+- [`SatelliteEncodedNameCell`](./SatelliteEncodedNameCell.md) — view/edit wrapper for the preview table
+- [name-shortening.md](../../../../docs/features/satellite-keps/name-shortening.md)

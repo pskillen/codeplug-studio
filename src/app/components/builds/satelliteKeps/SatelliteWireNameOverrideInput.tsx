@@ -5,16 +5,20 @@ import { ICON_SIZE_ACTION, ICON_STROKE } from '../../../lib/iconSizes.ts';
 
 export function SatelliteWireNameOverrideInput({
   committedWireName,
-  generatedWireName,
+  suggestedFamiliar,
+  suggestedOscar,
   nameLimit,
   onWireNameChange,
   onDirtyChange,
+  onCancel,
 }: {
   committedWireName: string;
-  generatedWireName: string;
+  suggestedFamiliar: string;
+  suggestedOscar?: string | null;
   nameLimit: number;
   onWireNameChange: (wireName: string) => void;
   onDirtyChange?: (dirty: boolean) => void;
+  onCancel?: () => void;
 }) {
   const [draft, setDraft] = useState(committedWireName ?? '');
   const dirty = draft !== committedWireName;
@@ -31,15 +35,16 @@ export function SatelliteWireNameOverrideInput({
 
   const revert = () => {
     setDraft(committedWireName);
+    onCancel?.();
   };
 
-  const applyDefault = () => {
-    setDraft(generatedWireName);
-    onWireNameChange(generatedWireName);
+  const applySuggestion = (value: string) => {
+    setDraft(value);
+    onWireNameChange(value);
   };
 
   const clearOverride = () => {
-    setDraft(generatedWireName);
+    setDraft(suggestedFamiliar);
     onWireNameChange('');
   };
 
@@ -49,7 +54,7 @@ export function SatelliteWireNameOverrideInput({
         <TextInput
           flex={1}
           size="xs"
-          placeholder={generatedWireName}
+          placeholder={suggestedFamiliar}
           value={draft}
           onChange={(event) => setDraft(event.currentTarget.value)}
           onKeyDown={(event) => {
@@ -57,57 +62,54 @@ export function SatelliteWireNameOverrideInput({
               event.preventDefault();
               apply();
             }
-            if (event.key === 'Escape' && dirty) {
+            if (event.key === 'Escape') {
               event.preventDefault();
               revert();
             }
           }}
           error={tooLong ? `Exceeds ${nameLimit} characters` : undefined}
+          autoFocus
         />
-        {dirty ? (
-          <Group gap={4} wrap="nowrap">
-            <Tooltip label="Apply wire name">
-              <ActionIcon
-                variant="light"
-                color="green"
-                size="sm"
-                aria-label="Apply wire name"
-                disabled={tooLong}
-                onClick={apply}
-              >
-                <IconCheck size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="Revert wire name">
-              <ActionIcon
-                variant="light"
-                color="gray"
-                size="sm"
-                aria-label="Revert wire name"
-                onClick={revert}
-              >
-                <IconX size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        ) : null}
+        <Group gap={4} wrap="nowrap">
+          <Tooltip label="Apply wire name">
+            <ActionIcon
+              variant="light"
+              color="green"
+              size="sm"
+              aria-label="Apply wire name"
+              disabled={!dirty || tooLong}
+              onClick={apply}
+            >
+              <IconCheck size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Cancel">
+            <ActionIcon
+              variant="light"
+              color="gray"
+              size="sm"
+              aria-label="Cancel wire name edit"
+              onClick={revert}
+            >
+              <IconX size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
       </Group>
       <Text size="xs" c="dimmed">
-        Default:{' '}
-        <Tooltip label="Store this name as an explicit override">
-          <UnstyledButton
-            component="button"
-            type="button"
-            onClick={applyDefault}
-            style={{
-              color: 'var(--mantine-color-dimmed)',
-              textDecoration: 'underline',
-              cursor: 'pointer',
-            }}
-          >
-            {generatedWireName}
-          </UnstyledButton>
-        </Tooltip>
+        Familiar:{' '}
+        <SuggestionButton label="Store familiar suggestion" onClick={() => applySuggestion(suggestedFamiliar)}>
+          {suggestedFamiliar}
+        </SuggestionButton>
+        {suggestedOscar ? (
+          <>
+            {' · '}
+            OSCAR:{' '}
+            <SuggestionButton label="Store OSCAR suggestion" onClick={() => applySuggestion(suggestedOscar)}>
+              {suggestedOscar}
+            </SuggestionButton>
+          </>
+        ) : null}
         {' · '}
         <UnstyledButton
           component="button"
@@ -123,5 +125,32 @@ export function SatelliteWireNameOverrideInput({
         </UnstyledButton>
       </Text>
     </Stack>
+  );
+}
+
+function SuggestionButton({
+  children,
+  label,
+  onClick,
+}: {
+  children: string;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <Tooltip label={label}>
+      <UnstyledButton
+        component="button"
+        type="button"
+        onClick={onClick}
+        style={{
+          color: 'var(--mantine-color-dimmed)',
+          textDecoration: 'underline',
+          cursor: 'pointer',
+        }}
+      >
+        {children}
+      </UnstyledButton>
+    </Tooltip>
   );
 }
