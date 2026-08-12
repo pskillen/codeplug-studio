@@ -141,9 +141,7 @@ describe('InMemoryProjectPersistence', () => {
     expect(radioIoEgress).toBeDefined();
     const hydration = createRadioCloneHydrationBag({
       radioModelId: 'DM-1701',
-      capturedVia: 'web-serial',
-      imageBase64: 'AQID',
-      imageByteLength: 3,
+      imageBytes: new Uint8Array([1, 2, 3]),
     });
     const seededEgressPaths = egressPaths.map((path) =>
       path.id === radioIoEgress!.id ? { ...path, hydration } : path,

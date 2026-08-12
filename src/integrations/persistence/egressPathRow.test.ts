@@ -8,9 +8,7 @@ describe('readEgressPathRow', () => {
     const { egress } = newRadioBuildForProfile('proj-1', 'radio-io-uv5r-mini');
     const hydration = createRadioCloneHydrationBag({
       radioModelId: 'UV5R-Mini',
-      capturedVia: 'web-serial',
-      imageBase64: 'AQID',
-      imageByteLength: 3,
+      imageBytes: new Uint8Array([1, 2, 3]),
     });
     const row = { ...egress, hydration };
 
