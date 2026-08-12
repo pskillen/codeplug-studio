@@ -550,7 +550,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       </Text>
       <Text size="sm" c="dimmed">
         {requiresD890WriteConfirm
-          ? 'Write assembles modelled channels and organisation from the build, then reads co-resident bytes from the connected radio during upload. Unmodelled settings are preserved via erase-unit read-modify-write — not from a stored project image. Read is optional but still useful for Radio image inspection.'
+          ? 'Write assembles modelled channels and organisation from the build, then reads co-resident bytes from the connected radio during upload. Unmodelled settings are preserved via erase-unit read-modify-write — not from a stored project image. Read is optional; use Radio Info for ephemeral inspection.'
           : 'Read stores a clone image on this egress pathway so unmodelled settings survive write-back. Write sends the assembled build into that image — it does not import channels into the library. After a factory reset, Read again before Write (memory-bank addresses can move).'}
       </Text>
       {!serialOk ? <Alert color="yellow">{getRadioSerialUnsupportedMessage()}</Alert> : null}
@@ -707,8 +707,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           </Text>
           <Text size="xs" c="dimmed" mt={4}>
             Unmodelled registers are retained for write-back. See{' '}
-            <Anchor component={Link} to={`/builds/${build.id}/radio-image`} size="xs">
-              Radio image
+            <Anchor component={Link} to={`/builds/${build.id}/radio-info`} size="xs">
+              Radio Info
             </Anchor>{' '}
             for the retained region map. Settings are not editable here.
           </Text>
