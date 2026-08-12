@@ -288,52 +288,50 @@ export default function BuildSatelliteKepsPage() {
   );
 
   const previewColumns: DataTableColumn<SatellitePreviewRow>[] = [
-      {
-        key: 'name',
-        header: 'Satellite',
-        render: (r) => (isPreviewParentRow(r) ? r.satelliteName : r.transmitterLabel),
+    {
+      key: 'name',
+      header: 'Satellite',
+      render: (r) => (isPreviewParentRow(r) ? r.satelliteName : r.transmitterLabel),
+    },
+    {
+      key: 'encodedName',
+      header: 'Encoded name',
+      render: (r) => {
+        if (isPreviewParentRow(r)) return '—';
+        const override = transmitterOverrides.get(r.transmitterId)?.wireName?.trim();
+        const committed = override ?? r.encodedName;
+        return (
+          <SatelliteEncodedNameCell
+            entry={r}
+            nameLimit={AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH}
+            editing={editingTransmitterId === r.transmitterId}
+            committedWireName={committed}
+            onStartEdit={() => setEditingTransmitterId(r.transmitterId)}
+            onCancelEdit={() => setEditingTransmitterId(null)}
+            onWireNameChange={(wireName) => setTransmitterWireName(r.transmitterId, wireName)}
+          />
+        );
       },
-      {
-        key: 'encodedName',
-        header: 'Encoded name',
-        render: (r) => {
-          if (isPreviewParentRow(r)) return '—';
-          const override = transmitterOverrides.get(r.transmitterId)?.wireName?.trim();
-          const committed = override ?? r.encodedName;
-          return (
-            <SatelliteEncodedNameCell
-              entry={r}
-              nameLimit={AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH}
-              editing={editingTransmitterId === r.transmitterId}
-              committedWireName={committed}
-              onStartEdit={() => setEditingTransmitterId(r.transmitterId)}
-              onCancelEdit={() => setEditingTransmitterId(null)}
-              onWireNameChange={(wireName) => setTransmitterWireName(r.transmitterId, wireName)}
-            />
-          );
-        },
-      },
-      {
-        key: 'mode',
-        header: 'Mode',
-        render: (r) => (isPreviewParentRow(r) ? '—' : (r.mode ?? '—')),
-      },
-      {
-        key: 'uplinkHz',
-        header: 'Uplink',
-        render: (r) =>
-          isPreviewParentRow(r) || r.uplinkHz == null
-            ? '—'
-            : `${(r.uplinkHz / 1e6).toFixed(4)} MHz`,
-      },
-      {
-        key: 'downlinkHz',
-        header: 'Downlink',
-        render: (r) =>
-          isPreviewParentRow(r) || r.downlinkHz == null
-            ? '—'
-            : `${(r.downlinkHz / 1e6).toFixed(4)} MHz`,
-      },
+    },
+    {
+      key: 'mode',
+      header: 'Mode',
+      render: (r) => (isPreviewParentRow(r) ? '—' : (r.mode ?? '—')),
+    },
+    {
+      key: 'uplinkHz',
+      header: 'Uplink',
+      render: (r) =>
+        isPreviewParentRow(r) || r.uplinkHz == null ? '—' : `${(r.uplinkHz / 1e6).toFixed(4)} MHz`,
+    },
+    {
+      key: 'downlinkHz',
+      header: 'Downlink',
+      render: (r) =>
+        isPreviewParentRow(r) || r.downlinkHz == null
+          ? '—'
+          : `${(r.downlinkHz / 1e6).toFixed(4)} MHz`,
+    },
   ];
 
   function onProgress(p: ProgressUpdate) {
