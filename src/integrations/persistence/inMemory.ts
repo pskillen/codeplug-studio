@@ -34,6 +34,7 @@ import type {
 import { queryDigitalIdDirectoryPageInMemory } from './digitalIdDirectoryQuery.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
+import { readEgressPathRow } from './egressPathRow.ts';
 import { readRadioBuildRow } from './radioBuildRow.ts';
 
 type RowMap<T extends { id: string; projectId: string }> = Map<string, T>;
@@ -390,21 +391,22 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   }
 
   async getEgressPath(projectId: string, id: string): Promise<EgressPath | null> {
-    return this.egressPaths.get(rowKey(projectId, id)) ?? null;
+    const row = this.egressPaths.get(rowKey(projectId, id));
+    return row ? readEgressPathRow(row) : null;
   }
 
   async putEgressPath(row: EgressPath, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow('egressPath', this.egressPaths, row, expectedRevision);
+    return this.putRow('egressPath', this.egressPaths, readEgressPathRow(row), expectedRevision);
   }
 
   async listEgressPaths(projectId: string): Promise<EgressPath[]> {
-    return this.listRows(this.egressPaths, projectId);
+    return this.listRows(this.egressPaths, projectId).map(readEgressPathRow);
   }
 
   async listEgressPathsForBuild(projectId: string, radioBuildId: string): Promise<EgressPath[]> {
-    return this.listRows(this.egressPaths, projectId).filter(
-      (row) => row.radioBuildId === radioBuildId,
-    );
+    return this.listRows(this.egressPaths, projectId)
+      .filter((row) => row.radioBuildId === radioBuildId)
+      .map(readEgressPathRow);
   }
 
   async deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void> {
@@ -543,7 +545,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       this.radioBuilds.set(rowKey(row.projectId, row.id), { ...row });
     }
     for (const row of seed.egressPaths ?? []) {
-      this.egressPaths.set(rowKey(row.projectId, row.id), { ...row });
+      this.egressPaths.set(rowKey(row.projectId, row.id), readEgressPathRow({ ...row }));
     }
   }
 
