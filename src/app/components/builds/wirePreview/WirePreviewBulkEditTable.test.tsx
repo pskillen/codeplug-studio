@@ -124,7 +124,7 @@ describe('WirePreviewBulkEditTable', () => {
     expect(screen.queryByLabelText('Apply wire name')).not.toBeInTheDocument();
   });
 
-  it('fills the draft from Default without a per-row Apply', () => {
+  it('fills the draft from Suggestion without a per-row Apply', () => {
     const onPendingWireNamesChange = vi.fn();
     renderTable({
       rows,

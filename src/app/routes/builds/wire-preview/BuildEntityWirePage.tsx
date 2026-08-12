@@ -9,7 +9,7 @@ export interface BuildEntityWirePageProps {
   showDigitalContactExportNameMode?: boolean;
   showLibraryAbbreviations?: boolean;
   /** @deprecated Overrides edited via modal or bulk edit */
-  clickableDefaultWireName?: boolean;
+  clickableSuggestionWireName?: boolean;
   beforeTable?: ReactNode;
 }
 

@@ -9,7 +9,7 @@ export function WireNameOverrideInput({
   row,
   nameLimit,
   excluded,
-  clickableDefaultWireName,
+  clickableSuggestionWireName,
   deferCommit = false,
   onWireNameChange,
   onDraftChange,
@@ -18,7 +18,7 @@ export function WireNameOverrideInput({
   row: WirePreviewRow;
   nameLimit?: number;
   excluded: boolean;
-  clickableDefaultWireName?: boolean;
+  clickableSuggestionWireName?: boolean;
   /** When true, drafts never commit here — page-level Save owns persistence. */
   deferCommit?: boolean;
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
@@ -48,7 +48,7 @@ export function WireNameOverrideInput({
     updateDraft(committed);
   };
 
-  const applyDefault = () => {
+  const applySuggestion = () => {
     updateDraft(row.generatedWireName);
   };
 
@@ -103,14 +103,14 @@ export function WireNameOverrideInput({
         ) : null}
       </Group>
       <Text size="xs" c="dimmed">
-        Default:{' '}
-        {clickableDefaultWireName ? (
-          <Tooltip label="Use this suggested name">
+        Suggestion:{' '}
+        {clickableSuggestionWireName ? (
+          <Tooltip label="Use this suggestion">
             <UnstyledButton
               component="button"
               type="button"
               disabled={excluded}
-              onClick={applyDefault}
+              onClick={applySuggestion}
               style={{
                 color: 'var(--mantine-color-dimmed)',
                 textDecoration: 'underline',

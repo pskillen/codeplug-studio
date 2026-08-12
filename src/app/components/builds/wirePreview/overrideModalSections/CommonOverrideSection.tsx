@@ -51,14 +51,14 @@ export default function CommonOverrideSection({
         label="Wire name"
         overridden={row.hasWireNameOverride}
         onReset={() => onWireNameChange(row, '')}
-        libraryHint={`Default: ${row.generatedWireName}`}
+        libraryHint={`Suggestion: ${row.generatedWireName}`}
       >
         <WireNameOverrideInput
           key={`${row.key}:${row.hasWireNameOverride}:${row.effectiveWireName}`}
           row={row}
           nameLimit={nameLimit}
           excluded={!effectivelyIncluded}
-          clickableDefaultWireName
+          clickableSuggestionWireName
           onWireNameChange={onWireNameChange}
           onDirtyChange={() => {}}
         />

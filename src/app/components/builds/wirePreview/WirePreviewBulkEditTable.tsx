@@ -78,7 +78,7 @@ export default function WirePreviewBulkEditTable({
               row={row}
               nameLimit={nameLimit}
               excluded={!effectivelyIncluded}
-              clickableDefaultWireName
+              clickableSuggestionWireName
               deferCommit
               onWireNameChange={() => {}}
               onDraftChange={(draft) => setRowDraft(row, draft)}

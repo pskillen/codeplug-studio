@@ -16,7 +16,7 @@ Per-row override editor for wire preview list pages. Mantine `Modal` with common
 | `nameLimit`            | `number` (optional)                      | Profile wire name cap                                                                   |
 | `onExcludedChange`     | `(row, excluded) => void`                | Skip-from-export                                                                        |
 | `onForceIncludeChange` | `(row, forceInclude) => void` (optional) | Zone force-export (`entityKind === 'zone'`)                                             |
-| `onWireNameChange`     | `(row, wireName) => void`                | Wire name override (Apply / Reset in `CommonOverrideSection`; Default fills draft only) |
+| `onWireNameChange`     | `(row, wireName) => void`                | Wire name override (Apply / Reset in `CommonOverrideSection`; Suggestion fills draft only) |
 | `extraSections`        | `ReactNode` (optional)                   | Non-tabbed append (channel expansion context, CHIRP scan on flat-memory)                |
 | `membersSection`       | `ReactNode` (optional)                   | Zone **Members** tab — `ZoneMemberOrderSection` from the zones wire page                |
 | `scanSection`          | `ReactNode` (optional)                   | Zone **Scan** tab — `ZoneScanOverrideSection` when zone-derived scan applies            |
@@ -42,7 +42,7 @@ Route composition (not the registry):
 
 - **Non-zone entities:** single `Stack` — library header, common section, optional `extraSections`.
 - **Zones** (when `membersSection` and/or `scanSection` provided): Mantine **Tabs** — **Export** (header + common), optional **Members**, optional **Scan**. Default tab is Export. Scan tab omitted when the build lacks zone-derived scan support (`zoneScanExportSupported`: `ZoneGrouping` + `ScanLists` or `DedicatedScanLists`).
-- Wire name uses local draft with **Apply** / **Revert** (`WireNameOverrideInput`) before persisting. Clicking **Default** fills the draft only.
+- Wire name uses local draft with **Apply** / **Revert** (`WireNameOverrideInput`) before persisting. Clicking **Suggestion** fills the draft only.
 - List pages do **not** use `useUnsavedNavigationGuard`; only `/builds/:id/channels/bulk` guards unapplied wire-name drafts on navigation.
 
 ## Related

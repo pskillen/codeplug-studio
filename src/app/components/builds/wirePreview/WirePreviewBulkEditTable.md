@@ -19,7 +19,7 @@ Shows every preview row in edit mode at once. Wire-name drafts are owned by the 
 ## Behaviour
 
 - Each row uses `WireNameOverrideInput` with `deferCommit` — no per-row Apply/Revert.
-- Default suggestion clicks fill the draft only (still require page Save to persist).
+- Suggestion clicks fill the draft only (still require page Save to persist).
 - Parent owns the Save button and calls `setRowWireNames` with the pending map, then clears pending and bumps `draftEpoch`.
 
 ## Related
