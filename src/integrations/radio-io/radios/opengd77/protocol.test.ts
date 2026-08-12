@@ -258,9 +258,7 @@ describe('OpenGd77Protocol', () => {
       },
     });
 
-    const firstReadIdx = pipe.writes.findIndex(
-      (w) => w[0] === OPENGD77_TYPE_READ && w[1] === 0x01,
-    );
+    const firstReadIdx = pipe.writes.findIndex((w) => w[0] === OPENGD77_TYPE_READ && w[1] === 0x01);
     const firstWriteIdx = pipe.writes.findIndex(
       (w) => w[0] === OPENGD77_TYPE_WRITE_UV380 && w[1] === OPENGD77_WRITE_CMD_SET_SECTOR,
     );
