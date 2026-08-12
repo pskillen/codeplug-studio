@@ -20,3 +20,13 @@ export const STORES: Record<EntityKind, string> = {
 };
 
 export const STORE_NAMES = Object.values(STORES);
+
+/**
+ * Object stores outside {@link STORES} / project seed — keyed by natural IDs, not UUID rows.
+ * Excluded from `loadProjectSeed`, `replaceProject`, and `seedProject`.
+ */
+export const DIRECTORY_STORES = {
+  digitalIdDirectory: 'digitalIdDirectory',
+} as const;
+
+export const DIRECTORY_STORE_NAMES = Object.values(DIRECTORY_STORES);

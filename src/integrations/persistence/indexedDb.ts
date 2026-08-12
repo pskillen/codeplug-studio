@@ -27,7 +27,7 @@ import type {
   PutResult,
   SatellitePut,
 } from './types.ts';
-import { DEFAULT_DB_NAME, STORES, STORE_NAMES } from './stores.ts';
+import { DEFAULT_DB_NAME, DIRECTORY_STORES, STORES, STORE_NAMES } from './stores.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
 import { readRadioBuildRow } from './radioBuildRow.ts';
@@ -109,6 +109,11 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
               os.createIndex('byRadioBuild', ['projectId', 'radioBuildId'], { unique: false });
             }
           }
+        }
+        const directoryStore = DIRECTORY_STORES.digitalIdDirectory;
+        if (!db.objectStoreNames.contains(directoryStore)) {
+          const os = db.createObjectStore(directoryStore, { keyPath: ['projectId', 'digitalId'] });
+          os.createIndex('byProject', 'projectId', { unique: false });
         }
       };
       request.onsuccess = () => resolve(request.result);
