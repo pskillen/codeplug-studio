@@ -154,6 +154,17 @@ Found via live user report, not part of any plan: #1037's native-yaml migration 
 
 ---
 
+## #1090 — Satellite name shortening
+
+**Status:** Complete on branch `1090/pskillen/satellite-name-shortening` (PR pending)
+
+- Core `shortenSatelliteNames()` + amateur catalogue fixture tests.
+- `RadioBuild.satelliteOverrides`, `SATELLITE_NAME_LENGTH`, D890 pack/preview/write wiring.
+- Build **Satellite keps** tab **Wire names** panel + `SatelliteWireNameOverrideInput` (Default / Reset).
+- Docs: [name-shortening.md](name-shortening.md), hub + limits reference updates.
+
+---
+
 ## Next
 
 - Radio write-packing for uplink/downlink metadata (#855–#859) — not started. See `tmp/features/satellite/d890-keps-upload/plan.md` (Part B) and its [multi-radio-handover.md](../../../tmp/features/satellite/d890-keps-upload/multi-radio-handover.md) for the current model shape this work inherits.
