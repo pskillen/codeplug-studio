@@ -23,6 +23,7 @@ Many CPS suites (OpenGD77, qDMR, …) offer one-click DMR ID import. **Anytone C
 | OpenGD77 / DM32 contact metadata export         | Deferred | Separate format tickets; model ready                                                                                                                                                                                                                                         |
 | Additional ID providers                         | Deferred | One ticket per source after radioid.net                                                                                                                                                                                                                                      |
 | IndexedDB-primary contact browsing              | Deferred | [#428](https://github.com/pskillen/codeplug-studio/issues/428) — investigation; complements [#387](https://github.com/pskillen/codeplug-studio/issues/387) YAML split                                                                                                        |
+| Directory shadow IDB store                      | In progress | Foundation ([#982](https://github.com/pskillen/codeplug-studio/issues/982), epic [#981](https://github.com/pskillen/codeplug-studio/issues/981)) — separate `digitalIdDirectory` store keyed by `(projectId, digitalId)`; excluded from project seed                                                                 |
 
 ## Documentation map
 
