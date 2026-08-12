@@ -64,71 +64,105 @@ function ShortenedGroupPanel({ group }: { group: WireNameShorteningGroup }) {
 export default function ExportWarningsAlert({ warnings }: ExportWarningsAlertProps) {
   if (warnings.length === 0) return null;
 
-  const { general, unlinkedGroup, memberCapGroups, shortenedGroups } =
+  const { general, unlinkedGroup, memberCapGroups, shortenedProblemGroups, shortenedInfoGroups } =
     formatExportWarnings(warnings);
 
-  const hasFoldable =
-    unlinkedGroup != null || memberCapGroups.length > 0 || shortenedGroups.length > 0;
+  const hasProblems =
+    general.length > 0 ||
+    unlinkedGroup != null ||
+    memberCapGroups.length > 0 ||
+    shortenedProblemGroups.length > 0;
+  const hasInfo = shortenedInfoGroups.length > 0;
+
+  if (!hasProblems && !hasInfo) return null;
 
   return (
-    <Alert color="yellow" title="Export warnings">
-      <Stack gap="sm">
-        {general.length > 0 ? (
-          <Stack gap={4}>
-            {general.map((warning, index) => (
-              <Text key={`general-${index}`} size="sm">
-                {warning}
-              </Text>
-            ))}
+    <Stack gap="sm">
+      {hasProblems ? (
+        <Alert color="yellow" title="Export warnings">
+          <Stack gap="sm">
+            {general.length > 0 ? (
+              <Stack gap={4}>
+                {general.map((warning, index) => (
+                  <Text key={`general-${index}`} size="sm">
+                    {warning}
+                  </Text>
+                ))}
+              </Stack>
+            ) : null}
+            {unlinkedGroup != null ||
+            memberCapGroups.length > 0 ||
+            shortenedProblemGroups.length > 0 ? (
+              <Accordion multiple variant="separated" defaultValue={[]}>
+                {unlinkedGroup != null ? (
+                  <Accordion.Item value="unlinked">
+                    <Accordion.Control>
+                      {accordionControlLabel(unlinkedGroup.title, unlinkedGroup.items.length)}
+                    </Accordion.Control>
+                    <Accordion.Panel>
+                      <Stack gap={4}>
+                        {unlinkedGroup.items.map((warning, index) => (
+                          <Text key={`unlinked-${index}`} size="sm">
+                            {warning}
+                          </Text>
+                        ))}
+                      </Stack>
+                    </Accordion.Panel>
+                  </Accordion.Item>
+                ) : null}
+                {memberCapGroups.map((group) => {
+                  const value = `member-cap-${group.kind}-${group.cap}-${group.profileLabel ?? ''}`;
+                  return (
+                    <Accordion.Item key={value} value={value}>
+                      <Accordion.Control>
+                        {accordionControlLabel(group.title, group.items.length)}
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <MemberCapGroupPanel group={group} />
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  );
+                })}
+                {shortenedProblemGroups.map((group) => {
+                  const value = `shortened-problem-${group.entityKind}-${group.maxLen}-${group.profileLabel ?? ''}`;
+                  return (
+                    <Accordion.Item key={value} value={value}>
+                      <Accordion.Control>
+                        {accordionControlLabel(group.title, group.items.length)}
+                      </Accordion.Control>
+                      <Accordion.Panel>
+                        <ShortenedGroupPanel group={group} />
+                      </Accordion.Panel>
+                    </Accordion.Item>
+                  );
+                })}
+              </Accordion>
+            ) : null}
           </Stack>
-        ) : null}
-        {hasFoldable ? (
-          <Accordion multiple variant="separated" defaultValue={[]}>
-            {unlinkedGroup != null ? (
-              <Accordion.Item value="unlinked">
-                <Accordion.Control>
-                  {accordionControlLabel(unlinkedGroup.title, unlinkedGroup.items.length)}
+        </Alert>
+      ) : null}
+      {hasInfo ? (
+        <Accordion
+          multiple
+          variant="separated"
+          defaultValue={[]}
+          data-testid="export-info-section"
+        >
+          {shortenedInfoGroups.map((group) => {
+            const value = `shortened-info-${group.entityKind}-${group.maxLen}-${group.profileLabel ?? ''}`;
+            return (
+              <Accordion.Item key={value} value={value}>
+                <Accordion.Control c="dimmed">
+                  {accordionControlLabel(group.title, group.items.length)}
                 </Accordion.Control>
                 <Accordion.Panel>
-                  <Stack gap={4}>
-                    {unlinkedGroup.items.map((warning, index) => (
-                      <Text key={`unlinked-${index}`} size="sm">
-                        {warning}
-                      </Text>
-                    ))}
-                  </Stack>
+                  <ShortenedGroupPanel group={group} />
                 </Accordion.Panel>
               </Accordion.Item>
-            ) : null}
-            {memberCapGroups.map((group) => {
-              const value = `member-cap-${group.kind}-${group.cap}-${group.profileLabel ?? ''}`;
-              return (
-                <Accordion.Item key={value} value={value}>
-                  <Accordion.Control>
-                    {accordionControlLabel(group.title, group.items.length)}
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <MemberCapGroupPanel group={group} />
-                  </Accordion.Panel>
-                </Accordion.Item>
-              );
-            })}
-            {shortenedGroups.map((group) => {
-              const value = `shortened-${group.entityKind}-${group.maxLen}-${group.profileLabel ?? ''}`;
-              return (
-                <Accordion.Item key={value} value={value}>
-                  <Accordion.Control>
-                    {accordionControlLabel(group.title, group.items.length)}
-                  </Accordion.Control>
-                  <Accordion.Panel>
-                    <ShortenedGroupPanel group={group} />
-                  </Accordion.Panel>
-                </Accordion.Item>
-              );
-            })}
-          </Accordion>
-        ) : null}
-      </Stack>
-    </Alert>
+            );
+          })}
+        </Accordion>
+      ) : null}
+    </Stack>
   );
 }
