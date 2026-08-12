@@ -11,6 +11,10 @@ export interface ShortenSatelliteNameResult {
   shortName: string;
   /** Algorithm suggestion ignoring stored override — shown as Default in the UI. */
   generatedShortName: string;
+  /** Best familiar-path short name (no OSCAR/catalogue/alternate alias tier). */
+  suggestedFamiliar: string;
+  /** Tier A OSCAR alias when present and ≤maxLength; otherwise null. */
+  suggestedOscar: string | null;
   fromOverride: boolean;
 }
 
@@ -202,6 +206,46 @@ function buildCandidateLadder(
   return candidates;
 }
 
+function buildFamiliarCandidateLadder(
+  parsed: ParsedSatelliteName,
+  maxLength: number,
+  seriesGroups: Map<string, SeriesGroup>,
+  isAllowedChar: (c: string) => boolean,
+): string[] {
+  const candidates: string[] = [];
+  const seen = new Set<string>();
+
+  const push = (value: string | null | undefined) => {
+    if (!value) return;
+    const trimmed = value.trim();
+    if (!fits(trimmed, maxLength) || seen.has(trimmed)) return;
+    seen.add(trimmed);
+    candidates.push(trimmed);
+  };
+
+  push(parsed.base);
+  push(separatorSqueezeCandidate(parsed, maxLength, isAllowedChar));
+  push(headShortenCandidate(parsed, maxLength, seriesGroups));
+
+  return candidates;
+}
+
+function oscarSuggestion(parsed: ParsedSatelliteName, maxLength: number): string | null {
+  if (parsed.aliasTier !== 'oscar' || !parsed.alias) return null;
+  const upper = parsed.alias.toUpperCase();
+  return fits(upper, maxLength) ? upper : null;
+}
+
+function assignFromLadder(
+  inputs: ShortenSatelliteNameInput[],
+  parsedById: Map<string, ParsedSatelliteName>,
+  ladders: Map<string, string[]>,
+  maxLength: number,
+  reserved: Set<string>,
+): Map<string, string> {
+  return assignGeneratedNames([...inputs], parsedById, ladders, maxLength, reserved);
+}
+
 function forcedDisambiguation(
   best: string,
   noradId: number,
@@ -285,9 +329,27 @@ export function shortenSatelliteNames(
 
   const generated = assignGeneratedNames([...inputs], parsedById, ladders, maxLength, reserved);
 
+  const familiarLadders = new Map<string, string[]>();
+  for (const input of inputs) {
+    const parsed = parsedById.get(input.id)!;
+    familiarLadders.set(
+      input.id,
+      buildFamiliarCandidateLadder(parsed, maxLength, seriesGroups, isAllowedChar),
+    );
+  }
+  const familiarAssigned = assignFromLadder(
+    inputs.filter((i) => !i.wireNameOverride?.trim()),
+    parsedById,
+    familiarLadders,
+    maxLength,
+    reserved,
+  );
+
   const results = new Map<string, ShortenSatelliteNameResult>();
   for (const input of inputs) {
     const override = input.wireNameOverride?.trim();
+    const parsed = parsedById.get(input.id)!;
+    const suggestedOscar = oscarSuggestion(parsed, maxLength);
     const generatedShortName = (() => {
       const othersReserved = new Set<string>();
       for (const other of inputs) {
@@ -309,10 +371,19 @@ export function shortenSatelliteNames(
       );
     })();
 
+    const suggestedFamiliar =
+      familiarAssigned.get(input.id) ??
+      assignFromLadder([input], parsedById, familiarLadders, maxLength, new Set()).get(
+        input.id,
+      ) ??
+      generatedShortName;
+
     if (override && fits(override, maxLength)) {
       results.set(input.id, {
         shortName: override,
         generatedShortName,
+        suggestedFamiliar,
+        suggestedOscar,
         fromOverride: true,
       });
     } else {
@@ -328,6 +399,8 @@ export function shortenSatelliteNames(
       results.set(input.id, {
         shortName,
         generatedShortName,
+        suggestedFamiliar,
+        suggestedOscar,
         fromOverride: false,
       });
     }

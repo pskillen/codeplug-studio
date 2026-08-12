@@ -77,6 +77,16 @@ describe('shortenSatelliteNames — familiar-name-first', () => {
     expect(result.get('b')!.generatedShortName).toBe('GEOSCA 6');
     expect(result.get('a')!.shortName).toBe('GEOSCA 1');
   });
+
+  it('exposes familiar and OSCAR suggestions', () => {
+    const fox = shortenAll([{ id: '1', name: 'FOX-1A (AO-85)', noradId: 1 }]).get('1')!;
+    expect(fox.suggestedFamiliar).toBe('FOX-1A');
+    expect(fox.suggestedOscar).toBe('AO-85');
+
+    const iss = shortenAll([{ id: '1', name: 'ISS (ZARYA)', noradId: 1 }]).get('1')!;
+    expect(iss.suggestedFamiliar).toBe('ISS');
+    expect(iss.suggestedOscar).toBeNull();
+  });
 });
 
 describe('shortenSatelliteNames — amateur catalogue fixture', () => {
