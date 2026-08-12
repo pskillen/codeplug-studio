@@ -78,3 +78,15 @@ describe('BuildRadioIoPanel — Write Keps link (#1085)', () => {
     expect(screen.queryByRole('link', { name: 'Write Keps…' })).not.toBeInTheDocument();
   });
 });
+
+describe('BuildRadioIoPanel — single-bank Write modes (#992)', () => {
+  it('shows Codeplug Write projection select for AT-D890', () => {
+    renderPanel('radio-io-at-d890uv');
+    expect(screen.getByRole('combobox', { name: 'Codeplug Write projection' })).toBeInTheDocument();
+  });
+
+  it('does not show single-bank projection select for UV-5R Mini', () => {
+    renderPanel('radio-io-uv5r-mini');
+    expect(screen.queryByLabelText('Codeplug Write projection')).not.toBeInTheDocument();
+  });
+});

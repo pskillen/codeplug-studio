@@ -5,12 +5,15 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Anchor, Button, Checkbox, Group, Stack, Text } from '@mantine/core';
+import { Alert, Anchor, Button, Checkbox, Group, Select, Stack, Text } from '@mantine/core';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import {
   defaultDualBankWriteOptions,
+  defaultSingleBankProjectionMode,
   type DualBankRadioWriteOptions,
   type DualBankWriteMode,
+  type SingleBankDigitalProjectionMode,
+  type SingleBankWriteMode,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import {
   ModalShell,
@@ -123,9 +126,13 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const supportsDualBankWrite = Boolean(
     dualBankTraitProfile?.traits.includes(BuildCapabilityTrait.SeparateDigitalIdList),
   );
+  const supportsSingleBankWrite =
+    egress.profileId === 'radio-io-at-d890uv' && !supportsDualBankWrite;
   const [dualBankToggles, setDualBankToggles] = useState<DualBankRadioWriteOptions>(() =>
     defaultDualBankWriteOptions('codeplug'),
   );
+  const [singleBankProjectionMode, setSingleBankProjectionMode] =
+    useState<SingleBankDigitalProjectionMode>(() => defaultSingleBankProjectionMode('codeplug'));
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
 
@@ -292,7 +299,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     }
   }
 
-  async function handleWriteWithDualBank(mode: DualBankWriteMode) {
+  async function handleWriteWithContactBanks(mode: DualBankWriteMode | SingleBankWriteMode) {
     setWriteWarnings([]);
     beginBusy('write');
     try {
@@ -301,19 +308,29 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       }
       const library = await loadLibrarySlice(persistence, activeProjectId);
       setPhase('preparing');
-      const options =
+      const dualBankOptions =
         mode === 'digitalIdList' ? defaultDualBankWriteOptions('digitalIdList') : dualBankToggles;
+      const singleBankProjection =
+        mode === 'digitalIdList' && singleBankProjectionMode === 'skip'
+          ? defaultSingleBankProjectionMode('digitalIdList')
+          : singleBankProjectionMode;
       const { image, warnings, organisation } = await prepareRadioWriteImage(
         build,
         egress,
         library,
         supportsDualBankWrite
           ? {
-              dualBank: { mode, options },
+              dualBank: { mode, options: dualBankOptions },
               persistence,
               projectId: activeProjectId,
             }
-          : undefined,
+          : supportsSingleBankWrite
+            ? {
+                singleBank: { mode, projectionMode: singleBankProjection },
+                persistence,
+                projectId: activeProjectId,
+              }
+            : undefined,
       );
       setPhase('connecting');
       const session = await ensureSession(true);
@@ -351,11 +368,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   }
 
   async function handleWrite() {
-    await handleWriteWithDualBank('codeplug');
+    await handleWriteWithContactBanks('codeplug');
   }
 
   async function handleWriteDigitalIdList() {
-    await handleWriteWithDualBank('digitalIdList');
+    await handleWriteWithContactBanks('digitalIdList');
   }
 
   function resetProgressState(): void {
@@ -505,6 +522,39 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           />
         </Stack>
       ) : null}
+      {supportsSingleBankWrite ? (
+        <Stack gap={6}>
+          <Text size="xs" fw={600}>
+            Digital contact bank
+          </Text>
+          <Text size="xs" c="dimmed">
+            AT-D890 uses one contact bank for library contacts and the local RadioID directory.
+            Large directory writes stream from storage and may take several minutes.
+          </Text>
+          <Select
+            size="xs"
+            label="Codeplug Write projection"
+            value={singleBankProjectionMode}
+            data={[
+              { value: 'contacts-only', label: 'Library contacts only' },
+              { value: 'directory-only', label: 'Digital ID directory only' },
+              { value: 'merge', label: 'Merge (library wins on duplicate ID)' },
+              { value: 'skip', label: 'Skip (leave radio contact bank unchanged)' },
+            ]}
+            onChange={(value) =>
+              setSingleBankProjectionMode(
+                (value as SingleBankDigitalProjectionMode) ??
+                  defaultSingleBankProjectionMode('codeplug'),
+              )
+            }
+            disabled={busy}
+          />
+          <Text size="xs" c="dimmed">
+            Write digital ID list replaces the entire radio contact bank for the selected projection
+            mode (no Skip).
+          </Text>
+        </Stack>
+      ) : null}
       <Group gap="xs">
         <Button
           size="xs"
@@ -524,6 +574,16 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           </Button>
         ) : null}
         {supportsDualBankWrite && !writeHidden ? (
+          <Button
+            size="xs"
+            variant="light"
+            disabled={!serialOk || busy || !hasHydration}
+            onClick={() => void handleWriteDigitalIdList()}
+          >
+            Write digital ID list
+          </Button>
+        ) : null}
+        {supportsSingleBankWrite && !writeHidden ? (
           <Button
             size="xs"
             variant="light"
@@ -577,7 +637,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             <Text size="xs" c="dimmed" mt={4}>
               {DM32_ANALOG_CONTACTS_WRITE_GAP}
             </Text>
-          ) : egress.profileId === 'radio-io-at-d890uv' ? (
+          ) : egress.profileId === 'radio-io-at-d890uv' && !supportsSingleBankWrite ? (
             <Text size="xs" c="dimmed" mt={4}>
               {AT_D890_DIGITAL_CONTACTS_WRITE_GAP}
             </Text>

@@ -5,6 +5,8 @@
 import type {
   DualBankRadioWriteOptions,
   DualBankWriteMode,
+  SingleBankDigitalProjectionMode,
+  SingleBankWriteMode,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
@@ -390,6 +392,11 @@ export interface BuildRadioWriteProjectionContext {
     mode: DualBankWriteMode;
     options: DualBankRadioWriteOptions;
     directorySlice?: DualBankDirectorySlice;
+  };
+  singleBank?: {
+    mode: SingleBankWriteMode;
+    projectionMode: SingleBankDigitalProjectionMode;
+    digitalContacts?: RadioDigitalContactDto[] | undefined;
   };
 }
 
@@ -1338,6 +1345,9 @@ export function buildRadioWriteProjection(
       talkGroups,
       rxGroups,
       radioIds: dm32RadioIds,
+      ...(context?.singleBank?.digitalContacts !== undefined
+        ? { digitalContacts: context.singleBank.digitalContacts }
+        : {}),
       ...(amAir ? { amAirChannels: amAir.amAirChannels, amZones: amAir.amZones } : {}),
       aprs: radioAprsFromAnytoneLibrary(projectionAssembled, numbersBySourceChannelId, warnings),
     };
