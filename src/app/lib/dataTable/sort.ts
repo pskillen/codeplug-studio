@@ -1,4 +1,4 @@
-import type { DataTableColumn, DataTableLinkedColumn } from '../../components/ui/DataTable.tsx';
+import type { ReactNode } from 'react';
 
 export type DataTableSortDirection = 'asc' | 'desc';
 
@@ -12,8 +12,22 @@ export const DATATABLE_CALLSIGN_SORT_KEY = '__callsign__';
 /** Display sort that preserves `rows` order (export / agreed membership order). */
 export const DATATABLE_STORED_ORDER_SORT_KEY = '__storedOrder__';
 
+export interface DataTableLinkedColumn<T> {
+  header?: string;
+  getName: (row: T) => string;
+  getPath: (row: T) => string;
+  sortable?: boolean;
+  sortValue?: (row: T) => string | number | null;
+  render?: (row: T) => ReactNode;
+}
+
+export interface DataTableSortableColumn<T> {
+  key: string;
+  sortValue?: (row: T) => string | number | null;
+}
+
 export interface DataTableSortContext<T> {
-  columns: DataTableColumn<T>[];
+  columns: DataTableSortableColumn<T>[];
   callsignColumn?: DataTableLinkedColumn<T>;
   nameColumn: DataTableLinkedColumn<T>;
   /** When set, sorting by this key keeps (or reverses) `rows` without field compare. */

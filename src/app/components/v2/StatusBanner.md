@@ -29,7 +29,7 @@ import { DesignSystemV2Provider, StatusBanner } from '@app/components/v2';
 
 - Must render inside `DesignSystemV2Provider`.
 - Uses Tabler icons (`IconCircleCheck` for success; `IconInfoCircle` for warning/info).
-- Live demos: `/styleguide/v2/feedback`
+- Live demos: `/styleguide/feedback`
 
 ## Related
 

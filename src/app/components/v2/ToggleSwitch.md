@@ -22,7 +22,7 @@ Skip-scan, show-on-map, and similar boolean toggles in channel editor sections.
 
 ## Behaviour
 
-- Live demos: `/styleguide/v2/forms`
+- Live demos: `/styleguide/forms`
 
 ## Related
 

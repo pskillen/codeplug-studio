@@ -4,7 +4,7 @@ Member-panel shell for the Membership family: title + Add, find-in-list filter, 
 
 ## Purpose
 
-Header/toolbar chrome around a list of `MembershipRow`s. Exported as both `MembershipPanel` (design-system name) and `MembershipList` (alias), mirroring `ShuttleListPanel`/`ShuttleList`.
+Header/toolbar chrome around a list of `MembershipRow`s. Exported as both `MembershipPanel` (design-system name) and `MembershipList` (alias).
 
 ## Props
 
@@ -47,7 +47,7 @@ import { DesignSystemV2Provider, MembershipPanel, MembershipRow } from '@app/com
 - Must render inside `DesignSystemV2Provider`.
 - **Implicit-by-prop-presence composition**, not a `mode` enum: omitting `onAdd` yields the reorder-only, no-pool variant (the build's zone member order screen); the bulk toolbar only appears once `selectedCount > 0` **and** at least one bulk handler is provided.
 - The Sort… affordance is a **permanent, confirm-gated rewrite of the true order** — distinct from any temporary browse sort, and disabled while the find-in-list filter is active (to avoid reordering a filtered subset).
-- Live demos: `/styleguide/v2/membership`
+- Live demos: `/styleguide/membership`
 
 ## Related
 

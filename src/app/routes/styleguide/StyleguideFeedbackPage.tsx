@@ -1,21 +1,11 @@
 import { Group, Stack } from '@mantine/core';
-import { Link } from 'react-router-dom';
-import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
-import { DismissibleNotice, StatusBanner, StatusDot } from '../../../components/v2/index.ts';
+import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
+import { DismissibleNotice, StatusBanner, StatusDot } from '../../components/v2/index.ts';
 
-export default function StyleguideV2FeedbackPage() {
+export default function StyleguideFeedbackPage() {
   return (
-    <Page width="default">
-      <PageHeader
-        title="Feedback"
-        description={
-          <>
-            <Link to="/styleguide/v2">← Design system v2</Link>
-          </>
-        }
-      />
-
-      <PageSection title="StatusBanner" description="Success, warning, and info tones.">
+    <StyleguidePageShell title="Feedback" description="Status surfaces and dismissible chrome.">
+      <StyleguideSection title="StatusBanner" description="Success, warning, and info tones.">
         <Stack gap="sm">
           <StatusBanner tone="success">
             No dangling references — all relationships resolve.
@@ -25,9 +15,12 @@ export default function StyleguideV2FeedbackPage() {
             Export combines library + build via assemble — re-import may differ.
           </StatusBanner>
         </Stack>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection title="StatusDot" description="Compact inline status — write/sync/verify state.">
+      <StyleguideSection
+        title="StatusDot"
+        description="Compact inline status — write/sync/verify state."
+      >
         <Group gap="md">
           <StatusDot label="Verified" tone="success" />
           <StatusDot label="Pending" tone="neutral" />
@@ -35,9 +28,9 @@ export default function StyleguideV2FeedbackPage() {
           <StatusDot label="Drift detected" tone="warning" />
           <StatusDot label="Write failed" tone="destructive" />
         </Group>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="DismissibleNotice"
         description="Chrome-level, single-line, no re-show once dismissed — distinct from StatusBanner."
       >
@@ -52,7 +45,7 @@ export default function StyleguideV2FeedbackPage() {
             Export combines library + build via assemble — re-import may differ.
           </DismissibleNotice>
         </Stack>
-      </PageSection>
-    </Page>
+      </StyleguideSection>
+    </StyleguidePageShell>
   );
 }

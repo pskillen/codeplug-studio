@@ -36,7 +36,7 @@ Presents a labelled field that can stay on the library default or be overridden 
 - Unoverridden: “using library default” + “Override for this build” ghost button.
 - Overridden: accent `Pill` “Overridden for this build” + “Reset”.
 - Must render inside `DesignSystemV2Provider`.
-- Live demos: `/styleguide/v2/forms`
+- Live demos: `/styleguide/forms`
 
 ## Related
 

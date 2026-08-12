@@ -2,7 +2,7 @@ import { IconX } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import SelectedItemDragHandle, {
   type SelectedItemDragHandleProps,
-} from '../ui/SelectedItemDragHandle.tsx';
+} from './SelectedItemDragHandle.tsx';
 import { ICON_SIZE_ACTION } from '../../lib/iconSizes.ts';
 import Checkbox from './Checkbox.tsx';
 import classes from './MembershipRow.module.css';

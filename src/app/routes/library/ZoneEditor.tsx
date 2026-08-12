@@ -11,7 +11,7 @@ import {
 import { resolveEffectiveZoneChannelIds } from '@core/domain/zoneHierarchy.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
 import CodeplugMap from '../../components/CodeplugMap/CodeplugMap.tsx';
-import { UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/v2/index.ts';
 import {
   DesignSystemV2Provider,
   EditorHeader,

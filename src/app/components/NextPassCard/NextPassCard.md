@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Highlighted "next pass" summary card for a single satellite — AOS/LOS/max-elevation, then one block per transmitter with its static uplink/downlink/tone/mode, and Doppler-corrected uplink/downlink shown alongside the static values while the pass is active. Modeled on [`BuildListCard`](../builds/BuildListCard.tsx) ("Export for radio — build card" pattern) as a sibling card, not a reuse of it. Used at the top of the satellite detail page (`SatelliteDetailPage.tsx`) and demoed in the [styleguide](/styleguide/v2/patterns).
+Highlighted "next pass" summary card for a single satellite — AOS/LOS/max-elevation, then one block per transmitter with its static uplink/downlink/tone/mode, and Doppler-corrected uplink/downlink shown alongside the static values while the pass is active. Modeled on [`BuildListCard`](../builds/BuildListCard.tsx) ("Export for radio — build card" pattern) as a sibling card, not a reuse of it. Used at the top of the satellite detail page (`SatelliteDetailPage.tsx`) and demoed in the [styleguide](/styleguide/patterns).
 
 ## Props
 

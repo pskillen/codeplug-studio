@@ -26,7 +26,7 @@ Channel editor Identity/Frequencies/etc. — label + bordered body; slots contro
 
 ## Behaviour
 
-- Live demos: `/styleguide/v2/forms`
+- Live demos: `/styleguide/forms`
 
 ## Related
 

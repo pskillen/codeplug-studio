@@ -31,7 +31,7 @@ import { DesignSystemV2Provider, Button } from '@app/components/v2';
 ## Behaviour
 
 - Must render inside `DesignSystemV2Provider` so `--dsv2-*` tokens resolve.
-- Live demos: `/styleguide/v2/forms`
+- Live demos: `/styleguide/forms`
 
 ## Related
 

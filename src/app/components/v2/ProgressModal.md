@@ -46,7 +46,7 @@ import { DesignSystemV2Provider, ProgressModal } from '@app/components/v2';
 - Not dismissible while `phase === 'running'` — no close button, escape, or backdrop dismiss.
 - Footer is hidden entirely while running; once finished it shows Close (+ Retry when `onRetry` is provided and any step has `status="error"`).
 - Header shows a destructive alert icon once finished with an error.
-- Live demos: `/styleguide/v2/overlays`
+- Live demos: `/styleguide/overlays`
 
 ## Related
 

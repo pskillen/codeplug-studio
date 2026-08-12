@@ -45,7 +45,7 @@ import { ConfirmModal, DesignSystemV2Provider } from '@app/components/v2';
 - Must render inside `DesignSystemV2Provider`.
 - `size="sm"` on the underlying `ModalShell`.
 - `destructive` tone swaps the header icon to `IconAlertTriangle` and the confirm button to the `destructive` `Button` variant; `default` tone uses `IconHelpCircle` with the `primary` variant.
-- Live demos: `/styleguide/v2/overlays`
+- Live demos: `/styleguide/overlays`
 
 ## Related
 

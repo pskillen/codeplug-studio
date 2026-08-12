@@ -10,7 +10,7 @@ import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx'
 import AprsChannelSlotsEditor from '../../components/library/AprsChannelSlotsEditor.tsx';
 import GeoPointEditor from '../../components/library/GeoPointEditor.tsx';
 import { FieldCard } from '../../components/fields/Fields.tsx';
-import { UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/v2/index.ts';
 import { useEntityFormDirty, useFormBaseline } from '../../hooks/useEntityFormDirty.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
 import { persistence } from '../../state/persistence.ts';

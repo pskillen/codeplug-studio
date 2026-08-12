@@ -10,7 +10,7 @@ export interface SortableMembershipRowProps extends Omit<MembershipRowProps, 'dr
 
 /**
  * dnd-kit sortable wrapper for {@link MembershipRow} — same pattern as
- * `/styleguide/v2/membership` and DataTable v2 bulk reorder.
+ * `/styleguide/membership` and DataTable v2 bulk reorder.
  */
 export default function SortableMembershipRow({
   itemKey,

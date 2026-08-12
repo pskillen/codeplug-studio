@@ -1,15 +1,22 @@
 import { Text } from '@mantine/core';
-import { ListPage } from '../../components/ui/index.ts';
+import { DesignSystemV2Provider, Panel } from '../../components/v2/index.ts';
+import classes from './ReferenceIndexPage.module.css';
 
 export default function ReferenceIndexPage() {
   return (
-    <ListPage
-      title="Reference"
-      description="Lookup tables and helpers for amateur radio programming — not authoritative for on-air operation."
-    >
-      <Text c="dimmed" size="sm">
-        Choose a reference tool from the sidebar.
-      </Text>
-    </ListPage>
+    <DesignSystemV2Provider>
+      <div className={classes.page}>
+        <h1 className={classes.title}>Reference</h1>
+        <p className={classes.description}>
+          Lookup tables and helpers for amateur radio programming — not authoritative for on-air
+          operation.
+        </p>
+        <Panel title="Tools">
+          <Text size="sm" className={classes.panelCopy}>
+            Choose a reference tool from the sidebar.
+          </Text>
+        </Panel>
+      </div>
+    </DesignSystemV2Provider>
   );
 }

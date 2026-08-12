@@ -21,7 +21,7 @@ DataTable bulk-select and list row checkboxes.
 
 ## Behaviour
 
-- Live demos: `/styleguide/v2/forms`
+- Live demos: `/styleguide/forms`
 
 ## Related
 

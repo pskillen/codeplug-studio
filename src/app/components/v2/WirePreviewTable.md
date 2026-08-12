@@ -38,7 +38,7 @@ import { DesignSystemV2Provider, WirePreviewTable } from '@app/components/v2';
 - Must render inside `DesignSystemV2Provider`.
 - Monospace, no sort/select/actions — read-only by design.
 - Visual shape referenced from `builds/wirePreview/WirePreviewDataTable.tsx` for parity, but this component does not import from it or type against real wire-preview domain types.
-- Live demos: `/styleguide/v2/data-display`
+- Live demos: `/styleguide/data-display`
 
 ## Related
 

@@ -45,7 +45,7 @@ import { AddMembersScreen, DesignSystemV2Provider, MembershipPoolRow } from '@ap
 - Full-viewport fixed takeover below the desktop breakpoint (`< 48em`, matching `DESKTOP_MIN_WIDTH_MEDIA_QUERY`); at `≥ 48em` it becomes a centered card over a dimmed backdrop, capped at `720px`/`85vh` — distinct from the `ModalShell` family (no Mantine `Modal`/portal involved either way, just CSS).
 - "Add selected (N)" is disabled at `totalStaged === 0`.
 - Blocked candidates never contribute to `totalStaged` because `MembershipPoolRow` never wires `onCheck` when `disabled` — this screen does not need its own gating logic.
-- Live demos: `/styleguide/v2/membership`
+- Live demos: `/styleguide/membership`
 
 ## Related
 

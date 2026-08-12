@@ -29,7 +29,7 @@ Small, high-contrast labels. Named tones cover accent/status chrome; `tone="sema
 ## Behaviour
 
 - Must render inside `DesignSystemV2Provider`.
-- Live demos: `/styleguide/v2/data-display`
+- Live demos: `/styleguide/data-display`
 
 ## Related
 

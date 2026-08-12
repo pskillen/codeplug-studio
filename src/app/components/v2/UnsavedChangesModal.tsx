@@ -1,5 +1,5 @@
-import ConfirmModal from '../v2/ConfirmModal.tsx';
-import DesignSystemV2Provider from '../v2/DesignSystemV2Provider.tsx';
+import ConfirmModal from './ConfirmModal.tsx';
+import DesignSystemV2Provider from './DesignSystemV2Provider.tsx';
 
 export interface UnsavedChangesModalProps {
   opened: boolean;

@@ -1,7 +1,6 @@
 import { Group, Stack, TextInput as MantineTextInput } from '@mantine/core';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
+import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
 import {
   Button,
   Checkbox,
@@ -10,12 +9,13 @@ import {
   FileDropzone,
   FormField,
   OverrideField,
+  PercentLevelSlider,
   Pill,
   SearchInput,
   SegmentedControl,
   TextInput,
   ToggleSwitch,
-} from '../../../components/v2/index.ts';
+} from '../../components/v2/index.ts';
 
 const VARIANTS = ['primary', 'secondary', 'outline', 'dashed', 'ghost', 'destructive'] as const;
 const SIZES = ['sm', 'md', 'lg'] as const;
@@ -26,7 +26,7 @@ const REPEATER_OPTIONS: ComboboxOption<string>[] = [
   { value: 'gb7gm', label: 'GB7GM Glasgow', sublabel: '145.6375 MHz' },
 ];
 
-export default function StyleguideV2FormsPage() {
+export default function StyleguideFormsPage() {
   const [overridden, setOverridden] = useState(false);
   const [wireName, setWireName] = useState('GB3DA-DMR');
   const [search, setSearch] = useState('');
@@ -42,17 +42,8 @@ export default function StyleguideV2FormsPage() {
   );
 
   return (
-    <Page width="default">
-      <PageHeader
-        title="Forms"
-        description={
-          <>
-            <Link to="/styleguide/v2">← Design system v2</Link>
-          </>
-        }
-      />
-
-      <PageSection title="Button" description="Variants and sizes from the v2 token set.">
+    <StyleguidePageShell title="Forms" description="Button variants, inputs, and form chrome.">
+      <StyleguideSection title="Button" description="Variants and sizes from the v2 token set.">
         <Stack gap="md">
           {SIZES.map((size) => (
             <Group key={size} gap="sm" wrap="wrap">
@@ -64,9 +55,9 @@ export default function StyleguideV2FormsPage() {
             </Group>
           ))}
         </Stack>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="TextInput & FormField"
         description="Standalone input and label-above-box wrapper."
       >
@@ -77,24 +68,24 @@ export default function StyleguideV2FormsPage() {
             <TextInput variant="plain" value="WROTHM" readOnly aria-label="Abbreviation" />
           </FormField>
         </Stack>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection title="SearchInput" description="Filter bar with optional detected tag.">
+      <StyleguideSection title="SearchInput" description="Filter bar with optional detected tag.">
         <SearchInput
           value={search}
           onChange={(e) => setSearch(e.currentTarget.value)}
           detectedTag={search ? 'Filter active' : undefined}
         />
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection title="Checkbox & ToggleSwitch">
+      <StyleguideSection title="Checkbox & ToggleSwitch">
         <Group gap="lg">
           <Checkbox checked={selected} onCheckedChange={setSelected} aria-label="Select row" />
           <ToggleSwitch checked={skipScan} onChange={setSkipScan} label="Skip scan" />
         </Group>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection title="SegmentedControl" description="DMR timeslot picker scale.">
+      <StyleguideSection title="SegmentedControl" description="DMR timeslot picker scale.">
         <SegmentedControl
           size="md"
           options={[
@@ -104,9 +95,9 @@ export default function StyleguideV2FormsPage() {
           value={ts}
           onChange={(v) => setTs(v as 'ts1' | 'ts2')}
         />
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="OverrideField"
         description="Library default vs per-build override chrome."
       >
@@ -130,9 +121,9 @@ export default function StyleguideV2FormsPage() {
             />
           ) : null}
         </OverrideField>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="FileDropzone"
         description="Drag/drop + click-to-browse, collapsing to a selected-file row."
       >
@@ -144,9 +135,9 @@ export default function StyleguideV2FormsPage() {
           onFilesSelected={([file]) => setDroppedFileName(file?.name)}
           onClear={() => setDroppedFileName(undefined)}
         />
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="Combobox"
         description="Async search-select; committed chip state with a Change link."
       >
@@ -159,9 +150,9 @@ export default function StyleguideV2FormsPage() {
           onClear={() => setRepeater(null)}
           placeholder="Search repeaters…"
         />
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="Pill extensions"
         description="Removable and dashed add chips (see data-display too)."
       >
@@ -173,7 +164,13 @@ export default function StyleguideV2FormsPage() {
             + DMR
           </Pill>
         </Group>
-      </PageSection>
-    </Page>
+      </StyleguideSection>
+      <StyleguideSection
+        title="PercentLevelSlider"
+        description="Power/squelch percentage with radio-default checkbox."
+      >
+        <PercentLevelSlider label="Power" value={50} onChange={() => undefined} />
+      </StyleguideSection>
+    </StyleguidePageShell>
   );
 }

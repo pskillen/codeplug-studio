@@ -30,7 +30,7 @@ import { DesignSystemV2Provider, CountTile } from '@app/components/v2';
 
 - Must render inside `DesignSystemV2Provider` so `--dsv2-*` tokens resolve.
 - Value uses tabular numerics for aligned grids.
-- Live demos: `/styleguide/v2/data-display`
+- Live demos: `/styleguide/data-display`
 
 ## Related
 

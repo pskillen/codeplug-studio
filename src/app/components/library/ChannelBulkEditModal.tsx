@@ -28,7 +28,7 @@ import TxPermitSegment from '../channels/TxPermitSegment.tsx';
 import SendTalkerAliasSegment from '../channels/SendTalkerAliasSegment.tsx';
 import AnalogSquelchModeSegment from '../channels/AnalogSquelchModeSegment.tsx';
 import ScanInclusionSegment from '../channels/ScanInclusionSegment.tsx';
-import { PercentLevelSlider } from '../ui/index.ts';
+import { PercentLevelSlider } from '../v2/index.ts';
 import { Button, ConfirmModal, ModalShell } from '../v2/index.ts';
 import { ICON_SIZE_ACTION, ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import {

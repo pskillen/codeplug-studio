@@ -3,14 +3,20 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import { radioTargetFor } from '@core/radio-targets/index.ts';
-import { Button, EmptyState, SearchInput, SegmentedControl } from '../../components/v2/index.ts';
+import {
+  Button,
+  DataTable,
+  EmptyState,
+  SearchInput,
+  SegmentedControl,
+  type DataTableColumn,
+  type DataTableSortState,
+} from '../../components/v2/index.ts';
 import { Loader, Text } from '@mantine/core';
-import DataTable from '../../components/ui/DataTable.tsx';
-import type { DataTableColumn } from '../../components/ui/DataTable.tsx';
-import type { DataTableSortState } from '../../lib/dataTable/sort.ts';
 import { filterRowsByName } from '../../hooks/useListNameQuery.ts';
 import { useDebouncedNameFilter } from '../../hooks/useDebouncedNameFilter.ts';
 import { DATATABLE_NAME_SORT_KEY } from '../../lib/dataTable/sort.ts';
+import { createNameColumn } from '../../lib/libraryListTable.tsx';
 import { useFormatBuilds } from '../../state/useFormatBuilds.ts';
 import BuildListCard, { BuildsListSection } from '../../components/builds/BuildListCard.tsx';
 import { groupFormatBuilds, type BuildsListGroupMode } from './groupFormatBuilds.ts';
@@ -32,7 +38,7 @@ export default function BuildsListPage() {
     nameFilterPending,
   } = useDebouncedNameFilter(committedNameFilter, setCommittedNameFilter);
   const [sort, setSort] = useState<DataTableSortState | null>({
-    columnKey: DATATABLE_NAME_SORT_KEY,
+    key: DATATABLE_NAME_SORT_KEY,
     direction: 'asc',
   });
   const [groupMode, setGroupMode] = useState<BuildsListGroupMode>('radio');
@@ -47,15 +53,21 @@ export default function BuildsListPage() {
 
   const columns = useMemo((): DataTableColumn<RadioBuild>[] => {
     return [
+      createNameColumn<RadioBuild>({
+        getName: (b) => b.name,
+        getPath: (b) => `/builds/${b.id}/export`,
+      }),
       {
         key: 'radio',
         header: 'Radio',
+        sortable: true,
         render: (b) => radioTargetFor(b.radioTargetId)?.label ?? b.radioTargetId,
         sortValue: (b) => radioTargetFor(b.radioTargetId)?.label ?? b.radioTargetId,
       },
       {
         key: 'egress',
         header: 'Export paths',
+        sortable: true,
         render: (b) =>
           radioTargetFor(b.radioTargetId)
             ?.compatibleEgress.map((entry) => entry.label)
@@ -68,6 +80,7 @@ export default function BuildsListPage() {
       {
         key: 'updated',
         header: 'Updated',
+        sortable: true,
         render: (b) => new Date(b.updatedAt).toLocaleString(),
         sortValue: (b) => b.updatedAt,
       },
@@ -155,11 +168,7 @@ export default function BuildsListPage() {
               totalRowCount={builds.length}
               sort={sort}
               onSortChange={setSort}
-              rowKey={(b) => b.id}
-              nameColumn={{
-                getName: (b) => b.name,
-                getPath: (b) => `/builds/${b.id}/export`,
-              }}
+              getRowId={(b) => b.id}
               columns={columns}
             />
           )}

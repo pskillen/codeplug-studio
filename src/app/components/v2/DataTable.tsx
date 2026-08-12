@@ -22,7 +22,7 @@ import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import SelectedItemDragHandle, {
   type SelectedItemDragHandleProps,
-} from '../ui/SelectedItemDragHandle.tsx';
+} from './SelectedItemDragHandle.tsx';
 import Button from './Button.tsx';
 import Checkbox from './Checkbox.tsx';
 import classes from './DataTable.module.css';

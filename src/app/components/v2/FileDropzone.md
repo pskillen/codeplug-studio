@@ -4,7 +4,7 @@ Drag/drop + click-to-browse file input, collapsing to a selected-file row once a
 
 ## Purpose
 
-Generic file intake — project YAML import, channel-set upload, and similar single/multi-file pickers. Generalized from `import-export/YamlFileDropzone.tsx`'s drag/drop + hidden-input mechanics; that component is untouched and stays YAML-specific until a later migration.
+Generic file intake — project YAML import, channel-set upload, and similar single/multi-file pickers. Generalized from the retired v1 `YamlFileDropzone` drag/drop mechanics.
 
 ## Props
 
@@ -40,8 +40,8 @@ import { DesignSystemV2Provider, FileDropzone } from '@app/components/v2';
 
 - Must render inside `DesignSystemV2Provider`.
 - Two states, driven by whether `fileName` is set: empty dropzone (dashed border, drag-over highlight, click-or-drop, keyboard-accessible via `role="button"` + Enter/Space) vs. selected-file row (bordered, success icon, filename, remove action).
-- This component only surfaces raw `File` objects — reading file contents (e.g. `readTextFile`) and validating extension/type stays the consumer's job, same as `YamlFileDropzone`.
-- Live demos: `/styleguide/v2/forms`
+- This component only surfaces raw `File` objects — reading file contents (e.g. `readTextFile`) and validating extension/type stays the consumer's job.
+- Live demos: `/styleguide/forms`
 
 ## Related
 

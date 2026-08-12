@@ -29,7 +29,7 @@ import { DesignSystemV2Provider, StatusDot } from '@app/components/v2';
 
 - Must render inside `DesignSystemV2Provider`.
 - 6px filled circle, inline-flex with the label.
-- Live demos: `/styleguide/v2/feedback`
+- Live demos: `/styleguide/feedback`
 
 ## Related
 

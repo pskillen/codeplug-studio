@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type { AnalogContact } from '@core/models/library.ts';
 import { newAnalogContact } from '@core/domain/factories.ts';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
-import { UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/v2/index.ts';
 import {
   DesignSystemV2Provider,
   EditorHeader,

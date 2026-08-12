@@ -1,16 +1,15 @@
 import { Group, Text } from '@mantine/core';
 import { IconHelpCircle } from '@tabler/icons-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
+import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
 import {
   Button,
   ConfirmModal,
   ModalShell,
   ProgressModal,
   type ProgressModalStep,
-} from '../../../components/v2/index.ts';
-import { ICON_SIZE_ACTION, ICON_STROKE } from '../../../lib/iconSizes.ts';
+} from '../../components/v2/index.ts';
+import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
 const RUNNING_STEPS: ProgressModalStep[] = [
   { id: 'connect', label: 'Connect to radio', status: 'success' },
@@ -30,7 +29,7 @@ const FINISHED_ERROR_STEPS: ProgressModalStep[] = [
   { id: 'verify', label: 'Verify', status: 'pending' },
 ];
 
-export default function StyleguideV2OverlaysPage() {
+export default function StyleguideOverlaysPage() {
   const [shellOpen, setShellOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [destructiveOpen, setDestructiveOpen] = useState(false);
@@ -40,17 +39,14 @@ export default function StyleguideV2OverlaysPage() {
   const [errorOpen, setErrorOpen] = useState(false);
 
   return (
-    <Page width="default">
-      <PageHeader
-        title="Overlays"
-        description={
-          <>
-            <Link to="/styleguide/v2">← Design system v2</Link>
-          </>
-        }
-      />
-
-      <PageSection title="ModalShell" description="Base overlay shell: icon, title, body, footer.">
+    <StyleguidePageShell
+      title="Overlays"
+      description="ModalShell, ConfirmModal, and ProgressModal."
+    >
+      <StyleguideSection
+        title="ModalShell"
+        description="Base overlay shell: icon, title, body, footer."
+      >
         <Group gap="sm">
           <Button variant="secondary" onClick={() => setShellOpen(true)}>
             Open ModalShell
@@ -69,9 +65,9 @@ export default function StyleguideV2OverlaysPage() {
         >
           <Text size="sm">Body content scrolls independently of the header/footer.</Text>
         </ModalShell>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="ConfirmModal"
         description="Standard and destructive confirmation on top of ModalShell."
       >
@@ -112,9 +108,9 @@ export default function StyleguideV2OverlaysPage() {
         >
           <Text size="sm">Dismiss and confirm are disabled while busy.</Text>
         </ConfirmModal>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="ProgressModal"
         description="Blocking progress with per-step status — the shape for radio write/verify."
       >
@@ -151,7 +147,7 @@ export default function StyleguideV2OverlaysPage() {
           onRetry={() => setErrorOpen(false)}
           summary={<Text size="sm">1 of 42 channels failed to write.</Text>}
         />
-      </PageSection>
-    </Page>
+      </StyleguideSection>
+    </StyleguidePageShell>
   );
 }

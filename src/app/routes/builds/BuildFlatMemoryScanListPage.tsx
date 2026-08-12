@@ -21,8 +21,9 @@ import type { LibrarySlice } from '@core/services/assemble.ts';
 import DefaultScanInclusionSegment from '../../components/builds/DefaultScanInclusionSegment.tsx';
 import ScanInclusionSegment from '../../components/channels/ScanInclusionSegment.tsx';
 import { BandPillForChannel } from '../../components/pills/BandPill.tsx';
+import { DataTable, type DataTableColumn } from '../../components/v2/index.ts';
+import { createNameColumn } from '../../lib/libraryListTable.tsx';
 import classes from './BuildSubPage.module.css';
-import DataTable from '../../components/ui/DataTable.tsx';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { prepareBuildForFrequencyRangeExportPatch } from '../../lib/frequencyRangeExportSettingsPatch.ts';
 import { resolveOptimisticBuild } from '../../lib/resolveOptimisticBuild.ts';
@@ -122,6 +123,66 @@ export default function BuildFlatMemoryScanListPage() {
     () => chirpMemoryChannelIds(build, librarySlice).length,
     [build, librarySlice],
   );
+
+  const columns = useMemo((): DataTableColumn<ScanListRow>[] => {
+    return [
+      createNameColumn<ScanListRow>({
+        header: 'Channel',
+        getName: (row) => channelDisplayLabel(row.channel),
+        getPath: () => '#',
+        sortValue: (row) => channelDisplayLabel(row.channel).toLowerCase(),
+        render: (row) => (
+          <Group gap="xs" wrap="wrap" align="center">
+            <Text size="sm" fw={500}>
+              {channelDisplayLabel(row.channel)}
+            </Text>
+            <BandPillForChannel channel={row.channel} size="xs" />
+          </Group>
+        ),
+      }),
+      {
+        key: 'slot',
+        header: 'Memory',
+        sortable: true,
+        sortValue: (row) => row.slot,
+        render: (row) => row.slot,
+      },
+      {
+        key: 'scan',
+        header: 'Scan',
+        hideable: false,
+        render: (row) => (
+          <ScanInclusionSegment
+            compact
+            disabled={saving}
+            value={row.scanInclusion}
+            onChange={(scanInclusion) => void updateChannelScan(row.id, scanInclusion)}
+          />
+        ),
+      },
+      {
+        key: 'effective',
+        header: 'On export',
+        render: (row) => {
+          const override = overrideScanInclusion(build.channelOverrides, row.id);
+          const effective = resolveChannelScanInclusionForExport(
+            row.channel,
+            override,
+            scanContext,
+          );
+          return effective === 'scan' ? (
+            <Badge color="green" variant="light">
+              Scans
+            </Badge>
+          ) : (
+            <Badge color="gray" variant="light">
+              Skipped
+            </Badge>
+          );
+        },
+      },
+    ];
+  }, [build.channelOverrides, scanContext, saving, channelById]);
 
   if (!radioTargetHasTrait(build.radioTargetId, BuildCapabilityTrait.PerChannelScanFlag)) {
     return <Navigate to={`/builds/${build.id}/channels`} replace />;
@@ -224,73 +285,18 @@ export default function BuildFlatMemoryScanListPage() {
           ) : null}
           <DataTable
             rows={rows}
-            rowKey={(row) => row.id}
-            search={search}
-            onSearchChange={setSearch}
-            searchPlaceholder="Search channels…"
-            emptyState={
+            getRowId={(row) => row.id}
+            search={{
+              value: search,
+              onChange: setSearch,
+              placeholder: 'Search channels…',
+            }}
+            emptyMessage={
               <Text size="sm" c="dimmed">
                 No analogue memories on this build yet.
               </Text>
             }
-            nameColumn={{
-              header: 'Channel',
-              getName: (row) => channelDisplayLabel(row.channel),
-              getPath: () => '#',
-              sortable: true,
-              sortValue: (row) => channelDisplayLabel(row.channel).toLowerCase(),
-              render: (row) => (
-                <Group gap="xs" wrap="wrap" align="center">
-                  <Text size="sm" fw={500}>
-                    {channelDisplayLabel(row.channel)}
-                  </Text>
-                  <BandPillForChannel channel={row.channel} size="xs" />
-                </Group>
-              ),
-            }}
-            columns={[
-              {
-                key: 'slot',
-                header: 'Memory',
-                sortable: true,
-                sortValue: (row) => row.slot,
-                render: (row) => row.slot,
-              },
-              {
-                key: 'scan',
-                header: 'Scan',
-                hideable: false,
-                render: (row) => (
-                  <ScanInclusionSegment
-                    compact
-                    disabled={saving}
-                    value={row.scanInclusion}
-                    onChange={(scanInclusion) => void updateChannelScan(row.id, scanInclusion)}
-                  />
-                ),
-              },
-              {
-                key: 'effective',
-                header: 'On export',
-                render: (row) => {
-                  const override = overrideScanInclusion(build.channelOverrides, row.id);
-                  const effective = resolveChannelScanInclusionForExport(
-                    row.channel,
-                    override,
-                    scanContext,
-                  );
-                  return effective === 'scan' ? (
-                    <Badge color="green" variant="light">
-                      Scans
-                    </Badge>
-                  ) : (
-                    <Badge color="gray" variant="light">
-                      Skipped
-                    </Badge>
-                  );
-                },
-              },
-            ]}
+            columns={columns}
           />
         </section>
       </Stack>

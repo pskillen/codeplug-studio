@@ -7,7 +7,7 @@ import {
   EditorHeader,
   StickyFooter,
 } from '../../../components/v2/index.ts';
-import { UnsavedChangesModal } from '../../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../../components/v2/index.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
 import { MOBILE_MAX_WIDTH_MEDIA_QUERY } from '../../../lib/breakpoints.ts';
 import { ZoneEditProvider, useZoneEdit } from './ZoneEditContext.tsx';

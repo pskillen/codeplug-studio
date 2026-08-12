@@ -1,54 +1,63 @@
 import { Stack, Text } from '@mantine/core';
 import { Link } from 'react-router-dom';
-import { Page, PageHeader } from '../../components/ui/index.ts';
+import { StyleguidePageShell } from './StyleguidePageShell.tsx';
 
 const SECTIONS = [
   {
-    to: '/styleguide/v2',
-    title: 'Design system v2 (preview)',
-    description: 'Isolated v2 theme + components (#916). Does not change live screens.',
+    to: '/styleguide/forms',
+    title: 'Forms',
+    description: 'Button variants, OverrideField, PercentLevelSlider, Combobox, FileDropzone.',
   },
   {
-    to: '/styleguide/layout',
-    title: 'Layout',
-    description: 'Page, PageHeader, PageSection, ListPage, FormPage shells.',
+    to: '/styleguide/data-display',
+    title: 'Data display',
+    description: 'CountTile, Panel, Pill, DataTable v2, MapPanel, WirePreviewTable.',
   },
   {
-    to: '/styleguide/data-table',
-    title: 'DataTable (roles A + D)',
-    description: 'Entity list and extreme-scale inventory demos.',
+    to: '/styleguide/feedback',
+    title: 'Feedback',
+    description: 'StatusBanner, StatusDot, DismissibleNotice.',
+  },
+  {
+    to: '/styleguide/overlays',
+    title: 'Overlays',
+    description: 'ModalShell, ConfirmModal, ProgressModal.',
   },
   {
     to: '/styleguide/membership',
-    title: 'Membership (roles B + C)',
-    description: 'AvailableItemPicker, SelectedItemList, and paired pick-members demo.',
+    title: 'Membership',
+    description: 'MembershipPanel, AddMembersScreen, pool rows.',
   },
   {
-    to: '/styleguide/controls',
-    title: 'Controls',
-    description: 'Gradient segments, pills, buttons, EmptyState, Modal, SoftWarning.',
+    to: '/styleguide/navigation',
+    title: 'Navigation',
+    description: 'AppShell, ContextualStrip, EditorHeader, StickyFooter, BottomTabBar.',
+  },
+  {
+    to: '/styleguide/containers',
+    title: 'Containers',
+    description: 'Panel (default + danger) for section blocks.',
+  },
+  {
+    to: '/styleguide/patterns',
+    title: 'Patterns',
+    description: 'FacetBar, build list cards, NextPassCard.',
   },
 ] as const;
 
 export default function StyleguideIndexPage() {
   return (
-    <Page width="default">
-      <PageHeader
-        title="UI styleguide"
-        description="Hidden dev hub — demos shared kit primitives. Not linked from navigation. See list-kit-roles.md for A/B/C/D."
-      />
+    <StyleguidePageShell
+      title="Design system"
+      description="Interactive component kit for Codeplug Studio. Narrow the viewport to check mobile behaviour."
+    >
       <Stack gap="md">
-        <Text size="sm" c="dimmed">
-          Role legend: <strong>A</strong> entity list · <strong>B</strong> member picker ·{' '}
-          <strong>C</strong> membership list · <strong>D</strong> extreme inventory (same face as
-          A).
-        </Text>
         {SECTIONS.map((section) => (
           <Text key={section.to} size="sm">
             <Link to={section.to}>{section.title}</Link> — {section.description}
           </Text>
         ))}
       </Stack>
-    </Page>
+    </StyleguidePageShell>
   );
 }

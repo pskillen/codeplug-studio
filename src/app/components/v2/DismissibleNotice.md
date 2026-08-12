@@ -4,7 +4,7 @@ Chrome-level inline dismissible notice — single-line, no re-show once dismisse
 
 ## Purpose
 
-Non-blocking session/drift notices (e.g. Drive session expired, dangling reference warnings shown inline in chrome). Distinct from the page-level persistent `StatusBanner`, which is a bordered card and doesn't dismiss. Adapts `ui/SoftWarning`'s tone/dismiss shape as a new independent component — `SoftWarning` itself is untouched.
+Non-blocking session/drift notices (e.g. Drive session expired, dangling reference warnings shown inline in chrome). Distinct from the page-level persistent `StatusBanner`, which is a bordered card and doesn't dismiss. Replaces the retired v1 `SoftWarning` tone/dismiss shape.
 
 ## Props
 
@@ -31,7 +31,7 @@ import { DesignSystemV2Provider, DismissibleNotice } from '@app/components/v2';
 
 - Must render inside `DesignSystemV2Provider`.
 - Internal `dismissed` state — renders `null` once dismissed. **No re-show prop or API** — a dismissed notice stays gone until the component remounts.
-- Live demos: `/styleguide/v2/feedback`
+- Live demos: `/styleguide/feedback`
 
 ## Related
 

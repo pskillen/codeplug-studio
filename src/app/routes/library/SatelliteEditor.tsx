@@ -9,7 +9,7 @@ import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import { fetchSatnogsTransmittersForNoradId } from '@integrations/satellites/satnogsClient.ts';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
-import { UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/v2/index.ts';
 import {
   Button,
   Checkbox,

@@ -34,7 +34,7 @@ import { DesignSystemV2Provider, MembershipPoolRow } from '@app/components/v2';
 
 - Must render inside `DesignSystemV2Provider`.
 - **Blocked-candidate enforcement lives on this row, not on the consumer**: when `disabled`, the checkbox is a native `disabled` input **and** `onCheck` is never wired to it, so a blocked key can never enter a consumer's staged-selection state. `AddMembersScreen` does not separately filter blocked keys because this row already guarantees it.
-- Live demos: `/styleguide/v2/membership`
+- Live demos: `/styleguide/membership`
 
 ## Related
 

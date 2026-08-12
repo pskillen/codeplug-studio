@@ -1,0 +1,46 @@
+.page {
+  padding: var(--dsv2-page-padding-y) var(--dsv2-page-padding-x);
+  max-width: 960px;
+  min-width: 0;
+}
+
+.back {
+  margin: 0 0 12px;
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.back a {
+  color: var(--dsv2-text-secondary);
+  text-decoration: none;
+}
+
+.back a:hover {
+  color: var(--dsv2-text-primary);
+}
+
+.title {
+  font-size: var(--dsv2-font-heading-lg);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 4px;
+}
+
+.description {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0 0 20px;
+  line-height: 1.45;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-6);
+}
+
+.sectionDescription {
+  margin: 0 0 12px;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+  line-height: 1.45;
+}

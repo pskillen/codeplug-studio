@@ -1,6 +1,6 @@
 import type { TablerIcon } from '@tabler/icons-react';
 import { IconId } from '@tabler/icons-react';
-import type { BadgeCardBadge } from '../components/ui/BadgeCard.tsx';
+import type { BadgeCardBadge } from '../lib/badgeCardTypes.ts';
 
 export interface ContactDataSource {
   id: string;

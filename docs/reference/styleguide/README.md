@@ -5,7 +5,7 @@ Contributor and agent reference for **how we build UI** in Codeplug Studio — w
 This is **not** user-facing help copy. For wording aimed at operators, use [help writing styleguide](../writing-styleguide/help-writing-styleguide.md). For value formatting (frequencies, pills, icons), see [display.md](display.md) in this folder.
 
 **Tracking:** [#465](https://github.com/pskillen/codeplug-studio/issues/465) · Parent [#52](https://github.com/pskillen/codeplug-studio/issues/52)  
-**Interactive demos:** `/styleguide/*` (v1 kit) and `/styleguide/v2/*` (design-system v2 preview, [#916](https://github.com/pskillen/codeplug-studio/issues/916)) — both are dev-only and unlinked from main nav. This doc is the written contract for v1 list-kit roles; v2 component behaviour lives in [design-system-v2](../../features/design-system-v2/README.md) and `src/app/components/v2/*.md` sidecars.
+**Interactive demos:** `/styleguide/*` — design-system v2 kit under `DesignSystemV2Provider` ([#916](https://github.com/pskillen/codeplug-studio/issues/916), promoted in [#927](https://github.com/pskillen/codeplug-studio/issues/927)). Dev-only and unlinked from main nav. Component behaviour and sidecars: [design-system-v2](../../features/design-system-v2/README.md) and `src/app/components/v2/*.md`.
 
 ## When to read this
 
@@ -23,38 +23,41 @@ This is **not** user-facing help copy. For wording aimed at operators, use [help
 | [lists-and-ordering.md](lists-and-ordering.md)                              | Roles A/B/C/D, `reorderMode` / `storedOrder`, permanent Sort…, gold references |
 | [display.md](display.md)                                                    | Frequencies, bands, modes, icons, two-section nav                              |
 | [list-kit-roles.md](../../features/app-shell/list-kit-roles.md)             | Surface → role inventory (tier 1 feature deep dive)                            |
-| [data-table.md](../../features/app-shell/data-table.md)                     | DataTable props, list prefs, virtualisation                                    |
+| [data-table.md](../../features/app-shell/data-table.md)                     | v2 `DataTable` props, list prefs, virtualisation                               |
+| [design-system-v2](../../features/design-system-v2/README.md)               | Theme, component map, implementation status                                    |
 | [help writing styleguide](../writing-styleguide/help-writing-styleguide.md) | Operator-facing prose                                                          |
 
 ## Common UI categories
 
 Name the job first, then pick a shell.
 
-| Category                   | Job                                              | Typical shell                                              | Gold reference                                                 |
-| -------------------------- | ------------------------------------------------ | ---------------------------------------------------------- | -------------------------------------------------------------- |
-| **Entity inventory**       | Browse / filter / open library or build entities | **A** — `DataTable` `variant="list"`                       | Library → Channels                                             |
-| **Extreme inventory**      | Same look as A; very large N                     | **D** — `DataTable` `scale="extreme"`                      | Library → Contacts (digital)                                   |
-| **Agreed-order inventory** | List’s job is export / model order               | **A** + `reorderMode` (+ arrows / Sort…)                   | Library → Zones                                                |
-| **Membership pair**        | Curate ordered members of a container            | **B** + **C** — `AvailableItemPicker` + `SelectedItemList` | Zones → Edit members; Build → Zones → Members (per-row arrows) |
-| **Embedded inventory**     | Compact table inside a form / wizard             | **A** — `DataTable` `variant="embedded"`                   | Channel set preview; repeater results                          |
-| **Entity form**            | Create / edit one entity                         | `FormPage` + `PageSection`                                 | Channel / zone editors                                         |
-| **List page chrome**       | Title + intro + table                            | `ListPage`                                                 | Entity list routes                                             |
-| **Specialised**            | Diff matrices, CPS spreadsheets, config grids    | Keep custom — document why                                 | Field-diff; export resolution; CPS CSV                         |
+| Category                   | Job                                              | Typical shell                                             | Gold reference                                |
+| -------------------------- | ------------------------------------------------ | --------------------------------------------------------- | --------------------------------------------- |
+| **Entity inventory**       | Browse / filter / open library or build entities | **A** — v2 `DataTable` `variant="list"`                   | Library → Channels                            |
+| **Extreme inventory**      | Same look as A; very large N                     | **D** — v2 `DataTable` `scale="extreme"`                  | Library → Contacts (digital)                  |
+| **Agreed-order inventory** | List's job is export / model order               | **A** + `reorderMode` (+ arrows / Sort…)                  | Library → Zones                               |
+| **Membership**             | Curate ordered members of a container            | **B** + **C** — `MembershipPanel` + `AddMembersScreen`    | Zones → Edit members; RGL / scan list editors |
+| **Embedded inventory**     | Compact table inside a form / wizard             | **A** — v2 `DataTable` `variant="embedded"`               | Channel set preview; repeater results         |
+| **Entity form**            | Create / edit one entity                         | `EditorHeader` + `Panel` sections (or `FormPage` holdout) | Channel / zone editors                        |
+| **List page chrome**       | Title + intro + table                            | `LibraryInventoryHeader` + v2 list chrome                 | Entity list routes                            |
+| **Specialised**            | Diff matrices, CPS spreadsheets, config grids    | Keep custom — document why                                | Field-diff; export resolution; CPS CSV        |
 
 Do **not** invent a fifth list look-and-feel for ordinary inventory. Prefer kit shells.
+
+**Holdout:** `ZoneMemberOrderSection` still uses v1 `SelectedItemList` for wire-order override reorder — see [#1097](https://github.com/pskillen/codeplug-studio/issues/1097).
 
 ## Decision tree (lists)
 
 ```text
 Is this a membership of a container (zone, scan list, …)?
-  yes → B (pool) + C (ordered members). Role C = reorder mode only.
+  yes → MembershipPanel + AddMembersScreen (B pool + C members).
   no ↓
 
 Is cardinality extreme (contacts-scale, 10k+)?
   yes → D (DataTable scale="extreme", cheap cells).
   no ↓
 
-Does the list’s agreed order mutate the model (zone order, memory slots)?
+Does the list's agreed order mutate the model (zone order, memory slots)?
   yes → A + reorderMode (+ consumer arrows / Sort…). Not temporary column sorts.
   no ↓
 
@@ -71,22 +74,22 @@ Details and prop names: [lists-and-ordering.md](lists-and-ordering.md).
 
 ### Permanent Sort…
 
-| Rule                         | Detail                                                                                                  |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **Control**                  | `MembershipSortMenu` — confirm dialog; **rewrites** model order                                         |
-| **Label**                    | Name the noun: **Sort zones…**, **Sort channels…** — not bare **Sort…** when the entity is clear        |
-| **Placement (list pages)**   | Left-aligned `Group` **above** the `DataTable` (see Zones list)                                         |
-| **Placement (membership C)** | `SelectedItemList` `toolbar` — rendered **above** the scroll body (same visual band as Zones list Sort) |
-| **Not**                      | Temporary browse sort; do not invent per-page sort chrome                                               |
+| Rule                         | Detail                                                                                               |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Control**                  | `MembershipSortMenu` — confirm dialog; **rewrites** model order                                      |
+| **Label**                    | Name the noun: **Sort zones…**, **Sort channels…** — not bare **Sort…** when the entity is clear     |
+| **Placement (list pages)**   | Left-aligned `Group` **above** the `DataTable` (see Zones list)                                      |
+| **Placement (membership C)** | `MembershipPanel` toolbar — rendered **above** the scroll body (same visual band as Zones list Sort) |
+| **Not**                      | Temporary browse sort; do not invent per-page sort chrome                                            |
 
 Permanent Sort… is distinct from DataTable column headers (browse) and from `storedOrder` restore (hybrid browse).
 
 ### Remove from list vs delete entity
 
-| Action                     | Icon        | Style                                                      | When                                                       |
-| -------------------------- | ----------- | ---------------------------------------------------------- | ---------------------------------------------------------- |
-| **Remove from membership** | `IconTrash` | `ActionIcon` `subtle` / `red` / `sm`, size `ICON_SIZE_NAV` | Zone / scan member rows — leaves the entity in the library |
-| **Delete entity**          | `IconTrash` | Same ActionIcon styling via `EntityListDeleteAction`       | Library list rows — deletes the entity (confirm flow)      |
+| Action                     | Icon        | Style                                     | When                                                       |
+| -------------------------- | ----------- | ----------------------------------------- | ---------------------------------------------------------- |
+| **Remove from membership** | `IconTrash` | `RowActionIcon` / subtle red              | Zone / scan member rows — leaves the entity in the library |
+| **Delete entity**          | `IconTrash` | Same styling via `EntityListDeleteAction` | Library list rows — deletes the entity (confirm flow)      |
 
 Prefer trash over `IconX` for membership remove so chrome matches entity lists. Aria / tooltip should say **Remove from …**, not **Delete**, when the entity survives.
 
@@ -99,30 +102,30 @@ Prefer trash over `IconX` for membership remove so chrome matches entity lists. 
 
 - **Sentence case** for ordinary headings and buttons ([help writing styleguide](../writing-styleguide/help-writing-styleguide.md)).
 - Established product terms may keep conventional capitals in titles (e.g. **Receive Group Lists**, **Edit Receive Group List**, **Back to Receive Group Lists**).
-- Introduce app jargon in plain language in list/editor subtitles aimed at operators — not contributor field names (`Zone.order`, “reorder mode”).
+- Introduce app jargon in plain language in list/editor subtitles aimed at operators — not contributor field names (`Zone.order`, "reorder mode").
 
 ### List page intro copy
 
-Operator-facing: what the page does and how to use Sort / arrows / filters. Avoid schema and kit jargon. Lead with the outcome (“Zones appear on your radio in this order”).
+Operator-facing: what the page does and how to use Sort / arrows / filters. Avoid schema and kit jargon. Lead with the outcome ("Zones appear on your radio in this order").
 
 ### Filters and reorder
 
-When a find-in-list or name filter is active, **disable reorder** (drag, arrows, permanent Sort when it would confuse filtered order). Tell the operator why (orange hint on Zones list; C `reorderDisabled` + hint text).
+When a find-in-list or name filter is active, **disable reorder** (drag, arrows, permanent Sort when it would confuse filtered order). Tell the operator why (orange hint on Zones list; membership `reorderDisabled` + hint text).
 
 ## Page shells
 
-| Shell         | Use                                                                                |
-| ------------- | ---------------------------------------------------------------------------------- |
-| `ListPage`    | Top-level entity inventories                                                       |
-| `FormPage`    | Entity create/edit; description slot often holds **← Back to …**                   |
-| `PageSection` | Grouped blocks inside forms **and** list pages when a secondary job needs a border |
-| Section nav   | Per-area secondary nav — registry titles should match list page titles             |
+| Shell                                     | Use                                                                                                                  |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `LibraryInventoryHeader` + v2 list chrome | Top-level entity inventories                                                                                         |
+| `EditorHeader` + `Panel`                  | Entity create/edit; back crumb in header                                                                             |
+| `FormPage` (holdout)                      | Build settings and some loading shells — migrate in [#1097](https://github.com/pskillen/codeplug-studio/issues/1097) |
+| Section nav                               | Per-area secondary nav — registry titles should match list page titles                                               |
 
-**Maps and membership:** Put map + location controls in a titled `PageSection` (e.g. **Map**) below the primary `DataTable` / form — do not leave them loose in the same stack as the table so chrome bleeds across jobs. On B+C membership editors, wrap **In this…** (C) and **Other…** (B) each in `PageSection` so the two pools read as distinct blocks. Gold: Library → Channels / Zones lists; Zones → Edit (Members + Map); Scan list edit.
+**Maps and membership:** Put map + location controls in a titled `Panel` (e.g. **Map**) below the primary `DataTable` / form — do not leave them loose in the same stack as the table so chrome bleeds across jobs. On membership editors, **In this…** (C) and pool add (B) use `MembershipPanel` + `AddMembersScreen`. Gold: Library → Channels / Zones lists; Zones → Edit (Members + Map); Scan list edit.
 
 Layout of primary + section nav: [display.md — Two-section navigation](display.md#two-section-navigation).
 
-New reusable pieces under `src/app/components/` need a sidecar `.md` and preferably a `/styleguide` demo ([#199](https://github.com/pskillen/codeplug-studio/issues/199) pattern).
+New reusable pieces under `src/app/components/v2/` need a sidecar `.md` and preferably a `/styleguide` demo ([#199](https://github.com/pskillen/codeplug-studio/issues/199) pattern).
 
 ## Specialised outliers (keep specialised)
 
@@ -143,7 +146,8 @@ UI conventions live in `src/app/` and this reference. Do not push vendor CPS col
 
 ## Related
 
-- Interactive kit: `/styleguide`, `/styleguide/data-table`, `/styleguide/membership`, `/styleguide/layout`, `/styleguide/controls`
+- Interactive kit: `/styleguide`, `/styleguide/forms`, `/styleguide/data-display`, `/styleguide/membership`, `/styleguide/navigation`, `/styleguide/patterns`, `/styleguide/containers`
+- Legacy `/styleguide/v2/*` redirects to `/styleguide/*`
 - [display.md](display.md) — frequencies, pills, icons, nav chrome
 - App shell hub: [docs/features/app-shell/README.md](../../features/app-shell/README.md)
-- Alerts colours: [alerts.md](../../features/app-shell/alerts.md)
+- Retained `ui/*` holdouts: [#1097](https://github.com/pskillen/codeplug-studio/issues/1097)

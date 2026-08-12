@@ -4,7 +4,7 @@ CSS-grid data table — the design-system-v2 port of the mk2 DS `DataTable` spec
 
 ## Purpose
 
-The full-capability list/detail table used across library lists, wire preview, and directory search. This is a **new, independent** implementation living under `v2/` — it coexists with `components/ui/DataTable` (still reused as-is by existing v1/mixed screens) until a later migration consolidates call sites. See [datatable-capability-inventory.md](../../../../tmp/design-system-prep/datatable-capability-inventory.md) for the full requirements trace.
+The full-capability list/detail table used across library lists, wire preview, builds, and directory search. Sole product `DataTable` after v1 retire ([#927](https://github.com/pskillen/codeplug-studio/issues/927)). See [datatable-capability-inventory.md](../../../../tmp/design-system-prep/datatable-capability-inventory.md) for the full requirements trace.
 
 ## Props (core)
 
@@ -42,7 +42,7 @@ The full-capability list/detail table used across library lists, wire preview, a
 | `onReorder`   | `(nextRows: T[]) => void` | Called by both drag and bulk-toolbar moves with the recomputed row order                                    |
 | `bulkReorder` | `boolean`                 | Adds Move up/down to the selection toolbar. Requires `selectable` + `reorderMode`                           |
 
-Per-row reorder is a **grip drag handle** (`SelectedItemDragHandle`, the same primitive `ShuttleRow` uses), not up/down buttons — reusing the generic `DataTableBulkReorderProvider`/`DataTableBulkReorderSortable` dnd-kit wrapper and `reorderKeysByDrag`/`reorderSelectedKeys` from `@core/domain/zoneOrder.ts` (the same algorithms `components/ui/DataTable`'s bulk-reorder drag uses — not reimplemented). Dragging a selected row moves the whole selected block together. The selection toolbar additionally exposes **Move up/down buttons** for reordering the current selection without dragging (keyboard/non-pointer path), per the capability doc's "up/down (optionally + drag handle)" — both mechanisms call the same `onReorder`. Order numbering/dragging is top-level only; nested child rows and parent (has-children) rows don't reorder, matching the capability doc's "non-reorderable parents."
+Per-row reorder is a **grip drag handle** (`SelectedItemDragHandle`), reusing the generic `DataTableBulkReorderProvider`/`DataTableBulkReorderSortable` dnd-kit wrapper and `reorderKeysByDrag`/`reorderSelectedKeys` from `@core/domain/zoneOrder.ts`. Dragging a selected row moves the whole selected block together.
 
 ## Props (nesting, scale, column visibility, row activate)
 
@@ -59,7 +59,7 @@ Per-row reorder is a **grip drag handle** (`SelectedItemDragHandle`, the same pr
 | `getRowVariant`                             | `(row: T) => 'nestParent' \| 'active' \| undefined` | `'nestParent'` quiet background; `'active'` accent tint for live in-progress rows (e.g. above-horizon passes) |
 | `mobileCard`                                | `(row: T) => ReactNode`                             | Replaces per-column grid cells with this card render on narrow viewports — see below                          |
 
-Column-level `hideable`/`defaultVisible`/`hideOnMobile` live on `DataTableColumn`. Mobile collapse uses `useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY)` (viewport-width based, matching the existing `components/ui/DataTable` convention) rather than a per-instance `ResizeObserver` — a deliberate deviation from the DS bundle's approach for consistency with how this codebase already solves the same problem. The column-visibility toggle is a small self-contained dropdown (not Mantine `Popover`) — `Popover.Target` requires a ref-forwarding child and `v2/Button` doesn't forward refs, so a custom absolutely-positioned panel was simpler and more testable than fixing that dependency chain.
+Column-level `hideable`/`defaultVisible`/`hideOnMobile` live on `DataTableColumn`. Mobile collapse uses `useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY)` (viewport-width based) rather than a per-instance `ResizeObserver`.
 
 ### Mobile card rows
 
@@ -94,7 +94,7 @@ import { DataTable, DesignSystemV2Provider } from '@app/components/v2';
 - Sort cycles asc → desc → unsorted (original `rows` order) per header click.
 - Lead columns (nested expander, checkbox) use a dedicated `.leadCell` style (tight, symmetric padding) rather than the regular 16px `.dataCell`/`.headerCell` padding, which doesn't leave room for icon/control-only content in a narrow column.
 - The table shell uses `overflow: auto` with touch momentum scrolling. Flexible columns default to `minmax(8rem, 1fr)` so wide layouts scroll horizontally on mobile instead of crushing every column ([#962](https://github.com/pskillen/codeplug-studio/issues/962)). On narrow viewports, `variant="list"` tables bleed the `.table` shell to the viewport edge (filters and titles above stay inset) ([#1024](https://github.com/pskillen/codeplug-studio/issues/1024)). Prefer `hideOnMobile` / column visibility for intentional collapse; when columns stay visible, horizontal swipe must work.
-- Live demos: `/styleguide/v2/data-display`
+- Live demos: `/styleguide/data-display`
 
 ## Related
 

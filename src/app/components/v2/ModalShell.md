@@ -40,7 +40,7 @@ import { DesignSystemV2Provider, ModalShell } from '@app/components/v2';
 - Not dismissible while `dismissible={false}` — escape, backdrop click, and the close button all become no-ops.
 - `inline` skips the Modal portal/overlay entirely — used for embedding the same panel markup elsewhere (e.g. a page section) rather than as a true dialog.
 - Portals into `.dsv2-scope` (`portalProps={{ target: DSV2_SCOPE_SELECTOR }}`), not Mantine's default `document.body` target — `--dsv2-*` custom properties are scoped to `.dsv2-scope`, so a default-portaled Modal would render its panel with no background/text colour.
-- Live demos: `/styleguide/v2/overlays`
+- Live demos: `/styleguide/overlays`
 
 ## Related
 
