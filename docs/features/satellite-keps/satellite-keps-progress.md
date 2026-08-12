@@ -156,7 +156,7 @@ Found via live user report, not part of any plan: #1037's native-yaml migration 
 
 ## #1090 — Satellite name shortening
 
-**Status:** Complete on branch `1090/pskillen/satellite-name-shortening` (PR pending)
+**Status:** Complete — [PR #1096](https://github.com/pskillen/codeplug-studio/pull/1096)
 
 - Core `shortenSatelliteNames()` + amateur catalogue fixture tests.
 - `RadioBuild.satelliteOverrides`, `SATELLITE_NAME_LENGTH`, D890 pack/preview/write wiring.
