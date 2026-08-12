@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { D890_MAP } from './constants.ts';
 import { listWriteChunks, cacheToMemoryMap, applyAtD890WriteImageToCache } from './memory.ts';
 import { AtD890uvProtocol } from './protocol.ts';
@@ -17,7 +16,7 @@ import {
   enableAtD890AutoWriteAck,
 } from './__fixtures__/scriptedPipe.ts';
 import { labelForAtD890SentinelId } from './sentinelVerify.ts';
-import { AT_D890_MAP_SIZE, AT_D890_SAFE_SKIP_WRITE_ADDR } from './constants.ts';
+import { AT_D890_SAFE_SKIP_WRITE_ADDR } from './constants.ts';
 import { encodeBcdFrequencyHz } from './bcd.ts';
 import { setBitmapBit } from './bitmap.ts';
 import { channelPrimaryAddress, channelSecondaryAddress } from './memory.ts';
