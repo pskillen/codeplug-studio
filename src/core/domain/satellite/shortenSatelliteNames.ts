@@ -373,9 +373,7 @@ export function shortenSatelliteNames(
 
     const suggestedFamiliar =
       familiarAssigned.get(input.id) ??
-      assignFromLadder([input], parsedById, familiarLadders, maxLength, new Set()).get(
-        input.id,
-      ) ??
+      assignFromLadder([input], parsedById, familiarLadders, maxLength, new Set()).get(input.id) ??
       generatedShortName;
 
     if (override && fits(override, maxLength)) {

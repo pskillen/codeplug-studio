@@ -214,9 +214,11 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
 
   it('passes build satelliteOverrides to the preview function', async () => {
     const previewSpy = vi.fn(
-      (_satellites: readonly Satellite[], _options?: { satelliteOverrides?: unknown[] }) => [
-        previewEntry({ uplinkHz: null, downlinkHz: null }),
-      ],
+      (satellites: readonly Satellite[], options?: { satelliteOverrides?: unknown[] }) => {
+        void satellites;
+        void options;
+        return [previewEntry({ uplinkHz: null, downlinkHz: null })];
+      },
     );
     kepsPreviewStub = previewSpy;
     try {

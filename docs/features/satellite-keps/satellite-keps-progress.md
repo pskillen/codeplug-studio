@@ -158,10 +158,10 @@ Found via live user report, not part of any plan: #1037's native-yaml migration 
 
 **Status:** Complete — [PR #1096](https://github.com/pskillen/codeplug-studio/pull/1096)
 
-- Core `shortenSatelliteNames()` + amateur catalogue fixture tests.
-- `RadioBuild.satelliteOverrides`, `SATELLITE_NAME_LENGTH`, D890 pack/preview/write wiring.
-- Build **Satellite keps** tab **Wire names** panel + `SatelliteWireNameOverrideInput` (Default / Reset).
-- Docs: [name-shortening.md](name-shortening.md), hub + limits reference updates.
+- Core `shortenSatelliteNames()` + `resolveSatelliteTransmitterWriteNames()` + collision helper + tests.
+- `RadioBuild.satelliteOverrides` keyed by transmitter id (full encoded field); D890 pack/preview/write.
+- Inline encoded-name editor on nested preview (`SatelliteEncodedNameCell`); Familiar/OSCAR suggestions; duplicate warning.
+- Docs: [name-shortening.md](name-shortening.md), hub + component sidecars.
 
 ---
 

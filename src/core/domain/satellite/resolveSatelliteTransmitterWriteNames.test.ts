@@ -24,7 +24,12 @@ function tx(id: string, label: string): SatelliteTransmitter {
   };
 }
 
-function sat(id: string, name: string, noradId: number, transmitters: SatelliteTransmitter[]): Satellite {
+function sat(
+  id: string,
+  name: string,
+  noradId: number,
+  transmitters: SatelliteTransmitter[],
+): Satellite {
   return {
     id,
     projectId: 'p1',
@@ -79,10 +84,7 @@ describe('resolveSatelliteTransmitterWriteNames', () => {
   });
 
   it('uses transmitter-keyed override as full encoded field', () => {
-    const satellite = sat('s1', 'ISS (ZARYA)', 25544, [
-      tx('t1', 'FM'),
-      tx('t2', 'Voice'),
-    ]);
+    const satellite = sat('s1', 'ISS (ZARYA)', 25544, [tx('t1', 'FM'), tx('t2', 'Voice')]);
     const result = resolveSatelliteTransmitterWriteNames(
       [
         { satellite, transmitter: satellite.transmitters[0]! },

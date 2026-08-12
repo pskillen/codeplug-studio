@@ -74,7 +74,7 @@ type SatellitePreviewParentRow = {
   kind: 'parent';
   id: string;
   satelliteName: string;
-  children: SatellitePreviewChildRow[];
+  children: SatellitePreviewRow[];
 };
 
 type SatellitePreviewChildRow = SatelliteWritePreviewEntry & {
@@ -115,17 +115,14 @@ export default function BuildSatelliteKepsPage() {
     void run();
   }, []);
 
-  const setTransmitterWireName = useCallback(
-    (transmitterId: string, wireName: string) => {
-      void persistBuild((current) =>
-        buildService.withWireNameOverride(current, 'satelliteOverrides', transmitterId, wireName),
-      );
-      setEditingTransmitterId(null);
-    },
-    [persistBuild],
-  );
-
   const [editingTransmitterId, setEditingTransmitterId] = useState<string | null>(null);
+
+  function setTransmitterWireName(transmitterId: string, wireName: string) {
+    void persistBuild((current) =>
+      buildService.withWireNameOverride(current, 'satelliteOverrides', transmitterId, wireName),
+    );
+    setEditingTransmitterId(null);
+  }
 
   const sessionRef = useRef<RadioSession | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -200,7 +197,7 @@ export default function BuildSatelliteKepsPage() {
     [kepsPreview, enabledSatellites, build.satelliteOverrides],
   );
 
-  const previewTreeRows = useMemo<SatellitePreviewParentRow[]>(() => {
+  const previewTreeRows = useMemo((): SatellitePreviewRow[] => {
     const parents: SatellitePreviewParentRow[] = [];
     const parentById = new Map<string, SatellitePreviewParentRow>();
     for (const entry of previewEntries) {
@@ -290,8 +287,7 @@ export default function BuildSatelliteKepsPage() {
     [],
   );
 
-  const previewColumns = useMemo<DataTableColumn<SatellitePreviewRow>[]>(
-    () => [
+  const previewColumns: DataTableColumn<SatellitePreviewRow>[] = [
       {
         key: 'name',
         header: 'Satellite',
@@ -338,9 +334,7 @@ export default function BuildSatelliteKepsPage() {
             ? '—'
             : `${(r.downlinkHz / 1e6).toFixed(4)} MHz`,
       },
-    ],
-    [editingTransmitterId, setTransmitterWireName, transmitterOverrides],
-  );
+  ];
 
   function onProgress(p: ProgressUpdate) {
     setPhase('transfer');

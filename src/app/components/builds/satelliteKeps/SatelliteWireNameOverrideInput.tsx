@@ -98,14 +98,20 @@ export function SatelliteWireNameOverrideInput({
       </Group>
       <Text size="xs" c="dimmed">
         Familiar:{' '}
-        <SuggestionButton label="Store familiar suggestion" onClick={() => applySuggestion(suggestedFamiliar)}>
+        <SuggestionButton
+          label="Store familiar suggestion"
+          onClick={() => applySuggestion(suggestedFamiliar)}
+        >
           {suggestedFamiliar}
         </SuggestionButton>
         {suggestedOscar ? (
           <>
             {' · '}
             OSCAR:{' '}
-            <SuggestionButton label="Store OSCAR suggestion" onClick={() => applySuggestion(suggestedOscar)}>
+            <SuggestionButton
+              label="Store OSCAR suggestion"
+              onClick={() => applySuggestion(suggestedOscar)}
+            >
               {suggestedOscar}
             </SuggestionButton>
           </>

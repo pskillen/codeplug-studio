@@ -8,15 +8,15 @@ Lets operators pin **Familiar** or **OSCAR** suggestions, type a custom ≤`N`-c
 
 ## Props
 
-| Prop                 | Type                         | Description                                                |
-| -------------------- | ---------------------------- | ---------------------------------------------------------- |
-| `committedWireName`  | `string`                     | Current effective encoded name                             |
-| `suggestedFamiliar`  | `string`                     | Familiar-path encoded suggestion for this transmitter      |
-| `suggestedOscar`     | `string \| null` (optional)  | OSCAR encoded suggestion when the spacecraft has Tier A    |
-| `nameLimit`          | `number`                     | Max length from radio limits (e.g. 8 on D890)              |
-| `onWireNameChange`   | `(wireName: string) => void` | Apply suggestion or custom text; `''` clears override      |
-| `onDirtyChange`      | `(dirty: boolean) => void`   | Optional dirty-state callback                              |
-| `onCancel`           | `() => void`                 | Optional cancel callback (Escape / X)                    |
+| Prop                | Type                         | Description                                             |
+| ------------------- | ---------------------------- | ------------------------------------------------------- |
+| `committedWireName` | `string`                     | Current effective encoded name                          |
+| `suggestedFamiliar` | `string`                     | Familiar-path encoded suggestion for this transmitter   |
+| `suggestedOscar`    | `string \| null` (optional)  | OSCAR encoded suggestion when the spacecraft has Tier A |
+| `nameLimit`         | `number`                     | Max length from radio limits (e.g. 8 on D890)           |
+| `onWireNameChange`  | `(wireName: string) => void` | Apply suggestion or custom text; `''` clears override   |
+| `onDirtyChange`     | `(dirty: boolean) => void`   | Optional dirty-state callback                           |
+| `onCancel`          | `() => void`                 | Optional cancel callback (Escape / X)                   |
 
 ## Behaviour
 
