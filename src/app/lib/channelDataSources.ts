@@ -7,7 +7,7 @@ import {
   IconRadio,
   IconTower,
 } from '@tabler/icons-react';
-import type { BadgeCardBadge } from '../components/ui/BadgeCard.tsx';
+import type { BadgeCardBadge } from '../lib/badgeCardTypes.ts';
 
 export interface ChannelDataSource {
   id: string;

@@ -108,18 +108,3 @@ export type {
   AddMembersScreenSearchConfig,
   AddMembersScreenSection,
 } from './AddMembersScreen.tsx';
-export {
-  ShuttleAddBar,
-  ShuttleList,
-  ShuttleListPanel,
-  ShuttlePoolHeader,
-  ShuttlePoolPanel,
-  ShuttleRow,
-} from './ShuttleList.tsx';
-export type {
-  ShuttleAddBarProps,
-  ShuttleListPanelProps,
-  ShuttlePoolHeaderProps,
-  ShuttlePoolPanelProps,
-  ShuttleRowProps,
-} from './ShuttleList.tsx';
