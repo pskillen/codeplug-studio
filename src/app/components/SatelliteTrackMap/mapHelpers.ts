@@ -113,6 +113,34 @@ export function observerDivIcon(): L.DivIcon {
 }
 
 /**
+ * Pick which world-copy offset (`-360`, `0`, or `+360`, from `worldOffsets`) to draw a single
+ * point at so it sits next to `referenceLon` — the offset minimizing `|lon + offset -
+ * referenceLon|`. Used to place the live-position marker in the same repeat as the pass track
+ * it's approaching: `duplicateSegmentsForWorldCopies` draws the track itself at all three
+ * offsets, but a `Marker` is a single point, so without this it renders at its raw (`0`-offset)
+ * longitude even when the pass track's nearby copy — the one the operator is actually looking at
+ * — sits at `-360`/`+360` (e.g. the satellite is approaching from just east of the antimeridian
+ * while the pass itself renders just west of it). Falls back to `0` (the "central" repeat) when
+ * already the closest, per #1094.
+ */
+export function chooseWorldCopyOffset(
+  lon: number,
+  referenceLon: number,
+  worldOffsets: readonly number[] = DEFAULT_WORLD_COPY_OFFSETS,
+): number {
+  let bestOffset = 0;
+  let bestDistance = Infinity;
+  for (const offset of worldOffsets) {
+    const distance = Math.abs(lon + offset - referenceLon);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestOffset = offset;
+    }
+  }
+  return bestOffset;
+}
+
+/**
  * Live-position marker icon for a satellite's current subsatellite point, tinted per-satellite
  * via `color` (expected: `colorForNoradId(noradId, <reduced alpha>)`, matching the de-emphasised
  * hue family the dotted approach track uses). Unlike `observerDivIcon`, this isn't a module-level
@@ -123,6 +151,6 @@ export function liveSatelliteDivIcon(color: string): L.DivIcon {
   return L.divIcon({
     className: classes.liveMarkerWrap,
     html: `<div class="${classes.liveMarker}" style="background:${color}"></div>`,
-    iconAnchor: [5, 5],
+    iconAnchor: [6, 6],
   });
 }

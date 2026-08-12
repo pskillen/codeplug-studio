@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LatLon } from '@core/domain/geo.ts';
 import {
+  chooseWorldCopyOffset,
   duplicateSegmentsForWorldCopies,
   splitAtAntimeridian,
   splitRingAtAntimeridian,
@@ -32,6 +33,22 @@ describe('duplicateSegmentsForWorldCopies', () => {
 
     expect(segments).toHaveLength(2);
     expect(copies).toHaveLength(6);
+  });
+});
+
+describe('chooseWorldCopyOffset', () => {
+  it('stays at the central (0) repeat when the point is already close to the reference', () => {
+    expect(chooseWorldCopyOffset(-5, -2)).toBe(0);
+  });
+
+  it('picks the east repeat (+360) when travelling so the raw point sits far west of the reference', () => {
+    // Raw point at -170, reference at 170: -170 is 340 away directly, but only 20 away as +360.
+    expect(chooseWorldCopyOffset(-170, 170)).toBe(360);
+  });
+
+  it('picks the west repeat (-360) when travelling so the raw point sits far east of the reference', () => {
+    // Raw point at 170, reference at -170: 170 is 340 away directly, but only 20 away as -360.
+    expect(chooseWorldCopyOffset(170, -170)).toBe(-360);
   });
 });
 

@@ -8,6 +8,7 @@ import { sampleGroundTrack } from '@core/domain/satelliteTracking/groundTrack.ts
 import {
   observerDivIcon,
   liveSatelliteDivIcon,
+  chooseWorldCopyOffset,
   duplicateSegmentsForWorldCopies,
   splitAtAntimeridian,
 } from './mapHelpers.ts';
@@ -25,10 +26,10 @@ const DEFAULT_ZOOM = 2;
  * orbital periods; past this, the marker still shows but no dotted track is drawn. */
 const MAX_APPROACH_SPAN_MS = 3 * 60 * 60 * 1000;
 
-/** Reduced alpha for the live marker and dotted approach track, so both read as de-emphasised
- * supporting context next to the solid AOS→LOS colour — same convention as the globe's footprint
- * paths (`colorForNoradId(noradId, 0.45)` in `buildGlobeData.ts`). */
-const LIVE_POSITION_ALPHA = 0.45;
+/** Reduced (but not too subtle — #1094 review feedback bumped this up from 0.45) alpha for the
+ * live marker and dotted approach track, so both read as de-emphasised supporting context next
+ * to the solid AOS→LOS colour without disappearing against typical basemap tiles. */
+const LIVE_POSITION_ALPHA = 0.75;
 
 export interface SelectedPass {
   satelliteName: string;
@@ -216,20 +217,40 @@ export default function SatelliteTrackMap({
     return icons;
   }, [passesToDraw]);
 
+  // Longitude of each pass's own (central, unoffset) track — the reference `liveMarkers` below
+  // snaps the live position's world-copy repeat to, so the marker sits next to the track it's
+  // approaching instead of always rendering at its raw (`0`-offset) longitude (#1094 review
+  // feedback: the dot often didn't visually "meet up with" the drawn track).
+  const referenceLonByPassKey = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const layer of trackLayers) {
+      const centralCopy = layer.rendered.find((copy) => copy.worldOffset === 0);
+      const firstPoint = centralCopy?.segment[0];
+      if (firstPoint) map.set(layer.key, firstPoint[1]);
+    }
+    return map;
+  }, [trackLayers]);
+
   const liveMarkers = useMemo(() => {
     return passesToDraw.flatMap((pass) => {
       const live = livePositions.get(String(pass.noradId));
       const icon = liveIconsByNoradId.get(pass.noradId);
       if (!live || !icon) return [];
+      const passKey = `${pass.satelliteName}:${pass.aosAt}:${pass.losAt}`;
+      const referenceLon = referenceLonByPassKey.get(passKey);
+      const offset =
+        referenceLon === undefined ? 0 : chooseWorldCopyOffset(live.position[1], referenceLon);
+      const position: LatLon =
+        offset === 0 ? live.position : [live.position[0], live.position[1] + offset];
       return [
         {
-          key: `${pass.satelliteName}:${pass.aosAt}:${pass.losAt}:live`,
-          position: live.position,
+          key: `${passKey}:live`,
+          position,
           icon,
         },
       ];
     });
-  }, [passesToDraw, livePositions, liveIconsByNoradId]);
+  }, [passesToDraw, livePositions, liveIconsByNoradId, referenceLonByPassKey]);
 
   const approachLayers = useMemo(() => {
     return passesToDraw.flatMap((pass) => {
@@ -293,7 +314,7 @@ export default function SatelliteTrackMap({
             <Polyline
               key={`${layer.key}:${copy.worldOffset}-${index}`}
               positions={copy.segment}
-              pathOptions={{ color: layer.color, weight: 1, dashArray: '4, 6' }}
+              pathOptions={{ color: layer.color, weight: 1.5, dashArray: '5, 5' }}
             />
           )),
         )}
