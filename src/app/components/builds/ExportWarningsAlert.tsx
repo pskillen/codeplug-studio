@@ -142,12 +142,7 @@ export default function ExportWarningsAlert({ warnings }: ExportWarningsAlertPro
         </Alert>
       ) : null}
       {hasInfo ? (
-        <Accordion
-          multiple
-          variant="separated"
-          defaultValue={[]}
-          data-testid="export-info-section"
-        >
+        <Accordion multiple variant="separated" defaultValue={[]} data-testid="export-info-section">
           {shortenedInfoGroups.map((group) => {
             const value = `shortened-info-${group.entityKind}-${group.maxLen}-${group.profileLabel ?? ''}`;
             return (

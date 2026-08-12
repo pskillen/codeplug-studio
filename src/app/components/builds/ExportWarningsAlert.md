@@ -6,10 +6,10 @@ Renders CPS export warning strings from `exportBuildAll` in a scannable, foldabl
 
 Splits presentation into two severity tiers so a clean successful name-shorten is never styled as a problem:
 
-| Section | Contents |
-| --- | --- |
-| **Export warnings** (yellow `Alert`) | Real problems: still-too-long after shortening, shortening disabled while over the limit, member-cap / truncation, unlinked inclusion, and other general assemble warnings |
-| **Names shortened** (neutral collapsed accordion) | Clean successful shortens (`exported as "…"` and fits the limit) — visible if the operator wants to check, never counted or framed as a warning |
+| Section                                           | Contents                                                                                                                                                                   |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Export warnings** (yellow `Alert`)              | Real problems: still-too-long after shortening, shortening disabled while over the limit, member-cap / truncation, unlinked inclusion, and other general assemble warnings |
+| **Names shortened** (neutral collapsed accordion) | Clean successful shortens (`exported as "…"` and fits the limit) — visible if the operator wants to check, never counted or framed as a warning                            |
 
 Within those sections, related lines are grouped and collapsed by default:
 

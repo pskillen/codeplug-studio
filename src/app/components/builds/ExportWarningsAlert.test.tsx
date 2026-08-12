@@ -66,7 +66,9 @@ describe('ExportWarningsAlert', () => {
     expect(infoSection).toBeInTheDocument();
 
     // Two accordion controls both match "Channel names shortened (1)" — one problem, one info
-    const channelControls = screen.getAllByRole('button', { name: /Channel names shortened \(1\)/ });
+    const channelControls = screen.getAllByRole('button', {
+      name: /Channel names shortened \(1\)/,
+    });
     expect(channelControls).toHaveLength(2);
 
     const infoChannels = channelControls.find((el) => infoSection.contains(el))!;
