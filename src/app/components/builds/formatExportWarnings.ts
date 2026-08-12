@@ -46,7 +46,10 @@ export interface FormattedExportWarnings {
   /** Orphan / unlinked inclusion lines — folded as one accordion section. */
   unlinkedGroup: UnlinkedExportGroup | null;
   memberCapGroups: MemberCapGroup[];
-  shortenedGroups: WireNameShorteningGroup[];
+  /** Real problems: still too long after shortening, or shortening disabled while over the limit. */
+  shortenedProblemGroups: WireNameShorteningGroup[];
+  /** Clean, successful shortens — no data loss, no conflict. Shown separately, never as a "warning." */
+  shortenedInfoGroups: WireNameShorteningGroup[];
 }
 
 const UNLINKED_EXPORT_RE =
@@ -344,10 +347,29 @@ export function formatExportWarnings(warnings: string[]): FormattedExportWarning
       return (a.profileLabel ?? '').localeCompare(b.profileLabel ?? '');
     });
 
+  const shortenedProblemGroups: WireNameShorteningGroup[] = [];
+  const shortenedInfoGroups: WireNameShorteningGroup[] = [];
+  for (const group of shortenedGroups) {
+    const problemItems = group.items.filter((item) => item.stillExceedsLimit);
+    const infoItems = group.items.filter((item) => !item.stillExceedsLimit);
+    if (problemItems.length > 0) {
+      shortenedProblemGroups.push({ ...group, items: problemItems });
+    }
+    if (infoItems.length > 0) {
+      shortenedInfoGroups.push({ ...group, items: infoItems });
+    }
+  }
+
   const unlinkedGroup: UnlinkedExportGroup | null =
     unlinkedItems.length > 0 ? { title: UNLINKED_GROUP_TITLE, items: unlinkedItems } : null;
 
-  return { general, unlinkedGroup, memberCapGroups, shortenedGroups };
+  return {
+    general,
+    unlinkedGroup,
+    memberCapGroups,
+    shortenedProblemGroups,
+    shortenedInfoGroups,
+  };
 }
 
 export function wireNameShorteningIntro(group: WireNameShorteningGroup): string {

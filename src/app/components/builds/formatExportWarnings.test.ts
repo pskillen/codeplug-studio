@@ -21,7 +21,8 @@ describe('formatExportWarnings', () => {
     });
     expect(result.general).toEqual(['Build exceeded profile channel cap']);
     expect(result.memberCapGroups).toEqual([]);
-    expect(result.shortenedGroups).toEqual([]);
+    expect(result.shortenedProblemGroups).toEqual([]);
+    expect(result.shortenedInfoGroups).toEqual([]);
   });
 
   it('groups zone member cap and scan list truncation warnings', () => {
@@ -56,14 +57,15 @@ describe('formatExportWarnings', () => {
 
     expect(result.general).toEqual([]);
     expect(result.unlinkedGroup).toBeNull();
-    expect(result.shortenedGroups).toHaveLength(2);
-    expect(result.shortenedGroups[0]?.title).toBe('Channel names shortened');
-    expect(result.shortenedGroups[0]?.items).toEqual([
+    expect(result.shortenedProblemGroups).toEqual([]);
+    expect(result.shortenedInfoGroups).toHaveLength(2);
+    expect(result.shortenedInfoGroups[0]?.title).toBe('Channel names shortened');
+    expect(result.shortenedInfoGroups[0]?.items).toEqual([
       { original: 'Aberdeen Approach', exported: 'Aber Approach', stillExceedsLimit: false },
       { original: 'Edinburgh Approach', exported: 'Edinb Approach', stillExceedsLimit: false },
     ]);
-    expect(result.shortenedGroups[1]?.title).toBe('Talk group names shortened');
-    expect(result.shortenedGroups[1]?.items).toEqual([
+    expect(result.shortenedInfoGroups[1]?.title).toBe('Talk group names shortened');
+    expect(result.shortenedInfoGroups[1]?.items).toEqual([
       {
         original: 'Australia, New Zealand',
         exported: 'Aus+NZ',
@@ -72,11 +74,31 @@ describe('formatExportWarnings', () => {
     ]);
   });
 
+  it('splits mixed clean and still-too-long shortenings for the same group key', () => {
+    const result = formatExportWarnings([
+      'Channel wire name "Aberdeen Approach" exceeds 16 characters for Anytone AT-D890UV; exported as "Aber Approach"',
+      'Channel wire name "This Name Remains Far Too Long After Shortening" exceeds 16 characters for Anytone AT-D890UV; shortened to "This Name Remains Far Too Long After Shortening" still exceeds limit',
+    ]);
+
+    expect(result.shortenedInfoGroups).toHaveLength(1);
+    expect(result.shortenedInfoGroups[0]?.items).toEqual([
+      { original: 'Aberdeen Approach', exported: 'Aber Approach', stillExceedsLimit: false },
+    ]);
+    expect(result.shortenedProblemGroups).toHaveLength(1);
+    expect(result.shortenedProblemGroups[0]?.items).toEqual([
+      {
+        original: 'This Name Remains Far Too Long After Shortening',
+        exported: 'This Name Remains Far Too Long After Shortening',
+        stillExceedsLimit: true,
+      },
+    ]);
+  });
+
   it('builds intro copy from limit and profile label', () => {
     const result = formatExportWarnings([
       'Zone wire name "Very Long Zone Name Here" exceeds 16 characters for Anytone AT-D890UV; exported as "Short Zone"',
     ]);
-    const group = result.shortenedGroups[0]!;
+    const group = result.shortenedInfoGroups[0]!;
     expect(wireNameShorteningIntro(group)).toBe(
       'The following names were too long for the 16 character limit of Anytone AT-D890UV and were shortened on export:',
     );
