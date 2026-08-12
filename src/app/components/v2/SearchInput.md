@@ -23,7 +23,7 @@ Channels list name/callsign filter and similar list filter bars.
 
 ## Behaviour
 
-- Live demos: `/styleguide/v2/forms`
+- Live demos: `/styleguide/forms`
 
 ## Related
 

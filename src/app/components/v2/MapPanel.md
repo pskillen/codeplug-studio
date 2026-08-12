@@ -41,7 +41,7 @@ Presentational map panel matching the design-system layout: optional title + set
 - Without `children`: CSS `repeating-linear-gradient` hatch — not a live map (`role="img"`).
 - With `children`: map body uses `mapLive` styles (no hatch, no padding); Leaflet maps should pass `height="100%"`.
 - Must render inside `DesignSystemV2Provider`.
-- Live demos: `/styleguide/v2/data-display`
+- Live demos: `/styleguide/data-display`
 
 ## Related
 

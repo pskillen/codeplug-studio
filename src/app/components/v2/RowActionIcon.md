@@ -37,7 +37,7 @@ import { IconTrash } from '@tabler/icons-react';
 
 - Must render inside `DesignSystemV2Provider`.
 - Calls `event.stopPropagation()` internally before `onClick` — consumers do not need to remember this themselves when nesting inside a clickable row.
-- Live demos: `/styleguide/v2/data-display`
+- Live demos: `/styleguide/data-display`
 
 ## Related
 

@@ -25,7 +25,7 @@ When build `orderOrSlot` (or zone member layout order) differs from the library 
 
 List **Skip / Force** column: **Skip from export** for most rows; zones with library **Don't export as its own zone** show **Force export** only (red when on). Turn force off to honour the library omit.
 
-Build **contacts** wire preview debounces toolbar search (300 ms), matches **library name or callsign**, and shows a **Callsign** column for digital contacts. Large contact builds inherit shared [`DataTable`](../../src/app/components/ui/DataTable.md) virtual tbody rendering (`virtualize: 'auto'`, threshold 75 rows) for responsive scrolling.
+Build **contacts** wire preview debounces toolbar search (300 ms), matches **library name or callsign**, and shows a **Callsign** column for digital contacts. Large contact builds inherit shared [`DataTable`](../../src/app/components/v2/DataTable.md) virtual tbody rendering (`virtualize: 'auto'`, threshold 75 rows) for responsive scrolling.
 
 ## Override semantics
 

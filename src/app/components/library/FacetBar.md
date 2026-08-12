@@ -33,7 +33,7 @@ Pill chips and a two-way split toggle matching mk2 Batch 2 facet bars. Lives und
 
 ## Styleguide
 
-Interactive demo on `/styleguide/v2/patterns` (FacetBar section).
+Interactive demo on `/styleguide/patterns` (FacetBar section).
 
 ## Related
 

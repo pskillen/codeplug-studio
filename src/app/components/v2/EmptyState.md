@@ -35,7 +35,7 @@ import { DesignSystemV2Provider, EmptyState } from '@app/components/v2';
 
 - Must render inside `DesignSystemV2Provider`.
 - Centered column: circular icon badge (40×40, bordered) → title → description → optional action.
-- Live demos: `/styleguide/v2/data-display`
+- Live demos: `/styleguide/data-display`
 
 ## Related
 

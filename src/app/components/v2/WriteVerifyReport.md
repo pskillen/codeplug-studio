@@ -34,7 +34,7 @@ import { DesignSystemV2Provider, WriteVerifyReport } from '@app/components/v2';
 - Simple bordered card, no interactivity.
 - Each row composes `StatusDot` for the tone + label, with the detail right-aligned.
 - Visual shape referenced from `builds/WriteVerifyReport.tsx` for parity, but this component does not import from it or type against real domain types.
-- Live demos: `/styleguide/v2/data-display`
+- Live demos: `/styleguide/data-display`
 
 ## Related
 

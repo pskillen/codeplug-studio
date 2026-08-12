@@ -20,4 +20,4 @@ Home **Open project** panel and Summary **Import (replace active project)** pane
 
 - [FileDropzone](../v2/FileDropzone.md)
 - [native-yaml](../../../docs/features/import-export/native-yaml/README.md)
-- Legacy `YamlFileDropzone.tsx` remains until v1 retire ([#927](https://github.com/pskillen/codeplug-studio/issues/927))
+- Sidecar: [DataTable.md](../../../src/app/components/v2/DataTable.md)

@@ -43,7 +43,7 @@ Brand uses the shipped product logo (`public/branding/studio-logo.svg`) rather t
 
 - Desktop shows the tab row; mobile hides it via `showTabs={false}` and uses `BottomTabBar`.
 - Must render inside `DesignSystemV2Provider`.
-- Live demos: `/styleguide/v2/navigation`
+- Live demos: `/styleguide/navigation`
 
 ## Related
 

@@ -7,8 +7,8 @@ Deep dive for list kit roles and export / membership ordering. Hub: [README.md](
 | Role  | Name              | Shell                         | Cardinality        | Mutates agreed order?                     |
 | ----- | ----------------- | ----------------------------- | ------------------ | ----------------------------------------- |
 | **A** | Entity list       | `DataTable`                   | Hundreds–thousands | Only if `reorderMode` + consumer controls |
-| **B** | Member picker     | `AvailableItemPicker`         | High (pool)        | No — stages adds only                     |
-| **C** | Membership list   | `SelectedItemList`            | Typically &lt;100  | Yes — drag / move / permanent Sort…       |
+| **B** | Member picker     | `AddMembersScreen` / pool rows | High (pool)        | No — stages adds only                     |
+| **C** | Membership list   | `MembershipPanel` + `MembershipRow` | Typically &lt;100  | Yes — drag / move / permanent Sort…       |
 | **D** | Extreme inventory | `DataTable` `scale="extreme"` | Up to ~200k        | Same as A; prefer cheap cells             |
 
 ```text
@@ -17,7 +17,9 @@ A  Entity list
 D  Extreme inventory (A’s face, harder guts)
 ```
 
-Gold references: Channels (A), Zone member editor (B+C), digital Contacts (D), Zones list (A + `reorderMode`), Build → Zones → Members tab (C with per-row arrows).
+Gold references: Channels (A), Zone member editor (Membership B+C), digital Contacts (D), Zones list (A + `reorderMode`), Build → Zones → Members tab (C with per-row arrows).
+
+**Holdout:** `ZoneMemberOrderSection` still uses v1 `SelectedItemList` for wire-order override reorder ([#1097](https://github.com/pskillen/codeplug-studio/issues/1097)).
 
 ## Ordering toolkit
 
@@ -28,7 +30,7 @@ Prefer these names in code and docs.
 | **`reorderMode`** (alias `orderMode`) | `DataTable`                                                                             | No by itself    | List’s **only** job is agreed/export order (Zones; wire preview when order arrows present)        |
 | **Arrows / Move**                     | Consumer column or C builtins                                                           | Yes             | Reorder one step; disable while filter active                                                     |
 | **Per-row arrows (C)**                | `onMoveItem` + `SelectedItemRowMoveButtons`                                             | Yes             | Role C when selection Move alone is easy to miss (e.g. build zone Members)                        |
-| **Drag**                              | C `onReorder` + `SelectedItemDragHandle`; A `bulkReorder` + drag handle in Order column | Yes             | Membership lists; large export-order DataTables (`bulkReorder`); `reorderDisabled` while filtered |
+| **Drag**                              | C `MembershipRow` drag handle (`SelectedItemDragHandle`); A `bulkReorder` + drag handle in Order column | Yes             | Membership lists; large export-order DataTables (`bulkReorder`); `reorderDisabled` while filtered |
 | **`MembershipSortMenu`**              | Above list / C toolbar                                                                  | Yes (confirm)   | Permanent rewrite by name / callsign / …; flat-memory also **Sort selection…** (selected only)    |
 | **`ExportOrderSelectMenu`**           | Flat-memory Channels toolbar (beside Sort…)                                             | No              | Toggle-select by band / FM·AM / simplex·split before drag, Move, or Sort selection…               |
 | **`CopyOrderFromBuildMenu`**          | Flat-memory Channels toolbar (beside Select…)                                           | Yes (confirm)   | Copy memory order from another same-project `FlatMemoryList` build by library channel UUID        |
@@ -114,10 +116,12 @@ Gold: Zones → Edit, Scan list edit, Receive Group List edit (`RxGroupListMembe
 
 | Symbol                       | Path                                                   |
 | ---------------------------- | ------------------------------------------------------ |
-| `DataTable`                  | `src/app/components/ui/DataTable.tsx`                  |
-| `AvailableItemPicker`        | `src/app/components/ui/AvailableItemPicker.tsx`        |
-| `SelectedItemList`           | `src/app/components/ui/SelectedItemList.tsx`           |
-| `SelectedItemDragHandle`     | `src/app/components/ui/SelectedItemDragHandle.tsx`     |
+| `DataTable`                  | `src/app/components/v2/DataTable.tsx`                  |
+| `AddMembersScreen`           | `src/app/components/v2/AddMembersScreen.tsx`           |
+| `MembershipPanel`            | `src/app/components/v2/MembershipPanel.tsx`            |
+| `MembershipRow`              | `src/app/components/v2/MembershipRow.tsx`              |
+| `SelectedItemList`           | `src/app/components/ui/SelectedItemList.tsx` (holdout) |
+| `SelectedItemDragHandle`     | `src/app/components/v2/SelectedItemDragHandle.tsx`     |
 | `SelectedItemRowMoveButtons` | `src/app/components/ui/SelectedItemRowMoveButtons.tsx` |
 | `MembershipSortMenu`         | `src/app/components/library/MembershipSortMenu.tsx`    |
 | List prefs                   | `src/integrations/listPrefs/`                          |

@@ -24,7 +24,7 @@ Standalone bordered input or `variant="plain"` inner control inside `FormField`.
 
 ## Behaviour
 
-- Live demos: `/styleguide/v2/forms`
+- Live demos: `/styleguide/forms`
 
 ## Related
 

@@ -30,7 +30,7 @@ DMR timeslot (TS1/TS2) and similar compact exclusive choices.
 
 ## Behaviour
 
-- Live demos: `/styleguide/v2/forms`
+- Live demos: `/styleguide/forms`
 
 ## Related
 

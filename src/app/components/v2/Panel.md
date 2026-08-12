@@ -44,7 +44,7 @@ Collapsible, e.g. defaulting closed on a narrow viewport (caller decides `defaul
 - Must render inside `DesignSystemV2Provider`.
 - Title renders as `<h2>` for section semantics; when `collapsible`, the heading wraps a `<button aria-expanded>` toggle instead of plain text — the heading level doesn't change.
 - `collapsible` state is internal/uncontrolled — `defaultCollapsed` only sets the initial value; there's no controlled `collapsed`/`onCollapsedChange` pair today because no caller has needed one yet.
-- Live demos: `/styleguide/v2/containers` (danger variant, collapsible), `/styleguide/v2/data-display`
+- Live demos: `/styleguide/containers` (danger variant, collapsible), `/styleguide/data-display`
 
 ## Related
 

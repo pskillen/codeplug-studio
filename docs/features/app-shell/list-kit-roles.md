@@ -13,9 +13,9 @@ Not one mega-table. Specialised shells share filter / selection / reorder vocabu
 
 | Role  | Working name      | Shell                                                                       | Cardinality                      | Job                                                                                                                  |
 | ----- | ----------------- | --------------------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **A** | Entity list       | [`DataTable`](../../src/app/components/ui/DataTable.md)                     | High (hundreds–thousands)        | First-class entity inventory — filter, sort, persist prefs, multi-select, row/bulk actions, rich columns, virtualise |
-| **B** | Member picker     | [`AvailableItemPicker`](../../src/app/components/ui/AvailableItemPicker.md) | High (pool minus members)        | Stage candidates to add — sparse rows, filter, multi-select → add; no edit/delete/reorder of candidates              |
-| **C** | Membership list   | [`SelectedItemList`](../../src/app/components/ui/SelectedItemList.md)       | Low (typically &lt;100)          | **Reorder mode** — drag handles, move up/down, remove; permanent Sort… only; find-in-list filter                     |
+| **A** | Entity list       | [`DataTable`](../../src/app/components/v2/DataTable.md)                     | High (hundreds–thousands)        | First-class entity inventory — filter, sort, persist prefs, multi-select, row/bulk actions, rich columns, virtualise |
+| **B** | Member picker     | [`AddMembersScreen`](../../src/app/components/v2/AddMembersScreen.md) + pool rows | High (pool minus members)        | Stage candidates to add — sparse rows, filter, multi-select → add; no edit/delete/reorder of candidates              |
+| **C** | Membership list   | [`MembershipPanel`](../../src/app/components/v2/MembershipPanel.md) + [`MembershipRow`](../../src/app/components/v2/MembershipRow.md) | Low (typically &lt;100)          | **Reorder mode** — drag handles, move up/down, remove; permanent Sort… only; find-in-list filter                     |
 | **D** | Extreme inventory | `DataTable` with `scale="extreme"`                                          | Very high (up to ~200k contacts) | Same **look** as A; harder **perf contract** (always-on virtualise, cheap cells)                                     |
 
 ```text
@@ -73,11 +73,12 @@ Also fold charms from Zones list (order-mode honesty) and wire-preview lists (de
 
 | Symbol                      | Path                                                                 | Role      |
 | --------------------------- | -------------------------------------------------------------------- | --------- |
-| `DataTable`                 | `src/app/components/ui/DataTable.tsx`                                | A / D     |
-| `AvailableItemPicker`       | `src/app/components/ui/AvailableItemPicker.tsx`                      | B         |
-| `SelectedItemList`          | `src/app/components/ui/SelectedItemList.tsx`                         | C         |
+| `DataTable`                 | `src/app/components/v2/DataTable.tsx`                                | A / D     |
+| `AddMembersScreen`          | `src/app/components/v2/AddMembersScreen.tsx`                         | B         |
+| `MembershipPanel`           | `src/app/components/v2/MembershipPanel.tsx`                          | C         |
+| `SelectedItemList`          | `src/app/components/ui/SelectedItemList.tsx`                         | C holdout (wire order only — [#1097](https://github.com/pskillen/codeplug-studio/issues/1097)) |
 | List prefs / virtualisation | `src/app/lib/dataTable/`, `src/app/hooks/useListNameQuery.ts`, …     | A support |
-| Styleguide                  | `/styleguide`, `/styleguide/data-table`, `/styleguide/membership`, … | Dev demos |
+| Styleguide                  | `/styleguide`, `/styleguide/data-display`, `/styleguide/membership`, … | Dev demos |
 
 See also [data-table.md](data-table.md) for list prefs and virtualisation detail.
 
@@ -89,11 +90,13 @@ Dev-only interactive demos (unlinked from product nav):
 
 | Path                     | Contents                          |
 | ------------------------ | --------------------------------- |
-| `/styleguide`            | Index — role legend + links       |
-| `/styleguide/layout`     | Page / ListPage / FormPage shells |
-| `/styleguide/data-table` | Role A + D demos                  |
-| `/styleguide/membership` | Role B + C (+ paired demo)        |
-| `/styleguide/controls`   | Other UI kit controls             |
+| `/styleguide`            | Index — component map + links     |
+| `/styleguide/data-display` | Role A + D demos (`DataTable`)  |
+| `/styleguide/membership` | Role B + C (Membership family)  |
+| `/styleguide/forms`      | Form controls                     |
+| `/styleguide/navigation` | App chrome demos                  |
+
+Legacy `/styleguide/v2/*` redirects to the paths above.
 
 ## Implementation status
 

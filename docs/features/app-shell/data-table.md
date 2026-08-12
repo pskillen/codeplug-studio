@@ -14,8 +14,8 @@ Ported from [codeplug-tool](https://github.com/pskillen/codeplug-tool) `DataTabl
 
 | Symbol                                                           | Path                                                     | Role                                                                     |
 | ---------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `DataTable`                                                      | `src/app/components/ui/DataTable.tsx`                    | Mantine `Table` wrapper — sort, search, column visibility, virtual tbody |
-| `DataTable.md`                                                   | `src/app/components/ui/DataTable.md`                     | Component sidecar — virtual props                                        |
+| `DataTable`                                                      | `src/app/components/v2/DataTable.tsx`                    | v2 list table — sort, search, column visibility, virtual tbody, reorder |
+| `DataTable.md`                                                   | `src/app/components/v2/DataTable.md`                     | Component sidecar — virtual props, reorder, nesting                       |
 | `useVirtualDataTableRows`                                        | `src/app/lib/dataTable/useVirtualDataTableRows.ts`       | TanStack virtualizer hook for tbody windowing                            |
 | `VIRTUAL_ROW_THRESHOLD`                                          | `src/app/lib/dataTable/virtualization.ts`                | Auto-enable threshold (75 rows)                                          |
 | `useDataTableColumnVisibility`                                   | `src/app/hooks/useDataTableColumnVisibility.ts`          | Persist hideable column keys (channels)                                  |
