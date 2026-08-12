@@ -78,9 +78,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
         ? new BroadcastChannel(`${dbName}:persistence`)
         : null;
     this.directoryChannel =
-      typeof BroadcastChannel !== 'undefined'
-        ? new BroadcastChannel(`${dbName}:directory`)
-        : null;
+      typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(`${dbName}:directory`) : null;
     if (this.channel) {
       this.channel.onmessage = (event: MessageEvent<PersistenceChange>) => {
         this.notifyLocal(event.data);

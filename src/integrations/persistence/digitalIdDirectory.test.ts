@@ -103,7 +103,9 @@ describe.each(implementations)('DigitalIdDirectory — %s', (_label, makeStore) 
     await store.replaceProject(meta.projectId, { meta });
 
     expect(await store.countDigitalIdDirectoryEntries(meta.projectId)).toBe(1);
-    expect(await store.getDigitalIdDirectoryEntry(meta.projectId, 99)).toMatchObject({ name: 'Shadow' });
+    expect(await store.getDigitalIdDirectoryEntry(meta.projectId, 99)).toMatchObject({
+      name: 'Shadow',
+    });
     expect(await store.listChannels(meta.projectId)).toHaveLength(0);
   });
 
