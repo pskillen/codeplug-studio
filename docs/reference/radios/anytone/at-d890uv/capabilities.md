@@ -24,30 +24,62 @@ Inclusive MHz bands used when filtering build lists and export ([#612](https://g
 
 Source: Studio Anytone bank docs + common CPS clamps.
 
-### Satellite transmitter mode support (Studio write eligibility) — placeholder, not hardware-verified
+### Satellite transmitter mode support (Studio write eligibility) — operator-confirmed on real hardware
 
 Distinct question from the frequency-range table above: that table filters standard DMR/FM/AM
 **channel** RF band and TX eligibility, not which **demodulation modes** the D890 can use to
-track a satellite transmitter/transponder ([#1068](https://github.com/pskillen/codeplug-studio/issues/1068)).
-Neither anytone-cps nor qdmr GPL source declares a satellite-mode capability list at all — this
-is a genuine absence, not a narrower table this doc simply hasn't ported yet, so there is nothing
-to reuse or cross-check against here.
+track a satellite transmitter/transponder ([#1068](https://github.com/pskillen/codeplug-studio/issues/1068),
+revised [#1086](https://github.com/pskillen/codeplug-studio/issues/1086)). Neither anytone-cps nor
+qdmr GPL source declares a satellite-mode capability list at all — this is a genuine absence, not
+a narrower table this doc simply hasn't ported yet, so there is nothing to reuse or cross-check
+against here.
 
-Studio ships a small **denylist** of modes believed unsupported (`isModeSupportedByAtD890`,
-`src/core/radios/anytone/at-d890uv/satelliteCapability.ts`), on the reasoning that the D890 is a
-DMR/analog-FM handheld with no documented SSB/CW/digital-transponder demodulation hardware. A
-denylist (rather than an allowlist) is deliberate: `SatelliteTransmitter.mode` is free text with
-no closed taxonomy, so an allowlist would silently reject any mode spelling Studio hasn't seen.
-Unknown/unrecognised mode strings default to **supported**.
+**#1086 reversed the original approach.** The #1068 implementation shipped a small **denylist**
+of modes believed unsupported (`SSTV`/`SSB`/`CW`), with unrecognised mode strings defaulting to
+_supported_ — a placeholder guess made with no hardware access, deliberately permissive because
+there was no positive evidence either way. An operator has since **directly confirmed on real
+D890 hardware** that satellite tracking only works with **FM** (and narrowband-FM spellings) —
+other modes, including some the old denylist didn't even cover (GMSK, AFSK, DUV), silently failed
+in the field. Given that stronger evidence, Studio now ships an **allowlist**
+(`isModeSupportedByAtD890`, `src/core/radios/anytone/at-d890uv/satelliteCapability.ts`) of
+FM-family mode strings, and unrecognised/unknown mode strings now default to **NOT supported** —
+an intentional reversal of the previous default, made because real hardware evidence now points
+at a narrow FM-only capability rather than "no evidence either way."
 
-| Mode  | Supported? | Basis                                                             |
-| ----- | ---------- | ----------------------------------------------------------------- |
-| FM    | Yes        | Native D890 demodulation                                          |
-| DMR   | Yes        | Native D890 demodulation                                          |
-| SSTV  | **No**     | Placeholder — issue's own example; image mode, no D890 demod path |
-| SSB   | **No**     | Placeholder — no documented SSB demodulation on this handheld     |
-| CW    | **No**     | Placeholder — no documented CW demodulation on this handheld      |
-| other | Yes        | Unrecognised — defaults to supported, not silently dropped        |
+| Mode                              | Supported? | Basis                                                                                                       |
+| --------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
+| FM                                | Yes        | Directly confirmed on real D890 hardware (#1086)                                                            |
+| FMN / NFM / FM Narrow / Narrow FM | Yes        | Reasonable narrowband-FM spelling variant of the confirmed FM family — not independently hardware-confirmed |
+| GMSK                              | **No**     | Operator-reported failing on real hardware (#1086)                                                          |
+| AFSK                              | **No**     | Operator-reported failing on real hardware (#1086)                                                          |
+| DUV                               | **No**     | Operator-reported failing on real hardware (#1086)                                                          |
+| SSTV                              | **No**     | Not FM-family; previously denylisted, still unsupported                                                     |
+| SSB                               | **No**     | Not FM-family; previously denylisted, still unsupported                                                     |
+| CW                                | **No**     | Not FM-family; previously denylisted, still unsupported                                                     |
+| other / unrecognised              | **No**     | Not on the FM-family allowlist — defaults to unsupported (reversed from #1068)                              |
+
+Note: `DMR` satellite transmitters are out of scope for this table — the D890's satellite write
+path targets analogue FM transponders/repeaters, and `SatelliteTransmitter.mode` here refers to
+the transponder's downlink demodulation mode, not the D890's DMR channel capability described
+elsewhere in this document.
+
+### Satellite transmitter frequency-range support (Studio write eligibility)
+
+In addition to the mode allowlist above, a satellite transmitter's uplink and downlink
+frequencies (when set) are checked against the D890's own **ham-band TX** rows from the
+"Frequency ranges (Studio eligibility)" table above — 136–174 MHz and 400–480 MHz. The AM
+airband (108–136 MHz) and receive-only FM broadcast (87.5–108 MHz) rows from that same table
+are deliberately excluded here: satellites don't operate in either, and satellite tracking on
+this radio is FM-only per the mode table above.
+
+Either frequency being unset does not disqualify the transmitter on its own — same "no positive
+evidence, don't guess" principle as the mode check's null handling. A transmitter needs **both**
+its uplink and downlink (whichever are set) inside those two ranges to remain write-eligible;
+an out-of-range value (e.g. an L-band uplink around 1269 MHz, common on real linear
+transponders) excludes it, with a distinct skip reason from the mode check
+(`isFrequencyInD890SatelliteRange`, `src/core/radios/anytone/at-d890uv/satelliteCapability.ts`).
+See [satellite-keps.md](satellite-keps.md) for where this filter sits in the overall write
+pipeline.
 
 ## Related
 

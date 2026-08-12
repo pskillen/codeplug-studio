@@ -10,7 +10,10 @@
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import { isTransmitterWriteEligible } from '@core/domain/satellite/transmitterWriteEligibility.ts';
-import { isModeSupportedByAtD890 } from '@core/radios/anytone/at-d890uv/satelliteCapability.ts';
+import {
+  isFrequencyInD890SatelliteRange,
+  isModeSupportedByAtD890,
+} from '@core/radios/anytone/at-d890uv/satelliteCapability.ts';
 import { ctcssIndexFromHz } from './ctcssToneTable.ts';
 
 /** Wire record size — zero-initialized before fields are written (satellite-keps.md). */
@@ -46,11 +49,27 @@ export interface CapabilitySkippedTransmitter {
   reason: string;
 }
 
+/**
+ * A transmitter's uplink AND downlink (when set) must both fall inside the D890's ham-band
+ * TX ranges — see `isFrequencyInD890SatelliteRange`'s doc comment for which rows apply and
+ * why. Either frequency being unset does not disqualify on its own.
+ */
+function isFrequencyEligibleForAtD890(transmitter: SatelliteTransmitter): boolean {
+  return (
+    isFrequencyInD890SatelliteRange(transmitter.uplinkHz) &&
+    isFrequencyInD890SatelliteRange(transmitter.downlinkHz)
+  );
+}
+
 function listEligiblePairs(satellites: readonly Satellite[]): EligiblePair[] {
   const pairs: EligiblePair[] = [];
   for (const satellite of satellites) {
     for (const transmitter of satellite.transmitters) {
-      if (isWriteEligible(satellite, transmitter) && isModeSupportedByAtD890(transmitter.mode)) {
+      if (
+        isWriteEligible(satellite, transmitter) &&
+        isModeSupportedByAtD890(transmitter.mode) &&
+        isFrequencyEligibleForAtD890(transmitter)
+      ) {
         pairs.push({ satellite, transmitter });
       }
     }
@@ -58,11 +77,19 @@ function listEligiblePairs(satellites: readonly Satellite[]): EligiblePair[] {
   return pairs;
 }
 
+/** MHz, matching `isFrequencyInD890SatelliteRange`'s bare `hz / 1_000_000` conversion. */
+function formatMhz(hz: number): string {
+  return `${(hz / 1_000_000).toFixed(4).replace(/0+$/, '').replace(/\.$/, '')} MHz`;
+}
+
 /**
  * Generically write-eligible `(satellite, transmitter)` pairs that `packSatelliteWriteRecords`
- * drops for a D890-specific reason: the transmitter's `mode` is on the D890 mode denylist
- * (`isModeSupportedByAtD890`, #1068) — distinct from `WriteSatellitesToRadioResult.skipped`
- * (satellite-level, "no eligible transmitters at all", #856).
+ * drops for a D890-specific reason: either the transmitter's `mode` is not on the D890 mode
+ * allowlist (`isModeSupportedByAtD890`, #1068/#1086), or its uplink/downlink frequency falls
+ * outside the D890's ham-band TX ranges (`isFrequencyInD890SatelliteRange`, #1085 follow-up) —
+ * each reported with its own distinct reason string, not conflated. Distinct from
+ * `WriteSatellitesToRadioResult.skipped` (satellite-level, "no eligible transmitters at all",
+ * #856).
  */
 export function listCapabilitySkippedTransmitters(
   satellites: readonly Satellite[],
@@ -70,13 +97,37 @@ export function listCapabilitySkippedTransmitters(
   const skipped: CapabilitySkippedTransmitter[] = [];
   for (const satellite of satellites) {
     for (const transmitter of satellite.transmitters) {
-      if (isWriteEligible(satellite, transmitter) && !isModeSupportedByAtD890(transmitter.mode)) {
+      if (!isWriteEligible(satellite, transmitter)) continue;
+
+      if (!isModeSupportedByAtD890(transmitter.mode)) {
         skipped.push({
           satelliteId: satellite.id,
           transmitterId: transmitter.id,
           reason:
             `${transmitter.mode ?? 'unknown mode'} not supported by Anytone D890 ` +
             `(placeholder pending hardware confirmation).`,
+        });
+        continue;
+      }
+
+      if (!isFrequencyInD890SatelliteRange(transmitter.uplinkHz)) {
+        skipped.push({
+          satelliteId: satellite.id,
+          transmitterId: transmitter.id,
+          reason:
+            `Uplink ${formatMhz(transmitter.uplinkHz!)} outside Anytone D890 ham-band range ` +
+            `(136-174/400-480 MHz).`,
+        });
+        continue;
+      }
+
+      if (!isFrequencyInD890SatelliteRange(transmitter.downlinkHz)) {
+        skipped.push({
+          satelliteId: satellite.id,
+          transmitterId: transmitter.id,
+          reason:
+            `Downlink ${formatMhz(transmitter.downlinkHz!)} outside Anytone D890 ham-band range ` +
+            `(136-174/400-480 MHz).`,
         });
       }
     }
@@ -160,12 +211,20 @@ function hzToDeciHz(hz: number | null): number {
 
 /**
  * Combined name field is 8 bytes — tight for "<satellite name> <transmitter label>".
- * Truncate to 8 ASCII chars, left-justified, space-padded, matching satellite-keps.md's
- * `leftJustified(8, ' ')` convention. Satellite/transmitter names are typically plain ASCII
- * (e.g. "ISS", "AO-27"), so non-ASCII handling is not modelled here.
+ * `satellite.name` gets first claim on all 8 bytes; `transmitter.label` only gets to
+ * contribute when the name leaves room (#1075 — see satellite-keps.md's "Name field"
+ * section for the anytone-cps `Satellite::encode()` cross-check: the vendor's own model has
+ * no transmitter/label concept at all, so this combining rule is Studio-only, not
+ * vendor-verified).
+ *
+ * Deliberately still a hard byte-slice — no word-boundary search — matching
+ * satellite-keps.md's `leftJustified(8, ' ')` convention. Satellite/transmitter names are
+ * typically plain ASCII (e.g. "ISS", "AO-27"), so non-ASCII handling is not modelled here.
  */
 function encodeName(satellite: Satellite, transmitter: SatelliteTransmitter): string {
-  const combined = `${satellite.name} ${transmitter.label}`.trim();
+  const name = satellite.name.trim();
+  if (name.length >= 8) return name.slice(0, 8).padEnd(8, ' ');
+  const combined = `${name} ${transmitter.label}`.trim();
   return combined.slice(0, 8).padEnd(8, ' ');
 }
 
@@ -212,6 +271,56 @@ export function encodeSatelliteRecord(
   // 0x6c-0x6f (DCS encode/decode) stay zero — satellite transmitters have no DCS field.
 
   return data;
+}
+
+/** One `(satellite, transmitter)` pair as it would be written, without encoding wire bytes. */
+export interface SatelliteWritePreviewEntry {
+  satelliteId: string;
+  satelliteName: string;
+  transmitterId: string;
+  transmitterLabel: string;
+  mode: string | null;
+  /** Exactly what encodeName() would write to the 8-byte name field, trimmed of padding. */
+  encodedName: string;
+  uplinkHz: number | null;
+  downlinkHz: number | null;
+  /** True when encodedName lost information relative to the full name (+label, if it had room). */
+  nameTruncated: boolean;
+}
+
+/**
+ * The untruncated source string `encodeName` draws from — `satellite.name` alone once it
+ * already fills the 8-byte budget, otherwise `name + " " + label` (#1075). Comparing
+ * `encodeName`'s trimmed output against this tells the UI whether the write dropped
+ * information, without duplicating `encodeName`'s own budget-allocation branch a second time.
+ */
+function nameEncodingSource(satellite: Satellite, transmitter: SatelliteTransmitter): string {
+  const name = satellite.name.trim();
+  return name.length >= 8 ? name : `${name} ${transmitter.label}`.trim();
+}
+
+/**
+ * Everything `packSatelliteWriteRecords` would write, in the same wire order, without encoding
+ * bytes — lets the UI show operators what would go to the radio before/without triggering an
+ * actual write (#1074).
+ */
+export function previewSatelliteWriteRecords(
+  satellites: readonly Satellite[],
+): SatelliteWritePreviewEntry[] {
+  return listEligiblePairs(satellites).map(({ satellite, transmitter }) => {
+    const encodedName = encodeName(satellite, transmitter).trimEnd();
+    return {
+      satelliteId: satellite.id,
+      satelliteName: satellite.name,
+      transmitterId: transmitter.id,
+      transmitterLabel: transmitter.label,
+      mode: transmitter.mode,
+      encodedName,
+      uplinkHz: transmitter.uplinkHz,
+      downlinkHz: transmitter.downlinkHz,
+      nameTruncated: encodedName !== nameEncodingSource(satellite, transmitter),
+    };
+  });
 }
 
 /**

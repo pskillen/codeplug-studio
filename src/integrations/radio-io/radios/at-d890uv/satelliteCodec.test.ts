@@ -5,6 +5,7 @@ import {
   encodeSatelliteRecord,
   listCapabilitySkippedTransmitters,
   packSatelliteWriteRecords,
+  previewSatelliteWriteRecords,
   SATELLITE_RECORD_BYTES,
 } from './satelliteCodec.ts';
 
@@ -103,9 +104,19 @@ describe('encodeSatelliteRecord', () => {
       makeSatellite({ name: 'International Space Station' }),
       makeTransmitter({ label: 'FM Voice Repeater' }),
     );
-    // Truncated to exactly 8 ASCII chars, no padding needed since it's already full.
+    // Name alone already consumes all 8 bytes — label gets no room, same as before the
+    // name-first budget fix (#1075).
     expect(long.subarray(0x00, 0x08).length).toBe(8);
     expect(new TextDecoder().decode(long.subarray(0x00, 0x08))).toBe('Internat');
+  });
+
+  it('gives satellite.name first claim on the 8-byte budget, then fills remaining bytes with the label (#1075)', () => {
+    // "AO-27" is 5 chars, leaving 3 bytes: one separator space + 1 char of the label.
+    const record = encodeSatelliteRecord(
+      makeSatellite({ name: 'AO-27' }),
+      makeTransmitter({ label: 'X' }),
+    );
+    expect(new TextDecoder().decode(record.subarray(0x00, 0x08))).toBe('AO-27 X ');
   });
 
   it('encodes RX=downlink / TX=uplink frequency as deci-Hz, little-endian u32', () => {
@@ -219,6 +230,37 @@ describe('packSatelliteWriteRecords', () => {
     expect(packSatelliteWriteRecords(satellites, BASE, STRIDE)).toHaveLength(0);
   });
 
+  it('excludes a transmitter with an out-of-ham-band L-band uplink, even with a supported FM mode (#1085 follow-up)', () => {
+    // 1269 MHz is a genuinely realistic satellite uplink (L-band, common on real linear
+    // transponders) — well outside the D890's 136-174/400-480 MHz ham-band TX ranges.
+    const satellites = [
+      makeSatellite({
+        transmitters: [makeTransmitter({ mode: 'FM', uplinkHz: 1_269_000_000 })],
+      }),
+    ];
+    expect(packSatelliteWriteRecords(satellites, BASE, STRIDE)).toHaveLength(0);
+  });
+
+  it('does not exclude a transmitter with both uplink and downlink unset (frequency grounds alone)', () => {
+    const satellites = [
+      makeSatellite({
+        transmitters: [makeTransmitter({ mode: 'FM', uplinkHz: null, downlinkHz: null })],
+      }),
+    ];
+    expect(packSatelliteWriteRecords(satellites, BASE, STRIDE)).toHaveLength(1);
+  });
+
+  it('keeps a transmitter with in-range uplink/downlink and FM mode', () => {
+    const satellites = [
+      makeSatellite({
+        transmitters: [
+          makeTransmitter({ mode: 'FM', uplinkHz: 145_850_000, downlinkHz: 436_795_000 }),
+        ],
+      }),
+    ];
+    expect(packSatelliteWriteRecords(satellites, BASE, STRIDE)).toHaveLength(1);
+  });
+
   it('still writes an includeInWrite:false transmitter for the generic reason, not capability', () => {
     // An opted-out transmitter is skipped whether or not its mode would also be unsupported —
     // confirms the generic and capability checks are independent, not conflated.
@@ -230,6 +272,67 @@ describe('packSatelliteWriteRecords', () => {
     ];
     expect(packSatelliteWriteRecords(satellites, BASE, STRIDE)).toHaveLength(0);
     expect(listCapabilitySkippedTransmitters(satellites)).toHaveLength(0);
+  });
+});
+
+describe('previewSatelliteWriteRecords', () => {
+  it('returns one entry per write-eligible transmitter, with the encoded name matching the packed record', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        name: 'International Space Station',
+        transmitters: [
+          makeTransmitter({ id: 'tx-a', label: 'FM Voice Repeater' }),
+          makeTransmitter({ id: 'tx-b', label: 'CW', includeInWrite: false }),
+        ],
+      }),
+    ];
+
+    const preview = previewSatelliteWriteRecords(satellites);
+    expect(preview).toHaveLength(1);
+
+    const [entry] = preview;
+    expect(entry).toEqual({
+      satelliteId: 'sat-a',
+      satelliteName: 'International Space Station',
+      transmitterId: 'tx-a',
+      transmitterLabel: 'FM Voice Repeater',
+      mode: 'FM',
+      encodedName: 'Internat',
+      uplinkHz: 145_850_000,
+      downlinkHz: 436_795_000,
+      nameTruncated: true,
+    });
+
+    const [record] = packSatelliteWriteRecords(satellites, 0, SATELLITE_RECORD_BYTES);
+    const packedName = new TextDecoder().decode(record!.bytes.subarray(0x00, 0x08)).trimEnd();
+    expect(entry!.encodedName).toBe(packedName);
+  });
+
+  it('flags nameTruncated true when satellite.name alone is >= 8 chars (#1075)', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        name: 'CUBESAT XI-V',
+        transmitters: [makeTransmitter({ id: 'tx-a', label: 'CW' })],
+      }),
+    ];
+    const [entry] = previewSatelliteWriteRecords(satellites);
+    expect(entry!.encodedName).toBe('CUBESAT');
+    expect(entry!.nameTruncated).toBe(true);
+  });
+
+  it('flags nameTruncated false when name + label both fit within 8 bytes', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        name: 'AO',
+        transmitters: [makeTransmitter({ id: 'tx-a', label: '27' })],
+      }),
+    ];
+    const [entry] = previewSatelliteWriteRecords(satellites);
+    expect(entry!.encodedName).toBe('AO 27');
+    expect(entry!.nameTruncated).toBe(false);
   });
 });
 
@@ -260,5 +363,40 @@ describe('listCapabilitySkippedTransmitters', () => {
   it('does not report a supported-mode transmitter', () => {
     const satellites = [makeSatellite({ transmitters: [makeTransmitter({ mode: 'FM' })] })];
     expect(listCapabilitySkippedTransmitters(satellites)).toHaveLength(0);
+  });
+
+  it('reports an out-of-ham-band uplink with its own distinct reason, not the mode reason', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        transmitters: [makeTransmitter({ id: 'tx-a', mode: 'FM', uplinkHz: 1_269_000_000 })],
+      }),
+    ];
+    const skipped = listCapabilitySkippedTransmitters(satellites);
+    expect(skipped).toEqual([
+      {
+        satelliteId: 'sat-a',
+        transmitterId: 'tx-a',
+        reason: expect.stringContaining('Uplink'),
+      },
+    ]);
+    expect(skipped[0]!.reason).not.toContain('not supported by Anytone D890');
+  });
+
+  it('reports an out-of-ham-band downlink separately from an out-of-ham-band uplink', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        transmitters: [makeTransmitter({ id: 'tx-a', mode: 'FM', downlinkHz: 2_400_000_000 })],
+      }),
+    ];
+    const skipped = listCapabilitySkippedTransmitters(satellites);
+    expect(skipped).toEqual([
+      {
+        satelliteId: 'sat-a',
+        transmitterId: 'tx-a',
+        reason: expect.stringContaining('Downlink'),
+      },
+    ]);
   });
 });

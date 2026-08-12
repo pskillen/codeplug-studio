@@ -36,7 +36,12 @@ function rxFrequencyMhz(channel: Channel): number | null {
   return channel.rxFrequency / 1_000_000;
 }
 
-function frequencyInRange(mhz: number, band: RadioFrequencyRange): boolean {
+/**
+ * Exported for reuse by other eligibility checks that need the same plain numeric
+ * band-membership test without the channel-specific wrapping semantics below (e.g.
+ * satellite uplink/downlink frequency gating — `satelliteCapability.ts`).
+ */
+export function frequencyInRange(mhz: number, band: RadioFrequencyRange): boolean {
   return mhz >= band.minMhz && mhz <= band.maxMhz;
 }
 

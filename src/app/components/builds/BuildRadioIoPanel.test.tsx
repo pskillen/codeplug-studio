@@ -1,20 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
+import { MemoryRouter } from 'react-router-dom';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
-import type { Satellite } from '@core/models/satellite.ts';
 import { BuildLayoutProvider } from '../../routes/builds/BuildLayoutContext.tsx';
 import BuildRadioIoPanel from './BuildRadioIoPanel.tsx';
 
 /**
- * Slice 5 (#859): "Write Keps" shares this panel's `busy`/`operation` state with the
- * existing Read/Write buttons, so clicking one disables the others — the concrete mechanism
- * satisfying design §9's "disable the adjacent button" COM-port-collision requirement for the
- * same-page case. That's the one behaviour worth a real component test rather than relying on
- * manual clicking (plan §Slice 5 test plan) — everything else here is supporting scaffolding.
+ * #1085 promoted the inline "Write Keps" button + collapsible preview panel to a dedicated
+ * `/builds/:id/satellite-keps` tab (`BuildSatelliteKepsPage.test.tsx` covers that page's
+ * behaviour — the busy/disable interaction, capacity pre-flight, and preview table). What's left
+ * here is just: does this panel show a "Write Keps…" *link* to that tab when the egress profile
+ * has a registered adapter, and not otherwise.
  */
-
-let resolveOpenSession: (() => void) | null = null;
 
 vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../services/radioIoSession.ts')>();
@@ -22,37 +20,13 @@ vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
     ...actual,
     isRadioSerialSupported: () => true,
     getRadioSerialUnsupportedMessage: () => 'Web Serial not supported.',
-    openRadioSessionForEgress: vi.fn(
-      () =>
-        new Promise((resolve) => {
-          resolveOpenSession = () =>
-            resolve({
-              session: {
-                descriptor: { label: 'D890' },
-                pipe: {},
-                radio: {},
-              },
-              descriptor: { label: 'D890' },
-            });
-        }),
-    ),
+    openRadioSessionForEgress: vi.fn(() => new Promise(() => {})),
     closeRadioSession: vi.fn(async () => {}),
   };
 });
 
-const kepsWriteFn = vi.fn(
-  () => new Promise(() => {}), // never resolves — we only assert the disabled state mid-flight
-);
-
-// Mutable per-test capacity stub (#1068) — most tests want no ceiling registered (undefined),
-// so the pre-flight capacity check is a no-op and clicking "Write Keps" reaches kepsWriteFn
-// directly; the capacity-warning test below overrides this before rendering.
-let kepsCapacityStub: { max: number; countEligible: (s: readonly unknown[]) => number } | undefined;
-
 vi.mock('../../services/satelliteKepsWriteAdapters.ts', () => ({
-  getSatelliteKepsWriteAdapter: (profileId: string) =>
-    profileId === 'radio-io-at-d890uv' ? kepsWriteFn : undefined,
-  getSatelliteKepsWriteCapacity: () => kepsCapacityStub,
+  hasSatelliteKepsWriteAdapter: (profileId: string) => profileId === 'radio-io-at-d890uv',
 }));
 
 vi.mock('../../hooks/useUnsavedNavigationGuard.ts', () => ({
@@ -63,39 +37,15 @@ vi.mock('../../state/useProjects.ts', () => ({
   useProjects: () => ({ activeProjectId: 'project-1', activeProject: { name: 'Demo' } }),
 }));
 
-const satellite: Satellite = {
-  id: 'sat-1',
-  projectId: 'project-1',
-  revision: 1,
-  updatedAt: '2024-01-01T00:00:00Z',
-  name: 'ISS',
-  noradId: 25544,
-  enabled: true,
-  source: 'celestrak',
-  tleLine1: '1 25544U 98067A   24079.51782528  .00016717  00000-0  30721-3 0  9993',
-  tleLine2: '2 25544  51.6416 335.6205 0006447  56.6529  36.3752 15.49560768 45087',
-  epoch: '2024-01-01T00:00:00Z',
-  classification: 'U',
-  inclinationDeg: 51.6416,
-  raanDeg: 335.6205,
-  eccentricity: 0.0006447,
-  argPerigeeDeg: 56.6529,
-  meanAnomalyDeg: 36.3752,
-  meanMotionRevPerDay: 15.4956,
-  bstar: 0.00030721,
-  elementSetNumber: 999,
-  revolutionNumber: 4508,
-  transmitters: [],
-};
-
 vi.mock('../../state/persistence.ts', () => ({
   persistence: {
-    listSatellites: vi.fn(async () => [satellite]),
+    listSatellites: vi.fn(async () => []),
+    subscribe: vi.fn(() => () => {}),
   },
 }));
 
-function renderPanel() {
-  const { build, egress, egressPaths } = newRadioBuildForProfile('project-1', 'radio-io-at-d890uv');
+function renderPanel(profileId: string) {
+  const { build, egress, egressPaths } = newRadioBuildForProfile('project-1', profileId);
   const layoutValue = {
     build,
     buildId: build.id,
@@ -104,61 +54,27 @@ function renderPanel() {
     setActiveEgressId: vi.fn(),
     reloadEgressPaths: vi.fn(async () => {}),
   };
-  return render(
-    <BuildLayoutProvider value={layoutValue}>
-      <MantineProvider>
-        <BuildRadioIoPanel build={build} egress={egress} />
-      </MantineProvider>
-    </BuildLayoutProvider>,
+  const result = render(
+    <MemoryRouter>
+      <BuildLayoutProvider value={layoutValue}>
+        <MantineProvider>
+          <BuildRadioIoPanel build={build} egress={egress} />
+        </MantineProvider>
+      </BuildLayoutProvider>
+    </MemoryRouter>,
   );
+  return { ...result, build };
 }
 
-describe('BuildRadioIoPanel — Write Keps (#859)', () => {
-  it('renders a Write Keps button for a profile with a registered keps-write adapter', () => {
-    renderPanel();
-    expect(screen.getByRole('button', { name: 'Write Keps' })).toBeInTheDocument();
+describe('BuildRadioIoPanel — Write Keps link (#1085)', () => {
+  it('renders a "Write Keps…" link to the Satellite Keps tab for a profile with a registered adapter', () => {
+    const { build } = renderPanel('radio-io-at-d890uv');
+    const link = screen.getByRole('link', { name: 'Write Keps…' });
+    expect(link).toHaveAttribute('href', `/builds/${build.id}/satellite-keps`);
   });
 
-  it('disables Read/Write while a Write Keps operation is in flight, and vice versa', async () => {
-    renderPanel();
-
-    const readButton = screen.getByRole('button', { name: 'Read from radio' });
-    const writeKepsButton = screen.getByRole('button', { name: 'Write Keps' });
-
-    expect(readButton).not.toBeDisabled();
-    expect(writeKepsButton).not.toBeDisabled();
-
-    fireEvent.click(writeKepsButton);
-
-    // Busy state flips synchronously on click (beginBusy runs before any await resolves).
-    await waitFor(() => {
-      expect(readButton).toBeDisabled();
-      expect(writeKepsButton).toBeDisabled();
-    });
-
-    // Let the connect promise resolve so the pending kepsWriteFn call keeps the panel busy
-    // (kepsWriteFn itself never resolves) — buttons must stay disabled throughout.
-    resolveOpenSession?.();
-    await waitFor(() => expect(kepsWriteFn).toHaveBeenCalled());
-    expect(readButton).toBeDisabled();
-    expect(writeKepsButton).toBeDisabled();
-  });
-});
-
-describe('BuildRadioIoPanel — Write Keps capacity pre-flight (#1068)', () => {
-  it('shows a capacity warning and never calls kepsWriteFn or opens a session when over capacity', async () => {
-    const callsBefore = kepsWriteFn.mock.calls.length;
-    kepsCapacityStub = { max: 0, countEligible: () => 1 };
-    try {
-      renderPanel();
-      fireEvent.click(screen.getByRole('button', { name: 'Write Keps' }));
-
-      await waitFor(() => expect(screen.getByText(/only supports 0/)).toBeInTheDocument());
-      expect(kepsWriteFn.mock.calls.length).toBe(callsBefore);
-      // Buttons stay enabled — no session was opened, no busy state entered.
-      expect(screen.getByRole('button', { name: 'Read from radio' })).not.toBeDisabled();
-    } finally {
-      kepsCapacityStub = undefined;
-    }
+  it('does not render a Write Keps link for a profile with no registered adapter', () => {
+    renderPanel('neonplug-dm32uv');
+    expect(screen.queryByRole('link', { name: 'Write Keps…' })).not.toBeInTheDocument();
   });
 });

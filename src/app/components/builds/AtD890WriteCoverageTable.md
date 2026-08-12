@@ -20,7 +20,7 @@ Shows AT-D890UV operators which parts of the radio **Write** updates from their 
 ## Behaviour
 
 - Static rows from `AT_D890_WRITE_COVERAGE_ROWS` in `writeCoverage.ts` (no hex addresses).
-- Status labels with icons: check (updated from library), cross (not supported yet), minus (left alone), violet check (satellite keps — updated via the separate **Write Keps** button, #859, not this Write).
+- Status labels with icons: check (updated from library), cross (not supported yet), minus (left alone), violet check (satellite keps — updated via the separate **Satellite keps** tab's Write Keps trigger, #859/#1085, not this Write).
 - Copy follows the [help writing styleguide](../../../docs/reference/writing-styleguide/help-writing-styleguide.md).
 - Does not gate Write — informational only.
 

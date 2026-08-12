@@ -4,6 +4,7 @@ import {
   IconPlane,
   IconPlugConnected,
   IconRadio,
+  IconSatellite,
   IconSettings,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
@@ -18,13 +19,16 @@ import {
 import { usesAtD890AirbandBankSplit } from '@core/services/anytoneChannelBanks.ts';
 import { findNeonplugDonorEgress, findRadioCloneEgress } from '../../lib/buildEgressUi.ts';
 import { entityNavIcons } from '../../nav/entityNavIcons.ts';
+import { hasSatelliteKepsWriteAdapter } from '../../services/satelliteKepsWriteAdapters.ts';
 
-export type BuildNavSection = 'overview' | 'export' | 'export-settings' | 'wire-preview' | 'audit';
+export type BuildNavSection =
+  'overview' | 'export' | 'export-settings' | 'wire-preview' | 'satellite-keps' | 'audit';
 
 export const BUILD_SECTION_OVERVIEW = 'Overview';
 export const BUILD_SECTION_EXPORT = 'Export';
 export const BUILD_SECTION_EXPORT_SETTINGS = 'Export settings';
 export const BUILD_SECTION_WIRE_PREVIEW = 'Wire preview';
+export const BUILD_SECTION_SATELLITE_KEPS = 'Satellite keps';
 export const BUILD_SECTION_ABOUT = 'About';
 
 export interface BuildNavOptions {
@@ -69,10 +73,25 @@ export function showsD890AmAirbandNav(build: RadioBuild, options?: BuildNavOptio
   return (options?.egressPaths ?? []).some((path) => usesAtD890AirbandBankSplit(path.profileId));
 }
 
-/** mk2 B2 — four peer sections in the contextual strip. */
-export function buildSectionNavItems(build: RadioBuild): BuildSectionNavItem[] {
+/**
+ * Whether the build secondary nav should link to the dedicated Satellite Keps tab (#1085) —
+ * mirrors `showsD890AmAirbandNav`'s "any egress path on this build matches" pattern rather than
+ * gating on whichever egress happens to be active, since the operator may switch pathways.
+ */
+export function showsSatelliteKepsNav(_build: RadioBuild, options?: BuildNavOptions): boolean {
+  if (options?.activeEgress && hasSatelliteKepsWriteAdapter(options.activeEgress.profileId)) {
+    return true;
+  }
+  return (options?.egressPaths ?? []).some((path) => hasSatelliteKepsWriteAdapter(path.profileId));
+}
+
+/** mk2 B2 — peer sections in the contextual strip; Satellite keps (#1085) is conditional. */
+export function buildSectionNavItems(
+  build: RadioBuild,
+  options?: BuildNavOptions,
+): BuildSectionNavItem[] {
   const base = `/builds/${build.id}`;
-  return [
+  const items: BuildSectionNavItem[] = [
     {
       label: BUILD_SECTION_OVERVIEW,
       section: 'overview',
@@ -97,13 +116,25 @@ export function buildSectionNavItems(build: RadioBuild): BuildSectionNavItem[] {
       path: defaultWirePreviewPath(build),
       icon: entityNavIcons.channels,
     },
-    {
-      label: BUILD_SECTION_ABOUT,
-      section: 'audit',
-      path: `${base}/characteristics`,
-      icon: IconRadio,
-    },
   ];
+
+  if (showsSatelliteKepsNav(build, options)) {
+    items.push({
+      label: BUILD_SECTION_SATELLITE_KEPS,
+      section: 'satellite-keps',
+      path: `${base}/satellite-keps`,
+      icon: IconSatellite,
+    });
+  }
+
+  items.push({
+    label: BUILD_SECTION_ABOUT,
+    section: 'audit',
+    path: `${base}/characteristics`,
+    icon: IconRadio,
+  });
+
+  return items;
 }
 
 /** Trait-shaped wire entity chips — shown under Wire preview, not in the strip. */
@@ -264,6 +295,7 @@ export function allBuildDetailPaths(build: RadioBuild, options?: BuildNavOptions
     `${base}/overview`,
     ...buildWireEntityNavItems(build, options).map((item) => item.path),
     `${base}/channels/bulk`,
+    ...(showsSatelliteKepsNav(build, options) ? [`${base}/satellite-keps`] : []),
     ...buildAuditNavItems(build, options).map((item) => item.path),
   ]);
   return [...paths];
@@ -296,6 +328,7 @@ export function activeBuildSection(pathname: string, buildId: string): BuildNavS
   if (suffix === 'export/settings' || suffix.startsWith('export/settings/'))
     return 'export-settings';
   if (suffix === 'overview' || suffix.startsWith('overview/')) return 'overview';
+  if (suffix === 'satellite-keps' || suffix.startsWith('satellite-keps/')) return 'satellite-keps';
 
   const firstSegment = suffix.split('/')[0];
   if (firstSegment && WIRE_PREVIEW_SEGMENTS.has(firstSegment)) return 'wire-preview';
@@ -316,6 +349,8 @@ export function activeBuildSectionLabel(pathname: string, buildId: string): stri
       return BUILD_SECTION_EXPORT_SETTINGS;
     case 'wire-preview':
       return BUILD_SECTION_WIRE_PREVIEW;
+    case 'satellite-keps':
+      return BUILD_SECTION_SATELLITE_KEPS;
     case 'audit':
       return BUILD_SECTION_ABOUT;
   }

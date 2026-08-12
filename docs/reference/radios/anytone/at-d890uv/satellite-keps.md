@@ -85,7 +85,7 @@ binary conversion).
 
 | Offset         | Length        | Field                                    | Encoding                                                                                                    |
 | -------------- | ------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `0x00`         | 8             | Name                                     | ASCII, left-justified, space-padded (`leftJustified(8, ' ')`)                                               |
+| `0x00`         | 8             | Name                                     | ASCII, left-justified, space-padded (`leftJustified(8, ' ')`) — Studio-only combining rule, see note below  |
 | `0x08`         | 14 (see note) | Epoch                                    | Raw TLE substring, ASCII, space-padded                                                                      |
 | `0x16`         | 11            | Mean motion derivative                   | Raw TLE substring, ASCII, right-justified, space-padded                                                     |
 | `0x21`         | 8             | Inclination                              | Raw TLE substring, right-justified                                                                          |
@@ -104,6 +104,26 @@ binary conversion).
 | `0x6c`         | 2             | DCS encode tone                          | u16 little-endian code                                                                                      |
 | `0x6e`         | 2             | DCS decode tone                          | u16 little-endian code                                                                                      |
 | `0x70`–`0x1ff` | —             | Zero-filled                              | Never written by `encode()` — buffer starts as `QByteArray(0x200, 0)` and nothing after `0x70` is touched   |
+
+### Name field — Studio-only name+label combining, not vendor-verified (#1075)
+
+anytone-cps's own `Anytone::Satellite::encode()` writes only `name.leftJustified(8, ' ').toUtf8().mid(0,8)`
+at `0x00` — a single `name` string sourced from the first line of the pasted Kepler/TLE data
+(`decodeKeplerData()`'s `kD[0]`), with no separate transmitter/label field anywhere in `Anytone::Satellite`
+at all. The vendor's own model has nothing to combine — one satellite record, one name string, full stop.
+
+Studio's internal model instead has a `Satellite` with multiple `SatelliteTransmitter`s (mode, label, uplink/
+downlink), so a single 8-byte name field has to represent both when useful (e.g. distinguishing a satellite's
+CW beacon from its FM voice repeater). That combining behaviour is **entirely Studio's own invention** — there
+is nothing in anytone-cps's source to verify it against, positively or negatively. As of #1075,
+`encodeName()` (`src/integrations/radio-io/radios/at-d890uv/satelliteCodec.ts`) gives `satellite.name` first
+claim on all 8 bytes; `transmitter.label` only contributes the bytes left over once the name is written,
+separated by one space. When `satellite.name` alone is 8 characters or longer, the label never appears (same
+as before #1075's fix) — the fix targets the case of a short name with room to spare, which previously lost
+characters to the label unnecessarily via naive `` `${name} ${label}` ``-then-slice. No word-boundary
+awareness is attempted; 8 bytes is judged too tight for that to reliably help, and a fixed hard-slice rule is
+easier to describe accurately in the write-preview UI (`nameTruncated` flag, #1075) than a "smart" one would
+be.
 
 ### Epoch field overlap — an anytone-cps encode() quirk, not a Studio assumption
 
@@ -193,6 +213,14 @@ number and should be labelled as a placeholder pending hardware confirmation, no
 this cap counts write **records** — one per eligible `(satellite, transmitter)` pair emitted by
 `packSatelliteWriteRecords` — not distinct satellites; a satellite with two enabled transmitters consumes two
 slots against this limit.
+
+**"Eligible" also includes a frequency-range gate (#1085 follow-up), not only mode.** In addition to the
+FM-family mode allowlist, `packSatelliteWriteRecords`/`listEligiblePairs` (`satelliteCodec.ts`) now also require
+a transmitter's uplink and downlink (when set) to fall inside the D890's own ham-band TX ranges — see
+[capabilities.md — Satellite transmitter frequency-range support](capabilities.md#satellite-transmitter-frequency-range-support-studio-write-eligibility)
+for the exact ranges and reasoning. This affects the satellite-record count above the same way the mode filter
+does: a generically write-eligible transmitter with an out-of-range frequency (e.g. an L-band uplink) consumes
+no slot at all, rather than being written and later rejected by the radio.
 
 ## qdmr cross-check — record layout matches closely; base address cannot be directly compared
 

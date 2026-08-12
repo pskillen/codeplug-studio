@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Workflow A (#859, [feature-design.md §8](../../../../docs/features/satellite-keps/feature-design.md#8-the-write-workflows)): the target-selection modal behind the Satellite Keps library page's **Write Keps to Radio** button. Lets the operator pick a radio — a build's persisted Web Serial egress ("Your radios"), or a registered adapter with no persisted build ("Other supported radios") — then connects and uploads the library's **enabled** satellites, reusing the same [`RadioIoProgressModal`](../builds/RadioIoProgressModal.md) shell Workflow B (`BuildRadioIoPanel`) uses for its contextual **Write Keps** button.
+Workflow A (#859, [feature-design.md §8](../../../../docs/features/satellite-keps/feature-design.md#8-the-write-workflows)): the target-selection modal behind the Satellite Keps library page's **Write Keps to Radio** button. Lets the operator pick a radio — a build's persisted Web Serial egress ("Your radios"), or a registered adapter with no persisted build ("Other supported radios") — then connects and uploads the library's **enabled** satellites, reusing the same [`RadioIoProgressModal`](../builds/RadioIoProgressModal.md) shell Workflow B uses for its **Write Keps** trigger (on the dedicated `BuildSatelliteKepsPage` build tab since #1085, previously an inline `BuildRadioIoPanel` button).
 
 ## Props
 

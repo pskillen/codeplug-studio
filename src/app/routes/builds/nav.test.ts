@@ -1,14 +1,17 @@
 import {
   activeBuildSection,
+  allBuildDetailPaths,
   buildAuditNavItems,
   buildSectionNavItems,
   BUILD_SECTION_ABOUT,
   BUILD_SECTION_EXPORT,
   BUILD_SECTION_EXPORT_SETTINGS,
   BUILD_SECTION_OVERVIEW,
+  BUILD_SECTION_SATELLITE_KEPS,
   BUILD_SECTION_WIRE_PREVIEW,
   buildNavItems,
   pathForSwitchedBuild,
+  showsSatelliteKepsNav,
 } from './nav.ts';
 import { newFormatBuild, newRadioBuildForProfile } from '@core/domain/factories.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
@@ -194,6 +197,59 @@ describe('buildSectionNavItems', () => {
       BUILD_SECTION_ABOUT,
     ]);
   });
+
+  it('omits Satellite keps for a profile with no keps write adapter', () => {
+    const build = newFormatBuild('proj', 'opengd77-1701');
+    expect(buildSectionNavItems(build).map((item) => item.label)).not.toContain(
+      BUILD_SECTION_SATELLITE_KEPS,
+    );
+  });
+
+  it('includes Satellite keps, between Wire preview and About, for a build with a D890 Web Serial egress', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
+    const labels = buildSectionNavItems(build, { egressPaths }).map((item) => item.label);
+    expect(labels).toContain(BUILD_SECTION_SATELLITE_KEPS);
+    expect(labels.indexOf(BUILD_SECTION_SATELLITE_KEPS)).toBeGreaterThan(
+      labels.indexOf(BUILD_SECTION_WIRE_PREVIEW),
+    );
+    expect(labels.indexOf(BUILD_SECTION_SATELLITE_KEPS)).toBeLessThan(
+      labels.indexOf(BUILD_SECTION_ABOUT),
+    );
+  });
+
+  it('links Satellite keps to /builds/:id/satellite-keps', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
+    const item = buildSectionNavItems(build, { egressPaths }).find(
+      (i) => i.label === BUILD_SECTION_SATELLITE_KEPS,
+    );
+    expect(item?.path).toBe(`/builds/${build.id}/satellite-keps`);
+  });
+});
+
+describe('showsSatelliteKepsNav', () => {
+  it('is false for a build with no egress path carrying a keps write adapter', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'neonplug-dm32uv');
+    expect(showsSatelliteKepsNav(build, { egressPaths })).toBe(false);
+  });
+
+  it('is true when any egress path on the build has a keps write adapter', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
+    expect(showsSatelliteKepsNav(build, { egressPaths })).toBe(true);
+  });
+});
+
+describe('allBuildDetailPaths', () => {
+  it('includes satellite-keps only when the build has a keps-capable egress', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
+    expect(allBuildDetailPaths(build, { egressPaths })).toContain(
+      `/builds/${build.id}/satellite-keps`,
+    );
+
+    const noKeps = newRadioBuildForProfile('proj', 'neonplug-dm32uv');
+    expect(allBuildDetailPaths(noKeps.build, { egressPaths: noKeps.egressPaths })).not.toContain(
+      `/builds/${noKeps.build.id}/satellite-keps`,
+    );
+  });
 });
 
 describe('activeBuildSection', () => {
@@ -215,6 +271,12 @@ describe('activeBuildSection', () => {
       'export-settings',
     );
     expect(activeBuildSection(`/builds/${build.id}/overview`, build.id)).toBe('overview');
+  });
+
+  it('maps the satellite-keps route to the satellite-keps section', () => {
+    expect(activeBuildSection(`/builds/${build.id}/satellite-keps`, build.id)).toBe(
+      'satellite-keps',
+    );
   });
 });
 
