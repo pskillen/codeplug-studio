@@ -52,10 +52,9 @@ describe('analogContactExportBaseName', () => {
 describe('resolveAnalogContactExportBaseName', () => {
   it('prefers build wire name override', () => {
     expect(
-      resolveAnalogContactExportBaseName(
-        { id: 'c1', name: 'DTMF Pad' },
-        [{ libraryEntityId: 'c1', wireName: 'Custom' }],
-      ),
+      resolveAnalogContactExportBaseName({ id: 'c1', name: 'DTMF Pad' }, [
+        { libraryEntityId: 'c1', wireName: 'Custom' },
+      ]),
     ).toBe('Custom');
   });
 

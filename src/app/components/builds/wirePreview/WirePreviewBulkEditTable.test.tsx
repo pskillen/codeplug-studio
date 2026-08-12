@@ -1,4 +1,5 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, Dispatch, SetStateAction } from 'react';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
@@ -33,12 +34,33 @@ const rows: WirePreviewRow[] = [
 ];
 
 describe('WirePreviewBulkEditTable', () => {
-  function renderTable(props: ComponentProps<typeof WirePreviewBulkEditTable>) {
+  function ControlledTable(
+    props: Omit<ComponentProps<typeof WirePreviewBulkEditTable>, 'onPendingWireNamesChange'> & {
+      onPendingWireNamesChange?: Dispatch<SetStateAction<Map<string, string>>>;
+    },
+  ) {
+    const [, setPending] = useState<Map<string, string>>(() => new Map());
+    return (
+      <WirePreviewBulkEditTable
+        {...props}
+        onPendingWireNamesChange={(update) => {
+          setPending(update);
+          props.onPendingWireNamesChange?.(update);
+        }}
+      />
+    );
+  }
+
+  function renderTable(
+    props: Omit<ComponentProps<typeof WirePreviewBulkEditTable>, 'onPendingWireNamesChange'> & {
+      onPendingWireNamesChange?: Dispatch<SetStateAction<Map<string, string>>>;
+    },
+  ) {
     return render(
       <MemoryRouter>
         <MantineProvider>
           <DesignSystemV2Provider>
-            <WirePreviewBulkEditTable {...props} />
+            <ControlledTable {...props} />
           </DesignSystemV2Provider>
         </MantineProvider>
       </MemoryRouter>,
@@ -95,12 +117,14 @@ describe('WirePreviewBulkEditTable', () => {
     const input = screen.getByPlaceholderText('GB3DA Demo');
     fireEvent.change(input, { target: { value: 'Custom' } });
 
-    const pending = onPendingWireNamesChange.mock.calls.at(-1)?.[0] as Map<string, string>;
-    expect(pending.get('ch-1')).toBe('Custom');
+    const update = onPendingWireNamesChange.mock.calls.at(-1)?.[0] as (
+      prev: Map<string, string>,
+    ) => Map<string, string>;
+    expect(update(new Map()).get('ch-1')).toBe('Custom');
     expect(screen.queryByLabelText('Apply wire name')).not.toBeInTheDocument();
   });
 
-  it('fills the draft from Default without committing a pending override when unchanged from generated', () => {
+  it('fills the draft from Default without a per-row Apply', () => {
     const onPendingWireNamesChange = vi.fn();
     renderTable({
       rows,
@@ -110,47 +134,26 @@ describe('WirePreviewBulkEditTable', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'GB3DA Demo' }));
     expect(screen.getByPlaceholderText('GB3DA Demo')).toHaveValue('GB3DA Demo');
-    const pending = onPendingWireNamesChange.mock.calls.at(-1)?.[0] as Map<string, string>;
-    // No override committed yet; draft equals generated while committed is '' → pending
-    expect(pending.get('ch-1')).toBe('GB3DA Demo');
+    const update = onPendingWireNamesChange.mock.calls.at(-1)?.[0] as (
+      prev: Map<string, string>,
+    ) => Map<string, string>;
+    expect(update(new Map()).get('ch-1')).toBe('GB3DA Demo');
   });
 
-  it('reports unapplied wire name drafts and clears them on draftEpoch bump', () => {
-    const onUnsavedChangesChange = vi.fn();
+  it('reports pending drafts via onPendingWireNamesChange', () => {
     const onPendingWireNamesChange = vi.fn();
-    const { rerender } = renderTable({
+    renderTable({
       rows,
       onExcludedChange: vi.fn(),
       onPendingWireNamesChange,
-      onUnsavedChangesChange,
-      draftEpoch: 0,
     });
-
-    expect(onUnsavedChangesChange).toHaveBeenCalledWith(false);
 
     fireEvent.change(screen.getByPlaceholderText('GB3DA Demo'), {
       target: { value: 'Custom' },
     });
-    expect(onUnsavedChangesChange).toHaveBeenLastCalledWith(true);
-
-    rerender(
-      <MemoryRouter>
-        <MantineProvider>
-          <DesignSystemV2Provider>
-            <WirePreviewBulkEditTable
-              rows={rows}
-              onExcludedChange={vi.fn()}
-              onPendingWireNamesChange={onPendingWireNamesChange}
-              onUnsavedChangesChange={onUnsavedChangesChange}
-              draftEpoch={1}
-            />
-          </DesignSystemV2Provider>
-        </MantineProvider>
-      </MemoryRouter>,
-    );
-
-    expect(onUnsavedChangesChange).toHaveBeenLastCalledWith(false);
-    const pending = onPendingWireNamesChange.mock.calls.at(-1)?.[0] as Map<string, string>;
-    expect(pending.size).toBe(0);
+    const update = onPendingWireNamesChange.mock.calls.at(-1)?.[0] as (
+      prev: Map<string, string>,
+    ) => Map<string, string>;
+    expect(update(new Map()).get('ch-1')).toBe('Custom');
   });
 });

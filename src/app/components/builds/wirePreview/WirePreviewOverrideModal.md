@@ -6,20 +6,20 @@ Per-row override editor for wire preview list pages. Mantine `Modal` with common
 
 ## Props
 
-| Prop                   | Type                                     | Description                                                                  |
-| ---------------------- | ---------------------------------------- | ---------------------------------------------------------------------------- |
-| `opened`               | `boolean`                                | Modal visibility                                                             |
-| `onClose`              | `() => void`                             | Close handler                                                                |
-| `row`                  | `WirePreviewRow \| null`                 | Active preview row                                                           |
-| `build`                | `FormatBuild`                            | Active build                                                                 |
-| `entityKind`           | `WirePreviewEntityKind`                  | Entity kind for section registry                                             |
-| `nameLimit`            | `number` (optional)                      | Profile wire name cap                                                        |
-| `onExcludedChange`     | `(row, excluded) => void`                | Skip-from-export                                                             |
-| `onForceIncludeChange` | `(row, forceInclude) => void` (optional) | Zone force-export (`entityKind === 'zone'`)                                  |
+| Prop                   | Type                                     | Description                                                                             |
+| ---------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------- |
+| `opened`               | `boolean`                                | Modal visibility                                                                        |
+| `onClose`              | `() => void`                             | Close handler                                                                           |
+| `row`                  | `WirePreviewRow \| null`                 | Active preview row                                                                      |
+| `build`                | `FormatBuild`                            | Active build                                                                            |
+| `entityKind`           | `WirePreviewEntityKind`                  | Entity kind for section registry                                                        |
+| `nameLimit`            | `number` (optional)                      | Profile wire name cap                                                                   |
+| `onExcludedChange`     | `(row, excluded) => void`                | Skip-from-export                                                                        |
+| `onForceIncludeChange` | `(row, forceInclude) => void` (optional) | Zone force-export (`entityKind === 'zone'`)                                             |
 | `onWireNameChange`     | `(row, wireName) => void`                | Wire name override (Apply / Reset in `CommonOverrideSection`; Default fills draft only) |
-| `extraSections`        | `ReactNode` (optional)                   | Non-tabbed append (channel expansion context, CHIRP scan on flat-memory)     |
-| `membersSection`       | `ReactNode` (optional)                   | Zone **Members** tab — `ZoneMemberOrderSection` from the zones wire page     |
-| `scanSection`          | `ReactNode` (optional)                   | Zone **Scan** tab — `ZoneScanOverrideSection` when zone-derived scan applies |
+| `extraSections`        | `ReactNode` (optional)                   | Non-tabbed append (channel expansion context, CHIRP scan on flat-memory)                |
+| `membersSection`       | `ReactNode` (optional)                   | Zone **Members** tab — `ZoneMemberOrderSection` from the zones wire page                |
+| `scanSection`          | `ReactNode` (optional)                   | Zone **Scan** tab — `ZoneScanOverrideSection` when zone-derived scan applies            |
 
 ## Sections
 

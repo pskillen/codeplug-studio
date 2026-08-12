@@ -10,7 +10,8 @@ import classes from '../BuildSubPage.module.css';
 
 export default function BuildChannelsBulkEditPage() {
   const { build } = useBuildLayout();
-  const { rows, nameLimit, error, setRowExcluded, setRowWireNames } = useBuildWirePreview('channel');
+  const { rows, nameLimit, error, setRowExcluded, setRowWireNames } =
+    useBuildWirePreview('channel');
   const [pendingWireNames, setPendingWireNames] = useState<Map<string, string>>(() => new Map());
   const [draftEpoch, setDraftEpoch] = useState(0);
   const hasUnsavedWireNames = pendingWireNames.size > 0;
@@ -25,6 +26,7 @@ export default function BuildChannelsBulkEditPage() {
     }
     if (entries.length === 0) return;
     setRowWireNames(entries);
+    setPendingWireNames(new Map());
     setDraftEpoch((value) => value + 1);
   };
 
