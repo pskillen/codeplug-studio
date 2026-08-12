@@ -167,7 +167,11 @@ export function applyMultiTalkGroupWireNameLimits(
 
   const tgSuffix = talkGroupMemberSuffixForAppend(member, library, options, mode);
 
-  const { name: finalized, collided, stem } = finalizeWireName(base, reserved, maxLen, {
+  const {
+    name: finalized,
+    collided,
+    stem,
+  } = finalizeWireName(base, reserved, maxLen, {
     exportNameMode: pick.exportNameMode,
     recomposeWithMode: (m) => composeChannelWireName({ ...pick, exportNameMode: m }),
     recomposeWithChannelAbbreviation,

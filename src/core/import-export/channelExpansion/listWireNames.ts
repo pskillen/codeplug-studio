@@ -27,12 +27,11 @@ export function applyListWireNameLimits(
 
   if (isOverride || !shorten || maxLen == null) {
     if (isOverride && maxLen != null) {
-      const { name: truncated, collided, stem } = hardTruncateUniqueWireName(
-        base,
-        reserved,
-        maxLen,
-        true,
-      );
+      const {
+        name: truncated,
+        collided,
+        stem,
+      } = hardTruncateUniqueWireName(base, reserved, maxLen, true);
       const name = sanitiseAsciiWireString(truncated);
       if (collided) {
         pushWireNameCollisionWarning(warnings, {
@@ -73,7 +72,11 @@ export function applyListWireNameLimits(
     return name;
   }
 
-  const { name: finalized, collided, stem } = finalizeWireName(base, reserved, maxLen, {
+  const {
+    name: finalized,
+    collided,
+    stem,
+  } = finalizeWireName(base, reserved, maxLen, {
     allowCallsignSuffixDowngrade: false,
   });
   const exported = sanitiseAsciiWireString(finalized);

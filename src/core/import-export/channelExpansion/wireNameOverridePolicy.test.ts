@@ -38,9 +38,9 @@ describe('wire name override hard-truncate policy', () => {
       );
 
       expect(exported.length).toBeLessThanOrEqual(maxLen!);
-      expect(override.startsWith(exported) || exported.startsWith(override.slice(0, maxLen! - 3))).toBe(
-        true,
-      );
+      expect(
+        override.startsWith(exported) || exported.startsWith(override.slice(0, maxLen! - 3)),
+      ).toBe(true);
       // Smart shorten would drop vowels / apply dictionary — hard truncate is a strict prefix.
       expect(exported).toBe(override.slice(0, exported.length));
       expect(warnings.some((w) => w.includes('exceeds'))).toBe(true);

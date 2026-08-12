@@ -92,7 +92,8 @@ export function buildOpenGd77ListWireMaps(
   for (const contact of exportAssembled.analogContacts) {
     const override = options?.contactOverrides
       ? Boolean(
-          options.contactOverrides.find((row) => row.libraryEntityId === contact.entity.id)
+          options.contactOverrides
+            .find((row) => row.libraryEntityId === contact.entity.id)
             ?.wireName?.trim(),
         )
       : Boolean(contact.wireNameOverride?.trim());

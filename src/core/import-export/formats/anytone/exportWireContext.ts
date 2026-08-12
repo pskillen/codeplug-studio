@@ -107,8 +107,9 @@ export function buildAnytoneExportWireContext(
   );
   for (const row of assembled.analogContacts) {
     const isOverride = Boolean(
-      options?.contactOverrides?.find((o) => o.libraryEntityId === row.entity.id)?.wireName?.trim() ??
-        row.wireNameOverride?.trim(),
+      options?.contactOverrides
+        ?.find((o) => o.libraryEntityId === row.entity.id)
+        ?.wireName?.trim() ?? row.wireNameOverride?.trim(),
     );
     const base = resolveAnalogContactExportBaseName(row.entity, options?.contactOverrides);
     digitalContactWireNames.set(

@@ -44,12 +44,11 @@ export function anytoneChannelWireName(
 
   const override = row.wireNameOverride?.trim();
   if (override) {
-    const { name: truncated, collided, stem } = hardTruncateUniqueWireName(
-      override,
-      wireOptions.reserved,
-      maxNameLength,
-      reserve,
-    );
+    const {
+      name: truncated,
+      collided,
+      stem,
+    } = hardTruncateUniqueWireName(override, wireOptions.reserved, maxNameLength, reserve);
     const name = sanitiseAsciiWireString(truncated);
     if (collided) {
       pushWireNameCollisionWarning(warnings, {

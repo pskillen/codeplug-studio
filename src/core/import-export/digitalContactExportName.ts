@@ -114,7 +114,11 @@ export function applyDigitalContactExportWireName(
   }
 
   const localReserved = new Set<string>();
-  const { name: finalized, collided, stem } = finalizeWireName(original, localReserved, maxLen, {
+  const {
+    name: finalized,
+    collided,
+    stem,
+  } = finalizeWireName(original, localReserved, maxLen, {
     allowCallsignSuffixDowngrade: false,
   });
   const exported = sanitiseAsciiWireString(finalized);
@@ -164,9 +168,7 @@ export function buildDigitalContactExportWireNameMap(
   for (const row of contacts) {
     const override = overrideMap.get(row.entity.id)?.wireName?.trim();
     const isOverride = Boolean(override);
-    const base = isOverride
-      ? override!
-      : digitalContactExportBaseName(row.entity, mode);
+    const base = isOverride ? override! : digitalContactExportBaseName(row.entity, mode);
     map.set(
       row.entity.id,
       applyDigitalContactExportWireName(base, options, profileId, warnings, isOverride),

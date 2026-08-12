@@ -103,12 +103,13 @@ Organisation names (talk groups, zones, contacts, RX lists) on Web Serial Write 
 
 ## Parity notes (preview vs egress)
 
-| Finding | Outcome |
-| --- | --- |
-| **D3** `nameModeOverride` | Verified: Anytone channel CSV / preview share `composeChannelWireName` with `nameModeOverride`. DM32 APRS guide markdown uses assembled `wireName` as a **display label only**, not a CPS wire field. |
-| **D4** contact export name mode | Anytone + OpenGD77 honour `digitalContactExportNameMode` via `buildDigitalContactExportWireNameMap`. DM32 / NeonPlug contact CSV uses assembled `name` (mode N/A for those adapters today). |
-| **D7** DM32/NeonPlug lean m×n rows | Lean rows keep the site wire name without a second shorten pass. Full compose/shorten still applies to expanded talk-group / multi-mode rows. Large lean-vs-preview parity cleanup deferred under epic [#915](https://github.com/pskillen/codeplug-studio/issues/915) if needed. |
-| **D8** scan-list preview shortening | Preview shortens standalone scan lists for Anytone only. DM32 / NeonPlug / OpenGD77 zone-derived scan lists reuse the zone's already-shortened wire name at export — Anytone-only preview condition is correct. |
+| Finding                             | Outcome                                                                                                                                                                                                                                                                          |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D3** `nameModeOverride`           | Verified: Anytone channel CSV / preview share `composeChannelWireName` with `nameModeOverride`. DM32 APRS guide markdown uses assembled `wireName` as a **display label only**, not a CPS wire field.                                                                            |
+| **D4** contact export name mode     | Anytone + OpenGD77 honour `digitalContactExportNameMode` via `buildDigitalContactExportWireNameMap`. DM32 / NeonPlug contact CSV uses assembled `name` (mode N/A for those adapters today).                                                                                      |
+| **D7** DM32/NeonPlug lean m×n rows  | Lean rows keep the site wire name without a second shorten pass. Full compose/shorten still applies to expanded talk-group / multi-mode rows. Large lean-vs-preview parity cleanup deferred under epic [#915](https://github.com/pskillen/codeplug-studio/issues/915) if needed. |
+| **D8** scan-list preview shortening | Preview shortens standalone scan lists for Anytone only. DM32 / NeonPlug / OpenGD77 zone-derived scan lists reuse the zone's already-shortened wire name at export — Anytone-only preview condition is correct.                                                                  |
+
 ## Other entity wire names
 
 | Entity                   | Default generated name          | Override field                  |

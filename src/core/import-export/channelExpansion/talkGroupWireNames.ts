@@ -24,20 +24,18 @@ export function applyTalkGroupWireNameLimits(
   maxLenOverride?: number,
   isOverride = false,
 ): string {
-  const maxLen =
-    maxLenOverride ?? resolveMaxNameLength(profileId ?? options?.profileId, options);
+  const maxLen = maxLenOverride ?? resolveMaxNameLength(profileId ?? options?.profileId, options);
   const shorten = options?.shortenNames !== false;
   const original = baseWireName.trim();
   let base = original;
 
   if (isOverride || !shorten || maxLen == null) {
     if (isOverride && maxLen != null) {
-      const { name: truncated, collided, stem } = hardTruncateUniqueWireName(
-        base,
-        reserved,
-        maxLen,
-        true,
-      );
+      const {
+        name: truncated,
+        collided,
+        stem,
+      } = hardTruncateUniqueWireName(base, reserved, maxLen, true);
       const name = sanitiseAsciiWireString(truncated);
       if (collided) {
         pushWireNameCollisionWarning(warnings, {
@@ -83,7 +81,11 @@ export function applyTalkGroupWireNameLimits(
     base = abbrev;
   }
 
-  const { name: finalized, collided, stem } = finalizeWireName(base, reserved, maxLen, {
+  const {
+    name: finalized,
+    collided,
+    stem,
+  } = finalizeWireName(base, reserved, maxLen, {
     allowCallsignSuffixDowngrade: false,
   });
   const exported = sanitiseAsciiWireString(finalized);
