@@ -66,6 +66,7 @@ export interface RadioIoAtD890uvProfile {
   scanListMembers: number;
   maxRxGroupLists: number;
   rxGroupListMembers: number;
+  maxContacts: number;
   maxTalkGroups: number;
   powerLadder: readonly PowerLadderEntry[];
 }
@@ -246,6 +247,7 @@ export const RADIO_IO_AT_D890UV_PROFILE: RadioIoAtD890uvProfile = {
   scanListMembers: AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX,
   maxRxGroupLists: AT_D890UV_LIMITS.RX_GROUP_LISTS_MAX,
   rxGroupListMembers: AT_D890UV_LIMITS.RX_GROUP_MEMBERS_MAX,
+  maxContacts: AT_D890UV_LIMITS.DIGITAL_CONTACTS_MAX,
   maxTalkGroups: AT_D890UV_LIMITS.TALK_GROUPS_MAX,
   powerLadder: AT_D890UV_POWER_LADDER,
 };

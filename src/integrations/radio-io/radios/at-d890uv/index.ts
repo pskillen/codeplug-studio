@@ -52,6 +52,12 @@ export {
   type AtD890RegisterRow,
 } from './retainPreview.ts';
 export {
+  encodeAtD890DigitalContactRecord,
+  packAtD890DigitalContacts,
+  atD890BlockHoppedAddress,
+} from './digitalContactCodec.ts';
+export { uploadAtD890DigitalContacts } from './digitalContactWrite.ts';
+export {
   AT_D890_WRITTEN_FROM_BUILD_LABELS,
   AT_D890_DIGITAL_CONTACTS_WRITE_GAP,
   atD890WriteRole,
