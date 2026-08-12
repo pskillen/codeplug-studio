@@ -228,15 +228,15 @@ Only indices with a set bit in `ChannelSet` are present.
 
 ## Occupancy bitmaps (summary)
 
-| Set             | Size    | Sense                                                                                                 |
-| --------------- | ------- | ----------------------------------------------------------------------------------------------------- |
-| ChannelSet      | `0x200` | Bit **set** → channel slot occupied                                                                   |
-| ZoneSet         | `0x20`  | Bit **set** → zone occupied                                                                           |
+| Set             | Size    | Sense                                                                                                                                                                                             |
+| --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ChannelSet      | `0x200` | Bit **set** → channel slot occupied                                                                                                                                                               |
+| ZoneSet         | `0x20`  | Bit **set** → zone occupied                                                                                                                                                                       |
 | ZoneHide        | `0x20`  | Bit **set** → zone hidden. Visible = occupied and not hidden. Zero visible zones is invalid ([#1125](https://github.com/pskillen/codeplug-studio/issues/1125); [zone-record.md](zone-record.md)). |
-| RadioIdSet      | `0x20`  | Bit **set** → radio ID occupied                                                                       |
-| ScanListSet     | `0x20`  | Bit **set** → scan list occupied                                                                      |
-| ReceiveGroupSet | `0x20`  | Bit **set** → receive group occupied ([#845](https://github.com/pskillen/codeplug-studio/issues/845)) |
-| TalkgroupSet    | `0x4F0` | Bit **set** → slot **empty** (inverted)                                                               |
+| RadioIdSet      | `0x20`  | Bit **set** → radio ID occupied                                                                                                                                                                   |
+| ScanListSet     | `0x20`  | Bit **set** → scan list occupied                                                                                                                                                                  |
+| ReceiveGroupSet | `0x20`  | Bit **set** → receive group occupied ([#845](https://github.com/pskillen/codeplug-studio/issues/845))                                                                                             |
+| TalkgroupSet    | `0x4F0` | Bit **set** → slot **empty** (inverted)                                                                                                                                                           |
 
 Bit indexing: slot `n` → byte `n // 8`, bit `n % 8`.
 
