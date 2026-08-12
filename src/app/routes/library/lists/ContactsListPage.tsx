@@ -176,7 +176,7 @@ function DigitalContactsTable({
             ? `No digital contacts match “${nameFilter.trim()}”.`
             : 'No digital contacts match your filter.'
         }
-        caption="Imported contacts may include RadioID.net provenance metadata."
+        caption="Library contacts only — not the RadioID directory shadow store."
         onRowActivate={(c) => navigate(`/library/digital-contacts/${c.id}`)}
       />
     </>
@@ -273,7 +273,7 @@ export default function ContactsListPage() {
 
   const digitalCount = library.digitalContacts.length;
   const analogCount = library.analogContacts.length;
-  const countSubtitle = `${digitalCount.toLocaleString()} digital · ${analogCount.toLocaleString()} analog`;
+  const countSubtitle = `${digitalCount.toLocaleString()} digital · ${analogCount.toLocaleString()} analog · curated library contacts`;
 
   const listActions = (
     <>
@@ -308,6 +308,19 @@ export default function ContactsListPage() {
     <DesignSystemV2Provider>
       <div className={classes.page}>
         <LibraryInventoryHeader title="Contacts" subtitle={countSubtitle} actions={listActions} />
+
+        <p className={classes.subtitle} style={{ marginBottom: 16 }}>
+          Curated contacts you edit and reference from channels. Bulk RadioID.net downloads live in
+          the{' '}
+          <button
+            type="button"
+            className="libraryListNameLink"
+            onClick={() => navigate('/library/contacts/directory')}
+          >
+            digital ID directory
+          </button>{' '}
+          — copy rows here when you need them in the library.
+        </p>
 
         <Panel title={`Digital contacts (${digitalCount})`}>
           <DigitalContactsTable

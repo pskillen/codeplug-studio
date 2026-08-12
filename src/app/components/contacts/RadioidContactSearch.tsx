@@ -276,8 +276,8 @@ export default function RadioidContactSearch() {
 
   return (
     <DirectoryIngestPage
-      crumb="Contacts"
-      crumbTo="/library/contacts"
+      crumb="Directory"
+      crumbTo="/library/contacts/directory"
       title="Search RadioID.net"
       subtitle={
         <>
@@ -296,8 +296,8 @@ export default function RadioidContactSearch() {
         </>
       }
       footer={
-        <Button variant="secondary" onClick={() => navigate('/library/contacts')}>
-          Back to library
+        <Button variant="secondary" onClick={() => navigate('/library/contacts/directory')}>
+          Back to directory
         </Button>
       }
     >

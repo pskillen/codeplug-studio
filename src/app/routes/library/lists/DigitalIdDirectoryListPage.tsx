@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { DigitalIdDirectoryOrderBy } from '@integrations/persistence/index.ts';
 import DigitalIdDirectoryDetailDrawer from '../../../components/contacts/DigitalIdDirectoryDetailDrawer.tsx';
+import ClearDigitalIdDirectoryDialog from '../../../components/contacts/ClearDigitalIdDirectoryDialog.tsx';
 import CountryComboboxField from '../../../components/directories/CountryComboboxField.tsx';
 import pageClasses from '../../../components/directories/DirectoryIngestPage.module.css';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
@@ -18,22 +19,17 @@ import {
   StatusBanner,
   TextInput,
   type DataTableColumn,
-  type DataTableSortState,
 } from '../../../components/v2/index.ts';
 import { useDigitalIdDirectoryPage } from '../../../hooks/useDigitalIdDirectoryPage.ts';
-import { v1SortToV2, v2SortToV1 } from '../../../lib/libraryListTable.tsx';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../../lib/iconSizes.ts';
 import { useProjects } from '../../../state/useProjects.ts';
 import { useLibrary } from '../../../state/useLibrary.ts';
+import { persistence } from '../../../state/persistence.ts';
 import classes from '../../../components/library/LibraryInventoryPage.module.css';
 
 const PAGE_SIZE = 50;
 
 const ORDER_BY_KEYS = new Set<string>(['digitalId', 'callsign', 'name']);
-
-function orderByToSort(orderBy: DigitalIdDirectoryOrderBy): DataTableSortState {
-  return { key: orderBy, direction: 'asc' };
-}
 
 export default function DigitalIdDirectoryListPage() {
   const navigate = useNavigate();
@@ -46,6 +42,7 @@ export default function DigitalIdDirectoryListPage() {
   const [countryEquals, setCountryEquals] = useState('');
   const [detailEntry, setDetailEntry] = useState<DigitalIdDirectoryEntry | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [clearOpen, setClearOpen] = useState(false);
 
   const filters = useMemo(
     () => ({
@@ -177,6 +174,16 @@ export default function DigitalIdDirectoryListPage() {
           />
         ) : (
           <Panel title={`Directory rows (${total.toLocaleString()})`}>
+            <div className={classes.toolbarActions} style={{ marginBottom: 12 }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={total === 0}
+                onClick={() => setClearOpen(true)}
+              >
+                Clear directory
+              </Button>
+            </div>
             <div className={pageClasses.filterGrid} style={{ marginBottom: 12 }}>
               <CountryComboboxField
                 label="Country"
@@ -218,11 +225,10 @@ export default function DigitalIdDirectoryListPage() {
               scale="extreme"
               totalRowCount={total}
               caption={tableCaption}
-              sort={v1SortToV2(orderByToSort(orderBy))}
+              sort={{ key: orderBy, direction: 'asc' }}
               onSortChange={(next) => {
-                const v1 = v2SortToV1(next);
-                if (v1 && ORDER_BY_KEYS.has(v1.columnKey)) {
-                  setOrderBy(v1.columnKey as DigitalIdDirectoryOrderBy);
+                if (next && ORDER_BY_KEYS.has(next.key)) {
+                  setOrderBy(next.key as DigitalIdDirectoryOrderBy);
                   setPage(1);
                 }
               }}
@@ -249,6 +255,16 @@ export default function DigitalIdDirectoryListPage() {
           opened={detailOpen}
           onClose={() => setDetailOpen(false)}
           onCopied={() => void reload()}
+        />
+
+        <ClearDigitalIdDirectoryDialog
+          opened={clearOpen}
+          onClose={() => setClearOpen(false)}
+          entryCount={total}
+          onConfirm={async () => {
+            if (!activeProjectId) return { deletedCount: 0 };
+            return persistence.deleteDigitalIdDirectoryForProject(activeProjectId);
+          }}
         />
       </div>
     </DesignSystemV2Provider>
