@@ -11,18 +11,24 @@
  * after removing the relevant egress pathway).
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Alert, Group, Stack, Text, Tooltip } from '@mantine/core';
 import { IconAlertTriangle } from '@tabler/icons-react';
+import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import type { SatelliteWritePreviewEntry } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { Button, DataTable, Panel, type DataTableColumn } from '../../components/v2/index.ts';
+import { SatelliteWireNameOverrideInput } from '../../components/builds/satelliteKeps/SatelliteWireNameOverrideInput.tsx';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
+import { resolveOptimisticBuild } from '../../lib/resolveOptimisticBuild.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
 import { persistence } from '../../state/persistence.ts';
+import { BuildService } from '../../state/buildService.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import {
   closeRadioSession,
@@ -48,6 +54,8 @@ import RadioIoProgressModal, {
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 import classes from './BuildExportPage.module.css';
 
+const buildService = new BuildService(persistence);
+
 /**
  * Which egress pathway on this build to use for the keps write — prefers the operator's active
  * pathway (Export page's pathway switcher) when it's keps-capable, otherwise falls back to the
@@ -64,9 +72,40 @@ function resolveSatelliteKepsEgress(
 }
 
 export default function BuildSatelliteKepsPage() {
-  const { build, egressPaths, activeEgress } = useBuildLayout();
+  const { build: contextBuild, egressPaths, activeEgress } = useBuildLayout();
+  const buildRef = useRef(contextBuild);
+  const [savedBuild, setSavedBuild] = useState<RadioBuild | null>(null);
+  const build = resolveOptimisticBuild(contextBuild, savedBuild);
   const { activeProjectId } = useProjects();
   const egress = resolveSatelliteKepsEgress(egressPaths, activeEgress);
+
+  useEffect(() => {
+    buildRef.current = build;
+  }, [build]);
+
+  const persistBuild = useCallback((mutate: (current: RadioBuild) => RadioBuild) => {
+    const run = async () => {
+      const current = buildRef.current;
+      const next = mutate(current);
+      if (next === current) return;
+      const result = await buildService.putBuild(next, current.revision);
+      if (result.ok) {
+        const saved = { ...next, revision: result.revision };
+        buildRef.current = saved;
+        setSavedBuild(saved);
+      }
+    };
+    void run();
+  }, []);
+
+  const setSatelliteWireName = useCallback(
+    (satelliteId: string, wireName: string) => {
+      void persistBuild((current) =>
+        buildService.withWireNameOverride(current, 'satelliteOverrides', satelliteId, wireName),
+      );
+    },
+    [persistBuild],
+  );
 
   const sessionRef = useRef<RadioSession | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -134,9 +173,35 @@ export default function BuildSatelliteKepsPage() {
   }, [activeProjectId, kepsPreview, kepsExclusions]);
 
   const previewEntries = useMemo<SatelliteWritePreviewEntry[]>(
-    () => (kepsPreview ? kepsPreview(enabledSatellites) : []),
-    [kepsPreview, enabledSatellites],
+    () =>
+      kepsPreview
+        ? kepsPreview(enabledSatellites, { satelliteOverrides: build.satelliteOverrides })
+        : [],
+    [kepsPreview, enabledSatellites, build.satelliteOverrides],
   );
+
+  const satelliteWireNameRows = useMemo(() => {
+    const seen = new Set<string>();
+    const rows: {
+      satelliteId: string;
+      satelliteName: string;
+      generatedWireName: string;
+      committedWireName: string;
+    }[] = [];
+    const overrides = overrideByEntityId(build.satelliteOverrides);
+    for (const entry of previewEntries) {
+      if (seen.has(entry.satelliteId)) continue;
+      seen.add(entry.satelliteId);
+      const override = overrides.get(entry.satelliteId)?.wireName?.trim();
+      rows.push({
+        satelliteId: entry.satelliteId,
+        satelliteName: entry.satelliteName,
+        generatedWireName: entry.generatedWireName ?? entry.satelliteWireName ?? entry.encodedName,
+        committedWireName: override ?? entry.generatedWireName ?? entry.satelliteWireName,
+      });
+    }
+    return rows;
+  }, [previewEntries, build.satelliteOverrides]);
 
   /**
    * Live "why did this enabled satellite/transmitter not show up in the preview above" (#1085
@@ -285,6 +350,7 @@ export default function BuildSatelliteKepsPage() {
       const result = await kepsWriteFn(session, satellites, {
         onProgress,
         signal: abortRef.current!.signal,
+        satelliteOverrides: build.satelliteOverrides,
       });
       setKepsWriteSummary(result);
       await releaseSession();
@@ -331,6 +397,33 @@ export default function BuildSatelliteKepsPage() {
       </div>
       <Stack gap="md">
         {!serialOk ? <Alert color="yellow">{getRadioSerialUnsupportedMessage()}</Alert> : null}
+        <Panel title="Wire names">
+          <Text size="sm" c="dimmed" mb="xs">
+            Short names written to the radio for each satellite in this build. Overrides are saved
+            on the build; click <strong>Default</strong> to pin the generated suggestion.
+          </Text>
+          {satelliteWireNameRows.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              No satellites are currently eligible to write.
+            </Text>
+          ) : (
+            <Stack gap="md">
+              {satelliteWireNameRows.map((row) => (
+                <div key={row.satelliteId}>
+                  <Text size="sm" fw={500} mb={4}>
+                    {row.satelliteName}
+                  </Text>
+                  <SatelliteWireNameOverrideInput
+                    committedWireName={row.committedWireName}
+                    generatedWireName={row.generatedWireName}
+                    nameLimit={AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH}
+                    onWireNameChange={(wireName) => setSatelliteWireName(row.satelliteId, wireName)}
+                  />
+                </div>
+              ))}
+            </Stack>
+          )}
+        </Panel>
         <Panel title="Preview satellites to write">
           <Text size="sm" c="dimmed" mb="xs">
             Exactly what a Write Keps would send right now, from the library&apos;s current enabled

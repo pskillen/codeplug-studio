@@ -6,6 +6,7 @@ import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import { BuildLayoutProvider } from './BuildLayoutContext.tsx';
 import BuildSatelliteKepsPage from './BuildSatelliteKepsPage.tsx';
+import { persistence } from '../../state/persistence.ts';
 
 /**
  * #1085 moved these behaviours here from `BuildRadioIoPanel.test.tsx`'s "Write Keps (#859)",
@@ -93,6 +94,7 @@ vi.mock('../../state/persistence.ts', () => ({
   persistence: {
     listSatellites: vi.fn(async () => [satellite]),
     subscribe: vi.fn(() => () => {}),
+    putRadioBuild: vi.fn(async () => ({ ok: true, revision: 2 })),
   },
 }));
 
@@ -165,8 +167,12 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
         transmitterLabel: 'FM',
         mode: 'FM',
         encodedName: 'ISS',
+        satelliteWireName: 'ISS',
+        generatedWireName: 'ISS',
+        hasWireNameOverride: false,
         uplinkHz: 145_850_000,
         downlinkHz: 436_795_000,
+        nameTruncated: false,
       }));
     try {
       renderPage();
@@ -186,6 +192,9 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
         transmitterLabel: 'FM',
         mode: 'FM',
         encodedName: 'CUBESAT',
+        satelliteWireName: 'CUBESAT',
+        generatedWireName: 'CUBESAT',
+        hasWireNameOverride: false,
         uplinkHz: 145_850_000,
         downlinkHz: 436_795_000,
         nameTruncated: true,
@@ -198,8 +207,8 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
     }
   });
 
-  it('does not show a truncation indicator on a row with nameTruncated false', async () => {
-    kepsPreviewStub = (satellites) =>
+  it('passes build satelliteOverrides to the preview function', async () => {
+    const previewSpy = vi.fn((satellites: readonly Satellite[]) =>
       satellites.map((s) => ({
         satelliteId: s.id,
         satelliteName: s.name,
@@ -207,14 +216,54 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
         transmitterLabel: 'FM',
         mode: 'FM',
         encodedName: 'ISS',
-        uplinkHz: 145_850_000,
-        downlinkHz: 436_795_000,
+        satelliteWireName: 'ISS',
+        generatedWireName: 'ISS',
+        hasWireNameOverride: false,
+        uplinkHz: null,
+        downlinkHz: null,
         nameTruncated: false,
+      })),
+    );
+    kepsPreviewStub = previewSpy;
+    try {
+      renderPage();
+      await waitFor(() => expect(previewSpy).toHaveBeenCalled());
+      expect(previewSpy.mock.calls[0]?.[1]).toEqual({ satelliteOverrides: [] });
+    } finally {
+      kepsPreviewStub = undefined;
+    }
+  });
+
+  it('applies Default to pin a generated wire name', async () => {
+    kepsPreviewStub = (satellites) =>
+      satellites.map((s) => ({
+        satelliteId: s.id,
+        satelliteName: s.name,
+        transmitterId: 'tx-1',
+        transmitterLabel: 'FM',
+        mode: 'FM',
+        encodedName: 'GEOSCA 1',
+        satelliteWireName: 'GEOSCA 1',
+        generatedWireName: 'GEOSCA 1',
+        hasWireNameOverride: false,
+        uplinkHz: null,
+        downlinkHz: null,
+        nameTruncated: true,
       }));
     try {
       renderPage();
-      await waitFor(() => expect(screen.getAllByText('ISS').length).toBeGreaterThan(0));
-      expect(screen.queryByLabelText('Name truncated')).not.toBeInTheDocument();
+      await waitFor(() => expect(screen.getByText('Wire names')).toBeInTheDocument());
+      fireEvent.click(screen.getByRole('button', { name: 'GEOSCA 1' }));
+      await waitFor(() =>
+        expect(persistence.putRadioBuild).toHaveBeenCalledWith(
+          expect.objectContaining({
+            satelliteOverrides: expect.arrayContaining([
+              expect.objectContaining({ libraryEntityId: 'sat-1', wireName: 'GEOSCA 1' }),
+            ]),
+          }),
+          expect.anything(),
+        ),
+      );
     } finally {
       kepsPreviewStub = undefined;
     }
