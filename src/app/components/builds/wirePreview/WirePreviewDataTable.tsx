@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useDebouncedValue } from '@mantine/hooks';
-import { Badge, Group, Stack, Switch, Text } from '@mantine/core';
+import { Badge, Group, Switch, Text } from '@mantine/core';
 import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
 import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
 import type { WirePreviewEntityKind, WirePreviewRow } from '@core/services/previewWireRows.ts';
@@ -202,16 +202,9 @@ export default function WirePreviewDataTable({
               —
             </Text>
           ) : (
-            <Stack gap={2}>
-              <Text size="sm" fw={row.hasWireNameOverride ? 600 : 400}>
-                {row.effectiveWireName}
-              </Text>
-              {row.hasWireNameOverride ? (
-                <Text size="xs" c="dimmed">
-                  Default: {row.generatedWireName}
-                </Text>
-              ) : null}
-            </Stack>
+            <Text size="sm" fw={row.hasWireNameOverride ? 600 : 400}>
+              {row.effectiveWireName}
+            </Text>
           ),
       },
       ...(zoneScanColumn
