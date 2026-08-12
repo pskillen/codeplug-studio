@@ -104,4 +104,26 @@ describe('anytoneChannelWireName', () => {
 
     expect(exportName).toBe(preview);
   });
+
+  it('matches preview when nameModeOverride is name_only', () => {
+    const channel = dmrChannel('Glasgow');
+    const build = {
+      ...newFormatBuild(PROJECT_ID, 'anytone-at-d890uv'),
+      exportSettings: { nameModeOverride: 'name_only' as const },
+    };
+    const options = {
+      profileId: 'anytone-at-d890uv',
+      shortenNames: true,
+      nameModeOverride: 'name_only' as const,
+    };
+    const preview = previewGeneratedChannelWireName(channel, build, options);
+    const exportName = anytoneChannelWireName(
+      { entity: channel, wireName: 'unused' },
+      { reserved: new Set() },
+      options,
+    );
+
+    expect(preview).toBe('Glasgow');
+    expect(exportName).toBe(preview);
+  });
 });

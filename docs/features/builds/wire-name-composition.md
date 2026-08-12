@@ -80,7 +80,7 @@ See [multi-talkgroup-expansion](../../reference/multi-talkgroup-expansion.md).
 
 ## Shortening (all entity kinds that have wire names)
 
-When `shortenNames` is true and the name exceeds the profile **`nameLimit`** (or `maxNameLength` override):
+When `shortenNames` is true and the **generated** name exceeds the profile **`nameLimit`** (or `maxNameLength` override):
 
 | Entity                   | Prefer before dictionary                               | Protected suffix                                                     |
 | ------------------------ | ------------------------------------------------------ | -------------------------------------------------------------------- |
@@ -89,10 +89,26 @@ When `shortenNames` is true and the name exceeds the profile **`nameLimit`** (or
 | Talk group               | `TalkGroup.abbreviation` if `useTalkGroupAbbreviation` | —                                                                    |
 | Zone / contact / RX list | Dictionary / vowel squeeze on name                     | —                                                                    |
 
+**Overrides are never smart-shortened.** A non-empty `wireName` override is hard-truncated to `nameLimit` (with room reserved for ` 2` / ` 3` … disambiguation) regardless of `shortenNames`. That policy is shared by CPS export and Web Serial org-name generation.
+
+**Naming collisions:** when uniquify appends a disambiguation suffix because the candidate was already reserved, export pushes a problem warning (`… collided with another exported name; disambiguated as "…"`). Those land in the yellow Export warnings alert (`shortenedProblemGroups`), never the muted info accordion.
+
 Dictionary: `dictionary.generated.ts` (`npm run generate:abbreviations`).
 
 See [name-shortening.md](../import-export/name-shortening.md).
 
+## Web Serial (radio-io) parity
+
+Organisation names (talk groups, zones, contacts, RX lists) on Web Serial Write resolve through the same `mergeExportOptions(build, …)` settings as CPS CSV — including `shortenNames`, `useTalkGroupAbbreviation`, and override hard-truncate. Talk-group rows use `applyTalkGroupWireNameLimits` (abbreviation-aware), not the list-only helper.
+
+## Parity notes (preview vs egress)
+
+| Finding | Outcome |
+| --- | --- |
+| **D3** `nameModeOverride` | Verified: Anytone channel CSV / preview share `composeChannelWireName` with `nameModeOverride`. DM32 APRS guide markdown uses assembled `wireName` as a **display label only**, not a CPS wire field. |
+| **D4** contact export name mode | Anytone + OpenGD77 honour `digitalContactExportNameMode` via `buildDigitalContactExportWireNameMap`. DM32 / NeonPlug contact CSV uses assembled `name` (mode N/A for those adapters today). |
+| **D7** DM32/NeonPlug lean m×n rows | Lean rows keep the site wire name without a second shorten pass. Full compose/shorten still applies to expanded talk-group / multi-mode rows. Large lean-vs-preview parity cleanup deferred under epic [#915](https://github.com/pskillen/codeplug-studio/issues/915) if needed. |
+| **D8** scan-list preview shortening | Preview shortens standalone scan lists for Anytone only. DM32 / NeonPlug / OpenGD77 zone-derived scan lists reuse the zone's already-shortened wire name at export — Anytone-only preview condition is correct. |
 ## Other entity wire names
 
 | Entity                   | Default generated name          | Override field                  |

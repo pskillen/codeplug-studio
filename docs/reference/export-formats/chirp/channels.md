@@ -43,6 +43,8 @@ Parse by **header name**, not column index.
 
 CHIRP `Name` is the composed wire name (`composeChannelWireName`). Profile `nameLimit` varies by radio (UV-5R Mini / UV-21Pro V2: **12**; RT95 VOX: **6** — CHIRP driver caps). Shortening runs per export file with a shared reserved-name set.
 
+**Build `wireName` overrides** that exceed `nameLimit` are **hard-truncated** (never dictionary / vowel smart-shortened), matching other CPS formats. See [wire-name-composition](../../../features/builds/wire-name-composition.md).
+
 ## Duplex
 
 | `Duplex` | Meaning        | Model                           |
