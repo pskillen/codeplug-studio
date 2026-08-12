@@ -269,12 +269,18 @@ export class OpenGd77Protocol implements CloneImageRadio {
     this.pipe = null;
   }
 
-  async download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap> {
+  async download(opts: {
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
+    /** Override default progress step label (`FLASH image`). */
+    progressStage?: string;
+  }): Promise<MemoryMap> {
     const pipe = this.pipe;
     if (!pipe) throw new RadioProtocolError('OpenGD77 download: not connected');
 
     const image = createOpenUv380Image();
     const total = openUv380DownloadByteCount();
+    const stage = opts.progressStage ?? 'FLASH image';
     let done = 0;
 
     for (const span of OPENUV380_FLASH_SPANS) {
@@ -289,7 +295,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
           cur: done,
           max: total,
           msg: `Reading FLASH 0x${abs.toString(16)}`,
-          stage: 'FLASH image',
+          stage,
         });
       }
     }
@@ -312,21 +318,26 @@ export class OpenGd77Protocol implements CloneImageRadio {
       /* may already be in CPS */
     }
 
-    const prior = this.priorImage;
-    const sectors = prior
-      ? collectDirtySectors(prior, image)
-      : collectDirtySectors(createOpenUv380Image(), image);
+    // Live radio flash is the diff base for dirty-sector upload and kept-region snapshots.
+    // Bag-seeded priorImage (when present) may be stale; always refresh in-session before write.
+    await this.download({
+      onProgress: opts.onProgress,
+      signal: opts.signal,
+      progressStage: 'Pre-write read',
+    });
 
-    if (prior) {
-      const kept = new Map<string, Uint8Array>();
-      for (const region of openGd77KeptRegions()) {
-        const len = openGd77KeptRegionLength(region.id);
-        kept.set(region.id, readAbs(prior, region.absAddress, len));
-      }
-      this.lastUploadKept = kept;
-    } else {
-      this.lastUploadKept = undefined;
+    const prior = this.priorImage;
+    if (!prior) {
+      throw new RadioProtocolError('OpenGD77 upload: pre-write read did not establish priorImage');
     }
+    const sectors = collectDirtySectors(prior, image);
+
+    const kept = new Map<string, Uint8Array>();
+    for (const region of openGd77KeptRegions()) {
+      const len = openGd77KeptRegionLength(region.id);
+      kept.set(region.id, readAbs(prior, region.absAddress, len));
+    }
+    this.lastUploadKept = kept;
 
     for (let i = 0; i < sectors.length; i++) {
       throwIfAborted(opts.signal);
