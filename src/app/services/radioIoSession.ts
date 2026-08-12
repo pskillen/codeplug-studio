@@ -64,6 +64,10 @@ import {
   resolveRadioWriteProdDisabledMessage,
 } from './radioWriteEnvGate.ts';
 import { assembleAtD890WriteImage } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
+import {
+  AT_D890_ZERO_VISIBLE_ZONES_MESSAGE,
+  assertAtD890HasVisibleZones,
+} from '@integrations/radio-io/radios/at-d890uv/zoneCodec.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
@@ -380,8 +384,14 @@ export async function prepareRadioWriteImage(
     ).deciseconds;
   }
   if (descriptor && !descriptor.hydrationRequiredForWrite) {
+    const image = assembleAtD890WriteImage(projection.channels, organisation);
+    try {
+      assertAtD890HasVisibleZones(image);
+    } catch {
+      throw new RadioWriteBlockedError(AT_D890_ZERO_VISIBLE_ZONES_MESSAGE);
+    }
     return {
-      image: assembleAtD890WriteImage(projection.channels, organisation),
+      image,
       warnings,
       organisation,
     };

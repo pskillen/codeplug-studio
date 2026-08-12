@@ -12,7 +12,7 @@ import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { assembleAtD890WriteImage } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
 import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
 import type { CloneImageRadio, MemoryMap, RadioSession } from '@integrations/radio-io/types.ts';
-import { prepareRadioWriteImage, writeBuildToRadio } from './radioIoSession.ts';
+import { prepareRadioWriteImage, RadioWriteBlockedError, writeBuildToRadio } from './radioIoSession.ts';
 import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
 import { assemble } from '@core/services/assemble.ts';
 
@@ -41,17 +41,56 @@ describe('AT-D890UV write without persisted hydration', () => {
         { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
       ],
     };
+    const zone = {
+      ...newZone('p1', 'Local'),
+      id: 'zone-1',
+      members: [{ kind: 'channel' as const, channelId: 'ch-1' }],
+    };
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
     const { image } = await prepareRadioWriteImage(
       {
         ...build,
         channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
+        layout: {
+          sections: [
+            {
+              kind: 'zoneGrouping' as const,
+              zones: [{ id: 'zone-1', name: 'Local', channelIds: ['ch-1'] }],
+            },
+          ],
+        },
       },
       egress,
-      emptyLibrary([ch]),
+      { ...emptyLibrary([ch]), zones: [zone] },
     );
     const channelSet = image.get(D890_MAP.ChannelSet, 0x200);
     expect(channelSet[0]! & 1).toBe(1);
+    const zoneHide = image.get(D890_MAP.ZoneHide, 0x20);
+    expect(zoneHide[0]! & 1).toBe(0);
+  });
+
+  it('refuses prepare when the assembled image has zero visible zones', async () => {
+    const ch = {
+      ...newChannel('p1', 'TEST'),
+      id: 'ch-1',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    await expect(
+      prepareRadioWriteImage(
+        {
+          ...build,
+          channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
+        },
+        egress,
+        emptyLibrary([ch]),
+      ),
+    ).rejects.toBeInstanceOf(RadioWriteBlockedError);
   });
 
   it('writes without persisted hydration and sets upload bank intent only', async () => {
@@ -91,20 +130,76 @@ describe('AT-D890UV write without persisted hydration', () => {
         { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
       ],
     };
+    const zone = {
+      ...newZone('p1', 'Local'),
+      id: 'zone-1',
+      members: [{ kind: 'channel' as const, channelId: 'ch-1' }],
+    };
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
     await writeBuildToRadio(
       session,
       {
         ...build,
         channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
+        layout: {
+          sections: [
+            {
+              kind: 'zoneGrouping' as const,
+              zones: [{ id: 'zone-1', name: 'Local', channelIds: ['ch-1'] }],
+            },
+          ],
+        },
       },
       egress,
-      emptyLibrary([ch]),
+      { ...emptyLibrary([ch]), zones: [zone] },
     );
     expect(upload).toHaveBeenCalledTimes(1);
     expect(seedProtocolForUpload).toHaveBeenCalledTimes(1);
     const seedArgs = seedProtocolForUpload.mock.calls[0]!;
     expect(seedArgs[1]).toBeFalsy();
+  });
+
+  it('does not upload when the assembled image has zero visible zones', async () => {
+    const upload = vi.fn(async (_img: MemoryMap) => {
+      void _img;
+    });
+    const radio: CloneImageRadio = {
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      download: vi.fn(),
+      upload,
+      decodeChannels: () => [],
+      encodeChannels: (img) => img,
+      readFirmware: () => undefined,
+    };
+    const session: RadioSession = {
+      descriptor: AT_D890UV_DESCRIPTOR,
+      pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
+      radio,
+    };
+    const ch = {
+      ...newChannel('p1', 'TEST'),
+      id: 'ch-1',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    await expect(
+      writeBuildToRadio(
+        session,
+        {
+          ...build,
+          channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
+        },
+        egress,
+        emptyLibrary([ch]),
+      ),
+    ).rejects.toBeInstanceOf(RadioWriteBlockedError);
+    expect(upload).not.toHaveBeenCalled();
   });
 });
 

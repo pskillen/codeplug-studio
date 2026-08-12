@@ -39,6 +39,7 @@ import {
 } from './connection.ts';
 import { negotiateAtD890ReadBlockSize } from './linkProbe.ts';
 import { decodeChannelsFromAtD890Cache, encodeChannelsIntoAtD890Image } from './channelCodec.ts';
+import { assertAtD890HasVisibleZones } from './zoneCodec.ts';
 import { refreshScanListSetFromRadioBase } from './scanListCodec.ts';
 import {
   assertAtD890SentinelRegionsPlausible,
@@ -566,6 +567,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
     if (!this.pipe || !this.cache) {
       throw new RadioProtocolError('AT-D890UV not connected');
     }
+    assertAtD890HasVisibleZones(image);
     if (!this.programming) {
       await atD890EnterProgram(this.pipe, opts.signal);
       this.programming = true;
