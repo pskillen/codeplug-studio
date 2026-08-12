@@ -35,21 +35,17 @@ import MaidenheadReferencePage from './routes/reference/MaidenheadReferencePage.
 import ReferenceIndexPage from './routes/reference/ReferenceIndexPage.tsx';
 import SettingsPage from './routes/SettingsPage.tsx';
 import HelpPage from './routes/HelpPage.tsx';
+import StyleguideLayout from './routes/styleguide/StyleguideLayout.tsx';
+import StyleguideLegacyRedirect from './routes/styleguide/StyleguideLegacyRedirect.tsx';
 import StyleguideIndexPage from './routes/styleguide/StyleguideIndexPage.tsx';
-import StyleguideLayoutPage from './routes/styleguide/StyleguideLayoutPage.tsx';
-import StyleguideDataTablePage from './routes/styleguide/StyleguideDataTablePage.tsx';
+import StyleguideFormsPage from './routes/styleguide/StyleguideFormsPage.tsx';
+import StyleguideDataDisplayPage from './routes/styleguide/StyleguideDataDisplayPage.tsx';
+import StyleguideFeedbackPage from './routes/styleguide/StyleguideFeedbackPage.tsx';
+import StyleguideOverlaysPage from './routes/styleguide/StyleguideOverlaysPage.tsx';
 import StyleguideMembershipPage from './routes/styleguide/StyleguideMembershipPage.tsx';
-import StyleguideControlsPage from './routes/styleguide/StyleguideControlsPage.tsx';
-import StyleguideV2Layout from './routes/styleguide/v2/StyleguideV2Layout.tsx';
-import StyleguideV2IndexPage from './routes/styleguide/v2/StyleguideV2IndexPage.tsx';
-import StyleguideV2FormsPage from './routes/styleguide/v2/StyleguideV2FormsPage.tsx';
-import StyleguideV2DataDisplayPage from './routes/styleguide/v2/StyleguideV2DataDisplayPage.tsx';
-import StyleguideV2FeedbackPage from './routes/styleguide/v2/StyleguideV2FeedbackPage.tsx';
-import StyleguideV2OverlaysPage from './routes/styleguide/v2/StyleguideV2OverlaysPage.tsx';
-import StyleguideV2MembershipPage from './routes/styleguide/v2/StyleguideV2MembershipPage.tsx';
-import StyleguideV2NavigationPage from './routes/styleguide/v2/StyleguideV2NavigationPage.tsx';
-import StyleguideV2PatternsPage from './routes/styleguide/v2/StyleguideV2PatternsPage.tsx';
-import StyleguideV2ContainersPage from './routes/styleguide/v2/StyleguideV2ContainersPage.tsx';
+import StyleguideNavigationPage from './routes/styleguide/StyleguideNavigationPage.tsx';
+import StyleguidePatternsPage from './routes/styleguide/StyleguidePatternsPage.tsx';
+import StyleguideContainersPage from './routes/styleguide/StyleguideContainersPage.tsx';
 import DebugIndexPage from './routes/debug/DebugIndexPage.tsx';
 import DebugIndexedDbPage from './routes/debug/DebugIndexedDbPage.tsx';
 import DebugIndexedDbStorePage from './routes/debug/DebugIndexedDbStorePage.tsx';
@@ -101,26 +97,23 @@ export const appRouter = createBrowserRouter([
       { path: '/reference', element: <ReferenceIndexPage /> },
       { path: '/reference/maidenhead', element: <MaidenheadReferencePage /> },
       { path: '/reference/bands', element: <BandsReferencePage /> },
-      { path: '/styleguide', element: <StyleguideIndexPage /> },
-      { path: '/styleguide/layout', element: <StyleguideLayoutPage /> },
-      { path: '/styleguide/data-table', element: <StyleguideDataTablePage /> },
-      { path: '/styleguide/membership', element: <StyleguideMembershipPage /> },
-      { path: '/styleguide/controls', element: <StyleguideControlsPage /> },
       {
-        path: '/styleguide/v2',
-        element: <StyleguideV2Layout />,
+        path: '/styleguide',
+        element: <StyleguideLayout />,
         children: [
-          { index: true, element: <StyleguideV2IndexPage /> },
-          { path: 'forms', element: <StyleguideV2FormsPage /> },
-          { path: 'data-display', element: <StyleguideV2DataDisplayPage /> },
-          { path: 'feedback', element: <StyleguideV2FeedbackPage /> },
-          { path: 'overlays', element: <StyleguideV2OverlaysPage /> },
-          { path: 'membership', element: <StyleguideV2MembershipPage /> },
-          { path: 'navigation', element: <StyleguideV2NavigationPage /> },
-          { path: 'patterns', element: <StyleguideV2PatternsPage /> },
-          { path: 'containers', element: <StyleguideV2ContainersPage /> },
+          { index: true, element: <StyleguideIndexPage /> },
+          { path: 'forms', element: <StyleguideFormsPage /> },
+          { path: 'data-display', element: <StyleguideDataDisplayPage /> },
+          { path: 'feedback', element: <StyleguideFeedbackPage /> },
+          { path: 'overlays', element: <StyleguideOverlaysPage /> },
+          { path: 'membership', element: <StyleguideMembershipPage /> },
+          { path: 'navigation', element: <StyleguideNavigationPage /> },
+          { path: 'patterns', element: <StyleguidePatternsPage /> },
+          { path: 'containers', element: <StyleguideContainersPage /> },
         ],
       },
+      { path: '/styleguide/v2', element: <StyleguideLegacyRedirect /> },
+      { path: '/styleguide/v2/*', element: <StyleguideLegacyRedirect /> },
       { path: '/debug', element: <DebugIndexPage /> },
       { path: '/debug/indexed-db', element: <DebugIndexedDbPage /> },
       { path: '/debug/indexed-db/:storeName', element: <DebugIndexedDbStorePage /> },

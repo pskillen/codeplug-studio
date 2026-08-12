@@ -1,13 +1,12 @@
 import { Group, SimpleGrid, Stack, Text } from '@mantine/core';
 import { IconPencil, IconTrash } from '@tabler/icons-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import MapLocationPicker from '../../../components/MapLocationPicker/MapLocationPicker.tsx';
-import { DataTable, Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
+import MapLocationPicker from '../../components/MapLocationPicker/MapLocationPicker.tsx';
+import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
 import {
   Button,
   CountTile,
-  DataTable as DataTableV2,
+  DataTable,
   EmptyState,
   MapPanel,
   Panel,
@@ -15,10 +14,10 @@ import {
   RowActionIcon,
   WirePreviewTable,
   WriteVerifyReport,
-} from '../../../components/v2/index.ts';
-import { ICON_SIZE_ACTION } from '../../../lib/iconSizes.ts';
-import { DSV2_TOKENS } from '../../../theme-v2.ts';
-import { LARGE_VIRTUAL_DEMO_ROWS, SAMPLE_ROWS, STICKY_DEMO_ROWS } from '../fixtures.ts';
+} from '../../components/v2/index.ts';
+import { ICON_SIZE_ACTION } from '../../lib/iconSizes.ts';
+import { DSV2_TOKENS } from '../../theme-v2.ts';
+import { LARGE_VIRTUAL_DEMO_ROWS, STICKY_DEMO_ROWS } from './fixtures.ts';
 
 interface NestedDemoRow {
   id: string;
@@ -42,7 +41,7 @@ const NESTED_DEMO_ROWS: NestedDemoRow[] = [
   },
 ];
 
-export default function StyleguideV2DataDisplayPage() {
+export default function StyleguideDataDisplayPage() {
   const [dataTableSearch, setDataTableSearch] = useState('');
   const [dataTableSelected, setDataTableSelected] = useState<string[]>([]);
   const [reorderRows, setReorderRows] = useState(() => STICKY_DEMO_ROWS.slice(0, 5));
@@ -55,34 +54,28 @@ export default function StyleguideV2DataDisplayPage() {
   );
 
   return (
-    <Page width="default">
-      <PageHeader
-        title="Data display"
-        description={
-          <>
-            <Link to="/styleguide/v2">← Design system v2</Link>
-          </>
-        }
-      />
-
-      <PageSection title="CountTile" description="Summary stat grid tiles.">
+    <StyleguidePageShell
+      title="Data display"
+      description="Tiles, pills, tables, maps, and wire-preview chrome."
+    >
+      <StyleguideSection title="CountTile" description="Summary stat grid tiles.">
         <SimpleGrid cols={{ base: 2, sm: 3, md: 6 }} spacing="sm">
           <CountTile value={42} label="Channels" />
           <CountTile value={8} label="Talk groups" />
           <CountTile value={18} total={24} label="In build" />
         </SimpleGrid>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="Panel"
         description="Titled bordered section — see Containers for danger variant."
       >
         <Panel title="Identity" sub="Optional description below the title.">
           <Text size="sm">Panel body content.</Text>
         </Panel>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection title="Pill" description="Named tones plus tone=semantic escape hatch.">
+      <StyleguideSection title="Pill" description="Named tones plus tone=semantic escape hatch.">
         <Group gap="sm" wrap="wrap">
           <Pill tone="neutral">Neutral</Pill>
           <Pill tone="accent">Accent</Pill>
@@ -113,9 +106,9 @@ export default function StyleguideV2DataDisplayPage() {
             + Add to zone
           </Pill>
         </Group>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection title="RowActionIcon" description="Icon-only row action, stops propagation.">
+      <StyleguideSection title="RowActionIcon" description="Icon-only row action, stops propagation.">
         <Group gap="xs">
           <RowActionIcon
             icon={<IconPencil size={ICON_SIZE_ACTION} />}
@@ -135,39 +128,13 @@ export default function StyleguideV2DataDisplayPage() {
             disabled
           />
         </Group>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
-        title="DataTable (re-skinned)"
-        description="Existing ui/DataTable inside the v2 provider — radii/colors from themeV2."
+      <StyleguideSection
+        title="DataTable"
+        description="Sort, search, counts. Wide demos scroll horizontally on narrow viewports."
       >
         <DataTable
-          variant="list"
-          rows={[...SAMPLE_ROWS]}
-          totalRowCount={SAMPLE_ROWS.length}
-          rowKey={(row) => row.id}
-          nameColumn={{
-            getName: (row) => row.name,
-            getPath: (row) => `#${row.id}`,
-          }}
-          columns={[
-            {
-              key: 'id',
-              header: 'Id',
-              sortable: true,
-              render: (row) => row.id,
-              sortValue: (row) => row.id,
-            },
-          ]}
-          emptyState={<Text size="sm">No rows</Text>}
-        />
-      </PageSection>
-
-      <PageSection
-        title="DataTable (v2)"
-        description="New v2 port: sort, search, counts. Wide demos scroll horizontally on narrow viewports (overflow-x on the table shell)."
-      >
-        <DataTableV2
           rows={filteredDataTableRows}
           getRowId={(row) => row.id}
           totalRowCount={STICKY_DEMO_ROWS.length}
@@ -227,13 +194,13 @@ export default function StyleguideV2DataDisplayPage() {
           ]}
           caption="Header click cycles ascending → descending → unsorted. On mobile, swipe the table sideways to reach trailing columns."
         />
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="DataTable (v2) — reorderMode + bulkReorder"
         description="Column sort disabled; per-row and bulk Move up/down mutate the agreed order."
       >
-        <DataTableV2
+        <DataTable
           rows={reorderRows}
           getRowId={(row) => row.id}
           reorderMode
@@ -245,9 +212,9 @@ export default function StyleguideV2DataDisplayPage() {
           onClearSelection={() => setReorderSelected([])}
           columns={[{ key: 'name', header: 'Name', render: (row) => row.name }]}
         />
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="DataTable (v2) — nested + row activate"
         description="Expand/collapse lead column; whole-row click opens a detail (wire-preview shape)."
       >
@@ -257,7 +224,7 @@ export default function StyleguideV2DataDisplayPage() {
               Activated: {activatedRow}
             </Text>
           ) : null}
-          <DataTableV2
+          <DataTable
             rows={NESTED_DEMO_ROWS}
             getRowId={(row) => row.id}
             nested
@@ -267,13 +234,13 @@ export default function StyleguideV2DataDisplayPage() {
             columns={[{ key: 'name', header: 'Name', render: (row) => row.name }]}
           />
         </Stack>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="DataTable (v2) — scale=extreme + column visibility"
         description="Sticky header over a max-height scroll region; hideable columns via Show/hide cols."
       >
-        <DataTableV2
+        <DataTable
           rows={LARGE_VIRTUAL_DEMO_ROWS}
           getRowId={(row) => row.id}
           scale="extreme"
@@ -300,9 +267,9 @@ export default function StyleguideV2DataDisplayPage() {
             },
           ]}
         />
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="EmptyState"
         description="Icon badge + title + description + optional action; compact variant for denser contexts."
       >
@@ -318,9 +285,9 @@ export default function StyleguideV2DataDisplayPage() {
           />
           <EmptyState title="No matches" compact />
         </Stack>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="MapPanel"
         description="Hatch placeholder (no children) and live map inside v2 chrome."
       >
@@ -352,9 +319,9 @@ export default function StyleguideV2DataDisplayPage() {
             />
           </MapPanel>
         </Stack>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="WirePreviewTable"
         description="Stub — full implementation in #924. Read-only, monospace, no interactivity."
       >
@@ -372,9 +339,9 @@ export default function StyleguideV2DataDisplayPage() {
           isRowChanged={(row) => row.id === '2'}
           caption="Static fixture — real wire-preview data lands in #924."
         />
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="WriteVerifyReport"
         description="Stub — full implementation in #924. Static fixture, no interactivity."
       >
@@ -393,7 +360,7 @@ export default function StyleguideV2DataDisplayPage() {
             },
           ]}
         />
-      </PageSection>
-    </Page>
+      </StyleguideSection>
+    </StyleguidePageShell>
   );
 }

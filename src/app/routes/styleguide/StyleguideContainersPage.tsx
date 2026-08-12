@@ -1,39 +1,29 @@
 import { Stack, Text } from '@mantine/core';
-import { Link } from 'react-router-dom';
-import { Page, PageHeader, PageSection } from '../../../components/ui/index.ts';
-import { Button, Panel } from '../../../components/v2/index.ts';
+import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
+import { Button, Panel } from '../../components/v2/index.ts';
 
-export default function StyleguideV2ContainersPage() {
+export default function StyleguideContainersPage() {
   return (
-    <Page width="default">
-      <PageHeader
-        title="Containers"
-        description={
-          <>
-            <Link to="/styleguide/v2">← Design system v2</Link>
-          </>
-        }
-      />
-
-      <PageSection
+    <StyleguidePageShell title="Containers" description="Panel variants for section blocks.">
+      <StyleguideSection
         title="Panel"
         description="Default bordered section — editor blocks, build overview sections, audit pages."
       >
         <Panel title="Identity" sub="Optional description below the title.">
           <Text size="sm">Panel body content.</Text>
         </Panel>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="Panel (collapsible)"
         description="Disclosure header — e.g. defaulting a long section closed on narrow viewports (satellite detail page's Orbital elements)."
       >
         <Panel title="Orbital elements" collapsible defaultCollapsed>
           <Text size="sm">Starts collapsed; click the title to expand.</Text>
         </Panel>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="Panel (danger)"
         description="Destructive tint for irreversible actions — delete build, remove project data."
       >
@@ -46,9 +36,9 @@ export default function StyleguideV2ContainersPage() {
             Delete build
           </Button>
         </Panel>
-      </PageSection>
+      </StyleguideSection>
 
-      <PageSection
+      <StyleguideSection
         title="Stacked panels"
         description="Typical overview page rhythm — identity, capabilities, danger."
       >
@@ -67,7 +57,7 @@ export default function StyleguideV2ContainersPage() {
             </Button>
           </Panel>
         </Stack>
-      </PageSection>
-    </Page>
+      </StyleguideSection>
+    </StyleguidePageShell>
   );
 }
