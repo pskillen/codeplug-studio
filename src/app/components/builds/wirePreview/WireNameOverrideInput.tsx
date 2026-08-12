@@ -40,7 +40,6 @@ export function WireNameOverrideInput({
 
   const applyDefault = () => {
     setDraft(row.generatedWireName);
-    onWireNameChange(row, row.generatedWireName);
   };
 
   return (
@@ -96,7 +95,7 @@ export function WireNameOverrideInput({
       <Text size="xs" c="dimmed">
         Default:{' '}
         {clickableDefaultWireName ? (
-          <Tooltip label="Store this name as an explicit override">
+          <Tooltip label="Use this suggested name">
             <UnstyledButton
               component="button"
               type="button"

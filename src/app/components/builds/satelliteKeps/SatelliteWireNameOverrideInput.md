@@ -4,25 +4,25 @@ Inline editor for a per-transmitter encoded wire name on the build Satellite kep
 
 ## Purpose
 
-Lets operators pin **Familiar** or **OSCAR** suggestions, type a custom ≤`N`-character name, or **Reset** to generated defaults. Overrides persist on `RadioBuild.satelliteOverrides` keyed by transmitter id.
+Lets operators fill **Familiar** or **OSCAR** suggestions into the draft, type a custom ≤`N`-character name, or **Reset** to clear the override. Overrides persist on `RadioBuild.satelliteOverrides` keyed by transmitter id.
 
 ## Props
 
 | Prop                | Type                         | Description                                             |
 | ------------------- | ---------------------------- | ------------------------------------------------------- |
-| `committedWireName` | `string`                     | Current effective encoded name                          |
+| `committedWireName` | `string`                     | Persisted override, or `''` when none is set            |
 | `suggestedFamiliar` | `string`                     | Familiar-path encoded suggestion for this transmitter   |
 | `suggestedOscar`    | `string \| null` (optional)  | OSCAR encoded suggestion when the spacecraft has Tier A |
 | `nameLimit`         | `number`                     | Max length from radio limits (e.g. 8 on D890)           |
-| `onWireNameChange`  | `(wireName: string) => void` | Apply suggestion or custom text; `''` clears override   |
+| `onWireNameChange`  | `(wireName: string) => void` | Persist draft or clear; `''` clears override            |
 | `onDirtyChange`     | `(dirty: boolean) => void`   | Optional dirty-state callback                           |
 | `onCancel`          | `() => void`                 | Optional cancel callback (Escape / X)                   |
 
 ## Behaviour
 
 - Apply (check) commits draft when changed and within `nameLimit`.
-- **Familiar** / **OSCAR** underlined links store that suggestion as an explicit override.
-- **Reset** clears the build override so the name tracks live generation again.
+- **Familiar** / **OSCAR** underlined links fill the draft only — they do not persist until Apply.
+- **Reset** clears the build override immediately so the name tracks live generation again, and empties the draft (placeholder shows Familiar).
 
 ## Related
 

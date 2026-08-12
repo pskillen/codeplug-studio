@@ -299,7 +299,7 @@ export default function BuildSatelliteKepsPage() {
       render: (r) => {
         if (isPreviewParentRow(r)) return '—';
         const override = transmitterOverrides.get(r.transmitterId)?.wireName?.trim();
-        const committed = override ?? r.encodedName;
+        const committed = override ?? '';
         return (
           <SatelliteEncodedNameCell
             entry={r}

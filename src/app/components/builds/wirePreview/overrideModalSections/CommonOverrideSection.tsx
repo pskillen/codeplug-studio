@@ -50,7 +50,6 @@ export default function CommonOverrideSection({
       <OverrideField
         label="Wire name"
         overridden={row.hasWireNameOverride}
-        onOverride={() => onWireNameChange(row, row.effectiveWireName || row.generatedWireName)}
         onReset={() => onWireNameChange(row, '')}
         libraryHint={`Default: ${row.generatedWireName}`}
       >
