@@ -280,9 +280,9 @@ export default function ContactsListPage() {
       <Button
         variant="secondary"
         leftSection={<IconId size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
-        onClick={() => navigate('/library/contacts/add-from-radioid')}
+        onClick={() => navigate('/library/contacts/directory')}
       >
-        Import from RadioID
+        Digital ID directory
       </Button>
       <Button
         variant="primary"
