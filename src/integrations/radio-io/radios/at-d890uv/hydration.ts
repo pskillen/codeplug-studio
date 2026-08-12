@@ -21,7 +21,8 @@ import { encodeMasterIdIntoAtD890Image } from './masterIdCodec.ts';
 import { encodeAprsIntoAtD890Image } from './aprsCodec.ts';
 import { encodeAmAirIntoAtD890Image } from './amAirCodec.ts';
 import { encodeAmZonesIntoAtD890Image } from './amZoneCodec.ts';
-import { AT_D890UV_MODEL_IDS } from './constants.ts';
+import { AT_D890UV_MODEL_IDS, AT_D890_MAP_SIZE } from './constants.ts';
+import { createMemoryMap } from '../../kit/memoryMap.ts';
 import type { AtD890DownloadCache as ProtocolCache } from './protocol.ts';
 
 export const AT_D890UV_MODEL_ID = AT_D890UV_MODEL_IDS[0];
@@ -81,12 +82,22 @@ export function extractAtD890uvHydrationFromProtocol(
   return extractAtD890uvHydration(image, { ...meta, cache });
 }
 
-export function mergeChannelsIntoAtD890uvHydration(
-  bag: RadioCloneHydrationBag,
+/** Encode a build projection onto a D890 memory image (no persisted hydration base). */
+export function assembleAtD890WriteImage(
   channels: readonly RadioChannelDto[],
   organisation?: RadioWriteOrganisation,
 ): MemoryMap {
-  let next = memoryMapFromAtD890uvHydration(bag);
+  const next = createMemoryMap(AT_D890_MAP_SIZE);
+  next.fill(0, AT_D890_MAP_SIZE, 0xff);
+  return encodeAtD890ProjectionOntoImage(next, channels, organisation);
+}
+
+function encodeAtD890ProjectionOntoImage(
+  image: MemoryMap,
+  channels: readonly RadioChannelDto[],
+  organisation?: RadioWriteOrganisation,
+): MemoryMap {
+  let next = image;
 
   if (organisation?.talkGroups) {
     next = encodeTalkgroupsIntoAtD890Image(next, organisation.talkGroups);
@@ -119,4 +130,13 @@ export function mergeChannelsIntoAtD890uvHydration(
   }
 
   return next;
+}
+
+export function mergeChannelsIntoAtD890uvHydration(
+  bag: RadioCloneHydrationBag,
+  channels: readonly RadioChannelDto[],
+  organisation?: RadioWriteOrganisation,
+): MemoryMap {
+  const base = memoryMapFromAtD890uvHydration(bag);
+  return encodeAtD890ProjectionOntoImage(base, channels, organisation);
 }

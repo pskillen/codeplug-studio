@@ -63,6 +63,11 @@ import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from './radioWriteEnvGate.ts';
+import { assembleAtD890WriteImage } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
+import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
+import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
+import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
 
 export {
   isRadioSerialSupported,
@@ -274,7 +279,7 @@ export async function prepareRadioWriteImage(
   }
 
   const hydration = getRadioCloneHydration(egress);
-  if (!hydration) {
+  if (descriptor?.hydrationRequiredForWrite && !hydration) {
     throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
   }
 
@@ -374,6 +379,16 @@ export async function prepareRadioWriteImage(
       build.exportSettings,
     ).deciseconds;
   }
+  if (descriptor && !descriptor.hydrationRequiredForWrite) {
+    return {
+      image: assembleAtD890WriteImage(projection.channels, organisation),
+      warnings,
+      organisation,
+    };
+  }
+  if (!hydration) {
+    throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
+  }
   return {
     image: mergeChannelsForWrite(egress, hydration, projection.channels, organisation),
     warnings,
@@ -415,7 +430,9 @@ export async function writeBuildToRadio(
     );
   }
   const { image, warnings, organisation } = await prepareRadioWriteImage(build, egress, library);
-  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration!, organisation);
+  if (hydration || !session.descriptor.hydrationRequiredForWrite) {
+    session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration!, organisation);
+  }
   setCachedImage(session, image);
   await session.radio.upload(image, {
     onProgress: opts?.onProgress,
@@ -439,14 +456,16 @@ export async function uploadPreparedRadioWrite(
   },
 ): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult }> {
   const hydration = getRadioCloneHydration(egress);
-  if (!hydration) {
+  if (session.descriptor.hydrationRequiredForWrite && !hydration) {
     throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
   }
-  session.descriptor.hydration.seedProtocolForUpload?.(
-    session.radio,
-    hydration,
-    opts?.organisation,
-  );
+  if (hydration || !session.descriptor.hydrationRequiredForWrite) {
+    session.descriptor.hydration.seedProtocolForUpload?.(
+      session.radio,
+      hydration!,
+      opts?.organisation,
+    );
+  }
   setCachedImage(session, image);
   await session.radio.upload(image, {
     onProgress: opts?.onProgress,
@@ -478,4 +497,22 @@ export async function closeRadioSession(session: RadioSession): Promise<void> {
   } finally {
     await session.pipe.close();
   }
+}
+
+/** Read LocalInfo serial from a connected AT-D890UV session (operator confirm before Write). */
+export async function readAtD890ConnectedRadioIdentity(
+  session: RadioSession,
+  opts?: { signal?: AbortSignal },
+): Promise<{ serial: string; localInfo: Uint8Array }> {
+  if (!(session.radio instanceof AtD890uvProtocol)) {
+    throw new Error('Connected radio is not an AT-D890UV protocol instance.');
+  }
+  const raw = await atD890ReadMemory(
+    session.pipe,
+    D890_MAP.LocalInfo,
+    D890_MAP.LocalInfoLength,
+    opts?.signal,
+    session.radio.getNegotiatedReadBlockSize(),
+  );
+  return { serial: formatAtD890LocalInfoSerial(raw), localInfo: raw };
 }
