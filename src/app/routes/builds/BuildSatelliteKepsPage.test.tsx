@@ -230,7 +230,7 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
     }
   });
 
-  it('pins Familiar suggestion from inline encoded-name editor', async () => {
+  it('pins Familiar suggestion from inline encoded-name editor after Apply', async () => {
     kepsPreviewStub = () => [
       previewEntry({
         encodedName: 'GEOSCA 1',
@@ -244,7 +244,9 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
       renderPage();
       await waitFor(() => expect(screen.getByText('GEOSCA 1')).toBeInTheDocument());
       fireEvent.click(screen.getByRole('button', { name: 'Edit encoded name' }));
+      // Suggestion fills draft only — Apply commits the override.
       fireEvent.click(screen.getByRole('button', { name: 'GEOSCA 1' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Apply wire name' }));
       await waitFor(() =>
         expect(persistence.putRadioBuild).toHaveBeenCalledWith(
           expect.objectContaining({
