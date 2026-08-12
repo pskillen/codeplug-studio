@@ -54,7 +54,7 @@ import {
   listTouchedEraseUnits,
   readSpanForEraseUnit,
 } from './eraseUnits.ts';
-import { assertAtD890LocalInfoIdentity } from './identityCheck.ts';
+import { assertAtD890LocalInfoPlausible } from './identityCheck.ts';
 import {
   assertPreservedBytesMatchFreshRead,
   listSparseStagingChunks,
@@ -570,18 +570,6 @@ export class AtD890uvProtocol implements CloneImageRadio {
       await atD890EnterProgram(this.pipe, opts.signal);
       this.programming = true;
     }
-    if (this.cache.blocks.size === 0) {
-      throw new RadioProtocolError(
-        'AT-D890UV upload has no sparse blocks — seed from a prior Read hydration before Write',
-      );
-    }
-
-    const preUploadCache: AtD890DownloadCache = {
-      blocks: new Map(
-        [...this.cache.blocks.entries()].map(([address, data]) => [address, data.slice()]),
-      ),
-    };
-
     const freshScanListSet = await atD890ReadMemory(
       this.pipe,
       D890_MAP.ScanListSet,
@@ -592,6 +580,18 @@ export class AtD890uvProtocol implements CloneImageRadio {
     refreshScanListSetFromRadioBase(image, freshScanListSet);
 
     applyAtD890WriteImageToCache(this.cache, image, this.uploadBankIntent);
+
+    if (this.cache.blocks.size === 0) {
+      throw new RadioProtocolError(
+        'AT-D890UV upload has no modelled sparse blocks — assemble the build before Write',
+      );
+    }
+
+    const preUploadCache: AtD890DownloadCache = {
+      blocks: new Map(
+        [...this.cache.blocks.entries()].map(([address, data]) => [address, data.slice()]),
+      ),
+    };
 
     const modelledChunks = listWriteChunks(this.cache, AT_D890_SAFE_SKIP_WRITE_ADDR);
     const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
@@ -633,7 +633,6 @@ export class AtD890uvProtocol implements CloneImageRadio {
         freshUnits.set(unitBase, data);
       }
 
-      const stashedLocal = getCacheBytes(this.cache, D890_MAP.LocalInfo, D890_MAP.LocalInfoLength);
       const liveLocal = await atD890ReadMemory(
         this.pipe,
         D890_MAP.LocalInfo,
@@ -641,7 +640,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
         opts.signal,
         this.readBlockSize,
       );
-      assertAtD890LocalInfoIdentity(stashedLocal, liveLocal);
+      assertAtD890LocalInfoPlausible(liveLocal);
 
       const mergedUnits = new Map<number, Uint8Array>();
       for (const [base, data] of freshUnits) {
