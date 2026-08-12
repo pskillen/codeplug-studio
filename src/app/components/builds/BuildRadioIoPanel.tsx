@@ -19,6 +19,7 @@ import {
   ModalShell,
   WriteVerifyReport as WriteVerifyReportV2,
   Button as V2Button,
+  ConfirmModal,
 } from '../v2/index.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
@@ -44,6 +45,7 @@ import {
   openRadioSessionForEgress,
   prepareRadioWriteImage,
   RadioWriteBlockedError,
+  readAtD890ConnectedRadioIdentity,
   readRadioHydrationForBuild,
   uploadPreparedRadioWrite,
   verifyRadioWrite,
@@ -106,6 +108,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [writeVerifyStatus, setWriteVerifyStatus] = useState<RadioIoWriteVerifyStatus>('none');
   const [verifyButtonEnabled, setVerifyButtonEnabled] = useState(false);
   const [verifyResult, setVerifyResult] = useState<WriteVerifyResult | null>(null);
+  const [writeConfirmOpen, setWriteConfirmOpen] = useState(false);
+  const [writeConfirmSerial, setWriteConfirmSerial] = useState<string | null>(null);
+  const pendingWriteModeRef = useRef<DualBankWriteMode | SingleBankWriteMode | null>(null);
 
   const serialOk = isRadioSerialSupported();
   const descriptor = descriptors[0];
@@ -115,6 +120,10 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const writeHidden = writeGate === 'hidden';
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);
+  const hydrationRequiredForWrite = descriptor?.hydrationRequiredForWrite ?? true;
+  const requiresD890WriteConfirm =
+    egress.profileId === 'radio-io-at-d890uv' && !hydrationRequiredForWrite;
+  const writeNeedsStoredHydration = hydrationRequiredForWrite && !hasHydration;
   /**
    * Workflow B (#859, promoted to its own tab by #1085): "Write Keps…" now links to the
    * dedicated Satellite Keps tab (`/builds/:id/satellite-keps`, `BuildSatelliteKepsPage`) instead
@@ -367,12 +376,54 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     }
   }
 
-  async function handleWrite() {
-    await handleWriteWithContactBanks('codeplug');
+  async function beginWriteWithContactBanks(mode: DualBankWriteMode | SingleBankWriteMode) {
+    if (!requiresD890WriteConfirm) {
+      await handleWriteWithContactBanks(mode);
+      return;
+    }
+    setWriteWarnings([]);
+    beginBusy('write');
+    try {
+      setPhase('connecting');
+      const session = await ensureSession(true);
+      const { serial } = await readAtD890ConnectedRadioIdentity(session, {
+        signal: abortRef.current!.signal,
+      });
+      pendingWriteModeRef.current = mode;
+      setWriteConfirmSerial(serial || '(serial unreadable)');
+      setWriteConfirmOpen(true);
+      setBusy(false);
+      setProgress(null);
+      setPhase('done');
+    } catch (err) {
+      if (err instanceof RadioWriteBlockedError) {
+        setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+      await releaseSession();
+      setBusy(false);
+      setProgress(null);
+      abortRef.current = null;
+    }
   }
 
-  async function handleWriteDigitalIdList() {
-    await handleWriteWithContactBanks('digitalIdList');
+  function handleCancelWriteConfirm() {
+    setWriteConfirmOpen(false);
+    setWriteConfirmSerial(null);
+    pendingWriteModeRef.current = null;
+    void releaseSession().then(() => {
+      resetProgressState();
+    });
+  }
+
+  function handleConfirmWrite() {
+    const mode = pendingWriteModeRef.current;
+    setWriteConfirmOpen(false);
+    setWriteConfirmSerial(null);
+    pendingWriteModeRef.current = null;
+    if (!mode) return;
+    void handleWriteWithContactBanks(mode);
   }
 
   function resetProgressState(): void {
@@ -465,6 +516,24 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           </Stack>
         ) : null}
       </ModalShell>
+      <ConfirmModal
+        open={writeConfirmOpen}
+        onClose={handleCancelWriteConfirm}
+        title="Confirm connected radio"
+        confirmLabel="Write to this radio"
+        tone="destructive"
+        onConfirm={handleConfirmWrite}
+      >
+        <Stack gap="sm">
+          <Text size="sm">
+            Studio read the connected radio&apos;s serial from LocalInfo. Confirm this is the
+            handheld you intend to program before Write commits to flash.
+          </Text>
+          <Text size="sm" fw={600}>
+            Serial: {writeConfirmSerial ?? '—'}
+          </Text>
+        </Stack>
+      </ConfirmModal>
       <WebSerialExperimentalAlert />
       {descriptor?.hydrationRequiredForWrite ? (
         <Alert color="red" title="Write path not migrated">
@@ -479,9 +548,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         Direct radio (Web Serial)
       </Text>
       <Text size="sm" c="dimmed">
-        Read stores a clone image on this egress pathway so unmodelled settings survive write-back.
-        Write sends the assembled build into that image — it does not import channels into the
-        library. After a factory reset, Read again before Write (memory-bank addresses can move).
+        {requiresD890WriteConfirm
+          ? 'Write assembles modelled channels and organisation from the build, then reads co-resident bytes from the connected radio during upload. Unmodelled settings are preserved via erase-unit read-modify-write — not from a stored project image. Read is optional but still useful for Radio image inspection.'
+          : 'Read stores a clone image on this egress pathway so unmodelled settings survive write-back. Write sends the assembled build into that image — it does not import channels into the library. After a factory reset, Read again before Write (memory-bank addresses can move).'}
       </Text>
       {!serialOk ? <Alert color="yellow">{getRadioSerialUnsupportedMessage()}</Alert> : null}
       {attributionNames ? (
@@ -576,8 +645,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         {!writeHidden ? (
           <Button
             size="xs"
-            disabled={!serialOk || busy || !hasHydration}
-            onClick={() => void handleWrite()}
+            disabled={!serialOk || busy || writeNeedsStoredHydration}
+            onClick={() => void beginWriteWithContactBanks('codeplug')}
           >
             Write to radio
           </Button>
@@ -586,8 +655,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           <Button
             size="xs"
             variant="light"
-            disabled={!serialOk || busy || !hasHydration}
-            onClick={() => void handleWriteDigitalIdList()}
+            disabled={!serialOk || busy || writeNeedsStoredHydration}
+            onClick={() => void beginWriteWithContactBanks('digitalIdList')}
           >
             Write digital ID list
           </Button>
@@ -596,8 +665,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           <Button
             size="xs"
             variant="light"
-            disabled={!serialOk || busy || !hasHydration}
-            onClick={() => void handleWriteDigitalIdList()}
+            disabled={!serialOk || busy || writeNeedsStoredHydration}
+            onClick={() => void beginWriteWithContactBanks('digitalIdList')}
           >
             Write digital ID list
           </Button>
