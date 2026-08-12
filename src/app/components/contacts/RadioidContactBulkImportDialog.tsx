@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
 import { Progress, Stack, Text } from '@mantine/core';
-import type { DigitalContact } from '@core/models/library.ts';
 import type { RadioidDmrUserListing } from '@integrations/radioid/index.ts';
 import type { RadioidSearchFilters } from '../../hooks/useRadioidContactSearch.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -29,7 +28,7 @@ export interface RadioidContactBulkImportDialogProps {
   totalPages: number;
   totalCount: number;
   projectId: string | null;
-  contacts: readonly DigitalContact[];
+  existingDirectoryDigitalIds: ReadonlySet<number>;
 }
 
 type DialogPhase = 'confirm' | 'running' | 'done';
@@ -41,7 +40,7 @@ function scopeTitle(scope: RadioidBulkImportScope): string {
     case 'page':
       return 'Import this page';
     case 'selected':
-      return 'Import selected contacts';
+      return 'Import selected IDs';
   }
 }
 
@@ -53,11 +52,11 @@ function scopeSummary(
 ): string {
   switch (scope) {
     case 'all':
-      return `${totalCount} contacts across ${totalPages} page${totalPages === 1 ? '' : 's'}`;
+      return `${totalCount} IDs across ${totalPages} page${totalPages === 1 ? '' : 's'}`;
     case 'page':
-      return `${listings.length} contact${listings.length === 1 ? '' : 's'} on this page`;
+      return `${listings.length} ID${listings.length === 1 ? '' : 's'} on this page`;
     case 'selected':
-      return `${listings.length} selected contact${listings.length === 1 ? '' : 's'}`;
+      return `${listings.length} selected ID${listings.length === 1 ? '' : 's'}`;
   }
 }
 
@@ -68,7 +67,7 @@ function RadioidContactBulkImportDialogBody({
   totalPages,
   totalCount,
   projectId,
-  contacts,
+  existingDirectoryDigitalIds,
   onClose,
   onComplete,
 }: Omit<RadioidContactBulkImportDialogProps, 'opened'>) {
@@ -79,8 +78,8 @@ function RadioidContactBulkImportDialogBody({
   const cancelledRef = useRef(false);
 
   const { newCount, existingCount } = useMemo(
-    () => countRadioidBulkImportTargets(listings, contacts),
-    [listings, contacts],
+    () => countRadioidBulkImportTargets(listings, existingDirectoryDigitalIds),
+    [listings, existingDirectoryDigitalIds],
   );
 
   async function handleStart() {
@@ -94,7 +93,6 @@ function RadioidContactBulkImportDialogBody({
       scope,
       updateExisting,
       projectId,
-      contacts,
       listings: scope === 'all' ? undefined : listings,
       filters: scope === 'all' ? filters : undefined,
       totalPages: scope === 'all' ? totalPages : undefined,
@@ -129,22 +127,23 @@ function RadioidContactBulkImportDialogBody({
       <div className={classes.body}>
         <Text size="sm">
           Import <strong>{scopeSummary(scope, listings, totalCount, totalPages)}</strong> into your
-          library.
+          local <strong>digital ID directory</strong> (shadow store). Library contacts are not
+          changed — copy from the directory later when you are ready.
         </Text>
         {scope === 'all' ? (
           <Text size="sm" c="dimmed">
-            Studio will fetch each results page from RadioID.net before saving contacts. Large
+            Studio will fetch each results page from RadioID.net before saving directory rows. Large
             searches may take several minutes — respect RadioID.net rate limits.
           </Text>
         ) : null}
         <Stack gap="xs">
           <Text size="sm">
-            <strong>{newCount}</strong> new contact{newCount === 1 ? '' : 's'} to add
+            <strong>{newCount}</strong> new ID{newCount === 1 ? '' : 's'} to add
           </Text>
           {existingCount > 0 ? (
             <Text size="sm">
-              <strong>{existingCount}</strong> already in your library
-              {scope === 'all' ? ' on this page' : ''}
+              <strong>{existingCount}</strong> already in your directory
+              {scope === 'all' ? ' (may be updated when enabled below)' : ''}
             </Text>
           ) : null}
         </Stack>
@@ -153,14 +152,14 @@ function RadioidContactBulkImportDialogBody({
             <Checkbox
               checked={updateExisting}
               onCheckedChange={setUpdateExisting}
-              aria-label="Update existing library contacts when RadioID.net data differs"
+              aria-label="Update existing directory rows when RadioID.net data differs"
             />
-            Update existing library contacts when RadioID.net data differs
+            Update existing directory rows when RadioID.net data differs
           </label>
         ) : null}
         {!projectId ? (
           <StatusBanner tone="warning">
-            Select an active project before importing contacts.
+            Select an active project before importing directory IDs.
           </StatusBanner>
         ) : null}
         <div className={classes.footer}>
@@ -204,7 +203,7 @@ function RadioidContactBulkImportDialogBody({
       ) : null}
       {summary?.cancelled ? (
         <StatusBanner tone="warning">
-          Import cancelled — partial results were saved before cancellation.
+          Import cancelled — partial results were saved to the directory before cancellation.
         </StatusBanner>
       ) : null}
       <Text size="sm">

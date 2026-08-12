@@ -16,7 +16,7 @@ Double-confirm modal for wiping every digital contact in the active project — 
 ## Behaviour
 
 1. Operator opens via **Delete all** on Library → Contacts (digital section).
-2. Modal explains irreversible wipe + cascade of channel/`RX` refs.
+2. Modal explains irreversible wipe + cascade of channel/`RX` refs. The RadioID directory shadow store is **not** cleared.
 3. **Delete all** stays disabled until the confirmation checkbox is ticked.
 4. Cancel / dismiss leaves data unchanged; busy state while wipe runs.
 
