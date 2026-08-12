@@ -7,15 +7,28 @@ import { computeMapView, computeWorldRepeatMapView } from '@core/domain/mapView.
 import { sampleGroundTrack } from '@core/domain/satelliteTracking/groundTrack.ts';
 import {
   observerDivIcon,
+  liveSatelliteDivIcon,
   duplicateSegmentsForWorldCopies,
   splitAtAntimeridian,
 } from './mapHelpers.ts';
 import { colorForNoradId } from '@core/domain/satelliteTracking/satelliteColor.ts';
+import { useLiveSatellitePositions } from '../SatelliteGlobe/useLiveSatellitePositions.ts';
 import classes from './SatelliteTrackMap.module.css';
 
 const GROUND_TRACK_STEP_SEC = 30;
 const DEFAULT_CENTER: LatLon = [20, 0];
 const DEFAULT_ZOOM = 2;
+
+/** Dotted approach track is only meaningful across a bounded below-horizon gap — beyond this,
+ * "current position → next AOS" would sample most of an orbit (default passes can be up to the
+ * dashboard's 168h window away) and stop reading as "the approach to this pass". Roughly two LEO
+ * orbital periods; past this, the marker still shows but no dotted track is drawn. */
+const MAX_APPROACH_SPAN_MS = 3 * 60 * 60 * 1000;
+
+/** Reduced alpha for the live marker and dotted approach track, so both read as de-emphasised
+ * supporting context next to the solid AOS→LOS colour — same convention as the globe's footprint
+ * paths (`colorForNoradId(noradId, 0.45)` in `buildGlobeData.ts`). */
+const LIVE_POSITION_ALPHA = 0.45;
 
 export interface SelectedPass {
   satelliteName: string;
@@ -53,6 +66,30 @@ export function computeTrackBounds(
   const fromAt = new Date(new Date(aosAt).getTime() - drawBehindMin * 60_000).toISOString();
   const toAt = new Date(new Date(losAt).getTime() + drawAheadMin * 60_000).toISOString();
   return { fromAt, toAt };
+}
+
+/**
+ * Sample the dotted below-horizon "approach" track from `nowAt` to the pass's `aosAt` — joined
+ * to the AOS→LOS "interesting" segment itself, not to any `drawBehindMin`/`drawAheadMin`-extended
+ * solid tail (per #1094: the dotted part should stay the below-horizon approach, not overlap the
+ * extended solid track). Returns `[]` (marker-only) when `nowAt` is already at or past `aosAt`
+ * (on the interesting segment, or the pass has elapsed — either way there's no forward approach
+ * to draw) or when the gap exceeds `MAX_APPROACH_SPAN_MS`.
+ */
+export function computeApproachTrack(pass: SelectedPass, nowAt: string): LatLon[][] {
+  const nowMs = new Date(nowAt).getTime();
+  const aosMs = new Date(pass.aosAt).getTime();
+  if (nowMs >= aosMs) return [];
+  if (aosMs - nowMs > MAX_APPROACH_SPAN_MS) return [];
+
+  const points = sampleGroundTrack(
+    pass.tleLine1,
+    pass.tleLine2,
+    nowAt,
+    pass.aosAt,
+    GROUND_TRACK_STEP_SEC,
+  );
+  return splitAtAntimeridian(points);
 }
 
 function samplePassSegments(
@@ -151,6 +188,65 @@ export default function SatelliteTrackMap({
     });
   }, [passesToDraw, drawBehindMin, drawAheadMin]);
 
+  // Live subsatellite positions for every drawn pass, keyed by NORAD id — shared with the 3D
+  // globe's multi-satellite hook rather than `useLiveSatellitePosition` (built for the single-sat
+  // detail page; calling it once per array entry would violate the rules of hooks).
+  const liveSatelliteInputs = useMemo(
+    () =>
+      passesToDraw.map((pass) => ({
+        id: String(pass.noradId),
+        tleLine1: pass.tleLine1,
+        tleLine2: pass.tleLine2,
+      })),
+    [passesToDraw],
+  );
+  const livePositions = useLiveSatellitePositions(liveSatelliteInputs);
+
+  // Marker icons memoized per NORAD id (not per poll tick) — matches `SatelliteLiveMap`'s
+  // guard against `Marker` icon-identity churn on every live-position update.
+  const liveIconsByNoradId = useMemo(() => {
+    const icons = new Map<number, L.DivIcon>();
+    for (const pass of passesToDraw) {
+      if (icons.has(pass.noradId)) continue;
+      icons.set(
+        pass.noradId,
+        liveSatelliteDivIcon(colorForNoradId(pass.noradId, LIVE_POSITION_ALPHA)),
+      );
+    }
+    return icons;
+  }, [passesToDraw]);
+
+  const liveMarkers = useMemo(() => {
+    return passesToDraw.flatMap((pass) => {
+      const live = livePositions.get(String(pass.noradId));
+      const icon = liveIconsByNoradId.get(pass.noradId);
+      if (!live || !icon) return [];
+      return [
+        {
+          key: `${pass.satelliteName}:${pass.aosAt}:${pass.losAt}:live`,
+          position: live.position,
+          icon,
+        },
+      ];
+    });
+  }, [passesToDraw, livePositions, liveIconsByNoradId]);
+
+  const approachLayers = useMemo(() => {
+    return passesToDraw.flatMap((pass) => {
+      const live = livePositions.get(String(pass.noradId));
+      if (!live) return [];
+      const segments = computeApproachTrack(pass, live.at);
+      if (segments.length === 0) return [];
+      return [
+        {
+          key: `${pass.satelliteName}:${pass.aosAt}:${pass.losAt}:approach`,
+          color: colorForNoradId(pass.noradId, LIVE_POSITION_ALPHA),
+          rendered: duplicateSegmentsForWorldCopies(segments),
+        },
+      ];
+    });
+  }, [passesToDraw, livePositions]);
+
   const boundsPoints = useMemo(() => {
     const points: LatLon[] = [];
     for (const layer of trackLayers) {
@@ -192,6 +288,18 @@ export default function SatelliteTrackMap({
             />
           )),
         )}
+        {approachLayers.flatMap((layer) =>
+          layer.rendered.map((copy, index) => (
+            <Polyline
+              key={`${layer.key}:${copy.worldOffset}-${index}`}
+              positions={copy.segment}
+              pathOptions={{ color: layer.color, weight: 1, dashArray: '4, 6' }}
+            />
+          )),
+        )}
+        {liveMarkers.map((marker) => (
+          <Marker key={marker.key} position={marker.position} icon={marker.icon} />
+        ))}
         <MapViewController
           points={boundsPoints}
           passKey={passKey}

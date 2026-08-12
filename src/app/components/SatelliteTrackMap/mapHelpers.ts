@@ -111,3 +111,18 @@ const OBSERVER_DIV_ICON = L.divIcon({
 export function observerDivIcon(): L.DivIcon {
   return OBSERVER_DIV_ICON;
 }
+
+/**
+ * Live-position marker icon for a satellite's current subsatellite point, tinted per-satellite
+ * via `color` (expected: `colorForNoradId(noradId, <reduced alpha>)`, matching the de-emphasised
+ * hue family the dotted approach track uses). Unlike `observerDivIcon`, this isn't a module-level
+ * singleton — colour varies per satellite — so callers should memoize per `noradId` (not per
+ * render/poll tick) to avoid the `Marker` icon-identity churn `SatelliteLiveMap` guards against.
+ */
+export function liveSatelliteDivIcon(color: string): L.DivIcon {
+  return L.divIcon({
+    className: classes.liveMarkerWrap,
+    html: `<div class="${classes.liveMarker}" style="background:${color}"></div>`,
+    iconAnchor: [5, 5],
+  });
+}
