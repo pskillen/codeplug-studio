@@ -37,6 +37,11 @@ export function findNeonplugDonorEgress(egressPaths: EgressPath[]): EgressPath |
   return egressPaths.find((path) => isNeonplugDonorBag(path.hydration));
 }
 
+/** Web Serial egress pathway on a build (radio-io format), with or without stored hydration. */
+export function findRadioIoEgress(egressPaths: EgressPath[]): EgressPath | undefined {
+  return findEgressByFormatId(egressPaths, 'radio-io');
+}
+
 /** Web Serial egress that has a stored radio-clone hydration bag. */
 export function findRadioCloneEgress(egressPaths: EgressPath[]): EgressPath | undefined {
   return egressPaths.find((path) => isRadioCloneHydrationBag(path.hydration));

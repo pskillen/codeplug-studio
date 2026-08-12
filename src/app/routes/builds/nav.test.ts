@@ -34,18 +34,6 @@ const neonplugDonorHydration = {
   },
 };
 
-const radioCloneHydration = {
-  formatId: 'radio-clone' as const,
-  sourceFileName: 'web-serial',
-  capturedAt: '2026-07-23T12:00:00.000Z',
-  retain: {
-    radioModelId: 'UV5R-Mini',
-    capturedVia: 'web-serial' as const,
-    imageBase64: 'AAAA',
-    imageByteLength: 3,
-  },
-};
-
 function withHydration(egress: EgressPath, hydration: EgressPath['hydration']): EgressPath {
   return { ...egress, hydration };
 }
@@ -120,55 +108,41 @@ describe('buildNavItems', () => {
     ).toContain('NeonPlug settings');
   });
 
-  it('includes Radio image when a clone bag exists, even if Direct radio is not active', () => {
-    const { build, egress, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-uv5r-mini');
-    expect(buildNavItems(build, { egressPaths }).map((item) => item.label)).not.toContain(
-      'Radio image',
-    );
-    const withClone = egressPaths.map((path) =>
-      path.id === egress.id ? withHydration(path, radioCloneHydration) : path,
-    );
-    const nonSerial = withClone.find((path) => path.formatId !== 'radio-io') ?? withClone[0]!;
+  it('includes Radio Info when a Web Serial egress exists, even without a stored clone bag', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-uv5r-mini');
+    expect(buildNavItems(build, { egressPaths }).map((item) => item.label)).toContain('Radio Info');
+    const nonSerial = egressPaths.find((path) => path.formatId !== 'radio-io') ?? egressPaths[0]!;
     const labels = buildNavItems(build, {
-      egressPaths: withClone,
+      egressPaths,
       activeEgress: nonSerial,
     }).map((item) => item.label);
-    expect(labels).toContain('Radio image');
+    expect(labels).toContain('Radio Info');
     expect(labels).not.toContain('NeonPlug settings');
   });
 
-  it('includes Radio image for OpenGD77 DM-1701 when a clone bag exists', () => {
-    const { build, egress, egressPaths } = newRadioBuildForProfile(
+  it('includes Radio Info for OpenGD77 DM-1701 Web Serial builds', () => {
+    const { build, egressPaths } = newRadioBuildForProfile(
       'proj',
       'radio-io-opengd77-1701',
     );
-    const withClone = egressPaths.map((path) =>
-      path.id === egress.id
-        ? withHydration(path, {
-            ...radioCloneHydration,
-            retain: { ...radioCloneHydration.retain, radioModelId: 'DM-1701' },
-          })
-        : path,
-    );
-    const csvActive = withClone.find((path) => path.formatId === 'opengd77') ?? withClone[0]!;
+    const csvActive = egressPaths.find((path) => path.formatId === 'opengd77') ?? egressPaths[0]!;
     const labels = buildNavItems(build, {
-      egressPaths: withClone,
+      egressPaths,
       activeEgress: csvActive,
     }).map((item) => item.label);
-    expect(labels).toContain('Radio image');
+    expect(labels).toContain('Radio Info');
     expect(csvActive.formatId).toBe('opengd77');
   });
 
-  it('includes both retain viewers when both bags exist on one build', () => {
+  it('includes both retain viewers when NeonPlug donor and Web Serial egress exist', () => {
     const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-uv5r-mini');
-    const withBoth = egressPaths.map((path) => {
+    const withDonor = egressPaths.map((path) => {
       if (path.formatId === 'neonplug') return withHydration(path, neonplugDonorHydration);
-      if (path.formatId === 'radio-io') return withHydration(path, radioCloneHydration);
       return path;
     });
-    const labels = buildNavItems(build, { egressPaths: withBoth }).map((item) => item.label);
+    const labels = buildNavItems(build, { egressPaths: withDonor }).map((item) => item.label);
     expect(labels).toContain('NeonPlug settings');
-    expect(labels).toContain('Radio image');
+    expect(labels).toContain('Radio Info');
   });
 
   it('includes Scan list after Channels for flat-memory UV5R builds', () => {
@@ -324,6 +298,9 @@ describe('pathForSwitchedBuild', () => {
   it('falls back to export for retain routes when egress bags are unknown', () => {
     expect(pathForSwitchedBuild(`/builds/${from.id}/neonplug-settings`, from.id, toOpenGd77)).toBe(
       `/builds/${toOpenGd77.id}/export`,
+    );
+    expect(pathForSwitchedBuild(`/builds/${from.id}/radio-info`, from.id, toChirp)).toBe(
+      `/builds/${toChirp.id}/export`,
     );
   });
 });
