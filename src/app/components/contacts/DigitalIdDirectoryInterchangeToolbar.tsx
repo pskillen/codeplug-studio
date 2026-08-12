@@ -2,9 +2,10 @@ import { useRef, useState } from 'react';
 import { Group } from '@mantine/core';
 import { IconDownload, IconUpload } from '@tabler/icons-react';
 import type { DirectoryInterchangeFormat } from '@integrations/persistence/digitalIdDirectoryInterchange.ts';
-import { downloadTextFile } from '@integrations/download/browserDownload.ts';
+import { downloadTextFile, downloadZip } from '@integrations/download/browserDownload.ts';
 import {
   exportDirectoryInterchangeContent,
+  exportProjectWithDirectoryZip,
   importDirectoryInterchangeContent,
 } from '../../services/digitalIdDirectoryInterchangeService.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -26,7 +27,7 @@ export default function DigitalIdDirectoryInterchangeToolbar({
   onImported,
 }: DigitalIdDirectoryInterchangeToolbarProps) {
   const [format, setFormat] = useState<DirectoryInterchangeFormat>('yaml');
-  const [busy, setBusy] = useState<'download' | 'import' | null>(null);
+  const [busy, setBusy] = useState<'download' | 'import' | 'zip' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,6 +44,20 @@ export default function DigitalIdDirectoryInterchangeToolbar({
       downloadTextFile(result.content, result.fileName, mimeType);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Directory download failed');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleDownloadZip() {
+    if (!projectId) return;
+    setError(null);
+    setBusy('zip');
+    try {
+      const result = await exportProjectWithDirectoryZip(persistence, projectId, format);
+      downloadZip(result.zipBytes, result.zipFileName);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Zip download failed');
     } finally {
       setBusy(null);
     }
@@ -97,6 +112,16 @@ export default function DigitalIdDirectoryInterchangeToolbar({
           onClick={() => fileInputRef.current?.click()}
         >
           Import directory
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          leftSection={<IconDownload size={ICON_SIZE_NAV} stroke={ICON_STROKE} />}
+          disabled={isDisabled}
+          loading={busy === 'zip'}
+          onClick={() => void handleDownloadZip()}
+        >
+          Download zip with project
         </Button>
         <input
           ref={fileInputRef}

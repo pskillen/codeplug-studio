@@ -1,13 +1,26 @@
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
+import { exportProjectYaml } from '@core/services/exportProjectYaml.ts';
+import type { ProjectInterchangePort } from '@core/services/projectInterchangePort.ts';
 import type { DirectoryInterchangeFormat } from '@integrations/persistence/digitalIdDirectoryInterchange.ts';
 import {
   defaultDirectoryExportFileName,
+  defaultProjectWithDirectoryZipFileName,
   parseDirectoryInterchangeFile,
   serialiseDirectoryInterchangeFile,
 } from '@integrations/persistence/digitalIdDirectoryInterchange.ts';
-import type { ProjectPersistence } from '@integrations/persistence/index.ts';
+import { buildProjectWithDirectoryZip } from '@integrations/persistence/projectDirectoryZip.ts';
+import type { ProjectPersistence, ProjectSeed } from '@integrations/persistence/index.ts';
 
 const DIRECTORY_IMPORT_BATCH_SIZE = 100;
+
+function asInterchangePort(store: ProjectPersistence): ProjectInterchangePort {
+  return {
+    seedProject: (seed) => store.seedProject(seed as ProjectSeed),
+    replaceProject: (projectId, seed) => store.replaceProject(projectId, seed as ProjectSeed),
+    loadProjectSeed: (projectId) => store.loadProjectSeed(projectId),
+    putProjectMeta: (row, expectedRevision) => store.putProjectMeta(row, expectedRevision),
+  };
+}
 
 async function collectDirectoryEntries(
   store: ProjectPersistence,
@@ -57,6 +70,37 @@ export async function importDirectoryInterchangeContent(
     }
   });
   return { imported: entries.length };
+}
+
+export async function exportProjectWithDirectoryZip(
+  store: ProjectPersistence,
+  projectId: string,
+  format: DirectoryInterchangeFormat,
+): Promise<{
+  zipBytes: Uint8Array;
+  zipFileName: string;
+  projectFileName: string;
+  directoryFileName: string;
+  directoryRowCount: number;
+}> {
+  const seed = await store.loadProjectSeed(projectId);
+  if (!seed) {
+    throw new Error(`Project not found: ${projectId}`);
+  }
+  const port = asInterchangePort(store);
+  const projectExport = await exportProjectYaml(port, projectId);
+  const directoryExport = await exportDirectoryInterchangeContent(store, projectId, format);
+  const built = buildProjectWithDirectoryZip({
+    projectName: seed.meta.name,
+    projectYaml: projectExport.content,
+    directoryContent: directoryExport.content,
+    directoryFormat: format,
+  });
+  return {
+    ...built,
+    zipFileName: defaultProjectWithDirectoryZipFileName(seed.meta.name),
+    directoryRowCount: directoryExport.rowCount,
+  };
 }
 
 /** Test hook — round-trip directory interchange through an in-memory store. */
