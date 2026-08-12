@@ -13,6 +13,7 @@ import type {
   Zone,
 } from '@core/models/library.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
+import type { ProjectMeta } from '@core/models/project.ts';
 import { isoNow, nextRevision } from '@core/models/revision.ts';
 import type {
   BatchPutItemResult,

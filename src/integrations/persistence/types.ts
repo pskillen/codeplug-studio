@@ -13,6 +13,7 @@ import type {
   Zone,
 } from '@core/models/library.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
+import type { ProjectMeta } from '@core/models/project.ts';
 
 export type PutResult =
   { ok: true; revision: number } | { ok: false; reason: 'revision_conflict' | 'not_found' };
