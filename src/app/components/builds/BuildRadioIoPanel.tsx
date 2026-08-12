@@ -5,7 +5,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
+import { Alert, Anchor, Button, Checkbox, Group, Stack, Text } from '@mantine/core';
+import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
+import {
+  defaultDualBankWriteOptions,
+  type DualBankRadioWriteOptions,
+  type DualBankWriteMode,
+} from '@core/domain/digitalIdDirectoryProjection.ts';
 import {
   ModalShell,
   WriteVerifyReport as WriteVerifyReportV2,
@@ -113,6 +119,13 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
    * profile.
    */
   const showsWriteKepsLink = hasSatelliteKepsWriteAdapter(egress.profileId);
+  const dualBankTraitProfile = traitProfileFor(egress.profileId);
+  const supportsDualBankWrite = Boolean(
+    dualBankTraitProfile?.traits.includes(BuildCapabilityTrait.SeparateDigitalIdList),
+  );
+  const [dualBankToggles, setDualBankToggles] = useState<DualBankRadioWriteOptions>(() =>
+    defaultDualBankWriteOptions('codeplug'),
+  );
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
 
@@ -279,7 +292,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     }
   }
 
-  async function handleWrite() {
+  async function handleWriteWithDualBank(mode: DualBankWriteMode) {
     setWriteWarnings([]);
     beginBusy('write');
     try {
@@ -288,7 +301,20 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       }
       const library = await loadLibrarySlice(persistence, activeProjectId);
       setPhase('preparing');
-      const { image, warnings, organisation } = prepareRadioWriteImage(build, egress, library);
+      const options =
+        mode === 'digitalIdList' ? defaultDualBankWriteOptions('digitalIdList') : dualBankToggles;
+      const { image, warnings, organisation } = await prepareRadioWriteImage(
+        build,
+        egress,
+        library,
+        supportsDualBankWrite
+          ? {
+              dualBank: { mode, options },
+              persistence,
+              projectId: activeProjectId,
+            }
+          : undefined,
+      );
       setPhase('connecting');
       const session = await ensureSession(true);
       setPhase('transfer');
@@ -322,6 +348,14 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       setProgress(null);
       abortRef.current = null;
     }
+  }
+
+  async function handleWrite() {
+    await handleWriteWithDualBank('codeplug');
+  }
+
+  async function handleWriteDigitalIdList() {
+    await handleWriteWithDualBank('digitalIdList');
   }
 
   function resetProgressState(): void {
@@ -436,6 +470,41 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       {egress.profileId === 'radio-io-at-d890uv' ? (
         <AtD890WriteCoverageTable buildId={build.id} hasHydration={hasHydration} />
       ) : null}
+      {supportsDualBankWrite ? (
+        <Stack gap={6}>
+          <Text size="xs" fw={600}>
+            Contact and digital ID banks
+          </Text>
+          <Text size="xs" c="dimmed">
+            The digital ID directory is a local RadioID shadow (not in project YAML). Large
+            directory writes stream from storage and may take several minutes.
+          </Text>
+          <Checkbox
+            size="xs"
+            label="Include library digital contacts"
+            checked={dualBankToggles.includeLibraryContacts}
+            onChange={(event) =>
+              setDualBankToggles((prev) => ({
+                ...prev,
+                includeLibraryContacts: event.currentTarget.checked,
+              }))
+            }
+            disabled={busy}
+          />
+          <Checkbox
+            size="xs"
+            label="Include digital ID directory"
+            checked={dualBankToggles.includeDigitalIdDirectory}
+            onChange={(event) =>
+              setDualBankToggles((prev) => ({
+                ...prev,
+                includeDigitalIdDirectory: event.currentTarget.checked,
+              }))
+            }
+            disabled={busy}
+          />
+        </Stack>
+      ) : null}
       <Group gap="xs">
         <Button
           size="xs"
@@ -452,6 +521,16 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             onClick={() => void handleWrite()}
           >
             Write to radio
+          </Button>
+        ) : null}
+        {supportsDualBankWrite && !writeHidden ? (
+          <Button
+            size="xs"
+            variant="light"
+            disabled={!serialOk || busy || !hasHydration}
+            onClick={() => void handleWriteDigitalIdList()}
+          >
+            Write digital ID list
           </Button>
         ) : null}
         {showsWriteKepsLink && !writeHidden ? (
