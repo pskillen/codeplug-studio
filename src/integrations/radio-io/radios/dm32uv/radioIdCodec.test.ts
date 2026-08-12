@@ -5,6 +5,7 @@ import {
   encodeDm32RadioIdEntry,
   encodeRadioIdsIntoDm32Image,
 } from './radioIdCodec.ts';
+import { mapDirectoryEntryToRadioRadioIdDto } from '@integrations/radioid/mapDirectoryEntryToRadioDto.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from './constants.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 
@@ -38,6 +39,27 @@ describe('encodeDm32RadioIdBlock', () => {
     expect(second[0]).toBe(0);
     expect(second[1]).toBe(1);
     expect(second[2]).toBe(0);
+  });
+
+  it('encodes directory-sourced radio ID DTOs', () => {
+    const dto = mapDirectoryEntryToRadioRadioIdDto(
+      {
+        projectId: 'p1',
+        digitalId: 12_345_678,
+        mode: 'dmr',
+        name: 'Alice Example',
+        callsign: 'AL1CE',
+        city: '',
+        state: '',
+        country: '',
+      },
+      0,
+    );
+    const block = encodeDm32RadioIdBlock([dto]);
+    expect(block[0]).toBe(1);
+    expect(block.subarray(0x10, 0x10 + 3)).toEqual(
+      encodeDm32RadioIdEntry(dto.dmrId, dto.name).subarray(0, 3),
+    );
   });
 });
 

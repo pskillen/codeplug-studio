@@ -2,9 +2,14 @@
  * Build RadioWriteProjection from assemble + shared m×n expand for Web Serial Write.
  */
 
+import type {
+  DualBankRadioWriteOptions,
+  DualBankWriteMode,
+} from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { AssembledBuild, LibrarySlice } from '@core/services/assemble.ts';
+import type { DualBankDirectorySlice } from './dualBankRadioWrite.ts';
 import {
   expandAllMxNChannels,
   expandMxNZoneMemberNumbers,
@@ -380,11 +385,20 @@ function buildDm32Organisation(
   };
 }
 
+export interface BuildRadioWriteProjectionContext {
+  dualBank?: {
+    mode: DualBankWriteMode;
+    options: DualBankRadioWriteOptions;
+    directorySlice?: DualBankDirectorySlice;
+  };
+}
+
 function buildTalkGroupsAndRx(
   assembled: AssembledBuild,
   build: RadioBuild,
   egress: RadioWireEgressIds,
   warnings: string[],
+  includeLibraryContacts = true,
 ): {
   talkGroups: RadioTalkGroupDto[];
   rxGroups: RadioRxGroupDto[];
@@ -441,32 +455,34 @@ function buildTalkGroupsAndRx(
   const digitalContacts: RadioDigitalContactDto[] = [];
   const reservedDc = new Set<string>();
   const digitalContactTotal = assembled.digitalContacts.length;
-  for (const row of assembled.digitalContacts) {
-    if (digitalContacts.length >= maxDigitalContacts) break;
-    const wireName = applyListWireNameLimits(
-      row.wireName,
-      reservedDc,
-      merged,
-      egress.profileId,
-      warnings,
-      'Contact',
-      nameLen,
-      Boolean(row.wireNameOverride?.trim()),
-    );
-    digitalContacts.push({
-      wireName,
-      digitalId: row.entity.digitalId,
-      callsign: row.entity.callsign ?? '',
-      city: row.entity.city ?? '',
-      province: row.entity.state ?? '',
-      country: row.entity.country ?? '',
-      remark: row.entity.remarks ?? '',
-    });
-  }
-  if (digitalContactTotal > maxDigitalContacts) {
-    warnings.push(
-      `Build has ${digitalContactTotal} digital contact(s); only ${maxDigitalContacts} export to radio address book`,
-    );
+  if (includeLibraryContacts) {
+    for (const row of assembled.digitalContacts) {
+      if (digitalContacts.length >= maxDigitalContacts) break;
+      const wireName = applyListWireNameLimits(
+        row.wireName,
+        reservedDc,
+        merged,
+        egress.profileId,
+        warnings,
+        'Contact',
+        nameLen,
+        Boolean(row.wireNameOverride?.trim()),
+      );
+      digitalContacts.push({
+        wireName,
+        digitalId: row.entity.digitalId,
+        callsign: row.entity.callsign ?? '',
+        city: row.entity.city ?? '',
+        province: row.entity.state ?? '',
+        country: row.entity.country ?? '',
+        remark: row.entity.remarks ?? '',
+      });
+    }
+    if (digitalContactTotal > maxDigitalContacts) {
+      warnings.push(
+        `Build has ${digitalContactTotal} digital contact(s); only ${maxDigitalContacts} export to radio address book`,
+      );
+    }
   }
 
   const rxGroupIndexById = new Map<string, number>();
@@ -529,27 +545,66 @@ function isDmrProfile(
   return profile.mode === 'dmr';
 }
 
+function mergeDm32RadioIdEntries(
+  channelEntries: readonly { dmrId: number; name: string }[],
+  directoryRadioIds: readonly RadioRadioIdDto[],
+  maxRadioIds: number,
+  mode: DualBankWriteMode,
+  warnings: string[],
+): { radioIds: RadioRadioIdDto[]; dmrIdIndexByValue: Map<number, number> } {
+  const seen = new Map<number, { dmrId: number; name: string }>();
+
+  const consider = (dmrId: number, name: string) => {
+    if (dmrId <= 0 || seen.has(dmrId)) return;
+    seen.set(dmrId, { dmrId, name: name.slice(0, 11) });
+  };
+
+  if (mode === 'codeplug') {
+    for (const entry of channelEntries) {
+      consider(entry.dmrId, entry.name);
+    }
+  }
+  for (const entry of directoryRadioIds) {
+    consider(entry.dmrId, entry.name);
+  }
+
+  const entries = [...seen.values()];
+  if (entries.length > maxRadioIds) {
+    warnings.push(
+      `Build has ${entries.length} distinct DMR radio ID(s); only ${maxRadioIds} export to operator radio-ID bank`,
+    );
+  }
+  const capped = entries.slice(0, maxRadioIds);
+  const radioIds = capped.map((entry, index) => ({ index, ...entry }));
+  const dmrIdIndexByValue = new Map(capped.map((entry, index) => [entry.dmrId, index]));
+  return { radioIds, dmrIdIndexByValue };
+}
+
 function buildDm32RadioIdBank(
   assembled: AssembledBuild,
   build: RadioBuild,
   library: Pick<LibrarySlice, 'talkGroups' | 'digitalContacts'>,
   egress: RadioWireEgressIds,
   warnings: string[],
+  mode: DualBankWriteMode,
+  directoryRadioIds: readonly RadioRadioIdDto[],
 ): { radioIds: RadioRadioIdDto[]; dmrIdIndexByValue: Map<number, number> } {
   const limits = requireProfileExportLimits(egress);
   const maxRadioIds = requireNumericLimit(limits.maxRadioIds, 'maxRadioIds', egress);
-  const seen = new Map<number, { dmrId: number; name: string }>();
+  const channelEntries: { dmrId: number; name: string }[] = [];
+  const seenChannel = new Set<number>();
 
-  const considerDmrId = (dmrId: number | null | undefined, channel: Channel) => {
-    if (dmrId == null || dmrId <= 0 || seen.has(dmrId)) return;
+  const considerChannelDmrId = (dmrId: number | null | undefined, channel: Channel) => {
+    if (dmrId == null || dmrId <= 0 || seenChannel.has(dmrId)) return;
+    seenChannel.add(dmrId);
     const label = channel.callsign?.trim() || channel.name?.trim() || 'Radio ID';
-    seen.set(dmrId, { dmrId, name: label.slice(0, 11) });
+    channelEntries.push({ dmrId, name: label });
   };
 
   for (const row of assembled.channels) {
     for (const profile of row.entity.modeProfiles) {
       if (isDmrProfile(profile)) {
-        considerDmrId(profile.dmrId, row.entity);
+        considerChannelDmrId(profile.dmrId, row.entity);
       }
     }
   }
@@ -571,20 +626,11 @@ function buildDm32RadioIdBank(
     for (const projection of expanded) {
       const channel = channelById.get(projection.sourceChannelId);
       if (!channel || !isDmrProfile(projection.modeProfile)) continue;
-      considerDmrId(projection.modeProfile.dmrId, channel);
+      considerChannelDmrId(projection.modeProfile.dmrId, channel);
     }
   }
 
-  const entries = [...seen.values()];
-  if (entries.length > maxRadioIds) {
-    warnings.push(
-      `Build has ${entries.length} distinct DMR radio ID(s); only ${maxRadioIds} export to operator radio-ID bank`,
-    );
-  }
-  const capped = entries.slice(0, maxRadioIds);
-  const radioIds = capped.map((entry, index) => ({ index, ...entry }));
-  const dmrIdIndexByValue = new Map(capped.map((entry, index) => [entry.dmrId, index]));
-  return { radioIds, dmrIdIndexByValue };
+  return mergeDm32RadioIdEntries(channelEntries, directoryRadioIds, maxRadioIds, mode, warnings);
 }
 
 /**
@@ -710,6 +756,8 @@ function buildOpenGd77ContactsAndRx(
   build: RadioBuild,
   egress: RadioWireEgressIds,
   warnings: string[],
+  includeLibraryContacts = true,
+  directoryDigitalContacts: readonly RadioDigitalContactDto[] = [],
 ): {
   talkGroups: RadioTalkGroupDto[];
   rxGroups: RadioRxGroupDto[];
@@ -789,28 +837,45 @@ function buildOpenGd77ContactsAndRx(
   const digitalContacts: RadioDigitalContactDto[] = [];
   const reservedDc = new Set<string>();
   let nextContactIndex = talkGroups.length + 1;
-  for (const row of assembled.digitalContacts) {
+  if (includeLibraryContacts) {
+    for (const row of assembled.digitalContacts) {
+      if (nextContactIndex > maxContacts) break;
+      const wireName = applyListWireNameLimits(
+        row.wireName,
+        reservedDc,
+        merged,
+        egress.profileId,
+        warnings,
+        'Contact',
+        nameLen,
+        Boolean(row.wireNameOverride?.trim()),
+      );
+      digitalContacts.push({
+        wireName,
+        digitalId: row.entity.digitalId,
+        callsign: row.entity.callsign ?? '',
+        city: row.entity.city ?? '',
+        province: row.entity.state ?? '',
+        country: row.entity.country ?? '',
+        remark: row.entity.remarks ?? '',
+      });
+      contactIdByEntityId.set(row.entity.id, nextContactIndex);
+      nextContactIndex++;
+    }
+  }
+  for (const directoryContact of directoryDigitalContacts) {
     if (nextContactIndex > maxContacts) break;
     const wireName = applyListWireNameLimits(
-      row.wireName,
+      directoryContact.wireName,
       reservedDc,
       merged,
       egress.profileId,
       warnings,
       'Contact',
       nameLen,
-      Boolean(row.wireNameOverride?.trim()),
+      false,
     );
-    digitalContacts.push({
-      wireName,
-      digitalId: row.entity.digitalId,
-      callsign: row.entity.callsign ?? '',
-      city: row.entity.city ?? '',
-      province: row.entity.state ?? '',
-      country: row.entity.country ?? '',
-      remark: row.entity.remarks ?? '',
-    });
-    contactIdByEntityId.set(row.entity.id, nextContactIndex);
+    digitalContacts.push({ ...directoryContact, wireName });
     nextContactIndex++;
   }
 
@@ -1152,8 +1217,15 @@ export function buildRadioWriteProjection(
   build: RadioBuild,
   library: LibrarySlice,
   egress: RadioWireEgressIds,
+  context?: BuildRadioWriteProjectionContext,
 ): RadioWriteProjection {
   const warnings: string[] = [];
+  const dualBank = context?.dualBank;
+  const includeLibraryContacts = dualBank?.options.includeLibraryContacts ?? true;
+  const dualBankMode = dualBank?.mode ?? 'codeplug';
+  const directorySlice = dualBank?.directorySlice;
+  const directoryRadioIds = directorySlice?.radioIds ?? [];
+  const directoryDigitalContacts = directorySlice?.digitalContacts ?? [];
   let fkMaps: RadioChannelFkMaps | undefined;
   let talkGroups: RadioTalkGroupDto[] = [];
   let rxGroups: RadioRxGroupDto[] = [];
@@ -1161,13 +1233,21 @@ export function buildRadioWriteProjection(
   let dm32RadioIds: RadioRadioIdDto[] = [];
 
   if (egress.profileId === 'radio-io-dm32uv' || egress.profileId === 'radio-io-at-d890uv') {
-    const tgRx = buildTalkGroupsAndRx(assembled, build, egress, warnings);
+    const tgRx = buildTalkGroupsAndRx(assembled, build, egress, warnings, includeLibraryContacts);
     talkGroups = tgRx.talkGroups;
     rxGroups = tgRx.rxGroups;
     digitalContacts = tgRx.digitalContacts;
     fkMaps = tgRx.fkMaps;
     if (egress.profileId === 'radio-io-dm32uv') {
-      const radioIdBank = buildDm32RadioIdBank(assembled, build, library, egress, warnings);
+      const radioIdBank = buildDm32RadioIdBank(
+        assembled,
+        build,
+        library,
+        egress,
+        warnings,
+        dualBankMode,
+        directoryRadioIds,
+      );
       dm32RadioIds = radioIdBank.radioIds;
       fkMaps = {
         ...tgRx.fkMaps,
@@ -1175,7 +1255,14 @@ export function buildRadioWriteProjection(
       };
     }
   } else if (isOpenGd77RadioIoEgress(egress.profileId)) {
-    const tgRx = buildOpenGd77ContactsAndRx(assembled, build, egress, warnings);
+    const tgRx = buildOpenGd77ContactsAndRx(
+      assembled,
+      build,
+      egress,
+      warnings,
+      includeLibraryContacts,
+      directoryDigitalContacts,
+    );
     talkGroups = tgRx.talkGroups;
     rxGroups = tgRx.rxGroups;
     digitalContacts = tgRx.digitalContacts;

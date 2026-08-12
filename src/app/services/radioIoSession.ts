@@ -38,8 +38,18 @@ import type {
   WriteVerifyPendingPayload,
   WriteVerifyResult,
 } from '@integrations/radio-io/writeVerify.ts';
-import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
+import {
+  buildRadioWriteProjection,
+  type BuildRadioWriteProjectionContext,
+} from './radioIoWriteProjection.ts';
 import type { RadioWriteOrganisation } from '@integrations/radio-io/radioWriteProjection.ts';
+import {
+  collectDualBankDirectorySlice,
+  type DualBankRadioWritePrepareOptions,
+} from './dualBankRadioWrite.ts';
+import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
+import type { FormatId } from '@core/import-export/types.ts';
+import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
@@ -238,11 +248,16 @@ export class RadioWriteBlockedError extends Error {
  * Call before opening a Web Serial session on Write so the radio is not left
  * in program mode during CPU-heavy assemble (UV-5R Mini times out quickly).
  */
-export function prepareRadioWriteImage(
+export async function prepareRadioWriteImage(
   build: RadioBuild,
   egress: EgressPath,
   library: LibrarySlice,
-): { image: MemoryMap; warnings: string[]; organisation: RadioWriteOrganisation } {
+  opts?: {
+    dualBank?: DualBankRadioWritePrepareOptions;
+    persistence?: ProjectPersistence;
+    projectId?: string;
+  },
+): Promise<{ image: MemoryMap; warnings: string[]; organisation: RadioWriteOrganisation }> {
   const descriptor = descriptorsForEgress(egress)[0];
   if (descriptor && resolveRadioWriteGate(descriptor) === 'hidden') {
     throw new RadioWriteBlockedError(resolveRadioWriteProdDisabledMessage(egress.profileId));
@@ -257,7 +272,44 @@ export function prepareRadioWriteImage(
     formatId: egress.formatId,
     profileId: egress.profileId,
   });
-  const projection = buildRadioWriteProjection(assembled, build, library, egress);
+
+  let projectionContext: BuildRadioWriteProjectionContext | undefined;
+  const projectionWarnings: string[] = [];
+  if (opts?.dualBank) {
+    const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
+    const maxRadioIds = typeof limits?.maxRadioIds === 'number' ? limits.maxRadioIds : undefined;
+    const maxDirectoryContacts =
+      typeof limits?.maxContacts === 'number' ? limits.maxContacts : undefined;
+    const directorySlice =
+      opts.persistence && opts.projectId
+        ? await collectDualBankDirectorySlice({
+            store: opts.persistence,
+            projectId: opts.projectId,
+            library,
+            egressProfileId: egress.profileId,
+            options: opts.dualBank.options,
+            maxRadioIds,
+            maxDirectoryContacts,
+            warnings: projectionWarnings,
+          })
+        : { radioIds: [], digitalContacts: [] };
+    projectionContext = {
+      dualBank: {
+        mode: opts.dualBank.mode,
+        options: opts.dualBank.options,
+        directorySlice,
+      },
+    };
+  }
+
+  const projection = buildRadioWriteProjection(
+    assembled,
+    build,
+    library,
+    egress,
+    projectionContext,
+  );
+  const warnings = [...projectionWarnings, ...projection.warnings];
   const organisation: RadioWriteOrganisation = { ...projection.organisation };
   if (build.radioTargetId === 'anytone-at-d890uv') {
     organisation.atD890ScanListTiming = resolveAtD890ScanListTiming(
@@ -266,7 +318,7 @@ export function prepareRadioWriteImage(
   }
   return {
     image: mergeChannelsForWrite(egress, hydration, projection.channels, organisation),
-    warnings: projection.warnings,
+    warnings,
     organisation,
   };
 }
@@ -304,7 +356,7 @@ export async function writeBuildToRadio(
       'Read from the radio first so Studio can preserve unmodelled settings, then write.',
     );
   }
-  const { image, warnings, organisation } = prepareRadioWriteImage(build, egress, library);
+  const { image, warnings, organisation } = await prepareRadioWriteImage(build, egress, library);
   session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration!, organisation);
   setCachedImage(session, image);
   await session.radio.upload(image, {

@@ -97,7 +97,7 @@ describe('radioIoSession helpers', () => {
     expect(buildHasRadioCloneHydration(egress)).toBe(false);
   });
 
-  it('prepares write image without a serial session', () => {
+  it('prepares write image without a serial session', async () => {
     const imageBytes = new Uint8Array(UV5R_MINI_MEM_TOTAL);
     imageBytes.fill(0xff);
     const hydration = createRadioCloneHydrationBag({
@@ -115,7 +115,7 @@ describe('radioIoSession helpers', () => {
       ],
     };
     const { build, egress } = uv5rMiniRadioIo();
-    const { image } = prepareRadioWriteImage(
+    const { image } = await prepareRadioWriteImage(
       {
         ...build,
         channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
@@ -126,7 +126,7 @@ describe('radioIoSession helpers', () => {
     expect(image.size).toBe(UV5R_MINI_MEM_TOTAL);
   });
 
-  it('prepares OpenGD77 DM-1701 write image from hydration + projection', () => {
+  it('prepares OpenGD77 DM-1701 write image from hydration + projection', async () => {
     const imageBytes = new Uint8Array(OPENUV380_IMAGE_SIZE);
     imageBytes.fill(0xff);
     const hydration = createRadioCloneHydrationBag({
@@ -144,7 +144,7 @@ describe('radioIoSession helpers', () => {
       ],
     };
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
-    const { image } = prepareRadioWriteImage(
+    const { image } = await prepareRadioWriteImage(
       {
         ...build,
         channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
@@ -177,7 +177,7 @@ describe('radioIoSession helpers', () => {
     expect(radio.upload).not.toHaveBeenCalled();
   });
 
-  it('blocks prepare when prod write gate is hidden', () => {
+  it('blocks prepare when prod write gate is hidden', async () => {
     vi.spyOn(radioWriteEnvGate, 'resolveRadioWriteGate').mockReturnValue('hidden');
     const imageBytes = new Uint8Array(UV5R_MINI_MEM_TOTAL);
     imageBytes.fill(0xff);
@@ -186,9 +186,9 @@ describe('radioIoSession helpers', () => {
       imageBytes,
     });
     const { build, egress } = uv5rMiniRadioIo();
-    expect(() => prepareRadioWriteImage(build, { ...egress, hydration }, emptyLibrary())).toThrow(
-      RadioWriteBlockedError,
-    );
+    await expect(
+      prepareRadioWriteImage(build, { ...egress, hydration }, emptyLibrary()),
+    ).rejects.toBeInstanceOf(RadioWriteBlockedError);
     vi.restoreAllMocks();
   });
 
