@@ -50,7 +50,6 @@ describe('WirePreviewBulkEditTable', () => {
       rows,
       nameLimit: 16,
       onExcludedChange: vi.fn(),
-      onWireNameChange: vi.fn(),
     });
 
     expect(screen.getByRole('columnheader', { name: 'Skip from export' })).toBeInTheDocument();
@@ -65,7 +64,6 @@ describe('WirePreviewBulkEditTable', () => {
     renderTable({
       rows: [rows[0]!],
       onExcludedChange,
-      onWireNameChange: vi.fn(),
     });
 
     fireEvent.click(screen.getByLabelText('Skip GB3DA Demo from export'));
@@ -76,7 +74,6 @@ describe('WirePreviewBulkEditTable', () => {
     renderTable({
       rows,
       onExcludedChange: vi.fn(),
-      onWireNameChange: vi.fn(),
     });
 
     const links = screen.getAllByRole('link', { name: 'Edit in library' });
@@ -85,58 +82,48 @@ describe('WirePreviewBulkEditTable', () => {
     expect(links[1]).toHaveAttribute('href', '/library/channels/ch-2');
   });
 
-  it('commits wire name only when apply is clicked', () => {
-    const onWireNameChange = vi.fn();
+  it('accumulates pending wire names without a per-row Apply control', () => {
+    const onPendingWireNamesChange = vi.fn();
     renderTable({
       rows,
       onExcludedChange: vi.fn(),
-      onWireNameChange,
+      onPendingWireNamesChange,
     });
+
+    expect(screen.queryByLabelText('Apply wire name')).not.toBeInTheDocument();
 
     const input = screen.getByPlaceholderText('GB3DA Demo');
     fireEvent.change(input, { target: { value: 'Custom' } });
-    expect(onWireNameChange).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByLabelText('Apply wire name'));
-    expect(onWireNameChange).toHaveBeenCalledWith(rows[0], 'Custom');
+    const pending = onPendingWireNamesChange.mock.calls.at(-1)?.[0] as Map<string, string>;
+    expect(pending.get('ch-1')).toBe('Custom');
+    expect(screen.queryByLabelText('Apply wire name')).not.toBeInTheDocument();
   });
 
-  it('reverts draft wire name without persisting', () => {
-    const onWireNameChange = vi.fn();
+  it('fills the draft from Default without committing a pending override when unchanged from generated', () => {
+    const onPendingWireNamesChange = vi.fn();
     renderTable({
       rows,
       onExcludedChange: vi.fn(),
-      onWireNameChange,
-    });
-
-    const input = screen.getByPlaceholderText('GB3DA Demo');
-    fireEvent.change(input, { target: { value: 'Custom' } });
-    fireEvent.click(screen.getByLabelText('Revert wire name'));
-
-    expect(onWireNameChange).not.toHaveBeenCalled();
-    expect(input).toHaveValue('');
-  });
-
-  it('applies generated wire name when default label is clicked', () => {
-    const onWireNameChange = vi.fn();
-    renderTable({
-      rows,
-      onExcludedChange: vi.fn(),
-      onWireNameChange,
+      onPendingWireNamesChange,
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'GB3DA Demo' }));
-    expect(onWireNameChange).toHaveBeenCalledWith(rows[0], 'GB3DA Demo');
     expect(screen.getByPlaceholderText('GB3DA Demo')).toHaveValue('GB3DA Demo');
+    const pending = onPendingWireNamesChange.mock.calls.at(-1)?.[0] as Map<string, string>;
+    // No override committed yet; draft equals generated while committed is '' → pending
+    expect(pending.get('ch-1')).toBe('GB3DA Demo');
   });
 
-  it('reports unapplied wire name drafts', () => {
+  it('reports unapplied wire name drafts and clears them on draftEpoch bump', () => {
     const onUnsavedChangesChange = vi.fn();
-    renderTable({
+    const onPendingWireNamesChange = vi.fn();
+    const { rerender } = renderTable({
       rows,
       onExcludedChange: vi.fn(),
-      onWireNameChange: vi.fn(),
+      onPendingWireNamesChange,
       onUnsavedChangesChange,
+      draftEpoch: 0,
     });
 
     expect(onUnsavedChangesChange).toHaveBeenCalledWith(false);
@@ -146,7 +133,24 @@ describe('WirePreviewBulkEditTable', () => {
     });
     expect(onUnsavedChangesChange).toHaveBeenLastCalledWith(true);
 
-    fireEvent.click(screen.getByLabelText('Revert wire name'));
+    rerender(
+      <MemoryRouter>
+        <MantineProvider>
+          <DesignSystemV2Provider>
+            <WirePreviewBulkEditTable
+              rows={rows}
+              onExcludedChange={vi.fn()}
+              onPendingWireNamesChange={onPendingWireNamesChange}
+              onUnsavedChangesChange={onUnsavedChangesChange}
+              draftEpoch={1}
+            />
+          </DesignSystemV2Provider>
+        </MantineProvider>
+      </MemoryRouter>,
+    );
+
     expect(onUnsavedChangesChange).toHaveBeenLastCalledWith(false);
+    const pending = onPendingWireNamesChange.mock.calls.at(-1)?.[0] as Map<string, string>;
+    expect(pending.size).toBe(0);
   });
 });

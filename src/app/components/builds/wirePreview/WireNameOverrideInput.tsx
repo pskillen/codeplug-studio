@@ -10,14 +10,19 @@ export function WireNameOverrideInput({
   nameLimit,
   excluded,
   clickableDefaultWireName,
+  deferCommit = false,
   onWireNameChange,
+  onDraftChange,
   onDirtyChange,
 }: {
   row: WirePreviewRow;
   nameLimit?: number;
   excluded: boolean;
   clickableDefaultWireName?: boolean;
+  /** When true, drafts never commit here — page-level Save owns persistence. */
+  deferCommit?: boolean;
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
+  onDraftChange?: (draft: string) => void;
   onDirtyChange: (dirty: boolean) => void;
 }) {
   const committed = wireNameCommittedValue(row);
@@ -30,16 +35,21 @@ export function WireNameOverrideInput({
 
   const tooLong = nameLimit != null && draft.length > nameLimit;
 
+  const updateDraft = (value: string) => {
+    setDraft(value);
+    onDraftChange?.(value);
+  };
+
   const apply = () => {
     onWireNameChange(row, draft);
   };
 
   const revert = () => {
-    setDraft(committed);
+    updateDraft(committed);
   };
 
   const applyDefault = () => {
-    setDraft(row.generatedWireName);
+    updateDraft(row.generatedWireName);
   };
 
   return (
@@ -50,9 +60,9 @@ export function WireNameOverrideInput({
           size="xs"
           placeholder={row.generatedWireName}
           value={draft}
-          onChange={(event) => setDraft(event.currentTarget.value)}
+          onChange={(event) => updateDraft(event.currentTarget.value)}
           onKeyDown={(event) => {
-            if (event.key === 'Enter' && dirty && !tooLong && !excluded) {
+            if (event.key === 'Enter' && dirty && !tooLong && !excluded && !deferCommit) {
               event.preventDefault();
               apply();
             }
@@ -64,7 +74,7 @@ export function WireNameOverrideInput({
           disabled={excluded}
           error={tooLong ? `Exceeds ${nameLimit} characters` : undefined}
         />
-        {dirty ? (
+        {!deferCommit && dirty ? (
           <Group gap={4} wrap="nowrap">
             <Tooltip label="Apply wire name">
               <ActionIcon
