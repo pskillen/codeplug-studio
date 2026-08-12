@@ -694,9 +694,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     const tx = db.transaction(storeName, 'readonly');
     const index = tx.objectStore(storeName).index('byProject');
     const rows = await promisifyRequest<EgressPath[]>(index.getAll(projectId));
-    return rows
-      .map(readEgressPathRow)
-      .sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
+    return rows.map(readEgressPathRow).sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
   }
   async listEgressPathsForBuild(projectId: string, radioBuildId: string): Promise<EgressPath[]> {
     const db = await this.db();
@@ -704,9 +702,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     const tx = db.transaction(storeName, 'readonly');
     const index = tx.objectStore(storeName).index('byRadioBuild');
     const rows = await promisifyRequest<EgressPath[]>(index.getAll([projectId, radioBuildId]));
-    return rows
-      .map(readEgressPathRow)
-      .sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
+    return rows.map(readEgressPathRow).sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
   }
 
   async deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void> {
