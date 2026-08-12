@@ -113,31 +113,39 @@ export function observerDivIcon(): L.DivIcon {
 }
 
 /**
- * Pick which world-copy offset (`-360`, `0`, or `+360`, from `worldOffsets`) to draw a single
- * point at so it sits next to `referenceLon` — the offset minimizing `|lon + offset -
- * referenceLon|`. Used to place the live-position marker in the same repeat as the pass track
- * it's approaching: `duplicateSegmentsForWorldCopies` draws the track itself at all three
- * offsets, but a `Marker` is a single point, so without this it renders at its raw (`0`-offset)
- * longitude even when the pass track's nearby copy — the one the operator is actually looking at
- * — sits at `-360`/`+360` (e.g. the satellite is approaching from just east of the antimeridian
- * while the pass itself renders just west of it). Falls back to `0` (the "central" repeat) when
- * already the closest, per #1094.
+ * Standard longitude-unwrap: walks consecutive samples and accumulates a running multiple-of-360
+ * correction so the delta between any two consecutive points never exceeds 180° in magnitude —
+ * i.e. turns antimeridian-crossing raw samples (each individually wrapped to ±180° by
+ * `satellite.js`) into one continuous coordinate sequence with no artificial jump, instead of
+ * `splitAtAntimeridian`'s "cut into separate segments" approach. Used by `SatelliteTrackMap` to
+ * draw a pass's solid track + dotted approach + live marker as a single continuous line (#1094
+ * follow-up) rather than three independently-clipped, triple-duplicated pieces that rarely lined
+ * up. Empty/single-point input passes through unchanged.
  */
-export function chooseWorldCopyOffset(
-  lon: number,
-  referenceLon: number,
-  worldOffsets: readonly number[] = DEFAULT_WORLD_COPY_OFFSETS,
-): number {
-  let bestOffset = 0;
-  let bestDistance = Infinity;
-  for (const offset of worldOffsets) {
-    const distance = Math.abs(lon + offset - referenceLon);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestOffset = offset;
-    }
+export function unwrapLongitudes(points: LatLon[]): LatLon[] {
+  if (points.length === 0) return [];
+  const result: LatLon[] = [[points[0]![0], points[0]![1]]];
+  for (let i = 1; i < points.length; i += 1) {
+    const [lat, lon] = points[i]!;
+    const prevRawLon = points[i - 1]![1];
+    let delta = lon - prevRawLon;
+    if (delta > 180) delta -= 360;
+    else if (delta < -180) delta += 360;
+    const prevUnwrappedLon = result[i - 1]![1];
+    result.push([lat, prevUnwrappedLon + delta]);
   }
-  return bestOffset;
+  return result;
+}
+
+/**
+ * The multiple of 360° that brings `lon` closest to `referenceLon` — i.e. `lon + shift` lands in
+ * `(referenceLon - 180, referenceLon + 180]`. General nearest-world-copy math (any multiple, not
+ * just `-360`/`0`/`+360`), replacing the old `chooseWorldCopyOffset`'s small-candidate-array
+ * approach now that `SatelliteTrackMap` shifts a whole unwrapped pass as one unit anchored on its
+ * own track rather than snapping a lone marker to the nearest of a few fixed repeats.
+ */
+export function nearestLongitudeShift(lon: number, referenceLon: number): number {
+  return Math.round((referenceLon - lon) / 360) * 360;
 }
 
 /**

@@ -36,11 +36,21 @@ describe('computeMapView', () => {
 });
 
 describe('computeWorldRepeatMapView', () => {
-  it('fits one horizontal world repeat with modest padding', () => {
+  it('fits one horizontal world repeat centred on lon 0 by default', () => {
     expect(computeWorldRepeatMapView({ padding: [12, 12], maxZoom: 3 })).toEqual({
       type: 'fitBounds',
       southWest: [-60, -180],
       northEast: [60, 180],
+      padding: [12, 12],
+      maxZoom: 3,
+    });
+  });
+
+  it('centres the world repeat on centerLon when given', () => {
+    expect(computeWorldRepeatMapView({ padding: [12, 12], maxZoom: 3, centerLon: 170 })).toEqual({
+      type: 'fitBounds',
+      southWest: [-60, -10],
+      northEast: [60, 350],
       padding: [12, 12],
       maxZoom: 3,
     });

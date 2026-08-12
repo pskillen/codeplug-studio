@@ -1,6 +1,6 @@
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useEffect, useMemo, useRef } from 'react';
+import { Fragment, useEffect, useMemo, useRef } from 'react';
 import { MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import type { LatLon } from '@core/domain/geo.ts';
 import { computeMapView, computeWorldRepeatMapView } from '@core/domain/mapView.ts';
@@ -8,9 +8,8 @@ import { sampleGroundTrack } from '@core/domain/satelliteTracking/groundTrack.ts
 import {
   observerDivIcon,
   liveSatelliteDivIcon,
-  chooseWorldCopyOffset,
-  duplicateSegmentsForWorldCopies,
-  splitAtAntimeridian,
+  nearestLongitudeShift,
+  unwrapLongitudes,
 } from './mapHelpers.ts';
 import { colorForNoradId } from '@core/domain/satelliteTracking/satelliteColor.ts';
 import { useLiveSatellitePositions } from '../SatelliteGlobe/useLiveSatellitePositions.ts';
@@ -26,10 +25,20 @@ const DEFAULT_ZOOM = 2;
  * orbital periods; past this, the marker still shows but no dotted track is drawn. */
 const MAX_APPROACH_SPAN_MS = 3 * 60 * 60 * 1000;
 
-/** Reduced (but not too subtle — #1094 review feedback bumped this up from 0.45) alpha for the
- * live marker and dotted approach track, so both read as de-emphasised supporting context next
- * to the solid AOS→LOS colour without disappearing against typical basemap tiles. */
-const LIVE_POSITION_ALPHA = 0.75;
+/** Alpha for the live marker and dotted approach track — de-emphasised relative to the solid
+ * AOS→LOS colour, but not so low it disappears; the dark casing strokes underneath both lines
+ * (below) carry the actual hue-independent contrast. */
+const LIVE_POSITION_ALPHA = 0.8;
+
+/** Neutral dark "casing" strokes drawn under the coloured lines so pale/light hues (e.g. yellow,
+ * light green) stay legible against the light OSM basemap regardless of colorForNoradId's output
+ * — alpha-blending a light colour onto a light background can never produce enough contrast on
+ * its own. Applied to both the solid AOS→LOS line and the dashed approach line (#1094 review). */
+const MAIN_CASING_COLOR = 'rgba(0, 0, 0, 0.5)';
+const MAIN_CASING_WEIGHT = 4;
+const APPROACH_CASING_COLOR = 'rgba(0, 0, 0, 0.45)';
+const APPROACH_CASING_WEIGHT = 3.5;
+const APPROACH_DASH = '5, 5';
 
 export interface SelectedPass {
   satelliteName: string;
@@ -75,50 +84,96 @@ export function computeTrackBounds(
  * solid tail (per #1094: the dotted part should stay the below-horizon approach, not overlap the
  * extended solid track). Returns `[]` (marker-only) when `nowAt` is already at or past `aosAt`
  * (on the interesting segment, or the pass has elapsed — either way there's no forward approach
- * to draw) or when the gap exceeds `MAX_APPROACH_SPAN_MS`.
+ * to draw) or when the gap exceeds `MAX_APPROACH_SPAN_MS`. Raw (unsplit, unwrapped) points —
+ * `buildPassTrackVisuals` below handles antimeridian continuity and world-copy placement.
  */
-export function computeApproachTrack(pass: SelectedPass, nowAt: string): LatLon[][] {
+export function computeApproachTrack(pass: SelectedPass, nowAt: string): LatLon[] {
   const nowMs = new Date(nowAt).getTime();
   const aosMs = new Date(pass.aosAt).getTime();
   if (nowMs >= aosMs) return [];
   if (aosMs - nowMs > MAX_APPROACH_SPAN_MS) return [];
 
-  const points = sampleGroundTrack(
-    pass.tleLine1,
-    pass.tleLine2,
-    nowAt,
-    pass.aosAt,
-    GROUND_TRACK_STEP_SEC,
-  );
-  return splitAtAntimeridian(points);
+  return sampleGroundTrack(pass.tleLine1, pass.tleLine2, nowAt, pass.aosAt, GROUND_TRACK_STEP_SEC);
 }
 
-function samplePassSegments(
+/** Raw (unsplit, unwrapped) main AOS→LOS track, extended by `drawBehindMin`/`drawAheadMin`. */
+function sampleMainTrack(
   pass: SelectedPass,
   drawBehindMin: number,
   drawAheadMin: number,
-): LatLon[][] {
+): LatLon[] {
   const { fromAt, toAt } = computeTrackBounds(pass.aosAt, pass.losAt, drawBehindMin, drawAheadMin);
-  const points = sampleGroundTrack(
-    pass.tleLine1,
-    pass.tleLine2,
-    fromAt,
-    toAt,
-    GROUND_TRACK_STEP_SEC,
-  );
-  return splitAtAntimeridian(points);
+  return sampleGroundTrack(pass.tleLine1, pass.tleLine2, fromAt, toAt, GROUND_TRACK_STEP_SEC);
+}
+
+function passKeyFor(pass: SelectedPass): string {
+  return `${pass.satelliteName}:${pass.aosAt}:${pass.losAt}`;
+}
+
+export interface PassTrackVisuals {
+  mainPoints: LatLon[];
+  approachPoints: LatLon[];
+  markerPoint: LatLon | null;
+}
+
+/**
+ * Combine a pass's main (AOS→LOS, extended) track with its below-horizon approach track (when a
+ * live position exists) into **one continuous, longitude-unwrapped sequence**, then shift the
+ * whole thing as a single unit so the main track's own start — "the line where the pass is over
+ * the horizon for the observer" — sits closest to `referenceLon`. The live marker is simply the
+ * first point of that same shifted sequence, so it is always exactly on the line it's
+ * approaching, by construction — unlike the old `chooseWorldCopyOffset` approach, which snapped
+ * the marker to whichever of three fixed world-copy repeats was numerically closest to the
+ * (often very distant) AOS point, and which rarely lined the two up correctly (#1094 review).
+ *
+ * `liveRawPoint` covers the marker-only case: a live position exists but `computeApproachTrack`
+ * returned no points (already at/past AOS, or the gap exceeds `MAX_APPROACH_SPAN_MS`) — the
+ * marker still needs placing, reusing the same shift computed from the main track alone.
+ */
+export function buildPassTrackVisuals(
+  mainRawPoints: LatLon[],
+  approachRawPoints: LatLon[],
+  liveRawPoint: LatLon | null,
+  referenceLon: number,
+): PassTrackVisuals {
+  if (mainRawPoints.length === 0) {
+    return { mainPoints: [], approachPoints: [], markerPoint: null };
+  }
+
+  const combinedRaw = [...approachRawPoints, ...mainRawPoints];
+  const unwrapped = unwrapLongitudes(combinedRaw);
+  const anchorLon = unwrapped[approachRawPoints.length]![1];
+  const shift = nearestLongitudeShift(anchorLon, referenceLon);
+  const shiftPoint = ([lat, lon]: LatLon): LatLon => [lat, lon + shift];
+
+  const approachPoints = unwrapped.slice(0, approachRawPoints.length).map(shiftPoint);
+  const mainPoints = unwrapped.slice(approachRawPoints.length).map(shiftPoint);
+
+  let markerPoint: LatLon | null = null;
+  if (approachPoints.length > 0) {
+    markerPoint = approachPoints[0]!;
+  } else if (liveRawPoint) {
+    markerPoint = shiftPoint(liveRawPoint);
+  }
+
+  return { mainPoints, approachPoints, markerPoint };
 }
 
 function MapViewController({
   points,
   passKey,
   fitToPass,
+  centerLon,
 }: {
   points: LatLon[];
   /** Stable identity for the selected/default pass set — a change clears manual pan/zoom and re-fits. */
   passKey: string | null;
   /** When false, show one world repeat instead of fitting track bounds. */
   fitToPass: boolean;
+  /** Centre longitude for the default (non-fit-to-pass) world-repeat view — the observer's own
+   * longitude when set, so a station near the antimeridian isn't clipped to the fixed [-180,180]
+   * edge. */
+  centerLon: number;
 }) {
   const map = useMap();
   const userInteractedRef = useRef(false);
@@ -145,7 +200,7 @@ function MapViewController({
 
     const action = fitToPass
       ? computeMapView(points, { padding: [40, 40], maxZoom: 8, singlePointZoom: 4 })
-      : computeWorldRepeatMapView({ padding: [12, 12], maxZoom: 3 });
+      : computeWorldRepeatMapView({ padding: [12, 12], maxZoom: 3, centerLon });
     if (!action) return;
     if (action.type === 'setView') {
       map.setView(action.center, action.zoom);
@@ -155,7 +210,7 @@ function MapViewController({
       padding: action.padding,
       maxZoom: action.maxZoom,
     });
-  }, [map, points, passKey, fitToPass]);
+  }, [map, points, passKey, fitToPass, centerLon]);
 
   return null;
 }
@@ -178,15 +233,14 @@ export default function SatelliteTrackMap({
     [selectedPass, defaultPasses],
   );
 
-  const trackLayers = useMemo(() => {
-    return passesToDraw.map((pass) => {
-      const segments = samplePassSegments(pass, drawBehindMin, drawAheadMin);
-      return {
-        key: `${pass.satelliteName}:${pass.aosAt}:${pass.losAt}`,
-        color: colorForNoradId(pass.noradId),
-        rendered: duplicateSegmentsForWorldCopies(segments),
-      };
-    });
+  // Raw main-track samples, keyed by pass — the expensive sampleGroundTrack calls only re-run
+  // when the pass set or draw-ahead/behind sliders change, not on every live-position poll tick.
+  const mainRawByKey = useMemo(() => {
+    const map = new Map<string, LatLon[]>();
+    for (const pass of passesToDraw) {
+      map.set(passKeyFor(pass), sampleMainTrack(pass, drawBehindMin, drawAheadMin));
+    }
+    return map;
   }, [passesToDraw, drawBehindMin, drawAheadMin]);
 
   // Live subsatellite positions for every drawn pass, keyed by NORAD id — shared with the 3D
@@ -217,67 +271,40 @@ export default function SatelliteTrackMap({
     return icons;
   }, [passesToDraw]);
 
-  // Longitude of each pass's own (central, unoffset) track — the reference `liveMarkers` below
-  // snaps the live position's world-copy repeat to, so the marker sits next to the track it's
-  // approaching instead of always rendering at its raw (`0`-offset) longitude (#1094 review
-  // feedback: the dot often didn't visually "meet up with" the drawn track).
-  const referenceLonByPassKey = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const layer of trackLayers) {
-      const centralCopy = layer.rendered.find((copy) => copy.worldOffset === 0);
-      const firstPoint = centralCopy?.segment[0];
-      if (firstPoint) map.set(layer.key, firstPoint[1]);
-    }
-    return map;
-  }, [trackLayers]);
+  // The observer's own longitude anchors every pass's world-copy placement (default center 0,
+  // matching DEFAULT_CENTER, when no observer is set).
+  const referenceLon = observer?.lon ?? DEFAULT_CENTER[1];
 
-  const liveMarkers = useMemo(() => {
-    return passesToDraw.flatMap((pass) => {
+  const passVisuals = useMemo(() => {
+    return passesToDraw.map((pass) => {
+      const key = passKeyFor(pass);
+      const mainRaw = mainRawByKey.get(key) ?? [];
       const live = livePositions.get(String(pass.noradId));
-      const icon = liveIconsByNoradId.get(pass.noradId);
-      if (!live || !icon) return [];
-      const passKey = `${pass.satelliteName}:${pass.aosAt}:${pass.losAt}`;
-      const referenceLon = referenceLonByPassKey.get(passKey);
-      const offset =
-        referenceLon === undefined ? 0 : chooseWorldCopyOffset(live.position[1], referenceLon);
-      const position: LatLon =
-        offset === 0 ? live.position : [live.position[0], live.position[1] + offset];
-      return [
-        {
-          key: `${passKey}:live`,
-          position,
-          icon,
-        },
-      ];
+      const approachRaw = live ? computeApproachTrack(pass, live.at) : [];
+      const visuals = buildPassTrackVisuals(
+        mainRaw,
+        approachRaw,
+        live?.position ?? null,
+        referenceLon,
+      );
+      return {
+        key,
+        color: colorForNoradId(pass.noradId),
+        approachColor: colorForNoradId(pass.noradId, LIVE_POSITION_ALPHA),
+        icon: liveIconsByNoradId.get(pass.noradId) ?? null,
+        ...visuals,
+      };
     });
-  }, [passesToDraw, livePositions, liveIconsByNoradId, referenceLonByPassKey]);
-
-  const approachLayers = useMemo(() => {
-    return passesToDraw.flatMap((pass) => {
-      const live = livePositions.get(String(pass.noradId));
-      if (!live) return [];
-      const segments = computeApproachTrack(pass, live.at);
-      if (segments.length === 0) return [];
-      return [
-        {
-          key: `${pass.satelliteName}:${pass.aosAt}:${pass.losAt}:approach`,
-          color: colorForNoradId(pass.noradId, LIVE_POSITION_ALPHA),
-          rendered: duplicateSegmentsForWorldCopies(segments),
-        },
-      ];
-    });
-  }, [passesToDraw, livePositions]);
+  }, [passesToDraw, mainRawByKey, livePositions, referenceLon, liveIconsByNoradId]);
 
   const boundsPoints = useMemo(() => {
     const points: LatLon[] = [];
-    for (const layer of trackLayers) {
-      for (const copy of layer.rendered) {
-        points.push(...copy.segment);
-      }
+    for (const visual of passVisuals) {
+      points.push(...visual.mainPoints);
     }
     if (observer) points.push([observer.lat, observer.lon]);
     return points;
-  }, [trackLayers, observer]);
+  }, [passVisuals, observer]);
 
   const passKey = selectedPass
     ? `${selectedPass.satelliteName}:${selectedPass.aosAt}:${selectedPass.losAt}`
@@ -300,31 +327,46 @@ export default function SatelliteTrackMap({
         {observer ? (
           <Marker position={[observer.lat, observer.lon]} icon={observerDivIcon()} />
         ) : null}
-        {trackLayers.flatMap((layer) =>
-          layer.rendered.map((copy, index) => (
-            <Polyline
-              key={`${layer.key}:${copy.worldOffset}-${index}`}
-              positions={copy.segment}
-              pathOptions={{ color: layer.color, weight: 2 }}
-            />
-          )),
-        )}
-        {approachLayers.flatMap((layer) =>
-          layer.rendered.map((copy, index) => (
-            <Polyline
-              key={`${layer.key}:${copy.worldOffset}-${index}`}
-              positions={copy.segment}
-              pathOptions={{ color: layer.color, weight: 1.5, dashArray: '5, 5' }}
-            />
-          )),
-        )}
-        {liveMarkers.map((marker) => (
-          <Marker key={marker.key} position={marker.position} icon={marker.icon} />
+        {passVisuals.map((visual) => (
+          <Fragment key={visual.key}>
+            {visual.mainPoints.length > 1 ? (
+              <>
+                <Polyline
+                  positions={visual.mainPoints}
+                  pathOptions={{ color: MAIN_CASING_COLOR, weight: MAIN_CASING_WEIGHT }}
+                />
+                <Polyline
+                  positions={visual.mainPoints}
+                  pathOptions={{ color: visual.color, weight: 2 }}
+                />
+              </>
+            ) : null}
+            {visual.approachPoints.length > 1 ? (
+              <>
+                <Polyline
+                  positions={visual.approachPoints}
+                  pathOptions={{
+                    color: APPROACH_CASING_COLOR,
+                    weight: APPROACH_CASING_WEIGHT,
+                    dashArray: APPROACH_DASH,
+                  }}
+                />
+                <Polyline
+                  positions={visual.approachPoints}
+                  pathOptions={{ color: visual.approachColor, weight: 2, dashArray: APPROACH_DASH }}
+                />
+              </>
+            ) : null}
+            {visual.markerPoint && visual.icon ? (
+              <Marker position={visual.markerPoint} icon={visual.icon} />
+            ) : null}
+          </Fragment>
         ))}
         <MapViewController
           points={boundsPoints}
           passKey={passKey}
           fitToPass={selectedPass !== null}
+          centerLon={referenceLon}
         />
       </MapContainer>
       {!selectedPass && defaultPasses.length === 0 ? (

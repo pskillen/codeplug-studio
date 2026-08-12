@@ -80,24 +80,27 @@ export function computeMapView(
   };
 }
 
-/** Bounds for one horizontal world repeat (excludes extreme polar caps). */
-const WORLD_REPEAT_SOUTH_WEST: LatLon = [-60, -180];
-const WORLD_REPEAT_NORTH_EAST: LatLon = [60, 180];
+/** Vertical extent for one horizontal world repeat (excludes extreme polar caps). */
+const WORLD_REPEAT_LAT_RANGE = 60;
 
 /**
  * Fit one world repeat to the map viewport — default for satellite tracking maps before
- * a specific pass/track is selected.
+ * a specific pass/track is selected. Centred on `centerLon` (default `0`) rather than always
+ * `[-180°, 180°]`, so an observer stationed near the antimeridian isn't clipped to the very edge
+ * of the shown repeat.
  */
 export function computeWorldRepeatMapView(
   options: {
     padding?: [number, number];
     maxZoom?: number;
+    centerLon?: number;
   } = {},
 ): FitBoundsMapViewAction {
+  const centerLon = options.centerLon ?? 0;
   return {
     type: 'fitBounds',
-    southWest: WORLD_REPEAT_SOUTH_WEST,
-    northEast: WORLD_REPEAT_NORTH_EAST,
+    southWest: [-WORLD_REPEAT_LAT_RANGE, centerLon - 180],
+    northEast: [WORLD_REPEAT_LAT_RANGE, centerLon + 180],
     padding: options.padding ?? [12, 12],
     maxZoom: options.maxZoom ?? 3,
   };
