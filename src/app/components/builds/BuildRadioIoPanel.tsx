@@ -466,6 +466,15 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         ) : null}
       </ModalShell>
       <WebSerialExperimentalAlert />
+      {descriptor?.hydrationRequiredForWrite ? (
+        <Alert color="red" title="Write path not migrated">
+          <Text size="sm">
+            This radio still depends on a legacy stored clone image for Web Serial write. Project
+            save no longer keeps that image — Read again in this session before Write until this
+            adapter is migrated.
+          </Text>
+        </Alert>
+      ) : null}
       <Text fw={600} size="sm">
         Direct radio (Web Serial)
       </Text>

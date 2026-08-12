@@ -90,3 +90,10 @@ describe('BuildRadioIoPanel — single-bank Write modes (#992)', () => {
     expect(screen.queryByLabelText('Codeplug Write projection')).not.toBeInTheDocument();
   });
 });
+
+describe('BuildRadioIoPanel — legacy stash migration warning (#879)', () => {
+  it('shows a severe warning when the adapter still requires persisted clone hydration', () => {
+    renderPanel('radio-io-uv5r-mini');
+    expect(screen.getByText('Write path not migrated')).toBeInTheDocument();
+  });
+});
