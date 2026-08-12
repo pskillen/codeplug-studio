@@ -27,7 +27,9 @@ Cite: anytone-cps — facts only; do not paste GPL sources.
 Same bit indexing as channels: zone `n` → byte `n // 8`, bit `n % 8`.
 
 - Empty zone (no members): clear ZoneSet bit; anytone-cps still writes default A/B indices (`0` / `1`) into the A/B tables for that slot.
-- Hide flag is independent of occupancy.
+- Hide flag is independent of occupancy: bit **set** → hidden. A zone is **visible** when its ZoneSet bit is set and its ZoneHide bit is clear.
+- Firmware **rejects zero visible zones** (empty ZoneSet, or every occupied zone hidden) with _Program Error Please Initialize The Radio_ — confirmed on hardware, including assemble-from-`0xff` leaving ZoneHide all-set ([#1125](https://github.com/pskillen/codeplug-studio/issues/1125)). Sibling refusal for empty projection: [#880](https://github.com/pskillen/codeplug-studio/issues/880).
+- Studio Write **zeros ZoneHide** on encode (hide is not modelled). Occupied zones are therefore visible. Write is refused before PROGRAM / write frames when the image would have zero visible zones.
 
 ## Name
 

@@ -49,10 +49,10 @@ full official-CPS restore:
 | Cause                                                                                    | Status                                                                                                                                                                                           |
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Studio transmitting the sector-management markers above                                  | **Fixed** — [#871](https://github.com/pskillen/codeplug-studio/pull/871), suppression is structural                                                                                              |
-| Writing a codeplug with **channels but zero zones** — an invalid state for this firmware | **Open** — [#880](https://github.com/pskillen/codeplug-studio/issues/880) (refusal); [#881](https://github.com/pskillen/codeplug-studio/issues/881) (synthesised "All Channels" zone as the fix) |
+| Writing a codeplug with **channels but zero visible zones** — empty `ZoneSet`, or occupied zones that are all hidden (`ZoneHide` bits set) | **Partial** — [#1125](https://github.com/pskillen/codeplug-studio/issues/1125) zeros `ZoneHide` on encode and refuses Write when visible zones would be zero; [#880](https://github.com/pskillen/codeplug-studio/issues/880) (projection-empty refusal copy / DM-32); [#881](https://github.com/pskillen/codeplug-studio/issues/881) (synthesised "All Channels" zone) |
 
-Do not diagnose that message as a marker problem without checking the zone count first. A zero-zone codeplug
-is written faithfully by Studio and rejected by the radio — it is not an encoding fault.
+Do not diagnose that message as a marker problem without checking **visible** zone count first (`ZoneSet` occupied and not hidden). A zero-visible-zone codeplug
+is written faithfully by Studio unless the Write guard refuses it, and is rejected by the radio — it is not an encoding fault.
 
 **Recovery, either way:** on-radio init, then write a full codeplug from the **official** Anytone CPS. Studio
 alone is not known to be sufficient — it writes 15 erase units where CPS writes 30.
