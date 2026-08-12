@@ -112,6 +112,15 @@ const CAPABILITY_COPY: Record<CapabilityId, CapabilityCopy> = {
       'Wire names for expanded rows follow your export naming settings.',
     ],
   },
+  [BuildCapabilityTrait.SeparateDigitalIdList]: {
+    label: 'Separate digital ID list',
+    summary:
+      'Firmware keeps a contact list bank separate from a digital ID list bank — not a single shared contact/ID table.',
+    consequences: [
+      'Write and export can target contacts and the digital ID list independently.',
+      'Profiles without this trait use one bank for contacts and IDs (single-bank Write modes).',
+    ],
+  },
 };
 
 /** Display labels for badges and export toggles — same source as characteristics. */
