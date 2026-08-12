@@ -11,9 +11,14 @@ import {
   composeChannelWireName,
   type ChannelExportNameMode,
 } from '@core/domain/channelNaming.ts';
-import { finalizeWireName, shortenWireName, uniqueWireName } from './shortenName.ts';
+import {
+  finalizeWireName,
+  hardTruncateUniqueWireName,
+  shortenWireName,
+  uniqueWireName,
+} from './shortenName.ts';
 import { sanitiseAsciiWireString } from '../sanitiseAsciiWireString.ts';
-import { pushWireNameLengthWarning } from './wireNameWarning.ts';
+import { pushWireNameCollisionWarning, pushWireNameLengthWarning } from './wireNameWarning.ts';
 
 export function resolveMaxNameLength(
   profileId: string | undefined,
@@ -45,10 +50,18 @@ export function assembledChannelExportWireName(
   profileId: string | undefined,
   warnings: string[],
 ): string {
-  const base = row.wireNameOverride?.trim()
-    ? row.wireName
-    : composeExportWireName(row.entity, options);
-  return applyWireNameLimits(base, row.entity, reserved, options, profileId, warnings);
+  const isOverride = Boolean(row.wireNameOverride?.trim());
+  const base = isOverride ? row.wireName : composeExportWireName(row.entity, options);
+  return applyWireNameLimits(
+    base,
+    row.entity,
+    reserved,
+    options,
+    profileId,
+    warnings,
+    true,
+    isOverride,
+  );
 }
 
 export function applyWireNameLimits(
@@ -59,14 +72,49 @@ export function applyWireNameLimits(
   profileId: string | undefined,
   warnings: string[],
   reserve = true,
+  isOverride = false,
 ): string {
   const maxLen = resolveMaxNameLength(profileId ?? options?.profileId, options);
   const shorten = options?.shortenNames !== false;
   const original = baseWireName.trim();
 
-  if (!shorten || maxLen == null) {
-    const name = sanitiseAsciiWireString(reserve ? uniqueWireName(original, reserved) : original);
-    if (reserve) reserved.add(name);
+  if (isOverride || !shorten || maxLen == null) {
+    if (isOverride && maxLen != null) {
+      const { name: truncated, collided, stem } = hardTruncateUniqueWireName(
+        original,
+        reserved,
+        maxLen,
+        reserve,
+      );
+      const name = sanitiseAsciiWireString(truncated);
+      if (collided) {
+        pushWireNameCollisionWarning(warnings, {
+          entityKind: 'Channel',
+          candidate: stem,
+          disambiguated: name,
+        });
+      }
+      pushWireNameLengthWarning(warnings, {
+        entityKind: 'Channel',
+        original,
+        exported: name,
+        maxLen,
+        profileId: profileId ?? options?.profileId,
+        shortenEnabled: false,
+      });
+      return name;
+    }
+
+    const uniquified = reserve ? uniqueWireName(original, reserved) : original;
+    const name = sanitiseAsciiWireString(uniquified);
+    if (reserve) {
+      reserved.add(name);
+      pushWireNameCollisionWarning(warnings, {
+        entityKind: 'Channel',
+        candidate: original,
+        disambiguated: name,
+      });
+    }
     if (maxLen != null) {
       pushWireNameLengthWarning(warnings, {
         entityKind: 'Channel',
@@ -109,9 +157,20 @@ export function applyWireNameLimits(
     return exported;
   }
 
-  const exported = sanitiseAsciiWireString(
-    finalizeWireName(original, reserved, maxLen, shortenOpts),
+  const { name: finalized, collided, stem } = finalizeWireName(
+    original,
+    reserved,
+    maxLen,
+    shortenOpts,
   );
+  const exported = sanitiseAsciiWireString(finalized);
+  if (collided) {
+    pushWireNameCollisionWarning(warnings, {
+      entityKind: 'Channel',
+      candidate: stem,
+      disambiguated: exported,
+    });
+  }
   pushWireNameLengthWarning(warnings, {
     entityKind: 'Channel',
     original,

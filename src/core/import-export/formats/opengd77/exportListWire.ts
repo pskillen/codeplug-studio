@@ -25,6 +25,7 @@ function seedReservedFromChannels(
 ): void {
   const expandModes = options?.expandModes ?? true;
   for (const row of assembled.channels) {
+    const isOverride = Boolean(row.wireNameOverride?.trim());
     const expanded = expandOpenGd77ChannelWireRows(
       row.entity,
       row.wireNameOverride?.trim() || row.wireName,
@@ -33,6 +34,7 @@ function seedReservedFromChannels(
       profileId,
       reserved,
       warnings,
+      isOverride,
     );
     for (const entry of expanded) {
       if (isProjectionExcluded(options?.channelOverrides, entry.key, row.entity.id)) continue;
@@ -59,6 +61,7 @@ export function buildOpenGd77ListWireMaps(
       id: zone.zoneId,
       wireName: zone.wireName,
       entityKind: 'Zone' as const,
+      isOverride: Boolean(zone.wireNameOverride?.trim()),
     })),
     reserved,
     options,
@@ -71,6 +74,7 @@ export function buildOpenGd77ListWireMaps(
       id: list.entity.id,
       wireName: list.wireName,
       entityKind: 'RX group list' as const,
+      isOverride: Boolean(list.wireNameOverride?.trim()),
     })),
     reserved,
     options,
@@ -86,10 +90,16 @@ export function buildOpenGd77ListWireMaps(
     warnings,
   );
   for (const contact of exportAssembled.analogContacts) {
+    const override = options?.contactOverrides
+      ? Boolean(
+          options.contactOverrides.find((row) => row.libraryEntityId === contact.entity.id)
+            ?.wireName?.trim(),
+        )
+      : Boolean(contact.wireNameOverride?.trim());
     const base = resolveAnalogContactExportBaseName(contact.entity, options?.contactOverrides);
     contactWireNames.set(
       contact.entity.id,
-      applyDigitalContactExportWireName(base, options, profileId, warnings),
+      applyDigitalContactExportWireName(base, options, profileId, warnings, override),
     );
   }
 

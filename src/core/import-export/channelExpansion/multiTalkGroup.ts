@@ -27,7 +27,7 @@ import {
 } from './multiTalkGroupWireName.ts';
 import { modeExportNameSuffix } from './modeExportSuffix.ts';
 import { finalizeWireName, type TalkGroupMemberSuffixReplacement } from './shortenName.ts';
-import { pushWireNameLengthWarning } from './wireNameWarning.ts';
+import { pushWireNameCollisionWarning, pushWireNameLengthWarning } from './wireNameWarning.ts';
 import { sanitiseAsciiWireString } from '../sanitiseAsciiWireString.ts';
 
 export interface MultiTalkGroupLibrarySlice {
@@ -167,15 +167,21 @@ export function applyMultiTalkGroupWireNameLimits(
 
   const tgSuffix = talkGroupMemberSuffixForAppend(member, library, options, mode);
 
-  const exported = sanitiseAsciiWireString(
-    finalizeWireName(base, reserved, maxLen, {
-      exportNameMode: pick.exportNameMode,
-      recomposeWithMode: (m) => composeChannelWireName({ ...pick, exportNameMode: m }),
-      recomposeWithChannelAbbreviation,
-      talkGroupMemberSuffix: tgSuffix,
-      fixedSuffix,
-    }),
-  );
+  const { name: finalized, collided, stem } = finalizeWireName(base, reserved, maxLen, {
+    exportNameMode: pick.exportNameMode,
+    recomposeWithMode: (m) => composeChannelWireName({ ...pick, exportNameMode: m }),
+    recomposeWithChannelAbbreviation,
+    talkGroupMemberSuffix: tgSuffix,
+    fixedSuffix,
+  });
+  const exported = sanitiseAsciiWireString(finalized);
+  if (collided) {
+    pushWireNameCollisionWarning(warnings, {
+      entityKind: 'Channel',
+      candidate: stem,
+      disambiguated: exported,
+    });
+  }
   pushWireNameLengthWarning(warnings, {
     entityKind: 'Channel',
     original: base,

@@ -68,7 +68,7 @@ describe('hyphenated channel sets (CHIRP 7)', () => {
     const reserved = new Set<string>();
     const names: string[] = [];
     for (let n = 1; n <= 16; n++) {
-      const name = finalizeWireName(`PMR446-${n}`, reserved, 7);
+      const { name } = finalizeWireName(`PMR446-${n}`, reserved, 7);
       expect(name.length).toBeLessThanOrEqual(7);
       expect(name.startsWith('PMR')).toBe(true);
       expect(name.startsWith('PMR44')).toBe(false);
@@ -90,7 +90,7 @@ describe('finalizeWireName', () => {
     for (let n = 2; n <= 9; n++) {
       reserved.add(`PMR44 ${n}`);
     }
-    const name = finalizeWireName('PMR446 Channel Ten', reserved, 7);
+    const { name } = finalizeWireName('PMR446 Channel Ten', reserved, 7);
     expect(name.length).toBeLessThanOrEqual(7);
     expect(reserved.has(name)).toBe(true);
   });
@@ -98,7 +98,7 @@ describe('finalizeWireName', () => {
   it('fits many colliding stems on a 7-char limit', () => {
     const reserved = new Set<string>();
     for (let i = 0; i < 20; i++) {
-      const name = finalizeWireName('PMR446 Shared', reserved, 7);
+      const { name } = finalizeWireName('PMR446 Shared', reserved, 7);
       expect(name.length).toBeLessThanOrEqual(7);
     }
     expect(reserved.size).toBe(20);

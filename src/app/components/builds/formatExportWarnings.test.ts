@@ -115,4 +115,24 @@ describe('formatExportWarnings', () => {
       ),
     ).toBe('"Glasgow" — 30 → 16 members');
   });
+
+  it('routes naming-collision warnings into shortenedProblemGroups', () => {
+    const result = formatExportWarnings([
+      'Channel wire name "Glasgow" collided with another exported name; disambiguated as "Glasgow 2"',
+      'Channel wire name "Aberdeen Approach" exceeds 16 characters for Anytone AT-D890UV; exported as "Aber Approach"',
+    ]);
+
+    expect(result.shortenedInfoGroups).toHaveLength(1);
+    expect(result.shortenedProblemGroups).toHaveLength(1);
+    expect(result.shortenedProblemGroups[0]?.title).toBe('Channel name collisions');
+    expect(result.shortenedProblemGroups[0]?.items).toEqual([
+      {
+        original: 'Glasgow',
+        exported: 'Glasgow 2',
+        stillExceedsLimit: true,
+        isCollision: true,
+      },
+    ]);
+    expect(wireNameShorteningIntro(result.shortenedProblemGroups[0]!)).toContain('collided');
+  });
 });

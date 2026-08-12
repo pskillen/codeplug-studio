@@ -46,6 +46,7 @@ export function serialiseNeonplugContacts(
       warnings,
       'Talk group',
       profile.nameLimit,
+      Boolean(row.wireNameOverride?.trim()),
     );
     contacts.push({
       id,
@@ -66,6 +67,7 @@ export function serialiseNeonplugContacts(
       warnings,
       'Contact',
       profile.nameLimit,
+      Boolean(row.wireNameOverride?.trim()),
     );
     const contact: NeonplugContact = {
       id,

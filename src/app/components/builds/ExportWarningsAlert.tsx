@@ -14,6 +14,9 @@ export interface ExportWarningsAlertProps {
 }
 
 function shorteningLine(item: WireNameShortening): string {
+  if (item.isCollision) {
+    return `"${item.original}" → "${item.exported}" (collision)`;
+  }
   if (item.stillExceedsLimit && item.exported === item.original) {
     return `"${item.original}"`;
   }

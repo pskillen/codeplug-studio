@@ -52,7 +52,8 @@ function channelWireName(
   const pick = channelPickForWireExport(row.entity, {
     nameModeOverride: options.nameModeOverride,
   });
-  const base = row.wireNameOverride?.trim() ? row.wireName : composeChannelWireName(pick);
+  const isOverride = Boolean(row.wireNameOverride?.trim());
+  const base = isOverride ? row.wireName : composeChannelWireName(pick);
 
   if (!options.shortenNames) {
     if (base.length > options.maxNameLength) {
@@ -71,6 +72,8 @@ function channelWireName(
     exportOptions,
     exportOptions?.profileId ?? profileId,
     options.warnings ?? [],
+    true,
+    isOverride,
   );
 }
 

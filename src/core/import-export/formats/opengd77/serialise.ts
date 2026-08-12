@@ -168,6 +168,7 @@ export function serialiseChannels(
         profile.id,
         reserved,
         warnings,
+        Boolean(row.wireNameOverride?.trim()),
       ),
     ),
     options?.channelOverrides,

@@ -45,6 +45,7 @@ export function serialiseNeonplugZones(
       warnings,
       'Zone',
       profile.nameLimit,
+      Boolean(zone.wireNameOverride?.trim()),
     );
 
     zones.push({

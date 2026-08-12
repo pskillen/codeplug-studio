@@ -171,6 +171,7 @@ export function deriveZoneDerivedScanLists(
       warnings,
       'Scan list',
       profile.scanListNameLimit,
+      Boolean(assembledZone.wireNameOverride?.trim()),
     );
     const truncated =
       memberWireNames.length > profile.scanListMembers

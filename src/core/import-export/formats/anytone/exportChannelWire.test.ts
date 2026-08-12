@@ -38,7 +38,7 @@ describe('anytoneChannelWireName', () => {
     expect(warnings.some((w) => w.includes('exported as'))).toBe(true);
   });
 
-  it('keeps explicit wire overrides verbatim and warns when over limit', () => {
+  it('hard-truncates explicit wire overrides and warns when over limit', () => {
     const channel = dmrChannel('Short');
     const warnings: string[] = [];
     const override = 'This override is way too long';
@@ -48,9 +48,11 @@ describe('anytoneChannelWireName', () => {
       { profileId: 'anytone-at-d890uv', shortenNames: true },
     );
 
-    expect(wireName).toBe(override);
+    expect(wireName).toBe(override.slice(0, 16));
+    expect(wireName.length).toBe(16);
     expect(warnings.some((w) => w.includes('exceeds 16 characters'))).toBe(true);
     expect(warnings.some((w) => w.includes(override))).toBe(true);
+    expect(warnings.some((w) => w.includes('exported as'))).toBe(false);
   });
 
   it('keeps full name under limit when abbreviation is set (useChannelAbbreviation on)', () => {

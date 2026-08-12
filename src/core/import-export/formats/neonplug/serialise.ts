@@ -108,7 +108,16 @@ function resolveWireName(
   options: CpsExportOptions | undefined,
   warnings: string[],
 ): string {
-  return applyWireNameLimits(row.wireName, row.entity, reserved, options, profileId, warnings);
+  return applyWireNameLimits(
+    row.wireName,
+    row.entity,
+    reserved,
+    options,
+    profileId,
+    warnings,
+    true,
+    Boolean(row.wireNameOverride?.trim()),
+  );
 }
 
 function multiTalkGroupLibrarySlice(assembled: AssembledBuild) {

@@ -2,10 +2,16 @@ import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { channelPickForWireExport, composeChannelWireName } from '@core/domain/channelNaming.ts';
 import type { AssembledChannel } from '@core/services/assemble.ts';
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
-import { pushWireNameLengthWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
+import {
+  hardTruncateUniqueWireName,
+  uniqueWireName,
+} from '@core/import-export/channelExpansion/shortenName.ts';
+import {
+  pushWireNameCollisionWarning,
+  pushWireNameLengthWarning,
+} from '@core/import-export/channelExpansion/wireNameWarning.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import { uniqueWireName } from '@core/import-export/channelExpansion/shortenName.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
 
 export interface AnytoneChannelWireOptions {
@@ -38,10 +44,20 @@ export function anytoneChannelWireName(
 
   const override = row.wireNameOverride?.trim();
   if (override) {
-    const name = sanitiseAsciiWireString(
-      reserve ? uniqueWireName(override, wireOptions.reserved) : override,
+    const { name: truncated, collided, stem } = hardTruncateUniqueWireName(
+      override,
+      wireOptions.reserved,
+      maxNameLength,
+      reserve,
     );
-    if (reserve) wireOptions.reserved.add(name);
+    const name = sanitiseAsciiWireString(truncated);
+    if (collided) {
+      pushWireNameCollisionWarning(warnings, {
+        entityKind: 'Channel',
+        candidate: stem,
+        disambiguated: name,
+      });
+    }
     pushWireNameLengthWarning(warnings, {
       entityKind: 'Channel',
       original: override,
@@ -59,10 +75,16 @@ export function anytoneChannelWireName(
   const base = composeChannelWireName(pick);
 
   if (!shortenNames) {
-    const name = sanitiseAsciiWireString(
-      reserve ? uniqueWireName(base, wireOptions.reserved) : base,
-    );
-    if (reserve) wireOptions.reserved.add(name);
+    const uniquified = reserve ? uniqueWireName(base, wireOptions.reserved) : base;
+    const name = sanitiseAsciiWireString(uniquified);
+    if (reserve) {
+      wireOptions.reserved.add(name);
+      pushWireNameCollisionWarning(warnings, {
+        entityKind: 'Channel',
+        candidate: base,
+        disambiguated: name,
+      });
+    }
     pushWireNameLengthWarning(warnings, {
       entityKind: 'Channel',
       original: base,
@@ -82,5 +104,6 @@ export function anytoneChannelWireName(
     resolvedProfileId,
     warnings,
     reserve,
+    false,
   );
 }

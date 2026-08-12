@@ -92,6 +92,8 @@ export function buildAnytoneExportWireContext(
         options,
         profileId,
         warnings,
+        undefined,
+        Boolean(row.wireNameOverride?.trim()),
       ),
     );
   }
@@ -104,10 +106,14 @@ export function buildAnytoneExportWireContext(
     warnings,
   );
   for (const row of assembled.analogContacts) {
+    const isOverride = Boolean(
+      options?.contactOverrides?.find((o) => o.libraryEntityId === row.entity.id)?.wireName?.trim() ??
+        row.wireNameOverride?.trim(),
+    );
     const base = resolveAnalogContactExportBaseName(row.entity, options?.contactOverrides);
     digitalContactWireNames.set(
       row.entity.id,
-      applyDigitalContactExportWireName(base, options, profileId, warnings),
+      applyDigitalContactExportWireName(base, options, profileId, warnings, isOverride),
     );
   }
 
@@ -115,7 +121,16 @@ export function buildAnytoneExportWireContext(
   for (const zone of assembled.zones) {
     zoneWireNames.set(
       zone.zoneId,
-      applyListWireNameLimits(zone.wireName, reserved, options, profileId, warnings, 'Zone'),
+      applyListWireNameLimits(
+        zone.wireName,
+        reserved,
+        options,
+        profileId,
+        warnings,
+        'Zone',
+        undefined,
+        Boolean(zone.wireNameOverride?.trim()),
+      ),
     );
   }
 
@@ -138,6 +153,8 @@ export function buildAnytoneExportWireContext(
         profileId,
         warnings,
         'Scan list',
+        undefined,
+        Boolean(scanList.wireNameOverride?.trim()),
       ),
     );
   }
@@ -153,6 +170,8 @@ export function buildAnytoneExportWireContext(
         profileId,
         warnings,
         'RX group list',
+        undefined,
+        Boolean(list.wireNameOverride?.trim()),
       ),
     );
   }

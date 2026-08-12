@@ -116,6 +116,7 @@ function buildListWireMaps(
       id: zone.zoneId,
       wireName: zone.wireName,
       entityKind: 'Zone' as const,
+      isOverride: Boolean(zone.wireNameOverride?.trim()),
     })),
     reserved,
     options,
@@ -136,6 +137,7 @@ function buildListWireMaps(
         warnings,
         'RX group list',
         rxGroupListNameLimit,
+        Boolean(list.wireNameOverride?.trim()),
       ),
     );
   }

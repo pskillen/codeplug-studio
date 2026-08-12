@@ -322,6 +322,65 @@ export function shortenWireName(
   return combined;
 }
 
+export interface FinalizeWireNameResult {
+  name: string;
+  /** True when `uniqueWireName` appended a disambiguation suffix. */
+  collided: boolean;
+  /** Stem passed to `uniqueWireName` (pre-disambiguation candidate). */
+  stem: string;
+}
+
+/**
+ * Hard-truncate + uniquify without smart shortening. Leaves room for disambiguation suffixes
+ * so the final name never exceeds `maxLen` when a limit is set.
+ */
+export function hardTruncateUniqueWireName(
+  base: string,
+  reserved: Set<string>,
+  maxLen: number | undefined,
+  reserve = true,
+): FinalizeWireNameResult {
+  const original = base.trim();
+  if (maxLen == null) {
+    const name = reserve ? uniqueWireName(original, reserved) : original;
+    if (reserve) reserved.add(name);
+    return { name, collided: name !== original, stem: original };
+  }
+
+  if (!reserve) {
+    const name = original.length > maxLen ? original.slice(0, maxLen) : original;
+    return { name, collided: false, stem: name };
+  }
+
+  let name = '';
+  let stemUsed = original;
+  let collided = false;
+  for (let suffixBudget = 0; suffixBudget <= maxLen; suffixBudget++) {
+    const stemBudget = Math.max(1, maxLen - suffixBudget);
+    const stem = original.length > stemBudget ? original.slice(0, stemBudget) : original;
+    const needed = disambiguationSuffixLength(stem, reserved);
+    if (needed > suffixBudget) continue;
+    const candidate = uniqueWireName(stem, reserved);
+    if (candidate.length <= maxLen) {
+      name = candidate;
+      stemUsed = stem;
+      collided = candidate !== stem;
+      break;
+    }
+  }
+
+  if (!name) {
+    const stemBudget = Math.max(1, maxLen - 3);
+    stemUsed = original.slice(0, stemBudget) || 'X';
+    const candidate = uniqueWireName(stemUsed, reserved);
+    name = candidate.slice(0, maxLen);
+    collided = candidate !== stemUsed;
+  }
+
+  reserved.add(name);
+  return { name, collided, stem: stemUsed };
+}
+
 /**
  * Shorten, disambiguate against `reserved`, and reserve the returned name when the set is mutable.
  *
@@ -333,8 +392,10 @@ export function finalizeWireName(
   reserved: ReadonlySet<string>,
   maxLen: number,
   opts: ShortenWireNameOptions = {},
-): string {
+): FinalizeWireNameResult {
   let name = '';
+  let collided = false;
+  let stemUsed = base.trim();
   for (let suffixBudget = 0; suffixBudget <= maxLen; suffixBudget++) {
     const stemBudget = Math.max(1, maxLen - suffixBudget);
     let stem = shortenWireName(base, stemBudget, opts);
@@ -348,6 +409,8 @@ export function finalizeWireName(
     const candidate = uniqueWireName(stem, reserved);
     if (candidate.length <= maxLen) {
       name = candidate;
+      stemUsed = stem;
+      collided = candidate !== stem;
       break;
     }
   }
@@ -356,11 +419,14 @@ export function finalizeWireName(
     // Exhausted budgets — hard-truncate stem so uniquify can still fit.
     const stemBudget = Math.max(1, maxLen - 3);
     const stem = shortenWireName(base, stemBudget, opts).slice(0, stemBudget) || 'X';
-    name = uniqueWireName(stem, reserved).slice(0, maxLen);
+    const candidate = uniqueWireName(stem, reserved);
+    name = candidate.slice(0, maxLen);
+    stemUsed = stem;
+    collided = candidate !== stem;
   }
 
   if (reserved instanceof Set) {
     reserved.add(name);
   }
-  return name;
+  return { name, collided, stem: stemUsed };
 }

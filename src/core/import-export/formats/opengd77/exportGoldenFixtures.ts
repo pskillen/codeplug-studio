@@ -129,7 +129,6 @@ export function shorteningOpenGd77ExportLibrary(base: LibrarySlice): LibrarySlic
 }
 
 export function shorteningOpenGd77ExportBuild(library: LibrarySlice): RadioBuild {
-  const tg = library.talkGroups[0]!;
   const ch = library.channels[1]!;
   const zone = library.zones[0]!;
   return {
@@ -143,6 +142,6 @@ export function shorteningOpenGd77ExportBuild(library: LibrarySlice): RadioBuild
       ],
     },
     channelOverrides: [{ libraryEntityId: ch.id, wireName: 'GB7GL Scot' }],
-    talkGroupOverrides: [{ libraryEntityId: tg.id, wireName: tg.name }],
+    talkGroupOverrides: [],
   };
 }

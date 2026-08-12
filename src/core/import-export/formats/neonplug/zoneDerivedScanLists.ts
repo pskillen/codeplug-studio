@@ -189,6 +189,7 @@ export function deriveNeonplugZoneDerivedScanLists(
       warnings,
       'Scan list',
       profile.scanListNameLimit,
+      Boolean(assembledZone.wireNameOverride?.trim()),
     );
 
     const scanListId = result.scanLists.length + 1;
