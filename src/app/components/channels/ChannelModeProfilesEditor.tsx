@@ -22,7 +22,7 @@ import type {
 } from '@core/models/library.ts';
 import { isAnalogChannelModeProfile, isModeOnlyStub } from '@core/domain/modeProfiles.ts';
 import ModePill from '../pills/ModePill.tsx';
-import { PercentLevelSlider } from '../ui/index.ts';
+import { PercentLevelSlider } from '../v2/index.ts';
 import RxGroupListSummary from '../library/RxGroupListSummary.tsx';
 import AnalogSquelchModeSegment from './AnalogSquelchModeSegment.tsx';
 import SendTalkerAliasSegment from './SendTalkerAliasSegment.tsx';

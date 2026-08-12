@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import type { ZoneBehaviourDefaults } from '@core/models/zoneBehaviourDefaults.ts';
 import { normalizeZoneBehaviourDefaults } from '@core/domain/normalizeZoneBehaviourDefaults.ts';
-import { UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/v2/index.ts';
 import { Button, Panel, ToggleSwitch } from '../../components/v2/index.ts';
 import { useEntityFormDirty, useFormBaseline } from '../../hooks/useEntityFormDirty.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';

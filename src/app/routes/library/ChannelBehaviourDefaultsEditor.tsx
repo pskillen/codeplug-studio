@@ -3,7 +3,7 @@ import { useMediaQuery } from '@mantine/hooks';
 import type { ChannelBehaviourDefaults } from '@core/models/channelBehaviourDefaults.ts';
 import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
 import { normalizeChannelBehaviourDefaults } from '@core/domain/normalizeChannelBehaviourDefaults.ts';
-import { UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/v2/index.ts';
 import { Button, Panel, SegmentedControl } from '../../components/v2/index.ts';
 import { useEntityFormDirty, useFormBaseline } from '../../hooks/useEntityFormDirty.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';

@@ -10,7 +10,7 @@ import {
   PageSection,
   useDataTableBulkReorderDragHandle,
 } from '../../components/ui/index.ts';
-import SelectedItemDragHandle from '../../components/ui/SelectedItemDragHandle.tsx';
+import SelectedItemDragHandle from '../../components/v2/SelectedItemDragHandle.tsx';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
 import { COLUMN_PICKER_ROWS, LARGE_VIRTUAL_DEMO_ROWS, STICKY_DEMO_ROWS } from './fixtures.ts';
 

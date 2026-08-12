@@ -3,10 +3,10 @@ import { useState } from 'react';
 import type { ForbidTransmitOverride } from '@core/models/channelBehaviourDefaults.ts';
 import type { ChannelMode } from '../../lib/channelModes.ts';
 import { ModePill } from '../../components/pills/index.ts';
+import { PercentLevelSlider } from '../../components/v2/index.ts';
 import {
   GradientSegmentedControl,
   ImageCheckboxGroup,
-  PercentLevelSlider,
   PillTabs,
   SplitButton,
 } from '../../components/ui/index.ts';

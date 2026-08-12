@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useBuildWirePreview } from '../../../hooks/useBuildWirePreview.ts';
 import { useUnsavedNavigationGuard } from '../../../hooks/useUnsavedNavigationGuard.ts';
 import WirePreviewBulkEditTable from '../../../components/builds/wirePreview/WirePreviewBulkEditTable.tsx';
-import UnsavedChangesModal from '../../../components/ui/UnsavedChangesModal.tsx';
+import { UnsavedChangesModal } from '../../../components/v2/index.ts';
 import { useBuildLayout } from '../BuildLayoutContext.tsx';
 import classes from '../BuildSubPage.module.css';
 

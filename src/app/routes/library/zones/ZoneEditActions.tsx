@@ -1,5 +1,5 @@
 import EditorActions from '../EditorActions.tsx';
-import { UnsavedChangesModal } from '../../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../../components/v2/index.ts';
 import { useZoneEdit } from './ZoneEditContext.tsx';
 
 export default function ZoneEditActions() {

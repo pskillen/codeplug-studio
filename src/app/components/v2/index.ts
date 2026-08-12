@@ -70,6 +70,18 @@ export type {
   ProgressModalStep,
   ProgressModalStepStatus,
 } from './ProgressModal.tsx';
+export { default as UnsavedChangesModal } from './UnsavedChangesModal.tsx';
+export type { UnsavedChangesModalProps } from './UnsavedChangesModal.tsx';
+export { default as PercentLevelSlider } from './PercentLevelSlider.tsx';
+export type { PercentLevelSliderProps } from './PercentLevelSlider.tsx';
+export {
+  PERCENT_LEVEL_MARKS,
+  PERCENT_LEVEL_STEP,
+  formatPercentLevelLabel,
+  snapPercentToStep,
+} from './PercentLevelSlider.tsx';
+export { default as SelectedItemDragHandle } from './SelectedItemDragHandle.tsx';
+export type { SelectedItemDragHandleProps } from './SelectedItemDragHandle.tsx';
 export { default as AppShell } from './AppShell.tsx';
 export type { AppShellProps } from './AppShell.tsx';
 export { default as ProjectChip } from './ProjectChip.tsx';

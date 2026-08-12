@@ -10,8 +10,6 @@ export { default as EmptyState } from './EmptyState.tsx';
 export type { EmptyStateProps } from './EmptyState.tsx';
 export { default as ListPage } from './ListPage.tsx';
 export type { ListPageProps } from './ListPage.tsx';
-export { default as UnsavedChangesModal } from './UnsavedChangesModal.tsx';
-export type { UnsavedChangesModalProps } from './UnsavedChangesModal.tsx';
 export { default as FormPage } from './FormPage.tsx';
 export type { FormPageProps } from './FormPage.tsx';
 export { default as FormSection } from './FormSection.tsx';
@@ -26,8 +24,6 @@ export type {
   DataTableStoredOrderConfig,
   DataTableVariant,
 } from './DataTable.tsx';
-export { default as PercentLevelSlider } from './PercentLevelSlider.tsx';
-export type { PercentLevelSliderProps } from './PercentLevelSlider.tsx';
 export { default as GradientSegmentedControl } from './GradientSegmentedControl.tsx';
 export type {
   GradientSegmentOption,
@@ -56,8 +52,6 @@ export type {
   SelectedItemListProps,
   SelectedItemListRenderProps,
 } from './SelectedItemList.tsx';
-export { default as SelectedItemDragHandle } from './SelectedItemDragHandle.tsx';
-export type { SelectedItemDragHandleProps } from './SelectedItemDragHandle.tsx';
 export { default as SelectedItemRowMoveButtons } from './SelectedItemRowMoveButtons.tsx';
 export type { SelectedItemRowMoveProps } from './SelectedItemRowMoveButtons.tsx';
 export { default as AvailableItemPicker } from './AvailableItemPicker.tsx';

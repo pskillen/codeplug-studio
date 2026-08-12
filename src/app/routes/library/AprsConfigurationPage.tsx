@@ -2,7 +2,7 @@ import { Loader, Tabs } from '@mantine/core';
 import { useCallback, useRef, useState } from 'react';
 import AprsChannelAssignmentPanel from '../../components/library/AprsChannelAssignmentPanel.tsx';
 import AprsConfigurationEditor from './AprsConfigurationEditor.tsx';
-import { UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/v2/index.ts';
 import { DesignSystemV2Provider } from '../../components/v2/index.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
 import { useLibrary } from '../../state/useLibrary.ts';

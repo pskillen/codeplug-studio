@@ -2,7 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Table } from '@mantine/core';
 import { createContext, useContext, type CSSProperties, type ReactNode } from 'react';
-import type { SelectedItemDragHandleProps } from '../../components/ui/SelectedItemDragHandle.tsx';
+import type { SelectedItemDragHandleProps } from '../../components/v2/SelectedItemDragHandle.tsx';
 
 const RowBulkReorderDragHandleContext = createContext<SelectedItemDragHandleProps | null>(null);
 

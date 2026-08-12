@@ -17,7 +17,7 @@ C2 unsaved-changes confirm when the operator tries to leave a form with unsaved 
 ## Usage
 
 ```tsx
-import UnsavedChangesModal from '@app/components/ui/UnsavedChangesModal.tsx';
+import UnsavedChangesModal from '@app/components/v2/UnsavedChangesModal.tsx';
 import { useEntityFormDirty } from '@app/hooks/useEntityFormDirty.ts';
 import { useUnsavedNavigationGuard } from '@app/hooks/useUnsavedNavigationGuard.ts';
 

@@ -20,7 +20,7 @@ import {
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import { filterChannelIdsEligibleForBuild } from '@core/domain/channelEligibility.ts';
 import MembershipSortMenu from '../../../library/MembershipSortMenu.tsx';
-import SelectedItemDragHandle from '../../../ui/SelectedItemDragHandle.tsx';
+import SelectedItemDragHandle from '../../../v2/SelectedItemDragHandle.tsx';
 import SelectedItemList from '../../../ui/SelectedItemList.tsx';
 import SelectedItemRowMoveButtons from '../../../ui/SelectedItemRowMoveButtons.tsx';
 import ExportOrderOverrideBanner from '../ExportOrderOverrideBanner.tsx';

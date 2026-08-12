@@ -7,7 +7,7 @@ import RxGroupListMemberPicker, {
   RxGroupListAddOverlay,
 } from '../../components/library/RxGroupListMemberPicker.tsx';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
-import { UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/v2/index.ts';
 import {
   DesignSystemV2Provider,
   EditorHeader,

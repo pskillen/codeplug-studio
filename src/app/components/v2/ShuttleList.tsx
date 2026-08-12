@@ -3,7 +3,7 @@ import { IconX } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import SelectedItemDragHandle, {
   type SelectedItemDragHandleProps,
-} from '../ui/SelectedItemDragHandle.tsx';
+} from './SelectedItemDragHandle.tsx';
 import SelectedItemList, { type SelectedItemListProps } from '../ui/SelectedItemList.tsx';
 import AvailableItemPicker, { type AvailableItemPickerProps } from '../ui/AvailableItemPicker.tsx';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';

@@ -15,9 +15,9 @@ import { UK_BANDS } from '../../lib/bands.ts';
 import { BandPill, ModePill } from '../../components/pills/index.ts';
 import type { ChannelMode } from '../../lib/channelModes.ts';
 import { ICON_STROKE } from '../../lib/iconSizes.ts';
+import { SelectedItemDragHandle } from '../../components/v2/index.ts';
 import {
   AvailableItemPicker,
-  SelectedItemDragHandle,
   SelectedItemList,
   SelectedItemRowMoveButtons,
 } from '../../components/ui/index.ts';

@@ -17,7 +17,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Button, Group, ScrollArea, Stack, Text, TextInput } from '@mantine/core';
 import { Fragment, useCallback, useEffect, type CSSProperties, type ReactNode } from 'react';
-import type { SelectedItemDragHandleProps } from './SelectedItemDragHandle.tsx';
+import type { SelectedItemDragHandleProps } from '../v2/SelectedItemDragHandle.tsx';
 import type { SelectedItemRowMoveProps } from './SelectedItemRowMoveButtons.tsx';
 
 export interface SelectedItemListFilterProps {

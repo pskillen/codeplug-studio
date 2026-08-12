@@ -18,7 +18,7 @@ import {
   resolveChannelPrimaryMode,
 } from '@core/domain/modeProfiles.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
-import { PercentLevelSlider, UnsavedChangesModal } from '../../components/ui/index.ts';
+import { PercentLevelSlider, UnsavedChangesModal } from '../../components/v2/index.ts';
 import {
   Button,
   DesignSystemV2Provider,

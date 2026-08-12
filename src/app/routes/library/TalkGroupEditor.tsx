@@ -5,7 +5,7 @@ import type { DigitalChannelMode, TalkGroup } from '@core/models/library.ts';
 import { newTalkGroup } from '@core/domain/factories.ts';
 import TalkGroupWireNameExamples from '../../components/library/TalkGroupWireNameExamples.tsx';
 import EntityDeleteButton from '../../components/library/EntityDeleteButton.tsx';
-import { UnsavedChangesModal } from '../../components/ui/index.ts';
+import { UnsavedChangesModal } from '../../components/v2/index.ts';
 import {
   DesignSystemV2Provider,
   EditorHeader,
