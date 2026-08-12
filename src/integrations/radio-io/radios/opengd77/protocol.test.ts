@@ -20,6 +20,7 @@ import {
   createOpenGd77Md9600Protocol,
   parseFirmwareInfo,
 } from './protocol.ts';
+import { openGd77KeptRegionLength } from './writeVerifySupport.ts';
 
 function putU32Le(buf: Uint8Array, offset: number, value: number): void {
   buf[offset] = value & 0xff;
@@ -226,5 +227,82 @@ describe('OpenGd77Protocol', () => {
       (w) => w[0] === OPENGD77_TYPE_WRITE_UV380 && w[1] === OPENGD77_WRITE_CMD_SECTOR_BUFFER,
     );
     expect(bufferWrites.length).toBe(setSectorWrites.length * (OPENGD77_SECTOR / OPENGD77_BLOCK));
+  });
+
+  it('upload performs in-session pre-write read before programming flash', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    pipe.plantByte(OPENUV380_OFFSET.channelBank0 + 0x10, 0xaa);
+    const proto = new OpenGd77Protocol();
+    await proto.connect(pipe);
+
+    const next = createOpenUv380Image();
+    encodeChannelsIntoImage(next, [
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'UP',
+        rxHz: 145_500_000,
+        txHz: 145_500_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'NFM',
+        mode: 'analog',
+      },
+    ]);
+
+    const progressStages: string[] = [];
+    await proto.upload(next, {
+      onProgress: (p) => {
+        if (p.stage) progressStages.push(p.stage);
+      },
+    });
+
+    const firstReadIdx = pipe.writes.findIndex(
+      (w) => w[0] === OPENGD77_TYPE_READ && w[1] === 0x01,
+    );
+    const firstWriteIdx = pipe.writes.findIndex(
+      (w) => w[0] === OPENGD77_TYPE_WRITE_UV380 && w[1] === OPENGD77_WRITE_CMD_SET_SECTOR,
+    );
+    expect(firstReadIdx).toBeGreaterThanOrEqual(0);
+    expect(firstWriteIdx).toBeGreaterThanOrEqual(0);
+    expect(firstReadIdx).toBeLessThan(firstWriteIdx);
+
+    expect(progressStages).toContain('Pre-write read');
+    expect(progressStages).toContain('FLASH sectors');
+  });
+
+  it('upload captures kept regions from pre-write read priorImage', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    const settingsMarker = 0x42;
+    pipe.plantByte(OPENUV380_OFFSET.settings, settingsMarker);
+    const proto = new OpenGd77Protocol();
+    await proto.connect(pipe);
+
+    const next = createOpenUv380Image();
+    encodeChannelsIntoImage(next, [
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'UP',
+        rxHz: 145_500_000,
+        txHz: 145_500_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'NFM',
+        mode: 'analog',
+      },
+    ]);
+
+    await proto.upload(next, {});
+
+    const kept = proto.takeUploadKeptSnapshot();
+    expect(kept).toBeDefined();
+    const settingsLen = openGd77KeptRegionLength('settings');
+    const settingsBefore = kept!.get('settings');
+    expect(settingsBefore).toBeDefined();
+    expect(settingsBefore!.length).toBe(settingsLen);
+    expect(settingsBefore![0]).toBe(settingsMarker);
   });
 });
