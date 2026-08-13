@@ -18,6 +18,8 @@ OpenGD77 / G4EML CPS caps for this hardware. Adapters warn or truncate at the **
 | Contact name display | **16** chars            | Confirmed in forum (Jan 2025 thread)                                                                |
 | TG name display      | **16** chars            | Same field as contact name (Group rows)                                                             |
 | RX group list name   | **15** chars (binary)   | Serial codec field; CSV UI uses 16 for other names — see `OPENGD77_FAMILY_LIMITS.RX_GROUP_NAME_LEN` |
+| Satellite keps       | **25** spacecraft       | One `0x64` record per sat (FM + APRS + beacon fields) — [satellite-orbitals.md](../../opengd77/satellite-orbitals.md) |
+| Satellite name       | **8** chars             | Binary `SatelliteElement` name; library names stay unlimited |
 | TOT range            | **0–495**, step **15**  | `0` = off (G4EML CPS)                                                                               |
 | Colour code          | **0–15**                | Digital channels                                                                                    |
 | Append CSV renumber  | Ignores channel numbers | Append mode compacts and renumbers sequentially                                                     |
