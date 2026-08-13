@@ -78,6 +78,56 @@ export function enqueueReadReply(pipe: Dm32ScriptedPipe, address: number, data: 
  *
  * Range end 0x2fff → blocks 0x1000 and 0x2000.
  */
+/**
+ * Handshake + V-frames + PROGRAM entry (no discovery / download).
+ * Restore tests use this so the session never seeds Write hydration.
+ */
+export function scriptDm32Connect(
+  pipe: Dm32ScriptedPipe,
+  opts?: {
+    start?: number;
+    end?: number;
+    contactsBase?: number;
+    contactsEnd?: number;
+  },
+): { start: number; end: number } {
+  const start = opts?.start ?? 0x1000;
+  const end = opts?.end ?? 0x2fff;
+  const psearch = new Uint8Array(8);
+  psearch[0] = 0x06;
+  psearch.set(new TextEncoder().encode('DP570UV'), 1);
+  pipe.enqueue(psearch);
+  pipe.enqueue(new Uint8Array([0x50, 0x00, 0x00]));
+  pipe.enqueue(new Uint8Array([0x06]));
+
+  const layout = new Uint8Array(8);
+  layout.set(u32le(start), 0);
+  layout.set(u32le(end), 4);
+  const firmware = new TextEncoder().encode('DM32.TEST.001\0');
+  const contacts =
+    opts?.contactsBase != null && opts?.contactsEnd != null
+      ? (() => {
+          const payload = new Uint8Array(8);
+          payload.set(u32le(opts.contactsBase), 0);
+          payload.set(u32le(opts.contactsEnd), 4);
+          return payload;
+        })()
+      : new Uint8Array(0);
+  for (const id of [
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x10,
+  ]) {
+    if (id === 0x0a) enqueueVFrame(pipe, id, layout);
+    else if (id === 0x01) enqueueVFrame(pipe, id, firmware);
+    else if (id === 0x0f) enqueueVFrame(pipe, id, contacts);
+    else enqueueVFrame(pipe, id, new Uint8Array(0));
+  }
+
+  pipe.enqueue(new Uint8Array([0x06]));
+  pipe.enqueue(new Uint8Array(8).fill(0xff));
+  pipe.enqueue(new Uint8Array([0x06]));
+  return { start, end };
+}
+
 export function scriptDm32DownloadTwoBlocks(
   pipe: Dm32ScriptedPipe,
   channelCount = 1,

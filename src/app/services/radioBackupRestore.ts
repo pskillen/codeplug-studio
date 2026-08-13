@@ -31,6 +31,7 @@ import type {
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { readAtD890ConnectedRadioIdentity } from './radioIoSession.ts';
 
 export type RadioBackupSession = {
@@ -257,6 +258,13 @@ export function assertRestoreAddressMap(
   }
 }
 
+export function readLiveRestoreAddressMap(session: RadioSession): RestoreAddressMapLive | undefined {
+  if (session.radio instanceof Dm32uvProtocol) {
+    return session.radio.getLiveRestoreAddressMap();
+  }
+  return undefined;
+}
+
 export async function readLiveRestoreSerial(
   session: RadioSession,
   opts?: { signal?: AbortSignal },
@@ -317,7 +325,8 @@ export async function restoreRadioBackup(
     );
   }
   await assertRestoreIdentity(session, archive.manifest, { signal: opts?.signal });
-  assertRestoreAddressMap(archive.manifest, opts?.liveAddressMap);
+  const liveAddressMap = opts?.liveAddressMap ?? readLiveRestoreAddressMap(session);
+  assertRestoreAddressMap(archive.manifest, liveAddressMap);
   const regionIds = filterRestoreRegionIds(archive.manifest, opts?.regionIds);
   if (regionIds.length === 0) {
     throw new RadioRestoreError(

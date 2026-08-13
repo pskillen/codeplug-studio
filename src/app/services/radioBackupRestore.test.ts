@@ -12,6 +12,12 @@ import { UV5R_MINI_LAYOUT } from '@integrations/radio-io/radios/uv17pro-family/l
 import { UV5R_MINI_DESCRIPTOR } from '@integrations/radio-io/radios/uv5r-mini/descriptor.ts';
 import { UV21_PRO_V2_DESCRIPTOR } from '@integrations/radio-io/radios/uv21-pro-v2/descriptor.ts';
 import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
+import { DM32UV_DESCRIPTOR } from '@integrations/radio-io/radios/dm32uv/descriptor.ts';
+import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
+import {
+  Dm32ScriptedPipe,
+  scriptDm32Connect,
+} from '@integrations/radio-io/radios/dm32uv/__fixtures__/scriptedPipe.ts';
 import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.ts';
 import type { BytePipe, CloneImageRadio, RadioDescriptor } from '@integrations/radio-io/types.ts';
 import {
@@ -188,6 +194,30 @@ describe('restoreRadioBackup', () => {
     expect(descriptorSupportsRestore(UV5R_MINI_DESCRIPTOR)).toBe(true);
     expect(descriptorSupportsRestore(UV21_PRO_V2_DESCRIPTOR)).toBe(true);
   });
+
+  it('enables restore when the DM-32UV protocol implements the hook', () => {
+    expect(descriptorSupportsRestore(DM32UV_DESCRIPTOR)).toBe(true);
+  });
+
+  it('refuses DM-32 restore when live V-frame bases differ from the zip', async () => {
+    const dm32Pipe = new Dm32ScriptedPipe();
+    scriptDm32Connect(dm32Pipe, { start: 0x9000, end: 0xafff });
+    const radio = new Dm32uvProtocol();
+    await radio.connect(dm32Pipe, { settleScale: 0 });
+    const session = createRadioSession({
+      descriptor: DM32UV_DESCRIPTOR,
+      pipe: dm32Pipe,
+      radio,
+    });
+    const manifest = restoreManifest({
+      radioModelId: 'DM-32UV',
+      restoreFragileAfterFactoryReset: true,
+      addressBase: 0x1000,
+    });
+    await expect(
+      restoreRadioBackup(session, { manifest, image: createMemoryMap(16) }),
+    ).rejects.toMatchObject({ code: 'address-map-mismatch' });
+  });
 });
 
 describe('filterRestoreRegionIds', () => {
@@ -216,5 +246,15 @@ describe('assertRestoreAddressMap', () => {
       addressBase: 0x1000,
     });
     expect(() => assertRestoreAddressMap(manifest)).not.toThrow();
+  });
+
+  it('refuses a contacts-base mismatch when both sides are present', () => {
+    const manifest = restoreManifest({
+      restoreFragileAfterFactoryReset: true,
+      dm32ContactsBase: 0x200000,
+    });
+    expect(() =>
+      assertRestoreAddressMap(manifest, { dm32ContactsBase: 0x300000 }),
+    ).toThrow(/dm32ContactsBase/);
   });
 });
