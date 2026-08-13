@@ -1,6 +1,8 @@
 /**
- * Backup / Restore application service — pack live reads and open archive files.
+ * Backup / Restore application service — pack live reads, open archive files,
+ * and restore restorable regions onto a live session.
  * Zip on disk only; does not persist project state or run Write-codeplug preparation.
+ * Must not import assemble, buildRadioWriteProjection, or prepareRadioWriteImage.
  */
 
 import {
@@ -20,6 +22,7 @@ import {
 } from '@integrations/radio-io/backup/index.ts';
 import { getRadioDescriptor } from '@integrations/radio-io/index.ts';
 import type {
+  CloneImageRadio,
   MemoryMap,
   ProgressFn,
   RadioDescriptor,
@@ -27,6 +30,8 @@ import type {
 } from '@integrations/radio-io/types.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
+import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { readAtD890ConnectedRadioIdentity } from './radioIoSession.ts';
 
 export type RadioBackupSession = {
   source: 'live-read' | 'file';
@@ -177,4 +182,152 @@ export function openRadioBackupZip(bytes: Uint8Array): RadioBackupSession {
     inspectBag,
     zipBytes: bytes,
   };
+}
+
+export type RadioRestoreErrorCode =
+  | 'model-mismatch'
+  | 'serial-mismatch'
+  | 'address-map-mismatch'
+  | 'no-restore-hook'
+  | 'no-restorable-regions';
+
+export class RadioRestoreError extends Error {
+  readonly code: RadioRestoreErrorCode;
+
+  constructor(code: RadioRestoreErrorCode, message: string) {
+    super(message);
+    this.name = 'RadioRestoreError';
+    this.code = code;
+  }
+}
+
+/** Live DM-32 (and similar) address-map fields compared against the archive. */
+export type RestoreAddressMapLive = {
+  addressBase?: number;
+  dm32ContactsBase?: number;
+  dm32ContactsEnd?: number;
+};
+
+export function protocolSupportsRestore(radio: CloneImageRadio): boolean {
+  return typeof radio.restoreFromBackup === 'function';
+}
+
+export function descriptorSupportsRestore(descriptor: RadioDescriptor | undefined): boolean {
+  if (!descriptor) return false;
+  return protocolSupportsRestore(descriptor.protocolFactory());
+}
+
+export function defaultRestorableRegionIds(manifest: RadioBackupManifestV1): string[] {
+  return manifest.regions.filter((r) => r.restoreRole === 'restorable').map((r) => r.id);
+}
+
+/**
+ * Operator may uncheck restorable rows. Inspect-only ids are dropped even if
+ * the caller (or a tampered UI) includes them.
+ */
+export function filterRestoreRegionIds(
+  manifest: RadioBackupManifestV1,
+  requested?: readonly string[],
+): string[] {
+  const restorable = new Set(defaultRestorableRegionIds(manifest));
+  const source = requested ?? [...restorable];
+  return source.filter((id) => restorable.has(id));
+}
+
+/**
+ * Refuse restore when a factory-reset-fragile archive's live bases differ.
+ * DM-32 restore supplies {@link live}; omitted/partial live fields are not compared.
+ */
+export function assertRestoreAddressMap(
+  manifest: RadioBackupManifestV1,
+  live?: RestoreAddressMapLive,
+): void {
+  if (!manifest.restoreFragileAfterFactoryReset) return;
+  if (!live) return;
+  const fields = ['addressBase', 'dm32ContactsBase', 'dm32ContactsEnd'] as const;
+  for (const field of fields) {
+    const expected = manifest[field];
+    const actual = live[field];
+    if (expected !== undefined && actual !== undefined && expected !== actual) {
+      throw new RadioRestoreError(
+        'address-map-mismatch',
+        `Restore refused — live ${field} 0x${actual.toString(16)} does not match backup 0x${expected.toString(16)}. After a factory reset this archive cannot be restored.`,
+      );
+    }
+  }
+}
+
+export async function readLiveRestoreSerial(
+  session: RadioSession,
+  opts?: { signal?: AbortSignal },
+): Promise<string | undefined> {
+  if (session.radio instanceof AtD890uvProtocol) {
+    const { serial } = await readAtD890ConnectedRadioIdentity(session, opts);
+    const trimmed = serial.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+  return undefined;
+}
+
+export async function assertRestoreIdentity(
+  session: RadioSession,
+  manifest: RadioBackupManifestV1,
+  opts?: { signal?: AbortSignal },
+): Promise<{ serial?: string; firmware?: string; label: string }> {
+  if (!session.descriptor.modelIds.includes(manifest.radioModelId)) {
+    throw new RadioRestoreError(
+      'model-mismatch',
+      `Restore refused — connected radio (${session.descriptor.label}) does not match backup model ${manifest.radioModelId}.`,
+    );
+  }
+  const liveSerial = await readLiveRestoreSerial(session, opts);
+  const archived = manifest.serial?.trim();
+  if (archived) {
+    if (!liveSerial || liveSerial !== archived) {
+      throw new RadioRestoreError(
+        'serial-mismatch',
+        `Restore refused — connected serial "${liveSerial ?? '(unreadable)'}" does not match backup serial "${archived}".`,
+      );
+    }
+  }
+  const firmware =
+    (session.cachedImage ? session.radio.readFirmware(session.cachedImage) : undefined) ??
+    manifest.firmware;
+  return {
+    serial: liveSerial ?? archived,
+    firmware,
+    label: session.descriptor.label,
+  };
+}
+
+export async function restoreRadioBackup(
+  session: RadioSession,
+  archive: { manifest: RadioBackupManifestV1; image: MemoryMap },
+  opts?: {
+    regionIds?: readonly string[];
+    liveAddressMap?: RestoreAddressMapLive;
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
+  },
+): Promise<void> {
+  if (!protocolSupportsRestore(session.radio) || !session.radio.restoreFromBackup) {
+    throw new RadioRestoreError(
+      'no-restore-hook',
+      `Restore is not available for ${session.descriptor.label} yet.`,
+    );
+  }
+  await assertRestoreIdentity(session, archive.manifest, { signal: opts?.signal });
+  assertRestoreAddressMap(archive.manifest, opts?.liveAddressMap);
+  const regionIds = filterRestoreRegionIds(archive.manifest, opts?.regionIds);
+  if (regionIds.length === 0) {
+    throw new RadioRestoreError(
+      'no-restorable-regions',
+      'Restore refused — no restorable regions are selected.',
+    );
+  }
+  await session.radio.restoreFromBackup(archive, {
+    regionIds,
+    onProgress: opts?.onProgress,
+    signal: opts?.signal,
+  });
 }
