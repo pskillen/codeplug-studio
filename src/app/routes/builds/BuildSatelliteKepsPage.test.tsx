@@ -367,7 +367,9 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
     kepsPreviewStub = () => [previewEntry()];
     try {
       renderPage();
-      await waitFor(() => expect(screen.getByText('Preview satellites to write')).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByText('Preview satellites to write')).toBeInTheDocument(),
+      );
       expect(screen.queryByRole('columnheader', { name: 'Slot' })).not.toBeInTheDocument();
     } finally {
       kepsPreviewStub = undefined;
@@ -376,11 +378,16 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
 
   it('shows OpenGD77 Freq 1/2/3 slot labels', async () => {
     kepsPreviewStub = () => [
-      previewEntry({ slot: 'fm', slotCandidates: [{ transmitterId: 'tx-1', label: 'FM', mode: 'FM' }] }),
+      previewEntry({
+        slot: 'fm',
+        slotCandidates: [{ transmitterId: 'tx-1', label: 'FM', mode: 'FM' }],
+      }),
     ];
     try {
       renderPage('radio-io-opengd77-1701');
-      await waitFor(() => expect(screen.getByRole('columnheader', { name: 'Slot' })).toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByRole('columnheader', { name: 'Slot' })).toBeInTheDocument(),
+      );
       expect(screen.getByText('Freq 1 (FM)')).toBeInTheDocument();
     } finally {
       kepsPreviewStub = undefined;

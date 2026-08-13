@@ -259,9 +259,10 @@ describe('previewSatelliteWriteRecords', () => {
       satelliteOverrides: [{ libraryEntityId: 'tx-2', satelliteBankSlot: 'fm' }],
     }).subarray(0x08, 0x08 + SATELLITE_RECORD_BYTES);
     expect(readU32Le(rec, 0x34)).toBe(145_900_000);
-    const skipped = listCapabilitySkippedTransmitters([sat], [
-      { libraryEntityId: 'tx-2', satelliteBankSlot: 'fm' },
-    ]);
+    const skipped = listCapabilitySkippedTransmitters(
+      [sat],
+      [{ libraryEntityId: 'tx-2', satelliteBankSlot: 'fm' }],
+    );
     expect(skipped).toEqual([
       {
         satelliteId: 'sat-1',

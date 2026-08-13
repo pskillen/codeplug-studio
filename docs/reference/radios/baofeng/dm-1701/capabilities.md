@@ -28,11 +28,11 @@ Source: qDMR `opengd77_limits.cc` (OpenGD77 family). Used for **channel** list/e
 
 Not hardware-verified. Operator notes: radio slots are **Freq 1 (FM voice)**, **Freq 2 (APRS/packet)**, **Freq 3 (beacon / CW / SSTV / telemetry RX)**. Firmware does not track DMR satellite transponders. Standard RF 136–174 / 400–480 MHz; DM-1701 CPS Band Limits wideband unlock is **not modelled** — Studio still skips out-of-band transmitters. MD-9600 PLL is strict outside those bands.
 
-| Slot | Occupants | Skip |
-| ---- | --------- | ---- |
+| Slot   | Occupants                   | Skip                        |
+| ------ | --------------------------- | --------------------------- |
 | Freq 1 | FM-family (empty mode → FM) | Extra FM; DMR / BPSK / GFSK |
-| Freq 2 | APRS, PACKET, AX.25, AFSK | Extra APRS |
-| Freq 3 | Beacon, CW, SSTV, telemetry | Extra beacon |
+| Freq 2 | APRS, PACKET, AX.25, AFSK   | Extra APRS                  |
+| Freq 3 | Beacon, CW, SSTV, telemetry | Extra beacon                |
 
 Uplink CTCSS on Freq 1 is packed from `uplinkToneHz`. Arming tones and APRS path are **not** modelled.
 
