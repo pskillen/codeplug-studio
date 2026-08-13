@@ -581,24 +581,26 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             size="xs"
             label="Include library digital contacts"
             checked={dualBankToggles.includeLibraryContacts}
-            onChange={(event) =>
+            onChange={(event) => {
+              const checked = (event.currentTarget ?? event.target).checked;
               setDualBankToggles((prev) => ({
                 ...prev,
-                includeLibraryContacts: event.currentTarget.checked,
-              }))
-            }
+                includeLibraryContacts: checked,
+              }));
+            }}
             disabled={busy}
           />
           <Checkbox
             size="xs"
             label="Include digital ID directory"
             checked={dualBankToggles.includeDigitalIdDirectory}
-            onChange={(event) =>
+            onChange={(event) => {
+              const checked = (event.currentTarget ?? event.target).checked;
               setDualBankToggles((prev) => ({
                 ...prev,
-                includeDigitalIdDirectory: event.currentTarget.checked,
-              }))
-            }
+                includeDigitalIdDirectory: checked,
+              }));
+            }}
             disabled={busy}
           />
         </Stack>

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
@@ -105,5 +105,19 @@ describe('BuildRadioIoPanel — legacy stash migration warning (#879)', () => {
   it('does not show the severe warning for OpenGD77 MD-9600 after drop-stash', () => {
     renderPanel('radio-io-opengd77-md9600');
     expect(screen.queryByText('Write path not migrated')).not.toBeInTheDocument();
+  });
+});
+
+describe('BuildRadioIoPanel — dual-bank directory toggles', () => {
+  it('toggles library contacts and directory without throwing (React 19 currentTarget)', () => {
+    renderPanel('radio-io-opengd77-1701');
+    const library = screen.getByRole('checkbox', { name: 'Include library digital contacts' });
+    const directory = screen.getByRole('checkbox', { name: 'Include digital ID directory' });
+    expect(library).toBeChecked();
+    expect(directory).not.toBeChecked();
+    fireEvent.click(library);
+    expect(library).not.toBeChecked();
+    fireEvent.click(directory);
+    expect(directory).toBeChecked();
   });
 });
