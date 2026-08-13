@@ -12,6 +12,10 @@ import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
 import { isTransmitterWriteEligible } from '@core/domain/satellite/transmitterWriteEligibility.ts';
 import { shortenSatelliteNames } from '@core/domain/satellite/shortenSatelliteNames.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
+import {
+  classifyOpenGd77SatelliteSlot,
+  isOpenGd77SatelliteFrequencyEligible,
+} from '@core/radios/opengd77/satelliteCapability.ts';
 
 export const SATELLITE_RECORD_BYTES = 0x64;
 export const SATELLITE_BANK_BYTES = 0x09e0;
@@ -201,24 +205,12 @@ function ctcssWire(toneHz: number | null | undefined): number {
   return Math.round(toneHz * 10);
 }
 
-function normalizeMode(mode: string | null | undefined): string {
-  return (mode ?? '').trim().toUpperCase().replace(/[-_]/g, ' ').replace(/\s+/g, ' ');
-}
-
-function isFmFamily(mode: string | null | undefined): boolean {
-  const n = normalizeMode(mode);
-  if (!n) return true;
-  return n === 'FM' || n === 'FMN' || n === 'NFM' || n === 'FM NARROW' || n === 'NARROW FM';
-}
-
-function isAprsFamily(mode: string | null | undefined, label: string): boolean {
-  const blob = `${normalizeMode(mode)} ${label.toUpperCase()}`;
-  return /\b(APRS|PACKET|AX\.?25|AFSK)\b/.test(blob);
-}
-
-function isBeaconFamily(mode: string | null | undefined, label: string): boolean {
-  const blob = `${normalizeMode(mode)} ${label.toUpperCase()}`;
-  return /\bBEACON\b/.test(blob);
+function isPackableTransmitter(satellite: Satellite, transmitter: SatelliteTransmitter): boolean {
+  return (
+    isTransmitterWriteEligible(satellite, transmitter) &&
+    isOpenGd77SatelliteFrequencyEligible(transmitter) &&
+    classifyOpenGd77SatelliteSlot(transmitter) != null
+  );
 }
 
 function assignSlots(satellite: Satellite): {
@@ -227,7 +219,6 @@ function assignSlots(satellite: Satellite): {
   beacon: SatelliteTransmitter | null;
   skipped: CapabilitySkippedTransmitter[];
 } {
-  const eligible = satellite.transmitters.filter((t) => isTransmitterWriteEligible(satellite, t));
   let fm: SatelliteTransmitter | null = null;
   let aprs: SatelliteTransmitter | null = null;
   let beacon: SatelliteTransmitter | null = null;
@@ -243,23 +234,33 @@ function assignSlots(satellite: Satellite): {
     return current;
   };
 
-  for (const tx of eligible) {
-    if (isBeaconFamily(tx.mode, tx.label)) {
-      beacon = take(tx, beacon, 'Only one beacon frequency fits an OpenGD77 satellite record.');
+  for (const tx of satellite.transmitters) {
+    if (!isTransmitterWriteEligible(satellite, tx)) continue;
+    if (!isOpenGd77SatelliteFrequencyEligible(tx)) {
+      skipped.push({
+        satelliteId: satellite.id,
+        transmitterId: tx.id,
+        reason: 'Frequency is outside OpenGD77 satellite ham bands (136–174 / 400–480 MHz).',
+      });
       continue;
     }
-    if (isAprsFamily(tx.mode, tx.label)) {
+    const slot = classifyOpenGd77SatelliteSlot(tx);
+    if (slot === 'aprs') {
       aprs = take(tx, aprs, 'Only one APRS pair fits an OpenGD77 satellite record.');
       continue;
     }
-    if (isFmFamily(tx.mode)) {
+    if (slot === 'beacon') {
+      beacon = take(tx, beacon, 'Only one beacon frequency fits an OpenGD77 satellite record.');
+      continue;
+    }
+    if (slot === 'fm') {
       fm = take(tx, fm, 'Only one FM pair fits an OpenGD77 satellite record.');
       continue;
     }
     skipped.push({
       satelliteId: satellite.id,
       transmitterId: tx.id,
-      reason: `${tx.mode ?? 'unknown mode'} has no OpenGD77 satellite slot (FM, APRS, or beacon).`,
+      reason: `${tx.mode ?? 'unknown mode'} has no OpenGD77 satellite slot (Freq 1 FM, Freq 2 APRS, or Freq 3 beacon).`,
     });
   }
 
@@ -270,7 +271,7 @@ export function listOpenGd77WriteSatellites(satellites: readonly Satellite[]): S
   return satellites.filter((satellite) => {
     if (!satellite.enabled) return false;
     if (satellite.transmitters.length === 0) return true;
-    return satellite.transmitters.some((t) => isTransmitterWriteEligible(satellite, t));
+    return satellite.transmitters.some((t) => isPackableTransmitter(satellite, t));
   });
 }
 
@@ -281,9 +282,9 @@ export function skippedSatellites(
     .filter((s) => s.enabled)
     .filter((s) => {
       if (s.transmitters.length === 0) return false;
-      return !s.transmitters.some((t) => isTransmitterWriteEligible(s, t));
+      return !s.transmitters.some((t) => isPackableTransmitter(s, t));
     })
-    .map((s) => ({ satelliteId: s.id, reason: 'No write-eligible transmitters.' }));
+    .map((s) => ({ satelliteId: s.id, reason: 'No OpenGD77-packable transmitters.' }));
 }
 
 export function listCapabilitySkippedTransmitters(

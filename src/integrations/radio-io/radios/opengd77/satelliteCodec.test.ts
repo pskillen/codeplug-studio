@@ -132,6 +132,44 @@ describe('packSatelliteBank', () => {
     expect(readU32Le(rec, 0x44)).toBe(145_800_000);
   });
 
+  it('skips BPSK and L-band transmitters with distinct reasons', () => {
+    const sat = makeSatellite({
+      transmitters: [
+        makeTransmitter(),
+        makeTransmitter({ id: 'tx-bpsk', label: 'BPSK', mode: 'BPSK' }),
+        makeTransmitter({
+          id: 'tx-l',
+          label: 'L-band',
+          mode: 'FM',
+          uplinkHz: 1_269_000_000,
+          downlinkHz: 1_269_000_000,
+        }),
+      ],
+    });
+    const skipped = listCapabilitySkippedTransmitters([sat]);
+    expect(skipped.map((s) => s.transmitterId).sort()).toEqual(['tx-bpsk', 'tx-l']);
+    expect(skipped.find((s) => s.transmitterId === 'tx-bpsk')?.reason).toMatch(
+      /no OpenGD77 satellite slot/i,
+    );
+    expect(skipped.find((s) => s.transmitterId === 'tx-l')?.reason).toMatch(/136–174 \/ 400–480/);
+  });
+
+  it('packs CW/SSTV into the beacon slot', () => {
+    const sat = makeSatellite({
+      transmitters: [
+        makeTransmitter({
+          id: 'tx-sstv',
+          label: 'ISS SSTV',
+          mode: 'SSTV',
+          uplinkHz: null,
+          downlinkHz: 145_800_000,
+        }),
+      ],
+    });
+    const rec = packSatelliteBank([sat]).subarray(0x08, 0x08 + SATELLITE_RECORD_BYTES);
+    expect(readU32Le(rec, 0x44)).toBe(145_800_000);
+  });
+
   it('skips a second FM transmitter instead of a second record', () => {
     const sat = makeSatellite({
       transmitters: [
