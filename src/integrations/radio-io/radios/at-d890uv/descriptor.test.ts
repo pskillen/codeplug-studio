@@ -28,6 +28,6 @@ describe('AT-D890UV descriptor / registry', () => {
     const radio = createAtD890uvProtocol();
     expect(typeof radio.connect).toBe('function');
     expect(typeof radio.download).toBe('function');
-    expect(typeof radio.upload).toBe('function');
+    expect(typeof radio.restoreFromBackup).toBe('function');
   });
 });

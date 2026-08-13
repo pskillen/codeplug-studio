@@ -24,6 +24,7 @@ describe('summariseRt95Clone', () => {
     });
     const summary = summariseRt95Clone(bag);
     expect(summary?.occupiedChannelCount).toBe(1);
+    expect(summary?.inspectChannels).toEqual([{ slotIndex: 1, name: 'TEST01' }]);
     expect(summary?.writtenFromBuild).toContain('Channels (200 slots)');
     expect(summary?.retainGroups.length).toBeGreaterThan(0);
     expect(summary?.settingsRetain.length).toBeGreaterThan(0);

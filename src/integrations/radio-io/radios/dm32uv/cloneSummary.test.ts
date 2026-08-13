@@ -4,9 +4,10 @@
 
 import { describe, expect, it } from 'vitest';
 import { createRadioCloneHydrationBagFromBlocks } from '@core/models/radioCloneHydration.ts';
-import { DM32_METADATA } from './constants.ts';
+import { DM32_METADATA, DM32_OFFSET } from './constants.ts';
 import { makeEmptyBlock, makeFirstChannelBlock } from './__fixtures__/scriptedPipe.ts';
 import { summariseDm32uvClone } from './cloneSummary.ts';
+import { encodeDm32ChannelRecord } from './channelCodec.ts';
 import { settingsRetainPreview } from './retainPreview.ts';
 
 describe('summariseDm32uvClone', () => {
@@ -44,6 +45,30 @@ describe('summariseDm32uvClone', () => {
     expect(summary.requiredBlocks.some((r) => r.label === 'Radio settings' && r.present)).toBe(
       true,
     );
+  });
+
+  it('lists occupied channel names from the first channel block', () => {
+    const channelBlock = makeFirstChannelBlock(1);
+    const record = encodeDm32ChannelRecord({
+      slotIndex: 1,
+      empty: false,
+      wireName: 'LOCAL',
+      rxHz: 145_500_000,
+      txHz: 145_500_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'FM',
+      mode: 'analog',
+    });
+    channelBlock.set(record, DM32_OFFSET.FIRST_CHANNEL);
+    const bag = createRadioCloneHydrationBagFromBlocks({
+      radioModelId: 'DM-32UV',
+      blocks: [{ address: 0x1000, data: channelBlock }],
+      addressBase: 0x1000,
+      capturedVia: 'web-serial',
+    });
+    expect(summariseDm32uvClone(bag).inspectChannels).toEqual([{ slotIndex: 1, name: 'LOCAL' }]);
   });
 });
 

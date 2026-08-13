@@ -23,6 +23,16 @@ export {
 } from './satelliteCodec.ts';
 export { uploadAtD890SatelliteRecords } from './satelliteWrite.ts';
 export { createAtD890uvProtocol, AtD890uvProtocol, type AtD890DownloadCache } from './protocol.ts';
+export {
+  listAtD890RestoreModelledChunks,
+  restoreAtD890FromBackup,
+  type AtD890RestoreArchive,
+} from './restoreFromBackup.ts';
+export {
+  AT_D890_BACKUP_REGION_SPANS,
+  atD890BackupRestoreRole,
+  isAtD890RestoreNeverWriteAddress,
+} from './backupRestoreRoles.ts';
 export { AT_D890UV_DESCRIPTOR, AT_D890UV_MODEL_ID } from './descriptor.ts';
 export {
   extractAtD890uvHydration,

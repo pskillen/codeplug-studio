@@ -10,8 +10,9 @@ import { Button, ProgressModal, type ProgressModalStep } from '../v2/index.ts';
  * `'keps-write'` is a distinct operation from `'write'` (#859) — a satellite-keps upload has
  * no assemble-channels-into-image step, no write-verify concept, and no coverage table, so it
  * gets its own step list/title rather than reusing `'write'`'s codeplug-shaped copy.
+ * `'restore'` replays a backup zip onto the radio — not Write-codeplug.
  */
-export type RadioIoOperation = 'read' | 'write' | 'keps-write';
+export type RadioIoOperation = 'read' | 'write' | 'keps-write' | 'restore';
 
 export type RadioIoProgressPhase =
   'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
@@ -86,6 +87,18 @@ function buildSteps(
     ];
     if (phase === 'done') {
       steps.push({ id: 'done', label: 'Keps write complete' });
+    }
+    return steps;
+  }
+  if (operation === 'restore') {
+    const steps: StepDef[] = [
+      { id: 'connecting', label: 'Connect and handshake' },
+      ...(transferStages.length > 0
+        ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
+        : [{ id: 'transfer', label: 'Restore archive regions' }]),
+    ];
+    if (phase === 'done') {
+      steps.push({ id: 'done', label: 'Restore complete' });
     }
     return steps;
   }
@@ -209,7 +222,9 @@ export default function RadioIoProgressModal({
       ? 'Reading from radio'
       : operation === 'keps-write'
         ? 'Writing keps to radio'
-        : 'Writing to radio';
+        : operation === 'restore'
+          ? 'Restoring backup to radio'
+          : 'Writing to radio';
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
   const complete = phase === 'done';
   const verifying = phase === 'verifying' || writeVerifyStatus === 'verifying';
@@ -240,7 +255,13 @@ export default function RadioIoProgressModal({
               title: 'Keps write finished',
               body: 'Satellite records were sent to the radio.',
             }
-          : null;
+          : complete && operation === 'restore'
+            ? {
+                color: 'green',
+                title: 'Restore finished',
+                body: 'Selected restorable regions were sent from the backup file.',
+              }
+            : null;
 
   const footer = complete ? (
     awaitingVerify ? (

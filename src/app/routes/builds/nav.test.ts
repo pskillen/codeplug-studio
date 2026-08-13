@@ -4,6 +4,7 @@ import {
   buildAuditNavItems,
   buildSectionNavItems,
   BUILD_SECTION_ABOUT,
+  BUILD_SECTION_BACKUP,
   BUILD_SECTION_EXPORT,
   BUILD_SECTION_EXPORT_SETTINGS,
   BUILD_SECTION_OVERVIEW,
@@ -108,26 +109,24 @@ describe('buildNavItems', () => {
     ).toContain('NeonPlug settings');
   });
 
-  it('includes Radio Info when a Web Serial egress exists, even without a stored clone bag', () => {
+  it('does not include Radio Info in About nav when a Web Serial egress exists', () => {
     const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-uv5r-mini');
-    expect(buildNavItems(build, { egressPaths }).map((item) => item.label)).toContain('Radio Info');
-    const nonSerial = egressPaths.find((path) => path.formatId !== 'radio-io') ?? egressPaths[0]!;
-    const labels = buildNavItems(build, {
-      egressPaths,
-      activeEgress: nonSerial,
-    }).map((item) => item.label);
-    expect(labels).toContain('Radio Info');
-    expect(labels).not.toContain('NeonPlug settings');
+    expect(buildNavItems(build, { egressPaths }).map((item) => item.label)).not.toContain(
+      'Radio Info',
+    );
+    expect(buildAuditNavItems(build, { egressPaths }).map((item) => item.label)).not.toContain(
+      'Radio Info',
+    );
   });
 
-  it('includes Radio Info for OpenGD77 DM-1701 Web Serial builds', () => {
+  it('includes Backup / Restore in the strip for OpenGD77 DM-1701 Web Serial builds', () => {
     const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-opengd77-1701');
     const csvActive = egressPaths.find((path) => path.formatId === 'opengd77') ?? egressPaths[0]!;
-    const labels = buildNavItems(build, {
+    const labels = buildSectionNavItems(build, {
       egressPaths,
       activeEgress: csvActive,
     }).map((item) => item.label);
-    expect(labels).toContain('Radio Info');
+    expect(labels).toContain(BUILD_SECTION_BACKUP);
     expect(csvActive.formatId).toBe('opengd77');
   });
 
@@ -139,7 +138,7 @@ describe('buildNavItems', () => {
     });
     const labels = buildNavItems(build, { egressPaths: withDonor }).map((item) => item.label);
     expect(labels).toContain('NeonPlug settings');
-    expect(labels).toContain('Radio Info');
+    expect(labels).not.toContain('Radio Info');
   });
 
   it('includes Scan list after Channels for flat-memory UV5R builds', () => {
@@ -188,6 +187,32 @@ describe('buildSectionNavItems', () => {
     );
   });
 
+  it('includes Backup / Restore after Satellite keps and before About when Web Serial egress exists', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
+    const labels = buildSectionNavItems(build, { egressPaths }).map((item) => item.label);
+    expect(labels).toContain(BUILD_SECTION_BACKUP);
+    expect(labels.indexOf(BUILD_SECTION_BACKUP)).toBeGreaterThan(
+      labels.indexOf(BUILD_SECTION_SATELLITE_KEPS),
+    );
+    expect(labels.indexOf(BUILD_SECTION_BACKUP)).toBeLessThan(labels.indexOf(BUILD_SECTION_ABOUT));
+  });
+
+  it('omits Backup / Restore when the build has no Web Serial egress', () => {
+    const build = newFormatBuild('proj', 'opengd77-1701');
+    expect(buildSectionNavItems(build).map((item) => item.label)).not.toContain(
+      BUILD_SECTION_BACKUP,
+    );
+  });
+
+  it('links Backup / Restore to /builds/:id/backup', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-uv5r-mini');
+    const item = buildSectionNavItems(build, { egressPaths }).find(
+      (i) => i.label === BUILD_SECTION_BACKUP,
+    );
+    expect(item?.path).toBe(`/builds/${build.id}/backup`);
+    expect(item?.section).toBe('backup');
+  });
+
   it('links Satellite keps to /builds/:id/satellite-keps', () => {
     const { build, egressPaths } = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
     const item = buildSectionNavItems(build, { egressPaths }).find(
@@ -221,6 +246,23 @@ describe('allBuildDetailPaths', () => {
       `/builds/${noKeps.build.id}/satellite-keps`,
     );
   });
+
+  it('includes backup only when the build has a Web Serial egress', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-uv5r-mini');
+    expect(allBuildDetailPaths(build, { egressPaths })).toContain(`/builds/${build.id}/backup`);
+    expect(allBuildDetailPaths(build, { egressPaths })).not.toContain(
+      `/builds/${build.id}/radio-info`,
+    );
+
+    const { build: csvBuild, egressPaths: csvPaths } = newRadioBuildForProfile(
+      'proj',
+      'chirp-uv5r',
+    );
+    const noSerial = csvPaths.filter((path) => path.formatId !== 'radio-io');
+    expect(allBuildDetailPaths(csvBuild, { egressPaths: noSerial })).not.toContain(
+      `/builds/${csvBuild.id}/backup`,
+    );
+  });
 });
 
 describe('activeBuildSection', () => {
@@ -249,6 +291,12 @@ describe('activeBuildSection', () => {
       'satellite-keps',
     );
   });
+
+  it('maps the backup route (and retired Radio Info URLs) to the backup section', () => {
+    expect(activeBuildSection(`/builds/${build.id}/backup`, build.id)).toBe('backup');
+    expect(activeBuildSection(`/builds/${build.id}/radio-info`, build.id)).toBe('backup');
+    expect(activeBuildSection(`/builds/${build.id}/radio-image`, build.id)).toBe('backup');
+  });
 });
 
 describe('buildAuditNavItems', () => {
@@ -260,6 +308,13 @@ describe('buildAuditNavItems', () => {
     expect(
       buildAuditNavItems(build, { egressPaths: withDonor }).map((item) => item.label),
     ).toContain('NeonPlug settings');
+  });
+
+  it('does not include Radio Info', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-uv5r-mini');
+    expect(buildAuditNavItems(build, { egressPaths }).map((item) => item.label)).not.toContain(
+      'Radio Info',
+    );
   });
 });
 
@@ -299,5 +354,12 @@ describe('pathForSwitchedBuild', () => {
     expect(pathForSwitchedBuild(`/builds/${from.id}/radio-info`, from.id, toChirp)).toBe(
       `/builds/${toChirp.id}/export`,
     );
+  });
+
+  it('maps retired radio-info paths onto backup when the target has Web Serial', () => {
+    const { build: toSerial, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-uv5r-mini');
+    expect(
+      pathForSwitchedBuild(`/builds/${from.id}/radio-info`, from.id, toSerial, { egressPaths }),
+    ).toBe(`/builds/${toSerial.id}/backup`);
   });
 });

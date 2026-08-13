@@ -104,6 +104,7 @@ Checksum (anytone-cps): 8-bit sum over command bytes after the opcode (`cmd[1:]`
 1. Open serial @ 921600 → `PROGRAM` → `QX\x06` → `0x02` ident → negotiate read block size at LocalInfo.
 2. Read **sparse** regions needed for the adapter (not a contiguous dump) — start with LocalInfo, ChannelSet/ChannelData, Zone*, RadioId*, ScanList*, Talkgroup*/ReceiveGroup*, MasterIdData ([memory-layout.md](memory-layout.md)).
 3. For upload: re-enter program mode → pre-Write sentinel plausibility → **sparse erase-unit RMW** (fresh-read touched units, identity check, overlay modelled chunks, stage non-`0xff` blocks) → skip `0x2fa0010` → `END` on successful disconnect only ([#768](https://github.com/pskillen/codeplug-studio/issues/768)). Optional: after the radio restarts, **Check preserved settings** in the build UI ([#769](https://github.com/pskillen/codeplug-studio/issues/769) 5b).
+4. For **Restore** (not Write): `restoreFromBackup` overlays zip restorable regions onto a fresh live erase-unit read — never LocalInfo / alarm-from-archive / `0x2fa0010`. See [backup-restore.md](backup-restore.md). Hardware verify pending.
 
 ## Related
 

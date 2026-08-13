@@ -122,8 +122,8 @@ export default function AtD890WriteCoverageTable({
       {hasHydration ? (
         <Text size="xs" c="dimmed">
           For a detailed retain map from your last Read, see{' '}
-          <Anchor component={Link} to={`/builds/${buildId}/radio-info`} size="xs">
-            Radio Info
+          <Anchor component={Link} to={`/builds/${buildId}/backup`} size="xs">
+            Backup / Restore
           </Anchor>
           .
         </Text>

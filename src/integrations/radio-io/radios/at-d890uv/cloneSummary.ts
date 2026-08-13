@@ -11,7 +11,7 @@ import { listSetBits } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import { decodeChannelsFromAtD890Cache } from './channelCodec.ts';
 import { cacheFromBag } from './hydration.ts';
-import { getCacheBytes } from './memory.ts';
+import { getCacheBytes, scanListAddress, talkgroupAddress, zoneNameAddress } from './memory.ts';
 import {
   AT_D890_DIGITAL_CONTACTS_WRITE_GAP,
   AT_D890_WRITTEN_FROM_BUILD_LABELS,
@@ -28,6 +28,8 @@ import {
   type AtD890RegisterRow,
   type AtD890RetainPreviewRow,
 } from './retainPreview.ts';
+import { decodeWideCharName } from './wideChar.ts';
+import { inspectOccupiedChannels, type CloneInspectNamedItem } from '../../cloneInspect.ts';
 
 export interface AtD890RetainGroupSummary {
   label: string;
@@ -66,10 +68,31 @@ export interface AtD890uvCloneSummary {
   /** Documented regions Studio does not Read today. */
   notInCapture: typeof AT_D890_NOT_IN_CAPTURE;
   blockCount: number;
+  inspectChannels: readonly CloneInspectNamedItem[];
+  inspectZones: readonly CloneInspectNamedItem[];
+  inspectScanLists: readonly CloneInspectNamedItem[];
+  inspectTalkGroups: readonly CloneInspectNamedItem[];
 }
 
 function retainRoleCopy(): string {
   return 'Kept from Read from radio — not changed when you write from your build';
+}
+
+function inspectNamedFromSet(
+  cache: ReturnType<typeof cacheFromBag>,
+  setAddr: number,
+  setLen: number,
+  inverted: boolean,
+  nameAt: (idx: number) => Uint8Array,
+): CloneInspectNamedItem[] {
+  const set = getCacheBytes(cache, setAddr, setLen);
+  const out: CloneInspectNamedItem[] = [];
+  for (const idx of listSetBits(set, inverted)) {
+    const name = decodeWideCharName(nameAt(idx));
+    if (!name) continue;
+    out.push({ slotIndex: idx + 1, name });
+  }
+  return out;
 }
 
 export function summariseAtD890uvClone(bag: RadioCloneHydrationBag): AtD890uvCloneSummary | null {
@@ -178,5 +201,35 @@ export function summariseAtD890uvClone(bag: RadioCloneHydrationBag): AtD890uvClo
     localInfoRegisters: hasLocalInfo ? localInfoRegisterPreview(localInfo) : [],
     notInCapture: AT_D890_NOT_IN_CAPTURE,
     blockCount: radioCloneSparseBlockBytes(bag).length,
+    inspectChannels: inspectOccupiedChannels(channels),
+    inspectZones: inspectNamedFromSet(
+      cache,
+      D890_MAP.ZoneSet,
+      AT_D890_LIMITS.ZONE_SET_BYTES,
+      false,
+      (idx) => getCacheBytes(cache, zoneNameAddress(idx), D890_MAP.ZoneDataLength),
+    ),
+    inspectScanLists: inspectNamedFromSet(
+      cache,
+      D890_MAP.ScanListSet,
+      AT_D890_LIMITS.SCAN_LIST_SET_BYTES,
+      false,
+      (idx) =>
+        getCacheBytes(cache, scanListAddress(idx), AT_D890_LIMITS.SCAN_LIST_RECORD_SIZE).subarray(
+          0xe,
+          0x2e,
+        ),
+    ),
+    inspectTalkGroups: inspectNamedFromSet(
+      cache,
+      D890_MAP.TalkgroupSet,
+      AT_D890_LIMITS.TALKGROUP_SET_BYTES,
+      true,
+      (idx) =>
+        getCacheBytes(cache, talkgroupAddress(idx), AT_D890_LIMITS.TALKGROUP_RECORD_SIZE).subarray(
+          0x6,
+          0x26,
+        ),
+    ),
   };
 }

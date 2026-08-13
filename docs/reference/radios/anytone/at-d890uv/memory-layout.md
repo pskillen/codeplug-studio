@@ -65,6 +65,8 @@ On **Write**, Studio encodes the modelled overlay onto `cacheToMemoryMap` of thi
 
 Chinese UI on the radio is driven by **optional settings** (CPS language, power-on password) when those regions are erased — not LocalInfo ExpertOptions. Bag diffs on a faulted radio showed LocalInfo byte-identical between healthy and faulted reads ([#768](https://github.com/pskillen/codeplug-studio/issues/768)); the brick came from erase collateral in shared flash units, not LocalInfo replay.
 
+**Backup / Restore** ([backup-restore.md](backup-restore.md)): optional settings and APRS **are** restorable from a zip; LocalInfo and alarm are inspect-only and are never taken from the archive.
+
 ### APRS (binary — [#758](https://github.com/pskillen/codeplug-studio/issues/758))
 
 Cite: anytone-cps `AprsSettings::decode_D890UV` / `encode_D890UV` — facts only. Deep field tables: [aprs.md](aprs.md).

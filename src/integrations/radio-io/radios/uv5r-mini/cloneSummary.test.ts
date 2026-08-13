@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createRadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
 import { UV5R_MINI_MEM_TOTAL, UV5R_MINI_SETTINGS_OFFSET } from './constants.ts';
 import { summariseUv5rMiniClone } from './cloneSummary.ts';
+import { encodeChannelsIntoImage } from './channelCodec.ts';
 import { createSyntheticImageBase } from './__fixtures__/syntheticImage.ts';
 import { UV5R_MINI_WRITTEN_FROM_BUILD_LABELS } from './writeRole.ts';
 
@@ -33,6 +34,28 @@ describe('summariseUv5rMiniClone', () => {
     expect(summary.retainGroups.some((g) => g.label === 'Channel memories')).toBe(false);
     expect(summary.settingsRetain.length).toBeGreaterThan(0);
     expect(summary.ancillaryRetain.rows.some((r) => r.label === 'VFO A')).toBe(true);
+  });
+
+  it('lists occupied channel names from the image', () => {
+    const image = createSyntheticImageBase();
+    encodeChannelsIntoImage(image, [
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'A1',
+        rxHz: 146_520_000,
+        txHz: 146_520_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'FM',
+      },
+    ]);
+    const bag = createRadioCloneHydrationBag({
+      radioModelId: 'UV5R-Mini',
+      imageBytes: image,
+    });
+    expect(summariseUv5rMiniClone(bag).inspectChannels).toEqual([{ slotIndex: 1, name: 'A1' }]);
   });
 
   it('decodes settings from known bytes in synthetic image', () => {

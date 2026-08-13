@@ -18,6 +18,7 @@ import {
   type Uv17ProAncillaryRetainPreview,
   type Uv17ProRetainPreviewRow,
 } from './retainPreview.ts';
+import { inspectOccupiedChannels, type CloneInspectNamedItem } from '../../cloneInspect.ts';
 
 export interface RadioCloneRegionSummary {
   label: string;
@@ -47,6 +48,7 @@ export interface Uv17ProCloneSummary {
   retainGroups: readonly Uv17ProRetainGroupSummary[];
   settingsRetain: readonly Uv17ProRetainPreviewRow[];
   ancillaryRetain: Uv17ProAncillaryRetainPreview;
+  inspectChannels: readonly CloneInspectNamedItem[];
 }
 
 export function buildCloneRegionSummaries(
@@ -87,5 +89,6 @@ export function summariseUv17ProClone(
     })),
     settingsRetain: settingsRetainPreview(layout, bytes),
     ancillaryRetain: ancillaryRetainPreview(layout, bytes),
+    inspectChannels: inspectOccupiedChannels(channels),
   };
 }

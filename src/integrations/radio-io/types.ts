@@ -152,6 +152,17 @@ export interface CloneImageRadio {
     channels: readonly import('./radioChannelDto.ts').RadioChannelDto[],
   ): MemoryMap;
   readFirmware(image: MemoryMap): string | undefined;
+  /**
+   * Replay restorable backup regions onto the live pipe. Missing → Backup/Restore
+   * inspect only. Must not call assemble / prepareRadioWriteImage.
+   */
+  restoreFromBackup?(
+    archive: {
+      manifest: import('./backup/types.ts').RadioBackupManifestV1;
+      image: MemoryMap;
+    },
+    opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void>;
 }
 
 export interface RadioSession {

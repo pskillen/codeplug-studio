@@ -22,13 +22,20 @@ import { entityNavIcons } from '../../nav/entityNavIcons.ts';
 import { hasSatelliteKepsWriteAdapter } from '../../services/satelliteKepsWriteAdapters.ts';
 
 export type BuildNavSection =
-  'overview' | 'export' | 'export-settings' | 'wire-preview' | 'satellite-keps' | 'audit';
+  | 'overview'
+  | 'export'
+  | 'export-settings'
+  | 'wire-preview'
+  | 'satellite-keps'
+  | 'backup'
+  | 'audit';
 
 export const BUILD_SECTION_OVERVIEW = 'Overview';
 export const BUILD_SECTION_EXPORT = 'Export';
 export const BUILD_SECTION_EXPORT_SETTINGS = 'Export settings';
 export const BUILD_SECTION_WIRE_PREVIEW = 'Wire preview';
 export const BUILD_SECTION_SATELLITE_KEPS = 'Satellite keps';
+export const BUILD_SECTION_BACKUP = 'Backup / Restore';
 export const BUILD_SECTION_ABOUT = 'About';
 
 export interface BuildNavOptions {
@@ -85,6 +92,11 @@ export function showsSatelliteKepsNav(_build: RadioBuild, options?: BuildNavOpti
   return (options?.egressPaths ?? []).some((path) => hasSatelliteKepsWriteAdapter(path.profileId));
 }
 
+/** Backup / Restore strip tab — same predicate as the former Radio Info About child. */
+export function showsBackupNav(_build: RadioBuild, options?: BuildNavOptions): boolean {
+  return Boolean(findRadioIoEgress(options?.egressPaths ?? []));
+}
+
 /** mk2 B2 — peer sections in the contextual strip; Satellite keps (#1085) is conditional. */
 export function buildSectionNavItems(
   build: RadioBuild,
@@ -124,6 +136,15 @@ export function buildSectionNavItems(
       section: 'satellite-keps',
       path: `${base}/satellite-keps`,
       icon: IconSatellite,
+    });
+  }
+
+  if (showsBackupNav(build, options)) {
+    items.push({
+      label: BUILD_SECTION_BACKUP,
+      section: 'backup',
+      path: `${base}/backup`,
+      icon: IconPlugConnected,
     });
   }
 
@@ -246,14 +267,6 @@ export function buildAuditNavItems(
     });
   }
 
-  if (findRadioIoEgress(egressPaths)) {
-    items.push({
-      label: 'Radio Info',
-      path: `${base}/radio-info`,
-      icon: IconPlugConnected,
-    });
-  }
-
   return items;
 }
 
@@ -296,6 +309,7 @@ export function allBuildDetailPaths(build: RadioBuild, options?: BuildNavOptions
     ...buildWireEntityNavItems(build, options).map((item) => item.path),
     `${base}/channels/bulk`,
     ...(showsSatelliteKepsNav(build, options) ? [`${base}/satellite-keps`] : []),
+    ...(showsBackupNav(build, options) ? [`${base}/backup`] : []),
     ...buildAuditNavItems(build, options).map((item) => item.path),
   ]);
   return [...paths];
@@ -312,13 +326,9 @@ const WIRE_PREVIEW_SEGMENTS = new Set([
   'rx-group-lists',
 ]);
 
-const AUDIT_SEGMENTS = new Set([
-  'characteristics',
-  'export-resolution',
-  'neonplug-settings',
-  'radio-info',
-  'radio-image',
-]);
+const AUDIT_SEGMENTS = new Set(['characteristics', 'export-resolution', 'neonplug-settings']);
+
+const BACKUP_SEGMENTS = new Set(['backup', 'radio-info', 'radio-image']);
 
 export function activeBuildSection(pathname: string, buildId: string): BuildNavSection | null {
   const prefix = `/builds/${buildId}/`;
@@ -332,6 +342,7 @@ export function activeBuildSection(pathname: string, buildId: string): BuildNavS
   if (suffix === 'satellite-keps' || suffix.startsWith('satellite-keps/')) return 'satellite-keps';
 
   const firstSegment = suffix.split('/')[0];
+  if (firstSegment && BACKUP_SEGMENTS.has(firstSegment)) return 'backup';
   if (firstSegment && WIRE_PREVIEW_SEGMENTS.has(firstSegment)) return 'wire-preview';
   if (firstSegment && AUDIT_SEGMENTS.has(firstSegment)) return 'audit';
 
@@ -352,6 +363,8 @@ export function activeBuildSectionLabel(pathname: string, buildId: string): stri
       return BUILD_SECTION_WIRE_PREVIEW;
     case 'satellite-keps':
       return BUILD_SECTION_SATELLITE_KEPS;
+    case 'backup':
+      return BUILD_SECTION_BACKUP;
     case 'audit':
       return BUILD_SECTION_ABOUT;
   }
@@ -424,6 +437,12 @@ export function pathForSwitchedBuild(
   }
 
   const firstSegment = suffix.split('/')[0];
+  if (firstSegment === 'radio-info' || firstSegment === 'radio-image') {
+    const backup = `${base}/backup`;
+    if (navPaths.has(backup)) {
+      return backup;
+    }
+  }
   if (firstSegment) {
     const parent = `${base}/${firstSegment}`;
     if (navPaths.has(parent)) {

@@ -1,9 +1,11 @@
 /**
- * Clone-summary tables for Web Serial radio images — shared by Radio Info (ephemeral)
- * and legacy radio-image redirect. Renders from a {@link RadioCloneHydrationBag} only.
+ * Clone-summary tables for Web Serial radio images.
+ * Backup / Restore uses `variant="inspect"` (on-image occupancy). Write-coverage
+ * tables on Export stay in `AtD890WriteCoverageTable` and siblings; pass
+ * `variant="write-coverage"` only if this view must show Written / Kept sections.
  */
 
-import { Code, List, Stack, Table, Text } from '@mantine/core';
+import { Accordion, Code, List, Stack, Table, Text } from '@mantine/core';
 import { type RadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
 import {
   summariseUv5rMiniClone,
@@ -35,10 +37,60 @@ import {
   RT95_MODEL_ID,
   type Rt95CloneSummary,
 } from '@integrations/radio-io/radios/rt95/index.ts';
+import type { CloneInspectNamedItem } from '@integrations/radio-io/cloneInspect.ts';
 import { FormSection } from '../ui/index.ts';
+
+export type RadioCloneSummaryVariant = 'inspect' | 'write-coverage';
 
 function hexOffset(n: number): string {
   return `0x${n.toString(16).toUpperCase()}`;
+}
+
+function occupancyCopy(variant: RadioCloneSummaryVariant): { title: string; description: string } {
+  if (variant === 'inspect') {
+    return {
+      title: 'On this image',
+      description: 'Decoded from this backup — what is stored here, not your build layout.',
+    };
+  }
+  return {
+    title: 'On the radio',
+    description: 'Counts decoded from the stored image — not your build layout.',
+  };
+}
+
+function InspectNamedLists({
+  lists,
+}: {
+  lists: readonly { id: string; title: string; rows: readonly CloneInspectNamedItem[] }[];
+}) {
+  const nonempty = lists.filter((list) => list.rows.length > 0);
+  if (nonempty.length === 0) return null;
+  return (
+    <FormSection
+      title="Names on this image"
+      description="Expand a list to see slot names decoded from this backup."
+    >
+      <Accordion multiple variant="separated" defaultValue={[]}>
+        {nonempty.map((list) => (
+          <Accordion.Item key={list.id} value={list.id}>
+            <Accordion.Control>
+              {list.title} ({list.rows.length})
+            </Accordion.Control>
+            <Accordion.Panel>
+              <List size="sm" spacing={4}>
+                {list.rows.map((row) => (
+                  <List.Item key={`${list.id}-${row.slotIndex}`}>
+                    {row.slotIndex}. {row.name || '(unnamed)'}
+                  </List.Item>
+                ))}
+              </List>
+            </Accordion.Panel>
+          </Accordion.Item>
+        ))}
+      </Accordion>
+    </FormSection>
+  );
 }
 
 function summariseUv17ProFamilyClone(bag: RadioCloneHydrationBag): Uv5rMiniCloneSummary | null {
@@ -52,13 +104,17 @@ function isUv17ProFamilyModel(modelId: string | undefined): boolean {
   return modelId === UV5R_MINI_MODEL_ID || modelId === UV21_PRO_V2_MODEL_ID;
 }
 
-function Dm32OnRadioSection({ summary }: { summary: Dm32uvCloneSummary }) {
+function Dm32OnRadioSection({
+  summary,
+  variant,
+}: {
+  summary: Dm32uvCloneSummary;
+  variant: RadioCloneSummaryVariant;
+}) {
   const c = summary.onRadioCounts;
+  const occupancy = occupancyCopy(variant);
   return (
-    <FormSection
-      title="On the radio"
-      description="Counts decoded from the stored image — not your build layout."
-    >
+    <FormSection title={occupancy.title} description={occupancy.description}>
       <Table.ScrollContainer minWidth={360}>
         <Table withTableBorder withColumnBorders>
           <Table.Tbody>
@@ -256,13 +312,17 @@ function Dm32RequiredBlocksSection({ summary }: { summary: Dm32uvCloneSummary })
   );
 }
 
-function Uv5rOnRadioSection({ summary }: { summary: Uv5rMiniCloneSummary }) {
+function Uv5rOnRadioSection({
+  summary,
+  variant,
+}: {
+  summary: Uv5rMiniCloneSummary;
+  variant: RadioCloneSummaryVariant;
+}) {
   const c = summary.onRadioCounts;
+  const occupancy = occupancyCopy(variant);
   return (
-    <FormSection
-      title="On the radio"
-      description="Counts decoded from the stored image — not your build layout."
-    >
+    <FormSection title={occupancy.title} description={occupancy.description}>
       <Table.ScrollContainer minWidth={360}>
         <Table withTableBorder withColumnBorders>
           <Table.Tbody>
@@ -387,9 +447,11 @@ function Uv5rAncillaryRetainSection({ summary }: { summary: Uv5rMiniCloneSummary
 function Uv5rRadioImageSections({
   summary,
   bag,
+  variant,
 }: {
   summary: Uv5rMiniCloneSummary;
   bag: RadioCloneHydrationBag;
+  variant: RadioCloneSummaryVariant;
 }) {
   return (
     <>
@@ -437,22 +499,35 @@ function Uv5rRadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
-      <Uv5rOnRadioSection summary={summary} />
-      <Uv5rWrittenFromBuildSection summary={summary} />
-      <Uv5rKeptOnWriteSection summary={summary} />
+      <Uv5rOnRadioSection summary={summary} variant={variant} />
+      {variant === 'inspect' ? (
+        <InspectNamedLists
+          lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]}
+        />
+      ) : null}
+      {variant === 'write-coverage' ? (
+        <>
+          <Uv5rWrittenFromBuildSection summary={summary} />
+          <Uv5rKeptOnWriteSection summary={summary} />
+        </>
+      ) : null}
       <Uv5rSettingsRetainSection summary={summary} />
       <Uv5rAncillaryRetainSection summary={summary} />
     </>
   );
 }
 
-function OpenGd77OnRadioSection({ summary }: { summary: OpenGd77CloneSummary }) {
+function OpenGd77OnRadioSection({
+  summary,
+  variant,
+}: {
+  summary: OpenGd77CloneSummary;
+  variant: RadioCloneSummaryVariant;
+}) {
   const c = summary.onRadioCounts;
+  const occupancy = occupancyCopy(variant);
   return (
-    <FormSection
-      title="On the radio"
-      description="Counts decoded from the stored image — not your build layout."
-    >
+    <FormSection title={occupancy.title} description={occupancy.description}>
       <Table.ScrollContainer minWidth={360}>
         <Table withTableBorder withColumnBorders>
           <Table.Tbody>
@@ -595,9 +670,11 @@ function OpenGd77AncillaryRetainSection({ summary }: { summary: OpenGd77CloneSum
 function OpenGd77RadioImageSections({
   summary,
   bag,
+  variant,
 }: {
   summary: OpenGd77CloneSummary;
   bag: RadioCloneHydrationBag;
+  variant: RadioCloneSummaryVariant;
 }) {
   return (
     <>
@@ -645,9 +722,23 @@ function OpenGd77RadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
-      <OpenGd77OnRadioSection summary={summary} />
-      <OpenGd77WrittenFromBuildSection summary={summary} />
-      <OpenGd77KeptOnWriteSection summary={summary} />
+      <OpenGd77OnRadioSection summary={summary} variant={variant} />
+      {variant === 'inspect' ? (
+        <InspectNamedLists
+          lists={[
+            { id: 'channels', title: 'Channels', rows: summary.inspectChannels },
+            { id: 'zones', title: 'Zones', rows: summary.inspectZones },
+            { id: 'contacts', title: 'DMR contacts', rows: summary.inspectContacts },
+            { id: 'rx-groups', title: 'RX group lists', rows: summary.inspectRxGroups },
+          ]}
+        />
+      ) : null}
+      {variant === 'write-coverage' ? (
+        <>
+          <OpenGd77WrittenFromBuildSection summary={summary} />
+          <OpenGd77KeptOnWriteSection summary={summary} />
+        </>
+      ) : null}
       <OpenGd77SettingsRetainSection summary={summary} />
       <OpenGd77AncillaryRetainSection summary={summary} />
     </>
@@ -657,9 +748,11 @@ function OpenGd77RadioImageSections({
 function Dm32RadioImageSections({
   summary,
   bag,
+  variant,
 }: {
   summary: Dm32uvCloneSummary;
   bag: RadioCloneHydrationBag;
+  variant: RadioCloneSummaryVariant;
 }) {
   return (
     <>
@@ -711,9 +804,18 @@ function Dm32RadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
-      <Dm32OnRadioSection summary={summary} />
-      <Dm32WrittenFromBuildSection summary={summary} />
-      <Dm32KeptOnWriteSection summary={summary} />
+      <Dm32OnRadioSection summary={summary} variant={variant} />
+      {variant === 'inspect' ? (
+        <InspectNamedLists
+          lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]}
+        />
+      ) : null}
+      {variant === 'write-coverage' ? (
+        <>
+          <Dm32WrittenFromBuildSection summary={summary} />
+          <Dm32KeptOnWriteSection summary={summary} />
+        </>
+      ) : null}
       <Dm32SettingsRetainSection summary={summary} />
       <Dm32AncillaryRetainSection summary={summary} />
       <Dm32RequiredBlocksSection summary={summary} />
@@ -721,12 +823,16 @@ function Dm32RadioImageSections({
   );
 }
 
-function Rt95OnRadioSection({ summary }: { summary: Rt95CloneSummary }) {
+function Rt95OnRadioSection({
+  summary,
+  variant,
+}: {
+  summary: Rt95CloneSummary;
+  variant: RadioCloneSummaryVariant;
+}) {
+  const occupancy = occupancyCopy(variant);
   return (
-    <FormSection
-      title="On the radio"
-      description="Counts decoded from the stored image — not your build layout."
-    >
+    <FormSection title={occupancy.title} description={occupancy.description}>
       <Table.ScrollContainer minWidth={360}>
         <Table withTableBorder withColumnBorders>
           <Table.Tbody>
@@ -818,9 +924,11 @@ function Rt95SettingsRetainSection({ summary }: { summary: Rt95CloneSummary }) {
 function Rt95RadioImageSections({
   summary,
   bag,
+  variant,
 }: {
   summary: Rt95CloneSummary;
   bag: RadioCloneHydrationBag;
+  variant: RadioCloneSummaryVariant;
 }) {
   return (
     <>
@@ -851,9 +959,18 @@ function Rt95RadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
-      <Rt95OnRadioSection summary={summary} />
-      <Rt95WrittenFromBuildSection summary={summary} />
-      <Rt95KeptOnWriteSection summary={summary} />
+      <Rt95OnRadioSection summary={summary} variant={variant} />
+      {variant === 'inspect' ? (
+        <InspectNamedLists
+          lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]}
+        />
+      ) : null}
+      {variant === 'write-coverage' ? (
+        <>
+          <Rt95WrittenFromBuildSection summary={summary} />
+          <Rt95KeptOnWriteSection summary={summary} />
+        </>
+      ) : null}
       <Rt95SettingsRetainSection summary={summary} />
     </>
   );
@@ -862,10 +979,13 @@ function Rt95RadioImageSections({
 function AtD890RadioImageSections({
   summary,
   bag,
+  variant,
 }: {
   summary: AtD890uvCloneSummary;
   bag: RadioCloneHydrationBag;
+  variant: RadioCloneSummaryVariant;
 }) {
+  const occupancy = occupancyCopy(variant);
   return (
     <>
       <FormSection title="Capture">
@@ -916,10 +1036,7 @@ function AtD890RadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
-      <FormSection
-        title="On the radio"
-        description="Counts decoded from the stored image — not your build layout."
-      >
+      <FormSection title={occupancy.title} description={occupancy.description}>
         <Table.ScrollContainer minWidth={360}>
           <Table withTableBorder withColumnBorders>
             <Table.Tbody>
@@ -960,242 +1077,288 @@ function AtD890RadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
-      <FormSection
-        title="Written from your build"
-        description="When you Write to radio, Studio updates these from your build."
-      >
-        <List size="sm" spacing="xs">
-          {summary.writtenFromBuild.map((item) => (
-            <List.Item key={item}>{item}</List.Item>
-          ))}
-        </List>
-        <Text size="sm" c="dimmed" mt="sm">
-          {summary.digitalContactsWriteGap}
-        </Text>
-      </FormSection>
+      {variant === 'inspect' ? (
+        <InspectNamedLists
+          lists={[
+            { id: 'channels', title: 'Channels', rows: summary.inspectChannels },
+            { id: 'zones', title: 'Zones', rows: summary.inspectZones },
+            { id: 'scan-lists', title: 'Scan lists', rows: summary.inspectScanLists },
+            { id: 'talk-groups', title: 'Talk groups', rows: summary.inspectTalkGroups },
+          ]}
+        />
+      ) : null}
 
-      <FormSection
-        title="Kept on Write"
-        description="Not re-derived from your build. Local info is still uploaded verbatim from this Read cache."
-      >
-        {summary.retainGroups.length === 0 ? (
-          <Text size="sm">No retained regions in this capture.</Text>
-        ) : (
-          <Table.ScrollContainer minWidth={480}>
-            <Table withTableBorder withColumnBorders>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Region</Table.Th>
-                  <Table.Th>Address range</Table.Th>
-                  <Table.Th>Chunks</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {summary.retainGroups.map((g) => (
-                  <Table.Tr key={g.label}>
-                    <Table.Td>{g.label}</Table.Td>
-                    <Table.Td>
-                      <Code>{g.addressRange}</Code>
-                    </Table.Td>
-                    <Table.Td>{g.blockCount}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
-      </FormSection>
+      {variant === 'write-coverage' ? (
+        <>
+          <FormSection
+            title="Written from your build"
+            description="When you Write to radio, Studio updates these from your build."
+          >
+            <List size="sm" spacing="xs">
+              {summary.writtenFromBuild.map((item) => (
+                <List.Item key={item}>{item}</List.Item>
+              ))}
+            </List>
+            <Text size="sm" c="dimmed" mt="sm">
+              {summary.digitalContactsWriteGap}
+            </Text>
+          </FormSection>
 
-      <FormSection
-        title="Local info (Expert options)"
-        description="Decoded fields from LocalInfo @ 0x4f80000 — Read for forensics; not serial-written on Studio Write."
-      >
-        {summary.settingsRetain.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            No LocalInfo block in this capture.
-          </Text>
-        ) : (
-          <Table.ScrollContainer minWidth={560}>
-            <Table withTableBorder withColumnBorders>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Address</Table.Th>
-                  <Table.Th>Offset</Table.Th>
-                  <Table.Th>Field</Table.Th>
-                  <Table.Th>Value</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {summary.settingsRetain.map((row) => (
-                  <Table.Tr key={`${row.offset}-${row.label}`}>
-                    <Table.Td>
-                      <Code>{row.address}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{row.offset}</Code>
-                    </Table.Td>
-                    <Table.Td>{row.label}</Table.Td>
-                    <Table.Td>{row.value}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
-      </FormSection>
-
-      <FormSection
-        title="Optional settings (forensics)"
-        description="Decoded from optional settings @ 0x3500000 / 0x3500900 — Read and stashed for Radio Info only; never serial-written. CPS language here is separate from Chinese UI in Local info above."
-      >
-        {summary.optionalSettingsRetain.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            No optional settings blocks in this capture.
-          </Text>
-        ) : (
-          <Table.ScrollContainer minWidth={560}>
-            <Table withTableBorder withColumnBorders>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Address</Table.Th>
-                  <Table.Th>Offset</Table.Th>
-                  <Table.Th>Field</Table.Th>
-                  <Table.Th>Value</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {summary.optionalSettingsRetain.map((row) => (
-                  <Table.Tr key={`${row.offset}-${row.label}`}>
-                    <Table.Td>
-                      <Code>{row.address}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{row.offset}</Code>
-                    </Table.Td>
-                    <Table.Td>{row.label}</Table.Td>
-                    <Table.Td>{row.value}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
-      </FormSection>
-
-      {summary.optionalSettingsAprs.length > 0 ? (
-        <FormSection
-          title="Optional settings (APRS)"
-          description="Raw hex from 0x3501280 — not decoded in Studio v1."
-        >
-          <Table.ScrollContainer minWidth={560}>
-            <Table withTableBorder withColumnBorders>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Address</Table.Th>
-                  <Table.Th>Offset</Table.Th>
-                  <Table.Th>Field</Table.Th>
-                  <Table.Th>Value</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {summary.optionalSettingsAprs.map((row) => (
-                  <Table.Tr key={`${row.offset}-${row.label}`}>
-                    <Table.Td>
-                      <Code>{row.address}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{row.offset}</Code>
-                    </Table.Td>
-                    <Table.Td>{row.label}</Table.Td>
-                    <Table.Td>{row.value}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        </FormSection>
+          <FormSection
+            title="Kept on Write"
+            description="Not re-derived from your build. Local info is still uploaded verbatim from this Read cache."
+          >
+            {summary.retainGroups.length === 0 ? (
+              <Text size="sm">No retained regions in this capture.</Text>
+            ) : (
+              <Table.ScrollContainer minWidth={480}>
+                <Table withTableBorder withColumnBorders>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Region</Table.Th>
+                      <Table.Th>Address range</Table.Th>
+                      <Table.Th>Chunks</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {summary.retainGroups.map((g) => (
+                      <Table.Tr key={g.label}>
+                        <Table.Td>{g.label}</Table.Td>
+                        <Table.Td>
+                          <Code>{g.addressRange}</Code>
+                        </Table.Td>
+                        <Table.Td>{g.blockCount}</Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            )}
+          </FormSection>
+        </>
       ) : null}
 
       <FormSection
-        title="Alarm (forensics)"
-        description="Light decode from alarm @ 0x3482e00 / 0x3483000 and man-down flags in optional main — Read/stash only; never serial-written."
+        title="Forensics"
+        description="Read-only decode from this image. These regions are not restore targets."
       >
-        {summary.alarmRetain.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            No alarm blocks in this capture.
-          </Text>
-        ) : (
-          <Table.ScrollContainer minWidth={560}>
-            <Table withTableBorder withColumnBorders>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Address</Table.Th>
-                  <Table.Th>Offset</Table.Th>
-                  <Table.Th>Field</Table.Th>
-                  <Table.Th>Value</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {summary.alarmRetain.map((row) => (
-                  <Table.Tr key={`${row.address}-${row.label}`}>
-                    <Table.Td>
-                      <Code>{row.address}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{row.offset}</Code>
-                    </Table.Td>
-                    <Table.Td>{row.label}</Table.Td>
-                    <Table.Td>{row.value}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
-      </FormSection>
+        <Accordion multiple variant="separated" defaultValue={[]}>
+          <Accordion.Item value="local-info">
+            <Accordion.Control>Local info (Expert options)</Accordion.Control>
+            <Accordion.Panel>
+              <Text size="sm" c="dimmed" mb="sm">
+                {variant === 'inspect'
+                  ? 'Restore will not write Local info.'
+                  : 'Decoded fields from LocalInfo @ 0x4f80000 — Read for forensics; not serial-written on Studio Write.'}
+              </Text>
+              {summary.settingsRetain.length === 0 ? (
+                <Text size="sm" c="dimmed">
+                  No LocalInfo block in this capture.
+                </Text>
+              ) : (
+                <Table.ScrollContainer minWidth={560}>
+                  <Table withTableBorder withColumnBorders>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Address</Table.Th>
+                        <Table.Th>Offset</Table.Th>
+                        <Table.Th>Field</Table.Th>
+                        <Table.Th>Value</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {summary.settingsRetain.map((row) => (
+                        <Table.Tr key={`${row.offset}-${row.label}`}>
+                          <Table.Td>
+                            <Code>{row.address}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code>{row.offset}</Code>
+                          </Table.Td>
+                          <Table.Td>{row.label}</Table.Td>
+                          <Table.Td>{row.value}</Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              )}
+            </Accordion.Panel>
+          </Accordion.Item>
 
-      <FormSection
-        title="Local info registers"
-        description="Every 16-byte serial chunk in LocalInfo (0x100 bytes). Notes map known ExpertOptions fields onto each chunk."
-      >
-        {summary.localInfoRegisters.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            No LocalInfo registers in this capture.
-          </Text>
-        ) : (
-          <Table.ScrollContainer minWidth={720}>
-            <Table withTableBorder withColumnBorders fz="xs">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Address</Table.Th>
-                  <Table.Th>Offset</Table.Th>
-                  <Table.Th>Hex (16 bytes)</Table.Th>
-                  <Table.Th>ASCII</Table.Th>
-                  <Table.Th>Known fields</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {summary.localInfoRegisters.map((row) => (
-                  <Table.Tr key={row.address}>
-                    <Table.Td>
-                      <Code>{row.address}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{row.offset}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code style={{ whiteSpace: 'nowrap' }}>{row.hex}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{row.ascii}</Code>
-                    </Table.Td>
-                    <Table.Td>{row.notes}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
+          <Accordion.Item value="optional-settings">
+            <Accordion.Control>Optional settings</Accordion.Control>
+            <Accordion.Panel>
+              <Text size="sm" c="dimmed" mb="sm">
+                {variant === 'inspect'
+                  ? 'Restore will not write optional settings.'
+                  : 'Decoded from optional settings @ 0x3500000 / 0x3500900 — never serial-written. CPS language here is separate from Chinese UI in Local info above.'}
+              </Text>
+              {summary.optionalSettingsRetain.length === 0 ? (
+                <Text size="sm" c="dimmed">
+                  No optional settings blocks in this capture.
+                </Text>
+              ) : (
+                <Table.ScrollContainer minWidth={560}>
+                  <Table withTableBorder withColumnBorders>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Address</Table.Th>
+                        <Table.Th>Offset</Table.Th>
+                        <Table.Th>Field</Table.Th>
+                        <Table.Th>Value</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {summary.optionalSettingsRetain.map((row) => (
+                        <Table.Tr key={`${row.offset}-${row.label}`}>
+                          <Table.Td>
+                            <Code>{row.address}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code>{row.offset}</Code>
+                          </Table.Td>
+                          <Table.Td>{row.label}</Table.Td>
+                          <Table.Td>{row.value}</Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              )}
+            </Accordion.Panel>
+          </Accordion.Item>
+
+          {summary.optionalSettingsAprs.length > 0 ? (
+            <Accordion.Item value="optional-aprs">
+              <Accordion.Control>Optional settings (APRS)</Accordion.Control>
+              <Accordion.Panel>
+                <Text size="sm" c="dimmed" mb="sm">
+                  {variant === 'inspect'
+                    ? 'Read-only hex preview from this image.'
+                    : 'Raw hex from 0x3501280 — not decoded in Studio v1.'}
+                </Text>
+                <Table.ScrollContainer minWidth={560}>
+                  <Table withTableBorder withColumnBorders>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Address</Table.Th>
+                        <Table.Th>Offset</Table.Th>
+                        <Table.Th>Field</Table.Th>
+                        <Table.Th>Value</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {summary.optionalSettingsAprs.map((row) => (
+                        <Table.Tr key={`${row.offset}-${row.label}`}>
+                          <Table.Td>
+                            <Code>{row.address}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code>{row.offset}</Code>
+                          </Table.Td>
+                          <Table.Td>{row.label}</Table.Td>
+                          <Table.Td>{row.value}</Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              </Accordion.Panel>
+            </Accordion.Item>
+          ) : null}
+
+          <Accordion.Item value="alarm">
+            <Accordion.Control>Alarm</Accordion.Control>
+            <Accordion.Panel>
+              <Text size="sm" c="dimmed" mb="sm">
+                {variant === 'inspect'
+                  ? 'Restore will not write alarm memory.'
+                  : 'Light decode from alarm @ 0x3482e00 / 0x3483000 and man-down flags in optional main — Read/stash only; never serial-written.'}
+              </Text>
+              {summary.alarmRetain.length === 0 ? (
+                <Text size="sm" c="dimmed">
+                  No alarm blocks in this capture.
+                </Text>
+              ) : (
+                <Table.ScrollContainer minWidth={560}>
+                  <Table withTableBorder withColumnBorders>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Address</Table.Th>
+                        <Table.Th>Offset</Table.Th>
+                        <Table.Th>Field</Table.Th>
+                        <Table.Th>Value</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {summary.alarmRetain.map((row) => (
+                        <Table.Tr key={`${row.address}-${row.label}`}>
+                          <Table.Td>
+                            <Code>{row.address}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code>{row.offset}</Code>
+                          </Table.Td>
+                          <Table.Td>{row.label}</Table.Td>
+                          <Table.Td>{row.value}</Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              )}
+            </Accordion.Panel>
+          </Accordion.Item>
+
+          <Accordion.Item value="local-info-registers">
+            <Accordion.Control>Local info registers</Accordion.Control>
+            <Accordion.Panel>
+              <Text size="sm" c="dimmed" mb="sm">
+                Every 16-byte serial chunk in LocalInfo (0x100 bytes). Notes map known ExpertOptions
+                fields onto each chunk.
+              </Text>
+              {summary.localInfoRegisters.length === 0 ? (
+                <Text size="sm" c="dimmed">
+                  No LocalInfo registers in this capture.
+                </Text>
+              ) : (
+                <Table.ScrollContainer minWidth={720}>
+                  <Table withTableBorder withColumnBorders fz="xs">
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Address</Table.Th>
+                        <Table.Th>Offset</Table.Th>
+                        <Table.Th>Hex (16 bytes)</Table.Th>
+                        <Table.Th>ASCII</Table.Th>
+                        <Table.Th>Known fields</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {summary.localInfoRegisters.map((row) => (
+                        <Table.Tr key={row.address}>
+                          <Table.Td>
+                            <Code>{row.address}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code>{row.offset}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code style={{ whiteSpace: 'nowrap' }}>{row.hex}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code>{row.ascii}</Code>
+                          </Table.Td>
+                          <Table.Td>{row.notes}</Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              )}
+            </Accordion.Panel>
+          </Accordion.Item>
+        </Accordion>
       </FormSection>
 
       <FormSection
@@ -1231,9 +1394,14 @@ function AtD890RadioImageSections({
 
 export interface RadioCloneSummaryViewProps {
   bag: RadioCloneHydrationBag;
+  /** Backup / Restore defaults to on-image inspect. */
+  variant?: RadioCloneSummaryVariant;
 }
 
-export default function RadioCloneSummaryView({ bag }: RadioCloneSummaryViewProps) {
+export default function RadioCloneSummaryView({
+  bag,
+  variant = 'inspect',
+}: RadioCloneSummaryViewProps) {
   const isUv17ProFamily = isUv17ProFamilyModel(bag.retain.radioModelId);
   const isDm32 =
     bag.retain.radioModelId === DM32UV_MODEL_ID || bag.retain.radioModelId === 'DP570UV';
@@ -1267,15 +1435,15 @@ export default function RadioCloneSummaryView({ bag }: RadioCloneSummaryViewProp
   return (
     <Stack gap="lg">
       {dm32Summary ? (
-        <Dm32RadioImageSections summary={dm32Summary} bag={bag} />
+        <Dm32RadioImageSections summary={dm32Summary} bag={bag} variant={variant} />
       ) : atD890Summary ? (
-        <AtD890RadioImageSections summary={atD890Summary} bag={bag} />
+        <AtD890RadioImageSections summary={atD890Summary} bag={bag} variant={variant} />
       ) : openGd77Summary ? (
-        <OpenGd77RadioImageSections summary={openGd77Summary} bag={bag} />
+        <OpenGd77RadioImageSections summary={openGd77Summary} bag={bag} variant={variant} />
       ) : rt95Summary ? (
-        <Rt95RadioImageSections summary={rt95Summary} bag={bag} />
+        <Rt95RadioImageSections summary={rt95Summary} bag={bag} variant={variant} />
       ) : uv17ProSummary ? (
-        <Uv5rRadioImageSections summary={uv17ProSummary} bag={bag} />
+        <Uv5rRadioImageSections summary={uv17ProSummary} bag={bag} variant={variant} />
       ) : null}
     </Stack>
   );
