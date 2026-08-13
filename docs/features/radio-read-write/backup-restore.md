@@ -12,6 +12,7 @@ Per-radio restorable vs inspect-only region tables, coverage honesty, and protoc
 | --------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------- |
 | Strip tab `/builds/:id/backup`                | Shipped | After Satellite keps (when present), before About; shown when the build has a Web Serial egress.                            |
 | Live backup → auto-download zip + RAM inspect | Shipped | [#1138](https://github.com/pskillen/codeplug-studio/issues/1138) — zip first, then page fill; leaving the tab discards RAM. |
+| Rich inspect lists                            | Shipped | [#1139](https://github.com/pskillen/codeplug-studio/issues/1139) — expandable on-image channel / zone / list names; not write coverage. Inspect-only regions stay listed and are not restore targets. |
 | Open backup file                              | Shipped | Offline parse of v1 archives. Radio Info `hydration.json` zips are not imported.                                            |
 | Restore to radio                              | Not yet | Button visible and disabled: “Restore not available for this radio yet.” Protocol `restoreFromBackup` lands in later PRs.   |
 | Per-radio restorable vs inspect-only maps     | Design  | Exact restore sections stay in this contract until each family’s restore PR; radio reference docs get the tables then.      |
@@ -132,7 +133,7 @@ Do **not** import old Radio Info debug zips (`hydration.json`). None are expecte
 1. **Restore to radio** at the top (dangerous primary). Disabled until that adapter implements restore, with copy that backup/inspect is available.
 2. Identity + **coverage honesty** (see archive).
 3. Region table: restorable vs inspect-only. Restore defaults to **all restorable** regions; the operator may uncheck restorable rows. Inspect-only rows cannot be enabled. The service drops inspect-only even if the UI is tampered.
-4. Inspect body (v1, not a follow-up): **what is on this image**, not “written from your build.” Occupancy plus expandable channel / zone / scan / talk-group / contact lists where codecs already exist. D890 Local info / optional settings / APRS / alarm stay read-only forensics.
+4. Inspect body: **what is on this image**, not “written from your build.” Occupancy plus **expandable** channel / zone / scan / talk-group / contact lists where codecs already exist. D890 Local info / optional settings / APRS / alarm stay collapsed read-only forensics. Inspect-only regions remain in the region table and are not restore targets.
 5. Secondary: save zip again / clear / read again.
 
 Write-coverage tables stay on the **Export** write panel. They must not become the lead copy here.

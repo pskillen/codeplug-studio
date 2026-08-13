@@ -59,6 +59,9 @@ describe('summariseOpenGd77Clone', () => {
     expect(summary.settingsRetain.some((r) => r.label === 'Callsign' && r.value === 'MM9PDY')).toBe(
       true,
     );
+    expect(summary.inspectChannels).toEqual([{ slotIndex: 1, name: 'CH1' }]);
+    expect(summary.inspectZones).toEqual([{ slotIndex: 1, name: 'Local' }]);
+    expect(summary.inspectContacts).toEqual([{ slotIndex: 1, name: 'TG91' }]);
   });
 
   it('returns empty settings preview when general settings are blank', () => {
