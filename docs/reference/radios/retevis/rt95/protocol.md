@@ -107,7 +107,8 @@ Upload path also issues a priming read at radio address **`0x3b10`** (outside th
 2. `PROGRAM` → `QX\x06` → `0x02` version / allow-list.
 3. Read all blocks `0x0000`…`0x3290` step `0x10` → assemble contiguous `0x32A0` image ([memory-layout.md](memory-layout.md)).
 4. For upload: re-enter program mode → version check (warn if image vs radio bandlimit differ) → priming read `0x3b10` → write each `0x10` block → `END`.
-5. Prefer RMW for settings / bandlimit — see [settings.md](settings.md).
+5. For **Restore** (not Write): `restoreFromBackup` uploads selected zip clone bins with that same upload handshake — never assemble / stash merge. See [backup-restore.md](backup-restore.md). Hardware verify pending.
+6. Prefer RMW for settings / bandlimit — see [settings.md](settings.md).
 
 ## Write verify
 
@@ -115,5 +116,5 @@ After upload, Studio stages every **16-byte** block written in `0x0000`…`0x329
 
 ## Related
 
-- [fixtures.md](fixtures.md) · [memory-layout.md](memory-layout.md) · [settings.md](settings.md)
+- [fixtures.md](fixtures.md) · [memory-layout.md](memory-layout.md) · [settings.md](settings.md) · [backup-restore.md](backup-restore.md)
 - Shipped kit: [#641](https://github.com/pskillen/codeplug-studio/issues/641) (`programQx.ts`) · adapter [#643](https://github.com/pskillen/codeplug-studio/issues/643) (`radios/rt95/`)
