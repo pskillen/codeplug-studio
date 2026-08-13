@@ -160,8 +160,15 @@ async function handshake(
 export class Uv17ProProtocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
+  /** Live packed image from the most recent {@link download} in this session. */
+  private priorImage: MemoryMap | null = null;
 
   constructor(private readonly layout: Uv17ProLayout) {}
+
+  /** Packed clone from the last in-session download — used as the Write encode base. */
+  getPriorImage(): MemoryMap | null {
+    return this.priorImage;
+  }
 
   async connect(pipe: BytePipe, opts?: Uv17ProConnectOptions): Promise<IdentResult> {
     this.pipe = pipe;
@@ -207,12 +214,15 @@ export class Uv17ProProtocol implements CloneImageRadio {
     await expectAck(pipe, this.layout.writeAckTimeoutMs);
   }
 
-  async download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap> {
+  async download(
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal; progressStage?: string } = {},
+  ): Promise<MemoryMap> {
     const pipe = this.requirePipe();
     const addrs = listRadioBlockAddresses(this.layout);
     const image = createMemoryMap(this.layout.memTotal);
     let done = 0;
     const max = this.layout.cloneBlockCount;
+    const stage = opts.progressStage;
     for (const addr of addrs) {
       throwIfAborted(opts.signal);
       const block = await this.readBlock(pipe, addr);
@@ -221,10 +231,16 @@ export class Uv17ProProtocol implements CloneImageRadio {
       done += 1;
       reportProgress(
         opts.onProgress,
-        { cur: done, max, msg: `Reading 0x${addr.toString(16)}` },
+        {
+          cur: done,
+          max,
+          msg: `Reading 0x${addr.toString(16)}`,
+          ...(stage ? { stage } : {}),
+        },
         opts.signal,
       );
     }
+    this.priorImage = memoryMapFromBytes(image.bytes);
     return image;
   }
 
@@ -239,7 +255,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
     const addrs = listRadioBlockAddresses(this.layout);
     reportProgress(
       opts.onProgress,
-      { cur: 0, max: addrs.length, msg: 'Upload handshake' },
+      { cur: 0, max: addrs.length, msg: 'Upload handshake', stage: 'Upload' },
       opts.signal,
     );
     await handshake(this.layout, pipe, 'upload', { signal: opts.signal });
@@ -255,7 +271,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
       done += 1;
       reportProgress(
         opts.onProgress,
-        { cur: done, max, msg: `Writing 0x${addr.toString(16)}` },
+        { cur: done, max, msg: `Writing 0x${addr.toString(16)}`, stage: 'Upload' },
         opts.signal,
       );
     }

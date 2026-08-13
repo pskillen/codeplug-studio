@@ -35,7 +35,7 @@ After a **factory reset** (or a full CPS rewrite), the radio can place ZONE / VF
 | VFO at `0x86000`               | VFO at `0x63000`        | Startup text / key settings never update on the live settings block                   |
 | SCAN at `0x62000`              | SCAN at `0x62000`       | Scan lists may still land (address unchanged)                                         |
 
-**Write behaviour (#703):** before every upload, Studio runs a **lightweight metadata discover** over the V-frame `0x0A` config range (one byte per 4KB block — not a full clone Read). Hydration blocks and the prepared write image are **remapped by metadata tag** onto live absolute addresses, then uploaded. Refuse only when a required tag from the hydration bag is missing on the live radio.
+**Write behaviour (#703 + #877):** before encoding the upload image, Studio **bulk-reads live 4KB block contents** for the Write-touched / required set (`download` with progress **Pre-write read**). Address/tag discovery (`discoverDm32MemoryBlocks`) is metadata only and does **not** satisfy that content read. Overlay modelled fields onto those live bytes (not a blank `0xff` map, not OpenGD77 restore’s blank prior). `upload` still remaps by metadata tag onto live absolute addresses. No persisted stash (`hydrationRequiredForWrite: false`). Restore does not use this path.
 
 **Full Read** remains the path to refresh **unmodelled retain payloads** (settings slices not replaced by the build) from the radio — it is not required solely to learn current block addresses.
 

@@ -29,7 +29,7 @@ Warn at backup: after a factory reset, a backup taken beforehand cannot be resto
 2. Live V-frame bases must match the manifest or restore is refused **before any write**.
 3. `Dm32uvProtocol.restoreFromBackup` — connected PROGRAM session; writes selected restorable 4KB blocks at their archive addresses.
 4. Never calibration. Never assemble. Never persist a radio-clone bag.
-5. Progress copy is **Restore**, not “Writing codeplug.” Write `upload` is unchanged (`hydrationRequiredForWrite: true`, stash / in-session hydration still required).
+5. Progress copy is **Restore**, not “Writing codeplug.” Write-codeplug overlays modelled channels onto an in-session content pre-write read (`hydrationRequiredForWrite: false`); Restore does **not** call `upload()`, assemble, or that pre-write read.
 
 ## Related
 

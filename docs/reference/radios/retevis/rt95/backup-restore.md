@@ -15,7 +15,7 @@ Backup packing: `src/integrations/radio-io/backup/regionsFromDownload.ts` (`from
 | **Restorable**   | `programming-image` — contiguous `0x0000`–`0x3290` clone (`0x32A0` bytes), including settings / DTMF / bandlimit that live in that span                                                                                        |
 | **Inspect-only** | None on this map. Studio has **no** isolated calibration or LocalInfo table, and **no serial** in the layout. Residual: if the vendor hid cal inside the clone, Restore will send those bytes — do **not** invent a cal offset |
 
-Write-codeplug still requires **project / session stash** (`hydrationRequiredForWrite: true`) and overlays modelled channels onto that image. Restore **does not** use that stash; it replays zip clone bins only.
+Write-codeplug overlays modelled channels onto an **in-session** full-clone read (`resolveRadioWriteImageForUpload`; `hydrationRequiredForWrite: false`). Restore **does not** use a project bag or that pre-write read; it replays zip clone bins via `upload()` only.
 
 ## Restore path
 
@@ -23,7 +23,7 @@ Write-codeplug still requires **project / session stash** (`hydrationRequiredFor
 2. `Rt95Protocol.restoreFromBackup` — connect purpose `restore` (handshake `none`); restore runs the **upload** handshake itself.
 3. Copy selected restorable clone bins onto a `0x32A0` map; program `0x10` blocks `0x0000`…`0x3290`. Unselected / inspect-only bins are not written.
 4. Never LocalInfo. Never a separate calibration write (none in this layout).
-5. Progress copy is **Restore**, not “Writing codeplug.” Write `upload` is unchanged (stash / in-session hydration still required).
+5. Progress copy is **Restore**, not “Writing codeplug.” Write `upload` stays “write these bytes” (no live `download()` inside it). Write does not require a project bag.
 
 ## Related
 

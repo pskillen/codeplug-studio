@@ -47,7 +47,7 @@ Reused as-is for satellite-keps writes (#859, Workflow A + B) — `operation: 'k
 
 - Modal cannot be dismissed via escape, overlay click, or close button while transferring — only **Cancel** (parent aborts). On success (`phase === 'done'`), **Close** dismisses so the operator can review the checklist (especially Write).
 - Parent should pair with `useUnsavedNavigationGuard(busy)` + `beforeunload` so route changes and tab close are blocked while open.
-- When adapters emit `ProgressUpdate.stage`, the parent appends unique labels to `transferStages` so the checklist grows (Read: Discover memory map → Channels → Zones → …; Write: Channels → Zones → Scan lists → …).
+- When adapters emit `ProgressUpdate.stage`, the parent appends unique labels to `transferStages` so the checklist grows (Read: Discover memory map → Channels → Zones → …; Write: Channels → Zones → Scan lists → …; OpenGD77 Write: **Pre-write read** → **FLASH sectors**; UV-17Pro family Write: **Pre-write read** → **Upload**).
 - **AT-D890 Write verify:** when `writeVerifyStatus === 'unverified'`, done state shows a calm alert with optional **Check preserved settings** and **Close**. Checking waits for the radio to restart on its own after commit, then reconnects and diffs never-write regions.
 
 ## Related

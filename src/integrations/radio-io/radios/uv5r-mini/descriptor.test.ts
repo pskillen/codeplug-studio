@@ -13,7 +13,7 @@ describe('UV-5R Mini descriptor / registry', () => {
     expect(list.some((d) => d.modelIds.includes(UV5R_MINI_MODEL_ID))).toBe(true);
     const d = getRadioDescriptor(UV5R_MINI_MODEL_ID);
     expect(d?.writeStrategy).toBe('full-image');
-    expect(d?.hydrationRequiredForWrite).toBe(true);
+    expect(d?.hydrationRequiredForWrite).toBe(false);
     expect(d?.attributionIds).toEqual(['chirp', 'neonplug']);
     expect(d?.baudRate).toBe(115200);
     expect(d?.baudRateFallback).toBe(38400);

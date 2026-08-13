@@ -10,6 +10,7 @@ import {
 import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
+import { RadioProtocolError } from '../../kit/errors.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { DM32_BLOCK_SIZE, DM32_MODEL_IDS } from './constants.ts';
 import { encodeChannelsIntoDm32Image, type Dm32ChannelDecodeContext } from './channelCodec.ts';
@@ -53,14 +54,17 @@ export function cacheFromBag(bag: RadioCloneHydrationBag): Dm32DownloadCache {
   };
 }
 
-export function memoryMapFromDm32uvHydration(bag: RadioCloneHydrationBag): MemoryMap {
-  const cache = cacheFromBag(bag);
+export function memoryMapFromDm32Cache(cache: Dm32DownloadCache): MemoryMap {
   const map = createMemoryMap(cache.mapSize);
   map.fill(0, cache.mapSize, 0xff);
   for (const [addr, data] of cache.blocks) {
     map.set(addr - cache.addressBase, data);
   }
   return map;
+}
+
+export function memoryMapFromDm32uvHydration(bag: RadioCloneHydrationBag): MemoryMap {
+  return memoryMapFromDm32Cache(cacheFromBag(bag));
 }
 
 export function extractDm32uvHydration(
@@ -109,13 +113,16 @@ export function extractDm32uvHydrationFromProtocol(
   return extractDm32uvHydration(image, { ...meta, cache });
 }
 
-export function mergeChannelsIntoDm32uvHydration(
-  bag: RadioCloneHydrationBag,
+export const DM32_EMPTY_WRITE_CACHE_MESSAGE =
+  'Read this radio in the current session before Write. The DM-32UV write encode needs live sparse-block contents — metadata discovery alone is not enough.';
+
+/** Overlay the build projection onto an existing sparse DM-32 image (live cache; stash merge is inspect-only). */
+export function encodeDm32uvProjectionOntoImage(
+  image: MemoryMap,
+  cache: Dm32DownloadCache,
   channels: readonly RadioChannelDto[],
   organisation?: RadioWriteOrganisation,
 ): MemoryMap {
-  const cache = cacheFromBag(bag);
-  const image = memoryMapFromDm32uvHydration(bag);
   const ctx: Dm32ChannelDecodeContext = {
     addressBase: cache.addressBase,
     discovered: cache.discovered,
@@ -155,4 +162,35 @@ export function mergeChannelsIntoDm32uvHydration(
     next = encodeAprsIntoDm32Image(next, ctx, organisation.aprs);
   }
   return next;
+}
+
+/** Encode modelled overlay onto live download-cache contents. Empty cache is refused. */
+export function encodeDm32uvWriteImageFromDownloadCache(
+  cache: Dm32DownloadCache | null | undefined,
+  channels: readonly RadioChannelDto[],
+  organisation?: RadioWriteOrganisation,
+): MemoryMap {
+  if (!cache || cache.blocks.size === 0) {
+    throw new RadioProtocolError(DM32_EMPTY_WRITE_CACHE_MESSAGE);
+  }
+  return encodeDm32uvProjectionOntoImage(
+    memoryMapFromDm32Cache(cache),
+    cache,
+    channels,
+    organisation,
+  );
+}
+
+export function mergeChannelsIntoDm32uvHydration(
+  bag: RadioCloneHydrationBag,
+  channels: readonly RadioChannelDto[],
+  organisation?: RadioWriteOrganisation,
+): MemoryMap {
+  const cache = cacheFromBag(bag);
+  return encodeDm32uvProjectionOntoImage(
+    memoryMapFromDm32uvHydration(bag),
+    cache,
+    channels,
+    organisation,
+  );
 }

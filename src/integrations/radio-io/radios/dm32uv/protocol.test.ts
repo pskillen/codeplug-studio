@@ -257,4 +257,25 @@ describe('Dm32uvProtocol', () => {
     expect(vfoWriteAddr).toBe(vfoLive);
     expect(writeFrames[1]![6 + 3]).toBe(0xdd);
   });
+
+  it('download with progressStage labels content reads separately from metadata discovery', async () => {
+    const pipe = new Dm32ScriptedPipe();
+    scriptDm32DownloadTwoBlocks(pipe, 1);
+    const radio = new Dm32uvProtocol();
+    await radio.connect(pipe, { settleScale: 0 });
+
+    const stages: string[] = [];
+    const image = await radio.download({
+      progressStage: 'Pre-write read',
+      onProgress: (p) => {
+        if (p.stage) stages.push(p.stage);
+      },
+    });
+
+    expect(stages).toContain('Discover memory map');
+    expect(stages).toContain('Pre-write read');
+    expect(stages.indexOf('Discover memory map')).toBeLessThan(stages.indexOf('Pre-write read'));
+    expect(radio.getDownloadCache()?.blocks.size).toBe(2);
+    expect(image.size).toBe(DM32_BLOCK_SIZE * 2);
+  });
 });

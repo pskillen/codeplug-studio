@@ -238,9 +238,9 @@ describe('Rt95Protocol.restoreFromBackup', () => {
     expect(RT95_BLOCK_ADDR_START).toBe(0);
   });
 
-  it('protocolFactory exposes restoreFromBackup; Write still requires stash', () => {
+  it('protocolFactory exposes restoreFromBackup; Write does not require stash', () => {
     const radio = createRt95Protocol();
     expect(typeof radio.restoreFromBackup).toBe('function');
-    expect(RT95_DESCRIPTOR.hydrationRequiredForWrite).toBe(true);
+    expect(RT95_DESCRIPTOR.hydrationRequiredForWrite).toBe(false);
   });
 });

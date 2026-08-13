@@ -65,11 +65,15 @@ import {
 } from './radioWriteEnvGate.ts';
 import { encodeAtD890WriteImageFromDownloadCache } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { encodeDm32uvWriteImageFromDownloadCache } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
+import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
 import {
   OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE,
   OpenGd77Protocol,
 } from '@integrations/radio-io/radios/opengd77/protocol.ts';
+import { Uv17ProProtocol } from '@integrations/radio-io/radios/uv17pro-family/protocol.ts';
+import { Rt95Protocol } from '@integrations/radio-io/radios/rt95/protocol.ts';
 import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
@@ -428,9 +432,10 @@ function mergeChannelsForWrite(
 }
 
 /**
- * D890 and OpenGD77 Write encode onto the in-session radio image (not persisted stash,
- * not a virgin 0xff map). Other radios still use the image prepared from hydration.
- * Empty session prior → operator error after a download attempt.
+ * D890, OpenGD77, UV-17Pro, DM-32, and RT95 Write encode onto the in-session radio image
+ * (not persisted stash, not a virgin 0xff map). Other radios still use the image
+ * prepared from hydration. Empty session prior → operator error after a download attempt.
+ * RT95 restore reuses {@link Rt95Protocol.upload} — pre-write read lives here, not in upload().
  */
 async function resolveRadioWriteImageForUpload(
   session: RadioSession,
@@ -477,6 +482,49 @@ async function resolveRadioWriteImageForUpload(
       return encodeOpenGd77WriteImageFromPrior(prior, prepared.channels, prepared.organisation, {
         powerSteps: session.radio.getPowerSteps(),
       });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new RadioWriteBlockedError(message);
+    }
+  }
+  if (session.radio instanceof Uv17ProProtocol) {
+    const prior = await session.radio.download({
+      onProgress: opts?.onProgress,
+      signal: opts?.signal,
+      progressStage: 'Pre-write read',
+    });
+    try {
+      return session.radio.encodeChannels(prior, prepared.channels);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new RadioWriteBlockedError(message);
+    }
+  }
+  if (session.radio instanceof Dm32uvProtocol) {
+    await session.radio.download({
+      onProgress: opts?.onProgress,
+      signal: opts?.signal,
+      progressStage: 'Pre-write read',
+    });
+    try {
+      return encodeDm32uvWriteImageFromDownloadCache(
+        session.radio.getDownloadCache(),
+        prepared.channels,
+        prepared.organisation,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new RadioWriteBlockedError(message);
+    }
+  }
+  if (session.radio instanceof Rt95Protocol) {
+    const prior = await session.radio.download({
+      onProgress: opts?.onProgress,
+      signal: opts?.signal,
+      progressStage: 'Pre-write read',
+    });
+    try {
+      return session.radio.encodeChannels(prior, prepared.channels);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new RadioWriteBlockedError(message);

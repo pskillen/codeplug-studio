@@ -105,11 +105,14 @@ export class Rt95Protocol implements CloneImageRadio {
     parseProgramQxWriteAck(ack[0]!);
   }
 
-  async download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap> {
+  async download(
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal; progressStage?: string } = {},
+  ): Promise<MemoryMap> {
     const pipe = this.requirePipe();
     const image = createMemoryMap(RT95_IMAGE_SIZE);
     const blockCount = (RT95_BLOCK_ADDR_END - RT95_BLOCK_ADDR_START) / RT95_BLOCK_SIZE + 1;
     let done = 0;
+    const stage = opts.progressStage;
 
     for (let addr = RT95_BLOCK_ADDR_START; addr <= RT95_BLOCK_ADDR_END; addr += RT95_BLOCK_SIZE) {
       throwIfAborted(opts.signal);
@@ -118,7 +121,12 @@ export class Rt95Protocol implements CloneImageRadio {
       done += 1;
       reportProgress(
         opts.onProgress,
-        { cur: done, max: blockCount, msg: `Reading 0x${addr.toString(16)}` },
+        {
+          cur: done,
+          max: blockCount,
+          msg: `Reading 0x${addr.toString(16)}`,
+          ...(stage ? { stage } : {}),
+        },
         opts.signal,
       );
     }
@@ -143,9 +151,10 @@ export class Rt95Protocol implements CloneImageRadio {
       );
     }
 
+    // Write-these-bytes only. Restore calls this with the zip clone — do not download() or overlay here.
     reportProgress(
       opts.onProgress,
-      { cur: 0, max: RT95_IMAGE_SIZE / RT95_BLOCK_SIZE, msg: 'Upload handshake' },
+      { cur: 0, max: RT95_IMAGE_SIZE / RT95_BLOCK_SIZE, msg: 'Upload handshake', stage: 'Upload' },
       opts.signal,
     );
 
@@ -171,7 +180,7 @@ export class Rt95Protocol implements CloneImageRadio {
         done += 1;
         reportProgress(
           opts.onProgress,
-          { cur: done, max: blockCount, msg: `Writing 0x${addr.toString(16)}` },
+          { cur: done, max: blockCount, msg: `Writing 0x${addr.toString(16)}`, stage: 'Upload' },
           opts.signal,
         );
       }

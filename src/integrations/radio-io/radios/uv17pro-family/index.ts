@@ -40,6 +40,7 @@ export {
   extractUv17ProHydration,
   memoryMapFromUv17ProHydration,
   mergeChannelsIntoUv17ProHydration,
+  encodeUv17ProWriteImageFromPrior,
 } from './hydration.ts';
 export {
   UV17PRO_WRITTEN_FROM_BUILD_LABELS,

@@ -92,9 +92,19 @@ describe('BuildRadioIoPanel — single-bank Write modes (#992)', () => {
 });
 
 describe('BuildRadioIoPanel — legacy stash migration warning (#879)', () => {
-  it('shows a severe warning when the adapter still requires persisted clone hydration', () => {
+  it('does not show the severe warning for RT95 after drop-stash', () => {
+    renderPanel('radio-io-rt95');
+    expect(screen.queryByText('Write path not migrated')).not.toBeInTheDocument();
+  });
+
+  it('does not show the severe warning for DM-32UV after drop-stash', () => {
+    renderPanel('radio-io-dm32uv');
+    expect(screen.queryByText('Write path not migrated')).not.toBeInTheDocument();
+  });
+
+  it('does not show the severe warning for UV-5R Mini after drop-stash', () => {
     renderPanel('radio-io-uv5r-mini');
-    expect(screen.getByText('Write path not migrated')).toBeInTheDocument();
+    expect(screen.queryByText('Write path not migrated')).not.toBeInTheDocument();
   });
 
   it('does not show the severe warning for OpenGD77 DM-1701 after drop-stash', () => {

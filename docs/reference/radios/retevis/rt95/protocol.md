@@ -106,8 +106,8 @@ Upload path also issues a priming read at radio address **`0x3b10`** (outside th
 1. Open serial @ 9600 → echo-aware transport.
 2. `PROGRAM` → `QX\x06` → `0x02` version / allow-list.
 3. Read all blocks `0x0000`…`0x3290` step `0x10` → assemble contiguous `0x32A0` image ([memory-layout.md](memory-layout.md)).
-4. For upload: re-enter program mode → version check (warn if image vs radio bandlimit differ) → priming read `0x3b10` → write each `0x10` block → `END`.
-5. For **Restore** (not Write): `restoreFromBackup` uploads selected zip clone bins with that same upload handshake — never assemble / stash merge. See [backup-restore.md](backup-restore.md). Hardware verify pending.
+4. For **Write** upload: in-session full-clone pre-write read of blocks `0x0000`…`0x3290` (progress **Pre-write read**), overlay modelled channels onto that live image, then upload handshake → priming read `0x3b10` → write each `0x10` block → `END`. No persisted stash (`hydrationRequiredForWrite: false`). Hardware verify pending.
+5. For **Restore** (not Write): `restoreFromBackup` uploads selected zip clone bins with that same `upload()` handshake — never assemble / stash merge, and never a live pre-write read inside `upload()`. See [backup-restore.md](backup-restore.md). Hardware verify pending.
 6. Prefer RMW for settings / bandlimit — see [settings.md](settings.md).
 
 ## Write verify

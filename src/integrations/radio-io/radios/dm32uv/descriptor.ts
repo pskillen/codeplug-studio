@@ -5,7 +5,6 @@
 import type { RadioDescriptor } from '../../types.ts';
 import { DM32_CONNECTION, DM32_LIMITS, DM32_MODEL_IDS } from './constants.ts';
 import {
-  cacheFromBag,
   extractDm32uvHydration,
   extractDm32uvHydrationFromProtocol,
   mergeChannelsIntoDm32uvHydration,
@@ -33,7 +32,7 @@ export const DM32UV_DESCRIPTOR: RadioDescriptor = {
   attributionIds: ['chirp', 'neonplug'],
   compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-dm32uv' }],
   writeStrategy: 'selective-ranges',
-  hydrationRequiredForWrite: true,
+  hydrationRequiredForWrite: false,
   baudRate: DM32_CONNECTION.BAUD_RATE,
   hydration: {
     extractHydration: (image, meta) => {
@@ -47,11 +46,6 @@ export const DM32UV_DESCRIPTOR: RadioDescriptor = {
       return extractDm32uvHydration(image, meta);
     },
     mergeChannelsIntoHydration: mergeChannelsIntoDm32uvHydration,
-    seedProtocolForUpload: (protocol, bag) => {
-      if (protocol instanceof Dm32uvProtocol) {
-        protocol.seedDownloadCache(cacheFromBag(bag));
-      }
-    },
   },
   writeVerify: DM32_WRITE_VERIFY_HOOKS,
 };
