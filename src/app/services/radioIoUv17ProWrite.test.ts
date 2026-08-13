@@ -4,7 +4,6 @@ import type { LibrarySlice } from '@core/services/assemble.ts';
 import { memoryMapFromBytes } from '@integrations/radio-io/kit/memoryMap.ts';
 import { UV5R_MINI_DESCRIPTOR } from '@integrations/radio-io/radios/uv5r-mini/descriptor.ts';
 import { UV5R_MINI_MEM_TOTAL } from '@integrations/radio-io/radios/uv5r-mini/constants.ts';
-import { UV21_PRO_V2_DESCRIPTOR } from '@integrations/radio-io/radios/uv21-pro-v2/descriptor.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import type { RadioSession } from '@integrations/radio-io/types.ts';
 import { Uv17ProProtocol } from '@integrations/radio-io/radios/uv17pro-family/protocol.ts';
@@ -24,11 +23,6 @@ function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
 }
 
 describe('UV-17Pro family write without persisted stash', () => {
-  it('sets hydrationRequiredForWrite false on both family descriptors', () => {
-    expect(UV5R_MINI_DESCRIPTOR.hydrationRequiredForWrite).toBe(false);
-    expect(UV21_PRO_V2_DESCRIPTOR.hydrationRequiredForWrite).toBe(false);
-  });
-
   it('prepareRadioWriteImage succeeds without egress hydration bag', async () => {
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
     const ch = {

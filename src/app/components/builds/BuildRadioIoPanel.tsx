@@ -120,10 +120,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const writeHidden = writeGate === 'hidden';
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);
-  const hydrationRequiredForWrite = descriptor?.hydrationRequiredForWrite ?? true;
-  const requiresD890WriteConfirm =
-    egress.profileId === 'radio-io-at-d890uv' && !hydrationRequiredForWrite;
-  const writeNeedsStoredHydration = hydrationRequiredForWrite && !hasHydration;
+  const requiresD890WriteConfirm = egress.profileId === 'radio-io-at-d890uv';
   /**
    * Workflow B (#859, promoted to its own tab by #1085): "Write Keps…" now links to the
    * dedicated Satellite Keps tab (`/builds/:id/satellite-keps`, `BuildSatelliteKepsPage`) instead
@@ -538,24 +535,13 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         </Stack>
       </ConfirmModal>
       <WebSerialExperimentalAlert />
-      {descriptor?.hydrationRequiredForWrite ? (
-        <Alert color="red" title="Write path not migrated">
-          <Text size="sm">
-            This radio still depends on a legacy stored clone image for Web Serial write. Project
-            save no longer keeps that image — Read again in this session before Write until this
-            adapter is migrated.
-          </Text>
-        </Alert>
-      ) : null}
       <Text fw={600} size="sm">
         Direct radio (Web Serial)
       </Text>
       <Text size="sm" c="dimmed">
         {requiresD890WriteConfirm
           ? 'Write assembles modelled channels and organisation from the build, then reads co-resident bytes from the connected radio during upload. Unmodelled settings are preserved via erase-unit read-modify-write — not from a stored project image. Read is optional; use Backup / Restore for a zip snapshot and ephemeral inspection.'
-          : hydrationRequiredForWrite
-            ? 'Read stores a clone image on this egress pathway so unmodelled settings survive write-back. Write sends the assembled build into that image — it does not import channels into the library. After a factory reset, Read again before Write (memory-bank addresses can move).'
-            : 'Write overlays modelled channels and organisation onto an in-session read of the connected radio. Unmodelled settings are preserved from that live FLASH image — not from a stored project clone. Identity is the radio on the cable this session, not a saved stash.'}
+          : 'Write overlays modelled channels and organisation onto an in-session read of the connected radio. Unmodelled settings are preserved from that live FLASH image — not from a stored project clone. Identity is the radio on the cable this session, not a saved stash.'}
       </Text>
       {!serialOk ? <Alert color="yellow">{getRadioSerialUnsupportedMessage()}</Alert> : null}
       {attributionNames ? (
@@ -652,7 +638,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         {!writeHidden ? (
           <Button
             size="xs"
-            disabled={!serialOk || busy || writeNeedsStoredHydration}
+            disabled={!serialOk || busy}
             onClick={() => void beginWriteWithContactBanks('codeplug')}
           >
             Write to radio
@@ -662,7 +648,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           <Button
             size="xs"
             variant="light"
-            disabled={!serialOk || busy || writeNeedsStoredHydration}
+            disabled={!serialOk || busy}
             onClick={() => void beginWriteWithContactBanks('digitalIdList')}
           >
             Write digital ID list
@@ -672,7 +658,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           <Button
             size="xs"
             variant="light"
-            disabled={!serialOk || busy || writeNeedsStoredHydration}
+            disabled={!serialOk || busy}
             onClick={() => void beginWriteWithContactBanks('digitalIdList')}
           >
             Write digital ID list

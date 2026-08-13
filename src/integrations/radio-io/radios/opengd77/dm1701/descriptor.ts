@@ -47,7 +47,6 @@ export const OPENGD77_DM1701_DESCRIPTOR: RadioDescriptor = {
   attributionIds: ['qdmr'],
   compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-opengd77-1701' }],
   writeStrategy: 'full-image',
-  hydrationRequiredForWrite: false,
   baudRate: OPENGD77_BAUD_RATE,
   hydration,
   writeVerify: createOpenGd77WriteVerifyHooks(OPENGD77_DM1701_MODEL_ID),

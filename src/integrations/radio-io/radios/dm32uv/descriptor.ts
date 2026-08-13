@@ -32,7 +32,6 @@ export const DM32UV_DESCRIPTOR: RadioDescriptor = {
   attributionIds: ['chirp', 'neonplug'],
   compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-dm32uv' }],
   writeStrategy: 'selective-ranges',
-  hydrationRequiredForWrite: false,
   baudRate: DM32_CONNECTION.BAUD_RATE,
   hydration: {
     extractHydration: (image, meta) => {

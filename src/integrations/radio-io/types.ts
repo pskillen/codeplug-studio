@@ -98,7 +98,7 @@ export interface RadioHydrationHooks {
    */
   seedProtocolForUpload?(
     protocol: CloneImageRadio,
-    bag: import('@core/models/radioCloneHydration.ts').RadioCloneHydrationBag,
+    bag: import('@core/models/radioCloneHydration.ts').RadioCloneHydrationBag | undefined,
     organisation?: import('./radioWriteProjection.ts').RadioWriteOrganisation,
   ): void;
 }
@@ -114,10 +114,8 @@ export interface RadioDescriptor {
   attributionIds: readonly string[];
   /** Egress profiles eligible for connect / read / write. */
   compatibleProfiles: readonly RadioCompatibleProfile[];
-  /** Upload strategy — full-image radios require prior Read hydration. */
+  /** Upload strategy — Write still overlays this PROGRAM session, never a blank image. */
   writeStrategy: RadioWriteStrategy;
-  /** When true, Write is blocked until egress has binary hydration from Read. */
-  hydrationRequiredForWrite: boolean;
   /**
    * When true, direct serial Write is hidden on production deploys and warned in pre-prod.
    * App layer evaluates {@link __BUILD_ENV__}; adapter code stays registered.

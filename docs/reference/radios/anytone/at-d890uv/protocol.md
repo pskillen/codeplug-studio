@@ -97,7 +97,7 @@ Checksum (anytone-cps): 8-bit sum over command bytes after the opcode (`cmd[1:]`
 
 **Failed or aborted uploads** must call `abandonProgramMode()` before `disconnect()` so Studio does **not** send `END` after a partial write. Omitting `END` is the safe failure path.
 
-**Hydration on Write:** the hydration bag is required (`hydrationRequiredForWrite`) for LocalInfo **identity check** (serial match) and Radio image preview — it is **not** the data source for preserved bytes. Upload fresh-reads each touched erase unit from the radio immediately before staging.
+**Hydration on Write:** Write overlays modelled bytes onto this PROGRAM session’s download cache. LocalInfo **identity check** (serial match) uses the live radio, not a persisted bag. Upload fresh-reads each touched erase unit from the radio immediately before staging.
 
 ## Typical session flow
 

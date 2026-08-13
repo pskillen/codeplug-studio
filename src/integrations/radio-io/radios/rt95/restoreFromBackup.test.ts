@@ -18,7 +18,6 @@ import {
   programQxChecksum8AfterOpcode,
 } from '../../kit/codecs/programQx.ts';
 import { memoryMapFromBytes } from '../../kit/memoryMap.ts';
-import { RT95_DESCRIPTOR } from './descriptor.ts';
 import { createRt95Protocol, Rt95Protocol } from './protocol.ts';
 import { buildSyntheticRt95Image } from './__fixtures__/syntheticImage.ts';
 import {
@@ -238,9 +237,8 @@ describe('Rt95Protocol.restoreFromBackup', () => {
     expect(RT95_BLOCK_ADDR_START).toBe(0);
   });
 
-  it('protocolFactory exposes restoreFromBackup; Write does not require stash', () => {
+  it('protocolFactory exposes restoreFromBackup', () => {
     const radio = createRt95Protocol();
     expect(typeof radio.restoreFromBackup).toBe('function');
-    expect(RT95_DESCRIPTOR.hydrationRequiredForWrite).toBe(false);
   });
 });

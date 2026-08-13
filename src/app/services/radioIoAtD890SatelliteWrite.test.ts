@@ -84,7 +84,6 @@ function fakeSession(pipe: AtD890ScriptedPipe): RadioSession {
     attributionIds: [],
     compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-at-d890uv' }],
     writeStrategy: 'selective-ranges',
-    hydrationRequiredForWrite: false,
     baudRate: 921600,
     hydration: {
       extractHydration: () => {

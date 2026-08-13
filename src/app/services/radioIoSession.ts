@@ -25,7 +25,6 @@ import {
   type MemoryMap,
   type ProgressFn,
   type RadioDescriptor,
-  type RadioHydrationHooks,
   type RadioSession,
   isCapacitorSerialSupported,
   isRadioSerialSupported,
@@ -296,11 +295,6 @@ export async function prepareRadioWriteImage(
     throw new RadioWriteBlockedError(resolveRadioWriteProdDisabledMessage(egress.profileId));
   }
 
-  const hydration = getRadioCloneHydration(egress);
-  if (descriptor?.hydrationRequiredForWrite && !hydration) {
-    throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
-  }
-
   const assembled = assemble(build, library, {
     formatId: egress.formatId,
     profileId: egress.profileId,
@@ -397,44 +391,16 @@ export async function prepareRadioWriteImage(
       build.exportSettings,
     ).deciseconds;
   }
-  if (descriptor && !descriptor.hydrationRequiredForWrite) {
-    return {
-      warnings,
-      organisation,
-      channels: projection.channels,
-    };
-  }
-  if (!hydration) {
-    throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
-  }
   return {
-    image: mergeChannelsForWrite(egress, hydration, projection.channels, organisation),
     warnings,
     organisation,
     channels: projection.channels,
   };
 }
 
-function mergeChannelsForWrite(
-  egress: EgressPath,
-  hydration: RadioCloneHydrationBag,
-  dtos: Parameters<RadioHydrationHooks['mergeChannelsIntoHydration']>[1],
-  organisation?: RadioWriteOrganisation,
-): MemoryMap {
-  const descriptors = descriptorsForEgress(egress);
-  const descriptor = descriptors[0];
-  if (!descriptor) {
-    throw new Error(
-      `No Web Serial radio adapter is registered for ${egress.formatId}/${egress.profileId}.`,
-    );
-  }
-  return descriptor.hydration.mergeChannelsIntoHydration(hydration, dtos, organisation);
-}
-
 /**
- * D890, OpenGD77, UV-17Pro, DM-32, and RT95 Write encode onto the in-session radio image
- * (not persisted stash, not a virgin 0xff map). Other radios still use the image
- * prepared from hydration. Empty session prior → operator error after a download attempt.
+ * Web Serial Write encode onto the in-session radio image (not persisted stash,
+ * not a virgin 0xff map). Empty session prior → operator error after a download attempt.
  * RT95 restore reuses {@link Rt95Protocol.upload} — pre-write read lives here, not in upload().
  */
 async function resolveRadioWriteImageForUpload(
@@ -547,8 +513,7 @@ function openGd77DirtySectorWarnings(session: RadioSession): string[] {
 }
 
 /**
- * Assemble build → encode into hydrated image → upload.
- * Requires radio-clone hydration on the egress when descriptor.hydrationRequiredForWrite.
+ * Assemble build → overlay onto this PROGRAM session → upload.
  */
 export async function writeBuildToRadio(
   session: RadioSession,
@@ -558,19 +523,12 @@ export async function writeBuildToRadio(
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
 ): Promise<{ warnings: string[] }> {
   const hydration = getRadioCloneHydration(egress);
-  if (session.descriptor.hydrationRequiredForWrite && !hydration) {
-    throw new RadioWriteBlockedError(
-      'Read from the radio first so Studio can preserve unmodelled settings, then write.',
-    );
-  }
   const prepared = await prepareRadioWriteImage(build, egress, library);
-  if (hydration || !session.descriptor.hydrationRequiredForWrite) {
-    session.descriptor.hydration.seedProtocolForUpload?.(
-      session.radio,
-      hydration!,
-      prepared.organisation,
-    );
-  }
+  session.descriptor.hydration.seedProtocolForUpload?.(
+    session.radio,
+    hydration ?? undefined,
+    prepared.organisation,
+  );
   const image = await resolveRadioWriteImageForUpload(session, egress, prepared, opts);
   setCachedImage(session, image);
   await session.radio.upload(image, {
@@ -596,16 +554,11 @@ export async function uploadPreparedRadioWrite(
   },
 ): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult; warnings?: string[] }> {
   const hydration = getRadioCloneHydration(egress);
-  if (session.descriptor.hydrationRequiredForWrite && !hydration) {
-    throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
-  }
-  if (hydration || !session.descriptor.hydrationRequiredForWrite) {
-    session.descriptor.hydration.seedProtocolForUpload?.(
-      session.radio,
-      hydration!,
-      opts?.organisation,
-    );
-  }
+  session.descriptor.hydration.seedProtocolForUpload?.(
+    session.radio,
+    hydration ?? undefined,
+    opts?.organisation,
+  );
   const resolved = await resolveRadioWriteImageForUpload(
     session,
     egress,

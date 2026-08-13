@@ -86,7 +86,6 @@ describe('session', () => {
     attributionIds: [],
     compatibleProfiles: [],
     writeStrategy: 'full-image',
-    hydrationRequiredForWrite: true,
     baudRate: 9600,
     hydration: {
       extractHydration: () => {
