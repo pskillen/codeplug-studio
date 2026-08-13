@@ -31,45 +31,6 @@ export const FRESNEL_OPACITY_MAX = 0.4;
 /** `pow(1 - |N·V|, power)` — higher tightens the glow to the silhouette rim. */
 export const FRESNEL_POWER = 2;
 
-const SHELL_VERTEX_SHADER = /* glsl */ `
-  varying vec3 vWorldNormal;
-  varying vec3 vWorldPosition;
-  void main() {
-    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-    vWorldPosition = worldPosition.xyz;
-    vWorldNormal = normalize(mat3(modelMatrix) * normal);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
-
-const SHELL_FRAGMENT_SHADER = /* glsl */ `
-  uniform vec3 uColor;
-  uniform vec3 uCameraPosition;
-  uniform float uFresnelEnabled;
-  uniform float uBaselineOpacity;
-  uniform float uOpacityMin;
-  uniform float uOpacityMax;
-  uniform float uFresnelPower;
-  varying vec3 vWorldNormal;
-  varying vec3 vWorldPosition;
-  void main() {
-    float baseline = uBaselineOpacity;
-    vec3 normal = normalize(vWorldNormal);
-    // Prefer the explicit uniform (pushed from Globe.camera() each frame) and
-    // fall back to Three's built-in cameraPosition if the uniform is still at origin.
-    vec3 cam = uCameraPosition;
-    if (dot(cam, cam) < 1e-6) {
-      cam = cameraPosition;
-    }
-    vec3 viewDir = normalize(cam - vWorldPosition);
-    float ndotv = abs(dot(normal, viewDir));
-    float fresnel = pow(1.0 - clamp(ndotv, 0.0, 1.0), uFresnelPower);
-    float fresnelOpacity = mix(uOpacityMin, uOpacityMax, fresnel);
-    float opacity = mix(baseline, fresnelOpacity, uFresnelEnabled);
-    gl_FragColor = vec4(uColor, opacity);
-  }
-`;
-
 /**
  * Per-fragment Fresnel opacity for a given |N·V| (1 = face-on, 0 = grazing).
  * Matches the fragment shader: `mix(MIN, MAX, pow(1 - |N·V|, POWER))`.
@@ -143,37 +104,63 @@ export function buildShellMesh(
   const midAltitudeKm = (s.altitudeMinKm + s.altitudeMaxKm) / 2;
   const radius = displayShellRadiusUnits(midAltitudeKm, layerIndex, display);
   const geometry = new THREE.SphereGeometry(radius, 48, 48);
-  const color = new THREE.Color(colorForLayer(s.id));
-  const material = new THREE.ShaderMaterial({
-    uniforms: {
-      uColor: { value: color },
-      uCameraPosition: { value: new THREE.Vector3(0, 0, 400) },
-      uFresnelEnabled: { value: display.fresnelEnabled ? 1 : 0 },
-      uBaselineOpacity: { value: SHELL_BASELINE_OPACITY },
-      uOpacityMin: { value: FRESNEL_OPACITY_MIN },
-      uOpacityMax: { value: FRESNEL_OPACITY_MAX },
-      uFresnelPower: { value: FRESNEL_POWER },
-    },
-    vertexShader: SHELL_VERTEX_SHADER,
-    fragmentShader: SHELL_FRAGMENT_SHADER,
+  const material = new THREE.MeshBasicMaterial({
+    color: colorForLayer(s.id),
     transparent: true,
+    opacity: SHELL_BASELINE_OPACITY,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
+  const uniforms = {
+    uFresnelEnabled: { value: display.fresnelEnabled ? 1 : 0 },
+    uBaselineOpacity: { value: SHELL_BASELINE_OPACITY },
+    uOpacityMin: { value: FRESNEL_OPACITY_MIN },
+    uOpacityMax: { value: FRESNEL_OPACITY_MAX },
+    uFresnelPower: { value: FRESNEL_POWER },
+  };
+  material.userData.shellFresnelUniforms = uniforms;
+  material.customProgramCacheKey = () => 'hf-shell-fresnel';
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = `varying vec3 vShellWorldPosition;\nvarying vec3 vShellWorldNormal;\n${shader.vertexShader}`.replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+       vShellWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;
+       vShellWorldNormal = normalize(mat3(modelMatrix) * position);`,
+    );
+    shader.fragmentShader =
+      `uniform float uFresnelEnabled;
+uniform float uBaselineOpacity;
+uniform float uOpacityMin;
+uniform float uOpacityMax;
+uniform float uFresnelPower;
+varying vec3 vShellWorldPosition;
+varying vec3 vShellWorldNormal;
+${shader.fragmentShader}`.replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+         vec3 shellViewDir = normalize(cameraPosition - vShellWorldPosition);
+         float ndotv = abs(dot(normalize(vShellWorldNormal), shellViewDir));
+         float fresnel = pow(1.0 - clamp(ndotv, 0.0, 1.0), uFresnelPower);
+         float fresnelOpacity = mix(uOpacityMin, uOpacityMax, fresnel);
+         diffuseColor.a = mix(uBaselineOpacity, fresnelOpacity, uFresnelEnabled);`,
+      );
+  };
   return new THREE.Mesh(geometry, material);
 }
 
-/** Pushes camera position and Fresnel toggle into each shell's shader uniforms. */
+/** Pushes the Fresnel toggle into each shell's shader uniforms. */
 export function updateShellFresnel(
   obj: THREE.Object3D,
-  camera: THREE.Camera | undefined,
+  _camera: THREE.Camera | undefined,
   fresnelEnabled: boolean,
 ): void {
   const mesh = obj as THREE.Mesh;
   const material = mesh.material;
-  if (!(material instanceof THREE.ShaderMaterial)) return;
-  material.uniforms.uFresnelEnabled.value = fresnelEnabled ? 1 : 0;
-  if (camera) {
-    material.uniforms.uCameraPosition.value.copy(camera.position);
-  }
+  if (!(material instanceof THREE.MeshBasicMaterial)) return;
+  const uniforms = material.userData.shellFresnelUniforms as
+    | { uFresnelEnabled: { value: number } }
+    | undefined;
+  if (!uniforms) return;
+  uniforms.uFresnelEnabled.value = fresnelEnabled ? 1 : 0;
 }

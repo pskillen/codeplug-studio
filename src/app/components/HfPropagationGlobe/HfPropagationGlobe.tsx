@@ -47,10 +47,11 @@ export default function HfPropagationGlobe({
 
   const shellObjectAccessor = useMemo(
     () => (d: object) => {
-      const index = activeLayers.indexOf(d as IonosphericLayerState);
+      const layer = d as IonosphericLayerState;
+      const index = ['D', 'E', 'F1', 'F2'].indexOf(layer.id);
       return buildShellMesh(d, index, { exaggerationFactor, explodeEnabled, fresnelEnabled });
     },
-    [activeLayers, exaggerationFactor, explodeEnabled, fresnelEnabled],
+    [exaggerationFactor, explodeEnabled, fresnelEnabled],
   );
 
   // Verified against react-globe.gl 2.x: customThreeObjectUpdate runs when custom-layer

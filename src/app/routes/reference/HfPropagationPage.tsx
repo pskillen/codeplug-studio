@@ -122,7 +122,7 @@ export default function HfPropagationPage() {
   const [exaggerationEnabled, setExaggerationEnabled] = useState(true);
   const [exaggerationFactor, setExaggerationFactor] = useState(DEFAULT_EXAGGERATION);
   const [explodeEnabled, setExplodeEnabled] = useState(true);
-  const [fresnelEnabled, setFresnelEnabled] = useState(false);
+  const [fresnelEnabled, setFresnelEnabled] = useState(true);
 
   const antennaFamily = useMemo(
     () =>

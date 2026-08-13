@@ -66,8 +66,8 @@ describe('displayShellRadiusUnits', () => {
     );
   });
 
-  it('adds explode offset in globe-radius units before converting to scene units', () => {
-    const midAltitudeKm = 100;
+  it('uses canonical layer index so F2 still gets the outermost explode offset at night', () => {
+    const midAltitudeKm = 325;
     expect(
       displayShellRadiusUnits(midAltitudeKm, 3, {
         exaggerationFactor: 1,
