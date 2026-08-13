@@ -39,8 +39,7 @@ Library (RF semantics)  +  RadioBuild (wire names, slots, trait layout)
                                     │
                             RadioChannelDto[]  ──►  encode into image
                                     │
-     in-session overlay (D890 / OpenGD77)  or  EgressPath.hydration stash
-                         (Mini / DM-32 / RT95 until ephemeral 06+ unparks)
+              in-session overlay (resolveRadioWriteImageForUpload)
                                     │
                               upload (full or selective)
 ```
@@ -54,13 +53,13 @@ Library (RF semantics)  +  RadioBuild (wire names, slots, trait layout)
 | **Write always goes through a RadioBuild + egress** | Same bridge as CPS export — name limits, slots, exclusions, trait layout; egress supplies `formatId` / `profileId` for the pathway                                                                                                                                 |
 | **`assemble(build, library)` before encode**        | Modelled channels come from the projection, not a raw library dump. Restore must not call `assemble`.                                                                                                                                                              |
 | **Shared m×n expander when trait applies**          | Preview, CPS export, and Web Serial write must emit the same channel fan-out ([#664](https://github.com/pskillen/codeplug-studio/issues/664) / [#665](https://github.com/pskillen/codeplug-studio/issues/665))                                                     |
-| **Write stash is adapter-specific, not universal**  | AT-D890UV, OpenGD77, UV-17Pro family, DM-32UV, and RT95 overlay the build on this PROGRAM session (`hydrationRequiredForWrite: false`). Do not tell operators to stash for Write on those adapters. The flag remains on `RadioDescriptor` until the cleanup phase. |
+| **Write never stashes a clone bag**                 | All shipped Web Serial adapters overlay the build on this PROGRAM session. Do not tell operators to Read-and-stash for Write. Inspect lives on Backup / Restore.                                                                                                   |
 | **Backup never hydrates the project**               | The zip on disk is the durable copy. RAM inspect is discarded when leaving the tab. Importing radio channels into the library is a separate deliverable.                                                                                                           |
-| **Hydration is a labelled escape hatch on egress**  | Same spirit as NeonPlug donor retain — opaque state Studio does not model; stored on `EgressPath.hydration` (`CpsWireHydration`) **only** when Write still requires a bag.                                                                                         |
+| **NeonPlug donor retain is a file-egress hatch**    | Opaque NeonPlug `donorRetain` on a **NeonPlug file** egress (`formatId: 'neonplug'`) is not Web Serial Write hydration. Do not revive `radio-clone` bags as Write inputs.                                                                                          |
 | **Display unmodelled settings read-only**           | Backup / Restore inspect (legacy `/radio-info` redirects here); editing those bytes in Studio is out of scope until modelled                                                                                                                                       |
 
 **NeonPlug file path (shipped):** operator imports `.neonplug` on the NeonPlug **egress** → Studio stores retain on `EgressPath.hydration` (`formatId: 'neonplug'`) → merge export through that egress.  
-**Direct Web Serial Write:** pick the **Web Serial** egress on a catalog target that includes `radio-io`. AT-D890UV / OpenGD77 / UV-17Pro / DM-32UV / RT95: Read this session, overlay `assemble`, upload — no persisted clone bag. RT95 Write overlays modelled channels onto an in-session full-clone `download()` then `upload`s that image (`upload()` itself does not pre-read — Restore reuses it with zip bytes). Inspect and restore live on **Backup / Restore**, not the Export write panel. CPS file egresses on the same build remain separate children.
+**Direct Web Serial Write:** pick the **Web Serial** egress on a catalog target that includes `radio-io`. Overlay `assemble` onto an in-session radio read, then upload — no persisted clone bag. RT95 Write overlays modelled channels onto an in-session full-clone `download()` then `upload`s that image (`upload()` itself does not pre-read — Restore reuses it with zip bytes). Inspect and restore live on **Backup / Restore**, not the Export write panel. CPS file egresses on the same build remain separate children.
 
 See [neonplug merge](../../reference/export-formats/neonplug/merge.md), [`CpsWireHydration`](../../../src/core/models/cpsWireHydration.ts), and [`radioCloneHydration.ts`](../../../src/core/models/radioCloneHydration.ts).
 
@@ -75,7 +74,7 @@ Radios differ in how safely Studio can update them:
 | **Selective ranges**  | Write only modelled (or declared safe) address ranges; leave other EEPROM alone | Publish safe upload ranges; still **read/cache** first when non-channel regions must be known                                                                          |
 | **Full image upload** | Radio/firmware expects a complete clone; partial write is unsafe or unsupported | Require a prior **Read** (or equivalent hydration) on the FormatBuild; encode modelled channels into the cached full image; upload the whole (or all required regions) |
 
-Declare the strategy on the descriptor (e.g. capability flag or `writeStrategy: 'selective-ranges' | 'full-image'`). UI gates **Write** when hydration is missing on the active Web Serial **egress** (same UX idea as NeonPlug “donor required for radio-write download”).
+Declare the strategy on the descriptor (e.g. capability flag or `writeStrategy: 'selective-ranges' | 'full-image'`). Web Serial Write always takes a live in-session base; do not gate Write on a persisted clone bag. NeonPlug file export may still require a donor zip on that egress.
 
 UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + upload safe/full regions** — follow NeonPlug/CHIRP practice (cache full `0x8240` image so settings/VFO/ANI survive). Exact range list belongs in the radio module + tier-3 docs.
 
@@ -106,7 +105,7 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 - [ ] Upload with declared write strategy; progress + abort
 - [ ] Channel (and later contacts/zones) encode/decode for **modelled** regions only
 - [ ] Firmware string parse (for future catalog gate [#619](https://github.com/pskillen/codeplug-studio/issues/619))
-- [ ] Hydration extract **when Write still requires a bag**: what to persist on the **active EgressPath** so unmodelled state round-trips on write. AT-D890UV / OpenGD77 / UV-17Pro / DM-32UV Write must not persist a clone bag.
+- [ ] Do **not** persist a radio-clone bag for Write. Overlay modelled encode onto this PROGRAM session’s download cache.
 - [ ] Comments cite ground-truth paths
 
 ### 3b. Backup named regions + restore
@@ -126,17 +125,17 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 - [ ] For Direct radio profiles: still wire `nameLimit` / `resolveMaxNameLength` / `getProfileExportLimits` / Export naming settings (same as [adding-a-new-format.md](../import-export/adding-a-new-format.md) channel wire-name checklist) — serial write uses them even without a CPS adapter
 - [ ] Radio limits module exists or is extended under `src/core/radios/<mfr>/<model>/limits.ts`; radio-io profile imports cardinality from it (protocol offsets may stay in `integrations/radio-io/`)
 - [ ] On failed connect/read/write: always close `BytePipe` / clear UI session so the OS port is not held
-- [ ] Write-strategy / hydration-required flags for UI gating
+- [ ] Write-strategy flag for UI/docs (`selective-ranges` vs `full-image`); Write always uses in-session overlay
 - [ ] **`prodWriteDisabled`** when direct serial Write is not safe for production deploys — `BuildRadioIoPanel` + `prepareRadioWriteImage` gate via `__BUILD_ENV__` (`hidden` on `prod` only); prefer the radio target's CPS file egress until cleared
 - [ ] Register in `registry.ts`; UI picks only via registry (no `instanceof`)
 
 ### 5. App / RadioBuild + egress integration
 
-- [ ] **Read (Write path):** download → cache. Persist hydration on the **selected Web Serial EgressPath** only when `hydrationRequiredForWrite` (all shipped adapters are `false`; they overlay this PROGRAM session).
+- [ ] **Read (Write path):** in-session `download()` inside `resolveRadioWriteImageForUpload` — do not persist a clone bag on the egress for Write
 - [ ] **Backup / Restore:** live backup auto-downloads zip; inspect in RAM; restore via `restoreFromBackup` after identity + restorable-region filter (`radioBackupRestore.ts`)
-- [ ] **Write:** require compatible egress on the build → `assemble(build, library)` → **shared MxN expand when trait applies** → map to radio DTOs → encode into hydrated image → upload
+- [ ] **Write:** require compatible egress on the build → `assemble(build, library)` → **shared MxN expand when trait applies** → map to radio DTOs → overlay onto in-session image → upload
 - [ ] Do **not** import `formats/<cps>/channelExpansion.ts` from the write path — use `channelExpansion/mxnExpandAll.ts`
-- [ ] Refuse write when full-image strategy lacks egress hydration **and** that adapter still requires a bag
+- [ ] Refuse write when the in-session download cache is empty — never fall back to a blank/`0xff` image or a persisted bag
 - [ ] In-flow attribution from `attributionIds`
 - [ ] Build Export hosts egress switcher + connect/read/write for Web Serial — not a library-only dump UI
 
@@ -144,7 +143,7 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 
 - [ ] Codec / layout: directional fixture tests (bytes → fields; fields → bytes)
 - [ ] Mocked `BytePipe`: handshake, download assemble, upload frames/ACKs
-- [ ] App services: hydration persist + assemble→encode path (fake radio); restore path never calls `assemble`
+- [ ] App services: in-session overlay assemble→encode path (fake radio); restore path never calls `assemble`
 - [ ] No React in `integrations/radio-io/`; no frame bytes in `src/app/`
 - [ ] No personal codeplug dumps in the repo
 - [ ] **Pathway parity:** Web Serial Write projection agrees with sibling CPS CSV (and NeonPlug when present) for the catalog target — shared harness in [`pathwayParity.ts`](../../../src/core/import-export/channelExpansion/__testUtils__/pathwayParity.ts); see [pathway-parity tests](../../build/testing/pathway-parity.md) and [export-pathway-parity.md](../import-export/export-pathway-parity.md)
@@ -247,6 +246,7 @@ Append here as adapters ship. Keep entries short; promote repeated patterns into
 | 2026-08-13 | DM-32UV #877         | **Drop Write stash:** `hydrationRequiredForWrite: false`. Write overlays modelled channels onto in-session content pre-write read (phase 08); `prepareRadioWriteImage` succeeds without egress hydration. Restore unchanged (zip-block replay, no cal, no remap). Hardware verify pending. Refs [#877](https://github.com/pskillen/codeplug-studio/issues/877).                                                                                                                                                                                                            |
 | 2026-08-13 | RT95 #877            | **In-session pre-write read:** Write `resolveRadioWriteImageForUpload` full-clone `download()` (**Pre-write read**), then overlays modelled channels via `encodeChannels` and `upload`s that image. Do **not** put `download()` inside `upload()` — Restore calls `upload` with zip bytes. Stash flag stays `hydrationRequiredForWrite: true`. Hardware verify pending.                                                                                                                                                                                                    |
 | 2026-08-13 | RT95 #877            | **Drop Write stash:** `hydrationRequiredForWrite: false`. Write overlays modelled channels onto in-session full-clone pre-write read (phase 10); `prepareRadioWriteImage` succeeds without egress hydration. Restore unchanged (zip clone `upload()`, no project bag). Hardware verify pending. Refs [#877](https://github.com/pskillen/codeplug-studio/issues/877).                                                                                                                                                                                                       |
+| 2026-08-13 | Docs #878            | **Inspect vs Write vs Restore:** Backup / Restore is the inspect home; Write overlays this PROGRAM session; Restore is `restoreFromBackup` (not `assemble`). NeonPlug donor retain stays a file-egress hatch. Descriptor flag + Export Read-from-radio stash removed in the same cleanup PR. Refs [#878](https://github.com/pskillen/codeplug-studio/issues/878).                                                                                                                                                                                                        |
 
 ---
 
