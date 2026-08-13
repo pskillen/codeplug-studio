@@ -2,6 +2,7 @@
  * UV-17Pro family CloneImageRadio — PROGRAM+R/W handshake, multi-region download/upload.
  */
 
+import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import {
@@ -18,6 +19,10 @@ import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 import type { Uv17ProLayout } from './layout.ts';
 import { uv17ProCrypt } from './crypt.ts';
+import {
+  intendedUv17ProRestoreImage,
+  listUv17ProRestoreWriteAddresses,
+} from './restoreFromBackup.ts';
 import {
   decodeChannelsFromImage,
   encodeChannelsIntoImage,
@@ -251,6 +256,46 @@ export class Uv17ProProtocol implements CloneImageRadio {
       reportProgress(
         opts.onProgress,
         { cur: done, max, msg: `Writing 0x${addr.toString(16)}` },
+        opts.signal,
+      );
+    }
+    this.lastUploadStaging = captureWriteVerifyStaging(stagingChunks);
+  }
+
+  /**
+   * Replay selected restorable MEM bins as a packed clone upload.
+   * Does not merge channels, assemble, or seed from a project bag.
+   */
+  async restoreFromBackup(
+    archive: { manifest: RadioBackupManifestV1; image: MemoryMap },
+    opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
+    const pipe = this.requirePipe();
+    const intended = intendedUv17ProRestoreImage(this.layout, archive, opts.regionIds);
+    const addrs = listUv17ProRestoreWriteAddresses(this.layout, archive, opts.regionIds);
+    reportProgress(
+      opts.onProgress,
+      { cur: 0, max: addrs.length, msg: 'Restore handshake', stage: 'Restore' },
+      opts.signal,
+    );
+    await handshake(this.layout, pipe, 'upload', { signal: opts.signal });
+    let done = 0;
+    const stagingChunks: { address: number; data: Uint8Array }[] = [];
+    for (const addr of addrs) {
+      throwIfAborted(opts.signal);
+      const packed = packedOffsetForRadioAddr(this.layout, addr);
+      const plain = intended.get(packed, this.layout.blockSize);
+      await this.writeBlock(pipe, addr, plain);
+      stagingChunks.push({ address: addr, data: plain.slice() });
+      done += 1;
+      reportProgress(
+        opts.onProgress,
+        {
+          cur: done,
+          max: addrs.length,
+          msg: `Restoring 0x${addr.toString(16)}`,
+          stage: 'Restore',
+        },
         opts.signal,
       );
     }

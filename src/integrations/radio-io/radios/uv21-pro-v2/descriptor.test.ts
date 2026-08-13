@@ -23,9 +23,10 @@ describe('UV-21Pro V2 descriptor / registry', () => {
     expect(listDescriptorsForProfile('chirp', 'chirp-uv21')).toHaveLength(0);
   });
 
-  it('protocolFactory returns a CloneImageRadio', () => {
+  it('protocolFactory returns a CloneImageRadio with restoreFromBackup', () => {
     const radio = createUv17ProProtocol(UV21_PRO_V2_LAYOUT);
     expect(typeof radio.connect).toBe('function');
     expect(typeof radio.download).toBe('function');
+    expect(typeof radio.restoreFromBackup).toBe('function');
   });
 });

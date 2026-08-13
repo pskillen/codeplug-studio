@@ -10,7 +10,9 @@ import {
 } from '@integrations/radio-io/backup/index.ts';
 import { UV5R_MINI_LAYOUT } from '@integrations/radio-io/radios/uv17pro-family/layout.ts';
 import { UV5R_MINI_DESCRIPTOR } from '@integrations/radio-io/radios/uv5r-mini/descriptor.ts';
+import { UV21_PRO_V2_DESCRIPTOR } from '@integrations/radio-io/radios/uv21-pro-v2/descriptor.ts';
 import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
+import { RT95_DESCRIPTOR } from '@integrations/radio-io/radios/rt95/descriptor.ts';
 import type { BytePipe, CloneImageRadio, RadioDescriptor } from '@integrations/radio-io/types.ts';
 import {
   RadioRestoreError,
@@ -175,11 +177,16 @@ describe('restoreRadioBackup', () => {
   });
 
   it('does not enable restore on shipped adapters without the hook', () => {
-    expect(descriptorSupportsRestore(UV5R_MINI_DESCRIPTOR)).toBe(false);
+    expect(descriptorSupportsRestore(RT95_DESCRIPTOR)).toBe(false);
   });
 
   it('enables restore when the AT-D890UV protocol implements the hook', () => {
     expect(descriptorSupportsRestore(AT_D890UV_DESCRIPTOR)).toBe(true);
+  });
+
+  it('enables restore on UV-5R Mini and UV-21 Pro V2', () => {
+    expect(descriptorSupportsRestore(UV5R_MINI_DESCRIPTOR)).toBe(true);
+    expect(descriptorSupportsRestore(UV21_PRO_V2_DESCRIPTOR)).toBe(true);
   });
 });
 

@@ -7,7 +7,7 @@ import {
   OPENUV380_IMAGE_SIZE,
   openUv380AbsToOffset,
 } from '../radios/opengd77/constants.ts';
-import { UV5R_MINI_LAYOUT } from '../radios/uv17pro-family/layout.ts';
+import { UV21_PRO_V2_LAYOUT, UV5R_MINI_LAYOUT } from '../radios/uv17pro-family/layout.ts';
 import { memoryMapFromBackupRegions, regionsFromDownload } from './regionsFromDownload.ts';
 
 describe('regionsFromDownload', () => {
@@ -20,6 +20,16 @@ describe('regionsFromDownload', () => {
     expect(extract.regions.map((r) => r.id)).toEqual(['mem-0', 'mem-1', 'mem-2']);
     expect(extract.regions.every((r) => r.restoreRole === 'restorable')).toBe(true);
     expect(extract.regionBytes['mem-0']!.byteLength).toBe(UV5R_MINI_LAYOUT.memSizes[0]);
+  });
+
+  it('packs UV-21 Pro V2 as four named restorable MEM regions', () => {
+    const image = createMemoryMap(UV21_PRO_V2_LAYOUT.memTotal);
+    image.fill(0, UV21_PRO_V2_LAYOUT.memTotal, 0xbb);
+    const extract = regionsFromDownload({ modelId: 'UV21ProV2', image });
+    expect(extract.coverage).toBe('full-clone');
+    expect(extract.regions).toHaveLength(4);
+    expect(extract.regions.map((r) => r.id)).toEqual(['mem-0', 'mem-1', 'mem-2', 'mem-3']);
+    expect(extract.regions.every((r) => r.restoreRole === 'restorable')).toBe(true);
   });
 
   it('packs OpenGD77 FLASH spans as restorable named bins', () => {

@@ -5,6 +5,10 @@
 export { UV5R_MINI_DESCRIPTOR, UV5R_MINI_MODEL_ID } from './descriptor.ts';
 export { createUv5rMiniProtocol, Uv5rMiniProtocol } from './protocol.ts';
 export {
+  uv17ProBackupMemSpans as uv5rMiniBackupMemSpans,
+  type Uv17ProBackupMemSpan as Uv5rMiniBackupMemSpan,
+} from '../uv17pro-family/backupRestoreRoles.ts';
+export {
   extractUv5rMiniHydration,
   mergeChannelsIntoUv5rMiniHydration,
   memoryMapFromUv5rMiniHydration,

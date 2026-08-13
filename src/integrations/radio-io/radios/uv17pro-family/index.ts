@@ -25,6 +25,18 @@ export {
 } from './channelCodec.ts';
 export { createUv17ProProtocol, Uv17ProProtocol, type Uv17ProConnectOptions } from './protocol.ts';
 export {
+  uv17ProBackupMemSpans,
+  uv17ProBackupRestoreRole,
+  uv17ProBackupSpanForPackedOffset,
+  isUv17ProRestoreNeverWritePackedOffset,
+  type Uv17ProBackupMemSpan,
+} from './backupRestoreRoles.ts';
+export {
+  intendedUv17ProRestoreImage,
+  listUv17ProRestoreWriteAddresses,
+  type Uv17ProRestoreArchive,
+} from './restoreFromBackup.ts';
+export {
   extractUv17ProHydration,
   memoryMapFromUv17ProHydration,
   mergeChannelsIntoUv17ProHydration,

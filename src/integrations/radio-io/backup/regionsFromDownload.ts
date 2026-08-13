@@ -17,7 +17,12 @@ import { classifyDm32Metadata } from '../radios/dm32uv/memory.ts';
 import { OPENGD77_BACKUP_FLASH_SPANS } from '../radios/opengd77/backupRestoreRoles.ts';
 import { OPENUV380_IMAGE_SIZE, openUv380AbsToOffset } from '../radios/opengd77/constants.ts';
 import { RT95_IMAGE_SIZE, RT95_MODEL_ID } from '../radios/rt95/constants.ts';
-import { UV21_PRO_V2_LAYOUT, UV5R_MINI_LAYOUT } from '../radios/uv17pro-family/layout.ts';
+import { uv17ProBackupMemSpans } from '../radios/uv17pro-family/backupRestoreRoles.ts';
+import {
+  UV21_PRO_V2_LAYOUT,
+  UV5R_MINI_LAYOUT,
+  type Uv17ProLayout,
+} from '../radios/uv17pro-family/layout.ts';
 import { createMemoryMap } from '../kit/memoryMap.ts';
 import type { MemoryMap } from '../types.ts';
 import {
@@ -230,23 +235,10 @@ function fromSparseBlocks(
   return collect(parts, 'known-map-regions', image.size, extra);
 }
 
-function fromUvLayout(
-  layout: { memStarts: readonly number[]; memSizes: readonly number[]; memTotal: number },
-  image: MemoryMap,
-): BackupRegionExtract {
-  let packed = 0;
-  const parts = layout.memStarts.map((radioAddr, i) => {
-    const size = layout.memSizes[i]!;
-    const data = sliceImage(image, packed, size);
-    const part = makeRegion(
-      `mem-${i}`,
-      `MEM ${i + 1} (radio 0x${radioAddr.toString(16)})`,
-      packed,
-      data,
-      'restorable',
-    );
-    packed += size;
-    return part;
+function fromUvLayout(layout: Uv17ProLayout, image: MemoryMap): BackupRegionExtract {
+  const parts = uv17ProBackupMemSpans(layout).map((span) => {
+    const data = sliceImage(image, span.packedOffset, span.size);
+    return makeRegion(span.id, span.label, span.packedOffset, data, span.restoreRole);
   });
   return collect(parts, 'full-clone', image.size || layout.memTotal);
 }
