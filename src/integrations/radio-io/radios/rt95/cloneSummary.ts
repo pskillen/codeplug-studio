@@ -12,6 +12,11 @@ import {
   type Rt95RegionManifestEntry,
 } from './writeRole.ts';
 import { settingsRetainPreview, type Rt95RetainPreviewRow } from './retainPreview.ts';
+import { decodeChannelsFromImage } from './channelCodec.ts';
+import {
+  inspectOccupiedChannels,
+  type CloneInspectNamedItem,
+} from '../../cloneInspect.ts';
 
 export interface Rt95RetainGroupSummary {
   label: string;
@@ -27,6 +32,7 @@ export interface Rt95CloneSummary {
   writtenFromBuild: readonly string[];
   retainGroups: readonly Rt95RetainGroupSummary[];
   settingsRetain: readonly Rt95RetainPreviewRow[];
+  inspectChannels: readonly CloneInspectNamedItem[];
 }
 
 export function summariseRt95Clone(bag: RadioCloneHydrationBag): Rt95CloneSummary | null {
@@ -47,5 +53,6 @@ export function summariseRt95Clone(bag: RadioCloneHydrationBag): Rt95CloneSummar
       role: 'Kept from Read from radio — not changed when you write from your build',
     })),
     settingsRetain: settingsRetainPreview(bytes),
+    inspectChannels: inspectOccupiedChannels(decodeChannelsFromImage(bytes)),
   };
 }

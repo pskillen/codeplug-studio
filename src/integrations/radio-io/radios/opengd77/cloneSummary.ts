@@ -21,6 +21,10 @@ import {
   openGd77KeptRegions,
 } from './writeRole.ts';
 import { decodeZonesFromImage } from './zoneCodec.ts';
+import {
+  inspectOccupiedChannels,
+  type CloneInspectNamedItem,
+} from '../../cloneInspect.ts';
 
 export interface OpenGd77OnRadioCounts {
   occupiedChannels: number;
@@ -48,6 +52,10 @@ export interface OpenGd77CloneSummary {
   retainGroups: readonly OpenGd77RetainGroupSummary[];
   settingsRetain: readonly OpenGd77RetainPreviewRow[];
   ancillaryRetain: OpenGd77AncillaryRetainPreview;
+  inspectChannels: readonly CloneInspectNamedItem[];
+  inspectZones: readonly CloneInspectNamedItem[];
+  inspectContacts: readonly CloneInspectNamedItem[];
+  inspectRxGroups: readonly CloneInspectNamedItem[];
 }
 
 function buildRetainGroups(): OpenGd77RetainGroupSummary[] {
@@ -85,5 +93,9 @@ export function summariseOpenGd77Clone(bag: RadioCloneHydrationBag): OpenGd77Clo
     retainGroups: buildRetainGroups(),
     settingsRetain: settingsRetainPreview(image),
     ancillaryRetain: ancillaryRetainPreview(image),
+    inspectChannels: inspectOccupiedChannels(channels),
+    inspectZones: zones.map((z, i) => ({ slotIndex: i + 1, name: z.wireName })),
+    inspectContacts: contacts.map((c) => ({ slotIndex: c.index, name: c.wireName })),
+    inspectRxGroups: rxGroups.map((g) => ({ slotIndex: g.index, name: g.wireName })),
   };
 }

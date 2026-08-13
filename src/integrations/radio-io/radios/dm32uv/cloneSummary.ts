@@ -29,6 +29,10 @@ import {
   DM32_ANALOG_CONTACTS_WRITE_GAP,
   DM32_WRITTEN_FROM_BUILD_LABELS,
 } from './writeRole.ts';
+import {
+  inspectOccupiedChannels,
+  type CloneInspectNamedItem,
+} from '../../cloneInspect.ts';
 
 export interface Dm32RetainGroupSummary {
   label: string;
@@ -55,6 +59,7 @@ export interface Dm32uvCloneSummary {
   ancillaryRetain: Dm32AncillaryRetainPreview;
   requiredBlocks: readonly Dm32RequiredBlockStatus[];
   blockCount: number;
+  inspectChannels: readonly CloneInspectNamedItem[];
 }
 
 function requiredBlockLabel(metadata: number): string {
@@ -149,6 +154,7 @@ export function summariseDm32uvClone(bag: RadioCloneHydrationBag): Dm32uvCloneSu
     ancillaryRetain: ancillaryRetainPreview(blockInputs),
     requiredBlocks,
     blockCount: radioCloneHasSparseBlocks(bag) ? sparse.length : 0,
+    inspectChannels: inspectOccupiedChannels(channels),
   };
 }
 

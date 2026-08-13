@@ -5,7 +5,7 @@
  * `variant="write-coverage"` only if this view must show Written / Kept sections.
  */
 
-import { Code, List, Stack, Table, Text } from '@mantine/core';
+import { Accordion, Code, List, Stack, Table, Text } from '@mantine/core';
 import { type RadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
 import {
   summariseUv5rMiniClone,
@@ -37,6 +37,7 @@ import {
   RT95_MODEL_ID,
   type Rt95CloneSummary,
 } from '@integrations/radio-io/radios/rt95/index.ts';
+import type { CloneInspectNamedItem } from '@integrations/radio-io/cloneInspect.ts';
 import { FormSection } from '../ui/index.ts';
 
 export type RadioCloneSummaryVariant = 'inspect' | 'write-coverage';
@@ -56,6 +57,40 @@ function occupancyCopy(variant: RadioCloneSummaryVariant): { title: string; desc
     title: 'On the radio',
     description: 'Counts decoded from the stored image — not your build layout.',
   };
+}
+
+function InspectNamedLists({
+  lists,
+}: {
+  lists: readonly { id: string; title: string; rows: readonly CloneInspectNamedItem[] }[];
+}) {
+  const nonempty = lists.filter((list) => list.rows.length > 0);
+  if (nonempty.length === 0) return null;
+  return (
+    <FormSection
+      title="Names on this image"
+      description="Expand a list to see slot names decoded from this backup."
+    >
+      <Accordion multiple variant="separated" defaultValue={[]}>
+        {nonempty.map((list) => (
+          <Accordion.Item key={list.id} value={list.id}>
+            <Accordion.Control>
+              {list.title} ({list.rows.length})
+            </Accordion.Control>
+            <Accordion.Panel>
+              <List size="sm" spacing={4}>
+                {list.rows.map((row) => (
+                  <List.Item key={`${list.id}-${row.slotIndex}`}>
+                    {row.slotIndex}. {row.name || '(unnamed)'}
+                  </List.Item>
+                ))}
+              </List>
+            </Accordion.Panel>
+          </Accordion.Item>
+        ))}
+      </Accordion>
+    </FormSection>
+  );
 }
 
 function summariseUv17ProFamilyClone(bag: RadioCloneHydrationBag): Uv5rMiniCloneSummary | null {
@@ -465,6 +500,9 @@ function Uv5rRadioImageSections({
       </FormSection>
 
       <Uv5rOnRadioSection summary={summary} variant={variant} />
+      {variant === 'inspect' ? (
+        <InspectNamedLists lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]} />
+      ) : null}
       {variant === 'write-coverage' ? (
         <>
           <Uv5rWrittenFromBuildSection summary={summary} />
@@ -683,6 +721,16 @@ function OpenGd77RadioImageSections({
       </FormSection>
 
       <OpenGd77OnRadioSection summary={summary} variant={variant} />
+      {variant === 'inspect' ? (
+        <InspectNamedLists
+          lists={[
+            { id: 'channels', title: 'Channels', rows: summary.inspectChannels },
+            { id: 'zones', title: 'Zones', rows: summary.inspectZones },
+            { id: 'contacts', title: 'DMR contacts', rows: summary.inspectContacts },
+            { id: 'rx-groups', title: 'RX group lists', rows: summary.inspectRxGroups },
+          ]}
+        />
+      ) : null}
       {variant === 'write-coverage' ? (
         <>
           <OpenGd77WrittenFromBuildSection summary={summary} />
@@ -755,6 +803,9 @@ function Dm32RadioImageSections({
       </FormSection>
 
       <Dm32OnRadioSection summary={summary} variant={variant} />
+      {variant === 'inspect' ? (
+        <InspectNamedLists lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]} />
+      ) : null}
       {variant === 'write-coverage' ? (
         <>
           <Dm32WrittenFromBuildSection summary={summary} />
@@ -905,6 +956,9 @@ function Rt95RadioImageSections({
       </FormSection>
 
       <Rt95OnRadioSection summary={summary} variant={variant} />
+      {variant === 'inspect' ? (
+        <InspectNamedLists lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]} />
+      ) : null}
       {variant === 'write-coverage' ? (
         <>
           <Rt95WrittenFromBuildSection summary={summary} />
@@ -1017,6 +1071,17 @@ function AtD890RadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
+      {variant === 'inspect' ? (
+        <InspectNamedLists
+          lists={[
+            { id: 'channels', title: 'Channels', rows: summary.inspectChannels },
+            { id: 'zones', title: 'Zones', rows: summary.inspectZones },
+            { id: 'scan-lists', title: 'Scan lists', rows: summary.inspectScanLists },
+            { id: 'talk-groups', title: 'Talk groups', rows: summary.inspectTalkGroups },
+          ]}
+        />
+      ) : null}
+
       {variant === 'write-coverage' ? (
         <>
           <FormSection
@@ -1068,13 +1133,18 @@ function AtD890RadioImageSections({
       ) : null}
 
       <FormSection
-        title="Local info (Expert options)"
-        description={
-          variant === 'inspect'
-            ? 'Read-only forensics from this image. Restore will not write Local info.'
-            : 'Decoded fields from LocalInfo @ 0x4f80000 — Read for forensics; not serial-written on Studio Write.'
-        }
+        title="Forensics"
+        description="Read-only decode from this image. These regions are not restore targets."
       >
+        <Accordion multiple variant="separated" defaultValue={[]}>
+          <Accordion.Item value="local-info">
+            <Accordion.Control>Local info (Expert options)</Accordion.Control>
+            <Accordion.Panel>
+              <Text size="sm" c="dimmed" mb="sm">
+                {variant === 'inspect'
+                  ? 'Restore will not write Local info.'
+                  : 'Decoded fields from LocalInfo @ 0x4f80000 — Read for forensics; not serial-written on Studio Write.'}
+              </Text>
         {summary.settingsRetain.length === 0 ? (
           <Text size="sm" c="dimmed">
             No LocalInfo block in this capture.
@@ -1107,16 +1177,17 @@ function AtD890RadioImageSections({
             </Table>
           </Table.ScrollContainer>
         )}
-      </FormSection>
+            </Accordion.Panel>
+          </Accordion.Item>
 
-      <FormSection
-        title="Optional settings (forensics)"
-        description={
-          variant === 'inspect'
-            ? 'Read-only forensics from this image. Restore will not write optional settings.'
-            : 'Decoded from optional settings @ 0x3500000 / 0x3500900 — Read and stashed for inspect only; never serial-written. CPS language here is separate from Chinese UI in Local info above.'
-        }
-      >
+          <Accordion.Item value="optional-settings">
+            <Accordion.Control>Optional settings</Accordion.Control>
+            <Accordion.Panel>
+              <Text size="sm" c="dimmed" mb="sm">
+                {variant === 'inspect'
+                  ? 'Restore will not write optional settings.'
+                  : 'Decoded from optional settings @ 0x3500000 / 0x3500900 — never serial-written. CPS language here is separate from Chinese UI in Local info above.'}
+              </Text>
         {summary.optionalSettingsRetain.length === 0 ? (
           <Text size="sm" c="dimmed">
             No optional settings blocks in this capture.
@@ -1149,17 +1220,18 @@ function AtD890RadioImageSections({
             </Table>
           </Table.ScrollContainer>
         )}
-      </FormSection>
+            </Accordion.Panel>
+          </Accordion.Item>
 
-      {summary.optionalSettingsAprs.length > 0 ? (
-        <FormSection
-          title="Optional settings (APRS)"
-          description={
-            variant === 'inspect'
-              ? 'Read-only hex preview from this image.'
-              : 'Raw hex from 0x3501280 — not decoded in Studio v1.'
-          }
-        >
+          {summary.optionalSettingsAprs.length > 0 ? (
+            <Accordion.Item value="optional-aprs">
+              <Accordion.Control>Optional settings (APRS)</Accordion.Control>
+              <Accordion.Panel>
+                <Text size="sm" c="dimmed" mb="sm">
+                  {variant === 'inspect'
+                    ? 'Read-only hex preview from this image.'
+                    : 'Raw hex from 0x3501280 — not decoded in Studio v1.'}
+                </Text>
           <Table.ScrollContainer minWidth={560}>
             <Table withTableBorder withColumnBorders>
               <Table.Thead>
@@ -1186,17 +1258,18 @@ function AtD890RadioImageSections({
               </Table.Tbody>
             </Table>
           </Table.ScrollContainer>
-        </FormSection>
-      ) : null}
+              </Accordion.Panel>
+            </Accordion.Item>
+          ) : null}
 
-      <FormSection
-        title="Alarm (forensics)"
-        description={
-          variant === 'inspect'
-            ? 'Read-only forensics from this image. Restore will not write alarm memory.'
-            : 'Light decode from alarm @ 0x3482e00 / 0x3483000 and man-down flags in optional main — Read/stash only; never serial-written.'
-        }
-      >
+          <Accordion.Item value="alarm">
+            <Accordion.Control>Alarm</Accordion.Control>
+            <Accordion.Panel>
+              <Text size="sm" c="dimmed" mb="sm">
+                {variant === 'inspect'
+                  ? 'Restore will not write alarm memory.'
+                  : 'Light decode from alarm @ 0x3482e00 / 0x3483000 and man-down flags in optional main — Read/stash only; never serial-written.'}
+              </Text>
         {summary.alarmRetain.length === 0 ? (
           <Text size="sm" c="dimmed">
             No alarm blocks in this capture.
@@ -1229,12 +1302,16 @@ function AtD890RadioImageSections({
             </Table>
           </Table.ScrollContainer>
         )}
-      </FormSection>
+            </Accordion.Panel>
+          </Accordion.Item>
 
-      <FormSection
-        title="Local info registers"
-        description="Every 16-byte serial chunk in LocalInfo (0x100 bytes). Notes map known ExpertOptions fields onto each chunk."
-      >
+          <Accordion.Item value="local-info-registers">
+            <Accordion.Control>Local info registers</Accordion.Control>
+            <Accordion.Panel>
+              <Text size="sm" c="dimmed" mb="sm">
+                Every 16-byte serial chunk in LocalInfo (0x100 bytes). Notes map known ExpertOptions
+                fields onto each chunk.
+              </Text>
         {summary.localInfoRegisters.length === 0 ? (
           <Text size="sm" c="dimmed">
             No LocalInfo registers in this capture.
@@ -1273,6 +1350,9 @@ function AtD890RadioImageSections({
             </Table>
           </Table.ScrollContainer>
         )}
+            </Accordion.Panel>
+          </Accordion.Item>
+        </Accordion>
       </FormSection>
 
       <FormSection
