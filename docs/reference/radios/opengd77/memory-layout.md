@@ -144,6 +144,6 @@ A live radio dump is optional for this doc ticket; see [fixtures.md](fixtures.md
 
 ## Related
 
-- [channel-record.md](channel-record.md) · [contacts-zones-lists.md](contacts-zones-lists.md) · [settings-aprs.md](settings-aprs.md)
+- [channel-record.md](channel-record.md) · [contacts-zones-lists.md](contacts-zones-lists.md) · [settings-aprs.md](settings-aprs.md) · [satellite-orbitals.md](satellite-orbitals.md)
 - [protocol.md](protocol.md)
 - Radio homes: [dm-1701](../baofeng/dm-1701/README.md) · [md-9600](../tyt/md-9600/README.md)

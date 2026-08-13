@@ -32,6 +32,7 @@ Shares OpenGD77 CPS and codeplug format with Baofeng DM-1701 / Retevis RT-84 (sa
 | [capabilities.md](capabilities.md)                   | Modes, `+W-` / User Power note                                                                                                   |
 | [power.md](power.md)                                 | P1–P9 percent mapping + `+W-` exclusion                                                                                          |
 | [OpenGD77 binary memory](../../opengd77/README.md)   | Shared EEPROM/FLASH map + serial protocol (direct I/O)                                                                           |
+| [Satellite orbitals](../../opengd77/satellite-orbitals.md) | Shared OpenUV380 keps bank (additional-settings block 3)                                                                   |
 | [Backup / Restore](../../opengd77/backup-restore.md) | FLASH span zip + Restore SAVE_REBOOT (hardware verify pending, [#1142](https://github.com/pskillen/codeplug-studio/issues/1142)) |
 
 ## Adapter wire
