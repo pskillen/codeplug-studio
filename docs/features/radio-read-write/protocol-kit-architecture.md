@@ -122,6 +122,11 @@ interface CloneImageRadio {
   decodeChannels(image: MemoryMap): /* Studio-facing channel DTOs */ unknown[];
   encodeChannels(image: MemoryMap, channels: /* assembled channels */ unknown[]): MemoryMap;
   readFirmware(image: MemoryMap): string | undefined;
+  /** Optional: replay restorable backup regions. Missing → inspect only. */
+  restoreFromBackup?(
+    archive: { manifest: unknown; image: MemoryMap },
+    opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void>;
 }
 
 interface RadioSession {
