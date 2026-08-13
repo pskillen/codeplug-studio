@@ -8,7 +8,6 @@
  * Channel-eligibility `DM1701_BANDS` still uses 400–470 MHz — do not reuse that table here.
  */
 
-import { frequencyInRange } from '@core/domain/channelEligibility.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 
 export type OpenGd77SatelliteBankSlot = 'fm' | 'aprs' | 'beacon';
@@ -32,7 +31,7 @@ function normalizeMode(mode: string | null | undefined): string {
 export function isFrequencyInOpenGd77SatelliteRange(hz: number | null | undefined): boolean {
   if (hz == null) return true;
   const mhz = hz / 1_000_000;
-  return OPENGD77_SATELLITE_BANDS.some((band) => frequencyInRange(mhz, band));
+  return OPENGD77_SATELLITE_BANDS.some((band) => mhz >= band.minMhz && mhz <= band.maxMhz);
 }
 
 export function isOpenGd77SatelliteFrequencyEligible(transmitter: SatelliteTransmitter): boolean {
