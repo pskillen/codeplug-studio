@@ -55,10 +55,28 @@ vi.mock('../../services/satelliteKepsWriteAdapters.ts', async (importOriginal) =
     await importOriginal<typeof import('../../services/satelliteKepsWriteAdapters.ts')>();
   return {
     ...actual,
-    hasSatelliteKepsWriteAdapter: (profileId: string) => profileId === 'radio-io-at-d890uv',
+    hasSatelliteKepsWriteAdapter: (profileId: string) =>
+      profileId === 'radio-io-at-d890uv' ||
+      profileId === 'radio-io-opengd77-1701' ||
+      profileId === 'radio-io-opengd77-md9600',
     getSatelliteKepsWriteAdapter: (profileId: string) =>
-      profileId === 'radio-io-at-d890uv' ? kepsWriteFn : undefined,
-    getSatelliteKepsWriteCapacity: () => kepsCapacityStub,
+      profileId === 'radio-io-at-d890uv' ||
+      profileId === 'radio-io-opengd77-1701' ||
+      profileId === 'radio-io-opengd77-md9600'
+        ? kepsWriteFn
+        : undefined,
+    getSatelliteKepsWriteCapacity: (profileId: string) => {
+      if (kepsCapacityStub) {
+        return {
+          ...kepsCapacityStub,
+          nameLength: 8,
+          unitNoun: 'transmitter',
+          nameScope: 'transmitter' as const,
+          limitsDoc: '',
+        };
+      }
+      return actual.getSatelliteKepsWriteCapacity(profileId);
+    },
     satelliteKepsCapacityWarning: (_profileId: string, satellites: readonly Satellite[]) => {
       if (!kepsCapacityStub) return null;
       return actual.formatSatelliteKepsCapacityWarning(
@@ -283,6 +301,63 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
       renderPage();
       await waitFor(() => expect(screen.getByText('Duplicate encoded names')).toBeInTheDocument());
       expect(screen.getByText(/"SAME"/)).toBeInTheDocument();
+    } finally {
+      kepsPreviewStub = undefined;
+    }
+  });
+
+  it('does not treat OpenGD77 slot siblings sharing a spacecraft name as a collision', async () => {
+    kepsPreviewStub = () => [
+      previewEntry({
+        transmitterId: 'tx-fm',
+        transmitterLabel: 'FM',
+        encodedName: 'ISS',
+        slot: 'fm',
+      }),
+      previewEntry({
+        transmitterId: 'tx-aprs',
+        transmitterLabel: 'APRS',
+        encodedName: 'ISS',
+        slot: 'aprs',
+      }),
+    ];
+    try {
+      renderPage('radio-io-opengd77-1701');
+      await waitFor(() =>
+        expect(screen.getByText('Preview satellites to write')).toBeInTheDocument(),
+      );
+      expect(screen.queryByText('Duplicate encoded names')).not.toBeInTheDocument();
+    } finally {
+      kepsPreviewStub = undefined;
+    }
+  });
+
+  it('pins OpenGD77 encoded-name override to the satellite id', async () => {
+    kepsPreviewStub = () => [
+      previewEntry({
+        encodedName: 'ISS',
+        suggestedFamiliarEncoded: 'ISS',
+        slot: 'fm',
+      }),
+    ];
+    try {
+      renderPage('radio-io-opengd77-1701');
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'Edit encoded name' })).toBeInTheDocument(),
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Edit encoded name' }));
+      fireEvent.click(screen.getByRole('button', { name: 'ISS' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Apply wire name' }));
+      await waitFor(() =>
+        expect(persistence.putRadioBuild).toHaveBeenCalledWith(
+          expect.objectContaining({
+            satelliteOverrides: expect.arrayContaining([
+              expect.objectContaining({ libraryEntityId: 'sat-1', wireName: 'ISS' }),
+            ]),
+          }),
+          expect.anything(),
+        ),
+      );
     } finally {
       kepsPreviewStub = undefined;
     }

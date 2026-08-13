@@ -79,6 +79,8 @@ export interface SatelliteKepsWriteCapacity {
   nameLength: number;
   /** Noun in capacity warnings (`transmitter` vs `satellite`). */
   unitNoun: string;
+  /** Wire name is one field per spacecraft (OpenGD77) vs per transmitter (D890). */
+  nameScope: 'spacecraft' | 'transmitter';
   /** Tier-3 doc path cited in over-cap copy. */
   limitsDoc: string;
 }
@@ -95,6 +97,7 @@ export const SATELLITE_KEPS_WRITE_CAPACITY: Readonly<Record<string, SatelliteKep
     countEligible: countWriteEligibleSatelliteRecords,
     nameLength: AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH,
     unitNoun: 'transmitter',
+    nameScope: 'transmitter',
     limitsDoc: 'docs/reference/radios/anytone/at-d890uv/satellite-keps.md',
   },
   'radio-io-opengd77-1701': {
@@ -102,6 +105,7 @@ export const SATELLITE_KEPS_WRITE_CAPACITY: Readonly<Record<string, SatelliteKep
     countEligible: countOpenGd77WriteEligibleSatellites,
     nameLength: OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH,
     unitNoun: 'satellite',
+    nameScope: 'spacecraft',
     limitsDoc: 'docs/reference/radios/opengd77/satellite-orbitals.md',
   },
   'radio-io-opengd77-md9600': {
@@ -109,6 +113,7 @@ export const SATELLITE_KEPS_WRITE_CAPACITY: Readonly<Record<string, SatelliteKep
     countEligible: countOpenGd77WriteEligibleSatellites,
     nameLength: OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH,
     unitNoun: 'satellite',
+    nameScope: 'spacecraft',
     limitsDoc: 'docs/reference/radios/opengd77/satellite-orbitals.md',
   },
 };

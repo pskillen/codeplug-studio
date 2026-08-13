@@ -49,6 +49,7 @@ describe('getSatelliteKepsWriteCapacity (#1068)', () => {
       expect(capacity?.max).toBe(OPENGD77_FAMILY_LIMITS.SATELLITE_MAX);
       expect(capacity?.nameLength).toBe(OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH);
       expect(capacity?.unitNoun).toBe('satellite');
+      expect(capacity?.nameScope).toBe('spacecraft');
     }
   });
 

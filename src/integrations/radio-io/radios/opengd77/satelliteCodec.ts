@@ -309,16 +309,13 @@ function resolvePacked(
 
   return selected.map((satellite) => {
     const slots = assignSlots(satellite);
-    const primary = slots.fm ?? slots.aprs ?? slots.beacon;
     const generated = names.get(satellite.id)?.generatedShortName ?? satellite.name;
     let encodedName = generated.slice(0, OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH);
     let fromOverride = false;
-    if (primary) {
-      const override = overrides.get(primary.id)?.wireName?.trim();
-      if (override) {
-        encodedName = override.slice(0, OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH);
-        fromOverride = true;
-      }
+    const override = overrides.get(satellite.id)?.wireName?.trim();
+    if (override) {
+      encodedName = override.slice(0, OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH);
+      fromOverride = true;
     }
     return {
       satellite,

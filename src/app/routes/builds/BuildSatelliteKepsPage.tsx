@@ -74,6 +74,11 @@ type SatellitePreviewParentRow = {
   kind: 'parent';
   id: string;
   satelliteName: string;
+  encodedName: string;
+  suggestedFamiliarEncoded: string;
+  suggestedOscarEncoded: string | null;
+  nameTruncated: boolean;
+  hasWireNameOverride: boolean;
   children: SatellitePreviewRow[];
 };
 
@@ -115,13 +120,13 @@ export default function BuildSatelliteKepsPage() {
     void run();
   }, []);
 
-  const [editingTransmitterId, setEditingTransmitterId] = useState<string | null>(null);
+  const [editingEntityId, setEditingEntityId] = useState<string | null>(null);
 
-  function setTransmitterWireName(transmitterId: string, wireName: string) {
+  function setEntityWireName(entityId: string, wireName: string) {
     void persistBuild((current) =>
-      buildService.withWireNameOverride(current, 'satelliteOverrides', transmitterId, wireName),
+      buildService.withWireNameOverride(current, 'satelliteOverrides', entityId, wireName),
     );
-    setEditingTransmitterId(null);
+    setEditingEntityId(null);
   }
 
   const sessionRef = useRef<RadioSession | null>(null);
@@ -160,6 +165,9 @@ export default function BuildSatelliteKepsPage() {
   const kepsPreview = egress ? getSatelliteKepsWritePreview(egress.profileId) : undefined;
   const kepsExclusions = egress ? getSatelliteKepsExclusions(egress.profileId) : undefined;
   const nameLimit = getSatelliteKepsWriteCapacity(egress?.profileId ?? '')?.nameLength ?? 8;
+  const nameScope =
+    getSatelliteKepsWriteCapacity(egress?.profileId ?? '')?.nameScope ?? 'transmitter';
+  const spacecraftNames = nameScope === 'spacecraft';
 
   /**
    * Live-loaded enabled satellites for the preview and the "Excluded from write" panel below
@@ -207,6 +215,11 @@ export default function BuildSatelliteKepsPage() {
           kind: 'parent',
           id: entry.satelliteId,
           satelliteName: entry.satelliteName,
+          encodedName: entry.encodedName,
+          suggestedFamiliarEncoded: entry.suggestedFamiliarEncoded,
+          suggestedOscarEncoded: entry.suggestedOscarEncoded,
+          nameTruncated: entry.nameTruncated,
+          hasWireNameOverride: entry.hasWireNameOverride,
           children: [],
         };
         parentById.set(entry.satelliteId, parent);
@@ -232,22 +245,31 @@ export default function BuildSatelliteKepsPage() {
   );
 
   const collisionWarning = useMemo(() => {
-    const groups = findEncodedNameCollisions(
-      previewEntries.map((entry) => ({
-        id: entry.transmitterId,
-        encodedName: entry.encodedName,
-      })),
-    );
+    const entries = spacecraftNames
+      ? [...new Map(previewEntries.map((e) => [e.satelliteId, e])).values()].map((entry) => ({
+          id: entry.satelliteId,
+          encodedName: entry.encodedName,
+        }))
+      : previewEntries.map((entry) => ({
+          id: entry.transmitterId,
+          encodedName: entry.encodedName,
+        }));
+    const groups = findEncodedNameCollisions(entries);
     if (groups.length === 0) return null;
     return groups
       .map((group) => {
         const labels = group.ids
-          .map((id) => previewEntries.find((e) => e.transmitterId === id)?.transmitterLabel ?? id)
+          .map((id) => {
+            if (spacecraftNames) {
+              return previewEntries.find((e) => e.satelliteId === id)?.satelliteName ?? id;
+            }
+            return previewEntries.find((e) => e.transmitterId === id)?.transmitterLabel ?? id;
+          })
           .join(', ');
         return `"${group.encodedName}" — ${labels}`;
       })
       .join('; ');
-  }, [previewEntries]);
+  }, [previewEntries, spacecraftNames]);
 
   /**
    * Live "why did this enabled satellite/transmitter not show up in the preview above" (#1085
@@ -297,6 +319,37 @@ export default function BuildSatelliteKepsPage() {
       key: 'encodedName',
       header: 'Encoded name',
       render: (r) => {
+        if (spacecraftNames) {
+          if (!isPreviewParentRow(r)) return r.encodedName;
+          const override = transmitterOverrides.get(r.id)?.wireName?.trim();
+          const committed = override ?? '';
+          return (
+            <SatelliteEncodedNameCell
+              entry={{
+                satelliteId: r.id,
+                satelliteName: r.satelliteName,
+                transmitterId: r.id,
+                transmitterLabel: r.satelliteName,
+                mode: null,
+                encodedName: r.encodedName,
+                satelliteWireName: r.encodedName,
+                generatedWireName: r.encodedName,
+                suggestedFamiliarEncoded: r.suggestedFamiliarEncoded,
+                suggestedOscarEncoded: r.suggestedOscarEncoded,
+                hasWireNameOverride: r.hasWireNameOverride,
+                uplinkHz: null,
+                downlinkHz: null,
+                nameTruncated: r.nameTruncated,
+              }}
+              nameLimit={nameLimit}
+              editing={editingEntityId === r.id}
+              committedWireName={committed}
+              onStartEdit={() => setEditingEntityId(r.id)}
+              onCancelEdit={() => setEditingEntityId(null)}
+              onWireNameChange={(wireName) => setEntityWireName(r.id, wireName)}
+            />
+          );
+        }
         if (isPreviewParentRow(r)) return '—';
         const override = transmitterOverrides.get(r.transmitterId)?.wireName?.trim();
         const committed = override ?? '';
@@ -304,11 +357,11 @@ export default function BuildSatelliteKepsPage() {
           <SatelliteEncodedNameCell
             entry={r}
             nameLimit={nameLimit}
-            editing={editingTransmitterId === r.transmitterId}
+            editing={editingEntityId === r.transmitterId}
             committedWireName={committed}
-            onStartEdit={() => setEditingTransmitterId(r.transmitterId)}
-            onCancelEdit={() => setEditingTransmitterId(null)}
-            onWireNameChange={(wireName) => setTransmitterWireName(r.transmitterId, wireName)}
+            onStartEdit={() => setEditingEntityId(r.transmitterId)}
+            onCancelEdit={() => setEditingEntityId(null)}
+            onWireNameChange={(wireName) => setEntityWireName(r.transmitterId, wireName)}
           />
         );
       },

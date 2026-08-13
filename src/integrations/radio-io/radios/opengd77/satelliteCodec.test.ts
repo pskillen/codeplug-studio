@@ -188,6 +188,27 @@ describe('previewSatelliteWriteRecords', () => {
     expect(preview.map((p) => p.slot)).toEqual(['fm', 'aprs']);
     expect(preview.every((p) => p.encodedName === 'ISS')).toBe(true);
   });
+
+  it('applies a spacecraft wire-name override keyed by satellite id', () => {
+    const sat = makeSatellite({ name: 'INTERNATIONAL SPACE STATION' });
+    const preview = previewSatelliteWriteRecords([sat], {
+      satelliteOverrides: [{ libraryEntityId: 'sat-1', wireName: 'ISS-FM' }],
+    });
+    expect(preview.every((p) => p.encodedName === 'ISS-FM')).toBe(true);
+    expect(preview.every((p) => p.hasWireNameOverride)).toBe(true);
+    const rec = packSatelliteBank([sat], {
+      satelliteOverrides: [{ libraryEntityId: 'sat-1', wireName: 'ISS-FM' }],
+    }).subarray(0x08, 0x08 + SATELLITE_RECORD_BYTES);
+    expect(String.fromCharCode(...rec.subarray(0, 6))).toBe('ISS-FM');
+  });
+
+  it('ignores a transmitter-keyed wire-name override for the spacecraft field', () => {
+    const preview = previewSatelliteWriteRecords([makeSatellite()], {
+      satelliteOverrides: [{ libraryEntityId: 'tx-1', wireName: 'WRONG' }],
+    });
+    expect(preview[0]?.encodedName).toBe('ISS');
+    expect(preview[0]?.hasWireNameOverride).toBe(false);
+  });
 });
 
 describe('overlaySatelliteBank', () => {
