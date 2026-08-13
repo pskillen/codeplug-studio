@@ -41,5 +41,6 @@ describe('BuildRadioBackupPage isolation', () => {
     expect(text).toContain('toggleRestorableRegion');
     expect(text).not.toContain('prodWriteDisabled');
     expect(text).toContain('descriptorSupportsRestore');
+    expect(text).toContain('remapping those bases is out of scope');
   });
 });

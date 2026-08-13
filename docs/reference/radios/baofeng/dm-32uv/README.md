@@ -33,6 +33,7 @@ Handheld DMR + analogue dual-band radio (DM-32 family). Studio targets it via DM
 | [channel-record.md](channel-record.md)             | 48-byte channel; packing 84/85 per block; TX-contact indirection                                           |
 | [contacts-zones-lists.md](contacts-zones-lists.md) | Contacts (V `0x0F`), TGs, zones, scan, RX groups, radio IDs, TX-contact                                    |
 | [settings.md](settings.md)                         | Metadata `0x04` settings / APRS; emergency/encryption co-resident notes                                    |
+| [backup-restore.md](backup-restore.md)             | Zip 4KB regions; calibration inspect-only; factory-reset refuse ([#1144](https://github.com/pskillen/codeplug-studio/issues/1144)) |
 | [fixtures.md](fixtures.md)                         | How to capture dumps for tests without committing personal codeplugs                                       |
 
 ## Adapter wire (files)
