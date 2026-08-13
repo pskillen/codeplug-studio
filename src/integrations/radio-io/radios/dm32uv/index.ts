@@ -40,6 +40,9 @@ export {
   extractDm32uvHydrationFromProtocol,
   mergeChannelsIntoDm32uvHydration,
   memoryMapFromDm32uvHydration,
+  encodeDm32uvWriteImageFromDownloadCache,
+  encodeDm32uvProjectionOntoImage,
+  DM32_EMPTY_WRITE_CACHE_MESSAGE,
 } from './hydration.ts';
 export {
   decodeChannelsFromDm32Image,

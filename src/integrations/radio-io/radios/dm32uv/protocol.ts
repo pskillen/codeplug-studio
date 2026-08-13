@@ -230,11 +230,14 @@ export class Dm32uvProtocol implements CloneImageRadio {
     this.programming = false;
   }
 
-  async download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap> {
+  async download(
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal; progressStage?: string } = {},
+  ): Promise<MemoryMap> {
     if (!this.pipe || !this.cache || !this.programming) {
       throw new RadioProtocolError('DM-32UV not connected / not in PROGRAM mode');
     }
     const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
+    const contentStage = opts.progressStage;
 
     reportProgress(
       opts.onProgress,
@@ -264,20 +267,21 @@ export class Dm32uvProtocol implements CloneImageRadio {
     const groups = groupDm32BlocksForProgress(toRead);
     this.cache.blocks = new Map();
     for (const group of groups) {
+      const stage = contentStage ?? group.stage;
       reportProgress(
         opts.onProgress,
         {
           cur: 0,
           max: group.blocks.length || 1,
-          msg: `Reading ${group.stage}…`,
-          stage: group.stage,
+          msg: contentStage ? `Reading live block contents…` : `Reading ${group.stage}…`,
+          stage,
         },
         opts.signal,
       );
       const part = await bulkReadDm32Blocks(this.pipe, group.blocks, {
         ...settle,
         onProgress: opts.onProgress,
-        stage: group.stage,
+        stage,
       });
       for (const [addr, data] of part) {
         this.cache.blocks.set(addr, data);

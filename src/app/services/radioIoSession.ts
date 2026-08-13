@@ -65,6 +65,8 @@ import {
 } from './radioWriteEnvGate.ts';
 import { encodeAtD890WriteImageFromDownloadCache } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { encodeDm32uvWriteImageFromDownloadCache } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
+import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
 import {
   OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE,
@@ -429,9 +431,9 @@ function mergeChannelsForWrite(
 }
 
 /**
- * D890 and OpenGD77 Write encode onto the in-session radio image (not persisted stash,
- * not a virgin 0xff map). Other radios still use the image prepared from hydration.
- * Empty session prior → operator error after a download attempt.
+ * D890, OpenGD77, UV-17Pro, and DM-32 Write encode onto the in-session radio image
+ * (not persisted stash, not a virgin 0xff map). Other radios still use the image
+ * prepared from hydration. Empty session prior → operator error after a download attempt.
  */
 async function resolveRadioWriteImageForUpload(
   session: RadioSession,
@@ -491,6 +493,23 @@ async function resolveRadioWriteImageForUpload(
     });
     try {
       return session.radio.encodeChannels(prior, prepared.channels);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new RadioWriteBlockedError(message);
+    }
+  }
+  if (session.radio instanceof Dm32uvProtocol) {
+    await session.radio.download({
+      onProgress: opts?.onProgress,
+      signal: opts?.signal,
+      progressStage: 'Pre-write read',
+    });
+    try {
+      return encodeDm32uvWriteImageFromDownloadCache(
+        session.radio.getDownloadCache(),
+        prepared.channels,
+        prepared.organisation,
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new RadioWriteBlockedError(message);
