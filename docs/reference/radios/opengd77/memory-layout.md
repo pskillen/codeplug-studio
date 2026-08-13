@@ -67,6 +67,8 @@ Cite: qdmr `openuv380_codeplug.hh` `Offset` / `ImageIndex`.
 
 Cite: qdmr `openuv380_codeplug.cc` ctor.
 
+**Backup / Restore** ([backup-restore.md](backup-restore.md)): these spans are named zip regions and are **restorable**. Studio does not isolate a calibration table on this map.
+
 ## Named region bases — OpenGD77 (GD-77 class)
 
 Same **numeric** low addresses for settings…zones, but those live in **EEPROM**. High regions differ.

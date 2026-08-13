@@ -18,16 +18,17 @@ Handheld analogue FM/AM radio (UV-17Pro lineage). Studio targets it via CHIRP CS
 
 ## Documentation map
 
-| Doc                                    | Contents                               |
-| -------------------------------------- | -------------------------------------- |
-| [limits.md](limits.md)                 | Memory slots, name length              |
-| [capabilities.md](capabilities.md)     | Modes, organisation traits, RF summary |
-| [power.md](power.md)                   | High / Low ladder (internal %)         |
-| [protocol.md](protocol.md)             | PROGRAM+R/W handshake, baud, crypt     |
-| [memory-layout.md](memory-layout.md)   | `MEM_*` regions, packed `0x8380`       |
-| [channel-record.md](channel-record.md) | 32-byte channel element                |
-| [settings.md](settings.md)             | VFO/settings retain, upload scope      |
-| [fixtures.md](fixtures.md)             | Synthetic image recipe                 |
+| Doc                                    | Contents                                                                                                                |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| [limits.md](limits.md)                 | Memory slots, name length                                                                                               |
+| [capabilities.md](capabilities.md)     | Modes, organisation traits, RF summary                                                                                  |
+| [power.md](power.md)                   | High / Low ladder (internal %)                                                                                          |
+| [protocol.md](protocol.md)             | PROGRAM+R/W handshake, baud, crypt                                                                                      |
+| [memory-layout.md](memory-layout.md)   | `MEM_*` regions, packed `0x8380`                                                                                        |
+| [channel-record.md](channel-record.md) | 32-byte channel element                                                                                                 |
+| [settings.md](settings.md)             | VFO/settings retain, upload scope                                                                                       |
+| [backup-restore.md](backup-restore.md) | Zip MEM regions; Restore clone upload vs stash Write ([#1143](https://github.com/pskillen/codeplug-studio/issues/1143)) |
+| [fixtures.md](fixtures.md)             | Synthetic image recipe                                                                                                  |
 
 ## Adapter wire
 

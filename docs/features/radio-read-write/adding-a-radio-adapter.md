@@ -4,7 +4,7 @@ Canonical checklist for contributors shipping a **Web Serial (or BLE) radio modu
 
 Sibling concern to [adding a CPS file format](../import-export/adding-a-new-format.md): file adapters live in `src/core/import-export/formats/`; **binary protocols and clone images** live in integrations. Both ultimately feed the same operator story — **library + RadioBuild + active EgressPath** — but radio I/O must also preserve **unmodelled radio state** so a write-back remains a valid codeplug.
 
-**Hub:** [radio-read-write/README.md](README.md) · **Architecture:** [protocol-kit-architecture.md](protocol-kit-architecture.md) · **Epic:** [#594](https://github.com/pskillen/codeplug-studio/issues/594)
+**Hub:** [radio-read-write/README.md](README.md) · **Backup / Restore:** [backup-restore.md](backup-restore.md) · **Architecture:** [protocol-kit-architecture.md](protocol-kit-architecture.md) · **Epic:** [#594](https://github.com/pskillen/codeplug-studio/issues/594)
 
 **Living doc:** append new requirements discovered while implementing adapters (UV-5R Mini [#617](https://github.com/pskillen/codeplug-studio/issues/617), OpenGD77 [#624](https://github.com/pskillen/codeplug-studio/issues/624), DM-32UV [#638](https://github.com/pskillen/codeplug-studio/issues/638), …). Prefer a dated bullet under [Discovered during implementation](#discovered-during-implementation) plus a short stable rule above when the pattern generalises.
 
@@ -12,19 +12,23 @@ Sibling concern to [adding a CPS file format](../import-export/adding-a-new-form
 
 ## What an adapter is
 
-| Piece                 | Owns                                                                                                                             | Must not own                                            |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `radios/<id>/` module | Descriptor, ident/handshake, memory layout, crypt, encode/decode of modelled regions, safe write strategy, firmware string parse | React; library CRUD; `assemble`; `RadioBuild` mutations |
-| `kit/` codecs         | Shared framing (PROGRAM+R/W, OpenGD77 serial, V-probe, …)                                                                        | Per-radio `MEM_*`, XOR tables, model idents             |
-| `transport/`          | `BytePipe` (Web Serial today)                                                                                                    | Handshake or memory maps                                |
-| Registry              | Descriptor list / lookup by model or compatible profile                                                                          | Framing details                                         |
-| App services + UI     | Port request, progress, **egress hydration**, `assemble` → encode → upload, attribution                                          | Frame bytes, CPS column names                           |
+| Piece                 | Owns                                                                                                                                               | Must not own                                            |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `radios/<id>/` module | Descriptor, ident/handshake, memory layout, crypt, encode/decode of modelled regions, safe write strategy, firmware string parse                   | React; library CRUD; `assemble`; `RadioBuild` mutations |
+| `kit/` codecs         | Shared framing (PROGRAM+R/W, OpenGD77 serial, V-probe, …)                                                                                          | Per-radio `MEM_*`, XOR tables, model idents             |
+| `transport/`          | `BytePipe` (Web Serial today)                                                                                                                      | Handshake or memory maps                                |
+| Registry              | Descriptor list / lookup by model or compatible profile                                                                                            | Framing details                                         |
+| App services + UI     | Port request, progress, Write-codeplug (`assemble` → encode → upload), Backup/Restore (zip pack/parse + optional `restoreFromBackup`), attribution | Frame bytes, CPS column names; zip parsing ad hoc       |
 
 **Dependency direction:** `app` → `core` + `integrations/radio-io`; radio modules → kit + types only. Never `core` → `integrations`.
 
 ---
 
 ## Product model (do not bypass)
+
+Three compositions share protocol `download` helpers. They must not share Write upload-staging (`seedProtocolForUpload` from a bag, `prepareRadioWriteImage`, encode-from-build onto cache).
+
+**Write-codeplug** (Export tab):
 
 ```text
 Library (RF semantics)  +  RadioBuild (wire names, slots, trait layout)
@@ -35,24 +39,28 @@ Library (RF semantics)  +  RadioBuild (wire names, slots, trait layout)
                                     │
                             RadioChannelDto[]  ──►  encode into image
                                     │
-              Active EgressPath.hydration (unmodelled / full clone cache)
-                                    │
-                          merge modelled channels into image
+     in-session overlay (D890 / OpenGD77)  or  EgressPath.hydration stash
+                         (Mini / DM-32 / RT95 until ephemeral 06+ unparks)
                                     │
                               upload (full or selective)
 ```
 
-| Rule                                                           | Why                                                                                                                                                                                                            |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Write always goes through a RadioBuild + egress**            | Same bridge as CPS export — name limits, slots, exclusions, trait layout; egress supplies `formatId` / `profileId` for the pathway                                                                             |
-| **`assemble(build, library)` before encode**                   | Modelled channels come from the projection, not a raw library dump                                                                                                                                             |
-| **Shared m×n expander when trait applies**                     | Preview, CPS export, and Web Serial write must emit the same channel fan-out ([#664](https://github.com/pskillen/codeplug-studio/issues/664) / [#665](https://github.com/pskillen/codeplug-studio/issues/665)) |
-| **Read hydrates the active EgressPath, not the library** (MVP) | Unmodelled registers must survive; importing radio channels into the library is a separate deliverable                                                                                                         |
-| **Hydration is a labelled escape hatch on egress**             | Same spirit as NeonPlug donor retain — opaque state Studio does not model; stored on `EgressPath.hydration` (`CpsWireHydration`)                                                                               |
-| **Display unmodelled settings read-only**                      | Operator can see that a donor/read exists; editing those bytes in Studio is out of scope until modelled                                                                                                        |
+**Backup / inspect** (`/builds/:id/backup`): `download()` → pack named regions via `integrations/radio-io/backup/` → auto-download zip + RAM session. Never persist the archive on the project.
+
+**Restore:** open zip → filter `restoreRole: 'restorable'` → optional `restoreFromBackup`. Never `assemble` / `prepareRadioWriteImage`. Never write LocalInfo or isolated calibration.
+
+| Rule                                                | Why                                                                                                                                                                                                                                                        |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Write always goes through a RadioBuild + egress** | Same bridge as CPS export — name limits, slots, exclusions, trait layout; egress supplies `formatId` / `profileId` for the pathway                                                                                                                         |
+| **`assemble(build, library)` before encode**        | Modelled channels come from the projection, not a raw library dump. Restore must not call `assemble`.                                                                                                                                                      |
+| **Shared m×n expander when trait applies**          | Preview, CPS export, and Web Serial write must emit the same channel fan-out ([#664](https://github.com/pskillen/codeplug-studio/issues/664) / [#665](https://github.com/pskillen/codeplug-studio/issues/665))                                             |
+| **Write stash is adapter-specific, not universal**  | AT-D890UV and OpenGD77 overlay the build on this PROGRAM session (`hydrationRequiredForWrite: false`). UV-5R Mini / UV-21 Pro V2, DM-32UV, and RT95 still persist `radio-clone` bags for Write. Do not tell operators to stash for Write on D890/OpenGD77. |
+| **Backup never hydrates the project**               | The zip on disk is the durable copy. RAM inspect is discarded when leaving the tab. Importing radio channels into the library is a separate deliverable.                                                                                                   |
+| **Hydration is a labelled escape hatch on egress**  | Same spirit as NeonPlug donor retain — opaque state Studio does not model; stored on `EgressPath.hydration` (`CpsWireHydration`) **only** when Write still requires a bag.                                                                                 |
+| **Display unmodelled settings read-only**           | Backup / Restore inspect (legacy `/radio-info` redirects here); editing those bytes in Studio is out of scope until modelled                                                                                                                               |
 
 **NeonPlug file path (shipped):** operator imports `.neonplug` on the NeonPlug **egress** → Studio stores retain on `EgressPath.hydration` (`formatId: 'neonplug'`) → merge export through that egress.  
-**Direct Web Serial path:** pick the **Web Serial** egress on a catalog target that includes `radio-io` (e.g. UV-5R Mini) → **Read** in Studio → persist `EgressPath.hydration` with `formatId: 'radio-clone'` (`RadioCloneHydrationBag`) → show read-only settings on **Radio image** → **Write** merges `assemble` projection into that image → upload. CPS file egresses on the same build remain separate children.
+**Direct Web Serial Write:** pick the **Web Serial** egress on a catalog target that includes `radio-io`. AT-D890UV / OpenGD77: Read this session, overlay `assemble`, upload — no persisted clone bag. Mini / DM-32 / RT95: **Read** still persists `EgressPath.hydration` (`formatId: 'radio-clone'`) until parked ephemeral-radio-info 06+ unparks; **Write** merges `assemble` into that image → upload. Inspect and restore live on **Backup / Restore**, not the Export write panel. CPS file egresses on the same build remain separate children.
 
 See [neonplug merge](../../reference/export-formats/neonplug/merge.md), [`CpsWireHydration`](../../../src/core/models/cpsWireHydration.ts), and [`radioCloneHydration.ts`](../../../src/core/models/radioCloneHydration.ts).
 
@@ -98,8 +106,18 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 - [ ] Upload with declared write strategy; progress + abort
 - [ ] Channel (and later contacts/zones) encode/decode for **modelled** regions only
 - [ ] Firmware string parse (for future catalog gate [#619](https://github.com/pskillen/codeplug-studio/issues/619))
-- [ ] Hydration extract: what to persist on the **active EgressPath** so unmodelled state round-trips on write
+- [ ] Hydration extract **when Write still requires a bag**: what to persist on the **active EgressPath** so unmodelled state round-trips on write. AT-D890UV / OpenGD77 Write must not persist a clone bag.
 - [ ] Comments cite ground-truth paths
+
+### 3b. Backup named regions + restore
+
+- [ ] Publish named memory regions with `restoreRole: 'restorable' | 'inspect-only'` (LocalInfo, isolated calibration, extra FLASH → inspect-only)
+- [ ] Pack/parse through `integrations/radio-io/backup/` — UI must not unzip ad hoc
+- [ ] Optional `restoreFromBackup` on the protocol **beside** `upload`; do **not** share Write upload-staging (`seedProtocolForUpload` from a bag, `prepareRadioWriteImage`)
+- [ ] Restore stays disabled until the hook exists; do not gate Restore on `prodWriteDisabled`
+- [ ] Never persist the backup zip or a reconstructed clone bag on the project
+- [ ] Never `assemble` / write LocalInfo / write isolated calibration on restore
+- [ ] Coverage honesty (`full-clone` of the programming image vs `known-map-regions` vs `partial`) — exact maps in tier-3 `docs/reference/radios/<mfr>/<model>/backup-restore.md`
 
 ### 4. Descriptor + registry
 
@@ -114,10 +132,11 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 
 ### 5. App / RadioBuild + egress integration
 
-- [ ] **Read:** download → cache → persist hydration on the **selected Web Serial EgressPath** → read-only settings view (no library channel import unless a later ticket says so)
+- [ ] **Read (Write path):** download → cache. Persist hydration on the **selected Web Serial EgressPath** only when `hydrationRequiredForWrite` (Mini / DM-32 / RT95 today). D890 / OpenGD77 overlay this PROGRAM session.
+- [ ] **Backup / Restore:** live backup auto-downloads zip; inspect in RAM; restore via `restoreFromBackup` after identity + restorable-region filter (`radioBackupRestore.ts`)
 - [ ] **Write:** require compatible egress on the build → `assemble(build, library)` → **shared MxN expand when trait applies** → map to radio DTOs → encode into hydrated image → upload
 - [ ] Do **not** import `formats/<cps>/channelExpansion.ts` from the write path — use `channelExpansion/mxnExpandAll.ts`
-- [ ] Refuse write when full-image strategy lacks egress hydration
+- [ ] Refuse write when full-image strategy lacks egress hydration **and** that adapter still requires a bag
 - [ ] In-flow attribution from `attributionIds`
 - [ ] Build Export hosts egress switcher + connect/read/write for Web Serial — not a library-only dump UI
 
@@ -125,7 +144,7 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 
 - [ ] Codec / layout: directional fixture tests (bytes → fields; fields → bytes)
 - [ ] Mocked `BytePipe`: handshake, download assemble, upload frames/ACKs
-- [ ] App services: hydration persist + assemble→encode path (fake radio)
+- [ ] App services: hydration persist + assemble→encode path (fake radio); restore path never calls `assemble`
 - [ ] No React in `integrations/radio-io/`; no frame bytes in `src/app/`
 - [ ] No personal codeplug dumps in the repo
 - [ ] **Pathway parity:** Web Serial Write projection agrees with sibling CPS CSV (and NeonPlug when present) for the catalog target — shared harness in [`pathwayParity.ts`](../../../src/core/import-export/channelExpansion/__testUtils__/pathwayParity.ts); see [pathway-parity tests](../../build/testing/pathway-parity.md) and [export-pathway-parity.md](../import-export/export-pathway-parity.md)
@@ -134,7 +153,7 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 
 - [ ] Update [radio-read-write hub](README.md) status
 - [ ] Progress / outstanding for epic #594 when behaviour ships
-- [ ] Tier-3 link “Studio module” → implemented path
+- [ ] Tier-3 link “Studio module” → implemented path; backup restorable vs inspect-only tables under `docs/reference/radios/<mfr>/<model>/` (not in `docs/features/`)
 - [ ] **Update this file** with any new cross-radio requirements discovered
 - [ ] Component sidecars for new shared UI widgets
 
@@ -150,6 +169,8 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 6. App `instanceof` concrete radios — gate on capabilities / descriptor fields
 7. Forcing one codec shape (e.g. V-probe+4KB) into the generic kit for every radio
 8. Committing live radio dumps or operator callsigns as fixtures
+9. Using `assemble` / `prepareRadioWriteImage` / Write upload-staging as Restore
+10. Persisting a backup zip or radio-clone bag on the project for inspect/restore
 
 ---
 
@@ -217,12 +238,17 @@ Append here as adapters ship. Keep entries short; promote repeated patterns into
 | 2026-07-25 | RT95 #643            | **`prodWriteDisabled` deploy gate:** Write hidden on `prod`, red alert + confirm modal on pre-prod; steer to **CHIRP CSV** until hardware Read→Write verify (same pattern as AT-D890 [#741](https://github.com/pskillen/codeplug-studio/issues/741)). Cleared in [#761](https://github.com/pskillen/codeplug-studio/issues/761).                                                                                                                                                                                                                                           |
 | 2026-08-13 | Backup restore #1140 | **`CloneImageRadio.restoreFromBackup`:** optional protocol hook. Restore stays disabled until the adapter implements it. App identity/region filters live in `radioBackupRestore.ts`. Do not gate Restore on `prodWriteDisabled`. Never assemble / `prepareRadioWriteImage`. Serial mismatch is a hard refuse.                                                                                                                                                                                                                                                             |
 | 2026-08-13 | AT-D890UV #1141      | **`restoreFromBackup`:** erase-unit RMW of restorable zip regions onto a fresh live read. Never LocalInfo, alarm-from-archive, calibration, or `0x2fa0010`. Optional settings + APRS **are** restorable (unlike Write-codeplug). Coverage `known-map-regions`. Hardware verify pending. Tier-3: [backup-restore.md](../../reference/radios/anytone/at-d890uv/backup-restore.md).                                                                                                                                                                                           |
+| 2026-08-13 | OpenGD77 #1142       | **`restoreFromBackup`:** replay zip FLASH spans vs a **blank** prior (`collectDirtySectors`), then **SAVE_REBOOT**. Does not `armWriteProjection`, pre-write-read, or assemble. Write-kept settings/APRS **are** restorable (they live in those spans). No isolated cal/LocalInfo on this map. Shared DM-1701 + MD-9600 protocol. Hardware verify pending. Tier-3: [backup-restore.md](../../reference/radios/opengd77/backup-restore.md).                                                                                                                                 |
+| 2026-08-13 | UV-17Pro #1143       | **`restoreFromBackup`:** upload selected zip `MEM_*` bins as the packed programming clone (Mini three regions / UV-21 four). Does not assemble, merge channels into hydration, or persist a clone bag. Write still `hydrationRequiredForWrite`. No isolated cal/LocalInfo — residual cal inside MEM spans is not skipped. Hardware verify pending. Tier-3: [uv-5r-mini/backup-restore.md](../../reference/radios/baofeng/uv-5r-mini/backup-restore.md).                                                                                                                    |
+| 2026-08-13 | DM-32UV #1144        | **`restoreFromBackup`:** restorable 4KB blocks only. Calibration `0x02` inspect-only. Live V-frame bases ≠ zip → refuse (no remap). Write still `hydrationRequiredForWrite`. Hardware verify pending. Tier-3: [dm-32uv/backup-restore.md](../../reference/radios/baofeng/dm-32uv/backup-restore.md).                                                                                                                                                                                                                                                                       |
+| 2026-08-13 | RT95 #1145           | **`restoreFromBackup`:** upload selected zip programming-clone bins (`0x32A0`). Does not assemble, merge channels into hydration, or persist a clone bag. No serial / isolated cal / LocalInfo — residual cal inside the clone is not skipped. Write still `hydrationRequiredForWrite`. Hardware verify pending. Tier-3: [rt95/backup-restore.md](../../reference/radios/retevis/rt95/backup-restore.md).                                                                                                                                                                  |
 
 ---
 
 ## Related
 
 - [protocol-kit-architecture.md](protocol-kit-architecture.md)
+- [backup-restore.md](backup-restore.md) — operator zip + restore isolation
 - [adding-a-new-format.md](../import-export/adding-a-new-format.md) — CPS file sibling checklist
 - [builds hub](../builds/README.md) — RadioBuild + EgressPath operator workflow
 - [NeonPlug merge / donor](../../reference/export-formats/neonplug/merge.md) — file-path hydration precedent

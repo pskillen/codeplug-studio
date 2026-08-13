@@ -20,4 +20,13 @@ export {
   OPENGD77_DTMF_CONTACTS_WRITE_GAP,
   OPENGD77_APRS_WRITE_GAP,
 } from './writeRole.ts';
+export {
+  OPENGD77_BACKUP_FLASH_SPANS,
+  openGd77BackupRestoreRole,
+  type OpenGd77BackupFlashSpan,
+} from './backupRestoreRoles.ts';
+export {
+  intendedOpenGd77RestoreImage,
+  listOpenGd77RestoreDirtySectors,
+} from './restoreFromBackup.ts';
 export { OPENGD77_MD9600_DESCRIPTOR } from './md9600/descriptor.ts';

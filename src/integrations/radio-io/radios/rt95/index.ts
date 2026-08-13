@@ -1,6 +1,11 @@
 export { RT95_DESCRIPTOR } from './descriptor.ts';
 export { createRt95Protocol, Rt95Protocol } from './protocol.ts';
 export {
+  intendedRt95RestoreImage,
+  RT95_PROGRAMMING_IMAGE_REGION_ID,
+  type Rt95RestoreArchive,
+} from './restoreFromBackup.ts';
+export {
   decodeChannelRecord,
   decodeChannelsFromImage,
   encodeChannelRecord,

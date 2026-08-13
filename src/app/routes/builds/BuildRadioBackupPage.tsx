@@ -283,7 +283,7 @@ export default function BuildRadioBackupPage() {
         {warnFactoryReset ? (
           <Alert color="yellow" title="Factory reset">
             Restore for this radio depends on a live address map. After a factory reset, a backup
-            taken beforehand cannot be restored.
+            taken beforehand cannot be restored — remapping those bases is out of scope.
           </Alert>
         ) : null}
         {error ? <Alert color="red">{error}</Alert> : null}

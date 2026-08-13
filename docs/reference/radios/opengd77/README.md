@@ -37,14 +37,15 @@ UV380-class for Studio adapters: `05h`, `08h`, `0ah` (plus other UV380 types not
 
 ## Documentation map
 
-| Doc                                                | Contents                                                                       |
-| -------------------------------------------------- | ------------------------------------------------------------------------------ |
-| [memory-layout.md](memory-layout.md)               | Image banks, region bases, channel-bank geometry, OpenUV380 vs GD-77 remapping |
-| [channel-record.md](channel-record.md)             | Channel element (`0x38`) field offsets and enums                               |
-| [contacts-zones-lists.md](contacts-zones-lists.md) | DMR/DTMF contacts, zones, RX group lists; scan-list note                       |
-| [settings-aprs.md](settings-aprs.md)               | General/boot/APRS/additional-settings offsets                                  |
-| [protocol.md](protocol.md)                         | USB VID/PID, `C`/`R`/`W`/`X`, flash sector write, FirmwareInfo                 |
-| [fixtures.md](fixtures.md)                         | How to capture dumps for tests without committing personal codeplugs           |
+| Doc                                                | Contents                                                                                                                 |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| [memory-layout.md](memory-layout.md)               | Image banks, region bases, channel-bank geometry, OpenUV380 vs GD-77 remapping                                           |
+| [channel-record.md](channel-record.md)             | Channel element (`0x38`) field offsets and enums                                                                         |
+| [contacts-zones-lists.md](contacts-zones-lists.md) | DMR/DTMF contacts, zones, RX group lists; scan-list note                                                                 |
+| [settings-aprs.md](settings-aprs.md)               | General/boot/APRS/additional-settings offsets                                                                            |
+| [protocol.md](protocol.md)                         | USB VID/PID, `C`/`R`/`W`/`X`, flash sector write, FirmwareInfo                                                           |
+| [backup-restore.md](backup-restore.md)             | Zip FLASH spans; Restore vs blank prior + SAVE_REBOOT ([#1142](https://github.com/pskillen/codeplug-studio/issues/1142)) |
+| [fixtures.md](fixtures.md)                         | How to capture dumps for tests without committing personal codeplugs                                                     |
 
 ## Radio homes (caps / power)
 

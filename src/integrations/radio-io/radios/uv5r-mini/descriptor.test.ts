@@ -26,9 +26,10 @@ describe('UV-5R Mini descriptor / registry', () => {
     expect(listDescriptorsForProfile('opengd77', 'opengd77-1701')).toHaveLength(0);
   });
 
-  it('protocolFactory returns a CloneImageRadio', () => {
+  it('protocolFactory returns a CloneImageRadio with restoreFromBackup', () => {
     const radio = createUv5rMiniProtocol();
     expect(typeof radio.connect).toBe('function');
     expect(typeof radio.download).toBe('function');
+    expect(typeof radio.restoreFromBackup).toBe('function');
   });
 });

@@ -8,19 +8,16 @@ import {
   atD890BackupSpanForAddress,
 } from '../radios/at-d890uv/backupRestoreRoles.ts';
 import { D890_MAP } from '../radios/at-d890uv/constants.ts';
-import {
-  DM32_BLOCK_SIZE,
-  DM32_METADATA,
-  DM32_METADATA_OFFSET,
-} from '../radios/dm32uv/constants.ts';
-import { classifyDm32Metadata } from '../radios/dm32uv/memory.ts';
-import {
-  OPENUV380_FLASH_SPANS,
-  OPENUV380_IMAGE_SIZE,
-  openUv380AbsToOffset,
-} from '../radios/opengd77/constants.ts';
+import { dm32BackupRestoreRole } from '../radios/dm32uv/backupRestoreRoles.ts';
+import { OPENGD77_BACKUP_FLASH_SPANS } from '../radios/opengd77/backupRestoreRoles.ts';
+import { OPENUV380_IMAGE_SIZE, openUv380AbsToOffset } from '../radios/opengd77/constants.ts';
 import { RT95_IMAGE_SIZE, RT95_MODEL_ID } from '../radios/rt95/constants.ts';
-import { UV21_PRO_V2_LAYOUT, UV5R_MINI_LAYOUT } from '../radios/uv17pro-family/layout.ts';
+import { uv17ProBackupMemSpans } from '../radios/uv17pro-family/backupRestoreRoles.ts';
+import {
+  UV21_PRO_V2_LAYOUT,
+  UV5R_MINI_LAYOUT,
+  type Uv17ProLayout,
+} from '../radios/uv17pro-family/layout.ts';
 import { createMemoryMap } from '../kit/memoryMap.ts';
 import type { MemoryMap } from '../types.ts';
 import {
@@ -138,7 +135,7 @@ function blockRole(modelId: string, address: number, data: Uint8Array): RadioBac
     return d890Role(address, data.byteLength);
   }
   if (isDm32Model(modelId)) {
-    return dm32Role(address, data);
+    return dm32BackupRestoreRole(data);
   }
   return 'restorable';
 }
@@ -181,17 +178,6 @@ function d890Role(address: number, length: number): RadioBackupRegionRole {
   return atD890BackupRestoreRole(address, length);
 }
 
-function dm32Role(address: number, data: Uint8Array): RadioBackupRegionRole {
-  if (data.byteLength >= DM32_BLOCK_SIZE) {
-    const meta = data[DM32_METADATA_OFFSET] ?? data[data.byteLength - 1]!;
-    if (meta === DM32_METADATA.CALIBRATION || classifyDm32Metadata(meta) === 'calibration') {
-      return 'inspect-only';
-    }
-  }
-  const localInfoHint = address === D890_MAP.LocalInfo;
-  return localInfoHint ? 'inspect-only' : 'restorable';
-}
-
 function hexId(address: number): string {
   return `0x${address.toString(16)}`;
 }
@@ -208,7 +194,7 @@ function fromSparseBlocks(
     const inspect =
       isD890Model(modelId) && d890Role(block.address, block.data.byteLength) === 'inspect-only';
     const dm32Inspect =
-      isDm32Model(modelId) && dm32Role(block.address, block.data) === 'inspect-only';
+      isDm32Model(modelId) && dm32BackupRestoreRole(block.data) === 'inspect-only';
     const restoreRole: RadioBackupRegionRole =
       inspect || dm32Inspect ? 'inspect-only' : 'restorable';
     const d890Span = isD890Model(modelId) ? atD890BackupSpanForAddress(block.address) : undefined;
@@ -233,32 +219,19 @@ function fromSparseBlocks(
   return collect(parts, 'known-map-regions', image.size, extra);
 }
 
-function fromUvLayout(
-  layout: { memStarts: readonly number[]; memSizes: readonly number[]; memTotal: number },
-  image: MemoryMap,
-): BackupRegionExtract {
-  let packed = 0;
-  const parts = layout.memStarts.map((radioAddr, i) => {
-    const size = layout.memSizes[i]!;
-    const data = sliceImage(image, packed, size);
-    const part = makeRegion(
-      `mem-${i}`,
-      `MEM ${i + 1} (radio 0x${radioAddr.toString(16)})`,
-      packed,
-      data,
-      'restorable',
-    );
-    packed += size;
-    return part;
+function fromUvLayout(layout: Uv17ProLayout, image: MemoryMap): BackupRegionExtract {
+  const parts = uv17ProBackupMemSpans(layout).map((span) => {
+    const data = sliceImage(image, span.packedOffset, span.size);
+    return makeRegion(span.id, span.label, span.packedOffset, data, span.restoreRole);
   });
   return collect(parts, 'full-clone', image.size || layout.memTotal);
 }
 
 function fromOpenGd77(image: MemoryMap): BackupRegionExtract {
-  const parts = OPENUV380_FLASH_SPANS.map((span, i) => {
+  const parts = OPENGD77_BACKUP_FLASH_SPANS.map((span) => {
     const offset = openUv380AbsToOffset(span.start);
     const data = sliceImage(image, offset, span.length);
-    return makeRegion(`flash-span-${i}`, `FLASH span ${i + 1}`, span.start, data, 'restorable');
+    return makeRegion(span.id, span.label, span.start, data, span.restoreRole);
   });
   return collect(parts, 'known-map-regions', image.size || OPENUV380_IMAGE_SIZE);
 }

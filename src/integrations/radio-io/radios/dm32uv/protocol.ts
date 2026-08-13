@@ -4,6 +4,7 @@
  */
 
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
+import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
@@ -47,6 +48,11 @@ import {
   planDm32ContactBankBlocks,
   readDm32ContactCountFromBlock,
 } from './contactCodec.ts';
+import {
+  assertDm32RestoreAddressMap,
+  listDm32RestoreBlocks,
+  type Dm32RestoreLiveAddressMap,
+} from './restoreFromBackup.ts';
 
 /** Max MemoryMap span when folding contact bank into config window (bytes). */
 const DM32_MAX_COMBINED_MAP_BYTES = 32 * 1024 * 1024;
@@ -113,6 +119,15 @@ export class Dm32uvProtocol implements CloneImageRadio {
   /** Last successful download cache (for hydration / RMW). */
   getDownloadCache(): Dm32DownloadCache | null {
     return this.cache;
+  }
+
+  /** V-frame bases from this PROGRAM connect — compared to the backup manifest. */
+  getLiveRestoreAddressMap(): Dm32RestoreLiveAddressMap {
+    return {
+      addressBase: this.liveLayout?.addressBase ?? this.cache?.addressBase,
+      dm32ContactsBase: this.cache?.contactsBase,
+      dm32ContactsEnd: this.cache?.contactsEnd,
+    };
   }
 
   /**
@@ -483,6 +498,54 @@ export class Dm32uvProtocol implements CloneImageRadio {
       }
     }
     this.lastUploadStaging = captureWriteVerifyStaging(stagingChunks);
+  }
+
+  /**
+   * Replay selected restorable 4KB archive blocks. Does not remap, assemble,
+   * merge channels, seed Write hydration, or write calibration.
+   */
+  async restoreFromBackup(
+    archive: { manifest: RadioBackupManifestV1; image: MemoryMap },
+    opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
+    if (!this.pipe || !this.programming) {
+      throw new RadioProtocolError('DM-32UV restore: not connected / not in PROGRAM mode');
+    }
+    assertDm32RestoreAddressMap(archive.manifest, this.getLiveRestoreAddressMap());
+    const blocks = listDm32RestoreBlocks(archive, opts.regionIds);
+    const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
+    const scale = settle.settleScale ?? 1;
+    const interBlockMs = scale <= 0 ? 0 : DM32_CONNECTION.BLOCK_READ_DELAY_MS * scale;
+
+    reportProgress(
+      opts.onProgress,
+      {
+        cur: 0,
+        max: Math.max(blocks.length, 1),
+        msg: 'Restoring backup blocks…',
+        stage: 'Restore',
+      },
+      opts.signal,
+    );
+
+    for (let i = 0; i < blocks.length; i++) {
+      throwIfAborted(opts.signal);
+      if (interBlockMs > 0) {
+        await new Promise((r) => setTimeout(r, interBlockMs));
+      }
+      const block = blocks[i]!;
+      await dm32WriteMemory(this.pipe, block.address, block.data, settle);
+      reportProgress(
+        opts.onProgress,
+        {
+          cur: i + 1,
+          max: blocks.length,
+          msg: `Restoring block ${i + 1} of ${blocks.length} (0x${block.address.toString(16)})`,
+          stage: 'Restore',
+        },
+        opts.signal,
+      );
+    }
   }
 
   takeUploadStagingSnapshot(): WriteVerifyStagingSnapshot | undefined {

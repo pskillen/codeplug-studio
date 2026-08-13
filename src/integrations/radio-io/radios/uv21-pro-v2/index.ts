@@ -30,3 +30,7 @@ export {
   readFirmwareFromImage,
 } from '../uv17pro-family/channelCodec.ts';
 export { createUv17ProProtocol as createUv21ProV2Protocol } from '../uv17pro-family/protocol.ts';
+export {
+  uv17ProBackupMemSpans as uv21BackupMemSpans,
+  type Uv17ProBackupMemSpan as Uv21BackupMemSpan,
+} from '../uv17pro-family/backupRestoreRoles.ts';

@@ -41,6 +41,8 @@ Clone download concatenates the four regions in order into one buffer:
 
 Sum: `0x8040 + 0x40 + 0x2C0 + 0x40 = 0x8380`.
 
+**Backup / Restore** ([backup-restore.md](backup-restore.md)): these four `MEM_*` spans are named zip regions and are **restorable**. Studio does not isolate a calibration table on this map.
+
 ## Notable packed-image offsets
 
 | Offset     | Size / role                                                                                                                                     |
