@@ -7,7 +7,6 @@ import {
   DM32_METADATA_OFFSET,
 } from '@integrations/radio-io/radios/dm32uv/constants.ts';
 import { DM32UV_DESCRIPTOR } from '@integrations/radio-io/radios/dm32uv/descriptor.ts';
-import { extractDm32uvHydrationFromProtocol } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
 import type { Dm32DownloadCache } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { createMemoryMap } from '@integrations/radio-io/kit/memoryMap.ts';
@@ -176,8 +175,8 @@ describe('DM-32UV write without persisted hydration bag', () => {
 });
 
 describe('DM-32UV in-session pre-write content read', () => {
-  it('keeps hydrationRequiredForWrite true', () => {
-    expect(DM32UV_DESCRIPTOR.hydrationRequiredForWrite).toBe(true);
+  it('sets hydrationRequiredForWrite false', () => {
+    expect(DM32UV_DESCRIPTOR.hydrationRequiredForWrite).toBe(false);
   });
 
   it('does not seed the write cache from a persisted hydration bag', () => {
@@ -185,9 +184,6 @@ describe('DM-32UV in-session pre-write content read', () => {
   });
 
   it('uploadPreparedRadioWrite bulk-reads live contents before overlay upload', async () => {
-    const bagSettings = makeBlock(DM32_METADATA.VFO_SETTINGS, (b) => {
-      b[0] = 0x11;
-    });
     const liveSettings = makeBlock(DM32_METADATA.VFO_SETTINGS, (b) => {
       b[0] = 0x42;
     });
@@ -207,18 +203,6 @@ describe('DM-32UV in-session pre-write content read', () => {
         [0x2000, liveSettings],
       ]),
     };
-    const bagCache: Dm32DownloadCache = {
-      ...liveCache,
-      blocks: new Map([
-        [0x1000, channelBlock],
-        [0x2000, bagSettings],
-      ]),
-    };
-    const bagImage = createMemoryMap(bagCache.mapSize);
-    bagImage.fill(0, bagCache.mapSize, 0xff);
-    bagImage.set(0, channelBlock);
-    bagImage.set(DM32_BLOCK_SIZE, bagSettings);
-    const hydration = extractDm32uvHydrationFromProtocol(bagImage, bagCache);
 
     const download = vi.fn(
       async (opts?: {
@@ -270,7 +254,7 @@ describe('DM-32UV in-session pre-write content read', () => {
       bandwidth: 'FM',
     };
 
-    await uploadPreparedRadioWrite(session, { ...egress, hydration }, undefined, {
+    await uploadPreparedRadioWrite(session, egress, undefined, {
       channels: [liveChannel],
     });
 
@@ -282,7 +266,6 @@ describe('DM-32UV in-session pre-write content read', () => {
     expect(download.mock.invocationCallOrder[0]).toBeLessThan(upload.mock.invocationCallOrder[0]!);
     const uploaded = upload.mock.calls[0]![0] as MemoryMap;
     expect(uploaded.bytes[DM32_BLOCK_SIZE]).toBe(0x42);
-    expect(uploaded.bytes[DM32_BLOCK_SIZE]).not.toBe(0x11);
   });
 
   it('hardware verify pending — operator to confirm on DM-32UV', () => {

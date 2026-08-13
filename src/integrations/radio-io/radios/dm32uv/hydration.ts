@@ -116,7 +116,7 @@ export function extractDm32uvHydrationFromProtocol(
 export const DM32_EMPTY_WRITE_CACHE_MESSAGE =
   'Read this radio in the current session before Write. The DM-32UV write encode needs live sparse-block contents — metadata discovery alone is not enough.';
 
-/** Overlay the build projection onto an existing sparse DM-32 image (stash merge or live cache). */
+/** Overlay the build projection onto an existing sparse DM-32 image (live cache; stash merge is inspect-only). */
 export function encodeDm32uvProjectionOntoImage(
   image: MemoryMap,
   cache: Dm32DownloadCache,
