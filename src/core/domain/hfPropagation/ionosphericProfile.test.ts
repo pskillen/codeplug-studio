@@ -45,7 +45,7 @@ describe('computeIonosphericLayers', () => {
     expect(day.F2).toMatchObject({ altitudeMinKm: 250, altitudeMaxKm: 400 });
   });
 
-  it('drops F2 altitudeMinKm to 150 km at night so the F-region fills F1's band', () => {
+  it('drops F2 altitudeMinKm to 150 km at night so the F-region fills the F1 band', () => {
     const day = layersById(EQUINOX_SOLAR_NOON_UTC);
     const night = layersById(EQUINOX_MIDNIGHT_UTC);
     expect(day.F2?.altitudeMinKm).toBe(250);
