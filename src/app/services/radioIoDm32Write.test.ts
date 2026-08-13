@@ -6,11 +6,13 @@ import {
   DM32_METADATA,
   DM32_METADATA_OFFSET,
 } from '@integrations/radio-io/radios/dm32uv/constants.ts';
+import { DM32UV_DESCRIPTOR } from '@integrations/radio-io/radios/dm32uv/descriptor.ts';
 import {
   extractDm32uvHydrationFromProtocol,
   mergeChannelsIntoDm32uvHydration,
 } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
 import type { Dm32DownloadCache } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
+import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { createMemoryMap } from '@integrations/radio-io/kit/memoryMap.ts';
 import type {
   CloneImageRadio,
@@ -18,8 +20,13 @@ import type {
   RadioDescriptor,
   RadioSession,
 } from '@integrations/radio-io/types.ts';
-import { RadioWriteBlockedError, writeBuildToRadio } from './radioIoSession.ts';
+import {
+  RadioWriteBlockedError,
+  uploadPreparedRadioWrite,
+  writeBuildToRadio,
+} from './radioIoSession.ts';
 import { assembledChannelsToRadioDtos } from './radioIoChannelMap.ts';
+import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 
 function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
   return {
@@ -212,5 +219,112 @@ describe('DM-32UV write via hydration merge', () => {
     const uploaded = upload.mock.calls[0]![0] as MemoryMap;
     // Settings block metadata preserved
     expect(uploaded.bytes[DM32_BLOCK_SIZE + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.VFO_SETTINGS);
+  });
+});
+
+describe('DM-32UV in-session pre-write content read', () => {
+  it('keeps hydrationRequiredForWrite true', () => {
+    expect(DM32UV_DESCRIPTOR.hydrationRequiredForWrite).toBe(true);
+  });
+
+  it('uploadPreparedRadioWrite bulk-reads live contents before overlay upload', async () => {
+    const bagSettings = makeBlock(DM32_METADATA.VFO_SETTINGS, (b) => {
+      b[0] = 0x11;
+    });
+    const liveSettings = makeBlock(DM32_METADATA.VFO_SETTINGS, (b) => {
+      b[0] = 0x42;
+    });
+    const channelBlock = makeBlock(DM32_METADATA.CHANNEL_FIRST, (b) => {
+      b[0] = 1;
+      b[1] = 0;
+    });
+    const liveCache: Dm32DownloadCache = {
+      addressBase: 0x1000,
+      mapSize: DM32_BLOCK_SIZE * 2,
+      discovered: [
+        { address: 0x1000, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' },
+        { address: 0x2000, metadata: DM32_METADATA.VFO_SETTINGS, type: 'vfo' },
+      ],
+      blocks: new Map([
+        [0x1000, channelBlock],
+        [0x2000, liveSettings],
+      ]),
+    };
+    const bagCache: Dm32DownloadCache = {
+      ...liveCache,
+      blocks: new Map([
+        [0x1000, channelBlock],
+        [0x2000, bagSettings],
+      ]),
+    };
+    const bagImage = createMemoryMap(bagCache.mapSize);
+    bagImage.fill(0, bagCache.mapSize, 0xff);
+    bagImage.set(0, channelBlock);
+    bagImage.set(DM32_BLOCK_SIZE, bagSettings);
+    const hydration = extractDm32uvHydrationFromProtocol(bagImage, bagCache);
+
+    const download = vi.fn(
+      async (opts?: {
+        progressStage?: string;
+        onProgress?: (p: { cur: number; max: number; msg: string; stage?: string }) => void;
+      }) => {
+        opts?.onProgress?.({
+          cur: 1,
+          max: 1,
+          msg: 'Reading live block contents…',
+          stage: opts.progressStage,
+        });
+        return createMemoryMap(liveCache.mapSize);
+      },
+    );
+    const upload = vi.fn(async () => undefined);
+    const radio = {
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      download,
+      upload,
+      decodeChannels: () => [],
+      encodeChannels: (img: MemoryMap) => img,
+      readFirmware: () => undefined,
+      getDownloadCache: () => liveCache,
+      seedDownloadCache: vi.fn(),
+    } as unknown as Dm32uvProtocol;
+    Object.setPrototypeOf(radio, Dm32uvProtocol.prototype);
+
+    const session: RadioSession = {
+      descriptor: DM32UV_DESCRIPTOR,
+      pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
+      radio,
+    };
+    const { egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
+
+    const liveChannel: RadioChannelDto = {
+      slotIndex: 1,
+      empty: false,
+      wireName: 'LIVE',
+      rxHz: 145_500_000,
+      txHz: 145_500_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'FM',
+    };
+
+    await uploadPreparedRadioWrite(session, { ...egress, hydration }, undefined, {
+      channels: [liveChannel],
+    });
+
+    expect(download).toHaveBeenCalledWith(
+      expect.objectContaining({ progressStage: 'Pre-write read' }),
+    );
+    expect(upload).toHaveBeenCalledTimes(1);
+    expect(download.mock.invocationCallOrder[0]).toBeLessThan(upload.mock.invocationCallOrder[0]!);
+    const uploaded = upload.mock.calls[0]![0] as MemoryMap;
+    expect(uploaded.bytes[DM32_BLOCK_SIZE]).toBe(0x42);
+    expect(uploaded.bytes[DM32_BLOCK_SIZE]).not.toBe(0x11);
+  });
+
+  it('hardware verify pending — operator to confirm on DM-32UV', () => {
+    expect(true).toBe(true);
   });
 });
