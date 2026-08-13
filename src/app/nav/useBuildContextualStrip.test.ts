@@ -39,7 +39,7 @@ describe('useBuildContextualStrip (no BuildLayoutProvider ancestor, matching App
   it('omits Satellite keps for a build with no keps-capable egress, still with no BuildLayoutContext', async () => {
     const { build: ogBuild, egressPaths: ogEgressPaths } = newRadioBuildForProfile(
       'project-1',
-      'opengd77-1701',
+      'radio-io-uv5r-mini',
     );
 
     vi.mocked(

@@ -175,6 +175,15 @@ describe('buildSectionNavItems', () => {
     );
   });
 
+  it('includes Satellite keps for OpenGD77 Web Serial egresses', () => {
+    for (const profileId of ['radio-io-opengd77-1701', 'radio-io-opengd77-md9600'] as const) {
+      const { build, egressPaths } = newRadioBuildForProfile('proj', profileId);
+      expect(buildSectionNavItems(build, { egressPaths }).map((item) => item.label)).toContain(
+        BUILD_SECTION_SATELLITE_KEPS,
+      );
+    }
+  });
+
   it('includes Satellite keps, between Wire preview and About, for a build with a D890 Web Serial egress', () => {
     const { build, egressPaths } = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
     const labels = buildSectionNavItems(build, { egressPaths }).map((item) => item.label);

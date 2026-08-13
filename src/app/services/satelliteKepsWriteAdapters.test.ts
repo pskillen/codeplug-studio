@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts';
 import {
@@ -20,9 +21,18 @@ describe('satelliteKepsWriteAdapters', () => {
     );
   });
 
-  it('has no adapter for an unknown or not-yet-shipped (e.g. OpenGD77) profile', () => {
-    expect(hasSatelliteKepsWriteAdapter('radio-io-opengd77-dm1701')).toBe(false);
-    expect(getSatelliteKepsWriteAdapter('radio-io-opengd77-dm1701')).toBeUndefined();
+  it('has adapters registered for OpenGD77 DM-1701 and MD-9600', () => {
+    for (const profileId of ['radio-io-opengd77-1701', 'radio-io-opengd77-md9600'] as const) {
+      expect(hasSatelliteKepsWriteAdapter(profileId)).toBe(true);
+      expect(getSatelliteKepsWriteAdapter(profileId)).toBe(
+        SATELLITE_KEPS_WRITE_ADAPTERS[profileId],
+      );
+    }
+  });
+
+  it('has no adapter for an unknown profile', () => {
+    expect(hasSatelliteKepsWriteAdapter('radio-io-uv5r-mini')).toBe(false);
+    expect(getSatelliteKepsWriteAdapter('radio-io-uv5r-mini')).toBeUndefined();
     expect(hasSatelliteKepsWriteAdapter('not-a-real-profile')).toBe(false);
   });
 });
@@ -33,8 +43,17 @@ describe('getSatelliteKepsWriteCapacity (#1068)', () => {
     expect(capacity?.max).toBe(AT_D890UV_LIMITS.SATELLITE_MAX);
   });
 
+  it('registers OpenGD77 capacity from OPENGD77_FAMILY_LIMITS.SATELLITE_MAX', () => {
+    for (const profileId of ['radio-io-opengd77-1701', 'radio-io-opengd77-md9600'] as const) {
+      const capacity = getSatelliteKepsWriteCapacity(profileId);
+      expect(capacity?.max).toBe(OPENGD77_FAMILY_LIMITS.SATELLITE_MAX);
+      expect(capacity?.nameLength).toBe(OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH);
+      expect(capacity?.unitNoun).toBe('satellite');
+    }
+  });
+
   it('is undefined for a profile with no registered capacity ceiling', () => {
-    expect(getSatelliteKepsWriteCapacity('radio-io-opengd77-dm1701')).toBeUndefined();
+    expect(getSatelliteKepsWriteCapacity('radio-io-uv5r-mini')).toBeUndefined();
   });
 });
 
@@ -45,8 +64,14 @@ describe('getSatelliteKepsWritePreview (#1074)', () => {
     );
   });
 
+  it('has preview functions registered for OpenGD77 profileIds', () => {
+    for (const profileId of ['radio-io-opengd77-1701', 'radio-io-opengd77-md9600'] as const) {
+      expect(getSatelliteKepsWritePreview(profileId)).toBe(SATELLITE_KEPS_WRITE_PREVIEW[profileId]);
+    }
+  });
+
   it('is undefined for a profile with no registered preview function', () => {
-    expect(getSatelliteKepsWritePreview('radio-io-opengd77-dm1701')).toBeUndefined();
+    expect(getSatelliteKepsWritePreview('radio-io-uv5r-mini')).toBeUndefined();
   });
 });
 
@@ -103,8 +128,14 @@ describe('getSatelliteKepsExclusions (#1085 follow-up)', () => {
     expect(getSatelliteKepsExclusions('radio-io-at-d890uv')).toBeTypeOf('function');
   });
 
+  it('has exclusions functions registered for OpenGD77 profileIds', () => {
+    for (const profileId of ['radio-io-opengd77-1701', 'radio-io-opengd77-md9600'] as const) {
+      expect(getSatelliteKepsExclusions(profileId)).toBeTypeOf('function');
+    }
+  });
+
   it('is undefined for a profile with no registered exclusions function', () => {
-    expect(getSatelliteKepsExclusions('radio-io-opengd77-dm1701')).toBeUndefined();
+    expect(getSatelliteKepsExclusions('radio-io-uv5r-mini')).toBeUndefined();
   });
 
   it('reports a satellite-level exclusion with transmitterId null when nothing is write-eligible', () => {
@@ -136,5 +167,19 @@ describe('getSatelliteKepsExclusions (#1085 follow-up)', () => {
   it('is empty when every enabled satellite/transmitter is fully write-eligible', () => {
     const satellites = [makeSatellite({ transmitters: [makeTransmitter()] })];
     expect(getSatelliteKepsExclusions('radio-io-at-d890uv')!(satellites)).toEqual([]);
+  });
+
+  it('reports an extra OpenGD77 transmitter that does not fit the in-record FM slot', () => {
+    const satellites = [
+      makeSatellite({
+        id: 'sat-a',
+        transmitters: [
+          makeTransmitter({ id: 'tx-fm', mode: 'FM', label: 'Voice' }),
+          makeTransmitter({ id: 'tx-fm-2', mode: 'FM', label: 'Voice 2' }),
+        ],
+      }),
+    ];
+    const exclusions = getSatelliteKepsExclusions('radio-io-opengd77-1701')!(satellites);
+    expect(exclusions.some((e) => e.transmitterId === 'tx-fm-2' && e.reason.length > 0)).toBe(true);
   });
 });

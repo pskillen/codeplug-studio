@@ -19,8 +19,6 @@ import { findEncodedNameCollisions } from '@core/domain/satellite/findEncodedNam
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
-import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
-import type { SatelliteWritePreviewEntry } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { Button, DataTable, Panel, type DataTableColumn } from '../../components/v2/index.ts';
 import { SatelliteEncodedNameCell } from '../../components/builds/satelliteKeps/SatelliteEncodedNameCell.tsx';
@@ -41,10 +39,12 @@ import { resolveRadioWriteGate } from '../../services/radioWriteEnvGate.ts';
 import {
   getSatelliteKepsExclusions,
   getSatelliteKepsWriteAdapter,
+  getSatelliteKepsWriteCapacity,
   getSatelliteKepsWritePreview,
   hasSatelliteKepsWriteAdapter,
   satelliteKepsCapacityWarning,
   type SatelliteKepsExclusion,
+  type SatelliteKepsWritePreviewEntry,
   type SatelliteKepsWriteResult,
 } from '../../services/satelliteKepsWriteAdapters.ts';
 import RadioIoProgressModal, {
@@ -77,7 +77,7 @@ type SatellitePreviewParentRow = {
   children: SatellitePreviewRow[];
 };
 
-type SatellitePreviewChildRow = SatelliteWritePreviewEntry & {
+type SatellitePreviewChildRow = SatelliteKepsWritePreviewEntry & {
   kind: 'child';
   id: string;
 };
@@ -159,6 +159,7 @@ export default function BuildSatelliteKepsPage() {
   const kepsWriteFn = egress ? getSatelliteKepsWriteAdapter(egress.profileId) : undefined;
   const kepsPreview = egress ? getSatelliteKepsWritePreview(egress.profileId) : undefined;
   const kepsExclusions = egress ? getSatelliteKepsExclusions(egress.profileId) : undefined;
+  const nameLimit = getSatelliteKepsWriteCapacity(egress?.profileId ?? '')?.nameLength ?? 8;
 
   /**
    * Live-loaded enabled satellites for the preview and the "Excluded from write" panel below
@@ -188,7 +189,7 @@ export default function BuildSatelliteKepsPage() {
     };
   }, [activeProjectId, kepsPreview, kepsExclusions]);
 
-  const previewEntries = useMemo<SatelliteWritePreviewEntry[]>(
+  const previewEntries = useMemo<SatelliteKepsWritePreviewEntry[]>(
     () =>
       kepsPreview
         ? kepsPreview(enabledSatellites, { satelliteOverrides: build.satelliteOverrides })
@@ -302,7 +303,7 @@ export default function BuildSatelliteKepsPage() {
         return (
           <SatelliteEncodedNameCell
             entry={r}
-            nameLimit={AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH}
+            nameLimit={nameLimit}
             editing={editingTransmitterId === r.transmitterId}
             committedWireName={committed}
             onStartEdit={() => setEditingTransmitterId(r.transmitterId)}
