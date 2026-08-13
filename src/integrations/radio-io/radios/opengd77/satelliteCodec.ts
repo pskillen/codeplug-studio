@@ -416,8 +416,7 @@ export function previewSatelliteWriteRecords(
         hasWireNameOverride: row.fromOverride,
         uplinkHz: tx.uplinkHz,
         downlinkHz: tx.downlinkHz,
-        nameTruncated:
-          nameTruncated || row.generatedShortName !== row.satellite.name.trim(),
+        nameTruncated: nameTruncated || row.generatedShortName !== row.satellite.name.trim(),
         slot,
       });
     };
@@ -458,7 +457,10 @@ function readMagic(blob: Uint8Array): string {
 }
 
 function isValidAdditionalSettingsHeader(blob: Uint8Array): boolean {
-  return readMagic(blob) === ADDITIONAL_SETTINGS_MAGIC && readU32Le(blob, 0x08) === ADDITIONAL_SETTINGS_VERSION;
+  return (
+    readMagic(blob) === ADDITIONAL_SETTINGS_MAGIC &&
+    readU32Le(blob, 0x08) === ADDITIONAL_SETTINGS_VERSION
+  );
 }
 
 function initializeAdditionalSettingsHeader(blob: Uint8Array): void {
@@ -473,10 +475,7 @@ function initializeAdditionalSettingsHeader(blob: Uint8Array): void {
  * Insert or replace satellite bank (block id 3) inside a copy of the additional-settings blob.
  * Preserves other TLV blocks. Initializes a virgin/garbage header; refuses unknown OpenGD77 versions.
  */
-export function overlaySatelliteBank(
-  existing: Uint8Array,
-  bank: Uint8Array,
-): Uint8Array {
+export function overlaySatelliteBank(existing: Uint8Array, bank: Uint8Array): Uint8Array {
   if (existing.length < ADDITIONAL_SETTINGS_BYTES) {
     throw new RangeError(
       `Additional settings blob must be ${ADDITIONAL_SETTINGS_BYTES} bytes, got ${existing.length}`,
@@ -511,7 +510,9 @@ export function overlaySatelliteBank(
     }
     if (id === SATELLITE_BLOCK_ID) {
       if (offset + SATELLITE_BANK_BYTES > ADDITIONAL_SETTINGS_BYTES) {
-        throw new OpenGd77SatelliteBankFitError('Existing satellite block does not fit the bank size.');
+        throw new OpenGd77SatelliteBankFitError(
+          'Existing satellite block does not fit the bank size.',
+        );
       }
       next.set(bank, offset);
       return next;

@@ -85,11 +85,11 @@ BaudRate enum in qdmr: `Baud1200 = 0`, `Baud300 = 1`.
 
 ## Known deferrals
 
-| Topic                            | Status                                                                                                                                                           |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Callsign DB                      | Different bases/entry sizes for OpenGD77 vs OpenUV380 (`opengd77_callsigndb.*` / `openuv380_callsigndb.*`) — not required for first channel/contact/zone adapter |
+| Topic                            | Status                                                                                                                                                               |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Callsign DB                      | Different bases/entry sizes for OpenGD77 vs OpenUV380 (`opengd77_callsigndb.*` / `openuv380_callsigndb.*`) — not required for first channel/contact/zone adapter     |
 | Satellite orbital payload detail | Documented in [satellite-orbitals.md](satellite-orbitals.md) (qdmr-inferred; hardware verify pending [#858](https://github.com/pskillen/codeplug-studio/issues/858)) |
-| DTMF _settings_ (vs contacts)    | Region reserved; full field table deferred                                                                                                                       |
+| DTMF _settings_ (vs contacts)    | Region reserved; full field table deferred                                                                                                                           |
 
 ## Related
 

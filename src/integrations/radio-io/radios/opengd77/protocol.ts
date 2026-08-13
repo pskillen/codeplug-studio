@@ -461,11 +461,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
       OPENUV380_OFFSET.additionalSettings,
       ADDITIONAL_SETTINGS_BYTES,
     );
-    writeAbs(
-      intended,
-      OPENUV380_OFFSET.additionalSettings,
-      overlaySatelliteBank(existing, bank),
-    );
+    writeAbs(intended, OPENUV380_OFFSET.additionalSettings, overlaySatelliteBank(existing, bank));
 
     const sectors = collectDirtySectors(prior, intended);
     this.lastDirtySectorCount = sectors.length;

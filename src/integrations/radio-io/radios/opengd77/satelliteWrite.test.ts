@@ -4,7 +4,11 @@ import {
   OPENGD77_TYPE_WRITE_UV380,
   OPENGD77_WRITE_CMD_SET_SECTOR,
 } from '../../kit/codecs/opengd77Serial.ts';
-import { OPENGD77_CMD_CONTROL, OPENGD77_CONTROL_SAVE_REBOOT, OPENUV380_OFFSET } from './constants.ts';
+import {
+  OPENGD77_CMD_CONTROL,
+  OPENGD77_CONTROL_SAVE_REBOOT,
+  OPENUV380_OFFSET,
+} from './constants.ts';
 import { OpenGd77Protocol } from './protocol.ts';
 import { packSatelliteBank } from './satelliteCodec.ts';
 import { uploadOpenGd77SatelliteBank } from './satelliteWrite.ts';

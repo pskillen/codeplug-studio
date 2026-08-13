@@ -168,7 +168,10 @@ describe('packSatelliteBank', () => {
     );
     expect(countWriteEligibleSatelliteRecords(sats)).toBe(26);
     const bank = packSatelliteBank(sats);
-    const last = bank.subarray(0x08 + 24 * SATELLITE_RECORD_BYTES, 0x08 + 25 * SATELLITE_RECORD_BYTES);
+    const last = bank.subarray(
+      0x08 + 24 * SATELLITE_RECORD_BYTES,
+      0x08 + 25 * SATELLITE_RECORD_BYTES,
+    );
     expect(String.fromCharCode(last[0]!)).toBe('S');
   });
 });

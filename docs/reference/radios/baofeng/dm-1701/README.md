@@ -29,14 +29,14 @@ TYT MD-UV380 / Retevis RT-3S / Baofeng DM-1701 / Retevis RT-84 share OpenGD77 CP
 
 ## Documentation map
 
-| Doc                                                  | Contents                                                                                                                         |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| [limits.md](limits.md)                               | Channels, zone/TG members, names, TOT, colour code                                                                               |
-| [capabilities.md](capabilities.md)                   | Modes, APRS/DTMF modelling, layout conventions                                                                                   |
-| [power.md](power.md)                                 | P1–P9 percent mapping + link to generic wire spelling                                                                            |
-| [OpenGD77 binary memory](../../opengd77/README.md)   | Shared EEPROM/FLASH map + serial protocol (direct I/O)                                                                           |
-| [Satellite orbitals](../../opengd77/satellite-orbitals.md) | Shared OpenUV380 keps bank (additional-settings block 3)                                                                   |
-| [Backup / Restore](../../opengd77/backup-restore.md) | FLASH span zip + Restore SAVE_REBOOT (hardware verify pending, [#1142](https://github.com/pskillen/codeplug-studio/issues/1142)) |
+| Doc                                                        | Contents                                                                                                                         |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| [limits.md](limits.md)                                     | Channels, zone/TG members, names, TOT, colour code                                                                               |
+| [capabilities.md](capabilities.md)                         | Modes, APRS/DTMF modelling, layout conventions                                                                                   |
+| [power.md](power.md)                                       | P1–P9 percent mapping + link to generic wire spelling                                                                            |
+| [OpenGD77 binary memory](../../opengd77/README.md)         | Shared EEPROM/FLASH map + serial protocol (direct I/O)                                                                           |
+| [Satellite orbitals](../../opengd77/satellite-orbitals.md) | Shared OpenUV380 keps bank (additional-settings block 3)                                                                         |
+| [Backup / Restore](../../opengd77/backup-restore.md)       | FLASH span zip + Restore SAVE_REBOOT (hardware verify pending, [#1142](https://github.com/pskillen/codeplug-studio/issues/1142)) |
 
 ## Adapter wire
 
