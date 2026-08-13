@@ -3,6 +3,10 @@
  * Radio constants stay here — not in React. Does not assemble or persist.
  */
 
+import {
+  atD890BackupRestoreRole,
+  atD890BackupSpanForAddress,
+} from '../radios/at-d890uv/backupRestoreRoles.ts';
 import { D890_MAP } from '../radios/at-d890uv/constants.ts';
 import {
   DM32_BLOCK_SIZE,
@@ -139,6 +143,12 @@ function blockRole(modelId: string, address: number, data: Uint8Array): RadioBac
   return 'restorable';
 }
 
+function d890CoalesceKey(address: number, length: number): string {
+  const span = atD890BackupSpanForAddress(address);
+  if (span) return span.id;
+  return `leftover:${atD890BackupRestoreRole(address, length)}`;
+}
+
 function coalesceSparse(
   modelId: string,
   blocks: readonly BackupSparseBlock[],
@@ -150,7 +160,12 @@ function coalesceSparse(
     const sameRole =
       last &&
       blockRole(modelId, last.address, last.data) === blockRole(modelId, block.address, block.data);
-    if (last && sameRole && last.address + last.data.byteLength === block.address) {
+    const sameD890Span =
+      !isD890Model(modelId) ||
+      (last &&
+        d890CoalesceKey(last.address, last.data.byteLength) ===
+          d890CoalesceKey(block.address, block.data.byteLength));
+    if (last && sameRole && sameD890Span && last.address + last.data.byteLength === block.address) {
       const merged = new Uint8Array(last.data.byteLength + block.data.byteLength);
       merged.set(last.data, 0);
       merged.set(block.data, last.data.byteLength);
@@ -163,13 +178,7 @@ function coalesceSparse(
 }
 
 function d890Role(address: number, length: number): RadioBackupRegionRole {
-  const localStart = D890_MAP.LocalInfo;
-  const localEnd = localStart + D890_MAP.LocalInfoLength;
-  const end = address + length;
-  if (address < localEnd && end > localStart) {
-    return 'inspect-only';
-  }
-  return 'restorable';
+  return atD890BackupRestoreRole(address, length);
 }
 
 function dm32Role(address: number, data: Uint8Array): RadioBackupRegionRole {
@@ -194,6 +203,7 @@ function fromSparseBlocks(
   extra?: Partial<BackupRegionExtract>,
 ): BackupRegionExtract {
   const coalesced = coalesceSparse(modelId, sparseBlocks);
+  const usedIds = new Set<string>();
   const parts = coalesced.map((block, index) => {
     const inspect =
       isD890Model(modelId) && d890Role(block.address, block.data.byteLength) === 'inspect-only';
@@ -201,17 +211,23 @@ function fromSparseBlocks(
       isDm32Model(modelId) && dm32Role(block.address, block.data) === 'inspect-only';
     const restoreRole: RadioBackupRegionRole =
       inspect || dm32Inspect ? 'inspect-only' : 'restorable';
-    const id =
-      inspect && block.address === D890_MAP.LocalInfo
+    const d890Span = isD890Model(modelId) ? atD890BackupSpanForAddress(block.address) : undefined;
+    let id =
+      d890Span?.id ??
+      (inspect && block.address === D890_MAP.LocalInfo
         ? 'local-info'
         : dm32Inspect
           ? `calibration-${hexId(block.address)}`
-          : `region-${hexId(block.address)}`;
-    const label = inspect
-      ? 'LocalInfo'
+          : `region-${hexId(block.address)}`);
+    if (usedIds.has(id)) id = `${id}-${hexId(block.address)}`;
+    usedIds.add(id);
+    const label = d890Span
+      ? d890Span.label
       : dm32Inspect
         ? `Calibration (${hexId(block.address)})`
-        : `Region ${index + 1} (${hexId(block.address)})`;
+        : inspect
+          ? `Inspect-only (${hexId(block.address)})`
+          : `Region ${index + 1} (${hexId(block.address)})`;
     return makeRegion(id, label, block.address, block.data, restoreRole);
   });
   return collect(parts, 'known-map-regions', image.size, extra);

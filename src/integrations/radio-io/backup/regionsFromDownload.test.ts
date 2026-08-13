@@ -44,17 +44,39 @@ describe('regionsFromDownload', () => {
       modelId: 'AT-D890UV',
       image,
       sparseBlocks: [
-        { address: 0x1000, data: channels.subarray(0, 16) },
-        { address: 0x1010, data: channels.subarray(16, 32) },
+        { address: D890_MAP.ChannelData, data: channels.subarray(0, 16) },
+        { address: D890_MAP.ChannelData + 16, data: channels.subarray(16, 32) },
         { address: D890_MAP.LocalInfo, data: local },
       ],
     });
     expect(extract.coverage).toBe('known-map-regions');
     const localRegion = extract.regions.find((r) => r.id === 'local-info');
     expect(localRegion?.restoreRole).toBe('inspect-only');
-    const channelRegion = extract.regions.find((r) => r.address === 0x1000);
+    const channelRegion = extract.regions.find((r) => r.id === 'channel-data');
     expect(channelRegion?.byteLength).toBe(32);
     expect(channelRegion?.restoreRole).toBe('restorable');
+  });
+
+  it('marks D890 optional settings restorable and alarm inspect-only', () => {
+    const image = createMemoryMap(0x10);
+    const extract = regionsFromDownload({
+      modelId: 'AT-D890UV',
+      image,
+      sparseBlocks: [
+        {
+          address: D890_MAP.OptionalSettingsMain,
+          data: new Uint8Array(D890_MAP.OptionalSettingsMainLength).fill(0x11),
+        },
+        {
+          address: D890_MAP.AlarmBitmap,
+          data: new Uint8Array(D890_MAP.AlarmBitmapLength).fill(0x22),
+        },
+      ],
+    });
+    expect(extract.regions.find((r) => r.id === 'optional-settings-main')?.restoreRole).toBe(
+      'restorable',
+    );
+    expect(extract.regions.find((r) => r.id === 'alarm-bitmap')?.restoreRole).toBe('inspect-only');
   });
 
   it('marks DM-32 calibration blocks inspect-only and sets factory-reset fragility', () => {
