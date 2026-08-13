@@ -8,13 +8,13 @@ Per-radio restorable vs inspect-only region tables, coverage honesty, and protoc
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Strip tab `/builds/:id/backup` | Shipped | After Satellite keps (when present), before About; shown when the build has a Web Serial egress. |
+| Area                                          | Status  | Notes                                                                                                                       |
+| --------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Strip tab `/builds/:id/backup`                | Shipped | After Satellite keps (when present), before About; shown when the build has a Web Serial egress.                            |
 | Live backup → auto-download zip + RAM inspect | Shipped | [#1138](https://github.com/pskillen/codeplug-studio/issues/1138) — zip first, then page fill; leaving the tab discards RAM. |
-| Open backup file | Shipped | Offline parse of v1 archives. Radio Info `hydration.json` zips are not imported. |
-| Restore to radio | Not yet | Button visible and disabled: “Restore not available for this radio yet.” Protocol `restoreFromBackup` lands in later PRs. |
-| Per-radio restorable vs inspect-only maps | Design | Exact restore sections stay in this contract until each family’s restore PR; radio reference docs get the tables then. |
+| Open backup file                              | Shipped | Offline parse of v1 archives. Radio Info `hydration.json` zips are not imported.                                            |
+| Restore to radio                              | Not yet | Button visible and disabled: “Restore not available for this radio yet.” Protocol `restoreFromBackup` lands in later PRs.   |
+| Per-radio restorable vs inspect-only maps     | Design  | Exact restore sections stay in this contract until each family’s restore PR; radio reference docs get the tables then.      |
 
 ---
 
@@ -32,15 +32,15 @@ Backup / Restore is the spare tyre: a **file the operator owns**, plus a restore
 
 ## Vocabulary
 
-| Term | Meaning |
-| --- | --- |
-| **Write codeplug** | Export-tab Web Serial write: modelled build overlay + in-session co-resident bytes. Uses `assemble` / `prepareRadioWriteImage` / `upload`. |
-| **Backup** | Connect → `download()` (full-as-possible read) → versioned zip on disk **and** in-RAM session. |
-| **Restore** | Replay **restorable** archive bytes onto a matching radio. Not assemble. |
-| **Radio Info** | Former About-child inspect page. Replaced by this tab; old URLs redirect here. |
-| **Hydration bag** | `RadioCloneHydrationBag` — project/egress stash type. May be built **ephemerally in RAM** so existing clone-summary / decode helpers can render. Must not be the zip contract and must not be persisted. |
-| **Restorable region** | Named memory span Restore may send. |
-| **Inspect-only region** | Named span kept in the zip for diagnostics (LocalInfo, calibration, extra FLASH). Restore never writes it. |
+| Term                    | Meaning                                                                                                                                                                                                  |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Write codeplug**      | Export-tab Web Serial write: modelled build overlay + in-session co-resident bytes. Uses `assemble` / `prepareRadioWriteImage` / `upload`.                                                               |
+| **Backup**              | Connect → `download()` (full-as-possible read) → versioned zip on disk **and** in-RAM session.                                                                                                           |
+| **Restore**             | Replay **restorable** archive bytes onto a matching radio. Not assemble.                                                                                                                                 |
+| **Radio Info**          | Former About-child inspect page. Replaced by this tab; old URLs redirect here.                                                                                                                           |
+| **Hydration bag**       | `RadioCloneHydrationBag` — project/egress stash type. May be built **ephemerally in RAM** so existing clone-summary / decode helpers can render. Must not be the zip contract and must not be persisted. |
+| **Restorable region**   | Named memory span Restore may send.                                                                                                                                                                      |
+| **Inspect-only region** | Named span kept in the zip for diagnostics (LocalInfo, calibration, extra FLASH). Restore never writes it.                                                                                               |
 
 ---
 
@@ -71,11 +71,11 @@ flowchart LR
   end
 ```
 
-| Composition | Persist | `assemble`? | Feeds Write-codeplug? |
-| --- | --- | --- | --- |
-| Backup / inspect | Optional zip only | No | No |
-| Pre-write read | RAM, same connection as Write | Overlay yes | Yes |
-| Restore | Zip → radio | No | No |
+| Composition      | Persist                       | `assemble`? | Feeds Write-codeplug? |
+| ---------------- | ----------------------------- | ----------- | --------------------- |
+| Backup / inspect | Optional zip only             | No          | No                    |
+| Pre-write read   | RAM, same connection as Write | Overlay yes | Yes                   |
+| Restore          | Zip → radio                   | No          | No                    |
 
 Leaving the Backup / Restore page discards the RAM session. The zip on disk is the durable copy. Restore opens a **new** serial connection (backup already closed after read).
 
@@ -101,10 +101,10 @@ Still **per-build** because that is the only radio I/O door today (egress + desc
 
 Two actions:
 
-| Action | When | What |
-| --- | --- | --- |
-| **Backup radio** | Web Serial + descriptor | Connect → read → **auto-download zip** → populate RAM session → close session |
-| **Open backup file** | Always | File picker → parse zip → same inspect UI; no serial until Restore |
+| Action               | When                    | What                                                                          |
+| -------------------- | ----------------------- | ----------------------------------------------------------------------------- |
+| **Backup radio**     | Web Serial + descriptor | Connect → read → **auto-download zip** → populate RAM session → close session |
+| **Open backup file** | Always                  | File picker → parse zip → same inspect UI; no serial until Restore            |
 
 Copy: this is not Write; the zip stays on the operator’s disk; the file may contain contact banks / callsigns.
 
@@ -258,13 +258,13 @@ Write-codeplug overlay semantics stay as they are. Restore is a **sibling** of `
 
 Exact region-role tables ship in each radio’s reference docs when that adapter’s restore lands. Rules that must hold:
 
-| Family | Backup | Restore |
-| --- | --- | --- |
-| AT-D890UV | Sparse known-map regions, including LocalInfo for diagnostics. Not the huge digital-contact FLASH. Coverage `known-map-regions`. | Erase-unit RMW of restorable codeplug-shaped regions (channels, zones, scan, talk groups, RX lists, optional settings, APRS, …) onto a **fresh live read** of those units — never a virgin blank map. Omit LocalInfo and calibration. Keep the existing unsafe skip-write address. |
-| OpenGD77 (DM-1701, MD-9600) | Named FLASH spans. | Replay archive FLASH; force dirty vs empty/blank prior (not vs live, and not vs an armed write projection). Then **SAVE_REBOOT**, same as today’s upload. |
-| UV-5R Mini / UV-21 Pro V2 | CHIRP-sized programming clone (named MEM regions). No isolated cal table in Studio’s layout. | `upload` of that programming clone. Residual: if the vendor hid cal inside those spans, we do not isolate it — document that; do not invent offsets. Write-codeplug may still require project stash until a later series drops it. |
-| DM-32UV | Sparse blocks including isolated calibration (inspect-only) plus V-frame bases in the manifest. | Restorable blocks only. Live address/contact bases ≠ manifest → refuse. Warn at backup about factory reset. Write-codeplug may still stash. |
-| RT95 | Small programming clone. No serial in layout. | Clone `upload`. Model + firmware confirm. Write-codeplug may still stash. |
+| Family                      | Backup                                                                                                                           | Restore                                                                                                                                                                                                                                                                            |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AT-D890UV                   | Sparse known-map regions, including LocalInfo for diagnostics. Not the huge digital-contact FLASH. Coverage `known-map-regions`. | Erase-unit RMW of restorable codeplug-shaped regions (channels, zones, scan, talk groups, RX lists, optional settings, APRS, …) onto a **fresh live read** of those units — never a virgin blank map. Omit LocalInfo and calibration. Keep the existing unsafe skip-write address. |
+| OpenGD77 (DM-1701, MD-9600) | Named FLASH spans.                                                                                                               | Replay archive FLASH; force dirty vs empty/blank prior (not vs live, and not vs an armed write projection). Then **SAVE_REBOOT**, same as today’s upload.                                                                                                                          |
+| UV-5R Mini / UV-21 Pro V2   | CHIRP-sized programming clone (named MEM regions). No isolated cal table in Studio’s layout.                                     | `upload` of that programming clone. Residual: if the vendor hid cal inside those spans, we do not isolate it — document that; do not invent offsets. Write-codeplug may still require project stash until a later series drops it.                                                 |
+| DM-32UV                     | Sparse blocks including isolated calibration (inspect-only) plus V-frame bases in the manifest.                                  | Restorable blocks only. Live address/contact bases ≠ manifest → refuse. Warn at backup about factory reset. Write-codeplug may still stash.                                                                                                                                        |
+| RT95                        | Small programming clone. No serial in layout.                                                                                    | Clone `upload`. Model + firmware confirm. Write-codeplug may still stash.                                                                                                                                                                                                          |
 
 **i002 lesson (D890 Write):** encoding modelled bytes onto a blank map bricks the radio. Restore must overlay archive bytes on **this session’s live units**, not fill blank flash. That lesson is about the radio’s erase-unit behaviour, not about bringing stash back.
 
@@ -292,11 +292,11 @@ In-app warning that the zip can contain contact banks and callsigns. Filename is
 
 This feature is **radio-io memory**, not library or build modelling.
 
-| May | Must not |
-| --- | --- |
-| `src/integrations/radio-io/backup/`, radio protocol `restoreFromBackup`, app route/services | `RadioBuild` / library entities / IndexedDB as the store |
-| Ephemeral RAM bag for inspect decode | Persist `radio-clone` hydration for backup |
-| Named region ids in the Studio zip | CPS column names, OpenGD77-shaped library zones, name-string FKs |
+| May                                                                                         | Must not                                                         |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `src/integrations/radio-io/backup/`, radio protocol `restoreFromBackup`, app route/services | `RadioBuild` / library entities / IndexedDB as the store         |
+| Ephemeral RAM bag for inspect decode                                                        | Persist `radio-clone` hydration for backup                       |
+| Named region ids in the Studio zip                                                          | CPS column names, OpenGD77-shaped library zones, name-string FKs |
 
 Internal relationships stay UUID-based in the library. Backup files key radios by descriptor `radioModelId` + optional serial — that is an **external identity**, not a library FK.
 
@@ -304,16 +304,16 @@ Internal relationships stay UUID-based in the library. Backup files key radios b
 
 ## Planned code anchors
 
-| Layer | Path | Role |
-| --- | --- | --- |
-| Archive | `src/integrations/radio-io/backup/` | Manifest types, pack, parse, validate |
-| Protocol | `CloneImageRadio.restoreFromBackup` | Per-radio replay beside `upload` |
-| App service | `src/app/services/radioBackupRestore.ts` | Identity, region filter, progress; no assemble |
-| UI | `BuildRadioBackupPage` (`/builds/:id/backup`) | Empty / inspect / restore |
-| Inspect | `RadioCloneSummaryView` (inspect variant) | On-image lists |
-| Progress | `RadioIoProgressModal` `operation: 'restore'` | Distinct from Write |
-| Download | `downloadZip` / `isoTimestampForFilename` | Auto-download backup |
-| Retired | `BuildRadioInfoPage`, `radioInfoExport.ts` | Redirect / replace |
+| Layer       | Path                                          | Role                                           |
+| ----------- | --------------------------------------------- | ---------------------------------------------- |
+| Archive     | `src/integrations/radio-io/backup/`           | Manifest types, pack, parse, validate          |
+| Protocol    | `CloneImageRadio.restoreFromBackup`           | Per-radio replay beside `upload`               |
+| App service | `src/app/services/radioBackupRestore.ts`      | Identity, region filter, progress; no assemble |
+| UI          | `BuildRadioBackupPage` (`/builds/:id/backup`) | Empty / inspect / restore                      |
+| Inspect     | `RadioCloneSummaryView` (inspect variant)     | On-image lists                                 |
+| Progress    | `RadioIoProgressModal` `operation: 'restore'` | Distinct from Write                            |
+| Download    | `downloadZip` / `isoTimestampForFilename`     | Auto-download backup                           |
+| Retired     | `BuildRadioInfoPage`, `radioInfoExport.ts`    | Redirect / replace                             |
 
 ---
 

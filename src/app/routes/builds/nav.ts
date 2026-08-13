@@ -326,11 +326,7 @@ const WIRE_PREVIEW_SEGMENTS = new Set([
   'rx-group-lists',
 ]);
 
-const AUDIT_SEGMENTS = new Set([
-  'characteristics',
-  'export-resolution',
-  'neonplug-settings',
-]);
+const AUDIT_SEGMENTS = new Set(['characteristics', 'export-resolution', 'neonplug-settings']);
 
 const BACKUP_SEGMENTS = new Set(['backup', 'radio-info', 'radio-image']);
 

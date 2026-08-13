@@ -7,10 +7,7 @@ import {
   radioCloneSparseBlockBytes,
   type RadioCloneHydrationBag,
 } from '@core/models/radioCloneHydration.ts';
-import {
-  downloadZip,
-  isoTimestampForFilename,
-} from '@integrations/download/browserDownload.ts';
+import { downloadZip, isoTimestampForFilename } from '@integrations/download/browserDownload.ts';
 import {
   RADIO_BACKUP_FORMAT,
   RADIO_BACKUP_VERSION,
@@ -22,7 +19,12 @@ import {
   type RadioBackupManifestV1,
 } from '@integrations/radio-io/backup/index.ts';
 import { getRadioDescriptor } from '@integrations/radio-io/index.ts';
-import type { MemoryMap, ProgressFn, RadioDescriptor, RadioSession } from '@integrations/radio-io/types.ts';
+import type {
+  MemoryMap,
+  ProgressFn,
+  RadioDescriptor,
+  RadioSession,
+} from '@integrations/radio-io/types.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 
@@ -60,7 +62,10 @@ export function radioBackupFileName(manifest: RadioBackupManifestV1): string {
   return backupFileName(manifest.radioModelId, manifest.capturedAt);
 }
 
-export function downloadRadioBackupZip(zipBytes: Uint8Array, manifest: RadioBackupManifestV1): void {
+export function downloadRadioBackupZip(
+  zipBytes: Uint8Array,
+  manifest: RadioBackupManifestV1,
+): void {
   downloadZip(zipBytes, radioBackupFileName(manifest));
 }
 

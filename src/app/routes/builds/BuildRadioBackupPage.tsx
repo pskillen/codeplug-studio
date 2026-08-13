@@ -80,9 +80,7 @@ export default function BuildRadioBackupPage() {
   const descriptors = descriptorsForEgress(radioEgress);
   const descriptor = descriptors[0];
   const serialOk = isRadioSerialSupported();
-  const warnFactoryReset = (descriptor?.modelIds ?? []).some((id) =>
-    /dm-?32/i.test(id),
-  );
+  const warnFactoryReset = (descriptor?.modelIds ?? []).some((id) => /dm-?32/i.test(id));
 
   const attributionNames = (descriptor?.attributionIds ?? [])
     .map((id) => findAttribution(id)?.name)
@@ -207,7 +205,11 @@ export default function BuildRadioBackupPage() {
               >
                 Backup radio
               </Button>
-              <FileButton resetRef={fileResetRef} onChange={(f) => void handleOpenFile(f)} accept=".zip">
+              <FileButton
+                resetRef={fileResetRef}
+                onChange={(f) => void handleOpenFile(f)}
+                accept=".zip"
+              >
                 {(props) => (
                   <Button size="sm" variant="secondary" disabled={busy} {...props}>
                     Open backup file

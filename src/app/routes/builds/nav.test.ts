@@ -254,7 +254,10 @@ describe('allBuildDetailPaths', () => {
       `/builds/${build.id}/radio-info`,
     );
 
-    const { build: csvBuild, egressPaths: csvPaths } = newRadioBuildForProfile('proj', 'chirp-uv5r');
+    const { build: csvBuild, egressPaths: csvPaths } = newRadioBuildForProfile(
+      'proj',
+      'chirp-uv5r',
+    );
     const noSerial = csvPaths.filter((path) => path.formatId !== 'radio-io');
     expect(allBuildDetailPaths(csvBuild, { egressPaths: noSerial })).not.toContain(
       `/builds/${csvBuild.id}/backup`,

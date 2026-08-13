@@ -4,7 +4,11 @@
  */
 
 import { D890_MAP } from '../radios/at-d890uv/constants.ts';
-import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from '../radios/dm32uv/constants.ts';
+import {
+  DM32_BLOCK_SIZE,
+  DM32_METADATA,
+  DM32_METADATA_OFFSET,
+} from '../radios/dm32uv/constants.ts';
 import { classifyDm32Metadata } from '../radios/dm32uv/memory.ts';
 import {
   OPENUV380_FLASH_SPANS,
@@ -125,11 +129,7 @@ function uvLayoutFor(modelId: string) {
   return null;
 }
 
-function blockRole(
-  modelId: string,
-  address: number,
-  data: Uint8Array,
-): RadioBackupRegionRole {
+function blockRole(modelId: string, address: number, data: Uint8Array): RadioBackupRegionRole {
   if (isD890Model(modelId)) {
     return d890Role(address, data.byteLength);
   }
@@ -149,8 +149,7 @@ function coalesceSparse(
     const last = out[out.length - 1];
     const sameRole =
       last &&
-      blockRole(modelId, last.address, last.data) ===
-        blockRole(modelId, block.address, block.data);
+      blockRole(modelId, last.address, last.data) === blockRole(modelId, block.address, block.data);
     if (last && sameRole && last.address + last.data.byteLength === block.address) {
       const merged = new Uint8Array(last.data.byteLength + block.data.byteLength);
       merged.set(last.data, 0);
@@ -198,7 +197,8 @@ function fromSparseBlocks(
   const parts = coalesced.map((block, index) => {
     const inspect =
       isD890Model(modelId) && d890Role(block.address, block.data.byteLength) === 'inspect-only';
-    const dm32Inspect = isDm32Model(modelId) && dm32Role(block.address, block.data) === 'inspect-only';
+    const dm32Inspect =
+      isDm32Model(modelId) && dm32Role(block.address, block.data) === 'inspect-only';
     const restoreRole: RadioBackupRegionRole =
       inspect || dm32Inspect ? 'inspect-only' : 'restorable';
     const id =
