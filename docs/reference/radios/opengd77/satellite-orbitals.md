@@ -138,6 +138,7 @@ Not a separate `SATELLITE_DATA` PROGRAM type (that is D890). OpenGD77 keps ride 
 | FM / APRS / beacon | one of each per record | Extra library transmitters beyond those roles skip with a reason — not extra slots |
 | Studio RF gate     | 136–174 / 400–480 MHz  | Separate from channel-eligibility 400–470; see [DM-1701 capabilities](../baofeng/dm-1701/capabilities.md#satellite-keps-write-eligibility-studio) |
 | Radio UI slots     | Freq 1 / 2 / 3         | qdmr fields FM / APRS / beacon; Freq 3 also takes CW/SSTV/telemetry RX |
+| Contested slot     | Build override         | `satelliteBankSlot` on the transmitter UUID; otherwise first-wins among classified transmitters |
 
 Code SoT: `OPENGD77_FAMILY_LIMITS` in `src/core/radios/opengd77/limits.ts`. Human: [DM-1701 limits](../baofeng/dm-1701/limits.md) / [MD-9600 limits](../tyt/md-9600/limits.md).
 
