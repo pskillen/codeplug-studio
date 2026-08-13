@@ -21,6 +21,7 @@
 .layout {
   display: grid;
   grid-template-columns: 1fr minmax(320px, 380px);
+  align-items: start;
   gap: 16px;
 }
 
