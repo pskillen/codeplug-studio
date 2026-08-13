@@ -21,6 +21,63 @@ export const EXPLODE_OFFSET_PER_LAYER = 0.15;
 export interface ShellDisplayOptions {
   exaggerationFactor: number;
   explodeEnabled: boolean;
+  fresnelEnabled: boolean;
+}
+
+/** Face-on (looking through the shell toward Earth) opacity when Fresnel shading is on. */
+export const FRESNEL_OPACITY_MIN = 0.05;
+/** Grazing/limb opacity when Fresnel shading is on. */
+export const FRESNEL_OPACITY_MAX = 0.4;
+/** `pow(1 - |N·V|, power)` — higher tightens the glow to the silhouette rim. */
+export const FRESNEL_POWER = 2;
+
+const SHELL_VERTEX_SHADER = /* glsl */ `
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPosition;
+  void main() {
+    vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+    vWorldPosition = worldPosition.xyz;
+    vWorldNormal = normalize(mat3(modelMatrix) * normal);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const SHELL_FRAGMENT_SHADER = /* glsl */ `
+  uniform vec3 uColor;
+  uniform vec3 uCameraPosition;
+  uniform float uFresnelEnabled;
+  uniform float uBaselineOpacity;
+  uniform float uOpacityMin;
+  uniform float uOpacityMax;
+  uniform float uFresnelPower;
+  varying vec3 vWorldNormal;
+  varying vec3 vWorldPosition;
+  void main() {
+    float baseline = uBaselineOpacity;
+    vec3 normal = normalize(vWorldNormal);
+    // Prefer the explicit uniform (pushed from Globe.camera() each frame) and
+    // fall back to Three's built-in cameraPosition if the uniform is still at origin.
+    vec3 cam = uCameraPosition;
+    if (dot(cam, cam) < 1e-6) {
+      cam = cameraPosition;
+    }
+    vec3 viewDir = normalize(cam - vWorldPosition);
+    float ndotv = abs(dot(normal, viewDir));
+    float fresnel = pow(1.0 - clamp(ndotv, 0.0, 1.0), uFresnelPower);
+    float fresnelOpacity = mix(uOpacityMin, uOpacityMax, fresnel);
+    float opacity = mix(baseline, fresnelOpacity, uFresnelEnabled);
+    gl_FragColor = vec4(uColor, opacity);
+  }
+`;
+
+/**
+ * Per-fragment Fresnel opacity for a given |N·V| (1 = face-on, 0 = grazing).
+ * Matches the fragment shader: `mix(MIN, MAX, pow(1 - |N·V|, POWER))`.
+ */
+export function fresnelOpacity(ndotv: number): number {
+  const clamped = Math.min(1, Math.max(0, Math.abs(ndotv)));
+  const fresnel = (1 - clamped) ** FRESNEL_POWER;
+  return FRESNEL_OPACITY_MIN + fresnel * (FRESNEL_OPACITY_MAX - FRESNEL_OPACITY_MIN);
 }
 
 /**
@@ -69,6 +126,7 @@ export function shellRadiusUnits(midAltitudeKm: number): number {
   return displayShellRadiusUnits(midAltitudeKm, 0, {
     exaggerationFactor: 1,
     explodeEnabled: false,
+    fresnelEnabled: false,
   });
 }
 
@@ -85,12 +143,37 @@ export function buildShellMesh(
   const midAltitudeKm = (s.altitudeMinKm + s.altitudeMaxKm) / 2;
   const radius = displayShellRadiusUnits(midAltitudeKm, layerIndex, display);
   const geometry = new THREE.SphereGeometry(radius, 48, 48);
-  const material = new THREE.MeshBasicMaterial({
-    color: colorForLayer(s.id),
+  const color = new THREE.Color(colorForLayer(s.id));
+  const material = new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: { value: color },
+      uCameraPosition: { value: new THREE.Vector3(0, 0, 400) },
+      uFresnelEnabled: { value: display.fresnelEnabled ? 1 : 0 },
+      uBaselineOpacity: { value: SHELL_BASELINE_OPACITY },
+      uOpacityMin: { value: FRESNEL_OPACITY_MIN },
+      uOpacityMax: { value: FRESNEL_OPACITY_MAX },
+      uFresnelPower: { value: FRESNEL_POWER },
+    },
+    vertexShader: SHELL_VERTEX_SHADER,
+    fragmentShader: SHELL_FRAGMENT_SHADER,
     transparent: true,
-    opacity: SHELL_BASELINE_OPACITY,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
   return new THREE.Mesh(geometry, material);
+}
+
+/** Pushes camera position and Fresnel toggle into each shell's shader uniforms. */
+export function updateShellFresnel(
+  obj: THREE.Object3D,
+  camera: THREE.Camera | undefined,
+  fresnelEnabled: boolean,
+): void {
+  const mesh = obj as THREE.Mesh;
+  const material = mesh.material;
+  if (!(material instanceof THREE.ShaderMaterial)) return;
+  material.uniforms.uFresnelEnabled.value = fresnelEnabled ? 1 : 0;
+  if (camera) {
+    material.uniforms.uCameraPosition.value.copy(camera.position);
+  }
 }

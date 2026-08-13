@@ -5,6 +5,9 @@ import {
   EXPLODE_OFFSET_PER_LAYER,
   exaggeratedAltitudeKm,
   explodeOffsetUnits,
+  FRESNEL_OPACITY_MAX,
+  FRESNEL_OPACITY_MIN,
+  fresnelOpacity,
   GLOBE_RADIUS_UNITS,
   shellRadiusUnits,
 } from './buildGlobeData.ts';
@@ -44,7 +47,7 @@ describe('explodeOffsetUnits', () => {
 });
 
 describe('displayShellRadiusUnits', () => {
-  const trueScale = { exaggerationFactor: 1, explodeEnabled: false };
+  const trueScale = { exaggerationFactor: 1, explodeEnabled: false, fresnelEnabled: false };
 
   it('matches shellRadiusUnits at true scale', () => {
     expect(displayShellRadiusUnits(100, 2, trueScale)).toBe(shellRadiusUnits(100));
@@ -52,7 +55,13 @@ describe('displayShellRadiusUnits', () => {
 
   it('scales altitude by the exaggeration factor', () => {
     const midAltitudeKm = 100;
-    expect(displayShellRadiusUnits(midAltitudeKm, 0, { exaggerationFactor: 5, explodeEnabled: false })).toBeCloseTo(
+    expect(
+      displayShellRadiusUnits(midAltitudeKm, 0, {
+        exaggerationFactor: 5,
+        explodeEnabled: false,
+        fresnelEnabled: false,
+      }),
+    ).toBeCloseTo(
       GLOBE_RADIUS_UNITS * (1 + (midAltitudeKm * 5) / GLOBE_EARTH_RADIUS_KM),
     );
   });
@@ -60,10 +69,24 @@ describe('displayShellRadiusUnits', () => {
   it('adds explode offset in globe-radius units before converting to scene units', () => {
     const midAltitudeKm = 100;
     expect(
-      displayShellRadiusUnits(midAltitudeKm, 3, { exaggerationFactor: 1, explodeEnabled: true }),
+      displayShellRadiusUnits(midAltitudeKm, 3, {
+        exaggerationFactor: 1,
+        explodeEnabled: true,
+        fresnelEnabled: false,
+      }),
     ).toBeCloseTo(
       GLOBE_RADIUS_UNITS *
         (1 + midAltitudeKm / GLOBE_EARTH_RADIUS_KM + 3 * EXPLODE_OFFSET_PER_LAYER),
     );
+  });
+});
+
+describe('fresnelOpacity', () => {
+  it('is at the minimum when looking face-on (|N·V| = 1)', () => {
+    expect(fresnelOpacity(1)).toBeCloseTo(FRESNEL_OPACITY_MIN);
+  });
+
+  it('is at the maximum at a grazing angle (|N·V| = 0)', () => {
+    expect(fresnelOpacity(0)).toBeCloseTo(FRESNEL_OPACITY_MAX);
   });
 });

@@ -65,6 +65,7 @@ describe('HfPropagationGlobe', () => {
     const shells = lastGlobeProps?.customLayerData as { id: string }[];
     expect(shells.map((s) => s.id)).toEqual(['E', 'F2']);
     expect(lastGlobeProps?.customThreeObject).toBeInstanceOf(Function);
+    expect(lastGlobeProps?.customThreeObjectUpdate).toBeInstanceOf(Function);
   });
 
   it('passes all four layers when every layer is active', () => {
