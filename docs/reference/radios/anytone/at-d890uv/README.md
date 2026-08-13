@@ -43,6 +43,7 @@ Provisional CSV caps mirror `profiles.ts` (`ANYTONE_PROFILES`); still verify aga
 | [satellite-keps.md](satellite-keps.md)                                         | Satellite keps base `0x4a80000`, `0x200` record, erase-unit safety, no occupancy bitmap ([#855](https://github.com/pskillen/codeplug-studio/issues/855)) — GPL-source-inferred, not hardware-verified                     |
 | [wire-capture-2026-08-11-write-keps.md](wire-capture-2026-08-11-write-keps.md) | Real USB wire capture of the official CPS writing satellite keps — hardware confirmation of most of `satellite-keps.md`'s record layout, plus new findings (trailing-slot zero-fill, official CPS's own CSV-escaping bug) |
 | [fixtures.md](fixtures.md)                                                     | How to capture dumps for tests without committing personal codeplugs                                                                                                                                                      |
+| [backup-restore.md](backup-restore.md)                                         | Backup coverage `known-map-regions`; Restore omits LocalInfo / alarm / cals; hardware verify pending ([#1141](https://github.com/pskillen/codeplug-studio/issues/1141))                                                   |
 
 ## Adapter wire (files)
 
