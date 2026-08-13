@@ -277,7 +277,7 @@ export async function prepareRadioWriteImage(
   image?: MemoryMap;
   warnings: string[];
   organisation: RadioWriteOrganisation;
-  channels: RadioChannelDto[];
+  channels: readonly RadioChannelDto[];
 }> {
   const descriptor = descriptorsForEgress(egress)[0];
   if (descriptor && resolveRadioWriteGate(descriptor) === 'hidden') {

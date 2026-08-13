@@ -123,7 +123,7 @@ describe('radioIoSession helpers', () => {
       { ...egress, hydration },
       emptyLibrary([ch]),
     );
-    expect(image.size).toBe(UV5R_MINI_MEM_TOTAL);
+    expect(image?.size).toBe(UV5R_MINI_MEM_TOTAL);
   });
 
   it('prepares OpenGD77 DM-1701 write image from hydration + projection', async () => {
@@ -152,7 +152,7 @@ describe('radioIoSession helpers', () => {
       { ...egress, hydration },
       emptyLibrary([ch]),
     );
-    expect(image.size).toBe(OPENUV380_IMAGE_SIZE);
+    expect(image?.size).toBe(OPENUV380_IMAGE_SIZE);
   });
 
   it('blocks write without hydration', async () => {
