@@ -223,8 +223,9 @@ describe('previewSatelliteWriteRecords', () => {
       ],
     });
     const preview = previewSatelliteWriteRecords([sat]);
-    expect(preview.map((p) => p.slot)).toEqual(['fm', 'aprs']);
+    expect(preview.map((p) => p.slot)).toEqual(['fm', 'aprs', 'beacon']);
     expect(preview.every((p) => p.encodedName === 'ISS')).toBe(true);
+    expect(preview[2]?.transmitterId).toBe('');
   });
 
   it('applies a spacecraft wire-name override keyed by satellite id', () => {
@@ -280,9 +281,11 @@ describe('previewSatelliteWriteRecords', () => {
       ],
     });
     const preview = previewSatelliteWriteRecords([sat]);
-    expect(preview).toHaveLength(1);
+    expect(preview).toHaveLength(3);
     expect(preview[0]?.transmitterId).toBe('tx-1');
     expect(preview[0]?.slotCandidates.map((c) => c.transmitterId)).toEqual(['tx-1', 'tx-2']);
+    expect(preview[1]?.slot).toBe('aprs');
+    expect(preview[1]?.transmitterId).toBe('');
   });
 
   it('ignores a satelliteBankSlot that does not match the transmitter class', () => {

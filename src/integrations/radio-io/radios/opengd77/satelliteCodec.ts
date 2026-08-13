@@ -63,7 +63,13 @@ export interface OpenGd77SatelliteWritePreviewEntry {
   downlinkHz: number | null;
   nameTruncated: boolean;
   slot: OpenGd77SatelliteBankSlot;
-  slotCandidates: { transmitterId: string; label: string; mode: string | null }[];
+  slotCandidates: {
+    transmitterId: string;
+    label: string;
+    mode: string | null;
+    uplinkHz: number | null;
+    downlinkHz: number | null;
+  }[];
 }
 
 export interface CapabilitySkippedTransmitter {
@@ -428,51 +434,32 @@ export function previewSatelliteWriteRecords(
     const oscar = satNames?.suggestedOscar ?? null;
     const nameTruncated = row.generatedShortName !== row.satellite.name.trim();
     const slots = assignSlots(row.satellite, options?.satelliteOverrides);
-    const push = (slot: OpenGd77SatelliteBankSlot, tx: SatelliteTransmitter): void => {
+    const bankSlots: OpenGd77SatelliteBankSlot[] = ['fm', 'aprs', 'beacon'];
+    for (const slot of bankSlots) {
+      const tx = row[slot];
       entries.push({
         satelliteId: row.satellite.id,
         satelliteName: row.satellite.name,
-        transmitterId: tx.id,
-        transmitterLabel: tx.label,
-        mode: tx.mode,
+        transmitterId: tx?.id ?? '',
+        transmitterLabel: tx?.label ?? '',
+        mode: tx?.mode ?? null,
         encodedName: row.encodedName,
         satelliteWireName: row.generatedShortName,
         generatedWireName: row.generatedShortName,
         suggestedFamiliarEncoded: familiar,
         suggestedOscarEncoded: oscar,
         hasWireNameOverride: row.fromOverride,
-        uplinkHz: tx.uplinkHz,
-        downlinkHz: tx.downlinkHz,
+        uplinkHz: tx?.uplinkHz ?? null,
+        downlinkHz: tx?.downlinkHz ?? null,
         nameTruncated: nameTruncated || row.generatedShortName !== row.satellite.name.trim(),
         slot,
         slotCandidates: slots.candidates[slot].map((candidate) => ({
           transmitterId: candidate.id,
           label: candidate.label,
           mode: candidate.mode,
+          uplinkHz: candidate.uplinkHz,
+          downlinkHz: candidate.downlinkHz,
         })),
-      });
-    };
-    if (row.fm) push('fm', row.fm);
-    if (row.aprs) push('aprs', row.aprs);
-    if (row.beacon) push('beacon', row.beacon);
-    if (!row.fm && !row.aprs && !row.beacon) {
-      entries.push({
-        satelliteId: row.satellite.id,
-        satelliteName: row.satellite.name,
-        transmitterId: row.satellite.id,
-        transmitterLabel: '',
-        mode: null,
-        encodedName: row.encodedName,
-        satelliteWireName: row.generatedShortName,
-        generatedWireName: row.generatedShortName,
-        suggestedFamiliarEncoded: familiar,
-        suggestedOscarEncoded: oscar,
-        hasWireNameOverride: row.fromOverride,
-        uplinkHz: null,
-        downlinkHz: null,
-        nameTruncated: row.generatedShortName !== row.satellite.name.trim(),
-        slot: 'fm',
-        slotCandidates: [],
       });
     }
   }

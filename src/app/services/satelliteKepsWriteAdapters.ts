@@ -158,7 +158,13 @@ export interface SatelliteKepsWritePreviewOptions {
 /** Common preview row for any registered keps adapter (OpenGD77 may add extra fields). */
 export type SatelliteKepsWritePreviewEntry = SatelliteWritePreviewEntry & {
   slot?: OpenGd77SatelliteBankSlot;
-  slotCandidates?: { transmitterId: string; label: string; mode: string | null }[];
+  slotCandidates?: {
+    transmitterId: string;
+    label: string;
+    mode: string | null;
+    uplinkHz?: number | null;
+    downlinkHz?: number | null;
+  }[];
 };
 
 export type SatelliteKepsWritePreviewFn = (
