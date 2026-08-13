@@ -21,11 +21,11 @@ Per-radio restorable vs inspect-only region tables, coverage honesty, and protoc
 
 ## Problem
 
-Studio is removing **persisted radio-clone hydration** from the project (`EgressPath.hydration` / `RadioCloneHydrationBag`). That stash was unsafe as a Write base (wrong radio, stale session) and is being deleted on purpose.
+Studio stopped persisting **radio-clone hydration** on the project for new captures (`EgressPath.hydration` / `RadioCloneHydrationBag`). That stash was unsafe as a Write base (wrong radio, stale session) and is being deleted on purpose.
 
 It was also the only **1-click recovery** after a bad Web Serial write: a prior Read sat on the egress, and Write merged the current build onto those bytes. Dropping stash without a replacement leaves operators with vendor CPS only.
 
-**Radio Info** (`/builds/:id/radio-info`) already inspects a live read in RAM and can dump a debug zip of the hydration bag. That zip is not a restore format, and inspect lived under About — easy to miss before a risky write.
+**Radio Info** (`/builds/:id/radio-info`) used to inspect a live read in RAM and could dump a debug zip of the hydration bag. That zip is not a restore format, and inspect lived under About — easy to miss before a risky write. The Backup / Restore tab replaced it; old URLs redirect here.
 
 Backup / Restore is the spare tyre: a **file the operator owns**, plus a restore path that is **not** “Write this build.”
 
@@ -209,7 +209,7 @@ v1 only at ship. No project schema bump. Archives are never stored in IndexedDB 
 
 ## In-memory session
 
-React page state only (same lifetime as today’s Radio Info bag):
+React page state only (same lifetime as the former Radio Info bag):
 
 ```ts
 type RadioBackupSession = {
@@ -338,7 +338,7 @@ Internal relationships stay UUID-based in the library. Backup files key radios b
 4. Attempt restore with a mismatched serial (or a zip from another unit) → refused before protocol write.
 5. Confirm Export **Write** still uses assemble + in-session overlay (or stash, on unmigrated families) and does not read the backup zip.
 
-Hardware verify is part of shipping each family’s restore, not a docs footnote.
+Hardware verify is part of shipping each family's restore. Remaining radios: **hardware verify pending** — operator waived live radio; tester feedback later. Do not claim HW-verified.
 
 ---
 
