@@ -61,9 +61,7 @@ describe('displayShellRadiusUnits', () => {
         explodeEnabled: false,
         fresnelEnabled: false,
       }),
-    ).toBeCloseTo(
-      GLOBE_RADIUS_UNITS * (1 + (midAltitudeKm * 5) / GLOBE_EARTH_RADIUS_KM),
-    );
+    ).toBeCloseTo(GLOBE_RADIUS_UNITS * (1 + (midAltitudeKm * 5) / GLOBE_EARTH_RADIUS_KM));
   });
 
   it('uses canonical layer index so F2 still gets the outermost explode offset at night', () => {

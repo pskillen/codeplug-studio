@@ -6,10 +6,10 @@ Renders the 3D propagation globe for the [HF/RF propagation visualiser](../../..
 
 ## Props
 
-| Prop      | Type                      | Notes                                                                                                                                                                                                 |
-| --------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `layers`  | `IonosphericLayerState[]` | Day/night-aware layer state from `computeIonosphericLayers`. Only `active` layers are drawn.                                                                                                          |
-| `display` | `ShellDisplayOptions`     | Optional. `{ exaggerationFactor, explodeEnabled, fresnelEnabled }`. Omit for true-scale shells (factor `1`, explode/Fresnel off). The page passes live Display-panel state.                           |
+| Prop      | Type                      | Notes                                                                                                                                                                       |
+| --------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layers`  | `IonosphericLayerState[]` | Day/night-aware layer state from `computeIonosphericLayers`. Only `active` layers are drawn.                                                                                |
+| `display` | `ShellDisplayOptions`     | Optional. `{ exaggerationFactor, explodeEnabled, fresnelEnabled }`. Omit for true-scale shells (factor `1`, explode/Fresnel off). The page passes live Display-panel state. |
 
 ## Usage
 
@@ -22,9 +22,9 @@ const HfPropagationGlobe = lazy(
 
 <Suspense fallback={<div>Loading 3D globe…</div>}>
   <HfPropagationGlobe
-  layers={layers}
-  display={{ exaggerationFactor: 5, explodeEnabled: true, fresnelEnabled: true }}
-/>
+    layers={layers}
+    display={{ exaggerationFactor: 5, explodeEnabled: true, fresnelEnabled: true }}
+  />
 </Suspense>;
 ```
 

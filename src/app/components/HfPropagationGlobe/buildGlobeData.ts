@@ -122,14 +122,14 @@ export function buildShellMesh(
   material.customProgramCacheKey = () => 'hf-shell-fresnel';
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
-    shader.vertexShader = `varying vec3 vShellWorldPosition;\nvarying vec3 vShellWorldNormal;\n${shader.vertexShader}`.replace(
-      '#include <begin_vertex>',
-      `#include <begin_vertex>
+    shader.vertexShader =
+      `varying vec3 vShellWorldPosition;\nvarying vec3 vShellWorldNormal;\n${shader.vertexShader}`.replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
        vShellWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;
        vShellWorldNormal = normalize(mat3(modelMatrix) * position);`,
-    );
-    shader.fragmentShader =
-      `uniform float uFresnelEnabled;
+      );
+    shader.fragmentShader = `uniform float uFresnelEnabled;
 uniform float uBaselineOpacity;
 uniform float uOpacityMin;
 uniform float uOpacityMax;
@@ -137,14 +137,14 @@ uniform float uFresnelPower;
 varying vec3 vShellWorldPosition;
 varying vec3 vShellWorldNormal;
 ${shader.fragmentShader}`.replace(
-        '#include <color_fragment>',
-        `#include <color_fragment>
+      '#include <color_fragment>',
+      `#include <color_fragment>
          vec3 shellViewDir = normalize(cameraPosition - vShellWorldPosition);
          float ndotv = abs(dot(normalize(vShellWorldNormal), shellViewDir));
          float fresnel = pow(1.0 - clamp(ndotv, 0.0, 1.0), uFresnelPower);
          float fresnelOpacity = mix(uOpacityMin, uOpacityMax, fresnel);
          diffuseColor.a = mix(uBaselineOpacity, fresnelOpacity, uFresnelEnabled);`,
-      );
+    );
   };
   return new THREE.Mesh(geometry, material);
 }
@@ -159,8 +159,7 @@ export function updateShellFresnel(
   const material = mesh.material;
   if (!(material instanceof THREE.MeshBasicMaterial)) return;
   const uniforms = material.userData.shellFresnelUniforms as
-    | { uFresnelEnabled: { value: number } }
-    | undefined;
+    { uFresnelEnabled: { value: number } } | undefined;
   if (!uniforms) return;
   uniforms.uFresnelEnabled.value = fresnelEnabled ? 1 : 0;
 }
