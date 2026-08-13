@@ -190,4 +190,3 @@ describe('OpenGd77Protocol', () => {
     expect(channels.some((ch) => ch.wireName === 'LIVE')).toBe(true);
   });
 });
-

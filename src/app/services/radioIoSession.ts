@@ -468,12 +468,9 @@ async function resolveRadioWriteImageForUpload(
       prior = session.radio.getPriorImage();
     }
     try {
-      return encodeOpenGd77WriteImageFromPrior(
-        prior,
-        prepared.channels,
-        prepared.organisation,
-        { powerSteps: session.radio.getPowerSteps() },
-      );
+      return encodeOpenGd77WriteImageFromPrior(prior, prepared.channels, prepared.organisation, {
+        powerSteps: session.radio.getPowerSteps(),
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new RadioWriteBlockedError(message);

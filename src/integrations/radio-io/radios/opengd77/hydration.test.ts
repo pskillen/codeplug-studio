@@ -4,7 +4,11 @@ import {
   encodeOpenGd77WriteImageFromPrior,
   OPENGD77_EMPTY_WRITE_PRIOR_MESSAGE,
 } from './hydration.ts';
-import { OPENGD77_CHANNEL_RECORD_SIZE, OPENUV380_IMAGE_SIZE, OPENUV380_OFFSET } from './constants.ts';
+import {
+  OPENGD77_CHANNEL_RECORD_SIZE,
+  OPENUV380_IMAGE_SIZE,
+  OPENUV380_OFFSET,
+} from './constants.ts';
 import { createOpenUv380Image, readAbs, writeAbs } from './memory.ts';
 import { channelRecordAbs, decodeChannelRecord } from './channelCodec.ts';
 

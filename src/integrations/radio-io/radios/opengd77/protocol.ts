@@ -358,12 +358,9 @@ export class OpenGd77Protocol implements CloneImageRadio {
     if (this.pendingWriteProjection) {
       const pending = this.pendingWriteProjection;
       this.pendingWriteProjection = null;
-      intended = encodeOpenGd77WriteImageFromPrior(
-        prior,
-        pending.channels,
-        pending.organisation,
-        { powerSteps: this.powerSteps },
-      );
+      intended = encodeOpenGd77WriteImageFromPrior(prior, pending.channels, pending.organisation, {
+        powerSteps: this.powerSteps,
+      });
     }
 
     const sectors = collectDirtySectors(prior, intended);
