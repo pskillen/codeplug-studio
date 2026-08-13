@@ -4,6 +4,7 @@ Tier-1 hub for the **Propagation Visualiser** — an interactive 3D globe (plus 
 
 **Tracking:** Epic [#1162](https://github.com/pskillen/codeplug-studio/issues/1162) (child of Milestone 2 [#495](https://github.com/pskillen/codeplug-studio/issues/495))
 **Navigation:** reached from the Tools strip (`Tools → Propagation Visualiser`, `/reference/rf-propagation`), reachable with **no active project** — like Maidenhead locator and Band plan, unlike the project-scoped Tracking Dashboard.
+**Components:** [HfPropagationGlobe](../../../src/app/components/HfPropagationGlobe/HfPropagationGlobe.md)
 
 ---
 
@@ -12,7 +13,7 @@ Tier-1 hub for the **Propagation Visualiser** — an interactive 3D globe (plus 
 | Ticket                                                           | Area         | Status      | Notes                                                                                                                                                                                                             |
 | ---------------------------------------------------------------- | ------------ | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [#1163](https://github.com/pskillen/codeplug-studio/issues/1163) | app          | Shipped     | Route, `/reference/rf-propagation` outside `RequireActiveProject`, Tools-strip entry, and `HfPropagationPage` control-panel layout (View/RF/Antenna/Environment/Reading) — local state only, no globe, no physics |
-| [#1164](https://github.com/pskillen/codeplug-studio/issues/1164) | app          | Not started | Ionospheric shell rendering spike                                                                                                                                                                                 |
+| [#1164](https://github.com/pskillen/codeplug-studio/issues/1164) | app          | Shipped     | Ionospheric shell rendering spike — hard-coded D/E/F1/F2 shells via `customThreeObject` (`HfPropagationGlobe`); real layer data in #1165                                                                          |
 | [#1165](https://github.com/pskillen/codeplug-studio/issues/1165) | core         | Not started | Ionospheric layer model                                                                                                                                                                                           |
 | [#1166](https://github.com/pskillen/codeplug-studio/issues/1166) | core         | Not started | Antenna pattern library                                                                                                                                                                                           |
 | [#1167](https://github.com/pskillen/codeplug-studio/issues/1167) | app          | Not started | Slice-plane picker (bearing / Maidenhead / address)                                                                                                                                                               |
