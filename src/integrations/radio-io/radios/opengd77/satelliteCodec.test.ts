@@ -247,6 +247,55 @@ describe('previewSatelliteWriteRecords', () => {
     expect(preview[0]?.encodedName).toBe('ISS');
     expect(preview[0]?.hasWireNameOverride).toBe(false);
   });
+
+  it('packs a tagged transmitter into a contested FM slot', () => {
+    const sat = makeSatellite({
+      transmitters: [
+        makeTransmitter(),
+        makeTransmitter({ id: 'tx-2', label: 'FM 2', mode: 'FM', uplinkHz: 145_900_000 }),
+      ],
+    });
+    const rec = packSatelliteBank([sat], {
+      satelliteOverrides: [{ libraryEntityId: 'tx-2', satelliteBankSlot: 'fm' }],
+    }).subarray(0x08, 0x08 + SATELLITE_RECORD_BYTES);
+    expect(readU32Le(rec, 0x34)).toBe(145_900_000);
+    const skipped = listCapabilitySkippedTransmitters([sat], [
+      { libraryEntityId: 'tx-2', satelliteBankSlot: 'fm' },
+    ]);
+    expect(skipped).toEqual([
+      {
+        satelliteId: 'sat-1',
+        transmitterId: 'tx-1',
+        reason: 'Not selected for Freq 1 (FM) on this build.',
+      },
+    ]);
+  });
+
+  it('lists contested slot candidates on the packed preview row', () => {
+    const sat = makeSatellite({
+      transmitters: [
+        makeTransmitter(),
+        makeTransmitter({ id: 'tx-2', label: 'FM 2', mode: 'FM', uplinkHz: 145_900_000 }),
+      ],
+    });
+    const preview = previewSatelliteWriteRecords([sat]);
+    expect(preview).toHaveLength(1);
+    expect(preview[0]?.transmitterId).toBe('tx-1');
+    expect(preview[0]?.slotCandidates.map((c) => c.transmitterId)).toEqual(['tx-1', 'tx-2']);
+  });
+
+  it('ignores a satelliteBankSlot that does not match the transmitter class', () => {
+    const sat = makeSatellite({
+      transmitters: [
+        makeTransmitter(),
+        makeTransmitter({ id: 'tx-2', label: 'FM 2', mode: 'FM', uplinkHz: 145_900_000 }),
+      ],
+    });
+    const rec = packSatelliteBank([sat], {
+      satelliteOverrides: [{ libraryEntityId: 'tx-2', satelliteBankSlot: 'beacon' }],
+    }).subarray(0x08, 0x08 + SATELLITE_RECORD_BYTES);
+    expect(readU32Le(rec, 0x34)).toBe(145_850_000);
+  });
 });
 
 describe('overlaySatelliteBank', () => {

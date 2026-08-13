@@ -13,12 +13,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Alert, Group, Stack, Text } from '@mantine/core';
-import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
+import { Alert, Group, Select, Stack, Text } from '@mantine/core';
+import { overrideByEntityId, upsertOverride } from '@core/domain/formatBuildOverrides.ts';
 import { findEncodedNameCollisions } from '@core/domain/satellite/findEncodedNameCollisions.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
+import {
+  OPENGD77_SATELLITE_SLOT_LABELS,
+  type OpenGd77SatelliteBankSlot,
+} from '@core/radios/opengd77/satelliteCapability.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { Button, DataTable, Panel, type DataTableColumn } from '../../components/v2/index.ts';
 import { SatelliteEncodedNameCell } from '../../components/builds/satelliteKeps/SatelliteEncodedNameCell.tsx';
@@ -127,6 +131,22 @@ export default function BuildSatelliteKepsPage() {
       buildService.withWireNameOverride(current, 'satelliteOverrides', entityId, wireName),
     );
     setEditingEntityId(null);
+  }
+
+  function setSlotWinner(
+    slot: OpenGd77SatelliteBankSlot,
+    transmitterId: string,
+    candidates: { transmitterId: string }[],
+  ) {
+    persistBuild((current) => {
+      let next = current.satelliteOverrides;
+      for (const candidate of candidates) {
+        next = upsertOverride(next, candidate.transmitterId, {
+          satelliteBankSlot: candidate.transmitterId === transmitterId ? slot : undefined,
+        });
+      }
+      return { ...current, satelliteOverrides: next };
+    });
   }
 
   const sessionRef = useRef<RadioSession | null>(null);
@@ -285,7 +305,9 @@ export default function BuildSatelliteKepsPage() {
   const exclusionEntries = useMemo<ResolvedExclusion[]>(() => {
     if (!kepsExclusions) return [];
     const satelliteById = new Map(enabledSatellites.map((s) => [s.id, s]));
-    return kepsExclusions(enabledSatellites).map((exclusion) => {
+    return kepsExclusions(enabledSatellites, {
+      satelliteOverrides: build.satelliteOverrides,
+    }).map((exclusion) => {
       const satellite = satelliteById.get(exclusion.satelliteId);
       const transmitter = satellite?.transmitters.find((t) => t.id === exclusion.transmitterId);
       return {
@@ -294,7 +316,7 @@ export default function BuildSatelliteKepsPage() {
         transmitterLabel: transmitter?.label ?? null,
       };
     });
-  }, [kepsExclusions, enabledSatellites]);
+  }, [kepsExclusions, enabledSatellites, build.satelliteOverrides]);
 
   const exclusionColumns = useMemo<DataTableColumn<ResolvedExclusion>[]>(
     () => [
@@ -371,6 +393,38 @@ export default function BuildSatelliteKepsPage() {
       header: 'Mode',
       render: (r) => (isPreviewParentRow(r) ? '—' : (r.mode ?? '—')),
     },
+    ...(spacecraftNames
+      ? [
+          {
+            key: 'slot',
+            header: 'Slot',
+            render: (r: SatellitePreviewRow) => {
+              if (isPreviewParentRow(r) || r.slot == null) return '—';
+              const slot = r.slot;
+              const candidates = r.slotCandidates ?? [];
+              if (candidates.length < 2) {
+                return OPENGD77_SATELLITE_SLOT_LABELS[slot];
+              }
+              return (
+                <Select
+                  size="xs"
+                  aria-label={`Choose transmitter for ${OPENGD77_SATELLITE_SLOT_LABELS[slot]}`}
+                  data={candidates.map((candidate) => ({
+                    value: candidate.transmitterId,
+                    label: `${candidate.label}${candidate.mode ? ` (${candidate.mode})` : ''}`,
+                  }))}
+                  value={r.transmitterId}
+                  onChange={(value) => {
+                    if (!value) return;
+                    setSlotWinner(slot, value, candidates);
+                  }}
+                  onClick={(event) => event.stopPropagation()}
+                />
+              );
+            },
+          } satisfies DataTableColumn<SatellitePreviewRow>,
+        ]
+      : []),
     {
       key: 'uplinkHz',
       header: 'Uplink',

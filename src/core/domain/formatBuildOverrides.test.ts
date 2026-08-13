@@ -69,6 +69,26 @@ describe('formatBuildOverrides', () => {
     expect(next).toEqual([{ libraryEntityId: 'ch-1', scanInclusion: 'skip' }]);
   });
 
+  it('parses and retains satelliteBankSlot on override rows', () => {
+    const rows = parseOverrideArray(
+      [{ libraryEntityId: 'tx-1', satelliteBankSlot: 'beacon' }],
+      'satelliteOverrides',
+    );
+    expect(rows).toEqual([{ libraryEntityId: 'tx-1', satelliteBankSlot: 'beacon' }]);
+    const next = upsertOverride(undefined, 'tx-1', { satelliteBankSlot: 'fm' });
+    expect(next).toEqual([{ libraryEntityId: 'tx-1', satelliteBankSlot: 'fm' }]);
+    expect(upsertOverride(next, 'tx-1', { satelliteBankSlot: undefined })).toEqual([]);
+  });
+
+  it('rejects invalid satelliteBankSlot on parse', () => {
+    expect(() =>
+      parseOverrideArray(
+        [{ libraryEntityId: 'tx-1', satelliteBankSlot: 'voice' }],
+        'satelliteOverrides',
+      ),
+    ).toThrow(/satelliteBankSlot is invalid/);
+  });
+
   it('rejects invalid scanInclusion on parse', () => {
     expect(() =>
       parseOverrideArray([{ libraryEntityId: 'ch-1', scanInclusion: 'nope' }], 'channelOverrides'),

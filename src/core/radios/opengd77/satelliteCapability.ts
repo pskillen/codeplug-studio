@@ -13,6 +13,12 @@ import type { SatelliteTransmitter } from '@core/models/satelliteTransmitter.ts'
 
 export type OpenGd77SatelliteBankSlot = 'fm' | 'aprs' | 'beacon';
 
+export const OPENGD77_SATELLITE_SLOT_LABELS: Record<OpenGd77SatelliteBankSlot, string> = {
+  fm: 'Freq 1 (FM)',
+  aprs: 'Freq 2 (APRS)',
+  beacon: 'Freq 3 (Beacon)',
+};
+
 /** Satellite write RF gate — investigation standard range, not channel-list 400–470. */
 const OPENGD77_SATELLITE_BANDS = [
   { minMhz: 136, maxMhz: 174 },

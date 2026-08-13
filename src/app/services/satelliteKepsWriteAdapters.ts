@@ -13,6 +13,7 @@ import type { BuildEntityOverride } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
+import type { OpenGd77SatelliteBankSlot } from '@core/radios/opengd77/satelliteCapability.ts';
 import type { ProgressFn, RadioSession } from '@integrations/radio-io/index.ts';
 import {
   listCapabilitySkippedTransmitters,
@@ -155,7 +156,10 @@ export interface SatelliteKepsWritePreviewOptions {
 }
 
 /** Common preview row for any registered keps adapter (OpenGD77 may add extra fields). */
-export type SatelliteKepsWritePreviewEntry = SatelliteWritePreviewEntry;
+export type SatelliteKepsWritePreviewEntry = SatelliteWritePreviewEntry & {
+  slot?: OpenGd77SatelliteBankSlot;
+  slotCandidates?: { transmitterId: string; label: string; mode: string | null }[];
+};
 
 export type SatelliteKepsWritePreviewFn = (
   satellites: readonly Satellite[],
@@ -203,6 +207,7 @@ export interface SatelliteKepsExclusion {
 
 export type SatelliteKepsExclusionsFn = (
   satellites: readonly Satellite[],
+  options?: SatelliteKepsWritePreviewOptions,
 ) => SatelliteKepsExclusion[];
 
 /**
@@ -213,18 +218,23 @@ export type SatelliteKepsExclusionsFn = (
  * transmitter at all) and `listCapabilitySkippedTransmitters` (transmitter-level: mode or
  * frequency excluded) are pure functions of the `satellites` array — no session needed.
  */
-function openGd77Exclusions(satellites: readonly Satellite[]): SatelliteKepsExclusion[] {
+function openGd77Exclusions(
+  satellites: readonly Satellite[],
+  options?: SatelliteKepsWritePreviewOptions,
+): SatelliteKepsExclusion[] {
   return [
     ...skippedOpenGd77Satellites(satellites).map((s) => ({
       satelliteId: s.satelliteId,
       transmitterId: null,
       reason: s.reason,
     })),
-    ...listOpenGd77CapabilitySkippedTransmitters(satellites).map((t) => ({
-      satelliteId: t.satelliteId,
-      transmitterId: t.transmitterId,
-      reason: t.reason,
-    })),
+    ...listOpenGd77CapabilitySkippedTransmitters(satellites, options?.satelliteOverrides).map(
+      (t) => ({
+        satelliteId: t.satelliteId,
+        transmitterId: t.transmitterId,
+        reason: t.reason,
+      }),
+    ),
   ];
 }
 

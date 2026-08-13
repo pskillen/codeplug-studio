@@ -15,6 +15,8 @@ import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import {
   classifyOpenGd77SatelliteSlot,
   isOpenGd77SatelliteFrequencyEligible,
+  OPENGD77_SATELLITE_SLOT_LABELS,
+  type OpenGd77SatelliteBankSlot,
 } from '@core/radios/opengd77/satelliteCapability.ts';
 
 export const SATELLITE_RECORD_BYTES = 0x64;
@@ -60,7 +62,8 @@ export interface OpenGd77SatelliteWritePreviewEntry {
   uplinkHz: number | null;
   downlinkHz: number | null;
   nameTruncated: boolean;
-  slot: 'fm' | 'aprs' | 'beacon';
+  slot: OpenGd77SatelliteBankSlot;
+  slotCandidates: { transmitterId: string; label: string; mode: string | null }[];
 }
 
 export interface CapabilitySkippedTransmitter {
@@ -213,25 +216,30 @@ function isPackableTransmitter(satellite: Satellite, transmitter: SatelliteTrans
   );
 }
 
-function assignSlots(satellite: Satellite): {
+function extraSlotReason(slot: OpenGd77SatelliteBankSlot, taggedWinner: boolean): string {
+  if (taggedWinner) {
+    return `Not selected for ${OPENGD77_SATELLITE_SLOT_LABELS[slot]} on this build.`;
+  }
+  if (slot === 'fm') return 'Only one FM pair fits an OpenGD77 satellite record.';
+  if (slot === 'aprs') return 'Only one APRS pair fits an OpenGD77 satellite record.';
+  return 'Only one beacon frequency fits an OpenGD77 satellite record.';
+}
+
+function assignSlots(
+  satellite: Satellite,
+  satelliteOverrides?: readonly BuildEntityOverride[],
+): {
   fm: SatelliteTransmitter | null;
   aprs: SatelliteTransmitter | null;
   beacon: SatelliteTransmitter | null;
   skipped: CapabilitySkippedTransmitter[];
+  candidates: Record<OpenGd77SatelliteBankSlot, SatelliteTransmitter[]>;
 } {
-  let fm: SatelliteTransmitter | null = null;
-  let aprs: SatelliteTransmitter | null = null;
-  let beacon: SatelliteTransmitter | null = null;
   const skipped: CapabilitySkippedTransmitter[] = [];
-
-  const take = (
-    tx: SatelliteTransmitter,
-    current: SatelliteTransmitter | null,
-    extraReason: string,
-  ): SatelliteTransmitter | null => {
-    if (!current) return tx;
-    skipped.push({ satelliteId: satellite.id, transmitterId: tx.id, reason: extraReason });
-    return current;
+  const candidates: Record<OpenGd77SatelliteBankSlot, SatelliteTransmitter[]> = {
+    fm: [],
+    aprs: [],
+    beacon: [],
   };
 
   for (const tx of satellite.transmitters) {
@@ -245,26 +253,45 @@ function assignSlots(satellite: Satellite): {
       continue;
     }
     const slot = classifyOpenGd77SatelliteSlot(tx);
-    if (slot === 'aprs') {
-      aprs = take(tx, aprs, 'Only one APRS pair fits an OpenGD77 satellite record.');
+    if (slot == null) {
+      skipped.push({
+        satelliteId: satellite.id,
+        transmitterId: tx.id,
+        reason: `${tx.mode ?? 'unknown mode'} has no OpenGD77 satellite slot (Freq 1 FM, Freq 2 APRS, or Freq 3 beacon).`,
+      });
       continue;
     }
-    if (slot === 'beacon') {
-      beacon = take(tx, beacon, 'Only one beacon frequency fits an OpenGD77 satellite record.');
-      continue;
-    }
-    if (slot === 'fm') {
-      fm = take(tx, fm, 'Only one FM pair fits an OpenGD77 satellite record.');
-      continue;
-    }
-    skipped.push({
-      satelliteId: satellite.id,
-      transmitterId: tx.id,
-      reason: `${tx.mode ?? 'unknown mode'} has no OpenGD77 satellite slot (Freq 1 FM, Freq 2 APRS, or Freq 3 beacon).`,
-    });
+    candidates[slot].push(tx);
   }
 
-  return { fm, aprs, beacon, skipped };
+  const pick = (slot: OpenGd77SatelliteBankSlot): SatelliteTransmitter | null => {
+    const list = candidates[slot];
+    if (list.length === 0) return null;
+    let tagged: SatelliteTransmitter | null = null;
+    for (const row of satelliteOverrides ?? []) {
+      if (row.satelliteBankSlot !== slot) continue;
+      const hit = list.find((tx) => tx.id === row.libraryEntityId);
+      if (hit) tagged = hit;
+    }
+    const winner = tagged ?? list[0]!;
+    for (const tx of list) {
+      if (tx.id === winner.id) continue;
+      skipped.push({
+        satelliteId: satellite.id,
+        transmitterId: tx.id,
+        reason: extraSlotReason(slot, tagged != null),
+      });
+    }
+    return winner;
+  };
+
+  return {
+    fm: pick('fm'),
+    aprs: pick('aprs'),
+    beacon: pick('beacon'),
+    skipped,
+    candidates,
+  };
 }
 
 export function listOpenGd77WriteSatellites(satellites: readonly Satellite[]): Satellite[] {
@@ -289,10 +316,11 @@ export function skippedSatellites(
 
 export function listCapabilitySkippedTransmitters(
   satellites: readonly Satellite[],
+  satelliteOverrides?: readonly BuildEntityOverride[],
 ): CapabilitySkippedTransmitter[] {
   const out: CapabilitySkippedTransmitter[] = [];
   for (const satellite of listOpenGd77WriteSatellites(satellites)) {
-    out.push(...assignSlots(satellite).skipped);
+    out.push(...assignSlots(satellite, satelliteOverrides).skipped);
   }
   return out;
 }
@@ -309,7 +337,7 @@ function resolvePacked(
   const overrides = overrideByEntityId(satelliteOverrides);
 
   return selected.map((satellite) => {
-    const slots = assignSlots(satellite);
+    const slots = assignSlots(satellite, satelliteOverrides);
     const generated = names.get(satellite.id)?.generatedShortName ?? satellite.name;
     let encodedName = generated.slice(0, OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH);
     let fromOverride = false;
@@ -399,7 +427,8 @@ export function previewSatelliteWriteRecords(
     const familiar = satNames?.suggestedFamiliar ?? row.generatedShortName;
     const oscar = satNames?.suggestedOscar ?? null;
     const nameTruncated = row.generatedShortName !== row.satellite.name.trim();
-    const push = (slot: 'fm' | 'aprs' | 'beacon', tx: SatelliteTransmitter): void => {
+    const slots = assignSlots(row.satellite, options?.satelliteOverrides);
+    const push = (slot: OpenGd77SatelliteBankSlot, tx: SatelliteTransmitter): void => {
       entries.push({
         satelliteId: row.satellite.id,
         satelliteName: row.satellite.name,
@@ -416,6 +445,11 @@ export function previewSatelliteWriteRecords(
         downlinkHz: tx.downlinkHz,
         nameTruncated: nameTruncated || row.generatedShortName !== row.satellite.name.trim(),
         slot,
+        slotCandidates: slots.candidates[slot].map((candidate) => ({
+          transmitterId: candidate.id,
+          label: candidate.label,
+          mode: candidate.mode,
+        })),
       });
     };
     if (row.fm) push('fm', row.fm);
@@ -438,6 +472,7 @@ export function previewSatelliteWriteRecords(
         downlinkHz: null,
         nameTruncated: row.generatedShortName !== row.satellite.name.trim(),
         slot: 'fm',
+        slotCandidates: [],
       });
     }
   }

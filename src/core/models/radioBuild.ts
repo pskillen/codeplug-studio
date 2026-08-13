@@ -93,6 +93,11 @@ export interface BuildEntityOverride {
    * When set, wins over library `Channel.scanInclusion` at export (then build/format default).
    */
   scanInclusion?: ScanInclusion;
+  /**
+   * OpenGD77 satellite bank slot this transmitter occupies on this build (`fm` = Freq 1,
+   * `aprs` = Freq 2, `beacon` = Freq 3). Ignored by D890. Keyed by transmitter UUID.
+   */
+  satelliteBankSlot?: 'fm' | 'aprs' | 'beacon';
 }
 
 /**

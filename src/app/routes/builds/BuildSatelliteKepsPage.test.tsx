@@ -362,6 +362,54 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
       kepsPreviewStub = undefined;
     }
   });
+
+  it('does not show a Slot column on D890 preview', async () => {
+    kepsPreviewStub = () => [previewEntry()];
+    try {
+      renderPage();
+      await waitFor(() => expect(screen.getByText('Preview satellites to write')).toBeInTheDocument());
+      expect(screen.queryByRole('columnheader', { name: 'Slot' })).not.toBeInTheDocument();
+    } finally {
+      kepsPreviewStub = undefined;
+    }
+  });
+
+  it('shows OpenGD77 Freq 1/2/3 slot labels', async () => {
+    kepsPreviewStub = () => [
+      previewEntry({ slot: 'fm', slotCandidates: [{ transmitterId: 'tx-1', label: 'FM', mode: 'FM' }] }),
+    ];
+    try {
+      renderPage('radio-io-opengd77-1701');
+      await waitFor(() => expect(screen.getByRole('columnheader', { name: 'Slot' })).toBeInTheDocument());
+      expect(screen.getByText('Freq 1 (FM)')).toBeInTheDocument();
+    } finally {
+      kepsPreviewStub = undefined;
+    }
+  });
+
+  it('shows a contested OpenGD77 slot picker', async () => {
+    kepsPreviewStub = () => [
+      previewEntry({
+        transmitterId: 'tx-1',
+        transmitterLabel: 'FM A',
+        slot: 'fm',
+        slotCandidates: [
+          { transmitterId: 'tx-1', label: 'FM A', mode: 'FM' },
+          { transmitterId: 'tx-2', label: 'FM B', mode: 'FM' },
+        ],
+      }),
+    ];
+    try {
+      renderPage('radio-io-opengd77-1701');
+      expect(
+        await screen.findByRole('combobox', {
+          name: 'Choose transmitter for Freq 1 (FM)',
+        }),
+      ).toBeInTheDocument();
+    } finally {
+      kepsPreviewStub = undefined;
+    }
+  });
 });
 
 describe('BuildSatelliteKepsPage — Excluded from write (#1085 follow-up)', () => {
