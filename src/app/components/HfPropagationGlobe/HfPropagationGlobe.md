@@ -6,10 +6,11 @@ Renders the 3D propagation globe for the [HF/RF propagation visualiser](../../..
 
 ## Props
 
-| Prop      | Type                      | Notes                                                                                                                                                                       |
-| --------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `layers`  | `IonosphericLayerState[]` | Day/night-aware layer state from `computeIonosphericLayers`. Only `active` layers are drawn.                                                                                |
-| `display` | `ShellDisplayOptions`     | Optional. `{ exaggerationFactor, explodeEnabled, fresnelEnabled }`. Omit for true-scale shells (factor `1`, explode/Fresnel off). The page passes live Display-panel state. |
+| Prop            | Type                      | Notes                                                                                                                                                                       |
+| --------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layers`        | `IonosphericLayerState[]` | Day/night-aware layer state from `computeIonosphericLayers`. A shell is drawn only when `active` **and** the operator has not hidden it.                                    |
+| `display`       | `ShellDisplayOptions`     | Optional. `{ exaggerationFactor, explodeEnabled, fresnelEnabled }`. Omit for true-scale shells (factor `1`, explode/Fresnel off). The page passes live Display-panel state. |
+| `visibleLayers` | `LayerVisibility`         | Optional. `{ D, E, F1, F2 }` booleans, default all `true`. Operator hide is independent of physics `active` (day/night). Explode indices stay canonical by id.              |
 
 ## Usage
 
@@ -24,6 +25,7 @@ const HfPropagationGlobe = lazy(
   <HfPropagationGlobe
     layers={layers}
     display={{ exaggerationFactor: 5, explodeEnabled: true, fresnelEnabled: true }}
+    visibleLayers={{ D: true, E: true, F1: true, F2: true }}
   />
 </Suspense>;
 ```
@@ -33,18 +35,19 @@ const HfPropagationGlobe = lazy(
 ## Behaviour
 
 - **Sizing:** measures its own container via `ResizeObserver` and passes explicit `width`/`height` to `Globe` — identical convention to `SatelliteGlobe` (`react-globe.gl` defaults to the _window's_ size otherwise, not its container's).
-- **Shells:** one `THREE.Mesh` (sphere geometry, semi-transparent `MeshBasicMaterial`) per **active** layer in `customLayerData`. Geometry lives in `buildGlobeData.ts` (`buildShellMesh`, `displayShellRadiusUnits`) — `buildShellMesh` was moved here from `HfPropagationGlobe.tsx` so exaggeration/explode math sits next to the mesh builder. Colour still comes from `colorForLayer(id)`, not a field on `IonosphericLayerState`.
+- **Shells:** one `THREE.Mesh` (sphere geometry, semi-transparent `MeshBasicMaterial`) per layer that is physics-`active` **and** operator-visible, in `customLayerData`. Geometry lives in `buildGlobeData.ts` (`buildShellMesh`, `displayShellRadiusUnits`) — `buildShellMesh` was moved here from `HfPropagationGlobe.tsx` so exaggeration/explode math sits next to the mesh builder. Colour still comes from `colorForLayer(id)`, not a field on `IonosphericLayerState`. D/E use a higher baseline opacity (`0.28` vs `0.12`) because they sit close to the blue-marble globe.
 - **Display controls** (`display` prop):
   - **Altitude exaggeration** — `exaggeratedAltitudeKm` multiplies mid-altitude when `exaggerationFactor > 1` (range 1×–10×). Factor `≤ 1` is a no-op (true scale).
-  - **Exploded stacking** — `explodeOffsetUnits` adds `layerIndex * 0.15` globe-radius units (`D=0` … `F2=3`, canonical id order so night-time F2 still sits outermost). Independent of exaggeration.
-  - **Fresnel shading** — per-fragment opacity `mix(0.05, 0.40, pow(1 - \|N·V\|, 2))` when on; baseline `0.12` when off. Injected via `MeshBasicMaterial.onBeforeCompile`. `react-globe.gl`'s `customThreeObjectUpdate` only runs on data updates, not every frame, so a `requestAnimationFrame` loop pushes the enable flag; Three's built-in `cameraPosition` drives the view vector.
-- **Colour:** `colorForLayer(id)` in `src/core/domain/hfPropagation/layerColor.ts` — one shared mapping for this globe and later top-down / vertical-slice views.
+  - **Exploded stacking** — `explodeOffsetUnits` adds `canonicalLayerIndex(id) * 0.15` globe-radius units (`D=0` … `F2=3`, canonical id order so night-time or operator-hidden F2 still sits outermost). Independent of exaggeration.
+  - **Fresnel shading** — per-fragment opacity `mix(0.05, 0.40, pow(1 - \|N·V\|, 2))` when on; baseline `0.12` (F1/F2) or `0.28` (D/E) when off. Injected via `MeshBasicMaterial.onBeforeCompile`. `react-globe.gl`'s `customThreeObjectUpdate` only runs on data updates, not every frame, so a `requestAnimationFrame` loop pushes the enable flag; Three's built-in `cameraPosition` drives the view vector.
+  - **Per-layer visibility** — Display-panel toggles (D/E/F1/F2) with a 12px swatch from `colorForLayer`. Night-time D/F1 stay in the panel but the switch is disabled with a “not present (night)” hint so operator-hide and physics-absent stay distinguishable.
+- **Colour:** `colorForLayer(id)` in `src/core/domain/hfPropagation/layerColor.ts` — D `#5ec8ff` (cyan-blue, distinct from oceans), E `#3ddc97`, F1 `#f5c451`, F2 `#ff6b6b`. Shared with later top-down / vertical-slice views.
 - **`GLOBE_RADIUS_UNITS = 100`:** `three-globe`'s own internal scene-unit globe radius (pinned copy of `GLOBE_RADIUS` in `three-globe`'s source — not exported from the package). `customThreeObject` positions objects in these scene units, not the `0`–`1`+ altitude units `react-globe.gl`'s own `pointAltitude`/`pathPointAlt` accessors use.
-- **Data:** `layers` from `computeIonosphericLayers` (D 60–90 km day-only, E 90–150 km, F1 150–250 km day-only, F2 250–400 km). Inactive D/F1 shells are omitted at night.
+- **Data:** `layers` from `computeIonosphericLayers` (D 60–90 km day-only, E 90–150 km, F1 150–250 km day-only, F2 250–400 km). Inactive D/F1 shells are omitted at night; operator-hidden shells are omitted even when physics-active.
 
 ## Testing
 
-`react-globe.gl` needs a WebGL context jsdom doesn't provide, so `HfPropagationGlobe.test.tsx` mocks it to a stub component and asserts the `customLayerData`/`customThreeObject`/`customThreeObjectUpdate` props it receives (including that inactive layers are filtered out). Radius math lives in `buildGlobeData.test.ts` (`exaggeratedAltitudeKm`, `explodeOffsetUnits`, `displayShellRadiusUnits`, `fresnelOpacity`, `shellRadiusUnits`).
+`react-globe.gl` needs a WebGL context jsdom doesn't provide, so `HfPropagationGlobe.test.tsx` mocks it to a stub component and asserts the `customLayerData`/`customThreeObject`/`customThreeObjectUpdate` props it receives (including that physics-inactive and operator-hidden layers are filtered out). Radius math lives in `buildGlobeData.test.ts` (`exaggeratedAltitudeKm`, `explodeOffsetUnits`, `displayShellRadiusUnits`, `fresnelOpacity`, `shellRadiusUnits`, `canonicalLayerIndex`, `shellBaselineOpacity`).
 
 ## Related
 
