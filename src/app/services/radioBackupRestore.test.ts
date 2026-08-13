@@ -160,7 +160,10 @@ describe('restoreRadioBackup', () => {
       { regionIds: ['channels', 'local-info', 'bogus'] },
     );
     expect(restoreFromBackup).toHaveBeenCalledOnce();
-    expect(restoreFromBackup.mock.calls[0]![1].regionIds).toEqual(['channels']);
+    expect(restoreFromBackup).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ regionIds: ['channels'] }),
+    );
   });
 
   it('throws when the protocol hook is missing', async () => {
