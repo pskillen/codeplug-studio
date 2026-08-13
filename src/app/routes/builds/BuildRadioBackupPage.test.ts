@@ -7,6 +7,7 @@ const backupPageDir = dirname(fileURLToPath(import.meta.url));
 
 const FORBIDDEN_IMPORT_PATTERNS = [
   /from ['"][^'"]*prepareRadioWriteImage/,
+  /from ['"][^'"]*buildRadioWriteProjection/,
   /from ['"][^'"]*seedProtocolForUpload/,
   /from ['"][^'"]*uploadPreparedRadioWrite/,
   /from ['"][^'"]*writeBuildToRadio/,
