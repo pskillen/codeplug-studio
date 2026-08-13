@@ -277,7 +277,9 @@ describe('DM-32UV in-session pre-write content read', () => {
         return createMemoryMap(liveCache.mapSize);
       },
     );
-    const upload = vi.fn(async () => undefined);
+    const upload = vi.fn(async (_img: MemoryMap) => {
+      void _img;
+    });
     const radio = {
       connect: vi.fn(),
       disconnect: vi.fn(),
