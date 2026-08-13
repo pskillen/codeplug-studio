@@ -11,6 +11,7 @@ import {
   FormField,
   Panel,
   SegmentedControl,
+  ToggleSwitch,
 } from '../../components/v2/index.ts';
 import classes from './HfPropagationPage.module.css';
 
@@ -75,6 +76,9 @@ const MIN_HEIGHT_M = 1;
 const MAX_HEIGHT_M = 30;
 const MIN_WIRE_LENGTH_WAVELENGTHS = 0.5;
 const MAX_WIRE_LENGTH_WAVELENGTHS = 5;
+const MIN_EXAGGERATION = 1;
+const MAX_EXAGGERATION = 10;
+const DEFAULT_EXAGGERATION = 5;
 
 /** Fields shown/hidden per antenna pattern family — see `AntennaConfig` (core domain scaffold). */
 function fieldsShownForFamily(family: AntennaPatternFamily) {
@@ -114,6 +118,11 @@ export default function HfPropagationPage() {
 
   const [dateTime, setDateTime] = useState(nowForDateTimeInput);
   const [solarPreset, setSolarPreset] = useState<SolarActivityPreset>('moderate');
+
+  const [exaggerationEnabled, setExaggerationEnabled] = useState(true);
+  const [exaggerationFactor, setExaggerationFactor] = useState(DEFAULT_EXAGGERATION);
+  const [explodeEnabled, setExplodeEnabled] = useState(true);
+  const [fresnelEnabled, setFresnelEnabled] = useState(false);
 
   const antennaFamily = useMemo(
     () =>
@@ -160,7 +169,14 @@ export default function HfPropagationPage() {
                   </div>
                 }
               >
-                <HfPropagationGlobe layers={layers} />
+                <HfPropagationGlobe
+                  layers={layers}
+                  display={{
+                    exaggerationFactor: exaggerationEnabled ? exaggerationFactor : 1,
+                    explodeEnabled,
+                    fresnelEnabled,
+                  }}
+                />
               </Suspense>
             ) : (
               <div className={classes.viewportPlaceholder}>
@@ -174,6 +190,39 @@ export default function HfPropagationPage() {
           <div className={classes.controlPanel}>
             <Panel title="View">
               <SegmentedControl options={VIEW_OPTIONS} value={view} onChange={setView} />
+            </Panel>
+
+            <Panel title="Display">
+              <Stack gap="lg">
+                <ToggleSwitch
+                  checked={exaggerationEnabled}
+                  onChange={setExaggerationEnabled}
+                  label="Altitude exaggeration"
+                />
+                {exaggerationEnabled ? (
+                  <Input.Wrapper label={`${exaggerationFactor.toFixed(1)}×`}>
+                    <Slider
+                      aria-label="Altitude exaggeration"
+                      value={exaggerationFactor}
+                      onChange={setExaggerationFactor}
+                      min={MIN_EXAGGERATION}
+                      max={MAX_EXAGGERATION}
+                      step={0.5}
+                      mb={16}
+                    />
+                  </Input.Wrapper>
+                ) : null}
+                <ToggleSwitch
+                  checked={explodeEnabled}
+                  onChange={setExplodeEnabled}
+                  label="Exploded layer stacking"
+                />
+                <ToggleSwitch
+                  checked={fresnelEnabled}
+                  onChange={setFresnelEnabled}
+                  label="Fresnel shading"
+                />
+              </Stack>
             </Panel>
 
             <Panel title="RF">
