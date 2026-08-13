@@ -1,0 +1,63 @@
+.page {
+  padding: var(--dsv2-page-padding-y) var(--dsv2-page-padding-x);
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--dsv2-font-heading-lg);
+  font-weight: 700;
+  color: var(--dsv2-text-primary);
+  margin: 0 0 3px;
+}
+
+.description {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-tertiary);
+  margin: 0 0 20px;
+  line-height: 1.45;
+  max-width: 720px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr minmax(320px, 380px);
+  gap: 16px;
+}
+
+/* Stack the viewport above the control panel below ~900px — same breakpoint as
+   SatelliteGlobe/SatelliteLiveMap's two-pane convention on the tracking pages. */
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.viewport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: 8px;
+  background: #000011;
+  text-align: center;
+  padding: 24px;
+}
+
+.controlPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.dateTimeInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: 6px;
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-primary);
+  font-size: var(--dsv2-font-body);
+}
