@@ -2,6 +2,7 @@
  * RT95 VOX CloneImageRadio — PROGRAM→QX contiguous clone.
  */
 
+import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import {
@@ -35,6 +36,7 @@ import {
   readBandlimitFromImage,
 } from './channelCodec.ts';
 import { parseRt95IdentResponse } from './ident.ts';
+import { intendedRt95RestoreImage } from './restoreFromBackup.ts';
 
 export interface Rt95ConnectOptions {
   signal?: AbortSignal;
@@ -177,6 +179,29 @@ export class Rt95Protocol implements CloneImageRadio {
     } finally {
       await exitProgramQxMode(pipe);
     }
+  }
+
+  /**
+   * Replay selected restorable clone bins via the same PROGRAM→QX upload path
+   * as Write. Does not merge channels, assemble, or seed from a project bag.
+   */
+  async restoreFromBackup(
+    archive: { manifest: RadioBackupManifestV1; image: MemoryMap },
+    opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
+    const intended = intendedRt95RestoreImage(archive, opts.regionIds);
+    await this.upload(intended, {
+      signal: opts.signal,
+      onProgress: (p) => {
+        const msg =
+          p.msg === 'Upload handshake'
+            ? 'Restore handshake'
+            : p.msg.startsWith('Writing ')
+              ? `Restoring ${p.msg.slice('Writing '.length)}`
+              : p.msg;
+        reportProgress(opts.onProgress, { ...p, msg, stage: 'Restore' }, opts.signal);
+      },
+    });
   }
 
   /** Staging chunks from the last successful {@link upload} — consumed once. */
