@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { GLOBE_EARTH_RADIUS_KM } from '../SatelliteGlobe/globeAltitude.ts';
 import {
+  displayShellRadiusUnits,
   EXPLODE_OFFSET_PER_LAYER,
   exaggeratedAltitudeKm,
   explodeOffsetUnits,
+  GLOBE_RADIUS_UNITS,
+  shellRadiusUnits,
 } from './buildGlobeData.ts';
 
 describe('exaggeratedAltitudeKm', () => {
@@ -36,5 +40,30 @@ describe('explodeOffsetUnits', () => {
   it('returns 0 when exploded stacking is disabled', () => {
     expect(explodeOffsetUnits(0, false)).toBe(0);
     expect(explodeOffsetUnits(3, false)).toBe(0);
+  });
+});
+
+describe('displayShellRadiusUnits', () => {
+  const trueScale = { exaggerationFactor: 1, explodeEnabled: false };
+
+  it('matches shellRadiusUnits at true scale', () => {
+    expect(displayShellRadiusUnits(100, 2, trueScale)).toBe(shellRadiusUnits(100));
+  });
+
+  it('scales altitude by the exaggeration factor', () => {
+    const midAltitudeKm = 100;
+    expect(displayShellRadiusUnits(midAltitudeKm, 0, { exaggerationFactor: 5, explodeEnabled: false })).toBeCloseTo(
+      GLOBE_RADIUS_UNITS * (1 + (midAltitudeKm * 5) / GLOBE_EARTH_RADIUS_KM),
+    );
+  });
+
+  it('adds explode offset in globe-radius units before converting to scene units', () => {
+    const midAltitudeKm = 100;
+    expect(
+      displayShellRadiusUnits(midAltitudeKm, 3, { exaggerationFactor: 1, explodeEnabled: true }),
+    ).toBeCloseTo(
+      GLOBE_RADIUS_UNITS *
+        (1 + midAltitudeKm / GLOBE_EARTH_RADIUS_KM + 3 * EXPLODE_OFFSET_PER_LAYER),
+    );
   });
 });

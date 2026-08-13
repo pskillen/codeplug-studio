@@ -1,66 +1,55 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Globe from 'react-globe.gl';
-import * as THREE from 'three';
-import { colorForLayer } from '@core/domain/hfPropagation/layerColor.ts';
 import type { IonosphericLayerState } from '@core/domain/hfPropagation/types.ts';
-import { altitudeKmToGlobeRadiusUnits } from '../SatelliteGlobe/globeAltitude.ts';
+import {
+  buildShellMesh,
+  type ShellDisplayOptions,
+} from './buildGlobeData.ts';
 import classes from './HfPropagationGlobe.module.css';
+
+export {
+  buildShellMesh,
+  displayShellRadiusUnits,
+  GLOBE_RADIUS_UNITS,
+  SHELL_BASELINE_OPACITY,
+  shellRadiusUnits,
+} from './buildGlobeData.ts';
+export type { ShellDisplayOptions } from './buildGlobeData.ts';
 
 const GLOBE_IMAGE_URL = '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
 const BACKGROUND_COLOR = '#000011';
 
-/**
- * `three-globe`'s own internal scene-unit radius for the globe mesh (verified against
- * `GLOBE_RADIUS` in `node_modules/three-globe/dist/three-globe.mjs` — not exported from the
- * package, so this is a pinned copy, not an import). `customThreeObject` positions/sizes
- * objects in these same scene units, not the `0`–`1`+ altitude units `react-globe.gl`'s own
- * `pointAltitude`/`pathPointAlt` accessors use.
- */
-export const GLOBE_RADIUS_UNITS = 100;
-
 export interface HfPropagationGlobeProps {
   layers: IonosphericLayerState[];
+  display?: ShellDisplayOptions;
 }
 
-/**
- * Converts a shell's mid-altitude (km above the surface) to a `customThreeObject` scene-unit
- * radius — separately exported and unit-testable (no `THREE.Mesh`/`SphereGeometry`
- * instantiation needed).
- */
-export function shellRadiusUnits(midAltitudeKm: number): number {
-  return (1 + altitudeKmToGlobeRadiusUnits(midAltitudeKm)) * GLOBE_RADIUS_UNITS;
-}
-
-/**
- * Builds one translucent ionospheric shell mesh. Exported so later display-control work
- * (exaggeration / explode / Fresnel) can wrap this without duplicating geometry construction.
- * Typed as `object` because `react-globe.gl`'s `customThreeObject` callback receives layer
- * data as an untyped object.
- */
-export function buildShellMesh(layer: object): THREE.Object3D {
-  const s = layer as IonosphericLayerState;
-  const midAltitudeKm = (s.altitudeMinKm + s.altitudeMaxKm) / 2;
-  const radius = shellRadiusUnits(midAltitudeKm);
-  const geometry = new THREE.SphereGeometry(radius, 48, 48);
-  const material = new THREE.MeshBasicMaterial({
-    color: colorForLayer(s.id),
-    transparent: true,
-    opacity: 0.12,
-    side: THREE.DoubleSide,
-    depthWrite: false,
-  });
-  return new THREE.Mesh(geometry, material);
-}
+const DEFAULT_DISPLAY: ShellDisplayOptions = {
+  exaggerationFactor: 1,
+  explodeEnabled: false,
+};
 
 /**
  * 3D propagation globe — renders active ionospheric shells (D/E/F1/F2) as concentric
  * translucent spheres via `react-globe.gl`'s `customThreeObject` extension point. No ray
  * paths or transmitter marker yet (#1170).
  */
-export default function HfPropagationGlobe({ layers }: HfPropagationGlobeProps) {
+export default function HfPropagationGlobe({
+  layers,
+  display = DEFAULT_DISPLAY,
+}: HfPropagationGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const activeLayers = layers.filter((layer) => layer.active);
+  const activeLayers = useMemo(() => layers.filter((layer) => layer.active), [layers]);
+  const { exaggerationFactor, explodeEnabled } = display;
+
+  const shellObjectAccessor = useMemo(
+    () => (d: object) => {
+      const index = activeLayers.indexOf(d as IonosphericLayerState);
+      return buildShellMesh(d, index, { exaggerationFactor, explodeEnabled });
+    },
+    [activeLayers, exaggerationFactor, explodeEnabled],
+  );
 
   useEffect(() => {
     const node = containerRef.current;
@@ -83,7 +72,7 @@ export default function HfPropagationGlobe({ layers }: HfPropagationGlobeProps) 
         width={size.width || undefined}
         height={size.height || undefined}
         customLayerData={activeLayers}
-        customThreeObject={buildShellMesh}
+        customThreeObject={shellObjectAccessor}
       />
     </div>
   );
