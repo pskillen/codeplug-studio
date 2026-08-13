@@ -35,10 +35,7 @@ describe('RT95 in-session pre-write read', () => {
     liveBytes[0x3200] = 0x42;
 
     const download = vi.fn(
-      async (opts?: {
-        progressStage?: string;
-        onProgress?: (p: { stage?: string }) => void;
-      }) => {
+      async (opts?: { progressStage?: string; onProgress?: (p: { stage?: string }) => void }) => {
         opts?.onProgress?.({ stage: opts.progressStage });
         return memoryMapFromBytes(liveBytes);
       },
