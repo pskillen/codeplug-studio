@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { D890_MAP } from './constants.ts';
-import { encodeZonesIntoAtD890Image } from './zoneCodec.ts';
+import { encodeZonesIntoAtD890Image, countAtD890VisibleZones, assertAtD890HasVisibleZones } from './zoneCodec.ts';
 import { encodeTalkgroupsIntoAtD890Image } from './talkGroupCodec.ts';
 import { listSetBits } from './bitmap.ts';
 import { listZoneMemberIndicesFromCache } from './zoneCodec.ts';
@@ -72,6 +72,22 @@ describe('zoneCodec', () => {
       expect(readU16Le(outA, i * 2)).toBe(0);
       expect(readU16Le(outB, i * 2)).toBe(0);
     }
+  });
+
+  it('clears ZoneHide for occupied zones on an all-set prior', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    encodeZonesIntoAtD890Image(image, [{ wireName: 'Z1', channelNumbers: [1] }]);
+    expect(countAtD890VisibleZones(image)).toBe(1);
+    expect(() => assertAtD890HasVisibleZones(image)).not.toThrow();
+  });
+
+  it('counts zero visible zones when ZoneSet is empty', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    encodeZonesIntoAtD890Image(image, []);
+    expect(countAtD890VisibleZones(image)).toBe(0);
+    expect(() => assertAtD890HasVisibleZones(image)).toThrow(/at least one visible zone/);
   });
 });
 

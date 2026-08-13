@@ -20,7 +20,7 @@ import { AT_D890_SAFE_SKIP_WRITE_ADDR } from './constants.ts';
 import { encodeBcdFrequencyHz } from './bcd.ts';
 import { setBitmapBit } from './bitmap.ts';
 import { channelPrimaryAddress, channelSecondaryAddress } from './memory.ts';
-import { assembleAtD890WriteImage } from './hydration.ts';
+import { encodeAtD890WriteImageFromDownloadCache } from './hydration.ts';
 
 import { isAtD890EraseUnitBookkeepingAddress, listTouchedEraseUnits } from './eraseUnits.ts';
 
@@ -399,34 +399,51 @@ describe('AtD890uvProtocol', () => {
     expect(collectAtD890WriteDataAddresses(pipe)).toHaveLength(0);
   });
 
-  it('uploads from assembled write image without prior Read hydration cache', async () => {
+  it('uploads from an encode onto the in-session download cache', async () => {
     const pipe = new AtD890ScriptedPipe();
     scriptAtD890ConnectWithNegotiation(pipe);
     const radio = new AtD890uvProtocol();
     await radio.connect(pipe);
     scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
 
-    // Match assembleAtD890WriteImage — 0xff base so inverted TalkgroupSet is empty.
-    const image = assembleAtD890WriteImage([
+    seedChannelZeroUpload(radio);
+    const encoded = encodeAtD890WriteImageFromDownloadCache(
+      radio.getDownloadCache(),
+      [
+        {
+          slotIndex: 1,
+          empty: false,
+          wireName: 'CH0',
+          rxHz: 145_520_000,
+          txHz: 145_520_000,
+          rxTone: { kind: 'none' },
+          txTone: { kind: 'none' },
+          powerPercent: 100,
+          bandwidth: 'FM',
+          mode: 'analog',
+        },
+      ],
       {
-        slotIndex: 1,
-        empty: false,
-        wireName: 'CH0',
-        rxHz: 145_520_000,
-        txHz: 145_520_000,
-        rxTone: { kind: 'none' },
-        txTone: { kind: 'none' },
-        powerPercent: 100,
-        bandwidth: 'FM',
-        mode: 'analog',
+        zones: [{ wireName: 'Z1', channelNumbers: [1] }],
       },
-    ]);
+    );
 
     enableAtD890AutoWriteAck(pipe);
-    await radio.upload(image, {});
+    await radio.upload(encoded, {});
 
     expect(collectAtD890WriteDataAddresses(pipe).length).toBeGreaterThan(0);
-    expect(radio.getDownloadCache()?.blocks.has(D890_MAP.LocalInfo)).toBe(false);
+  });
+
+  it('refuses upload when the in-session download cache is empty', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
+    const image = seedChannelZeroUpload(radio);
+    radio.getDownloadCache()!.blocks.clear();
+    await expect(radio.upload(image, {})).rejects.toThrow(/in-session download cache/);
+    expect(collectAtD890WriteDataAddresses(pipe)).toHaveLength(0);
   });
 
   it('exposes pre-Write sentinel snapshot after upload', async () => {
