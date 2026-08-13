@@ -21,11 +21,11 @@ Amateur spacecraft names are often longer than a radio's name field (8 character
 | **Core**     | `shortenSatelliteNames()` — vendor-neutral whole-set assignment; `resolveSatelliteTransmitterWriteNames()` — per-transmitter encoded names; `findEncodedNameCollisions()` — UI warning helper.          |
 | **Build**    | `RadioBuild.satelliteOverrides[]` — sparse `wireName` pins per **transmitter** (`libraryEntityId` = transmitter UUID). Value is the **full** ≤`N` encoded name field written to the radio.              |
 | **App**      | **Satellite keps** build tab — nested preview table; inline edit on each transmitter row ([`SatelliteEncodedNameCell`](../../../src/app/components/builds/satelliteKeps/SatelliteEncodedNameCell.tsx)). |
-| **Radio-io** | D890 `packSatelliteWriteRecords` / `previewSatelliteWriteRecords` consume resolved per-transmitter names. Overrides skip name+label combine; generated rows use `encodeSatelliteTransmitterWireName`.   |
+| **Radio-io** | D890 `packSatelliteWriteRecords` / `previewSatelliteWriteRecords` consume resolved per-transmitter names. Overrides skip name+label combine; generated rows use `encodeSatelliteTransmitterWireName`. OpenGD77 `packSatelliteBank` writes **one 8-byte spacecraft name** per bank slot (`OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH`); transmitter labels are not combined. Build overrides are keyed by the **primary** transmitter (FM, else APRS, else beacon). |
 
 Workflow A (library **Write Keps**) has no build context — names are computed ephemerally per write with no override UI.
 
-Name length and charset come from the target radio limits module (e.g. `AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH` in `src/core/radios/anytone/at-d890uv/limits.ts`), not literals in the shortener.
+Name length and charset come from the target radio limits module (e.g. `AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH`, `OPENGD77_FAMILY_LIMITS.SATELLITE_NAME_LENGTH`), not literals in the shortener.
 
 ---
 
