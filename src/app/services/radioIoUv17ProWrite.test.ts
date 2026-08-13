@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { newRadioBuildForProfile } from '@core/domain/factories.ts';
+import { newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
+import type { LibrarySlice } from '@core/services/assemble.ts';
 import {
   createRadioCloneHydrationBag,
   radioCloneImageBytes,
@@ -11,10 +12,47 @@ import { UV21_PRO_V2_DESCRIPTOR } from '@integrations/radio-io/radios/uv21-pro-v
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import type { RadioSession } from '@integrations/radio-io/types.ts';
 import { Uv17ProProtocol } from '@integrations/radio-io/radios/uv17pro-family/protocol.ts';
-import { uploadPreparedRadioWrite } from './radioIoSession.ts';
+import { prepareRadioWriteImage, uploadPreparedRadioWrite } from './radioIoSession.ts';
+
+function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
+  return {
+    channels,
+    zones: [],
+    scanLists: [],
+    talkGroups: [],
+    digitalContacts: [],
+    analogContacts: [],
+    rxGroupLists: [],
+    aprsConfiguration: null,
+  };
+}
 
 describe('UV-17Pro family write pre-read', () => {
-  it('descriptors still require hydration stash until phase 07', () => {
+  it('prepareRadioWriteImage succeeds without egress hydration bag', async () => {
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
+    const ch = {
+      ...newChannel('p1', 'TEST'),
+      id: 'ch-1',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const prepared = await prepareRadioWriteImage(
+      {
+        ...build,
+        channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
+      },
+      { ...egress, hydration: undefined },
+      emptyLibrary([ch]),
+    );
+    expect(prepared.image).toBeUndefined();
+    expect(prepared.channels.some((row) => row.wireName === 'TEST')).toBe(true);
+  });
+
+  it('descriptors still require hydration stash until phase 07 flags', () => {
     expect(UV5R_MINI_DESCRIPTOR.hydrationRequiredForWrite).toBe(true);
     expect(UV21_PRO_V2_DESCRIPTOR.hydrationRequiredForWrite).toBe(true);
   });
