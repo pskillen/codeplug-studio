@@ -133,7 +133,11 @@ describe('encodeAtD890WriteImageFromDownloadCache', () => {
     const primary = new Uint8Array(AT_D890_LIMITS.CHANNEL_CHUNK_SIZE);
     primary[0x22] = aesByte;
     putCacheBytes(cache, channelPrimaryAddress(0), primary);
-    putCacheBytes(cache, channelSecondaryAddress(0), new Uint8Array(AT_D890_LIMITS.CHANNEL_CHUNK_SIZE));
+    putCacheBytes(
+      cache,
+      channelSecondaryAddress(0),
+      new Uint8Array(AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
+    );
     putCacheBytes(cache, D890_MAP.ZoneSet, new Uint8Array(AT_D890_LIMITS.ZONE_SET_BYTES));
     putCacheBytes(
       cache,

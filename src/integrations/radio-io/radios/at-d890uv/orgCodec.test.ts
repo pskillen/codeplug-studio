@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { D890_MAP } from './constants.ts';
-import { encodeZonesIntoAtD890Image, countAtD890VisibleZones, assertAtD890HasVisibleZones } from './zoneCodec.ts';
+import {
+  encodeZonesIntoAtD890Image,
+  countAtD890VisibleZones,
+  assertAtD890HasVisibleZones,
+} from './zoneCodec.ts';
 import { encodeTalkgroupsIntoAtD890Image } from './talkGroupCodec.ts';
 import { listSetBits } from './bitmap.ts';
 import { listZoneMemberIndicesFromCache } from './zoneCodec.ts';
