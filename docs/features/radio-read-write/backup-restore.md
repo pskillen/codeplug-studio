@@ -8,14 +8,14 @@ Per-radio restorable vs inspect-only region tables, coverage honesty, and protoc
 
 ## Implementation status
 
-| Area                                          | Status  | Notes                                                                                                                                                                                                 |
-| --------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Strip tab `/builds/:id/backup`                | Shipped | After Satellite keps (when present), before About; shown when the build has a Web Serial egress.                                                                                                      |
-| Live backup → auto-download zip + RAM inspect | Shipped | [#1138](https://github.com/pskillen/codeplug-studio/issues/1138) — zip first, then page fill; leaving the tab discards RAM.                                                                           |
-| Rich inspect lists                            | Shipped | [#1139](https://github.com/pskillen/codeplug-studio/issues/1139) — expandable on-image channel / zone / list names; not write coverage. Inspect-only regions stay listed and are not restore targets. |
-| Open backup file                              | Shipped | Offline parse of v1 archives. Radio Info `hydration.json` zips are not imported.                                                                                                                      |
+| Area                                          | Status   | Notes                                                                                                                                                                                                                        |
+| --------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Strip tab `/builds/:id/backup`                | Shipped  | After Satellite keps (when present), before About; shown when the build has a Web Serial egress.                                                                                                                             |
+| Live backup → auto-download zip + RAM inspect | Shipped  | [#1138](https://github.com/pskillen/codeplug-studio/issues/1138) — zip first, then page fill; leaving the tab discards RAM.                                                                                                  |
+| Rich inspect lists                            | Shipped  | [#1139](https://github.com/pskillen/codeplug-studio/issues/1139) — expandable on-image channel / zone / list names; not write coverage. Inspect-only regions stay listed and are not restore targets.                        |
+| Open backup file                              | Shipped  | Offline parse of v1 archives. Radio Info `hydration.json` zips are not imported.                                                                                                                                             |
 | Restore to radio                              | Plumbing | [#1140](https://github.com/pskillen/codeplug-studio/issues/1140) — identity, region filter, confirm UI. Restore stays disabled until that radio’s protocol implements `restoreFromBackup`. Serial mismatch is a hard refuse. |
-| Per-radio restorable vs inspect-only maps     | Design  | Exact restore sections stay in this contract until each family’s restore PR; radio reference docs get the tables then.                                                                                |
+| Per-radio restorable vs inspect-only maps     | Design   | Exact restore sections stay in this contract until each family’s restore PR; radio reference docs get the tables then.                                                                                                       |
 
 ---
 

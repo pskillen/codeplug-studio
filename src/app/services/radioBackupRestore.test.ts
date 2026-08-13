@@ -121,10 +121,7 @@ function fakeRadio(restoreFromBackup?: CloneImageRadio['restoreFromBackup']): Cl
   };
 }
 
-function sessionFor(
-  radio: CloneImageRadio,
-  descriptor: RadioDescriptor = UV5R_MINI_DESCRIPTOR,
-) {
+function sessionFor(radio: CloneImageRadio, descriptor: RadioDescriptor = UV5R_MINI_DESCRIPTOR) {
   return createRadioSession({ descriptor, pipe, radio });
 }
 
