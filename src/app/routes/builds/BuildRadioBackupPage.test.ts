@@ -3,24 +3,25 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-const radioInfoDir = dirname(fileURLToPath(import.meta.url));
+const backupPageDir = dirname(fileURLToPath(import.meta.url));
 
 const FORBIDDEN_IMPORT_PATTERNS = [
   /prepareRadioWriteImage/,
   /seedProtocolForUpload/,
   /uploadPreparedRadioWrite/,
   /writeBuildToRadio/,
+  /persistBuild/,
+  /\bassemble\b/,
 ];
 
 function readAppSource(relPath: string): string {
-  return readFileSync(join(radioInfoDir, relPath), 'utf8');
+  return readFileSync(join(backupPageDir, relPath), 'utf8');
 }
 
-describe('BuildRadioInfoPage isolation', () => {
-  it('does not import upload staging or write-image preparation', () => {
+describe('BuildRadioBackupPage isolation', () => {
+  it('does not import upload staging, assemble, or persist', () => {
     const sources = [
-      'BuildRadioInfoPage.tsx',
-      '../../services/radioInfoExport.ts',
+      'BuildRadioBackupPage.tsx',
       '../../components/builds/RadioCloneSummaryView.tsx',
     ];
     for (const rel of sources) {
