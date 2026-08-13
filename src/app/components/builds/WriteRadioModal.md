@@ -50,8 +50,9 @@ Build → Export **Write radio** popup: always **Write codeplug**, plus radio-ap
 ## Behaviour
 
 - Parent resets extras to **none** / keps unchecked every time the popup opens (do not persist last session).
-- **Write this** for digital contacts is disabled while source is None. **Write this** for keps is disabled while the checkbox is off.
-- Write codeplug never writes keps. Copy uses digital contacts / library contacts / RadioID directory — not “digital ID list”.
+- **Write contacts only** is disabled while source is None. **Write keps only** is disabled while the checkbox is off.
+- Write codeplug helper copy only mentions digital contacts or keps when those extras are on this radio.
+- Copy uses digital contacts / library contacts / RadioID directory — not “digital ID list”.
 - Empty RadioID shadow warning is owned by `BuildRadioIoPanel`, not this modal.
 
 ## Related

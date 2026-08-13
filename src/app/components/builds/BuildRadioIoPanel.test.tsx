@@ -92,7 +92,7 @@ describe('BuildRadioIoPanel — dual-bank / single-bank extras', () => {
       'aria-pressed',
       'true',
     );
-    expect(screen.getByRole('button', { name: 'Write digital contacts' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Write contacts only' })).toBeDisabled();
   });
 
   it('shows digital contacts extra for AT-D890', async () => {

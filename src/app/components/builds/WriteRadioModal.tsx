@@ -65,8 +65,9 @@ export default function WriteRadioModal({
               Write codeplug
             </Text>
             <Text size="xs" c="dimmed">
-              Overlay this build onto the connected radio. Digital contacts follow the source below;
-              satellite keps are a separate Write this.
+              Writes this build onto the connected radio.
+              {supportsDigitalContacts ? ' Digital contacts follow the source below.' : ''}
+              {supportsKeps ? ' Satellite keps use Write keps only — not Write codeplug.' : ''}
             </Text>
           </Stack>
           <Button variant="primary" size="sm" disabled={writeDisabled} onClick={onWriteCodeplug}>
@@ -101,9 +102,8 @@ export default function WriteRadioModal({
                 size="sm"
                 disabled={contactsWriteDisabled}
                 onClick={onWriteContacts}
-                aria-label="Write digital contacts"
               >
-                Write this
+                Write contacts only
               </Button>
             </Group>
           </Stack>
@@ -137,9 +137,8 @@ export default function WriteRadioModal({
                 size="sm"
                 disabled={kepsWriteDisabled}
                 onClick={onWriteKeps}
-                aria-label="Write satellite keps"
               >
-                Write this
+                Write keps only
               </Button>
             </Group>
           </Stack>

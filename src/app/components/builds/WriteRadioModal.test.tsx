@@ -42,28 +42,32 @@ describe('WriteRadioModal (#1121)', () => {
     renderModal();
     expect(screen.getByRole('button', { name: 'Write codeplug' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'None' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Write digital contacts' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Write contacts only' })).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).not.toBeChecked();
-    expect(screen.getByRole('button', { name: 'Write satellite keps' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Write keps only' })).toBeDisabled();
     expect(screen.queryByText(/digital ID list/i)).not.toBeInTheDocument();
   });
 
-  it('enables Write this for digital contacts after a source is chosen', () => {
+  it('enables Write contacts only after a source is chosen', () => {
     const { props } = renderModal({ contactSource: 'library' });
-    expect(screen.getByRole('button', { name: 'Write digital contacts' })).not.toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Write digital contacts' }));
+    expect(screen.getByRole('button', { name: 'Write contacts only' })).not.toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Write contacts only' }));
     expect(props.onWriteContacts).toHaveBeenCalled();
   });
 
   it('hides keps extra when the radio has no adapter', () => {
     renderModal({ supportsKeps: false });
     expect(screen.queryByRole('checkbox', { name: 'Satellite keps' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/satellite keps/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/digital contacts follow/i)).toBeInTheDocument();
   });
 
   it('hides digital contacts extra on analog radios', () => {
     renderModal({ supportsDigitalContacts: false, supportsKeps: false });
     expect(screen.getByRole('button', { name: 'Write codeplug' })).toBeInTheDocument();
     expect(screen.queryByText('Digital contacts')).not.toBeInTheDocument();
+    expect(screen.queryByText(/digital contacts follow/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/satellite keps/i)).not.toBeInTheDocument();
   });
 
   it('links to the Satellite keps tab for preview', () => {
