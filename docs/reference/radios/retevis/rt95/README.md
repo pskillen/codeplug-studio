@@ -32,7 +32,7 @@ Mobile / base analogue FM radio (AnyTone 778UV family). Studio targets it via CH
 | [channel-record.md](channel-record.md) | 32-byte channel layout + enums                                       |
 | [settings.md](settings.md)             | Settings / DTMF / PTT-ID / keys / VOX / bandlimit; RMW notes         |
 | [protocol.md](protocol.md)             | Baud, PROGRAM→QX, echo-strip, R/W frames, checksum, model allow-list |
-| [backup-restore.md](backup-restore.md) | Zip clone region; Restore via clone `upload`; Write still stash      |
+| [backup-restore.md](backup-restore.md) | Zip clone region; Restore via clone `upload`; Write still stash-gated |
 | [fixtures.md](fixtures.md)             | How to capture dumps for tests without committing personal codeplugs |
 
 ## Adapter wire (files)
@@ -63,7 +63,7 @@ Protocol lineage credit: `/attributions` entry `chirp` ([#597](https://github.co
 
 ## Shipped Studio module
 
-`src/integrations/radio-io/radios/rt95/` — full-image RMW Write (channels + occupancy/scan bitfields); settings / DTMF / bandlimit retained from Read. Radio image inspector ([#732](https://github.com/pskillen/codeplug-studio/issues/732)). Write available on all deploy environments ([#761](https://github.com/pskillen/codeplug-studio/issues/761)); CHIRP CSV file egress remains available.
+`src/integrations/radio-io/radios/rt95/` — full-image RMW Write (channels + occupancy/scan bitfields); settings / DTMF / bandlimit retained from an in-session pre-write read (stash still required as a Write gate). Radio image inspector ([#732](https://github.com/pskillen/codeplug-studio/issues/732)). Write available on all deploy environments ([#761](https://github.com/pskillen/codeplug-studio/issues/761)); CHIRP CSV file egress remains available.
 
 ## Related
 
