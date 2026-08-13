@@ -1,5 +1,5 @@
 import { Input, Select, Slider, Stack, Text } from '@mantine/core';
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import type {
   AntennaPatternFamily,
   SolarActivityPreset,
@@ -11,6 +11,10 @@ import {
   SegmentedControl,
 } from '../../components/v2/index.ts';
 import classes from './HfPropagationPage.module.css';
+
+const HfPropagationGlobe = lazy(
+  () => import('../../components/HfPropagationGlobe/HfPropagationGlobe.tsx'),
+);
 
 type PropagationView = 'globe' | 'top-down' | 'vertical-slice';
 
@@ -120,9 +124,25 @@ export default function HfPropagationPage() {
 
         <div className={classes.layout}>
           <div className={classes.viewport}>
-            <Text size="sm" c="dimmed">
-              3D globe coming in a later phase
-            </Text>
+            {view === 'globe' ? (
+              <Suspense
+                fallback={
+                  <div className={classes.viewportPlaceholder}>
+                    <Text size="sm" c="dimmed">
+                      Loading 3D globe…
+                    </Text>
+                  </div>
+                }
+              >
+                <HfPropagationGlobe />
+              </Suspense>
+            ) : (
+              <div className={classes.viewportPlaceholder}>
+                <Text size="sm" c="dimmed">
+                  This view isn&apos;t implemented yet.
+                </Text>
+              </div>
+            )}
           </div>
 
           <div className={classes.controlPanel}>
