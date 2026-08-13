@@ -7,21 +7,13 @@ import {
   DM32_METADATA_OFFSET,
 } from '@integrations/radio-io/radios/dm32uv/constants.ts';
 import { DM32UV_DESCRIPTOR } from '@integrations/radio-io/radios/dm32uv/descriptor.ts';
-import {
-  extractDm32uvHydrationFromProtocol,
-  mergeChannelsIntoDm32uvHydration,
-} from '@integrations/radio-io/radios/dm32uv/hydration.ts';
+import { extractDm32uvHydrationFromProtocol } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
 import type { Dm32DownloadCache } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { createMemoryMap } from '@integrations/radio-io/kit/memoryMap.ts';
-import type {
-  CloneImageRadio,
-  MemoryMap,
-  RadioDescriptor,
-  RadioSession,
-} from '@integrations/radio-io/types.ts';
+import type { MemoryMap, RadioSession } from '@integrations/radio-io/types.ts';
 import {
-  RadioWriteBlockedError,
+  prepareRadioWriteImage,
   uploadPreparedRadioWrite,
   writeBuildToRadio,
 } from './radioIoSession.ts';
@@ -85,58 +77,40 @@ describe('assembledChannelsToRadioDtos digital fields', () => {
   });
 });
 
-describe('DM-32UV write via hydration merge', () => {
-  it('blocks write without hydration', async () => {
-    const radio: CloneImageRadio = {
-      connect: vi.fn(),
-      disconnect: vi.fn(),
-      download: vi.fn(),
-      upload: vi.fn(),
-      decodeChannels: () => [],
-      encodeChannels: (img) => img,
-      readFirmware: () => undefined,
-    };
-    const descriptor: RadioDescriptor = {
-      modelIds: ['DM-32UV'],
-      label: 'DM-32',
-      supportsBle: false,
-      protocolFactory: () => radio,
-      capabilities: {
-        maxChannels: 4000,
-        supportsZones: true,
-        supportsScanLists: true,
-        analogOnly: false,
-      },
-      attributionIds: [],
-      compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-dm32uv' }],
-      writeStrategy: 'selective-ranges',
-      hydrationRequiredForWrite: true,
-      baudRate: 115200,
-      hydration: {
-        extractHydration: () => {
-          throw new Error('unused');
-        },
-        mergeChannelsIntoHydration: mergeChannelsIntoDm32uvHydration,
-      },
-    };
-    const session: RadioSession = {
-      descriptor,
-      pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
-      radio,
-    };
+describe('DM-32UV write without persisted hydration bag', () => {
+  it('prepareRadioWriteImage succeeds without egress hydration bag', async () => {
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
-    await expect(writeBuildToRadio(session, build, egress, emptyLibrary())).rejects.toBeInstanceOf(
-      RadioWriteBlockedError,
+    const ch = {
+      ...newChannel('p1', 'TEST'),
+      id: 'ch-1',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const prepared = await prepareRadioWriteImage(
+      {
+        ...build,
+        channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
+      },
+      { ...egress, hydration: undefined },
+      emptyLibrary([ch]),
     );
+    expect(prepared.image).toBeUndefined();
+    expect(prepared.channels.some((row) => row.wireName === 'TEST')).toBe(true);
   });
 
-  it('merges channels into sparse hydration and uploads', async () => {
+  it('writes without an egress hydration bag onto the in-session download cache', async () => {
     const channelBlock = makeBlock(DM32_METADATA.CHANNEL_FIRST, (b) => {
       b[0] = 1;
       b[1] = 0;
     });
-    const settingsBlock = makeBlock(DM32_METADATA.VFO_SETTINGS);
-    const cache: Dm32DownloadCache = {
+    const settingsBlock = makeBlock(DM32_METADATA.VFO_SETTINGS, (b) => {
+      b[0] = 0x42;
+    });
+    const liveCache: Dm32DownloadCache = {
       addressBase: 0x1000,
       mapSize: DM32_BLOCK_SIZE * 2,
       discovered: [
@@ -148,49 +122,26 @@ describe('DM-32UV write via hydration merge', () => {
         [0x2000, settingsBlock],
       ]),
     };
-    const image = createMemoryMap(cache.mapSize);
-    image.fill(0, cache.mapSize, 0xff);
-    image.set(0, channelBlock);
-    image.set(DM32_BLOCK_SIZE, settingsBlock);
-    const hydration = extractDm32uvHydrationFromProtocol(image, cache);
-
+    const download = vi.fn(async () => createMemoryMap(liveCache.mapSize));
     const upload = vi.fn(async (_img: MemoryMap) => {
       void _img;
     });
-    const seedProtocolForUpload = vi.fn();
-    const radio: CloneImageRadio = {
+    const seedDownloadCache = vi.fn();
+    const radio = {
       connect: vi.fn(),
       disconnect: vi.fn(),
-      download: vi.fn(),
+      download,
       upload,
       decodeChannels: () => [],
-      encodeChannels: (img) => img,
+      encodeChannels: (img: MemoryMap) => img,
       readFirmware: () => undefined,
-    };
-    const descriptor: RadioDescriptor = {
-      modelIds: ['DM-32UV'],
-      label: 'DM-32',
-      supportsBle: false,
-      protocolFactory: () => radio,
-      capabilities: {
-        maxChannels: 4000,
-        supportsZones: true,
-        supportsScanLists: true,
-        analogOnly: false,
-      },
-      attributionIds: ['neonplug'],
-      compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-dm32uv' }],
-      writeStrategy: 'selective-ranges',
-      hydrationRequiredForWrite: true,
-      baudRate: 115200,
-      hydration: {
-        extractHydration: () => hydration,
-        mergeChannelsIntoHydration: mergeChannelsIntoDm32uvHydration,
-        seedProtocolForUpload,
-      },
-    };
+      getDownloadCache: () => liveCache,
+      seedDownloadCache: seedDownloadCache as Dm32uvProtocol['seedDownloadCache'],
+    } as unknown as Dm32uvProtocol;
+    Object.setPrototypeOf(radio, Dm32uvProtocol.prototype);
+
     const session: RadioSession = {
-      descriptor,
+      descriptor: DM32UV_DESCRIPTOR,
       pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
       radio,
     };
@@ -205,19 +156,21 @@ describe('DM-32UV write via hydration merge', () => {
       ],
     };
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
+    expect(egress.hydration).toBeUndefined();
     await writeBuildToRadio(
       session,
       {
         ...build,
         channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
       },
-      { ...egress, hydration },
+      egress,
       emptyLibrary([ch]),
     );
+    expect(download).toHaveBeenCalledTimes(1);
+    expect(seedDownloadCache).not.toHaveBeenCalled();
     expect(upload).toHaveBeenCalledTimes(1);
-    expect(seedProtocolForUpload).toHaveBeenCalledTimes(1);
     const uploaded = upload.mock.calls[0]![0] as MemoryMap;
-    // Settings block metadata preserved
+    expect(uploaded.bytes[DM32_BLOCK_SIZE]).toBe(0x42);
     expect(uploaded.bytes[DM32_BLOCK_SIZE + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.VFO_SETTINGS);
   });
 });
@@ -225,6 +178,10 @@ describe('DM-32UV write via hydration merge', () => {
 describe('DM-32UV in-session pre-write content read', () => {
   it('keeps hydrationRequiredForWrite true', () => {
     expect(DM32UV_DESCRIPTOR.hydrationRequiredForWrite).toBe(true);
+  });
+
+  it('does not seed the write cache from a persisted hydration bag', () => {
+    expect(DM32UV_DESCRIPTOR.hydration.seedProtocolForUpload).toBeUndefined();
   });
 
   it('uploadPreparedRadioWrite bulk-reads live contents before overlay upload', async () => {
@@ -280,6 +237,7 @@ describe('DM-32UV in-session pre-write content read', () => {
     const upload = vi.fn(async (_img: MemoryMap) => {
       void _img;
     });
+    const seedDownloadCache = vi.fn();
     const radio = {
       connect: vi.fn(),
       disconnect: vi.fn(),
@@ -289,7 +247,7 @@ describe('DM-32UV in-session pre-write content read', () => {
       encodeChannels: (img: MemoryMap) => img,
       readFirmware: () => undefined,
       getDownloadCache: () => liveCache,
-      seedDownloadCache: vi.fn(),
+      seedDownloadCache: seedDownloadCache as Dm32uvProtocol['seedDownloadCache'],
     } as unknown as Dm32uvProtocol;
     Object.setPrototypeOf(radio, Dm32uvProtocol.prototype);
 
@@ -319,6 +277,7 @@ describe('DM-32UV in-session pre-write content read', () => {
     expect(download).toHaveBeenCalledWith(
       expect.objectContaining({ progressStage: 'Pre-write read' }),
     );
+    expect(seedDownloadCache).not.toHaveBeenCalled();
     expect(upload).toHaveBeenCalledTimes(1);
     expect(download.mock.invocationCallOrder[0]).toBeLessThan(upload.mock.invocationCallOrder[0]!);
     const uploaded = upload.mock.calls[0]![0] as MemoryMap;
