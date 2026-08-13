@@ -90,6 +90,17 @@ describe('canonicalLayerIndex', () => {
     expect(canonicalLayerIndex('F1')).toBe(2);
     expect(canonicalLayerIndex('F2')).toBe(3);
   });
+
+  it('keeps E and F2 indices when D and F1 are absent (night)', () => {
+    const nightActive = ['E', 'F2'] as const;
+    expect(nightActive.indexOf('F2')).toBe(1);
+    expect(canonicalLayerIndex('E')).toBe(1);
+    expect(canonicalLayerIndex('F2')).toBe(3);
+    expect(explodeOffsetUnits(canonicalLayerIndex('F2'), true)).toBe(3 * EXPLODE_OFFSET_PER_LAYER);
+    expect(explodeOffsetUnits(canonicalLayerIndex('F2'), true)).not.toBe(
+      explodeOffsetUnits(nightActive.indexOf('F2'), true),
+    );
+  });
 });
 
 describe('shellBaselineOpacity', () => {
