@@ -1,0 +1,338 @@
+/**
+ * Named backup regions from a clone download / MemoryMap.
+ * Radio constants stay here — not in React. Does not assemble or persist.
+ */
+
+import { D890_MAP } from '../radios/at-d890uv/constants.ts';
+import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from '../radios/dm32uv/constants.ts';
+import { classifyDm32Metadata } from '../radios/dm32uv/memory.ts';
+import {
+  OPENUV380_FLASH_SPANS,
+  OPENUV380_IMAGE_SIZE,
+  openUv380AbsToOffset,
+} from '../radios/opengd77/constants.ts';
+import { RT95_IMAGE_SIZE, RT95_MODEL_ID } from '../radios/rt95/constants.ts';
+import { UV21_PRO_V2_LAYOUT, UV5R_MINI_LAYOUT } from '../radios/uv17pro-family/layout.ts';
+import { createMemoryMap } from '../kit/memoryMap.ts';
+import type { MemoryMap } from '../types.ts';
+import {
+  RadioBackupError,
+  type RadioBackupCoverage,
+  type RadioBackupRegionRole,
+  type RadioBackupRegionV1,
+} from './types.ts';
+
+export interface BackupSparseBlock {
+  address: number;
+  data: Uint8Array;
+}
+
+export interface BackupRegionExtract {
+  regions: RadioBackupRegionV1[];
+  regionBytes: Record<string, Uint8Array>;
+  coverage: RadioBackupCoverage;
+  imageByteLength: number;
+  restoreFragileAfterFactoryReset?: boolean;
+  addressBase?: number;
+  dm32ContactsBase?: number;
+  dm32ContactsEnd?: number;
+}
+
+export interface RegionsFromDownloadInput {
+  modelId: string;
+  image: MemoryMap;
+  sparseBlocks?: readonly BackupSparseBlock[];
+  addressBase?: number;
+  dm32ContactsBase?: number;
+  dm32ContactsEnd?: number;
+}
+
+function regionPath(id: string): string {
+  return `regions/${id}.bin`;
+}
+
+function makeRegion(
+  id: string,
+  label: string,
+  address: number,
+  data: Uint8Array,
+  restoreRole: RadioBackupRegionRole,
+): { region: RadioBackupRegionV1; bytes: Uint8Array } {
+  return {
+    region: {
+      id,
+      label,
+      address,
+      byteLength: data.byteLength,
+      path: regionPath(id),
+      restoreRole,
+    },
+    bytes: data,
+  };
+}
+
+function collect(
+  parts: readonly { region: RadioBackupRegionV1; bytes: Uint8Array }[],
+  coverage: RadioBackupCoverage,
+  imageByteLength: number,
+  extra?: Partial<BackupRegionExtract>,
+): BackupRegionExtract {
+  if (parts.length === 0) {
+    throw new RadioBackupError('Radio backup has no named regions to pack.');
+  }
+  const regions = parts.map((p) => p.region);
+  const regionBytes: Record<string, Uint8Array> = {};
+  for (const part of parts) {
+    regionBytes[part.region.id] = part.bytes;
+  }
+  return { regions, regionBytes, coverage, imageByteLength, ...extra };
+}
+
+function sliceImage(image: MemoryMap, offset: number, length: number): Uint8Array {
+  if (offset < 0 || length <= 0 || offset + length > image.size) {
+    throw new RadioBackupError(
+      `Radio backup cannot slice image [${offset}, ${offset + length}) from size ${image.size}.`,
+    );
+  }
+  return image.get(offset, length);
+}
+
+function isDm32Model(modelId: string): boolean {
+  const id = modelId.toLowerCase();
+  return id === 'dm-32uv' || id === 'dp570uv' || id.includes('dm-32') || id.includes('dm32');
+}
+
+function isD890Model(modelId: string): boolean {
+  const id = modelId.toLowerCase();
+  return id.includes('d890') || id === 'id890uv';
+}
+
+function isOpenGd77Model(modelId: string): boolean {
+  const id = modelId.toLowerCase();
+  return (
+    id === 'dm-1701' ||
+    id === 'md-9600' ||
+    id.includes('opengd77') ||
+    id === 'rt-84' ||
+    id === 'rt-90'
+  );
+}
+
+function uvLayoutFor(modelId: string) {
+  const id = modelId.toLowerCase();
+  if (id.includes('uv21') || id.includes('uv-21')) return UV21_PRO_V2_LAYOUT;
+  if (id.includes('uv5r') || id.includes('uv-5r')) return UV5R_MINI_LAYOUT;
+  return null;
+}
+
+function blockRole(
+  modelId: string,
+  address: number,
+  data: Uint8Array,
+): RadioBackupRegionRole {
+  if (isD890Model(modelId)) {
+    return d890Role(address, data.byteLength);
+  }
+  if (isDm32Model(modelId)) {
+    return dm32Role(address, data);
+  }
+  return 'restorable';
+}
+
+function coalesceSparse(
+  modelId: string,
+  blocks: readonly BackupSparseBlock[],
+): BackupSparseBlock[] {
+  const sorted = [...blocks].sort((a, b) => a.address - b.address);
+  const out: BackupSparseBlock[] = [];
+  for (const block of sorted) {
+    const last = out[out.length - 1];
+    const sameRole =
+      last &&
+      blockRole(modelId, last.address, last.data) ===
+        blockRole(modelId, block.address, block.data);
+    if (last && sameRole && last.address + last.data.byteLength === block.address) {
+      const merged = new Uint8Array(last.data.byteLength + block.data.byteLength);
+      merged.set(last.data, 0);
+      merged.set(block.data, last.data.byteLength);
+      last.data = merged;
+    } else {
+      out.push({ address: block.address, data: block.data.slice() });
+    }
+  }
+  return out;
+}
+
+function d890Role(address: number, length: number): RadioBackupRegionRole {
+  const localStart = D890_MAP.LocalInfo;
+  const localEnd = localStart + D890_MAP.LocalInfoLength;
+  const end = address + length;
+  if (address < localEnd && end > localStart) {
+    return 'inspect-only';
+  }
+  return 'restorable';
+}
+
+function dm32Role(address: number, data: Uint8Array): RadioBackupRegionRole {
+  if (data.byteLength >= DM32_BLOCK_SIZE) {
+    const meta = data[DM32_METADATA_OFFSET] ?? data[data.byteLength - 1]!;
+    if (meta === DM32_METADATA.CALIBRATION || classifyDm32Metadata(meta) === 'calibration') {
+      return 'inspect-only';
+    }
+  }
+  const localInfoHint = address === D890_MAP.LocalInfo;
+  return localInfoHint ? 'inspect-only' : 'restorable';
+}
+
+function hexId(address: number): string {
+  return `0x${address.toString(16)}`;
+}
+
+function fromSparseBlocks(
+  modelId: string,
+  image: MemoryMap,
+  sparseBlocks: readonly BackupSparseBlock[],
+  extra?: Partial<BackupRegionExtract>,
+): BackupRegionExtract {
+  const coalesced = coalesceSparse(modelId, sparseBlocks);
+  const parts = coalesced.map((block, index) => {
+    const inspect =
+      isD890Model(modelId) && d890Role(block.address, block.data.byteLength) === 'inspect-only';
+    const dm32Inspect = isDm32Model(modelId) && dm32Role(block.address, block.data) === 'inspect-only';
+    const restoreRole: RadioBackupRegionRole =
+      inspect || dm32Inspect ? 'inspect-only' : 'restorable';
+    const id =
+      inspect && block.address === D890_MAP.LocalInfo
+        ? 'local-info'
+        : dm32Inspect
+          ? `calibration-${hexId(block.address)}`
+          : `region-${hexId(block.address)}`;
+    const label = inspect
+      ? 'LocalInfo'
+      : dm32Inspect
+        ? `Calibration (${hexId(block.address)})`
+        : `Region ${index + 1} (${hexId(block.address)})`;
+    return makeRegion(id, label, block.address, block.data, restoreRole);
+  });
+  return collect(parts, 'known-map-regions', image.size, extra);
+}
+
+function fromUvLayout(
+  layout: { memStarts: readonly number[]; memSizes: readonly number[]; memTotal: number },
+  image: MemoryMap,
+): BackupRegionExtract {
+  let packed = 0;
+  const parts = layout.memStarts.map((radioAddr, i) => {
+    const size = layout.memSizes[i]!;
+    const data = sliceImage(image, packed, size);
+    const part = makeRegion(
+      `mem-${i}`,
+      `MEM ${i + 1} (radio 0x${radioAddr.toString(16)})`,
+      packed,
+      data,
+      'restorable',
+    );
+    packed += size;
+    return part;
+  });
+  return collect(parts, 'full-clone', image.size || layout.memTotal);
+}
+
+function fromOpenGd77(image: MemoryMap): BackupRegionExtract {
+  const parts = OPENUV380_FLASH_SPANS.map((span, i) => {
+    const offset = openUv380AbsToOffset(span.start);
+    const data = sliceImage(image, offset, span.length);
+    return makeRegion(`flash-span-${i}`, `FLASH span ${i + 1}`, span.start, data, 'restorable');
+  });
+  return collect(parts, 'known-map-regions', image.size || OPENUV380_IMAGE_SIZE);
+}
+
+function fromRt95(image: MemoryMap): BackupRegionExtract {
+  const size = image.size || RT95_IMAGE_SIZE;
+  const data = sliceImage(image, 0, size);
+  return collect(
+    [makeRegion('programming-image', 'Programming image', 0, data, 'restorable')],
+    'full-clone',
+    size,
+  );
+}
+
+/**
+ * Build named region bins from a live download image (and optional sparse cache).
+ */
+export function regionsFromDownload(input: RegionsFromDownloadInput): BackupRegionExtract {
+  const { modelId, image, sparseBlocks } = input;
+  const extra: Partial<BackupRegionExtract> = {};
+  if (isDm32Model(modelId)) {
+    extra.restoreFragileAfterFactoryReset = true;
+    if (input.addressBase !== undefined) extra.addressBase = input.addressBase;
+    if (input.dm32ContactsBase !== undefined) extra.dm32ContactsBase = input.dm32ContactsBase;
+    if (input.dm32ContactsEnd !== undefined) extra.dm32ContactsEnd = input.dm32ContactsEnd;
+  }
+
+  if (sparseBlocks && sparseBlocks.length > 0) {
+    return fromSparseBlocks(modelId, image, sparseBlocks, extra);
+  }
+
+  const uv = uvLayoutFor(modelId);
+  if (uv) {
+    return fromUvLayout(uv, image);
+  }
+  if (isOpenGd77Model(modelId)) {
+    return fromOpenGd77(image);
+  }
+  if (modelId === RT95_MODEL_ID || modelId.toLowerCase().includes('rt95')) {
+    return fromRt95(image);
+  }
+  if (image.size > 0 && image.size <= 0x2_0000) {
+    const data = sliceImage(image, 0, image.size);
+    return collect(
+      [makeRegion('clone', 'Clone image', 0, data, 'restorable')],
+      'partial',
+      image.size,
+      extra,
+    );
+  }
+  throw new RadioBackupError(
+    `Radio backup has no region map for model ${modelId} and no sparse download cache.`,
+  );
+}
+
+/**
+ * Rebuild a MemoryMap from archive regions. Places each bin at its manifest address
+ * when that fits; otherwise concatenates in manifest order (packed clones).
+ */
+export function memoryMapFromBackupRegions(
+  imageByteLength: number,
+  regions: readonly RadioBackupRegionV1[],
+  regionBytes: Record<string, Uint8Array>,
+): MemoryMap {
+  const maxEnd = regions.reduce((max, r) => Math.max(max, r.address + r.byteLength), 0);
+  const minAddr = regions.reduce((min, r) => Math.min(min, r.address), Number.POSITIVE_INFINITY);
+  const fitsAbsolute = maxEnd <= imageByteLength || minAddr === 0;
+  const size = fitsAbsolute ? Math.max(imageByteLength, maxEnd) : imageByteLength;
+  const map = createMemoryMap(size);
+  map.fill(0, size, 0xff);
+
+  if (fitsAbsolute) {
+    for (const region of regions) {
+      const data = regionBytes[region.id];
+      if (!data) continue;
+      if (region.address + data.byteLength <= map.size) {
+        map.set(region.address, data);
+      }
+    }
+    return map;
+  }
+
+  const base = Number.isFinite(minAddr) ? minAddr : 0;
+  for (const region of regions) {
+    const data = regionBytes[region.id];
+    if (!data) continue;
+    const offset = region.address - base;
+    if (offset >= 0 && offset + data.byteLength <= map.size) {
+      map.set(offset, data);
+    }
+  }
+  return map;
+}

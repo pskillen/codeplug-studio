@@ -16,3 +16,10 @@ export {
 } from './types.ts';
 export { packRadioBackupZip } from './pack.ts';
 export { parseRadioBackupZip, type ParsedRadioBackupZip } from './parse.ts';
+export {
+  memoryMapFromBackupRegions,
+  regionsFromDownload,
+  type BackupRegionExtract,
+  type BackupSparseBlock,
+  type RegionsFromDownloadInput,
+} from './regionsFromDownload.ts';

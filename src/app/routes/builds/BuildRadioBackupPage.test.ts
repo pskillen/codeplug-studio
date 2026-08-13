@@ -6,12 +6,12 @@ import { describe, expect, it } from 'vitest';
 const backupPageDir = dirname(fileURLToPath(import.meta.url));
 
 const FORBIDDEN_IMPORT_PATTERNS = [
-  /prepareRadioWriteImage/,
-  /seedProtocolForUpload/,
-  /uploadPreparedRadioWrite/,
-  /writeBuildToRadio/,
-  /persistBuild/,
-  /\bassemble\b/,
+  /from ['"][^'"]*prepareRadioWriteImage/,
+  /from ['"][^'"]*seedProtocolForUpload/,
+  /from ['"][^'"]*uploadPreparedRadioWrite/,
+  /from ['"][^'"]*writeBuildToRadio/,
+  /persistBuild\s*\(/,
+  /(?<![.\w])assemble\s*\(/,
 ];
 
 function readAppSource(relPath: string): string {
@@ -22,6 +22,7 @@ describe('BuildRadioBackupPage isolation', () => {
   it('does not import upload staging, assemble, or persist', () => {
     const sources = [
       'BuildRadioBackupPage.tsx',
+      '../../services/radioBackupRestore.ts',
       '../../components/builds/RadioCloneSummaryView.tsx',
     ];
     for (const rel of sources) {

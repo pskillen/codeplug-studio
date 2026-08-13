@@ -1,6 +1,5 @@
 /**
- * Clone-summary tables for Web Serial radio images — shared by Radio Info (ephemeral)
- * and legacy radio-image redirect. Renders from a {@link RadioCloneHydrationBag} only.
+ * Clone-summary tables for Web Serial radio images — shared by Backup / Restore inspect.
  */
 
 import { Code, List, Stack, Table, Text } from '@mantine/core';
