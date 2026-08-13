@@ -8,12 +8,7 @@ import {
   atD890BackupSpanForAddress,
 } from '../radios/at-d890uv/backupRestoreRoles.ts';
 import { D890_MAP } from '../radios/at-d890uv/constants.ts';
-import {
-  DM32_BLOCK_SIZE,
-  DM32_METADATA,
-  DM32_METADATA_OFFSET,
-} from '../radios/dm32uv/constants.ts';
-import { classifyDm32Metadata } from '../radios/dm32uv/memory.ts';
+import { dm32BackupRestoreRole } from '../radios/dm32uv/backupRestoreRoles.ts';
 import { OPENGD77_BACKUP_FLASH_SPANS } from '../radios/opengd77/backupRestoreRoles.ts';
 import { OPENUV380_IMAGE_SIZE, openUv380AbsToOffset } from '../radios/opengd77/constants.ts';
 import { RT95_IMAGE_SIZE, RT95_MODEL_ID } from '../radios/rt95/constants.ts';
@@ -140,7 +135,7 @@ function blockRole(modelId: string, address: number, data: Uint8Array): RadioBac
     return d890Role(address, data.byteLength);
   }
   if (isDm32Model(modelId)) {
-    return dm32Role(address, data);
+    return dm32BackupRestoreRole(data);
   }
   return 'restorable';
 }
@@ -183,17 +178,6 @@ function d890Role(address: number, length: number): RadioBackupRegionRole {
   return atD890BackupRestoreRole(address, length);
 }
 
-function dm32Role(address: number, data: Uint8Array): RadioBackupRegionRole {
-  if (data.byteLength >= DM32_BLOCK_SIZE) {
-    const meta = data[DM32_METADATA_OFFSET] ?? data[data.byteLength - 1]!;
-    if (meta === DM32_METADATA.CALIBRATION || classifyDm32Metadata(meta) === 'calibration') {
-      return 'inspect-only';
-    }
-  }
-  const localInfoHint = address === D890_MAP.LocalInfo;
-  return localInfoHint ? 'inspect-only' : 'restorable';
-}
-
 function hexId(address: number): string {
   return `0x${address.toString(16)}`;
 }
@@ -210,7 +194,7 @@ function fromSparseBlocks(
     const inspect =
       isD890Model(modelId) && d890Role(block.address, block.data.byteLength) === 'inspect-only';
     const dm32Inspect =
-      isDm32Model(modelId) && dm32Role(block.address, block.data) === 'inspect-only';
+      isDm32Model(modelId) && dm32BackupRestoreRole(block.data) === 'inspect-only';
     const restoreRole: RadioBackupRegionRole =
       inspect || dm32Inspect ? 'inspect-only' : 'restorable';
     const d890Span = isD890Model(modelId) ? atD890BackupSpanForAddress(block.address) : undefined;

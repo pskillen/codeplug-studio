@@ -103,9 +103,13 @@ describe('regionsFromDownload', () => {
         { address: 0x2000, data: cal },
       ],
       addressBase: 0x1000,
+      dm32ContactsBase: 0x278000,
+      dm32ContactsEnd: 0x279000,
     });
     expect(extract.restoreFragileAfterFactoryReset).toBe(true);
     expect(extract.addressBase).toBe(0x1000);
+    expect(extract.dm32ContactsBase).toBe(0x278000);
+    expect(extract.dm32ContactsEnd).toBe(0x279000);
     const calRegion = extract.regions.find((r) => r.restoreRole === 'inspect-only');
     expect(calRegion?.address).toBe(0x2000);
     expect(extract.regions.find((r) => r.address === 0x1000)?.restoreRole).toBe('restorable');

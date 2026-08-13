@@ -25,6 +25,11 @@ export {
 } from './connection.ts';
 export { DM32UV_DESCRIPTOR, DM32UV_MODEL_ID } from './descriptor.ts';
 export {
+  dm32BackupRestoreRole,
+  isDm32CalibrationBlock,
+  isDm32RestoreNeverWriteBlock,
+} from './backupRestoreRoles.ts';
+export {
   extractDm32uvHydration,
   extractDm32uvHydrationFromProtocol,
   mergeChannelsIntoDm32uvHydration,
