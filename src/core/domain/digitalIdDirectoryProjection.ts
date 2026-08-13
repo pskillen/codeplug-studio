@@ -123,3 +123,36 @@ export function defaultDualBankWriteOptions(mode: DualBankWriteMode): DualBankRa
     ? { includeLibraryContacts: true, includeDigitalIdDirectory: false }
     : { includeLibraryContacts: false, includeDigitalIdDirectory: true };
 }
+
+/**
+ * Operator-facing Write radio popup source. `none` skips overlaying contact / directory banks.
+ */
+export type DigitalContactsWriteSource = 'none' | 'library' | 'directory' | 'both';
+
+export function dualBankOptionsFromWriteSource(
+  source: DigitalContactsWriteSource,
+): DualBankRadioWriteOptions {
+  return {
+    includeLibraryContacts: source === 'library' || source === 'both',
+    includeDigitalIdDirectory: source === 'directory' || source === 'both',
+  };
+}
+
+export function singleBankProjectionFromWriteSource(
+  source: DigitalContactsWriteSource,
+): SingleBankDigitalProjectionMode {
+  switch (source) {
+    case 'none':
+      return 'skip';
+    case 'library':
+      return 'contacts-only';
+    case 'directory':
+      return 'directory-only';
+    case 'both':
+      return 'merge';
+  }
+}
+
+export function writeSourceIncludesDirectory(source: DigitalContactsWriteSource): boolean {
+  return source === 'directory' || source === 'both';
+}

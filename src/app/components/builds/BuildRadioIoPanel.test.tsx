@@ -1,18 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MantineProvider } from '@mantine/core';
 import { MemoryRouter } from 'react-router-dom';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
+import { DesignSystemV2Provider } from '../v2/index.ts';
 import { BuildLayoutProvider } from '../../routes/builds/BuildLayoutContext.tsx';
 import BuildRadioIoPanel from './BuildRadioIoPanel.tsx';
-
-/**
- * #1085 promoted the inline "Write Keps" button + collapsible preview panel to a dedicated
- * `/builds/:id/satellite-keps` tab (`BuildSatelliteKepsPage.test.tsx` covers that page's
- * behaviour — the busy/disable interaction, capacity pre-flight, and preview table). What's left
- * here is just: does this panel show a "Write Keps…" *link* to that tab when the egress profile
- * has a registered adapter, and not otherwise.
- */
 
 vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../services/radioIoSession.ts')>();
@@ -25,9 +17,16 @@ vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
   };
 });
 
-vi.mock('../../services/satelliteKepsWriteAdapters.ts', () => ({
-  hasSatelliteKepsWriteAdapter: (profileId: string) => profileId === 'radio-io-at-d890uv',
-}));
+vi.mock('../../services/satelliteKepsWriteAdapters.ts', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../../services/satelliteKepsWriteAdapters.ts')>();
+  return {
+    ...actual,
+    hasSatelliteKepsWriteAdapter: (profileId: string) => profileId === 'radio-io-at-d890uv',
+    getSatelliteKepsWriteAdapter: (profileId: string) =>
+      profileId === 'radio-io-at-d890uv' ? vi.fn() : undefined,
+  };
+});
 
 vi.mock('../../hooks/useUnsavedNavigationGuard.ts', () => ({
   useUnsavedNavigationGuard: () => ({ modalOpen: false, stay: vi.fn(), leave: vi.fn() }),
@@ -40,6 +39,7 @@ vi.mock('../../state/useProjects.ts', () => ({
 vi.mock('../../state/persistence.ts', () => ({
   persistence: {
     listSatellites: vi.fn(async () => []),
+    countDigitalIdDirectoryEntries: vi.fn(async () => 0),
     subscribe: vi.fn(() => () => {}),
   },
 }));
@@ -57,37 +57,66 @@ function renderPanel(profileId: string) {
   const result = render(
     <MemoryRouter>
       <BuildLayoutProvider value={layoutValue}>
-        <MantineProvider>
+        <DesignSystemV2Provider>
           <BuildRadioIoPanel build={build} egress={egress} />
-        </MantineProvider>
+        </DesignSystemV2Provider>
       </BuildLayoutProvider>
     </MemoryRouter>,
   );
   return { ...result, build };
 }
 
-describe('BuildRadioIoPanel — Write Keps link (#1085)', () => {
-  it('renders a "Write Keps…" link to the Satellite Keps tab for a profile with a registered adapter', () => {
-    const { build } = renderPanel('radio-io-at-d890uv');
-    const link = screen.getByRole('link', { name: 'Write Keps…' });
-    expect(link).toHaveAttribute('href', `/builds/${build.id}/satellite-keps`);
+describe('BuildRadioIoPanel — Write radio popup (#1121)', () => {
+  it('opens a Write radio popup with keps extra for D890', async () => {
+    renderPanel('radio-io-at-d890uv');
+    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+    expect(await screen.findByRole('button', { name: 'Write codeplug' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).toBeInTheDocument();
+    expect(screen.queryByText(/digital ID list/i)).not.toBeInTheDocument();
   });
 
-  it('does not render a Write Keps link for a profile with no registered adapter', () => {
-    renderPanel('neonplug-dm32uv');
-    expect(screen.queryByRole('link', { name: 'Write Keps…' })).not.toBeInTheDocument();
+  it('does not show keps extra for a profile with no adapter', async () => {
+    renderPanel('radio-io-uv5r-mini');
+    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+    expect(await screen.findByRole('button', { name: 'Write codeplug' })).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Satellite keps' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Digital contacts')).not.toBeInTheDocument();
   });
 });
 
-describe('BuildRadioIoPanel — single-bank Write modes (#992)', () => {
-  it('shows Codeplug Write projection select for AT-D890', () => {
-    renderPanel('radio-io-at-d890uv');
-    expect(screen.getByRole('combobox', { name: 'Codeplug Write projection' })).toBeInTheDocument();
+describe('BuildRadioIoPanel — dual-bank / single-bank extras', () => {
+  it('shows digital contacts extra for OpenGD77 and defaults None', async () => {
+    renderPanel('radio-io-opengd77-1701');
+    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+    expect(await screen.findByRole('button', { name: 'None' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(screen.getByRole('button', { name: 'Write digital contacts' })).toBeDisabled();
   });
 
-  it('does not show single-bank projection select for UV-5R Mini', () => {
+  it('shows digital contacts extra for AT-D890', async () => {
+    renderPanel('radio-io-at-d890uv');
+    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+    expect(await screen.findByText('Digital contacts')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('combobox', { name: 'Codeplug Write projection' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('warns when RadioID directory is selected and the shadow is empty', async () => {
+    renderPanel('radio-io-opengd77-1701');
+    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'RadioID' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write codeplug' }));
+    expect(await screen.findByText('RadioID directory is empty')).toBeInTheDocument();
+  });
+
+  it('does not show digital contacts extra for UV-5R Mini', async () => {
     renderPanel('radio-io-uv5r-mini');
-    expect(screen.queryByLabelText('Codeplug Write projection')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+    await screen.findByRole('button', { name: 'Write codeplug' });
+    expect(screen.queryByText('Digital contacts')).not.toBeInTheDocument();
   });
 });
 
@@ -125,19 +154,5 @@ describe('BuildRadioIoPanel — no write-panel Read stash (#878)', () => {
     expect(
       screen.queryByText(/Write requires a prior Read on this egress/i),
     ).not.toBeInTheDocument();
-  });
-});
-
-describe('BuildRadioIoPanel — dual-bank directory toggles', () => {
-  it('toggles library contacts and directory without throwing (React 19 currentTarget)', () => {
-    renderPanel('radio-io-opengd77-1701');
-    const library = screen.getByRole('checkbox', { name: 'Include library digital contacts' });
-    const directory = screen.getByRole('checkbox', { name: 'Include digital ID directory' });
-    expect(library).toBeChecked();
-    expect(directory).not.toBeChecked();
-    fireEvent.click(library);
-    expect(library).not.toBeChecked();
-    fireEvent.click(directory);
-    expect(directory).toBeChecked();
   });
 });

@@ -50,14 +50,26 @@ let kepsPreviewStub:
   | undefined;
 let kepsExclusionsStub: ((satellites: readonly Satellite[]) => unknown[]) | undefined;
 
-vi.mock('../../services/satelliteKepsWriteAdapters.ts', () => ({
-  hasSatelliteKepsWriteAdapter: (profileId: string) => profileId === 'radio-io-at-d890uv',
-  getSatelliteKepsWriteAdapter: (profileId: string) =>
-    profileId === 'radio-io-at-d890uv' ? kepsWriteFn : undefined,
-  getSatelliteKepsWriteCapacity: () => kepsCapacityStub,
-  getSatelliteKepsWritePreview: () => kepsPreviewStub,
-  getSatelliteKepsExclusions: () => kepsExclusionsStub,
-}));
+vi.mock('../../services/satelliteKepsWriteAdapters.ts', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../../services/satelliteKepsWriteAdapters.ts')>();
+  return {
+    ...actual,
+    hasSatelliteKepsWriteAdapter: (profileId: string) => profileId === 'radio-io-at-d890uv',
+    getSatelliteKepsWriteAdapter: (profileId: string) =>
+      profileId === 'radio-io-at-d890uv' ? kepsWriteFn : undefined,
+    getSatelliteKepsWriteCapacity: () => kepsCapacityStub,
+    satelliteKepsCapacityWarning: (_profileId: string, satellites: readonly Satellite[]) => {
+      if (!kepsCapacityStub) return null;
+      return actual.formatSatelliteKepsCapacityWarning(
+        kepsCapacityStub.countEligible(satellites),
+        kepsCapacityStub.max,
+      );
+    },
+    getSatelliteKepsWritePreview: () => kepsPreviewStub,
+    getSatelliteKepsExclusions: () => kepsExclusionsStub,
+  };
+});
 
 vi.mock('../../hooks/useUnsavedNavigationGuard.ts', () => ({
   useUnsavedNavigationGuard: () => ({ modalOpen: false, stay: vi.fn(), leave: vi.fn() }),
