@@ -11,7 +11,6 @@ import {
 import {
   extractOpenGd77Hydration,
   mergeChannelsIntoOpenGd77Hydration,
-  memoryMapFromOpenGd77Hydration,
   OPENGD77_MD9600_MODEL_ID,
 } from '../hydration.ts';
 import { createOpenGd77Md9600Protocol, OpenGd77Protocol } from '../protocol.ts';
@@ -37,11 +36,6 @@ const hydration: RadioHydrationHooks = {
     mergeChannelsIntoOpenGd77Hydration(bag, channels, organisation, {
       powerSteps: OPENGD77_MD9600_POWER_STEPS,
     }),
-  seedProtocolForUpload: (protocol, bag) => {
-    if (protocol instanceof OpenGd77Protocol) {
-      protocol.seedPriorImage(memoryMapFromOpenGd77Hydration(bag));
-    }
-  },
 };
 
 export const OPENGD77_MD9600_DESCRIPTOR: RadioDescriptor = {
@@ -61,7 +55,7 @@ export const OPENGD77_MD9600_DESCRIPTOR: RadioDescriptor = {
   attributionIds: ['qdmr'],
   compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-opengd77-md9600' }],
   writeStrategy: 'full-image',
-  hydrationRequiredForWrite: true,
+  hydrationRequiredForWrite: false,
   baudRate: OPENGD77_BAUD_RATE,
   hydration,
   writeVerify: createOpenGd77WriteVerifyHooks(OPENGD77_MD9600_MODEL_ID),

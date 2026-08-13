@@ -29,6 +29,9 @@ export {
   extractAtD890uvHydrationFromProtocol,
   mergeChannelsIntoAtD890uvHydration,
   memoryMapFromAtD890uvHydration,
+  encodeAtD890ProjectionOntoImage,
+  encodeAtD890WriteImageFromDownloadCache,
+  AT_D890_EMPTY_WRITE_CACHE_MESSAGE,
 } from './hydration.ts';
 export {
   decodeChannelsFromAtD890Cache,

@@ -29,6 +29,7 @@ Grouped export preference controls on the build **Export** page.
 - **Scratch channels** toggle is enabled only when m×n expansion is on; turning expansion off clears scratch.
 - Zone-derived scan list toggle is shown when the radio catalog lists a `dm32` or `anytone` compatible egress.
 - **AT-D890UV** scan-list timing fields live in `ExportAnytoneSettingsSections` (not this wrapper).
+- Dual-bank CPS (`SeparateDigitalIdList`) uses `ExportDirectoryProjectionFields` — **Include library digital contacts** / **Include digital ID directory**.
 
 ## Related
 

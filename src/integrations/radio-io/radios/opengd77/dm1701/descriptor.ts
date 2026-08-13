@@ -7,7 +7,6 @@ import { OPENGD77_BAUD_RATE, OPENGD77_CHANNEL_SLOTS } from '../constants.ts';
 import {
   extractOpenGd77Hydration,
   mergeChannelsIntoOpenGd77Hydration,
-  memoryMapFromOpenGd77Hydration,
   OPENGD77_DM1701_MODEL_ID,
 } from '../hydration.ts';
 import { createOpenGd77Dm1701Protocol, OpenGd77Protocol } from '../protocol.ts';
@@ -29,11 +28,6 @@ const hydration: RadioHydrationHooks = {
     });
   },
   mergeChannelsIntoHydration: mergeChannelsIntoOpenGd77Hydration,
-  seedProtocolForUpload: (protocol, bag) => {
-    if (protocol instanceof OpenGd77Protocol) {
-      protocol.seedPriorImage(memoryMapFromOpenGd77Hydration(bag));
-    }
-  },
 };
 
 export const OPENGD77_DM1701_DESCRIPTOR: RadioDescriptor = {
@@ -53,7 +47,7 @@ export const OPENGD77_DM1701_DESCRIPTOR: RadioDescriptor = {
   attributionIds: ['qdmr'],
   compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-opengd77-1701' }],
   writeStrategy: 'full-image',
-  hydrationRequiredForWrite: true,
+  hydrationRequiredForWrite: false,
   baudRate: OPENGD77_BAUD_RATE,
   hydration,
   writeVerify: createOpenGd77WriteVerifyHooks(OPENGD77_DM1701_MODEL_ID),

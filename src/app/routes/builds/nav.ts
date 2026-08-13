@@ -17,7 +17,7 @@ import {
   traitsForRadioTarget,
 } from '@core/radio-targets/index.ts';
 import { usesAtD890AirbandBankSplit } from '@core/services/anytoneChannelBanks.ts';
-import { findNeonplugDonorEgress, findRadioCloneEgress } from '../../lib/buildEgressUi.ts';
+import { findNeonplugDonorEgress, findRadioIoEgress } from '../../lib/buildEgressUi.ts';
 import { entityNavIcons } from '../../nav/entityNavIcons.ts';
 import { hasSatelliteKepsWriteAdapter } from '../../services/satelliteKepsWriteAdapters.ts';
 
@@ -246,10 +246,10 @@ export function buildAuditNavItems(
     });
   }
 
-  if (findRadioCloneEgress(egressPaths)) {
+  if (findRadioIoEgress(egressPaths)) {
     items.push({
-      label: 'Radio image',
-      path: `${base}/radio-image`,
+      label: 'Radio Info',
+      path: `${base}/radio-info`,
       icon: IconPlugConnected,
     });
   }
@@ -316,6 +316,7 @@ const AUDIT_SEGMENTS = new Set([
   'characteristics',
   'export-resolution',
   'neonplug-settings',
+  'radio-info',
   'radio-image',
 ]);
 

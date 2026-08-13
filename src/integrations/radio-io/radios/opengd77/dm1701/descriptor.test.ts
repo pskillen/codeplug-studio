@@ -14,7 +14,7 @@ describe('OpenGD77 DM-1701 descriptor / registry', () => {
     );
     const d = getRadioDescriptor(OPENGD77_DM1701_MODEL_ID);
     expect(d?.writeStrategy).toBe('full-image');
-    expect(d?.hydrationRequiredForWrite).toBe(true);
+    expect(d?.hydrationRequiredForWrite).toBe(false);
     expect(d?.attributionIds).toEqual(['qdmr']);
     expect(d?.baudRate).toBe(115_200);
     expect(d?.compatibleProfiles).toEqual([

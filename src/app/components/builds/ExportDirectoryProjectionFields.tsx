@@ -60,27 +60,29 @@ export default function ExportDirectoryProjectionFields({
             label="Include library digital contacts"
             checked={dualToggles.includeLibraryContacts}
             disabled={saving}
-            onChange={(event) =>
+            onChange={(event) => {
+              const checked = (event.currentTarget ?? event.target).checked;
               onPatch({
                 cpsDualBankDirectory: {
                   ...dualToggles,
-                  includeLibraryContacts: event.currentTarget.checked,
+                  includeLibraryContacts: checked,
                 },
-              })
-            }
+              });
+            }}
           />
           <Checkbox
             label="Include digital ID directory"
             checked={dualToggles.includeDigitalIdDirectory}
             disabled={saving}
-            onChange={(event) =>
+            onChange={(event) => {
+              const checked = (event.currentTarget ?? event.target).checked;
               onPatch({
                 cpsDualBankDirectory: {
                   ...dualToggles,
-                  includeDigitalIdDirectory: event.currentTarget.checked,
+                  includeDigitalIdDirectory: checked,
                 },
-              })
-            }
+              });
+            }}
           />
         </Stack>
       ) : null}

@@ -21,7 +21,10 @@ import { encodeMasterIdIntoAtD890Image } from './masterIdCodec.ts';
 import { encodeAprsIntoAtD890Image } from './aprsCodec.ts';
 import { encodeAmAirIntoAtD890Image } from './amAirCodec.ts';
 import { encodeAmZonesIntoAtD890Image } from './amZoneCodec.ts';
-import { AT_D890UV_MODEL_IDS } from './constants.ts';
+import { AT_D890UV_MODEL_IDS, AT_D890_MAP_SIZE } from './constants.ts';
+import { createMemoryMap } from '../../kit/memoryMap.ts';
+import { RadioProtocolError } from '../../kit/errors.ts';
+import { assertAtD890HasVisibleZones } from './zoneCodec.ts';
 import type { AtD890DownloadCache as ProtocolCache } from './protocol.ts';
 
 export const AT_D890UV_MODEL_ID = AT_D890UV_MODEL_IDS[0];
@@ -81,12 +84,30 @@ export function extractAtD890uvHydrationFromProtocol(
   return extractAtD890uvHydration(image, { ...meta, cache });
 }
 
-export function mergeChannelsIntoAtD890uvHydration(
-  bag: RadioCloneHydrationBag,
+export const AT_D890_EMPTY_WRITE_CACHE_MESSAGE =
+  'Read this radio in the current session before Write. The AT-D890UV write encode needs the in-session download cache as its prior — it will not fall back to a blank 0xff image.';
+
+/**
+ * @deprecated Not the D890 Write entry. Write encodes onto
+ * {@link encodeAtD890WriteImageFromDownloadCache} (in-session Read cache).
+ * Virgin 0xff fill bricks unmodelled occupancy / AES / ZoneHide.
+ */
+export function assembleAtD890WriteImage(
   channels: readonly RadioChannelDto[],
   organisation?: RadioWriteOrganisation,
 ): MemoryMap {
-  let next = memoryMapFromAtD890uvHydration(bag);
+  const next = createMemoryMap(AT_D890_MAP_SIZE);
+  next.fill(0, AT_D890_MAP_SIZE, 0xff);
+  return encodeAtD890ProjectionOntoImage(next, channels, organisation);
+}
+
+/** Overlay the build projection onto an existing radio-shaped image (stash merge or live cache). */
+export function encodeAtD890ProjectionOntoImage(
+  image: MemoryMap,
+  channels: readonly RadioChannelDto[],
+  organisation?: RadioWriteOrganisation,
+): MemoryMap {
+  let next = image;
 
   if (organisation?.talkGroups) {
     next = encodeTalkgroupsIntoAtD890Image(next, organisation.talkGroups);
@@ -119,4 +140,27 @@ export function mergeChannelsIntoAtD890uvHydration(
   }
 
   return next;
+}
+
+/** Encode modelled overlay onto `cacheToMemoryMap(session download cache)`. Empty cache is refused. */
+export function encodeAtD890WriteImageFromDownloadCache(
+  cache: AtD890DownloadCache | null | undefined,
+  channels: readonly RadioChannelDto[],
+  organisation?: RadioWriteOrganisation,
+): MemoryMap {
+  if (!cache || cache.blocks.size === 0) {
+    throw new RadioProtocolError(AT_D890_EMPTY_WRITE_CACHE_MESSAGE);
+  }
+  const image = encodeAtD890ProjectionOntoImage(cacheToMemoryMap(cache), channels, organisation);
+  assertAtD890HasVisibleZones(image);
+  return image;
+}
+
+export function mergeChannelsIntoAtD890uvHydration(
+  bag: RadioCloneHydrationBag,
+  channels: readonly RadioChannelDto[],
+  organisation?: RadioWriteOrganisation,
+): MemoryMap {
+  const base = memoryMapFromAtD890uvHydration(bag);
+  return encodeAtD890ProjectionOntoImage(base, channels, organisation);
 }

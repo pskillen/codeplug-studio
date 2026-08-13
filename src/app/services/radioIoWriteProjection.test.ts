@@ -822,4 +822,30 @@ describe('buildRadioWriteProjection', () => {
     ]);
     expect(projection.organisation.digitalContacts?.some((c) => c.digitalId === 1001)).toBe(false);
   });
+
+  it('uses digitalContactExportNameMode for OpenGD77 library contact wire names', () => {
+    const contact = {
+      ...newDigitalContact('p1', 'Ada Lovelace', 1234567),
+      id: 'dc-1',
+      callsign: 'M7ABC',
+    };
+    const library = {
+      ...emptyLibrary(),
+      digitalContacts: [contact],
+    };
+    const { build: base, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
+    const build = {
+      ...base,
+      exportUnlinkedDigitalContacts: true,
+      exportSettings: { digitalContactExportNameMode: 'callsign' as const },
+    };
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    expect(projection.organisation.digitalContacts).toEqual([
+      expect.objectContaining({ digitalId: 1234567, wireName: 'M7ABC' }),
+    ]);
+  });
 });

@@ -63,6 +63,17 @@ import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from './radioWriteEnvGate.ts';
+import { encodeAtD890WriteImageFromDownloadCache } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
+import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
+import {
+  OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE,
+  OpenGd77Protocol,
+} from '@integrations/radio-io/radios/opengd77/protocol.ts';
+import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
+import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
+import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
+import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 
 export {
   isRadioSerialSupported,
@@ -267,14 +278,19 @@ export async function prepareRadioWriteImage(
     persistence?: ProjectPersistence;
     projectId?: string;
   },
-): Promise<{ image: MemoryMap; warnings: string[]; organisation: RadioWriteOrganisation }> {
+): Promise<{
+  image?: MemoryMap;
+  warnings: string[];
+  organisation: RadioWriteOrganisation;
+  channels: readonly RadioChannelDto[];
+}> {
   const descriptor = descriptorsForEgress(egress)[0];
   if (descriptor && resolveRadioWriteGate(descriptor) === 'hidden') {
     throw new RadioWriteBlockedError(resolveRadioWriteProdDisabledMessage(egress.profileId));
   }
 
   const hydration = getRadioCloneHydration(egress);
-  if (!hydration) {
+  if (descriptor?.hydrationRequiredForWrite && !hydration) {
     throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
   }
 
@@ -374,10 +390,21 @@ export async function prepareRadioWriteImage(
       build.exportSettings,
     ).deciseconds;
   }
+  if (descriptor && !descriptor.hydrationRequiredForWrite) {
+    return {
+      warnings,
+      organisation,
+      channels: projection.channels,
+    };
+  }
+  if (!hydration) {
+    throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
+  }
   return {
     image: mergeChannelsForWrite(egress, hydration, projection.channels, organisation),
     warnings,
     organisation,
+    channels: projection.channels,
   };
 }
 
@@ -398,6 +425,77 @@ function mergeChannelsForWrite(
 }
 
 /**
+ * D890 and OpenGD77 Write encode onto the in-session radio image (not persisted stash,
+ * not a virgin 0xff map). Other radios still use the image prepared from hydration.
+ * Empty session prior → operator error after a download attempt.
+ */
+async function resolveRadioWriteImageForUpload(
+  session: RadioSession,
+  egress: EgressPath,
+  prepared: {
+    image?: MemoryMap;
+    channels: readonly RadioChannelDto[];
+    organisation: RadioWriteOrganisation;
+  },
+  opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
+): Promise<MemoryMap> {
+  if (session.radio instanceof AtD890uvProtocol) {
+    let cache = session.radio.getDownloadCache();
+    if (!cache || cache.blocks.size === 0) {
+      await session.radio.download({
+        onProgress: opts?.onProgress,
+        signal: opts?.signal,
+      });
+      cache = session.radio.getDownloadCache();
+    }
+    try {
+      return encodeAtD890WriteImageFromDownloadCache(
+        cache,
+        prepared.channels,
+        prepared.organisation,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new RadioWriteBlockedError(message);
+    }
+  }
+  if (session.radio instanceof OpenGd77Protocol) {
+    session.radio.armWriteProjection(prepared.channels, prepared.organisation);
+    let prior = session.radio.getPriorImage();
+    if (!prior) {
+      await session.radio.download({
+        onProgress: opts?.onProgress,
+        signal: opts?.signal,
+        progressStage: 'Pre-write read',
+      });
+      prior = session.radio.getPriorImage();
+    }
+    try {
+      return encodeOpenGd77WriteImageFromPrior(prior, prepared.channels, prepared.organisation, {
+        powerSteps: session.radio.getPowerSteps(),
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new RadioWriteBlockedError(message);
+    }
+  }
+  if (!prepared.image) {
+    throw new RadioWriteBlockedError(
+      egress.profileId === 'radio-io-at-d890uv'
+        ? 'Read this radio in the current session before Write. The AT-D890UV write encode needs the in-session download cache as its prior — it will not fall back to a blank 0xff image.'
+        : 'Missing radio clone write image.',
+    );
+  }
+  return prepared.image;
+}
+
+function openGd77DirtySectorWarnings(session: RadioSession): string[] {
+  if (!(session.radio instanceof OpenGd77Protocol)) return [];
+  if (session.radio.getLastDirtySectorCount() !== 0) return [];
+  return [OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE];
+}
+
+/**
  * Assemble build → encode into hydrated image → upload.
  * Requires radio-clone hydration on the egress when descriptor.hydrationRequiredForWrite.
  */
@@ -414,41 +512,61 @@ export async function writeBuildToRadio(
       'Read from the radio first so Studio can preserve unmodelled settings, then write.',
     );
   }
-  const { image, warnings, organisation } = await prepareRadioWriteImage(build, egress, library);
-  session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration!, organisation);
+  const prepared = await prepareRadioWriteImage(build, egress, library);
+  if (hydration || !session.descriptor.hydrationRequiredForWrite) {
+    session.descriptor.hydration.seedProtocolForUpload?.(
+      session.radio,
+      hydration!,
+      prepared.organisation,
+    );
+  }
+  const image = await resolveRadioWriteImageForUpload(session, egress, prepared, opts);
   setCachedImage(session, image);
   await session.radio.upload(image, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
   if (egress.profileId === 'radio-io-at-d890uv') {
-    await uploadAtD890DigitalContactsForWrite(session, organisation.digitalContacts, opts);
+    await uploadAtD890DigitalContactsForWrite(session, prepared.organisation.digitalContacts, opts);
   }
-  return { warnings };
+  return { warnings: [...prepared.warnings, ...openGd77DirtySectorWarnings(session)] };
 }
 
 /** Upload a prepared clone image after {@link prepareRadioWriteImage} and session connect. */
 export async function uploadPreparedRadioWrite(
   session: RadioSession,
   egress: EgressPath,
-  image: MemoryMap,
+  image: MemoryMap | undefined,
   opts?: {
     onProgress?: ProgressFn;
     signal?: AbortSignal;
     organisation?: RadioWriteOrganisation;
+    channels?: readonly RadioChannelDto[];
   },
-): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult }> {
+): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult; warnings?: string[] }> {
   const hydration = getRadioCloneHydration(egress);
-  if (!hydration) {
+  if (session.descriptor.hydrationRequiredForWrite && !hydration) {
     throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
   }
-  session.descriptor.hydration.seedProtocolForUpload?.(
-    session.radio,
-    hydration,
-    opts?.organisation,
+  if (hydration || !session.descriptor.hydrationRequiredForWrite) {
+    session.descriptor.hydration.seedProtocolForUpload?.(
+      session.radio,
+      hydration!,
+      opts?.organisation,
+    );
+  }
+  const resolved = await resolveRadioWriteImageForUpload(
+    session,
+    egress,
+    {
+      image,
+      channels: opts?.channels ?? [],
+      organisation: opts?.organisation ?? {},
+    },
+    opts,
   );
-  setCachedImage(session, image);
-  await session.radio.upload(image, {
+  setCachedImage(session, resolved);
+  await session.radio.upload(resolved, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
@@ -456,7 +574,11 @@ export async function uploadPreparedRadioWrite(
     await uploadAtD890DigitalContactsForWrite(session, opts?.organisation?.digitalContacts, opts);
   }
   const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
-  return captured ? { writeVerifyPending: captured } : {};
+  const warnings = openGd77DirtySectorWarnings(session);
+  return {
+    ...(captured ? { writeVerifyPending: captured } : {}),
+    ...(warnings.length ? { warnings } : {}),
+  };
 }
 
 /** Cross-session write verify — delegates to descriptor {@link WriteVerifyHooks}. */
@@ -478,4 +600,22 @@ export async function closeRadioSession(session: RadioSession): Promise<void> {
   } finally {
     await session.pipe.close();
   }
+}
+
+/** Read LocalInfo serial from a connected AT-D890UV session (operator confirm before Write). */
+export async function readAtD890ConnectedRadioIdentity(
+  session: RadioSession,
+  opts?: { signal?: AbortSignal },
+): Promise<{ serial: string; localInfo: Uint8Array }> {
+  if (!(session.radio instanceof AtD890uvProtocol)) {
+    throw new Error('Connected radio is not an AT-D890UV protocol instance.');
+  }
+  const raw = await atD890ReadMemory(
+    session.pipe,
+    D890_MAP.LocalInfo,
+    D890_MAP.LocalInfoLength,
+    opts?.signal,
+    session.radio.getNegotiatedReadBlockSize(),
+  );
+  return { serial: formatAtD890LocalInfoSerial(raw), localInfo: raw };
 }

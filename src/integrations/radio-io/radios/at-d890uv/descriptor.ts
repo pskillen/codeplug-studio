@@ -5,7 +5,6 @@
 import type { RadioDescriptor } from '../../types.ts';
 import { AT_D890_CONNECTION, AT_D890_LIMITS, AT_D890UV_MODEL_IDS } from './constants.ts';
 import {
-  cacheFromBag,
   extractAtD890uvHydration,
   extractAtD890uvHydrationFromProtocol,
   mergeChannelsIntoAtD890uvHydration,
@@ -34,7 +33,7 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
   attributionIds: ['anytone-cps'],
   compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-at-d890uv' }],
   writeStrategy: 'selective-ranges',
-  hydrationRequiredForWrite: true,
+  hydrationRequiredForWrite: false,
   baudRate: AT_D890_CONNECTION.BAUD_RATE,
   hydration: {
     extractHydration: (image, meta) => {
@@ -48,9 +47,8 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
       return extractAtD890uvHydration(image, meta);
     },
     mergeChannelsIntoHydration: mergeChannelsIntoAtD890uvHydration,
-    seedProtocolForUpload: (protocol, bag, organisation) => {
+    seedProtocolForUpload: (protocol, _bag, organisation) => {
       if (protocol instanceof AtD890uvProtocol) {
-        protocol.seedDownloadCache(cacheFromBag(bag));
         protocol.setUploadBankIntent(atD890UploadBankIntentFromOrganisation(organisation));
       }
     },

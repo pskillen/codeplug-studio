@@ -9,6 +9,7 @@ import {
   newTalkGroup,
   newTrackingSettings,
 } from '@core/domain/factories.ts';
+import { createRadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
 import { InMemoryProjectPersistence } from './inMemory.ts';
 import type { PersistenceChange } from './types.ts';
 
@@ -130,6 +131,31 @@ describe('InMemoryProjectPersistence', () => {
     expect(seed?.radioBuilds).toHaveLength(1);
     expect(seed?.radioBuilds?.[0]?.id).toBe(build.id);
     expect(seed?.egressPaths).toHaveLength(egressPaths.length);
+  });
+
+  it('loadProjectSeed strips persisted radio-clone hydration from egress paths (#879)', async () => {
+    const store = new InMemoryProjectPersistence();
+    const meta = newProjectMeta('Test');
+    const { build, egressPaths } = newRadioBuildWithEgresses(meta.projectId, 'baofeng-dm1701');
+    const radioIoEgress = egressPaths.find((path) => path.formatId === 'radio-io');
+    expect(radioIoEgress).toBeDefined();
+    const hydration = createRadioCloneHydrationBag({
+      radioModelId: 'DM-1701',
+      imageBytes: new Uint8Array([1, 2, 3]),
+    });
+    const seededEgressPaths = egressPaths.map((path) =>
+      path.id === radioIoEgress!.id ? { ...path, hydration } : path,
+    );
+
+    await store.seedProject({
+      meta,
+      radioBuilds: [build],
+      egressPaths: seededEgressPaths,
+    });
+
+    const seed = await store.loadProjectSeed(meta.projectId);
+    const loadedRadioIo = seed?.egressPaths?.find((path) => path.formatId === 'radio-io');
+    expect(loadedRadioIo?.hydration).toBeUndefined();
   });
 
   it('putRadioBuild and putEgressPath persist and read back rows', async () => {

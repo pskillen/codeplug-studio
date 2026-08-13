@@ -40,6 +40,7 @@ import {
 } from './digitalIdDirectoryQuery.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
+import { readEgressPathRow } from './egressPathRow.ts';
 import { readRadioBuildRow } from './radioBuildRow.ts';
 import { readSatelliteRow } from './satelliteRow.ts';
 
@@ -681,10 +682,11 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
 
   async getEgressPath(projectId: string, id: string): Promise<EgressPath | null> {
-    return this.getRow<EgressPath>('egressPath', projectId, id);
+    const row = await this.getRow<EgressPath>('egressPath', projectId, id);
+    return row ? readEgressPathRow(row) : null;
   }
   async putEgressPath(row: EgressPath, expectedRevision: number | null): Promise<PutResult> {
-    return this.putRow('egressPath', row, expectedRevision);
+    return this.putRow('egressPath', readEgressPathRow(row), expectedRevision);
   }
   async listEgressPaths(projectId: string): Promise<EgressPath[]> {
     const db = await this.db();
@@ -692,7 +694,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     const tx = db.transaction(storeName, 'readonly');
     const index = tx.objectStore(storeName).index('byProject');
     const rows = await promisifyRequest<EgressPath[]>(index.getAll(projectId));
-    return rows.sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
+    return rows.map(readEgressPathRow).sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
   }
   async listEgressPathsForBuild(projectId: string, radioBuildId: string): Promise<EgressPath[]> {
     const db = await this.db();
@@ -700,7 +702,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     const tx = db.transaction(storeName, 'readonly');
     const index = tx.objectStore(storeName).index('byRadioBuild');
     const rows = await promisifyRequest<EgressPath[]>(index.getAll([projectId, radioBuildId]));
-    return rows.sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
+    return rows.map(readEgressPathRow).sort((a, b) => (a.label ?? '').localeCompare(b.label ?? ''));
   }
 
   async deleteEntity(projectId: string, kind: EntityKind, id: string): Promise<void> {
@@ -784,7 +786,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'satellite', rows: seed.satellites ?? [] },
       { kind: 'trackingSettings', rows: seed.trackingSettings ?? [] },
       { kind: 'radioBuild', rows: seed.radioBuilds ?? [] },
-      { kind: 'egressPath', rows: seed.egressPaths ?? [] },
+      { kind: 'egressPath', rows: (seed.egressPaths ?? []).map(readEgressPathRow) },
     ];
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE_NAMES, 'readwrite');
@@ -843,7 +845,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       { kind: 'satellite', rows: seed.satellites ?? [] },
       { kind: 'trackingSettings', rows: seed.trackingSettings ?? [] },
       { kind: 'radioBuild', rows: seed.radioBuilds ?? [] },
-      { kind: 'egressPath', rows: seed.egressPaths ?? [] },
+      { kind: 'egressPath', rows: (seed.egressPaths ?? []).map(readEgressPathRow) },
     ];
     const storeNames = writes.map((w) => STORES[w.kind]);
     await new Promise<void>((resolve, reject) => {

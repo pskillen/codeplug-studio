@@ -12,7 +12,7 @@ describe('AT-D890UV descriptor / registry', () => {
     expect(listRadioDescriptors().some((d) => d.modelIds.includes(AT_D890UV_MODEL_ID))).toBe(true);
     const d = getRadioDescriptor(AT_D890UV_MODEL_ID);
     expect(d?.writeStrategy).toBe('selective-ranges');
-    expect(d?.hydrationRequiredForWrite).toBe(true);
+    expect(d?.hydrationRequiredForWrite).toBe(false);
     expect(d?.prodWriteDisabled).toBeUndefined();
     expect(d?.attributionIds).toEqual(['anytone-cps']);
     expect(d?.baudRate).toBe(921_600);
