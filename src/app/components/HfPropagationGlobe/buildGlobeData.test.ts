@@ -10,8 +10,8 @@ import {
   FRESNEL_OPACITY_MIN,
   fresnelOpacity,
   GLOBE_RADIUS_UNITS,
-  SHELL_BASELINE_OPACITY,
   SHELL_INNER_BASELINE_OPACITY,
+  SHELL_OPACITY_STEP,
   shellBaselineOpacity,
   shellRadiusUnits,
 } from './buildGlobeData.ts';
@@ -93,14 +93,11 @@ describe('canonicalLayerIndex', () => {
 });
 
 describe('shellBaselineOpacity', () => {
-  it('boosts D and E so inner shells stay readable against the globe', () => {
+  it('steps opacity down from inner D to outer F2', () => {
     expect(shellBaselineOpacity(0)).toBe(SHELL_INNER_BASELINE_OPACITY);
-    expect(shellBaselineOpacity(1)).toBe(SHELL_INNER_BASELINE_OPACITY);
-  });
-
-  it('keeps F1 and F2 at the original baseline', () => {
-    expect(shellBaselineOpacity(2)).toBe(SHELL_BASELINE_OPACITY);
-    expect(shellBaselineOpacity(3)).toBe(SHELL_BASELINE_OPACITY);
+    expect(shellBaselineOpacity(1)).toBe(SHELL_INNER_BASELINE_OPACITY - SHELL_OPACITY_STEP);
+    expect(shellBaselineOpacity(2)).toBe(SHELL_INNER_BASELINE_OPACITY - 2 * SHELL_OPACITY_STEP);
+    expect(shellBaselineOpacity(3)).toBe(SHELL_INNER_BASELINE_OPACITY - 3 * SHELL_OPACITY_STEP);
   });
 });
 

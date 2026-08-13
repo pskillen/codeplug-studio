@@ -4,11 +4,11 @@ import type { IonosphericLayerId } from './types.ts';
 export const IONOSPHERIC_LAYER_IDS: readonly IonosphericLayerId[] = ['D', 'E', 'F1', 'F2'];
 
 const LAYER_COLORS: Record<IonosphericLayerId, string> = {
-  // Brighter cyan-blue so D does not vanish into the blue-marble oceans.
-  D: '#5ec8ff',
-  E: '#3ddc97',
-  F1: '#f5c451',
-  F2: '#ff6b6b',
+  // Inner→outer warm→cool so D contrasts against the blue-marble globe.
+  D: '#ff6b6b',
+  E: '#f5c451',
+  F1: '#3ddc97',
+  F2: '#5ec8ff',
 };
 
 /** Shared D/E/F1/F2 shell colours for the globe, top-down, and vertical-slice views. */

@@ -62,7 +62,11 @@ export default function HfPropagationGlobe({
   const fresnelEnabledRef = useRef(display.fresnelEnabled);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const visibleShells = useMemo(
-    () => layers.filter((layer) => layer.active && visibleLayers[layer.id] !== false),
+    () =>
+      layers
+        .filter((layer) => layer.active && visibleLayers[layer.id] !== false)
+        .slice()
+        .sort((a, b) => canonicalLayerIndex(a.id) - canonicalLayerIndex(b.id)),
     [layers, visibleLayers],
   );
   const { exaggerationFactor, explodeEnabled, fresnelEnabled } = display;

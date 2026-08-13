@@ -90,8 +90,16 @@
   font-weight: 400;
 }
 
+.dateTimeField {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+  position: relative;
+}
+
 .dateTimeInput {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   box-sizing: border-box;
   padding: 6px 10px;
   border: 1px solid var(--dsv2-border);
@@ -99,4 +107,30 @@
   background: var(--dsv2-surface);
   color: var(--dsv2-text-primary);
   font-size: var(--dsv2-font-body);
+}
+
+.dateTimeNative {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dateTimePickerButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  flex-shrink: 0;
+  border: 1px solid var(--dsv2-border);
+  border-radius: 6px;
+  background: var(--dsv2-surface);
+  color: var(--dsv2-text-primary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.dateTimePickerButton:hover {
+  border-color: var(--dsv2-text-tertiary);
 }

@@ -27,8 +27,12 @@ export function canonicalLayerIndex(id: IonosphericLayerId): number {
   return index < 0 ? 0 : index;
 }
 
+/** Opacity drop per canonical layer index (D=0 … F2=3) so outer shells stay slightly thinner. */
+export const SHELL_OPACITY_STEP = 0.05;
+
 export function shellBaselineOpacity(layerIndex: number): number {
-  return layerIndex <= 1 ? SHELL_INNER_BASELINE_OPACITY : SHELL_BASELINE_OPACITY;
+  const index = layerIndex < 0 ? 0 : layerIndex;
+  return Math.max(0, SHELL_INNER_BASELINE_OPACITY - index * SHELL_OPACITY_STEP);
 }
 
 /** Extra radial separation per layer when exploded stacking is on, in globe-radius units. */
@@ -121,6 +125,7 @@ export function buildShellMesh(
   const radius = displayShellRadiusUnits(midAltitudeKm, layerIndex, display);
   const geometry = new THREE.SphereGeometry(radius, 48, 48);
   const baselineOpacity = shellBaselineOpacity(layerIndex);
+  const fresnelScale = baselineOpacity / SHELL_INNER_BASELINE_OPACITY;
   const material = new THREE.MeshBasicMaterial({
     color: colorForLayer(s.id),
     transparent: true,
@@ -131,8 +136,8 @@ export function buildShellMesh(
   const uniforms = {
     uFresnelEnabled: { value: display.fresnelEnabled ? 1 : 0 },
     uBaselineOpacity: { value: baselineOpacity },
-    uOpacityMin: { value: FRESNEL_OPACITY_MIN },
-    uOpacityMax: { value: FRESNEL_OPACITY_MAX },
+    uOpacityMin: { value: FRESNEL_OPACITY_MIN * fresnelScale },
+    uOpacityMax: { value: FRESNEL_OPACITY_MAX * fresnelScale },
     uFresnelPower: { value: FRESNEL_POWER },
   };
   material.userData.shellFresnelUniforms = uniforms;
@@ -163,7 +168,12 @@ ${shader.fragmentShader}`.replace(
          diffuseColor.a = mix(uBaselineOpacity, fresnelOpacity, uFresnelEnabled);`,
     );
   };
-  return new THREE.Mesh(geometry, material);
+  const mesh = new THREE.Mesh(geometry, material);
+  // All shells share the globe origin, so Three's transparent distance-sort is unstable and
+  // follows insertion order (last toggled-on shell jumps to the front). Paint outer first,
+  // inner last, so D/E are not buried under F1/F2.
+  mesh.renderOrder = IONOSPHERIC_LAYER_IDS.length - 1 - layerIndex;
+  return mesh;
 }
 
 /** Pushes the Fresnel toggle into each shell's shader uniforms. */

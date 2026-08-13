@@ -1,5 +1,6 @@
 import { Input, Select, Slider, Stack, Text } from '@mantine/core';
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { IconCalendar } from '@tabler/icons-react';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { computeIonosphericLayers } from '@core/domain/hfPropagation/ionosphericProfile.ts';
 import { colorForLayer, IONOSPHERIC_LAYER_IDS } from '@core/domain/hfPropagation/layerColor.ts';
 import { criticalFrequencyMhz } from '@core/domain/hfPropagation/mufCalculation.ts';
@@ -15,6 +16,11 @@ import {
   SegmentedControl,
   ToggleSwitch,
 } from '../../components/v2/index.ts';
+import {
+  formatDatetimeLocalValue,
+  formatUkDateTime,
+  parseUkDateTime,
+} from './hfPropagationDateTime.ts';
 import classes from './HfPropagationPage.module.css';
 
 const HfPropagationGlobe = lazy(
@@ -80,7 +86,7 @@ const MIN_WIRE_LENGTH_WAVELENGTHS = 0.5;
 const MAX_WIRE_LENGTH_WAVELENGTHS = 5;
 const MIN_EXAGGERATION = 1;
 const MAX_EXAGGERATION = 10;
-const DEFAULT_EXAGGERATION = 5;
+const DEFAULT_EXAGGERATION = 2.5;
 
 /** Fields shown/hidden per antenna pattern family — see `AntennaConfig` (core domain scaffold). */
 function fieldsShownForFamily(family: AntennaPatternFamily) {
@@ -95,18 +101,6 @@ function fieldsShownForFamily(family: AntennaPatternFamily) {
 const DEFAULT_TX_LAT_DEG = 0;
 const DEFAULT_TX_LON_DEG = 0;
 
-/** "YYYY-MM-DDTHH:mm" in local time, suitable for an `<input type="datetime-local">` default. */
-function nowForDateTimeInput(): string {
-  const now = new Date();
-  const offsetMs = now.getTimezoneOffset() * 60_000;
-  return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
-}
-
-function dateTimeLocalToMs(value: string): number {
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? Date.now() : parsed.getTime();
-}
-
 function layerToggleAriaLabel(id: IonosphericLayerId, physicsPresent: boolean): string {
   return physicsPresent ? `${id} layer` : `${id} layer, not present (night)`;
 }
@@ -119,6 +113,7 @@ const ALL_LAYERS_VISIBLE: Record<IonosphericLayerId, boolean> = {
 };
 
 export default function HfPropagationPage() {
+  const dateTimePickerRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<PropagationView>('globe');
 
   const [frequencyMhz, setFrequencyMhz] = useState(14.2);
@@ -129,12 +124,13 @@ export default function HfPropagationPage() {
   const [azimuthDeg, setAzimuthDeg] = useState(90);
   const [wireLengthWavelengths, setWireLengthWavelengths] = useState(1);
 
-  const [dateTime, setDateTime] = useState(nowForDateTimeInput);
+  const [dateTime, setDateTime] = useState(() => new Date());
+  const [dateTimeText, setDateTimeText] = useState(() => formatUkDateTime(dateTime));
   const [solarPreset, setSolarPreset] = useState<SolarActivityPreset>('moderate');
 
   const [exaggerationEnabled, setExaggerationEnabled] = useState(true);
   const [exaggerationFactor, setExaggerationFactor] = useState(DEFAULT_EXAGGERATION);
-  const [explodeEnabled, setExplodeEnabled] = useState(true);
+  const [explodeEnabled, setExplodeEnabled] = useState(false);
   const [fresnelEnabled, setFresnelEnabled] = useState(true);
   const [visibleLayers, setVisibleLayers] =
     useState<Record<IonosphericLayerId, boolean>>(ALL_LAYERS_VISIBLE);
@@ -152,7 +148,7 @@ export default function HfPropagationPage() {
       computeIonosphericLayers(
         DEFAULT_TX_LAT_DEG,
         DEFAULT_TX_LON_DEG,
-        dateTimeLocalToMs(dateTime),
+        dateTime.getTime(),
         solarPreset,
       ),
     [dateTime, solarPreset],
@@ -353,12 +349,57 @@ export default function HfPropagationPage() {
             <Panel title="Environment">
               <Stack gap="lg">
                 <FormField label="Date & time">
-                  <input
-                    type="datetime-local"
-                    className={classes.dateTimeInput}
-                    value={dateTime}
-                    onChange={(e) => setDateTime(e.currentTarget.value)}
-                  />
+                  <div className={classes.dateTimeField}>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="dd/mm/yyyy HH:mm"
+                      aria-label="Date and time, day first, 24-hour"
+                      className={classes.dateTimeInput}
+                      value={dateTimeText}
+                      onChange={(e) => {
+                        const next = e.currentTarget.value;
+                        setDateTimeText(next);
+                        const parsed = parseUkDateTime(next);
+                        if (parsed) setDateTime(parsed);
+                      }}
+                      onBlur={() => {
+                        const parsed = parseUkDateTime(dateTimeText);
+                        setDateTimeText(formatUkDateTime(parsed ?? dateTime));
+                      }}
+                    />
+                    <input
+                      ref={dateTimePickerRef}
+                      type="datetime-local"
+                      lang="en-GB"
+                      className={classes.dateTimeNative}
+                      tabIndex={-1}
+                      aria-hidden
+                      value={formatDatetimeLocalValue(dateTime)}
+                      onChange={(e) => {
+                        const value = e.currentTarget.value;
+                        if (!value) return;
+                        const parsed = new Date(value);
+                        if (Number.isNaN(parsed.getTime())) return;
+                        setDateTime(parsed);
+                        setDateTimeText(formatUkDateTime(parsed));
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className={classes.dateTimePickerButton}
+                      aria-label="Open date and time picker"
+                      onClick={() => {
+                        const el = dateTimePickerRef.current;
+                        if (!el) return;
+                        if (typeof el.showPicker === 'function') el.showPicker();
+                        else el.click();
+                      }}
+                    >
+                      <IconCalendar size={16} />
+                    </button>
+                  </div>
                 </FormField>
                 <FormField label="Solar activity">
                   <SegmentedControl
