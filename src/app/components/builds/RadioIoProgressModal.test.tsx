@@ -109,6 +109,25 @@ describe('RadioIoProgressModal', () => {
     expect(screen.getByText('Upload')).toBeInTheDocument();
   });
 
+  it('shows RT95 pre-write read and upload stages during write', () => {
+    renderModal({
+      opened: true,
+      operation: 'write',
+      phase: 'transfer',
+      progress: {
+        cur: 40,
+        max: 810,
+        msg: 'Reading 0x280',
+        stage: 'Pre-write read',
+      },
+      transferStages: ['Pre-write read', 'Upload'],
+      onCancel: vi.fn(),
+    });
+
+    expect(screen.getByText('Pre-write read')).toBeInTheDocument();
+    expect(screen.getByText('Upload')).toBeInTheDocument();
+  });
+
   it('keeps write checklist and shows Close when done', () => {
     const onClose = vi.fn();
     renderModal({

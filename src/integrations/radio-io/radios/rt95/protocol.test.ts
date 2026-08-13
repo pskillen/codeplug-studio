@@ -3,7 +3,7 @@ import type { BytePipe } from '../../types.ts';
 import { RadioTimeoutError } from '../../kit/errors.ts';
 import { memoryMapToBytes } from '../../kit/memoryMap.ts';
 import { PROGRAM_QX_BLOCK_SIZE } from '../../kit/codecs/programQx.ts';
-import { createRt95Protocol } from './protocol.ts';
+import { Rt95Protocol } from './protocol.ts';
 import { buildSyntheticRt95Image } from './__fixtures__/syntheticImage.ts';
 import {
   RT95_BLOCK_ADDR_END,
@@ -84,11 +84,19 @@ describe('Rt95Protocol', () => {
     }
 
     const pipe = scriptedEchoPipe(reads);
-    const radio = createRt95Protocol();
+    const radio = new Rt95Protocol();
     await radio.connect(pipe);
-    const map = await radio.download({});
+    const stages: string[] = [];
+    const map = await radio.download({
+      progressStage: 'Pre-write read',
+      onProgress: (p) => {
+        if (p.stage) stages.push(p.stage);
+      },
+    });
     expect(memoryMapToBytes(map).length).toBe(RT95_IMAGE_SIZE);
     expect(map.bytes[0]).toBe(image[0]);
+    expect(stages.every((s) => s === 'Pre-write read')).toBe(true);
+    expect(stages.length).toBeGreaterThan(0);
     await radio.disconnect();
   });
 });
