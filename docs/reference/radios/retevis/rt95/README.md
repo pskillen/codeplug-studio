@@ -23,17 +23,17 @@ Mobile / base analogue FM radio (AnyTone 778UV family). Studio targets it via CH
 
 ## Documentation map
 
-| Doc                                    | Contents                                                              |
-| -------------------------------------- | --------------------------------------------------------------------- |
-| [limits.md](limits.md)                 | Memory slots, name length                                             |
-| [capabilities.md](capabilities.md)     | Modes, organisation traits                                            |
-| [power.md](power.md)                   | High / Medium / Low ladder (internal %)                               |
-| [memory-layout.md](memory-layout.md)   | Contiguous image ≈ `0x0000`–`0x3290` (`0x32A0` bytes)                 |
-| [channel-record.md](channel-record.md) | 32-byte channel layout + enums                                        |
-| [settings.md](settings.md)             | Settings / DTMF / PTT-ID / keys / VOX / bandlimit; RMW notes          |
-| [protocol.md](protocol.md)             | Baud, PROGRAM→QX, echo-strip, R/W frames, checksum, model allow-list  |
+| Doc                                    | Contents                                                                |
+| -------------------------------------- | ----------------------------------------------------------------------- |
+| [limits.md](limits.md)                 | Memory slots, name length                                               |
+| [capabilities.md](capabilities.md)     | Modes, organisation traits                                              |
+| [power.md](power.md)                   | High / Medium / Low ladder (internal %)                                 |
+| [memory-layout.md](memory-layout.md)   | Contiguous image ≈ `0x0000`–`0x3290` (`0x32A0` bytes)                   |
+| [channel-record.md](channel-record.md) | 32-byte channel layout + enums                                          |
+| [settings.md](settings.md)             | Settings / DTMF / PTT-ID / keys / VOX / bandlimit; RMW notes            |
+| [protocol.md](protocol.md)             | Baud, PROGRAM→QX, echo-strip, R/W frames, checksum, model allow-list    |
 | [backup-restore.md](backup-restore.md) | Zip clone region; Restore via clone `upload`; Write overlays in-session |
-| [fixtures.md](fixtures.md)             | How to capture dumps for tests without committing personal codeplugs  |
+| [fixtures.md](fixtures.md)             | How to capture dumps for tests without committing personal codeplugs    |
 
 ## Adapter wire (files)
 
