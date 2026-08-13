@@ -30,10 +30,7 @@ import {
   RT95_MODEL_ID,
   RT95_UPLOAD_PRIME_ADDR,
 } from './constants.ts';
-import {
-  intendedRt95RestoreImage,
-  RT95_PROGRAMMING_IMAGE_REGION_ID,
-} from './restoreFromBackup.ts';
+import { intendedRt95RestoreImage, RT95_PROGRAMMING_IMAGE_REGION_ID } from './restoreFromBackup.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 

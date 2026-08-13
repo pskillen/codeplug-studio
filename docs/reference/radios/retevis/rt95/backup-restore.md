@@ -10,9 +10,9 @@ Operator zip snapshot of the **PROGRAM→QX programming clone** (`0x32A0` bytes,
 
 Backup packing: `src/integrations/radio-io/backup/regionsFromDownload.ts` (`fromRt95`). Restore payload: `src/integrations/radio-io/radios/rt95/restoreFromBackup.ts`.
 
-| Role             | Regions                                                                                                                                                                                                                         |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Restorable**   | `programming-image` — contiguous `0x0000`–`0x3290` clone (`0x32A0` bytes), including settings / DTMF / bandlimit that live in that span                                                                                         |
+| Role             | Regions                                                                                                                                                                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Restorable**   | `programming-image` — contiguous `0x0000`–`0x3290` clone (`0x32A0` bytes), including settings / DTMF / bandlimit that live in that span                                                                                        |
 | **Inspect-only** | None on this map. Studio has **no** isolated calibration or LocalInfo table, and **no serial** in the layout. Residual: if the vendor hid cal inside the clone, Restore will send those bytes — do **not** invent a cal offset |
 
 Write-codeplug still requires **project / session stash** (`hydrationRequiredForWrite: true`) and overlays modelled channels onto that image. Restore **does not** use that stash; it replays zip clone bins only.
