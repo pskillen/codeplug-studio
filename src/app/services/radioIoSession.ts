@@ -70,6 +70,7 @@ import {
   OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE,
   OpenGd77Protocol,
 } from '@integrations/radio-io/radios/opengd77/protocol.ts';
+import { Uv17ProProtocol } from '@integrations/radio-io/radios/uv17pro-family/protocol.ts';
 import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
@@ -477,6 +478,19 @@ async function resolveRadioWriteImageForUpload(
       return encodeOpenGd77WriteImageFromPrior(prior, prepared.channels, prepared.organisation, {
         powerSteps: session.radio.getPowerSteps(),
       });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new RadioWriteBlockedError(message);
+    }
+  }
+  if (session.radio instanceof Uv17ProProtocol) {
+    const prior = await session.radio.download({
+      onProgress: opts?.onProgress,
+      signal: opts?.signal,
+      progressStage: 'Pre-write read',
+    });
+    try {
+      return session.radio.encodeChannels(prior, prepared.channels);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new RadioWriteBlockedError(message);
