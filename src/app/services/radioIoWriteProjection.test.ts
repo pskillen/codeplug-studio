@@ -785,8 +785,25 @@ describe('buildRadioWriteProjection', () => {
       },
     });
     expect(projection.organisation.radioIds).toEqual([{ index: 0, dmrId: 4242, name: 'DirUser' }]);
-    expect(projection.organisation.digitalContacts).toEqual([]);
+    expect(projection.organisation.digitalContacts).toBeUndefined();
     expect(projection.organisation.radioIds?.some((r) => r.dmrId === 999)).toBe(false);
+  });
+
+  it('omits DM-32 digitalContacts when library contacts are off so the address book is not wiped', () => {
+    const dc = { ...newDigitalContact('p1', 'Alice', 1001, 'dmr'), id: 'dc-1' };
+    const library = { ...emptyLibrary(), digitalContacts: [dc] };
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress, {
+      dualBank: {
+        mode: 'codeplug',
+        options: { includeLibraryContacts: false, includeDigitalIdDirectory: false },
+      },
+    });
+    expect(projection.organisation.digitalContacts).toBeUndefined();
   });
 
   it('omits library digital contacts when dual-bank toggle is off', () => {

@@ -9,6 +9,7 @@ import {
   ProgressModal,
   type ProgressModalStep,
 } from '../../components/v2/index.ts';
+import WriteRadioModal from '../../components/builds/WriteRadioModal.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
 const RUNNING_STEPS: ProgressModalStep[] = [
@@ -37,11 +38,16 @@ export default function StyleguideOverlaysPage() {
   const [runningOpen, setRunningOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [errorOpen, setErrorOpen] = useState(false);
+  const [writeRadioOpen, setWriteRadioOpen] = useState(false);
+  const [demoContactSource, setDemoContactSource] = useState<
+    'none' | 'library' | 'directory' | 'both'
+  >('none');
+  const [demoKeps, setDemoKeps] = useState(false);
 
   return (
     <StyleguidePageShell
       title="Overlays"
-      description="ModalShell, ConfirmModal, and ProgressModal."
+      description="ModalShell, ConfirmModal, and ProgressModal. Product Write radio is ModalShell composition (`WriteRadioModal`), not a new overlay primitive."
     >
       <StyleguideSection
         title="ModalShell"
@@ -146,6 +152,41 @@ export default function StyleguideOverlaysPage() {
           onClose={() => setErrorOpen(false)}
           onRetry={() => setErrorOpen(false)}
           summary={<Text size="sm">1 of 42 channels failed to write.</Text>}
+        />
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="Write radio (product composition)"
+        description="Build → Export uses ModalShell via WriteRadioModal — not a new overlay primitive. Live demo with dummy handlers."
+      >
+        <Group gap="sm">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setDemoContactSource('none');
+              setDemoKeps(false);
+              setWriteRadioOpen(true);
+            }}
+          >
+            Open Write radio
+          </Button>
+        </Group>
+        <WriteRadioModal
+          open={writeRadioOpen}
+          onClose={() => setWriteRadioOpen(false)}
+          buildId="demo"
+          serialOk
+          busy={false}
+          writeHidden={false}
+          supportsDigitalContacts
+          supportsKeps
+          contactSource={demoContactSource}
+          onContactSourceChange={setDemoContactSource}
+          kepsSelected={demoKeps}
+          onKepsSelectedChange={setDemoKeps}
+          onWriteCodeplug={() => setWriteRadioOpen(false)}
+          onWriteContacts={() => setWriteRadioOpen(false)}
+          onWriteKeps={() => setWriteRadioOpen(false)}
         />
       </StyleguideSection>
     </StyleguidePageShell>

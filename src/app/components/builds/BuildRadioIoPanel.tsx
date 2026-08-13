@@ -5,14 +5,14 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Anchor, Button, Checkbox, Group, Select, Stack, Text } from '@mantine/core';
+import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import {
-  defaultDualBankWriteOptions,
-  defaultSingleBankProjectionMode,
-  type DualBankRadioWriteOptions,
+  dualBankOptionsFromWriteSource,
+  singleBankProjectionFromWriteSource,
+  writeSourceIncludesDirectory,
+  type DigitalContactsWriteSource,
   type DualBankWriteMode,
-  type SingleBankDigitalProjectionMode,
   type SingleBankWriteMode,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import {
@@ -71,7 +71,14 @@ import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from '../../services/radioWriteEnvGate.ts';
-import { hasSatelliteKepsWriteAdapter } from '../../services/satelliteKepsWriteAdapters.ts';
+import { isOpenGd77RadioIoEgress } from '../../services/radioIoChannelMap.ts';
+import {
+  getSatelliteKepsWriteAdapter,
+  hasSatelliteKepsWriteAdapter,
+  satelliteKepsCapacityWarning,
+  type SatelliteKepsWriteResult,
+} from '../../services/satelliteKepsWriteAdapters.ts';
+import WriteRadioModal from './WriteRadioModal.tsx';
 
 export interface BuildRadioIoPanelProps {
   build: RadioBuild;
@@ -108,6 +115,13 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [writeConfirmOpen, setWriteConfirmOpen] = useState(false);
   const [writeConfirmSerial, setWriteConfirmSerial] = useState<string | null>(null);
   const pendingWriteModeRef = useRef<DualBankWriteMode | SingleBankWriteMode | null>(null);
+  const [writeRadioOpen, setWriteRadioOpen] = useState(false);
+  const [contactSource, setContactSource] = useState<DigitalContactsWriteSource>('none');
+  const [kepsSelected, setKepsSelected] = useState(false);
+  const [emptyDirectoryOpen, setEmptyDirectoryOpen] = useState(false);
+  const pendingEmptyDirectoryWriteRef = useRef<(() => void) | null>(null);
+  const [kepsCapacityWarning, setKepsCapacityWarning] = useState<string | null>(null);
+  const [kepsWriteSummary, setKepsWriteSummary] = useState<SatelliteKepsWriteResult | null>(null);
 
   const serialOk = isRadioSerialSupported();
   const descriptor = descriptors[0];
@@ -118,24 +132,15 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);
   const requiresD890WriteConfirm = egress.profileId === 'radio-io-at-d890uv';
-  /**
-   * Workflow B (#859, promoted to its own tab by #1085): "Write Keps…" now links to the
-   * dedicated Satellite Keps tab (`/builds/:id/satellite-keps`, `BuildSatelliteKepsPage`) instead
-   * of triggering the write inline — gated the same way, on a registered adapter for this egress
-   * profile.
-   */
-  const showsWriteKepsLink = hasSatelliteKepsWriteAdapter(egress.profileId);
+  const supportsKepsWrite = hasSatelliteKepsWriteAdapter(egress.profileId);
+  const kepsWriteFn = getSatelliteKepsWriteAdapter(egress.profileId);
   const dualBankTraitProfile = traitProfileFor(egress.profileId);
   const supportsDualBankWrite = Boolean(
     dualBankTraitProfile?.traits.includes(BuildCapabilityTrait.SeparateDigitalIdList),
   );
   const supportsSingleBankWrite =
     egress.profileId === 'radio-io-at-d890uv' && !supportsDualBankWrite;
-  const [dualBankToggles, setDualBankToggles] = useState<DualBankRadioWriteOptions>(() =>
-    defaultDualBankWriteOptions('codeplug'),
-  );
-  const [singleBankProjectionMode, setSingleBankProjectionMode] =
-    useState<SingleBankDigitalProjectionMode>(() => defaultSingleBankProjectionMode('codeplug'));
+  const supportsDigitalContacts = supportsDualBankWrite || supportsSingleBankWrite;
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
 
@@ -194,6 +199,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     setWriteVerifyStatus('none');
     setVerifyButtonEnabled(false);
     setVerifyResult(null);
+    setKepsWriteSummary(null);
     verifyStartedRef.current = false;
     verifyReadActiveRef.current = false;
     clearPendingVerify();
@@ -277,12 +283,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       }
       const library = await loadLibrarySlice(persistence, activeProjectId);
       setPhase('preparing');
-      const dualBankOptions =
-        mode === 'digitalIdList' ? defaultDualBankWriteOptions('digitalIdList') : dualBankToggles;
-      const singleBankProjection =
-        mode === 'digitalIdList' && singleBankProjectionMode === 'skip'
-          ? defaultSingleBankProjectionMode('digitalIdList')
-          : singleBankProjectionMode;
+      const dualBankOptions = dualBankOptionsFromWriteSource(contactSource);
+      const singleBankProjection = singleBankProjectionFromWriteSource(contactSource);
       const { image, warnings, organisation, channels } = await prepareRadioWriteImage(
         build,
         egress,
@@ -387,6 +389,82 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     pendingWriteModeRef.current = null;
     if (!mode) return;
     void handleWriteWithContactBanks(mode);
+  }
+
+  function openWriteRadio() {
+    setContactSource('none');
+    setKepsSelected(false);
+    setKepsCapacityWarning(null);
+    window.setTimeout(() => setWriteRadioOpen(true), 0);
+  }
+
+  async function guardDirectoryThenWrite(mode: DualBankWriteMode | SingleBankWriteMode) {
+    setWriteRadioOpen(false);
+    if (supportsDigitalContacts && writeSourceIncludesDirectory(contactSource) && activeProjectId) {
+      const count = await persistence.countDigitalIdDirectoryEntries(activeProjectId);
+      if (count === 0) {
+        pendingEmptyDirectoryWriteRef.current = () => {
+          void beginWriteWithContactBanks(mode);
+        };
+        setEmptyDirectoryOpen(true);
+        return;
+      }
+    }
+    await beginWriteWithContactBanks(mode);
+  }
+
+  function handleEmptyDirectoryCancel() {
+    setEmptyDirectoryOpen(false);
+    pendingEmptyDirectoryWriteRef.current = null;
+  }
+
+  function handleEmptyDirectoryConfirm() {
+    const pending = pendingEmptyDirectoryWriteRef.current;
+    setEmptyDirectoryOpen(false);
+    pendingEmptyDirectoryWriteRef.current = null;
+    pending?.();
+  }
+
+  async function handleWriteKepsFromPopup() {
+    if (!kepsWriteFn || !kepsSelected) return;
+    setWriteRadioOpen(false);
+    if (!activeProjectId) {
+      setError('No active project.');
+      return;
+    }
+    const allSatellites = await persistence.listSatellites(activeProjectId);
+    const satellites = allSatellites.filter((s) => s.enabled);
+    const capacityWarning = satelliteKepsCapacityWarning(egress.profileId, satellites);
+    if (capacityWarning) {
+      setKepsCapacityWarning(capacityWarning);
+      return;
+    }
+    setKepsCapacityWarning(null);
+    setKepsWriteSummary(null);
+    beginBusy('keps-write');
+    try {
+      setPhase('preparing');
+      const session = await ensureSession(true);
+      setPhase('transfer');
+      const result = await kepsWriteFn(session, satellites, {
+        onProgress,
+        signal: abortRef.current!.signal,
+        satelliteOverrides: build.satelliteOverrides,
+      });
+      setKepsWriteSummary(result);
+      await releaseSession();
+      setPhase('done');
+    } catch (err) {
+      if (err instanceof RadioWriteBlockedError) {
+        setError(err.message);
+      } else {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+      await releaseSession();
+      setBusy(false);
+      setProgress(null);
+      abortRef.current = null;
+    }
   }
 
   function resetProgressState(): void {
@@ -495,6 +573,37 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           </Text>
         </Stack>
       </ConfirmModal>
+      <ConfirmModal
+        open={emptyDirectoryOpen}
+        onClose={handleEmptyDirectoryCancel}
+        title="RadioID directory is empty"
+        confirmLabel="Write anyway"
+        cancelLabel="Cancel"
+        onConfirm={handleEmptyDirectoryConfirm}
+      >
+        <Text size="sm">
+          The local RadioID directory shadow has no rows. Fetch or import a directory before
+          writing, or continue if you intend to write without directory contacts.
+        </Text>
+      </ConfirmModal>
+      <WriteRadioModal
+        open={writeRadioOpen}
+        onClose={() => setWriteRadioOpen(false)}
+        buildId={build.id}
+        serialOk={serialOk}
+        busy={busy}
+        writeHidden={writeHidden}
+        supportsDigitalContacts={supportsDigitalContacts}
+        sharedContactBankNote={isOpenGd77RadioIoEgress(egress.profileId)}
+        supportsKeps={supportsKepsWrite}
+        contactSource={contactSource}
+        onContactSourceChange={setContactSource}
+        kepsSelected={kepsSelected}
+        onKepsSelectedChange={setKepsSelected}
+        onWriteCodeplug={() => void guardDirectoryThenWrite('codeplug')}
+        onWriteContacts={() => void guardDirectoryThenWrite('digitalIdList')}
+        onWriteKeps={() => void handleWriteKepsFromPopup()}
+      />
       <WebSerialExperimentalAlert />
       <Text fw={600} size="sm">
         Direct radio (Web Serial)
@@ -517,114 +626,10 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       {egress.profileId === 'radio-io-at-d890uv' ? (
         <AtD890WriteCoverageTable buildId={build.id} hasHydration={hasHydration} />
       ) : null}
-      {supportsDualBankWrite ? (
-        <Stack gap={6}>
-          <Text size="xs" fw={600}>
-            Contact and digital ID banks
-          </Text>
-          <Text size="xs" c="dimmed">
-            The digital ID directory is a local RadioID shadow (not in project YAML). Large
-            directory writes stream from storage and may take several minutes.
-          </Text>
-          <Checkbox
-            size="xs"
-            label="Include library digital contacts"
-            checked={dualBankToggles.includeLibraryContacts}
-            onChange={(event) => {
-              const checked = (event.currentTarget ?? event.target).checked;
-              setDualBankToggles((prev) => ({
-                ...prev,
-                includeLibraryContacts: checked,
-              }));
-            }}
-            disabled={busy}
-          />
-          <Checkbox
-            size="xs"
-            label="Include digital ID directory"
-            checked={dualBankToggles.includeDigitalIdDirectory}
-            onChange={(event) => {
-              const checked = (event.currentTarget ?? event.target).checked;
-              setDualBankToggles((prev) => ({
-                ...prev,
-                includeDigitalIdDirectory: checked,
-              }));
-            }}
-            disabled={busy}
-          />
-        </Stack>
-      ) : null}
-      {supportsSingleBankWrite ? (
-        <Stack gap={6}>
-          <Text size="xs" fw={600}>
-            Digital contact bank
-          </Text>
-          <Text size="xs" c="dimmed">
-            AT-D890 uses one contact bank for library contacts and the local RadioID directory.
-            Large directory writes stream from storage and may take several minutes.
-          </Text>
-          <Select
-            size="xs"
-            label="Codeplug Write projection"
-            value={singleBankProjectionMode}
-            data={[
-              { value: 'contacts-only', label: 'Library contacts only' },
-              { value: 'directory-only', label: 'Digital ID directory only' },
-              { value: 'merge', label: 'Merge (library wins on duplicate ID)' },
-              { value: 'skip', label: 'Skip (leave radio contact bank unchanged)' },
-            ]}
-            onChange={(value) =>
-              setSingleBankProjectionMode(
-                (value as SingleBankDigitalProjectionMode) ??
-                  defaultSingleBankProjectionMode('codeplug'),
-              )
-            }
-            disabled={busy}
-          />
-          <Text size="xs" c="dimmed">
-            Write digital ID list replaces the entire radio contact bank for the selected projection
-            mode (no Skip).
-          </Text>
-        </Stack>
-      ) : null}
       <Group gap="xs">
         {!writeHidden ? (
-          <Button
-            size="xs"
-            disabled={!serialOk || busy}
-            onClick={() => void beginWriteWithContactBanks('codeplug')}
-          >
-            Write to radio
-          </Button>
-        ) : null}
-        {supportsDualBankWrite && !writeHidden ? (
-          <Button
-            size="xs"
-            variant="light"
-            disabled={!serialOk || busy}
-            onClick={() => void beginWriteWithContactBanks('digitalIdList')}
-          >
-            Write digital ID list
-          </Button>
-        ) : null}
-        {supportsSingleBankWrite && !writeHidden ? (
-          <Button
-            size="xs"
-            variant="light"
-            disabled={!serialOk || busy}
-            onClick={() => void beginWriteWithContactBanks('digitalIdList')}
-          >
-            Write digital ID list
-          </Button>
-        ) : null}
-        {showsWriteKepsLink && !writeHidden ? (
-          <Button
-            size="xs"
-            variant="light"
-            component={Link}
-            to={`/builds/${build.id}/satellite-keps`}
-          >
-            Write Keps…
+          <Button size="xs" disabled={!serialOk || busy} onClick={openWriteRadio}>
+            Write radio
           </Button>
         ) : null}
         <Button
@@ -682,6 +687,35 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         </Text>
       ) : null}
       {error ? <Alert color="red">{error}</Alert> : null}
+      {kepsCapacityWarning ? (
+        <Alert color="yellow" title="Write capacity">
+          <Text size="sm">{kepsCapacityWarning}</Text>
+        </Alert>
+      ) : null}
+      {kepsWriteSummary ? (
+        <Alert
+          color={
+            kepsWriteSummary.skipped.length > 0 || kepsWriteSummary.skippedTransmitters.length > 0
+              ? 'yellow'
+              : 'green'
+          }
+          title="Keps write"
+        >
+          <Stack gap={4}>
+            <Text size="sm">{kepsWriteSummary.written} transmitter(s) written.</Text>
+            {kepsWriteSummary.skipped.map((s) => (
+              <Text key={`keps-skipped-${s.satelliteId}`} size="sm" c="dimmed">
+                Skipped {s.satelliteId}: {s.reason}
+              </Text>
+            ))}
+            {kepsWriteSummary.skippedTransmitters.map((s) => (
+              <Text key={`keps-skipped-tx-${s.transmitterId}`} size="sm" c="dimmed">
+                Skipped {s.satelliteId} / {s.transmitterId}: {s.reason}
+              </Text>
+            ))}
+          </Stack>
+        </Alert>
+      ) : null}
       {writeWarnings.length > 0 ? (
         <Alert color="yellow" title="Write warnings">
           <Stack gap={4}>

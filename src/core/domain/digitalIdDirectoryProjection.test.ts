@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   defaultDualBankWriteOptions,
   defaultSingleBankProjectionMode,
+  dualBankOptionsFromWriteSource,
   libraryDigitalIdSet,
   projectSingleBankDigitalContacts,
   shouldIncludeDirectoryRow,
+  singleBankProjectionFromWriteSource,
+  writeSourceIncludesDirectory,
   type ProjectedDigitalContactRow,
 } from './digitalIdDirectoryProjection.ts';
 
@@ -53,6 +56,33 @@ describe('digitalIdDirectoryProjection', () => {
   it('defaultSingleBankProjectionMode matches product tables', () => {
     expect(defaultSingleBankProjectionMode('codeplug')).toBe('contacts-only');
     expect(defaultSingleBankProjectionMode('digitalIdList')).toBe('directory-only');
+  });
+
+  it('maps Write radio popup source to dual-bank toggles and single-bank projection', () => {
+    expect(dualBankOptionsFromWriteSource('none')).toEqual({
+      includeLibraryContacts: false,
+      includeDigitalIdDirectory: false,
+    });
+    expect(dualBankOptionsFromWriteSource('library')).toEqual({
+      includeLibraryContacts: true,
+      includeDigitalIdDirectory: false,
+    });
+    expect(dualBankOptionsFromWriteSource('directory')).toEqual({
+      includeLibraryContacts: false,
+      includeDigitalIdDirectory: true,
+    });
+    expect(dualBankOptionsFromWriteSource('both')).toEqual({
+      includeLibraryContacts: true,
+      includeDigitalIdDirectory: true,
+    });
+    expect(singleBankProjectionFromWriteSource('none')).toBe('skip');
+    expect(singleBankProjectionFromWriteSource('library')).toBe('contacts-only');
+    expect(singleBankProjectionFromWriteSource('directory')).toBe('directory-only');
+    expect(singleBankProjectionFromWriteSource('both')).toBe('merge');
+    expect(writeSourceIncludesDirectory('none')).toBe(false);
+    expect(writeSourceIncludesDirectory('library')).toBe(false);
+    expect(writeSourceIncludesDirectory('directory')).toBe(true);
+    expect(writeSourceIncludesDirectory('both')).toBe(true);
   });
 
   describe('projectSingleBankDigitalContacts', () => {

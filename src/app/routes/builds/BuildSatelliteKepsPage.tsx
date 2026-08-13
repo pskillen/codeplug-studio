@@ -2,8 +2,8 @@
  * Dedicated Satellite Keps tab (#1085) — promotes the write preview + "Write Keps" trigger
  * that previously lived inline (collapsed) on the Export page's `BuildRadioIoPanel` into a
  * full-page view of its own, so the preview `DataTable` gets real room and the write action is
- * co-located with the exact records it will send. `BuildRadioIoPanel` keeps a "Write Keps…" link
- * to this page instead of the button/panel it used to render inline.
+ * co-located with the exact records it will send. Export's Write radio popup (#1121) can also
+ * trigger a keps-only write; this tab remains the preview and curation surface.
  *
  * Only reachable when the build has an egress pathway with a registered keps write adapter
  * (`hasSatelliteKepsWriteAdapter`, gated the same way the nav item is — see
@@ -41,9 +41,9 @@ import { resolveRadioWriteGate } from '../../services/radioWriteEnvGate.ts';
 import {
   getSatelliteKepsExclusions,
   getSatelliteKepsWriteAdapter,
-  getSatelliteKepsWriteCapacity,
   getSatelliteKepsWritePreview,
   hasSatelliteKepsWriteAdapter,
+  satelliteKepsCapacityWarning,
   type SatelliteKepsExclusion,
   type SatelliteKepsWriteResult,
 } from '../../services/satelliteKepsWriteAdapters.ts';
@@ -157,7 +157,6 @@ export default function BuildSatelliteKepsPage() {
   const writeGate = egress ? resolveRadioWriteGate(descriptor) : 'hidden';
   const writeHidden = writeGate === 'hidden';
   const kepsWriteFn = egress ? getSatelliteKepsWriteAdapter(egress.profileId) : undefined;
-  const kepsCapacity = egress ? getSatelliteKepsWriteCapacity(egress.profileId) : undefined;
   const kepsPreview = egress ? getSatelliteKepsWritePreview(egress.profileId) : undefined;
   const kepsExclusions = egress ? getSatelliteKepsExclusions(egress.profileId) : undefined;
 
@@ -378,17 +377,12 @@ export default function BuildSatelliteKepsPage() {
     // session, so an over-capacity library never pays for a session open it can't use. This
     // mirrors the hard block writeSatellitesToRadio itself enforces (no partial write); the
     // point here is surfacing that same fact earlier, not changing the underlying behavior.
-    if (kepsCapacity) {
-      const eligibleCount = kepsCapacity.countEligible(satellites);
-      if (eligibleCount > kepsCapacity.max) {
-        setKepsCapacityWarning(
-          `${eligibleCount} transmitter(s) are eligible to write, but this radio only supports ` +
-            `${kepsCapacity.max} (placeholder pending hardware confirmation — see ` +
-            `docs/reference/radios/anytone/at-d890uv/satellite-keps.md). Deselect some ` +
-            `satellites or transmitters in the library before writing.`,
-        );
-        return;
-      }
+    const capacityWarning = egress
+      ? satelliteKepsCapacityWarning(egress.profileId, satellites)
+      : null;
+    if (capacityWarning) {
+      setKepsCapacityWarning(capacityWarning);
+      return;
     }
     setKepsCapacityWarning(null);
 

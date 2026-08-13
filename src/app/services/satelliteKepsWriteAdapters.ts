@@ -86,6 +86,29 @@ export function getSatelliteKepsWriteCapacity(
   return SATELLITE_KEPS_WRITE_CAPACITY[profileId];
 }
 
+/** Shared capacity copy for Export Write radio popup and the Satellite keps tab. */
+export function formatSatelliteKepsCapacityWarning(
+  eligibleCount: number,
+  max: number,
+): string | null {
+  if (eligibleCount <= max) return null;
+  return (
+    `${eligibleCount} transmitter(s) are eligible to write, but this radio only supports ` +
+    `${max} (placeholder pending hardware confirmation — see ` +
+    `docs/reference/radios/anytone/at-d890uv/satellite-keps.md). Deselect some ` +
+    `satellites or transmitters in the library before writing.`
+  );
+}
+
+export function satelliteKepsCapacityWarning(
+  profileId: string,
+  satellites: readonly Satellite[],
+): string | null {
+  const capacity = getSatelliteKepsWriteCapacity(profileId);
+  if (!capacity) return null;
+  return formatSatelliteKepsCapacityWarning(capacity.countEligible(satellites), capacity.max);
+}
+
 export interface SatelliteKepsWritePreviewOptions {
   satelliteOverrides?: readonly BuildEntityOverride[];
 }

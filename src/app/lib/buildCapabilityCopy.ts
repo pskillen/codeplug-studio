@@ -113,12 +113,12 @@ const CAPABILITY_COPY: Record<CapabilityId, CapabilityCopy> = {
     ],
   },
   [BuildCapabilityTrait.SeparateDigitalIdList]: {
-    label: 'Separate digital ID list',
+    label: 'Separate digital contacts / RadioID directory',
     summary:
-      'Firmware keeps a contact list bank separate from a digital ID list bank — not a single shared contact/ID table.',
+      'Firmware keeps library digital contacts in one bank and a RadioID directory bank in another — not a single shared contact table.',
     consequences: [
-      'Write and export can target contacts and the digital ID list independently.',
-      'Profiles without this trait use one bank for contacts and IDs (single-bank Write modes).',
+      'Write and export can target library contacts and the RadioID directory independently.',
+      'Profiles without this trait use one bank for contacts and directory rows (single-bank Write modes).',
     ],
   },
 };

@@ -1335,7 +1335,7 @@ export function buildRadioWriteProjection(
       scanLists: org.scanLists,
       talkGroups,
       rxGroups,
-      digitalContacts,
+      ...(includeLibraryContacts ? { digitalContacts } : {}),
       radioIds: dm32RadioIds,
       aprs: radioAprsFromNeonplugPatch(assembled, numbersBySourceChannelId, warnings),
     };
