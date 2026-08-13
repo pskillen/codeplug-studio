@@ -8,6 +8,7 @@ import { memoryMapFromBytes } from '@integrations/radio-io/kit/memoryMap.ts';
 import { UV5R_MINI_DESCRIPTOR } from '@integrations/radio-io/radios/uv5r-mini/descriptor.ts';
 import { UV5R_MINI_MEM_TOTAL } from '@integrations/radio-io/radios/uv5r-mini/constants.ts';
 import { UV21_PRO_V2_DESCRIPTOR } from '@integrations/radio-io/radios/uv21-pro-v2/descriptor.ts';
+import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import type { RadioSession } from '@integrations/radio-io/types.ts';
 import { Uv17ProProtocol } from '@integrations/radio-io/radios/uv17pro-family/protocol.ts';
 import { uploadPreparedRadioWrite } from './radioIoSession.ts';
@@ -64,8 +65,20 @@ describe('UV-17Pro family write pre-read', () => {
     const { egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
     const bagImage = memoryMapFromBytes(radioCloneImageBytes(hydration));
 
+    const liveChannel: RadioChannelDto = {
+      slotIndex: 1,
+      empty: false,
+      wireName: 'LIVE',
+      rxHz: 145_500_000,
+      txHz: 145_500_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'FM',
+    };
+
     await uploadPreparedRadioWrite(session, { ...egress, hydration }, bagImage, {
-      channels: [{ slotIndex: 1, empty: false, wireName: 'LIVE' }],
+      channels: [liveChannel],
     });
 
     expect(download).toHaveBeenCalledWith(

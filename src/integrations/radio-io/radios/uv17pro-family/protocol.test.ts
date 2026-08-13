@@ -14,7 +14,7 @@ import {
 import { uv5rMiniCrypt } from '../uv5r-mini/crypt.ts';
 import { UV5R_MINI_MAGICS_READ, UV5R_MINI_MAGICS_UPLOAD } from '../uv5r-mini/magics.ts';
 import { UV5R_MINI_LAYOUT } from './layout.ts';
-import { createUv17ProProtocol } from './protocol.ts';
+import { Uv17ProProtocol } from './protocol.ts';
 
 function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
   return a.length === b.length && a.every((v, i) => v === b[i]);
@@ -131,7 +131,7 @@ describe('Uv17ProProtocol pre-write read', () => {
     const pipe = new ScriptedPipe();
     pipe.armReadBlocks(listDownloadBlocks(source));
 
-    const radio = createUv17ProProtocol(UV5R_MINI_LAYOUT);
+    const radio = new Uv17ProProtocol(UV5R_MINI_LAYOUT);
     await radio.connect(pipe, { settleScale: 0 });
 
     const stages: string[] = [];
@@ -167,7 +167,7 @@ describe('Uv17ProProtocol pre-write read', () => {
     const pipe = new ScriptedPipe();
     pipe.armReadBlocks([]);
 
-    const radio = createUv17ProProtocol(UV5R_MINI_LAYOUT);
+    const radio = new Uv17ProProtocol(UV5R_MINI_LAYOUT);
     await radio.connect(pipe, { handshake: 'none' });
 
     const uploadStages: string[] = [];
