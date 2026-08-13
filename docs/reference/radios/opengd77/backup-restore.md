@@ -25,7 +25,7 @@ Write-codeplug still overlays modelled channels/zones/contacts/RX lists onto a *
 4. Program dirty 4KB FLASH sectors (`X` framing). Never LocalInfo. Never calibration (none in this map).
 5. **SAVE_REBOOT** even if the operator selected spans that happen to be all `0xff` vs blank (then sector count may be zero; reboot still sent).
 
-Progress copy is **Restore**, not “Writing codeplug.” Write `upload` is unchanged (`hydrationRequiredForWrite: false`, in-session pre-write read + projection overlay).
+Progress copy is **Restore**, not “Writing codeplug.” Write `upload` is unchanged (in-session pre-write read + projection overlay).
 
 ## Related
 

@@ -36,7 +36,6 @@ export const UV5R_MINI_DESCRIPTOR: RadioDescriptor = {
   attributionIds: ['chirp', 'neonplug'],
   compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
   writeStrategy: 'full-image',
-  hydrationRequiredForWrite: false,
   baudRate: UV5R_MINI_BAUD_RATE,
   baudRateFallback: UV5R_MINI_BAUD_RATE_FALLBACK,
   hydration: {

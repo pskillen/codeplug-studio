@@ -15,7 +15,7 @@ Backup packing: `src/integrations/radio-io/backup/regionsFromDownload.ts` (`from
 | **Restorable**   | `programming-image` — contiguous `0x0000`–`0x3290` clone (`0x32A0` bytes), including settings / DTMF / bandlimit that live in that span                                                                                        |
 | **Inspect-only** | None on this map. Studio has **no** isolated calibration or LocalInfo table, and **no serial** in the layout. Residual: if the vendor hid cal inside the clone, Restore will send those bytes — do **not** invent a cal offset |
 
-Write-codeplug overlays modelled channels onto an **in-session** full-clone read (`resolveRadioWriteImageForUpload`; `hydrationRequiredForWrite: false`). Restore **does not** use a project bag or that pre-write read; it replays zip clone bins via `upload()` only.
+Write-codeplug overlays modelled channels onto an **in-session** full-clone read (`resolveRadioWriteImageForUpload`). Restore **does not** use a project bag or that pre-write read; it replays zip clone bins via `upload()` only.
 
 ## Restore path
 

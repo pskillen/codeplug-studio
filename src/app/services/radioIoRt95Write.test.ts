@@ -35,10 +35,6 @@ function stashBag(settingsByte: number) {
 }
 
 describe('RT95 in-session pre-write read', () => {
-  it('sets hydrationRequiredForWrite false', () => {
-    expect(RT95_DESCRIPTOR.hydrationRequiredForWrite).toBe(false);
-  });
-
   it('does not seed the write image from a protocol upload hook', () => {
     expect(RT95_DESCRIPTOR.hydration.seedProtocolForUpload).toBeUndefined();
   });

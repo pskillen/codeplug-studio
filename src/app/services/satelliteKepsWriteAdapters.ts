@@ -2,8 +2,8 @@
  * Registry of profileIds with a satellite-keps write adapter (#859).
  *
  * Nothing else in the codebase answers "which connected/configured radios support a keps
- * write." `RadioDescriptor` (`@integrations/radio-io/types.ts`) has `hydrationRequiredForWrite`,
- * `writeStrategy`, `writeVerify` — all about full-codeplug write. This registry is the
+ * write." `RadioDescriptor` (`@integrations/radio-io/types.ts`) has
+ * `writeStrategy` and `writeVerify` — all about full-codeplug write. This registry is the
  * satellite-keps-specific analogue: it lets Workflow A/B call sites ask "does this
  * formatId/profileId support a keps write" without hardcoding a D890-only check at every
  * call site, so adding OpenGD77 (#858) later is additive — a new registry entry — not a

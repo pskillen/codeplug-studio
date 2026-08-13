@@ -1,5 +1,5 @@
 /**
- * Web Serial connect / read (hydrate EgressPath) / write (assemble → radio)
+ * Web Serial connect / write (assemble → overlay this PROGRAM session → radio)
  * for egress pathways with a registered radio adapter.
  */
 
@@ -46,7 +46,6 @@ import {
   prepareRadioWriteImage,
   RadioWriteBlockedError,
   readAtD890ConnectedRadioIdentity,
-  readRadioHydrationForBuild,
   uploadPreparedRadioWrite,
   verifyRadioWrite,
 } from '../../services/radioIoSession.ts';
@@ -103,8 +102,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [writeWarnings, setWriteWarnings] = useState<string[]>([]);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [transferStages, setTransferStages] = useState<string[]>([]);
-  const [lastFirmware, setLastFirmware] = useState<string | undefined>();
-  const [lastOccupied, setLastOccupied] = useState<number | null>(null);
   const [writeVerifyStatus, setWriteVerifyStatus] = useState<RadioIoWriteVerifyStatus>('none');
   const [verifyButtonEnabled, setVerifyButtonEnabled] = useState(false);
   const [verifyResult, setVerifyResult] = useState<WriteVerifyResult | null>(null);
@@ -120,10 +117,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const writeHidden = writeGate === 'hidden';
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);
-  const hydrationRequiredForWrite = descriptor?.hydrationRequiredForWrite ?? true;
-  const requiresD890WriteConfirm =
-    egress.profileId === 'radio-io-at-d890uv' && !hydrationRequiredForWrite;
-  const writeNeedsStoredHydration = hydrationRequiredForWrite && !hasHydration;
+  const requiresD890WriteConfirm = egress.profileId === 'radio-io-at-d890uv';
   /**
    * Workflow B (#859, promoted to its own tab by #1085): "Write Keps…" now links to the
    * dedicated Satellite Keps tab (`/builds/:id/satellite-keps`, `BuildSatelliteKepsPage`) instead
@@ -273,40 +267,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   }, [writeVerifyStatus, verifyButtonEnabled]);
 
   if (descriptors.length === 0) return null;
-
-  async function handleRead() {
-    beginBusy('read');
-    try {
-      const session = await ensureSession();
-      setPhase('transfer');
-      const result = await readRadioHydrationForBuild(session, {
-        onProgress,
-        signal: abortRef.current!.signal,
-      });
-      setPhase('saving');
-      setProgress(null);
-      const next = buildService.withEgressHydration(egress, result.hydration);
-      const saved = await buildService.putEgressPath(next, egress.revision);
-      if (!saved.ok) {
-        throw new Error(
-          saved.reason === 'revision_conflict'
-            ? 'Egress changed elsewhere — reload and try again.'
-            : 'Could not save radio hydration on the egress pathway.',
-        );
-      }
-      await reloadEgressPaths();
-      setLastFirmware(result.firmware);
-      setLastOccupied(result.channelCountOccupied);
-      await releaseSession();
-      setPhase('done');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      await releaseSession();
-      setBusy(false);
-      setProgress(null);
-      abortRef.current = null;
-    }
-  }
 
   async function handleWriteWithContactBanks(mode: DualBankWriteMode | SingleBankWriteMode) {
     setWriteWarnings([]);
@@ -468,8 +428,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       return;
     }
     await reloadEgressPaths();
-    setLastFirmware(undefined);
-    setLastOccupied(null);
   }
 
   return (
@@ -538,24 +496,13 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         </Stack>
       </ConfirmModal>
       <WebSerialExperimentalAlert />
-      {descriptor?.hydrationRequiredForWrite ? (
-        <Alert color="red" title="Write path not migrated">
-          <Text size="sm">
-            This radio still depends on a legacy stored clone image for Web Serial write. Project
-            save no longer keeps that image — Read again in this session before Write until this
-            adapter is migrated.
-          </Text>
-        </Alert>
-      ) : null}
       <Text fw={600} size="sm">
         Direct radio (Web Serial)
       </Text>
       <Text size="sm" c="dimmed">
         {requiresD890WriteConfirm
-          ? 'Write assembles modelled channels and organisation from the build, then reads co-resident bytes from the connected radio during upload. Unmodelled settings are preserved via erase-unit read-modify-write — not from a stored project image. Read is optional; use Backup / Restore for a zip snapshot and ephemeral inspection.'
-          : hydrationRequiredForWrite
-            ? 'Read stores a clone image on this egress pathway so unmodelled settings survive write-back. Write sends the assembled build into that image — it does not import channels into the library. After a factory reset, Read again before Write (memory-bank addresses can move).'
-            : 'Write overlays modelled channels and organisation onto an in-session read of the connected radio. Unmodelled settings are preserved from that live FLASH image — not from a stored project clone. Identity is the radio on the cable this session, not a saved stash.'}
+          ? 'Write assembles modelled channels and organisation from the build, then reads co-resident bytes from the connected radio during upload. Unmodelled settings are preserved via erase-unit read-modify-write — not from a stored project image. Use Backup / Restore for a zip snapshot and ephemeral inspection.'
+          : 'Write overlays modelled channels and organisation onto an in-session read of the connected radio. Unmodelled settings are preserved from that live FLASH image — not from a stored project clone. Identity is the radio on the cable this session, not a saved stash. Use Backup / Restore for a zip snapshot.'}
       </Text>
       {!serialOk ? <Alert color="yellow">{getRadioSerialUnsupportedMessage()}</Alert> : null}
       {attributionNames ? (
@@ -641,18 +588,10 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         </Stack>
       ) : null}
       <Group gap="xs">
-        <Button
-          size="xs"
-          variant="light"
-          disabled={!serialOk || busy}
-          onClick={() => void handleRead()}
-        >
-          Read from radio
-        </Button>
         {!writeHidden ? (
           <Button
             size="xs"
-            disabled={!serialOk || busy || writeNeedsStoredHydration}
+            disabled={!serialOk || busy}
             onClick={() => void beginWriteWithContactBanks('codeplug')}
           >
             Write to radio
@@ -662,7 +601,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           <Button
             size="xs"
             variant="light"
-            disabled={!serialOk || busy || writeNeedsStoredHydration}
+            disabled={!serialOk || busy}
             onClick={() => void beginWriteWithContactBanks('digitalIdList')}
           >
             Write digital ID list
@@ -672,7 +611,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           <Button
             size="xs"
             variant="light"
-            disabled={!serialOk || busy || writeNeedsStoredHydration}
+            disabled={!serialOk || busy}
             onClick={() => void beginWriteWithContactBanks('digitalIdList')}
           >
             Write digital ID list
@@ -698,35 +637,23 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         </Button>
       </Group>
       {hasHydration && hydration ? (
-        <Alert color="gray" title="Stored radio image (read-only)">
+        <Alert color="gray" title="Stored radio image (unused for Write)">
           <Text size="sm">
             Model {hydration.retain.radioModelId}
-            {hydration.retain.firmware || lastFirmware
-              ? ` · firmware ${hydration.retain.firmware ?? lastFirmware}`
-              : ''}
+            {hydration.retain.firmware ? ` · firmware ${hydration.retain.firmware}` : ''}
             {' · '}
             {hydration.retain.imageByteLength} bytes
-            {lastOccupied != null ? ` · ${lastOccupied} occupied channels on radio` : ''}
             {hydration.capturedAt
               ? ` · captured ${new Date(hydration.capturedAt).toLocaleString()}`
               : ''}
           </Text>
           <Text size="xs" c="dimmed" mt={4}>
-            Unmodelled registers are retained for write-back. See{' '}
+            This leftover clone is not a Write input. Snapshot and inspect on{' '}
             <Anchor component={Link} to={`/builds/${build.id}/backup`} size="xs">
               Backup / Restore
-            </Anchor>{' '}
-            for the retained region map. Settings are not editable here.
+            </Anchor>
+            .
           </Text>
-          {egress.profileId === 'radio-io-dm32uv' ? (
-            <Text size="xs" c="dimmed" mt={4}>
-              {DM32_ANALOG_CONTACTS_WRITE_GAP}
-            </Text>
-          ) : egress.profileId === 'radio-io-at-d890uv' && !supportsSingleBankWrite ? (
-            <Text size="xs" c="dimmed" mt={4}>
-              {AT_D890_DIGITAL_CONTACTS_WRITE_GAP}
-            </Text>
-          ) : null}
           <Button size="xs" variant="subtle" mt="xs" onClick={() => void handleClearHydration()}>
             Clear stored image
           </Button>
@@ -737,9 +664,23 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         </Text>
       ) : (
         <Text size="xs" c="dimmed">
-          Write requires a prior Read on this egress ({descriptor?.label ?? 'compatible radio'}).
+          Snapshot and inspect this radio on{' '}
+          <Anchor component={Link} to={`/builds/${build.id}/backup`} size="xs">
+            Backup / Restore
+          </Anchor>
+          . Write uses a live in-session read.
         </Text>
       )}
+      {egress.profileId === 'radio-io-dm32uv' ? (
+        <Text size="xs" c="dimmed">
+          {DM32_ANALOG_CONTACTS_WRITE_GAP}
+        </Text>
+      ) : null}
+      {egress.profileId === 'radio-io-at-d890uv' && !supportsSingleBankWrite ? (
+        <Text size="xs" c="dimmed">
+          {AT_D890_DIGITAL_CONTACTS_WRITE_GAP}
+        </Text>
+      ) : null}
       {error ? <Alert color="red">{error}</Alert> : null}
       {writeWarnings.length > 0 ? (
         <Alert color="yellow" title="Write warnings">

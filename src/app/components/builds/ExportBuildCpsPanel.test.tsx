@@ -421,7 +421,7 @@ describe('ExportBuildCpsPanel', () => {
   });
 
   it('shows Web Serial panel for Direct radio builds without CPS download', async () => {
-    renderExportPanel('radio-io-uv5r-mini');
+    renderExportPanel('radio-io-uv5r-mini', { router: true });
 
     expect(await screen.findByText(/Direct radio via Web Serial/i)).toBeInTheDocument();
     expect(screen.getByText(/no CPS file export/i)).toBeInTheDocument();
@@ -429,8 +429,8 @@ describe('ExportBuildCpsPanel', () => {
     expect(screen.queryByText('Naming')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Download ZIP/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Download CSV/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Read from radio/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Write to radio/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Read from radio/i })).not.toBeInTheDocument();
   });
 
   it('shows empty state when no active egress pathway', () => {

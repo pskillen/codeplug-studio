@@ -23,9 +23,7 @@ function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
 }
 
 describe('OpenGD77 write without persisted hydration', () => {
-  it('sets hydrationRequiredForWrite false on both family descriptors', () => {
-    expect(OPENGD77_DM1701_DESCRIPTOR.hydrationRequiredForWrite).toBe(false);
-    expect(OPENGD77_MD9600_DESCRIPTOR.hydrationRequiredForWrite).toBe(false);
+  it('does not seed OpenGD77 write from a persisted hydration bag', () => {
     expect(OPENGD77_DM1701_DESCRIPTOR.hydration.seedProtocolForUpload).toBeUndefined();
     expect(OPENGD77_MD9600_DESCRIPTOR.hydration.seedProtocolForUpload).toBeUndefined();
   });

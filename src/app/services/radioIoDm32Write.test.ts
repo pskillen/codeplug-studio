@@ -175,10 +175,6 @@ describe('DM-32UV write without persisted hydration bag', () => {
 });
 
 describe('DM-32UV in-session pre-write content read', () => {
-  it('sets hydrationRequiredForWrite false', () => {
-    expect(DM32UV_DESCRIPTOR.hydrationRequiredForWrite).toBe(false);
-  });
-
   it('does not seed the write cache from a persisted hydration bag', () => {
     expect(DM32UV_DESCRIPTOR.hydration.seedProtocolForUpload).toBeUndefined();
   });

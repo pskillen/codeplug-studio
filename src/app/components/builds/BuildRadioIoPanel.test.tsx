@@ -118,6 +118,16 @@ describe('BuildRadioIoPanel — legacy stash migration warning (#879)', () => {
   });
 });
 
+describe('BuildRadioIoPanel — no write-panel Read stash (#878)', () => {
+  it('does not offer Read from radio on Export', () => {
+    renderPanel('radio-io-uv5r-mini');
+    expect(screen.queryByRole('button', { name: /Read from radio/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Write requires a prior Read on this egress/i),
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe('BuildRadioIoPanel — dual-bank directory toggles', () => {
   it('toggles library contacts and directory without throwing (React 19 currentTarget)', () => {
     renderPanel('radio-io-opengd77-1701');
