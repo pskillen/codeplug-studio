@@ -29,10 +29,7 @@ import {
   DM32_ANALOG_CONTACTS_WRITE_GAP,
   DM32_WRITTEN_FROM_BUILD_LABELS,
 } from './writeRole.ts';
-import {
-  inspectOccupiedChannels,
-  type CloneInspectNamedItem,
-} from '../../cloneInspect.ts';
+import { inspectOccupiedChannels, type CloneInspectNamedItem } from '../../cloneInspect.ts';
 
 export interface Dm32RetainGroupSummary {
   label: string;

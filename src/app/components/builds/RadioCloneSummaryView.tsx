@@ -501,7 +501,9 @@ function Uv5rRadioImageSections({
 
       <Uv5rOnRadioSection summary={summary} variant={variant} />
       {variant === 'inspect' ? (
-        <InspectNamedLists lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]} />
+        <InspectNamedLists
+          lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]}
+        />
       ) : null}
       {variant === 'write-coverage' ? (
         <>
@@ -804,7 +806,9 @@ function Dm32RadioImageSections({
 
       <Dm32OnRadioSection summary={summary} variant={variant} />
       {variant === 'inspect' ? (
-        <InspectNamedLists lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]} />
+        <InspectNamedLists
+          lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]}
+        />
       ) : null}
       {variant === 'write-coverage' ? (
         <>
@@ -957,7 +961,9 @@ function Rt95RadioImageSections({
 
       <Rt95OnRadioSection summary={summary} variant={variant} />
       {variant === 'inspect' ? (
-        <InspectNamedLists lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]} />
+        <InspectNamedLists
+          lists={[{ id: 'channels', title: 'Channels', rows: summary.inspectChannels }]}
+        />
       ) : null}
       {variant === 'write-coverage' ? (
         <>
@@ -1145,38 +1151,38 @@ function AtD890RadioImageSections({
                   ? 'Restore will not write Local info.'
                   : 'Decoded fields from LocalInfo @ 0x4f80000 — Read for forensics; not serial-written on Studio Write.'}
               </Text>
-        {summary.settingsRetain.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            No LocalInfo block in this capture.
-          </Text>
-        ) : (
-          <Table.ScrollContainer minWidth={560}>
-            <Table withTableBorder withColumnBorders>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Address</Table.Th>
-                  <Table.Th>Offset</Table.Th>
-                  <Table.Th>Field</Table.Th>
-                  <Table.Th>Value</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {summary.settingsRetain.map((row) => (
-                  <Table.Tr key={`${row.offset}-${row.label}`}>
-                    <Table.Td>
-                      <Code>{row.address}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{row.offset}</Code>
-                    </Table.Td>
-                    <Table.Td>{row.label}</Table.Td>
-                    <Table.Td>{row.value}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
+              {summary.settingsRetain.length === 0 ? (
+                <Text size="sm" c="dimmed">
+                  No LocalInfo block in this capture.
+                </Text>
+              ) : (
+                <Table.ScrollContainer minWidth={560}>
+                  <Table withTableBorder withColumnBorders>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Address</Table.Th>
+                        <Table.Th>Offset</Table.Th>
+                        <Table.Th>Field</Table.Th>
+                        <Table.Th>Value</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {summary.settingsRetain.map((row) => (
+                        <Table.Tr key={`${row.offset}-${row.label}`}>
+                          <Table.Td>
+                            <Code>{row.address}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code>{row.offset}</Code>
+                          </Table.Td>
+                          <Table.Td>{row.label}</Table.Td>
+                          <Table.Td>{row.value}</Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              )}
             </Accordion.Panel>
           </Accordion.Item>
 
@@ -1188,38 +1194,38 @@ function AtD890RadioImageSections({
                   ? 'Restore will not write optional settings.'
                   : 'Decoded from optional settings @ 0x3500000 / 0x3500900 — never serial-written. CPS language here is separate from Chinese UI in Local info above.'}
               </Text>
-        {summary.optionalSettingsRetain.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            No optional settings blocks in this capture.
-          </Text>
-        ) : (
-          <Table.ScrollContainer minWidth={560}>
-            <Table withTableBorder withColumnBorders>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Address</Table.Th>
-                  <Table.Th>Offset</Table.Th>
-                  <Table.Th>Field</Table.Th>
-                  <Table.Th>Value</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {summary.optionalSettingsRetain.map((row) => (
-                  <Table.Tr key={`${row.offset}-${row.label}`}>
-                    <Table.Td>
-                      <Code>{row.address}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{row.offset}</Code>
-                    </Table.Td>
-                    <Table.Td>{row.label}</Table.Td>
-                    <Table.Td>{row.value}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
+              {summary.optionalSettingsRetain.length === 0 ? (
+                <Text size="sm" c="dimmed">
+                  No optional settings blocks in this capture.
+                </Text>
+              ) : (
+                <Table.ScrollContainer minWidth={560}>
+                  <Table withTableBorder withColumnBorders>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Address</Table.Th>
+                        <Table.Th>Offset</Table.Th>
+                        <Table.Th>Field</Table.Th>
+                        <Table.Th>Value</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {summary.optionalSettingsRetain.map((row) => (
+                        <Table.Tr key={`${row.offset}-${row.label}`}>
+                          <Table.Td>
+                            <Code>{row.address}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code>{row.offset}</Code>
+                          </Table.Td>
+                          <Table.Td>{row.label}</Table.Td>
+                          <Table.Td>{row.value}</Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              )}
             </Accordion.Panel>
           </Accordion.Item>
 
@@ -1232,32 +1238,32 @@ function AtD890RadioImageSections({
                     ? 'Read-only hex preview from this image.'
                     : 'Raw hex from 0x3501280 — not decoded in Studio v1.'}
                 </Text>
-          <Table.ScrollContainer minWidth={560}>
-            <Table withTableBorder withColumnBorders>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Address</Table.Th>
-                  <Table.Th>Offset</Table.Th>
-                  <Table.Th>Field</Table.Th>
-                  <Table.Th>Value</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {summary.optionalSettingsAprs.map((row) => (
-                  <Table.Tr key={`${row.offset}-${row.label}`}>
-                    <Table.Td>
-                      <Code>{row.address}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{row.offset}</Code>
-                    </Table.Td>
-                    <Table.Td>{row.label}</Table.Td>
-                    <Table.Td>{row.value}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
+                <Table.ScrollContainer minWidth={560}>
+                  <Table withTableBorder withColumnBorders>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Address</Table.Th>
+                        <Table.Th>Offset</Table.Th>
+                        <Table.Th>Field</Table.Th>
+                        <Table.Th>Value</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {summary.optionalSettingsAprs.map((row) => (
+                        <Table.Tr key={`${row.offset}-${row.label}`}>
+                          <Table.Td>
+                            <Code>{row.address}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code>{row.offset}</Code>
+                          </Table.Td>
+                          <Table.Td>{row.label}</Table.Td>
+                          <Table.Td>{row.value}</Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
               </Accordion.Panel>
             </Accordion.Item>
           ) : null}
@@ -1270,38 +1276,38 @@ function AtD890RadioImageSections({
                   ? 'Restore will not write alarm memory.'
                   : 'Light decode from alarm @ 0x3482e00 / 0x3483000 and man-down flags in optional main — Read/stash only; never serial-written.'}
               </Text>
-        {summary.alarmRetain.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            No alarm blocks in this capture.
-          </Text>
-        ) : (
-          <Table.ScrollContainer minWidth={560}>
-            <Table withTableBorder withColumnBorders>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Address</Table.Th>
-                  <Table.Th>Offset</Table.Th>
-                  <Table.Th>Field</Table.Th>
-                  <Table.Th>Value</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {summary.alarmRetain.map((row) => (
-                  <Table.Tr key={`${row.address}-${row.label}`}>
-                    <Table.Td>
-                      <Code>{row.address}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{row.offset}</Code>
-                    </Table.Td>
-                    <Table.Td>{row.label}</Table.Td>
-                    <Table.Td>{row.value}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
+              {summary.alarmRetain.length === 0 ? (
+                <Text size="sm" c="dimmed">
+                  No alarm blocks in this capture.
+                </Text>
+              ) : (
+                <Table.ScrollContainer minWidth={560}>
+                  <Table withTableBorder withColumnBorders>
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Address</Table.Th>
+                        <Table.Th>Offset</Table.Th>
+                        <Table.Th>Field</Table.Th>
+                        <Table.Th>Value</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {summary.alarmRetain.map((row) => (
+                        <Table.Tr key={`${row.address}-${row.label}`}>
+                          <Table.Td>
+                            <Code>{row.address}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code>{row.offset}</Code>
+                          </Table.Td>
+                          <Table.Td>{row.label}</Table.Td>
+                          <Table.Td>{row.value}</Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              )}
             </Accordion.Panel>
           </Accordion.Item>
 
@@ -1312,44 +1318,44 @@ function AtD890RadioImageSections({
                 Every 16-byte serial chunk in LocalInfo (0x100 bytes). Notes map known ExpertOptions
                 fields onto each chunk.
               </Text>
-        {summary.localInfoRegisters.length === 0 ? (
-          <Text size="sm" c="dimmed">
-            No LocalInfo registers in this capture.
-          </Text>
-        ) : (
-          <Table.ScrollContainer minWidth={720}>
-            <Table withTableBorder withColumnBorders fz="xs">
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Address</Table.Th>
-                  <Table.Th>Offset</Table.Th>
-                  <Table.Th>Hex (16 bytes)</Table.Th>
-                  <Table.Th>ASCII</Table.Th>
-                  <Table.Th>Known fields</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {summary.localInfoRegisters.map((row) => (
-                  <Table.Tr key={row.address}>
-                    <Table.Td>
-                      <Code>{row.address}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{row.offset}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code style={{ whiteSpace: 'nowrap' }}>{row.hex}</Code>
-                    </Table.Td>
-                    <Table.Td>
-                      <Code>{row.ascii}</Code>
-                    </Table.Td>
-                    <Table.Td>{row.notes}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
+              {summary.localInfoRegisters.length === 0 ? (
+                <Text size="sm" c="dimmed">
+                  No LocalInfo registers in this capture.
+                </Text>
+              ) : (
+                <Table.ScrollContainer minWidth={720}>
+                  <Table withTableBorder withColumnBorders fz="xs">
+                    <Table.Thead>
+                      <Table.Tr>
+                        <Table.Th>Address</Table.Th>
+                        <Table.Th>Offset</Table.Th>
+                        <Table.Th>Hex (16 bytes)</Table.Th>
+                        <Table.Th>ASCII</Table.Th>
+                        <Table.Th>Known fields</Table.Th>
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {summary.localInfoRegisters.map((row) => (
+                        <Table.Tr key={row.address}>
+                          <Table.Td>
+                            <Code>{row.address}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code>{row.offset}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code style={{ whiteSpace: 'nowrap' }}>{row.hex}</Code>
+                          </Table.Td>
+                          <Table.Td>
+                            <Code>{row.ascii}</Code>
+                          </Table.Td>
+                          <Table.Td>{row.notes}</Table.Td>
+                        </Table.Tr>
+                      ))}
+                    </Table.Tbody>
+                  </Table>
+                </Table.ScrollContainer>
+              )}
             </Accordion.Panel>
           </Accordion.Item>
         </Accordion>

@@ -21,10 +21,7 @@ import {
   openGd77KeptRegions,
 } from './writeRole.ts';
 import { decodeZonesFromImage } from './zoneCodec.ts';
-import {
-  inspectOccupiedChannels,
-  type CloneInspectNamedItem,
-} from '../../cloneInspect.ts';
+import { inspectOccupiedChannels, type CloneInspectNamedItem } from '../../cloneInspect.ts';
 
 export interface OpenGd77OnRadioCounts {
   occupiedChannels: number;

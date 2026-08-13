@@ -18,10 +18,7 @@ import {
   type Uv17ProAncillaryRetainPreview,
   type Uv17ProRetainPreviewRow,
 } from './retainPreview.ts';
-import {
-  inspectOccupiedChannels,
-  type CloneInspectNamedItem,
-} from '../../cloneInspect.ts';
+import { inspectOccupiedChannels, type CloneInspectNamedItem } from '../../cloneInspect.ts';
 
 export interface RadioCloneRegionSummary {
   label: string;

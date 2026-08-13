@@ -29,10 +29,7 @@ import {
   type AtD890RetainPreviewRow,
 } from './retainPreview.ts';
 import { decodeWideCharName } from './wideChar.ts';
-import {
-  inspectOccupiedChannels,
-  type CloneInspectNamedItem,
-} from '../../cloneInspect.ts';
+import { inspectOccupiedChannels, type CloneInspectNamedItem } from '../../cloneInspect.ts';
 
 export interface AtD890RetainGroupSummary {
   label: string;

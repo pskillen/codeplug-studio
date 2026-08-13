@@ -13,10 +13,7 @@ import {
 } from './writeRole.ts';
 import { settingsRetainPreview, type Rt95RetainPreviewRow } from './retainPreview.ts';
 import { decodeChannelsFromImage } from './channelCodec.ts';
-import {
-  inspectOccupiedChannels,
-  type CloneInspectNamedItem,
-} from '../../cloneInspect.ts';
+import { inspectOccupiedChannels, type CloneInspectNamedItem } from '../../cloneInspect.ts';
 
 export interface Rt95RetainGroupSummary {
   label: string;
