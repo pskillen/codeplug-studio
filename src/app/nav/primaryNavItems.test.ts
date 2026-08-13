@@ -47,14 +47,19 @@ describe('contextualStripItems', () => {
     expect(resolveContextualStripItems('/attributions')).toEqual(helpStripItems);
   });
 
-  it('includes Tracking Dashboard in the Tools strip and resolves it from /tracking', () => {
+  it('includes Tracking Dashboard and Propagation Visualiser in the Tools strip and resolves it from /tracking', () => {
     expect(toolsStripItems.map((i) => i.label)).toEqual([
       'Maidenhead locator',
       'Band plan',
       'Tracking Dashboard',
+      'Propagation Visualiser',
     ]);
     expect(toolsStripItems.find((i) => i.label === 'Tracking Dashboard')?.to).toBe('/tracking');
+    expect(toolsStripItems.find((i) => i.label === 'Propagation Visualiser')?.to).toBe(
+      '/reference/rf-propagation',
+    );
     expect(resolveContextualStripItems('/tracking')).toEqual(toolsStripItems);
+    expect(resolveContextualStripItems('/reference/rf-propagation')).toEqual(toolsStripItems);
   });
 
   it('picks the active strip label by longest path match', () => {
