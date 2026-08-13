@@ -26,12 +26,12 @@ Shares OpenGD77 CPS and codeplug format with Baofeng DM-1701 / Retevis RT-84 (sa
 
 ## Documentation map
 
-| Doc                                                | Contents                                               |
-| -------------------------------------------------- | ------------------------------------------------------ |
-| [limits.md](limits.md)                             | Channels, zone/TG members                              |
-| [capabilities.md](capabilities.md)                 | Modes, `+W-` / User Power note                         |
-| [power.md](power.md)                               | P1–P9 percent mapping + `+W-` exclusion                |
-| [OpenGD77 binary memory](../../opengd77/README.md) | Shared EEPROM/FLASH map + serial protocol (direct I/O) |
+| Doc                                                  | Contents                                                                                                                         |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| [limits.md](limits.md)                               | Channels, zone/TG members                                                                                                        |
+| [capabilities.md](capabilities.md)                   | Modes, `+W-` / User Power note                                                                                                   |
+| [power.md](power.md)                                 | P1–P9 percent mapping + `+W-` exclusion                                                                                          |
+| [OpenGD77 binary memory](../../opengd77/README.md)   | Shared EEPROM/FLASH map + serial protocol (direct I/O)                                                                           |
 | [Backup / Restore](../../opengd77/backup-restore.md) | FLASH span zip + Restore SAVE_REBOOT (hardware verify pending, [#1142](https://github.com/pskillen/codeplug-studio/issues/1142)) |
 
 ## Adapter wire

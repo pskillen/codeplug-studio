@@ -11,12 +11,7 @@ import {
   isOpenGd77RestoreNeverWriteAddress,
 } from './backupRestoreRoles.ts';
 import { OPENUV380_IMAGE_SIZE, openUv380AbsToOffset } from './constants.ts';
-import {
-  collectDirtySectors,
-  createOpenUv380Image,
-  type DirtySector,
-  writeAbs,
-} from './memory.ts';
+import { collectDirtySectors, createOpenUv380Image, type DirtySector, writeAbs } from './memory.ts';
 
 export type OpenGd77RestoreArchive = {
   manifest: RadioBackupManifestV1;

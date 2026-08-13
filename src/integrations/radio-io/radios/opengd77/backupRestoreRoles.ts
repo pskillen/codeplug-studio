@@ -32,9 +32,7 @@ export const OPENGD77_BACKUP_FLASH_SPANS: readonly OpenGd77BackupFlashSpan[] =
     restoreRole: 'restorable' as const,
   }));
 
-export function openGd77BackupSpanForAddress(
-  address: number,
-): OpenGd77BackupFlashSpan | undefined {
+export function openGd77BackupSpanForAddress(address: number): OpenGd77BackupFlashSpan | undefined {
   return OPENGD77_BACKUP_FLASH_SPANS.find(
     (span) => address >= span.start && address < span.start + span.length,
   );
