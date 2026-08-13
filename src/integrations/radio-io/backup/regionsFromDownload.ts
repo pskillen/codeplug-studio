@@ -14,11 +14,8 @@ import {
   DM32_METADATA_OFFSET,
 } from '../radios/dm32uv/constants.ts';
 import { classifyDm32Metadata } from '../radios/dm32uv/memory.ts';
-import {
-  OPENUV380_FLASH_SPANS,
-  OPENUV380_IMAGE_SIZE,
-  openUv380AbsToOffset,
-} from '../radios/opengd77/constants.ts';
+import { OPENGD77_BACKUP_FLASH_SPANS } from '../radios/opengd77/backupRestoreRoles.ts';
+import { OPENUV380_IMAGE_SIZE, openUv380AbsToOffset } from '../radios/opengd77/constants.ts';
 import { RT95_IMAGE_SIZE, RT95_MODEL_ID } from '../radios/rt95/constants.ts';
 import { UV21_PRO_V2_LAYOUT, UV5R_MINI_LAYOUT } from '../radios/uv17pro-family/layout.ts';
 import { createMemoryMap } from '../kit/memoryMap.ts';
@@ -255,10 +252,10 @@ function fromUvLayout(
 }
 
 function fromOpenGd77(image: MemoryMap): BackupRegionExtract {
-  const parts = OPENUV380_FLASH_SPANS.map((span, i) => {
+  const parts = OPENGD77_BACKUP_FLASH_SPANS.map((span) => {
     const offset = openUv380AbsToOffset(span.start);
     const data = sliceImage(image, offset, span.length);
-    return makeRegion(`flash-span-${i}`, `FLASH span ${i + 1}`, span.start, data, 'restorable');
+    return makeRegion(span.id, span.label, span.start, data, span.restoreRole);
   });
   return collect(parts, 'known-map-regions', image.size || OPENUV380_IMAGE_SIZE);
 }
