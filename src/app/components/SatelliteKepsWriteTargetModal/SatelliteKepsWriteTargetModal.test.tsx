@@ -45,6 +45,8 @@ describe('SatelliteKepsWriteTargetModal — Workflow A target list (#859)', () =
 
     expect(await screen.findByText('Other supported radios')).toBeInTheDocument();
     expect(screen.getByText('Anytone AT-D890UV')).toBeInTheDocument();
+    expect(screen.getByText('Baofeng DM-1701 / RT-84 (OpenGD77)')).toBeInTheDocument();
+    expect(screen.getByText('TYT MD-9600 / RT-90 (OpenGD77)')).toBeInTheDocument();
     expect(screen.queryByText('Recommended / Your radios')).not.toBeInTheDocument();
   });
 
@@ -57,8 +59,9 @@ describe('SatelliteKepsWriteTargetModal — Workflow A target list (#859)', () =
 
     expect(await screen.findByText('Recommended / Your radios')).toBeInTheDocument();
     expect(screen.getByText('My D890 — Anytone AT-D890UV')).toBeInTheDocument();
-    // Same D890 profile must not also appear generically once it's shown as "Your radios".
-    expect(screen.queryByText('Other supported radios')).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: 'Anytone AT-D890UV' })).not.toBeInTheDocument();
+    expect(screen.getByText('Other supported radios')).toBeInTheDocument();
+    expect(screen.getByText('Baofeng DM-1701 / RT-84 (OpenGD77)')).toBeInTheDocument();
   });
 
   it('does not list a build whose egress profile has no registered keps-write adapter', async () => {
