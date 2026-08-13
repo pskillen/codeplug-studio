@@ -421,7 +421,7 @@ describe('ExportBuildCpsPanel', () => {
   });
 
   it('shows Web Serial panel for Direct radio builds without CPS download', async () => {
-    renderExportPanel('radio-io-uv5r-mini');
+    renderExportPanel('radio-io-uv5r-mini', { router: true });
 
     expect(await screen.findByText(/Direct radio via Web Serial/i)).toBeInTheDocument();
     expect(screen.getByText(/no CPS file export/i)).toBeInTheDocument();
