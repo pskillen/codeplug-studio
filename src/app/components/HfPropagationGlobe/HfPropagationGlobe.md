@@ -6,9 +6,10 @@ Renders the 3D propagation globe for the [HF/RF propagation visualiser](../../..
 
 ## Props
 
-| Prop     | Type                      | Notes                                                                                        |
-| -------- | ------------------------- | -------------------------------------------------------------------------------------------- |
-| `layers` | `IonosphericLayerState[]` | Day/night-aware layer state from `computeIonosphericLayers`. Only `active` layers are drawn. |
+| Prop      | Type                      | Notes                                                                                                                                                                                                 |
+| --------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layers`  | `IonosphericLayerState[]` | Day/night-aware layer state from `computeIonosphericLayers`. Only `active` layers are drawn.                                                                                                          |
+| `display` | `ShellDisplayOptions`     | Optional. `{ exaggerationFactor, explodeEnabled, fresnelEnabled }`. Omit for true-scale shells (factor `1`, explode/Fresnel off). The page passes live Display-panel state.                           |
 
 ## Usage
 
@@ -20,7 +21,10 @@ const HfPropagationGlobe = lazy(
 );
 
 <Suspense fallback={<div>Loading 3D globe…</div>}>
-  <HfPropagationGlobe layers={layers} />
+  <HfPropagationGlobe
+  layers={layers}
+  display={{ exaggerationFactor: 5, explodeEnabled: true, fresnelEnabled: true }}
+/>
 </Suspense>;
 ```
 
@@ -29,14 +33,18 @@ const HfPropagationGlobe = lazy(
 ## Behaviour
 
 - **Sizing:** measures its own container via `ResizeObserver` and passes explicit `width`/`height` to `Globe` — identical convention to `SatelliteGlobe` (`react-globe.gl` defaults to the _window's_ size otherwise, not its container's).
-- **Shells:** one `THREE.Mesh` (sphere geometry, semi-transparent `MeshBasicMaterial`) per **active** layer in `customLayerData`, built by exported `buildShellMesh` and sized via `shellRadiusUnits(midAltitudeKm)` — a separately-exported, unit-testable pure function that converts a shell's mid-altitude (km) to `customThreeObject`'s scene-unit radius. Reuses `altitudeKmToGlobeRadiusUnits` from [`SatelliteGlobe/globeAltitude.ts`](../SatelliteGlobe/globeAltitude.ts) rather than a second copy, so shell placement stays consistent with any future point/path rendering (#1170) that also uses it.
+- **Shells:** one `THREE.Mesh` (sphere geometry, semi-transparent `MeshBasicMaterial`) per **active** layer in `customLayerData`. Geometry lives in `buildGlobeData.ts` (`buildShellMesh`, `displayShellRadiusUnits`) — `buildShellMesh` was moved here from `HfPropagationGlobe.tsx` so exaggeration/explode math sits next to the mesh builder. Colour still comes from `colorForLayer(id)`, not a field on `IonosphericLayerState`.
+- **Display controls** (`display` prop):
+  - **Altitude exaggeration** — `exaggeratedAltitudeKm` multiplies mid-altitude when `exaggerationFactor > 1` (range 1×–10×). Factor `≤ 1` is a no-op (true scale).
+  - **Exploded stacking** — `explodeOffsetUnits` adds `layerIndex * 0.15` globe-radius units (`D=0` … `F2=3`, canonical id order so night-time F2 still sits outermost). Independent of exaggeration.
+  - **Fresnel shading** — per-fragment opacity `mix(0.05, 0.40, pow(1 - \|N·V\|, 2))` when on; baseline `0.12` when off. Injected via `MeshBasicMaterial.onBeforeCompile`. `react-globe.gl`'s `customThreeObjectUpdate` only runs on data updates, not every frame, so a `requestAnimationFrame` loop pushes the enable flag; Three's built-in `cameraPosition` drives the view vector.
 - **Colour:** `colorForLayer(id)` in `src/core/domain/hfPropagation/layerColor.ts` — one shared mapping for this globe and later top-down / vertical-slice views.
 - **`GLOBE_RADIUS_UNITS = 100`:** `three-globe`'s own internal scene-unit globe radius (pinned copy of `GLOBE_RADIUS` in `three-globe`'s source — not exported from the package). `customThreeObject` positions objects in these scene units, not the `0`–`1`+ altitude units `react-globe.gl`'s own `pointAltitude`/`pathPointAlt` accessors use.
 - **Data:** `layers` from `computeIonosphericLayers` (D 60–90 km day-only, E 90–150 km, F1 150–250 km day-only, F2 250–400 km). Inactive D/F1 shells are omitted at night.
 
 ## Testing
 
-`react-globe.gl` needs a WebGL context jsdom doesn't provide, so `HfPropagationGlobe.test.tsx` mocks it to a stub component and asserts the `customLayerData`/`customThreeObject` props it receives (including that inactive layers are filtered out), plus direct unit tests of `shellRadiusUnits` — same convention as [`SatelliteGlobe.test.tsx`](../SatelliteGlobe/SatelliteGlobe.test.tsx).
+`react-globe.gl` needs a WebGL context jsdom doesn't provide, so `HfPropagationGlobe.test.tsx` mocks it to a stub component and asserts the `customLayerData`/`customThreeObject`/`customThreeObjectUpdate` props it receives (including that inactive layers are filtered out). Radius math lives in `buildGlobeData.test.ts` (`exaggeratedAltitudeKm`, `explodeOffsetUnits`, `displayShellRadiusUnits`, `fresnelOpacity`, `shellRadiusUnits`).
 
 ## Related
 
