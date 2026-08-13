@@ -10,10 +10,10 @@ Operator zip snapshot of the **CHIRP-sized PROGRAM+R/W programming clone** (four
 
 Code table: `src/integrations/radio-io/radios/uv17pro-family/backupRestoreRoles.ts` (`uv17ProBackupMemSpans` for `UV21_PRO_V2_LAYOUT`).
 
-| Role             | Regions                                                                                                                                                                                                            |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Restorable**   | `mem-0` … `mem-3` — packed offsets of radio `0x0000` / `0x9000` / `0xA000` / `0xD000`. Includes Write-kept VFO / settings / ANI / fourth MEM block                                                                  |
-| **Inspect-only** | None on this map. Studio has **no** isolated calibration or LocalInfo table. Residual: if the vendor hid cal inside these spans, Restore will send those bytes — do **not** invent a cal offset to skip            |
+| Role             | Regions                                                                                                                                                                                                 |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Restorable**   | `mem-0` … `mem-3` — packed offsets of radio `0x0000` / `0x9000` / `0xA000` / `0xD000`. Includes Write-kept VFO / settings / ANI / fourth MEM block                                                      |
+| **Inspect-only** | None on this map. Studio has **no** isolated calibration or LocalInfo table. Residual: if the vendor hid cal inside these spans, Restore will send those bytes — do **not** invent a cal offset to skip |
 
 Write-codeplug still requires **project / session stash** (`hydrationRequiredForWrite: true`). Restore does **not** use that stash; it replays zip MEM bins only.
 

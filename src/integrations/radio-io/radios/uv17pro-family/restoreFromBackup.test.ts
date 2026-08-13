@@ -161,7 +161,9 @@ describe('intendedUv17ProRestoreImage', () => {
     const archive = {
       manifest: manifestFor(layout, [
         region(spans[0]!.id, spans[0]!.packedOffset, spans[0]!.size, 'inspect-only'),
-        ...spans.slice(1).map((span) => region(span.id, span.packedOffset, span.size, 'restorable')),
+        ...spans
+          .slice(1)
+          .map((span) => region(span.id, span.packedOffset, span.size, 'restorable')),
       ]),
       image,
     };
@@ -172,9 +174,13 @@ describe('intendedUv17ProRestoreImage', () => {
     );
     expect(intended.get(0, 1)[0]).toBe(0xff);
     expect(intended.get(spans[1]!.packedOffset, 1)[0]).not.toBe(0xff);
-    expect(listUv17ProRestoreWriteAddresses(layout, archive, spans.map((s) => s.id))).not.toContain(
-      0x0000,
-    );
+    expect(
+      listUv17ProRestoreWriteAddresses(
+        layout,
+        archive,
+        spans.map((s) => s.id),
+      ),
+    ).not.toContain(0x0000);
   });
 
   it('does not import assemble / hydration merge / write-image helpers', () => {

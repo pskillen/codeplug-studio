@@ -42,9 +42,9 @@ describe('UV-17Pro backup restore roles', () => {
     expect(uv17ProBackupRestoreRole(UV5R_MINI_LAYOUT, UV5R_MINI_LAYOUT.memTotal)).toBe(
       'inspect-only',
     );
-    expect(isUv17ProRestoreNeverWritePackedOffset(UV5R_MINI_LAYOUT, UV5R_MINI_LAYOUT.memTotal)).toBe(
-      true,
-    );
+    expect(
+      isUv17ProRestoreNeverWritePackedOffset(UV5R_MINI_LAYOUT, UV5R_MINI_LAYOUT.memTotal),
+    ).toBe(true);
     expect(uv17ProBackupMemSpans(UV5R_MINI_LAYOUT).some((s) => s.id.includes('cal'))).toBe(false);
   });
 });
