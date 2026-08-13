@@ -45,6 +45,15 @@ describe('computeIonosphericLayers', () => {
     expect(day.F2).toMatchObject({ altitudeMinKm: 250, altitudeMaxKm: 400 });
   });
 
+  it('drops F2 altitudeMinKm to 150 km at night so the F-region fills F1's band', () => {
+    const day = layersById(EQUINOX_SOLAR_NOON_UTC);
+    const night = layersById(EQUINOX_MIDNIGHT_UTC);
+    expect(day.F2?.altitudeMinKm).toBe(250);
+    expect(day.F2?.altitudeMaxKm).toBe(400);
+    expect(night.F2?.altitudeMinKm).toBe(150);
+    expect(night.F2?.altitudeMaxKm).toBe(400);
+  });
+
   it('scales daytime F2 density with the solar-activity preset', () => {
     const quiet = layersById(EQUINOX_SOLAR_NOON_UTC, 'quiet').F2?.peakElectronDensity ?? 0;
     const moderate = layersById(EQUINOX_SOLAR_NOON_UTC, 'moderate').F2?.peakElectronDensity ?? 0;

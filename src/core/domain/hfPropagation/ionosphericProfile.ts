@@ -15,6 +15,9 @@ const LAYER_BANDS: LayerBand[] = [
   { id: 'F2', altitudeMinKm: 250, altitudeMaxKm: 400, dayOnly: false },
 ];
 
+/** Night-time F2 lower bound — merged F-region occupies F1's daytime band as well. */
+const NIGHT_F2_ALTITUDE_MIN_KM = 150;
+
 /**
  * Canned peak-density baselines (electrons/m³) per solar preset. Order-of-magnitude
  * daytime F2 Ne,max — this is an idealised teaching tool, not a space-weather service.
@@ -35,7 +38,8 @@ const NIGHT_DENSITY_FRACTION = 0.3;
 /**
  * Compute the four layers' activation/density state for a transmitter location, instant, and
  * solar preset. D and F1 deactivate at night (solar zenith angle > ~100°); E and F2 stay active
- * day and night with reduced night-time density.
+ * day and night with reduced night-time density. At night F2's `altitudeMinKm` drops to 150 km
+ * so the remaining F-region shell fills F1's vacated band (no geometric gap).
  */
 export function computeIonosphericLayers(
   latDeg: number,
@@ -50,10 +54,12 @@ export function computeIonosphericLayers(
   return LAYER_BANDS.map((band) => {
     const active = band.dayOnly ? isDaylight : true;
     const nightFraction = isDaylight ? 1 : NIGHT_DENSITY_FRACTION;
+    const altitudeMinKm =
+      band.id === 'F2' && !isDaylight ? NIGHT_F2_ALTITUDE_MIN_KM : band.altitudeMinKm;
     return {
       id: band.id,
       active,
-      altitudeMinKm: band.altitudeMinKm,
+      altitudeMinKm,
       altitudeMaxKm: band.altitudeMaxKm,
       peakElectronDensity: active ? peakDensityBaseline * nightFraction : 0,
     };
