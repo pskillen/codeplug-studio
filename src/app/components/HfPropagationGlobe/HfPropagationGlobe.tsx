@@ -40,10 +40,13 @@ export default function HfPropagationGlobe({
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const fresnelEnabledRef = useRef(display.fresnelEnabled);
-  fresnelEnabledRef.current = display.fresnelEnabled;
   const [size, setSize] = useState({ width: 0, height: 0 });
   const activeLayers = useMemo(() => layers.filter((layer) => layer.active), [layers]);
   const { exaggerationFactor, explodeEnabled, fresnelEnabled } = display;
+
+  useEffect(() => {
+    fresnelEnabledRef.current = fresnelEnabled;
+  }, [fresnelEnabled]);
 
   const shellObjectAccessor = useMemo(
     () => (d: object) => {
