@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Globe, { type GlobeMethods } from 'react-globe.gl';
 import type * as THREE from 'three';
-import { computeSolarTerminator, computeSubsolarPoint } from '@core/domain/hfPropagation/solarTerminator.ts';
+import {
+  computeSolarTerminator,
+  computeSubsolarPoint,
+} from '@core/domain/hfPropagation/solarTerminator.ts';
 import type {
   IonosphericLayerId,
   IonosphericLayerState,

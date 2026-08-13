@@ -6,12 +6,12 @@ Renders the 3D propagation globe for the [HF/RF propagation visualiser](../../..
 
 ## Props
 
-| Prop               | Type                      | Notes                                                                                                                                                                       |
-| ------------------ | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `layers`           | `IonosphericLayerState[]` | Day/night-aware layer state from `computeIonosphericLayers`. A shell is drawn only when `active` **and** the operator has not hidden it.                                    |
-| `display`          | `ShellDisplayOptions`     | Optional. `{ exaggerationFactor, explodeEnabled, fresnelEnabled, terminatorEnabled? }`. Omit for true-scale shells (factor `1`, explode/Fresnel/terminator off). The page passes live Display-panel state. |
-| `visibleLayers`    | `LayerVisibility`         | Optional. `{ D, E, F1, F2 }` booleans, default all `true`. Operator hide is independent of physics `active` (day/night). Explode indices stay canonical by id.              |
-| `environmentAtMs`  | `number`                  | Optional. Instant for the greyline ring, night-side shade, and sun marker. Required when `display.terminatorEnabled` is true.                                               |
+| Prop              | Type                      | Notes                                                                                                                                                                                                      |
+| ----------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `layers`          | `IonosphericLayerState[]` | Day/night-aware layer state from `computeIonosphericLayers`. A shell is drawn only when `active` **and** the operator has not hidden it.                                                                   |
+| `display`         | `ShellDisplayOptions`     | Optional. `{ exaggerationFactor, explodeEnabled, fresnelEnabled, terminatorEnabled? }`. Omit for true-scale shells (factor `1`, explode/Fresnel/terminator off). The page passes live Display-panel state. |
+| `visibleLayers`   | `LayerVisibility`         | Optional. `{ D, E, F1, F2 }` booleans, default all `true`. Operator hide is independent of physics `active` (day/night). Explode indices stay canonical by id.                                             |
+| `environmentAtMs` | `number`                  | Optional. Instant for the greyline ring, night-side shade, and sun marker. Required when `display.terminatorEnabled` is true.                                                                              |
 
 ## Usage
 
