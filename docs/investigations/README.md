@@ -8,9 +8,10 @@ process failures were.
 run in a scratch directory (gitignored) and only their durable conclusions are promoted — settled technical
 facts to the reference docs, the record of how they were established to here.
 
-| #                                                | Investigation                            | Closed     | Outcome                                                      |
-| ------------------------------------------------ | ---------------------------------------- | ---------- | ------------------------------------------------------------ |
-| [i001](i001-d890-write-commit-failure/README.md) | AT-D890UV Web Serial writes never commit | 2026-07-30 | Studio was transmitting the radio's own flash sector markers |
+| #                                                     | Investigation                              | Closed     | Outcome                                                                 |
+| ----------------------------------------------------- | ------------------------------------------ | ---------- | ----------------------------------------------------------------------- |
+| [i001](i001-d890-write-commit-failure/README.md)      | AT-D890UV Web Serial writes never commit   | 2026-07-30 | Studio was transmitting the radio's own flash sector markers            |
+| [i002](i002-d890-program-error-after-write/README.md) | AT-D890UV Program Error after Studio write | 2026-08-13 | Phase 2 encoded onto a virgin `0xff` map instead of the in-session Read |
 
 ## Conventions
 
