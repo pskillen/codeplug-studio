@@ -74,4 +74,28 @@ describe('HfPropagationGlobe', () => {
     const shells = lastGlobeProps?.customLayerData as { id: string }[];
     expect(shells.map((s) => s.id)).toEqual(['D', 'E', 'F1', 'F2']);
   });
+
+  it('omits operator-hidden layers even when they are physics-active', () => {
+    render(
+      <HfPropagationGlobe
+        layers={DAYTIME_LAYERS}
+        visibleLayers={{ D: true, E: true, F1: false, F2: false }}
+      />,
+    );
+
+    const shells = lastGlobeProps?.customLayerData as { id: string }[];
+    expect(shells.map((s) => s.id)).toEqual(['D', 'E']);
+  });
+
+  it('does not draw a physics-inactive layer even if the operator leaves it visible', () => {
+    render(
+      <HfPropagationGlobe
+        layers={NIGHTTIME_LAYERS}
+        visibleLayers={{ D: true, E: true, F1: true, F2: true }}
+      />,
+    );
+
+    const shells = lastGlobeProps?.customLayerData as { id: string }[];
+    expect(shells.map((s) => s.id)).toEqual(['E', 'F2']);
+  });
 });

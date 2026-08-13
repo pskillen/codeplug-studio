@@ -1,9 +1,11 @@
 import { Input, Select, Slider, Stack, Text } from '@mantine/core';
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { computeIonosphericLayers } from '@core/domain/hfPropagation/ionosphericProfile.ts';
+import { colorForLayer, IONOSPHERIC_LAYER_IDS } from '@core/domain/hfPropagation/layerColor.ts';
 import { criticalFrequencyMhz } from '@core/domain/hfPropagation/mufCalculation.ts';
 import type {
   AntennaPatternFamily,
+  IonosphericLayerId,
   SolarActivityPreset,
 } from '@core/domain/hfPropagation/types.ts';
 import {
@@ -105,6 +107,17 @@ function dateTimeLocalToMs(value: string): number {
   return Number.isNaN(parsed.getTime()) ? Date.now() : parsed.getTime();
 }
 
+function layerToggleAriaLabel(id: IonosphericLayerId, physicsPresent: boolean): string {
+  return physicsPresent ? `${id} layer` : `${id} layer, not present (night)`;
+}
+
+const ALL_LAYERS_VISIBLE: Record<IonosphericLayerId, boolean> = {
+  D: true,
+  E: true,
+  F1: true,
+  F2: true,
+};
+
 export default function HfPropagationPage() {
   const [view, setView] = useState<PropagationView>('globe');
 
@@ -123,6 +136,8 @@ export default function HfPropagationPage() {
   const [exaggerationFactor, setExaggerationFactor] = useState(DEFAULT_EXAGGERATION);
   const [explodeEnabled, setExplodeEnabled] = useState(true);
   const [fresnelEnabled, setFresnelEnabled] = useState(true);
+  const [visibleLayers, setVisibleLayers] =
+    useState<Record<IonosphericLayerId, boolean>>(ALL_LAYERS_VISIBLE);
 
   const antennaFamily = useMemo(
     () =>
@@ -176,6 +191,7 @@ export default function HfPropagationPage() {
                     explodeEnabled,
                     fresnelEnabled,
                   }}
+                  visibleLayers={visibleLayers}
                 />
               </Suspense>
             ) : (
@@ -222,6 +238,35 @@ export default function HfPropagationPage() {
                   onChange={setFresnelEnabled}
                   label="Fresnel shading"
                 />
+                <div className={classes.layerToggles}>
+                  {IONOSPHERIC_LAYER_IDS.map((id) => {
+                    const physicsPresent = layers.find((layer) => layer.id === id)?.active ?? false;
+                    return (
+                      <ToggleSwitch
+                        key={id}
+                        checked={visibleLayers[id]}
+                        disabled={!physicsPresent}
+                        onChange={(checked) =>
+                          setVisibleLayers((prev) => ({ ...prev, [id]: checked }))
+                        }
+                        label={
+                          <span className={classes.layerToggleLabel}>
+                            <span
+                              className={classes.layerSwatch}
+                              style={{ backgroundColor: colorForLayer(id) }}
+                              aria-hidden
+                            />
+                            {id}
+                            {physicsPresent ? null : (
+                              <span className={classes.layerAbsentHint}>not present (night)</span>
+                            )}
+                          </span>
+                        }
+                        aria-label={layerToggleAriaLabel(id, physicsPresent)}
+                      />
+                    );
+                  })}
+                </div>
               </Stack>
             </Panel>
 

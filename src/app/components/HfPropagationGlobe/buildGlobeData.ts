@@ -1,6 +1,9 @@
 import * as THREE from 'three';
-import { colorForLayer } from '@core/domain/hfPropagation/layerColor.ts';
-import type { IonosphericLayerState } from '@core/domain/hfPropagation/types.ts';
+import { colorForLayer, IONOSPHERIC_LAYER_IDS } from '@core/domain/hfPropagation/layerColor.ts';
+import type {
+  IonosphericLayerId,
+  IonosphericLayerState,
+} from '@core/domain/hfPropagation/types.ts';
 import { altitudeKmToGlobeRadiusUnits } from '../SatelliteGlobe/globeAltitude.ts';
 
 /**
@@ -12,8 +15,21 @@ import { altitudeKmToGlobeRadiusUnits } from '../SatelliteGlobe/globeAltitude.ts
  */
 export const GLOBE_RADIUS_UNITS = 100;
 
-/** Phase 2 baseline shell opacity; Fresnel shading modulates around this. */
+/** Phase 2 baseline shell opacity for F1/F2; Fresnel shading modulates around this. */
 export const SHELL_BASELINE_OPACITY = 0.12;
+
+/** D/E sit only a few percent above the globe mesh — bump so they remain readable when isolated. */
+export const SHELL_INNER_BASELINE_OPACITY = 0.28;
+
+/** Canonical D=0 … F2=3 index for explode offsets, independent of which shells are currently drawn. */
+export function canonicalLayerIndex(id: IonosphericLayerId): number {
+  const index = IONOSPHERIC_LAYER_IDS.indexOf(id);
+  return index < 0 ? 0 : index;
+}
+
+export function shellBaselineOpacity(layerIndex: number): number {
+  return layerIndex <= 1 ? SHELL_INNER_BASELINE_OPACITY : SHELL_BASELINE_OPACITY;
+}
 
 /** Extra radial separation per layer when exploded stacking is on, in globe-radius units. */
 export const EXPLODE_OFFSET_PER_LAYER = 0.15;
@@ -104,16 +120,17 @@ export function buildShellMesh(
   const midAltitudeKm = (s.altitudeMinKm + s.altitudeMaxKm) / 2;
   const radius = displayShellRadiusUnits(midAltitudeKm, layerIndex, display);
   const geometry = new THREE.SphereGeometry(radius, 48, 48);
+  const baselineOpacity = shellBaselineOpacity(layerIndex);
   const material = new THREE.MeshBasicMaterial({
     color: colorForLayer(s.id),
     transparent: true,
-    opacity: SHELL_BASELINE_OPACITY,
+    opacity: baselineOpacity,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
   const uniforms = {
     uFresnelEnabled: { value: display.fresnelEnabled ? 1 : 0 },
-    uBaselineOpacity: { value: SHELL_BASELINE_OPACITY },
+    uBaselineOpacity: { value: baselineOpacity },
     uOpacityMin: { value: FRESNEL_OPACITY_MIN },
     uOpacityMax: { value: FRESNEL_OPACITY_MAX },
     uFresnelPower: { value: FRESNEL_POWER },

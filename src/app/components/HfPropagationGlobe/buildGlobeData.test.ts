@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { GLOBE_EARTH_RADIUS_KM } from '../SatelliteGlobe/globeAltitude.ts';
 import {
+  canonicalLayerIndex,
   displayShellRadiusUnits,
   EXPLODE_OFFSET_PER_LAYER,
   exaggeratedAltitudeKm,
@@ -9,6 +10,9 @@ import {
   FRESNEL_OPACITY_MIN,
   fresnelOpacity,
   GLOBE_RADIUS_UNITS,
+  SHELL_BASELINE_OPACITY,
+  SHELL_INNER_BASELINE_OPACITY,
+  shellBaselineOpacity,
   shellRadiusUnits,
 } from './buildGlobeData.ts';
 
@@ -76,6 +80,27 @@ describe('displayShellRadiusUnits', () => {
       GLOBE_RADIUS_UNITS *
         (1 + midAltitudeKm / GLOBE_EARTH_RADIUS_KM + 3 * EXPLODE_OFFSET_PER_LAYER),
     );
+  });
+});
+
+describe('canonicalLayerIndex', () => {
+  it('is D=0 … F2=3 regardless of draw order', () => {
+    expect(canonicalLayerIndex('D')).toBe(0);
+    expect(canonicalLayerIndex('E')).toBe(1);
+    expect(canonicalLayerIndex('F1')).toBe(2);
+    expect(canonicalLayerIndex('F2')).toBe(3);
+  });
+});
+
+describe('shellBaselineOpacity', () => {
+  it('boosts D and E so inner shells stay readable against the globe', () => {
+    expect(shellBaselineOpacity(0)).toBe(SHELL_INNER_BASELINE_OPACITY);
+    expect(shellBaselineOpacity(1)).toBe(SHELL_INNER_BASELINE_OPACITY);
+  });
+
+  it('keeps F1 and F2 at the original baseline', () => {
+    expect(shellBaselineOpacity(2)).toBe(SHELL_BASELINE_OPACITY);
+    expect(shellBaselineOpacity(3)).toBe(SHELL_BASELINE_OPACITY);
   });
 });
 

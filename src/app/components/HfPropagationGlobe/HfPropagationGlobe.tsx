@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Globe, { type GlobeMethods } from 'react-globe.gl';
 import type * as THREE from 'three';
-import type { IonosphericLayerState } from '@core/domain/hfPropagation/types.ts';
-import { buildShellMesh, type ShellDisplayOptions, updateShellFresnel } from './buildGlobeData.ts';
+import type {
+  IonosphericLayerId,
+  IonosphericLayerState,
+} from '@core/domain/hfPropagation/types.ts';
+import {
+  buildShellMesh,
+  canonicalLayerIndex,
+  type ShellDisplayOptions,
+  updateShellFresnel,
+} from './buildGlobeData.ts';
 import classes from './HfPropagationGlobe.module.css';
 
 export {
@@ -17,9 +25,20 @@ export type { ShellDisplayOptions } from './buildGlobeData.ts';
 const GLOBE_IMAGE_URL = '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
 const BACKGROUND_COLOR = '#000011';
 
+export type LayerVisibility = Record<IonosphericLayerId, boolean>;
+
+export const DEFAULT_LAYER_VISIBILITY: LayerVisibility = {
+  D: true,
+  E: true,
+  F1: true,
+  F2: true,
+};
+
 export interface HfPropagationGlobeProps {
   layers: IonosphericLayerState[];
   display?: ShellDisplayOptions;
+  /** Operator on/off per layer. Defaults all on. Physics `active` still gates whether a shell exists. */
+  visibleLayers?: LayerVisibility;
 }
 
 const DEFAULT_DISPLAY: ShellDisplayOptions = {
@@ -36,12 +55,16 @@ const DEFAULT_DISPLAY: ShellDisplayOptions = {
 export default function HfPropagationGlobe({
   layers,
   display = DEFAULT_DISPLAY,
+  visibleLayers = DEFAULT_LAYER_VISIBILITY,
 }: HfPropagationGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
   const fresnelEnabledRef = useRef(display.fresnelEnabled);
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const activeLayers = useMemo(() => layers.filter((layer) => layer.active), [layers]);
+  const visibleShells = useMemo(
+    () => layers.filter((layer) => layer.active && visibleLayers[layer.id] !== false),
+    [layers, visibleLayers],
+  );
   const { exaggerationFactor, explodeEnabled, fresnelEnabled } = display;
 
   useEffect(() => {
@@ -51,8 +74,11 @@ export default function HfPropagationGlobe({
   const shellObjectAccessor = useMemo(
     () => (d: object) => {
       const layer = d as IonosphericLayerState;
-      const index = ['D', 'E', 'F1', 'F2'].indexOf(layer.id);
-      return buildShellMesh(d, index, { exaggerationFactor, explodeEnabled, fresnelEnabled });
+      return buildShellMesh(d, canonicalLayerIndex(layer.id), {
+        exaggerationFactor,
+        explodeEnabled,
+        fresnelEnabled,
+      });
     },
     [exaggerationFactor, explodeEnabled, fresnelEnabled],
   );
@@ -107,7 +133,7 @@ export default function HfPropagationGlobe({
         showAtmosphere
         width={size.width || undefined}
         height={size.height || undefined}
-        customLayerData={activeLayers}
+        customLayerData={visibleShells}
         customThreeObject={shellObjectAccessor}
         customThreeObjectUpdate={fresnelUpdateAccessor}
       />

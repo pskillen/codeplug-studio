@@ -2,11 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { colorForLayer } from './layerColor.ts';
 
 describe('colorForLayer', () => {
-  it('returns a distinct hex colour for each ionospheric layer', () => {
-    const colors = (['D', 'E', 'F1', 'F2'] as const).map(colorForLayer);
-    expect(new Set(colors).size).toBe(4);
-    for (const color of colors) {
-      expect(color).toMatch(/^#[0-9a-f]{6}$/);
-    }
+  it('returns the shared hex colour for each ionospheric layer', () => {
+    expect(colorForLayer('D')).toBe('#5ec8ff');
+    expect(colorForLayer('E')).toBe('#3ddc97');
+    expect(colorForLayer('F1')).toBe('#f5c451');
+    expect(colorForLayer('F2')).toBe('#ff6b6b');
   });
 });
