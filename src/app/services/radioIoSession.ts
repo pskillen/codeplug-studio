@@ -131,8 +131,11 @@ export async function openRadioSessionForEgress(
     modelId?: string;
     forcePortSelection?: boolean;
     signal?: AbortSignal;
-    /** Write opens the port without read handshake; upload supplies upload handshake. */
-    purpose?: 'read' | 'write';
+    /**
+     * Write/restore open the port without read handshake; upload / restoreFromBackup
+     * supply their own handshake. Restore is not a Write-codeplug purpose.
+     */
+    purpose?: 'read' | 'write' | 'restore';
   },
 ): Promise<OpenRadioSessionResult> {
   const candidates = descriptorsForEgress(egress);
@@ -176,7 +179,7 @@ export async function openRadioSessionForEgress(
     try {
       await radio.connect(pipe, {
         signal: opts?.signal,
-        handshake: opts?.purpose === 'write' ? 'none' : 'read',
+        handshake: opts?.purpose === 'write' || opts?.purpose === 'restore' ? 'none' : 'read',
       });
       const session = createRadioSession({ descriptor, pipe, radio });
       return { session, descriptor };

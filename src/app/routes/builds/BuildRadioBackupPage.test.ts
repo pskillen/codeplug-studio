@@ -35,6 +35,10 @@ describe('BuildRadioBackupPage isolation', () => {
 
   it('labels inspect-only regions as not restore targets', () => {
     const text = readAppSource('BuildRadioBackupPage.tsx');
-    expect(text).toContain("region.restoreRole === 'restorable' ? 'Restorable' : 'Inspect only'");
+    expect(text).toContain('Inspect only');
+    expect(text).toContain("region.restoreRole === 'restorable'");
+    expect(text).toContain('toggleRestorableRegion');
+    expect(text).not.toContain('prodWriteDisabled');
+    expect(text).toContain('descriptorSupportsRestore');
   });
 });

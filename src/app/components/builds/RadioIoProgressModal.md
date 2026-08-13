@@ -2,16 +2,18 @@
 
 ## Purpose
 
-Blocking modal during Web Serial **Read** / **Write** / **Keps write** on a Direct radio FormatBuild. Shows coarse steps, a transfer progress bar (from existing `ProgressUpdate`), and a prominent keep-tab-open warning. Does not change radio adapter code.
+Blocking modal during Web Serial **Read** / **Write** / **Keps write** / **Restore** on a Direct radio FormatBuild. Shows coarse steps, a transfer progress bar (from existing `ProgressUpdate`), and a prominent keep-tab-open warning. Does not change radio adapter code.
 
 Reused as-is for satellite-keps writes (#859, Workflow A + B) — `operation: 'keps-write'` gets its own step list/title distinct from codeplug `'write'` (no "assemble channels into image" step, no write-verify concept), while sharing the same modal shell, progress bar, and cancel/navigation-guard behaviour.
+
+`operation: 'restore'` (#1140) replays a backup zip. Copy must not say “Writing codeplug.” There is no assemble step.
 
 ## Props
 
 | Prop                   | Type                                                                             | Description                                                      |
 | ---------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
 | `opened`               | `boolean`                                                                        | Show while an operation is in progress                           |
-| `operation`            | `'read' \| 'write' \| 'keps-write'`                                              | Chooses step list and title                                      |
+| `operation`            | `'read' \| 'write' \| 'keps-write' \| 'restore'`                             | Chooses step list and title                                      |
 | `phase`                | `'connecting' \| 'preparing' \| 'transfer' \| 'saving' \| 'verifying' \| 'done'` | Active coarse phase                                              |
 | `progress`             | `ProgressUpdate \| null`                                                         | Block-level progress during `transfer` (`msg`, optional `stage`) |
 | `transferStages`       | `readonly string[]`                                                              | Checklist labels accumulated from `progress.stage`               |

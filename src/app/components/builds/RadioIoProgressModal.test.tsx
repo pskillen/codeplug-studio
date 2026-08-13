@@ -273,4 +273,36 @@ describe('RadioIoProgressModal', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('shows restore title and steps that are not writing a codeplug', () => {
+    renderModal({
+      opened: true,
+      operation: 'restore',
+      phase: 'transfer',
+      progress: { cur: 1, max: 2, msg: 'Restoring channels' },
+      onCancel: vi.fn(),
+    });
+
+    expect(screen.getByText('Restoring backup to radio')).toBeInTheDocument();
+    expect(screen.getByText('Restore archive regions')).toBeInTheDocument();
+    expect(screen.queryByText(/Writing codeplug/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Assemble channels into image/i)).not.toBeInTheDocument();
+  });
+
+  it('shows restore finished copy without write-verify actions', () => {
+    const onClose = vi.fn();
+    renderModal({
+      opened: true,
+      operation: 'restore',
+      phase: 'done',
+      progress: null,
+      onCancel: vi.fn(),
+      onClose,
+    });
+
+    expect(screen.getByText('Restore finished')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Verify write' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

@@ -10,6 +10,7 @@ import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import RadioCloneSummaryView from '../../components/builds/RadioCloneSummaryView.tsx';
 import RadioIoProgressModal, {
+  type RadioIoOperation,
   type RadioIoProgressPhase,
 } from '../../components/builds/RadioIoProgressModal.tsx';
 import WebSerialExperimentalAlert from '../../components/builds/WebSerialExperimentalAlert.tsx';
@@ -24,12 +25,16 @@ import {
   openRadioSessionForEgress,
 } from '../../services/radioIoSession.ts';
 import {
+  assertRestoreIdentity,
   backupLiveRadioSession,
+  defaultRestorableRegionIds,
+  descriptorSupportsRestore,
   downloadRadioBackupZip,
   openRadioBackupZip,
+  restoreRadioBackup,
   type RadioBackupSession,
 } from '../../services/radioBackupRestore.ts';
-import { Button } from '../../components/v2/index.ts';
+import { Button, Checkbox, ConfirmModal } from '../../components/v2/index.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 
 function coverageCopy(coverage: RadioBackupSession['manifest']['coverage']): string {
@@ -52,11 +57,19 @@ export default function BuildRadioBackupPage() {
   const fileResetRef = useRef<() => void>(null);
 
   const [busy, setBusy] = useState(false);
+  const [operation, setOperation] = useState<RadioIoOperation>('read');
   const [phase, setPhase] = useState<RadioIoProgressPhase>('connecting');
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [transferStages, setTransferStages] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [backup, setBackup] = useState<RadioBackupSession | null>(null);
+  const [selectedRegionIds, setSelectedRegionIds] = useState<ReadonlySet<string>>(new Set());
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState(false);
+  const [restoreIdentity, setRestoreIdentity] = useState<{
+    label: string;
+    serial?: string;
+    firmware?: string;
+  } | null>(null);
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
 
@@ -80,6 +93,7 @@ export default function BuildRadioBackupPage() {
   const descriptors = descriptorsForEgress(radioEgress);
   const descriptor = descriptors[0];
   const serialOk = isRadioSerialSupported();
+  const restoreAvailable = descriptorSupportsRestore(descriptor);
   const warnFactoryReset = (descriptor?.modelIds ?? []).some((id) => /dm-?32/i.test(id));
 
   const attributionNames = (descriptor?.attributionIds ?? [])
@@ -95,13 +109,19 @@ export default function BuildRadioBackupPage() {
     }
   }
 
-  function beginBusy(): void {
+  function beginBusy(next: RadioIoOperation = 'read'): void {
     setError(null);
+    setOperation(next);
     setBusy(true);
     setPhase('connecting');
     setProgress(null);
     setTransferStages([]);
     abortRef.current = new AbortController();
+  }
+
+  function applyBackupSession(next: RadioBackupSession): void {
+    setBackup(next);
+    setSelectedRegionIds(new Set(defaultRestorableRegionIds(next.manifest)));
   }
 
   async function releaseSession(): Promise<void> {
@@ -124,7 +144,7 @@ export default function BuildRadioBackupPage() {
         signal: abortRef.current!.signal,
       });
       await releaseSession();
-      setBackup(result);
+      applyBackupSession(result);
       setPhase('done');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -138,6 +158,8 @@ export default function BuildRadioBackupPage() {
   function handleCancel(): void {
     abortRef.current?.abort();
     abortRef.current = null;
+    setRestoreConfirmOpen(false);
+    setRestoreIdentity(null);
     void releaseSession();
     setBusy(false);
     setProgress(null);
@@ -151,7 +173,78 @@ export default function BuildRadioBackupPage() {
 
   function handleClearSession(): void {
     setBackup(null);
+    setSelectedRegionIds(new Set());
+    setRestoreConfirmOpen(false);
+    setRestoreIdentity(null);
     setError(null);
+  }
+
+  function toggleRestorableRegion(regionId: string, checked: boolean): void {
+    setSelectedRegionIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(regionId);
+      else next.delete(regionId);
+      return next;
+    });
+  }
+
+  async function handleRestoreToRadio() {
+    if (!backup) return;
+    beginBusy('restore');
+    try {
+      const { session } = await openRadioSessionForEgress(radioEgress!, {
+        forcePortSelection: true,
+        purpose: 'restore',
+      });
+      sessionRef.current = session;
+      const identity = await assertRestoreIdentity(session, backup.manifest, {
+        signal: abortRef.current!.signal,
+      });
+      setRestoreIdentity(identity);
+      setBusy(false);
+      setProgress(null);
+      setRestoreConfirmOpen(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setRestoreConfirmOpen(false);
+      setRestoreIdentity(null);
+      await releaseSession();
+      setBusy(false);
+      setProgress(null);
+      abortRef.current = null;
+    }
+  }
+
+  function handleCancelRestoreConfirm(): void {
+    setRestoreConfirmOpen(false);
+    setRestoreIdentity(null);
+    void releaseSession();
+  }
+
+  async function handleConfirmRestore() {
+    if (!backup || !sessionRef.current) return;
+    setRestoreConfirmOpen(false);
+    beginBusy('restore');
+    setPhase('transfer');
+    try {
+      await restoreRadioBackup(
+        sessionRef.current,
+        { manifest: backup.manifest, image: backup.image },
+        {
+          regionIds: [...selectedRegionIds],
+          onProgress,
+          signal: abortRef.current!.signal,
+        },
+      );
+      await releaseSession();
+      setPhase('done');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      await releaseSession();
+      setBusy(false);
+      setProgress(null);
+      abortRef.current = null;
+    }
   }
 
   async function handleOpenFile(file: File | null) {
@@ -159,7 +252,7 @@ export default function BuildRadioBackupPage() {
     setError(null);
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
-      setBackup(openRadioBackupZip(bytes));
+      applyBackupSession(openRadioBackupZip(bytes));
     } catch (err) {
       setBackup(null);
       setError(err instanceof Error ? err.message : String(err));
@@ -231,11 +324,24 @@ export default function BuildRadioBackupPage() {
         ) : (
           <>
             <FormSection title="Restore">
-              <Button size="sm" variant="destructive" disabled>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={
+                  busy ||
+                  !serialOk ||
+                  !restoreAvailable ||
+                  selectedRegionIds.size === 0 ||
+                  restoreConfirmOpen
+                }
+                onClick={() => void handleRestoreToRadio()}
+              >
                 Restore to radio
               </Button>
               <Text size="sm" mt="sm" c="dimmed">
-                Restore not available for this radio yet. Backup and inspect are available.
+                {restoreAvailable
+                  ? 'Restore writes selected restorable regions from this zip. Inspect-only regions are never sent.'
+                  : 'Restore not available for this radio yet. Backup and inspect are available.'}
               </Text>
             </FormSection>
             <FormSection title="Archive">
@@ -302,7 +408,23 @@ export default function BuildRadioBackupPage() {
                       </Table.Td>
                       <Table.Td>{region.byteLength}</Table.Td>
                       <Table.Td>
-                        {region.restoreRole === 'restorable' ? 'Restorable' : 'Inspect only'}
+                        {region.restoreRole === 'restorable' ? (
+                          <Group gap="xs">
+                            <Checkbox
+                              checked={selectedRegionIds.has(region.id)}
+                              disabled={busy || !restoreAvailable}
+                              onCheckedChange={(checked) =>
+                                toggleRestorableRegion(region.id, checked)
+                              }
+                              aria-label={`Restore ${region.label}`}
+                            />
+                            <Text size="sm">Restorable</Text>
+                          </Group>
+                        ) : (
+                          <Text size="sm" c="dimmed">
+                            Inspect only
+                          </Text>
+                        )}
                       </Table.Td>
                     </Table.Tr>
                   ))}
@@ -315,9 +437,40 @@ export default function BuildRadioBackupPage() {
           </>
         )}
 
+        {backup ? (
+          <ConfirmModal
+            open={restoreConfirmOpen}
+            onClose={handleCancelRestoreConfirm}
+            onConfirm={() => void handleConfirmRestore()}
+            title="Confirm restore"
+            confirmLabel="Restore to this radio"
+            tone="destructive"
+          >
+            <Stack gap="sm">
+              <Text size="sm">
+                Confirm this is the same radio the backup was taken from. Serial mismatch is refused
+                before this step — confirm is not a bypass.
+              </Text>
+              <Text size="sm" fw={600}>
+                Radio: {restoreIdentity?.label ?? descriptor?.label ?? '—'}
+              </Text>
+              {restoreIdentity?.serial || backup.manifest.serial ? (
+                <Text size="sm" fw={600}>
+                  Serial: {restoreIdentity?.serial ?? backup.manifest.serial}
+                </Text>
+              ) : (
+                <Text size="sm" fw={600}>
+                  {restoreIdentity?.firmware || backup.manifest.firmware
+                    ? `Firmware: ${restoreIdentity?.firmware ?? backup.manifest.firmware}`
+                    : `Backup: ${backup.manifest.descriptorLabel}`}
+                </Text>
+              )}
+            </Stack>
+          </ConfirmModal>
+        ) : null}
         <RadioIoProgressModal
           opened={busy}
-          operation="read"
+          operation={operation}
           phase={phase}
           progress={progress}
           transferStages={transferStages}
