@@ -69,7 +69,7 @@ import {
   type AtD890WriteStagingSnapshot,
 } from './writeMemoryVerify.ts';
 import { assertAtD890TransmitAddress } from './writableExtents.ts';
-import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
+import { restoreAtD890FromBackup, type AtD890RestoreArchive } from './restoreFromBackup.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
@@ -734,6 +734,28 @@ export class AtD890uvProtocol implements CloneImageRadio {
   readFirmware(image: MemoryMap): string | undefined {
     void image;
     return this.cache?.firmware;
+  }
+
+  async restoreFromBackup(
+    archive: AtD890RestoreArchive,
+    opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
+    if (!this.pipe) {
+      throw new RadioProtocolError('AT-D890UV not connected');
+    }
+    if (!this.programming) {
+      await atD890EnterProgram(this.pipe, opts.signal);
+      this.programming = true;
+    }
+    try {
+      await restoreAtD890FromBackup(this.pipe, archive, {
+        ...opts,
+        readBlockSize: this.readBlockSize,
+      });
+    } catch (err) {
+      this.abandonProgramMode();
+      throw err;
+    }
   }
 }
 

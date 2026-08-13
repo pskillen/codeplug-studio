@@ -155,7 +155,6 @@ export interface CloneImageRadio {
   /**
    * Replay restorable backup regions onto the live pipe. Missing → Backup/Restore
    * inspect only. Must not call assemble / prepareRadioWriteImage.
-   * No adapter implements this yet (#1140 plumbing).
    */
   restoreFromBackup?(
     archive: {
