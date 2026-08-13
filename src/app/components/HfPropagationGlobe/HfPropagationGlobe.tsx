@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Globe from 'react-globe.gl';
 import * as THREE from 'three';
+import { colorForLayer } from '@core/domain/hfPropagation/layerColor.ts';
+import type { IonosphericLayerState } from '@core/domain/hfPropagation/types.ts';
 import { altitudeKmToGlobeRadiusUnits } from '../SatelliteGlobe/globeAltitude.ts';
 import classes from './HfPropagationGlobe.module.css';
 
@@ -16,38 +18,32 @@ const BACKGROUND_COLOR = '#000011';
  */
 export const GLOBE_RADIUS_UNITS = 100;
 
-export interface HardcodedShell {
-  id: 'D' | 'E' | 'F1' | 'F2';
-  altitudeMinKm: number;
-  altitudeMaxKm: number;
-  color: string;
+export interface HfPropagationGlobeProps {
+  layers: IonosphericLayerState[];
 }
-
-// Hard-coded per background.md's altitude table — replaced by real IonosphericLayerState in #1165.
-const HARDCODED_SHELLS: HardcodedShell[] = [
-  { id: 'D', altitudeMinKm: 60, altitudeMaxKm: 90, color: '#4d7cff' },
-  { id: 'E', altitudeMinKm: 90, altitudeMaxKm: 150, color: '#3ddc97' },
-  { id: 'F1', altitudeMinKm: 150, altitudeMaxKm: 250, color: '#f5c451' },
-  { id: 'F2', altitudeMinKm: 250, altitudeMaxKm: 400, color: '#ff6b6b' },
-];
 
 /**
  * Converts a shell's mid-altitude (km above the surface) to a `customThreeObject` scene-unit
  * radius — separately exported and unit-testable (no `THREE.Mesh`/`SphereGeometry`
- * instantiation needed) so #1165 can reuse this unchanged when `HARDCODED_SHELLS` is replaced
- * by a `layers: IonosphericLayerState[]` prop.
+ * instantiation needed).
  */
 export function shellRadiusUnits(midAltitudeKm: number): number {
   return (1 + altitudeKmToGlobeRadiusUnits(midAltitudeKm)) * GLOBE_RADIUS_UNITS;
 }
 
-function buildShellMesh(shell: object): THREE.Object3D {
-  const s = shell as HardcodedShell;
+/**
+ * Builds one translucent ionospheric shell mesh. Exported so later display-control work
+ * (exaggeration / explode / Fresnel) can wrap this without duplicating geometry construction.
+ * Typed as `object` because `react-globe.gl`'s `customThreeObject` callback receives layer
+ * data as an untyped object.
+ */
+export function buildShellMesh(layer: object): THREE.Object3D {
+  const s = layer as IonosphericLayerState;
   const midAltitudeKm = (s.altitudeMinKm + s.altitudeMaxKm) / 2;
   const radius = shellRadiusUnits(midAltitudeKm);
   const geometry = new THREE.SphereGeometry(radius, 48, 48);
   const material = new THREE.MeshBasicMaterial({
-    color: s.color,
+    color: colorForLayer(s.id),
     transparent: true,
     opacity: 0.12,
     side: THREE.DoubleSide,
@@ -57,14 +53,14 @@ function buildShellMesh(shell: object): THREE.Object3D {
 }
 
 /**
- * 3D propagation globe — renders the ionospheric shells (D/E/F1/F2) as concentric translucent
- * spheres via `react-globe.gl`'s `customThreeObject` extension point. Shells are hard-coded
- * for this rendering spike; real day/night-aware layer state lands in #1165. No ray paths or
- * transmitter marker yet (#1170).
+ * 3D propagation globe — renders active ionospheric shells (D/E/F1/F2) as concentric
+ * translucent spheres via `react-globe.gl`'s `customThreeObject` extension point. No ray
+ * paths or transmitter marker yet (#1170).
  */
-export default function HfPropagationGlobe() {
+export default function HfPropagationGlobe({ layers }: HfPropagationGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
+  const activeLayers = layers.filter((layer) => layer.active);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -86,7 +82,7 @@ export default function HfPropagationGlobe() {
         showAtmosphere
         width={size.width || undefined}
         height={size.height || undefined}
-        customLayerData={HARDCODED_SHELLS}
+        customLayerData={activeLayers}
         customThreeObject={buildShellMesh}
       />
     </div>

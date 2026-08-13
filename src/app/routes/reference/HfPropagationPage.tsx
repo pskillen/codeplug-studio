@@ -1,5 +1,7 @@
 import { Input, Select, Slider, Stack, Text } from '@mantine/core';
 import { lazy, Suspense, useMemo, useState } from 'react';
+import { computeIonosphericLayers } from '@core/domain/hfPropagation/ionosphericProfile.ts';
+import { criticalFrequencyMhz } from '@core/domain/hfPropagation/mufCalculation.ts';
 import type {
   AntennaPatternFamily,
   SolarActivityPreset,
@@ -83,11 +85,20 @@ function fieldsShownForFamily(family: AntennaPatternFamily) {
   };
 }
 
+/** Placeholder transmitter site until the slice-plane picker (#1167) supplies lat/lon. */
+const DEFAULT_TX_LAT_DEG = 0;
+const DEFAULT_TX_LON_DEG = 0;
+
 /** "YYYY-MM-DDTHH:mm" in local time, suitable for an `<input type="datetime-local">` default. */
 function nowForDateTimeInput(): string {
   const now = new Date();
   const offsetMs = now.getTimezoneOffset() * 60_000;
   return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function dateTimeLocalToMs(value: string): number {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? Date.now() : parsed.getTime();
 }
 
 export default function HfPropagationPage() {
@@ -112,6 +123,21 @@ export default function HfPropagationPage() {
   );
   const shownFields = fieldsShownForFamily(antennaFamily);
 
+  const layers = useMemo(
+    () =>
+      computeIonosphericLayers(
+        DEFAULT_TX_LAT_DEG,
+        DEFAULT_TX_LON_DEG,
+        dateTimeLocalToMs(dateTime),
+        solarPreset,
+      ),
+    [dateTime, solarPreset],
+  );
+  const f2Layer = layers.find((layer) => layer.id === 'F2');
+  const criticalFrequencyLabel = f2Layer
+    ? `${criticalFrequencyMhz(f2Layer.peakElectronDensity).toFixed(1)} MHz`
+    : '—';
+
   return (
     <DesignSystemV2Provider>
       <div className={classes.page}>
@@ -134,7 +160,7 @@ export default function HfPropagationPage() {
                   </div>
                 }
               >
-                <HfPropagationGlobe />
+                <HfPropagationGlobe layers={layers} />
               </Suspense>
             ) : (
               <div className={classes.viewportPlaceholder}>
@@ -252,7 +278,7 @@ export default function HfPropagationPage() {
 
             <Panel title="Reading">
               <Stack gap="lg">
-                <FormField label="Critical frequency (fc)" value="—" />
+                <FormField label="Critical frequency (fc)" value={criticalFrequencyLabel} />
                 <FormField label="MUF" value="—" />
                 <FormField label="Mode" value="—" />
               </Stack>
