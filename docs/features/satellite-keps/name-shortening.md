@@ -62,14 +62,14 @@ Auto-generated encoded names stay unique within the write set. **Manual override
 
 On **Build → Satellite keps → Preview satellites to write**:
 
-- Expand a spacecraft row: D890 shows each transmitter; OpenGD77 shows Freq 1 / 2 / 3.
+- Expand a spacecraft row: D890 shows each transmitter; OpenGD77 shows FM / APRS / beacon slots.
 - **D890:** click **Edit** beside the encoded name on a **transmitter** row.
-- **OpenGD77:** click **Edit** on the **parent** spacecraft row (one name for all three radio slots). Child rows are **Freq 1 / 2 / 3**; encoded name is parent-only.
+- **OpenGD77:** click **Edit** on the **parent** spacecraft row (one name for all three radio slots). Child rows are **FM / APRS / beacon slots**; encoded name is parent-only.
 - **Familiar** / **OSCAR** (when present) fill the draft only — they do not persist until **Apply**.
 - **Reset** clears the override immediately so the name tracks live generation again, and empties the draft (placeholder shows Familiar).
 - Manual edit + Apply persists a custom full encoded name.
 - Duplicate encoded names: D890 warns across transmitters; OpenGD77 warns only when **two spacecraft** shorten to the same 8 characters (the three slot rows of one satellite are not a collision).
-- OpenGD77 child rows: **Radio** (eligible candidates; Select when a slot is contested), **Slot** (Freq 1 FM / Freq 2 APRS / Freq 3 Beacon), then mode and frequencies of the chosen candidate. `satelliteBankSlot` is pinned on the chosen transmitter for this build.
+- OpenGD77 child rows: **Radio** (eligible candidates, or `(none)`; Select when a slot is contested), **Slot** (`FM slot` / `APRS slot` / `Beacon slot`), then mode and frequencies of the chosen candidate. `satelliteBankSlot` is pinned on the chosen transmitter for this build.
 
 ---
 

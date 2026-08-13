@@ -268,7 +268,7 @@ describe('previewSatelliteWriteRecords', () => {
       {
         satelliteId: 'sat-1',
         transmitterId: 'tx-1',
-        reason: 'Not selected for Freq 1 (FM) on this build.',
+        reason: 'Not selected for FM slot on this build.',
       },
     ]);
   });

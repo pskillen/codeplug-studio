@@ -406,10 +406,11 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
       await waitFor(() =>
         expect(screen.getByRole('columnheader', { name: 'Slot' })).toBeInTheDocument(),
       );
-      expect(screen.getByText('Freq 1 (FM)')).toBeInTheDocument();
-      expect(screen.getByText('Freq 2 (APRS)')).toBeInTheDocument();
-      expect(screen.getByText('Freq 3 (Beacon)')).toBeInTheDocument();
+      expect(screen.getByText('FM slot')).toBeInTheDocument();
+      expect(screen.getByText('APRS slot')).toBeInTheDocument();
+      expect(screen.getByText('Beacon slot')).toBeInTheDocument();
       expect(screen.getByRole('columnheader', { name: 'Radio' })).toBeInTheDocument();
+      expect(screen.getAllByText('(none)').length).toBeGreaterThanOrEqual(2);
     } finally {
       kepsPreviewStub = undefined;
     }
@@ -431,7 +432,7 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
       renderPage('radio-io-opengd77-1701');
       expect(
         await screen.findByRole('combobox', {
-          name: 'Choose transmitter for Freq 1 (FM)',
+          name: 'Choose transmitter for FM slot',
         }),
       ).toBeInTheDocument();
     } finally {

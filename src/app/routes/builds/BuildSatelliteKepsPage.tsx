@@ -358,7 +358,7 @@ export default function BuildSatelliteKepsPage() {
         if (isPreviewParentRow(r)) return r.satelliteName;
         if (!spacecraftNames) return r.transmitterLabel;
         const candidates = r.slotCandidates ?? [];
-        if (candidates.length === 0) return '—';
+        if (candidates.length === 0) return '(none)';
         if (candidates.length === 1) return openGd77CandidateLabel(candidates[0]!);
         const slot = r.slot;
         if (slot == null) return r.transmitterLabel || '—';
@@ -581,7 +581,7 @@ export default function BuildSatelliteKepsPage() {
             Exactly what a Write Keps would send right now, from the library&apos;s current enabled
             satellites — no session or write required. Expand a spacecraft to see each packed radio
             {spacecraftNames
-              ? ' slot (Freq 1 / 2 / 3). Pick a candidate in the Radio column when a slot has more than one.'
+              ? ' slot (FM, APRS, or beacon). Pick a candidate in the Radio column when a slot has more than one.'
               : ' (transmitter) row.'}{' '}
             Use the edit control beside an encoded name to pin Familiar or OSCAR suggestions, or
             type a custom name (≤8 characters).
