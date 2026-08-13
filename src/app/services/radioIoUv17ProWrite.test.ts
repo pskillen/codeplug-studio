@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
-import { createRadioCloneHydrationBag, radioCloneImageBytes } from '@core/models/radioCloneHydration.ts';
+import {
+  createRadioCloneHydrationBag,
+  radioCloneImageBytes,
+} from '@core/models/radioCloneHydration.ts';
 import { memoryMapFromBytes } from '@integrations/radio-io/kit/memoryMap.ts';
 import { UV5R_MINI_DESCRIPTOR } from '@integrations/radio-io/radios/uv5r-mini/descriptor.ts';
 import { UV5R_MINI_MEM_TOTAL } from '@integrations/radio-io/radios/uv5r-mini/constants.ts';
@@ -20,18 +23,20 @@ describe('UV-17Pro family write pre-read', () => {
     priorBytes.fill(0xff);
     priorBytes[0x8040] = 0x42;
 
-    const download = vi.fn(async (opts?: { progressStage?: string; onProgress?: (p: {
-      stage?: string;
-    }) => void }) => {
-      opts?.onProgress?.({ stage: opts.progressStage });
-      return memoryMapFromBytes(priorBytes);
-    });
-    const encodeChannels = vi.fn((prior: ReturnType<typeof memoryMapFromBytes>, channels: unknown[]) => {
-      const next = memoryMapFromBytes(prior.bytes);
-      next.bytes[0] = 0xaa;
-      void channels;
-      return next;
-    });
+    const download = vi.fn(
+      async (opts?: { progressStage?: string; onProgress?: (p: { stage?: string }) => void }) => {
+        opts?.onProgress?.({ stage: opts.progressStage });
+        return memoryMapFromBytes(priorBytes);
+      },
+    );
+    const encodeChannels = vi.fn(
+      (prior: ReturnType<typeof memoryMapFromBytes>, channels: unknown[]) => {
+        const next = memoryMapFromBytes(prior.bytes);
+        next.bytes[0] = 0xaa;
+        void channels;
+        return next;
+      },
+    );
     const upload = vi.fn(async () => undefined);
 
     const radio = {
@@ -59,12 +64,9 @@ describe('UV-17Pro family write pre-read', () => {
     const { egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
     const bagImage = memoryMapFromBytes(radioCloneImageBytes(hydration));
 
-    await uploadPreparedRadioWrite(
-      session,
-      { ...egress, hydration },
-      bagImage,
-      { channels: [{ slotIndex: 1, empty: false, wireName: 'LIVE' }] },
-    );
+    await uploadPreparedRadioWrite(session, { ...egress, hydration }, bagImage, {
+      channels: [{ slotIndex: 1, empty: false, wireName: 'LIVE' }],
+    });
 
     expect(download).toHaveBeenCalledWith(
       expect.objectContaining({ progressStage: 'Pre-write read' }),
