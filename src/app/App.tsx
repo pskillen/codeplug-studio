@@ -34,6 +34,7 @@ import SatelliteDetailPage from './routes/tracking/SatelliteDetailPage.tsx';
 import BandsReferencePage from './routes/reference/BandsReferencePage.tsx';
 import MaidenheadReferencePage from './routes/reference/MaidenheadReferencePage.tsx';
 import ReferenceIndexPage from './routes/reference/ReferenceIndexPage.tsx';
+import HfPropagationPage from './routes/reference/HfPropagationPage.tsx';
 import SettingsPage from './routes/SettingsPage.tsx';
 import HelpPage from './routes/HelpPage.tsx';
 import StyleguideLayout from './routes/styleguide/StyleguideLayout.tsx';
@@ -98,6 +99,7 @@ export const appRouter = createBrowserRouter([
       { path: '/reference', element: <ReferenceIndexPage /> },
       { path: '/reference/maidenhead', element: <MaidenheadReferencePage /> },
       { path: '/reference/bands', element: <BandsReferencePage /> },
+      { path: '/reference/rf-propagation', element: <HfPropagationPage /> },
       {
         path: '/styleguide',
         element: <StyleguideLayout />,
