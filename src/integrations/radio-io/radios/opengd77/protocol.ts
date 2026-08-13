@@ -5,6 +5,7 @@
  */
 
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
+import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
 import {
@@ -61,6 +62,7 @@ import { openGd77KeptRegionLength, openGd77KeptRegions } from './writeVerifySupp
 import { encodeOpenGd77WriteImageFromPrior } from './hydration.ts';
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
+import { intendedOpenGd77RestoreImage } from './restoreFromBackup.ts';
 
 /** Packed FirmwareInfo size (qdmr FirmwareInfo). */
 export const OPENGD77_FIRMWARE_INFO_SIZE = 46;
@@ -405,6 +407,60 @@ export class OpenGd77Protocol implements CloneImageRadio {
     this.lastUploadStaging = captureWriteVerifyStaging(
       sectors.map((sector) => ({ address: sector.sectorAbs, data: sector.payload })),
     );
+
+    await pipe.write(
+      makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),
+    );
+    try {
+      parseCommandAck(await pipe.readExact(1, OPENGD77_IO_TIMEOUT_MS));
+    } catch {
+      /* reboot may drop the port */
+    }
+
+    this.priorImage = openUv380ImageFromBytes(intended.bytes);
+  }
+
+  /**
+   * Replay archive FLASH spans vs a blank prior, then SAVE_REBOOT.
+   * Does not download live FLASH, arm a write projection, or encode a build.
+   */
+  async restoreFromBackup(
+    archive: { manifest: RadioBackupManifestV1; image: MemoryMap },
+    opts: { regionIds: readonly string[]; onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
+    const pipe = this.pipe;
+    if (!pipe) throw new RadioProtocolError('OpenGD77 restore: not connected');
+
+    this.pendingWriteProjection = null;
+
+    try {
+      await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
+    } catch {
+      /* may already be in CPS */
+    }
+
+    const intended = intendedOpenGd77RestoreImage(archive, opts.regionIds);
+    const sectors = collectDirtySectors(createOpenUv380Image(), intended);
+    this.lastDirtySectorCount = sectors.length;
+
+    reportProgress(opts.onProgress, {
+      cur: 0,
+      max: Math.max(sectors.length, 1),
+      msg: 'Restoring backup FLASH…',
+      stage: 'Restore',
+    });
+
+    for (let i = 0; i < sectors.length; i++) {
+      throwIfAborted(opts.signal);
+      const sector = sectors[i]!;
+      await writeFlashSector(pipe, sector.sectorAbs, sector.payload, opts.signal);
+      reportProgress(opts.onProgress, {
+        cur: i + 1,
+        max: Math.max(sectors.length, 1),
+        msg: `Restoring FLASH sector 0x${sector.sectorAbs.toString(16)}`,
+        stage: 'Restore',
+      });
+    }
 
     await pipe.write(
       makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),

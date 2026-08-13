@@ -25,4 +25,8 @@ export {
   openGd77BackupRestoreRole,
   type OpenGd77BackupFlashSpan,
 } from './backupRestoreRoles.ts';
+export {
+  intendedOpenGd77RestoreImage,
+  listOpenGd77RestoreDirtySectors,
+} from './restoreFromBackup.ts';
 export { OPENGD77_MD9600_DESCRIPTOR } from './md9600/descriptor.ts';

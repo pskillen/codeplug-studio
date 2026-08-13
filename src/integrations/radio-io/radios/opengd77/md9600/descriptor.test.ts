@@ -31,5 +31,6 @@ describe('OpenGD77 MD-9600 descriptor / registry', () => {
     expect(typeof radio.connect).toBe('function');
     expect(typeof radio.download).toBe('function');
     expect(typeof radio.upload).toBe('function');
+    expect(typeof radio.restoreFromBackup).toBe('function');
   });
 });
