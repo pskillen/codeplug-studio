@@ -5,13 +5,7 @@
 import { Link } from 'react-router-dom';
 import { Anchor, Group, Stack, Text } from '@mantine/core';
 import type { DigitalContactsWriteSource } from '@core/domain/digitalIdDirectoryProjection.ts';
-import {
-  Button,
-  Checkbox,
-  FormField,
-  ModalShell,
-  SegmentedControl,
-} from '../v2/index.ts';
+import { Button, Checkbox, FormField, ModalShell, SegmentedControl } from '../v2/index.ts';
 
 export interface WriteRadioModalProps {
   open: boolean;
@@ -75,12 +69,7 @@ export default function WriteRadioModal({
               satellite keps are a separate Write this.
             </Text>
           </Stack>
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={writeDisabled}
-            onClick={onWriteCodeplug}
-          >
+          <Button variant="primary" size="sm" disabled={writeDisabled} onClick={onWriteCodeplug}>
             Write codeplug
           </Button>
         </Group>

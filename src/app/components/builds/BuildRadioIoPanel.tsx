@@ -400,11 +400,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
 
   async function guardDirectoryThenWrite(mode: DualBankWriteMode | SingleBankWriteMode) {
     setWriteRadioOpen(false);
-    if (
-      supportsDigitalContacts &&
-      writeSourceIncludesDirectory(contactSource) &&
-      activeProjectId
-    ) {
+    if (supportsDigitalContacts && writeSourceIncludesDirectory(contactSource) && activeProjectId) {
       const count = await persistence.countDigitalIdDirectoryEntries(activeProjectId);
       if (count === 0) {
         pendingEmptyDirectoryWriteRef.current = () => {

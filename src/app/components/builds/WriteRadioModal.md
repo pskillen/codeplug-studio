@@ -6,24 +6,24 @@ Build → Export **Write radio** popup: always **Write codeplug**, plus radio-ap
 
 ## Props
 
-| Prop | Type | Description |
-| --- | --- | --- |
-| `open` | `boolean` | Modal visibility |
-| `onClose` | `() => void` | Dismiss |
-| `buildId` | `string` | For Satellite keps tab link |
-| `serialOk` | `boolean` | Web Serial / USB-serial available |
-| `busy` | `boolean` | Transfer in progress |
-| `writeHidden` | `boolean` | Prod write gate |
-| `supportsDigitalContacts` | `boolean` | Dual-bank trait or D890 single-bank |
-| `sharedContactBankNote` | `boolean` | OpenGD77 shared Contacts bank caveat |
-| `supportsKeps` | `boolean` | Registered keps write adapter |
-| `contactSource` | `DigitalContactsWriteSource` | `none` \| `library` \| `directory` \| `both` |
-| `onContactSourceChange` | `(source) => void` | Source picker |
-| `kepsSelected` | `boolean` | Keps extra |
-| `onKepsSelectedChange` | `(selected) => void` | Keps checkbox |
-| `onWriteCodeplug` | `() => void` | Full codeplug write |
-| `onWriteContacts` | `() => void` | Contacts-bank-only write |
-| `onWriteKeps` | `() => void` | Keps-only write |
+| Prop                      | Type                         | Description                                  |
+| ------------------------- | ---------------------------- | -------------------------------------------- |
+| `open`                    | `boolean`                    | Modal visibility                             |
+| `onClose`                 | `() => void`                 | Dismiss                                      |
+| `buildId`                 | `string`                     | For Satellite keps tab link                  |
+| `serialOk`                | `boolean`                    | Web Serial / USB-serial available            |
+| `busy`                    | `boolean`                    | Transfer in progress                         |
+| `writeHidden`             | `boolean`                    | Prod write gate                              |
+| `supportsDigitalContacts` | `boolean`                    | Dual-bank trait or D890 single-bank          |
+| `sharedContactBankNote`   | `boolean`                    | OpenGD77 shared Contacts bank caveat         |
+| `supportsKeps`            | `boolean`                    | Registered keps write adapter                |
+| `contactSource`           | `DigitalContactsWriteSource` | `none` \| `library` \| `directory` \| `both` |
+| `onContactSourceChange`   | `(source) => void`           | Source picker                                |
+| `kepsSelected`            | `boolean`                    | Keps extra                                   |
+| `onKepsSelectedChange`    | `(selected) => void`         | Keps checkbox                                |
+| `onWriteCodeplug`         | `() => void`                 | Full codeplug write                          |
+| `onWriteContacts`         | `() => void`                 | Contacts-bank-only write                     |
+| `onWriteKeps`             | `() => void`                 | Keps-only write                              |
 
 ## Usage
 
