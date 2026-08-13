@@ -1,10 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
-import {
-  createRadioCloneHydrationBag,
-  radioCloneImageBytes,
-} from '@core/models/radioCloneHydration.ts';
 import { memoryMapFromBytes } from '@integrations/radio-io/kit/memoryMap.ts';
 import { UV5R_MINI_DESCRIPTOR } from '@integrations/radio-io/radios/uv5r-mini/descriptor.ts';
 import { UV5R_MINI_MEM_TOTAL } from '@integrations/radio-io/radios/uv5r-mini/constants.ts';
@@ -27,7 +23,12 @@ function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
   };
 }
 
-describe('UV-17Pro family write pre-read', () => {
+describe('UV-17Pro family write without persisted stash', () => {
+  it('sets hydrationRequiredForWrite false on both family descriptors', () => {
+    expect(UV5R_MINI_DESCRIPTOR.hydrationRequiredForWrite).toBe(false);
+    expect(UV21_PRO_V2_DESCRIPTOR.hydrationRequiredForWrite).toBe(false);
+  });
+
   it('prepareRadioWriteImage succeeds without egress hydration bag', async () => {
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
     const ch = {
@@ -50,11 +51,6 @@ describe('UV-17Pro family write pre-read', () => {
     );
     expect(prepared.image).toBeUndefined();
     expect(prepared.channels.some((row) => row.wireName === 'TEST')).toBe(true);
-  });
-
-  it('descriptors still require hydration stash until phase 07 flags', () => {
-    expect(UV5R_MINI_DESCRIPTOR.hydrationRequiredForWrite).toBe(true);
-    expect(UV21_PRO_V2_DESCRIPTOR.hydrationRequiredForWrite).toBe(true);
   });
 
   it('uploadPreparedRadioWrite pre-reads radio before overlay upload (UV-5R Mini)', async () => {
@@ -96,12 +92,7 @@ describe('UV-17Pro family write pre-read', () => {
       radio,
     };
 
-    const hydration = createRadioCloneHydrationBag({
-      radioModelId: 'UV5R-Mini',
-      imageBytes: new Uint8Array(UV5R_MINI_MEM_TOTAL).fill(0x11),
-    });
     const { egress } = newRadioBuildForProfile('p1', 'radio-io-uv5r-mini');
-    const bagImage = memoryMapFromBytes(radioCloneImageBytes(hydration));
 
     const liveChannel: RadioChannelDto = {
       slotIndex: 1,
@@ -115,7 +106,7 @@ describe('UV-17Pro family write pre-read', () => {
       bandwidth: 'FM',
     };
 
-    await uploadPreparedRadioWrite(session, { ...egress, hydration }, bagImage, {
+    await uploadPreparedRadioWrite(session, egress, undefined, {
       channels: [liveChannel],
     });
 

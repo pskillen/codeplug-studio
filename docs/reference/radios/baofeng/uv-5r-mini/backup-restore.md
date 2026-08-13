@@ -15,7 +15,7 @@ Code table: `src/integrations/radio-io/radios/uv17pro-family/backupRestoreRoles.
 | **Restorable**   | `mem-0` … `mem-2` — packed offsets of radio `0x0000` / `0x9000` / `0xA000`. Includes Write-kept VFO / settings / ANI that live inside those spans                                                       |
 | **Inspect-only** | None on this map. Studio has **no** isolated calibration or LocalInfo table. Residual: if the vendor hid cal inside these spans, Restore will send those bytes — do **not** invent a cal offset to skip |
 
-Write-codeplug still requires **project / session stash** (`hydrationRequiredForWrite: true`) and overlays modelled channels onto that image. Restore **does not** use that stash; it replays zip MEM bins only.
+Write-codeplug overlays modelled channels onto an **in-session** radio read (`hydrationRequiredForWrite: false`). Restore **does not** use that stash; it replays zip MEM bins only.
 
 ## Restore path
 

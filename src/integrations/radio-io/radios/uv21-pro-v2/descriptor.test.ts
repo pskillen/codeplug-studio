@@ -14,7 +14,7 @@ describe('UV-21Pro V2 descriptor / registry', () => {
     expect(list.some((d) => d.modelIds.includes(UV21_PRO_V2_MODEL_ID))).toBe(true);
     const d = getRadioDescriptor(UV21_PRO_V2_MODEL_ID);
     expect(d?.writeStrategy).toBe('full-image');
-    expect(d?.hydrationRequiredForWrite).toBe(true);
+    expect(d?.hydrationRequiredForWrite).toBe(false);
     expect(d?.attributionIds).toEqual(['chirp']);
     expect(d?.baudRate).toBe(115200);
     expect(d?.baudRateFallback).toBeUndefined();

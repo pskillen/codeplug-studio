@@ -2,10 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { createRadioCloneHydrationBag } from '@core/models/radioCloneHydration.ts';
+import { UV5R_MINI_DESCRIPTOR } from '@integrations/radio-io/radios/uv5r-mini/descriptor.ts';
 import {
   extractUv5rMiniHydration,
   mergeChannelsIntoUv5rMiniHydration,
 } from '@integrations/radio-io/radios/uv5r-mini/hydration.ts';
+import { Uv17ProProtocol } from '@integrations/radio-io/radios/uv17pro-family/protocol.ts';
+import { memoryMapFromBytes } from '@integrations/radio-io/kit/memoryMap.ts';
 import { UV5R_MINI_MEM_TOTAL } from '@integrations/radio-io/radios/uv5r-mini/constants.ts';
 import type {
   CloneImageRadio,
@@ -96,13 +99,7 @@ describe('radioIoSession helpers', () => {
     expect(buildHasRadioCloneHydration(egress)).toBe(false);
   });
 
-  it('prepares write image without a serial session', async () => {
-    const imageBytes = new Uint8Array(UV5R_MINI_MEM_TOTAL);
-    imageBytes.fill(0xff);
-    const hydration = createRadioCloneHydrationBag({
-      radioModelId: 'UV5R-Mini',
-      imageBytes,
-    });
+  it('prepares UV-5R Mini write without persisted hydration bag', async () => {
     const ch = {
       ...newChannel('p1', 'Test'),
       id: 'ch-1',
@@ -114,15 +111,16 @@ describe('radioIoSession helpers', () => {
       ],
     };
     const { build, egress } = uv5rMiniRadioIo();
-    const { image } = await prepareRadioWriteImage(
+    const { image, channels } = await prepareRadioWriteImage(
       {
         ...build,
         channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
       },
-      { ...egress, hydration },
+      egress,
       emptyLibrary([ch]),
     );
-    expect(image?.size).toBe(UV5R_MINI_MEM_TOTAL);
+    expect(image).toBeUndefined();
+    expect(channels.length).toBeGreaterThan(0);
   });
 
   it('prepares OpenGD77 DM-1701 write without persisted hydration bag', async () => {
@@ -186,27 +184,32 @@ describe('radioIoSession helpers', () => {
     vi.restoreAllMocks();
   });
 
-  it('writes via assemble when hydration present', async () => {
-    const imageBytes = new Uint8Array(UV5R_MINI_MEM_TOTAL);
-    imageBytes.fill(0xff);
-    const hydration = createRadioCloneHydrationBag({
-      radioModelId: 'UV5R-Mini',
-      imageBytes,
-    });
+  it('writes via in-session pre-read when no persisted hydration bag', async () => {
+    const priorBytes = new Uint8Array(UV5R_MINI_MEM_TOTAL);
+    priorBytes.fill(0xff);
+    const download = vi.fn(async () => memoryMapFromBytes(priorBytes));
     const upload = vi.fn(async (_img: MemoryMap) => {
       void _img;
     });
-    const radio: CloneImageRadio = {
+    const encodeChannels = vi.fn((prior: MemoryMap, _channels: unknown[]) => {
+      const next = memoryMapFromBytes(prior.bytes);
+      next.bytes[0] = 0xaa;
+      void _channels;
+      return next;
+    });
+    const radio = {
       connect: vi.fn(),
       disconnect: vi.fn(),
-      download: vi.fn(),
+      download,
       upload,
       decodeChannels: () => [],
-      encodeChannels: (img) => img,
+      encodeChannels,
       readFirmware: () => undefined,
-    };
+    } as unknown as Uv17ProProtocol;
+    Object.setPrototypeOf(radio, Uv17ProProtocol.prototype);
+
     const session: RadioSession = {
-      descriptor: miniDescriptor(radio),
+      descriptor: UV5R_MINI_DESCRIPTOR,
       pipe: { write: vi.fn(), readExact: vi.fn(), close: vi.fn() },
       radio,
     };
@@ -227,13 +230,14 @@ describe('radioIoSession helpers', () => {
         ...build,
         channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
       },
-      { ...egress, hydration },
+      egress,
       emptyLibrary([ch]),
     );
+    expect(download).toHaveBeenCalledTimes(1);
     expect(upload).toHaveBeenCalledTimes(1);
     const uploaded = upload.mock.calls[0]![0] as MemoryMap;
     expect(uploaded.size).toBe(UV5R_MINI_MEM_TOTAL);
-    expect(uploaded.bytes[0]).not.toBe(0xff);
+    expect(uploaded.bytes[0]).toBe(0xaa);
   });
 
   it('closes the serial pipe when connect/handshake fails', async () => {

@@ -31,7 +31,7 @@ export const UV21_PRO_V2_DESCRIPTOR: RadioDescriptor = {
   attributionIds: ['chirp'],
   compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv21' }],
   writeStrategy: 'full-image',
-  hydrationRequiredForWrite: true,
+  hydrationRequiredForWrite: false,
   baudRate: UV21_PRO_V2_LAYOUT.baudRate,
   hydration: {
     extractHydration: (image, meta) => extractUv17ProHydration(UV21_PRO_V2_LAYOUT, image, meta),

@@ -96,23 +96,6 @@ export function egressHasRadioCloneHydration(egress: EgressPath): boolean {
   return isRadioCloneHydrationBag(egress.hydration);
 }
 
-/** UV-17Pro family Write overlays in-session download (phase 06+); no persisted stash. */
-const UV17PRO_IN_SESSION_WRITE_PROFILES = new Set(['radio-io-uv5r-mini', 'radio-io-uv21']);
-
-function egressUsesInSessionUv17ProWrite(egress: EgressPath): boolean {
-  return UV17PRO_IN_SESSION_WRITE_PROFILES.has(egress.profileId);
-}
-
-function writeOverlayUsesInSessionPrior(
-  descriptor: RadioDescriptor | undefined,
-  egress: EgressPath,
-): boolean {
-  return Boolean(
-    descriptor &&
-      (!descriptor.hydrationRequiredForWrite || egressUsesInSessionUv17ProWrite(egress)),
-  );
-}
-
 /** @deprecated Prefer {@link egressHasRadioCloneHydration}. */
 export const buildHasRadioCloneHydration = egressHasRadioCloneHydration;
 
@@ -311,11 +294,7 @@ export async function prepareRadioWriteImage(
   }
 
   const hydration = getRadioCloneHydration(egress);
-  if (
-    descriptor?.hydrationRequiredForWrite &&
-    !hydration &&
-    !egressUsesInSessionUv17ProWrite(egress)
-  ) {
+  if (descriptor?.hydrationRequiredForWrite && !hydration) {
     throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
   }
 
@@ -415,7 +394,7 @@ export async function prepareRadioWriteImage(
       build.exportSettings,
     ).deciseconds;
   }
-  if (descriptor && writeOverlayUsesInSessionPrior(descriptor, egress)) {
+  if (descriptor && !descriptor.hydrationRequiredForWrite) {
     return {
       warnings,
       organisation,
@@ -545,20 +524,16 @@ export async function writeBuildToRadio(
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
 ): Promise<{ warnings: string[] }> {
   const hydration = getRadioCloneHydration(egress);
-  if (
-    session.descriptor.hydrationRequiredForWrite &&
-    !hydration &&
-    !egressUsesInSessionUv17ProWrite(egress)
-  ) {
+  if (session.descriptor.hydrationRequiredForWrite && !hydration) {
     throw new RadioWriteBlockedError(
       'Read from the radio first so Studio can preserve unmodelled settings, then write.',
     );
   }
   const prepared = await prepareRadioWriteImage(build, egress, library);
-  if (hydration) {
+  if (hydration || !session.descriptor.hydrationRequiredForWrite) {
     session.descriptor.hydration.seedProtocolForUpload?.(
       session.radio,
-      hydration,
+      hydration!,
       prepared.organisation,
     );
   }
@@ -587,17 +562,13 @@ export async function uploadPreparedRadioWrite(
   },
 ): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult; warnings?: string[] }> {
   const hydration = getRadioCloneHydration(egress);
-  if (
-    session.descriptor.hydrationRequiredForWrite &&
-    !hydration &&
-    !egressUsesInSessionUv17ProWrite(egress)
-  ) {
+  if (session.descriptor.hydrationRequiredForWrite && !hydration) {
     throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
   }
-  if (hydration) {
+  if (hydration || !session.descriptor.hydrationRequiredForWrite) {
     session.descriptor.hydration.seedProtocolForUpload?.(
       session.radio,
-      hydration,
+      hydration!,
       opts?.organisation,
     );
   }
