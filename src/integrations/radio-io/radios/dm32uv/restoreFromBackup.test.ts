@@ -11,11 +11,12 @@ import {
 } from '../../backup/index.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA } from './constants.ts';
 import { Dm32uvProtocol } from './protocol.ts';
+import { assertDm32RestoreAddressMap, listDm32RestoreBlocks } from './restoreFromBackup.ts';
 import {
-  assertDm32RestoreAddressMap,
-  listDm32RestoreBlocks,
-} from './restoreFromBackup.ts';
-import { Dm32ScriptedPipe, makeEmptyBlock, scriptDm32Connect } from './__fixtures__/scriptedPipe.ts';
+  Dm32ScriptedPipe,
+  makeEmptyBlock,
+  scriptDm32Connect,
+} from './__fixtures__/scriptedPipe.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -73,10 +74,7 @@ describe('listDm32RestoreBlocks', () => {
       region('region-0x1000', 0x1000, zone, 'restorable'),
       region('calibration-0x2000', 0x2000, cal, 'inspect-only'),
     ];
-    const archive = packedArchive(
-      { 'region-0x1000': zone, 'calibration-0x2000': cal },
-      regions,
-    );
+    const archive = packedArchive({ 'region-0x1000': zone, 'calibration-0x2000': cal }, regions);
     const blocks = listDm32RestoreBlocks(archive, ['region-0x1000', 'calibration-0x2000']);
     expect(blocks).toHaveLength(1);
     expect(blocks[0]!.address).toBe(0x1000);
@@ -137,10 +135,7 @@ describe('Dm32uvProtocol.restoreFromBackup', () => {
       region('region-0x1000', 0x1000, zone, 'restorable'),
       region('calibration-0x2000', 0x2000, cal, 'inspect-only'),
     ];
-    const archive = packedArchive(
-      { 'region-0x1000': zone, 'calibration-0x2000': cal },
-      regions,
-    );
+    const archive = packedArchive({ 'region-0x1000': zone, 'calibration-0x2000': cal }, regions);
     pipe.enqueue(new Uint8Array([0x06]));
 
     const stages: string[] = [];
@@ -178,8 +173,8 @@ describe('Dm32uvProtocol.restoreFromBackup', () => {
       proto.restoreFromBackup(archive, { regionIds: ['region-0x1000'] }),
     ).rejects.toThrow(/addressBase/);
     const restoreWrites = pipe.writes.slice(writesAfterConnect);
-    expect(restoreWrites.filter((w) => w[0] === 0x57 && w.length === 6 + DM32_BLOCK_SIZE)).toHaveLength(
-      0,
-    );
+    expect(
+      restoreWrites.filter((w) => w[0] === 0x57 && w.length === 6 + DM32_BLOCK_SIZE),
+    ).toHaveLength(0);
   });
 });

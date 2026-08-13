@@ -253,8 +253,8 @@ describe('assertRestoreAddressMap', () => {
       restoreFragileAfterFactoryReset: true,
       dm32ContactsBase: 0x200000,
     });
-    expect(() =>
-      assertRestoreAddressMap(manifest, { dm32ContactsBase: 0x300000 }),
-    ).toThrow(/dm32ContactsBase/);
+    expect(() => assertRestoreAddressMap(manifest, { dm32ContactsBase: 0x300000 })).toThrow(
+      /dm32ContactsBase/,
+    );
   });
 });

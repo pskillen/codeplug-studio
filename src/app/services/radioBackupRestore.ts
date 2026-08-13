@@ -258,7 +258,9 @@ export function assertRestoreAddressMap(
   }
 }
 
-export function readLiveRestoreAddressMap(session: RadioSession): RestoreAddressMapLive | undefined {
+export function readLiveRestoreAddressMap(
+  session: RadioSession,
+): RestoreAddressMapLive | undefined {
   if (session.radio instanceof Dm32uvProtocol) {
     return session.radio.getLiveRestoreAddressMap();
   }
