@@ -171,6 +171,30 @@ describe('radioIoSession helpers', () => {
     expect(channels.length).toBeGreaterThan(0);
   });
 
+  it('prepares RT95 write without persisted hydration bag', async () => {
+    const ch = {
+      ...newChannel('p1', 'Test'),
+      id: 'ch-1',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-rt95');
+    const { image, channels } = await prepareRadioWriteImage(
+      {
+        ...build,
+        channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'TEST', orderOrSlot: 1 }],
+      },
+      egress,
+      emptyLibrary([ch]),
+    );
+    expect(image).toBeUndefined();
+    expect(channels.length).toBeGreaterThan(0);
+  });
+
   it('blocks write without hydration', async () => {
     const radio: CloneImageRadio = {
       connect: vi.fn(),
