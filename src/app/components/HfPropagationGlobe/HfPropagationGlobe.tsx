@@ -9,11 +9,14 @@ import type {
 import {
   buildNightShadeMesh,
   buildShellMesh,
+  buildSunMarkerMesh,
   buildTerminatorPaths,
   canonicalLayerIndex,
   isNightShadeLayer,
+  isSunMarkerLayer,
   type NightShadeLayer,
   type ShellDisplayOptions,
+  type SunMarkerLayer,
   updateShellFresnel,
 } from './buildGlobeData.ts';
 import classes from './HfPropagationGlobe.module.css';
@@ -86,10 +89,13 @@ export default function HfPropagationGlobe({
   }, [terminatorEnabled, environmentAtMs]);
 
   const customLayerData = useMemo(() => {
-    const objects: Array<IonosphericLayerState | NightShadeLayer> = [...visibleShells];
+    const objects: Array<IonosphericLayerState | NightShadeLayer | SunMarkerLayer> = [
+      ...visibleShells,
+    ];
     if (terminatorEnabled && environmentAtMs != null) {
       const [sunLatDeg, sunLonDeg] = computeSubsolarPoint(environmentAtMs);
       objects.push({ kind: 'night-shade', sunLatDeg, sunLonDeg });
+      objects.push({ kind: 'sun', sunLatDeg, sunLonDeg });
     }
     return objects;
   }, [visibleShells, terminatorEnabled, environmentAtMs]);
@@ -101,6 +107,7 @@ export default function HfPropagationGlobe({
   const shellObjectAccessor = useMemo(
     () => (d: object) => {
       if (isNightShadeLayer(d)) return buildNightShadeMesh(d);
+      if (isSunMarkerLayer(d)) return buildSunMarkerMesh(d);
       const layer = d as IonosphericLayerState;
       return buildShellMesh(d, canonicalLayerIndex(layer.id), {
         exaggerationFactor,

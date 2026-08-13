@@ -15,6 +15,7 @@ import {
   SHELL_OPACITY_STEP,
   shellBaselineOpacity,
   shellRadiusUnits,
+  SUN_MARKER_DISTANCE_UNITS,
   TERMINATOR_PATH_ALTITUDE,
   TERMINATOR_PATH_COLOR,
   buildTerminatorPaths,
@@ -132,6 +133,12 @@ describe('latLonToGlobeDirection', () => {
     expect(v.x).toBeCloseTo(0);
     expect(v.y).toBeCloseTo(0);
     expect(v.z).toBeCloseTo(1);
+  });
+});
+
+describe('sun marker distance', () => {
+  it('sits at three times the true-scale F2 outer-shell radius', () => {
+    expect(SUN_MARKER_DISTANCE_UNITS).toBeCloseTo(3 * shellRadiusUnits(400));
   });
 });
 

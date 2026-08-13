@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { solarZenithAngleDeg } from './solarZenithAngle.ts';
-import { computeSolarTerminator } from './solarTerminator.ts';
+import { computeSolarTerminator, computeSubsolarPoint } from './solarTerminator.ts';
 
 const EQUINOX_SOLAR_NOON_UTC = Date.UTC(2024, 2, 20, 12, 0, 0);
 const EQUINOX_MIDNIGHT_UTC = Date.UTC(2024, 2, 20, 0, 0, 0);
@@ -24,5 +24,13 @@ describe('computeSolarTerminator', () => {
     for (const [lat, lon] of ring) {
       expect(solarZenithAngleDeg(lat, lon, EQUINOX_MIDNIGHT_UTC)).toBeCloseTo(90, 0);
     }
+  });
+});
+
+describe('computeSubsolarPoint', () => {
+  it('is near (0, 0) at equinox solar noon UTC', () => {
+    const [lat, lon] = computeSubsolarPoint(EQUINOX_SOLAR_NOON_UTC);
+    expect(lat).toBeCloseTo(0, 0);
+    expect(lon).toBeCloseTo(0, 0);
   });
 });

@@ -293,3 +293,36 @@ ${shader.fragmentShader}`.replace(
   mesh.renderOrder = -1;
   return mesh;
 }
+
+export type SunMarkerLayer = {
+  kind: 'sun';
+  sunLatDeg: number;
+  sunLonDeg: number;
+};
+
+export function isSunMarkerLayer(d: object): d is SunMarkerLayer {
+  return (d as SunMarkerLayer).kind === 'sun';
+}
+
+/** True-scale F2 outer radius × 3 — directional cue, not to scale. */
+export const SUN_MARKER_DISTANCE_UNITS = 3 * shellRadiusUnits(400);
+export const SUN_MARKER_RADIUS_UNITS = GLOBE_RADIUS_UNITS * 0.045;
+export const SUN_MARKER_COLOR = '#ffe566';
+
+/**
+ * Small unlit yellow sphere along the subsolar direction, well outside the F2 shell.
+ * No exaggeration, explode, or Fresnel.
+ */
+export function buildSunMarkerMesh(d: object): THREE.Object3D {
+  const { sunLatDeg, sunLonDeg } = d as SunMarkerLayer;
+  const geometry = new THREE.SphereGeometry(SUN_MARKER_RADIUS_UNITS, 24, 24);
+  const material = new THREE.MeshBasicMaterial({
+    color: SUN_MARKER_COLOR,
+    depthWrite: true,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  const dir = latLonToGlobeDirection(sunLatDeg, sunLonDeg);
+  mesh.position.copy(dir.multiplyScalar(SUN_MARKER_DISTANCE_UNITS));
+  mesh.renderOrder = 10;
+  return mesh;
+}

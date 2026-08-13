@@ -116,6 +116,7 @@ describe('HfPropagationGlobe', () => {
 
     const custom = lastGlobeProps?.customLayerData as { id?: string; kind?: string }[];
     expect(custom.some((d) => d.kind === 'night-shade')).toBe(true);
+    expect(custom.some((d) => d.kind === 'sun')).toBe(true);
     expect(custom.map((d) => d.id).filter(Boolean)).toEqual(['D', 'E', 'F1', 'F2']);
     const paths = lastGlobeProps?.pathsData as { kind: string; points: unknown[] }[];
     expect(paths.length).toBeGreaterThan(0);
