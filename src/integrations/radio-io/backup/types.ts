@@ -123,7 +123,10 @@ function validateRegion(raw: unknown, index: number): RadioBackupRegionV1 {
       `Radio backup manifest regions[${index}].path must be under regions/.`,
     );
   }
-  if (typeof raw.restoreRole !== 'string' || !REGION_ROLES.has(raw.restoreRole as RadioBackupRegionRole)) {
+  if (
+    typeof raw.restoreRole !== 'string' ||
+    !REGION_ROLES.has(raw.restoreRole as RadioBackupRegionRole)
+  ) {
     throw new RadioBackupError(
       `Radio backup manifest regions[${index}].restoreRole must be restorable or inspect-only.`,
     );
@@ -147,15 +150,16 @@ export function validateRadioBackupManifest(value: unknown): RadioBackupManifest
     throw new RadioBackupError('Radio backup manifest must be an object.');
   }
   if (value.format !== RADIO_BACKUP_FORMAT) {
-    throw new RadioBackupError(
-      `Radio backup manifest format must be ${RADIO_BACKUP_FORMAT}.`,
-    );
+    throw new RadioBackupError(`Radio backup manifest format must be ${RADIO_BACKUP_FORMAT}.`);
   }
   if (value.version !== RADIO_BACKUP_VERSION) {
     throw new RadioBackupError('Radio backup manifest version must be 1.');
   }
   const capturedAt = requireNonEmptyString(value.capturedAt, 'capturedAt');
-  if (typeof value.capturedVia !== 'string' || !CAPTURED_VIA.has(value.capturedVia as RadioBackupCapturedVia)) {
+  if (
+    typeof value.capturedVia !== 'string' ||
+    !CAPTURED_VIA.has(value.capturedVia as RadioBackupCapturedVia)
+  ) {
     throw new RadioBackupError('Radio backup manifest capturedVia must be web-serial or file.');
   }
   if (!isRecord(value.app)) {

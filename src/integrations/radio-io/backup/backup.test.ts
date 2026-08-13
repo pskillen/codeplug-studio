@@ -208,9 +208,9 @@ describe('radio-backup zip', () => {
   });
 
   it('rejects wrong format and unknown version', () => {
-    expect(() => validateRadioBackupManifest({ ...d890LikeManifest(), format: 'radio-info' })).toThrow(
-      /format must be/,
-    );
+    expect(() =>
+      validateRadioBackupManifest({ ...d890LikeManifest(), format: 'radio-info' }),
+    ).toThrow(/format must be/);
     expect(() => validateRadioBackupManifest({ ...d890LikeManifest(), version: 2 })).toThrow(
       /version must be 1/,
     );
