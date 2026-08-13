@@ -96,4 +96,14 @@ describe('BuildRadioIoPanel — legacy stash migration warning (#879)', () => {
     renderPanel('radio-io-uv5r-mini');
     expect(screen.getByText('Write path not migrated')).toBeInTheDocument();
   });
+
+  it('does not show the severe warning for OpenGD77 DM-1701 after drop-stash', () => {
+    renderPanel('radio-io-opengd77-1701');
+    expect(screen.queryByText('Write path not migrated')).not.toBeInTheDocument();
+  });
+
+  it('does not show the severe warning for OpenGD77 MD-9600 after drop-stash', () => {
+    renderPanel('radio-io-opengd77-md9600');
+    expect(screen.queryByText('Write path not migrated')).not.toBeInTheDocument();
+  });
 });

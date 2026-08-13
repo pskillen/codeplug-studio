@@ -58,9 +58,7 @@ import {
   writeAbs,
 } from './memory.ts';
 import { openGd77KeptRegionLength, openGd77KeptRegions } from './writeVerifySupport.ts';
-import {
-  encodeOpenGd77WriteImageFromPrior,
-} from './hydration.ts';
+import { encodeOpenGd77WriteImageFromPrior } from './hydration.ts';
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 
