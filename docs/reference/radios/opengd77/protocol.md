@@ -118,6 +118,8 @@ Typical flash path: set sector → write 32-byte buffers → finish sector. EEPR
 
 Upload stages each **dirty 4096-byte FLASH sector** from `collectDirtySectors` (not untouched image gaps) plus a pre-upload snapshot of **kept** regions from `writeRole.ts`. Write encode overlays modelled banks onto the **in-session pre-write FLASH prior** (same download as the dirty-sector base) — not a persisted clone bag and not a virgin `0xff` image. **Zero dirty sectors** means the modelled overlay already matched live FLASH: Studio still sends `SAVE_REBOOT`, but the DM-1701 does **not** drop to All Channels (that kick happens when FLASH is actually programmed). Digital contact names on Write use `digitalContactExportNameMode` (same map as CPS / Contacts wire preview). **Verify write** runs after `SAVE_REBOOT` — operator waits for restart, reconnects, full `download()`, and compares sector payloads plus kept spans. Feature: [write-verify.md](../../../features/radio-read-write/write-verify.md).
 
+For **Restore** (not Write): `restoreFromBackup` copies zip FLASH spans onto a **blank** prior, programs those dirty sectors, then **SAVE_REBOOT**. It does not pre-write-read live FLASH and does not arm a write projection. See [backup-restore.md](backup-restore.md). Hardware verify pending.
+
 Exact framing byte layouts are in qdmr’s `doc/code/opengd77_protocol_*.txt` verbincludes — cite those files when implementing a codec; do not copy GPL sources into Studio.
 
 ## Related
