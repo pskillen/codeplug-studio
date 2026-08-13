@@ -182,10 +182,6 @@ describe('restoreRadioBackup', () => {
     ).rejects.toMatchObject({ code: 'no-restore-hook' });
   });
 
-  it('does not enable restore on shipped adapters without the hook', () => {
-    expect(descriptorSupportsRestore(RT95_DESCRIPTOR)).toBe(false);
-  });
-
   it('enables restore when the AT-D890UV protocol implements the hook', () => {
     expect(descriptorSupportsRestore(AT_D890UV_DESCRIPTOR)).toBe(true);
   });
@@ -197,6 +193,10 @@ describe('restoreRadioBackup', () => {
 
   it('enables restore when the DM-32UV protocol implements the hook', () => {
     expect(descriptorSupportsRestore(DM32UV_DESCRIPTOR)).toBe(true);
+  });
+
+  it('enables restore when the RT95 protocol implements the hook', () => {
+    expect(descriptorSupportsRestore(RT95_DESCRIPTOR)).toBe(true);
   });
 
   it('refuses DM-32 restore when live V-frame bases differ from the zip', async () => {
