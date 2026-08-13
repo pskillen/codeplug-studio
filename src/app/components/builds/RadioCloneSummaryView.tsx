@@ -1,5 +1,8 @@
 /**
- * Clone-summary tables for Web Serial radio images — shared by Backup / Restore inspect.
+ * Clone-summary tables for Web Serial radio images.
+ * Backup / Restore uses `variant="inspect"` (on-image occupancy). Write-coverage
+ * tables on Export stay in `AtD890WriteCoverageTable` and siblings; pass
+ * `variant="write-coverage"` only if this view must show Written / Kept sections.
  */
 
 import { Code, List, Stack, Table, Text } from '@mantine/core';
@@ -36,8 +39,23 @@ import {
 } from '@integrations/radio-io/radios/rt95/index.ts';
 import { FormSection } from '../ui/index.ts';
 
+export type RadioCloneSummaryVariant = 'inspect' | 'write-coverage';
+
 function hexOffset(n: number): string {
   return `0x${n.toString(16).toUpperCase()}`;
+}
+
+function occupancyCopy(variant: RadioCloneSummaryVariant): { title: string; description: string } {
+  if (variant === 'inspect') {
+    return {
+      title: 'On this image',
+      description: 'Decoded from this backup — what is stored here, not your build layout.',
+    };
+  }
+  return {
+    title: 'On the radio',
+    description: 'Counts decoded from the stored image — not your build layout.',
+  };
 }
 
 function summariseUv17ProFamilyClone(bag: RadioCloneHydrationBag): Uv5rMiniCloneSummary | null {
@@ -51,13 +69,17 @@ function isUv17ProFamilyModel(modelId: string | undefined): boolean {
   return modelId === UV5R_MINI_MODEL_ID || modelId === UV21_PRO_V2_MODEL_ID;
 }
 
-function Dm32OnRadioSection({ summary }: { summary: Dm32uvCloneSummary }) {
+function Dm32OnRadioSection({
+  summary,
+  variant,
+}: {
+  summary: Dm32uvCloneSummary;
+  variant: RadioCloneSummaryVariant;
+}) {
   const c = summary.onRadioCounts;
+  const occupancy = occupancyCopy(variant);
   return (
-    <FormSection
-      title="On the radio"
-      description="Counts decoded from the stored image — not your build layout."
-    >
+    <FormSection title={occupancy.title} description={occupancy.description}>
       <Table.ScrollContainer minWidth={360}>
         <Table withTableBorder withColumnBorders>
           <Table.Tbody>
@@ -255,13 +277,17 @@ function Dm32RequiredBlocksSection({ summary }: { summary: Dm32uvCloneSummary })
   );
 }
 
-function Uv5rOnRadioSection({ summary }: { summary: Uv5rMiniCloneSummary }) {
+function Uv5rOnRadioSection({
+  summary,
+  variant,
+}: {
+  summary: Uv5rMiniCloneSummary;
+  variant: RadioCloneSummaryVariant;
+}) {
   const c = summary.onRadioCounts;
+  const occupancy = occupancyCopy(variant);
   return (
-    <FormSection
-      title="On the radio"
-      description="Counts decoded from the stored image — not your build layout."
-    >
+    <FormSection title={occupancy.title} description={occupancy.description}>
       <Table.ScrollContainer minWidth={360}>
         <Table withTableBorder withColumnBorders>
           <Table.Tbody>
@@ -386,9 +412,11 @@ function Uv5rAncillaryRetainSection({ summary }: { summary: Uv5rMiniCloneSummary
 function Uv5rRadioImageSections({
   summary,
   bag,
+  variant,
 }: {
   summary: Uv5rMiniCloneSummary;
   bag: RadioCloneHydrationBag;
+  variant: RadioCloneSummaryVariant;
 }) {
   return (
     <>
@@ -436,22 +464,30 @@ function Uv5rRadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
-      <Uv5rOnRadioSection summary={summary} />
-      <Uv5rWrittenFromBuildSection summary={summary} />
-      <Uv5rKeptOnWriteSection summary={summary} />
+      <Uv5rOnRadioSection summary={summary} variant={variant} />
+      {variant === 'write-coverage' ? (
+        <>
+          <Uv5rWrittenFromBuildSection summary={summary} />
+          <Uv5rKeptOnWriteSection summary={summary} />
+        </>
+      ) : null}
       <Uv5rSettingsRetainSection summary={summary} />
       <Uv5rAncillaryRetainSection summary={summary} />
     </>
   );
 }
 
-function OpenGd77OnRadioSection({ summary }: { summary: OpenGd77CloneSummary }) {
+function OpenGd77OnRadioSection({
+  summary,
+  variant,
+}: {
+  summary: OpenGd77CloneSummary;
+  variant: RadioCloneSummaryVariant;
+}) {
   const c = summary.onRadioCounts;
+  const occupancy = occupancyCopy(variant);
   return (
-    <FormSection
-      title="On the radio"
-      description="Counts decoded from the stored image — not your build layout."
-    >
+    <FormSection title={occupancy.title} description={occupancy.description}>
       <Table.ScrollContainer minWidth={360}>
         <Table withTableBorder withColumnBorders>
           <Table.Tbody>
@@ -594,9 +630,11 @@ function OpenGd77AncillaryRetainSection({ summary }: { summary: OpenGd77CloneSum
 function OpenGd77RadioImageSections({
   summary,
   bag,
+  variant,
 }: {
   summary: OpenGd77CloneSummary;
   bag: RadioCloneHydrationBag;
+  variant: RadioCloneSummaryVariant;
 }) {
   return (
     <>
@@ -644,9 +682,13 @@ function OpenGd77RadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
-      <OpenGd77OnRadioSection summary={summary} />
-      <OpenGd77WrittenFromBuildSection summary={summary} />
-      <OpenGd77KeptOnWriteSection summary={summary} />
+      <OpenGd77OnRadioSection summary={summary} variant={variant} />
+      {variant === 'write-coverage' ? (
+        <>
+          <OpenGd77WrittenFromBuildSection summary={summary} />
+          <OpenGd77KeptOnWriteSection summary={summary} />
+        </>
+      ) : null}
       <OpenGd77SettingsRetainSection summary={summary} />
       <OpenGd77AncillaryRetainSection summary={summary} />
     </>
@@ -656,9 +698,11 @@ function OpenGd77RadioImageSections({
 function Dm32RadioImageSections({
   summary,
   bag,
+  variant,
 }: {
   summary: Dm32uvCloneSummary;
   bag: RadioCloneHydrationBag;
+  variant: RadioCloneSummaryVariant;
 }) {
   return (
     <>
@@ -710,9 +754,13 @@ function Dm32RadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
-      <Dm32OnRadioSection summary={summary} />
-      <Dm32WrittenFromBuildSection summary={summary} />
-      <Dm32KeptOnWriteSection summary={summary} />
+      <Dm32OnRadioSection summary={summary} variant={variant} />
+      {variant === 'write-coverage' ? (
+        <>
+          <Dm32WrittenFromBuildSection summary={summary} />
+          <Dm32KeptOnWriteSection summary={summary} />
+        </>
+      ) : null}
       <Dm32SettingsRetainSection summary={summary} />
       <Dm32AncillaryRetainSection summary={summary} />
       <Dm32RequiredBlocksSection summary={summary} />
@@ -720,12 +768,16 @@ function Dm32RadioImageSections({
   );
 }
 
-function Rt95OnRadioSection({ summary }: { summary: Rt95CloneSummary }) {
+function Rt95OnRadioSection({
+  summary,
+  variant,
+}: {
+  summary: Rt95CloneSummary;
+  variant: RadioCloneSummaryVariant;
+}) {
+  const occupancy = occupancyCopy(variant);
   return (
-    <FormSection
-      title="On the radio"
-      description="Counts decoded from the stored image — not your build layout."
-    >
+    <FormSection title={occupancy.title} description={occupancy.description}>
       <Table.ScrollContainer minWidth={360}>
         <Table withTableBorder withColumnBorders>
           <Table.Tbody>
@@ -817,9 +869,11 @@ function Rt95SettingsRetainSection({ summary }: { summary: Rt95CloneSummary }) {
 function Rt95RadioImageSections({
   summary,
   bag,
+  variant,
 }: {
   summary: Rt95CloneSummary;
   bag: RadioCloneHydrationBag;
+  variant: RadioCloneSummaryVariant;
 }) {
   return (
     <>
@@ -850,9 +904,13 @@ function Rt95RadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
-      <Rt95OnRadioSection summary={summary} />
-      <Rt95WrittenFromBuildSection summary={summary} />
-      <Rt95KeptOnWriteSection summary={summary} />
+      <Rt95OnRadioSection summary={summary} variant={variant} />
+      {variant === 'write-coverage' ? (
+        <>
+          <Rt95WrittenFromBuildSection summary={summary} />
+          <Rt95KeptOnWriteSection summary={summary} />
+        </>
+      ) : null}
       <Rt95SettingsRetainSection summary={summary} />
     </>
   );
@@ -861,10 +919,13 @@ function Rt95RadioImageSections({
 function AtD890RadioImageSections({
   summary,
   bag,
+  variant,
 }: {
   summary: AtD890uvCloneSummary;
   bag: RadioCloneHydrationBag;
+  variant: RadioCloneSummaryVariant;
 }) {
+  const occupancy = occupancyCopy(variant);
   return (
     <>
       <FormSection title="Capture">
@@ -915,10 +976,7 @@ function AtD890RadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
-      <FormSection
-        title="On the radio"
-        description="Counts decoded from the stored image — not your build layout."
-      >
+      <FormSection title={occupancy.title} description={occupancy.description}>
         <Table.ScrollContainer minWidth={360}>
           <Table withTableBorder withColumnBorders>
             <Table.Tbody>
@@ -959,55 +1017,63 @@ function AtD890RadioImageSections({
         </Table.ScrollContainer>
       </FormSection>
 
-      <FormSection
-        title="Written from your build"
-        description="When you Write to radio, Studio updates these from your build."
-      >
-        <List size="sm" spacing="xs">
-          {summary.writtenFromBuild.map((item) => (
-            <List.Item key={item}>{item}</List.Item>
-          ))}
-        </List>
-        <Text size="sm" c="dimmed" mt="sm">
-          {summary.digitalContactsWriteGap}
-        </Text>
-      </FormSection>
+      {variant === 'write-coverage' ? (
+        <>
+          <FormSection
+            title="Written from your build"
+            description="When you Write to radio, Studio updates these from your build."
+          >
+            <List size="sm" spacing="xs">
+              {summary.writtenFromBuild.map((item) => (
+                <List.Item key={item}>{item}</List.Item>
+              ))}
+            </List>
+            <Text size="sm" c="dimmed" mt="sm">
+              {summary.digitalContactsWriteGap}
+            </Text>
+          </FormSection>
 
-      <FormSection
-        title="Kept on Write"
-        description="Not re-derived from your build. Local info is still uploaded verbatim from this Read cache."
-      >
-        {summary.retainGroups.length === 0 ? (
-          <Text size="sm">No retained regions in this capture.</Text>
-        ) : (
-          <Table.ScrollContainer minWidth={480}>
-            <Table withTableBorder withColumnBorders>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Region</Table.Th>
-                  <Table.Th>Address range</Table.Th>
-                  <Table.Th>Chunks</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {summary.retainGroups.map((g) => (
-                  <Table.Tr key={g.label}>
-                    <Table.Td>{g.label}</Table.Td>
-                    <Table.Td>
-                      <Code>{g.addressRange}</Code>
-                    </Table.Td>
-                    <Table.Td>{g.blockCount}</Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </Table.ScrollContainer>
-        )}
-      </FormSection>
+          <FormSection
+            title="Kept on Write"
+            description="Not re-derived from your build. Local info is still uploaded verbatim from this Read cache."
+          >
+            {summary.retainGroups.length === 0 ? (
+              <Text size="sm">No retained regions in this capture.</Text>
+            ) : (
+              <Table.ScrollContainer minWidth={480}>
+                <Table withTableBorder withColumnBorders>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Region</Table.Th>
+                      <Table.Th>Address range</Table.Th>
+                      <Table.Th>Chunks</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {summary.retainGroups.map((g) => (
+                      <Table.Tr key={g.label}>
+                        <Table.Td>{g.label}</Table.Td>
+                        <Table.Td>
+                          <Code>{g.addressRange}</Code>
+                        </Table.Td>
+                        <Table.Td>{g.blockCount}</Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
+              </Table.ScrollContainer>
+            )}
+          </FormSection>
+        </>
+      ) : null}
 
       <FormSection
         title="Local info (Expert options)"
-        description="Decoded fields from LocalInfo @ 0x4f80000 — Read for forensics; not serial-written on Studio Write."
+        description={
+          variant === 'inspect'
+            ? 'Read-only forensics from this image. Restore will not write Local info.'
+            : 'Decoded fields from LocalInfo @ 0x4f80000 — Read for forensics; not serial-written on Studio Write.'
+        }
       >
         {summary.settingsRetain.length === 0 ? (
           <Text size="sm" c="dimmed">
@@ -1045,7 +1111,11 @@ function AtD890RadioImageSections({
 
       <FormSection
         title="Optional settings (forensics)"
-        description="Decoded from optional settings @ 0x3500000 / 0x3500900 — Read and stashed for Radio Info only; never serial-written. CPS language here is separate from Chinese UI in Local info above."
+        description={
+          variant === 'inspect'
+            ? 'Read-only forensics from this image. Restore will not write optional settings.'
+            : 'Decoded from optional settings @ 0x3500000 / 0x3500900 — Read and stashed for inspect only; never serial-written. CPS language here is separate from Chinese UI in Local info above.'
+        }
       >
         {summary.optionalSettingsRetain.length === 0 ? (
           <Text size="sm" c="dimmed">
@@ -1084,7 +1154,11 @@ function AtD890RadioImageSections({
       {summary.optionalSettingsAprs.length > 0 ? (
         <FormSection
           title="Optional settings (APRS)"
-          description="Raw hex from 0x3501280 — not decoded in Studio v1."
+          description={
+            variant === 'inspect'
+              ? 'Read-only hex preview from this image.'
+              : 'Raw hex from 0x3501280 — not decoded in Studio v1.'
+          }
         >
           <Table.ScrollContainer minWidth={560}>
             <Table withTableBorder withColumnBorders>
@@ -1117,7 +1191,11 @@ function AtD890RadioImageSections({
 
       <FormSection
         title="Alarm (forensics)"
-        description="Light decode from alarm @ 0x3482e00 / 0x3483000 and man-down flags in optional main — Read/stash only; never serial-written."
+        description={
+          variant === 'inspect'
+            ? 'Read-only forensics from this image. Restore will not write alarm memory.'
+            : 'Light decode from alarm @ 0x3482e00 / 0x3483000 and man-down flags in optional main — Read/stash only; never serial-written.'
+        }
       >
         {summary.alarmRetain.length === 0 ? (
           <Text size="sm" c="dimmed">
@@ -1230,9 +1308,14 @@ function AtD890RadioImageSections({
 
 export interface RadioCloneSummaryViewProps {
   bag: RadioCloneHydrationBag;
+  /** Backup / Restore defaults to on-image inspect. */
+  variant?: RadioCloneSummaryVariant;
 }
 
-export default function RadioCloneSummaryView({ bag }: RadioCloneSummaryViewProps) {
+export default function RadioCloneSummaryView({
+  bag,
+  variant = 'inspect',
+}: RadioCloneSummaryViewProps) {
   const isUv17ProFamily = isUv17ProFamilyModel(bag.retain.radioModelId);
   const isDm32 =
     bag.retain.radioModelId === DM32UV_MODEL_ID || bag.retain.radioModelId === 'DP570UV';
@@ -1266,15 +1349,15 @@ export default function RadioCloneSummaryView({ bag }: RadioCloneSummaryViewProp
   return (
     <Stack gap="lg">
       {dm32Summary ? (
-        <Dm32RadioImageSections summary={dm32Summary} bag={bag} />
+        <Dm32RadioImageSections summary={dm32Summary} bag={bag} variant={variant} />
       ) : atD890Summary ? (
-        <AtD890RadioImageSections summary={atD890Summary} bag={bag} />
+        <AtD890RadioImageSections summary={atD890Summary} bag={bag} variant={variant} />
       ) : openGd77Summary ? (
-        <OpenGd77RadioImageSections summary={openGd77Summary} bag={bag} />
+        <OpenGd77RadioImageSections summary={openGd77Summary} bag={bag} variant={variant} />
       ) : rt95Summary ? (
-        <Rt95RadioImageSections summary={rt95Summary} bag={bag} />
+        <Rt95RadioImageSections summary={rt95Summary} bag={bag} variant={variant} />
       ) : uv17ProSummary ? (
-        <Uv5rRadioImageSections summary={uv17ProSummary} bag={bag} />
+        <Uv5rRadioImageSections summary={uv17ProSummary} bag={bag} variant={variant} />
       ) : null}
     </Stack>
   );
