@@ -323,7 +323,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         mode === 'digitalIdList' && singleBankProjectionMode === 'skip'
           ? defaultSingleBankProjectionMode('digitalIdList')
           : singleBankProjectionMode;
-      const { image, warnings, organisation } = await prepareRadioWriteImage(
+      const { image, warnings, organisation, channels } = await prepareRadioWriteImage(
         build,
         egress,
         library,
@@ -348,6 +348,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         onProgress,
         signal: abortRef.current!.signal,
         organisation,
+        channels,
       });
       if (warnings.length > 0) setWriteWarnings(warnings);
       await releaseSession();

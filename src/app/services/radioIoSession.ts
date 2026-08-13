@@ -63,11 +63,12 @@ import {
   resolveRadioWriteGate,
   resolveRadioWriteProdDisabledMessage,
 } from './radioWriteEnvGate.ts';
-import { assembleAtD890WriteImage } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
+import { encodeAtD890WriteImageFromDownloadCache } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
+import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 
 export {
   isRadioSerialSupported,
@@ -272,7 +273,12 @@ export async function prepareRadioWriteImage(
     persistence?: ProjectPersistence;
     projectId?: string;
   },
-): Promise<{ image: MemoryMap; warnings: string[]; organisation: RadioWriteOrganisation }> {
+): Promise<{
+  image?: MemoryMap;
+  warnings: string[];
+  organisation: RadioWriteOrganisation;
+  channels: RadioChannelDto[];
+}> {
   const descriptor = descriptorsForEgress(egress)[0];
   if (descriptor && resolveRadioWriteGate(descriptor) === 'hidden') {
     throw new RadioWriteBlockedError(resolveRadioWriteProdDisabledMessage(egress.profileId));
@@ -381,9 +387,9 @@ export async function prepareRadioWriteImage(
   }
   if (descriptor && !descriptor.hydrationRequiredForWrite) {
     return {
-      image: assembleAtD890WriteImage(projection.channels, organisation),
       warnings,
       organisation,
+      channels: projection.channels,
     };
   }
   if (!hydration) {
@@ -393,6 +399,7 @@ export async function prepareRadioWriteImage(
     image: mergeChannelsForWrite(egress, hydration, projection.channels, organisation),
     warnings,
     organisation,
+    channels: projection.channels,
   };
 }
 
@@ -413,6 +420,55 @@ function mergeChannelsForWrite(
 }
 
 /**
+ * D890 Write encodes onto the in-session download cache (W3). Other radios use the
+ * image prepared from persisted hydration. Empty D890 cache is downloaded once; still
+ * empty → operator error, never a 0xff assemble.
+ */
+async function resolveRadioWriteImageForUpload(
+  session: RadioSession,
+  egress: EgressPath,
+  prepared: {
+    image?: MemoryMap;
+    channels: readonly RadioChannelDto[];
+    organisation: RadioWriteOrganisation;
+  },
+  opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
+): Promise<MemoryMap> {
+  if (egress.profileId !== 'radio-io-at-d890uv') {
+    if (!prepared.image) {
+      throw new RadioWriteBlockedError('Missing radio clone write image.');
+    }
+    return prepared.image;
+  }
+  if (session.radio instanceof AtD890uvProtocol) {
+    let cache = session.radio.getDownloadCache();
+    if (!cache || cache.blocks.size === 0) {
+      await session.radio.download({
+        onProgress: opts?.onProgress,
+        signal: opts?.signal,
+      });
+      cache = session.radio.getDownloadCache();
+    }
+    try {
+      return encodeAtD890WriteImageFromDownloadCache(
+        cache,
+        prepared.channels,
+        prepared.organisation,
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new RadioWriteBlockedError(message);
+    }
+  }
+  if (!prepared.image) {
+    throw new RadioWriteBlockedError(
+      'Read this radio in the current session before Write. The AT-D890UV write encode needs the in-session download cache as its prior — it will not fall back to a blank 0xff image.',
+    );
+  }
+  return prepared.image;
+}
+
+/**
  * Assemble build → encode into hydrated image → upload.
  * Requires radio-clone hydration on the egress when descriptor.hydrationRequiredForWrite.
  */
@@ -429,30 +485,36 @@ export async function writeBuildToRadio(
       'Read from the radio first so Studio can preserve unmodelled settings, then write.',
     );
   }
-  const { image, warnings, organisation } = await prepareRadioWriteImage(build, egress, library);
+  const prepared = await prepareRadioWriteImage(build, egress, library);
   if (hydration || !session.descriptor.hydrationRequiredForWrite) {
-    session.descriptor.hydration.seedProtocolForUpload?.(session.radio, hydration!, organisation);
+    session.descriptor.hydration.seedProtocolForUpload?.(
+      session.radio,
+      hydration!,
+      prepared.organisation,
+    );
   }
+  const image = await resolveRadioWriteImageForUpload(session, egress, prepared, opts);
   setCachedImage(session, image);
   await session.radio.upload(image, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
   if (egress.profileId === 'radio-io-at-d890uv') {
-    await uploadAtD890DigitalContactsForWrite(session, organisation.digitalContacts, opts);
+    await uploadAtD890DigitalContactsForWrite(session, prepared.organisation.digitalContacts, opts);
   }
-  return { warnings };
+  return { warnings: prepared.warnings };
 }
 
 /** Upload a prepared clone image after {@link prepareRadioWriteImage} and session connect. */
 export async function uploadPreparedRadioWrite(
   session: RadioSession,
   egress: EgressPath,
-  image: MemoryMap,
+  image: MemoryMap | undefined,
   opts?: {
     onProgress?: ProgressFn;
     signal?: AbortSignal;
     organisation?: RadioWriteOrganisation;
+    channels?: readonly RadioChannelDto[];
   },
 ): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult }> {
   const hydration = getRadioCloneHydration(egress);
@@ -466,8 +528,18 @@ export async function uploadPreparedRadioWrite(
       opts?.organisation,
     );
   }
-  setCachedImage(session, image);
-  await session.radio.upload(image, {
+  const resolved = await resolveRadioWriteImageForUpload(
+    session,
+    egress,
+    {
+      image,
+      channels: opts?.channels ?? [],
+      organisation: opts?.organisation ?? {},
+    },
+    opts,
+  );
+  setCachedImage(session, resolved);
+  await session.radio.upload(resolved, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });

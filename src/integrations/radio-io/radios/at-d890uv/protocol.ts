@@ -2,6 +2,7 @@
  * AT-D890UV CloneImageRadio — sparse 16-byte selective download/upload.
  */
 
+import { AT_D890_EMPTY_WRITE_CACHE_MESSAGE } from './hydration.ts';
 import {
   applyAtD890WriteImageToCache,
   cacheToMemoryMap,
@@ -578,6 +579,10 @@ export class AtD890uvProtocol implements CloneImageRadio {
       this.readBlockSize,
     );
     refreshScanListSetFromRadioBase(image, freshScanListSet);
+
+    if (this.cache.blocks.size === 0) {
+      throw new RadioProtocolError(AT_D890_EMPTY_WRITE_CACHE_MESSAGE);
+    }
 
     applyAtD890WriteImageToCache(this.cache, image, this.uploadBankIntent);
 

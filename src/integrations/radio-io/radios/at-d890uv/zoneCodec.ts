@@ -1,9 +1,13 @@
 /**
  * AT-D890UV zone encode — ZoneSet, names, membership, A/B tables.
+ *
+ * Occupied zones are visible unless hide is modelled (it is not today). A virgin
+ * all-set ZoneHide prior must not hide every occupied zone (#1125).
  */
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioZoneDto } from '../../radioWriteProjection.ts';
+import { RadioProtocolError } from '../../kit/errors.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { clearBitmap, listSetBits, setBitmapBit } from './bitmap.ts';
 import { AT_D890_INVALID_U16, AT_D890_LIMITS, D890_MAP } from './constants.ts';
@@ -63,14 +67,38 @@ export function encodeZonesIntoAtD890Image(
     image.set(zoneChannelsAddress(zIdx), encodeAtD890ZoneMembership(zone.channelNumbers));
     writeU16Le(zoneA, zIdx * 2, 0);
     writeU16Le(zoneB, zIdx * 2, zone.channelNumbers.length > 1 ? 1 : 0);
-    void zoneHide;
   });
+
+  for (const idx of listSetBits(zoneSet)) {
+    setBitmapBit(zoneHide, idx, false);
+  }
 
   image.set(D890_MAP.ZoneSet, zoneSet);
   image.set(D890_MAP.ZoneHide, zoneHide);
   image.set(D890_MAP.ZoneAChannel, zoneA);
   image.set(D890_MAP.ZoneBChannel, zoneB);
   return image;
+}
+
+/** Occupied ZoneSet bits whose ZoneHide bit is clear. */
+export function countAtD890VisibleZones(image: MemoryMap): number {
+  const zoneSet = image.get(D890_MAP.ZoneSet, AT_D890_LIMITS.ZONE_SET_BYTES);
+  const hidden = new Set(listSetBits(image.get(D890_MAP.ZoneHide, AT_D890_LIMITS.ZONE_SET_BYTES)));
+  let visible = 0;
+  for (const idx of listSetBits(zoneSet)) {
+    if (!hidden.has(idx)) visible += 1;
+  }
+  return visible;
+}
+
+export const AT_D890_ZERO_VISIBLE_ZONES_MESSAGE =
+  'This radio needs at least one visible zone. The AT-D890UV rejects a codeplug with no visible zones (empty ZoneSet, or every occupied zone hidden in ZoneHide) and shows Program Error Please Initialize The Radio, which erases the radio. Add a zone to the build before Write.';
+
+/** Refuse Write when the image would present zero visible zones to firmware (#1125, #880). */
+export function assertAtD890HasVisibleZones(image: MemoryMap): void {
+  if (countAtD890VisibleZones(image) === 0) {
+    throw new RadioProtocolError(AT_D890_ZERO_VISIBLE_ZONES_MESSAGE);
+  }
 }
 
 export function syncZoneRegionsToCache(cache: AtD890DownloadCache, image: MemoryMap): void {
