@@ -24,7 +24,7 @@ export const RT95_DESCRIPTOR: RadioDescriptor = {
   attributionIds: ['chirp'],
   compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-rt95' }],
   writeStrategy: 'full-image',
-  hydrationRequiredForWrite: true,
+  hydrationRequiredForWrite: false,
   baudRate: RT95_BAUD_RATE,
   hydration: {
     extractHydration: extractRt95Hydration,
