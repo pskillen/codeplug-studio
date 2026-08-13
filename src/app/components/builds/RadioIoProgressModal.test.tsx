@@ -90,6 +90,25 @@ describe('RadioIoProgressModal', () => {
     expect(screen.getByText('FLASH sectors')).toBeInTheDocument();
   });
 
+  it('shows UV-17Pro family pre-write read and upload stages during write', () => {
+    renderModal({
+      opened: true,
+      operation: 'write',
+      phase: 'transfer',
+      progress: {
+        cur: 120,
+        max: 520,
+        msg: 'Reading 0x9000',
+        stage: 'Pre-write read',
+      },
+      transferStages: ['Pre-write read', 'Upload'],
+      onCancel: vi.fn(),
+    });
+
+    expect(screen.getByText('Pre-write read')).toBeInTheDocument();
+    expect(screen.getByText('Upload')).toBeInTheDocument();
+  });
+
   it('keeps write checklist and shows Close when done', () => {
     const onClose = vi.fn();
     renderModal({
