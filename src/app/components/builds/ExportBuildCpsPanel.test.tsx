@@ -429,8 +429,8 @@ describe('ExportBuildCpsPanel', () => {
     expect(screen.queryByText('Naming')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Download ZIP/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Download CSV/i })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Read from radio/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Write to radio/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Read from radio/i })).not.toBeInTheDocument();
   });
 
   it('shows empty state when no active egress pathway', () => {

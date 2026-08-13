@@ -137,7 +137,7 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 - [ ] Do **not** import `formats/<cps>/channelExpansion.ts` from the write path — use `channelExpansion/mxnExpandAll.ts`
 - [ ] Refuse write when the in-session download cache is empty — never fall back to a blank/`0xff` image or a persisted bag
 - [ ] In-flow attribution from `attributionIds`
-- [ ] Build Export hosts egress switcher + connect/read/write for Web Serial — not a library-only dump UI
+- [ ] Build Export hosts egress switcher + connect/write for Web Serial — inspect is Backup / Restore
 
 ### 6. Tests
 
