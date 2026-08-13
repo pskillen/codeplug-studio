@@ -79,6 +79,7 @@ Do not paste CHIRP’s full table into Studio as GPL source — cite NeonPlug `b
 2. Settle, flush, ident → seek ACK → read magics (flush before each).
 3. Read all `MEM_*` regions in `0x40` blocks → assemble packed `0x8240` image ([memory-layout.md](memory-layout.md)). Sync each read reply to opcode `0x52`.
 4. For upload: upload handshake (NeonPlug trailer `0x01`) → write all `MEM_*` regions from hydrated image ([settings.md](settings.md)).
+5. For **Restore** (not Write): `restoreFromBackup` uploads selected zip MEM bins with that same upload handshake — never assemble / stash merge. See [backup-restore.md](backup-restore.md). Hardware verify pending.
 
 ## Write verify
 
