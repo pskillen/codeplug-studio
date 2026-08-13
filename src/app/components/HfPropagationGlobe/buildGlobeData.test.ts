@@ -10,10 +10,14 @@ import {
   FRESNEL_OPACITY_MIN,
   fresnelOpacity,
   GLOBE_RADIUS_UNITS,
+  latLonToGlobeDirection,
   SHELL_INNER_BASELINE_OPACITY,
   SHELL_OPACITY_STEP,
   shellBaselineOpacity,
   shellRadiusUnits,
+  TERMINATOR_PATH_ALTITUDE,
+  TERMINATOR_PATH_COLOR,
+  buildTerminatorPaths,
 } from './buildGlobeData.ts';
 
 describe('exaggeratedAltitudeKm', () => {
@@ -119,5 +123,37 @@ describe('fresnelOpacity', () => {
 
   it('is at the maximum at a grazing angle (|N·V| = 0)', () => {
     expect(fresnelOpacity(0)).toBeCloseTo(FRESNEL_OPACITY_MAX);
+  });
+});
+
+describe('latLonToGlobeDirection', () => {
+  it('maps equator lon 0 to +Z (three-globe polar2Cartesian)', () => {
+    const v = latLonToGlobeDirection(0, 0);
+    expect(v.x).toBeCloseTo(0);
+    expect(v.y).toBeCloseTo(0);
+    expect(v.z).toBeCloseTo(1);
+  });
+});
+
+describe('buildTerminatorPaths', () => {
+  it('lifts a ring to path altitude with the greyline colour', () => {
+    const paths = buildTerminatorPaths([
+      [0, -10],
+      [10, 0],
+      [0, 10],
+    ]);
+    expect(paths).toHaveLength(1);
+    expect(paths[0]?.color).toBe(TERMINATOR_PATH_COLOR);
+    expect(paths[0]?.points.every((p) => p[2] === TERMINATOR_PATH_ALTITUDE)).toBe(true);
+  });
+
+  it('splits the ring when longitude jumps across the antimeridian', () => {
+    const paths = buildTerminatorPaths([
+      [0, 170],
+      [0, 179],
+      [0, -179],
+      [0, -170],
+    ]);
+    expect(paths.length).toBeGreaterThanOrEqual(2);
   });
 });

@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Globe, { type GlobeMethods } from 'react-globe.gl';
 import type * as THREE from 'three';
+import { computeSolarTerminator, computeSubsolarPoint } from '@core/domain/hfPropagation/solarTerminator.ts';
 import type {
   IonosphericLayerId,
   IonosphericLayerState,
 } from '@core/domain/hfPropagation/types.ts';
 import {
+  buildNightShadeMesh,
   buildShellMesh,
+  buildTerminatorPaths,
   canonicalLayerIndex,
+  isNightShadeLayer,
+  type NightShadeLayer,
   type ShellDisplayOptions,
   updateShellFresnel,
 } from './buildGlobeData.ts';
@@ -39,6 +44,8 @@ export interface HfPropagationGlobeProps {
   display?: ShellDisplayOptions;
   /** Operator on/off per layer. Defaults all on. Physics `active` still gates whether a shell exists. */
   visibleLayers?: LayerVisibility;
+  /** Instant used for the greyline / night-side overlay (Environment datetime). */
+  environmentAtMs?: number;
 }
 
 const DEFAULT_DISPLAY: ShellDisplayOptions = {
@@ -49,13 +56,15 @@ const DEFAULT_DISPLAY: ShellDisplayOptions = {
 
 /**
  * 3D propagation globe — renders active ionospheric shells (D/E/F1/F2) as concentric
- * translucent spheres via `react-globe.gl`'s `customThreeObject` extension point. No ray
- * paths or transmitter marker yet (#1170).
+ * translucent spheres via `react-globe.gl`'s `customThreeObject` extension point. Optional
+ * solar terminator ring (`pathsData`) and night-side shade. No ray paths or transmitter
+ * marker yet (#1170).
  */
 export default function HfPropagationGlobe({
   layers,
   display = DEFAULT_DISPLAY,
   visibleLayers = DEFAULT_LAYER_VISIBILITY,
+  environmentAtMs,
 }: HfPropagationGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
@@ -69,7 +78,21 @@ export default function HfPropagationGlobe({
         .sort((a, b) => canonicalLayerIndex(a.id) - canonicalLayerIndex(b.id)),
     [layers, visibleLayers],
   );
-  const { exaggerationFactor, explodeEnabled, fresnelEnabled } = display;
+  const { exaggerationFactor, explodeEnabled, fresnelEnabled, terminatorEnabled } = display;
+
+  const terminatorPaths = useMemo(() => {
+    if (!terminatorEnabled || environmentAtMs == null) return [];
+    return buildTerminatorPaths(computeSolarTerminator(environmentAtMs));
+  }, [terminatorEnabled, environmentAtMs]);
+
+  const customLayerData = useMemo(() => {
+    const objects: Array<IonosphericLayerState | NightShadeLayer> = [...visibleShells];
+    if (terminatorEnabled && environmentAtMs != null) {
+      const [sunLatDeg, sunLonDeg] = computeSubsolarPoint(environmentAtMs);
+      objects.push({ kind: 'night-shade', sunLatDeg, sunLonDeg });
+    }
+    return objects;
+  }, [visibleShells, terminatorEnabled, environmentAtMs]);
 
   useEffect(() => {
     fresnelEnabledRef.current = fresnelEnabled;
@@ -77,6 +100,7 @@ export default function HfPropagationGlobe({
 
   const shellObjectAccessor = useMemo(
     () => (d: object) => {
+      if (isNightShadeLayer(d)) return buildNightShadeMesh(d);
       const layer = d as IonosphericLayerState;
       return buildShellMesh(d, canonicalLayerIndex(layer.id), {
         exaggerationFactor,
@@ -137,9 +161,20 @@ export default function HfPropagationGlobe({
         showAtmosphere
         width={size.width || undefined}
         height={size.height || undefined}
-        customLayerData={visibleShells}
+        customLayerData={customLayerData}
         customThreeObject={shellObjectAccessor}
         customThreeObjectUpdate={fresnelUpdateAccessor}
+        pathsData={terminatorPaths}
+        pathPoints="points"
+        pathPointLat={(p: unknown) => (p as [number, number, number])[0]}
+        pathPointLng={(p: unknown) => (p as [number, number, number])[1]}
+        pathPointAlt={(p: unknown) => (p as [number, number, number])[2]}
+        pathColor={(path: object) => (path as { color: string }).color}
+        pathDashLength={0.12}
+        pathDashGap={0.08}
+        pathDashAnimateTime={0}
+        pathStroke={1.2}
+        pathTransitionDuration={0}
       />
     </div>
   );

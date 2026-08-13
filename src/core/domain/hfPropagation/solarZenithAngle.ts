@@ -23,6 +23,40 @@ function utcHours(date: Date): number {
   );
 }
 
+function normalizeLonDeg(lonDeg: number): number {
+  let lon = lonDeg;
+  while (lon <= -180) lon += 360;
+  while (lon > 180) lon -= 360;
+  return lon;
+}
+
+export interface SolarGeometry {
+  declinationRad: number;
+  /** Geographic latitude where the sun is overhead (equals declination, degrees). */
+  subsolarLatDeg: number;
+  /** Geographic longitude where the sun is overhead (degrees, −180…180]. */
+  subsolarLonDeg: number;
+}
+
+/**
+ * Cooper-1969 declination plus hour-angle subsolar longitude — shared by zenith angle,
+ * the terminator ring, and the subsolar-point helper. Idealised, not a full ephemeris.
+ */
+export function solarGeometryAt(atMs: number): SolarGeometry {
+  const date = new Date(atMs);
+  const doy = utcDayOfYear(date);
+  const declinationRad =
+    OBLIQUITY_DEG *
+    DEG_TO_RAD *
+    Math.sin((360 / DAYS_PER_YEAR) * (doy - EQUINOX_DAY_OF_YEAR) * DEG_TO_RAD);
+  const subsolarLonDeg = normalizeLonDeg(-15 * (utcHours(date) - 12));
+  return {
+    declinationRad,
+    subsolarLatDeg: declinationRad * RAD_TO_DEG,
+    subsolarLonDeg,
+  };
+}
+
 /**
  * Solar zenith angle (degrees) at a given lat/lon and instant — standard formula from solar
  * declination + hour angle. 0° = sun directly overhead, 90° = sun at horizon, >90° = sun below
@@ -33,13 +67,8 @@ function utcHours(date: Date): number {
  * real date/time/location an operator picks.
  */
 export function solarZenithAngleDeg(latDeg: number, lonDeg: number, atMs: number): number {
-  const date = new Date(atMs);
-  const doy = utcDayOfYear(date);
-  const declinationRad =
-    OBLIQUITY_DEG *
-    DEG_TO_RAD *
-    Math.sin((360 / DAYS_PER_YEAR) * (doy - EQUINOX_DAY_OF_YEAR) * DEG_TO_RAD);
-  const hourAngleRad = (15 * (utcHours(date) - 12) + lonDeg) * DEG_TO_RAD;
+  const { declinationRad, subsolarLonDeg } = solarGeometryAt(atMs);
+  const hourAngleRad = (lonDeg - subsolarLonDeg) * DEG_TO_RAD;
   const latRad = latDeg * DEG_TO_RAD;
   const cosZenith =
     Math.sin(latRad) * Math.sin(declinationRad) +

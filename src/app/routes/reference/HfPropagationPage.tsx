@@ -132,6 +132,7 @@ export default function HfPropagationPage() {
   const [exaggerationFactor, setExaggerationFactor] = useState(DEFAULT_EXAGGERATION);
   const [explodeEnabled, setExplodeEnabled] = useState(false);
   const [fresnelEnabled, setFresnelEnabled] = useState(true);
+  const [terminatorEnabled, setTerminatorEnabled] = useState(false);
   const [visibleLayers, setVisibleLayers] =
     useState<Record<IonosphericLayerId, boolean>>(ALL_LAYERS_VISIBLE);
 
@@ -186,8 +187,10 @@ export default function HfPropagationPage() {
                     exaggerationFactor: exaggerationEnabled ? exaggerationFactor : 1,
                     explodeEnabled,
                     fresnelEnabled,
+                    terminatorEnabled,
                   }}
                   visibleLayers={visibleLayers}
+                  environmentAtMs={dateTime.getTime()}
                 />
               </Suspense>
             ) : (
@@ -233,6 +236,11 @@ export default function HfPropagationPage() {
                   checked={fresnelEnabled}
                   onChange={setFresnelEnabled}
                   label="Fresnel shading"
+                />
+                <ToggleSwitch
+                  checked={terminatorEnabled}
+                  onChange={setTerminatorEnabled}
+                  label="Show day/night terminator"
                 />
                 <div className={classes.layerToggles}>
                   {IONOSPHERIC_LAYER_IDS.map((id) => {

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { LatLon } from '@core/domain/geo.ts';
 import { colorForLayer, IONOSPHERIC_LAYER_IDS } from '@core/domain/hfPropagation/layerColor.ts';
 import type {
   IonosphericLayerId,
@@ -42,6 +43,8 @@ export interface ShellDisplayOptions {
   exaggerationFactor: number;
   explodeEnabled: boolean;
   fresnelEnabled: boolean;
+  /** Greyline ring + night-side overlay. Default off. */
+  terminatorEnabled?: boolean;
 }
 
 /** Face-on (looking through the shell toward Earth) opacity when Fresnel shading is on. */
@@ -189,4 +192,104 @@ export function updateShellFresnel(
     { uFresnelEnabled: { value: number } } | undefined;
   if (!uniforms) return;
   uniforms.uFresnelEnabled.value = fresnelEnabled ? 1 : 0;
+}
+
+/** Matches `three-globe` `polar2Cartesian` (unit vector, relAltitude 0). */
+export function latLonToGlobeDirection(latDeg: number, lonDeg: number): THREE.Vector3 {
+  const phi = ((90 - latDeg) * Math.PI) / 180;
+  const theta = ((90 - lonDeg) * Math.PI) / 180;
+  const phiSin = Math.sin(phi);
+  return new THREE.Vector3(phiSin * Math.cos(theta), Math.cos(phi), phiSin * Math.sin(theta));
+}
+
+/** Neutral greyline — not a shell / MODE colour. */
+export const TERMINATOR_PATH_COLOR = '#cfd3dc';
+/** Slight lift above the surface so the dashed ring is not z-fought with the globe mesh. */
+export const TERMINATOR_PATH_ALTITUDE = 0.004;
+export const NIGHT_SHADE_OPACITY = 0.15;
+export const NIGHT_SHADE_RADIUS_UNITS = GLOBE_RADIUS_UNITS * 1.008;
+
+export type TerminatorPath = {
+  kind: 'terminator';
+  points: [number, number, number][];
+  color: string;
+};
+
+function splitLatLonRingAtAntimeridian(points: LatLon[]): LatLon[][] {
+  if (points.length === 0) return [];
+  const segments: LatLon[][] = [[points[0]!]];
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1]!;
+    const curr = points[i]!;
+    if (Math.abs(curr[1] - prev[1]) > 180) {
+      segments.push([curr]);
+    } else {
+      segments[segments.length - 1]!.push(curr);
+    }
+  }
+  return segments.filter((segment) => segment.length >= 2);
+}
+
+export function buildTerminatorPaths(ring: LatLon[]): TerminatorPath[] {
+  return splitLatLonRingAtAntimeridian(ring).map((segment) => ({
+    kind: 'terminator' as const,
+    points: segment.map(
+      ([lat, lon]) => [lat, lon, TERMINATOR_PATH_ALTITUDE] as [number, number, number],
+    ),
+    color: TERMINATOR_PATH_COLOR,
+  }));
+}
+
+export type NightShadeLayer = {
+  kind: 'night-shade';
+  sunLatDeg: number;
+  sunLonDeg: number;
+};
+
+export function isNightShadeLayer(d: object): d is NightShadeLayer {
+  return (d as NightShadeLayer).kind === 'night-shade';
+}
+
+/**
+ * Slightly oversized dark sphere; fragment alpha is 0 on the sunlit hemisphere so only the
+ * night side tints the globe (~0.15). Sun direction uses three-globe cartesian, not exaggeration.
+ */
+export function buildNightShadeMesh(d: object): THREE.Object3D {
+  const { sunLatDeg, sunLonDeg } = d as NightShadeLayer;
+  const geometry = new THREE.SphereGeometry(NIGHT_SHADE_RADIUS_UNITS, 64, 64);
+  const material = new THREE.MeshBasicMaterial({
+    color: '#070714',
+    transparent: true,
+    opacity: NIGHT_SHADE_OPACITY,
+    depthWrite: false,
+    side: THREE.FrontSide,
+  });
+  const sunDir = latLonToGlobeDirection(sunLatDeg, sunLonDeg);
+  const uniforms = {
+    uSunDir: { value: sunDir },
+    uNightOpacity: { value: NIGHT_SHADE_OPACITY },
+  };
+  material.userData.nightShadeUniforms = uniforms;
+  material.customProgramCacheKey = () => 'hf-night-shade';
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = `varying vec3 vGlobeNormal;\n${shader.vertexShader}`.replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+       vGlobeNormal = normalize(transformed);`,
+    );
+    shader.fragmentShader = `uniform vec3 uSunDir;
+uniform float uNightOpacity;
+varying vec3 vGlobeNormal;
+${shader.fragmentShader}`.replace(
+      '#include <color_fragment>',
+      `#include <color_fragment>
+         float ndotSun = dot(normalize(vGlobeNormal), normalize(uSunDir));
+         float night = 1.0 - smoothstep(-0.06, 0.06, ndotSun);
+         diffuseColor.a = uNightOpacity * night;`,
+    );
+  };
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.renderOrder = -1;
+  return mesh;
 }

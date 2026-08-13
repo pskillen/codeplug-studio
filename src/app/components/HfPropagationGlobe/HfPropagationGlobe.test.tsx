@@ -98,4 +98,27 @@ describe('HfPropagationGlobe', () => {
     const shells = lastGlobeProps?.customLayerData as { id: string }[];
     expect(shells.map((s) => s.id)).toEqual(['E', 'F2']);
   });
+
+  it('adds a dashed terminator path and night-shade layer when the overlay is on', () => {
+    const atMs = Date.UTC(2024, 2, 20, 12, 0, 0);
+    render(
+      <HfPropagationGlobe
+        layers={DAYTIME_LAYERS}
+        display={{
+          exaggerationFactor: 1,
+          explodeEnabled: false,
+          fresnelEnabled: false,
+          terminatorEnabled: true,
+        }}
+        environmentAtMs={atMs}
+      />,
+    );
+
+    const custom = lastGlobeProps?.customLayerData as { id?: string; kind?: string }[];
+    expect(custom.some((d) => d.kind === 'night-shade')).toBe(true);
+    expect(custom.map((d) => d.id).filter(Boolean)).toEqual(['D', 'E', 'F1', 'F2']);
+    const paths = lastGlobeProps?.pathsData as { kind: string; points: unknown[] }[];
+    expect(paths.length).toBeGreaterThan(0);
+    expect(paths.every((p) => p.kind === 'terminator' && p.points.length >= 2)).toBe(true);
+  });
 });
