@@ -6,6 +6,7 @@
 
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
+import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
 import {
   makeCommandFrame,
   makeFinishFlashSectorFrame,
@@ -57,6 +58,9 @@ import {
   writeAbs,
 } from './memory.ts';
 import { openGd77KeptRegionLength, openGd77KeptRegions } from './writeVerifySupport.ts';
+import {
+  encodeOpenGd77WriteImageFromPrior,
+} from './hydration.ts';
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 
@@ -187,8 +191,13 @@ export interface OpenGd77ProtocolOptions {
 export class OpenGd77Protocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
   private firmwareInfo: OpenGd77FirmwareInfo | null = null;
-  /** Image from last download or seed — used for dirty-sector upload. */
+  /** Image from last download — used for dirty-sector upload. Never bag-seeded on Write. */
   private priorImage: MemoryMap | null = null;
+  /** Modelled overlay applied after the in-session pre-write read (drop-stash Write). */
+  private pendingWriteProjection: {
+    channels: readonly RadioChannelDto[];
+    organisation?: RadioWriteOrganisation;
+  } | null = null;
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
   private lastUploadKept: Map<string, Uint8Array> | undefined;
   private readonly allowedRadioTypes: readonly number[];
@@ -203,9 +212,25 @@ export class OpenGd77Protocol implements CloneImageRadio {
     this.identLabel = opts?.identLabel ?? 'DM-1701/RT-84';
   }
 
-  /** Seed prior image from hydration before upload (write path). */
+  /** Seed prior image from a MemoryMap (tests / leftover bag merge). Write does not call this. */
   seedPriorImage(image: MemoryMap): void {
     this.priorImage = openUv380ImageFromBytes(image.bytes);
+  }
+
+  getPriorImage(): MemoryMap | null {
+    return this.priorImage ? openUv380ImageFromBytes(this.priorImage.bytes) : null;
+  }
+
+  getPowerSteps(): readonly OpenGd77PowerStep[] {
+    return this.powerSteps;
+  }
+
+  /** Arm modelled overlay; {@link upload} encodes onto the live pre-write prior, not this image. */
+  armWriteProjection(
+    channels: readonly RadioChannelDto[],
+    organisation?: RadioWriteOrganisation,
+  ): void {
+    this.pendingWriteProjection = { channels, organisation };
   }
 
   getFirmwareInfo(): OpenGd77FirmwareInfo | null {
@@ -318,8 +343,8 @@ export class OpenGd77Protocol implements CloneImageRadio {
       /* may already be in CPS */
     }
 
-    // Live radio flash is the diff base for dirty-sector upload and kept-region snapshots.
-    // Bag-seeded priorImage (when present) may be stale; always refresh in-session before write.
+    // Live radio flash is the encode base and the dirty-sector diff prior.
+    // Never overlay onto a blank 0xff map — empty prior after this read refuses Write.
     await this.download({
       onProgress: opts.onProgress,
       signal: opts.signal,
@@ -330,7 +355,20 @@ export class OpenGd77Protocol implements CloneImageRadio {
     if (!prior) {
       throw new RadioProtocolError('OpenGD77 upload: pre-write read did not establish priorImage');
     }
-    const sectors = collectDirtySectors(prior, image);
+
+    let intended = image;
+    if (this.pendingWriteProjection) {
+      const pending = this.pendingWriteProjection;
+      this.pendingWriteProjection = null;
+      intended = encodeOpenGd77WriteImageFromPrior(
+        prior,
+        pending.channels,
+        pending.organisation,
+        { powerSteps: this.powerSteps },
+      );
+    }
+
+    const sectors = collectDirtySectors(prior, intended);
 
     const kept = new Map<string, Uint8Array>();
     for (const region of openGd77KeptRegions()) {
@@ -364,7 +402,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
       /* reboot may drop the port */
     }
 
-    this.priorImage = openUv380ImageFromBytes(image.bytes);
+    this.priorImage = openUv380ImageFromBytes(intended.bytes);
   }
 
   takeUploadStagingSnapshot(): WriteVerifyStagingSnapshot | undefined {

@@ -10,6 +10,7 @@ import {
 import type { MemoryMap } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
+import { RadioProtocolError } from '../../kit/errors.ts';
 import { OPENUV380_IMAGE_SIZE, type OpenGd77PowerStep } from './constants.ts';
 import { encodeChannelsIntoImage } from './channelCodec.ts';
 import {
@@ -57,12 +58,59 @@ export function memoryMapFromOpenGd77Hydration(bag: RadioCloneHydrationBag): Mem
   return openUv380ImageFromBytes(bytes);
 }
 
+export const OPENGD77_EMPTY_WRITE_PRIOR_MESSAGE =
+  'Read this radio in the current session before Write. OpenGD77 write encodes onto the in-session FLASH image — it will not fall back to a blank 0xff map.';
+
 /**
- * Encode modelled organisation + channels into a copy of the hydrated image.
+ * Overlay modelled organisation + channels onto a copy of an existing radio image.
  * Order: contacts → RX groups → channels → zones (FK dependency).
  *
  * Organisation banks are **fully replaced** from the projection (empty arrays wipe
  * prior payload). Settings / APRS / DTMF / VFO / additional settings are untouched.
+ */
+export function encodeOpenGd77ProjectionOntoImage(
+  image: MemoryMap,
+  channels: readonly RadioChannelDto[],
+  organisation?: RadioWriteOrganisation,
+  opts?: { powerSteps?: readonly OpenGd77PowerStep[] },
+): MemoryMap {
+  const next = openUv380ImageFromBytes(image.bytes);
+  const contacts = mergeOrganisationContacts(
+    organisation?.talkGroups,
+    organisation?.digitalContacts,
+  );
+  encodeContactsIntoImage(next, contacts);
+  const byDigitalId = contactIndexByDigitalId(contacts);
+  const useContactIndices = (organisation?.talkGroups ?? []).some(
+    (tg) => tg.timeSlotOverride != null,
+  );
+  encodeRxGroupsIntoImage(next, organisation?.rxGroups ?? [], byDigitalId, {
+    memberIdsAreContactIndices: useContactIndices,
+  });
+  encodeChannelsIntoImage(next, channels, {
+    clearUnlisted: true,
+    powerSteps: opts?.powerSteps,
+  });
+  encodeZonesIntoImage(next, organisation?.zones ?? []);
+  return next;
+}
+
+/** Encode modelled overlay onto an in-session FLASH prior. Empty / undersized prior is refused. */
+export function encodeOpenGd77WriteImageFromPrior(
+  prior: MemoryMap | null | undefined,
+  channels: readonly RadioChannelDto[],
+  organisation?: RadioWriteOrganisation,
+  opts?: { powerSteps?: readonly OpenGd77PowerStep[] },
+): MemoryMap {
+  if (!prior || prior.size !== OPENUV380_IMAGE_SIZE) {
+    throw new RadioProtocolError(OPENGD77_EMPTY_WRITE_PRIOR_MESSAGE);
+  }
+  return encodeOpenGd77ProjectionOntoImage(prior, channels, organisation, opts);
+}
+
+/**
+ * Encode modelled organisation + channels into a copy of the hydrated image.
+ * Write uses {@link encodeOpenGd77WriteImageFromPrior} on the in-session prior instead.
  */
 export function mergeChannelsIntoOpenGd77Hydration(
   bag: RadioCloneHydrationBag,
@@ -70,23 +118,10 @@ export function mergeChannelsIntoOpenGd77Hydration(
   organisation?: RadioWriteOrganisation,
   opts?: { powerSteps?: readonly OpenGd77PowerStep[] },
 ): MemoryMap {
-  const image = memoryMapFromOpenGd77Hydration(bag);
-  const contacts = mergeOrganisationContacts(
-    organisation?.talkGroups,
-    organisation?.digitalContacts,
+  return encodeOpenGd77ProjectionOntoImage(
+    memoryMapFromOpenGd77Hydration(bag),
+    channels,
+    organisation,
+    opts,
   );
-  encodeContactsIntoImage(image, contacts);
-  const byDigitalId = contactIndexByDigitalId(contacts);
-  const useContactIndices = (organisation?.talkGroups ?? []).some(
-    (tg) => tg.timeSlotOverride != null,
-  );
-  encodeRxGroupsIntoImage(image, organisation?.rxGroups ?? [], byDigitalId, {
-    memberIdsAreContactIndices: useContactIndices,
-  });
-  encodeChannelsIntoImage(image, channels, {
-    clearUnlisted: true,
-    powerSteps: opts?.powerSteps,
-  });
-  encodeZonesIntoImage(image, organisation?.zones ?? []);
-  return image;
 }

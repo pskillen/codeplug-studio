@@ -65,6 +65,8 @@ import {
 } from './radioWriteEnvGate.ts';
 import { encodeAtD890WriteImageFromDownloadCache } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
+import { OpenGd77Protocol } from '@integrations/radio-io/radios/opengd77/protocol.ts';
 import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
@@ -420,9 +422,9 @@ function mergeChannelsForWrite(
 }
 
 /**
- * D890 Write encodes onto the in-session download cache (W3). Other radios use the
- * image prepared from persisted hydration. Empty D890 cache is downloaded once; still
- * empty → operator error, never a 0xff assemble.
+ * D890 and OpenGD77 Write encode onto the in-session radio image (not persisted stash,
+ * not a virgin 0xff map). Other radios still use the image prepared from hydration.
+ * Empty session prior → operator error after a download attempt.
  */
 async function resolveRadioWriteImageForUpload(
   session: RadioSession,
@@ -434,12 +436,6 @@ async function resolveRadioWriteImageForUpload(
   },
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
 ): Promise<MemoryMap> {
-  if (egress.profileId !== 'radio-io-at-d890uv') {
-    if (!prepared.image) {
-      throw new RadioWriteBlockedError('Missing radio clone write image.');
-    }
-    return prepared.image;
-  }
   if (session.radio instanceof AtD890uvProtocol) {
     let cache = session.radio.getDownloadCache();
     if (!cache || cache.blocks.size === 0) {
@@ -460,9 +456,34 @@ async function resolveRadioWriteImageForUpload(
       throw new RadioWriteBlockedError(message);
     }
   }
+  if (session.radio instanceof OpenGd77Protocol) {
+    session.radio.armWriteProjection(prepared.channels, prepared.organisation);
+    let prior = session.radio.getPriorImage();
+    if (!prior) {
+      await session.radio.download({
+        onProgress: opts?.onProgress,
+        signal: opts?.signal,
+        progressStage: 'Pre-write read',
+      });
+      prior = session.radio.getPriorImage();
+    }
+    try {
+      return encodeOpenGd77WriteImageFromPrior(
+        prior,
+        prepared.channels,
+        prepared.organisation,
+        { powerSteps: session.radio.getPowerSteps() },
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new RadioWriteBlockedError(message);
+    }
+  }
   if (!prepared.image) {
     throw new RadioWriteBlockedError(
-      'Read this radio in the current session before Write. The AT-D890UV write encode needs the in-session download cache as its prior — it will not fall back to a blank 0xff image.',
+      egress.profileId === 'radio-io-at-d890uv'
+        ? 'Read this radio in the current session before Write. The AT-D890UV write encode needs the in-session download cache as its prior — it will not fall back to a blank 0xff image.'
+        : 'Missing radio clone write image.',
     );
   }
   return prepared.image;

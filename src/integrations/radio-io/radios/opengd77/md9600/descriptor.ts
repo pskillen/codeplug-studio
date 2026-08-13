@@ -55,7 +55,7 @@ export const OPENGD77_MD9600_DESCRIPTOR: RadioDescriptor = {
   attributionIds: ['qdmr'],
   compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-opengd77-md9600' }],
   writeStrategy: 'full-image',
-  hydrationRequiredForWrite: true,
+  hydrationRequiredForWrite: false,
   baudRate: OPENGD77_BAUD_RATE,
   hydration,
   writeVerify: createOpenGd77WriteVerifyHooks(OPENGD77_MD9600_MODEL_ID),
