@@ -188,5 +188,20 @@ describe('OpenGd77Protocol', () => {
     expect(pipe.flashByte(OPENUV380_OFFSET.settings)).toBe(settingsMarker);
     const channels = proto.decodeChannels(proto.getPriorImage()!);
     expect(channels.some((ch) => ch.wireName === 'LIVE')).toBe(true);
+    expect(proto.getLastDirtySectorCount()).toBeGreaterThan(0);
+  });
+
+  it('reports zero dirty sectors when the overlay already matches FLASH', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    const proto = new OpenGd77Protocol();
+    await proto.connect(pipe);
+    const msgs: string[] = [];
+    await proto.upload(createOpenUv380Image(), {
+      onProgress: (update) => {
+        if (update.msg) msgs.push(update.msg);
+      },
+    });
+    expect(proto.getLastDirtySectorCount()).toBe(0);
+    expect(msgs.some((msg) => msg.includes('0 FLASH sectors'))).toBe(true);
   });
 });

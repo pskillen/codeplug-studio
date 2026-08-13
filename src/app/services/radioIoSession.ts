@@ -66,7 +66,10 @@ import {
 import { encodeAtD890WriteImageFromDownloadCache } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
-import { OpenGd77Protocol } from '@integrations/radio-io/radios/opengd77/protocol.ts';
+import {
+  OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE,
+  OpenGd77Protocol,
+} from '@integrations/radio-io/radios/opengd77/protocol.ts';
 import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
@@ -486,6 +489,12 @@ async function resolveRadioWriteImageForUpload(
   return prepared.image;
 }
 
+function openGd77DirtySectorWarnings(session: RadioSession): string[] {
+  if (!(session.radio instanceof OpenGd77Protocol)) return [];
+  if (session.radio.getLastDirtySectorCount() !== 0) return [];
+  return [OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE];
+}
+
 /**
  * Assemble build → encode into hydrated image → upload.
  * Requires radio-clone hydration on the egress when descriptor.hydrationRequiredForWrite.
@@ -520,7 +529,7 @@ export async function writeBuildToRadio(
   if (egress.profileId === 'radio-io-at-d890uv') {
     await uploadAtD890DigitalContactsForWrite(session, prepared.organisation.digitalContacts, opts);
   }
-  return { warnings: prepared.warnings };
+  return { warnings: [...prepared.warnings, ...openGd77DirtySectorWarnings(session)] };
 }
 
 /** Upload a prepared clone image after {@link prepareRadioWriteImage} and session connect. */
@@ -534,7 +543,7 @@ export async function uploadPreparedRadioWrite(
     organisation?: RadioWriteOrganisation;
     channels?: readonly RadioChannelDto[];
   },
-): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult }> {
+): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult; warnings?: string[] }> {
   const hydration = getRadioCloneHydration(egress);
   if (session.descriptor.hydrationRequiredForWrite && !hydration) {
     throw new RadioWriteBlockedError('Missing radio clone hydration on this egress path.');
@@ -565,7 +574,11 @@ export async function uploadPreparedRadioWrite(
     await uploadAtD890DigitalContactsForWrite(session, opts?.organisation?.digitalContacts, opts);
   }
   const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
-  return captured ? { writeVerifyPending: captured } : {};
+  const warnings = openGd77DirtySectorWarnings(session);
+  return {
+    ...(captured ? { writeVerifyPending: captured } : {}),
+    ...(warnings.length ? { warnings } : {}),
+  };
 }
 
 /** Cross-session write verify — delegates to descriptor {@link WriteVerifyHooks}. */

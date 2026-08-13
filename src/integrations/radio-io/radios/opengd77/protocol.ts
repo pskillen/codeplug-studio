@@ -186,6 +186,9 @@ export interface OpenGd77ProtocolOptions {
   identLabel?: string;
 }
 
+export const OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE =
+  'OpenGD77 Write programmed 0 FLASH sectors — the live radio already matched this build. The DM-1701 stays in the current zone unless FLASH is rewritten.';
+
 export class OpenGd77Protocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
   private firmwareInfo: OpenGd77FirmwareInfo | null = null;
@@ -196,6 +199,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
     channels: readonly RadioChannelDto[];
     organisation?: RadioWriteOrganisation;
   } | null = null;
+  private lastDirtySectorCount = 0;
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
   private lastUploadKept: Map<string, Uint8Array> | undefined;
   private readonly allowedRadioTypes: readonly number[];
@@ -221,6 +225,10 @@ export class OpenGd77Protocol implements CloneImageRadio {
 
   getPowerSteps(): readonly OpenGd77PowerStep[] {
     return this.powerSteps;
+  }
+
+  getLastDirtySectorCount(): number {
+    return this.lastDirtySectorCount;
   }
 
   /** Arm modelled overlay; {@link upload} encodes onto the live pre-write prior, not this image. */
@@ -364,6 +372,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
     }
 
     const sectors = collectDirtySectors(prior, intended);
+    this.lastDirtySectorCount = sectors.length;
 
     const kept = new Map<string, Uint8Array>();
     for (const region of openGd77KeptRegions()) {
@@ -371,6 +380,15 @@ export class OpenGd77Protocol implements CloneImageRadio {
       kept.set(region.id, readAbs(prior, region.absAddress, len));
     }
     this.lastUploadKept = kept;
+
+    if (sectors.length === 0) {
+      reportProgress(opts.onProgress, {
+        cur: 1,
+        max: 1,
+        msg: OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE,
+        stage: 'FLASH sectors',
+      });
+    }
 
     for (let i = 0; i < sectors.length; i++) {
       throwIfAborted(opts.signal);

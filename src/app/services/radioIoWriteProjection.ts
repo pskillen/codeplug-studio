@@ -26,6 +26,7 @@ import {
 import type { FormatId } from '@core/import-export/types.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
+import { buildDigitalContactExportWireNameMap } from '@core/import-export/digitalContactExportName.ts';
 import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import {
   buildTalkGroupTimeslotCloneIndex,
@@ -462,11 +463,18 @@ function buildTalkGroupsAndRx(
   const digitalContacts: RadioDigitalContactDto[] = [];
   const reservedDc = new Set<string>();
   const digitalContactTotal = assembled.digitalContacts.length;
+  const contactExportWireNames = buildDigitalContactExportWireNameMap(
+    assembled.digitalContacts,
+    build.contactOverrides,
+    merged,
+    egress.profileId,
+    warnings,
+  );
   if (includeLibraryContacts) {
     for (const row of assembled.digitalContacts) {
       if (digitalContacts.length >= maxDigitalContacts) break;
       const wireName = applyListWireNameLimits(
-        row.wireName,
+        contactExportWireNames.get(row.entity.id) ?? row.wireName,
         reservedDc,
         merged,
         egress.profileId,
@@ -844,11 +852,18 @@ function buildOpenGd77ContactsAndRx(
   const digitalContacts: RadioDigitalContactDto[] = [];
   const reservedDc = new Set<string>();
   let nextContactIndex = talkGroups.length + 1;
+  const contactExportWireNames = buildDigitalContactExportWireNameMap(
+    assembled.digitalContacts,
+    build.contactOverrides,
+    merged,
+    egress.profileId,
+    warnings,
+  );
   if (includeLibraryContacts) {
     for (const row of assembled.digitalContacts) {
       if (nextContactIndex > maxContacts) break;
       const wireName = applyListWireNameLimits(
-        row.wireName,
+        contactExportWireNames.get(row.entity.id) ?? row.wireName,
         reservedDc,
         merged,
         egress.profileId,

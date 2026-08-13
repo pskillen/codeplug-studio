@@ -350,7 +350,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         organisation,
         channels,
       });
-      if (warnings.length > 0) setWriteWarnings(warnings);
+      if (warnings.length > 0 || (uploadResult.warnings?.length ?? 0) > 0) {
+        setWriteWarnings([...warnings, ...(uploadResult.warnings ?? [])]);
+      }
       await releaseSession();
       if (supportsWriteVerify && uploadResult.writeVerifyPending) {
         const pending: PendingVerifyPayload = uploadResult.writeVerifyPending;
