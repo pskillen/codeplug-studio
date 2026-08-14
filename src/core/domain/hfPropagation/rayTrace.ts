@@ -5,6 +5,7 @@ import type {
   RayPathResult,
   RayTraceParams,
 } from './types.ts';
+import { antennaGain } from './antennaPatterns.ts';
 import { criticalFrequencyMhz, maximumUsableFrequencyMhz } from './mufCalculation.ts';
 
 const GROUNDWAVE_MAX_RANGE_KM = 300; // typical single-hop groundwave upper bound at HF
@@ -90,4 +91,22 @@ function buildEscapePathPoints(
     { planeDistanceM: 0, altitudeKm: 0 },
     { planeDistanceM: horizontalM, altitudeKm: escapeAltitudeKm },
   ];
+}
+
+/** Trace a fan of rays across elevation angles 0-90°, weighted by the antenna's gain at each
+ * angle (rays below a power threshold are pruned — cheap early-exit per background.md §4's
+ * launch-pipeline note, adapted to this phase's simpler single-plane scope). Returns only rays
+ * with meaningful gain, sorted by takeoff angle ascending. */
+export function traceRayFan(
+  params: RayTraceParams,
+  powerThreshold: number = 0.05,
+): RayPathResult[] {
+  const ANGLE_STEP_DEG = 2;
+  const results: RayPathResult[] = [];
+  for (let angle = 1; angle <= 89; angle += ANGLE_STEP_DEG) {
+    const gain = antennaGain(params.antenna, angle, params.azimuthDeg, params.frequencyMhz);
+    if (gain < powerThreshold) continue;
+    results.push(traceRay(params, angle));
+  }
+  return results;
 }

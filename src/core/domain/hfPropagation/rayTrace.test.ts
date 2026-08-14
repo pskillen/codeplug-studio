@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { criticalFrequencyMhz, maximumUsableFrequencyMhz } from './mufCalculation.ts';
-import { traceRay } from './rayTrace.ts';
+import { antennaGain } from './antennaPatterns.ts';
+import { traceRay, traceRayFan } from './rayTrace.ts';
 import type { AntennaConfig, IonosphericLayerState, RayTraceParams } from './types.ts';
 
 const OMNIDIRECTIONAL: AntennaConfig = { family: 'omnidirectional-vertical', heightM: 8 };
@@ -126,5 +127,50 @@ describe('traceRay', () => {
     const result = traceRay(params({ frequencyMhz: 10, layers: [F2_DAY, eLayer] }), 45);
     expect(result.mode).toBe('skywave');
     expect(result.points[1]?.altitudeKm).toBe(120); // E mid-altitude, not F2's 325
+  });
+});
+
+describe('traceRayFan', () => {
+  const frequencyMhz = 10;
+
+  it('returns rays sorted by takeoff angle and skips the groundwave band at 1–3° when gain is below threshold', () => {
+    const fan = traceRayFan(params({ frequencyMhz }));
+    const angles = fan.map((r) => r.takeoffAngleDeg);
+    expect(angles).toEqual([...angles].sort((a, b) => a - b));
+    expect(angles.every((a) => a >= 1 && a <= 89)).toBe(true);
+    expect(angles.every((a) => (a - 1) % 2 === 0)).toBe(true);
+    for (const ray of fan) {
+      expect(
+        antennaGain(OMNIDIRECTIONAL, ray.takeoffAngleDeg, 0, frequencyMhz),
+      ).toBeGreaterThanOrEqual(0.05);
+    }
+  });
+
+  it('produces the same ray count for an omnidirectional-vertical antenna at any azimuth', () => {
+    const at0 = traceRayFan(params({ frequencyMhz, azimuthDeg: 0 }));
+    const at90 = traceRayFan(params({ frequencyMhz, azimuthDeg: 90 }));
+    const at180 = traceRayFan(params({ frequencyMhz, azimuthDeg: 180 }));
+    expect(at0).toHaveLength(at90.length);
+    expect(at0).toHaveLength(at180.length);
+    expect(at0).toHaveLength(37);
+    expect(at0[0]?.takeoffAngleDeg).toBe(3);
+    expect(at0.at(-1)?.takeoffAngleDeg).toBe(75);
+  });
+
+  it('produces fewer rays for a directional-lobe antenna off its heading than on-axis', () => {
+    const directional: AntennaConfig = {
+      family: 'directional-lobe',
+      heightM: 8,
+      azimuthDeg: 0,
+    };
+    const onAxis = traceRayFan(params({ frequencyMhz, antenna: directional, azimuthDeg: 0 }));
+    const offAxis = traceRayFan(params({ frequencyMhz, antenna: directional, azimuthDeg: 90 }));
+    const reverse = traceRayFan(params({ frequencyMhz, antenna: directional, azimuthDeg: 180 }));
+    expect(onAxis).toHaveLength(34);
+    expect(onAxis[0]?.takeoffAngleDeg).toBe(23);
+    expect(onAxis.at(-1)?.takeoffAngleDeg).toBe(89);
+    expect(offAxis).toHaveLength(11);
+    expect(reverse).toHaveLength(0);
+    expect(onAxis.length).toBeGreaterThan(offAxis.length);
   });
 });
