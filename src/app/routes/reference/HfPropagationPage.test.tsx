@@ -19,11 +19,19 @@ const { requestRayTrace } = vi.hoisted(() => ({
 }));
 
 let lastGlobeProps: Record<string, unknown> | null = null;
+let lastTopDownProps: Record<string, unknown> | null = null;
 
 vi.mock('../../components/HfPropagationGlobe/HfPropagationGlobe.tsx', () => ({
   default: (props: Record<string, unknown>) => {
     lastGlobeProps = props;
     return <div data-testid="globe-stub" />;
+  },
+}));
+
+vi.mock('../../components/PropagationTopDownMap/PropagationTopDownMap.tsx', () => ({
+  default: (props: Record<string, unknown>) => {
+    lastTopDownProps = props;
+    return <div data-testid="top-down-stub" />;
   },
 }));
 
@@ -73,6 +81,27 @@ describe('HfPropagationPage Reading panel', () => {
     });
     const mhzReadouts = screen.getAllByText(/\d+\.\d+ MHz/);
     expect(mhzReadouts.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('HfPropagationPage top-down view', () => {
+  it('renders the top-down map with the same transmitter and rays, without a second Worker call', async () => {
+    await renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('Skywave')).toBeInTheDocument();
+    });
+    const globeRays = lastGlobeProps?.rays;
+    const callsAfterGlobe = requestRayTrace.mock.calls.length;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Top-down' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('top-down-stub')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('globe-stub')).not.toBeInTheDocument();
+    expect(lastTopDownProps?.transmitter).toEqual({ lat: 0, lon: 0 });
+    expect(lastTopDownProps?.rays).toBe(globeRays);
+    expect(requestRayTrace.mock.calls.length).toBe(callsAfterGlobe);
   });
 });
 

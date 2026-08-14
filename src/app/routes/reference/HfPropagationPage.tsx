@@ -38,6 +38,9 @@ import classes from './HfPropagationPage.module.css';
 const HfPropagationGlobe = lazy(
   () => import('../../components/HfPropagationGlobe/HfPropagationGlobe.tsx'),
 );
+const PropagationTopDownMap = lazy(
+  () => import('../../components/PropagationTopDownMap/PropagationTopDownMap.tsx'),
+);
 
 type PropagationView = 'globe' | 'top-down' | 'vertical-slice';
 
@@ -268,12 +271,22 @@ export default function HfPropagationPage() {
                   txLon={txLon}
                 />
               </Suspense>
+            ) : view === 'top-down' ? (
+              <Suspense
+                fallback={
+                  <div className={classes.viewportPlaceholder}>
+                    <Text size="sm" c="dimmed">
+                      Loading top-down view…
+                    </Text>
+                  </div>
+                }
+              >
+                <PropagationTopDownMap transmitter={txLocation} rays={rays} />
+              </Suspense>
             ) : (
               <div className={classes.viewportPlaceholder}>
                 <Text size="sm" c="dimmed">
-                  {view === 'vertical-slice'
-                    ? `This view isn't implemented yet. Slice plane: ${slicePlane.bearingDeg.toFixed(0)}°T, ${(slicePlane.distanceM / 1000).toFixed(0)} km.`
-                    : "This view isn't implemented yet."}
+                  {`This view isn't implemented yet. Slice plane: ${slicePlane.bearingDeg.toFixed(0)}°T, ${(slicePlane.distanceM / 1000).toFixed(0)} km.`}
                 </Text>
               </div>
             )}
