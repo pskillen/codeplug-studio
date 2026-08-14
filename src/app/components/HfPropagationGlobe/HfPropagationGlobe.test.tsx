@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { IonosphericLayerState } from '@core/domain/hfPropagation/types.ts';
+import type { IonosphericLayerState, RayPathResult } from '@core/domain/hfPropagation/types.ts';
 import HfPropagationGlobe, { GLOBE_RADIUS_UNITS, shellRadiusUnits } from './HfPropagationGlobe.tsx';
 import { GLOBE_EARTH_RADIUS_KM } from '../SatelliteGlobe/globeAltitude.ts';
+import { MODE_COLORS } from './buildGlobeData.ts';
 
 // react-globe.gl needs a WebGL context jsdom doesn't provide, so it's mocked to a stub that
 // exposes the props it was called with — same convention as SatelliteGlobe.test.tsx. This
@@ -132,5 +133,113 @@ describe('HfPropagationGlobe', () => {
     const paths = lastGlobeProps?.pathsData as { kind: string; points: unknown[] }[];
     expect(paths.length).toBeGreaterThan(0);
     expect(paths.every((p) => p.kind === 'terminator' && p.points.length >= 2)).toBe(true);
+  });
+
+  it('renders a transmitter marker, mode-coloured ray paths, skip-zone ring, and legend', () => {
+    const rays: RayPathResult[] = [
+      {
+        mode: 'groundwave',
+        points: [
+          { lat: 0, lon: 0, altitudeKm: 0 },
+          { lat: 0, lon: 2.7, altitudeKm: 0 },
+        ],
+        takeoffAngleDeg: 3,
+        relativeSignalStrength: 1,
+      },
+      {
+        mode: 'skywave',
+        points: [
+          { lat: 0, lon: 0, altitudeKm: 0 },
+          { lat: 0, lon: 10, altitudeKm: 250 },
+          { lat: 0, lon: 20, altitudeKm: 0 },
+        ],
+        takeoffAngleDeg: 20,
+        relativeSignalStrength: 0.8,
+      },
+    ];
+    render(<HfPropagationGlobe layers={DAYTIME_LAYERS} rays={rays} />);
+
+    const points = lastGlobeProps?.pointsData as { kind: string; lat: number; lng: number }[];
+    expect(points).toEqual([expect.objectContaining({ kind: 'transmitter', lat: 0, lng: 0 })]);
+
+    const paths = lastGlobeProps?.pathsData as { kind: string; mode?: string; color: string }[];
+    expect(paths.filter((p) => p.kind === 'ray').map((p) => p.mode)).toEqual([
+      'groundwave',
+      'skywave',
+    ]);
+    expect(paths.find((p) => p.kind === 'ray' && p.mode === 'skywave')?.color).toBe(
+      MODE_COLORS.skywave,
+    );
+    expect(paths.some((p) => p.kind === 'skip-zone')).toBe(true);
+    expect(lastGlobeProps?.pathDashLength).toBeInstanceOf(Function);
+    expect(lastGlobeProps?.pathDashGap).toBeInstanceOf(Function);
+
+    expect(screen.getByLabelText('Propagation modes')).toBeInTheDocument();
+    expect(screen.getByText('Groundwave')).toBeInTheDocument();
+    expect(screen.getByText('NVIS')).toBeInTheDocument();
+  });
+
+  it('places the transmitter marker and skip ring at txLat/txLon', () => {
+    const rays: RayPathResult[] = [
+      {
+        mode: 'skywave',
+        points: [
+          { lat: 51.5, lon: -0.13, altitudeKm: 0 },
+          { lat: 52.5, lon: -0.13, altitudeKm: 250 },
+          { lat: 53.5, lon: -0.13, altitudeKm: 0 },
+        ],
+        takeoffAngleDeg: 20,
+        relativeSignalStrength: 0.8,
+      },
+    ];
+    render(<HfPropagationGlobe layers={DAYTIME_LAYERS} rays={rays} txLat={51.5} txLon={-0.13} />);
+
+    const points = lastGlobeProps?.pointsData as { kind: string; lat: number; lng: number }[];
+    expect(points).toEqual([
+      expect.objectContaining({ kind: 'transmitter', lat: 51.5, lng: -0.13 }),
+    ]);
+    const skipRing = (lastGlobeProps?.pathsData as { kind: string; points: [number, number][] }[])
+      .filter((p) => p.kind === 'skip-zone')
+      .flatMap((p) => p.points);
+    expect(skipRing.length).toBeGreaterThan(0);
+    expect(
+      skipRing.some(([lat, lon]) => Math.abs(lat - 51.5) < 3 && Math.abs(lon + 0.13) < 3),
+    ).toBe(true);
+  });
+
+  it('does not add extra customLayerData entries when cutaway is enabled', () => {
+    render(
+      <HfPropagationGlobe
+        layers={DAYTIME_LAYERS}
+        cutawayEnabled
+        sliceBearingDeg={90}
+        txLat={0}
+        txLon={0}
+      />,
+    );
+    const custom = lastGlobeProps?.customLayerData as { id?: string; kind?: string }[];
+    expect(custom.map((d) => d.id).filter(Boolean)).toEqual(['D', 'E', 'F1', 'F2']);
+    expect(custom.every((d) => d.kind !== 'ray-corridor')).toBe(true);
+  });
+
+  it('adds a ray-corridor custom layer without removing the thin pathsData rays', () => {
+    const rays: RayPathResult[] = [
+      {
+        mode: 'nvis',
+        points: [
+          { lat: 0, lon: 0, altitudeKm: 0 },
+          { lat: 1, lon: 0, altitudeKm: 80 },
+          { lat: 2, lon: 0, altitudeKm: 0 },
+        ],
+        takeoffAngleDeg: 70,
+        relativeSignalStrength: 0.5,
+      },
+    ];
+    render(<HfPropagationGlobe layers={DAYTIME_LAYERS} rays={rays} rayCorridorEnabled />);
+
+    const custom = lastGlobeProps?.customLayerData as { kind?: string }[];
+    expect(custom.some((d) => d.kind === 'ray-corridor')).toBe(true);
+    const paths = lastGlobeProps?.pathsData as { kind: string; mode?: string }[];
+    expect(paths.filter((p) => p.kind === 'ray').map((p) => p.mode)).toEqual(['nvis']);
   });
 });

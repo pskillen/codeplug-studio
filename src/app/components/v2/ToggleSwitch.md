@@ -22,6 +22,7 @@ Skip-scan, show-on-map, and similar boolean toggles in channel editor sections.
 
 ## Behaviour
 
+- Keyboard: native checkbox in the tab order; Space/Enter toggle. `:focus-visible` outline on the track.
 - Live demos: `/styleguide/forms`
 
 ## Related

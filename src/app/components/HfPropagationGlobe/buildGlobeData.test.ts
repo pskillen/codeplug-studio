@@ -1,6 +1,10 @@
+import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { cutawayPlaneNormal } from '@core/domain/hfPropagation/cutawayPlane.ts';
 import { layerMidAltitudeKm } from '@core/domain/hfPropagation/ionosphericProfile.ts';
 import { GLOBE_EARTH_RADIUS_KM } from '../SatelliteGlobe/globeAltitude.ts';
+import type { RayPathResult } from '@core/domain/hfPropagation/types.ts';
+import { altitudeKmToGlobeRadiusUnits } from '../SatelliteGlobe/globeAltitude.ts';
 import {
   canonicalLayerIndex,
   displayShellRadiusUnits,
@@ -11,7 +15,12 @@ import {
   FRESNEL_OPACITY_MIN,
   fresnelOpacity,
   GLOBE_RADIUS_UNITS,
+  applyShellClippingPlanes,
+  buildCutawayClippingPlane,
+  buildRayCorridorMesh,
   latLonToGlobeDirection,
+  MODE_COLORS,
+  rayResultsToGlobePaths,
   SHELL_INNER_BASELINE_OPACITY,
   SHELL_OPACITY_STEP,
   shellBaselineOpacity,
@@ -138,6 +147,29 @@ describe('latLonToGlobeDirection', () => {
   });
 });
 
+describe('buildCutawayClippingPlane', () => {
+  it('uses the domain normal on a THREE.Plane through the transmitter', () => {
+    const plane = buildCutawayClippingPlane(0, 0, 0);
+    const n = cutawayPlaneNormal(0, 0, 0);
+    expect(plane.normal.x).toBeCloseTo(n.x);
+    expect(plane.normal.y).toBeCloseTo(n.y);
+    expect(plane.normal.z).toBeCloseTo(n.z);
+  });
+});
+
+describe('applyShellClippingPlanes', () => {
+  it('sets and clears clippingPlanes on existing shell MeshBasicMaterial', () => {
+    const material = new THREE.MeshBasicMaterial();
+    material.userData.shellFresnelUniforms = { uFresnelEnabled: { value: 0 } };
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 4, 4), material);
+    const plane = buildCutawayClippingPlane(0, 0, 0);
+    applyShellClippingPlanes(mesh, [plane]);
+    expect(material.clippingPlanes).toEqual([plane]);
+    applyShellClippingPlanes(mesh, []);
+    expect(material.clippingPlanes).toEqual([]);
+  });
+});
+
 describe('sun marker distance', () => {
   it('sits at three times the true-scale F2 outer-shell radius', () => {
     expect(SUN_MARKER_DISTANCE_UNITS).toBeCloseTo(3 * shellRadiusUnits(400));
@@ -187,5 +219,74 @@ describe('day/night shell presence', () => {
     const dayR = displayShellRadiusUnits(layerMidAltitudeKm('F2', false), 3, display);
     const nightR = displayShellRadiusUnits(layerMidAltitudeKm('F2', true), 3, display);
     expect(nightR).toBeLessThan(dayR);
+  });
+});
+
+describe('rayResultsToGlobePaths', () => {
+  function ray(mode: RayPathResult['mode'], altitudeKm: number): RayPathResult {
+    return {
+      mode,
+      points: [
+        { lat: 0, lon: 0, altitudeKm: 0 },
+        { lat: 1, lon: 2, altitudeKm },
+      ],
+      takeoffAngleDeg: 15,
+      relativeSignalStrength: 1,
+    };
+  }
+
+  it('maps lat/lon/altitude onto globe path triples with per-mode colours', () => {
+    const rays = [
+      ray('groundwave', 0),
+      ray('skywave', 250),
+      ray('nvis', 200),
+      ray('absorbed', 80),
+      ray('escaped', 500),
+    ];
+    const paths = rayResultsToGlobePaths(rays);
+    expect(paths).toHaveLength(5);
+    for (const [i, path] of paths.entries()) {
+      expect(path.kind).toBe('ray');
+      expect(path.mode).toBe(rays[i]!.mode);
+      expect(path.color).toBe(MODE_COLORS[rays[i]!.mode]);
+      expect(path.points).toEqual([
+        [0, 0, altitudeKmToGlobeRadiusUnits(0)],
+        [1, 2, altitudeKmToGlobeRadiusUnits(rays[i]!.points[1]!.altitudeKm)],
+      ]);
+    }
+  });
+
+  it('keeps MODE_COLORS distinct from ionospheric layer colours', () => {
+    expect(MODE_COLORS.groundwave).toBe('#4d7cff');
+    expect(MODE_COLORS.skywave).toBe('#3ddc97');
+    expect(MODE_COLORS.nvis).toBe('#f5a623');
+    expect(MODE_COLORS.absorbed).toBe('#8b3a3a');
+    expect(MODE_COLORS.escaped).toBe('#666666');
+  });
+});
+
+describe('buildRayCorridorMesh', () => {
+  it('builds TubeGeometry meshes coloured by MODE_COLORS', () => {
+    const obj = buildRayCorridorMesh({
+      kind: 'ray-corridor',
+      rays: [
+        {
+          mode: 'skywave',
+          points: [
+            { lat: 0, lon: 0, altitudeKm: 0 },
+            { lat: 0, lon: 10, altitudeKm: 250 },
+            { lat: 0, lon: 20, altitudeKm: 0 },
+          ],
+          takeoffAngleDeg: 20,
+          relativeSignalStrength: 0.8,
+        },
+      ],
+    });
+    expect(obj.children).toHaveLength(1);
+    const mesh = obj.children[0] as THREE.Mesh;
+    expect(mesh.geometry.type).toBe('TubeGeometry');
+    expect((mesh.material as THREE.MeshBasicMaterial).color.getHexString()).toBe(
+      MODE_COLORS.skywave.slice(1),
+    );
   });
 });

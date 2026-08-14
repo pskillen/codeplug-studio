@@ -3,10 +3,14 @@
  * Labels match the design-system reference kit (`libStrip` / Tools / Help).
  */
 
+import { isProdBuildEnv } from '@app/services/radioWriteEnvGate.ts';
+
 export interface ContextualStripItem {
   label: string;
   to: string;
 }
+
+const PROPAGATION_VISUALISER_TO = '/reference/rf-propagation';
 
 /** Library entity types — design-system `libStrip` wording. */
 export const libraryStripItems: readonly ContextualStripItem[] = [
@@ -20,12 +24,21 @@ export const libraryStripItems: readonly ContextualStripItem[] = [
   { label: 'Satellite Keps', to: '/library/satellite-keps' },
 ];
 
+/** Full Tools strip, including items hidden on prod. */
 export const toolsStripItems: readonly ContextualStripItem[] = [
   { label: 'Maidenhead locator', to: '/reference/maidenhead' },
   { label: 'Band plan', to: '/reference/bands' },
   { label: 'Tracking Dashboard', to: '/tracking' },
-  { label: 'Propagation Visualiser', to: '/reference/rf-propagation' },
+  { label: 'Propagation Visualiser', to: PROPAGATION_VISUALISER_TO },
 ];
+
+/** Tools strip for chrome. Hides Propagation Visualiser when `buildEnv` is prod. */
+export function getToolsStripItems(
+  buildEnv: string = __BUILD_ENV__,
+): readonly ContextualStripItem[] {
+  if (!isProdBuildEnv(buildEnv)) return toolsStripItems;
+  return toolsStripItems.filter((item) => item.to !== PROPAGATION_VISUALISER_TO);
+}
 
 export const helpStripItems: readonly ContextualStripItem[] = [
   { label: 'Overview', to: '/help' },
@@ -49,10 +62,11 @@ export const debugStripItems: readonly ContextualStripItem[] = [
  */
 export function resolveContextualStripItems(
   pathname: string,
+  buildEnv: string = __BUILD_ENV__,
 ): readonly ContextualStripItem[] | null {
   if (pathname.startsWith('/library')) return libraryStripItems;
   if (pathname.startsWith('/reference') || pathname.startsWith('/tracking')) {
-    return toolsStripItems;
+    return getToolsStripItems(buildEnv);
   }
   if (pathname.startsWith('/help') || pathname.startsWith('/attributions')) {
     return helpStripItems;

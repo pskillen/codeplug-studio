@@ -5,7 +5,13 @@ import { colorForLayer, IONOSPHERIC_LAYER_IDS } from '@core/domain/hfPropagation
 import type {
   IonosphericLayerId,
   IonosphericLayerState,
+  PropagationMode,
+  RayPathResult,
 } from '@core/domain/hfPropagation/types.ts';
+import {
+  cutawayPlaneNormal,
+  latLonToGlobeCartesian,
+} from '@core/domain/hfPropagation/cutawayPlane.ts';
 import { altitudeKmToGlobeRadiusUnits } from '../SatelliteGlobe/globeAltitude.ts';
 
 /**
@@ -294,12 +300,34 @@ export function updateShellFresnel(
   uniforms.uFresnelEnabled.value = fresnelEnabled ? 1 : 0;
 }
 
+/** THREE.Plane through the transmitter along `bearingDeg` (globe-centre coplanar). */
+export function buildCutawayClippingPlane(
+  txLat: number,
+  txLon: number,
+  bearingDeg: number,
+): THREE.Plane {
+  const n = cutawayPlaneNormal(txLat, txLon, bearingDeg);
+  const normal = new THREE.Vector3(n.x, n.y, n.z);
+  const coplanar = latLonToGlobeDirection(txLat, txLon).multiplyScalar(GLOBE_RADIUS_UNITS);
+  return new THREE.Plane().setFromNormalAndCoplanarPoint(normal, coplanar);
+}
+
+/**
+ * Sets `clippingPlanes` on existing shell `MeshBasicMaterial`s only (Fresnel uniforms
+ * discriminant). Empty array clears a previous cutaway. Does not recreate materials.
+ */
+export function applyShellClippingPlanes(obj: THREE.Object3D, planes: THREE.Plane[]): void {
+  const mesh = obj as THREE.Mesh;
+  const material = mesh.material;
+  if (!(material instanceof THREE.MeshBasicMaterial)) return;
+  if (!material.userData.shellFresnelUniforms) return;
+  material.clippingPlanes = planes;
+}
+
 /** Matches `three-globe` `polar2Cartesian` (unit vector, relAltitude 0). */
 export function latLonToGlobeDirection(latDeg: number, lonDeg: number): THREE.Vector3 {
-  const phi = ((90 - latDeg) * Math.PI) / 180;
-  const theta = ((90 - lonDeg) * Math.PI) / 180;
-  const phiSin = Math.sin(phi);
-  return new THREE.Vector3(phiSin * Math.cos(theta), Math.cos(phi), phiSin * Math.sin(theta));
+  const { x, y, z } = latLonToGlobeCartesian(latDeg, lonDeg);
+  return new THREE.Vector3(x, y, z);
 }
 
 /** Bright greyline so it reads against both the marble and the night shade. */
@@ -425,4 +453,125 @@ export function buildSunMarkerMesh(d: object): THREE.Object3D {
   mesh.position.copy(dir.multiplyScalar(SUN_MARKER_DISTANCE_UNITS));
   mesh.renderOrder = 10;
   return mesh;
+}
+
+/**
+ * Propagation-mode colours for ray paths — distinct from `colorForLayer` (D/E/F1/F2 shells).
+ * Phases 10 (top-down) and 11 (vertical slice) import this mapping rather than redefining it.
+ */
+export const MODE_COLORS: Record<PropagationMode, string> = {
+  groundwave: '#4d7cff',
+  skywave: '#3ddc97',
+  nvis: '#f5a623',
+  absorbed: '#8b3a3a',
+  escaped: '#666666',
+};
+
+export const MODE_LABELS: Record<PropagationMode, string> = {
+  groundwave: 'Groundwave',
+  skywave: 'Skywave',
+  nvis: 'NVIS',
+  absorbed: 'Absorbed',
+  escaped: 'Escaped',
+};
+
+export const PROPAGATION_MODES: readonly PropagationMode[] = [
+  'groundwave',
+  'skywave',
+  'nvis',
+  'absorbed',
+  'escaped',
+];
+
+export interface PropagationRayGlobePath {
+  kind: 'ray';
+  mode: PropagationMode;
+  points: [number, number, number][];
+  color: string;
+}
+
+/** Neutral skip-zone / NVIS-coverage ring — not one of the five mode colours. */
+export const SKIP_ZONE_PATH_COLOR = '#c8c8d4';
+/** Lift slightly above the marble so the ring is not buried; below the greyline. */
+export const SKIP_ZONE_PATH_ALTITUDE = 0.008;
+
+export type SkipZoneGlobePath = {
+  kind: 'skip-zone';
+  points: [number, number, number][];
+  color: string;
+};
+
+export type HfGlobePath = PropagationRayGlobePath | SkipZoneGlobePath | TerminatorPath;
+
+export function rayResultsToGlobePaths(rays: RayPathResult[]): PropagationRayGlobePath[] {
+  return rays.map((ray) => ({
+    kind: 'ray' as const,
+    mode: ray.mode,
+    points: ray.points.map(
+      (p) => [p.lat, p.lon, altitudeKmToGlobeRadiusUnits(p.altitudeKm)] as [number, number, number],
+    ),
+    color: MODE_COLORS[ray.mode],
+  }));
+}
+
+export function buildSkipZonePaths(ring: LatLon[]): SkipZoneGlobePath[] {
+  return splitLatLonRingAtAntimeridian(ring).map((segment) => ({
+    kind: 'skip-zone' as const,
+    points: segment.map(
+      ([lat, lon]) => [lat, lon, SKIP_ZONE_PATH_ALTITUDE] as [number, number, number],
+    ),
+    color: SKIP_ZONE_PATH_COLOR,
+  }));
+}
+
+/** Scene-unit tube radius — small vs globe radius 100 so the phase 9 line still reads. */
+export const RAY_CORRIDOR_RADIUS_UNITS = 1.15;
+
+export type RayCorridorLayer = {
+  kind: 'ray-corridor';
+  rays: RayPathResult[];
+};
+
+export function isRayCorridorLayer(d: object): d is RayCorridorLayer {
+  return (d as RayCorridorLayer).kind === 'ray-corridor';
+}
+
+export function rayPointToGlobePosition(
+  lat: number,
+  lon: number,
+  altitudeKm: number,
+): THREE.Vector3 {
+  const altUnits = altitudeKmToGlobeRadiusUnits(altitudeKm);
+  return latLonToGlobeDirection(lat, lon).multiplyScalar(GLOBE_RADIUS_UNITS * (1 + altUnits));
+}
+
+/**
+ * Optional ribbon along the same rays as `pathsData`. Thin line stays on; this mesh is additive.
+ */
+export function buildRayCorridorMesh(d: object): THREE.Object3D {
+  const { rays } = d as RayCorridorLayer;
+  const group = new THREE.Group();
+  for (const ray of rays) {
+    if (ray.points.length < 2) continue;
+    const pts = ray.points.map((p) => rayPointToGlobePosition(p.lat, p.lon, p.altitudeKm));
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const tubularSegments = Math.max(16, (pts.length - 1) * 8);
+    const geometry = new THREE.TubeGeometry(
+      curve,
+      tubularSegments,
+      RAY_CORRIDOR_RADIUS_UNITS,
+      8,
+      false,
+    );
+    const material = new THREE.MeshBasicMaterial({
+      color: MODE_COLORS[ray.mode],
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.renderOrder = 8;
+    group.add(mesh);
+  }
+  return group;
 }

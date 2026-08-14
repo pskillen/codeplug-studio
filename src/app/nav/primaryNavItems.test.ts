@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   activeContextualStripLabel,
+  getToolsStripItems,
   helpStripItems,
   libraryStripItems,
   resolveContextualStripItems,
@@ -43,7 +44,7 @@ describe('contextualStripItems', () => {
   });
 
   it('resolves Tools and Help strips', () => {
-    expect(resolveContextualStripItems('/reference/bands')).toEqual(toolsStripItems);
+    expect(resolveContextualStripItems('/reference/bands', 'local')).toEqual(toolsStripItems);
     expect(resolveContextualStripItems('/attributions')).toEqual(helpStripItems);
   });
 
@@ -58,8 +59,26 @@ describe('contextualStripItems', () => {
     expect(toolsStripItems.find((i) => i.label === 'Propagation Visualiser')?.to).toBe(
       '/reference/rf-propagation',
     );
-    expect(resolveContextualStripItems('/tracking')).toEqual(toolsStripItems);
-    expect(resolveContextualStripItems('/reference/rf-propagation')).toEqual(toolsStripItems);
+    expect(resolveContextualStripItems('/tracking', 'local')).toEqual(toolsStripItems);
+    expect(resolveContextualStripItems('/reference/rf-propagation', 'main')).toEqual(
+      toolsStripItems,
+    );
+  });
+
+  it('hides Propagation Visualiser in the Tools strip on prod builds only', () => {
+    const prodItems = getToolsStripItems('prod');
+    expect(prodItems.map((i) => i.label)).toEqual([
+      'Maidenhead locator',
+      'Band plan',
+      'Tracking Dashboard',
+    ]);
+    expect(resolveContextualStripItems('/tracking', 'prod')).toEqual(prodItems);
+    expect(resolveContextualStripItems('/reference/rf-propagation', 'prod')).toEqual(prodItems);
+
+    for (const env of ['local', 'main', 'dev', 'staging'] as const) {
+      expect(getToolsStripItems(env)).toEqual(toolsStripItems);
+      expect(resolveContextualStripItems('/reference', env)).toEqual(toolsStripItems);
+    }
   });
 
   it('picks the active strip label by longest path match', () => {

@@ -8,12 +8,13 @@ DMR timeslot (TS1/TS2) and similar compact exclusive choices.
 
 ## Props
 
-| Prop       | Type                 | Notes             |
-| ---------- | -------------------- | ----------------- |
-| `options`  | `{ value, label }[]` | Segment options   |
-| `value`    | `string`             | Active value      |
-| `onChange` | `(value) => void`    | Selection handler |
-| `size`     | `'sm' \| 'md'`       | Default `sm`      |
+| Prop         | Type                 | Notes                                |
+| ------------ | -------------------- | ------------------------------------ |
+| `options`    | `{ value, label }[]` | Segment options                      |
+| `value`      | `string`             | Active value                         |
+| `onChange`   | `(value) => void`    | Selection handler                    |
+| `size`       | `'sm' \| 'md'`       | Default `sm`                         |
+| `aria-label` | `string`             | Optional name for the `role="group"` |
 
 ## Usage
 
@@ -30,6 +31,8 @@ DMR timeslot (TS1/TS2) and similar compact exclusive choices.
 
 ## Behaviour
 
+- Native `<button>` segments in the tab order; Enter/Space select. `:focus-visible` outline on the option.
+- Optional `aria-label` names the `role="group"`.
 - Live demos: `/styleguide/forms`
 
 ## Related

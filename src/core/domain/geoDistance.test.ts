@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { locatorToCoords } from './maidenhead.ts';
 import {
   compassOctant,
+  destinationPoint,
   formatDistanceKmAndMi,
   formatDistanceM,
+  haversineDistanceM,
   initialBearingDeg,
   pathMetricsBetween,
   reciprocalBearingDeg,
@@ -58,5 +60,30 @@ describe('geoDistance', () => {
     const b = { lat: 52.37, lon: 4.9 };
     const metrics = pathMetricsBetween(a, b);
     expect(metrics.bearingBA).toBeCloseTo(reciprocalBearingDeg(metrics.bearingAB), 5);
+  });
+
+  it('destinationPoint at the equator due east by 1° of longitude', () => {
+    const oneDegreeM = 6_371_000 * (Math.PI / 180);
+    const dest = destinationPoint(0, 0, 90, oneDegreeM);
+    expect(dest.lat).toBeCloseTo(0, 10);
+    expect(dest.lon).toBeCloseTo(1, 10);
+  });
+
+  it('destinationPoint round-trips pathMetricsBetween (London → Amsterdam)', () => {
+    const from = { lat: 51.5, lon: -0.1 };
+    const to = { lat: 52.37, lon: 4.9 };
+    const distanceM = haversineDistanceM(from.lat, from.lon, to.lat, to.lon);
+    const bearingDeg = initialBearingDeg(from.lat, from.lon, to.lat, to.lon);
+    const dest = destinationPoint(from.lat, from.lon, bearingDeg, distanceM);
+    expect(distanceM).toBeCloseTo(356_094.5, 0);
+    expect(bearingDeg).toBeCloseTo(72.281, 3);
+    expect(dest.lat).toBeCloseTo(to.lat, 10);
+    expect(dest.lon).toBeCloseTo(to.lon, 10);
+  });
+
+  it('destinationPoint at zero distance returns the start', () => {
+    const dest = destinationPoint(51.5, -0.13, 45, 0);
+    expect(dest.lat).toBeCloseTo(51.5, 10);
+    expect(dest.lon).toBeCloseTo(-0.13, 10);
   });
 });

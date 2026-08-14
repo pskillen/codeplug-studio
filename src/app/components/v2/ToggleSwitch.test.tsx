@@ -15,4 +15,19 @@ describe('ToggleSwitch', () => {
     fireEvent.click(screen.getByRole('checkbox'));
     expect(onChange).toHaveBeenCalledWith(true);
   });
+
+  it('toggles via keyboard on the checkbox', () => {
+    const onChange = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <ToggleSwitch checked={false} onChange={onChange} label="Skip scan" />
+      </DesignSystemV2Provider>,
+    );
+
+    const checkbox = screen.getByRole('checkbox', { name: 'Skip scan' });
+    checkbox.focus();
+    expect(checkbox).toHaveFocus();
+    fireEvent.click(checkbox);
+    expect(onChange).toHaveBeenCalledWith(true);
+  });
 });

@@ -1,14 +1,23 @@
-import { Input, Select, Slider, Stack, Text } from '@mantine/core';
+import { Group, Input, Loader, NumberInput, Select, Slider, Stack, Text } from '@mantine/core';
 import { IconCalendar } from '@tabler/icons-react';
-import { lazy, Suspense, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react';
+import { peakGainElevationDeg } from '@core/domain/hfPropagation/antennaPatterns.ts';
 import { computeIonosphericLayers } from '@core/domain/hfPropagation/ionosphericProfile.ts';
 import { colorForLayer, IONOSPHERIC_LAYER_IDS } from '@core/domain/hfPropagation/layerColor.ts';
-import { criticalFrequencyMhz } from '@core/domain/hfPropagation/mufCalculation.ts';
+import {
+  criticalFrequencyMhz,
+  maximumUsableFrequencyMhz,
+} from '@core/domain/hfPropagation/mufCalculation.ts';
 import type {
+  AntennaConfig,
   AntennaPatternFamily,
   IonosphericLayerId,
+  RayPathResult,
   SolarActivityPreset,
 } from '@core/domain/hfPropagation/types.ts';
+import { MODE_LABELS } from '../../components/HfPropagationGlobe/buildGlobeData.ts';
+import UseMyLocationButton from '../../components/UseMyLocationButton/UseMyLocationButton.tsx';
+import { useDebouncedOptionalNumberField } from '../../hooks/useDebouncedOptionalNumberField.ts';
 import {
   DesignSystemV2Provider,
   FormField,
@@ -16,15 +25,24 @@ import {
   SegmentedControl,
   ToggleSwitch,
 } from '../../components/v2/index.ts';
+import { useMapSettings } from '../../hooks/useMapSettings.ts';
 import {
   formatDatetimeLocalValue,
   formatUkDateTime,
   parseUkDateTime,
 } from './hfPropagationDateTime.ts';
+import SlicePlanePicker, { DEFAULT_RANGE_M, type SlicePlaneResult } from './SlicePlanePicker.tsx';
+import { usePropagationRayTrace } from './usePropagationRayTrace.ts';
 import classes from './HfPropagationPage.module.css';
 
 const HfPropagationGlobe = lazy(
   () => import('../../components/HfPropagationGlobe/HfPropagationGlobe.tsx'),
+);
+const PropagationTopDownMap = lazy(
+  () => import('../../components/PropagationTopDownMap/PropagationTopDownMap.tsx'),
+);
+const PropagationVerticalSlice = lazy(
+  () => import('../../components/PropagationVerticalSlice/PropagationVerticalSlice.tsx'),
 );
 
 type PropagationView = 'globe' | 'top-down' | 'vertical-slice';
@@ -92,17 +110,52 @@ const DEFAULT_EXAGGERATION = 2.5;
 function fieldsShownForFamily(family: AntennaPatternFamily) {
   return {
     height: family === 'omnidirectional-vertical' || family === 'bidirectional-transverse',
-    azimuth: family === 'bidirectional-transverse' || family === 'directional-lobe',
+    azimuth:
+      family === 'bidirectional-transverse' ||
+      family === 'directional-lobe' ||
+      family === 'multi-lobe-conical',
     wireLength: family === 'multi-lobe-conical',
   };
 }
 
-/** Placeholder transmitter site until the slice-plane picker (#1167) supplies lat/lon. */
+/** Neutral placeholder until the operator enters a site or uses geolocation (Gulf of Guinea). */
 const DEFAULT_TX_LAT_DEG = 0;
 const DEFAULT_TX_LON_DEG = 0;
 
 function layerToggleAriaLabel(id: IonosphericLayerId): string {
   return `${id} layer`;
+}
+
+function DisplayToggle({
+  checked,
+  onChange,
+  label,
+  hint,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <Stack gap={4}>
+      <ToggleSwitch checked={checked} onChange={onChange} label={label} />
+      <Text size="xs" c="dimmed">
+        {hint}
+      </Text>
+    </Stack>
+  );
+}
+
+function dominantRay(rays: RayPathResult[]): RayPathResult | null {
+  if (rays.length === 0) return null;
+  const preferred = rays.filter(
+    (ray) => ray.mode === 'skywave' || ray.mode === 'nvis' || ray.mode === 'groundwave',
+  );
+  const pool = preferred.length > 0 ? preferred : rays;
+  return pool.reduce((best, ray) =>
+    ray.relativeSignalStrength > best.relativeSignalStrength ? ray : best,
+  );
 }
 
 const ALL_LAYERS_VISIBLE: Record<IonosphericLayerId, boolean> = {
@@ -112,9 +165,22 @@ const ALL_LAYERS_VISIBLE: Record<IonosphericLayerId, boolean> = {
   F2: true,
 };
 
+/** Slice-plane bearing vs antenna heading — reuse the primary Worker result within this. */
+const SLICE_BEARING_EPSILON_DEG = 0.5;
+
 export default function HfPropagationPage() {
   const dateTimePickerRef = useRef<HTMLInputElement>(null);
+  const { mapboxToken } = useMapSettings();
   const [view, setView] = useState<PropagationView>('globe');
+  const [slicePlane, setSlicePlane] = useState<SlicePlaneResult>({
+    bearingDeg: 0,
+    distanceM: DEFAULT_RANGE_M,
+  });
+  const [slicePlaneTouched, setSlicePlaneTouched] = useState(false);
+  const onSlicePlaneChange = useCallback((result: SlicePlaneResult) => {
+    setSlicePlaneTouched(true);
+    setSlicePlane(result);
+  }, []);
 
   const [frequencyMhz, setFrequencyMhz] = useState(14.2);
   const [powerW, setPowerW] = useState(100);
@@ -127,12 +193,27 @@ export default function HfPropagationPage() {
   const [dateTime, setDateTime] = useState(() => new Date());
   const [dateTimeText, setDateTimeText] = useState(() => formatUkDateTime(dateTime));
   const [solarPreset, setSolarPreset] = useState<SolarActivityPreset>('moderate');
+  const [txLat, setTxLat] = useState(DEFAULT_TX_LAT_DEG);
+  const [txLon, setTxLon] = useState(DEFAULT_TX_LON_DEG);
+  const txLocation = useMemo(() => ({ lat: txLat, lon: txLon }), [txLat, txLon]);
+  const commitTxLat = useCallback((value: number | undefined) => {
+    if (value == null || !Number.isFinite(value)) return;
+    setTxLat(Math.min(90, Math.max(-90, value)));
+  }, []);
+  const commitTxLon = useCallback((value: number | undefined) => {
+    if (value == null || !Number.isFinite(value)) return;
+    setTxLon(Math.min(180, Math.max(-180, value)));
+  }, []);
+  const txLatField = useDebouncedOptionalNumberField(txLat, commitTxLat);
+  const txLonField = useDebouncedOptionalNumberField(txLon, commitTxLon);
 
   const [exaggerationEnabled, setExaggerationEnabled] = useState(true);
   const [exaggerationFactor, setExaggerationFactor] = useState(DEFAULT_EXAGGERATION);
   const [explodeEnabled, setExplodeEnabled] = useState(false);
   const [fresnelEnabled, setFresnelEnabled] = useState(true);
   const [terminatorEnabled, setTerminatorEnabled] = useState(false);
+  const [cutawayEnabled, setCutawayEnabled] = useState(false);
+  const [rayCorridorEnabled, setRayCorridorEnabled] = useState(false);
   const [visibleLayers, setVisibleLayers] =
     useState<Record<IonosphericLayerId, boolean>>(ALL_LAYERS_VISIBLE);
 
@@ -143,21 +224,62 @@ export default function HfPropagationPage() {
     [antennaType],
   );
   const shownFields = fieldsShownForFamily(antennaFamily);
+  const defaultSliceBearingDeg = shownFields.azimuth ? azimuthDeg : 0;
+  const globeSliceBearingDeg = slicePlaneTouched ? slicePlane.bearingDeg : defaultSliceBearingDeg;
+  const antennaConfig = useMemo<AntennaConfig>(
+    () => ({
+      family: antennaFamily,
+      heightM,
+      azimuthDeg,
+      wireLengthWavelengths,
+    }),
+    [antennaFamily, heightM, azimuthDeg, wireLengthWavelengths],
+  );
+  const peakGainElevation = useMemo(
+    () => peakGainElevationDeg(antennaConfig, azimuthDeg, frequencyMhz),
+    [antennaConfig, azimuthDeg, frequencyMhz],
+  );
 
   const layers = useMemo(
-    () =>
-      computeIonosphericLayers(
-        DEFAULT_TX_LAT_DEG,
-        DEFAULT_TX_LON_DEG,
-        dateTime.getTime(),
-        solarPreset,
-      ),
-    [dateTime, solarPreset],
+    () => computeIonosphericLayers(txLat, txLon, dateTime.getTime(), solarPreset),
+    [txLat, txLon, dateTime, solarPreset],
   );
   const f2Layer = layers.find((layer) => layer.id === 'F2');
-  const criticalFrequencyLabel = f2Layer
-    ? `${criticalFrequencyMhz(f2Layer.peakElectronDensity).toFixed(1)} MHz`
+  const criticalFrequencyMhzValue = f2Layer ? criticalFrequencyMhz(f2Layer.peakElectronDensity) : 0;
+  const criticalFrequencyLabel = f2Layer ? `${criticalFrequencyMhzValue.toFixed(1)} MHz` : '—';
+  const mufLabel = f2Layer
+    ? `${maximumUsableFrequencyMhz(criticalFrequencyMhzValue, peakGainElevation).toFixed(1)} MHz`
     : '—';
+
+  const rayTraceParams = useMemo(
+    () => ({
+      frequencyMhz,
+      antenna: antennaConfig,
+      layers,
+      azimuthDeg,
+      txLat,
+      txLon,
+      atMs: dateTime.getTime(),
+    }),
+    [frequencyMhz, antennaConfig, layers, azimuthDeg, txLat, txLon, dateTime],
+  );
+  const { rays, isComputing } = usePropagationRayTrace(rayTraceParams);
+  const sliceOffHeading =
+    view === 'vertical-slice' &&
+    Math.abs(slicePlane.bearingDeg - azimuthDeg) > SLICE_BEARING_EPSILON_DEG;
+  const sliceRayTraceParams = useMemo(
+    () => ({ ...rayTraceParams, azimuthDeg: slicePlane.bearingDeg }),
+    [rayTraceParams, slicePlane.bearingDeg],
+  );
+  const { rays: sliceRays, isComputing: sliceComputing } = usePropagationRayTrace(
+    sliceRayTraceParams,
+    sliceOffHeading,
+  );
+  const readingBusy = isComputing || (sliceOffHeading && sliceComputing);
+  const verticalSliceRays = sliceOffHeading ? sliceRays : rays;
+  const dominant = dominantRay(rays);
+  const modeReadout = dominant ? MODE_LABELS[dominant.mode] : '—';
+  const verticalSliceRay = dominantRay(verticalSliceRays);
 
   return (
     <DesignSystemV2Provider>
@@ -191,33 +313,82 @@ export default function HfPropagationPage() {
                   }}
                   visibleLayers={visibleLayers}
                   environmentAtMs={dateTime.getTime()}
+                  rays={rays}
+                  txLat={txLat}
+                  txLon={txLon}
+                  cutawayEnabled={cutawayEnabled}
+                  sliceBearingDeg={globeSliceBearingDeg}
+                  rayCorridorEnabled={rayCorridorEnabled}
                 />
               </Suspense>
+            ) : view === 'top-down' ? (
+              <Suspense
+                fallback={
+                  <div className={classes.viewportPlaceholder}>
+                    <Text size="sm" c="dimmed">
+                      Loading top-down view…
+                    </Text>
+                  </div>
+                }
+              >
+                <PropagationTopDownMap transmitter={txLocation} rays={rays} />
+              </Suspense>
             ) : (
-              <div className={classes.viewportPlaceholder}>
-                <Text size="sm" c="dimmed">
-                  This view isn&apos;t implemented yet.
-                </Text>
-              </div>
+              <Suspense
+                fallback={
+                  <div className={classes.viewportPlaceholder}>
+                    <Text size="sm" c="dimmed">
+                      Loading vertical slice…
+                    </Text>
+                  </div>
+                }
+              >
+                <PropagationVerticalSlice
+                  layers={layers}
+                  ray={verticalSliceRay}
+                  maxRangeM={slicePlane.distanceM}
+                />
+              </Suspense>
             )}
           </div>
 
           <div className={classes.controlPanel}>
             <Panel title="View">
-              <SegmentedControl options={VIEW_OPTIONS} value={view} onChange={setView} />
+              <SegmentedControl
+                options={VIEW_OPTIONS}
+                value={view}
+                onChange={setView}
+                aria-label="View"
+              />
             </Panel>
 
-            <Panel title="Display">
+            {view === 'vertical-slice' ? (
+              <Panel title="Slice plane">
+                <SlicePlanePicker
+                  transmitterLocation={txLocation}
+                  defaultBearingDeg={shownFields.azimuth ? azimuthDeg : 0}
+                  onChange={onSlicePlaneChange}
+                  mapboxToken={mapboxToken}
+                />
+              </Panel>
+            ) : null}
+
+            <Panel
+              title="Display"
+              sub="How the 3D globe draws layers and rays — not a change to the physics."
+            >
               <Stack gap="lg">
-                <ToggleSwitch
+                <DisplayToggle
                   checked={exaggerationEnabled}
                   onChange={setExaggerationEnabled}
                   label="Altitude exaggeration"
+                  hint="Stretches D/E/F shell height so the layers are easier to tell apart. Off is true scale."
                 />
                 {exaggerationEnabled ? (
                   <Input.Wrapper label={`${exaggerationFactor.toFixed(1)}×`}>
                     <Slider
                       aria-label="Altitude exaggeration"
+                      thumbLabel="Altitude exaggeration"
                       value={exaggerationFactor}
                       onChange={setExaggerationFactor}
                       min={MIN_EXAGGERATION}
@@ -227,20 +398,35 @@ export default function HfPropagationPage() {
                     />
                   </Input.Wrapper>
                 ) : null}
-                <ToggleSwitch
+                <DisplayToggle
                   checked={explodeEnabled}
                   onChange={setExplodeEnabled}
                   label="Exploded layer stacking"
+                  hint="Pulls shells apart so they don’t nest."
                 />
-                <ToggleSwitch
+                <DisplayToggle
                   checked={fresnelEnabled}
                   onChange={setFresnelEnabled}
                   label="Fresnel shading"
+                  hint="Brightens each shell’s limb; dimmer when looking straight down."
                 />
-                <ToggleSwitch
+                <DisplayToggle
                   checked={terminatorEnabled}
                   onChange={setTerminatorEnabled}
                   label="Show day/night terminator"
+                  hint="Greyline and sun marker. Night-side shade stays on either way."
+                />
+                <DisplayToggle
+                  checked={cutawayEnabled}
+                  onChange={setCutawayEnabled}
+                  label="Cutaway plane"
+                  hint="Hides half the shells along the slice bearing so you can see inside."
+                />
+                <DisplayToggle
+                  checked={rayCorridorEnabled}
+                  onChange={setRayCorridorEnabled}
+                  label="Ray corridor"
+                  hint="Thicker ribbon along the traced path. The thin line stays on."
                 />
                 <div className={classes.layerToggles}>
                   {IONOSPHERIC_LAYER_IDS.map((id) => {
@@ -274,6 +460,7 @@ export default function HfPropagationPage() {
                 <Input.Wrapper label={`Frequency — ${frequencyMhz.toFixed(1)} MHz`}>
                   <Slider
                     aria-label="Frequency"
+                    thumbLabel="Frequency"
                     value={frequencyMhz}
                     onChange={setFrequencyMhz}
                     min={MIN_FREQUENCY_MHZ}
@@ -285,6 +472,7 @@ export default function HfPropagationPage() {
                 <Input.Wrapper label={`Power — ${powerW} W`}>
                   <Slider
                     aria-label="Power"
+                    thumbLabel="Power"
                     value={powerW}
                     onChange={setPowerW}
                     min={MIN_POWER_W}
@@ -302,6 +490,7 @@ export default function HfPropagationPage() {
                   <Select
                     data={ANTENNA_TYPE_OPTIONS.map(({ value, label }) => ({ value, label }))}
                     value={antennaType}
+                    aria-label="Antenna type"
                     onChange={(value) => {
                       if (value) setAntennaType(value as AntennaType);
                     }}
@@ -311,6 +500,7 @@ export default function HfPropagationPage() {
                   <Input.Wrapper label={`Height above ground — ${heightM} m`}>
                     <Slider
                       aria-label="Height above ground"
+                      thumbLabel="Height above ground"
                       value={heightM}
                       onChange={setHeightM}
                       min={MIN_HEIGHT_M}
@@ -324,6 +514,7 @@ export default function HfPropagationPage() {
                   <Input.Wrapper label={`Azimuth — ${azimuthDeg}°`}>
                     <Slider
                       aria-label="Azimuth"
+                      thumbLabel="Azimuth"
                       value={azimuthDeg}
                       onChange={setAzimuthDeg}
                       min={0}
@@ -337,6 +528,7 @@ export default function HfPropagationPage() {
                   <Input.Wrapper label={`Wire length — ${wireLengthWavelengths.toFixed(1)} λ`}>
                     <Slider
                       aria-label="Wire length"
+                      thumbLabel="Wire length"
                       value={wireLengthWavelengths}
                       onChange={setWireLengthWavelengths}
                       min={MIN_WIRE_LENGTH_WAVELENGTHS}
@@ -351,6 +543,41 @@ export default function HfPropagationPage() {
 
             <Panel title="Environment">
               <Stack gap="lg">
+                <FormField
+                  label="Transmitter location"
+                  hint="0°, 0° (Gulf of Guinea) until you enter coordinates or use your location."
+                >
+                  <Stack gap="sm">
+                    <Group grow>
+                      <NumberInput
+                        label="Latitude"
+                        aria-label="Latitude"
+                        value={txLatField.value}
+                        onChange={txLatField.setValue}
+                        onBlur={txLatField.flush}
+                        decimalScale={6}
+                        min={-90}
+                        max={90}
+                      />
+                      <NumberInput
+                        label="Longitude"
+                        aria-label="Longitude"
+                        value={txLonField.value}
+                        onChange={txLonField.setValue}
+                        onBlur={txLonField.flush}
+                        decimalScale={6}
+                        min={-180}
+                        max={180}
+                      />
+                    </Group>
+                    <UseMyLocationButton
+                      onLocation={(lat, lon) => {
+                        setTxLat(lat);
+                        setTxLon(lon);
+                      }}
+                    />
+                  </Stack>
+                </FormField>
                 <FormField label="Date & time">
                   <div className={classes.dateTimeField}>
                     <input
@@ -409,16 +636,25 @@ export default function HfPropagationPage() {
                     options={SOLAR_PRESET_OPTIONS}
                     value={solarPreset}
                     onChange={setSolarPreset}
+                    aria-label="Solar activity"
                   />
                 </FormField>
               </Stack>
             </Panel>
 
             <Panel title="Reading">
-              <Stack gap="lg">
+              <Stack gap="lg" aria-busy={readingBusy} aria-live="polite">
+                {readingBusy ? (
+                  <Group gap="xs">
+                    <Loader size="xs" aria-label="Updating reading" />
+                    <Text size="xs" c="dimmed">
+                      Updating…
+                    </Text>
+                  </Group>
+                ) : null}
                 <FormField label="Critical frequency (fc)" value={criticalFrequencyLabel} />
-                <FormField label="MUF" value="—" />
-                <FormField label="Mode" value="—" />
+                <FormField label="MUF" value={mufLabel} />
+                <FormField label="Mode" value={modeReadout} />
               </Stack>
             </Panel>
           </div>

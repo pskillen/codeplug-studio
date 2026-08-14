@@ -12,6 +12,7 @@ export interface SegmentedControlProps<T extends string = string> {
   size?: 'sm' | 'md';
   className?: string;
   disabled?: boolean;
+  'aria-label'?: string;
 }
 
 /**
@@ -22,11 +23,16 @@ export default function SegmentedControl<T extends string = string>({
   value,
   onChange,
   size = 'sm',
-  className,
+  className = '',
   disabled = false,
+  'aria-label': ariaLabel,
 }: SegmentedControlProps<T>) {
   return (
-    <div className={[classes.root, className].filter(Boolean).join(' ')} role="group">
+    <div
+      className={[classes.root, className].filter(Boolean).join(' ')}
+      role="group"
+      aria-label={ariaLabel}
+    >
       {options.map((opt) => {
         const active = opt.value === value;
         return (
