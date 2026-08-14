@@ -3,7 +3,7 @@
 Tier-1 hub for the **Propagation Visualiser** — an interactive 3D globe (plus 2D top-down and vertical cross-section views) that lets an operator place an idealised HF transmitter (antenna type, power, frequency, location) and see where the signal actually goes: groundwave footprint, skywave skip zones and hop landing points, and NVIS coverage, shaped by day/night ionospheric state and solar activity. A planning/teaching tool, not a coverage guarantee.
 
 **Tracking:** Epic [#1162](https://github.com/pskillen/codeplug-studio/issues/1162) (child of Milestone 2 [#495](https://github.com/pskillen/codeplug-studio/issues/495))
-**Navigation:** reached from the Tools strip (`Tools → Propagation Visualiser`, `/reference/rf-propagation`), reachable with **no active project** — like Maidenhead locator and Band plan, unlike the project-scoped Tracking Dashboard.
+**Navigation:** reached from the Tools strip (`Tools → Propagation Visualiser`, `/reference/rf-propagation`), reachable with **no active project** — like Maidenhead locator and Band plan, unlike the project-scoped Tracking Dashboard. The Tools entry is hidden on prod builds; the route remains.
 **Components:** [HfPropagationGlobe](../../../src/app/components/HfPropagationGlobe/HfPropagationGlobe.md)
 
 ---
