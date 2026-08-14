@@ -8,12 +8,12 @@ Avoids duplicating field-rendering logic between the table and cards: callers pa
 
 ## Props
 
-| Prop                | Type                         | Notes                                                                                       |
-| ------------------- | ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `channel`           | `Channel`                    | Required                                                                                    |
-| `fieldColumns`      | `DataTableColumn<Channel>[]` | Rendered as `{col.header}: {col.render(channel)}` rows. Exclude name, callsign, and actions. |
-| `selected`          | `boolean`                    | Optional — paired with `onSelectedChange` for bulk select                                   |
-| `onSelectedChange`  | `(selected: boolean) => void`| Optional — when set, shows a row-selection checkbox                                         |
+| Prop               | Type                          | Notes                                                                                        |
+| ------------------ | ----------------------------- | -------------------------------------------------------------------------------------------- |
+| `channel`          | `Channel`                     | Required                                                                                     |
+| `fieldColumns`     | `DataTableColumn<Channel>[]`  | Rendered as `{col.header}: {col.render(channel)}` rows. Exclude name, callsign, and actions. |
+| `selected`         | `boolean`                     | Optional — paired with `onSelectedChange` for bulk select                                    |
+| `onSelectedChange` | `(selected: boolean) => void` | Optional — when set, shows a row-selection checkbox                                          |
 
 ## Usage
 

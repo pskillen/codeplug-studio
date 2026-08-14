@@ -1,4 +1,9 @@
-import { channelListColumnsKey, channelListColumnsSchemaKey, channelListCardColumnsKey, channelListCardColumnsSchemaKey } from './keys.ts';
+import {
+  channelListColumnsKey,
+  channelListColumnsSchemaKey,
+  channelListCardColumnsKey,
+  channelListCardColumnsSchemaKey,
+} from './keys.ts';
 
 function readRaw(key: string): string | null {
   try {

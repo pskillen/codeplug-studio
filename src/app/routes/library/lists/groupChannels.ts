@@ -31,9 +31,7 @@ function filterZoneGroupsByZoneFilter(
 ): ChannelZoneGroup[] {
   if (zoneFilter.length === 0) return groups;
 
-  const selectedZoneIds = new Set(
-    zoneFilter.filter((id) => id !== CHANNEL_ZONE_FILTER_NONE),
-  );
+  const selectedZoneIds = new Set(zoneFilter.filter((id) => id !== CHANNEL_ZONE_FILTER_NONE));
   const includeNoZone = zoneFilter.includes(CHANNEL_ZONE_FILTER_NONE);
 
   return groups.filter((group) => {

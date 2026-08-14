@@ -142,7 +142,9 @@ export default function ChannelsListPage() {
   const [cardDetailsPickerOpen, setCardDetailsPickerOpen] = useState(false);
 
   const columnStorageKey = activeProjectId ? channelListColumnsKey(activeProjectId) : undefined;
-  const cardColumnStorageKey = activeProjectId ? channelListCardColumnsKey(activeProjectId) : undefined;
+  const cardColumnStorageKey = activeProjectId
+    ? channelListCardColumnsKey(activeProjectId)
+    : undefined;
   const loadVisibleColumns = useCallback(
     () => (activeProjectId ? loadChannelVisibleColumns(activeProjectId) : []),
     [activeProjectId],
@@ -396,18 +398,10 @@ export default function ChannelsListPage() {
 
   const cardGroups = useMemo(() => {
     if (layoutState.layout !== 'cards' || layoutState.cardGroup === 'none') return null;
-    return groupChannelsForCardView(
-      sortedFiltered,
-      zones,
-      layoutState.cardGroup,
-      query.zoneFilter,
-    );
+    return groupChannelsForCardView(sortedFiltered, zones, layoutState.cardGroup, query.zoneFilter);
   }, [layoutState, sortedFiltered, zones, query.zoneFilter]);
 
-  const filteredUniqueIds = useMemo(
-    () => [...new Set(filtered.map((ch) => ch.id))],
-    [filtered],
-  );
+  const filteredUniqueIds = useMemo(() => [...new Set(filtered.map((ch) => ch.id))], [filtered]);
 
   const allCardsSelected =
     filteredUniqueIds.length > 0 && filteredUniqueIds.every((id) => selectedKeys.includes(id));
@@ -560,9 +554,7 @@ export default function ChannelsListPage() {
       {layoutState.layout === 'cards' ? (
         <SegmentedControl
           value={layoutState.cardGroup}
-          onChange={(value) =>
-            setCardGroup(value as 'none' | 'zone' | 'band' | 'duplex')
-          }
+          onChange={(value) => setCardGroup(value as 'none' | 'zone' | 'band' | 'duplex')}
           options={CHANNEL_CARD_GROUP_OPTIONS.map((opt) => ({
             value: opt.value,
             label: opt.label,
@@ -637,11 +629,7 @@ export default function ChannelsListPage() {
                 <section key={group.key} className={classes.zoneSection}>
                   <h2 className={classes.zoneSectionTitle}>{group.title}</h2>
                   <div className={classes.zoneCardGrid}>
-                    {sortRowsByColumn(
-                      group.channels,
-                      columns,
-                      effectiveV2Sort,
-                    ).map((ch) =>
+                    {sortRowsByColumn(group.channels, columns, effectiveV2Sort).map((ch) =>
                       renderChannelCard(
                         ch,
                         layoutState.cardGroup === 'zone' ? zoneGroupFieldColumns : cardFieldColumns,

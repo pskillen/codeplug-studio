@@ -22,9 +22,7 @@ function normalizeLayoutPrefs(
 ): ChannelListLayoutState {
   const layout = stored?.layout === 'cards' ? 'cards' : 'table';
   const cardGroup =
-    stored?.cardGroup === 'zone' ||
-    stored?.cardGroup === 'band' ||
-    stored?.cardGroup === 'duplex'
+    stored?.cardGroup === 'zone' || stored?.cardGroup === 'band' || stored?.cardGroup === 'duplex'
       ? stored.cardGroup
       : 'none';
   return { layout, cardGroup };

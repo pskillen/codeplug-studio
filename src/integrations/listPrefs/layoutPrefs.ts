@@ -23,10 +23,7 @@ export function loadChannelListLayoutPrefs(projectId: string): ChannelListLayout
   return readJson<ChannelListLayoutPrefs>(channelListLayoutPrefsKey(projectId));
 }
 
-export function saveChannelListLayoutPrefs(
-  projectId: string,
-  prefs: ChannelListLayoutPrefs,
-): void {
+export function saveChannelListLayoutPrefs(projectId: string, prefs: ChannelListLayoutPrefs): void {
   writeJson(channelListLayoutPrefsKey(projectId), prefs);
 }
 

@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { channelListColumnsKey, channelListColumnsSchemaKey, channelListCardColumnsSchemaKey } from './keys.ts';
-import { loadChannelCardVisibleColumns, loadChannelVisibleColumns, loadStringArray, saveStringArray } from './columnVisibility.ts';
+import {
+  channelListColumnsKey,
+  channelListColumnsSchemaKey,
+  channelListCardColumnsSchemaKey,
+} from './keys.ts';
+import {
+  loadChannelCardVisibleColumns,
+  loadChannelVisibleColumns,
+  loadStringArray,
+  saveStringArray,
+} from './columnVisibility.ts';
 
 function createLocalStorageMock() {
   const store = new Map<string, string>();

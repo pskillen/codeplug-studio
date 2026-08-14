@@ -5,9 +5,7 @@ import { ALL_BANDS, bandsFromFrequencies, type BandDefinition } from '../../lib/
 import { modeFilterOptions, modeLabel, type ChannelMode } from '../../lib/channelModes.ts';
 import { useChannelListQuery } from '../../hooks/useChannelListQuery.ts';
 import { useFilteredChannels } from '../../hooks/useChannelListFilters.ts';
-import {
-  CHANNEL_ZONE_FILTER_NONE,
-} from '../../routes/library/lists/channelListZoneFilter.ts';
+import { CHANNEL_ZONE_FILTER_NONE } from '../../routes/library/lists/channelListZoneFilter.ts';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
 import { FacetBar, FacetChip, SplitFilter } from './FacetBar.tsx';
 import classes from './ChannelListFilters.module.css';

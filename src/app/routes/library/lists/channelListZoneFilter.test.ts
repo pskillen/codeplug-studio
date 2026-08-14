@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Zone } from '@core/models/library.ts';
 import { newChannel, newZone } from '@core/domain/factories.ts';
-import {
-  CHANNEL_ZONE_FILTER_NONE,
-  channelMatchesZoneFilter,
-} from './channelListZoneFilter.ts';
+import { CHANNEL_ZONE_FILTER_NONE, channelMatchesZoneFilter } from './channelListZoneFilter.ts';
 
 function withMembers(zone: Zone, channelIds: string[]): Zone {
   return { ...zone, members: channelIds.map((channelId) => ({ kind: 'channel', channelId })) };
@@ -31,11 +28,11 @@ describe('channelMatchesZoneFilter', () => {
   });
 
   it('matches when any selected zone or none applies', () => {
-    expect(
-      channelMatchesZoneFilter(chInZone, [zoneA.id, CHANNEL_ZONE_FILTER_NONE], [zoneA]),
-    ).toBe(true);
-    expect(
-      channelMatchesZoneFilter(chNoZone, [zoneA.id, CHANNEL_ZONE_FILTER_NONE], [zoneA]),
-    ).toBe(true);
+    expect(channelMatchesZoneFilter(chInZone, [zoneA.id, CHANNEL_ZONE_FILTER_NONE], [zoneA])).toBe(
+      true,
+    );
+    expect(channelMatchesZoneFilter(chNoZone, [zoneA.id, CHANNEL_ZONE_FILTER_NONE], [zoneA])).toBe(
+      true,
+    );
   });
 });

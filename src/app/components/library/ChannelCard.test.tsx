@@ -27,14 +27,12 @@ const NO_ACTIVE_PROJECT: ProjectContextValue = {
   refreshProjects: async () => undefined,
 };
 
-function renderCard(
-  props: {
-    channel: Channel;
-    fieldColumns: DataTableColumn<Channel>[];
-    selected?: boolean;
-    onSelectedChange?: (selected: boolean) => void;
-  },
-) {
+function renderCard(props: {
+  channel: Channel;
+  fieldColumns: DataTableColumn<Channel>[];
+  selected?: boolean;
+  onSelectedChange?: (selected: boolean) => void;
+}) {
   return render(
     <MemoryRouter>
       <DesignSystemV2Provider>

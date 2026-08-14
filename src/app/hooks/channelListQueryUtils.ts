@@ -1,5 +1,8 @@
 import { DISTANCE_FILTER_MARKS_KM } from '../lib/channels.ts';
-import { loadChannelVisibleColumns as loadChannelVisibleColumnsFromStorage, loadChannelCardVisibleColumns as loadChannelCardVisibleColumnsFromStorage } from '@integrations/listPrefs/index.ts';
+import {
+  loadChannelVisibleColumns as loadChannelVisibleColumnsFromStorage,
+  loadChannelCardVisibleColumns as loadChannelCardVisibleColumnsFromStorage,
+} from '@integrations/listPrefs/index.ts';
 
 export {
   channelListColumnsKey,
