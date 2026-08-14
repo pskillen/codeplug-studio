@@ -53,9 +53,7 @@ const skywave: RayPathResult = {
 
 describe('PropagationTopDownMap', () => {
   it('centres a transmitter marker on the given lat/lon', () => {
-    render(
-      <PropagationTopDownMap transmitter={{ lat: 51.5, lon: -0.13 }} rays={[skywave]} />,
-    );
+    render(<PropagationTopDownMap transmitter={{ lat: 51.5, lon: -0.13 }} rays={[skywave]} />);
 
     expect(screen.getByTestId('map-container')).toBeInTheDocument();
     expect(screen.getByTestId('tx-marker')).toHaveAttribute(
@@ -65,16 +63,12 @@ describe('PropagationTopDownMap', () => {
   });
 
   it('draws a groundwave ring, skip-zone ring, and first-ray track in mode colour', () => {
-    render(
-      <PropagationTopDownMap transmitter={{ lat: 51.5, lon: -0.13 }} rays={[skywave]} />,
-    );
+    render(<PropagationTopDownMap transmitter={{ lat: 51.5, lon: -0.13 }} rays={[skywave]} />);
 
     expect(screen.getByTestId('skip-zone-ring')).toBeInTheDocument();
     const lines = screen.getAllByTestId('polyline');
     expect(lines.length).toBeGreaterThanOrEqual(2);
     expect(lines.some((el) => el.getAttribute('data-color') === MODE_COLORS.skywave)).toBe(true);
-    expect(lines.some((el) => el.getAttribute('data-color') === MODE_COLORS.groundwave)).toBe(
-      true,
-    );
+    expect(lines.some((el) => el.getAttribute('data-color') === MODE_COLORS.groundwave)).toBe(true);
   });
 });

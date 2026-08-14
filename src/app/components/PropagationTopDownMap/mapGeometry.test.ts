@@ -2,9 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { RayPathResult } from '@core/domain/hfPropagation/types.ts';
 import { rayGroundTrack } from './mapGeometry.ts';
 
-function ray(
-  overrides: Partial<RayPathResult> & Pick<RayPathResult, 'points'>,
-): RayPathResult {
+function ray(overrides: Partial<RayPathResult> & Pick<RayPathResult, 'points'>): RayPathResult {
   return {
     mode: 'skywave',
     takeoffAngleDeg: 20,

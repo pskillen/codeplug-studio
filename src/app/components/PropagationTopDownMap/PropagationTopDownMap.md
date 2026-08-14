@@ -6,10 +6,10 @@ Leaflet plan view for the [HF/RF propagation visualiser](../../../../docs/featur
 
 ## Props
 
-| Prop          | Type                            | Notes                                                                                          |
-| ------------- | ------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `transmitter` | `{ lat: number; lon: number }`  | Map centre and ring origin — the Environment panel’s `txLat`/`txLon` (placeholder 0°, 0°).     |
-| `rays`        | `RayPathResult[]`               | Same Worker result the 3D globe already holds. Rings use the full set; the track uses `rays[0]`. |
+| Prop          | Type                           | Notes                                                                                            |
+| ------------- | ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `transmitter` | `{ lat: number; lon: number }` | Map centre and ring origin — the Environment panel’s `txLat`/`txLon` (placeholder 0°, 0°).       |
+| `rays`        | `RayPathResult[]`              | Same Worker result the 3D globe already holds. Rings use the full set; the track uses `rays[0]`. |
 
 ## Usage
 
