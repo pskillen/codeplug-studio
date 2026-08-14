@@ -214,6 +214,7 @@ export default function SlicePlanePicker({
               placeholder="e.g. G1 1XQ, Glasgow"
               value={addressQuery}
               onChange={(e) => setAddressQuery(e.currentTarget.value)}
+              aria-invalid={geocodeError != null}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -230,7 +231,7 @@ export default function SlicePlanePicker({
             </Button>
           </Group>
           {geocodeError ? (
-            <Text size="sm" c="red" role="alert">
+            <Text size="sm" c="red.6" fw={500} role="alert">
               {geocodeError}
             </Text>
           ) : null}

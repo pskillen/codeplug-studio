@@ -40,10 +40,10 @@
   background: #000011;
 }
 
-/* Non-globe view states (loading fallback, "not implemented yet" placeholders) reuse the
-   original centred-text framing the viewport itself used to provide before the globe (which
-   supplies its own black background + border-radius via HfPropagationGlobe.module.css) took
-   over the plain background above. */
+/* Non-globe view states (Suspense fallbacks) reuse the original centred-text framing
+   the viewport itself used to provide before the globe (which supplies its own black
+   background + border-radius via HfPropagationGlobe.module.css) took over the plain
+   background above. */
 .viewportPlaceholder {
   display: flex;
   align-items: center;

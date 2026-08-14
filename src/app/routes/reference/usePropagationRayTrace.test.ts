@@ -53,7 +53,8 @@ describe('usePropagationRayTrace', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(RAY_TRACE_DEBOUNCE_MS);
     });
-    expect(result.current).toEqual([SKY]);
+    expect(result.current.rays).toEqual([SKY]);
+    expect(result.current.isComputing).toBe(false);
   });
 
   it('ignores a stale in-flight result after params change', async () => {
@@ -85,7 +86,7 @@ describe('usePropagationRayTrace', () => {
     await act(async () => {
       resolveFirst?.([SKY]);
     });
-    expect(result.current).toEqual([]);
+    expect(result.current.rays).toEqual([]);
   });
 
   it('retriggers when transmitter lat/lon change', async () => {
@@ -122,13 +123,52 @@ describe('usePropagationRayTrace', () => {
       await vi.advanceTimersByTimeAsync(RAY_TRACE_DEBOUNCE_MS);
     });
     expect(requestRayTrace).not.toHaveBeenCalled();
-    expect(result.current).toEqual([]);
+    expect(result.current.rays).toEqual([]);
+    expect(result.current.isComputing).toBe(false);
 
     rerender({ enabled: true });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(RAY_TRACE_DEBOUNCE_MS);
     });
     expect(requestRayTrace).toHaveBeenCalledTimes(1);
-    expect(result.current).toEqual([SKY]);
+    expect(result.current.rays).toEqual([SKY]);
+  });
+
+  it('keeps previous rays while a newer request is in flight', async () => {
+    requestRayTrace.mockResolvedValueOnce([SKY]);
+    const { result, rerender } = renderHook(
+      ({ params }: { params: RayTraceParams }) => usePropagationRayTrace(params),
+      { initialProps: { params: PARAMS } },
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RAY_TRACE_DEBOUNCE_MS);
+    });
+    expect(result.current.rays).toEqual([SKY]);
+    expect(result.current.isComputing).toBe(false);
+
+    let resolveNext: ((rays: RayPathResult[]) => void) | undefined;
+    requestRayTrace.mockImplementationOnce(
+      () =>
+        new Promise<RayPathResult[]>((resolve) => {
+          resolveNext = resolve;
+        }),
+    );
+
+    rerender({ params: { ...PARAMS, frequencyMhz: 7.1 } });
+    expect(result.current.rays).toEqual([SKY]);
+    expect(result.current.isComputing).toBe(true);
+
+    await act(async () => {
+      vi.advanceTimersByTime(RAY_TRACE_DEBOUNCE_MS);
+    });
+    expect(result.current.rays).toEqual([SKY]);
+
+    const next: RayPathResult = { ...SKY, takeoffAngleDeg: 12 };
+    await act(async () => {
+      resolveNext?.([next]);
+    });
+    expect(result.current.rays).toEqual([next]);
+    expect(result.current.isComputing).toBe(false);
   });
 });

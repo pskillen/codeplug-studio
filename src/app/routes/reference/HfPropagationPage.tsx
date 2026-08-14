@@ -1,4 +1,4 @@
-import { Group, Input, NumberInput, Select, Slider, Stack, Text } from '@mantine/core';
+import { Group, Input, Loader, NumberInput, Select, Slider, Stack, Text } from '@mantine/core';
 import { IconCalendar } from '@tabler/icons-react';
 import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react';
 import { peakGainElevationDeg } from '@core/domain/hfPropagation/antennaPatterns.ts';
@@ -263,7 +263,7 @@ export default function HfPropagationPage() {
     }),
     [frequencyMhz, antennaConfig, layers, azimuthDeg, txLat, txLon, dateTime],
   );
-  const rays = usePropagationRayTrace(rayTraceParams);
+  const { rays, isComputing } = usePropagationRayTrace(rayTraceParams);
   const sliceOffHeading =
     view === 'vertical-slice' &&
     Math.abs(slicePlane.bearingDeg - azimuthDeg) > SLICE_BEARING_EPSILON_DEG;
@@ -271,7 +271,11 @@ export default function HfPropagationPage() {
     () => ({ ...rayTraceParams, azimuthDeg: slicePlane.bearingDeg }),
     [rayTraceParams, slicePlane.bearingDeg],
   );
-  const sliceRays = usePropagationRayTrace(sliceRayTraceParams, sliceOffHeading);
+  const { rays: sliceRays, isComputing: sliceComputing } = usePropagationRayTrace(
+    sliceRayTraceParams,
+    sliceOffHeading,
+  );
+  const readingBusy = isComputing || (sliceOffHeading && sliceComputing);
   const verticalSliceRays = sliceOffHeading ? sliceRays : rays;
   const dominant = dominantRay(rays);
   const modeReadout = dominant ? MODE_LABELS[dominant.mode] : '—';
@@ -626,7 +630,15 @@ export default function HfPropagationPage() {
             </Panel>
 
             <Panel title="Reading">
-              <Stack gap="lg">
+              <Stack gap="lg" aria-busy={readingBusy} aria-live="polite">
+                {readingBusy ? (
+                  <Group gap="xs">
+                    <Loader size="xs" aria-label="Updating reading" />
+                    <Text size="xs" c="dimmed">
+                      Updating…
+                    </Text>
+                  </Group>
+                ) : null}
                 <FormField label="Critical frequency (fc)" value={criticalFrequencyLabel} />
                 <FormField label="MUF" value={mufLabel} />
                 <FormField label="Mode" value={modeReadout} />

@@ -311,3 +311,46 @@ describe('HfPropagationPage transmitter location', () => {
     expect(screen.getByRole('textbox', { name: 'Longitude' })).toHaveValue('0');
   });
 });
+
+describe('HfPropagationPage Reading recompute', () => {
+  it('shows an in-panel spinner and keeps the previous globe rays', async () => {
+    await renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('Skywave')).toBeInTheDocument();
+    });
+    const previousRays = lastGlobeProps?.rays;
+
+    let resolveNext: ((value: unknown) => void) | undefined;
+    requestRayTrace.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveNext = resolve;
+        }),
+    );
+
+    fireEvent.keyDown(screen.getByRole('slider', { name: 'Frequency' }), { key: 'ArrowRight' });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Updating reading')).toBeInTheDocument();
+    });
+    expect(lastGlobeProps?.rays).toBe(previousRays);
+    expect(screen.getByText('Skywave')).toBeInTheDocument();
+
+    resolveNext?.([
+      {
+        mode: 'nvis',
+        points: [
+          { lat: 0, lon: 0, altitudeKm: 0 },
+          { lat: 1, lon: 0, altitudeKm: 80 },
+        ],
+        takeoffAngleDeg: 70,
+        relativeSignalStrength: 0.4,
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Updating reading')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText('NVIS')).toBeInTheDocument();
+  });
+});
