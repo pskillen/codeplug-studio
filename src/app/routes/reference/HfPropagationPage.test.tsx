@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RAY_TRACE_DEBOUNCE_MS } from './usePropagationRayTrace.ts';
 import HfPropagationPage from './HfPropagationPage.tsx';
+import type { RayPathResult } from '@core/domain/hfPropagation/types.ts';
 
 const { requestRayTrace } = vi.hoisted(() => ({
   requestRayTrace: vi.fn(async () => [
@@ -334,10 +335,10 @@ describe('HfPropagationPage Reading recompute', () => {
     });
     const previousRays = lastGlobeProps?.rays;
 
-    let resolveNext: ((value: unknown) => void) | undefined;
+    let resolveNext: ((rays: RayPathResult[]) => void) | undefined;
     requestRayTrace.mockImplementationOnce(
       () =>
-        new Promise((resolve) => {
+        new Promise<RayPathResult[]>((resolve) => {
           resolveNext = resolve;
         }),
     );
@@ -352,7 +353,7 @@ describe('HfPropagationPage Reading recompute', () => {
 
     resolveNext?.([
       {
-        mode: 'nvis',
+        mode: 'nvis' as const,
         points: [
           { lat: 0, lon: 0, altitudeKm: 0 },
           { lat: 1, lon: 0, altitudeKm: 80 },
