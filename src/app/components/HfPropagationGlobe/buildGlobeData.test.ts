@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { layerMidAltitudeKm } from '@core/domain/hfPropagation/ionosphericProfile.ts';
 import { GLOBE_EARTH_RADIUS_KM } from '../SatelliteGlobe/globeAltitude.ts';
+import type { RayPathResult } from '@core/domain/hfPropagation/types.ts';
+import { altitudeKmToGlobeRadiusUnits } from '../SatelliteGlobe/globeAltitude.ts';
 import {
   canonicalLayerIndex,
   displayShellRadiusUnits,
@@ -12,6 +14,8 @@ import {
   fresnelOpacity,
   GLOBE_RADIUS_UNITS,
   latLonToGlobeDirection,
+  MODE_COLORS,
+  rayResultsToGlobePaths,
   SHELL_INNER_BASELINE_OPACITY,
   SHELL_OPACITY_STEP,
   shellBaselineOpacity,
@@ -187,5 +191,48 @@ describe('day/night shell presence', () => {
     const dayR = displayShellRadiusUnits(layerMidAltitudeKm('F2', false), 3, display);
     const nightR = displayShellRadiusUnits(layerMidAltitudeKm('F2', true), 3, display);
     expect(nightR).toBeLessThan(dayR);
+  });
+});
+
+describe('rayResultsToGlobePaths', () => {
+  function ray(mode: RayPathResult['mode'], altitudeKm: number): RayPathResult {
+    return {
+      mode,
+      points: [
+        { lat: 0, lon: 0, altitudeKm: 0 },
+        { lat: 1, lon: 2, altitudeKm },
+      ],
+      takeoffAngleDeg: 15,
+      relativeSignalStrength: 1,
+    };
+  }
+
+  it('maps lat/lon/altitude onto globe path triples with per-mode colours', () => {
+    const rays = [
+      ray('groundwave', 0),
+      ray('skywave', 250),
+      ray('nvis', 200),
+      ray('absorbed', 80),
+      ray('escaped', 500),
+    ];
+    const paths = rayResultsToGlobePaths(rays);
+    expect(paths).toHaveLength(5);
+    for (const [i, path] of paths.entries()) {
+      expect(path.kind).toBe('ray');
+      expect(path.mode).toBe(rays[i]!.mode);
+      expect(path.color).toBe(MODE_COLORS[rays[i]!.mode]);
+      expect(path.points).toEqual([
+        [0, 0, altitudeKmToGlobeRadiusUnits(0)],
+        [1, 2, altitudeKmToGlobeRadiusUnits(rays[i]!.points[1]!.altitudeKm)],
+      ]);
+    }
+  });
+
+  it('keeps MODE_COLORS distinct from ionospheric layer colours', () => {
+    expect(MODE_COLORS.groundwave).toBe('#4d7cff');
+    expect(MODE_COLORS.skywave).toBe('#3ddc97');
+    expect(MODE_COLORS.nvis).toBe('#f5a623');
+    expect(MODE_COLORS.absorbed).toBe('#8b3a3a');
+    expect(MODE_COLORS.escaped).toBe('#666666');
   });
 });

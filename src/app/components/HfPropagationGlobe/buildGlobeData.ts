@@ -5,6 +5,8 @@ import { colorForLayer, IONOSPHERIC_LAYER_IDS } from '@core/domain/hfPropagation
 import type {
   IonosphericLayerId,
   IonosphericLayerState,
+  PropagationMode,
+  RayPathResult,
 } from '@core/domain/hfPropagation/types.ts';
 import { altitudeKmToGlobeRadiusUnits } from '../SatelliteGlobe/globeAltitude.ts';
 
@@ -425,4 +427,73 @@ export function buildSunMarkerMesh(d: object): THREE.Object3D {
   mesh.position.copy(dir.multiplyScalar(SUN_MARKER_DISTANCE_UNITS));
   mesh.renderOrder = 10;
   return mesh;
+}
+
+/**
+ * Propagation-mode colours for ray paths — distinct from `colorForLayer` (D/E/F1/F2 shells).
+ * Phases 10 (top-down) and 11 (vertical slice) import this mapping rather than redefining it.
+ */
+export const MODE_COLORS: Record<PropagationMode, string> = {
+  groundwave: '#4d7cff',
+  skywave: '#3ddc97',
+  nvis: '#f5a623',
+  absorbed: '#8b3a3a',
+  escaped: '#666666',
+};
+
+export const MODE_LABELS: Record<PropagationMode, string> = {
+  groundwave: 'Groundwave',
+  skywave: 'Skywave',
+  nvis: 'NVIS',
+  absorbed: 'Absorbed',
+  escaped: 'Escaped',
+};
+
+export const PROPAGATION_MODES: readonly PropagationMode[] = [
+  'groundwave',
+  'skywave',
+  'nvis',
+  'absorbed',
+  'escaped',
+];
+
+export interface PropagationRayGlobePath {
+  kind: 'ray';
+  mode: PropagationMode;
+  points: [number, number, number][];
+  color: string;
+}
+
+/** Neutral skip-zone / NVIS-coverage ring — not one of the five mode colours. */
+export const SKIP_ZONE_PATH_COLOR = '#c8c8d4';
+/** Lift slightly above the marble so the ring is not buried; below the greyline. */
+export const SKIP_ZONE_PATH_ALTITUDE = 0.008;
+
+export type SkipZoneGlobePath = {
+  kind: 'skip-zone';
+  points: [number, number, number][];
+  color: string;
+};
+
+export type HfGlobePath = PropagationRayGlobePath | SkipZoneGlobePath | TerminatorPath;
+
+export function rayResultsToGlobePaths(rays: RayPathResult[]): PropagationRayGlobePath[] {
+  return rays.map((ray) => ({
+    kind: 'ray' as const,
+    mode: ray.mode,
+    points: ray.points.map(
+      (p) => [p.lat, p.lon, altitudeKmToGlobeRadiusUnits(p.altitudeKm)] as [number, number, number],
+    ),
+    color: MODE_COLORS[ray.mode],
+  }));
+}
+
+export function buildSkipZonePaths(ring: LatLon[]): SkipZoneGlobePath[] {
+  return splitLatLonRingAtAntimeridian(ring).map((segment) => ({
+    kind: 'skip-zone' as const,
+    points: segment.map(
+      ([lat, lon]) => [lat, lon, SKIP_ZONE_PATH_ALTITUDE] as [number, number, number],
+    ),
+    color: SKIP_ZONE_PATH_COLOR,
+  }));
 }
