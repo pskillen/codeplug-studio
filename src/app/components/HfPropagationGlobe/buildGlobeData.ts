@@ -8,6 +8,7 @@ import type {
   PropagationMode,
   RayPathResult,
 } from '@core/domain/hfPropagation/types.ts';
+import { latLonToGlobeCartesian } from '@core/domain/hfPropagation/cutawayPlane.ts';
 import { altitudeKmToGlobeRadiusUnits } from '../SatelliteGlobe/globeAltitude.ts';
 
 /**
@@ -298,10 +299,8 @@ export function updateShellFresnel(
 
 /** Matches `three-globe` `polar2Cartesian` (unit vector, relAltitude 0). */
 export function latLonToGlobeDirection(latDeg: number, lonDeg: number): THREE.Vector3 {
-  const phi = ((90 - latDeg) * Math.PI) / 180;
-  const theta = ((90 - lonDeg) * Math.PI) / 180;
-  const phiSin = Math.sin(phi);
-  return new THREE.Vector3(phiSin * Math.cos(theta), Math.cos(phi), phiSin * Math.sin(theta));
+  const { x, y, z } = latLonToGlobeCartesian(latDeg, lonDeg);
+  return new THREE.Vector3(x, y, z);
 }
 
 /** Bright greyline so it reads against both the marble and the night shade. */
