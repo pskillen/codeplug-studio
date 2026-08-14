@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { layerMidAltitudeKm } from '@core/domain/hfPropagation/ionosphericProfile.ts';
 import { GLOBE_EARTH_RADIUS_KM } from '../SatelliteGlobe/globeAltitude.ts';
 import {
   canonicalLayerIndex,
@@ -14,6 +15,7 @@ import {
   SHELL_INNER_BASELINE_OPACITY,
   SHELL_OPACITY_STEP,
   shellBaselineOpacity,
+  shellPresence,
   shellRadiusUnits,
   SUN_MARKER_DISTANCE_UNITS,
   TERMINATOR_PATH_ALTITUDE,
@@ -162,5 +164,28 @@ describe('buildTerminatorPaths', () => {
       [0, -170],
     ]);
     expect(paths.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('day/night shell presence', () => {
+  it('drops D and F1 on the night side and keeps F2', () => {
+    expect(shellPresence('D', -1)).toBe(0);
+    expect(shellPresence('F1', -1)).toBe(0);
+    expect(shellPresence('F2', -1)).toBe(1);
+    expect(shellPresence('F1', 1)).toBeCloseTo(1);
+    expect(shellPresence('D', 1)).toBeCloseTo(1);
+  });
+
+  it('thins D across the terminator while F1 is still partly present', () => {
+    const terminator = 0;
+    expect(shellPresence('D', terminator)).toBeLessThan(shellPresence('F1', terminator));
+    expect(shellPresence('D', terminator)).toBeGreaterThan(0);
+  });
+
+  it('uses a lower F2 display radius on the night hemisphere', () => {
+    const display = { exaggerationFactor: 1, explodeEnabled: false, fresnelEnabled: false };
+    const dayR = displayShellRadiusUnits(layerMidAltitudeKm('F2', false), 3, display);
+    const nightR = displayShellRadiusUnits(layerMidAltitudeKm('F2', true), 3, display);
+    expect(nightR).toBeLessThan(dayR);
   });
 });

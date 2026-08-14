@@ -101,8 +101,8 @@ function fieldsShownForFamily(family: AntennaPatternFamily) {
 const DEFAULT_TX_LAT_DEG = 0;
 const DEFAULT_TX_LON_DEG = 0;
 
-function layerToggleAriaLabel(id: IonosphericLayerId, physicsPresent: boolean): string {
-  return physicsPresent ? `${id} layer` : `${id} layer, not present (night)`;
+function layerToggleAriaLabel(id: IonosphericLayerId): string {
+  return `${id} layer`;
 }
 
 const ALL_LAYERS_VISIBLE: Record<IonosphericLayerId, boolean> = {
@@ -244,12 +244,10 @@ export default function HfPropagationPage() {
                 />
                 <div className={classes.layerToggles}>
                   {IONOSPHERIC_LAYER_IDS.map((id) => {
-                    const physicsPresent = layers.find((layer) => layer.id === id)?.active ?? false;
                     return (
                       <ToggleSwitch
                         key={id}
                         checked={visibleLayers[id]}
-                        disabled={!physicsPresent}
                         onChange={(checked) =>
                           setVisibleLayers((prev) => ({ ...prev, [id]: checked }))
                         }
@@ -261,12 +259,9 @@ export default function HfPropagationPage() {
                               aria-hidden
                             />
                             {id}
-                            {physicsPresent ? null : (
-                              <span className={classes.layerAbsentHint}>not present (night)</span>
-                            )}
                           </span>
                         }
-                        aria-label={layerToggleAriaLabel(id, physicsPresent)}
+                        aria-label={layerToggleAriaLabel(id)}
                       />
                     );
                   })}

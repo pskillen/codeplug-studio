@@ -16,7 +16,25 @@ const LAYER_BANDS: LayerBand[] = [
 ];
 
 /** Night-time F2 lower bound — merged F-region occupies F1's daytime band as well. */
-const NIGHT_F2_ALTITUDE_MIN_KM = 150;
+export const NIGHT_F2_ALTITUDE_MIN_KM = 150;
+
+export function layerAltitudeBand(
+  id: IonosphericLayerId,
+  isNight: boolean,
+): { altitudeMinKm: number; altitudeMaxKm: number } {
+  const band = LAYER_BANDS.find((entry) => entry.id === id);
+  const altitudeMinKm = band?.altitudeMinKm ?? 0;
+  const altitudeMaxKm = band?.altitudeMaxKm ?? 0;
+  if (id === 'F2' && isNight) {
+    return { altitudeMinKm: NIGHT_F2_ALTITUDE_MIN_KM, altitudeMaxKm };
+  }
+  return { altitudeMinKm, altitudeMaxKm };
+}
+
+export function layerMidAltitudeKm(id: IonosphericLayerId, isNight: boolean): number {
+  const { altitudeMinKm, altitudeMaxKm } = layerAltitudeBand(id, isNight);
+  return (altitudeMinKm + altitudeMaxKm) / 2;
+}
 
 /**
  * Canned peak-density baselines (electrons/m³) per solar preset. Order-of-magnitude
@@ -54,13 +72,12 @@ export function computeIonosphericLayers(
   return LAYER_BANDS.map((band) => {
     const active = band.dayOnly ? isDaylight : true;
     const nightFraction = isDaylight ? 1 : NIGHT_DENSITY_FRACTION;
-    const altitudeMinKm =
-      band.id === 'F2' && !isDaylight ? NIGHT_F2_ALTITUDE_MIN_KM : band.altitudeMinKm;
+    const { altitudeMinKm, altitudeMaxKm } = layerAltitudeBand(band.id, !isDaylight);
     return {
       id: band.id,
       active,
       altitudeMinKm,
-      altitudeMaxKm: band.altitudeMaxKm,
+      altitudeMaxKm,
       peakElectronDensity: active ? peakDensityBaseline * nightFraction : 0,
     };
   });

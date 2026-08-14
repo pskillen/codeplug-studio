@@ -84,12 +84,6 @@
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
 }
 
-.layerAbsentHint {
-  font-size: var(--dsv2-font-micro);
-  color: var(--dsv2-text-tertiary);
-  font-weight: 400;
-}
-
 .dateTimeField {
   display: flex;
   gap: 6px;

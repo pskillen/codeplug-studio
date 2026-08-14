@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { LatLon } from '@core/domain/geo.ts';
+import { layerMidAltitudeKm } from '@core/domain/hfPropagation/ionosphericProfile.ts';
 import { colorForLayer, IONOSPHERIC_LAYER_IDS } from '@core/domain/hfPropagation/layerColor.ts';
 import type {
   IonosphericLayerId,
@@ -43,7 +44,7 @@ export interface ShellDisplayOptions {
   exaggerationFactor: number;
   explodeEnabled: boolean;
   fresnelEnabled: boolean;
-  /** Greyline ring + night-side overlay. Default off. */
+  /** Greyline ring + sun marker. Default off. Night-side shade follows `environmentAtMs`. */
   terminatorEnabled?: boolean;
 }
 
@@ -114,9 +115,63 @@ export function shellRadiusUnits(midAltitudeKm: number): number {
   });
 }
 
+/** Matches `computeIonosphericLayers` night gate (zenith 100°) as a sun-direction cosine. */
+export const DUSK_NDOT_SUN_LO = Math.cos((100 * Math.PI) / 180);
+/** Day side of the dusk band — sun ~10° above the horizon. */
+export const DUSK_NDOT_SUN_HI = Math.cos((80 * Math.PI) / 180);
+/** D-layer is gone by the terminator and only fully present well into daylight. */
+export const D_THIN_NDOT_SUN_LO = Math.cos((95 * Math.PI) / 180);
+export const D_THIN_NDOT_SUN_HI = Math.cos((70 * Math.PI) / 180);
+
+function hermiteSmoothstep(edge0: number, edge1: number, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+/** 0 = night hemisphere, 1 = day hemisphere (GLSL `smoothstep` equivalent). */
+export function dayNightFactor(ndotSun: number): number {
+  return hermiteSmoothstep(DUSK_NDOT_SUN_LO, DUSK_NDOT_SUN_HI, ndotSun);
+}
+
+/**
+ * Night-side opacity scale. D/F1 vanish (F1 merges into F2 geometrically); E dims;
+ * F2 stays (radius drops instead).
+ */
+export function shellNightPresence(id: IonosphericLayerId): number {
+  if (id === 'D' || id === 'F1') return 0;
+  if (id === 'E') return 0.45;
+  return 1;
+}
+
+/** Extra D-layer fade so the shell thins along the terminator instead of cutting off. */
+export function dLayerPresence(ndotSun: number): number {
+  return hermiteSmoothstep(D_THIN_NDOT_SUN_LO, D_THIN_NDOT_SUN_HI, ndotSun);
+}
+
+export function shellPresence(id: IonosphericLayerId, ndotSun: number): number {
+  if (id === 'D') return dLayerPresence(ndotSun);
+  return shellNightPresence(id) + (1 - shellNightPresence(id)) * dayNightFactor(ndotSun);
+}
+
+export type ShellSunOverlay = {
+  sunLatDeg: number;
+  sunLonDeg: number;
+};
+
+export function isShellSunOverlay(d: object): d is IonosphericLayerState & ShellSunOverlay {
+  const rec = d as IonosphericLayerState & Partial<ShellSunOverlay>;
+  return (
+    typeof rec.id === 'string' &&
+    typeof rec.sunLatDeg === 'number' &&
+    typeof rec.sunLonDeg === 'number'
+  );
+}
+
 /**
  * Builds one translucent ionospheric shell mesh. Typed as `object` because
  * `react-globe.gl`'s `customThreeObject` callback receives layer data as an untyped object.
+ * When sun lat/lon are present, the vertex shader mixes day/night radius (F2 drops into
+ * F1's band on the night hemisphere) and the fragment shader fades D/F1 / thins D.
  */
 export function buildShellMesh(
   layer: object,
@@ -124,11 +179,19 @@ export function buildShellMesh(
   display: ShellDisplayOptions,
 ): THREE.Object3D {
   const s = layer as IonosphericLayerState;
-  const midAltitudeKm = (s.altitudeMinKm + s.altitudeMaxKm) / 2;
-  const radius = displayShellRadiusUnits(midAltitudeKm, layerIndex, display);
-  const geometry = new THREE.SphereGeometry(radius, 48, 48);
+  const spatial = isShellSunOverlay(layer);
+  const dayMidKm = spatial
+    ? layerMidAltitudeKm(s.id, false)
+    : (s.altitudeMinKm + s.altitudeMaxKm) / 2;
+  const nightMidKm = spatial ? layerMidAltitudeKm(s.id, true) : dayMidKm;
+  const dayRadius = displayShellRadiusUnits(dayMidKm, layerIndex, display);
+  const nightRadius = displayShellRadiusUnits(nightMidKm, layerIndex, display);
+  const geometry = new THREE.SphereGeometry(1, 64, 64);
   const baselineOpacity = shellBaselineOpacity(layerIndex);
   const fresnelScale = baselineOpacity / SHELL_INNER_BASELINE_OPACITY;
+  const sunDir = spatial
+    ? latLonToGlobeDirection(s.sunLatDeg, s.sunLonDeg)
+    : new THREE.Vector3(0, 1, 0);
   const material = new THREE.MeshBasicMaterial({
     color: colorForLayer(s.id),
     transparent: true,
@@ -142,25 +205,59 @@ export function buildShellMesh(
     uOpacityMin: { value: FRESNEL_OPACITY_MIN * fresnelScale },
     uOpacityMax: { value: FRESNEL_OPACITY_MAX * fresnelScale },
     uFresnelPower: { value: FRESNEL_POWER },
+    uSunDir: { value: sunDir },
+    uDayRadius: { value: dayRadius },
+    uNightRadius: { value: nightRadius },
+    uSpatialDayNight: { value: spatial ? 1 : 0 },
+    uNightPresence: { value: shellNightPresence(s.id) },
+    uDThinning: { value: s.id === 'D' ? 1 : 0 },
+    uDuskLo: { value: DUSK_NDOT_SUN_LO },
+    uDuskHi: { value: DUSK_NDOT_SUN_HI },
+    uDThinLo: { value: D_THIN_NDOT_SUN_LO },
+    uDThinHi: { value: D_THIN_NDOT_SUN_HI },
   };
   material.userData.shellFresnelUniforms = uniforms;
-  material.customProgramCacheKey = () => 'hf-shell-fresnel';
+  material.customProgramCacheKey = () => 'hf-shell-fresnel-daynight';
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
-    shader.vertexShader =
-      `varying vec3 vShellWorldPosition;\nvarying vec3 vShellWorldNormal;\n${shader.vertexShader}`.replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
+    shader.vertexShader = `uniform vec3 uSunDir;
+uniform float uDayRadius;
+uniform float uNightRadius;
+uniform float uSpatialDayNight;
+uniform float uDuskLo;
+uniform float uDuskHi;
+uniform float uDThinLo;
+uniform float uDThinHi;
+varying vec3 vShellWorldPosition;
+varying vec3 vShellWorldNormal;
+varying float vDayFactor;
+varying float vDPresence;
+${shader.vertexShader}`.replace(
+      '#include <begin_vertex>',
+      `#include <begin_vertex>
+       vec3 radial = normalize(position);
+       float ndotSun = dot(radial, normalize(uSunDir));
+       float dayFactor = mix(1.0, smoothstep(uDuskLo, uDuskHi, ndotSun), uSpatialDayNight);
+       float dPresence = mix(1.0, smoothstep(uDThinLo, uDThinHi, ndotSun), uSpatialDayNight);
+       float radius = mix(uNightRadius, uDayRadius, dayFactor);
+       transformed = radial * radius;
+       vDayFactor = dayFactor;
+       vDPresence = dPresence;
        vShellWorldPosition = (modelMatrix * vec4(transformed, 1.0)).xyz;
-       vShellWorldNormal = normalize(mat3(modelMatrix) * position);`,
-      );
+       vShellWorldNormal = normalize(mat3(modelMatrix) * radial);`,
+    );
     shader.fragmentShader = `uniform float uFresnelEnabled;
 uniform float uBaselineOpacity;
 uniform float uOpacityMin;
 uniform float uOpacityMax;
 uniform float uFresnelPower;
+uniform float uNightPresence;
+uniform float uDThinning;
+uniform float uSpatialDayNight;
 varying vec3 vShellWorldPosition;
 varying vec3 vShellWorldNormal;
+varying float vDayFactor;
+varying float vDPresence;
 ${shader.fragmentShader}`.replace(
       '#include <color_fragment>',
       `#include <color_fragment>
@@ -168,7 +265,10 @@ ${shader.fragmentShader}`.replace(
          float ndotv = abs(dot(normalize(vShellWorldNormal), shellViewDir));
          float fresnel = pow(1.0 - clamp(ndotv, 0.0, 1.0), uFresnelPower);
          float fresnelOpacity = mix(uOpacityMin, uOpacityMax, fresnel);
-         diffuseColor.a = mix(uBaselineOpacity, fresnelOpacity, uFresnelEnabled);`,
+         float baseAlpha = mix(uBaselineOpacity, fresnelOpacity, uFresnelEnabled);
+         float duskPresence = mix(uNightPresence, 1.0, vDayFactor);
+         float presence = mix(duskPresence, vDPresence, uDThinning);
+         diffuseColor.a = baseAlpha * mix(1.0, presence, uSpatialDayNight);`,
     );
   };
   const mesh = new THREE.Mesh(geometry, material);
@@ -202,12 +302,12 @@ export function latLonToGlobeDirection(latDeg: number, lonDeg: number): THREE.Ve
   return new THREE.Vector3(phiSin * Math.cos(theta), Math.cos(phi), phiSin * Math.sin(theta));
 }
 
-/** Neutral greyline — not a shell / MODE colour. */
-export const TERMINATOR_PATH_COLOR = '#cfd3dc';
-/** Slight lift above the surface so the dashed ring is not z-fought with the globe mesh. */
-export const TERMINATOR_PATH_ALTITUDE = 0.004;
-export const NIGHT_SHADE_OPACITY = 0.15;
-export const NIGHT_SHADE_RADIUS_UNITS = GLOBE_RADIUS_UNITS * 1.008;
+/** Bright greyline so it reads against both the marble and the night shade. */
+export const TERMINATOR_PATH_COLOR = '#fff6c8';
+/** Lift above the night-shade sphere so the ring is not buried. */
+export const TERMINATOR_PATH_ALTITUDE = 0.014;
+export const NIGHT_SHADE_OPACITY = 0.48;
+export const NIGHT_SHADE_RADIUS_UNITS = GLOBE_RADIUS_UNITS * 1.006;
 
 export type TerminatorPath = {
   kind: 'terminator';
@@ -252,7 +352,7 @@ export function isNightShadeLayer(d: object): d is NightShadeLayer {
 
 /**
  * Slightly oversized dark sphere; fragment alpha is 0 on the sunlit hemisphere so only the
- * night side tints the globe (~0.15). Sun direction uses three-globe cartesian, not exaggeration.
+ * night side tints the globe. Sun direction uses three-globe cartesian, not exaggeration.
  */
 export function buildNightShadeMesh(d: object): THREE.Object3D {
   const { sunLatDeg, sunLonDeg } = d as NightShadeLayer;
@@ -285,7 +385,7 @@ ${shader.fragmentShader}`.replace(
       '#include <color_fragment>',
       `#include <color_fragment>
          float ndotSun = dot(normalize(vGlobeNormal), normalize(uSunDir));
-         float night = 1.0 - smoothstep(-0.06, 0.06, ndotSun);
+         float night = 1.0 - smoothstep(-0.12, 0.08, ndotSun);
          diffuseColor.a = uNightOpacity * night;`,
     );
   };

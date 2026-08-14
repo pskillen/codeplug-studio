@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { computeIonosphericLayers } from './ionosphericProfile.ts';
+import {
+  computeIonosphericLayers,
+  layerAltitudeBand,
+  layerMidAltitudeKm,
+} from './ionosphericProfile.ts';
 
 const EQUINOX_SOLAR_NOON_UTC = Date.UTC(2024, 2, 20, 12, 0, 0);
 const EQUINOX_MIDNIGHT_UTC = Date.UTC(2024, 2, 20, 0, 0, 0);
@@ -52,6 +56,14 @@ describe('computeIonosphericLayers', () => {
     expect(day.F2?.altitudeMaxKm).toBe(400);
     expect(night.F2?.altitudeMinKm).toBe(150);
     expect(night.F2?.altitudeMaxKm).toBe(400);
+  });
+
+  it('reports the same F2 night band via layerAltitudeBand', () => {
+    expect(layerAltitudeBand('F2', false)).toEqual({ altitudeMinKm: 250, altitudeMaxKm: 400 });
+    expect(layerAltitudeBand('F2', true)).toEqual({ altitudeMinKm: 150, altitudeMaxKm: 400 });
+    expect(layerMidAltitudeKm('F2', false)).toBe(325);
+    expect(layerMidAltitudeKm('F2', true)).toBe(275);
+    expect(layerMidAltitudeKm('F1', false)).toBe(layerMidAltitudeKm('F1', true));
   });
 
   it('scales daytime F2 density with the solar-activity preset', () => {

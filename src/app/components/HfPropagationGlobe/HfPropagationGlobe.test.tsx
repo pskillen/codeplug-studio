@@ -58,7 +58,7 @@ describe('shellRadiusUnits', () => {
 });
 
 describe('HfPropagationGlobe', () => {
-  it('passes only active layers to customLayerData', () => {
+  it('passes only active layers to customLayerData when no environment instant is set', () => {
     render(<HfPropagationGlobe layers={NIGHTTIME_LAYERS} />);
 
     expect(screen.getByTestId('globe-stub')).toBeInTheDocument();
@@ -87,7 +87,7 @@ describe('HfPropagationGlobe', () => {
     expect(shells.map((s) => s.id)).toEqual(['D', 'E']);
   });
 
-  it('does not draw a physics-inactive layer even if the operator leaves it visible', () => {
+  it('does not draw a physics-inactive layer when there is no environment instant', () => {
     render(
       <HfPropagationGlobe
         layers={NIGHTTIME_LAYERS}
@@ -97,6 +97,17 @@ describe('HfPropagationGlobe', () => {
 
     const shells = lastGlobeProps?.customLayerData as { id: string }[];
     expect(shells.map((s) => s.id)).toEqual(['E', 'F2']);
+  });
+
+  it('keeps D and F1 in customLayerData at night when the environment instant is set', () => {
+    const atMs = Date.UTC(2024, 2, 20, 0, 0, 0);
+    render(<HfPropagationGlobe layers={NIGHTTIME_LAYERS} environmentAtMs={atMs} />);
+
+    const custom = lastGlobeProps?.customLayerData as { id?: string; kind?: string }[];
+    expect(custom.map((d) => d.id).filter(Boolean)).toEqual(['D', 'E', 'F1', 'F2']);
+    expect(custom.some((d) => d.kind === 'night-shade')).toBe(true);
+    expect(custom.some((d) => d.kind === 'sun')).toBe(false);
+    expect(lastGlobeProps?.pathsData).toEqual([]);
   });
 
   it('adds a dashed terminator path and night-shade layer when the overlay is on', () => {

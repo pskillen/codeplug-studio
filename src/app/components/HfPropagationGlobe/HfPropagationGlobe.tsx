@@ -61,10 +61,11 @@ const DEFAULT_DISPLAY: ShellDisplayOptions = {
 };
 
 /**
- * 3D propagation globe — renders active ionospheric shells (D/E/F1/F2) as concentric
- * translucent spheres via `react-globe.gl`'s `customThreeObject` extension point. Optional
- * solar terminator ring (`pathsData`) and night-side shade. No ray paths or transmitter
- * marker yet (#1170).
+ * 3D propagation globe — renders ionospheric shells (D/E/F1/F2) as concentric
+ * translucent spheres via `react-globe.gl`'s `customThreeObject` extension point. With
+ * `environmentAtMs`, shells vary by sun hemisphere (D/F1 fade at night, F2 drops into F1's
+ * band) and the night side is shaded. Optional solar terminator ring (`pathsData`) and sun
+ * marker. No ray paths or transmitter marker yet (#1170).
  */
 export default function HfPropagationGlobe({
   layers,
@@ -79,12 +80,24 @@ export default function HfPropagationGlobe({
   const visibleShells = useMemo(
     () =>
       layers
-        .filter((layer) => layer.active && visibleLayers[layer.id] !== false)
+        .filter((layer) => {
+          if (visibleLayers[layer.id] === false) return false;
+          // Spatial day/night draws all four shells; the shader fades D/F1 on the night
+          // hemisphere. Without an environment instant, keep TX-local physics `active`.
+          if (environmentAtMs != null) return true;
+          return layer.active;
+        })
         .slice()
         .sort((a, b) => canonicalLayerIndex(a.id) - canonicalLayerIndex(b.id)),
-    [layers, visibleLayers],
+    [layers, visibleLayers, environmentAtMs],
   );
   const { exaggerationFactor, explodeEnabled, fresnelEnabled, terminatorEnabled } = display;
+
+  const subsolar = useMemo(() => {
+    if (environmentAtMs == null) return null;
+    const [sunLatDeg, sunLonDeg] = computeSubsolarPoint(environmentAtMs);
+    return { sunLatDeg, sunLonDeg };
+  }, [environmentAtMs]);
 
   const terminatorPaths = useMemo(() => {
     if (!terminatorEnabled || environmentAtMs == null) return [];
@@ -92,16 +105,28 @@ export default function HfPropagationGlobe({
   }, [terminatorEnabled, environmentAtMs]);
 
   const customLayerData = useMemo(() => {
-    const objects: Array<IonosphericLayerState | NightShadeLayer | SunMarkerLayer> = [
-      ...visibleShells,
-    ];
-    if (terminatorEnabled && environmentAtMs != null) {
-      const [sunLatDeg, sunLonDeg] = computeSubsolarPoint(environmentAtMs);
-      objects.push({ kind: 'night-shade', sunLatDeg, sunLonDeg });
-      objects.push({ kind: 'sun', sunLatDeg, sunLonDeg });
+    const objects: Array<IonosphericLayerState | NightShadeLayer | SunMarkerLayer> =
+      visibleShells.map((layer) =>
+        subsolar
+          ? { ...layer, sunLatDeg: subsolar.sunLatDeg, sunLonDeg: subsolar.sunLonDeg }
+          : layer,
+      );
+    if (subsolar) {
+      objects.push({
+        kind: 'night-shade',
+        sunLatDeg: subsolar.sunLatDeg,
+        sunLonDeg: subsolar.sunLonDeg,
+      });
+      if (terminatorEnabled) {
+        objects.push({
+          kind: 'sun',
+          sunLatDeg: subsolar.sunLatDeg,
+          sunLonDeg: subsolar.sunLonDeg,
+        });
+      }
     }
     return objects;
-  }, [visibleShells, terminatorEnabled, environmentAtMs]);
+  }, [visibleShells, subsolar, terminatorEnabled]);
 
   useEffect(() => {
     fresnelEnabledRef.current = fresnelEnabled;
@@ -180,10 +205,10 @@ export default function HfPropagationGlobe({
         pathPointLng={(p: unknown) => (p as [number, number, number])[1]}
         pathPointAlt={(p: unknown) => (p as [number, number, number])[2]}
         pathColor={(path: object) => (path as { color: string }).color}
-        pathDashLength={0.12}
-        pathDashGap={0.08}
+        pathDashLength={0.18}
+        pathDashGap={0.05}
         pathDashAnimateTime={0}
-        pathStroke={1.2}
+        pathStroke={3.6}
         pathTransitionDuration={0}
       />
     </div>
