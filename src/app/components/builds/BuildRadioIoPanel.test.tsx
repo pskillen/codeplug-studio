@@ -22,9 +22,16 @@ vi.mock('../../services/satelliteKepsWriteAdapters.ts', async (importOriginal) =
     await importOriginal<typeof import('../../services/satelliteKepsWriteAdapters.ts')>();
   return {
     ...actual,
-    hasSatelliteKepsWriteAdapter: (profileId: string) => profileId === 'radio-io-at-d890uv',
+    hasSatelliteKepsWriteAdapter: (profileId: string) =>
+      profileId === 'radio-io-at-d890uv' ||
+      profileId === 'radio-io-opengd77-1701' ||
+      profileId === 'radio-io-opengd77-md9600',
     getSatelliteKepsWriteAdapter: (profileId: string) =>
-      profileId === 'radio-io-at-d890uv' ? vi.fn() : undefined,
+      profileId === 'radio-io-at-d890uv' ||
+      profileId === 'radio-io-opengd77-1701' ||
+      profileId === 'radio-io-opengd77-md9600'
+        ? vi.fn()
+        : undefined,
   };
 });
 
@@ -85,7 +92,7 @@ describe('BuildRadioIoPanel — Write radio popup (#1121)', () => {
 });
 
 describe('BuildRadioIoPanel — dual-bank / single-bank extras', () => {
-  it('shows digital contacts extra for OpenGD77 and defaults None', async () => {
+  it('shows digital contacts extra for OpenGD77 and defaults None; keps extra is off until checked', async () => {
     renderPanel('radio-io-opengd77-1701');
     fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
     expect(await screen.findByRole('button', { name: 'None' })).toHaveAttribute(
@@ -93,6 +100,16 @@ describe('BuildRadioIoPanel — dual-bank / single-bank extras', () => {
       'true',
     );
     expect(screen.getByRole('button', { name: 'Write contacts only' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Write keps only' })).toBeDisabled();
+  });
+
+  it('shows digital contacts and satellite keps extras for MD-9600', async () => {
+    renderPanel('radio-io-opengd77-md9600');
+    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+    expect(await screen.findByText('Digital contacts')).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Write keps only' })).toBeDisabled();
   });
 
   it('shows digital contacts extra for AT-D890', async () => {

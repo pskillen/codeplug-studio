@@ -3,6 +3,7 @@ import type { ScanInclusion } from '@core/models/library.ts';
 import { sanitiseAsciiWireString } from '@core/import-export/sanitiseAsciiWireString.ts';
 
 const SCAN_INCLUSION_VALUES: readonly ScanInclusion[] = ['default', 'skip', 'alwaysScan'];
+const SATELLITE_BANK_SLOT_VALUES = ['fm', 'aprs', 'beacon'] as const;
 
 export type OverrideField =
   | 'channelOverrides'
@@ -176,6 +177,17 @@ function parseOverrideRow(raw: unknown, label: string): BuildEntityOverride {
     }
     result.scanInclusion = value as ScanInclusion;
   }
+  if (
+    record.satelliteBankSlot !== undefined &&
+    record.satelliteBankSlot !== null &&
+    record.satelliteBankSlot !== ''
+  ) {
+    const value = String(record.satelliteBankSlot);
+    if (!(SATELLITE_BANK_SLOT_VALUES as readonly string[]).includes(value)) {
+      throw new Error(`${label}.satelliteBankSlot is invalid: ${value}`);
+    }
+    result.satelliteBankSlot = value as BuildEntityOverride['satelliteBankSlot'];
+  }
   const legacyScanListId =
     record.scanListId !== undefined && record.scanListId !== null && record.scanListId !== ''
       ? String(record.scanListId)
@@ -192,7 +204,12 @@ export function upsertOverride(
   patch: Partial<
     Pick<
       BuildEntityOverride,
-      'excluded' | 'forceInclude' | 'wireName' | 'orderOrSlot' | 'scanInclusion'
+      | 'excluded'
+      | 'forceInclude'
+      | 'wireName'
+      | 'orderOrSlot'
+      | 'scanInclusion'
+      | 'satelliteBankSlot'
     >
   >,
 ): BuildEntityOverride[] {
@@ -226,11 +243,30 @@ export function upsertOverride(
     }
   }
 
+  if ('satelliteBankSlot' in patch) {
+    if (
+      patch.satelliteBankSlot == null ||
+      !(SATELLITE_BANK_SLOT_VALUES as readonly string[]).includes(patch.satelliteBankSlot)
+    ) {
+      delete merged.satelliteBankSlot;
+    } else {
+      merged.satelliteBankSlot = patch.satelliteBankSlot;
+    }
+  }
+
   const hasOrderOrSlot =
     merged.orderOrSlot != null && Number.isFinite(merged.orderOrSlot) && merged.orderOrSlot >= 1;
   const hasScanInclusion = merged.scanInclusion != null;
+  const hasSatelliteBankSlot = merged.satelliteBankSlot != null;
 
-  if (!hasWireName && !isExcluded && !isForceIncluded && !hasOrderOrSlot && !hasScanInclusion) {
+  if (
+    !hasWireName &&
+    !isExcluded &&
+    !isForceIncluded &&
+    !hasOrderOrSlot &&
+    !hasScanInclusion &&
+    !hasSatelliteBankSlot
+  ) {
     if (index < 0) return rows;
     return rows.filter((row) => row.libraryEntityId !== entityId);
   }
@@ -251,6 +287,10 @@ export function upsertOverride(
 
   if (!hasScanInclusion) {
     delete merged.scanInclusion;
+  }
+
+  if (!hasSatelliteBankSlot) {
+    delete merged.satelliteBankSlot;
   }
 
   if (index < 0) {

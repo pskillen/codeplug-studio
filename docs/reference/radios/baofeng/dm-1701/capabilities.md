@@ -22,7 +22,21 @@ Inclusive MHz bands used when filtering build lists and export ([#612](https://g
 | 136–174    | FM, DMR | Yes |
 | 400–470    | FM, DMR | Yes |
 
-Source: qDMR `opengd77_limits.cc` (OpenGD77 family).
+Source: qDMR `opengd77_limits.cc` (OpenGD77 family). Used for **channel** list/export eligibility ([#612](https://github.com/pskillen/codeplug-studio/issues/612)). Satellite keps write uses a **separate** 136–174 / **400–480** MHz gate — see below.
+
+### Satellite keps write eligibility (Studio)
+
+Not hardware-verified. Operator notes: radio slots are **Freq 1 (FM voice)**, **Freq 2 (APRS/packet)**, **Freq 3 (beacon / CW / SSTV / telemetry RX)**. Firmware does not track DMR satellite transponders. Standard RF 136–174 / 400–480 MHz; DM-1701 CPS Band Limits wideband unlock is **not modelled** — Studio still skips out-of-band transmitters. MD-9600 PLL is strict outside those bands.
+
+| Slot   | Occupants                   | Skip                        |
+| ------ | --------------------------- | --------------------------- |
+| Freq 1 | FM-family (empty mode → FM) | Extra FM; DMR / BPSK / GFSK |
+| Freq 2 | APRS, PACKET, AX.25, AFSK   | Extra APRS                  |
+| Freq 3 | Beacon, CW, SSTV, telemetry | Extra beacon                |
+
+Uplink CTCSS on Freq 1 is packed from `uplinkToneHz`. Arming tones and APRS path are **not** modelled.
+
+Code: `src/core/radios/opengd77/satelliteCapability.ts`. Wire: [satellite-orbitals.md](../../opengd77/satellite-orbitals.md).
 
 ## Layout conventions (operator practice)
 

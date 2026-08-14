@@ -41,6 +41,7 @@ import {
   OPENGD77_MEM_FLASH,
   OPENGD77_WRITE_VARIANT,
   OPENUV380_FLASH_SPANS,
+  OPENUV380_OFFSET,
   OPENGD77_1701_POWER_STEPS,
   OPENGD77_MD9600_POWER_STEPS,
   MD9600_RADIO_TYPES,
@@ -60,6 +61,7 @@ import {
 } from './memory.ts';
 import { openGd77KeptRegionLength, openGd77KeptRegions } from './writeVerifySupport.ts';
 import { encodeOpenGd77WriteImageFromPrior } from './hydration.ts';
+import { ADDITIONAL_SETTINGS_BYTES, overlaySatelliteBank } from './satelliteCodec.ts';
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 import { intendedOpenGd77RestoreImage } from './restoreFromBackup.ts';
@@ -407,6 +409,74 @@ export class OpenGd77Protocol implements CloneImageRadio {
     this.lastUploadStaging = captureWriteVerifyStaging(
       sectors.map((sector) => ({ address: sector.sectorAbs, data: sector.payload })),
     );
+
+    await pipe.write(
+      makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),
+    );
+    try {
+      parseCommandAck(await pipe.readExact(1, OPENGD77_IO_TIMEOUT_MS));
+    } catch {
+      /* reboot may drop the port */
+    }
+
+    this.priorImage = openUv380ImageFromBytes(intended.bytes);
+  }
+
+  /**
+   * Keps-only write: overlay satellite bank (additional-settings block 3) onto a
+   * fresh FLASH read, program dirty sectors, SAVE_REBOOT. Does not run modelled
+   * channel encode — Write codeplug never writes keps (#1121).
+   */
+  async uploadSatelliteBank(
+    bank: Uint8Array,
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
+    const pipe = this.pipe;
+    if (!pipe) throw new RadioProtocolError('OpenGD77 satellite write: not connected');
+
+    this.pendingWriteProjection = null;
+
+    try {
+      await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
+    } catch {
+      /* may already be in CPS */
+    }
+
+    await this.download({
+      onProgress: opts.onProgress,
+      signal: opts.signal,
+      progressStage: 'Pre-write read',
+    });
+
+    const prior = this.priorImage;
+    if (!prior) {
+      throw new RadioProtocolError(
+        'OpenGD77 satellite write: pre-write read did not establish priorImage',
+      );
+    }
+
+    const intended = openUv380ImageFromBytes(prior.bytes);
+    const existing = readAbs(
+      intended,
+      OPENUV380_OFFSET.additionalSettings,
+      ADDITIONAL_SETTINGS_BYTES,
+    );
+    writeAbs(intended, OPENUV380_OFFSET.additionalSettings, overlaySatelliteBank(existing, bank));
+
+    const sectors = collectDirtySectors(prior, intended);
+    this.lastDirtySectorCount = sectors.length;
+
+    for (let i = 0; i < sectors.length; i++) {
+      throwIfAborted(opts.signal);
+      const sector = sectors[i]!;
+      await writeFlashSector(pipe, sector.sectorAbs, sector.payload, opts.signal);
+      reportProgress(opts.onProgress, {
+        cur: i + 1,
+        max: Math.max(sectors.length, 1),
+        msg: `Writing FLASH sector 0x${sector.sectorAbs.toString(16)}`,
+        stage: 'FLASH sectors',
+      });
+    }
 
     await pipe.write(
       makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),

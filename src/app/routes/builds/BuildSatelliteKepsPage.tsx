@@ -13,14 +13,16 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { Alert, Group, Stack, Text } from '@mantine/core';
-import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
+import { Alert, Group, Select, Stack, Text } from '@mantine/core';
+import { overrideByEntityId, upsertOverride } from '@core/domain/formatBuildOverrides.ts';
 import { findEncodedNameCollisions } from '@core/domain/satellite/findEncodedNameCollisions.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Satellite } from '@core/models/satellite.ts';
-import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
-import type { SatelliteWritePreviewEntry } from '@integrations/radio-io/radios/at-d890uv/index.ts';
+import {
+  OPENGD77_SATELLITE_SLOT_LABELS,
+  type OpenGd77SatelliteBankSlot,
+} from '@core/radios/opengd77/satelliteCapability.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { Button, DataTable, Panel, type DataTableColumn } from '../../components/v2/index.ts';
 import { SatelliteEncodedNameCell } from '../../components/builds/satelliteKeps/SatelliteEncodedNameCell.tsx';
@@ -41,10 +43,12 @@ import { resolveRadioWriteGate } from '../../services/radioWriteEnvGate.ts';
 import {
   getSatelliteKepsExclusions,
   getSatelliteKepsWriteAdapter,
+  getSatelliteKepsWriteCapacity,
   getSatelliteKepsWritePreview,
   hasSatelliteKepsWriteAdapter,
   satelliteKepsCapacityWarning,
   type SatelliteKepsExclusion,
+  type SatelliteKepsWritePreviewEntry,
   type SatelliteKepsWriteResult,
 } from '../../services/satelliteKepsWriteAdapters.ts';
 import RadioIoProgressModal, {
@@ -74,15 +78,39 @@ type SatellitePreviewParentRow = {
   kind: 'parent';
   id: string;
   satelliteName: string;
+  encodedName: string;
+  suggestedFamiliarEncoded: string;
+  suggestedOscarEncoded: string | null;
+  nameTruncated: boolean;
+  hasWireNameOverride: boolean;
   children: SatellitePreviewRow[];
 };
 
-type SatellitePreviewChildRow = SatelliteWritePreviewEntry & {
+type SatellitePreviewChildRow = SatelliteKepsWritePreviewEntry & {
   kind: 'child';
   id: string;
 };
 
 type SatellitePreviewRow = SatellitePreviewParentRow | SatellitePreviewChildRow;
+
+function formatMhz(hz: number | null | undefined): string | null {
+  if (hz == null) return null;
+  return `${(hz / 1e6).toFixed(4)} MHz`;
+}
+
+function openGd77CandidateLabel(candidate: {
+  label: string;
+  mode: string | null;
+  uplinkHz?: number | null;
+  downlinkHz?: number | null;
+}): string {
+  const bits = [candidate.label];
+  if (candidate.mode) bits.push(`(${candidate.mode})`);
+  const uplink = formatMhz(candidate.uplinkHz);
+  const downlink = formatMhz(candidate.downlinkHz);
+  if (uplink || downlink) bits.push([uplink, downlink].filter(Boolean).join(' / '));
+  return bits.join(' ');
+}
 
 function isPreviewParentRow(row: SatellitePreviewRow): row is SatellitePreviewParentRow {
   return row.kind === 'parent';
@@ -115,13 +143,29 @@ export default function BuildSatelliteKepsPage() {
     void run();
   }, []);
 
-  const [editingTransmitterId, setEditingTransmitterId] = useState<string | null>(null);
+  const [editingEntityId, setEditingEntityId] = useState<string | null>(null);
 
-  function setTransmitterWireName(transmitterId: string, wireName: string) {
+  function setEntityWireName(entityId: string, wireName: string) {
     void persistBuild((current) =>
-      buildService.withWireNameOverride(current, 'satelliteOverrides', transmitterId, wireName),
+      buildService.withWireNameOverride(current, 'satelliteOverrides', entityId, wireName),
     );
-    setEditingTransmitterId(null);
+    setEditingEntityId(null);
+  }
+
+  function setSlotWinner(
+    slot: OpenGd77SatelliteBankSlot,
+    transmitterId: string,
+    candidates: { transmitterId: string }[],
+  ) {
+    persistBuild((current) => {
+      let next = current.satelliteOverrides;
+      for (const candidate of candidates) {
+        next = upsertOverride(next, candidate.transmitterId, {
+          satelliteBankSlot: candidate.transmitterId === transmitterId ? slot : undefined,
+        });
+      }
+      return { ...current, satelliteOverrides: next };
+    });
   }
 
   const sessionRef = useRef<RadioSession | null>(null);
@@ -159,6 +203,10 @@ export default function BuildSatelliteKepsPage() {
   const kepsWriteFn = egress ? getSatelliteKepsWriteAdapter(egress.profileId) : undefined;
   const kepsPreview = egress ? getSatelliteKepsWritePreview(egress.profileId) : undefined;
   const kepsExclusions = egress ? getSatelliteKepsExclusions(egress.profileId) : undefined;
+  const nameLimit = getSatelliteKepsWriteCapacity(egress?.profileId ?? '')?.nameLength ?? 8;
+  const nameScope =
+    getSatelliteKepsWriteCapacity(egress?.profileId ?? '')?.nameScope ?? 'transmitter';
+  const spacecraftNames = nameScope === 'spacecraft';
 
   /**
    * Live-loaded enabled satellites for the preview and the "Excluded from write" panel below
@@ -188,7 +236,7 @@ export default function BuildSatelliteKepsPage() {
     };
   }, [activeProjectId, kepsPreview, kepsExclusions]);
 
-  const previewEntries = useMemo<SatelliteWritePreviewEntry[]>(
+  const previewEntries = useMemo<SatelliteKepsWritePreviewEntry[]>(
     () =>
       kepsPreview
         ? kepsPreview(enabledSatellites, { satelliteOverrides: build.satelliteOverrides })
@@ -206,6 +254,11 @@ export default function BuildSatelliteKepsPage() {
           kind: 'parent',
           id: entry.satelliteId,
           satelliteName: entry.satelliteName,
+          encodedName: entry.encodedName,
+          suggestedFamiliarEncoded: entry.suggestedFamiliarEncoded,
+          suggestedOscarEncoded: entry.suggestedOscarEncoded,
+          nameTruncated: entry.nameTruncated,
+          hasWireNameOverride: entry.hasWireNameOverride,
           children: [],
         };
         parentById.set(entry.satelliteId, parent);
@@ -213,7 +266,7 @@ export default function BuildSatelliteKepsPage() {
       }
       parent.children.push({
         kind: 'child',
-        id: `${entry.satelliteId}-${entry.transmitterId}`,
+        id: `${entry.satelliteId}-${entry.slot ?? entry.transmitterId}`,
         ...entry,
       });
     }
@@ -231,22 +284,31 @@ export default function BuildSatelliteKepsPage() {
   );
 
   const collisionWarning = useMemo(() => {
-    const groups = findEncodedNameCollisions(
-      previewEntries.map((entry) => ({
-        id: entry.transmitterId,
-        encodedName: entry.encodedName,
-      })),
-    );
+    const entries = spacecraftNames
+      ? [...new Map(previewEntries.map((e) => [e.satelliteId, e])).values()].map((entry) => ({
+          id: entry.satelliteId,
+          encodedName: entry.encodedName,
+        }))
+      : previewEntries.map((entry) => ({
+          id: entry.transmitterId,
+          encodedName: entry.encodedName,
+        }));
+    const groups = findEncodedNameCollisions(entries);
     if (groups.length === 0) return null;
     return groups
       .map((group) => {
         const labels = group.ids
-          .map((id) => previewEntries.find((e) => e.transmitterId === id)?.transmitterLabel ?? id)
+          .map((id) => {
+            if (spacecraftNames) {
+              return previewEntries.find((e) => e.satelliteId === id)?.satelliteName ?? id;
+            }
+            return previewEntries.find((e) => e.transmitterId === id)?.transmitterLabel ?? id;
+          })
           .join(', ');
         return `"${group.encodedName}" — ${labels}`;
       })
       .join('; ');
-  }, [previewEntries]);
+  }, [previewEntries, spacecraftNames]);
 
   /**
    * Live "why did this enabled satellite/transmitter not show up in the preview above" (#1085
@@ -262,7 +324,9 @@ export default function BuildSatelliteKepsPage() {
   const exclusionEntries = useMemo<ResolvedExclusion[]>(() => {
     if (!kepsExclusions) return [];
     const satelliteById = new Map(enabledSatellites.map((s) => [s.id, s]));
-    return kepsExclusions(enabledSatellites).map((exclusion) => {
+    return kepsExclusions(enabledSatellites, {
+      satelliteOverrides: build.satelliteOverrides,
+    }).map((exclusion) => {
       const satellite = satelliteById.get(exclusion.satelliteId);
       const transmitter = satellite?.transmitters.find((t) => t.id === exclusion.transmitterId);
       return {
@@ -271,7 +335,7 @@ export default function BuildSatelliteKepsPage() {
         transmitterLabel: transmitter?.label ?? null,
       };
     });
-  }, [kepsExclusions, enabledSatellites]);
+  }, [kepsExclusions, enabledSatellites, build.satelliteOverrides]);
 
   const exclusionColumns = useMemo<DataTableColumn<ResolvedExclusion>[]>(
     () => [
@@ -289,25 +353,92 @@ export default function BuildSatelliteKepsPage() {
   const previewColumns: DataTableColumn<SatellitePreviewRow>[] = [
     {
       key: 'name',
-      header: 'Satellite',
-      render: (r) => (isPreviewParentRow(r) ? r.satelliteName : r.transmitterLabel),
+      header: spacecraftNames ? 'Radio' : 'Satellite',
+      render: (r) => {
+        if (isPreviewParentRow(r)) return r.satelliteName;
+        if (!spacecraftNames) return r.transmitterLabel;
+        const candidates = r.slotCandidates ?? [];
+        if (candidates.length === 0) return '(none)';
+        if (candidates.length === 1) return openGd77CandidateLabel(candidates[0]!);
+        const slot = r.slot;
+        if (slot == null) return r.transmitterLabel || '—';
+        return (
+          <Select
+            size="xs"
+            aria-label={`Choose transmitter for ${OPENGD77_SATELLITE_SLOT_LABELS[slot]}`}
+            data={candidates.map((candidate) => ({
+              value: candidate.transmitterId,
+              label: openGd77CandidateLabel(candidate),
+            }))}
+            value={r.transmitterId || null}
+            onChange={(value) => {
+              if (!value) return;
+              setSlotWinner(slot, value, candidates);
+            }}
+            onClick={(event) => event.stopPropagation()}
+          />
+        );
+      },
     },
+    ...(spacecraftNames
+      ? [
+          {
+            key: 'slot',
+            header: 'Slot',
+            render: (r: SatellitePreviewRow) => {
+              if (isPreviewParentRow(r) || r.slot == null) return '—';
+              return OPENGD77_SATELLITE_SLOT_LABELS[r.slot];
+            },
+          } satisfies DataTableColumn<SatellitePreviewRow>,
+        ]
+      : []),
     {
       key: 'encodedName',
       header: 'Encoded name',
       render: (r) => {
+        if (spacecraftNames) {
+          if (!isPreviewParentRow(r)) return '—';
+          const override = transmitterOverrides.get(r.id)?.wireName?.trim();
+          const committed = override ?? '';
+          return (
+            <SatelliteEncodedNameCell
+              entry={{
+                satelliteId: r.id,
+                satelliteName: r.satelliteName,
+                transmitterId: r.id,
+                transmitterLabel: r.satelliteName,
+                mode: null,
+                encodedName: r.encodedName,
+                satelliteWireName: r.encodedName,
+                generatedWireName: r.encodedName,
+                suggestedFamiliarEncoded: r.suggestedFamiliarEncoded,
+                suggestedOscarEncoded: r.suggestedOscarEncoded,
+                hasWireNameOverride: r.hasWireNameOverride,
+                uplinkHz: null,
+                downlinkHz: null,
+                nameTruncated: r.nameTruncated,
+              }}
+              nameLimit={nameLimit}
+              editing={editingEntityId === r.id}
+              committedWireName={committed}
+              onStartEdit={() => setEditingEntityId(r.id)}
+              onCancelEdit={() => setEditingEntityId(null)}
+              onWireNameChange={(wireName) => setEntityWireName(r.id, wireName)}
+            />
+          );
+        }
         if (isPreviewParentRow(r)) return '—';
         const override = transmitterOverrides.get(r.transmitterId)?.wireName?.trim();
         const committed = override ?? '';
         return (
           <SatelliteEncodedNameCell
             entry={r}
-            nameLimit={AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH}
-            editing={editingTransmitterId === r.transmitterId}
+            nameLimit={nameLimit}
+            editing={editingEntityId === r.transmitterId}
             committedWireName={committed}
-            onStartEdit={() => setEditingTransmitterId(r.transmitterId)}
-            onCancelEdit={() => setEditingTransmitterId(null)}
-            onWireNameChange={(wireName) => setTransmitterWireName(r.transmitterId, wireName)}
+            onStartEdit={() => setEditingEntityId(r.transmitterId)}
+            onCancelEdit={() => setEditingEntityId(null)}
+            onWireNameChange={(wireName) => setEntityWireName(r.transmitterId, wireName)}
           />
         );
       },
@@ -321,15 +452,13 @@ export default function BuildSatelliteKepsPage() {
       key: 'uplinkHz',
       header: 'Uplink',
       render: (r) =>
-        isPreviewParentRow(r) || r.uplinkHz == null ? '—' : `${(r.uplinkHz / 1e6).toFixed(4)} MHz`,
+        isPreviewParentRow(r) || r.uplinkHz == null ? '—' : (formatMhz(r.uplinkHz) ?? '—'),
     },
     {
       key: 'downlinkHz',
       header: 'Downlink',
       render: (r) =>
-        isPreviewParentRow(r) || r.downlinkHz == null
-          ? '—'
-          : `${(r.downlinkHz / 1e6).toFixed(4)} MHz`,
+        isPreviewParentRow(r) || r.downlinkHz == null ? '—' : (formatMhz(r.downlinkHz) ?? '—'),
     },
   ];
 
@@ -450,9 +579,12 @@ export default function BuildSatelliteKepsPage() {
         <Panel title="Preview satellites to write">
           <Text size="sm" c="dimmed" mb="xs">
             Exactly what a Write Keps would send right now, from the library&apos;s current enabled
-            satellites — no session or write required. Expand a spacecraft to see each transmitter
-            (radio) row. Use the edit control beside an encoded name to pin Familiar or OSCAR
-            suggestions, or type a custom name (≤8 characters).
+            satellites — no session or write required. Expand a spacecraft to see each packed radio
+            {spacecraftNames
+              ? ' slot (FM, APRS, or beacon). Pick a candidate in the Radio column when a slot has more than one.'
+              : ' (transmitter) row.'}{' '}
+            Use the edit control beside an encoded name to pin Familiar or OSCAR suggestions, or
+            type a custom name (≤8 characters).
           </Text>
           {collisionWarning ? (
             <Alert color="yellow" title="Duplicate encoded names" mb="sm">

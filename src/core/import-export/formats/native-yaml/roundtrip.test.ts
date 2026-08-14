@@ -181,6 +181,24 @@ describe('native-yaml round-trip smoke', () => {
     ).toBe('GB7GL-Scot');
   });
 
+  it('preserves satelliteBankSlot on satelliteOverrides round-trip', () => {
+    const aggregate = projectWithRadioBuildAggregate();
+    const build = aggregate.radioBuilds[0]!;
+    const withSlot = {
+      ...aggregate,
+      radioBuilds: [
+        {
+          ...build,
+          satelliteOverrides: [{ libraryEntityId: 'tx-fm-2', satelliteBankSlot: 'fm' as const }],
+        },
+      ],
+    };
+    const parsed = parseProjectDocument(serialiseProject(withSlot));
+    expect(parsed.radioBuilds[0]?.satelliteOverrides).toEqual([
+      { libraryEntityId: 'tx-fm-2', satelliteBankSlot: 'fm' },
+    ]);
+  });
+
   it('serialises ssb mode with sideband on round-trip', () => {
     const ssbChannel: Channel = {
       ...newChannel(FIXTURE_PROJECT_ID, 'HF SSB', 'G0SSB'),

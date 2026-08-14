@@ -30,3 +30,14 @@ export {
   listOpenGd77RestoreDirtySectors,
 } from './restoreFromBackup.ts';
 export { OPENGD77_MD9600_DESCRIPTOR } from './md9600/descriptor.ts';
+export {
+  countWriteEligibleSatelliteRecords as countOpenGd77WriteEligibleSatellites,
+  listCapabilitySkippedTransmitters as listOpenGd77CapabilitySkippedTransmitters,
+  overlaySatelliteBank,
+  packSatelliteBank,
+  previewSatelliteWriteRecords as previewOpenGd77SatelliteWriteRecords,
+  skippedSatellites as skippedOpenGd77Satellites,
+  type OpenGd77SatelliteWritePreviewEntry,
+  type CapabilitySkippedTransmitter as OpenGd77CapabilitySkippedTransmitter,
+} from './satelliteCodec.ts';
+export { uploadOpenGd77SatelliteBank } from './satelliteWrite.ts';

@@ -85,13 +85,13 @@ BaudRate enum in qdmr: `Baud1200 = 0`, `Baud300 = 1`.
 
 ## Known deferrals
 
-| Topic                            | Status                                                                                                                                                           |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Callsign DB                      | Different bases/entry sizes for OpenGD77 vs OpenUV380 (`opengd77_callsigndb.*` / `openuv380_callsigndb.*`) — not required for first channel/contact/zone adapter |
-| Satellite orbital payload detail | Block present in additional settings; deep map deferred                                                                                                          |
-| DTMF _settings_ (vs contacts)    | Region reserved; full field table deferred                                                                                                                       |
+| Topic                            | Status                                                                                                                                                               |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Callsign DB                      | Different bases/entry sizes for OpenGD77 vs OpenUV380 (`opengd77_callsigndb.*` / `openuv380_callsigndb.*`) — not required for first channel/contact/zone adapter     |
+| Satellite orbital payload detail | Documented in [satellite-orbitals.md](satellite-orbitals.md) (qdmr-inferred; hardware verify pending [#858](https://github.com/pskillen/codeplug-studio/issues/858)) |
+| DTMF _settings_ (vs contacts)    | Region reserved; full field table deferred                                                                                                                           |
 
 ## Related
 
-- [memory-layout.md](memory-layout.md) · [protocol.md](protocol.md)
+- [memory-layout.md](memory-layout.md) · [protocol.md](protocol.md) · [satellite-orbitals.md](satellite-orbitals.md)
 - CSV APRS/DTMF skip notes: [export-formats/opengd77/dtmf-aprs.md](../../export-formats/opengd77/dtmf-aprs.md)

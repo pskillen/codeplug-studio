@@ -8,6 +8,10 @@ Same OpenGD77 modelling posture as the DM-1701 family for DMR / analogue / TG li
 
 Same bands as DM-1701 — see [DM-1701 capabilities § Frequency ranges](../../baofeng/dm-1701/capabilities.md#frequency-ranges-studio-eligibility).
 
+### Satellite keps write eligibility (Studio)
+
+Same OpenGD77 packer as DM-1701 ([satellite capability](../../baofeng/dm-1701/capabilities.md#satellite-keps-write-eligibility-studio)). MD-9600 **cannot** software-unlock outside 136–174 / 400–480 MHz; Studio uses that same gate for both radios.
+
 ## `+W-` (User Power) — not modelled in Studio
 
 The radio menu also offers **`+W-`**. That selects **User Power** from **Options → Radio Options → User Power**: a raw ADC voltage that drives the power amplifier (PA), not a wattage step on the P-index ladder.
