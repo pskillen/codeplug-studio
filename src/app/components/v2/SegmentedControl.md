@@ -31,7 +31,8 @@ DMR timeslot (TS1/TS2) and similar compact exclusive choices.
 
 ## Behaviour
 
-- Keyboard: native checkbox in the tab order; Space/Enter toggle. `:focus-visible` outline on the track.
+- Native `<button>` segments in the tab order; Enter/Space select. `:focus-visible` outline on the option.
+- Optional `aria-label` names the `role="group"`.
 - Live demos: `/styleguide/forms`
 
 ## Related
