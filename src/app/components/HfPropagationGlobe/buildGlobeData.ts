@@ -523,3 +523,55 @@ export function buildSkipZonePaths(ring: LatLon[]): SkipZoneGlobePath[] {
     color: SKIP_ZONE_PATH_COLOR,
   }));
 }
+
+/** Scene-unit tube radius — small vs globe radius 100 so the phase 9 line still reads. */
+export const RAY_CORRIDOR_RADIUS_UNITS = 1.15;
+
+export type RayCorridorLayer = {
+  kind: 'ray-corridor';
+  rays: RayPathResult[];
+};
+
+export function isRayCorridorLayer(d: object): d is RayCorridorLayer {
+  return (d as RayCorridorLayer).kind === 'ray-corridor';
+}
+
+export function rayPointToGlobePosition(
+  lat: number,
+  lon: number,
+  altitudeKm: number,
+): THREE.Vector3 {
+  const altUnits = altitudeKmToGlobeRadiusUnits(altitudeKm);
+  return latLonToGlobeDirection(lat, lon).multiplyScalar(GLOBE_RADIUS_UNITS * (1 + altUnits));
+}
+
+/**
+ * Optional ribbon along the same rays as `pathsData`. Thin line stays on; this mesh is additive.
+ */
+export function buildRayCorridorMesh(d: object): THREE.Object3D {
+  const { rays } = d as RayCorridorLayer;
+  const group = new THREE.Group();
+  for (const ray of rays) {
+    if (ray.points.length < 2) continue;
+    const pts = ray.points.map((p) => rayPointToGlobePosition(p.lat, p.lon, p.altitudeKm));
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const tubularSegments = Math.max(16, (pts.length - 1) * 8);
+    const geometry = new THREE.TubeGeometry(
+      curve,
+      tubularSegments,
+      RAY_CORRIDOR_RADIUS_UNITS,
+      8,
+      false,
+    );
+    const material = new THREE.MeshBasicMaterial({
+      color: MODE_COLORS[ray.mode],
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.renderOrder = 8;
+    group.add(mesh);
+  }
+  return group;
+}

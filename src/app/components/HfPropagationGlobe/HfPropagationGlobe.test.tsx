@@ -221,4 +221,25 @@ describe('HfPropagationGlobe', () => {
     expect(custom.map((d) => d.id).filter(Boolean)).toEqual(['D', 'E', 'F1', 'F2']);
     expect(custom.every((d) => d.kind !== 'ray-corridor')).toBe(true);
   });
+
+  it('adds a ray-corridor custom layer without removing the thin pathsData rays', () => {
+    const rays: RayPathResult[] = [
+      {
+        mode: 'nvis',
+        points: [
+          { lat: 0, lon: 0, altitudeKm: 0 },
+          { lat: 1, lon: 0, altitudeKm: 80 },
+          { lat: 2, lon: 0, altitudeKm: 0 },
+        ],
+        takeoffAngleDeg: 70,
+        relativeSignalStrength: 0.5,
+      },
+    ];
+    render(<HfPropagationGlobe layers={DAYTIME_LAYERS} rays={rays} rayCorridorEnabled />);
+
+    const custom = lastGlobeProps?.customLayerData as { kind?: string }[];
+    expect(custom.some((d) => d.kind === 'ray-corridor')).toBe(true);
+    const paths = lastGlobeProps?.pathsData as { kind: string; mode?: string }[];
+    expect(paths.filter((p) => p.kind === 'ray').map((p) => p.mode)).toEqual(['nvis']);
+  });
 });

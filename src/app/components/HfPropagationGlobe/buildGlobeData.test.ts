@@ -17,6 +17,7 @@ import {
   GLOBE_RADIUS_UNITS,
   applyShellClippingPlanes,
   buildCutawayClippingPlane,
+  buildRayCorridorMesh,
   latLonToGlobeDirection,
   MODE_COLORS,
   rayResultsToGlobePaths,
@@ -261,5 +262,31 @@ describe('rayResultsToGlobePaths', () => {
     expect(MODE_COLORS.nvis).toBe('#f5a623');
     expect(MODE_COLORS.absorbed).toBe('#8b3a3a');
     expect(MODE_COLORS.escaped).toBe('#666666');
+  });
+});
+
+describe('buildRayCorridorMesh', () => {
+  it('builds TubeGeometry meshes coloured by MODE_COLORS', () => {
+    const obj = buildRayCorridorMesh({
+      kind: 'ray-corridor',
+      rays: [
+        {
+          mode: 'skywave',
+          points: [
+            { lat: 0, lon: 0, altitudeKm: 0 },
+            { lat: 0, lon: 10, altitudeKm: 250 },
+            { lat: 0, lon: 20, altitudeKm: 0 },
+          ],
+          takeoffAngleDeg: 20,
+          relativeSignalStrength: 0.8,
+        },
+      ],
+    });
+    expect(obj.children).toHaveLength(1);
+    const mesh = obj.children[0] as THREE.Mesh;
+    expect(mesh.geometry.type).toBe('TubeGeometry');
+    expect((mesh.material as THREE.MeshBasicMaterial).color.getHexString()).toBe(
+      MODE_COLORS.skywave.slice(1),
+    );
   });
 });

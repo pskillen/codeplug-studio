@@ -16,12 +16,14 @@ import type {
 } from '@core/domain/hfPropagation/types.ts';
 import {
   buildNightShadeMesh,
+  buildRayCorridorMesh,
   buildShellMesh,
   buildSkipZonePaths,
   buildSunMarkerMesh,
   buildTerminatorPaths,
   canonicalLayerIndex,
   isNightShadeLayer,
+  isRayCorridorLayer,
   isSunMarkerLayer,
   MODE_COLORS,
   MODE_LABELS,
@@ -31,6 +33,7 @@ import {
   buildCutawayClippingPlane,
   type HfGlobePath,
   type NightShadeLayer,
+  type RayCorridorLayer,
   type ShellDisplayOptions,
   type SunMarkerLayer,
   updateShellFresnel,
@@ -83,6 +86,8 @@ export interface HfPropagationGlobeProps {
    * slice. Antenna heading when the picker has not been used.
    */
   sliceBearingDeg?: number;
+  /** TubeGeometry ribbon along the traced rays. Default off; thin `pathsData` line stays on. */
+  rayCorridorEnabled?: boolean;
 }
 
 const DEFAULT_DISPLAY: ShellDisplayOptions = {
@@ -143,6 +148,7 @@ export default function HfPropagationGlobe({
   txLon = DEFAULT_TX_LON_DEG,
   cutawayEnabled = false,
   sliceBearingDeg = 0,
+  rayCorridorEnabled = false,
 }: HfPropagationGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
@@ -207,12 +213,13 @@ export default function HfPropagationGlobe({
   );
 
   const customLayerData = useMemo(() => {
-    const objects: Array<IonosphericLayerState | NightShadeLayer | SunMarkerLayer> =
-      visibleShells.map((layer) =>
-        subsolar
-          ? { ...layer, sunLatDeg: subsolar.sunLatDeg, sunLonDeg: subsolar.sunLonDeg }
-          : layer,
-      );
+    const objects: Array<
+      IonosphericLayerState | NightShadeLayer | SunMarkerLayer | RayCorridorLayer
+    > = visibleShells.map((layer) =>
+      subsolar
+        ? { ...layer, sunLatDeg: subsolar.sunLatDeg, sunLonDeg: subsolar.sunLonDeg }
+        : layer,
+    );
     if (subsolar) {
       objects.push({
         kind: 'night-shade',
@@ -227,8 +234,11 @@ export default function HfPropagationGlobe({
         });
       }
     }
+    if (rayCorridorEnabled && rays.length > 0) {
+      objects.push({ kind: 'ray-corridor', rays });
+    }
     return objects;
-  }, [visibleShells, subsolar, terminatorEnabled]);
+  }, [visibleShells, subsolar, terminatorEnabled, rayCorridorEnabled, rays]);
 
   useEffect(() => {
     fresnelEnabledRef.current = fresnelEnabled;
@@ -238,6 +248,7 @@ export default function HfPropagationGlobe({
     () => (d: object) => {
       if (isNightShadeLayer(d)) return buildNightShadeMesh(d);
       if (isSunMarkerLayer(d)) return buildSunMarkerMesh(d);
+      if (isRayCorridorLayer(d)) return buildRayCorridorMesh(d);
       const layer = d as IonosphericLayerState;
       const mesh = buildShellMesh(d, canonicalLayerIndex(layer.id), {
         exaggerationFactor,
