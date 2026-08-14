@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { criticalFrequencyMhz, maximumUsableFrequencyMhz } from './mufCalculation.ts';
 import { antennaGain } from './antennaPatterns.ts';
-import { traceRay, traceRayFan } from './rayTrace.ts';
+import { dLayerAttenuation, traceRay, traceRayFan } from './rayTrace.ts';
 import type { AntennaConfig, IonosphericLayerState, RayTraceParams } from './types.ts';
 
 const OMNIDIRECTIONAL: AntennaConfig = { family: 'omnidirectional-vertical', heightM: 8 };
@@ -13,6 +13,14 @@ const F2_DAY: IonosphericLayerState = {
   altitudeMinKm: 250,
   altitudeMaxKm: 400,
   peakElectronDensity: 1e12,
+};
+
+const ACTIVE_D: IonosphericLayerState = {
+  id: 'D',
+  active: true,
+  altitudeMinKm: 60,
+  altitudeMaxKm: 90,
+  peakElectronDensity: 1e9, // fc ≈ 0.285 MHz — does not reflect typical HF
 };
 
 const INACTIVE_D: IonosphericLayerState = {
@@ -127,6 +135,56 @@ describe('traceRay', () => {
     const result = traceRay(params({ frequencyMhz: 10, layers: [F2_DAY, eLayer] }), 45);
     expect(result.mode).toBe('skywave');
     expect(result.points[1]?.altitudeKm).toBe(120); // E mid-altitude, not F2's 325
+  });
+
+  it('attenuates skywave through an active D layer without reclassifying typical HF', () => {
+    const result = traceRay(
+      params({ frequencyMhz: 10, layers: [ACTIVE_D, F2_DAY] }),
+      45,
+    );
+    expect(result.mode).toBe('skywave');
+    expect(result.relativeSignalStrength).toBeCloseTo(0.70710678118, 8);
+  });
+
+  it('classifies a low-frequency low-takeoff ray as absorbed when the D layer is active', () => {
+    const result = traceRay(
+      params({ frequencyMhz: 0.4, layers: [ACTIVE_D, F2_DAY] }),
+      10,
+    );
+    expect(result.mode).toBe('absorbed');
+    expect(result.relativeSignalStrength).toBeCloseTo(0.01333333333, 8);
+    expect(result.relativeSignalStrength).toBeLessThan(0.02);
+  });
+
+  it('reverts the same low-frequency case to skywave at night when the D layer is inactive', () => {
+    const result = traceRay(
+      params({ frequencyMhz: 0.4, layers: [INACTIVE_D, F2_DAY] }),
+      10,
+    );
+    expect(result.mode).toBe('skywave');
+    expect(result.relativeSignalStrength).toBe(1);
+  });
+});
+
+describe('dLayerAttenuation', () => {
+  it('returns 1.0 when the D layer is inactive (night)', () => {
+    expect(dLayerAttenuation(0.4, false, 10)).toBe(1);
+    expect(dLayerAttenuation(3, false, 10)).toBe(1);
+  });
+
+  it('increases absorption as frequency decreases', () => {
+    const at10Mhz = dLayerAttenuation(10, true, 45);
+    const at3Mhz = dLayerAttenuation(3, true, 45);
+    expect(at10Mhz).toBeCloseTo(0.70710678118, 8);
+    expect(at3Mhz).toBeCloseTo(0.21213203436, 8);
+    expect(at3Mhz).toBeLessThan(at10Mhz);
+  });
+
+  it('increases absorption as takeoff angle decreases (longer D-layer path)', () => {
+    const at45 = dLayerAttenuation(10, true, 45);
+    const at10 = dLayerAttenuation(10, true, 10);
+    expect(at10).toBeCloseTo(1 / 3, 8);
+    expect(at10).toBeLessThan(at45);
   });
 });
 

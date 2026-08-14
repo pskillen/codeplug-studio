@@ -46,7 +46,7 @@ export interface RayPathResult {
   mode: PropagationMode;
   points: RayPathPoint[];
   takeoffAngleDeg: number;
-  /** Placeholder in this phase — always 1.0 (0 for escaped). Phase 7 replaces with real D-layer attenuation. */
+  /** 1.0 reflected with no D-layer absorption; 0 escaped; otherwise D-layer attenuation in [0, 1]. */
   relativeSignalStrength: number;
 }
 

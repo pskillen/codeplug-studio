@@ -10,17 +10,54 @@ import { criticalFrequencyMhz, maximumUsableFrequencyMhz } from './mufCalculatio
 
 const GROUNDWAVE_MAX_RANGE_KM = 300; // typical single-hop groundwave upper bound at HF
 const NVIS_MIN_TAKEOFF_DEG = 70; // per background.md's NVIS elevation-angle range (70-90°)
+const ABSORBED_STRENGTH_THRESHOLD = 0.02;
+
+/** D-layer absorption attenuation — scales relativeSignalStrength down based on frequency
+ * (lower frequencies absorb more) and path length through the D layer (longer path = more
+ * absorption). Simple monotonic model, not a full collision-frequency physical derivation —
+ * matches this series' "idealised, teaching-tool" fidelity bar throughout. */
+export function dLayerAttenuation(
+  frequencyMhz: number,
+  dLayerActive: boolean,
+  takeoffAngleDeg: number,
+): number {
+  if (!dLayerActive) return 1.0; // no D layer present (night) — no absorption
+  const FREQUENCY_REFERENCE_MHZ = 10; // absorption roughly halves by this frequency, per background.md §3
+  const frequencyFactor = Math.min(1, frequencyMhz / FREQUENCY_REFERENCE_MHZ);
+  // Longer D-layer path (lower takeoff angle = more oblique = longer path through the layer)
+  // increases absorption — approximate via 1/sin(takeoff angle), clamped to avoid blow-up near 0°.
+  const takeoffRad = (Math.max(takeoffAngleDeg, 2) * Math.PI) / 180;
+  const pathLengthFactor = Math.min(3, 1 / Math.sin(takeoffRad));
+  const attenuation = frequencyFactor / pathLengthFactor;
+  return Math.max(0, Math.min(1, attenuation));
+}
+
+function applyDLayerAbsorption(
+  mode: PropagationMode,
+  frequencyMhz: number,
+  dLayerActive: boolean,
+  takeoffAngleDeg: number,
+): { mode: PropagationMode; relativeSignalStrength: number } {
+  if (mode !== 'skywave' && mode !== 'nvis') {
+    return { mode, relativeSignalStrength: mode === 'escaped' ? 0 : 1.0 };
+  }
+  const relativeSignalStrength = dLayerAttenuation(frequencyMhz, dLayerActive, takeoffAngleDeg);
+  if (dLayerActive && relativeSignalStrength < ABSORBED_STRENGTH_THRESHOLD) {
+    return { mode: 'absorbed', relativeSignalStrength };
+  }
+  return { mode, relativeSignalStrength };
+}
 
 /**
  * Trace one ray at a given takeoff angle through the active ionospheric layers, in a single
  * vertical plane (2D: plane-distance vs. altitude), classifying its propagation mode.
- * Does NOT apply D-layer absorption weighting (phase 7) or map onto the sphere (phase 7) —
- * relativeSignalStrength is always 1.0 here (0 for escaped), points are 2D plane coordinates.
+ * Applies D-layer absorption to skywave/NVIS; sphere mapping is a later slice.
  */
 export function traceRay(params: RayTraceParams, takeoffAngleDeg: number): RayPathResult {
   const activeLayers = params.layers
     .filter((l) => l.active)
     .sort((a, b) => a.altitudeMinKm - b.altitudeMinKm);
+  const dLayerActive = activeLayers.some((l) => l.id === 'D');
 
   // Groundwave: very low takeoff angle, short range, no ionospheric interaction.
   if (takeoffAngleDeg < 5) {
@@ -41,9 +78,16 @@ export function traceRay(params: RayTraceParams, takeoffAngleDeg: number): RayPa
     const fc = criticalFrequencyMhz(layer.peakElectronDensity);
     const muf = maximumUsableFrequencyMhz(fc, takeoffAngleDeg);
     if (params.frequencyMhz <= muf) {
-      const mode: PropagationMode = takeoffAngleDeg >= NVIS_MIN_TAKEOFF_DEG ? 'nvis' : 'skywave';
+      const classified: PropagationMode =
+        takeoffAngleDeg >= NVIS_MIN_TAKEOFF_DEG ? 'nvis' : 'skywave';
       const points = buildReflectionPathPoints(layer, takeoffAngleDeg);
-      return { mode, points, takeoffAngleDeg, relativeSignalStrength: 1.0 };
+      const absorbed = applyDLayerAbsorption(
+        classified,
+        params.frequencyMhz,
+        dLayerActive,
+        takeoffAngleDeg,
+      );
+      return { ...absorbed, points, takeoffAngleDeg };
     }
   }
 
