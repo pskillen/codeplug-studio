@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Globe, { type GlobeMethods } from 'react-globe.gl';
 import type * as THREE from 'three';
-import { computePropagationRing, skipZoneOuterRadiusM } from '@core/domain/hfPropagation/footprint.ts';
+import {
+  computePropagationRing,
+  skipZoneOuterRadiusM,
+} from '@core/domain/hfPropagation/footprint.ts';
 import {
   computeSolarTerminator,
   computeSubsolarPoint,

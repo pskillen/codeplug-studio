@@ -4,7 +4,10 @@ import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react';
 import { peakGainElevationDeg } from '@core/domain/hfPropagation/antennaPatterns.ts';
 import { computeIonosphericLayers } from '@core/domain/hfPropagation/ionosphericProfile.ts';
 import { colorForLayer, IONOSPHERIC_LAYER_IDS } from '@core/domain/hfPropagation/layerColor.ts';
-import { criticalFrequencyMhz, maximumUsableFrequencyMhz } from '@core/domain/hfPropagation/mufCalculation.ts';
+import {
+  criticalFrequencyMhz,
+  maximumUsableFrequencyMhz,
+} from '@core/domain/hfPropagation/mufCalculation.ts';
 import type {
   AntennaConfig,
   AntennaPatternFamily,
@@ -21,7 +24,11 @@ import {
   ToggleSwitch,
 } from '../../components/v2/index.ts';
 import { useMapSettings } from '../../hooks/useMapSettings.ts';
-import { formatDatetimeLocalValue, formatUkDateTime, parseUkDateTime } from './hfPropagationDateTime.ts';
+import {
+  formatDatetimeLocalValue,
+  formatUkDateTime,
+  parseUkDateTime,
+} from './hfPropagationDateTime.ts';
 import SlicePlanePicker, { DEFAULT_RANGE_M, type SlicePlaneResult } from './SlicePlanePicker.tsx';
 import { usePropagationRayTrace } from './usePropagationRayTrace.ts';
 import classes from './HfPropagationPage.module.css';
@@ -194,9 +201,7 @@ export default function HfPropagationPage() {
     [dateTime, solarPreset],
   );
   const f2Layer = layers.find((layer) => layer.id === 'F2');
-  const criticalFrequencyMhzValue = f2Layer
-    ? criticalFrequencyMhz(f2Layer.peakElectronDensity)
-    : 0;
+  const criticalFrequencyMhzValue = f2Layer ? criticalFrequencyMhz(f2Layer.peakElectronDensity) : 0;
   const criticalFrequencyLabel = f2Layer ? `${criticalFrequencyMhzValue.toFixed(1)} MHz` : '—';
   const mufLabel = f2Layer
     ? `${maximumUsableFrequencyMhz(criticalFrequencyMhzValue, peakGainElevation).toFixed(1)} MHz`

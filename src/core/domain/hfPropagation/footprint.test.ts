@@ -52,7 +52,9 @@ describe('skipZoneOuterRadiusM', () => {
   });
 
   it('returns null when no skywave or NVIS ray exists', () => {
-    expect(skipZoneOuterRadiusM([ray('groundwave', 2), ray('escaped', 40)], txLat, txLon)).toBeNull();
+    expect(
+      skipZoneOuterRadiusM([ray('groundwave', 2), ray('escaped', 40)], txLat, txLon),
+    ).toBeNull();
   });
 
   it('re-exports the groundwave inner-edge constant', () => {
