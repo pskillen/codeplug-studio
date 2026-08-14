@@ -61,3 +61,25 @@ export function antennaGain(
     }
   }
 }
+
+/**
+ * Elevation angle (degrees above horizon) at which `antennaGain` is largest, sampling
+ * `theta = 0..90` at 1° steps for the given azimuth and frequency. Temporary verification
+ * aid until ray tracing (#1168) replaces the debug readout.
+ */
+export function peakGainElevationDeg(
+  antenna: AntennaConfig,
+  phiDeg: number,
+  frequencyMhz: number,
+): number {
+  let bestTheta = 0;
+  let bestGain = Number.NEGATIVE_INFINITY;
+  for (let thetaDeg = 0; thetaDeg <= 90; thetaDeg += 1) {
+    const gain = antennaGain(antenna, thetaDeg, phiDeg, frequencyMhz);
+    if (gain > bestGain) {
+      bestGain = gain;
+      bestTheta = thetaDeg;
+    }
+  }
+  return bestTheta;
+}

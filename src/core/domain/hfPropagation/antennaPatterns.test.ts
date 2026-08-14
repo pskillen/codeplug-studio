@@ -1,19 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { antennaGain, groundReflectionFactor, wavelengthM } from './antennaPatterns.ts';
+import { antennaGain, groundReflectionFactor, peakGainElevationDeg, wavelengthM } from './antennaPatterns.ts';
 import type { AntennaConfig } from './types.ts';
-
-function peakThetaDeg(antenna: AntennaConfig, phiDeg: number, frequencyMhz: number): number {
-  let bestTheta = 0;
-  let bestGain = Number.NEGATIVE_INFINITY;
-  for (let thetaDeg = 0; thetaDeg <= 90; thetaDeg += 1) {
-    const gain = antennaGain(antenna, thetaDeg, phiDeg, frequencyMhz);
-    if (gain > bestGain) {
-      bestGain = gain;
-      bestTheta = thetaDeg;
-    }
-  }
-  return bestTheta;
-}
 
 const HF_FREQUENCY_MHZ = 14.2;
 
@@ -72,14 +59,14 @@ describe('antennaGain', () => {
         heightM: low,
         azimuthDeg: 0,
       };
-      expect(peakThetaDeg(nvis, 0, HF_FREQUENCY_MHZ)).toBe(90);
+      expect(peakGainElevationDeg(nvis, 0, HF_FREQUENCY_MHZ)).toBe(90);
 
       const dx: AntennaConfig = {
         family: 'bidirectional-transverse',
         heightM: standard,
         azimuthDeg: 0,
       };
-      expect(peakThetaDeg(dx, 0, HF_FREQUENCY_MHZ)).toBe(30);
+      expect(peakGainElevationDeg(dx, 0, HF_FREQUENCY_MHZ)).toBe(30);
     });
   });
 

@@ -1,10 +1,12 @@
 import { Input, Select, Slider, Stack, Text } from '@mantine/core';
 import { IconCalendar } from '@tabler/icons-react';
 import { lazy, Suspense, useMemo, useRef, useState } from 'react';
+import { peakGainElevationDeg } from '@core/domain/hfPropagation/antennaPatterns.ts';
 import { computeIonosphericLayers } from '@core/domain/hfPropagation/ionosphericProfile.ts';
 import { colorForLayer, IONOSPHERIC_LAYER_IDS } from '@core/domain/hfPropagation/layerColor.ts';
 import { criticalFrequencyMhz } from '@core/domain/hfPropagation/mufCalculation.ts';
 import type {
+  AntennaConfig,
   AntennaPatternFamily,
   IonosphericLayerId,
   SolarActivityPreset,
@@ -146,6 +148,19 @@ export default function HfPropagationPage() {
     [antennaType],
   );
   const shownFields = fieldsShownForFamily(antennaFamily);
+  const antennaConfig = useMemo<AntennaConfig>(
+    () => ({
+      family: antennaFamily,
+      heightM,
+      azimuthDeg,
+      wireLengthWavelengths,
+    }),
+    [antennaFamily, heightM, azimuthDeg, wireLengthWavelengths],
+  );
+  const peakGainElevation = useMemo(
+    () => peakGainElevationDeg(antennaConfig, azimuthDeg, frequencyMhz),
+    [antennaConfig, azimuthDeg, frequencyMhz],
+  );
 
   const layers = useMemo(
     () =>
@@ -422,6 +437,10 @@ export default function HfPropagationPage() {
                 <FormField label="Critical frequency (fc)" value={criticalFrequencyLabel} />
                 <FormField label="MUF" value="—" />
                 <FormField label="Mode" value="—" />
+                <FormField
+                  label="Peak gain elevation (debug)"
+                  value={`${peakGainElevation}°`}
+                />
               </Stack>
             </Panel>
           </div>
