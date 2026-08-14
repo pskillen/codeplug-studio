@@ -189,7 +189,8 @@ describe('HfPropagationPage dual ray-trace', () => {
       takeoffAngleDeg: 70,
       relativeSignalStrength: 0.4,
     };
-    requestRayTrace.mockImplementation(async (params: { azimuthDeg: number }) => {
+    requestRayTrace.mockImplementation(async (...args: unknown[]) => {
+      const params = args[0] as { azimuthDeg: number };
       if (params.azimuthDeg === 0) return [sliceRay];
       return [headingRay];
     });
