@@ -13,6 +13,7 @@ Renders the 3D propagation globe for the [HF/RF propagation visualiser](../../..
 | `display`         | `ShellDisplayOptions`     | Optional. `{ exaggerationFactor, explodeEnabled, fresnelEnabled, terminatorEnabled? }`. Omit for true-scale shells (factor `1`, explode/Fresnel/terminator off). The page passes live Display-panel state. Greyline + sun marker follow `terminatorEnabled`; night-side shade follows `environmentAtMs`.                              |
 | `visibleLayers`   | `LayerVisibility`         | Optional. `{ D, E, F1, F2 }` booleans, default all `true`. Operator hide is independent of TX-local physics `active`. Explode indices stay canonical by id.                                                                                                                                                                           |
 | `environmentAtMs` | `number`                  | Optional. Instant for spatially varying shells, night-side shade, greyline, and sun marker. Required for terminator overlay.                                                                                                                                                                                                          |
+| `txLat` / `txLon` | `number`                  | Optional. Transmitter WGS84 degrees for the marker and skip-zone ring. Defaults **0, 0** (Gulf of Guinea placeholder) until `HfPropagationPage` Environment sets a site.                                                                                                                                                              |
 
 ## Usage
 
@@ -30,6 +31,8 @@ const HfPropagationGlobe = lazy(
     visibleLayers={{ D: true, E: true, F1: true, F2: true }}
     environmentAtMs={Date.now()}
     rays={rays}
+    txLat={51.5}
+    txLon={-0.13}
   />
 </Suspense>;
 ```
@@ -48,13 +51,13 @@ const HfPropagationGlobe = lazy(
   - **Day/night terminator** — Display toggle, default **off**. When on, `computeSolarTerminator(environmentAtMs)` feeds a dashed `pathsData` greyline (`#fff6c8`, altitude 0.014 globe-radii, above the night-shade sphere) split at the antimeridian, plus `buildSunMarkerMesh` (yellow sphere at **3×** true-scale F2 outer radius). Night-side shade (`buildNightShadeMesh`, ~0.48 alpha) is **always** on whenever `environmentAtMs` is set, so the night hemisphere stays darker even with the overlay off.
   - **Per-layer visibility** — Display-panel toggles (D/E/F1/F2) with a 12px swatch from `colorForLayer`. D/F1 remain togglable at night because they still exist on the day hemisphere.
 - **Colour:** `colorForLayer(id)` in `src/core/domain/hfPropagation/layerColor.ts` — inner D `#ff6b6b` (red, contrasts against oceans) through E `#f5c451`, F1 `#3ddc97`, outer F2 `#5ec8ff` (cyan-blue). **Ray paths** use a separate `MODE_COLORS` map in `buildGlobeData.ts` (groundwave `#4d7cff`, skywave `#3ddc97`, NVIS `#f5a623`, absorbed `#8b3a3a`, escaped `#666666`) — do not merge with layer colours. Dash style in `globePathDash.ts` is keyed on `PropagationMode` (solid groundwave; dashed skywave/NVIS; sparser absorbed/escaped). Skip-zone ring is neutral `#c8c8d4`.
-- **Rays / skip zone / TX:** `rays` → `pathsData` plus an isotropic skip-zone ring from `computePropagationRing` / `skipZoneOuterRadiusM` (`src/core/domain/hfPropagation/footprint.ts`) at the nearest skywave/NVIS landing. Transmitter marker is a `pointsData` point at the placeholder TX (0°, 0°), observer-style. Static mode legend overlays the globe (always visible, no hover).
+- **Rays / skip zone / TX:** `rays` → `pathsData` plus an isotropic skip-zone ring from `computePropagationRing` / `skipZoneOuterRadiusM` (`src/core/domain/hfPropagation/footprint.ts`) at the nearest skywave/NVIS landing, centred on `txLat`/`txLon`. Transmitter marker is a `pointsData` point at those coordinates (page Environment control; 0°, 0° until set). Static mode legend overlays the globe (always visible, no hover).
 - **`GLOBE_RADIUS_UNITS = 100`:** `three-globe`'s own internal scene-unit globe radius (pinned copy of `GLOBE_RADIUS` in `three-globe`'s source — not exported from the package). `customThreeObject` positions objects in these scene units, not the `0`–`1`+ altitude units `react-globe.gl`'s own `pointAltitude`/`pathPointAlt` accessors use.
 - **Data:** daytime altitude bands are D 60–90 km, E 90–150 km, F1 150–250 km, F2 250–400 km. On the night hemisphere F2's lower bound drops to **150 km** (merged F-region) while D/F1 fade out. TX-local `computeIonosphericLayers` still sets `active` / `peakElectronDensity` / F2 bounds for the Reading panel and later ray tracing. `customThreeObjectUpdate` remains data-only; Fresnel + day/night live in `MeshBasicMaterial.onBeforeCompile` (`hf-shell-fresnel-daynight`). Cutaway (11a) must target those uniforms, not a custom ShaderMaterial.
 
 ## Testing
 
-`react-globe.gl` needs a WebGL context jsdom doesn't provide, so `HfPropagationGlobe.test.tsx` mocks it to a stub component and asserts the `customLayerData`/`customThreeObject`/`customThreeObjectUpdate`/`pathsData`/`pointsData` props it receives (including that operator-hidden layers are filtered out, that an environment instant keeps D/F1 for spatial shading and adds night-shade, that terminator-on adds the sun marker plus a greyline path, and that `rays` add mode-coloured paths, a skip-zone ring, and a transmitter point). Radius / path-mapping math lives in `buildGlobeData.test.ts`. Dash fractions: `globePathDash.test.ts`. Terminator / subsolar math: `solarTerminator.test.ts`. Ring geometry: `footprint.test.ts`. Debounced Worker fetch: `usePropagationRayTrace.test.ts`.
+`react-globe.gl` needs a WebGL context jsdom doesn't provide, so `HfPropagationGlobe.test.tsx` mocks it to a stub component and asserts the `customLayerData`/`customThreeObject`/`customThreeObjectUpdate`/`pathsData`/`pointsData` props it receives (including that operator-hidden layers are filtered out, that an environment instant keeps D/F1 for spatial shading and adds night-shade, that terminator-on adds the sun marker plus a greyline path, and that `rays` add mode-coloured paths, a skip-zone ring, and a transmitter point at `txLat`/`txLon`). Radius / path-mapping math lives in `buildGlobeData.test.ts`. Dash fractions: `globePathDash.test.ts`. Terminator / subsolar math: `solarTerminator.test.ts`. Ring geometry: `footprint.test.ts`. Debounced Worker fetch: `usePropagationRayTrace.test.ts`.
 
 ## Related
 
