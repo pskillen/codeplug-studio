@@ -47,7 +47,7 @@ export type { ShellDisplayOptions } from './buildGlobeData.ts';
 
 const GLOBE_IMAGE_URL = '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
 const BACKGROUND_COLOR = '#000011';
-/** Matches SatelliteGlobe's observer marker; TX stays at the placeholder equator origin. */
+/** Matches SatelliteGlobe's observer marker. */
 const TRANSMITTER_COLOR = '#4d7cff';
 const DEFAULT_TX_LAT_DEG = 0;
 const DEFAULT_TX_LON_DEG = 0;
@@ -70,6 +70,10 @@ export interface HfPropagationGlobeProps {
   environmentAtMs?: number;
   /** Traced rays for the primary azimuth — `pathsData` lines colour/dash by `PropagationMode`. */
   rays?: RayPathResult[];
+  /** Transmitter WGS84 latitude (degrees). Defaults to 0° until the page sets a site. */
+  txLat?: number;
+  /** Transmitter WGS84 longitude (degrees). Defaults to 0° until the page sets a site. */
+  txLon?: number;
 }
 
 const DEFAULT_DISPLAY: ShellDisplayOptions = {
@@ -126,6 +130,8 @@ export default function HfPropagationGlobe({
   visibleLayers = DEFAULT_LAYER_VISIBILITY,
   environmentAtMs,
   rays = [],
+  txLat = DEFAULT_TX_LAT_DEG,
+  txLon = DEFAULT_TX_LON_DEG,
 }: HfPropagationGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
@@ -160,12 +166,10 @@ export default function HfPropagationGlobe({
 
   const rayPaths = useMemo(() => rayResultsToGlobePaths(rays), [rays]);
   const skipZonePaths = useMemo(() => {
-    const outerM = skipZoneOuterRadiusM(rays, DEFAULT_TX_LAT_DEG, DEFAULT_TX_LON_DEG);
+    const outerM = skipZoneOuterRadiusM(rays, txLat, txLon);
     if (outerM == null) return [];
-    return buildSkipZonePaths(
-      computePropagationRing(DEFAULT_TX_LAT_DEG, DEFAULT_TX_LON_DEG, outerM),
-    );
-  }, [rays]);
+    return buildSkipZonePaths(computePropagationRing(txLat, txLon, outerM));
+  }, [rays, txLat, txLon]);
   const paths = useMemo(
     () => [...rayPaths, ...skipZonePaths, ...terminatorPaths],
     [rayPaths, skipZonePaths, terminatorPaths],
@@ -174,12 +178,12 @@ export default function HfPropagationGlobe({
     () => [
       {
         kind: 'transmitter' as const,
-        lat: DEFAULT_TX_LAT_DEG,
-        lng: DEFAULT_TX_LON_DEG,
+        lat: txLat,
+        lng: txLon,
         color: TRANSMITTER_COLOR,
       },
     ],
-    [],
+    [txLat, txLon],
   );
 
   const customLayerData = useMemo(() => {

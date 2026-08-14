@@ -178,4 +178,32 @@ describe('HfPropagationGlobe', () => {
     expect(screen.getByText('Groundwave')).toBeInTheDocument();
     expect(screen.getByText('NVIS')).toBeInTheDocument();
   });
+
+  it('places the transmitter marker and skip ring at txLat/txLon', () => {
+    const rays: RayPathResult[] = [
+      {
+        mode: 'skywave',
+        points: [
+          { lat: 51.5, lon: -0.13, altitudeKm: 0 },
+          { lat: 52.5, lon: -0.13, altitudeKm: 250 },
+          { lat: 53.5, lon: -0.13, altitudeKm: 0 },
+        ],
+        takeoffAngleDeg: 20,
+        relativeSignalStrength: 0.8,
+      },
+    ];
+    render(<HfPropagationGlobe layers={DAYTIME_LAYERS} rays={rays} txLat={51.5} txLon={-0.13} />);
+
+    const points = lastGlobeProps?.pointsData as { kind: string; lat: number; lng: number }[];
+    expect(points).toEqual([
+      expect.objectContaining({ kind: 'transmitter', lat: 51.5, lng: -0.13 }),
+    ]);
+    const skipRing = (lastGlobeProps?.pathsData as { kind: string; points: [number, number][] }[])
+      .filter((p) => p.kind === 'skip-zone')
+      .flatMap((p) => p.points);
+    expect(skipRing.length).toBeGreaterThan(0);
+    expect(
+      skipRing.some(([lat, lon]) => Math.abs(lat - 51.5) < 3 && Math.abs(lon + 0.13) < 3),
+    ).toBe(true);
+  });
 });
