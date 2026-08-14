@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Globe, { type GlobeMethods } from 'react-globe.gl';
 import type * as THREE from 'three';
+import { computePropagationRing, skipZoneOuterRadiusM } from '@core/domain/hfPropagation/footprint.ts';
 import {
   computeSolarTerminator,
   computeSubsolarPoint,
@@ -8,20 +9,28 @@ import {
 import type {
   IonosphericLayerId,
   IonosphericLayerState,
+  RayPathResult,
 } from '@core/domain/hfPropagation/types.ts';
 import {
   buildNightShadeMesh,
   buildShellMesh,
+  buildSkipZonePaths,
   buildSunMarkerMesh,
   buildTerminatorPaths,
   canonicalLayerIndex,
   isNightShadeLayer,
   isSunMarkerLayer,
+  MODE_COLORS,
+  MODE_LABELS,
+  PROPAGATION_MODES,
+  rayResultsToGlobePaths,
+  type HfGlobePath,
   type NightShadeLayer,
   type ShellDisplayOptions,
   type SunMarkerLayer,
   updateShellFresnel,
 } from './buildGlobeData.ts';
+import { propagationPathDashGap, propagationPathDashLength } from './globePathDash.ts';
 import classes from './HfPropagationGlobe.module.css';
 
 export {
@@ -35,6 +44,10 @@ export type { ShellDisplayOptions } from './buildGlobeData.ts';
 
 const GLOBE_IMAGE_URL = '//unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
 const BACKGROUND_COLOR = '#000011';
+/** Matches SatelliteGlobe's observer marker; TX stays at the placeholder equator origin. */
+const TRANSMITTER_COLOR = '#4d7cff';
+const DEFAULT_TX_LAT_DEG = 0;
+const DEFAULT_TX_LON_DEG = 0;
 
 export type LayerVisibility = Record<IonosphericLayerId, boolean>;
 
@@ -52,6 +65,8 @@ export interface HfPropagationGlobeProps {
   visibleLayers?: LayerVisibility;
   /** Instant used for the greyline / night-side overlay (Environment datetime). */
   environmentAtMs?: number;
+  /** Traced rays for the primary azimuth — `pathsData` lines colour/dash by `PropagationMode`. */
+  rays?: RayPathResult[];
 }
 
 const DEFAULT_DISPLAY: ShellDisplayOptions = {
@@ -60,18 +75,54 @@ const DEFAULT_DISPLAY: ShellDisplayOptions = {
   fresnelEnabled: false,
 };
 
+function pathColor(path: object): string {
+  return (path as HfGlobePath).color;
+}
+
+function pathDashLength(path: object): number {
+  return propagationPathDashLength(path as HfGlobePath);
+}
+
+function pathDashGap(path: object): number {
+  return propagationPathDashGap(path as HfGlobePath);
+}
+
+function pathStroke(path: object): number {
+  const kind = (path as HfGlobePath).kind;
+  if (kind === 'terminator') return 3.6;
+  if (kind === 'skip-zone') return 1.6;
+  return 1.8;
+}
+
+function PropagationModeLegend() {
+  return (
+    <ul className={classes.legend} aria-label="Propagation mode colours">
+      {PROPAGATION_MODES.map((mode) => (
+        <li key={mode} className={classes.legendItem}>
+          <span
+            className={classes.legendSwatch}
+            style={{ backgroundColor: MODE_COLORS[mode] }}
+            aria-hidden
+          />
+          {MODE_LABELS[mode]}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /**
- * 3D propagation globe — renders ionospheric shells (D/E/F1/F2) as concentric
- * translucent spheres via `react-globe.gl`'s `customThreeObject` extension point. With
+ * 3D propagation globe — ionospheric shells via `customThreeObject`, plus traced ray paths
+ * (`pathsData`), skip-zone ring, and a transmitter marker (`pointsData`). With
  * `environmentAtMs`, shells vary by sun hemisphere (D/F1 fade at night, F2 drops into F1's
- * band) and the night side is shaded. Optional solar terminator ring (`pathsData`) and sun
- * marker. No ray paths or transmitter marker yet (#1170).
+ * band) and the night side is shaded. Optional solar terminator ring and sun marker.
  */
 export default function HfPropagationGlobe({
   layers,
   display = DEFAULT_DISPLAY,
   visibleLayers = DEFAULT_LAYER_VISIBILITY,
   environmentAtMs,
+  rays = [],
 }: HfPropagationGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
@@ -103,6 +154,30 @@ export default function HfPropagationGlobe({
     if (!terminatorEnabled || environmentAtMs == null) return [];
     return buildTerminatorPaths(computeSolarTerminator(environmentAtMs));
   }, [terminatorEnabled, environmentAtMs]);
+
+  const rayPaths = useMemo(() => rayResultsToGlobePaths(rays), [rays]);
+  const skipZonePaths = useMemo(() => {
+    const outerM = skipZoneOuterRadiusM(rays, DEFAULT_TX_LAT_DEG, DEFAULT_TX_LON_DEG);
+    if (outerM == null) return [];
+    return buildSkipZonePaths(
+      computePropagationRing(DEFAULT_TX_LAT_DEG, DEFAULT_TX_LON_DEG, outerM),
+    );
+  }, [rays]);
+  const paths = useMemo(
+    () => [...rayPaths, ...skipZonePaths, ...terminatorPaths],
+    [rayPaths, skipZonePaths, terminatorPaths],
+  );
+  const points = useMemo(
+    () => [
+      {
+        kind: 'transmitter' as const,
+        lat: DEFAULT_TX_LAT_DEG,
+        lng: DEFAULT_TX_LON_DEG,
+        color: TRANSMITTER_COLOR,
+      },
+    ],
+    [],
+  );
 
   const customLayerData = useMemo(() => {
     const objects: Array<IonosphericLayerState | NightShadeLayer | SunMarkerLayer> =
@@ -199,18 +274,26 @@ export default function HfPropagationGlobe({
         customLayerData={customLayerData}
         customThreeObject={shellObjectAccessor}
         customThreeObjectUpdate={fresnelUpdateAccessor}
-        pathsData={terminatorPaths}
+        pathsData={paths}
         pathPoints="points"
         pathPointLat={(p: unknown) => (p as [number, number, number])[0]}
         pathPointLng={(p: unknown) => (p as [number, number, number])[1]}
         pathPointAlt={(p: unknown) => (p as [number, number, number])[2]}
-        pathColor={(path: object) => (path as { color: string }).color}
-        pathDashLength={0.18}
-        pathDashGap={0.05}
+        pathColor={pathColor}
+        pathDashLength={pathDashLength}
+        pathDashGap={pathDashGap}
         pathDashAnimateTime={0}
-        pathStroke={3.6}
+        pathStroke={pathStroke}
         pathTransitionDuration={0}
+        pointsData={points}
+        pointLat="lat"
+        pointLng="lng"
+        pointColor={() => TRANSMITTER_COLOR}
+        pointRadius={0.35}
+        pointAltitude={0}
+        pointsTransitionDuration={0}
       />
+      <PropagationModeLegend />
     </div>
   );
 }

@@ -7,6 +7,22 @@ vi.mock('../../components/HfPropagationGlobe/HfPropagationGlobe.tsx', () => ({
   default: () => <div data-testid="globe-stub" />,
 }));
 
+vi.mock('@integrations/hfPropagation/rayTraceClient.ts', () => ({
+  rayTraceClient: {
+    requestRayTrace: vi.fn(async () => [
+      {
+        mode: 'skywave',
+        points: [
+          { lat: 0, lon: 0, altitudeKm: 0 },
+          { lat: 0, lon: 20, altitudeKm: 0 },
+        ],
+        takeoffAngleDeg: 20,
+        relativeSignalStrength: 0.9,
+      },
+    ]),
+  },
+}));
+
 async function renderPage() {
   const view = render(
     <MantineProvider>
@@ -31,5 +47,21 @@ describe('HfPropagationPage slice-plane picker', () => {
     expect(screen.getByRole('button', { name: 'Bearing' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Locator' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Address' })).toBeInTheDocument();
+  });
+});
+
+describe('HfPropagationPage Reading panel', () => {
+  it('shows live fc, MUF, and mode, without the peak-gain debug readout', async () => {
+    await renderPage();
+
+    expect(screen.getByText('Critical frequency (fc)')).toBeInTheDocument();
+    expect(screen.getByText('MUF')).toBeInTheDocument();
+    expect(screen.queryByText('Peak gain elevation (debug)')).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByText('Skywave')).toBeInTheDocument();
+    });
+    const mhzReadouts = screen.getAllByText(/\d+\.\d+ MHz/);
+    expect(mhzReadouts.length).toBeGreaterThanOrEqual(2);
   });
 });

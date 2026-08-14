@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { IonosphericLayerState } from '@core/domain/hfPropagation/types.ts';
+import type { IonosphericLayerState, RayPathResult } from '@core/domain/hfPropagation/types.ts';
 import HfPropagationGlobe, { GLOBE_RADIUS_UNITS, shellRadiusUnits } from './HfPropagationGlobe.tsx';
 import { GLOBE_EARTH_RADIUS_KM } from '../SatelliteGlobe/globeAltitude.ts';
+import { MODE_COLORS } from './buildGlobeData.ts';
 
 // react-globe.gl needs a WebGL context jsdom doesn't provide, so it's mocked to a stub that
 // exposes the props it was called with — same convention as SatelliteGlobe.test.tsx. This
@@ -132,5 +133,49 @@ describe('HfPropagationGlobe', () => {
     const paths = lastGlobeProps?.pathsData as { kind: string; points: unknown[] }[];
     expect(paths.length).toBeGreaterThan(0);
     expect(paths.every((p) => p.kind === 'terminator' && p.points.length >= 2)).toBe(true);
+  });
+
+  it('renders a transmitter marker, mode-coloured ray paths, skip-zone ring, and legend', () => {
+    const rays: RayPathResult[] = [
+      {
+        mode: 'groundwave',
+        points: [
+          { lat: 0, lon: 0, altitudeKm: 0 },
+          { lat: 0, lon: 2.7, altitudeKm: 0 },
+        ],
+        takeoffAngleDeg: 3,
+        relativeSignalStrength: 1,
+      },
+      {
+        mode: 'skywave',
+        points: [
+          { lat: 0, lon: 0, altitudeKm: 0 },
+          { lat: 0, lon: 10, altitudeKm: 250 },
+          { lat: 0, lon: 20, altitudeKm: 0 },
+        ],
+        takeoffAngleDeg: 20,
+        relativeSignalStrength: 0.8,
+      },
+    ];
+    render(<HfPropagationGlobe layers={DAYTIME_LAYERS} rays={rays} />);
+
+    const points = lastGlobeProps?.pointsData as { kind: string; lat: number; lng: number }[];
+    expect(points).toEqual([expect.objectContaining({ kind: 'transmitter', lat: 0, lng: 0 })]);
+
+    const paths = lastGlobeProps?.pathsData as { kind: string; mode?: string; color: string }[];
+    expect(paths.filter((p) => p.kind === 'ray').map((p) => p.mode)).toEqual([
+      'groundwave',
+      'skywave',
+    ]);
+    expect(paths.find((p) => p.kind === 'ray' && p.mode === 'skywave')?.color).toBe(
+      MODE_COLORS.skywave,
+    );
+    expect(paths.some((p) => p.kind === 'skip-zone')).toBe(true);
+    expect(lastGlobeProps?.pathDashLength).toBeInstanceOf(Function);
+    expect(lastGlobeProps?.pathDashGap).toBeInstanceOf(Function);
+
+    expect(screen.getByLabelText('Propagation mode colours')).toBeInTheDocument();
+    expect(screen.getByText('Groundwave')).toBeInTheDocument();
+    expect(screen.getByText('NVIS')).toBeInTheDocument();
   });
 });

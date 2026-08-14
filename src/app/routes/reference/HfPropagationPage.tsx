@@ -4,13 +4,15 @@ import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react';
 import { peakGainElevationDeg } from '@core/domain/hfPropagation/antennaPatterns.ts';
 import { computeIonosphericLayers } from '@core/domain/hfPropagation/ionosphericProfile.ts';
 import { colorForLayer, IONOSPHERIC_LAYER_IDS } from '@core/domain/hfPropagation/layerColor.ts';
-import { criticalFrequencyMhz } from '@core/domain/hfPropagation/mufCalculation.ts';
+import { criticalFrequencyMhz, maximumUsableFrequencyMhz } from '@core/domain/hfPropagation/mufCalculation.ts';
 import type {
   AntennaConfig,
   AntennaPatternFamily,
   IonosphericLayerId,
+  RayPathResult,
   SolarActivityPreset,
 } from '@core/domain/hfPropagation/types.ts';
+import { MODE_LABELS } from '../../components/HfPropagationGlobe/buildGlobeData.ts';
 import {
   DesignSystemV2Provider,
   FormField,
@@ -19,12 +21,9 @@ import {
   ToggleSwitch,
 } from '../../components/v2/index.ts';
 import { useMapSettings } from '../../hooks/useMapSettings.ts';
-import {
-  formatDatetimeLocalValue,
-  formatUkDateTime,
-  parseUkDateTime,
-} from './hfPropagationDateTime.ts';
+import { formatDatetimeLocalValue, formatUkDateTime, parseUkDateTime } from './hfPropagationDateTime.ts';
 import SlicePlanePicker, { DEFAULT_RANGE_M, type SlicePlaneResult } from './SlicePlanePicker.tsx';
+import { usePropagationRayTrace } from './usePropagationRayTrace.ts';
 import classes from './HfPropagationPage.module.css';
 
 const HfPropagationGlobe = lazy(
@@ -113,6 +112,17 @@ function layerToggleAriaLabel(id: IonosphericLayerId): string {
   return `${id} layer`;
 }
 
+function dominantRay(rays: RayPathResult[]): RayPathResult | null {
+  if (rays.length === 0) return null;
+  const preferred = rays.filter(
+    (ray) => ray.mode === 'skywave' || ray.mode === 'nvis' || ray.mode === 'groundwave',
+  );
+  const pool = preferred.length > 0 ? preferred : rays;
+  return pool.reduce((best, ray) =>
+    ray.relativeSignalStrength > best.relativeSignalStrength ? ray : best,
+  );
+}
+
 const ALL_LAYERS_VISIBLE: Record<IonosphericLayerId, boolean> = {
   D: true,
   E: true,
@@ -184,9 +194,29 @@ export default function HfPropagationPage() {
     [dateTime, solarPreset],
   );
   const f2Layer = layers.find((layer) => layer.id === 'F2');
-  const criticalFrequencyLabel = f2Layer
-    ? `${criticalFrequencyMhz(f2Layer.peakElectronDensity).toFixed(1)} MHz`
+  const criticalFrequencyMhzValue = f2Layer
+    ? criticalFrequencyMhz(f2Layer.peakElectronDensity)
+    : 0;
+  const criticalFrequencyLabel = f2Layer ? `${criticalFrequencyMhzValue.toFixed(1)} MHz` : '—';
+  const mufLabel = f2Layer
+    ? `${maximumUsableFrequencyMhz(criticalFrequencyMhzValue, peakGainElevation).toFixed(1)} MHz`
     : '—';
+
+  const rayTraceParams = useMemo(
+    () => ({
+      frequencyMhz,
+      antenna: antennaConfig,
+      layers,
+      azimuthDeg,
+      txLat: DEFAULT_TX_LAT_DEG,
+      txLon: DEFAULT_TX_LON_DEG,
+      atMs: dateTime.getTime(),
+    }),
+    [frequencyMhz, antennaConfig, layers, azimuthDeg, dateTime],
+  );
+  const rays = usePropagationRayTrace(rayTraceParams);
+  const dominant = dominantRay(rays);
+  const modeReadout = dominant ? MODE_LABELS[dominant.mode] : '—';
 
   return (
     <DesignSystemV2Provider>
@@ -220,6 +250,7 @@ export default function HfPropagationPage() {
                   }}
                   visibleLayers={visibleLayers}
                   environmentAtMs={dateTime.getTime()}
+                  rays={rays}
                 />
               </Suspense>
             ) : (
@@ -459,9 +490,8 @@ export default function HfPropagationPage() {
             <Panel title="Reading">
               <Stack gap="lg">
                 <FormField label="Critical frequency (fc)" value={criticalFrequencyLabel} />
-                <FormField label="MUF" value="—" />
-                <FormField label="Mode" value="—" />
-                <FormField label="Peak gain elevation (debug)" value={`${peakGainElevation}°`} />
+                <FormField label="MUF" value={mufLabel} />
+                <FormField label="Mode" value={modeReadout} />
               </Stack>
             </Panel>
           </div>
