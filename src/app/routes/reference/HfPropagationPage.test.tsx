@@ -230,17 +230,30 @@ describe('HfPropagationPage dual ray-trace', () => {
   });
 });
 
+describe('HfPropagationPage copy', () => {
+  it('states the idealised-model caveat and uses plain-language Display labels', async () => {
+    await renderPage();
+
+    expect(screen.getByText(/idealised atmospheric layers/i)).toBeInTheDocument();
+    expect(screen.getByText(/not a coverage guarantee/i)).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Cutaway plane' })).toBeInTheDocument();
+    expect(screen.getByText(/Hides half the shells along the slice bearing/i)).toBeInTheDocument();
+    expect(screen.getByText(/Thicker ribbon along the traced path/i)).toBeInTheDocument();
+    expect(screen.queryByText("'nvis'")).not.toBeInTheDocument();
+  });
+});
+
 describe('HfPropagationPage Display cutaway and corridor', () => {
   it('defaults both toggles off and passes them to the globe', async () => {
     await renderPage();
 
-    expect(screen.getByRole('checkbox', { name: 'Volumetric cutaway' })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Cutaway plane' })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Ray corridor' })).not.toBeChecked();
     expect(lastGlobeProps?.cutawayEnabled).toBe(false);
     expect(lastGlobeProps?.rayCorridorEnabled).toBe(false);
     expect(lastGlobeProps?.sliceBearingDeg).toBe(0);
 
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Volumetric cutaway' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Cutaway plane' }));
     fireEvent.click(screen.getByRole('checkbox', { name: 'Ray corridor' }));
     expect(lastGlobeProps?.cutawayEnabled).toBe(true);
     expect(lastGlobeProps?.rayCorridorEnabled).toBe(true);

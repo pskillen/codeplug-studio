@@ -126,6 +126,27 @@ function layerToggleAriaLabel(id: IonosphericLayerId): string {
   return `${id} layer`;
 }
 
+function DisplayToggle({
+  checked,
+  onChange,
+  label,
+  hint,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <Stack gap={4}>
+      <ToggleSwitch checked={checked} onChange={onChange} label={label} />
+      <Text size="xs" c="dimmed">
+        {hint}
+      </Text>
+    </Stack>
+  );
+}
+
 function dominantRay(rays: RayPathResult[]): RayPathResult | null {
   if (rays.length === 0) return null;
   const preferred = rays.filter(
@@ -343,12 +364,16 @@ export default function HfPropagationPage() {
               </Panel>
             ) : null}
 
-            <Panel title="Display">
+            <Panel
+              title="Display"
+              sub="How the 3D globe draws layers and rays — not a change to the physics."
+            >
               <Stack gap="lg">
-                <ToggleSwitch
+                <DisplayToggle
                   checked={exaggerationEnabled}
                   onChange={setExaggerationEnabled}
                   label="Altitude exaggeration"
+                  hint="Stretches D/E/F shell height so the layers are easier to tell apart. Off is true scale."
                 />
                 {exaggerationEnabled ? (
                   <Input.Wrapper label={`${exaggerationFactor.toFixed(1)}×`}>
@@ -363,30 +388,35 @@ export default function HfPropagationPage() {
                     />
                   </Input.Wrapper>
                 ) : null}
-                <ToggleSwitch
+                <DisplayToggle
                   checked={explodeEnabled}
                   onChange={setExplodeEnabled}
                   label="Exploded layer stacking"
+                  hint="Pulls shells apart so they don’t nest."
                 />
-                <ToggleSwitch
+                <DisplayToggle
                   checked={fresnelEnabled}
                   onChange={setFresnelEnabled}
                   label="Fresnel shading"
+                  hint="Brightens each shell’s limb; dimmer when looking straight down."
                 />
-                <ToggleSwitch
+                <DisplayToggle
                   checked={terminatorEnabled}
                   onChange={setTerminatorEnabled}
                   label="Show day/night terminator"
+                  hint="Greyline and sun marker. Night-side shade stays on either way."
                 />
-                <ToggleSwitch
+                <DisplayToggle
                   checked={cutawayEnabled}
                   onChange={setCutawayEnabled}
-                  label="Volumetric cutaway"
+                  label="Cutaway plane"
+                  hint="Hides half the shells along the slice bearing so you can see inside."
                 />
-                <ToggleSwitch
+                <DisplayToggle
                   checked={rayCorridorEnabled}
                   onChange={setRayCorridorEnabled}
                   label="Ray corridor"
+                  hint="Thicker ribbon along the traced path. The thin line stays on."
                 />
                 <div className={classes.layerToggles}>
                   {IONOSPHERIC_LAYER_IDS.map((id) => {
