@@ -140,10 +140,7 @@ function buildEscapePathPoints(
   const escapeAltitudeKm = outermostAltitudeKm * 1.3; // draw a bit past the outermost layer
   const takeoffRad = (takeoffAngleDeg * Math.PI) / 180;
   const horizontalM = (escapeAltitudeKm / Math.tan(takeoffRad)) * 1000;
-  return [
-    toSpherePoint(params, 0, 0),
-    toSpherePoint(params, horizontalM, escapeAltitudeKm),
-  ];
+  return [toSpherePoint(params, 0, 0), toSpherePoint(params, horizontalM, escapeAltitudeKm)];
 }
 
 /** Trace a fan of rays across elevation angles 0-90°, weighted by the antenna's gain at each

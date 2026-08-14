@@ -157,29 +157,20 @@ describe('traceRay', () => {
   });
 
   it('attenuates skywave through an active D layer without reclassifying typical HF', () => {
-    const result = traceRay(
-      params({ frequencyMhz: 10, layers: [ACTIVE_D, F2_DAY] }),
-      45,
-    );
+    const result = traceRay(params({ frequencyMhz: 10, layers: [ACTIVE_D, F2_DAY] }), 45);
     expect(result.mode).toBe('skywave');
     expect(result.relativeSignalStrength).toBeCloseTo(0.70710678118, 8);
   });
 
   it('classifies a low-frequency low-takeoff ray as absorbed when the D layer is active', () => {
-    const result = traceRay(
-      params({ frequencyMhz: 0.4, layers: [ACTIVE_D, F2_DAY] }),
-      10,
-    );
+    const result = traceRay(params({ frequencyMhz: 0.4, layers: [ACTIVE_D, F2_DAY] }), 10);
     expect(result.mode).toBe('absorbed');
     expect(result.relativeSignalStrength).toBeCloseTo(0.01333333333, 8);
     expect(result.relativeSignalStrength).toBeLessThan(0.02);
   });
 
   it('reverts the same low-frequency case to skywave at night when the D layer is inactive', () => {
-    const result = traceRay(
-      params({ frequencyMhz: 0.4, layers: [INACTIVE_D, F2_DAY] }),
-      10,
-    );
+    const result = traceRay(params({ frequencyMhz: 0.4, layers: [INACTIVE_D, F2_DAY] }), 10);
     expect(result.mode).toBe('skywave');
     expect(result.relativeSignalStrength).toBe(1);
   });
