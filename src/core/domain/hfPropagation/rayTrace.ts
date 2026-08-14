@@ -9,7 +9,8 @@ import { antennaGain } from './antennaPatterns.ts';
 import { criticalFrequencyMhz, maximumUsableFrequencyMhz } from './mufCalculation.ts';
 import { destinationPoint } from '../geoDistance.ts';
 
-const GROUNDWAVE_MAX_RANGE_KM = 300; // typical single-hop groundwave upper bound at HF
+/** Typical single-hop groundwave upper bound at HF — skip-zone inner radius. */
+export const GROUNDWAVE_MAX_RANGE_KM = 300;
 const NVIS_MIN_TAKEOFF_DEG = 70; // per background.md's NVIS elevation-angle range (70-90°)
 const ABSORBED_STRENGTH_THRESHOLD = 0.02;
 
