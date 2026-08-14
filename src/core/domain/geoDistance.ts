@@ -85,3 +85,33 @@ export function pathMetricsBetween(from: GeoPoint, to: GeoPoint): PathMetrics {
     bearingBA: reciprocalBearingDeg(bearingAB),
   };
 }
+
+/** Destination point given a start point, bearing, and distance — the forward/direct geodesic
+ * problem (inverse of pathMetricsBetween, which solves the reverse: distance/bearing between
+ * two known points). Standard spherical direct-geodesic formula — same family as this file's
+ * existing haversineDistanceM/initialBearingDeg, and the same math already used (in degrees-of-
+ * angular-distance form) by satelliteTracking/footprint.ts's sampleGreatCircle. */
+export function destinationPoint(
+  lat: number,
+  lon: number,
+  bearingDeg: number,
+  distanceM: number,
+): GeoPoint {
+  const angularDistanceRad = distanceM / EARTH_RADIUS_M;
+  const bearingRad = toRadians(bearingDeg);
+  const latRad = toRadians(lat);
+  const lonRad = toRadians(lon);
+
+  const destLatRad = Math.asin(
+    Math.sin(latRad) * Math.cos(angularDistanceRad) +
+      Math.cos(latRad) * Math.sin(angularDistanceRad) * Math.cos(bearingRad),
+  );
+  const destLonRad =
+    lonRad +
+    Math.atan2(
+      Math.sin(bearingRad) * Math.sin(angularDistanceRad) * Math.cos(latRad),
+      Math.cos(angularDistanceRad) - Math.sin(latRad) * Math.sin(destLatRad),
+    );
+
+  return { lat: toDegrees(destLatRad), lon: ((toDegrees(destLonRad) + 540) % 360) - 180 };
+}
