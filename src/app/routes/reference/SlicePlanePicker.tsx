@@ -1,4 +1,4 @@
-import { Input, Slider, Stack, Text, TextInput } from '@mantine/core';
+import { Button, Group, Input, Slider, Stack, Text, TextInput } from '@mantine/core';
 import { useEffect, useMemo, useState } from 'react';
 import {
   compassOctant,
@@ -7,9 +7,10 @@ import {
 } from '@core/domain/geoDistance.ts';
 import { isValidLocator, locatorToCoords } from '@core/domain/maidenhead.ts';
 import type { GeoPoint } from '@core/models/libraryTypes.ts';
+import { GeocodeError, geocodeQuery, type GeocodeProvider } from '@integrations/geocode/index.ts';
 import { FormField, SegmentedControl } from '../../components/v2/index.ts';
 
-type SlicePlaneMode = 'bearing' | 'locator';
+export type SlicePlaneMode = 'bearing' | 'locator' | 'address';
 
 export interface SlicePlaneResult {
   bearingDeg: number;
@@ -23,6 +24,12 @@ const MAX_RANGE_KM = 20_000;
 const MODE_OPTIONS: { value: SlicePlaneMode; label: string }[] = [
   { value: 'bearing', label: 'Bearing' },
   { value: 'locator', label: 'Locator' },
+  { value: 'address', label: 'Address' },
+];
+
+const GEOCODE_PROVIDER_OPTIONS: { value: GeocodeProvider; label: string }[] = [
+  { value: 'mapbox', label: 'Mapbox' },
+  { value: 'photon', label: 'Photon (OSM)' },
 ];
 
 export function formatSlicePlaneReadout(result: SlicePlaneResult): string {
@@ -50,18 +57,29 @@ export interface SlicePlanePickerProps {
   /** Antenna heading used as the initial bearing only. */
   defaultBearingDeg: number;
   onChange: (result: SlicePlaneResult) => void;
+  mapboxToken?: string;
 }
 
 export default function SlicePlanePicker({
   transmitterLocation,
   defaultBearingDeg,
   onChange,
+  mapboxToken = '',
 }: SlicePlanePickerProps) {
+  const hasMapboxToken = mapboxToken.trim().length > 0;
   const [mode, setMode] = useState<SlicePlaneMode>('bearing');
   const [bearingTouched, setBearingTouched] = useState(false);
   const [manualBearingDeg, setManualBearingDeg] = useState(defaultBearingDeg);
   const [manualRangeM, setManualRangeM] = useState(DEFAULT_RANGE_M);
   const [toLocator, setToLocator] = useState('');
+  const [addressQuery, setAddressQuery] = useState('');
+  const [addressResolvedCoords, setAddressResolvedCoords] = useState<GeoPoint | null>(null);
+  const [geocodeProvider, setGeocodeProvider] = useState<GeocodeProvider>(
+    hasMapboxToken ? 'mapbox' : 'photon',
+  );
+  const [geocodeLoading, setGeocodeLoading] = useState(false);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
+  const [geocodeLabel, setGeocodeLabel] = useState<string | null>(null);
 
   useEffect(() => {
     if (!bearingTouched) setManualBearingDeg(defaultBearingDeg);
@@ -80,6 +98,8 @@ export default function SlicePlanePicker({
     return locatorToCoords(toLocator);
   }, [mode, toLocator]);
 
+  const toCoords = mode === 'locator' ? toCoordsFromLocator : addressResolvedCoords;
+
   const resolved: SlicePlaneResult = useMemo(
     () =>
       resolveSlicePlane({
@@ -87,14 +107,38 @@ export default function SlicePlanePicker({
         manualBearingDeg,
         manualRangeM,
         transmitterLocation,
-        toCoords: toCoordsFromLocator,
+        toCoords,
       }),
-    [mode, manualBearingDeg, manualRangeM, toCoordsFromLocator, transmitterLocation],
+    [mode, manualBearingDeg, manualRangeM, toCoords, transmitterLocation],
   );
 
   useEffect(() => {
     onChange(resolved);
   }, [onChange, resolved]);
+
+  const handleGeocode = async () => {
+    setGeocodeError(null);
+    setGeocodeLabel(null);
+    setGeocodeLoading(true);
+    try {
+      const result = await geocodeQuery(addressQuery, {
+        mapboxToken,
+        provider: geocodeProvider,
+      });
+      if (!result) {
+        setGeocodeError('No results found');
+        setAddressResolvedCoords(null);
+        return;
+      }
+      setAddressResolvedCoords({ lat: result.lat, lon: result.lon });
+      setGeocodeLabel(result.label);
+    } catch (err) {
+      setAddressResolvedCoords(null);
+      setGeocodeError(err instanceof GeocodeError ? err.message : 'Look-up failed');
+    } finally {
+      setGeocodeLoading(false);
+    }
+  };
 
   const rangeKm = manualRangeM / 1000;
 
@@ -138,7 +182,9 @@ export default function SlicePlanePicker({
             />
           </Input.Wrapper>
         </>
-      ) : (
+      ) : null}
+
+      {mode === 'locator' ? (
         <TextInput
           label="To locator"
           placeholder="e.g. JO22ab"
@@ -151,7 +197,55 @@ export default function SlicePlanePicker({
           }}
           error={toError}
         />
-      )}
+      ) : null}
+
+      {mode === 'address' ? (
+        <Stack gap="sm">
+          <Text size="sm" c="dimmed">
+            {hasMapboxToken
+              ? 'Enter an address or postcode. Choose Mapbox or Photon (OpenStreetMap).'
+              : 'Using Photon (OpenStreetMap). Set a Mapbox token in Settings for Mapbox.'}
+          </Text>
+          {hasMapboxToken ? (
+            <SegmentedControl
+              options={GEOCODE_PROVIDER_OPTIONS}
+              value={geocodeProvider}
+              onChange={setGeocodeProvider}
+            />
+          ) : null}
+          <Group align="flex-end" grow>
+            <TextInput
+              label="Address or postcode"
+              placeholder="e.g. G1 1XQ, Glasgow"
+              value={addressQuery}
+              onChange={(e) => setAddressQuery(e.currentTarget.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void handleGeocode();
+                }
+              }}
+            />
+            <Button
+              onClick={() => void handleGeocode()}
+              loading={geocodeLoading}
+              style={{ flexShrink: 0 }}
+            >
+              Look up
+            </Button>
+          </Group>
+          {geocodeError ? (
+            <Text size="sm" c="red" role="alert">
+              {geocodeError}
+            </Text>
+          ) : null}
+          {geocodeLabel ? (
+            <Text size="sm" c="dimmed">
+              {geocodeLabel}
+            </Text>
+          ) : null}
+        </Stack>
+      ) : null}
     </Stack>
   );
 }

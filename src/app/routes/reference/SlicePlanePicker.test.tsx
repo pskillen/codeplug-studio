@@ -1,15 +1,21 @@
 import { MantineProvider } from '@mantine/core';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { pathMetricsBetween } from '@core/domain/geoDistance.ts';
 import { locatorToCoords } from '@core/domain/maidenhead.ts';
+import { GeocodeError, geocodeQuery } from '@integrations/geocode/index.ts';
 import { DesignSystemV2Provider } from '../../components/v2/index.ts';
 import SlicePlanePicker, {
   DEFAULT_RANGE_M,
   formatSlicePlaneReadout,
   resolveSlicePlane,
 } from './SlicePlanePicker.tsx';
+
+vi.mock('@integrations/geocode/index.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@integrations/geocode/index.ts')>();
+  return { ...actual, geocodeQuery: vi.fn() };
+});
 
 const LONDON = locatorToCoords('IO91WM')!;
 
@@ -112,5 +118,46 @@ describe('SlicePlanePicker', () => {
         distanceM: expected.distanceM,
       }),
     );
+  });
+
+  it('derives bearing and distance from a geocoded address', async () => {
+    const destination = { lat: 52.37, lon: 4.9 };
+    vi.mocked(geocodeQuery).mockResolvedValue({
+      lat: destination.lat,
+      lon: destination.lon,
+      label: 'Amsterdam',
+    });
+    const expected = pathMetricsBetween(LONDON, destination);
+    const { onChange } = renderPicker();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Address' }));
+    fireEvent.change(screen.getByLabelText('Address or postcode'), {
+      target: { value: 'Amsterdam' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Look up' }));
+
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith({
+        bearingDeg: expected.bearingAB,
+        distanceM: expected.distanceM,
+      });
+    });
+    expect(geocodeQuery).toHaveBeenCalledWith('Amsterdam', {
+      mapboxToken: '',
+      provider: 'photon',
+    });
+  });
+
+  it('surfaces geocode errors', async () => {
+    vi.mocked(geocodeQuery).mockRejectedValue(new GeocodeError('Look-up failed'));
+    renderPicker();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Address' }));
+    fireEvent.change(screen.getByLabelText('Address or postcode'), {
+      target: { value: 'nowhere' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Look up' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Look-up failed');
   });
 });
