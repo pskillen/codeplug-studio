@@ -23,28 +23,25 @@ export function usePropagationRayTrace(
   enabled = true,
 ): PropagationRayTraceState {
   const [rays, setRays] = useState<RayPathResult[]>([]);
-  const [isComputing, setIsComputing] = useState(enabled);
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    if (!enabled) {
-      setIsComputing(false);
-      return;
-    }
+    if (!enabled) return;
 
     let cancelled = false;
-    setIsComputing(true);
     const timer = setTimeout(() => {
+      setPending(true);
       void rayTraceClient
         .requestRayTrace(params)
         .then((result) => {
           if (cancelled) return;
           setRays(result);
-          setIsComputing(false);
+          setPending(false);
         })
         .catch(() => {
           if (cancelled) return;
           setRays([]);
-          setIsComputing(false);
+          setPending(false);
         });
     }, RAY_TRACE_DEBOUNCE_MS);
 
@@ -63,5 +60,5 @@ export function usePropagationRayTrace(
     params.atMs,
   ]);
 
-  return { rays, isComputing };
+  return { rays, isComputing: enabled && pending };
 }

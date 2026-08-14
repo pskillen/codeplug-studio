@@ -157,12 +157,12 @@ describe('usePropagationRayTrace', () => {
 
     rerender({ params: { ...PARAMS, frequencyMhz: 7.1 } });
     expect(result.current.rays).toEqual([SKY]);
-    expect(result.current.isComputing).toBe(true);
 
     await act(async () => {
       vi.advanceTimersByTime(RAY_TRACE_DEBOUNCE_MS);
     });
     expect(result.current.rays).toEqual([SKY]);
+    expect(result.current.isComputing).toBe(true);
 
     const next: RayPathResult = { ...SKY, takeoffAngleDeg: 12 };
     await act(async () => {
