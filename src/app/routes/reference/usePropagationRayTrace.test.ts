@@ -87,4 +87,27 @@ describe('usePropagationRayTrace', () => {
     });
     expect(result.current).toEqual([]);
   });
+
+  it('retriggers when transmitter lat/lon change', async () => {
+    requestRayTrace.mockResolvedValue([]);
+    const { rerender } = renderHook(
+      ({ params }: { params: RayTraceParams }) => usePropagationRayTrace(params),
+      { initialProps: { params: PARAMS } },
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RAY_TRACE_DEBOUNCE_MS);
+    });
+    expect(requestRayTrace).toHaveBeenCalledTimes(1);
+    expect(requestRayTrace).toHaveBeenLastCalledWith(PARAMS);
+
+    rerender({ params: { ...PARAMS, txLat: 51.5, txLon: -0.13 } });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RAY_TRACE_DEBOUNCE_MS);
+    });
+    expect(requestRayTrace).toHaveBeenCalledTimes(2);
+    expect(requestRayTrace).toHaveBeenLastCalledWith(
+      expect.objectContaining({ txLat: 51.5, txLon: -0.13 }),
+    );
+  });
 });

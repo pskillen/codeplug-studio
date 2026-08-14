@@ -1,4 +1,4 @@
-import { Input, Select, Slider, Stack, Text } from '@mantine/core';
+import { Group, Input, NumberInput, Select, Slider, Stack, Text } from '@mantine/core';
 import { IconCalendar } from '@tabler/icons-react';
 import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react';
 import { peakGainElevationDeg } from '@core/domain/hfPropagation/antennaPatterns.ts';
@@ -16,6 +16,8 @@ import type {
   SolarActivityPreset,
 } from '@core/domain/hfPropagation/types.ts';
 import { MODE_LABELS } from '../../components/HfPropagationGlobe/buildGlobeData.ts';
+import UseMyLocationButton from '../../components/UseMyLocationButton/UseMyLocationButton.tsx';
+import { useDebouncedOptionalNumberField } from '../../hooks/useDebouncedOptionalNumberField.ts';
 import {
   DesignSystemV2Provider,
   FormField,
@@ -110,10 +112,9 @@ function fieldsShownForFamily(family: AntennaPatternFamily) {
   };
 }
 
-/** Placeholder transmitter site until a dedicated TX-location control lands. */
+/** Neutral placeholder until the operator enters a site or uses geolocation (Gulf of Guinea). */
 const DEFAULT_TX_LAT_DEG = 0;
 const DEFAULT_TX_LON_DEG = 0;
-const DEFAULT_TX_LOCATION = { lat: DEFAULT_TX_LAT_DEG, lon: DEFAULT_TX_LON_DEG };
 
 function layerToggleAriaLabel(id: IonosphericLayerId): string {
   return `${id} layer`;
@@ -160,6 +161,19 @@ export default function HfPropagationPage() {
   const [dateTime, setDateTime] = useState(() => new Date());
   const [dateTimeText, setDateTimeText] = useState(() => formatUkDateTime(dateTime));
   const [solarPreset, setSolarPreset] = useState<SolarActivityPreset>('moderate');
+  const [txLat, setTxLat] = useState(DEFAULT_TX_LAT_DEG);
+  const [txLon, setTxLon] = useState(DEFAULT_TX_LON_DEG);
+  const txLocation = useMemo(() => ({ lat: txLat, lon: txLon }), [txLat, txLon]);
+  const commitTxLat = useCallback((value: number | undefined) => {
+    if (value == null || !Number.isFinite(value)) return;
+    setTxLat(Math.min(90, Math.max(-90, value)));
+  }, []);
+  const commitTxLon = useCallback((value: number | undefined) => {
+    if (value == null || !Number.isFinite(value)) return;
+    setTxLon(Math.min(180, Math.max(-180, value)));
+  }, []);
+  const txLatField = useDebouncedOptionalNumberField(txLat, commitTxLat);
+  const txLonField = useDebouncedOptionalNumberField(txLon, commitTxLon);
 
   const [exaggerationEnabled, setExaggerationEnabled] = useState(true);
   const [exaggerationFactor, setExaggerationFactor] = useState(DEFAULT_EXAGGERATION);
@@ -191,14 +205,8 @@ export default function HfPropagationPage() {
   );
 
   const layers = useMemo(
-    () =>
-      computeIonosphericLayers(
-        DEFAULT_TX_LOCATION.lat,
-        DEFAULT_TX_LOCATION.lon,
-        dateTime.getTime(),
-        solarPreset,
-      ),
-    [dateTime, solarPreset],
+    () => computeIonosphericLayers(txLat, txLon, dateTime.getTime(), solarPreset),
+    [txLat, txLon, dateTime, solarPreset],
   );
   const f2Layer = layers.find((layer) => layer.id === 'F2');
   const criticalFrequencyMhzValue = f2Layer ? criticalFrequencyMhz(f2Layer.peakElectronDensity) : 0;
@@ -213,11 +221,11 @@ export default function HfPropagationPage() {
       antenna: antennaConfig,
       layers,
       azimuthDeg,
-      txLat: DEFAULT_TX_LAT_DEG,
-      txLon: DEFAULT_TX_LON_DEG,
+      txLat,
+      txLon,
       atMs: dateTime.getTime(),
     }),
-    [frequencyMhz, antennaConfig, layers, azimuthDeg, dateTime],
+    [frequencyMhz, antennaConfig, layers, azimuthDeg, txLat, txLon, dateTime],
   );
   const rays = usePropagationRayTrace(rayTraceParams);
   const dominant = dominantRay(rays);
@@ -256,6 +264,8 @@ export default function HfPropagationPage() {
                   visibleLayers={visibleLayers}
                   environmentAtMs={dateTime.getTime()}
                   rays={rays}
+                  txLat={txLat}
+                  txLon={txLon}
                 />
               </Suspense>
             ) : (
@@ -277,7 +287,7 @@ export default function HfPropagationPage() {
             {view === 'vertical-slice' ? (
               <Panel title="Slice plane">
                 <SlicePlanePicker
-                  transmitterLocation={DEFAULT_TX_LOCATION}
+                  transmitterLocation={txLocation}
                   defaultBearingDeg={shownFields.azimuth ? azimuthDeg : 0}
                   onChange={onSlicePlaneChange}
                   mapboxToken={mapboxToken}
@@ -429,6 +439,41 @@ export default function HfPropagationPage() {
 
             <Panel title="Environment">
               <Stack gap="lg">
+                <FormField
+                  label="Transmitter location"
+                  hint="0°, 0° (Gulf of Guinea) until you enter coordinates or use your location."
+                >
+                  <Stack gap="sm">
+                    <Group grow>
+                      <NumberInput
+                        label="Latitude"
+                        aria-label="Latitude"
+                        value={txLatField.value}
+                        onChange={txLatField.setValue}
+                        onBlur={txLatField.flush}
+                        decimalScale={6}
+                        min={-90}
+                        max={90}
+                      />
+                      <NumberInput
+                        label="Longitude"
+                        aria-label="Longitude"
+                        value={txLonField.value}
+                        onChange={txLonField.setValue}
+                        onBlur={txLonField.flush}
+                        decimalScale={6}
+                        min={-180}
+                        max={180}
+                      />
+                    </Group>
+                    <UseMyLocationButton
+                      onLocation={(lat, lon) => {
+                        setTxLat(lat);
+                        setTxLon(lon);
+                      }}
+                    />
+                  </Stack>
+                </FormField>
                 <FormField label="Date & time">
                   <div className={classes.dateTimeField}>
                     <input
