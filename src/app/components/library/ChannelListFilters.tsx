@@ -5,6 +5,9 @@ import { ALL_BANDS, bandsFromFrequencies, type BandDefinition } from '../../lib/
 import { modeFilterOptions, modeLabel, type ChannelMode } from '../../lib/channelModes.ts';
 import { useChannelListQuery } from '../../hooks/useChannelListQuery.ts';
 import { useFilteredChannels } from '../../hooks/useChannelListFilters.ts';
+import {
+  CHANNEL_ZONE_FILTER_NONE,
+} from '../../routes/library/lists/channelListZoneFilter.ts';
 import UseMyLocationButton from '../UseMyLocationButton/UseMyLocationButton.tsx';
 import { FacetBar, FacetChip, SplitFilter } from './FacetBar.tsx';
 import classes from './ChannelListFilters.module.css';
@@ -31,6 +34,17 @@ export default function ChannelListFilters() {
 
   const modeOptions = useMemo(() => modeFilterOptions(), []);
 
+  const zoneOptions = useMemo(
+    () =>
+      [...zones].sort((a, b) => {
+        const orderA = a.order ?? Number.POSITIVE_INFINITY;
+        const orderB = b.order ?? Number.POSITIVE_INFINITY;
+        if (orderA !== orderB) return orderA - orderB;
+        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      }),
+    [zones],
+  );
+
   const distanceFilterPending = query.distanceFilterEnabled && !position;
 
   const distanceFilterMarks = DISTANCE_FILTER_MARKS_KM.map((km) => ({
@@ -51,6 +65,14 @@ export default function ChannelListFilters() {
       query.setModeFilter(query.modeFilter.filter((m) => m !== mode));
     } else {
       query.setModeFilter([...query.modeFilter, mode]);
+    }
+  };
+
+  const toggleZoneFilter = (zoneId: string) => {
+    if (query.zoneFilter.includes(zoneId)) {
+      query.setZoneFilter(query.zoneFilter.filter((id) => id !== zoneId));
+    } else {
+      query.setZoneFilter([...query.zoneFilter, zoneId]);
     }
   };
 
@@ -83,6 +105,27 @@ export default function ChannelListFilters() {
           active={query.distanceFilterEnabled}
           onClick={() => query.setDistanceFilterEnabled(!query.distanceFilterEnabled)}
         />
+      </FacetBar>
+
+      <FacetBar scrollable>
+        <FacetChip
+          label="All zones"
+          active={query.zoneFilter.length === 0}
+          onClick={() => query.setZoneFilter([])}
+        />
+        <FacetChip
+          label="Not in a zone"
+          active={query.zoneFilter.includes(CHANNEL_ZONE_FILTER_NONE)}
+          onClick={() => toggleZoneFilter(CHANNEL_ZONE_FILTER_NONE)}
+        />
+        {zoneOptions.map((zone) => (
+          <FacetChip
+            key={zone.id}
+            label={zone.name}
+            active={query.zoneFilter.includes(zone.id)}
+            onClick={() => toggleZoneFilter(zone.id)}
+          />
+        ))}
       </FacetBar>
 
       <FacetBar scrollable>
