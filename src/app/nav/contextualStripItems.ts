@@ -24,6 +24,7 @@ export const toolsStripItems: readonly ContextualStripItem[] = [
   { label: 'Maidenhead locator', to: '/reference/maidenhead' },
   { label: 'Band plan', to: '/reference/bands' },
   { label: 'Tracking Dashboard', to: '/tracking' },
+  { label: 'Propagation Visualiser', to: '/reference/rf-propagation' },
 ];
 
 export const helpStripItems: readonly ContextualStripItem[] = [

@@ -1,0 +1,10 @@
+.wrapper {
+  position: relative;
+  /* Set by the hosting page's viewport container on desktop widths — falls back to this
+     component's own 420px default otherwise. Matches SatelliteGlobe.module.css's convention. */
+  height: var(--satellite-panel-height, 420px);
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+}
