@@ -230,6 +230,23 @@ describe('HfPropagationPage dual ray-trace', () => {
   });
 });
 
+describe('HfPropagationPage Display cutaway and corridor', () => {
+  it('defaults both toggles off and passes them to the globe', async () => {
+    await renderPage();
+
+    expect(screen.getByRole('checkbox', { name: 'Volumetric cutaway' })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Ray corridor' })).not.toBeChecked();
+    expect(lastGlobeProps?.cutawayEnabled).toBe(false);
+    expect(lastGlobeProps?.rayCorridorEnabled).toBe(false);
+    expect(lastGlobeProps?.sliceBearingDeg).toBe(0);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Volumetric cutaway' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Ray corridor' }));
+    expect(lastGlobeProps?.cutawayEnabled).toBe(true);
+    expect(lastGlobeProps?.rayCorridorEnabled).toBe(true);
+  });
+});
+
 describe('HfPropagationPage transmitter location', () => {
   it('shows labelled 0,0 lat/lon and Use my location in Environment', async () => {
     await renderPage();

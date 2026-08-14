@@ -155,7 +155,9 @@ export default function HfPropagationPage() {
     bearingDeg: 0,
     distanceM: DEFAULT_RANGE_M,
   });
+  const [slicePlaneTouched, setSlicePlaneTouched] = useState(false);
   const onSlicePlaneChange = useCallback((result: SlicePlaneResult) => {
+    setSlicePlaneTouched(true);
     setSlicePlane(result);
   }, []);
 
@@ -189,6 +191,8 @@ export default function HfPropagationPage() {
   const [explodeEnabled, setExplodeEnabled] = useState(false);
   const [fresnelEnabled, setFresnelEnabled] = useState(true);
   const [terminatorEnabled, setTerminatorEnabled] = useState(false);
+  const [cutawayEnabled, setCutawayEnabled] = useState(false);
+  const [rayCorridorEnabled, setRayCorridorEnabled] = useState(false);
   const [visibleLayers, setVisibleLayers] =
     useState<Record<IonosphericLayerId, boolean>>(ALL_LAYERS_VISIBLE);
 
@@ -199,6 +203,8 @@ export default function HfPropagationPage() {
     [antennaType],
   );
   const shownFields = fieldsShownForFamily(antennaFamily);
+  const defaultSliceBearingDeg = shownFields.azimuth ? azimuthDeg : 0;
+  const globeSliceBearingDeg = slicePlaneTouched ? slicePlane.bearingDeg : defaultSliceBearingDeg;
   const antennaConfig = useMemo<AntennaConfig>(
     () => ({
       family: antennaFamily,
@@ -285,6 +291,9 @@ export default function HfPropagationPage() {
                   rays={rays}
                   txLat={txLat}
                   txLon={txLon}
+                  cutawayEnabled={cutawayEnabled}
+                  sliceBearingDeg={globeSliceBearingDeg}
+                  rayCorridorEnabled={rayCorridorEnabled}
                 />
               </Suspense>
             ) : view === 'top-down' ? (
@@ -368,6 +377,16 @@ export default function HfPropagationPage() {
                   checked={terminatorEnabled}
                   onChange={setTerminatorEnabled}
                   label="Show day/night terminator"
+                />
+                <ToggleSwitch
+                  checked={cutawayEnabled}
+                  onChange={setCutawayEnabled}
+                  label="Volumetric cutaway"
+                />
+                <ToggleSwitch
+                  checked={rayCorridorEnabled}
+                  onChange={setRayCorridorEnabled}
+                  label="Ray corridor"
                 />
                 <div className={classes.layerToggles}>
                   {IONOSPHERIC_LAYER_IDS.map((id) => {
