@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { criticalFrequencyMhz, maximumUsableFrequencyMhz } from './mufCalculation.ts';
 import { antennaGain } from './antennaPatterns.ts';
+import { destinationPoint, haversineDistanceM } from '../geoDistance.ts';
 import { dLayerAttenuation, traceRay, traceRayFan } from './rayTrace.ts';
 import type { AntennaConfig, IonosphericLayerState, RayTraceParams } from './types.ts';
 
@@ -45,6 +46,9 @@ function params(overrides: Partial<RayTraceParams> = {}): RayTraceParams {
     antenna: OMNIDIRECTIONAL,
     layers: [F2_DAY],
     azimuthDeg: 0,
+    txLat: 51.5,
+    txLon: -0.13,
+    atMs: 0,
     ...overrides,
   };
 }
@@ -54,10 +58,15 @@ describe('traceRay', () => {
     const highFreq = traceRay(params({ frequencyMhz: 50, layers: [] }), 4);
     expect(highFreq.mode).toBe('groundwave');
     expect(highFreq.relativeSignalStrength).toBe(1);
-    expect(highFreq.points).toEqual([
-      { planeDistanceM: 0, altitudeKm: 0 },
-      { planeDistanceM: 300_000, altitudeKm: 0 },
-    ]);
+    expect(highFreq.points[0]?.lat).toBeCloseTo(51.5, 10);
+    expect(highFreq.points[0]?.lon).toBeCloseTo(-0.13, 10);
+    expect(highFreq.points[0]?.altitudeKm).toBe(0);
+    expect(highFreq.points[1]?.altitudeKm).toBe(0);
+    expect(highFreq.points[1]?.lat).toBeCloseTo(54.19796, 4);
+    expect(highFreq.points[1]?.lon).toBeCloseTo(-0.13, 5);
+    expect(
+      haversineDistanceM(51.5, -0.13, highFreq.points[1]!.lat, highFreq.points[1]!.lon),
+    ).toBeCloseTo(300_000, 0);
     expect(traceRay(params(), 0).mode).toBe('groundwave');
   });
 
@@ -74,11 +83,21 @@ describe('traceRay', () => {
     expect(result.mode).toBe('skywave');
     expect(result.takeoffAngleDeg).toBe(45);
     expect(result.relativeSignalStrength).toBe(1);
-    expect(result.points[0]).toEqual({ planeDistanceM: 0, altitudeKm: 0 });
+    expect(result.points[0]?.lat).toBeCloseTo(51.5, 10);
+    expect(result.points[0]?.lon).toBeCloseTo(-0.13, 10);
+    expect(result.points[0]?.altitudeKm).toBe(0);
     expect(result.points[1]?.altitudeKm).toBe(325); // F2 mid-altitude
-    expect(result.points[1]?.planeDistanceM).toBeCloseTo(325_000, 0);
+    const apex = destinationPoint(51.5, -0.13, 0, 325_000);
+    expect(result.points[1]?.lat).toBeCloseTo(apex.lat, 10);
+    expect(result.points[1]?.lon).toBeCloseTo(apex.lon, 10);
+    expect(result.points[1]?.lat).toBeCloseTo(54.4228, 4);
+    expect(
+      haversineDistanceM(51.5, -0.13, result.points[1]!.lat, result.points[1]!.lon),
+    ).toBeCloseTo(325_000, 0);
     expect(result.points[2]).toMatchObject({ altitudeKm: 0 });
-    expect(result.points[2]?.planeDistanceM).toBeCloseTo(650_000, 0);
+    expect(
+      haversineDistanceM(51.5, -0.13, result.points[2]!.lat, result.points[2]!.lon),
+    ).toBeCloseTo(650_000, 0);
   });
 
   it('classifies a frequency below layer MUF at takeoff ≥ 70° as nvis', () => {
@@ -230,5 +249,28 @@ describe('traceRayFan', () => {
     expect(offAxis).toHaveLength(11);
     expect(reverse).toHaveLength(0);
     expect(onAxis.length).toBeGreaterThan(offAxis.length);
+  });
+
+  it('maps every fan point onto the sphere with valid lat/lon (TX, poles, antimeridian)', () => {
+    const sites = [
+      { txLat: 51.5, txLon: -0.13 },
+      { txLat: 89.5, txLon: 0 },
+      { txLat: -89.5, txLon: 45 },
+      { txLat: 0, txLon: 179.5 },
+    ];
+    for (const site of sites) {
+      const fan = traceRayFan(params({ frequencyMhz, ...site }));
+      expect(fan.length).toBeGreaterThan(0);
+      for (const ray of fan) {
+        for (const point of ray.points) {
+          expect(Number.isFinite(point.lat)).toBe(true);
+          expect(Number.isFinite(point.lon)).toBe(true);
+          expect(point.lat).toBeGreaterThanOrEqual(-90);
+          expect(point.lat).toBeLessThanOrEqual(90);
+          expect(point.lon).toBeGreaterThanOrEqual(-180);
+          expect(point.lon).toBeLessThanOrEqual(180);
+        }
+      }
+    }
   });
 });

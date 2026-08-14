@@ -7,6 +7,7 @@ import type {
 } from './types.ts';
 import { antennaGain } from './antennaPatterns.ts';
 import { criticalFrequencyMhz, maximumUsableFrequencyMhz } from './mufCalculation.ts';
+import { destinationPoint } from '../geoDistance.ts';
 
 const GROUNDWAVE_MAX_RANGE_KM = 300; // typical single-hop groundwave upper bound at HF
 const NVIS_MIN_TAKEOFF_DEG = 70; // per background.md's NVIS elevation-angle range (70-90°)
@@ -49,9 +50,8 @@ function applyDLayerAbsorption(
 }
 
 /**
- * Trace one ray at a given takeoff angle through the active ionospheric layers, in a single
- * vertical plane (2D: plane-distance vs. altitude), classifying its propagation mode.
- * Applies D-layer absorption to skywave/NVIS; sphere mapping is a later slice.
+ * Trace one ray at a given takeoff angle through the active ionospheric layers, classifying
+ * its propagation mode and mapping path points onto the sphere from the transmitter location.
  */
 export function traceRay(params: RayTraceParams, takeoffAngleDeg: number): RayPathResult {
   const activeLayers = params.layers
@@ -64,8 +64,8 @@ export function traceRay(params: RayTraceParams, takeoffAngleDeg: number): RayPa
     return {
       mode: 'groundwave',
       points: [
-        { planeDistanceM: 0, altitudeKm: 0 },
-        { planeDistanceM: GROUNDWAVE_MAX_RANGE_KM * 1000, altitudeKm: 0 },
+        toSpherePoint(params, 0, 0),
+        toSpherePoint(params, GROUNDWAVE_MAX_RANGE_KM * 1000, 0),
       ],
       takeoffAngleDeg,
       relativeSignalStrength: 1.0,
@@ -80,7 +80,7 @@ export function traceRay(params: RayTraceParams, takeoffAngleDeg: number): RayPa
     if (params.frequencyMhz <= muf) {
       const classified: PropagationMode =
         takeoffAngleDeg >= NVIS_MIN_TAKEOFF_DEG ? 'nvis' : 'skywave';
-      const points = buildReflectionPathPoints(layer, takeoffAngleDeg);
+      const points = buildReflectionPathPoints(params, layer, takeoffAngleDeg);
       const absorbed = applyDLayerAbsorption(
         classified,
         params.frequencyMhz,
@@ -94,18 +94,26 @@ export function traceRay(params: RayTraceParams, takeoffAngleDeg: number): RayPa
   // No active layer can reflect this frequency at this angle — the ray escapes into space.
   return {
     mode: 'escaped',
-    points: buildEscapePathPoints(activeLayers, takeoffAngleDeg),
+    points: buildEscapePathPoints(params, activeLayers, takeoffAngleDeg),
     takeoffAngleDeg,
     relativeSignalStrength: 0,
   };
 }
 
-/** Simple triangular up-and-down path to the reflecting layer's mid-altitude, in plane
- * coordinates. A geometrically simplified single-hop path — not a curved refraction trace
- * (that level of fidelity is not required for correct mode classification, which is this
- * phase's job; a smoother curve is a plausible future visual-polish refinement, not required
- * for #1170's rendering to look reasonable at this altitude/distance scale). */
+function toSpherePoint(
+  params: RayTraceParams,
+  planeDistanceM: number,
+  altitudeKm: number,
+): RayPathPoint {
+  const dest = destinationPoint(params.txLat, params.txLon, params.azimuthDeg, planeDistanceM);
+  return { lat: dest.lat, lon: dest.lon, altitudeKm };
+}
+
+/** Simple triangular up-and-down path to the reflecting layer's mid-altitude, mapped onto the
+ * sphere along `params.azimuthDeg`. Horizontal distances are the same plane geometry as before;
+ * only the final conversion is now a forward geodesic. */
 function buildReflectionPathPoints(
+  params: RayTraceParams,
   layer: IonosphericLayerState,
   takeoffAngleDeg: number,
 ): RayPathPoint[] {
@@ -113,15 +121,16 @@ function buildReflectionPathPoints(
   const takeoffRad = (takeoffAngleDeg * Math.PI) / 180;
   const horizontalToApexM = (midAltitudeKm / Math.tan(takeoffRad)) * 1000;
   return [
-    { planeDistanceM: 0, altitudeKm: 0 },
-    { planeDistanceM: horizontalToApexM, altitudeKm: midAltitudeKm },
-    { planeDistanceM: horizontalToApexM * 2, altitudeKm: 0 },
+    toSpherePoint(params, 0, 0),
+    toSpherePoint(params, horizontalToApexM, midAltitudeKm),
+    toSpherePoint(params, horizontalToApexM * 2, 0),
   ];
 }
 
 /** Path points for a ray that escapes — drawn continuing outward past the outermost active
  * layer rather than terminating, per the UI spec's "escaped" visual convention. */
 function buildEscapePathPoints(
+  params: RayTraceParams,
   activeLayers: IonosphericLayerState[],
   takeoffAngleDeg: number,
 ): RayPathPoint[] {
@@ -132,8 +141,8 @@ function buildEscapePathPoints(
   const takeoffRad = (takeoffAngleDeg * Math.PI) / 180;
   const horizontalM = (escapeAltitudeKm / Math.tan(takeoffRad)) * 1000;
   return [
-    { planeDistanceM: 0, altitudeKm: 0 },
-    { planeDistanceM: horizontalM, altitudeKm: escapeAltitudeKm },
+    toSpherePoint(params, 0, 0),
+    toSpherePoint(params, horizontalM, escapeAltitudeKm),
   ];
 }
 

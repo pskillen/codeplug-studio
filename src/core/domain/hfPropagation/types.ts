@@ -4,8 +4,9 @@
  * Growing scaffold for the visualiser. `IonosphericLayerState` field names (`peakElectronDensity`,
  * `altitudeMinKm`, `altitudeMaxKm`) are load-bearing for the ray-trace stepper (#1168) — do not
  * rename them. `AntennaConfig.family`'s string-literal values are load-bearing for #1166.
- * `RayPathResult.points` are 2D plane coordinates in this phase; phase 7 maps them onto the
- * sphere and adds `txLat`/`txLon`/`atMs` to `RayTraceParams`.
+ * `RayPathResult.points` are sphere-mapped `{ lat, lon, altitudeKm }` triples. `RayTraceParams`
+ * includes `txLat`/`txLon`/`atMs` for the Worker contract (`atMs` is unused by the domain math
+ * in this module).
  */
 
 export type AntennaPatternFamily =
@@ -36,9 +37,8 @@ export interface IonosphericLayerState {
 export type PropagationMode = 'groundwave' | 'skywave' | 'nvis' | 'escaped' | 'absorbed';
 
 export interface RayPathPoint {
-  /** 2D-plane coordinates in this phase — elevation-plane distance (m) and altitude (km), NOT
-   * yet lat/lon. Phase 7 maps these onto the sphere and replaces this with { lat, lon, altitudeKm }. */
-  planeDistanceM: number;
+  lat: number;
+  lon: number;
   altitudeKm: number;
 }
 
@@ -55,4 +55,8 @@ export interface RayTraceParams {
   antenna: AntennaConfig;
   layers: IonosphericLayerState[];
   azimuthDeg: number;
+  txLat: number;
+  txLon: number;
+  /** Instant for the Worker contract. Unused by domain ray-trace math (ionospheric layers are supplied already). */
+  atMs: number;
 }
