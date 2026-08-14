@@ -112,9 +112,14 @@ function writeAsciiPad0(data: Uint8Array, offset: number, text: string, length: 
   }
 }
 
+/**
+ * Advance a BCD nibble cursor the way qdmr `Offset::Bit::operator+` does:
+ * bits are counted from the MSB of each byte, so `{b, 4} + 4` is `{b, 0}`
+ * (high then low nibble), not the next byte's low nibble.
+ */
 function addBits(byte: number, bit: number, delta: number): { byte: number; bit: number } {
-  const total = byte * 8 + bit + delta;
-  return { byte: Math.floor(total / 8), bit: total % 8 };
+  const tmp = 8 * byte + (7 - bit) + delta;
+  return { byte: Math.floor(tmp / 8), bit: 7 - (tmp % 8) };
 }
 
 function writeDigit(data: Uint8Array, byte: number, bit: number, digit: number): void {

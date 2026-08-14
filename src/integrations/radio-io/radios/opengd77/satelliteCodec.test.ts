@@ -99,10 +99,26 @@ describe('packSatelliteBank', () => {
     expect(readU32Le(rec, 0x38)).toBe(670);
   });
 
-  it('encodes epoch year 24 in BCD at {0x08,4}', () => {
+  it('encodes Keplerian BCD high-nibble-then-low (qdmr Bit::operator+)', () => {
     const rec = packSatelliteBank([makeSatellite()]).subarray(0x08, 0x08 + SATELLITE_RECORD_BYTES);
+    // Year 24 occupies both nibbles of 0x08 — not 0x08 high + 0x09 low.
     expect(nibble(rec, 0x08, true)).toBe(2);
+    expect(nibble(rec, 0x08, false)).toBe(4);
+    // Epoch day 045.… starts at 0x09 high; decimal point is 0x0a low.
+    expect(nibble(rec, 0x09, true)).toBe(0);
     expect(nibble(rec, 0x09, false)).toBe(4);
+    expect(nibble(rec, 0x0a, true)).toBe(5);
+    expect(nibble(rec, 0x0a, false)).toBe(0xa);
+    // Inclination 051.6416 at 0x14–0x17; must not overlap RAAN at 0x18.
+    expect(nibble(rec, 0x14, true)).toBe(0);
+    expect(nibble(rec, 0x14, false)).toBe(5);
+    expect(nibble(rec, 0x15, true)).toBe(1);
+    expect(nibble(rec, 0x15, false)).toBe(0xa);
+    expect(nibble(rec, 0x16, true)).toBe(6);
+    expect(nibble(rec, 0x16, false)).toBe(4);
+    expect(nibble(rec, 0x17, true)).toBe(1);
+    expect(nibble(rec, 0x18, true)).toBe(2);
+    expect(nibble(rec, 0x18, false)).toBe(4);
   });
 
   it('maps APRS and beacon transmitters into the fixed slots', () => {

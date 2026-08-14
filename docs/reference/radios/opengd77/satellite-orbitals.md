@@ -90,7 +90,9 @@ qdmr `writeDigit` / `writeInteger` / `writeFractional` / `writeFixedPoint`:
 | `0xb`       | Blank         |
 | `0xc`       | Minus         |
 
-Each `Offset::Bit` is `{ byte, bit }` with `bit` `0` (low nibble) or `4` (high nibble). Implementers must match qdmr’s integer / fractional / sign placement (the setters below encode the widths).
+Each `Offset::Bit` is `{ byte, bit }` with `bit` `0` (low nibble) or `4` (high nibble). qdmr advances that cursor from the **MSB of the byte** (`codeplug.hh` `Bit::operator+`): `{b, 4} + 4 bits` → `{b, 0}`, then `{b+1, 4}`. Linear `byte*8+bit` addressing skips the low nibble and overlaps the next Keplerian field — firmware then predicts garbage elevation / zigzag tracks. Implementers must match qdmr’s integer / fractional / sign placement (the setters below encode the widths).
+
+Worked example: epoch year `24` at `{0x08, 4}` occupies **both nibbles of `0x08`** (`0x24`). Inclination `51.6416` at `{0x14, 4}` is bytes `05 1a 64 16` (`051.6416`) and must not spill into RAAN at `{0x18, 4}`.
 
 ### Fields
 
