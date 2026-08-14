@@ -37,7 +37,7 @@ const HfPropagationGlobe = lazy(
 </Suspense>;
 ```
 
-`HfPropagationPage.tsx` renders this only when its View `SegmentedControl` is set to `'globe'`. `'top-down'` uses [`PropagationTopDownMap`](../PropagationTopDownMap/PropagationTopDownMap.md); `'vertical-slice'` is still a placeholder (#1172).
+`HfPropagationPage.tsx` renders this only when its View `SegmentedControl` is set to `'globe'`. `'top-down'` uses [`PropagationTopDownMap`](../PropagationTopDownMap/PropagationTopDownMap.md); `'vertical-slice'` uses [`PropagationVerticalSlice`](../PropagationVerticalSlice/PropagationVerticalSlice.md).
 
 ## Behaviour
 
