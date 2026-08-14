@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { channelListColumnsKey, channelListColumnsSchemaKey } from './keys.ts';
-import { loadChannelVisibleColumns, loadStringArray, saveStringArray } from './columnVisibility.ts';
+import { channelListColumnsKey, channelListColumnsSchemaKey, channelListCardColumnsKey, channelListCardColumnsSchemaKey } from './keys.ts';
+import { loadChannelCardVisibleColumns, loadChannelVisibleColumns, loadStringArray, saveStringArray } from './columnVisibility.ts';
 
 function createLocalStorageMock() {
   const store = new Map<string, string>();
@@ -53,6 +53,12 @@ describe('columnVisibility', () => {
   it('loadChannelVisibleColumns returns defaults when nothing stored', () => {
     const cols = loadChannelVisibleColumns('proj-2', new Set(['band']), ['band'], 1);
     expect(cols).toEqual(['band']);
+  });
+
+  it('loadChannelCardVisibleColumns returns defaults when nothing stored', () => {
+    const cols = loadChannelCardVisibleColumns('proj-3', new Set(['band', 'mode']), ['band'], 1);
+    expect(cols).toEqual(['band']);
+    expect(localStorage.getItem(channelListCardColumnsSchemaKey('proj-3'))).toBe('1');
   });
 });
 

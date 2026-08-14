@@ -82,6 +82,7 @@ export function useChannelListQuery(): ChannelListQuery {
   const modeFilter = useMemo(() => parseCsvParam(searchParams.get('mode')), [searchParams]);
   const duplexRaw = searchParams.get('duplex');
   const duplexFilter = duplexRaw === 'simplex' || duplexRaw === 'split' ? duplexRaw : null;
+  const zoneFilter = useMemo(() => parseCsvParam(searchParams.get('zone')), [searchParams]);
   const distanceFilterEnabled = searchParams.get('distance') === '1';
   const maxDistanceKm = parseMaxDistanceKm(searchParams.get('maxKm'));
 
@@ -175,9 +176,13 @@ export function useChannelListQuery(): ChannelListQuery {
     [updateParams, persistPrefs],
   );
 
-  const setZoneFilter = useCallback((_value: string[]) => {
-    // Wired in slice 2 (URL + localStorage persistence).
-  }, []);
+  const setZoneFilter = useCallback(
+    (value: string[]) => {
+      updateParams((p) => setOrDelete(p, 'zone', serializeCsvParam(value)));
+      persistPrefs({ zone: value });
+    },
+    [updateParams, persistPrefs],
+  );
 
   return {
     nameFilter,
@@ -187,7 +192,7 @@ export function useChannelListQuery(): ChannelListQuery {
     bandFilter,
     modeFilter,
     duplexFilter,
-    zoneFilter: [],
+    zoneFilter,
     distanceFilterEnabled,
     maxDistanceKm,
     setNameFilter,

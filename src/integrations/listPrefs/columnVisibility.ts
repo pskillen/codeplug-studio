@@ -1,4 +1,4 @@
-import { channelListColumnsKey, channelListColumnsSchemaKey } from './keys.ts';
+import { channelListColumnsKey, channelListColumnsSchemaKey, channelListCardColumnsKey, channelListCardColumnsSchemaKey } from './keys.ts';
 
 function readRaw(key: string): string | null {
   try {
@@ -44,6 +44,30 @@ export function loadChannelVisibleColumns(
 ): string[] {
   const storageKey = channelListColumnsKey(projectId);
   const schemaKey = channelListColumnsSchemaKey(projectId);
+
+  const cols = loadStringArray(storageKey, validKeys, defaultColumns);
+
+  try {
+    const schema = Number.parseInt(readRaw(schemaKey) ?? '0', 10);
+    if (schema < schemaVersion) {
+      saveStringArray(storageKey, cols);
+      globalThis.localStorage?.setItem(schemaKey, String(schemaVersion));
+    }
+  } catch {
+    /* ignore */
+  }
+
+  return cols;
+}
+
+export function loadChannelCardVisibleColumns(
+  projectId: string,
+  validKeys: Set<string>,
+  defaultColumns: string[],
+  schemaVersion: number,
+): string[] {
+  const storageKey = channelListCardColumnsKey(projectId);
+  const schemaKey = channelListCardColumnsSchemaKey(projectId);
 
   const cols = loadStringArray(storageKey, validKeys, defaultColumns);
 

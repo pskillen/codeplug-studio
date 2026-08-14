@@ -23,9 +23,19 @@ export interface ChannelListPrefs {
   band?: string[];
   mode?: string[];
   duplex?: 'simplex' | 'split' | null;
+  zone?: string[];
   distanceFilterEnabled?: boolean;
   maxDistanceKm?: number;
   columnSort?: DataTableSortState | null;
+}
+
+export type ChannelListLayoutMode = 'table' | 'cards';
+
+export type ChannelListCardGroupMode = 'none' | 'zone' | 'band' | 'duplex';
+
+export interface ChannelListLayoutPrefs {
+  layout?: ChannelListLayoutMode;
+  cardGroup?: ChannelListCardGroupMode;
 }
 
 export interface EntityListPrefs {

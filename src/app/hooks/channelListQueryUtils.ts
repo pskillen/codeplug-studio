@@ -1,13 +1,16 @@
 import { DISTANCE_FILTER_MARKS_KM } from '../lib/channels.ts';
-import { loadChannelVisibleColumns as loadChannelVisibleColumnsFromStorage } from '@integrations/listPrefs/index.ts';
+import { loadChannelVisibleColumns as loadChannelVisibleColumnsFromStorage, loadChannelCardVisibleColumns as loadChannelCardVisibleColumnsFromStorage } from '@integrations/listPrefs/index.ts';
 
 export {
   channelListColumnsKey,
   channelListColumnsSchemaKey,
+  channelListCardColumnsKey,
+  channelListCardColumnsSchemaKey,
 } from '@integrations/listPrefs/index.ts';
 export type { ChannelSortMode } from '@integrations/listPrefs/index.ts';
 
 export const CHANNEL_LIST_COLUMNS_SCHEMA_VERSION = 3;
+export const CHANNEL_LIST_CARD_COLUMNS_SCHEMA_VERSION = 1;
 
 export const CHANNEL_OPTIONAL_COLUMNS = [
   { key: 'zones', header: 'Zones', defaultVisible: true },
@@ -36,6 +39,16 @@ export function loadChannelVisibleColumns(projectId: string): string[] {
     validKeys,
     defaultChannelVisibleColumns(),
     CHANNEL_LIST_COLUMNS_SCHEMA_VERSION,
+  );
+}
+
+export function loadChannelCardVisibleColumns(projectId: string): string[] {
+  const validKeys = new Set(CHANNEL_OPTIONAL_COLUMNS.map((c) => c.key));
+  return loadChannelCardVisibleColumnsFromStorage(
+    projectId,
+    validKeys,
+    defaultChannelVisibleColumns(),
+    CHANNEL_LIST_CARD_COLUMNS_SCHEMA_VERSION,
   );
 }
 

@@ -1,10 +1,11 @@
 import type { Channel, Zone } from '@core/models/library.ts';
+import type { ChannelListCardGroupMode } from '@integrations/listPrefs/index.ts';
 import { ALL_BANDS, bandFromChannel } from '../../../lib/bands.ts';
 import { isSimplex } from '../../../lib/channels.ts';
 import { CHANNEL_ZONE_FILTER_NONE } from './channelListZoneFilter.ts';
 import { groupChannelsByZone, type ChannelZoneGroup } from './groupChannelsByZone.ts';
 
-export type ChannelCardGroupMode = 'none' | 'zone' | 'band' | 'duplex';
+export type { ChannelListCardGroupMode as ChannelCardGroupMode } from '@integrations/listPrefs/index.ts';
 
 export interface ChannelListGroup {
   key: string;
@@ -107,7 +108,7 @@ export function groupChannelsByDuplex(channels: Channel[]): ChannelListGroup[] {
 export function groupChannelsForCardView(
   channels: Channel[],
   zones: Zone[],
-  groupMode: Exclude<ChannelCardGroupMode, 'none'>,
+  groupMode: Exclude<ChannelListCardGroupMode, 'none'>,
   zoneFilter: string[] = [],
 ): ChannelListGroup[] {
   switch (groupMode) {
