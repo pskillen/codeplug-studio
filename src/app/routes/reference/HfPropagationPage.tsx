@@ -92,7 +92,10 @@ const DEFAULT_EXAGGERATION = 2.5;
 function fieldsShownForFamily(family: AntennaPatternFamily) {
   return {
     height: family === 'omnidirectional-vertical' || family === 'bidirectional-transverse',
-    azimuth: family === 'bidirectional-transverse' || family === 'directional-lobe',
+    azimuth:
+      family === 'bidirectional-transverse' ||
+      family === 'directional-lobe' ||
+      family === 'multi-lobe-conical',
     wireLength: family === 'multi-lobe-conical',
   };
 }
