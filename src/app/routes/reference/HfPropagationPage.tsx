@@ -1,6 +1,6 @@
 import { Input, Select, Slider, Stack, Text } from '@mantine/core';
 import { IconCalendar } from '@tabler/icons-react';
-import { lazy, Suspense, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useRef, useState } from 'react';
 import { peakGainElevationDeg } from '@core/domain/hfPropagation/antennaPatterns.ts';
 import { computeIonosphericLayers } from '@core/domain/hfPropagation/ionosphericProfile.ts';
 import { colorForLayer, IONOSPHERIC_LAYER_IDS } from '@core/domain/hfPropagation/layerColor.ts';
@@ -18,11 +18,13 @@ import {
   SegmentedControl,
   ToggleSwitch,
 } from '../../components/v2/index.ts';
+import { useMapSettings } from '../../hooks/useMapSettings.ts';
 import {
   formatDatetimeLocalValue,
   formatUkDateTime,
   parseUkDateTime,
 } from './hfPropagationDateTime.ts';
+import SlicePlanePicker, { DEFAULT_RANGE_M, type SlicePlaneResult } from './SlicePlanePicker.tsx';
 import classes from './HfPropagationPage.module.css';
 
 const HfPropagationGlobe = lazy(
@@ -102,9 +104,10 @@ function fieldsShownForFamily(family: AntennaPatternFamily) {
   };
 }
 
-/** Placeholder transmitter site until the slice-plane picker (#1167) supplies lat/lon. */
+/** Placeholder transmitter site until a dedicated TX-location control lands. */
 const DEFAULT_TX_LAT_DEG = 0;
 const DEFAULT_TX_LON_DEG = 0;
+const DEFAULT_TX_LOCATION = { lat: DEFAULT_TX_LAT_DEG, lon: DEFAULT_TX_LON_DEG };
 
 function layerToggleAriaLabel(id: IonosphericLayerId): string {
   return `${id} layer`;
@@ -119,7 +122,15 @@ const ALL_LAYERS_VISIBLE: Record<IonosphericLayerId, boolean> = {
 
 export default function HfPropagationPage() {
   const dateTimePickerRef = useRef<HTMLInputElement>(null);
+  const { mapboxToken } = useMapSettings();
   const [view, setView] = useState<PropagationView>('globe');
+  const [slicePlane, setSlicePlane] = useState<SlicePlaneResult>({
+    bearingDeg: 0,
+    distanceM: DEFAULT_RANGE_M,
+  });
+  const onSlicePlaneChange = useCallback((result: SlicePlaneResult) => {
+    setSlicePlane(result);
+  }, []);
 
   const [frequencyMhz, setFrequencyMhz] = useState(14.2);
   const [powerW, setPowerW] = useState(100);
@@ -165,8 +176,8 @@ export default function HfPropagationPage() {
   const layers = useMemo(
     () =>
       computeIonosphericLayers(
-        DEFAULT_TX_LAT_DEG,
-        DEFAULT_TX_LON_DEG,
+        DEFAULT_TX_LOCATION.lat,
+        DEFAULT_TX_LOCATION.lon,
         dateTime.getTime(),
         solarPreset,
       ),
@@ -214,7 +225,9 @@ export default function HfPropagationPage() {
             ) : (
               <div className={classes.viewportPlaceholder}>
                 <Text size="sm" c="dimmed">
-                  This view isn&apos;t implemented yet.
+                  {view === 'vertical-slice'
+                    ? `This view isn't implemented yet. Slice plane: ${slicePlane.bearingDeg.toFixed(0)}°T, ${(slicePlane.distanceM / 1000).toFixed(0)} km.`
+                    : "This view isn't implemented yet."}
                 </Text>
               </div>
             )}
@@ -224,6 +237,17 @@ export default function HfPropagationPage() {
             <Panel title="View">
               <SegmentedControl options={VIEW_OPTIONS} value={view} onChange={setView} />
             </Panel>
+
+            {view === 'vertical-slice' ? (
+              <Panel title="Slice plane">
+                <SlicePlanePicker
+                  transmitterLocation={DEFAULT_TX_LOCATION}
+                  defaultBearingDeg={shownFields.azimuth ? azimuthDeg : 0}
+                  onChange={onSlicePlaneChange}
+                  mapboxToken={mapboxToken}
+                />
+              </Panel>
+            ) : null}
 
             <Panel title="Display">
               <Stack gap="lg">
