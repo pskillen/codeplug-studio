@@ -12,10 +12,7 @@ export const RAY_TRACE_DEBOUNCE_MS = 200;
  *
  * Pass `enabled: false` to skip the Worker (reuse the primary results instead).
  */
-export function usePropagationRayTrace(
-  params: RayTraceParams,
-  enabled = true,
-): RayPathResult[] {
+export function usePropagationRayTrace(params: RayTraceParams, enabled = true): RayPathResult[] {
   const [rays, setRays] = useState<RayPathResult[]>([]);
 
   useEffect(() => {

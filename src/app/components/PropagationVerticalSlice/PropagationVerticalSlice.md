@@ -6,11 +6,11 @@ Hand-rolled SVG height-vs-distance chart for the [HF/RF propagation visualiser](
 
 ## Props
 
-| Prop        | Type                      | Notes                                                                                          |
-| ----------- | ------------------------- | ---------------------------------------------------------------------------------------------- |
-| `layers`    | `IonosphericLayerState[]` | Same TX-local layers as the globe. Only `active` layers get a band.                            |
+| Prop        | Type                      | Notes                                                                                                                |
+| ----------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `layers`    | `IonosphericLayerState[]` | Same TX-local layers as the globe. Only `active` layers get a band.                                                  |
 | `ray`       | `RayPathResult \| null`   | Dominant ray from the primary Worker result when the slice bearing matches heading; otherwise the off-heading trace. |
-| `maxRangeM` | `number`                  | Horizontal scale — the picker’s `distanceM` (bearing-mode default 4,000 km).                   |
+| `maxRangeM` | `number`                  | Horizontal scale — the picker’s `distanceM` (bearing-mode default 4,000 km).                                         |
 
 ## Usage
 
@@ -22,7 +22,11 @@ const PropagationVerticalSlice = lazy(
 );
 
 <Suspense fallback={<div>Loading vertical slice…</div>}>
-  <PropagationVerticalSlice layers={layers} ray={verticalSliceRay} maxRangeM={slicePlane.distanceM} />
+  <PropagationVerticalSlice
+    layers={layers}
+    ray={verticalSliceRay}
+    maxRangeM={slicePlane.distanceM}
+  />
 </Suspense>;
 ```
 
