@@ -216,9 +216,7 @@ export default function HfPropagationGlobe({
     const objects: Array<
       IonosphericLayerState | NightShadeLayer | SunMarkerLayer | RayCorridorLayer
     > = visibleShells.map((layer) =>
-      subsolar
-        ? { ...layer, sunLatDeg: subsolar.sunLatDeg, sunLonDeg: subsolar.sunLonDeg }
-        : layer,
+      subsolar ? { ...layer, sunLatDeg: subsolar.sunLatDeg, sunLonDeg: subsolar.sunLonDeg } : layer,
     );
     if (subsolar) {
       objects.push({
