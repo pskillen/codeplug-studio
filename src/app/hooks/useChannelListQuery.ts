@@ -28,6 +28,7 @@ export interface ChannelListQuery {
   bandFilter: string[];
   modeFilter: string[];
   duplexFilter: string | null;
+  zoneFilter: string[];
   distanceFilterEnabled: boolean;
   maxDistanceKm: number;
   setNameFilter: (value: string) => void;
@@ -35,6 +36,7 @@ export interface ChannelListQuery {
   setBandFilter: (value: string[]) => void;
   setModeFilter: (value: string[]) => void;
   setDuplexFilter: (value: string | null) => void;
+  setZoneFilter: (value: string[]) => void;
   setDistanceFilterEnabled: (value: boolean) => void;
   setMaxDistanceKm: (value: number) => void;
 }
@@ -173,6 +175,10 @@ export function useChannelListQuery(): ChannelListQuery {
     [updateParams, persistPrefs],
   );
 
+  const setZoneFilter = useCallback((_value: string[]) => {
+    // Wired in slice 2 (URL + localStorage persistence).
+  }, []);
+
   return {
     nameFilter,
     nameFilterInput,
@@ -181,6 +187,7 @@ export function useChannelListQuery(): ChannelListQuery {
     bandFilter,
     modeFilter,
     duplexFilter,
+    zoneFilter: [],
     distanceFilterEnabled,
     maxDistanceKm,
     setNameFilter,
@@ -188,6 +195,7 @@ export function useChannelListQuery(): ChannelListQuery {
     setBandFilter,
     setModeFilter,
     setDuplexFilter,
+    setZoneFilter,
     setDistanceFilterEnabled,
     setMaxDistanceKm,
   };

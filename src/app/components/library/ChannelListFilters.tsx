@@ -14,10 +14,10 @@ import { useOperatorPosition } from '../../state/operatorPosition.tsx';
 /** Band, duplex, and distance facets for the channels list (mk2 L2 facet bar). */
 export default function ChannelListFilters() {
   const { library } = useLibrary();
-  const { channels } = library;
+  const { channels, zones } = library;
   const { position, setPosition } = useOperatorPosition();
   const query = useChannelListQuery();
-  const filtered = useFilteredChannels(channels, query, position);
+  const filtered = useFilteredChannels(channels, query, position, zones);
 
   const bandOptions = useMemo(() => {
     const ids = new Set<string>(query.bandFilter);

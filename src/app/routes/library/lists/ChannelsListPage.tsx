@@ -118,7 +118,7 @@ export default function ChannelsListPage() {
   const { position, setPosition, clearPosition } = useOperatorPosition();
   const query = useChannelListQuery();
   const isMobileTable = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
-  const filtered = useFilteredChannels(channels, query, position, { skipSort: true });
+  const filtered = useFilteredChannels(channels, query, position, zones, { skipSort: true });
   const [columnSortOverride, setColumnSortOverride] = usePersistedChannelColumnSort();
   const [groupMode, setGroupMode] = useState<ChannelGroupMode>('list');
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
