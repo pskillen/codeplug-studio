@@ -141,6 +141,9 @@ const ALL_LAYERS_VISIBLE: Record<IonosphericLayerId, boolean> = {
   F2: true,
 };
 
+/** Slice-plane bearing vs antenna heading — reuse the primary Worker result within this. */
+const SLICE_BEARING_EPSILON_DEG = 0.5;
+
 export default function HfPropagationPage() {
   const dateTimePickerRef = useRef<HTMLInputElement>(null);
   const { mapboxToken } = useMapSettings();
@@ -231,8 +234,18 @@ export default function HfPropagationPage() {
     [frequencyMhz, antennaConfig, layers, azimuthDeg, txLat, txLon, dateTime],
   );
   const rays = usePropagationRayTrace(rayTraceParams);
+  const sliceOffHeading =
+    view === 'vertical-slice' &&
+    Math.abs(slicePlane.bearingDeg - azimuthDeg) > SLICE_BEARING_EPSILON_DEG;
+  const sliceRayTraceParams = useMemo(
+    () => ({ ...rayTraceParams, azimuthDeg: slicePlane.bearingDeg }),
+    [rayTraceParams, slicePlane.bearingDeg],
+  );
+  const sliceRays = usePropagationRayTrace(sliceRayTraceParams, sliceOffHeading);
+  const verticalSliceRays = sliceOffHeading ? sliceRays : rays;
   const dominant = dominantRay(rays);
   const modeReadout = dominant ? MODE_LABELS[dominant.mode] : '—';
+  const verticalSliceRay = dominantRay(verticalSliceRays);
 
   return (
     <DesignSystemV2Provider>
@@ -284,9 +297,13 @@ export default function HfPropagationPage() {
                 <PropagationTopDownMap transmitter={txLocation} rays={rays} />
               </Suspense>
             ) : (
-              <div className={classes.viewportPlaceholder}>
+              <div
+                className={classes.viewportPlaceholder}
+                data-testid="vertical-slice-ray-mode"
+                data-mode={verticalSliceRay?.mode ?? ''}
+              >
                 <Text size="sm" c="dimmed">
-                  {`This view isn't implemented yet. Slice plane: ${slicePlane.bearingDeg.toFixed(0)}°T, ${(slicePlane.distanceM / 1000).toFixed(0)} km.`}
+                  {`This view isn't implemented yet. Slice plane: ${slicePlane.bearingDeg.toFixed(0)}°T, ${(slicePlane.distanceM / 1000).toFixed(0)} km. ${verticalSliceRay ? MODE_LABELS[verticalSliceRay.mode] : 'No ray'}.`}
                 </Text>
               </div>
             )}

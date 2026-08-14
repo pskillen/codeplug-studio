@@ -1,6 +1,6 @@
 import { MantineProvider } from '@mantine/core';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RAY_TRACE_DEBOUNCE_MS } from './usePropagationRayTrace.ts';
 import HfPropagationPage from './HfPropagationPage.tsx';
 
@@ -53,6 +53,24 @@ async function renderPage() {
   return view;
 }
 
+beforeEach(() => {
+  lastGlobeProps = null;
+  lastTopDownProps = null;
+  requestRayTrace.mockReset();
+  requestRayTrace.mockImplementation(async () => [
+    {
+      mode: 'skywave',
+      points: [
+        { lat: 0, lon: 0, altitudeKm: 0 },
+        { lat: 0, lon: 20, altitudeKm: 0 },
+      ],
+      takeoffAngleDeg: 20,
+      relativeSignalStrength: 0.9,
+    },
+  ]);
+  HTMLElement.prototype.scrollIntoView = vi.fn();
+});
+
 describe('HfPropagationPage slice-plane picker', () => {
   it('hides the slice-plane picker until Vertical slice is selected', async () => {
     await renderPage();
@@ -102,6 +120,94 @@ describe('HfPropagationPage top-down view', () => {
     expect(lastTopDownProps?.transmitter).toEqual({ lat: 0, lon: 0 });
     expect(lastTopDownProps?.rays).toBe(globeRays);
     expect(requestRayTrace.mock.calls.length).toBe(callsAfterGlobe);
+  });
+});
+
+describe('HfPropagationPage dual ray-trace', () => {
+  it('reuses the primary Worker result when the slice bearing matches heading', async () => {
+    await renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('Skywave')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vertical slice' }));
+    expect(screen.getByTestId('slice-plane-readout')).toBeInTheDocument();
+
+    await waitFor(
+      () => {
+        expect(requestRayTrace).toHaveBeenCalledWith(expect.objectContaining({ azimuthDeg: 0 }));
+      },
+      { timeout: RAY_TRACE_DEBOUNCE_MS + 2000 },
+    );
+    const callsWhileOffHeading = requestRayTrace.mock.calls.length;
+
+    const bearingThumb = screen.getByRole('slider', { name: 'Slice-plane bearing' });
+    for (let i = 0; i < 90; i++) {
+      fireEvent.keyDown(bearingThumb, { key: 'ArrowRight' });
+    }
+    expect(screen.getByTestId('slice-plane-readout')).toHaveTextContent(/090°T/);
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, RAY_TRACE_DEBOUNCE_MS + 50);
+    });
+    expect(requestRayTrace.mock.calls.length).toBe(callsWhileOffHeading);
+    expect(screen.getByTestId('vertical-slice-ray-mode')).toHaveAttribute('data-mode', 'skywave');
+  });
+
+  it('issues a second Worker request when the slice bearing differs from heading', async () => {
+    const headingRay = {
+      mode: 'skywave' as const,
+      points: [
+        { lat: 0, lon: 0, altitudeKm: 0 },
+        { lat: 0, lon: 20, altitudeKm: 0 },
+      ],
+      takeoffAngleDeg: 20,
+      relativeSignalStrength: 0.9,
+    };
+    const sliceRay = {
+      mode: 'nvis' as const,
+      points: [
+        { lat: 0, lon: 0, altitudeKm: 0 },
+        { lat: 1, lon: 0, altitudeKm: 80 },
+      ],
+      takeoffAngleDeg: 70,
+      relativeSignalStrength: 0.4,
+    };
+    requestRayTrace.mockImplementation(async (params: { azimuthDeg: number }) => {
+      if (params.azimuthDeg === 0) return [sliceRay];
+      return [headingRay];
+    });
+
+    await renderPage();
+    await waitFor(() => {
+      expect(screen.getByText('Skywave')).toBeInTheDocument();
+    });
+    const globeRays = lastGlobeProps?.rays;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Vertical slice' }));
+    expect(screen.getByTestId('slice-plane-readout')).toBeInTheDocument();
+
+    await waitFor(
+      () => {
+        expect(requestRayTrace).toHaveBeenCalledWith(expect.objectContaining({ azimuthDeg: 0 }));
+      },
+      { timeout: RAY_TRACE_DEBOUNCE_MS + 2000 },
+    );
+    expect(requestRayTrace).toHaveBeenCalledWith(expect.objectContaining({ azimuthDeg: 90 }));
+
+    await waitFor(
+      () => {
+        expect(screen.getByTestId('vertical-slice-ray-mode')).toHaveAttribute('data-mode', 'nvis');
+      },
+      { timeout: RAY_TRACE_DEBOUNCE_MS + 2000 },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '3D Globe' }));
+    await waitFor(() => {
+      expect(screen.getByTestId('globe-stub')).toBeInTheDocument();
+    });
+    expect(lastGlobeProps?.rays).toEqual(globeRays);
+    expect(lastGlobeProps?.rays).toEqual([headingRay]);
   });
 });
 

@@ -110,4 +110,25 @@ describe('usePropagationRayTrace', () => {
       expect.objectContaining({ txLat: 51.5, txLon: -0.13 }),
     );
   });
+
+  it('does not request when enabled is false', async () => {
+    requestRayTrace.mockResolvedValue([SKY]);
+    const { result, rerender } = renderHook(
+      ({ enabled }: { enabled: boolean }) => usePropagationRayTrace(PARAMS, enabled),
+      { initialProps: { enabled: false } },
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RAY_TRACE_DEBOUNCE_MS);
+    });
+    expect(requestRayTrace).not.toHaveBeenCalled();
+    expect(result.current).toEqual([]);
+
+    rerender({ enabled: true });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(RAY_TRACE_DEBOUNCE_MS);
+    });
+    expect(requestRayTrace).toHaveBeenCalledTimes(1);
+    expect(result.current).toEqual([SKY]);
+  });
 });

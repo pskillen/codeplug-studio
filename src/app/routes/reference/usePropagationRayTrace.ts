@@ -7,13 +7,20 @@ export const RAY_TRACE_DEBOUNCE_MS = 200;
 
 /**
  * Debounced ray-trace against the shared Worker client. Ignores stale in-flight results
- * (cancelled effect / newer request). Call once per azimuth — phase 11 can invoke this
- * hook a second time for the slice-plane bearing.
+ * (cancelled effect / newer request). Call once per azimuth — the vertical-slice view
+ * invokes this a second time for the slice-plane bearing when it differs from heading.
+ *
+ * Pass `enabled: false` to skip the Worker (reuse the primary results instead).
  */
-export function usePropagationRayTrace(params: RayTraceParams): RayPathResult[] {
+export function usePropagationRayTrace(
+  params: RayTraceParams,
+  enabled = true,
+): RayPathResult[] {
   const [rays, setRays] = useState<RayPathResult[]>([]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     let cancelled = false;
     const timer = setTimeout(() => {
       void rayTraceClient
@@ -33,6 +40,7 @@ export function usePropagationRayTrace(params: RayTraceParams): RayPathResult[] 
       clearTimeout(timer);
     };
   }, [
+    enabled,
     params.frequencyMhz,
     params.antenna,
     params.layers,
