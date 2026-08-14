@@ -68,8 +68,8 @@ export default function SlicePlanePicker({
 }: SlicePlanePickerProps) {
   const hasMapboxToken = mapboxToken.trim().length > 0;
   const [mode, setMode] = useState<SlicePlaneMode>('bearing');
-  const [bearingTouched, setBearingTouched] = useState(false);
-  const [manualBearingDeg, setManualBearingDeg] = useState(defaultBearingDeg);
+  const [bearingOverrideDeg, setBearingOverrideDeg] = useState<number | null>(null);
+  const manualBearingDeg = bearingOverrideDeg ?? defaultBearingDeg;
   const [manualRangeM, setManualRangeM] = useState(DEFAULT_RANGE_M);
   const [toLocator, setToLocator] = useState('');
   const [addressQuery, setAddressQuery] = useState('');
@@ -80,10 +80,6 @@ export default function SlicePlanePicker({
   const [geocodeLoading, setGeocodeLoading] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
   const [geocodeLabel, setGeocodeLabel] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!bearingTouched) setManualBearingDeg(defaultBearingDeg);
-  }, [defaultBearingDeg, bearingTouched]);
 
   const toError = useMemo(() => {
     if (!toLocator.trim()) return null;
@@ -160,8 +156,7 @@ export default function SlicePlanePicker({
               thumbLabel="Slice-plane bearing"
               value={manualBearingDeg}
               onChange={(value) => {
-                setBearingTouched(true);
-                setManualBearingDeg(value);
+                setBearingOverrideDeg(value);
               }}
               min={0}
               max={359}
