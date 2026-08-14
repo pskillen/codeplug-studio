@@ -20,6 +20,7 @@ const { requestRayTrace } = vi.hoisted(() => ({
 
 let lastGlobeProps: Record<string, unknown> | null = null;
 let lastTopDownProps: Record<string, unknown> | null = null;
+let lastSliceProps: Record<string, unknown> | null = null;
 
 vi.mock('../../components/HfPropagationGlobe/HfPropagationGlobe.tsx', () => ({
   default: (props: Record<string, unknown>) => {
@@ -32,6 +33,13 @@ vi.mock('../../components/PropagationTopDownMap/PropagationTopDownMap.tsx', () =
   default: (props: Record<string, unknown>) => {
     lastTopDownProps = props;
     return <div data-testid="top-down-stub" />;
+  },
+}));
+
+vi.mock('../../components/PropagationVerticalSlice/PropagationVerticalSlice.tsx', () => ({
+  default: (props: Record<string, unknown>) => {
+    lastSliceProps = props;
+    return <div data-testid="vertical-slice-stub" />;
   },
 }));
 
@@ -56,6 +64,7 @@ async function renderPage() {
 beforeEach(() => {
   lastGlobeProps = null;
   lastTopDownProps = null;
+  lastSliceProps = null;
   requestRayTrace.mockReset();
   requestRayTrace.mockImplementation(async () => [
     {
@@ -80,6 +89,9 @@ describe('HfPropagationPage slice-plane picker', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Vertical slice' }));
 
     expect(screen.getByTestId('slice-plane-readout')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('vertical-slice-stub')).toBeInTheDocument();
+    });
     expect(screen.getByRole('button', { name: 'Bearing' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Locator' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Address' })).toBeInTheDocument();
@@ -151,7 +163,11 @@ describe('HfPropagationPage dual ray-trace', () => {
       setTimeout(resolve, RAY_TRACE_DEBOUNCE_MS + 50);
     });
     expect(requestRayTrace.mock.calls.length).toBe(callsWhileOffHeading);
-    expect(screen.getByTestId('vertical-slice-ray-mode')).toHaveAttribute('data-mode', 'skywave');
+    await waitFor(() => {
+      expect(screen.getByTestId('vertical-slice-stub')).toBeInTheDocument();
+    });
+    expect((lastSliceProps?.ray as { mode: string } | null)?.mode).toBe('skywave');
+    expect(lastSliceProps?.maxRangeM).toBe(4_000_000);
   });
 
   it('issues a second Worker request when the slice bearing differs from heading', async () => {
@@ -197,10 +213,12 @@ describe('HfPropagationPage dual ray-trace', () => {
 
     await waitFor(
       () => {
-        expect(screen.getByTestId('vertical-slice-ray-mode')).toHaveAttribute('data-mode', 'nvis');
+        expect((lastSliceProps?.ray as { mode: string } | null)?.mode).toBe('nvis');
       },
       { timeout: RAY_TRACE_DEBOUNCE_MS + 2000 },
     );
+    expect(lastSliceProps?.maxRangeM).toBe(4_000_000);
+    expect(lastGlobeProps?.rays).toEqual([headingRay]);
 
     fireEvent.click(screen.getByRole('button', { name: '3D Globe' }));
     await waitFor(() => {

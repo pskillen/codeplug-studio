@@ -41,6 +41,9 @@ const HfPropagationGlobe = lazy(
 const PropagationTopDownMap = lazy(
   () => import('../../components/PropagationTopDownMap/PropagationTopDownMap.tsx'),
 );
+const PropagationVerticalSlice = lazy(
+  () => import('../../components/PropagationVerticalSlice/PropagationVerticalSlice.tsx'),
+);
 
 type PropagationView = 'globe' | 'top-down' | 'vertical-slice';
 
@@ -297,15 +300,21 @@ export default function HfPropagationPage() {
                 <PropagationTopDownMap transmitter={txLocation} rays={rays} />
               </Suspense>
             ) : (
-              <div
-                className={classes.viewportPlaceholder}
-                data-testid="vertical-slice-ray-mode"
-                data-mode={verticalSliceRay?.mode ?? ''}
+              <Suspense
+                fallback={
+                  <div className={classes.viewportPlaceholder}>
+                    <Text size="sm" c="dimmed">
+                      Loading vertical slice…
+                    </Text>
+                  </div>
+                }
               >
-                <Text size="sm" c="dimmed">
-                  {`This view isn't implemented yet. Slice plane: ${slicePlane.bearingDeg.toFixed(0)}°T, ${(slicePlane.distanceM / 1000).toFixed(0)} km. ${verticalSliceRay ? MODE_LABELS[verticalSliceRay.mode] : 'No ray'}.`}
-                </Text>
-              </div>
+                <PropagationVerticalSlice
+                  layers={layers}
+                  ray={verticalSliceRay}
+                  maxRangeM={slicePlane.distanceM}
+                />
+              </Suspense>
             )}
           </div>
 
