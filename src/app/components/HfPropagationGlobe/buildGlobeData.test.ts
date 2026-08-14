@@ -1,4 +1,6 @@
+import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { cutawayPlaneNormal } from '@core/domain/hfPropagation/cutawayPlane.ts';
 import { layerMidAltitudeKm } from '@core/domain/hfPropagation/ionosphericProfile.ts';
 import { GLOBE_EARTH_RADIUS_KM } from '../SatelliteGlobe/globeAltitude.ts';
 import type { RayPathResult } from '@core/domain/hfPropagation/types.ts';
@@ -13,6 +15,8 @@ import {
   FRESNEL_OPACITY_MIN,
   fresnelOpacity,
   GLOBE_RADIUS_UNITS,
+  applyShellClippingPlanes,
+  buildCutawayClippingPlane,
   latLonToGlobeDirection,
   MODE_COLORS,
   rayResultsToGlobePaths,
@@ -139,6 +143,29 @@ describe('latLonToGlobeDirection', () => {
     expect(v.x).toBeCloseTo(0);
     expect(v.y).toBeCloseTo(0);
     expect(v.z).toBeCloseTo(1);
+  });
+});
+
+describe('buildCutawayClippingPlane', () => {
+  it('uses the domain normal on a THREE.Plane through the transmitter', () => {
+    const plane = buildCutawayClippingPlane(0, 0, 0);
+    const n = cutawayPlaneNormal(0, 0, 0);
+    expect(plane.normal.x).toBeCloseTo(n.x);
+    expect(plane.normal.y).toBeCloseTo(n.y);
+    expect(plane.normal.z).toBeCloseTo(n.z);
+  });
+});
+
+describe('applyShellClippingPlanes', () => {
+  it('sets and clears clippingPlanes on existing shell MeshBasicMaterial', () => {
+    const material = new THREE.MeshBasicMaterial();
+    material.userData.shellFresnelUniforms = { uFresnelEnabled: { value: 0 } };
+    const mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 4, 4), material);
+    const plane = buildCutawayClippingPlane(0, 0, 0);
+    applyShellClippingPlanes(mesh, [plane]);
+    expect(material.clippingPlanes).toEqual([plane]);
+    applyShellClippingPlanes(mesh, []);
+    expect(material.clippingPlanes).toEqual([]);
   });
 });
 

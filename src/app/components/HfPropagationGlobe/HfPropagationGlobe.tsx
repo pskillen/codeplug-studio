@@ -27,6 +27,8 @@ import {
   MODE_LABELS,
   PROPAGATION_MODES,
   rayResultsToGlobePaths,
+  applyShellClippingPlanes,
+  buildCutawayClippingPlane,
   type HfGlobePath,
   type NightShadeLayer,
   type ShellDisplayOptions,
@@ -74,6 +76,13 @@ export interface HfPropagationGlobeProps {
   txLat?: number;
   /** Transmitter WGS84 longitude (degrees). Defaults to 0° until the page sets a site. */
   txLon?: number;
+  /** Clip shells along the slice-plane bearing. Default off. */
+  cutawayEnabled?: boolean;
+  /**
+   * Slice-plane bearing (degrees true) — same `SlicePlaneResult.bearingDeg` as the vertical
+   * slice. Antenna heading when the picker has not been used.
+   */
+  sliceBearingDeg?: number;
 }
 
 const DEFAULT_DISPLAY: ShellDisplayOptions = {
@@ -132,6 +141,8 @@ export default function HfPropagationGlobe({
   rays = [],
   txLat = DEFAULT_TX_LAT_DEG,
   txLon = DEFAULT_TX_LON_DEG,
+  cutawayEnabled = false,
+  sliceBearingDeg = 0,
 }: HfPropagationGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeMethods | undefined>(undefined);
@@ -152,6 +163,15 @@ export default function HfPropagationGlobe({
     [layers, visibleLayers, environmentAtMs],
   );
   const { exaggerationFactor, explodeEnabled, fresnelEnabled, terminatorEnabled } = display;
+
+  const cutawayPlanes = useMemo(
+    () => (cutawayEnabled ? [buildCutawayClippingPlane(txLat, txLon, sliceBearingDeg)] : []),
+    [cutawayEnabled, txLat, txLon, sliceBearingDeg],
+  );
+  const cutawayPlanesRef = useRef(cutawayPlanes);
+  useEffect(() => {
+    cutawayPlanesRef.current = cutawayPlanes;
+  }, [cutawayPlanes]);
 
   const subsolar = useMemo(() => {
     if (environmentAtMs == null) return null;
@@ -219,11 +239,13 @@ export default function HfPropagationGlobe({
       if (isNightShadeLayer(d)) return buildNightShadeMesh(d);
       if (isSunMarkerLayer(d)) return buildSunMarkerMesh(d);
       const layer = d as IonosphericLayerState;
-      return buildShellMesh(d, canonicalLayerIndex(layer.id), {
+      const mesh = buildShellMesh(d, canonicalLayerIndex(layer.id), {
         exaggerationFactor,
         explodeEnabled,
         fresnelEnabled,
       });
+      applyShellClippingPlanes(mesh, cutawayPlanesRef.current);
+      return mesh;
     },
     [exaggerationFactor, explodeEnabled, fresnelEnabled],
   );
@@ -247,8 +269,11 @@ export default function HfPropagationGlobe({
       const camera = globe?.camera() as THREE.Camera | undefined;
       const scene = globe?.scene();
       if (camera && scene) {
+        const renderer = globe?.renderer();
+        if (renderer) renderer.localClippingEnabled = true;
         scene.traverse((obj) => {
           updateShellFresnel(obj, camera, fresnelEnabledRef.current);
+          applyShellClippingPlanes(obj, cutawayPlanesRef.current);
         });
       }
       raf = requestAnimationFrame(tick);
@@ -256,6 +281,15 @@ export default function HfPropagationGlobe({
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, []);
+
+  useEffect(() => {
+    const globe = globeRef.current;
+    const renderer = globe?.renderer();
+    if (renderer) renderer.localClippingEnabled = true;
+    const scene = globe?.scene();
+    if (!scene) return;
+    scene.traverse((obj) => applyShellClippingPlanes(obj, cutawayPlanes));
+  }, [cutawayPlanes, size.width, size.height, customLayerData]);
 
   useEffect(() => {
     const node = containerRef.current;

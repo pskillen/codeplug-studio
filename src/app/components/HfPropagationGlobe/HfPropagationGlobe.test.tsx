@@ -206,4 +206,19 @@ describe('HfPropagationGlobe', () => {
       skipRing.some(([lat, lon]) => Math.abs(lat - 51.5) < 3 && Math.abs(lon + 0.13) < 3),
     ).toBe(true);
   });
+
+  it('does not add extra customLayerData entries when cutaway is enabled', () => {
+    render(
+      <HfPropagationGlobe
+        layers={DAYTIME_LAYERS}
+        cutawayEnabled
+        sliceBearingDeg={90}
+        txLat={0}
+        txLon={0}
+      />,
+    );
+    const custom = lastGlobeProps?.customLayerData as { id?: string; kind?: string }[];
+    expect(custom.map((d) => d.id).filter(Boolean)).toEqual(['D', 'E', 'F1', 'F2']);
+    expect(custom.every((d) => d.kind !== 'ray-corridor')).toBe(true);
+  });
 });

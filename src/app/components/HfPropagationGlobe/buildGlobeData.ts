@@ -8,7 +8,10 @@ import type {
   PropagationMode,
   RayPathResult,
 } from '@core/domain/hfPropagation/types.ts';
-import { latLonToGlobeCartesian } from '@core/domain/hfPropagation/cutawayPlane.ts';
+import {
+  cutawayPlaneNormal,
+  latLonToGlobeCartesian,
+} from '@core/domain/hfPropagation/cutawayPlane.ts';
 import { altitudeKmToGlobeRadiusUnits } from '../SatelliteGlobe/globeAltitude.ts';
 
 /**
@@ -295,6 +298,30 @@ export function updateShellFresnel(
     { uFresnelEnabled: { value: number } } | undefined;
   if (!uniforms) return;
   uniforms.uFresnelEnabled.value = fresnelEnabled ? 1 : 0;
+}
+
+/** THREE.Plane through the transmitter along `bearingDeg` (globe-centre coplanar). */
+export function buildCutawayClippingPlane(
+  txLat: number,
+  txLon: number,
+  bearingDeg: number,
+): THREE.Plane {
+  const n = cutawayPlaneNormal(txLat, txLon, bearingDeg);
+  const normal = new THREE.Vector3(n.x, n.y, n.z);
+  const coplanar = latLonToGlobeDirection(txLat, txLon).multiplyScalar(GLOBE_RADIUS_UNITS);
+  return new THREE.Plane().setFromNormalAndCoplanarPoint(normal, coplanar);
+}
+
+/**
+ * Sets `clippingPlanes` on existing shell `MeshBasicMaterial`s only (Fresnel uniforms
+ * discriminant). Empty array clears a previous cutaway. Does not recreate materials.
+ */
+export function applyShellClippingPlanes(obj: THREE.Object3D, planes: THREE.Plane[]): void {
+  const mesh = obj as THREE.Mesh;
+  const material = mesh.material;
+  if (!(material instanceof THREE.MeshBasicMaterial)) return;
+  if (!material.userData.shellFresnelUniforms) return;
+  material.clippingPlanes = planes;
 }
 
 /** Matches `three-globe` `polar2Cartesian` (unit vector, relAltitude 0). */
