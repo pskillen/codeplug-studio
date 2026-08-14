@@ -179,7 +179,7 @@ export function buildShellMesh(
   display: ShellDisplayOptions,
 ): THREE.Object3D {
   const s = layer as IonosphericLayerState;
-  const spatial = isShellSunOverlay(layer);
+  const spatial = isShellSunOverlay(layer) ? layer : null;
   const dayMidKm = spatial
     ? layerMidAltitudeKm(s.id, false)
     : (s.altitudeMinKm + s.altitudeMaxKm) / 2;
@@ -190,7 +190,7 @@ export function buildShellMesh(
   const baselineOpacity = shellBaselineOpacity(layerIndex);
   const fresnelScale = baselineOpacity / SHELL_INNER_BASELINE_OPACITY;
   const sunDir = spatial
-    ? latLonToGlobeDirection(s.sunLatDeg, s.sunLonDeg)
+    ? latLonToGlobeDirection(spatial.sunLatDeg, spatial.sunLonDeg)
     : new THREE.Vector3(0, 1, 0);
   const material = new THREE.MeshBasicMaterial({
     color: colorForLayer(s.id),
