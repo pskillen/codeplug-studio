@@ -437,10 +437,7 @@ export default function HfPropagationPage() {
                 <FormField label="Critical frequency (fc)" value={criticalFrequencyLabel} />
                 <FormField label="MUF" value="—" />
                 <FormField label="Mode" value="—" />
-                <FormField
-                  label="Peak gain elevation (debug)"
-                  value={`${peakGainElevation}°`}
-                />
+                <FormField label="Peak gain elevation (debug)" value={`${peakGainElevation}°`} />
               </Stack>
             </Panel>
           </div>

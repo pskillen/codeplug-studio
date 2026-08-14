@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { antennaGain, groundReflectionFactor, peakGainElevationDeg, wavelengthM } from './antennaPatterns.ts';
+import {
+  antennaGain,
+  groundReflectionFactor,
+  peakGainElevationDeg,
+  wavelengthM,
+} from './antennaPatterns.ts';
 import type { AntennaConfig } from './types.ts';
 
 const HF_FREQUENCY_MHZ = 14.2;
