@@ -145,7 +145,12 @@ export default function SlicePlanePicker({
       </Text>
 
       <FormField label="Mode">
-        <SegmentedControl options={MODE_OPTIONS} value={mode} onChange={setMode} />
+        <SegmentedControl
+          options={MODE_OPTIONS}
+          value={mode}
+          onChange={setMode}
+          aria-label="Slice-plane mode"
+        />
       </FormField>
 
       {mode === 'bearing' ? (

@@ -354,7 +354,12 @@ export default function HfPropagationPage() {
 
           <div className={classes.controlPanel}>
             <Panel title="View">
-              <SegmentedControl options={VIEW_OPTIONS} value={view} onChange={setView} />
+              <SegmentedControl
+                options={VIEW_OPTIONS}
+                value={view}
+                onChange={setView}
+                aria-label="View"
+              />
             </Panel>
 
             {view === 'vertical-slice' ? (
@@ -383,6 +388,7 @@ export default function HfPropagationPage() {
                   <Input.Wrapper label={`${exaggerationFactor.toFixed(1)}×`}>
                     <Slider
                       aria-label="Altitude exaggeration"
+                      thumbLabel="Altitude exaggeration"
                       value={exaggerationFactor}
                       onChange={setExaggerationFactor}
                       min={MIN_EXAGGERATION}
@@ -454,6 +460,7 @@ export default function HfPropagationPage() {
                 <Input.Wrapper label={`Frequency — ${frequencyMhz.toFixed(1)} MHz`}>
                   <Slider
                     aria-label="Frequency"
+                    thumbLabel="Frequency"
                     value={frequencyMhz}
                     onChange={setFrequencyMhz}
                     min={MIN_FREQUENCY_MHZ}
@@ -465,6 +472,7 @@ export default function HfPropagationPage() {
                 <Input.Wrapper label={`Power — ${powerW} W`}>
                   <Slider
                     aria-label="Power"
+                    thumbLabel="Power"
                     value={powerW}
                     onChange={setPowerW}
                     min={MIN_POWER_W}
@@ -482,6 +490,7 @@ export default function HfPropagationPage() {
                   <Select
                     data={ANTENNA_TYPE_OPTIONS.map(({ value, label }) => ({ value, label }))}
                     value={antennaType}
+                    aria-label="Antenna type"
                     onChange={(value) => {
                       if (value) setAntennaType(value as AntennaType);
                     }}
@@ -491,6 +500,7 @@ export default function HfPropagationPage() {
                   <Input.Wrapper label={`Height above ground — ${heightM} m`}>
                     <Slider
                       aria-label="Height above ground"
+                      thumbLabel="Height above ground"
                       value={heightM}
                       onChange={setHeightM}
                       min={MIN_HEIGHT_M}
@@ -504,6 +514,7 @@ export default function HfPropagationPage() {
                   <Input.Wrapper label={`Azimuth — ${azimuthDeg}°`}>
                     <Slider
                       aria-label="Azimuth"
+                      thumbLabel="Azimuth"
                       value={azimuthDeg}
                       onChange={setAzimuthDeg}
                       min={0}
@@ -517,6 +528,7 @@ export default function HfPropagationPage() {
                   <Input.Wrapper label={`Wire length — ${wireLengthWavelengths.toFixed(1)} λ`}>
                     <Slider
                       aria-label="Wire length"
+                      thumbLabel="Wire length"
                       value={wireLengthWavelengths}
                       onChange={setWireLengthWavelengths}
                       min={MIN_WIRE_LENGTH_WAVELENGTHS}
@@ -624,6 +636,7 @@ export default function HfPropagationPage() {
                     options={SOLAR_PRESET_OPTIONS}
                     value={solarPreset}
                     onChange={setSolarPreset}
+                    aria-label="Solar activity"
                   />
                 </FormField>
               </Stack>

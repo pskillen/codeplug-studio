@@ -112,6 +112,20 @@ describe('HfPropagationPage Reading panel', () => {
     const mhzReadouts = screen.getAllByText(/\d+\.\d+ MHz/);
     expect(mhzReadouts.length).toBeGreaterThanOrEqual(2);
   });
+
+  it('exposes View, Display toggles, and Reading as labelled controls', async () => {
+    await renderPage();
+
+    expect(screen.getByRole('group', { name: 'View' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Altitude exaggeration' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Cutaway plane' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Ray corridor' })).toBeInTheDocument();
+    expect(screen.getByText('Critical frequency (fc)')).toBeInTheDocument();
+    expect(screen.getByText('MUF')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Skywave')).toBeInTheDocument();
+    });
+  });
 });
 
 describe('HfPropagationPage top-down view', () => {

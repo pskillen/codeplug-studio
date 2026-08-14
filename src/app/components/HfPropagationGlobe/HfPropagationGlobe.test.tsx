@@ -174,7 +174,7 @@ describe('HfPropagationGlobe', () => {
     expect(lastGlobeProps?.pathDashLength).toBeInstanceOf(Function);
     expect(lastGlobeProps?.pathDashGap).toBeInstanceOf(Function);
 
-    expect(screen.getByLabelText('Propagation mode colours')).toBeInTheDocument();
+    expect(screen.getByLabelText('Propagation modes')).toBeInTheDocument();
     expect(screen.getByText('Groundwave')).toBeInTheDocument();
     expect(screen.getByText('NVIS')).toBeInTheDocument();
   });

@@ -12,6 +12,7 @@ import {
 import type {
   IonosphericLayerId,
   IonosphericLayerState,
+  PropagationMode,
   RayPathResult,
 } from '@core/domain/hfPropagation/types.ts';
 import {
@@ -115,14 +116,23 @@ function pathStroke(path: object): number {
   return 1.8;
 }
 
+function legendStrokeStyle(mode: PropagationMode): 'solid' | 'dashed' | 'dotted' {
+  if (mode === 'groundwave') return 'solid';
+  if (mode === 'absorbed' || mode === 'escaped') return 'dotted';
+  return 'dashed';
+}
+
 function PropagationModeLegend() {
   return (
-    <ul className={classes.legend} aria-label="Propagation mode colours">
+    <ul className={classes.legend} aria-label="Propagation modes">
       {PROPAGATION_MODES.map((mode) => (
         <li key={mode} className={classes.legendItem}>
           <span
-            className={classes.legendSwatch}
-            style={{ backgroundColor: MODE_COLORS[mode] }}
+            className={classes.legendSample}
+            style={{
+              borderTopColor: MODE_COLORS[mode],
+              borderTopStyle: legendStrokeStyle(mode),
+            }}
             aria-hidden
           />
           {MODE_LABELS[mode]}

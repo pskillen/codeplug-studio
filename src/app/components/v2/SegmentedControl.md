@@ -14,6 +14,7 @@ DMR timeslot (TS1/TS2) and similar compact exclusive choices.
 | `value`    | `string`             | Active value      |
 | `onChange` | `(value) => void`    | Selection handler |
 | `size`     | `'sm' \| 'md'`       | Default `sm`      |
+| `aria-label` | `string`             | Optional name for the `role="group"` |
 
 ## Usage
 
@@ -30,6 +31,7 @@ DMR timeslot (TS1/TS2) and similar compact exclusive choices.
 
 ## Behaviour
 
+- Keyboard: native checkbox in the tab order; Space/Enter toggle. `:focus-visible` outline on the track.
 - Live demos: `/styleguide/forms`
 
 ## Related
