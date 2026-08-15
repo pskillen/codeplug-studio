@@ -1,7 +1,9 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Progress, Text } from '@mantine/core';
 import { persistence } from '../../state/persistence.ts';
 import {
+  estimateRadioidDumpRemainingMs,
+  formatRadioidDumpDuration,
   formatRadioidDumpProgressPercent,
   runRadioidDumpImport,
   type RadioidDumpIngestProgress,
@@ -32,12 +34,22 @@ function RadioidEntireDatabaseImportDialogBody({
   const [confirmed, setConfirmed] = useState(false);
   const [progress, setProgress] = useState<RadioidDumpIngestProgress | null>(null);
   const [result, setResult] = useState<RadioidDumpIngestResult | null>(null);
+  const [clockMs, setClockMs] = useState(() => Date.now());
   const abortRef = useRef<AbortController | null>(null);
+  const startedAtRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (phase !== 'running') return;
+    const id = window.setInterval(() => setClockMs(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [phase]);
 
   async function handleStart() {
     if (!projectId) return;
     const controller = new AbortController();
     abortRef.current = controller;
+    startedAtRef.current = Date.now();
+    setClockMs(Date.now());
     setPhase('running');
     setProgress(null);
     setResult(null);
@@ -65,6 +77,16 @@ function RadioidEntireDatabaseImportDialogBody({
     progress?.bytesRead ?? 0,
     progress?.totalBytes ?? null,
   );
+  const elapsedMs =
+    startedAtRef.current != null && phase === 'running' ? clockMs - startedAtRef.current : 0;
+  const remainingMs =
+    phase === 'running'
+      ? estimateRadioidDumpRemainingMs(
+          elapsedMs,
+          progress?.bytesRead ?? 0,
+          progress?.totalBytes ?? null,
+        )
+      : null;
 
   if (phase === 'confirm') {
     return (
@@ -113,12 +135,18 @@ function RadioidEntireDatabaseImportDialogBody({
     return (
       <div className={classes.body}>
         <Text size="sm">{progress?.message ?? 'Starting…'}</Text>
+        <Text size="sm" c="dimmed" className={classes.timingRow}>
+          <span>{formatRadioidDumpDuration(elapsedMs)}</span>
+          <span className={classes.timingLeader} aria-hidden />
+          <span>
+            ({remainingMs != null ? ` ${formatRadioidDumpDuration(remainingMs)} ` : ' — '})
+          </span>
+        </Text>
         <Progress value={bytePercent ?? 0} animated={bytePercent == null} />
         <Text size="sm" c="dimmed">
           {progress
-            ? `${progress.written.toLocaleString()} IDs written · skipped ${progress.skipped}`
+            ? `${progress.written.toLocaleString()} imported · skipped ${progress.skipped}`
             : 'Preparing…'}
-          {bytePercent != null ? ` · ${bytePercent}% downloaded` : ''}
         </Text>
         <div className={classes.footer}>
           <Button variant="destructive" onClick={handleCancelRunning}>
