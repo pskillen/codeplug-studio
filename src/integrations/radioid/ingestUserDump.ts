@@ -9,7 +9,7 @@ import {
   mapRadioidDumpRowToDirectoryEntry,
 } from './mapDumpRowToDirectoryEntry.ts';
 
-export const RADIOID_DUMP_BATCH_SIZE = 250;
+export const RADIOID_DUMP_BATCH_SIZE = 2000;
 
 export interface RadioidDumpIngestProgress {
   written: number;
