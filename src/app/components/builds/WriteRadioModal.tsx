@@ -17,6 +17,8 @@ export interface WriteRadioModalProps {
   supportsDigitalContacts: boolean;
   /** OpenGD77 shared Contacts bank — talk groups still rewrite the bank when contacts are skipped. */
   sharedContactBankNote?: boolean;
+  /** DM-32: library and RadioID share one address book (RadioID/Both replace it). */
+  sharedAddressBookNote?: boolean;
   supportsKeps: boolean;
   contactSource: DigitalContactsWriteSource;
   onContactSourceChange: (source: DigitalContactsWriteSource) => void;
@@ -43,6 +45,7 @@ export default function WriteRadioModal({
   writeHidden,
   supportsDigitalContacts,
   sharedContactBankNote = false,
+  sharedAddressBookNote = false,
   supportsKeps,
   contactSource,
   onContactSourceChange,
@@ -82,7 +85,9 @@ export default function WriteRadioModal({
               hint={
                 sharedContactBankNote
                   ? 'Library talk groups and privates use the 1024-slot DMR contact bank. RadioID directory writes the firmware User Database for incoming-call lookup. The same DMR ID may exist in both stores. None leaves those FLASH regions unchanged on Write codeplug.'
-                  : 'Library contacts are curated project rows. RadioID directory is the local shadow book. None leaves the radio contact banks unchanged. Both: library wins on duplicate DMR ID.'
+                  : sharedAddressBookNote
+                    ? 'Library contacts and the RadioID directory share one address book. RadioID or Both replaces that book. None leaves it unchanged. Duplicate DMR IDs: library wins. Operator radio IDs come from channel DMR IDs on Write codeplug only.'
+                    : 'Library contacts are curated project rows. RadioID directory is the local shadow book. None leaves the radio contact banks unchanged. Both: library wins on duplicate DMR ID.'
               }
             >
               <SegmentedControl
@@ -97,6 +102,12 @@ export default function WriteRadioModal({
               <Text size="xs" c="dimmed">
                 RadioID does not fill the 1024 contact bank. RadioID-only Write leaves prior FLASH
                 contacts. Library or Both replaces talk groups and library privates in that bank.
+              </Text>
+            ) : null}
+            {sharedAddressBookNote ? (
+              <Text size="xs" c="dimmed">
+                RadioID-only Write replaces the address book with directory rows. Write contacts
+                only does not rewrite operator radio IDs.
               </Text>
             ) : null}
             <Group justify="flex-end">

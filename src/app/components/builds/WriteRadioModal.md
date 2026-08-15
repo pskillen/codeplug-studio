@@ -16,6 +16,7 @@ Build → Export **Write radio** popup: always **Write codeplug**, plus radio-ap
 | `writeHidden`             | `boolean`                    | Prod write gate                              |
 | `supportsDigitalContacts` | `boolean`                    | Dual-bank trait or D890 single-bank          |
 | `sharedContactBankNote`   | `boolean`                    | OpenGD77 shared Contacts bank caveat         |
+| `sharedAddressBookNote`   | `boolean`                    | DM-32: library and RadioID share one book    |
 | `supportsKeps`            | `boolean`                    | Registered keps write adapter                |
 | `contactSource`           | `DigitalContactsWriteSource` | `none` \| `library` \| `directory` \| `both` |
 | `onContactSourceChange`   | `(source) => void`           | Source picker                                |
@@ -54,6 +55,7 @@ Build → Export **Write radio** popup: always **Write codeplug**, plus radio-ap
 - Write codeplug helper copy only mentions digital contacts or keps when those extras are on this radio.
 - Copy uses digital contacts / library contacts / RadioID directory — not “digital ID list”.
 - OpenGD77 (`sharedContactBankNote`): RadioID writes User Database; library/Both replace the 1024 contact bank; overlapping `digitalId`s are kept in both stores.
+- DM-32 (`sharedAddressBookNote`): library and RadioID share one address book; RadioID/Both **replace** it; None leaves it; operator radio IDs stay channel DMR IDs on Write codeplug; duplicate IDs: library wins.
 - Empty RadioID shadow warning is owned by `BuildRadioIoPanel`, not this modal.
 
 ## Related

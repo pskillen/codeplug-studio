@@ -595,6 +595,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         writeHidden={writeHidden}
         supportsDigitalContacts={supportsDigitalContacts}
         sharedContactBankNote={isOpenGd77RadioIoEgress(egress.profileId)}
+        sharedAddressBookNote={egress.profileId === 'radio-io-dm32uv'}
         supportsKeps={supportsKepsWrite}
         contactSource={contactSource}
         onContactSourceChange={setContactSource}
