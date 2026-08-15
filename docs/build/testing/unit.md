@@ -5,7 +5,7 @@
 ## Convention
 
 - File name: `<module>.test.ts` or `<module>.test.tsx` beside the source file.
-- Runner: Vitest (`npm test` runs all `src/**/*.test.ts(x)`).
+- Runner: Vitest (`npm test` runs colocated `*.test.ts(x)` under `src/` and `scripts/play/`).
 - Environment: `jsdom` via [`vite.config.ts`](../../../vite.config.ts).
 
 ## Layer layout

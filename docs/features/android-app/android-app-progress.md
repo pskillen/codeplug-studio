@@ -4,14 +4,14 @@ Execution log for [Epic #747](https://github.com/pskillen/codeplug-studio/issues
 
 ## Slices
 
-| Slice               | Status      | Branch / PR                    | Notes                                                                          |
-| ------------------- | ----------- | ------------------------------ | ------------------------------------------------------------------------------ |
-| Scaffold            | Complete    | PR #891 (`886/…`)              | Capacitor Android shell (#886)                                                 |
-| API Proxy & Routing | Complete    | PR #892 (`887/…`)              | Absolute API base, CORS allowlist, Browser (#887)                              |
-| USB Serial Pipe     | Complete\*  | PR #893 (`888/…`)              | Capacitor `BytePipe` + feature detect (#888). \*Hardware OTG still outstanding |
-| Signed APK CI       | Complete    | PR #889                        | Workflow + signing + Release attach + versionName/Code (#889)                  |
-| Native Drive OAuth  | In progress | `895/pskil/native-drive-oauth` | PKCE + Custom Tabs + deep link (#895); on-device verify pending                |
-| Play Store          | Deferred    | —                              | #890                                                                           |
+| Slice               | Status      | Branch / PR                       | Notes                                                                          |
+| ------------------- | ----------- | --------------------------------- | ------------------------------------------------------------------------------ |
+| Scaffold            | Complete    | PR #891 (`886/…`)                 | Capacitor Android shell (#886)                                                 |
+| API Proxy & Routing | Complete    | PR #892 (`887/…`)                 | Absolute API base, CORS allowlist, Browser (#887)                              |
+| USB Serial Pipe     | Complete\*  | PR #893 (`888/…`)                 | Capacitor `BytePipe` + feature detect (#888). \*Hardware OTG still outstanding |
+| Signed APK CI       | Complete    | PR #889                           | Workflow + signing + Release attach + versionName/Code (#889)                  |
+| Native Drive OAuth  | In progress | `895/pskil/native-drive-oauth`    | PKCE + Custom Tabs + deep link (#895); on-device verify pending                |
+| Play Store          | Complete\*  | `1206/pskil/play-publish-realign` | Publish pipeline #1206. \*Listing / Data safety still #890                     |
 
 ## Verification
 
@@ -34,4 +34,5 @@ Execution log for [Epic #747](https://github.com/pskillen/codeplug-studio/issues
 
 - [ ] **#895 on-device:** connect/disconnect, background mid-consent, cold-start redirect, refresh, denied consent, open/save via Drive
 - [ ] Hardware: physical Android + OTG + supported radio Read/Write
-- [ ] Play Store (#890)
+- [x] Play publish pipeline: tag-derived `versionCode`, Open testing / Production map, idempotent retries (#1206)
+- [ ] Play Store listing / Data safety / first review (#890)

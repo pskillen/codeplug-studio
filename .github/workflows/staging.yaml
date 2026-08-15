@@ -25,6 +25,4 @@ jobs:
       build_version: ${{ github.event.release.tag_name }}
       attach_to_release: true
       build_aab: true
-      # Play API id for the default Closed Testing track — confirm against the real
-      # Play Console track once created; adjust if it's a custom track name.
-      publish_to_play_track: alpha
+      play_track: beta
