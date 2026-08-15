@@ -8,7 +8,7 @@ import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
 import { DM32_BLOCK_SIZE, DM32_LIMITS } from './constants.ts';
 
 export const DM32_CONTACT_ENTRY_SIZE = 0x5c; // 92
-export const DM32_CONTACTS_PER_BLOCK = 44;
+export const DM32_CONTACTS_PER_BLOCK = DM32_LIMITS.ADDRESS_BOOK_CONTACTS_PER_BLOCK;
 
 const TE = new TextEncoder();
 
@@ -208,6 +208,24 @@ export function planDm32ContactBankBlocks(args: {
     blockAddresses.push(firstBlockAddr + i * DM32_BLOCK_SIZE);
   }
   return { firstBlockAddr, blockAddresses, contactCount };
+}
+
+/**
+ * Address-book 4KB blocks to allocate/write for a known contact count.
+ * Never walks V-frame `contactsEnd` (L01 runaway).
+ */
+export function planDm32ContactBankWriteBlocks(
+  contactsBase: number,
+  contactCount: number,
+): number[] {
+  const firstBlockAddr = Math.floor(contactsBase / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
+  const needed = Math.max(1, Math.ceil(Math.max(contactCount, 0) / DM32_CONTACTS_PER_BLOCK));
+  const blockCount = Math.min(needed, DM32_LIMITS.CONTACT_BANK_MAX_BLOCKS);
+  const blockAddresses: number[] = [];
+  for (let i = 0; i < blockCount; i++) {
+    blockAddresses.push(firstBlockAddr + i * DM32_BLOCK_SIZE);
+  }
+  return blockAddresses;
 }
 
 /** Read u32 LE contact count at contactsBase within a first-block buffer. */

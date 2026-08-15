@@ -82,17 +82,15 @@ export const DM32_LIMITS = {
   SCAN_LISTS_MAX: DM32UV_LIMITS.SCAN_LISTS_MAX,
   SCAN_LIST_MEMBERS_MAX: DM32UV_LIMITS.SCAN_LIST_MEMBERS_MAX,
   DMR_RADIO_IDS_MAX: DM32UV_LIMITS.RADIO_IDS_MAX,
-  /**
-   * Hard cap on contact-bank 4KB blocks to fold into a download map.
-   * NeonPlug reads by header count, never the full V-frame 0x0F end address
-   * (L01 ranges can span thousands of empty blocks — see download runaway).
-   */
-  CONTACT_BANK_MAX_BLOCKS: 256,
-  /** Firmware fallback when V-frame 0x10 is missing (non-L01). */
-  CONTACT_MAX_DEFAULT: 50_000,
-  /** Firmware fallback when V-frame 0x10 is missing (L01 extended). */
-  CONTACT_MAX_L01: 150_000,
+  CONTACT_BANK_MAX_BLOCKS: DM32UV_LIMITS.CONTACT_BANK_MAX_BLOCKS,
+  ADDRESS_BOOK_CONTACTS_PER_BLOCK: DM32UV_LIMITS.ADDRESS_BOOK_CONTACTS_PER_BLOCK,
+  ADDRESS_BOOK_WRITE_MAX: DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX,
+  CONTACT_MAX_DEFAULT: DM32UV_LIMITS.FIRMWARE_CONTACT_MAX_DEFAULT,
+  CONTACT_MAX_L01: DM32UV_LIMITS.FIRMWARE_CONTACT_MAX_L01,
 } as const;
+
+/** Max MemoryMap span when folding/allocating the address book into the config window. */
+export const DM32_MAX_COMBINED_MAP_BYTES = 32 * 1024 * 1024;
 
 /** Fixed metadata tags always bulk-read when present (NeonPlug bulkReadRequiredBlocks). */
 export const DM32_REQUIRED_METADATA: readonly number[] = [

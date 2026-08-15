@@ -12,11 +12,12 @@ import {
   type SingleBankDigitalProjectionMode,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import {
+  DM32_CPS_DIRECTORY_WARNING,
   OPENGD77_CPS_DIRECTORY_WARNING,
   projectedRowToAssembledDigitalContact,
   type CpsDirectoryProjectionPayload,
 } from '@core/domain/cpsDigitalDirectoryProjection.ts';
-import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
+import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
@@ -27,7 +28,6 @@ import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { mapDirectoryEntryToRadioDigitalContactDto } from '@integrations/radioid/mapDirectoryEntryToRadioDto.ts';
-import { collectDualBankDirectorySlice } from './dualBankRadioWrite.ts';
 
 function hasSeparateDigitalIdList(profileId: string): boolean {
   return (
@@ -128,71 +128,30 @@ async function collectSingleBankCpsProjection(
   };
 }
 
+function dualBankCpsDirectoryWarning(egress: EgressPath): string {
+  if (egress.formatId === 'dm32' || egress.profileId === 'radio-io-dm32uv') {
+    return DM32_CPS_DIRECTORY_WARNING;
+  }
+  return OPENGD77_CPS_DIRECTORY_WARNING;
+}
+
 async function collectDualBankCpsProjection(
-  store: ProjectPersistence,
-  projectId: string,
-  library: LibrarySlice,
+  _store: ProjectPersistence,
+  _projectId: string,
+  _library: LibrarySlice,
   egress: EgressPath,
   options: DualBankRadioWriteOptions,
   warnings: string[],
 ): Promise<CpsDirectoryProjectionPayload> {
-  if (egress.formatId === 'opengd77') {
-    if (options.includeDigitalIdDirectory) {
-      warnings.push(OPENGD77_CPS_DIRECTORY_WARNING);
-    }
-    return {
-      dualBank: {
-        includeLibraryContacts: options.includeLibraryContacts,
-        directoryDigitalContacts: [],
-        dm32RadioIds: [],
-        includeDm32RadioIdFile: false,
-      },
-      warnings,
-    };
+  if (options.includeDigitalIdDirectory) {
+    warnings.push(dualBankCpsDirectoryWarning(egress));
   }
-
-  const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
-  const maxRadioIds = typeof limits?.maxRadioIds === 'number' ? limits.maxRadioIds : undefined;
-
-  const slice = await collectDualBankDirectorySlice({
-    store,
-    projectId,
-    library,
-    formatId: egress.formatId,
-    egressProfileId: egress.profileId,
-    options,
-    maxRadioIds,
-    warnings,
-  });
-
-  const directoryDigitalContacts = slice.digitalContacts.map((dto) =>
-    projectedRowToAssembledDigitalContact(
-      {
-        digitalId: dto.digitalId,
-        wireName: dto.wireName,
-        callsign: dto.callsign,
-        city: dto.city,
-        province: dto.province,
-        country: dto.country,
-        remark: dto.remark,
-      },
-      projectId,
-    ),
-  );
-
-  const dm32RadioIds = slice.radioIds.map((entry) => ({
-    dmrId: entry.dmrId,
-    name: entry.name,
-  }));
-
   return {
     dualBank: {
       includeLibraryContacts: options.includeLibraryContacts,
-      directoryDigitalContacts,
-      dm32RadioIds,
-      includeDm32RadioIdFile:
-        egress.formatId === 'dm32' &&
-        (options.includeDigitalIdDirectory || dm32RadioIds.length > 0),
+      directoryDigitalContacts: [],
+      dm32RadioIds: [],
+      includeDm32RadioIdFile: false,
     },
     warnings,
   };

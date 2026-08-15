@@ -562,25 +562,14 @@ function isDmrProfile(
 
 function mergeDm32RadioIdEntries(
   channelEntries: readonly { dmrId: number; name: string }[],
-  directoryRadioIds: readonly RadioRadioIdDto[],
   maxRadioIds: number,
-  mode: DualBankWriteMode,
   warnings: string[],
 ): { radioIds: RadioRadioIdDto[]; dmrIdIndexByValue: Map<number, number> } {
   const seen = new Map<number, { dmrId: number; name: string }>();
 
-  const consider = (dmrId: number, name: string) => {
-    if (dmrId <= 0 || seen.has(dmrId)) return;
-    seen.set(dmrId, { dmrId, name: name.slice(0, 11) });
-  };
-
-  if (mode === 'codeplug') {
-    for (const entry of channelEntries) {
-      consider(entry.dmrId, entry.name);
-    }
-  }
-  for (const entry of directoryRadioIds) {
-    consider(entry.dmrId, entry.name);
+  for (const entry of channelEntries) {
+    if (entry.dmrId <= 0 || seen.has(entry.dmrId)) continue;
+    seen.set(entry.dmrId, { dmrId: entry.dmrId, name: entry.name.slice(0, 11) });
   }
 
   const entries = [...seen.values()];
@@ -595,14 +584,64 @@ function mergeDm32RadioIdEntries(
   return { radioIds, dmrIdIndexByValue };
 }
 
+function mergeDm32AddressBookContacts(
+  libraryContacts: readonly RadioDigitalContactDto[],
+  directoryContacts: readonly RadioDigitalContactDto[],
+  includeLibrary: boolean,
+  includeDirectory: boolean,
+  serialCap: number,
+  warnings: string[],
+): RadioDigitalContactDto[] | undefined {
+  if (!includeLibrary && !includeDirectory) return undefined;
+  if (includeDirectory && !includeLibrary) {
+    if (directoryContacts.length > serialCap) {
+      warnings.push(
+        `Directory has more contacts than the DM-32 address book allows; only ${serialCap} write from directory`,
+      );
+    }
+    return directoryContacts.slice(0, serialCap);
+  }
+  if (includeLibrary && !includeDirectory) {
+    return [...libraryContacts];
+  }
+  const merged = [...libraryContacts];
+  const seen = new Set(
+    libraryContacts.filter((row) => row.digitalId > 0).map((row) => row.digitalId),
+  );
+  let skippedOverlap = 0;
+  let truncated = 0;
+  for (const row of directoryContacts) {
+    if (row.digitalId <= 0) continue;
+    if (seen.has(row.digitalId)) {
+      skippedOverlap++;
+      continue;
+    }
+    if (merged.length >= serialCap) {
+      truncated++;
+      continue;
+    }
+    seen.add(row.digitalId);
+    merged.push(row);
+  }
+  if (skippedOverlap > 0) {
+    warnings.push(
+      `Skipped ${skippedOverlap} directory row(s) whose DMR ID already exists on a library digital contact`,
+    );
+  }
+  if (truncated > 0) {
+    warnings.push(
+      `Directory has more contacts than the DM-32 address book allows; only ${serialCap} write from directory`,
+    );
+  }
+  return merged;
+}
+
 function buildDm32RadioIdBank(
   assembled: AssembledBuild,
   build: RadioBuild,
   library: Pick<LibrarySlice, 'talkGroups' | 'digitalContacts'>,
   egress: RadioWireEgressIds,
   warnings: string[],
-  mode: DualBankWriteMode,
-  directoryRadioIds: readonly RadioRadioIdDto[],
 ): { radioIds: RadioRadioIdDto[]; dmrIdIndexByValue: Map<number, number> } {
   const limits = requireProfileExportLimits(egress);
   const maxRadioIds = requireNumericLimit(limits.maxRadioIds, 'maxRadioIds', egress);
@@ -645,7 +684,7 @@ function buildDm32RadioIdBank(
     }
   }
 
-  return mergeDm32RadioIdEntries(channelEntries, directoryRadioIds, maxRadioIds, mode, warnings);
+  return mergeDm32RadioIdEntries(channelEntries, maxRadioIds, warnings);
 }
 
 /**
@@ -1228,14 +1267,15 @@ export function buildRadioWriteProjection(
   const warnings: string[] = [];
   const dualBank = context?.dualBank;
   const includeLibraryContacts = dualBank?.options.includeLibraryContacts ?? true;
+  const includeDigitalIdDirectory = dualBank?.options.includeDigitalIdDirectory ?? false;
   const dualBankMode = dualBank?.mode ?? 'codeplug';
   const directorySlice = dualBank?.directorySlice;
-  const directoryRadioIds = directorySlice?.radioIds ?? [];
   let fkMaps: RadioChannelFkMaps | undefined;
   let talkGroups: RadioTalkGroupDto[] = [];
   let rxGroups: RadioRxGroupDto[] = [];
   let digitalContacts: RadioDigitalContactDto[] = [];
   let dm32RadioIds: RadioRadioIdDto[] = [];
+  let dm32AddressBook: RadioDigitalContactDto[] | undefined;
 
   if (egress.profileId === 'radio-io-dm32uv' || egress.profileId === 'radio-io-at-d890uv') {
     const tgRx = buildTalkGroupsAndRx(assembled, build, egress, warnings, includeLibraryContacts);
@@ -1244,20 +1284,20 @@ export function buildRadioWriteProjection(
     digitalContacts = tgRx.digitalContacts;
     fkMaps = tgRx.fkMaps;
     if (egress.profileId === 'radio-io-dm32uv') {
-      const radioIdBank = buildDm32RadioIdBank(
-        assembled,
-        build,
-        library,
-        egress,
-        warnings,
-        dualBankMode,
-        directoryRadioIds,
-      );
+      const radioIdBank = buildDm32RadioIdBank(assembled, build, library, egress, warnings);
       dm32RadioIds = radioIdBank.radioIds;
       fkMaps = {
         ...tgRx.fkMaps,
         dmrIdIndexByValue: radioIdBank.dmrIdIndexByValue,
       };
+      dm32AddressBook = mergeDm32AddressBookContacts(
+        tgRx.digitalContacts,
+        directorySlice?.digitalContacts ?? [],
+        includeLibraryContacts,
+        includeDigitalIdDirectory,
+        DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX,
+        warnings,
+      );
     }
   } else if (isOpenGd77RadioIoEgress(egress.profileId)) {
     const tgRx = buildOpenGd77ContactsAndRx(
@@ -1317,8 +1357,8 @@ export function buildRadioWriteProjection(
       scanLists: org.scanLists,
       talkGroups,
       rxGroups,
-      ...(includeLibraryContacts ? { digitalContacts } : {}),
-      radioIds: dm32RadioIds,
+      ...(dm32AddressBook !== undefined ? { digitalContacts: dm32AddressBook } : {}),
+      ...(dualBankMode === 'codeplug' ? { radioIds: dm32RadioIds } : {}),
       aprs: radioAprsFromNeonplugPatch(assembled, numbersBySourceChannelId, warnings),
     };
   } else if (egress.profileId === 'radio-io-at-d890uv') {

@@ -16,6 +16,7 @@ import {
   DM32_MODEL_IDS,
   DM32_VFRAME,
   DM32_VFRAME_QUERY_IDS,
+  DM32_MAX_COMBINED_MAP_BYTES,
 } from './constants.ts';
 import { decodeChannelsFromDm32Image, encodeChannelsIntoDm32Image } from './channelCodec.ts';
 import {
@@ -54,9 +55,6 @@ import {
   type Dm32RestoreLiveAddressMap,
 } from './restoreFromBackup.ts';
 
-/** Max MemoryMap span when folding contact bank into config window (bytes). */
-const DM32_MAX_COMBINED_MAP_BYTES = 32 * 1024 * 1024;
-
 /** V-frame config window from connect — not overwritten when seeding hydration for Write. */
 export interface Dm32LiveLayout {
   addressBase: number;
@@ -77,6 +75,8 @@ export interface Dm32DownloadCache {
   contactsEnd?: number;
   /** Max contacts from V-frame 0x10 or firmware fallback. */
   maxContacts?: number;
+  /** Address-book 4KB blocks allocated for this Write (not in metadata discovery). */
+  contactWriteAddresses?: number[];
 }
 
 function blocksToMemoryMap(cache: Dm32DownloadCache): MemoryMap {
@@ -150,6 +150,9 @@ export class Dm32uvProtocol implements CloneImageRadio {
         contactsBase: seed.contactsBase,
         contactsEnd: seed.contactsEnd,
         maxContacts: seed.maxContacts,
+        contactWriteAddresses: seed.contactWriteAddresses
+          ? [...seed.contactWriteAddresses]
+          : undefined,
       };
       return;
     }
@@ -161,6 +164,9 @@ export class Dm32uvProtocol implements CloneImageRadio {
     this.cache.contactsBase = seed.contactsBase;
     this.cache.contactsEnd = seed.contactsEnd;
     this.cache.maxContacts = seed.maxContacts;
+    this.cache.contactWriteAddresses = seed.contactWriteAddresses
+      ? [...seed.contactWriteAddresses]
+      : undefined;
   }
 
   async connect(
@@ -420,21 +426,49 @@ export class Dm32uvProtocol implements CloneImageRadio {
     }
 
     const { blocks: remappedBlocks, discovered: remappedDiscovered, translations } = remapOutcome;
-    const addresses = [...remappedBlocks.keys()].sort((a, b) => a - b);
+    const contactWriteAddresses = [...(this.cache.contactWriteAddresses ?? [])];
+    const configAddresses = [...remappedBlocks.keys()];
+    const addresses = [...new Set([...configAddresses, ...contactWriteAddresses])].sort(
+      (a, b) => a - b,
+    );
+
+    const contactLast = contactWriteAddresses[contactWriteAddresses.length - 1];
+    const uploadBase =
+      contactWriteAddresses.length > 0
+        ? Math.min(this.liveLayout.addressBase, contactWriteAddresses[0]!)
+        : this.liveLayout.addressBase;
+    const uploadLast =
+      contactLast != null
+        ? Math.max(this.liveLayout.alignedEnd, contactLast)
+        : this.liveLayout.alignedEnd;
+    const uploadMapSize = uploadLast - uploadBase + DM32_BLOCK_SIZE;
+    if (uploadMapSize <= 0 || uploadMapSize > DM32_MAX_COMBINED_MAP_BYTES) {
+      throw new RadioProtocolError(
+        `DM-32UV write map ${uploadMapSize} bytes exceeds the combined map ceiling`,
+      );
+    }
 
     const remappedImage = remapDm32MemoryMapByTranslations(
       image,
       seededAddressBase,
-      this.liveLayout.addressBase,
-      this.liveLayout.mapSize,
+      uploadBase,
+      uploadMapSize,
       translations,
       addresses,
     );
 
-    this.cache.addressBase = this.liveLayout.addressBase;
-    this.cache.mapSize = this.liveLayout.mapSize;
+    for (const addr of contactWriteAddresses) {
+      const sourceOffset = addr - seededAddressBase;
+      if (sourceOffset >= 0 && sourceOffset + DM32_BLOCK_SIZE <= image.size) {
+        remappedBlocks.set(addr, image.get(sourceOffset, DM32_BLOCK_SIZE).slice());
+      }
+    }
+
+    this.cache.addressBase = uploadBase;
+    this.cache.mapSize = uploadMapSize;
     this.cache.discovered = remappedDiscovered;
     this.cache.blocks = remappedBlocks;
+    this.cache.contactWriteAddresses = contactWriteAddresses;
 
     const blocks = memoryMapToDm32Blocks(remappedImage, this.cache.addressBase, addresses);
     const byAddr = new Map(this.cache.discovered.map((b) => [b.address, b]));

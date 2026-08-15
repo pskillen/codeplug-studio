@@ -42,7 +42,7 @@ Studio Web Serial encodes the **serial** address book only.
 | `0x3C`–`0x4B` | Country  | 16 ASCII |
 | `0x4C`–`0x5B` | Remark   | 16 ASCII |
 
-**Studio Web Serial (#667, #685):** digital address-book **encode** remains for when contact blocks are present in the map; clone **Read does not pull** that bank into hydration, so selective-range Write will not upload address-book blocks until a contacts Read (or allocate-on-write) is wired. When packing, entry slots in the packed blocks (and in a **trusted small** V-frame span ≤ `CONTACT_BANK_MAX_BLOCKS`) clear to `0xFF` before packing. A huge L01 `contactsEnd` is **not** treated as a clear/read span. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them.
+**Studio Web Serial (#667, #685, [#1220](https://github.com/pskillen/codeplug-studio/issues/1220)):** Write **allocates** `ceil(n/44)` 4KB blocks from V-frame `0x0F` `contactsBase` (capped at `CONTACT_BANK_MAX_BLOCKS`) and includes those addresses in upload — clone **Read still skips** the bank (H6). A huge L01 `contactsEnd` is **not** treated as a clear/read span. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them. RadioID directory and library privates share this bank; operator radio IDs stay metadata `0x67`.
 
 ## Talk groups — metadata `0x44` (+ counter `0x06`)
 

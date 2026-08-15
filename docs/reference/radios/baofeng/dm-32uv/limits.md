@@ -4,30 +4,32 @@ Shared hardware / memory caps (NeonPlug `LIMITS` + radio-confirmed zone name len
 
 **Code:** `src/core/radios/baofeng/dm-32uv/limits.ts` (`DM32UV_LIMITS`); Web Serial `DM32_LIMITS` in `src/integrations/radio-io/radios/dm32uv/constants.ts` re-exports cardinality from core.
 
-| Constraint                          | Value    | Notes                                                                                                                          |
-| ----------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Channels                            | **4000** |                                                                                                                                |
-| Zones                               | **250**  |                                                                                                                                |
-| Zone members                        | **64**   | Distinct from scan-list member cap                                                                                             |
-| Scan lists                          | **32**   | EEPROM bank; channel `scanListId` FK is 4 bits → **15** referenceable lists (`CHANNEL_SCAN_LIST_ID_MAX`)                       |
-| Scan list members                   | **15**   | Named CSV members; CPS “16” includes implicit current channel ([#486](https://github.com/pskillen/codeplug-studio/issues/486)) |
-| RX group lists                      | **32**   |                                                                                                                                |
-| RX group list members               | **32**   |                                                                                                                                |
-| Contacts                            | **250**  |                                                                                                                                |
-| Talk groups                         | **800**  |                                                                                                                                |
-| Channel / zone / contact / TG names | **16**   | `nameLimit` — channel LCD + radio-confirmed zone                                                                               |
-| Scan list names                     | **10**   | `scanListNameLimit` — conservative (CPS official 11; NeonPlug field 10)                                                        |
-| RX group list names                 | **10**   | `rxGroupListNameLimit` — NeonPlug RXGroup 11-byte null-terminated field                                                        |
-| Default scan inclusion (export)     | **scan** | When library `scanInclusion` is `default`; `DM32UV_LIMITS.DEFAULT_SCAN_INCLUSION`                                              |
+| Constraint                          | Value                | Notes                                                                                                                          |
+| ----------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Channels                            | **4000**             |                                                                                                                                |
+| Zones                               | **250**              |                                                                                                                                |
+| Zone members                        | **64**               | Distinct from scan-list member cap                                                                                             |
+| Scan lists                          | **32**               | EEPROM bank; channel `scanListId` FK is 4 bits → **15** referenceable lists (`CHANNEL_SCAN_LIST_ID_MAX`)                       |
+| Scan list members                   | **15**               | Named CSV members; CPS “16” includes implicit current channel ([#486](https://github.com/pskillen/codeplug-studio/issues/486)) |
+| RX group lists                      | **32**               |                                                                                                                                |
+| RX group list members               | **32**               |                                                                                                                                |
+| Contacts (CPS)                      | **250**              | `CONTACTS_MAX` — `DigitalContacts.csv` / library-private projection                                                            |
+| Address-book write (Web Serial)     | **11 264**           | `ADDRESS_BOOK_WRITE_MAX` = `CONTACT_BANK_MAX_BLOCKS` (256) × 44 records/block. Do not walk V-frame end.                        |
+| Firmware contact bank (preliminary) | **50 000 / 150 000** | V-frame `0x10` or L01 fallback (`FIRMWARE_CONTACT_MAX_*`). Studio does not write this many in one pass.                        |
+| Talk groups                         | **800**              |                                                                                                                                |
+| Channel / zone / contact / TG names | **16**               | `nameLimit` — channel LCD + radio-confirmed zone                                                                               |
+| Scan list names                     | **10**               | `scanListNameLimit` — conservative (CPS official 11; NeonPlug field 10)                                                        |
+| RX group list names                 | **10**               | `rxGroupListNameLimit` — NeonPlug RXGroup 11-byte null-terminated field                                                        |
+| Default scan inclusion (export)     | **scan**             | When library `scanInclusion` is `default`; `DM32UV_LIMITS.DEFAULT_SCAN_INCLUSION`                                              |
 
 Zone-derived scan lists synthesise at most **15** named members even when a zone has up to **64** members — intentional export loss; see DM32 [scan-lists.md](../../../export-formats/dm32/scan-lists.md).
 
 ## Adapter application
 
-| Adapter                      | Behaviour when over limit                                            |
-| ---------------------------- | -------------------------------------------------------------------- |
-| DM32 `dm32-baofeng-dm32uv`   | Export warnings / truncation at CSV serialise                        |
-| NeonPlug `neonplug-dm32uv`   | Same numeric caps (sync test in `formats/neonplug/profiles.test.ts`) |
-| Web Serial `radio-io-dm32uv` | Same caps via `getProfileExportLimits` + write projection            |
+| Adapter                      | Behaviour when over limit                                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------- |
+| DM32 `dm32-baofeng-dm32uv`   | Export warnings / truncation at CSV serialise                                                            |
+| NeonPlug `neonplug-dm32uv`   | Same numeric caps (sync test in `formats/neonplug/profiles.test.ts`)                                     |
+| Web Serial `radio-io-dm32uv` | CPS contact cap **250** for library privates; address-book directory writes use `ADDRESS_BOOK_WRITE_MAX` |
 
 Do **not** bake these into library CRUD.

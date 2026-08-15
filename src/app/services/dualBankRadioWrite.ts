@@ -8,14 +8,12 @@ import {
   type DualBankRadioWriteOptions,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import type { DualBankWriteMode } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
-import {
-  mapDirectoryEntryToRadioDigitalContactDto,
-  mapDirectoryEntryToRadioRadioIdDto,
-} from '@integrations/radioid/mapDirectoryEntryToRadioDto.ts';
+import { mapDirectoryEntryToRadioDigitalContactDto } from '@integrations/radioid/mapDirectoryEntryToRadioDto.ts';
 import type {
   RadioDigitalContactDto,
   RadioRadioIdDto,
@@ -71,26 +69,26 @@ export async function collectDualBankDirectorySlice(
     return { radioIds: [], digitalContacts: [] };
   }
 
-  const radioIds: RadioRadioIdDto[] = [];
   const digitalContacts: RadioDigitalContactDto[] = [];
   let skippedOverlap = 0;
-  let truncatedRadioIds = 0;
   let truncatedContacts = 0;
   const openGd77Cap = args.maxDirectoryContacts ?? OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX;
+  const dm32Cap = args.maxDirectoryContacts ?? DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX;
+  // Shared 0x0F bank: skip library IDs only when Both (library is also written).
+  const skipDm32Overlap = forDm32 && args.options.includeLibraryContacts;
 
   await args.store.iterateDigitalIdDirectory(args.projectId, (row: DigitalIdDirectoryEntry) => {
-    // DM-32 still shares the operator-ID bank with channel dmrId until #1220.
-    // OpenGD77 User Database is a true second store — keep overlapping digitalIds.
-    if (forDm32 && !shouldIncludeDirectoryRow(row.digitalId, libraryIds)) {
+    if (skipDm32Overlap && !shouldIncludeDirectoryRow(row.digitalId, libraryIds)) {
       skippedOverlap++;
       return;
     }
     if (forDm32) {
-      if (args.maxRadioIds != null && radioIds.length >= args.maxRadioIds) {
-        truncatedRadioIds++;
+      if (row.digitalId <= 0) return;
+      if (digitalContacts.length >= dm32Cap) {
+        truncatedContacts++;
         return;
       }
-      radioIds.push(mapDirectoryEntryToRadioRadioIdDto(row, radioIds.length));
+      digitalContacts.push(mapDirectoryEntryToRadioDigitalContactDto(row));
     }
     if (forOpenGd77) {
       if (row.digitalId <= 0) return;
@@ -107,16 +105,17 @@ export async function collectDualBankDirectorySlice(
       `Skipped ${skippedOverlap} directory row(s) whose DMR ID already exists on a library digital contact`,
     );
   }
-  if (truncatedRadioIds > 0 && args.maxRadioIds != null) {
-    args.warnings.push(
-      `Directory has more DMR IDs than the radio operator-ID bank allows; only ${args.maxRadioIds} export`,
-    );
-  }
   if (truncatedContacts > 0) {
-    args.warnings.push(
-      `Directory has more contacts than the OpenGD77 User Database allows; only ${openGd77Cap} write from directory`,
-    );
+    if (forOpenGd77) {
+      args.warnings.push(
+        `Directory has more contacts than the OpenGD77 User Database allows; only ${openGd77Cap} write from directory`,
+      );
+    } else {
+      args.warnings.push(
+        `Directory has more contacts than the DM-32 address book allows; only ${dm32Cap} write from directory`,
+      );
+    }
   }
 
-  return { radioIds, digitalContacts };
+  return { radioIds: [], digitalContacts };
 }

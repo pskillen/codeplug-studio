@@ -39,4 +39,20 @@ describe('ExportDirectoryProjectionFields', () => {
       },
     });
   });
+
+  it('explains that DM-32 CPS cannot hold the RadioID directory', () => {
+    const { build } = newRadioBuildForProfile('project-1', 'dm32-baofeng-dm32uv');
+    render(
+      <MantineProvider>
+        <ExportDirectoryProjectionFields
+          build={build}
+          formatId="dm32"
+          profileId="dm32-baofeng-dm32uv"
+          saving={false}
+          onPatch={vi.fn()}
+        />
+      </MantineProvider>,
+    );
+    expect(screen.getByText(/does not add rows to that file or DMR-ID.csv/)).toBeInTheDocument();
+  });
 });

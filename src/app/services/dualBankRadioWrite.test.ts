@@ -18,7 +18,7 @@ function emptyLibrary(): LibrarySlice {
 }
 
 describe('collectDualBankDirectorySlice', () => {
-  it('streams directory rows into DM-32 radio ID DTOs and skips library overlaps', async () => {
+  it('streams directory rows into DM-32 address-book DTOs and skips library overlaps when Both', async () => {
     const store = new InMemoryProjectPersistence();
     await store.putDigitalIdDirectoryEntriesBatch([
       {
@@ -57,13 +57,48 @@ describe('collectDualBankDirectorySlice', () => {
       projectId: 'p1',
       library,
       egressProfileId: 'radio-io-dm32uv',
-      options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
-      maxRadioIds: 250,
+      options: { includeLibraryContacts: true, includeDigitalIdDirectory: true },
       warnings,
     });
-    expect(slice.radioIds).toEqual([{ index: 0, dmrId: 2002, name: 'Beta' }]);
-    expect(slice.digitalContacts).toEqual([]);
+    expect(slice.radioIds).toEqual([]);
+    expect(slice.digitalContacts.map((row) => row.digitalId)).toEqual([2002]);
     expect(warnings.some((w) => w.includes('Skipped 1 directory row'))).toBe(true);
+  });
+
+  it('keeps overlapping DM-32 directory IDs on RadioID-only (address book replaced)', async () => {
+    const store = new InMemoryProjectPersistence();
+    await store.putDigitalIdDirectoryEntriesBatch([
+      {
+        projectId: 'p1',
+        digitalId: 1001,
+        mode: 'dmr',
+        name: 'Alpha',
+        callsign: 'A1',
+        city: '',
+        state: '',
+        country: '',
+      },
+    ]);
+    const warnings: string[] = [];
+    const library: LibrarySlice = {
+      ...emptyLibrary(),
+      digitalContacts: [
+        {
+          ...newDigitalContact('p1', 'Curated', 1001, 'dmr'),
+          id: 'dc-1',
+        },
+      ],
+    };
+    const slice = await collectDualBankDirectorySlice({
+      store,
+      projectId: 'p1',
+      library,
+      egressProfileId: 'radio-io-dm32uv',
+      options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
+      warnings,
+    });
+    expect(slice.digitalContacts.map((row) => row.digitalId)).toEqual([1001]);
+    expect(warnings.some((w) => w.includes('Skipped'))).toBe(false);
   });
 
   it('returns empty slice when directory toggle is off', async () => {

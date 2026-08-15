@@ -54,6 +54,12 @@ describe('WriteRadioModal (#1121)', () => {
     expect(screen.getByText(/does not fill the 1024 contact bank/i)).toBeInTheDocument();
   });
 
+  it('explains DM-32 shared address book vs operator radio IDs', () => {
+    renderModal({ sharedAddressBookNote: true, supportsKeps: false });
+    expect(screen.getByText(/share one address book/i)).toBeInTheDocument();
+    expect(screen.getByText(/does not rewrite operator radio IDs/i)).toBeInTheDocument();
+  });
+
   it('enables Write contacts only after a source is chosen', () => {
     const { props } = renderModal({ contactSource: 'library' });
     expect(screen.getByRole('button', { name: 'Write contacts only' })).not.toBeDisabled();

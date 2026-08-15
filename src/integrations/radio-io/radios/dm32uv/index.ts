@@ -42,6 +42,7 @@ export {
   memoryMapFromDm32uvHydration,
   encodeDm32uvWriteImageFromDownloadCache,
   encodeDm32uvProjectionOntoImage,
+  allocateDm32ContactBankForWrite,
   DM32_EMPTY_WRITE_CACHE_MESSAGE,
 } from './hydration.ts';
 export {
