@@ -21,12 +21,12 @@ Nothing enters on inference alone. Where something is inference it says so in th
 | - | ------- | -------- |
 | G1 | The DMR contact bank is FLASH `0x000a7620`, 1024 × `0x18`, fully replaced on Write. CPS analogue is `Contacts.csv`. | `S/2026-08-15-code`; [contacts-zones-lists.md](../../reference/radios/opengd77/contacts-zones-lists.md) |
 | G2 | Firmware **User Database** / **DMR ID database** (qdmr **call-sign DB**) is a separate FLASH region used for callsign+name display when a DMR ID is heard. CPS writes it via “Write DMR IDs”, not `Contacts.csv`. | `S/2026-08-15-userguide`; `S/2026-08-15-qdmr` |
-| G3 | Studio never reads or writes that User Database. Download/backup only transfers `OPENUV380_FLASH_SPANS`. Segment 0 (qdmr `0x50000`) sits in an untransferred image gap; segment 1 (`0xd8000`) is past `IMAGE_END` `0xaee60`. | `S/2026-08-15-code`; `04-bank-geometry.md` |
-| G4 | Dual-bank Write/CPS for OpenGD77 appends directory rows as **private contacts** into the 1024 contact bank (`collectDualBankDirectorySlice` `forOpenGd77`; `buildOpenGd77ContactsAndRx`). Cap is `maxContacts` (1024). Tests lock this in. | `S/2026-08-15-code` |
-| G5 | Backup / Restore inspect “DMR contacts” is `decodeContactsFromImage` over those 1024 slots only. A count of 1024 means the **contact bank is full**, not that the User Database is capped at 1024. | `S/2026-08-15-code`; `O/1211` |
+| G5 | Backup / Restore inspect “DMR contacts” is `decodeContactsFromImage` over those 1024 slots only. A count of 1024 means the **contact bank is full**, not that the User Database is capped at 1024. Occupied User Database count is a separate inspect row when the zip captured it. | `S/2026-08-15-code`; `S/2026-08-15-impl`; `O/1211` |
 | G6 | qdmr OpenUV380 callsign-db **class comment** saying start `0x30000` is copy-paste from GD-77. Actual encode uses `Offset::header() = 0x50000` and `entries1 = 0xd8000`. | `S/2026-08-15-qdmr` |
 | G7 | qdmr `Limit::entries()` on UV380 `size1 = 0xd28000` is not a Studio SoT. User guide cardinality is ~13 800–69 600 depending on chars/entry. | `S/2026-08-15-qdmr`; `S/2026-08-15-userguide` |
-| G8 | **Inference:** MD-9600 shares the OpenUV380 map, so the same wrong directory merge applies. | inference from `radio-io-opengd77-md9600` using the same codecs |
+| G8 | **Inference:** MD-9600 shares the OpenUV380 map, so the same User Database layout applies. | inference from `radio-io-opengd77-md9600` using the same codecs |
+| G9 | Studio **encodes and writes** OpenUV380 User Database as occupied FLASH sectors (`0x50000` / overflow `0xd8000`); occupied Backup inspect decodes header count. Programming `IMAGE_END` is unchanged. Cardinality cap is preliminary `USER_DATABASE_MAX` (69 600). **Not hardware-proven.** | `S/2026-08-15-impl`; [user-database.md](../../reference/radios/opengd77/user-database.md) |
+| G10 | OpenGD77 Write/CPS **no longer** append directory rows to the 1024 contact bank / `Contacts.csv`. Dual-bank OpenGD77 **keeps** overlapping `digitalId`s. Directory-only omits contact overlay keys so prior FLASH contacts are kept. CPS emits a Web Serial–only warning. | `S/2026-08-15-impl`; G9 |
 
 ## DM-32
 
@@ -54,6 +54,5 @@ Nothing enters on inference alone. Where something is inference it says so in th
 
 | # | Finding | Evidence |
 | - | ------- | -------- |
-| C1 | `SeparateDigitalIdList` is stamped on OpenGD77 1701/MD-9600 and DM-32. The Write UI therefore offers Library / RadioID / Both. Wire targets differ and are wrong for directory on both. | `S/2026-08-15-code` |
-| C2 | CPS `applyCpsDigitalDirectoryProjection` concatenates directory onto `digitalContacts` for OpenGD77 (`Contacts.csv`) and can emit DM-32 `DMR-ID.csv` when directory is on. Format README still lists `DMR-ID.csv` as skip. | `S/2026-08-15-code` |
-| C3 | Dual-bank streaming (`collectDualBankDirectorySlice`, CPS dual path) **always** skips directory `digitalId`s already in the library. That matches **P2 single-bank**, and **violates P2 dual-bank**. Comment on `shouldIncludeDirectoryRow` says “when both banks contribute, library wins.” | `S/2026-08-15-code`; P2 |
+| C1 | `SeparateDigitalIdList` is stamped on OpenGD77 1701/MD-9600 and DM-32. The Write UI therefore offers Library / RadioID / Both. Wire targets differ. | `S/2026-08-15-code`; G10 |
+| C4 | Dual-bank streaming **gates** overlap skip: OpenGD77 **keeps** matching `digitalId`s; DM-32 still skips until #1220; D890 single-bank **keeps** the skip. | `S/2026-08-15-impl`; P2 |

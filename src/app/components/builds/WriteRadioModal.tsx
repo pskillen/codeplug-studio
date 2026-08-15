@@ -79,7 +79,11 @@ export default function WriteRadioModal({
           <Stack gap="xs">
             <FormField
               label="Digital contacts"
-              hint="Library contacts are curated project rows. RadioID directory is the local shadow book. None leaves the radio contact banks unchanged. Both: library wins on duplicate DMR ID."
+              hint={
+                sharedContactBankNote
+                  ? 'Library talk groups and privates use the 1024-slot DMR contact bank. RadioID directory writes the firmware User Database for incoming-call lookup. The same DMR ID may exist in both stores. None leaves those FLASH regions unchanged on Write codeplug.'
+                  : 'Library contacts are curated project rows. RadioID directory is the local shadow book. None leaves the radio contact banks unchanged. Both: library wins on duplicate DMR ID.'
+              }
             >
               <SegmentedControl
                 size="sm"
@@ -91,9 +95,8 @@ export default function WriteRadioModal({
             </FormField>
             {sharedContactBankNote ? (
               <Text size="xs" c="dimmed">
-                Talk groups still rewrite this radio&apos;s shared contact bank. Skipping library
-                contacts and RadioID directory does not preserve private-contact slots already on
-                the radio.
+                RadioID does not fill the 1024 contact bank. RadioID-only Write leaves prior FLASH
+                contacts. Library or Both replaces talk groups and library privates in that bank.
               </Text>
             ) : null}
             <Group justify="flex-end">

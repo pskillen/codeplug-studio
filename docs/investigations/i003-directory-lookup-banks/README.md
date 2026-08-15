@@ -2,11 +2,11 @@
 
 **Hub for this investigation.** Promoted from `tmp/features/baofeng-contacts-export/investigation.md` (scratch). Number **i003** is used; do not reuse.
 
-**Status:** **Preliminary.** Code + qdmr/OpenGD77/Anytone docs. No live dump in this pass. Findings will move or die as hardware lands. Do not promote numbers into `src/core/radios/` until verified.
+**Status:** **Live.** OpenGD77 User Database **code shipped** ([#1211](https://github.com/pskillen/codeplug-studio/issues/1211)) — hardware verify pending. DM-32 remapping ([#1220](https://github.com/pskillen/codeplug-studio/issues/1220)) still open. No live dump in this pass. Do not promote unverified numbers into library CRUD.
 
-**Prime suspect:** Dual-bank radios map directory to the wrong FLASH/metadata bank (1701 contact bank; DM-32 `0x67`). D890 is single-bank: directory already targets `DigitalContact*` (the 500k lookup store). Dual-bank code still **drops** directory rows whose DMR ID is already in the library — wrong once banks are truly separate.
+**Prime suspect (remaining):** DM-32 maps directory to operator radio IDs `0x67` instead of address book `0x0F`. D890 is single-bank: directory already targets `DigitalContact*`. OpenGD77 contact-bank stuffing is **stopped in code**; LCD lookup vs qdmr `0x50000` / `0xd8000` is unproven.
 
-**Next move:** Hardware-check 1701 User Database bases vs qdmr `Offset`, and whether DM-32 incoming-call display reads V-frame `0x0F`. Stop-gap: do not merge directory into those wrong banks; stop dual-bank digitalId skip.
+**Next move:** Hardware-check 1701 User Database bases vs qdmr `Offset` (H1) and incoming-call display. Keep #1220 stop-gap (do not merge directory into `0x67`; keep DM-32 digitalId skip until that ticket).
 
 | | |
 | --- | --- |
@@ -32,7 +32,7 @@ Settled radio facts belong in `docs/reference/radios/` — cite, do not duplicat
 
 ## Current strategy
 
-Same product intent, three wires. Code mapping is cheap to prove; FLASH layout and “what the LCD actually looks up” are hardware. Do not ship User Database encode from qdmr comments alone (`0x30000` on the UV380 file is stale). D890 `DigitalContact*` is the lookup-sized bank — do not invent a second User Database there.
+Same product intent, three wires. OpenGD77 encode follows qdmr `Offset` + `encode()` (not the `0x30000` class comment) as a sidecar — **LCD proof is still hardware**. D890 `DigitalContact*` is the lookup-sized bank — do not invent a second User Database there.
 
 ## Rules of engagement
 

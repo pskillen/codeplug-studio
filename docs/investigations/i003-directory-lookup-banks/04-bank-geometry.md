@@ -34,6 +34,8 @@ Permanent homes when settled: `docs/reference/radios/opengd77/`, `docs/reference
 
 User guide (operator): ~13 800–69 600 IDs depending on characters per entry.
 
+**Promoted (code, not dump):** [user-database.md](../../reference/radios/opengd77/user-database.md).
+
 ## Stock DM-1701 (not OpenGD77)
 
 qdmr `DM1701Codeplug`: second segment includes 10 000 contacts at `0x140000`. **Do not use on OpenGD77 firmware.**

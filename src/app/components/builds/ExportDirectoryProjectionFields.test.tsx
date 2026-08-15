@@ -20,6 +20,8 @@ describe('ExportDirectoryProjectionFields', () => {
       </MantineProvider>,
     );
 
+    expect(screen.getByText(/OpenGD77 CPS has no User Database file/)).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole('checkbox', { name: 'Include library digital contacts' }));
     expect(onPatch).toHaveBeenCalledWith({
       cpsDualBankDirectory: {
