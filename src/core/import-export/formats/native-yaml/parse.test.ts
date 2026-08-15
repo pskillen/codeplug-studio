@@ -253,7 +253,7 @@ describe('native-yaml validate', () => {
     const priorVersionYaml = readFileSync(
       join(exportFixturesDir, 'minimal-project.yaml'),
       'utf8',
-    ).replace('studioSchemaVersion: 28', 'studioSchemaVersion: 26');
+    ).replace('studioSchemaVersion: 29', 'studioSchemaVersion: 28');
     expect(() => validateDocument(parseYamlTree(priorVersionYaml))).not.toThrow();
   });
 

@@ -195,7 +195,7 @@ project:
     includeInZoneDerivedScanList: true
 radioBuilds: []
 schemaVersion: 1
-studioSchemaVersion: 28
+studioSchemaVersion: 29
 trackingSettings:
   id: ffffffff-ffff-4fff-8fff-ffffffffffff
   location:
