@@ -363,9 +363,16 @@ export default function ChannelEditor({
               <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
               <TxPermitSegment value={txPermit} onChange={setTxPermit} />
             </Stack>
-            <div className={[classes.powerField, isMobile ? classes.powerFieldFull : ''].join(' ')}>
+            <div className={classes.powerRow}>
               <PercentLevelSlider label="Power" value={power} onChange={setPower} />
-              <PowerLadderHints power={power} />
+              {isMobile ? (
+                <details className={classes.hintDetails}>
+                  <summary>Power examples</summary>
+                  <PowerLadderHints power={power} />
+                </details>
+              ) : (
+                <PowerLadderHints power={power} />
+              )}
             </div>
           </Panel>
 
