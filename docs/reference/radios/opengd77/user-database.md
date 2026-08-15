@@ -4,7 +4,7 @@ Firmware **DMR ID / callsign lookup** used for incoming-call display. This is **
 
 **Hub:** [README.md](README.md) · **Contacts bank:** [contacts-zones-lists.md](contacts-zones-lists.md) · **Product:** [contact-directories](../../../features/contact-directories/README.md)
 
-Cite: qdmr `OpenUV380CallsignDB` **Offset** + `encode()` (facts only). The class comment saying start `0x30000` is GD-77 copy-paste — do not use it on 1701 / MD-9600. Addresses are **preliminary until a live dump** ([#1211](https://github.com/pskillen/codeplug-studio/issues/1211), i003).
+Cite: qdmr `OpenUV380CallsignDB` **Offset** + `encode()` (facts only). The class comment saying start `0x30000` is GD-77 copy-paste — do not use it on 1701 / MD-9600. A 1701 **Write ACK’d** occupied sectors at these bases ([i003](../../../investigations/i003-directory-lookup-banks/README.md) `R/2026-08-15-1701-udb-ack`). Incoming-call LCD lookup and a FLASH dump are still open.
 
 ## FLASH (OpenUV380)
 
