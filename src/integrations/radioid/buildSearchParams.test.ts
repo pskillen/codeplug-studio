@@ -38,7 +38,7 @@ describe('buildRadioidDmrUserSearchParams', () => {
       country: 'United Kingdom',
       country_sel: 'B',
       page: 2,
-      per_page: 100,
+      per_page: 200,
     });
   });
 });

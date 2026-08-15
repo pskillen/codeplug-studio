@@ -43,7 +43,7 @@ Studio forwards these query params to upstream (see [API explorer](https://radio
 | `city`, `state`, `country` | Location filters               |
 | `*_sel`                    | Match mode for string filters  |
 | `page`                     | Page number (starts at 1)      |
-| `per_page`                 | Page size (Studio caps at 100) |
+| `per_page`                 | Page size (Studio caps at 200) |
 
 ## Response shape (JSON)
 
