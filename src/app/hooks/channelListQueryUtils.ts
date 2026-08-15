@@ -1,4 +1,5 @@
 import { DISTANCE_FILTER_MARKS_KM } from '../lib/channels.ts';
+import { DATATABLE_CALLSIGN_SORT_KEY } from '../lib/dataTable/sort.ts';
 import {
   loadChannelVisibleColumns as loadChannelVisibleColumnsFromStorage,
   loadChannelCardVisibleColumns as loadChannelCardVisibleColumnsFromStorage,
@@ -14,6 +15,12 @@ export type { ChannelSortMode } from '@integrations/listPrefs/index.ts';
 
 export const CHANNEL_LIST_COLUMNS_SCHEMA_VERSION = 3;
 export const CHANNEL_LIST_CARD_COLUMNS_SCHEMA_VERSION = 1;
+
+export const CHANNEL_TABLE_CALLSIGN_COLUMN = {
+  key: DATATABLE_CALLSIGN_SORT_KEY,
+  header: 'Callsign',
+  defaultVisible: true,
+} as const;
 
 export const CHANNEL_OPTIONAL_COLUMNS = [
   { key: 'zones', header: 'Zones', defaultVisible: true },
@@ -35,12 +42,29 @@ export function defaultChannelVisibleColumns(): string[] {
   return CHANNEL_OPTIONAL_COLUMNS.filter((c) => c.defaultVisible).map((c) => c.key);
 }
 
+export function defaultChannelTableVisibleColumns(): string[] {
+  return [CHANNEL_TABLE_CALLSIGN_COLUMN.key, ...defaultChannelVisibleColumns()];
+}
+
+export function channelTableHideableColumns(): { key: string; defaultVisible: boolean }[] {
+  return [
+    {
+      key: CHANNEL_TABLE_CALLSIGN_COLUMN.key,
+      defaultVisible: CHANNEL_TABLE_CALLSIGN_COLUMN.defaultVisible,
+    },
+    ...CHANNEL_OPTIONAL_COLUMNS.map((col) => ({
+      key: col.key,
+      defaultVisible: col.defaultVisible,
+    })),
+  ];
+}
+
 export function loadChannelVisibleColumns(projectId: string): string[] {
-  const validKeys = new Set(CHANNEL_OPTIONAL_COLUMNS.map((c) => c.key));
+  const validKeys = new Set(channelTableHideableColumns().map((col) => col.key));
   return loadChannelVisibleColumnsFromStorage(
     projectId,
     validKeys,
-    defaultChannelVisibleColumns(),
+    defaultChannelTableVisibleColumns(),
     CHANNEL_LIST_COLUMNS_SCHEMA_VERSION,
   );
 }
