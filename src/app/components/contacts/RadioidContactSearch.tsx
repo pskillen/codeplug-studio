@@ -84,14 +84,23 @@ export default function RadioidContactSearch() {
     return map;
   }, [library.digitalContacts]);
 
+  const listingIds = useMemo(() => listings.map((row) => row.id), [listings]);
+
   useEffect(() => {
-    if (!activeProjectId) return;
+    if (!activeProjectId) {
+      setDirectoryDigitalIds(EMPTY_DIRECTORY_IDS);
+      return;
+    }
     const projectId = activeProjectId;
 
     let cancelled = false;
 
     async function loadDirectoryIds() {
-      const entries = await persistence.listDigitalIdDirectoryEntries(projectId);
+      if (listingIds.length === 0) {
+        if (!cancelled) setDirectoryDigitalIds(EMPTY_DIRECTORY_IDS);
+        return;
+      }
+      const entries = await persistence.getDigitalIdDirectoryEntriesByIds(projectId, listingIds);
       if (cancelled) return;
       setDirectoryDigitalIds(new Set(entries.map((entry) => entry.digitalId)));
     }
@@ -107,7 +116,7 @@ export default function RadioidContactSearch() {
       cancelled = true;
       unsubscribe();
     };
-  }, [activeProjectId]);
+  }, [activeProjectId, listingIds]);
 
   function openPreview(row: RadioidDmrUserListing) {
     const existing = findDigitalContactByDigitalId(library.digitalContacts, row.id);

@@ -28,6 +28,7 @@ export default function AddFromRadioidPage() {
   - **Import selected** — checked rows only
 - Bulk modal: confirm directory counts, optional **update existing** checkbox, progress bar with ETA, cancel mid-run.
 - Per row: **Add** saves a new directory row; **In directory** when the ID is already staged; **Update** opens `RadioidContactUpdateDialog` when the ID exists as a **library** contact.
+- Duplicate dimming looks up **only the current result-page IDs** (`getDigitalIdDirectoryEntriesByIds`). It must not hydrate the full shadow store.
 - Callsign and DMR ID links open `RadioidContactPreviewDialog` (view-only library record) so search results are preserved.
 - Preview modal: **Update from RadioID.net**, **Open in editor** (warns that search will be lost).
 - Bulk duplicate gate matches on directory `digitalId`; library preview/update still uses library contacts.
