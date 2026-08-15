@@ -54,14 +54,11 @@ describe('encodeOpenGd77WriteImageFromPrior', () => {
 
   it('keeps prior DMR contacts when organisation omits talkGroups and digitalContacts', () => {
     const prior = createOpenUv380Image();
-    encodeContactsIntoImage(prior, [
-      { index: 1, wireName: 'TG91', digitalId: 91, callType: 0 },
-    ]);
-    const image = encodeOpenGd77WriteImageFromPrior(
-      prior,
-      [],
-      { zones: [], userDatabaseContacts: [] },
-    );
+    encodeContactsIntoImage(prior, [{ index: 1, wireName: 'TG91', digitalId: 91, callType: 0 }]);
+    const image = encodeOpenGd77WriteImageFromPrior(prior, [], {
+      zones: [],
+      userDatabaseContacts: [],
+    });
     expect(decodeContactsFromImage(image)).toEqual([
       expect.objectContaining({ digitalId: 91, wireName: 'TG91' }),
     ]);

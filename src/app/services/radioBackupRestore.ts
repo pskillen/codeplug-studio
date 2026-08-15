@@ -143,7 +143,8 @@ export async function backupLiveRadioSession(
     protocol: session.radio,
     capturedAt: new Date().toISOString(),
   });
-  let extraRegions: { region: RadioBackupManifestV1['regions'][number]; bytes: Uint8Array }[] | undefined;
+  let extraRegions:
+    { region: RadioBackupManifestV1['regions'][number]; bytes: Uint8Array }[] | undefined;
   let userDatabaseOccupied: Uint8Array | undefined;
   if (session.radio instanceof OpenGd77Protocol) {
     userDatabaseOccupied = await session.radio.downloadUserDatabaseOccupied({

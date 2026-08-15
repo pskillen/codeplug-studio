@@ -15,7 +15,9 @@ import {
   unpackUserDatabaseText,
 } from './userDatabaseCodec.ts';
 
-function row(partial: Partial<RadioDigitalContactDto> & { digitalId: number }): RadioDigitalContactDto {
+function row(
+  partial: Partial<RadioDigitalContactDto> & { digitalId: number },
+): RadioDigitalContactDto {
   return {
     wireName: partial.wireName ?? `N${partial.digitalId}`,
     digitalId: partial.digitalId,
@@ -87,7 +89,11 @@ describe('OpenGD77 User Database codec', () => {
     expect(overflow.entryCount).toBe(n0 + 2);
     expect(overflow.entries0.byteLength).toBe(n0 * OPENUV380_USER_DB_ENTRY_SIZE);
     expect(overflow.entries1.byteLength).toBe(2 * OPENUV380_USER_DB_ENTRY_SIZE);
-    const decoded = decodeOpenGd77UserDatabase(overflow.header, overflow.entries0, overflow.entries1);
+    const decoded = decodeOpenGd77UserDatabase(
+      overflow.header,
+      overflow.entries0,
+      overflow.entries1,
+    );
     expect(decoded).toHaveLength(n0 + 2);
     expect(decoded[n0]?.digitalId).toBe(n0 + 1);
   });

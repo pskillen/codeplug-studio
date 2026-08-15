@@ -18,8 +18,7 @@ import {
 } from './constants.ts';
 
 /** 6-bit LUT from qdmr OpenGD77BaseCallsignDB::DatabaseEntryElement::_lut. */
-const PACK_LUT =
-  ' 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.';
+const PACK_LUT = ' 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.';
 
 const FORMAT_COMPRESSED = 78;
 const ENTRY_SIZE_WIRE_BIAS = 0x4a;
@@ -52,7 +51,10 @@ export function composeUserDatabaseText(row: RadioDigitalContactDto): string {
   return parts.join(' ');
 }
 
-export function packUserDatabaseText(text: string, textChars = OPENUV380_USER_DB_TEXT_CHARS): Uint8Array {
+export function packUserDatabaseText(
+  text: string,
+  textChars = OPENUV380_USER_DB_TEXT_CHARS,
+): Uint8Array {
   const packedLen = (3 * textChars) / 4;
   const codes: number[] = [];
   for (const ch of text) {
@@ -76,11 +78,19 @@ export function packUserDatabaseText(text: string, textChars = OPENUV380_USER_DB
   return out;
 }
 
-export function unpackUserDatabaseText(packed: Uint8Array, textChars = OPENUV380_USER_DB_TEXT_CHARS): string {
+export function unpackUserDatabaseText(
+  packed: Uint8Array,
+  textChars = OPENUV380_USER_DB_TEXT_CHARS,
+): string {
   const chars: string[] = [];
   for (let o = 0; o + 2 < packed.length && chars.length < textChars; o += 3) {
     const encoded = (packed[o]! << 16) | (packed[o + 1]! << 8) | packed[o + 2]!;
-    const codes = [(encoded >>> 18) & 0x3f, (encoded >>> 12) & 0x3f, (encoded >>> 6) & 0x3f, encoded & 0x3f];
+    const codes = [
+      (encoded >>> 18) & 0x3f,
+      (encoded >>> 12) & 0x3f,
+      (encoded >>> 6) & 0x3f,
+      encoded & 0x3f,
+    ];
     for (const code of codes) {
       if (chars.length >= textChars) break;
       chars.push(PACK_LUT[code] ?? ' ');
@@ -98,7 +108,10 @@ function writeU32Le(buf: Uint8Array, offset: number, value: number): void {
 
 function readU32Le(buf: Uint8Array, offset: number): number {
   return (
-    (buf[offset]! | (buf[offset + 1]! << 8) | (buf[offset + 2]! << 16) | (buf[offset + 3]! << 24)) >>>
+    (buf[offset]! |
+      (buf[offset + 1]! << 8) |
+      (buf[offset + 2]! << 16) |
+      (buf[offset + 3]! << 24)) >>>
     0
   );
 }
@@ -113,7 +126,10 @@ function readU24Le(buf: Uint8Array, offset: number): number {
   return (buf[offset]! | (buf[offset + 1]! << 8) | (buf[offset + 2]! << 16)) >>> 0;
 }
 
-export function encodeUserDatabaseHeader(entryCount: number, entrySize = OPENUV380_USER_DB_ENTRY_SIZE): Uint8Array {
+export function encodeUserDatabaseHeader(
+  entryCount: number,
+  entrySize = OPENUV380_USER_DB_ENTRY_SIZE,
+): Uint8Array {
   const header = new Uint8Array(OPENUV380_USER_DB_HEADER_SIZE);
   header[0] = 0x49; // I
   header[1] = 0x64; // d
@@ -126,7 +142,10 @@ export function encodeUserDatabaseHeader(entryCount: number, entrySize = OPENUV3
   return header;
 }
 
-export function decodeUserDatabaseHeader(header: Uint8Array): { entryCount: number; entrySize: number } {
+export function decodeUserDatabaseHeader(header: Uint8Array): {
+  entryCount: number;
+  entrySize: number;
+} {
   if (header.length < OPENUV380_USER_DB_HEADER_SIZE) {
     throw new RangeError('User Database header is truncated');
   }

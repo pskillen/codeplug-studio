@@ -604,7 +604,11 @@ export class OpenGd77Protocol implements CloneImageRadio {
       msg: 'Reading User Database header',
       stage: 'User Database',
     });
-    const header = await readFlashRange(pipe, OPENUV380_USER_DB_HEADER_ABS, OPENUV380_USER_DB_HEADER_SIZE);
+    const header = await readFlashRange(
+      pipe,
+      OPENUV380_USER_DB_HEADER_ABS,
+      OPENUV380_USER_DB_HEADER_SIZE,
+    );
     let entryCount = 0;
     try {
       entryCount = decodeUserDatabaseHeader(header).entryCount;

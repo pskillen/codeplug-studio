@@ -9,8 +9,8 @@ here, it is in the wrong place once the work closes.
 
 ## Open
 
-| # | Investigation | Tickets | Status |
-| --- | --- | --- | --- |
+| #                                             | Investigation                                                    | Tickets                                                                                                                            | Status                                                        |
+| --------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | [i003](i003-directory-lookup-banks/README.md) | Directory rows vs lookup banks (OpenGD77 1701 / DM-32 / AT-D890) | [#1211](https://github.com/pskillen/codeplug-studio/issues/1211), [#1220](https://github.com/pskillen/codeplug-studio/issues/1220) | OpenGD77 **code shipped**, hardware pending; DM-32 still live |
 
 ## Closed
