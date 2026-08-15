@@ -4,26 +4,26 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 ## Implementation status
 
-| Area                  | Status    | Notes                                                                                                                                                                              |
-| --------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Scaffold              | Shipped   | Capacitor core + Android platform (#886)                                                                                                                                           |
-| API / CORS / Browser  | Shipped   | Absolute `/api` on native, Capacitor CORS allowlist, system browser (#887); staging vs prod API origin (#899)                                                                      |
-| Google Drive (native) | Shipped   | PKCE OAuth in Custom Tabs + deep link (#895)                                                                                                                                       |
-| USB Serial            | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888). \*Unit/mock coverage; **hardware OTG R/W still outstanding**                                                                 |
-| APK CI                | Shipped   | Signed APK + Release attach (#889); real `BUILD_ENV` + GA ID inject (#896)                                                                                                         |
-| Analytics (gtag)      | Shipped   | Same SPA consent gate; `app_surface=android` + `build_env` on page views (#896)                                                                                                    |
-| In-app icon / splash  | Shipped   | Brand-derived adaptive icon + splash via `@capacitor/assets` (#898)                                                                                                                |
-| Play Store listing    | Drafted   | Graphics + copy staged under [store-assets/](store-assets/README.md); submission itself still #890                                                                                 |
-| AAB / Play publish CI | Shipped\* | `bundleRelease` + Closed Testing / Production publish pipeline (#890). \*CI wired; live publish blocked on Play Console setup — see [play-store-publish.md](play-store-publish.md) |
+| Area                  | Status    | Notes                                                                                                                                                                                                                           |
+| --------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scaffold              | Shipped   | Capacitor core + Android platform (#886)                                                                                                                                                                                        |
+| API / CORS / Browser  | Shipped   | Absolute `/api` on native, Capacitor CORS allowlist, system browser (#887); staging vs prod API origin (#899)                                                                                                                   |
+| Google Drive (native) | Shipped   | PKCE OAuth in Custom Tabs + deep link (#895)                                                                                                                                                                                    |
+| USB Serial            | Shipped\* | `BytePipe` + `@leeskies/capacitor-usb-serial` (#888). \*Unit/mock coverage; **hardware OTG R/W still outstanding**                                                                                                              |
+| APK CI                | Shipped   | Signed APK + Release attach (#889); real `BUILD_ENV` + GA ID inject (#896)                                                                                                                                                      |
+| Analytics (gtag)      | Shipped   | Same SPA consent gate; `app_surface=android` + `build_env` on page views (#896)                                                                                                                                                 |
+| In-app icon / splash  | Shipped   | Brand-derived adaptive icon + splash via `@capacitor/assets` (#898)                                                                                                                                                             |
+| Play Store listing    | Drafted   | Graphics + copy staged under [store-assets/](store-assets/README.md); submission itself still #890                                                                                                                              |
+| AAB / Play publish CI | Shipped\* | Tag-derived `versionCode`, preflight, ensure-on-track (#1206). Staging → Open testing (`beta`); prod → Production. \*Live verify needs Open testing set up in Play Console — see [play-store-publish.md](play-store-publish.md) |
 
 ## Documentation map
 
-| Doc                                                      | Purpose                                                   |
-| -------------------------------------------------------- | --------------------------------------------------------- |
-| [android-app-progress.md](android-app-progress.md)       | Execution log for Epic #747                               |
-| [android-app-outstanding.md](android-app-outstanding.md) | Discovered debt and follow-ups                            |
-| [store-assets/README.md](store-assets/README.md)         | Play Store graphics + listing copy (#898)                 |
-| [play-store-publish.md](play-store-publish.md)           | AAB build + Closed Testing / Production publish CI (#890) |
+| Doc                                                      | Purpose                                                  |
+| -------------------------------------------------------- | -------------------------------------------------------- |
+| [android-app-progress.md](android-app-progress.md)       | Execution log for Epic #747                              |
+| [android-app-outstanding.md](android-app-outstanding.md) | Discovered debt and follow-ups                           |
+| [store-assets/README.md](store-assets/README.md)         | Play Store graphics + listing copy (#898)                |
+| [play-store-publish.md](play-store-publish.md)           | AAB build + Open testing / Production publish CI (#1206) |
 
 ## Concepts
 
@@ -61,7 +61,7 @@ Reusable [`.github/workflows/android-release.yaml`](../../../.github/workflows/a
 | [`staging.yaml`](../../../.github/workflows/staging.yaml) | Pre-release               | `staging`   | Artifact + **Release asset** |
 | [`prod.yaml`](../../../.github/workflows/prod.yaml)       | Full release (`released`) | `prod`      | Artifact + **Release asset** |
 
-GA secrets follow Pages (`prod` → `GA_MEASUREMENT_ID`; otherwise `GA_MEASUREMENT_ID_PREPROD`). Native API origin follows the same `BUILD_ENV` split (see table above). Version comes from the release tag when provided, else short git SHA; `ANDROID_VERSION_CODE` from `github.run_number`.
+GA secrets follow Pages (`prod` → `GA_MEASUREMENT_ID`; otherwise `GA_MEASUREMENT_ID_PREPROD`). Native API origin follows the same `BUILD_ENV` split (see table above). Version comes from the release tag when provided, else short git SHA. Tagged staging/prod runs set `ANDROID_VERSION_CODE` from the tag ([play-store-publish.md](play-store-publish.md)); untagged `dev`/`main` APKs still use `github.run_number`.
 
 **GitHub Actions secrets (required for a signed APK):**
 
@@ -97,9 +97,9 @@ For CI test builds on `dev`, download the APK from the workflow run’s **Artifa
 
 ### AAB / Play Store publish
 
-`main.yaml`, `prod.yaml`, and `staging.yaml` also build a signed `.aab` (`build_aab: true`), kept as a workflow artifact only — never attached to the GitHub Release, since nobody can install a `.aab` directly. Staging pre-releases push straight to Play's Closed Testing track inline; `main` AABs are for manual Internal Testing upload (`source=main`, `track=internal`); prod full releases are batched to Production weekly by a separate scheduled workflow, so shipping web changes often doesn't spam real users with Play update notifications. A manual Actions workflow can push a main/staging/prod AAB to a chosen track as `draft` or `completed`. Full design, the `android-<semver>` tag mechanism, and manual setup: [play-store-publish.md](play-store-publish.md).
+`staging.yaml` and `prod.yaml` also build a signed `.aab` (`build_aab: true`), kept as a workflow artifact only — never attached to the GitHub Release. A GitHub pre-release ensures the staging-flavoured bundle on Play **Open testing**; a full release ensures the prod-flavoured bundle on **Production**. `main` / `dev` pushes build APKs only. Re-runs reconcile the same `versionCode` instead of uploading a second binary. Track map, numbering, and retry semantics: [play-store-publish.md](play-store-publish.md).
 
-Play Store distribution is [#890](https://github.com/pskillen/codeplug-studio/issues/890).
+Play listing / Data safety remains [#890](https://github.com/pskillen/codeplug-studio/issues/890); publish pipeline alignment is [#1206](https://github.com/pskillen/codeplug-studio/issues/1206).
 
 ## Contributor guide
 

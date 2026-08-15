@@ -49,7 +49,7 @@ flowchart TB
 
 | Script      | Command                                                            | Scope                                                                                                                            |
 | ----------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| All Vitest  | `npm test`                                                         | Colocated `src/**/*.test.ts(x)`                                                                                                  |
+| All Vitest  | `npm test`                                                         | Colocated `src/**/*.test.ts(x)` and `scripts/play/*.test.ts`                                                                     |
 | Watch       | `npm run test:watch`                                               | Same, interactive                                                                                                                |
 | Wire verify | `npm run test:cps-verify`                                          | External CPS wire-shape suite under `cps-verify/` ([wire-verification.md](wire-verification.md))                                 |
 | CLI verify  | `npm run verify:codeplug -- --format anytone [--profile …] <path>` | Same verifier as CLI against a dir/ZIP (also `dm32`, `opengd77`, `chirp`)                                                        |
@@ -82,6 +82,7 @@ Docs-only PRs: `format:check` + link audit is sufficient.
 3. **Changing UI only** → component RTL under `src/app/` or e2e when browser behaviour matters.
 4. **New format adapter** → follow [adding-a-new-format.md](../features/import-export/adding-a-new-format.md); register under `src/core/import-export/formats/<format>/`; reference docs under `docs/reference/export-formats/<format>/`; fixture bundle; fill adapter matrix in [mapping-tests.md](mapping-tests.md).
 5. **Pure domain helper** (geo, validation, maidenhead) → colocated `*.test.ts` in `src/core/` or `src/integrations/`.
+6. **CI Play helpers** (`versionCode`, preflight decision) → colocated `scripts/play/*.test.ts` (picked up by `npm test`).
 
 ## Documentation map
 
