@@ -72,6 +72,15 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
   });
 }
 
+/** Bulk directory puts prefer relaxed durability so the dump ingest is not fsync-bound. */
+function openDirectoryWriteTransaction(db: IDBDatabase, storeName: string): IDBTransaction {
+  try {
+    return db.transaction(storeName, 'readwrite', { durability: 'relaxed' });
+  } catch {
+    return db.transaction(storeName, 'readwrite');
+  }
+}
+
 function ensureDigitalIdDirectoryIndexes(os: IDBObjectStore): void {
   if (!os.indexNames.contains('byProject')) {
     os.createIndex('byProject', 'projectId', { unique: false });
@@ -279,6 +288,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   private readonly directoryChannel: BroadcastChannel | null;
   private notificationDepth = 0;
   private suppressedProjectId: string | null = null;
+  private suppressedDirectoryChange: DirectoryPersistenceChange | null = null;
 
   constructor(dbName: string = DEFAULT_DB_NAME) {
     this.dbName = dbName;
@@ -489,7 +499,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     const firstDigitalId = entries[0]!.digitalId;
 
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
+      const tx = openDirectoryWriteTransaction(db, storeName);
       const os = tx.objectStore(storeName);
       for (const entry of entries) {
         os.put(toDirectoryIdbRow(entry));
@@ -564,6 +574,25 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       tx.objectStore(storeName).get([projectId, digitalId]),
     );
     return row ? stripDirectoryIdbRowIfNeeded(row) : null;
+  }
+
+  async getDigitalIdDirectoryEntriesByIds(
+    projectId: string,
+    digitalIds: readonly number[],
+  ): Promise<DigitalIdDirectoryEntry[]> {
+    if (digitalIds.length === 0) return [];
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction(storeName, 'readonly');
+    const os = tx.objectStore(storeName);
+    const rows = await Promise.all(
+      digitalIds.map((digitalId) =>
+        promisifyRequest<DigitalIdDirectoryIdbRow | undefined>(os.get([projectId, digitalId])),
+      ),
+    );
+    return rows
+      .filter((row): row is DigitalIdDirectoryIdbRow => row != null)
+      .map((row) => stripDirectoryIdbRowIfNeeded(row));
   }
 
   async deleteDigitalIdDirectoryForProject(projectId: string): Promise<{ deletedCount: number }> {
@@ -972,10 +1001,17 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       return await fn();
     } finally {
       this.notificationDepth -= 1;
-      if (this.notificationDepth === 0 && this.suppressedProjectId) {
-        const projectId = this.suppressedProjectId;
-        this.suppressedProjectId = null;
-        this.emitImmediate({ projectId, kind: 'project', id: projectId, op: 'put' });
+      if (this.notificationDepth === 0) {
+        if (this.suppressedProjectId) {
+          const projectId = this.suppressedProjectId;
+          this.suppressedProjectId = null;
+          this.emitImmediate({ projectId, kind: 'project', id: projectId, op: 'put' });
+        }
+        if (this.suppressedDirectoryChange) {
+          const change = this.suppressedDirectoryChange;
+          this.suppressedDirectoryChange = null;
+          this.emitDirectoryImmediate(change);
+        }
       }
     }
   }
@@ -1099,6 +1135,14 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
 
   private emitDirectory(change: DirectoryPersistenceChange): void {
+    if (this.notificationDepth > 0) {
+      this.suppressedDirectoryChange = change;
+      return;
+    }
+    this.emitDirectoryImmediate(change);
+  }
+
+  private emitDirectoryImmediate(change: DirectoryPersistenceChange): void {
     this.notifyDirectoryLocal(change);
     this.directoryChannel?.postMessage(change);
   }

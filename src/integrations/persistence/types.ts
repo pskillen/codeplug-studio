@@ -202,6 +202,11 @@ export interface ProjectPersistence {
     projectId: string,
     digitalId: number,
   ): Promise<DigitalIdDirectoryEntry | null>;
+  /** Primary-key lookups for the given IDs — never a full partition scan. */
+  getDigitalIdDirectoryEntriesByIds(
+    projectId: string,
+    digitalIds: readonly number[],
+  ): Promise<DigitalIdDirectoryEntry[]>;
   deleteDigitalIdDirectoryForProject(projectId: string): Promise<{ deletedCount: number }>;
   deleteDigitalIdDirectoryMatching(
     query: DigitalIdDirectoryDeleteQuery,
@@ -210,7 +215,8 @@ export interface ProjectPersistence {
 
   /**
    * Run writes without per-operation change notifications; emit once when the
-   * outermost nested call completes (if any writes occurred).
+   * outermost nested call completes (if any writes occurred). Coalesces both
+   * library {@link subscribe} and directory {@link subscribeDirectory} events.
    */
   runWithoutNotifications<T>(fn: () => Promise<T>): Promise<T>;
 

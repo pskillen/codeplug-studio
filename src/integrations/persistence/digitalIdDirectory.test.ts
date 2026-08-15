@@ -158,6 +158,39 @@ describe.each(implementations)('DigitalIdDirectory — %s', (_label, makeStore) 
     expect(libraryChanges).toHaveLength(0);
   });
 
+  it('looks up directory rows by digital ID without listing the partition', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('By ids');
+    await store.seedProject({ meta });
+
+    await store.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(meta.projectId, 1, { name: 'One' }),
+      sampleEntry(meta.projectId, 2, { name: 'Two' }),
+      sampleEntry(meta.projectId, 3, { name: 'Three' }),
+    ]);
+
+    const found = await store.getDigitalIdDirectoryEntriesByIds(meta.projectId, [3, 99, 1]);
+    expect(found.map((row) => row.digitalId).sort((a, b) => a - b)).toEqual([1, 3]);
+    expect(await store.getDigitalIdDirectoryEntriesByIds(meta.projectId, [])).toEqual([]);
+  });
+
+  it('coalesces directory notifications inside runWithoutNotifications', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Coalesce');
+    await store.seedProject({ meta });
+
+    const directoryChanges: DirectoryPersistenceChange[] = [];
+    const unsubDir = store.subscribeDirectory((c) => directoryChanges.push(c));
+
+    await store.runWithoutNotifications(async () => {
+      await store.putDigitalIdDirectoryEntriesBatch([sampleEntry(meta.projectId, 1)]);
+      await store.putDigitalIdDirectoryEntriesBatch([sampleEntry(meta.projectId, 2)]);
+    });
+
+    unsubDir();
+    expect(directoryChanges).toEqual([{ projectId: meta.projectId, digitalId: 2, op: 'put' }]);
+  });
+
   it('deletes only rows matching directory filters', async () => {
     const store = makeStore();
     const meta = newProjectMeta('Filtered delete');
