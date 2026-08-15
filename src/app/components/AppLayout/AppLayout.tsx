@@ -42,6 +42,7 @@ import { useProjects } from '../../state/useProjects.ts';
 import shellClasses from '../v2/AppShell.module.css';
 import classes from './AppLayout.module.css';
 import { DESKTOP_MIN_WIDTH_MEDIA_QUERY } from '../../lib/breakpoints.ts';
+import { HOME_MANAGE_HREF } from '../../routes/homeRedirect.ts';
 
 export default function AppLayout() {
   usePageAnalytics();
@@ -169,11 +170,11 @@ function AppLayoutShell() {
         }}
         onNewProject={() => {
           setSwitcherOpen(false);
-          navigate('/');
+          navigate(HOME_MANAGE_HREF);
         }}
         onManageAll={() => {
           setSwitcherOpen(false);
-          navigate('/');
+          navigate(HOME_MANAGE_HREF);
         }}
       >
         {projectChip}
@@ -281,7 +282,7 @@ function AppLayoutBody({
           onTabChange={goToTab}
           showTabs={isDesktopNav !== false}
           projectChip={projectChipControl}
-          onBrandClick={() => navigate('/')}
+          onBrandClick={() => navigate(hasActiveProject ? '/library/channels' : '/')}
           rightExtra={hasActiveProject ? <SidebarDriveControls /> : undefined}
           avatar={overflowAvatar}
         />
