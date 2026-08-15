@@ -1,6 +1,7 @@
 import { IconRadio } from '@tabler/icons-react';
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { shouldRedirectHomeToLibrary } from './homeRedirect.ts';
 import {
   DesignSystemV2Provider,
   Button,
@@ -28,6 +29,7 @@ export default function HomePage() {
     deleteProject,
   } = useProjects();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const statsMap = useProjectStatsMap(projects);
   const importRef = useRef<HTMLDivElement>(null);
 
@@ -81,6 +83,10 @@ export default function HomePage() {
   }
 
   const empty = !loading && projects.length === 0;
+
+  if (shouldRedirectHomeToLibrary(loading, activeProjectId, searchParams)) {
+    return <Navigate to="/library/channels" replace />;
+  }
 
   return (
     <DesignSystemV2Provider>

@@ -38,6 +38,7 @@ import {
   CHANNEL_OPTIONAL_COLUMNS,
   channelListCardColumnsKey,
   channelListColumnsKey,
+  channelTableHideableColumns,
   loadChannelCardVisibleColumns,
   loadChannelVisibleColumns,
 } from '../../../hooks/channelListQueryUtils.ts';
@@ -153,7 +154,8 @@ export default function ChannelsListPage() {
     () => (activeProjectId ? loadChannelCardVisibleColumns(activeProjectId) : []),
     [activeProjectId],
   );
-  const hideableDefs = useMemo(
+  const tableHideableDefs = useMemo(() => channelTableHideableColumns(), []);
+  const cardHideableDefs = useMemo(
     () =>
       CHANNEL_OPTIONAL_COLUMNS.map((col) => ({
         key: col.key,
@@ -163,12 +165,12 @@ export default function ChannelsListPage() {
   );
   const [visibleKeys, setVisibleKeys] = usePersistedColumnVisibility(
     columnStorageKey,
-    hideableDefs,
+    tableHideableDefs,
     columnStorageKey ? loadVisibleColumns : undefined,
   );
   const [cardVisibleKeys, setCardVisibleKeys] = usePersistedColumnVisibility(
     cardColumnStorageKey,
-    hideableDefs,
+    cardHideableDefs,
     cardColumnStorageKey ? loadVisibleCardColumns : undefined,
   );
 

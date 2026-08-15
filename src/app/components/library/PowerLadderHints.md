@@ -19,6 +19,8 @@ Shows how the current library `Channel.power` percent (or `null` radio default) 
 <PowerLadderHints power={power} />
 ```
 
+On the channel editor ([#1209](https://github.com/pskillen/codeplug-studio/issues/1209)) the parent lays this out beside the slider on desktop and inside a collapsed **Power examples** disclosure on mobile. This component itself is layout-agnostic.
+
 ## Behaviour
 
 - Profile list: unique `(formatId, profileId)` from project format builds; if none, all shipped profiles with a power ladder (`listPowerLadderHints`).

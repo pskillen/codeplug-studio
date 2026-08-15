@@ -88,7 +88,7 @@ Prefix: `mm9pdy-codeplug-studio.list.` (`LIST_PREFS_STORAGE_PREFIX` in [`src/int
 | Key pattern                    | Contents                                                                                                         |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
 | `channels.{projectId}`         | Channel filters + `columnSort`                                                                                   |
-| `channels.{projectId}.columns` | Hideable column visibility                                                                                       |
+| `channels.{projectId}.columns` | Hideable column visibility (channels table includes Callsign plus optional columns)                              |
 | `{entity}.{projectId}`         | Entity list `q` + `columnSort` (`zones`, `talk-groups`, `digital-contacts`, `analog-contacts`, `rx-group-lists`) |
 
 Name filters sync to URL query params when committed; on first visit without URL params, stored prefs hydrate the URL (`replace: true`). `localStorage` writes happen on commit (not every keystroke).

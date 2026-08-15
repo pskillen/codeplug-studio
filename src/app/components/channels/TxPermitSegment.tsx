@@ -32,11 +32,7 @@ export default function TxPermitSegment({
   return (
     <GradientSegmentedControl
       label="TX permit"
-      description={
-        includeDefault
-          ? 'Default defers to library defaults and build export overrides.'
-          : 'Override library and per-channel settings for this build.'
-      }
+      description="Busy lock stops you transmitting while the frequency is in use. Permit always lets you hold TX anyway."
       value={wireValue}
       onChange={(next) => onChange(next as TxPermitOverride)}
       data={data}

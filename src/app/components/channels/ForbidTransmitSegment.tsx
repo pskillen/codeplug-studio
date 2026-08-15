@@ -32,6 +32,7 @@ export default function ForbidTransmitSegment({
   return (
     <GradientSegmentedControl
       label="Transmit"
+      description="RX only makes this channel receive-only — the radio will not transmit on it."
       value={wireValue}
       onChange={(next) => onChange(next as ForbidTransmitOverride)}
       data={data}
