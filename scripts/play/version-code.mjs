@@ -100,7 +100,17 @@ export function playTrackFor(tag) {
 }
 
 function main() {
-  const tag = process.argv[2];
+  const args = process.argv.slice(2);
+  if (args[0] === '--track') {
+    const tag = args[1];
+    if (!tag) {
+      console.error('Usage: node scripts/play/version-code.mjs --track <tag>');
+      process.exit(1);
+    }
+    process.stdout.write(`${playTrackFor(tag)}\n`);
+    return;
+  }
+  const tag = args[0];
   if (!tag) {
     console.error('Usage: node scripts/play/version-code.mjs <tag>');
     process.exit(1);
