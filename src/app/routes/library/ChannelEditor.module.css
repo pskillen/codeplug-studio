@@ -35,6 +35,29 @@
   grid-template-columns: 1fr;
 }
 
+.identityLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px 24px;
+  align-items: start;
+}
+
+.identityFields {
+  min-width: 0;
+}
+
+.identityCallsign {
+  margin-bottom: 14px;
+}
+
+.identityComment {
+  margin-top: 14px;
+}
+
+.identityModes {
+  margin-top: 16px;
+}
+
 .frequencyGap {
   margin: 14px 0;
 }
@@ -120,6 +143,10 @@
   }
 
   .powerRow {
+    grid-template-columns: 1fr;
+  }
+
+  .identityLayout {
     grid-template-columns: 1fr;
   }
 }

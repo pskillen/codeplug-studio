@@ -1,7 +1,7 @@
 import { IconCheck } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import type { ChannelMode as CoreChannelMode } from '@core/models/libraryTypes.ts';
-import { CHANNEL_MODES, modeLabel, type ChannelMode } from '../../lib/channelModes.ts';
+import { CHANNEL_MODES, modeColor, modeLabel, type ChannelMode } from '../../lib/channelModes.ts';
 import classes from './ChannelModesField.module.css';
 
 const ANALOG_MODES = CHANNEL_MODES.filter((m) => m.category === 'analog' && m.id !== 'other').map(
@@ -18,18 +18,25 @@ export interface ChannelModesFieldProps {
 }
 
 function ModeChip({
+  mode,
   active,
   children,
   onClick,
 }: {
+  mode: ChannelMode;
   active: boolean;
   children: ReactNode;
   onClick: () => void;
 }) {
+  const fill = modeColor(mode);
   return (
     <button
       type="button"
       className={[classes.chip, active ? classes.chipActive : ''].filter(Boolean).join(' ')}
+      style={{
+        borderColor: fill,
+        ...(active ? { backgroundColor: fill, color: '#1a1b1e' } : {}),
+      }}
       onClick={onClick}
       aria-pressed={active}
     >
@@ -62,7 +69,12 @@ export default function ChannelModesField({
         <div className={classes.groupLabel}>{label}</div>
         <div className={classes.chips}>
           {modes.map((mode) => (
-            <ModeChip key={mode} active={selectedModes.includes(mode)} onClick={() => toggle(mode)}>
+            <ModeChip
+              key={mode}
+              mode={mode as ChannelMode}
+              active={selectedModes.includes(mode)}
+              onClick={() => toggle(mode)}
+            >
               {modeLabel(mode as ChannelMode)}
             </ModeChip>
           ))}

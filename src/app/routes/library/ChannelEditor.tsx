@@ -283,51 +283,72 @@ export default function ChannelEditor({
           ) : null}
 
           <Panel title="Identity">
-            <div
-              className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(' ')}
-            >
-              <FormField label="Name">
-                <TextInput
-                  variant="plain"
-                  value={name}
-                  onChange={(e) => setName(e.currentTarget.value)}
-                  aria-label="Name"
+            <div className={classes.identityLayout}>
+              <div className={classes.identityFields}>
+                <div className={classes.identityCallsign}>
+                  <FormField label="Callsign (optional)">
+                    <TextInput
+                      variant="plain"
+                      value={callsign}
+                      onChange={(e) => setCallsign(e.currentTarget.value)}
+                      mono
+                      aria-label="Callsign"
+                    />
+                  </FormField>
+                </div>
+                <div
+                  className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(
+                    ' ',
+                  )}
+                >
+                  <FormField label="Name">
+                    <TextInput
+                      variant="plain"
+                      value={name}
+                      onChange={(e) => setName(e.currentTarget.value)}
+                      aria-label="Name"
+                    />
+                  </FormField>
+                  <FormField label="Abbreviation (optional)">
+                    <TextInput
+                      variant="plain"
+                      value={abbreviation}
+                      onChange={(e) => setAbbreviation(e.currentTarget.value)}
+                      aria-label="Abbreviation"
+                    />
+                  </FormField>
+                </div>
+                <div className={classes.identityComment}>
+                  <FormField label="Comment">
+                    <TextInput
+                      variant="plain"
+                      value={comment}
+                      onChange={(e) => setComment(e.currentTarget.value)}
+                      aria-label="Comment"
+                    />
+                  </FormField>
+                </div>
+              </div>
+              {isMobile ? (
+                <details className={classes.hintDetails}>
+                  <summary>Name examples</summary>
+                  <ChannelWireNameExamples
+                    callsign={callsign}
+                    name={name}
+                    abbreviation={abbreviation}
+                  />
+                </details>
+              ) : (
+                <ChannelWireNameExamples
+                  callsign={callsign}
+                  name={name}
+                  abbreviation={abbreviation}
                 />
-              </FormField>
-              <FormField label="Callsign (optional)">
-                <TextInput
-                  variant="plain"
-                  value={callsign}
-                  onChange={(e) => setCallsign(e.currentTarget.value)}
-                  mono
-                  aria-label="Callsign"
-                />
-              </FormField>
+              )}
             </div>
-            <Stack gap="sm" mt="md">
-              <FormField label="Comment">
-                <TextInput
-                  variant="plain"
-                  value={comment}
-                  onChange={(e) => setComment(e.currentTarget.value)}
-                  aria-label="Comment"
-                />
-              </FormField>
-              <FormField label="Abbreviation (optional)">
-                <TextInput
-                  variant="plain"
-                  value={abbreviation}
-                  onChange={(e) => setAbbreviation(e.currentTarget.value)}
-                  aria-label="Abbreviation"
-                />
-              </FormField>
-              <ChannelWireNameExamples
-                callsign={callsign}
-                name={name}
-                abbreviation={abbreviation}
-              />
+            <div className={classes.identityModes}>
               <ChannelModesField selectedModes={selectedModes} onChange={handleModesChange} />
-            </Stack>
+            </div>
           </Panel>
 
           <Panel title="Frequency">
