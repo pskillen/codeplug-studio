@@ -116,6 +116,69 @@ describe.each(implementations)('DigitalIdDirectory paged queries — %s', (_labe
     expect(page.rows.map((row) => row.callsign)).toEqual(['G4ABC', 'G4ABD']);
   });
 
+  it('filters callsign prefix case-insensitively', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Case callsign');
+    await store.seedProject({ meta });
+    await store.putDigitalIdDirectoryEntriesBatch([
+      makeEntry(meta.projectId, 1, { callsign: 'G4ABC', name: 'Alpha' }),
+      makeEntry(meta.projectId, 2, { callsign: 'M0XYZ', name: 'Charlie' }),
+    ]);
+
+    const page = await store.queryDigitalIdDirectoryPage({
+      projectId: meta.projectId,
+      offset: 0,
+      limit: 10,
+      orderBy: 'callsign',
+      callsignPrefix: 'g4',
+    });
+
+    expect(page.total).toBe(1);
+    expect(page.rows[0]?.callsign).toBe('G4ABC');
+  });
+
+  it('filters name prefix case-insensitively', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Case name');
+    await store.seedProject({ meta });
+    await store.putDigitalIdDirectoryEntriesBatch([
+      makeEntry(meta.projectId, 1, { name: 'Alpha One', callsign: 'A1' }),
+      makeEntry(meta.projectId, 2, { name: 'Bravo', callsign: 'B1' }),
+    ]);
+
+    const page = await store.queryDigitalIdDirectoryPage({
+      projectId: meta.projectId,
+      offset: 0,
+      limit: 10,
+      namePrefix: 'alpha',
+    });
+
+    expect(page.total).toBe(1);
+    expect(page.rows[0]?.name).toBe('Alpha One');
+  });
+
+  it('filters by digital ID decimal prefix', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('ID prefix');
+    await store.seedProject({ meta });
+    await store.putDigitalIdDirectoryEntriesBatch([
+      makeEntry(meta.projectId, 3109478, { callsign: 'W1AW', name: 'Hiram' }),
+      makeEntry(meta.projectId, 3109000, { callsign: 'M7ABC', name: 'Other' }),
+      makeEntry(meta.projectId, 9999999, { callsign: 'M0XYZ', name: 'Far' }),
+    ]);
+
+    const page = await store.queryDigitalIdDirectoryPage({
+      projectId: meta.projectId,
+      offset: 0,
+      limit: 10,
+      orderBy: 'digitalId',
+      digitalIdPrefix: '3109',
+    });
+
+    expect(page.total).toBe(2);
+    expect(page.rows.map((row) => row.digitalId)).toEqual([3109000, 3109478]);
+  });
+
   it('filters by name prefix', async () => {
     const store = makeStore();
     const meta = newProjectMeta('Name prefix');
@@ -241,8 +304,11 @@ describe('DigitalIdDirectory indexes — IndexedDb', () => {
     expect([...os.indexNames].sort()).toEqual([
       'byProject',
       'byProjectCallsign',
+      'byProjectCallsignLower',
       'byProjectCountry',
+      'byProjectDigitalIdStr',
       'byProjectName',
+      'byProjectNameLower',
     ]);
     db.close();
   });

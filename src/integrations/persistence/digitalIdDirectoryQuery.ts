@@ -7,6 +7,7 @@ export type DigitalIdDirectoryPageQuery = {
   offset: number;
   limit: number;
   orderBy?: DigitalIdDirectoryOrderBy;
+  digitalIdPrefix?: string;
   callsignPrefix?: string;
   namePrefix?: string;
   countryEquals?: string;
@@ -23,6 +24,16 @@ export function directoryPrefixUpperBound(prefix: string): string {
   return prefix + UNICODE_MAX;
 }
 
+export function normalizeDirectoryTextPrefix(prefix: string): string {
+  return prefix.trim().toLocaleLowerCase('en');
+}
+
+/** Digits-only decimal prefix for digital ID filter. Undefined when empty or non-digit. */
+export function normalizeDigitalIdPrefix(prefix: string): string | undefined {
+  const digits = prefix.trim().replace(/\D/g, '');
+  return digits.length > 0 ? digits : undefined;
+}
+
 export function directoryProjectNameRange(projectId: string): [string, string] {
   return [projectId, ''];
 }
@@ -31,15 +42,49 @@ export function directoryProjectNameRangeUpper(projectId: string): [string, stri
   return [projectId, UNICODE_MAX];
 }
 
+export function normalizedDirectoryFilterQuery(
+  query: Pick<
+    DigitalIdDirectoryPageQuery,
+    'digitalIdPrefix' | 'callsignPrefix' | 'namePrefix' | 'countryEquals'
+  >,
+): Pick<
+  DigitalIdDirectoryPageQuery,
+  'digitalIdPrefix' | 'callsignPrefix' | 'namePrefix' | 'countryEquals'
+> {
+  return {
+    digitalIdPrefix:
+      query.digitalIdPrefix !== undefined
+        ? normalizeDigitalIdPrefix(query.digitalIdPrefix)
+        : undefined,
+    callsignPrefix:
+      query.callsignPrefix !== undefined
+        ? normalizeDirectoryTextPrefix(query.callsignPrefix)
+        : undefined,
+    namePrefix:
+      query.namePrefix !== undefined ? normalizeDirectoryTextPrefix(query.namePrefix) : undefined,
+    countryEquals: query.countryEquals,
+  };
+}
+
 export function matchesDirectoryFilters(
   row: DigitalIdDirectoryEntry,
-  query: Pick<DigitalIdDirectoryPageQuery, 'callsignPrefix' | 'namePrefix' | 'countryEquals'>,
+  query: Pick<
+    DigitalIdDirectoryPageQuery,
+    'digitalIdPrefix' | 'callsignPrefix' | 'namePrefix' | 'countryEquals'
+  >,
 ): boolean {
-  if (query.countryEquals !== undefined && row.country !== query.countryEquals) return false;
-  if (query.callsignPrefix !== undefined && !row.callsign.startsWith(query.callsignPrefix)) {
-    return false;
+  if (query.digitalIdPrefix !== undefined) {
+    if (!String(row.digitalId).startsWith(query.digitalIdPrefix)) return false;
   }
-  if (query.namePrefix !== undefined && !row.name.startsWith(query.namePrefix)) return false;
+  if (query.countryEquals !== undefined && row.country !== query.countryEquals) return false;
+  if (query.callsignPrefix !== undefined) {
+    if (!row.callsign.toLocaleLowerCase('en').startsWith(query.callsignPrefix)) {
+      return false;
+    }
+  }
+  if (query.namePrefix !== undefined) {
+    if (!row.name.toLocaleLowerCase('en').startsWith(query.namePrefix)) return false;
+  }
   return true;
 }
 
@@ -63,9 +108,10 @@ export function queryDigitalIdDirectoryPageInMemory(
   query: DigitalIdDirectoryPageQuery,
 ): DigitalIdDirectoryPageResult {
   const orderBy = query.orderBy ?? 'name';
+  const filterQuery = normalizedDirectoryFilterQuery(query);
   const filtered = [...rows]
     .filter((row) => row.projectId === query.projectId)
-    .filter((row) => matchesDirectoryFilters(row, query))
+    .filter((row) => matchesDirectoryFilters(row, filterQuery))
     .sort((a, b) => compareDirectoryRows(a, b, orderBy));
   return {
     rows: filtered.slice(query.offset, query.offset + query.limit),
