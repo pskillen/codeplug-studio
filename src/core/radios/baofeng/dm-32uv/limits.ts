@@ -4,6 +4,11 @@
  * Used by CPS export adapters and Web Serial codecs — not library CRUD.
  */
 
+/** Hard cap on 4KB address-book blocks Studio will fold or write (not a firmware walk of V-frame end). */
+const CONTACT_BANK_MAX_BLOCKS = 256;
+/** 92-byte records packed per 4KB address-book block. */
+const ADDRESS_BOOK_CONTACTS_PER_BLOCK = 44;
+
 export const DM32UV_LIMITS = {
   CHANNEL_MAX: 4000,
   ZONE_MAX: 250,
@@ -17,7 +22,19 @@ export const DM32UV_LIMITS = {
   /** RX group bank size (metadata 0x0F). */
   RX_GROUPS_MAX: 32,
   RX_GROUP_MEMBERS_MAX: 32,
+  /** CPS / library-contact export ceiling (`DigitalContacts.csv`). */
   CONTACTS_MAX: 250,
+  CONTACT_BANK_MAX_BLOCKS,
+  ADDRESS_BOOK_CONTACTS_PER_BLOCK,
+  /**
+   * Web Serial address-book write/fold ceiling (`CONTACT_BANK_MAX_BLOCKS` ×
+   * `ADDRESS_BOOK_CONTACTS_PER_BLOCK`). Firmware V-frame 0x10 / L01 may be larger.
+   */
+  ADDRESS_BOOK_WRITE_MAX: CONTACT_BANK_MAX_BLOCKS * ADDRESS_BOOK_CONTACTS_PER_BLOCK,
+  /** Firmware fallback when V-frame 0x10 is missing (non-L01). Preliminary. */
+  FIRMWARE_CONTACT_MAX_DEFAULT: 50_000,
+  /** Firmware fallback when V-frame 0x10 is missing (L01 extended). Preliminary. */
+  FIRMWARE_CONTACT_MAX_L01: 150_000,
   TALK_GROUPS_MAX: 800,
   RADIO_IDS_MAX: 250,
   /** Channel / zone / contact / talk-group wire name length (LCD limit). */

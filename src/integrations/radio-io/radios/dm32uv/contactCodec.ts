@@ -8,7 +8,7 @@ import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
 import { DM32_BLOCK_SIZE, DM32_LIMITS } from './constants.ts';
 
 export const DM32_CONTACT_ENTRY_SIZE = 0x5c; // 92
-export const DM32_CONTACTS_PER_BLOCK = 44;
+export const DM32_CONTACTS_PER_BLOCK = DM32_LIMITS.ADDRESS_BOOK_CONTACTS_PER_BLOCK;
 
 const TE = new TextEncoder();
 
