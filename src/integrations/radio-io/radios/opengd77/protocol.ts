@@ -7,7 +7,7 @@
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
 import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
-import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
+import type { RadioDigitalContactDto, RadioWriteOrganisation } from '../../radioWriteProjection.ts';
 import {
   makeCommandFrame,
   makeFinishFlashSectorFrame,
@@ -34,7 +34,9 @@ import {
   OPENGD77_CMD_CLOSE_CPS,
   OPENGD77_CMD_CONTROL,
   OPENGD77_CMD_SHOW_CPS,
+  OPENGD77_CONTROL_FLASH_RED_LED,
   OPENGD77_CONTROL_SAVE_REBOOT,
+  OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS,
   OPENGD77_IDENT_TIMEOUT_MS,
   OPENGD77_IO_TIMEOUT_MS,
   OPENGD77_MEM_FIRMWARE_INFO,
@@ -42,6 +44,13 @@ import {
   OPENGD77_WRITE_VARIANT,
   OPENUV380_FLASH_SPANS,
   OPENUV380_OFFSET,
+  OPENUV380_USER_DB_ENTRIES0_ABS,
+  OPENUV380_USER_DB_ENTRIES0_MAX,
+  OPENUV380_USER_DB_ENTRIES1_ABS,
+  OPENUV380_USER_DB_ENTRY_SIZE,
+  OPENUV380_USER_DB_HEADER_ABS,
+  OPENUV380_USER_DB_HEADER_SIZE,
+  OPENGD77_USER_DATABASE_MAX,
   OPENGD77_1701_POWER_STEPS,
   OPENGD77_MD9600_POWER_STEPS,
   MD9600_RADIO_TYPES,
@@ -65,6 +74,11 @@ import { ADDITIONAL_SETTINGS_BYTES, overlaySatelliteBank } from './satelliteCode
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 import { intendedOpenGd77RestoreImage } from './restoreFromBackup.ts';
+import { encodeOpenGd77UserDatabase, decodeUserDatabaseHeader } from './userDatabaseCodec.ts';
+import {
+  openGd77MissingExtendedCallsignDbWarning,
+  buildUserDatabaseSectorPayloads,
+} from './userDatabaseWrite.ts';
 
 /** Packed FirmwareInfo size (qdmr FirmwareInfo). */
 export const OPENGD77_FIRMWARE_INFO_SIZE = 46;
@@ -74,6 +88,8 @@ export interface OpenGd77FirmwareInfo {
   radioType: number;
   fwRevision: string;
   buildDate: string;
+  /** FirmwareInfo features bitflags (bit 1 = extended callsign DB). */
+  features: number;
 }
 
 function readU32Le(buf: Uint8Array, offset: number): number {
@@ -107,6 +123,7 @@ export function parseFirmwareInfo(payload: Uint8Array): OpenGd77FirmwareInfo {
     radioType: readU32Le(payload, 4),
     fwRevision: readAsciiPad(payload, 8, 16),
     buildDate: readAsciiPad(payload, 24, 16),
+    features: payload.length >= 46 ? payload[44]! | (payload[45]! << 8) : 0,
   };
 }
 
@@ -141,6 +158,30 @@ async function readMem(
   return parseOpenGd77ReadReply(
     new Uint8Array([header[0]!, header[1]!, header[2]!, ...payload]),
     length,
+  );
+}
+
+async function readFlashRange(pipe: BytePipe, abs: number, length: number): Promise<Uint8Array> {
+  const out = new Uint8Array(length);
+  for (let off = 0; off < length; off += OPENGD77_BLOCK) {
+    const n = Math.min(OPENGD77_BLOCK, length - off);
+    const payload = await readMem(pipe, OPENGD77_MEM_FLASH, abs + off, n);
+    out.set(payload, off);
+  }
+  return out;
+}
+
+async function prepareCallsignDbFlashWrite(pipe: BytePipe): Promise<void> {
+  try {
+    await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
+  } catch {
+    /* may already be in CPS */
+  }
+  await sendCommand(pipe, OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_FLASH_RED_LED]));
+  await sendCommand(
+    pipe,
+    OPENGD77_CMD_CONTROL,
+    new Uint8Array([OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS]),
   );
 }
 
@@ -206,6 +247,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
   private lastDirtySectorCount = 0;
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
   private lastUploadKept: Map<string, Uint8Array> | undefined;
+  private lastUserDatabaseWarning: string | undefined;
   private readonly allowedRadioTypes: readonly number[];
   private readonly modelHints: readonly string[];
   private readonly powerSteps: readonly OpenGd77PowerStep[];
@@ -233,6 +275,10 @@ export class OpenGd77Protocol implements CloneImageRadio {
 
   getLastDirtySectorCount(): number {
     return this.lastDirtySectorCount;
+  }
+
+  getLastUserDatabaseWarning(): string | undefined {
+    return this.lastUserDatabaseWarning;
   }
 
   /** Arm modelled overlay; {@link upload} encodes onto the live pre-write prior, not this image. */
@@ -367,9 +413,11 @@ export class OpenGd77Protocol implements CloneImageRadio {
     }
 
     let intended = image;
+    let userDatabaseContacts: readonly RadioDigitalContactDto[] | undefined;
     if (this.pendingWriteProjection) {
       const pending = this.pendingWriteProjection;
       this.pendingWriteProjection = null;
+      userDatabaseContacts = pending.organisation?.userDatabaseContacts;
       intended = encodeOpenGd77WriteImageFromPrior(prior, pending.channels, pending.organisation, {
         powerSteps: this.powerSteps,
       });
@@ -410,6 +458,10 @@ export class OpenGd77Protocol implements CloneImageRadio {
       sectors.map((sector) => ({ address: sector.sectorAbs, data: sector.payload })),
     );
 
+    if (userDatabaseContacts !== undefined) {
+      await this.programUserDatabaseSectors(pipe, userDatabaseContacts, opts);
+    }
+
     await pipe.write(
       makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),
     );
@@ -420,6 +472,58 @@ export class OpenGd77Protocol implements CloneImageRadio {
     }
 
     this.priorImage = openUv380ImageFromBytes(intended.bytes);
+  }
+
+  /**
+   * User Database only: program occupied FLASH sectors at 0x50000 / 0xd8000, SAVE_REBOOT.
+   * Does not overlay the programming image.
+   */
+  async uploadUserDatabase(
+    contacts: readonly RadioDigitalContactDto[],
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
+    const pipe = this.pipe;
+    if (!pipe) throw new RadioProtocolError('OpenGD77 User Database write: not connected');
+    try {
+      await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
+    } catch {
+      /* may already be in CPS */
+    }
+    await this.programUserDatabaseSectors(pipe, contacts, opts);
+    await pipe.write(
+      makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),
+    );
+    try {
+      parseCommandAck(await pipe.readExact(1, OPENGD77_IO_TIMEOUT_MS));
+    } catch {
+      /* reboot may drop the port */
+    }
+  }
+
+  private async programUserDatabaseSectors(
+    pipe: BytePipe,
+    contacts: readonly RadioDigitalContactDto[],
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
+    this.lastUserDatabaseWarning = openGd77MissingExtendedCallsignDbWarning(
+      this.firmwareInfo?.features ?? 0,
+    );
+    await prepareCallsignDbFlashWrite(pipe);
+    const encoded = encodeOpenGd77UserDatabase(contacts);
+    const payloads = buildUserDatabaseSectorPayloads(encoded);
+    const sectorAbsList = [...payloads.keys()].sort((a, b) => a - b);
+    let i = 0;
+    for (const sectorAbs of sectorAbsList) {
+      throwIfAborted(opts.signal);
+      await writeFlashSector(pipe, sectorAbs, payloads.get(sectorAbs)!, opts.signal);
+      i++;
+      reportProgress(opts.onProgress, {
+        cur: i,
+        max: Math.max(sectorAbsList.length, 1),
+        msg: `Writing User Database sector 0x${sectorAbs.toString(16)}`,
+        stage: 'User Database',
+      });
+    }
   }
 
   /**
@@ -488,6 +592,71 @@ export class OpenGd77Protocol implements CloneImageRadio {
     }
 
     this.priorImage = openUv380ImageFromBytes(intended.bytes);
+  }
+
+  /**
+   * Occupied User Database bytes (header + packed entries). Empty when FLASH
+   * has no `Id` header. Does not walk qdmr size1.
+   */
+  async downloadUserDatabaseOccupied(opts?: {
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
+  }): Promise<Uint8Array> {
+    const pipe = this.pipe;
+    if (!pipe) throw new RadioProtocolError('OpenGD77 User Database read: not connected');
+    reportProgress(opts?.onProgress, {
+      cur: 0,
+      max: 1,
+      msg: 'Reading User Database header',
+      stage: 'User Database',
+    });
+    const header = await readFlashRange(
+      pipe,
+      OPENUV380_USER_DB_HEADER_ABS,
+      OPENUV380_USER_DB_HEADER_SIZE,
+    );
+    let entryCount: number;
+    try {
+      entryCount = Math.min(
+        decodeUserDatabaseHeader(header).entryCount,
+        OPENGD77_USER_DATABASE_MAX,
+      );
+    } catch {
+      return new Uint8Array(0);
+    }
+    const n0 = Math.min(entryCount, OPENUV380_USER_DB_ENTRIES0_MAX);
+    const n1 = Math.max(0, entryCount - n0);
+    const entries0 = new Uint8Array(n0 * OPENUV380_USER_DB_ENTRY_SIZE);
+    const entries1 = new Uint8Array(n1 * OPENUV380_USER_DB_ENTRY_SIZE);
+    const total = header.byteLength + entries0.byteLength + entries1.byteLength;
+    let done = header.byteLength;
+    if (entries0.byteLength > 0) {
+      const raw = await readFlashRange(pipe, OPENUV380_USER_DB_ENTRIES0_ABS, entries0.byteLength);
+      entries0.set(raw);
+      done += entries0.byteLength;
+      reportProgress(opts?.onProgress, {
+        cur: done,
+        max: total,
+        msg: 'Reading User Database segment 0',
+        stage: 'User Database',
+      });
+    }
+    if (entries1.byteLength > 0) {
+      const raw = await readFlashRange(pipe, OPENUV380_USER_DB_ENTRIES1_ABS, entries1.byteLength);
+      entries1.set(raw);
+      done += entries1.byteLength;
+      reportProgress(opts?.onProgress, {
+        cur: done,
+        max: total,
+        msg: 'Reading User Database segment 1',
+        stage: 'User Database',
+      });
+    }
+    const out = new Uint8Array(total);
+    out.set(header, 0);
+    out.set(entries0, header.byteLength);
+    out.set(entries1, header.byteLength + entries0.byteLength);
+    return out;
   }
 
   /**

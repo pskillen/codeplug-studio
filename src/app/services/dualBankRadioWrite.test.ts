@@ -80,4 +80,51 @@ describe('collectDualBankDirectorySlice', () => {
     expect(slice).toEqual({ radioIds: [], digitalContacts: [] });
     expect(iterateSpy).not.toHaveBeenCalled();
   });
+
+  it('keeps OpenGD77 directory rows whose DMR ID already exists in the library', async () => {
+    const store = new InMemoryProjectPersistence();
+    await store.putDigitalIdDirectoryEntriesBatch([
+      {
+        projectId: 'p1',
+        digitalId: 1001,
+        mode: 'dmr',
+        name: 'Alpha',
+        callsign: 'A1',
+        city: '',
+        state: '',
+        country: '',
+      },
+      {
+        projectId: 'p1',
+        digitalId: 2002,
+        mode: 'dmr',
+        name: 'Beta',
+        callsign: 'B2',
+        city: '',
+        state: '',
+        country: '',
+      },
+    ]);
+    const warnings: string[] = [];
+    const library: LibrarySlice = {
+      ...emptyLibrary(),
+      digitalContacts: [
+        {
+          ...newDigitalContact('p1', 'Curated', 1001, 'dmr'),
+          id: 'dc-1',
+        },
+      ],
+    };
+    const slice = await collectDualBankDirectorySlice({
+      store,
+      projectId: 'p1',
+      library,
+      egressProfileId: 'radio-io-opengd77-1701',
+      options: { includeLibraryContacts: true, includeDigitalIdDirectory: true },
+      warnings,
+    });
+    expect(slice.radioIds).toEqual([]);
+    expect(slice.digitalContacts.map((row) => row.digitalId).sort()).toEqual([1001, 2002]);
+    expect(warnings.some((w) => w.includes('Skipped'))).toBe(false);
+  });
 });

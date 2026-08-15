@@ -549,6 +549,14 @@ function OpenGd77OnRadioSection({
               <Table.Td fw={600}>RX group lists</Table.Td>
               <Table.Td>{c.rxGroupCount}</Table.Td>
             </Table.Tr>
+            {c.userDatabaseCount !== undefined ? (
+              <Table.Tr>
+                <Table.Td fw={600}>User Database</Table.Td>
+                <Table.Td>
+                  {c.userDatabaseCount} lookup IDs (not the 1024 DMR contact bank)
+                </Table.Td>
+              </Table.Tr>
+            ) : null}
           </Table.Tbody>
         </Table>
       </Table.ScrollContainer>
@@ -572,6 +580,9 @@ function OpenGd77WrittenFromBuildSection({ summary }: { summary: OpenGd77CloneSu
       </Text>
       <Text size="sm" c="dimmed" mt="xs">
         {summary.aprsWriteGap}
+      </Text>
+      <Text size="sm" c="dimmed" mt="xs">
+        {summary.userDatabaseWriteNote}
       </Text>
     </FormSection>
   );
@@ -1396,11 +1407,14 @@ export interface RadioCloneSummaryViewProps {
   bag: RadioCloneHydrationBag;
   /** Backup / Restore defaults to on-image inspect. */
   variant?: RadioCloneSummaryVariant;
+  /** Occupied OpenGD77 User Database bytes from the backup zip (inspect-only). */
+  userDatabaseOccupied?: Uint8Array;
 }
 
 export default function RadioCloneSummaryView({
   bag,
   variant = 'inspect',
+  userDatabaseOccupied,
 }: RadioCloneSummaryViewProps) {
   const isUv17ProFamily = isUv17ProFamilyModel(bag.retain.radioModelId);
   const isDm32 =
@@ -1418,7 +1432,7 @@ export default function RadioCloneSummaryView({
   const uv17ProSummary = isUv17ProFamily ? summariseUv17ProFamilyClone(bag) : null;
   const dm32Summary = isDm32 ? summariseDm32uvClone(bag) : null;
   const atD890Summary = isAtD890 ? summariseAtD890uvClone(bag) : null;
-  const openGd77Summary = isOpenGd77 ? summariseOpenGd77Clone(bag) : null;
+  const openGd77Summary = isOpenGd77 ? summariseOpenGd77Clone(bag, userDatabaseOccupied) : null;
   const rt95Summary = isRt95 ? summariseRt95Clone(bag) : null;
 
   if (!uv17ProSummary && !dm32Summary && !atD890Summary && !openGd77Summary && !rt95Summary) {

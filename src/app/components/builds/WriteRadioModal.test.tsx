@@ -48,6 +48,12 @@ describe('WriteRadioModal (#1121)', () => {
     expect(screen.queryByText(/digital ID list/i)).not.toBeInTheDocument();
   });
 
+  it('explains OpenGD77 User Database vs the 1024 contact bank', () => {
+    renderModal({ sharedContactBankNote: true, supportsKeps: false });
+    expect(screen.getByText(/firmware User Database/i)).toBeInTheDocument();
+    expect(screen.getByText(/does not fill the 1024 contact bank/i)).toBeInTheDocument();
+  });
+
   it('enables Write contacts only after a source is chosen', () => {
     const { props } = renderModal({ contactSource: 'library' });
     expect(screen.getByRole('button', { name: 'Write contacts only' })).not.toBeDisabled();

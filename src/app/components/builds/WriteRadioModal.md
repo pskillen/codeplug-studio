@@ -53,6 +53,7 @@ Build → Export **Write radio** popup: always **Write codeplug**, plus radio-ap
 - **Write contacts only** is disabled while source is None. **Write keps only** is disabled while the checkbox is off.
 - Write codeplug helper copy only mentions digital contacts or keps when those extras are on this radio.
 - Copy uses digital contacts / library contacts / RadioID directory — not “digital ID list”.
+- OpenGD77 (`sharedContactBankNote`): RadioID writes User Database; library/Both replace the 1024 contact bank; overlapping `digitalId`s are kept in both stores.
 - Empty RadioID shadow warning is owned by `BuildRadioIoPanel`, not this modal.
 
 ## Related

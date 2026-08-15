@@ -30,7 +30,7 @@ Generic column reference for `Contacts.csv`. One file holds both **group talk gr
 | `Group`   | `TalkGroup`    | TX/RX talk groups referenced by `Channels.Contact` and TG list members |
 | `Private` | `Contact`      | Individual DMR IDs                                                     |
 
-Export order: all talk groups first, then private contacts (order within each group follows codeplug array order).
+Export order: all talk groups first, then private **library** contacts. RadioID directory rows are **not** written to `Contacts.csv` — they belong in the firmware User Database (Web Serial only). See [user-database.md](../../radios/opengd77/user-database.md).
 
 ## Naming conventions
 

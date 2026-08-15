@@ -19,6 +19,7 @@ export {
   OPENGD77_WRITTEN_FROM_BUILD_LABELS,
   OPENGD77_DTMF_CONTACTS_WRITE_GAP,
   OPENGD77_APRS_WRITE_GAP,
+  OPENGD77_USER_DATABASE_WRITE_NOTE,
 } from './writeRole.ts';
 export {
   OPENGD77_BACKUP_FLASH_SPANS,
@@ -41,3 +42,4 @@ export {
   type CapabilitySkippedTransmitter as OpenGd77CapabilitySkippedTransmitter,
 } from './satelliteCodec.ts';
 export { uploadOpenGd77SatelliteBank } from './satelliteWrite.ts';
+export { encodeOpenGd77UserDatabase } from './userDatabaseCodec.ts';

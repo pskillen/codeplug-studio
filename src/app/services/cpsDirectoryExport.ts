@@ -12,6 +12,7 @@ import {
   type SingleBankDigitalProjectionMode,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import {
+  OPENGD77_CPS_DIRECTORY_WARNING,
   projectedRowToAssembledDigitalContact,
   type CpsDirectoryProjectionPayload,
 } from '@core/domain/cpsDigitalDirectoryProjection.ts';
@@ -135,8 +136,22 @@ async function collectDualBankCpsProjection(
   options: DualBankRadioWriteOptions,
   warnings: string[],
 ): Promise<CpsDirectoryProjectionPayload> {
+  if (egress.formatId === 'opengd77') {
+    if (options.includeDigitalIdDirectory) {
+      warnings.push(OPENGD77_CPS_DIRECTORY_WARNING);
+    }
+    return {
+      dualBank: {
+        includeLibraryContacts: options.includeLibraryContacts,
+        directoryDigitalContacts: [],
+        dm32RadioIds: [],
+        includeDm32RadioIdFile: false,
+      },
+      warnings,
+    };
+  }
+
   const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
-  const maxContacts = typeof limits?.maxContacts === 'number' ? limits.maxContacts : undefined;
   const maxRadioIds = typeof limits?.maxRadioIds === 'number' ? limits.maxRadioIds : undefined;
 
   const slice = await collectDualBankDirectorySlice({
@@ -147,7 +162,6 @@ async function collectDualBankCpsProjection(
     egressProfileId: egress.profileId,
     options,
     maxRadioIds,
-    maxDirectoryContacts: maxContacts,
     warnings,
   });
 

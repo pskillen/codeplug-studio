@@ -11,6 +11,7 @@ import {
 } from './constants.ts';
 import { createOpenUv380Image, readAbs, writeAbs } from './memory.ts';
 import { channelRecordAbs, decodeChannelRecord } from './channelCodec.ts';
+import { decodeContactsFromImage, encodeContactsIntoImage } from './contactCodec.ts';
 
 describe('encodeOpenGd77WriteImageFromPrior', () => {
   it('refuses a missing or undersized prior instead of a blank 0xff map', () => {
@@ -49,5 +50,17 @@ describe('encodeOpenGd77WriteImageFromPrior', () => {
       1,
     );
     expect(rec.wireName).toBe('CH1');
+  });
+
+  it('keeps prior DMR contacts when organisation omits talkGroups and digitalContacts', () => {
+    const prior = createOpenUv380Image();
+    encodeContactsIntoImage(prior, [{ index: 1, wireName: 'TG91', digitalId: 91, callType: 0 }]);
+    const image = encodeOpenGd77WriteImageFromPrior(prior, [], {
+      zones: [],
+      userDatabaseContacts: [],
+    });
+    expect(decodeContactsFromImage(image)).toEqual([
+      expect.objectContaining({ digitalId: 91, wireName: 'TG91' }),
+    ]);
   });
 });

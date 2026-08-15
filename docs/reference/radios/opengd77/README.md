@@ -37,16 +37,17 @@ UV380-class for Studio adapters: `05h`, `08h`, `0ah` (plus other UV380 types not
 
 ## Documentation map
 
-| Doc                                                | Contents                                                                                                                 |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| [memory-layout.md](memory-layout.md)               | Image banks, region bases, channel-bank geometry, OpenUV380 vs GD-77 remapping                                           |
-| [channel-record.md](channel-record.md)             | Channel element (`0x38`) field offsets and enums                                                                         |
-| [contacts-zones-lists.md](contacts-zones-lists.md) | DMR/DTMF contacts, zones, RX group lists; scan-list note                                                                 |
-| [settings-aprs.md](settings-aprs.md)               | General/boot/APRS/additional-settings offsets                                                                            |
-| [satellite-orbitals.md](satellite-orbitals.md)     | Additional-settings block id 3: 25×`0x64` satellite bank (qdmr-inferred, not hardware-verified)                          |
-| [protocol.md](protocol.md)                         | USB VID/PID, `C`/`R`/`W`/`X`, flash sector write, FirmwareInfo                                                           |
-| [backup-restore.md](backup-restore.md)             | Zip FLASH spans; Restore vs blank prior + SAVE_REBOOT ([#1142](https://github.com/pskillen/codeplug-studio/issues/1142)) |
-| [fixtures.md](fixtures.md)                         | How to capture dumps for tests without committing personal codeplugs                                                     |
+| Doc                                                | Contents                                                                                                                                          |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [memory-layout.md](memory-layout.md)               | Image banks, region bases, channel-bank geometry, OpenUV380 vs GD-77 remapping                                                                    |
+| [channel-record.md](channel-record.md)             | Channel element (`0x38`) field offsets and enums                                                                                                  |
+| [contacts-zones-lists.md](contacts-zones-lists.md) | DMR/DTMF contacts, zones, RX group lists; scan-list note                                                                                          |
+| [settings-aprs.md](settings-aprs.md)               | General/boot/APRS/additional-settings offsets                                                                                                     |
+| [satellite-orbitals.md](satellite-orbitals.md)     | Additional-settings block id 3: 25×`0x64` satellite bank (qdmr-inferred, not hardware-verified)                                                   |
+| [user-database.md](user-database.md)               | OpenUV380 call-sign / DMR ID lookup FLASH (qdmr Offset; hardware verify pending [#1211](https://github.com/pskillen/codeplug-studio/issues/1211)) |
+| [protocol.md](protocol.md)                         | USB VID/PID, `C`/`R`/`W`/`X`, flash sector write, FirmwareInfo                                                                                    |
+| [backup-restore.md](backup-restore.md)             | Zip FLASH spans; Restore vs blank prior + SAVE_REBOOT ([#1142](https://github.com/pskillen/codeplug-studio/issues/1142))                          |
+| [fixtures.md](fixtures.md)                         | How to capture dumps for tests without committing personal codeplugs                                                                              |
 
 ## Radio homes (caps / power)
 

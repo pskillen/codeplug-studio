@@ -109,7 +109,11 @@ export function libraryDigitalIdSet(contacts: readonly { digitalId: number }[]):
   return ids;
 }
 
-/** When both banks contribute, library digital contacts win on `digitalId`. */
+/**
+ * Single shared contact bank: skip directory rows whose `digitalId` is already
+ * on a library contact. Dual-bank radios that keep a separate lookup store
+ * (OpenGD77 User Database) must **not** use this — both stores may hold the same ID.
+ */
 export function shouldIncludeDirectoryRow(
   digitalId: number,
   libraryIds: ReadonlySet<number>,

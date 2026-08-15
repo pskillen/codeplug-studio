@@ -42,6 +42,9 @@ export const OPENGD77_DTMF_CONTACTS_WRITE_GAP =
 export const OPENGD77_APRS_WRITE_GAP =
   'FM APRS systems stay as they were on the radio when you Write. Use OpenGD77 CPS CSV export if you need to update those.';
 
+export const OPENGD77_USER_DATABASE_WRITE_NOTE =
+  'User Database (incoming-call lookup) is replaced when RadioID directory is selected on Write. It is not part of the programming-image retain list.';
+
 const REPLACED =
   'Fully replaced from your build on Write — the entire bank is cleared then encoded from your library; prior radio payload in this region is not kept';
 const KEPT = 'Kept from Read from radio — not changed when you write from your build';

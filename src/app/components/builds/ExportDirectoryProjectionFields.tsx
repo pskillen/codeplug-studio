@@ -52,9 +52,9 @@ export default function ExportDirectoryProjectionFields({
       {supportsDualBank ? (
         <Stack gap="xs">
           <Text size="sm" c="dimmed">
-            Dual-bank radios keep library contacts and the digital ID directory in separate CPS
-            tables. When both are included, directory rows whose DMR ID matches a library contact
-            are skipped.
+            {formatId === 'opengd77'
+              ? 'OpenGD77 CPS has no User Database file. Include digital ID directory warns and does not add rows to Contacts.csv — use Web Serial Write for incoming-call lookup IDs. Library contacts stay in Contacts.csv. The radio may hold the same DMR ID in both stores.'
+              : 'Dual-bank radios keep library contacts and the digital ID directory in separate CPS tables. When both are included, directory rows whose DMR ID matches a library contact are skipped.'}
           </Text>
           <Checkbox
             label="Include library digital contacts"

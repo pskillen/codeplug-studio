@@ -46,3 +46,7 @@ export function openGd77BackupRestoreRole(address: number): RadioBackupRegionRol
 export function isOpenGd77RestoreNeverWriteAddress(address: number): boolean {
   return openGd77BackupRestoreRole(address) === 'inspect-only';
 }
+
+/** Occupied User Database bytes (header + packed entries). Not in IMAGE_END; inspect-only. */
+export const OPENGD77_BACKUP_USER_DATABASE_ID = 'user-database';
+export const OPENGD77_BACKUP_USER_DATABASE_LABEL = 'User Database (occupied)';

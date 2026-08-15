@@ -25,6 +25,10 @@ export const OPENGD77_CMD_SHOW_CPS = 0x00;
 export const OPENGD77_CMD_CLOSE_CPS = 0x05;
 export const OPENGD77_CMD_CONTROL = 0x06;
 export const OPENGD77_CONTROL_SAVE_REBOOT = 0x00;
+/** qdmr write_start: save settings and VFOs, no reboot. */
+export const OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS = 0x02;
+/** qdmr write_start before FLASH programming. */
+export const OPENGD77_CONTROL_FLASH_RED_LED = 0x04;
 
 /** DM-1701 / RT-84 radioType values in FirmwareInfo. */
 export const DM1701_RADIO_TYPES = Object.freeze([0x08, 0x0a] as const);
@@ -80,6 +84,21 @@ export const OPENGD77_CHANNEL_NAME_LEN = OPENGD77_FAMILY_LIMITS.NAME_LENGTH_CHAN
 export const OPENGD77_CONTACT_SIZE = 0x18;
 export const OPENGD77_CONTACT_COUNT = OPENGD77_FAMILY_LIMITS.CONTACTS_MAX;
 export const OPENGD77_CONTACT_NAME_LEN = OPENGD77_FAMILY_LIMITS.NAME_LENGTH_CHANNEL_ZONE_CONTACT_TG;
+
+/** OpenUV380 User Database / call-sign DB (qdmr OpenUV380CallsignDB Offset, not live dump). */
+export const OPENUV380_USER_DB_HEADER_ABS = 0x0005_0000;
+export const OPENUV380_USER_DB_HEADER_SIZE = 12;
+export const OPENUV380_USER_DB_ENTRIES0_ABS =
+  OPENUV380_USER_DB_HEADER_ABS + OPENUV380_USER_DB_HEADER_SIZE;
+export const OPENUV380_USER_DB_ENTRIES1_ABS = 0x000d_8000;
+export const OPENUV380_USER_DB_SIZE0 = 0x0004_0000;
+export const OPENUV380_USER_DB_ENTRY_SIZE = 0x1b;
+export const OPENUV380_USER_DB_TEXT_CHARS = 32;
+/** Segment 0 capacity — integer division of size0 minus header. Not USER_DATABASE_MAX. */
+export const OPENUV380_USER_DB_ENTRIES0_MAX = Math.floor(
+  (OPENUV380_USER_DB_SIZE0 - OPENUV380_USER_DB_HEADER_SIZE) / OPENUV380_USER_DB_ENTRY_SIZE,
+);
+export const OPENGD77_USER_DATABASE_MAX = OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX;
 
 export const OPENGD77_ZONE_SIZE = 0xb0;
 export const OPENGD77_ZONE_COUNT = OPENGD77_FAMILY_LIMITS.ZONE_MAX;

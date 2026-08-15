@@ -22,9 +22,6 @@ import {
 } from './channelCodec.ts';
 import {
   OPENGD77_CHANNEL_RECORD_SIZE,
-  OPENGD77_CONTACT_COUNT,
-  OPENGD77_CONTACT_SIZE,
-  OPENGD77_RX_GROUP_BANK_SIZE,
   OPENGD77_ZONE_BANK_SIZE,
   OPENUV380_OFFSET,
   openUv380AbsToOffset,
@@ -166,7 +163,7 @@ describe('opengd77 hydration', () => {
     expect(next.size).toBe(image.size);
   });
 
-  it('wipes dirty prior org banks when organisation keys are omitted', () => {
+  it('keeps prior contact and RX banks when organisation keys are omitted', () => {
     const image = createOpenUv380Image();
     const priorContacts = [{ index: 1, wireName: 'OLD-TG', digitalId: 42, callType: 0 }];
     encodeContactsIntoImage(image, priorContacts);
@@ -189,26 +186,15 @@ describe('opengd77 hydration', () => {
       },
     ]);
 
-    expect(decodeContactsFromImage(merged)).toHaveLength(0);
+    expect(decodeContactsFromImage(merged)).toEqual([
+      expect.objectContaining({ digitalId: 42, wireName: 'OLD-TG' }),
+    ]);
+    expect(decodeRxGroupsFromImage(merged, new Map([[1, 42]]))).toEqual([
+      expect.objectContaining({ wireName: 'OldRx' }),
+    ]);
     expect(decodeZonesFromImage(merged)).toHaveLength(0);
-    expect(decodeRxGroupsFromImage(merged, new Map())).toHaveLength(0);
-    const contactBank = readAbs(
-      merged,
-      OPENUV380_OFFSET.contacts,
-      OPENGD77_CONTACT_COUNT * OPENGD77_CONTACT_SIZE,
-    );
-    expect(contactBank.every((b) => b === 0xff)).toBe(true);
     const zoneBank = readAbs(merged, OPENUV380_OFFSET.zoneBank, OPENGD77_ZONE_BANK_SIZE);
     expect(zoneBank.every((b) => b === 0x00)).toBe(true);
-    const emptyRxImage = createOpenUv380Image();
-    encodeRxGroupsIntoImage(emptyRxImage, [], new Map());
-    const expectedRxBank = readAbs(
-      emptyRxImage,
-      OPENUV380_OFFSET.groupLists,
-      OPENGD77_RX_GROUP_BANK_SIZE,
-    );
-    const rxBank = readAbs(merged, OPENUV380_OFFSET.groupLists, OPENGD77_RX_GROUP_BANK_SIZE);
-    expect(rxBank).toEqual(expectedRxBank);
   });
 
   it('replaces dirty channel unmodelled bytes with encode defaults and keeps D023N tone', () => {

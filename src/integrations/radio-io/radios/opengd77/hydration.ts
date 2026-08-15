@@ -65,8 +65,10 @@ export const OPENGD77_EMPTY_WRITE_PRIOR_MESSAGE =
  * Overlay modelled organisation + channels onto a copy of an existing radio image.
  * Order: contacts → RX groups → channels → zones (FK dependency).
  *
- * Organisation banks are **fully replaced** from the projection (empty arrays wipe
- * prior payload). Settings / APRS / DTMF / VFO / additional settings are untouched.
+ * Organisation contact / RX banks are **fully replaced** when `talkGroups` or
+ * `digitalContacts` is present (empty arrays wipe). Omit both to keep prior
+ * FLASH contacts (directory-only User Database write). Settings / APRS / DTMF /
+ * VFO / additional settings are untouched.
  */
 export function encodeOpenGd77ProjectionOntoImage(
   image: MemoryMap,
@@ -75,18 +77,22 @@ export function encodeOpenGd77ProjectionOntoImage(
   opts?: { powerSteps?: readonly OpenGd77PowerStep[] },
 ): MemoryMap {
   const next = openUv380ImageFromBytes(image.bytes);
-  const contacts = mergeOrganisationContacts(
-    organisation?.talkGroups,
-    organisation?.digitalContacts,
-  );
-  encodeContactsIntoImage(next, contacts);
-  const byDigitalId = contactIndexByDigitalId(contacts);
-  const useContactIndices = (organisation?.talkGroups ?? []).some(
-    (tg) => tg.timeSlotOverride != null,
-  );
-  encodeRxGroupsIntoImage(next, organisation?.rxGroups ?? [], byDigitalId, {
-    memberIdsAreContactIndices: useContactIndices,
-  });
+  const replaceContacts =
+    organisation?.talkGroups !== undefined || organisation?.digitalContacts !== undefined;
+  if (replaceContacts) {
+    const contacts = mergeOrganisationContacts(
+      organisation?.talkGroups,
+      organisation?.digitalContacts,
+    );
+    encodeContactsIntoImage(next, contacts);
+    const byDigitalId = contactIndexByDigitalId(contacts);
+    const useContactIndices = (organisation?.talkGroups ?? []).some(
+      (tg) => tg.timeSlotOverride != null,
+    );
+    encodeRxGroupsIntoImage(next, organisation?.rxGroups ?? [], byDigitalId, {
+      memberIdsAreContactIndices: useContactIndices,
+    });
+  }
   encodeChannelsIntoImage(next, channels, {
     clearUnlisted: true,
     powerSteps: opts?.powerSteps,
