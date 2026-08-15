@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import path from 'node:path';
 import { REPEATERBOOK_USER_AGENT } from './src/integrations/repeaters/repeaterbook/constants';
 import { NOMINATIM_USER_AGENT } from './src/integrations/geocoding/nominatimConstants';
+import { RADIOID_USER_AGENT } from './src/integrations/radioid/constants';
 
 const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
 
@@ -73,6 +74,16 @@ export default defineConfig(({ mode }) => {
           target: 'https://database.radioid.net',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/radioid/, '/api'),
+        },
+        '/api/radioid-static/user.csv': {
+          target: 'https://radioid.net',
+          changeOrigin: true,
+          rewrite: () => '/static/user.csv',
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.setHeader('User-Agent', RADIOID_USER_AGENT);
+            });
+          },
         },
         '/api/celestrak/amateur': {
           target: 'https://celestrak.org',

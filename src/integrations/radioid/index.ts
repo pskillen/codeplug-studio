@@ -19,7 +19,16 @@ export {
   RADIOID_NETWORK_ERROR_MESSAGE,
   RADIOID_PROVIDER,
   RADIOID_RATE_LIMIT_MESSAGE,
+  RADIOID_USER_DUMP_PROXY_PATH,
+  RADIOID_USER_DUMP_UPSTREAM,
 } from './constants.ts';
+export {
+  ingestRadioidUserDump,
+  RADIOID_DUMP_BATCH_SIZE,
+  type RadioidDumpIngestOptions,
+  type RadioidDumpIngestProgress,
+  type RadioidDumpIngestResult,
+} from './ingestUserDump.ts';
 export { RadioidDirectoryError } from './errors.ts';
 export {
   findDigitalContactByCallsign,

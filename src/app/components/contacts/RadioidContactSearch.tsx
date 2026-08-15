@@ -28,6 +28,7 @@ import {
   type DataTableColumn,
 } from '../v2/index.ts';
 import RadioidContactBulkImportDialog from './RadioidContactBulkImportDialog.tsx';
+import RadioidEntireDatabaseImportDialog from './RadioidEntireDatabaseImportDialog.tsx';
 import RadioidContactUpdateDialog from './RadioidContactUpdateDialog.tsx';
 import RadioidContactPreviewDialog from './RadioidContactPreviewDialog.tsx';
 
@@ -68,6 +69,8 @@ export default function RadioidContactSearch() {
   const [bulkScope, setBulkScope] = useState<RadioidBulkImportScope | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkSessionKey, setBulkSessionKey] = useState(0);
+  const [entireDbOpen, setEntireDbOpen] = useState(false);
+  const [entireDbSessionKey, setEntireDbSessionKey] = useState(0);
   const [directoryDigitalIds, setDirectoryDigitalIds] =
     useState<ReadonlySet<number>>(EMPTY_DIRECTORY_IDS);
 
@@ -126,6 +129,11 @@ export default function RadioidContactSearch() {
     setBulkScope(scope);
     setBulkSessionKey((key) => key + 1);
     setBulkOpen(true);
+  }
+
+  function openEntireDatabaseImport() {
+    setEntireDbSessionKey((key) => key + 1);
+    setEntireDbOpen(true);
   }
 
   const bulkListings = useMemo(() => {
@@ -357,6 +365,13 @@ export default function RadioidContactSearch() {
             >
               Search
             </Button>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={openEntireDatabaseImport}
+            >
+              Entire database
+            </Button>
           </div>
         </Panel>
       </form>
@@ -426,6 +441,16 @@ export default function RadioidContactSearch() {
           existingDirectoryDigitalIds={directoryIdsForImport}
         />
       ) : null}
+
+      <RadioidEntireDatabaseImportDialog
+        opened={entireDbOpen}
+        onClose={() => setEntireDbOpen(false)}
+        onComplete={() => {
+          setAddMessage('Entire database import finished — browse the directory when ready.');
+        }}
+        sessionKey={entireDbSessionKey}
+        projectId={activeProjectId}
+      />
 
       {updateContact && updateListing ? (
         <RadioidContactUpdateDialog
