@@ -34,7 +34,9 @@ import {
   OPENGD77_CMD_CLOSE_CPS,
   OPENGD77_CMD_CONTROL,
   OPENGD77_CMD_SHOW_CPS,
+  OPENGD77_CONTROL_FLASH_RED_LED,
   OPENGD77_CONTROL_SAVE_REBOOT,
+  OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS,
   OPENGD77_IDENT_TIMEOUT_MS,
   OPENGD77_IO_TIMEOUT_MS,
   OPENGD77_MEM_FIRMWARE_INFO,
@@ -75,9 +77,7 @@ import { intendedOpenGd77RestoreImage } from './restoreFromBackup.ts';
 import { encodeOpenGd77UserDatabase, decodeUserDatabaseHeader } from './userDatabaseCodec.ts';
 import {
   openGd77MissingExtendedCallsignDbWarning,
-  overlayUserDatabaseSpanOnSector,
-  userDatabaseFlashSpans,
-  userDatabaseSectorAbsSet,
+  buildUserDatabaseSectorPayloads,
 } from './userDatabaseWrite.ts';
 
 /** Packed FirmwareInfo size (qdmr FirmwareInfo). */
@@ -169,6 +169,20 @@ async function readFlashRange(pipe: BytePipe, abs: number, length: number): Prom
     out.set(payload, off);
   }
   return out;
+}
+
+async function prepareCallsignDbFlashWrite(pipe: BytePipe): Promise<void> {
+  try {
+    await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
+  } catch {
+    /* may already be in CPS */
+  }
+  await sendCommand(pipe, OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_FLASH_RED_LED]));
+  await sendCommand(
+    pipe,
+    OPENGD77_CMD_CONTROL,
+    new Uint8Array([OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS]),
+  );
 }
 
 async function writeFlashSector(
@@ -494,18 +508,10 @@ export class OpenGd77Protocol implements CloneImageRadio {
     this.lastUserDatabaseWarning = openGd77MissingExtendedCallsignDbWarning(
       this.firmwareInfo?.features ?? 0,
     );
+    await prepareCallsignDbFlashWrite(pipe);
     const encoded = encodeOpenGd77UserDatabase(contacts);
-    const spans = userDatabaseFlashSpans(encoded);
-    const sectorAbsList = userDatabaseSectorAbsSet(spans);
-    const payloads = new Map<number, Uint8Array>();
-    for (const sectorAbs of sectorAbsList) {
-      throwIfAborted(opts.signal);
-      const sector = await readFlashRange(pipe, sectorAbs, OPENGD77_SECTOR);
-      for (const span of spans) {
-        overlayUserDatabaseSpanOnSector(sector, sectorAbs, span);
-      }
-      payloads.set(sectorAbs, sector);
-    }
+    const payloads = buildUserDatabaseSectorPayloads(encoded);
+    const sectorAbsList = [...payloads.keys()].sort((a, b) => a - b);
     let i = 0;
     for (const sectorAbs of sectorAbsList) {
       throwIfAborted(opts.signal);

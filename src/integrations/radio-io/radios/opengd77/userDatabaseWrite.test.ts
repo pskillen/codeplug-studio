@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   OPENGD77_TYPE_COMMAND,
+  OPENGD77_TYPE_READ,
   OPENGD77_TYPE_WRITE_UV380,
   OPENGD77_WRITE_CMD_SET_SECTOR,
 } from '../../kit/codecs/opengd77Serial.ts';
-import { OPENGD77_CMD_CONTROL, OPENGD77_CONTROL_SAVE_REBOOT } from './constants.ts';
+import {
+  OPENGD77_CMD_CONTROL,
+  OPENGD77_CONTROL_FLASH_RED_LED,
+  OPENGD77_CONTROL_SAVE_REBOOT,
+  OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS,
+} from './constants.ts';
 import { OpenGd77Protocol } from './protocol.ts';
 import { encodeOpenGd77UserDatabase } from './userDatabaseCodec.ts';
 import {
@@ -63,6 +69,29 @@ describe('OpenGD77 User Database sidecar write', () => {
     );
     const sectorIndex = (setSector[0]![2]! << 16) | (setSector[0]![3]! << 8) | setSector[0]![4]!;
     expect(sectorIndex).toBe(0x50000 / 4096);
+    expect(
+      pipe.writes.some(
+        (w) =>
+          w[0] === OPENGD77_TYPE_READ &&
+          ((w[2]! << 24) | (w[3]! << 16) | (w[4]! << 8) | w[5]!) >>> 0 === 0x50000,
+      ),
+    ).toBe(false);
+    expect(
+      pipe.writes.some(
+        (w) =>
+          w[0] === OPENGD77_TYPE_COMMAND &&
+          w[1] === OPENGD77_CMD_CONTROL &&
+          w[2] === OPENGD77_CONTROL_FLASH_RED_LED,
+      ),
+    ).toBe(true);
+    expect(
+      pipe.writes.some(
+        (w) =>
+          w[0] === OPENGD77_TYPE_COMMAND &&
+          w[1] === OPENGD77_CMD_CONTROL &&
+          w[2] === OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS,
+      ),
+    ).toBe(true);
     expect(
       pipe.writes.some(
         (w) =>

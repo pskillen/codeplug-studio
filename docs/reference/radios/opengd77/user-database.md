@@ -29,12 +29,12 @@ Library CRUD stays unlimited.
 
 ## Studio behaviour
 
-| Path                              | Behaviour                                                                                                                                                         |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Web Serial Write · RadioID / Both | Encode directory into User Database; **do not** skip overlapping library `digitalId`s                                                                             |
-| Web Serial Write · Library        | Replaces 1024 contact bank only; User Database unchanged                                                                                                          |
-| CPS zip                           | No User Database file. Directory toggle **warns** and does **not** append to `Contacts.csv` (CPS “Write DMR IDs” is a separate CPS tool)                          |
-| Backup / Restore                  | Occupied User Database is an **inspect-only** zip region (`user-database`). Restore does not replay it. Inspect shows lookup count separately from “DMR contacts” |
+| Path                              | Behaviour                                                                                                                                                                                           |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web Serial Write · RadioID / Both | Encode directory into User Database; **do not** skip overlapping library `digitalId`s. Same-session write after the contact bank uses qdmr `write_start` (no FLASH read of `0x50000` before `'X'`). |
+| Web Serial Write · Library        | Replaces 1024 contact bank only; User Database unchanged                                                                                                                                            |
+| CPS zip                           | No User Database file. Directory toggle **warns** and does **not** append to `Contacts.csv` (CPS “Write DMR IDs” is a separate CPS tool)                                                            |
+| Backup / Restore                  | Occupied User Database is an **inspect-only** zip region (`user-database`). Restore does not replay it. Inspect shows lookup count separately from “DMR contacts”                                   |
 
 FirmwareInfo **features bit 1** = extended callsign DB. Studio still uses these Offset bases if the bit is clear, and warns.
 

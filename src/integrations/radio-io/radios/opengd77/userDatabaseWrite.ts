@@ -56,3 +56,23 @@ export function overlayUserDatabaseSpanOnSector(
   if (to <= from) return;
   sector.set(span.data.subarray(from - span.abs, to - span.abs), from - sectorAbs);
 }
+
+/**
+ * Occupied-sector payloads from encode only (0x00 fill). Do not RMW-read FLASH —
+ * qdmr callsign upload writes encoded blocks after write_start, never a prior read
+ * of 0x50000. Mixing 'R' then 'X' after codeplug sectors NACKs with '-'.
+ */
+export function buildUserDatabaseSectorPayloads(
+  encoded: OpenGd77UserDatabaseEncodeResult,
+): Map<number, Uint8Array> {
+  const spans = userDatabaseFlashSpans(encoded);
+  const payloads = new Map<number, Uint8Array>();
+  for (const sectorAbs of userDatabaseSectorAbsSet(spans)) {
+    const sector = new Uint8Array(OPENGD77_SECTOR);
+    for (const span of spans) {
+      overlayUserDatabaseSpanOnSector(sector, sectorAbs, span);
+    }
+    payloads.set(sectorAbs, sector);
+  }
+  return payloads;
+}

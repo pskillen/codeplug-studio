@@ -25,6 +25,10 @@ export const OPENGD77_CMD_SHOW_CPS = 0x00;
 export const OPENGD77_CMD_CLOSE_CPS = 0x05;
 export const OPENGD77_CMD_CONTROL = 0x06;
 export const OPENGD77_CONTROL_SAVE_REBOOT = 0x00;
+/** qdmr write_start: save settings and VFOs, no reboot. */
+export const OPENGD77_CONTROL_SAVE_SETTINGS_AND_VFOS = 0x02;
+/** qdmr write_start before FLASH programming. */
+export const OPENGD77_CONTROL_FLASH_RED_LED = 0x04;
 
 /** DM-1701 / RT-84 radioType values in FirmwareInfo. */
 export const DM1701_RADIO_TYPES = Object.freeze([0x08, 0x0a] as const);
