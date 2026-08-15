@@ -45,7 +45,7 @@ export async function getAccessToken() {
  * @param {RequestInit} [init]
  * @returns {Promise<unknown>}
  */
-export async function playRequest(token, url, init = {}) {
+export async function playRequest(token, url, init = {}, options = {}) {
   const headers = new Headers(init.headers);
   headers.set('Authorization', `Bearer ${token}`);
   if (init.body && !(init.body instanceof Uint8Array) && !headers.has('Content-Type')) {
@@ -54,6 +54,9 @@ export async function playRequest(token, url, init = {}) {
   const response = await fetch(url, { ...init, headers });
   const text = await response.text();
   if (!response.ok) {
+    if (options.allowStatuses?.includes(response.status)) {
+      return null;
+    }
     throw new Error(`Play API ${init.method ?? 'GET'} ${url} → ${response.status}: ${text}`);
   }
   if (text.trim() === '') {
@@ -158,7 +161,12 @@ export async function listTracks(token, packageName, editId) {
  * @param {string} track
  */
 export async function getTrack(token, packageName, editId, track) {
-  return playRequest(token, `${API}/applications/${packageName}/edits/${editId}/tracks/${track}`);
+  return playRequest(
+    token,
+    `${API}/applications/${packageName}/edits/${editId}/tracks/${track}`,
+    {},
+    { allowStatuses: [404] },
+  );
 }
 
 /**
