@@ -8,12 +8,12 @@ Whether you may transmit while the frequency is already in use. Distinct from re
 
 ## Props
 
-| Prop             | Type                                      | Description                                      |
-| ---------------- | ----------------------------------------- | ------------------------------------------------ |
-| `value`          | `TxPermitOverride`                        | `default` \| `permitAlways` \| `busyLock`        |
-| `onChange`       | `(value: TxPermitOverride) => void`       | Called when the operator changes the control     |
-| `includeDefault` | `boolean`                                 | When false, omits **Default**. Default `true`    |
-| `disabled`       | `boolean`                                 | Optional                                         |
+| Prop             | Type                                | Description                                   |
+| ---------------- | ----------------------------------- | --------------------------------------------- |
+| `value`          | `TxPermitOverride`                  | `default` \| `permitAlways` \| `busyLock`     |
+| `onChange`       | `(value: TxPermitOverride) => void` | Called when the operator changes the control  |
+| `includeDefault` | `boolean`                           | When false, omits **Default**. Default `true` |
+| `disabled`       | `boolean`                           | Optional                                      |
 
 ## Behaviour
 

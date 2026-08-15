@@ -6,12 +6,12 @@ Channel transmit permission: **Allow TX** or **RX only**. Thin wrapper around [`
 
 ## Props
 
-| Prop             | Type                                           | Description                                                                 |
-| ---------------- | ---------------------------------------------- | --------------------------------------------------------------------------- |
+| Prop             | Type                                                        | Description                                                         |
+| ---------------- | ----------------------------------------------------------- | ------------------------------------------------------------------- |
 | `value`          | `ForbidTransmitOverride` (`default` \| `allow` \| `forbid`) | Channel-level override; `default` defers to library + build cascade |
-| `onChange`       | `(value: ForbidTransmitOverride) => void`      | Called when the operator changes the control                                |
-| `includeDefault` | `boolean`                                      | When true (channel editor), includes **Default**. Default `true`            |
-| `disabled`       | `boolean`                                      | Optional                                                                    |
+| `onChange`       | `(value: ForbidTransmitOverride) => void`                   | Called when the operator changes the control                        |
+| `includeDefault` | `boolean`                                                   | When true (channel editor), includes **Default**. Default `true`    |
+| `disabled`       | `boolean`                                                   | Optional                                                            |
 
 ## Usage
 
