@@ -11,7 +11,7 @@ export const OPENGD77_FAMILY_LIMITS = {
   CONTACTS_MAX: 1024,
   /**
    * Firmware User Database (call-sign / DMR ID lookup) — preliminary upper bound
-   * from the OpenGD77 user guide (~13 800–69 600 by chars/entry). Packing may
+   * from the OpenGD77 user guide (~13800-69600 by chars/entry). Packing may
    * yield fewer. Not the 1024-slot DMR contact bank. Not qdmr `size1`.
    */
   USER_DATABASE_MAX: 69_600,

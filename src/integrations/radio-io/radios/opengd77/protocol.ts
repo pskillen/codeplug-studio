@@ -609,13 +609,15 @@ export class OpenGd77Protocol implements CloneImageRadio {
       OPENUV380_USER_DB_HEADER_ABS,
       OPENUV380_USER_DB_HEADER_SIZE,
     );
-    let entryCount = 0;
+    let entryCount: number;
     try {
-      entryCount = decodeUserDatabaseHeader(header).entryCount;
+      entryCount = Math.min(
+        decodeUserDatabaseHeader(header).entryCount,
+        OPENGD77_USER_DATABASE_MAX,
+      );
     } catch {
       return new Uint8Array(0);
     }
-    entryCount = Math.min(entryCount, OPENGD77_USER_DATABASE_MAX);
     const n0 = Math.min(entryCount, OPENUV380_USER_DB_ENTRIES0_MAX);
     const n1 = Math.max(0, entryCount - n0);
     const entries0 = new Uint8Array(n0 * OPENUV380_USER_DB_ENTRY_SIZE);

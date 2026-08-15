@@ -7,7 +7,6 @@
 import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import {
-  OPENGD77_USER_DATABASE_MAX,
   OPENUV380_USER_DB_ENTRIES0_ABS,
   OPENUV380_USER_DB_ENTRIES0_MAX,
   OPENUV380_USER_DB_ENTRIES1_ABS,
