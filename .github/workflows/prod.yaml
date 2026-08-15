@@ -23,6 +23,5 @@ jobs:
       build_env: prod
       build_version: ${{ github.event.release.tag_name }}
       attach_to_release: true
-      # AAB is kept as a workflow artifact only — android-play-publish.yaml batches
-      # the actual Production push weekly so real users aren't spammed with updates.
       build_aab: true
+      play_track: production

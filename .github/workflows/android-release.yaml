@@ -27,29 +27,24 @@ on:
         required: false
         type: string
         default: ''
-      publish_to_play_track:
-        description: Deprecated alias for play_track (dropped once callers switch)
-        required: false
-        type: string
-        default: ''
 
 # write needed to attach APK to GitHub Releases; artifact upload works with read alone
 permissions:
   contents: write
 
 concurrency:
-  group: ${{ (inputs.play_track != '' || inputs.publish_to_play_track != '') && 'android-play-publisher' || format('android-apk-{0}', inputs.build_env) }}
-  cancel-in-progress: ${{ inputs.play_track == '' && inputs.publish_to_play_track == '' }}
+  group: ${{ inputs.play_track != '' && 'android-play-publisher' || format('android-apk-{0}', inputs.build_env) }}
+  cancel-in-progress: ${{ inputs.play_track == '' }}
 
 jobs:
   preflight:
-    if: ${{ inputs.play_track != '' || inputs.publish_to_play_track != '' }}
+    if: ${{ inputs.play_track != '' }}
     runs-on: ubuntu-latest
     outputs:
       action: ${{ steps.preflight.outputs.action }}
       version_code: ${{ steps.preflight.outputs.version_code }}
       version_name: ${{ steps.preflight.outputs.version_name }}
-      play_track: ${{ steps.track.outputs.play_track }}
+      play_track: ${{ inputs.play_track }}
     env:
       GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
     steps:
@@ -64,15 +59,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Resolve Play track
-        id: track
-        run: |
-          TRACK="${{ inputs.play_track }}"
-          if [ -z "${TRACK}" ]; then
-            TRACK="${{ inputs.publish_to_play_track }}"
-          fi
-          echo "play_track=${TRACK}" >> "$GITHUB_OUTPUT"
 
       - name: Play preflight
         id: preflight
