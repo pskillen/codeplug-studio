@@ -40,6 +40,7 @@ export default function DigitalIdDirectoryListPage() {
   const [orderBy, setOrderBy] = useState<DigitalIdDirectoryOrderBy>('name');
   const [callsignPrefix, setCallsignPrefix] = useState('');
   const [namePrefix, setNamePrefix] = useState('');
+  const [digitalIdPrefix, setDigitalIdPrefix] = useState('');
   const [countryEquals, setCountryEquals] = useState('');
   const [detailEntry, setDetailEntry] = useState<DigitalIdDirectoryEntry | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -47,14 +48,16 @@ export default function DigitalIdDirectoryListPage() {
 
   const filters = useMemo(
     () => ({
+      digitalIdPrefix: digitalIdPrefix.trim() || undefined,
       callsignPrefix: callsignPrefix.trim() || undefined,
       namePrefix: namePrefix.trim() || undefined,
       countryEquals: countryEquals.trim() || undefined,
     }),
-    [callsignPrefix, namePrefix, countryEquals],
+    [digitalIdPrefix, callsignPrefix, namePrefix, countryEquals],
   );
 
   const hasFilters =
+    filters.digitalIdPrefix !== undefined ||
     filters.callsignPrefix !== undefined ||
     filters.namePrefix !== undefined ||
     filters.countryEquals !== undefined;
@@ -202,6 +205,18 @@ export default function DigitalIdDirectoryListPage() {
                 }}
                 className={pageClasses.filterField}
               />
+              <FormField label="ID begins with" className={pageClasses.filterField}>
+                <TextInput
+                  variant="plain"
+                  value={digitalIdPrefix}
+                  onChange={(e) => {
+                    setDigitalIdPrefix(e.currentTarget.value);
+                    setPage(1);
+                  }}
+                  placeholder="e.g. 3109"
+                  inputMode="numeric"
+                />
+              </FormField>
               <FormField label="Callsign begins with" className={pageClasses.filterField}>
                 <TextInput
                   variant="plain"

@@ -91,6 +91,27 @@ describe('useDigitalIdDirectoryPage', () => {
     await waitFor(() => expect(result.current.total).toBe(2));
   });
 
+  it('passes digitalIdPrefix filter to persistence', async () => {
+    const querySpy = vi.spyOn(store.persistence!, 'queryDigitalIdDirectoryPage');
+    await store.persistence!.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(projectId, 3109478, 'Hiram'),
+    ]);
+
+    const { result } = renderHook(() =>
+      useDigitalIdDirectoryPage(projectId, {
+        page: 1,
+        pageSize: 10,
+        filters: { digitalIdPrefix: '3109' },
+      }),
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(querySpy).toHaveBeenCalledWith(
+      expect.objectContaining({ digitalIdPrefix: '3109' }),
+    );
+    expect(result.current.total).toBe(1);
+  });
+
   it('clears rows when projectId is missing', async () => {
     const { result } = renderHook(() => useDigitalIdDirectoryPage(null, { page: 1, pageSize: 10 }));
 
