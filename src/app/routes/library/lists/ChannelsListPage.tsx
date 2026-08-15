@@ -12,6 +12,7 @@ import { haversineDistanceM } from '@core/domain/geoDistance.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
 import {
   Button,
+  Checkbox,
   DataTable,
   DesignSystemV2Provider,
   DismissibleNotice,
@@ -21,11 +22,13 @@ import {
   type DataTableColumn,
   type DataTableSortState as V2Sort,
 } from '../../../components/v2/index.ts';
+import { sortRowsByColumn } from '../../../components/v2/DataTable.tsx';
 import { DSV2_TOKENS } from '../../../theme-v2.ts';
 import UseMyLocationButton from '../../../components/UseMyLocationButton/UseMyLocationButton.tsx';
 import AddFromDataSourceModal from '../../../components/library/AddFromDataSourceModal.tsx';
 import ChannelBulkEditModal from '../../../components/library/ChannelBulkEditModal.tsx';
 import ChannelCard from '../../../components/library/ChannelCard.tsx';
+import ChannelListBulkActions from '../../../components/library/ChannelListBulkActions.tsx';
 import ChannelListDeleteAction from '../../../components/library/ChannelListDeleteAction.tsx';
 import ChannelListFilters from '../../../components/library/ChannelListFilters.tsx';
 import ChannelZonesListCell from '../../../components/library/ChannelZonesListCell.tsx';
@@ -33,11 +36,14 @@ import LibraryInventoryHeader from '../../../components/library/LibraryInventory
 import LibraryMapStack from '../../../components/library/LibraryMapStack.tsx';
 import {
   CHANNEL_OPTIONAL_COLUMNS,
+  channelListCardColumnsKey,
   channelListColumnsKey,
+  loadChannelCardVisibleColumns,
   loadChannelVisibleColumns,
 } from '../../../hooks/channelListQueryUtils.ts';
 import { useChannelListQuery } from '../../../hooks/useChannelListQuery.ts';
 import { usePersistedChannelColumnSort } from '../../../hooks/usePersistedChannelColumnSort.ts';
+import { usePersistedChannelListLayout } from '../../../hooks/usePersistedChannelListLayout.ts';
 import {
   DATATABLE_CALLSIGN_SORT_KEY,
   DATATABLE_NAME_SORT_KEY,
@@ -81,15 +87,20 @@ import {
   formatAprsAssignmentSummary,
 } from '../../../lib/aprsBindingHelpers.ts';
 import pageClasses from '../../../components/library/LibraryInventoryPage.module.css';
-import { groupChannelsByZone } from './groupChannelsByZone.ts';
+import { groupChannelsForCardView } from './groupChannels.ts';
 import classes from './ChannelsListPage.module.css';
 
-const CHANNEL_GROUP_MODE_OPTIONS = [
-  { value: 'list', label: 'List' },
-  { value: 'zone', label: 'Group by zone' },
+const CHANNEL_LAYOUT_OPTIONS = [
+  { value: 'table', label: 'Table' },
+  { value: 'cards', label: 'Cards' },
 ] as const;
 
-type ChannelGroupMode = (typeof CHANNEL_GROUP_MODE_OPTIONS)[number]['value'];
+const CHANNEL_CARD_GROUP_OPTIONS = [
+  { value: 'none', label: 'None' },
+  { value: 'zone', label: 'Zone' },
+  { value: 'band', label: 'Band' },
+  { value: 'duplex', label: 'Simplex/split' },
+] as const;
 
 function percentLabel(value: number | null): string {
   if (value == null) return '—';
@@ -118,9 +129,9 @@ export default function ChannelsListPage() {
   const { position, setPosition, clearPosition } = useOperatorPosition();
   const query = useChannelListQuery();
   const isMobileTable = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
-  const filtered = useFilteredChannels(channels, query, position, { skipSort: true });
+  const filtered = useFilteredChannels(channels, query, position, zones, { skipSort: true });
   const [columnSortOverride, setColumnSortOverride] = usePersistedChannelColumnSort();
-  const [groupMode, setGroupMode] = useState<ChannelGroupMode>('list');
+  const [layoutState, { setLayout, setCardGroup }] = usePersistedChannelListLayout();
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
   const [addFromOpen, setAddFromOpen] = useState(false);
@@ -128,10 +139,18 @@ export default function ChannelsListPage() {
   const [bulkEditMessageColor, setBulkEditMessageColor] = useState<'green' | 'orange' | 'red'>(
     'green',
   );
+  const [cardDetailsPickerOpen, setCardDetailsPickerOpen] = useState(false);
 
   const columnStorageKey = activeProjectId ? channelListColumnsKey(activeProjectId) : undefined;
+  const cardColumnStorageKey = activeProjectId
+    ? channelListCardColumnsKey(activeProjectId)
+    : undefined;
   const loadVisibleColumns = useCallback(
     () => (activeProjectId ? loadChannelVisibleColumns(activeProjectId) : []),
+    [activeProjectId],
+  );
+  const loadVisibleCardColumns = useCallback(
+    () => (activeProjectId ? loadChannelCardVisibleColumns(activeProjectId) : []),
     [activeProjectId],
   );
   const hideableDefs = useMemo(
@@ -146,6 +165,11 @@ export default function ChannelsListPage() {
     columnStorageKey,
     hideableDefs,
     columnStorageKey ? loadVisibleColumns : undefined,
+  );
+  const [cardVisibleKeys, setCardVisibleKeys] = usePersistedColumnVisibility(
+    cardColumnStorageKey,
+    hideableDefs,
+    cardColumnStorageKey ? loadVisibleCardColumns : undefined,
   );
 
   const effectiveV1Sort = useMemo((): V1Sort => {
@@ -355,20 +379,71 @@ export default function ChannelsListPage() {
     ];
   }, [optionalColumnDefs]);
 
-  const fieldColumns = useMemo(
-    () => optionalColumnDefs.filter((col) => visibleKeys.includes(col.key)),
-    [optionalColumnDefs, visibleKeys],
+  const cardFieldColumns = useMemo(
+    () => optionalColumnDefs.filter((col) => cardVisibleKeys.includes(col.key)),
+    [optionalColumnDefs, cardVisibleKeys],
   );
 
-  // Zone is already the section heading in grouped card sections — redundant as a field row there.
   const zoneGroupFieldColumns = useMemo(
-    () => fieldColumns.filter((col) => col.key !== 'zones'),
-    [fieldColumns],
+    () => cardFieldColumns.filter((col) => col.key !== 'zones'),
+    [cardFieldColumns],
   );
 
-  const zoneGroups = useMemo(
-    () => (groupMode === 'zone' ? groupChannelsByZone(filtered, zones) : null),
-    [groupMode, filtered, zones],
+  const effectiveV2Sort = useMemo(() => v1SortToV2(effectiveV1Sort), [effectiveV1Sort]);
+
+  const sortedFiltered = useMemo(
+    () => sortRowsByColumn(filtered, columns, effectiveV2Sort),
+    [filtered, columns, effectiveV2Sort],
+  );
+
+  const cardGroups = useMemo(() => {
+    if (layoutState.layout !== 'cards' || layoutState.cardGroup === 'none') return null;
+    return groupChannelsForCardView(sortedFiltered, zones, layoutState.cardGroup, query.zoneFilter);
+  }, [layoutState, sortedFiltered, zones, query.zoneFilter]);
+
+  const filteredUniqueIds = useMemo(() => [...new Set(filtered.map((ch) => ch.id))], [filtered]);
+
+  const allCardsSelected =
+    filteredUniqueIds.length > 0 && filteredUniqueIds.every((id) => selectedKeys.includes(id));
+  const someCardsSelected = selectedKeys.length > 0 && !allCardsSelected;
+
+  const toggleChannelSelected = useCallback((channelId: string, selected: boolean) => {
+    setSelectedKeys((prev) => {
+      if (selected) return prev.includes(channelId) ? prev : [...prev, channelId];
+      return prev.filter((key) => key !== channelId);
+    });
+  }, []);
+
+  const toggleSelectAllCards = useCallback(() => {
+    setSelectedKeys(allCardsSelected ? [] : filteredUniqueIds);
+  }, [allCardsSelected, filteredUniqueIds]);
+
+  const clearCardSelection = useCallback(() => {
+    setSelectedKeys([]);
+  }, []);
+
+  const renderChannelCard = useCallback(
+    (channel: Channel, fieldCols: DataTableColumn<Channel>[]) => (
+      <ChannelCard
+        key={channel.id}
+        channel={channel}
+        fieldColumns={fieldCols}
+        selected={selectedKeys.includes(channel.id)}
+        onSelectedChange={(selected) => toggleChannelSelected(channel.id, selected)}
+      />
+    ),
+    [selectedKeys, toggleChannelSelected],
+  );
+
+  const toggleCardDetailVisible = useCallback(
+    (key: string, checked: boolean) => {
+      if (checked) {
+        setCardVisibleKeys([...cardVisibleKeys, key]);
+        return;
+      }
+      setCardVisibleKeys(cardVisibleKeys.filter((visibleKey) => visibleKey !== key));
+    },
+    [cardVisibleKeys, setCardVisibleKeys],
   );
 
   const selectedChannels = useMemo(() => {
@@ -470,29 +545,105 @@ export default function ChannelsListPage() {
       />
 
       <SegmentedControl
-        value={groupMode}
-        onChange={setGroupMode}
-        options={CHANNEL_GROUP_MODE_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
-        className={classes.groupModeControl}
+        value={layoutState.layout}
+        onChange={(value) => setLayout(value as 'table' | 'cards')}
+        options={CHANNEL_LAYOUT_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+        className={classes.layoutControls}
       />
 
-      {groupMode === 'zone' ? (
-        <div className={classes.zoneGroups}>
-          {zoneGroups!.length === 0 ? (
+      {layoutState.layout === 'cards' ? (
+        <SegmentedControl
+          value={layoutState.cardGroup}
+          onChange={(value) => setCardGroup(value as 'none' | 'zone' | 'band' | 'duplex')}
+          options={CHANNEL_CARD_GROUP_OPTIONS.map((opt) => ({
+            value: opt.value,
+            label: opt.label,
+          }))}
+          className={classes.groupModeControl}
+        />
+      ) : null}
+
+      {layoutState.layout === 'cards' ? (
+        <div className={classes.cardChrome}>
+          <div className={classes.cardMetaRow}>
+            <span className={classes.cardCount}>
+              {sortedFiltered.length === channels.length
+                ? `${sortedFiltered.length} result${sortedFiltered.length === 1 ? '' : 's'}`
+                : `Showing ${sortedFiltered.length} of ${channels.length}`}
+            </span>
+            <div className={classes.cardDetailsPickerWrapper}>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-expanded={cardDetailsPickerOpen}
+                onClick={() => setCardDetailsPickerOpen((open) => !open)}
+              >
+                Show/hide details
+              </Button>
+              {cardDetailsPickerOpen ? (
+                <div className={classes.cardDetailsPicker} role="menu">
+                  {CHANNEL_OPTIONAL_COLUMNS.map((col) => (
+                    <label key={col.key} className={classes.cardDetailsPickerRow}>
+                      <Checkbox
+                        checked={cardVisibleKeys.includes(col.key)}
+                        onCheckedChange={(checked) => toggleCardDetailVisible(col.key, checked)}
+                      />
+                      <span>{col.header}</span>
+                    </label>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <div className={classes.cardSelectionToolbar}>
+            <label className={classes.cardSelectAll}>
+              <Checkbox
+                checked={allCardsSelected}
+                indeterminate={someCardsSelected}
+                onCheckedChange={toggleSelectAllCards}
+                aria-label="Select all channels"
+              />
+              <span>Select all</span>
+            </label>
+            <span className={classes.cardSelectionCount}>{selectedKeys.length} selected</span>
+            <div className={classes.cardBulkActions}>
+              <ChannelListBulkActions
+                selectedCount={selectedKeys.length}
+                onBulkEdit={handleBulkEdit}
+                onCreateZoneFromSelected={handleCreateZoneFromSelected}
+              />
+            </div>
+            <button type="button" className={classes.clearSelection} onClick={clearCardSelection}>
+              Clear
+            </button>
+          </div>
+
+          {sortedFiltered.length === 0 ? (
             <p className={classes.zoneGroupsEmpty}>
               {channels.length === 0 ? channelsEmptyMessage : channelsFilteredEmptyMessage}
             </p>
-          ) : null}
-          {zoneGroups!.map((group) => (
-            <section key={group.key} className={classes.zoneSection}>
-              <h2 className={classes.zoneSectionTitle}>{group.zone?.name ?? 'No Zone'}</h2>
-              <div className={classes.zoneCardGrid}>
-                {group.channels.map((ch) => (
-                  <ChannelCard key={ch.id} channel={ch} fieldColumns={zoneGroupFieldColumns} />
-                ))}
-              </div>
-            </section>
-          ))}
+          ) : cardGroups ? (
+            <div className={classes.zoneGroups}>
+              {cardGroups.map((group) => (
+                <section key={group.key} className={classes.zoneSection}>
+                  <h2 className={classes.zoneSectionTitle}>{group.title}</h2>
+                  <div className={classes.zoneCardGrid}>
+                    {sortRowsByColumn(group.channels, columns, effectiveV2Sort).map((ch) =>
+                      renderChannelCard(
+                        ch,
+                        layoutState.cardGroup === 'zone' ? zoneGroupFieldColumns : cardFieldColumns,
+                      ),
+                    )}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <div className={classes.zoneCardGrid}>
+              {sortedFiltered.map((ch) => renderChannelCard(ch, cardFieldColumns))}
+            </div>
+          )}
         </div>
       ) : (
         <DataTable
@@ -502,35 +653,21 @@ export default function ChannelsListPage() {
           totalRowCount={channels.length}
           visibleKeys={visibleKeys}
           onVisibleKeysChange={setVisibleKeys}
-          sort={v1SortToV2(effectiveV1Sort)}
+          sort={effectiveV2Sort}
           onSortChange={handleSortChange}
           selectable
           selectedKeys={selectedKeys}
           onSelectionChange={setSelectedKeys}
           bulkActions={
-            <>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={selectedKeys.length === 0}
-                onClick={handleBulkEdit}
-              >
-                Bulk edit
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={selectedKeys.length === 0}
-                onClick={handleCreateZoneFromSelected}
-              >
-                New zone from selection
-              </Button>
-            </>
+            <ChannelListBulkActions
+              selectedCount={selectedKeys.length}
+              onBulkEdit={handleBulkEdit}
+              onCreateZoneFromSelected={handleCreateZoneFromSelected}
+            />
           }
           emptyMessage={channelsEmptyMessage}
           filteredEmptyMessage={channelsFilteredEmptyMessage}
           onRowActivate={(ch) => navigate(`/library/channels/${ch.id}`)}
-          mobileCard={(ch) => <ChannelCard channel={ch} fieldColumns={fieldColumns} />}
         />
       )}
 

@@ -32,6 +32,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | Grow zone from map                        | Shipped ([#588](https://github.com/pskillen/codeplug-studio/issues/588))                                                                       | Inside-hull + near-locator suggestions; multi-add on add-from-map screen                                                                                                       |
 | Channel Power approx watts hint           | Shipped ([#414](https://github.com/pskillen/codeplug-studio/issues/414))                                                                       | Frequencies tab — informational ladder projection; `Channel.power` stays percent-only                                                                                          |
 | Channel TX offset quick buttons           | Shipped ([#156](https://github.com/pskillen/codeplug-studio/issues/156))                                                                       | Frequencies tab — offset display + band quick buttons; see [tx-offsets.md](../../reference/tx-offsets.md)                                                                      |
+| Channels list layout (table / cards)      | Shipped ([#1205](https://github.com/pskillen/codeplug-studio/issues/1205))                                                                     | Operator-chosen layout, card grouping, zone filter, independent card details — supersedes #967 / #971 trials                                                                   |
 
 ## Documentation map
 
@@ -68,18 +69,19 @@ Shared L1 chrome: `LibraryInventoryHeader`, optional `FacetBar` (channels), `Lib
 
 ### Channels list (#24)
 
-- Filters on the list page (`ChannelListFilters`): mk2 facet chips for band, mode, duplex, and distance radius (when operator location is set). Name/callsign search is a page-level field shared by List and Group by zone — not `DataTable`'s own toolbar search — so it stays visible (and its effect stays obvious) in both display modes.
-- The embedded map plots the **same filtered channel set** as the table (all active filters apply).
-- Filter state syncs to URL query params and per-project `localStorage`.
-- Column sort and visibility prefs persist per project.
+- Filters on the list page (`ChannelListFilters`): mk2 facet chips for **band**, **mode**, **duplex**, **zone membership** (including **Not in a zone**), and **distance radius** (when operator location is set). Name/callsign search is a page-level field shared by table and card layouts — not `DataTable`'s own toolbar search — so it stays visible in both modes.
+- **Layout** — **Table** or **Cards** on desktop and mobile (operator choice; persisted per project in `localStorage`, not URL). Table mode always renders a real grid (horizontal scroll on narrow viewports). Card mode uses `ChannelCard` with bulk selection.
+- **Card grouping** (card mode only) — **None**, **Zone**, **Band**, or **Simplex/split** (persisted). Zone grouping uses direct membership only (same rule as the Zones column); multi-zone channels appear once per matching section. Band / duplex grouping use `groupChannels.ts`.
+- **Card details** — **Show/hide details** toggles optional field rows on cards independently of table **Show/hide cols** (separate `localStorage` keys).
+- The embedded map plots the **same filtered channel set** as the list (all active filters apply).
+- Filter state (including zone) syncs to URL query params and per-project `localStorage`. Table column sort/visibility and card layout/group/details prefs persist per project.
 - `modeProfiles[]` drives mode pills and mode filter matching (vendor-neutral labels only).
-- **Row checkboxes**, **Bulk edit** ([#207](https://github.com/pskillen/codeplug-studio/issues/207)), and **New zone from selected** ([#154](https://github.com/pskillen/codeplug-studio/issues/154)).
+- **Row / card checkboxes**, **Bulk edit** ([#207](https://github.com/pskillen/codeplug-studio/issues/207)), and **New zone from selected** ([#154](https://github.com/pskillen/codeplug-studio/issues/154)) — available in **both** table and card layouts (`ChannelListBulkActions`).
   - **Bulk edit** — select 2+ channels to open `ChannelBulkEditModal` (see sidecar `ChannelBulkEditModal.md`). Each field is opt-in; unset fields leave existing values. Channel-level: scan inclusion, transmit permission, TX permit, talker alias, analog squelch mode, power. Analog squelch patches existing analog mode profiles only (skipped on digital-only channels). **Delete** removes the selection after in-modal confirm (zone membership auto-cascade; scan-list and other refs block with a summary). Selecting exactly one channel opens the standard channel editor instead.
-  - **New zone from selected** — navigates to zone editor with members pre-filled in table order.
+  - **New zone from selected** — navigates to zone editor with members pre-filled in list order.
 - **Zones** column — direct zone badges (link to zone editor), **Not in a zone** / **Nested only** when applicable ([#180](https://github.com/pskillen/codeplug-studio/issues/180)).
 - **Delete** row action — removes channel; offers remove-from-zones cascade when blocked by zone membership.
-- **Mobile card rows (trial, [#967](https://github.com/pskillen/codeplug-studio/issues/967))** — below the mobile breakpoint, rows render as `ChannelCard`s (name/callsign header, one labeled row per currently-visible optional column, delete action) via `DataTable`'s `mobileCard` prop instead of the horizontally-scrolling grid. View/navigate/delete-one only — no selection checkbox, so Bulk edit and New zone from selected stay desktop-table-only. See [ChannelCard.md](../../../src/app/components/library/ChannelCard.md) and [DataTable.md](../../../src/app/components/v2/DataTable.md#mobile-card-rows).
-- **Group by Zone (trial, [#971](https://github.com/pskillen/codeplug-studio/issues/971))** — a List / Group by zone toggle above the table switches to zone-heading card sections (`groupChannelsByZone.ts`, direct membership only — same rule as the Zones column). A channel that's a direct member of multiple zones appears once per zone (intentional duplication); channels with no direct membership land in a single "No Zone" section, shown last. Card sections have no per-row selection/sort/column-picker — Bulk edit, New zone from selected, and column sort stay List-mode-only. Name/callsign search and facet filters apply in both modes. Session-only toggle, not persisted.
+- **ChannelCard** — name link, **callsign** in the header when set (omitted when empty), optional field rows, delete action, optional selection checkbox. See [ChannelCard.md](../../../src/app/components/library/ChannelCard.md).
 
 ### Zone member editor (#25, #157, #180)
 

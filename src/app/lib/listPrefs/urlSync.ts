@@ -13,6 +13,7 @@ const CHANNEL_LIST_PARAM_KEYS = [
   'band',
   'mode',
   'duplex',
+  'zone',
   'distance',
   'maxKm',
 ] as const;
@@ -36,6 +37,7 @@ export function channelListPrefsFromSearchParams(params: URLSearchParams): Chann
     band: parseCsvParam(params.get('band')),
     mode: parseCsvParam(params.get('mode')),
     duplex: duplexFilter,
+    zone: parseCsvParam(params.get('zone')),
     distanceFilterEnabled: params.get('distance') === '1',
     maxDistanceKm: parseMaxDistanceKm(params.get('maxKm')),
   };
@@ -53,6 +55,7 @@ export function channelListPrefsToSearchParams(prefs: ChannelListPrefs): URLSear
   setOrDelete(params, 'band', serializeCsvParam(prefs.band ?? []));
   setOrDelete(params, 'mode', serializeCsvParam(prefs.mode ?? []));
   setOrDelete(params, 'duplex', prefs.duplex ?? null);
+  setOrDelete(params, 'zone', serializeCsvParam(prefs.zone ?? []));
   setOrDelete(params, 'distance', prefs.distanceFilterEnabled ? '1' : null);
   const maxKm = prefs.maxDistanceKm ?? defaultMaxDistanceKm();
   setOrDelete(params, 'maxKm', maxKm === defaultMaxDistanceKm() ? null : String(maxKm));

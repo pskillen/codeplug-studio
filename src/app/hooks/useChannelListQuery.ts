@@ -28,6 +28,7 @@ export interface ChannelListQuery {
   bandFilter: string[];
   modeFilter: string[];
   duplexFilter: string | null;
+  zoneFilter: string[];
   distanceFilterEnabled: boolean;
   maxDistanceKm: number;
   setNameFilter: (value: string) => void;
@@ -35,6 +36,7 @@ export interface ChannelListQuery {
   setBandFilter: (value: string[]) => void;
   setModeFilter: (value: string[]) => void;
   setDuplexFilter: (value: string | null) => void;
+  setZoneFilter: (value: string[]) => void;
   setDistanceFilterEnabled: (value: boolean) => void;
   setMaxDistanceKm: (value: number) => void;
 }
@@ -80,6 +82,7 @@ export function useChannelListQuery(): ChannelListQuery {
   const modeFilter = useMemo(() => parseCsvParam(searchParams.get('mode')), [searchParams]);
   const duplexRaw = searchParams.get('duplex');
   const duplexFilter = duplexRaw === 'simplex' || duplexRaw === 'split' ? duplexRaw : null;
+  const zoneFilter = useMemo(() => parseCsvParam(searchParams.get('zone')), [searchParams]);
   const distanceFilterEnabled = searchParams.get('distance') === '1';
   const maxDistanceKm = parseMaxDistanceKm(searchParams.get('maxKm'));
 
@@ -173,6 +176,14 @@ export function useChannelListQuery(): ChannelListQuery {
     [updateParams, persistPrefs],
   );
 
+  const setZoneFilter = useCallback(
+    (value: string[]) => {
+      updateParams((p) => setOrDelete(p, 'zone', serializeCsvParam(value)));
+      persistPrefs({ zone: value });
+    },
+    [updateParams, persistPrefs],
+  );
+
   return {
     nameFilter,
     nameFilterInput,
@@ -181,6 +192,7 @@ export function useChannelListQuery(): ChannelListQuery {
     bandFilter,
     modeFilter,
     duplexFilter,
+    zoneFilter,
     distanceFilterEnabled,
     maxDistanceKm,
     setNameFilter,
@@ -188,6 +200,7 @@ export function useChannelListQuery(): ChannelListQuery {
     setBandFilter,
     setModeFilter,
     setDuplexFilter,
+    setZoneFilter,
     setDistanceFilterEnabled,
     setMaxDistanceKm,
   };

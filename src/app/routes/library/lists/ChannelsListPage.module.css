@@ -88,6 +88,98 @@
   margin-bottom: 14px;
 }
 
+.layoutControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cardChrome {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cardMetaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cardCount {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.cardDetailsPickerWrapper {
+  position: relative;
+}
+
+.cardDetailsPicker {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 5;
+  min-width: 12rem;
+  padding: 8px;
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-surface);
+  box-shadow: var(--dsv2-shadow-panel);
+}
+
+.cardDetailsPickerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-primary);
+}
+
+.cardSelectionToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 8px var(--dsv2-row-padding-x);
+  border: 1px solid var(--dsv2-accent-border);
+  border-radius: var(--dsv2-radius-control);
+  background: var(--dsv2-accent-tint-06);
+}
+
+.cardSelectionCount {
+  font-size: var(--dsv2-font-body-sm);
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+}
+
+.cardSelectAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-primary);
+}
+
+.clearSelection {
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+  cursor: pointer;
+}
+
+.cardBulkActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .zoneGroups {
   display: flex;
   flex-direction: column;

@@ -3,10 +3,16 @@ import type {
   Channel,
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
+  Zone,
 } from '@core/models/library.ts';
-import { newChannel } from '@core/domain/factories.ts';
+import { newChannel, newZone } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
+import { CHANNEL_ZONE_FILTER_NONE } from '../routes/library/lists/channelListZoneFilter.ts';
 import { filterChannelsForList } from './useChannelListFilters.ts';
+
+function withMembers(zone: Zone, channelIds: string[]): Zone {
+  return { ...zone, members: channelIds.map((channelId) => ({ kind: 'channel', channelId })) };
+}
 
 function makeChannel(overrides: Partial<Channel> = {}): Channel {
   const fm = defaultModeProfile('fm') as ChannelModeProfileAnalog;
@@ -58,11 +64,13 @@ describe('filterChannelsForList', () => {
         bandFilter: [],
         modeFilter: [],
         duplexFilter: null,
+        zoneFilter: [],
         distanceFilterEnabled: false,
         maxDistanceKm: 25,
         sortMode: 'name',
       },
       null,
+      [],
     );
     expect(result.map((c) => c.id)).toEqual(['2']);
   });
@@ -75,11 +83,13 @@ describe('filterChannelsForList', () => {
         bandFilter: [],
         modeFilter: ['dmr'],
         duplexFilter: null,
+        zoneFilter: [],
         distanceFilterEnabled: false,
         maxDistanceKm: 25,
         sortMode: 'name',
       },
       null,
+      [],
     );
     expect(result.map((c) => c.id)).toEqual(['2']);
   });
@@ -97,11 +107,13 @@ describe('filterChannelsForList', () => {
         bandFilter: [],
         modeFilter: ['ssb'],
         duplexFilter: null,
+        zoneFilter: [],
         distanceFilterEnabled: false,
         maxDistanceKm: 25,
         sortMode: 'name',
       },
       null,
+      [],
     );
     expect(result).toHaveLength(1);
   });
@@ -114,12 +126,54 @@ describe('filterChannelsForList', () => {
         bandFilter: ['2m'],
         modeFilter: [],
         duplexFilter: null,
+        zoneFilter: [],
         distanceFilterEnabled: false,
         maxDistanceKm: 25,
         sortMode: 'name',
       },
       null,
+      [],
     );
     expect(result.map((c) => c.id)).toEqual(['1', '3']);
+  });
+
+  it('filters by zone membership', () => {
+    const inZone = makeChannel({ id: 'in-zone', name: 'In zone' });
+    const noZone = makeChannel({ id: 'no-zone', name: 'No zone' });
+    const zoneA = withMembers(newZone('p1', 'Zone A'), [inZone.id]);
+
+    const result = filterChannelsForList(
+      [inZone, noZone],
+      {
+        nameFilter: '',
+        bandFilter: [],
+        modeFilter: [],
+        duplexFilter: null,
+        zoneFilter: [zoneA.id],
+        distanceFilterEnabled: false,
+        maxDistanceKm: 25,
+        sortMode: 'name',
+      },
+      null,
+      [zoneA],
+    );
+    expect(result.map((c) => c.id)).toEqual(['in-zone']);
+
+    const noZoneOnly = filterChannelsForList(
+      [inZone, noZone],
+      {
+        nameFilter: '',
+        bandFilter: [],
+        modeFilter: [],
+        duplexFilter: null,
+        zoneFilter: [CHANNEL_ZONE_FILTER_NONE],
+        distanceFilterEnabled: false,
+        maxDistanceKm: 25,
+        sortMode: 'name',
+      },
+      null,
+      [zoneA],
+    );
+    expect(noZoneOnly.map((c) => c.id)).toEqual(['no-zone']);
   });
 });

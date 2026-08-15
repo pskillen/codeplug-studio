@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
-import type { Channel } from '@core/models/library.ts';
+import type { Channel, Zone } from '@core/models/library.ts';
 import { channelHasGeolocation } from '@core/domain/mapProjection.ts';
 import { formatDistanceM, haversineDistanceM } from '@core/domain/geoDistance.ts';
+import { channelMatchesZoneFilter } from '../routes/library/lists/channelListZoneFilter.ts';
 import { channelMatchesBandFilter } from '../lib/bands.ts';
 import {
   channelMatchesModeFilter,
@@ -47,11 +48,13 @@ export function filterChannelsForList(
     | 'bandFilter'
     | 'modeFilter'
     | 'duplexFilter'
+    | 'zoneFilter'
     | 'distanceFilterEnabled'
     | 'maxDistanceKm'
     | 'sortMode'
   >,
   position: OperatorPosition | null,
+  zones: Zone[],
   options?: { skipSort?: boolean },
 ): Channel[] {
   const nameFiltered = channels.filter((ch) => {
@@ -66,6 +69,7 @@ export function filterChannelsForList(
     if (query.duplexFilter === 'simplex' && !isSimplex(ch.rxFrequency, ch.txFrequency))
       return false;
     if (query.duplexFilter === 'split' && isSimplex(ch.rxFrequency, ch.txFrequency)) return false;
+    if (!channelMatchesZoneFilter(ch, query.zoneFilter, zones)) return false;
     return true;
   });
 
@@ -83,20 +87,23 @@ export function useFilteredChannels(
   channels: Channel[],
   query: ChannelListQuery,
   position: OperatorPosition | null,
+  zones: Zone[],
   options?: { skipSort?: boolean },
 ): Channel[] {
   return useMemo(
-    () => filterChannelsForList(channels, query, position, options),
+    () => filterChannelsForList(channels, query, position, zones, options),
     [
       channels,
       query.nameFilter,
       query.bandFilter,
       query.modeFilter,
       query.duplexFilter,
+      query.zoneFilter,
       query.distanceFilterEnabled,
       query.maxDistanceKm,
       query.sortMode,
       position,
+      zones,
       options?.skipSort,
     ],
   );
