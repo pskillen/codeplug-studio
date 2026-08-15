@@ -38,6 +38,7 @@ import {
   OPENGD77_BACKUP_USER_DATABASE_LABEL,
 } from '@integrations/radio-io/radios/opengd77/backupRestoreRoles.ts';
 import { OPENUV380_USER_DB_HEADER_ABS } from '@integrations/radio-io/radios/opengd77/constants.ts';
+import { readAtD890ConnectedRadioIdentity } from './radioIoSession.ts';
 
 export type RadioBackupSession = {
   source: 'live-read' | 'file';
