@@ -258,6 +258,82 @@ describe('Dm32uvProtocol', () => {
     expect(writeFrames[1]![6 + 3]).toBe(0xdd);
   });
 
+  it('uploads allocated address-book blocks that are outside the config discovery range', async () => {
+    const pipe = new Dm32ScriptedPipe();
+    const start = 0x1000;
+    const contactsBase = 0x4000;
+    const channelBlock = makeFirstChannelBlock(1);
+    const settingsBlock = makeEmptyBlock(DM32_METADATA.VFO_SETTINGS);
+    const contactBlock = makeEmptyBlock(0xff);
+    contactBlock[0] = 0xab;
+
+    const psearch = new Uint8Array(8);
+    psearch[0] = 0x06;
+    psearch.set(new TextEncoder().encode('DP570UV'), 1);
+    pipe.enqueue(psearch);
+    pipe.enqueue(new Uint8Array([0x50, 0x00, 0x00]));
+    pipe.enqueue(new Uint8Array([0x06]));
+
+    const layout = new Uint8Array(8);
+    layout.set(new Uint8Array([0x00, 0x10, 0x00, 0x00]), 0);
+    layout.set(new Uint8Array([0xff, 0x2f, 0x00, 0x00]), 4);
+    const firmware = new TextEncoder().encode('DM32.TEST.001\0');
+    for (const id of [
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x10,
+    ]) {
+      if (id === 0x0a) enqueueVFrame(pipe, id, layout);
+      else if (id === 0x01) enqueueVFrame(pipe, id, firmware);
+      else enqueueVFrame(pipe, id, new Uint8Array(0));
+    }
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array(8).fill(0xff));
+    pipe.enqueue(new Uint8Array([0x06]));
+
+    const radio = new Dm32uvProtocol();
+    await radio.connect(pipe, { settleScale: 0 });
+
+    const mapSize = contactsBase - start + DM32_BLOCK_SIZE;
+    radio.seedDownloadCache({
+      addressBase: start,
+      mapSize,
+      discovered: [
+        { address: start, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' },
+        { address: 0x2000, metadata: DM32_METADATA.VFO_SETTINGS, type: 'vfo' },
+      ],
+      blocks: new Map([
+        [start, channelBlock],
+        [0x2000, settingsBlock],
+        [contactsBase, contactBlock],
+      ]),
+      contactsBase,
+      contactWriteAddresses: [contactsBase],
+    });
+
+    const image = createMemoryMap(mapSize);
+    image.fill(0, mapSize, 0xff);
+    image.set(0, channelBlock);
+    image.set(DM32_BLOCK_SIZE, settingsBlock);
+    image.set(contactsBase - start, contactBlock);
+
+    enqueueReadReply(pipe, start + 0xfff, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
+    enqueueReadReply(pipe, 0x2000 + 0xfff, new Uint8Array([DM32_METADATA.VFO_SETTINGS]));
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array([0x06]));
+
+    await radio.upload(image, {});
+
+    const writeFrames = pipe.writes.filter(
+      (w) => w[0] === 0x57 && w.length === 6 + DM32_BLOCK_SIZE,
+    );
+    const writeAddrs = writeFrames.map((w) => w[1]! | (w[2]! << 8) | (w[3]! << 16) | (w[4]! << 24));
+    expect(writeAddrs).toContain(contactsBase);
+    const contactWrite = writeFrames.find(
+      (w) => (w[1]! | (w[2]! << 8) | (w[3]! << 16)) === contactsBase,
+    );
+    expect(contactWrite![6]).toBe(0xab);
+  });
+
   it('download with progressStage labels content reads separately from metadata discovery', async () => {
     const pipe = new Dm32ScriptedPipe();
     scriptDm32DownloadTwoBlocks(pipe, 1);

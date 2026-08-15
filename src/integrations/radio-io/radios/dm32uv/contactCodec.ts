@@ -210,6 +210,24 @@ export function planDm32ContactBankBlocks(args: {
   return { firstBlockAddr, blockAddresses, contactCount };
 }
 
+/**
+ * Address-book 4KB blocks to allocate/write for a known contact count.
+ * Never walks V-frame `contactsEnd` (L01 runaway).
+ */
+export function planDm32ContactBankWriteBlocks(
+  contactsBase: number,
+  contactCount: number,
+): number[] {
+  const firstBlockAddr = Math.floor(contactsBase / DM32_BLOCK_SIZE) * DM32_BLOCK_SIZE;
+  const needed = Math.max(1, Math.ceil(Math.max(contactCount, 0) / DM32_CONTACTS_PER_BLOCK));
+  const blockCount = Math.min(needed, DM32_LIMITS.CONTACT_BANK_MAX_BLOCKS);
+  const blockAddresses: number[] = [];
+  for (let i = 0; i < blockCount; i++) {
+    blockAddresses.push(firstBlockAddr + i * DM32_BLOCK_SIZE);
+  }
+  return blockAddresses;
+}
+
 /** Read u32 LE contact count at contactsBase within a first-block buffer. */
 export function readDm32ContactCountFromBlock(
   firstBlock: Uint8Array,

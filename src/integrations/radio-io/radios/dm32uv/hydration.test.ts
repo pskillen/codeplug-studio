@@ -64,4 +64,36 @@ describe('encodeDm32uvWriteImageFromDownloadCache', () => {
       ),
     ).toThrow(DM32_EMPTY_WRITE_CACHE_MESSAGE);
   });
+
+  it('allocates V-frame address-book blocks outside the config window', () => {
+    const channelBlock = makeBlock(DM32_METADATA.CHANNEL_FIRST, (b) => {
+      b[0] = 1;
+      b[1] = 0;
+    });
+    const cache: Dm32DownloadCache = {
+      addressBase: 0x1000,
+      mapSize: DM32_BLOCK_SIZE * 2,
+      discovered: [{ address: 0x1000, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' }],
+      blocks: new Map([[0x1000, channelBlock]]),
+      contactsBase: 0x4000,
+    };
+    const image = encodeDm32uvWriteImageFromDownloadCache(cache, [analogChannel()], {
+      digitalContacts: [
+        {
+          wireName: 'Dir',
+          digitalId: 4242,
+          callsign: 'D1',
+          city: '',
+          province: '',
+          country: '',
+          remark: '',
+        },
+      ],
+    });
+    expect(cache.contactWriteAddresses).toEqual([0x4000]);
+    expect(cache.blocks.has(0x4000)).toBe(true);
+    const off = 0x4000 - cache.addressBase;
+    expect(image.bytes[off] | (image.bytes[off + 1]! << 8)).toBe(1);
+    expect(image.bytes[off + 0x10]).toBe('D'.charCodeAt(0));
+  });
 });

@@ -89,6 +89,9 @@ export const DM32_LIMITS = {
   CONTACT_MAX_L01: DM32UV_LIMITS.FIRMWARE_CONTACT_MAX_L01,
 } as const;
 
+/** Max MemoryMap span when folding/allocating the address book into the config window. */
+export const DM32_MAX_COMBINED_MAP_BYTES = 32 * 1024 * 1024;
+
 /** Fixed metadata tags always bulk-read when present (NeonPlug bulkReadRequiredBlocks). */
 export const DM32_REQUIRED_METADATA: readonly number[] = [
   DM32_METADATA.VFO_SETTINGS,

@@ -12,13 +12,16 @@ import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
-import { DM32_BLOCK_SIZE, DM32_MODEL_IDS } from './constants.ts';
+import { DM32_BLOCK_SIZE, DM32_MAX_COMBINED_MAP_BYTES, DM32_MODEL_IDS } from './constants.ts';
 import { encodeChannelsIntoDm32Image, type Dm32ChannelDecodeContext } from './channelCodec.ts';
 import { encodeZonesIntoDm32Image } from './zoneCodec.ts';
 import { encodeScanListsIntoDm32Image } from './scanListCodec.ts';
 import { encodeTalkGroupsIntoDm32Image } from './talkGroupCodec.ts';
 import { encodeRxGroupsIntoDm32Image } from './rxGroupCodec.ts';
-import { encodeDigitalContactsIntoDm32Image } from './contactCodec.ts';
+import {
+  encodeDigitalContactsIntoDm32Image,
+  planDm32ContactBankWriteBlocks,
+} from './contactCodec.ts';
 import { encodeRadioIdsIntoDm32Image } from './radioIdCodec.ts';
 import { encodeAprsIntoDm32Image } from './aprsCodec.ts';
 import { classifyDm32Metadata } from './memory.ts';
@@ -116,6 +119,40 @@ export function extractDm32uvHydrationFromProtocol(
 export const DM32_EMPTY_WRITE_CACHE_MESSAGE =
   'Read this radio in the current session before Write. The DM-32UV write encode needs live sparse-block contents — metadata discovery alone is not enough.';
 
+/**
+ * Grow the sparse cache so V-frame 0x0F address-book blocks fit in the MemoryMap.
+ * New blocks are 0xFF (not metadata-discovered). Does not walk `contactsEnd`.
+ */
+export function allocateDm32ContactBankForWrite(
+  cache: Dm32DownloadCache,
+  contactCount: number,
+): number[] {
+  if (cache.contactsBase == null) return [];
+  const addrs = planDm32ContactBankWriteBlocks(cache.contactsBase, contactCount);
+  const first = addrs[0]!;
+  const last = addrs[addrs.length - 1]!;
+  const newBase = Math.min(cache.addressBase, first);
+  const configLast = cache.addressBase + cache.mapSize - DM32_BLOCK_SIZE;
+  const newLast = Math.max(configLast, last);
+  const combinedSize = newLast - newBase + DM32_BLOCK_SIZE;
+  if (combinedSize <= 0 || combinedSize > DM32_MAX_COMBINED_MAP_BYTES) {
+    throw new RadioProtocolError(
+      `DM-32UV address-book write span ${combinedSize} bytes exceeds the combined map ceiling`,
+    );
+  }
+  for (const addr of addrs) {
+    if (!cache.blocks.has(addr)) {
+      const block = new Uint8Array(DM32_BLOCK_SIZE);
+      block.fill(0xff);
+      cache.blocks.set(addr, block);
+    }
+  }
+  cache.addressBase = newBase;
+  cache.mapSize = combinedSize;
+  cache.contactWriteAddresses = addrs;
+  return addrs;
+}
+
 /** Overlay the build projection onto an existing sparse DM-32 image (live cache; stash merge is inspect-only). */
 export function encodeDm32uvProjectionOntoImage(
   image: MemoryMap,
@@ -123,11 +160,15 @@ export function encodeDm32uvProjectionOntoImage(
   channels: readonly RadioChannelDto[],
   organisation?: RadioWriteOrganisation,
 ): MemoryMap {
+  let next = image;
+  if (organisation?.digitalContacts && cache.contactsBase != null) {
+    allocateDm32ContactBankForWrite(cache, organisation.digitalContacts.length);
+    next = memoryMapFromDm32Cache(cache);
+  }
   const ctx: Dm32ChannelDecodeContext = {
     addressBase: cache.addressBase,
     discovered: cache.discovered,
   };
-  let next = image;
   // Indices before channel FK bytes
   if (organisation?.talkGroups) {
     next = encodeTalkGroupsIntoDm32Image(next, ctx, organisation.talkGroups);

@@ -7,6 +7,7 @@ import {
   parseDm32ContactsRange,
   parseDm32MaxContacts,
   planDm32ContactBankBlocks,
+  planDm32ContactBankWriteBlocks,
   DM32_CONTACT_ENTRY_SIZE,
   DM32_CONTACTS_PER_BLOCK,
 } from './contactCodec.ts';
@@ -74,6 +75,14 @@ describe('contactCodec', () => {
       maxContacts: 150_000,
     });
     expect(planGarbage.blockAddresses).toHaveLength(1);
+  });
+
+  it('plans write blocks from contact count without walking V-frame end', () => {
+    expect(planDm32ContactBankWriteBlocks(0x278000, 0)).toEqual([0x278000]);
+    expect(planDm32ContactBankWriteBlocks(0x278000, 45)).toEqual([0x278000, 0x279000]);
+    expect(planDm32ContactBankWriteBlocks(0x278000, 50_000).length).toBe(
+      DM32_LIMITS.CONTACT_BANK_MAX_BLOCKS,
+    );
   });
 
   it('writes count header and first contact into map', () => {
