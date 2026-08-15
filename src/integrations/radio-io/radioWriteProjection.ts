@@ -153,7 +153,15 @@ export interface RadioWriteOrganisation {
   /**
    * AT-D890UV scan-list timing deciseconds for all lists when build exportSettings override ([#1069](https://github.com/pskillen/codeplug-studio/issues/1069)).
    */
+  /**
+   * AT-D890UV scan-list timing deciseconds for all lists when build exportSettings override ([#1069](https://github.com/pskillen/codeplug-studio/issues/1069)).
+   */
   atD890ScanListTiming?: AtD890ResolvedScanListTiming['deciseconds'];
+  /**
+   * OpenGD77 User Database (call-sign DB) rows. Omit to leave FLASH 0x50000 / 0xd8000
+   * unchanged. Present (including empty) replaces the lookup store; not the 1024 contact bank.
+   */
+  userDatabaseContacts?: readonly RadioDigitalContactDto[];
 }
 
 /**

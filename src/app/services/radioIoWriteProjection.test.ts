@@ -834,9 +834,11 @@ describe('buildRadioWriteProjection', () => {
         },
       },
     });
-    expect(projection.organisation.digitalContacts).toEqual([]);
-    expect(projection.organisation.digitalContacts?.some((c) => c.digitalId === 2002)).toBe(false);
-    expect(projection.organisation.digitalContacts?.some((c) => c.digitalId === 1001)).toBe(false);
+    expect(projection.organisation.digitalContacts).toBeUndefined();
+    expect(projection.organisation.talkGroups).toBeUndefined();
+    expect(projection.organisation.userDatabaseContacts).toEqual([
+      expect.objectContaining({ digitalId: 2002, wireName: 'Dir' }),
+    ]);
   });
 
   it('uses digitalContactExportNameMode for OpenGD77 library contact wire names', () => {

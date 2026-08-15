@@ -7,7 +7,7 @@
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
 import type { RadioBackupManifestV1 } from '../../backup/types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
-import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
+import type { RadioDigitalContactDto, RadioWriteOrganisation } from '../../radioWriteProjection.ts';
 import {
   makeCommandFrame,
   makeFinishFlashSectorFrame,
@@ -65,6 +65,13 @@ import { ADDITIONAL_SETTINGS_BYTES, overlaySatelliteBank } from './satelliteCode
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 import { intendedOpenGd77RestoreImage } from './restoreFromBackup.ts';
+import { encodeOpenGd77UserDatabase } from './userDatabaseCodec.ts';
+import {
+  openGd77MissingExtendedCallsignDbWarning,
+  overlayUserDatabaseSpanOnSector,
+  userDatabaseFlashSpans,
+  userDatabaseSectorAbsSet,
+} from './userDatabaseWrite.ts';
 
 /** Packed FirmwareInfo size (qdmr FirmwareInfo). */
 export const OPENGD77_FIRMWARE_INFO_SIZE = 46;
@@ -74,6 +81,8 @@ export interface OpenGd77FirmwareInfo {
   radioType: number;
   fwRevision: string;
   buildDate: string;
+  /** FirmwareInfo features bitflags (bit 1 = extended callsign DB). */
+  features: number;
 }
 
 function readU32Le(buf: Uint8Array, offset: number): number {
@@ -107,6 +116,7 @@ export function parseFirmwareInfo(payload: Uint8Array): OpenGd77FirmwareInfo {
     radioType: readU32Le(payload, 4),
     fwRevision: readAsciiPad(payload, 8, 16),
     buildDate: readAsciiPad(payload, 24, 16),
+    features: payload.length >= 46 ? payload[44]! | (payload[45]! << 8) : 0,
   };
 }
 
@@ -142,6 +152,16 @@ async function readMem(
     new Uint8Array([header[0]!, header[1]!, header[2]!, ...payload]),
     length,
   );
+}
+
+async function readFlashRange(pipe: BytePipe, abs: number, length: number): Promise<Uint8Array> {
+  const out = new Uint8Array(length);
+  for (let off = 0; off < length; off += OPENGD77_BLOCK) {
+    const n = Math.min(OPENGD77_BLOCK, length - off);
+    const payload = await readMem(pipe, OPENGD77_MEM_FLASH, abs + off, n);
+    out.set(payload, off);
+  }
+  return out;
 }
 
 async function writeFlashSector(
@@ -206,6 +226,7 @@ export class OpenGd77Protocol implements CloneImageRadio {
   private lastDirtySectorCount = 0;
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
   private lastUploadKept: Map<string, Uint8Array> | undefined;
+  private lastUserDatabaseWarning: string | undefined;
   private readonly allowedRadioTypes: readonly number[];
   private readonly modelHints: readonly string[];
   private readonly powerSteps: readonly OpenGd77PowerStep[];
@@ -233,6 +254,10 @@ export class OpenGd77Protocol implements CloneImageRadio {
 
   getLastDirtySectorCount(): number {
     return this.lastDirtySectorCount;
+  }
+
+  getLastUserDatabaseWarning(): string | undefined {
+    return this.lastUserDatabaseWarning;
   }
 
   /** Arm modelled overlay; {@link upload} encodes onto the live pre-write prior, not this image. */
@@ -367,9 +392,11 @@ export class OpenGd77Protocol implements CloneImageRadio {
     }
 
     let intended = image;
+    let userDatabaseContacts: readonly RadioDigitalContactDto[] | undefined;
     if (this.pendingWriteProjection) {
       const pending = this.pendingWriteProjection;
       this.pendingWriteProjection = null;
+      userDatabaseContacts = pending.organisation?.userDatabaseContacts;
       intended = encodeOpenGd77WriteImageFromPrior(prior, pending.channels, pending.organisation, {
         powerSteps: this.powerSteps,
       });
@@ -410,6 +437,10 @@ export class OpenGd77Protocol implements CloneImageRadio {
       sectors.map((sector) => ({ address: sector.sectorAbs, data: sector.payload })),
     );
 
+    if (userDatabaseContacts !== undefined) {
+      await this.programUserDatabaseSectors(pipe, userDatabaseContacts, opts);
+    }
+
     await pipe.write(
       makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),
     );
@@ -420,6 +451,66 @@ export class OpenGd77Protocol implements CloneImageRadio {
     }
 
     this.priorImage = openUv380ImageFromBytes(intended.bytes);
+  }
+
+  /**
+   * User Database only: program occupied FLASH sectors at 0x50000 / 0xd8000, SAVE_REBOOT.
+   * Does not overlay the programming image.
+   */
+  async uploadUserDatabase(
+    contacts: readonly RadioDigitalContactDto[],
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
+    const pipe = this.pipe;
+    if (!pipe) throw new RadioProtocolError('OpenGD77 User Database write: not connected');
+    try {
+      await sendCommand(pipe, OPENGD77_CMD_SHOW_CPS);
+    } catch {
+      /* may already be in CPS */
+    }
+    await this.programUserDatabaseSectors(pipe, contacts, opts);
+    await pipe.write(
+      makeCommandFrame(OPENGD77_CMD_CONTROL, new Uint8Array([OPENGD77_CONTROL_SAVE_REBOOT])),
+    );
+    try {
+      parseCommandAck(await pipe.readExact(1, OPENGD77_IO_TIMEOUT_MS));
+    } catch {
+      /* reboot may drop the port */
+    }
+  }
+
+  private async programUserDatabaseSectors(
+    pipe: BytePipe,
+    contacts: readonly RadioDigitalContactDto[],
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
+    this.lastUserDatabaseWarning = openGd77MissingExtendedCallsignDbWarning(
+      this.firmwareInfo?.features ?? 0,
+    );
+    const encoded = encodeOpenGd77UserDatabase(contacts);
+    const spans = userDatabaseFlashSpans(encoded);
+    const sectorAbsList = userDatabaseSectorAbsSet(spans);
+    const payloads = new Map<number, Uint8Array>();
+    for (const sectorAbs of sectorAbsList) {
+      throwIfAborted(opts.signal);
+      const sector = await readFlashRange(pipe, sectorAbs, OPENGD77_SECTOR);
+      for (const span of spans) {
+        overlayUserDatabaseSpanOnSector(sector, sectorAbs, span);
+      }
+      payloads.set(sectorAbs, sector);
+    }
+    let i = 0;
+    for (const sectorAbs of sectorAbsList) {
+      throwIfAborted(opts.signal);
+      await writeFlashSector(pipe, sectorAbs, payloads.get(sectorAbs)!, opts.signal);
+      i++;
+      reportProgress(opts.onProgress, {
+        cur: i,
+        max: Math.max(sectorAbsList.length, 1),
+        msg: `Writing User Database sector 0x${sectorAbs.toString(16)}`,
+        stage: 'User Database',
+      });
+    }
   }
 
   /**

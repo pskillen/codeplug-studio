@@ -1358,9 +1358,10 @@ export function buildRadioWriteProjection(
     );
     organisation = {
       zones: buildOpenGd77Zones(assembled, build, egress, numbersBySourceChannelId, warnings),
-      talkGroups,
-      rxGroups,
-      digitalContacts,
+      ...(includeLibraryContacts ? { talkGroups, rxGroups, digitalContacts } : {}),
+      ...(dualBank?.options.includeDigitalIdDirectory
+        ? { userDatabaseContacts: directorySlice?.digitalContacts ?? [] }
+        : {}),
     };
   } else if (
     egress.profileId === 'radio-io-uv5r-mini' ||

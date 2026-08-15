@@ -41,3 +41,4 @@ export {
   type CapabilitySkippedTransmitter as OpenGd77CapabilitySkippedTransmitter,
 } from './satelliteCodec.ts';
 export { uploadOpenGd77SatelliteBank } from './satelliteWrite.ts';
+export { encodeOpenGd77UserDatabase } from './userDatabaseCodec.ts';

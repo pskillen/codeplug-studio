@@ -511,10 +511,15 @@ async function resolveRadioWriteImageForUpload(
   return prepared.image;
 }
 
-function openGd77DirtySectorWarnings(session: RadioSession): string[] {
+function openGd77WriteWarnings(session: RadioSession): string[] {
   if (!(session.radio instanceof OpenGd77Protocol)) return [];
-  if (session.radio.getLastDirtySectorCount() !== 0) return [];
-  return [OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE];
+  const warnings: string[] = [];
+  if (session.radio.getLastDirtySectorCount() === 0) {
+    warnings.push(OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE);
+  }
+  const userDb = session.radio.getLastUserDatabaseWarning();
+  if (userDb) warnings.push(userDb);
+  return warnings;
 }
 
 /**
@@ -543,7 +548,7 @@ export async function writeBuildToRadio(
   if (egress.profileId === 'radio-io-at-d890uv') {
     await uploadAtD890DigitalContactsForWrite(session, prepared.organisation.digitalContacts, opts);
   }
-  return { warnings: [...prepared.warnings, ...openGd77DirtySectorWarnings(session)] };
+  return { warnings: [...prepared.warnings, ...openGd77WriteWarnings(session)] };
 }
 
 /** Upload a prepared clone image after {@link prepareRadioWriteImage} and session connect. */
@@ -583,7 +588,7 @@ export async function uploadPreparedRadioWrite(
     await uploadAtD890DigitalContactsForWrite(session, opts?.organisation?.digitalContacts, opts);
   }
   const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
-  const warnings = openGd77DirtySectorWarnings(session);
+  const warnings = openGd77WriteWarnings(session);
   return {
     ...(captured ? { writeVerifyPending: captured } : {}),
     ...(warnings.length ? { warnings } : {}),
