@@ -806,7 +806,7 @@ describe('buildRadioWriteProjection', () => {
     expect(projection.organisation.digitalContacts).toBeUndefined();
   });
 
-  it('omits library digital contacts when dual-bank toggle is off', () => {
+  it('omits library digital contacts when dual-bank toggle is off and does not stuff directory into the contact bank', () => {
     const dc = { ...newDigitalContact('p1', 'Alice', 1001, 'dmr'), id: 'dc-1' };
     const library = { ...emptyLibrary(), digitalContacts: [dc] };
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
@@ -834,9 +834,8 @@ describe('buildRadioWriteProjection', () => {
         },
       },
     });
-    expect(projection.organisation.digitalContacts).toEqual([
-      expect.objectContaining({ digitalId: 2002, wireName: 'Dir' }),
-    ]);
+    expect(projection.organisation.digitalContacts).toEqual([]);
+    expect(projection.organisation.digitalContacts?.some((c) => c.digitalId === 2002)).toBe(false);
     expect(projection.organisation.digitalContacts?.some((c) => c.digitalId === 1001)).toBe(false);
   });
 

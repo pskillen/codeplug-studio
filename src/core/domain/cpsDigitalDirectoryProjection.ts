@@ -11,6 +11,10 @@ export interface CpsDm32RadioIdRow {
   name: string;
 }
 
+/** OpenGD77 CPS zip has no User Database file — directory belongs on Web Serial Write. */
+export const OPENGD77_CPS_DIRECTORY_WARNING =
+  'OpenGD77 CPS export cannot write the firmware User Database (Write DMR IDs). Directory rows are omitted from Contacts.csv — use Web Serial Write with RadioID directory selected.';
+
 export interface CpsDirectoryProjectionPayload {
   warnings?: string[];
   /** Single-bank replacement list (Anytone `DMRDigitalContactList.CSV`). */
@@ -68,10 +72,7 @@ export function applyCpsDigitalDirectoryProjection(
 
   const dual = payload.dualBank;
   if (dual) {
-    let digitalContacts = dual.includeLibraryContacts ? [...assembled.digitalContacts] : [];
-    if (dual.directoryDigitalContacts.length > 0) {
-      digitalContacts = [...digitalContacts, ...dual.directoryDigitalContacts];
-    }
+    const digitalContacts = dual.includeLibraryContacts ? [...assembled.digitalContacts] : [];
     return { assembled: { ...assembled, digitalContacts }, warnings };
   }
 

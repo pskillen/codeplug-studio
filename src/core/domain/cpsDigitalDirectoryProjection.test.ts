@@ -23,7 +23,7 @@ function minimalAssembled(digitalIds: number[]): AssembledBuild {
 }
 
 describe('applyCpsDigitalDirectoryProjection', () => {
-  it('merges dual-bank directory contacts after library rows', () => {
+  it('keeps library contacts and does not append dual-bank directory rows to Contacts.csv', () => {
     const assembled = minimalAssembled([100]);
     const { assembled: out } = applyCpsDigitalDirectoryProjection(assembled, {
       directoryProjection: {
@@ -40,7 +40,7 @@ describe('applyCpsDigitalDirectoryProjection', () => {
         },
       },
     });
-    expect(out.digitalContacts.map((row) => row.entity.digitalId)).toEqual([100, 200]);
+    expect(out.digitalContacts.map((row) => row.entity.digitalId)).toEqual([100]);
   });
 
   it('omits library contacts when dual-bank library toggle is off', () => {
@@ -60,7 +60,7 @@ describe('applyCpsDigitalDirectoryProjection', () => {
         },
       },
     });
-    expect(out.digitalContacts.map((row) => row.entity.digitalId)).toEqual([200]);
+    expect(out.digitalContacts.map((row) => row.entity.digitalId)).toEqual([]);
   });
 
   it('clears digital contacts for single-bank skip', () => {

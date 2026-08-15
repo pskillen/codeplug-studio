@@ -54,6 +54,7 @@ import { uploadAtD890DigitalContactsForWrite } from './radioIoAtD890DigitalConta
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
+import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
 import type { ProjectedDigitalContactRow } from '@core/domain/digitalIdDirectoryProjection.ts';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
 import type { FormatId } from '@core/import-export/types.ts';
@@ -77,6 +78,7 @@ import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connec
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
+import { isOpenGd77RadioIoEgress } from './radioIoChannelMap.ts';
 
 export {
   isRadioSerialSupported,
@@ -305,8 +307,11 @@ export async function prepareRadioWriteImage(
   if (opts?.dualBank) {
     const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
     const maxRadioIds = typeof limits?.maxRadioIds === 'number' ? limits.maxRadioIds : undefined;
-    const maxDirectoryContacts =
-      typeof limits?.maxContacts === 'number' ? limits.maxContacts : undefined;
+    const maxDirectoryContacts = isOpenGd77RadioIoEgress(egress.profileId)
+      ? OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX
+      : typeof limits?.maxContacts === 'number'
+        ? limits.maxContacts
+        : undefined;
     const directorySlice =
       opts.persistence && opts.projectId
         ? await collectDualBankDirectorySlice({

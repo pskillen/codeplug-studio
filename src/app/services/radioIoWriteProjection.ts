@@ -772,7 +772,6 @@ function buildOpenGd77ContactsAndRx(
   egress: RadioWireEgressIds,
   warnings: string[],
   includeLibraryContacts = true,
-  directoryDigitalContacts: readonly RadioDigitalContactDto[] = [],
 ): {
   talkGroups: RadioTalkGroupDto[];
   rxGroups: RadioRxGroupDto[];
@@ -884,21 +883,6 @@ function buildOpenGd77ContactsAndRx(
       contactIdByEntityId.set(row.entity.id, nextContactIndex);
       nextContactIndex++;
     }
-  }
-  for (const directoryContact of directoryDigitalContacts) {
-    if (nextContactIndex > maxContacts) break;
-    const wireName = applyListWireNameLimits(
-      directoryContact.wireName,
-      reservedDc,
-      merged,
-      egress.profileId,
-      warnings,
-      'Contact',
-      nameLen,
-      false,
-    );
-    digitalContacts.push({ ...directoryContact, wireName });
-    nextContactIndex++;
   }
 
   const rxGroupIndexById = new Map<string, number>();
@@ -1247,7 +1231,6 @@ export function buildRadioWriteProjection(
   const dualBankMode = dualBank?.mode ?? 'codeplug';
   const directorySlice = dualBank?.directorySlice;
   const directoryRadioIds = directorySlice?.radioIds ?? [];
-  const directoryDigitalContacts = directorySlice?.digitalContacts ?? [];
   let fkMaps: RadioChannelFkMaps | undefined;
   let talkGroups: RadioTalkGroupDto[] = [];
   let rxGroups: RadioRxGroupDto[] = [];
@@ -1283,7 +1266,6 @@ export function buildRadioWriteProjection(
       egress,
       warnings,
       includeLibraryContacts,
-      directoryDigitalContacts,
     );
     talkGroups = tgRx.talkGroups;
     rxGroups = tgRx.rxGroups;

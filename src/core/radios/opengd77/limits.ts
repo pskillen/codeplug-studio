@@ -9,6 +9,12 @@ export const OPENGD77_FAMILY_LIMITS = {
   ZONE_MAX: 68,
   RX_GROUP_LISTS_MAX: 76,
   CONTACTS_MAX: 1024,
+  /**
+   * Firmware User Database (call-sign / DMR ID lookup) — preliminary upper bound
+   * from the OpenGD77 user guide (~13 800–69 600 by chars/entry). Packing may
+   * yield fewer. Not the 1024-slot DMR contact bank. Not qdmr `size1`.
+   */
+  USER_DATABASE_MAX: 69_600,
   ZONE_MEMBERS_MAX: 80,
   RX_GROUP_MEMBERS_MAX: 32,
   /** Channel / zone / contact / talk-group wire name length (LCD limit). */
