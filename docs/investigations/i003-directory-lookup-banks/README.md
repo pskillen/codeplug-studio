@@ -2,11 +2,11 @@
 
 **Hub for this investigation.** Promoted from `tmp/features/baofeng-contacts-export/investigation.md` (scratch). Number **i003** is used; do not reuse.
 
-**Status:** **Live.** OpenGD77 User Database **Write ACK’d on a 1701** ([#1211](https://github.com/pskillen/codeplug-studio/issues/1211)) after the qdmr `write_start` session fix. Incoming-call **LCD lookup is untested** (local repeaters send Talker Alias). DM-32 remapping ([#1220](https://github.com/pskillen/codeplug-studio/issues/1220)) still open. No FLASH dump. Do not promote unverified numbers into library CRUD.
+**Status:** **Live.** OpenGD77 User Database **Write ACK’d on a 1701** ([#1211](https://github.com/pskillen/codeplug-studio/issues/1211)) after the qdmr `write_start` session fix. Incoming-call **LCD lookup is untested** (local repeaters send Talker Alias). DM-32 directory now targets address book `0x0F` in code ([#1220](https://github.com/pskillen/codeplug-studio/issues/1220)); LCD (H4) unproven. No FLASH dump. Do not promote unverified numbers into library CRUD.
 
-**Prime suspect (remaining):** DM-32 maps directory to operator radio IDs `0x67` instead of address book `0x0F`. D890 is single-bank: directory already targets `DigitalContact*`. OpenGD77 contact-bank stuffing is **stopped**; 1701 User Database **program succeeded**; LCD vs Talker Alias is H8.
+**Prime suspect (remaining):** incoming-call LCD (H4 / H8). D890 is single-bank: directory already targets `DigitalContact*`. OpenGD77 contact-bank stuffing is **stopped**; 1701 User Database **program succeeded**. DM-32 `0x67` stuffing is **stopped**.
 
-**Next move:** H8 on a repeater (or private call) that does **not** broadcast Talker Alias. Keep #1220 stop-gap.
+**Next move:** H8 on a repeater (or private call) that does **not** broadcast Talker Alias. Human-verify #1220 on a DM-32 before merge.
 
 |                        |                                                                                                                                                                                                                                           |
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

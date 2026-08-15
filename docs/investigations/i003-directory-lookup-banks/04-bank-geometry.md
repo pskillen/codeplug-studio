@@ -42,11 +42,11 @@ qdmr `DM1701Codeplug`: second segment includes 10 000 contacts at `0x140000`. 
 
 ## DM-32 serial (NeonPlug / Studio)
 
-| Bank                 | Metadata / V-frame | Entry                | Studio cap | Firmware hint                          |
-| -------------------- | ------------------ | -------------------- | ---------- | -------------------------------------- |
-| Digital address book | V-frame `0x0F`     | `0x5C` (92)          | CPS 250    | V-frame `0x10` or L01 50 000 / 150 000 |
-| Operator radio IDs   | `0x67`             | 16 bytes from `0x10` | 250        | 250                                    |
-| Talk groups          | `0x44`             | packed               | 800        | 800                                    |
+| Bank                 | Metadata / V-frame | Entry                | Studio cap                                       | Firmware hint                          |
+| -------------------- | ------------------ | -------------------- | ------------------------------------------------ | -------------------------------------- |
+| Digital address book | V-frame `0x0F`     | `0x5C` (92)          | Write 11 264 (`ADDRESS_BOOK_WRITE_MAX`); CPS 250 | V-frame `0x10` or L01 50 000 / 150 000 |
+| Operator radio IDs   | `0x67`             | 16 bytes from `0x10` | 250                                              | 250                                    |
+| Talk groups          | `0x44`             | packed               | 800                                              | 800                                    |
 
 `CONTACT_BANK_MAX_BLOCKS` = 256 (fold/write safety; L01 end near `0xFFF000` must not be walked).
 
