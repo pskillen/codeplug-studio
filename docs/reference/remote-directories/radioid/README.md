@@ -26,7 +26,7 @@ Studio exposes a same-origin Pages Function:
 | Auth        | None (public upstream)                                                                   |
 | Cache       | `Cache-Control: public, max-age=300`                                                     |
 | Origin gate | Shared allowlist with RepeaterBook / IRTS — deploy hostnames and `http://localhost:5173` |
-| Local dev   | Vite `server.proxy` rewrites `/api/radioid` → `/api` on `database.radioid.net`           |
+| Local dev   | Vite proxy `/api/radioid/dmr` → `/api/dmr` on `database.radioid.net`; `/api/radioid-static/user.csv` → `/static/user.csv` on `radioid.net` |
 
 Deployed via `functions/api/radioid/dmr/user.ts` on every Cloudflare Pages environment.
 

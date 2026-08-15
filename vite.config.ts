@@ -70,11 +70,6 @@ export default defineConfig(({ mode }) => {
             });
           },
         },
-        '/api/radioid': {
-          target: 'https://database.radioid.net',
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/radioid/, '/api'),
-        },
         '/api/radioid-static/user.csv': {
           target: 'https://radioid.net',
           changeOrigin: true,
@@ -84,6 +79,12 @@ export default defineConfig(({ mode }) => {
               proxyReq.setHeader('User-Agent', RADIOID_USER_AGENT);
             });
           },
+        },
+        // Must not use `/api/radioid` — that prefix also matches `/api/radioid-static/…`.
+        '/api/radioid/dmr': {
+          target: 'https://database.radioid.net',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api\/radioid/, '/api'),
         },
         '/api/celestrak/amateur': {
           target: 'https://celestrak.org',
