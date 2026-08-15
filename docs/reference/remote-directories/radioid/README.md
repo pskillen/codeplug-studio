@@ -19,13 +19,13 @@ RadioID.net does **not** send `Access-Control-Allow-Origin` for browser direct f
 
 Studio exposes a same-origin Pages Function:
 
-| Property    | Value                                                                                    |
-| ----------- | ---------------------------------------------------------------------------------------- |
-| Studio path | `GET /api/radioid/dmr/user/` (trailing slash required)                                   |
-| Upstream    | `https://database.radioid.net/api/dmr/user/`                                             |
-| Auth        | None (public upstream)                                                                   |
-| Cache       | `Cache-Control: public, max-age=300`                                                     |
-| Origin gate | Shared allowlist with RepeaterBook / IRTS — deploy hostnames and `http://localhost:5173` |
+| Property    | Value                                                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Studio path | `GET /api/radioid/dmr/user/` (trailing slash required)                                                                                     |
+| Upstream    | `https://database.radioid.net/api/dmr/user/`                                                                                               |
+| Auth        | None (public upstream)                                                                                                                     |
+| Cache       | `Cache-Control: public, max-age=300`                                                                                                       |
+| Origin gate | Shared allowlist with RepeaterBook / IRTS — deploy hostnames and `http://localhost:5173`                                                   |
 | Local dev   | Vite proxy `/api/radioid/dmr` → `/api/dmr` on `database.radioid.net`; `/api/radioid-static/user.csv` → `/static/user.csv` on `radioid.net` |
 
 Deployed via `functions/api/radioid/dmr/user.ts` on every Cloudflare Pages environment.
@@ -42,7 +42,7 @@ For worldwide coverage Studio streams the published daily CSV instead of paginat
 | Cache       | `Cache-Control: private, no-store` — Worker streams upstream body; no public edge cache      |
 | Local dev   | Vite proxy `/api/radioid-static/user.csv` → `/static/user.csv` on `radioid.net`              |
 
-Use the **Entire database** action on the RadioID search page. Expect **300,000+** rows; import upserts into the local directory shadow only (never Google Drive). Respect [acceptable use policy](https://www.radioid.net/acceptable_use_policy) — local operator cache, not a public mirror.
+Use the **Entire database** action on the RadioID search page. Expect **300,000+** rows; import upserts into the local directory shadow only (never Google Drive). Writes are 2000-row IndexedDB transactions (relaxed durability when the browser supports it). Respect [acceptable use policy](https://www.radioid.net/acceptable_use_policy) — local operator cache, not a public mirror.
 
 Deployed via `functions/api/radioid-static/user.csv.ts`.
 
