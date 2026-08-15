@@ -359,6 +359,10 @@ export default function ChannelEditor({
             <p className={classes.bandHint}>
               Offsets shown match this frequency&apos;s band when RX is set.
             </p>
+            <Stack gap="lg" className={classes.frequencyTx}>
+              <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
+              <TxPermitSegment value={txPermit} onChange={setTxPermit} />
+            </Stack>
             <div className={[classes.powerField, isMobile ? classes.powerFieldFull : ''].join(' ')}>
               <PercentLevelSlider label="Power" value={power} onChange={setPower} />
               <PowerLadderHints power={power} />
@@ -421,8 +425,6 @@ export default function ChannelEditor({
                 />
               </FormField>
               <ScanListSummary listId={scanListId || null} library={library} />
-              <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
-              <TxPermitSegment value={txPermit} onChange={setTxPermit} />
             </Stack>
           </Panel>
 

@@ -45,6 +45,10 @@
   color: var(--dsv2-text-tertiary);
 }
 
+.frequencyTx {
+  margin-top: 14px;
+}
+
 .powerField {
   margin-top: 14px;
   width: 48%;
