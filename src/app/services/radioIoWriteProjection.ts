@@ -602,7 +602,7 @@ function mergeDm32AddressBookContacts(
     return directoryContacts.slice(0, serialCap);
   }
   if (includeLibrary && !includeDirectory) {
-    return libraryContacts;
+    return [...libraryContacts];
   }
   const merged = [...libraryContacts];
   const seen = new Set(
