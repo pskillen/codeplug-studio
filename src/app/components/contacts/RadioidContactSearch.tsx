@@ -365,11 +365,7 @@ export default function RadioidContactSearch() {
             >
               Search
             </Button>
-            <Button
-              variant="secondary"
-              type="button"
-              onClick={openEntireDatabaseImport}
-            >
+            <Button variant="secondary" type="button" onClick={openEntireDatabaseImport}>
               Entire database
             </Button>
           </div>

@@ -106,9 +106,7 @@ describe('useDigitalIdDirectoryPage', () => {
     );
 
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(querySpy).toHaveBeenCalledWith(
-      expect.objectContaining({ digitalIdPrefix: '3109' }),
-    );
+    expect(querySpy).toHaveBeenCalledWith(expect.objectContaining({ digitalIdPrefix: '3109' }));
     expect(result.current.total).toBe(1);
   });
 

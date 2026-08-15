@@ -17,7 +17,8 @@ export function toDirectoryIdbRow(entry: DigitalIdDirectoryEntry): DigitalIdDire
 }
 
 export function stripDirectoryIdbRow(row: DigitalIdDirectoryIdbRow): DigitalIdDirectoryEntry {
-  const { callsignLower: _c, nameLower: _n, digitalIdStr: _d, ...entry } = row;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- strip IDB-only index fields
+  const { callsignLower, nameLower, digitalIdStr, ...entry } = row;
   return entry;
 }
 

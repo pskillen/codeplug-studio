@@ -47,7 +47,6 @@ export function directoryProjectNameRangeUpper(projectId: string): [string, stri
   return [projectId, UNICODE_MAX];
 }
 
-
 export function normalizedDirectoryFilterQuery(
   query: Pick<
     DigitalIdDirectoryPageQuery,

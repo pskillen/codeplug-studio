@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Progress, Stack, Text } from '@mantine/core';
+import { Progress, Text } from '@mantine/core';
 import { persistence } from '../../state/persistence.ts';
 import {
   formatRadioidDumpProgressPercent,
@@ -71,9 +71,9 @@ function RadioidEntireDatabaseImportDialogBody({
       <div className={classes.body}>
         <StatusBanner tone="warning">
           <strong>Caution — 300,000+ records.</strong> This downloads RadioID.net&apos;s daily
-          worldwide user database into your local directory shadow store. The import may take several
-          minutes and can strain mobile browser tabs or IndexedDB quota. Library contacts are not
-          changed.
+          worldwide user database into your local directory shadow store. The import may take
+          several minutes and can strain mobile browser tabs or IndexedDB quota. Library contacts
+          are not changed.
         </StatusBanner>
         <Text size="sm" c="dimmed">
           Community-maintained data — verify before use on air. Existing directory rows with the
@@ -113,7 +113,7 @@ function RadioidEntireDatabaseImportDialogBody({
     return (
       <div className={classes.body}>
         <Text size="sm">{progress?.message ?? 'Starting…'}</Text>
-        <Progress value={bytePercent ?? undefined} animated={bytePercent == null} />
+        <Progress value={bytePercent ?? 0} animated={bytePercent == null} />
         <Text size="sm" c="dimmed">
           {progress
             ? `${progress.written.toLocaleString()} IDs written · skipped ${progress.skipped}`
@@ -172,11 +172,7 @@ export default function RadioidEntireDatabaseImportDialog({
       size="md"
     >
       {opened ? (
-        <RadioidEntireDatabaseImportDialogBody
-          key={sessionKey}
-          {...rest}
-          onClose={onClose}
-        />
+        <RadioidEntireDatabaseImportDialogBody key={sessionKey} {...rest} onClose={onClose} />
       ) : null}
     </ModalShell>
   );

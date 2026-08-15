@@ -81,7 +81,16 @@ export function useDigitalIdDirectoryPage(
       cancelled = true;
       unsubscribe();
     };
-  }, [projectId, page, pageSize, orderBy, digitalIdPrefix, callsignPrefix, namePrefix, countryEquals]);
+  }, [
+    projectId,
+    page,
+    pageSize,
+    orderBy,
+    digitalIdPrefix,
+    callsignPrefix,
+    namePrefix,
+    countryEquals,
+  ]);
 
   if (!projectId) {
     return {

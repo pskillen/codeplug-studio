@@ -128,9 +128,7 @@ function planDirectoryScan(
   const digitalIdPrefix =
     digitalIdPrefixRaw !== undefined ? normalizeDigitalIdPrefix(digitalIdPrefixRaw) : undefined;
   const callsignPrefix =
-    callsignPrefixRaw !== undefined
-      ? normalizeDirectoryTextPrefix(callsignPrefixRaw)
-      : undefined;
+    callsignPrefixRaw !== undefined ? normalizeDirectoryTextPrefix(callsignPrefixRaw) : undefined;
   const namePrefix =
     namePrefixRaw !== undefined ? normalizeDirectoryTextPrefix(namePrefixRaw) : undefined;
   const activeFilters =

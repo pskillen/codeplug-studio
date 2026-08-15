@@ -2,10 +2,7 @@ import { parseCsv } from '@core/import-export/csvParse.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { ProjectPersistence } from '../persistence/types.ts';
 import { resolveApiUrl } from '../platform/resolveApiUrl.ts';
-import {
-  RADIOID_NETWORK_ERROR_MESSAGE,
-  RADIOID_USER_DUMP_PROXY_PATH,
-} from './constants.ts';
+import { RADIOID_NETWORK_ERROR_MESSAGE, RADIOID_USER_DUMP_PROXY_PATH } from './constants.ts';
 import { RadioidDirectoryError } from './errors.ts';
 import {
   buildRadioidDumpHeaderIndex,
@@ -107,7 +104,7 @@ export async function ingestRadioidUserDump(
   let response: Response;
   try {
     response = await fetch(url, { signal: options.signal });
-  } catch (err) {
+  } catch {
     if (options.signal?.aborted) {
       return { ...counts, cancelled: true, error: null };
     }
@@ -115,7 +112,10 @@ export async function ingestRadioidUserDump(
   }
 
   if (!response.ok || !response.body) {
-    throw new RadioidDirectoryError(`RadioID.net dump returned ${response.status}.`, response.status);
+    throw new RadioidDirectoryError(
+      `RadioID.net dump returned ${response.status}.`,
+      response.status,
+    );
   }
 
   const totalBytesHeader = response.headers.get('Content-Length');

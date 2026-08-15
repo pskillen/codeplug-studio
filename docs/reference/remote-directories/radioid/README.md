@@ -34,13 +34,13 @@ Deployed via `functions/api/radioid/dmr/user.ts` on every Cloudflare Pages envir
 
 For worldwide coverage Studio streams the published daily CSV instead of paginating the JSON API.
 
-| Property    | Value                                                                                          |
-| ----------- | ---------------------------------------------------------------------------------------------- |
+| Property    | Value                                                                                        |
+| ----------- | -------------------------------------------------------------------------------------------- |
 | Upstream    | `https://radioid.net/static/user.csv` ([database dumps](https://radioid.net/database/dumps)) |
-| Studio path | `GET /api/radioid-static/user.csv`                                                             |
-| Format      | CSV with header row — parse by column name (`RADIO_ID`, `CALLSIGN`, `FIRST_NAME`, …)           |
+| Studio path | `GET /api/radioid-static/user.csv`                                                           |
+| Format      | CSV with header row — parse by column name (`RADIO_ID`, `CALLSIGN`, `FIRST_NAME`, …)         |
 | Cache       | `Cache-Control: private, no-store` — Worker streams upstream body; no public edge cache      |
-| Local dev   | Vite proxy `/api/radioid-static/user.csv` → `/static/user.csv` on `radioid.net`                |
+| Local dev   | Vite proxy `/api/radioid-static/user.csv` → `/static/user.csv` on `radioid.net`              |
 
 Use the **Entire database** action on the RadioID search page. Expect **300,000+** rows; import upserts into the local directory shadow only (never Google Drive). Respect [acceptable use policy](https://www.radioid.net/acceptable_use_policy) — local operator cache, not a public mirror.
 

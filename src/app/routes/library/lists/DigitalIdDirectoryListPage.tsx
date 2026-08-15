@@ -74,10 +74,7 @@ export default function DigitalIdDirectoryListPage() {
   });
 
   useEffect(() => {
-    if (!activeProjectId) {
-      setPartitionCount(0);
-      return;
-    }
+    if (!activeProjectId) return;
     const projectId = activeProjectId;
 
     async function loadPartitionCount() {
@@ -218,7 +215,7 @@ export default function DigitalIdDirectoryListPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                disabled={partitionCount === 0}
+                disabled={partitionCount === 0 && total === 0}
                 onClick={() => openClearDialog('all')}
               >
                 Clear directory
@@ -321,7 +318,7 @@ export default function DigitalIdDirectoryListPage() {
           opened={clearOpen}
           onClose={() => setClearOpen(false)}
           mode={clearMode}
-          entryCount={clearMode === 'filtered' ? total : partitionCount}
+          entryCount={clearMode === 'filtered' ? total : partitionCount || total}
           onConfirm={async () => {
             if (!activeProjectId) return { deletedCount: 0 };
             if (clearMode === 'filtered') {

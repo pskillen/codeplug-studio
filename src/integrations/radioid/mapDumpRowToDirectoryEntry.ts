@@ -4,14 +4,7 @@ import type { RadioidDmrUserListing } from './types.ts';
 
 /** Normalised dump column names (header row, uppercased). */
 export type RadioidDumpColumn =
-  | 'RADIO_ID'
-  | 'CALLSIGN'
-  | 'FIRST_NAME'
-  | 'LAST_NAME'
-  | 'CITY'
-  | 'STATE'
-  | 'COUNTRY'
-  | 'REMARKS';
+  'RADIO_ID' | 'CALLSIGN' | 'FIRST_NAME' | 'LAST_NAME' | 'CITY' | 'STATE' | 'COUNTRY' | 'REMARKS';
 
 export function normaliseRadioidDumpHeader(header: string): string {
   return header.trim().toUpperCase().replace(/\s+/g, '_');

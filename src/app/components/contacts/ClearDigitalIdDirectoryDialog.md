@@ -6,13 +6,13 @@ Double-confirm modal for wiping directory shadow rows — either the **entire pa
 
 ## Props
 
-| Prop          | Type                                            | Description                                              |
-| ------------- | ----------------------------------------------- | -------------------------------------------------------- |
-| `opened`      | `boolean`                                       | Modal visibility                                         |
-| `onClose`     | `() => void`                                    | Dismiss handler (ignored while delete is running)        |
-| `mode`        | `'all' \| 'filtered'`                           | Full partition wipe vs delete rows matching active filters |
-| `entryCount`  | `number`                                        | Rows that will be deleted (partition total or filtered `total`) |
-| `onConfirm`   | `() => Promise<{ deletedCount: number }>`       | Persistence delete callback                              |
+| Prop         | Type                                      | Description                                                     |
+| ------------ | ----------------------------------------- | --------------------------------------------------------------- |
+| `opened`     | `boolean`                                 | Modal visibility                                                |
+| `onClose`    | `() => void`                              | Dismiss handler (ignored while delete is running)               |
+| `mode`       | `'all' \| 'filtered'`                     | Full partition wipe vs delete rows matching active filters      |
+| `entryCount` | `number`                                  | Rows that will be deleted (partition total or filtered `total`) |
+| `onConfirm`  | `() => Promise<{ deletedCount: number }>` | Persistence delete callback                                     |
 
 ## Behaviour
 

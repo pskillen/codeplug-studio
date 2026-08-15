@@ -4,7 +4,10 @@ import {
   type RadioidDumpIngestResult,
 } from '@integrations/radioid/ingestUserDump.ts';
 
-export type { RadioidDumpIngestProgress, RadioidDumpIngestResult } from '@integrations/radioid/ingestUserDump.ts';
+export type {
+  RadioidDumpIngestProgress,
+  RadioidDumpIngestResult,
+} from '@integrations/radioid/ingestUserDump.ts';
 
 export async function runRadioidDumpImport(
   options: RadioidDumpIngestOptions,

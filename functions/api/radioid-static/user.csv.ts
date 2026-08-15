@@ -7,8 +7,7 @@ import {
 
 const RADIOID_USER_DUMP_UPSTREAM = 'https://radioid.net/static/user.csv';
 
-const RADIOID_USER_AGENT =
-  'CodeplugStudio/1.0 (+https://codeplug.mm9pdy.net; mm9pdy@gmail.com)';
+const RADIOID_USER_AGENT = 'CodeplugStudio/1.0 (+https://codeplug.mm9pdy.net; mm9pdy@gmail.com)';
 
 /**
  * Same-origin CORS bridge for RadioID.net daily user.csv dump.

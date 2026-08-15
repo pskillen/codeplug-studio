@@ -123,7 +123,9 @@ describe.each(implementations)('DigitalIdDirectory — %s', (_label, makeStore) 
     const store = makeStore();
     const meta = newProjectMeta('Test');
     await store.seedProject({ meta });
-    await store.putDigitalIdDirectoryEntriesBatch([sampleEntry(meta.projectId, 42, 'Dir')]);
+    await store.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(meta.projectId, 42, { name: 'Dir' }),
+    ]);
 
     const seed = await store.loadProjectSeed(meta.projectId);
     expect(seed).not.toBeNull();

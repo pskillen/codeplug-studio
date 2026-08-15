@@ -30,7 +30,13 @@ describe('ingestRadioidUserDump', () => {
       onProgress: (p) => progress.push(p.written),
     });
 
-    expect(result).toMatchObject({ written: 2, skipped: 1, failed: 0, cancelled: false, error: null });
+    expect(result).toMatchObject({
+      written: 2,
+      skipped: 1,
+      failed: 0,
+      cancelled: false,
+      error: null,
+    });
     expect(listSpy).not.toHaveBeenCalled();
 
     const page = await persistence.queryDigitalIdDirectoryPage({
