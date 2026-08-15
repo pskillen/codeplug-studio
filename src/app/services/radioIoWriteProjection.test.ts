@@ -751,7 +751,7 @@ describe('buildRadioWriteProjection', () => {
     expect(projWithout.organisation.talkGroups?.[0]?.wireName.length).toBeLessThanOrEqual(16);
   });
 
-  it('projects directory radio IDs for DM-32 digital ID list Write', () => {
+  it('projects DM-32 directory into the address book and omits operator radio IDs on contacts-only Write', () => {
     const ch = withExportEligibleDefaults({
       ...newChannel('p1', 'A'),
       id: 'ch-a',
@@ -779,14 +779,85 @@ describe('buildRadioWriteProjection', () => {
         mode: 'digitalIdList',
         options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
         directorySlice: {
-          radioIds: [{ index: 0, dmrId: 4242, name: 'DirUser' }],
-          digitalContacts: [],
+          radioIds: [],
+          digitalContacts: [
+            {
+              wireName: 'DirUser',
+              digitalId: 4242,
+              callsign: 'D1',
+              city: '',
+              province: '',
+              country: '',
+              remark: '',
+            },
+          ],
         },
       },
     });
-    expect(projection.organisation.radioIds).toEqual([{ index: 0, dmrId: 4242, name: 'DirUser' }]);
-    expect(projection.organisation.digitalContacts).toBeUndefined();
-    expect(projection.organisation.radioIds?.some((r) => r.dmrId === 999)).toBe(false);
+    expect(projection.organisation.radioIds).toBeUndefined();
+    expect(projection.organisation.digitalContacts).toEqual([
+      expect.objectContaining({ digitalId: 4242, wireName: 'DirUser' }),
+    ]);
+  });
+
+  it('merges DM-32 library then directory into the address book and keeps channel operator IDs', () => {
+    const dc = { ...newDigitalContact('p1', 'Alice', 1001, 'dmr'), id: 'dc-1' };
+    const ch = withExportEligibleDefaults({
+      ...newChannel('p1', 'A'),
+      id: 'ch-a',
+      rxFrequency: 145_000_000,
+      txFrequency: 145_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 999,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    });
+    const library = { ...emptyLibrary([ch]), digitalContacts: [dc] };
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress, {
+      dualBank: {
+        mode: 'codeplug',
+        options: { includeLibraryContacts: true, includeDigitalIdDirectory: true },
+        directorySlice: {
+          radioIds: [],
+          digitalContacts: [
+            {
+              wireName: 'AliceDir',
+              digitalId: 1001,
+              callsign: 'A1',
+              city: '',
+              province: '',
+              country: '',
+              remark: '',
+            },
+            {
+              wireName: 'Beta',
+              digitalId: 2002,
+              callsign: 'B2',
+              city: '',
+              province: '',
+              country: '',
+              remark: '',
+            },
+          ],
+        },
+      },
+    });
+    expect(projection.organisation.digitalContacts?.map((row) => row.digitalId)).toEqual([
+      1001, 2002,
+    ]);
+    expect(projection.organisation.radioIds?.some((r) => r.dmrId === 999)).toBe(true);
+    expect(projection.organisation.radioIds?.some((r) => r.dmrId === 2002)).toBe(false);
   });
 
   it('omits DM-32 digitalContacts when library contacts are off so the address book is not wiped', () => {

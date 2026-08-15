@@ -55,6 +55,7 @@ import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import type { ProjectedDigitalContactRow } from '@core/domain/digitalIdDirectoryProjection.ts';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
 import type { FormatId } from '@core/import-export/types.ts';
@@ -309,9 +310,11 @@ export async function prepareRadioWriteImage(
     const maxRadioIds = typeof limits?.maxRadioIds === 'number' ? limits.maxRadioIds : undefined;
     const maxDirectoryContacts = isOpenGd77RadioIoEgress(egress.profileId)
       ? OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX
-      : typeof limits?.maxContacts === 'number'
-        ? limits.maxContacts
-        : undefined;
+      : egress.profileId === 'radio-io-dm32uv'
+        ? DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX
+        : typeof limits?.maxContacts === 'number'
+          ? limits.maxContacts
+          : undefined;
     const directorySlice =
       opts.persistence && opts.projectId
         ? await collectDualBankDirectorySlice({

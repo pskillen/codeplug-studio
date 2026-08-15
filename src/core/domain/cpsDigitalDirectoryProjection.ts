@@ -15,6 +15,10 @@ export interface CpsDm32RadioIdRow {
 export const OPENGD77_CPS_DIRECTORY_WARNING =
   'OpenGD77 CPS export cannot write the firmware User Database (Write DMR IDs). Directory rows are omitted from Contacts.csv — use Web Serial Write with RadioID directory selected.';
 
+/** DM-32 CPS DigitalContacts.csv is 250 rows; directory lookup is Web Serial address book. */
+export const DM32_CPS_DIRECTORY_WARNING =
+  'DM-32 CPS export cannot hold the RadioID directory in DigitalContacts.csv (250-row CPS cap) or DMR-ID.csv (operator TX identities). Directory rows are omitted — use Web Serial Write with RadioID directory selected.';
+
 export interface CpsDirectoryProjectionPayload {
   warnings?: string[];
   /** Single-bank replacement list (Anytone `DMRDigitalContactList.CSV`). */
