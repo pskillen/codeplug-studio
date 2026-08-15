@@ -51,8 +51,10 @@ All regions use **FLASH** (`ImageIndex` → `FLASH`). Numeric offsets below are 
 | zoneBank           | `0x00008010` |                                               |
 | additionalSettings | `0x00020000` | Boot image/melody/satellites/themes           |
 | channelBank1       | `0x0009b1b0` | Channels 129–1024 (banks 1–7 stride `0x1c10`) |
-| contacts           | `0x000a7620` | DMR contacts                                  |
+| contacts           | `0x000a7620` | DMR contacts (1024-slot bank)                 |
 | groupLists         | `0x000ad620` | RX group lists                                |
+| User Database hdr  | `0x00050000` | Call-sign DB — **not** in programming image   |
+| User Database ovf  | `0x000d8000` | Overflow entries — past `IMAGE_END`           |
 
 Cite: qdmr `openuv380_codeplug.hh` `Offset` / `ImageIndex`.
 
@@ -67,7 +69,9 @@ Cite: qdmr `openuv380_codeplug.hh` `Offset` / `ImageIndex`.
 
 Cite: qdmr `openuv380_codeplug.cc` ctor.
 
-**Backup / Restore** ([backup-restore.md](backup-restore.md)): these spans are named zip regions and are **restorable**. Studio does not isolate a calibration table on this map.
+Segment 0 of the User Database (`0x50000`, size `0x40000`) sits in the untransferred gap between additional-settings and channel bank 1. Segment 1 is past `IMAGE_END`. Sidecar transfer: [user-database.md](user-database.md).
+
+**Backup / Restore** ([backup-restore.md](backup-restore.md)): these spans are named zip regions and are **restorable**. Occupied **User Database** bytes are a separate inspect-only region — [user-database.md](user-database.md). Studio does not isolate a calibration table on this map.
 
 ## Named region bases — OpenGD77 (GD-77 class)
 

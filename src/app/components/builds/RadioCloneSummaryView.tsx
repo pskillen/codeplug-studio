@@ -581,6 +581,9 @@ function OpenGd77WrittenFromBuildSection({ summary }: { summary: OpenGd77CloneSu
       <Text size="sm" c="dimmed" mt="xs">
         {summary.aprsWriteGap}
       </Text>
+      <Text size="sm" c="dimmed" mt="xs">
+        {summary.userDatabaseWriteNote}
+      </Text>
     </FormSection>
   );
 }

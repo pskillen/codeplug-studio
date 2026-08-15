@@ -37,6 +37,8 @@ Encoded values noted correct for firmware ~2022-02-28 through ~2025-03-23 in qdm
 
 **OpenUV380 base:** FLASH `0x000a7620` · **GD-77 base:** FLASH `0x087620`
 
+Incoming-call **callsign lookup** is a different FLASH region (User Database / call-sign DB) — [user-database.md](user-database.md). Do not treat the 1024 contact bank as that lookup store.
+
 ## DTMF contacts
 
 | Fact                    | Value                                         |

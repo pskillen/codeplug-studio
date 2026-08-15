@@ -17,6 +17,7 @@ import {
 import {
   OPENGD77_APRS_WRITE_GAP,
   OPENGD77_DTMF_CONTACTS_WRITE_GAP,
+  OPENGD77_USER_DATABASE_WRITE_NOTE,
   OPENGD77_WRITTEN_FROM_BUILD_LABELS,
   openGd77KeptRegions,
 } from './writeRole.ts';
@@ -49,6 +50,7 @@ export interface OpenGd77CloneSummary {
   writtenFromBuild: readonly string[];
   dtmfContactsWriteGap: string;
   aprsWriteGap: string;
+  userDatabaseWriteNote: string;
   retainGroups: readonly OpenGd77RetainGroupSummary[];
   settingsRetain: readonly OpenGd77RetainPreviewRow[];
   ancillaryRetain: OpenGd77AncillaryRetainPreview;
@@ -94,6 +96,7 @@ export function summariseOpenGd77Clone(
     writtenFromBuild: [...OPENGD77_WRITTEN_FROM_BUILD_LABELS],
     dtmfContactsWriteGap: OPENGD77_DTMF_CONTACTS_WRITE_GAP,
     aprsWriteGap: OPENGD77_APRS_WRITE_GAP,
+    userDatabaseWriteNote: OPENGD77_USER_DATABASE_WRITE_NOTE,
     retainGroups: buildRetainGroups(),
     settingsRetain: settingsRetainPreview(image),
     ancillaryRetain: ancillaryRetainPreview(image),

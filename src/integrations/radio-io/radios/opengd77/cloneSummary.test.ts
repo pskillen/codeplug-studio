@@ -56,6 +56,7 @@ describe('summariseOpenGd77Clone', () => {
     expect(summary.writtenFromBuild).toContain('Zones');
     expect(summary.dtmfContactsWriteGap).toMatch(/DTMF contacts stay/);
     expect(summary.aprsWriteGap).toMatch(/FM APRS systems stay/);
+    expect(summary.userDatabaseWriteNote).toMatch(/User Database/);
     expect(summary.retainGroups.some((g) => g.label === 'General settings')).toBe(true);
     expect(summary.settingsRetain.some((r) => r.label === 'Callsign' && r.value === 'MM9PDY')).toBe(
       true,

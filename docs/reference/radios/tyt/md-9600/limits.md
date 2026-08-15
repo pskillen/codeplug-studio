@@ -8,6 +8,7 @@ OpenGD77 CPS caps for this hardware. OpenGD77 uses **one shared codeplug structu
 | Max zones          | **68**                  | Shared codeplug — forum source; not MD-9600-specific-confirmed                                                  |
 | Max RX group lists | **76**                  | Shared codeplug — forum source                                                                                  |
 | Max contacts       | **1024**                | Contact bank; talk groups share this pool                                                                       |
+| User Database      | **69 600** (preliminary) | Shared OpenUV380 lookup store — [user-database.md](../../opengd77/user-database.md)                            |
 | Max talk groups    | _(shares contact bank)_ | No separate TG table                                                                                            |
 | Zone members       | **80**                  | `Channel1`…`Channel80`                                                                                          |
 | TG list members    | **32**                  | `Contact1`…`Contact32`                                                                                          |

@@ -10,6 +10,7 @@ OpenGD77 / G4EML CPS caps for this hardware. Adapters warn or truncate at the **
 | Max zones            | **68**                  | Forum mod/dev reply — best available; not independently confirmed for DM-1701 specifically                            |
 | Max RX group lists   | **76**                  | Same forum source as max zones                                                                                        |
 | Max contacts         | **1024**                | Contact bank size; talk groups are `Contacts.csv` rows with ID Type `Group`                                           |
+| User Database        | **69 600** (preliminary) | Incoming-call lookup — [user-database.md](../../opengd77/user-database.md); not the 1024 contact bank                |
 | Max talk groups      | _(shares contact bank)_ | No separate TG table — each TG is a contact row                                                                       |
 | Zone members         | **80**                  | `Channel1`…`Channel80` (G4EML CSV doc)                                                                                |
 | TG list members      | **32**                  | `Contact1`…`Contact32` (G4EML CSV doc)                                                                                |
