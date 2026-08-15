@@ -58,9 +58,10 @@ A confirm dialog warns that slot/member order may need redoing.
 
 1. **RT95 build** — AM/airband library channel hidden on Channels; FM in 136–174 / 400–490 visible.
 2. **UV-5R Mini** — in-band AM (108–136 MHz) visible; DMR channel hidden (unsupported mode).
-3. **DM-1701** — AM channel hidden; FM/DMR in 136–174 and 400–470 visible.
-4. Turn off **Hide channels outside frequency range** — out-of-band FM appears on build lists; export shows eligibility warning.
-5. **Radio characteristics** — bands/modes table matches the build’s `radioTargetId`.
+3. **DM-32UV** — AM airband in 87–136 MHz visible on Channels / zone wire preview and included in assemble / Web Serial Write; AM above 136 MHz hidden as out of range.
+4. **DM-1701** — AM channel hidden; FM/DMR in 136–174 and 400–470 visible.
+5. Turn off **Hide channels outside frequency range** — out-of-band FM appears on build lists; export shows eligibility warning.
+6. **Radio characteristics** — bands/modes table matches the build’s `radioTargetId`.
 
 ## Related
 
