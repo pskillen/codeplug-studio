@@ -11,6 +11,7 @@ import { extractOpenGd77Hydration } from './hydration.ts';
 import { createOpenUv380Image, writeAbs } from './memory.ts';
 import { encodeZonesIntoImage } from './zoneCodec.ts';
 import { summariseOpenGd77Clone } from './cloneSummary.ts';
+import { encodeUserDatabaseHeader } from './userDatabaseCodec.ts';
 import { settingsRetainPreview } from './retainPreview.ts';
 
 describe('summariseOpenGd77Clone', () => {
@@ -62,6 +63,15 @@ describe('summariseOpenGd77Clone', () => {
     expect(summary.inspectChannels).toEqual([{ slotIndex: 1, name: 'CH1' }]);
     expect(summary.inspectZones).toEqual([{ slotIndex: 1, name: 'Local' }]);
     expect(summary.inspectContacts).toEqual([{ slotIndex: 1, name: 'TG91' }]);
+  });
+
+  it('decodes User Database occupancy from occupied backup bytes', () => {
+    const image = createOpenUv380Image();
+    const bag = extractOpenGd77Hydration(image, { firmware: 'R20240101000000' });
+    const occupied = encodeUserDatabaseHeader(3);
+    const summary = summariseOpenGd77Clone(bag, occupied);
+    expect(summary.onRadioCounts.userDatabaseCount).toBe(3);
+    expect(summariseOpenGd77Clone(bag).onRadioCounts.userDatabaseCount).toBeUndefined();
   });
 
   it('returns empty settings preview when general settings are blank', () => {

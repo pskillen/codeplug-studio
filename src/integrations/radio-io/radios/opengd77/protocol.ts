@@ -42,6 +42,13 @@ import {
   OPENGD77_WRITE_VARIANT,
   OPENUV380_FLASH_SPANS,
   OPENUV380_OFFSET,
+  OPENUV380_USER_DB_ENTRIES0_ABS,
+  OPENUV380_USER_DB_ENTRIES0_MAX,
+  OPENUV380_USER_DB_ENTRIES1_ABS,
+  OPENUV380_USER_DB_ENTRY_SIZE,
+  OPENUV380_USER_DB_HEADER_ABS,
+  OPENUV380_USER_DB_HEADER_SIZE,
+  OPENGD77_USER_DATABASE_MAX,
   OPENGD77_1701_POWER_STEPS,
   OPENGD77_MD9600_POWER_STEPS,
   MD9600_RADIO_TYPES,
@@ -65,7 +72,7 @@ import { ADDITIONAL_SETTINGS_BYTES, overlaySatelliteBank } from './satelliteCode
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 import { intendedOpenGd77RestoreImage } from './restoreFromBackup.ts';
-import { encodeOpenGd77UserDatabase } from './userDatabaseCodec.ts';
+import { encodeOpenGd77UserDatabase, decodeUserDatabaseHeader } from './userDatabaseCodec.ts';
 import {
   openGd77MissingExtendedCallsignDbWarning,
   overlayUserDatabaseSpanOnSector,
@@ -579,6 +586,65 @@ export class OpenGd77Protocol implements CloneImageRadio {
     }
 
     this.priorImage = openUv380ImageFromBytes(intended.bytes);
+  }
+
+  /**
+   * Occupied User Database bytes (header + packed entries). Empty when FLASH
+   * has no `Id` header. Does not walk qdmr size1.
+   */
+  async downloadUserDatabaseOccupied(opts?: {
+    onProgress?: ProgressFn;
+    signal?: AbortSignal;
+  }): Promise<Uint8Array> {
+    const pipe = this.pipe;
+    if (!pipe) throw new RadioProtocolError('OpenGD77 User Database read: not connected');
+    reportProgress(opts?.onProgress, {
+      cur: 0,
+      max: 1,
+      msg: 'Reading User Database header',
+      stage: 'User Database',
+    });
+    const header = await readFlashRange(pipe, OPENUV380_USER_DB_HEADER_ABS, OPENUV380_USER_DB_HEADER_SIZE);
+    let entryCount = 0;
+    try {
+      entryCount = decodeUserDatabaseHeader(header).entryCount;
+    } catch {
+      return new Uint8Array(0);
+    }
+    entryCount = Math.min(entryCount, OPENGD77_USER_DATABASE_MAX);
+    const n0 = Math.min(entryCount, OPENUV380_USER_DB_ENTRIES0_MAX);
+    const n1 = Math.max(0, entryCount - n0);
+    const entries0 = new Uint8Array(n0 * OPENUV380_USER_DB_ENTRY_SIZE);
+    const entries1 = new Uint8Array(n1 * OPENUV380_USER_DB_ENTRY_SIZE);
+    const total = header.byteLength + entries0.byteLength + entries1.byteLength;
+    let done = header.byteLength;
+    if (entries0.byteLength > 0) {
+      const raw = await readFlashRange(pipe, OPENUV380_USER_DB_ENTRIES0_ABS, entries0.byteLength);
+      entries0.set(raw);
+      done += entries0.byteLength;
+      reportProgress(opts?.onProgress, {
+        cur: done,
+        max: total,
+        msg: 'Reading User Database segment 0',
+        stage: 'User Database',
+      });
+    }
+    if (entries1.byteLength > 0) {
+      const raw = await readFlashRange(pipe, OPENUV380_USER_DB_ENTRIES1_ABS, entries1.byteLength);
+      entries1.set(raw);
+      done += entries1.byteLength;
+      reportProgress(opts?.onProgress, {
+        cur: done,
+        max: total,
+        msg: 'Reading User Database segment 1',
+        stage: 'User Database',
+      });
+    }
+    const out = new Uint8Array(total);
+    out.set(header, 0);
+    out.set(entries0, header.byteLength);
+    out.set(entries1, header.byteLength + entries0.byteLength);
+    return out;
   }
 
   /**

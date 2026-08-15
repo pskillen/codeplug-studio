@@ -32,7 +32,12 @@ import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d8
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
-import { readAtD890ConnectedRadioIdentity } from './radioIoSession.ts';
+import { OpenGd77Protocol } from '@integrations/radio-io/radios/opengd77/protocol.ts';
+import {
+  OPENGD77_BACKUP_USER_DATABASE_ID,
+  OPENGD77_BACKUP_USER_DATABASE_LABEL,
+} from '@integrations/radio-io/radios/opengd77/backupRestoreRoles.ts';
+import { OPENUV380_USER_DB_HEADER_ABS } from '@integrations/radio-io/radios/opengd77/constants.ts';
 
 export type RadioBackupSession = {
   source: 'live-read' | 'file';
@@ -40,6 +45,7 @@ export type RadioBackupSession = {
   image: MemoryMap;
   inspectBag?: RadioCloneHydrationBag;
   zipBytes: Uint8Array;
+  userDatabaseOccupied?: Uint8Array;
 };
 
 function sanitizeModelId(modelId: string): string {
@@ -81,6 +87,7 @@ export function packLiveRadioBackup(input: {
   inspectBag?: RadioCloneHydrationBag;
   firmware?: string;
   capturedAt?: string;
+  extraRegions?: readonly { region: RadioBackupManifestV1['regions'][number]; bytes: Uint8Array }[];
 }): { manifest: RadioBackupManifestV1; zipBytes: Uint8Array } {
   const capturedAt = input.capturedAt ?? new Date().toISOString();
   const modelId = input.descriptor.modelIds[0] ?? 'radio';
@@ -92,6 +99,7 @@ export function packLiveRadioBackup(input: {
     addressBase: input.inspectBag?.retain.addressBase,
     dm32ContactsBase: input.inspectBag?.retain.dm32ContactsBase,
     dm32ContactsEnd: input.inspectBag?.retain.dm32ContactsEnd,
+    extraRegions: input.extraRegions,
   });
 
   const serial = d890SerialFromImage(input.image);
@@ -135,12 +143,36 @@ export async function backupLiveRadioSession(
     protocol: session.radio,
     capturedAt: new Date().toISOString(),
   });
+  let extraRegions: { region: RadioBackupManifestV1['regions'][number]; bytes: Uint8Array }[] | undefined;
+  let userDatabaseOccupied: Uint8Array | undefined;
+  if (session.radio instanceof OpenGd77Protocol) {
+    userDatabaseOccupied = await session.radio.downloadUserDatabaseOccupied({
+      onProgress: opts?.onProgress,
+      signal: opts?.signal,
+    });
+    if (userDatabaseOccupied.byteLength > 0) {
+      extraRegions = [
+        {
+          region: {
+            id: OPENGD77_BACKUP_USER_DATABASE_ID,
+            label: OPENGD77_BACKUP_USER_DATABASE_LABEL,
+            address: OPENUV380_USER_DB_HEADER_ABS,
+            byteLength: userDatabaseOccupied.byteLength,
+            path: `regions/${OPENGD77_BACKUP_USER_DATABASE_ID}.bin`,
+            restoreRole: 'inspect-only',
+          },
+          bytes: userDatabaseOccupied,
+        },
+      ];
+    }
+  }
   const { manifest, zipBytes } = packLiveRadioBackup({
     descriptor: session.descriptor,
     image,
     inspectBag,
     firmware: firmware ?? inspectBag.retain.firmware,
     capturedAt: inspectBag.capturedAt,
+    extraRegions,
   });
   downloadRadioBackupZip(zipBytes, manifest);
   return {
@@ -149,6 +181,7 @@ export async function backupLiveRadioSession(
     image,
     inspectBag,
     zipBytes,
+    userDatabaseOccupied,
   };
 }
 
@@ -176,12 +209,14 @@ export function openRadioBackupZip(bytes: Uint8Array): RadioBackupSession {
     parsed.regions,
   );
   const inspectBag = inspectBagFromBackupImage(parsed.manifest, image);
+  const userDatabaseOccupied = parsed.regions[OPENGD77_BACKUP_USER_DATABASE_ID];
   return {
     source: 'file',
     manifest: parsed.manifest,
     image,
     inspectBag,
     zipBytes: bytes,
+    userDatabaseOccupied,
   };
 }
 

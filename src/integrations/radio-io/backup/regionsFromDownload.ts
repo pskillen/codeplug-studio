@@ -50,6 +50,8 @@ export interface RegionsFromDownloadInput {
   addressBase?: number;
   dm32ContactsBase?: number;
   dm32ContactsEnd?: number;
+  /** Extra named bins (OpenGD77 occupied User Database). */
+  extraRegions?: readonly { region: RadioBackupRegionV1; bytes: Uint8Array }[];
 }
 
 function regionPath(id: string): string {
@@ -227,13 +229,20 @@ function fromUvLayout(layout: Uv17ProLayout, image: MemoryMap): BackupRegionExtr
   return collect(parts, 'full-clone', image.size || layout.memTotal);
 }
 
-function fromOpenGd77(image: MemoryMap): BackupRegionExtract {
+function fromOpenGd77(
+  image: MemoryMap,
+  extraRegions?: readonly { region: RadioBackupRegionV1; bytes: Uint8Array }[],
+): BackupRegionExtract {
   const parts = OPENGD77_BACKUP_FLASH_SPANS.map((span) => {
     const offset = openUv380AbsToOffset(span.start);
     const data = sliceImage(image, offset, span.length);
     return makeRegion(span.id, span.label, span.start, data, span.restoreRole);
   });
-  return collect(parts, 'known-map-regions', image.size || OPENUV380_IMAGE_SIZE);
+  return collect(
+    extraRegions && extraRegions.length > 0 ? [...parts, ...extraRegions] : parts,
+    'known-map-regions',
+    image.size || OPENUV380_IMAGE_SIZE,
+  );
 }
 
 function fromRt95(image: MemoryMap): BackupRegionExtract {
@@ -268,7 +277,7 @@ export function regionsFromDownload(input: RegionsFromDownloadInput): BackupRegi
     return fromUvLayout(uv, image);
   }
   if (isOpenGd77Model(modelId)) {
-    return fromOpenGd77(image);
+    return fromOpenGd77(image, input.extraRegions);
   }
   if (modelId === RT95_MODEL_ID || modelId.toLowerCase().includes('rt95')) {
     return fromRt95(image);

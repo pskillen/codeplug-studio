@@ -22,6 +22,7 @@ import {
 } from './writeRole.ts';
 import { decodeZonesFromImage } from './zoneCodec.ts';
 import { inspectOccupiedChannels, type CloneInspectNamedItem } from '../../cloneInspect.ts';
+import { userDatabaseCountFromOccupied } from './userDatabaseCodec.ts';
 
 export interface OpenGd77OnRadioCounts {
   occupiedChannels: number;
@@ -29,6 +30,8 @@ export interface OpenGd77OnRadioCounts {
   zoneCount: number;
   contactCount: number;
   rxGroupCount: number;
+  /** Occupied User Database entries when the backup captured that region. */
+  userDatabaseCount?: number;
 }
 
 export interface OpenGd77RetainGroupSummary {
@@ -63,7 +66,10 @@ function buildRetainGroups(): OpenGd77RetainGroupSummary[] {
   }));
 }
 
-export function summariseOpenGd77Clone(bag: RadioCloneHydrationBag): OpenGd77CloneSummary {
+export function summariseOpenGd77Clone(
+  bag: RadioCloneHydrationBag,
+  userDatabaseOccupied?: Uint8Array,
+): OpenGd77CloneSummary {
   const image = memoryMapFromOpenGd77Hydration(bag);
   const channels = decodeChannelsFromImage(image);
   const occupied = channels.filter((c) => !c.empty).length;
@@ -83,6 +89,7 @@ export function summariseOpenGd77Clone(bag: RadioCloneHydrationBag): OpenGd77Clo
       zoneCount: zones.length,
       contactCount: contacts.length,
       rxGroupCount: rxGroups.length,
+      userDatabaseCount: userDatabaseCountFromOccupied(userDatabaseOccupied),
     },
     writtenFromBuild: [...OPENGD77_WRITTEN_FROM_BUILD_LABELS],
     dtmfContactsWriteGap: OPENGD77_DTMF_CONTACTS_WRITE_GAP,

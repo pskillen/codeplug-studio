@@ -432,7 +432,11 @@ export default function BuildRadioBackupPage() {
               </Table>
             </FormSection>
             {backup.inspectBag ? (
-              <RadioCloneSummaryView bag={backup.inspectBag} variant="inspect" />
+              <RadioCloneSummaryView
+                bag={backup.inspectBag}
+                variant="inspect"
+                userDatabaseOccupied={backup.userDatabaseOccupied}
+              />
             ) : null}
           </>
         )}

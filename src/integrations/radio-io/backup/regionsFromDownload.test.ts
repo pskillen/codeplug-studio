@@ -46,6 +46,38 @@ describe('regionsFromDownload', () => {
     expect(extract.regions[0]!.address).toBe(OPENUV380_FLASH_SPANS[0]!.start);
   });
 
+  it('appends OpenGD77 occupied User Database as inspect-only', () => {
+    const image = createMemoryMap(OPENUV380_IMAGE_SIZE);
+    image.fill(0, OPENUV380_IMAGE_SIZE, 0xff);
+    for (const span of OPENUV380_FLASH_SPANS) {
+      const off = openUv380AbsToOffset(span.start);
+      image.fill(off, span.length, 0x11);
+    }
+    const occupied = new Uint8Array(12);
+    occupied.set([0x49, 0x64]);
+    const extract = regionsFromDownload({
+      modelId: 'DM-1701',
+      image,
+      extraRegions: [
+        {
+          region: {
+            id: 'user-database',
+            label: 'User Database (occupied)',
+            address: 0x50000,
+            byteLength: occupied.byteLength,
+            path: 'regions/user-database.bin',
+            restoreRole: 'inspect-only',
+          },
+          bytes: occupied,
+        },
+      ],
+    });
+    expect(extract.regions).toHaveLength(OPENUV380_FLASH_SPANS.length + 1);
+    const udb = extract.regions.find((r) => r.id === 'user-database');
+    expect(udb?.restoreRole).toBe('inspect-only');
+    expect(extract.regionBytes['user-database']?.byteLength).toBe(12);
+  });
+
   it('marks D890 LocalInfo as inspect-only and coalesces sparse cache blocks', () => {
     const local = new Uint8Array(D890_MAP.LocalInfoLength).fill(0x42);
     const channels = new Uint8Array(32).fill(0x21);

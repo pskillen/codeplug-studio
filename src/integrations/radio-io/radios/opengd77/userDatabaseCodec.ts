@@ -213,4 +213,11 @@ export function decodeOpenGd77UserDatabase(
   return out;
 }
 
-export { OPENGD77_USER_DATABASE_MAX };
+export function userDatabaseCountFromOccupied(bytes: Uint8Array | undefined): number | undefined {
+  if (!bytes || bytes.byteLength < OPENUV380_USER_DB_HEADER_SIZE) return undefined;
+  try {
+    return decodeUserDatabaseHeader(bytes.subarray(0, OPENUV380_USER_DB_HEADER_SIZE)).entryCount;
+  } catch {
+    return undefined;
+  }
+}
