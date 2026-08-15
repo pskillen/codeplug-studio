@@ -13,6 +13,11 @@ export type DigitalIdDirectoryPageQuery = {
   countryEquals?: string;
 };
 
+export type DigitalIdDirectoryDeleteQuery = Pick<
+  DigitalIdDirectoryPageQuery,
+  'projectId' | 'digitalIdPrefix' | 'callsignPrefix' | 'namePrefix' | 'countryEquals'
+>;
+
 export type DigitalIdDirectoryPageResult = {
   rows: DigitalIdDirectoryEntry[];
   total: number;
@@ -42,6 +47,7 @@ export function directoryProjectNameRangeUpper(projectId: string): [string, stri
   return [projectId, UNICODE_MAX];
 }
 
+
 export function normalizedDirectoryFilterQuery(
   query: Pick<
     DigitalIdDirectoryPageQuery,
@@ -64,6 +70,21 @@ export function normalizedDirectoryFilterQuery(
       query.namePrefix !== undefined ? normalizeDirectoryTextPrefix(query.namePrefix) : undefined,
     countryEquals: query.countryEquals,
   };
+}
+
+export function hasDirectoryPageFilters(
+  query: Pick<
+    DigitalIdDirectoryPageQuery,
+    'digitalIdPrefix' | 'callsignPrefix' | 'namePrefix' | 'countryEquals'
+  >,
+): boolean {
+  const normalized = normalizedDirectoryFilterQuery(query);
+  return (
+    normalized.digitalIdPrefix !== undefined ||
+    normalized.callsignPrefix !== undefined ||
+    normalized.namePrefix !== undefined ||
+    normalized.countryEquals !== undefined
+  );
 }
 
 export function matchesDirectoryFilters(

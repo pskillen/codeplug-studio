@@ -15,6 +15,7 @@ import type {
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { ProjectMeta } from '@core/models/project.ts';
 import type {
+  DigitalIdDirectoryDeleteQuery,
   DigitalIdDirectoryPageQuery,
   DigitalIdDirectoryPageResult,
 } from './digitalIdDirectoryQuery.ts';
@@ -86,6 +87,7 @@ export type {
   DigitalIdDirectoryOrderBy,
   DigitalIdDirectoryPageQuery,
   DigitalIdDirectoryPageResult,
+  DigitalIdDirectoryDeleteQuery,
 } from './digitalIdDirectoryQuery.ts';
 
 export interface ProjectSeed {
@@ -201,6 +203,9 @@ export interface ProjectPersistence {
     digitalId: number,
   ): Promise<DigitalIdDirectoryEntry | null>;
   deleteDigitalIdDirectoryForProject(projectId: string): Promise<{ deletedCount: number }>;
+  deleteDigitalIdDirectoryMatching(
+    query: DigitalIdDirectoryDeleteQuery,
+  ): Promise<{ deletedCount: number }>;
   countDigitalIdDirectoryEntries(projectId: string): Promise<number>;
 
   /**

@@ -9,16 +9,20 @@ import type { DirectoryPersistenceChange, ProjectPersistence } from './types.ts'
 let idbCounter = 0;
 const openIdb = new Set<IndexedDbProjectPersistence>();
 
-function sampleEntry(projectId: string, digitalId: number, name: string): DigitalIdDirectoryEntry {
+function sampleEntry(
+  projectId: string,
+  digitalId: number,
+  overrides: Partial<Pick<DigitalIdDirectoryEntry, 'name' | 'callsign' | 'country'>> = {},
+): DigitalIdDirectoryEntry {
   return {
     projectId,
     digitalId,
     mode: 'dmr',
-    name,
-    callsign: 'CALL',
+    name: overrides.name ?? `Name ${digitalId}`,
+    callsign: overrides.callsign ?? 'CALL',
     city: 'City',
     state: 'ST',
-    country: 'Country',
+    country: overrides.country ?? 'Country',
   };
 }
 
@@ -47,13 +51,17 @@ describe.each(implementations)('DigitalIdDirectory — %s', (_label, makeStore) 
     const meta = newProjectMeta('Test');
     await store.seedProject({ meta });
 
-    const first = sampleEntry(meta.projectId, 1234567, 'Alpha');
-    const second = sampleEntry(meta.projectId, 7654321, 'Bravo');
-    const result = await store.putDigitalIdDirectoryEntriesBatch([first, second]);
+    const result = await store.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(meta.projectId, 1234567, { name: 'Alpha' }),
+      sampleEntry(meta.projectId, 7654321, { name: 'Bravo' }),
+    ]);
     expect(result).toEqual({ written: 2 });
     expect(await store.countDigitalIdDirectoryEntries(meta.projectId)).toBe(2);
 
-    const updated = { ...first, name: 'Alpha updated', city: 'New City' };
+    const updated = {
+      ...sampleEntry(meta.projectId, 1234567, { name: 'Alpha updated' }),
+      city: 'New City',
+    };
     await store.putDigitalIdDirectoryEntriesBatch([updated]);
     const loaded = await store.getDigitalIdDirectoryEntry(meta.projectId, 1234567);
     expect(loaded).toMatchObject({ name: 'Alpha updated', city: 'New City' });
@@ -66,8 +74,8 @@ describe.each(implementations)('DigitalIdDirectory — %s', (_label, makeStore) 
     await store.seedProject({ meta });
 
     await store.putDigitalIdDirectoryEntriesBatch([
-      sampleEntry(meta.projectId, 2, 'Zulu'),
-      sampleEntry(meta.projectId, 1, 'Alpha'),
+      sampleEntry(meta.projectId, 2, { name: 'Zulu' }),
+      sampleEntry(meta.projectId, 1, { name: 'Alpha' }),
     ]);
 
     const names = (await store.listDigitalIdDirectoryEntries(meta.projectId)).map((e) => e.name);
@@ -82,9 +90,9 @@ describe.each(implementations)('DigitalIdDirectory — %s', (_label, makeStore) 
     await store.seedProject({ meta: other });
 
     await store.putDigitalIdDirectoryEntriesBatch([
-      sampleEntry(meta.projectId, 1, 'One'),
-      sampleEntry(meta.projectId, 2, 'Two'),
-      sampleEntry(other.projectId, 3, 'Keep'),
+      sampleEntry(meta.projectId, 1, { name: 'One' }),
+      sampleEntry(meta.projectId, 2, { name: 'Two' }),
+      sampleEntry(other.projectId, 3, { name: 'Keep' }),
     ]);
 
     const result = await store.deleteDigitalIdDirectoryForProject(meta.projectId);
@@ -98,7 +106,9 @@ describe.each(implementations)('DigitalIdDirectory — %s', (_label, makeStore) 
     const meta = newProjectMeta('Test');
     const channel = newChannel(meta.projectId, 'Old');
     await store.seedProject({ meta, channels: [channel] });
-    await store.putDigitalIdDirectoryEntriesBatch([sampleEntry(meta.projectId, 99, 'Shadow')]);
+    await store.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(meta.projectId, 99, { name: 'Shadow' }),
+    ]);
 
     await store.replaceProject(meta.projectId, { meta });
 
@@ -131,7 +141,9 @@ describe.each(implementations)('DigitalIdDirectory — %s', (_label, makeStore) 
     const unsubDir = store.subscribeDirectory((c) => directoryChanges.push(c));
     const unsubLib = store.subscribe((c) => libraryChanges.push(c));
 
-    await store.putDigitalIdDirectoryEntriesBatch([sampleEntry(meta.projectId, 7, 'Notify')]);
+    await store.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(meta.projectId, 7, { name: 'Notify' }),
+    ]);
     await store.deleteDigitalIdDirectoryForProject(meta.projectId);
 
     unsubDir();
@@ -142,5 +154,46 @@ describe.each(implementations)('DigitalIdDirectory — %s', (_label, makeStore) 
       { projectId: meta.projectId, digitalId: 0, op: 'delete' },
     ]);
     expect(libraryChanges).toHaveLength(0);
+  });
+
+  it('deletes only rows matching directory filters', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('Filtered delete');
+    await store.seedProject({ meta });
+
+    await store.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(meta.projectId, 3109478, { country: 'Scotland', name: 'Highland' }),
+      sampleEntry(meta.projectId, 3109000, { country: 'Scotland', name: 'Lowland' }),
+      sampleEntry(meta.projectId, 9999999, { country: 'England', name: 'Other' }),
+    ]);
+
+    const result = await store.deleteDigitalIdDirectoryMatching({
+      projectId: meta.projectId,
+      countryEquals: 'Scotland',
+    });
+    expect(result.deletedCount).toBe(2);
+    expect(await store.countDigitalIdDirectoryEntries(meta.projectId)).toBe(1);
+
+    const remaining = await store.getDigitalIdDirectoryEntry(meta.projectId, 9999999);
+    expect(remaining?.country).toBe('England');
+  });
+
+  it('deletes by digital ID prefix filter', async () => {
+    const store = makeStore();
+    const meta = newProjectMeta('ID delete');
+    await store.seedProject({ meta });
+
+    await store.putDigitalIdDirectoryEntriesBatch([
+      sampleEntry(meta.projectId, 3109478, { name: 'A' }),
+      sampleEntry(meta.projectId, 3109000, { name: 'B' }),
+      sampleEntry(meta.projectId, 9999999, { name: 'C' }),
+    ]);
+
+    const result = await store.deleteDigitalIdDirectoryMatching({
+      projectId: meta.projectId,
+      digitalIdPrefix: '3109',
+    });
+    expect(result.deletedCount).toBe(2);
+    expect(await store.countDigitalIdDirectoryEntries(meta.projectId)).toBe(1);
   });
 });

@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { Alert, Button, Checkbox, Group, Modal, Stack, Text } from '@mantine/core';
 
+export type ClearDigitalIdDirectoryMode = 'all' | 'filtered';
+
 export interface ClearDigitalIdDirectoryDialogProps {
   opened: boolean;
   onClose: () => void;
+  mode: ClearDigitalIdDirectoryMode;
   entryCount: number;
   onConfirm: () => Promise<{ deletedCount: number }>;
 }
 
 function ClearDigitalIdDirectoryDialogBody({
+  mode,
   entryCount,
   onClose,
   onConfirm,
@@ -32,22 +36,38 @@ function ClearDigitalIdDirectoryDialogBody({
     }
   };
 
+  const isFiltered = mode === 'filtered';
+
   return (
     <Stack gap="md">
       <Text>
-        Permanently delete {entryCount.toLocaleString()} downloaded ID
-        {entryCount === 1 ? '' : 's'} from your local digital ID directory? This cannot be undone.
+        {isFiltered ? (
+          <>
+            Permanently delete <strong>{entryCount.toLocaleString()}</strong> directory row
+            {entryCount === 1 ? '' : 's'} matching your current filters? This cannot be undone.
+          </>
+        ) : (
+          <>
+            Permanently delete all {entryCount.toLocaleString()} downloaded ID
+            {entryCount === 1 ? '' : 's'} from your local digital ID directory? This cannot be
+            undone.
+          </>
+        )}
       </Text>
       <Text size="sm" c="dimmed">
         Library contacts are not affected. Channel and RX group list references stay intact — only
-        the shadow directory partition is wiped.
+        the shadow directory partition{isFiltered ? ' rows that match' : ''} is removed.
       </Text>
 
       <Checkbox
         checked={confirmed}
         onChange={(event) => setConfirmed(event.currentTarget.checked)}
         disabled={clearing}
-        label="I understand this permanently clears the directory shadow store for this project"
+        label={
+          isFiltered
+            ? 'I understand this permanently deletes the matching directory rows for this project'
+            : 'I understand this permanently clears the directory shadow store for this project'
+        }
       />
 
       {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
@@ -59,10 +79,10 @@ function ClearDigitalIdDirectoryDialogBody({
         <Button
           color="red"
           onClick={() => void handleClear()}
-          disabled={!confirmed}
+          disabled={!confirmed || entryCount === 0}
           loading={clearing}
         >
-          Clear directory
+          {isFiltered ? 'Delete matching rows' : 'Clear directory'}
         </Button>
       </Group>
     </Stack>
@@ -72,20 +92,25 @@ function ClearDigitalIdDirectoryDialogBody({
 export default function ClearDigitalIdDirectoryDialog({
   opened,
   onClose,
+  mode,
   entryCount,
   onConfirm,
 }: ClearDigitalIdDirectoryDialogProps) {
+  const title =
+    mode === 'filtered' ? 'Delete matching directory rows' : 'Clear digital ID directory';
+
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Clear digital ID directory"
+      title={title}
       centered
       closeOnClickOutside={false}
       closeOnEscape={true}
     >
       {opened ? (
         <ClearDigitalIdDirectoryDialogBody
+          mode={mode}
           entryCount={entryCount}
           onClose={onClose}
           onConfirm={onConfirm}

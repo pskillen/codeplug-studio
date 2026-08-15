@@ -31,7 +31,13 @@ import type {
   PutResult,
   SatellitePut,
 } from './types.ts';
-import { queryDigitalIdDirectoryPageInMemory } from './digitalIdDirectoryQuery.ts';
+import {
+  hasDirectoryPageFilters,
+  matchesDirectoryFilters,
+  normalizedDirectoryFilterQuery,
+  queryDigitalIdDirectoryPageInMemory,
+  type DigitalIdDirectoryDeleteQuery,
+} from './digitalIdDirectoryQuery.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
 import { readEgressPathRow } from './egressPathRow.ts';
@@ -251,6 +257,27 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     }
     if (deletedCount > 0) {
       this.emitDirectory({ projectId, digitalId: 0, op: 'delete' });
+    }
+    return { deletedCount };
+  }
+
+  async deleteDigitalIdDirectoryMatching(
+    query: DigitalIdDirectoryDeleteQuery,
+  ): Promise<{ deletedCount: number }> {
+    if (!hasDirectoryPageFilters(query)) {
+      return this.deleteDigitalIdDirectoryForProject(query.projectId);
+    }
+
+    const filterQuery = normalizedDirectoryFilterQuery(query);
+    let deletedCount = 0;
+    for (const [key, row] of [...this.digitalIdDirectory.entries()]) {
+      if (row.projectId === query.projectId && matchesDirectoryFilters(row, filterQuery)) {
+        this.digitalIdDirectory.delete(key);
+        deletedCount += 1;
+      }
+    }
+    if (deletedCount > 0) {
+      this.emitDirectory({ projectId: query.projectId, digitalId: 0, op: 'delete' });
     }
     return { deletedCount };
   }

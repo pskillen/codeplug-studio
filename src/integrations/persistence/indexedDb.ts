@@ -34,10 +34,12 @@ import { DEFAULT_DB_NAME, DIRECTORY_STORES, STORES, STORE_NAMES } from './stores
 import {
   directoryPrefixUpperBound,
   directoryProjectNameRangeUpper,
+  hasDirectoryPageFilters,
   matchesDirectoryFilters,
   normalizeDirectoryTextPrefix,
   normalizeDigitalIdPrefix,
   normalizedDirectoryFilterQuery,
+  type DigitalIdDirectoryDeleteQuery,
   type DigitalIdDirectoryPageQuery,
   type DigitalIdDirectoryPageResult,
 } from './digitalIdDirectoryQuery.ts';
@@ -591,6 +593,51 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
 
     if (deletedCount > 0) {
       this.emitDirectory({ projectId, digitalId: 0, op: 'delete' });
+    }
+    return { deletedCount };
+  }
+
+  async deleteDigitalIdDirectoryMatching(
+    query: DigitalIdDirectoryDeleteQuery,
+  ): Promise<{ deletedCount: number }> {
+    if (!hasDirectoryPageFilters(query)) {
+      return this.deleteDigitalIdDirectoryForProject(query.projectId);
+    }
+
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const filterQuery = normalizedDirectoryFilterQuery(query);
+    const scanQuery: DigitalIdDirectoryPageQuery = {
+      ...query,
+      offset: 0,
+      limit: 1,
+      orderBy: 'name',
+    };
+    let deletedCount = 0;
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const os = tx.objectStore(storeName);
+      const scan = planDirectoryScan(os, scanQuery);
+      const req = scan.source.openCursor(scan.range);
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (!cursor) return;
+        const row = stripDirectoryIdbRowIfNeeded(cursor.value as DigitalIdDirectoryIdbRow);
+        if (matchesDirectoryFilters(row, filterQuery)) {
+          cursor.delete();
+          deletedCount += 1;
+        }
+        cursor.continue();
+      };
+      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+
+    if (deletedCount > 0) {
+      this.emitDirectory({ projectId: query.projectId, digitalId: 0, op: 'delete' });
     }
     return { deletedCount };
   }

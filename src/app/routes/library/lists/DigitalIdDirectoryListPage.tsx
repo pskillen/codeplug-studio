@@ -1,11 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Group, Pagination } from '@mantine/core';
 import { IconId, IconSearch } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { DigitalIdDirectoryOrderBy } from '@integrations/persistence/index.ts';
 import DigitalIdDirectoryDetailDrawer from '../../../components/contacts/DigitalIdDirectoryDetailDrawer.tsx';
-import ClearDigitalIdDirectoryDialog from '../../../components/contacts/ClearDigitalIdDirectoryDialog.tsx';
+import ClearDigitalIdDirectoryDialog, {
+  type ClearDigitalIdDirectoryMode,
+} from '../../../components/contacts/ClearDigitalIdDirectoryDialog.tsx';
 import DigitalIdDirectoryInterchangeToolbar from '../../../components/contacts/DigitalIdDirectoryInterchangeToolbar.tsx';
 import CountryComboboxField from '../../../components/directories/CountryComboboxField.tsx';
 import pageClasses from '../../../components/directories/DirectoryIngestPage.module.css';
@@ -45,6 +47,8 @@ export default function DigitalIdDirectoryListPage() {
   const [detailEntry, setDetailEntry] = useState<DigitalIdDirectoryEntry | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
+  const [clearMode, setClearMode] = useState<ClearDigitalIdDirectoryMode>('all');
+  const [partitionCount, setPartitionCount] = useState(0);
 
   const filters = useMemo(
     () => ({
@@ -68,6 +72,31 @@ export default function DigitalIdDirectoryListPage() {
     orderBy,
     filters,
   });
+
+  useEffect(() => {
+    if (!activeProjectId) {
+      setPartitionCount(0);
+      return;
+    }
+    const projectId = activeProjectId;
+
+    async function loadPartitionCount() {
+      const count = await persistence.countDigitalIdDirectoryEntries(projectId);
+      setPartitionCount(count);
+    }
+
+    void loadPartitionCount();
+    const unsubscribe = persistence.subscribeDirectory((change) => {
+      if (change.projectId === projectId) void loadPartitionCount();
+    });
+
+    return () => unsubscribe();
+  }, [activeProjectId]);
+
+  function openClearDialog(mode: ClearDigitalIdDirectoryMode) {
+    setClearMode(mode);
+    setClearOpen(true);
+  }
 
   const columns = useMemo((): DataTableColumn<DigitalIdDirectoryEntry>[] => {
     return [
@@ -189,10 +218,18 @@ export default function DigitalIdDirectoryListPage() {
               <Button
                 variant="ghost"
                 size="sm"
-                disabled={total === 0}
-                onClick={() => setClearOpen(true)}
+                disabled={partitionCount === 0}
+                onClick={() => openClearDialog('all')}
               >
                 Clear directory
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!hasFilters || total === 0}
+                onClick={() => openClearDialog('filtered')}
+              >
+                Delete matching filters ({total.toLocaleString()})
               </Button>
             </div>
             <div className={pageClasses.filterGrid} style={{ marginBottom: 12 }}>
@@ -283,9 +320,16 @@ export default function DigitalIdDirectoryListPage() {
         <ClearDigitalIdDirectoryDialog
           opened={clearOpen}
           onClose={() => setClearOpen(false)}
-          entryCount={total}
+          mode={clearMode}
+          entryCount={clearMode === 'filtered' ? total : partitionCount}
           onConfirm={async () => {
             if (!activeProjectId) return { deletedCount: 0 };
+            if (clearMode === 'filtered') {
+              return persistence.deleteDigitalIdDirectoryMatching({
+                projectId: activeProjectId,
+                ...filters,
+              });
+            }
             return persistence.deleteDigitalIdDirectoryForProject(activeProjectId);
           }}
         />
