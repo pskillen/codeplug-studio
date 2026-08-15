@@ -35,8 +35,8 @@ function RadioidEntireDatabaseImportDialogBody({
   const [progress, setProgress] = useState<RadioidDumpIngestProgress | null>(null);
   const [result, setResult] = useState<RadioidDumpIngestResult | null>(null);
   const [clockMs, setClockMs] = useState(() => Date.now());
+  const [startedAtMs, setStartedAtMs] = useState<number | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const startedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (phase !== 'running') return;
@@ -48,8 +48,9 @@ function RadioidEntireDatabaseImportDialogBody({
     if (!projectId) return;
     const controller = new AbortController();
     abortRef.current = controller;
-    startedAtRef.current = Date.now();
-    setClockMs(Date.now());
+    const now = Date.now();
+    setStartedAtMs(now);
+    setClockMs(now);
     setPhase('running');
     setProgress(null);
     setResult(null);
@@ -77,8 +78,7 @@ function RadioidEntireDatabaseImportDialogBody({
     progress?.bytesRead ?? 0,
     progress?.totalBytes ?? null,
   );
-  const elapsedMs =
-    startedAtRef.current != null && phase === 'running' ? clockMs - startedAtRef.current : 0;
+  const elapsedMs = startedAtMs != null && phase === 'running' ? clockMs - startedAtMs : 0;
   const remainingMs =
     phase === 'running'
       ? estimateRadioidDumpRemainingMs(

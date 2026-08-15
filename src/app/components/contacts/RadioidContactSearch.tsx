@@ -73,8 +73,9 @@ export default function RadioidContactSearch() {
   const [entireDbSessionKey, setEntireDbSessionKey] = useState(0);
   const [directoryDigitalIds, setDirectoryDigitalIds] =
     useState<ReadonlySet<number>>(EMPTY_DIRECTORY_IDS);
-
-  const directoryIdsForImport = activeProjectId ? directoryDigitalIds : EMPTY_DIRECTORY_IDS;
+  const listingIds = useMemo(() => listings.map((row) => row.id), [listings]);
+  const directoryIdsForImport =
+    activeProjectId && listingIds.length > 0 ? directoryDigitalIds : EMPTY_DIRECTORY_IDS;
 
   const duplicateById = useMemo(() => {
     const map = new Map<number, string>();
@@ -84,22 +85,13 @@ export default function RadioidContactSearch() {
     return map;
   }, [library.digitalContacts]);
 
-  const listingIds = useMemo(() => listings.map((row) => row.id), [listings]);
-
   useEffect(() => {
-    if (!activeProjectId) {
-      setDirectoryDigitalIds(EMPTY_DIRECTORY_IDS);
-      return;
-    }
+    if (!activeProjectId || listingIds.length === 0) return;
     const projectId = activeProjectId;
 
     let cancelled = false;
 
     async function loadDirectoryIds() {
-      if (listingIds.length === 0) {
-        if (!cancelled) setDirectoryDigitalIds(EMPTY_DIRECTORY_IDS);
-        return;
-      }
       const entries = await persistence.getDigitalIdDirectoryEntriesByIds(projectId, listingIds);
       if (cancelled) return;
       setDirectoryDigitalIds(new Set(entries.map((entry) => entry.digitalId)));
