@@ -22,8 +22,13 @@ on:
         required: false
         type: boolean
         default: false
+      play_track:
+        description: Play track to ensure this version on (beta / production). Empty skips Play.
+        required: false
+        type: string
+        default: ''
       publish_to_play_track:
-        description: Play Store track to push the built .aab to directly (e.g. alpha for Closed Testing). Empty skips publishing inline.
+        description: Deprecated alias for play_track (dropped once callers switch)
         required: false
         type: string
         default: ''
@@ -33,11 +38,51 @@ permissions:
   contents: write
 
 concurrency:
-  group: android-apk-${{ inputs.build_env }}
-  cancel-in-progress: true
+  group: ${{ (inputs.play_track != '' || inputs.publish_to_play_track != '') && 'android-play-publisher' || format('android-apk-{0}', inputs.build_env) }}
+  cancel-in-progress: ${{ inputs.play_track == '' && inputs.publish_to_play_track == '' }}
 
 jobs:
+  preflight:
+    if: ${{ inputs.play_track != '' || inputs.publish_to_play_track != '' }}
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.preflight.outputs.action }}
+      version_code: ${{ steps.preflight.outputs.version_code }}
+      version_name: ${{ steps.preflight.outputs.version_name }}
+      play_track: ${{ steps.track.outputs.play_track }}
+    env:
+      GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve Play track
+        id: track
+        run: |
+          TRACK="${{ inputs.play_track }}"
+          if [ -z "${TRACK}" ]; then
+            TRACK="${{ inputs.publish_to_play_track }}"
+          fi
+          echo "play_track=${TRACK}" >> "$GITHUB_OUTPUT"
+
+      - name: Play preflight
+        id: preflight
+        env:
+          BUILD_VERSION: ${{ inputs.build_version }}
+        run: node scripts/play/preflight.mjs
+
   build-apk:
+    needs: [preflight]
+    if: ${{ always() && !cancelled() && (needs.preflight.result == 'skipped' || needs.preflight.outputs.action == 'upload') }}
     runs-on: ubuntu-latest
     # secrets cannot be referenced in `if:` — map to env first, then gate on env
     env:
@@ -76,9 +121,14 @@ jobs:
           fi
           echo "BUILD_VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "ANDROID_VERSION_NAME=${VERSION}" >> "$GITHUB_ENV"
-          echo "ANDROID_VERSION_CODE=${{ github.run_number }}" >> "$GITHUB_ENV"
+          if [ -n "${{ needs.preflight.outputs.version_code }}" ]; then
+            CODE="${{ needs.preflight.outputs.version_code }}"
+          else
+            CODE="${{ github.run_number }}"
+          fi
+          echo "ANDROID_VERSION_CODE=${CODE}" >> "$GITHUB_ENV"
           echo "BUILD_ENV=${{ inputs.build_env }}" >> "$GITHUB_ENV"
-          echo "Version=${VERSION} BUILD_ENV=${{ inputs.build_env }}"
+          echo "Version=${VERSION} BUILD_ENV=${{ inputs.build_env }} versionCode=${CODE}"
 
       - name: Set GA measurement ID
         run: |
@@ -168,18 +218,44 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
-      - name: Publish AAB to Play Store track
-        if: ${{ inputs.build_aab && inputs.publish_to_play_track != '' }}
-        uses: r0adkll/upload-google-play@v1
+  publish:
+    needs: [preflight, build-apk]
+    if: ${{ always() && !cancelled() && needs.preflight.result == 'success' && (needs.preflight.outputs.action == 'reconcile' || needs.build-apk.result == 'success') }}
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+      BUILD_VERSION: ${{ inputs.build_version }}
+      PLAY_TRACK: ${{ needs.preflight.outputs.play_track }}
+      RELEASE_NOTES: ${{ github.event.release.body }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
         with:
-          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: net.mm9pdy.codeplugstudio
-          releaseFiles: android/app/build/outputs/bundle/release/codeplug-studio-*.aab
-          track: ${{ inputs.publish_to_play_track }}
-          # Must be draft while the Play Console app itself is still Draft —
-          # the API rejects completed/inProgress for draft apps
-          # ("Only releases with status draft may be created on draft app").
-          # After the first Closed Testing release is rolled out manually and
-          # the app leaves Draft, flip this (and android-play-publish.yaml) to
-          # completed so CI can auto-roll out without a Console click.
-          status: draft
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download AAB artifact
+        if: ${{ needs.preflight.outputs.action == 'upload' }}
+        uses: actions/download-artifact@v7
+        with:
+          name: app-release-aab-${{ inputs.build_env }}
+          path: ./aab-download
+
+      - name: Ensure version on Play track
+        run: |
+          set -euo pipefail
+          if [ "${{ needs.preflight.outputs.action }}" = "upload" ]; then
+            AAB_PATH="$(find ./aab-download -name 'codeplug-studio-*.aab' | head -n 1)"
+            if [ -z "${AAB_PATH}" ]; then
+              echo "::error::No AAB artifact found to upload"
+              exit 1
+            fi
+            export AAB_PATH
+          fi
+          node scripts/play/ensure-on-track.mjs
