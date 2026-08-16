@@ -9,7 +9,7 @@ import type { WirePreviewEntityKind } from '@core/services/previewWireRows.ts';
 import { FieldCard } from '../fields/Fields.tsx';
 import ExportNameModeSelect from './ExportNameModeSelect.tsx';
 import DigitalContactExportNameModeSelect from './DigitalContactExportNameModeSelect.tsx';
-import UseLibraryAbbreviationsSwitch from './UseLibraryAbbreviationsSwitch.tsx';
+import LibraryAbbreviationsFields from './LibraryAbbreviationsFields.tsx';
 import type { ResolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 
 export type BuildEntityInclusionField =
@@ -167,14 +167,17 @@ export default function BuildEntityExportSettingsCard({
           />
         ) : null}
         {showLibraryAbbreviations ? (
-          <UseLibraryAbbreviationsSwitch
+          <LibraryAbbreviationsFields
             shortenNames={exportSettings.shortenNames}
-            value={exportSettings.useChannelAbbreviation && exportSettings.useTalkGroupAbbreviation}
-            onChange={(useLibraryAbbreviations) =>
-              onExportSettingsPatch({
-                useChannelAbbreviation: useLibraryAbbreviations,
-                useTalkGroupAbbreviation: useLibraryAbbreviations,
-              })
+            useChannelAbbreviation={exportSettings.useChannelAbbreviation}
+            useTalkGroupAbbreviation={exportSettings.useTalkGroupAbbreviation}
+            showChannel={entityKind === 'channel'}
+            showTalkGroup={entityKind === 'talkGroup'}
+            onChangeChannel={(useChannelAbbreviation) =>
+              onExportSettingsPatch({ useChannelAbbreviation })
+            }
+            onChangeTalkGroup={(useTalkGroupAbbreviation) =>
+              onExportSettingsPatch({ useTalkGroupAbbreviation })
             }
           />
         ) : null}
