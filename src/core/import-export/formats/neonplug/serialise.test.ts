@@ -283,7 +283,8 @@ describe('neonplug/serialise', () => {
     expect(data.zones[0]?.channels).toEqual([4, 1, 2, 3]);
     expect(data.scanLists[0]?.channels).toEqual([1, 2, 3]);
     expect(data.scanLists[0]?.designatedTxChannel).toBe(4);
-    expect(data.channels.every((c) => c.scanListId === 1)).toBe(true);
+    expect(data.channels[3]?.scanListId).toBe(1);
+    expect(data.channels.slice(0, 3).every((c) => c.scanListId === 0)).toBe(true);
   });
 
   it('emits one lean channel when expandRxGroupLists is false', () => {

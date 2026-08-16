@@ -35,7 +35,7 @@ function fmChannel(id: string, name: string): Channel {
 }
 
 describe('neonplug/zoneDerivedScanLists', () => {
-  it('derives scan lists from zoneGrouping.exportScanList and sets scanListId', () => {
+  it('derives scan lists from zoneGrouping.exportScanList; scanListId on carriers only', () => {
     const ch1 = fmChannel('ch-1', 'Alpha');
     const ch2 = fmChannel('ch-2', 'Bravo');
     const zone: Zone = {
@@ -112,8 +112,9 @@ describe('neonplug/zoneDerivedScanLists', () => {
         scanTxMode: 0,
       },
     ]);
-    expect(derived.scanListIdByChannelId.get('ch-1')).toBe(1);
-    expect(derived.scanListIdByChannelId.get('ch-2')).toBe(1);
+    expect(derived.scanListIdByChannelId.get('ch-1')).toBeUndefined();
+    expect(derived.scanListIdByChannelId.get('ch-2')).toBeUndefined();
+    expect(derived.scanListIdByChannelId.get('scan-carrier:zone-1')).toBe(1);
     expect(derived.carriers).toEqual([
       {
         zoneId: 'zone-1',
@@ -136,8 +137,8 @@ describe('neonplug/zoneDerivedScanLists', () => {
     expect(data.channels[2]?.rxFrequency).toBe(145.5);
     expect(data.channels[2]?.scanListId).toBe(1);
     expect(data.zones[0]?.channels[0]).toBe(3);
-    expect(data.channels[0]?.scanListId).toBe(1);
-    expect(data.channels[1]?.scanListId).toBe(1);
+    expect(data.channels[0]?.scanListId).toBe(0);
+    expect(data.channels[1]?.scanListId).toBe(0);
   });
 
   it('skips scan derivation when exportZoneDerivedScanLists is false', () => {
@@ -254,7 +255,8 @@ describe('neonplug/zoneDerivedScanLists', () => {
         scanTxMode: 0,
       },
     ]);
-    expect(derived.scanListIdByChannelId.get('ch-1')).toBe(1);
+    expect(derived.scanListIdByChannelId.get('ch-1')).toBeUndefined();
+    expect(derived.scanListIdByChannelId.get('scan-carrier:zone-1')).toBe(1);
     expect(derived.carriers).toHaveLength(1);
     expect(derived.carriers[0]?.frequencyHz).toBe(DEFAULT_SCAN_CARRIER_HZ);
 
@@ -265,7 +267,10 @@ describe('neonplug/zoneDerivedScanLists', () => {
     expect(data.scanLists[0]?.name).toBe('Local');
     expect(data.scanLists[0]?.designatedTxChannel).toBe(3);
     expect(data.channels.some((c) => c.name === 'Local Scan')).toBe(true);
-    expect(data.channels.every((c) => c.scanListId === 1)).toBe(true);
+    expect(data.channels.find((c) => c.name === 'Local Scan')?.scanListId).toBe(1);
+    expect(
+      data.channels.filter((c) => !c.name.endsWith(' Scan')).every((c) => c.scanListId === 0),
+    ).toBe(true);
     expect(data.zones[0]?.channels[0]).toBe(3);
   });
 
@@ -573,5 +578,102 @@ describe('neonplug/zoneDerivedScanLists', () => {
       scanTxMode: 0,
     });
     expect(data.channels.every((ch) => ch.scanListId === 0)).toBe(true);
+  });
+
+  it('does not stamp member channels when shared across two exporting zones', () => {
+    const shared = fmChannel('ch-shared', 'Hotspot');
+    const onlyHome = fmChannel('ch-home', 'HomeOnly');
+    const onlyWalk = fmChannel('ch-walk', 'WalkOnly');
+    const homeZone: Zone = {
+      ...newZone(projectId, 'Home Shack'),
+      id: 'zone-home',
+      members: [
+        { kind: 'channel', channelId: 'ch-home' },
+        { kind: 'channel', channelId: 'ch-shared' },
+      ],
+    };
+    const walkZone: Zone = {
+      ...newZone(projectId, 'Morning Walk'),
+      id: 'zone-walk',
+      members: [
+        { kind: 'channel', channelId: 'ch-walk' },
+        { kind: 'channel', channelId: 'ch-shared' },
+      ],
+    };
+
+    const assembled: AssembledBuild = {
+      buildId: 'b1',
+      formatId: 'neonplug',
+      profileId: 'neonplug-dm32uv',
+      buildName: 'DM32 Neon',
+      channels: [
+        { entity: shared, wireName: 'Hotspot' },
+        { entity: onlyHome, wireName: 'HomeOnly' },
+        { entity: onlyWalk, wireName: 'WalkOnly' },
+      ],
+      zones: [
+        { zoneId: 'zone-home', wireName: 'Home Shack', memberChannelIds: ['ch-home', 'ch-shared'] },
+        {
+          zoneId: 'zone-walk',
+          wireName: 'Morning Walk',
+          memberChannelIds: ['ch-walk', 'ch-shared'],
+        },
+      ],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+      library: {
+        channels: [shared, onlyHome, onlyWalk],
+        zones: [homeZone, walkZone],
+        talkGroups: [],
+        digitalContacts: [],
+        analogContacts: [],
+        rxGroupLists: [],
+        scanLists: [],
+      },
+      zoneGrouping: {
+        kind: 'zoneGrouping',
+        zones: [
+          {
+            id: 'zone-home',
+            name: 'Home Shack',
+            channelIds: ['ch-home', 'ch-shared'],
+            exportScanList: true,
+          },
+          {
+            id: 'zone-walk',
+            name: 'Morning Walk',
+            channelIds: ['ch-walk', 'ch-shared'],
+            exportScanList: true,
+          },
+        ],
+      },
+    };
+
+    const derived = deriveNeonplugZoneDerivedScanLists(
+      assembled,
+      NEONPLUG_DM32UV_PROFILE,
+      singletonChannelNumbersById(buildDm32uvChannelNumberMap(assembled, 4000)),
+      { shortenNames: false },
+    );
+
+    expect(derived.scanListIdByChannelId.get('ch-shared')).toBeUndefined();
+    expect(derived.scanListIdByChannelId.get('ch-home')).toBeUndefined();
+    expect(derived.scanListIdByChannelId.get('ch-walk')).toBeUndefined();
+    expect(derived.scanListIdByChannelId.get('scan-carrier:zone-home')).toBe(1);
+    expect(derived.scanListIdByChannelId.get('scan-carrier:zone-walk')).toBe(2);
+
+    const { data } = serialiseNeonplugCodeplug(assembled, {
+      exportDate: '2026-07-20T12:00:00.000Z',
+      shortenNames: false,
+    });
+    const carriers = data.channels.filter((c) => c.name.endsWith(' Scan'));
+    expect(carriers).toHaveLength(2);
+    expect(carriers.map((c) => c.scanListId).sort()).toEqual([1, 2]);
+    expect(
+      data.channels.filter((c) => !c.name.endsWith(' Scan')).every((c) => c.scanListId === 0),
+    ).toBe(true);
   });
 });

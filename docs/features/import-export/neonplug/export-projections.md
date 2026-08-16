@@ -31,9 +31,9 @@ When m×n expansion is on, you can also export **scratch channels** (default **o
 
 ## Zones and scan lists
 
-Each zone (or zone-derived scan list) member library channel id **fans out** to all projected channel **numbers** (expanded TG rows + scratch when enabled), then truncates to the NeonPlug profile member caps (`zoneMembers` / `scanListMembers`).
+Each zone (or zone-derived scan list) member library channel id **fans out** to all projected channel **numbers** in the scan-list `channels[]` array (expanded TG rows + scratch when enabled), then truncates to the NeonPlug profile member caps (`zoneMembers` / `scanListMembers`).
 
-All expanded rows for a source channel inherit the same `scanListId`.
+Zone-derived **`scanListId` on the channel record** is stamped on synthetic **`{zone} Scan` carriers only** (`scan-carrier:{zoneId}`). Member rows stay `scanListId: 0` — they appear **in** the list but do not carry the zone FK (channels can sit in multiple zones). Manual per-channel assignment is not modelled yet ([#1225](https://github.com/pskillen/codeplug-studio/issues/1225)).
 
 When **Export zone-derived scan lists** is on:
 
