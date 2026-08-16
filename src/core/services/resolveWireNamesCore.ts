@@ -398,22 +398,25 @@ export function overridesFromAssembledWireNames<T extends { wireNameOverride?: s
  */
 export function libraryFromAssembledOrStub(assembled: AssembledBuild): LibrarySlice {
   if (assembled.library) return assembled.library;
+  const stubPersistableFields = { projectId: '', revision: 1, updatedAt: '' };
   return {
     channels: assembled.channels.map((row) => row.entity),
-    zones: assembled.zones.map(
-      (row) => ({ id: row.zoneId, name: row.wireName, members: [], comment: '' }) as Zone,
-    ),
+    zones: assembled.zones.map((row): Zone => ({
+      ...stubPersistableFields,
+      id: row.zoneId,
+      name: row.wireName,
+      members: [],
+      comment: '',
+    })),
     talkGroups: assembled.talkGroups.map((row) => row.entity),
     digitalContacts: assembled.digitalContacts.map((row) => row.entity),
     analogContacts: assembled.analogContacts.map((row) => row.entity),
     rxGroupLists: assembled.rxGroupLists.map((row) => row.entity),
-    scanLists: assembled.scanLists.map(
-      (row) =>
-        ({
-          id: row.scanListId,
-          name: row.wireName,
-          memberChannelIds: row.memberChannelIds,
-        }) as ScanList,
-    ),
+    scanLists: assembled.scanLists.map((row): ScanList => ({
+      ...stubPersistableFields,
+      id: row.scanListId,
+      name: row.wireName,
+      memberChannelIds: row.memberChannelIds,
+    })),
   };
 }

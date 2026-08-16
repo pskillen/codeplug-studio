@@ -85,27 +85,25 @@ function anytoneExpansionLibrarySlice(assembled: AssembledBuild): LibrarySlice {
  * `fallbackWireContext` compatibility path below; production export always has the real
  * library via `prepareAnytoneExportAssembly`). Only `id`/`name` are read for this kind.
  */
+const STUB_PERSISTABLE_FIELDS = { projectId: '', revision: 1, updatedAt: '' };
+
 function stubZonesFromAssembled(assembled: AssembledBuild): Zone[] {
-  return assembled.zones.map(
-    (row) =>
-      ({
-        id: row.zoneId,
-        name: row.wireName,
-        members: [],
-        comment: '',
-      }) as Zone,
-  );
+  return assembled.zones.map((row): Zone => ({
+    ...STUB_PERSISTABLE_FIELDS,
+    id: row.zoneId,
+    name: row.wireName,
+    members: [],
+    comment: '',
+  }));
 }
 
 function stubScanListsFromAssembled(assembled: AssembledBuild): ScanList[] {
-  return assembled.scanLists.map(
-    (row) =>
-      ({
-        id: row.scanListId,
-        name: row.wireName,
-        memberChannelIds: row.memberChannelIds,
-      }) as ScanList,
-  );
+  return assembled.scanLists.map((row): ScanList => ({
+    ...STUB_PERSISTABLE_FIELDS,
+    id: row.scanListId,
+    name: row.wireName,
+    memberChannelIds: row.memberChannelIds,
+  }));
 }
 
 function fallbackWireContext(
