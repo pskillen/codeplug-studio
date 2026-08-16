@@ -44,7 +44,9 @@ Field-by-field UI enums live in NeonPlug `settingsProfile.ts` / settings parse �
 | `0x320`–`0x32F`   | APRS report channels 1–8 (u16 LE each; `0` = current) |
 | `0x330`           | Repeater active delay                                 |
 | `0x331` bit 0     | Call type                                             |
-| `0x332`–`0x334`   | Upload DMR ID (24-bit BE)                             |
+| `0x332`–`0x334`   | Upload DMR ID (24-bit **LE** on radio UI; Studio Web Serial Write matches firmware) |
+
+NeonPlug `encodeRadioSettings` (file/JSON path) still documents **big-endian** at these offsets — Studio serial intentionally diverges here after hardware dump [#1223](https://github.com/pskillen/codeplug-studio/issues/1223).
 
 ## VFO channels (metadata `0x41`)
 
