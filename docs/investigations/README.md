@@ -12,6 +12,7 @@ here, it is in the wrong place once the work closes.
 | #                                             | Investigation                                                    | Tickets                                                                                                                            | Status                                                                             |
 | --------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | [i003](i003-directory-lookup-banks/README.md) | Directory rows vs lookup banks (OpenGD77 1701 / DM-32 / AT-D890) | [#1211](https://github.com/pskillen/codeplug-studio/issues/1211), [#1220](https://github.com/pskillen/codeplug-studio/issues/1220) | OpenGD77 1701 **Write ACK’d**, LCD lookup pending (Talker Alias); DM-32 still live |
+| [i004](i004-dm32-serial-scan-aprs/README.md)  | DM-32UV serial Write: zone scan carriers + APRS upload ID        | [#1223](https://github.com/pskillen/codeplug-studio/issues/1223), [#1225](https://github.com/pskillen/codeplug-studio/issues/1225) | Dump-proven: scan vacant `0x00`; APRS UI = LE of BE `234999`; Walk carrier `0x19` chase |
 
 ## Closed
 
