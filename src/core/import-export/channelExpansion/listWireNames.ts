@@ -128,9 +128,3 @@ export function buildListWireNameMap(
   }
   return map;
 }
-
-export const FORMATS_WITH_LIST_NAME_SHORTENING = new Set(['anytone', 'opengd77', 'dm32']);
-
-export function formatUsesListNameShortening(formatId: string): boolean {
-  return FORMATS_WITH_LIST_NAME_SHORTENING.has(formatId);
-}
