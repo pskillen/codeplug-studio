@@ -6,7 +6,7 @@ import { withTalkGroupWireNameLimits } from '@core/import-export/channelExpansio
 import {
   overridesFromAssembledWireNames,
   resolveWireNamesFromOptions,
-} from '@core/services/resolveWireNames.ts';
+} from '@core/services/resolveWireNamesCore.ts';
 import { pushWireNameResolutionWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
 import {
   deriveZoneDerivedScanLists,

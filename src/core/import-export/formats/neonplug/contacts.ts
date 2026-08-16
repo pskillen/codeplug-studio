@@ -1,7 +1,12 @@
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
-import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
+import {
+  libraryFromAssembledOrStub,
+  overridesFromAssembledWireNames,
+  resolveWireNamesFromOptions,
+} from '@core/services/resolveWireNamesCore.ts';
+import { pushWireNameResolutionWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
 import {
   getNeonplugProfile,
   isNeonplugDm32uvProfile,
@@ -33,22 +38,54 @@ export function serialiseNeonplugContacts(
 ): NeonplugContactsExport {
   const contacts: NeonplugContact[] = [];
   const contactIdByEntityId = new Map<string, number>();
-  const reserved = new Set<string>();
   const max = profile.maxContacts;
+  const library = libraryFromAssembledOrStub(assembled);
+  const mergedOptions = { ...options, profileId: profile.id };
+
+  const talkGroupWireNames = new Map<string, string>();
+  for (const resolution of resolveWireNamesFromOptions({
+    library,
+    entityKind: 'talkGroup',
+    formatId: 'neonplug',
+    profileId: profile.id,
+    options: mergedOptions,
+    overrides: overridesFromAssembledWireNames(assembled.talkGroups, (row) => row.entity.id),
+  })) {
+    talkGroupWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'Talk group',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId: profile.id,
+    });
+  }
+
+  const contactWireNames = new Map<string, string>();
+  for (const resolution of resolveWireNamesFromOptions({
+    library,
+    entityKind: 'contact',
+    formatId: 'neonplug',
+    profileId: profile.id,
+    options: mergedOptions,
+    overrides: options?.contactOverrides,
+  })) {
+    contactWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'Contact',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId: profile.id,
+    });
+  }
 
   for (const row of assembled.talkGroups) {
     if (contacts.length >= max) break;
     const id = contacts.length + 1;
-    const name = applyListWireNameLimits(
-      row.wireName,
-      reserved,
-      options,
-      profile.id,
-      warnings,
-      'Talk group',
-      profile.nameLimit,
-      Boolean(row.wireNameOverride?.trim()),
-    );
+    const name = talkGroupWireNames.get(row.entity.id) ?? row.wireName;
     contacts.push({
       id,
       name,
@@ -60,16 +97,7 @@ export function serialiseNeonplugContacts(
   for (const row of assembled.digitalContacts) {
     if (contacts.length >= max) break;
     const id = contacts.length + 1;
-    const name = applyListWireNameLimits(
-      row.wireName,
-      reserved,
-      options,
-      profile.id,
-      warnings,
-      'Contact',
-      profile.nameLimit,
-      Boolean(row.wireNameOverride?.trim()),
-    );
+    const name = contactWireNames.get(row.entity.id) ?? row.wireName;
     const contact: NeonplugContact = {
       id,
       name,

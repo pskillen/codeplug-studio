@@ -1,6 +1,11 @@
-import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
+import {
+  libraryFromAssembledOrStub,
+  overridesFromAssembledWireNames,
+  resolveWireNamesFromOptions,
+} from '@core/services/resolveWireNamesCore.ts';
+import { pushWireNameResolutionWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
 import { expandNeonplugZoneMemberNumbers } from './channelExpansion.ts';
 import type { NeonplugDm32uvRadioProfile } from './profiles.ts';
 import type { NeonplugZone } from './wireTypes.ts';
@@ -21,7 +26,25 @@ export function serialiseNeonplugZones(
   carrierNumberByZoneId: ReadonlyMap<string, number> = new Map(),
 ): NeonplugZone[] {
   const zones: NeonplugZone[] = [];
-  const reserved = new Set<string>();
+  const zoneWireNames = new Map<string, string>();
+  for (const resolution of resolveWireNamesFromOptions({
+    library: libraryFromAssembledOrStub(assembled),
+    entityKind: 'zone',
+    formatId: 'neonplug',
+    profileId: profile.id,
+    options: { ...options, profileId: profile.id },
+    overrides: overridesFromAssembledWireNames(assembled.zones, (row) => row.zoneId),
+  })) {
+    zoneWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'Zone',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId: profile.id,
+    });
+  }
 
   for (const zone of assembled.zones) {
     if (zones.length >= profile.maxZones) break;
@@ -39,16 +62,7 @@ export function serialiseNeonplugZones(
       channels = channels.slice(0, profile.zoneMembers);
     }
 
-    const name = applyListWireNameLimits(
-      zone.wireName,
-      reserved,
-      options,
-      profile.id,
-      warnings,
-      'Zone',
-      profile.nameLimit,
-      Boolean(zone.wireNameOverride?.trim()),
-    );
+    const name = zoneWireNames.get(zone.zoneId) ?? zone.wireName;
 
     zones.push({
       id: zone.zoneId,

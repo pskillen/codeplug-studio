@@ -5,7 +5,7 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import {
   overridesFromAssembledWireNames,
   resolveWireNamesFromOptions,
-} from '@core/services/resolveWireNames.ts';
+} from '@core/services/resolveWireNamesCore.ts';
 import { pushWireNameResolutionWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
 import { anytoneChannelWireName } from './exportChannelWire.ts';
 import { isAmAirbandBankChannel, isFmBroadcastBankChannel } from './receiveOnlyBanks.ts';

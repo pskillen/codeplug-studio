@@ -167,16 +167,26 @@ describe('resolveWireNames', () => {
 
   it('has no format-id string literals in the resolver module', async () => {
     // Guard against reintroducing formatId === 'anytone' | 'opengd77' | ... branches.
+    // Covers both resolveWireNames.ts (build-based entry point) and resolveWireNamesCore.ts
+    // (the actual policy engine, split out so CPS serialisers inside a registered format
+    // package — e.g. formats/neonplug/*.ts — can depend on it without pulling in
+    // exportSettingsMerge.ts's registry.ts import, which closes an ESM cycle back through
+    // that format's own adapter.ts).
     const fs = await import('node:fs');
     const path = await import('node:path');
-    const filePath = path.join(process.cwd(), 'src/core/services/resolveWireNames.ts');
-    const source = fs.readFileSync(filePath, 'utf-8');
-    const codeOnly = source
-      .split('\n')
-      .filter((line) => !line.trim().startsWith('*') && !line.trim().startsWith('//'))
-      .join('\n');
-    for (const literal of ["'anytone'", "'opengd77'", "'dm32'", "'chirp'", "'neonplug'"]) {
-      expect(codeOnly.includes(literal)).toBe(false);
+    for (const relativePath of [
+      'src/core/services/resolveWireNames.ts',
+      'src/core/services/resolveWireNamesCore.ts',
+    ]) {
+      const filePath = path.join(process.cwd(), relativePath);
+      const source = fs.readFileSync(filePath, 'utf-8');
+      const codeOnly = source
+        .split('\n')
+        .filter((line) => !line.trim().startsWith('*') && !line.trim().startsWith('//'))
+        .join('\n');
+      for (const literal of ["'anytone'", "'opengd77'", "'dm32'", "'chirp'", "'neonplug'"]) {
+        expect(codeOnly.includes(literal)).toBe(false);
+      }
     }
   });
 });

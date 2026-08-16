@@ -6,7 +6,7 @@ import {
   libraryFromAssembledOrStub,
   overridesFromAssembledWireNames,
   resolveWireNamesFromOptions,
-} from '@core/services/resolveWireNames.ts';
+} from '@core/services/resolveWireNamesCore.ts';
 import { DEFAULT_OPENGD77_PROFILE_ID } from './profiles.ts';
 
 export interface OpenGd77ListWireMaps {
