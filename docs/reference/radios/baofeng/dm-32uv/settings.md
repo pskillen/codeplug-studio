@@ -35,15 +35,15 @@ Field-by-field UI enums live in NeonPlug `settingsProfile.ts` / settings parse �
 
 ### APRS / GPS position (`0x301`–`0x334`)
 
-| Offset            | Role                                                  |
-| ----------------- | ----------------------------------------------------- |
-| `0x301`           | Scheduled send time                                   |
-| `0x302` bit 0     | Fixed beacon                                          |
-| `0x306` / `0x30F` | Latitude string + N/S                                 |
-| `0x310` / `0x319` | Longitude string + E/W                                |
-| `0x320`–`0x32F`   | APRS report channels 1–8 (u16 LE each; `0` = current) |
-| `0x330`           | Repeater active delay                                 |
-| `0x331` bit 0     | Call type                                             |
+| Offset            | Role                                                                                |
+| ----------------- | ----------------------------------------------------------------------------------- |
+| `0x301`           | Scheduled send time                                                                 |
+| `0x302` bit 0     | Fixed beacon                                                                        |
+| `0x306` / `0x30F` | Latitude string + N/S                                                               |
+| `0x310` / `0x319` | Longitude string + E/W                                                              |
+| `0x320`–`0x32F`   | APRS report channels 1–8 (u16 LE each; `0` = current)                               |
+| `0x330`           | Repeater active delay                                                               |
+| `0x331` bit 0     | Call type                                                                           |
 | `0x332`–`0x334`   | Upload DMR ID (24-bit **LE** on radio UI; Studio Web Serial Write matches firmware) |
 
 NeonPlug `encodeRadioSettings` (file/JSON path) still documents **big-endian** at these offsets — Studio serial intentionally diverges here after hardware dump [#1223](https://github.com/pskillen/codeplug-studio/issues/1223).
