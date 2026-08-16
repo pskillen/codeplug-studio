@@ -93,6 +93,50 @@ describe('expandAllMxNChannels — dm32Family', () => {
     expect(scratch?.txContactRef).toBeNull();
   });
 
+  it('scratch row keeps the "Scratch" marker and never silently drops it under a downgrade', () => {
+    // "GB7GL Glasgow Scratch" (21 chars) overflows the 16-char DM32 limit — before the
+    // fix, the shortener's callsign_suffix downgrade recomposed purely from the channel's
+    // own fields (with no knowledge "Scratch" had been appended) and returned "L Glasgow",
+    // silently dropping the Scratch marker and overriding the configured name style.
+    const tg = newTalkGroup(PROJECT_ID, 'Scotland', 950);
+    const rgl = {
+      ...newRxGroupList(PROJECT_ID, 'Scotland'),
+      members: [{ ref: { kind: 'talkGroup' as const, id: tg.id } }],
+    };
+    const channel = dmrRepeaterChannel('Glasgow', rgl.id);
+    const build = newFormatBuild(PROJECT_ID, 'dm32-baofeng-dm32uv');
+    const library = {
+      channels: [channel],
+      zones: [],
+      talkGroups: [tg],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [rgl],
+      scanLists: [],
+    };
+    const assembled = assemble(build, library);
+    const policy = mxnPolicyForRadioTarget(radioTargetId)!;
+
+    const rows = expandMxNChannelWireRows(
+      assembled.channels[0]!,
+      assembled,
+      library,
+      policy,
+      {
+        expandRxGroupLists: true,
+        exportScratchChannels: true,
+        profileId: 'dm32-baofeng-dm32uv',
+        nameModeOverride: 'callsign_name',
+      },
+      new Set(),
+      [],
+    );
+
+    const scratch = rows.find((row) => row.rowKind === 'scratch');
+    expect(scratch?.wireName).toContain('Scratch');
+    expect(scratch?.wireName.length).toBeLessThanOrEqual(16);
+  });
+
   it('returns lean row when expansion is disabled', () => {
     const tg = newTalkGroup(PROJECT_ID, 'Scotland', 950);
     const rgl = {

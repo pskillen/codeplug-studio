@@ -74,6 +74,15 @@ export function applyWireNameLimits(
   warnings: ExportWarning[],
   reserve = true,
   isOverride = false,
+  /**
+   * Protected trailing text already appended to `baseWireName` (e.g. ` Scratch`) that
+   * shortening must never drop — only the leading, style-composed portion is shortened.
+   * Without this, `recomposeWithMode`'s callsign_suffix downgrade recomposes purely from
+   * `channel`'s own fields and has no way to know a suffix was appended, so it silently
+   * discards the suffix (and overrides the configured name style) instead of shortening
+   * around it.
+   */
+  fixedSuffix?: string,
 ): string {
   const maxLen = resolveMaxNameLength(profileId ?? options?.profileId, options);
   const shorten = options?.shortenNames !== false;
@@ -142,6 +151,7 @@ export function applyWireNameLimits(
     recomposeWithMode: (mode: ChannelExportNameMode) =>
       composeChannelWireName({ ...pick, exportNameMode: mode }),
     recomposeWithChannelAbbreviation,
+    fixedSuffix,
   };
 
   if (!reserve) {

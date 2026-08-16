@@ -138,13 +138,28 @@ function scratchWireName(
   profileId: string | undefined,
   warnings: ExportWarning[],
 ): string {
-  const composed = `${baseWireName} Scratch`;
+  const suffix = ' Scratch';
+  const composed = `${baseWireName}${suffix}`;
   if (options.shortenNames === false) {
     const name = sanitiseAsciiWireString(uniqueWireName(composed, reserved));
     reserved.add(name);
     return name;
   }
-  return applyWireNameLimits(composed, channel, reserved, options, profileId, warnings);
+  // Preserve the "Scratch" marker as a protected suffix — without it, the shortener's
+  // callsign_suffix downgrade recomposes purely from `channel`'s own fields, silently
+  // dropping "Scratch" and overriding the configured name style whenever the downgraded
+  // candidate happens to fit (e.g. "GB7EE Edinburgh Scratch" → "EE Edinburgh").
+  return applyWireNameLimits(
+    composed,
+    channel,
+    reserved,
+    options,
+    profileId,
+    warnings,
+    true,
+    false,
+    suffix,
+  );
 }
 
 function appendScratchRow(
