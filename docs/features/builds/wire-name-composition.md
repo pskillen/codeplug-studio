@@ -99,14 +99,21 @@ See [name-shortening.md](../import-export/name-shortening.md).
 
 ## Web Serial (radio-io) parity
 
-Organisation names (talk groups, zones, contacts, RX lists) on Web Serial Write resolve through the same `mergeExportOptions(build, …)` settings as CPS CSV — including `shortenNames`, `useTalkGroupAbbreviation`, and override hard-truncate. Talk-group rows use `applyTalkGroupWireNameLimits` (abbreviation-aware), not the list-only helper.
+Organisation names (talk groups, zones, contacts, RX lists) on Web Serial Write, CPS CSV export,
+and wire preview all resolve through the same `resolveWireNames()` / `resolveWireNamesFromOptions()`
+policy engine (`src/core/services/resolveWireNamesCore.ts`) — same `shortenNames`,
+`useTalkGroupAbbreviation`, and override hard-truncate behaviour on every pathway. Talk-group rows
+use `applyTalkGroupWireNameLimits` internally (abbreviation-aware), not the list-only helper. Each
+entity kind resolves against its own independent reserved-name set — a zone and a scan list (or a
+talk group and a contact) may legitimately share a generated wire name; that is not disambiguated
+across kinds.
 
 ## Parity notes (preview vs egress)
 
 | Finding                             | Outcome                                                                                                                                                                                                                                                                          |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **D3** `nameModeOverride`           | Verified: Anytone channel CSV / preview share `composeChannelWireName` with `nameModeOverride`. DM32 APRS guide markdown uses assembled `wireName` as a **display label only**, not a CPS wire field.                                                                            |
-| **D4** contact export name mode     | Anytone + OpenGD77 CPS and **OpenGD77 / DM-32 Web Serial Write** honour `digitalContactExportNameMode` via `buildDigitalContactExportWireNameMap`. NeonPlug contact CSV uses assembled `name` (mode N/A for that adapter today).                                                 |
+| **D4** contact export name mode     | Anytone, OpenGD77, DM32, NeonPlug CPS, and Web Serial Write all honour `digitalContactExportNameMode` via `resolveWireNamesFromOptions('contact', …)` — no cross-contact dedup (matches wire preview).                                                                           |
 | **D7** DM32/NeonPlug lean m×n rows  | Lean rows keep the site wire name without a second shorten pass. Full compose/shorten still applies to expanded talk-group / multi-mode rows. Large lean-vs-preview parity cleanup deferred under epic [#915](https://github.com/pskillen/codeplug-studio/issues/915) if needed. |
 | **D8** scan-list preview shortening | Preview shortens standalone scan lists for Anytone only. DM32 / NeonPlug / OpenGD77 zone-derived scan lists reuse the zone's already-shortened wire name at export — Anytone-only preview condition is correct.                                                                  |
 
