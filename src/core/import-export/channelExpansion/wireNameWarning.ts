@@ -37,6 +37,46 @@ export function pushWireNameCollisionWarning(
   });
 }
 
+/** `remediation` → severity for warnings synthesised from a `resolveWireNames()` resolution — `none` emits nothing. */
+const SEVERITY_BY_RESOLUTION_REMEDIATION: Partial<Record<WireNameRemediation, ExportWarningSeverity>> = {
+  shortened: 'info',
+  disambiguated: 'problem',
+  truncated: 'problem',
+  over_limit: 'problem',
+};
+
+/**
+ * Push a `wire_name` warning from a `resolveWireNames()` resolution's `remediation` — the
+ * resolver itself only classifies what happened (for preview), it does not emit warnings.
+ * Callers on the egress path (radio-io, and CSV once repointed) call this once per row to
+ * surface the same remediation as an `ExportWarning`. No-op when `remediation` is `'none'`.
+ */
+export function pushWireNameResolutionWarning(
+  warnings: ExportWarning[],
+  params: {
+    entityKind: WireNameEntityKind;
+    remediation: WireNameRemediation;
+    original: string;
+    exported: string;
+    limit?: number;
+    profileId?: string;
+    profileLabel?: string;
+  },
+): void {
+  const severity = SEVERITY_BY_RESOLUTION_REMEDIATION[params.remediation];
+  if (!severity) return;
+  warnings.push({
+    kind: 'wire_name',
+    severity,
+    remediation: params.remediation,
+    entityKind: params.entityKind,
+    original: params.original.trim(),
+    exported: params.exported.trim(),
+    limit: params.limit ?? 0,
+    profileLabel: params.profileLabel ?? resolveProfileLabel(params.profileId),
+  });
+}
+
 /** Warn when a wire name exceeds the profile limit, including the export-shortened form when applicable. */
 export function pushWireNameLengthWarning(
   warnings: ExportWarning[],

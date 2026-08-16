@@ -35,7 +35,7 @@ describe('channelToneToRadioTone', () => {
 describe('assembledChannelsToRadioDtos', () => {
   it('maps wire name, slot, Hz, and NFM bandwidth', () => {
     const projectId = 'p1';
-    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-uv5r-mini');
+    const { build: baseBuild, egress } = newRadioBuildForProfile(projectId, 'radio-io-uv5r-mini');
     const entity = {
       ...newChannel(projectId, 'Library Name'),
       id: 'ch-1',
@@ -51,6 +51,13 @@ describe('assembledChannelsToRadioDtos', () => {
           bandwidthKHz: 12.5,
         },
       ],
+    };
+    // Wire-name override is looked up from `build.channelOverrides` by resolveWireNames —
+    // not from the AssembledChannel's own `wireNameOverride` (which `assemble()` would have
+    // folded from the same override, but this test constructs the row directly).
+    const build = {
+      ...baseBuild,
+      channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'WIRE12' }],
     };
     const row: AssembledChannel = {
       entity,
