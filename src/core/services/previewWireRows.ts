@@ -58,6 +58,7 @@ import {
   type WirePreviewChannelNameOptions,
 } from './previewChannelWireName.ts';
 import { resolveBuildDefaultEgress } from '@core/radio-targets/index.ts';
+import type { WireNameRemediation } from './resolveWireNames.ts';
 import { isAmAirbandBankChannel } from '@core/import-export/formats/anytone/receiveOnlyBanks.ts';
 import {
   classifyAnytoneZoneByMembers,
@@ -107,6 +108,12 @@ export interface WirePreviewRow {
   effectiveWireName: string;
   /** True when the build stores an explicit wireName override for this row key. */
   hasWireNameOverride: boolean;
+  /**
+   * What (if anything) `resolveWireNames` had to do to fit the effective name — undefined
+   * for expansion rows (m×n / multi-mode / CHIRP flat-memory) that don't join a resolver
+   * result. UI may ignore this until the inline-edit rework (phase 6).
+   */
+  remediation?: WireNameRemediation;
   /** True when the build stores a densified `orderOrSlot` for this row key. */
   hasOrderOrSlotOverride: boolean;
   /**
