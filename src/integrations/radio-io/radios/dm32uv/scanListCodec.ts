@@ -92,7 +92,7 @@ export function encodeScanListsIntoDm32Image(
     dm32ScanListEntryOffset(encoded.length) + DM32_SCAN_LIST_ENTRY_SIZE,
   );
   const all = new Uint8Array(totalSize);
-  all.fill(0x00);
+  all.fill(0xff);
   all[0] = encoded.length & 0xff;
   for (let i = 0; i < encoded.length; i++) {
     const off = dm32ScanListEntryOffset(i + 1);
@@ -104,7 +104,7 @@ export function encodeScanListsIntoDm32Image(
     const base = block.address - ctx.addressBase;
     const slice = all.subarray(blockIdx * DM32_BLOCK_SIZE, (blockIdx + 1) * DM32_BLOCK_SIZE);
     const chunk = new Uint8Array(DM32_BLOCK_SIZE);
-    chunk.fill(0x00);
+    chunk.fill(0xff);
     chunk.set(slice.subarray(0, Math.min(slice.length, DM32_BLOCK_SIZE)));
     if (blockIdx === 0) {
       chunk[0] = encoded.length & 0xff;

@@ -171,7 +171,7 @@ describe('encodeScanListsIntoDm32Image', () => {
       { wireName: 'Only', channelNumbers: [5], listIndex: 1 },
     ]);
     expect(image.bytes[dm32ScanListEntryOffset(1)]).toBe('O'.charCodeAt(0));
-    expect(image.bytes[secondOff]).toBe(0x00);
+    expect(image.bytes[secondOff]).toBe(0xff);
     expect(image.bytes[0]).toBe(1);
   });
 
