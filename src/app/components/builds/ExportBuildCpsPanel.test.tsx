@@ -249,10 +249,10 @@ describe('ExportBuildCpsPanel', () => {
   it('hides default scan behaviour for Anytone dedicated scan list builds', async () => {
     renderExportPanel('anytone-at-d890uv', { panelMode: 'settings' });
 
-    expect(await screen.findByText('Scan lists')).toBeInTheDocument();
+    expect(await screen.findByText('Organisation')).toBeInTheDocument();
     expect(screen.queryByText('Default scan behaviour')).not.toBeInTheDocument();
     expect(screen.getByText(/Library → Scan lists/i)).toBeInTheDocument();
-    expect(screen.getByText(/Export zone-derived scan lists/i)).toBeInTheDocument();
+    expect(screen.getByText(/Create scan lists from zones/i)).toBeInTheDocument();
   });
 
   it('shows AT-D890UV scan list timing fields on export settings', async () => {

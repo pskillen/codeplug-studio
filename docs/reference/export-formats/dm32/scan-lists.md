@@ -7,7 +7,7 @@ Zone-derived scan list export for Baofeng DM-32UV CPS. Manual scan-list CRUD and
 
 ## Export behaviour
 
-When a DM32 build zone entry has `exportScanList: true` and the export master toggle **Export zone-derived scan lists** is on:
+When a DM32 build zone entry has `exportScanList: true` and the export master toggle **Create scan lists from zones** (build Export → Organisation) is on:
 
 1. Emit a `Scan.csv` row named after the zone wire name, shortened to **`scanListNameLimit` (10)** when **Shorten long names** is on (general zone/channel `nameLimit` remains 16)
 2. Synthesise a scan carrier channel `{zoneName} Scan` (default 145.500 MHz simplex)

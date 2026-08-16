@@ -28,7 +28,7 @@ For each **digital library channel** that has an **RX group list** with talk-gro
 
 Across a build, total expanded rows ≈ **sum of RX-list sizes** for all expanded channels (not a single cartesian grid unless you model many repeater channels separately in the library).
 
-**Toggle:** Build → Export → **Channels** → **m×n channel expansion** (`exportSettings.expandRxGroupLists`).
+**Toggle:** Build → Export → **Channel expansion** → **m×n channel expansion** (`exportSettings.expandRxGroupLists`).
 
 ---
 
@@ -40,7 +40,7 @@ When m×n expansion is on, you can also export **scratch channels** (default **o
 - Faithful copy of the parent channel's frequencies, mode, power, contact, and RX group list — with **Scratch** in the wire name so you can retune in the field without touching programmed TG rows.
 - Scratch is **not** emitted when expansion is off (the lean parent row is already editable).
 
-**Toggle:** Build → Export → **Channels** → **Scratch channels** (`exportSettings.exportScratchChannels`) — only enabled when expansion is on.
+**Toggle:** Build → Export → **Channel expansion** → **Scratch channels** (`exportSettings.exportScratchChannels`) — only enabled when expansion is on.
 
 ---
 
@@ -63,7 +63,7 @@ Airband channels in mixed zones continue to partition to `AMZone.CSV` — unchan
 
 ### Zone-derived scan lists
 
-When **Export zone-derived scan lists** is on and a zone is marked **Export as scan list**:
+When **Create scan lists from zones** (Build → Export → **Organisation**) is on and a zone is marked **Export as scan list**:
 
 - The derived scan list still uses **logical** channel ids for membership.
 - Exported `Scan List Channel Member` columns list **expanded** wire names (plus the zone scan carrier when synthesised).

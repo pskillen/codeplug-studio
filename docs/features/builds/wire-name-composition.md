@@ -2,7 +2,7 @@
 
 Single reference for **how CPS wire names are composed** before export — which library fields, build traits, and browser export settings combine at each step. Wire naming is split across expansion axes (base name → multi-mode → multi-talkgroup → shorten); this doc maps those axes without repeating tier-3 column tables.
 
-**Code:** `src/core/domain/channelNaming.ts`, `src/core/import-export/channelExpansion/`, `src/core/services/previewWireRows.ts`, `src/app/hooks/useExportSettings.ts`
+**Code:** `src/core/domain/channelNaming.ts`, `src/core/import-export/channelExpansion/`, `src/core/services/previewWireRows.ts`, `src/app/components/builds/ExportNameSettingsFields.tsx`
 
 ## Pipeline overview
 
@@ -15,7 +15,7 @@ Library channel / talk group / zone / contact
   → effective wire name in preview + CPS files
 ```
 
-Preview and export share the same options via `useExportSettings` (browser `localStorage`) plus per-build overrides on `/builds/:id/*` wire preview routes.
+Preview and export share the same options via the build's `exportSettings` row (Naming section of `ExportBuildSettingsSections`) plus per-build overrides on `/builds/:id/*` wire preview routes.
 
 ## Base channel name (all formats)
 

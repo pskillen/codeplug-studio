@@ -23,7 +23,7 @@ When m×n expansion is on, you can also export **scratch channels** (default **o
 - Faithful copy of the parent channel (frequencies, mode, power, contact, RX group list) with **Scratch** in the wire name.
 - Scratch is **not** emitted when expansion is off.
 
-**Toggle:** Build → Export → **Channels** → **Scratch channels** (`exportSettings.exportScratchChannels`) — only enabled when expansion is on.
+**Toggle:** Build → Export → **Channel expansion** → **Scratch channels** (`exportSettings.exportScratchChannels`) — only enabled when expansion is on.
 
 Legacy `ZoneGroupingLayout.exportScratchChannel` (older builds / YAML) is **ignored** on export; use the Export panel toggle instead.
 
