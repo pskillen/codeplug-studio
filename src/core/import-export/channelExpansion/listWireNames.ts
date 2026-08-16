@@ -98,34 +98,3 @@ export function applyListWireNameLimits(
   });
   return exported;
 }
-
-export function buildListWireNameMap(
-  entries: ReadonlyArray<{
-    id: string;
-    wireName: string;
-    entityKind?: WireNameEntityKind;
-    isOverride?: boolean;
-  }>,
-  reserved: Set<string>,
-  options: CpsExportOptions | undefined,
-  profileId: string | undefined,
-  warnings: ExportWarning[],
-): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const entry of entries) {
-    map.set(
-      entry.id,
-      applyListWireNameLimits(
-        entry.wireName,
-        reserved,
-        options,
-        profileId,
-        warnings,
-        entry.entityKind ?? 'Wire name',
-        undefined,
-        entry.isOverride === true,
-      ),
-    );
-  }
-  return map;
-}

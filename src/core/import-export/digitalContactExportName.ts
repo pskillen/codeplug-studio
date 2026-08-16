@@ -155,25 +155,3 @@ export function resolveAnalogContactExportBaseName(
   if (override) return override;
   return analogContactExportBaseName(contact);
 }
-
-export function buildDigitalContactExportWireNameMap(
-  contacts: readonly { entity: DigitalContact }[],
-  contactOverrides: readonly BuildEntityOverride[] | undefined,
-  options: CpsExportOptions | undefined,
-  profileId: string,
-  warnings: ExportWarning[],
-): Map<string, string> {
-  const mode = options?.digitalContactExportNameMode ?? DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE;
-  const overrideMap = overrideByEntityId(contactOverrides);
-  const map = new Map<string, string>();
-  for (const row of contacts) {
-    const override = overrideMap.get(row.entity.id)?.wireName?.trim();
-    const isOverride = Boolean(override);
-    const base = isOverride ? override! : digitalContactExportBaseName(row.entity, mode);
-    map.set(
-      row.entity.id,
-      applyDigitalContactExportWireName(base, options, profileId, warnings, isOverride),
-    );
-  }
-  return map;
-}

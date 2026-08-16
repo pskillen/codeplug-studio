@@ -1,6 +1,5 @@
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { AssembledBuild, AssembledChannel, LibrarySlice } from '@core/services/assemble.ts';
-import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import {
   overridesFromAssembledWireNames,
@@ -21,9 +20,6 @@ export function padReceiveBankName(name: string): string {
     .padEnd(ANYTONE_RECEIVE_BANK_NAME_WIDTH, ' ')
     .slice(0, ANYTONE_RECEIVE_BANK_NAME_WIDTH);
 }
-
-/** @deprecated Use applyListWireNameLimits from channelExpansion/listWireNames.ts */
-export const applyAnytoneListWireNameLimits = applyListWireNameLimits;
 
 export interface AnytoneExportWireContext {
   channelWireNames: ReadonlyMap<string, string>;
