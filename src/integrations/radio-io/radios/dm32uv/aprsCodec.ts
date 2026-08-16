@@ -68,9 +68,10 @@ export function patchDm32AprsSettingsSlice(block: Uint8Array, aprs: RadioAprsDto
   }
   if (aprs.uploadDmrId != null) {
     const id = Math.max(0, Math.min(16_776_415, aprs.uploadDmrId >>> 0));
-    block[0x332] = (id >>> 16) & 0xff;
+    // Firmware LCD reads this field as 24-bit little-endian (dump: BE 03 95 f7 → UI 16225539).
+    block[0x332] = id & 0xff;
     block[0x333] = (id >>> 8) & 0xff;
-    block[0x334] = id & 0xff;
+    block[0x334] = (id >>> 16) & 0xff;
   }
 }
 
