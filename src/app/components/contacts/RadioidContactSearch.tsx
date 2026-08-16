@@ -28,6 +28,7 @@ import {
   type DataTableColumn,
 } from '../v2/index.ts';
 import RadioidContactBulkImportDialog from './RadioidContactBulkImportDialog.tsx';
+import RadioidEntireDatabaseImportDialog from './RadioidEntireDatabaseImportDialog.tsx';
 import RadioidContactUpdateDialog from './RadioidContactUpdateDialog.tsx';
 import RadioidContactPreviewDialog from './RadioidContactPreviewDialog.tsx';
 
@@ -68,10 +69,13 @@ export default function RadioidContactSearch() {
   const [bulkScope, setBulkScope] = useState<RadioidBulkImportScope | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkSessionKey, setBulkSessionKey] = useState(0);
+  const [entireDbOpen, setEntireDbOpen] = useState(false);
+  const [entireDbSessionKey, setEntireDbSessionKey] = useState(0);
   const [directoryDigitalIds, setDirectoryDigitalIds] =
     useState<ReadonlySet<number>>(EMPTY_DIRECTORY_IDS);
-
-  const directoryIdsForImport = activeProjectId ? directoryDigitalIds : EMPTY_DIRECTORY_IDS;
+  const listingIds = useMemo(() => listings.map((row) => row.id), [listings]);
+  const directoryIdsForImport =
+    activeProjectId && listingIds.length > 0 ? directoryDigitalIds : EMPTY_DIRECTORY_IDS;
 
   const duplicateById = useMemo(() => {
     const map = new Map<number, string>();
@@ -82,13 +86,13 @@ export default function RadioidContactSearch() {
   }, [library.digitalContacts]);
 
   useEffect(() => {
-    if (!activeProjectId) return;
+    if (!activeProjectId || listingIds.length === 0) return;
     const projectId = activeProjectId;
 
     let cancelled = false;
 
     async function loadDirectoryIds() {
-      const entries = await persistence.listDigitalIdDirectoryEntries(projectId);
+      const entries = await persistence.getDigitalIdDirectoryEntriesByIds(projectId, listingIds);
       if (cancelled) return;
       setDirectoryDigitalIds(new Set(entries.map((entry) => entry.digitalId)));
     }
@@ -104,7 +108,7 @@ export default function RadioidContactSearch() {
       cancelled = true;
       unsubscribe();
     };
-  }, [activeProjectId]);
+  }, [activeProjectId, listingIds]);
 
   function openPreview(row: RadioidDmrUserListing) {
     const existing = findDigitalContactByDigitalId(library.digitalContacts, row.id);
@@ -126,6 +130,11 @@ export default function RadioidContactSearch() {
     setBulkScope(scope);
     setBulkSessionKey((key) => key + 1);
     setBulkOpen(true);
+  }
+
+  function openEntireDatabaseImport() {
+    setEntireDbSessionKey((key) => key + 1);
+    setEntireDbOpen(true);
   }
 
   const bulkListings = useMemo(() => {
@@ -357,6 +366,9 @@ export default function RadioidContactSearch() {
             >
               Search
             </Button>
+            <Button variant="secondary" type="button" onClick={openEntireDatabaseImport}>
+              Entire database
+            </Button>
           </div>
         </Panel>
       </form>
@@ -426,6 +438,16 @@ export default function RadioidContactSearch() {
           existingDirectoryDigitalIds={directoryIdsForImport}
         />
       ) : null}
+
+      <RadioidEntireDatabaseImportDialog
+        opened={entireDbOpen}
+        onClose={() => setEntireDbOpen(false)}
+        onComplete={() => {
+          setAddMessage('Entire database import finished — browse the directory when ready.');
+        }}
+        sessionKey={entireDbSessionKey}
+        projectId={activeProjectId}
+      />
 
       {updateContact && updateListing ? (
         <RadioidContactUpdateDialog

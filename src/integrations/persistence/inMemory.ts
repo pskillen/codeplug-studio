@@ -31,7 +31,13 @@ import type {
   PutResult,
   SatellitePut,
 } from './types.ts';
-import { queryDigitalIdDirectoryPageInMemory } from './digitalIdDirectoryQuery.ts';
+import {
+  hasDirectoryPageFilters,
+  matchesDirectoryFilters,
+  normalizedDirectoryFilterQuery,
+  queryDigitalIdDirectoryPageInMemory,
+  type DigitalIdDirectoryDeleteQuery,
+} from './digitalIdDirectoryQuery.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
 import { readEgressPathRow } from './egressPathRow.ts';
@@ -76,6 +82,7 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   private directoryListeners = new Set<DirectoryPersistenceListener>();
   private notificationDepth = 0;
   private suppressedProjectId: string | null = null;
+  private suppressedDirectoryChange: DirectoryPersistenceChange | null = null;
 
   async listProjects(): Promise<ProjectMeta[]> {
     return [...this.projects.values()].sort((a, b) => a.name.localeCompare(b.name));
@@ -241,6 +248,18 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     return this.digitalIdDirectory.get(directoryRowKey(projectId, digitalId)) ?? null;
   }
 
+  async getDigitalIdDirectoryEntriesByIds(
+    projectId: string,
+    digitalIds: readonly number[],
+  ): Promise<DigitalIdDirectoryEntry[]> {
+    const rows: DigitalIdDirectoryEntry[] = [];
+    for (const digitalId of digitalIds) {
+      const row = this.digitalIdDirectory.get(directoryRowKey(projectId, digitalId));
+      if (row) rows.push({ ...row });
+    }
+    return rows;
+  }
+
   async deleteDigitalIdDirectoryForProject(projectId: string): Promise<{ deletedCount: number }> {
     let deletedCount = 0;
     for (const [key, row] of [...this.digitalIdDirectory.entries()]) {
@@ -251,6 +270,27 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
     }
     if (deletedCount > 0) {
       this.emitDirectory({ projectId, digitalId: 0, op: 'delete' });
+    }
+    return { deletedCount };
+  }
+
+  async deleteDigitalIdDirectoryMatching(
+    query: DigitalIdDirectoryDeleteQuery,
+  ): Promise<{ deletedCount: number }> {
+    if (!hasDirectoryPageFilters(query)) {
+      return this.deleteDigitalIdDirectoryForProject(query.projectId);
+    }
+
+    const filterQuery = normalizedDirectoryFilterQuery(query);
+    let deletedCount = 0;
+    for (const [key, row] of [...this.digitalIdDirectory.entries()]) {
+      if (row.projectId === query.projectId && matchesDirectoryFilters(row, filterQuery)) {
+        this.digitalIdDirectory.delete(key);
+        deletedCount += 1;
+      }
+    }
+    if (deletedCount > 0) {
+      this.emitDirectory({ projectId: query.projectId, digitalId: 0, op: 'delete' });
     }
     return { deletedCount };
   }
@@ -486,10 +526,17 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
       return await fn();
     } finally {
       this.notificationDepth -= 1;
-      if (this.notificationDepth === 0 && this.suppressedProjectId) {
-        const projectId = this.suppressedProjectId;
-        this.suppressedProjectId = null;
-        this.emitImmediate({ projectId, kind: 'project', id: projectId, op: 'put' });
+      if (this.notificationDepth === 0) {
+        if (this.suppressedProjectId) {
+          const projectId = this.suppressedProjectId;
+          this.suppressedProjectId = null;
+          this.emitImmediate({ projectId, kind: 'project', id: projectId, op: 'put' });
+        }
+        if (this.suppressedDirectoryChange) {
+          const change = this.suppressedDirectoryChange;
+          this.suppressedDirectoryChange = null;
+          this.emitDirectoryImmediate(change);
+        }
       }
     }
   }
@@ -588,6 +635,14 @@ export class InMemoryProjectPersistence implements ProjectPersistence {
   }
 
   private emitDirectory(change: DirectoryPersistenceChange): void {
+    if (this.notificationDepth > 0) {
+      this.suppressedDirectoryChange = change;
+      return;
+    }
+    this.emitDirectoryImmediate(change);
+  }
+
+  private emitDirectoryImmediate(change: DirectoryPersistenceChange): void {
     for (const listener of this.directoryListeners) {
       listener(change);
     }

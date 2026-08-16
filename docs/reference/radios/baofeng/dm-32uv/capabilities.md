@@ -6,6 +6,7 @@
 | -------------------- | ------------------------------------------------------------ |
 | DMR digital          | Yes                                                          |
 | Analogue FM          | Yes                                                          |
+| Analogue AM          | Yes — receive-only 87–136 MHz (airband / broadcast)          |
 | Dual-mode single row | Per adapter wire rules (DM32 CPS / NeonPlug Channel objects) |
 
 ### Frequency ranges (Studio eligibility)

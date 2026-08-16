@@ -34,10 +34,20 @@ import { DEFAULT_DB_NAME, DIRECTORY_STORES, STORES, STORE_NAMES } from './stores
 import {
   directoryPrefixUpperBound,
   directoryProjectNameRangeUpper,
+  hasDirectoryPageFilters,
   matchesDirectoryFilters,
+  normalizeDirectoryTextPrefix,
+  normalizeDigitalIdPrefix,
+  normalizedDirectoryFilterQuery,
+  type DigitalIdDirectoryDeleteQuery,
   type DigitalIdDirectoryPageQuery,
   type DigitalIdDirectoryPageResult,
 } from './digitalIdDirectoryQuery.ts';
+import {
+  stripDirectoryIdbRowIfNeeded,
+  toDirectoryIdbRow,
+  type DigitalIdDirectoryIdbRow,
+} from './digitalIdDirectoryIdbRow.ts';
 import { assertSeedProjectId } from './projectSeed.ts';
 import { readChannelRow } from './channelRow.ts';
 import { readEgressPathRow } from './egressPathRow.ts';
@@ -62,6 +72,15 @@ function promisifyRequest<T>(request: IDBRequest<T>): Promise<T> {
   });
 }
 
+/** Bulk directory puts prefer relaxed durability so the dump ingest is not fsync-bound. */
+function openDirectoryWriteTransaction(db: IDBDatabase, storeName: string): IDBTransaction {
+  try {
+    return db.transaction(storeName, 'readwrite', { durability: 'relaxed' });
+  } catch {
+    return db.transaction(storeName, 'readwrite');
+  }
+}
+
 function ensureDigitalIdDirectoryIndexes(os: IDBObjectStore): void {
   if (!os.indexNames.contains('byProject')) {
     os.createIndex('byProject', 'projectId', { unique: false });
@@ -75,6 +94,26 @@ function ensureDigitalIdDirectoryIndexes(os: IDBObjectStore): void {
   if (!os.indexNames.contains('byProjectCountry')) {
     os.createIndex('byProjectCountry', ['projectId', 'country'], { unique: false });
   }
+  if (!os.indexNames.contains('byProjectCallsignLower')) {
+    os.createIndex('byProjectCallsignLower', ['projectId', 'callsignLower'], { unique: false });
+  }
+  if (!os.indexNames.contains('byProjectNameLower')) {
+    os.createIndex('byProjectNameLower', ['projectId', 'nameLower'], { unique: false });
+  }
+  if (!os.indexNames.contains('byProjectDigitalIdStr')) {
+    os.createIndex('byProjectDigitalIdStr', ['projectId', 'digitalIdStr'], { unique: false });
+  }
+}
+
+function backfillDirectoryIndexFields(os: IDBObjectStore): void {
+  const req = os.openCursor();
+  req.onsuccess = () => {
+    const cursor = req.result;
+    if (!cursor) return;
+    const row = stripDirectoryIdbRowIfNeeded(cursor.value as DigitalIdDirectoryIdbRow);
+    cursor.update(toDirectoryIdbRow(row));
+    cursor.continue();
+  };
 }
 
 type DirectoryScanSource = {
@@ -87,16 +126,40 @@ function planDirectoryScan(
   os: IDBObjectStore,
   query: DigitalIdDirectoryPageQuery,
 ): DirectoryScanSource {
-  const { projectId, callsignPrefix, namePrefix, countryEquals, orderBy = 'name' } = query;
+  const {
+    projectId,
+    digitalIdPrefix: digitalIdPrefixRaw,
+    callsignPrefix: callsignPrefixRaw,
+    namePrefix: namePrefixRaw,
+    countryEquals,
+    orderBy = 'name',
+  } = query;
+  const digitalIdPrefix =
+    digitalIdPrefixRaw !== undefined ? normalizeDigitalIdPrefix(digitalIdPrefixRaw) : undefined;
+  const callsignPrefix =
+    callsignPrefixRaw !== undefined ? normalizeDirectoryTextPrefix(callsignPrefixRaw) : undefined;
+  const namePrefix =
+    namePrefixRaw !== undefined ? normalizeDirectoryTextPrefix(namePrefixRaw) : undefined;
   const activeFilters =
+    (digitalIdPrefix !== undefined ? 1 : 0) +
     (callsignPrefix !== undefined ? 1 : 0) +
     (namePrefix !== undefined ? 1 : 0) +
     (countryEquals !== undefined ? 1 : 0);
   const needsClientFilter = activeFilters > 1;
 
+  if (digitalIdPrefix !== undefined) {
+    return {
+      source: os.index('byProjectDigitalIdStr'),
+      range: IDBKeyRange.bound(
+        [projectId, digitalIdPrefix],
+        [projectId, directoryPrefixUpperBound(digitalIdPrefix)],
+      ),
+      needsClientFilter,
+    };
+  }
   if (callsignPrefix !== undefined) {
     return {
-      source: os.index('byProjectCallsign'),
+      source: os.index('byProjectCallsignLower'),
       range: IDBKeyRange.bound(
         [projectId, callsignPrefix],
         [projectId, directoryPrefixUpperBound(callsignPrefix)],
@@ -106,7 +169,7 @@ function planDirectoryScan(
   }
   if (namePrefix !== undefined) {
     return {
-      source: os.index('byProjectName'),
+      source: os.index('byProjectNameLower'),
       range: IDBKeyRange.bound(
         [projectId, namePrefix],
         [projectId, directoryPrefixUpperBound(namePrefix)],
@@ -131,13 +194,13 @@ function planDirectoryScan(
   }
   if (orderBy === 'callsign') {
     return {
-      source: os.index('byProjectCallsign'),
+      source: os.index('byProjectCallsignLower'),
       range: IDBKeyRange.bound([projectId, ''], directoryProjectNameRangeUpper(projectId)),
       needsClientFilter: false,
     };
   }
   return {
-    source: os.index('byProjectName'),
+    source: os.index('byProjectNameLower'),
     range: IDBKeyRange.bound([projectId, ''], directoryProjectNameRangeUpper(projectId)),
     needsClientFilter: false,
   };
@@ -147,6 +210,7 @@ async function idbCountMatchingDirectoryRows(
   scan: DirectoryScanSource,
   query: DigitalIdDirectoryPageQuery,
 ): Promise<number> {
+  const filterQuery = normalizedDirectoryFilterQuery(query);
   if (!scan.needsClientFilter && scan.range === undefined) {
     return promisifyRequest(scan.source.count());
   }
@@ -163,8 +227,8 @@ async function idbCountMatchingDirectoryRows(
         resolve();
         return;
       }
-      const row = cursor.value as DigitalIdDirectoryEntry;
-      if (matchesDirectoryFilters(row, query)) total += 1;
+      const row = stripDirectoryIdbRowIfNeeded(cursor.value as DigitalIdDirectoryIdbRow);
+      if (matchesDirectoryFilters(row, filterQuery)) total += 1;
       cursor.continue();
     };
     req.onerror = () => reject(req.error);
@@ -176,6 +240,7 @@ async function idbCollectDirectoryPage(
   scan: DirectoryScanSource,
   query: DigitalIdDirectoryPageQuery,
 ): Promise<DigitalIdDirectoryEntry[]> {
+  const filterQuery = normalizedDirectoryFilterQuery(query);
   const rows: DigitalIdDirectoryEntry[] = [];
   let matchedIndex = 0;
 
@@ -187,8 +252,8 @@ async function idbCollectDirectoryPage(
         resolve();
         return;
       }
-      const row = cursor.value as DigitalIdDirectoryEntry;
-      if (matchesDirectoryFilters(row, query)) {
+      const row = stripDirectoryIdbRowIfNeeded(cursor.value as DigitalIdDirectoryIdbRow);
+      if (matchesDirectoryFilters(row, filterQuery)) {
         if (matchedIndex >= query.offset && rows.length < query.limit) {
           rows.push(row);
         }
@@ -223,6 +288,7 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   private readonly directoryChannel: BroadcastChannel | null;
   private notificationDepth = 0;
   private suppressedProjectId: string | null = null;
+  private suppressedDirectoryChange: DirectoryPersistenceChange | null = null;
 
   constructor(dbName: string = DEFAULT_DB_NAME) {
     this.dbName = dbName;
@@ -258,8 +324,9 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, STUDIO_SCHEMA_VERSION);
       // Migration hook: create/upgrade stores as the schema version bumps.
-      request.onupgradeneeded = () => {
+      request.onupgradeneeded = (event) => {
         const db = request.result;
+        const oldVersion = event.oldVersion;
         // Schema v22 (#654): drop the legacy formatBuilds store outright — builds are
         // not migrated to radioBuilds/egressPaths; library rows are untouched.
         if (db.objectStoreNames.contains(LEGACY_FORMAT_BUILDS_STORE)) {
@@ -281,6 +348,9 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
         } else {
           const os = request.transaction!.objectStore(directoryStore);
           ensureDigitalIdDirectoryIndexes(os);
+          if (oldVersion > 0 && oldVersion < 29) {
+            backfillDirectoryIndexFields(os);
+          }
         }
       };
       request.onsuccess = () => resolve(request.result);
@@ -429,10 +499,10 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     const firstDigitalId = entries[0]!.digitalId;
 
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
+      const tx = openDirectoryWriteTransaction(db, storeName);
       const os = tx.objectStore(storeName);
       for (const entry of entries) {
-        os.put(entry);
+        os.put(toDirectoryIdbRow(entry));
       }
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
@@ -500,10 +570,29 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
     const db = await this.db();
     const storeName = DIRECTORY_STORES.digitalIdDirectory;
     const tx = db.transaction(storeName, 'readonly');
-    const row = await promisifyRequest<DigitalIdDirectoryEntry | undefined>(
+    const row = await promisifyRequest<DigitalIdDirectoryIdbRow | undefined>(
       tx.objectStore(storeName).get([projectId, digitalId]),
     );
-    return row ?? null;
+    return row ? stripDirectoryIdbRowIfNeeded(row) : null;
+  }
+
+  async getDigitalIdDirectoryEntriesByIds(
+    projectId: string,
+    digitalIds: readonly number[],
+  ): Promise<DigitalIdDirectoryEntry[]> {
+    if (digitalIds.length === 0) return [];
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const tx = db.transaction(storeName, 'readonly');
+    const os = tx.objectStore(storeName);
+    const rows = await Promise.all(
+      digitalIds.map((digitalId) =>
+        promisifyRequest<DigitalIdDirectoryIdbRow | undefined>(os.get([projectId, digitalId])),
+      ),
+    );
+    return rows
+      .filter((row): row is DigitalIdDirectoryIdbRow => row != null)
+      .map((row) => stripDirectoryIdbRowIfNeeded(row));
   }
 
   async deleteDigitalIdDirectoryForProject(projectId: string): Promise<{ deletedCount: number }> {
@@ -531,6 +620,51 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
 
     if (deletedCount > 0) {
       this.emitDirectory({ projectId, digitalId: 0, op: 'delete' });
+    }
+    return { deletedCount };
+  }
+
+  async deleteDigitalIdDirectoryMatching(
+    query: DigitalIdDirectoryDeleteQuery,
+  ): Promise<{ deletedCount: number }> {
+    if (!hasDirectoryPageFilters(query)) {
+      return this.deleteDigitalIdDirectoryForProject(query.projectId);
+    }
+
+    const db = await this.db();
+    const storeName = DIRECTORY_STORES.digitalIdDirectory;
+    const filterQuery = normalizedDirectoryFilterQuery(query);
+    const scanQuery: DigitalIdDirectoryPageQuery = {
+      ...query,
+      offset: 0,
+      limit: 1,
+      orderBy: 'name',
+    };
+    let deletedCount = 0;
+
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const os = tx.objectStore(storeName);
+      const scan = planDirectoryScan(os, scanQuery);
+      const req = scan.source.openCursor(scan.range);
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (!cursor) return;
+        const row = stripDirectoryIdbRowIfNeeded(cursor.value as DigitalIdDirectoryIdbRow);
+        if (matchesDirectoryFilters(row, filterQuery)) {
+          cursor.delete();
+          deletedCount += 1;
+        }
+        cursor.continue();
+      };
+      req.onerror = () => reject(req.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+
+    if (deletedCount > 0) {
+      this.emitDirectory({ projectId: query.projectId, digitalId: 0, op: 'delete' });
     }
     return { deletedCount };
   }
@@ -867,10 +1001,17 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
       return await fn();
     } finally {
       this.notificationDepth -= 1;
-      if (this.notificationDepth === 0 && this.suppressedProjectId) {
-        const projectId = this.suppressedProjectId;
-        this.suppressedProjectId = null;
-        this.emitImmediate({ projectId, kind: 'project', id: projectId, op: 'put' });
+      if (this.notificationDepth === 0) {
+        if (this.suppressedProjectId) {
+          const projectId = this.suppressedProjectId;
+          this.suppressedProjectId = null;
+          this.emitImmediate({ projectId, kind: 'project', id: projectId, op: 'put' });
+        }
+        if (this.suppressedDirectoryChange) {
+          const change = this.suppressedDirectoryChange;
+          this.suppressedDirectoryChange = null;
+          this.emitDirectoryImmediate(change);
+        }
       }
     }
   }
@@ -994,6 +1135,14 @@ export class IndexedDbProjectPersistence implements ProjectPersistence {
   }
 
   private emitDirectory(change: DirectoryPersistenceChange): void {
+    if (this.notificationDepth > 0) {
+      this.suppressedDirectoryChange = change;
+      return;
+    }
+    this.emitDirectoryImmediate(change);
+  }
+
+  private emitDirectoryImmediate(change: DirectoryPersistenceChange): void {
     this.notifyDirectoryLocal(change);
     this.directoryChannel?.postMessage(change);
   }

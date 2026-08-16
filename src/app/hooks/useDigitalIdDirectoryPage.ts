@@ -4,6 +4,7 @@ import type { DigitalIdDirectoryOrderBy } from '@integrations/persistence/index.
 import { persistence } from '../state/persistence.ts';
 
 export type DigitalIdDirectoryPageFilters = {
+  digitalIdPrefix?: string;
   callsignPrefix?: string;
   namePrefix?: string;
   countryEquals?: string;
@@ -31,6 +32,7 @@ export function useDigitalIdDirectoryPage(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const digitalIdPrefix = filters.digitalIdPrefix;
   const callsignPrefix = filters.callsignPrefix;
   const namePrefix = filters.namePrefix;
   const countryEquals = filters.countryEquals;
@@ -51,6 +53,7 @@ export function useDigitalIdDirectoryPage(
           offset,
           limit: pageSize,
           orderBy,
+          digitalIdPrefix,
           callsignPrefix,
           namePrefix,
           countryEquals,
@@ -78,7 +81,16 @@ export function useDigitalIdDirectoryPage(
       cancelled = true;
       unsubscribe();
     };
-  }, [projectId, page, pageSize, orderBy, callsignPrefix, namePrefix, countryEquals]);
+  }, [
+    projectId,
+    page,
+    pageSize,
+    orderBy,
+    digitalIdPrefix,
+    callsignPrefix,
+    namePrefix,
+    countryEquals,
+  ]);
 
   if (!projectId) {
     return {

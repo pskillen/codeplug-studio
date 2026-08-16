@@ -59,7 +59,7 @@ const RT95: RadioRfCapabilities = {
 
 const DM32UV: RadioRfCapabilities = {
   radioTargetId: 'baofeng-dm32uv',
-  supportedModes: ['fm', 'dmr'],
+  supportedModes: ['fm', 'am', 'dmr'],
   frequencyRanges: [
     range(136, 174, ['fm', 'dmr']),
     range(400, 480, ['fm', 'dmr']),

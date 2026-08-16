@@ -19,16 +19,32 @@ RadioID.net does **not** send `Access-Control-Allow-Origin` for browser direct f
 
 Studio exposes a same-origin Pages Function:
 
-| Property    | Value                                                                                    |
-| ----------- | ---------------------------------------------------------------------------------------- |
-| Studio path | `GET /api/radioid/dmr/user/` (trailing slash required)                                   |
-| Upstream    | `https://database.radioid.net/api/dmr/user/`                                             |
-| Auth        | None (public upstream)                                                                   |
-| Cache       | `Cache-Control: public, max-age=300`                                                     |
-| Origin gate | Shared allowlist with RepeaterBook / IRTS — deploy hostnames and `http://localhost:5173` |
-| Local dev   | Vite `server.proxy` rewrites `/api/radioid` → `/api` on `database.radioid.net`           |
+| Property    | Value                                                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Studio path | `GET /api/radioid/dmr/user/` (trailing slash required)                                                                                     |
+| Upstream    | `https://database.radioid.net/api/dmr/user/`                                                                                               |
+| Auth        | None (public upstream)                                                                                                                     |
+| Cache       | `Cache-Control: public, max-age=300`                                                                                                       |
+| Origin gate | Shared allowlist with RepeaterBook / IRTS — deploy hostnames and `http://localhost:5173`                                                   |
+| Local dev   | Vite proxy `/api/radioid/dmr` → `/api/dmr` on `database.radioid.net`; `/api/radioid-static/user.csv` → `/static/user.csv` on `radioid.net` |
 
 Deployed via `functions/api/radioid/dmr/user.ts` on every Cloudflare Pages environment.
+
+## Daily user dump (entire database)
+
+For worldwide coverage Studio streams the published daily CSV instead of paginating the JSON API.
+
+| Property    | Value                                                                                        |
+| ----------- | -------------------------------------------------------------------------------------------- |
+| Upstream    | `https://radioid.net/static/user.csv` ([database dumps](https://radioid.net/database/dumps)) |
+| Studio path | `GET /api/radioid-static/user.csv`                                                           |
+| Format      | CSV with header row — parse by column name (`RADIO_ID`, `CALLSIGN`, `FIRST_NAME`, …)         |
+| Cache       | `Cache-Control: private, no-store` — Worker streams upstream body; no public edge cache      |
+| Local dev   | Vite proxy `/api/radioid-static/user.csv` → `/static/user.csv` on `radioid.net`              |
+
+Use the **Entire database** action on the RadioID search page. Expect **300,000+** rows; import upserts into the local directory shadow only (never Google Drive). Writes are 2000-row IndexedDB transactions (relaxed durability when the browser supports it). Respect [acceptable use policy](https://www.radioid.net/acceptable_use_policy) — local operator cache, not a public mirror.
+
+Deployed via `functions/api/radioid-static/user.csv.ts`.
 
 ## Query parameters (DMR users)
 
@@ -43,7 +59,7 @@ Studio forwards these query params to upstream (see [API explorer](https://radio
 | `city`, `state`, `country` | Location filters               |
 | `*_sel`                    | Match mode for string filters  |
 | `page`                     | Page number (starts at 1)      |
-| `per_page`                 | Page size (Studio caps at 100) |
+| `per_page`                 | Page size (Studio caps at 200) |
 
 ## Response shape (JSON)
 

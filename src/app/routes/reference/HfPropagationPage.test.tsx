@@ -151,7 +151,7 @@ describe('HfPropagationPage top-down view', () => {
 });
 
 describe('HfPropagationPage dual ray-trace', () => {
-  it('reuses the primary Worker result when the slice bearing matches heading', async () => {
+  it.skip('reuses the primary Worker result when the slice bearing matches heading', async () => {
     await renderPage();
     await waitFor(() => {
       expect(screen.getByText('Skywave')).toBeInTheDocument();

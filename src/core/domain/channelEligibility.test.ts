@@ -64,6 +64,18 @@ describe('channelEligibility', () => {
     expect(channelEligibleForRadio(air, 'baofeng-uv5r-mini')).toBe(true);
   });
 
+  it('DM-32UV accepts AM airband in the receive-only 87–136 MHz band', () => {
+    const air = channelWith(['am'], 118_800_000);
+    expect(channelEligibleForRadio(air, 'baofeng-dm32uv')).toBe(true);
+    expect(getChannelIneligibilityReason(air, 'baofeng-dm32uv')).toBeNull();
+  });
+
+  it('DM-32UV rejects AM above the receive-only band', () => {
+    const air = channelWith(['am'], 145_500_000);
+    expect(channelEligibleForRadio(air, 'baofeng-dm32uv')).toBe(false);
+    expect(getChannelIneligibilityReason(air, 'baofeng-dm32uv')).toBe('out-of-range');
+  });
+
   it('DM-1701 rejects AM channels', () => {
     const air = channelWith(['am'], 118_800_000);
     expect(channelEligibleForRadio(air, 'baofeng-dm1701')).toBe(false);

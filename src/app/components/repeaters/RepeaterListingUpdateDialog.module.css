@@ -66,6 +66,22 @@
   flex-wrap: wrap;
 }
 
+.timingRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--dsv2-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.timingLeader {
+  flex: 1;
+  border-bottom: 1px dotted var(--dsv2-border-subtle);
+  min-width: 24px;
+  height: 0;
+}
+
 @media (max-width: 47.99em) {
   .table th:nth-child(3),
   .table td:nth-child(3) {
