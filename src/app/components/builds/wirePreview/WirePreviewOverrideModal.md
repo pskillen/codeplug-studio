@@ -1,8 +1,14 @@
 ## Purpose
 
-Per-row override editor for wire preview list pages. Mantine `Modal` with common fields (wire name, skip, force-include) from `resolveOverrideModalSections`, plus route-supplied sections.
+Per-row override editor for wire preview list pages. As of the wire-preview rework (phase 6),
+**retained only for kinds with more than a name to edit** — zones (Members / Scan tabs) and
+CHIRP flat-memory channels (scan inclusion via `extraSections`). Every other entity kind edits
+its export name inline via [`WirePreviewExportNameCell`](./WirePreviewExportNameCell.md) on the
+table and never opens this modal (`BuildWirePreviewListPage` gates `onRowActivate` on
+`entityKind === 'zone'`). Mantine `Modal` with common fields (wire name, skip, force-include)
+from `resolveOverrideModalSections`, plus route-supplied sections.
 
-**Tracking:** [#349](https://github.com/pskillen/codeplug-studio/issues/349) · zone tabs [#472](https://github.com/pskillen/codeplug-studio/issues/472)
+**Tracking:** [#349](https://github.com/pskillen/codeplug-studio/issues/349) · zone tabs [#472](https://github.com/pskillen/codeplug-studio/issues/472) · inline edit rework [#1217](https://github.com/pskillen/codeplug-studio/issues/1217)
 
 ## Props
 
@@ -31,18 +37,24 @@ Per-row override editor for wire preview list pages. Mantine `Modal` with common
 
 Route composition (not the registry):
 
-| Content                   | Where                                                        |
-| ------------------------- | ------------------------------------------------------------ |
-| Zone member export order  | `BuildZonesWirePage` → `membersSection` (Members tab)        |
-| Zone-derived scan export  | `BuildZonesWirePage` → `scanSection` (Scan tab; trait-gated) |
-| CHIRP per-channel scan    | Flat-memory channel page → `extraSections`                   |
-| Channel expansion context | Channels wire page → `extraSections`                         |
+| Content                  | Where                                                        |
+| ------------------------ | ------------------------------------------------------------ |
+| Zone member export order | `BuildZonesWirePage` → `membersSection` (Members tab)        |
+| Zone-derived scan export | `BuildZonesWirePage` → `scanSection` (Scan tab; trait-gated) |
+| CHIRP per-channel scan   | Flat-memory channel page → `extraSections`                   |
+
+Channel expansion context (mode/site details) moved to the always-visible **Details** column
+(`WirePreviewDisplayCell`) on the table — it no longer needs a modal since the modal doesn't
+open for channel rows.
 
 ## Behaviour
 
-- **Non-zone entities:** single `Stack` — library header, common section, optional `extraSections`.
+- **Non-zone entities:** modal is not reachable — `BuildWirePreviewListPage` only sets the
+  active row (opening this modal) when `entityKind === 'zone'`. CHIRP flat-memory channels are a
+  separate route (`BuildFlatMemoryChannelsPage`) that keeps row-click-opens-modal for its
+  `ChirpChannelScanSection`.
 - **Zones** (when `membersSection` and/or `scanSection` provided): Mantine **Tabs** — **Export** (header + common), optional **Members**, optional **Scan**. Default tab is Export. Scan tab omitted when the build lacks zone-derived scan support (`zoneScanExportSupported`: `ZoneGrouping` + `ScanLists` or `DedicatedScanLists`).
-- Wire name uses local draft with **Apply** / **Revert** (`WireNameOverrideInput`) before persisting. Clicking **Suggestion** fills the draft only.
+- Wire name uses the shared [`WireNameInlineEditor`](./WireNameInlineEditor.md) (Save / Revert) before persisting — same component the table cell and bulk edit use. Clicking a suggestion fills the draft only.
 - List pages do **not** use `useUnsavedNavigationGuard`; only `/builds/:id/channels/bulk` guards unapplied wire-name drafts on navigation.
 
 ## Related

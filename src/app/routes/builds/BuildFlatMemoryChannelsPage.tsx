@@ -435,6 +435,9 @@ export default function BuildFlatMemoryChannelsPage() {
           onRowActivate={(row) => setSelectedRowKey(row.key)}
           channelOverrides={build.channelOverrides}
           locationByKey={locationByKey}
+          nameLimit={nameLimit}
+          onWireNameChange={setRowWireName}
+          channelsById={channelById}
           inclusionColumn={{
             saving,
             onExcludedChange: setRowExcluded,

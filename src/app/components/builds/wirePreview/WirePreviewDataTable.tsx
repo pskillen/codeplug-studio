@@ -1,17 +1,21 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useDebouncedValue } from '@mantine/hooks';
-import { Badge, Group, Switch, Text } from '@mantine/core';
+import { Badge, Group, Switch, Text, Tooltip } from '@mantine/core';
 import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
 import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
+import type { Channel } from '@core/models/library.ts';
 import type { WirePreviewEntityKind, WirePreviewRow } from '@core/services/previewWireRows.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
 import { LIST_NAME_FILTER_DEBOUNCE_MS } from '@integrations/listPrefs/index.ts';
+import { channelWireNameStyleSuggestions } from '../../../lib/channelWireNameStyleSuggestions.ts';
 import DataTable, { type DataTableSortState } from '../../v2/DataTable.tsx';
 import WirePreviewListNameCell from './WirePreviewListNameCell.tsx';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
 import WirePreviewInclusionCell from './WirePreviewInclusionCell.tsx';
+import WirePreviewExportNameCell from './WirePreviewExportNameCell.tsx';
 import { rowEffectivelyIncluded } from './wirePreviewRowUtils.ts';
+import type { WireNameSuggestion } from './WireNameInlineEditor.tsx';
 import {
   applyWirePreviewNestCollapse,
   filterNestedWirePreviewRows,
@@ -64,6 +68,31 @@ export interface WirePreviewDataTableProps {
   channelOverrides?: readonly BuildEntityOverride[];
   selectedKeys?: string[];
   onSelectedKeysChange?: (keys: string[]) => void;
+  /** Export name limit for the active egress profile — feeds the inline editor + markers. */
+  nameLimit?: number;
+  /** Inline export-name edit (wire-preview rework phase 6) — omit to keep the name read-only. */
+  onWireNameChange?: (row: WirePreviewRow, wireName: string) => void;
+  /**
+   * Channel rows only — library channel lookup for per-`ChannelExportNameMode` suggestions
+   * (ux-proposal.md §6a). Omit to fall back to the single build-default suggestion.
+   */
+  channelsById?: Map<string, Channel>;
+}
+
+/**
+ * One suggestion per identity for most kinds; channel rows get one per
+ * `ChannelExportNameMode` when a library channel lookup is available (ux-proposal.md §6a).
+ */
+function wireNameSuggestionsForRow(
+  row: WirePreviewRow,
+  channelsById: Map<string, Channel> | undefined,
+  nameLimit: number | undefined,
+): WireNameSuggestion[] {
+  if (row.entityKind === 'channel' && channelsById) {
+    const channel = channelsById.get(row.libraryEntityId);
+    if (channel) return channelWireNameStyleSuggestions(channel, nameLimit);
+  }
+  return [{ value: row.generatedWireName }];
 }
 
 export default function WirePreviewDataTable({
@@ -82,6 +111,9 @@ export default function WirePreviewDataTable({
   channelOverrides,
   selectedKeys,
   onSelectedKeysChange,
+  nameLimit,
+  onWireNameChange,
+  channelsById,
 }: WirePreviewDataTableProps) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
   const effectiveSort = sort !== undefined ? sort : internalSort;
@@ -196,17 +228,69 @@ export default function WirePreviewDataTable({
         header: 'Export name',
         sortable: true,
         sortValue: (row: WirePreviewTableRow) => row.effectiveWireName.toLowerCase(),
-        render: (row: WirePreviewTableRow) =>
-          row.nestRole === 'parent' ? (
-            <Text size="sm" c="dimmed">
-              —
-            </Text>
-          ) : (
-            <Text size="sm" fw={row.hasWireNameOverride ? 600 : 400}>
-              {row.effectiveWireName}
-            </Text>
-          ),
+        render: (row: WirePreviewTableRow) => {
+          if (row.nestRole === 'parent') {
+            return (
+              <Text size="sm" c="dimmed">
+                —
+              </Text>
+            );
+          }
+          if (!onWireNameChange) {
+            return (
+              <Text size="sm" fw={row.hasWireNameOverride ? 600 : 400}>
+                {row.effectiveWireName}
+              </Text>
+            );
+          }
+          const suggestions = wireNameSuggestionsForRow(row, channelsById, nameLimit);
+          return (
+            <WirePreviewExportNameCell
+              row={row}
+              nameLimit={nameLimit}
+              disabled={!rowEffectivelyIncluded(row)}
+              suggestions={suggestions}
+              onWireNameChange={onWireNameChange}
+            />
+          );
+        },
       },
+      ...(entityKind === 'channel'
+        ? [
+            {
+              key: 'mode',
+              header: 'Mode',
+              sortable: true,
+              sortValue: (row: WirePreviewTableRow) => row.channelMode ?? '',
+              render: (row: WirePreviewTableRow) => {
+                if (row.nestRole === 'parent') {
+                  return (
+                    <Text size="sm" c="dimmed">
+                      —
+                    </Text>
+                  );
+                }
+                if (!row.channelMode) {
+                  return (
+                    <Text size="sm" c="dimmed">
+                      —
+                    </Text>
+                  );
+                }
+                const badge = (
+                  <Badge size="xs" variant="light">
+                    {row.channelMode.toUpperCase()}
+                  </Badge>
+                );
+                return row.expansionNote ? (
+                  <Tooltip label={row.expansionNote}>{badge}</Tooltip>
+                ) : (
+                  badge
+                );
+              },
+            },
+          ]
+        : []),
       ...(zoneScanColumn
         ? [
             {
@@ -308,7 +392,17 @@ export default function WirePreviewDataTable({
           ),
       },
     ],
-    [collapsedParentIds, inclusionColumn, locationByKey, entityKind, zoneScanColumn, toggleNest],
+    [
+      collapsedParentIds,
+      inclusionColumn,
+      locationByKey,
+      entityKind,
+      zoneScanColumn,
+      toggleNest,
+      onWireNameChange,
+      nameLimit,
+      channelsById,
+    ],
   );
 
   return (
