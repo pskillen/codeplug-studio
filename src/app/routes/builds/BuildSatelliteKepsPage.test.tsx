@@ -224,7 +224,32 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
     }
   });
 
-  it('shows a truncation indicator on a row with nameTruncated true (#1075)', async () => {
+  it('shows a truncation indicator on a row hard-cut to the name budget (#1075, #1217)', async () => {
+    // 8 chars — fills the whole write budget (nameLength: 8, stubbed above), so the shared
+    // severity marker (wire-preview rework phase 6) classifies this as a hard cut, not a clean
+    // shorten — see `satelliteNameRemediation`.
+    kepsPreviewStub = () => [
+      previewEntry({
+        encodedName: 'CUBESAT2',
+        satelliteWireName: 'CUBESAT2',
+        generatedWireName: 'CUBESAT2',
+        suggestedFamiliarEncoded: 'CUBESAT2',
+        nameTruncated: true,
+      }),
+    ];
+    try {
+      renderPage();
+      await waitFor(() => expect(screen.getByLabelText('Name truncated')).toBeInTheDocument());
+    } finally {
+      kepsPreviewStub = undefined;
+    }
+  });
+
+  it('shows a dimmed shortened marker, not the orange triangle, for a clean shorten (#1217)', async () => {
+    // Under the 8-char budget — the shared severity marker (phase 6) treats this as clean
+    // dictionary shortening, not a damaging cut. The pre-#1217 behaviour put the orange
+    // triangle on every `nameTruncated: true` row regardless of the result; that's the
+    // over-severity this phase fixes.
     kepsPreviewStub = () => [
       previewEntry({
         encodedName: 'CUBESAT',
@@ -236,7 +261,8 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
     ];
     try {
       renderPage();
-      await waitFor(() => expect(screen.getByLabelText('Name truncated')).toBeInTheDocument());
+      await waitFor(() => expect(screen.getByLabelText('Name shortened')).toBeInTheDocument());
+      expect(screen.queryByLabelText('Name truncated')).not.toBeInTheDocument();
     } finally {
       kepsPreviewStub = undefined;
     }
@@ -276,7 +302,7 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Edit encoded name' }));
       // Suggestion fills draft only — Apply commits the override.
       fireEvent.click(screen.getByRole('button', { name: 'GEOSCA 1' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Apply wire name' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save wire name' }));
       await waitFor(() =>
         expect(persistence.putRadioBuild).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -347,7 +373,7 @@ describe('BuildSatelliteKepsPage — satellite write preview (#1074)', () => {
       );
       fireEvent.click(screen.getByRole('button', { name: 'Edit encoded name' }));
       fireEvent.click(screen.getByRole('button', { name: 'ISS' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Apply wire name' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Save wire name' }));
       await waitFor(() =>
         expect(persistence.putRadioBuild).toHaveBeenCalledWith(
           expect.objectContaining({

@@ -1,9 +1,11 @@
-import { Group, Text, Tooltip } from '@mantine/core';
-import { IconAlertTriangle, IconPencil } from '@tabler/icons-react';
+import { Group, Text } from '@mantine/core';
+import { IconPencil } from '@tabler/icons-react';
 import type { SatelliteWritePreviewEntry } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import { RowActionIcon } from '../../v2/index.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../../lib/iconSizes.ts';
-import { SatelliteWireNameOverrideInput } from './SatelliteWireNameOverrideInput.tsx';
+import { satelliteNameRemediation } from '../../../lib/satelliteWireNameRemediation.ts';
+import WireNameInlineEditor from '../wirePreview/WireNameInlineEditor.tsx';
+import WireNameRemediationMarker from '../wirePreview/WireNameRemediationMarker.tsx';
 
 export function SatelliteEncodedNameCell({
   entry,
@@ -24,13 +26,18 @@ export function SatelliteEncodedNameCell({
 }) {
   if (editing) {
     return (
-      <SatelliteWireNameOverrideInput
+      <WireNameInlineEditor
         key={`${entry.transmitterId}-${committedWireName}`}
-        committedWireName={committedWireName}
-        suggestedFamiliar={entry.suggestedFamiliarEncoded}
-        suggestedOscar={entry.suggestedOscarEncoded}
-        nameLimit={nameLimit}
-        onWireNameChange={onWireNameChange}
+        committedValue={committedWireName}
+        suggestions={[
+          { label: 'Familiar', value: entry.suggestedFamiliarEncoded },
+          ...(entry.suggestedOscarEncoded
+            ? [{ label: 'OSCAR', value: entry.suggestedOscarEncoded }]
+            : []),
+        ]}
+        limit={nameLimit}
+        autoFocus
+        onCommit={onWireNameChange}
         onCancel={onCancelEdit}
       />
     );
@@ -39,16 +46,11 @@ export function SatelliteEncodedNameCell({
   return (
     <Group gap={6} wrap="nowrap">
       <Text size="sm">{entry.encodedName}</Text>
-      {entry.nameTruncated ? (
-        <Tooltip label="Shortened to fit the radio's 8-character name field">
-          <IconAlertTriangle
-            size={14}
-            stroke={ICON_STROKE}
-            color="var(--mantine-color-orange-6)"
-            aria-label="Name truncated"
-          />
-        </Tooltip>
-      ) : null}
+      <WireNameRemediationMarker
+        remediation={satelliteNameRemediation(entry.nameTruncated, entry.encodedName, nameLimit)}
+        originalName={entry.satelliteName}
+        limit={nameLimit}
+      />
       <RowActionIcon
         icon={<IconPencil size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
         label="Edit encoded name"
