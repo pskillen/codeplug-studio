@@ -1321,7 +1321,10 @@ describe('previewWireRows', () => {
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701'),
       contactOverrides: [{ libraryEntityId: contact.id, wireName: 'Pinned Contact' }],
-      exportSettings: { digitalContactExportNameMode: 'callsign-name' as const, shortenNames: false },
+      exportSettings: {
+        digitalContactExportNameMode: 'callsign-name' as const,
+        shortenNames: false,
+      },
     };
     const library = {
       channels: [],

@@ -719,7 +719,13 @@ export function previewWireRows(
         const assembled = projection.digitalContacts.find((row) => row.entity.id === contact.id);
         const resolution =
           resolutions.get(contact.id) ??
-          fallbackResolution('contact', contact.id, contact.name, contact.name, build.contactOverrides);
+          fallbackResolution(
+            'contact',
+            contact.id,
+            contact.name,
+            contact.name,
+            build.contactOverrides,
+          );
         rows.push(
           previewRow(
             contact.id,
@@ -738,7 +744,13 @@ export function previewWireRows(
         const assembled = projection.analogContacts.find((row) => row.entity.id === contact.id);
         const resolution =
           resolutions.get(contact.id) ??
-          fallbackResolution('contact', contact.id, contact.name, contact.name, build.contactOverrides);
+          fallbackResolution(
+            'contact',
+            contact.id,
+            contact.name,
+            contact.name,
+            build.contactOverrides,
+          );
         rows.push(
           previewRow(
             contact.id,
@@ -765,7 +777,13 @@ export function previewWireRows(
         const assembled = projection.rxGroupLists.find((row) => row.entity.id === list.id);
         const resolution =
           resolutions.get(list.id) ??
-          fallbackResolution('rxGroupList', list.id, list.name, list.name, build.rxGroupListOverrides);
+          fallbackResolution(
+            'rxGroupList',
+            list.id,
+            list.name,
+            list.name,
+            build.rxGroupListOverrides,
+          );
         return previewRow(
           list.id,
           list.id,
