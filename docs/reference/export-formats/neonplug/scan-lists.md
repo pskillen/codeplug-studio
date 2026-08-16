@@ -41,9 +41,7 @@ DM32 CSV synthesises `Scan.csv` from **zone-derived** scan lists (with synthetic
 | Priority / hang / CTC | Lossy defaults: `ctcScanMode`/`scanTxMode` = `0`; omit rest                                                                               |
 | Cap                   | Min of profile `maxScanLists` and **15** (`DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX` in `src/core/radios/baofeng/dm-32uv/limits.ts`)        |
 
-All expanded channel objects for a source library channel inherit the same `scanListId`. Carriers use synthetic source id `scan-carrier:{zoneId}` (export-only — not library channels).
-
-Member channels that map into a derived list also receive that list’s `scanListId` (NeonPlug keeps member FK binding; this is **not** DM32’s carrier-only Scan List column policy).
+**List membership vs channel-record FK:** `scanLists[].channels` includes expanded member **numbers**. Only the synthetic **`{zone} Scan` carrier** row gets that list’s `scanListId` on the channel object (`scan-carrier:{zoneId}`). Member library channels stay `scanListId: 0` — parity with Web Serial Write ([#1225](https://github.com/pskillen/codeplug-studio/issues/1225)).
 
 ### Empty-list floor (DM32UV — #564)
 

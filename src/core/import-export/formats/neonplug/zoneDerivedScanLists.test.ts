@@ -268,9 +268,9 @@ describe('neonplug/zoneDerivedScanLists', () => {
     expect(data.scanLists[0]?.designatedTxChannel).toBe(3);
     expect(data.channels.some((c) => c.name === 'Local Scan')).toBe(true);
     expect(data.channels.find((c) => c.name === 'Local Scan')?.scanListId).toBe(1);
-    expect(data.channels.filter((c) => !c.name.endsWith(' Scan')).every((c) => c.scanListId === 0)).toBe(
-      true,
-    );
+    expect(
+      data.channels.filter((c) => !c.name.endsWith(' Scan')).every((c) => c.scanListId === 0),
+    ).toBe(true);
     expect(data.zones[0]?.channels[0]).toBe(3);
   });
 
@@ -672,8 +672,8 @@ describe('neonplug/zoneDerivedScanLists', () => {
     const carriers = data.channels.filter((c) => c.name.endsWith(' Scan'));
     expect(carriers).toHaveLength(2);
     expect(carriers.map((c) => c.scanListId).sort()).toEqual([1, 2]);
-    expect(data.channels.filter((c) => !c.name.endsWith(' Scan')).every((c) => c.scanListId === 0)).toBe(
-      true,
-    );
+    expect(
+      data.channels.filter((c) => !c.name.endsWith(' Scan')).every((c) => c.scanListId === 0),
+    ).toBe(true);
   });
 });
