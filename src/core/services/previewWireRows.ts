@@ -36,7 +36,7 @@ import {
 } from '@core/domain/channelEligibility.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.ts';
-import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
+import type { ChannelMode, DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
 import { sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
 import {
@@ -132,6 +132,13 @@ export interface WirePreviewRow {
   /** Channel rows only — frequencies for band pills beside the library name. */
   rxFrequency?: number | null;
   txFrequency?: number | null;
+  /**
+   * Channel rows only — which mode this row represents (m×n / multi-mode expansion rows use
+   * the row's own projected mode; single-mode rows use the channel's mode profile). Feeds the
+   * wire-preview "Mode" indicator (ux-proposal §2) — no new domain logic, just surfacing data
+   * `previewWireRows` already computes per row.
+   */
+  channelMode?: ChannelMode;
 }
 
 export function overrideFieldForEntityKind(entityKind: WirePreviewEntityKind): OverrideField {
@@ -422,6 +429,7 @@ export function previewWireRows(
             hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
             excluded: isEntityExcluded(build.channelOverrides, channel.id),
             expansionNote,
+            channelMode: channel.modeProfiles[0]?.mode,
             ...channelBandFields(channel),
           });
         };
@@ -514,6 +522,7 @@ export function previewWireRows(
                 excluded: isProjectionExcluded(build.channelOverrides, generated.key, channel.id),
                 expansionNote: generated.expansionNote,
                 displayDetails: mxnExpansionDisplayDetails(channel, generated, library),
+                channelMode: generated.mode,
                 ...channelBandFields(channel),
               });
             }
@@ -544,6 +553,7 @@ export function previewWireRows(
                 ? PREVIEW_ROW_NOT_ZONE_LINKED_NOTE
                 : undefined,
             remediation: resolution.remediation,
+            channelMode: channel.modeProfiles[0]?.mode,
             ...channelBandFields(channel),
           });
         }
@@ -595,6 +605,7 @@ export function previewWireRows(
                 : zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
                   ? PREVIEW_ROW_NOT_ZONE_LINKED_NOTE
                   : undefined,
+            channelMode: generated.mode,
             ...channelBandFields(channel),
           });
         }

@@ -4,7 +4,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { DataTable, type DataTableColumn } from '../../v2/index.ts';
 import { createNameColumn } from '../../../lib/libraryListTable.tsx';
-import { WireNameOverrideInput } from './WireNameOverrideInput.tsx';
+import WireNameInlineEditor from './WireNameInlineEditor.tsx';
 import { rowEffectivelyIncluded, wireNameCommittedValue } from './wirePreviewRowUtils.ts';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
 
@@ -73,16 +73,15 @@ export default function WirePreviewBulkEditTable({
         render: (row) => {
           const effectivelyIncluded = rowEffectivelyIncluded(row);
           return (
-            <WireNameOverrideInput
+            <WireNameInlineEditor
               key={`${row.key}:${draftEpoch}:${row.hasWireNameOverride ? row.effectiveWireName : ''}`}
-              row={row}
-              nameLimit={nameLimit}
-              excluded={!effectivelyIncluded}
-              clickableSuggestionWireName
+              committedValue={wireNameCommittedValue(row)}
+              suggestions={[{ value: row.generatedWireName }]}
+              limit={nameLimit}
+              disabled={!effectivelyIncluded}
               deferCommit
-              onWireNameChange={() => {}}
+              onCommit={() => {}}
               onDraftChange={(draft) => setRowDraft(row, draft)}
-              onDirtyChange={() => {}}
             />
           );
         },

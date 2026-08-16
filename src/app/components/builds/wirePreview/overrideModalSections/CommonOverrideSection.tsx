@@ -1,8 +1,9 @@
 import { Stack, Switch, Text, Tooltip } from '@mantine/core';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { OverrideField } from '../../../v2/index.ts';
-import { WireNameOverrideInput } from '../WireNameOverrideInput.tsx';
-import { rowEffectivelyIncluded } from '../wirePreviewRowUtils.ts';
+import WireNameInlineEditor from '../WireNameInlineEditor.tsx';
+import WireNameRemediationMarker from '../WireNameRemediationMarker.tsx';
+import { rowEffectivelyIncluded, wireNameCommittedValue } from '../wirePreviewRowUtils.ts';
 
 export interface CommonOverrideSectionProps {
   row: WirePreviewRow;
@@ -53,15 +54,21 @@ export default function CommonOverrideSection({
         onReset={() => onWireNameChange(row, '')}
         libraryHint={`Suggestion: ${row.generatedWireName}`}
       >
-        <WireNameOverrideInput
-          key={`${row.key}:${row.hasWireNameOverride}:${row.effectiveWireName}`}
-          row={row}
-          nameLimit={nameLimit}
-          excluded={!effectivelyIncluded}
-          clickableSuggestionWireName
-          onWireNameChange={onWireNameChange}
-          onDirtyChange={() => {}}
-        />
+        <Stack gap={4}>
+          <WireNameRemediationMarker
+            remediation={row.remediation}
+            originalName={row.displayLabel}
+            limit={nameLimit}
+          />
+          <WireNameInlineEditor
+            key={`${row.key}:${row.hasWireNameOverride}:${row.effectiveWireName}`}
+            committedValue={wireNameCommittedValue(row)}
+            suggestions={[{ value: row.generatedWireName }]}
+            limit={nameLimit}
+            disabled={!effectivelyIncluded}
+            onCommit={(value) => onWireNameChange(row, value)}
+          />
+        </Stack>
       </OverrideField>
     </Stack>
   );

@@ -52,6 +52,21 @@ A row may offer **zero, one, or several** candidate strings from the pure
 generator (e.g. a single Suggestion; or "Familiar" + "OSCAR" alternates).
 Render each as a **clickable, link-styled** string near the input.
 
+**One suggestion per identity, not per style.** Multiple suggestions are legitimate only
+when they are genuinely different *source identities* for the same object (satellite
+Familiar vs OSCAR). A generated name reflecting a different naming **style** — "callsign
+only" vs "name only" vs "both shortened" — is a settings concern, not a per-row suggestion
+list; the operator changes the build's Name style setting once, not per row.
+
+**Explicit exception — channel export names:** a channel row's inline editor offers one
+suggestion per `ChannelExportNameMode` (`callsign_name`, `callsign_only`, `name_only`,
+`callsign_suffix` — `src/core/domain/channelNaming.ts`), each run through the same
+limit/shorten/uniquify pipeline as the row's default suggestion. Reuse the per-style
+composition already computed for `ChannelWireNameExamples.tsx` on the channel edit page
+(`channelWireNamePreviewExamples`) — do not add a second style-composition path. This is a
+deliberate, requested exception for channels only; it does not extend to zones, talk
+groups, contacts, scan lists, or RX group lists.
+
 **Clicking a suggestion only fills the draft input.** It must **not** commit
 the change, persist an override, or close edit mode. The operator still has
 to hit Save. (Several existing components commit on suggestion-click today —
