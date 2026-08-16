@@ -8,8 +8,11 @@
  * from {@link getProfileExportLimits}; format-specific *composition* stays in
  * `@core/import-export/formats/<format>/` and is not referenced here.
  *
- * Not yet the live path — `previewWireRows`, format serialisers, and `radioIo*.ts`
- * still compute names independently (phase 2 of the wire-preview rework repoints them).
+ * Live path for `previewWireRows`, `radioIo*.ts` (both hold the original `RadioBuild`,
+ * so call {@link resolveWireNames}), and CPS serialisers (`formats/<format>/serialise.ts`
+ * — work from `AssembledBuild` + already-merged options, so call
+ * {@link resolveWireNamesFromOptions} instead; see also
+ * {@link overridesFromAssembledWireNames} / {@link libraryFromAssembledOrStub}).
  */
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { BuildEntityOverride, RadioBuild } from '@core/models/radioBuild.ts';
@@ -23,7 +26,7 @@ import type {
   Zone,
 } from '@core/models/library.ts';
 import type { RxGroupList, ScanList } from '@core/models/library.ts';
-import type { LibrarySlice } from './assemble.ts';
+import type { AssembledBuild, LibrarySlice } from './assemble.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import {
   getProfileExportLimits,
@@ -410,4 +413,39 @@ export function overridesFromAssembledWireNames<T extends { wireNameOverride?: s
     if (wireName) overrides.push({ libraryEntityId: idOf(row), wireName });
   }
   return overrides;
+}
+
+/**
+ * `AssembledBuild.library` is set by `exportBuild.ts` on every real export pass (so
+ * `resolveWireNamesFromOptions` gets the real library there), but some callers construct
+ * `AssembledBuild` directly via `assemble()` without it (unit tests, and a couple of
+ * back-compat entry points that serialise a single CPS file standalone). This reconstructs
+ * a best-effort `LibrarySlice` from the assembled rows for that case.
+ *
+ * Zone/scan-list stubs use `wireName` (override-or-raw, per `resolveOverrideWireName` —
+ * not yet shortened/uniquified) as `.name` since `AssembledZone`/`AssembledScanList` don't
+ * retain a separate pre-override library name. This only affects the resolver's `suggestion`
+ * output for rows that already carry an override — serialisers only ever read `.effective`
+ * (which correctly prefers the override either way), so it's harmless in practice.
+ */
+export function libraryFromAssembledOrStub(assembled: AssembledBuild): LibrarySlice {
+  if (assembled.library) return assembled.library;
+  return {
+    channels: assembled.channels.map((row) => row.entity),
+    zones: assembled.zones.map(
+      (row) => ({ id: row.zoneId, name: row.wireName, members: [], comment: '' }) as Zone,
+    ),
+    talkGroups: assembled.talkGroups.map((row) => row.entity),
+    digitalContacts: assembled.digitalContacts.map((row) => row.entity),
+    analogContacts: assembled.analogContacts.map((row) => row.entity),
+    rxGroupLists: assembled.rxGroupLists.map((row) => row.entity),
+    scanLists: assembled.scanLists.map(
+      (row) =>
+        ({
+          id: row.scanListId,
+          name: row.wireName,
+          memberChannelIds: row.memberChannelIds,
+        }) as ScanList,
+    ),
+  };
 }

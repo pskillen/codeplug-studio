@@ -1,14 +1,12 @@
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
-import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
-import { isProjectionExcluded } from '@core/domain/formatBuildOverrides.ts';
-import { buildListWireNameMap } from '@core/import-export/channelExpansion/listWireNames.ts';
+import { pushWireNameResolutionWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
 import {
-  applyDigitalContactExportWireName,
-  buildDigitalContactExportWireNameMap,
-  resolveAnalogContactExportBaseName,
-} from '@core/import-export/digitalContactExportName.ts';
+  libraryFromAssembledOrStub,
+  overridesFromAssembledWireNames,
+  resolveWireNamesFromOptions,
+} from '@core/services/resolveWireNames.ts';
 import { DEFAULT_OPENGD77_PROFILE_ID } from './profiles.ts';
 
 export interface OpenGd77ListWireMaps {
@@ -17,92 +15,76 @@ export interface OpenGd77ListWireMaps {
   contactWireNames: Map<string, string>;
 }
 
-function seedReservedFromChannels(
-  assembled: AssembledBuild,
-  options: CpsExportOptions | undefined,
-  profileId: string,
-  reserved: Set<string>,
-  warnings: ExportWarning[],
-): void {
-  const expandModes = options?.expandModes ?? true;
-  for (const row of assembled.channels) {
-    const isOverride = Boolean(row.wireNameOverride?.trim());
-    const expanded = expandOpenGd77ChannelWireRows(
-      row.entity,
-      row.wireNameOverride?.trim() || row.wireName,
-      expandModes,
-      options,
-      profileId,
-      reserved,
-      warnings,
-      isOverride,
-    );
-    for (const entry of expanded) {
-      if (isProjectionExcluded(options?.channelOverrides, entry.key, row.entity.id)) continue;
-      reserved.add(entry.wireName);
-    }
-  }
-}
-
 export function buildOpenGd77ListWireMaps(
   exportAssembled: AssembledBuild,
   options?: CpsExportOptions,
   warnings: ExportWarning[] = [],
 ): OpenGd77ListWireMaps {
   const profileId = options?.profileId ?? exportAssembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID;
-  const reserved = new Set<string>();
+  const library = libraryFromAssembledOrStub(exportAssembled);
+  const mergedOptions = { ...options, profileId };
 
-  seedReservedFromChannels(exportAssembled, options, profileId, reserved, warnings);
-  for (const tg of exportAssembled.talkGroups) {
-    reserved.add(tg.wireName);
+  const zoneWireNames = new Map<string, string>();
+  for (const resolution of resolveWireNamesFromOptions({
+    library,
+    entityKind: 'zone',
+    formatId: 'opengd77',
+    profileId,
+    options: mergedOptions,
+    overrides: overridesFromAssembledWireNames(exportAssembled.zones, (row) => row.zoneId),
+  })) {
+    zoneWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'Zone',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId,
+    });
   }
 
-  const zoneWireNames = buildListWireNameMap(
-    exportAssembled.zones.map((zone) => ({
-      id: zone.zoneId,
-      wireName: zone.wireName,
-      entityKind: 'Zone' as const,
-      isOverride: Boolean(zone.wireNameOverride?.trim()),
-    })),
-    reserved,
-    options,
+  const rxGroupListWireNames = new Map<string, string>();
+  for (const resolution of resolveWireNamesFromOptions({
+    library,
+    entityKind: 'rxGroupList',
+    formatId: 'opengd77',
     profileId,
-    warnings,
-  );
+    options: mergedOptions,
+    overrides: overridesFromAssembledWireNames(
+      exportAssembled.rxGroupLists,
+      (row) => row.entity.id,
+    ),
+  })) {
+    rxGroupListWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'RX group list',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId,
+    });
+  }
 
-  const rxGroupListWireNames = buildListWireNameMap(
-    exportAssembled.rxGroupLists.map((list) => ({
-      id: list.entity.id,
-      wireName: list.wireName,
-      entityKind: 'RX group list' as const,
-      isOverride: Boolean(list.wireNameOverride?.trim()),
-    })),
-    reserved,
-    options,
+  const contactWireNames = new Map<string, string>();
+  for (const resolution of resolveWireNamesFromOptions({
+    library,
+    entityKind: 'contact',
+    formatId: 'opengd77',
     profileId,
-    warnings,
-  );
-
-  const contactWireNames = buildDigitalContactExportWireNameMap(
-    exportAssembled.digitalContacts,
-    options?.contactOverrides,
-    options,
-    profileId,
-    warnings,
-  );
-  for (const contact of exportAssembled.analogContacts) {
-    const override = options?.contactOverrides
-      ? Boolean(
-          options.contactOverrides
-            .find((row) => row.libraryEntityId === contact.entity.id)
-            ?.wireName?.trim(),
-        )
-      : Boolean(contact.wireNameOverride?.trim());
-    const base = resolveAnalogContactExportBaseName(contact.entity, options?.contactOverrides);
-    contactWireNames.set(
-      contact.entity.id,
-      applyDigitalContactExportWireName(base, options, profileId, warnings, override),
-    );
+    options: mergedOptions,
+    overrides: options?.contactOverrides,
+  })) {
+    contactWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'Contact',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId,
+    });
   }
 
   return { zoneWireNames, rxGroupListWireNames, contactWireNames };

@@ -3,6 +3,7 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { zoneExportMemberNames } from './listWire.ts';
 import { buildOpenGd77ListWireMaps } from './exportListWire.ts';
 import { withTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
+import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
 import { DEFAULT_OPENGD77_PROFILE_ID, getOpenGd77Profile } from './profiles.ts';
 import { countOpenGd77ProjectedContactRows } from './timeslotExport.ts';
 import {
@@ -10,6 +11,36 @@ import {
   pushMemberCapWarning,
   type ExportWarning,
 } from '@core/import-export/exportWarning.ts';
+
+/**
+ * Channel wire-name warnings, mirroring what `serialiseChannels` composes (mode-expansion
+ * aware — not the generic single-row `resolveWireNames` channel composer, since OpenGD77
+ * channels can expand into multiple `-F`/`-D` wire rows per library channel). Its own
+ * reserved set, scoped to channels only — no longer shared with zone/rxGroupList/contact
+ * (see `buildOpenGd77ListWireMaps`).
+ */
+function collectOpenGd77ChannelWireNameWarnings(
+  assembled: AssembledBuild,
+  options: CpsExportOptions | undefined,
+  profileId: string,
+  warnings: ExportWarning[],
+): void {
+  const expandModes = options?.expandModes ?? true;
+  const reserved = new Set<string>();
+  for (const row of assembled.channels) {
+    const isOverride = Boolean(row.wireNameOverride?.trim());
+    expandOpenGd77ChannelWireRows(
+      row.entity,
+      row.wireNameOverride?.trim() || row.wireName,
+      expandModes,
+      options,
+      profileId,
+      reserved,
+      warnings,
+      isOverride,
+    );
+  }
+}
 
 /** Collect export-time warnings for OpenGD77 profile limits. */
 export function collectOpenGd77ExportWarnings(
@@ -48,6 +79,7 @@ export function collectOpenGd77ExportWarnings(
     { ...options, profileId },
     warnings,
   );
+  collectOpenGd77ChannelWireNameWarnings(exportAssembled, options, profileId, warnings);
   buildOpenGd77ListWireMaps(exportAssembled, { ...options, profileId }, warnings);
 
   const projectedContacts = countOpenGd77ProjectedContactRows(exportAssembled, options, warnings);
