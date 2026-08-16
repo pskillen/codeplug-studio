@@ -24,7 +24,7 @@ export const NEONPLUG_DM32UV_EMPTY_SCAN_LIST_NAME = 'Scan list 1';
 
 export interface NeonplugZoneDerivedScanExport {
   scanLists: NeonplugScanList[];
-  /** Channel UUID → 1-based NeonPlug `scanListId` (inherited by all expanded rows). */
+  /** Scan-carrier synthetic id (`scan-carrier:{zoneId}`) → 1-based NeonPlug `scanListId`. */
   scanListIdByChannelId: Map<string, number>;
   /** Synthetic `{zone} Scan` FM carriers (numbered later in serialise). */
   carriers: SyntheticScanCarrier[];
@@ -221,12 +221,6 @@ export function deriveNeonplugZoneDerivedScanLists(
     result.carrierPrependByZoneId.set(assembledZone.zoneId, carrierWireName);
     result.scanListIdByZoneId.set(assembledZone.zoneId, scanListId);
     result.scanListIdByChannelId.set(`scan-carrier:${assembledZone.zoneId}`, scanListId);
-
-    for (const channelId of memberIds) {
-      if (!result.scanListIdByChannelId.has(channelId)) {
-        result.scanListIdByChannelId.set(channelId, scanListId);
-      }
-    }
   }
 
   return result;
