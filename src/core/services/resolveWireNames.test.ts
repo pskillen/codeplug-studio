@@ -127,13 +127,16 @@ describe('resolveWireNames', () => {
     const { lib, build } = dm32Fixture();
     const longName = 'A Zone Name That Is Definitely Longer Than Sixteen Characters';
     lib.zones.push({ ...newZone(PROJECT_ID, longName), projectId: PROJECT_ID });
-    // Anytone leaves nameLengthZone unmodelled (null) — see profileExportLimits.ts.
+    // Every catalogued format/profile currently populates a real numeric nameLength for
+    // every wire-name kind (see profileExportLimits.ts) — an unrecognised formatId is the
+    // only way left to exercise the "getProfileExportLimits returns null" pass-through
+    // branch this test targets.
     const rows = resolveWireNames({
       build,
       library: librarySliceFrom(lib),
       entityKind: 'zone',
-      formatId: 'anytone',
-      profileId: 'anytone-at-d890uv',
+      formatId: 'not-a-real-format',
+      profileId: 'not-a-real-profile',
     });
     expect(rows).toHaveLength(1);
     expect(rows[0]!.limit).toBeUndefined();

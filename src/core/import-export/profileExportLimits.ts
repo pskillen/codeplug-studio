@@ -205,11 +205,14 @@ export function getProfileExportLimits(
         zoneMembers: profile.zoneMembers,
         scanListMembers: profile.scanListMembers,
         rxGroupListMembers: profile.rxGroupListMembers,
-        nameLengthZone: null,
-        nameLengthContact: null,
-        nameLengthTalkGroup: null,
-        nameLengthScanList: null,
-        nameLengthRxGroupList: null,
+        // Anytone profiles carry one field-width `nameLimit` shared by every wire-name
+        // column (matches the legacy `resolveMaxNameLength` prefix fallback these preview
+        // rows used before `resolveWireNames` existed) — not a per-kind cap to invent.
+        nameLengthZone: profile.nameLimit,
+        nameLengthContact: profile.nameLimit,
+        nameLengthTalkGroup: profile.nameLimit,
+        nameLengthScanList: profile.nameLimit,
+        nameLengthRxGroupList: profile.nameLimit,
       });
     }
 
