@@ -1,0 +1,4 @@
+RADIO_ID,CALLSIGN,FIRST_NAME,LAST_NAME,CITY,STATE,COUNTRY
+1023007,VA3BOC,Hans Juergen,,Cornwall,Ontario,Canada
+9999999,M7TEST,Test,,London,England,United Kingdom
+invalid-row,NOTANID,,,,,
