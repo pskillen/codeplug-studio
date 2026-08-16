@@ -1,3 +1,4 @@
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
 import type { Channel } from '@core/models/library.ts';
@@ -169,7 +170,7 @@ describe('serialiseAprsCsv analog slot binding', () => {
     };
     const assembled = assemble(build, library);
     const prepared = prepareAnytoneExportAssembly(assembled, library);
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const csv = serialiseAprsCsv(config, assembled, prepared, undefined, warnings);
     const parsed = parseCsv(csv);
     const headers = parsed[0]!;
@@ -177,6 +178,6 @@ describe('serialiseAprsCsv analog slot binding', () => {
 
     expect(row[headers.indexOf('channel1')]).toBe('1');
     expect(row[headers.indexOf('channel2')]).toBe('0');
-    expect(warnings.some((w) => w.includes(orphanId))).toBe(true);
+    expect(warnings.some((w) => formatExportWarning(w).includes(orphanId))).toBe(true);
   });
 });

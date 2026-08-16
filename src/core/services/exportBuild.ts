@@ -39,6 +39,7 @@ import { resolveEffectiveExportFileNames } from '@core/import-export/exportFileN
 import { dedupeWarnings } from '@core/import-export/dedupeWarnings.ts';
 import { applyCpsDigitalDirectoryProjection } from '@core/domain/cpsDigitalDirectoryProjection.ts';
 import type { CpsExportOptions, ExportResult, FormatId } from '@core/import-export/types.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   assemble,
   exportInclusionWarnings,
@@ -64,11 +65,12 @@ export interface ExportBuildZipParams extends Omit<ExportBuildParams, 'fileName'
 export function validateNeonplugDonorBase(
   bytes: Uint8Array,
   profileId: string,
-): { warnings: string[] } {
+): { warnings: ExportWarning[] } {
   const { data, warnings } = parseNeonplugZip(bytes);
   const expected = neonplugRadioModelForProfile(profileId);
   if (data.radioInfo.model && data.radioInfo.model !== expected) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Donor radioInfo.model is "${data.radioInfo.model}" but this build targets "${expected}"`,
     );
   }
@@ -94,7 +96,7 @@ export {
 export interface ExportBuildAllResult {
   assembled: AssembledBuild;
   files: Record<string, string>;
-  warnings: string[];
+  warnings: ExportWarning[];
 }
 
 export { mergeExportOptions };
@@ -104,7 +106,7 @@ function assembleForExport(
   library: LibrarySlice,
   egress: EgressPath,
   exportOptions: CpsExportOptions,
-): { assembled: AssembledBuild; projectionWarnings: string[] } {
+): { assembled: AssembledBuild; projectionWarnings: ExportWarning[] } {
   const projection = assemble(build, library, {
     formatId: egress.formatId,
     profileId: egress.profileId,
@@ -239,7 +241,7 @@ export function exportBuildAll({
   }
 
   const files: Record<string, string> = {};
-  const warnings: string[] = [
+  const warnings: ExportWarning[] = [
     ...projectionWarnings,
     ...exportInclusionWarnings(build, library, assembled),
     ...adapter.collectExportWarnings(assembled, exportOptions),
@@ -319,7 +321,7 @@ export function exportBuildZip({
     }
 
     let mergeBase = null as ReturnType<typeof neonplugDonorRetainAsMergeBase> | null;
-    const donorWarnings: string[] = [];
+    const donorWarnings: ExportWarning[] = [];
 
     if (baseNeonplugBytes) {
       const { data, warnings } = parseNeonplugZip(baseNeonplugBytes);
@@ -355,7 +357,10 @@ export function exportBuildZip({
       };
     }
 
-    const greenfieldWarnings = aprsSettingsPatch != null ? [NEONPLUG_APRS_GREENFIELD_WARNING] : [];
+    const greenfieldWarnings: ExportWarning[] =
+      aprsSettingsPatch != null
+        ? [{ kind: 'general', severity: 'problem', message: NEONPLUG_APRS_GREENFIELD_WARNING }]
+        : [];
     return {
       ...result,
       warnings: dedupeWarnings([...result.warnings, ...greenfieldWarnings]),

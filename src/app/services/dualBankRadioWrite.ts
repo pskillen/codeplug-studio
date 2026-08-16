@@ -19,6 +19,7 @@ import type {
   RadioRadioIdDto,
 } from '@integrations/radio-io/radioWriteProjection.ts';
 import { isOpenGd77RadioIoEgress } from './radioIoChannelMap.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export interface DualBankRadioWritePrepareOptions {
   mode: DualBankWriteMode;
@@ -40,7 +41,7 @@ export interface CollectDualBankDirectorySliceArgs {
   options: DualBankRadioWriteOptions;
   maxRadioIds?: number;
   maxDirectoryContacts?: number;
-  warnings: string[];
+  warnings: ExportWarning[];
 }
 
 function dualBankDirectoryTargets(
@@ -101,17 +102,20 @@ export async function collectDualBankDirectorySlice(
   });
 
   if (skippedOverlap > 0) {
-    args.warnings.push(
+    pushGeneralWarning(
+      args.warnings,
       `Skipped ${skippedOverlap} directory row(s) whose DMR ID already exists on a library digital contact`,
     );
   }
   if (truncatedContacts > 0) {
     if (forOpenGd77) {
-      args.warnings.push(
+      pushGeneralWarning(
+        args.warnings,
         `Directory has more contacts than the OpenGD77 User Database allows; only ${openGd77Cap} write from directory`,
       );
     } else {
-      args.warnings.push(
+      pushGeneralWarning(
+        args.warnings,
         `Directory has more contacts than the DM-32 address book allows; only ${dm32Cap} write from directory`,
       );
     }

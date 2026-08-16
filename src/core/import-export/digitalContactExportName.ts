@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { DigitalContact } from '@core/models/library.ts';
 import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -70,7 +71,7 @@ export function applyDigitalContactExportWireName(
   baseWireName: string,
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
   isOverride = false,
 ): string {
   const maxLen = resolveMaxNameLength(profileId ?? options?.profileId, options);
@@ -160,7 +161,7 @@ export function buildDigitalContactExportWireNameMap(
   contactOverrides: readonly BuildEntityOverride[] | undefined,
   options: CpsExportOptions | undefined,
   profileId: string,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): Map<string, string> {
   const mode = options?.digitalContactExportNameMode ?? DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE;
   const overrideMap = overrideByEntityId(contactOverrides);

@@ -1,3 +1,4 @@
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { newChannel, newFormatBuild } from '@core/domain/factories.ts';
 import { previewGeneratedChannelWireName } from '@core/services/previewChannelWireName.ts';
@@ -27,7 +28,7 @@ function dmrChannel(name: string) {
 describe('anytoneChannelWireName', () => {
   it('shortens generated names to AT-D890UV profile limit', () => {
     const channel = dmrChannel('Very Long Channel Name That Exceeds Limit');
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const wireName = anytoneChannelWireName(
       { entity: channel, wireName: 'unused' },
       { reserved: new Set(), warnings },
@@ -35,12 +36,12 @@ describe('anytoneChannelWireName', () => {
     );
 
     expect(wireName.length).toBeLessThanOrEqual(16);
-    expect(warnings.some((w) => w.includes('exported as'))).toBe(true);
+    expect(warnings.some((w) => formatExportWarning(w).includes('exported as'))).toBe(true);
   });
 
   it('hard-truncates explicit wire overrides and warns when over limit', () => {
     const channel = dmrChannel('Short');
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const override = 'This override is way too long';
     const wireName = anytoneChannelWireName(
       { entity: channel, wireName: override, wireNameOverride: override },
@@ -50,9 +51,11 @@ describe('anytoneChannelWireName', () => {
 
     expect(wireName).toBe(override.slice(0, 16));
     expect(wireName.length).toBe(16);
-    expect(warnings.some((w) => w.includes('exceeds 16 characters'))).toBe(true);
-    expect(warnings.some((w) => w.includes(override))).toBe(true);
-    expect(warnings.some((w) => w.includes('exported as'))).toBe(false);
+    expect(warnings.some((w) => formatExportWarning(w).includes('exceeds 16 characters'))).toBe(
+      true,
+    );
+    expect(warnings.some((w) => formatExportWarning(w).includes(override))).toBe(true);
+    expect(warnings.some((w) => formatExportWarning(w).includes('exported as'))).toBe(false);
   });
 
   it('keeps full name under limit when abbreviation is set (useChannelAbbreviation on)', () => {

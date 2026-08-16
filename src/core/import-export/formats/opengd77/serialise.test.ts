@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -473,8 +474,8 @@ describe('OpenGD77 export serialise', () => {
     };
     const warnings = collectOpenGd77ExportWarnings(assembled);
     expect(warnings.length).toBeGreaterThan(0);
-    expect(warnings.some((w) => w.includes('exceeds'))).toBe(true);
-    expect(warnings.some((w) => w.includes('exported as'))).toBe(false);
+    expect(warnings.some((w) => formatExportWarning(w).includes('exceeds'))).toBe(true);
+    expect(warnings.some((w) => formatExportWarning(w).includes('exported as'))).toBe(false);
   });
 
   it('channels CSV is self-consistent when re-exported from same projection', () => {

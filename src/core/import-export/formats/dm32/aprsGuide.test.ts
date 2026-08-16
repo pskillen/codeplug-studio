@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { newAprsConfiguration, newChannel, newFormatBuild } from '@core/domain/factories.ts';
@@ -119,8 +120,8 @@ describe('buildDm32AprsGuide', () => {
 
     expect(guide.callType).toBe('group');
     expect(guide.uploadNumber).toBe(1);
-    expect(guide.warnings.some((w) => w.includes('call type'))).toBe(true);
-    expect(guide.warnings.some((w) => w.includes('upload DMR ID'))).toBe(true);
+    expect(guide.warnings.some((w) => formatExportWarning(w).includes('call type'))).toBe(true);
+    expect(guide.warnings.some((w) => formatExportWarning(w).includes('upload DMR ID'))).toBe(true);
   });
 });
 
@@ -149,6 +150,8 @@ describe('DM32 APRS.md export wiring', () => {
     expect(resolveDm32ExportFileNames(assembled)).toContain(DM32_APRS_GUIDE_FILE_NAME);
     const files = serialiseDm32Files(assembled, library);
     expect(files[DM32_APRS_GUIDE_FILE_NAME]).toContain('DM-32 APRS setup');
-    expect(collectDm32ExportWarnings(assembled, library)).toContain(DM32_APRS_GUIDE_TIP);
+    expect(
+      collectDm32ExportWarnings(assembled, library).map((w) => formatExportWarning(w)),
+    ).toContain(DM32_APRS_GUIDE_TIP);
   });
 });

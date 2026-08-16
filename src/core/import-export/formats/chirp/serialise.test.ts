@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
@@ -142,7 +143,9 @@ describe('chirp/serialise', () => {
     };
 
     const { csv, warnings } = serialiseChirpCsv(assembled);
-    expect(warnings.some((w) => w.includes('Skipped 1 non-analogue'))).toBe(true);
+    expect(warnings.some((w) => formatExportWarning(w).includes('Skipped 1 non-analogue'))).toBe(
+      true,
+    );
     expect(csv.trim().split('\n')).toHaveLength(1);
   });
 

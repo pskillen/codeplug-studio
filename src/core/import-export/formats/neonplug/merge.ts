@@ -5,15 +5,16 @@ import {
 } from './aprsSettingsWire.ts';
 import { NEONPLUG_CODEPLUG_VERSION, NEONPLUG_JSON_FILE_NAME } from './serialise.ts';
 import type { NeonplugCodeplugData, NeonplugRadioInfo } from './wireTypes.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export interface NeonplugParseResult {
   data: NeonplugCodeplugData;
-  warnings: string[];
+  warnings: ExportWarning[];
 }
 
 export interface NeonplugMergeResult {
   data: NeonplugCodeplugData;
-  warnings: string[];
+  warnings: ExportWarning[];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -75,7 +76,7 @@ export function parseNeonplugCodeplugJson(raw: unknown): NeonplugCodeplugData {
 
 /** Unzip a `.neonplug` file and parse the required `codeplug.json` entry. */
 export function parseNeonplugZip(bytes: Uint8Array): NeonplugParseResult {
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   let entries: Record<string, Uint8Array>;
   try {
     entries = unzipSync(bytes);
@@ -97,7 +98,7 @@ export function parseNeonplugZip(bytes: Uint8Array): NeonplugParseResult {
 
   const data = parseNeonplugCodeplugJson(parsed);
   if (!data.radioInfo.model) {
-    warnings.push('Donor .neonplug has empty radioInfo.model');
+    pushGeneralWarning(warnings, 'Donor .neonplug has empty radioInfo.model');
   }
   return { data, warnings };
 }
@@ -126,7 +127,7 @@ export function mergeNeonplugCodeplug(
   projected: NeonplugCodeplugData,
   options?: NeonplugMergeOptions,
 ): NeonplugMergeResult {
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const exportDate = options?.exportDate ?? new Date().toISOString();
 
   if (
@@ -134,7 +135,8 @@ export function mergeNeonplugCodeplug(
     base.radioInfo.model &&
     base.radioInfo.model !== options.expectedRadioModel
   ) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Donor radioInfo.model is "${base.radioInfo.model}" but this build targets "${options.expectedRadioModel}"`,
     );
   }

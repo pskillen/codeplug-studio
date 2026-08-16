@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 /** CPS file export projection from directory shadow — vendor-neutral; wire at serialise boundary. */
 
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -20,7 +21,7 @@ export const DM32_CPS_DIRECTORY_WARNING =
   'DM-32 CPS export cannot hold the RadioID directory in DigitalContacts.csv (250-row CPS cap) or DMR-ID.csv (operator TX identities). Directory rows are omitted — use Web Serial Write with RadioID directory selected.';
 
 export interface CpsDirectoryProjectionPayload {
-  warnings?: string[];
+  warnings?: ExportWarning[];
   /** Single-bank replacement list (Anytone `DMRDigitalContactList.CSV`). */
   singleBankDigitalContacts?: AssembledEntity<DigitalContact>[];
   /** When true, emit header-only digital contact CPS files (single-bank skip). */
@@ -55,7 +56,7 @@ export function projectedRowToAssembledDigitalContact(
 export function applyCpsDigitalDirectoryProjection(
   assembled: AssembledBuild,
   options: CpsExportOptions,
-): { assembled: AssembledBuild; warnings: string[] } {
+): { assembled: AssembledBuild; warnings: ExportWarning[] } {
   const payload = options.directoryProjection;
   if (!payload) {
     return { assembled, warnings: [] };

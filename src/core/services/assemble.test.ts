@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { readFileSync } from 'node:fs';
 import type { Channel } from '@core/models/library.ts';
 import { dirname, join } from 'node:path';
@@ -889,10 +890,12 @@ describe('assemble', () => {
     expect(glasgow?.memberChannelIds).toEqual([glasgowChannel.id, pmrChannel.id]);
 
     const warnings = exportInclusionWarnings(build, library, projection);
-    expect(warnings.some((warning) => warning.includes('cycle'))).toBe(true);
+    expect(warnings.some((warning) => formatExportWarning(warning).includes('cycle'))).toBe(true);
 
     const exportResult = exportBuildAll({ build, egress, library });
-    expect(exportResult.warnings.some((warning) => warning.includes('cycle'))).toBe(true);
+    expect(
+      exportResult.warnings.some((warning) => formatExportWarning(warning).includes('cycle')),
+    ).toBe(true);
     expect(Object.keys(exportResult.files).length).toBeGreaterThan(0);
   });
 
@@ -964,7 +967,7 @@ describe('assemble', () => {
         config,
         { ...libraryWithoutConfig, channels: [channelWithDigitalAprs] },
         withoutConfig,
-      ).some((w) => w.includes('no APRS configuration')),
+      ).some((w) => formatExportWarning(w).includes('no APRS configuration')),
     ).toBe(true);
   });
 });

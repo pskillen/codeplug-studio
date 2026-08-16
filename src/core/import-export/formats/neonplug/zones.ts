@@ -4,6 +4,7 @@ import type { AssembledBuild } from '@core/services/assemble.ts';
 import { expandNeonplugZoneMemberNumbers } from './channelExpansion.ts';
 import type { NeonplugDm32uvRadioProfile } from './profiles.ts';
 import type { NeonplugZone } from './wireTypes.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 /**
  * Project assembled zones → NeonPlug `zones[]` with channel **numbers**.
@@ -16,7 +17,7 @@ export function serialiseNeonplugZones(
   profile: NeonplugDm32uvRadioProfile,
   numbersBySourceChannelId: ReadonlyMap<string, readonly number[]>,
   options: CpsExportOptions | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
   carrierNumberByZoneId: ReadonlyMap<string, number> = new Map(),
 ): NeonplugZone[] {
   const zones: NeonplugZone[] = [];
@@ -31,7 +32,8 @@ export function serialiseNeonplugZones(
       channels = [carrierNumber, ...channels.filter((n) => n !== carrierNumber)];
     }
     if (channels.length > profile.zoneMembers) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Zone "${zone.wireName}" truncated from ${channels.length} to ${profile.zoneMembers} members`,
       );
       channels = channels.slice(0, profile.zoneMembers);

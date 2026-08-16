@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { assembledChannelExportWireName } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
@@ -30,7 +31,7 @@ export function previewGeneratedChannelWireName(
   });
   const profileId = merged.profileId ?? defaultEgress?.profileId;
   const reserved = new Set<string>();
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   return assembledChannelExportWireName(
     { entity: channel, wireName: defaultChannelWireName(channel) },
     reserved,

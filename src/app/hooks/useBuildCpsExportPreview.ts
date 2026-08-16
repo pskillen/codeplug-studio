@@ -10,6 +10,7 @@ import type { FormatId } from '@core/import-export/types.ts';
 import type { CpsAppExportOptions } from '../services/buildCpsExportService.ts';
 import { previewCpsExport, previewCpsSingleFile } from '../services/buildCpsExportService.ts';
 import { useProjects } from '../state/useProjects.ts';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export interface UseBuildCpsExportPreviewParams {
   build: RadioBuild;
@@ -23,7 +24,7 @@ interface PreviewSnapshot {
   requestKey: string;
   fileNames: string[];
   files: Record<string, string>;
-  warnings: string[];
+  warnings: ExportWarning[];
   error: string | null;
 }
 

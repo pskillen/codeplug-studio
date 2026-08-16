@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   isEntityExcluded,
   isEntityForceIncluded,
@@ -368,7 +369,7 @@ export function previewWireRows(
         channelEligibleForRadio(channel, build.radioTargetId, eligibilityOptions);
       const rows: WirePreviewRow[] = [];
       const reserved = new Set<string>();
-      const warnings: string[] = [];
+      const warnings: ExportWarning[] = [];
 
       if (
         formatId === 'chirp' ||

@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import {
   decodeAnytoneAprsAutoTxIntervalWire,
@@ -61,10 +62,14 @@ describe('anytone aprsWireFormat', () => {
 
   it('snaps off-step auto TX intervals and warns', () => {
     expect(snapAnytoneAprsAutoTxIntervalSec(61)).toBe(60);
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     expect(formatAnytoneAprsAutoTxIntervalWire(61, warnings)).toBe('1');
     expect(warnings).toEqual([
-      'APRS auto TX interval 61s adjusted to 60s for Anytone wire encoding',
+      {
+        kind: 'general',
+        severity: 'problem',
+        message: 'APRS auto TX interval 61s adjusted to 60s for Anytone wire encoding',
+      },
     ]);
   });
 

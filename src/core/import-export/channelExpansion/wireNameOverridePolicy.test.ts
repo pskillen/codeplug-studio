@@ -1,3 +1,4 @@
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { newChannel } from '@core/domain/factories.ts';
 import { applyWireNameLimits, resolveMaxNameLength } from './exportWireNames.ts';
@@ -25,7 +26,7 @@ describe('wire name override hard-truncate policy', () => {
 
       const channel = newChannel('proj', 'Short', 'GB3XX');
       const reserved = new Set<string>();
-      const warnings: string[] = [];
+      const warnings: ExportWarning[] = [];
       const exported = applyWireNameLimits(
         override,
         channel,
@@ -43,8 +44,8 @@ describe('wire name override hard-truncate policy', () => {
       ).toBe(true);
       // Smart shorten would drop vowels / apply dictionary — hard truncate is a strict prefix.
       expect(exported).toBe(override.slice(0, exported.length));
-      expect(warnings.some((w) => w.includes('exceeds'))).toBe(true);
-      expect(warnings.some((w) => w.includes('exported as'))).toBe(false);
+      expect(warnings.some((w) => formatExportWarning(w).includes('exceeds'))).toBe(true);
+      expect(warnings.some((w) => formatExportWarning(w).includes('exported as'))).toBe(false);
     },
   );
 

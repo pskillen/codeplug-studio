@@ -1,3 +1,4 @@
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import type { TalkGroup } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
@@ -39,7 +40,7 @@ describe('talkGroupWireNames', () => {
   it('warns when abbreviation shortens an over-limit talk group name', () => {
     const reserved = new Set<string>();
     const tg = { ...newTalkGroup('p', 'Scotland West Region', 23559), abbreviation: 'Scot West' };
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     expect(
       applyTalkGroupWireNameLimits(
         'Scotland West Region',
@@ -50,7 +51,7 @@ describe('talkGroupWireNames', () => {
         warnings,
       ),
     ).toBe('Scot West');
-    expect(warnings[0]).toContain('exported as "Scot West"');
+    expect(formatExportWarning(warnings[0]!)).toContain('exported as "Scot West"');
   });
 
   it('shortens when abbreviation is still too long', () => {

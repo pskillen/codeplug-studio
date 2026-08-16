@@ -83,6 +83,11 @@ import {
   type RadioChannelFkMaps,
   type RadioWireEgressIds,
 } from './radioIoChannelMap.ts';
+import {
+  pushGeneralWarning,
+  pushMemberCapWarning,
+  type ExportWarning,
+} from '@core/import-export/exportWarning.ts';
 
 /** NeonPlug quick-contact group-call type byte (DM-32UV always writes group call). */
 const TG_CALL_TYPE_GROUP = 0x04;
@@ -125,7 +130,7 @@ function buildNumbersBySourceChannelId(
   build: RadioBuild,
   library: Pick<LibrarySlice, 'talkGroups' | 'digitalContacts'>,
   egress: RadioWireEgressIds,
-  warnings: string[],
+  warnings: ExportWarning[],
   maxSlots: number | undefined,
 ): Map<string, number[]> {
   const map = new Map<string, number[]>();
@@ -198,7 +203,7 @@ function buildDm32Organisation(
   egress: RadioWireEgressIds,
   numbersBySourceChannelId: Map<string, number[]>,
   channels: RadioChannelDto[],
-  warnings: string[],
+  warnings: ExportWarning[],
   scanListWireCap?: number,
 ): {
   zones: RadioZoneDto[];
@@ -258,8 +263,13 @@ function buildDm32Organisation(
     const wantScan = masterOn && (entry?.exportScanList ?? false);
 
     if (wantScan && scanLists.length >= maxScanLists) {
-      if (!warnings.some((w) => w.includes('channel scanListId supports at most'))) {
-        warnings.push(
+      if (
+        !warnings.some(
+          (w) => w.kind === 'general' && w.message.includes('channel scanListId supports at most'),
+        )
+      ) {
+        pushGeneralWarning(
+          warnings,
           `Additional zone-derived scan list(s) skipped; channel scanListId supports at most ${maxScanLists} lists`,
         );
       }
@@ -279,9 +289,13 @@ function buildDm32Organisation(
 
         let scanMembers = expandMxNZoneMemberNumbers(memberIds, numbers);
         if (scanMembers.length > scanListMembersCap) {
-          warnings.push(
-            `Zone "${zone.wireName}" scan list truncated from ${scanMembers.length} to ${scanListMembersCap} members`,
-          );
+          pushMemberCapWarning(warnings, {
+            capKind: 'zone-scan-list-truncated',
+            label: zone.wireName,
+            count: scanListMembersCap,
+            cap: scanListMembersCap,
+            truncatedFrom: scanMembers.length,
+          });
           scanMembers = scanMembers.slice(0, scanListMembersCap);
         }
 
@@ -343,9 +357,12 @@ function buildDm32Organisation(
       channelNumbers = [carrierNum, ...channelNumbers.filter((n) => n !== carrierNum)];
     }
     if (channelNumbers.length > zoneMembersCap) {
-      warnings.push(
-        `Zone "${zone.wireName}" truncated from ${channelNumbers.length} to ${zoneMembersCap} members`,
-      );
+      pushMemberCapWarning(warnings, {
+        capKind: 'zone-members-export',
+        label: zone.wireName,
+        count: channelNumbers.length,
+        cap: zoneMembersCap,
+      });
       channelNumbers = channelNumbers.slice(0, zoneMembersCap);
     }
 
@@ -405,7 +422,7 @@ function buildTalkGroupsAndRx(
   assembled: AssembledBuild,
   build: RadioBuild,
   egress: RadioWireEgressIds,
-  warnings: string[],
+  warnings: ExportWarning[],
   includeLibraryContacts = true,
 ): {
   talkGroups: RadioTalkGroupDto[];
@@ -455,7 +472,8 @@ function buildTalkGroupsAndRx(
     contactIdByEntityId.set(row.entity.id, index);
   }
   if (talkGroupTotal > maxTalkGroups) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Build has ${talkGroupTotal} talk group(s); only ${maxTalkGroups} export to radio quick contacts`,
     );
   }
@@ -494,7 +512,8 @@ function buildTalkGroupsAndRx(
       });
     }
     if (digitalContactTotal > maxDigitalContacts) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Build has ${digitalContactTotal} digital contact(s); only ${maxDigitalContacts} export to radio address book`,
       );
     }
@@ -541,7 +560,8 @@ function buildTalkGroupsAndRx(
     rxGroupIndexById.set(row.entity.id, index);
   }
   if (rxGroupTotal > maxRx) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Build has ${rxGroupTotal} RX group list(s); only ${maxRx} export to radio RX group lists`,
     );
   }
@@ -563,7 +583,7 @@ function isDmrProfile(
 function mergeDm32RadioIdEntries(
   channelEntries: readonly { dmrId: number; name: string }[],
   maxRadioIds: number,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): { radioIds: RadioRadioIdDto[]; dmrIdIndexByValue: Map<number, number> } {
   const seen = new Map<number, { dmrId: number; name: string }>();
 
@@ -574,7 +594,8 @@ function mergeDm32RadioIdEntries(
 
   const entries = [...seen.values()];
   if (entries.length > maxRadioIds) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Build has ${entries.length} distinct DMR radio ID(s); only ${maxRadioIds} export to operator radio-ID bank`,
     );
   }
@@ -590,12 +611,13 @@ function mergeDm32AddressBookContacts(
   includeLibrary: boolean,
   includeDirectory: boolean,
   serialCap: number,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): RadioDigitalContactDto[] | undefined {
   if (!includeLibrary && !includeDirectory) return undefined;
   if (includeDirectory && !includeLibrary) {
     if (directoryContacts.length > serialCap) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Directory has more contacts than the DM-32 address book allows; only ${serialCap} write from directory`,
       );
     }
@@ -624,12 +646,14 @@ function mergeDm32AddressBookContacts(
     merged.push(row);
   }
   if (skippedOverlap > 0) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Skipped ${skippedOverlap} directory row(s) whose DMR ID already exists on a library digital contact`,
     );
   }
   if (truncated > 0) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Directory has more contacts than the DM-32 address book allows; only ${serialCap} write from directory`,
     );
   }
@@ -641,7 +665,7 @@ function buildDm32RadioIdBank(
   build: RadioBuild,
   library: Pick<LibrarySlice, 'talkGroups' | 'digitalContacts'>,
   egress: RadioWireEgressIds,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): { radioIds: RadioRadioIdDto[]; dmrIdIndexByValue: Map<number, number> } {
   const limits = requireProfileExportLimits(egress);
   const maxRadioIds = requireNumericLimit(limits.maxRadioIds, 'maxRadioIds', egress);
@@ -694,7 +718,7 @@ function buildDm32RadioIdBank(
 function radioAprsFromNeonplugPatch(
   assembled: AssembledBuild,
   numbersBySourceChannelId: ReadonlyMap<string, readonly number[]>,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): RadioAprsDto | null {
   const numberArrays = new Map<string, number[]>();
   for (const [id, nums] of numbersBySourceChannelId) {
@@ -746,7 +770,7 @@ function parseFixCoordinate(
 function radioAprsFromAnytoneLibrary(
   assembled: AssembledBuild,
   numbersBySourceChannelId: ReadonlyMap<string, readonly number[]>,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): RadioAprsDto | null {
   const config = assembled.aprsConfiguration;
   if (!config) return null;
@@ -763,7 +787,8 @@ function radioAprsFromAnytoneLibrary(
     if (slot.channelRef != null) {
       const wire = dmrSlotByChannelId.get(slot.channelRef.id);
       if (wire == null) {
-        warnings.push(
+        pushGeneralWarning(
+          warnings,
           `APRS slot references channel "${slot.channelRef.id}" outside the DMR bank; encoding Current Channel on Web Serial Write`,
         );
       } else {
@@ -809,7 +834,7 @@ function buildOpenGd77ContactsAndRx(
   assembled: AssembledBuild,
   build: RadioBuild,
   egress: RadioWireEgressIds,
-  warnings: string[],
+  warnings: ExportWarning[],
   includeLibraryContacts = true,
 ): {
   talkGroups: RadioTalkGroupDto[];
@@ -984,7 +1009,7 @@ function buildOpenGd77Zones(
   build: RadioBuild,
   egress: RadioWireEgressIds,
   numbersBySourceChannelId: Map<string, number[]>,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): RadioZoneDto[] {
   const limits = requireProfileExportLimits(egress);
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
@@ -1003,9 +1028,12 @@ function buildOpenGd77Zones(
       if (nums) channelNumbers.push(...nums);
     }
     if (channelNumbers.length > zoneMembersCap) {
-      warnings.push(
-        `Zone "${zone.wireName}" truncated from ${channelNumbers.length} to ${zoneMembersCap} members`,
-      );
+      pushMemberCapWarning(warnings, {
+        capKind: 'zone-members-export',
+        label: zone.wireName,
+        count: channelNumbers.length,
+        cap: zoneMembersCap,
+      });
       channelNumbers = channelNumbers.slice(0, zoneMembersCap);
     }
     const wireName = applyListWireNameLimits(
@@ -1111,14 +1139,15 @@ function buildAtD890DmrBankAssembled(
   assembled: AssembledBuild,
   build: RadioBuild,
   egress: RadioWireEgressIds,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): AssembledBuild {
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const context = merged.channelBehaviourContext;
   const { dmrChannels, fmBroadcastChannels } = partitionAnytoneChannels(assembled, context);
 
   if (fmBroadcastChannels.length > 0) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `${fmBroadcastChannels.length} broadcast FM channel(s) omitted from Web Serial Write — use Anytone CSV for FM.CSV updates.`,
     );
   }
@@ -1154,7 +1183,7 @@ function buildAtD890AmAirOrganisation(
   assembled: AssembledBuild,
   build: RadioBuild,
   egress: RadioWireEgressIds,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): { amAirChannels: RadioAmAirChannelDto[]; amZones: RadioAmZoneDto[] } | undefined {
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const context = merged.channelBehaviourContext;
@@ -1167,7 +1196,8 @@ function buildAtD890AmAirOrganisation(
   }
 
   if (partitionedAmZones.length === 0) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `${ordered.length} AM airband channel(s) present but no AM zone membership — Web Serial leaves the radio AM airband bank unchanged (zones ship with channels). Add airband channels to a zone, or use Anytone CSV.`,
     );
     return undefined;
@@ -1181,13 +1211,15 @@ function buildAtD890AmAirOrganisation(
   ordered.forEach((row, index) => {
     const slot = receiveBankChannelSlot(row, index);
     if (slot < 1 || slot > AT_D890UV_LIMITS.AM_AIR_CHANNEL_MAX) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `AM airband channel "${row.wireName}" slot ${slot} is outside 1–${AT_D890UV_LIMITS.AM_AIR_CHANNEL_MAX}; omitted from Web Serial Write`,
       );
       return;
     }
     if (amAirChannels.length >= AT_D890UV_LIMITS.AM_AIR_CHANNEL_MAX) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `AM airband channel bank exceeds ${AT_D890UV_LIMITS.AM_AIR_CHANNEL_MAX}; extra channels omitted from Web Serial Write`,
       );
       return;
@@ -1218,7 +1250,8 @@ function buildAtD890AmAirOrganisation(
   const amZones: RadioAmZoneDto[] = [];
   for (const partitioned of partitionedAmZones) {
     if (amZones.length >= AT_D890UV_LIMITS.AM_ZONE_MAX) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `AM airband zone bank exceeds ${AT_D890UV_LIMITS.AM_ZONE_MAX}; extra zones omitted from Web Serial Write`,
       );
       break;
@@ -1229,9 +1262,12 @@ function buildAtD890AmAirOrganisation(
       .filter((n): n is number => typeof n === 'number');
     if (channelNumbers.length === 0) continue;
     if (channelNumbers.length > AT_D890UV_LIMITS.AM_ZONE_MEMBERS_MAX) {
-      warnings.push(
-        `AM airband zone "${original?.wireName ?? partitioned.zoneId}" truncated from ${channelNumbers.length} to ${AT_D890UV_LIMITS.AM_ZONE_MEMBERS_MAX} members`,
-      );
+      pushMemberCapWarning(warnings, {
+        capKind: 'zone-members-export',
+        label: original?.wireName ?? partitioned.zoneId,
+        count: channelNumbers.length,
+        cap: AT_D890UV_LIMITS.AM_ZONE_MEMBERS_MAX,
+      });
       channelNumbers = channelNumbers.slice(0, AT_D890UV_LIMITS.AM_ZONE_MEMBERS_MAX);
     }
     const wireName = applyListWireNameLimits(
@@ -1248,7 +1284,8 @@ function buildAtD890AmAirOrganisation(
   }
 
   if (amZones.length === 0) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       'AM airband channels could not be mapped into any AM zone for Web Serial Write — radio AM airband bank unchanged.',
     );
     return undefined;
@@ -1264,7 +1301,7 @@ export function buildRadioWriteProjection(
   egress: RadioWireEgressIds,
   context?: BuildRadioWriteProjectionContext,
 ): RadioWriteProjection {
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const dualBank = context?.dualBank;
   const includeLibraryContacts = dualBank?.options.includeLibraryContacts ?? true;
   const includeDigitalIdDirectory = dualBank?.options.includeDigitalIdDirectory ?? false;

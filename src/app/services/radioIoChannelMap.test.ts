@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import {
   newChannel,
@@ -284,7 +285,9 @@ describe('assembledChannelsToRadioDtos', () => {
     expect(dtos).toHaveLength(2);
     expect(dtos.map((d) => d.wireName).sort()).toEqual(['Repeater-D', 'Repeater-F']);
     expect(dtos.map((d) => d.mode).sort()).toEqual(['analog', 'digital']);
-    expect(warnings).toContain(openGd77DroppedModesWarning('Repeater', ['ysf']));
+    expect(warnings.map((w) => formatExportWarning(w))).toContain(
+      openGd77DroppedModesWarning('Repeater', ['ysf']),
+    );
   });
 
   it('expands dual-mode FM+DMR to -F and -D wire rows via expandAssembledChannelsToRadioDtos', () => {
@@ -369,7 +372,12 @@ describe('assembledChannelsToRadioDtos', () => {
       egress,
     );
     expect(dtos).toEqual([]);
-    expect(warnings.some((w) => w.includes('Fusion only') && w.includes('ysf'))).toBe(true);
+    expect(
+      warnings.some(
+        (w) =>
+          formatExportWarning(w).includes('Fusion only') && formatExportWarning(w).includes('ysf'),
+      ),
+    ).toBe(true);
   });
 });
 

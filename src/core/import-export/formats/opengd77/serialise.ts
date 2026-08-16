@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -156,7 +157,7 @@ export function serialiseChannels(
     options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID,
   );
   const expandModes = options?.expandModes ?? true;
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const reserved = new Set<string>();
   const expandedRows = filterExpandedRowsByOverrides(
     assembled.channels.flatMap((row) =>
@@ -319,7 +320,7 @@ export function serialiseOpenGd77Files(
   options?: CpsExportOptions,
 ): OpenGd77ExportFiles {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID;
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const exportAssembled = withTalkGroupWireNameLimits(
     assembled,
     { ...options, profileId },

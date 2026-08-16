@@ -1,3 +1,4 @@
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   buildTalkGroupTimeslotCloneIndex,
   profileHasTalkGroupTimeslotClones,
@@ -21,7 +22,7 @@ export function formatOpenGd77ContactTsOverride(slot: DMRTimeSlot): string {
 export function countOpenGd77ProjectedContactRows(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings?: string[],
+  warnings?: ExportWarning[],
 ): number {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID;
   const profile = getOpenGd77Profile(profileId);
@@ -44,7 +45,7 @@ export function countOpenGd77ProjectedContactRows(
 export function buildOpenGd77TimeslotExportContext(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings?: string[],
+  warnings?: ExportWarning[],
 ): OpenGd77TimeslotExportContext {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID;
   if (!profileHasTalkGroupTimeslotClones(profileId)) {
@@ -62,7 +63,8 @@ export function buildOpenGd77TimeslotExportContext(
 
   const totalContacts = countOpenGd77ProjectedContactRows(assembled, options, sink);
   if (totalContacts > profile.maxContacts) {
-    sink.push(
+    pushGeneralWarning(
+      sink,
       `Build projects ${totalContacts} contact row(s) (talk-group clones + private); only ${profile.maxContacts} fit OpenGD77 Contacts.csv`,
     );
   }

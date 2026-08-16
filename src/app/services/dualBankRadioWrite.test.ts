@@ -1,3 +1,4 @@
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it, vi } from 'vitest';
 import { newDigitalContact } from '@core/domain/factories.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
@@ -42,7 +43,7 @@ describe('collectDualBankDirectorySlice', () => {
         country: '',
       },
     ]);
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const library: LibrarySlice = {
       ...emptyLibrary(),
       digitalContacts: [
@@ -62,7 +63,9 @@ describe('collectDualBankDirectorySlice', () => {
     });
     expect(slice.radioIds).toEqual([]);
     expect(slice.digitalContacts.map((row) => row.digitalId)).toEqual([2002]);
-    expect(warnings.some((w) => w.includes('Skipped 1 directory row'))).toBe(true);
+    expect(warnings.some((w) => formatExportWarning(w).includes('Skipped 1 directory row'))).toBe(
+      true,
+    );
   });
 
   it('keeps overlapping DM-32 directory IDs on RadioID-only (address book replaced)', async () => {
@@ -79,7 +82,7 @@ describe('collectDualBankDirectorySlice', () => {
         country: '',
       },
     ]);
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const library: LibrarySlice = {
       ...emptyLibrary(),
       digitalContacts: [
@@ -98,7 +101,7 @@ describe('collectDualBankDirectorySlice', () => {
       warnings,
     });
     expect(slice.digitalContacts.map((row) => row.digitalId)).toEqual([1001]);
-    expect(warnings.some((w) => w.includes('Skipped'))).toBe(false);
+    expect(warnings.some((w) => formatExportWarning(w).includes('Skipped'))).toBe(false);
   });
 
   it('returns empty slice when directory toggle is off', async () => {
@@ -140,7 +143,7 @@ describe('collectDualBankDirectorySlice', () => {
         country: '',
       },
     ]);
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const library: LibrarySlice = {
       ...emptyLibrary(),
       digitalContacts: [
@@ -160,6 +163,6 @@ describe('collectDualBankDirectorySlice', () => {
     });
     expect(slice.radioIds).toEqual([]);
     expect(slice.digitalContacts.map((row) => row.digitalId).sort()).toEqual([1001, 2002]);
-    expect(warnings.some((w) => w.includes('Skipped'))).toBe(false);
+    expect(warnings.some((w) => formatExportWarning(w).includes('Skipped'))).toBe(false);
   });
 });

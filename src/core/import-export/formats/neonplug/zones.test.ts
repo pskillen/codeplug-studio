@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { newChannel } from '@core/domain/factories.ts';
 import type { Channel } from '@core/models/library.ts';
@@ -56,7 +57,7 @@ describe('neonplug/zones', () => {
       scanLists: [],
     };
 
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const numbersBySource = singletonChannelNumbersById(
       buildDm32uvChannelNumberMap(assembled, 4000),
     );

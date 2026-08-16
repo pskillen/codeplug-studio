@@ -3,6 +3,7 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { NeonplugDm32uvRadioProfile } from './profiles.ts';
 import type { NeonplugRxGroup } from './wireTypes.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export interface NeonplugRxGroupsExport {
   rxGroups: NeonplugRxGroup[];
@@ -18,7 +19,7 @@ export function serialiseNeonplugRxGroups(
   assembled: AssembledBuild,
   profile: NeonplugDm32uvRadioProfile,
   options: CpsExportOptions | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): NeonplugRxGroupsExport {
   const rxGroups: NeonplugRxGroup[] = [];
   const rxGroupIndexById = new Map<string, number>();
@@ -40,7 +41,8 @@ export function serialiseNeonplugRxGroups(
     }
 
     if (talkGroupIndices.length > profile.rxGroupListMembers) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `RX group list "${row.wireName}" truncated from ${talkGroupIndices.length} to ${profile.rxGroupListMembers} members`,
       );
       talkGroupIndices.length = profile.rxGroupListMembers;

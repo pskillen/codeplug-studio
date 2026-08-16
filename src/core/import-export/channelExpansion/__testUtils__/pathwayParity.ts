@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { expect } from 'vitest';
 import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
 import { newChannel } from '@core/domain/factories.ts';
@@ -154,7 +155,7 @@ export function opengd77SerialPathwaySnapshot(
 ): PathwayChannelSnapshot {
   const wireName = defaultChannelWireName(channel);
   const reserved = new Set<string>();
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const expanded = expandOpenGd77ChannelWireRows(
     channel,
     wireName,
@@ -181,7 +182,7 @@ export function serialPathwaySnapshot(
   const wireName = defaultChannelWireName(channel);
   const row = { entity: channel, wireName };
   const reserved = new Set<string>();
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const name = assembledChannelExportWireName(
     row,
     reserved,
@@ -203,7 +204,7 @@ export function opengd77CsvPathwaySnapshot(
   const { channel, csvOptions, csvProfileId, exportSettings } = input;
   const wireName = defaultChannelWireName(channel);
   const reserved = new Set<string>();
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const expanded = expandOpenGd77ChannelWireRows(
     channel,
     wireName,
@@ -314,7 +315,7 @@ export function chirpCsvPathwaySnapshot(
   const wireName = defaultChannelWireName(channel);
   const row = { entity: channel, wireName };
   const reserved = new Set<string>();
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const wireOpts: ChirpChannelWireOptions = {
     reserved,
     maxNameLength: effectiveMaxNameLength(csvOptions, csvProfileId),
@@ -346,7 +347,7 @@ export function anytoneCsvPathwaySnapshot(
   const wireName = defaultChannelWireName(channel);
   const row = { entity: channel, wireName };
   const reserved = new Set<string>();
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const name = anytoneChannelWireName(row, { reserved, warnings }, csvOptions, csvProfileId);
   return {
     wireNames: [name],

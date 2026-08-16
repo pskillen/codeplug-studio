@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 /**
  * NeonPlug DM32UV thin adapter over the shared radio-target m×n expander.
  * Fan-out maths live in `channelExpansion/mxnExpandAll.ts`.
@@ -44,7 +45,7 @@ export function expandNeonplugChannelWireRows(
   library: MultiTalkGroupLibrarySlice,
   options?: CpsExportOptions,
   reserved = new Set<string>(),
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): ExpandedNeonplugChannelRow[] {
   const radioTargetId = resolveRadioTargetId(assembled, options);
   const policy = mxnPolicyForRadioTarget(radioTargetId);
@@ -73,7 +74,7 @@ export function expandAllNeonplugChannelsForExport(
   assembled: AssembledBuild,
   library: MultiTalkGroupLibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): ExpandedNeonplugChannelRow[] {
   return withProjectionExclusions(
     expandAllMxNChannels({

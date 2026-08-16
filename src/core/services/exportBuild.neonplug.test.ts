@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { unzipSync, strFromU8 } from 'fflate';
 import {
   emptyLibrary,
@@ -84,7 +85,9 @@ describe('exportBuildZip neonplug', () => {
     });
 
     expect(Object.keys(files)).toEqual([NEONPLUG_JSON_FILE_NAME]);
-    expect(warnings.every((w) => !/truncat|exceeds \d+ characters/i.test(w))).toBe(true);
+    expect(
+      warnings.every((w) => !/truncat|exceeds \d+ characters/i.test(formatExportWarning(w))),
+    ).toBe(true);
 
     const data = parseZip(zip);
     expect(data.version).toBe('1.0.0');
@@ -183,7 +186,7 @@ describe('exportBuildZip neonplug', () => {
     expect(data.channels[0]?.name).toBe('GB3AO');
     expect(data.zones).toEqual([]);
     expect(data.exportDate).not.toBe('2020-01-01T00:00:00.000Z');
-    expect(warnings.every((w) => !/UV5R-Mini/.test(w))).toBe(true);
+    expect(warnings.every((w) => !/UV5R-Mini/.test(formatExportWarning(w)))).toBe(true);
   });
 
   it('merges using egress hydration when no session donor bytes', () => {
@@ -305,7 +308,7 @@ describe('exportBuildZip neonplug', () => {
 
     const data = parseZip(zip);
     expect(data.radioSettings).toBeNull();
-    expect(warnings).toContain(NEONPLUG_APRS_GREENFIELD_WARNING);
+    expect(warnings.map((w) => formatExportWarning(w))).toContain(NEONPLUG_APRS_GREENFIELD_WARNING);
   });
 
   it('patches donor radioSettings APRS fields on merge-export', () => {
@@ -385,6 +388,8 @@ describe('exportBuildZip neonplug', () => {
     expect(settings.aprsUploadId).toBe(23551);
     expect(settings.latitudeDirection).toBe('N');
     expect(settings.longitudeDirection).toBe('W');
-    expect(warnings).not.toContain(NEONPLUG_APRS_GREENFIELD_WARNING);
+    expect(warnings.map((w) => formatExportWarning(w))).not.toContain(
+      NEONPLUG_APRS_GREENFIELD_WARNING,
+    );
   });
 });

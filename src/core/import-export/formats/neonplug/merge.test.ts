@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { zipSync, strToU8 } from 'fflate';
 import { buildNeonplugZip } from './packageZip.ts';
@@ -125,7 +126,11 @@ describe('neonplug/merge', () => {
     const { warnings } = mergeNeonplugCodeplug(base, projected, {
       expectedRadioModel: 'DP570UV',
     });
-    expect(warnings.some((w) => /UV5R-Mini/.test(w) && /DP570UV/.test(w))).toBe(true);
+    expect(
+      warnings.some(
+        (w) => /UV5R-Mini/.test(formatExportWarning(w)) && /DP570UV/.test(formatExportWarning(w)),
+      ),
+    ).toBe(true);
   });
 
   it('patches donor radioSettings APRS slice while retaining unmodelled keys', () => {

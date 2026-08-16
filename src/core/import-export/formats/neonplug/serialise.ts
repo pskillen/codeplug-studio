@@ -32,6 +32,7 @@ import {
   ensureNeonplugDm32uvScanListsFloor,
 } from './zoneDerivedScanLists.ts';
 import { serialiseNeonplugZones } from './zones.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export const NEONPLUG_CODEPLUG_VERSION = '1.0.0';
 export const NEONPLUG_JSON_FILE_NAME = 'codeplug.json';
@@ -45,7 +46,7 @@ export interface NeonplugSerialiseResult {
   /** Compact `codeplug.json` body. */
   content: string;
   data: NeonplugCodeplugData;
-  warnings: string[];
+  warnings: ExportWarning[];
   /**
    * APRS leaf patch for merge-on-export onto donor `radioSettings`.
    * Null when no library APRS config or UV5R-Mini (no gpsAprs projection).
@@ -106,7 +107,7 @@ function resolveWireName(
   reserved: Set<string>,
   profileId: string,
   options: CpsExportOptions | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): string {
   return applyWireNameLimits(
     row.wireName,
@@ -188,7 +189,7 @@ function serialiseUv5rminiChannels(
   assembled: AssembledBuild,
   profileId: string,
   options: CpsExportOptions | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): NeonplugChannel[] {
   const profile = getNeonplugProfile(profileId);
   if (isNeonplugDm32uvProfile(profile)) {
@@ -213,7 +214,8 @@ function serialiseUv5rminiChannels(
       const row = byId.get(slot.channelId);
       if (!row) continue;
       if (!channelHasFmAmProfile(row.entity)) {
-        warnings.push(
+        pushGeneralWarning(
+          warnings,
           `Skipped non-analogue channel "${row.wireName}" (slot ${slot.slot}) — UV5R-Mini NeonPlug export is FM/AM only.`,
         );
         continue;
@@ -240,7 +242,8 @@ function serialiseUv5rminiChannels(
   for (let i = 0; i < assembled.channels.length && channels.length < max; i++) {
     const row = assembled.channels[i]!;
     if (!channelHasFmAmProfile(row.entity)) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Skipped non-analogue channel "${row.wireName}" — UV5R-Mini NeonPlug export is FM/AM only.`,
       );
       continue;

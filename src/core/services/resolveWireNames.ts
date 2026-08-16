@@ -11,6 +11,7 @@
  * Not yet the live path — `previewWireRows`, format serialisers, and `radioIo*.ts`
  * still compute names independently (phase 2 of the wire-preview rework repoints them).
  */
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { BuildEntityOverride, RadioBuild } from '@core/models/radioBuild.ts';
 import type { OverrideField } from '@core/domain/formatBuildOverrides.ts';
 import { overrideByEntityId } from '@core/domain/formatBuildOverrides.ts';
@@ -156,7 +157,7 @@ function resolveNameForKind(
   options: ReturnType<typeof mergeExportOptions>,
   profileId: string | undefined,
 ): string {
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
 
   if (limit == null) {
     // Unmodelled — pass through, dedupe only (no cap to enforce).

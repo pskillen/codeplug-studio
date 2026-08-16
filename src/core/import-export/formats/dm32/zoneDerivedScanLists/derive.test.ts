@@ -1,3 +1,4 @@
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { newChannel, newFormatBuild, newZone } from '@core/domain/factories.ts';
 import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts';
@@ -162,7 +163,7 @@ describe('deriveZoneDerivedScanLists', () => {
       library,
       zoneGrouping: layout,
     };
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const expanded = expandAllDm32ChannelsForExport(assembled, library, undefined, warnings);
     const expansionByChannelId = dm32ChannelExpansionById(expanded);
     const derived = deriveZoneDerivedScanLists(
@@ -175,7 +176,9 @@ describe('deriveZoneDerivedScanLists', () => {
     expect(derived.scanRows).toHaveLength(DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX);
     expect(
       warnings.some((w) =>
-        w.includes(`channel scanListId supports at most ${DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX}`),
+        formatExportWarning(w).includes(
+          `channel scanListId supports at most ${DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX}`,
+        ),
       ),
     ).toBe(true);
   });

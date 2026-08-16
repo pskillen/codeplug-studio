@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { ZoneGroupingLayout, ZoneGroupingZoneEntry } from '@core/models/traitLayout.ts';
@@ -121,7 +122,7 @@ export function useZoneScanExportLayout() {
       { profileId: egress.profileId },
       library,
     );
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const rows = expandAllMxNChannels({
       assembled,
       library,

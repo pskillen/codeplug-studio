@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { channelPickForWireExport, composeChannelWireName } from '@core/domain/channelNaming.ts';
 import type { AssembledChannel } from '@core/services/assemble.ts';
@@ -16,7 +17,7 @@ import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
 
 export interface AnytoneChannelWireOptions {
   reserved: Set<string>;
-  warnings?: string[];
+  warnings?: ExportWarning[];
   /** When false, compute the wire name without reserving it (e.g. phantom site label before RX fan-out). */
   reserve?: boolean;
 }

@@ -11,10 +11,11 @@ import {
 } from './exportChannelWire.ts';
 import { getChirpProfile } from './profiles.ts';
 import { isChirpAnalogueExportable } from './channelWire.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export interface ChirpSerialiseResult {
   csv: string;
-  warnings: string[];
+  warnings: ExportWarning[];
 }
 
 function channelById(assembled: AssembledBuild): Map<string, AssembledChannel> {
@@ -27,7 +28,7 @@ export function serialiseChirpCsv(
 ): ChirpSerialiseResult {
   const profileId = options?.profileId ?? assembled.profileId;
   const profile = getChirpProfile(profileId);
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
 
   const byId = channelById(assembled);
   const memorySlots = assembled.channelMemorySlots;
@@ -56,7 +57,8 @@ export function serialiseChirpCsv(
   }
 
   if (skippedDigital.length > 0) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Skipped ${skippedDigital.length} non-analogue channel(s): ${skippedDigital.join(', ')}`,
     );
   }
@@ -73,7 +75,8 @@ export function serialiseChirpCsv(
   let exportCount = rowsBySlot.size;
   if (exportCount > profile.maxMemorySlots) {
     const excess = exportCount - profile.maxMemorySlots;
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Truncated ${excess} channel(s) to fit ${profile.maxMemorySlots} memory slots for ${profile.label}.`,
     );
     exportCount = profile.maxMemorySlots;

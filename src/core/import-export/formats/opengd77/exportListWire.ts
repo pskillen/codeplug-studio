@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
@@ -21,7 +22,7 @@ function seedReservedFromChannels(
   options: CpsExportOptions | undefined,
   profileId: string,
   reserved: Set<string>,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): void {
   const expandModes = options?.expandModes ?? true;
   for (const row of assembled.channels) {
@@ -46,7 +47,7 @@ function seedReservedFromChannels(
 export function buildOpenGd77ListWireMaps(
   exportAssembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): OpenGd77ListWireMaps {
   const profileId = options?.profileId ?? exportAssembled.profileId ?? DEFAULT_OPENGD77_PROFILE_ID;
   const reserved = new Set<string>();

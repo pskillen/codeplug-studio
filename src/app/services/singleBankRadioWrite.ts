@@ -15,6 +15,7 @@ import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { mapDirectoryEntryToRadioDigitalContactDto } from '@integrations/radioid/mapDirectoryEntryToRadioDto.ts';
 import type { RadioDigitalContactDto } from '@integrations/radio-io/radioWriteProjection.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export interface SingleBankRadioWritePrepareOptions {
   mode: SingleBankWriteMode;
@@ -27,7 +28,7 @@ export interface CollectSingleBankDigitalContactsArgs {
   assembled: AssembledBuild;
   projectionMode: SingleBankDigitalProjectionMode;
   maxContacts: number;
-  warnings: string[];
+  warnings: ExportWarning[];
   mapLibraryRow: (row: AssembledBuild['digitalContacts'][number]) => ProjectedDigitalContactRow;
 }
 
@@ -85,12 +86,14 @@ export async function collectSingleBankDigitalContacts(
       });
     });
     if (skippedOverlap > 0) {
-      args.warnings.push(
+      pushGeneralWarning(
+        args.warnings,
         `Skipped ${skippedOverlap} directory row(s) whose DMR ID already exists on a library digital contact`,
       );
     }
     if (truncated > 0) {
-      args.warnings.push(
+      pushGeneralWarning(
+        args.warnings,
         `Directory has more contacts than the radio contact bank allows; only ${args.maxContacts} export from directory`,
       );
     }

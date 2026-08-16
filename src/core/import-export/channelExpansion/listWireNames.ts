@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { resolveMaxNameLength } from './exportWireNames.ts';
 import { finalizeWireName, hardTruncateUniqueWireName, uniqueWireName } from './shortenName.ts';
@@ -14,7 +15,7 @@ export function applyListWireNameLimits(
   reserved: Set<string>,
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
   entityKind: WireNameEntityKind = 'Wire name',
   /** Override profile `nameLimit` (e.g. DM32 Scan Name ≤10). */
   maxLenOverride?: number,
@@ -108,7 +109,7 @@ export function buildListWireNameMap(
   reserved: Set<string>,
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): Map<string, string> {
   const map = new Map<string, string>();
   for (const entry of entries) {

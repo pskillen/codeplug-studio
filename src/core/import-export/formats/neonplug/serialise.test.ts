@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { newChannel, newRxGroupList, newTalkGroup, newZone } from '@core/domain/factories.ts';
 import type { Channel, ChannelModeProfileDMR } from '@core/models/library.ts';
@@ -158,7 +159,12 @@ describe('neonplug/serialise', () => {
     expect(data.channels).toHaveLength(1);
     expect(data.channels[0]?.name).toBe('Analog');
     expect(data.channels[0]?.mode).toBe('Analog');
-    expect(warnings.some((w) => /Digital/.test(w) && /FM\/AM only/i.test(w))).toBe(true);
+    expect(
+      warnings.some(
+        (w) =>
+          /Digital/.test(formatExportWarning(w)) && /FM\/AM only/i.test(formatExportWarning(w)),
+      ),
+    ).toBe(true);
   });
 
   it('truncates long channel names to profile limit', () => {
@@ -168,7 +174,9 @@ describe('neonplug/serialise', () => {
       shortenNames: true,
     });
     expect(data.channels[0]?.name.length).toBeLessThanOrEqual(16);
-    expect(warnings.some((w) => /name|truncat|shorten|exceed/i.test(w))).toBe(true);
+    expect(warnings.some((w) => /name|truncat|shorten|exceed/i.test(formatExportWarning(w)))).toBe(
+      true,
+    );
   });
 
   it('warns when UV5R channel count exceeds maxMemorySlots', () => {
@@ -189,7 +197,7 @@ describe('neonplug/serialise', () => {
         channelId: `ch-${i}`,
       })),
     };
-    expect(collectNeonplugExportWarnings(assembled)).toEqual([
+    expect(collectNeonplugExportWarnings(assembled).map((w) => formatExportWarning(w))).toEqual([
       'Truncated 2 channel(s) to fit 999 memory slots for Baofeng UV-5R Mini (NeonPlug).',
     ]);
   });

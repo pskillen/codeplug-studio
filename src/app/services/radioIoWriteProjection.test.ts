@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import {
   newChannel,
@@ -477,7 +478,11 @@ describe('buildRadioWriteProjection', () => {
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.organisation.talkGroups).toHaveLength(800);
     expect(projection.organisation.talkGroups?.every((tg) => tg.callType === 0x04)).toBe(true);
-    expect(projection.warnings.some((w) => /801 talk group/.test(w) && /800/.test(w))).toBe(true);
+    expect(
+      projection.warnings.some(
+        (w) => /801 talk group/.test(formatExportWarning(w)) && /800/.test(formatExportWarning(w)),
+      ),
+    ).toBe(true);
   });
 
   it('caps zone-derived scan lists at channel scanListId hardware limit', () => {
@@ -526,7 +531,9 @@ describe('buildRadioWriteProjection', () => {
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.organisation.scanLists).toHaveLength(15);
     expect(
-      projection.warnings.some((w) => w.includes('channel scanListId supports at most 15')),
+      projection.warnings.some((w) =>
+        formatExportWarning(w).includes('channel scanListId supports at most 15'),
+      ),
     ).toBe(true);
   });
 
@@ -547,7 +554,11 @@ describe('buildRadioWriteProjection', () => {
     });
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.organisation.rxGroups).toHaveLength(32);
-    expect(projection.warnings.some((w) => /40 RX group list/.test(w) && /32/.test(w))).toBe(true);
+    expect(
+      projection.warnings.some(
+        (w) => /40 RX group list/.test(formatExportWarning(w)) && /32/.test(formatExportWarning(w)),
+      ),
+    ).toBe(true);
   });
 
   it('warns and truncates digital contacts beyond DM-32UV address-book cap', () => {
@@ -566,9 +577,12 @@ describe('buildRadioWriteProjection', () => {
     });
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.organisation.digitalContacts).toHaveLength(250);
-    expect(projection.warnings.some((w) => /251 digital contact/.test(w) && /250/.test(w))).toBe(
-      true,
-    );
+    expect(
+      projection.warnings.some(
+        (w) =>
+          /251 digital contact/.test(formatExportWarning(w)) && /250/.test(formatExportWarning(w)),
+      ),
+    ).toBe(true);
   });
 
   it('projects operator radio IDs and channel bank indices from ModeProfile.dmrId', () => {

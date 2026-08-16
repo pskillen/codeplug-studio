@@ -40,6 +40,10 @@ Shortening is **shared** in `channelExpansion/` — format adapters only supply 
 
 Wire preview and export share DM32 expansion: no multi-mode rows; RX-list fan-out when a channel references a multi-member RX group list.
 
+## Warnings are structured, not parsed text
+
+`ExportResult.warnings` is a discriminated `ExportWarning[]` (`src/core/import-export/exportWarning.ts`) — `wire_name` (with a `remediation`: `shortened` | `disambiguated` | `truncated` | `over_limit`), `member_cap`, `unlinked`, or `general`. `pushWireNameLengthWarning` / `pushWireNameCollisionWarning` push these objects directly; the UI (`formatExportWarnings.ts`) groups by kind/severity with no text parsing. Yellow-alert framing = `severity: 'problem'` (disambiguated, truncated, over-limit, member-cap, unlinked, general); the neutral "names shortened" info accordion = `severity: 'info'` (clean `shortened` remediation) — this was already true from the operator's point of view before the struct existed ([#1099](https://github.com/pskillen/codeplug-studio/issues/1099)); the struct just makes it the mechanism instead of a regex bank.
+
 ## Related
 
 - [wire-preview.md](wire-preview.md) — UI workflow

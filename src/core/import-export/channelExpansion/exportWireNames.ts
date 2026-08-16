@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { getDm32Profile } from '@core/import-export/formats/dm32/profiles.ts';
@@ -48,7 +49,7 @@ export function assembledChannelExportWireName(
   reserved: Set<string>,
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): string {
   const isOverride = Boolean(row.wireNameOverride?.trim());
   const base = isOverride ? row.wireName : composeExportWireName(row.entity, options);
@@ -70,7 +71,7 @@ export function applyWireNameLimits(
   reserved: Set<string>,
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
   reserve = true,
   isOverride = false,
 ): string {

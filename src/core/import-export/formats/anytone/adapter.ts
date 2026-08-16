@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { MultiFileExportAdapter } from '@core/import-export/exportAdapter.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
@@ -34,7 +35,7 @@ export const anytoneExportAdapter: MultiFileExportAdapter = {
   },
   serialiseFile(assembled, fileName, options?: CpsExportOptions) {
     const library = requireLibrary(assembled.library);
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const content = serialiseAnytoneFile(assembled, library, fileName, options, warnings);
     return { content, warnings };
   },

@@ -1,3 +1,4 @@
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { newRxGroupList } from '@core/domain/factories.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
@@ -45,13 +46,15 @@ describe('collectDm32ExportWarnings', () => {
       profileId: next.profileId,
       shortenNames: false,
     });
-    expect(warnings.some((w) => w.includes('exceeds 16 characters'))).toBe(true);
+    expect(warnings.some((w) => formatExportWarning(w).includes('exceeds 16 characters'))).toBe(
+      true,
+    );
   });
 
   it('warns when expanded channel row count exceeds profile cap', () => {
     const library = minimalDm32ExportLibrary();
     const base = assembled();
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const expanded = expandAllDm32ChannelsForExport(
       base,
       library,
@@ -81,6 +84,10 @@ describe('collectDm32ExportWarnings', () => {
       profileId: 'dm32-baofeng-dm32uv',
     });
     const warnings = collectDm32ExportWarnings(assembled, library);
-    expect(warnings.some((w) => /40 RX group list/.test(w) && /32/.test(w))).toBe(true);
+    expect(
+      warnings.some(
+        (w) => /40 RX group list/.test(formatExportWarning(w)) && /32/.test(formatExportWarning(w)),
+      ),
+    ).toBe(true);
   });
 });

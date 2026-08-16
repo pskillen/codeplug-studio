@@ -13,6 +13,11 @@ import {
 } from '@core/import-export/zoneDerivedScanLists/members.ts';
 import type { AssembledBuild, AssembledScanList, LibrarySlice } from '@core/services/assemble.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID, getAnytoneProfile } from './profiles.ts';
+import {
+  pushGeneralWarning,
+  pushMemberCapWarning,
+  type ExportWarning,
+} from '@core/import-export/exportWarning.ts';
 
 export const ZONE_DERIVED_SCAN_LIST_ID_PREFIX = 'zone-derived:';
 
@@ -37,7 +42,7 @@ export function deriveAnytoneZoneDerivedScanLists(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): AnytoneZoneDerivedScanExport {
   const result: AnytoneZoneDerivedScanExport = {
     scanLists: [],
@@ -84,16 +89,21 @@ export function deriveAnytoneZoneDerivedScanLists(
     });
 
     if (memberIds.length === 0) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Zone "${assembledZone.wireName}" has no scan-eligible members; scan list skipped`,
       );
       continue;
     }
 
     if (memberIds.length > profile.scanListMembers) {
-      warnings.push(
-        `Zone "${assembledZone.wireName}" scan list truncated from ${memberIds.length} to ${profile.scanListMembers} members`,
-      );
+      pushMemberCapWarning(warnings, {
+        capKind: 'zone-scan-list-truncated',
+        label: assembledZone.wireName,
+        count: profile.scanListMembers,
+        cap: profile.scanListMembers,
+        truncatedFrom: memberIds.length,
+      });
       memberIds = memberIds.slice(0, profile.scanListMembers);
     }
 

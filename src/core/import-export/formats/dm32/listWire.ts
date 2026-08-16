@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import {
@@ -12,7 +13,7 @@ export type Dm32TalkGroupWireNameMap = TalkGroupWireNameMap;
 export function buildDm32TalkGroupWireNameMap(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings?: string[],
+  warnings?: ExportWarning[],
 ): Map<string, string> {
   return buildTalkGroupWireNameMap(assembled, options, warnings);
 }

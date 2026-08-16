@@ -15,6 +15,7 @@ import {
   OPENUV380_USER_DB_HEADER_SIZE,
   OPENUV380_USER_DB_TEXT_CHARS,
 } from './constants.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 /** 6-bit LUT from qdmr OpenGD77BaseCallsignDB::DatabaseEntryElement::_lut. */
 const PACK_LUT = ' 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.';
@@ -174,14 +175,15 @@ function decodeEntry(rec: Uint8Array): OpenGd77UserDatabaseDecodedEntry {
 
 export function encodeOpenGd77UserDatabase(
   rows: readonly RadioDigitalContactDto[],
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): OpenGd77UserDatabaseEncodeResult {
   const valid = rows.filter((row) => row.digitalId > 0);
   valid.sort((a, b) => a.digitalId - b.digitalId);
   const cap = OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX;
   const truncated = Math.max(0, valid.length - cap);
   if (truncated > 0) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Directory has more contacts than the OpenGD77 User Database allows; only ${cap} write from directory`,
     );
   }

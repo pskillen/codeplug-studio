@@ -6,6 +6,7 @@ import type { DualBankRadioWriteOptions } from '@core/domain/digitalIdDirectoryP
 import type { SingleBankDigitalProjectionMode } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { MultiTalkGroupExportNameMode } from './channelExpansion/multiTalkGroupWireName.ts';
 import type { DigitalContactExportNameMode } from './digitalContactExportName.ts';
+import type { ExportWarning } from './exportWarning.ts';
 
 /** Canonical format ids — shared by registry and future UI. */
 export type FormatId =
@@ -77,7 +78,7 @@ export interface FormatCatalogEntry {
 }
 
 export interface ExportResult {
-  warnings: string[];
+  warnings: ExportWarning[];
 }
 
 export interface ExportSerialiseResult extends ExportResult {
@@ -142,6 +143,12 @@ export interface CpsExportOptions {
   cpsSingleBankProjectionMode?: SingleBankDigitalProjectionMode;
 }
 
-export interface ImportDocumentResult extends ExportResult {
+/**
+ * Import-side validation warnings — free text, deliberately separate from `ExportWarning`.
+ * Import diagnostics (unknown fields, migrated legacy shapes, …) don't carry the
+ * remediation/cap semantics `ExportWarning` models for the export/write path.
+ */
+export interface ImportDocumentResult {
   project: import('./projectDocument.ts').ProjectAggregate;
+  warnings: string[];
 }

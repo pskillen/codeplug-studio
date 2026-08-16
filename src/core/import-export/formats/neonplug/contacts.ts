@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
@@ -28,7 +29,7 @@ export function serialiseNeonplugContacts(
   assembled: AssembledBuild,
   profile: NeonplugDm32uvRadioProfile,
   options: CpsExportOptions | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): NeonplugContactsExport {
   const contacts: NeonplugContact[] = [];
   const contactIdByEntityId = new Map<string, number>();
@@ -95,7 +96,7 @@ export function serialiseNeonplugContactsForProfile(
   assembled: AssembledBuild,
   profileId: string,
   options: CpsExportOptions | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): NeonplugContactsExport {
   const profile = getNeonplugProfile(profileId);
   if (!isNeonplugDm32uvProfile(profile)) {

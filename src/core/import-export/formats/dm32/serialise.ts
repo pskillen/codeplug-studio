@@ -42,6 +42,7 @@ import { serialiseDm32ChannelRow } from './channelWire.ts';
 import { buildDm32TalkGroupWireNameMap, rxGroupListExportMemberNames } from './listWire.ts';
 import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from './profiles.ts';
 import type { SyntheticScanCarrier } from '@core/import-export/formats/dm32/zoneDerivedScanLists/derive.ts';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export type Dm32ExportFiles = Record<Dm32ExportFileName, string> & {
   [DM32_APRS_GUIDE_FILE_NAME]?: string;
@@ -104,7 +105,7 @@ function buildListWireMaps(
   expandedChannels: ExpandedDm32ChannelRow[],
   talkGroupWireNames: Map<string, string>,
   options: CpsExportOptions | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): { zoneWireNames: Map<string, string>; rxGroupListWireNames: Map<string, string> } {
   const profileId = options?.profileId ?? exportAssembled.profileId ?? DEFAULT_DM32_PROFILE_ID;
   const reserved = new Set<string>();
@@ -153,7 +154,7 @@ export function buildSerialiseContext(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): Dm32SerialiseContext {
   const exportAssembled = withTalkGroupWireNameLimits(assembled, options, warnings);
   const talkGroupWireNames = buildDm32TalkGroupWireNameMap(exportAssembled, options, warnings);
@@ -186,7 +187,7 @@ export function serialiseChannels(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   scanListByWireName?: Map<string, string>,
 ): string {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_DM32_PROFILE_ID;
@@ -217,7 +218,7 @@ export function serialiseZones(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): string {
   const ctx = buildSerialiseContext(assembled, library, options, warnings);
   const rows = assembled.zones.map((zone, i) => {
@@ -237,7 +238,7 @@ export function serialiseZones(
 export function serialiseTalkGroups(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): string {
   const talkGroupWireNames = buildDm32TalkGroupWireNameMap(
     withTalkGroupWireNameLimits(assembled, options, warnings),
@@ -303,7 +304,7 @@ export function serialiseDtmfContacts(assembled: AssembledBuild): string {
 export function serialiseRxGroupLists(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   library: LibrarySlice = {
     channels: [],
     zones: [],
@@ -337,7 +338,7 @@ export function serialiseDm32Files(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): Dm32ExportFiles {
   const ctxWarnings = warnings;
   const exportAssembled = withTalkGroupWireNameLimits(assembled, options, ctxWarnings);

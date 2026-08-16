@@ -28,6 +28,7 @@ import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts';
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { mapDirectoryEntryToRadioDigitalContactDto } from '@integrations/radioid/mapDirectoryEntryToRadioDto.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 function hasSeparateDigitalIdList(profileId: string): boolean {
   return (
@@ -55,7 +56,7 @@ async function collectSingleBankCpsProjection(
   assembled: AssembledBuild,
   mode: SingleBankDigitalProjectionMode,
   maxContacts: number,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): Promise<CpsDirectoryProjectionPayload> {
   if (mode === 'skip') {
     return { omitDigitalContactList: true, warnings };
@@ -101,12 +102,14 @@ async function collectSingleBankCpsProjection(
     });
 
     if (skippedOverlap > 0) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Skipped ${skippedOverlap} directory row(s) whose DMR ID already exists on a library digital contact`,
       );
     }
     if (truncated > 0) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Directory has more contacts than the radio contact bank allows; only ${maxContacts} export from directory`,
       );
     }
@@ -141,10 +144,10 @@ async function collectDualBankCpsProjection(
   _library: LibrarySlice,
   egress: EgressPath,
   options: DualBankRadioWriteOptions,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): Promise<CpsDirectoryProjectionPayload> {
   if (options.includeDigitalIdDirectory) {
-    warnings.push(dualBankCpsDirectoryWarning(egress));
+    pushGeneralWarning(warnings, dualBankCpsDirectoryWarning(egress));
   }
   return {
     dualBank: {
@@ -170,7 +173,7 @@ export async function enrichCpsExportOptionsWithDirectory(
     ...baseOptions,
     profileId: baseOptions.profileId ?? egress.profileId,
   });
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   let directoryProjection: CpsDirectoryProjectionPayload | undefined;
 
   if (hasSeparateDigitalIdList(egress.profileId)) {

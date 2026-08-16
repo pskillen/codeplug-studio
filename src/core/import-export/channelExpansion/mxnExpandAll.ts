@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 /**
  * Shared m×n expand-all for radio targets with MxNChannelExpansion.
  * Selected by radioTargetId / policy — not by egress format id.
@@ -41,7 +42,7 @@ export interface ExpandedMxNChannelRow {
 
 export interface ResolveMxNSiteWireNameContext {
   reserved: Set<string>;
-  warnings: string[];
+  warnings: ExportWarning[];
   willExpandRx: boolean;
   options: CpsExportOptions;
   profileId: string | undefined;
@@ -52,7 +53,7 @@ export interface ExpandAllMxNChannelsArgs {
   library: MultiTalkGroupLibrarySlice;
   radioTargetId: string;
   options?: CpsExportOptions;
-  warnings?: string[];
+  warnings?: ExportWarning[];
   /**
    * Optional site-name composer (e.g. Anytone abbreviation path).
    * Default: `wireNameOverride ?? wireName`.
@@ -135,7 +136,7 @@ function scratchWireName(
   reserved: Set<string>,
   options: CpsExportOptions,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): string {
   const composed = `${baseWireName} Scratch`;
   if (options.shortenNames === false) {
@@ -154,7 +155,7 @@ function appendScratchRow(
   exportOptions: CpsExportOptions,
   profileId: string | undefined,
   reserved: Set<string>,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): void {
   if (exportOptions.exportScratchChannels === false) return;
   const hasTalkGroupRows = rows.some((row) => row.rowKind === 'talkGroup');
@@ -223,7 +224,7 @@ export function expandMxNChannelWireRows(
   policy: MxNExpansionPolicy,
   options?: CpsExportOptions,
   reserved = new Set<string>(),
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   resolveSiteWireName?: ExpandAllMxNChannelsArgs['resolveSiteWireName'],
 ): ExpandedMxNChannelRow[] {
   const exportOptions = mxnExportOptions(assembled, options);

@@ -1,3 +1,4 @@
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { channelPickForWireExport, composeChannelWireName } from '@core/domain/channelNaming.ts';
@@ -32,7 +33,7 @@ export interface ChirpChannelWireOptions {
   shortenNames: boolean;
   nameModeOverride?: ChannelExportNameMode;
   useChannelAbbreviation?: boolean;
-  warnings?: string[];
+  warnings?: ExportWarning[];
 }
 
 export function effectiveMaxNameLength(
@@ -57,7 +58,12 @@ function channelWireName(
 
   if (!options.shortenNames) {
     if (base.length > options.maxNameLength) {
-      options.warnings?.push(`Channel name "${base}" exceeds ${options.maxNameLength} characters`);
+      if (options.warnings) {
+        pushGeneralWarning(
+          options.warnings,
+          `Channel name "${base}" exceeds ${options.maxNameLength} characters`,
+        );
+      }
     }
     if (!options.reserved.has(base)) {
       options.reserved.add(base);

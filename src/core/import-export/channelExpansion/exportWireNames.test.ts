@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
@@ -39,7 +40,7 @@ describe('assembledChannelExportWireName', () => {
       abbreviation: 'Hspt',
     });
     const reserved = new Set<string>();
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const wireName = assembledChannelExportWireName(
       { entity, wireName: 'hotspot' },
       reserved,
@@ -57,7 +58,7 @@ describe('assembledChannelExportWireName', () => {
       abbreviation: "M'flt",
     });
     const reserved = new Set<string>();
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const wireName = assembledChannelExportWireName(
       { entity, wireName: 'GB3MT Mugherafelt' },
       reserved,
@@ -75,7 +76,7 @@ describe('assembledChannelExportWireName', () => {
       abbreviation: "M'flt",
     });
     const reserved = new Set<string>();
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const wireName = assembledChannelExportWireName(
       { entity, wireName: 'GB3MT Mugherafelt' },
       reserved,
@@ -94,7 +95,7 @@ describe('assembledChannelExportWireName', () => {
       abbreviation: 'Hspt',
     });
     const reserved = new Set<string>();
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const wireName = assembledChannelExportWireName(
       { entity, wireName: 'Custom', wireNameOverride: 'Custom' },
       reserved,
@@ -114,7 +115,7 @@ describe('applyWireNameLimits', () => {
       abbreviation: "M'flt",
     });
     const reserved = new Set<string>();
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const wireName = applyWireNameLimits(
       'GB3MT Mugherafelt',
       row,
@@ -134,7 +135,7 @@ describe('applyWireNameLimits', () => {
       abbreviation: "M'flt",
     });
     const reserved = new Set<string>();
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const wireName = applyWireNameLimits(
       'GB3MT Mugherafelt',
       row,

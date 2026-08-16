@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
 import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
@@ -56,7 +57,7 @@ export function buildAnytoneExportWireContext(
   assembled: AssembledBuild,
   expandedChannels: ExpandedAnytoneChannelRow[],
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): AnytoneExportWireContext {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
   const reserved = new Set<string>();

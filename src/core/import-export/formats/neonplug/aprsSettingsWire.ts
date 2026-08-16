@@ -2,6 +2,7 @@ import type { AprsChannelSlot, AprsConfiguration } from '@core/models/aprs.ts';
 import type { AprsPositionSource, AprsSlotCallType, GeoPoint } from '@core/models/libraryTypes.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 /** NeonPlug report-channel slots are fixed at 8 (radioSettings.aprsReportChannel1…8). */
 export const NEONPLUG_APRS_MAX_REPORT_CHANNELS = DM32UV_LIMITS.APRS_REPORT_CHANNELS;
@@ -39,7 +40,7 @@ export type NeonplugAprsRadioSettingsPatch = {
 export type NeonplugAprsSettingsBuildResult = {
   /** Null when library has no APRS configuration. */
   patch: NeonplugAprsRadioSettingsPatch | null;
-  warnings: string[];
+  warnings: ExportWarning[];
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -67,7 +68,7 @@ export function encodeNeonplugAprsScheduledSendTime(seconds: number | null | und
  */
 export function resolveNeonplugAprsScheduledSendTime(
   config: Pick<AprsConfiguration, 'manualTxIntervalSec' | 'autoTxIntervalSec'>,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): number {
   const auto = config.autoTxIntervalSec;
   const manual = config.manualTxIntervalSec;
@@ -78,7 +79,8 @@ export function resolveNeonplugAprsScheduledSendTime(
     const autoIdx = encodeNeonplugAprsScheduledSendTime(auto);
     const manualIdx = encodeNeonplugAprsScheduledSendTime(manual);
     if (autoIdx !== manualIdx) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `APRS manual (${manual}s) and auto (${auto}s) intervals snap to different NeonPlug scheduled-send values; using auto`,
       );
     }
@@ -117,7 +119,7 @@ export function formatNeonplugFixedLocation(location: GeoPoint): {
 /** NeonPlug gpsMode: 0=GPS, 1=BDS, 2=GPS+BDS. Galileo maps to 2 with a warning. */
 export function neonplugGpsModeForPositionSource(
   source: AprsPositionSource,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): number | undefined {
   switch (source) {
     case 'fixed':
@@ -127,7 +129,8 @@ export function neonplugGpsModeForPositionSource(
     case 'beidou':
       return 1;
     case 'galileo':
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         'APRS position source galileo has no NeonPlug GPS mode; exporting as GPS+BDS (gpsMode 2)',
       );
       return 2;
@@ -141,19 +144,21 @@ export function neonplugGpsModeForPositionSource(
 export function resolveNeonplugAprsReportChannelNumber(
   slot: AprsChannelSlot | undefined,
   numbersBySourceChannelId: ReadonlyMap<string, number[]>,
-  warnings: string[],
+  warnings: ExportWarning[],
   slotIndex: number,
 ): number {
   if (!slot || slot.channelRef == null) return 0;
   const numbers = numbersBySourceChannelId.get(slot.channelRef.id);
   if (numbers == null || numbers.length === 0) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `APRS report channel ${slotIndex} references a channel that is not in this NeonPlug export; using current channel (0)`,
     );
     return 0;
   }
   if (numbers.length > 1) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `APRS report channel ${slotIndex} source channel expanded to ${numbers.length} NeonPlug rows; using first number ${numbers[0]}`,
     );
   }
@@ -162,7 +167,7 @@ export function resolveNeonplugAprsReportChannelNumber(
 
 function resolveCallTypeAndUpload(
   config: AprsConfiguration,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): { callType: AprsSlotCallType | null; uploadId: number | null } {
   const contributing = config.channelSlots
     .map((slot, i) => ({ slot, index: i + 1 }))
@@ -174,12 +179,14 @@ function resolveCallTypeAndUpload(
 
   for (const { slot, index } of contributing.slice(1)) {
     if (slot.callType !== callType) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `APRS slots disagree on call type (NeonPlug supports one value); using slot 1 — check slot ${index}`,
       );
     }
     if (slot.targetDmrId !== uploadId) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `APRS slots disagree on upload DMR ID (NeonPlug supports one value); using slot 1 — check slot ${index}`,
       );
     }
@@ -201,10 +208,11 @@ export function buildNeonplugAprsRadioSettingsPatch(
     return { patch: null, warnings: [] };
   }
 
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
 
   if (config.channelSlots.length > NEONPLUG_APRS_MAX_REPORT_CHANNELS) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `APRS configuration has ${config.channelSlots.length} channel slots; NeonPlug exports the first ${NEONPLUG_APRS_MAX_REPORT_CHANNELS} only`,
     );
   }
@@ -250,7 +258,10 @@ export function buildNeonplugAprsRadioSettingsPatch(
       const coords = formatNeonplugFixedLocation(config.fixedLocation);
       Object.assign(patch, coords);
     } else {
-      warnings.push('APRS position source is fixed but fixedLocation is unset; beacon on with 0/0');
+      pushGeneralWarning(
+        warnings,
+        'APRS position source is fixed but fixedLocation is unset; beacon on with 0/0',
+      );
     }
   } else {
     patch.aprsFixedBeacon = false;

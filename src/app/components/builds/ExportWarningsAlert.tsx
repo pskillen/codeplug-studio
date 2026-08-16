@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { Accordion, Alert, List, Stack, Text } from '@mantine/core';
 import {
   formatExportWarnings,
@@ -10,7 +11,7 @@ import {
 } from './formatExportWarnings.ts';
 
 export interface ExportWarningsAlertProps {
-  warnings: string[];
+  warnings: ExportWarning[];
 }
 
 function shorteningLine(item: WireNameShortening): string {

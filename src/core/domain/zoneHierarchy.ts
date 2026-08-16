@@ -1,5 +1,6 @@
 import type { Zone, ZoneMemberEntry } from '@core/models/library.ts';
 import { normalizeZoneMemberEntry } from './zoneMembers.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 function zoneMap(zones: Zone[]): Map<string, Zone> {
   return new Map(zones.map((zone) => [zone.id, zone]));
@@ -83,9 +84,12 @@ export function resolveEffectiveZoneChannelIds(zone: Zone, zones: Zone[]): strin
 }
 
 /** Cycle warnings from flattening the given root zones (deduped, stable order). */
-export function collectZoneFlattenWarnings(zones: Zone[], zoneIds: Iterable<string>): string[] {
+export function collectZoneFlattenWarnings(
+  zones: Zone[],
+  zoneIds: Iterable<string>,
+): ExportWarning[] {
   const zonesById = zoneMap(zones);
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const seen = new Set<string>();
 
   for (const zoneId of zoneIds) {
@@ -94,7 +98,7 @@ export function collectZoneFlattenWarnings(zones: Zone[], zoneIds: Iterable<stri
     for (const warning of flattenZoneMembership(zone, zones).cycleWarnings) {
       if (seen.has(warning)) continue;
       seen.add(warning);
-      warnings.push(warning);
+      pushGeneralWarning(warnings, warning);
     }
   }
 

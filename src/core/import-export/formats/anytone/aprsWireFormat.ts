@@ -6,6 +6,7 @@ import type {
   DMRTimeSlot,
   GeoPoint,
 } from '@core/models/libraryTypes.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export function formatAnytoneAprsOnOff(enabled: boolean): 'On' | 'Off' {
   return enabled ? 'On' : 'Off';
@@ -72,12 +73,13 @@ export function snapAnytoneAprsAutoTxIntervalSec(seconds: number | null | undefi
 
 export function formatAnytoneAprsAutoTxIntervalWire(
   seconds: number | null | undefined,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): string {
   const input = seconds == null || !Number.isFinite(seconds) ? 0 : Math.trunc(seconds);
   const snapped = snapAnytoneAprsAutoTxIntervalSec(input);
   if (input !== snapped) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `APRS auto TX interval ${input}s adjusted to ${snapped}s for Anytone wire encoding`,
     );
   }
