@@ -2,15 +2,15 @@
 
 **Hub for this investigation.** Opened from live-radio report [#1223](https://github.com/pskillen/codeplug-studio/issues/1223).
 
-**Status:** **Live.** Two Studio backups decoded (`D/2026-08-15-before`, `D/2026-08-15-after`). APRS endian is dump-proven. Unnamed lists are `0x00` vacant slots. Morning Walk **carrier** `0x19` is wrong (`0x41` vs expected `0x48`).
+**Status:** **Parked** (2026-08-16). APRS LE fix **verified** on hardware. Scan vacant-slot clear (`+0x0B=0x00` after `0xFF` bank fill) shipped in branch but **did not** fix phantom blanks or Morning Walk→Glasgow Airband UI misbind. Write-verify shows carrier `0x19=0x48` (list 2) correct on wire — root cause of UI mismatch **open**.
 
-**Prime suspects (current):**
+**Prime suspects (parked):**
 
-1. Scan-list unused slots `0x00`-filled — **seen on radio image**. Switch to NeonPlug `0xFF` fill (one variable).
-2. Morning Walk Scan channel byte `0x19` = `0x41` (scanAdd, list id 0, stray bit 0) instead of `0x48` (list 2). Other carriers match `scanAdd | (n<<2)`.
-3. APRS upload ID written 24-bit **BE** (`03 95 f7` = 234999). Firmware displays **LE** → `16225539`. NeonPlug encode is the same BE; Studio copied it.
+1. Phantom scan slots 14–32 had `+0x0B=0xFF` before vacant clear — **fixed in code**, hardware still wrong → firmware may use another vacant-slot rule or UI reads a different field.
+2. Morning Walk carrier `scanListId` on wire is **list 2** per write-verify; radio UI shows Glasgow Airband (list 8) — investigate designated-TX reverse lookup vs byte `0x19`.
+3. APRS upload ID LE — **done** (`03 95 f7` LE displays `234999`).
 
-**Next move:** (a) `0xFF`-fill scan bank; (b) write APRS ID little-endian and re-dump `0x332–0x334` + radio UI; (c) chase why carrier list index 2 encodes as `0x41`. Do not bundle these in one hardware run if you need to tell them apart.
+**Next move when resumed:** Read-back full channel bank at `0x95000` (sparse backup omits it); compare scan-list picker firmware behaviour; consider CPS round-trip of same build.
 
 |                        |                                                                                                                                                                            |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
