@@ -78,6 +78,39 @@ describe('assemble', () => {
     expect(build.radioTargetId).toBe('baofeng-dm1701');
   });
 
+  it('assembles channel wireName from build nameModeOverride when no channel override is set', () => {
+    const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
+    const aggregate = parseProjectDocument(yaml);
+    const build = {
+      ...aggregate.radioBuilds[0]!,
+      // No override for the DMR channel — assembled wireName must come from the pure
+      // compose formula honouring the build's name style, not raw defaultChannelWireName().
+      channelOverrides: [],
+      exportSettings: { nameModeOverride: 'name_only' as const },
+    };
+    const library = {
+      channels: aggregate.channels,
+      zones: aggregate.zones,
+      talkGroups: aggregate.talkGroups,
+      digitalContacts: aggregate.digitalContacts,
+      analogContacts: aggregate.analogContacts,
+      rxGroupLists: aggregate.rxGroupLists,
+      scanLists: [],
+    };
+
+    const projection = assemble(build, library, {
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+    });
+    const dmrChannel = projection.channels.find(
+      (row) => row.entity.id === '33333333-3333-4333-8333-333333333333',
+    );
+    // Channel has callsign GB7GL, name "DMR Scotland" — callsign+name mode (default) would
+    // compose "GB7GL DMR Scotland"; name_only must compose "DMR Scotland" instead.
+    expect(dmrChannel?.wireName).toBe('DMR Scotland');
+    expect(dmrChannel?.wireNameOverride).toBeUndefined();
+  });
+
   it('excludes channels when channel override marks excluded', () => {
     const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);

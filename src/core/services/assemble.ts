@@ -18,7 +18,8 @@ import {
   overrideOrderOrSlot,
   resolveOverrideWireName,
 } from '@core/domain/formatBuildOverrides.ts';
-import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
+import { defaultChannelWireName, type ChannelExportNameMode } from '@core/domain/channelNaming.ts';
+import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { channelInAnyZoneMembership } from '@core/domain/zoneMembership.ts';
 import {
   resolveEffectiveZoneChannelIds,
@@ -338,11 +339,18 @@ function withExportInclusionDefaults(build: RadioBuild): RadioBuild {
   };
 }
 
-function assembleChannels(build: RadioBuild, library: LibrarySlice): AssembledChannel[] {
+function assembleChannels(
+  build: RadioBuild,
+  library: LibrarySlice,
+  formatId: string,
+  profileId: string,
+): AssembledChannel[] {
   const overrides = build.channelOverrides;
   /** Flat-memory radios only export the memory list — no “orphan” inclusion toggle. */
   const includeUnlinked = !buildUsesFlatMemoryList(build) && build.exportUnlinkedChannels !== false;
   const exportReachable = exportReachableChannelIds(build, library);
+  const exportOptions = mergeExportOptions(build, formatId, { profileId }, library);
+  const nameModeOverride = exportOptions.nameModeOverride as ChannelExportNameMode | undefined;
   const assembled: AssembledChannel[] = [];
   for (const entity of library.channels) {
     if (isEntityExcluded(overrides, entity.id)) continue;
@@ -357,7 +365,7 @@ function assembleChannels(build: RadioBuild, library: LibrarySlice): AssembledCh
     }
     const override = overrideByEntityId(overrides).get(entity.id);
     const wireNameOverride = override?.wireName?.trim();
-    const generated = defaultChannelWireName(entity);
+    const generated = defaultChannelWireName(entity, { nameModeOverride });
     assembled.push({
       entity,
       wireName: wireNameOverride ?? generated,
@@ -583,7 +591,7 @@ export function assemble(
     ? migrateFlatMemoryLayoutToOrderOrSlot(migratedBase, library)
     : migratedBase;
   const normalizedBuild = withExportInclusionDefaults(migratedBuild);
-  const channels = assembleChannels(normalizedBuild, library);
+  const channels = assembleChannels(normalizedBuild, library, formatId, profileId);
   const exportedChannelIds = new Set(channels.map((c) => c.entity.id));
   const zones = assembleZones(normalizedBuild, library, exportedChannelIds);
   const scanLists = assembleScanLists(normalizedBuild, library, exportedChannelIds);
