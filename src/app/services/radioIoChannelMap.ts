@@ -348,8 +348,14 @@ export function assembledChannelsToRadioDtos(
   egress: RadioWireEgressIds,
   library?: LibrarySlice,
 ): RadioChannelDto[] {
-  return assembledChannelsToRadioDtosWithWarnings(channels, build, egress, undefined, undefined, library)
-    .dtos;
+  return assembledChannelsToRadioDtosWithWarnings(
+    channels,
+    build,
+    egress,
+    undefined,
+    undefined,
+    library,
+  ).dtos;
 }
 
 /**
@@ -401,7 +407,9 @@ export function assembledChannelsToRadioDtosWithWarnings(
     const slotIndex = slotByChannelId.get(entity.id) ?? index + 1;
     const rxOnly = effectiveForbidTransmit(entity, merged.channelBehaviourContext);
     const resolution = resolutions.get(entity.id);
-    const wireName = resolution ? resolution.effective : row.wireNameOverride?.trim() || row.wireName;
+    const wireName = resolution
+      ? resolution.effective
+      : row.wireNameOverride?.trim() || row.wireName;
     if (resolution) {
       pushWireNameResolutionWarning(warnings, {
         entityKind: 'Channel',

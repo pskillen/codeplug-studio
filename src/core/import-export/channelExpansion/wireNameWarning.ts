@@ -38,7 +38,9 @@ export function pushWireNameCollisionWarning(
 }
 
 /** `remediation` → severity for warnings synthesised from a `resolveWireNames()` resolution — `none` emits nothing. */
-const SEVERITY_BY_RESOLUTION_REMEDIATION: Partial<Record<WireNameRemediation, ExportWarningSeverity>> = {
+const SEVERITY_BY_RESOLUTION_REMEDIATION: Partial<
+  Record<WireNameRemediation, ExportWarningSeverity>
+> = {
   shortened: 'info',
   disambiguated: 'problem',
   truncated: 'problem',
