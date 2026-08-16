@@ -14,7 +14,7 @@ import {
   type ExpandAllMxNChannelsArgs,
   type ExpandedMxNChannelRow,
 } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
-import { resolveAnytoneSiteWireName } from '@core/services/anytoneChannelExpansion.ts';
+import { mxnSiteWireNameResolverForRadioTarget } from '@core/services/anytoneChannelExpansion.ts';
 import {
   expandChannelWireRows,
   modeExportNameSuffix,
@@ -317,24 +317,38 @@ function mxnExpansionDisplayDetails(
 
 /**
  * Preview-only site-name resolver for m×n expansion.
- * Strips this row's override so suggestions stay pure (export still prefers overrides).
+ *
+ * Delegates composition to `mxnSiteWireNameResolverForRadioTarget` — gated on
+ * `radioTargetId`, matching production Web Serial writes, so every default egress on a
+ * D890 build (not only the `anytone` CSV formatId) gets correct `nameModeOverride`
+ * composition. See PR: this was previously gated on `formatId === 'anytone'`, which meant
+ * the radio-io / Web Serial default egress on Anytone D890 builds silently fell back to
+ * `defaultChannelWireName` with zero options and ignored `nameModeOverride` entirely.
+ *
+ * Still strips this row's own override before composing, so `generatedWireName` stays the
+ * pure suggestion (export still prefers overrides) — `previewWireRows` layers
+ * key/channel overrides back on top for `effectiveWireName`.
  */
 function purePreviewMxNSiteWireName(
-  formatId: string,
+  radioTargetId: string,
 ): NonNullable<ExpandAllMxNChannelsArgs['resolveSiteWireName']> {
-  if (formatId === 'anytone') {
-    return (assembledChannel, ctx) =>
-      resolveAnytoneSiteWireName(
-        {
-          ...assembledChannel,
-          wireNameOverride: undefined,
-          // assemble folds override into wireName — restore pure library compose
-          wireName: defaultChannelWireName(assembledChannel.entity),
-        },
-        ctx,
-      );
+  const resolver = mxnSiteWireNameResolverForRadioTarget(radioTargetId);
+  if (!resolver) {
+    // No radio-target-specific composer (e.g. DM32) — same pure library compose the
+    // resolver's own fallback below uses, kept explicit here so preview never falls
+    // through to `expandAllMxNChannels`'s internal default, which folds overrides in.
+    return (assembledChannel) => defaultChannelWireName(assembledChannel.entity);
   }
-  return (assembledChannel) => defaultChannelWireName(assembledChannel.entity);
+  return (assembledChannel, ctx) =>
+    resolver(
+      {
+        ...assembledChannel,
+        wireNameOverride: undefined,
+        // assemble folds override into wireName — restore pure library compose
+        wireName: defaultChannelWireName(assembledChannel.entity),
+      },
+      ctx,
+    );
 }
 
 export function previewWireRows(
@@ -445,7 +459,7 @@ export function previewWireRows(
           radioTargetId: build.radioTargetId,
           options: mxnOptions,
           warnings,
-          resolveSiteWireName: purePreviewMxNSiteWireName(formatId),
+          resolveSiteWireName: purePreviewMxNSiteWireName(build.radioTargetId),
         });
         const expandedByChannelId = new Map<string, ExpandedMxNChannelRow[]>();
         for (const generated of expanded) {

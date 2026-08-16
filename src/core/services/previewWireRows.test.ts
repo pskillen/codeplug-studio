@@ -1155,6 +1155,70 @@ describe('previewWireRows', () => {
     expect(row?.hasWireNameOverride).toBe(true);
   });
 
+  it('honours nameModeOverride on anytone m×n rows previewed via the radio-io (Web Serial) default egress', () => {
+    // Regression: previewWireRows used to route m×n site-name composition through a
+    // bespoke helper gated on `formatId === 'anytone'`. Any other default egress —
+    // including 'radio-io', the Web Serial pathway that is the default/primary egress for
+    // most Anytone D890 builds — fell back to a bare defaultChannelWireName() call with
+    // zero options, silently ignoring `nameModeOverride`. This pins that the radio-io
+    // pathway now composes m×n site names the same way the anytone CSV pathway always did.
+    const projectId = 'proj-anytone-mxn-radioio-namemode';
+    const channel: Channel = {
+      ...newChannel(projectId, 'Repeater Alpha'),
+      callsign: 'GB3GL',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 2 as const,
+          dmrId: 1234567,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const zone = {
+      ...newZone(projectId, 'Zone A'),
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
+    };
+    const baseBuild = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      defaultEgressFormatId: 'radio-io',
+      defaultEgressProfileId: 'radio-io-at-d890uv',
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [channel.id] }],
+          },
+        ],
+      },
+    };
+    const library = {
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const defaultModeRow = previewWireRows(baseBuild, library, 'channel')[0];
+    // Default mode is callsign_name — the generated site name should include the callsign.
+    expect(defaultModeRow?.generatedWireName).toContain('GB3GL');
+
+    const nameOnlyBuild = {
+      ...baseBuild,
+      exportSettings: { ...baseBuild.exportSettings, nameModeOverride: 'name_only' as const },
+    };
+    const nameOnlyRow = previewWireRows(nameOnlyBuild, library, 'channel')[0];
+    expect(nameOnlyRow?.generatedWireName).not.toContain('GB3GL');
+    expect(nameOnlyRow?.generatedWireName).not.toBe(defaultModeRow?.generatedWireName);
+  });
+
   it('keeps anytone airband channel generated wire name pure when override is set', () => {
     const projectId = 'proj-anytone-airband-purity';
     const air: Channel = {
