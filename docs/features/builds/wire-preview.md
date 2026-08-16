@@ -44,14 +44,27 @@ Overrides are stored on `RadioBuild` as `channelOverrides`, `zoneOverrides`, `ta
 
 ## Preview rows
 
-`previewWireRows(build, library, entityKind, options)` returns rows with:
+`previewWireRows(build, library, entityKind, anytoneBank)` returns rows with:
 
 - **displayLabel** — human-readable library label (may note multi-mode suffix)
 - **displayDetails** — optional `{ label, value }` sub-lines under the display name (DM32 RX-list fan-out shows channel name and talk group id/slot)
-- **generatedWireName** — pure suggestion from library fields + export settings only (never this row's own override). Channels use `defaultChannelWireName` / `composeChannelWireName`; multi-mode channels append mode suffixes (`-F`, `-D`, `-Y`, `-DS`, …) when expansion applies. Zones / scan lists / RX lists / contacts use the same pure generators as export-without-override.
+- **generatedWireName** — pure suggestion from library fields + export settings only (never this row's own override)
 - **effectiveWireName** — override or generated
+- **remediation** — what (if anything) fitting the effective name to the profile limit required (`none` / `shortened` / `disambiguated` / `truncated`); undefined for expansion rows that don't join a resolver result
 - **key** — stable override id (composite `${channelId}:${modeSuffix}` for multi-mode expansion rows; `${channelId}:${memberKey}` for DM32 RX-list fan-out)
 - **expansionNote** — human-readable note when a row is synthesized (multi-mode suffix, RX-list fan-out, **Not linked to a zone**, **Not exported as its own zone** for library `omitFromExport`, or **Not referenced by exported channels**)
+
+Zones, scan lists, talk groups, contacts, and RX group lists — entity kinds with no
+expansion concept — resolve through the shared **`resolveWireNames`** service
+(`src/core/services/resolveWireNames.ts`), so preview reads the same build export
+settings (name style, shorten, abbreviation) and profile name-length limit
+(`getProfileExportLimits`) that export will use for those rows, including for build
+overrides (now hard-truncated to the profile limit instead of shown raw). Channel rows
+with an m×n or multi-mode expansion (or CHIRP flat-memory rows) still compute their base
+name through the existing expansion pipelines (`expandAllMxNChannels`,
+`expandChannelWireRows`) rather than the resolver — those composition hooks are a later
+phase; their overrides are shown unshortened until then. Full egress convergence
+(serialisers and Web Serial reading the same resolver) is a later phase too.
 
 Wire preview pages and the export panel share **`useExportSettings`** (browser `localStorage`) for shortening, name mode, abbreviation toggles, and DM32 zone-derived scan export. Wire name overrides use a local draft with explicit **Apply** and **Revert** in the single-item modal (suggestion clicks fill the draft only). The channel **bulk-edit** table accumulates drafts locally and commits them with one page-level **Save** (no per-row Apply). Only **`/builds/:id/channels/bulk`** uses `useUnsavedNavigationGuard` for unapplied wire-name drafts.
 
