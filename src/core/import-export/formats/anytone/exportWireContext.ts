@@ -1,13 +1,12 @@
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
-import type { AssembledBuild, AssembledChannel } from '@core/services/assemble.ts';
-import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
+import type { AssembledBuild, AssembledChannel, LibrarySlice } from '@core/services/assemble.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
-import {
-  applyDigitalContactExportWireName,
-  buildDigitalContactExportWireNameMap,
-  resolveAnalogContactExportBaseName,
-} from '@core/import-export/digitalContactExportName.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
+import {
+  overridesFromAssembledWireNames,
+  resolveWireNamesFromOptions,
+} from '@core/services/resolveWireNames.ts';
+import { pushWireNameResolutionWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
 import { anytoneChannelWireName } from './exportChannelWire.ts';
 import { isAmAirbandBankChannel, isFmBroadcastBankChannel } from './receiveOnlyBanks.ts';
 import { DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
@@ -55,11 +54,15 @@ function channelRowById(
 /** One canonical wire name per entity for a single Anytone export pass. */
 export function buildAnytoneExportWireContext(
   assembled: AssembledBuild,
+  library: LibrarySlice,
   expandedChannels: ExpandedAnytoneChannelRow[],
   options?: CpsExportOptions,
   warnings: ExportWarning[] = [],
 ): AnytoneExportWireContext {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
+  // Channel m×n/timeslot-clone composition stays format-specific (anytoneChannelWireName)
+  // — only its own reserved set, scoped to channels, matching resolveWireNames' per-kind
+  // scoping (no more cross-kind sharing with zone/scanList/talkGroup/contact/rxGroupList).
   const reserved = new Set<string>();
   for (const row of expandedChannels) {
     reserved.add(row.wireName);
@@ -82,60 +85,89 @@ export function buildAnytoneExportWireContext(
     );
   }
 
-  const talkGroupWireNames = new Map<string, string>();
-  for (const row of assembled.talkGroups) {
-    talkGroupWireNames.set(
-      row.entity.id,
-      applyTalkGroupWireNameLimits(
-        row.wireName,
-        row.entity,
-        reserved,
-        options,
-        profileId,
-        warnings,
-        undefined,
-        Boolean(row.wireNameOverride?.trim()),
-      ),
-    );
-  }
-
-  const digitalContactWireNames = buildDigitalContactExportWireNameMap(
-    assembled.digitalContacts,
-    options?.contactOverrides,
-    options,
+  const talkGroupResolutions = resolveWireNamesFromOptions({
+    library,
+    entityKind: 'talkGroup',
+    formatId: 'anytone',
     profileId,
-    warnings,
-  );
-  for (const row of assembled.analogContacts) {
-    const isOverride = Boolean(
-      options?.contactOverrides
-        ?.find((o) => o.libraryEntityId === row.entity.id)
-        ?.wireName?.trim() ?? row.wireNameOverride?.trim(),
-    );
-    const base = resolveAnalogContactExportBaseName(row.entity, options?.contactOverrides);
-    digitalContactWireNames.set(
-      row.entity.id,
-      applyDigitalContactExportWireName(base, options, profileId, warnings, isOverride),
-    );
+    options: options ?? {},
+    overrides: overridesFromAssembledWireNames(assembled.talkGroups, (row) => row.entity.id),
+  });
+  const talkGroupWireNames = new Map<string, string>();
+  for (const resolution of talkGroupResolutions) {
+    talkGroupWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'Talk group',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId,
+    });
   }
 
+  const contactResolutions = resolveWireNamesFromOptions({
+    library,
+    entityKind: 'contact',
+    formatId: 'anytone',
+    profileId,
+    options: options ?? {},
+    overrides: options?.contactOverrides,
+  });
+  const digitalContactWireNames = new Map<string, string>();
+  for (const resolution of contactResolutions) {
+    digitalContactWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'Contact',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId,
+    });
+  }
+
+  const zoneResolutions = resolveWireNamesFromOptions({
+    library,
+    entityKind: 'zone',
+    formatId: 'anytone',
+    profileId,
+    options: options ?? {},
+    overrides: overridesFromAssembledWireNames(assembled.zones, (row) => row.zoneId),
+  });
   const zoneWireNames = new Map<string, string>();
-  for (const zone of assembled.zones) {
-    zoneWireNames.set(
-      zone.zoneId,
-      applyListWireNameLimits(
-        zone.wireName,
-        reserved,
-        options,
-        profileId,
-        warnings,
-        'Zone',
-        undefined,
-        Boolean(zone.wireNameOverride?.trim()),
-      ),
-    );
+  for (const resolution of zoneResolutions) {
+    zoneWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'Zone',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId,
+    });
   }
 
+  const scanListResolutions = new Map(
+    resolveWireNamesFromOptions({
+      library,
+      entityKind: 'scanList',
+      formatId: 'anytone',
+      profileId,
+      options: options ?? {},
+      overrides: overridesFromAssembledWireNames(assembled.scanLists, (row) => row.scanListId),
+    }).map((resolution) => {
+      pushWireNameResolutionWarning(warnings, {
+        entityKind: 'Scan list',
+        remediation: resolution.remediation,
+        original: resolution.override ?? resolution.libraryName,
+        exported: resolution.effective,
+        limit: resolution.limit,
+        profileId,
+      });
+      return [resolution.libraryEntityId, resolution.effective] as const;
+    }),
+  );
   const scanListWireNames = new Map<string, string>();
   for (const scanList of assembled.scanLists) {
     const derivedZoneId = zoneIdFromDerivedScanListId(scanList.scanListId);
@@ -146,36 +178,34 @@ export function buildAnytoneExportWireContext(
         continue;
       }
     }
+    // Zone-derived scan lists have no matching `library.scanLists` entry — the resolver
+    // only resolves real library scan lists, so fall back to the assembled wire name
+    // (already shortened by `deriveAnytoneZoneDerivedScanLists`) when there's no match.
     scanListWireNames.set(
       scanList.scanListId,
-      applyListWireNameLimits(
-        scanList.wireName,
-        reserved,
-        options,
-        profileId,
-        warnings,
-        'Scan list',
-        undefined,
-        Boolean(scanList.wireNameOverride?.trim()),
-      ),
+      scanListResolutions.get(scanList.scanListId) ?? scanList.wireName,
     );
   }
 
+  const rxGroupListResolutions = resolveWireNamesFromOptions({
+    library,
+    entityKind: 'rxGroupList',
+    formatId: 'anytone',
+    profileId,
+    options: options ?? {},
+    overrides: overridesFromAssembledWireNames(assembled.rxGroupLists, (row) => row.entity.id),
+  });
   const rxGroupListWireNames = new Map<string, string>();
-  for (const list of assembled.rxGroupLists) {
-    rxGroupListWireNames.set(
-      list.entity.id,
-      applyListWireNameLimits(
-        list.wireName,
-        reserved,
-        options,
-        profileId,
-        warnings,
-        'RX group list',
-        undefined,
-        Boolean(list.wireNameOverride?.trim()),
-      ),
-    );
+  for (const resolution of rxGroupListResolutions) {
+    rxGroupListWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'RX group list',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId,
+    });
   }
 
   const receiveBankWireName = (channelId: string): string => {

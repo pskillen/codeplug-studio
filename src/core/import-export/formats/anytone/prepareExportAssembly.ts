@@ -86,7 +86,13 @@ export function prepareAnytoneExportAssembly(
     warnings,
   );
   const expansionByChannelId = anytoneChannelExpansionById(expandedChannels);
-  const context = buildAnytoneExportWireContext(withCarriers, expandedChannels, options, warnings);
+  const context = buildAnytoneExportWireContext(
+    withCarriers,
+    library,
+    expandedChannels,
+    options,
+    warnings,
+  );
 
   const carrierChannels = carrierRows.map((row) => {
     const zoneId = row.entity.id.replace('scan-carrier:', '');

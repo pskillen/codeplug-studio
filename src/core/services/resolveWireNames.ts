@@ -107,6 +107,24 @@ export interface ResolveWireNamesArgs {
   profileId?: string;
 }
 
+/**
+ * Same shape as `ResolveWireNamesArgs`, for callers that already hold merged
+ * `CpsExportOptions` and a per-kind override array instead of the original `RadioBuild`.
+ * CPS serialisers work from `AssembledBuild` (+ already-merged export options) — the raw
+ * `RadioBuild` isn't threaded that deep — so they resolve names via
+ * {@link resolveWireNamesFromOptions} instead of {@link resolveWireNames}. Both call the
+ * same internal resolution core; this one skips `mergeExportOptions` (the caller already
+ * ran it) and takes the override array directly rather than reading it off `build`.
+ */
+export interface ResolveWireNamesFromOptionsArgs {
+  library: LibrarySlice;
+  entityKind: WireNameEntityKind;
+  formatId: string;
+  profileId?: string;
+  options: ReturnType<typeof mergeExportOptions>;
+  overrides?: readonly BuildEntityOverride[];
+}
+
 interface CandidateEntity {
   id: string;
   libraryName: string;
@@ -274,14 +292,15 @@ function candidatesForKind(
 }
 
 /**
- * Resolve wire names for every library entity of one kind under one build/format/profile.
- * Pure with respect to each row's own override — `suggestion` never sees it. `effective`
- * folds `override ?? suggestion` and re-applies limits per whether this row is an override
- * (hard-truncate policy) or a generated suggestion (smart-shorten policy).
+ * Resolve wire names for every library entity of one kind under one format/profile, given
+ * already-merged export options and a per-kind override array. Shared core for both public
+ * entry points below — pure with respect to each row's own override (`suggestion` never
+ * sees it); `effective` folds `override ?? suggestion` and re-applies limits per whether
+ * this row is an override (hard-truncate policy) or a generated suggestion (smart-shorten
+ * policy).
  */
-export function resolveWireNames(args: ResolveWireNamesArgs): WireNameResolution[] {
-  const { build, library, entityKind, formatId, profileId } = args;
-  const options = mergeExportOptions(build, formatId, { profileId }, library);
+function resolveWireNamesCore(args: ResolveWireNamesFromOptionsArgs): WireNameResolution[] {
+  const { library, entityKind, formatId, profileId, options } = args;
 
   const limits = getProfileExportLimits(formatId as FormatId, profileId ?? '');
   const limitValue = limits
@@ -290,10 +309,7 @@ export function resolveWireNames(args: ResolveWireNamesArgs): WireNameResolution
   if (limitValue === 'not_used') return [];
   const limit = typeof limitValue === 'number' ? limitValue : null;
 
-  const overrideField = OVERRIDE_FIELD_BY_KIND[entityKind];
-  const overrides = overrideByEntityId(
-    build[overrideField] as readonly BuildEntityOverride[] | undefined,
-  );
+  const overrides = overrideByEntityId(args.overrides);
 
   const candidates = candidatesForKind(entityKind, library, options);
   const reservedForEffective = new Set<string>();
@@ -348,4 +364,50 @@ export function resolveWireNames(args: ResolveWireNamesArgs): WireNameResolution
   }
 
   return results;
+}
+
+/**
+ * Resolve wire names for every library entity of one kind under one build/format/profile.
+ * Pure with respect to each row's own override — `suggestion` never sees it. `effective`
+ * folds `override ?? suggestion` and re-applies limits per whether this row is an override
+ * (hard-truncate policy) or a generated suggestion (smart-shorten policy).
+ */
+export function resolveWireNames(args: ResolveWireNamesArgs): WireNameResolution[] {
+  const { build, library, entityKind, formatId, profileId } = args;
+  const options = mergeExportOptions(build, formatId, { profileId }, library);
+  const overrideField = OVERRIDE_FIELD_BY_KIND[entityKind];
+  const overrides = build[overrideField] as readonly BuildEntityOverride[] | undefined;
+  return resolveWireNamesCore({ library, entityKind, formatId, profileId, options, overrides });
+}
+
+/**
+ * Same resolution as {@link resolveWireNames}, for callers that already have merged
+ * `CpsExportOptions` and a per-kind override array instead of the original `RadioBuild` —
+ * CPS serialisers (`formats/<format>/serialise.ts`) work from `AssembledBuild` and
+ * already-merged export options, not the build. See {@link ResolveWireNamesFromOptionsArgs}.
+ */
+export function resolveWireNamesFromOptions(
+  args: ResolveWireNamesFromOptionsArgs,
+): WireNameResolution[] {
+  return resolveWireNamesCore(args);
+}
+
+/**
+ * Reconstruct a minimal override array from assembled rows' `wireNameOverride` — for CPS
+ * serialisers that only have `AssembledBuild` (already override-folded per row by
+ * `assemble()`), not the raw `RadioBuild.<kind>Overrides` array `resolveWireNames` reads.
+ * Only entity kinds without a dedicated array on `CpsExportOptions` (zone, scanList,
+ * talkGroup, rxGroupList) need this — channel/contact overrides already travel on
+ * `CpsExportOptions.channelOverrides` / `.contactOverrides`.
+ */
+export function overridesFromAssembledWireNames<T extends { wireNameOverride?: string }>(
+  rows: readonly T[],
+  idOf: (row: T) => string,
+): BuildEntityOverride[] {
+  const overrides: BuildEntityOverride[] = [];
+  for (const row of rows) {
+    const wireName = row.wireNameOverride?.trim();
+    if (wireName) overrides.push({ libraryEntityId: idOf(row), wireName });
+  }
+  return overrides;
 }

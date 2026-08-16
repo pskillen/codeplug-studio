@@ -23,7 +23,7 @@ export function collectAnytoneExportWarnings(
   const expandedChannels = expandAllAnytoneChannelsForExport(assembled, library, options, warnings);
   const expansionByChannelId = anytoneChannelExpansionById(expandedChannels);
 
-  buildAnytoneExportWireContext(assembled, expandedChannels, options, warnings);
+  buildAnytoneExportWireContext(assembled, library, expandedChannels, options, warnings);
 
   if (expandedChannels.length > profile.maxChannels) {
     pushGeneralWarning(
