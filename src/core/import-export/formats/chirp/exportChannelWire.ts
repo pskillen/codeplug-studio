@@ -11,6 +11,10 @@ import {
 } from '@core/import-export/scanInclusion/resolve.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
+import {
+  getProfileExportLimits,
+  profileNameLimit,
+} from '@core/import-export/profileExportLimits.ts';
 import { getChirpProfile } from './profiles.ts';
 import {
   deriveChirpDuplexAndOffset,
@@ -36,12 +40,21 @@ export interface ChirpChannelWireOptions {
   warnings?: ExportWarning[];
 }
 
+/**
+ * Same value `resolveWireNames`/`resolveWireNamesFromOptions` use for the 'channel' kind
+ * on this profile (`getProfileExportLimits('chirp', profileId).nameLengthChannel`, which is
+ * `profile.nameLimit` under the hood) — sourced from the shared profile-limits lookup
+ * instead of `getChirpProfile(...).nameLimit` directly, so this and the resolver can't
+ * silently drift apart.
+ */
 export function effectiveMaxNameLength(
   options: CpsExportOptions | undefined,
   profileId: string,
 ): number {
   if (options?.maxNameLength != null) return options.maxNameLength;
-  return getChirpProfile(profileId).nameLimit;
+  const limits = getProfileExportLimits('chirp', profileId);
+  const limit = limits ? profileNameLimit(limits, 'channel') : null;
+  return typeof limit === 'number' ? limit : getChirpProfile(profileId).nameLimit;
 }
 
 function channelWireName(
