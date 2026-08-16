@@ -418,6 +418,39 @@ describe('WirePreviewDataTable', () => {
     expect(screen.getByText(/Callsign suffix \+ name:/)).toBeInTheDocument();
   });
 
+  it('offers exactly one suggestion (the composed name) for m×n-expanded channel rows, not per-style alternates', () => {
+    const channel = {
+      id: 'ch-1',
+      callsign: 'MM9PDY',
+      name: 'Demo Repeater',
+      abbreviation: undefined,
+    } as unknown as Channel;
+    const expandedRow: WirePreviewRow = {
+      key: 'ch-1:site-a:tg-9',
+      libraryEntityId: 'ch-1',
+      entityKind: 'channel',
+      displayLabel: 'GB3DA Demo',
+      generatedWireName: 'MM9PDY Site A - Local 9',
+      effectiveWireName: 'MM9PDY Site A - Local 9',
+      hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
+      excluded: false,
+    };
+    renderTable({
+      rows: [expandedRow],
+      onRowActivate: vi.fn(),
+      onWireNameChange: vi.fn(),
+      channelsById: new Map([['ch-1', channel]]),
+      nameLimit: 16,
+    });
+
+    fireEvent.click(screen.getByLabelText('Edit export name'));
+    expect(screen.getByText('Suggestion:')).toBeInTheDocument();
+    expect(screen.getAllByText('MM9PDY Site A - Local 9').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Callsign \+ name:/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Callsign only:/)).not.toBeInTheDocument();
+  });
+
   it('offers exactly one suggestion for non-channel kinds even with no style data', () => {
     const talkGroupRow: WirePreviewRow = {
       key: 'tg-1',

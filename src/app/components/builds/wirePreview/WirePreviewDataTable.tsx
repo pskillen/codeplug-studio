@@ -82,13 +82,21 @@ export interface WirePreviewDataTableProps {
 /**
  * One suggestion per identity for most kinds; channel rows get one per
  * `ChannelExportNameMode` when a library channel lookup is available (ux-proposal.md §6a).
+ *
+ * Per-style suggestions are computed from the library channel's own callsign/name only —
+ * correct for a plain channel row, but wrong for m×n / multi-mode expansion rows, whose
+ * `key` differs from `libraryEntityId` and whose `generatedWireName` already carries a
+ * second axis (site, talk group, mode) that the per-style composer knows nothing about.
+ * Offering "style" suggestions there would silently drop that axis. Expansion rows keep
+ * the single, already-correctly-composed `generatedWireName` suggestion instead.
  */
 function wireNameSuggestionsForRow(
   row: WirePreviewRow,
   channelsById: Map<string, Channel> | undefined,
   nameLimit: number | undefined,
 ): WireNameSuggestion[] {
-  if (row.entityKind === 'channel' && channelsById) {
+  const isExpansionRow = row.key !== row.libraryEntityId;
+  if (row.entityKind === 'channel' && channelsById && !isExpansionRow) {
     const channel = channelsById.get(row.libraryEntityId);
     if (channel) return channelWireNameStyleSuggestions(channel, nameLimit);
   }
