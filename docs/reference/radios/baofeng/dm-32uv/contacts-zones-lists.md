@@ -115,7 +115,7 @@ VFO A/B selected zone and channel indices live in the **zone bank** first block 
 | Max lists    | **32** bank / **15** channel-FK        |
 | Max members  | **15** named channels                  |
 
-**Studio Web Serial Write:** zone-derived scan lists are rewritten from projection; the block is zero-filled so shrink clears stale lists. Each exporting zone gets a `{zone} Scan` carrier channel prepended to the zone and set as designated TX. Channel-record `scanListId` is only **4 bits (1–15)** — Studio caps addressable zone-derived lists at 15 (NeonPlug parity). Shared channels keep the **first** zone’s list (not last-wins). Carriers always keep their own list id.
+**Studio Web Serial Write:** zone-derived scan lists are rewritten from projection; the block is **`0xFF`-filled** (NeonPlug `writeAllData` parity) so unused slots stay vacant on the radio. Each exporting zone gets a `{zone} Scan` carrier channel prepended to the zone and set as designated TX. Channel-record `scanListId` is only **4 bits (1–15)** — Studio caps addressable zone-derived lists at 15 (NeonPlug parity). **Members** stay `scanListId` 0 on the channel record; only **scan carriers** carry the zone list FK.
 
 ### 57-byte entry (summary)
 
