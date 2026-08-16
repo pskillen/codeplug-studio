@@ -13,7 +13,13 @@ import { seedZoneGroupingFromLibrary } from '@core/domain/zoneGroupingLayout.ts'
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { assemble } from '@core/services/assemble.ts';
-import { encodeDm32ChannelRecord } from '@integrations/radio-io/radios/dm32uv/channelCodec.ts';
+import {
+  decodeChannelsFromDm32Image,
+  encodeChannelsIntoDm32Image,
+  encodeDm32ChannelRecord,
+} from '@integrations/radio-io/radios/dm32uv/channelCodec.ts';
+import { DM32_METADATA } from '@integrations/radio-io/radios/dm32uv/constants.ts';
+import { createMemoryMap } from '@integrations/radio-io/kit/memoryMap.ts';
 import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
 
 function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
@@ -352,6 +358,22 @@ describe('buildRadioWriteProjection', () => {
     expect((walkRec[0x19]! >> 2) & 0x0f).toBe(2);
     expect(homeRec[0x19]! & 0x80).toBe(0x00); // NFM (narrow)
     expect(homeRec[0x19]! & 0x40).toBe(0x40); // scanAdd
+    expect(walkRec[0x19]).toBe(0x48);
+
+    const addressBase = 0x8e000;
+    const image = createMemoryMap(0x20_000);
+    const discovered = [
+      { address: addressBase, metadata: DM32_METADATA.CHANNEL_FIRST },
+      { address: addressBase + 0x1000, metadata: DM32_METADATA.CHANNEL_FIRST + 1 },
+    ];
+    const ctx = { addressBase, discovered };
+    encodeChannelsIntoDm32Image(image, ctx, projection.channels);
+    const walkFromImage = decodeChannelsFromDm32Image(image, ctx).find(
+      (c) => c.slotIndex === walkCarrier,
+    );
+    expect(walkFromImage?.wireName).toMatch(/Morn.*Scan|Walk.*Scan/i);
+    const walkSlotOff = 0x10 + (walkCarrier - 1) * 48;
+    expect(image.bytes[walkSlotOff + 0x19]).toBe(0x48);
   });
 
   it('stamps UV-5R Mini scanAdd from effective scan inclusion', () => {

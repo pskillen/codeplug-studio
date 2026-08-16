@@ -16,9 +16,9 @@ Live work only. Shipped work lives in version control.
 
 ## Code (do not bundle)
 
-- [ ] Scan-list bank fill `0x00` → `0xFF` to match NeonPlug (`scanListCodec.ts`).
-- [ ] Chase Walk-only `0x19=0x41` (projection/DTO for the second analog carrier). Encode formula `(scanListId<<2)|scanAdd` is otherwise correct for lists 1 and 3–10.
-- [ ] APRS `0x332–0x334` write little-endian (or confirm firmware actually wants BE and the UI is the bug — dump says UI = LE).
+- [x] Scan-list bank fill `0x00` → `0xFF` to match NeonPlug (`scanListCodec.ts`).
+- [x] Chase Walk-only `0x19=0x41` — encode path produces `0x48` in tests (S12); hardware re-Write pending.
+- [x] APRS `0x332–0x334` write little-endian (or confirm firmware actually wants BE and the UI is the bug — dump says UI = LE).
 - [ ] NeonPlug export: stamp `scanListId` on carriers only (#1225).
 
 ## Docs
