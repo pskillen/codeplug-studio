@@ -1,14 +1,15 @@
 /**
- * Pins today's `previewWireRows` (production) wire-name output — long names, an
- * abbreviation, a name collision, and a build override — per format. Not testing the
- * new `resolveWireNames` service (phase 1 doesn't wire it to any consumer yet).
- *
- * Later phases repoint `previewWireRows` at `resolveWireNames` (phase 2) and can diff
- * its output against these pins. Full byte-level goldens already exist per format
- * (`formats/dm32/serialise.test.ts`, `formats/opengd77/exportGolden.test.ts`,
+ * Pins `previewWireRows` (production) wire-name output — long names, an abbreviation, a
+ * name collision, and a build override — per format. Full byte-level goldens already
+ * exist per format (`formats/dm32/serialise.test.ts`, `formats/opengd77/exportGolden.test.ts`,
  * `formats/anytone/exportGolden.test.ts`, `formats/chirp/exportGolden.test.ts`) — this
  * file only pins the wire-*name* strings previewWireRows shows the operator, not the
  * full CSV bytes those suites already cover.
+ *
+ * Phase 2 (export wire-preview rework) repointed `previewWireRows` at `resolveWireNames`
+ * for zone/scanList/talkGroup/contact/rxGroupList and for channels with no m×n/multi-mode
+ * expansion row. Values below were re-pinned against that new output — see per-format
+ * notes.
  */
 import { describe, expect, it } from 'vitest';
 import { newChannel, newRadioBuildForProfile, newZone } from '@core/domain/factories.ts';
@@ -66,13 +67,28 @@ const FORMAT_CASES: readonly FormatCase[] = [
 
 /**
  * Wire names pinned per format — update deliberately (and note why) when the exporter
- * changes. Captured from today's `previewWireRows` production output; see file header.
+ * changes.
  *
  * Notable current behaviour this pins (not necessarily desirable — just what exists):
- * - Channel overrides are NOT length-limited by `previewWireRows` today (shown raw,
- *   sanitised only) — only the *generated* suggestion goes through the shorten pipeline.
- * - CHIRP channel/zone rows are never disambiguated (`formatUsesListNameShortening`
- *   excludes chirp, and the CHIRP channel branch has no `reserved` set at all).
+ * - DM32/Anytone are m×n-capable radio targets, so every channel in this fixture gets an
+ *   m×n expansion row; that expansion path (`expandAllMxNChannels`) is untouched by phase
+ *   2 (per the wire-preview-rework plan — composition hooks for m×n/timeslot-clone base
+ *   names are out of scope). Channel overrides on expansion rows are still shown raw,
+ *   sanitised only, NOT length-limited — only the *generated* suggestion is shortened.
+ *   OpenGD77 (`baofeng-dm1701`) is not m×n-capable, so its channels go through the
+ *   general multi-mode path, which has the same untouched-override behaviour.
+ * - CHIRP channel/zone rows are never disambiguated (CHIRP zones are `'not_used'` in
+ *   `getProfileExportLimits`, and the CHIRP channel branch has no `reserved` set at all).
+ * - Zone/scanList/contact/talkGroup/rxGroupList rows have no expansion concept, so they
+ *   now go through `resolveWireNames` uniformly — including overrides, which are now
+ *   correctly length-limited (hard-truncated) to the profile's `nameLengthZone` (etc.),
+ *   matching what CSV export actually writes. This is the phase 2 WYSIWYG fix. Anytone's
+ *   `nameLengthZone`/`nameLengthContact`/`nameLengthTalkGroup`/`nameLengthScanList`/
+ *   `nameLengthRxGroupList` were `null` ("unmodelled") in
+ *   `src/core/import-export/profileExportLimits.ts` prior to this phase — backfilled here
+ *   to `profile.nameLimit` (the single field-width Anytone's own profile already applies
+ *   to every wire-name column) so preview matches the CSV exporter's existing
+ *   `resolveMaxNameLength` fallback instead of silently stopping shortening.
  */
 const EXPECTED_CHANNEL_NAMES: Record<string, readonly string[]> = {
   dm32: ['GCCRGS', 'Home', 'Home 2', 'This Base Override Is Too Long for the radio'],
@@ -82,9 +98,10 @@ const EXPECTED_CHANNEL_NAMES: Record<string, readonly string[]> = {
 };
 
 const EXPECTED_ZONE_NAMES: Record<string, readonly string[]> = {
-  dm32: ['This Zone Override Is Too Long for the radio', 'Gls Cy Cntr Rptr', 'Home', 'Home 2'],
-  opengd77: ['This Zone Override Is Too Long for the radio', 'Gls Cy Cntr Rptr', 'Home', 'Home 2'],
-  anytone: ['This Zone Override Is Too Long for the radio', 'Gls Cy Cntr Rptr', 'Home', 'Home 2'],
+  // Override now hard-truncated to the 16-char profile limit — was shown raw pre-phase-2.
+  dm32: ['This Zone Overri', 'Gls Cy Cntr Rptr', 'Home', 'Home 2'],
+  opengd77: ['This Zone Overri', 'Gls Cy Cntr Rptr', 'Home', 'Home 2'],
+  anytone: ['This Zone Overri', 'Gls Cy Cntr Rptr', 'Home', 'Home 2'],
   chirp: [
     'This Zone Override Is Too Long for the radio',
     'Glasgow City Centre Repeater Group Site',
