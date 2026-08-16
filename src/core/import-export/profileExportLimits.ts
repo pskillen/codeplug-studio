@@ -63,12 +63,7 @@ export interface ProfileExportLimits {
 
 /** Wire-name-bearing entity kinds carried by {@link ProfileExportLimits}. */
 export type ProfileNameLimitKind =
-  | 'channel'
-  | 'zone'
-  | 'contact'
-  | 'talkGroup'
-  | 'scanList'
-  | 'rxGroupList';
+  'channel' | 'zone' | 'contact' | 'talkGroup' | 'scanList' | 'rxGroupList';
 
 const NAME_LIMIT_FIELD: Record<ProfileNameLimitKind, keyof ProfileExportLimits> = {
   channel: 'nameLengthChannel',
