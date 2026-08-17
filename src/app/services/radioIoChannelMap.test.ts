@@ -386,6 +386,30 @@ describe('assembledChannelsToRadioDtos', () => {
       ),
     ).toBe(true);
   });
+
+  it('copies channel location and useLocation for OpenGD77 serial projection', () => {
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
+    const entity = {
+      ...newChannel('p1', 'Edinburgh'),
+      id: 'ch-edin',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      location: { lat: 55.9533, lon: -3.1883 },
+      useLocation: true,
+      modeProfiles: [
+        {
+          mode: 'fm' as const,
+          squelch: null,
+          rxTone: 'none',
+          txTone: 'none',
+          bandwidthKHz: 12.5,
+        },
+      ],
+    };
+    const dtos = assembledChannelsToRadioDtos([{ entity, wireName: 'Edinburgh' }], build, egress);
+    expect(dtos[0]?.location).toEqual({ lat: 55.9533, lon: -3.1883 });
+    expect(dtos[0]?.useLocation).toBe(true);
+  });
 });
 
 describe('expandAssembledChannelsToRadioDtos — MxN', () => {

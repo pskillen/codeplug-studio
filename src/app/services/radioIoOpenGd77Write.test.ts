@@ -64,4 +64,39 @@ describe('OpenGD77 write without persisted hydration', () => {
     const written = radio.decodeChannels(radio.getPriorImage()!);
     expect(written.some((row) => row.wireName === 'TEST')).toBe(true);
   });
+
+  it('writes located channel GPS onto the channel record', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    const radio = new OpenGd77Protocol();
+    await radio.connect(pipe);
+    const session: RadioSession = {
+      descriptor: OPENGD77_DM1701_DESCRIPTOR,
+      pipe,
+      radio,
+    };
+    const ch = {
+      ...newChannel('p1', 'EDIN'),
+      id: 'ch-edin',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      location: { lat: 55.9533, lon: -3.1883 },
+      useLocation: true,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
+    await writeBuildToRadio(
+      session,
+      {
+        ...build,
+        channelOverrides: [{ libraryEntityId: 'ch-edin', wireName: 'EDIN', orderOrSlot: 1 }],
+      },
+      egress,
+      emptyLibrary([ch]),
+    );
+    const written = radio.decodeChannels(radio.getPriorImage()!).find((row) => row.wireName === 'EDIN');
+    expect(written?.location).toEqual({ lat: 55.9533, lon: -3.1883 });
+    expect(written?.useLocation).toBe(true);
+  });
 });

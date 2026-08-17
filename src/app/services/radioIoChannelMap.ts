@@ -256,6 +256,8 @@ function openGd77AssembledChannelsToRadioDtos(
         ? { squelchPercent: profileAnalog.squelch }
         : {}),
       ...(rxOnly ? { rxOnly: true } : {}),
+      location: entity.location,
+      useLocation: entity.useLocation,
       ...digitalFieldsFromExpandedWireRow(expansion, entity, fkMaps),
     });
     slotIndex += 1;
