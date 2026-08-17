@@ -327,6 +327,9 @@ export default function WirePreviewDataTable({
       {
         key: 'exportName',
         header: 'Export name',
+        // Wider than the default minmax(8rem, 1fr) — the edit state needs room for a text
+        // input, Save/Revert icons, and a suggestion line without crowding (#1217 follow-up).
+        width: onWireNameChange ? 'minmax(14rem, 2fr)' : undefined,
         sortable: true,
         sortValue: (row: WirePreviewTableRow) => row.effectiveWireName.toLowerCase(),
         render: (row: WirePreviewTableRow) => {
@@ -352,7 +355,6 @@ export default function WirePreviewDataTable({
               disabled={!rowEffectivelyIncluded(row)}
               suggestions={suggestions}
               onWireNameChange={onWireNameChange}
-              resolutionFields={channelResolutionByKey?.get(row.key)}
             />
           );
         },

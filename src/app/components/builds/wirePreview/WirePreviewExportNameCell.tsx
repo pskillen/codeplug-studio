@@ -4,10 +4,8 @@ import { useState } from 'react';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { RowActionIcon } from '../../v2/index.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../../lib/iconSizes.ts';
-import type { ResolutionFieldRow } from '../../../lib/wirePreviewResolution.ts';
 import WireNameInlineEditor, { type WireNameSuggestion } from './WireNameInlineEditor.tsx';
 import WireNameRemediationMarker from './WireNameRemediationMarker.tsx';
-import WireResolutionSection from './WireResolutionSection.tsx';
 import { wireNameCommittedValue } from './wirePreviewRowUtils.ts';
 
 export interface WirePreviewExportNameCellProps {
@@ -16,14 +14,18 @@ export interface WirePreviewExportNameCellProps {
   disabled?: boolean;
   suggestions: WireNameSuggestion[];
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
-  /** Channel rows only — Resolution section shown below the editor while editing. */
-  resolutionFields?: ResolutionFieldRow[];
 }
 
 /**
  * Export name cell for the CPS wire-preview table (wire-preview rework phase 6,
  * ux-proposal.md §2/§3) — read state is a label + remediation marker + pencil; the pencil
  * swaps the cell for the shared `WireNameInlineEditor` in place, no modal.
+ *
+ * Does not render a Resolution section here — a table cell has no room for one without
+ * crowding out the editor itself. The same reading is available per-row via the optional
+ * hideable resolution columns on this table (`WirePreviewDataTable`'s "Show/hide cols"),
+ * which is where it belongs for a list row rather than nested inside a name edit. The
+ * zone/CHIRP override modal (a full panel, not a table cell) still shows it.
  */
 export default function WirePreviewExportNameCell({
   row,
@@ -31,7 +33,6 @@ export default function WirePreviewExportNameCell({
   disabled = false,
   suggestions,
   onWireNameChange,
-  resolutionFields,
 }: WirePreviewExportNameCellProps) {
   const [editing, setEditing] = useState(false);
 
@@ -50,9 +51,6 @@ export default function WirePreviewExportNameCell({
           }}
           onCancel={() => setEditing(false)}
         />
-        {resolutionFields && resolutionFields.length > 0 ? (
-          <WireResolutionSection fields={resolutionFields} />
-        ) : null}
       </div>
     );
   }
