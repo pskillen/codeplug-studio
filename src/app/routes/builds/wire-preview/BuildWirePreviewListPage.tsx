@@ -241,6 +241,8 @@ function BuildWirePreviewListContent({
           nameLimit={nameLimit}
           onWireNameChange={setRowWireName}
           channelsById={channelsById}
+          build={build}
+          library={library}
           inclusionColumn={{
             saving,
             onExcludedChange: setRowExcluded,
@@ -268,6 +270,7 @@ function BuildWirePreviewListContent({
           row={activeRow}
           build={build}
           entityKind={entityKind}
+          library={library}
           nameLimit={nameLimit}
           onExcludedChange={setRowExcluded}
           onForceIncludeChange={entityKind === 'zone' ? setRowForceIncluded : undefined}

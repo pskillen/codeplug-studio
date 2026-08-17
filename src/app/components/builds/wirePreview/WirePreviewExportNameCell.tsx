@@ -4,8 +4,10 @@ import { useState } from 'react';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { RowActionIcon } from '../../v2/index.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../../lib/iconSizes.ts';
+import type { ResolutionFieldRow } from '../../../lib/wirePreviewResolution.ts';
 import WireNameInlineEditor, { type WireNameSuggestion } from './WireNameInlineEditor.tsx';
 import WireNameRemediationMarker from './WireNameRemediationMarker.tsx';
+import WireResolutionSection from './WireResolutionSection.tsx';
 import { wireNameCommittedValue } from './wirePreviewRowUtils.ts';
 
 export interface WirePreviewExportNameCellProps {
@@ -14,6 +16,8 @@ export interface WirePreviewExportNameCellProps {
   disabled?: boolean;
   suggestions: WireNameSuggestion[];
   onWireNameChange: (row: WirePreviewRow, wireName: string) => void;
+  /** Channel rows only — Resolution section shown below the editor while editing. */
+  resolutionFields?: ResolutionFieldRow[];
 }
 
 /**
@@ -27,6 +31,7 @@ export default function WirePreviewExportNameCell({
   disabled = false,
   suggestions,
   onWireNameChange,
+  resolutionFields,
 }: WirePreviewExportNameCellProps) {
   const [editing, setEditing] = useState(false);
 
@@ -45,6 +50,9 @@ export default function WirePreviewExportNameCell({
           }}
           onCancel={() => setEditing(false)}
         />
+        {resolutionFields && resolutionFields.length > 0 ? (
+          <WireResolutionSection fields={resolutionFields} />
+        ) : null}
       </div>
     );
   }

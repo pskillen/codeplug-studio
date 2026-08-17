@@ -1,6 +1,7 @@
 import { Stack, Tabs, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
 import type { FormatBuild } from '@core/models/formatBuild.ts';
+import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { WirePreviewEntityKind, WirePreviewRow } from '@core/services/previewWireRows.ts';
 import { Button, ModalShell } from '../../v2/index.ts';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
@@ -12,6 +13,8 @@ export interface WirePreviewOverrideModalProps {
   row: WirePreviewRow | null;
   build: FormatBuild;
   entityKind: WirePreviewEntityKind;
+  /** Feeds the row's Resolution section (wire name + behavioural fields) when available. */
+  library?: LibrarySlice | null;
   nameLimit?: number;
   onExcludedChange: (row: WirePreviewRow, excluded: boolean) => void;
   onForceIncludeChange?: (row: WirePreviewRow, forceInclude: boolean) => void;
@@ -30,6 +33,7 @@ export default function WirePreviewOverrideModal({
   row,
   build,
   entityKind,
+  library,
   nameLimit,
   onExcludedChange,
   onForceIncludeChange,
@@ -44,6 +48,7 @@ export default function WirePreviewOverrideModal({
     row,
     build,
     entityKind,
+    library,
     nameLimit,
     onExcludedChange,
     onForceIncludeChange,

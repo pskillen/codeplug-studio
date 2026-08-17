@@ -4,11 +4,20 @@ import { Badge, Group, Switch, Text, Tooltip } from '@mantine/core';
 import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
 import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
 import type { Channel } from '@core/models/library.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { WirePreviewEntityKind, WirePreviewRow } from '@core/services/previewWireRows.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
+import { findZoneGroupingSection } from '@core/domain/zoneGroupingLayout.ts';
 import { LIST_NAME_FILTER_DEBOUNCE_MS } from '@integrations/listPrefs/index.ts';
 import { channelWireNameStyleSuggestions } from '../../../lib/channelWireNameStyleSuggestions.ts';
+import {
+  channelWireResolutionRows,
+  zoneDerivedScanResolutionRows,
+  zoneWireResolutionRows,
+  type ResolutionFieldRow,
+} from '../../../lib/wirePreviewResolution.ts';
 import DataTable, { type DataTableSortState } from '../../v2/DataTable.tsx';
 import WirePreviewListNameCell from './WirePreviewListNameCell.tsx';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
@@ -77,6 +86,14 @@ export interface WirePreviewDataTableProps {
    * (ux-proposal.md §6a). Omit to fall back to the single build-default suggestion.
    */
   channelsById?: Map<string, Channel>;
+  /**
+   * Build + library slice for the row-editor Resolution section (channel rows, ux-proposal.md
+   * §1) and the optional Resolution columns (channel + zone rows, hideable, off by default —
+   * same column-visibility picker as the existing Details column). Omit either to leave
+   * Resolution off (e.g. before library loads).
+   */
+  build?: RadioBuild;
+  library?: LibrarySlice | null;
 }
 
 /**
@@ -103,6 +120,45 @@ function wireNameSuggestionsForRow(
   return [{ value: row.generatedWireName }];
 }
 
+/**
+ * Optional hideable resolution columns (ux-proposal.md §1, wire-preview rework phase 8) —
+ * one per behavioural field, reproducing the deleted `/builds/:id/export-resolution` About
+ * page's channel matrix. Off by default via the existing Details-column `defaultVisible`
+ * convention; a row without a resolved field (e.g. no DMR profile for Talker alias) shows
+ * a dash rather than an empty cell.
+ */
+function resolutionFieldColumns(
+  byKey: Map<string, ResolutionFieldRow[]> | null,
+  defs: { key: string; header: string }[],
+) {
+  if (!byKey) return [];
+  return defs.map((def) => ({
+    key: `resolution-${def.key}`,
+    header: def.header,
+    hideable: true,
+    defaultVisible: false,
+    render: (row: WirePreviewTableRow) => {
+      const field = byKey.get(row.key)?.find((entry) => entry.key === def.key);
+      if (!field) {
+        return (
+          <Text size="sm" c="dimmed">
+            —
+          </Text>
+        );
+      }
+      return (
+        <Text size="sm">
+          {field.value}
+          <Text span size="xs" c="dimmed">
+            {' '}
+            · {field.layer}
+          </Text>
+        </Text>
+      );
+    },
+  }));
+}
+
 export default function WirePreviewDataTable({
   rows,
   onRowActivate,
@@ -122,6 +178,8 @@ export default function WirePreviewDataTable({
   nameLimit,
   onWireNameChange,
   channelsById,
+  build,
+  library,
 }: WirePreviewDataTableProps) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
   const effectiveSort = sort !== undefined ? sort : internalSort;
@@ -130,6 +188,38 @@ export default function WirePreviewDataTable({
   const [collapsedParentIds, setCollapsedParentIds] = useState<Set<string>>(() => new Set());
 
   const nestChannels = entityKind === 'channel';
+
+  // Resolution reading (ux-proposal.md §1) — computed once per row key, not per column, so
+  // the row-editor Resolution section and the optional hideable columns below share one pass.
+  const channelResolutionByKey = useMemo(() => {
+    if (entityKind !== 'channel' || !build || !library || !channelsById) return null;
+    const map = new Map<string, ResolutionFieldRow[]>();
+    for (const row of rows) {
+      const channel = channelsById.get(row.libraryEntityId);
+      if (!channel) continue;
+      map.set(row.key, channelWireResolutionRows(channel, row, build, library));
+    }
+    return map;
+  }, [entityKind, build, library, channelsById, rows]);
+
+  const zoneResolutionByKey = useMemo(() => {
+    if (entityKind !== 'zone' || !build || !library) return null;
+    const zoneGroupingLayout = findZoneGroupingSection(build);
+    const zoneById = new Map(library.zones.map((zone) => [zone.id, zone]));
+    const map = new Map<
+      string,
+      { fields: ResolutionFieldRow[]; zoneDerivedScan?: ReturnType<typeof zoneDerivedScanResolutionRows> }
+    >();
+    for (const row of rows) {
+      const zone = zoneById.get(row.libraryEntityId);
+      if (!zone) continue;
+      map.set(row.key, {
+        fields: zoneWireResolutionRows(row),
+        zoneDerivedScan: zoneDerivedScanResolutionRows(zone, build, library, zoneGroupingLayout),
+      });
+    }
+    return map;
+  }, [entityKind, build, library, rows]);
 
   const nestedRows = useMemo(() => {
     if (!nestChannels) return rows as WirePreviewTableRow[];
@@ -259,6 +349,7 @@ export default function WirePreviewDataTable({
               disabled={!rowEffectivelyIncluded(row)}
               suggestions={suggestions}
               onWireNameChange={onWireNameChange}
+              resolutionFields={channelResolutionByKey?.get(row.key)}
             />
           );
         },
@@ -294,6 +385,39 @@ export default function WirePreviewDataTable({
                   <Tooltip label={row.expansionNote}>{badge}</Tooltip>
                 ) : (
                   badge
+                );
+              },
+            },
+            ...resolutionFieldColumns(channelResolutionByKey, [
+              { key: 'transmit', header: 'Transmit' },
+              { key: 'txPermit', header: 'TX permit' },
+              { key: 'talkerAlias', header: 'Talker alias (DMR)' },
+              { key: 'squelch', header: 'Analog squelch' },
+            ]),
+          ]
+        : []),
+      ...(entityKind === 'zone' && zoneResolutionByKey
+        ? [
+            {
+              key: 'zoneDerivedScanResolution',
+              header: 'Zone-derived scan',
+              hideable: true,
+              defaultVisible: false,
+              render: (row: WirePreviewTableRow) => {
+                const resolution = zoneResolutionByKey.get(row.key);
+                const members = resolution?.zoneDerivedScan;
+                if (!members) {
+                  return (
+                    <Text size="sm" c="dimmed">
+                      —
+                    </Text>
+                  );
+                }
+                const included = members.filter((member) => member.value === 'Include').length;
+                return (
+                  <Text size="sm">
+                    {included} include, {members.length - included} skip
+                  </Text>
                 );
               },
             },
@@ -410,6 +534,8 @@ export default function WirePreviewDataTable({
       onWireNameChange,
       nameLimit,
       channelsById,
+      channelResolutionByKey,
+      zoneResolutionByKey,
     ],
   );
 
