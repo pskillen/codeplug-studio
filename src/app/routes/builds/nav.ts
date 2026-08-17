@@ -1,5 +1,4 @@
 import {
-  IconBinaryTree2,
   IconFileExport,
   IconPlane,
   IconPlugConnected,
@@ -238,7 +237,11 @@ export function buildWireEntityNavItems(
   return items;
 }
 
-/** mk2 About section — characteristics, export resolution, pathway retain viewers. */
+/**
+ * mk2 About section — characteristics, pathway retain viewers. Export resolution moved into
+ * Wire preview (row Resolution section + optional list columns) and this route was deleted —
+ * see docs/features/builds/wire-preview.md.
+ */
 export function buildAuditNavItems(
   build: RadioBuild,
   options?: BuildNavOptions,
@@ -251,11 +254,6 @@ export function buildAuditNavItems(
       label: 'Radio characteristics',
       path: `${base}/characteristics`,
       icon: IconRadio,
-    },
-    {
-      label: 'Export resolution',
-      path: `${base}/export-resolution`,
-      icon: IconBinaryTree2,
     },
   ];
 
@@ -326,7 +324,7 @@ const WIRE_PREVIEW_SEGMENTS = new Set([
   'rx-group-lists',
 ]);
 
-const AUDIT_SEGMENTS = new Set(['characteristics', 'export-resolution', 'neonplug-settings']);
+const AUDIT_SEGMENTS = new Set(['characteristics', 'neonplug-settings']);
 
 const BACKUP_SEGMENTS = new Set(['backup', 'radio-info', 'radio-image']);
 

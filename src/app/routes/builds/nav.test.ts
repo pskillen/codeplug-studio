@@ -284,7 +284,6 @@ describe('activeBuildSection', () => {
 
   it('maps about routes to audit section', () => {
     expect(activeBuildSection(`/builds/${build.id}/characteristics`, build.id)).toBe('audit');
-    expect(activeBuildSection(`/builds/${build.id}/export-resolution`, build.id)).toBe('audit');
   });
 
   it('maps export, export settings, and overview', () => {
