@@ -172,7 +172,25 @@ describe('encodeScanListsIntoDm32Image', () => {
     ]);
     expect(image.bytes[dm32ScanListEntryOffset(1)]).toBe('O'.charCodeAt(0));
     expect(image.bytes[secondOff]).toBe(0x00);
+    expect(image.bytes[secondOff + 0x0b]).toBe(0x00);
     expect(image.bytes[0]).toBe(1);
+  });
+
+  it('clears vacant slots beyond count so member byte is not 0xFF', () => {
+    const scanData = makeBlock(DM32_METADATA.SCAN_LIST);
+    const image = createMemoryMap(DM32_BLOCK_SIZE);
+    image.set(0, scanData);
+    const ctx = { addressBase: 0, discovered: [{ address: 0, metadata: DM32_METADATA.SCAN_LIST }] };
+    const lists = Array.from({ length: 13 }, (_, i) => ({
+      wireName: `L${i + 1}`,
+      channelNumbers: [i + 1],
+      listIndex: i + 1,
+    }));
+    encodeScanListsIntoDm32Image(image, ctx, lists);
+    expect(image.bytes[0]).toBe(13);
+    const vacantOff = dm32ScanListEntryOffset(14);
+    expect(image.bytes[vacantOff + 0x0b]).toBe(0x00);
+    expect(image.bytes[vacantOff]).toBe(0x00);
   });
 
   it('writes count and entry at (57*N)-56', () => {

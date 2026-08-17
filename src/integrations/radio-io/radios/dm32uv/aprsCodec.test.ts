@@ -39,12 +39,21 @@ describe('aprsCodec', () => {
     expect(block[0x321]).toBe(0);
     expect(block[0x32e]).toBe(7);
     expect(block[0x331]! & 0x01).toBe(1);
-    expect(block[0x332]).toBe(0x12);
+    expect(block[0x332]).toBe(0x56);
     expect(block[0x333]).toBe(0x34);
-    expect(block[0x334]).toBe(0x56);
+    expect(block[0x334]).toBe(0x12);
     // Unspecified mid-slice bytes stay until explicitly written by patch fields
     expect(DM32_APRS_SLICE_START).toBe(0x301);
     expect(DM32_APRS_SLICE_END).toBe(0x334);
+  });
+
+  it('writes upload DMR ID little-endian for firmware LCD (234999 fixture)', () => {
+    const block = new Uint8Array(DM32_BLOCK_SIZE);
+    patchDm32AprsSettingsSlice(block, { uploadDmrId: 234_999, callType: 0 });
+    expect(block[0x332]).toBe(0xf7);
+    expect(block[0x333]).toBe(0x95);
+    expect(block[0x334]).toBe(0x03);
+    expect(block[0x331]! & 0x01).toBe(0);
   });
 
   it('encodes APRS into the settings block of a MemoryMap', () => {

@@ -70,6 +70,18 @@ export function dm32ScanListEntryOffset(listNum1Based: number): number {
 }
 
 /**
+ * Vacant scan-list slot after `0xFF` bank fill — firmware treats `+0x0B` `0xFF` as 255 members
+ * (zone vacant-slot parity in `zoneCodec.clearDm32ZoneSlot`).
+ */
+export function clearDm32VacantScanListSlot(buf: Uint8Array, listNum1Based: number): void {
+  const off = dm32ScanListEntryOffset(listNum1Based);
+  if (off < 0 || off + DM32_SCAN_LIST_ENTRY_SIZE > buf.length) return;
+  buf.fill(0xff, off, off + DM32_SCAN_LIST_ENTRY_SIZE);
+  buf[off] = 0x00;
+  buf[off + 0x0b] = 0x00;
+}
+
+/**
  * Rewrite scan-list block(s) metadata 0x11.
  * Count at byte 0; entries at (57*N)-56.
  */
@@ -92,11 +104,14 @@ export function encodeScanListsIntoDm32Image(
     dm32ScanListEntryOffset(encoded.length) + DM32_SCAN_LIST_ENTRY_SIZE,
   );
   const all = new Uint8Array(totalSize);
-  all.fill(0x00);
+  all.fill(0xff);
   all[0] = encoded.length & 0xff;
   for (let i = 0; i < encoded.length; i++) {
     const off = dm32ScanListEntryOffset(i + 1);
     all.set(encoded[i]!, off);
+  }
+  for (let n = encoded.length + 1; n <= DM32_SCAN_LISTS_MAX; n++) {
+    clearDm32VacantScanListSlot(all, n);
   }
 
   for (let blockIdx = 0; blockIdx < scanBlocks.length; blockIdx++) {
@@ -104,7 +119,7 @@ export function encodeScanListsIntoDm32Image(
     const base = block.address - ctx.addressBase;
     const slice = all.subarray(blockIdx * DM32_BLOCK_SIZE, (blockIdx + 1) * DM32_BLOCK_SIZE);
     const chunk = new Uint8Array(DM32_BLOCK_SIZE);
-    chunk.fill(0x00);
+    chunk.fill(0xff);
     chunk.set(slice.subarray(0, Math.min(slice.length, DM32_BLOCK_SIZE)));
     if (blockIdx === 0) {
       chunk[0] = encoded.length & 0xff;

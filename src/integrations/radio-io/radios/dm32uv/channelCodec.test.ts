@@ -122,6 +122,21 @@ describe('dm32 channelCodec', () => {
     expect(parseDm32ChannelRecord(encoded, 1).rxOnly).toBe(true);
   });
 
+  it('encodes zone-derived scanListId and scanAdd on byte 0x19', () => {
+    const list1 = encodeDm32ChannelRecord(
+      sampleDto({ bandwidth: 'NFM', scanAdd: true, scanListId: 1 }),
+    );
+    expect(list1[0x19]).toBe(0x44);
+
+    const list2 = encodeDm32ChannelRecord(
+      sampleDto({ bandwidth: 'NFM', scanAdd: true, scanListId: 2 }),
+    );
+    expect(list2[0x19]).toBe(0x48);
+    expect(list2[0x19]! & 0x80).toBe(0);
+    expect(list2[0x19]! & 0x40).toBe(0x40);
+    expect((list2[0x19]! >> 2) & 0x0f).toBe(2);
+  });
+
   it('parses and encodes a basic analog channel record', () => {
     const encoded = encodeDm32ChannelRecord(sampleDto());
     expect(encoded.length).toBe(DM32_CHANNEL_RECORD_SIZE);
