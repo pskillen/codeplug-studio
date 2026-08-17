@@ -23,6 +23,91 @@ import { readAbs, writeAbs } from './memory.ts';
 
 const TE = new TextEncoder();
 
+const OPENGD77_USE_LOCATION_FLAG = 0x08;
+const OPENGD77_LAT_BYTE_OFFSETS: [number, number, number] = [0x1a, 0x1c, 0x1d];
+const OPENGD77_LON_BYTE_OFFSETS: [number, number, number] = [0x1e, 0x1f, 0x24];
+
+/** Pack WGS84 degrees into OpenGD77 24-bit split-angle (round `abs(angle)*10000`). */
+export function encodeOpenGd77Angle(angle: number): number {
+  if (!Number.isFinite(angle)) return 0;
+  const sign = angle < 0 ? 1 : 0;
+  const scaled = Math.round(Math.abs(angle) * 10000);
+  const degrees = Math.floor(scaled / 10000);
+  const frac = scaled % 10000;
+  return ((sign << 23) | (degrees << 15) | frac) >>> 0;
+}
+
+/** Unpack OpenGD77 24-bit split-angle to WGS84 degrees. */
+export function decodeOpenGd77Angle(code: number): number {
+  const unsigned = code >>> 0;
+  const sign = (unsigned >> 23) & 1 ? -1 : 1;
+  const degrees = (unsigned >> 15) & 0xff;
+  const frac = unsigned & 0x7fff;
+  return sign * (degrees + frac / 10000);
+}
+
+function readSplitAngle(raw: Uint8Array, offsets: readonly [number, number, number]): number {
+  const b0 = raw[offsets[0]]!;
+  const b1 = raw[offsets[1]]!;
+  const b2 = raw[offsets[2]]!;
+  return (b2 << 16) | (b1 << 8) | b0;
+}
+
+function writeSplitAngle(
+  out: Uint8Array,
+  code: number,
+  offsets: readonly [number, number, number],
+): void {
+  const c = code >>> 0;
+  out[offsets[0]] = c & 0xff;
+  out[offsets[1]] = (c >> 8) & 0xff;
+  out[offsets[2]] = (c >> 16) & 0xff;
+}
+
+function clearOpenGd77LocationBytes(out: Uint8Array): void {
+  out[0x1a] = 0;
+  out[0x1c] = 0;
+  out[0x1d] = 0;
+  out[0x1e] = 0;
+  out[0x1f] = 0;
+  out[0x24] = 0;
+}
+
+function decodeChannelLocation(raw: Uint8Array): Pick<RadioChannelDto, 'location' | 'useLocation'> {
+  const latCode = readSplitAngle(raw, OPENGD77_LAT_BYTE_OFFSETS);
+  const lonCode = readSplitAngle(raw, OPENGD77_LON_BYTE_OFFSETS);
+  const useLocation = (raw[0x26]! & OPENGD77_USE_LOCATION_FLAG) !== 0;
+  if (latCode === 0 && lonCode === 0 && !useLocation) {
+    return { location: null, useLocation: false };
+  }
+  return {
+    location: { lat: decodeOpenGd77Angle(latCode), lon: decodeOpenGd77Angle(lonCode) },
+    useLocation,
+  };
+}
+
+function writeChannelLocation(out: Uint8Array, dto: RadioChannelDto): void {
+  const loc = dto.location;
+  const lat = loc?.lat;
+  const lon = loc?.lon;
+  const hasFiniteCoords =
+    loc != null && Number.isFinite(lat) && Number.isFinite(lon);
+  const useLocation = dto.useLocation === true && hasFiniteCoords;
+
+  if (hasFiniteCoords) {
+    writeSplitAngle(out, encodeOpenGd77Angle(lat!), OPENGD77_LAT_BYTE_OFFSETS);
+    writeSplitAngle(out, encodeOpenGd77Angle(lon!), OPENGD77_LON_BYTE_OFFSETS);
+    if (useLocation) {
+      out[0x26] = (out[0x26]! | OPENGD77_USE_LOCATION_FLAG) & 0xff;
+    } else {
+      out[0x26] = out[0x26]! & ~OPENGD77_USE_LOCATION_FLAG;
+    }
+  } else {
+    clearOpenGd77LocationBytes(out);
+    out[0x26] = out[0x26]! & ~OPENGD77_USE_LOCATION_FLAG;
+  }
+}
+
 /** BCD8 little-endian → integer (qdmr getBCD8_le). */
 export function decodeBcd8Le(bytes: Uint8Array): number {
   if (bytes.length < 4) return 0;
@@ -218,6 +303,8 @@ export function decodeChannelRecord(
       txTone: { kind: 'none' },
       powerPercent: null,
       bandwidth: 'NFM',
+      location: null,
+      useLocation: false,
     };
   }
 
@@ -227,6 +314,7 @@ export function decodeChannelRecord(
   const groupListWire = raw[0x2b]!;
   const txContactWire = getU16Le(raw, 0x2e);
   const timeslotBit = (raw[0x31]! >> 6) & 1;
+  const { location, useLocation } = decodeChannelLocation(raw);
 
   return {
     slotIndex,
@@ -247,6 +335,8 @@ export function decodeChannelRecord(
     skipZoneScan: (bits33 & 0x20) !== 0,
     rxOnly: (bits33 & 0x04) !== 0,
     squelchPercent: decodeOpenGd77SquelchPercent(raw[0x37]!),
+    location,
+    useLocation,
   };
 }
 
@@ -266,10 +356,11 @@ export function encodeChannelRecord(
   out.set(encodeBcdFreqHz(dto.txHz > 0 ? dto.txHz : dto.rxHz), 0x14);
   out[0x18] = wireFromMode(dto.mode);
   out[0x19] = powerPercentToWire(dto.powerPercent, powerSteps);
-  // latitude / timeout / longitude left 0 (not modelled on write)
+  // TOT @ 0x1b left 0; lat/lon split bytes written by writeChannelLocation (skips 0x1b)
   setU16Le(out, 0x20, encodeSelectiveCall(dto.rxTone));
   setU16Le(out, 0x22, encodeSelectiveCall(dto.txTone));
-  out[0x26] = 0; // flags — simplex etc. not modelled
+  out[0x26] = 0; // flags — simplex etc. not modelled; USE_LOCATION OR'd in writeChannelLocation
+  writeChannelLocation(out, dto);
   // dmrId @ 0x27 left 0
   out[0x2b] = dto.rxGroupIndex != null && dto.rxGroupIndex >= 0 ? (dto.rxGroupIndex + 1) & 0xff : 0;
   out[0x2c] = (dto.colorCode ?? 0) & 0xff;
@@ -318,6 +409,8 @@ function emptySlot(slotIndex: number): RadioChannelDto {
     txTone: { kind: 'none' },
     powerPercent: null,
     bandwidth: 'NFM',
+    location: null,
+    useLocation: false,
   };
 }
 

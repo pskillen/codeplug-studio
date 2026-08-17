@@ -4,11 +4,13 @@ import {
   decodeBcdFreqHz,
   decodeChannelRecord,
   decodeChannelsFromImage,
+  decodeOpenGd77Angle,
   decodeOpenGd77SquelchPercent,
   decodeSelectiveCall,
   encodeBcdFreqHz,
   encodeChannelRecord,
   encodeChannelsIntoImage,
+  encodeOpenGd77Angle,
   encodeOpenGd77SquelchByte,
   encodeSelectiveCall,
   powerPercentToWire,
@@ -165,5 +167,71 @@ describe('opengd77 channelCodec record', () => {
     expect(channels[128]?.wireName).toBe('B1');
     expect(channels[128]?.empty).toBe(false);
     expect(channels[1]?.empty).toBe(true);
+  });
+});
+
+describe('opengd77 channelCodec packed-angle location', () => {
+  it('packs Edinburgh lat/lon with round scaling', () => {
+    expect(encodeOpenGd77Angle(55.9533)).toBe(0x001ba53d);
+    expect(encodeOpenGd77Angle(-3.1883)).toBe(0x0081875b);
+    expect(decodeOpenGd77Angle(0x001ba53d)).toBe(55.9533);
+    expect(decodeOpenGd77Angle(0x0081875b)).toBe(-3.1883);
+  });
+
+  it('rounds 51.5074 to four decimal places (not qDMR truncate)', () => {
+    expect(decodeOpenGd77Angle(encodeOpenGd77Angle(51.5074))).toBe(51.5074);
+  });
+
+  it('encodes Edinburgh channel with Use Location flag', () => {
+    const dto = sampleDto({
+      location: { lat: 55.9533, lon: -3.1883 },
+      useLocation: true,
+    });
+    const raw = encodeChannelRecord(dto);
+    expect(raw[0x1a]).toBe(0x3d);
+    expect(raw[0x1c]).toBe(0xa5);
+    expect(raw[0x1d]).toBe(0x1b);
+    expect(raw[0x1e]).toBe(0x5b);
+    expect(raw[0x1f]).toBe(0x87);
+    expect(raw[0x24]).toBe(0x81);
+    expect(raw[0x26]).toBe(0x08);
+    expect(raw[0x1b]).toBe(0); // TOT not clobbered by lat MS byte path
+  });
+
+  it('round-trips location and useLocation', () => {
+    const dto = sampleDto({
+      location: { lat: 55.9533, lon: -3.1883 },
+      useLocation: true,
+    });
+    const decoded = decodeChannelRecord(encodeChannelRecord(dto), 1);
+    expect(decoded.location).toEqual({ lat: 55.9533, lon: -3.1883 });
+    expect(decoded.useLocation).toBe(true);
+  });
+
+  it('encodes coords without Use Location flag when flag is false', () => {
+    const dto = sampleDto({
+      location: { lat: 55.9533, lon: -3.1883 },
+      useLocation: false,
+    });
+    const raw = encodeChannelRecord(dto);
+    expect(raw[0x1a]).toBe(0x3d);
+    expect(raw[0x26]).toBe(0);
+    const decoded = decodeChannelRecord(raw, 1);
+    expect(decoded.location).toEqual({ lat: 55.9533, lon: -3.1883 });
+    expect(decoded.useLocation).toBe(false);
+  });
+
+  it('zeros location bytes and clears flag when unset', () => {
+    const raw = encodeChannelRecord(sampleDto());
+    expect(raw[0x1a]).toBe(0);
+    expect(raw[0x1c]).toBe(0);
+    expect(raw[0x1d]).toBe(0);
+    expect(raw[0x1e]).toBe(0);
+    expect(raw[0x1f]).toBe(0);
+    expect(raw[0x24]).toBe(0);
+    expect(raw[0x26]).toBe(0);
+    const decoded = decodeChannelRecord(raw, 1);
+    expect(decoded.location).toBeNull();
+    expect(decoded.useLocation).toBe(false);
   });
 });
