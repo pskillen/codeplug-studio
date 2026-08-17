@@ -10,13 +10,14 @@ ux-proposal.md §2/§3). Read state is a label + [`WireNameRemediationMarker`](.
 
 ## Props
 
-| Prop               | Type                                              | Description                                       |
-| ------------------ | ------------------------------------------------- | ------------------------------------------------- |
-| `row`              | `WirePreviewRow`                                  | The preview row being rendered                    |
-| `nameLimit`        | `number` (optional)                               | Export name length limit                          |
-| `disabled`         | `boolean` (optional)                              | Row is effectively excluded from export           |
-| `suggestions`      | `WireNameSuggestion[]`                            | Passed straight through to `WireNameInlineEditor` |
-| `onWireNameChange` | `(row: WirePreviewRow, wireName: string) => void` | Called on Save                                    |
+| Prop               | Type                                              | Description                                                                                                        |
+| ------------------ | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `row`              | `WirePreviewRow`                                  | The preview row being rendered                                                                                     |
+| `nameLimit`        | `number` (optional)                               | Export name length limit                                                                                           |
+| `disabled`         | `boolean` (optional)                              | Row is effectively excluded from export                                                                            |
+| `suggestions`      | `WireNameSuggestion[]`                            | Passed straight through to `WireNameInlineEditor`                                                                  |
+| `onWireNameChange` | `(row: WirePreviewRow, wireName: string) => void` | Called on Save                                                                                                     |
+| `resolutionFields` | `ResolutionFieldRow[]` (optional)                 | Channel rows only — renders a [`WireResolutionSection`](./WireResolutionSection.md) below the editor while editing |
 
 ## Usage
 
@@ -41,4 +42,5 @@ ux-proposal.md §2/§3). Read state is a label + [`WireNameRemediationMarker`](.
 - [WirePreviewDataTable.md](./WirePreviewDataTable.md)
 - [WireNameInlineEditor.md](./WireNameInlineEditor.md)
 - [WireNameRemediationMarker.md](./WireNameRemediationMarker.md)
+- [WireResolutionSection.md](./WireResolutionSection.md)
 - [wire-preview.md](../../../../docs/features/builds/wire-preview.md)

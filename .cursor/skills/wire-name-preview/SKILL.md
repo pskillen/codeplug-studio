@@ -13,10 +13,47 @@ description: >-
 
 One pattern applies everywhere a name gets written to a CPS file or radio,
 regardless of entity granularity (channel, zone, talk group, contact, RX
-group list, satellite transmitter, …). Existing surfaces diverge from it in
-places — see [references/audit-findings.md](references/audit-findings.md)
-for the concrete catalogue. Treat that document as evidence of drift, not as
-alternative patterns to preserve.
+group list, satellite transmitter, …). For the six CPS entity kinds
+(channel, zone, scan list, talk group, contact, RX group list) that pattern
+is **shipped as a single service** — call it, do not hand-roll a per-surface
+checklist. Satellite transmitter names are a parallel, already-converged
+family with their own resolver (see below).
+
+The wire-preview rework series (#1213, #1217, #1219 — closes #956) landed
+this. [references/audit-findings.md](references/audit-findings.md) is now
+**historical evidence of the drift that motivated the rework**, not a
+catalogue of live gaps — do not read it as "surfaces still needing fixing."
+
+## The one entry point: `resolveWireNames`
+
+`src/core/services/resolveWireNames.ts` (policy engine in
+`resolveWireNamesCore.ts`) resolves every wire name for one entity kind
+under one build/format/profile in a single call:
+
+```ts
+resolveWireNames({ build, library, entityKind, formatId, profileId }): WireNameResolution[]
+```
+
+Each `WireNameResolution` carries:
+
+| Field              | Meaning                                                                 |
+| ------------------ | ------------------------------------------------------------------------ |
+| `libraryEntityId`  | The library row this resolution is for                                  |
+| `libraryName`      | Unshortened library name                                                |
+| `suggestion`       | Pure generated candidate — **never** sees this row's own override       |
+| `override`         | This row's stored override, if any                                      |
+| `effective`        | `override ?? suggestion`, limits re-applied per override-vs-suggestion policy |
+| `limit`            | Profile name-length cap, when the format/profile models one             |
+| `remediation`      | `'none' \| 'shortened' \| 'disambiguated' \| 'truncated' \| 'over_limit'` — what (if anything) fitting `effective` to `limit` required |
+
+CPS serialisers (`formats/<format>/serialise.ts`) that already hold merged
+`CpsExportOptions` call `resolveWireNamesFromOptions` from
+`resolveWireNamesCore.ts` **directly** (not via `resolveWireNames.ts`) if the
+calling module is itself registered in `registry.ts` — see the header
+comment on `resolveWireNamesCore.ts` for the import-cycle reason. Preview
+(`previewWireRows.ts`) and radio-io write projections call the
+build-based `resolveWireNames()` wrapper. Do not write a third call site
+that reimplements the fold.
 
 ## Data model
 
@@ -34,23 +71,16 @@ alternative patterns to preserve.
 The generator takes **library fields + build/radio/format settings only**.
 It must **never** receive this row's own override as input. Other rows'
 overrides may still be reserved (for uniqueness) while generating this row's
-suggestion.
-
-There is **one** generator function per entity kind, and it is called from
-both places:
-
-1. Preview / edit UI (to compute the suggestion(s) shown to the operator).
-2. Export / radio-write, for any row with no override.
-
-Do not let preview and export diverge into two implementations, and do not
-feed `assembled`/already-override-folded values back into the generator —
-that produces a "suggestion" that is really `shorten(override)` in disguise.
+suggestion. For the six CPS entity kinds this is `resolveWireNames`' job —
+do not write a new pure-generator function for one of those kinds; extend
+the resolver instead.
 
 ## Suggestions
 
-A row may offer **zero, one, or several** candidate strings from the pure
-generator (e.g. a single Suggestion; or "Familiar" + "OSCAR" alternates).
-Render each as a **clickable, link-styled** string near the input.
+A row may offer **zero, one, or several** candidate strings. Render each as
+a **clickable, link-styled** string near the input — see
+[`WireNameInlineEditor`](../../../src/app/components/builds/wirePreview/WireNameInlineEditor.md),
+the shared component every surface below uses.
 
 **One suggestion per identity, not per style.** Multiple suggestions are legitimate only
 when they are genuinely different *source identities* for the same object (satellite
@@ -61,40 +91,44 @@ list; the operator changes the build's Name style setting once, not per row.
 **Explicit exception — channel export names:** a channel row's inline editor offers one
 suggestion per `ChannelExportNameMode` (`callsign_name`, `callsign_only`, `name_only`,
 `callsign_suffix` — `src/core/domain/channelNaming.ts`), each run through the same
-limit/shorten/uniquify pipeline as the row's default suggestion. Reuse the per-style
-composition already computed for `ChannelWireNameExamples.tsx` on the channel edit page
-(`channelWireNamePreviewExamples`) — do not add a second style-composition path. This is a
-deliberate, requested exception for channels only; it does not extend to zones, talk
-groups, contacts, scan lists, or RX group lists.
+limit/shorten/uniquify pipeline as the row's default suggestion
+(`channelWireNameStyleSuggestions.ts`, reusing `channelWireNamePreviewExamples`
+composition). This is a deliberate, human-approved exception for channels only
+(ux-proposal.md §6a); it does not extend to zones, talk groups, contacts, scan lists,
+or RX group lists.
 
 **Clicking a suggestion only fills the draft input.** It must **not** commit
 the change, persist an override, or close edit mode. The operator still has
-to hit Save. (Several existing components commit on suggestion-click today —
-that is the anti-pattern to fix, not the pattern to copy.)
+to hit Save.
 
 ## Presentation
 
 ### List / read-only surfaces
 
-Show the **effective** name only. No "Suggestion:" subline, no
-generated-name preview. If the operator wants to see or change the
-generated value, they open the edit surface. In some situations we show
-the library (original unshortened) and override in e.g. a table - this is
-acceptable and by design.
+Show the **effective** name, plus a
+[`WireNameRemediationMarker`](../../../src/app/components/builds/wirePreview/WireNameRemediationMarker.md)
+driven by `resolution.remediation` — not a blanket "was this shortened"
+boolean. Clean shortening/disambiguation stays quiet (dimmed `≈`); only
+`truncated`/`over_limit` (genuine information loss the operator didn't
+choose) gets the orange warning triangle. No "Suggestion:" subline on list
+rows — that only appears once the row is in edit mode.
 
-### Editing one item, or a few, at a time
+### Inline vs modal — which surface edits a row
 
-- **Default state:** a label showing the effective name, with an edit
-  icon/button next to it. Rows are **not** pre-opened into edit mode.
-- **On click:** the label swaps for an input (draft = effective name; when
-  there is no override, draft is empty and the input's **placeholder**
-  shows the generated value) plus **Save** and **Revert** controls, and any
-  suggestion links.
-- **Save** commits the draft as the override (trim; empty clears the
-  override and reverts to live generation). **Revert** discards the draft
-  and closes edit mode without persisting anything.
-- Nothing persists from a suggestion click alone — only Save does.
-- Confirm before navigating away with an unsaved edit open.
+**Default: inline.** Row click does **not** open a modal. The Export name
+cell (`WirePreviewExportNameCell`) swaps in place for a name-only edit:
+label + remediation marker + pencil → `WireNameInlineEditor` with Save /
+Revert, closes back to the label on commit.
+
+**Modal only when a row has more than a name to edit**
+(`WirePreviewOverrideModal`, gated by `rowClickOpensModal` in
+`BuildWirePreviewListPage.tsx`): zones (Members / Scan tabs) and CHIRP
+flat-memory channels (per-channel scan inclusion via `extraSections`). The
+modal's wire-name field uses the **same** `WireNameInlineEditor`, not a
+separate input — do not fork a second edit widget for the modal path.
+
+Do not add a modal for a kind that only needs a name edit just because an
+older surface used to have one — extend the inline cell instead.
 
 ### Bulk editing many items
 
@@ -104,54 +138,98 @@ acceptable and by design.
   Apply button.
 - Confirm before navigating away with any unsaved row.
 
+## Resolution view — "why is it this?"
+
+Every row's editing surface (inline cell while editing, or the modal) can
+also show a **Resolution** section
+([`WireResolutionSection`](../../../src/app/components/builds/wirePreview/WireResolutionSection.md),
+composed via `src/app/lib/wirePreviewResolution.ts`): each exported field
+next to the layer that decided its effective value. For wire names, the
+layer is **derived from `WirePreviewRow.hasWireNameOverride` /
+`.remediation`** — override set wins outright ("Row override"); a non-`none`
+remediation with no override means a target constraint (length limit or
+dedupe) changed the composed name; otherwise it's exactly what library data
++ build naming settings composed. This is **not** a fifth stored layer —
+don't add one. Channel/zone behavioural fields (transmit, TX permit, talker
+alias, analog squelch, zone-derived scan membership) reuse the existing
+`resolve*WithLayer` cascades unchanged. The channels/zones wire-preview
+lists also offer the same reading as optional hideable columns (off by
+default). See
+[wire-preview.md — Resolution view](../../../docs/features/builds/wire-preview.md#resolution-view).
+
+This absorbed the former `/builds/:id/export-resolution` About page, which
+is deleted.
+
 ## Egress (export / radio write)
 
 - Override set → use it. Only deviate for a doc'd hard constraint (e.g. a
   fixed-width radio field that must literally fit `N` bytes) — and document
   that exception where the constraint lives, not as ad-hoc behaviour.
-- No override → call the **same pure generator** used in preview, resolved
-  with the **same settings** the preview used (build export settings /
-  radio-target profile limits). If export and preview can disagree for the
-  same build state, that is a bug, not a feature-specific choice.
+- No override → call `resolveWireNames` / `resolveWireNamesFromOptions`
+  (CPS entities) resolved with the **same settings** preview used (build
+  export settings / radio-target profile limits). If export and preview can
+  disagree for the same build state, that is a bug, not a feature-specific
+  choice.
 - Limits (`N`, charset) come from the radio/format **limits module**
-  (`src/core/radios/<mfr>/<model>/limits.ts` or format profile) — never a
-  literal in UI or generator code.
+  (`src/core/radios/<mfr>/<model>/limits.ts` or format profile via
+  `getProfileExportLimits`) — never a literal in UI or generator code.
+
+## Satellite transmitter encoded names (parallel family)
+
+Satellite transmitter names do not go through `resolveWireNames` (a
+fixed-width radio field with its own shortener, not a CPS profile limit) but
+follow the same shape: `resolveSatelliteTransmitterWriteNames` is the pure
+per-transmitter resolver, `SatelliteEncodedNameCell.tsx` +
+`SatelliteWireNameOverrideInput.tsx` are the inline editor, and
+`src/app/lib/satelliteWireNameRemediation.ts` approximates
+`WireNameRemediation` from the shortener's `nameTruncated` flag so it can
+drive the same `WireNameRemediationMarker`. See
+`docs/features/satellite-keps/name-shortening.md`.
 
 ## Anti-patterns
 
 See [references/audit-findings.md](references/audit-findings.md) for the
-full catalogue with file/line evidence. Headlines:
+historical catalogue this series fixed — useful as evidence of what drift
+looks like, not as a checklist to re-derive. Do not reintroduce:
 
-- Suggestion click persists immediately instead of only filling the draft.
-- Generator input includes this row's own override (or an already-folded
-  `assembled` value), so the "suggestion" isn't pure.
-- Bulk-edit surface applies changes per row instead of one page-level Save.
-- List view renders a Suggestion subline under the effective name.
-- Preview and the actual export/write path disagree on whether an override
-  gets shortened/uniquified.
-- A serial/radio-io egress path ignores build export settings that the CPS
-  CSV path for the same entity honours.
+- Generator input that includes this row's own override (or an
+  already-folded `assembled`/`effectiveWireName` value), so the
+  "suggestion" isn't pure.
+- Suggestion click that persists immediately instead of only filling the
+  draft.
+- A modal added for a kind that only needs a name edit.
+- Bulk-edit surface that applies changes per row instead of one page-level
+  Save.
+- List view rendering a Suggestion subline under the effective name.
+- Preview and the actual export/write path disagreeing on whether an
+  override gets shortened/uniquified — if they can, that's a resolver bug.
 - A hard-coded length/charset literal instead of reading the limits SoT.
-- Dead resolver functions left behind after a design changes which key
-  (entity vs sub-entity) an override is keyed by.
+- A new pure-generator function for a CPS entity kind `resolveWireNames`
+  already covers.
+- Inventing a stored "wire-name layer" field instead of deriving Resolution
+  attribution from `hasWireNameOverride` / `remediation`.
 
 ## Retrospective checklist
 
-When aligning an existing entity kind / surface to this pattern:
+When adding a new wire-name-bearing entity kind or surface:
 
-- [ ] Generator is pure (no override in its input)
-- [ ] Preview and egress-without-override call the **same** generator call
-- [ ] List/read-only view shows effective name only
-- [ ] Single/few-item edit: label + edit icon → input + Save/Revert, not
-      always-on input
+- [ ] CPS entity kinds resolve through `resolveWireNames` /
+      `resolveWireNamesFromOptions` — no parallel pure-generator path
+- [ ] Preview and egress-without-override call the **same** resolver call
+- [ ] List/read-only view shows effective name + remediation marker only
+- [ ] Row edit: inline cell by default; modal only for more-than-a-name rows
 - [ ] Bulk edit: all rows in edit mode, one page Save, not per-row Apply
 - [ ] Suggestion click fills the draft only, never commits
 - [ ] Unsaved-changes navigation guard present where edits are page-scoped
 - [ ] Limits/charset read from the radio/format SoT module
 - [ ] Only one override-keying scheme per entity kind (no dead alternates)
+- [ ] Resolution view attribution (if added) derives from existing fields —
+      not a new stored layer
 
 ## Related
 
-- Evidence / current-state audit: [references/audit-findings.md](references/audit-findings.md)
+- Evidence / historical audit: [references/audit-findings.md](references/audit-findings.md)
 - `docs/features/builds/wire-preview.md`, `wire-name-composition.md` — product-level CPS wire naming
 - `docs/features/satellite-keps/name-shortening.md` — satellite transmitter encoded names
+- `src/core/services/resolveWireNames.ts`, `resolveWireNamesCore.ts` — the resolver
+- `src/app/lib/wirePreviewResolution.ts`, `behaviourResolutionLabels.ts` — Resolution view

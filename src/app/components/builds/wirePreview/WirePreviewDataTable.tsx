@@ -208,7 +208,10 @@ export default function WirePreviewDataTable({
     const zoneById = new Map(library.zones.map((zone) => [zone.id, zone]));
     const map = new Map<
       string,
-      { fields: ResolutionFieldRow[]; zoneDerivedScan?: ReturnType<typeof zoneDerivedScanResolutionRows> }
+      {
+        fields: ResolutionFieldRow[];
+        zoneDerivedScan?: ReturnType<typeof zoneDerivedScanResolutionRows>;
+      }
     >();
     for (const row of rows) {
       const zone = zoneById.get(row.libraryEntityId);

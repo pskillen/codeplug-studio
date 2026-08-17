@@ -79,7 +79,10 @@ Passed to exporters via `CpsExportOptions.channelBehaviourContext` (`mergeExport
 - **Channel defaults** — `/library/channels/defaults` (nested under Channels)
 - **Channel editor** — Frequencies tab (transmit, TX permit); Modes → DMR subtab (talker alias); Modes → analog subtab (squelch mode)
 - **Build export** — optional default override segments
-- **Export resolution** — read-only audit of effective values + winning layer per build
+- **Wire preview Resolution** — per-channel-row effective value + winning layer for each
+  field, plus optional list columns — see
+  [wire-preview.md — Resolution view](../features/builds/wire-preview.md#resolution-view)
+  (absorbed the former `/builds/:id/export-resolution` About page)
 
 ## Related
 

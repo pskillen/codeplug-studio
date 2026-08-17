@@ -11,10 +11,10 @@ row override / target constraint.
 
 ## Props
 
-| Prop             | Type                          | Description                                                             |
-| ----------------- | ----------------------------- | ------------------------------------------------------------------------ |
-| `fields`          | `ResolutionFieldRow[]`        | One row per exported field — label, effective value, deciding layer     |
-| `zoneDerivedScan` | `ZoneScanMemberResolutionRow[]` (optional) | Zone rows only — per-member zone-derived scan inclusion |
+| Prop              | Type                                       | Description                                                         |
+| ----------------- | ------------------------------------------ | ------------------------------------------------------------------- |
+| `fields`          | `ResolutionFieldRow[]`                     | One row per exported field — label, effective value, deciding layer |
+| `zoneDerivedScan` | `ZoneScanMemberResolutionRow[]` (optional) | Zone rows only — per-member zone-derived scan inclusion             |
 
 Both row shapes come from `src/app/lib/wirePreviewResolution.ts`, which composes the existing
 `resolve*WithLayer` cascades (`@core/import-export/channelBehaviourDefaults/resolve.ts`,

@@ -26,6 +26,8 @@ Wire preview list for build entity routes. Shows library label, effective wire n
 | `nameLimit`            | `number` (optional)                | Export name length limit — feeds the inline editor + remediation marker tooltips             |
 | `onWireNameChange`     | `(row, wireName) => void` (opt.)   | Enables inline Export name editing; omit to keep the column read-only                        |
 | `channelsById`         | `Map<string, Channel>` (optional)  | Channel rows only — enables per-`ChannelExportNameMode` suggestions (ux-proposal.md §6a)     |
+| `build`                | `RadioBuild` (optional)            | Feeds the channel inline editor's Resolution section and the optional resolution columns     |
+| `library`              | `LibrarySlice \| null` (optional)  | Same — both `build` and `library` (plus `channelsById` for channels) are required to render  |
 
 ## Behaviour
 
@@ -37,6 +39,7 @@ Wire preview list for build entity routes. Shows library label, effective wire n
 - When **`reorder`** is set, the table runs in **`reorderMode`** (locked to `rows` order; column sorts off). Up/down `ActionIcon`s call `onMove`; drag handles and toolbar **Move** when `bulkReorder` is true (`onSetOrder` persists). Clicks stop propagation so they do not open the modal. Nest parent/child rows are not selectable or draggable.
 - Parents may show [`ExportOrderOverrideBanner`](./ExportOrderOverrideBanner.md) when `orderOrSlot` (or member layout order) is overridden — reset is separate from this table’s display sort.
 - **Export status badges** — skip, force-export, library omit, expansion notes via `rowEffectivelyIncluded`. Zone rows with a build member-order layout hint show **Custom member order**.
+- **Resolution columns** (channel: Transmit / TX permit / Talker alias / Analog squelch; zone: Zone-derived scan include/skip count) are hideable, `defaultVisible: false` — same column-visibility picker as **Details**. Only rendered when `build` and `library` are both supplied; see [`WireResolutionSection`](./WireResolutionSection.md) for the matching row-editor reading.
 
 ## Related
 
@@ -46,5 +49,6 @@ Wire preview list for build entity routes. Shows library label, effective wire n
 - [WireNameInlineEditor.md](./WireNameInlineEditor.md)
 - [WireNameRemediationMarker.md](./WireNameRemediationMarker.md)
 - [WirePreviewExportNameCell.md](./WirePreviewExportNameCell.md)
+- [WireResolutionSection.md](./WireResolutionSection.md)
 - `BuildWirePreviewListPage` route wrapper
 - `groupWirePreviewChannelRows` — presentation grouping over flat `previewWireRows`

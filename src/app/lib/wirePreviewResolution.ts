@@ -18,7 +18,10 @@ import {
   buildZoneBehaviourContext,
   resolveIncludeInZoneDerivedScanListWithLayer,
 } from '@core/import-export/zoneBehaviourDefaults/resolve.ts';
-import { collectZoneScanMemberRefs, layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
+import {
+  collectZoneScanMemberRefs,
+  layoutEntry,
+} from '@core/import-export/zoneDerivedScanLists/members.ts';
 import { findAnalogProfile, findDmrProfile } from '@core/domain/modeProfiles.ts';
 import { channelDisplayLabel } from '@core/domain/channelNaming.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
@@ -46,7 +49,10 @@ export interface ResolutionFieldRow {
   layer: string;
 }
 
-type WireNameRowSource = Pick<WirePreviewRow, 'hasWireNameOverride' | 'remediation' | 'effectiveWireName'>;
+type WireNameRowSource = Pick<
+  WirePreviewRow,
+  'hasWireNameOverride' | 'remediation' | 'effectiveWireName'
+>;
 
 function wireNameResolutionRow(row: WireNameRowSource): ResolutionFieldRow {
   return {
@@ -75,7 +81,12 @@ export function channelWireResolutionRows(
 
   const rows: ResolutionFieldRow[] = [
     wireNameResolutionRow(row),
-    { key: 'transmit', label: 'Transmit', value: forbidTransmitLabel(forbid.value), layer: layerLabel(forbid.layer) },
+    {
+      key: 'transmit',
+      label: 'Transmit',
+      value: forbidTransmitLabel(forbid.value),
+      layer: layerLabel(forbid.layer),
+    },
     {
       key: 'txPermit',
       label: 'TX permit',
@@ -137,7 +148,10 @@ export function zoneDerivedScanResolutionRows(
 
   const zoneContext = buildZoneBehaviourContext(library.zoneDefaults, build.exportSettings);
   const channelById = new Map(library.channels.map((channel) => [channel.id, channel]));
-  const refs = collectZoneScanMemberRefs(zone, library.zones, { context: zoneContext, layoutEntry: entry });
+  const refs = collectZoneScanMemberRefs(zone, library.zones, {
+    context: zoneContext,
+    layoutEntry: entry,
+  });
 
   return refs.map((ref) => {
     const channel = channelById.get(ref.channelId);

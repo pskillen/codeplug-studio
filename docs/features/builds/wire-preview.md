@@ -104,6 +104,33 @@ suggestions it never changes the build's stored Name style setting.
 
 Each entity wire page offers **Hide items not to be included in export** above the table when the library has rows for that entity kind (the toggle stays visible even when filtering hides every row). When enabled, rows are filtered with `isPreviewRowIncludedInExport` (respects per-row skip toggles and **Export inclusion** on `/builds/:id/export` for orphan channels, talk groups, and RX group lists). Zone rows with **Don't export as its own zone** in the library show a **Not exported as zone** badge; **Force export** is edited on the list and in the override modal (`forceInclude` on `zoneOverrides`) — no separate Skip for those rows (turn force off to honour the library omit). For other entities, **Skip from export** uses `excluded`. Precedence when both flags exist: `excluded` wins over `forceInclude`; `forceInclude` overrides library `omitFromExport`. Channel zone linkage uses library `Zone.members` plus build `zoneGrouping` layout — see [wire-name-composition.md](wire-name-composition.md#zone-membership-vs-wire-names). DM32 channel preview lists unlinked library channels (with zone note) so the toggle can reveal them when export inclusion excludes orphans. Contacts not referenced by exported channels are always omitted when the toggle is on.
 
+### Resolution view
+
+**Tracking:** [#1219](https://github.com/pskillen/codeplug-studio/issues/1219), closes [#956](https://github.com/pskillen/codeplug-studio/issues/956) — absorbs the deleted `/builds/:id/export-resolution` About page's two readings.
+
+- **Per row, "why is it this?"** — a **Resolution** section lists each exported field next to
+  the layer that decided its effective value. Channel rows: wire name, transmit, TX permit,
+  talker alias (DMR profiles), analog squelch (analog profiles). Zone rows: wire name, plus a
+  member-by-member **zone-derived scan membership** list when the zone is set to export as a
+  scan list and the format/profile supports the trait. Shown in the channel inline editor
+  (expanded while editing) and in the zone/CHIRP override modal, below the wire-name editor —
+  see [`WireResolutionSection`](../../../src/app/components/builds/wirePreview/WireResolutionSection.md).
+- **Across rows, "show me the whole matrix"** — optional **resolution columns** on the
+  channels and zones list (Transmit / TX permit / Talker alias / Analog squelch for channels;
+  a Zone-derived scan include/skip count for zones). Hideable, off by default, same
+  column-visibility picker as the existing **Details** column.
+
+Both readings reuse the existing `resolve*WithLayer` cascades unchanged
+(`@core/import-export/channelBehaviourDefaults/resolve.ts`,
+`@core/import-export/zoneBehaviourDefaults/resolve.ts`) via
+`src/app/lib/wirePreviewResolution.ts`. **Wire-name layer attribution** is not a stored
+layer — it is derived from `WirePreviewRow.hasWireNameOverride` / `.remediation`: a row
+override wins outright ("Row override"); otherwise a non-`none` remediation means the
+profile's naming constraint (length limit or dedupe) changed the composed name ("Target
+constraint"); absent both, the value is exactly what library data + build naming settings
+composed ("Library + build settings"). See `wireNameResolutionLayer` /
+`wireNameLayerLabel` in `src/app/lib/behaviourResolutionLabels.ts`.
+
 ### m×n channel fan-out (MxNChannelExpansion)
 
 When `hasMxNChannelExpansion(build.radioTargetId)` is true (Baofeng DM-32UV — CPS, NeonPlug, and Web Serial egresses — and Anytone AT-D890UV), channel preview uses the shared **`expandAllMxNChannels`** API (same projection as CPS export and Web Serial write). Fan-out and scratch rows honour Export settings (`expandRxGroupLists`, `exportScratchChannels`). Fan-out rows include **displayDetails** (channel name, talk group name + digital ID + slot, or a scratch marker). Library channels omitted from export (when **Export channels not linked to a zone** is off) still appear in preview with a **Not linked to a zone** note. Anytone site wire names still go through `anytoneChannelWireName` as a resolve hook. OpenGD77 builds continue to use multi-mode expansion only.
@@ -152,5 +179,6 @@ Secondary nav is trait-gated from `radioTargetId`. **AM airband** keys off the a
 - [WirePreviewInclusionCell sidecar](../../../src/app/components/builds/wirePreview/WirePreviewInclusionCell.md)
 - [BuildEntityExportSettingsCard sidecar](../../../src/app/components/builds/BuildEntityExportSettingsCard.md)
 - [WirePreviewOverrideModal sidecar](../../../src/app/components/builds/wirePreview/WirePreviewOverrideModal.md)
+- [WireResolutionSection sidecar](../../../src/app/components/builds/wirePreview/WireResolutionSection.md)
 - [ChirpChannelScanSection sidecar](../../../src/app/components/builds/wirePreview/overrideModalSections/ChirpChannelScanSection.md)
 - [data-model](../data-model/README.md) — `RadioBuild` overrides

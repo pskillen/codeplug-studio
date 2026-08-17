@@ -12,20 +12,21 @@ from `resolveOverrideModalSections`, plus route-supplied sections.
 
 ## Props
 
-| Prop                   | Type                                     | Description                                                                                |
-| ---------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `opened`               | `boolean`                                | Modal visibility                                                                           |
-| `onClose`              | `() => void`                             | Close handler                                                                              |
-| `row`                  | `WirePreviewRow \| null`                 | Active preview row                                                                         |
-| `build`                | `FormatBuild`                            | Active build                                                                               |
-| `entityKind`           | `WirePreviewEntityKind`                  | Entity kind for section registry                                                           |
-| `nameLimit`            | `number` (optional)                      | Profile wire name cap                                                                      |
-| `onExcludedChange`     | `(row, excluded) => void`                | Skip-from-export                                                                           |
-| `onForceIncludeChange` | `(row, forceInclude) => void` (optional) | Zone force-export (`entityKind === 'zone'`)                                                |
-| `onWireNameChange`     | `(row, wireName) => void`                | Wire name override (Apply / Reset in `CommonOverrideSection`; Suggestion fills draft only) |
-| `extraSections`        | `ReactNode` (optional)                   | Non-tabbed append (channel expansion context, CHIRP scan on flat-memory)                   |
-| `membersSection`       | `ReactNode` (optional)                   | Zone **Members** tab — `ZoneMemberOrderSection` from the zones wire page                   |
-| `scanSection`          | `ReactNode` (optional)                   | Zone **Scan** tab — `ZoneScanOverrideSection` when zone-derived scan applies               |
+| Prop                   | Type                                     | Description                                                                                                                 |
+| ---------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `opened`               | `boolean`                                | Modal visibility                                                                                                            |
+| `onClose`              | `() => void`                             | Close handler                                                                                                               |
+| `row`                  | `WirePreviewRow \| null`                 | Active preview row                                                                                                          |
+| `build`                | `FormatBuild`                            | Active build                                                                                                                |
+| `entityKind`           | `WirePreviewEntityKind`                  | Entity kind for section registry                                                                                            |
+| `library`              | `LibrarySlice \| null` (optional)        | Feeds the row's [Resolution section](./WireResolutionSection.md); omitted or unset (e.g. before the library loads) skips it |
+| `nameLimit`            | `number` (optional)                      | Profile wire name cap                                                                                                       |
+| `onExcludedChange`     | `(row, excluded) => void`                | Skip-from-export                                                                                                            |
+| `onForceIncludeChange` | `(row, forceInclude) => void` (optional) | Zone force-export (`entityKind === 'zone'`)                                                                                 |
+| `onWireNameChange`     | `(row, wireName) => void`                | Wire name override (Apply / Reset in `CommonOverrideSection`; Suggestion fills draft only)                                  |
+| `extraSections`        | `ReactNode` (optional)                   | Non-tabbed append (channel expansion context, CHIRP scan on flat-memory)                                                    |
+| `membersSection`       | `ReactNode` (optional)                   | Zone **Members** tab — `ZoneMemberOrderSection` from the zones wire page                                                    |
+| `scanSection`          | `ReactNode` (optional)                   | Zone **Scan** tab — `ZoneScanOverrideSection` when zone-derived scan applies                                                |
 
 ## Sections
 
@@ -47,6 +48,12 @@ Channel expansion context (mode/site details) moved to the always-visible **Deta
 (`WirePreviewDisplayCell`) on the table — it no longer needs a modal since the modal doesn't
 open for channel rows.
 
+`CommonOverrideSection` also renders a [`WireResolutionSection`](./WireResolutionSection.md)
+below the wire-name editor when both `build` and `library` are available — absorbed from the
+deleted `/builds/:id/export-resolution` About page (wire-preview rework phase 8). Channel rows
+(CHIRP flat-memory) show wire name + transmit + TX permit + talker alias + analog squelch;
+zone rows show wire name + zone-derived scan membership per exported channel.
+
 ## Behaviour
 
 - **Non-zone entities:** modal is not reachable — `BuildWirePreviewListPage` only sets the
@@ -61,4 +68,5 @@ open for channel rows.
 
 - [wire-preview.md](../../../../docs/features/builds/wire-preview.md)
 - [WirePreviewDataTable.md](./WirePreviewDataTable.md)
+- [WireResolutionSection.md](./WireResolutionSection.md)
 - `overrideModalSections/` — common + route-mounted zone/CHIRP sections

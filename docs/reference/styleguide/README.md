@@ -131,7 +131,10 @@ New reusable pieces under `src/app/components/v2/` need a sidecar `.md` and pref
 
 Do not force the list kit onto:
 
-- Export resolution / inclusion matrices
+- Inclusion matrices that don't reduce to per-row columns (the former Export resolution page's
+  matrix reading now fits role A `DataTable` fine as hideable columns — see
+  [wire-preview.md — Resolution view](../../features/builds/wire-preview.md#resolution-view) —
+  so it moved off this list, not onto it)
 - CPS CSV spreadsheet preview
 - Field-diff update dialogs
 - BrandMeister RX sync review
