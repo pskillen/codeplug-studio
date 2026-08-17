@@ -2,7 +2,7 @@
 
 **Status:** draft
 **Assignee:** agent with network (GitHub was 429 on 2026-08-17)
-**Dispatched:** _(not yet)_  **Returned:**
+**Dispatched:** _(not yet)_ **Returned:**
 **Code state:** Telectroboy/opengd77 `OPENGD77_MD9600_20260131` (official MD-9600 2026-01-31 source archive)
 **Blocks / blocked by:** only needed if `E1` disagrees with qDMR, or to raise F20 from inference to source read
 
@@ -50,7 +50,9 @@ Quoted functions + a one-sentence verdict: channel store **is** / **is not** qDM
 ---
 
 ## Report
+
 <!-- written by the assignee; the brief above is immutable once dispatched -->
 
 ## Coordinator review
+
 <!-- what was accepted, what was folded where, what is still open -->

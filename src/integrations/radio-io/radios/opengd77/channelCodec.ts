@@ -90,8 +90,7 @@ function writeChannelLocation(out: Uint8Array, dto: RadioChannelDto): void {
   const loc = dto.location;
   const lat = loc?.lat;
   const lon = loc?.lon;
-  const hasFiniteCoords =
-    loc != null && Number.isFinite(lat) && Number.isFinite(lon);
+  const hasFiniteCoords = loc != null && Number.isFinite(lat) && Number.isFinite(lon);
   const useLocation = dto.useLocation === true && hasFiniteCoords;
 
   if (hasFiniteCoords) {

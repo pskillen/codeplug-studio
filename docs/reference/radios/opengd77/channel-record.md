@@ -16,37 +16,37 @@ Cite: qdmr `lib/opengd77base_codeplug.hh` `ChannelElement` (prefer over `doc/cod
 
 ## Field offsets
 
-| Field                                                        | Offset          | Encoding / notes                  |
-| ------------------------------------------------------------ | --------------- | --------------------------------- |
-| name                                                         | `0x00`          | 16 ASCII, `0xff` pad              |
-| rxFrequency                                                  | `0x10`          | BCD8 LE, ×10 Hz                   |
-| txFrequency                                                  | `0x14`          | BCD8 LE, ×10 Hz                   |
-| mode                                                         | `0x18`          | See Mode enum                     |
-| power                                                        | `0x19`          | `0` = global; `1`…`10` level      |
+| Field                                                        | Offset          | Encoding / notes                        |
+| ------------------------------------------------------------ | --------------- | --------------------------------------- |
+| name                                                         | `0x00`          | 16 ASCII, `0xff` pad                    |
+| rxFrequency                                                  | `0x10`          | BCD8 LE, ×10 Hz                         |
+| txFrequency                                                  | `0x14`          | BCD8 LE, ×10 Hz                         |
+| mode                                                         | `0x18`          | See Mode enum                           |
+| power                                                        | `0x19`          | `0` = global; `1`…`10` level            |
 | latitude byte 0                                              | `0x1a`          | Packed angle LS (with `0x1c`/`0x1d` MS) |
-| txTimeout                                                    | `0x1b`          | Units of 15 s; `0` = infinite     |
-| latitude bytes 1/2                                           | `0x1c` / `0x1d` | Packed angle mid / MS             |
-| longitude bytes 0/1                                          | `0x1e` / `0x1f` | Packed angle LS / mid (with `0x24` MS) |
-| rxTone                                                       | `0x20`          | u16 LE; `0xffff` = off            |
-| txTone                                                       | `0x22`          | u16 LE; `0xffff` = off            |
-| longitude byte 2                                             | `0x24`          |                                   |
-| flags                                                        | `0x26`          | Bitfield (below)                  |
-| dmrId                                                        | `0x27`          | 24-bit BE (when override set)     |
-| groupList                                                    | `0x2b`          | Index                             |
-| colorCode                                                    | `0x2c`          |                                   |
-| aprsIndex                                                    | `0x2d`          |                                   |
-| txContact                                                    | `0x2e`          | Index                             |
-| alias TS1 / TS2                                              | bits @ `0x30`   | Alias enum bits                   |
-| timeSlot                                                     | bit 6 @ `0x31`  |                                   |
-| bandwidth / rxOnly / skipScan / skipZoneScan / vox / monitor | bits @ `0x33`   | See bitfield                      |
-| squelch                                                      | `0x37`          | See SquelchMode                   |
+| txTimeout                                                    | `0x1b`          | Units of 15 s; `0` = infinite           |
+| latitude bytes 1/2                                           | `0x1c` / `0x1d` | Packed angle mid / MS                   |
+| longitude bytes 0/1                                          | `0x1e` / `0x1f` | Packed angle LS / mid (with `0x24` MS)  |
+| rxTone                                                       | `0x20`          | u16 LE; `0xffff` = off                  |
+| txTone                                                       | `0x22`          | u16 LE; `0xffff` = off                  |
+| longitude byte 2                                             | `0x24`          |                                         |
+| flags                                                        | `0x26`          | Bitfield (below)                        |
+| dmrId                                                        | `0x27`          | 24-bit BE (when override set)           |
+| groupList                                                    | `0x2b`          | Index                                   |
+| colorCode                                                    | `0x2c`          |                                         |
+| aprsIndex                                                    | `0x2d`          |                                         |
+| txContact                                                    | `0x2e`          | Index                                   |
+| alias TS1 / TS2                                              | bits @ `0x30`   | Alias enum bits                         |
+| timeSlot                                                     | bit 6 @ `0x31`  |                                         |
+| bandwidth / rxOnly / skipScan / skipZoneScan / vox / monitor | bits @ `0x33`   | See bitfield                            |
+| squelch                                                      | `0x37`          | See SquelchMode                         |
 
 ### Flags @ `0x26`
 
 | Bit | Meaning                                                                 |
 | --- | ----------------------------------------------------------------------- |
 | 2   | simplex                                                                 |
-| 3   | useFixedLocation (`0x08`) — distance-from-repeater / roaming when set |
+| 3   | useFixedLocation (`0x08`) — distance-from-repeater / roaming when set   |
 | 5   | disablePowerSave (inverted sense in API: power-save enabled when clear) |
 | 6   | disableBeep (inverted sense in API)                                     |
 | 7   | overrideDMRID                                                           |
@@ -141,18 +141,18 @@ Example (Edinburgh `55.9533`, `-3.1883`, `useLocation` on): lat bytes `3d a5 1b`
 
 On Web Serial Write, Studio **fully replaces** each occupied channel record from the build projection. Fields below are written to firmware-safe defaults when not carried on `RadioChannelDto` — prior Read bytes in those offsets are **not** retained (no RMW inside channel records).
 
-| Field / offset                               | Write default             | Notes                                                                                            |
-| -------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------ |
-| txTimeout @ `0x1b`                           | `0`                       | Infinite (qdmr units of 15 s)                                                                    |
-| latitude / longitude @ split bytes           | from projection           | Packed angle when `location` set; zero + flag clear when unset. See Packed angle section         |
-| flags @ `0x26`                               | from projection           | `useFixedLocation` bit 3 when `useLocation` and finite coords; other flag bits clear             |
-| dmrId @ `0x27`                               | `0`                       | No per-channel DMR ID override                                                                   |
-| aprsIndex @ `0x2d`                           | `0`                       | No APRS alias link                                                                               |
-| alias @ `0x30`                               | `0`                       | Alias mode None                                                                                  |
-| vox / monitor bits @ `0x33`                  | clear                     | Bits 6–3 off                                                                                     |
-| squelch @ `0x37`                             | from projection           | Analogue: library `squelch` % via qDMR scaling; digital: Global (`0`). See Squelch section above |
-| skipScan / skipZoneScan @ `0x33` bits 4–5    | from projection           | Both bits set together from scan-inclusion trait (no separate library fields)                    |
-| Empty / unlisted slots                       | `0xFF` fill, bitmap clear | Full channel table replace                                                                       |
+| Field / offset                            | Write default             | Notes                                                                                            |
+| ----------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------ |
+| txTimeout @ `0x1b`                        | `0`                       | Infinite (qdmr units of 15 s)                                                                    |
+| latitude / longitude @ split bytes        | from projection           | Packed angle when `location` set; zero + flag clear when unset. See Packed angle section         |
+| flags @ `0x26`                            | from projection           | `useFixedLocation` bit 3 when `useLocation` and finite coords; other flag bits clear             |
+| dmrId @ `0x27`                            | `0`                       | No per-channel DMR ID override                                                                   |
+| aprsIndex @ `0x2d`                        | `0`                       | No APRS alias link                                                                               |
+| alias @ `0x30`                            | `0`                       | Alias mode None                                                                                  |
+| vox / monitor bits @ `0x33`               | clear                     | Bits 6–3 off                                                                                     |
+| squelch @ `0x37`                          | from projection           | Analogue: library `squelch` % via qDMR scaling; digital: Global (`0`). See Squelch section above |
+| skipScan / skipZoneScan @ `0x33` bits 4–5 | from projection           | Both bits set together from scan-inclusion trait (no separate library fields)                    |
+| Empty / unlisted slots                    | `0xFF` fill, bitmap clear | Full channel table replace                                                                       |
 
 Modelled fields (name, frequencies, mode, power, tones, bandwidth, color code, timeslot, TX contact, RX group, channel location + use location when set, scan skip flags when set on DTO, analogue squelch when set on DTO) encode from the projection. Tone wire values: see [#690](https://github.com/pskillen/codeplug-studio/issues/690).
 

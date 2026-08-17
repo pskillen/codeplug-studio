@@ -8,26 +8,26 @@
 
 **Next move:** ship write path + codec tests; hardware verify distance-from-repeater (`E1`).
 
-|                        |                                                                                                                                                                            |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Opened**             | 2026-08-17                                                                                                                                                                 |
-| **Closed**             | —                                                                                                                                                                          |
-| **Tickets**            | [#1233](https://github.com/pskillen/codeplug-studio/issues/1233)                                                                                                           |
+|                        |                                                                                                                                                                         |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Opened**             | 2026-08-17                                                                                                                                                              |
+| **Closed**             | —                                                                                                                                                                       |
+| **Tickets**            | [#1233](https://github.com/pskillen/codeplug-studio/issues/1233)                                                                                                        |
 | **Intended behaviour** | Library `Channel.location` + `useLocation` pack into the 56-byte channel record so the radio can show distance-from-repeater / roaming / Show dist when the flag is on. |
 
 ---
 
 ## Read in this order
 
-| File                                                                   | What it is                                           | Mutability                          |
-| ---------------------------------------------------------------------- | ---------------------------------------------------- | ----------------------------------- |
-| this file                                                              | status, strategy, rules                              | status line changes; rest is stable |
-| [`01-findings.md`](01-findings.md)                                     | what is **true**, each with a citation               | **append-only**                     |
-| [`02-dead-ends.md`](02-dead-ends.md)                                   | killed hypotheses + what killed them                 | **append-only**                     |
-| [`03-ledger.md`](03-ledger.md)                                         | one row per run / capture / source read              | **rows are immutable**              |
-| [`04-packed-angle-reference.md`](04-packed-angle-reference.md)         | bit layout, offsets, worked examples                 | append-only facts; examples may grow |
-| [`05-open-items.md`](05-open-items.md)                                 | open work only                                       | edited as things ship               |
-| [`errands/`](errands/README.md)                                        | two-way briefs and reports                           | one file per errand                 |
+| File                                                           | What it is                              | Mutability                           |
+| -------------------------------------------------------------- | --------------------------------------- | ------------------------------------ |
+| this file                                                      | status, strategy, rules                 | status line changes; rest is stable  |
+| [`01-findings.md`](01-findings.md)                             | what is **true**, each with a citation  | **append-only**                      |
+| [`02-dead-ends.md`](02-dead-ends.md)                           | killed hypotheses + what killed them    | **append-only**                      |
+| [`03-ledger.md`](03-ledger.md)                                 | one row per run / capture / source read | **rows are immutable**               |
+| [`04-packed-angle-reference.md`](04-packed-angle-reference.md) | bit layout, offsets, worked examples    | append-only facts; examples may grow |
+| [`05-open-items.md`](05-open-items.md)                         | open work only                          | edited as things ship                |
+| [`errands/`](errands/README.md)                                | two-way briefs and reports              | one file per errand                  |
 
 Settled radio-layout facts that already live in committed docs should be **cited, not duplicated**: [channel-record.md](../../reference/radios/opengd77/channel-record.md), [Channels.csv](../../reference/export-formats/opengd77/channels.md). This directory holds the investigation of the _missing write path_ and packed-angle formula until promoted into tier-3 reference.
 

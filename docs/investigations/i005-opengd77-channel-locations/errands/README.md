@@ -8,10 +8,10 @@ Naming: `NN-slug.md`, zero-padded, allocated in order. Never renumber — findin
 
 ## Index
 
-| # | Errand | Assignee | Status | Returns |
-| - | ------ | -------- | ------ | ------- |
-| E1 | CPS-written channel record dump | operator (hardware) | `draft` | 56-byte record + known lat/lon |
-| E2 | Read firmware `latLon*` / channel-distance conversion | agent | `draft` | confirm F20 or reopen encoding |
+| #   | Errand                                                | Assignee            | Status  | Returns                        |
+| --- | ----------------------------------------------------- | ------------------- | ------- | ------------------------------ |
+| E1  | CPS-written channel record dump                       | operator (hardware) | `draft` | 56-byte record + known lat/lon |
+| E2  | Read firmware `latLon*` / channel-distance conversion | agent               | `draft` | confirm F20 or reopen encoding |
 
 Status values: `draft` · `dispatched` · `returned` · `accepted` · `abandoned`.
 `returned` means the report is written; `accepted` means the coordinator has folded the results into the ledger and findings.

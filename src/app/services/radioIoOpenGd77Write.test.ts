@@ -95,7 +95,9 @@ describe('OpenGD77 write without persisted hydration', () => {
       egress,
       emptyLibrary([ch]),
     );
-    const written = radio.decodeChannels(radio.getPriorImage()!).find((row) => row.wireName === 'EDIN');
+    const written = radio
+      .decodeChannels(radio.getPriorImage()!)
+      .find((row) => row.wireName === 'EDIN');
     expect(written?.location).toEqual({ lat: 55.9533, lon: -3.1883 });
     expect(written?.useLocation).toBe(true);
   });

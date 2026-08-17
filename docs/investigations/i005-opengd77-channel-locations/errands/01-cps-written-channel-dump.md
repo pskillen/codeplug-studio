@@ -2,7 +2,7 @@
 
 **Status:** draft
 **Assignee:** operator (hardware + official OpenGD77 CPS)
-**Dispatched:** _(not yet)_  **Returned:**
+**Dispatched:** _(not yet)_ **Returned:**
 **Code state:** n/a (radio + CPS, not Studio)
 **Blocks / blocked by:** does not block the implementation plan; blocks calling F16 "measured against CPS"
 
@@ -20,15 +20,15 @@ Pick **one** channel. Write down the exact decimal lat/lon typed into CPS (four 
 
 Channel record size is 56 bytes (`0x38`). Offsets inside that record:
 
-| Bytes | Meaning |
-| ----- | ------- |
-| `0x1a` | lat LS |
-| `0x1b` | TOT (ignore) |
-| `0x1c` `0x1d` | lat mid / MS |
-| `0x1e` `0x1f` | lon LS / mid |
-| `0x20`–`0x23` | tones (ignore) |
-| `0x24` | lon MS |
-| `0x26` | flags; bit 3 (`0x08`) = Use Location |
+| Bytes         | Meaning                              |
+| ------------- | ------------------------------------ |
+| `0x1a`        | lat LS                               |
+| `0x1b`        | TOT (ignore)                         |
+| `0x1c` `0x1d` | lat mid / MS                         |
+| `0x1e` `0x1f` | lon LS / mid                         |
+| `0x20`–`0x23` | tones (ignore)                       |
+| `0x24`        | lon MS                               |
+| `0x26`        | flags; bit 3 (`0x08`) = Use Location |
 
 Do **not** use Studio to write the channel. Use official CPS (or a `.g77` saved after CPS programmed that channel). If capturing from the radio, read with a tool that dumps raw channel memory (qdmr read, or Studio Read **if** you save the raw image before any Write).
 
@@ -54,7 +54,9 @@ Do **not** use Studio to write the channel. Use official CPS (or a `.g77` saved 
 ---
 
 ## Report
+
 <!-- written by the assignee; the brief above is immutable once dispatched -->
 
 ## Coordinator review
+
 <!-- what was accepted, what was folded where, what is still open -->

@@ -22,11 +22,11 @@ GitHub rate-limited the `.c` fetch (`E2`). Needed only if `E1` disagrees with qD
 
 ## Locked decisions (2026-08-17)
 
-| # | Decision | Resolution |
-| - | -------- | ---------- |
-| O2 | Truncate vs round when encoding `angle * 10000` | **Round** `abs(angle)*10000` after scaling (not qDMR truncate toward zero). |
-| O3 | Should Web Serial **Read** hydrate `Channel.location` / `useLocation`? | **No** Read→library. `decodeChannelRecord` fills `RadioChannelDto` for read-info, backup inspect, and write-verify. |
-| O4 | Track #1233 on the DM-1701 outstanding list | **Do not** add a row to `opengd77-dm1701-outstanding.md`. |
-| D1 | DTO shape | `location?: { lat, lon } \| null` plus `useLocation?: boolean` — coords without flag are representable. |
-| D2 | Maidenhead-only channels | Projection uses `channel.location` (same as CSV). No Maidenhead on the wire. |
-| D3 | Scope | One `channelCodec.ts` for all OpenGD77 radio-io profiles (DM-1701, MD-9600, …). |
+| #   | Decision                                                               | Resolution                                                                                                          |
+| --- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| O2  | Truncate vs round when encoding `angle * 10000`                        | **Round** `abs(angle)*10000` after scaling (not qDMR truncate toward zero).                                         |
+| O3  | Should Web Serial **Read** hydrate `Channel.location` / `useLocation`? | **No** Read→library. `decodeChannelRecord` fills `RadioChannelDto` for read-info, backup inspect, and write-verify. |
+| O4  | Track #1233 on the DM-1701 outstanding list                            | **Do not** add a row to `opengd77-dm1701-outstanding.md`.                                                           |
+| D1  | DTO shape                                                              | `location?: { lat, lon } \| null` plus `useLocation?: boolean` — coords without flag are representable.             |
+| D2  | Maidenhead-only channels                                               | Projection uses `channel.location` (same as CSV). No Maidenhead on the wire.                                        |
+| D3  | Scope                                                                  | One `channelCodec.ts` for all OpenGD77 radio-io profiles (DM-1701, MD-9600, …).                                     |

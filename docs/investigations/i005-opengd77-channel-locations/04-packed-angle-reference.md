@@ -33,15 +33,15 @@ Assemble: `code = (b2 << 16) | (b1 << 8) | b0` (unsigned 24-bit).
 
 ## Flag byte `0x26` (LibreDMR_flag1)
 
-| Bit | Mask | Firmware name | qDMR name | Studio write today |
-| --- | ---- | ------------- | --------- | ------------------ |
-| 7 | `0x80` | OPTIONAL_DMRID | overrideDMRID | 0 |
-| 6 | `0x40` | NO_BEEP | disableBeep | 0 |
-| 5 | `0x20` | NO_ECO | disablePowerSave | 0 |
-| 4 | `0x10` | OUT_OF_BAND (MD-9600) | — | 0 |
-| 3 | `0x08` | **USE_LOCATION** | **useFixedLocation** | 0 ← the gap |
-| 2 | `0x04` | FORCE_DMO | simplex | 0 |
-| 0 | `0x01` | ROAMING | — | 0 |
+| Bit | Mask   | Firmware name         | qDMR name            | Studio write today |
+| --- | ------ | --------------------- | -------------------- | ------------------ |
+| 7   | `0x80` | OPTIONAL_DMRID        | overrideDMRID        | 0                  |
+| 6   | `0x40` | NO_BEEP               | disableBeep          | 0                  |
+| 5   | `0x20` | NO_ECO                | disablePowerSave     | 0                  |
+| 4   | `0x10` | OUT_OF_BAND (MD-9600) | —                    | 0                  |
+| 3   | `0x08` | **USE_LOCATION**      | **useFixedLocation** | 0 ← the gap        |
+| 2   | `0x04` | FORCE_DMO             | simplex              | 0                  |
+| 0   | `0x01` | ROAMING               | —                    | 0                  |
 
 Set bit 3 without OR-clobbering the rest of a future modelled flags byte. Today the whole byte is 0, so `0x08` is sufficient.
 
@@ -70,27 +70,27 @@ Longitude 180 fits in the 8-bit degree field (max 255).
 
 Little-endian byte order as stored in the split fields.
 
-| WGS84 | code | hex (24-bit) | b0 | b1 | b2 | notes |
-| ----- | ---- | ------------ | -- | -- | -- | ----- |
-| `0` | 0 | `00 00 00` | `00` | `00` | `00` | indistinguishable from "unset" without the flag |
-| `51.5000` | 1676168 | `00199388` | `88` | `93` | `19` | exact 0.0001 |
-| `55.9533` | 1811773 | `001ba53d` | `3d` | `a5` | `1b` | Edinburgh lat |
-| `-3.1883` | 8488795 | `0081875b` | `5b` | `87` | `81` | Edinburgh lon (sign in b2) |
-| `51.5074` | 1676241 | `001993d1` | `d1` | `93` | `19` | **truncates to 51.5073** |
-| `-0.1278` | 8389886 | `008004fe` | `fe` | `04` | `80` | west of Greenwich |
-| `90` | 2949120 | `002d0000` | `00` | `00` | `2d` | |
-| `-90` | 11337728 | `00ad0000` | `00` | `00` | `ad` | |
-| `180` | 5898240 | `005a0000` | `00` | `00` | `5a` | |
-| `-180` | 14286848 | `00da0000` | `00` | `00` | `da` | |
+| WGS84     | code     | hex (24-bit) | b0   | b1   | b2   | notes                                           |
+| --------- | -------- | ------------ | ---- | ---- | ---- | ----------------------------------------------- |
+| `0`       | 0        | `00 00 00`   | `00` | `00` | `00` | indistinguishable from "unset" without the flag |
+| `51.5000` | 1676168  | `00199388`   | `88` | `93` | `19` | exact 0.0001                                    |
+| `55.9533` | 1811773  | `001ba53d`   | `3d` | `a5` | `1b` | Edinburgh lat                                   |
+| `-3.1883` | 8488795  | `0081875b`   | `5b` | `87` | `81` | Edinburgh lon (sign in b2)                      |
+| `51.5074` | 1676241  | `001993d1`   | `d1` | `93` | `19` | **truncates to 51.5073**                        |
+| `-0.1278` | 8389886  | `008004fe`   | `fe` | `04` | `80` | west of Greenwich                               |
+| `90`      | 2949120  | `002d0000`   | `00` | `00` | `2d` |                                                 |
+| `-90`     | 11337728 | `00ad0000`   | `00` | `00` | `ad` |                                                 |
+| `180`     | 5898240  | `005a0000`   | `00` | `00` | `5a` |                                                 |
+| `-180`    | 14286848 | `00da0000`   | `00` | `00` | `da` |                                                 |
 
 Edinburgh on the wire (illustrative):
 
-| Field | Offset | Value |
-| ----- | ------ | ----- |
-| lat b0/b1/b2 | `0x1a`, `0x1c`, `0x1d` | `3d`, `a5`, `1b` |
-| tot | `0x1b` | leave as TOT (Studio currently writes `0`) |
-| lon b0/b1/b2 | `0x1e`, `0x1f`, `0x24` | `5b`, `87`, `81` |
-| flags | `0x26` | `0x08` if `useLocation` |
+| Field        | Offset                 | Value                                      |
+| ------------ | ---------------------- | ------------------------------------------ |
+| lat b0/b1/b2 | `0x1a`, `0x1c`, `0x1d` | `3d`, `a5`, `1b`                           |
+| tot          | `0x1b`                 | leave as TOT (Studio currently writes `0`) |
+| lon b0/b1/b2 | `0x1e`, `0x1f`, `0x24` | `5b`, `87`, `81`                           |
+| flags        | `0x26`                 | `0x08` if `useLocation`                    |
 
 ## What "unset" looks like
 
