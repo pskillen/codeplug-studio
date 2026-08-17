@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   isEntityExcluded,
   isEntityForceIncluded,
@@ -13,26 +14,16 @@ import {
   type ExpandAllMxNChannelsArgs,
   type ExpandedMxNChannelRow,
 } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
-import { resolveAnytoneSiteWireName } from '@core/services/anytoneChannelExpansion.ts';
+import { mxnSiteWireNameResolverForRadioTarget } from '@core/services/anytoneChannelExpansion.ts';
 import {
   expandChannelWireRows,
   modeExportNameSuffix,
 } from '@core/import-export/channelExpansion/multiMode.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
-import { applyTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import {
   buildTalkGroupTimeslotCloneIndex,
   profileHasTalkGroupTimeslotClones,
 } from '@core/import-export/channelExpansion/talkGroupTimeslotClones.ts';
-import {
-  applyListWireNameLimits,
-  formatUsesListNameShortening,
-} from '@core/import-export/channelExpansion/listWireNames.ts';
-import {
-  analogContactExportBaseName,
-  applyDigitalContactExportWireName,
-  digitalContactExportBaseName,
-} from '@core/import-export/digitalContactExportName.ts';
 import {
   assemble,
   channelInAnyZoneMembership,
@@ -45,7 +36,7 @@ import {
 } from '@core/domain/channelEligibility.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Channel, ChannelModeProfileDMR, Zone } from '@core/models/library.ts';
-import type { DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
+import type { ChannelMode, DMRTimeSlot, EntityRef } from '@core/models/libraryTypes.ts';
 import { directZoneMemberChannelIds, directZoneMemberZoneIds } from '@core/domain/zoneMembers.ts';
 import { sortZonesByExportOrder } from '@core/domain/zoneOrder.ts';
 import {
@@ -58,6 +49,13 @@ import {
   type WirePreviewChannelNameOptions,
 } from './previewChannelWireName.ts';
 import { resolveBuildDefaultEgress } from '@core/radio-targets/index.ts';
+import {
+  resolveWireNames,
+  type WireNameEntityKind,
+  type WireNameRemediation,
+  type WireNameResolution,
+} from './resolveWireNames.ts';
+import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { isAmAirbandBankChannel } from '@core/import-export/formats/anytone/receiveOnlyBanks.ts';
 import {
   classifyAnytoneZoneByMembers,
@@ -107,6 +105,12 @@ export interface WirePreviewRow {
   effectiveWireName: string;
   /** True when the build stores an explicit wireName override for this row key. */
   hasWireNameOverride: boolean;
+  /**
+   * What (if anything) `resolveWireNames` had to do to fit the effective name — undefined
+   * for expansion rows (m×n / multi-mode / CHIRP flat-memory) that don't join a resolver
+   * result. UI may ignore this until the inline-edit rework (phase 6).
+   */
+  remediation?: WireNameRemediation;
   /** True when the build stores a densified `orderOrSlot` for this row key. */
   hasOrderOrSlotOverride: boolean;
   /**
@@ -128,6 +132,13 @@ export interface WirePreviewRow {
   /** Channel rows only — frequencies for band pills beside the library name. */
   rxFrequency?: number | null;
   txFrequency?: number | null;
+  /**
+   * Channel rows only — which mode this row represents (m×n / multi-mode expansion rows use
+   * the row's own projected mode; single-mode rows use the channel's mode profile). Feeds the
+   * wire-preview "Mode" indicator (ux-proposal §2) — no new domain logic, just surfacing data
+   * `previewWireRows` already computes per row.
+   */
+  channelMode?: ChannelMode;
 }
 
 export function overrideFieldForEntityKind(entityKind: WirePreviewEntityKind): OverrideField {
@@ -179,12 +190,18 @@ function channelBandFields(channel: Channel): Pick<WirePreviewRow, 'rxFrequency'
   };
 }
 
+/**
+ * Build a `WirePreviewRow` from a `resolveWireNames` resolution — the resolver owns the
+ * wire-name math (suggestion/effective/override/remediation); this only adds the
+ * preview-specific fields (`hasOrderOrSlotOverride`, `excluded`) the resolver doesn't know
+ * about.
+ */
 function previewRow(
   key: string,
   libraryEntityId: string,
   entityKind: WirePreviewEntityKind,
   displayLabel: string,
-  generatedWireName: string,
+  resolution: WireNameResolution,
   overrides: RadioBuild[OverrideField],
   expansionNote?: string,
   displayDetails?: WirePreviewDisplayLine[],
@@ -192,8 +209,6 @@ function previewRow(
 ): WirePreviewRow {
   const override = overrideByEntityId(overrides).get(key);
   const excluded = override?.excluded === true;
-  const wireNameOverride = override?.wireName?.trim();
-  const effectiveWireName = sanitiseAsciiWireString(wireNameOverride || generatedWireName);
   const orderOrSlot = override?.orderOrSlot;
   const hasOrderOrSlotOverride =
     orderOrSlot != null && Number.isFinite(orderOrSlot) && orderOrSlot >= 1;
@@ -202,15 +217,59 @@ function previewRow(
     libraryEntityId,
     entityKind,
     displayLabel,
-    generatedWireName: sanitiseAsciiWireString(generatedWireName),
-    effectiveWireName,
-    hasWireNameOverride: Boolean(wireNameOverride),
+    generatedWireName: sanitiseAsciiWireString(resolution.suggestion),
+    effectiveWireName: sanitiseAsciiWireString(resolution.effective),
+    hasWireNameOverride: Boolean(resolution.override),
     hasOrderOrSlotOverride,
     excluded,
     expansionNote,
     displayDetails,
     libraryCallsign,
+    remediation: resolution.remediation,
   };
+}
+
+/**
+ * Synthesise a resolution for a library entity `resolveWireNames` skipped (`'not_used'`
+ * profile limit — the entity kind has no wire name on this format/profile at all). Preview
+ * still lists the row so the operator can see it isn't wire-named on this target; dedupe
+ * and shortening don't apply since nothing will be written.
+ */
+function fallbackResolution(
+  entityKind: WireNameEntityKind,
+  id: string,
+  libraryName: string,
+  rawBase: string,
+  overrides: RadioBuild[OverrideField],
+): WireNameResolution {
+  const overrideRaw = overrideByEntityId(overrides).get(id)?.wireName?.trim();
+  const suggestion = sanitiseAsciiWireString(rawBase);
+  return {
+    key: id,
+    libraryEntityId: id,
+    entityKind,
+    libraryName,
+    suggestion,
+    override: overrideRaw,
+    effective: sanitiseAsciiWireString(overrideRaw || rawBase),
+    remediation: 'none',
+  };
+}
+
+/** Resolve wire names for one entity kind and index by `libraryEntityId` for row joins. */
+function resolutionsByLibraryEntityId(
+  build: RadioBuild,
+  library: LibrarySlice,
+  entityKind: WireNameEntityKind,
+  formatId: string,
+  profileId: string | undefined,
+): Map<string, WireNameResolution> {
+  return new Map(
+    resolveWireNames({ build, library, entityKind, formatId, profileId }).map((resolution) => [
+      resolution.libraryEntityId,
+      resolution,
+    ]),
+  );
 }
 
 function isDmrProfile(profile: Channel['modeProfiles'][number]): profile is ChannelModeProfileDMR {
@@ -265,38 +324,59 @@ function mxnExpansionDisplayDetails(
 
 /**
  * Preview-only site-name resolver for m×n expansion.
- * Strips this row's override so suggestions stay pure (export still prefers overrides).
+ *
+ * Delegates composition to `mxnSiteWireNameResolverForRadioTarget` — gated on
+ * `radioTargetId`, matching production Web Serial writes, so every default egress on a
+ * D890 build (not only the `anytone` CSV formatId) gets correct `nameModeOverride`
+ * composition. See PR: this was previously gated on `formatId === 'anytone'`, which meant
+ * the radio-io / Web Serial default egress on Anytone D890 builds silently fell back to
+ * `defaultChannelWireName` with zero options and ignored `nameModeOverride` entirely.
+ *
+ * Still strips this row's own override before composing, so `generatedWireName` stays the
+ * pure suggestion (export still prefers overrides) — `previewWireRows` layers
+ * key/channel overrides back on top for `effectiveWireName`.
  */
 function purePreviewMxNSiteWireName(
-  formatId: string,
+  radioTargetId: string,
 ): NonNullable<ExpandAllMxNChannelsArgs['resolveSiteWireName']> {
-  if (formatId === 'anytone') {
-    return (assembledChannel, ctx) =>
-      resolveAnytoneSiteWireName(
-        {
-          ...assembledChannel,
-          wireNameOverride: undefined,
-          // assemble folds override into wireName — restore pure library compose
-          wireName: defaultChannelWireName(assembledChannel.entity),
-        },
-        ctx,
-      );
+  const resolver = mxnSiteWireNameResolverForRadioTarget(radioTargetId);
+  if (!resolver) {
+    // No radio-target-specific composer (e.g. DM32) — same pure library compose the
+    // resolver's own fallback below uses, kept explicit here so preview never falls
+    // through to `expandAllMxNChannels`'s internal default, which folds overrides in.
+    return (assembledChannel) => defaultChannelWireName(assembledChannel.entity);
   }
-  return (assembledChannel) => defaultChannelWireName(assembledChannel.entity);
+  return (assembledChannel, ctx) =>
+    resolver(
+      {
+        ...assembledChannel,
+        wireNameOverride: undefined,
+        // assemble folds override into wireName — restore pure library compose
+        wireName: defaultChannelWireName(assembledChannel.entity),
+      },
+      ctx,
+    );
 }
 
 export function previewWireRows(
   build: RadioBuild,
   library: LibrarySlice,
   entityKind: WirePreviewEntityKind,
-  _options?: WirePreviewChannelNameOptions,
   anytoneBank: AnytoneWirePreviewBank = 'dmr',
 ): WirePreviewRow[] {
   const defaultEgress = resolveBuildDefaultEgress(build);
-  const formatId = _options?.formatId ?? defaultEgress?.formatId ?? '';
-  const profileId = _options?.profileId ?? defaultEgress?.profileId;
+  const formatId = defaultEgress?.formatId ?? '';
+  const profileId = defaultEgress?.profileId;
   const atD890AirbandBankSplit = usesAtD890AirbandBankSplit(profileId);
   const projection = assemble(build, library, { formatId, profileId });
+  // Same settings resolveWireNames uses internally — kept alongside so expansion helpers
+  // that resolveWireNames doesn't cover (m×n, multi-mode, CHIRP flat memory) stay WYSIWYG too.
+  const exportOptions = mergeExportOptions(build, formatId, { profileId }, library);
+  const channelNameOptions: WirePreviewChannelNameOptions = {
+    ...exportOptions,
+    formatId,
+    profileId,
+  };
 
   switch (entityKind) {
     case 'channel': {
@@ -304,13 +384,13 @@ export function previewWireRows(
       const expandModes =
         formatId === 'dm32' || profileId === 'radio-io-dm32uv'
           ? false
-          : (_options?.expandModes ?? true);
+          : (exportOptions.expandModes ?? true);
       const eligibilityOptions = resolveChannelEligibilityOptions(build);
       const channelPassesRfEligibility = (channel: Channel) =>
         channelEligibleForRadio(channel, build.radioTargetId, eligibilityOptions);
       const rows: WirePreviewRow[] = [];
       const reserved = new Set<string>();
-      const warnings: string[] = [];
+      const warnings: ExportWarning[] = [];
 
       if (
         formatId === 'chirp' ||
@@ -333,7 +413,11 @@ export function previewWireRows(
           const channelOverride = overrideByEntityId(build.channelOverrides)
             .get(channel.id)
             ?.wireName?.trim();
-          const generatedWireName = previewGeneratedChannelWireName(channel, build, _options);
+          const generatedWireName = previewGeneratedChannelWireName(
+            channel,
+            build,
+            channelNameOptions,
+          );
           rows.push({
             key: channel.id,
             libraryEntityId: channel.id,
@@ -345,6 +429,7 @@ export function previewWireRows(
             hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
             excluded: isEntityExcluded(build.channelOverrides, channel.id),
             expansionNote,
+            channelMode: channel.modeProfiles[0]?.mode,
             ...channelBandFields(channel),
           });
         };
@@ -370,10 +455,10 @@ export function previewWireRows(
       if (hasMxNChannelExpansion(build.radioTargetId)) {
         const assembled = projection;
         const mxnOptions = {
-          ..._options,
+          ...exportOptions,
           expandModes: false,
-          expandRxGroupLists: _options?.expandRxGroupLists ?? true,
-          exportScratchChannels: _options?.exportScratchChannels ?? true,
+          expandRxGroupLists: exportOptions.expandRxGroupLists ?? true,
+          exportScratchChannels: exportOptions.exportScratchChannels ?? true,
           profileId,
         };
         const expanded = expandAllMxNChannels({
@@ -382,7 +467,7 @@ export function previewWireRows(
           radioTargetId: build.radioTargetId,
           options: mxnOptions,
           warnings,
-          resolveSiteWireName: purePreviewMxNSiteWireName(formatId),
+          resolveSiteWireName: purePreviewMxNSiteWireName(build.radioTargetId),
         });
         const expandedByChannelId = new Map<string, ExpandedMxNChannelRow[]>();
         for (const generated of expanded) {
@@ -392,8 +477,18 @@ export function previewWireRows(
         }
         const zoneLinkedForPreview =
           build.exportUnlinkedChannels === false ? zoneLinkedChannelIds(build, library) : null;
+        // Channels the m×n policy didn't expand (no site/carrier match) fall back to the
+        // same per-channel resolution the resolver uses for non-mxn radios — WYSIWYG for
+        // every format, not just Anytone.
+        const channelResolutions = resolutionsByLibraryEntityId(
+          build,
+          library,
+          'channel',
+          formatId,
+          profileId,
+        );
 
-        const behaviourContext = _options?.channelBehaviourContext;
+        const behaviourContext = exportOptions.channelBehaviourContext;
 
         for (const channel of library.channels) {
           if (!channelPassesRfEligibility(channel)) continue;
@@ -427,33 +522,38 @@ export function previewWireRows(
                 excluded: isProjectionExcluded(build.channelOverrides, generated.key, channel.id),
                 expansionNote: generated.expansionNote,
                 displayDetails: mxnExpansionDisplayDetails(channel, generated, library),
+                channelMode: generated.mode,
                 ...channelBandFields(channel),
               });
             }
             continue;
           }
 
-          const channelOverride = overrideByEntityId(build.channelOverrides)
-            .get(channel.id)
-            ?.wireName?.trim();
-          const generatedWireName =
-            formatId === 'anytone'
-              ? previewGeneratedChannelWireName(channel, build, _options)
-              : defaultChannelWireName(channel);
+          const resolution =
+            channelResolutions.get(channel.id) ??
+            fallbackResolution(
+              'channel',
+              channel.id,
+              channel.name,
+              defaultChannelWireName(channel),
+              build.channelOverrides,
+            );
           rows.push({
             key: channel.id,
             libraryEntityId: channel.id,
             entityKind: 'channel',
             displayLabel: channelDisplayLabel(channel),
-            generatedWireName: sanitiseAsciiWireString(generatedWireName),
-            effectiveWireName: sanitiseAsciiWireString(channelOverride ?? generatedWireName),
-            hasWireNameOverride: Boolean(channelOverride),
+            generatedWireName: sanitiseAsciiWireString(resolution.suggestion),
+            effectiveWireName: sanitiseAsciiWireString(resolution.effective),
+            hasWireNameOverride: Boolean(resolution.override),
             hasOrderOrSlotOverride: overrideOrderOrSlot(build.channelOverrides, channel.id) != null,
             excluded: isEntityExcluded(build.channelOverrides, channel.id),
             expansionNote:
               zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
                 ? PREVIEW_ROW_NOT_ZONE_LINKED_NOTE
                 : undefined,
+            remediation: resolution.remediation,
+            channelMode: channel.modeProfiles[0]?.mode,
             ...channelBandFields(channel),
           });
         }
@@ -469,7 +569,7 @@ export function previewWireRows(
           channel,
           undefined,
           expandModes,
-          _options,
+          exportOptions,
           profileId,
           reserved,
           warnings,
@@ -505,6 +605,7 @@ export function previewWireRows(
                 : zoneLinkedForPreview && !zoneLinkedForPreview.has(channel.id)
                   ? PREVIEW_ROW_NOT_ZONE_LINKED_NOTE
                   : undefined,
+            channelMode: generated.mode,
             ...channelBandFields(channel),
           });
         }
@@ -512,9 +613,7 @@ export function previewWireRows(
       return rows;
     }
     case 'zone': {
-      const shortenListNames = formatUsesListNameShortening(formatId);
-      const reserved = shortenListNames ? new Set<string>() : null;
-      const warnings: string[] = [];
+      const resolutions = resolutionsByLibraryEntityId(build, library, 'zone', formatId, profileId);
       const channelById = new Map(library.channels.map((ch) => [ch.id, ch]));
       const zonesForBank = atD890AirbandBankSplit
         ? library.zones.filter((zone) => {
@@ -526,7 +625,7 @@ export function previewWireRows(
             const kind = classifyAnytoneZoneByMembers(
               memberIds,
               channelById,
-              _options?.channelBehaviourContext,
+              exportOptions.channelBehaviourContext,
             );
             return anytoneBank === 'airband'
               ? zoneShowsOnAnytoneAirbandBank(kind)
@@ -539,9 +638,9 @@ export function previewWireRows(
         const omitFromExport = zone.omitFromExport === true;
         const forceInclude = isEntityForceIncluded(build.zoneOverrides, zone.id);
         const zoneDirectMembers = zoneDirectMembersPreview(zone, library, build);
-        const generatedWireName = shortenListNames
-          ? applyListWireNameLimits(zone.name, reserved!, _options, profileId, warnings)
-          : zone.name;
+        const resolution =
+          resolutions.get(zone.id) ??
+          fallbackResolution('zone', zone.id, zone.name, zone.name, build.zoneOverrides);
         const layoutEntry = zoneGrouping?.zones.find((entry) => entry.id === zone.id);
         return {
           ...previewRow(
@@ -549,7 +648,7 @@ export function previewWireRows(
             zone.id,
             'zone',
             zone.name,
-            generatedWireName,
+            resolution,
             build.zoneOverrides,
             omitFromExport ? PREVIEW_ROW_OMIT_FROM_EXPORT_NOTE : undefined,
           ),
@@ -565,46 +664,55 @@ export function previewWireRows(
       });
     }
     case 'scanList': {
-      const shortenListNames = formatId === 'anytone';
-      const reserved = shortenListNames ? new Set<string>() : null;
-      const warnings: string[] = [];
+      const resolutions = resolutionsByLibraryEntityId(
+        build,
+        library,
+        'scanList',
+        formatId,
+        profileId,
+      );
       return library.scanLists.map((entry) => {
         const assembled = projection.scanLists.find((row) => row.scanListId === entry.id);
         const memberCount = entry.memberChannelIds.length;
-        const generatedWireName = shortenListNames
-          ? applyListWireNameLimits(entry.name, reserved!, _options, profileId, warnings)
-          : entry.name;
+        const resolution =
+          resolutions.get(entry.id) ??
+          fallbackResolution('scanList', entry.id, entry.name, entry.name, build.scanListOverrides);
         return previewRow(
           entry.id,
           entry.id,
           'scanList',
           `${entry.name} (${memberCount} channels)`,
-          generatedWireName,
+          resolution,
           build.scanListOverrides,
           assembled && memberCount > 0 ? undefined : 'No channels in scan list',
         );
       });
     }
     case 'talkGroup': {
-      const reserved = new Set<string>();
-      const warnings: string[] = [];
+      const resolutions = resolutionsByLibraryEntityId(
+        build,
+        library,
+        'talkGroup',
+        formatId,
+        profileId,
+      );
       return library.talkGroups.map((talkGroup) => {
         const assembled = projection.talkGroups.find((row) => row.entity.id === talkGroup.id);
         const referenced = assembled != null;
-        const baseWireName = talkGroup.name;
-        const generatedWireName = applyTalkGroupWireNameLimits(
-          baseWireName,
-          talkGroup,
-          reserved,
-          _options,
-          profileId,
-          warnings,
-        );
+        const resolution =
+          resolutions.get(talkGroup.id) ??
+          fallbackResolution(
+            'talkGroup',
+            talkGroup.id,
+            talkGroup.name,
+            talkGroup.name,
+            build.talkGroupOverrides,
+          );
         const cloneDetails =
           profileHasTalkGroupTimeslotClones(profileId) && referenced
             ? buildTalkGroupTimeslotCloneIndex(
                 projection,
-                new Map([[talkGroup.id, generatedWireName]]),
+                new Map([[talkGroup.id, resolution.suggestion]]),
               )
                 .clones.filter((clone) => clone.talkGroupId === talkGroup.id)
                 .map((clone) => ({
@@ -617,7 +725,7 @@ export function previewWireRows(
           talkGroup.id,
           'talkGroup',
           `${talkGroup.name} (ID ${talkGroup.digitalId})`,
-          generatedWireName,
+          resolution,
           build.talkGroupOverrides,
           referenced ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
           cloneDetails?.length ? cloneDetails : undefined,
@@ -625,23 +733,32 @@ export function previewWireRows(
       });
     }
     case 'contact': {
-      const shortenContacts = formatId === 'anytone' || formatId === 'opengd77';
-      const mode = _options?.digitalContactExportNameMode ?? 'name';
-      const warnings: string[] = [];
+      const resolutions = resolutionsByLibraryEntityId(
+        build,
+        library,
+        'contact',
+        formatId,
+        profileId,
+      );
       const rows: WirePreviewRow[] = [];
       for (const contact of library.digitalContacts) {
         const assembled = projection.digitalContacts.find((row) => row.entity.id === contact.id);
-        const baseWireName = digitalContactExportBaseName(contact, mode);
-        const generatedWireName = shortenContacts
-          ? applyDigitalContactExportWireName(baseWireName, _options, profileId, warnings)
-          : contact.name;
+        const resolution =
+          resolutions.get(contact.id) ??
+          fallbackResolution(
+            'contact',
+            contact.id,
+            contact.name,
+            contact.name,
+            build.contactOverrides,
+          );
         rows.push(
           previewRow(
             contact.id,
             contact.id,
             'contact',
             `${contact.name} (digital ${contact.digitalId})`,
-            generatedWireName,
+            resolution,
             build.contactOverrides,
             assembled ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
             undefined,
@@ -651,17 +768,22 @@ export function previewWireRows(
       }
       for (const contact of library.analogContacts) {
         const assembled = projection.analogContacts.find((row) => row.entity.id === contact.id);
-        const baseWireName = analogContactExportBaseName(contact);
-        const generatedWireName = shortenContacts
-          ? applyDigitalContactExportWireName(baseWireName, _options, profileId, warnings)
-          : contact.name;
+        const resolution =
+          resolutions.get(contact.id) ??
+          fallbackResolution(
+            'contact',
+            contact.id,
+            contact.name,
+            contact.name,
+            build.contactOverrides,
+          );
         rows.push(
           previewRow(
             contact.id,
             contact.id,
             'contact',
             `${contact.name} (analog)`,
-            generatedWireName,
+            resolution,
             build.contactOverrides,
             assembled ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
           ),
@@ -670,20 +792,30 @@ export function previewWireRows(
       return rows;
     }
     case 'rxGroupList': {
-      const shortenListNames = formatUsesListNameShortening(formatId);
-      const reserved = shortenListNames ? new Set<string>() : null;
-      const warnings: string[] = [];
+      const resolutions = resolutionsByLibraryEntityId(
+        build,
+        library,
+        'rxGroupList',
+        formatId,
+        profileId,
+      );
       return library.rxGroupLists.map((list) => {
         const assembled = projection.rxGroupLists.find((row) => row.entity.id === list.id);
-        const generatedWireName = shortenListNames
-          ? applyListWireNameLimits(list.name, reserved!, _options, profileId, warnings)
-          : list.name;
+        const resolution =
+          resolutions.get(list.id) ??
+          fallbackResolution(
+            'rxGroupList',
+            list.id,
+            list.name,
+            list.name,
+            build.rxGroupListOverrides,
+          );
         return previewRow(
           list.id,
           list.id,
           'rxGroupList',
           `${list.name} (${list.members.length} members)`,
-          generatedWireName,
+          resolution,
           build.rxGroupListOverrides,
           assembled ? undefined : PREVIEW_ROW_NOT_REFERENCED_NOTE,
         );
@@ -736,9 +868,9 @@ export function includedPreviewWireRows(
   build: RadioBuild,
   library: LibrarySlice,
   entityKind: WirePreviewEntityKind,
-  options?: WirePreviewChannelNameOptions,
+  anytoneBank: AnytoneWirePreviewBank = 'dmr',
 ): WirePreviewRow[] {
-  return previewWireRows(build, library, entityKind, options).filter((row) =>
+  return previewWireRows(build, library, entityKind, anytoneBank).filter((row) =>
     isPreviewRowIncludedInExport(build, library, entityKind, row),
   );
 }

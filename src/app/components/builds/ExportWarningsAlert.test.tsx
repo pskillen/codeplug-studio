@@ -1,9 +1,52 @@
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import ExportWarningsAlert from './ExportWarningsAlert.tsx';
 
-function renderAlert(warnings: string[]) {
+function unlinked(message: string): ExportWarning {
+  return { kind: 'unlinked', severity: 'problem', message };
+}
+
+function generalWarning(message: string): ExportWarning {
+  return { kind: 'general', severity: 'problem', message };
+}
+
+function shortened(params: {
+  entityKind: string;
+  original: string;
+  exported: string;
+  limit?: number;
+  profileLabel?: string;
+}): ExportWarning {
+  return {
+    kind: 'wire_name',
+    severity: 'info',
+    remediation: 'shortened',
+    limit: 16,
+    profileLabel: 'Anytone AT-D890UV',
+    ...params,
+  };
+}
+
+function stillTooLong(params: {
+  entityKind: string;
+  original: string;
+  exported: string;
+  limit?: number;
+  profileLabel?: string;
+}): ExportWarning {
+  return {
+    kind: 'wire_name',
+    severity: 'problem',
+    remediation: 'truncated',
+    limit: 16,
+    profileLabel: 'Anytone AT-D890UV',
+    ...params,
+  };
+}
+
+function renderAlert(warnings: ExportWarning[]) {
   return render(
     <MantineProvider>
       <ExportWarningsAlert warnings={warnings} />
@@ -14,20 +57,32 @@ function renderAlert(warnings: string[]) {
 describe('ExportWarningsAlert', () => {
   it('folds unlinked problems in the yellow alert and clean shortens in the info section', () => {
     renderAlert([
-      'Including 19 channel(s) not linked to a zone',
-      'Including 7 talk group(s) not referenced by a channel',
-      'Channel wire name "Aberdeen Approach" exceeds 16 characters for Anytone AT-D890UV; exported as "Aber Approach"',
-      'Channel wire name "Edinburgh Approach" exceeds 16 characters for Anytone AT-D890UV; exported as "Edinb Approach"',
-      'Talk group wire name "Australia, New Zealand" exceeds 16 characters for Anytone AT-D890UV; exported as "Aus+NZ"',
+      unlinked('Including 19 channel(s) not linked to a zone'),
+      unlinked('Including 7 talk group(s) not referenced by a channel'),
+      shortened({
+        entityKind: 'Channel',
+        original: 'Aberdeen Approach',
+        exported: 'Aber Approach',
+      }),
+      shortened({
+        entityKind: 'Channel',
+        original: 'Edinburgh Approach',
+        exported: 'Edinb Approach',
+      }),
+      shortened({
+        entityKind: 'Talk group',
+        original: 'Australia, New Zealand',
+        exported: 'Aus+NZ',
+      }),
     ]);
 
     expect(screen.getByText('Export warnings')).toBeInTheDocument();
 
-    const unlinked = screen.getByRole('button', { name: /Export unlinked items \(2\)/ });
+    const unlinkedControl = screen.getByRole('button', { name: /Export unlinked items \(2\)/ });
     const channels = screen.getByRole('button', { name: /Channel names shortened \(2\)/ });
     const talkGroups = screen.getByRole('button', { name: /Talk group names shortened \(1\)/ });
 
-    expect(unlinked).toHaveAttribute('aria-expanded', 'false');
+    expect(unlinkedControl).toHaveAttribute('aria-expanded', 'false');
     expect(channels).toHaveAttribute('aria-expanded', 'false');
     expect(talkGroups).toHaveAttribute('aria-expanded', 'false');
 
@@ -41,8 +96,16 @@ describe('ExportWarningsAlert', () => {
 
   it('renders clean shortens as info only — no Export warnings alert', () => {
     renderAlert([
-      'Channel wire name "Aberdeen Approach" exceeds 16 characters for Anytone AT-D890UV; exported as "Aber Approach"',
-      'Channel wire name "Edinburgh Approach" exceeds 16 characters for Anytone AT-D890UV; exported as "Edinb Approach"',
+      shortened({
+        entityKind: 'Channel',
+        original: 'Aberdeen Approach',
+        exported: 'Aber Approach',
+      }),
+      shortened({
+        entityKind: 'Channel',
+        original: 'Edinburgh Approach',
+        exported: 'Edinb Approach',
+      }),
     ]);
 
     expect(screen.queryByText('Export warnings')).not.toBeInTheDocument();
@@ -57,8 +120,16 @@ describe('ExportWarningsAlert', () => {
 
   it('renders both sections when clean and still-too-long shortens mix', () => {
     renderAlert([
-      'Channel wire name "Aberdeen Approach" exceeds 16 characters for Anytone AT-D890UV; exported as "Aber Approach"',
-      'Channel wire name "This Name Remains Far Too Long After Shortening" exceeds 16 characters for Anytone AT-D890UV; shortened to "StillTooLongNameX" still exceeds limit',
+      shortened({
+        entityKind: 'Channel',
+        original: 'Aberdeen Approach',
+        exported: 'Aber Approach',
+      }),
+      stillTooLong({
+        entityKind: 'Channel',
+        original: 'This Name Remains Far Too Long After Shortening',
+        exported: 'StillTooLongNameX',
+      }),
     ]);
 
     expect(screen.getByText('Export warnings')).toBeInTheDocument();
@@ -82,7 +153,7 @@ describe('ExportWarningsAlert', () => {
   });
 
   it('keeps non-group general warnings visible without an accordion', () => {
-    renderAlert(['Build exceeded profile channel cap']);
+    renderAlert([generalWarning('Build exceeded profile channel cap')]);
 
     expect(screen.getByText('Export warnings')).toBeInTheDocument();
     expect(screen.getByText('Build exceeded profile channel cap')).toBeInTheDocument();
@@ -92,15 +163,15 @@ describe('ExportWarningsAlert', () => {
 
   it('expands unlinked items on click', () => {
     renderAlert([
-      'Including 19 channel(s) not linked to a zone',
-      'Including 22304 digital contact(s) not referenced by a channel',
+      unlinked('Including 19 channel(s) not linked to a zone'),
+      unlinked('Including 22304 digital contact(s) not referenced by a channel'),
     ]);
 
-    const unlinked = screen.getByRole('button', { name: /Export unlinked items \(2\)/ });
-    expect(unlinked).toHaveAttribute('aria-expanded', 'false');
+    const unlinkedControl = screen.getByRole('button', { name: /Export unlinked items \(2\)/ });
+    expect(unlinkedControl).toHaveAttribute('aria-expanded', 'false');
 
-    fireEvent.click(unlinked);
-    expect(unlinked).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(unlinkedControl);
+    expect(unlinkedControl).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText(/Including 19 channel\(s\)/)).toBeInTheDocument();
     expect(screen.getByText(/Including 22304 digital contact\(s\)/)).toBeInTheDocument();
   });

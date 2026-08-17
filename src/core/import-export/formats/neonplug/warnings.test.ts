@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import {
   newChannel,
@@ -52,11 +53,11 @@ describe('neonplug/warnings', () => {
     };
 
     const warnings = collectNeonplugExportWarnings(assembled);
-    expect(warnings.some((w) => /4001 channel/.test(w))).toBe(true);
-    expect(warnings.some((w) => /251 zone/.test(w))).toBe(true);
-    expect(warnings.some((w) => /260 talk group/.test(w))).toBe(true);
-    expect(warnings.some((w) => /33 RX group/.test(w))).toBe(true);
-    expect(warnings.some((w) => /16 zone-derived scan/.test(w))).toBe(true);
+    expect(warnings.some((w) => /4001 channel/.test(formatExportWarning(w)))).toBe(true);
+    expect(warnings.some((w) => /251 zone/.test(formatExportWarning(w)))).toBe(true);
+    expect(warnings.some((w) => /260 talk group/.test(formatExportWarning(w)))).toBe(true);
+    expect(warnings.some((w) => /33 RX group/.test(formatExportWarning(w)))).toBe(true);
+    expect(warnings.some((w) => /16 zone-derived scan/.test(formatExportWarning(w)))).toBe(true);
   });
 
   it('does not warn for empty UV5R org arrays', () => {

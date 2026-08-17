@@ -8,6 +8,7 @@ import {
 } from './interchangeMeta.ts';
 import type { ProjectInterchangePort } from './projectInterchangePort.ts';
 import { seedToAggregate } from './projectSeedMapping.ts';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export interface ExportProjectYamlOptions {
   fileName?: string;
@@ -24,7 +25,7 @@ export interface ExportProjectYamlResult {
   content: string;
   fileName: string;
   projectId: string;
-  warnings: string[];
+  warnings: ExportWarning[];
 }
 
 export async function exportProjectYaml(

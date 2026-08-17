@@ -2,6 +2,11 @@ import type { AprsChannelSlot, AprsConfiguration } from '@core/models/aprs.ts';
 import type { AprsSlotCallType } from '@core/models/libraryTypes.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
+import {
+  formatExportWarning,
+  pushGeneralWarning,
+  type ExportWarning,
+} from '@core/import-export/exportWarning.ts';
 
 export const DM32_APRS_GUIDE_FILE_NAME = 'APRS.md' as const;
 
@@ -24,7 +29,7 @@ export interface Dm32AprsGuideSummary {
   /** CPS Upload number (DMR ID) — from first contributing slot. */
   uploadNumber: number | null;
   reportChannels: Dm32AprsReportChannelLine[];
-  warnings: string[];
+  warnings: ExportWarning[];
   markdown: string;
 }
 
@@ -51,13 +56,14 @@ function slotIsContributing(slot: AprsChannelSlot): boolean {
 function resolveSlotWireName(
   slot: AprsChannelSlot,
   wireNameById: Map<string, string>,
-  warnings: string[],
+  warnings: ExportWarning[],
   slotIndex: number,
 ): string {
   if (slot.channelRef == null) return 'Current Channel';
   const wireName = wireNameById.get(slot.channelRef.id);
   if (wireName == null) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `APRS report channel ${slotIndex} references a channel that is not in this DM32 export; shown as missing in APRS.md`,
     );
     return '(missing from export)';
@@ -73,7 +79,7 @@ export function buildDm32AprsGuide(assembled: AssembledBuild): Dm32AprsGuideSumm
   const config = assembled.aprsConfiguration;
   if (config == null) return null;
 
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const wireNameById = new Map(assembled.channels.map((row) => [row.entity.id, row.wireName]));
 
   const contributing = config.channelSlots
@@ -86,12 +92,14 @@ export function buildDm32AprsGuide(assembled: AssembledBuild): Dm32AprsGuideSumm
 
   for (const { slot, index } of contributing.slice(1)) {
     if (slot.callType !== callType) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `APRS slots disagree on call type (CPS supports one value); APRS.md uses slot 1 — check slot ${index}`,
       );
     }
     if (slot.targetDmrId !== uploadNumber) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `APRS slots disagree on upload DMR ID (CPS supports one value); APRS.md uses slot 1 — check slot ${index}`,
       );
     }
@@ -112,7 +120,8 @@ export function buildDm32AprsGuide(assembled: AssembledBuild): Dm32AprsGuideSumm
   }
 
   if (config.channelSlots.length > MAX_REPORT_CHANNELS) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `APRS configuration has ${config.channelSlots.length} channel slots; APRS.md lists the first ${MAX_REPORT_CHANNELS} only`,
     );
   }
@@ -164,7 +173,7 @@ export function formatDm32AprsGuideMarkdown(
   if (summary.warnings.length > 0) {
     lines.push('', '## Warnings', '');
     for (const warning of summary.warnings) {
-      lines.push(`- ${warning}`);
+      lines.push(`- ${formatExportWarning(warning)}`);
     }
   }
 
@@ -184,8 +193,11 @@ export function hasDm32AprsGuide(assembled: AssembledBuild): boolean {
   return assembled.aprsConfiguration != null;
 }
 
-export function collectDm32AprsGuideWarnings(assembled: AssembledBuild): string[] {
+export function collectDm32AprsGuideWarnings(assembled: AssembledBuild): ExportWarning[] {
   const guide = buildDm32AprsGuide(assembled);
   if (!guide) return [];
-  return [DM32_APRS_GUIDE_TIP, ...guide.warnings];
+  const warnings: ExportWarning[] = [];
+  pushGeneralWarning(warnings, DM32_APRS_GUIDE_TIP);
+  warnings.push(...guide.warnings);
+  return warnings;
 }

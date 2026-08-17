@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import { newChannel, newRxGroupList } from '@core/domain/factories.ts';
@@ -39,9 +40,11 @@ describe('collectOpenGd77ExportWarnings', () => {
     });
 
     const warnings = collectOpenGd77ExportWarnings(assembled);
-    expect(warnings.some((w) => w.includes('ThisNameIsWayTooLong'))).toBe(true);
-    expect(warnings.some((w) => w.includes('exported as'))).toBe(true);
-    expect(warnings.some((w) => w.includes('16 characters'))).toBe(true);
+    expect(warnings.some((w) => formatExportWarning(w).includes('ThisNameIsWayTooLong'))).toBe(
+      true,
+    );
+    expect(warnings.some((w) => formatExportWarning(w).includes('exported as'))).toBe(true);
+    expect(warnings.some((w) => formatExportWarning(w).includes('16 characters'))).toBe(true);
   });
 
   it('returns no warnings for fixture-sized projection', () => {
@@ -76,7 +79,9 @@ describe('collectOpenGd77ExportWarnings', () => {
         channels: [{ wireName: 'Repeater', entity: channel }],
       }),
     );
-    expect(warnings).toContain(openGd77DroppedModesWarning('Repeater', ['ysf']));
+    expect(warnings.map((w) => formatExportWarning(w))).toContain(
+      openGd77DroppedModesWarning('Repeater', ['ysf']),
+    );
   });
 
   it('warns when zone count exceeds profile maxZones', () => {
@@ -86,7 +91,11 @@ describe('collectOpenGd77ExportWarnings', () => {
       memberChannelIds: [] as string[],
     }));
     const warnings = collectOpenGd77ExportWarnings(minimalAssembled({ zones }));
-    expect(warnings.some((w) => w.includes('69 zones') && w.includes('68'))).toBe(true);
+    expect(
+      warnings.some(
+        (w) => formatExportWarning(w).includes('69 zones') && formatExportWarning(w).includes('68'),
+      ),
+    ).toBe(true);
   });
 
   it('warns when RX group list count exceeds profile maxRxGroupLists', () => {
@@ -95,6 +104,12 @@ describe('collectOpenGd77ExportWarnings', () => {
       wireName: `RGL ${i}`,
     }));
     const warnings = collectOpenGd77ExportWarnings(minimalAssembled({ rxGroupLists }));
-    expect(warnings.some((w) => w.includes('77 RX group lists') && w.includes('76'))).toBe(true);
+    expect(
+      warnings.some(
+        (w) =>
+          formatExportWarning(w).includes('77 RX group lists') &&
+          formatExportWarning(w).includes('76'),
+      ),
+    ).toBe(true);
   });
 });

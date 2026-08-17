@@ -9,7 +9,6 @@
 import type { AssembledBuild, AssembledChannel, LibrarySlice } from '@core/services/assemble.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
-import { assembledChannelExportWireName } from '@core/import-export/channelExpansion/exportWireNames.ts';
 import { expandAllMxNChannels } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import type { ExpandedMxNChannelRow } from '@core/import-export/channelExpansion/mxnExpandAll.ts';
 import { mxnSiteWireNameResolverForRadioTarget } from '@core/services/anytoneChannelExpansion.ts';
@@ -27,6 +26,9 @@ import type { RadioChannelDto, RadioChannelMode } from '@integrations/radio-io/r
 import { channelToneToRadioTone } from '@app/lib/channelFields/channelToneToRadioTone.ts';
 import { expandOpenGd77ChannelWireRows } from '@core/import-export/opengd77ExportModes.ts';
 import type { ExpandedChannelWireRow } from '@core/import-export/channelExpansion/multiMode.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import { resolveWireNames } from '@core/services/resolveWireNames.ts';
+import { pushWireNameResolutionWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
 
 export interface RadioWireEgressIds {
   formatId: string;
@@ -35,7 +37,7 @@ export interface RadioWireEgressIds {
 
 export interface AssembledChannelsToRadioDtosResult {
   dtos: RadioChannelDto[];
-  warnings: string[];
+  warnings: ExportWarning[];
 }
 
 /** Optional radio-native FK maps for TX-contact / RX-group indices. */
@@ -112,23 +114,6 @@ function isOpenGd77RadioIoEgress(profileId: string): boolean {
 }
 
 export { isOpenGd77RadioIoEgress };
-
-function radioWireName(
-  row: AssembledChannel,
-  build: RadioBuild,
-  egress: RadioWireEgressIds,
-  reserved: Set<string>,
-  warnings: string[],
-): string {
-  const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
-  return assembledChannelExportWireName(
-    row,
-    reserved,
-    merged,
-    merged.profileId ?? egress.profileId,
-    warnings,
-  );
-}
 
 function isDmrProfile(
   profile: ChannelModeProfile,
@@ -207,7 +192,7 @@ function expandOpenGd77AssembledWireRows(
   channels: readonly AssembledChannel[],
   build: RadioBuild,
   egress: RadioWireEgressIds,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): ExpandedChannelWireRow[] {
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const reserved = new Set<string>();
@@ -234,7 +219,7 @@ function openGd77AssembledChannelsToRadioDtos(
   egress: RadioWireEgressIds,
   fkMaps?: RadioChannelFkMaps,
 ): AssembledChannelsToRadioDtosResult {
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const expandedRows = expandOpenGd77AssembledWireRows(channels, build, egress, warnings);
   const rowBySourceId = new Map(channels.map((row) => [row.entity.id, row]));
@@ -284,7 +269,7 @@ export function openGd77NumbersBySourceChannelId(
   channels: readonly AssembledChannel[],
   build: RadioBuild,
   egress: RadioWireEgressIds,
-  warnings: string[],
+  warnings: ExportWarning[],
   maxSlots?: number,
 ): Map<string, number[]> {
   const map = new Map<string, number[]>();
@@ -338,12 +323,13 @@ function digitalFieldsFromProjection(
 function truncateToRadioCapacity(
   dtos: RadioChannelDto[],
   egress: RadioWireEgressIds,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): RadioChannelDto[] {
   const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
   const maxSlots = limits?.maxChannels;
   if (typeof maxSlots === 'number' && dtos.length > maxSlots) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Expanded channel count ${dtos.length} exceeds radio capacity ${maxSlots}; truncating`,
     );
     return dtos.slice(0, maxSlots);
@@ -360,24 +346,56 @@ export function assembledChannelsToRadioDtos(
   channels: readonly AssembledChannel[],
   build: RadioBuild,
   egress: RadioWireEgressIds,
+  library?: LibrarySlice,
 ): RadioChannelDto[] {
-  return assembledChannelsToRadioDtosWithWarnings(channels, build, egress).dtos;
+  return assembledChannelsToRadioDtosWithWarnings(
+    channels,
+    build,
+    egress,
+    undefined,
+    undefined,
+    library,
+  ).dtos;
 }
 
+/**
+ * `channels` may be a build-scoped subset of the library — when the caller has the full
+ * library (real writes), pass it so name resolution/dedup matches preview and CSV export
+ * exactly. Falls back to a library synthesised from just `channels` (dedup scoped to this
+ * call only) when omitted, e.g. by unit tests constructing rows without a backing library.
+ */
 export function assembledChannelsToRadioDtosWithWarnings(
   channels: readonly AssembledChannel[],
   build: RadioBuild,
   egress: RadioWireEgressIds,
   fkMaps?: RadioChannelFkMaps,
   channelMemorySlots?: readonly ExportMemorySlot[],
+  library?: LibrarySlice,
 ): AssembledChannelsToRadioDtosResult {
   if (isOpenGd77RadioIoEgress(egress.profileId)) {
     return openGd77AssembledChannelsToRadioDtos(channels, build, egress, fkMaps);
   }
 
-  const reserved = new Set<string>();
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
+  const effectiveLibrary: LibrarySlice = library ?? {
+    channels: channels.map((row) => row.entity),
+    zones: [],
+    talkGroups: [],
+    digitalContacts: [],
+    analogContacts: [],
+    rxGroupLists: [],
+    scanLists: [],
+  };
+  const resolutions = new Map(
+    resolveWireNames({
+      build,
+      library: effectiveLibrary,
+      entityKind: 'channel',
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    }).map((resolution) => [resolution.libraryEntityId, resolution]),
+  );
   const slotByChannelId = channelSlotIndexMap(channels, channelMemorySlots);
   const dtos: RadioChannelDto[] = [];
   channels.forEach((row, index) => {
@@ -388,10 +406,24 @@ export function assembledChannelsToRadioDtosWithWarnings(
     const txHz = entity.txFrequency ?? rxHz;
     const slotIndex = slotByChannelId.get(entity.id) ?? index + 1;
     const rxOnly = effectiveForbidTransmit(entity, merged.channelBehaviourContext);
+    const resolution = resolutions.get(entity.id);
+    const wireName = resolution
+      ? resolution.effective
+      : row.wireNameOverride?.trim() || row.wireName;
+    if (resolution) {
+      pushWireNameResolutionWarning(warnings, {
+        entityKind: 'Channel',
+        remediation: resolution.remediation,
+        original: resolution.override ?? resolution.libraryName,
+        exported: resolution.effective,
+        limit: resolution.limit,
+        profileId: egress.profileId,
+      });
+    }
     dtos.push({
       slotIndex,
       empty: false,
-      wireName: radioWireName(row, build, egress, reserved, warnings),
+      wireName,
       rxHz,
       txHz,
       rxTone: channelToneToRadioTone(analog && 'rxTone' in analog ? analog.rxTone : 'none'),
@@ -412,7 +444,7 @@ export function assembledChannelsToRadioDtosWithWarnings(
 export function expandAssembledChannelsToRadioDtos(
   assembled: AssembledBuild,
   build: RadioBuild,
-  library: Pick<LibrarySlice, 'talkGroups' | 'digitalContacts'>,
+  library: LibrarySlice,
   egress: RadioWireEgressIds,
   fkMaps?: RadioChannelFkMaps,
 ): AssembledChannelsToRadioDtosResult {
@@ -423,10 +455,11 @@ export function expandAssembledChannelsToRadioDtos(
       egress,
       fkMaps,
       assembled.channelMemorySlots,
+      library,
     );
   }
 
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   const merged = mergeExportOptions(build, egress.formatId, { profileId: egress.profileId });
   const expanded = filterExpandedRowsByOverrides(
     expandAllMxNChannels({

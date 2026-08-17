@@ -1,3 +1,4 @@
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 /** Dual-bank / single-bank Write overlap and projection modes — vendor-neutral; no CPS wire shapes. */
 
 export type DualBankWriteMode = 'codeplug' | 'digitalIdList';
@@ -40,9 +41,9 @@ export function singleBankProjectionModesForWrite(
 
 export function projectSingleBankDigitalContacts(args: ProjectSingleBankDigitalContactsArgs): {
   contacts: ProjectedDigitalContactRow[];
-  warnings: string[];
+  warnings: ExportWarning[];
 } {
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   if (args.mode === 'skip') {
     return { contacts: [], warnings };
   }
@@ -58,7 +59,8 @@ export function projectSingleBankDigitalContacts(args: ProjectSingleBankDigitalC
       out.push(row);
     }
     if (args.libraryContacts.length > args.maxContacts) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Build has ${args.libraryContacts.length} digital contact(s); only ${args.maxContacts} export to radio contact bank`,
       );
     }
@@ -80,12 +82,14 @@ export function projectSingleBankDigitalContacts(args: ProjectSingleBankDigitalC
       out.push(row);
     }
     if (skippedOverlap > 0) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Skipped ${skippedOverlap} directory row(s) whose DMR ID already exists on a library digital contact`,
       );
     }
     if (truncated > 0) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Directory has more contacts than the radio contact bank allows; only ${args.maxContacts} export from directory`,
       );
     }

@@ -2,15 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
 import { dedupeWarnings } from '@core/import-export/dedupeWarnings.ts';
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { exportBuildAll } from './exportBuild.ts';
 
+function general(message: string): ExportWarning {
+  return { kind: 'general', severity: 'problem', message };
+}
+
 describe('dedupeWarnings', () => {
-  it('removes duplicate strings while preserving order', () => {
-    expect(dedupeWarnings(['a', 'b', 'a', 'c', 'b']).map((warning) => warning)).toEqual([
-      'a',
-      'b',
-      'c',
-    ]);
+  it('removes duplicate warnings while preserving order', () => {
+    expect(
+      dedupeWarnings([general('a'), general('b'), general('a'), general('c'), general('b')]).map(
+        (warning) => formatExportWarning(warning),
+      ),
+    ).toEqual(['a', 'b', 'c']);
   });
 });
 
@@ -48,11 +53,19 @@ describe('exportBuildAll', () => {
 
     expect(Object.keys(result.files).length).toBeGreaterThan(1);
     expect(
-      result.warnings.filter((warning) => warning.startsWith(longNameWarningPrefix)),
+      result.warnings.filter((warning) =>
+        formatExportWarning(warning).startsWith(longNameWarningPrefix),
+      ),
     ).toHaveLength(1);
     // Override path hard-truncates — warn without smart-shorten "exported as" wording.
-    expect(result.warnings.some((warning) => warning.includes('exported as'))).toBe(false);
-    expect(result.warnings.some((warning) => warning.startsWith(longNameWarningPrefix))).toBe(true);
+    expect(
+      result.warnings.some((warning) => formatExportWarning(warning).includes('exported as')),
+    ).toBe(false);
+    expect(
+      result.warnings.some((warning) =>
+        formatExportWarning(warning).startsWith(longNameWarningPrefix),
+      ),
+    ).toBe(true);
   });
 
   it('returns each build-wide DM32 zone cap warning once across all CSV files', () => {
@@ -85,12 +98,20 @@ describe('exportBuildAll', () => {
       scanLists: [],
     };
     const { build, egress } = newRadioBuildForProfile(projectId, 'dm32-baofeng-dm32uv');
-    const capWarning = 'Zone "Glasgow" has 65 expanded members (cap 64)';
 
     const result = exportBuildAll({ build, egress, library });
 
     expect(Object.keys(result.files).length).toBeGreaterThan(1);
-    expect(result.warnings.filter((warning) => warning === capWarning)).toHaveLength(1);
+    expect(
+      result.warnings.filter(
+        (warning) =>
+          warning.kind === 'member_cap' &&
+          warning.capKind === 'zone-expanded-cap' &&
+          warning.label === 'Glasgow' &&
+          warning.count === 65 &&
+          warning.cap === 64,
+      ),
+    ).toHaveLength(1);
   });
 
   it('keeps distinct warnings for different entities', () => {
@@ -146,7 +167,25 @@ describe('exportBuildAll', () => {
 
     const result = exportBuildAll({ build, egress, library });
 
-    expect(result.warnings).toContain('Zone "Glasgow" has 65 expanded members (cap 64)');
-    expect(result.warnings).toContain('Zone "Edinburgh" has 65 expanded members (cap 64)');
+    expect(
+      result.warnings.some(
+        (warning) =>
+          warning.kind === 'member_cap' &&
+          warning.capKind === 'zone-expanded-cap' &&
+          warning.label === 'Glasgow' &&
+          warning.count === 65 &&
+          warning.cap === 64,
+      ),
+    ).toBe(true);
+    expect(
+      result.warnings.some(
+        (warning) =>
+          warning.kind === 'member_cap' &&
+          warning.capKind === 'zone-expanded-cap' &&
+          warning.label === 'Edinburgh' &&
+          warning.count === 65 &&
+          warning.cap === 64,
+      ),
+    ).toBe(true);
   });
 });

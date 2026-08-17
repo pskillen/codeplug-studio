@@ -1,11 +1,14 @@
-import { NumberInput, Stack, Switch, Text } from '@mantine/core';
+import { NumberInput, Stack, Switch } from '@mantine/core';
+import { useCallback } from 'react';
 import type { BuildExportSettings, FormatBuild } from '@core/models/formatBuild.ts';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { radioTargetHasCompatibleFormat } from '@core/radio-targets/index.ts';
+import { useDebouncedOptionalNumberField } from '../../hooks/useDebouncedOptionalNumberField.ts';
 import { resolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import ExportNameModeSelect from './ExportNameModeSelect.tsx';
 import DigitalContactExportNameModeSelect from './DigitalContactExportNameModeSelect.tsx';
-import UseLibraryAbbreviationsSwitch from './UseLibraryAbbreviationsSwitch.tsx';
+import LibraryAbbreviationsFields from './LibraryAbbreviationsFields.tsx';
+import ExportSettingsSubheading from './ExportSettingsSubheading.tsx';
 
 export interface ExportNameSettingsFieldsProps {
   build: FormatBuild;
@@ -14,6 +17,11 @@ export interface ExportNameSettingsFieldsProps {
   profileNameLimit?: number;
 }
 
+/**
+ * Naming section content — name style, library abbreviations, shorten/length, and
+ * (where applicable) contact naming. Shared by every target; fields that don't apply
+ * to a target's traits are gated by the caller, not forked per format.
+ */
 export default function ExportNameSettingsFields({
   build,
   onPatch,
@@ -25,52 +33,25 @@ export default function ExportNameSettingsFields({
     radioTargetHasCompatibleFormat(build.radioTargetId, 'anytone') ||
     radioTargetHasCompatibleFormat(build.radioTargetId, 'opengd77');
 
+  const commitMaxNameLength = useCallback(
+    (value: number | undefined) => {
+      onPatch({ maxNameLength: value ?? null });
+    },
+    [onPatch],
+  );
+  const maxNameLengthField = useDebouncedOptionalNumberField(
+    settings.maxNameLength ?? undefined,
+    commitMaxNameLength,
+  );
+
   return (
     <Stack gap="sm">
-      <Switch
-        label="Shorten long names"
-        description="Abbreviate names that exceed the target length at export"
-        checked={settings.shortenNames}
-        disabled={saving}
-        onChange={(e) => onPatch({ shortenNames: e.currentTarget.checked })}
-      />
-      <NumberInput
-        label="Target name length"
-        description={
-          profileNameLimit != null
-            ? `Leave empty to use the radio profile default (${profileNameLimit} characters)`
-            : 'Leave empty to use the radio profile default'
-        }
-        placeholder={profileNameLimit != null ? String(profileNameLimit) : 'Profile default'}
-        min={1}
-        max={64}
-        value={settings.maxNameLength ?? ''}
-        disabled={saving || !settings.shortenNames}
-        onChange={(value) => {
-          if (value === '' || value == null) {
-            onPatch({ maxNameLength: null });
-            return;
-          }
-          const n = typeof value === 'number' ? value : Number.parseInt(String(value), 10);
-          onPatch({ maxNameLength: Number.isFinite(n) && n > 0 ? n : null });
-        }}
-      />
+      <ExportSettingsSubheading>Name style</ExportSettingsSubheading>
       <ExportNameModeSelect
         value={settings.nameModeOverride}
-        disabled={saving || !settings.shortenNames}
-        onChange={(nameModeOverride) => onPatch({ nameModeOverride })}
-        description="Fallback when shortening applies and a channel has no wire name override on this build."
-      />
-      <UseLibraryAbbreviationsSwitch
-        shortenNames={settings.shortenNames}
-        value={settings.useChannelAbbreviation && settings.useTalkGroupAbbreviation}
         disabled={saving}
-        onChange={(useLibraryAbbreviations) =>
-          onPatch({
-            useChannelAbbreviation: useLibraryAbbreviations,
-            useTalkGroupAbbreviation: useLibraryAbbreviations,
-          })
-        }
+        onChange={(nameModeOverride) => onPatch({ nameModeOverride })}
+        description="Fallback when a channel has no wire name override on this build. Set overrides on the Channels wire page."
       />
       {showContactExportNameMode ? (
         <DigitalContactExportNameModeSelect
@@ -79,9 +60,39 @@ export default function ExportNameSettingsFields({
           onChange={(digitalContactExportNameMode) => onPatch({ digitalContactExportNameMode })}
         />
       ) : null}
-      <Text size="xs" c="dimmed">
-        Saved with this build and included in native YAML export.
-      </Text>
+
+      <ExportSettingsSubheading>Shorten and length</ExportSettingsSubheading>
+      <Switch
+        label="Shorten long names"
+        description="Abbreviate names that exceed the target length at export."
+        checked={settings.shortenNames}
+        disabled={saving}
+        onChange={(event) => onPatch({ shortenNames: event.currentTarget.checked })}
+      />
+      <NumberInput
+        label="Target name length"
+        description={
+          profileNameLimit != null
+            ? `This radio allows ${profileNameLimit} characters. Leave empty to use that default.`
+            : 'Leave empty to use the radio profile default.'
+        }
+        placeholder={profileNameLimit != null ? String(profileNameLimit) : 'Profile default'}
+        min={1}
+        max={64}
+        value={maxNameLengthField.value}
+        disabled={saving || !settings.shortenNames}
+        onChange={maxNameLengthField.setValue}
+        onBlur={maxNameLengthField.flush}
+      />
+
+      <LibraryAbbreviationsFields
+        shortenNames={settings.shortenNames}
+        useChannelAbbreviation={settings.useChannelAbbreviation}
+        useTalkGroupAbbreviation={settings.useTalkGroupAbbreviation}
+        disabled={saving || !settings.shortenNames}
+        onChangeChannel={(useChannelAbbreviation) => onPatch({ useChannelAbbreviation })}
+        onChangeTalkGroup={(useTalkGroupAbbreviation) => onPatch({ useTalkGroupAbbreviation })}
+      />
     </Stack>
   );
 }

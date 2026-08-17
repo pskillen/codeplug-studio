@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it, vi } from 'vitest';
 import {
   newChannel,
@@ -231,9 +232,13 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     expect(projection.organisation.amZones).toEqual([
       expect.objectContaining({ wireName: 'Mixed', channelNumbers: [1] }),
     ]);
-    expect(projection.warnings.some((w) => w.includes('AM airband') && w.includes('omitted'))).toBe(
-      false,
-    );
+    expect(
+      projection.warnings.some(
+        (w) =>
+          formatExportWarning(w).includes('AM airband') &&
+          formatExportWarning(w).includes('omitted'),
+      ),
+    ).toBe(false);
   });
 
   it('keeps airband-only zones off DMR organisation.zones and on amZones', () => {
@@ -415,7 +420,9 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.organisation.amAirChannels).toBeUndefined();
     expect(projection.organisation.amZones).toBeUndefined();
-    expect(projection.warnings.some((w) => w.includes('no AM zone membership'))).toBe(true);
+    expect(
+      projection.warnings.some((w) => formatExportWarning(w).includes('no AM zone membership')),
+    ).toBe(true);
   });
 
   it('warns when an AM zone exceeds 32 members', () => {
@@ -457,7 +464,11 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     });
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
     expect(projection.organisation.amZones?.[0]?.channelNumbers).toHaveLength(32);
-    expect(projection.warnings.some((w) => w.includes('truncated') && w.includes('32'))).toBe(true);
+    expect(
+      projection.warnings.some(
+        (w) => w.kind === 'member_cap' && w.capKind === 'zone-members-export' && w.cap === 32,
+      ),
+    ).toBe(true);
   });
 
   it('partitions broadcast FM out of MR channels with a warning', () => {
@@ -491,7 +502,11 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     expect(projection.channels[0]?.wireName).toBe('VHF');
     expect(projection.numbersBySourceChannelId.has('ch-fm')).toBe(false);
     expect(
-      projection.warnings.some((w) => w.includes('broadcast FM') && w.includes('omitted')),
+      projection.warnings.some(
+        (w) =>
+          formatExportWarning(w).includes('broadcast FM') &&
+          formatExportWarning(w).includes('omitted'),
+      ),
     ).toBe(true);
   });
 

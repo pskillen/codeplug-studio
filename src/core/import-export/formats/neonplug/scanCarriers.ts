@@ -4,6 +4,7 @@ import type { AssembledChannel } from '@core/services/assemble.ts';
 import type { ExpandedNeonplugChannelRow } from './channelExpansion.ts';
 import type { NumberedNeonplugChannelRow } from './exportContext.ts';
 import type { NeonplugScanList } from './wireTypes.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export function neonplugCarrierChannelEntity(
   carrier: SyntheticScanCarrier,
@@ -55,7 +56,7 @@ export function appendNeonplugScanCarriers(
   maxChannels: number,
   profileLabel: string,
   template: Channel | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): {
   numbered: NumberedNeonplugChannelRow[];
   carrierSources: Map<string, AssembledChannel>;
@@ -71,7 +72,8 @@ export function appendNeonplugScanCarriers(
   for (let i = 0; i < carriers.length; i++) {
     const carrier = carriers[i]!;
     if (result.length >= maxChannels) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Truncated ${carriers.length - i} scan carrier channel(s) to fit ${maxChannels} channels for ${profileLabel}`,
       );
       break;

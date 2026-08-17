@@ -15,6 +15,11 @@ import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { NeonplugDm32uvRadioProfile } from './profiles.ts';
 import type { NeonplugScanList } from './wireTypes.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
+import {
+  pushGeneralWarning,
+  pushMemberCapWarning,
+  type ExportWarning,
+} from '@core/import-export/exportWarning.ts';
 
 /**
  * Default name for the DM32UV empty-list floor (#564).
@@ -90,7 +95,7 @@ export function deriveNeonplugZoneDerivedScanLists(
   profile: NeonplugDm32uvRadioProfile,
   numbersBySourceChannelId: ReadonlyMap<string, readonly number[]>,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   reservedWireNames: Iterable<string> = [],
   /** Parallel to numbers — used to honour projection-key scan skips (#570). */
   expansionByChannelId?: ReadonlyMap<string, ReadonlyArray<{ key: string }>>,
@@ -129,7 +134,8 @@ export function deriveNeonplugZoneDerivedScanLists(
     if (!emptyLayoutMode && !entry?.exportScanList) continue;
 
     if (result.scanLists.length >= maxLists) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Additional zone-derived scan list(s) skipped; NeonPlug channel scanListId supports at most ${maxLists} lists`,
       );
       break;
@@ -150,7 +156,8 @@ export function deriveNeonplugZoneDerivedScanLists(
     });
 
     if (memberIds.length === 0) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Zone "${assembledZone.wireName}" has no scan-eligible members; scan list skipped`,
       );
       continue;
@@ -168,14 +175,19 @@ export function deriveNeonplugZoneDerivedScanLists(
       }
     }
     if (channels.length > profile.scanListMembers) {
-      warnings.push(
-        `Zone "${assembledZone.wireName}" scan list truncated from ${channels.length} to ${profile.scanListMembers} members`,
-      );
+      pushMemberCapWarning(warnings, {
+        capKind: 'zone-scan-list-truncated',
+        label: assembledZone.wireName,
+        count: profile.scanListMembers,
+        cap: profile.scanListMembers,
+        truncatedFrom: channels.length,
+      });
       channels = channels.slice(0, profile.scanListMembers);
     }
 
     if (channels.length === 0) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Zone "${assembledZone.wireName}" has no scan-eligible members; scan list skipped`,
       );
       continue;

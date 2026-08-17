@@ -18,7 +18,8 @@ import {
   overrideOrderOrSlot,
   resolveOverrideWireName,
 } from '@core/domain/formatBuildOverrides.ts';
-import { defaultChannelWireName } from '@core/domain/channelNaming.ts';
+import { defaultChannelWireName, type ChannelExportNameMode } from '@core/domain/channelNaming.ts';
+import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { channelInAnyZoneMembership } from '@core/domain/zoneMembership.ts';
 import {
   resolveEffectiveZoneChannelIds,
@@ -44,6 +45,11 @@ import type { Library } from '@core/models/library.ts';
 import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { ChannelBehaviourDefaults } from '@core/models/channelBehaviourDefaults.ts';
 import type { ZoneBehaviourDefaults } from '@core/models/zoneBehaviourDefaults.ts';
+import {
+  pushGeneralWarning,
+  pushUnlinkedWarning,
+  type ExportWarning,
+} from '@core/import-export/exportWarning.ts';
 
 /** Library entities needed for export projection — vendor-neutral slice. */
 export interface LibrarySlice {
@@ -338,11 +344,18 @@ function withExportInclusionDefaults(build: RadioBuild): RadioBuild {
   };
 }
 
-function assembleChannels(build: RadioBuild, library: LibrarySlice): AssembledChannel[] {
+function assembleChannels(
+  build: RadioBuild,
+  library: LibrarySlice,
+  formatId: string,
+  profileId: string,
+): AssembledChannel[] {
   const overrides = build.channelOverrides;
   /** Flat-memory radios only export the memory list — no “orphan” inclusion toggle. */
   const includeUnlinked = !buildUsesFlatMemoryList(build) && build.exportUnlinkedChannels !== false;
   const exportReachable = exportReachableChannelIds(build, library);
+  const exportOptions = mergeExportOptions(build, formatId, { profileId }, library);
+  const nameModeOverride = exportOptions.nameModeOverride as ChannelExportNameMode | undefined;
   const assembled: AssembledChannel[] = [];
   for (const entity of library.channels) {
     if (isEntityExcluded(overrides, entity.id)) continue;
@@ -357,7 +370,7 @@ function assembleChannels(build: RadioBuild, library: LibrarySlice): AssembledCh
     }
     const override = overrideByEntityId(overrides).get(entity.id);
     const wireNameOverride = override?.wireName?.trim();
-    const generated = defaultChannelWireName(entity);
+    const generated = defaultChannelWireName(entity, { nameModeOverride });
     assembled.push({
       entity,
       wireName: wireNameOverride ?? generated,
@@ -456,13 +469,14 @@ export function aprsConfigurationWarnings(
   _build: RadioBuild,
   library: LibrarySlice,
   assembled: AssembledBuild,
-): string[] {
-  const warnings: string[] = [];
+): ExportWarning[] {
+  const warnings: ExportWarning[] = [];
   const hasDigitalAprsChannel = library.channels.some(
     (channel) => channel.aprs?.reportType === 'digital',
   );
   if (hasDigitalAprsChannel && !assembled.aprsConfiguration) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       'One or more channels have digital APRS reporting but no APRS configuration exists in the library',
     );
   }
@@ -473,7 +487,7 @@ export function aprsConfigurationWarnings(
 export function exportChannelEligibilityWarnings(
   build: RadioBuild,
   library: LibrarySlice,
-): string[] {
+): ExportWarning[] {
   const eligibleOptions = resolveChannelEligibilityOptions(build);
   const candidates = library.channels.filter(
     (channel) => !isEntityExcluded(build.channelOverrides, channel.id),
@@ -488,8 +502,8 @@ export function exportInclusionWarnings(
   build: RadioBuild,
   library: LibrarySlice,
   assembled: AssembledBuild,
-): string[] {
-  const warnings: string[] = [];
+): ExportWarning[] {
+  const warnings: ExportWarning[] = [];
   const normalized = withExportInclusionDefaults(build);
 
   if (normalized.exportUnlinkedChannels !== false) {
@@ -499,7 +513,7 @@ export function exportInclusionWarnings(
       const zoneLinked = zoneLinkedChannelIds(normalized, library);
       const orphanCount = assembled.channels.filter((row) => !zoneLinked.has(row.entity.id)).length;
       if (orphanCount > 0) {
-        warnings.push(`Including ${orphanCount} channel(s) not linked to a zone`);
+        pushUnlinkedWarning(warnings, `Including ${orphanCount} channel(s) not linked to a zone`);
       }
     }
   }
@@ -519,7 +533,10 @@ export function exportInclusionWarnings(
       (row) => !refs.talkGroupIds.has(row.entity.id),
     ).length;
     if (orphanTgCount > 0) {
-      warnings.push(`Including ${orphanTgCount} talk group(s) not referenced by a channel`);
+      pushUnlinkedWarning(
+        warnings,
+        `Including ${orphanTgCount} talk group(s) not referenced by a channel`,
+      );
     }
   }
 
@@ -528,7 +545,10 @@ export function exportInclusionWarnings(
       (row) => !refs.rxGroupListIds.has(row.entity.id),
     ).length;
     if (orphanListCount > 0) {
-      warnings.push(`Including ${orphanListCount} RX group list(s) not referenced by a channel`);
+      pushUnlinkedWarning(
+        warnings,
+        `Including ${orphanListCount} RX group list(s) not referenced by a channel`,
+      );
     }
   }
 
@@ -537,7 +557,8 @@ export function exportInclusionWarnings(
       (row) => !refs.digitalContactIds.has(row.entity.id),
     ).length;
     if (orphanContactCount > 0) {
-      warnings.push(
+      pushUnlinkedWarning(
+        warnings,
         `Including ${orphanContactCount} digital contact(s) not referenced by a channel`,
       );
     }
@@ -548,7 +569,8 @@ export function exportInclusionWarnings(
       (row) => !refs.analogContactIds.has(row.entity.id),
     ).length;
     if (orphanContactCount > 0) {
-      warnings.push(
+      pushUnlinkedWarning(
+        warnings,
         `Including ${orphanContactCount} analog contact(s) not referenced by a channel`,
       );
     }
@@ -583,7 +605,7 @@ export function assemble(
     ? migrateFlatMemoryLayoutToOrderOrSlot(migratedBase, library)
     : migratedBase;
   const normalizedBuild = withExportInclusionDefaults(migratedBuild);
-  const channels = assembleChannels(normalizedBuild, library);
+  const channels = assembleChannels(normalizedBuild, library, formatId, profileId);
   const exportedChannelIds = new Set(channels.map((c) => c.entity.id));
   const zones = assembleZones(normalizedBuild, library, exportedChannelIds);
   const scanLists = assembleScanLists(normalizedBuild, library, exportedChannelIds);

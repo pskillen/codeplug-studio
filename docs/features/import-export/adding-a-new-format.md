@@ -341,6 +341,31 @@ Checklist for flat/single-row formats:
 
 See [wire-name-composition.md](../builds/wire-name-composition.md) for the full pipeline. Regression: [#287](https://github.com/pskillen/codeplug-studio/issues/287).
 
+### Zone / scan-list / talk-group / contact / RX-group-list wire names
+
+These kinds don't have per-format expansion — one library entity, one wire row. Resolve their
+names via `resolveWireNamesFromOptions()` (or `resolveWireNames()` if your call site holds the
+original `RadioBuild` rather than an `AssembledBuild`) from
+`src/core/services/resolveWireNamesCore.ts` (or the `resolveWireNames.ts` barrel — see the note
+below on which to import). **Do not** hand-roll a per-format map builder around
+`applyListWireNameLimits` / `applyTalkGroupWireNameLimits` / `applyDigitalContactExportWireName` —
+those are the resolver's own internal primitives now; a new format calling them directly
+duplicates the resolver's limit/uniquify/override policy instead of reusing it.
+
+- Each entity kind resolves against its **own** reserved-name set — do not share one `Set` across
+  kinds. A zone and a scan list (or a talk group and a contact) sharing the same generated name is
+  expected, not a bug.
+- If your format's serialiser is itself registered in `registry.ts` (i.e. it has an
+  `adapter.ts` listed there), **import from `resolveWireNamesCore.ts` directly, not from
+  `resolveWireNames.ts`** — the barrel pulls in `mergeExportOptions` /
+  `exportSettingsMerge.ts` → `registry.ts`, which closes an ESM cycle back through your own
+  `adapter.ts` and can corrupt Vitest's SSR module graph (see the comment atop
+  `resolveWireNamesCore.ts` for the full story — this was live-reproduced adding NeonPlug's
+  zone/contact resolution in the export wire-preview rework, phase 5).
+- Format-specific _composition_ (deriving the base name — e.g. m×n site names, timeslot-clone
+  suffixes, zone-derived scan-list carrier names) still belongs in your format's own adapter code;
+  only the shared limit/uniquify/override policy routes through the resolver.
+
 ---
 
 ## 5. Data model

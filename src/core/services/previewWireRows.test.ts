@@ -64,6 +64,7 @@ describe('previewWireRows', () => {
     const build = {
       ...aggregate.radioBuilds[0]!,
       talkGroupOverrides: [{ libraryEntityId: tgId, wireName: 'Custom Override' }],
+      exportSettings: { shortenNames: false },
     };
     const library = {
       channels: aggregate.channels,
@@ -77,7 +78,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'talkGroup', { shortenNames: false });
+    const rows = previewWireRows(build, library, 'talkGroup');
     const row = rows.find((entry) => entry.libraryEntityId === tgId);
     expect(row?.generatedWireName).toBe('Scotland Full Name');
     expect(row?.effectiveWireName).toBe('Custom Override');
@@ -91,6 +92,9 @@ describe('previewWireRows', () => {
     const build = {
       ...aggregate.radioBuilds[0]!,
       talkGroupOverrides: [{ libraryEntityId: tgId, wireName: 'Short override' }],
+      defaultEgressFormatId: 'opengd77',
+      defaultEgressProfileId: 'opengd77-1701',
+      exportSettings: { shortenNames: true },
     };
     const library = {
       channels: aggregate.channels,
@@ -106,10 +110,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'talkGroup', {
-      profileId: 'opengd77-1701',
-      shortenNames: true,
-    });
+    const rows = previewWireRows(build, library, 'talkGroup');
     const row = rows.find((entry) => entry.libraryEntityId === tgId);
     expect(row?.generatedWireName).toBe('VL TGN');
     expect(row?.effectiveWireName).toBe('Short override');
@@ -236,7 +237,12 @@ describe('previewWireRows', () => {
   it('expands multi-mode channels into separate preview rows', () => {
     const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.radioBuilds[0]!;
+    const build = {
+      ...aggregate.radioBuilds[0]!,
+      defaultEgressFormatId: 'opengd77',
+      defaultEgressProfileId: 'opengd77-1701',
+      exportSettings: { expandModes: true },
+    };
     const channels: Channel[] = aggregate.channels.map((channel, index) =>
       index === 1
         ? {
@@ -271,10 +277,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'channel', {
-      profileId: 'opengd77-1701',
-      expandModes: true,
-    });
+    const rows = previewWireRows(build, library, 'channel');
     const multiModeRows = rows.filter((row) => row.libraryEntityId === channels[1]!.id);
     expect(multiModeRows).toHaveLength(2);
     expect(multiModeRows[0]?.generatedWireName).toMatch(/-F$/);
@@ -316,6 +319,9 @@ describe('previewWireRows', () => {
     const build = {
       ...aggregate.radioBuilds[0]!,
       channelOverrides: [{ libraryEntityId: skipKey, excluded: true }],
+      defaultEgressFormatId: 'opengd77',
+      defaultEgressProfileId: 'opengd77-1701',
+      exportSettings: { expandModes: true },
     };
     const library = {
       channels,
@@ -327,10 +333,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'channel', {
-      profileId: 'opengd77-1701',
-      expandModes: true,
-    });
+    const rows = previewWireRows(build, library, 'channel');
     const multiModeRows = rows.filter((row) => row.libraryEntityId === multiId);
     expect(multiModeRows).toHaveLength(2);
     expect(multiModeRows.find((row) => row.key === skipKey)?.excluded).toBe(true);
@@ -340,7 +343,12 @@ describe('previewWireRows', () => {
   it('shortens wire names at the profile name limit in preview', () => {
     const yaml = readFileSync(join(fixtureDir, 'with-radio-build.yaml'), 'utf8');
     const aggregate = parseProjectDocument(yaml);
-    const build = aggregate.radioBuilds[0]!;
+    const build = {
+      ...aggregate.radioBuilds[0]!,
+      defaultEgressFormatId: 'opengd77',
+      defaultEgressProfileId: 'opengd77-1701',
+      exportSettings: { shortenNames: true, maxNameLength: 16 },
+    };
     const channels = aggregate.channels.map((channel) => ({
       ...channel,
       name: 'Very Long Channel Name That Exceeds Limit',
@@ -356,11 +364,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'channel', {
-      profileId: 'opengd77-1701',
-      shortenNames: true,
-      maxNameLength: 16,
-    });
+    const rows = previewWireRows(build, library, 'channel');
     expect(rows[0]?.effectiveWireName.length).toBeLessThanOrEqual(16);
   });
 
@@ -370,6 +374,9 @@ describe('previewWireRows', () => {
     const build = {
       ...aggregate.radioBuilds[0]!,
       channelOverrides: [],
+      defaultEgressFormatId: 'opengd77',
+      defaultEgressProfileId: 'opengd77-1701',
+      exportSettings: { shortenNames: false },
     };
     const library = {
       channels: aggregate.channels,
@@ -381,10 +388,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'channel', {
-      profileId: 'opengd77-1701',
-      shortenNames: false,
-    });
+    const rows = previewWireRows(build, library, 'channel');
     expect(rows.find((row) => row.libraryEntityId.endsWith('2222'))?.generatedWireName).toBe(
       'GB3DA GB3DA Demo',
     );
@@ -399,6 +403,9 @@ describe('previewWireRows', () => {
     const build = {
       ...aggregate.radioBuilds[0]!,
       channelOverrides: [],
+      defaultEgressFormatId: 'opengd77',
+      defaultEgressProfileId: 'opengd77-1701',
+      exportSettings: { shortenNames: true },
     };
     const channels = aggregate.channels.map((channel, index) =>
       index === 1
@@ -415,10 +422,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'channel', {
-      profileId: 'opengd77-1701',
-      shortenNames: true,
-    });
+    const rows = previewWireRows(build, library, 'channel');
     const row = rows.find((r) => r.libraryEntityId === channels[1]!.id);
     expect(row?.generatedWireName).toBe("GB3MT M'flt");
   });
@@ -462,10 +466,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'channel', {
-      formatId: 'dm32',
-      profileId: 'dm32-baofeng-dm32uv',
-    });
+    const rows = previewWireRows(build, library, 'channel');
     const fanOutRows = rows.filter((row) =>
       row.displayDetails?.some((line) => line.label === 'Talk group'),
     );
@@ -844,12 +845,8 @@ describe('previewWireRows', () => {
         rxGroupLists: [rgl],
         scanLists: [],
       };
-      const egress =
-        formatId === 'opengd77-1701'
-          ? { formatId: 'opengd77', profileId: 'opengd77-1701' }
-          : { formatId: 'dm32', profileId: 'dm32-baofeng-dm32uv' };
-      const zoneRow = previewWireRows(build, library, 'zone', egress)[0];
-      const rglRow = previewWireRows(build, library, 'rxGroupList', egress)[0];
+      const zoneRow = previewWireRows(build, library, 'zone')[0];
+      const rglRow = previewWireRows(build, library, 'rxGroupList')[0];
       expect(zoneRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
       expect(rglRow?.effectiveWireName.length).toBeLessThanOrEqual(16);
     }
@@ -884,7 +881,7 @@ describe('previewWireRows', () => {
     const mainRows = previewWireRows(build, library, 'channel');
     expect(mainRows.map((row) => row.displayLabel)).toEqual([expect.stringContaining('DMR 1')]);
 
-    const airRows = previewWireRows(build, library, 'channel', undefined, 'airband');
+    const airRows = previewWireRows(build, library, 'channel', 'airband');
     expect(airRows.map((row) => row.displayLabel)).toEqual([expect.stringContaining('Tower')]);
   });
 
@@ -928,7 +925,7 @@ describe('previewWireRows', () => {
     const mainZoneNames = previewWireRows(build, library, 'zone').map((row) => row.displayLabel);
     expect(mainZoneNames).toEqual(['Mixed']);
 
-    const airZoneNames = previewWireRows(build, library, 'zone', undefined, 'airband').map(
+    const airZoneNames = previewWireRows(build, library, 'zone', 'airband').map(
       (row) => row.displayLabel,
     );
     expect(airZoneNames.sort()).toEqual(['AM only', 'Mixed']);
@@ -960,7 +957,11 @@ describe('previewWireRows', () => {
         { kind: 'channel' as const, channelId: air.id },
       ],
     };
-    const build = newFormatBuild(projectId, 'anytone-at-d890uv');
+    const build = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      defaultEgressFormatId: 'radio-io',
+      defaultEgressProfileId: 'radio-io-at-d890uv',
+    };
     const library = {
       channels: [dmr, air],
       zones: [airOnlyZone, mixedZone],
@@ -970,14 +971,11 @@ describe('previewWireRows', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const serialEgress = { formatId: 'radio-io' as const, profileId: 'radio-io-at-d890uv' };
 
-    const mainZoneNames = previewWireRows(build, library, 'zone', serialEgress).map(
-      (row) => row.displayLabel,
-    );
+    const mainZoneNames = previewWireRows(build, library, 'zone').map((row) => row.displayLabel);
     expect(mainZoneNames).toEqual(['Mixed']);
 
-    const airZoneNames = previewWireRows(build, library, 'zone', serialEgress, 'airband').map(
+    const airZoneNames = previewWireRows(build, library, 'zone', 'airband').map(
       (row) => row.displayLabel,
     );
     expect(airZoneNames.sort()).toEqual(['AM only', 'Mixed']);
@@ -998,7 +996,11 @@ describe('previewWireRows', () => {
       forbidTransmit: 'forbid',
       modeProfiles: [defaultModeProfile('am')],
     };
-    const build = newFormatBuild(projectId, 'anytone-at-d890uv');
+    const build = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      defaultEgressFormatId: 'radio-io',
+      defaultEgressProfileId: 'radio-io-at-d890uv',
+    };
     const library = {
       channels: [dmr, air],
       zones: [],
@@ -1008,12 +1010,11 @@ describe('previewWireRows', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const serialEgress = { formatId: 'radio-io' as const, profileId: 'radio-io-at-d890uv' };
 
-    const mainRows = previewWireRows(build, library, 'channel', serialEgress);
+    const mainRows = previewWireRows(build, library, 'channel');
     expect(mainRows.map((row) => row.displayLabel)).toEqual([expect.stringContaining('DMR 1')]);
 
-    const airRows = previewWireRows(build, library, 'channel', serialEgress, 'airband');
+    const airRows = previewWireRows(build, library, 'channel', 'airband');
     expect(airRows.map((row) => row.displayLabel)).toEqual([expect.stringContaining('Tower')]);
   });
 
@@ -1140,21 +1141,82 @@ describe('previewWireRows', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const egress = { formatId: 'anytone' as const, profileId: 'anytone-at-d890uv' };
-
-    const pureSuggestion = previewWireRows(baseBuild, library, 'channel', egress)[0]
-      ?.generatedWireName;
+    const pureSuggestion = previewWireRows(baseBuild, library, 'channel')[0]?.generatedWireName;
     const overridden = {
       ...baseBuild,
       channelOverrides: [{ libraryEntityId: channel.id, wireName: 'Pinned Override Name' }],
     };
-    const row = previewWireRows(overridden, library, 'channel', egress)[0];
+    const row = previewWireRows(overridden, library, 'channel')[0];
 
     expect(pureSuggestion).toBeTruthy();
     expect(row?.generatedWireName).toBe(pureSuggestion);
     expect(row?.generatedWireName).not.toBe('Pinned Override Name');
     expect(row?.effectiveWireName).toBe('Pinned Override Name');
     expect(row?.hasWireNameOverride).toBe(true);
+  });
+
+  it('honours nameModeOverride on anytone m×n rows previewed via the radio-io (Web Serial) default egress', () => {
+    // Regression: previewWireRows used to route m×n site-name composition through a
+    // bespoke helper gated on `formatId === 'anytone'`. Any other default egress —
+    // including 'radio-io', the Web Serial pathway that is the default/primary egress for
+    // most Anytone D890 builds — fell back to a bare defaultChannelWireName() call with
+    // zero options, silently ignoring `nameModeOverride`. This pins that the radio-io
+    // pathway now composes m×n site names the same way the anytone CSV pathway always did.
+    const projectId = 'proj-anytone-mxn-radioio-namemode';
+    const channel: Channel = {
+      ...newChannel(projectId, 'Repeater Alpha'),
+      callsign: 'GB3GL',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 2 as const,
+          dmrId: 1234567,
+          contactRef: null,
+          rxGroupListId: null,
+        },
+      ],
+    };
+    const zone = {
+      ...newZone(projectId, 'Zone A'),
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
+    };
+    const baseBuild = {
+      ...newFormatBuild(projectId, 'anytone-at-d890uv'),
+      defaultEgressFormatId: 'radio-io',
+      defaultEgressProfileId: 'radio-io-at-d890uv',
+      layout: {
+        sections: [
+          {
+            kind: 'zoneGrouping' as const,
+            zones: [{ id: zone.id, name: zone.name, channelIds: [channel.id] }],
+          },
+        ],
+      },
+    };
+    const library = {
+      channels: [channel],
+      zones: [zone],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const defaultModeRow = previewWireRows(baseBuild, library, 'channel')[0];
+    // Default mode is callsign_name — the generated site name should include the callsign.
+    expect(defaultModeRow?.generatedWireName).toContain('GB3GL');
+
+    const nameOnlyBuild = {
+      ...baseBuild,
+      exportSettings: { ...baseBuild.exportSettings, nameModeOverride: 'name_only' as const },
+    };
+    const nameOnlyRow = previewWireRows(nameOnlyBuild, library, 'channel')[0];
+    expect(nameOnlyRow?.generatedWireName).not.toContain('GB3GL');
+    expect(nameOnlyRow?.generatedWireName).not.toBe(defaultModeRow?.generatedWireName);
   });
 
   it('keeps anytone airband channel generated wire name pure when override is set', () => {
@@ -1177,15 +1239,13 @@ describe('previewWireRows', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const egress = { formatId: 'anytone' as const, profileId: 'anytone-at-d890uv' };
-
-    const pureSuggestion = previewWireRows(baseBuild, library, 'channel', egress, 'airband')[0]
+    const pureSuggestion = previewWireRows(baseBuild, library, 'channel', 'airband')[0]
       ?.generatedWireName;
     const overridden = {
       ...baseBuild,
       channelOverrides: [{ libraryEntityId: air.id, wireName: 'Pinned Airband' }],
     };
-    const row = previewWireRows(overridden, library, 'channel', egress, 'airband')[0];
+    const row = previewWireRows(overridden, library, 'channel', 'airband')[0];
 
     expect(pureSuggestion).toBeTruthy();
     expect(row?.generatedWireName).toBe(pureSuggestion);
@@ -1227,15 +1287,12 @@ describe('previewWireRows', () => {
       rxGroupLists: [],
       scanLists: [],
     };
-    const egress = { formatId: 'dm32' as const, profileId: 'dm32-baofeng-dm32uv' };
-
-    const pureSuggestion = previewWireRows(baseBuild, library, 'channel', egress)[0]
-      ?.generatedWireName;
+    const pureSuggestion = previewWireRows(baseBuild, library, 'channel')[0]?.generatedWireName;
     const overridden = {
       ...baseBuild,
       channelOverrides: [{ libraryEntityId: channel.id, wireName: 'Pinned DM32' }],
     };
-    const row = previewWireRows(overridden, library, 'channel', egress)[0];
+    const row = previewWireRows(overridden, library, 'channel')[0];
 
     expect(pureSuggestion).toBeTruthy();
     expect(row?.generatedWireName).toBe(pureSuggestion);
@@ -1250,6 +1307,7 @@ describe('previewWireRows', () => {
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701'),
       zoneOverrides: [{ libraryEntityId: zone.id, wireName: 'Pinned Override' }],
+      exportSettings: { shortenNames: false },
     };
     const library = {
       channels: [],
@@ -1261,7 +1319,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'zone', { shortenNames: false });
+    const rows = previewWireRows(build, library, 'zone');
     const row = rows.find((entry) => entry.libraryEntityId === zone.id);
     expect(row?.generatedWireName).toBe('Library Zone Name');
     expect(row?.effectiveWireName).toBe('Pinned Override');
@@ -1274,6 +1332,7 @@ describe('previewWireRows', () => {
     const build = {
       ...newFormatBuild(projectId, 'anytone-at-d890uv'),
       scanListOverrides: [{ libraryEntityId: scanList.id, wireName: 'Pinned Scan' }],
+      exportSettings: { shortenNames: false },
     };
     const library = {
       channels: [],
@@ -1285,11 +1344,7 @@ describe('previewWireRows', () => {
       scanLists: [scanList],
     };
 
-    const rows = previewWireRows(build, library, 'scanList', {
-      formatId: 'anytone',
-      profileId: 'anytone-at-d890uv',
-      shortenNames: false,
-    });
+    const rows = previewWireRows(build, library, 'scanList');
     const row = rows.find((entry) => entry.libraryEntityId === scanList.id);
     expect(row?.generatedWireName).toBe('Library Scan Name');
     expect(row?.effectiveWireName).toBe('Pinned Scan');
@@ -1302,6 +1357,7 @@ describe('previewWireRows', () => {
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701'),
       rxGroupListOverrides: [{ libraryEntityId: list.id, wireName: 'Pinned RX' }],
+      exportSettings: { shortenNames: false },
     };
     const library = {
       channels: [],
@@ -1313,7 +1369,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'rxGroupList', { shortenNames: false });
+    const rows = previewWireRows(build, library, 'rxGroupList');
     const row = rows.find((entry) => entry.libraryEntityId === list.id);
     expect(row?.generatedWireName).toBe('Library RX List');
     expect(row?.effectiveWireName).toBe('Pinned RX');
@@ -1329,6 +1385,10 @@ describe('previewWireRows', () => {
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701'),
       contactOverrides: [{ libraryEntityId: contact.id, wireName: 'Pinned Contact' }],
+      exportSettings: {
+        digitalContactExportNameMode: 'callsign-name' as const,
+        shortenNames: false,
+      },
     };
     const library = {
       channels: [],
@@ -1340,11 +1400,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'contact', {
-      formatId: 'opengd77',
-      digitalContactExportNameMode: 'callsign-name',
-      shortenNames: false,
-    });
+    const rows = previewWireRows(build, library, 'contact');
     const row = rows.find((entry) => entry.libraryEntityId === contact.id);
     expect(row?.generatedWireName).toBe(digitalContactExportBaseName(contact, 'callsign-name'));
     expect(row?.effectiveWireName).toBe('Pinned Contact');
@@ -1357,6 +1413,7 @@ describe('previewWireRows', () => {
     const build = {
       ...newFormatBuild(projectId, 'opengd77-1701'),
       contactOverrides: [{ libraryEntityId: contact.id, wireName: 'Pinned Analog' }],
+      exportSettings: { shortenNames: false },
     };
     const library = {
       channels: [],
@@ -1368,10 +1425,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'contact', {
-      formatId: 'opengd77',
-      shortenNames: false,
-    });
+    const rows = previewWireRows(build, library, 'contact');
     const row = rows.find((entry) => entry.libraryEntityId === contact.id);
     expect(row?.generatedWireName).toBe(analogContactExportBaseName(contact));
     expect(row?.effectiveWireName).toBe('Pinned Analog');
@@ -1390,7 +1444,11 @@ describe('previewWireRows', () => {
       rxFrequency: 145_500_000,
       modeProfiles: [defaultModeProfile('fm')],
     });
-    const build = newRadioBuild('proj', 'baofeng-dm1701', 'DM-1701');
+    const build = {
+      ...newRadioBuild('proj', 'baofeng-dm1701', 'DM-1701'),
+      defaultEgressFormatId: 'opengd77',
+      defaultEgressProfileId: 'opengd77-1701',
+    };
     const library = {
       channels: [air, fm],
       zones: [],
@@ -1401,10 +1459,7 @@ describe('previewWireRows', () => {
       scanLists: [],
     };
 
-    const rows = previewWireRows(build, library, 'channel', {
-      formatId: 'opengd77',
-      profileId: '1701',
-    });
+    const rows = previewWireRows(build, library, 'channel');
     expect(rows.map((row) => row.libraryEntityId)).toEqual([fm.id]);
   });
 });

@@ -18,12 +18,12 @@ Shows every preview row in edit mode at once. Wire-name drafts are owned by the 
 
 ## Behaviour
 
-- Each row uses `WireNameOverrideInput` with `deferCommit` — no per-row Apply/Revert.
-- Suggestion clicks fill the draft only (still require page Save to persist).
+- Each row uses the shared [`WireNameInlineEditor`](./WireNameInlineEditor.md) with `deferCommit` — no per-row Save/Revert.
+- Suggestion clicks fill the draft only (still require page Save to persist). One suggestion per row (build-default style) — unlike the CPS wire-preview table cell, this bulk surface does not yet offer per-`ChannelExportNameMode` suggestions.
 - Parent owns the Save button and calls `setRowWireNames` with the pending map, then clears pending and bumps `draftEpoch`.
 
 ## Related
 
 - [wire-preview.md](../../../../docs/features/builds/wire-preview.md)
 - `BuildChannelsBulkEditPage`
-- [`WireNameOverrideInput`](./WireNameOverrideInput.tsx)
+- [`WireNameInlineEditor`](./WireNameInlineEditor.md)

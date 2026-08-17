@@ -1,10 +1,11 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { applyListWireNameLimits } from './listWireNames.ts';
 
 describe('applyListWireNameLimits', () => {
   it('shortens long names when shortenNames is enabled', () => {
     const reserved = new Set<string>();
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const name = applyListWireNameLimits(
       'Very Long Zone Name That Exceeds Limit',
       reserved,
@@ -31,7 +32,7 @@ describe('applyListWireNameLimits', () => {
 
   it('disambiguates collisions in reserved set', () => {
     const reserved = new Set<string>();
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const first = applyListWireNameLimits(
       'Scotland West Region',
       reserved,

@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { TalkGroup } from '@core/models/library.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -19,7 +20,7 @@ export function applyTalkGroupWireNameLimits(
   reserved: Set<string>,
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
   /** Override profile `nameLimit` (e.g. radio-io talk-group field width). */
   maxLenOverride?: number,
   isOverride = false,
@@ -111,7 +112,7 @@ export function applyTalkGroupWireNameLimits(
 export function buildTalkGroupWireNameMap(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings?: string[],
+  warnings?: ExportWarning[],
 ): Map<string, string> {
   const profileId = options?.profileId ?? assembled.profileId;
   const sink = warnings ?? [];
@@ -142,7 +143,7 @@ export function buildTalkGroupWireNameMap(
 export function withTalkGroupWireNameLimits(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings?: string[],
+  warnings?: ExportWarning[],
 ): AssembledBuild {
   const map = buildTalkGroupWireNameMap(assembled, options, warnings);
   if (assembled.talkGroups.every((row) => map.get(row.entity.id) === row.wireName)) {

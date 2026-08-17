@@ -19,6 +19,11 @@ import { applyListWireNameLimits } from '@core/import-export/channelExpansion/li
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 
 import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLists/dm32EmptyScanFloor.ts';
+import {
+  pushGeneralWarning,
+  pushMemberCapWarning,
+  type ExportWarning,
+} from '@core/import-export/exportWarning.ts';
 
 export { DM32_EMPTY_SCAN_LIST_NAME };
 export type { SyntheticScanCarrier } from '@core/import-export/zoneDerivedScanLists/carrier.ts';
@@ -108,7 +113,7 @@ export function deriveZoneDerivedScanLists(
   library: LibrarySlice,
   expansionByChannelId: Map<string, ExpandedMxNChannelRow[]>,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): ZoneDerivedScanExport {
   const result: ZoneDerivedScanExport = {
     scanRows: [],
@@ -135,7 +140,8 @@ export function deriveZoneDerivedScanLists(
     if (!entry?.exportScanList) continue;
 
     if (result.scanRows.length >= maxLists) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Additional zone-derived scan list(s) skipped; channel scanListId supports at most ${maxLists} lists`,
       );
       break;
@@ -157,7 +163,8 @@ export function deriveZoneDerivedScanLists(
     );
 
     if (memberWireNames.length === 0) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `Zone "${assembledZone.wireName}" has no scan-eligible members; scan list skipped`,
       );
       continue;
@@ -179,9 +186,13 @@ export function deriveZoneDerivedScanLists(
         : memberWireNames;
 
     if (truncated.length < memberWireNames.length) {
-      warnings.push(
-        `Zone "${assembledZone.wireName}" scan list truncated from ${memberWireNames.length} to ${profile.scanListMembers} members`,
-      );
+      pushMemberCapWarning(warnings, {
+        capKind: 'zone-scan-list-truncated',
+        label: assembledZone.wireName,
+        count: profile.scanListMembers,
+        cap: profile.scanListMembers,
+        truncatedFrom: memberWireNames.length,
+      });
     }
 
     const carrierWireName = zoneScanCarrierWireName(

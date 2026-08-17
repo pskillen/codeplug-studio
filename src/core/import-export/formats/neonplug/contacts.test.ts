@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { newChannel, newDigitalContact, newTalkGroup } from '@core/domain/factories.ts';
 import type { Channel, DigitalContact, TalkGroup } from '@core/models/library.ts';
@@ -54,7 +55,7 @@ describe('neonplug/contacts', () => {
       scanLists: [],
     };
 
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const { contacts, contactIdByEntityId } = serialiseNeonplugContacts(
       assembled,
       NEONPLUG_DM32UV_PROFILE,

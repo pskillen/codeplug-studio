@@ -1,3 +1,4 @@
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { newAprsConfiguration, newChannel, newFormatBuild } from '@core/domain/factories.ts';
@@ -66,7 +67,7 @@ describe('encodeNeonplugAprsScheduledSendTime', () => {
 
 describe('resolveNeonplugAprsScheduledSendTime', () => {
   it('prefers auto over manual', () => {
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     expect(
       resolveNeonplugAprsScheduledSendTime(
         { manualTxIntervalSec: 60, autoTxIntervalSec: 180 },
@@ -74,7 +75,7 @@ describe('resolveNeonplugAprsScheduledSendTime', () => {
       ),
     ).toBe(6);
     expect(warnings).toHaveLength(1);
-    expect(warnings[0]).toMatch(/using auto/i);
+    expect(formatExportWarning(warnings[0]!)).toMatch(/using auto/i);
   });
 
   it('uses manual when auto unset', () => {
@@ -87,7 +88,7 @@ describe('resolveNeonplugAprsScheduledSendTime', () => {
   });
 
   it('does not warn when both snap to the same idx', () => {
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     expect(
       resolveNeonplugAprsScheduledSendTime(
         { manualTxIntervalSec: 180, autoTxIntervalSec: 180 },
@@ -125,9 +126,9 @@ describe('neonplugGpsModeForPositionSource', () => {
     expect(neonplugGpsModeForPositionSource('gps', [])).toBe(0);
     expect(neonplugGpsModeForPositionSource('beidou', [])).toBe(1);
     expect(neonplugGpsModeForPositionSource('allGnss', [])).toBe(2);
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     expect(neonplugGpsModeForPositionSource('galileo', warnings)).toBe(2);
-    expect(warnings[0]).toMatch(/galileo/i);
+    expect(formatExportWarning(warnings[0]!)).toMatch(/galileo/i);
   });
 });
 
@@ -144,7 +145,7 @@ describe('resolveNeonplugAprsReportChannelNumber', () => {
   });
 
   it('uses first expanded number and warns on multi-row', () => {
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const id = 'ch-1';
     expect(
       resolveNeonplugAprsReportChannelNumber(
@@ -159,11 +160,11 @@ describe('resolveNeonplugAprsReportChannelNumber', () => {
         2,
       ),
     ).toBe(7);
-    expect(warnings[0]).toMatch(/expanded to 3/);
+    expect(formatExportWarning(warnings[0]!)).toMatch(/expanded to 3/);
   });
 
   it('warns and uses 0 when channel missing from export', () => {
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     expect(
       resolveNeonplugAprsReportChannelNumber(
         {
@@ -177,7 +178,7 @@ describe('resolveNeonplugAprsReportChannelNumber', () => {
         3,
       ),
     ).toBe(0);
-    expect(warnings[0]).toMatch(/not in this NeonPlug export/);
+    expect(formatExportWarning(warnings[0]!)).toMatch(/not in this NeonPlug export/);
   });
 });
 
@@ -232,7 +233,7 @@ describe('buildNeonplugAprsRadioSettingsPatch', () => {
     });
     expect(patch?.latitude).toBe(formatNeonplugCoordinateAscii(55.9533));
     expect(patch?.longitude).toBe(formatNeonplugCoordinateAscii(3.1883));
-    expect(warnings.some((w) => /using auto/i.test(w))).toBe(true);
+    expect(warnings.some((w) => /using auto/i.test(formatExportWarning(w)))).toBe(true);
   });
 
   it('sets gpsEnabled/gpsMode for GNSS position source', () => {
@@ -279,8 +280,8 @@ describe('buildNeonplugAprsRadioSettingsPatch', () => {
     );
     expect(patch?.aprsCallType).toBe(true);
     expect(patch?.aprsUploadId).toBe(100);
-    expect(warnings.some((w) => /call type/i.test(w))).toBe(true);
-    expect(warnings.some((w) => /upload DMR ID/i.test(w))).toBe(true);
+    expect(warnings.some((w) => /call type/i.test(formatExportWarning(w)))).toBe(true);
+    expect(warnings.some((w) => /upload DMR ID/i.test(formatExportWarning(w)))).toBe(true);
   });
 });
 

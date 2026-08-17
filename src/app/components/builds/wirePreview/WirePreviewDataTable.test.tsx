@@ -7,6 +7,7 @@ import { DesignSystemV2Provider } from '../../v2/index.ts';
 import WirePreviewDataTable from './WirePreviewDataTable.tsx';
 import type { WirePreviewRow } from '@core/services/previewWireRows.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
+import type { Channel } from '@core/models/library.ts';
 
 const rows: WirePreviewRow[] = [
   {
@@ -294,5 +295,183 @@ describe('WirePreviewDataTable', () => {
 
     expect(screen.queryByText('Custom member order')).not.toBeInTheDocument();
     expect(screen.queryByText('Custom order')).not.toBeInTheDocument();
+  });
+
+  it('edits the export name inline via the pencil when onWireNameChange is set (#1217)', () => {
+    const onWireNameChange = vi.fn();
+    renderTable({
+      rows: [rows[0]!],
+      onRowActivate: vi.fn(),
+      onWireNameChange,
+      nameLimit: 16,
+    });
+
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Edit export name'));
+    const input = screen.getByPlaceholderText('GB3DA Demo');
+    expect(input).toBeInTheDocument();
+
+    fireEvent.change(input, { target: { value: 'Custom name' } });
+    fireEvent.click(screen.getByLabelText('Save wire name'));
+    expect(onWireNameChange).toHaveBeenCalledWith(rows[0], 'Custom name');
+  });
+
+  it('does not open the row-activate modal when the pencil is clicked', () => {
+    const onRowActivate = vi.fn();
+    renderTable({
+      rows: [rows[0]!],
+      onRowActivate,
+      onWireNameChange: vi.fn(),
+    });
+
+    fireEvent.click(screen.getByLabelText('Edit export name'));
+    expect(onRowActivate).not.toHaveBeenCalled();
+  });
+
+  it('shows a remediation marker driven by row.remediation, not a truncation flag', () => {
+    const truncatedRow: WirePreviewRow = {
+      ...rows[0]!,
+      key: 'ch-truncated',
+      hasWireNameOverride: true,
+      remediation: 'truncated',
+    };
+    renderTable({
+      rows: [truncatedRow],
+      onRowActivate: vi.fn(),
+      onWireNameChange: vi.fn(),
+      nameLimit: 16,
+    });
+
+    expect(screen.getByLabelText('Name truncated')).toBeInTheDocument();
+  });
+
+  it('shows a dimmed marker (not the orange triangle) for a clean shorten', () => {
+    const shortenedRow: WirePreviewRow = {
+      ...rows[0]!,
+      key: 'ch-shortened',
+      remediation: 'shortened',
+    };
+    renderTable({
+      rows: [shortenedRow],
+      onRowActivate: vi.fn(),
+      onWireNameChange: vi.fn(),
+      nameLimit: 16,
+    });
+
+    expect(screen.getByLabelText('Name shortened')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Name truncated')).not.toBeInTheDocument();
+  });
+
+  it('shows a Mode column badge for channel rows with channelMode set', () => {
+    const dmrRow: WirePreviewRow = { ...rows[0]!, key: 'ch-dmr', channelMode: 'dmr' };
+    const fmRow: WirePreviewRow = { ...rows[1]!, key: 'ch-fm', channelMode: 'fm', excluded: false };
+    renderTable({
+      rows: [dmrRow, fmRow],
+      entityKind: 'channel',
+      onRowActivate: vi.fn(),
+    });
+
+    expect(screen.getByText('DMR')).toBeInTheDocument();
+    expect(screen.getByText('FM')).toBeInTheDocument();
+  });
+
+  it('does not show a Mode column for non-channel entity kinds', () => {
+    const talkGroupRow: WirePreviewRow = {
+      key: 'tg-1',
+      libraryEntityId: 'tg-1',
+      entityKind: 'talkGroup',
+      displayLabel: 'Local 9',
+      generatedWireName: 'Local 9',
+      effectiveWireName: 'Local 9',
+      hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
+      excluded: false,
+    };
+    renderTable({
+      rows: [talkGroupRow],
+      entityKind: 'talkGroup',
+      onRowActivate: vi.fn(),
+    });
+
+    expect(screen.queryByRole('columnheader', { name: 'Mode' })).not.toBeInTheDocument();
+  });
+
+  it('offers one suggestion per ChannelExportNameMode for channel rows when channelsById is set (ux-proposal §6a)', () => {
+    const channel = {
+      id: 'ch-1',
+      callsign: 'MM9PDY',
+      name: 'Demo Repeater',
+      abbreviation: undefined,
+    } as unknown as Channel;
+    renderTable({
+      rows: [rows[0]!],
+      onRowActivate: vi.fn(),
+      onWireNameChange: vi.fn(),
+      channelsById: new Map([['ch-1', channel]]),
+      nameLimit: 16,
+    });
+
+    fireEvent.click(screen.getByLabelText('Edit export name'));
+    expect(screen.getByText(/Callsign \+ name:/)).toBeInTheDocument();
+    expect(screen.getByText(/Callsign only:/)).toBeInTheDocument();
+    expect(screen.getByText(/Name only:/)).toBeInTheDocument();
+    expect(screen.getByText(/Callsign suffix \+ name:/)).toBeInTheDocument();
+  });
+
+  it('offers exactly one suggestion (the composed name) for m×n-expanded channel rows, not per-style alternates', () => {
+    const channel = {
+      id: 'ch-1',
+      callsign: 'MM9PDY',
+      name: 'Demo Repeater',
+      abbreviation: undefined,
+    } as unknown as Channel;
+    const expandedRow: WirePreviewRow = {
+      key: 'ch-1:site-a:tg-9',
+      libraryEntityId: 'ch-1',
+      entityKind: 'channel',
+      displayLabel: 'GB3DA Demo',
+      generatedWireName: 'MM9PDY Site A - Local 9',
+      effectiveWireName: 'MM9PDY Site A - Local 9',
+      hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
+      excluded: false,
+    };
+    renderTable({
+      rows: [expandedRow],
+      onRowActivate: vi.fn(),
+      onWireNameChange: vi.fn(),
+      channelsById: new Map([['ch-1', channel]]),
+      nameLimit: 16,
+    });
+
+    fireEvent.click(screen.getByLabelText('Edit export name'));
+    expect(screen.getByText('Suggestion:')).toBeInTheDocument();
+    expect(screen.getAllByText('MM9PDY Site A - Local 9').length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Callsign \+ name:/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Callsign only:/)).not.toBeInTheDocument();
+  });
+
+  it('offers exactly one suggestion for non-channel kinds even with no style data', () => {
+    const talkGroupRow: WirePreviewRow = {
+      key: 'tg-1',
+      libraryEntityId: 'tg-1',
+      entityKind: 'talkGroup',
+      displayLabel: 'Local 9',
+      generatedWireName: 'Local 9',
+      effectiveWireName: 'Local 9',
+      hasWireNameOverride: false,
+      hasOrderOrSlotOverride: false,
+      excluded: false,
+    };
+    renderTable({
+      rows: [talkGroupRow],
+      entityKind: 'talkGroup',
+      onRowActivate: vi.fn(),
+      onWireNameChange: vi.fn(),
+    });
+
+    fireEvent.click(screen.getByLabelText('Edit export name'));
+    expect(screen.getByText('Suggestion:')).toBeInTheDocument();
+    expect(screen.queryByText(/Callsign/)).not.toBeInTheDocument();
   });
 });

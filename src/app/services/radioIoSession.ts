@@ -80,6 +80,7 @@ import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import { isOpenGd77RadioIoEgress } from './radioIoChannelMap.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export {
   isRadioSerialSupported,
@@ -289,7 +290,7 @@ export async function prepareRadioWriteImage(
   },
 ): Promise<{
   image?: MemoryMap;
-  warnings: string[];
+  warnings: ExportWarning[];
   organisation: RadioWriteOrganisation;
   channels: readonly RadioChannelDto[];
 }> {
@@ -304,7 +305,7 @@ export async function prepareRadioWriteImage(
   });
 
   let projectionContext: BuildRadioWriteProjectionContext | undefined;
-  const projectionWarnings: string[] = [];
+  const projectionWarnings: ExportWarning[] = [];
   if (opts?.dualBank) {
     const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
     const maxRadioIds = typeof limits?.maxRadioIds === 'number' ? limits.maxRadioIds : undefined;
@@ -514,14 +515,14 @@ async function resolveRadioWriteImageForUpload(
   return prepared.image;
 }
 
-function openGd77WriteWarnings(session: RadioSession): string[] {
+function openGd77WriteWarnings(session: RadioSession): ExportWarning[] {
   if (!(session.radio instanceof OpenGd77Protocol)) return [];
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   if (session.radio.getLastDirtySectorCount() === 0) {
-    warnings.push(OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE);
+    pushGeneralWarning(warnings, OPENGD77_ZERO_DIRTY_SECTORS_MESSAGE);
   }
   const userDb = session.radio.getLastUserDatabaseWarning();
-  if (userDb) warnings.push(userDb);
+  if (userDb) pushGeneralWarning(warnings, userDb);
   return warnings;
 }
 
@@ -534,7 +535,7 @@ export async function writeBuildToRadio(
   egress: EgressPath,
   library: LibrarySlice,
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
-): Promise<{ warnings: string[] }> {
+): Promise<{ warnings: ExportWarning[] }> {
   const hydration = getRadioCloneHydration(egress);
   const prepared = await prepareRadioWriteImage(build, egress, library);
   session.descriptor.hydration.seedProtocolForUpload?.(
@@ -565,7 +566,7 @@ export async function uploadPreparedRadioWrite(
     organisation?: RadioWriteOrganisation;
     channels?: readonly RadioChannelDto[];
   },
-): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult; warnings?: string[] }> {
+): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult; warnings?: ExportWarning[] }> {
   const hydration = getRadioCloneHydration(egress);
   session.descriptor.hydration.seedProtocolForUpload?.(
     session.radio,

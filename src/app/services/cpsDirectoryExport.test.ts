@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   DM32_CPS_DIRECTORY_WARNING,
   OPENGD77_CPS_DIRECTORY_WARNING,
@@ -48,7 +49,9 @@ describe('enrichCpsExportOptionsWithDirectory', () => {
         includeDigitalIdDirectory: true,
       },
     });
-    expect(options.directoryProjection?.warnings).toContain(OPENGD77_CPS_DIRECTORY_WARNING);
+    expect(options.directoryProjection?.warnings?.map((w) => formatExportWarning(w))).toContain(
+      OPENGD77_CPS_DIRECTORY_WARNING,
+    );
     expect(options.directoryProjection?.dualBank?.directoryDigitalContacts).toEqual([]);
   });
 
@@ -78,7 +81,9 @@ describe('enrichCpsExportOptionsWithDirectory', () => {
         includeDigitalIdDirectory: true,
       },
     });
-    expect(options.directoryProjection?.warnings).toContain(DM32_CPS_DIRECTORY_WARNING);
+    expect(options.directoryProjection?.warnings?.map((w) => formatExportWarning(w))).toContain(
+      DM32_CPS_DIRECTORY_WARNING,
+    );
     expect(options.directoryProjection?.dualBank?.directoryDigitalContacts).toEqual([]);
     expect(options.directoryProjection?.dualBank?.includeDm32RadioIdFile).toBe(false);
     expect(options.directoryProjection?.dualBank?.dm32RadioIds).toEqual([]);

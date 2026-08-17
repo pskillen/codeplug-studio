@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import {
   newChannel,
@@ -34,7 +35,7 @@ describe('channelToneToRadioTone', () => {
 describe('assembledChannelsToRadioDtos', () => {
   it('maps wire name, slot, Hz, and NFM bandwidth', () => {
     const projectId = 'p1';
-    const { build, egress } = newRadioBuildForProfile(projectId, 'radio-io-uv5r-mini');
+    const { build: baseBuild, egress } = newRadioBuildForProfile(projectId, 'radio-io-uv5r-mini');
     const entity = {
       ...newChannel(projectId, 'Library Name'),
       id: 'ch-1',
@@ -50,6 +51,13 @@ describe('assembledChannelsToRadioDtos', () => {
           bandwidthKHz: 12.5,
         },
       ],
+    };
+    // Wire-name override is looked up from `build.channelOverrides` by resolveWireNames —
+    // not from the AssembledChannel's own `wireNameOverride` (which `assemble()` would have
+    // folded from the same override, but this test constructs the row directly).
+    const build = {
+      ...baseBuild,
+      channelOverrides: [{ libraryEntityId: 'ch-1', wireName: 'WIRE12' }],
     };
     const row: AssembledChannel = {
       entity,
@@ -284,7 +292,9 @@ describe('assembledChannelsToRadioDtos', () => {
     expect(dtos).toHaveLength(2);
     expect(dtos.map((d) => d.wireName).sort()).toEqual(['Repeater-D', 'Repeater-F']);
     expect(dtos.map((d) => d.mode).sort()).toEqual(['analog', 'digital']);
-    expect(warnings).toContain(openGd77DroppedModesWarning('Repeater', ['ysf']));
+    expect(warnings.map((w) => formatExportWarning(w))).toContain(
+      openGd77DroppedModesWarning('Repeater', ['ysf']),
+    );
   });
 
   it('expands dual-mode FM+DMR to -F and -D wire rows via expandAssembledChannelsToRadioDtos', () => {
@@ -369,7 +379,12 @@ describe('assembledChannelsToRadioDtos', () => {
       egress,
     );
     expect(dtos).toEqual([]);
-    expect(warnings.some((w) => w.includes('Fusion only') && w.includes('ysf'))).toBe(true);
+    expect(
+      warnings.some(
+        (w) =>
+          formatExportWarning(w).includes('Fusion only') && formatExportWarning(w).includes('ysf'),
+      ),
+    ).toBe(true);
   });
 });
 

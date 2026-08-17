@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { newChannel, newRxGroupList, newTalkGroup } from '@core/domain/factories.ts';
 import type { Channel, RxGroupList, TalkGroup } from '@core/models/library.ts';
@@ -54,7 +55,7 @@ describe('neonplug/rxGroups', () => {
       scanLists: [],
     };
 
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const { rxGroups, rxGroupIndexById } = serialiseNeonplugRxGroups(
       assembled,
       NEONPLUG_DM32UV_PROFILE,

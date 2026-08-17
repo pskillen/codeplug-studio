@@ -8,6 +8,7 @@ import type {
   FormatStatus,
   CpsExportOptions,
 } from './types.ts';
+import type { ExportWarning } from './exportWarning.ts';
 
 export interface BaseExportAdapter {
   readonly id: FormatId;
@@ -40,7 +41,7 @@ export interface MultiFileExportAdapter extends BaseExportAdapter {
   /** When set, overrides static `fileNames` per assembled build (e.g. conditional receive banks). */
   resolveExportFileNames?(assembled: AssembledBuild, options?: CpsExportOptions): readonly string[];
   /** Build-wide export warnings (profile caps, wire name limits, …). */
-  collectExportWarnings(assembled: AssembledBuild, options?: CpsExportOptions): string[];
+  collectExportWarnings(assembled: AssembledBuild, options?: CpsExportOptions): ExportWarning[];
   serialiseFile(
     assembled: AssembledBuild,
     fileName: string,

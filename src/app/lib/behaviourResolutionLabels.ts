@@ -7,6 +7,7 @@ import type {
   TxPermitMode,
 } from '@core/models/channelBehaviourDefaults.ts';
 import type { EffectiveIncludeInZoneDerivedScanList } from '@core/models/zoneBehaviourDefaults.ts';
+import type { WireNameRemediation } from '@core/services/resolveWireNamesCore.ts';
 
 export function layerLabel(layer: BehaviourResolutionLayer): string {
   switch (layer) {
@@ -50,4 +51,34 @@ export function analogSquelchModeLabel(value: AnalogSquelchMode): string {
 
 export function zoneDerivedScanIncludeLabel(value: EffectiveIncludeInZoneDerivedScanList): string {
   return value === 'include' ? 'Include' : 'Skip';
+}
+
+/**
+ * Wire-name layer attribution for the Resolution view (ux-proposal.md §1) — derived from
+ * `WireNameResolution`/`WirePreviewRow` fields, not a fifth stored layer. Four-layer cascade:
+ * library → build settings → per-row override → target constraint. `override` set wins
+ * outright; otherwise a non-`'none'` remediation means the profile's naming constraint
+ * (length limit or dedupe) changed the composed name; absent both, the value is exactly what
+ * library data + build naming settings composed.
+ */
+export type WireNameResolutionLayer = 'override' | 'constraint' | 'settings';
+
+export function wireNameResolutionLayer(row: {
+  hasWireNameOverride: boolean;
+  remediation?: WireNameRemediation;
+}): WireNameResolutionLayer {
+  if (row.hasWireNameOverride) return 'override';
+  if (row.remediation && row.remediation !== 'none') return 'constraint';
+  return 'settings';
+}
+
+export function wireNameLayerLabel(layer: WireNameResolutionLayer): string {
+  switch (layer) {
+    case 'override':
+      return 'Row override';
+    case 'constraint':
+      return 'Target constraint';
+    case 'settings':
+      return 'Library + build settings';
+  }
 }

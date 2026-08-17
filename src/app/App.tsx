@@ -66,7 +66,6 @@ import BuildRadioBackupPage from './routes/builds/BuildRadioBackupPage.tsx';
 import BuildFlatMemoryScanListPage from './routes/builds/BuildFlatMemoryScanListPage.tsx';
 import BuildExportPage from './routes/builds/BuildExportPage.tsx';
 import BuildExportSettingsPage from './routes/builds/BuildExportSettingsPage.tsx';
-import BuildExportResolutionPage from './routes/builds/BuildExportResolutionPage.tsx';
 import BuildSatelliteKepsPage from './routes/builds/BuildSatelliteKepsPage.tsx';
 import BuildChannelsWirePage from './routes/builds/wire-preview/BuildChannelsWirePage.tsx';
 import BuildChannelsBulkEditPage from './routes/builds/wire-preview/BuildChannelsBulkEditPage.tsx';
@@ -226,7 +225,6 @@ export const appRouter = createBrowserRouter([
                   { path: 'export', element: <BuildExportPage /> },
                   { path: 'export/settings', element: <BuildExportSettingsPage /> },
                   { path: 'satellite-keps', element: <BuildSatelliteKepsPage /> },
-                  { path: 'export-resolution', element: <BuildExportResolutionPage /> },
                   { path: 'neonplug-settings', element: <BuildNeonplugSettingsPage /> },
                   { path: 'backup', element: <BuildRadioBackupPage /> },
                   { path: 'radio-info', element: <Navigate to="backup" replace /> },

@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type {
   Channel,
   ChannelModeProfile,
@@ -138,7 +139,7 @@ export function applyMultiTalkGroupWireNameLimits(
   reserved: Set<string>,
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): string {
   const { base, mode, fixedSuffix } = composeWithEscalation(
     channel,
@@ -207,7 +208,7 @@ export function expandMultiTalkGroupMemberWireRow(
   options?: CpsExportOptions,
   profileId?: string,
   reserved = new Set<string>(),
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): ExpandedMultiTalkGroupWireRow {
   const wireName = applyMultiTalkGroupWireNameLimits(
     channel,
@@ -244,7 +245,7 @@ export function expandMultiTalkGroupMemberWireRows(
   options?: CpsExportOptions,
   profileId?: string,
   reserved = new Set<string>(),
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): ExpandedMultiTalkGroupWireRow[] {
   const siteRows = expandChannelWireRows(
     channel,

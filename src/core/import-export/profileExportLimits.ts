@@ -1,7 +1,11 @@
 /**
- * Normalised export-limit projection for UI (Radio characteristics, etc.).
+ * Export-boundary limits projection — the source of truth for per-format/profile
+ * cardinality and name-length caps. UI (Radio characteristics, etc.) is one consumer;
+ * `resolveWireNames` (`@core/services/resolveWireNames.ts`) is another.
  * Maps per-format `profiles.ts` fields — does not invent caps.
- * `null` = applies but not yet modelled (blank in UI); `'not_used'` = N/A for this profile.
+ * `null` = applies but not yet modelled (blank in UI, unmodelled/pass-through for wire
+ * name resolution); `'not_used'` = N/A for this profile (the entity kind does not exist
+ * on this target).
  */
 
 import type { FormatId } from './types.ts';
@@ -55,6 +59,27 @@ export interface ProfileExportLimits {
 
   powerLadder: readonly PowerLadderEntry[];
   siblingLadders: readonly SiblingLadder[];
+}
+
+/** Wire-name-bearing entity kinds carried by {@link ProfileExportLimits}. */
+export type ProfileNameLimitKind =
+  'channel' | 'zone' | 'contact' | 'talkGroup' | 'scanList' | 'rxGroupList';
+
+const NAME_LIMIT_FIELD: Record<ProfileNameLimitKind, keyof ProfileExportLimits> = {
+  channel: 'nameLengthChannel',
+  zone: 'nameLengthZone',
+  contact: 'nameLengthContact',
+  talkGroup: 'nameLengthTalkGroup',
+  scanList: 'nameLengthScanList',
+  rxGroupList: 'nameLengthRxGroupList',
+};
+
+/** Name-length limit for one entity kind, without a `'not_used'` literal at every call site. */
+export function profileNameLimit(
+  limits: ProfileExportLimits,
+  kind: ProfileNameLimitKind,
+): ExportLimitValue {
+  return limits[NAME_LIMIT_FIELD[kind]] as ExportLimitValue;
 }
 
 function blankDigitalOrganisation(partial: {
@@ -180,11 +205,14 @@ export function getProfileExportLimits(
         zoneMembers: profile.zoneMembers,
         scanListMembers: profile.scanListMembers,
         rxGroupListMembers: profile.rxGroupListMembers,
-        nameLengthZone: null,
-        nameLengthContact: null,
-        nameLengthTalkGroup: null,
-        nameLengthScanList: null,
-        nameLengthRxGroupList: null,
+        // Anytone profiles carry one field-width `nameLimit` shared by every wire-name
+        // column (matches the legacy `resolveMaxNameLength` prefix fallback these preview
+        // rows used before `resolveWireNames` existed) — not a per-kind cap to invent.
+        nameLengthZone: profile.nameLimit,
+        nameLengthContact: profile.nameLimit,
+        nameLengthTalkGroup: profile.nameLimit,
+        nameLengthScanList: profile.nameLimit,
+        nameLengthRxGroupList: profile.nameLimit,
       });
     }
 

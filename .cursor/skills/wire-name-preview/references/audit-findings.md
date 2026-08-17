@@ -1,10 +1,19 @@
-# Wire name preview — current-state findings
+# Wire name preview — historical findings (fixed)
+
+**Historical.** This snapshot predates the wire-preview rework series
+(#1213, #1217, #1219 — closes #956), which shipped `resolveWireNames` as
+the single resolver for CPS entities, `WireNameInlineEditor` /
+`WireNameRemediationMarker` as the shared UI, and absorbed the divergences
+below. Read this as **evidence of what drift looks like**, not as a
+catalogue of live gaps to fix — do not re-derive a task list from it without
+first checking whether [SKILL.md](../SKILL.md) already describes the fix as
+shipped.
 
 Snapshot from an audit done after [PR #1096](https://github.com/pskillen/codeplug-studio/pull/1096)
 (`feat(satellite-keps): per-transmitter wire names and inline editor`, closed
 [#1090](https://github.com/pskillen/codeplug-studio/issues/1090)). Two
-implementation families exist today; both should converge on
-[SKILL.md](../SKILL.md), not stay as separate "patterns."
+implementation families existed at the time; both have since converged on
+[SKILL.md](../SKILL.md).
 
 Full working notes (not shipped, gitignored under `tmp/`):
 `tmp/features/wire-preview-name-default/audit.md`.

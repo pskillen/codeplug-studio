@@ -54,7 +54,13 @@ describe('buildCpsExportService', () => {
     expect(result.fileName).toBe('OpenGD77-1701-opengd77.zip');
     expect(result.zip.byteLength).toBeGreaterThan(0);
     expect(result.zip[0]).toBe(0x50);
-    expect(result.warnings).toEqual(['Including 1 channel(s) not linked to a zone']);
+    expect(result.warnings).toEqual([
+      {
+        kind: 'unlinked',
+        severity: 'problem',
+        message: 'Including 1 channel(s) not linked to a zone',
+      },
+    ]);
   });
 
   it('buildCpsZipBytes for NeonPlug uses .neonplug and packs codeplug.json', async () => {
@@ -138,6 +144,12 @@ describe('buildCpsExportService', () => {
         content: expect.any(Uint8Array),
       }),
     );
-    expect(result.warnings).toEqual(['Including 1 channel(s) not linked to a zone']);
+    expect(result.warnings).toEqual([
+      {
+        kind: 'unlinked',
+        severity: 'problem',
+        message: 'Including 1 channel(s) not linked to a zone',
+      },
+    ]);
   });
 });

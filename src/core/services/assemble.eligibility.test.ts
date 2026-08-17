@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { newChannel, newFormatBuild } from '@core/domain/factories.ts';
 import { exportChannelEligibilityWarnings } from './assemble.ts';
@@ -31,7 +32,7 @@ describe('exportChannelEligibilityWarnings', () => {
       ...emptyLibrary,
       channels: [air],
     });
-    expect(warnings.some((w) => w.includes('unsupported mode'))).toBe(true);
-    expect(warnings.some((w) => w.includes('Tower'))).toBe(true);
+    expect(warnings.some((w) => formatExportWarning(w).includes('unsupported mode'))).toBe(true);
+    expect(warnings.some((w) => formatExportWarning(w).includes('Tower'))).toBe(true);
   });
 });

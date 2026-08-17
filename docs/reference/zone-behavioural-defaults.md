@@ -19,7 +19,7 @@ Library.zoneDefaults.includeInZoneDerivedScanList
   → Build.exportSettings.defaultIncludeInZoneDerivedScanList (when set)
   → ZoneGroupingZoneEntry.scanMemberInclusion[channelId] (when set)
   → resolveEffectiveIncludeInZoneDerivedScanList()
-  → zone-derived scan derive / Export resolution Zones tab
+  → zone-derived scan derive / wire preview zone Resolution section
 ```
 
 **Nested zones:** filters are not hierarchical. Parent projection skips do not rewrite the child library zone and do not imply skip when the child is exported separately. Flatten still walks nested membership for _which_ channels exist.
@@ -70,7 +70,10 @@ Build → Zones UI writes here only (does not call `putZone`). Clearing a skip r
 - **Zone editor** — tri-state member control on `ZoneMemberEditor`
 - **Build Zones** — per-exported-zone include switches (projection)
 - **Build Export** — optional zone membership default override
-- **Export resolution** — Channels / Zones tabs
+- **Wire preview Resolution** — per-zone-row wire name + member-by-member zone-derived scan
+  membership, plus an optional list column — see
+  [wire-preview.md — Resolution view](../features/builds/wire-preview.md#resolution-view)
+  (absorbed the former `/builds/:id/export-resolution` About page)
 
 ## Related
 

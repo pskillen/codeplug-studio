@@ -1,3 +1,4 @@
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { newChannel, newZone } from '@core/domain/factories.ts';
 import type { Channel, Zone } from '@core/models/library.ts';
@@ -90,7 +91,7 @@ describe('neonplug/zoneDerivedScanLists', () => {
       },
     };
 
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const numbersBySource = singletonChannelNumbersById(
       buildDm32uvChannelNumberMap(assembled, 4000),
     );
@@ -236,7 +237,7 @@ describe('neonplug/zoneDerivedScanLists', () => {
       // No zoneGrouping — assemble falls back to library zones; scan derive should too.
     };
 
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const derived = deriveNeonplugZoneDerivedScanLists(
       assembled,
       NEONPLUG_DM32UV_PROFILE,
@@ -403,7 +404,7 @@ describe('neonplug/zoneDerivedScanLists', () => {
         scanTxMode: 0,
       },
     ];
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const numbersBySource = new Map<string, number[]>([['ch-1', [1]]]);
     const libraryNumbered = [
       {
@@ -449,7 +450,7 @@ describe('neonplug/zoneDerivedScanLists', () => {
 
     expect(numbered).toHaveLength(1);
     expect(carrierNumberByZoneId.size).toBe(0);
-    expect(warnings).toEqual([
+    expect(warnings.map((w) => formatExportWarning(w))).toEqual([
       'Truncated 1 scan carrier channel(s) to fit 1 channels for NeonPlug',
     ]);
     expect(scanLists[0]?.designatedTxChannel).toBeUndefined();

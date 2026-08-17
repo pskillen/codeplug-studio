@@ -1,17 +1,30 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useDebouncedValue } from '@mantine/hooks';
-import { Badge, Group, Switch, Text } from '@mantine/core';
+import { Badge, Group, Switch, Text, Tooltip } from '@mantine/core';
 import { isEntityExcluded } from '@core/domain/formatBuildOverrides.ts';
 import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
+import type { Channel } from '@core/models/library.ts';
+import type { RadioBuild } from '@core/models/radioBuild.ts';
+import type { LibrarySlice } from '@core/services/assemble.ts';
 import type { WirePreviewEntityKind, WirePreviewRow } from '@core/services/previewWireRows.ts';
 import type { ZoneGroupingLayout } from '@core/models/traitLayout.ts';
 import { layoutEntry } from '@core/import-export/zoneDerivedScanLists/members.ts';
+import { findZoneGroupingSection } from '@core/domain/zoneGroupingLayout.ts';
 import { LIST_NAME_FILTER_DEBOUNCE_MS } from '@integrations/listPrefs/index.ts';
+import { channelWireNameStyleSuggestions } from '../../../lib/channelWireNameStyleSuggestions.ts';
+import {
+  channelWireResolutionRows,
+  zoneDerivedScanResolutionRows,
+  zoneWireResolutionRows,
+  type ResolutionFieldRow,
+} from '../../../lib/wirePreviewResolution.ts';
 import DataTable, { type DataTableSortState } from '../../v2/DataTable.tsx';
 import WirePreviewListNameCell from './WirePreviewListNameCell.tsx';
 import WirePreviewDisplayCell from './WirePreviewDisplayCell.tsx';
 import WirePreviewInclusionCell from './WirePreviewInclusionCell.tsx';
+import WirePreviewExportNameCell from './WirePreviewExportNameCell.tsx';
 import { rowEffectivelyIncluded } from './wirePreviewRowUtils.ts';
+import type { WireNameSuggestion } from './WireNameInlineEditor.tsx';
 import {
   applyWirePreviewNestCollapse,
   filterNestedWirePreviewRows,
@@ -64,6 +77,86 @@ export interface WirePreviewDataTableProps {
   channelOverrides?: readonly BuildEntityOverride[];
   selectedKeys?: string[];
   onSelectedKeysChange?: (keys: string[]) => void;
+  /** Export name limit for the active egress profile — feeds the inline editor + markers. */
+  nameLimit?: number;
+  /** Inline export-name edit (wire-preview rework phase 6) — omit to keep the name read-only. */
+  onWireNameChange?: (row: WirePreviewRow, wireName: string) => void;
+  /**
+   * Channel rows only — library channel lookup for per-`ChannelExportNameMode` suggestions
+   * (ux-proposal.md §6a). Omit to fall back to the single build-default suggestion.
+   */
+  channelsById?: Map<string, Channel>;
+  /**
+   * Build + library slice for the row-editor Resolution section (channel rows, ux-proposal.md
+   * §1) and the optional Resolution columns (channel + zone rows, hideable, off by default —
+   * same column-visibility picker as the existing Details column). Omit either to leave
+   * Resolution off (e.g. before library loads).
+   */
+  build?: RadioBuild;
+  library?: LibrarySlice | null;
+}
+
+/**
+ * One suggestion per identity for most kinds; channel rows get one per
+ * `ChannelExportNameMode` when a library channel lookup is available (ux-proposal.md §6a).
+ *
+ * Per-style suggestions are computed from the library channel's own callsign/name only —
+ * correct for a plain channel row, but wrong for m×n / multi-mode expansion rows, whose
+ * `key` differs from `libraryEntityId` and whose `generatedWireName` already carries a
+ * second axis (site, talk group, mode) that the per-style composer knows nothing about.
+ * Offering "style" suggestions there would silently drop that axis. Expansion rows keep
+ * the single, already-correctly-composed `generatedWireName` suggestion instead.
+ */
+function wireNameSuggestionsForRow(
+  row: WirePreviewRow,
+  channelsById: Map<string, Channel> | undefined,
+  nameLimit: number | undefined,
+): WireNameSuggestion[] {
+  const isExpansionRow = row.key !== row.libraryEntityId;
+  if (row.entityKind === 'channel' && channelsById && !isExpansionRow) {
+    const channel = channelsById.get(row.libraryEntityId);
+    if (channel) return channelWireNameStyleSuggestions(channel, nameLimit);
+  }
+  return [{ value: row.generatedWireName }];
+}
+
+/**
+ * Optional hideable resolution columns (ux-proposal.md §1, wire-preview rework phase 8) —
+ * one per behavioural field, reproducing the deleted `/builds/:id/export-resolution` About
+ * page's channel matrix. Off by default via the existing Details-column `defaultVisible`
+ * convention; a row without a resolved field (e.g. no DMR profile for Talker alias) shows
+ * a dash rather than an empty cell.
+ */
+function resolutionFieldColumns(
+  byKey: Map<string, ResolutionFieldRow[]> | null,
+  defs: { key: string; header: string }[],
+) {
+  if (!byKey) return [];
+  return defs.map((def) => ({
+    key: `resolution-${def.key}`,
+    header: def.header,
+    hideable: true,
+    defaultVisible: false,
+    render: (row: WirePreviewTableRow) => {
+      const field = byKey.get(row.key)?.find((entry) => entry.key === def.key);
+      if (!field) {
+        return (
+          <Text size="sm" c="dimmed">
+            —
+          </Text>
+        );
+      }
+      return (
+        <Text size="sm">
+          {field.value}
+          <Text span size="xs" c="dimmed">
+            {' '}
+            · {field.layer}
+          </Text>
+        </Text>
+      );
+    },
+  }));
 }
 
 export default function WirePreviewDataTable({
@@ -82,6 +175,11 @@ export default function WirePreviewDataTable({
   channelOverrides,
   selectedKeys,
   onSelectedKeysChange,
+  nameLimit,
+  onWireNameChange,
+  channelsById,
+  build,
+  library,
 }: WirePreviewDataTableProps) {
   const [internalSort, setInternalSort] = useState<DataTableSortState | null>(null);
   const effectiveSort = sort !== undefined ? sort : internalSort;
@@ -90,6 +188,41 @@ export default function WirePreviewDataTable({
   const [collapsedParentIds, setCollapsedParentIds] = useState<Set<string>>(() => new Set());
 
   const nestChannels = entityKind === 'channel';
+
+  // Resolution reading (ux-proposal.md §1) — computed once per row key, not per column, so
+  // the row-editor Resolution section and the optional hideable columns below share one pass.
+  const channelResolutionByKey = useMemo(() => {
+    if (entityKind !== 'channel' || !build || !library || !channelsById) return null;
+    const map = new Map<string, ResolutionFieldRow[]>();
+    for (const row of rows) {
+      const channel = channelsById.get(row.libraryEntityId);
+      if (!channel) continue;
+      map.set(row.key, channelWireResolutionRows(channel, row, build, library));
+    }
+    return map;
+  }, [entityKind, build, library, channelsById, rows]);
+
+  const zoneResolutionByKey = useMemo(() => {
+    if (entityKind !== 'zone' || !build || !library) return null;
+    const zoneGroupingLayout = findZoneGroupingSection(build);
+    const zoneById = new Map(library.zones.map((zone) => [zone.id, zone]));
+    const map = new Map<
+      string,
+      {
+        fields: ResolutionFieldRow[];
+        zoneDerivedScan?: ReturnType<typeof zoneDerivedScanResolutionRows>;
+      }
+    >();
+    for (const row of rows) {
+      const zone = zoneById.get(row.libraryEntityId);
+      if (!zone) continue;
+      map.set(row.key, {
+        fields: zoneWireResolutionRows(row),
+        zoneDerivedScan: zoneDerivedScanResolutionRows(zone, build, library, zoneGroupingLayout),
+      });
+    }
+    return map;
+  }, [entityKind, build, library, rows]);
 
   const nestedRows = useMemo(() => {
     if (!nestChannels) return rows as WirePreviewTableRow[];
@@ -194,19 +327,107 @@ export default function WirePreviewDataTable({
       {
         key: 'exportName',
         header: 'Export name',
+        // Wider than the default minmax(8rem, 1fr) — the edit state needs room for a text
+        // input, Save/Revert icons, and a suggestion line without crowding (#1217 follow-up).
+        width: onWireNameChange ? 'minmax(14rem, 2fr)' : undefined,
         sortable: true,
         sortValue: (row: WirePreviewTableRow) => row.effectiveWireName.toLowerCase(),
-        render: (row: WirePreviewTableRow) =>
-          row.nestRole === 'parent' ? (
-            <Text size="sm" c="dimmed">
-              —
-            </Text>
-          ) : (
-            <Text size="sm" fw={row.hasWireNameOverride ? 600 : 400}>
-              {row.effectiveWireName}
-            </Text>
-          ),
+        render: (row: WirePreviewTableRow) => {
+          if (row.nestRole === 'parent') {
+            return (
+              <Text size="sm" c="dimmed">
+                —
+              </Text>
+            );
+          }
+          if (!onWireNameChange) {
+            return (
+              <Text size="sm" fw={row.hasWireNameOverride ? 600 : 400}>
+                {row.effectiveWireName}
+              </Text>
+            );
+          }
+          const suggestions = wireNameSuggestionsForRow(row, channelsById, nameLimit);
+          return (
+            <WirePreviewExportNameCell
+              row={row}
+              nameLimit={nameLimit}
+              disabled={!rowEffectivelyIncluded(row)}
+              suggestions={suggestions}
+              onWireNameChange={onWireNameChange}
+            />
+          );
+        },
       },
+      ...(entityKind === 'channel'
+        ? [
+            {
+              key: 'mode',
+              header: 'Mode',
+              sortable: true,
+              sortValue: (row: WirePreviewTableRow) => row.channelMode ?? '',
+              render: (row: WirePreviewTableRow) => {
+                if (row.nestRole === 'parent') {
+                  return (
+                    <Text size="sm" c="dimmed">
+                      —
+                    </Text>
+                  );
+                }
+                if (!row.channelMode) {
+                  return (
+                    <Text size="sm" c="dimmed">
+                      —
+                    </Text>
+                  );
+                }
+                const badge = (
+                  <Badge size="xs" variant="light">
+                    {row.channelMode.toUpperCase()}
+                  </Badge>
+                );
+                return row.expansionNote ? (
+                  <Tooltip label={row.expansionNote}>{badge}</Tooltip>
+                ) : (
+                  badge
+                );
+              },
+            },
+            ...resolutionFieldColumns(channelResolutionByKey, [
+              { key: 'transmit', header: 'Transmit' },
+              { key: 'txPermit', header: 'TX permit' },
+              { key: 'talkerAlias', header: 'Talker alias (DMR)' },
+              { key: 'squelch', header: 'Analog squelch' },
+            ]),
+          ]
+        : []),
+      ...(entityKind === 'zone' && zoneResolutionByKey
+        ? [
+            {
+              key: 'zoneDerivedScanResolution',
+              header: 'Zone-derived scan',
+              hideable: true,
+              defaultVisible: false,
+              render: (row: WirePreviewTableRow) => {
+                const resolution = zoneResolutionByKey.get(row.key);
+                const members = resolution?.zoneDerivedScan;
+                if (!members) {
+                  return (
+                    <Text size="sm" c="dimmed">
+                      —
+                    </Text>
+                  );
+                }
+                const included = members.filter((member) => member.value === 'Include').length;
+                return (
+                  <Text size="sm">
+                    {included} include, {members.length - included} skip
+                  </Text>
+                );
+              },
+            },
+          ]
+        : []),
       ...(zoneScanColumn
         ? [
             {
@@ -308,7 +529,19 @@ export default function WirePreviewDataTable({
           ),
       },
     ],
-    [collapsedParentIds, inclusionColumn, locationByKey, entityKind, zoneScanColumn, toggleNest],
+    [
+      collapsedParentIds,
+      inclusionColumn,
+      locationByKey,
+      entityKind,
+      zoneScanColumn,
+      toggleNest,
+      onWireNameChange,
+      nameLimit,
+      channelsById,
+      channelResolutionByKey,
+      zoneResolutionByKey,
+    ],
   );
 
   return (

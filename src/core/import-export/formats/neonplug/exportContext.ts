@@ -1,6 +1,7 @@
 import type { EntityRef } from '@core/models/libraryTypes.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { ExpandedNeonplugChannelRow } from './channelExpansion.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 /**
  * Channel UUID → NeonPlug channel `number` for DM32UV sequential export (1…N in assemble order).
@@ -42,7 +43,7 @@ export interface NumberedNeonplugChannelRow {
 export function assignNeonplugExpandedChannelNumbers(
   expandedRows: readonly ExpandedNeonplugChannelRow[],
   maxChannels: number,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   profileLabel = 'NeonPlug',
 ): {
   numbered: NumberedNeonplugChannelRow[];
@@ -51,7 +52,8 @@ export function assignNeonplugExpandedChannelNumbers(
   const numbered: NumberedNeonplugChannelRow[] = [];
   const numbersBySourceChannelId = new Map<string, number[]>();
   if (expandedRows.length > maxChannels) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Truncated ${expandedRows.length - maxChannels} expanded channel(s) to fit ${maxChannels} channels for ${profileLabel}`,
     );
   }

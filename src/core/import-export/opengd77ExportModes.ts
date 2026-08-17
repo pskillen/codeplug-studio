@@ -4,6 +4,7 @@ import { isAnalogMode } from '@core/import-export/formats/opengd77/channelModes.
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 /** FM+DMR only for modelled OpenGD77 radios (1701 / MD-9600). */
 export function isOpenGd77ExportableMode(mode: ChannelMode): boolean {
@@ -27,11 +28,12 @@ export function openGd77OmittedChannelWarning(channelLabel: string): string {
  */
 export function filterOpenGd77ExportChannel(
   channel: Channel,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): Channel | null {
   const dropped = channel.modeProfiles.filter((p) => !isOpenGd77ExportableMode(p.mode));
   if (dropped.length > 0) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       openGd77DroppedModesWarning(
         channel.name,
         dropped.map((p) => p.mode),
@@ -40,7 +42,7 @@ export function filterOpenGd77ExportChannel(
   }
   const exportableProfiles = channel.modeProfiles.filter((p) => isOpenGd77ExportableMode(p.mode));
   if (exportableProfiles.length === 0) {
-    warnings.push(openGd77OmittedChannelWarning(channel.name));
+    pushGeneralWarning(warnings, openGd77OmittedChannelWarning(channel.name));
     return null;
   }
   if (exportableProfiles.length === channel.modeProfiles.length) {
@@ -57,7 +59,7 @@ export function expandOpenGd77ChannelWireRows(
   options?: CpsExportOptions,
   profileId?: string,
   reserved = new Set<string>(),
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   isOverride = false,
 ): ExpandedChannelWireRow[] {
   const filtered = filterOpenGd77ExportChannel(channel, warnings);

@@ -1,8 +1,14 @@
-import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
+import {
+  libraryFromAssembledOrStub,
+  overridesFromAssembledWireNames,
+  resolveWireNamesFromOptions,
+} from '@core/services/resolveWireNamesCore.ts';
+import { pushWireNameResolutionWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
 import type { NeonplugDm32uvRadioProfile } from './profiles.ts';
 import type { NeonplugRxGroup } from './wireTypes.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export interface NeonplugRxGroupsExport {
   rxGroups: NeonplugRxGroup[];
@@ -18,14 +24,33 @@ export function serialiseNeonplugRxGroups(
   assembled: AssembledBuild,
   profile: NeonplugDm32uvRadioProfile,
   options: CpsExportOptions | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): NeonplugRxGroupsExport {
   const rxGroups: NeonplugRxGroup[] = [];
   const rxGroupIndexById = new Map<string, number>();
-  const reserved = new Set<string>();
   const talkGroupDigitalIdById = new Map(
     assembled.talkGroups.map((row) => [row.entity.id, row.entity.digitalId] as const),
   );
+
+  const rxGroupListWireNames = new Map<string, string>();
+  for (const resolution of resolveWireNamesFromOptions({
+    library: libraryFromAssembledOrStub(assembled),
+    entityKind: 'rxGroupList',
+    formatId: 'neonplug',
+    profileId: profile.id,
+    options: { ...options, profileId: profile.id },
+    overrides: overridesFromAssembledWireNames(assembled.rxGroupLists, (row) => row.entity.id),
+  })) {
+    rxGroupListWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'RX group list',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId: profile.id,
+    });
+  }
 
   for (const row of assembled.rxGroupLists) {
     if (rxGroups.length >= profile.maxRxGroupLists) break;
@@ -40,22 +65,14 @@ export function serialiseNeonplugRxGroups(
     }
 
     if (talkGroupIndices.length > profile.rxGroupListMembers) {
-      warnings.push(
+      pushGeneralWarning(
+        warnings,
         `RX group list "${row.wireName}" truncated from ${talkGroupIndices.length} to ${profile.rxGroupListMembers} members`,
       );
       talkGroupIndices.length = profile.rxGroupListMembers;
     }
 
-    const name = applyListWireNameLimits(
-      row.wireName,
-      reserved,
-      options,
-      profile.id,
-      warnings,
-      'RX group list',
-      profile.rxGroupListNameLimit,
-      Boolean(row.wireNameOverride?.trim()),
-    );
+    const name = rxGroupListWireNames.get(row.entity.id) ?? row.wireName;
 
     const index = rxGroups.length;
     const oneBased = index + 1;

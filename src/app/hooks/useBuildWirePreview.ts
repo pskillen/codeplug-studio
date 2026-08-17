@@ -17,7 +17,6 @@ import {
 import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import type { FormatId } from '@core/import-export/types.ts';
 import { filterChannelsEligibleForBuild } from '@core/domain/channelEligibility.ts';
-import { mergeExportOptions } from '@core/services/exportBuild.ts';
 import { applyDenseOrderOrSlots, clearAllOrderOrSlots } from '@core/domain/exportOrderOrSlot.ts';
 import { reorderSelectedKeys } from '@core/domain/zoneOrder.ts';
 import { egressIdentityForBuild } from '../lib/buildEgressUi.ts';
@@ -52,27 +51,25 @@ export function useBuildWirePreview(
 
   const egress = useMemo(() => egressIdentityForBuild(build, activeEgress), [build, activeEgress]);
 
-  const exportOptions = useMemo(
-    () =>
-      mergeExportOptions(
-        build,
-        egress.formatId,
-        { profileId: egress.profileId },
-        library ?? undefined,
-      ),
-    [build, egress.formatId, egress.profileId, library],
+  // previewWireRows resolves formatId/profileId from the build's default egress
+  // (resolveBuildDefaultEgress) — a build with multiple compatible egress paths (nearly
+  // every radio target: Web Serial + CSV, sometimes NeonPlug too) can be *viewed* on a
+  // different one via `activeEgress` without changing its persisted default. Carry that
+  // override into a view-only build so preview always matches what the operator is
+  // currently looking at, not just the stored default.
+  const previewBuild: RadioBuild = useMemo(
+    () => ({
+      ...build,
+      defaultEgressFormatId: egress.formatId,
+      defaultEgressProfileId: egress.profileId,
+    }),
+    [build, egress.formatId, egress.profileId],
   );
 
   const allRows = useMemo(() => {
     if (!library) return [];
-    return previewWireRows(
-      build,
-      library,
-      entityKind,
-      { formatId: egress.formatId, profileId: egress.profileId, ...exportOptions },
-      anytoneBank,
-    );
-  }, [build, library, entityKind, exportOptions, anytoneBank, egress.formatId, egress.profileId]);
+    return previewWireRows(previewBuild, library, entityKind, anytoneBank);
+  }, [previewBuild, library, entityKind, anytoneBank]);
 
   const rows = useMemo(() => {
     if (!hideNotIncludedInExport || !library) return allRows;

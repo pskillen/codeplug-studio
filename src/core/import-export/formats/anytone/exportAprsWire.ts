@@ -22,6 +22,7 @@ import {
   resolveDmrChannelSlotById,
   resolveFmBroadcastChannelSlotById,
 } from './exportChannelSlots.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 function padRow(headers: string[], values: Record<string, string>): string[] {
   return headers.map((header) => values[header] ?? '');
@@ -59,7 +60,7 @@ function serialiseAprsSlot(
   slot: AprsChannelSlot | undefined,
   channelSlotById: Map<string, number>,
   channelNameById: Map<string, string>,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): Record<string, string> {
   if (!slot) {
     return {
@@ -82,7 +83,8 @@ function serialiseAprsSlot(
   const wireSlot = channelSlotById.get(channelId);
   if (wireSlot == null) {
     const label = channelNameById.get(channelId) ?? channelId;
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `APRS slot references channel "${label}" which is not in this Anytone export (missing from build or unsupported bank); exporting channel wire as 0`,
     );
   }
@@ -112,14 +114,15 @@ export function serialiseAprsCsv(
   assembled: AssembledBuild,
   prepared: AnytonePreparedExport,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): string {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
   const profile = getAnytoneProfile(profileId);
   const slots = config.channelSlots ?? [];
 
   if (slots.length > profile.maxAprsSlots) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `APRS configuration has ${slots.length} channel slots; exporting first ${profile.maxAprsSlots} only`,
     );
   }

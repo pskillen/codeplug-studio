@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { CpsExportOptions, FormatId } from '@core/import-export/types.ts';
@@ -24,12 +25,12 @@ export interface CpsDriveUploadTarget {
 }
 
 export interface CpsDownloadResult {
-  warnings: string[];
+  warnings: ExportWarning[];
 }
 
 export interface CpsPreviewResult {
   files: Record<string, string>;
-  warnings: string[];
+  warnings: ExportWarning[];
   fileNames: string[];
 }
 
@@ -277,7 +278,7 @@ export async function buildCpsZipBytes(
   buildId: string,
   options?: CpsZipExportOptions,
   store: ProjectPersistence = persistence,
-): Promise<{ zip: Uint8Array; fileName: string; warnings: string[] }> {
+): Promise<{ zip: Uint8Array; fileName: string; warnings: ExportWarning[] }> {
   const { egressId, baseNeonplugBytes, ...rest } = options ?? {};
   const cpsOptions: CpsExportOptions = rest;
   const { build, egress } = await requireBuildAndEgress(store, projectId, buildId, egressId);

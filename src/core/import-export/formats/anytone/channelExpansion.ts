@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 /**
  * Anytone CPS thin adapter over the shared radio-target m×n expander.
  * Fan-out maths live in `channelExpansion/mxnExpandAll.ts`; this file only
@@ -55,7 +56,7 @@ export function expandAnytoneChannelWireRows(
   library: MultiTalkGroupLibrarySlice,
   options?: CpsExportOptions,
   reserved = new Set<string>(),
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): ExpandedAnytoneChannelRow[] {
   const radioTargetId = resolveRadioTargetId(assembled, options);
   const policy = mxnPolicyForRadioTarget(radioTargetId);
@@ -86,7 +87,7 @@ export function expandAllAnytoneChannelsForExport(
   assembled: AssembledBuild,
   library: MultiTalkGroupLibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): ExpandedAnytoneChannelRow[] {
   return withProjectionExclusions(
     expandAllMxNChannels({

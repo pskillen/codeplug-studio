@@ -25,7 +25,6 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/builds/:id/rx-group-lists',
   '/builds/:id/export',
   '/builds/:id/export/settings',
-  '/builds/:id/export-resolution',
   '/builds/:id/neonplug-settings',
   '/builds/:id/backup',
   '/builds/:id/radio-info',

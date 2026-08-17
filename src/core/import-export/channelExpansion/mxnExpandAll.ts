@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 /**
  * Shared m×n expand-all for radio targets with MxNChannelExpansion.
  * Selected by radioTargetId / policy — not by egress format id.
@@ -41,7 +42,7 @@ export interface ExpandedMxNChannelRow {
 
 export interface ResolveMxNSiteWireNameContext {
   reserved: Set<string>;
-  warnings: string[];
+  warnings: ExportWarning[];
   willExpandRx: boolean;
   options: CpsExportOptions;
   profileId: string | undefined;
@@ -52,7 +53,7 @@ export interface ExpandAllMxNChannelsArgs {
   library: MultiTalkGroupLibrarySlice;
   radioTargetId: string;
   options?: CpsExportOptions;
-  warnings?: string[];
+  warnings?: ExportWarning[];
   /**
    * Optional site-name composer (e.g. Anytone abbreviation path).
    * Default: `wireNameOverride ?? wireName`.
@@ -135,15 +136,30 @@ function scratchWireName(
   reserved: Set<string>,
   options: CpsExportOptions,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): string {
-  const composed = `${baseWireName} Scratch`;
+  const suffix = ' Scratch';
+  const composed = `${baseWireName}${suffix}`;
   if (options.shortenNames === false) {
     const name = sanitiseAsciiWireString(uniqueWireName(composed, reserved));
     reserved.add(name);
     return name;
   }
-  return applyWireNameLimits(composed, channel, reserved, options, profileId, warnings);
+  // Preserve the "Scratch" marker as a protected suffix — without it, the shortener's
+  // callsign_suffix downgrade recomposes purely from `channel`'s own fields, silently
+  // dropping "Scratch" and overriding the configured name style whenever the downgraded
+  // candidate happens to fit (e.g. "GB7EE Edinburgh Scratch" → "EE Edinburgh").
+  return applyWireNameLimits(
+    composed,
+    channel,
+    reserved,
+    options,
+    profileId,
+    warnings,
+    true,
+    false,
+    suffix,
+  );
 }
 
 function appendScratchRow(
@@ -154,7 +170,7 @@ function appendScratchRow(
   exportOptions: CpsExportOptions,
   profileId: string | undefined,
   reserved: Set<string>,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): void {
   if (exportOptions.exportScratchChannels === false) return;
   const hasTalkGroupRows = rows.some((row) => row.rowKind === 'talkGroup');
@@ -223,7 +239,7 @@ export function expandMxNChannelWireRows(
   policy: MxNExpansionPolicy,
   options?: CpsExportOptions,
   reserved = new Set<string>(),
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   resolveSiteWireName?: ExpandAllMxNChannelsArgs['resolveSiteWireName'],
 ): ExpandedMxNChannelRow[] {
   const exportOptions = mxnExportOptions(assembled, options);

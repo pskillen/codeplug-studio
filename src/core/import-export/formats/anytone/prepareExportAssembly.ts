@@ -18,6 +18,7 @@ import {
   zoneDerivedScanListId,
 } from './zoneDerivedScanLists.ts';
 import { getAnytoneProfile, DEFAULT_ANYTONE_PROFILE_ID } from './profiles.ts';
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export interface AnytonePreparedExport {
   assembled: AssembledBuild;
@@ -52,7 +53,7 @@ export function prepareAnytoneExportAssembly(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): AnytonePreparedExport {
   const derived = deriveAnytoneZoneDerivedScanLists(assembled, library, options, warnings);
   const mergedScanLists = [...assembled.scanLists, ...derived.scanLists];
@@ -60,7 +61,8 @@ export function prepareAnytoneExportAssembly(
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_ANYTONE_PROFILE_ID;
   const profile = getAnytoneProfile(profileId);
   if (mergedScanLists.length > profile.maxScanLists) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Scan list count ${mergedScanLists.length} exceeds profile cap ${profile.maxScanLists}`,
     );
   }
@@ -84,7 +86,13 @@ export function prepareAnytoneExportAssembly(
     warnings,
   );
   const expansionByChannelId = anytoneChannelExpansionById(expandedChannels);
-  const context = buildAnytoneExportWireContext(withCarriers, expandedChannels, options, warnings);
+  const context = buildAnytoneExportWireContext(
+    withCarriers,
+    library,
+    expandedChannels,
+    options,
+    warnings,
+  );
 
   const carrierChannels = carrierRows.map((row) => {
     const zoneId = row.entity.id.replace('scan-carrier:', '');

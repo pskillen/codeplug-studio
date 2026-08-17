@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 /**
  * Radio-boundary Write projection — modelled regions for clone-image encode.
  * App builds this from assemble + m×n expand; radio modules encode only.
@@ -173,5 +174,5 @@ export interface RadioWriteProjection {
   organisation: RadioWriteOrganisation;
   /** Library channel UUID → expanded 1-based radio channel numbers. */
   numbersBySourceChannelId: ReadonlyMap<string, readonly number[]>;
-  warnings: string[];
+  warnings: ExportWarning[];
 }

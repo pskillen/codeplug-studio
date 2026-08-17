@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { DigitalContact } from '@core/models/library.ts';
 import type { BuildEntityOverride } from '@core/models/formatBuild.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -70,7 +71,7 @@ export function applyDigitalContactExportWireName(
   baseWireName: string,
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
   isOverride = false,
 ): string {
   const maxLen = resolveMaxNameLength(profileId ?? options?.profileId, options);
@@ -153,26 +154,4 @@ export function resolveAnalogContactExportBaseName(
   const override = overrideByEntityId(contactOverrides).get(contact.id)?.wireName?.trim();
   if (override) return override;
   return analogContactExportBaseName(contact);
-}
-
-export function buildDigitalContactExportWireNameMap(
-  contacts: readonly { entity: DigitalContact }[],
-  contactOverrides: readonly BuildEntityOverride[] | undefined,
-  options: CpsExportOptions | undefined,
-  profileId: string,
-  warnings: string[],
-): Map<string, string> {
-  const mode = options?.digitalContactExportNameMode ?? DEFAULT_DIGITAL_CONTACT_EXPORT_NAME_MODE;
-  const overrideMap = overrideByEntityId(contactOverrides);
-  const map = new Map<string, string>();
-  for (const row of contacts) {
-    const override = overrideMap.get(row.entity.id)?.wireName?.trim();
-    const isOverride = Boolean(override);
-    const base = isOverride ? override! : digitalContactExportBaseName(row.entity, mode);
-    map.set(
-      row.entity.id,
-      applyDigitalContactExportWireName(base, options, profileId, warnings, isOverride),
-    );
-  }
-  return map;
 }

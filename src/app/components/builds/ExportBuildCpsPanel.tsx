@@ -1,3 +1,5 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
+import { dedupeWarnings } from '@core/import-export/dedupeWarnings.ts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { IconDownload, IconPackage, IconTable } from '@tabler/icons-react';
@@ -83,7 +85,7 @@ export default function ExportBuildCpsPanel({
   const resolvedSettings = resolvedBuildExportSettings(build);
 
   const [channelCount, setChannelCount] = useState<number | null>(null);
-  const [exportWarnings, setExportWarnings] = useState<string[]>([]);
+  const [exportWarnings, setExportWarnings] = useState<ExportWarning[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -174,9 +176,9 @@ export default function ExportBuildCpsPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time migration on mount
   }, [build.id]);
 
-  function mergeWarnings(warnings: string[]) {
+  function mergeWarnings(warnings: ExportWarning[]) {
     if (warnings.length) {
-      setExportWarnings((prev) => [...new Set([...prev, ...warnings])]);
+      setExportWarnings((prev) => dedupeWarnings([...prev, ...warnings]));
     }
   }
 

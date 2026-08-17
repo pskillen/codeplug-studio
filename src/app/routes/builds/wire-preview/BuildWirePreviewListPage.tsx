@@ -44,7 +44,6 @@ export interface BuildWirePreviewListPageProps {
   beforeTable?: ReactNode;
   headerActions?: ReactNode;
   anytoneBank?: AnytoneWirePreviewBank;
-  modalExtraSections?: (row: WirePreviewRow) => ReactNode;
   /** Zone override modal Members tab content. */
   modalMembersSection?: (row: WirePreviewRow) => ReactNode;
   /** Zone override modal Scan tab content (trait-gated by caller). */
@@ -52,6 +51,15 @@ export interface BuildWirePreviewListPageProps {
   zoneScanColumn?: WirePreviewZoneScanColumnConfig;
   /** When true, render list content only (no FormPage shell). */
   embedded?: boolean;
+}
+
+/**
+ * The modal is retained only where a row has more than a name to edit — zones (Members /
+ * Scan tabs). Every other kind edits its export name inline via the pencil in the table
+ * (wire-preview rework phase 6, ux-proposal.md §3).
+ */
+function rowClickOpensModal(entityKind: WirePreviewEntityKind): boolean {
+  return entityKind === 'zone';
 }
 
 function BuildWirePreviewListContent({
@@ -64,7 +72,6 @@ function BuildWirePreviewListContent({
   beforeTable,
   headerActions,
   anytoneBank = 'dmr',
-  modalExtraSections,
   modalMembersSection,
   modalScanSection,
   zoneScanColumn,
@@ -73,6 +80,7 @@ function BuildWirePreviewListContent({
     build,
     rows,
     allRows,
+    library,
     hiddenRowCount,
     hideNotIncludedInExport,
     setHideNotIncludedInExport,
@@ -94,6 +102,14 @@ function BuildWirePreviewListContent({
   const [search, setSearch] = useState('');
   const exportSettings = resolvedBuildExportSettings(build);
   const zoneReorderEnabled = entityKind === 'zone';
+  const modalEligible = rowClickOpensModal(entityKind);
+  const channelsById = useMemo(
+    () =>
+      entityKind === 'channel' && library
+        ? new Map(library.channels.map((channel) => [channel.id, channel]))
+        : undefined,
+    [entityKind, library],
+  );
   const zoneOrderOverridden = useMemo(
     () => zoneReorderEnabled && hasAnyOrderOrSlotOverride(build.zoneOverrides),
     [zoneReorderEnabled, build.zoneOverrides],
@@ -217,9 +233,16 @@ function BuildWirePreviewListContent({
           entityKind={entityKind}
           search={search}
           onSearchChange={setSearch}
-          onRowActivate={(row) => setSelectedRowKey(row.key)}
+          onRowActivate={(row) => {
+            if (modalEligible) setSelectedRowKey(row.key);
+          }}
           channelOverrides={build.channelOverrides}
           zoneScanColumn={zoneScanColumn}
+          nameLimit={nameLimit}
+          onWireNameChange={setRowWireName}
+          channelsById={channelsById}
+          build={build}
+          library={library}
           inclusionColumn={{
             saving,
             onExcludedChange: setRowExcluded,
@@ -240,20 +263,22 @@ function BuildWirePreviewListContent({
           onSelectedKeysChange={zoneReorderEnabled ? setReorderSelectedKeys : undefined}
         />
       </Stack>
-      <WirePreviewOverrideModal
-        opened={selectedRowKey !== null}
-        onClose={() => setSelectedRowKey(null)}
-        row={activeRow}
-        build={build}
-        entityKind={entityKind}
-        nameLimit={nameLimit}
-        onExcludedChange={setRowExcluded}
-        onForceIncludeChange={entityKind === 'zone' ? setRowForceIncluded : undefined}
-        onWireNameChange={setRowWireName}
-        extraSections={activeRow && modalExtraSections ? modalExtraSections(activeRow) : null}
-        membersSection={activeRow && modalMembersSection ? modalMembersSection(activeRow) : null}
-        scanSection={activeRow && modalScanSection ? modalScanSection(activeRow) : null}
-      />
+      {modalEligible ? (
+        <WirePreviewOverrideModal
+          opened={selectedRowKey !== null}
+          onClose={() => setSelectedRowKey(null)}
+          row={activeRow}
+          build={build}
+          entityKind={entityKind}
+          library={library}
+          nameLimit={nameLimit}
+          onExcludedChange={setRowExcluded}
+          onForceIncludeChange={entityKind === 'zone' ? setRowForceIncluded : undefined}
+          onWireNameChange={setRowWireName}
+          membersSection={activeRow && modalMembersSection ? modalMembersSection(activeRow) : null}
+          scanSection={activeRow && modalScanSection ? modalScanSection(activeRow) : null}
+        />
+      ) : null}
     </>
   );
 }

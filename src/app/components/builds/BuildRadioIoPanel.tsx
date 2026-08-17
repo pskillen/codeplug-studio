@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
   dualBankOptionsFromWriteSource,
   singleBankProjectionFromWriteSource,
@@ -106,7 +107,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [phase, setPhase] = useState<RadioIoProgressPhase>('connecting');
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [writeWarnings, setWriteWarnings] = useState<string[]>([]);
+  const [writeWarnings, setWriteWarnings] = useState<ExportWarning[]>([]);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [transferStages, setTransferStages] = useState<string[]>([]);
   const [writeVerifyStatus, setWriteVerifyStatus] = useState<RadioIoWriteVerifyStatus>('none');
@@ -720,9 +721,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       {writeWarnings.length > 0 ? (
         <Alert color="yellow" title="Write warnings">
           <Stack gap={4}>
-            {writeWarnings.map((line, index) => (
+            {writeWarnings.map((warning, index) => (
               <Text key={`write-warning-${index}`} size="sm">
-                {line}
+                {formatExportWarning(warning)}
               </Text>
             ))}
           </Stack>

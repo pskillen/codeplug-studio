@@ -1,3 +1,8 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
+import type { MemberCapWarningKind } from '@core/import-export/exportWarning.ts';
+
+export type { MemberCapWarningKind } from '@core/import-export/exportWarning.ts';
+
 export interface WireNameShortening {
   original: string;
   exported: string;
@@ -13,14 +18,6 @@ export interface WireNameShorteningGroup {
   profileLabel?: string;
   items: WireNameShortening[];
 }
-
-export type MemberCapWarningKind =
-  | 'zone-expanded-scan-cap'
-  | 'zone-expanded-cap'
-  | 'zone-members-export'
-  | 'zone-scan-list-truncated'
-  | 'scan-list-expanded-cap'
-  | 'rx-group-list-members';
 
 export interface MemberCapItem {
   label: string;
@@ -54,35 +51,7 @@ export interface FormattedExportWarnings {
   shortenedInfoGroups: WireNameShorteningGroup[];
 }
 
-const UNLINKED_EXPORT_RE =
-  /^Including \d+ (?:channel|talk group|RX group list|digital contact|analog contact)\(s\) not (?:linked to a zone|referenced by a channel)$/;
-
 const UNLINKED_GROUP_TITLE = 'Export unlinked items';
-
-const SHORTENED_EXPORTED_RE =
-  /^(.+?) wire name "(.+)" exceeds (\d+) characters(?: for (.+?))?; exported as "(.+)"$/;
-
-const SHORTENED_STILL_TOO_LONG_RE =
-  /^(.+?) wire name "(.+)" exceeds (\d+) characters(?: for (.+?))?; shortened to "(.+)" still exceeds limit$/;
-
-const UNSHORTENED_OVER_LIMIT_RE =
-  /^(.+?) wire name "(.+)" exceeds (\d+) characters(?: for (.+?))?$/;
-
-const COLLISION_RE =
-  /^(.+?) wire name "(.+)" collided with another exported name; disambiguated as "(.+)"$/;
-
-const ZONE_EXPANDED_SCAN_CAP_RE = /^Zone "(.+)" has (\d+) expanded members \(scan cap (\d+)\)$/;
-
-const ZONE_EXPANDED_CAP_RE = /^Zone "(.+)" has (\d+) expanded members \(cap (\d+)\)$/;
-
-const ZONE_MEMBERS_EXPORT_RE = /^Zone "(.+)" has (\d+) members; only (\d+) export to (.+)$/;
-
-const ZONE_SCAN_LIST_TRUNCATED_RE = /^Zone "(.+)" scan list truncated from (\d+) to (\d+) members$/;
-
-const SCAN_LIST_EXPANDED_CAP_RE = /^Scan list "(.+)" has (\d+) expanded members \(cap (\d+)\)$/;
-
-const RX_GROUP_LIST_MEMBERS_RE =
-  /^RX group list "(.+)" has (\d+) members; only (\d+) export to (.+)$/;
 
 const SHORTENED_GROUP_TITLES: Record<string, string> = {
   Channel: 'Channel names shortened',
@@ -203,159 +172,84 @@ function addMemberCapItem(
   groups.set(key, group);
 }
 
-/** Split raw export warning strings into grouped presentation sections. */
-export function formatExportWarnings(warnings: string[]): FormattedExportWarnings {
+function addWireNameShortening(
+  groups: Map<string, WireNameShorteningGroup>,
+  key: string,
+  entityKind: string,
+  maxLen: number,
+  profileLabel: string | undefined,
+  isCollision: boolean,
+  item: WireNameShortening,
+): void {
+  const group = groups.get(key) ?? {
+    entityKind,
+    title: wireNameGroupTitle(entityKind, isCollision),
+    maxLen,
+    profileLabel,
+    items: [],
+  };
+  group.items.push(item);
+  groups.set(key, group);
+}
+
+/** Group structured `ExportWarning[]` into presentation sections — no text parsing. */
+export function formatExportWarnings(warnings: ExportWarning[]): FormattedExportWarnings {
   const general: string[] = [];
   const unlinkedItems: string[] = [];
   const shortenedGroupsMap = new Map<string, WireNameShorteningGroup>();
   const memberCapGroupsMap = new Map<string, MemberCapGroup>();
 
   for (const warning of warnings) {
-    if (UNLINKED_EXPORT_RE.test(warning)) {
-      unlinkedItems.push(warning);
-      continue;
-    }
+    switch (warning.kind) {
+      case 'unlinked': {
+        unlinkedItems.push(warning.message);
+        break;
+      }
 
-    const zoneScanCap = warning.match(ZONE_EXPANDED_SCAN_CAP_RE);
-    if (zoneScanCap) {
-      const [, label, countText, capText] = zoneScanCap;
-      addMemberCapItem(memberCapGroupsMap, 'zone-expanded-scan-cap', Number(capText), undefined, {
-        label: label!,
-        count: Number(countText),
-        cap: Number(capText),
-      });
-      continue;
-    }
+      case 'member_cap': {
+        addMemberCapItem(memberCapGroupsMap, warning.capKind, warning.cap, warning.profileLabel, {
+          label: warning.label,
+          count: warning.count,
+          cap: warning.cap,
+          truncatedFrom: warning.truncatedFrom,
+        });
+        break;
+      }
 
-    const zoneExpandedCap = warning.match(ZONE_EXPANDED_CAP_RE);
-    if (zoneExpandedCap) {
-      const [, label, countText, capText] = zoneExpandedCap;
-      addMemberCapItem(memberCapGroupsMap, 'zone-expanded-cap', Number(capText), undefined, {
-        label: label!,
-        count: Number(countText),
-        cap: Number(capText),
-      });
-      continue;
-    }
+      case 'wire_name': {
+        if (warning.remediation === 'disambiguated') {
+          const key = wireNameGroupKey(warning.entityKind, 0, 'collision');
+          addWireNameShortening(shortenedGroupsMap, key, warning.entityKind, 0, undefined, true, {
+            original: warning.original,
+            exported: warning.exported,
+            stillExceedsLimit: true,
+            isCollision: true,
+          });
+          break;
+        }
 
-    const zoneMembersExport = warning.match(ZONE_MEMBERS_EXPORT_RE);
-    if (zoneMembersExport) {
-      const [, label, countText, capText, profileLabel] = zoneMembersExport;
-      addMemberCapItem(memberCapGroupsMap, 'zone-members-export', Number(capText), profileLabel, {
-        label: label!,
-        count: Number(countText),
-        cap: Number(capText),
-      });
-      continue;
-    }
+        const key = wireNameGroupKey(warning.entityKind, warning.limit, warning.profileLabel);
+        addWireNameShortening(
+          shortenedGroupsMap,
+          key,
+          warning.entityKind,
+          warning.limit,
+          warning.profileLabel,
+          false,
+          {
+            original: warning.original,
+            exported: warning.exported,
+            stillExceedsLimit: warning.remediation !== 'shortened',
+          },
+        );
+        break;
+      }
 
-    const zoneScanTruncated = warning.match(ZONE_SCAN_LIST_TRUNCATED_RE);
-    if (zoneScanTruncated) {
-      const [, label, fromText, capText] = zoneScanTruncated;
-      addMemberCapItem(memberCapGroupsMap, 'zone-scan-list-truncated', Number(capText), undefined, {
-        label: label!,
-        count: Number(capText),
-        cap: Number(capText),
-        truncatedFrom: Number(fromText),
-      });
-      continue;
+      case 'general': {
+        general.push(warning.message);
+        break;
+      }
     }
-
-    const scanListCap = warning.match(SCAN_LIST_EXPANDED_CAP_RE);
-    if (scanListCap) {
-      const [, label, countText, capText] = scanListCap;
-      addMemberCapItem(memberCapGroupsMap, 'scan-list-expanded-cap', Number(capText), undefined, {
-        label: label!,
-        count: Number(countText),
-        cap: Number(capText),
-      });
-      continue;
-    }
-
-    const rxGroupListCap = warning.match(RX_GROUP_LIST_MEMBERS_RE);
-    if (rxGroupListCap) {
-      const [, label, countText, capText, profileLabel] = rxGroupListCap;
-      addMemberCapItem(memberCapGroupsMap, 'rx-group-list-members', Number(capText), profileLabel, {
-        label: label!,
-        count: Number(countText),
-        cap: Number(capText),
-      });
-      continue;
-    }
-
-    const shortened = warning.match(SHORTENED_EXPORTED_RE);
-    if (shortened) {
-      const [, entityKind, original, maxLenText, profileLabel, exported] = shortened;
-      const maxLen = Number(maxLenText);
-      const key = wireNameGroupKey(entityKind!, maxLen, profileLabel);
-      const group = shortenedGroupsMap.get(key) ?? {
-        entityKind: entityKind!,
-        title: wireNameGroupTitle(entityKind!),
-        maxLen,
-        profileLabel,
-        items: [],
-      };
-      group.items.push({ original: original!, exported: exported!, stillExceedsLimit: false });
-      shortenedGroupsMap.set(key, group);
-      continue;
-    }
-
-    const stillTooLong = warning.match(SHORTENED_STILL_TOO_LONG_RE);
-    if (stillTooLong) {
-      const [, entityKind, original, maxLenText, profileLabel, exported] = stillTooLong;
-      const maxLen = Number(maxLenText);
-      const key = wireNameGroupKey(entityKind!, maxLen, profileLabel);
-      const group = shortenedGroupsMap.get(key) ?? {
-        entityKind: entityKind!,
-        title: wireNameGroupTitle(entityKind!),
-        maxLen,
-        profileLabel,
-        items: [],
-      };
-      group.items.push({ original: original!, exported: exported!, stillExceedsLimit: true });
-      shortenedGroupsMap.set(key, group);
-      continue;
-    }
-
-    const collision = warning.match(COLLISION_RE);
-    if (collision) {
-      const [, entityKind, candidate, disambiguated] = collision;
-      const key = wireNameGroupKey(entityKind!, 0, 'collision');
-      const group = shortenedGroupsMap.get(key) ?? {
-        entityKind: entityKind!,
-        title: wireNameGroupTitle(entityKind!, true),
-        maxLen: 0,
-        profileLabel: undefined,
-        items: [],
-      };
-      group.items.push({
-        original: candidate!,
-        exported: disambiguated!,
-        stillExceedsLimit: true,
-        isCollision: true,
-      });
-      shortenedGroupsMap.set(key, group);
-      continue;
-    }
-
-    const overLimit = warning.match(UNSHORTENED_OVER_LIMIT_RE);
-    if (overLimit) {
-      const [, entityKind, original, maxLenText, profileLabel] = overLimit;
-      const maxLen = Number(maxLenText);
-      const key = wireNameGroupKey(entityKind!, maxLen, profileLabel);
-      const group = shortenedGroupsMap.get(key) ?? {
-        entityKind: entityKind!,
-        title: wireNameGroupTitle(entityKind!),
-        maxLen,
-        profileLabel,
-        items: [],
-      };
-      group.items.push({ original: original!, exported: original!, stillExceedsLimit: true });
-      shortenedGroupsMap.set(key, group);
-      continue;
-    }
-
-    general.push(warning);
   }
 
   const memberCapGroups = [...memberCapGroupsMap.values()]

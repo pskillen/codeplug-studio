@@ -35,7 +35,7 @@ Each zone (or zone-derived scan list) member library channel id **fans out** to 
 
 Zone-derived **`scanListId` on the channel record** is stamped on synthetic **`{zone} Scan` carriers only** (`scan-carrier:{zoneId}`). Member rows stay `scanListId: 0` — they appear **in** the list but do not carry the zone FK (channels can sit in multiple zones). Manual per-channel assignment is not modelled yet ([#1225](https://github.com/pskillen/codeplug-studio/issues/1225)).
 
-When **Export zone-derived scan lists** is on:
+When **Create scan lists from zones** (build Export → Organisation) is on:
 
 - With a populated zoneGrouping layout, only zones with `exportScanList: true` emit lists.
 - With an **empty or missing** layout, every assembled zone is treated as `exportScanList: true` (same spirit as zone assemble’s library fallback) — [#562](https://github.com/pskillen/codeplug-studio/issues/562).

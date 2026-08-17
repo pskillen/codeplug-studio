@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { Channel } from '@core/models/library.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { getDm32Profile } from '@core/import-export/formats/dm32/profiles.ts';
@@ -48,7 +49,7 @@ export function assembledChannelExportWireName(
   reserved: Set<string>,
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): string {
   const isOverride = Boolean(row.wireNameOverride?.trim());
   const base = isOverride ? row.wireName : composeExportWireName(row.entity, options);
@@ -70,9 +71,18 @@ export function applyWireNameLimits(
   reserved: Set<string>,
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
   reserve = true,
   isOverride = false,
+  /**
+   * Protected trailing text already appended to `baseWireName` (e.g. ` Scratch`) that
+   * shortening must never drop — only the leading, style-composed portion is shortened.
+   * Without this, `recomposeWithMode`'s callsign_suffix downgrade recomposes purely from
+   * `channel`'s own fields and has no way to know a suffix was appended, so it silently
+   * discards the suffix (and overrides the configured name style) instead of shortening
+   * around it.
+   */
+  fixedSuffix?: string,
 ): string {
   const maxLen = resolveMaxNameLength(profileId ?? options?.profileId, options);
   const shorten = options?.shortenNames !== false;
@@ -141,6 +151,7 @@ export function applyWireNameLimits(
     recomposeWithMode: (mode: ChannelExportNameMode) =>
       composeChannelWireName({ ...pick, exportNameMode: mode }),
     recomposeWithChannelAbbreviation,
+    fixedSuffix,
   };
 
   if (!reserve) {

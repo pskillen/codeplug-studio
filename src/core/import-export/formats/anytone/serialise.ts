@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { ChannelBehaviourContext } from '@core/import-export/channelBehaviourDefaults/resolve.ts';
 import type { AssembledBuild } from '@core/services/assemble.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -27,7 +28,7 @@ import {
 } from './columns.ts';
 import { formatCsv } from './csvWrite.ts';
 import { serialiseAnytoneChannelRow } from './channelWire.ts';
-import type { ChannelModeProfileDMR } from '@core/models/library.ts';
+import type { ChannelModeProfileDMR, ScanList, Zone } from '@core/models/library.ts';
 import {
   resolveAtD890ScanListTiming,
   type AtD890ResolvedScanListTiming,
@@ -77,18 +78,61 @@ function anytoneExpansionLibrarySlice(assembled: AssembledBuild): LibrarySlice {
   };
 }
 
+/**
+ * `AssembledZone.wireName` is override-or-raw-library-name (not yet shortened/uniquified,
+ * see `resolveOverrideWireName`) — a valid stand-in `Zone.name` for `resolveWireNames`'
+ * candidate list when the caller only has `AssembledBuild`, not the original library (the
+ * `fallbackWireContext` compatibility path below; production export always has the real
+ * library via `prepareAnytoneExportAssembly`). Only `id`/`name` are read for this kind.
+ */
+const STUB_PERSISTABLE_FIELDS = { projectId: '', revision: 1, updatedAt: '' };
+
+function stubZonesFromAssembled(assembled: AssembledBuild): Zone[] {
+  return assembled.zones.map((row): Zone => ({
+    ...STUB_PERSISTABLE_FIELDS,
+    id: row.zoneId,
+    name: row.wireName,
+    members: [],
+    comment: '',
+  }));
+}
+
+function stubScanListsFromAssembled(assembled: AssembledBuild): ScanList[] {
+  return assembled.scanLists.map((row): ScanList => ({
+    ...STUB_PERSISTABLE_FIELDS,
+    id: row.scanListId,
+    name: row.wireName,
+    memberChannelIds: row.memberChannelIds,
+  }));
+}
+
 function fallbackWireContext(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): AnytoneExportWireContext {
+  const expansionLibrary = anytoneExpansionLibrarySlice(assembled);
   const expandedChannels = expandAllAnytoneChannelsForExport(
     assembled,
-    anytoneExpansionLibrarySlice(assembled),
+    expansionLibrary,
     options,
     warnings,
   );
-  return buildAnytoneExportWireContext(assembled, expandedChannels, options, warnings);
+  // Wire-context resolution needs zone/scanList candidates the (deliberately zones/scanList-
+  // free) expansion library slice above doesn't carry — reconstruct minimal stubs from the
+  // assembled rows themselves for this fallback-only path.
+  const wireNameLibrary: LibrarySlice = {
+    ...expansionLibrary,
+    zones: stubZonesFromAssembled(assembled),
+    scanLists: stubScanListsFromAssembled(assembled),
+  };
+  return buildAnytoneExportWireContext(
+    assembled,
+    wireNameLibrary,
+    expandedChannels,
+    options,
+    warnings,
+  );
 }
 
 function formatAmAirMhz(rxHz: number): string {
@@ -191,7 +235,7 @@ function serialiseZonesCsv(
 export function serialiseAmZonesCsv(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   context?: AnytoneExportWireContext,
 ): string {
   const ctx = context ?? fallbackWireContext(assembled, options, warnings);
@@ -329,7 +373,7 @@ function serialiseRxGroupListsCsv(
 export function serialiseAmAirCsv(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   context?: AnytoneExportWireContext,
 ): string {
   const ctx = context ?? fallbackWireContext(assembled, options, warnings);
@@ -358,7 +402,7 @@ export function serialiseAmAirCsv(
 export function serialiseFmBroadcastCsv(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   context?: AnytoneExportWireContext,
 ): string {
   const ctx = context ?? fallbackWireContext(assembled, options, warnings);
@@ -396,7 +440,7 @@ export function serialiseAnytoneFiles(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   prepared?: AnytonePreparedExport,
 ): AnytoneExportFiles {
   const exportPrep =
@@ -423,7 +467,7 @@ export function serialiseAnytoneFile(
   library: LibrarySlice,
   fileName: string,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): string {
   const prepared = prepareAnytoneExportAssembly(assembled, library, options, warnings);
   const { assembled: exportAssembly } = prepared;

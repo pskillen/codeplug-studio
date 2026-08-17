@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import type { Channel, DigitalContact, TalkGroup } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
@@ -71,7 +72,7 @@ describe('applyMultiTalkGroupWireNameLimits', () => {
     const member = { kind: 'talkGroup' as const, id: tg.id };
     const library = { talkGroups: [tg], digitalContacts: [] as DigitalContact[] };
     const reserved = new Set<string>();
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
 
     const wireName = applyMultiTalkGroupWireNameLimits(
       ch,

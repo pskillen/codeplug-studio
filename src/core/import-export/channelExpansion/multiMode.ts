@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { Channel, ChannelModeProfile } from '@core/models/library.ts';
 import type { ChannelMode } from '@core/models/libraryTypes.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
@@ -32,7 +33,7 @@ export function expandChannelWireRows(
   options?: CpsExportOptions,
   profileId?: string,
   reserved = new Set<string>(),
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   isOverride = false,
 ): ExpandedChannelWireRow[] {
   const composedBase = baseWireName?.trim() || composeExportWireName(channel, options);
@@ -123,7 +124,7 @@ export function buildExpandedChannelWireMap(
 ): Map<string, string> {
   const map = new Map<string, string>();
   const reserved = new Set<string>();
-  const warnings: string[] = [];
+  const warnings: ExportWarning[] = [];
   for (const row of channels) {
     for (const expanded of expandChannelWireRows(
       row.entity,

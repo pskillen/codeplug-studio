@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 /**
  * DM32 CPS thin adapter over the shared radio-target m×n expander.
  * Fan-out maths live in `channelExpansion/mxnExpandAll.ts`.
@@ -41,7 +42,7 @@ export function expandDm32ChannelWireRows(
   library: MultiTalkGroupLibrarySlice,
   options?: CpsExportOptions,
   reserved = new Set<string>(),
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): ExpandedDm32ChannelRow[] {
   const radioTargetId = resolveRadioTargetId(assembled, options);
   const policy = mxnPolicyForRadioTarget(radioTargetId);
@@ -70,7 +71,7 @@ export function expandAllDm32ChannelsForExport(
   assembled: AssembledBuild,
   library: MultiTalkGroupLibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): ExpandedDm32ChannelRow[] {
   return withProjectionExclusions(
     expandAllMxNChannels({

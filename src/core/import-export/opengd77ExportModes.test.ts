@@ -1,3 +1,4 @@
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { newChannel } from '@core/domain/factories.ts';
 import {
@@ -40,10 +41,12 @@ describe('OpenGD77 exportModes', () => {
         { mode: 'ysf' as const, dgId: null, wiresDtmfId: '' },
       ],
     };
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const filtered = filterOpenGd77ExportChannel(channel, warnings);
     expect(filtered?.modeProfiles.map((p) => p.mode)).toEqual(['fm', 'dmr']);
-    expect(warnings).toEqual([openGd77DroppedModesWarning('Repeater', ['ysf'])]);
+    expect(warnings.map((w) => formatExportWarning(w))).toEqual([
+      openGd77DroppedModesWarning('Repeater', ['ysf']),
+    ]);
   });
 
   it('omits YSF-only channels with warning', () => {
@@ -51,9 +54,9 @@ describe('OpenGD77 exportModes', () => {
       ...newChannel('p1', 'Fusion only'),
       modeProfiles: [{ mode: 'ysf' as const, dgId: null, wiresDtmfId: '' }],
     };
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     expect(filterOpenGd77ExportChannel(channel, warnings)).toBeNull();
-    expect(warnings).toEqual([
+    expect(warnings.map((w) => formatExportWarning(w))).toEqual([
       openGd77DroppedModesWarning('Fusion only', ['ysf']),
       openGd77OmittedChannelWarning('Fusion only'),
     ]);

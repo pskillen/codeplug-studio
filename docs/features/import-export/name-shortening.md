@@ -25,20 +25,26 @@ Shortening is **shared** in `channelExpansion/` — format adapters only supply 
 
 ## Operator settings
 
-`ExportNameSettingsFields` on `/builds/:id/export` persists preferences in browser `localStorage` via `useExportSettings`:
+[`ExportNameSettingsFields`](../../../src/app/components/builds/ExportNameSettingsFields.md) — the Naming section of [`ExportBuildSettingsSections`](../../../src/app/components/builds/ExportBuildSettingsSections.md) on `/builds/:id/export` — persists preferences on the **build row** (`build.exportSettings`), one capability-gated tree shared by every target:
 
-| Key                                                 | Effect                                                                                                                  |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `codeplug-studio.export.shortenNames`               | Enable abbreviation shortening (default on)                                                                             |
-| `codeplug-studio.export.maxNameLength`              | Override profile `nameLimit`                                                                                            |
-| `codeplug-studio.export.nameModeOverride`           | Default name style when no build wire override is set                                                                   |
-| `codeplug-studio.export.useChannelAbbreviation`     | Prefer `Channel.abbreviation` before dictionary shortening (default on); kept in sync with talk-group abbrev from UI    |
-| `codeplug-studio.export.useTalkGroupAbbreviation`   | Prefer `TalkGroup.abbreviation` when shortening talk-group wire names and multi-talkgroup channel suffixes (default on) |
-| `codeplug-studio.export.exportZoneDerivedScanLists` | Master toggle for DM32 zone-derived `Scan.csv` export (default on); per-zone flags on the Zones page still apply        |
+| Field                        | Effect                                                                                                                  |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `shortenNames`               | Enable abbreviation shortening (default on)                                                                             |
+| `maxNameLength`              | Override profile `nameLimit`                                                                                            |
+| `nameModeOverride`           | Default name style when no build wire override is set                                                                   |
+| `useChannelAbbreviation`     | Prefer `Channel.abbreviation` before dictionary shortening (default on)                                                 |
+| `useTalkGroupAbbreviation`   | Prefer `TalkGroup.abbreviation` when shortening talk-group wire names and multi-talkgroup channel suffixes (default on) |
+| `exportZoneDerivedScanLists` | Master toggle for zone-derived scan list export (default on); per-zone flags on the Zones page still apply              |
 
-**Use abbreviations from library** on the export panel and channel wire-preview page toggles both keys together on every format.
+[`LibraryAbbreviationsFields`](../../../src/app/components/builds/LibraryAbbreviationsFields.md) shows `useChannelAbbreviation` / `useTalkGroupAbbreviation` as one **Use abbreviations from library** group — per-kind switches when both are relevant (Naming section), a single switch scoped to one kind on entity-scoped cards (e.g. the Channels wire-preview page). The two stored fields stay independent; the UI no longer collapses them into one write-both boolean.
+
+A one-time browser-`localStorage` legacy migration (`legacyExportSettingsFromLocalStorage` in `src/app/lib/migrateLegacyExportSettings.ts`) copies any values a returning operator still has from the pre-build-row era onto their first build, then clears the keys. There is no live `localStorage` store anymore.
 
 Wire preview and export share DM32 expansion: no multi-mode rows; RX-list fan-out when a channel references a multi-member RX group list.
+
+## Warnings are structured, not parsed text
+
+`ExportResult.warnings` is a discriminated `ExportWarning[]` (`src/core/import-export/exportWarning.ts`) — `wire_name` (with a `remediation`: `shortened` | `disambiguated` | `truncated` | `over_limit`), `member_cap`, `unlinked`, or `general`. `pushWireNameLengthWarning` / `pushWireNameCollisionWarning` push these objects directly; the UI (`formatExportWarnings.ts`) groups by kind/severity with no text parsing. Yellow-alert framing = `severity: 'problem'` (disambiguated, truncated, over-limit, member-cap, unlinked, general); the neutral "names shortened" info accordion = `severity: 'info'` (clean `shortened` remediation) — this was already true from the operator's point of view before the struct existed ([#1099](https://github.com/pskillen/codeplug-studio/issues/1099)); the struct just makes it the mechanism instead of a regex bank.
 
 ## Related
 

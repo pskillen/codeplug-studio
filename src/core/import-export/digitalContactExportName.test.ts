@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import { newDigitalContact } from '@core/domain/factories.ts';
 import {
@@ -67,7 +68,7 @@ describe('resolveAnalogContactExportBaseName', () => {
 
 describe('applyDigitalContactExportWireName', () => {
   it('allows duplicate contact wire names without numeric suffix', () => {
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const first = applyDigitalContactExportWireName(
       'John',
       undefined,

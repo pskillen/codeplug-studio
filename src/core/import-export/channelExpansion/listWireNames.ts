@@ -1,3 +1,4 @@
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { resolveMaxNameLength } from './exportWireNames.ts';
 import { finalizeWireName, hardTruncateUniqueWireName, uniqueWireName } from './shortenName.ts';
@@ -14,7 +15,7 @@ export function applyListWireNameLimits(
   reserved: Set<string>,
   options: CpsExportOptions | undefined,
   profileId: string | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
   entityKind: WireNameEntityKind = 'Wire name',
   /** Override profile `nameLimit` (e.g. DM32 Scan Name ≤10). */
   maxLenOverride?: number,
@@ -96,41 +97,4 @@ export function applyListWireNameLimits(
     shortenEnabled: true,
   });
   return exported;
-}
-
-export function buildListWireNameMap(
-  entries: ReadonlyArray<{
-    id: string;
-    wireName: string;
-    entityKind?: WireNameEntityKind;
-    isOverride?: boolean;
-  }>,
-  reserved: Set<string>,
-  options: CpsExportOptions | undefined,
-  profileId: string | undefined,
-  warnings: string[],
-): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const entry of entries) {
-    map.set(
-      entry.id,
-      applyListWireNameLimits(
-        entry.wireName,
-        reserved,
-        options,
-        profileId,
-        warnings,
-        entry.entityKind ?? 'Wire name',
-        undefined,
-        entry.isOverride === true,
-      ),
-    );
-  }
-  return map;
-}
-
-export const FORMATS_WITH_LIST_NAME_SHORTENING = new Set(['anytone', 'opengd77', 'dm32']);
-
-export function formatUsesListNameShortening(formatId: string): boolean {
-  return FORMATS_WITH_LIST_NAME_SHORTENING.has(formatId);
 }

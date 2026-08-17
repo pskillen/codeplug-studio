@@ -1,3 +1,4 @@
+import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { effectiveForbidTransmit } from '@core/import-export/channelBehaviourDefaults/index.ts';
 import type { ChannelExportNameMode } from '@core/domain/channelNaming.ts';
 import { channelPickForWireExport, composeChannelWireName } from '@core/domain/channelNaming.ts';
@@ -10,6 +11,10 @@ import {
 } from '@core/import-export/scanInclusion/resolve.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { applyWireNameLimits } from '@core/import-export/channelExpansion/exportWireNames.ts';
+import {
+  getProfileExportLimits,
+  profileNameLimit,
+} from '@core/import-export/profileExportLimits.ts';
 import { getChirpProfile } from './profiles.ts';
 import {
   deriveChirpDuplexAndOffset,
@@ -32,15 +37,24 @@ export interface ChirpChannelWireOptions {
   shortenNames: boolean;
   nameModeOverride?: ChannelExportNameMode;
   useChannelAbbreviation?: boolean;
-  warnings?: string[];
+  warnings?: ExportWarning[];
 }
 
+/**
+ * Same value `resolveWireNames`/`resolveWireNamesFromOptions` use for the 'channel' kind
+ * on this profile (`getProfileExportLimits('chirp', profileId).nameLengthChannel`, which is
+ * `profile.nameLimit` under the hood) — sourced from the shared profile-limits lookup
+ * instead of `getChirpProfile(...).nameLimit` directly, so this and the resolver can't
+ * silently drift apart.
+ */
 export function effectiveMaxNameLength(
   options: CpsExportOptions | undefined,
   profileId: string,
 ): number {
   if (options?.maxNameLength != null) return options.maxNameLength;
-  return getChirpProfile(profileId).nameLimit;
+  const limits = getProfileExportLimits('chirp', profileId);
+  const limit = limits ? profileNameLimit(limits, 'channel') : null;
+  return typeof limit === 'number' ? limit : getChirpProfile(profileId).nameLimit;
 }
 
 function channelWireName(
@@ -57,7 +71,12 @@ function channelWireName(
 
   if (!options.shortenNames) {
     if (base.length > options.maxNameLength) {
-      options.warnings?.push(`Channel name "${base}" exceeds ${options.maxNameLength} characters`);
+      if (options.warnings) {
+        pushGeneralWarning(
+          options.warnings,
+          `Channel name "${base}" exceeds ${options.maxNameLength} characters`,
+        );
+      }
     }
     if (!options.reserved.has(base)) {
       options.reserved.add(base);

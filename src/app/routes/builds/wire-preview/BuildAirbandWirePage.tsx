@@ -11,9 +11,10 @@ import ExportWarningsAlert from '../../../components/builds/ExportWarningsAlert.
 import { loadLibrarySlice } from '../../../lib/loadLibrarySlice.ts';
 import { useProjects } from '../../../state/useProjects.ts';
 import { persistence } from '../../../state/persistence.ts';
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 
-function isAmAirbandWriteWarning(message: string): boolean {
-  return /AM airband|airband bank unchanged/i.test(message);
+function isAmAirbandWriteWarning(warning: ExportWarning): boolean {
+  return /AM airband|airband bank unchanged/i.test(formatExportWarning(warning));
 }
 
 export default function BuildAirbandWirePage() {

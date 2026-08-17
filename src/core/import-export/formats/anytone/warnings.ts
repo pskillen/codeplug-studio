@@ -7,21 +7,27 @@ import {
   expandAllAnytoneChannelsForExport,
 } from './channelExpansion.ts';
 import { buildAnytoneExportWireContext } from './exportWireContext.ts';
+import {
+  pushGeneralWarning,
+  pushMemberCapWarning,
+  type ExportWarning,
+} from '@core/import-export/exportWarning.ts';
 
 export function collectAnytoneExportWarnings(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
-): string[] {
-  const warnings: string[] = [];
+): ExportWarning[] {
+  const warnings: ExportWarning[] = [];
   const profile = getAnytoneProfile(options?.profileId ?? assembled.profileId);
   const expandedChannels = expandAllAnytoneChannelsForExport(assembled, library, options, warnings);
   const expansionByChannelId = anytoneChannelExpansionById(expandedChannels);
 
-  buildAnytoneExportWireContext(assembled, expandedChannels, options, warnings);
+  buildAnytoneExportWireContext(assembled, library, expandedChannels, options, warnings);
 
   if (expandedChannels.length > profile.maxChannels) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Channel count ${expandedChannels.length} exceeds profile cap ${profile.maxChannels}`,
     );
   }
@@ -32,9 +38,12 @@ export function collectAnytoneExportWarnings(
       0,
     );
     if (expandedMemberCount > profile.zoneMembers) {
-      warnings.push(
-        `Zone "${zone.wireName}" has ${expandedMemberCount} expanded members (cap ${profile.zoneMembers})`,
-      );
+      pushMemberCapWarning(warnings, {
+        capKind: 'zone-expanded-cap',
+        label: zone.wireName,
+        count: expandedMemberCount,
+        cap: profile.zoneMembers,
+      });
     }
   }
 
@@ -44,14 +53,18 @@ export function collectAnytoneExportWarnings(
       0,
     );
     if (expandedMemberCount > profile.scanListMembers) {
-      warnings.push(
-        `Scan list "${scanList.wireName}" has ${expandedMemberCount} expanded members (cap ${profile.scanListMembers})`,
-      );
+      pushMemberCapWarning(warnings, {
+        capKind: 'scan-list-expanded-cap',
+        label: scanList.wireName,
+        count: expandedMemberCount,
+        cap: profile.scanListMembers,
+      });
     }
   }
 
   if (assembled.scanLists.length > profile.maxScanLists) {
-    warnings.push(
+    pushGeneralWarning(
+      warnings,
       `Scan list count ${assembled.scanLists.length} exceeds profile cap ${profile.maxScanLists}`,
     );
   }

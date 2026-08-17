@@ -13,12 +13,12 @@ import { buildUsesFlatMemoryList } from '@core/domain/exportOrderOrSlot.ts';
 import type { FormatExportDefaults } from '@core/import-export/types.ts';
 import { FieldCard } from '../fields/Fields.tsx';
 import ExportNameSettingsFields from './ExportNameSettingsFields.tsx';
-import ExportAnytoneSettingsSections from './ExportAnytoneSettingsSections.tsx';
 import FrequencyRangeEligibilityFields from './FrequencyRangeEligibilityFields.tsx';
 import DefaultScanInclusionSegment from './DefaultScanInclusionSegment.tsx';
 import ChannelBehaviourExportOverrides from './ChannelBehaviourExportOverrides.tsx';
 import ZoneBehaviourExportOverrides from './ZoneBehaviourExportOverrides.tsx';
 import ExportDirectoryProjectionFields from './ExportDirectoryProjectionFields.tsx';
+import AtD890ScanListTimingFields from './AtD890ScanListTimingFields.tsx';
 import type { ResolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
 
@@ -46,6 +46,12 @@ export interface ExportBuildSettingsSectionsProps {
   ) => void;
 }
 
+/**
+ * One capability-gated section tree for every export/write target — Anytone included.
+ * Section order follows the operator's mental sequence: what goes on the radio → how
+ * it's named → how it's organised → how it behaves. Sections gate their own controls by
+ * `build.radioTargetId` catalog traits, not by forking the whole tree per format.
+ */
 export default function ExportBuildSettingsSections({
   build,
   formatId,
@@ -59,38 +65,12 @@ export default function ExportBuildSettingsSections({
   onExportSettingsPatch,
   onExportInclusionChange,
 }: ExportBuildSettingsSectionsProps) {
-  if (radioTargetHasCompatibleFormat(build.radioTargetId, 'anytone')) {
-    return (
-      <Stack gap="md">
-        <FrequencyRangeEligibilityFields
-          hideOutsideFrequencyRange={
-            build.exportSettings?.hideChannelsOutsideFrequencyRange !== false
-          }
-          saving={saving}
-          onPatch={onExportSettingsPatch}
-        />
-        <ExportAnytoneSettingsSections
-          build={build}
-          profileId={profileId}
-          saving={saving}
-          settingsError={settingsError}
-          profileNameLimit={profileNameLimit}
-          resolvedSettings={resolvedSettings}
-          onExportSettingsPatch={onExportSettingsPatch}
-          onExportInclusionChange={onExportInclusionChange}
-        />
-      </Stack>
-    );
-  }
-
   const flatMemory = buildUsesFlatMemoryList(build);
   const showChannelExpansion = hasMxNChannelExpansion(build.radioTargetId);
   const showZoneDerivedScanLists =
     radioTargetHasCompatibleFormat(build.radioTargetId, 'dm32') ||
     radioTargetHasCompatibleFormat(build.radioTargetId, 'anytone');
-  const zoneDerivedScanLabel = radioTargetHasCompatibleFormat(build.radioTargetId, 'dm32')
-    ? 'Export zone-derived scan lists (Scan.csv)'
-    : 'Export zone-derived scan lists (ScanList.CSV)';
+  const showD890ScanListTiming = build.radioTargetId === 'anytone-at-d890uv';
 
   return (
     <Stack gap="md">
@@ -101,9 +81,10 @@ export default function ExportBuildSettingsSections({
         saving={saving}
         onPatch={onExportSettingsPatch}
       />
+
       {!flatMemory ? (
         <FieldCard
-          title="Inclusion"
+          title="What gets exported"
           description="Which library entities are exported when they are not already linked from an exported channel or zone."
         >
           <Switch
@@ -159,6 +140,22 @@ export default function ExportBuildSettingsSections({
         </Text>
       ) : null}
 
+      <FieldCard
+        title="Naming"
+        description={
+          formatId === 'radio-io'
+            ? 'Wire name length, abbreviation, and fallback style for radio write.'
+            : 'Wire name length, abbreviation, and fallback style for CPS export.'
+        }
+      >
+        <ExportNameSettingsFields
+          build={build}
+          saving={saving}
+          onPatch={onExportSettingsPatch}
+          profileNameLimit={profileNameLimit}
+        />
+      </FieldCard>
+
       {showChannelExpansion ? (
         <FieldCard
           title="Channel expansion"
@@ -188,32 +185,8 @@ export default function ExportBuildSettingsSections({
         </FieldCard>
       ) : null}
 
-      <ExportDirectoryProjectionFields
-        build={build}
-        formatId={formatId}
-        profileId={profileId}
-        saving={saving}
-        onPatch={onExportSettingsPatch}
-      />
-
       <FieldCard
-        title="Naming"
-        description={
-          formatId === 'radio-io'
-            ? 'Wire name length, abbreviation, and fallback style for radio write.'
-            : 'Wire name length, abbreviation, and fallback style for CPS export.'
-        }
-      >
-        <ExportNameSettingsFields
-          build={build}
-          saving={saving}
-          onPatch={onExportSettingsPatch}
-          profileNameLimit={profileNameLimit}
-        />
-      </FieldCard>
-
-      <FieldCard
-        title="Scanning"
+        title="Organisation"
         description={
           showsDefaultScanInclusion(build.radioTargetId)
             ? 'Default scan behaviour for channels and format-specific scan list export.'
@@ -236,7 +209,7 @@ export default function ExportBuildSettingsSections({
         {showZoneDerivedScanLists ? (
           <>
             <Switch
-              label={zoneDerivedScanLabel}
+              label="Create scan lists from zones"
               description="Requires per-zone Export as scan list on the Zones page. Library scan lists still export when enabled."
               checked={resolvedSettings.exportZoneDerivedScanLists}
               disabled={saving}
@@ -251,6 +224,12 @@ export default function ExportBuildSettingsSections({
               disabled={saving}
               onPatch={onExportSettingsPatch}
             />
+            {showD890ScanListTiming ? (
+              <AtD890ScanListTimingFields
+                exportSettings={build.exportSettings}
+                onPatch={onExportSettingsPatch}
+              />
+            ) : null}
           </>
         ) : null}
       </FieldCard>
@@ -265,6 +244,18 @@ export default function ExportBuildSettingsSections({
           onPatch={onExportSettingsPatch}
         />
       </FieldCard>
+
+      <ExportDirectoryProjectionFields
+        build={build}
+        formatId={formatId}
+        profileId={profileId}
+        saving={saving}
+        onPatch={onExportSettingsPatch}
+      />
+
+      <Text size="xs" c="dimmed">
+        Export preferences are saved with this build and included in native YAML export.
+      </Text>
     </Stack>
   );
 }

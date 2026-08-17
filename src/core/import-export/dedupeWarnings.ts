@@ -1,10 +1,13 @@
-/** Return warnings with duplicate strings removed, preserving first-seen order. */
-export function dedupeWarnings(warnings: string[]): string[] {
+import { exportWarningIdentity, type ExportWarning } from './exportWarning.ts';
+
+/** Return warnings with duplicates removed (by structural identity, not message text), preserving first-seen order. */
+export function dedupeWarnings(warnings: ExportWarning[]): ExportWarning[] {
   const seen = new Set<string>();
-  const result: string[] = [];
+  const result: ExportWarning[] = [];
   for (const warning of warnings) {
-    if (seen.has(warning)) continue;
-    seen.add(warning);
+    const key = exportWarningIdentity(warning);
+    if (seen.has(key)) continue;
+    seen.add(key);
     result.push(warning);
   }
   return result;

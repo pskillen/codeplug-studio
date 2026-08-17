@@ -1,5 +1,6 @@
 import { newChannel } from '@core/domain/factories.ts';
 import { applyWireNameLimits } from '../channelExpansion/exportWireNames.ts';
+import type { ExportWarning } from '../exportWarning.ts';
 
 export const DEFAULT_SCAN_CARRIER_HZ = 145_500_000;
 
@@ -15,7 +16,7 @@ export function zoneScanCarrierWireName(
   zoneName: string,
   profileId: string,
   reserved: Set<string>,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): string {
   const base = `${zoneName} Scan`.trim();
   const stub = {

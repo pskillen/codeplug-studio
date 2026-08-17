@@ -4,9 +4,10 @@ import type { CpsExportOptions } from '@core/import-export/types.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { withTalkGroupWireNameLimits } from '@core/import-export/channelExpansion/talkGroupWireNames.ts';
 import {
-  applyListWireNameLimits,
-  buildListWireNameMap,
-} from '@core/import-export/channelExpansion/listWireNames.ts';
+  overridesFromAssembledWireNames,
+  resolveWireNamesFromOptions,
+} from '@core/services/resolveWireNamesCore.ts';
+import { pushWireNameResolutionWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
 import {
   deriveZoneDerivedScanLists,
   ensureDm32ScanCsvFloor,
@@ -42,6 +43,7 @@ import { serialiseDm32ChannelRow } from './channelWire.ts';
 import { buildDm32TalkGroupWireNameMap, rxGroupListExportMemberNames } from './listWire.ts';
 import { DEFAULT_DM32_PROFILE_ID, getDm32Profile } from './profiles.ts';
 import type { SyntheticScanCarrier } from '@core/import-export/formats/dm32/zoneDerivedScanLists/derive.ts';
+import type { ExportWarning } from '@core/import-export/exportWarning.ts';
 
 export type Dm32ExportFiles = Record<Dm32ExportFileName, string> & {
   [DM32_APRS_GUIDE_FILE_NAME]?: string;
@@ -101,49 +103,54 @@ export interface Dm32SerialiseContext {
 
 function buildListWireMaps(
   exportAssembled: AssembledBuild,
-  expandedChannels: ExpandedDm32ChannelRow[],
-  talkGroupWireNames: Map<string, string>,
+  library: LibrarySlice,
   options: CpsExportOptions | undefined,
-  warnings: string[],
+  warnings: ExportWarning[],
 ): { zoneWireNames: Map<string, string>; rxGroupListWireNames: Map<string, string> } {
   const profileId = options?.profileId ?? exportAssembled.profileId ?? DEFAULT_DM32_PROFILE_ID;
-  const reserved = new Set<string>();
-  for (const row of expandedChannels) {
-    reserved.add(row.wireName);
-  }
-  for (const name of talkGroupWireNames.values()) {
-    reserved.add(name);
-  }
+  const mergedOptions = { ...options, profileId };
 
-  const zoneWireNames = buildListWireNameMap(
-    exportAssembled.zones.map((zone) => ({
-      id: zone.zoneId,
-      wireName: zone.wireName,
-      entityKind: 'Zone' as const,
-      isOverride: Boolean(zone.wireNameOverride?.trim()),
-    })),
-    reserved,
-    options,
+  const zoneWireNames = new Map<string, string>();
+  for (const resolution of resolveWireNamesFromOptions({
+    library,
+    entityKind: 'zone',
+    formatId: 'dm32',
     profileId,
-    warnings,
-  );
+    options: mergedOptions,
+    overrides: overridesFromAssembledWireNames(exportAssembled.zones, (row) => row.zoneId),
+  })) {
+    zoneWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'Zone',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId,
+    });
+  }
 
-  const rxGroupListNameLimit = getDm32Profile(profileId).rxGroupListNameLimit;
   const rxGroupListWireNames = new Map<string, string>();
-  for (const list of exportAssembled.rxGroupLists) {
-    rxGroupListWireNames.set(
-      list.entity.id,
-      applyListWireNameLimits(
-        list.wireName,
-        reserved,
-        options,
-        profileId,
-        warnings,
-        'RX group list',
-        rxGroupListNameLimit,
-        Boolean(list.wireNameOverride?.trim()),
-      ),
-    );
+  for (const resolution of resolveWireNamesFromOptions({
+    library,
+    entityKind: 'rxGroupList',
+    formatId: 'dm32',
+    profileId,
+    options: mergedOptions,
+    overrides: overridesFromAssembledWireNames(
+      exportAssembled.rxGroupLists,
+      (row) => row.entity.id,
+    ),
+  })) {
+    rxGroupListWireNames.set(resolution.libraryEntityId, resolution.effective);
+    pushWireNameResolutionWarning(warnings, {
+      entityKind: 'RX group list',
+      remediation: resolution.remediation,
+      original: resolution.override ?? resolution.libraryName,
+      exported: resolution.effective,
+      limit: resolution.limit,
+      profileId,
+    });
   }
 
   return { zoneWireNames, rxGroupListWireNames };
@@ -153,7 +160,7 @@ export function buildSerialiseContext(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): Dm32SerialiseContext {
   const exportAssembled = withTalkGroupWireNameLimits(assembled, options, warnings);
   const talkGroupWireNames = buildDm32TalkGroupWireNameMap(exportAssembled, options, warnings);
@@ -166,8 +173,7 @@ export function buildSerialiseContext(
   const expansionByChannelId = dm32ChannelExpansionById(expandedChannels);
   const { zoneWireNames, rxGroupListWireNames } = buildListWireMaps(
     exportAssembled,
-    expandedChannels,
-    talkGroupWireNames,
+    library,
     options,
     warnings,
   );
@@ -186,7 +192,7 @@ export function serialiseChannels(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   scanListByWireName?: Map<string, string>,
 ): string {
   const profileId = options?.profileId ?? assembled.profileId ?? DEFAULT_DM32_PROFILE_ID;
@@ -217,7 +223,7 @@ export function serialiseZones(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): string {
   const ctx = buildSerialiseContext(assembled, library, options, warnings);
   const rows = assembled.zones.map((zone, i) => {
@@ -237,7 +243,7 @@ export function serialiseZones(
 export function serialiseTalkGroups(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): string {
   const talkGroupWireNames = buildDm32TalkGroupWireNameMap(
     withTalkGroupWireNameLimits(assembled, options, warnings),
@@ -303,7 +309,7 @@ export function serialiseDtmfContacts(assembled: AssembledBuild): string {
 export function serialiseRxGroupLists(
   assembled: AssembledBuild,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
   library: LibrarySlice = {
     channels: [],
     zones: [],
@@ -337,7 +343,7 @@ export function serialiseDm32Files(
   assembled: AssembledBuild,
   library: LibrarySlice,
   options?: CpsExportOptions,
-  warnings: string[] = [],
+  warnings: ExportWarning[] = [],
 ): Dm32ExportFiles {
   const ctxWarnings = warnings;
   const exportAssembled = withTalkGroupWireNameLimits(assembled, options, ctxWarnings);
@@ -383,13 +389,7 @@ export function serialiseDm32Files(
   }
 
   const profileId = options?.profileId ?? exportAssembled.profileId ?? DEFAULT_DM32_PROFILE_ID;
-  const { zoneWireNames } = buildListWireMaps(
-    exportAssembled,
-    expandedChannels,
-    talkGroupWireNames,
-    options,
-    ctxWarnings,
-  );
+  const { zoneWireNames } = buildListWireMaps(exportAssembled, library, options, ctxWarnings);
 
   const channelRows = allExpandedRows.map((row, i) => {
     const source = channelEntityById.get(row.sourceChannelId);

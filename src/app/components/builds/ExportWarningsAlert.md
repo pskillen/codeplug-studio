@@ -1,6 +1,6 @@
 # ExportWarningsAlert
 
-Renders CPS export warning strings from `exportBuildAll` in a scannable, foldable layout.
+Renders structured `ExportWarning[]` from `exportBuildAll` in a scannable, foldable layout.
 
 ## Purpose
 
@@ -25,9 +25,9 @@ A fully clean export that only has successful shortens renders **no** yellow ale
 
 ## Props
 
-| Prop       | Type       | Description                          |
-| ---------- | ---------- | ------------------------------------ |
-| `warnings` | `string[]` | Raw warning strings from core export |
+| Prop       | Type              | Description                                                            |
+| ---------- | ----------------- | ---------------------------------------------------------------------- |
+| `warnings` | `ExportWarning[]` | Structured export warnings (`src/core/import-export/exportWarning.ts`) |
 
 ## Usage
 
@@ -38,8 +38,8 @@ A fully clean export that only has successful shortens renders **no** yellow ale
 ## Behaviour
 
 - Collapsed headers show **title + issue count** (e.g. `Channel names shortened (23)`). Info-section headers use the same convention with muted styling and no "warning" framing.
-- Parses messages emitted by `pushWireNameLengthWarning` in core (`exported as "…"` form) and assemble orphan-inclusion lines; `formatExportWarnings` partitions clean shortens into `shortenedInfoGroups` and problem shortens into `shortenedProblemGroups`.
-- Does not mutate or dedupe the input; core export already dedupes.
+- Groups by `ExportWarning.kind` / `.remediation` / `.severity` — no text parsing. `formatExportWarnings` (`./formatExportWarnings.ts`) partitions clean `shortened` remediation into `shortenedInfoGroups` and `disambiguated` / `truncated` / `over_limit` into `shortenedProblemGroups`; `member_cap` and `unlinked` fold into their own groups; `general` stays flat.
+- Does not mutate or dedupe the input; core export already dedupes (`dedupeWarnings` compares structural identity, not message text).
 - Used on the build Export panel and inside the CSV preview modal (same component).
 
 ## Related

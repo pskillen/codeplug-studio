@@ -1,3 +1,4 @@
+import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -514,7 +515,7 @@ describe('DM32 export serialise', () => {
       library,
       zoneGrouping: layout,
     };
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const files = serialiseDm32Files(assembled, library, undefined, warnings);
     const scanRows = parseCsv(files['Scan.csv']);
     const membersIndex = scanRows[0]!.indexOf(SCAN_COL.channelMembers);
@@ -524,7 +525,11 @@ describe('DM32 export serialise', () => {
     expect(emittedNames[0]).toBe('Mem 01');
     expect(emittedNames[14]).toBe('Mem 15');
     expect(membersCell.endsWith('|')).toBe(true);
-    expect(warnings.some((w) => /scan list truncated from 16 to 15 members/.test(w))).toBe(true);
+    expect(
+      warnings.some((w) =>
+        /scan list truncated from 16 to 15 members/.test(formatExportWarning(w)),
+      ),
+    ).toBe(true);
   });
 
   it('caps zone-derived scan list count at channel scanListId hardware limit', () => {
@@ -568,11 +573,15 @@ describe('DM32 export serialise', () => {
       library,
       zoneGrouping: layout,
     };
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const files = serialiseDm32Files(assembled, library, DM32_PROJECTION, warnings);
     const scanRows = parseCsv(files['Scan.csv']);
     expect(scanRows.length - 1).toBe(15);
-    expect(warnings.some((w) => w.includes('channel scanListId supports at most 15'))).toBe(true);
+    expect(
+      warnings.some((w) =>
+        formatExportWarning(w).includes('channel scanListId supports at most 15'),
+      ),
+    ).toBe(true);
   });
 
   it('emits a trailing pipe on Scan.csv Channel Members', () => {
@@ -652,7 +661,7 @@ describe('DM32 export serialise', () => {
       library,
       zoneGrouping: layout,
     };
-    const warnings: string[] = [];
+    const warnings: ExportWarning[] = [];
     const files = serialiseDm32Files(
       assembled,
       library,
@@ -673,9 +682,11 @@ describe('DM32 export serialise', () => {
     );
     expect(carrierRow).toBeDefined();
     expect(carrierRow?.[scanListIndex]).toBe(scanName);
-    expect(warnings.some((w) => /Scan list wire name "Glasgow Airband" exceeds 10/.test(w))).toBe(
-      true,
-    );
+    expect(
+      warnings.some((w) =>
+        /Scan list wire name "Glasgow Airband" exceeds 10/.test(formatExportWarning(w)),
+      ),
+    ).toBe(true);
 
     const zoneRows = parseCsv(files['Zones.csv']);
     const zoneNameIndex = zoneRows[0]!.indexOf(ZONE_COL.name);
@@ -703,7 +714,11 @@ describe('DM32 export serialise', () => {
     const files = serialiseDm32Files(assembled, library, DM32_PROJECTION);
     const rows = parseCsv(files['RXGroupLists.csv']);
     expect(rows.length - 1).toBe(32);
-    expect(warnings.some((w) => /40 RX group list/.test(w) && /32/.test(w))).toBe(true);
+    expect(
+      warnings.some(
+        (w) => /40 RX group list/.test(formatExportWarning(w)) && /32/.test(formatExportWarning(w)),
+      ),
+    ).toBe(true);
   });
 
   /**

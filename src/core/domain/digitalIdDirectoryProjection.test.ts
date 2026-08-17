@@ -1,3 +1,4 @@
+import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { describe, expect, it } from 'vitest';
 import {
   defaultDualBankWriteOptions,
@@ -96,7 +97,9 @@ describe('digitalIdDirectoryProjection', () => {
         maxContacts: 100,
       });
       expect(contacts.map((c) => c.digitalId)).toEqual([42, 99, 43]);
-      expect(warnings.some((w) => w.includes('Skipped 1 directory'))).toBe(true);
+      expect(warnings.some((w) => formatExportWarning(w).includes('Skipped 1 directory'))).toBe(
+        true,
+      );
     });
 
     it('skip returns empty contacts', () => {
