@@ -13,6 +13,7 @@ here, it is in the wrong place once the work closes.
 | --------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | [i003](i003-directory-lookup-banks/README.md) | Directory rows vs lookup banks (OpenGD77 1701 / DM-32 / AT-D890) | [#1211](https://github.com/pskillen/codeplug-studio/issues/1211), [#1220](https://github.com/pskillen/codeplug-studio/issues/1220) | OpenGD77 1701 **Write ACK’d**, LCD lookup pending (Talker Alias); DM-32 still live |
 | [i004](i004-dm32-serial-scan-aprs/README.md)  | DM-32UV serial Write: zone scan carriers + APRS upload ID        | [#1223](https://github.com/pskillen/codeplug-studio/issues/1223), [#1225](https://github.com/pskillen/codeplug-studio/issues/1225) | **Parked** — APRS LE verified; scan UI misbind open (wire FK correct per verify)   |
+| [i005](i005-opengd77-channel-locations/README.md) | OpenGD77 Web Serial Write: channel GPS / Use Location on wire   | [#1233](https://github.com/pskillen/codeplug-studio/issues/1233)                                                                   | **Open** — write path in progress; hardware confirm (`E1`) after merge              |
 
 ## Closed
 
