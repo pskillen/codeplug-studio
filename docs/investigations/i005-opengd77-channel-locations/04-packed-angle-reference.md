@@ -1,6 +1,8 @@
 # Packed-angle reference
 
-Facts too bulky for `01-findings.md`. Numeric examples are from `R/angle-2026-08-17` (qDMR formula). Offsets are from `S/fw-struct` + `S/qdmr-offsets`.
+**Settled layout and encode/decode rules:** [channel-record.md](../../reference/radios/opengd77/channel-record.md#packed-angle-latitude--longitude). This file keeps investigation-era worked examples and notes; do not duplicate the tier-3 formula here.
+
+Facts too bulky for `01-findings.md`. Numeric examples below use **round** `abs(angle)*10000` (Studio write path). Offsets are from `S/fw-struct` + `S/qdmr-offsets`.
 
 Firmware source (do not treat as a Studio tree): Telectroboy archive of official MD-9600 2026-01-31 firmware, `application/include/functions/codeplug.h`, `CodeplugChannel_t`. Same header is compiled for `PLATFORM_RT84_DM1701`.
 
