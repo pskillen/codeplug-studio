@@ -10,20 +10,20 @@ Reused as-is for satellite-keps writes (#859, Workflow A + B) — `operation: 'k
 
 ## Props
 
-| Prop                   | Type                                                                             | Description                                                      |
-| ---------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `opened`               | `boolean`                                                                        | Show while an operation is in progress                           |
-| `operation`            | `'read' \| 'write' \| 'keps-write' \| 'restore'`                                 | Chooses step list and title                                      |
-| `phase`                | `'connecting' \| 'preparing' \| 'transfer' \| 'saving' \| 'verifying' \| 'done'` | Active coarse phase                                              |
-| `progress`             | `ProgressUpdate \| null`                                                         | Block-level progress during `transfer` (`msg`, optional `stage`) |
-| `transferStages`       | `readonly string[]`                                                              | Checklist labels accumulated from `progress.stage`               |
-| `navigationBlocked`    | `boolean`                                                                        | Extra alert after an in-app navigation attempt                   |
-| `writeVerifyStatus`    | `'none' \| 'unverified' \| 'verifying' \| 'verified' \| 'failed'`                | AT-D890 optional post-Write preserved-settings check             |
-| `verifyMismatches`     | `readonly { id: string; label: string }[]`                                       | Named regions when verify fails                                  |
-| `onVerify`             | `() => void`                                                                     | Start optional verify (AT-D890)                                  |
-| `onCloseWithoutVerify` | `() => void`                                                                     | Dismiss after Write without running verify                       |
-| `onCancel`             | `() => void`                                                                     | Abort the in-flight transfer                                     |
-| `onClose`              | `() => void`                                                                     | Dismiss after `phase === 'done'` (Write stays open until Close)  |
+| Prop                   | Type                                                                             | Description                                                                                                                                                              |
+| ---------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `opened`               | `boolean`                                                                        | Show while an operation is in progress                                                                                                                                   |
+| `operation`            | `'read' \| 'write' \| 'keps-write' \| 'restore'`                                 | Chooses step list and title                                                                                                                                              |
+| `phase`                | `'connecting' \| 'preparing' \| 'transfer' \| 'saving' \| 'verifying' \| 'done'` | Active coarse phase                                                                                                                                                      |
+| `progress`             | `ProgressUpdate \| null`                                                         | Block-level progress during `transfer` (`msg`, optional `stage`) and during `preparing` when directory assemble reports `ProgressUpdate` (determinate bar + step detail) |
+| `transferStages`       | `readonly string[]`                                                              | Checklist labels accumulated from `progress.stage`                                                                                                                       |
+| `navigationBlocked`    | `boolean`                                                                        | Extra alert after an in-app navigation attempt                                                                                                                           |
+| `writeVerifyStatus`    | `'none' \| 'unverified' \| 'verifying' \| 'verified' \| 'failed'`                | AT-D890 optional post-Write preserved-settings check                                                                                                                     |
+| `verifyMismatches`     | `readonly { id: string; label: string }[]`                                       | Named regions when verify fails                                                                                                                                          |
+| `onVerify`             | `() => void`                                                                     | Start optional verify (AT-D890)                                                                                                                                          |
+| `onCloseWithoutVerify` | `() => void`                                                                     | Dismiss after Write without running verify                                                                                                                               |
+| `onCancel`             | `() => void`                                                                     | Abort the in-flight transfer                                                                                                                                             |
+| `onClose`              | `() => void`                                                                     | Dismiss after `phase === 'done'` (Write stays open until Close)                                                                                                          |
 
 ## Usage
 
@@ -48,6 +48,7 @@ Reused as-is for satellite-keps writes (#859, Workflow A + B) — `operation: 'k
 - Modal cannot be dismissed via escape, overlay click, or close button while transferring — only **Cancel** (parent aborts). On success (`phase === 'done'`), **Close** dismisses so the operator can review the checklist (especially Write).
 - Parent should pair with `useUnsavedNavigationGuard(busy)` + `beforeunload` so route changes and tab close are blocked while open.
 - When adapters emit `ProgressUpdate.stage`, the parent appends unique labels to `transferStages` so the checklist grows (Read: Discover memory map → Channels → Zones → …; Write: Channels → Zones → Scan lists → …; OpenGD77 Write: **Pre-write read** → **FLASH sectors**; UV-17Pro family Write: **Pre-write read** → **Upload**).
+- **Write assemble:** when `phase === 'preparing'` and the parent passes `progress` (e.g. paging a large RadioID directory shadow), the modal shows a determinate bar and `progress.msg` as the preparing-step detail ([#1247](https://github.com/pskillen/codeplug-studio/issues/1247)).
 - **AT-D890 Write verify:** when `writeVerifyStatus === 'unverified'`, done state shows a calm alert with optional **Check preserved settings** and **Close**. Checking waits for the radio to restart on its own after commit, then reconnects and diffs never-write regions.
 
 ## Related

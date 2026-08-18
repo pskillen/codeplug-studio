@@ -187,18 +187,17 @@ interface RadioSession {
 ## 5. Session vs image lifecycle
 
 ```text
-requestPort(baud) → open BytePipe
-  → radio.connect(pipe)           // ident / handshake
-  → radio.download(onProgress)    // fill MemoryMap via BlockCodec
-  → persist FormatBuild.cpsWireHydration (formatId: radio-clone)
-  → (operator curates library + FormatBuild as usual)
-  → assemble(build, library)
+requestPort (no open) → assemble(build, library)   // grant during Write click; progress while paging directory
+  → open BytePipe at baud
+  → radio.connect(pipe, handshake: none for Write) // ident skipped until upload path needs it
   → expandAllMxNChannels when MxNChannelExpansion (same as CPS export)
   → RadioChannelDto[]
-  → encode into hydrated image (preserve unmodelled regions)
-  → radio.upload(image)           // often re-handshake; full or selective ranges
+  → encode into hydrated / in-session prior image (preserve unmodelled regions)
+  → radio.upload(image)           // often pre-write read inside upload; selective ranges
   → disconnect
 ```
+
+Read path (unchanged): `requestPort` → open → `connect(read)` → `download` → persist hydration on egress.
 
 MVP **Read** hydrates the FormatBuild only — it does **not** import channels into the library. See [adding-a-radio-adapter.md](adding-a-radio-adapter.md).
 

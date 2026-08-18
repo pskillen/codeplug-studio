@@ -15,7 +15,9 @@ import type { DigitalIdDirectoryEntry } from '@core/models/digitalIdDirectory.ts
 import type { ProjectPersistence } from '@integrations/persistence/index.ts';
 import { mapDirectoryEntryToRadioDigitalContactDto } from '@integrations/radioid/mapDirectoryEntryToRadioDto.ts';
 import type { RadioDigitalContactDto } from '@integrations/radio-io/radioWriteProjection.ts';
+import type { ProgressFn } from '@integrations/radio-io/types.ts';
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import { pageDigitalIdDirectoryForWrite } from './directoryWritePaging.ts';
 
 export interface SingleBankRadioWritePrepareOptions {
   mode: SingleBankWriteMode;
@@ -30,6 +32,7 @@ export interface CollectSingleBankDigitalContactsArgs {
   maxContacts: number;
   warnings: ExportWarning[];
   mapLibraryRow: (row: AssembledBuild['digitalContacts'][number]) => ProjectedDigitalContactRow;
+  onProgress?: ProgressFn;
 }
 
 function dtoFromProjected(row: ProjectedDigitalContactRow): RadioDigitalContactDto {
@@ -64,34 +67,41 @@ export async function collectSingleBankDigitalContacts(
         : 0;
     const directoryCap = args.maxContacts - libraryUsed;
     let skippedOverlap = 0;
-    let truncated = 0;
-    await args.store.iterateDigitalIdDirectory(args.projectId, (row: DigitalIdDirectoryEntry) => {
-      if (!shouldIncludeDirectoryRow(row.digitalId, libraryIds)) {
-        skippedOverlap++;
-        return;
-      }
-      if (directoryRows.length >= directoryCap) {
-        truncated++;
-        return;
-      }
-      const dto = mapDirectoryEntryToRadioDigitalContactDto(row);
-      directoryRows.push({
-        digitalId: dto.digitalId,
-        wireName: dto.wireName,
-        callsign: dto.callsign,
-        city: dto.city,
-        province: dto.province,
-        country: dto.country,
-        remark: dto.remark,
-      });
+
+    const { total, collected } = await pageDigitalIdDirectoryForWrite({
+      store: args.store,
+      projectId: args.projectId,
+      cap: directoryCap,
+      onProgress: args.onProgress,
+      progressMsg: 'Loading directory contacts',
+      acceptRow: (row: DigitalIdDirectoryEntry) => {
+        if (!shouldIncludeDirectoryRow(row.digitalId, libraryIds)) {
+          skippedOverlap++;
+          return false;
+        }
+        return row.digitalId > 0;
+      },
+      onAcceptedRow: (row) => {
+        const dto = mapDirectoryEntryToRadioDigitalContactDto(row);
+        directoryRows.push({
+          digitalId: dto.digitalId,
+          wireName: dto.wireName,
+          callsign: dto.callsign,
+          city: dto.city,
+          province: dto.province,
+          country: dto.country,
+          remark: dto.remark,
+        });
+      },
     });
+
     if (skippedOverlap > 0) {
       pushGeneralWarning(
         args.warnings,
         `Skipped ${skippedOverlap} directory row(s) whose DMR ID already exists on a library digital contact`,
       );
     }
-    if (truncated > 0) {
+    if (collected >= directoryCap && total > directoryCap) {
       pushGeneralWarning(
         args.warnings,
         `Directory has more contacts than the radio contact bank allows; only ${args.maxContacts} export from directory`,

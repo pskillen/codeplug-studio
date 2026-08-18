@@ -18,8 +18,10 @@ import type {
   RadioDigitalContactDto,
   RadioRadioIdDto,
 } from '@integrations/radio-io/radioWriteProjection.ts';
+import type { ProgressFn } from '@integrations/radio-io/types.ts';
 import { isOpenGd77RadioIoEgress } from './radioIoChannelMap.ts';
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import { pageDigitalIdDirectoryForWrite } from './directoryWritePaging.ts';
 
 export interface DualBankRadioWritePrepareOptions {
   mode: DualBankWriteMode;
@@ -42,6 +44,7 @@ export interface CollectDualBankDirectorySliceArgs {
   maxRadioIds?: number;
   maxDirectoryContacts?: number;
   warnings: ExportWarning[];
+  onProgress?: ProgressFn;
 }
 
 function dualBankDirectoryTargets(
@@ -72,33 +75,31 @@ export async function collectDualBankDirectorySlice(
 
   const digitalContacts: RadioDigitalContactDto[] = [];
   let skippedOverlap = 0;
-  let truncatedContacts = 0;
   const openGd77Cap = args.maxDirectoryContacts ?? OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX;
   const dm32Cap = args.maxDirectoryContacts ?? DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX;
+  const cap = forOpenGd77 ? openGd77Cap : dm32Cap;
   // Shared 0x0F bank: skip library IDs only when Both (library is also written).
   const skipDm32Overlap = forDm32 && args.options.includeLibraryContacts;
 
-  await args.store.iterateDigitalIdDirectory(args.projectId, (row: DigitalIdDirectoryEntry) => {
+  const acceptRow = (row: DigitalIdDirectoryEntry): boolean => {
     if (skipDm32Overlap && !shouldIncludeDirectoryRow(row.digitalId, libraryIds)) {
       skippedOverlap++;
-      return;
+      return false;
     }
-    if (forDm32) {
-      if (row.digitalId <= 0) return;
-      if (digitalContacts.length >= dm32Cap) {
-        truncatedContacts++;
-        return;
-      }
+    if (row.digitalId <= 0) return false;
+    return true;
+  };
+
+  const { total, collected } = await pageDigitalIdDirectoryForWrite({
+    store: args.store,
+    projectId: args.projectId,
+    cap,
+    onProgress: args.onProgress,
+    progressMsg: 'Loading directory contacts',
+    acceptRow,
+    onAcceptedRow: (row) => {
       digitalContacts.push(mapDirectoryEntryToRadioDigitalContactDto(row));
-    }
-    if (forOpenGd77) {
-      if (row.digitalId <= 0) return;
-      if (digitalContacts.length >= openGd77Cap) {
-        truncatedContacts++;
-        return;
-      }
-      digitalContacts.push(mapDirectoryEntryToRadioDigitalContactDto(row));
-    }
+    },
   });
 
   if (skippedOverlap > 0) {
@@ -107,7 +108,7 @@ export async function collectDualBankDirectorySlice(
       `Skipped ${skippedOverlap} directory row(s) whose DMR ID already exists on a library digital contact`,
     );
   }
-  if (truncatedContacts > 0) {
+  if (collected >= cap && total > cap) {
     if (forOpenGd77) {
       pushGeneralWarning(
         args.warnings,

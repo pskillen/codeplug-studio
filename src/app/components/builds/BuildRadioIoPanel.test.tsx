@@ -1,10 +1,25 @@
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import { DesignSystemV2Provider } from '../v2/index.ts';
 import { BuildLayoutProvider } from '../../routes/builds/BuildLayoutContext.tsx';
 import BuildRadioIoPanel from './BuildRadioIoPanel.tsx';
+import * as radioIoSession from '../../services/radioIoSession.ts';
+import { persistence } from '../../state/persistence.ts';
+
+vi.mock('../../lib/loadLibrarySlice.ts', () => ({
+  loadLibrarySlice: vi.fn(async () => ({
+    channels: [],
+    zones: [],
+    scanLists: [],
+    talkGroups: [],
+    digitalContacts: [],
+    analogContacts: [],
+    rxGroupLists: [],
+    aprsConfiguration: null,
+  })),
+}));
 
 vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../services/radioIoSession.ts')>();
@@ -127,6 +142,62 @@ describe('BuildRadioIoPanel — dual-bank / single-bank extras', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'RadioID' }));
     fireEvent.click(screen.getByRole('button', { name: 'Write codeplug' }));
     expect(await screen.findByText('RadioID directory is empty')).toBeInTheDocument();
+  });
+
+  describe('Write sequence (#1247)', () => {
+    const port = {
+      readable: null,
+      writable: null,
+      open: vi.fn(async () => undefined),
+      close: vi.fn(async () => undefined),
+    };
+
+    beforeEach(() => {
+      vi.mocked(persistence.countDigitalIdDirectoryEntries).mockResolvedValue(100);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('grants serial port before prepareRadioWriteImage when directory contacts are selected', async () => {
+      const grantSpy = vi
+        .spyOn(radioIoSession, 'grantRadioSerialPortForEgress')
+        .mockResolvedValue({ transport: 'web', port });
+      const prepareSpy = vi.spyOn(radioIoSession, 'prepareRadioWriteImage').mockResolvedValue({
+        warnings: [],
+        organisation: {},
+        channels: [],
+      });
+      vi.spyOn(radioIoSession, 'openRadioSessionForEgress').mockResolvedValue({
+        session: {
+          descriptor: { modelIds: ['DM-1701'] },
+          pipe: { close: vi.fn(async () => undefined) },
+          radio: {},
+        } as never,
+        descriptor: { modelIds: ['DM-1701'] } as never,
+      });
+
+      renderPanel('radio-io-opengd77-1701');
+      fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'RadioID' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Write codeplug' }));
+
+      await waitFor(() => {
+        expect(grantSpy).toHaveBeenCalled();
+        expect(prepareSpy).toHaveBeenCalled();
+      });
+      expect(grantSpy.mock.invocationCallOrder[0]!).toBeLessThan(
+        prepareSpy.mock.invocationCallOrder[0]!,
+      );
+      expect(radioIoSession.openRadioSessionForEgress).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          grantedPort: { transport: 'web', port },
+          purpose: 'write',
+        }),
+      );
+    });
   });
 
   it('does not show digital contacts extra for UV-5R Mini', async () => {

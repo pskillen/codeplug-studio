@@ -26,6 +26,8 @@ import {
   type ProgressFn,
   type RadioDescriptor,
   type RadioSession,
+  type SerialPortLike,
+  type UsbDeviceLike,
   isCapacitorSerialSupported,
   isRadioSerialSupported,
   isWebSerialSupported,
@@ -114,6 +116,25 @@ export interface OpenRadioSessionResult {
   descriptor: RadioDescriptor;
 }
 
+/** Port picker result — granted during a user gesture, opened later (Write assemble path). */
+export type GrantedRadioSerialPort =
+  { transport: 'web'; port: SerialPortLike } | { transport: 'capacitor'; device: UsbDeviceLike };
+
+/**
+ * Request (or reuse) a serial port without opening it or running a radio handshake.
+ * Call from the Write click before CPU-heavy assemble so `requestPort()` keeps user activation.
+ */
+export async function grantRadioSerialPortForEgress(opts?: {
+  forcePortSelection?: boolean;
+}): Promise<GrantedRadioSerialPort> {
+  if (isCapacitorSerialSupported()) {
+    const device = await requestCapacitorSerialPort();
+    return { transport: 'capacitor', device };
+  }
+  const port = await requestWebSerialPort(opts?.forcePortSelection ?? true);
+  return { transport: 'web', port };
+}
+
 function isHandshakeConnectFailure(err: unknown): boolean {
   return err instanceof RadioWrongIdentError || err instanceof RadioTimeoutError;
 }
@@ -138,6 +159,8 @@ export async function openRadioSessionForEgress(
     modelId?: string;
     forcePortSelection?: boolean;
     signal?: AbortSignal;
+    /** When set, skip requestPort / requestPermission — use a prior {@link grantRadioSerialPortForEgress}. */
+    grantedPort?: GrantedRadioSerialPort;
     /**
      * Write/restore open the port without read handshake; upload / restoreFromBackup
      * supply their own handshake. Restore is not a Write-codeplug purpose.
@@ -160,8 +183,18 @@ export async function openRadioSessionForEgress(
     : ([descriptor.baudRate] as const);
 
   const isNative = isCapacitorSerialSupported();
-  const nativeDevice = isNative ? await requestCapacitorSerialPort() : null;
-  const webPort = isNative ? null : await requestWebSerialPort(opts?.forcePortSelection ?? true);
+  let nativeDevice: UsbDeviceLike | null = null;
+  let webPort: SerialPortLike | null = null;
+  if (opts?.grantedPort) {
+    if (opts.grantedPort.transport === 'capacitor') {
+      nativeDevice = opts.grantedPort.device;
+    } else {
+      webPort = opts.grantedPort.port;
+    }
+  } else {
+    nativeDevice = isNative ? await requestCapacitorSerialPort() : null;
+    webPort = isNative ? null : await requestWebSerialPort(opts?.forcePortSelection ?? true);
+  }
 
   let pipe: BytePipe | null = null;
 
@@ -287,6 +320,7 @@ export async function prepareRadioWriteImage(
     singleBank?: SingleBankRadioWritePrepareOptions;
     persistence?: ProjectPersistence;
     projectId?: string;
+    onProgress?: ProgressFn;
   },
 ): Promise<{
   image?: MemoryMap;
@@ -327,6 +361,7 @@ export async function prepareRadioWriteImage(
             maxRadioIds,
             maxDirectoryContacts,
             warnings: projectionWarnings,
+            onProgress: opts.onProgress,
           })
         : { radioIds: [], digitalContacts: [] };
     projectionContext = {
@@ -375,6 +410,7 @@ export async function prepareRadioWriteImage(
                 remark: row.entity.remarks ?? '',
               } satisfies ProjectedDigitalContactRow;
             },
+            onProgress: opts.onProgress,
           })
         : undefined;
     projectionContext = {
