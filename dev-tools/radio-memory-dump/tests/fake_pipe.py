@@ -7,23 +7,29 @@ from dataclasses import dataclass, field
 
 @dataclass
 class FakeBytePipe:
-    """Scripted request/response byte pipe."""
+    """Scripted response byte stream consumed by read_exact."""
 
     responses: list[bytes] = field(default_factory=list)
     written: list[bytes] = field(default_factory=list)
-    _response_offset: int = 0
+    _response_bytes: bytes = b""
+    _read_offset: int = 0
+
+    def __post_init__(self) -> None:
+        if self.responses:
+            self._response_bytes = b"".join(self.responses)
 
     def write(self, data: bytes) -> None:
         self.written.append(bytes(data))
 
     def read_exact(self, nbytes: int, timeout_ms: int) -> bytes:
         del timeout_ms
-        if self._response_offset >= len(self.responses):
-            raise TimeoutError(f"No scripted response for read of {nbytes} bytes")
-        chunk = self.responses[self._response_offset]
-        self._response_offset += 1
-        if len(chunk) != nbytes:
-            raise ValueError(f"Scripted response length {len(chunk)} != expected {nbytes}")
+        end = self._read_offset + nbytes
+        chunk = self._response_bytes[self._read_offset:end]
+        if len(chunk) < nbytes:
+            raise TimeoutError(
+                f"No scripted response for read of {nbytes} bytes (got {len(chunk)})"
+            )
+        self._read_offset = end
         return chunk
 
     def flush(self) -> None:

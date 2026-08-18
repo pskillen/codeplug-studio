@@ -77,7 +77,3 @@ class OpenGd77Protocol(ReadOnlyProtocol):
         reply_len = (header[1] << 8) | header[2]
         payload = pipe.read_exact(reply_len, OPENGD77_IO_TIMEOUT_MS)
         return parse_read_reply(header + payload, length)
-
-
-class TimeoutError(Exception):
-    """Serial read timed out."""
