@@ -94,7 +94,13 @@ vi.mock('../../hooks/useUnsavedNavigationGuard.ts', () => ({
 }));
 
 vi.mock('../../state/useProjects.ts', () => ({
-  useProjects: () => ({ activeProjectId: 'project-1', activeProject: { name: 'Demo' } }),
+  useProjects: () => ({
+    activeProjectId: 'project-1',
+    activeProject: {
+      name: 'Demo',
+      satelliteLibraryLastUpdated: '2026-08-10T12:00:00.000Z',
+    },
+  }),
 }));
 
 const satellite: Satellite = {
@@ -152,6 +158,15 @@ function renderPage(profileId = 'radio-io-at-d890uv') {
 }
 
 describe('BuildSatelliteKepsPage — Write Keps (#1085, moved from #859)', () => {
+  it('shows keps last-updated with a library refresh link', () => {
+    renderPage();
+    expect(screen.getByText(/Last updated:/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Update in Library' })).toHaveAttribute(
+      'href',
+      '/library/satellite-keps',
+    );
+  });
+
   it('renders a Write Keps button for a build with a keps-capable egress', () => {
     renderPage();
     expect(screen.getByRole('button', { name: 'Write Keps' })).toBeInTheDocument();

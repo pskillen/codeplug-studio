@@ -96,7 +96,7 @@ type PendingVerifyPayload = WriteVerifyPendingPayload;
 
 export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelProps) {
   const descriptors = descriptorsForEgress(egress);
-  const { activeProjectId } = useProjects();
+  const { activeProjectId, activeProject } = useProjects();
   const { reloadEgressPaths } = useBuildLayout();
   const sessionRef = useRef<RadioSession | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -610,6 +610,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         sharedContactBankNote={isOpenGd77RadioIoEgress(egress.profileId)}
         sharedAddressBookNote={egress.profileId === 'radio-io-dm32uv'}
         supportsKeps={supportsKepsWrite}
+        kepsLastUpdatedIso={activeProject?.satelliteLibraryLastUpdated}
         contactSource={contactSource}
         onContactSourceChange={setContactSource}
         kepsSelected={kepsSelected}

@@ -1,11 +1,13 @@
 import { Suspense, lazy, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LibraryInventoryHeader from '../../components/library/LibraryInventoryHeader.tsx';
+import KepsLastUpdated from '../../components/library/KepsLastUpdated.tsx';
 import { Checkbox, DesignSystemV2Provider, Panel, TextInput } from '../../components/v2/index.ts';
 import SatelliteTrackMap, {
   type SelectedPass,
 } from '../../components/SatelliteTrackMap/SatelliteTrackMap.tsx';
 import { useLibrary } from '../../state/useLibrary.ts';
+import { useProjects } from '../../state/useProjects.ts';
 import { useTrackingSettings } from '../../state/useTrackingSettings.ts';
 import ObserverLocationSettings from './ObserverLocationSettings.tsx';
 import PassGrid from './PassGrid.tsx';
@@ -95,6 +97,7 @@ export default function TrackingDashboardPage() {
   } = useTrackingPasses(windowHours);
   const { settings } = useTrackingSettings();
   const { library } = useLibrary();
+  const { activeProject } = useProjects();
   const [selectedPass, setSelectedPass] = useState<SelectedPass | null>(null);
 
   const enabledSatelliteRecords = useMemo(
@@ -193,7 +196,16 @@ export default function TrackingDashboardPage() {
       <div className={libraryPageClasses.page}>
         <LibraryInventoryHeader
           title="Tracking Dashboard"
-          subtitle={`Upcoming satellite passes over the next ${windowHours} hours.`}
+          subtitle={
+            <>
+              Upcoming satellite passes over the next {windowHours} hours.
+              {' · '}
+              <KepsLastUpdated
+                iso={activeProject?.satelliteLibraryLastUpdated}
+                libraryHref="/library/satellite-keps"
+              />
+            </>
+          }
         />
 
         <ObserverLocationSettings />

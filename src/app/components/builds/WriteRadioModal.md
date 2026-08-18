@@ -18,6 +18,7 @@ Build → Export **Write radio** popup: always **Write codeplug**, plus radio-ap
 | `sharedContactBankNote`   | `boolean`                    | OpenGD77 shared Contacts bank caveat         |
 | `sharedAddressBookNote`   | `boolean`                    | DM-32: library and RadioID share one book    |
 | `supportsKeps`            | `boolean`                    | Registered keps write adapter                |
+| `kepsLastUpdatedIso`      | `string \| null`             | `ProjectMeta.satelliteLibraryLastUpdated`    |
 | `contactSource`           | `DigitalContactsWriteSource` | `none` \| `library` \| `directory` \| `both` |
 | `onContactSourceChange`   | `(source) => void`           | Source picker                                |
 | `kepsSelected`            | `boolean`                    | Keps extra                                   |
@@ -57,8 +58,11 @@ Build → Export **Write radio** popup: always **Write codeplug**, plus radio-ap
 - OpenGD77 (`sharedContactBankNote`): RadioID writes User Database; library/Both replace the 1024 contact bank; overlapping `digitalId`s are kept in both stores.
 - DM-32 (`sharedAddressBookNote`): library and RadioID share one address book; RadioID/Both **replace** it; None leaves it; operator radio IDs stay channel DMR IDs on Write codeplug; duplicate IDs: library wins.
 - Empty RadioID shadow warning is owned by `BuildRadioIoPanel`, not this modal.
+- When `supportsKeps`, shows keps last-updated (`KepsLastUpdated`) with a link to Library → Satellite Keps; preview tab link unchanged.
 
 ## Related
+
+- [KepsLastUpdated.md](../library/KepsLastUpdated.md)
 
 - [BuildRadioIoPanel.md](./BuildRadioIoPanel.md)
 - [radio-read-write hub](../../../docs/features/radio-read-write/README.md)
