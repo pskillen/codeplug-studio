@@ -8,10 +8,10 @@ Not TLE `epoch` or per-row `updatedAt`.
 
 ## Props
 
-| Prop          | Type                       | Notes                                                                 |
-| ------------- | -------------------------- | --------------------------------------------------------------------- |
-| `iso`         | `string \| null \| undefined` | Last successful bulk keps refresh timestamp                        |
-| `libraryHref` | `string`                   | Optional — appends an "Update in Library" link (omit on the list page) |
+| Prop          | Type                          | Notes                                                                  |
+| ------------- | ----------------------------- | ---------------------------------------------------------------------- |
+| `iso`         | `string \| null \| undefined` | Last successful bulk keps refresh timestamp                            |
+| `libraryHref` | `string`                      | Optional — appends an "Update in Library" link (omit on the list page) |
 
 ## Usage
 
