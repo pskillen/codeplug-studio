@@ -71,14 +71,14 @@ The UI will visually separate these concerns while allowing them to interact sea
 
 Within the main "Library" navigation, a dedicated **"Satellite Keps"** tab will be introduced. This acts as the single source of truth for the user's orbital data.
 
-- **Data Fetching:** A prominent "Update from CelesTrak/AMSAT" button. Crucially, the UI must display a **"Last Updated: [Timestamp]"** indicator. If the timestamp is older than 7 days, it should turn yellow/red to gently prompt the user to refresh.
+- **Data Fetching:** A prominent "Update from CelesTrak/AMSAT" button. Crucially, the UI must display a **"Last Updated: [Timestamp]"** indicator. If the timestamp is older than 7 days, it should turn yellow/red to gently prompt the user to refresh. The clock is `ProjectMeta.satelliteLibraryLastUpdated` (bulk fetch time — not per-satellite TLE `epoch`). The same indicator (with an **Update in Library** link where fetch does not live) also appears on the Tracking dashboard, the build **Write radio** popup's keps extra, and the build **Satellite keps** tab ([#1241](https://github.com/pskillen/codeplug-studio/issues/1241)).
 - **Satellite Selection:** A data grid displaying the downloaded satellites (Name, Uplink/Downlink frequencies if available, Epoch date).
 - **Toggles:** Users will have On/Off toggle switches next to each satellite. This allows users to curate a clean list of only the satellites they actively track (e.g., turning off dead telemetry satellites or modes they don't operate), saving valuable radio memory.
 - **Global Write Button:** A primary action button floating or at the top: `Write Keps to Radio`.
 
 ### 8. The Write Workflows
 
-The user can initiate a web-serial write to their radio via two distinct paths, accommodating different user intents.
+The user can initiate a web-serial write to their radio via two distinct paths, accommodating different user intents. On build write surfaces (Workflow B and the **Write radio** popup), show the same last-updated indicator with a link back to the Library fetch action — operators refresh keps there, not from Export.
 
 #### Workflow A: Global Write (From the Library)
 
