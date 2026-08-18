@@ -43,7 +43,9 @@ describe('pageDigitalIdDirectoryForWrite', () => {
     expect(total).toBe(rows.length);
     expect(count).toBe(100);
     expect(collected).toHaveLength(100);
-    expect(pageSpy.mock.calls.length).toBeLessThan(Math.ceil(rows.length / DIRECTORY_WRITE_PAGE_SIZE));
+    expect(pageSpy.mock.calls.length).toBeLessThan(
+      Math.ceil(rows.length / DIRECTORY_WRITE_PAGE_SIZE),
+    );
   });
 
   it('reports progress while paging', async () => {

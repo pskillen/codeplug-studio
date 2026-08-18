@@ -118,8 +118,7 @@ export interface OpenRadioSessionResult {
 
 /** Port picker result — granted during a user gesture, opened later (Write assemble path). */
 export type GrantedRadioSerialPort =
-  | { transport: 'web'; port: SerialPortLike }
-  | { transport: 'capacitor'; device: UsbDeviceLike };
+  { transport: 'web'; port: SerialPortLike } | { transport: 'capacitor'; device: UsbDeviceLike };
 
 /**
  * Request (or reuse) a serial port without opening it or running a radio handshake.

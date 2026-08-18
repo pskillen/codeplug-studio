@@ -375,7 +375,7 @@ describe('radioIoSession helpers', () => {
     };
     const portSpy = vi.spyOn(radioIo, 'requestWebSerialPort');
     const openSpy = vi.spyOn(radioIo, 'openWebSerialPipe').mockResolvedValue(pipe);
-    const connect = vi.fn(async () => undefined);
+    const connect = vi.fn(async () => ({ raw: new Uint8Array(0) }));
     const listSpy = vi.spyOn(radioIo, 'listDescriptorsForProfile').mockReturnValue([
       {
         modelIds: ['UV5R-Mini'],
@@ -411,10 +411,7 @@ describe('radioIoSession helpers', () => {
     });
     expect(portSpy).not.toHaveBeenCalled();
     expect(openSpy).toHaveBeenCalledWith(port, 115200);
-    expect(connect).toHaveBeenCalledWith(
-      pipe,
-      expect.objectContaining({ handshake: 'none' }),
-    );
+    expect(connect).toHaveBeenCalledWith(pipe, expect.objectContaining({ handshake: 'none' }));
 
     portSpy.mockRestore();
     openSpy.mockRestore();

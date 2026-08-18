@@ -310,9 +310,7 @@ export default function RadioIoProgressModal({
       steps={steps}
       progress={
         !complete &&
-        (phase === 'transfer' ||
-          verifying ||
-          (phase === 'preparing' && progress != null))
+        (phase === 'transfer' || verifying || (phase === 'preparing' && progress != null))
           ? percent
           : undefined
       }

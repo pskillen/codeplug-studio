@@ -145,9 +145,9 @@ describe('collectDualBankDirectorySlice', () => {
       warnings,
     });
     expect(slice.digitalContacts).toHaveLength(50);
-    expect(warnings.some((w) => formatExportWarning(w).includes('only 50 write from directory'))).toBe(
-      true,
-    );
+    expect(
+      warnings.some((w) => formatExportWarning(w).includes('only 50 write from directory')),
+    ).toBe(true);
     expect(pageSpy.mock.calls.length).toBeLessThan(3);
   });
 
