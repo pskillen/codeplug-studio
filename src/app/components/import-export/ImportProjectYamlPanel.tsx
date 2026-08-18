@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Stack } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
 import { useYamlImportResolver } from '../../hooks/useYamlImportResolver.ts';
+import StatusBanner from '../v2/StatusBanner.tsx';
 import DriveBrowserModal from './DriveBrowserModal.tsx';
 import GoogleDriveActionButton from './GoogleDriveActionButton.tsx';
 import InterchangeOverwriteModal from './InterchangeOverwriteModal.tsx';
@@ -16,10 +17,13 @@ export default function ImportProjectYamlPanel() {
 
   return (
     <Stack gap="sm">
+      {resolver.error && !resolver.overwriteOpen ? (
+        <StatusBanner tone="warning">Import failed: {resolver.error}</StatusBanner>
+      ) : null}
       <ProjectYamlFileDropzone
         onFileText={(text, fileName) => resolver.handleLocalFile(fileName, text)}
         disabled={resolver.importing}
-        error={resolver.error}
+        error={null}
       />
       <GoogleDriveActionButton disabled={resolver.importing} onClick={() => setDriveOpen(true)}>
         Open from Drive
@@ -40,6 +44,7 @@ export default function ImportProjectYamlPanel() {
         projectName={resolver.projectName}
         diff={resolver.diff}
         loading={resolver.importing}
+        error={resolver.error}
         onClose={() => resolver.resetOverwrite()}
         onConfirm={() => void resolver.confirmOverwrite()}
       />

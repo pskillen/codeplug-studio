@@ -96,4 +96,22 @@ describe('RefreshFromDriveBanner', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Refresh from Drive' }));
     expect(openOverwrite).toHaveBeenCalledTimes(1);
   });
+
+  it('shows parse failure when newer banner is not open', () => {
+    mockUseDriveRefresh.mockReturnValue(
+      baseHookState({
+        bannerOpen: false,
+        error: 'Invalid channel override key: ch-1:bogus',
+      }),
+    );
+
+    render(
+      <MantineProvider>
+        <RefreshFromDriveBanner />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByText('Could not refresh from Google Drive')).toBeInTheDocument();
+    expect(screen.getByText(/Invalid channel override key/)).toBeInTheDocument();
+  });
 });

@@ -21,8 +21,16 @@ export default function RefreshFromDriveBanner() {
     projectName,
   } = useDriveRefresh();
 
-  if (!bannerOpen) {
+  if (!bannerOpen && !error) {
     return null;
+  }
+
+  if (!bannerOpen && error) {
+    return (
+      <Alert color="red" title="Could not refresh from Google Drive" mb="sm">
+        {error}
+      </Alert>
+    );
   }
 
   return (

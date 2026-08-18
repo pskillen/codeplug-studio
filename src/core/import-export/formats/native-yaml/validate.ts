@@ -1598,7 +1598,11 @@ function validateForeignKeys(
     for (const override of build.channelOverrides) {
       try {
         validateChannelOverrideKey(override.libraryEntityId, library);
-      } catch {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.startsWith('Invalid channel override key:')) {
+          throw new NativeYamlImportError(message);
+        }
         throw new NativeYamlImportError(
           `Build channel override ${override.libraryEntityId} not found in library`,
         );

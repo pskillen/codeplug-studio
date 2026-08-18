@@ -3,6 +3,7 @@ import { useDriveActionClick } from '../../hooks/useDriveActionClick.ts';
 import { useGoogleDrive } from '../../hooks/useGoogleDrive.ts';
 import { useDriveRefresh } from '../ProjectInterchangeBar/DriveRefreshProvider.tsx';
 import { useProjects } from '../../state/useProjects.ts';
+import { useDriveSaveFlowContext } from '../SidebarDriveControls/DriveSaveFlowProvider.tsx';
 import DismissibleNotice from '../v2/DismissibleNotice.tsx';
 import GoogleDriveNotConfiguredModal from '../import-export/GoogleDriveNotConfiguredModal.tsx';
 import InterchangeOverwriteModal from '../import-export/InterchangeOverwriteModal.tsx';
@@ -21,7 +22,7 @@ export default function ChromeDismissibleNotices() {
     diff,
     overwriteOpen,
     importing,
-    error,
+    error: refreshError,
     idMismatch,
     localProjectId,
     remoteProjectId,
@@ -30,11 +31,16 @@ export default function ChromeDismissibleNotices() {
     closeOverwrite,
     confirmRefresh,
     confirmImportAsNew,
+    clearRefreshError,
     projectName,
   } = useDriveRefresh();
+  const { error: saveError, conflictOpen, clearSaveError } = useDriveSaveFlowContext();
 
   const driveLinked = Boolean(activeProject?.interchange?.googleDrive);
   const showDriveUpdate = bannerOpen && activeProjectId != null;
+  const showRefreshError =
+    Boolean(refreshError) && !showDriveUpdate && !overwriteOpen && driveLinked;
+  const showSaveError = Boolean(saveError) && !conflictOpen && driveLinked;
   const showDisconnected = driveLinked && sessionExpired && !connected && activeProjectId != null;
 
   return (
@@ -48,6 +54,16 @@ export default function ChromeDismissibleNotices() {
           {idMismatch
             ? 'Google Drive has a newer file linked, but its project id does not match this project.'
             : "Google Drive has a newer version of this project than what's loaded here."}
+        </DismissibleNotice>
+      ) : null}
+      {showRefreshError ? (
+        <DismissibleNotice tone="warning" onDismiss={clearRefreshError}>
+          Could not refresh from Google Drive: {refreshError}
+        </DismissibleNotice>
+      ) : null}
+      {showSaveError ? (
+        <DismissibleNotice tone="warning" onDismiss={clearSaveError}>
+          Could not save to Google Drive: {saveError}
         </DismissibleNotice>
       ) : null}
       {showDisconnected ? (
@@ -75,7 +91,7 @@ export default function ChromeDismissibleNotices() {
         projectName={projectName}
         diff={diff}
         loading={importing}
-        error={error}
+        error={refreshError}
         idMismatch={idMismatch}
         localProjectId={localProjectId}
         remoteProjectId={remoteProjectId}

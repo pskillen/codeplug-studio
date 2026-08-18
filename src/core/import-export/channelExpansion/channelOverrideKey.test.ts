@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { emptyLibrary } from '@core/domain/factories.ts';
 import { fullLibraryAggregate } from '../formats/native-yaml/testFixtures.ts';
-import { parseChannelOverrideKey, validateChannelOverrideKey } from './channelOverrideKey.ts';
+import {
+  parseChannelOverrideKey,
+  scratchWireKey,
+  validateChannelOverrideKey,
+} from './channelOverrideKey.ts';
 import { expansionWireKey } from './modeExportSuffix.ts';
 import { multiTalkGroupMemberWireKey } from './multiTalkGroup.ts';
 import { FIXTURE_CHANNEL_B_ID, FIXTURE_TG_ID } from '../formats/native-yaml/testFixtures.ts';
@@ -23,6 +27,14 @@ describe('parseChannelOverrideKey', () => {
     });
   });
 
+  it('parses m×n scratch companion keys', () => {
+    const key = scratchWireKey(FIXTURE_CHANNEL_B_ID);
+    expect(parseChannelOverrideKey(key)).toEqual({
+      kind: 'scratch',
+      channelId: FIXTURE_CHANNEL_B_ID,
+    });
+  });
+
   it('parses multi-talkgroup expansion keys', () => {
     const key = multiTalkGroupMemberWireKey(FIXTURE_CHANNEL_B_ID, 'dmr', {
       kind: 'talkGroup',
@@ -37,6 +49,7 @@ describe('parseChannelOverrideKey', () => {
   });
 
   it('rejects malformed keys', () => {
+    expect(() => parseChannelOverrideKey('ch-1:bogus')).toThrow(/Invalid channel override key/);
     expect(() => parseChannelOverrideKey('bad:-X')).toThrow(/Invalid channel override key/);
     expect(() => parseChannelOverrideKey('ch-1:-D:badKind:id')).toThrow(
       /Invalid channel override key/,
@@ -71,6 +84,7 @@ describe('validateChannelOverrideKey', () => {
       }),
       library,
     );
+    validateChannelOverrideKey(scratchWireKey(FIXTURE_CHANNEL_B_ID), library);
   });
 
   it('rejects missing channel or member refs', () => {

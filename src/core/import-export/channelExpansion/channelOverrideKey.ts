@@ -11,10 +11,19 @@ const ENTITY_REF_KINDS = new Set<EntityRefKind>([
 
 const MODE_SUFFIX_SET = new Set<string>(MODE_EXPORT_NAME_SUFFIXES);
 
+/** Second segment of m×n scratch companion override keys (`{channelId}:scratch`). */
+export const SCRATCH_WIRE_KEY_SUFFIX = 'scratch';
+
 export type ChannelOverrideKey =
   | { kind: 'plain'; channelId: string }
   | { kind: 'expansion'; channelId: string; modeSuffix: string }
+  | { kind: 'scratch'; channelId: string }
   | { kind: 'multiMember'; channelId: string; modeSuffix: string; memberRef: EntityRef };
+
+/** Build override key for an m×n scratch companion row. */
+export function scratchWireKey(channelId: string): string {
+  return `${channelId}:${SCRATCH_WIRE_KEY_SUFFIX}`;
+}
 
 function parseModeSuffix(value: string): string | null {
   return MODE_SUFFIX_SET.has(value) ? value : null;
@@ -29,8 +38,15 @@ export function parseChannelOverrideKey(libraryEntityId: string): ChannelOverrid
   const parts = libraryEntityId.split(':');
   if (parts.length === 2) {
     const channelId = parts[0];
-    const modeSuffix = parseModeSuffix(parts[1] ?? '');
-    if (!channelId || !modeSuffix) {
+    const second = parts[1] ?? '';
+    if (!channelId) {
+      throw new Error(`Invalid channel override key: ${libraryEntityId}`);
+    }
+    if (second === SCRATCH_WIRE_KEY_SUFFIX) {
+      return { kind: 'scratch', channelId };
+    }
+    const modeSuffix = parseModeSuffix(second);
+    if (!modeSuffix) {
       throw new Error(`Invalid channel override key: ${libraryEntityId}`);
     }
     return { kind: 'expansion', channelId, modeSuffix };

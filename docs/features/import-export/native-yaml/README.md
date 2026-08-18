@@ -78,7 +78,10 @@ Rejected imports throw with a clear message:
 - Duplicate entity `id` within a collection
 - Inconsistent `projectId` across rows
 - Broken UUID FK (zone member, contact ref, build selection, trait layout channel id, …)
+- Invalid composite channel override key shape (plain UUID, mode suffix, talk-group member, or `:scratch` companion — see [tier 3 `BuildEntityOverride`](../../../reference/export-formats/native-yaml/README.md#buildentityoverride))
 - `replaceExisting` when YAML project id ≠ active project id (UI may offer `adoptRemote` instead — Summary **Replace active** panel and Drive refresh)
+
+When import or Drive **Check** / **Open** / **Refresh** fails on parse, the app shows the parser message in chrome or on the import panel — not console-only ([#1242](https://github.com/pskillen/codeplug-studio/issues/1242)).
 
 Nullable model fields may be omitted from YAML or set to `null` — import treats both as `null` (see [tier 3 validation rules](../../../reference/export-formats/native-yaml/README.md#validation-rules-58)).
 
@@ -95,16 +98,16 @@ loadProjectSeed → ProjectAggregate
 
 ## Implementation status
 
-| Slice                             | Status                                                                                                                                                                                                                                 |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Contracts + envelope (#56)        | Shipped                                                                                                                                                                                                                                |
-| Export serialiser (#57)           | Shipped                                                                                                                                                                                                                                |
-| Import parser + validation (#58)  | Shipped — `studioSchemaVersion` 9; legacy SSB modes migrate on load ([#204](https://github.com/pskillen/codeplug-studio/issues/204)); composite channel override keys ([#336](https://github.com/pskillen/codeplug-studio/issues/336)) |
-| Services (#59)                    | Shipped                                                                                                                                                                                                                                |
-| Local file UI (#60)               | Shipped                                                                                                                                                                                                                                |
-| App chrome Save + import sync     | Shipped ([#285](https://github.com/pskillen/codeplug-studio/issues/285))                                                                                                                                                               |
-| Portable project id on first open | Shipped ([#361](https://github.com/pskillen/codeplug-studio/issues/361)) — `seedPreservingId` for unknown UUID on Home / Drive open                                                                                                    |
-| mk2 import chrome (r2 #944)       | Shipped — `ProjectYamlFileDropzone` (v2 `FileDropzone`); `InterchangeOverwriteModal` on `ConfirmModal` / `ModalShell` ([#944](https://github.com/pskillen/codeplug-studio/issues/944))                                                 |
+| Slice                             | Status                                                                                                                                                                                                                                                                                                                                |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contracts + envelope (#56)        | Shipped                                                                                                                                                                                                                                                                                                                               |
+| Export serialiser (#57)           | Shipped                                                                                                                                                                                                                                                                                                                               |
+| Import parser + validation (#58)  | Shipped — `studioSchemaVersion` 9; legacy SSB modes migrate on load ([#204](https://github.com/pskillen/codeplug-studio/issues/204)); composite channel override keys ([#336](https://github.com/pskillen/codeplug-studio/issues/336)); m×n scratch companion keys ([#1242](https://github.com/pskillen/codeplug-studio/issues/1242)) |
+| Services (#59)                    | Shipped                                                                                                                                                                                                                                                                                                                               |
+| Local file UI (#60)               | Shipped                                                                                                                                                                                                                                                                                                                               |
+| App chrome Save + import sync     | Shipped ([#285](https://github.com/pskillen/codeplug-studio/issues/285))                                                                                                                                                                                                                                                              |
+| Portable project id on first open | Shipped ([#361](https://github.com/pskillen/codeplug-studio/issues/361)) — `seedPreservingId` for unknown UUID on Home / Drive open                                                                                                                                                                                                   |
+| mk2 import chrome (r2 #944)       | Shipped — `ProjectYamlFileDropzone` (v2 `FileDropzone`); `InterchangeOverwriteModal` on `ConfirmModal` / `ModalShell` ([#944](https://github.com/pskillen/codeplug-studio/issues/944))                                                                                                                                                |
 
 ## Testing
 

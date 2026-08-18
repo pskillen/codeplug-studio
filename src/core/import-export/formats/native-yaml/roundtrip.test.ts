@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { scratchWireKey } from '@core/import-export/channelExpansion/channelOverrideKey.ts';
 import { expansionWireKey } from '@core/import-export/channelExpansion/modeExportSuffix.ts';
 import { multiTalkGroupMemberWireKey } from '@core/import-export/channelExpansion/multiTalkGroup.ts';
 import { isSingleFileProjectExportAdapter } from '../../exportAdapter.ts';
@@ -155,6 +156,7 @@ describe('native-yaml round-trip smoke', () => {
       kind: 'talkGroup',
       id: FIXTURE_TG_ID,
     });
+    const scratchKey = scratchWireKey(FIXTURE_CHANNEL_B_ID);
     const withCompositeOverrides = {
       ...aggregate,
       radioBuilds: [
@@ -165,6 +167,7 @@ describe('native-yaml round-trip smoke', () => {
             ...build.channelOverrides,
             { libraryEntityId: expansionKey, wireName: 'GB7GL-D' },
             { libraryEntityId: multiTalkGroupKey, wireName: 'GB7GL-Scot' },
+            { libraryEntityId: scratchKey, wireName: 'GB7GL Scratch' },
           ],
         },
       ],
@@ -179,6 +182,9 @@ describe('native-yaml round-trip smoke', () => {
       parsedBuild?.channelOverrides.find((row) => row.libraryEntityId === multiTalkGroupKey)
         ?.wireName,
     ).toBe('GB7GL-Scot');
+    expect(
+      parsedBuild?.channelOverrides.find((row) => row.libraryEntityId === scratchKey)?.wireName,
+    ).toBe('GB7GL Scratch');
   });
 
   it('preserves satelliteBankSlot on satelliteOverrides round-trip', () => {

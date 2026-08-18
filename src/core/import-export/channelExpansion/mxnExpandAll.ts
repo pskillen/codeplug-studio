@@ -24,6 +24,7 @@ import {
   mxnPolicyForRadioTarget,
   type MxNExpansionPolicy,
 } from '@core/import-export/channelExpansion/mxnPolicy.ts';
+import { scratchWireKey } from '@core/import-export/channelExpansion/channelOverrideKey.ts';
 
 export type MxNChannelRowKind = 'lean' | 'talkGroup' | 'scratch';
 
@@ -178,7 +179,7 @@ function appendScratchRow(
 
   rows.push({
     sourceChannelId: channel.id,
-    key: `${channel.id}:scratch`,
+    key: scratchWireKey(channel.id),
     wireName: scratchWireName(channel, baseWireName, reserved, exportOptions, profileId, warnings),
     mode: dmrProfile.mode,
     modeProfile: dmrProfile,
