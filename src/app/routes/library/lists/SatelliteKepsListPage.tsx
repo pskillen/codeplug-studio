@@ -10,6 +10,7 @@ import { fetchSatelliteSet } from '@integrations/satellites/fetchSatelliteSet.ts
 import { mergeSatelliteSet } from '@integrations/satellites/mergeSatelliteSet.ts';
 import { fetchSatnogsEnrichmentForNoradIds } from '@integrations/satellites/satnogsClient.ts';
 import EntityListRowDeleteAction from '../../../components/library/EntityListRowDeleteAction.tsx';
+import KepsLastUpdated from '../../../components/library/KepsLastUpdated.tsx';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
 import SatelliteKepsWriteTargetModal from '../../../components/SatelliteKepsWriteTargetModal/SatelliteKepsWriteTargetModal.tsx';
 import {
@@ -37,16 +38,6 @@ import {
   transmitterWriteEligibleCount,
 } from './satelliteKepsListHelpers.ts';
 import staleClasses from './SatelliteKepsListPage.module.css';
-
-const STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
-
-function formatLastUpdated(iso: string | null | undefined): { label: string; stale: boolean } {
-  if (!iso) return { label: 'Never refreshed', stale: true };
-  const at = new Date(iso);
-  if (Number.isNaN(at.getTime())) return { label: 'Never refreshed', stale: true };
-  const stale = Date.now() - at.getTime() > STALE_AFTER_MS;
-  return { label: `Last updated: ${at.toLocaleString()}`, stale };
-}
 
 export default function SatelliteKepsListPage() {
   const { library, loading, projectId, reload } = useLibrary();
@@ -255,10 +246,6 @@ export default function SatelliteKepsListPage() {
     (sum, s) => sum + s.transmitters.filter((t) => isAtD890SatelliteWriteEligible(s, t)).length,
     0,
   );
-  const { label: lastUpdatedLabel, stale } = formatLastUpdated(
-    activeProject?.satelliteLibraryLastUpdated,
-  );
-
   const listActions = (
     <Group gap="xs" wrap="nowrap">
       <Button
@@ -303,9 +290,7 @@ export default function SatelliteKepsListPage() {
             <>
               <span>{countLabel}</span>
               {' · '}
-              <span className={stale ? staleClasses.lastUpdatedStale : staleClasses.lastUpdated}>
-                {lastUpdatedLabel}
-              </span>
+              <KepsLastUpdated iso={activeProject?.satelliteLibraryLastUpdated} />
             </>
           }
           actions={listActions}
