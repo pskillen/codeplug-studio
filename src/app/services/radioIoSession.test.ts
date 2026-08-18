@@ -20,7 +20,9 @@ import type {
 import {
   buildHasRadioCloneHydration,
   descriptorsForBuild,
+  grantRadioSerialPortForEgress,
   openRadioSessionForBuild,
+  openRadioSessionForEgress,
   prepareRadioWriteImage,
   RadioWriteBlockedError,
   uploadPreparedRadioWrite,
@@ -338,6 +340,81 @@ describe('radioIoSession helpers', () => {
     await expect(openRadioSessionForBuild(egress)).rejects.toThrow(/ident timeout/);
     expect(close).toHaveBeenCalledTimes(2);
     expect(openSpy).toHaveBeenCalledTimes(2);
+
+    portSpy.mockRestore();
+    openSpy.mockRestore();
+    listSpy.mockRestore();
+  });
+
+  it('grantRadioSerialPortForEgress calls requestWebSerialPort', async () => {
+    const port = {
+      readable: null,
+      writable: null,
+      open: vi.fn(async () => undefined),
+      close: vi.fn(async () => undefined),
+    };
+    const portSpy = vi.spyOn(radioIo, 'requestWebSerialPort').mockResolvedValue(port);
+    const granted = await grantRadioSerialPortForEgress({ forcePortSelection: true });
+    expect(granted).toEqual({ transport: 'web', port });
+    expect(portSpy).toHaveBeenCalledWith(true);
+    portSpy.mockRestore();
+  });
+
+  it('openRadioSessionForEgress with grantedPort does not call requestWebSerialPort again', async () => {
+    const port = {
+      readable: null,
+      writable: null,
+      open: vi.fn(async () => undefined),
+      close: vi.fn(async () => undefined),
+    };
+    const pipe = {
+      write: vi.fn(),
+      readExact: vi.fn(),
+      flush: vi.fn(),
+      close: vi.fn(async () => undefined),
+    };
+    const portSpy = vi.spyOn(radioIo, 'requestWebSerialPort');
+    const openSpy = vi.spyOn(radioIo, 'openWebSerialPipe').mockResolvedValue(pipe);
+    const connect = vi.fn(async () => undefined);
+    const listSpy = vi.spyOn(radioIo, 'listDescriptorsForProfile').mockReturnValue([
+      {
+        modelIds: ['UV5R-Mini'],
+        label: 'Mini',
+        supportsBle: false,
+        protocolFactory: () => ({
+          connect,
+          disconnect: vi.fn(),
+          download: vi.fn(),
+          upload: vi.fn(),
+          decodeChannels: () => [],
+          encodeChannels: (img: MemoryMap) => img,
+          readFirmware: () => undefined,
+        }),
+        capabilities: {
+          maxChannels: 999,
+          supportsZones: false,
+          supportsScanLists: false,
+          analogOnly: true,
+        },
+        attributionIds: [],
+        compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
+        writeStrategy: 'full-image',
+        baudRate: 115200,
+        hydration: miniHydration,
+      },
+    ]);
+
+    const { egress } = uv5rMiniRadioIo();
+    await openRadioSessionForEgress(egress, {
+      grantedPort: { transport: 'web', port },
+      purpose: 'write',
+    });
+    expect(portSpy).not.toHaveBeenCalled();
+    expect(openSpy).toHaveBeenCalledWith(port, 115200);
+    expect(connect).toHaveBeenCalledWith(
+      pipe,
+      expect.objectContaining({ handshake: 'none' }),
+    );
 
     portSpy.mockRestore();
     openSpy.mockRestore();
