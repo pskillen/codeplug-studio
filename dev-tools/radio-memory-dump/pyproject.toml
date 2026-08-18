@@ -1,0 +1,22 @@
+[project]
+name = "radio-memory-dump"
+version = "0.1.0"
+description = "Read-only serial memory dump CLI for radio protocol investigation."
+requires-python = ">=3.12"
+dependencies = ["pyserial>=3.5"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+radio-memory-dump = "radio_memory_dump.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
