@@ -168,6 +168,23 @@ describe('RadioIoProgressModal', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
+  it('shows assemble progress bar and message during preparing', () => {
+    const { container } = renderModal({
+      opened: true,
+      operation: 'write',
+      phase: 'preparing',
+      progress: {
+        cur: 250,
+        max: 500,
+        msg: 'Loading directory contacts',
+      },
+      onCancel: vi.fn(),
+    });
+
+    expect(screen.getByText('Loading directory contacts')).toBeInTheDocument();
+    expect(container.querySelector('.mantine-Progress-root')).toBeInTheDocument();
+  });
+
   it('shows unverified write done with optional verify actions', () => {
     const onVerify = vi.fn();
     const onCloseWithoutVerify = vi.fn();

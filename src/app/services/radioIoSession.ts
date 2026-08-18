@@ -321,6 +321,7 @@ export async function prepareRadioWriteImage(
     singleBank?: SingleBankRadioWritePrepareOptions;
     persistence?: ProjectPersistence;
     projectId?: string;
+    onProgress?: ProgressFn;
   },
 ): Promise<{
   image?: MemoryMap;
@@ -361,6 +362,7 @@ export async function prepareRadioWriteImage(
             maxRadioIds,
             maxDirectoryContacts,
             warnings: projectionWarnings,
+            onProgress: opts.onProgress,
           })
         : { radioIds: [], digitalContacts: [] };
     projectionContext = {
@@ -409,6 +411,7 @@ export async function prepareRadioWriteImage(
                 remark: row.entity.remarks ?? '',
               } satisfies ProjectedDigitalContactRow;
             },
+            onProgress: opts.onProgress,
           })
         : undefined;
     projectionContext = {

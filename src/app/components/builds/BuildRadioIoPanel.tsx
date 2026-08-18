@@ -306,12 +306,14 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
               dualBank: { mode, options: dualBankOptions },
               persistence,
               projectId: activeProjectId,
+              onProgress,
             }
           : supportsSingleBankWrite
             ? {
                 singleBank: { mode, projectionMode: singleBankProjection },
                 persistence,
                 projectId: activeProjectId,
+                onProgress,
               }
             : undefined,
       );

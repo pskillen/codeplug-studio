@@ -106,7 +106,7 @@ describe('collectDualBankDirectorySlice', () => {
 
   it('returns empty slice when directory toggle is off', async () => {
     const store = new InMemoryProjectPersistence();
-    const iterateSpy = vi.spyOn(store, 'iterateDigitalIdDirectory');
+    const pageSpy = vi.spyOn(store, 'queryDigitalIdDirectoryPage');
     const slice = await collectDualBankDirectorySlice({
       store,
       projectId: 'p1',
@@ -116,7 +116,39 @@ describe('collectDualBankDirectorySlice', () => {
       warnings: [],
     });
     expect(slice).toEqual({ radioIds: [], digitalContacts: [] });
-    expect(iterateSpy).not.toHaveBeenCalled();
+    expect(pageSpy).not.toHaveBeenCalled();
+  });
+
+  it('warns when directory total exceeds OpenGD77 cap without scanning past the cap', async () => {
+    const store = new InMemoryProjectPersistence();
+    await store.putDigitalIdDirectoryEntriesBatch(
+      Array.from({ length: 120 }, (_, i) => ({
+        projectId: 'p1',
+        digitalId: 30_000 + i,
+        mode: 'dmr' as const,
+        name: `Row ${i}`,
+        callsign: `M0X${i}`,
+        city: '',
+        state: '',
+        country: '',
+      })),
+    );
+    const pageSpy = vi.spyOn(store, 'queryDigitalIdDirectoryPage');
+    const warnings: ExportWarning[] = [];
+    const slice = await collectDualBankDirectorySlice({
+      store,
+      projectId: 'p1',
+      library: emptyLibrary(),
+      egressProfileId: 'radio-io-opengd77-1701',
+      options: { includeLibraryContacts: false, includeDigitalIdDirectory: true },
+      maxDirectoryContacts: 50,
+      warnings,
+    });
+    expect(slice.digitalContacts).toHaveLength(50);
+    expect(warnings.some((w) => formatExportWarning(w).includes('only 50 write from directory'))).toBe(
+      true,
+    );
+    expect(pageSpy.mock.calls.length).toBeLessThan(3);
   });
 
   it('keeps OpenGD77 directory rows whose DMR ID already exists in the library', async () => {

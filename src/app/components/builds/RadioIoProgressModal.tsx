@@ -234,6 +234,8 @@ export default function RadioIoProgressModal({
   const steps: ProgressModalStep[] = stepDefs.map((step) => ({
     id: step.id,
     label: step.label,
+    detail:
+      step.id === 'preparing' && phase === 'preparing' && progress?.msg ? progress.msg : undefined,
     status:
       complete && step.id === 'done' && writeVerifyStatus === 'failed'
         ? 'error'
@@ -306,7 +308,14 @@ export default function RadioIoProgressModal({
       title={title}
       phase={complete ? 'finished' : 'running'}
       steps={steps}
-      progress={!complete && (phase === 'transfer' || verifying) ? percent : undefined}
+      progress={
+        !complete &&
+        (phase === 'transfer' ||
+          verifying ||
+          (phase === 'preparing' && progress != null))
+          ? percent
+          : undefined
+      }
       note={runningNote}
       summary={
         alert ? (
