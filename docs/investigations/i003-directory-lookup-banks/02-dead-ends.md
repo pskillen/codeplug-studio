@@ -21,3 +21,7 @@ When in doubt, leave it in `05-open-items.md`.
 | Dual-bank streaming on DM-32 should **stop** skipping overlapping `digitalId`s once directory leaves `0x67` (I003-C4)                     | P2; D8; C5                                                 | Shared `0x0F` is a single bank — skip on Both. C4 applied to the wrong-bank dump.                                                                              |
 | AT-D890 has a hidden User Database besides `DigitalContact*` that directory should use                                                    | `S/2026-08-15-d890`; A1–A3                                 | `DigitalContact*` **is** the 500k metadata bank. RadioId\* is operator TX identity (correctly not used for directory). Talk groups are a different list (10k). |
 | Dual-bank radios should skip directory rows that match a library `digitalId`                                                              | P2                                                         | Operator: keep the ID in **both** stores when banks are separate. Skip is only for a **shared** bank.                                                          |
+
+### Deliberately NOT in this file
+
+- **“MD-9600 silent-repeater LCD miss means User Database encode is wrong.”** Not tested. `O/2026-08-18-lcd-silent` does not include a confirmed UDB `'X'` on that radio. Stay in H8/H9.
