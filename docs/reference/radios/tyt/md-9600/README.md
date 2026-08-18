@@ -51,3 +51,4 @@ Shares OpenGD77 CPS and codeplug format with Baofeng DM-1701 / Retevis RT-84 (sa
 
 - Sibling OpenGD77: [Baofeng DM-1701](../../baofeng/dm-1701/README.md)
 - Epic [#594](https://github.com/pskillen/codeplug-studio/issues/594) · extract [#621](https://github.com/pskillen/codeplug-studio/issues/621)
+- Hung Backup inspect looked like a map bug — it was not: [i006](../../../investigations/i006-md9600-serial-read-ident/README.md)

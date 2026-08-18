@@ -114,6 +114,12 @@ Typical flash path: set sector → write 32-byte buffers → finish sector. EEPR
 5. Read/write 32-byte blocks against registered spans ([memory-layout.md](memory-layout.md)).
 6. Save / reboot via control commands as required; close CPS screen (`05h`).
 
+## Hung or unresponsive radio
+
+A completed `download()` is evidence of 32-byte replies, not of FLASH content. On one hung TYT MD-9600 session ([i006](../../../investigations/i006-md9600-serial-read-ident/README.md)), every FLASH (and EEPROM) `'R'` of length 32 returned the **first 32 bytes of FirmwareInfo**, and the session still finished — `expectedLength` 32 would have thrown on a 46-byte ident frame. Inspect then decoded firmware revision / build-date ASCII as channel names.
+
+That dump shape is an **edge case**, not a hang detector. The next unresponsive radio may stall, NAK, or return different junk. Do not retarget [memory-layout.md](memory-layout.md) from a dump taken while the radio is hung. Do not Restore a zip that is that ident prefix tiled across the spans.
+
 ## Write verify
 
 Upload stages each **dirty 4096-byte FLASH sector** from `collectDirtySectors` (not untouched image gaps) plus a pre-upload snapshot of **kept** regions from `writeRole.ts`. Write encode overlays modelled banks onto the **in-session pre-write FLASH prior** (same download as the dirty-sector base) — not a persisted clone bag and not a virgin `0xff` image. **Zero dirty sectors** means the modelled overlay already matched live FLASH: Studio still sends `SAVE_REBOOT`, but the DM-1701 does **not** drop to All Channels (that kick happens when FLASH is actually programmed). Digital contact names on Write use `digitalContactExportNameMode` (same map as CPS / Contacts wire preview). After codeplug dirty sectors, **RadioID directory** Write starts a qdmr-style FLASH write_start (red LED + save-settings-no-reboot) then programs occupied User Database sectors from the encoded image only — **no** read-modify-write of `0x50000`. Mixing `'R'` then `'X'` after codeplug sectors is what produced `OpenGD77 write failed (radio returned '-')` on hardware. User Database is not part of `OPENUV380_FLASH_SPANS` and not a verify-image region. **Verify write** runs after `SAVE_REBOOT` — operator waits for restart, reconnects, full `download()`, and compares sector payloads plus kept spans. Feature: [write-verify.md](../../../features/radio-read-write/write-verify.md).
@@ -127,3 +133,4 @@ Exact framing byte layouts are in qdmr’s `doc/code/opengd77_protocol_*.txt` ve
 - [fixtures.md](fixtures.md) — capturing dumps for tests
 - [memory-layout.md](memory-layout.md)
 - Planned kit: transport [#615](https://github.com/pskillen/codeplug-studio/issues/615), protocol kit [#616](https://github.com/pskillen/codeplug-studio/issues/616)
+- Hung-session `'R'` tiling FirmwareInfo prefix: [i006](../../../investigations/i006-md9600-serial-read-ident/README.md)

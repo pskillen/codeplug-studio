@@ -29,6 +29,6 @@ Progress copy is **Restore**, not “Writing codeplug.” Write `upload` is unch
 
 ## Related
 
-- [protocol.md](protocol.md) — `SAVE_REBOOT` control action
+- [protocol.md](protocol.md) — `SAVE_REBOOT` control action; hung-session `'R'` can still complete ([i006](../../../investigations/i006-md9600-serial-read-ident/README.md))
 - [memory-layout.md](memory-layout.md) — registered FLASH spans
 - Radio homes: [DM-1701](../baofeng/dm-1701/README.md), [MD-9600](../tyt/md-9600/README.md)
