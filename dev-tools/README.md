@@ -19,7 +19,9 @@ non-JS toolchain) is the better fit than the app's own stack.
   a known frame shape.
 - [`radio-memory-dump/`](radio-memory-dump/README.md) — read-only serial
   memory dump CLI for protocol investigation: named region reads, bin +
-  manifest output, hex stdout. OpenGD77 first plugin ([#1244](https://github.com/pskillen/codeplug-studio/issues/1244)).
+  manifest output, hex stdout. OpenGD77 first plugin
+  ([i006](../docs/investigations/i006-md9600-serial-read-ident/README.md),
+  [#1244](https://github.com/pskillen/codeplug-studio/issues/1244)).
 
 ## Adding a new tool
 

@@ -2,17 +2,18 @@
 
 Read-only serial memory dump CLI for radio protocol investigation. Captures
 named memory regions over USB serial, writes `.bin` files plus `manifest.json`,
-and prints a 16-byte-row hex dump to stdout so investigation notes can paste
-hex without opening binaries.
-
-Built for the MD-9600 ident/read investigation ([#1244](https://github.com/pskillen/codeplug-studio/issues/1244)):
-compare FLASH vs EEPROM at the same offset (e.g. channel-bank base `0x3780`) to
-see whether ident/read is hitting the wrong mem code.
+and prints a 16-byte-row hex dump to stdout so notes can paste hex without
+opening binaries.
 
 Framing matches Studio `opengd77Serial.ts` and
 [`docs/reference/radios/opengd77/protocol.md`](../../docs/reference/radios/opengd77/protocol.md)
 (facts only; no GPL qdmr copy). **Read-only v1** — never sends OpenGD77 `'W'`
 or `'X'` write frames.
+
+Born from [i006](../../docs/investigations/i006-md9600-serial-read-ident/README.md)
+([#1244](https://github.com/pskillen/codeplug-studio/issues/1244)): compare FLASH
+vs EEPROM at the same offset, or skip ident, without using Studio Backup.
+The tool is generic; OpenGD77 is the first protocol plugin.
 
 Protocol plugins live under `protocols/` so a second radio family (e.g.
 Anytone) can be added without rewriting the CLI.
@@ -46,15 +47,18 @@ python -m radio_memory_dump --list-ports
 **Close Codeplug Studio Web Serial first** — the OS grants exclusive access to
 one process per serial device.
 
-E1 MD-9600 probe (FLASH vs EEPROM at channel-bank offset):
+Example — FirmwareInfo, then 32 bytes of FLASH and EEPROM at `channelBank0`:
 
 ```bash
 python -m radio_memory_dump --protocol opengd77 --port <port> \
   --ident --show-cps \
   --region flash:0x3780:32 \
   --region eeprom:0x3780:32 \
-  --out /tmp/e1-md9600-probe
+  --out /tmp/opengd77-probe
 ```
+
+Omit `--ident` to skip ping + FirmwareInfo and only SHOW_CPS then region
+reads.
 
 Options:
 
