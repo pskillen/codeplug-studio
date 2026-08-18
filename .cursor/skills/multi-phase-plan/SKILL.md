@@ -76,6 +76,8 @@ tmp/features/<name>/
 
 If a file at the "current" state has open questions or a "not yet decided" marker in it, treat that as still mid-review — don't advance past it silently.
 
+**Which Claude Code agent:** `designer` owns the first two rows (brainstorm → `hl-delivery-plan.md` and in-place design review). `planner` owns ticket/phase breakdown, filing issues, and `plans/`. `orchestrator` / `implementor` own execution. Do not have the planner draft the design doc, and do not have the designer write tickets.
+
 ---
 
 ## The steps
@@ -144,7 +146,9 @@ Decided in `phase-plan.md` (step 4) — affects what gets generated in step 7 an
 | Merges as PRs land | Yes, likely, as the human drives | Not necessarily — PRs may stay stacked until the human reviews and merges the whole stack |
 | Use when | Some phases are pure boilerplate, some need a specialist/expensive model, or the human wants to inspect each PR before the next starts | The phases are mechanical enough to trust end-to-end, and the human wants the whole series delivered with minimal per-phase intervention |
 
-**Claude Code note for the orchestrator model:** the `Agent` tool's `isolation: "worktree"` option is the natural mechanism for stacked-branch phases — it gives each sub-agent an isolated git worktree so phase *N* can be checked out from phase *N-1*'s branch without disturbing the orchestrator's own working tree. Each `Agent` invocation starts cold (no memory of prior sub-agents), so the orchestrator must explicitly pass forward: which branch to start from, what the prior phase actually did (including any deviations from its plan file), and anything the next phase needs that the plan file alone doesn't capture. The orchestrator model has no track record in this repo yet — treat its instructions as a reasoned first attempt, not a battle-tested pattern, and note in `zz-final-handover.md` anything that didn't work as expected so the next attempt improves on it.
+**Claude Code agents:** this repo ships four project subagents in `.claude/agents/` — `designer` (steps 1–3: brainstorm + `hl-delivery-plan.md`), `planner` (steps 4–7: tickets, phases, `plans/`), `orchestrator` (spawn `implementor` per phase), `implementor` (execute one phase file). Launch with `claude --agent <name>`, or ask a normal session to use that agent. See [CLAUDE.md — Multi-phase agents](../../../CLAUDE.md#multi-phase-agents).
+
+**Claude Code note for the orchestrator model:** spawn the `implementor` subagent with worktree isolation so phase *N* gets its own working tree. Worktrees default to `origin/main`; the orchestrator must tell the implementor to `git checkout -B` onto the prior phase branch. Each spawn starts cold — pass forward the start-from ref, PR base branch, what the prior phase actually did (including deviations), and anything the next phase needs that the plan file alone doesn't capture. `.worktreeinclude` copies `tmp/features/` into worktrees so gitignored phase files are readable. This model has no track record in this repo yet — treat it as a reasoned first attempt, and note anything that didn't work in `zz-final-handover.md`.
 
 Per-phase handover (human-led) and whole-series final handover: [references/handover.md](references/handover.md).
 
