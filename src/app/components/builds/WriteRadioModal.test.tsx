@@ -89,4 +89,19 @@ describe('WriteRadioModal (#1121)', () => {
       '/builds/build-1/satellite-keps',
     );
   });
+
+  it('shows keps last-updated and a library refresh link', () => {
+    renderModal({ kepsLastUpdatedIso: '2026-08-10T12:00:00.000Z' });
+    expect(screen.getByText(/Last updated:/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Update in Library' })).toHaveAttribute(
+      'href',
+      '/library/satellite-keps',
+    );
+  });
+
+  it('shows never refreshed when keps last-updated is unset', () => {
+    renderModal({ kepsLastUpdatedIso: null });
+    expect(screen.getByText(/Never refreshed/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Update in Library' })).toBeInTheDocument();
+  });
 });

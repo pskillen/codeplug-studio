@@ -5,6 +5,7 @@
 import { Link } from 'react-router-dom';
 import { Anchor, Group, Stack, Text } from '@mantine/core';
 import type { DigitalContactsWriteSource } from '@core/domain/digitalIdDirectoryProjection.ts';
+import KepsLastUpdated from '../library/KepsLastUpdated.tsx';
 import { Button, Checkbox, FormField, ModalShell, SegmentedControl } from '../v2/index.ts';
 
 export interface WriteRadioModalProps {
@@ -20,6 +21,8 @@ export interface WriteRadioModalProps {
   /** DM-32: library and RadioID share one address book (RadioID/Both replace it). */
   sharedAddressBookNote?: boolean;
   supportsKeps: boolean;
+  /** Last CelesTrak/AMSAT refresh — `ProjectMeta.satelliteLibraryLastUpdated`. */
+  kepsLastUpdatedIso?: string | null;
   contactSource: DigitalContactsWriteSource;
   onContactSourceChange: (source: DigitalContactsWriteSource) => void;
   kepsSelected: boolean;
@@ -47,6 +50,7 @@ export default function WriteRadioModal({
   sharedContactBankNote = false,
   sharedAddressBookNote = false,
   supportsKeps,
+  kepsLastUpdatedIso,
   contactSource,
   onContactSourceChange,
   kepsSelected,
@@ -144,6 +148,9 @@ export default function WriteRadioModal({
                     Preview on the Satellite keps tab
                   </Anchor>
                   .
+                </Text>
+                <Text size="xs" c="dimmed" component="div">
+                  <KepsLastUpdated iso={kepsLastUpdatedIso} libraryHref="/library/satellite-keps" />
                 </Text>
               </Stack>
               <Button

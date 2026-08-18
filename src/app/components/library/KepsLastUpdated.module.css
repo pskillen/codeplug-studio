@@ -1,0 +1,13 @@
+.lastUpdated {
+  font-size: 0.85em;
+  color: var(--dsv2-text-secondary);
+}
+
+.lastUpdatedStale {
+  color: var(--dsv2-warning);
+  font-weight: 600;
+}
+
+.libraryLink {
+  margin-left: 0.35em;
+}

@@ -54,6 +54,7 @@ import {
 import RadioIoProgressModal, {
   type RadioIoProgressPhase,
 } from '../../components/builds/RadioIoProgressModal.tsx';
+import KepsLastUpdated from '../../components/library/KepsLastUpdated.tsx';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 import classes from './BuildExportPage.module.css';
 
@@ -121,7 +122,7 @@ export default function BuildSatelliteKepsPage() {
   const buildRef = useRef(contextBuild);
   const [savedBuild, setSavedBuild] = useState<RadioBuild | null>(null);
   const build = resolveOptimisticBuild(contextBuild, savedBuild);
-  const { activeProjectId } = useProjects();
+  const { activeProjectId, activeProject } = useProjects();
   const egress = resolveSatelliteKepsEgress(egressPaths, activeEgress);
 
   useEffect(() => {
@@ -572,6 +573,11 @@ export default function BuildSatelliteKepsPage() {
         <p className={classes.subtitle}>
           Preview and write the library&apos;s enabled satellites to this build&apos;s radio.
           Separate from the codeplug Write on Export — no prior Read/hydration required.
+          {' · '}
+          <KepsLastUpdated
+            iso={activeProject?.satelliteLibraryLastUpdated}
+            libraryHref="/library/satellite-keps"
+          />
         </p>
       </div>
       <Stack gap="md">
