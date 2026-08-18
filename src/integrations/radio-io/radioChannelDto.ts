@@ -65,4 +65,11 @@ export interface RadioChannelDto {
   rxOnly?: boolean;
   /** DM-32UV: 0-based operator radio-ID bank index; omit or 0xFF on wire when unset. */
   dmrRadioIdIndex?: number;
+  /**
+   * OpenGD77 channel GPS — split packed-angle bytes in the 0x38 record.
+   * `null` when unset / all-zero on wire without Use Location flag.
+   */
+  location?: { lat: number; lon: number } | null;
+  /** OpenGD77 LibreDMR_flag1 @ `0x26` bit 3 (`0x08`) — distance-from-repeater / roaming. */
+  useLocation?: boolean;
 }
