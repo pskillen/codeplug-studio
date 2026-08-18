@@ -42,6 +42,7 @@ import {
   descriptorsForEgress,
   getRadioCloneHydration,
   getRadioSerialUnsupportedMessage,
+  grantRadioSerialPortForEgress,
   isRadioSerialSupported,
   openRadioSessionForEgress,
   prepareRadioWriteImage,
@@ -49,6 +50,7 @@ import {
   readAtD890ConnectedRadioIdentity,
   uploadPreparedRadioWrite,
   verifyRadioWrite,
+  type GrantedRadioSerialPort,
 } from '../../services/radioIoSession.ts';
 import {
   clearWriteVerifyPending,
@@ -214,10 +216,14 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     if (session) await closeRadioSession(session);
   }
 
-  async function ensureSession(forWrite = false): Promise<RadioSession> {
+  async function ensureSession(
+    forWrite = false,
+    grantedPort?: GrantedRadioSerialPort,
+  ): Promise<RadioSession> {
     if (sessionRef.current) return sessionRef.current;
     const { session } = await openRadioSessionForEgress(egress, {
-      forcePortSelection: true,
+      forcePortSelection: !grantedPort,
+      grantedPort,
       purpose: forWrite ? 'write' : 'read',
     });
     sessionRef.current = session;
@@ -282,6 +288,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       if (!activeProjectId) {
         throw new Error('No active project.');
       }
+      let grantedPort: GrantedRadioSerialPort | undefined;
+      if (!sessionRef.current) {
+        setPhase('connecting');
+        grantedPort = await grantRadioSerialPortForEgress({ forcePortSelection: true });
+      }
       const library = await loadLibrarySlice(persistence, activeProjectId);
       setPhase('preparing');
       const dualBankOptions = dualBankOptionsFromWriteSource(contactSource);
@@ -304,8 +315,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
               }
             : undefined,
       );
-      setPhase('connecting');
-      const session = await ensureSession(true);
+      const session = await ensureSession(true, grantedPort);
       setPhase('transfer');
       const uploadResult = await uploadPreparedRadioWrite(session, egress, image, {
         onProgress,
