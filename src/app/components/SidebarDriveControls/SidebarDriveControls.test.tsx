@@ -49,6 +49,7 @@ vi.mock('../../hooks/useDriveSaveFlow.ts', () => ({
     openSaveAsNew: vi.fn(),
     saveToNewTarget: vi.fn(),
     closeConflict: vi.fn(),
+    clearSaveError: vi.fn(),
   }),
 }));
 
@@ -78,6 +79,7 @@ vi.mock('../../hooks/useYamlImportResolver.ts', () => ({
     confirmRefresh: vi.fn(),
     confirmImportAsNew: vi.fn(),
     checkNow: mockCheckNow,
+    clearRefreshError: vi.fn(),
     projectName: 'Demo',
     setOverwriteOpen: vi.fn(),
   }),

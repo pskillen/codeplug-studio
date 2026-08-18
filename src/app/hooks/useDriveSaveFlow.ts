@@ -223,6 +223,10 @@ export function useDriveSaveFlow(options: UseDriveSaveFlowOptions = {}) {
     : '';
   const interchangeFolderId = activeProject?.interchange?.googleDrive?.folderId;
 
+  const clearSaveError = useCallback(() => {
+    setError(null);
+  }, []);
+
   return {
     saving,
     error,
@@ -240,5 +244,6 @@ export function useDriveSaveFlow(options: UseDriveSaveFlowOptions = {}) {
     openSaveAsNew,
     saveToNewTarget,
     closeConflict,
+    clearSaveError,
   };
 }

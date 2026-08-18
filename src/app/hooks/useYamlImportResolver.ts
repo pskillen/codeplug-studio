@@ -109,35 +109,39 @@ export function useYamlImportResolver(options: UseYamlImportResolverOptions = {}
 
   async function handleYamlContent(yamlText: string, source: YamlImportSource) {
     setError(null);
-    const preview = parseYamlImportPreview(yamlText);
-    const activeId = options.activeProjectId ?? null;
+    try {
+      const preview = parseYamlImportPreview(yamlText);
+      const activeId = options.activeProjectId ?? null;
 
-    if (activeId) {
-      const mismatch = preview.projectId !== activeId;
-      const nextDiff = await buildImportOverwriteDiff(activeId, preview.remoteSummary);
-      pendingRef.current = { preview, source, targetProjectId: activeId };
-      setIdMismatch(mismatch);
-      setLocalProjectId(activeId);
-      setRemoteProjectId(preview.projectId);
-      setOverwriteProjectName(preview.projectName);
-      setOverwriteTitle('Replace active project?');
-      setDiff(nextDiff);
-      setOverwriteOpen(true);
-      return;
+      if (activeId) {
+        const mismatch = preview.projectId !== activeId;
+        const nextDiff = await buildImportOverwriteDiff(activeId, preview.remoteSummary);
+        pendingRef.current = { preview, source, targetProjectId: activeId };
+        setIdMismatch(mismatch);
+        setLocalProjectId(activeId);
+        setRemoteProjectId(preview.projectId);
+        setOverwriteProjectName(preview.projectName);
+        setOverwriteTitle('Replace active project?');
+        setDiff(nextDiff);
+        setOverwriteOpen(true);
+        return;
+      }
+
+      const exists = projects.some((project) => project.projectId === preview.projectId);
+      if (exists) {
+        const nextDiff = await buildImportOverwriteDiff(preview.projectId, preview.remoteSummary);
+        pendingRef.current = { preview, source, targetProjectId: preview.projectId };
+        setOverwriteProjectName(preview.projectName);
+        setOverwriteTitle('Overwrite existing project?');
+        setDiff(nextDiff);
+        setOverwriteOpen(true);
+        return;
+      }
+
+      await runImport(yamlText, { kind: 'seedPreservingId' }, source);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     }
-
-    const exists = projects.some((project) => project.projectId === preview.projectId);
-    if (exists) {
-      const nextDiff = await buildImportOverwriteDiff(preview.projectId, preview.remoteSummary);
-      pendingRef.current = { preview, source, targetProjectId: preview.projectId };
-      setOverwriteProjectName(preview.projectName);
-      setOverwriteTitle('Overwrite existing project?');
-      setDiff(nextDiff);
-      setOverwriteOpen(true);
-      return;
-    }
-
-    await runImport(yamlText, { kind: 'seedPreservingId' }, source);
   }
 
   async function confirmOverwrite() {
@@ -384,6 +388,10 @@ export function useRefreshFromDrivePrompt() {
     setError(null);
   }
 
+  const clearRefreshError = useCallback(() => {
+    setError(null);
+  }, []);
+
   return {
     bannerOpen,
     diff,
@@ -401,6 +409,7 @@ export function useRefreshFromDrivePrompt() {
     confirmRefresh,
     confirmImportAsNew,
     checkNow,
+    clearRefreshError,
     projectName: activeProject?.name ?? '',
   };
 }

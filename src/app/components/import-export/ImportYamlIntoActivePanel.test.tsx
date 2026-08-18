@@ -109,6 +109,15 @@ describe('ImportYamlIntoActivePanel', () => {
     expect(confirmOverwrite).toHaveBeenCalledOnce();
   });
 
+  it('shows import error banner when preview parse fails', () => {
+    resolverState = mockResolver({
+      overwriteOpen: false,
+      error: 'Invalid channel override key: ch-1:bogus',
+    });
+    renderPanel();
+    expect(screen.getByText(/Import failed: Invalid channel override key/)).toBeInTheDocument();
+  });
+
   it('shows mismatch override actions when project ids differ', () => {
     resolverState = mockResolver({
       idMismatch: true,
