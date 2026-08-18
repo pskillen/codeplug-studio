@@ -1,0 +1,3 @@
+# Planning artifacts for multi-phase implementor worktrees.
+# tmp/ is gitignored; without this, isolated agents cannot read phase files.
+tmp/features/
