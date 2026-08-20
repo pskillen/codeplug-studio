@@ -45,6 +45,15 @@
     width: calc(100vw - 16px);
     max-width: calc(100vw - 16px);
   }
+
+  /* 44px+ tap targets for the trigger and every button slotted into the
+     panel (tab strip, tab-panel chips, footer chips, Done) — type selector
+     so it reaches FacetChip/SplitFilter/SegmentedControl/Button regardless
+     of their own CSS-module class names. */
+  .trigger,
+  .panel button {
+    min-height: 44px;
+  }
 }
 
 .panel {
