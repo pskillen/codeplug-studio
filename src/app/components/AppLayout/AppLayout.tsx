@@ -29,7 +29,7 @@ import { useProjectChipStatus } from '../../hooks/useProjectChipStatus.ts';
 import { useProjectPortableDirty } from '../../hooks/useProjectPortableDirty.ts';
 import { usePageAnalytics } from '../../hooks/usePageAnalytics.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
-import { handleExternalLinkClick } from '../../lib/openExternalUrl.ts';
+import { handleExternalLinkClick, openExternalUrl } from '../../lib/openExternalUrl.ts';
 import {
   activeContextualStripLabel,
   resolveContextualStripItems,
@@ -122,7 +122,12 @@ function AppLayoutShell() {
 
   function goToStrip(label: string) {
     const item = stripItems?.find((s) => s.label === label);
-    if (item) navigate(item.to);
+    if (!item) return;
+    if (item.external) {
+      void openExternalUrl(item.to);
+      return;
+    }
+    navigate(item.to);
   }
 
   const projectName = hasActiveProject

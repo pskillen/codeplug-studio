@@ -6,14 +6,16 @@ Global lookup helpers — no active project required (except channel lookup on t
 
 ## Routes
 
-| Path                        | Tool                                | Docs                                           |
-| --------------------------- | ----------------------------------- | ---------------------------------------------- |
-| `/reference`                | Hub — choose from Tools strip       | —                                              |
-| `/reference/maidenhead`     | Maidenhead locator ↔ coordinates    | [maidenhead.md](../maidenhead.md)              |
-| `/reference/bands`          | UK band allocation table with pills | [bands.md](../../reference/bands.md)           |
-| `/reference/rf-propagation` | Propagation Visualiser              | [hf-propagation/](../hf-propagation/README.md) |
+| Path                        | Tool                                                                     | Docs                                 |
+| --------------------------- | ------------------------------------------------------------------------ | ------------------------------------ |
+| `/reference`                | Hub — choose from Tools strip                                            | —                                    |
+| `/reference/maidenhead`     | Maidenhead locator ↔ coordinates                                         | [maidenhead.md](../maidenhead.md)    |
+| `/reference/bands`          | UK band allocation table with pills                                      | [bands.md](../../reference/bands.md) |
+| `/reference/rf-propagation` | _(redirect)_ → [propagation.mm9pdy.net](https://propagation.mm9pdy.net/) | —                                    |
 
 Reference routes are **not** behind `RequireActiveProject`. They sit under the **Tools** primary tab ([#917](https://github.com/pskillen/codeplug-studio/issues/917)). mk2 U4/U5 layouts shipped in r2 [#945](https://github.com/pskillen/codeplug-studio/issues/945).
+
+**Propagation Visualiser** moved off-Studio to [propagation.mm9pdy.net](https://propagation.mm9pdy.net/) ([#1259](https://github.com/pskillen/codeplug-studio/issues/1259), closing epic [#1162](https://github.com/pskillen/codeplug-studio/issues/1162)). The Tools strip (`contextualStripItems.ts`) links there directly on every build env; `/reference/rf-propagation` is kept only as a client-side redirect for old bookmarks (`RfPropagationRedirectPage.tsx`).
 
 ## Code anchors
 

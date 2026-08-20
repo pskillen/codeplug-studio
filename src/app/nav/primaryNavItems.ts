@@ -27,9 +27,9 @@ export interface PrimaryNavItem {
 }
 
 /**
- * Top-level chrome tabs — design-system order (Summary → Library → Tools →
- * Export for radio → Help). Routes stay at existing paths (`/reference` for
- * Tools) so deep links and RequireActiveProject guards do not change.
+ * Top-level chrome tabs — Summary → Library → Export for radio → Tools →
+ * Help. Routes stay at existing paths (`/reference` for Tools) so deep links
+ * and RequireActiveProject guards do not change.
  *
  * Tracking Dashboard (`/tracking`) is reachable from the Tools contextual
  * strip (`toolsStripItems` in `contextualStripItems.ts`), not as a top-level
@@ -44,8 +44,8 @@ export const primaryNavItems: PrimaryNavItem[] = [
     countKey: 'channels',
     requiresProject: true,
   },
-  { to: '/reference', label: 'Tools', icon: IconTool },
   { to: '/builds', label: 'Export for radio', icon: IconHammer, requiresProject: true },
+  { to: '/reference', label: 'Tools', icon: IconTool },
   { to: '/help', label: 'Help', icon: IconHelp },
 ];
 

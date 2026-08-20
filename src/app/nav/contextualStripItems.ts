@@ -3,14 +3,14 @@
  * Labels match the design-system reference kit (`libStrip` / Tools / Help).
  */
 
-import { isProdBuildEnv } from '@app/services/radioWriteEnvGate.ts';
-
 export interface ContextualStripItem {
   label: string;
   to: string;
+  /** When true, `to` is an off-Studio URL — open in a new tab instead of routing. */
+  external?: boolean;
 }
 
-const PROPAGATION_VISUALISER_TO = '/reference/rf-propagation';
+const PROPAGATION_VISUALISER_URL = 'https://propagation.mm9pdy.net/';
 
 /** Library entity types — design-system `libStrip` wording. */
 export const libraryStripItems: readonly ContextualStripItem[] = [
@@ -24,21 +24,17 @@ export const libraryStripItems: readonly ContextualStripItem[] = [
   { label: 'Satellite Keps', to: '/library/satellite-keps' },
 ];
 
-/** Full Tools strip, including items hidden on prod. */
+/**
+ * Tools strip. **Propagation Visualiser** moved off-Studio to
+ * propagation.mm9pdy.net — shown on every build env (including prod) as an
+ * external link, not gated by `isProdBuildEnv`.
+ */
 export const toolsStripItems: readonly ContextualStripItem[] = [
   { label: 'Maidenhead locator', to: '/reference/maidenhead' },
   { label: 'Band plan', to: '/reference/bands' },
   { label: 'Tracking Dashboard', to: '/tracking' },
-  { label: 'Propagation Visualiser', to: PROPAGATION_VISUALISER_TO },
+  { label: 'Propagation Visualiser', to: PROPAGATION_VISUALISER_URL, external: true },
 ];
-
-/** Tools strip for chrome. Hides Propagation Visualiser when `buildEnv` is prod. */
-export function getToolsStripItems(
-  buildEnv: string = __BUILD_ENV__,
-): readonly ContextualStripItem[] {
-  if (!isProdBuildEnv(buildEnv)) return toolsStripItems;
-  return toolsStripItems.filter((item) => item.to !== PROPAGATION_VISUALISER_TO);
-}
 
 export const helpStripItems: readonly ContextualStripItem[] = [
   { label: 'Overview', to: '/help' },
@@ -62,11 +58,10 @@ export const debugStripItems: readonly ContextualStripItem[] = [
  */
 export function resolveContextualStripItems(
   pathname: string,
-  buildEnv: string = __BUILD_ENV__,
 ): readonly ContextualStripItem[] | null {
   if (pathname.startsWith('/library')) return libraryStripItems;
   if (pathname.startsWith('/reference') || pathname.startsWith('/tracking')) {
-    return getToolsStripItems(buildEnv);
+    return toolsStripItems;
   }
   if (pathname.startsWith('/help') || pathname.startsWith('/attributions')) {
     return helpStripItems;
@@ -76,7 +71,7 @@ export function resolveContextualStripItems(
   return null;
 }
 
-/** Active strip label for pathname, or null when none match. */
+/** Active strip label for pathname, or null when none match. External items never match. */
 export function activeContextualStripLabel(
   pathname: string,
   items: readonly ContextualStripItem[],
@@ -84,6 +79,7 @@ export function activeContextualStripLabel(
   // Longest path prefix wins (e.g. /help vs /help never nested; attributions separate).
   let best: ContextualStripItem | null = null;
   for (const item of items) {
+    if (item.external) continue;
     if (pathname === item.to || pathname.startsWith(`${item.to}/`)) {
       if (!best || item.to.length > best.to.length) best = item;
     }
