@@ -143,7 +143,7 @@ describe('diffChannelFromListing', () => {
           dmrId: null,
           contactRef: null,
           rxGroupListId: null,
-          sendTalkerAlias: false,
+          sendTalkerAlias: 'default',
         },
       ],
     });
