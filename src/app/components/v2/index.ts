@@ -30,6 +30,8 @@ export { default as ToggleSwitch } from './ToggleSwitch.tsx';
 export type { ToggleSwitchProps } from './ToggleSwitch.tsx';
 export { default as SegmentedControl } from './SegmentedControl.tsx';
 export type { SegmentedControlOption, SegmentedControlProps } from './SegmentedControl.tsx';
+export { default as FilterPopover } from './FilterPopover.tsx';
+export type { FilterPopoverProps, FilterPopoverTab } from './FilterPopover.tsx';
 export { default as FormField } from './FormField.tsx';
 export type { FormFieldProps } from './FormField.tsx';
 export { default as MapPanel } from './MapPanel.tsx';
