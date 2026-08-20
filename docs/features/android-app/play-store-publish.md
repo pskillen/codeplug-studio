@@ -20,7 +20,7 @@ No workflow accepts a track input. The GitHub event implies the track; the recon
 | Full release `1.2.3`     | [`prod.yaml`](../../../.github/workflows/prod.yaml)                                     | `prod`         | ensure on **Production**                                                                                                                             |
 | Manual dispatch          | [`android-play-reconcile.yaml`](../../../.github/workflows/android-play-reconcile.yaml) | n/a — no build | re-assert a version Play already holds on **its mapped track** (`-rc` → `beta`, else `production`)                                                   |
 
-RC binaries are staging-flavoured (staging API origin, pre-prod GA4, Propagation Visualiser visible). Putting an RC on Production is a **hard refusal** with no override.
+RC binaries are staging-flavoured (staging API origin, pre-prod GA4). Putting an RC on Production is a **hard refusal** with no override.
 
 Each automatic path publishes `status: completed` at 100% (no staged rollout). Play may still hold a rollout while a version is under review — that is Play Console behaviour, not a pipeline bug.
 
