@@ -1,12 +1,16 @@
 import { Alert, Loader, TextInput } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
-import { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { Channel } from '@core/models/library.ts';
+import { Fragment, useCallback, useMemo, useState, type ReactNode } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import type { Channel, ChannelTone } from '@core/models/library.ts';
 import { zonesWithDirectChannelMember } from '@core/domain/zoneMembership.ts';
 import { applyFilters, channelHasGeolocation } from '@core/domain/mapProjection.ts';
-import { resolveChannelPrimaryMode } from '@core/domain/modeProfiles.ts';
+import {
+  findAnalogProfile,
+  isAnalogChannelModeProfile,
+  resolveChannelPrimaryMode,
+} from '@core/domain/modeProfiles.ts';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import { haversineDistanceM } from '@core/domain/geoDistance.ts';
 import CodeplugMap from '../../../components/CodeplugMap/CodeplugMap.tsx';
@@ -36,6 +40,7 @@ import LibraryInventoryHeader from '../../../components/library/LibraryInventory
 import LibraryMapStack from '../../../components/library/LibraryMapStack.tsx';
 import {
   CHANNEL_OPTIONAL_COLUMNS,
+  CHANNEL_TABLE_TONE_COLUMN,
   channelListCardColumnsKey,
   channelListColumnsKey,
   channelTableHideableColumns,
@@ -46,7 +51,6 @@ import { useChannelListQuery } from '../../../hooks/useChannelListQuery.ts';
 import { usePersistedChannelColumnSort } from '../../../hooks/usePersistedChannelColumnSort.ts';
 import { usePersistedChannelListLayout } from '../../../hooks/usePersistedChannelListLayout.ts';
 import {
-  DATATABLE_CALLSIGN_SORT_KEY,
   DATATABLE_NAME_SORT_KEY,
   type DataTableSortState as V1Sort,
 } from '../../../lib/dataTable/sort.ts';
@@ -108,19 +112,106 @@ function percentLabel(value: number | null): string {
   return `${value}%`;
 }
 
-function v2ModePill(mode: ChannelMode, primary: boolean) {
-  const def = getModeDefinition(mode);
-  const textColor =
-    mode === 'dstar' || mode === 'dmr' || mode === 'tetra'
-      ? DSV2_TOKENS.colors.pillTextLight
-      : DSV2_TOKENS.colors.pillTextDark;
-  const label = primary ? `${def.label} (primary)` : def.label;
+function modePillTextColor(mode: ChannelMode): string {
+  return mode === 'dstar' || mode === 'dmr' || mode === 'tetra'
+    ? DSV2_TOKENS.colors.pillTextLight
+    : DSV2_TOKENS.colors.pillTextDark;
+}
+
+/** Joined mode pill group — SplitFilter-style segments with per-mode semantic fills. */
+function renderJoinedModePills(modes: ChannelMode[], primary: ChannelMode | null): ReactNode {
+  if (modes.length === 0) return null;
   return (
-    <Pill key={mode} tone="semantic" color={def.color} textColor={textColor}>
-      {label}
-    </Pill>
+    <div className={classes.joinedModePill} role="presentation">
+      {modes.map((mode) => {
+        const def = getModeDefinition(mode);
+        const label = primary === mode ? `${def.label}*` : def.label;
+        return (
+          <span
+            key={mode}
+            className={classes.joinedModeSegment}
+            style={{ backgroundColor: def.color, color: modePillTextColor(mode) }}
+          >
+            {label}
+          </span>
+        );
+      })}
+    </div>
   );
 }
+
+/** Name column cell — name link; callsign + band on one line; mode pills below (table only). */
+function renderChannelNameCell(channel: Channel): ReactNode {
+  const name = channel.name || '—';
+  const callsign = channel.callsign?.trim();
+  const band = bandFromChannel(channel.rxFrequency, channel.txFrequency);
+  const modes = channelModesForFilter(channel);
+  const primary = modes.length > 1 ? resolveChannelPrimaryMode(channel) : null;
+
+  return (
+    <div className={classes.nameCell}>
+      <Link to={`/library/channels/${channel.id}`} className="libraryListNameLink">
+        {name}
+      </Link>
+      {callsign || band ? (
+        <div className={classes.pillRow}>
+          {callsign ? <Pill tone="accent">{callsign}</Pill> : null}
+          {band ? (
+            <Pill tone="semantic" color={band.color} textColor={DSV2_TOKENS.colors.pillTextLight}>
+              {band.label}
+            </Pill>
+          ) : null}
+        </div>
+      ) : null}
+      {renderJoinedModePills(modes, primary)}
+    </div>
+  );
+}
+
+function formatChannelToneValue(tone: ChannelTone): string {
+  return tone === 'none' ? '-' : tone;
+}
+
+function formatChannelRxTxTones(rxTone: ChannelTone, txTone: ChannelTone): string {
+  return `${formatChannelToneValue(rxTone)} / ${formatChannelToneValue(txTone)}`;
+}
+
+/** Tone column cell — `rx / tx` for a single analog profile, one `MODE: rx / tx` line per profile otherwise. */
+function renderChannelToneCell(channel: Channel): ReactNode {
+  const analogProfiles = channel.modeProfiles.filter(isAnalogChannelModeProfile);
+  if (analogProfiles.length === 0) return '—';
+  if (analogProfiles.length === 1) {
+    const profile = analogProfiles[0]!;
+    return formatChannelRxTxTones(profile.rxTone, profile.txTone);
+  }
+  return (
+    <>
+      {analogProfiles.map((profile, index) => (
+        <Fragment key={profile.mode}>
+          {index > 0 ? <br /> : null}
+          {getModeDefinition(profile.mode).label}:{' '}
+          {formatChannelRxTxTones(profile.rxTone, profile.txTone)}
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
+function channelToneSortValue(channel: Channel): string {
+  const profile = findAnalogProfile(channel);
+  if (!profile) return '';
+  return formatChannelRxTxTones(profile.rxTone, profile.txTone);
+}
+
+const CHANNEL_TONE_COLUMN: DataTableColumn<Channel> = {
+  key: CHANNEL_TABLE_TONE_COLUMN.key,
+  header: CHANNEL_TABLE_TONE_COLUMN.header,
+  hideable: true,
+  defaultVisible: CHANNEL_TABLE_TONE_COLUMN.defaultVisible,
+  hideOnMobile: true,
+  render: renderChannelToneCell,
+  sortValue: channelToneSortValue,
+};
 
 export default function ChannelsListPage() {
   const navigate = useNavigate();
@@ -187,10 +278,7 @@ export default function ChannelsListPage() {
       if (!state) return;
       const v1 = v2SortToV1(state);
       if (!v1) return;
-      if (
-        v1.columnKey === DATATABLE_NAME_SORT_KEY ||
-        v1.columnKey === DATATABLE_CALLSIGN_SORT_KEY
-      ) {
+      if (v1.columnKey === DATATABLE_NAME_SORT_KEY) {
         setColumnSortOverride(v1);
         if (query.sortMode === 'distance') {
           query.setSortMode('name');
@@ -258,11 +346,7 @@ export default function ChannelsListPage() {
           render: (ch: Channel) => {
             const modes = channelModesForFilter(ch);
             const primary = modes.length > 1 ? resolveChannelPrimaryMode(ch) : null;
-            return (
-              <div className={classes.pillRow}>
-                {modes.map((mode) => v2ModePill(mode, mode === primary))}
-              </div>
-            );
+            return renderJoinedModePills(modes, primary) ?? '—';
           },
           sortValue: (ch: Channel) => channelModesForFilter(ch).join(','),
         };
@@ -352,25 +436,27 @@ export default function ChannelsListPage() {
   }, [channels, library, position, zones]);
 
   const columns = useMemo((): DataTableColumn<Channel>[] => {
-    const callsignColumn: DataTableColumn<Channel> = {
-      key: DATATABLE_CALLSIGN_SORT_KEY,
-      header: 'Callsign',
-      hideable: true,
-      hideOnMobile: true,
-      sortable: true,
-      render: (ch) => ch.callsign || '—',
-      sortValue: (ch) => ch.callsign || '',
-    };
-
     const nameColumn = createNameColumn<Channel>({
       getName: (ch) => ch.name || '—',
       getPath: (ch) => `/library/channels/${ch.id}`,
+      render: renderChannelNameCell,
     });
 
+    // Band and Mode are merged into the Name column above; Tone (table-only) is
+    // inserted right after Frequency (`rxTx`).
+    const tableOptionalColumnDefs = optionalColumnDefs.reduce<DataTableColumn<Channel>[]>(
+      (acc, col) => {
+        if (col.key === 'band' || col.key === 'mode') return acc;
+        acc.push(col);
+        if (col.key === 'rxTx') acc.push(CHANNEL_TONE_COLUMN);
+        return acc;
+      },
+      [],
+    );
+
     return [
-      nameColumn,
-      callsignColumn,
-      ...optionalColumnDefs,
+      { ...nameColumn, width: 'minmax(max-content, 1fr)' },
+      ...tableOptionalColumnDefs,
       {
         key: 'actions',
         header: '',

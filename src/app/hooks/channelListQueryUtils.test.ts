@@ -35,32 +35,29 @@ describe('channel table column visibility', () => {
     vi.unstubAllGlobals();
   });
 
-  it('treats Callsign as a hideable table column', () => {
-    expect(
-      channelTableHideableColumns().some((col) => col.key === DATATABLE_CALLSIGN_SORT_KEY),
-    ).toBe(true);
-    expect(defaultChannelTableVisibleColumns()).toContain(DATATABLE_CALLSIGN_SORT_KEY);
+  it('does not treat Callsign, Band, or Mode as separate hideable table columns', () => {
+    const keys = channelTableHideableColumns().map((col) => col.key);
+    expect(keys).not.toContain(DATATABLE_CALLSIGN_SORT_KEY);
+    expect(keys).not.toContain('band');
+    expect(keys).not.toContain('mode');
   });
 
-  it('keeps Callsign when loading and saving table column prefs', () => {
-    const projectId = 'proj-callsign';
-    saveStringArray(channelListColumnsKey(projectId), [
-      DATATABLE_CALLSIGN_SORT_KEY,
-      'band',
-      'mode',
-    ]);
+  it('adds Tone as a hideable table column, hidden by default, right after Frequency', () => {
+    const keys = channelTableHideableColumns().map((col) => col.key);
+    const toneIndex = keys.indexOf('tone');
+    const frequencyIndex = keys.indexOf('rxTx');
+    expect(toneIndex).toBeGreaterThan(-1);
+    expect(toneIndex).toBe(frequencyIndex + 1);
 
-    expect(loadChannelVisibleColumns(projectId)).toEqual([
-      DATATABLE_CALLSIGN_SORT_KEY,
-      'band',
-      'mode',
-    ]);
+    const toneCol = channelTableHideableColumns().find((col) => col.key === 'tone');
+    expect(toneCol?.defaultVisible).toBe(false);
+    expect(defaultChannelTableVisibleColumns()).not.toContain('tone');
   });
 
-  it('persists enabling Callsign instead of stripping the key', () => {
-    const projectId = 'proj-enable-callsign';
+  it('persists enabling Tone instead of stripping the key', () => {
+    const projectId = 'proj-enable-tone';
     const storageKey = channelListColumnsKey(projectId);
-    saveStringArray(storageKey, ['band']);
+    saveStringArray(storageKey, ['zones']);
 
     const { result } = renderHook(() =>
       usePersistedColumnVisibility(storageKey, channelTableHideableColumns(), () =>
@@ -69,10 +66,10 @@ describe('channel table column visibility', () => {
     );
 
     act(() => {
-      result.current[1]([...result.current[0], DATATABLE_CALLSIGN_SORT_KEY]);
+      result.current[1]([...result.current[0], 'tone']);
     });
 
-    expect(result.current[0]).toContain(DATATABLE_CALLSIGN_SORT_KEY);
-    expect(loadChannelVisibleColumns(projectId)).toContain(DATATABLE_CALLSIGN_SORT_KEY);
+    expect(result.current[0]).toContain('tone');
+    expect(loadChannelVisibleColumns(projectId)).toContain('tone');
   });
 });

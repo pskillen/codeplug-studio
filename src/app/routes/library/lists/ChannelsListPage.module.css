@@ -53,6 +53,38 @@
   gap: 4px;
 }
 
+.nameCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: max-content;
+}
+
+.joinedModePill {
+  display: inline-flex;
+  width: max-content;
+  flex: 0 0 auto;
+  border-radius: var(--dsv2-radius-pill);
+  overflow: hidden;
+  border: 1px solid var(--dsv2-border-quiet);
+}
+
+.joinedModeSegment {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-family: var(--dsv2-font-family);
+  font-size: var(--dsv2-font-eyebrow);
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.joinedModeSegment + .joinedModeSegment {
+  border-left: 1px solid rgba(0, 0, 0, 0.18);
+}
+
 .mapSection {
   margin-top: 24px;
 }
