@@ -2,9 +2,11 @@ import { Group, Text } from '@mantine/core';
 import { IconHelpCircle } from '@tabler/icons-react';
 import { useState } from 'react';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
+import { FacetBar, FacetChip } from '../../components/library/FacetBar.tsx';
 import {
   Button,
   ConfirmModal,
+  FilterPopover,
   ModalShell,
   ProgressModal,
   type ProgressModalStep,
@@ -43,6 +45,9 @@ export default function StyleguideOverlaysPage() {
     'none' | 'library' | 'directory' | 'both'
   >('none');
   const [demoKeps, setDemoKeps] = useState(false);
+  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
+  const [filterTab, setFilterTab] = useState<'bands' | 'zones' | 'modes'>('bands');
+  const [demoBands, setDemoBands] = useState<string[]>(['2m']);
 
   return (
     <StyleguidePageShell
@@ -153,6 +158,49 @@ export default function StyleguideOverlaysPage() {
           onRetry={() => setErrorOpen(false)}
           summary={<Text size="sm">1 of 42 channels failed to write.</Text>}
         />
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="FilterPopover"
+        description="Tabbed flyout filter panel — Channels list filters (bands/zones/modes) on desktop and mobile."
+      >
+        <Group gap="sm">
+          <FilterPopover
+            triggerLabel="Filters"
+            opened={filterPopoverOpen}
+            onOpenChange={setFilterPopoverOpen}
+            activeCount={demoBands.length}
+            tabs={[
+              { value: 'bands', label: 'Bands' },
+              { value: 'zones', label: 'Zones' },
+              { value: 'modes', label: 'Modes' },
+            ]}
+            activeTab={filterTab}
+            onTabChange={setFilterTab}
+            footer={<Text size="sm">Simplex/Split + Within-Xkm live here, any tab.</Text>}
+          >
+            {filterTab === 'bands' ? (
+              <FacetBar>
+                {['2m', '70cm', '6m'].map((band) => (
+                  <FacetChip
+                    key={band}
+                    label={band}
+                    active={demoBands.includes(band)}
+                    onClick={() =>
+                      setDemoBands((prev) =>
+                        prev.includes(band) ? prev.filter((b) => b !== band) : [...prev, band],
+                      )
+                    }
+                  />
+                ))}
+              </FacetBar>
+            ) : (
+              <Text size="sm" c="dimmed">
+                {filterTab === 'zones' ? 'Zone chips here.' : 'Mode chips here.'}
+              </Text>
+            )}
+          </FilterPopover>
+        </Group>
       </StyleguideSection>
 
       <StyleguideSection
