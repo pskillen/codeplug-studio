@@ -78,18 +78,18 @@ HTTP **429** also indicates rate limiting. Studio records a per-provider cooldow
 
 Parse by **field name** — NA and ROW payloads differ slightly (NA may include `County`/`ARES`; ROW may omit `Region`).
 
-| RepeaterBook field            | `RepeaterListing` / notes                          |
-| ----------------------------- | -------------------------------------------------- |
-| `State ID` + `Rptr ID`        | `remoteId` as `{stateId}:{rptrId}`                 |
-| `Callsign`                    | `callsign`                                         |
-| `Nearest City` (+ `Landmark`) | `name`                                             |
-| `Frequency` (MHz string)      | `rxFrequencyHz` — repeater **output** (radio RX)   |
-| `Input Freq`                  | `txFrequencyHz` — repeater **input** (radio TX)    |
-| `TSQ` / `PL`                  | `toneHz` — prefer downlink (`TSQ`) CTCSS           |
-| `Lat`, `Long`                 | `location` when parseable                          |
-| `Operational Status`          | `status` (`On-air`, `Off-air`, …)                  |
-| `Country`, `State`            | used for display; band derived from RX MHz         |
-| Mode capability flags         | `modes[]`, `primaryMode`, `colourCode` — see below |
+| RepeaterBook field            | `RepeaterListing` / notes                                                                                                                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `State ID` + `Rptr ID`        | `remoteId` as `{stateId}:{rptrId}`                                                                                                                                                                                       |
+| `Callsign`                    | `callsign`                                                                                                                                                                                                               |
+| `Nearest City` (+ `Landmark`) | `name`                                                                                                                                                                                                                   |
+| `Frequency` (MHz string)      | `rxFrequencyHz` — repeater **output** (radio RX)                                                                                                                                                                         |
+| `Input Freq`                  | `txFrequencyHz` — repeater **input** (radio TX)                                                                                                                                                                          |
+| `TSQ` / `PL`                  | `rxToneHz` **and** `txToneHz` — prefer downlink (`TSQ`) CTCSS, applied to both sides (unlike ukrepeater's TX-only ETCC mapping — see [ukrepeater reference](../ukrepeater/README.md#ctcss-is-accessencode-tx-only-1254)) |
+| `Lat`, `Long`                 | `location` when parseable                                                                                                                                                                                                |
+| `Operational Status`          | `status` (`On-air`, `Off-air`, …)                                                                                                                                                                                        |
+| `Country`, `State`            | used for display; band derived from RX MHz                                                                                                                                                                               |
+| Mode capability flags         | `modes[]`, `primaryMode`, `colourCode` — see below                                                                                                                                                                       |
 
 Boolean-ish fields use `"Yes"`/`"No"`, `"1"`/`"0"`, or empty string.
 

@@ -74,7 +74,7 @@ EI7PMD Portmarno,439.46250,430.46250,D-Digital,2,Off
 | `name`                 | Remainder of `Channel Name` (location label) |
 | Receive MHz × 1e6      | `rxFrequencyHz`                              |
 | Transmit MHz × 1e6     | `txFrequencyHz`                              |
-| Encode tone (analogue) | `toneHz`                                     |
+| Encode tone (analogue) | `rxToneHz` **and** `txToneHz` (both sides)   |
 | `Channel Type`         | `modes[]`, `primaryMode`, `colourCode`       |
 | `callsign@rxMhz`       | `remoteId`                                   |
 | RX frequency           | `band` wire label via `bandFromFrequencyMhz` |
