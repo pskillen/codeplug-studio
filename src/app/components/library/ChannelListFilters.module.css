@@ -1,8 +1,18 @@
-.root {
-  margin-bottom: var(--dsv2-space-5);
+.footerRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .distanceSection {
   /* Mantine Slider mark labels sit below the track and overflow the layout box. */
   padding-bottom: 22px;
+}
+
+.appliedPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--dsv2-space-4);
 }
