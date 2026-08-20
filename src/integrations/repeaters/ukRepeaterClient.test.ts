@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ChannelModeProfileAnalog } from '@core/models/library.ts';
 import { repeaterListingToChannel } from './mapToChannel.ts';
 import {
   mockJsonFetch,
@@ -40,7 +41,9 @@ describe('searchUkRepeatersByCallsign', () => {
     expect(listing.name).toBe('DANBURY');
     expect(listing.rxFrequencyHz).toBe(145_725_000);
     expect(listing.txFrequencyHz).toBe(145_125_000);
-    expect(listing.toneHz).toBe(110.9);
+    // ETCC's single `ctcss` field is the access/encode (TX) tone only — #1254.
+    expect(listing.rxToneHz).toBeNull();
+    expect(listing.txToneHz).toBe(110.9);
     expect(listing.modes).toEqual(['fm', 'ysf']);
     expect(listing.primaryMode).toBe('fm');
     expect(listing.location?.lat).toBeCloseTo(51.7, 0);
@@ -48,6 +51,28 @@ describe('searchUkRepeatersByCallsign', () => {
     const channel = repeaterListingToChannel(listing, 'p1');
     expect(channel.callsign).toBe('GB3DA');
     expect(channel.name).toBe('DANBURY');
+    const profile = channel.modeProfiles[0] as ChannelModeProfileAnalog;
+    expect(profile.rxTone).toBe('none');
+    expect(profile.txTone).toBe('110.9');
+  });
+
+  it('leaves both tones null when ctcss is missing or zero', async () => {
+    mockJsonFetch(200, {
+      data: [
+        {
+          id: 4121,
+          repeater: 'GB3ZZ',
+          modeCodes: ['A'],
+          tx: 145_600_000,
+          rx: 145_000_000,
+          ctcss: 0,
+          band: '2M',
+        },
+      ],
+    });
+    const [listing] = await searchUkRepeatersByCallsign('gb3zz');
+    expect(listing.rxToneHz).toBeNull();
+    expect(listing.txToneHz).toBeNull();
   });
 
   it('parses a DMR listing with colour code', async () => {

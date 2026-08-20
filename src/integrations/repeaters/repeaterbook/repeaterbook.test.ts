@@ -42,7 +42,8 @@ describe('parseRepeaterBookListing', () => {
       callsign: 'W6TEST',
       rxFrequencyHz: 146_880_000,
       txFrequencyHz: 146_280_000,
-      toneHz: 100,
+      rxToneHz: 100,
+      txToneHz: 100,
       primaryMode: 'fm',
       status: 'On-air',
     });

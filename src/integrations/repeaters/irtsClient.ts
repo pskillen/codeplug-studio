@@ -56,7 +56,7 @@ function parseChannelType(
   channelType: string,
   colorCodeRaw: string,
   toneHz: number | null,
-): Pick<RepeaterListing, 'modes' | 'primaryMode' | 'colourCode' | 'toneHz'> {
+): Pick<RepeaterListing, 'modes' | 'primaryMode' | 'colourCode' | 'rxToneHz' | 'txToneHz'> {
   const type = channelType.trim();
   if (type === 'D-Digital') {
     const cc = Number.parseInt(colorCodeRaw, 10);
@@ -64,14 +64,16 @@ function parseChannelType(
       modes: ['dmr'],
       primaryMode: 'dmr',
       colourCode: Number.isFinite(cc) ? cc : null,
-      toneHz: null,
+      rxToneHz: null,
+      txToneHz: null,
     };
   }
   return {
     modes: ['fm'],
     primaryMode: 'fm',
     colourCode: null,
-    toneHz,
+    rxToneHz: toneHz,
+    txToneHz: toneHz,
   };
 }
 
@@ -114,7 +116,8 @@ export function parseIrtsAnytoneCsv(text: string): RepeaterListing[] {
       name,
       rxFrequencyHz,
       txFrequencyHz,
-      toneHz: modeFields.toneHz,
+      rxToneHz: modeFields.rxToneHz,
+      txToneHz: modeFields.txToneHz,
       modes: modeFields.modes,
       primaryMode: modeFields.primaryMode,
       colourCode: modeFields.colourCode,

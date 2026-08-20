@@ -44,7 +44,8 @@ describe('parseIrtsAnytoneCsv', () => {
       name: 'Three Roc',
       rxFrequencyHz: 145_600_000,
       txFrequencyHz: 145_000_000,
-      toneHz: 88.5,
+      rxToneHz: 88.5,
+      txToneHz: 88.5,
       modes: ['fm'],
       primaryMode: 'fm',
       colourCode: null,
@@ -58,7 +59,8 @@ describe('parseIrtsAnytoneCsv', () => {
       modes: ['dmr'],
       primaryMode: 'dmr',
       colourCode: 1,
-      toneHz: null,
+      rxToneHz: null,
+      txToneHz: null,
       band: '70CM',
     });
 

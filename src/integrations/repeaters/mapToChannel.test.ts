@@ -12,7 +12,8 @@ const baseListing: RepeaterListing = {
   name: 'Danbury',
   rxFrequencyHz: 145_725_000,
   txFrequencyHz: 145_125_000,
-  toneHz: 110.9,
+  rxToneHz: 110.9,
+  txToneHz: 110.9,
   modes: ['fm'],
   primaryMode: 'fm',
   colourCode: null,
@@ -50,7 +51,11 @@ describe('buildModeProfilesFromListing', () => {
   });
 
   it('formats whole-number repeater CTCSS with one decimal place', () => {
-    const profiles = buildModeProfilesFromListing({ ...baseListing, toneHz: 100 });
+    const profiles = buildModeProfilesFromListing({
+      ...baseListing,
+      rxToneHz: 100,
+      txToneHz: 100,
+    });
     const fm = profiles[0] as ChannelModeProfileAnalog;
     expect(fm.rxTone).toBe('100.0');
     expect(fm.txTone).toBe('100.0');
@@ -89,8 +94,11 @@ describe('repeaterListingToChannel', () => {
     expect(profile.rxTone).toBe('110.9');
   });
 
-  it('maps whole-number repeater toneHz to library CTCSS with decimal', () => {
-    const channel = repeaterListingToChannel({ ...baseListing, toneHz: 100 }, 'p1');
+  it('maps whole-number repeater tone to library CTCSS with decimal', () => {
+    const channel = repeaterListingToChannel(
+      { ...baseListing, rxToneHz: 100, txToneHz: 100 },
+      'p1',
+    );
     const profile = channel.modeProfiles[0] as ChannelModeProfileAnalog;
     expect(profile.rxTone).toBe('100.0');
     expect(profile.txTone).toBe('100.0');
@@ -109,7 +117,14 @@ describe('repeaterListingToChannel', () => {
 
   it('maps a DMR repeater to a channel with a DMR profile and colour code', () => {
     const channel = repeaterListingToChannel(
-      { ...baseListing, modes: ['dmr'], primaryMode: 'dmr', colourCode: 1, toneHz: null },
+      {
+        ...baseListing,
+        modes: ['dmr'],
+        primaryMode: 'dmr',
+        colourCode: 1,
+        rxToneHz: null,
+        txToneHz: null,
+      },
       'p1',
     );
     const profile = channel.modeProfiles[0] as ChannelModeProfileDMR;
@@ -125,6 +140,16 @@ describe('repeaterListingToChannel', () => {
     );
     expect(channel.name).toBe('Danbury');
     expect(channel.comment).toBe('Danbury — Operational');
+  });
+
+  it('maps a ukrepeater listing with TX-only tone to TX tone, RX none (#1254)', () => {
+    const channel = repeaterListingToChannel(
+      { ...baseListing, rxToneHz: null, txToneHz: 110.9 },
+      'p1',
+    );
+    const profile = channel.modeProfiles[0] as ChannelModeProfileAnalog;
+    expect(profile.rxTone).toBe('none');
+    expect(profile.txTone).toBe('110.9');
   });
 
   it('omits comment for BrandMeister listings by default', () => {

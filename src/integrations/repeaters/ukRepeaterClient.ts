@@ -33,7 +33,10 @@ function normalise(listing: EtccListing): RepeaterListing {
     name: listing.town ?? '',
     rxFrequencyHz: listing.tx && listing.tx > 0 ? listing.tx : null,
     txFrequencyHz: listing.rx && listing.rx > 0 ? listing.rx : null,
-    toneHz: listing.ctcss && listing.ctcss > 0 ? listing.ctcss : null,
+    // ETCC's single `ctcss` field is the access/encode tone (operator TX). It is not
+    // the repeater's output tone, so RX stays carrier-squelch (null) — issue #1254.
+    rxToneHz: null,
+    txToneHz: listing.ctcss && listing.ctcss > 0 ? listing.ctcss : null,
     modes,
     primaryMode,
     colourCode,
