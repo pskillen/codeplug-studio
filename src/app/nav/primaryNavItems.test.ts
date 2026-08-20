@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   activeContextualStripLabel,
-  getToolsStripItems,
   helpStripItems,
   libraryStripItems,
   resolveContextualStripItems,
@@ -10,12 +9,12 @@ import {
 import { primaryNavItems, projectNavItems } from './primaryNavItems.ts';
 
 describe('primaryNavItems', () => {
-  it('uses design-system tab order including Tools and Help', () => {
+  it('orders tabs with Tools immediately before Help', () => {
     expect(primaryNavItems.map((i) => i.label)).toEqual([
       'Summary',
       'Library',
-      'Tools',
       'Export for radio',
+      'Tools',
       'Help',
     ]);
   });
@@ -44,11 +43,11 @@ describe('contextualStripItems', () => {
   });
 
   it('resolves Tools and Help strips', () => {
-    expect(resolveContextualStripItems('/reference/bands', 'local')).toEqual(toolsStripItems);
+    expect(resolveContextualStripItems('/reference/bands')).toEqual(toolsStripItems);
     expect(resolveContextualStripItems('/attributions')).toEqual(helpStripItems);
   });
 
-  it('includes Tracking Dashboard and Propagation Visualiser in the Tools strip and resolves it from /tracking', () => {
+  it('includes Tracking Dashboard and an external Propagation Visualiser link in the Tools strip, on every env', () => {
     expect(toolsStripItems.map((i) => i.label)).toEqual([
       'Maidenhead locator',
       'Band plan',
@@ -56,37 +55,21 @@ describe('contextualStripItems', () => {
       'Propagation Visualiser',
     ]);
     expect(toolsStripItems.find((i) => i.label === 'Tracking Dashboard')?.to).toBe('/tracking');
-    expect(toolsStripItems.find((i) => i.label === 'Propagation Visualiser')?.to).toBe(
-      '/reference/rf-propagation',
-    );
-    expect(resolveContextualStripItems('/tracking', 'local')).toEqual(toolsStripItems);
-    expect(resolveContextualStripItems('/reference/rf-propagation', 'main')).toEqual(
-      toolsStripItems,
-    );
+    const propagation = toolsStripItems.find((i) => i.label === 'Propagation Visualiser');
+    expect(propagation?.to).toBe('https://propagation.mm9pdy.net/');
+    expect(propagation?.external).toBe(true);
+
+    expect(resolveContextualStripItems('/tracking')).toEqual(toolsStripItems);
+    expect(resolveContextualStripItems('/reference/rf-propagation')).toEqual(toolsStripItems);
   });
 
-  it('hides Propagation Visualiser in the Tools strip on prod builds only', () => {
-    const prodItems = getToolsStripItems('prod');
-    expect(prodItems.map((i) => i.label)).toEqual([
-      'Maidenhead locator',
-      'Band plan',
-      'Tracking Dashboard',
-    ]);
-    expect(resolveContextualStripItems('/tracking', 'prod')).toEqual(prodItems);
-    expect(resolveContextualStripItems('/reference/rf-propagation', 'prod')).toEqual(prodItems);
-
-    for (const env of ['local', 'main', 'dev', 'staging'] as const) {
-      expect(getToolsStripItems(env)).toEqual(toolsStripItems);
-      expect(resolveContextualStripItems('/reference', env)).toEqual(toolsStripItems);
-    }
-  });
-
-  it('picks the active strip label by longest path match', () => {
+  it('excludes external items from the active strip label', () => {
     expect(activeContextualStripLabel('/library/channels/defaults', libraryStripItems)).toBe(
       'Channels',
     );
     expect(activeContextualStripLabel('/reference/maidenhead', toolsStripItems)).toBe(
       'Maidenhead locator',
     );
+    expect(activeContextualStripLabel('/reference/rf-propagation', toolsStripItems)).toBeNull();
   });
 });
