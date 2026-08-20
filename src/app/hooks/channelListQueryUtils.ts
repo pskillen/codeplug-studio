@@ -1,5 +1,4 @@
 import { DISTANCE_FILTER_MARKS_KM } from '../lib/channels.ts';
-import { DATATABLE_CALLSIGN_SORT_KEY } from '../lib/dataTable/sort.ts';
 import {
   loadChannelVisibleColumns as loadChannelVisibleColumnsFromStorage,
   loadChannelCardVisibleColumns as loadChannelCardVisibleColumnsFromStorage,
@@ -13,13 +12,17 @@ export {
 } from '@integrations/listPrefs/index.ts';
 export type { ChannelSortMode } from '@integrations/listPrefs/index.ts';
 
-export const CHANNEL_LIST_COLUMNS_SCHEMA_VERSION = 3;
+export const CHANNEL_LIST_COLUMNS_SCHEMA_VERSION = 4;
 export const CHANNEL_LIST_CARD_COLUMNS_SCHEMA_VERSION = 1;
 
-export const CHANNEL_TABLE_CALLSIGN_COLUMN = {
-  key: DATATABLE_CALLSIGN_SORT_KEY,
-  header: 'Callsign',
-  defaultVisible: true,
+/**
+ * Table-only column — surfaced after Frequency, hidden by default. Not part of
+ * `CHANNEL_OPTIONAL_COLUMNS` since it doesn't apply to the cards field picker.
+ */
+export const CHANNEL_TABLE_TONE_COLUMN = {
+  key: 'tone',
+  header: 'Tone',
+  defaultVisible: false,
 } as const;
 
 export const CHANNEL_OPTIONAL_COLUMNS = [
@@ -42,21 +45,30 @@ export function defaultChannelVisibleColumns(): string[] {
   return CHANNEL_OPTIONAL_COLUMNS.filter((c) => c.defaultVisible).map((c) => c.key);
 }
 
-export function defaultChannelTableVisibleColumns(): string[] {
-  return [CHANNEL_TABLE_CALLSIGN_COLUMN.key, ...defaultChannelVisibleColumns()];
+/**
+ * Table-only hideable columns: `band` and `mode` are merged into the (non-hideable)
+ * Name column, so they're excluded here; `tone` (table-only) is inserted right after
+ * `rxTx` (Frequency).
+ */
+export function channelTableHideableColumns(): { key: string; defaultVisible: boolean }[] {
+  const result: { key: string; defaultVisible: boolean }[] = [];
+  for (const col of CHANNEL_OPTIONAL_COLUMNS) {
+    if (col.key === 'band' || col.key === 'mode') continue;
+    result.push({ key: col.key, defaultVisible: col.defaultVisible });
+    if (col.key === 'rxTx') {
+      result.push({
+        key: CHANNEL_TABLE_TONE_COLUMN.key,
+        defaultVisible: CHANNEL_TABLE_TONE_COLUMN.defaultVisible,
+      });
+    }
+  }
+  return result;
 }
 
-export function channelTableHideableColumns(): { key: string; defaultVisible: boolean }[] {
-  return [
-    {
-      key: CHANNEL_TABLE_CALLSIGN_COLUMN.key,
-      defaultVisible: CHANNEL_TABLE_CALLSIGN_COLUMN.defaultVisible,
-    },
-    ...CHANNEL_OPTIONAL_COLUMNS.map((col) => ({
-      key: col.key,
-      defaultVisible: col.defaultVisible,
-    })),
-  ];
+export function defaultChannelTableVisibleColumns(): string[] {
+  return channelTableHideableColumns()
+    .filter((col) => col.defaultVisible)
+    .map((col) => col.key);
 }
 
 export function loadChannelVisibleColumns(projectId: string): string[] {

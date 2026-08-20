@@ -53,6 +53,12 @@
   gap: 4px;
 }
 
+.nameCell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .mapSection {
   margin-top: 24px;
 }
