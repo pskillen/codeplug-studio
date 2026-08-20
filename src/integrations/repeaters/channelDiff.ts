@@ -42,6 +42,13 @@ export interface ChannelDiffRow {
   changed: boolean;
   /** When changed, whether the apply checkbox starts checked (default true). */
   selectByDefault: boolean;
+  /**
+   * Set when applying this row would **clear** a value the channel currently has
+   * (directory has nothing where the library has something) — row starts unchecked
+   * regardless of `selectByDefault`, and the UI renders the directory value as a
+   * warning pill rather than plain text (#1254).
+   */
+  emphasis?: 'warning';
 }
 
 const FIELD_LABELS: Record<ChannelDiffField, string> = {
@@ -58,6 +65,17 @@ const FIELD_LABELS: Record<ChannelDiffField, string> = {
   useLocation: 'Use location',
   comment: 'Comment',
 };
+
+/** Display sentinels used across this module's `local`/`remote` cell formatting. */
+const EMPTY_DISPLAY_VALUES = new Set(['', '—', 'None']);
+
+/**
+ * True when applying the directory value would clear a field the channel currently
+ * has set — the operator should opt in explicitly rather than lose data silently.
+ */
+function isClearingChange(local: string, remote: string): boolean {
+  return !EMPTY_DISPLAY_VALUES.has(local) && EMPTY_DISPLAY_VALUES.has(remote);
+}
 
 function findFmProfile(channel: Channel): ChannelModeProfileAnalog | null {
   const profile = findAnalogProfile(channel);
@@ -141,13 +159,15 @@ export function diffChannelFromListing(
     changed: boolean,
     selectByDefault = changed,
   ) => {
+    const clearing = changed && isClearingChange(local, remoteVal);
     rows.push({
       field,
       label: FIELD_LABELS[field],
       local,
       remote: remoteVal,
       changed,
-      selectByDefault: changed ? selectByDefault : false,
+      selectByDefault: changed && !clearing ? selectByDefault : false,
+      emphasis: clearing ? 'warning' : undefined,
     });
   };
 
