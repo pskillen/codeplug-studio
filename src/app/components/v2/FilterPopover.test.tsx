@@ -2,9 +2,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import DesignSystemV2Provider from './DesignSystemV2Provider.tsx';
-import FilterPopover from './FilterPopover.tsx';
+import FilterPopover, { type FilterPopoverTab } from './FilterPopover.tsx';
 
-const TABS = [
+const TABS: FilterPopoverTab<'bands' | 'zones'>[] = [
   { value: 'bands', label: 'Bands' },
   { value: 'zones', label: 'Zones' },
 ];
