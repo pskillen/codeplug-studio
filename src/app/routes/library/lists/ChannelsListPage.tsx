@@ -1,4 +1,4 @@
-import { Alert, Loader, TextInput } from '@mantine/core';
+import { Alert, Loader } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconPlus, IconWorldSearch } from '@tabler/icons-react';
 import { Fragment, useCallback, useMemo, useState, type ReactNode } from 'react';
@@ -22,6 +22,7 @@ import {
   DismissibleNotice,
   MapPanel,
   Pill,
+  SearchInput,
   SegmentedControl,
   type DataTableColumn,
   type DataTableSortState as V2Sort,
@@ -34,7 +35,9 @@ import ChannelBulkEditModal from '../../../components/library/ChannelBulkEditMod
 import ChannelCard from '../../../components/library/ChannelCard.tsx';
 import ChannelListBulkActions from '../../../components/library/ChannelListBulkActions.tsx';
 import ChannelListDeleteAction from '../../../components/library/ChannelListDeleteAction.tsx';
-import ChannelListFilters from '../../../components/library/ChannelListFilters.tsx';
+import ChannelListFilters, {
+  ChannelListAppliedFilters,
+} from '../../../components/library/ChannelListFilters.tsx';
 import ChannelZonesListCell from '../../../components/library/ChannelZonesListCell.tsx';
 import LibraryInventoryHeader from '../../../components/library/LibraryInventoryHeader.tsx';
 import LibraryMapStack from '../../../components/library/LibraryMapStack.tsx';
@@ -621,23 +624,37 @@ export default function ChannelsListPage() {
         </Alert>
       ) : null}
 
-      <ChannelListFilters />
+      <div className={classes.filterRow}>
+        <ChannelListFilters />
+        {!position ? (
+          <div className={classes.filterUseLocation}>
+            <UseMyLocationButton
+              onLocation={(lat, lon, accuracyMeters) =>
+                setPosition({ lat, lon, accuracyMeters: accuracyMeters ?? null })
+              }
+            />
+          </div>
+        ) : null}
+        <SegmentedControl
+          value={layoutState.layout}
+          onChange={(value) => setLayout(value as 'table' | 'cards')}
+          options={CHANNEL_LAYOUT_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
+          className={classes.filterViewSwitch}
+        />
+      </div>
 
-      <TextInput
-        value={query.nameFilterInput}
-        onChange={(event) => query.setNameFilter(event.currentTarget.value)}
-        placeholder="Filter name or callsign…"
-        rightSection={query.nameFilterPending ? <Loader size={16} /> : undefined}
-        aria-label="Search table"
-        className={classes.search}
-      />
+      <ChannelListAppliedFilters />
 
-      <SegmentedControl
-        value={layoutState.layout}
-        onChange={(value) => setLayout(value as 'table' | 'cards')}
-        options={CHANNEL_LAYOUT_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
-        className={classes.layoutControls}
-      />
+      <div className={classes.searchRow}>
+        <SearchInput
+          value={query.nameFilterInput}
+          onChange={(event) => query.setNameFilter(event.currentTarget.value)}
+          placeholder="Filter name or callsign…"
+          aria-label="Search table"
+          className={classes.search}
+        />
+        {query.nameFilterPending ? <Loader size={16} /> : null}
+      </div>
 
       {layoutState.layout === 'cards' ? (
         <SegmentedControl

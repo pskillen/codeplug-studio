@@ -1,0 +1,86 @@
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dsv2-space-2);
+  border: 1px solid var(--dsv2-border);
+  background: transparent;
+  color: var(--dsv2-text-primary);
+  font-family: var(--dsv2-font-family);
+  font-size: var(--dsv2-font-body);
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 8px 14px;
+  border-radius: var(--dsv2-radius-control);
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.trigger:hover {
+  border-color: var(--dsv2-accent);
+}
+
+.triggerActive {
+  border-color: var(--dsv2-accent);
+  color: var(--dsv2-accent);
+}
+
+.triggerBadge {
+  pointer-events: none;
+}
+
+.dropdown {
+  width: 440px;
+  max-width: calc(100vw - 32px);
+  background: var(--dsv2-surface);
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  box-shadow: var(--dsv2-shadow-popover);
+  overflow: hidden;
+}
+
+@media (max-width: 48em) {
+  .dropdown {
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
+  }
+
+  /* 44px+ tap targets for the trigger and every button slotted into the
+     panel (tab strip, tab-panel chips, footer chips, Done) — type selector
+     so it reaches FacetChip/SplitFilter/SegmentedControl/Button regardless
+     of their own CSS-module class names. */
+  .trigger,
+  .panel button {
+    min-height: 44px;
+  }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-4);
+  padding: 16px;
+}
+
+.tabPanel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 34px;
+}
+
+.divider {
+  border-top: 1px solid var(--dsv2-border-quiet);
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-3);
+}
+
+.doneRow {
+  display: flex;
+  justify-content: flex-end;
+}
