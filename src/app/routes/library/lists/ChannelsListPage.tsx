@@ -112,17 +112,31 @@ function percentLabel(value: number | null): string {
   return `${value}%`;
 }
 
-function v2ModePill(mode: ChannelMode, primary: boolean) {
-  const def = getModeDefinition(mode);
-  const textColor =
-    mode === 'dstar' || mode === 'dmr' || mode === 'tetra'
-      ? DSV2_TOKENS.colors.pillTextLight
-      : DSV2_TOKENS.colors.pillTextDark;
-  const label = primary ? `${def.label} (primary)` : def.label;
+function modePillTextColor(mode: ChannelMode): string {
+  return mode === 'dstar' || mode === 'dmr' || mode === 'tetra'
+    ? DSV2_TOKENS.colors.pillTextLight
+    : DSV2_TOKENS.colors.pillTextDark;
+}
+
+/** Joined mode pill group — SplitFilter-style segments with per-mode semantic fills. */
+function renderJoinedModePills(modes: ChannelMode[], primary: ChannelMode | null): ReactNode {
+  if (modes.length === 0) return null;
   return (
-    <Pill key={mode} tone="semantic" color={def.color} textColor={textColor}>
-      {label}
-    </Pill>
+    <div className={classes.joinedModePill} role="presentation">
+      {modes.map((mode) => {
+        const def = getModeDefinition(mode);
+        const label = primary === mode ? `${def.label}*` : def.label;
+        return (
+          <span
+            key={mode}
+            className={classes.joinedModeSegment}
+            style={{ backgroundColor: def.color, color: modePillTextColor(mode) }}
+          >
+            {label}
+          </span>
+        );
+      })}
+    </div>
   );
 }
 
@@ -149,9 +163,7 @@ function renderChannelNameCell(channel: Channel): ReactNode {
           ) : null}
         </div>
       ) : null}
-      <div className={classes.pillRow}>
-        {modes.map((mode) => v2ModePill(mode, mode === primary))}
-      </div>
+      {renderJoinedModePills(modes, primary)}
     </div>
   );
 }
@@ -330,11 +342,7 @@ export default function ChannelsListPage() {
           render: (ch: Channel) => {
             const modes = channelModesForFilter(ch);
             const primary = modes.length > 1 ? resolveChannelPrimaryMode(ch) : null;
-            return (
-              <div className={classes.pillRow}>
-                {modes.map((mode) => v2ModePill(mode, mode === primary))}
-              </div>
-            );
+            return renderJoinedModePills(modes, primary) ?? '—';
           },
           sortValue: (ch: Channel) => channelModesForFilter(ch).join(','),
         };
@@ -443,7 +451,7 @@ export default function ChannelsListPage() {
     );
 
     return [
-      nameColumn,
+      { ...nameColumn, width: 'minmax(max-content, 1fr)' },
       ...tableOptionalColumnDefs,
       {
         key: 'actions',

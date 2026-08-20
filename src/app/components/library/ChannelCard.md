@@ -4,7 +4,7 @@ Stacked-field card for one channel — name/callsign header, optional labeled fi
 
 ## Purpose
 
-Avoids duplicating field-rendering logic between the table and cards: callers pass `DataTableColumn` definitions (band pills, mode pills, RX/TX formatting, zones badges, contact/RX group list/scan list names, …) built in `ChannelsListPage`. Card **Show/hide details** uses a separate persisted key from table **Show/hide cols**.
+Avoids duplicating field-rendering logic between the table and cards: callers pass `DataTableColumn` definitions (band pills, joined mode pill group, RX/TX formatting, zones badges, contact/RX group list/scan list names, …) built in `ChannelsListPage`. Card **Show/hide details** uses a separate persisted key from table **Show/hide cols**.
 
 ## Props
 
