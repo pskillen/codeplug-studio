@@ -169,24 +169,28 @@ function renderChannelNameCell(channel: Channel): ReactNode {
 }
 
 function formatChannelToneValue(tone: ChannelTone): string {
-  return tone === 'none' ? 'None' : tone;
+  return tone === 'none' ? '-' : tone;
 }
 
-/** Tone column cell — `rx/tx` for a single analog profile, one `MODE: rx/tx` line per profile otherwise. */
+function formatChannelRxTxTones(rxTone: ChannelTone, txTone: ChannelTone): string {
+  return `${formatChannelToneValue(rxTone)} / ${formatChannelToneValue(txTone)}`;
+}
+
+/** Tone column cell — `rx / tx` for a single analog profile, one `MODE: rx / tx` line per profile otherwise. */
 function renderChannelToneCell(channel: Channel): ReactNode {
   const analogProfiles = channel.modeProfiles.filter(isAnalogChannelModeProfile);
   if (analogProfiles.length === 0) return '—';
   if (analogProfiles.length === 1) {
     const profile = analogProfiles[0]!;
-    return `${formatChannelToneValue(profile.rxTone)}/${formatChannelToneValue(profile.txTone)}`;
+    return formatChannelRxTxTones(profile.rxTone, profile.txTone);
   }
   return (
     <>
       {analogProfiles.map((profile, index) => (
         <Fragment key={profile.mode}>
           {index > 0 ? <br /> : null}
-          {getModeDefinition(profile.mode).label}: {formatChannelToneValue(profile.rxTone)}/
-          {formatChannelToneValue(profile.txTone)}
+          {getModeDefinition(profile.mode).label}:{' '}
+          {formatChannelRxTxTones(profile.rxTone, profile.txTone)}
         </Fragment>
       ))}
     </>
@@ -196,7 +200,7 @@ function renderChannelToneCell(channel: Channel): ReactNode {
 function channelToneSortValue(channel: Channel): string {
   const profile = findAnalogProfile(channel);
   if (!profile) return '';
-  return `${formatChannelToneValue(profile.rxTone)}/${formatChannelToneValue(profile.txTone)}`;
+  return formatChannelRxTxTones(profile.rxTone, profile.txTone);
 }
 
 const CHANNEL_TONE_COLUMN: DataTableColumn<Channel> = {
