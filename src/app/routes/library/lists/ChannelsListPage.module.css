@@ -34,6 +34,36 @@
   margin-bottom: 14px;
 }
 
+.filterViewSwitch {
+  margin-left: auto;
+}
+
+.filterUseLocation {
+  flex: none;
+}
+
+@media (max-width: 48em) {
+  .filterRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filterViewSwitch {
+    width: 100%;
+    margin-left: 0;
+    order: 2;
+  }
+
+  .filterUseLocation {
+    width: 100%;
+    order: 3;
+  }
+
+  .filterUseLocation button {
+    width: 100%;
+  }
+}
+
 .searchWrap {
   flex: 1;
   min-width: 200px;
@@ -111,19 +141,18 @@
   color: var(--dsv2-text-tertiary);
 }
 
-.search {
-  width: 100%;
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 14px;
+}
+
+.search {
+  flex: 1;
 }
 
 .groupModeControl {
-  margin-bottom: 14px;
-}
-
-.layoutControls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
   margin-bottom: 14px;
 }
 
