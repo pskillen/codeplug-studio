@@ -113,11 +113,15 @@ flowchart LR
 
 Frequency convention: `rxFrequencyHz` is what the radio **receives** (repeater output); `txFrequencyHz` is what it **transmits** (repeater input). ETCC field names are inverted — documented in [ukrepeater reference](../../reference/remote-directories/ukrepeater/README.md#frequency-inversion-critical).
 
+### Directory comparison does not auto-apply clears
+
+`diffChannelFromListing` ([`channelDiff.ts`](../../../src/integrations/repeaters/channelDiff.ts)) treats any row where the directory value is empty/none and the channel currently has a value as a **clearing change**: the apply checkbox starts **unchecked** and [`RepeaterListingUpdateDialog`](../../../src/app/components/repeaters/RepeaterListingUpdateDialog.md) renders the directory cell as a warning [`Pill`](../../../src/app/components/v2/Pill.md) instead of plain text. The operator can still tick the box to apply the clear — it is opt-in, not blocked. This covers, for example, a channel with an RX tone from an earlier import checked against a ukrepeater listing that now maps CTCSS to TX-only ([#1254](https://github.com/pskillen/codeplug-studio/issues/1254)).
+
 ### Multi-mode import
 
 `buildModeProfilesFromListing` creates one `modeProfiles` entry per advertised mode:
 
-- **Analogue (`fm`, …)** — full `ChannelModeProfileAnalog` with CTCSS on RX/TX tone when present (`toneHz` formatted via `formatCtcssHz` so whole numbers become `100.0`, not bare `100`).
+- **Analogue (`fm`, …)** — full `ChannelModeProfileAnalog` with CTCSS on RX/TX tone from `rxToneHz`/`txToneHz` when present (`formatCtcssHz` so whole numbers become `100.0`, not bare `100`). ukrepeater (ETCC) maps its single `ctcss` field to **TX only** — RX stays carrier squelch (`none`) — since ETCC has no separate output-tone field; RepeaterBook and IRTS apply their combined tone to both sides ([#1254](https://github.com/pskillen/codeplug-studio/issues/1254), [ukrepeater reference](../../reference/remote-directories/ukrepeater/README.md#ctcss-is-accessencode-tx-only-1254)).
 - **DMR** — full `ChannelModeProfileDMR` with colour code from `M:n` flags.
 - **D-STAR, YSF, NXDN, TETRA** — full typed profiles with CPS-informed defaults.
 - **P25, M17** — stub `{ mode }` until dedicated profile types ship.
@@ -126,18 +130,18 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 
 ## UI components
 
-| Component                               | Role                                                                                                           |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `DirectoryIngestPage.tsx`               | mk2 Batch 5 page shell (`EditorHeader`, v2 scope) — sidecar `DirectoryIngestPage.md`                           |
-| `CountryComboboxField.tsx`              | v2 country typeahead for RepeaterBook filters (C5) — sidecar `CountryComboboxField.md`                         |
-| `RepeaterDirectorySearch.tsx`           | Shared search form + v2 results `DataTable` (source capabilities; gated select for existing rows)              |
-| `RepeaterListingUpdateDialog.tsx`       | Directory comparison `ModalShell` (diff table, apply selected)                                                 |
-| `RepeaterVerifyPanel.tsx`               | Channel editor verify (UK, IRTS, RepeaterBook, optional BrandMeister)                                          |
-| `BrandmeisterRxGroupListSyncDialog.tsx` | BrandMeister RX group list diff + update/create ([#65](https://github.com/pskillen/codeplug-studio/issues/65)) |
-| `findChannelByCallsign.ts`              | Case-insensitive library lookup                                                                                |
-| `repeaterDirectoryRows.ts`              | Result rows; callsign-only duplicate gate for import                                                           |
-| `ModePillsForRepeaterListing.tsx`       | One pill per advertised mode on results                                                                        |
-| `useRepeaterDirectorySearch.ts`         | Search state hook (UK filters, geocode token)                                                                  |
+| Component                               | Role                                                                                                                                                                              |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DirectoryIngestPage.tsx`               | mk2 Batch 5 page shell (`EditorHeader`, v2 scope) — sidecar `DirectoryIngestPage.md`                                                                                              |
+| `CountryComboboxField.tsx`              | v2 country typeahead for RepeaterBook filters (C5) — sidecar `CountryComboboxField.md`                                                                                            |
+| `RepeaterDirectorySearch.tsx`           | Shared search form + v2 results `DataTable` (source capabilities; gated select for existing rows)                                                                                 |
+| `RepeaterListingUpdateDialog.tsx`       | Directory comparison `ModalShell` (diff table, apply selected) — sidecar [`RepeaterListingUpdateDialog.md`](../../../src/app/components/repeaters/RepeaterListingUpdateDialog.md) |
+| `RepeaterVerifyPanel.tsx`               | Channel editor verify (UK, IRTS, RepeaterBook, optional BrandMeister)                                                                                                             |
+| `BrandmeisterRxGroupListSyncDialog.tsx` | BrandMeister RX group list diff + update/create ([#65](https://github.com/pskillen/codeplug-studio/issues/65))                                                                    |
+| `findChannelByCallsign.ts`              | Case-insensitive library lookup                                                                                                                                                   |
+| `repeaterDirectoryRows.ts`              | Result rows; callsign-only duplicate gate for import                                                                                                                              |
+| `ModePillsForRepeaterListing.tsx`       | One pill per advertised mode on results                                                                                                                                           |
+| `useRepeaterDirectorySearch.ts`         | Search state hook (UK filters, geocode token)                                                                                                                                     |
 
 ## Boundaries
 

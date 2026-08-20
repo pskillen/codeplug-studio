@@ -90,27 +90,46 @@ DMR timeslot is not in ETCC listings — operator configures in CRUD.
 
 ## Field mapping (ETCC → `RepeaterListing`)
 
-| ETCC field  | `RepeaterListing` field              | Notes                              |
-| ----------- | ------------------------------------ | ---------------------------------- |
-| `tx`        | `rxFrequencyHz`                      | Hz; see inversion above            |
-| `rx`        | `txFrequencyHz`                      | Hz                                 |
-| `ctcss`     | `toneHz`                             | `0` or absent → no tone            |
-| `modeCodes` | `modes`, `primaryMode`, `colourCode` | See mode flags                     |
-| `locator`   | `location`                           | Via `locatorToCoords` in core      |
-| `repeater`  | `callsign`                           |                                    |
-| `town`      | `name`                               |                                    |
-| `band`      | `band`                               | Wire band code (e.g. `2M`, `70CM`) |
-| `status`    | `status`                             |                                    |
-| `id`        | `remoteId`                           |                                    |
+| ETCC field  | `RepeaterListing` field              | Notes                               |
+| ----------- | ------------------------------------ | ----------------------------------- |
+| `tx`        | `rxFrequencyHz`                      | Hz; see inversion above             |
+| `rx`        | `txFrequencyHz`                      | Hz                                  |
+| `ctcss`     | `txToneHz`                           | Access/encode tone only — see below |
+| —           | `rxToneHz`                           | Always `null` — see below           |
+| `modeCodes` | `modes`, `primaryMode`, `colourCode` | See mode flags                      |
+| `locator`   | `location`                           | Via `locatorToCoords` in core       |
+| `repeater`  | `callsign`                           |                                     |
+| `town`      | `name`                               |                                     |
+| `band`      | `band`                               | Wire band code (e.g. `2M`, `70CM`)  |
+| `status`    | `status`                             |                                     |
+| `id`        | `remoteId`                           |                                     |
+
+### CTCSS is access/encode (TX) only ([#1254](https://github.com/pskillen/codeplug-studio/issues/1254))
+
+ETCC exposes a **single** `ctcss` number per listing. It is the tone the operator's
+radio must **encode on transmit** to access the repeater — it is not necessarily the
+tone (if any) the repeater **encodes on its output**. Mapping it to both `rxTone` and
+`txTone` on the imported FM profile made radios mute the downlink whenever the
+repeater does not send CTCSS on transmit, which many UK analogue repeaters do not.
+
+Studio therefore maps `ctcss` → `txToneHz` only; `rxToneHz` is always `null`
+(carrier squelch on receive) for ukrepeater listings. `0` or absent `ctcss` maps
+both sides to `null`.
+
+This is **lossy**: ETCC has no separate field for the repeater's own output tone.
+Outreach to RSGB/ETCC about adding one (or an OpenAPI spec for the beta API) is
+tracked on [#1254](https://github.com/pskillen/codeplug-studio/issues/1254) and the
+epic [#276](https://github.com/pskillen/codeplug-studio/issues/276).
 
 ## Lossy / not modelled
 
-| ETCC data                             | Treatment                                            |
-| ------------------------------------- | ---------------------------------------------------- |
-| Talk groups, contacts, RX group lists | Operator configures in library CRUD                  |
-| DMR timeslot                          | Operator configures in CRUD                          |
-| Non-FM/DMR digital modes on import    | Mode-only profile stub (no mode-specific fields yet) |
-| `type`, keeper, ERP, antenna metadata | Not stored on import today                           |
+| ETCC data                             | Treatment                                                                                                                    |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Repeater output (RX) CTCSS            | Not exposed by ETCC — imported channels use carrier squelch on RX; operator edits in CRUD if the repeater does encode a tone |
+| Talk groups, contacts, RX group lists | Operator configures in library CRUD                                                                                          |
+| DMR timeslot                          | Operator configures in CRUD                                                                                                  |
+| Non-FM/DMR digital modes on import    | Mode-only profile stub (no mode-specific fields yet)                                                                         |
+| `type`, keeper, ERP, antenna metadata | Not stored on import today                                                                                                   |
 
 ## Disclaimer
 

@@ -12,7 +12,8 @@ const baseListing: RepeaterListing = {
   name: 'Danbury',
   rxFrequencyHz: 145_725_000,
   txFrequencyHz: 145_125_000,
-  toneHz: null,
+  rxToneHz: null,
+  txToneHz: null,
   modes: ['fm'],
   primaryMode: 'fm',
   colourCode: null,
@@ -105,5 +106,89 @@ describe('diffChannelFromListing', () => {
     const rows = diffChannelFromListing(baseChannel(), listing);
     const rxRow = rows.find((r) => r.field === 'rxFrequency');
     expect(rxRow?.selectByDefault).toBe(true);
+    expect(rxRow?.emphasis).toBeUndefined();
+  });
+
+  it('deselects and warns when a ukrepeater refresh would clear the RX tone (#1254)', () => {
+    const channel = baseChannel({
+      modeProfiles: [
+        { mode: 'fm', rxTone: '88.5', txTone: '88.5', squelch: null, bandwidthKHz: null },
+      ],
+    });
+    // ukrepeater semantics: ctcss maps to TX only, RX stays null/none.
+    const listing: RepeaterListing = { ...baseListing, rxToneHz: null, txToneHz: 88.5 };
+    const rows = diffChannelFromListing(channel, listing);
+
+    const rxToneRow = rows.find((r) => r.field === 'rxTone');
+    expect(rxToneRow?.changed).toBe(true);
+    expect(rxToneRow?.local).toBe('88.5');
+    expect(rxToneRow?.remote).toBe('None');
+    expect(rxToneRow?.selectByDefault).toBe(false);
+    expect(rxToneRow?.emphasis).toBe('warning');
+
+    // TX tone matches (88.5 both sides) — no change, no warning.
+    const txToneRow = rows.find((r) => r.field === 'txTone');
+    expect(txToneRow?.changed).toBe(false);
+    expect(txToneRow?.emphasis).toBeUndefined();
+  });
+
+  it('deselects and warns when the directory has no colour code for a DMR channel', () => {
+    const channel = baseChannel({
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 3,
+          dmrMode: null,
+          timeslot: null,
+          dmrId: null,
+          contactRef: null,
+          rxGroupListId: null,
+          sendTalkerAlias: 'default',
+        },
+      ],
+    });
+    const listing: RepeaterListing = {
+      ...baseListing,
+      modes: ['dmr'],
+      primaryMode: 'dmr',
+      colourCode: null,
+    };
+    const rows = diffChannelFromListing(channel, listing);
+    const ccRow = rows.find((r) => r.field === 'colourCode');
+    expect(ccRow?.changed).toBe(true);
+    expect(ccRow?.local).toBe('3');
+    expect(ccRow?.remote).toBe('—');
+    expect(ccRow?.selectByDefault).toBe(false);
+    expect(ccRow?.emphasis).toBe('warning');
+  });
+
+  it('deselects and warns when the directory would clear the comment', () => {
+    const listing: RepeaterListing = { ...baseListing, source: 'irts', name: '', status: '' };
+    const channel = baseChannel({ comment: 'Keep me' });
+    const rows = diffChannelFromListing(channel, listing);
+    const commentRow = rows.find((r) => r.field === 'comment');
+    expect(commentRow?.changed).toBe(true);
+    expect(commentRow?.remote).toBe('—');
+    expect(commentRow?.selectByDefault).toBe(false);
+    expect(commentRow?.emphasis).toBe('warning');
+  });
+
+  it('deselects and warns when the directory has no location at all (not just less precise)', () => {
+    const listing: RepeaterListing = { ...baseListing, locator: null, location: null };
+    const rows = diffChannelFromListing(baseChannel(), listing);
+    const locationRow = rows.find((r) => r.field === 'location');
+    expect(locationRow?.changed).toBe(true);
+    expect(locationRow?.remote).toBe('—');
+    expect(locationRow?.selectByDefault).toBe(false);
+    expect(locationRow?.emphasis).toBe('warning');
+  });
+
+  it('does not warn on a genuine (non-clearing) name change', () => {
+    const listing: RepeaterListing = { ...baseListing, name: 'New Name' };
+    const rows = diffChannelFromListing(baseChannel(), listing);
+    const nameRow = rows.find((r) => r.field === 'name');
+    expect(nameRow?.changed).toBe(true);
+    expect(nameRow?.selectByDefault).toBe(true);
+    expect(nameRow?.emphasis).toBeUndefined();
   });
 });

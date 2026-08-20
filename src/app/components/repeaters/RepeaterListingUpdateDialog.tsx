@@ -13,6 +13,7 @@ import { persistence } from '../../state/persistence.ts';
 import Button from '../v2/Button.tsx';
 import Checkbox from '../v2/Checkbox.tsx';
 import ModalShell from '../v2/ModalShell.tsx';
+import Pill from '../v2/Pill.tsx';
 import StatusBanner from '../v2/StatusBanner.tsx';
 import classes from './RepeaterListingUpdateDialog.module.css';
 
@@ -107,7 +108,13 @@ function RepeaterListingUpdateDialogBody({
                   </td>
                   <td>{row.label}</td>
                   <td>{row.local}</td>
-                  <td>{row.remote}</td>
+                  <td>
+                    {row.emphasis === 'warning' ? (
+                      <Pill tone="warning">{row.remote}</Pill>
+                    ) : (
+                      row.remote
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

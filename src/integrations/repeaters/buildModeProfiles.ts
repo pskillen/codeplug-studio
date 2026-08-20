@@ -20,10 +20,16 @@ const LEGACY_SSB_SIDEBAND: Record<string, SsbSideband> = {
 
 function analogProfile(
   mode: AnalogChannelMode,
-  tone: ChannelTone,
+  rxTone: ChannelTone,
+  txTone: ChannelTone,
   ssbSideband?: SsbSideband,
 ): ChannelModeProfileAnalog {
-  const profile = { ...defaultModeProfile(mode, tone), mode } as ChannelModeProfileAnalog;
+  const profile = {
+    ...defaultModeProfile(mode),
+    mode,
+    rxTone,
+    txTone,
+  } as ChannelModeProfileAnalog;
   if (mode === 'ssb' && ssbSideband) {
     profile.ssbSideband = ssbSideband;
   }
@@ -57,7 +63,8 @@ function analogKindFromListingMode(
  * collapse to a single profile (first in listing order wins).
  */
 export function buildModeProfilesFromListing(listing: RepeaterListing): ChannelModeProfile[] {
-  const tone: ChannelTone = listing.toneHz != null ? formatCtcssHz(listing.toneHz) : 'none';
+  const rxTone: ChannelTone = listing.rxToneHz != null ? formatCtcssHz(listing.rxToneHz) : 'none';
+  const txTone: ChannelTone = listing.txToneHz != null ? formatCtcssHz(listing.txToneHz) : 'none';
   const profiles: ChannelModeProfile[] = [];
   let hasAnalogProfile = false;
 
@@ -65,7 +72,7 @@ export function buildModeProfilesFromListing(listing: RepeaterListing): ChannelM
     const analogKind = analogKindFromListingMode(mode);
     if (analogKind != null) {
       if (!hasAnalogProfile) {
-        profiles.push(analogProfile(analogKind.mode, tone, analogKind.ssbSideband));
+        profiles.push(analogProfile(analogKind.mode, rxTone, txTone, analogKind.ssbSideband));
         hasAnalogProfile = true;
       }
       continue;
@@ -82,7 +89,7 @@ export function buildModeProfilesFromListing(listing: RepeaterListing): ChannelM
   }
 
   if (profiles.length === 0) {
-    profiles.push(analogProfile('fm', tone));
+    profiles.push(analogProfile('fm', rxTone, txTone));
   }
 
   return profiles;

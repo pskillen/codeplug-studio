@@ -15,7 +15,13 @@ export interface RepeaterListing {
   name: string;
   rxFrequencyHz: number | null;
   txFrequencyHz: number | null;
-  toneHz: number | null;
+  /**
+   * Analogue CTCSS in Hz. Most directories report a single combined tone, applied
+   * to both sides; ukrepeater (ETCC) reports access/encode tone only, so `rxToneHz`
+   * stays `null` there — see `docs/reference/remote-directories/ukrepeater/README.md`.
+   */
+  rxToneHz: number | null;
+  txToneHz: number | null;
   /** All modes advertised by the directory listing. */
   modes: ChannelMode[];
   /** Preferred mode when creating a library channel from this listing. */
