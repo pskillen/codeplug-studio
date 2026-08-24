@@ -13,6 +13,13 @@
   color: var(--dsv2-text-tertiary);
 }
 
+.stickyNav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--dsv2-surface);
+}
+
 .scrollBody {
   display: flex;
   flex-direction: column;

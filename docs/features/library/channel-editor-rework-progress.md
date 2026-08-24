@@ -6,13 +6,14 @@
 
 ## Shipped slices
 
-| #   | Slice                                 | Commit    | Notes                                                                 |
-| --- | ------------------------------------- | --------- | --------------------------------------------------------------------- |
-| 1   | Fix false-dirty on new-entity editors | (pending) | `base` snapshot moved into `useState(() => …)` in `ChannelEditor.tsx` |
+| #   | Slice                                 | Commit     | Notes                                                                                                                                                       |
+| --- | ------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Fix false-dirty on new-entity editors | `491898c9` | `base` snapshot moved into `useState(() => …)` in `ChannelEditor.tsx`                                                                                       |
+| 2   | Section ids + sticky jump-nav         | (pending)  | New `channelEditorSections.ts`, `useSectionScrollSpy.ts`; `SectionNav` gains `{id,label}` item form; sticky horizontal strip wired into `ChannelEditor.tsx` |
 
 ## Next
 
-Continue with slices 2–7 per the plan. Update this table at every commit checkpoint.
+Continue with slices 3–7 per the plan. Update this table at every commit checkpoint.
 
 ## Verify steps
 

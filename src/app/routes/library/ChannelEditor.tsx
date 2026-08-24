@@ -25,6 +25,7 @@ import {
   EditorHeader,
   FormField,
   Panel,
+  SectionNav,
   SegmentedControl,
   StickyFooter,
   TextInput,
@@ -51,9 +52,12 @@ import ChannelAprsBindingSection, {
   channelAprsBindingFromChannel,
 } from '../../components/library/ChannelAprsBindingSection.tsx';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
+import { useSectionScrollSpy } from '../../hooks/useSectionScrollSpy.ts';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
+import { scrollToPageSection } from '../../lib/scrollToPageSection.ts';
 import { persistence } from '../../state/persistence.ts';
 import { channelEditorPageTitle } from './channelEditorPageTitle.ts';
+import { channelEditorSections } from './channelEditorSections.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import classes from './ChannelEditor.module.css';
 
@@ -240,6 +244,10 @@ export default function ChannelEditor({
     ...library.scanLists.map((list) => ({ value: list.id, label: list.name })),
   ];
 
+  const editorSections = useMemo(() => channelEditorSections({ isNew: !entity }), [entity]);
+  const sectionIds = useMemo(() => editorSections.map((s) => s.id), [editorSections]);
+  const activeSectionId = useSectionScrollSpy(sectionIds);
+
   const browseChannelIds = useMemo(
     () => [...library.channels].sort((a, b) => a.name.localeCompare(b.name)).map((ch) => ch.id),
     [library.channels],
@@ -273,6 +281,15 @@ export default function ChannelEditor({
           compact={isMobile}
         />
 
+        <div className={classes.stickyNav}>
+          <SectionNav
+            items={editorSections}
+            active={activeSectionId}
+            onChange={scrollToPageSection}
+            orientation="horizontal"
+          />
+        </div>
+
         <div className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}>
           {!entity ? (
             <Alert color="blue" variant="light" className={classes.alert}>
@@ -282,7 +299,7 @@ export default function ChannelEditor({
             </Alert>
           ) : null}
 
-          <Panel title="Identity">
+          <Panel id="identity" title="Identity">
             <div className={classes.identityLayout}>
               <div className={classes.identityFields}>
                 <div className={classes.identityCallsign}>
@@ -352,7 +369,7 @@ export default function ChannelEditor({
             </div>
           </Panel>
 
-          <Panel title="Frequency">
+          <Panel id="rf" title="Frequency">
             <FormField label="RX frequency (MHz)" mono>
               <TextInput
                 variant="plain"
@@ -399,6 +416,7 @@ export default function ChannelEditor({
           </Panel>
 
           <Panel
+            id="mode-settings"
             title="Mode settings"
             sub={
               modeProfiles.length > 1
@@ -432,17 +450,17 @@ export default function ChannelEditor({
             />
           </Panel>
 
-          <Panel title="Location">
+          <Panel id="location" title="Location">
             <ChannelLocationSection value={location} onChange={setLocation} compact={isMobile} />
           </Panel>
 
           {entity ? (
-            <Panel title="Zones">
+            <Panel id="zones" title="Zones">
               <ChannelZoneMembershipSection channelId={entity.id} library={library} />
             </Panel>
           ) : null}
 
-          <Panel title="Scanning">
+          <Panel id="scanning" title="Scanning">
             <Stack gap="lg">
               <ScanInclusionSegment value={scanInclusion} onChange={setScanInclusion} />
               <FormField label="Scan list">
@@ -458,7 +476,7 @@ export default function ChannelEditor({
             </Stack>
           </Panel>
 
-          <Panel title="APRS">
+          <Panel id="aprs" title="APRS">
             <ChannelAprsBindingSection
               aprsConfiguration={library.aprsConfiguration}
               channels={library.channels}

@@ -93,7 +93,7 @@ export type { BottomTabBarProps, BottomTabItem } from './BottomTabBar.tsx';
 export { default as ContextualStrip } from './ContextualStrip.tsx';
 export type { ContextualStripProps } from './ContextualStrip.tsx';
 export { default as SectionNav } from './SectionNav.tsx';
-export type { SectionNavOrientation, SectionNavProps } from './SectionNav.tsx';
+export type { SectionNavItem, SectionNavOrientation, SectionNavProps } from './SectionNav.tsx';
 export { default as EditorHeader } from './EditorHeader.tsx';
 export type { EditorHeaderProps } from './EditorHeader.tsx';
 export { default as StickyFooter } from './StickyFooter.tsx';
