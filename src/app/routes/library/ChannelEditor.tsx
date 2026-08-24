@@ -44,6 +44,8 @@ import ChannelModeProfilesEditor from '../../components/channels/ChannelModeProf
 import ChannelModesField from '../../components/channels/ChannelModesField.tsx';
 import ChannelWireNameExamples from '../../components/channels/ChannelWireNameExamples.tsx';
 import ChannelDirectoryVerifyActions from '../../components/repeaters/ChannelDirectoryVerifyActions.tsx';
+import { BandPillForChannel } from '../../components/pills/BandPill.tsx';
+import { formatChannelRxTxListCell } from '../../lib/formatFrequency.ts';
 import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
 import PowerLadderHints from '../../components/library/PowerLadderHints.tsx';
 import ScanListSummary from '../../components/library/ScanListSummary.tsx';
@@ -300,76 +302,75 @@ export default function ChannelEditor({
           ) : null}
 
           <Panel id="identity" title="Identity">
-            <div className={classes.identityLayout}>
-              <div className={classes.identityFields}>
-                <div className={classes.identityCallsign}>
-                  <FormField label="Callsign (optional)">
-                    <TextInput
-                      variant="plain"
-                      value={callsign}
-                      onChange={(e) => setCallsign(e.currentTarget.value)}
-                      mono
-                      aria-label="Callsign"
-                    />
-                  </FormField>
-                  {entity ? <ChannelDirectoryVerifyActions channel={liveChannel} /> : null}
-                </div>
-                <div
-                  className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(
-                    ' ',
-                  )}
-                >
-                  <FormField label="Name">
-                    <TextInput
-                      variant="plain"
-                      value={name}
-                      onChange={(e) => setName(e.currentTarget.value)}
-                      aria-label="Name"
-                    />
-                  </FormField>
-                  <FormField label="Abbreviation (optional)">
-                    <TextInput
-                      variant="plain"
-                      value={abbreviation}
-                      onChange={(e) => setAbbreviation(e.currentTarget.value)}
-                      aria-label="Abbreviation"
-                    />
-                  </FormField>
-                </div>
-                <div className={classes.identityComment}>
-                  <FormField label="Comment">
-                    <TextInput
-                      variant="plain"
-                      value={comment}
-                      onChange={(e) => setComment(e.currentTarget.value)}
-                      aria-label="Comment"
-                    />
-                  </FormField>
-                </div>
-              </div>
-              {isMobile ? (
-                <details className={classes.hintDetails}>
-                  <summary>Name examples</summary>
-                  <ChannelWireNameExamples
-                    callsign={callsign}
-                    name={name}
-                    abbreviation={abbreviation}
-                  />
-                </details>
-              ) : (
-                <ChannelWireNameExamples
-                  callsign={callsign}
-                  name={name}
-                  abbreviation={abbreviation}
+            <div className={classes.identityCallsign}>
+              <FormField label="Callsign (optional)">
+                <TextInput
+                  variant="plain"
+                  value={callsign}
+                  onChange={(e) => setCallsign(e.currentTarget.value)}
+                  mono
+                  aria-label="Callsign"
                 />
-              )}
+              </FormField>
+              {entity ? <ChannelDirectoryVerifyActions channel={liveChannel} /> : null}
             </div>
+            <div className={classes.identityName}>
+              <FormField label="Name">
+                <TextInput
+                  variant="plain"
+                  value={name}
+                  onChange={(e) => setName(e.currentTarget.value)}
+                  aria-label="Name"
+                />
+              </FormField>
+            </div>
+            <button
+              type="button"
+              className={classes.identityRfSummary}
+              onClick={() => scrollToPageSection('rf')}
+              aria-label="Jump to RF section"
+            >
+              <span className={classes.identityRfSummaryText}>
+                {formatChannelRxTxListCell(liveRxHz, liveTxHz)}
+              </span>
+              <BandPillForChannel channel={liveChannel} size="xs" />
+            </button>
             <div className={classes.identityModes}>
               <ChannelModesField selectedModes={selectedModes} onChange={handleModesChange} />
             </div>
           </Panel>
 
-          <Panel id="rf" title="Frequency">
+          <Panel id="naming" title="Names and notes" collapsible defaultCollapsed={isMobile}>
+            <div
+              className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(' ')}
+            >
+              <FormField label="Abbreviation (optional)">
+                <TextInput
+                  variant="plain"
+                  value={abbreviation}
+                  onChange={(e) => setAbbreviation(e.currentTarget.value)}
+                  aria-label="Abbreviation"
+                />
+              </FormField>
+              <FormField label="Comment">
+                <TextInput
+                  variant="plain"
+                  value={comment}
+                  onChange={(e) => setComment(e.currentTarget.value)}
+                  aria-label="Comment"
+                />
+              </FormField>
+            </div>
+            <div className={classes.namingWireExamples}>
+              <ChannelWireNameExamples
+                callsign={callsign}
+                name={name}
+                abbreviation={abbreviation}
+              />
+            </div>
+          </Panel>
+
+          <Panel id="rf" title="RF">
             <FormField label="RX frequency (MHz)" mono>
               <TextInput
                 variant="plain"
@@ -379,7 +380,7 @@ export default function ChannelEditor({
                 aria-label="RX frequency"
               />
             </FormField>
-            <div className={classes.frequencyGap}>
+            <div className={classes.rfGap}>
               <TxOffsetControls
                 rxFrequencyHz={liveRxHz}
                 txFrequencyHz={liveTxHz}
@@ -398,7 +399,7 @@ export default function ChannelEditor({
             <p className={classes.bandHint}>
               Offsets shown match this frequency&apos;s band when RX is set.
             </p>
-            <Stack gap="lg" className={classes.frequencyTx}>
+            <Stack gap="lg" className={classes.rfTx}>
               <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
               <TxPermitSegment value={txPermit} onChange={setTxPermit} />
             </Stack>

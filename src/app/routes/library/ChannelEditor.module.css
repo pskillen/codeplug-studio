@@ -42,30 +42,43 @@
   grid-template-columns: 1fr;
 }
 
-.identityLayout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px 24px;
-  align-items: start;
-}
-
-.identityFields {
-  min-width: 0;
-}
-
 .identityCallsign {
   margin-bottom: 14px;
 }
 
-.identityComment {
-  margin-top: 14px;
+.identityName {
+  margin-bottom: 14px;
+}
+
+.identityRfSummary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 4px 0;
+  margin-bottom: 4px;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--dsv2-font-family);
+}
+
+.identityRfSummaryText {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 .identityModes {
   margin-top: 16px;
 }
 
-.frequencyGap {
+.namingWireExamples {
+  margin-top: 14px;
+}
+
+.rfGap {
   margin: 14px 0;
 }
 
@@ -75,7 +88,7 @@
   color: var(--dsv2-text-tertiary);
 }
 
-.frequencyTx {
+.rfTx {
   margin-top: 14px;
 }
 
@@ -150,10 +163,6 @@
   }
 
   .powerRow {
-    grid-template-columns: 1fr;
-  }
-
-  .identityLayout {
     grid-template-columns: 1fr;
   }
 }
