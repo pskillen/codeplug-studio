@@ -70,7 +70,7 @@ export default function ChannelEditor({
   onPageTitle?: (title: string) => void;
   loading?: boolean;
 }) {
-  const base = entity ?? newChannel(projectId, '');
+  const [base] = useState(() => entity ?? newChannel(projectId, ''));
 
   const [name, setName] = useState(base.name);
   const [abbreviation, setAbbreviation] = useState(base.abbreviation ?? '');
