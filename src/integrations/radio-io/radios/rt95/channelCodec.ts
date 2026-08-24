@@ -14,23 +14,13 @@ import {
 } from './constants.ts';
 import { decodeBcdFreq, encodeBcdFreq } from './bcd.ts';
 import { ctcssIndexToHz, hzToCtcssIndex } from './ctcssToneTable.ts';
+import { dtcsCodeToWireIndex, dtcsWireIndexToCode } from './allDtcsCodes.ts';
 import {
   isMemoryOccupied,
   isMemoryScanEnabled,
   syncOccupiedBitfield,
   syncScanBitfield,
 } from './bitfield.ts';
-
-const DTCS_CODES = Object.freeze(
-  [
-    23, 25, 26, 31, 32, 36, 43, 47, 51, 53, 54, 65, 71, 72, 73, 74, 114, 115, 116, 122, 125, 131,
-    132, 134, 143, 145, 152, 155, 156, 162, 165, 172, 174, 205, 212, 223, 225, 226, 243, 244, 245,
-    246, 251, 252, 255, 261, 263, 265, 266, 271, 274, 306, 311, 315, 325, 331, 332, 343, 346, 351,
-    356, 364, 365, 371, 411, 412, 413, 423, 431, 432, 445, 446, 452, 454, 455, 462, 464, 465, 466,
-    503, 506, 516, 523, 526, 532, 546, 565, 606, 612, 624, 627, 631, 632, 654, 662, 664, 703, 712,
-    723, 731, 732, 734, 743, 754, 645,
-  ].sort((a, b) => a - b),
-);
 
 const TXPOWER_LOW = 0;
 const TXPOWER_MED = 1;
@@ -43,6 +33,19 @@ const DUPLEX_SPLIT = 3;
 
 const WIDTH_NFM = 0;
 const WIDTH_FM = 2;
+
+/** CHIRP bitwise MSB-first bit positions within each byte (bit 0 = LSB). */
+const BIT_TXPOWER = 2;
+const BIT_DUPLEX = 0;
+const BIT_CHANNEL_WIDTH = 2;
+const BIT_TX_OFF = 0;
+const BIT_CTCSS_ENCODE_EN = 0;
+const BIT_DTCS_ENCODE_EN = 1;
+const BIT_CTCSS_DECODE_EN = 2;
+const BIT_DTCS_DECODE_EN = 3;
+const BIT_DTCS_INVERT = 1;
+const BIT_DTCS_HIGHBIT = 0;
+const BIT_TONE_SQUELCH_EN = 0;
 
 function getBit(byte: number, bit: number): boolean {
   return ((byte >> bit) & 1) === 1;
@@ -58,14 +61,13 @@ function getBits(byte: number, bit: number, width: number): number {
 }
 
 function dtcsCodeToBits(code: number): { low: number; high: number } {
-  const idx = DTCS_CODES.indexOf(code);
-  if (idx < 0) return { low: 0, high: 0 };
+  const idx = dtcsCodeToWireIndex(code);
+  if (idx == null) return { low: 0, high: 0 };
   return { low: idx & 0xff, high: (idx >> 8) & 1 };
 }
 
 function dtcsBitsToCode(low: number, high: number): number | null {
-  const idx = high * 256 + low;
-  return DTCS_CODES[idx] ?? null;
+  return dtcsWireIndexToCode(high * 256 + low);
 }
 
 function decodeRadioToneFromCtcssIndex(index: number): RadioTone {
@@ -133,10 +135,10 @@ export function decodeChannelRecord(
 
   const rxHz = decodeBcdFreq(raw.subarray(0, 4));
   const offsetHz = decodeBcdFreq(raw.subarray(4, 8));
-  const txOff = getBit(raw[10]!, 7);
-  const duplex = getBits(raw[9]!, 6, 2);
-  const channelWidth = getBits(raw[10]!, 4, 2);
-  const txpower = getBits(raw[9]!, 4, 2);
+  const txOff = getBit(raw[10]!, BIT_TX_OFF);
+  const duplex = getBits(raw[9]!, BIT_DUPLEX, 2);
+  const channelWidth = getBits(raw[10]!, BIT_CHANNEL_WIDTH, 2);
+  const txpower = getBits(raw[9]!, BIT_TXPOWER, 2);
 
   let txHz = rxHz;
   if (!txOff) {
@@ -148,23 +150,31 @@ export function decodeChannelRecord(
     }
   }
 
-  const ctcssEncEn = getBit(raw[11]!, 0);
-  const ctcssDecEn = getBit(raw[11]!, 1);
-  const dtcsEncEn = getBit(raw[11]!, 2);
-  const dtcsDecEn = getBit(raw[11]!, 3);
+  const ctcssEncEn = getBit(raw[11]!, BIT_CTCSS_ENCODE_EN);
+  const ctcssDecEn = getBit(raw[11]!, BIT_CTCSS_DECODE_EN);
+  const dtcsEncEn = getBit(raw[11]!, BIT_DTCS_ENCODE_EN);
+  const dtcsDecEn = getBit(raw[11]!, BIT_DTCS_DECODE_EN);
 
   let txTone: RadioTone = { kind: 'none' };
   if (ctcssEncEn) {
     txTone = decodeRadioToneFromCtcssIndex(raw[13]!);
   } else if (dtcsEncEn) {
-    txTone = decodeRadioToneFromDtcs(raw[16]!, getBit(raw[17]!, 7) ? 1 : 0, getBit(raw[17]!, 6));
+    txTone = decodeRadioToneFromDtcs(
+      raw[16]!,
+      getBit(raw[17]!, BIT_DTCS_HIGHBIT) ? 1 : 0,
+      getBit(raw[17]!, BIT_DTCS_INVERT),
+    );
   }
 
   let rxTone: RadioTone = { kind: 'none' };
   if (ctcssDecEn) {
     rxTone = decodeRadioToneFromCtcssIndex(raw[12]!);
   } else if (dtcsDecEn) {
-    rxTone = decodeRadioToneFromDtcs(raw[14]!, getBit(raw[15]!, 7) ? 1 : 0, getBit(raw[15]!, 6));
+    rxTone = decodeRadioToneFromDtcs(
+      raw[14]!,
+      getBit(raw[15]!, BIT_DTCS_HIGHBIT) ? 1 : 0,
+      getBit(raw[15]!, BIT_DTCS_INVERT),
+    );
   }
 
   const scanAdd = image != null ? isMemoryScanEnabled(image, slotIndex) : getBit(raw[20]!, 0);
@@ -192,12 +202,12 @@ function applyToneEncode(raw: Uint8Array, tone: RadioTone, direction: 'rx' | 'tx
     const idx = hzToCtcssIndex(tone.hz);
     if (idx == null) return;
     if (direction === 'tx') {
-      raw[11] = setBits(raw[11]!, 0, 1, 1);
+      raw[11] = setBits(raw[11]!, BIT_CTCSS_ENCODE_EN, 1, 1);
       raw[13] = idx;
     } else {
-      raw[11] = setBits(raw[11]!, 1, 1, 1);
+      raw[11] = setBits(raw[11]!, BIT_CTCSS_DECODE_EN, 1, 1);
       raw[12] = idx;
-      raw[20] = setBits(raw[20]!, 0, 1, 1);
+      raw[20] = setBits(raw[20]!, BIT_TONE_SQUELCH_EN, 1, 1);
     }
     return;
   }
@@ -205,16 +215,16 @@ function applyToneEncode(raw: Uint8Array, tone: RadioTone, direction: 'rx' | 'tx
   const { low, high } = dtcsCodeToBits(tone.code);
   const invert = tone.polarity === 'I';
   if (direction === 'tx') {
-    raw[11] = setBits(raw[11]!, 2, 1, 1);
+    raw[11] = setBits(raw[11]!, BIT_DTCS_ENCODE_EN, 1, 1);
     raw[16] = low;
-    raw[17] = setBits(raw[17]!, 6, 1, invert ? 1 : 0);
-    raw[17] = setBits(raw[17]!, 7, 1, high);
+    raw[17] = setBits(raw[17]!, BIT_DTCS_INVERT, 1, invert ? 1 : 0);
+    raw[17] = setBits(raw[17]!, BIT_DTCS_HIGHBIT, 1, high);
   } else {
-    raw[11] = setBits(raw[11]!, 3, 1, 1);
+    raw[11] = setBits(raw[11]!, BIT_DTCS_DECODE_EN, 1, 1);
     raw[14] = low;
-    raw[15] = setBits(raw[15]!, 6, 1, invert ? 1 : 0);
-    raw[15] = setBits(raw[15]!, 7, 1, high);
-    raw[20] = setBits(raw[20]!, 0, 1, 1);
+    raw[15] = setBits(raw[15]!, BIT_DTCS_INVERT, 1, invert ? 1 : 0);
+    raw[15] = setBits(raw[15]!, BIT_DTCS_HIGHBIT, 1, high);
+    raw[20] = setBits(raw[20]!, BIT_TONE_SQUELCH_EN, 1, 1);
   }
 }
 
@@ -235,7 +245,7 @@ export function encodeChannelRecord(dto: RadioChannelDto, prior?: Uint8Array): U
 
   const txOff = dto.rxOnly === true;
   let duplex = DUPLEX_NONE;
-  let offsetHz = dto.rxHz;
+  let offsetHz = 0;
 
   if (!txOff) {
     const txHz = dto.txHz > 0 ? dto.txHz : dto.rxHz;
@@ -245,35 +255,30 @@ export function encodeChannelRecord(dto: RadioChannelDto, prior?: Uint8Array): U
     } else if (txHz < dto.rxHz) {
       duplex = DUPLEX_MINUS;
       offsetHz = dto.rxHz - txHz;
-    } else {
-      duplex = DUPLEX_NONE;
-      offsetHz = dto.rxHz;
     }
   }
 
   out.set(encodeBcdFreq(offsetHz), 4);
 
-  out[9] = setBits(out[9]!, 4, 2, txPowerFromPercent(dto.powerPercent));
-  out[9] = setBits(out[9]!, 6, 2, duplex);
+  out[9] = setBits(out[9]!, BIT_TXPOWER, 2, txPowerFromPercent(dto.powerPercent));
+  out[9] = setBits(out[9]!, BIT_DUPLEX, 2, duplex);
 
   const width = dto.bandwidth === 'NFM' ? WIDTH_NFM : WIDTH_FM;
-  out[10] = setBits(out[10]!, 4, 2, width);
-  out[10] = setBits(out[10]!, 7, 1, txOff ? 1 : 0);
+  out[10] = setBits(out[10]!, BIT_CHANNEL_WIDTH, 2, width);
+  out[10] = setBits(out[10]!, BIT_TX_OFF, 1, txOff ? 1 : 0);
 
-  out[11] = 0;
+  out[11] = out[11]! & 0xf0;
   out[12] = 0;
   out[13] = 0;
   out[14] = 0;
-  out[15] = out[15]! & 0x3f;
   out[16] = 0;
-  out[17] = out[17]! & 0x3f;
   applyToneEncode(out, dto.txTone, 'tx');
   applyToneEncode(out, dto.rxTone, 'rx');
 
-  const nameStr = (dto.wireName || '').trim().slice(0, RT95_NAME_LENGTH);
+  const nameStr = (dto.wireName || '').trim().slice(0, RT95_NAME_LENGTH).padEnd(RT95_NAME_LENGTH, ' ');
   const nameBytes = new TextEncoder().encode(nameStr);
   for (let i = 0; i < RT95_NAME_LENGTH; i++) {
-    out[24 + i] = i < nameBytes.length ? nameBytes[i]! : 0x00;
+    out[24 + i] = nameBytes[i]!;
   }
 
   return out;

@@ -17,10 +17,10 @@ export function buildSyntheticRt95Image(): Uint8Array {
   const ch = new Uint8Array(RT95_CHANNEL_RECORD_SIZE);
   ch.fill(0);
   ch.set(encodeBcdFreq(146_520_000), 0);
-  ch.set(encodeBcdFreq(146_520_000), 4);
-  ch[9] = 0x02 << 4;
-  ch[10] = 0x02 << 4;
-  const name = new TextEncoder().encode('TEST01');
+  ch.set(encodeBcdFreq(0), 4);
+  ch[9] = 0x08;
+  ch[10] = 0x08;
+  const name = new TextEncoder().encode('TEST01'.padEnd(6, ' '));
   ch.set(name, 24);
 
   image.set(ch, 0);
