@@ -4,7 +4,7 @@ Directory comparison modal — diffs a library `Channel` against a repeater dire
 
 ## Purpose
 
-Shows a field-by-field diff table (`channelDiff.ts`) between a channel and a matched `RepeaterListing`, so an operator can review directory data before overwriting anything on an existing channel. Used by [`RepeaterVerifyPanel`](./RepeaterVerifyPanel.tsx) (channel editor "Check …" buttons) and [`RepeaterDirectorySearch`](./RepeaterDirectorySearch.tsx) (existing-row update).
+Shows a field-by-field diff table (`channelDiff.ts`) between a channel and a matched `RepeaterListing`, so an operator can review directory data before overwriting anything on an existing channel. Used by [`ChannelDirectoryVerifyActions`](./ChannelDirectoryVerifyActions.tsx) (channel editor Identity "Check …" buttons) and [`RepeaterDirectorySearch`](./RepeaterDirectorySearch.tsx) (existing-row update).
 
 ## Props
 

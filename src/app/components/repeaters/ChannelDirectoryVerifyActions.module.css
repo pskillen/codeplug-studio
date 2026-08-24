@@ -1,0 +1,14 @@
+.root {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.actions {
+  gap: 8px;
+}
+
+.error {
+  margin-top: 4px;
+}

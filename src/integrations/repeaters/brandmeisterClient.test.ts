@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { searchBrandmeisterByCallsign } from './brandmeisterClient.ts';
+import {
+  brandMeisterInactiveDeviceMessage,
+  isBrandMeisterDeviceInactive,
+  searchBrandmeisterByCallsign,
+} from './brandmeisterClient.ts';
 import {
   mockJsonFetch,
   setupRepeaterDirectoryTestMocks,
@@ -13,6 +17,47 @@ beforeEach(() => {
 
 afterEach(() => {
   teardownRepeaterDirectoryTestMocks();
+});
+
+describe('isBrandMeisterDeviceInactive', () => {
+  it('detects zero frequencies with lastKnownMaster 9999', () => {
+    expect(
+      isBrandMeisterDeviceInactive({
+        id: 235412,
+        callsign: 'GB7LV',
+        tx: '0.0000',
+        rx: '0.0000',
+        lastKnownMaster: 9999,
+        status: 3,
+        statusText: 'Both Slots Linked',
+      }),
+    ).toBe(true);
+  });
+
+  it('ignores status alone when frequencies and master look valid', () => {
+    expect(
+      isBrandMeisterDeviceInactive({
+        id: 1,
+        callsign: 'GB7AC',
+        tx: '430.00000',
+        rx: '438.00000',
+        lastKnownMaster: 2501,
+        status: 3,
+      }),
+    ).toBe(false);
+  });
+
+  it('requires lastKnownMaster 9999 even when frequencies are zero', () => {
+    expect(
+      isBrandMeisterDeviceInactive({
+        id: 1,
+        callsign: 'GB7AC',
+        tx: '0.0000',
+        rx: '0.0000',
+        lastKnownMaster: 2501,
+      }),
+    ).toBe(false);
+  });
 });
 
 describe('searchBrandmeisterByCallsign', () => {
@@ -61,6 +106,57 @@ describe('searchBrandmeisterByCallsign', () => {
     });
     const listings = await searchBrandmeisterByCallsign('TEST');
     expect(listings).toHaveLength(1);
+  });
+
+  it('throws when BrandMeister only returns a retired device stub', async () => {
+    mockJsonFetch(200, [
+      {
+        id: 235412,
+        callsign: 'GB7LV',
+        tx: '0.0000',
+        rx: '0.0000',
+        colorcode: 1,
+        status: 3,
+        lastKnownMaster: 9999,
+        lat: 0,
+        lng: 0,
+        statusText: 'Both Slots Linked',
+      },
+    ]);
+
+    await expect(searchBrandmeisterByCallsign('GB7LV')).rejects.toMatchObject({
+      name: 'RepeaterDirectoryError',
+      message: brandMeisterInactiveDeviceMessage('GB7LV'),
+    });
+  });
+
+  it('filters retired stubs and keeps active devices', async () => {
+    mockJsonFetch(200, [
+      {
+        id: 235412,
+        callsign: 'GB7LV',
+        tx: '0.0000',
+        rx: '0.0000',
+        lastKnownMaster: 9999,
+        status: 3,
+      },
+      {
+        id: 99,
+        callsign: 'GB7LV',
+        tx: '430.00000',
+        rx: '438.00000',
+        lastKnownMaster: 2501,
+        city: 'Active',
+      },
+    ]);
+
+    const listings = await searchBrandmeisterByCallsign('GB7LV');
+    expect(listings).toHaveLength(1);
+    expect(listings[0]).toMatchObject({
+      remoteId: '99',
+      name: 'Active',
+      rxFrequencyHz: 430_000_000,
+    });
   });
 
   it('throws RepeaterDirectoryError on HTTP failure', async () => {

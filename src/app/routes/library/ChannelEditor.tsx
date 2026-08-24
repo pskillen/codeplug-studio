@@ -42,7 +42,7 @@ import ChannelLocationSection, {
 import ChannelModeProfilesEditor from '../../components/channels/ChannelModeProfilesEditor.tsx';
 import ChannelModesField from '../../components/channels/ChannelModesField.tsx';
 import ChannelWireNameExamples from '../../components/channels/ChannelWireNameExamples.tsx';
-import RepeaterVerifyPanel from '../../components/repeaters/RepeaterVerifyPanel.tsx';
+import ChannelDirectoryVerifyActions from '../../components/repeaters/ChannelDirectoryVerifyActions.tsx';
 import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
 import PowerLadderHints from '../../components/library/PowerLadderHints.tsx';
 import ScanListSummary from '../../components/library/ScanListSummary.tsx';
@@ -295,6 +295,7 @@ export default function ChannelEditor({
                       aria-label="Callsign"
                     />
                   </FormField>
+                  {entity ? <ChannelDirectoryVerifyActions channel={liveChannel} /> : null}
                 </div>
                 <div
                   className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(
@@ -424,6 +425,7 @@ export default function ChannelEditor({
             <ChannelModeProfilesEditor
               profiles={modeProfiles}
               library={library}
+              channel={entity ? liveChannel : null}
               rxFrequency={liveRxHz}
               txFrequency={liveTxHz}
               onChange={setModeProfiles}
@@ -464,12 +466,6 @@ export default function ChannelEditor({
               onChange={setAprsBinding}
             />
           </Panel>
-
-          {entity ? (
-            <Panel title="Repeater info">
-              <RepeaterVerifyPanel channel={liveChannel} library={library} />
-            </Panel>
-          ) : null}
 
           {entity ? (
             <div className={classes.browseBar}>

@@ -33,8 +33,24 @@ BrandMeister `tx` / `rx` are **MHz strings**. Studio inverts to match repeater c
 | `lat`, `lng`            | `location`        | `{ lat, lon }`; locator derived on import |
 | `city`                  | `name`            | channel display name                      |
 | `statusText` / `status` | `status`          | prefers `statusText`                      |
+| `lastKnownMaster`       | _(filter only)_   | see [Retired devices](#retired-devices)   |
 
 All BrandMeister listings normalise to `modes: ['dmr']` at the boundary.
+
+### Retired devices
+
+BrandMeister can return a **200** with a former device that still has an `id` and `callsign`, but is no longer usable on the network. Studio treats a row as retired when **both**:
+
+- `tx` and `rx` are missing or ≤ 0 MHz (after parse), **and**
+- `lastKnownMaster` is `9999`
+
+Do **not** use API `status` / `statusText` for this — retired rows can still report values such as status `3` / “Both Slots Linked”.
+
+When every returned device is retired, `searchBrandmeisterByCallsign` throws `RepeaterDirectoryError` with:
+
+> BrandMeister has no active device for {callsign}. It may have left the network.
+
+That message surfaces on **Add from BrandMeister**, channel **Identity → Check BrandMeister repeater**, and **DMR settings → Check BrandMeister talk groups & RX list**. Mixed results drop retired stubs and keep active devices.
 
 ## Static talk group mapping
 

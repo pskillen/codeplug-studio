@@ -9,6 +9,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import type {
+  Channel,
   ChannelModeProfile,
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
@@ -23,6 +24,7 @@ import type {
 import { isAnalogChannelModeProfile, isModeOnlyStub } from '@core/domain/modeProfiles.ts';
 import ModePill from '../pills/ModePill.tsx';
 import { PercentLevelSlider } from '../v2/index.ts';
+import BrandmeisterRxListSyncAction from '../repeaters/BrandmeisterRxListSyncAction.tsx';
 import RxGroupListSummary from '../library/RxGroupListSummary.tsx';
 import AnalogSquelchModeSegment from './AnalogSquelchModeSegment.tsx';
 import SendTalkerAliasSegment from './SendTalkerAliasSegment.tsx';
@@ -49,6 +51,8 @@ const timeslotSelectData = [
 export interface ChannelModeProfilesEditorProps {
   profiles: ChannelModeProfile[];
   library: Library;
+  /** Saved channel for directory verify actions (DMR RX-list sync). */
+  channel?: Channel | null;
   rxFrequency: number | null;
   txFrequency: number | null;
   onChange: (profiles: ChannelModeProfile[]) => void;
@@ -57,6 +61,7 @@ export interface ChannelModeProfilesEditorProps {
 export default function ChannelModeProfilesEditor({
   profiles,
   library,
+  channel = null,
   rxFrequency,
   txFrequency,
   onChange,
@@ -90,6 +95,7 @@ export default function ChannelModeProfilesEditor({
             <DmrPanel
               profile={profile as ChannelModeProfileDMR}
               library={library}
+              channel={channel}
               rxFrequency={rxFrequency}
               txFrequency={txFrequency}
               onPatch={(patch) => updateProfile(index, patch)}
@@ -193,12 +199,14 @@ function AnalogPanel({
 function DmrPanel({
   profile,
   library,
+  channel,
   rxFrequency,
   txFrequency,
   onPatch,
 }: {
   profile: ChannelModeProfileDMR;
   library: Library;
+  channel: Channel | null;
   rxFrequency: number | null;
   txFrequency: number | null;
   onPatch: (patch: Partial<ChannelModeProfileDMR>) => void;
@@ -283,6 +291,7 @@ function DmrPanel({
         clearable
       />
       <RxGroupListSummary listId={profile.rxGroupListId} library={library} />
+      {channel ? <BrandmeisterRxListSyncAction channel={channel} library={library} /> : null}
       <SendTalkerAliasSegment
         value={profile.sendTalkerAlias ?? 'default'}
         onChange={(sendTalkerAlias) => onPatch({ sendTalkerAlias })}
