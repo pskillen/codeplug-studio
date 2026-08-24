@@ -14,7 +14,13 @@ export {
   type ListingGeometryFilter,
   type SearchFilters,
 } from './ukrepeater/queryRouter.ts';
-export { searchBrandmeisterByCallsign } from './brandmeisterClient.ts';
+export {
+  searchBrandmeisterByCallsign,
+  isBrandMeisterDeviceInactive,
+  brandMeisterInactiveDeviceMessage,
+  BRANDMEISTER_INACTIVE_LAST_KNOWN_MASTER,
+} from './brandmeisterClient.ts';
+export type { BrandMeisterDevice } from './brandmeisterClient.ts';
 export {
   clearIrtsCatalogueCache,
   fetchIrtsRepeaters,

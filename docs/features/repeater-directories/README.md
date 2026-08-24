@@ -20,7 +20,7 @@ Repeater search is **not** a top-level nav item — it lives under library workf
 | UK unified search UI                  | Shipped  | Auto-detect query; multi-band (OR) + mode + simplex/split/all geometry + operational client-side filters; use-my-location; bulk add ([#43](https://github.com/pskillen/codeplug-studio/issues/43), [#191](https://github.com/pskillen/codeplug-studio/issues/191), [#333](https://github.com/pskillen/codeplug-studio/issues/333)) |
 | Directory search results map          | Shipped  | All directory searches with geolocated listings ([#118](https://github.com/pskillen/codeplug-studio/issues/118))                                                                                                                                                                                                                   |
 | Library channel link on callsign      | Shipped  | Callsign links to channel editor when callsign matches library ([#118](https://github.com/pskillen/codeplug-studio/issues/118))                                                                                                                                                                                                    |
-| BrandMeister client                   | Shipped  | Callsign search ([#44](https://github.com/pskillen/codeplug-studio/issues/44))                                                                                                                                                                                                                                                     |
+| BrandMeister client                   | Shipped  | Callsign search ([#44](https://github.com/pskillen/codeplug-studio/issues/44)); filters retired device stubs (zero freq + `lastKnownMaster` 9999)                                                                                                                                                                                  |
 | BrandMeister shared search shell      | Shipped  | Same results `DataTable` (role A embedded); UK-only controls hidden ([#44](https://github.com/pskillen/codeplug-studio/issues/44), [#460](https://github.com/pskillen/codeplug-studio/issues/460))                                                                                                                                 |
 | Update existing (callsign match)      | Shipped  | Outline button → shared comparison dialog                                                                                                                                                                                                                                                                                          |
 | Import duplicate gate (callsign)      | Shipped  | Add blocked only when callsign already in library — not channel `name` ([#53](https://github.com/pskillen/codeplug-studio/issues/53))                                                                                                                                                                                              |
@@ -167,13 +167,14 @@ Example: `modeCodes: ["A", "D", "M:1", "F", "P", "N"]` → six profiles on impor
 3. _Use my location_ seeds a locator search.
 4. Bulk-select results → _Add selected_.
 5. Library → _Add from BrandMeister_ → search `GB7AC` → confirm **Import talk groups and RX group list** (default on) creates channel, talk groups, and RX list; DMR profile linked.
-6. Re-add same callsign with TG import → talk groups deduped by `digitalId`.
-7. Open a DMR channel → **Identity** → _Check BrandMeister repeater_ for field diff; **Mode settings → DMR** → _Check BrandMeister talk groups & RX list_ for RX list sync (separate actions).
-8. Library → _Add from IRTS_ → confirm catalogue loads; filter by `EI7` and 70 cm band → add a channel.
-9. Open the channel → **Identity** → _Check IRTS_ → apply a frequency or tone update from the diff dialog.
-10. Settings → RepeaterBook → paste `rbuapp_…` token → Save.
-11. Library → _Add from RepeaterBook_ → NA search with state ID + callsign (or ROW country) → add a channel.
-12. Open the channel → **Identity** → _Check RepeaterBook_ → apply an update from the diff dialog.
+6. Search a former BrandMeister callsign that returns only a retired stub (zero frequencies + `lastKnownMaster` 9999) → confirm the warning _BrandMeister has no active device for …_ (do not treat API status as the signal — see [BrandMeister reference](../../reference/remote-directories/brandmeister/README.md#retired-devices)).
+7. Re-add same callsign with TG import → talk groups deduped by `digitalId`.
+8. Open a DMR channel → **Identity** → _Check BrandMeister repeater_ for field diff; **Mode settings → DMR** → _Check BrandMeister talk groups & RX list_ for RX list sync (separate actions).
+9. Library → _Add from IRTS_ → confirm catalogue loads; filter by `EI7` and 70 cm band → add a channel.
+10. Open the channel → **Identity** → _Check IRTS_ → apply a frequency or tone update from the diff dialog.
+11. Settings → RepeaterBook → paste `rbuapp_…` token → Save.
+12. Library → _Add from RepeaterBook_ → NA search with state ID + callsign (or ROW country) → add a channel.
+13. Open the channel → **Identity** → _Check RepeaterBook_ → apply an update from the diff dialog.
 
 ## Related
 
