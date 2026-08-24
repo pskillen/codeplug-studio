@@ -31,7 +31,7 @@ Checklist for onboarding a new public repeater directory into Codeplug Studio. F
 
 ## Verify / update
 
-- [ ] Channel editor verify via [`RepeaterVerifyPanel`](../../../src/app/components/repeaters/RepeaterVerifyPanel.tsx) or sibling action.
+- [ ] Channel editor verify via [`ChannelDirectoryVerifyActions`](../../../src/app/components/repeaters/ChannelDirectoryVerifyActions.tsx) (Identity) and [`BrandmeisterRxListSyncAction`](../../../src/app/components/repeaters/BrandmeisterRxListSyncAction.tsx) (DMR settings) or sibling action.
 - [ ] Directory comparison via [`RepeaterListingUpdateDialog`](../../../src/app/components/repeaters/RepeaterListingUpdateDialog.tsx).
 - [ ] Diff apply defaults: remote fields with **lower precision** than local (`isCoordinateLessPrecise`, `isLocatorLessPrecise` in [`channelDiff.ts`](../../../src/integrations/repeaters/channelDiff.ts)) → `selectByDefault: false`.
 

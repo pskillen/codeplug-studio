@@ -18,7 +18,9 @@ function channelHasDmr(channel: Channel): boolean {
   return channel.modeProfiles.some((p) => p.mode === 'dmr');
 }
 
-export default function ChannelDirectoryVerifyActions({ channel }: ChannelDirectoryVerifyActionsProps) {
+export default function ChannelDirectoryVerifyActions({
+  channel,
+}: ChannelDirectoryVerifyActionsProps) {
   const [ukLoading, setUkLoading] = useState(false);
   const [irtsLoading, setIrtsLoading] = useState(false);
   const [rbLoading, setRbLoading] = useState(false);

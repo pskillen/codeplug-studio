@@ -90,5 +90,5 @@ await sharp('docs/features/android-app/store-assets/feature-graphic.svg')
 Screenshots were captured with Playwright against `npm run dev` at a 412×892 viewport (3x device scale), dark colour scheme. Re-run similar flows if the UI changes enough to make these stale:
 
 - Screenshots 1–4: Home → New project → Library → Channels → Add from…
-- Screenshot 5–6: Library → Channels → New channel (callsign `GB7GL`, add a DMR mode profile) → Save → open the channel → Repeater tab → Check ukrepeater.net (screenshot the "Directory comparison" dialog) → Check BrandMeister talk groups & RX list (screenshot the "RX group list sync" dialog). The BrandMeister button only appears once the channel has a DMR mode profile.
+- Screenshot 5–6: Library → Channels → New channel (callsign `GB7GL`, add a DMR mode profile) → Save → open the channel → **Identity** → Check ukrepeater.net (screenshot the "Directory comparison" dialog) → **Mode settings → DMR** → Check BrandMeister talk groups & RX list (screenshot the "RX group list sync" dialog). The BrandMeister repeater button only appears once the channel has a DMR mode profile.
 - Screenshot 7: Export for radio → New build (`/builds/new`).

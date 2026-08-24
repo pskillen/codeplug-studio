@@ -6,9 +6,9 @@ Directory verify buttons for a saved library channel, placed in the channel edit
 
 ## Props
 
-| Prop      | Type      | Description                                      |
-| --------- | --------- | ------------------------------------------------ |
-| `channel` | `Channel` | Live channel row (includes typed callsign)       |
+| Prop      | Type      | Description                                |
+| --------- | --------- | ------------------------------------------ |
+| `channel` | `Channel` | Live channel row (includes typed callsign) |
 
 ## Usage
 

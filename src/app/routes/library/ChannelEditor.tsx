@@ -295,9 +295,7 @@ export default function ChannelEditor({
                       aria-label="Callsign"
                     />
                   </FormField>
-                  {entity ? (
-                    <ChannelDirectoryVerifyActions channel={liveChannel} />
-                  ) : null}
+                  {entity ? <ChannelDirectoryVerifyActions channel={liveChannel} /> : null}
                 </div>
                 <div
                   className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(

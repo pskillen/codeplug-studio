@@ -6,14 +6,14 @@ Stacked per-mode settings blocks for a multi-mode library channel. One block per
 
 ## Props
 
-| Prop           | Type                                       | Description                                                    |
-| -------------- | ------------------------------------------ | -------------------------------------------------------------- |
-| `profiles`     | `ChannelModeProfile[]`                     | Current mode profiles (order = display order)                  |
-| `library`      | `Library`                                  | Project library for DMR contact / RX-list / talk-group selects   |
-| `channel`      | `Channel \| null`                          | Saved channel for DMR BrandMeister RX-list sync (optional)     |
-| `rxFrequency`  | `number \| null`                           | Live RX frequency (Hz) for DMR operating mode hints            |
-| `txFrequency`  | `number \| null`                           | Live TX frequency (Hz) for DMR operating mode hints              |
-| `onChange`     | `(profiles: ChannelModeProfile[]) => void` | Called when any profile field changes                          |
+| Prop          | Type                                       | Description                                                    |
+| ------------- | ------------------------------------------ | -------------------------------------------------------------- |
+| `profiles`    | `ChannelModeProfile[]`                     | Current mode profiles (order = display order)                  |
+| `library`     | `Library`                                  | Project library for DMR contact / RX-list / talk-group selects |
+| `channel`     | `Channel \| null`                          | Saved channel for DMR BrandMeister RX-list sync (optional)     |
+| `rxFrequency` | `number \| null`                           | Live RX frequency (Hz) for DMR operating mode hints            |
+| `txFrequency` | `number \| null`                           | Live TX frequency (Hz) for DMR operating mode hints            |
+| `onChange`    | `(profiles: ChannelModeProfile[]) => void` | Called when any profile field changes                          |
 
 ## Usage
 
