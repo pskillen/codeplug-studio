@@ -44,45 +44,45 @@ Bit positions below use **bit 0 = LSB** of each byte. CHIRP `bitwise` packs fiel
 
 ### Byte 9
 
-| Bits | Field |
-| ---- | ----- |
-| 7–4 | unknown — preserve on RMW |
-| 3–2 | **txpower** |
-| 1–0 | **duplex** |
+| Bits | Field                     |
+| ---- | ------------------------- |
+| 7–4  | unknown — preserve on RMW |
+| 3–2  | **txpower**               |
+| 1–0  | **duplex**                |
 
 ### Byte 10
 
-| Bits | Field |
-| ---- | ----- |
-| 7–4 | unknown — preserve on RMW |
-| 3–2 | **channel_width** |
-| 1 | reverse — preserve on RMW |
-| 0 | **tx_off** (TX disabled when set) |
+| Bits | Field                             |
+| ---- | --------------------------------- |
+| 7–4  | unknown — preserve on RMW         |
+| 3–2  | **channel_width**                 |
+| 1    | reverse — preserve on RMW         |
+| 0    | **tx_off** (TX disabled when set) |
 
 ### Byte 11
 
-| Bits | Field |
-| ---- | ----- |
-| 7–4 | unknown — preserve on RMW |
-| 3 | **dtcs_decode_en** |
-| 2 | **ctcss_decode_en** |
-| 1 | **dtcs_encode_en** |
-| 0 | **ctcss_encode_en** |
+| Bits | Field                     |
+| ---- | ------------------------- |
+| 7–4  | unknown — preserve on RMW |
+| 3    | **dtcs_decode_en**        |
+| 2    | **ctcss_decode_en**       |
+| 1    | **dtcs_encode_en**        |
+| 0    | **ctcss_encode_en**       |
 
 ### Bytes 15 / 17 (DTCS decode / encode flags)
 
-| Bits | Field |
-| ---- | ----- |
-| 7–2 | unknown — preserve on RMW |
-| 1 | **dtcs_*_invert** |
-| 0 | **dtcs_*_code_highbit** |
+| Bits | Field                     |
+| ---- | ------------------------- |
+| 7–2  | unknown — preserve on RMW |
+| 1    | **dtcs\_*_invert**        |
+| 0    | **dtcs\_*_code_highbit**  |
 
 ### Byte 20
 
-| Bits | Field |
-| ---- | ----- |
-| 7–1 | unknown — preserve on RMW |
-| 0 | **tone_squelch_en** (set for TSQL / DTCS squelch) |
+| Bits | Field                                             |
+| ---- | ------------------------------------------------- |
+| 7–1  | unknown — preserve on RMW                         |
+| 0    | **tone_squelch_en** (set for TSQL / DTCS squelch) |
 
 Simplex (`duplex = 0`) and RX-only (`tx_off`) use offset BCD **0**, not the RX frequency.
 
@@ -135,13 +135,13 @@ DTCS uses CHIRP `ALL_DTCS_CODES` index split across low byte + high bit, with se
 
 ## Web Serial Write (Studio)
 
-| Behaviour           | Implementation                                                                                                                                                                                            |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Scan inclusion      | Effective scan resolution (build default + per-channel override) → `scan_enabled_bitfield` @ `0x1960` via `scanAdd` on `RadioChannelDto` ([#734](https://github.com/pskillen/codeplug-studio/issues/734)) |
+| Behaviour           | Implementation                                                                                                                                                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scan inclusion      | Effective scan resolution (build default + per-channel override) → `scan_enabled_bitfield` @ `0x1960` via `scanAdd` on `RadioChannelDto` ([#734](https://github.com/pskillen/codeplug-studio/issues/734))               |
 | DTCS reverse        | Library `DnnnI` / CHIRP invert → byte `15`/`17` bit **1** on decode/encode ([#735](https://github.com/pskillen/codeplug-studio/issues/735); corrected [#1234](https://github.com/pskillen/codeplug-studio/issues/1234)) |
-| DTCS code index     | `ALL_DTCS_CODES` wire index (512 codes 000–777); low byte + bit 0 highbit — not the 104-code subset index ([#1234](https://github.com/pskillen/codeplug-studio/issues/1234)) |
-| Simplex offset      | Offset BCD `0` when duplex is none — not RX frequency ([#1234](https://github.com/pskillen/codeplug-studio/issues/1234)) |
-| Custom CTCSS `0x33` | **Gap:** CHIRP driver incomplete — Studio does not encode custom CTCSS indices on Web Serial yet                                                                                                          |
+| DTCS code index     | `ALL_DTCS_CODES` wire index (512 codes 000–777); low byte + bit 0 highbit — not the 104-code subset index ([#1234](https://github.com/pskillen/codeplug-studio/issues/1234))                                            |
+| Simplex offset      | Offset BCD `0` when duplex is none — not RX frequency ([#1234](https://github.com/pskillen/codeplug-studio/issues/1234))                                                                                                |
+| Custom CTCSS `0x33` | **Gap:** CHIRP driver incomplete — Studio does not encode custom CTCSS indices on Web Serial yet                                                                                                                        |
 
 Read from radio does not import scan flags into library `scanInclusion` — scan bitfield is write-projection only (same pattern as UV-17Pro flat-memory adapters).
 

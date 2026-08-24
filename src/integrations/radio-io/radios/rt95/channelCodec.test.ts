@@ -86,7 +86,9 @@ describe('rt95 channelCodec golden bytes', () => {
   });
 
   it('encodes DTCS invert on byte 17 bit 1', () => {
-    const raw = encodeChannelRecord(sampleDto({ txTone: { kind: 'dcs', code: 23, polarity: 'I' } }));
+    const raw = encodeChannelRecord(
+      sampleDto({ txTone: { kind: 'dcs', code: 23, polarity: 'I' } }),
+    );
     expect(raw[17]).toBe(0x02);
   });
 });

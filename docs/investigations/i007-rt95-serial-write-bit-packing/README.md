@@ -10,14 +10,14 @@
 
 ## Read in this order
 
-| File | What it is | Mutability |
-| ---- | ---------- | ---------- |
-| this file | status, strategy, rules of engagement | status line changes; rest is stable |
-| [`01-findings.md`](01-findings.md) | what is **true**, each with a citation | **append-only** |
-| [`02-dead-ends.md`](02-dead-ends.md) | killed hypotheses | **append-only** |
-| [`03-ledger.md`](03-ledger.md) | one row per run / source read | **rows are immutable** |
-| [`05-open-items.md`](05-open-items.md) | open work only | edited as things ship |
-| [`harness/`](harness/) | Studio encode printer | scratch |
+| File                                   | What it is                             | Mutability                          |
+| -------------------------------------- | -------------------------------------- | ----------------------------------- |
+| this file                              | status, strategy, rules of engagement  | status line changes; rest is stable |
+| [`01-findings.md`](01-findings.md)     | what is **true**, each with a citation | **append-only**                     |
+| [`02-dead-ends.md`](02-dead-ends.md)   | killed hypotheses                      | **append-only**                     |
+| [`03-ledger.md`](03-ledger.md)         | one row per run / source read          | **rows are immutable**              |
+| [`05-open-items.md`](05-open-items.md) | open work only                         | edited as things ship               |
+| [`harness/`](harness/)                 | Studio encode printer                  | scratch                             |
 
 Settled radio facts belong in `docs/reference/radios/retevis/rt95/` — cite, do not duplicate once promoted.
 

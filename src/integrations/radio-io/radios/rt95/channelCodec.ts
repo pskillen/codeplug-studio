@@ -275,7 +275,10 @@ export function encodeChannelRecord(dto: RadioChannelDto, prior?: Uint8Array): U
   applyToneEncode(out, dto.txTone, 'tx');
   applyToneEncode(out, dto.rxTone, 'rx');
 
-  const nameStr = (dto.wireName || '').trim().slice(0, RT95_NAME_LENGTH).padEnd(RT95_NAME_LENGTH, ' ');
+  const nameStr = (dto.wireName || '')
+    .trim()
+    .slice(0, RT95_NAME_LENGTH)
+    .padEnd(RT95_NAME_LENGTH, ' ');
   const nameBytes = new TextEncoder().encode(nameStr);
   for (let i = 0; i < RT95_NAME_LENGTH; i++) {
     out[24 + i] = nameBytes[i]!;
