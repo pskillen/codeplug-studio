@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import DataTable, { type DataTableColumn } from './DataTable.tsx';
+import DataTable, {
+  type DataTableColumn,
+  compareDataTableValues,
+  sortRowsByColumn,
+} from './DataTable.tsx';
 import DesignSystemV2Provider from './DesignSystemV2Provider.tsx';
 
 function mockMobileViewport() {
@@ -87,6 +91,34 @@ describe('DataTable v2', () => {
     fireEvent.click(screen.getByRole('button', { name: /Name/ }));
     // Unsorted falls back to original row order (Bravo first).
     expect(rowsInOrder()[0]).toContain('Bravo');
+  });
+
+  it('keeps null sort values last regardless of direction', () => {
+    interface NullableRow {
+      id: string;
+      value: number | null;
+    }
+    const rows: NullableRow[] = [
+      { id: 'a', value: 10 },
+      { id: 'b', value: null },
+      { id: 'c', value: 5 },
+    ];
+    const columns: DataTableColumn<NullableRow>[] = [
+      { key: 'value', header: 'Value', render: (r) => r.value, sortValue: (r) => r.value },
+    ];
+
+    expect(
+      sortRowsByColumn(rows, columns, { key: 'value', direction: 'asc' }).map((r) => r.id),
+    ).toEqual(['c', 'a', 'b']);
+    expect(
+      sortRowsByColumn(rows, columns, { key: 'value', direction: 'desc' }).map((r) => r.id),
+    ).toEqual(['a', 'c', 'b']);
+  });
+
+  it('compareDataTableValues sorts nulls after values', () => {
+    expect(compareDataTableValues(null, 5)).toBeGreaterThan(0);
+    expect(compareDataTableValues(5, null)).toBeLessThan(0);
+    expect(compareDataTableValues(null, null)).toBe(0);
   });
 
   it('shows the search input and calls onChange', () => {

@@ -139,13 +139,13 @@ export function compareDataTableValues(
   b: string | number | null,
 ): number {
   if (a == null && b == null) return 0;
-  if (a == null) return -1;
-  if (b == null) return 1;
+  if (a == null) return 1;
+  if (b == null) return -1;
   if (typeof a === 'number' && typeof b === 'number') return a - b;
   return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
 }
 
-/** Sorts `rows` by the `DataTableColumn` matching `sort.key`, using that column's `sortValue`. Shared by `DataTable`'s own sort and any consumer rendering an alternate (e.g. card) layout for the same rows/columns/sort state. */
+/** Sorts `rows` by the `DataTableColumn` matching `sort.key`, using that column's `sortValue`. Shared by `DataTable`'s own sort and any consumer rendering an alternate (e.g. card) layout for the same rows/columns/sort state. Null/empty values always sort last, regardless of direction. */
 export function sortRowsByColumn<T>(
   rows: T[],
   columns: DataTableColumn<T>[],
@@ -155,7 +155,14 @@ export function sortRowsByColumn<T>(
   if (!sort || !sortColumn?.sortValue) return rows;
   const { sortValue } = sortColumn;
   const direction = sort.direction === 'asc' ? 1 : -1;
-  return [...rows].sort((a, b) => direction * compareDataTableValues(sortValue(a), sortValue(b)));
+  return [...rows].sort((a, b) => {
+    const va = sortValue(a);
+    const vb = sortValue(b);
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    return direction * compareDataTableValues(va, vb);
+  });
 }
 
 function nextSortDirection(

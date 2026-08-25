@@ -278,7 +278,13 @@ export default function ChannelsListPage() {
 
   const handleSortChange = useCallback(
     (state: V2Sort | null) => {
-      if (!state) return;
+      if (!state) {
+        setColumnSortOverride(null);
+        if (query.sortMode === 'distance') {
+          query.setSortMode('name');
+        }
+        return;
+      }
       const v1 = v2SortToV1(state);
       if (!v1) return;
       if (v1.columnKey === DATATABLE_NAME_SORT_KEY) {
