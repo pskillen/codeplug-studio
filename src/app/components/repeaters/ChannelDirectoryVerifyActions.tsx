@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Anchor, Button, Checkbox, Group, Text } from '@mantine/core';
+import { Alert, Anchor, Button, Checkbox, Text } from '@mantine/core';
 import type { Channel } from '@core/models/library.ts';
 import type { MapListingOptions, RepeaterListing } from '@integrations/repeaters/index.ts';
 import { SETTINGS_REPEATERBOOK_SECTION_ID } from '../../lib/settingsSections.ts';
@@ -86,7 +86,7 @@ export default function ChannelDirectoryVerifyActions({
       <Text size="sm" c="dimmed">
         Compare frequencies, location, and other fields with public repeater directories.
       </Text>
-      <Group align="flex-end" wrap="wrap" className={classes.actions}>
+      <div className={classes.actions}>
         <Button
           variant="light"
           size="sm"
@@ -125,13 +125,13 @@ export default function ChannelDirectoryVerifyActions({
             {BUTTON_LABELS[mode].brandmeister}
           </Button>
         ) : null}
-        <Checkbox
-          label="Title case names"
-          size="sm"
-          checked={titleCaseNames}
-          onChange={(e) => setTitleCaseNames(e.currentTarget.checked)}
-        />
-      </Group>
+      </div>
+      <Checkbox
+        label="Title case names — ukrepeater.net and IRTS"
+        size="sm"
+        checked={titleCaseNames}
+        onChange={(e) => setTitleCaseNames(e.currentTarget.checked)}
+      />
       {!hasCallsign ? (
         <Text size="sm" c="dimmed">
           Enter a callsign to check against directories.

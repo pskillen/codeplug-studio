@@ -78,6 +78,23 @@
   margin-top: 14px;
 }
 
+.locationDirectoryHint {
+  display: inline-flex;
+  border: none;
+  background: transparent;
+  padding: 0 0 12px;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--dsv2-font-family);
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.locationDirectoryHint:hover {
+  color: var(--dsv2-text-primary);
+}
+
 .rfGap {
   margin: 14px 0;
 }

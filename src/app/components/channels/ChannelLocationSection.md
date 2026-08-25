@@ -52,6 +52,7 @@ const reconciled = reconcileChannelLocation({
 - `clearPosition` resets locator, coords, and `useLocation` (does not change `hideFromInternalMap`).
 - **Hide from map:** `hideFromInternalMap` is app-only — omits the channel from embedded Codeplug Studio maps; coordinates and distance sort are unchanged.
 - **Map mount:** `ChannelEditor` passes `mapActive` so the map unmounts when another tab is selected (Leaflet container reuse constraint).
+- **No directory-check hint here.** The channel editor's Location panel renders a conditional "Set from a directory in Identity" jump-link above this component (only when the channel has a callsign but no location yet) — this component itself has no directory-lookup awareness.
 
 ## Related
 

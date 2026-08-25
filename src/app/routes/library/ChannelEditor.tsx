@@ -489,6 +489,15 @@ export default function ChannelEditor({
           </Panel>
 
           <Panel id="location" title="Location">
+            {callsign.trim() && !location.maidenheadLocator && !location.lat && !location.lon ? (
+              <button
+                type="button"
+                className={classes.locationDirectoryHint}
+                onClick={() => scrollToPageSection('identity')}
+              >
+                Set from a directory in Identity
+              </button>
+            ) : null}
             <ChannelLocationSection value={location} onChange={setLocation} compact={isMobile} />
           </Panel>
 
