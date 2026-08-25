@@ -260,7 +260,10 @@ export default function ChannelEditor({
       : undefined;
   const footerDirty = isDirty || txFieldError != null;
 
-  const headerTitle = entity ? liveChannel.name || 'Untitled channel' : 'New channel';
+  const headerTitle = entity
+    ? [liveChannel.callsign.trim(), liveChannel.name.trim()].filter(Boolean).join(' ') ||
+      'Untitled channel'
+    : 'New channel';
   const headerSubtitle = entity
     ? `${selectedModes.map((m) => modeLabel(m)).join(' + ')} · editing`
     : 'Set up the identity, frequency and mode for this channel.';
