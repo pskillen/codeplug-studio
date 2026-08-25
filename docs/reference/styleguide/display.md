@@ -83,6 +83,20 @@ Strip labels should match list page titles ([README — Page shells](README.md#p
 
 Shared entity icons: `src/app/nav/entityNavIcons.ts`; build-only icons are set on `buildNavItems` in `src/app/routes/builds/nav.ts`.
 
+## In-page section jump-nav
+
+For a **single long editor form** with several distinct panels (not app-level primary/contextual nav above), give each `Panel` an `id` and render a sticky `SectionNav` strip between the header and the scroll body — see the channel editor ([#1265](https://github.com/pskillen/codeplug-studio/issues/1265)) for the reference implementation.
+
+- `SectionNav` items take `{ id, label }` — `active` and the `onChange` payload match `id`, not the label. Plain `string[]` items still work (label-as-id) for callers that don't need scroll-spy.
+- Drive the active item with a scroll-spy hook (`useSectionScrollSpy(ids)` — `IntersectionObserver`, top-biased `rootMargin`, returns the topmost intersecting id) rather than hand-rolled scroll-position math.
+- A cross-link from one panel to another (e.g. a read-only summary line that jumps to the panel holding the editable field) calls the same section-scroll helper (`scrollToPageSection(id)`) the nav uses — don't duplicate the scroll logic.
+- Sticky on **both** desktop and mobile; sits below any higher-priority sticky chrome (e.g. below `StickyFooter`'s z-index).
+- Only reach for this when a form has enough panels that scrolling past earlier ones to reach a later one is a real cost — not every multi-panel editor needs it.
+
+## Neutral-default segmented controls
+
+`GradientSegmentedControl`'s colour fitting is value-aware: a neutral option (conventionally `'default'`, or `'auto'` when that reads better for the field) is excluded from palette fitting via `neutralValues` and renders with **no** colour override, rather than absorbing a palette slot a short scheme didn't have spare. Use `layout="row"` (label/description left, control right, collapsing to full-width stacking on mobile) instead of `fullWidth` when a 2–3-option control doesn't need to dominate a panel's width — see [GradientSegmentedControl.md](../../../src/app/components/ui/GradientSegmentedControl.md).
+
 ## Related
 
 - [Styleguide hub](README.md)
