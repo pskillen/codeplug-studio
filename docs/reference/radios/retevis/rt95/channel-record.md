@@ -19,26 +19,26 @@ Cite: CHIRP `anytone778uv.py` `MEM_FORMAT` memory struct (facts only — no GPL 
 
 ## Field offsets
 
-| Offset / bits | Field                                             | Encoding / notes                                          |
-| ------------- | ------------------------------------------------- | --------------------------------------------------------- |
-| `0–3`         | RX frequency                                      | BCD (`bbcd`); Hz via CHIRP BCD decode                     |
-| `4–7`         | Offset                                            | BCD; used with duplex / odd-split                         |
-| `8`           | unknown                                           | Preserve on RMW                                           |
-| `9` bits      | talkaround, scramble, **txpower:2**, **duplex:2** | See enums below                                           |
-| `10` bits     | **channel_width:2**, reverse, **tx_off**          | Width + TX disable (`tx_off` → duplex off)                |
-| `11` bits     | dtcs/ctcss encode/decode enables                  | Four enable bits                                          |
-| `12`          | CTCSS decode tone index                           | See tone map                                              |
-| `13`          | CTCSS encode tone index                           | Same                                                      |
-| `14`          | DTCS decode code low                              | + high bit / invert in following byte                     |
-| `15` bits     | DTCS decode invert + high bit                     |                                                           |
-| `16`          | DTCS encode code low                              |                                                           |
-| `17` bits     | DTCS encode invert + high bit                     |                                                           |
-| `18` bits     | **busy_channel_lockout:2**                        | Off / repeater / busy                                     |
-| `19`          | unknown                                           | Preserve                                                  |
-| `20` bit      | **tone_squelch_en**                               | TSQL-style squelch                                        |
-| `21–23`       | unknown                                           | Preserve                                                  |
-| `24–29`       | name                                              | 6 chars; VOX uses all 6                                   |
-| `30–31`       | custom CTCSS                                      | `ul16`; custom tone `0x33` not fully implemented in CHIRP |
+| Offset / bits | Field                                             | Encoding / notes                                                             |
+| ------------- | ------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `0–3`         | RX frequency                                      | `bbcd[4]`; `int(Hz/10)`; **MSD pair in byte 0** (`14 65 20 00` = 146.52 MHz) |
+| `4–7`         | Offset                                            | Same `bbcd`; simplex / `tx_off` write `0`; +7.6 MHz is `00 76 00 00`         |
+| `8`           | unknown                                           | Preserve on RMW                                                              |
+| `9` bits      | talkaround, scramble, **txpower:2**, **duplex:2** | See enums below                                                              |
+| `10` bits     | **channel_width:2**, reverse, **tx_off**          | Width + TX disable (`tx_off` → duplex off)                                   |
+| `11` bits     | dtcs/ctcss encode/decode enables                  | Four enable bits                                                             |
+| `12`          | CTCSS decode tone index                           | See tone map                                                                 |
+| `13`          | CTCSS encode tone index                           | Same                                                                         |
+| `14`          | DTCS decode code low                              | + high bit / invert in following byte                                        |
+| `15` bits     | DTCS decode invert + high bit                     |                                                                              |
+| `16`          | DTCS encode code low                              |                                                                              |
+| `17` bits     | DTCS encode invert + high bit                     |                                                                              |
+| `18` bits     | **busy_channel_lockout:2**                        | Off / repeater / busy                                                        |
+| `19`          | unknown                                           | Preserve                                                                     |
+| `20` bit      | **tone_squelch_en**                               | TSQL-style squelch                                                           |
+| `21–23`       | unknown                                           | Preserve                                                                     |
+| `24–29`       | name                                              | 6 chars; VOX uses all 6                                                      |
+| `30–31`       | custom CTCSS                                      | `ul16`; custom tone `0x33` not fully implemented in CHIRP                    |
 
 Bit positions below use **bit 0 = LSB** of each byte. CHIRP `bitwise` packs fields **MSB-first** within each `u8` group (first field listed occupies the high bits). Preserve unknown bits on RMW.
 

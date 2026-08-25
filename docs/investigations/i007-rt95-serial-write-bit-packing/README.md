@@ -2,9 +2,11 @@
 
 **Hub for this investigation.** Opened from [#1234](https://github.com/pskillen/codeplug-studio/issues/1234) (parent [#640](https://github.com/pskillen/codeplug-studio/issues/640)).
 
-**Status:** **Code shipped** on branch `1234/pskil/rt95-channel-pack` ([#1234](https://github.com/pskillen/codeplug-studio/issues/1234)). Packing, `ALL_DTCS_CODES`, simplex offset `0`, and space-padded names are fixed in `channelCodec.ts` with golden-byte tests. **Hardware verify pending** before merge.
+**Status:** Bit packing and CTCSS **confirmed on hardware** (2026-08-25). Frequency `bbcd` endian **fixed in tree** (MSD-first). **Hardware re-verify pending** (GB3GL +7.6 MHz, PTT, no 136/490 coerce).
 
-**Next move:** Operator writes simplex, +600 kHz, TSQL, and DTCS on RT95 VOX; confirm TX and compare dump to CHIRP.
+**Prime suspect (cleared in code):** [`bcd.ts`](../../../src/integrations/radio-io/radios/rt95/bcd.ts) was LSD-first. Encode/decode now match CHIRP `bbcd`.
+
+**Next move:** Operator Write GB3GL; confirm RX in-band, offset +7.6 MHz, PTT works, CTCSS still correct.
 
 ---
 

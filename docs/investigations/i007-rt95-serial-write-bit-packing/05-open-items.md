@@ -4,20 +4,18 @@ Only open work. Shipped work lives in version control.
 
 ---
 
-## P0 — shipped in code (#1234 branch)
+## P0 — blocking on-air Write
 
-- MSB-first packing on bytes 9–11 and DTCS flags on 15/17 — **shipped** `channelCodec.ts`
-- Simplex / RX-only offset BCD `0` — **shipped**
-- `ALL_DTCS_CODES` wire indices — **shipped** `allDtcsCodes.ts`
-- Golden-byte tests — **shipped** `channelCodec.test.ts`
-- Tier-3 bit table — **shipped** [channel-record.md](../../reference/radios/retevis/rt95/channel-record.md)
+### O6. Frequency / offset BCD is LSD-first; radio wants CHIRP `bbcd` — **SHIPPED in tree**
 
-## P1 — still open
+`bcd.ts` now packs MSD-first. Hardware confirm still **O5**.
 
-### O5. Hardware Write — **OPEN**
+### O5. Hardware Write (second pass) — **OPEN**
 
-One simplex, one +600 kHz, one TSQL, one DTCS; TX works; dump matches a CHIRP write of the same memories. Operator-owned before merge.
+After O6: GB3GL RX in amateur UHF (not 136/490), offset **+7.6 MHz**, PTT not null, CTCSS still correct.
 
-### D2. Pre-#1234 images
+## P1 — already shipped (keep)
 
-Read of channels previously written with the LSB map will look wrong until those slots are rewritten.
+- MSB-first packing, `ALL_DTCS_CODES`, simplex offset modelled as 0, space-padded names, golden bit tests — **shipped** (hardware: tones + duplex sign OK).
+- `bbcd` MSD-first — **shipped** in `bcd.ts` (golden tests). Radio confirm is O5.
+- Tier-3 bit table + BCD endian note — **shipped** [channel-record.md](../../reference/radios/retevis/rt95/channel-record.md).
