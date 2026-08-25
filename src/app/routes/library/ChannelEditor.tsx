@@ -25,6 +25,7 @@ import {
   EditorHeader,
   FormField,
   Panel,
+  SectionNav,
   SegmentedControl,
   StickyFooter,
   TextInput,
@@ -43,6 +44,8 @@ import ChannelModeProfilesEditor from '../../components/channels/ChannelModeProf
 import ChannelModesField from '../../components/channels/ChannelModesField.tsx';
 import ChannelWireNameExamples from '../../components/channels/ChannelWireNameExamples.tsx';
 import ChannelDirectoryVerifyActions from '../../components/repeaters/ChannelDirectoryVerifyActions.tsx';
+import { BandPillForChannel } from '../../components/pills/BandPill.tsx';
+import { formatChannelRxTxListCell } from '../../lib/formatFrequency.ts';
 import ChannelZoneMembershipSection from '../../components/library/ChannelZoneMembershipSection.tsx';
 import PowerLadderHints from '../../components/library/PowerLadderHints.tsx';
 import ScanListSummary from '../../components/library/ScanListSummary.tsx';
@@ -51,9 +54,12 @@ import ChannelAprsBindingSection, {
   channelAprsBindingFromChannel,
 } from '../../components/library/ChannelAprsBindingSection.tsx';
 import { useEntityEditorUnsavedGuard } from '../../hooks/useEntityFormDirty.ts';
+import { useSectionScrollSpy } from '../../hooks/useSectionScrollSpy.ts';
 import { hzToMhzString, mhzStringToHz } from '../../lib/units.ts';
+import { scrollToPageSection } from '../../lib/scrollToPageSection.ts';
 import { persistence } from '../../state/persistence.ts';
 import { channelEditorPageTitle } from './channelEditorPageTitle.ts';
+import { channelEditorSections } from './channelEditorSections.ts';
 import { useEntitySave } from './useEntitySave.ts';
 import classes from './ChannelEditor.module.css';
 
@@ -70,7 +76,7 @@ export default function ChannelEditor({
   onPageTitle?: (title: string) => void;
   loading?: boolean;
 }) {
-  const base = entity ?? newChannel(projectId, '');
+  const [base] = useState(() => entity ?? newChannel(projectId, ''));
 
   const [name, setName] = useState(base.name);
   const [abbreviation, setAbbreviation] = useState(base.abbreviation ?? '');
@@ -185,6 +191,34 @@ export default function ChannelEditor({
     });
   }
 
+  // "Apply only": fills form state from a directory match, nothing persisted. Same fan-out
+  // either way — only the fields ChannelDiffField can carry need handling (channelDiff.ts:
+  // callsign, name, rxFrequency, txFrequency, rxTone, txTone, colourCode, mode, location,
+  // maidenheadLocator, useLocation, comment — tones/colour code arrive inside modeProfiles).
+  function applyDirectoryPatch(patched: Channel) {
+    setName(patched.name);
+    setCallsign(patched.callsign);
+    setRx(hzToMhzString(patched.rxFrequency));
+    setTx(hzToMhzString(patched.txFrequency));
+    setComment(patched.comment);
+    setModeProfiles(patched.modeProfiles);
+    setPrimaryMode((prev) => reconcilePrimaryMode(prev, patched.modeProfiles));
+    setLocation(channelLocationValuesFromChannel(patched));
+  }
+
+  // "Apply & save": the dialog has already persisted `patched` (same
+  // persistence.putChannel(patched, channel.revision) call as today's saved-channel workflow,
+  // unchanged). On a saved channel that's the whole job — the page's own key={revision}
+  // remount (EntityEditorPage.tsx) picks up the change. On New channel there is no remount to
+  // rely on yet, so land the operator on the freshly created channel's edit page, matching
+  // handleDuplicate's existing navigate-to-new-row pattern above.
+  function handleApplyAndSave(patched: Channel) {
+    permitNavigationOnce();
+    if (!entity) {
+      navigate(`/library/channels/${patched.id}`);
+    }
+  }
+
   function handleSave() {
     const profileErrors = validateModeProfiles(modeProfiles);
     if (profileErrors.length > 0) {
@@ -226,7 +260,10 @@ export default function ChannelEditor({
       : undefined;
   const footerDirty = isDirty || txFieldError != null;
 
-  const headerTitle = entity ? liveChannel.name || 'Untitled channel' : 'New channel';
+  const headerTitle = entity
+    ? [liveChannel.callsign.trim(), liveChannel.name.trim()].filter(Boolean).join(' ') ||
+      'Untitled channel'
+    : 'New channel';
   const headerSubtitle = entity
     ? `${selectedModes.map((m) => modeLabel(m)).join(' + ')} · editing`
     : 'Set up the identity, frequency and mode for this channel.';
@@ -239,6 +276,10 @@ export default function ChannelEditor({
     { value: '', label: 'None' },
     ...library.scanLists.map((list) => ({ value: list.id, label: list.name })),
   ];
+
+  const editorSections = useMemo(() => channelEditorSections({ isNew: !entity }), [entity]);
+  const sectionIds = useMemo(() => editorSections.map((s) => s.id), [editorSections]);
+  const activeSectionId = useSectionScrollSpy(sectionIds);
 
   const browseChannelIds = useMemo(
     () => [...library.channels].sort((a, b) => a.name.localeCompare(b.name)).map((ch) => ch.id),
@@ -273,86 +314,99 @@ export default function ChannelEditor({
           compact={isMobile}
         />
 
+        <div className={classes.stickyNav}>
+          <SectionNav
+            items={editorSections}
+            active={activeSectionId}
+            onChange={scrollToPageSection}
+            orientation="horizontal"
+          />
+        </div>
+
         <div className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}>
           {!entity ? (
             <Alert color="blue" variant="light" className={classes.alert}>
-              Prefer importing from a directory? Use{' '}
+              Know the callsign? Use the lookup buttons below. Don&apos;t know it? Browse{' '}
               <Link to="/library/channels/add-from-ukrepeater">ukrepeater.net</Link> or{' '}
               <Link to="/library/channels/add-from-brandmeister">BrandMeister</Link>.
             </Alert>
           ) : null}
 
-          <Panel title="Identity">
-            <div className={classes.identityLayout}>
-              <div className={classes.identityFields}>
-                <div className={classes.identityCallsign}>
-                  <FormField label="Callsign (optional)">
-                    <TextInput
-                      variant="plain"
-                      value={callsign}
-                      onChange={(e) => setCallsign(e.currentTarget.value)}
-                      mono
-                      aria-label="Callsign"
-                    />
-                  </FormField>
-                  {entity ? <ChannelDirectoryVerifyActions channel={liveChannel} /> : null}
-                </div>
-                <div
-                  className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(
-                    ' ',
-                  )}
-                >
-                  <FormField label="Name">
-                    <TextInput
-                      variant="plain"
-                      value={name}
-                      onChange={(e) => setName(e.currentTarget.value)}
-                      aria-label="Name"
-                    />
-                  </FormField>
-                  <FormField label="Abbreviation (optional)">
-                    <TextInput
-                      variant="plain"
-                      value={abbreviation}
-                      onChange={(e) => setAbbreviation(e.currentTarget.value)}
-                      aria-label="Abbreviation"
-                    />
-                  </FormField>
-                </div>
-                <div className={classes.identityComment}>
-                  <FormField label="Comment">
-                    <TextInput
-                      variant="plain"
-                      value={comment}
-                      onChange={(e) => setComment(e.currentTarget.value)}
-                      aria-label="Comment"
-                    />
-                  </FormField>
-                </div>
-              </div>
-              {isMobile ? (
-                <details className={classes.hintDetails}>
-                  <summary>Name examples</summary>
-                  <ChannelWireNameExamples
-                    callsign={callsign}
-                    name={name}
-                    abbreviation={abbreviation}
-                  />
-                </details>
-              ) : (
-                <ChannelWireNameExamples
-                  callsign={callsign}
-                  name={name}
-                  abbreviation={abbreviation}
+          <Panel id="identity" title="Identity">
+            <div className={classes.identityCallsign}>
+              <FormField label="Callsign (optional)">
+                <TextInput
+                  variant="plain"
+                  value={callsign}
+                  onChange={(e) => setCallsign(e.currentTarget.value)}
+                  mono
+                  aria-label="Callsign"
                 />
-              )}
+              </FormField>
+              <ChannelDirectoryVerifyActions
+                channel={liveChannel}
+                onApplyAndSave={handleApplyAndSave}
+                onApplyAndContinue={applyDirectoryPatch}
+                mode={entity ? 'verify' : 'lookup'}
+              />
             </div>
+            <div className={classes.identityName}>
+              <FormField label="Name">
+                <TextInput
+                  variant="plain"
+                  value={name}
+                  onChange={(e) => setName(e.currentTarget.value)}
+                  aria-label="Name"
+                />
+              </FormField>
+            </div>
+            <button
+              type="button"
+              className={classes.identityRfSummary}
+              onClick={() => scrollToPageSection('rf')}
+              aria-label="Jump to RF section"
+            >
+              <span className={classes.identityRfSummaryText}>
+                {formatChannelRxTxListCell(liveRxHz, liveTxHz)}
+              </span>
+              <BandPillForChannel channel={liveChannel} size="xs" />
+            </button>
             <div className={classes.identityModes}>
               <ChannelModesField selectedModes={selectedModes} onChange={handleModesChange} />
             </div>
           </Panel>
 
-          <Panel title="Frequency">
+          <Panel id="naming" title="Names and notes" collapsible defaultCollapsed={isMobile}>
+            <div
+              className={[classes.fieldGrid, isMobile ? classes.fieldGridCompact : ''].join(' ')}
+            >
+              <FormField label="Abbreviation (optional)">
+                <TextInput
+                  variant="plain"
+                  value={abbreviation}
+                  onChange={(e) => setAbbreviation(e.currentTarget.value)}
+                  aria-label="Abbreviation"
+                />
+              </FormField>
+              <FormField label="Comment">
+                <TextInput
+                  variant="plain"
+                  value={comment}
+                  onChange={(e) => setComment(e.currentTarget.value)}
+                  aria-label="Comment"
+                />
+              </FormField>
+            </div>
+            <div className={classes.namingWireExamples}>
+              <ChannelWireNameExamples
+                callsign={callsign}
+                name={name}
+                abbreviation={abbreviation}
+              />
+            </div>
+          </Panel>
+
+          <Panel id="rf" title="RF">
             <FormField label="RX frequency (MHz)" mono>
               <TextInput
                 variant="plain"
@@ -362,7 +416,7 @@ export default function ChannelEditor({
                 aria-label="RX frequency"
               />
             </FormField>
-            <div className={classes.frequencyGap}>
+            <div className={classes.rfGap}>
               <TxOffsetControls
                 rxFrequencyHz={liveRxHz}
                 txFrequencyHz={liveTxHz}
@@ -381,9 +435,13 @@ export default function ChannelEditor({
             <p className={classes.bandHint}>
               Offsets shown match this frequency&apos;s band when RX is set.
             </p>
-            <Stack gap="lg" className={classes.frequencyTx}>
-              <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
-              <TxPermitSegment value={txPermit} onChange={setTxPermit} />
+            <Stack gap="lg" className={classes.rfTx}>
+              <ForbidTransmitSegment
+                value={forbidTransmit}
+                onChange={setForbidTransmit}
+                layout="row"
+              />
+              <TxPermitSegment value={txPermit} onChange={setTxPermit} layout="row" />
             </Stack>
             <div className={classes.powerRow}>
               <PercentLevelSlider label="Power" value={power} onChange={setPower} />
@@ -399,6 +457,7 @@ export default function ChannelEditor({
           </Panel>
 
           <Panel
+            id="mode-settings"
             title="Mode settings"
             sub={
               modeProfiles.length > 1
@@ -432,17 +491,26 @@ export default function ChannelEditor({
             />
           </Panel>
 
-          <Panel title="Location">
+          <Panel id="location" title="Location">
+            {callsign.trim() && !location.maidenheadLocator && !location.lat && !location.lon ? (
+              <button
+                type="button"
+                className={classes.locationDirectoryHint}
+                onClick={() => scrollToPageSection('identity')}
+              >
+                Set from a directory in Identity
+              </button>
+            ) : null}
             <ChannelLocationSection value={location} onChange={setLocation} compact={isMobile} />
           </Panel>
 
           {entity ? (
-            <Panel title="Zones">
+            <Panel id="zones" title="Zones">
               <ChannelZoneMembershipSection channelId={entity.id} library={library} />
             </Panel>
           ) : null}
 
-          <Panel title="Scanning">
+          <Panel id="scanning" title="Scanning">
             <Stack gap="lg">
               <ScanInclusionSegment value={scanInclusion} onChange={setScanInclusion} />
               <FormField label="Scan list">
@@ -458,7 +526,7 @@ export default function ChannelEditor({
             </Stack>
           </Panel>
 
-          <Panel title="APRS">
+          <Panel id="aprs" title="APRS">
             <ChannelAprsBindingSection
               aprsConfiguration={library.aprsConfiguration}
               channels={library.channels}

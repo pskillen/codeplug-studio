@@ -6,6 +6,8 @@ export interface SendTalkerAliasSegmentProps {
   onChange: (value: SendTalkerAliasOverride) => void;
   includeDefault?: boolean;
   disabled?: boolean;
+  /** `'row'` puts label/description left, control right. Default `'stack'`. */
+  layout?: 'stack' | 'row';
 }
 
 const CHANNEL_OPTIONS = [
@@ -24,6 +26,7 @@ export default function SendTalkerAliasSegment({
   onChange,
   includeDefault = true,
   disabled = false,
+  layout = 'stack',
 }: SendTalkerAliasSegmentProps) {
   const data = includeDefault ? [...CHANNEL_OPTIONS] : [...BUILD_OPTIONS];
   const wireValue = includeDefault ? value : value === 'default' ? 'on' : value;
@@ -35,7 +38,8 @@ export default function SendTalkerAliasSegment({
       onChange={(next) => onChange(next as SendTalkerAliasOverride)}
       data={data}
       scheme="onOff"
-      fullWidth
+      layout={layout}
+      fullWidth={layout === 'stack'}
       disabled={disabled}
     />
   );

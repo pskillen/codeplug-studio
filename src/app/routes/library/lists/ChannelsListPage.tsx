@@ -143,7 +143,7 @@ function renderJoinedModePills(modes: ChannelMode[], primary: ChannelMode | null
   );
 }
 
-/** Name column cell — name link; callsign + band on one line; mode pills below (table only). */
+/** Name column cell — callsign + band on one line; name link below; mode pills last (table only). */
 function renderChannelNameCell(channel: Channel): ReactNode {
   const name = channel.name || '—';
   const callsign = channel.callsign?.trim();
@@ -153,9 +153,6 @@ function renderChannelNameCell(channel: Channel): ReactNode {
 
   return (
     <div className={classes.nameCell}>
-      <Link to={`/library/channels/${channel.id}`} className="libraryListNameLink">
-        {name}
-      </Link>
       {callsign || band ? (
         <div className={classes.pillRow}>
           {callsign ? <Pill tone="accent">{callsign}</Pill> : null}
@@ -166,6 +163,9 @@ function renderChannelNameCell(channel: Channel): ReactNode {
           ) : null}
         </div>
       ) : null}
+      <Link to={`/library/channels/${channel.id}`} className="libraryListNameLink">
+        {name}
+      </Link>
       {renderJoinedModePills(modes, primary)}
     </div>
   );

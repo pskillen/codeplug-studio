@@ -105,6 +105,10 @@ export default function ChannelZoneMembershipSection({
         Zones containing this channel. To reorder or manage other members, edit the zone itself.
       </p>
 
+      {directMemberships.length === 0 && nestedOnlyMemberships.length === 0 ? (
+        <p className={classes.hint}>Not in a zone yet.</p>
+      ) : null}
+
       <div className={classes.chipRow}>
         {directMemberships.map(({ zone }) => (
           <Pill key={zone.id} tone="neutral" onRemove={() => void handleRemove(zone.id)}>

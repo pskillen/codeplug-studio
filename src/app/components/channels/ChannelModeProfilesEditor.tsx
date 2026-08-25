@@ -191,6 +191,7 @@ function AnalogPanel({
       <AnalogSquelchModeSegment
         value={profile.analogSquelchMode ?? 'default'}
         onChange={(analogSquelchMode) => onPatch({ analogSquelchMode })}
+        layout="row"
       />
     </>
   );
@@ -233,6 +234,7 @@ function DmrPanel({
         onChange={(dmrMode) => onPatch({ dmrMode })}
         rxFrequency={rxFrequency}
         txFrequency={txFrequency}
+        layout="row"
       />
       <Group grow>
         <NumberInput
@@ -295,6 +297,7 @@ function DmrPanel({
       <SendTalkerAliasSegment
         value={profile.sendTalkerAlias ?? 'default'}
         onChange={(sendTalkerAlias) => onPatch({ sendTalkerAlias })}
+        layout="row"
       />
     </>
   );

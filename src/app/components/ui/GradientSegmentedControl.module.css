@@ -3,3 +3,38 @@
     background-color var(--sc-transition-duration, 200ms) var(--sc-transition-timing-function, ease),
     transform var(--sc-transition-duration, 200ms) var(--sc-transition-timing-function, ease);
 }
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--mantine-spacing-md);
+}
+
+.rowCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowLabel {
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 500;
+}
+
+.rowDescription {
+  font-size: var(--mantine-font-size-xs);
+  color: var(--mantine-color-dimmed);
+}
+
+.rowControl {
+  flex-shrink: 0;
+}
+
+@media (max-width: 48em) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

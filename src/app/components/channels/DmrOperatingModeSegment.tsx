@@ -8,6 +8,8 @@ export interface DmrOperatingModeSegmentProps {
   rxFrequency: number | null;
   txFrequency: number | null;
   disabled?: boolean;
+  /** `'row'` puts label/description left, control right. Default `'stack'`. */
+  layout?: 'stack' | 'row';
 }
 
 const OPTIONS = [
@@ -27,6 +29,7 @@ export default function DmrOperatingModeSegment({
   rxFrequency,
   txFrequency,
   disabled = false,
+  layout = 'stack',
 }: DmrOperatingModeSegmentProps) {
   const inferred = inferredLabel(rxFrequency, txFrequency);
 
@@ -42,7 +45,9 @@ export default function DmrOperatingModeSegment({
       onChange={(next) => onChange(next === 'auto' ? null : (next as DmrOperatingMode))}
       data={[...OPTIONS]}
       scheme="three"
-      fullWidth
+      neutralValues={['auto']}
+      layout={layout}
+      fullWidth={layout === 'stack'}
       disabled={disabled}
     />
   );

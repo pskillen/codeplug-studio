@@ -6,6 +6,8 @@ export interface AnalogSquelchModeSegmentProps {
   onChange: (value: AnalogSquelchModeOverride) => void;
   includeDefault?: boolean;
   disabled?: boolean;
+  /** `'row'` puts label/description left, control right. Default `'stack'`. */
+  layout?: 'stack' | 'row';
 }
 
 const CHANNEL_OPTIONS = [
@@ -24,6 +26,7 @@ export default function AnalogSquelchModeSegment({
   onChange,
   includeDefault = true,
   disabled = false,
+  layout = 'stack',
 }: AnalogSquelchModeSegmentProps) {
   const data = includeDefault ? [...CHANNEL_OPTIONS] : [...BUILD_OPTIONS];
   const wireValue = includeDefault ? value : value === 'default' ? 'carrier' : value;
@@ -40,7 +43,8 @@ export default function AnalogSquelchModeSegment({
       onChange={(next) => onChange(next as AnalogSquelchModeOverride)}
       data={data}
       scheme="three"
-      fullWidth
+      layout={layout}
+      fullWidth={layout === 'stack'}
       disabled={disabled}
     />
   );

@@ -7,6 +7,8 @@ export interface TxPermitSegmentProps {
   /** When false, omits Default (build export override). */
   includeDefault?: boolean;
   disabled?: boolean;
+  /** `'row'` puts label/description left, control right. Default `'stack'`. */
+  layout?: 'stack' | 'row';
 }
 
 const CHANNEL_OPTIONS = [
@@ -25,6 +27,7 @@ export default function TxPermitSegment({
   onChange,
   includeDefault = true,
   disabled = false,
+  layout = 'stack',
 }: TxPermitSegmentProps) {
   const data = includeDefault ? [...CHANNEL_OPTIONS] : [...BUILD_OPTIONS];
   const wireValue = includeDefault ? value : value === 'default' ? 'permitAlways' : value;
@@ -37,7 +40,8 @@ export default function TxPermitSegment({
       onChange={(next) => onChange(next as TxPermitOverride)}
       data={data}
       scheme="three"
-      fullWidth
+      layout={layout}
+      fullWidth={layout === 'stack'}
       disabled={disabled}
     />
   );

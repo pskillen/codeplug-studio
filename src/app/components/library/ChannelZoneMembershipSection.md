@@ -25,6 +25,7 @@ Zone membership is owned by `Zone.members`. This section on the channel editor l
 
 - Lists direct memberships with **Open zone** and **Remove from zone** (immediate `putZone`).
 - Lists parent zones where the channel appears only via nested zones.
+- **Empty state:** when the channel has no direct and no nested-only memberships, shows "Not in a zone yet." above the Add-to-zone combobox instead of leaving it bare.
 - **Add to zone** uses `ZoneSelect` + `addChannelsToZoneMembers`.
 - Calls `useLibrary().reload()` after each mutation.
 

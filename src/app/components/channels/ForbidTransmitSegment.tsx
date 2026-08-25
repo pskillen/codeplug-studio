@@ -7,6 +7,8 @@ export interface ForbidTransmitSegmentProps {
   /** When true, includes a Default option that defers to library + build cascade. */
   includeDefault?: boolean;
   disabled?: boolean;
+  /** `'row'` puts label/description left, control right. Default `'stack'`. */
+  layout?: 'stack' | 'row';
 }
 
 const CHANNEL_OPTIONS = [
@@ -25,6 +27,7 @@ export default function ForbidTransmitSegment({
   onChange,
   includeDefault = true,
   disabled = false,
+  layout = 'stack',
 }: ForbidTransmitSegmentProps) {
   const data = includeDefault ? [...CHANNEL_OPTIONS] : [...BUILD_OPTIONS];
   const wireValue = includeDefault ? value : value === 'default' ? 'allow' : value;
@@ -37,7 +40,8 @@ export default function ForbidTransmitSegment({
       onChange={(next) => onChange(next as ForbidTransmitOverride)}
       data={data}
       scheme="allowForbid"
-      fullWidth
+      layout={layout}
+      fullWidth={layout === 'stack'}
       disabled={disabled}
     />
   );

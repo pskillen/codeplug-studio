@@ -42,6 +42,7 @@ export default function StyleguideNavigationPage() {
   const [activeTab, setActiveTab] = useState<string>('Library');
   const [strip, setStrip] = useState<string>('Channels');
   const [section, setSection] = useState<string>('Identity');
+  const [sectionId, setSectionId] = useState<string>('identity');
   const [bottom, setBottom] = useState<string>('library');
 
   return (
@@ -132,6 +133,35 @@ export default function StyleguideNavigationPage() {
           <div style={{ padding: 20, flex: 1 }}>
             <Text size="sm">
               Section: <strong>{section}</strong>
+            </Text>
+          </div>
+        </div>
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="SectionNav — id/label form"
+        description="Scroll-spy driven nav (channel editor jump-nav): anchor id differs from display label."
+      >
+        <div
+          style={{
+            border: '1px solid var(--dsv2-border)',
+            borderRadius: 10,
+            overflow: 'hidden',
+          }}
+        >
+          <SectionNav
+            items={[
+              { id: 'identity', label: 'Identity' },
+              { id: 'rf', label: 'RF' },
+              { id: 'mode-settings', label: 'Mode settings' },
+            ]}
+            active={sectionId}
+            onChange={setSectionId}
+            orientation="horizontal"
+          />
+          <div style={{ padding: 20 }}>
+            <Text size="sm">
+              Active id: <strong>{sectionId}</strong>
             </Text>
           </div>
         </div>

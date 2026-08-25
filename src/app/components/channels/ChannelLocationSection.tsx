@@ -88,10 +88,6 @@ export default function ChannelLocationSection({
 
   return (
     <Stack gap="md">
-      <p style={{ margin: 0, fontSize: 12, color: 'var(--dsv2-text-tertiary)', lineHeight: 1.45 }}>
-        If this is a real repeater, we can pull its frequency, tone and mode straight from a
-        directory — you&apos;ll still review everything before saving.
-      </p>
       <FormField label="Maidenhead locator" error={locatorError ?? undefined}>
         <TextInput
           variant="plain"

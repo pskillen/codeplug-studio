@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import type { Channel } from '@core/models/library.ts';
 import { newChannel } from '@core/domain/factories.ts';
 import type { RepeaterListing } from '@integrations/repeaters/index.ts';
@@ -45,6 +45,7 @@ describe('RepeaterListingUpdateDialog', () => {
           listing={listing}
           opened
           onClose={() => undefined}
+          onApplyAndSave={() => undefined}
         />
       </DesignSystemV2Provider>,
     );
@@ -54,5 +55,32 @@ describe('RepeaterListingUpdateDialog', () => {
     const checkbox = rxToneRow!.querySelector('input[type="checkbox"]') as HTMLInputElement;
     expect(checkbox.checked).toBe(false);
     expect(screen.getByText('None')).toBeInTheDocument();
+  });
+
+  it('calls onApplyAndContinue with the patched channel and does not persist (Apply only)', () => {
+    const onApplyAndContinue = vi.fn();
+    // Callsign-first New-channel case: name/frequency not typed yet, so those rows
+    // differ from the listing and are selected by default (unlike channelWithRxTone(),
+    // which already matches the listing and would leave the "Apply only" button disabled).
+    const blankChannel: Channel = newChannel('p1', '', 'GB3DA');
+
+    render(
+      <DesignSystemV2Provider>
+        <RepeaterListingUpdateDialog
+          channel={blankChannel}
+          listing={listing}
+          opened
+          onClose={() => undefined}
+          onApplyAndContinue={onApplyAndContinue}
+        />
+      </DesignSystemV2Provider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Apply only' }));
+
+    expect(onApplyAndContinue).toHaveBeenCalledTimes(1);
+    const patched = onApplyAndContinue.mock.calls[0]?.[0] as Channel;
+    expect(patched.callsign).toBe('GB3DA');
+    expect(patched.name).toBe('Danbury');
   });
 });
