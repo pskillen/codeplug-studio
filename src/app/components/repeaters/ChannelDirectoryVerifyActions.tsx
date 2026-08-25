@@ -6,20 +6,46 @@ import type { MapListingOptions, RepeaterListing } from '@integrations/repeaters
 import { SETTINGS_REPEATERBOOK_SECTION_ID } from '../../lib/settingsSections.ts';
 import { useRepeaterBookSettings } from '../../hooks/useRepeaterBookSettings.ts';
 import RepeaterListingPickerModal from './RepeaterListingPickerModal.tsx';
-import RepeaterListingUpdateDialog from './RepeaterListingUpdateDialog.tsx';
+import RepeaterListingUpdateDialog, {
+  type RepeaterListingUpdateDialogMode,
+} from './RepeaterListingUpdateDialog.tsx';
 import { useRepeaterListingLookup } from './useRepeaterListingLookup.ts';
 import classes from './ChannelDirectoryVerifyActions.module.css';
 
 export interface ChannelDirectoryVerifyActionsProps {
   channel: Channel;
+  /** Primary button — "Apply & save". Omit to hide the button. */
+  onApplyAndSave?: (patched: Channel) => void;
+  /** Secondary button — "Apply only". Fills the caller's form state; writes nothing. */
+  onApplyAndContinue: (patched: Channel) => void;
+  /** Copy variant — 'verify' (default, saved channel) vs 'lookup' (New channel). */
+  mode?: RepeaterListingUpdateDialogMode;
 }
 
 function channelHasDmr(channel: Channel): boolean {
   return channel.modeProfiles.some((p) => p.mode === 'dmr');
 }
 
+const BUTTON_LABELS: Record<RepeaterListingUpdateDialogMode, Record<string, string>> = {
+  verify: {
+    ukrepeater: 'Check ukrepeater.net',
+    irts: 'Check IRTS',
+    repeaterbook: 'Check RepeaterBook',
+    brandmeister: 'Check BrandMeister repeater',
+  },
+  lookup: {
+    ukrepeater: 'Look up on ukrepeater.net',
+    irts: 'Look up on IRTS',
+    repeaterbook: 'Look up on RepeaterBook',
+    brandmeister: 'Look up on BrandMeister',
+  },
+};
+
 export default function ChannelDirectoryVerifyActions({
   channel,
+  onApplyAndSave,
+  onApplyAndContinue,
+  mode = 'verify',
 }: ChannelDirectoryVerifyActionsProps) {
   const [ukLoading, setUkLoading] = useState(false);
   const [irtsLoading, setIrtsLoading] = useState(false);
@@ -68,7 +94,7 @@ export default function ChannelDirectoryVerifyActions({
           disabled={!hasCallsign}
           onClick={() => void runDirectoryCheck('ukrepeater', 'repeater', setUkLoading)}
         >
-          Check ukrepeater.net
+          {BUTTON_LABELS[mode].ukrepeater}
         </Button>
         <Button
           variant="light"
@@ -77,7 +103,7 @@ export default function ChannelDirectoryVerifyActions({
           disabled={!hasCallsign}
           onClick={() => void runDirectoryCheck('irts', 'repeater', setIrtsLoading)}
         >
-          Check IRTS
+          {BUTTON_LABELS[mode].irts}
         </Button>
         <Button
           variant="light"
@@ -86,7 +112,7 @@ export default function ChannelDirectoryVerifyActions({
           disabled={!hasCallsign || !hasRepeaterBookToken}
           onClick={() => void runDirectoryCheck('repeaterbook', 'repeater', setRbLoading)}
         >
-          Check RepeaterBook
+          {BUTTON_LABELS[mode].repeaterbook}
         </Button>
         {showBrandmeister ? (
           <Button
@@ -96,7 +122,7 @@ export default function ChannelDirectoryVerifyActions({
             disabled={!hasCallsign}
             onClick={() => void runDirectoryCheck('brandmeister', 'repeater', setBmRepeaterLoading)}
           >
-            Check BrandMeister repeater
+            {BUTTON_LABELS[mode].brandmeister}
           </Button>
         ) : null}
         <Checkbox
@@ -145,6 +171,9 @@ export default function ChannelDirectoryVerifyActions({
         mapOptions={activeMapOptions}
         opened={updateOpen}
         onClose={() => setUpdateOpen(false)}
+        onApplyAndSave={onApplyAndSave}
+        onApplyAndContinue={onApplyAndContinue}
+        mode={mode}
       />
     </div>
   );

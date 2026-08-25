@@ -191,6 +191,34 @@ export default function ChannelEditor({
     });
   }
 
+  // "Apply only": fills form state from a directory match, nothing persisted. Same fan-out
+  // either way — only the fields ChannelDiffField can carry need handling (channelDiff.ts:
+  // callsign, name, rxFrequency, txFrequency, rxTone, txTone, colourCode, mode, location,
+  // maidenheadLocator, useLocation, comment — tones/colour code arrive inside modeProfiles).
+  function applyDirectoryPatch(patched: Channel) {
+    setName(patched.name);
+    setCallsign(patched.callsign);
+    setRx(hzToMhzString(patched.rxFrequency));
+    setTx(hzToMhzString(patched.txFrequency));
+    setComment(patched.comment);
+    setModeProfiles(patched.modeProfiles);
+    setPrimaryMode((prev) => reconcilePrimaryMode(prev, patched.modeProfiles));
+    setLocation(channelLocationValuesFromChannel(patched));
+  }
+
+  // "Apply & save": the dialog has already persisted `patched` (same
+  // persistence.putChannel(patched, channel.revision) call as today's saved-channel workflow,
+  // unchanged). On a saved channel that's the whole job — the page's own key={revision}
+  // remount (EntityEditorPage.tsx) picks up the change. On New channel there is no remount to
+  // rely on yet, so land the operator on the freshly created channel's edit page, matching
+  // handleDuplicate's existing navigate-to-new-row pattern above.
+  function handleApplyAndSave(patched: Channel) {
+    permitNavigationOnce();
+    if (!entity) {
+      navigate(`/library/channels/${patched.id}`);
+    }
+  }
+
   function handleSave() {
     const profileErrors = validateModeProfiles(modeProfiles);
     if (profileErrors.length > 0) {
@@ -295,7 +323,7 @@ export default function ChannelEditor({
         <div className={[classes.scrollBody, isMobile ? classes.scrollBodyCompact : ''].join(' ')}>
           {!entity ? (
             <Alert color="blue" variant="light" className={classes.alert}>
-              Prefer importing from a directory? Use{' '}
+              Know the callsign? Use the lookup buttons below. Don&apos;t know it? Browse{' '}
               <Link to="/library/channels/add-from-ukrepeater">ukrepeater.net</Link> or{' '}
               <Link to="/library/channels/add-from-brandmeister">BrandMeister</Link>.
             </Alert>
@@ -312,7 +340,12 @@ export default function ChannelEditor({
                   aria-label="Callsign"
                 />
               </FormField>
-              {entity ? <ChannelDirectoryVerifyActions channel={liveChannel} /> : null}
+              <ChannelDirectoryVerifyActions
+                channel={liveChannel}
+                onApplyAndSave={handleApplyAndSave}
+                onApplyAndContinue={applyDirectoryPatch}
+                mode={entity ? 'verify' : 'lookup'}
+              />
             </div>
             <div className={classes.identityName}>
               <FormField label="Name">

@@ -17,20 +17,33 @@ import Pill from '../v2/Pill.tsx';
 import StatusBanner from '../v2/StatusBanner.tsx';
 import classes from './RepeaterListingUpdateDialog.module.css';
 
+/** Copy variant — 'verify' (default) is today's "check against a directory" framing for a
+ * saved channel; 'lookup' swaps to an "import" framing for a blank New channel. See
+ * hl-delivery-plan.md — Naming — "Verify" vs "look up" vs "import". */
+export type RepeaterListingUpdateDialogMode = 'verify' | 'lookup';
+
 export interface RepeaterListingUpdateDialogProps {
   channel: Channel;
   listing: RepeaterListing | null;
   opened: boolean;
   onClose: () => void;
-  onApplied?: () => void;
+  /** Primary button — "Apply & save". Persists the patched Channel via
+   * persistence.putChannel(patched, channel.revision) — today's behaviour, unchanged.
+   * Omit to hide the button (no consumer needs to yet). */
+  onApplyAndSave?: (patched: Channel) => void;
+  /** Secondary button — "Apply only". Hands back the patched Channel, writes nothing.
+   * Omit to hide the button (only the channel editor's New-channel screen needs it today). */
+  onApplyAndContinue?: (patched: Channel) => void;
   mapOptions?: MapListingOptions;
+  mode?: RepeaterListingUpdateDialogMode;
 }
 
 interface RepeaterListingUpdateDialogBodyProps {
   channel: Channel;
   listing: RepeaterListing;
   onClose: () => void;
-  onApplied?: () => void;
+  onApplyAndSave?: (patched: Channel) => void;
+  onApplyAndContinue?: (patched: Channel) => void;
   mapOptions?: MapListingOptions;
 }
 
@@ -38,7 +51,8 @@ function RepeaterListingUpdateDialogBody({
   channel,
   listing,
   onClose,
-  onApplied,
+  onApplyAndSave,
+  onApplyAndContinue,
   mapOptions,
 }: RepeaterListingUpdateDialogBodyProps) {
   const diffRows: ChannelDiffRow[] = useMemo(
@@ -61,11 +75,15 @@ function RepeaterListingUpdateDialogBody({
     });
   }
 
-  async function handleApply() {
-    if (selectedFields.size === 0) return;
+  function buildPatch(): Channel {
+    return buildPatchFromDiff(channel, listing, [...selectedFields], mapOptions);
+  }
+
+  async function handleApplyAndSave() {
+    if (selectedFields.size === 0 || !onApplyAndSave) return;
     setApplying(true);
     setApplyError(null);
-    const patched = buildPatchFromDiff(channel, listing, [...selectedFields], mapOptions);
+    const patched = buildPatch();
     const result = await persistence.putChannel(patched, channel.revision);
     setApplying(false);
     if (!result.ok) {
@@ -76,7 +94,13 @@ function RepeaterListingUpdateDialogBody({
       );
       return;
     }
-    onApplied?.();
+    onApplyAndSave(patched);
+    onClose();
+  }
+
+  function handleApplyAndContinue() {
+    if (selectedFields.size === 0 || !onApplyAndContinue) return;
+    onApplyAndContinue(buildPatch());
     onClose();
   }
 
@@ -126,37 +150,56 @@ function RepeaterListingUpdateDialogBody({
         <Button variant="secondary" onClick={onClose}>
           Cancel
         </Button>
-        <Button
-          disabled={!diffHasChanges(diffRows) || selectedFields.size === 0}
-          loading={applying}
-          onClick={() => void handleApply()}
-        >
-          Apply selected
-        </Button>
+        {onApplyAndContinue ? (
+          <Button
+            variant="secondary"
+            disabled={!diffHasChanges(diffRows) || selectedFields.size === 0}
+            onClick={handleApplyAndContinue}
+          >
+            Apply only
+          </Button>
+        ) : null}
+        {onApplyAndSave ? (
+          <Button
+            disabled={!diffHasChanges(diffRows) || selectedFields.size === 0}
+            loading={applying}
+            onClick={() => void handleApplyAndSave()}
+          >
+            Apply & save
+          </Button>
+        ) : null}
       </div>
     </div>
   );
 }
+
+const DIALOG_TITLES: Record<RepeaterListingUpdateDialogMode, string> = {
+  verify: 'Directory comparison',
+  lookup: 'Import from directory',
+};
 
 export default function RepeaterListingUpdateDialog({
   channel,
   listing,
   opened,
   onClose,
-  onApplied,
+  onApplyAndSave,
+  onApplyAndContinue,
   mapOptions,
+  mode = 'verify',
 }: RepeaterListingUpdateDialogProps) {
   const bodyKey = listing ? `${channel.id}:${listing.source}:${listing.remoteId}` : 'none';
 
   return (
-    <ModalShell open={opened} onClose={onClose} title="Directory comparison" size="lg">
+    <ModalShell open={opened} onClose={onClose} title={DIALOG_TITLES[mode]} size="lg">
       {opened && listing ? (
         <RepeaterListingUpdateDialogBody
           key={bodyKey}
           channel={channel}
           listing={listing}
           onClose={onClose}
-          onApplied={onApplied}
+          onApplyAndSave={onApplyAndSave}
+          onApplyAndContinue={onApplyAndContinue}
           mapOptions={mapOptions}
         />
       ) : null}

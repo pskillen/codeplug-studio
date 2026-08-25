@@ -745,6 +745,7 @@ export default function RepeaterDirectorySearch({
           mapOptions={mapOptions}
           opened={updateOpen}
           onClose={() => setUpdateOpen(false)}
+          onApplyAndSave={() => undefined}
         />
       ) : null}
 
