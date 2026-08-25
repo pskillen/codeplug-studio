@@ -62,11 +62,6 @@ export function isStoredOrderSort(
 }
 
 function compareSortValues(a: string | number | null, b: string | number | null): number {
-  const aNull = a === null || a === undefined || a === '';
-  const bNull = b === null || b === undefined || b === '';
-  if (aNull && bNull) return 0;
-  if (aNull) return 1;
-  if (bNull) return -1;
   if (typeof a === 'number' && typeof b === 'number') return a - b;
   return String(a).localeCompare(String(b), undefined, { sensitivity: 'base' });
 }
@@ -88,6 +83,12 @@ export function sortDataTableRows<T>(
   return [...rows].sort((rowA, rowB) => {
     const a = getSortValueForKey(rowA, columnKey, ctx);
     const b = getSortValueForKey(rowB, columnKey, ctx);
+    const aNull = a === null || a === undefined || a === '';
+    const bNull = b === null || b === undefined || b === '';
+    // Null/empty values always sort last, regardless of direction.
+    if (aNull && bNull) return 0;
+    if (aNull) return 1;
+    if (bNull) return -1;
     return compareSortValues(a, b) * multiplier;
   });
 }

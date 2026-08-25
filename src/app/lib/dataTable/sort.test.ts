@@ -10,12 +10,18 @@ import {
 interface Row {
   id: string;
   name: string;
-  count: number;
+  count: number | null;
 }
 
 const rows: Row[] = [
   { id: '1', name: 'Zulu', count: 10 },
   { id: '2', name: 'Alpha', count: 3 },
+  { id: '3', name: 'Mike', count: 7 },
+];
+
+const rowsWithNulls: Row[] = [
+  { id: '1', name: 'Zulu', count: 10 },
+  { id: '2', name: 'Alpha', count: null },
   { id: '3', name: 'Mike', count: 7 },
 ];
 
@@ -40,6 +46,16 @@ describe('sortDataTableRows', () => {
   it('sorts numeric columns descending', () => {
     const sorted = sortDataTableRows(rows, { columnKey: 'count', direction: 'desc' }, ctx);
     expect(sorted.map((r) => r.count)).toEqual([10, 7, 3]);
+  });
+
+  it('keeps null values last when sorting ascending', () => {
+    const sorted = sortDataTableRows(rowsWithNulls, { columnKey: 'count', direction: 'asc' }, ctx);
+    expect(sorted.map((r) => r.id)).toEqual(['3', '1', '2']);
+  });
+
+  it('keeps null values last when sorting descending', () => {
+    const sorted = sortDataTableRows(rowsWithNulls, { columnKey: 'count', direction: 'desc' }, ctx);
+    expect(sorted.map((r) => r.id)).toEqual(['1', '3', '2']);
   });
 
   it('returns rows unchanged when sort state is null', () => {
