@@ -40,6 +40,7 @@ describe('rt95 channelCodec golden bytes', () => {
     expect(raw[10]).toBe(0x08);
     expect(raw[11]).toBe(0x00);
     expect(offsetBcdHex(raw)).toBe('00000000');
+    expect([...raw.subarray(0, 4)]).toEqual([0x14, 0x65, 0x20, 0x00]);
   });
 
   it('encodes High + plus + FM', () => {
@@ -47,7 +48,14 @@ describe('rt95 channelCodec golden bytes', () => {
     expect(raw[9]).toBe(0x09);
     expect(raw[10]).toBe(0x08);
     expect(raw[11]).toBe(0x00);
-    expect(offsetBcdHex(raw)).toBe('00000600');
+    expect(offsetBcdHex(raw)).toBe('00060000');
+  });
+
+  it('encodes 7.6 MHz plus offset as CHIRP bbcd', () => {
+    const raw = encodeChannelRecord(sampleDto({ rxHz: 430_850_000, txHz: 438_450_000 }));
+    expect([...raw.subarray(0, 4)]).toEqual([0x43, 0x08, 0x50, 0x00]);
+    expect(offsetBcdHex(raw)).toBe('00760000');
+    expect(raw[9]).toBe(0x09);
   });
 
   it('encodes High + tx_off + FM with tx_off on byte 10 bit 0', () => {
