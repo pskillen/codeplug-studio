@@ -7,6 +7,8 @@ export interface ScanInclusionSegmentProps {
   /** Table row layout — omits label and description. */
   compact?: boolean;
   disabled?: boolean;
+  /** `'row'` puts label/description left, control right. Default `'stack'`; ignored when `compact`. */
+  layout?: 'stack' | 'row';
 }
 
 const OPTIONS = [
@@ -26,6 +28,7 @@ export default function ScanInclusionSegment({
   onChange,
   compact = false,
   disabled = false,
+  layout = 'stack',
 }: ScanInclusionSegmentProps) {
   return (
     <GradientSegmentedControl
@@ -39,7 +42,8 @@ export default function ScanInclusionSegment({
       onChange={(next) => onChange(next as ScanInclusion)}
       data={compact ? [...COMPACT_OPTIONS] : [...OPTIONS]}
       scheme="three"
-      fullWidth={!compact}
+      layout={compact ? 'stack' : layout}
+      fullWidth={compact ? false : layout === 'stack'}
       size={compact ? 'xs' : undefined}
       disabled={disabled}
     />

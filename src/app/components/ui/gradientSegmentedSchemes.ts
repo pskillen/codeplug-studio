@@ -64,3 +64,27 @@ export function segmentColorsForCount(scheme: GradientSegmentScheme, count: numb
   while (out.length < count) out.push(last);
   return out;
 }
+
+/**
+ * Value-aware version of `segmentColorsForCount`: fits the palette to the count of
+ * **non-neutral** values only, so a neutral option (e.g. "Default"/"Auto") never
+ * absorbs a real palette slot — and never collapses onto the same colour as a
+ * semantically distinct option purely because padding ran out. Neutral positions
+ * come back `null` (render with no colour override, i.e. Mantine's default).
+ */
+export function segmentColorsForOptions(
+  scheme: GradientSegmentScheme,
+  values: readonly string[],
+  neutralValues: readonly string[] = [],
+): (string | null)[] {
+  const nonNeutralIndices: number[] = [];
+  values.forEach((value, index) => {
+    if (!neutralValues.includes(value)) nonNeutralIndices.push(index);
+  });
+  const fitted = segmentColorsForCount(scheme, nonNeutralIndices.length);
+  const out: (string | null)[] = values.map(() => null);
+  nonNeutralIndices.forEach((valueIndex, fittedIndex) => {
+    out[valueIndex] = fitted[fittedIndex] ?? null;
+  });
+  return out;
+}

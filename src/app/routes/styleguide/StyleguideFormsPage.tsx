@@ -1,5 +1,6 @@
 import { Group, Stack, TextInput as MantineTextInput } from '@mantine/core';
 import { useState } from 'react';
+import GradientSegmentedControl from '../../components/ui/GradientSegmentedControl.tsx';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
 import {
   Button,
@@ -31,6 +32,7 @@ export default function StyleguideFormsPage() {
   const [wireName, setWireName] = useState('GB3DA-DMR');
   const [search, setSearch] = useState('');
   const [ts, setTs] = useState<'ts1' | 'ts2'>('ts2');
+  const [txPermit, setTxPermit] = useState<'default' | 'permitAlways' | 'busyLock'>('default');
   const [skipScan, setSkipScan] = useState(false);
   const [selected, setSelected] = useState(true);
   const [droppedFileName, setDroppedFileName] = useState<string | undefined>();
@@ -170,6 +172,26 @@ export default function StyleguideFormsPage() {
         description="Power/squelch percentage with radio-default checkbox."
       >
         <PercentLevelSlider label="Power" value={50} onChange={() => undefined} />
+      </StyleguideSection>
+      <StyleguideSection
+        title="GradientSegmentedControl — row layout, neutral default"
+        description="layout='row' puts label/description left, control right at intrinsic width (collapses to full-width stacking on mobile). The neutral 'Default' option renders with no colour override instead of absorbing a palette slot."
+      >
+        <Stack gap="md">
+          <GradientSegmentedControl
+            label="TX permit"
+            description="Busy lock stops you transmitting while the frequency is in use. Permit always lets you hold TX anyway."
+            value={txPermit}
+            onChange={setTxPermit}
+            scheme="three"
+            layout="row"
+            data={[
+              { value: 'default', label: 'Default' },
+              { value: 'permitAlways', label: 'Permit always' },
+              { value: 'busyLock', label: 'Busy lock' },
+            ]}
+          />
+        </Stack>
       </StyleguideSection>
     </StyleguidePageShell>
   );

@@ -12,6 +12,7 @@ Channel transmit permission: **Allow TX** or **RX only**. Thin wrapper around [`
 | `onChange`       | `(value: ForbidTransmitOverride) => void`                   | Called when the operator changes the control                        |
 | `includeDefault` | `boolean`                                                   | When true (channel editor), includes **Default**. Default `true`    |
 | `disabled`       | `boolean`                                                   | Optional                                                            |
+| `layout`         | `'stack' \| 'row'`                                          | Forwarded to `GradientSegmentedControl`. Default `'stack'`          |
 
 ## Usage
 
@@ -28,7 +29,7 @@ import ForbidTransmitSegment from '@app/components/channels/ForbidTransmitSegmen
 - **Default** (when `includeDefault`) → library behavioural defaults and build export overrides.
 - Indicator colour follows the shared `allowForbid` preset (teal when Allow TX, orange when RX only).
 
-On the channel editor this control lives in the **Frequency** panel ([#1209](https://github.com/pskillen/codeplug-studio/issues/1209)). Vendor-neutral field name (`forbidTransmit`); wire mapping is format-specific.
+On the channel editor this control lives in the **RF** panel ([#1209](https://github.com/pskillen/codeplug-studio/issues/1209)), at `layout="row"` so the control no longer forces the panel to full-width single-column. Vendor-neutral field name (`forbidTransmit`); wire mapping is format-specific.
 
 ## Related
 

@@ -433,8 +433,12 @@ export default function ChannelEditor({
               Offsets shown match this frequency&apos;s band when RX is set.
             </p>
             <Stack gap="lg" className={classes.rfTx}>
-              <ForbidTransmitSegment value={forbidTransmit} onChange={setForbidTransmit} />
-              <TxPermitSegment value={txPermit} onChange={setTxPermit} />
+              <ForbidTransmitSegment
+                value={forbidTransmit}
+                onChange={setForbidTransmit}
+                layout="row"
+              />
+              <TxPermitSegment value={txPermit} onChange={setTxPermit} layout="row" />
             </Stack>
             <div className={classes.powerRow}>
               <PercentLevelSlider label="Power" value={power} onChange={setPower} />
