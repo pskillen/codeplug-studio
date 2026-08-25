@@ -42,6 +42,11 @@ Wire-name composition for CPS export lives at the import/export boundary. In lib
 | **Name**        | Human qualifier in lists and detail — not the composed CPS wire string |
 | **Comment**     | Internal notes; not exported to CPS                                    |
 
+**Callsign is at least as important as name for a fixed station** — it is the licensed identifier (what Ofcom or a foreign administration actually cares about), while `name` is an operator-chosen convenience label. Display surfaces should give callsign equal or greater visual priority, not bury it as secondary detail under the name:
+
+- **Channel editor heading:** `<Callsign> <Name>` (callsign first) when a callsign is set, falling back to name alone.
+- **List / table rows:** lead with callsign (+ band) on its own line, name below — not the other way round.
+
 CPS wire naming rules: [callsigns.md](../callsigns.md) and per-format channel docs under `docs/reference/export-formats/<format>/`.
 
 ## Icons
