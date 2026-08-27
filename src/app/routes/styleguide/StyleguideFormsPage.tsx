@@ -1,6 +1,9 @@
 import { Group, Stack, TextInput as MantineTextInput } from '@mantine/core';
 import { useState } from 'react';
-import GradientSegmentedControl from '../../components/ui/GradientSegmentedControl.tsx';
+import GradientSegmentedControl, {
+  GRADIENT_SEGMENT_IDLE_VALUE,
+} from '../../components/ui/GradientSegmentedControl.tsx';
+import BulkEditField from '../../components/library/BulkEditField.tsx';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
 import {
   Button,
@@ -33,6 +36,9 @@ export default function StyleguideFormsPage() {
   const [search, setSearch] = useState('');
   const [ts, setTs] = useState<'ts1' | 'ts2'>('ts2');
   const [txPermit, setTxPermit] = useState<'default' | 'permitAlways' | 'busyLock'>('default');
+  const [bulkTx, setBulkTx] = useState<string>(GRADIENT_SEGMENT_IDLE_VALUE);
+  const [bulkPowerOptedIn, setBulkPowerOptedIn] = useState(false);
+  const [bulkPower, setBulkPower] = useState<number | null>(50);
   const [skipScan, setSkipScan] = useState(false);
   const [selected, setSelected] = useState(true);
   const [droppedFileName, setDroppedFileName] = useState<string | undefined>();
@@ -174,8 +180,8 @@ export default function StyleguideFormsPage() {
         <PercentLevelSlider label="Power" value={50} onChange={() => undefined} />
       </StyleguideSection>
       <StyleguideSection
-        title="GradientSegmentedControl — row layout, neutral default"
-        description="layout='row' puts label/description left, control right at intrinsic width (collapses to full-width stacking on mobile). The neutral 'Default' option renders with no colour override instead of absorbing a palette slot."
+        title="GradientSegmentedControl — row layout, idle, shared hint"
+        description="layout='row' puts label/description left, control right at intrinsic width (collapses to full-width stacking on mobile). The neutral 'Default' option renders with no colour override. Bulk edit prepends an offset No change segment and can outline a shared value without selecting it. Sliders use BulkEditField (No change / Set)."
       >
         <Stack gap="md">
           <GradientSegmentedControl
@@ -191,6 +197,28 @@ export default function StyleguideFormsPage() {
               { value: 'busyLock', label: 'Busy lock' },
             ]}
           />
+          <GradientSegmentedControl
+            label="Transmit (bulk edit)"
+            description="No change is idle. The outline on Allow TX is a shared-value hint — it does not apply an override until you select it."
+            value={bulkTx}
+            onChange={setBulkTx}
+            idleOption={{ value: GRADIENT_SEGMENT_IDLE_VALUE, label: 'No change' }}
+            sharedValue="allow"
+            scheme="allowForbid"
+            layout="row"
+            data={[
+              { value: 'default', label: 'Default' },
+              { value: 'allow', label: 'Allow TX' },
+              { value: 'forbid', label: 'RX only' },
+            ]}
+          />
+          <BulkEditField
+            optedIn={bulkPowerOptedIn}
+            onOptedInChange={setBulkPowerOptedIn}
+            sharedHint="50%"
+          >
+            <PercentLevelSlider label="Power" value={bulkPower} onChange={setBulkPower} />
+          </BulkEditField>
         </Stack>
       </StyleguideSection>
     </StyleguidePageShell>

@@ -1,0 +1,22 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sharedHint {
+  margin: 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+  line-height: 1.4;
+}
+
+.body {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  width: 100%;
+}

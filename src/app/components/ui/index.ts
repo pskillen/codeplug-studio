@@ -15,6 +15,7 @@ export type {
   GradientSegmentOption,
   GradientSegmentedControlProps,
 } from './GradientSegmentedControl.tsx';
+export { GRADIENT_SEGMENT_IDLE_VALUE } from './GradientSegmentedControl.tsx';
 export {
   ALLOW_FORBID_SCHEME,
   DIGITAL_MODE_PILL_SCHEME,

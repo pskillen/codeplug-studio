@@ -18,21 +18,35 @@ export interface GradientSegmentOption<T extends string = string> {
   disabled?: boolean;
 }
 
+/** Sentinel for bulk-edit idle / “No change”. Not a domain value. */
+export const GRADIENT_SEGMENT_IDLE_VALUE = '__unchanged__';
+
 export interface GradientSegmentedControlProps<T extends string = string> {
   label?: ReactNode;
   description?: ReactNode;
   value: T;
   onChange: (value: T) => void;
   data: readonly GradientSegmentOption<T>[];
+  /**
+   * Offset first button, visually separate from the gradient group but still one
+   * control. Used for bulk-edit “No change”. Idle is treated as an extra neutral
+   * (no palette colour). Channel editors should omit this.
+   */
+  idleOption?: GradientSegmentOption<T>;
+  /**
+   * Domain value shared by every item in a bulk selection. Draws a secondary
+   * outline on that option without selecting it. Ignored when it matches `value`.
+   */
+  sharedValue?: T;
   /** Named preset or explicit palette. Omit for a plain Mantine segmented control. */
   scheme?: GradientSegmentSchemeName | GradientSegmentScheme;
-  /** Override segment colours — length should match `data`. */
+  /** Override segment colours — length should match `data` (not including `idleOption`). */
   segmentColors?: readonly string[];
   /**
    * Option values excluded from palette fitting and rendered with no colour override
    * (falls back to Mantine's default indicator). Default `['default']` — pass `[]` to
    * disable, or override for wrappers that spell their neutral option differently
-   * (e.g. `['auto']`).
+   * (e.g. `['auto']`). Idle option values are always treated as extra neutrals.
    */
   neutralValues?: readonly string[];
   /**
@@ -53,6 +67,8 @@ export default function GradientSegmentedControl<T extends string>({
   value,
   onChange,
   data,
+  idleOption,
+  sharedValue,
   scheme,
   segmentColors,
   neutralValues = ['default'],
@@ -64,16 +80,28 @@ export default function GradientSegmentedControl<T extends string>({
   const theme = useMantineTheme();
   const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
   const hasColorScheme = Boolean(scheme || segmentColors);
+  const segments = useMemo(
+    () => (idleOption ? [idleOption, ...data] : data),
+    [idleOption, data],
+  );
+  const effectiveNeutralValues = useMemo(() => {
+    if (!idleOption) return neutralValues;
+    return [...neutralValues, idleOption.value];
+  }, [idleOption, neutralValues]);
 
   const rawColors = useMemo((): (string | null)[] => {
-    if (segmentColors) return [...segmentColors];
-    if (!scheme) return [];
-    return segmentColorsForOptions(
-      resolveScheme(scheme),
-      data.map((item) => item.value),
-      neutralValues,
-    );
-  }, [segmentColors, scheme, data, neutralValues]);
+    const domainColors = segmentColors
+      ? [...segmentColors]
+      : scheme
+        ? segmentColorsForOptions(
+            resolveScheme(scheme),
+            data.map((item) => item.value),
+            effectiveNeutralValues,
+          )
+        : [];
+    if (!idleOption) return domainColors;
+    return [null, ...domainColors];
+  }, [segmentColors, scheme, data, effectiveNeutralValues, idleOption]);
 
   const resolvedColors = useMemo(
     () => rawColors.map((c) => (c == null ? null : resolveSegmentColor(c, theme))),
@@ -82,7 +110,7 @@ export default function GradientSegmentedControl<T extends string>({
 
   const activeIndex = Math.max(
     0,
-    data.findIndex((item) => item.value === value),
+    segments.findIndex((item) => item.value === value),
   );
   const indicatorColor = resolvedColors[activeIndex];
   const showColorOverride = hasColorScheme && indicatorColor != null;
@@ -93,16 +121,24 @@ export default function GradientSegmentedControl<T extends string>({
     <SegmentedControl
       value={value}
       onChange={(next) => onChange(next as T)}
-      data={data.map((item) => ({
+      data={segments.map((item) => ({
         value: item.value,
-        label: item.label,
+        label:
+          sharedValue != null && item.value === sharedValue && item.value !== value ? (
+            <span className={classes.sharedHint}>{item.label}</span>
+          ) : (
+            item.label
+          ),
         disabled: item.disabled,
       }))}
       fullWidth={effectiveFullWidth}
       disabled={disabled}
       size={size}
       autoContrast={hasColorScheme}
-      classNames={hasColorScheme ? { indicator: classes.indicator } : undefined}
+      classNames={{
+        indicator: hasColorScheme ? classes.indicator : undefined,
+        root: idleOption ? classes.withIdle : undefined,
+      }}
       styles={
         showColorOverride ? { root: { '--sc-color': indicatorColor } as CSSProperties } : undefined
       }
