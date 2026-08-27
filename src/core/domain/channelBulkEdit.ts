@@ -1,10 +1,19 @@
-import type { Channel, ChannelModeProfileAnalog, ScanInclusion } from '../models/library.ts';
+import type {
+  Channel,
+  ChannelModeProfileAnalog,
+  ChannelModeProfileDMR,
+  ChannelTone,
+  ScanInclusion,
+} from '../models/library.ts';
 import type {
   AnalogSquelchModeOverride,
   ForbidTransmitOverride,
   SendTalkerAliasOverride,
   TxPermitOverride,
 } from '../models/channelBehaviourDefaults.ts';
+import type { AprsChannelBulkPatch } from './aprs/index.ts';
+import { applyAprsChannelBulkPatch, aprsChannelBulkPatchHasChanges } from './aprs/index.ts';
+import { normalizeOptionalChannelAprs } from './aprs/index.ts';
 import {
   channelHasAnalogProfile,
   channelHasDmrProfile,
@@ -25,6 +34,12 @@ export type ChannelBulkEditPatch = {
   power?: number | null;
   /** `null` = open / radio-default squelch on analog profiles. */
   analogSquelch?: number | null;
+  /** Applied to every analog mode profile. `'none'` clears the tone. */
+  rxTone?: ChannelTone;
+  /** Applied to every analog mode profile. `'none'` clears the tone. */
+  txTone?: ChannelTone;
+  /** Partial APRS binding patch; omitted fields stay as they are on each channel. */
+  aprs?: AprsChannelBulkPatch;
 };
 
 export type ChannelBulkEditPatchKey = keyof ChannelBulkEditPatch;
@@ -95,6 +110,24 @@ export function applyChannelBulkPatch(channel: Channel, patch: ChannelBulkEditPa
       } satisfies Partial<ChannelModeProfileAnalog>),
     };
   }
+  if ('rxTone' in patch) {
+    result = {
+      ...result,
+      modeProfiles: patchAllAnalogProfiles(result, { rxTone: patch.rxTone! }),
+    };
+  }
+  if ('txTone' in patch) {
+    result = {
+      ...result,
+      modeProfiles: patchAllAnalogProfiles(result, { txTone: patch.txTone! }),
+    };
+  }
+  if ('aprs' in patch && patch.aprs) {
+    result = {
+      ...result,
+      aprs: normalizeOptionalChannelAprs(applyAprsChannelBulkPatch(result.aprs, patch.aprs)),
+    };
+  }
 
   return result;
 }
@@ -135,7 +168,62 @@ export function channelBulkEditWouldChange(channel: Channel, patch: ChannelBulkE
       (profile) => isAnalogChannelModeProfile(profile) && profile.squelch !== squelch,
     );
   }
+  if ('rxTone' in patch) {
+    if (!channelHasAnalogProfile(channel)) return false;
+    return channel.modeProfiles.some(
+      (profile) => isAnalogChannelModeProfile(profile) && profile.rxTone !== patch.rxTone,
+    );
+  }
+  if ('txTone' in patch) {
+    if (!channelHasAnalogProfile(channel)) return false;
+    return channel.modeProfiles.some(
+      (profile) => isAnalogChannelModeProfile(profile) && profile.txTone !== patch.txTone,
+    );
+  }
+  if ('aprs' in patch && patch.aprs && aprsChannelBulkPatchHasChanges(patch.aprs)) {
+    const next = normalizeOptionalChannelAprs(applyAprsChannelBulkPatch(channel.aprs, patch.aprs));
+    return JSON.stringify(next ?? null) !== JSON.stringify(channel.aprs ?? null);
+  }
   return false;
+}
+
+export function sharedEqualValue<T>(values: readonly T[]): T | undefined {
+  if (values.length === 0) return undefined;
+  const first = values[0];
+  return values.every((value) => Object.is(value, first)) ? first : undefined;
+}
+
+export function sharedChannelField<T>(
+  channels: readonly Channel[],
+  read: (channel: Channel) => T,
+): T | undefined {
+  return sharedEqualValue(channels.map(read));
+}
+
+export function analogProfilesOnChannels(channels: readonly Channel[]): ChannelModeProfileAnalog[] {
+  return channels.flatMap((channel) => channel.modeProfiles.filter(isAnalogChannelModeProfile));
+}
+
+export function dmrProfilesOnChannels(channels: readonly Channel[]): ChannelModeProfileDMR[] {
+  return channels.flatMap((channel) =>
+    channel.modeProfiles.filter(
+      (profile): profile is ChannelModeProfileDMR => profile.mode === 'dmr',
+    ),
+  );
+}
+
+export function sharedAnalogField<T>(
+  channels: readonly Channel[],
+  read: (profile: ChannelModeProfileAnalog) => T,
+): T | undefined {
+  return sharedEqualValue(analogProfilesOnChannels(channels).map(read));
+}
+
+export function sharedDmrField<T>(
+  channels: readonly Channel[],
+  read: (profile: ChannelModeProfileDMR) => T,
+): T | undefined {
+  return sharedEqualValue(dmrProfilesOnChannels(channels).map(read));
 }
 
 export function analyzeChannelBulkEditImpact(
@@ -146,7 +234,12 @@ export function analyzeChannelBulkEditImpact(
   const impact: ChannelBulkEditImpact = {};
 
   for (const key of Object.keys(patch) as ChannelBulkEditPatchKey[]) {
-    if (key === 'analogSquelch' || key === 'analogSquelchMode') {
+    if (
+      key === 'analogSquelch' ||
+      key === 'analogSquelchMode' ||
+      key === 'rxTone' ||
+      key === 'txTone'
+    ) {
       const appliesTo = countChannelsWithAnalogProfile(channels);
       impact[key] = {
         appliesTo,
@@ -166,6 +259,9 @@ export function analyzeChannelBulkEditImpact(
     }
     if (CHANNEL_LEVEL_KEYS.has(key)) {
       impact[key] = { appliesTo: total, skipped: 0 };
+    }
+    if (key === 'aprs') {
+      impact.aprs = { appliesTo: total, skipped: 0 };
     }
   }
 

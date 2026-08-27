@@ -1,0 +1,33 @@
+.trackWrap {
+  position: relative;
+}
+
+.thumbHidden {
+  visibility: hidden;
+}
+
+.barHidden {
+  display: none;
+}
+
+.previewLayer {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 0;
+  height: 16px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.previewDot {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--mantine-color-blue-filled);
+  background: var(--mantine-color-body);
+  transform: translate(-50%, -50%);
+  box-sizing: border-box;
+}

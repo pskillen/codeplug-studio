@@ -17,6 +17,11 @@ export interface PanelProps {
   collapsible?: boolean;
   /** Initial state when `collapsible` is set. Defaults to expanded. */
   defaultCollapsed?: boolean;
+  /**
+   * Compact count shown in the header (open or collapsed). Use for bulk-edit
+   * override counts, e.g. `2 changes`.
+   */
+  badge?: string;
 }
 
 /**
@@ -33,10 +38,23 @@ export default function Panel({
   variant = 'default',
   collapsible = false,
   defaultCollapsed = false,
+  badge,
 }: PanelProps) {
   const [collapsed, setCollapsed] = useState(collapsible && defaultCollapsed);
   const hasHeader = title != null;
   const showBody = !collapsible || !collapsed;
+  const headerLabel = badge ? `${title}, ${badge}` : title;
+
+  const titleInner = (
+    <span className={classes.titleRow}>
+      <span>{title}</span>
+      {badge ? (
+        <span className={classes.badge} aria-hidden>
+          {badge}
+        </span>
+      ) : null}
+    </span>
+  );
 
   return (
     <section
@@ -53,8 +71,9 @@ export default function Panel({
               className={classes.collapseToggle}
               onClick={() => setCollapsed((c) => !c)}
               aria-expanded={!collapsed}
+              aria-label={headerLabel}
             >
-              <span>{title}</span>
+              {titleInner}
               <IconChevronDown
                 size={ICON_SIZE_NAV}
                 stroke={ICON_STROKE}
@@ -65,7 +84,7 @@ export default function Panel({
               />
             </button>
           ) : (
-            title
+            titleInner
           )}
         </h2>
       ) : null}

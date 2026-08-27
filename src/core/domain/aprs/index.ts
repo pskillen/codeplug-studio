@@ -9,6 +9,11 @@ export {
   normalizeAprsConfigurationOrNull,
   normalizeOptionalChannelAprs,
 } from './normalize.ts';
+export {
+  applyAprsChannelBulkPatch,
+  aprsChannelBulkPatchHasChanges,
+  type AprsChannelBulkPatch,
+} from './bulkPatch.ts';
 
 export function newAprsConfiguration(projectId: string, name: string): AprsConfiguration {
   const now = isoNow();

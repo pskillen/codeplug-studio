@@ -14,25 +14,27 @@ Operators multi-select channels on `/library/channels` and bulk-update common fi
 | `onClose`      | `() => void`                                              | Close without persisting                      |
 | `channels`     | `Channel[]`                                               | Selected channels in table order (2 or more)  |
 | `projectId`    | `string \| null`                                          | Active project for delete                     |
+| `library`      | `Library`                                                 | Zones, APRS configuration, and channel slots  |
 | `deleteEntity` | `(kind: 'channel', id: string) => Promise<DeleteOutcome>` | Library delete with integrity                 |
 | `reload`       | `() => Promise<void>`                                     | Refresh library after delete                  |
-| `onApplied`    | `(outcome: PersistChannelBulkEditSuccess) => void`        | Called after a successful apply, before close |
+| `onApplied`    | `(outcome: ChannelBulkApplyOutcome) => void`              | Called after a successful apply, before close |
 | `onDeleted`    | `(outcome: PersistChannelBulkDeleteOutcome) => void`      | Called when one or more channels were deleted |
 
 ## Usage
 
 ```tsx
-const { projectId, deleteEntity, reload } = useLibrary();
+const { projectId, deleteEntity, reload, library } = useLibrary();
 
 <ChannelBulkEditModal
   opened={bulkEditOpen}
   onClose={() => setBulkEditOpen(false)}
   channels={selectedChannels}
   projectId={projectId}
+  library={library}
   deleteEntity={deleteEntity}
   reload={reload}
   onApplied={(outcome) => {
-    setMessage(formatChannelBulkEditMessage(outcome));
+    setMessage(formatChannelBulkApplyMessage(outcome));
     setSelectedKeys([]);
   }}
   onDeleted={(outcome) => {
@@ -47,17 +49,27 @@ Single-channel selection is handled by the list page (navigate to the channel ed
 
 ## Behaviour
 
-- Shell: `ModalShell` (`size="lg"`) with pencil icon, selection banner, and footer **Apply to N channels** / Cancel / Delete.
+- Shell: `ModalShell` (`size="xl"`) with pencil icon, a **N channels selected** banner, and footer **No changes** / **Apply to N channels**, Cancel, and a **destructive** **Delete N channels** button.
+- The list page passes the **full checkbox selection**, not the currently filtered/visible rows. Search and filters only hide rows; they do not shrink bulk edit.
 - **View selected channels** expands a compact scrollable name list.
-- Each field has a **Change …** checkbox; unchecked fields are omitted from the patch and their controls are disabled.
-- Channel-level fields (`scanInclusion`, `forbidTransmit`, `power`) apply to every selected channel when enabled.
-- **Analog mode settings** accordion appears only when at least one selected channel has an analog mode profile. Squelch updates all analog profiles on each affected channel; channels without analog modes are skipped (impact text explains the split).
-- **Apply** runs `persistChannelBulkEdit` with revision checks; revision conflicts show an error and leave the parent selection intact.
-- **Delete N channels** (footer, left) opens an in-modal confirmation. Confirm runs `persistChannelBulkDelete` with zone auto-cascade (same integrity as single delete). Partial blocks close the modal when at least one channel was deleted; total failure stays open with an error.
-- Core patch logic: `@core/domain/channelBulkEdit.ts`.
+- Groups match the channel editor: **RF**, **Mode settings**, **Zones**, **Scanning**, **APRS**. Collapsible `Panel`s; RF and Scanning start open. Header **badge** shows how many overrides in that group, open or closed.
+- Each field starts as **No change**. Gradient fields use an offset idle segment; long selects use [`BulkEditField`](./BulkEditField.md). Apply writes only opted-in fields.
+- Idle + shared value: Mantine fill on the shared option, outline on **No change**. Mixed: fill on **No change**. Opted in: fill and outline on the chosen value.
+- Desktop: two-column `.fieldGroup` grid; mobile: one group per row. Controls use `layout="column"` (title, then control, then description).
+- **Power** and analog **Squelch** are **No change | Default | Custom**. Default writes `null`. Custom shows the percent thumb; idle/default hide the 50% thumb. Preview dots mark every selected channel’s numeric level.
+- Analog **CTCSS/DCS** wraps independent RX and TX tone selects.
+- Channel-level fields (`scanInclusion`, `forbidTransmit`, `txPermit`, `power`) apply to every selected channel when opted in.
+- Analog fields appear only when at least one selected channel has an analog mode. Digital-only channels are skipped for analog patches. Talker alias appears when at least one channel has DMR.
+- **APRS** (collapsed by default): receive, report type, and digital PTT are three-way gradients; report slot stays **No change | Set** plus a select. Analog AX.25 APRS is not supported yet.
+- **Zones** (collapsed by default) uses two [`BulkZonePickerColumn`](./BulkZonePickerColumn.md) pickers: **Remove from** and **Add to**. Apply writes direct zone members (`putZone`); nested-only membership is listed with Open zone links and is not changed.
+- Apply is **No changes** (disabled) until at least one field or zone picker is opted in, then **Apply to N channels**.
+- **Apply** runs `persistChannelBulkEdit` then `persistChannelBulkZoneMembership` with revision checks; revision conflicts show an error and leave the parent selection intact. Zone-only applies skip the channel patch.
+- **Delete N channels** is a destructive footer button (left), not a text link. It opens an in-modal confirmation. Confirm runs `persistChannelBulkDelete` with zone auto-cascade (same integrity as single delete). Partial blocks close the modal when at least one channel was deleted; total failure stays open with an error.
+- Core patch logic: `@core/domain/channelBulkEdit.ts`. Zone membership: `@core/domain/zoneMembership.ts`.
 
 ## Related
 
-- [library/README.md](../../../docs/features/library/README.md) — channels list bulk edit/delete ([#207](https://github.com/pskillen/codeplug-studio/issues/207), [#310](https://github.com/pskillen/codeplug-studio/issues/310))
+- [library/README.md](../../../docs/features/library/README.md) — channels list bulk edit/delete ([#207](https://github.com/pskillen/codeplug-studio/issues/207), [#310](https://github.com/pskillen/codeplug-studio/issues/310), [#1269](https://github.com/pskillen/codeplug-studio/issues/1269))
+- [`BulkEditField`](./BulkEditField.md), [`BulkZonePickerColumn`](./BulkZonePickerColumn.md), [`GradientSegmentedControl`](../ui/GradientSegmentedControl.md), [`PercentLevelSlider`](../v2/PercentLevelSlider.md)
 - `ScanInclusionSegment`, `ForbidTransmitSegment`, `PercentLevelSlider`
 - `persistChannelBulkDelete` in `src/app/lib/channelBulkDelete.ts`

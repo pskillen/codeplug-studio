@@ -66,4 +66,17 @@ describe('Panel', () => {
     fireEvent.click(toggle);
     expect(screen.queryByText('Body')).not.toBeInTheDocument();
   });
+
+  it('shows a header badge while collapsed', () => {
+    render(
+      <DesignSystemV2Provider>
+        <Panel title="RF" collapsible defaultCollapsed badge="2 changes">
+          <span>Body</span>
+        </Panel>
+      </DesignSystemV2Provider>,
+    );
+
+    expect(screen.getByText('2 changes')).toBeInTheDocument();
+    expect(screen.queryByText('Body')).not.toBeInTheDocument();
+  });
 });

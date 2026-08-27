@@ -16,6 +16,7 @@
 .footer {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   width: 100%;
@@ -26,5 +27,41 @@
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
-  width: 100%;
+  margin-left: auto;
+}
+
+.pairRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 48em) {
+  .pairRow {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--dsv2-border-quiet);
+  border-radius: var(--dsv2-radius-panel);
+}
+
+.fieldGroupWide {
+  grid-column: 1 / -1;
+}
+
+.openLink {
+  font-size: 11.5px;
+  color: var(--dsv2-accent);
+  text-decoration: none;
+}
+
+.openLink:hover {
+  text-decoration: underline;
 }

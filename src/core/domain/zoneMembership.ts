@@ -80,6 +80,23 @@ export function zonesWithEffectiveChannelMembership(
   return result.sort((a, b) => a.zone.name.localeCompare(b.zone.name));
 }
 
+/** Unique parent zones where any of the channels is nested-only (not a direct member). */
+export function nestedOnlyZoneMembershipsForChannels(
+  channelIds: readonly string[],
+  library: Pick<Library, 'zones'>,
+): EffectiveZoneChannelMembership[] {
+  const byZoneId = new Map<string, EffectiveZoneChannelMembership>();
+  for (const channelId of channelIds) {
+    for (const membership of zonesWithEffectiveChannelMembership(channelId, library)) {
+      if (membership.direct) continue;
+      if (!byZoneId.has(membership.zone.id)) {
+        byZoneId.set(membership.zone.id, membership);
+      }
+    }
+  }
+  return [...byZoneId.values()].sort((a, b) => a.zone.name.localeCompare(b.zone.name));
+}
+
 /** Channel ids not referenced by any zone (effective membership). */
 export function unzonedChannelIds(library: ZoneMembershipLibrarySlice): string[] {
   return library.channels

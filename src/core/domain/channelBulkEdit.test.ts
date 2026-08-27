@@ -7,6 +7,7 @@ import {
   applyChannelBulkPatch,
   channelBulkEditWouldChange,
   countChannelsWithAnalogProfile,
+  sharedChannelField,
 } from './channelBulkEdit.ts';
 
 const projectId = 'proj-bulk-edit';
@@ -57,6 +58,19 @@ describe('applyChannelBulkPatch', () => {
     const patched = applyChannelBulkPatch(channel, { analogSquelch: 50 });
     expect(patched).toEqual(channel);
   });
+
+  it('sets or clears analog RX and TX tones independently', () => {
+    const channel = channelWithProfiles('Analog mix', [
+      defaultModeProfile('fm'),
+      defaultModeProfile('dmr'),
+    ]);
+
+    const patched = applyChannelBulkPatch(channel, { rxTone: '88.5', txTone: 'none' });
+    const fm = patched.modeProfiles.find((profile) => profile.mode === 'fm');
+    const dmr = patched.modeProfiles.find((profile) => profile.mode === 'dmr');
+    expect(fm).toMatchObject({ rxTone: '88.5', txTone: 'none' });
+    expect(dmr).toMatchObject({ mode: 'dmr' });
+  });
 });
 
 describe('channelBulkEditWouldChange', () => {
@@ -73,6 +87,31 @@ describe('channelBulkEditWouldChange', () => {
   it('returns false for analog squelch on DMR-only channel', () => {
     const channel = channelWithProfiles('DMR', [defaultModeProfile('dmr')]);
     expect(channelBulkEditWouldChange(channel, { analogSquelch: 50 })).toBe(false);
+  });
+
+  it('returns false for analog tones on DMR-only channel', () => {
+    const channel = channelWithProfiles('DMR', [defaultModeProfile('dmr')]);
+    expect(channelBulkEditWouldChange(channel, { rxTone: '88.5' })).toBe(false);
+  });
+
+  it('applies an APRS receive flag without dropping other binding fields', () => {
+    const channel: Channel = {
+      ...newChannel(projectId, 'APRS'),
+      aprs: {
+        receiveEnabled: false,
+        reportType: 'digital',
+        digitalPttMode: 'off',
+        reportSlotIndex: 1,
+      },
+    };
+    const patched = applyChannelBulkPatch(channel, {
+      aprs: { patchReceiveEnabled: true, receiveEnabled: true },
+    });
+    expect(patched.aprs).toMatchObject({
+      receiveEnabled: true,
+      reportType: 'digital',
+      reportSlotIndex: 1,
+    });
   });
 });
 
@@ -109,5 +148,19 @@ describe('countChannelsWithAnalogProfile', () => {
       channelWithProfiles('DMR', [defaultModeProfile('dmr')]),
     ];
     expect(countChannelsWithAnalogProfile(channels)).toBe(1);
+  });
+});
+
+describe('sharedChannelField', () => {
+  it('returns the value when every channel matches', () => {
+    const a = { ...newChannel(projectId, 'A'), power: 50 };
+    const b = { ...newChannel(projectId, 'B'), power: 50 };
+    expect(sharedChannelField([a, b], (channel) => channel.power)).toBe(50);
+  });
+
+  it('returns undefined when values differ', () => {
+    const a = { ...newChannel(projectId, 'A'), power: 50 };
+    const b = { ...newChannel(projectId, 'B'), power: 25 };
+    expect(sharedChannelField([a, b], (channel) => channel.power)).toBeUndefined();
   });
 });

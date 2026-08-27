@@ -6,13 +6,13 @@ Tri-state channel scan control for library CRUD — **Skip scan**, **Default**, 
 
 ## Props
 
-| Prop       | Type                      | Description                                                                   |
-| ---------- | ------------------------- | ----------------------------------------------------------------------------- |
-| `value`    | `ScanInclusion`           | Current library field value                                                   |
-| `onChange` | `(scanInclusion) => void` | Selection handler                                                             |
-| `compact`  | `boolean`                 | Table-row layout — omits label/description, forces `layout='stack'`           |
-| `disabled` | `boolean`                 | Optional                                                                      |
-| `layout`   | `'stack' \| 'row'`        | Forwarded to `GradientSegmentedControl` when not `compact`. Default `'stack'` |
+| Prop       | Type                           | Description                                                                   |
+| ---------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| `value`    | `ScanInclusion`                | Current library field value                                                   |
+| `onChange` | `(scanInclusion) => void`      | Selection handler                                                             |
+| `compact`  | `boolean`                      | Table-row layout — omits label/description, forces `layout='stack'`           |
+| `disabled` | `boolean`                      | Optional                                                                      |
+| `layout`   | `'stack' \| 'row' \| 'column'` | Forwarded to `GradientSegmentedControl` when not `compact`. Default `'stack'` |
 
 ## Usage
 
@@ -24,9 +24,9 @@ import ScanInclusionSegment from '@app/components/channels/ScanInclusionSegment.
 
 ## Behaviour
 
-- **Default** — resolved at export from `FormatBuild.exportSettings.defaultScanInclusion` and the format adapter default.
-- **Skip scan** — always excluded from scan on wire.
-- **Always scan** — always included on wire.
+- **Default** — uses the scan setting on export.
+- **Skip scan** — this channel is not scanned.
+- **Always scan** — this channel is always scanned.
 
 ## Related
 

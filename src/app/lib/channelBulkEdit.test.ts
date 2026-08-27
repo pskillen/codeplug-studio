@@ -3,7 +3,11 @@ import type { Channel } from '@core/models/library.ts';
 import { newChannel, newProjectMeta } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
-import { formatChannelBulkEditMessage, persistChannelBulkEdit } from './channelBulkEdit.ts';
+import {
+  formatChannelBulkEditMessage,
+  formatChannelBulkApplyMessage,
+  persistChannelBulkEdit,
+} from './channelBulkEdit.ts';
 
 describe('persistChannelBulkEdit', () => {
   it('updates channels that would change and skips no-ops', async () => {
@@ -79,5 +83,16 @@ describe('formatChannelBulkEditMessage', () => {
     expect(formatChannelBulkEditMessage({ ok: true, updatedCount: 3, skippedCount: 2 })).toBe(
       'Updated 3 channels; 2 unchanged (values already matched or no applicable mode profile).',
     );
+  });
+});
+
+describe('formatChannelBulkApplyMessage', () => {
+  it('joins channel and zone summaries', () => {
+    expect(
+      formatChannelBulkApplyMessage({
+        channels: { ok: true, updatedCount: 2, skippedCount: 0 },
+        zones: { ok: true, updatedCount: 1, skippedCount: 0 },
+      }),
+    ).toBe('Updated 2 channels; Updated 1 zone.');
   });
 });

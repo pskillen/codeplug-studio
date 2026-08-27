@@ -87,8 +87,8 @@ import {
   type PersistChannelBulkDeleteOutcome,
 } from '../../../lib/channelBulkDelete.ts';
 import {
-  formatChannelBulkEditMessage,
-  type PersistChannelBulkEditSuccess,
+  formatChannelBulkApplyMessage,
+  type ChannelBulkApplyOutcome,
 } from '../../../lib/channelBulkEdit.ts';
 import {
   channelHasDmrProfile,
@@ -543,18 +543,19 @@ export default function ChannelsListPage() {
     [cardVisibleKeys, setCardVisibleKeys],
   );
 
+  // Full library selection, not the current filter — search/filters only hide rows.
   const selectedChannels = useMemo(() => {
     const selectedSet = new Set(selectedKeys);
-    return filtered.filter((ch) => selectedSet.has(ch.id));
-  }, [filtered, selectedKeys]);
+    return channels.filter((ch) => selectedSet.has(ch.id));
+  }, [channels, selectedKeys]);
 
   const handleCreateZoneFromSelected = useCallback(() => {
     const selectedSet = new Set(selectedKeys);
-    const orderedIds = filtered.filter((ch) => selectedSet.has(ch.id)).map((ch) => ch.id);
+    const orderedIds = channels.filter((ch) => selectedSet.has(ch.id)).map((ch) => ch.id);
     if (orderedIds.length === 0) return;
     setSelectedKeys([]);
     navigate('/library/zones/new', { state: { initialChannelIds: orderedIds } });
-  }, [filtered, navigate, selectedKeys]);
+  }, [channels, navigate, selectedKeys]);
 
   const handleBulkEdit = useCallback(() => {
     if (selectedChannels.length === 0) return;
@@ -567,8 +568,8 @@ export default function ChannelsListPage() {
     setBulkEditOpen(true);
   }, [navigate, selectedChannels]);
 
-  const handleBulkEditApplied = useCallback((outcome: PersistChannelBulkEditSuccess) => {
-    setBulkEditMessage(formatChannelBulkEditMessage(outcome));
+  const handleBulkEditApplied = useCallback((outcome: ChannelBulkApplyOutcome) => {
+    setBulkEditMessage(formatChannelBulkApplyMessage(outcome));
     setBulkEditMessageColor('green');
     setSelectedKeys([]);
   }, []);
@@ -787,6 +788,7 @@ export default function ChannelsListPage() {
         onClose={() => setBulkEditOpen(false)}
         channels={selectedChannels}
         projectId={projectId}
+        library={library}
         deleteEntity={deleteEntity}
         reload={reload}
         onApplied={handleBulkEditApplied}

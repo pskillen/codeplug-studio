@@ -2,24 +2,26 @@
 
 ## Purpose
 
-Segmented control with an optional **value-aware per-segment indicator colour** — the sliding thumb takes the active segment's colour (with a short fade on change), and a neutral option (e.g. "Default"/"Auto") deliberately gets no colour override rather than inheriting whatever the palette had left over. Generic form primitive for two- to five-value choices; channel transmit permission uses the `allowForbid` preset via `ForbidTransmitSegment`.
+Segmented control with an optional **value-aware per-segment indicator colour** — the sliding thumb takes the active segment's colour (with a short fade on change), and a neutral option (e.g. "Default"/"Auto") deliberately gets no colour override rather than inheriting whatever the palette had left over. Generic form primitive for two- to five-value choices; channel transmit permission uses the `allowForbid` preset via `ForbidTransmitSegment`. Bulk edit can prepend an offset **No change** segment. When every selected row shares a value, the filled indicator sits on that value while idle; the outline sits on **No change**.
 
 ## Props
 
-| Prop            | Type                                                 | Description                                                                                                                                                                                                                                        |
-| --------------- | ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `label`         | `ReactNode`                                          | Optional label (position depends on `layout`)                                                                                                                                                                                                      |
-| `description`   | `ReactNode`                                          | Optional field description                                                                                                                                                                                                                         |
-| `value`         | `string`                                             | Selected segment value                                                                                                                                                                                                                             |
-| `onChange`      | `(value: string) => void`                            | Selection handler                                                                                                                                                                                                                                  |
-| `data`          | `GradientSegmentOption[]`                            | `{ value, label, disabled? }` per segment                                                                                                                                                                                                          |
-| `scheme`        | `GradientSegmentSchemeName \| GradientSegmentScheme` | Named preset or custom palette. Omit for plain Mantine UI.                                                                                                                                                                                         |
-| `segmentColors` | `readonly string[]`                                  | Explicit override colours (Mantine names or CSS), positional — length ≈ `data`. Bypasses `neutralValues` fitting.                                                                                                                                  |
-| `neutralValues` | `readonly string[]` (default `['default']`)          | Option values excluded from palette fitting and rendered with no colour override. Pass `[]` to disable, or override (e.g. `['auto']`).                                                                                                             |
-| `layout`        | `'stack' \| 'row'` (default `'stack'`)               | `'stack'` — label/description above the control (today's layout). `'row'` — label/description left, control right at intrinsic width, collapsing to full-width stacking below the app's shared mobile breakpoint (`MOBILE_MAX_WIDTH_MEDIA_QUERY`). |
-| `fullWidth`     | `boolean`                                            | Stretch to parent width. Respected for `layout='stack'`; ignored for `layout='row'` (row decides width from viewport instead).                                                                                                                     |
-| `disabled`      | `boolean`                                            | Disable all segments                                                                                                                                                                                                                               |
-| `size`          | `MantineSize`                                        | Forwarded to Mantine `SegmentedControl`                                                                                                                                                                                                            |
+| Prop            | Type                                                 | Description                                                                                                                                                                                    |
+| --------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `label`         | `ReactNode`                                          | Optional label (position depends on `layout`)                                                                                                                                                  |
+| `description`   | `ReactNode`                                          | Optional field description                                                                                                                                                                     |
+| `value`         | `string`                                             | Selected segment value                                                                                                                                                                         |
+| `onChange`      | `(value: string) => void`                            | Selection handler                                                                                                                                                                              |
+| `data`          | `GradientSegmentOption[]`                            | `{ value, label, disabled? }` per segment                                                                                                                                                      |
+| `idleOption`    | `GradientSegmentOption` (optional)                   | Offset first button (**No change** in bulk edit). Still one control. Extra palette-neutral. Use `GRADIENT_SEGMENT_IDLE_VALUE`. Channel editors omit this.                                      |
+| `sharedValue`   | `string` (optional)                                  | When idle, primary (fill) sits on this shared domain value and the outline sits on **No change**. When opted in, both sit on the chosen value. Visual only.                                    |
+| `scheme`        | `GradientSegmentSchemeName \| GradientSegmentScheme` | Named preset or custom palette. Omit for plain Mantine UI.                                                                                                                                     |
+| `segmentColors` | `readonly string[]`                                  | Explicit override colours (Mantine names or CSS), positional — length ≈ `data` (not including `idleOption`). Bypasses `neutralValues` fitting.                                                 |
+| `neutralValues` | `readonly string[]` (default `['default']`)          | Option values excluded from palette fitting and rendered with no colour override. Pass `[]` to disable, or override (e.g. `['auto']`). Idle option values are always extra neutrals.           |
+| `layout`        | `'stack' \| 'row' \| 'column'` (default `'stack'`)   | `'stack'` — label/description above the control. `'row'` — label/description left, control right (stacks on mobile). `'column'` — label, then intrinsic-width control, then description below. |
+| `fullWidth`     | `boolean`                                            | Stretch to parent width. Respected for `layout='stack'`; ignored for `layout='row'` (row decides width from viewport instead).                                                                 |
+| `disabled`      | `boolean`                                            | Disable all segments                                                                                                                                                                           |
+| `size`          | `MantineSize`                                        | Forwarded to Mantine `SegmentedControl`                                                                                                                                                        |
 
 ## Presets (`gradientSegmentedSchemes.ts`)
 
@@ -67,6 +69,31 @@ Row layout with a neutral "Default" option (the common wrapper-component shape):
 />
 ```
 
+Bulk-edit idle + shared-value hint (does not apply an override until the operator picks a real value):
+
+```tsx
+<GradientSegmentedControl
+  label="Transmit"
+  value={optedIn ? forbidTransmit : GRADIENT_SEGMENT_IDLE_VALUE}
+  onChange={(next) => {
+    if (next === GRADIENT_SEGMENT_IDLE_VALUE) setOptedIn(false);
+    else {
+      setOptedIn(true);
+      setForbidTransmit(next);
+    }
+  }}
+  idleOption={{ value: GRADIENT_SEGMENT_IDLE_VALUE, label: 'No change' }}
+  sharedValue={sharedForbidTransmit}
+  scheme="allowForbid"
+  layout="row"
+  data={[
+    { value: 'default', label: 'Default' },
+    { value: 'allow', label: 'Allow TX' },
+    { value: 'forbid', label: 'RX only' },
+  ]}
+/>
+```
+
 Custom palette:
 
 ```tsx
@@ -92,9 +119,15 @@ Custom palette:
 - `autoContrast` is enabled when a colour scheme is applied.
 - Without `scheme` or `segmentColors`, renders a standard Mantine `SegmentedControl`.
 - `layout="row"` uses `useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY)` to force full-width stacking on mobile — no CSS-only collapse, since Mantine's `SegmentedControl` needs the `fullWidth` prop itself to flex its segments evenly.
+- `idleOption` prepends a visually offset first segment (gap after **No change**). `GRADIENT_SEGMENT_IDLE_VALUE` (`__unchanged__`) is the intended sentinel — it is not a library domain value. Bulk-edit idle turns off Mantine item separators (`withItemsBorders`) so the sliding indicator is the only chrome.
+- Idle + `sharedValue`: Mantine’s filled indicator (the original shaded thumb) sits on the shared option, including a shared **Default**. Neutrals get a raised fallback colour so the thumb stays visible in dark mode. The outline sits on **No change**. Clicking the shared option still fires `onChange` (opt-in) even though it already looks selected. Mixed idle: primary on **No change**. Opted in: fill and outline on the chosen value. Apply still uses the parent’s opted-in patch — the visual selection is not a write.
+- `layout="column"` puts the description under the control so long help is not squeezed beside the segments.
+
+Non-segment bulk-edit fields use [`BulkEditField`](../library/BulkEditField.md) instead.
 
 ## Related
 
 - [ForbidTransmitSegment](../channels/ForbidTransmitSegment.md) — channel TX wrapper
+- [BulkEditField](../library/BulkEditField.md) — idle/set wrapper for sliders and selects
 - [App shell feature hub](../../../../docs/features/app-shell/README.md)
-- Dev demos: `/styleguide`
+- Dev demos: `/styleguide/forms`
