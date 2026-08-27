@@ -2,10 +2,7 @@ import { useMemo, useState } from 'react';
 import type { AprsChannelSlot } from '@core/models/aprs.ts';
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
-import {
-  applyAprsChannelBulkPatch,
-  type AprsChannelBulkPatch,
-} from '@core/domain/aprs/index.ts';
+import { applyAprsChannelBulkPatch, type AprsChannelBulkPatch } from '@core/domain/aprs/index.ts';
 import { Checkbox, Select, Stack, Text } from '@mantine/core';
 import { IconAntenna } from '@tabler/icons-react';
 import { APRS_SLOT_NONE_VALUE, aprsSlotSelectOptions } from '../../lib/aprsBindingHelpers.ts';

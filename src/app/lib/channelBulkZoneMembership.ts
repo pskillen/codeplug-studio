@@ -29,8 +29,7 @@ export interface PersistChannelBulkZoneMembershipFailure {
 }
 
 export type PersistChannelBulkZoneMembershipOutcome =
-  | PersistChannelBulkZoneMembershipSuccess
-  | PersistChannelBulkZoneMembershipFailure;
+  PersistChannelBulkZoneMembershipSuccess | PersistChannelBulkZoneMembershipFailure;
 
 function membersUnchanged(previous: ZoneMemberEntry[], next: ZoneMemberEntry[]): boolean {
   return JSON.stringify(previous) === JSON.stringify(next);

@@ -5,7 +5,9 @@ import { applyAprsChannelBulkPatch } from './bulkPatch.ts';
 describe('applyAprsChannelBulkPatch', () => {
   it('leaves unspecified fields on the current binding', () => {
     const current = { ...CHANNEL_APRS_OFF, receiveEnabled: true, reportType: 'digital' as const };
-    expect(applyAprsChannelBulkPatch(current, { patchDigitalPttMode: true, digitalPttMode: 'on' })).toEqual({
+    expect(
+      applyAprsChannelBulkPatch(current, { patchDigitalPttMode: true, digitalPttMode: 'on' }),
+    ).toEqual({
       ...current,
       digitalPttMode: 'on',
     });
@@ -13,7 +15,10 @@ describe('applyAprsChannelBulkPatch', () => {
 
   it('clears the binding when requested', () => {
     expect(
-      applyAprsChannelBulkPatch({ ...CHANNEL_APRS_OFF, reportType: 'digital' }, { clearBinding: true }),
+      applyAprsChannelBulkPatch(
+        { ...CHANNEL_APRS_OFF, reportType: 'digital' },
+        { clearBinding: true },
+      ),
     ).toBeUndefined();
   });
 });

@@ -97,9 +97,9 @@ describe('nestedOnlyZoneMembershipsForChannels', () => {
     const parent = zone('z-parent', 'UK Regions', [{ kind: 'zone', zoneId: 'z-child' }]);
     const lib = library(['ch-1', 'ch-2'], [child, parent]);
 
-    expect(nestedOnlyZoneMembershipsForChannels(['ch-1', 'ch-2'], lib).map((m) => m.zone.id)).toEqual(
-      ['z-parent'],
-    );
+    expect(
+      nestedOnlyZoneMembershipsForChannels(['ch-1', 'ch-2'], lib).map((m) => m.zone.id),
+    ).toEqual(['z-parent']);
   });
 });
 

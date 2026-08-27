@@ -33,9 +33,9 @@ export function applyAprsChannelBulkPatch(
 export function aprsChannelBulkPatchHasChanges(patch: AprsChannelBulkPatch): boolean {
   return Boolean(
     patch.clearBinding ||
-      patch.patchReportSlot ||
-      patch.patchReportType ||
-      patch.patchReceiveEnabled ||
-      patch.patchDigitalPttMode,
+    patch.patchReportSlot ||
+    patch.patchReportType ||
+    patch.patchReceiveEnabled ||
+    patch.patchDigitalPttMode,
   );
 }

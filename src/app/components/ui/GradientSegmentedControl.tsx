@@ -80,10 +80,7 @@ export default function GradientSegmentedControl<T extends string>({
   const theme = useMantineTheme();
   const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
   const hasColorScheme = Boolean(scheme || segmentColors);
-  const segments = useMemo(
-    () => (idleOption ? [idleOption, ...data] : data),
-    [idleOption, data],
-  );
+  const segments = useMemo(() => (idleOption ? [idleOption, ...data] : data), [idleOption, data]);
   const effectiveNeutralValues = useMemo(() => {
     if (!idleOption) return neutralValues;
     return [...neutralValues, idleOption.value];

@@ -3,7 +3,11 @@ import type { Channel } from '@core/models/library.ts';
 import { newChannel, newProjectMeta } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import { InMemoryProjectPersistence } from '@integrations/persistence/inMemory.ts';
-import { formatChannelBulkEditMessage, formatChannelBulkApplyMessage, persistChannelBulkEdit } from './channelBulkEdit.ts';
+import {
+  formatChannelBulkEditMessage,
+  formatChannelBulkApplyMessage,
+  persistChannelBulkEdit,
+} from './channelBulkEdit.ts';
 
 describe('persistChannelBulkEdit', () => {
   it('updates channels that would change and skips no-ops', async () => {

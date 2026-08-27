@@ -12,10 +12,7 @@ import type {
   TxPermitOverride,
 } from '../models/channelBehaviourDefaults.ts';
 import type { AprsChannelBulkPatch } from './aprs/index.ts';
-import {
-  applyAprsChannelBulkPatch,
-  aprsChannelBulkPatchHasChanges,
-} from './aprs/index.ts';
+import { applyAprsChannelBulkPatch, aprsChannelBulkPatchHasChanges } from './aprs/index.ts';
 import { normalizeOptionalChannelAprs } from './aprs/index.ts';
 import {
   channelHasAnalogProfile,
@@ -184,9 +181,7 @@ export function channelBulkEditWouldChange(channel: Channel, patch: ChannelBulkE
     );
   }
   if ('aprs' in patch && patch.aprs && aprsChannelBulkPatchHasChanges(patch.aprs)) {
-    const next = normalizeOptionalChannelAprs(
-      applyAprsChannelBulkPatch(channel.aprs, patch.aprs),
-    );
+    const next = normalizeOptionalChannelAprs(applyAprsChannelBulkPatch(channel.aprs, patch.aprs));
     return JSON.stringify(next ?? null) !== JSON.stringify(channel.aprs ?? null);
   }
   return false;
@@ -211,7 +206,9 @@ export function analogProfilesOnChannels(channels: readonly Channel[]): ChannelM
 
 export function dmrProfilesOnChannels(channels: readonly Channel[]): ChannelModeProfileDMR[] {
   return channels.flatMap((channel) =>
-    channel.modeProfiles.filter((profile): profile is ChannelModeProfileDMR => profile.mode === 'dmr'),
+    channel.modeProfiles.filter(
+      (profile): profile is ChannelModeProfileDMR => profile.mode === 'dmr',
+    ),
   );
 }
 
@@ -237,7 +234,12 @@ export function analyzeChannelBulkEditImpact(
   const impact: ChannelBulkEditImpact = {};
 
   for (const key of Object.keys(patch) as ChannelBulkEditPatchKey[]) {
-    if (key === 'analogSquelch' || key === 'analogSquelchMode' || key === 'rxTone' || key === 'txTone') {
+    if (
+      key === 'analogSquelch' ||
+      key === 'analogSquelchMode' ||
+      key === 'rxTone' ||
+      key === 'txTone'
+    ) {
       const appliesTo = countChannelsWithAnalogProfile(channels);
       impact[key] = {
         appliesTo,

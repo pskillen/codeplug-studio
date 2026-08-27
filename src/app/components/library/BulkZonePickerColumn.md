@@ -8,16 +8,16 @@ Used as a pair in `ChannelBulkEditModal` (**Remove from** / **Add to**). Not a c
 
 ## Props
 
-| Prop                 | Type                         | Description                                              |
-| -------------------- | ---------------------------- | -------------------------------------------------------- |
-| `title`              | `string`                     | Column heading                                           |
-| `description`        | `string` (optional)          | Short hint under the heading                             |
-| `searchPlaceholder`  | `string` (optional)          | Select placeholder                                       |
-| `zones`              | `readonly Zone[]`            | Library zones (display labels from `name`, keys from `id`) |
-| `selectedIds`        | `readonly string[]`          | Zone ids currently in this column’s box                  |
-| `onSelectedIdsChange`| `(ids: string[]) => void`    | Replace this column’s selection                          |
-| `blockedIds`         | `readonly string[]` (optional) | Zone ids already in the other column                   |
-| `emptyMessage`       | `string` (optional)          | Shown when the project has no zones                      |
+| Prop                  | Type                           | Description                                                |
+| --------------------- | ------------------------------ | ---------------------------------------------------------- |
+| `title`               | `string`                       | Column heading                                             |
+| `description`         | `string` (optional)            | Short hint under the heading                               |
+| `searchPlaceholder`   | `string` (optional)            | Select placeholder                                         |
+| `zones`               | `readonly Zone[]`              | Library zones (display labels from `name`, keys from `id`) |
+| `selectedIds`         | `readonly string[]`            | Zone ids currently in this column’s box                    |
+| `onSelectedIdsChange` | `(ids: string[]) => void`      | Replace this column’s selection                            |
+| `blockedIds`          | `readonly string[]` (optional) | Zone ids already in the other column                       |
+| `emptyMessage`        | `string` (optional)            | Shown when the project has no zones                        |
 
 ## Usage
 

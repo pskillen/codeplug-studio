@@ -1,6 +1,16 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Box, Checkbox, Collapse, Group, Select, Stack, Text, UnstyledButton } from '@mantine/core';
+import {
+  Alert,
+  Box,
+  Checkbox,
+  Collapse,
+  Group,
+  Select,
+  Stack,
+  Text,
+  UnstyledButton,
+} from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconPencil } from '@tabler/icons-react';
 import type {
   AnalogSquelchModeOverride,
@@ -11,7 +21,10 @@ import type {
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
 import type { Channel, ChannelTone, Library, ScanInclusion } from '@core/models/library.ts';
 import { nestedOnlyZoneMembershipsForChannels } from '@core/domain/zoneMembership.ts';
-import { aprsChannelBulkPatchHasChanges, type AprsChannelBulkPatch } from '@core/domain/aprs/index.ts';
+import {
+  aprsChannelBulkPatchHasChanges,
+  type AprsChannelBulkPatch,
+} from '@core/domain/aprs/index.ts';
 import {
   analyzeChannelBulkEditImpact,
   countChannelsWithAnalogProfile,
@@ -29,10 +42,7 @@ import ScanInclusionSegment from '../channels/ScanInclusionSegment.tsx';
 import { PercentLevelSlider, formatPercentLevelLabel } from '../v2/index.ts';
 import { Button, ConfirmModal, ModalShell, Panel } from '../v2/index.ts';
 import { ICON_SIZE_ACTION, ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
-import {
-  persistChannelBulkEdit,
-  type ChannelBulkApplyOutcome,
-} from '../../lib/channelBulkEdit.ts';
+import { persistChannelBulkEdit, type ChannelBulkApplyOutcome } from '../../lib/channelBulkEdit.ts';
 import { persistChannelBulkZoneMembership } from '../../lib/channelBulkZoneMembership.ts';
 import {
   persistChannelBulkDelete,
@@ -96,8 +106,7 @@ function initialFormFromChannels(channels: Channel[]): BulkEditFormState {
     changeScanInclusion: false,
     scanInclusion: sharedChannelField(channels, (channel) => channel.scanInclusion) ?? 'default',
     changeForbidTransmit: false,
-    forbidTransmit:
-      sharedChannelField(channels, (channel) => channel.forbidTransmit) ?? 'default',
+    forbidTransmit: sharedChannelField(channels, (channel) => channel.forbidTransmit) ?? 'default',
     changeTxPermit: false,
     txPermit: sharedChannelField(channels, (channel) => channel.txPermit) ?? 'default',
     changeSendTalkerAlias: false,
@@ -105,8 +114,7 @@ function initialFormFromChannels(channels: Channel[]): BulkEditFormState {
       sharedDmrField(channels, (profile) => profile.sendTalkerAlias ?? 'default') ?? 'default',
     changeAnalogSquelchMode: false,
     analogSquelchMode:
-      sharedAnalogField(channels, (profile) => profile.analogSquelchMode ?? 'default') ??
-      'default',
+      sharedAnalogField(channels, (profile) => profile.analogSquelchMode ?? 'default') ?? 'default',
     changePower: false,
     power: sharedChannelField(channels, (channel) => channel.power) ?? null,
     changeAnalogSquelch: false,
@@ -251,10 +259,7 @@ function ChannelBulkEditModalBody({
       forbidTransmit: sharedChannelField(channels, (channel) => channel.forbidTransmit),
       txPermit: sharedChannelField(channels, (channel) => channel.txPermit),
       power: sharedChannelField(channels, (channel) => channel.power),
-      sendTalkerAlias: sharedDmrField(
-        channels,
-        (profile) => profile.sendTalkerAlias ?? 'default',
-      ),
+      sendTalkerAlias: sharedDmrField(channels, (profile) => profile.sendTalkerAlias ?? 'default'),
       analogSquelchMode: sharedAnalogField(
         channels,
         (profile) => profile.analogSquelchMode ?? 'default',
@@ -266,10 +271,7 @@ function ChannelBulkEditModalBody({
         channels,
         (channel) => channel.aprs?.receiveEnabled ?? false,
       ),
-      aprsReportType: sharedChannelField(
-        channels,
-        (channel) => channel.aprs?.reportType ?? 'off',
-      ),
+      aprsReportType: sharedChannelField(channels, (channel) => channel.aprs?.reportType ?? 'off'),
       aprsDigitalPttMode: sharedChannelField(
         channels,
         (channel) => channel.aprs?.digitalPttMode ?? 'off',
@@ -320,7 +322,11 @@ function ChannelBulkEditModalBody({
   );
   const slotsAvailable = (library.aprsConfiguration?.channelSlots.length ?? 0) > 0;
   const nestedOnlyZones = useMemo(
-    () => nestedOnlyZoneMembershipsForChannels(channels.map((channel) => channel.id), library),
+    () =>
+      nestedOnlyZoneMembershipsForChannels(
+        channels.map((channel) => channel.id),
+        library,
+      ),
     [channels, library],
   );
 
@@ -482,58 +488,56 @@ function ChannelBulkEditModalBody({
 
           <Panel title="RF" collapsible badge={changeBadge(rfChangeCount)}>
             <Stack gap="md">
-            <div className={classes.pairRow}>
-              <ForbidTransmitSegment
-                value={bulkSegmentValue(form.changeForbidTransmit, form.forbidTransmit)}
-                onChange={(forbidTransmit) =>
-                  setForm((prev) => ({ ...prev, changeForbidTransmit: true, forbidTransmit }))
+              <div className={classes.pairRow}>
+                <ForbidTransmitSegment
+                  value={bulkSegmentValue(form.changeForbidTransmit, form.forbidTransmit)}
+                  onChange={(forbidTransmit) =>
+                    setForm((prev) => ({ ...prev, changeForbidTransmit: true, forbidTransmit }))
+                  }
+                  onIdle={() => setForm((prev) => ({ ...prev, changeForbidTransmit: false }))}
+                  idleOption={BULK_IDLE_OPTION}
+                  sharedValue={shared.forbidTransmit}
+                  layout="row"
+                />
+                <TxPermitSegment
+                  value={bulkSegmentValue(form.changeTxPermit, form.txPermit)}
+                  onChange={(txPermit) =>
+                    setForm((prev) => ({ ...prev, changeTxPermit: true, txPermit }))
+                  }
+                  onIdle={() => setForm((prev) => ({ ...prev, changeTxPermit: false }))}
+                  idleOption={BULK_IDLE_OPTION}
+                  sharedValue={shared.txPermit}
+                  layout="row"
+                />
+              </div>
+              {form.changeForbidTransmit && impact.forbidTransmit ? (
+                <Text size="xs" c="dimmed">
+                  {channelLevelImpactText(impact.forbidTransmit.appliesTo)}
+                </Text>
+              ) : null}
+              {form.changeTxPermit && impact.txPermit ? (
+                <Text size="xs" c="dimmed">
+                  {channelLevelImpactText(impact.txPermit.appliesTo)}
+                </Text>
+              ) : null}
+              <BulkEditField
+                optedIn={form.changePower}
+                onOptedInChange={(changePower) => setForm((prev) => ({ ...prev, changePower }))}
+                sharedHint={
+                  shared.power !== undefined ? formatPercentLevelLabel(shared.power) : undefined
                 }
-                onIdle={() => setForm((prev) => ({ ...prev, changeForbidTransmit: false }))}
-                idleOption={BULK_IDLE_OPTION}
-                sharedValue={shared.forbidTransmit}
-                layout="row"
-              />
-              <TxPermitSegment
-                value={bulkSegmentValue(form.changeTxPermit, form.txPermit)}
-                onChange={(txPermit) =>
-                  setForm((prev) => ({ ...prev, changeTxPermit: true, txPermit }))
-                }
-                onIdle={() => setForm((prev) => ({ ...prev, changeTxPermit: false }))}
-                idleOption={BULK_IDLE_OPTION}
-                sharedValue={shared.txPermit}
-                layout="row"
-              />
-            </div>
-            {form.changeForbidTransmit && impact.forbidTransmit ? (
-              <Text size="xs" c="dimmed">
-                {channelLevelImpactText(impact.forbidTransmit.appliesTo)}
-              </Text>
-            ) : null}
-            {form.changeTxPermit && impact.txPermit ? (
-              <Text size="xs" c="dimmed">
-                {channelLevelImpactText(impact.txPermit.appliesTo)}
-              </Text>
-            ) : null}
-            <BulkEditField
-              optedIn={form.changePower}
-              onOptedInChange={(changePower) => setForm((prev) => ({ ...prev, changePower }))}
-              sharedHint={
-                shared.power !== undefined
-                  ? formatPercentLevelLabel(shared.power)
-                  : undefined
-              }
-            >
-              <PercentLevelSlider
-                label="Power"
-                value={form.power}
-                onChange={(power) => setForm((prev) => ({ ...prev, power }))}
-              />
-            </BulkEditField>
-            {form.changePower && impact.power ? (
-              <Text size="xs" c="dimmed">
-                {channelLevelImpactText(impact.power.appliesTo)}
-              </Text>
-            ) : null}
+              >
+                <PercentLevelSlider
+                  label="Power"
+                  value={form.power}
+                  onChange={(power) => setForm((prev) => ({ ...prev, power }))}
+                />
+              </BulkEditField>
+              {form.changePower && impact.power ? (
+                <Text size="xs" c="dimmed">
+                  {channelLevelImpactText(impact.power.appliesTo)}
+                </Text>
+              ) : null}
             </Stack>
           </Panel>
 
@@ -556,9 +560,7 @@ function ChannelBulkEditModalBody({
                           sendTalkerAlias,
                         }))
                       }
-                      onIdle={() =>
-                        setForm((prev) => ({ ...prev, changeSendTalkerAlias: false }))
-                      }
+                      onIdle={() => setForm((prev) => ({ ...prev, changeSendTalkerAlias: false }))}
                       idleOption={BULK_IDLE_OPTION}
                       sharedValue={shared.sendTalkerAlias}
                       layout="row"
@@ -635,10 +637,7 @@ function ChannelBulkEditModalBody({
                       </Text>
                     ) : null}
                     <AnalogSquelchModeSegment
-                      value={bulkSegmentValue(
-                        form.changeAnalogSquelchMode,
-                        form.analogSquelchMode,
-                      )}
+                      value={bulkSegmentValue(form.changeAnalogSquelchMode, form.analogSquelchMode)}
                       onChange={(analogSquelchMode) =>
                         setForm((prev) => ({
                           ...prev,
@@ -749,21 +748,21 @@ function ChannelBulkEditModalBody({
 
           <Panel title="Scanning" collapsible badge={changeBadge(scanningChangeCount)}>
             <Stack gap="md">
-            <ScanInclusionSegment
-              value={bulkSegmentValue(form.changeScanInclusion, form.scanInclusion)}
-              onChange={(scanInclusion) =>
-                setForm((prev) => ({ ...prev, changeScanInclusion: true, scanInclusion }))
-              }
-              onIdle={() => setForm((prev) => ({ ...prev, changeScanInclusion: false }))}
-              idleOption={BULK_IDLE_OPTION}
-              sharedValue={shared.scanInclusion}
-              layout="row"
-            />
-            {form.changeScanInclusion && impact.scanInclusion ? (
-              <Text size="xs" c="dimmed">
-                {channelLevelImpactText(impact.scanInclusion.appliesTo)}
-              </Text>
-            ) : null}
+              <ScanInclusionSegment
+                value={bulkSegmentValue(form.changeScanInclusion, form.scanInclusion)}
+                onChange={(scanInclusion) =>
+                  setForm((prev) => ({ ...prev, changeScanInclusion: true, scanInclusion }))
+                }
+                onIdle={() => setForm((prev) => ({ ...prev, changeScanInclusion: false }))}
+                idleOption={BULK_IDLE_OPTION}
+                sharedValue={shared.scanInclusion}
+                layout="row"
+              />
+              {form.changeScanInclusion && impact.scanInclusion ? (
+                <Text size="xs" c="dimmed">
+                  {channelLevelImpactText(impact.scanInclusion.appliesTo)}
+                </Text>
+              ) : null}
             </Stack>
           </Panel>
 
@@ -828,9 +827,7 @@ function ChannelBulkEditModalBody({
               </BulkEditField>
               <BulkEditField
                 optedIn={form.changeAprsPtt}
-                onOptedInChange={(changeAprsPtt) =>
-                  setForm((prev) => ({ ...prev, changeAprsPtt }))
-                }
+                onOptedInChange={(changeAprsPtt) => setForm((prev) => ({ ...prev, changeAprsPtt }))}
                 sharedHint={
                   shared.aprsDigitalPttMode === undefined
                     ? undefined
@@ -886,9 +883,7 @@ function ChannelBulkEditModalBody({
                     setForm((prev) => ({
                       ...prev,
                       aprsReportSlotIndex:
-                        next && next !== APRS_SLOT_NONE_VALUE
-                          ? Number.parseInt(next, 10)
-                          : null,
+                        next && next !== APRS_SLOT_NONE_VALUE ? Number.parseInt(next, 10) : null,
                     }))
                   }
                   comboboxProps={modalComboboxProps()}
