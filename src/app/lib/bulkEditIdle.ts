@@ -1,5 +1,5 @@
-import { GRADIENT_SEGMENT_IDLE_VALUE } from '../ui/GradientSegmentedControl.tsx';
-import type { GradientSegmentOption } from '../ui/GradientSegmentedControl.tsx';
+import { GRADIENT_SEGMENT_IDLE_VALUE } from '../components/ui/GradientSegmentedControl.tsx';
+import type { GradientSegmentOption } from '../components/ui/GradientSegmentedControl.tsx';
 
 export const BULK_IDLE_OPTION: GradientSegmentOption<typeof GRADIENT_SEGMENT_IDLE_VALUE> = {
   value: GRADIENT_SEGMENT_IDLE_VALUE,
