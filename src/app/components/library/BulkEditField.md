@@ -20,18 +20,12 @@ Opt-in wrapper for bulk-edit sliders, selects, and other non-segment controls. *
 
 ```tsx
 <BulkEditField
-  label="Squelch"
-  optedIn={form.changeAnalogSquelch}
-  onOptedInChange={(changeAnalogSquelch) => setForm((prev) => ({ ...prev, changeAnalogSquelch }))}
-  hasSharedValue={shared.analogSquelch !== undefined}
+  label="RX tone"
+  optedIn={form.changeRxTone}
+  onOptedInChange={(changeRxTone) => setForm((prev) => ({ ...prev, changeRxTone }))}
+  hasSharedValue={shared.rxTone !== undefined}
 >
-  <PercentLevelSlider
-    label="Squelch"
-    value={form.analogSquelch}
-    onChange={(analogSquelch) => setForm((prev) => ({ ...prev, analogSquelch }))}
-    showValue={form.changeAnalogSquelch}
-    showDefaultCheckbox={false}
-  />
+  <Select data={toneSelectOptions()} value={form.rxTone} onChange={...} />
 </BulkEditField>
 ```
 

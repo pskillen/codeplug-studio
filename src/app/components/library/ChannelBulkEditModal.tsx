@@ -43,12 +43,12 @@ import {
 } from '../../lib/channelBulkDelete.ts';
 import {
   BULK_IDLE_OPTION,
-  BULK_POWER_CUSTOM,
-  BULK_POWER_DEFAULT,
-  bulkPowerSegmentValue,
+  BULK_LEVEL_CUSTOM,
+  BULK_LEVEL_DEFAULT,
+  bulkLevelSegmentValue,
   bulkSegmentValue,
   changeBadge,
-  sharedPowerSegmentValue,
+  sharedLevelSegmentValue,
 } from '../../lib/bulkEditIdle.ts';
 import { APRS_SLOT_NONE_VALUE, aprsSlotSelectOptions } from '../../lib/aprsBindingHelpers.ts';
 import { NONE_TONE, toneSelectOptions } from '../../lib/channelFields/index.ts';
@@ -398,7 +398,7 @@ function ChannelBulkEditModalBody({
         footer={
           <div className={classes.footer}>
             <Button
-              variant="ghost"
+              variant="destructive"
               size="sm"
               onClick={() => {
                 setErrorMessage(null);
@@ -498,13 +498,13 @@ function ChannelBulkEditModalBody({
               <FieldGroup>
                 <GradientSegmentedControl
                   label="Power"
-                  value={bulkPowerSegmentValue(form.changePower, form.power)}
+                  value={bulkLevelSegmentValue(form.changePower, form.power)}
                   onChange={(next) => {
                     if (next === GRADIENT_SEGMENT_IDLE_VALUE) {
                       setForm((prev) => ({ ...prev, changePower: false }));
                       return;
                     }
-                    if (next === BULK_POWER_DEFAULT) {
+                    if (next === BULK_LEVEL_DEFAULT) {
                       setForm((prev) => ({ ...prev, changePower: true, power: null }));
                       return;
                     }
@@ -515,10 +515,10 @@ function ChannelBulkEditModalBody({
                     }));
                   }}
                   idleOption={BULK_IDLE_OPTION}
-                  sharedValue={sharedPowerSegmentValue(shared.power)}
+                  sharedValue={sharedLevelSegmentValue(shared.power)}
                   data={[
-                    { value: BULK_POWER_DEFAULT, label: 'Default' },
-                    { value: BULK_POWER_CUSTOM, label: 'Custom' },
+                    { value: BULK_LEVEL_DEFAULT, label: 'Default' },
+                    { value: BULK_LEVEL_CUSTOM, label: 'Custom' },
                   ]}
                   scheme="three"
                   layout="column"
@@ -638,29 +638,56 @@ function ChannelBulkEditModalBody({
                       />
                     </FieldGroup>
                     <FieldGroup>
-                      <BulkEditField
+                      <GradientSegmentedControl
                         label="Squelch"
-                        optedIn={form.changeAnalogSquelch}
-                        onOptedInChange={(changeAnalogSquelch) =>
-                          setForm((prev) => ({ ...prev, changeAnalogSquelch }))
-                        }
-                        hasSharedValue={shared.analogSquelch !== undefined}
-                      >
-                        <PercentLevelSlider
-                          label="Level"
-                          value={form.analogSquelch}
-                          onChange={(analogSquelch) =>
-                            setForm((prev) => ({ ...prev, analogSquelch }))
+                        value={bulkLevelSegmentValue(form.changeAnalogSquelch, form.analogSquelch)}
+                        onChange={(next) => {
+                          if (next === GRADIENT_SEGMENT_IDLE_VALUE) {
+                            setForm((prev) => ({ ...prev, changeAnalogSquelch: false }));
+                            return;
                           }
-                          zeroLabel="Open (0%)"
-                          showValue={form.changeAnalogSquelch && form.analogSquelch != null}
-                          previewValues={channels.flatMap((channel) =>
-                            channel.modeProfiles
-                              .filter(isAnalogChannelModeProfile)
-                              .map((profile) => profile.squelch),
-                          )}
-                        />
-                      </BulkEditField>
+                          if (next === BULK_LEVEL_DEFAULT) {
+                            setForm((prev) => ({
+                              ...prev,
+                              changeAnalogSquelch: true,
+                              analogSquelch: null,
+                            }));
+                            return;
+                          }
+                          setForm((prev) => ({
+                            ...prev,
+                            changeAnalogSquelch: true,
+                            analogSquelch: prev.analogSquelch ?? 50,
+                          }));
+                        }}
+                        idleOption={BULK_IDLE_OPTION}
+                        sharedValue={sharedLevelSegmentValue(shared.analogSquelch)}
+                        data={[
+                          { value: BULK_LEVEL_DEFAULT, label: 'Default' },
+                          { value: BULK_LEVEL_CUSTOM, label: 'Custom' },
+                        ]}
+                        scheme="three"
+                        layout="column"
+                      />
+                      <PercentLevelSlider
+                        label="Level"
+                        value={form.analogSquelch}
+                        onChange={(analogSquelch) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            changeAnalogSquelch: true,
+                            analogSquelch,
+                          }))
+                        }
+                        zeroLabel="Open (0%)"
+                        showValue={form.changeAnalogSquelch && form.analogSquelch != null}
+                        showDefaultCheckbox={false}
+                        previewValues={channels.flatMap((channel) =>
+                          channel.modeProfiles
+                            .filter(isAnalogChannelModeProfile)
+                            .map((profile) => profile.squelch),
+                        )}
+                      />
                     </FieldGroup>
                   </>
                 ) : null}

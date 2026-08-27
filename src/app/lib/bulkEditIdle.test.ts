@@ -1,33 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import { GRADIENT_SEGMENT_IDLE_VALUE } from '../components/ui/GradientSegmentedControl.tsx';
 import {
-  BULK_POWER_CUSTOM,
-  BULK_POWER_DEFAULT,
-  bulkPowerSegmentValue,
-  sharedPowerSegmentValue,
+  BULK_LEVEL_CUSTOM,
+  BULK_LEVEL_DEFAULT,
+  bulkLevelSegmentValue,
+  sharedLevelSegmentValue,
 } from './bulkEditIdle.ts';
 
-describe('bulkPowerSegmentValue', () => {
-  it('is idle when power is not opted in', () => {
-    expect(bulkPowerSegmentValue(false, 50)).toBe(GRADIENT_SEGMENT_IDLE_VALUE);
+describe('bulkLevelSegmentValue', () => {
+  it('is idle when the level is not opted in', () => {
+    expect(bulkLevelSegmentValue(false, 50)).toBe(GRADIENT_SEGMENT_IDLE_VALUE);
   });
 
-  it('uses Default when opted in with a null power', () => {
-    expect(bulkPowerSegmentValue(true, null)).toBe(BULK_POWER_DEFAULT);
+  it('uses Default when opted in with a null level', () => {
+    expect(bulkLevelSegmentValue(true, null)).toBe(BULK_LEVEL_DEFAULT);
   });
 
   it('uses Custom when opted in with a percent', () => {
-    expect(bulkPowerSegmentValue(true, 50)).toBe(BULK_POWER_CUSTOM);
+    expect(bulkLevelSegmentValue(true, 50)).toBe(BULK_LEVEL_CUSTOM);
   });
 });
 
-describe('sharedPowerSegmentValue', () => {
+describe('sharedLevelSegmentValue', () => {
   it('is undefined when the selection is mixed', () => {
-    expect(sharedPowerSegmentValue(undefined)).toBeUndefined();
+    expect(sharedLevelSegmentValue(undefined)).toBeUndefined();
   });
 
   it('maps radio default and percents onto Default and Custom', () => {
-    expect(sharedPowerSegmentValue(null)).toBe(BULK_POWER_DEFAULT);
-    expect(sharedPowerSegmentValue(25)).toBe(BULK_POWER_CUSTOM);
+    expect(sharedLevelSegmentValue(null)).toBe(BULK_LEVEL_DEFAULT);
+    expect(sharedLevelSegmentValue(25)).toBe(BULK_LEVEL_CUSTOM);
   });
 });

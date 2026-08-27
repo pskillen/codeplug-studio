@@ -31,20 +31,21 @@ export function changeBadge(count: number): string | undefined {
   return count === 1 ? '1 change' : `${count} changes`;
 }
 
-export const BULK_POWER_DEFAULT = 'default';
-export const BULK_POWER_CUSTOM = 'custom';
+/** Shared by Power and analog squelch: No change | Default | Custom. */
+export const BULK_LEVEL_DEFAULT = 'default';
+export const BULK_LEVEL_CUSTOM = 'custom';
 
-export function bulkPowerSegmentValue(
-  changePower: boolean,
-  power: number | null,
-): typeof GRADIENT_SEGMENT_IDLE_VALUE | typeof BULK_POWER_DEFAULT | typeof BULK_POWER_CUSTOM {
-  if (!changePower) return GRADIENT_SEGMENT_IDLE_VALUE;
-  return power == null ? BULK_POWER_DEFAULT : BULK_POWER_CUSTOM;
+export function bulkLevelSegmentValue(
+  optedIn: boolean,
+  level: number | null,
+): typeof GRADIENT_SEGMENT_IDLE_VALUE | typeof BULK_LEVEL_DEFAULT | typeof BULK_LEVEL_CUSTOM {
+  if (!optedIn) return GRADIENT_SEGMENT_IDLE_VALUE;
+  return level == null ? BULK_LEVEL_DEFAULT : BULK_LEVEL_CUSTOM;
 }
 
-export function sharedPowerSegmentValue(
-  power: number | null | undefined,
-): typeof BULK_POWER_DEFAULT | typeof BULK_POWER_CUSTOM | undefined {
-  if (power === undefined) return undefined;
-  return power == null ? BULK_POWER_DEFAULT : BULK_POWER_CUSTOM;
+export function sharedLevelSegmentValue(
+  level: number | null | undefined,
+): typeof BULK_LEVEL_DEFAULT | typeof BULK_LEVEL_CUSTOM | undefined {
+  if (level === undefined) return undefined;
+  return level == null ? BULK_LEVEL_DEFAULT : BULK_LEVEL_CUSTOM;
 }
