@@ -54,7 +54,7 @@ Single-channel selection is handled by the list page (navigate to the channel ed
 - When every selected channel (and analog/DMR profile, for those fields) shares a value, that option shows a secondary outline. The outline is a hint — it does not opt the field in until the operator selects it.
 - Segmented controls use `layout="row"` (not full width). Transmit and TX permit sit on one row at desktop width.
 - Channel-level fields (`scanInclusion`, `forbidTransmit`, `txPermit`, `power`) apply to every selected channel when opted in.
-- Analog fields appear only when at least one selected channel has an analog mode. Squelch updates all analog profiles; digital-only channels are skipped. Talker alias appears when at least one channel has DMR.
+- Analog fields appear only when at least one selected channel has an analog mode. RX and TX tones (CTCSS or DCS, including **None** to clear) and squelch update all analog profiles independently; digital-only channels are skipped. Talker alias appears when at least one channel has DMR.
 - **Apply** runs `persistChannelBulkEdit` with revision checks; revision conflicts show an error and leave the parent selection intact.
 - **Delete N channels** (footer, left) opens an in-modal confirmation. Confirm runs `persistChannelBulkDelete` with zone auto-cascade (same integrity as single delete). Partial blocks close the modal when at least one channel was deleted; total failure stays open with an error.
 - Core patch logic: `@core/domain/channelBulkEdit.ts`.

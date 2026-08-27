@@ -58,6 +58,19 @@ describe('applyChannelBulkPatch', () => {
     const patched = applyChannelBulkPatch(channel, { analogSquelch: 50 });
     expect(patched).toEqual(channel);
   });
+
+  it('sets or clears analog RX and TX tones independently', () => {
+    const channel = channelWithProfiles('Analog mix', [
+      defaultModeProfile('fm'),
+      defaultModeProfile('dmr'),
+    ]);
+
+    const patched = applyChannelBulkPatch(channel, { rxTone: '88.5', txTone: 'none' });
+    const fm = patched.modeProfiles.find((profile) => profile.mode === 'fm');
+    const dmr = patched.modeProfiles.find((profile) => profile.mode === 'dmr');
+    expect(fm).toMatchObject({ rxTone: '88.5', txTone: 'none' });
+    expect(dmr).toMatchObject({ mode: 'dmr' });
+  });
 });
 
 describe('channelBulkEditWouldChange', () => {
@@ -74,6 +87,11 @@ describe('channelBulkEditWouldChange', () => {
   it('returns false for analog squelch on DMR-only channel', () => {
     const channel = channelWithProfiles('DMR', [defaultModeProfile('dmr')]);
     expect(channelBulkEditWouldChange(channel, { analogSquelch: 50 })).toBe(false);
+  });
+
+  it('returns false for analog tones on DMR-only channel', () => {
+    const channel = channelWithProfiles('DMR', [defaultModeProfile('dmr')]);
+    expect(channelBulkEditWouldChange(channel, { rxTone: '88.5' })).toBe(false);
   });
 });
 

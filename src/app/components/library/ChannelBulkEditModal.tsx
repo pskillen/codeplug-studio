@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Alert, Box, Collapse, Group, Stack, Text, UnstyledButton } from '@mantine/core';
+import { Alert, Box, Collapse, Group, Select, Stack, Text, UnstyledButton } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconPencil } from '@tabler/icons-react';
 import type {
   AnalogSquelchModeOverride,
@@ -7,7 +7,7 @@ import type {
   SendTalkerAliasOverride,
   TxPermitOverride,
 } from '@core/models/channelBehaviourDefaults.ts';
-import type { Channel, ScanInclusion } from '@core/models/library.ts';
+import type { Channel, ChannelTone, ScanInclusion } from '@core/models/library.ts';
 import {
   analyzeChannelBulkEditImpact,
   countChannelsWithAnalogProfile,
@@ -34,6 +34,8 @@ import {
   type PersistChannelBulkDeleteOutcome,
 } from '../../lib/channelBulkDelete.ts';
 import { BULK_IDLE_OPTION, bulkSegmentValue, changeBadge } from '../../lib/bulkEditIdle.ts';
+import { NONE_TONE, toneSelectOptions } from '../../lib/channelFields/index.ts';
+import { modalComboboxProps } from '../../theme.ts';
 import type { DeleteOutcome } from '../../state/libraryService.ts';
 import { persistence } from '../../state/persistence.ts';
 import BulkEditField from './BulkEditField.tsx';
@@ -65,6 +67,10 @@ interface BulkEditFormState {
   power: number | null;
   changeAnalogSquelch: boolean;
   analogSquelch: number | null;
+  changeRxTone: boolean;
+  rxTone: ChannelTone;
+  changeTxTone: boolean;
+  txTone: ChannelTone;
 }
 
 type ModalView = 'edit' | 'confirmDelete';
@@ -89,6 +95,10 @@ function initialFormFromChannels(channels: Channel[]): BulkEditFormState {
     power: sharedChannelField(channels, (channel) => channel.power) ?? null,
     changeAnalogSquelch: false,
     analogSquelch: sharedAnalogField(channels, (profile) => profile.squelch) ?? null,
+    changeRxTone: false,
+    rxTone: sharedAnalogField(channels, (profile) => profile.rxTone) ?? NONE_TONE,
+    changeTxTone: false,
+    txTone: sharedAnalogField(channels, (profile) => profile.txTone) ?? NONE_TONE,
   };
 }
 
@@ -101,6 +111,8 @@ function buildPatchFromForm(form: BulkEditFormState): ChannelBulkEditPatch {
   if (form.changeAnalogSquelchMode) patch.analogSquelchMode = form.analogSquelchMode;
   if (form.changePower) patch.power = form.power;
   if (form.changeAnalogSquelch) patch.analogSquelch = form.analogSquelch;
+  if (form.changeRxTone) patch.rxTone = form.rxTone;
+  if (form.changeTxTone) patch.txTone = form.txTone;
   return patch;
 }
 
@@ -112,6 +124,10 @@ function analogImpactText(appliesTo: number, skipped: number, total: number): st
   const base = `Applies to ${appliesTo} of ${total} selected channel${total === 1 ? '' : 's'}`;
   if (skipped <= 0) return base;
   return `${base}. ${skipped} channel${skipped === 1 ? '' : 's'} have no analog mode and will be skipped`;
+}
+
+function formatToneHint(tone: ChannelTone): string {
+  return tone === NONE_TONE ? 'None' : tone;
 }
 
 function dmrImpactText(appliesTo: number, skipped: number, total: number): string {
@@ -187,6 +203,8 @@ function ChannelBulkEditModalBody({
         (profile) => profile.analogSquelchMode ?? 'default',
       ),
       analogSquelch: sharedAnalogField(channels, (profile) => profile.squelch),
+      rxTone: sharedAnalogField(channels, (profile) => profile.rxTone),
+      txTone: sharedAnalogField(channels, (profile) => profile.txTone),
     }),
     [channels],
   );
@@ -210,7 +228,9 @@ function ChannelBulkEditModalBody({
   const modeChangeCount =
     Number(form.changeSendTalkerAlias) +
     Number(form.changeAnalogSquelchMode) +
-    Number(form.changeAnalogSquelch);
+    Number(form.changeAnalogSquelch) +
+    Number(form.changeRxTone) +
+    Number(form.changeTxTone);
   const scanningChangeCount = Number(form.changeScanInclusion);
 
   const handleApply = async () => {
@@ -447,6 +467,64 @@ function ChannelBulkEditModalBody({
                 ) : null}
                 {showAnalogFields ? (
                   <>
+                    <div className={classes.pairRow}>
+                      <BulkEditField
+                        optedIn={form.changeRxTone}
+                        onOptedInChange={(changeRxTone) =>
+                          setForm((prev) => ({ ...prev, changeRxTone }))
+                        }
+                        sharedHint={
+                          shared.rxTone !== undefined ? formatToneHint(shared.rxTone) : undefined
+                        }
+                      >
+                        <Select
+                          label="RX tone"
+                          data={toneSelectOptions()}
+                          value={form.rxTone}
+                          onChange={(value) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              rxTone: (value ?? NONE_TONE) as ChannelTone,
+                            }))
+                          }
+                          searchable
+                          comboboxProps={modalComboboxProps()}
+                        />
+                      </BulkEditField>
+                      <BulkEditField
+                        optedIn={form.changeTxTone}
+                        onOptedInChange={(changeTxTone) =>
+                          setForm((prev) => ({ ...prev, changeTxTone }))
+                        }
+                        sharedHint={
+                          shared.txTone !== undefined ? formatToneHint(shared.txTone) : undefined
+                        }
+                      >
+                        <Select
+                          label="TX tone"
+                          data={toneSelectOptions()}
+                          value={form.txTone}
+                          onChange={(value) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              txTone: (value ?? NONE_TONE) as ChannelTone,
+                            }))
+                          }
+                          searchable
+                          comboboxProps={modalComboboxProps()}
+                        />
+                      </BulkEditField>
+                    </div>
+                    {form.changeRxTone && impact.rxTone ? (
+                      <Text size="xs" c="dimmed">
+                        {analogImpactText(impact.rxTone.appliesTo, impact.rxTone.skipped, total)}
+                      </Text>
+                    ) : null}
+                    {form.changeTxTone && impact.txTone ? (
+                      <Text size="xs" c="dimmed">
+                        {analogImpactText(impact.txTone.appliesTo, impact.txTone.skipped, total)}
+                      </Text>
+                    ) : null}
                     <AnalogSquelchModeSegment
                       value={bulkSegmentValue(
                         form.changeAnalogSquelchMode,

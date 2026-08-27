@@ -2,6 +2,7 @@ import type {
   Channel,
   ChannelModeProfileAnalog,
   ChannelModeProfileDMR,
+  ChannelTone,
   ScanInclusion,
 } from '../models/library.ts';
 import type {
@@ -30,6 +31,10 @@ export type ChannelBulkEditPatch = {
   power?: number | null;
   /** `null` = open / radio-default squelch on analog profiles. */
   analogSquelch?: number | null;
+  /** Applied to every analog mode profile. `'none'` clears the tone. */
+  rxTone?: ChannelTone;
+  /** Applied to every analog mode profile. `'none'` clears the tone. */
+  txTone?: ChannelTone;
 };
 
 export type ChannelBulkEditPatchKey = keyof ChannelBulkEditPatch;
@@ -100,6 +105,18 @@ export function applyChannelBulkPatch(channel: Channel, patch: ChannelBulkEditPa
       } satisfies Partial<ChannelModeProfileAnalog>),
     };
   }
+  if ('rxTone' in patch) {
+    result = {
+      ...result,
+      modeProfiles: patchAllAnalogProfiles(result, { rxTone: patch.rxTone! }),
+    };
+  }
+  if ('txTone' in patch) {
+    result = {
+      ...result,
+      modeProfiles: patchAllAnalogProfiles(result, { txTone: patch.txTone! }),
+    };
+  }
 
   return result;
 }
@@ -138,6 +155,18 @@ export function channelBulkEditWouldChange(channel: Channel, patch: ChannelBulkE
     const squelch = patch.analogSquelch ?? null;
     return channel.modeProfiles.some(
       (profile) => isAnalogChannelModeProfile(profile) && profile.squelch !== squelch,
+    );
+  }
+  if ('rxTone' in patch) {
+    if (!channelHasAnalogProfile(channel)) return false;
+    return channel.modeProfiles.some(
+      (profile) => isAnalogChannelModeProfile(profile) && profile.rxTone !== patch.rxTone,
+    );
+  }
+  if ('txTone' in patch) {
+    if (!channelHasAnalogProfile(channel)) return false;
+    return channel.modeProfiles.some(
+      (profile) => isAnalogChannelModeProfile(profile) && profile.txTone !== patch.txTone,
     );
   }
   return false;
@@ -188,7 +217,7 @@ export function analyzeChannelBulkEditImpact(
   const impact: ChannelBulkEditImpact = {};
 
   for (const key of Object.keys(patch) as ChannelBulkEditPatchKey[]) {
-    if (key === 'analogSquelch' || key === 'analogSquelchMode') {
+    if (key === 'analogSquelch' || key === 'analogSquelchMode' || key === 'rxTone' || key === 'txTone') {
       const appliesTo = countChannelsWithAnalogProfile(channels);
       impact[key] = {
         appliesTo,
