@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Alert, Box, Checkbox, Collapse, Group, Select, Stack, Text, UnstyledButton } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconPencil } from '@tabler/icons-react';
 import type {
@@ -7,9 +8,9 @@ import type {
   SendTalkerAliasOverride,
   TxPermitOverride,
 } from '@core/models/channelBehaviourDefaults.ts';
-import type { AprsConfiguration } from '@core/models/aprs.ts';
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
-import type { Channel, ChannelTone, ScanInclusion } from '@core/models/library.ts';
+import type { Channel, ChannelTone, Library, ScanInclusion } from '@core/models/library.ts';
+import { nestedOnlyZoneMembershipsForChannels } from '@core/domain/zoneMembership.ts';
 import { aprsChannelBulkPatchHasChanges, type AprsChannelBulkPatch } from '@core/domain/aprs/index.ts';
 import {
   analyzeChannelBulkEditImpact,
@@ -30,8 +31,9 @@ import { Button, ConfirmModal, ModalShell, Panel } from '../v2/index.ts';
 import { ICON_SIZE_ACTION, ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import {
   persistChannelBulkEdit,
-  type PersistChannelBulkEditSuccess,
+  type ChannelBulkApplyOutcome,
 } from '../../lib/channelBulkEdit.ts';
+import { persistChannelBulkZoneMembership } from '../../lib/channelBulkZoneMembership.ts';
 import {
   persistChannelBulkDelete,
   type PersistChannelBulkDeleteOutcome,
@@ -43,6 +45,7 @@ import { modalComboboxProps } from '../../theme.ts';
 import type { DeleteOutcome } from '../../state/libraryService.ts';
 import { persistence } from '../../state/persistence.ts';
 import BulkEditField from './BulkEditField.tsx';
+import BulkZonePickerColumn from './BulkZonePickerColumn.tsx';
 import classes from './ChannelBulkEditModal.module.css';
 
 export interface ChannelBulkEditModalProps {
@@ -50,11 +53,10 @@ export interface ChannelBulkEditModalProps {
   onClose: () => void;
   channels: Channel[];
   projectId: string | null;
-  aprsConfiguration?: AprsConfiguration | null;
-  libraryChannels?: Channel[];
+  library: Library;
   deleteEntity: (kind: 'channel', id: string) => Promise<DeleteOutcome>;
   reload: () => Promise<void>;
-  onApplied?: (outcome: PersistChannelBulkEditSuccess) => void;
+  onApplied?: (outcome: ChannelBulkApplyOutcome) => void;
   onDeleted?: (outcome: PersistChannelBulkDeleteOutcome) => void;
 }
 
@@ -190,8 +192,7 @@ export default function ChannelBulkEditModal({
   onClose,
   channels,
   projectId,
-  aprsConfiguration = null,
-  libraryChannels = [],
+  library,
   deleteEntity,
   reload,
   onApplied,
@@ -206,8 +207,7 @@ export default function ChannelBulkEditModal({
       key={sessionKey}
       channels={channels}
       projectId={projectId}
-      aprsConfiguration={aprsConfiguration}
-      libraryChannels={libraryChannels}
+      library={library}
       deleteEntity={deleteEntity}
       reload={reload}
       onClose={onClose}
@@ -220,8 +220,7 @@ export default function ChannelBulkEditModal({
 function ChannelBulkEditModalBody({
   channels,
   projectId,
-  aprsConfiguration,
-  libraryChannels,
+  library,
   deleteEntity,
   reload,
   onClose,
@@ -230,16 +229,17 @@ function ChannelBulkEditModalBody({
 }: {
   channels: Channel[];
   projectId: string | null;
-  aprsConfiguration: AprsConfiguration | null;
-  libraryChannels: Channel[];
+  library: Library;
   deleteEntity: (kind: 'channel', id: string) => Promise<DeleteOutcome>;
   reload: () => Promise<void>;
   onClose: () => void;
-  onApplied?: (outcome: PersistChannelBulkEditSuccess) => void;
+  onApplied?: (outcome: ChannelBulkApplyOutcome) => void;
   onDeleted?: (outcome: PersistChannelBulkDeleteOutcome) => void;
 }) {
   const [view, setView] = useState<ModalView>('edit');
   const [form, setForm] = useState<BulkEditFormState>(() => initialFormFromChannels(channels));
+  const [addZoneIds, setAddZoneIds] = useState<string[]>([]);
+  const [removeZoneIds, setRemoveZoneIds] = useState<string[]>([]);
   const [showChannelList, setShowChannelList] = useState(false);
   const [applying, setApplying] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -283,10 +283,12 @@ function ChannelBulkEditModalBody({
   );
 
   const patch = useMemo(() => buildPatchFromForm(form), [form]);
-  const hasChanges = Object.keys(patch).length > 0;
+  const hasChannelPatch = Object.keys(patch).length > 0;
+  const hasZoneChanges = addZoneIds.length > 0 || removeZoneIds.length > 0;
+  const hasChanges = hasChannelPatch || hasZoneChanges;
   const impact = useMemo(
-    () => (hasChanges ? analyzeChannelBulkEditImpact(channels, patch) : {}),
-    [channels, hasChanges, patch],
+    () => (hasChannelPatch ? analyzeChannelBulkEditImpact(channels, patch) : {}),
+    [channels, hasChannelPatch, patch],
   );
   const analogChannelCount = useMemo(() => countChannelsWithAnalogProfile(channels), [channels]);
   const dmrChannelCount = useMemo(() => countChannelsWithDmrProfile(channels), [channels]);
@@ -305,6 +307,7 @@ function ChannelBulkEditModalBody({
     Number(form.changeRxTone) +
     Number(form.changeTxTone);
   const scanningChangeCount = Number(form.changeScanInclusion);
+  const zoneChangeCount = addZoneIds.length + removeZoneIds.length;
   const aprsChangeCount =
     Number(form.changeAprsReceive) +
     Number(form.changeAprsReportType) +
@@ -312,26 +315,48 @@ function ChannelBulkEditModalBody({
     Number(form.changeAprsSlot);
 
   const slotOptions = useMemo(
-    () => aprsSlotSelectOptions(aprsConfiguration?.channelSlots ?? [], libraryChannels),
-    [aprsConfiguration?.channelSlots, libraryChannels],
+    () => aprsSlotSelectOptions(library.aprsConfiguration?.channelSlots ?? [], library.channels),
+    [library.aprsConfiguration?.channelSlots, library.channels],
   );
-  const slotsAvailable = (aprsConfiguration?.channelSlots.length ?? 0) > 0;
+  const slotsAvailable = (library.aprsConfiguration?.channelSlots.length ?? 0) > 0;
+  const nestedOnlyZones = useMemo(
+    () => nestedOnlyZoneMembershipsForChannels(channels.map((channel) => channel.id), library),
+    [channels, library],
+  );
 
   const handleApply = async () => {
     if (!hasChanges || busy) return;
     setApplying(true);
     setErrorMessage(null);
     try {
-      const outcome = await persistChannelBulkEdit({
-        persistence,
-        channels,
-        patch,
-      });
-      if (!outcome.ok) {
-        setErrorMessage(outcome.message);
-        return;
+      const applyOutcome: ChannelBulkApplyOutcome = {};
+      if (hasChannelPatch) {
+        const outcome = await persistChannelBulkEdit({
+          persistence,
+          channels,
+          patch,
+        });
+        if (!outcome.ok) {
+          setErrorMessage(outcome.message);
+          return;
+        }
+        applyOutcome.channels = outcome;
       }
-      onApplied?.(outcome);
+      if (hasZoneChanges) {
+        const outcome = await persistChannelBulkZoneMembership({
+          persistence,
+          library,
+          channelIds: channels.map((channel) => channel.id),
+          addToZoneIds: addZoneIds,
+          removeFromZoneIds: removeZoneIds,
+        });
+        if (!outcome.ok) {
+          setErrorMessage(outcome.message);
+          return;
+        }
+        applyOutcome.zones = outcome;
+      }
+      onApplied?.(applyOutcome);
       onClose();
     } finally {
       setApplying(false);
@@ -381,7 +406,7 @@ function ChannelBulkEditModalBody({
         title="Bulk edit channels"
         icon={<IconPencil size={ICON_SIZE_ACTION} stroke={ICON_STROKE} />}
         iconTone="accent"
-        size="lg"
+        size="xl"
         dismissible={!busy}
         footer={
           <div className={classes.footer}>
@@ -673,6 +698,54 @@ function ChannelBulkEditModalBody({
               </Stack>
             </Panel>
           ) : null}
+
+          <Panel title="Zones" collapsible defaultCollapsed badge={changeBadge(zoneChangeCount)}>
+            <Stack gap="md">
+              <Text size="sm" c="dimmed">
+                Add or remove the selected channels as direct members. Nested membership is not
+                changed here.
+              </Text>
+              <div className={classes.pairRow}>
+                <BulkZonePickerColumn
+                  title="Remove from"
+                  description="Apply removes these channels from the zone’s direct members."
+                  searchPlaceholder="Search zones to remove from"
+                  zones={library.zones}
+                  selectedIds={removeZoneIds}
+                  blockedIds={addZoneIds}
+                  onSelectedIdsChange={setRemoveZoneIds}
+                />
+                <BulkZonePickerColumn
+                  title="Add to"
+                  description="Apply appends any selected channels that are not already members."
+                  searchPlaceholder="Search zones to add to"
+                  zones={library.zones}
+                  selectedIds={addZoneIds}
+                  blockedIds={removeZoneIds}
+                  onSelectedIdsChange={setAddZoneIds}
+                />
+              </div>
+              {nestedOnlyZones.length > 0 ? (
+                <Stack gap="xs">
+                  <Text size="xs" c="dimmed">
+                    Some selected channels appear in zones only through nested zones. Remove from
+                    does not change nested membership — open the zone to edit members.
+                  </Text>
+                  {nestedOnlyZones.map(({ zone, viaNestedZoneName }) => (
+                    <Group key={zone.id} justify="space-between" wrap="nowrap">
+                      <Text size="sm">
+                        {zone.name}
+                        {viaNestedZoneName ? ` (via ${viaNestedZoneName})` : ''}
+                      </Text>
+                      <Link to={`/library/zones/${zone.id}`} className={classes.openLink}>
+                        Open zone
+                      </Link>
+                    </Group>
+                  ))}
+                </Stack>
+              ) : null}
+            </Stack>
+          </Panel>
 
           <Panel title="Scanning" collapsible badge={changeBadge(scanningChangeCount)}>
             <Stack gap="md">

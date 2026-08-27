@@ -40,3 +40,13 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
+
+.openLink {
+  font-size: 11.5px;
+  color: var(--dsv2-accent);
+  text-decoration: none;
+}
+
+.openLink:hover {
+  text-decoration: underline;
+}

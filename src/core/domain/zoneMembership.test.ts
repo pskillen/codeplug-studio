@@ -11,6 +11,7 @@ import {
   setChannelMemberIncludeInScanList,
   unzonedChannelIds,
   zonesWithDirectChannelMember,
+  nestedOnlyZoneMembershipsForChannels,
   zonesWithEffectiveChannelMembership,
 } from './zoneMembership.ts';
 
@@ -87,6 +88,18 @@ describe('zonesWithEffectiveChannelMembership', () => {
     const nested = memberships.find((m) => m.zone.id === 'z-parent');
     expect(nested?.direct).toBe(false);
     expect(nested?.viaNestedZoneName).toBe('Scotland');
+  });
+});
+
+describe('nestedOnlyZoneMembershipsForChannels', () => {
+  it('dedupes parent zones and ignores direct membership', () => {
+    const child = zone('z-child', 'Scotland', [{ kind: 'channel', channelId: 'ch-1' }]);
+    const parent = zone('z-parent', 'UK Regions', [{ kind: 'zone', zoneId: 'z-child' }]);
+    const lib = library(['ch-1', 'ch-2'], [child, parent]);
+
+    expect(nestedOnlyZoneMembershipsForChannels(['ch-1', 'ch-2'], lib).map((m) => m.zone.id)).toEqual(
+      ['z-parent'],
+    );
   });
 });
 

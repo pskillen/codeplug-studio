@@ -87,8 +87,8 @@ import {
   type PersistChannelBulkDeleteOutcome,
 } from '../../../lib/channelBulkDelete.ts';
 import {
-  formatChannelBulkEditMessage,
-  type PersistChannelBulkEditSuccess,
+  formatChannelBulkApplyMessage,
+  type ChannelBulkApplyOutcome,
 } from '../../../lib/channelBulkEdit.ts';
 import {
   channelHasDmrProfile,
@@ -567,8 +567,8 @@ export default function ChannelsListPage() {
     setBulkEditOpen(true);
   }, [navigate, selectedChannels]);
 
-  const handleBulkEditApplied = useCallback((outcome: PersistChannelBulkEditSuccess) => {
-    setBulkEditMessage(formatChannelBulkEditMessage(outcome));
+  const handleBulkEditApplied = useCallback((outcome: ChannelBulkApplyOutcome) => {
+    setBulkEditMessage(formatChannelBulkApplyMessage(outcome));
     setBulkEditMessageColor('green');
     setSelectedKeys([]);
   }, []);
@@ -787,8 +787,7 @@ export default function ChannelsListPage() {
         onClose={() => setBulkEditOpen(false)}
         channels={selectedChannels}
         projectId={projectId}
-        aprsConfiguration={library.aprsConfiguration}
-        libraryChannels={channels}
+        library={library}
         deleteEntity={deleteEntity}
         reload={reload}
         onApplied={handleBulkEditApplied}

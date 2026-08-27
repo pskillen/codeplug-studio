@@ -5,6 +5,8 @@ import {
   type ChannelBulkEditPatch,
 } from '@core/domain/channelBulkEdit.ts';
 import type { ProjectPersistence, PutResult } from '@integrations/persistence/index.ts';
+import type { PersistChannelBulkZoneMembershipSuccess } from './channelBulkZoneMembership.ts';
+import { formatChannelBulkZoneMembershipMessage } from './channelBulkZoneMembership.ts';
 
 export interface PersistChannelBulkEditOptions {
   persistence: ProjectPersistence;
@@ -104,6 +106,27 @@ export function formatChannelBulkEditMessage(outcome: PersistChannelBulkEditSucc
   }
   if (parts.length === 0) {
     return 'No channels were changed.';
+  }
+  return `${parts.join('; ')}.`;
+}
+
+export type ChannelBulkApplyOutcome = {
+  channels?: PersistChannelBulkEditSuccess;
+  zones?: PersistChannelBulkZoneMembershipSuccess;
+};
+
+export function formatChannelBulkApplyMessage(outcome: ChannelBulkApplyOutcome): string {
+  const parts: string[] = [];
+  if (outcome.channels) {
+    const text = formatChannelBulkEditMessage(outcome.channels);
+    parts.push(text.endsWith('.') ? text.slice(0, -1) : text);
+  }
+  if (outcome.zones) {
+    const text = formatChannelBulkZoneMembershipMessage(outcome.zones);
+    parts.push(text.endsWith('.') ? text.slice(0, -1) : text);
+  }
+  if (parts.length === 0) {
+    return 'No channels or zones were changed.';
   }
   return `${parts.join('; ')}.`;
 }
