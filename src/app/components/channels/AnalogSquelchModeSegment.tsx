@@ -1,13 +1,19 @@
 import type { AnalogSquelchModeOverride } from '@core/models/channelBehaviourDefaults.ts';
-import GradientSegmentedControl from '../ui/GradientSegmentedControl.tsx';
+import GradientSegmentedControl, {
+  GRADIENT_SEGMENT_IDLE_VALUE,
+  type GradientSegmentOption,
+} from '../ui/GradientSegmentedControl.tsx';
 
 export interface AnalogSquelchModeSegmentProps {
-  value: AnalogSquelchModeOverride;
+  value: AnalogSquelchModeOverride | typeof GRADIENT_SEGMENT_IDLE_VALUE;
   onChange: (value: AnalogSquelchModeOverride) => void;
   includeDefault?: boolean;
   disabled?: boolean;
   /** `'row'` puts label/description left, control right. Default `'stack'`. */
   layout?: 'stack' | 'row';
+  idleOption?: GradientSegmentOption<string>;
+  sharedValue?: AnalogSquelchModeOverride;
+  onIdle?: () => void;
 }
 
 const CHANNEL_OPTIONS = [
@@ -27,9 +33,19 @@ export default function AnalogSquelchModeSegment({
   includeDefault = true,
   disabled = false,
   layout = 'stack',
+  idleOption,
+  sharedValue,
+  onIdle,
 }: AnalogSquelchModeSegmentProps) {
   const data = includeDefault ? [...CHANNEL_OPTIONS] : [...BUILD_OPTIONS];
-  const wireValue = includeDefault ? value : value === 'default' ? 'carrier' : value;
+  const wireValue =
+    value === GRADIENT_SEGMENT_IDLE_VALUE
+      ? value
+      : includeDefault
+        ? value
+        : value === 'default'
+          ? 'carrier'
+          : value;
 
   return (
     <GradientSegmentedControl
@@ -40,12 +56,20 @@ export default function AnalogSquelchModeSegment({
           : 'Override library and per-channel settings for this build.'
       }
       value={wireValue}
-      onChange={(next) => onChange(next as AnalogSquelchModeOverride)}
+      onChange={(next) => {
+        if (idleOption && next === idleOption.value) {
+          onIdle?.();
+          return;
+        }
+        onChange(next as AnalogSquelchModeOverride);
+      }}
       data={data}
       scheme="three"
       layout={layout}
       fullWidth={layout === 'stack'}
       disabled={disabled}
+      idleOption={idleOption}
+      sharedValue={sharedValue}
     />
   );
 }

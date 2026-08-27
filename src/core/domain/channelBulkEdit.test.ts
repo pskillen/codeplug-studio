@@ -7,6 +7,7 @@ import {
   applyChannelBulkPatch,
   channelBulkEditWouldChange,
   countChannelsWithAnalogProfile,
+  sharedChannelField,
 } from './channelBulkEdit.ts';
 
 const projectId = 'proj-bulk-edit';
@@ -109,5 +110,19 @@ describe('countChannelsWithAnalogProfile', () => {
       channelWithProfiles('DMR', [defaultModeProfile('dmr')]),
     ];
     expect(countChannelsWithAnalogProfile(channels)).toBe(1);
+  });
+});
+
+describe('sharedChannelField', () => {
+  it('returns the value when every channel matches', () => {
+    const a = { ...newChannel(projectId, 'A'), power: 50 };
+    const b = { ...newChannel(projectId, 'B'), power: 50 };
+    expect(sharedChannelField([a, b], (channel) => channel.power)).toBe(50);
+  });
+
+  it('returns undefined when values differ', () => {
+    const a = { ...newChannel(projectId, 'A'), power: 50 };
+    const b = { ...newChannel(projectId, 'B'), power: 25 };
+    expect(sharedChannelField([a, b], (channel) => channel.power)).toBeUndefined();
   });
 });

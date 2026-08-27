@@ -1,4 +1,9 @@
-import type { Channel, ChannelModeProfileAnalog, ScanInclusion } from '../models/library.ts';
+import type {
+  Channel,
+  ChannelModeProfileAnalog,
+  ChannelModeProfileDMR,
+  ScanInclusion,
+} from '../models/library.ts';
 import type {
   AnalogSquelchModeOverride,
   ForbidTransmitOverride,
@@ -136,6 +141,43 @@ export function channelBulkEditWouldChange(channel: Channel, patch: ChannelBulkE
     );
   }
   return false;
+}
+
+export function sharedEqualValue<T>(values: readonly T[]): T | undefined {
+  if (values.length === 0) return undefined;
+  const first = values[0];
+  return values.every((value) => Object.is(value, first)) ? first : undefined;
+}
+
+export function sharedChannelField<T>(
+  channels: readonly Channel[],
+  read: (channel: Channel) => T,
+): T | undefined {
+  return sharedEqualValue(channels.map(read));
+}
+
+export function analogProfilesOnChannels(channels: readonly Channel[]): ChannelModeProfileAnalog[] {
+  return channels.flatMap((channel) => channel.modeProfiles.filter(isAnalogChannelModeProfile));
+}
+
+export function dmrProfilesOnChannels(channels: readonly Channel[]): ChannelModeProfileDMR[] {
+  return channels.flatMap((channel) =>
+    channel.modeProfiles.filter((profile): profile is ChannelModeProfileDMR => profile.mode === 'dmr'),
+  );
+}
+
+export function sharedAnalogField<T>(
+  channels: readonly Channel[],
+  read: (profile: ChannelModeProfileAnalog) => T,
+): T | undefined {
+  return sharedEqualValue(analogProfilesOnChannels(channels).map(read));
+}
+
+export function sharedDmrField<T>(
+  channels: readonly Channel[],
+  read: (profile: ChannelModeProfileDMR) => T,
+): T | undefined {
+  return sharedEqualValue(dmrProfilesOnChannels(channels).map(read));
 }
 
 export function analyzeChannelBulkEditImpact(

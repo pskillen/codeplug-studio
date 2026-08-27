@@ -1,15 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  Accordion,
-  Alert,
-  Box,
-  Checkbox,
-  Collapse,
-  Group,
-  Stack,
-  Text,
-  UnstyledButton,
-} from '@mantine/core';
+import { Alert, Box, Collapse, Group, Stack, Text, UnstyledButton } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconPencil } from '@tabler/icons-react';
 import type {
   AnalogSquelchModeOverride,
@@ -21,6 +11,10 @@ import type { Channel, ScanInclusion } from '@core/models/library.ts';
 import {
   analyzeChannelBulkEditImpact,
   countChannelsWithAnalogProfile,
+  countChannelsWithDmrProfile,
+  sharedAnalogField,
+  sharedChannelField,
+  sharedDmrField,
   type ChannelBulkEditPatch,
 } from '@core/domain/channelBulkEdit.ts';
 import ForbidTransmitSegment from '../channels/ForbidTransmitSegment.tsx';
@@ -28,8 +22,8 @@ import TxPermitSegment from '../channels/TxPermitSegment.tsx';
 import SendTalkerAliasSegment from '../channels/SendTalkerAliasSegment.tsx';
 import AnalogSquelchModeSegment from '../channels/AnalogSquelchModeSegment.tsx';
 import ScanInclusionSegment from '../channels/ScanInclusionSegment.tsx';
-import { PercentLevelSlider } from '../v2/index.ts';
-import { Button, ConfirmModal, ModalShell } from '../v2/index.ts';
+import { PercentLevelSlider, formatPercentLevelLabel } from '../v2/index.ts';
+import { Button, ConfirmModal, ModalShell, Panel } from '../v2/index.ts';
 import { ICON_SIZE_ACTION, ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import {
   persistChannelBulkEdit,
@@ -39,8 +33,10 @@ import {
   persistChannelBulkDelete,
   type PersistChannelBulkDeleteOutcome,
 } from '../../lib/channelBulkDelete.ts';
+import { BULK_IDLE_OPTION, bulkSegmentValue, changeBadge } from '../../lib/bulkEditIdle.ts';
 import type { DeleteOutcome } from '../../state/libraryService.ts';
 import { persistence } from '../../state/persistence.ts';
+import BulkEditField from './BulkEditField.tsx';
 import classes from './ChannelBulkEditModal.module.css';
 
 export interface ChannelBulkEditModalProps {
@@ -71,48 +67,40 @@ interface BulkEditFormState {
   analogSquelch: number | null;
 }
 
-const INITIAL_FORM: BulkEditFormState = {
-  changeScanInclusion: false,
-  scanInclusion: 'default',
-  changeForbidTransmit: false,
-  forbidTransmit: 'default',
-  changeTxPermit: false,
-  txPermit: 'default',
-  changeSendTalkerAlias: false,
-  sendTalkerAlias: 'default',
-  changeAnalogSquelchMode: false,
-  analogSquelchMode: 'default',
-  changePower: false,
-  power: null,
-  changeAnalogSquelch: false,
-  analogSquelch: null,
-};
-
 type ModalView = 'edit' | 'confirmDelete';
+
+function initialFormFromChannels(channels: Channel[]): BulkEditFormState {
+  return {
+    changeScanInclusion: false,
+    scanInclusion: sharedChannelField(channels, (channel) => channel.scanInclusion) ?? 'default',
+    changeForbidTransmit: false,
+    forbidTransmit:
+      sharedChannelField(channels, (channel) => channel.forbidTransmit) ?? 'default',
+    changeTxPermit: false,
+    txPermit: sharedChannelField(channels, (channel) => channel.txPermit) ?? 'default',
+    changeSendTalkerAlias: false,
+    sendTalkerAlias:
+      sharedDmrField(channels, (profile) => profile.sendTalkerAlias ?? 'default') ?? 'default',
+    changeAnalogSquelchMode: false,
+    analogSquelchMode:
+      sharedAnalogField(channels, (profile) => profile.analogSquelchMode ?? 'default') ??
+      'default',
+    changePower: false,
+    power: sharedChannelField(channels, (channel) => channel.power) ?? null,
+    changeAnalogSquelch: false,
+    analogSquelch: sharedAnalogField(channels, (profile) => profile.squelch) ?? null,
+  };
+}
 
 function buildPatchFromForm(form: BulkEditFormState): ChannelBulkEditPatch {
   const patch: ChannelBulkEditPatch = {};
-  if (form.changeScanInclusion) {
-    patch.scanInclusion = form.scanInclusion;
-  }
-  if (form.changeForbidTransmit) {
-    patch.forbidTransmit = form.forbidTransmit;
-  }
-  if (form.changeTxPermit) {
-    patch.txPermit = form.txPermit;
-  }
-  if (form.changeSendTalkerAlias) {
-    patch.sendTalkerAlias = form.sendTalkerAlias;
-  }
-  if (form.changeAnalogSquelchMode) {
-    patch.analogSquelchMode = form.analogSquelchMode;
-  }
-  if (form.changePower) {
-    patch.power = form.power;
-  }
-  if (form.changeAnalogSquelch) {
-    patch.analogSquelch = form.analogSquelch;
-  }
+  if (form.changeScanInclusion) patch.scanInclusion = form.scanInclusion;
+  if (form.changeForbidTransmit) patch.forbidTransmit = form.forbidTransmit;
+  if (form.changeTxPermit) patch.txPermit = form.txPermit;
+  if (form.changeSendTalkerAlias) patch.sendTalkerAlias = form.sendTalkerAlias;
+  if (form.changeAnalogSquelchMode) patch.analogSquelchMode = form.analogSquelchMode;
+  if (form.changePower) patch.power = form.power;
+  if (form.changeAnalogSquelch) patch.analogSquelch = form.analogSquelch;
   return patch;
 }
 
@@ -178,11 +166,30 @@ function ChannelBulkEditModalBody({
   onDeleted?: (outcome: PersistChannelBulkDeleteOutcome) => void;
 }) {
   const [view, setView] = useState<ModalView>('edit');
-  const [form, setForm] = useState<BulkEditFormState>(INITIAL_FORM);
+  const [form, setForm] = useState<BulkEditFormState>(() => initialFormFromChannels(channels));
   const [showChannelList, setShowChannelList] = useState(false);
   const [applying, setApplying] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const shared = useMemo(
+    () => ({
+      scanInclusion: sharedChannelField(channels, (channel) => channel.scanInclusion),
+      forbidTransmit: sharedChannelField(channels, (channel) => channel.forbidTransmit),
+      txPermit: sharedChannelField(channels, (channel) => channel.txPermit),
+      power: sharedChannelField(channels, (channel) => channel.power),
+      sendTalkerAlias: sharedDmrField(
+        channels,
+        (profile) => profile.sendTalkerAlias ?? 'default',
+      ),
+      analogSquelchMode: sharedAnalogField(
+        channels,
+        (profile) => profile.analogSquelchMode ?? 'default',
+      ),
+      analogSquelch: sharedAnalogField(channels, (profile) => profile.squelch),
+    }),
+    [channels],
+  );
 
   const patch = useMemo(() => buildPatchFromForm(form), [form]);
   const hasChanges = Object.keys(patch).length > 0;
@@ -191,9 +198,20 @@ function ChannelBulkEditModalBody({
     [channels, hasChanges, patch],
   );
   const analogChannelCount = useMemo(() => countChannelsWithAnalogProfile(channels), [channels]);
-  const showAnalogSection = analogChannelCount > 0;
+  const dmrChannelCount = useMemo(() => countChannelsWithDmrProfile(channels), [channels]);
+  const showAnalogFields = analogChannelCount > 0;
+  const showDmrFields = dmrChannelCount > 0;
+  const showModeSettings = showAnalogFields || showDmrFields;
   const busy = applying || deleting;
   const total = channels.length;
+
+  const rfChangeCount =
+    Number(form.changeForbidTransmit) + Number(form.changeTxPermit) + Number(form.changePower);
+  const modeChangeCount =
+    Number(form.changeSendTalkerAlias) +
+    Number(form.changeAnalogSquelchMode) +
+    Number(form.changeAnalogSquelch);
+  const scanningChangeCount = Number(form.changeScanInclusion);
 
   const handleApply = async () => {
     if (!hasChanges || busy) return;
@@ -294,7 +312,8 @@ function ChannelBulkEditModalBody({
           <strong>
             {total} channel{total === 1 ? '' : 's'} selected.
           </strong>{' '}
-          Enable only the fields you want to change — blank fields keep current values.
+          Fields start as <strong>No change</strong>. Pick a value to apply it — an outline marks a
+          setting every selected channel already shares.
         </div>
 
         <Stack gap="md">
@@ -332,181 +351,142 @@ function ChannelBulkEditModalBody({
             </Box>
           </Collapse>
 
-          <Stack gap="sm">
-            <Checkbox
-              label="Change scan inclusion"
-              checked={form.changeScanInclusion}
-              onChange={(e) => {
-                const checked = e.currentTarget.checked;
-                setForm((prev) => ({ ...prev, changeScanInclusion: checked }));
-              }}
-            />
-            <fieldset
-              disabled={!form.changeScanInclusion}
-              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-            >
-              <ScanInclusionSegment
-                value={form.scanInclusion}
-                onChange={(scanInclusion) => setForm((prev) => ({ ...prev, scanInclusion }))}
-              />
-            </fieldset>
-            {form.changeScanInclusion && impact.scanInclusion ? (
-              <Text size="xs" c="dimmed">
-                {channelLevelImpactText(impact.scanInclusion.appliesTo)}
-              </Text>
-            ) : null}
-
-            <Checkbox
-              label="Change transmit permission"
-              checked={form.changeForbidTransmit}
-              onChange={(e) => {
-                const checked = e.currentTarget.checked;
-                setForm((prev) => ({ ...prev, changeForbidTransmit: checked }));
-              }}
-            />
-            <fieldset
-              disabled={!form.changeForbidTransmit}
-              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-            >
+          <Panel title="RF" collapsible badge={changeBadge(rfChangeCount)}>
+            <Stack gap="md">
+            <div className={classes.pairRow}>
               <ForbidTransmitSegment
-                value={form.forbidTransmit}
-                onChange={(forbidTransmit) => setForm((prev) => ({ ...prev, forbidTransmit }))}
+                value={bulkSegmentValue(form.changeForbidTransmit, form.forbidTransmit)}
+                onChange={(forbidTransmit) =>
+                  setForm((prev) => ({ ...prev, changeForbidTransmit: true, forbidTransmit }))
+                }
+                onIdle={() => setForm((prev) => ({ ...prev, changeForbidTransmit: false }))}
+                idleOption={BULK_IDLE_OPTION}
+                sharedValue={shared.forbidTransmit}
+                layout="row"
               />
-            </fieldset>
+              <TxPermitSegment
+                value={bulkSegmentValue(form.changeTxPermit, form.txPermit)}
+                onChange={(txPermit) =>
+                  setForm((prev) => ({ ...prev, changeTxPermit: true, txPermit }))
+                }
+                onIdle={() => setForm((prev) => ({ ...prev, changeTxPermit: false }))}
+                idleOption={BULK_IDLE_OPTION}
+                sharedValue={shared.txPermit}
+                layout="row"
+              />
+            </div>
             {form.changeForbidTransmit && impact.forbidTransmit ? (
               <Text size="xs" c="dimmed">
                 {channelLevelImpactText(impact.forbidTransmit.appliesTo)}
               </Text>
             ) : null}
-
-            <Checkbox
-              label="Change TX permit"
-              checked={form.changeTxPermit}
-              onChange={(e) => {
-                const checked = e.currentTarget.checked;
-                setForm((prev) => ({ ...prev, changeTxPermit: checked }));
-              }}
-            />
-            <fieldset
-              disabled={!form.changeTxPermit}
-              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-            >
-              <TxPermitSegment
-                value={form.txPermit}
-                onChange={(txPermit) => setForm((prev) => ({ ...prev, txPermit }))}
-              />
-            </fieldset>
             {form.changeTxPermit && impact.txPermit ? (
               <Text size="xs" c="dimmed">
                 {channelLevelImpactText(impact.txPermit.appliesTo)}
               </Text>
             ) : null}
-
-            <Checkbox
-              label="Change send talker alias"
-              checked={form.changeSendTalkerAlias}
-              onChange={(e) => {
-                const checked = e.currentTarget.checked;
-                setForm((prev) => ({ ...prev, changeSendTalkerAlias: checked }));
-              }}
-            />
-            <fieldset
-              disabled={!form.changeSendTalkerAlias}
-              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-            >
-              <SendTalkerAliasSegment
-                value={form.sendTalkerAlias}
-                onChange={(sendTalkerAlias) => setForm((prev) => ({ ...prev, sendTalkerAlias }))}
-              />
-            </fieldset>
-            {form.changeSendTalkerAlias && impact.sendTalkerAlias ? (
-              <Text size="xs" c="dimmed">
-                {dmrImpactText(
-                  impact.sendTalkerAlias.appliesTo,
-                  impact.sendTalkerAlias.skipped,
-                  total,
-                )}
-              </Text>
-            ) : null}
-
-            <Checkbox
-              label="Change analog squelch mode"
-              checked={form.changeAnalogSquelchMode}
-              onChange={(e) => {
-                const checked = e.currentTarget.checked;
-                setForm((prev) => ({ ...prev, changeAnalogSquelchMode: checked }));
-              }}
-            />
-            <fieldset
-              disabled={!form.changeAnalogSquelchMode}
-              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
-            >
-              <AnalogSquelchModeSegment
-                value={form.analogSquelchMode}
-                onChange={(analogSquelchMode) =>
-                  setForm((prev) => ({ ...prev, analogSquelchMode }))
-                }
-              />
-            </fieldset>
-            {form.changeAnalogSquelchMode && impact.analogSquelchMode ? (
-              <Text size="xs" c="dimmed">
-                {analogImpactText(
-                  impact.analogSquelchMode.appliesTo,
-                  impact.analogSquelchMode.skipped,
-                  total,
-                )}
-              </Text>
-            ) : null}
-
-            <Checkbox
-              label="Change power"
-              checked={form.changePower}
-              onChange={(e) => {
-                const checked = e.currentTarget.checked;
-                setForm((prev) => ({ ...prev, changePower: checked }));
-              }}
-            />
-            <fieldset
-              disabled={!form.changePower}
-              style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+            <BulkEditField
+              optedIn={form.changePower}
+              onOptedInChange={(changePower) => setForm((prev) => ({ ...prev, changePower }))}
+              sharedHint={
+                shared.power !== undefined
+                  ? formatPercentLevelLabel(shared.power)
+                  : undefined
+              }
             >
               <PercentLevelSlider
                 label="Power"
                 value={form.power}
                 onChange={(power) => setForm((prev) => ({ ...prev, power }))}
               />
-            </fieldset>
+            </BulkEditField>
             {form.changePower && impact.power ? (
               <Text size="xs" c="dimmed">
                 {channelLevelImpactText(impact.power.appliesTo)}
               </Text>
             ) : null}
-          </Stack>
+            </Stack>
+          </Panel>
 
-          {showAnalogSection ? (
-            <Accordion variant="separated">
-              <Accordion.Item value="analog">
-                <Accordion.Control>
-                  Analog mode settings
-                  <Text size="xs" c="dimmed">
-                    Updates squelch on existing analog mode profiles only. Does not add or remove
-                    modes.
-                  </Text>
-                </Accordion.Control>
-
-                <Accordion.Panel>
-                  <Stack gap="sm">
-                    <Checkbox
-                      label="Change squelch"
-                      checked={form.changeAnalogSquelch}
-                      onChange={(e) => {
-                        const checked = e.currentTarget.checked;
-                        setForm((prev) => ({ ...prev, changeAnalogSquelch: checked }));
-                      }}
+          {showModeSettings ? (
+            <Panel
+              title="Mode settings"
+              collapsible
+              defaultCollapsed
+              badge={changeBadge(modeChangeCount)}
+            >
+              <Stack gap="md">
+                {showDmrFields ? (
+                  <>
+                    <SendTalkerAliasSegment
+                      value={bulkSegmentValue(form.changeSendTalkerAlias, form.sendTalkerAlias)}
+                      onChange={(sendTalkerAlias) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          changeSendTalkerAlias: true,
+                          sendTalkerAlias,
+                        }))
+                      }
+                      onIdle={() =>
+                        setForm((prev) => ({ ...prev, changeSendTalkerAlias: false }))
+                      }
+                      idleOption={BULK_IDLE_OPTION}
+                      sharedValue={shared.sendTalkerAlias}
+                      layout="row"
                     />
-                    <fieldset
-                      disabled={!form.changeAnalogSquelch}
-                      style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+                    {form.changeSendTalkerAlias && impact.sendTalkerAlias ? (
+                      <Text size="xs" c="dimmed">
+                        {dmrImpactText(
+                          impact.sendTalkerAlias.appliesTo,
+                          impact.sendTalkerAlias.skipped,
+                          total,
+                        )}
+                      </Text>
+                    ) : null}
+                  </>
+                ) : null}
+                {showAnalogFields ? (
+                  <>
+                    <AnalogSquelchModeSegment
+                      value={bulkSegmentValue(
+                        form.changeAnalogSquelchMode,
+                        form.analogSquelchMode,
+                      )}
+                      onChange={(analogSquelchMode) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          changeAnalogSquelchMode: true,
+                          analogSquelchMode,
+                        }))
+                      }
+                      onIdle={() =>
+                        setForm((prev) => ({ ...prev, changeAnalogSquelchMode: false }))
+                      }
+                      idleOption={BULK_IDLE_OPTION}
+                      sharedValue={shared.analogSquelchMode}
+                      layout="row"
+                    />
+                    {form.changeAnalogSquelchMode && impact.analogSquelchMode ? (
+                      <Text size="xs" c="dimmed">
+                        {analogImpactText(
+                          impact.analogSquelchMode.appliesTo,
+                          impact.analogSquelchMode.skipped,
+                          total,
+                        )}
+                      </Text>
+                    ) : null}
+                    <BulkEditField
+                      optedIn={form.changeAnalogSquelch}
+                      onOptedInChange={(changeAnalogSquelch) =>
+                        setForm((prev) => ({ ...prev, changeAnalogSquelch }))
+                      }
+                      sharedHint={
+                        shared.analogSquelch !== undefined
+                          ? formatPercentLevelLabel(shared.analogSquelch, {
+                              zeroLabel: 'Open (0%)',
+                            })
+                          : undefined
+                      }
                     >
                       <PercentLevelSlider
                         label="Squelch"
@@ -516,7 +496,7 @@ function ChannelBulkEditModalBody({
                         }
                         zeroLabel="Open (0%)"
                       />
-                    </fieldset>
+                    </BulkEditField>
                     {form.changeAnalogSquelch && impact.analogSquelch ? (
                       <Text size="xs" c="dimmed">
                         {analogImpactText(
@@ -526,15 +506,35 @@ function ChannelBulkEditModalBody({
                         )}
                       </Text>
                     ) : null}
-                  </Stack>
-                </Accordion.Panel>
-              </Accordion.Item>
-            </Accordion>
+                  </>
+                ) : null}
+              </Stack>
+            </Panel>
           ) : null}
+
+          <Panel title="Scanning" collapsible badge={changeBadge(scanningChangeCount)}>
+            <Stack gap="md">
+            <ScanInclusionSegment
+              value={bulkSegmentValue(form.changeScanInclusion, form.scanInclusion)}
+              onChange={(scanInclusion) =>
+                setForm((prev) => ({ ...prev, changeScanInclusion: true, scanInclusion }))
+              }
+              onIdle={() => setForm((prev) => ({ ...prev, changeScanInclusion: false }))}
+              idleOption={BULK_IDLE_OPTION}
+              sharedValue={shared.scanInclusion}
+              layout="row"
+            />
+            {form.changeScanInclusion && impact.scanInclusion ? (
+              <Text size="xs" c="dimmed">
+                {channelLevelImpactText(impact.scanInclusion.appliesTo)}
+              </Text>
+            ) : null}
+            </Stack>
+          </Panel>
 
           {!hasChanges ? (
             <Text size="sm" c="dimmed">
-              Enable at least one change above to apply.
+              Choose at least one value above to apply. Leave the rest on No change.
             </Text>
           ) : null}
 

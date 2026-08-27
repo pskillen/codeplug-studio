@@ -28,3 +28,15 @@
   justify-content: flex-end;
   width: 100%;
 }
+
+.pairRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 48em) {
+  .pairRow {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
