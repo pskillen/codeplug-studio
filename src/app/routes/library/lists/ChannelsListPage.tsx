@@ -787,6 +787,8 @@ export default function ChannelsListPage() {
         onClose={() => setBulkEditOpen(false)}
         channels={selectedChannels}
         projectId={projectId}
+        aprsConfiguration={library.aprsConfiguration}
+        libraryChannels={channels}
         deleteEntity={deleteEntity}
         reload={reload}
         onApplied={handleBulkEditApplied}

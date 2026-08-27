@@ -11,6 +11,12 @@ import type {
   SendTalkerAliasOverride,
   TxPermitOverride,
 } from '../models/channelBehaviourDefaults.ts';
+import type { AprsChannelBulkPatch } from './aprs/index.ts';
+import {
+  applyAprsChannelBulkPatch,
+  aprsChannelBulkPatchHasChanges,
+} from './aprs/index.ts';
+import { normalizeOptionalChannelAprs } from './aprs/index.ts';
 import {
   channelHasAnalogProfile,
   channelHasDmrProfile,
@@ -35,6 +41,8 @@ export type ChannelBulkEditPatch = {
   rxTone?: ChannelTone;
   /** Applied to every analog mode profile. `'none'` clears the tone. */
   txTone?: ChannelTone;
+  /** Partial APRS binding patch; omitted fields stay as they are on each channel. */
+  aprs?: AprsChannelBulkPatch;
 };
 
 export type ChannelBulkEditPatchKey = keyof ChannelBulkEditPatch;
@@ -117,6 +125,12 @@ export function applyChannelBulkPatch(channel: Channel, patch: ChannelBulkEditPa
       modeProfiles: patchAllAnalogProfiles(result, { txTone: patch.txTone! }),
     };
   }
+  if ('aprs' in patch && patch.aprs) {
+    result = {
+      ...result,
+      aprs: normalizeOptionalChannelAprs(applyAprsChannelBulkPatch(result.aprs, patch.aprs)),
+    };
+  }
 
   return result;
 }
@@ -168,6 +182,12 @@ export function channelBulkEditWouldChange(channel: Channel, patch: ChannelBulkE
     return channel.modeProfiles.some(
       (profile) => isAnalogChannelModeProfile(profile) && profile.txTone !== patch.txTone,
     );
+  }
+  if ('aprs' in patch && patch.aprs && aprsChannelBulkPatchHasChanges(patch.aprs)) {
+    const next = normalizeOptionalChannelAprs(
+      applyAprsChannelBulkPatch(channel.aprs, patch.aprs),
+    );
+    return JSON.stringify(next ?? null) !== JSON.stringify(channel.aprs ?? null);
   }
   return false;
 }
@@ -237,6 +257,9 @@ export function analyzeChannelBulkEditImpact(
     }
     if (CHANNEL_LEVEL_KEYS.has(key)) {
       impact[key] = { appliesTo: total, skipped: 0 };
+    }
+    if (key === 'aprs') {
+      impact.aprs = { appliesTo: total, skipped: 0 };
     }
   }
 

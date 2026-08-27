@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Alert, Box, Collapse, Group, Select, Stack, Text, UnstyledButton } from '@mantine/core';
+import { Alert, Box, Checkbox, Collapse, Group, Select, Stack, Text, UnstyledButton } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconPencil } from '@tabler/icons-react';
 import type {
   AnalogSquelchModeOverride,
@@ -7,7 +7,10 @@ import type {
   SendTalkerAliasOverride,
   TxPermitOverride,
 } from '@core/models/channelBehaviourDefaults.ts';
+import type { AprsConfiguration } from '@core/models/aprs.ts';
+import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
 import type { Channel, ChannelTone, ScanInclusion } from '@core/models/library.ts';
+import { aprsChannelBulkPatchHasChanges, type AprsChannelBulkPatch } from '@core/domain/aprs/index.ts';
 import {
   analyzeChannelBulkEditImpact,
   countChannelsWithAnalogProfile,
@@ -34,6 +37,7 @@ import {
   type PersistChannelBulkDeleteOutcome,
 } from '../../lib/channelBulkDelete.ts';
 import { BULK_IDLE_OPTION, bulkSegmentValue, changeBadge } from '../../lib/bulkEditIdle.ts';
+import { APRS_SLOT_NONE_VALUE, aprsSlotSelectOptions } from '../../lib/aprsBindingHelpers.ts';
 import { NONE_TONE, toneSelectOptions } from '../../lib/channelFields/index.ts';
 import { modalComboboxProps } from '../../theme.ts';
 import type { DeleteOutcome } from '../../state/libraryService.ts';
@@ -46,6 +50,8 @@ export interface ChannelBulkEditModalProps {
   onClose: () => void;
   channels: Channel[];
   projectId: string | null;
+  aprsConfiguration?: AprsConfiguration | null;
+  libraryChannels?: Channel[];
   deleteEntity: (kind: 'channel', id: string) => Promise<DeleteOutcome>;
   reload: () => Promise<void>;
   onApplied?: (outcome: PersistChannelBulkEditSuccess) => void;
@@ -71,6 +77,14 @@ interface BulkEditFormState {
   rxTone: ChannelTone;
   changeTxTone: boolean;
   txTone: ChannelTone;
+  changeAprsReceive: boolean;
+  aprsReceiveEnabled: boolean;
+  changeAprsReportType: boolean;
+  aprsReportType: AprsReportType;
+  changeAprsPtt: boolean;
+  aprsDigitalPttMode: AprsPttMode;
+  changeAprsSlot: boolean;
+  aprsReportSlotIndex: number | null;
 }
 
 type ModalView = 'edit' | 'confirmDelete';
@@ -99,6 +113,18 @@ function initialFormFromChannels(channels: Channel[]): BulkEditFormState {
     rxTone: sharedAnalogField(channels, (profile) => profile.rxTone) ?? NONE_TONE,
     changeTxTone: false,
     txTone: sharedAnalogField(channels, (profile) => profile.txTone) ?? NONE_TONE,
+    changeAprsReceive: false,
+    aprsReceiveEnabled:
+      sharedChannelField(channels, (channel) => channel.aprs?.receiveEnabled ?? false) ?? false,
+    changeAprsReportType: false,
+    aprsReportType:
+      sharedChannelField(channels, (channel) => channel.aprs?.reportType ?? 'off') ?? 'off',
+    changeAprsPtt: false,
+    aprsDigitalPttMode:
+      sharedChannelField(channels, (channel) => channel.aprs?.digitalPttMode ?? 'off') ?? 'off',
+    changeAprsSlot: false,
+    aprsReportSlotIndex:
+      sharedChannelField(channels, (channel) => channel.aprs?.reportSlotIndex ?? null) ?? null,
   };
 }
 
@@ -113,7 +139,30 @@ function buildPatchFromForm(form: BulkEditFormState): ChannelBulkEditPatch {
   if (form.changeAnalogSquelch) patch.analogSquelch = form.analogSquelch;
   if (form.changeRxTone) patch.rxTone = form.rxTone;
   if (form.changeTxTone) patch.txTone = form.txTone;
+  const aprs = aprsPatchFromForm(form);
+  if (aprs) patch.aprs = aprs;
   return patch;
+}
+
+function aprsPatchFromForm(form: BulkEditFormState): AprsChannelBulkPatch | undefined {
+  const aprs: AprsChannelBulkPatch = {};
+  if (form.changeAprsReceive) {
+    aprs.patchReceiveEnabled = true;
+    aprs.receiveEnabled = form.aprsReceiveEnabled;
+  }
+  if (form.changeAprsReportType) {
+    aprs.patchReportType = true;
+    aprs.reportType = form.aprsReportType;
+  }
+  if (form.changeAprsPtt) {
+    aprs.patchDigitalPttMode = true;
+    aprs.digitalPttMode = form.aprsDigitalPttMode;
+  }
+  if (form.changeAprsSlot) {
+    aprs.patchReportSlot = true;
+    aprs.reportSlotIndex = form.aprsReportSlotIndex;
+  }
+  return aprsChannelBulkPatchHasChanges(aprs) ? aprs : undefined;
 }
 
 function channelLevelImpactText(appliesTo: number): string {
@@ -141,6 +190,8 @@ export default function ChannelBulkEditModal({
   onClose,
   channels,
   projectId,
+  aprsConfiguration = null,
+  libraryChannels = [],
   deleteEntity,
   reload,
   onApplied,
@@ -155,6 +206,8 @@ export default function ChannelBulkEditModal({
       key={sessionKey}
       channels={channels}
       projectId={projectId}
+      aprsConfiguration={aprsConfiguration}
+      libraryChannels={libraryChannels}
       deleteEntity={deleteEntity}
       reload={reload}
       onClose={onClose}
@@ -167,6 +220,8 @@ export default function ChannelBulkEditModal({
 function ChannelBulkEditModalBody({
   channels,
   projectId,
+  aprsConfiguration,
+  libraryChannels,
   deleteEntity,
   reload,
   onClose,
@@ -175,6 +230,8 @@ function ChannelBulkEditModalBody({
 }: {
   channels: Channel[];
   projectId: string | null;
+  aprsConfiguration: AprsConfiguration | null;
+  libraryChannels: Channel[];
   deleteEntity: (kind: 'channel', id: string) => Promise<DeleteOutcome>;
   reload: () => Promise<void>;
   onClose: () => void;
@@ -205,6 +262,22 @@ function ChannelBulkEditModalBody({
       analogSquelch: sharedAnalogField(channels, (profile) => profile.squelch),
       rxTone: sharedAnalogField(channels, (profile) => profile.rxTone),
       txTone: sharedAnalogField(channels, (profile) => profile.txTone),
+      aprsReceiveEnabled: sharedChannelField(
+        channels,
+        (channel) => channel.aprs?.receiveEnabled ?? false,
+      ),
+      aprsReportType: sharedChannelField(
+        channels,
+        (channel) => channel.aprs?.reportType ?? 'off',
+      ),
+      aprsDigitalPttMode: sharedChannelField(
+        channels,
+        (channel) => channel.aprs?.digitalPttMode ?? 'off',
+      ),
+      aprsReportSlotIndex: sharedChannelField(
+        channels,
+        (channel) => channel.aprs?.reportSlotIndex ?? null,
+      ),
     }),
     [channels],
   );
@@ -232,6 +305,17 @@ function ChannelBulkEditModalBody({
     Number(form.changeRxTone) +
     Number(form.changeTxTone);
   const scanningChangeCount = Number(form.changeScanInclusion);
+  const aprsChangeCount =
+    Number(form.changeAprsReceive) +
+    Number(form.changeAprsReportType) +
+    Number(form.changeAprsPtt) +
+    Number(form.changeAprsSlot);
+
+  const slotOptions = useMemo(
+    () => aprsSlotSelectOptions(aprsConfiguration?.channelSlots ?? [], libraryChannels),
+    [aprsConfiguration?.channelSlots, libraryChannels],
+  );
+  const slotsAvailable = (aprsConfiguration?.channelSlots.length ?? 0) > 0;
 
   const handleApply = async () => {
     if (!hasChanges || busy) return;
@@ -607,6 +691,136 @@ function ChannelBulkEditModalBody({
                 {channelLevelImpactText(impact.scanInclusion.appliesTo)}
               </Text>
             ) : null}
+            </Stack>
+          </Panel>
+
+          <Panel title="APRS" collapsible defaultCollapsed badge={changeBadge(aprsChangeCount)}>
+            <Stack gap="md">
+              <Text size="sm" c="dimmed">
+                Per-channel digital APRS flags for CPS export. Bindings apply to DMR and analog
+                channels on Anytone export; analog AX.25 APRS is not modelled in Codeplug Studio.
+              </Text>
+              <BulkEditField
+                optedIn={form.changeAprsReceive}
+                onOptedInChange={(changeAprsReceive) =>
+                  setForm((prev) => ({ ...prev, changeAprsReceive }))
+                }
+                sharedHint={
+                  shared.aprsReceiveEnabled === undefined
+                    ? undefined
+                    : shared.aprsReceiveEnabled
+                      ? 'On'
+                      : 'Off'
+                }
+              >
+                <Checkbox
+                  label="APRS receive enabled"
+                  checked={form.aprsReceiveEnabled}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      aprsReceiveEnabled: event.currentTarget.checked,
+                    }))
+                  }
+                />
+              </BulkEditField>
+              <BulkEditField
+                optedIn={form.changeAprsReportType}
+                onOptedInChange={(changeAprsReportType) =>
+                  setForm((prev) => ({ ...prev, changeAprsReportType }))
+                }
+                sharedHint={
+                  shared.aprsReportType === undefined
+                    ? undefined
+                    : shared.aprsReportType === 'digital'
+                      ? 'Digital'
+                      : 'Off'
+                }
+              >
+                <Select
+                  label="Report type"
+                  data={[
+                    { value: 'off', label: 'Off' },
+                    { value: 'digital', label: 'Digital' },
+                  ]}
+                  value={form.aprsReportType}
+                  onChange={(next) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      aprsReportType: (next as AprsReportType | null) ?? 'off',
+                    }))
+                  }
+                  comboboxProps={modalComboboxProps()}
+                />
+              </BulkEditField>
+              <BulkEditField
+                optedIn={form.changeAprsPtt}
+                onOptedInChange={(changeAprsPtt) =>
+                  setForm((prev) => ({ ...prev, changeAprsPtt }))
+                }
+                sharedHint={
+                  shared.aprsDigitalPttMode === undefined
+                    ? undefined
+                    : shared.aprsDigitalPttMode === 'on'
+                      ? 'On'
+                      : 'Off'
+                }
+              >
+                <Select
+                  label="Digital APRS PTT mode"
+                  data={[
+                    { value: 'off', label: 'Off' },
+                    { value: 'on', label: 'On' },
+                  ]}
+                  value={form.aprsDigitalPttMode}
+                  onChange={(next) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      aprsDigitalPttMode: (next as AprsPttMode | null) ?? 'off',
+                    }))
+                  }
+                  comboboxProps={modalComboboxProps()}
+                />
+              </BulkEditField>
+              <BulkEditField
+                optedIn={form.changeAprsSlot}
+                onOptedInChange={(changeAprsSlot) =>
+                  setForm((prev) => ({ ...prev, changeAprsSlot }))
+                }
+                sharedHint={
+                  shared.aprsReportSlotIndex === undefined
+                    ? undefined
+                    : shared.aprsReportSlotIndex == null
+                      ? 'None'
+                      : `Slot ${shared.aprsReportSlotIndex}`
+                }
+              >
+                <Select
+                  label="Report slot"
+                  description={
+                    slotsAvailable
+                      ? 'APRS configuration slot used for position reports at export.'
+                      : 'Add channel slots on the APRS configuration page first.'
+                  }
+                  data={slotOptions}
+                  disabled={!slotsAvailable}
+                  value={
+                    form.aprsReportSlotIndex != null
+                      ? String(form.aprsReportSlotIndex)
+                      : APRS_SLOT_NONE_VALUE
+                  }
+                  onChange={(next) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      aprsReportSlotIndex:
+                        next && next !== APRS_SLOT_NONE_VALUE
+                          ? Number.parseInt(next, 10)
+                          : null,
+                    }))
+                  }
+                  comboboxProps={modalComboboxProps()}
+                />
+              </BulkEditField>
             </Stack>
           </Panel>
 

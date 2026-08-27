@@ -93,6 +93,26 @@ describe('channelBulkEditWouldChange', () => {
     const channel = channelWithProfiles('DMR', [defaultModeProfile('dmr')]);
     expect(channelBulkEditWouldChange(channel, { rxTone: '88.5' })).toBe(false);
   });
+
+  it('applies an APRS receive flag without dropping other binding fields', () => {
+    const channel: Channel = {
+      ...newChannel(projectId, 'APRS'),
+      aprs: {
+        receiveEnabled: false,
+        reportType: 'digital',
+        digitalPttMode: 'off',
+        reportSlotIndex: 1,
+      },
+    };
+    const patched = applyChannelBulkPatch(channel, {
+      aprs: { patchReceiveEnabled: true, receiveEnabled: true },
+    });
+    expect(patched.aprs).toMatchObject({
+      receiveEnabled: true,
+      reportType: 'digital',
+      reportSlotIndex: 1,
+    });
+  });
 });
 
 describe('analyzeChannelBulkEditImpact', () => {

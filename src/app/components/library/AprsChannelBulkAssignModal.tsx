@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react';
-import type { AprsChannelSlot, ChannelAprsBinding } from '@core/models/aprs.ts';
+import type { AprsChannelSlot } from '@core/models/aprs.ts';
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
 import type { Channel } from '@core/models/library.ts';
-import { CHANNEL_APRS_OFF } from '@core/domain/aprs/defaults.ts';
+import {
+  applyAprsChannelBulkPatch,
+  type AprsChannelBulkPatch,
+} from '@core/domain/aprs/index.ts';
 import { Checkbox, Select, Stack, Text } from '@mantine/core';
 import { IconAntenna } from '@tabler/icons-react';
 import { APRS_SLOT_NONE_VALUE, aprsSlotSelectOptions } from '../../lib/aprsBindingHelpers.ts';
@@ -10,6 +13,8 @@ import { modalComboboxProps } from '../../theme.ts';
 import { Button, ModalShell } from '../v2/index.ts';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 import classes from './ChannelBulkEditModal.module.css';
+
+export { applyAprsChannelBulkPatch, type AprsChannelBulkPatch };
 
 const REPORT_TYPE_OPTIONS = [
   { value: 'off', label: 'Off' },
@@ -28,34 +33,6 @@ export interface AprsChannelBulkAssignModalProps {
   channelSlots: AprsChannelSlot[];
   channels: Channel[];
   onApply: (patch: AprsChannelBulkPatch) => void;
-}
-
-export interface AprsChannelBulkPatch {
-  clearBinding?: boolean;
-  reportSlotIndex?: number | null;
-  patchReportSlot?: boolean;
-  reportType?: AprsReportType;
-  patchReportType?: boolean;
-  receiveEnabled?: boolean;
-  patchReceiveEnabled?: boolean;
-  digitalPttMode?: AprsPttMode;
-  patchDigitalPttMode?: boolean;
-}
-
-export function applyAprsChannelBulkPatch(
-  current: ChannelAprsBinding | undefined,
-  patch: AprsChannelBulkPatch,
-): ChannelAprsBinding | undefined {
-  if (patch.clearBinding) return undefined;
-  const base = current ?? { ...CHANNEL_APRS_OFF };
-  return {
-    receiveEnabled: patch.patchReceiveEnabled ? Boolean(patch.receiveEnabled) : base.receiveEnabled,
-    reportType: patch.patchReportType ? (patch.reportType ?? 'off') : base.reportType,
-    digitalPttMode: patch.patchDigitalPttMode
-      ? (patch.digitalPttMode ?? 'off')
-      : base.digitalPttMode,
-    reportSlotIndex: patch.patchReportSlot ? (patch.reportSlotIndex ?? null) : base.reportSlotIndex,
-  };
 }
 
 export default function AprsChannelBulkAssignModal({
