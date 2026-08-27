@@ -4,7 +4,7 @@ import { ICON_SIZE_ACTION } from '../../lib/iconSizes.ts';
 import { DSV2_SCOPE_SELECTOR } from '../../theme-v2.ts';
 import classes from './ModalShell.module.css';
 
-export type ModalShellSize = 'sm' | 'md' | 'lg';
+export type ModalShellSize = 'sm' | 'md' | 'lg' | 'xl';
 export type ModalShellIconTone = 'accent' | 'warning' | 'destructive';
 
 export interface ModalShellProps {
@@ -24,7 +24,7 @@ export interface ModalShellProps {
   className?: string;
 }
 
-const SIZE_PX: Record<ModalShellSize, number> = { sm: 400, md: 520, lg: 720 };
+const SIZE_PX: Record<ModalShellSize, number> = { sm: 400, md: 520, lg: 720, xl: 960 };
 
 const ICON_TONE_CLASS: Record<ModalShellIconTone, string> = {
   accent: classes.iconAccent,

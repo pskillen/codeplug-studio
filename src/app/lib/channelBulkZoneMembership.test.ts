@@ -15,8 +15,8 @@ describe('persistChannelBulkZoneMembership', () => {
     const already = {
       ...newZone(meta.projectId, 'Already'),
       members: [
-        { kind: 'channel', channelId: ch1.id },
-        { kind: 'channel', channelId: ch2.id },
+        { kind: 'channel' as const, channelId: ch1.id },
+        { kind: 'channel' as const, channelId: ch2.id },
       ],
     };
     const target = newZone(meta.projectId, 'Target');
@@ -49,11 +49,11 @@ describe('persistChannelBulkZoneMembership', () => {
     const channel = newChannel(meta.projectId, 'Nested');
     const child = {
       ...newZone(meta.projectId, 'Child'),
-      members: [{ kind: 'channel', channelId: channel.id }],
+      members: [{ kind: 'channel' as const, channelId: channel.id }],
     };
     const parent = {
       ...newZone(meta.projectId, 'Parent'),
-      members: [{ kind: 'zone', zoneId: child.id }],
+      members: [{ kind: 'zone' as const, zoneId: child.id }],
     };
     const library = { ...emptyLibrary(), channels: [channel], zones: [child, parent] };
     await store.seedProject({ meta, channels: [channel], zones: [child, parent] });

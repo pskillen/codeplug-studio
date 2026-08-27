@@ -15,7 +15,7 @@ The structural foundation `ConfirmModal` and `ProgressModal` build on. Closes th
 | `title`       | `ReactNode`                              | Header title                                                       |
 | `icon`        | `ReactNode`                              | Optional header icon (e.g. a Tabler icon element)                  |
 | `iconTone`    | `'accent' \| 'warning' \| 'destructive'` | Default `accent`                                                   |
-| `size`        | `'sm' \| 'md' \| 'lg'`                   | Default `md` (400/520/720px)                                       |
+| `size`        | `'sm' \| 'md' \| 'lg' \| 'xl'`           | Default `md` (400/520/720/960px)                                   |
 | `dismissible` | `boolean`                                | Default `true` — controls escape/backdrop/close-button             |
 | `footer`      | `ReactNode`                              | Right-aligned action row                                           |
 | `children`    | `ReactNode`                              | Scrollable body content                                            |
