@@ -6,12 +6,12 @@ Tri-state channel scan control for library CRUD — **Skip scan**, **Default**, 
 
 ## Props
 
-| Prop       | Type                      | Description                                                                   |
-| ---------- | ------------------------- | ----------------------------------------------------------------------------- |
-| `value`    | `ScanInclusion`           | Current library field value                                                   |
-| `onChange` | `(scanInclusion) => void` | Selection handler                                                             |
-| `compact`  | `boolean`                 | Table-row layout — omits label/description, forces `layout='stack'`           |
-| `disabled` | `boolean`                 | Optional                                                                      |
+| Prop       | Type                           | Description                                                                   |
+| ---------- | ------------------------------ | ----------------------------------------------------------------------------- |
+| `value`    | `ScanInclusion`                | Current library field value                                                   |
+| `onChange` | `(scanInclusion) => void`      | Selection handler                                                             |
+| `compact`  | `boolean`                      | Table-row layout — omits label/description, forces `layout='stack'`           |
+| `disabled` | `boolean`                      | Optional                                                                      |
 | `layout`   | `'stack' \| 'row' \| 'column'` | Forwarded to `GradientSegmentedControl` when not `compact`. Default `'stack'` |
 
 ## Usage

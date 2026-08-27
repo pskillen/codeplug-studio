@@ -6,13 +6,13 @@ Channel transmit permission: **Allow TX** or **RX only**. Thin wrapper around [`
 
 ## Props
 
-| Prop             | Type                                                        | Description                                                         |
-| ---------------- | ----------------------------------------------------------- | ------------------------------------------------------------------- |
+| Prop             | Type                                                        | Description                                                             |
+| ---------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------- |
 | `value`          | `ForbidTransmitOverride` (`default` \| `allow` \| `forbid`) | Channel-level override; **Default** uses the transmit setting on export |
-| `onChange`       | `(value: ForbidTransmitOverride) => void`                   | Called when the operator changes the control                        |
-| `includeDefault` | `boolean`                                                   | When true (channel editor), includes **Default**. Default `true`    |
-| `disabled`       | `boolean`                                                   | Optional                                                            |
-| `layout`         | `'stack' \| 'row' \| 'column'`                              | Forwarded to `GradientSegmentedControl`. Default `'stack'`          |
+| `onChange`       | `(value: ForbidTransmitOverride) => void`                   | Called when the operator changes the control                            |
+| `includeDefault` | `boolean`                                                   | When true (channel editor), includes **Default**. Default `true`        |
+| `disabled`       | `boolean`                                                   | Optional                                                                |
+| `layout`         | `'stack' \| 'row' \| 'column'`                              | Forwarded to `GradientSegmentedControl`. Default `'stack'`              |
 
 ## Usage
 
