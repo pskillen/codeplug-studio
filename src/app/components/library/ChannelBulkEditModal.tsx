@@ -176,31 +176,8 @@ function aprsPatchFromForm(form: BulkEditFormState): AprsChannelBulkPatch | unde
   return aprsChannelBulkPatchHasChanges(aprs) ? aprs : undefined;
 }
 
-function channelLevelImpactText(appliesTo: number): string {
-  return `Applies to all ${appliesTo} selected channel${appliesTo === 1 ? '' : 's'}`;
-}
-
-function FieldGroup({ children, impact }: { children: ReactNode; impact: string }) {
-  return (
-    <div className={classes.fieldGroup}>
-      {children}
-      <Text size="xs" c="dimmed" className={classes.impact}>
-        {impact}
-      </Text>
-    </div>
-  );
-}
-
-function analogImpactText(appliesTo: number, skipped: number, total: number): string {
-  const base = `Applies to ${appliesTo} of ${total} selected channel${total === 1 ? '' : 's'}`;
-  if (skipped <= 0) return base;
-  return `${base}. ${skipped} channel${skipped === 1 ? '' : 's'} have no analog mode and will be skipped`;
-}
-
-function dmrImpactText(appliesTo: number, skipped: number, total: number): string {
-  const base = `Applies to ${appliesTo} of ${total} selected channel${total === 1 ? '' : 's'}`;
-  if (skipped <= 0) return base;
-  return `${base}. ${skipped} channel${skipped === 1 ? '' : 's'} have no DMR mode and will be skipped`;
+function FieldGroup({ children }: { children: ReactNode }) {
+  return <div className={classes.fieldGroup}>{children}</div>;
 }
 
 export default function ChannelBulkEditModal({
@@ -299,9 +276,6 @@ function ChannelBulkEditModalBody({
   const analogChannelCount = useMemo(() => countChannelsWithAnalogProfile(channels), [channels]);
   const dmrChannelCount = useMemo(() => countChannelsWithDmrProfile(channels), [channels]);
   const total = channels.length;
-  const analogSkipText = analogImpactText(analogChannelCount, total - analogChannelCount, total);
-  const dmrSkipText = dmrImpactText(dmrChannelCount, total - dmrChannelCount, total);
-  const allChannelsImpact = channelLevelImpactText(total);
   const showAnalogFields = analogChannelCount > 0;
   const showDmrFields = dmrChannelCount > 0;
   const showModeSettings = showAnalogFields || showDmrFields;
@@ -423,36 +397,33 @@ function ChannelBulkEditModalBody({
         dismissible={!busy}
         footer={
           <div className={classes.footer}>
-            {!hasChanges ? (
-              <Text size="sm" c="dimmed" className={classes.footerHint}>
-                Choose at least one value above to apply. Leave the rest on No change.
-              </Text>
-            ) : null}
-            <div className={classes.footerRow}>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setErrorMessage(null);
-                  setView('confirmDelete');
-                }}
-                disabled={busy || !projectId}
-              >
-                Delete {total} channel{total === 1 ? '' : 's'}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setErrorMessage(null);
+                setView('confirmDelete');
+              }}
+              disabled={busy || !projectId}
+            >
+              Delete {total} channel{total === 1 ? '' : 's'}
+            </Button>
+            <div className={classes.footerActions}>
+              <Button variant="secondary" size="sm" onClick={onClose} disabled={busy}>
+                Cancel
               </Button>
-              <div className={classes.footerActions}>
-                <Button variant="secondary" size="sm" onClick={onClose} disabled={busy}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => void handleApply()}
-                  disabled={!hasChanges || busy}
-                >
-                  {applying ? 'Applying…' : `Apply to ${total} channel${total === 1 ? '' : 's'}`}
-                </Button>
-              </div>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => void handleApply()}
+                disabled={!hasChanges || busy}
+              >
+                {applying
+                  ? 'Applying…'
+                  : hasChanges
+                    ? `Apply to ${total} channel${total === 1 ? '' : 's'}`
+                    : 'No changes'}
+              </Button>
             </div>
           </div>
         }
@@ -460,9 +431,7 @@ function ChannelBulkEditModalBody({
         <div className={classes.banner}>
           <strong>
             {total} channel{total === 1 ? '' : 's'} selected.
-          </strong>{' '}
-          Fields start as <strong>No change</strong>. A fill marks a setting every selected channel
-          already shares; the outline stays on No change until you pick a value to apply.
+          </strong>
         </div>
 
         <Stack gap="md">
@@ -502,7 +471,7 @@ function ChannelBulkEditModalBody({
 
           <Panel title="RF" collapsible badge={changeBadge(rfChangeCount)}>
             <div className={classes.pairRow}>
-              <FieldGroup impact={allChannelsImpact}>
+              <FieldGroup>
                 <ForbidTransmitSegment
                   value={bulkSegmentValue(form.changeForbidTransmit, form.forbidTransmit)}
                   onChange={(forbidTransmit) =>
@@ -514,7 +483,7 @@ function ChannelBulkEditModalBody({
                   layout="column"
                 />
               </FieldGroup>
-              <FieldGroup impact={allChannelsImpact}>
+              <FieldGroup>
                 <TxPermitSegment
                   value={bulkSegmentValue(form.changeTxPermit, form.txPermit)}
                   onChange={(txPermit) =>
@@ -526,7 +495,7 @@ function ChannelBulkEditModalBody({
                   layout="column"
                 />
               </FieldGroup>
-              <FieldGroup impact={allChannelsImpact}>
+              <FieldGroup>
                 <GradientSegmentedControl
                   label="Power"
                   value={bulkPowerSegmentValue(form.changePower, form.power)}
@@ -575,7 +544,7 @@ function ChannelBulkEditModalBody({
             >
               <div className={classes.pairRow}>
                 {showDmrFields ? (
-                  <FieldGroup impact={dmrSkipText}>
+                  <FieldGroup>
                     <SendTalkerAliasSegment
                       value={bulkSegmentValue(form.changeSendTalkerAlias, form.sendTalkerAlias)}
                       onChange={(sendTalkerAlias) =>
@@ -620,9 +589,6 @@ function ChannelBulkEditModalBody({
                               aria-label="RX tone"
                             />
                           </BulkEditField>
-                          <Text size="xs" c="dimmed" className={classes.impact}>
-                            {analogSkipText}
-                          </Text>
                         </div>
                         <div>
                           <BulkEditField
@@ -647,13 +613,10 @@ function ChannelBulkEditModalBody({
                               aria-label="TX tone"
                             />
                           </BulkEditField>
-                          <Text size="xs" c="dimmed" className={classes.impact}>
-                            {analogSkipText}
-                          </Text>
                         </div>
                       </div>
                     </div>
-                    <FieldGroup impact={analogSkipText}>
+                    <FieldGroup>
                       <AnalogSquelchModeSegment
                         value={bulkSegmentValue(
                           form.changeAnalogSquelchMode,
@@ -674,7 +637,7 @@ function ChannelBulkEditModalBody({
                         layout="column"
                       />
                     </FieldGroup>
-                    <FieldGroup impact={analogSkipText}>
+                    <FieldGroup>
                       <BulkEditField
                         label="Squelch"
                         optedIn={form.changeAnalogSquelch}
@@ -755,7 +718,7 @@ function ChannelBulkEditModalBody({
 
           <Panel title="Scanning" collapsible badge={changeBadge(scanningChangeCount)}>
             <div className={classes.pairRow}>
-              <FieldGroup impact={allChannelsImpact}>
+              <FieldGroup>
                 <ScanInclusionSegment
                   value={bulkSegmentValue(form.changeScanInclusion, form.scanInclusion)}
                   onChange={(scanInclusion) =>
@@ -773,10 +736,11 @@ function ChannelBulkEditModalBody({
           <Panel title="APRS" collapsible defaultCollapsed badge={changeBadge(aprsChangeCount)}>
             <Stack gap="md">
               <Text size="sm" c="dimmed">
-                Per-channel digital APRS flags for CPS export. Analog AX.25 APRS is not modelled.
+                Per-channel digital APRS flags for CPS export. Analog AX.25 APRS is not supported
+                yet.
               </Text>
               <div className={classes.pairRow}>
-                <FieldGroup impact={allChannelsImpact}>
+                <FieldGroup>
                   <GradientSegmentedControl
                     label="APRS receive"
                     value={bulkSegmentValue(
@@ -810,7 +774,7 @@ function ChannelBulkEditModalBody({
                     layout="column"
                   />
                 </FieldGroup>
-                <FieldGroup impact={allChannelsImpact}>
+                <FieldGroup>
                   <GradientSegmentedControl
                     label="Report type"
                     value={bulkSegmentValue(form.changeAprsReportType, form.aprsReportType)}
@@ -835,7 +799,7 @@ function ChannelBulkEditModalBody({
                     layout="column"
                   />
                 </FieldGroup>
-                <FieldGroup impact={allChannelsImpact}>
+                <FieldGroup>
                   <GradientSegmentedControl
                     label="Digital APRS PTT"
                     value={bulkSegmentValue(form.changeAprsPtt, form.aprsDigitalPttMode)}
@@ -860,7 +824,7 @@ function ChannelBulkEditModalBody({
                     layout="column"
                   />
                 </FieldGroup>
-                <FieldGroup impact={allChannelsImpact}>
+                <FieldGroup>
                   <BulkEditField
                     label="Report slot"
                     description={

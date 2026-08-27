@@ -49,19 +49,20 @@ Single-channel selection is handled by the list page (navigate to the channel ed
 
 ## Behaviour
 
-- Shell: `ModalShell` (`size="xl"`) with pencil icon, selection banner, and footer hint + **Apply to N channels** / Cancel / Delete.
+- Shell: `ModalShell` (`size="xl"`) with pencil icon, a **N channels selected** banner, and footer **No changes** / **Apply to N channels** plus Cancel / Delete.
+- The list page passes the **full checkbox selection**, not the currently filtered/visible rows. Search and filters only hide rows; they do not shrink bulk edit.
 - **View selected channels** expands a compact scrollable name list.
 - Groups match the channel editor: **RF**, **Mode settings**, **Zones**, **Scanning**, **APRS**. Collapsible `Panel`s; RF and Scanning start open. Header **badge** shows how many overrides in that group, open or closed.
 - Each field starts as **No change**. Gradient fields use an offset idle segment; long selects use [`BulkEditField`](./BulkEditField.md). Apply writes only opted-in fields.
-- Idle + shared value: fill on the shared option, outline on **No change**. Mixed: fill on **No change**. Opted in: fill and outline on the chosen value.
+- Idle + shared value: Mantine fill on the shared option, outline on **No change**. Mixed: fill on **No change**. Opted in: fill and outline on the chosen value.
 - Desktop: two-column `.fieldGroup` grid; mobile: one group per row. Controls use `layout="column"` (title, then control, then description).
-- **Power** is **No change | Default | Custom**. Default writes `power: null`. Custom shows the percent thumb; preview dots mark every selected channel’s power.
+- **Power** is **No change | Default | Custom**. Default writes `power: null`. Custom shows the percent thumb; idle/default hide the 50% thumb. Preview dots mark every selected channel’s numeric power.
 - Analog **CTCSS/DCS** wraps independent RX and TX tone selects. Squelch keeps **No change | Set** plus the slider.
 - Channel-level fields (`scanInclusion`, `forbidTransmit`, `txPermit`, `power`) apply to every selected channel when opted in.
 - Analog fields appear only when at least one selected channel has an analog mode. Digital-only channels are skipped for analog patches. Talker alias appears when at least one channel has DMR.
-- **APRS** (collapsed by default): receive, report type, and digital PTT are three-way gradients; report slot stays **No change | Set** plus a select. Analog AX.25 APRS is not modelled.
+- **APRS** (collapsed by default): receive, report type, and digital PTT are three-way gradients; report slot stays **No change | Set** plus a select. Analog AX.25 APRS is not supported yet.
 - **Zones** (collapsed by default) uses two [`BulkZonePickerColumn`](./BulkZonePickerColumn.md) pickers: **Remove from** and **Add to**. Apply writes direct zone members (`putZone`); nested-only membership is listed with Open zone links and is not changed.
-- **Choose at least one value above to apply** sits in the footer so it does not shift the scroll body.
+- Apply is **No changes** (disabled) until at least one field or zone picker is opted in, then **Apply to N channels**.
 - **Apply** runs `persistChannelBulkEdit` then `persistChannelBulkZoneMembership` with revision checks; revision conflicts show an error and leave the parent selection intact. Zone-only applies skip the channel patch.
 - **Delete N channels** (footer, left) opens an in-modal confirmation. Confirm runs `persistChannelBulkDelete` with zone auto-cascade (same integrity as single delete). Partial blocks close the modal when at least one channel was deleted; total failure stays open with an error.
 - Core patch logic: `@core/domain/channelBulkEdit.ts`. Zone membership: `@core/domain/zoneMembership.ts`.

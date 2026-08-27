@@ -64,13 +64,14 @@ export default function PercentLevelSlider({
   const useDefaultId = useId();
   const sliderId = useId();
   const isDefault = value == null;
-  const sliderValue =
+  const committedValue =
     value == null ? Math.max(min, snapPercentToStep(50, step)) : snapPercentToStep(value, step);
   const valueLabel = formatPercentLevelLabel(value, { zeroLabel, defaultLabel });
   const displayValue = showValue ?? !isDefault;
   const hideThumb = !displayValue;
+  const sliderValue = hideThumb ? min : committedValue;
 
-  const previewPercents = (previewValues ?? []).filter((v): v is number => v != null);
+  const previewPercents = (previewValues ?? []).map((v) => (v == null ? 50 : v));
 
   return (
     <Input.Wrapper
@@ -98,7 +99,7 @@ export default function PercentLevelSlider({
               if (e.currentTarget.checked) {
                 onChange(null);
               } else {
-                onChange(sliderValue);
+                onChange(committedValue);
               }
             }}
           />
@@ -115,10 +116,13 @@ export default function PercentLevelSlider({
             marks={[...PERCENT_LEVEL_MARKS]}
             disabled={isDefault || hideThumb}
             mb={16}
-            classNames={{ thumb: hideThumb ? classes.thumbHidden : undefined }}
+            classNames={{
+              thumb: hideThumb ? classes.thumbHidden : undefined,
+              bar: hideThumb ? classes.barHidden : undefined,
+            }}
           />
           {previewPercents.length > 0 ? (
-            <div className={classes.previewLayer} aria-hidden>
+            <div className={classes.previewLayer} aria-hidden data-preview-dots="">
               {previewPercents.map((percent, index) => (
                 <span
                   key={`${percent}-${index}`}

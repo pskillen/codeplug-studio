@@ -13,7 +13,8 @@ describe('BulkEditField', () => {
       </DesignSystemV2Provider>,
     );
 
-    expect(screen.getByRole('radio', { name: 'No change' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Set' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'No change' })).not.toBeChecked();
     expect(screen.queryByText(/Shared value/)).not.toBeInTheDocument();
     expect(screen.getByLabelText('Power')).toBeDisabled();
   });
@@ -29,6 +30,20 @@ describe('BulkEditField', () => {
     );
 
     fireEvent.click(screen.getByRole('radio', { name: 'Set' }));
+    expect(onOptedInChange).toHaveBeenCalledWith(true);
+  });
+
+  it('opts in from the shared Set indicator while still idle', () => {
+    const onOptedInChange = vi.fn();
+    render(
+      <DesignSystemV2Provider>
+        <BulkEditField optedIn={false} onOptedInChange={onOptedInChange} hasSharedValue>
+          <input aria-label="Power" />
+        </BulkEditField>
+      </DesignSystemV2Provider>,
+    );
+
+    fireEvent.pointerDown(screen.getByRole('radio', { name: 'Set' }));
     expect(onOptedInChange).toHaveBeenCalledWith(true);
   });
 });

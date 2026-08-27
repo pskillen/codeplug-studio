@@ -1,4 +1,10 @@
-import { Input, SegmentedControl, useMantineTheme, type MantineSize } from '@mantine/core';
+import {
+  Input,
+  SegmentedControl,
+  useComputedColorScheme,
+  useMantineTheme,
+  type MantineSize,
+} from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import type { CSSProperties, ReactNode } from 'react';
 import { useMemo } from 'react';
@@ -79,6 +85,7 @@ export default function GradientSegmentedControl<T extends string>({
   size,
 }: GradientSegmentedControlProps<T>) {
   const theme = useMantineTheme();
+  const colorScheme = useComputedColorScheme('light');
   const isMobile = useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY);
   const hasColorScheme = Boolean(scheme || segmentColors);
   const segments = useMemo(() => (idleOption ? [idleOption, ...data] : data), [idleOption, data]);
@@ -107,75 +114,69 @@ export default function GradientSegmentedControl<T extends string>({
   );
 
   const isIdle = Boolean(idleOption && value === idleOption.value);
-  const invertShared = isIdle && sharedValue != null;
-  const visualPrimaryIndex = invertShared
-    ? segments.findIndex((item) => item.value === sharedValue)
-    : segments.findIndex((item) => item.value === value);
-  const visualPrimaryColor = visualPrimaryIndex >= 0 ? resolvedColors[visualPrimaryIndex] : null;
+  const invertShared =
+    isIdle && sharedValue != null && segments.some((item) => item.value === sharedValue);
+  const controlValue = invertShared ? (sharedValue as T) : value;
 
   const activeIndex = Math.max(
     0,
-    segments.findIndex((item) => item.value === value),
+    segments.findIndex((item) => item.value === controlValue),
   );
-  const indicatorColor = resolvedColors[activeIndex];
-  const showColorOverride = hasColorScheme && indicatorColor != null && !invertShared;
+  const schemeIndicatorColor = resolvedColors[activeIndex];
+  /** Neutrals have no palette colour; in dark mode Mantine’s default thumb matches the track. */
+  const indicatorColor =
+    schemeIndicatorColor ??
+    (idleOption ? (colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.16)' : theme.white) : null);
+  const showColorOverride = indicatorColor != null;
 
   const effectiveFullWidth =
     layout === 'row' ? isMobile : layout === 'column' ? Boolean(fullWidth) : fullWidth;
 
   const rootClass = [
     idleOption ? classes.withIdle : undefined,
-    invertShared ? classes.hideIndicator : undefined,
+    invertShared ? classes.outlineIdle : undefined,
+    !isIdle && idleOption ? classes.outlineActive : undefined,
   ]
     .filter(Boolean)
     .join(' ');
 
+  const emitSharedOptIn = (event: { target: EventTarget | null }) => {
+    if (disabled || !invertShared || sharedValue == null) return;
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+    const fromLabel = target.closest('label')?.parentElement?.querySelector('input[type="radio"]');
+    const input =
+      target instanceof HTMLInputElement && target.type === 'radio' ? target : fromLabel;
+    if (input instanceof HTMLInputElement && input.value === String(sharedValue)) {
+      onChange(sharedValue);
+    }
+  };
+
   const control = (
-    <SegmentedControl
-      value={value}
-      onChange={(next) => onChange(next as T)}
-      data={segments.map((item) => {
-        const isVisualPrimary = invertShared && item.value === sharedValue;
-        const outlineIdle = invertShared && idleOption != null && item.value === idleOption.value;
-        const outlineOptedIn = !isIdle && item.value === value;
-        const className = [
-          isVisualPrimary ? classes.sharedPrimary : undefined,
-          outlineIdle || outlineOptedIn ? classes.sharedHint : undefined,
-        ]
-          .filter(Boolean)
-          .join(' ');
-        return {
-          value: item.value,
-          label: (
-            <span
-              className={className || undefined}
-              style={
-                isVisualPrimary && visualPrimaryColor
-                  ? ({
-                      backgroundColor: visualPrimaryColor,
-                      color: 'var(--mantine-color-white)',
-                    } as CSSProperties)
-                  : undefined
-              }
-            >
-              {item.label}
-            </span>
-          ),
-          disabled: item.disabled,
-        };
-      })}
-      fullWidth={effectiveFullWidth}
-      disabled={disabled}
-      size={size}
-      autoContrast={hasColorScheme}
-      classNames={{
-        indicator: hasColorScheme ? classes.indicator : undefined,
-        root: rootClass || undefined,
-      }}
-      styles={
-        showColorOverride ? { root: { '--sc-color': indicatorColor } as CSSProperties } : undefined
-      }
-    />
+    <div
+      onPointerDownCapture={invertShared ? emitSharedOptIn : undefined}
+      onClickCapture={invertShared ? emitSharedOptIn : undefined}
+    >
+      <SegmentedControl
+        value={controlValue}
+        onChange={(next) => onChange(next as T)}
+        data={[...segments]}
+        fullWidth={effectiveFullWidth}
+        disabled={disabled}
+        size={size}
+        autoContrast={hasColorScheme}
+        withItemsBorders={!idleOption}
+        classNames={{
+          indicator: hasColorScheme ? classes.indicator : undefined,
+          root: rootClass || undefined,
+        }}
+        styles={
+          showColorOverride
+            ? { root: { '--sc-color': indicatorColor } as CSSProperties }
+            : undefined
+        }
+      />
+    </div>
   );
 
   if (layout === 'column' && (label != null || description != null)) {

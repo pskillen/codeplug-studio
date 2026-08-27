@@ -37,7 +37,7 @@ describe('GradientSegmentedControl', () => {
     expect(onChange).toHaveBeenCalledWith(GRADIENT_SEGMENT_IDLE_VALUE);
   });
 
-  it('keeps No change selected while idle, paints the shared value, and emits that value on click', () => {
+  it('puts the primary indicator on a shared value while idle, and still emits that value on click', () => {
     const onChange = vi.fn();
     renderControl({
       value: GRADIENT_SEGMENT_IDLE_VALUE,
@@ -46,10 +46,33 @@ describe('GradientSegmentedControl', () => {
       sharedValue: 'allow',
     });
 
-    expect(screen.getByRole('radio', { name: 'No change' })).toBeChecked();
-    expect(screen.getByRole('radio', { name: 'Allow TX' })).not.toBeChecked();
-    fireEvent.click(screen.getByRole('radio', { name: 'Allow TX' }));
+    expect(screen.getByRole('radio', { name: 'Allow TX' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'No change' })).not.toBeChecked();
+    fireEvent.pointerDown(screen.getByRole('radio', { name: 'Allow TX' }));
     expect(onChange).toHaveBeenCalledWith('allow');
+  });
+
+  it('puts the primary indicator on a shared Default while idle', () => {
+    const onChange = vi.fn();
+    render(
+      <MantineProvider>
+        <GradientSegmentedControl
+          value={GRADIENT_SEGMENT_IDLE_VALUE}
+          onChange={onChange}
+          idleOption={{ value: GRADIENT_SEGMENT_IDLE_VALUE, label: 'No change' }}
+          sharedValue="default"
+          scheme="allowForbid"
+          data={[
+            { value: 'default', label: 'Default' },
+            { value: 'allow', label: 'Allow TX' },
+            { value: 'forbid', label: 'RX only' },
+          ]}
+        />
+      </MantineProvider>,
+    );
+
+    expect(screen.getByRole('radio', { name: 'Default' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'No change' })).not.toBeChecked();
   });
 
   it('keeps the primary indicator on No change when idle and values are mixed', () => {

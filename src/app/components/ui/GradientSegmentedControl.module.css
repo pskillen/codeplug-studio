@@ -44,27 +44,18 @@
   max-width: 100%;
 }
 
-.withIdle :global(.mantine-SegmentedControl-label):first-of-type {
+.withIdle :global(.mantine-SegmentedControl-control):first-of-type {
   margin-inline-end: 8px;
-  padding-inline-end: 10px;
-  border-inline-end: 1px solid var(--mantine-color-default-border);
 }
 
-.sharedHint {
-  display: inline-block;
+.outlineIdle
+  :global(.mantine-SegmentedControl-control):first-of-type
+  :global(.mantine-SegmentedControl-label) {
   box-shadow: inset 0 0 0 1.5px var(--mantine-color-blue-filled);
-  border-radius: 4px;
-  padding: 0 6px;
 }
 
-.sharedPrimary {
-  display: inline-block;
-  border-radius: 4px;
-  padding: 0 6px;
-}
-
-.hideIndicator :global(.mantine-SegmentedControl-indicator) {
-  display: none;
+.outlineActive :global(.mantine-SegmentedControl-label[data-active]) {
+  box-shadow: inset 0 0 0 1.5px var(--mantine-color-blue-filled);
 }
 
 @media (max-width: 48em) {

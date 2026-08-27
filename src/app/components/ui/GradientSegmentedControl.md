@@ -119,8 +119,8 @@ Custom palette:
 - `autoContrast` is enabled when a colour scheme is applied.
 - Without `scheme` or `segmentColors`, renders a standard Mantine `SegmentedControl`.
 - `layout="row"` uses `useMediaQuery(MOBILE_MAX_WIDTH_MEDIA_QUERY)` to force full-width stacking on mobile — no CSS-only collapse, since Mantine's `SegmentedControl` needs the `fullWidth` prop itself to flex its segments evenly.
-- `idleOption` prepends a visually offset first segment (gap + divider). `GRADIENT_SEGMENT_IDLE_VALUE` (`__unchanged__`) is the intended sentinel — it is not a library domain value.
-- Idle + `sharedValue`: the filled look sits on the shared option and the outline sits on **No change**. Mantine’s selected value stays **No change** so Apply does not write the field; clicking the shared option still fires `onChange` (opt-in). Mixed idle: primary on **No change**. Opted in: fill and outline on the chosen value.
+- `idleOption` prepends a visually offset first segment (gap after **No change**). `GRADIENT_SEGMENT_IDLE_VALUE` (`__unchanged__`) is the intended sentinel — it is not a library domain value. Bulk-edit idle turns off Mantine item separators (`withItemsBorders`) so the sliding indicator is the only chrome.
+- Idle + `sharedValue`: Mantine’s filled indicator (the original shaded thumb) sits on the shared option, including a shared **Default**. Neutrals get a raised fallback colour so the thumb stays visible in dark mode. The outline sits on **No change**. Clicking the shared option still fires `onChange` (opt-in) even though it already looks selected. Mixed idle: primary on **No change**. Opted in: fill and outline on the chosen value. Apply still uses the parent’s opted-in patch — the visual selection is not a write.
 - `layout="column"` puts the description under the control so long help is not squeezed beside the segments.
 
 Non-segment bulk-edit fields use [`BulkEditField`](../library/BulkEditField.md) instead.

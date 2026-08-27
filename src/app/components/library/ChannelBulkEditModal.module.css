@@ -15,17 +15,6 @@
 
 .footer {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
-
-.footerHint {
-  min-height: 1.25em;
-}
-
-.footerRow {
-  display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
@@ -61,10 +50,6 @@
   padding: 10px 12px;
   border: 1px solid var(--dsv2-border-quiet);
   border-radius: var(--dsv2-radius-panel);
-}
-
-.impact {
-  min-height: 1.35em;
 }
 
 .fieldGroupWide {
