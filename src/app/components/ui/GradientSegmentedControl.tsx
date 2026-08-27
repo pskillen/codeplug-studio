@@ -34,8 +34,10 @@ export interface GradientSegmentedControlProps<T extends string = string> {
    */
   idleOption?: GradientSegmentOption<T>;
   /**
-   * Domain value shared by every item in a bulk selection. Draws a secondary
-   * outline on that option without selecting it. Ignored when it matches `value`.
+   * Domain value shared by every item in a bulk selection. When idle, the primary
+   * (filled) indicator sits on this option and the idle segment gets the outline.
+   * When opted in, both sit on the chosen value. Visual only — Apply still uses
+   * the parent’s opted-in patch.
    */
   sharedValue?: T;
   /** Named preset or explicit palette. Omit for a plain Mantine segmented control. */
@@ -50,12 +52,11 @@ export interface GradientSegmentedControlProps<T extends string = string> {
    */
   neutralValues?: readonly string[];
   /**
-   * `'stack'` (default) is today's layout — label/description above a control that
-   * respects `fullWidth`. `'row'` puts label+description on the left and the control
-   * on the right at its intrinsic width, collapsing to `'stack'`-like full-width
-   * stacking below the app's shared mobile breakpoint.
+   * `'stack'` (default) — label/description above a control that respects `fullWidth`.
+   * `'row'` — label+description left, control right; stacks on mobile.
+   * `'column'` — label, then intrinsic-width control, then description below (bulk edit).
    */
-  layout?: 'stack' | 'row';
+  layout?: 'stack' | 'row' | 'column';
   fullWidth?: boolean;
   disabled?: boolean;
   size?: MantineSize;
@@ -105,42 +106,87 @@ export default function GradientSegmentedControl<T extends string>({
     [rawColors, theme],
   );
 
+  const isIdle = Boolean(idleOption && value === idleOption.value);
+  const invertShared = isIdle && sharedValue != null;
+  const visualPrimaryIndex = invertShared
+    ? segments.findIndex((item) => item.value === sharedValue)
+    : segments.findIndex((item) => item.value === value);
+  const visualPrimaryColor = visualPrimaryIndex >= 0 ? resolvedColors[visualPrimaryIndex] : null;
+
   const activeIndex = Math.max(
     0,
     segments.findIndex((item) => item.value === value),
   );
   const indicatorColor = resolvedColors[activeIndex];
-  const showColorOverride = hasColorScheme && indicatorColor != null;
+  const showColorOverride = hasColorScheme && indicatorColor != null && !invertShared;
 
-  const effectiveFullWidth = layout === 'row' ? isMobile : fullWidth;
+  const effectiveFullWidth =
+    layout === 'row' ? isMobile : layout === 'column' ? Boolean(fullWidth) : fullWidth;
+
+  const rootClass = [
+    idleOption ? classes.withIdle : undefined,
+    invertShared ? classes.hideIndicator : undefined,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const control = (
     <SegmentedControl
       value={value}
       onChange={(next) => onChange(next as T)}
-      data={segments.map((item) => ({
-        value: item.value,
-        label:
-          sharedValue != null && item.value === sharedValue && item.value !== value ? (
-            <span className={classes.sharedHint}>{item.label}</span>
-          ) : (
-            item.label
+      data={segments.map((item) => {
+        const isVisualPrimary = invertShared && item.value === sharedValue;
+        const outlineIdle = invertShared && idleOption != null && item.value === idleOption.value;
+        const outlineOptedIn = !isIdle && item.value === value;
+        const className = [
+          isVisualPrimary ? classes.sharedPrimary : undefined,
+          outlineIdle || outlineOptedIn ? classes.sharedHint : undefined,
+        ]
+          .filter(Boolean)
+          .join(' ');
+        return {
+          value: item.value,
+          label: (
+            <span
+              className={className || undefined}
+              style={
+                isVisualPrimary && visualPrimaryColor
+                  ? ({
+                      backgroundColor: visualPrimaryColor,
+                      color: 'var(--mantine-color-white)',
+                    } as CSSProperties)
+                  : undefined
+              }
+            >
+              {item.label}
+            </span>
           ),
-        disabled: item.disabled,
-      }))}
+          disabled: item.disabled,
+        };
+      })}
       fullWidth={effectiveFullWidth}
       disabled={disabled}
       size={size}
       autoContrast={hasColorScheme}
       classNames={{
         indicator: hasColorScheme ? classes.indicator : undefined,
-        root: idleOption ? classes.withIdle : undefined,
+        root: rootClass || undefined,
       }}
       styles={
         showColorOverride ? { root: { '--sc-color': indicatorColor } as CSSProperties } : undefined
       }
     />
   );
+
+  if (layout === 'column' && (label != null || description != null)) {
+    return (
+      <div className={classes.column}>
+        {label != null ? <div className={classes.rowLabel}>{label}</div> : null}
+        <div className={classes.columnControl}>{control}</div>
+        {description != null ? <div className={classes.rowDescription}>{description}</div> : null}
+      </div>
+    );
+  }
 
   if (label != null && layout === 'row') {
     return (

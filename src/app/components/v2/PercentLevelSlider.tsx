@@ -1,5 +1,6 @@
 import { Checkbox, Input, Slider, Stack, Text } from '@mantine/core';
 import { useId } from 'react';
+import classes from './PercentLevelSlider.module.css';
 
 export const PERCENT_LEVEL_STEP = 5;
 
@@ -35,6 +36,15 @@ export interface PercentLevelSliderProps {
   min?: number;
   max?: number;
   step?: number;
+  /**
+   * When false, omit the `— {value}` suffix and hide the primary thumb.
+   * Defaults to hiding when `value` is null (radio default).
+   */
+  showValue?: boolean;
+  /** Radio-default checkbox. Hide when a parent gradient owns Default. Default true. */
+  showDefaultCheckbox?: boolean;
+  /** Numeric percents from a bulk selection — secondary dots on the track. Nulls omitted. */
+  previewValues?: readonly (number | null)[];
 }
 
 export default function PercentLevelSlider({
@@ -47,6 +57,9 @@ export default function PercentLevelSlider({
   min = 0,
   max = 100,
   step = PERCENT_LEVEL_STEP,
+  showValue,
+  showDefaultCheckbox = true,
+  previewValues,
 }: PercentLevelSliderProps) {
   const useDefaultId = useId();
   const sliderId = useId();
@@ -54,44 +67,68 @@ export default function PercentLevelSlider({
   const sliderValue =
     value == null ? Math.max(min, snapPercentToStep(50, step)) : snapPercentToStep(value, step);
   const valueLabel = formatPercentLevelLabel(value, { zeroLabel, defaultLabel });
+  const displayValue = showValue ?? !isDefault;
+  const hideThumb = !displayValue;
+
+  const previewPercents = (previewValues ?? []).filter((v): v is number => v != null);
 
   return (
     <Input.Wrapper
       label={
-        <Text component="span" inherit>
-          {label}{' '}
-          <Text component="span" c="dimmed" inherit>
-            — {valueLabel}
+        displayValue ? (
+          <Text component="span" inherit>
+            {label}{' '}
+            <Text component="span" c="dimmed" inherit>
+              — {valueLabel}
+            </Text>
           </Text>
-        </Text>
+        ) : (
+          label
+        )
       }
       description={description}
     >
       <Stack gap="xs" mt={4}>
-        <Checkbox
-          id={useDefaultId}
-          label={defaultLabel}
-          checked={isDefault}
-          onChange={(e) => {
-            if (e.currentTarget.checked) {
-              onChange(null);
-            } else {
-              onChange(sliderValue);
-            }
-          }}
-        />
-        <Slider
-          id={sliderId}
-          aria-label={label}
-          value={sliderValue}
-          onChange={(v) => onChange(snapPercentToStep(v, step))}
-          min={min}
-          max={max}
-          step={step}
-          marks={[...PERCENT_LEVEL_MARKS]}
-          disabled={isDefault}
-          mb={16}
-        />
+        {showDefaultCheckbox ? (
+          <Checkbox
+            id={useDefaultId}
+            label={defaultLabel}
+            checked={isDefault}
+            onChange={(e) => {
+              if (e.currentTarget.checked) {
+                onChange(null);
+              } else {
+                onChange(sliderValue);
+              }
+            }}
+          />
+        ) : null}
+        <div className={classes.trackWrap}>
+          <Slider
+            id={sliderId}
+            aria-label={label}
+            value={sliderValue}
+            onChange={(v) => onChange(snapPercentToStep(v, step))}
+            min={min}
+            max={max}
+            step={step}
+            marks={[...PERCENT_LEVEL_MARKS]}
+            disabled={isDefault || hideThumb}
+            mb={16}
+            classNames={{ thumb: hideThumb ? classes.thumbHidden : undefined }}
+          />
+          {previewPercents.length > 0 ? (
+            <div className={classes.previewLayer} aria-hidden>
+              {previewPercents.map((percent, index) => (
+                <span
+                  key={`${percent}-${index}`}
+                  className={classes.previewDot}
+                  style={{ left: `${((percent - min) / (max - min)) * 100}%` }}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
       </Stack>
     </Input.Wrapper>
   );

@@ -21,6 +21,7 @@ import type {
 import type { AprsPttMode, AprsReportType } from '@core/models/libraryTypes.ts';
 import type { Channel, ChannelTone, Library, ScanInclusion } from '@core/models/library.ts';
 import { nestedOnlyZoneMembershipsForChannels } from '@core/domain/zoneMembership.ts';
+import { isAnalogChannelModeProfile } from '@core/domain/modeProfiles.ts';
 import {
   aprsChannelBulkPatchHasChanges,
   type AprsChannelBulkPatch,
@@ -39,7 +40,7 @@ import TxPermitSegment from '../channels/TxPermitSegment.tsx';
 import SendTalkerAliasSegment from '../channels/SendTalkerAliasSegment.tsx';
 import AnalogSquelchModeSegment from '../channels/AnalogSquelchModeSegment.tsx';
 import ScanInclusionSegment from '../channels/ScanInclusionSegment.tsx';
-import { PercentLevelSlider, formatPercentLevelLabel } from '../v2/index.ts';
+import { PercentLevelSlider } from '../v2/index.ts';
 import { Button, ConfirmModal, ModalShell, Panel } from '../v2/index.ts';
 import { ICON_SIZE_ACTION, ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { persistChannelBulkEdit, type ChannelBulkApplyOutcome } from '../../lib/channelBulkEdit.ts';
@@ -183,10 +184,6 @@ function analogImpactText(appliesTo: number, skipped: number, total: number): st
   const base = `Applies to ${appliesTo} of ${total} selected channel${total === 1 ? '' : 's'}`;
   if (skipped <= 0) return base;
   return `${base}. ${skipped} channel${skipped === 1 ? '' : 's'} have no analog mode and will be skipped`;
-}
-
-function formatToneHint(tone: ChannelTone): string {
-  return tone === NONE_TONE ? 'None' : tone;
 }
 
 function dmrImpactText(appliesTo: number, skipped: number, total: number): string {
@@ -523,14 +520,14 @@ function ChannelBulkEditModalBody({
               <BulkEditField
                 optedIn={form.changePower}
                 onOptedInChange={(changePower) => setForm((prev) => ({ ...prev, changePower }))}
-                sharedHint={
-                  shared.power !== undefined ? formatPercentLevelLabel(shared.power) : undefined
-                }
+                hasSharedValue={shared.power !== undefined}
               >
                 <PercentLevelSlider
                   label="Power"
                   value={form.power}
                   onChange={(power) => setForm((prev) => ({ ...prev, power }))}
+                  showValue={form.changePower && form.power != null}
+                  previewValues={channels.map((channel) => channel.power)}
                 />
               </BulkEditField>
               {form.changePower && impact.power ? (
@@ -584,9 +581,7 @@ function ChannelBulkEditModalBody({
                         onOptedInChange={(changeRxTone) =>
                           setForm((prev) => ({ ...prev, changeRxTone }))
                         }
-                        sharedHint={
-                          shared.rxTone !== undefined ? formatToneHint(shared.rxTone) : undefined
-                        }
+                        hasSharedValue={shared.rxTone !== undefined}
                       >
                         <Select
                           label="RX tone"
@@ -607,9 +602,7 @@ function ChannelBulkEditModalBody({
                         onOptedInChange={(changeTxTone) =>
                           setForm((prev) => ({ ...prev, changeTxTone }))
                         }
-                        sharedHint={
-                          shared.txTone !== undefined ? formatToneHint(shared.txTone) : undefined
-                        }
+                        hasSharedValue={shared.txTone !== undefined}
                       >
                         <Select
                           label="TX tone"
@@ -666,13 +659,7 @@ function ChannelBulkEditModalBody({
                       onOptedInChange={(changeAnalogSquelch) =>
                         setForm((prev) => ({ ...prev, changeAnalogSquelch }))
                       }
-                      sharedHint={
-                        shared.analogSquelch !== undefined
-                          ? formatPercentLevelLabel(shared.analogSquelch, {
-                              zeroLabel: 'Open (0%)',
-                            })
-                          : undefined
-                      }
+                      hasSharedValue={shared.analogSquelch !== undefined}
                     >
                       <PercentLevelSlider
                         label="Squelch"
@@ -681,6 +668,12 @@ function ChannelBulkEditModalBody({
                           setForm((prev) => ({ ...prev, analogSquelch }))
                         }
                         zeroLabel="Open (0%)"
+                        showValue={form.changeAnalogSquelch && form.analogSquelch != null}
+                        previewValues={channels.flatMap((channel) =>
+                          channel.modeProfiles
+                            .filter(isAnalogChannelModeProfile)
+                            .map((profile) => profile.squelch),
+                        )}
                       />
                     </BulkEditField>
                     {form.changeAnalogSquelch && impact.analogSquelch ? (
@@ -777,13 +770,7 @@ function ChannelBulkEditModalBody({
                 onOptedInChange={(changeAprsReceive) =>
                   setForm((prev) => ({ ...prev, changeAprsReceive }))
                 }
-                sharedHint={
-                  shared.aprsReceiveEnabled === undefined
-                    ? undefined
-                    : shared.aprsReceiveEnabled
-                      ? 'On'
-                      : 'Off'
-                }
+                hasSharedValue={shared.aprsReceiveEnabled !== undefined}
               >
                 <Checkbox
                   label="APRS receive enabled"
@@ -801,13 +788,7 @@ function ChannelBulkEditModalBody({
                 onOptedInChange={(changeAprsReportType) =>
                   setForm((prev) => ({ ...prev, changeAprsReportType }))
                 }
-                sharedHint={
-                  shared.aprsReportType === undefined
-                    ? undefined
-                    : shared.aprsReportType === 'digital'
-                      ? 'Digital'
-                      : 'Off'
-                }
+                hasSharedValue={shared.aprsReportType !== undefined}
               >
                 <Select
                   label="Report type"
@@ -828,13 +809,7 @@ function ChannelBulkEditModalBody({
               <BulkEditField
                 optedIn={form.changeAprsPtt}
                 onOptedInChange={(changeAprsPtt) => setForm((prev) => ({ ...prev, changeAprsPtt }))}
-                sharedHint={
-                  shared.aprsDigitalPttMode === undefined
-                    ? undefined
-                    : shared.aprsDigitalPttMode === 'on'
-                      ? 'On'
-                      : 'Off'
-                }
+                hasSharedValue={shared.aprsDigitalPttMode !== undefined}
               >
                 <Select
                   label="Digital APRS PTT mode"
@@ -857,13 +832,7 @@ function ChannelBulkEditModalBody({
                 onOptedInChange={(changeAprsSlot) =>
                   setForm((prev) => ({ ...prev, changeAprsSlot }))
                 }
-                sharedHint={
-                  shared.aprsReportSlotIndex === undefined
-                    ? undefined
-                    : shared.aprsReportSlotIndex == null
-                      ? 'None'
-                      : `Slot ${shared.aprsReportSlotIndex}`
-                }
+                hasSharedValue={shared.aprsReportSlotIndex !== undefined}
               >
                 <Select
                   label="Report slot"

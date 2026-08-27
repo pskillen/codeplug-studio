@@ -37,7 +37,7 @@ describe('GradientSegmentedControl', () => {
     expect(onChange).toHaveBeenCalledWith(GRADIENT_SEGMENT_IDLE_VALUE);
   });
 
-  it('does not treat a shared-value hint as the selected option', () => {
+  it('keeps No change selected while idle, paints the shared value, and emits that value on click', () => {
     const onChange = vi.fn();
     renderControl({
       value: GRADIENT_SEGMENT_IDLE_VALUE,
@@ -48,6 +48,33 @@ describe('GradientSegmentedControl', () => {
 
     expect(screen.getByRole('radio', { name: 'No change' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Allow TX' })).not.toBeChecked();
+    fireEvent.click(screen.getByRole('radio', { name: 'Allow TX' }));
+    expect(onChange).toHaveBeenCalledWith('allow');
+  });
+
+  it('keeps the primary indicator on No change when idle and values are mixed', () => {
+    const onChange = vi.fn();
+    renderControl({
+      value: GRADIENT_SEGMENT_IDLE_VALUE,
+      onChange,
+      idleOption: { value: GRADIENT_SEGMENT_IDLE_VALUE, label: 'No change' },
+    });
+
+    expect(screen.getByRole('radio', { name: 'No change' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Allow TX' })).not.toBeChecked();
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('puts the primary indicator on the opted-in value', () => {
+    const onChange = vi.fn();
+    renderControl({
+      value: 'forbid',
+      onChange,
+      idleOption: { value: GRADIENT_SEGMENT_IDLE_VALUE, label: 'No change' },
+      sharedValue: 'allow',
+    });
+
+    expect(screen.getByRole('radio', { name: 'RX only' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Allow TX' })).not.toBeChecked();
   });
 });

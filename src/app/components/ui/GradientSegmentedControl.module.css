@@ -32,6 +32,18 @@
   flex-shrink: 0;
 }
 
+.column {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.columnControl {
+  max-width: 100%;
+}
+
 .withIdle :global(.mantine-SegmentedControl-label):first-of-type {
   margin-inline-end: 8px;
   padding-inline-end: 10px;
@@ -43,6 +55,16 @@
   box-shadow: inset 0 0 0 1.5px var(--mantine-color-blue-filled);
   border-radius: 4px;
   padding: 0 6px;
+}
+
+.sharedPrimary {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 0 6px;
+}
+
+.hideIndicator :global(.mantine-SegmentedControl-indicator) {
+  display: none;
 }
 
 @media (max-width: 48em) {
