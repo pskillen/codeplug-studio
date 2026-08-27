@@ -15,7 +15,19 @@
 
 .footer {
   display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.footerHint {
+  min-height: 1.25em;
+}
+
+.footerRow {
+  display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   width: 100%;
@@ -26,7 +38,7 @@
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
-  width: 100%;
+  margin-left: auto;
 }
 
 .pairRow {
@@ -39,6 +51,24 @@
   .pairRow {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--dsv2-border-quiet);
+  border-radius: var(--dsv2-radius-panel);
+}
+
+.impact {
+  min-height: 1.35em;
+}
+
+.fieldGroupWide {
+  grid-column: 1 / -1;
 }
 
 .openLink {

@@ -10,8 +10,8 @@ export interface ScanInclusionSegmentProps {
   /** Table row layout — omits label and description. */
   compact?: boolean;
   disabled?: boolean;
-  /** `'row'` puts label/description left, control right. Default `'stack'`; ignored when `compact`. */
-  layout?: 'stack' | 'row';
+  /** `'row'` puts label/description left, control right. `'column'` puts description below. Default `'stack'`; ignored when `compact`. */
+  layout?: 'stack' | 'row' | 'column';
   idleOption?: GradientSegmentOption<string>;
   sharedValue?: ScanInclusion;
   onIdle?: () => void;
@@ -45,7 +45,7 @@ export default function ScanInclusionSegment({
       description={
         compact
           ? undefined
-          : 'Default defers to the format build export setting. Skip and Always scan override that default.'
+          : 'Default uses the scan setting on export. Skip and Always scan set this channel.'
       }
       value={value}
       onChange={(next) => {

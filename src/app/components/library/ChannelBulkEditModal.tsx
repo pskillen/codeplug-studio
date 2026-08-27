@@ -1,16 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Alert,
-  Box,
-  Checkbox,
-  Collapse,
-  Group,
-  Select,
-  Stack,
-  Text,
-  UnstyledButton,
-} from '@mantine/core';
+import { Alert, Box, Collapse, Group, Select, Stack, Text, UnstyledButton } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconPencil } from '@tabler/icons-react';
 import type {
   AnalogSquelchModeOverride,
@@ -27,7 +17,6 @@ import {
   type AprsChannelBulkPatch,
 } from '@core/domain/aprs/index.ts';
 import {
-  analyzeChannelBulkEditImpact,
   countChannelsWithAnalogProfile,
   countChannelsWithDmrProfile,
   sharedAnalogField,
@@ -40,6 +29,9 @@ import TxPermitSegment from '../channels/TxPermitSegment.tsx';
 import SendTalkerAliasSegment from '../channels/SendTalkerAliasSegment.tsx';
 import AnalogSquelchModeSegment from '../channels/AnalogSquelchModeSegment.tsx';
 import ScanInclusionSegment from '../channels/ScanInclusionSegment.tsx';
+import GradientSegmentedControl, {
+  GRADIENT_SEGMENT_IDLE_VALUE,
+} from '../ui/GradientSegmentedControl.tsx';
 import { PercentLevelSlider } from '../v2/index.ts';
 import { Button, ConfirmModal, ModalShell, Panel } from '../v2/index.ts';
 import { ICON_SIZE_ACTION, ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
@@ -49,7 +41,15 @@ import {
   persistChannelBulkDelete,
   type PersistChannelBulkDeleteOutcome,
 } from '../../lib/channelBulkDelete.ts';
-import { BULK_IDLE_OPTION, bulkSegmentValue, changeBadge } from '../../lib/bulkEditIdle.ts';
+import {
+  BULK_IDLE_OPTION,
+  BULK_POWER_CUSTOM,
+  BULK_POWER_DEFAULT,
+  bulkPowerSegmentValue,
+  bulkSegmentValue,
+  changeBadge,
+  sharedPowerSegmentValue,
+} from '../../lib/bulkEditIdle.ts';
 import { APRS_SLOT_NONE_VALUE, aprsSlotSelectOptions } from '../../lib/aprsBindingHelpers.ts';
 import { NONE_TONE, toneSelectOptions } from '../../lib/channelFields/index.ts';
 import { modalComboboxProps } from '../../theme.ts';
@@ -180,6 +180,17 @@ function channelLevelImpactText(appliesTo: number): string {
   return `Applies to all ${appliesTo} selected channel${appliesTo === 1 ? '' : 's'}`;
 }
 
+function FieldGroup({ children, impact }: { children: ReactNode; impact: string }) {
+  return (
+    <div className={classes.fieldGroup}>
+      {children}
+      <Text size="xs" c="dimmed" className={classes.impact}>
+        {impact}
+      </Text>
+    </div>
+  );
+}
+
 function analogImpactText(appliesTo: number, skipped: number, total: number): string {
   const base = `Applies to ${appliesTo} of ${total} selected channel${total === 1 ? '' : 's'}`;
   if (skipped <= 0) return base;
@@ -285,17 +296,16 @@ function ChannelBulkEditModalBody({
   const hasChannelPatch = Object.keys(patch).length > 0;
   const hasZoneChanges = addZoneIds.length > 0 || removeZoneIds.length > 0;
   const hasChanges = hasChannelPatch || hasZoneChanges;
-  const impact = useMemo(
-    () => (hasChannelPatch ? analyzeChannelBulkEditImpact(channels, patch) : {}),
-    [channels, hasChannelPatch, patch],
-  );
   const analogChannelCount = useMemo(() => countChannelsWithAnalogProfile(channels), [channels]);
   const dmrChannelCount = useMemo(() => countChannelsWithDmrProfile(channels), [channels]);
+  const total = channels.length;
+  const analogSkipText = analogImpactText(analogChannelCount, total - analogChannelCount, total);
+  const dmrSkipText = dmrImpactText(dmrChannelCount, total - dmrChannelCount, total);
+  const allChannelsImpact = channelLevelImpactText(total);
   const showAnalogFields = analogChannelCount > 0;
   const showDmrFields = dmrChannelCount > 0;
   const showModeSettings = showAnalogFields || showDmrFields;
   const busy = applying || deleting;
-  const total = channels.length;
 
   const rfChangeCount =
     Number(form.changeForbidTransmit) + Number(form.changeTxPermit) + Number(form.changePower);
@@ -413,29 +423,36 @@ function ChannelBulkEditModalBody({
         dismissible={!busy}
         footer={
           <div className={classes.footer}>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setErrorMessage(null);
-                setView('confirmDelete');
-              }}
-              disabled={busy || !projectId}
-            >
-              Delete {total} channel{total === 1 ? '' : 's'}
-            </Button>
-            <div className={classes.footerActions}>
-              <Button variant="secondary" size="sm" onClick={onClose} disabled={busy}>
-                Cancel
-              </Button>
+            {!hasChanges ? (
+              <Text size="sm" c="dimmed" className={classes.footerHint}>
+                Choose at least one value above to apply. Leave the rest on No change.
+              </Text>
+            ) : null}
+            <div className={classes.footerRow}>
               <Button
-                variant="primary"
+                variant="ghost"
                 size="sm"
-                onClick={() => void handleApply()}
-                disabled={!hasChanges || busy}
+                onClick={() => {
+                  setErrorMessage(null);
+                  setView('confirmDelete');
+                }}
+                disabled={busy || !projectId}
               >
-                {applying ? 'Applying…' : `Apply to ${total} channel${total === 1 ? '' : 's'}`}
+                Delete {total} channel{total === 1 ? '' : 's'}
               </Button>
+              <div className={classes.footerActions}>
+                <Button variant="secondary" size="sm" onClick={onClose} disabled={busy}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => void handleApply()}
+                  disabled={!hasChanges || busy}
+                >
+                  {applying ? 'Applying…' : `Apply to ${total} channel${total === 1 ? '' : 's'}`}
+                </Button>
+              </div>
             </div>
           </div>
         }
@@ -444,8 +461,8 @@ function ChannelBulkEditModalBody({
           <strong>
             {total} channel{total === 1 ? '' : 's'} selected.
           </strong>{' '}
-          Fields start as <strong>No change</strong>. Pick a value to apply it — an outline marks a
-          setting every selected channel already shares.
+          Fields start as <strong>No change</strong>. A fill marks a setting every selected channel
+          already shares; the outline stays on No change until you pick a value to apply.
         </div>
 
         <Stack gap="md">
@@ -484,8 +501,8 @@ function ChannelBulkEditModalBody({
           </Collapse>
 
           <Panel title="RF" collapsible badge={changeBadge(rfChangeCount)}>
-            <Stack gap="md">
-              <div className={classes.pairRow}>
+            <div className={classes.pairRow}>
+              <FieldGroup impact={allChannelsImpact}>
                 <ForbidTransmitSegment
                   value={bulkSegmentValue(form.changeForbidTransmit, form.forbidTransmit)}
                   onChange={(forbidTransmit) =>
@@ -494,8 +511,10 @@ function ChannelBulkEditModalBody({
                   onIdle={() => setForm((prev) => ({ ...prev, changeForbidTransmit: false }))}
                   idleOption={BULK_IDLE_OPTION}
                   sharedValue={shared.forbidTransmit}
-                  layout="row"
+                  layout="column"
                 />
+              </FieldGroup>
+              <FieldGroup impact={allChannelsImpact}>
                 <TxPermitSegment
                   value={bulkSegmentValue(form.changeTxPermit, form.txPermit)}
                   onChange={(txPermit) =>
@@ -504,38 +523,47 @@ function ChannelBulkEditModalBody({
                   onIdle={() => setForm((prev) => ({ ...prev, changeTxPermit: false }))}
                   idleOption={BULK_IDLE_OPTION}
                   sharedValue={shared.txPermit}
-                  layout="row"
+                  layout="column"
                 />
-              </div>
-              {form.changeForbidTransmit && impact.forbidTransmit ? (
-                <Text size="xs" c="dimmed">
-                  {channelLevelImpactText(impact.forbidTransmit.appliesTo)}
-                </Text>
-              ) : null}
-              {form.changeTxPermit && impact.txPermit ? (
-                <Text size="xs" c="dimmed">
-                  {channelLevelImpactText(impact.txPermit.appliesTo)}
-                </Text>
-              ) : null}
-              <BulkEditField
-                optedIn={form.changePower}
-                onOptedInChange={(changePower) => setForm((prev) => ({ ...prev, changePower }))}
-                hasSharedValue={shared.power !== undefined}
-              >
-                <PercentLevelSlider
+              </FieldGroup>
+              <FieldGroup impact={allChannelsImpact}>
+                <GradientSegmentedControl
                   label="Power"
+                  value={bulkPowerSegmentValue(form.changePower, form.power)}
+                  onChange={(next) => {
+                    if (next === GRADIENT_SEGMENT_IDLE_VALUE) {
+                      setForm((prev) => ({ ...prev, changePower: false }));
+                      return;
+                    }
+                    if (next === BULK_POWER_DEFAULT) {
+                      setForm((prev) => ({ ...prev, changePower: true, power: null }));
+                      return;
+                    }
+                    setForm((prev) => ({
+                      ...prev,
+                      changePower: true,
+                      power: prev.power ?? 50,
+                    }));
+                  }}
+                  idleOption={BULK_IDLE_OPTION}
+                  sharedValue={sharedPowerSegmentValue(shared.power)}
+                  data={[
+                    { value: BULK_POWER_DEFAULT, label: 'Default' },
+                    { value: BULK_POWER_CUSTOM, label: 'Custom' },
+                  ]}
+                  scheme="three"
+                  layout="column"
+                />
+                <PercentLevelSlider
+                  label="Level"
                   value={form.power}
-                  onChange={(power) => setForm((prev) => ({ ...prev, power }))}
+                  onChange={(power) => setForm((prev) => ({ ...prev, changePower: true, power }))}
                   showValue={form.changePower && form.power != null}
+                  showDefaultCheckbox={false}
                   previewValues={channels.map((channel) => channel.power)}
                 />
-              </BulkEditField>
-              {form.changePower && impact.power ? (
-                <Text size="xs" c="dimmed">
-                  {channelLevelImpactText(impact.power.appliesTo)}
-                </Text>
-              ) : null}
-            </Stack>
+              </FieldGroup>
+            </div>
           </Panel>
 
           {showModeSettings ? (
@@ -545,9 +573,9 @@ function ChannelBulkEditModalBody({
               defaultCollapsed
               badge={changeBadge(modeChangeCount)}
             >
-              <Stack gap="md">
+              <div className={classes.pairRow}>
                 {showDmrFields ? (
-                  <>
+                  <FieldGroup impact={dmrSkipText}>
                     <SendTalkerAliasSegment
                       value={bulkSegmentValue(form.changeSendTalkerAlias, form.sendTalkerAlias)}
                       onChange={(sendTalkerAlias) =>
@@ -560,134 +588,120 @@ function ChannelBulkEditModalBody({
                       onIdle={() => setForm((prev) => ({ ...prev, changeSendTalkerAlias: false }))}
                       idleOption={BULK_IDLE_OPTION}
                       sharedValue={shared.sendTalkerAlias}
-                      layout="row"
+                      layout="column"
                     />
-                    {form.changeSendTalkerAlias && impact.sendTalkerAlias ? (
-                      <Text size="xs" c="dimmed">
-                        {dmrImpactText(
-                          impact.sendTalkerAlias.appliesTo,
-                          impact.sendTalkerAlias.skipped,
-                          total,
-                        )}
-                      </Text>
-                    ) : null}
-                  </>
+                  </FieldGroup>
                 ) : null}
                 {showAnalogFields ? (
                   <>
-                    <div className={classes.pairRow}>
-                      <BulkEditField
-                        optedIn={form.changeRxTone}
-                        onOptedInChange={(changeRxTone) =>
-                          setForm((prev) => ({ ...prev, changeRxTone }))
-                        }
-                        hasSharedValue={shared.rxTone !== undefined}
-                      >
-                        <Select
-                          label="RX tone"
-                          data={toneSelectOptions()}
-                          value={form.rxTone}
-                          onChange={(value) =>
-                            setForm((prev) => ({
-                              ...prev,
-                              rxTone: (value ?? NONE_TONE) as ChannelTone,
-                            }))
-                          }
-                          searchable
-                          comboboxProps={modalComboboxProps()}
-                        />
-                      </BulkEditField>
-                      <BulkEditField
-                        optedIn={form.changeTxTone}
-                        onOptedInChange={(changeTxTone) =>
-                          setForm((prev) => ({ ...prev, changeTxTone }))
-                        }
-                        hasSharedValue={shared.txTone !== undefined}
-                      >
-                        <Select
-                          label="TX tone"
-                          data={toneSelectOptions()}
-                          value={form.txTone}
-                          onChange={(value) =>
-                            setForm((prev) => ({
-                              ...prev,
-                              txTone: (value ?? NONE_TONE) as ChannelTone,
-                            }))
-                          }
-                          searchable
-                          comboboxProps={modalComboboxProps()}
-                        />
-                      </BulkEditField>
+                    <div className={[classes.fieldGroup, classes.fieldGroupWide].join(' ')}>
+                      <div className={classes.tonesHeading}>CTCSS/DCS</div>
+                      <div className={classes.pairRow}>
+                        <div>
+                          <BulkEditField
+                            label="RX tone"
+                            optedIn={form.changeRxTone}
+                            onOptedInChange={(changeRxTone) =>
+                              setForm((prev) => ({ ...prev, changeRxTone }))
+                            }
+                            hasSharedValue={shared.rxTone !== undefined}
+                          >
+                            <Select
+                              data={toneSelectOptions()}
+                              value={form.rxTone}
+                              onChange={(value) =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  rxTone: (value ?? NONE_TONE) as ChannelTone,
+                                }))
+                              }
+                              searchable
+                              comboboxProps={modalComboboxProps()}
+                              aria-label="RX tone"
+                            />
+                          </BulkEditField>
+                          <Text size="xs" c="dimmed" className={classes.impact}>
+                            {analogSkipText}
+                          </Text>
+                        </div>
+                        <div>
+                          <BulkEditField
+                            label="TX tone"
+                            optedIn={form.changeTxTone}
+                            onOptedInChange={(changeTxTone) =>
+                              setForm((prev) => ({ ...prev, changeTxTone }))
+                            }
+                            hasSharedValue={shared.txTone !== undefined}
+                          >
+                            <Select
+                              data={toneSelectOptions()}
+                              value={form.txTone}
+                              onChange={(value) =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  txTone: (value ?? NONE_TONE) as ChannelTone,
+                                }))
+                              }
+                              searchable
+                              comboboxProps={modalComboboxProps()}
+                              aria-label="TX tone"
+                            />
+                          </BulkEditField>
+                          <Text size="xs" c="dimmed" className={classes.impact}>
+                            {analogSkipText}
+                          </Text>
+                        </div>
+                      </div>
                     </div>
-                    {form.changeRxTone && impact.rxTone ? (
-                      <Text size="xs" c="dimmed">
-                        {analogImpactText(impact.rxTone.appliesTo, impact.rxTone.skipped, total)}
-                      </Text>
-                    ) : null}
-                    {form.changeTxTone && impact.txTone ? (
-                      <Text size="xs" c="dimmed">
-                        {analogImpactText(impact.txTone.appliesTo, impact.txTone.skipped, total)}
-                      </Text>
-                    ) : null}
-                    <AnalogSquelchModeSegment
-                      value={bulkSegmentValue(form.changeAnalogSquelchMode, form.analogSquelchMode)}
-                      onChange={(analogSquelchMode) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          changeAnalogSquelchMode: true,
-                          analogSquelchMode,
-                        }))
-                      }
-                      onIdle={() =>
-                        setForm((prev) => ({ ...prev, changeAnalogSquelchMode: false }))
-                      }
-                      idleOption={BULK_IDLE_OPTION}
-                      sharedValue={shared.analogSquelchMode}
-                      layout="row"
-                    />
-                    {form.changeAnalogSquelchMode && impact.analogSquelchMode ? (
-                      <Text size="xs" c="dimmed">
-                        {analogImpactText(
-                          impact.analogSquelchMode.appliesTo,
-                          impact.analogSquelchMode.skipped,
-                          total,
+                    <FieldGroup impact={analogSkipText}>
+                      <AnalogSquelchModeSegment
+                        value={bulkSegmentValue(
+                          form.changeAnalogSquelchMode,
+                          form.analogSquelchMode,
                         )}
-                      </Text>
-                    ) : null}
-                    <BulkEditField
-                      optedIn={form.changeAnalogSquelch}
-                      onOptedInChange={(changeAnalogSquelch) =>
-                        setForm((prev) => ({ ...prev, changeAnalogSquelch }))
-                      }
-                      hasSharedValue={shared.analogSquelch !== undefined}
-                    >
-                      <PercentLevelSlider
-                        label="Squelch"
-                        value={form.analogSquelch}
-                        onChange={(analogSquelch) =>
-                          setForm((prev) => ({ ...prev, analogSquelch }))
+                        onChange={(analogSquelchMode) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            changeAnalogSquelchMode: true,
+                            analogSquelchMode,
+                          }))
                         }
-                        zeroLabel="Open (0%)"
-                        showValue={form.changeAnalogSquelch && form.analogSquelch != null}
-                        previewValues={channels.flatMap((channel) =>
-                          channel.modeProfiles
-                            .filter(isAnalogChannelModeProfile)
-                            .map((profile) => profile.squelch),
-                        )}
+                        onIdle={() =>
+                          setForm((prev) => ({ ...prev, changeAnalogSquelchMode: false }))
+                        }
+                        idleOption={BULK_IDLE_OPTION}
+                        sharedValue={shared.analogSquelchMode}
+                        layout="column"
                       />
-                    </BulkEditField>
-                    {form.changeAnalogSquelch && impact.analogSquelch ? (
-                      <Text size="xs" c="dimmed">
-                        {analogImpactText(
-                          impact.analogSquelch.appliesTo,
-                          impact.analogSquelch.skipped,
-                          total,
-                        )}
-                      </Text>
-                    ) : null}
+                    </FieldGroup>
+                    <FieldGroup impact={analogSkipText}>
+                      <BulkEditField
+                        label="Squelch"
+                        optedIn={form.changeAnalogSquelch}
+                        onOptedInChange={(changeAnalogSquelch) =>
+                          setForm((prev) => ({ ...prev, changeAnalogSquelch }))
+                        }
+                        hasSharedValue={shared.analogSquelch !== undefined}
+                      >
+                        <PercentLevelSlider
+                          label="Level"
+                          value={form.analogSquelch}
+                          onChange={(analogSquelch) =>
+                            setForm((prev) => ({ ...prev, analogSquelch }))
+                          }
+                          zeroLabel="Open (0%)"
+                          showValue={form.changeAnalogSquelch && form.analogSquelch != null}
+                          previewValues={channels.flatMap((channel) =>
+                            channel.modeProfiles
+                              .filter(isAnalogChannelModeProfile)
+                              .map((profile) => profile.squelch),
+                          )}
+                        />
+                      </BulkEditField>
+                    </FieldGroup>
                   </>
                 ) : null}
-              </Stack>
+              </div>
             </Panel>
           ) : null}
 
@@ -740,132 +754,151 @@ function ChannelBulkEditModalBody({
           </Panel>
 
           <Panel title="Scanning" collapsible badge={changeBadge(scanningChangeCount)}>
-            <Stack gap="md">
-              <ScanInclusionSegment
-                value={bulkSegmentValue(form.changeScanInclusion, form.scanInclusion)}
-                onChange={(scanInclusion) =>
-                  setForm((prev) => ({ ...prev, changeScanInclusion: true, scanInclusion }))
-                }
-                onIdle={() => setForm((prev) => ({ ...prev, changeScanInclusion: false }))}
-                idleOption={BULK_IDLE_OPTION}
-                sharedValue={shared.scanInclusion}
-                layout="row"
-              />
-              {form.changeScanInclusion && impact.scanInclusion ? (
-                <Text size="xs" c="dimmed">
-                  {channelLevelImpactText(impact.scanInclusion.appliesTo)}
-                </Text>
-              ) : null}
-            </Stack>
+            <div className={classes.pairRow}>
+              <FieldGroup impact={allChannelsImpact}>
+                <ScanInclusionSegment
+                  value={bulkSegmentValue(form.changeScanInclusion, form.scanInclusion)}
+                  onChange={(scanInclusion) =>
+                    setForm((prev) => ({ ...prev, changeScanInclusion: true, scanInclusion }))
+                  }
+                  onIdle={() => setForm((prev) => ({ ...prev, changeScanInclusion: false }))}
+                  idleOption={BULK_IDLE_OPTION}
+                  sharedValue={shared.scanInclusion}
+                  layout="column"
+                />
+              </FieldGroup>
+            </div>
           </Panel>
 
           <Panel title="APRS" collapsible defaultCollapsed badge={changeBadge(aprsChangeCount)}>
             <Stack gap="md">
               <Text size="sm" c="dimmed">
-                Per-channel digital APRS flags for CPS export. Bindings apply to DMR and analog
-                channels on Anytone export; analog AX.25 APRS is not modelled in Codeplug Studio.
+                Per-channel digital APRS flags for CPS export. Analog AX.25 APRS is not modelled.
               </Text>
-              <BulkEditField
-                optedIn={form.changeAprsReceive}
-                onOptedInChange={(changeAprsReceive) =>
-                  setForm((prev) => ({ ...prev, changeAprsReceive }))
-                }
-                hasSharedValue={shared.aprsReceiveEnabled !== undefined}
-              >
-                <Checkbox
-                  label="APRS receive enabled"
-                  checked={form.aprsReceiveEnabled}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      aprsReceiveEnabled: event.currentTarget.checked,
-                    }))
-                  }
-                />
-              </BulkEditField>
-              <BulkEditField
-                optedIn={form.changeAprsReportType}
-                onOptedInChange={(changeAprsReportType) =>
-                  setForm((prev) => ({ ...prev, changeAprsReportType }))
-                }
-                hasSharedValue={shared.aprsReportType !== undefined}
-              >
-                <Select
-                  label="Report type"
-                  data={[
-                    { value: 'off', label: 'Off' },
-                    { value: 'digital', label: 'Digital' },
-                  ]}
-                  value={form.aprsReportType}
-                  onChange={(next) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      aprsReportType: (next as AprsReportType | null) ?? 'off',
-                    }))
-                  }
-                  comboboxProps={modalComboboxProps()}
-                />
-              </BulkEditField>
-              <BulkEditField
-                optedIn={form.changeAprsPtt}
-                onOptedInChange={(changeAprsPtt) => setForm((prev) => ({ ...prev, changeAprsPtt }))}
-                hasSharedValue={shared.aprsDigitalPttMode !== undefined}
-              >
-                <Select
-                  label="Digital APRS PTT mode"
-                  data={[
-                    { value: 'off', label: 'Off' },
-                    { value: 'on', label: 'On' },
-                  ]}
-                  value={form.aprsDigitalPttMode}
-                  onChange={(next) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      aprsDigitalPttMode: (next as AprsPttMode | null) ?? 'off',
-                    }))
-                  }
-                  comboboxProps={modalComboboxProps()}
-                />
-              </BulkEditField>
-              <BulkEditField
-                optedIn={form.changeAprsSlot}
-                onOptedInChange={(changeAprsSlot) =>
-                  setForm((prev) => ({ ...prev, changeAprsSlot }))
-                }
-                hasSharedValue={shared.aprsReportSlotIndex !== undefined}
-              >
-                <Select
-                  label="Report slot"
-                  description={
-                    slotsAvailable
-                      ? 'APRS configuration slot used for position reports at export.'
-                      : 'Add channel slots on the APRS configuration page first.'
-                  }
-                  data={slotOptions}
-                  disabled={!slotsAvailable}
-                  value={
-                    form.aprsReportSlotIndex != null
-                      ? String(form.aprsReportSlotIndex)
-                      : APRS_SLOT_NONE_VALUE
-                  }
-                  onChange={(next) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      aprsReportSlotIndex:
-                        next && next !== APRS_SLOT_NONE_VALUE ? Number.parseInt(next, 10) : null,
-                    }))
-                  }
-                  comboboxProps={modalComboboxProps()}
-                />
-              </BulkEditField>
+              <div className={classes.pairRow}>
+                <FieldGroup impact={allChannelsImpact}>
+                  <GradientSegmentedControl
+                    label="APRS receive"
+                    value={bulkSegmentValue(
+                      form.changeAprsReceive,
+                      form.aprsReceiveEnabled ? 'on' : 'off',
+                    )}
+                    onChange={(next) => {
+                      if (next === GRADIENT_SEGMENT_IDLE_VALUE) {
+                        setForm((prev) => ({ ...prev, changeAprsReceive: false }));
+                        return;
+                      }
+                      setForm((prev) => ({
+                        ...prev,
+                        changeAprsReceive: true,
+                        aprsReceiveEnabled: next === 'on',
+                      }));
+                    }}
+                    idleOption={BULK_IDLE_OPTION}
+                    sharedValue={
+                      shared.aprsReceiveEnabled === undefined
+                        ? undefined
+                        : shared.aprsReceiveEnabled
+                          ? 'on'
+                          : 'off'
+                    }
+                    data={[
+                      { value: 'off', label: 'Off' },
+                      { value: 'on', label: 'On' },
+                    ]}
+                    scheme="onOff"
+                    layout="column"
+                  />
+                </FieldGroup>
+                <FieldGroup impact={allChannelsImpact}>
+                  <GradientSegmentedControl
+                    label="Report type"
+                    value={bulkSegmentValue(form.changeAprsReportType, form.aprsReportType)}
+                    onChange={(next) => {
+                      if (next === GRADIENT_SEGMENT_IDLE_VALUE) {
+                        setForm((prev) => ({ ...prev, changeAprsReportType: false }));
+                        return;
+                      }
+                      setForm((prev) => ({
+                        ...prev,
+                        changeAprsReportType: true,
+                        aprsReportType: next as AprsReportType,
+                      }));
+                    }}
+                    idleOption={BULK_IDLE_OPTION}
+                    sharedValue={shared.aprsReportType}
+                    data={[
+                      { value: 'off', label: 'Off' },
+                      { value: 'digital', label: 'Digital' },
+                    ]}
+                    scheme="onOff"
+                    layout="column"
+                  />
+                </FieldGroup>
+                <FieldGroup impact={allChannelsImpact}>
+                  <GradientSegmentedControl
+                    label="Digital APRS PTT"
+                    value={bulkSegmentValue(form.changeAprsPtt, form.aprsDigitalPttMode)}
+                    onChange={(next) => {
+                      if (next === GRADIENT_SEGMENT_IDLE_VALUE) {
+                        setForm((prev) => ({ ...prev, changeAprsPtt: false }));
+                        return;
+                      }
+                      setForm((prev) => ({
+                        ...prev,
+                        changeAprsPtt: true,
+                        aprsDigitalPttMode: next as AprsPttMode,
+                      }));
+                    }}
+                    idleOption={BULK_IDLE_OPTION}
+                    sharedValue={shared.aprsDigitalPttMode}
+                    data={[
+                      { value: 'off', label: 'Off' },
+                      { value: 'on', label: 'On' },
+                    ]}
+                    scheme="onOff"
+                    layout="column"
+                  />
+                </FieldGroup>
+                <FieldGroup impact={allChannelsImpact}>
+                  <BulkEditField
+                    label="Report slot"
+                    description={
+                      slotsAvailable
+                        ? 'Slot used for position reports at export.'
+                        : 'Add channel slots on the APRS configuration page first.'
+                    }
+                    optedIn={form.changeAprsSlot}
+                    onOptedInChange={(changeAprsSlot) =>
+                      setForm((prev) => ({ ...prev, changeAprsSlot }))
+                    }
+                    hasSharedValue={shared.aprsReportSlotIndex !== undefined}
+                  >
+                    <Select
+                      data={slotOptions}
+                      disabled={!slotsAvailable}
+                      value={
+                        form.aprsReportSlotIndex != null
+                          ? String(form.aprsReportSlotIndex)
+                          : APRS_SLOT_NONE_VALUE
+                      }
+                      onChange={(next) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          aprsReportSlotIndex:
+                            next && next !== APRS_SLOT_NONE_VALUE
+                              ? Number.parseInt(next, 10)
+                              : null,
+                        }))
+                      }
+                      comboboxProps={modalComboboxProps()}
+                      aria-label="Report slot"
+                    />
+                  </BulkEditField>
+                </FieldGroup>
+              </div>
             </Stack>
           </Panel>
-
-          {!hasChanges ? (
-            <Text size="sm" c="dimmed">
-              Choose at least one value above to apply. Leave the rest on No change.
-            </Text>
-          ) : null}
 
           {errorMessage ? <Alert color="red">{errorMessage}</Alert> : null}
         </Stack>

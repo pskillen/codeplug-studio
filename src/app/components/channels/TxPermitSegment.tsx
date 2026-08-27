@@ -10,8 +10,8 @@ export interface TxPermitSegmentProps {
   /** When false, omits Default (build export override). */
   includeDefault?: boolean;
   disabled?: boolean;
-  /** `'row'` puts label/description left, control right. Default `'stack'`. */
-  layout?: 'stack' | 'row';
+  /** `'row'` puts label/description left, control right. `'column'` puts description below. Default `'stack'`. */
+  layout?: 'stack' | 'row' | 'column';
   idleOption?: GradientSegmentOption<string>;
   sharedValue?: TxPermitOverride;
   onIdle?: () => void;

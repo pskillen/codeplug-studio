@@ -14,7 +14,7 @@ Whether you may transmit while the frequency is already in use. Distinct from re
 | `onChange`       | `(value: TxPermitOverride) => void` | Called when the operator changes the control               |
 | `includeDefault` | `boolean`                           | When false, omits **Default**. Default `true`              |
 | `disabled`       | `boolean`                           | Optional                                                   |
-| `layout`         | `'stack' \| 'row'`                  | Forwarded to `GradientSegmentedControl`. Default `'stack'` |
+| `layout`         | `'stack' \| 'row' \| 'column'` | Forwarded to `GradientSegmentedControl`. Default `'stack'` |
 
 ## Behaviour
 

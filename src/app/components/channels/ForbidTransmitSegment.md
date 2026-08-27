@@ -8,11 +8,11 @@ Channel transmit permission: **Allow TX** or **RX only**. Thin wrapper around [`
 
 | Prop             | Type                                                        | Description                                                         |
 | ---------------- | ----------------------------------------------------------- | ------------------------------------------------------------------- |
-| `value`          | `ForbidTransmitOverride` (`default` \| `allow` \| `forbid`) | Channel-level override; `default` defers to library + build cascade |
+| `value`          | `ForbidTransmitOverride` (`default` \| `allow` \| `forbid`) | Channel-level override; **Default** uses the transmit setting on export |
 | `onChange`       | `(value: ForbidTransmitOverride) => void`                   | Called when the operator changes the control                        |
 | `includeDefault` | `boolean`                                                   | When true (channel editor), includes **Default**. Default `true`    |
 | `disabled`       | `boolean`                                                   | Optional                                                            |
-| `layout`         | `'stack' \| 'row'`                                          | Forwarded to `GradientSegmentedControl`. Default `'stack'`          |
+| `layout`         | `'stack' \| 'row' \| 'column'`                              | Forwarded to `GradientSegmentedControl`. Default `'stack'`          |
 
 ## Usage
 

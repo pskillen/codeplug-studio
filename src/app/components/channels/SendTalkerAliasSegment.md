@@ -8,11 +8,11 @@ DMR **send talker alias** toggle — **Default**, **On**, **Off**. Thin wrapper 
 
 | Prop             | Type                                                   | Description                                                         |
 | ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------- |
-| `value`          | `SendTalkerAliasOverride` (`default` \| `on` \| `off`) | Channel-level override; `default` defers to library + build cascade |
+| `value`          | `SendTalkerAliasOverride` (`default` \| `on` \| `off`) | Channel-level override; **Default** uses the talker-alias setting on export |
 | `onChange`       | `(value: SendTalkerAliasOverride) => void`             | Called when the operator changes the control                        |
 | `includeDefault` | `boolean`                                              | When true (channel editor), includes **Default**. Default `true`    |
 | `disabled`       | `boolean`                                              | Optional                                                            |
-| `layout`         | `'stack' \| 'row'`                                     | Forwarded to `GradientSegmentedControl`. Default `'stack'`          |
+| `layout`         | `'stack' \| 'row' \| 'column'`                         | Forwarded to `GradientSegmentedControl`. Default `'stack'`          |
 
 ## Usage
 

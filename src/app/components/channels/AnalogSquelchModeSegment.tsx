@@ -9,8 +9,8 @@ export interface AnalogSquelchModeSegmentProps {
   onChange: (value: AnalogSquelchModeOverride) => void;
   includeDefault?: boolean;
   disabled?: boolean;
-  /** `'row'` puts label/description left, control right. Default `'stack'`. */
-  layout?: 'stack' | 'row';
+  /** `'row'` puts label/description left, control right. `'column'` puts description below. Default `'stack'`. */
+  layout?: 'stack' | 'row' | 'column';
   idleOption?: GradientSegmentOption<string>;
   sharedValue?: AnalogSquelchModeOverride;
   onIdle?: () => void;
@@ -52,8 +52,8 @@ export default function AnalogSquelchModeSegment({
       label="Analog squelch mode"
       description={
         includeDefault
-          ? 'Default defers to library defaults and build export overrides.'
-          : 'Override library and per-channel settings for this build.'
+          ? 'Default uses the analog squelch setting on export. Carrier opens on signal; Tone waits for the RX CTCSS or DCS.'
+          : 'Sets analog squelch for this build’s export, instead of each channel’s own setting.'
       }
       value={wireValue}
       onChange={(next) => {

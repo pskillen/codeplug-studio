@@ -7,11 +7,11 @@ import GradientSegmentedControl, {
 export interface ForbidTransmitSegmentProps {
   value: ForbidTransmitOverride | typeof GRADIENT_SEGMENT_IDLE_VALUE;
   onChange: (forbidTransmit: ForbidTransmitOverride) => void;
-  /** When true, includes a Default option that defers to library + build cascade. */
+  /** When true, includes a Default option that uses the export setting. */
   includeDefault?: boolean;
   disabled?: boolean;
-  /** `'row'` puts label/description left, control right. Default `'stack'`. */
-  layout?: 'stack' | 'row';
+  /** `'row'` puts label/description left, control right. `'column'` puts description below. Default `'stack'`. */
+  layout?: 'stack' | 'row' | 'column';
   idleOption?: GradientSegmentOption<string>;
   sharedValue?: ForbidTransmitOverride;
   onIdle?: () => void;
