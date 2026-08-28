@@ -34,6 +34,7 @@ function modelledFields(dto: RadioChannelDto) {
     scanAdd: dto.scanAdd,
     dmrRadioIdIndex: dto.dmrRadioIdIndex,
     timeslot: dto.timeslot,
+    dmrOperatingMode: dto.dmrOperatingMode,
     rxOnly: dto.rxOnly,
     colorCode: dto.colorCode,
     aprsReceive: dto.aprsReceive,
@@ -291,7 +292,7 @@ describe('encodeAtD890ChannelRecord', () => {
     expect((encoded[0x34]! >> 4) & 1).toBe(0);
   });
 
-  it('encodes DMR MODE on 0x21 bits 2-3 as DMO or repeater', () => {
+  it('encodes DMO vs repeater on 0x34 bit 1 and keeps 0x21 bits 2-3 clear', () => {
     const base = {
       slotIndex: 1,
       empty: false as const,
@@ -305,12 +306,21 @@ describe('encodeAtD890ChannelRecord', () => {
       mode: 'digital' as const,
     };
     const dmo = encodeAtD890ChannelRecord({ ...base, dmrOperatingMode: 'dmo-simplex' });
-    const repeater = encodeAtD890ChannelRecord({ ...base, dmrOperatingMode: 'repeater' });
+    const repeater = encodeAtD890ChannelRecord({
+      ...base,
+      rxHz: 438_800_000,
+      txHz: 434_000_000,
+      dmrOperatingMode: 'repeater',
+    });
     expect((dmo[0x21]! >> 2) & 0x3).toBe(0);
-    expect((repeater[0x21]! >> 2) & 0x3).toBe(1);
+    expect((repeater[0x21]! >> 2) & 0x3).toBe(0);
+    expect((dmo[0x34]! >> 1) & 1).toBe(1);
+    expect((repeater[0x34]! >> 1) & 1).toBe(0);
+    expect(parseAtD890ChannelRecord(dmo, 1).dmrOperatingMode).toBe('dmo-simplex');
+    expect(parseAtD890ChannelRecord(repeater, 1).dmrOperatingMode).toBe('repeater');
   });
 
-  it('writes DMR MODE repeater and SMS confirm On', () => {
+  it('writes DMR MODE repeater on 0x34 bit 1 and SMS confirm On', () => {
     const encoded = encodeAtD890ChannelRecord({
       slotIndex: 1,
       empty: false,
@@ -324,8 +334,9 @@ describe('encodeAtD890ChannelRecord', () => {
       mode: 'digital',
       dmrOperatingMode: 'repeater',
     });
-    expect((encoded[0x21]! >> 2) & 0x3).toBe(1);
+    expect((encoded[0x21]! >> 2) & 0x3).toBe(0);
     expect((encoded[0x21]! >> 1) & 1).toBe(1);
+    expect((encoded[0x34]! >> 1) & 1).toBe(0);
   });
 
   it('preserves ChannelSet bits at or above MAX_CHANNELS on Write', () => {
