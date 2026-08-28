@@ -157,6 +157,8 @@ describe('Uv21ProV2Protocol', () => {
     expect(radio.decodeChannels(image)[0]?.wireName).toBe('TEST');
     expect(radio.readFirmware(image)).toBe('UV21PROV2-TEST');
     expect(pipe.writes[0]).toEqual(L.ident);
+    const firstR = pipe.writes.findIndex((w) => w[0] === 0x52);
+    expect(firstR).toBeGreaterThan(0);
   });
 
   it('uploads after upload handshake across four MEM regions', async () => {

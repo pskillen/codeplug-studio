@@ -162,8 +162,9 @@ export async function openRadioSessionForEgress(
     /** When set, skip requestPort / requestPermission — use a prior {@link grantRadioSerialPortForEgress}. */
     grantedPort?: GrantedRadioSerialPort;
     /**
-     * Write/restore open the port without read handshake; upload / restoreFromBackup
-     * supply their own handshake. Restore is not a Write-codeplug purpose.
+     * Restore opens without read handshake; restoreFromBackup supplies upload handshake.
+     * Write uses the read handshake so ident runs before in-session pre-write download
+     * (UV-17Pro / RT95). Assemble already finished before this open (#1247).
      */
     purpose?: 'read' | 'write' | 'restore';
   },
@@ -219,7 +220,7 @@ export async function openRadioSessionForEgress(
     try {
       await radio.connect(pipe, {
         signal: opts?.signal,
-        handshake: opts?.purpose === 'write' || opts?.purpose === 'restore' ? 'none' : 'read',
+        handshake: opts?.purpose === 'restore' ? 'none' : 'read',
       });
       const session = createRadioSession({ descriptor, pipe, radio });
       return { session, descriptor };
@@ -656,7 +657,7 @@ export async function closeRadioSession(session: RadioSession): Promise<void> {
   }
 }
 
-/** Read LocalInfo serial from a connected AT-D890UV session (operator confirm before Write). */
+/** Read LocalInfo serial from a connected AT-D890UV session (Restore identity vs zip). */
 export async function readAtD890ConnectedRadioIdentity(
   session: RadioSession,
   opts?: { signal?: AbortSignal },

@@ -83,7 +83,16 @@ describe('Rt95Protocol', () => {
       }
     }
 
-    const pipe = scriptedEchoPipe(reads);
+    const writes: Uint8Array[] = [];
+    const inner = scriptedEchoPipe(reads);
+    const pipe: BytePipe = {
+      write: async (data) => {
+        writes.push(data.slice());
+        await inner.write(data);
+      },
+      readExact: (n, t) => inner.readExact(n, t),
+      close: () => inner.close(),
+    };
     const radio = new Rt95Protocol();
     await radio.connect(pipe);
     const stages: string[] = [];
@@ -97,6 +106,13 @@ describe('Rt95Protocol', () => {
     expect(map.bytes[0]).toBe(image[0]);
     expect(stages.every((s) => s === 'Pre-write read')).toBe(true);
     expect(stages.length).toBeGreaterThan(0);
+    const program = new TextEncoder().encode('PROGRAM');
+    const programIdx = writes.findIndex(
+      (w) => w.length === program.length && w.every((b, i) => b === program[i]),
+    );
+    const firstR = writes.findIndex((w) => w[0] === 0x52);
+    expect(programIdx).toBeGreaterThanOrEqual(0);
+    expect(firstR).toBeGreaterThan(programIdx);
     await radio.disconnect();
   });
 });

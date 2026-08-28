@@ -47,7 +47,6 @@ import {
   openRadioSessionForEgress,
   prepareRadioWriteImage,
   RadioWriteBlockedError,
-  readAtD890ConnectedRadioIdentity,
   uploadPreparedRadioWrite,
   verifyRadioWrite,
   type GrantedRadioSerialPort,
@@ -115,9 +114,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [writeVerifyStatus, setWriteVerifyStatus] = useState<RadioIoWriteVerifyStatus>('none');
   const [verifyButtonEnabled, setVerifyButtonEnabled] = useState(false);
   const [verifyResult, setVerifyResult] = useState<WriteVerifyResult | null>(null);
-  const [writeConfirmOpen, setWriteConfirmOpen] = useState(false);
-  const [writeConfirmSerial, setWriteConfirmSerial] = useState<string | null>(null);
-  const pendingWriteModeRef = useRef<DualBankWriteMode | SingleBankWriteMode | null>(null);
   const [writeRadioOpen, setWriteRadioOpen] = useState(false);
   const [contactSource, setContactSource] = useState<DigitalContactsWriteSource>('none');
   const [kepsSelected, setKepsSelected] = useState(false);
@@ -134,7 +130,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const writeHidden = writeGate === 'hidden';
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);
-  const requiresD890WriteConfirm = egress.profileId === 'radio-io-at-d890uv';
+  const isAtD890Write = egress.profileId === 'radio-io-at-d890uv';
   const supportsKepsWrite = hasSatelliteKepsWriteAdapter(egress.profileId);
   const kepsWriteFn = getSatelliteKepsWriteAdapter(egress.profileId);
   const dualBankTraitProfile = traitProfileFor(egress.profileId);
@@ -354,56 +350,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     }
   }
 
-  async function beginWriteWithContactBanks(mode: DualBankWriteMode | SingleBankWriteMode) {
-    if (!requiresD890WriteConfirm) {
-      await handleWriteWithContactBanks(mode);
-      return;
-    }
-    setWriteWarnings([]);
-    beginBusy('write');
-    try {
-      setPhase('connecting');
-      const session = await ensureSession(true);
-      const { serial } = await readAtD890ConnectedRadioIdentity(session, {
-        signal: abortRef.current!.signal,
-      });
-      pendingWriteModeRef.current = mode;
-      setWriteConfirmSerial(serial || '(serial unreadable)');
-      setWriteConfirmOpen(true);
-      setBusy(false);
-      setProgress(null);
-      setPhase('done');
-    } catch (err) {
-      if (err instanceof RadioWriteBlockedError) {
-        setError(err.message);
-      } else {
-        setError(err instanceof Error ? err.message : String(err));
-      }
-      await releaseSession();
-      setBusy(false);
-      setProgress(null);
-      abortRef.current = null;
-    }
-  }
-
-  function handleCancelWriteConfirm() {
-    setWriteConfirmOpen(false);
-    setWriteConfirmSerial(null);
-    pendingWriteModeRef.current = null;
-    void releaseSession().then(() => {
-      resetProgressState();
-    });
-  }
-
-  function handleConfirmWrite() {
-    const mode = pendingWriteModeRef.current;
-    setWriteConfirmOpen(false);
-    setWriteConfirmSerial(null);
-    pendingWriteModeRef.current = null;
-    if (!mode) return;
-    void handleWriteWithContactBanks(mode);
-  }
-
   function openWriteRadio() {
     setContactSource('none');
     setKepsSelected(false);
@@ -417,13 +363,13 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       const count = await persistence.countDigitalIdDirectoryEntries(activeProjectId);
       if (count === 0) {
         pendingEmptyDirectoryWriteRef.current = () => {
-          void beginWriteWithContactBanks(mode);
+          void handleWriteWithContactBanks(mode);
         };
         setEmptyDirectoryOpen(true);
         return;
       }
     }
-    await beginWriteWithContactBanks(mode);
+    await handleWriteWithContactBanks(mode);
   }
 
   function handleEmptyDirectoryCancel() {
@@ -569,24 +515,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         ) : null}
       </ModalShell>
       <ConfirmModal
-        open={writeConfirmOpen}
-        onClose={handleCancelWriteConfirm}
-        title="Confirm connected radio"
-        confirmLabel="Write to this radio"
-        tone="destructive"
-        onConfirm={handleConfirmWrite}
-      >
-        <Stack gap="sm">
-          <Text size="sm">
-            Studio read the connected radio&apos;s serial from LocalInfo. Confirm this is the
-            handheld you intend to program before Write commits to flash.
-          </Text>
-          <Text size="sm" fw={600}>
-            Serial: {writeConfirmSerial ?? '—'}
-          </Text>
-        </Stack>
-      </ConfirmModal>
-      <ConfirmModal
         open={emptyDirectoryOpen}
         onClose={handleEmptyDirectoryCancel}
         title="RadioID directory is empty"
@@ -624,7 +552,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         Direct radio (Web Serial)
       </Text>
       <Text size="sm" c="dimmed">
-        {requiresD890WriteConfirm
+        {isAtD890Write
           ? 'Write assembles modelled channels and organisation from the build, then reads co-resident bytes from the connected radio during upload. Unmodelled settings are preserved via erase-unit read-modify-write — not from a stored project image. Use Backup / Restore for a zip snapshot and ephemeral inspection.'
           : 'Write overlays modelled channels and organisation onto an in-session read of the connected radio. Unmodelled settings are preserved from that live FLASH image — not from a stored project clone. Identity is the radio on the cable this session, not a saved stash. Use Backup / Restore for a zip snapshot.'}
       </Text>

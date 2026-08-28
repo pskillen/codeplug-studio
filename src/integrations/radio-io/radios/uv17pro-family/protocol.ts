@@ -37,6 +37,8 @@ export interface Uv17ProConnectOptions {
   handshake?: 'read' | 'none';
 }
 
+type HandshakeOpts = Uv17ProConnectOptions;
+
 function scaledMs(baseMs: number, scale: number): number {
   if (scale <= 0) return 0;
   return Math.round(baseMs * scale);
@@ -132,7 +134,7 @@ async function handshake(
   layout: Uv17ProLayout,
   pipe: BytePipe,
   mode: HandshakeMode,
-  opts?: Uv17ProConnectOptions,
+  opts?: HandshakeOpts,
 ): Promise<void> {
   const signal = opts?.signal;
   const skipPortSettle = mode === 'upload';
@@ -162,6 +164,8 @@ export class Uv17ProProtocol implements CloneImageRadio {
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
   /** Live packed image from the most recent {@link download} in this session. */
   private priorImage: MemoryMap | null = null;
+  /** True after ident + read magics this session. Upload then skips a second handshake. */
+  private identComplete = false;
 
   constructor(private readonly layout: Uv17ProLayout) {}
 
@@ -172,8 +176,10 @@ export class Uv17ProProtocol implements CloneImageRadio {
 
   async connect(pipe: BytePipe, opts?: Uv17ProConnectOptions): Promise<IdentResult> {
     this.pipe = pipe;
+    this.identComplete = false;
     if (opts?.handshake !== 'none') {
       await handshake(this.layout, pipe, 'read', opts);
+      this.identComplete = true;
     }
     return {
       raw: this.layout.ident.slice(),
@@ -183,6 +189,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
 
   async disconnect(): Promise<void> {
     this.pipe = null;
+    this.identComplete = false;
   }
 
   private requirePipe(): BytePipe {
@@ -258,7 +265,10 @@ export class Uv17ProProtocol implements CloneImageRadio {
       { cur: 0, max: addrs.length, msg: 'Upload handshake', stage: 'Upload' },
       opts.signal,
     );
-    await handshake(this.layout, pipe, 'upload', { signal: opts.signal });
+    if (!this.identComplete) {
+      await handshake(this.layout, pipe, 'upload', { signal: opts.signal });
+      this.identComplete = true;
+    }
     let done = 0;
     const max = addrs.length;
     const stagingChunks: { address: number; data: Uint8Array }[] = [];
@@ -294,7 +304,10 @@ export class Uv17ProProtocol implements CloneImageRadio {
       { cur: 0, max: addrs.length, msg: 'Restore handshake', stage: 'Restore' },
       opts.signal,
     );
-    await handshake(this.layout, pipe, 'upload', { signal: opts.signal });
+    if (!this.identComplete) {
+      await handshake(this.layout, pipe, 'upload', { signal: opts.signal });
+      this.identComplete = true;
+    }
     let done = 0;
     const stagingChunks: { address: number; data: Uint8Array }[] = [];
     for (const addr of addrs) {
