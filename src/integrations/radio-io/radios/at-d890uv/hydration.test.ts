@@ -152,7 +152,7 @@ describe('encodeAtD890WriteImageFromDownloadCache', () => {
     return cache;
   }
 
-  it('preserves radio IDs, ChannelSet tail, channel AES, and clears occupied ZoneHide', () => {
+  it('preserves radio IDs, ChannelSet tail, and clears occupied ZoneHide', () => {
     const image = encodeAtD890WriteImageFromDownloadCache(seedLivePriorCache(0x00), [analogCh], {
       radioIds: [],
       zones: [{ wireName: 'Z1', channelNumbers: [1] }],
@@ -168,12 +168,12 @@ describe('encodeAtD890WriteImageFromDownloadCache', () => {
     expect(image.get(D890_MAP.ZoneHide, AT_D890_LIMITS.ZONE_SET_BYTES)[0]! & 1).toBe(0);
   });
 
-  it('preserves seeded AES 0xfd when the DTO does not model it', () => {
+  it('writes AES default 0 when the DTO does not model it, even if the cache slot had 0xfd', () => {
     const image = encodeAtD890WriteImageFromDownloadCache(seedLivePriorCache(0xfd), [analogCh], {
       radioIds: [],
       zones: [{ wireName: 'Z1', channelNumbers: [1] }],
     });
-    expect(image.get(channelPrimaryAddress(0), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE)[0x22]).toBe(0xfd);
+    expect(image.get(channelPrimaryAddress(0), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE)[0x22]).toBe(0);
   });
 
   it('refuses an empty download cache instead of assembling 0xff', () => {

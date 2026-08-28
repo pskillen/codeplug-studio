@@ -8,7 +8,7 @@ import type { RadioChannelDto, RadioChannelMode, RadioTone } from '../../radioCh
 import { encodeBcdFrequencyHz, decodeBcdFrequencyHz } from './bcd.ts';
 import { assertAtD890MrChannelFrequencies } from './channelEncodeGuards.ts';
 import { clearBitmapBitsBelow, listSetBits, setBitmapBit } from './bitmap.ts';
-import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
+import { AT_D890_INVALID_U16, AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
   cacheToMemoryMap,
   channelPrimaryAddress,
@@ -23,9 +23,6 @@ import { ctcssHzFromIndex, ctcssIndexFromHz } from './ctcssToneTable.ts';
 
 /** Wire sentinel for no scan list / no RX group on D890 channel bytes `0x1b` / `0x1c`. */
 const WIRE_INDEX_NONE = 0xff;
-
-/** Preserve talkaround (7), call confirm (6), reverse (4) on byte `0x09` RMW. */
-const BYTE_09_PRESERVE_MASK = 0xd0;
 
 /**
  * Byte `0x21` (qDMR ChannelElement; forensic HEALTHY_CHANNEL_RECORDS).
@@ -53,16 +50,6 @@ function decodeToneFromDcsU16(low: number, high: number): RadioTone {
   const code = (high & 0x0f) * 100 + ((low >> 4) & 0x0f) * 10 + (low & 0x0f);
   if (code === 0) return { kind: 'none' };
   return { kind: 'dcs', code, polarity: high >= 0xc0 ? 'I' : 'N' };
-}
-
-function readExistingChannelRecord(image: MemoryMap, idx: number): Uint8Array {
-  const combined = new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
-  combined.set(image.get(channelPrimaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE), 0);
-  combined.set(
-    image.get(channelSecondaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
-    AT_D890_LIMITS.CHANNEL_CHUNK_SIZE,
-  );
-  return combined;
 }
 
 function encodeDcsTone(tone: RadioTone): { low: number; high: number } {
@@ -151,11 +138,12 @@ function encodeRxGroupWire(rxGroupIndex: number | undefined): number {
 
 function decodeTxContactId(contactWire: number, mode: RadioChannelMode): number | undefined {
   if (!isDigitalMode(mode)) return undefined;
+  if (contactWire === AT_D890_INVALID_U16) return undefined;
   return contactWire + 1;
 }
 
-function encodeTxContactWire(txContactId: number | undefined): number | undefined {
-  if (txContactId == null) return undefined;
+function encodeTxContactWire(txContactId: number | undefined): number {
+  if (txContactId == null) return AT_D890_INVALID_U16;
   return (txContactId - 1) & 0xffff;
 }
 
@@ -229,12 +217,9 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
   };
 }
 
-export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Array): Uint8Array {
-  const data =
-    prior && prior.length >= AT_D890_LIMITS.CHANNEL_RECORD_SIZE
-      ? prior.slice(0, AT_D890_LIMITS.CHANNEL_RECORD_SIZE)
-      : new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
-  if (!prior) data.fill(0);
+export function encodeAtD890ChannelRecord(ch: RadioChannelDto): Uint8Array {
+  const data = new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
+  data.fill(0);
   if (ch.empty || ch.rxHz <= 0) {
     return data;
   }
@@ -243,9 +228,7 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   const txHz = ch.txHz > 0 ? ch.txHz : rxHz;
   data.set(encodeBcdFrequencyHz(rxHz), 0);
   const duplex = duplexFromRxTx(rxHz, txHz);
-  if (duplex !== 0) {
-    data.set(encodeBcdFrequencyHz(offsetHz(rxHz, txHz)), 4);
-  }
+  data.set(encodeBcdFrequencyHz(duplex === 0 ? 0 : offsetHz(rxHz, txHz)), 4);
   const power = powerWireFromPercent(ch.powerPercent);
   const bw = bandwidthToWire(ch.bandwidth);
   data[8] =
@@ -254,8 +237,7 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
     ((power & 0x3) << 2) |
     (wireFromMode(ch.mode) & 0x3);
 
-  const priorB9 = prior ? prior[9]! & BYTE_09_PRESERVE_MASK : 0;
-  let b9 = priorB9;
+  let b9 = 0;
   if (ch.rxOnly) b9 |= 1 << 5;
   const txDcs = ch.txTone.kind === 'dcs';
   const rxDcs = ch.rxTone.kind === 'dcs';
@@ -291,17 +273,13 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   }
 
   const contactWire = encodeTxContactWire(ch.txContactId);
-  if (contactWire != null) {
-    data[0x13] = (contactWire >> 8) & 0xff;
-    data[0x14] = contactWire & 0xff;
-  }
+  data[0x13] = (contactWire >> 8) & 0xff;
+  data[0x14] = contactWire & 0xff;
   data[0x18] = ch.dmrRadioIdIndex ?? 0;
   data[0x1b] = encodeScanListWire(ch.scanListId);
   data[0x1c] = encodeRxGroupWire(ch.rxGroupIndex);
 
-  if (!prior) {
-    data[0x21] = setBit(data[0x21]!, BYTE_21_SMS_CONFIRM_BIT, true);
-  }
+  data[0x21] = setBit(data[0x21]!, BYTE_21_SMS_CONFIRM_BIT, true);
   if (ch.timeslot === 2) {
     data[0x21] = setBit(data[0x21]!, BYTE_21_TIMESLOT_BIT, true);
   } else if (ch.timeslot === 1) {
@@ -374,11 +352,6 @@ export function encodeChannelsIntoAtD890Image(
     const idx = ch.slotIndex - 1;
     return idx >= 0 && idx < maxSlot;
   });
-  const priors = new Map<number, Uint8Array>();
-  for (const ch of toWrite) {
-    const idx = ch.slotIndex - 1;
-    priors.set(idx, readExistingChannelRecord(image, idx));
-  }
 
   for (let idx = 0; idx < maxSlot; idx++) {
     const primary = channelPrimaryAddress(idx);
@@ -389,7 +362,7 @@ export function encodeChannelsIntoAtD890Image(
   for (const ch of toWrite) {
     const idx = ch.slotIndex - 1;
     setBitmapBit(set, idx, true);
-    const encoded = encodeAtD890ChannelRecord(ch, priors.get(idx));
+    const encoded = encodeAtD890ChannelRecord(ch);
     image.set(channelPrimaryAddress(idx), encoded.subarray(0, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE));
     image.set(
       channelSecondaryAddress(idx),

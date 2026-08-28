@@ -1,18 +1,83 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
+import type { MemoryMap } from '../../types.ts';
 import {
   encodeAtD890ChannelRecord,
   encodeChannelsIntoAtD890Image,
   parseAtD890ChannelRecord,
 } from './channelCodec.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
-import { AT_D890_LIMITS, AT_D890_MAP_SIZE, D890_MAP } from './constants.ts';
+import { AT_D890_INVALID_U16, AT_D890_LIMITS, AT_D890_MAP_SIZE, D890_MAP } from './constants.ts';
 import { setBitmapBit } from './bitmap.ts';
+import { channelPrimaryAddress, channelSecondaryAddress } from './memory.ts';
 import { HEALTHY_CHANNEL_RECORDS } from './__fixtures__/healthyChannelRecords.ts';
 
 function hexToBytes(hex: string): Uint8Array {
   return Uint8Array.from(hex.match(/.{2}/g)!.map((pair) => parseInt(pair, 16)));
 }
+
+function modelledFields(dto: RadioChannelDto) {
+  return {
+    slotIndex: dto.slotIndex,
+    empty: dto.empty,
+    wireName: dto.wireName,
+    rxHz: dto.rxHz,
+    txHz: dto.txHz,
+    rxTone: dto.rxTone,
+    txTone: dto.txTone,
+    powerPercent: dto.powerPercent,
+    bandwidth: dto.bandwidth,
+    mode: dto.mode,
+    txContactId: dto.txContactId,
+    rxGroupIndex: dto.rxGroupIndex,
+    scanListId: dto.scanListId,
+    scanAdd: dto.scanAdd,
+    dmrRadioIdIndex: dto.dmrRadioIdIndex,
+    timeslot: dto.timeslot,
+    rxOnly: dto.rxOnly,
+    colorCode: dto.colorCode,
+    aprsReceive: dto.aprsReceive,
+    aprsReportMode: dto.aprsReportMode,
+    aprsDigitalPttMode: dto.aprsDigitalPttMode,
+    aprsReportSlotIndex: dto.aprsReportSlotIndex,
+  };
+}
+
+function plantChannelRecord(image: MemoryMap, slotIndex: number, record: Uint8Array): void {
+  const idx = slotIndex - 1;
+  image.set(channelPrimaryAddress(idx), record.subarray(0, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE));
+  image.set(
+    channelSecondaryAddress(idx),
+    record.subarray(AT_D890_LIMITS.CHANNEL_CHUNK_SIZE, AT_D890_LIMITS.CHANNEL_RECORD_SIZE),
+  );
+  const set = image.get(D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES);
+  setBitmapBit(set, idx, true);
+  image.set(D890_MAP.ChannelSet, set);
+}
+
+function readChannelRecord(image: MemoryMap, slotIndex: number): Uint8Array {
+  const idx = slotIndex - 1;
+  const combined = new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
+  combined.set(image.get(channelPrimaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE), 0);
+  combined.set(
+    image.get(channelSecondaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
+    AT_D890_LIMITS.CHANNEL_CHUNK_SIZE,
+  );
+  return combined;
+}
+
+const simplexDigital: RadioChannelDto = {
+  slotIndex: 1,
+  empty: false,
+  wireName: 'GB7GL',
+  rxHz: 438_800_000,
+  txHz: 438_800_000,
+  rxTone: { kind: 'none' },
+  txTone: { kind: 'none' },
+  powerPercent: 100,
+  bandwidth: 'NFM',
+  mode: 'digital',
+};
 
 describe('encodeAtD890ChannelRecord', () => {
   it('round-trips a simple FM channel', () => {
@@ -66,48 +131,35 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(decoded.txTone).toEqual({ kind: 'ctcss', hz: 88.5 });
   });
 
-  it('RMW preserves unmodelled bytes when prior is supplied', () => {
-    const prior = new Uint8Array(0x80);
-    prior[0x22] = 0xab;
-    prior.set([0x43, 0x01, 0x25, 0x00], 0);
-    const encoded = encodeAtD890ChannelRecord(
-      {
-        slotIndex: 1,
-        empty: false,
-        wireName: 'Keep',
-        rxHz: 430_125_000,
-        txHz: 430_125_000,
-        rxTone: { kind: 'none' },
-        txTone: { kind: 'none' },
-        powerPercent: 100,
-        bandwidth: 'NFM',
-        mode: 'digital',
-      },
-      prior,
-    );
-    expect(encoded[0x22]).toBe(0xab);
+  it('writes unmodelled crypto/talkaround as defaults, not occupant bytes', () => {
+    const encoded = encodeAtD890ChannelRecord({
+      slotIndex: 1,
+      empty: false,
+      wireName: 'Keep',
+      rxHz: 430_125_000,
+      txHz: 430_125_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'NFM',
+      mode: 'digital',
+    });
+    expect(encoded[0x22]).toBe(0);
+    expect(encoded[9]! & 0xd0).toBe(0);
   });
 
-  it('preserves byte 0x09 talkaround and call confirm on RMW', () => {
-    const prior = new Uint8Array(0x80);
-    prior.set([0x43, 0x01, 0x25, 0x00], 0);
-    prior[9] = 0xc0;
-    const encoded = encodeAtD890ChannelRecord(
-      {
-        slotIndex: 1,
-        empty: false,
-        wireName: 'Flags',
-        rxHz: 430_125_000,
-        txHz: 430_125_000,
-        rxTone: { kind: 'none' },
-        txTone: { kind: 'none' },
-        powerPercent: 100,
-        bandwidth: 'NFM',
-        mode: 'digital',
-      },
-      prior,
-    );
-    expect(encoded[9]! & 0xc0).toBe(0xc0);
+  it('writes omitted txContactId as 0xffff, not talk-group slot 0', () => {
+    const encoded = encodeAtD890ChannelRecord(simplexDigital);
+    const contactWire = (encoded[0x13]! << 8) | encoded[0x14]!;
+    expect(contactWire).toBe(AT_D890_INVALID_U16);
+    expect(parseAtD890ChannelRecord(encoded, 1).txContactId).toBeUndefined();
+  });
+
+  it('encodes txContactId 1 as talk-group slot 0', () => {
+    const encoded = encodeAtD890ChannelRecord({ ...simplexDigital, txContactId: 1 });
+    expect(encoded[0x13]).toBe(0);
+    expect(encoded[0x14]).toBe(0);
+    expect(parseAtD890ChannelRecord(encoded, 1).txContactId).toBe(1);
   });
 
   it('encodes scan-list and RX-group none as 0xff', () => {
@@ -127,48 +179,36 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(encoded[0x1c]).toBe(0xff);
   });
 
-  it('clears sticky RX-group index on RMW when DTO omits rxGroupIndex', () => {
-    const prior = new Uint8Array(0x80);
-    prior.set([0x43, 0x01, 0x25, 0x00], 0);
-    prior[0x1c] = 1;
-    const encoded = encodeAtD890ChannelRecord(
-      {
-        slotIndex: 1,
-        empty: false,
-        wireName: 'None RGL',
-        rxHz: 438_800_000,
-        txHz: 434_000_000,
-        rxTone: { kind: 'none' },
-        txTone: { kind: 'none' },
-        powerPercent: 100,
-        bandwidth: 'NFM',
-        mode: 'digital',
-      },
-      prior,
-    );
+  it('writes RX-group none as 0xff when DTO omits rxGroupIndex', () => {
+    const encoded = encodeAtD890ChannelRecord({
+      slotIndex: 1,
+      empty: false,
+      wireName: 'None RGL',
+      rxHz: 438_800_000,
+      txHz: 434_000_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'NFM',
+      mode: 'digital',
+    });
     expect(encoded[0x1c]).toBe(0xff);
   });
 
-  it('writes the DTO RX-group index on RMW', () => {
-    const prior = new Uint8Array(0x80);
-    prior.set([0x43, 0x01, 0x25, 0x00], 0);
-    prior[0x1c] = 0xff;
-    const encoded = encodeAtD890ChannelRecord(
-      {
-        slotIndex: 1,
-        empty: false,
-        wireName: 'Scratch',
-        rxHz: 438_800_000,
-        txHz: 434_000_000,
-        rxTone: { kind: 'none' },
-        txTone: { kind: 'none' },
-        powerPercent: 100,
-        bandwidth: 'NFM',
-        mode: 'digital',
-        rxGroupIndex: 2,
-      },
-      prior,
-    );
+  it('writes the DTO RX-group index', () => {
+    const encoded = encodeAtD890ChannelRecord({
+      slotIndex: 1,
+      empty: false,
+      wireName: 'Scratch',
+      rxHz: 438_800_000,
+      txHz: 434_000_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'NFM',
+      mode: 'digital',
+      rxGroupIndex: 2,
+    });
     expect(encoded[0x1c]).toBe(2);
   });
 
@@ -231,28 +271,21 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(parseAtD890ChannelRecord(ts2, 1).timeslot).toBe(2);
   });
 
-  it('clears sticky timeslot bit 0 only and auto-scan; preserves SMS bit 1', () => {
-    const prior = new Uint8Array(0x80);
-    prior.set([0x43, 0x01, 0x25, 0x00], 0);
-    prior[0x21] = 0x03; // bit 0 TS2, bit 1 SMS On
-    prior[0x34] = 0x10;
-    const encoded = encodeAtD890ChannelRecord(
-      {
-        slotIndex: 1,
-        empty: false,
-        wireName: 'Clear',
-        rxHz: 430_125_000,
-        txHz: 430_125_000,
-        rxTone: { kind: 'none' },
-        txTone: { kind: 'none' },
-        powerPercent: 100,
-        bandwidth: 'NFM',
-        mode: 'digital',
-        timeslot: 1,
-        scanAdd: false,
-      },
-      prior,
-    );
+  it('encodes timeslot 1, auto-scan off, and SMS confirm On', () => {
+    const encoded = encodeAtD890ChannelRecord({
+      slotIndex: 1,
+      empty: false,
+      wireName: 'Clear',
+      rxHz: 430_125_000,
+      txHz: 430_125_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'NFM',
+      mode: 'digital',
+      timeslot: 1,
+      scanAdd: false,
+    });
     expect(encoded[0x21]! & 1).toBe(0);
     expect((encoded[0x21]! >> 1) & 1).toBe(1);
     expect((encoded[0x34]! >> 4) & 1).toBe(0);
@@ -277,26 +310,20 @@ describe('encodeAtD890ChannelRecord', () => {
     expect((repeater[0x21]! >> 2) & 0x3).toBe(1);
   });
 
-  it('overwrites sticky DMO bits when DTO says repeater', () => {
-    const prior = new Uint8Array(0x80);
-    prior.set([0x43, 0x01, 0x25, 0x00], 0);
-    prior[0x21] = 0x02;
-    const encoded = encodeAtD890ChannelRecord(
-      {
-        slotIndex: 1,
-        empty: false,
-        wireName: 'Rpt',
-        rxHz: 438_800_000,
-        txHz: 434_000_000,
-        rxTone: { kind: 'none' },
-        txTone: { kind: 'none' },
-        powerPercent: 100,
-        bandwidth: 'NFM',
-        mode: 'digital',
-        dmrOperatingMode: 'repeater',
-      },
-      prior,
-    );
+  it('writes DMR MODE repeater and SMS confirm On', () => {
+    const encoded = encodeAtD890ChannelRecord({
+      slotIndex: 1,
+      empty: false,
+      wireName: 'Rpt',
+      rxHz: 438_800_000,
+      txHz: 434_000_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'NFM',
+      mode: 'digital',
+      dmrOperatingMode: 'repeater',
+    });
     expect((encoded[0x21]! >> 2) & 0x3).toBe(1);
     expect((encoded[0x21]! >> 1) & 1).toBe(1);
   });
@@ -329,6 +356,29 @@ describe('encodeAtD890ChannelRecord', () => {
     expect((after[0]! & 0x01) !== 0).toBe(true); // bit 0 set for channel 1
   });
 
+  it('does not copy hotspot occupant bytes onto a different DTO at the same slot', () => {
+    const image = createMemoryMap(AT_D890_MAP_SIZE);
+    const occupant = new Uint8Array(0x80);
+    occupant.set([0x43, 0x01, 0x25, 0x00], 0);
+    occupant.set([0x00, 0x60, 0x00, 0x00], 4);
+    occupant[8] = 0x41;
+    occupant[9] = 0xd0;
+    occupant[0x13] = 0x00;
+    occupant[0x14] = 0x01;
+    occupant[0x21] = 0x00;
+    occupant[0x22] = 0xfd;
+    plantChannelRecord(image, 7, occupant);
+
+    encodeChannelsIntoAtD890Image(image, [{ ...simplexDigital, slotIndex: 7 }]);
+
+    const encoded = readChannelRecord(image, 7);
+    expect(encoded[9]! & 0xd0).toBe(0);
+    expect((encoded[0x21]! >> 1) & 1).toBe(1);
+    expect(encoded[0x22]).toBe(0);
+    expect([...encoded.subarray(4, 8)]).toEqual([0, 0, 0, 0]);
+    expect((encoded[0x13]! << 8) | encoded[0x14]!).toBe(AT_D890_INVALID_U16);
+  });
+
   it('returns empty record for vacant slot', () => {
     const encoded = encodeAtD890ChannelRecord({
       slotIndex: 3,
@@ -345,21 +395,26 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(encoded[1]).toBe(0);
   });
 
-  it('round-trips healthy forensic channel records byte-for-byte', () => {
+  it('round-trips modelled fields of healthy forensic records with write-defaults', () => {
     for (const { slotIndex, bytesHex } of HEALTHY_CHANNEL_RECORDS) {
-      const prior = hexToBytes(bytesHex);
-      const dto = parseAtD890ChannelRecord(prior, slotIndex);
-      const encoded = encodeAtD890ChannelRecord(dto, prior);
-      const expected = prior.slice();
-      // Legacy none (`0`) is decoded as unset and re-encoded as CPS `0xff`.
-      if (expected[0x1c] === 0) expected[0x1c] = 0xff;
-      expect(encoded).toEqual(expected);
+      const original = hexToBytes(bytesHex);
+      const dto = parseAtD890ChannelRecord(original, slotIndex);
+      const encoded = encodeAtD890ChannelRecord(dto);
+      expect(modelledFields(parseAtD890ChannelRecord(encoded, slotIndex))).toEqual(
+        modelledFields(dto),
+      );
+      expect((encoded[0x21]! >> 1) & 1).toBe(1);
+      expect(encoded[0x22]).toBe(0);
+      if (dto.txContactId == null) {
+        expect((encoded[0x13]! << 8) | encoded[0x14]!).toBe(AT_D890_INVALID_U16);
+      }
+      if (original[0x1c] === 0) {
+        expect(encoded[0x1c]).toBe(0xff);
+      }
     }
   });
 
   it('encodes and decodes digital APRS channel bindings', () => {
-    const prior = new Uint8Array(0x80);
-    prior[0x36] = 0xcc;
     const ch: RadioChannelDto = {
       slotIndex: 2,
       empty: false,
@@ -376,12 +431,12 @@ describe('encodeAtD890ChannelRecord', () => {
       aprsDigitalPttMode: 'on',
       aprsReportSlotIndex: 3,
     };
-    const encoded = encodeAtD890ChannelRecord(ch, prior);
+    const encoded = encodeAtD890ChannelRecord(ch);
     expect((encoded[0x21]! >> 5) & 1).toBe(1);
     expect(encoded[0x35]).toBe(2);
     expect(encoded[0x37]).toBe(1);
     expect(encoded[0x38]).toBe(2);
-    expect(encoded[0x36]).toBe(0xcc);
+    expect(encoded[0x36]).toBe(0);
     const decoded = parseAtD890ChannelRecord(encoded, 2);
     expect(decoded.aprsReceive).toBe(true);
     expect(decoded.aprsReportMode).toBe('digital');
