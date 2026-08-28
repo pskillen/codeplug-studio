@@ -387,6 +387,53 @@ describe('assembledChannelsToRadioDtos', () => {
     ).toBe(true);
   });
 
+  it('projects repeater vs DMO onto RadioChannelDto for D890 serial', () => {
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const dmrProfile = {
+      mode: 'dmr' as const,
+      colourCode: 1,
+      timeslot: 1 as const,
+      dmrId: 1234567,
+      contactRef: null,
+      rxGroupListId: null,
+    } satisfies ChannelModeProfileDMR;
+    const repeater = {
+      ...newChannel('p1', 'GB7GL'),
+      id: 'ch-rpt',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [dmrProfile],
+    };
+    const simplex = {
+      ...newChannel('p1', 'Hspt'),
+      id: 'ch-dmo',
+      rxFrequency: 438_800_000,
+      txFrequency: 438_800_000,
+      modeProfiles: [dmrProfile],
+    };
+    const analog = {
+      ...newChannel('p1', 'FM'),
+      id: 'ch-fm',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
+      ],
+    };
+    expect(
+      assembledChannelsToRadioDtos([{ entity: repeater, wireName: 'GB7GL' }], build, egress)[0]
+        ?.dmrOperatingMode,
+    ).toBe('repeater');
+    expect(
+      assembledChannelsToRadioDtos([{ entity: simplex, wireName: 'Hspt' }], build, egress)[0]
+        ?.dmrOperatingMode,
+    ).toBe('dmo-simplex');
+    expect(
+      assembledChannelsToRadioDtos([{ entity: analog, wireName: 'FM' }], build, egress)[0]
+        ?.dmrOperatingMode,
+    ).toBeUndefined();
+  });
+
   it('copies channel location and useLocation for OpenGD77 serial projection', () => {
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
     const entity = {
@@ -479,6 +526,7 @@ describe('expandAssembledChannelsToRadioDtos — MxN', () => {
     expect(dtos.map((d) => d.wireName)).toEqual(expected.map((row) => row.wireName));
     expect(dtos.length).toBeGreaterThan(1);
     expect(channel.id).toBe(assembled.channels[0]?.entity.id);
+    expect(dtos.every((d) => d.dmrOperatingMode === 'repeater')).toBe(true);
   });
 
   it('stays lean 1:1 when expandRxGroupLists is off', () => {

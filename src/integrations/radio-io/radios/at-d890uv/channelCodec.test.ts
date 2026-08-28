@@ -213,6 +213,49 @@ describe('encodeAtD890ChannelRecord', () => {
     expect((encoded[0x34]! >> 4) & 1).toBe(0);
   });
 
+  it('encodes DMR MODE on 0x21 bits 2-3 as DMO or repeater', () => {
+    const base = {
+      slotIndex: 1,
+      empty: false as const,
+      wireName: 'DMR',
+      rxHz: 430_125_000,
+      txHz: 430_125_000,
+      rxTone: { kind: 'none' as const },
+      txTone: { kind: 'none' as const },
+      powerPercent: 100,
+      bandwidth: 'NFM' as const,
+      mode: 'digital' as const,
+    };
+    const dmo = encodeAtD890ChannelRecord({ ...base, dmrOperatingMode: 'dmo-simplex' });
+    const repeater = encodeAtD890ChannelRecord({ ...base, dmrOperatingMode: 'repeater' });
+    expect((dmo[0x21]! >> 2) & 0x3).toBe(0);
+    expect((repeater[0x21]! >> 2) & 0x3).toBe(1);
+  });
+
+  it('overwrites sticky DMO bits when DTO says repeater', () => {
+    const prior = new Uint8Array(0x80);
+    prior.set([0x43, 0x01, 0x25, 0x00], 0);
+    prior[0x21] = 0x02;
+    const encoded = encodeAtD890ChannelRecord(
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'Rpt',
+        rxHz: 438_800_000,
+        txHz: 434_000_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'NFM',
+        mode: 'digital',
+        dmrOperatingMode: 'repeater',
+      },
+      prior,
+    );
+    expect((encoded[0x21]! >> 2) & 0x3).toBe(1);
+    expect((encoded[0x21]! >> 1) & 1).toBe(1);
+  });
+
   it('preserves ChannelSet bits at or above MAX_CHANNELS on Write', () => {
     const image = createMemoryMap(AT_D890_MAP_SIZE);
     const set = image.get(D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES);

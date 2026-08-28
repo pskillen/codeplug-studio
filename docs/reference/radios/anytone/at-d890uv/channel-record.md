@@ -107,7 +107,7 @@ Little-endian bit numbers. Evidence: qDMR `libdmrconf` `anytone_d868uv_codeplug.
 | --- | --- | --- |
 | 0 | Time slot (`0` = TS1, `1` = TS2) | Written from DTO `timeslot` |
 | 1 | SMS Confirmation | Unmodelled. Fresh encode sets On; RMW preserves prior |
-| 2–3 | DMR MODE (`0` DMO/simplex, `1` repeater, `2`/`3` DCDM — unmodelled) | Not written from projection yet — preserved on RMW |
+| 2–3 | DMR MODE (`0` DMO/simplex, `1` repeater, `2`/`3` DCDM — unmodelled) | Written `0`/`1` from DTO `dmrOperatingMode`; never writes DCDM |
 | 4 | Slot Suit | Unmodelled — preserve |
 | 5 | APRS RX | Written from `Channel.aprs.receiveEnabled` when set |
 | 6 | (unused / unknown) | Preserve |

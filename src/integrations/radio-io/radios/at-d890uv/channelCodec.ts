@@ -33,6 +33,8 @@ const BYTE_09_PRESERVE_MASK = 0xd0;
  */
 const BYTE_21_TIMESLOT_BIT = 0;
 const BYTE_21_SMS_CONFIRM_BIT = 1;
+const BYTE_21_DMR_MODE_SHIFT = 2;
+const BYTE_21_DMR_MODE_MASK = 0x0c;
 const BYTE_21_APRS_RX_BIT = 5;
 
 function setBit(byte: number, bit: number, value: boolean): number {
@@ -308,6 +310,11 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
     data[0x21] = setBit(data[0x21]!, BYTE_21_TIMESLOT_BIT, true);
   } else if (ch.timeslot === 1) {
     data[0x21] = setBit(data[0x21]!, BYTE_21_TIMESLOT_BIT, false);
+  }
+  if (ch.dmrOperatingMode === 'repeater') {
+    data[0x21] = (data[0x21]! & ~BYTE_21_DMR_MODE_MASK) | (1 << BYTE_21_DMR_MODE_SHIFT);
+  } else if (ch.dmrOperatingMode === 'dmo-simplex') {
+    data[0x21] = data[0x21]! & ~BYTE_21_DMR_MODE_MASK;
   }
 
   // scanAdd maps to auto_scan (bit 4) on AT-D890UV — not per-channel scan membership.

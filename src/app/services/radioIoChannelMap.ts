@@ -29,6 +29,7 @@ import type { ExpandedChannelWireRow } from '@core/import-export/channelExpansio
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import { resolveWireNames } from '@core/services/resolveWireNames.ts';
 import { pushWireNameResolutionWarning } from '@core/import-export/channelExpansion/wireNameWarning.ts';
+import { resolveDmrOperatingMode } from '@core/domain/dmrOperatingMode.ts';
 
 export interface RadioWireEgressIds {
   formatId: string;
@@ -155,6 +156,7 @@ function digitalFieldsFromChannel(
     mode: mode ?? 'digital',
     colorCode: dmr.colourCode ?? undefined,
     timeslot,
+    dmrOperatingMode: resolveDmrOperatingMode(channel),
     ...(txContactId != null ? { txContactId } : {}),
     ...(rxGroupIndex != null ? { rxGroupIndex } : {}),
     ...(dmrRadioIdIndex != null ? { dmrRadioIdIndex } : {}),
@@ -181,6 +183,7 @@ function digitalFieldsFromExpandedWireRow(
     mode: 'digital',
     colorCode: dmr.colourCode ?? undefined,
     timeslot,
+    dmrOperatingMode: resolveDmrOperatingMode(channel),
     ...(txContactId != null ? { txContactId } : {}),
     ...(rxGroupIndex != null ? { rxGroupIndex } : {}),
     ...(dmrRadioIdIndex != null ? { dmrRadioIdIndex } : {}),
@@ -315,6 +318,7 @@ function digitalFieldsFromProjection(
     mode: mode ?? 'digital',
     colorCode: dmr.colourCode ?? undefined,
     timeslot,
+    dmrOperatingMode: resolveDmrOperatingMode(channel),
     ...(txContactId != null ? { txContactId } : {}),
     ...(rxGroupIndex != null ? { rxGroupIndex } : {}),
     ...(dmrRadioIdIndex != null ? { dmrRadioIdIndex } : {}),
