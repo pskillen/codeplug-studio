@@ -1,8 +1,9 @@
 /**
- * AT-D890UV connected-radio identity — LocalInfo serial field (#768, #875).
+ * AT-D890UV connected-radio identity — LocalInfo serial field (#768, #875, #1276).
  *
- * Write no longer compares a persisted hydration stash to the live radio. The app reads
- * LocalInfo in-session and the operator confirms the serial before commit.
+ * Write refuses erased LocalInfo serial ({@link assertAtD890LocalInfoPlausible}).
+ * Restore compares zip vs live serial ({@link formatAtD890LocalInfoSerial}).
+ * Write does not stash-compare or ask the operator to confirm serial.
  */
 
 import { RadioProtocolError } from '../../kit/errors.ts';
@@ -41,21 +42,5 @@ export function assertAtD890LocalInfoPlausible(live: Uint8Array): void {
     throw new RadioProtocolError(
       'D890 Write refused — LocalInfo serial reads erased; initialise the radio with vendor CPS before Write',
     );
-  }
-}
-
-/** @deprecated Stash-vs-live guard removed in #875 — use {@link formatAtD890LocalInfoSerial} + operator confirm. */
-export function assertAtD890LocalInfoIdentity(stashed: Uint8Array, live: Uint8Array): void {
-  assertAtD890LocalInfoPlausible(live);
-  const need = LOCAL_INFO_SERIAL_OFFSET + LOCAL_INFO_SERIAL_LENGTH;
-  if (stashed.length < need) return;
-  const a = serialSlice(stashed);
-  const b = serialSlice(live);
-  for (let i = 0; i < LOCAL_INFO_SERIAL_LENGTH; i++) {
-    if (a[i] !== b[i]) {
-      throw new RadioProtocolError(
-        `D890 Write refused — connected radio serial "${formatAtD890LocalInfoSerial(live)}" does not match hydration stash "${formatAtD890LocalInfoSerial(stashed)}"`,
-      );
-    }
   }
 }

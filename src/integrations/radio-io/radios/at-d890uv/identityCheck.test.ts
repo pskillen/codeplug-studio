@@ -4,7 +4,6 @@ import { RadioProtocolError } from '../../kit/errors.ts';
 import {
   LOCAL_INFO_SERIAL_LENGTH,
   LOCAL_INFO_SERIAL_OFFSET,
-  assertAtD890LocalInfoIdentity,
   assertAtD890LocalInfoPlausible,
   formatAtD890LocalInfoSerial,
 } from './identityCheck.ts';
@@ -26,21 +25,6 @@ describe('assertAtD890LocalInfoPlausible', () => {
   it('refuses erased serial bytes', () => {
     expect(() =>
       assertAtD890LocalInfoPlausible(new Uint8Array(D890_MAP.LocalInfoLength).fill(0xff)),
-    ).toThrow(RadioProtocolError);
-  });
-});
-
-describe('assertAtD890LocalInfoIdentity', () => {
-  it('passes when serial slices match', () => {
-    const serial = 'SN1234567890AB';
-    expect(() =>
-      assertAtD890LocalInfoIdentity(localWithSerial(serial), localWithSerial(serial)),
-    ).not.toThrow();
-  });
-
-  it('refuses when serial slices differ', () => {
-    expect(() =>
-      assertAtD890LocalInfoIdentity(localWithSerial('RADIO-A'), localWithSerial('RADIO-B')),
     ).toThrow(RadioProtocolError);
   });
 
