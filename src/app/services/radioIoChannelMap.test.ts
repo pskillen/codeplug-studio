@@ -719,4 +719,78 @@ describe('expandAssembledChannelsToRadioDtos — Anytone AT-D890UV site wire nam
     expect(dtos.length).toBeGreaterThan(1);
     expect(channel.id).toBe(assembled.channels[0]?.entity.id);
   });
+
+  it('omits rxGroupIndex on m×n talk-group rows and keeps it on scratch', () => {
+    const tg1 = newTalkGroup(PROJECT_ID, 'Scotland', 950);
+    const tg2 = newTalkGroup(PROJECT_ID, 'Local', 9);
+    const rgl = {
+      ...newRxGroupList(PROJECT_ID, 'Scotland'),
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg1.id } },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id } },
+      ],
+    };
+    const channel = {
+      ...newChannel(PROJECT_ID, 'Glasgow'),
+      callsign: 'GB7GL',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: 1234567,
+          contactRef: null,
+          rxGroupListId: rgl.id,
+        } satisfies ChannelModeProfileDMR,
+      ],
+    };
+    const library: LibrarySlice = {
+      channels: [channel],
+      zones: [],
+      talkGroups: [tg1, tg2],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [rgl],
+      scanLists: [],
+    };
+    const { build, egress } = newRadioBuildForProfile(PROJECT_ID, 'radio-io-at-d890uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const csvRows = expandAllAnytoneChannelsForExport(assembled, library, {
+      expandRxGroupLists: true,
+      exportScratchChannels: true,
+      profileId: 'anytone-at-d890uv',
+    });
+    const { dtos } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress, {
+      rxGroupIndexById: new Map([[rgl.id, 2]]),
+    });
+    expect(dtos).toHaveLength(csvRows.length);
+    for (let i = 0; i < csvRows.length; i++) {
+      const kind = csvRows[i]?.rowKind;
+      if (kind === 'talkGroup') {
+        expect(dtos[i]?.rxGroupIndex).toBeUndefined();
+      } else if (kind === 'scratch') {
+        expect(dtos[i]?.rxGroupIndex).toBe(2);
+      }
+    }
+  });
+
+  it('keeps parent rxGroupIndex on lean D890 rows when expansion is off', () => {
+    const { library } = leanAnytoneLibrary('Glasgow');
+    const rgl = library.rxGroupLists[0]!;
+    const { build, egress } = anytoneLeanBuild();
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const { dtos } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress, {
+      rxGroupIndexById: new Map([[rgl.id, 2]]),
+    });
+    expect(dtos).toHaveLength(1);
+    expect(dtos[0]?.rxGroupIndex).toBe(2);
+  });
 });

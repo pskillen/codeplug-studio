@@ -297,11 +297,7 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   }
   data[0x18] = ch.dmrRadioIdIndex ?? 0;
   data[0x1b] = encodeScanListWire(ch.scanListId);
-  if (ch.rxGroupIndex != null) {
-    data[0x1c] = encodeRxGroupWire(ch.rxGroupIndex);
-  } else if (!prior) {
-    data[0x1c] = WIRE_INDEX_NONE;
-  }
+  data[0x1c] = encodeRxGroupWire(ch.rxGroupIndex);
 
   if (!prior) {
     data[0x21] = setBit(data[0x21]!, BYTE_21_SMS_CONFIRM_BIT, true);

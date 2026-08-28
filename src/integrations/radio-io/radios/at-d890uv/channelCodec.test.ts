@@ -127,6 +127,51 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(encoded[0x1c]).toBe(0xff);
   });
 
+  it('clears sticky RX-group index on RMW when DTO omits rxGroupIndex', () => {
+    const prior = new Uint8Array(0x80);
+    prior.set([0x43, 0x01, 0x25, 0x00], 0);
+    prior[0x1c] = 1;
+    const encoded = encodeAtD890ChannelRecord(
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'None RGL',
+        rxHz: 438_800_000,
+        txHz: 434_000_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'NFM',
+        mode: 'digital',
+      },
+      prior,
+    );
+    expect(encoded[0x1c]).toBe(0xff);
+  });
+
+  it('writes the DTO RX-group index on RMW', () => {
+    const prior = new Uint8Array(0x80);
+    prior.set([0x43, 0x01, 0x25, 0x00], 0);
+    prior[0x1c] = 0xff;
+    const encoded = encodeAtD890ChannelRecord(
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'Scratch',
+        rxHz: 438_800_000,
+        txHz: 434_000_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'NFM',
+        mode: 'digital',
+        rxGroupIndex: 2,
+      },
+      prior,
+    );
+    expect(encoded[0x1c]).toBe(2);
+  });
+
   it('encodes DCS tones', () => {
     const ch: RadioChannelDto = {
       slotIndex: 2,
@@ -305,7 +350,10 @@ describe('encodeAtD890ChannelRecord', () => {
       const prior = hexToBytes(bytesHex);
       const dto = parseAtD890ChannelRecord(prior, slotIndex);
       const encoded = encodeAtD890ChannelRecord(dto, prior);
-      expect(encoded).toEqual(prior);
+      const expected = prior.slice();
+      // Legacy none (`0`) is decoded as unset and re-encoded as CPS `0xff`.
+      if (expected[0x1c] === 0) expected[0x1c] = 0xff;
+      expect(encoded).toEqual(expected);
     }
   });
 
