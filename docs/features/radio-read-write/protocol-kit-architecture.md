@@ -191,7 +191,7 @@ requestPort (no open) → assemble(build, library)   // grant during Write click
   → open BytePipe at baud
   → radio.connect(pipe, handshake: read for Write) // ident in baud-retry loop; Restore stays none
   → in-session pre-write download (UV-17Pro / RT95 / …) then encode onto that prior
-  → radio.upload(image)           // UV-17Pro: upload magics (no re-ident, no idle settle) then W blocks
+  → radio.upload(image)           // UV-17Pro: W blocks if already in PROGRAM; Restore still does upload handshake
   → disconnect
 ```
 

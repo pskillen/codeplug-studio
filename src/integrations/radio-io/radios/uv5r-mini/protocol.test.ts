@@ -200,7 +200,7 @@ describe('Uv5rMiniProtocol', () => {
     expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(UV5R_MINI_CLONE_BLOCK_COUNT);
   });
 
-  it('does not re-ident on upload after read handshake', async () => {
+  it('does not re-handshake on upload after read handshake', async () => {
     const source = createSyntheticImageBase();
     const pipe = new ScriptedPipe();
     pipe.armReadBlocks(listDownloadBlocks(source));
@@ -211,7 +211,8 @@ describe('Uv5rMiniProtocol', () => {
     await radio.upload(memoryMapFromBytes(source), {});
 
     expect(pipe.writes.filter((w) => bytesEqual(w, UV5R_MINI_IDENT))).toHaveLength(1);
+    expect(pipe.writes.filter((w) => w.length === 1 && w[0] === 0x46)).toHaveLength(1);
     const uploadTrailer = UV5R_MINI_MAGICS_UPLOAD[UV5R_MINI_MAGICS_UPLOAD.length - 1]!.send;
-    expect(pipe.writes.some((w) => bytesEqual(w, uploadTrailer))).toBe(true);
+    expect(pipe.writes.some((w) => bytesEqual(w, uploadTrailer))).toBe(false);
   });
 });

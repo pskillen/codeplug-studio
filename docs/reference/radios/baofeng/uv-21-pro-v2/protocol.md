@@ -75,7 +75,7 @@ Do not paste CHIRP’s full table into Studio as GPL source — cite CHIRP drive
 1. Open serial at **115200**.
 2. Settle, flush, ident → seek ACK → read magics (flush before each).
 3. Read all `MEM_*` regions in `0x40` blocks → assemble packed `0x8380` image ([memory-layout.md](memory-layout.md)). Sync each read reply to opcode `0x52`.
-4. For **Write** upload: **Write connect uses the read handshake** so ident runs before any `R` ([#1275](https://github.com/pskillen/codeplug-studio/issues/1275)). Then in-session pre-write read of all `MEM_*` blocks (progress **Pre-write read**), overlay modelled channels onto that live packed image, then **upload magics only** (do not re-ident) → write all **four** `MEM_*` regions ([settings.md](settings.md)). No persisted stash. Hardware verify pending.
+4. For **Write** upload: **Write connect uses the read handshake** so ident runs before any `R` ([#1275](https://github.com/pskillen/codeplug-studio/issues/1275)). Then in-session pre-write read of all `MEM_*` blocks (progress **Pre-write read**), overlay modelled channels onto that live packed image, then **`W` with no second handshake** (second ident / second `F` stay silent). Write all **four** `MEM_*` regions ([settings.md](settings.md)). No persisted stash. Hardware verify pending.
 5. For **Restore** (not Write): connect skips ident; `restoreFromBackup` sends ident + upload magics, then selected zip MEM bins — never assemble / stash merge. See [backup-restore.md](backup-restore.md). Hardware verify pending.
 
 ## Write verify

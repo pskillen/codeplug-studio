@@ -37,10 +37,7 @@ export interface Uv17ProConnectOptions {
   handshake?: 'read' | 'none';
 }
 
-type HandshakeOpts = Uv17ProConnectOptions & {
-  /** Upload after a same-session read handshake: magics only — do not send ident again. */
-  skipIdent?: boolean;
-};
+type HandshakeOpts = Uv17ProConnectOptions;
 
 function scaledMs(baseMs: number, scale: number): number {
   if (scale <= 0) return 0;
@@ -140,27 +137,24 @@ async function handshake(
   opts?: HandshakeOpts,
 ): Promise<void> {
   const signal = opts?.signal;
-  const skipIdent = opts?.skipIdent === true;
   const skipPortSettle = mode === 'upload';
-  const scale = skipPortSettle || skipIdent ? 0 : (opts?.settleScale ?? 1);
+  const scale = skipPortSettle ? 0 : (opts?.settleScale ?? 1);
   throwIfAborted(signal);
-  if (!skipIdent) {
-    if (!skipPortSettle) {
-      await delay(scaledMs(layout.initDelayMs, scale), signal);
-    }
-    await flushPipe(pipe);
-    if (!skipPortSettle) {
-      await delay(scaledMs(layout.clearBufferDelayMs, scale), signal);
-    }
-    try {
-      await sendIdent(pipe, layout.ident, layout.identTimeoutMs);
-    } catch (err) {
-      throw new RadioWrongIdentError(
-        err instanceof Error
-          ? `${layout.protocolLabel} ident failed: ${err.message}`
-          : `${layout.protocolLabel} ident failed`,
-      );
-    }
+  if (!skipPortSettle) {
+    await delay(scaledMs(layout.initDelayMs, scale), signal);
+  }
+  await flushPipe(pipe);
+  if (!skipPortSettle) {
+    await delay(scaledMs(layout.clearBufferDelayMs, scale), signal);
+  }
+  try {
+    await sendIdent(pipe, layout.ident, layout.identTimeoutMs);
+  } catch (err) {
+    throw new RadioWrongIdentError(
+      err instanceof Error
+        ? `${layout.protocolLabel} ident failed: ${err.message}`
+        : `${layout.protocolLabel} ident failed`,
+    );
   }
   await runMagics(layout, pipe, mode, signal);
 }
@@ -170,7 +164,7 @@ export class Uv17ProProtocol implements CloneImageRadio {
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
   /** Live packed image from the most recent {@link download} in this session. */
   private priorImage: MemoryMap | null = null;
-  /** True after ident succeeded this session (read handshake). Upload then skips re-ident. */
+  /** True after ident + read magics this session. Upload then skips a second handshake. */
   private identComplete = false;
 
   constructor(private readonly layout: Uv17ProLayout) {}
@@ -271,11 +265,10 @@ export class Uv17ProProtocol implements CloneImageRadio {
       { cur: 0, max: addrs.length, msg: 'Upload handshake', stage: 'Upload' },
       opts.signal,
     );
-    await handshake(this.layout, pipe, 'upload', {
-      signal: opts.signal,
-      skipIdent: this.identComplete,
-    });
-    this.identComplete = true;
+    if (!this.identComplete) {
+      await handshake(this.layout, pipe, 'upload', { signal: opts.signal });
+      this.identComplete = true;
+    }
     let done = 0;
     const max = addrs.length;
     const stagingChunks: { address: number; data: Uint8Array }[] = [];
@@ -311,11 +304,10 @@ export class Uv17ProProtocol implements CloneImageRadio {
       { cur: 0, max: addrs.length, msg: 'Restore handshake', stage: 'Restore' },
       opts.signal,
     );
-    await handshake(this.layout, pipe, 'upload', {
-      signal: opts.signal,
-      skipIdent: this.identComplete,
-    });
-    this.identComplete = true;
+    if (!this.identComplete) {
+      await handshake(this.layout, pipe, 'upload', { signal: opts.signal });
+      this.identComplete = true;
+    }
     let done = 0;
     const stagingChunks: { address: number; data: Uint8Array }[] = [];
     for (const addr of addrs) {

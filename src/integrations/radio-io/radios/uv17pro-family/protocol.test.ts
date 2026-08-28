@@ -186,7 +186,7 @@ describe('Uv17ProProtocol pre-write read', () => {
     expect(pipe.writes.filter((w) => w[0] === 0x52)).toHaveLength(0);
   });
 
-  it('Write-shaped session: ident once, then upload magics without re-ident', async () => {
+  it('Write-shaped session: ident once, then W without a second handshake', async () => {
     const source = createSyntheticImageBase();
     const pipe = new ScriptedPipe();
     pipe.armReadBlocks(listDownloadBlocks(source));
@@ -197,8 +197,9 @@ describe('Uv17ProProtocol pre-write read', () => {
     await radio.upload(memoryMapFromBytes(source), {});
 
     expect(pipe.writes.filter((w) => bytesEqual(w, UV5R_MINI_IDENT))).toHaveLength(1);
+    expect(pipe.writes.filter((w) => w.length === 1 && w[0] === 0x46)).toHaveLength(1);
     const uploadTrailer = UV5R_MINI_MAGICS_UPLOAD[UV5R_MINI_MAGICS_UPLOAD.length - 1]!.send;
-    expect(pipe.writes.some((w) => bytesEqual(w, uploadTrailer))).toBe(true);
+    expect(pipe.writes.some((w) => bytesEqual(w, uploadTrailer))).toBe(false);
     expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(UV5R_MINI_CLONE_BLOCK_COUNT);
   });
 
@@ -212,5 +213,7 @@ describe('Uv17ProProtocol pre-write read', () => {
 
     expect(pipe.writes.filter((w) => bytesEqual(w, UV5R_MINI_IDENT))).toHaveLength(1);
     expect(pipe.writes[0]).toEqual(UV5R_MINI_IDENT);
+    const uploadTrailer = UV5R_MINI_MAGICS_UPLOAD[UV5R_MINI_MAGICS_UPLOAD.length - 1]!.send;
+    expect(pipe.writes.some((w) => bytesEqual(w, uploadTrailer))).toBe(true);
   });
 });
