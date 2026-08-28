@@ -1,0 +1,53 @@
+# Findings — what is true
+
+Snapshot at close of i008 (2026-08-28). W4 / W9 / W14 describe the encoder **before** [#1273](https://github.com/pskillen/codeplug-studio/issues/1273). Write-defaults now live in [channel-record.md](../../reference/radios/anytone/at-d890uv/channel-record.md).
+
+---
+
+## Two RMW layers
+
+| # | Finding | Evidence |
+| - | ------- | -------- |
+| W1 | Studio Write **must** RMW at **region / erase-unit / clone-image** grain when the radio erases or uploads more than the modelled bank. D890 `0x40000` sparse erase-unit RMW and OpenGD77 overlay onto an in-session FLASH prior are this layer. | source read: `adding-a-radio-adapter.md` Write strategies + flash-erase paragraph; `at-d890uv/sparseEraseRmw.ts` / `#768`; OpenGD77 `encodeOpenGd77WriteImageFromPrior` |
+| W2 | That layer does **not** imply copying the previous **entity record body** at a reused memory index. Channels, zones, talk groups, RX lists, scan lists are modelled records. Their bytes should come from the projection (plus documented defaults for unmodelled *fields*), not from whoever occupied the slot last. | operator report #1271; inference from W1, high confidence |
+| W3 | m×n expansion (and scratch, shrink, reorder) **reuses slot indices**. Prior bytes at index *N* are not “this channel’s unmodelled settings”; they are often a different site (hotspot vs GB7GL). | source read: `mxnExpandAll.ts`; `encodeChannelsIntoAtD890Image` keyed `prior` by `slotIndex - 1` |
+
+## What #1271 actually showed (D890 channel `0x80`)
+
+| # | Finding | Evidence |
+| - | ------- | -------- |
+| W4 | `encodeAtD890ChannelRecord(ch, prior)` copied the prior `0x80` then overlaid some modelled fields. Unset DTO fields left prior bytes. | `S/d890-encode-prior` |
+| W5 | Timeslot was encoded on `0x21` **bit 1**. Independent mapping is **bit 0** = TSL, **bit 1** = SMS confirm. Writing TS1 cleared SMS confirm. | `S/d890-ts-bit`; [channel-record.md](../../reference/radios/anytone/at-d890uv/channel-record.md) byte `0x21` |
+| W6 | DMR MODE (`0x21` bits 2–3) was never written from the library. CSV already uses `resolveDmrOperatingMode`. Serial always left DMO (or prior). | `S/d890-dmr-mode`; CSV `formatAnytoneDmrModeWire` |
+| W7 | m×n talk-group rows have `projection.rxGroupListId === null` (CSV `None`). The serial mapper did `null ?? dmr.rxGroupListId`, re-applying the parent list. | `S/mapper-fallback` |
+| W8 | When `rxGroupIndex` was omitted, encoder **preserved prior `0x1c`**. A GB7GL expanded slot that previously held a hotspot channel showed the hotspot RGL. | operator report #1271 Update 2; `S/d890-encode-prior` |
+| W9 | #1271 / PR #1272 patched W5–W8 locally: timeslot bit 0, DMR MODE overlay, mapper uses projection RGL only, `0x1c` always written (`0xff` if omitted). Scratch still keeps parent RGL (CSV SoT). The **prior-copy engine in W4 remained** until #1273. | source read: `1271/pskil/d890-dmr-overlay`; PR #1272 |
+
+## Other radios (pre-inventory)
+
+| # | Finding | Evidence |
+| - | ------- | -------- |
+| W10 | DM-32 channel encode is a **fresh 48-byte record** (`0xff` fill + projection + NeonPlug defaults). No `prior` argument. | `S/dm32-fresh-record` |
+| W11 | OpenGD77 **channel table** is fully replaced from the projection (`clearUnlisted: true`). Image-level prior is for other FLASH regions, not per-channel body merge. | `S/opengd77-channel-replace` |
+| W12 | UV-5R Mini / UV-17Pro family `encodeChannelRecord(dto)` has **no prior**. Channel span is cleared then filled from DTOs. | `S/uv-family-fresh-record` |
+| W14 | Before #1273, D890 preserved selected **unmodelled-in-record** bits from prior on purpose (byte `0x09` talkaround / call confirm / reverse; `0x21` SMS confirm on RMW; crypto / R5Tone / analog APRS). Those leaked across slot reuse. | `S/d890-encode-prior`; former channel-record overlay table |
+
+## E1 inventory (serial Write)
+
+| # | Finding | Evidence |
+| - | ------- | -------- |
+| W15 | On serial Write, **only AT-D890UV channels** copied a previous occupant’s entity-record body into a newly projected record. D890 zones, scan lists, talk groups, RX groups, radio IDs, AM, digital contacts, and satellite **records** are whole-record. DM-32, OpenGD77 (1701 + MD-9600), UV-5R Mini, UV-21, and RT95 Write-path channels are whole-record. | `S/e1-inventory`; errand `E1` |
+| W16 | D890 intra-record channel copy was broader than W8/`0x1c`: simplex preserved occupant TX offset `0x04–0x07`; omitted `txContactId` preserved `0x13–0x14`; omitted colour code preserved `0x20`/`0x43`; `0x19`/`0x1a`, custom CTCSS/Tone2/DTMF, `0x34` except auto-scan, AES/R5Tone/analog APRS stayed from occupant. | `S/e1-inventory`; `S/d890-encode-prior` |
+| W17 | RT95 serial Write does **not** leak occupant channel bodies. `encodeChannelsIntoImage` fills the span `0xff` **before** reading `prior`; `isRecordBlank` treats that as blank; the encoder then `fill(0)` + DTO. | `S/e1-rt95-wipe-first` |
+| W18 | Unmodelled **fields inside** a modelled record already had CPS-safe defaults on DM-32, OpenGD77, UV family, and RT95 Write. D890 leftovers matched virgin-slot `0` (SMS confirm **On** when `!prior`). Contact-none (`0x0000` vs `0xffff`) was the remaining wire choice. APRS **settings** patches are region RMW, not this class. | `S/e1-inventory` |
+| W19 | D890 `AprsReceiveFilters` is allow-listed as replaced but has **no encoder** — cache bytes pass through. Occupancy-bitmap tails (ChannelSet ≥ 4000, ScanListSet ≥ max) and skip-if-empty radio-ID bank are region / bitmap, not intra-record. | `S/e1-inventory` |
+| W20 | D890 contact-none on `0x13–0x14` is **`0xffff`** (`AT_D890_INVALID_U16`). Contact is a 0-based TG slot; `0x0000` is slot 0. Analog CPS dumps often zero unused contact bytes — unused-field zero, not none. | `S/contact-none-ffff`; operator decision |
+
+## Settled elsewhere — cite, do not restate
+
+| Topic | Where it lives now |
+| ----- | ------------------ |
+| D890 `0x21` bit table, write-defaults, whole-record overlay | [channel-record.md](../../reference/radios/anytone/at-d890uv/channel-record.md) |
+| Anytone CSV TG `None` / scratch parent RGL | [export-projections.md](../../features/import-export/anytone/export-projections.md) |
+| Erase-unit vs allow-list | [adding-a-radio-adapter.md](../../features/radio-read-write/adding-a-radio-adapter.md) |
+| DM-32 unmodelled channel defaults | [dm-32uv/channel-record.md](../../reference/radios/baofeng/dm-32uv/channel-record.md) |
