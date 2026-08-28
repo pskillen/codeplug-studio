@@ -8,13 +8,13 @@
 
 Promoted from live notes in `tmp/investigations/i008-unnecessary-rmw/` (gitignored; opener misspelled the slug). Number **i008** is used; do not reuse.
 
-| | |
-| --- | --- |
-| **Symptom** | After serial Write, an m×n-expanded GB7GL talk-group memory inherited hotspot settings (first RX-group, then talkaround / SMS / AES / offset / contact). |
-| **Root cause** | `encodeAtD890ChannelRecord(ch, prior)` copied the occupant `0x80` then overlaid modelled fields. `encodeChannelsIntoAtD890Image` snapshotted `readExistingChannelRecord` before zero-filling the bank. Slot index is not entity identity. |
-| **Introduced by** | Channel encoder fidelity that treated unmodelled-in-record bytes as “this channel’s settings” ([#770](https://github.com/pskillen/codeplug-studio/issues/770)). |
-| **Masked by** | [#1271](https://github.com/pskillen/codeplug-studio/issues/1271) / [PR #1272](https://github.com/pskillen/codeplug-studio/pull/1272) patched timeslot, DMR MODE, and `0x1c`. Those fields stopped leaking; the prior-copy engine remained. |
-| **Fixed by** | `encodeAtD890ChannelRecord(ch)` — fresh `0x80` + projection + documented defaults. Contact-none `0xffff`. Occupant-at-slot-N tests. |
+|                   |                                                                                                                                                                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Symptom**       | After serial Write, an m×n-expanded GB7GL talk-group memory inherited hotspot settings (first RX-group, then talkaround / SMS / AES / offset / contact).                                                                                   |
+| **Root cause**    | `encodeAtD890ChannelRecord(ch, prior)` copied the occupant `0x80` then overlaid modelled fields. `encodeChannelsIntoAtD890Image` snapshotted `readExistingChannelRecord` before zero-filling the bank. Slot index is not entity identity.  |
+| **Introduced by** | Channel encoder fidelity that treated unmodelled-in-record bytes as “this channel’s settings” ([#770](https://github.com/pskillen/codeplug-studio/issues/770)).                                                                            |
+| **Masked by**     | [#1271](https://github.com/pskillen/codeplug-studio/issues/1271) / [PR #1272](https://github.com/pskillen/codeplug-studio/pull/1272) patched timeslot, DMR MODE, and `0x1c`. Those fields stopped leaking; the prior-copy engine remained. |
+| **Fixed by**      | `encodeAtD890ChannelRecord(ch)` — fresh `0x80` + projection + documented defaults. Contact-none `0xffff`. Occupant-at-slot-N tests.                                                                                                        |
 
 ---
 
