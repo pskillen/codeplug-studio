@@ -199,4 +199,19 @@ describe('Uv5rMiniProtocol', () => {
     expect(last.length).toBe(4 + UV5R_MINI_BLOCK_SIZE);
     expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(UV5R_MINI_CLONE_BLOCK_COUNT);
   });
+
+  it('does not re-ident on upload after read handshake', async () => {
+    const source = createSyntheticImageBase();
+    const pipe = new ScriptedPipe();
+    pipe.armReadBlocks(listDownloadBlocks(source));
+
+    const radio = new Uv5rMiniProtocol();
+    await radio.connect(pipe, { settleScale: 0 });
+    await radio.download({});
+    await radio.upload(memoryMapFromBytes(source), {});
+
+    expect(pipe.writes.filter((w) => bytesEqual(w, UV5R_MINI_IDENT))).toHaveLength(1);
+    const uploadTrailer = UV5R_MINI_MAGICS_UPLOAD[UV5R_MINI_MAGICS_UPLOAD.length - 1]!.send;
+    expect(pipe.writes.some((w) => bytesEqual(w, uploadTrailer))).toBe(true);
+  });
 });

@@ -185,4 +185,32 @@ describe('Uv17ProProtocol pre-write read', () => {
     expect(uploadStages.length).toBeGreaterThan(0);
     expect(pipe.writes.filter((w) => w[0] === 0x52)).toHaveLength(0);
   });
+
+  it('Write-shaped session: ident once, then upload magics without re-ident', async () => {
+    const source = createSyntheticImageBase();
+    const pipe = new ScriptedPipe();
+    pipe.armReadBlocks(listDownloadBlocks(source));
+
+    const radio = new Uv17ProProtocol(UV5R_MINI_LAYOUT);
+    await radio.connect(pipe, { settleScale: 0 });
+    await radio.download({ progressStage: 'Pre-write read' });
+    await radio.upload(memoryMapFromBytes(source), {});
+
+    expect(pipe.writes.filter((w) => bytesEqual(w, UV5R_MINI_IDENT))).toHaveLength(1);
+    const uploadTrailer = UV5R_MINI_MAGICS_UPLOAD[UV5R_MINI_MAGICS_UPLOAD.length - 1]!.send;
+    expect(pipe.writes.some((w) => bytesEqual(w, uploadTrailer))).toBe(true);
+    expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(UV5R_MINI_CLONE_BLOCK_COUNT);
+  });
+
+  it('Restore-shaped session: upload still idents when connect skipped handshake', async () => {
+    const source = createSyntheticImageBase();
+    const pipe = new ScriptedPipe();
+
+    const radio = new Uv17ProProtocol(UV5R_MINI_LAYOUT);
+    await radio.connect(pipe, { handshake: 'none' });
+    await radio.upload(memoryMapFromBytes(source), {});
+
+    expect(pipe.writes.filter((w) => bytesEqual(w, UV5R_MINI_IDENT))).toHaveLength(1);
+    expect(pipe.writes[0]).toEqual(UV5R_MINI_IDENT);
+  });
 });
