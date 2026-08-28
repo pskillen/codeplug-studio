@@ -198,6 +198,38 @@ describe('BuildRadioIoPanel — dual-bank / single-bank extras', () => {
         }),
       );
     });
+
+    it('does not show a serial-confirm modal on AT-D890 Write (#1276)', async () => {
+      vi.spyOn(radioIoSession, 'grantRadioSerialPortForEgress').mockResolvedValue({
+        transport: 'web',
+        port,
+      });
+      vi.spyOn(radioIoSession, 'prepareRadioWriteImage').mockResolvedValue({
+        warnings: [],
+        organisation: {},
+        channels: [],
+      });
+      vi.spyOn(radioIoSession, 'openRadioSessionForEgress').mockResolvedValue({
+        session: {
+          descriptor: { modelIds: ['AT-D890UV'] },
+          pipe: { close: vi.fn(async () => undefined) },
+          radio: {},
+        } as never,
+        descriptor: { modelIds: ['AT-D890UV'] } as never,
+      });
+      vi.spyOn(radioIoSession, 'uploadPreparedRadioWrite').mockResolvedValue({});
+      const identitySpy = vi.spyOn(radioIoSession, 'readAtD890ConnectedRadioIdentity');
+
+      renderPanel('radio-io-at-d890uv');
+      fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug' }));
+
+      await waitFor(() => {
+        expect(radioIoSession.prepareRadioWriteImage).toHaveBeenCalled();
+      });
+      expect(screen.queryByText('Confirm connected radio')).not.toBeInTheDocument();
+      expect(identitySpy).not.toHaveBeenCalled();
+    });
   });
 
   it('does not show digital contacts extra for UV-5R Mini', async () => {
