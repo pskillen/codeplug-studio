@@ -189,11 +189,9 @@ interface RadioSession {
 ```text
 requestPort (no open) → assemble(build, library)   // grant during Write click; progress while paging directory
   → open BytePipe at baud
-  → radio.connect(pipe, handshake: none for Write) // ident skipped until upload path needs it
-  → expandAllMxNChannels when MxNChannelExpansion (same as CPS export)
-  → RadioChannelDto[]
-  → encode into hydrated / in-session prior image (preserve unmodelled regions)
-  → radio.upload(image)           // often pre-write read inside upload; selective ranges
+  → radio.connect(pipe, handshake: read for Write) // ident in baud-retry loop; Restore stays none
+  → in-session pre-write download (UV-17Pro / RT95 / …) then encode onto that prior
+  → radio.upload(image)           // UV-17Pro: upload handshake (no idle settle) then W blocks
   → disconnect
 ```
 
