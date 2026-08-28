@@ -25,6 +25,8 @@ DCDM (double-capacity digital mode) is **not** a channel type — it appears on 
 
 ## DMR MODE (observed)
 
+CSV column and radio menu share this **1-based** order: (1) DMO/simplex, (2) Repeater, (3) DCDM/Dual TS, (4) DSCM TS split. Wire values are **0-based**. Web Serial packing is **not** this nibble on channel `0x21` bits 2–3 — those bits are DCDM only; DMO vs repeater is `0x34` bit 1. See [AT-D890UV channel record](../../radios/anytone/at-d890uv/channel-record.md#byte-0x34-bit-1-dmo-vs-repeater).
+
 | Wire | Meaning (CPS)    | Internal mapping                                                              |
 | ---- | ---------------- | ----------------------------------------------------------------------------- |
 | `0`  | DMO / simplex    | `ChannelModeProfileDMR.dmrMode` = `dmo-simplex`, or inferred when equal RX/TX |
