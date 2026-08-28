@@ -3,6 +3,8 @@
  * App maps AssembledChannel ↔ this shape; radio modules encode/decode only.
  */
 
+import type { DmrOperatingMode } from '@core/models/libraryTypes.ts';
+
 export type RadioTone =
   | { kind: 'none' }
   | { kind: 'ctcss'; hz: number }
@@ -33,6 +35,11 @@ export interface RadioChannelDto {
   mode?: RadioChannelMode;
   colorCode?: number;
   timeslot?: 1 | 2;
+  /**
+   * DMR operating mode for radios that store repeater vs DMO on the channel record
+   * (Anytone `0x21` bits 2–3). Omit on analog-only rows.
+   */
+  dmrOperatingMode?: DmrOperatingMode;
   /** TX contact / talk-group index from TX-contact blocks (1-based contact id when digital). */
   txContactId?: number;
   /** RX group list index (0-based / radio-native). */

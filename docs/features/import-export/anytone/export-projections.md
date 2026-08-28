@@ -75,6 +75,8 @@ When **Create scan lists from zones** (Build → Export → **Organisation**) is
 
 `DMRReceiveGroupCallList.CSV` is still exported from the **library** RX group lists. Expanded TG rows do **not** reference those lists on the wire (`Receive Group List` = `None`). Scratch rows may still reference the parent list when the library channel does.
 
+Web Serial Write matches that CSV mapping (`0x1c` = `0xff` on talk-group memories; scratch keeps the parent 1-based list index). The receive-group **bank** is still written.
+
 ---
 
 ## Wire preview

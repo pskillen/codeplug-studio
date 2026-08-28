@@ -127,6 +127,51 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(encoded[0x1c]).toBe(0xff);
   });
 
+  it('clears sticky RX-group index on RMW when DTO omits rxGroupIndex', () => {
+    const prior = new Uint8Array(0x80);
+    prior.set([0x43, 0x01, 0x25, 0x00], 0);
+    prior[0x1c] = 1;
+    const encoded = encodeAtD890ChannelRecord(
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'None RGL',
+        rxHz: 438_800_000,
+        txHz: 434_000_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'NFM',
+        mode: 'digital',
+      },
+      prior,
+    );
+    expect(encoded[0x1c]).toBe(0xff);
+  });
+
+  it('writes the DTO RX-group index on RMW', () => {
+    const prior = new Uint8Array(0x80);
+    prior.set([0x43, 0x01, 0x25, 0x00], 0);
+    prior[0x1c] = 0xff;
+    const encoded = encodeAtD890ChannelRecord(
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'Scratch',
+        rxHz: 438_800_000,
+        txHz: 434_000_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'NFM',
+        mode: 'digital',
+        rxGroupIndex: 2,
+      },
+      prior,
+    );
+    expect(encoded[0x1c]).toBe(2);
+  });
+
   it('encodes DCS tones', () => {
     const ch: RadioChannelDto = {
       slotIndex: 2,
@@ -151,10 +196,45 @@ describe('encodeAtD890ChannelRecord', () => {
     expect((encoded[0x34]! >> 4) & 1).toBe(0);
   });
 
-  it('clears sticky timeslot and auto-scan bits', () => {
+  it('encodes timeslot on 0x21 bit 0 and leaves SMS confirm on bit 1', () => {
+    const ts1 = encodeAtD890ChannelRecord({
+      slotIndex: 1,
+      empty: false,
+      wireName: 'TS1',
+      rxHz: 430_125_000,
+      txHz: 430_125_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'NFM',
+      mode: 'digital',
+      timeslot: 1,
+    });
+    const ts2 = encodeAtD890ChannelRecord({
+      slotIndex: 1,
+      empty: false,
+      wireName: 'TS2',
+      rxHz: 430_125_000,
+      txHz: 430_125_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'NFM',
+      mode: 'digital',
+      timeslot: 2,
+    });
+    expect(ts1[0x21]! & 1).toBe(0);
+    expect(ts2[0x21]! & 1).toBe(1);
+    expect((ts1[0x21]! >> 1) & 1).toBe(1);
+    expect((ts2[0x21]! >> 1) & 1).toBe(1);
+    expect(parseAtD890ChannelRecord(ts1, 1).timeslot).toBe(1);
+    expect(parseAtD890ChannelRecord(ts2, 1).timeslot).toBe(2);
+  });
+
+  it('clears sticky timeslot bit 0 only and auto-scan; preserves SMS bit 1', () => {
     const prior = new Uint8Array(0x80);
     prior.set([0x43, 0x01, 0x25, 0x00], 0);
-    prior[0x21] = 0x02;
+    prior[0x21] = 0x03; // bit 0 TS2, bit 1 SMS On
     prior[0x34] = 0x10;
     const encoded = encodeAtD890ChannelRecord(
       {
@@ -173,8 +253,52 @@ describe('encodeAtD890ChannelRecord', () => {
       },
       prior,
     );
-    expect((encoded[0x21]! >> 1) & 1).toBe(0);
+    expect(encoded[0x21]! & 1).toBe(0);
+    expect((encoded[0x21]! >> 1) & 1).toBe(1);
     expect((encoded[0x34]! >> 4) & 1).toBe(0);
+  });
+
+  it('encodes DMR MODE on 0x21 bits 2-3 as DMO or repeater', () => {
+    const base = {
+      slotIndex: 1,
+      empty: false as const,
+      wireName: 'DMR',
+      rxHz: 430_125_000,
+      txHz: 430_125_000,
+      rxTone: { kind: 'none' as const },
+      txTone: { kind: 'none' as const },
+      powerPercent: 100,
+      bandwidth: 'NFM' as const,
+      mode: 'digital' as const,
+    };
+    const dmo = encodeAtD890ChannelRecord({ ...base, dmrOperatingMode: 'dmo-simplex' });
+    const repeater = encodeAtD890ChannelRecord({ ...base, dmrOperatingMode: 'repeater' });
+    expect((dmo[0x21]! >> 2) & 0x3).toBe(0);
+    expect((repeater[0x21]! >> 2) & 0x3).toBe(1);
+  });
+
+  it('overwrites sticky DMO bits when DTO says repeater', () => {
+    const prior = new Uint8Array(0x80);
+    prior.set([0x43, 0x01, 0x25, 0x00], 0);
+    prior[0x21] = 0x02;
+    const encoded = encodeAtD890ChannelRecord(
+      {
+        slotIndex: 1,
+        empty: false,
+        wireName: 'Rpt',
+        rxHz: 438_800_000,
+        txHz: 434_000_000,
+        rxTone: { kind: 'none' },
+        txTone: { kind: 'none' },
+        powerPercent: 100,
+        bandwidth: 'NFM',
+        mode: 'digital',
+        dmrOperatingMode: 'repeater',
+      },
+      prior,
+    );
+    expect((encoded[0x21]! >> 2) & 0x3).toBe(1);
+    expect((encoded[0x21]! >> 1) & 1).toBe(1);
   });
 
   it('preserves ChannelSet bits at or above MAX_CHANNELS on Write', () => {
@@ -226,7 +350,10 @@ describe('encodeAtD890ChannelRecord', () => {
       const prior = hexToBytes(bytesHex);
       const dto = parseAtD890ChannelRecord(prior, slotIndex);
       const encoded = encodeAtD890ChannelRecord(dto, prior);
-      expect(encoded).toEqual(prior);
+      const expected = prior.slice();
+      // Legacy none (`0`) is decoded as unset and re-encoded as CPS `0xff`.
+      if (expected[0x1c] === 0) expected[0x1c] = 0xff;
+      expect(encoded).toEqual(expected);
     }
   });
 

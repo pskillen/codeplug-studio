@@ -387,6 +387,53 @@ describe('assembledChannelsToRadioDtos', () => {
     ).toBe(true);
   });
 
+  it('projects repeater vs DMO onto RadioChannelDto for D890 serial', () => {
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const dmrProfile = {
+      mode: 'dmr' as const,
+      colourCode: 1,
+      timeslot: 1 as const,
+      dmrId: 1234567,
+      contactRef: null,
+      rxGroupListId: null,
+    } satisfies ChannelModeProfileDMR;
+    const repeater = {
+      ...newChannel('p1', 'GB7GL'),
+      id: 'ch-rpt',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [dmrProfile],
+    };
+    const simplex = {
+      ...newChannel('p1', 'Hspt'),
+      id: 'ch-dmo',
+      rxFrequency: 438_800_000,
+      txFrequency: 438_800_000,
+      modeProfiles: [dmrProfile],
+    };
+    const analog = {
+      ...newChannel('p1', 'FM'),
+      id: 'ch-fm',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 12.5 },
+      ],
+    };
+    expect(
+      assembledChannelsToRadioDtos([{ entity: repeater, wireName: 'GB7GL' }], build, egress)[0]
+        ?.dmrOperatingMode,
+    ).toBe('repeater');
+    expect(
+      assembledChannelsToRadioDtos([{ entity: simplex, wireName: 'Hspt' }], build, egress)[0]
+        ?.dmrOperatingMode,
+    ).toBe('dmo-simplex');
+    expect(
+      assembledChannelsToRadioDtos([{ entity: analog, wireName: 'FM' }], build, egress)[0]
+        ?.dmrOperatingMode,
+    ).toBeUndefined();
+  });
+
   it('copies channel location and useLocation for OpenGD77 serial projection', () => {
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-opengd77-1701');
     const entity = {
@@ -479,6 +526,7 @@ describe('expandAssembledChannelsToRadioDtos — MxN', () => {
     expect(dtos.map((d) => d.wireName)).toEqual(expected.map((row) => row.wireName));
     expect(dtos.length).toBeGreaterThan(1);
     expect(channel.id).toBe(assembled.channels[0]?.entity.id);
+    expect(dtos.every((d) => d.dmrOperatingMode === 'repeater')).toBe(true);
   });
 
   it('stays lean 1:1 when expandRxGroupLists is off', () => {
@@ -670,5 +718,79 @@ describe('expandAssembledChannelsToRadioDtos — Anytone AT-D890UV site wire nam
     expect(dtos.map((d) => d.wireName)).toEqual(csvRows.map((row) => row.wireName));
     expect(dtos.length).toBeGreaterThan(1);
     expect(channel.id).toBe(assembled.channels[0]?.entity.id);
+  });
+
+  it('omits rxGroupIndex on m×n talk-group rows and keeps it on scratch', () => {
+    const tg1 = newTalkGroup(PROJECT_ID, 'Scotland', 950);
+    const tg2 = newTalkGroup(PROJECT_ID, 'Local', 9);
+    const rgl = {
+      ...newRxGroupList(PROJECT_ID, 'Scotland'),
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg1.id } },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id } },
+      ],
+    };
+    const channel = {
+      ...newChannel(PROJECT_ID, 'Glasgow'),
+      callsign: 'GB7GL',
+      rxFrequency: 438_800_000,
+      txFrequency: 434_000_000,
+      modeProfiles: [
+        {
+          mode: 'dmr',
+          colourCode: 1,
+          timeslot: 1,
+          dmrId: 1234567,
+          contactRef: null,
+          rxGroupListId: rgl.id,
+        } satisfies ChannelModeProfileDMR,
+      ],
+    };
+    const library: LibrarySlice = {
+      channels: [channel],
+      zones: [],
+      talkGroups: [tg1, tg2],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [rgl],
+      scanLists: [],
+    };
+    const { build, egress } = newRadioBuildForProfile(PROJECT_ID, 'radio-io-at-d890uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const csvRows = expandAllAnytoneChannelsForExport(assembled, library, {
+      expandRxGroupLists: true,
+      exportScratchChannels: true,
+      profileId: 'anytone-at-d890uv',
+    });
+    const { dtos } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress, {
+      rxGroupIndexById: new Map([[rgl.id, 2]]),
+    });
+    expect(dtos).toHaveLength(csvRows.length);
+    for (let i = 0; i < csvRows.length; i++) {
+      const kind = csvRows[i]?.rowKind;
+      if (kind === 'talkGroup') {
+        expect(dtos[i]?.rxGroupIndex).toBeUndefined();
+      } else if (kind === 'scratch') {
+        expect(dtos[i]?.rxGroupIndex).toBe(2);
+      }
+    }
+  });
+
+  it('keeps parent rxGroupIndex on lean D890 rows when expansion is off', () => {
+    const { library } = leanAnytoneLibrary('Glasgow');
+    const rgl = library.rxGroupLists[0]!;
+    const { build, egress } = anytoneLeanBuild();
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const { dtos } = expandAssembledChannelsToRadioDtos(assembled, build, library, egress, {
+      rxGroupIndexById: new Map([[rgl.id, 2]]),
+    });
+    expect(dtos).toHaveLength(1);
+    expect(dtos[0]?.rxGroupIndex).toBe(2);
   });
 });
