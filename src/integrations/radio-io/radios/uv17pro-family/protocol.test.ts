@@ -146,6 +146,10 @@ describe('Uv17ProProtocol pre-write read', () => {
     expect(radio.getPriorImage()?.bytes[0x8040]).toBe(0x5a);
     expect(stages.every((s) => s === 'Pre-write read')).toBe(true);
     expect(stages.length).toBe(UV5R_MINI_CLONE_BLOCK_COUNT);
+    const identIdx = pipe.writes.findIndex((w) => bytesEqual(w, UV5R_MINI_IDENT));
+    const firstR = pipe.writes.findIndex((w) => w[0] === 0x52);
+    expect(identIdx).toBeGreaterThanOrEqual(0);
+    expect(firstR).toBeGreaterThan(identIdx);
   });
 
   it('upload reports Upload stage during block writes', async () => {
