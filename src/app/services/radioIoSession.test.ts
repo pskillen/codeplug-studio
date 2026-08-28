@@ -411,9 +411,127 @@ describe('radioIoSession helpers', () => {
     });
     expect(portSpy).not.toHaveBeenCalled();
     expect(openSpy).toHaveBeenCalledWith(port, 115200);
-    expect(connect).toHaveBeenCalledWith(pipe, expect.objectContaining({ handshake: 'none' }));
+    expect(connect).toHaveBeenCalledWith(pipe, expect.objectContaining({ handshake: 'read' }));
 
     portSpy.mockRestore();
+    openSpy.mockRestore();
+    listSpy.mockRestore();
+  });
+
+  it('retries Mini fallback baud when Write ident times out', async () => {
+    const close = vi.fn(async () => undefined);
+    const pipe = {
+      write: vi.fn(),
+      readExact: vi.fn(),
+      flush: vi.fn(),
+      close,
+    };
+    const port = {
+      readable: null,
+      writable: null,
+      open: vi.fn(async () => undefined),
+      close: vi.fn(async () => undefined),
+    };
+    const portSpy = vi.spyOn(radioIo, 'requestWebSerialPort').mockResolvedValue(port);
+    const openSpy = vi.spyOn(radioIo, 'openWebSerialPipe').mockResolvedValue(pipe);
+    const listSpy = vi.spyOn(radioIo, 'listDescriptorsForProfile').mockReturnValue([
+      {
+        modelIds: ['UV5R-Mini'],
+        label: 'Mini',
+        supportsBle: false,
+        protocolFactory: () => ({
+          connect: async () => {
+            throw new radioIo.RadioTimeoutError('ident timeout');
+          },
+          disconnect: vi.fn(),
+          download: vi.fn(),
+          upload: vi.fn(),
+          decodeChannels: () => [],
+          encodeChannels: (img) => img,
+          readFirmware: () => undefined,
+        }),
+        capabilities: {
+          maxChannels: 999,
+          supportsZones: false,
+          supportsScanLists: false,
+          analogOnly: true,
+        },
+        attributionIds: [],
+        compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
+        writeStrategy: 'full-image',
+        baudRate: 115200,
+        baudRateFallback: 38400,
+        hydration: miniHydration,
+      },
+    ]);
+
+    const { egress } = uv5rMiniRadioIo();
+    await expect(
+      openRadioSessionForEgress(egress, {
+        grantedPort: { transport: 'web', port },
+        purpose: 'write',
+      }),
+    ).rejects.toThrow(/ident timeout/);
+    expect(openSpy).toHaveBeenCalledTimes(2);
+    expect(openSpy).toHaveBeenNthCalledWith(1, port, 115200);
+    expect(openSpy).toHaveBeenNthCalledWith(2, port, 38400);
+    expect(close).toHaveBeenCalledTimes(2);
+
+    portSpy.mockRestore();
+    openSpy.mockRestore();
+    listSpy.mockRestore();
+  });
+
+  it('restore purpose skips read handshake at connect', async () => {
+    const port = {
+      readable: null,
+      writable: null,
+      open: vi.fn(async () => undefined),
+      close: vi.fn(async () => undefined),
+    };
+    const pipe = {
+      write: vi.fn(),
+      readExact: vi.fn(),
+      flush: vi.fn(),
+      close: vi.fn(async () => undefined),
+    };
+    const openSpy = vi.spyOn(radioIo, 'openWebSerialPipe').mockResolvedValue(pipe);
+    const connect = vi.fn(async () => ({ raw: new Uint8Array(0) }));
+    const listSpy = vi.spyOn(radioIo, 'listDescriptorsForProfile').mockReturnValue([
+      {
+        modelIds: ['UV5R-Mini'],
+        label: 'Mini',
+        supportsBle: false,
+        protocolFactory: () => ({
+          connect,
+          disconnect: vi.fn(),
+          download: vi.fn(),
+          upload: vi.fn(),
+          decodeChannels: () => [],
+          encodeChannels: (img: MemoryMap) => img,
+          readFirmware: () => undefined,
+        }),
+        capabilities: {
+          maxChannels: 999,
+          supportsZones: false,
+          supportsScanLists: false,
+          analogOnly: true,
+        },
+        attributionIds: [],
+        compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-uv5r-mini' }],
+        writeStrategy: 'full-image',
+        baudRate: 115200,
+        hydration: miniHydration,
+      },
+    ]);
+
+    const { egress } = uv5rMiniRadioIo();
+    await openRadioSessionForEgress(egress, {
+      grantedPort: { transport: 'web', port },
+      purpose: 'restore',
+    });
+    expect(connect).toHaveBeenCalledWith(pipe, expect.objectContaining({ handshake: 'none' }));
+
     openSpy.mockRestore();
     listSpy.mockRestore();
   });
