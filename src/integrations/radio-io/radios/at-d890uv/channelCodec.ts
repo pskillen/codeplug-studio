@@ -27,6 +27,14 @@ const WIRE_INDEX_NONE = 0xff;
 /** Preserve talkaround (7), call confirm (6), reverse (4) on byte `0x09` RMW. */
 const BYTE_09_PRESERVE_MASK = 0xd0;
 
+/**
+ * Byte `0x21` (qDMR ChannelElement; forensic HEALTHY_CHANNEL_RECORDS).
+ * anytone-cps swapped timeslot vs SMS confirm — do not copy that mapping.
+ */
+const BYTE_21_TIMESLOT_BIT = 0;
+const BYTE_21_SMS_CONFIRM_BIT = 1;
+const BYTE_21_APRS_RX_BIT = 5;
+
 function setBit(byte: number, bit: number, value: boolean): number {
   return value ? (byte | (1 << bit)) & 0xff : byte & ~(1 << bit) & 0xff;
 }
@@ -209,10 +217,10 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
     ...(decodeScanListId(data[0x1b]!) != null ? { scanListId: decodeScanListId(data[0x1b]!) } : {}),
     scanAdd: autoScan,
     dmrRadioIdIndex: data[0x18]!,
-    timeslot: ((data[0x21]! >> 1) & 1) === 1 ? 2 : 1,
+    timeslot: ((data[0x21]! >> BYTE_21_TIMESLOT_BIT) & 1) === 1 ? 2 : 1,
     rxOnly,
     ...(data[0x20]! > 0 ? { colorCode: data[0x20] } : {}),
-    aprsReceive: ((data[0x21]! >> 5) & 1) === 1,
+    aprsReceive: ((data[0x21]! >> BYTE_21_APRS_RX_BIT) & 1) === 1,
     aprsReportMode: data[0x35]! === 2 ? 'digital' : 'off',
     aprsDigitalPttMode: data[0x37]! === 1 ? 'on' : 'off',
     ...(data[0x35]! === 2 && data[0x38]! < 8 ? { aprsReportSlotIndex: data[0x38]! + 1 } : {}),
@@ -293,10 +301,13 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
     data[0x1c] = WIRE_INDEX_NONE;
   }
 
+  if (!prior) {
+    data[0x21] = setBit(data[0x21]!, BYTE_21_SMS_CONFIRM_BIT, true);
+  }
   if (ch.timeslot === 2) {
-    data[0x21] = setBit(data[0x21]!, 1, true);
+    data[0x21] = setBit(data[0x21]!, BYTE_21_TIMESLOT_BIT, true);
   } else if (ch.timeslot === 1) {
-    data[0x21] = setBit(data[0x21]!, 1, false);
+    data[0x21] = setBit(data[0x21]!, BYTE_21_TIMESLOT_BIT, false);
   }
 
   // scanAdd maps to auto_scan (bit 4) on AT-D890UV — not per-channel scan membership.
@@ -307,7 +318,7 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Arra
   }
 
   if (ch.aprsReceive != null) {
-    data[0x21] = setBit(data[0x21]!, 5, ch.aprsReceive);
+    data[0x21] = setBit(data[0x21]!, BYTE_21_APRS_RX_BIT, ch.aprsReceive);
   }
   if (ch.aprsReportMode != null) {
     data[0x35] = ch.aprsReportMode === 'digital' ? 2 : 0;

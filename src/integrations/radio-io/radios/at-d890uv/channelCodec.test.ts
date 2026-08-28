@@ -151,10 +151,45 @@ describe('encodeAtD890ChannelRecord', () => {
     expect((encoded[0x34]! >> 4) & 1).toBe(0);
   });
 
-  it('clears sticky timeslot and auto-scan bits', () => {
+  it('encodes timeslot on 0x21 bit 0 and leaves SMS confirm on bit 1', () => {
+    const ts1 = encodeAtD890ChannelRecord({
+      slotIndex: 1,
+      empty: false,
+      wireName: 'TS1',
+      rxHz: 430_125_000,
+      txHz: 430_125_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'NFM',
+      mode: 'digital',
+      timeslot: 1,
+    });
+    const ts2 = encodeAtD890ChannelRecord({
+      slotIndex: 1,
+      empty: false,
+      wireName: 'TS2',
+      rxHz: 430_125_000,
+      txHz: 430_125_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'NFM',
+      mode: 'digital',
+      timeslot: 2,
+    });
+    expect(ts1[0x21]! & 1).toBe(0);
+    expect(ts2[0x21]! & 1).toBe(1);
+    expect((ts1[0x21]! >> 1) & 1).toBe(1);
+    expect((ts2[0x21]! >> 1) & 1).toBe(1);
+    expect(parseAtD890ChannelRecord(ts1, 1).timeslot).toBe(1);
+    expect(parseAtD890ChannelRecord(ts2, 1).timeslot).toBe(2);
+  });
+
+  it('clears sticky timeslot bit 0 only and auto-scan; preserves SMS bit 1', () => {
     const prior = new Uint8Array(0x80);
     prior.set([0x43, 0x01, 0x25, 0x00], 0);
-    prior[0x21] = 0x02;
+    prior[0x21] = 0x03; // bit 0 TS2, bit 1 SMS On
     prior[0x34] = 0x10;
     const encoded = encodeAtD890ChannelRecord(
       {
@@ -173,7 +208,8 @@ describe('encodeAtD890ChannelRecord', () => {
       },
       prior,
     );
-    expect((encoded[0x21]! >> 1) & 1).toBe(0);
+    expect(encoded[0x21]! & 1).toBe(0);
+    expect((encoded[0x21]! >> 1) & 1).toBe(1);
     expect((encoded[0x34]! >> 4) & 1).toBe(0);
   });
 
