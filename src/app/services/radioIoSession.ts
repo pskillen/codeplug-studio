@@ -656,7 +656,7 @@ export async function closeRadioSession(session: RadioSession): Promise<void> {
   }
 }
 
-/** Read LocalInfo serial from a connected AT-D890UV session (operator confirm before Write). */
+/** Read LocalInfo serial from a connected AT-D890UV session (Restore identity vs zip). */
 export async function readAtD890ConnectedRadioIdentity(
   session: RadioSession,
   opts?: { signal?: AbortSignal },
