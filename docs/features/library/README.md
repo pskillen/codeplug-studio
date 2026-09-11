@@ -24,6 +24,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | Library scan lists                        | Shipped ([#257](https://github.com/pskillen/codeplug-studio/issues/257))                                                                       | `ScanList` entity; schema v10; Anytone dedicated scan                                                                                                                          |
 | Zone member editor                        | Shipped ([#180](https://github.com/pskillen/codeplug-studio/issues/180), r2 [#942](https://github.com/pskillen/codeplug-studio/issues/942))    | mk2 E2 — `MembershipPanel` + `AddMembersScreen`; scanning panel separate from member rows                                                                                      |
 | Channel sets                              | Shipped ([#172](https://github.com/pskillen/codeplug-studio/issues/172))                                                                       | Optional zone on import; mk2 D4 picker ([#944](https://github.com/pskillen/codeplug-studio/issues/944))                                                                        |
+| Public service channels                   | Shipped ([#1283](https://github.com/pskillen/codeplug-studio/issues/1283))                                                                     | Receive-only UK + Ireland datasets; `/library/channels/add-public-services`                                                                                                    |
 | OpenAIP airband import                    | Shipped ([#263](https://github.com/pskillen/codeplug-studio/issues/263))                                                                       | `/library/channels/add-from-openaip` — see [aviation](../aviation/README.md)                                                                                                   |
 | Digital contact metadata + radioid import | Shipped ([#374](https://github.com/pskillen/codeplug-studio/issues/374))                                                                       | Enriched `DigitalContact` CRUD; directory browse/copy at `/library/contacts/directory` — see [contact-directories](../contact-directories/README.md)                           |
 | Delete all digital contacts               | Shipped ([#427](https://github.com/pskillen/codeplug-studio/issues/427))                                                                       | Library → Contacts toolbar; checkbox-gated modal; cascade-clears channel/`RX` refs then IDB partition clear                                                                    |
@@ -48,6 +49,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | [channel-behavioural-defaults](../../reference/channel-behavioural-defaults.md) | Epic [#388](https://github.com/pskillen/codeplug-studio/issues/388) cascade — tier-2 reference                                                            |
 | [zone-behavioural-defaults](../../reference/zone-behavioural-defaults.md)       | Zone defaults ([#443](https://github.com/pskillen/codeplug-studio/issues/443))                                                                            |
 | [channel-sets](../../reference/channel-sets.md)                                 | Static channel sets ([#172](https://github.com/pskillen/codeplug-studio/issues/172); epic [#281](https://github.com/pskillen/codeplug-studio/issues/281)) |
+| [public-service-channels/](public-service-channels/README.md)                   | Receive-only statutory-service memories ([#1283](https://github.com/pskillen/codeplug-studio/issues/1283))                                               |
 
 Shipped initiatives (mode profiles, membership order, zones revision-2, library routes): see GitHub issues cited in the status table — progress/outstanding logs retired in [#294](https://github.com/pskillen/codeplug-studio/issues/294).
 
@@ -157,6 +159,16 @@ Workflow: pick set → preview `DataTable` (per-channel checkboxes, dedup status
 - UI: `ChannelSetPicker` on `DirectoryIngestPage` — sidecar `src/app/components/channelSets/ChannelSetPicker.md`
 - **Add from…** picker: `AddFromDataSourceModal` on v2 `ModalShell` — sidecar `src/app/components/library/AddFromDataSourceModal.md`
 - Reference: [channel-sets.md](../../reference/channel-sets.md)
+
+### Public service channels ([#1283](https://github.com/pskillen/codeplug-studio/issues/1283))
+
+**Route:** `/library/channels/add-public-services` — **Add from…** modal → **Public services** card
+
+Import bundled, receive-only memories for published unencrypted service allocations (UK fireground, HM Coastguard, Irish Coast Guard, selected ports). Country is pre-selected from browser locale when a dataset exists; groups default to ticked; transmit cannot be enabled during import. Frequency collisions with a differently named library channel stay selectable and show an advisory.
+
+- Hub: [public-service-channels/](public-service-channels/README.md)
+- UI: `PublicServicePicker` — sidecar `src/app/components/publicServices/PublicServicePicker.md`
+- Core: `src/core/domain/publicServices/`, `src/core/services/publicServiceImport.ts`
 
 ### OpenAIP airband ([#263](https://github.com/pskillen/codeplug-studio/issues/263))
 
