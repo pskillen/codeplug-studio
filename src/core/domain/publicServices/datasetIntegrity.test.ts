@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import gb from './data/gb.ts';
 import ie from './data/ie.ts';
-import { PUBLIC_SERVICE_COUNTRY_SUMMARIES } from './data/index.generated.ts';
+import { PUBLIC_SERVICE_COUNTRY_SUMMARIES } from './data/summaries.ts';
 import type { PublicServiceCountry, PublicServiceEntry } from './types.ts';
 
 const COUNTRIES: readonly PublicServiceCountry[] = [gb, ie];

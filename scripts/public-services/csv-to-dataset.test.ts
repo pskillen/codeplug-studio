@@ -95,7 +95,7 @@ describe('csv-to-dataset', () => {
     expect(moduleText).toContain('Do not edit by hand');
     expect(moduleText).toContain('export default country');
     expect(renderCountryModule(country, 'zz')).toContain("import type { PublicServiceCountry }");
-    const indexText = readFileSync(join(out, 'index.generated.ts'), 'utf8');
+    const indexText = readFileSync(join(out, 'summaries.ts'), 'utf8');
     expect(indexText).toContain('PUBLIC_SERVICE_COUNTRY_SUMMARIES');
     expect(indexText).toContain('zz-northshire-fireground');
     expect(indexText).toContain('channelCount: 2');

@@ -11,6 +11,7 @@
  * Options:
  *   --out-dir <path>  Write modules here instead of src/core/domain/publicServices/data
  */
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -321,10 +322,21 @@ export function convertAll(options = {}) {
     }
   }
 
-  const indexPath = join(outDir, 'index.generated.ts');
+  const indexPath = join(outDir, 'summaries.ts');
   writeFileSync(indexPath, renderIndexModule(countries), 'utf8');
   written.push(indexPath);
+  formatGeneratedModules(written);
   return { written, countries };
+}
+
+/** @param {string[]} paths */
+function formatGeneratedModules(paths) {
+  const result = spawnSync('npx', ['prettier', '--write', ...paths], {
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr || result.stdout || 'prettier --write failed on generated modules');
+  }
 }
 
 /**
