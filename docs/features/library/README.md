@@ -49,7 +49,7 @@ Tier-1 reference for editing the vendor-neutral **library** — the per-project 
 | [channel-behavioural-defaults](../../reference/channel-behavioural-defaults.md) | Epic [#388](https://github.com/pskillen/codeplug-studio/issues/388) cascade — tier-2 reference                                                            |
 | [zone-behavioural-defaults](../../reference/zone-behavioural-defaults.md)       | Zone defaults ([#443](https://github.com/pskillen/codeplug-studio/issues/443))                                                                            |
 | [channel-sets](../../reference/channel-sets.md)                                 | Static channel sets ([#172](https://github.com/pskillen/codeplug-studio/issues/172); epic [#281](https://github.com/pskillen/codeplug-studio/issues/281)) |
-| [public-service-channels/](public-service-channels/README.md)                   | Receive-only statutory-service memories ([#1283](https://github.com/pskillen/codeplug-studio/issues/1283))                                               |
+| [public-service-channels/](public-service-channels/README.md)                   | Receive-only statutory-service memories ([#1283](https://github.com/pskillen/codeplug-studio/issues/1283))                                                |
 
 Shipped initiatives (mode profiles, membership order, zones revision-2, library routes): see GitHub issues cited in the status table — progress/outstanding logs retired in [#294](https://github.com/pskillen/codeplug-studio/issues/294).
 

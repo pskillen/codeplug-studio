@@ -77,9 +77,9 @@ describe('public-service dataset integrity', () => {
     const fire = gb.groups.find((group) => group.groupId === 'gb-ukfrs-fireground');
     expect(fire?.entries).toHaveLength(8);
     expect(fire?.entries.every((entry) => entry.modes.length === 2)).toBe(true);
-    expect(fire?.entries.every((entry) => entry.modes.find((m) => m.isPrimary)?.mode === 'dmr')).toBe(
-      true,
-    );
+    expect(
+      fire?.entries.every((entry) => entry.modes.find((m) => m.isPrimary)?.mode === 'dmr'),
+    ).toBe(true);
   });
 });
 

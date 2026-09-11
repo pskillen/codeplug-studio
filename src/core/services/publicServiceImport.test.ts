@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { emptyLibrary, newChannel } from '@core/domain/factories.ts';
-import type { PublicServiceCountry, PublicServiceEntry, PublicServiceGroup } from '@core/domain/publicServices/types.ts';
+import type {
+  PublicServiceCountry,
+  PublicServiceEntry,
+  PublicServiceGroup,
+} from '@core/domain/publicServices/types.ts';
 import { buildPublicServiceImportPlan } from './publicServiceImport.ts';
 
 const PROJECT_ID = 'proj-1';
@@ -42,17 +46,38 @@ const COUNTRY: PublicServiceCountry = {
   groups: [
     group(
       'zz-distress',
-      [entry({ channelId: 'ch-16', name: 'CG Ch16', rxFrequencyHz: 156_800_000, txFrequencyHz: 156_800_000 })],
+      [
+        entry({
+          channelId: 'ch-16',
+          name: 'CG Ch16',
+          rxFrequencyHz: 156_800_000,
+          txFrequencyHz: 156_800_000,
+        }),
+      ],
       { label: 'Distress', category: 'maritime' },
     ),
     group(
       'zz-dublin',
-      [entry({ channelId: 'ch-12', name: 'Dublin VTS12', rxFrequencyHz: PORT_HZ, txFrequencyHz: PORT_HZ })],
+      [
+        entry({
+          channelId: 'ch-12',
+          name: 'Dublin VTS12',
+          rxFrequencyHz: PORT_HZ,
+          txFrequencyHz: PORT_HZ,
+        }),
+      ],
       { label: 'Dublin Port', category: 'transport' },
     ),
     group(
       'zz-cork',
-      [entry({ channelId: 'ch-12', name: 'Cork Hbr Ch12', rxFrequencyHz: PORT_HZ, txFrequencyHz: PORT_HZ })],
+      [
+        entry({
+          channelId: 'ch-12',
+          name: 'Cork Hbr Ch12',
+          rxFrequencyHz: PORT_HZ,
+          txFrequencyHz: PORT_HZ,
+        }),
+      ],
       { label: 'Cork Harbour', category: 'transport' },
     ),
   ],

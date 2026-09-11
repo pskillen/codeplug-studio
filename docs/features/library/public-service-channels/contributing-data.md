@@ -12,13 +12,13 @@ Studio generates **receive-only** memories. You never record anything about tran
 
 ## Include / exclude
 
-| Include | Exclude |
-| --- | --- |
-| Unencrypted analogue FM and unencrypted DMR | Encrypted systems (TETRA, ESN, P25 with encryption, DMR privacy) |
-| Fireground / incident-ground simplex | Trunked talkgroup/tactical detail |
-| Maritime, coastguard, SAR common channels | Military; covert/surveillance |
-| Ambulance / HEMS air-ground where published and unencrypted | Leaked documents, hacked data, uncited forum hearsay |
-| Utility/transport where published and easy | Event-specific assignments; scanner-wiki frequencies with no upstream citation |
+| Include                                                     | Exclude                                                                        |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Unencrypted analogue FM and unencrypted DMR                 | Encrypted systems (TETRA, ESN, P25 with encryption, DMR privacy)               |
+| Fireground / incident-ground simplex                        | Trunked talkgroup/tactical detail                                              |
+| Maritime, coastguard, SAR common channels                   | Military; covert/surveillance                                                  |
+| Ambulance / HEMS air-ground where published and unencrypted | Leaked documents, hacked data, uncited forum hearsay                           |
+| Utility/transport where published and easy                  | Event-specific assignments; scanner-wiki frequencies with no upstream citation |
 
 If a service is **fully encrypted**, that is a valuable finding — record it in `findings.md` rather than omitting it silently.
 
@@ -28,23 +28,23 @@ Cover one country nationally. Where services are regional, cover what you can ci
 
 Create `scripts/public-services/research/<iso2>/` (`gb`, `ie`, …) with:
 
-| File | Contents |
-| --- | --- |
-| `channels.csv` | Data. Header exactly as `scripts/public-services/template.csv` |
-| `findings.md` | Coverage, encrypted dead ends, conflicts, legal pointers (facts, not advice), open questions |
-| `sources.md` | Every source consulted, including dead ends |
-| `known-gaps.json` | Optional. `countryLabel`, `datasetVersion`, and operator-facing `knownGaps` |
+| File              | Contents                                                                                     |
+| ----------------- | -------------------------------------------------------------------------------------------- |
+| `channels.csv`    | Data. Header exactly as `scripts/public-services/template.csv`                               |
+| `findings.md`     | Coverage, encrypted dead ends, conflicts, legal pointers (facts, not advice), open questions |
+| `sources.md`      | Every source consulted, including dead ends                                                  |
+| `known-gaps.json` | Optional. `countryLabel`, `datasetVersion`, and operator-facing `knownGaps`                  |
 
 UTF-8, no BOM, LF only, trailing newline. Quote a field only if it contains a comma, quote, or newline.
 
 ## Sourcing
 
-| Tier | `source_type` |
-| --- | --- |
-| Best | `regulator` |
-| Good | `official`, `foi` |
-| Acceptable with care | `industry` |
-| Last resort | `community` — only when they cite a primary source; prefer citing that source |
+| Tier                 | `source_type`                                                                 |
+| -------------------- | ----------------------------------------------------------------------------- |
+| Best                 | `regulator`                                                                   |
+| Good                 | `official`, `foi`                                                             |
+| Acceptable with care | `industry`                                                                    |
+| Last resort          | `community` — only when they cite a primary source; prefer citing that source |
 
 1. Every row needs `source_url` and `source_type`.
 2. Prefer primary sources. If a wiki cites a regulator PDF, read the PDF and cite that.

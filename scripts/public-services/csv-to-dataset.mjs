@@ -94,9 +94,9 @@ export function convertCountry(iso2, researchRoot = RESEARCH_DIR) {
   }
 
   const rows = parseCsv(readFileSync(csvPath, 'utf8'));
-  const dataRows = rows.slice(1).map((row) =>
-    Object.fromEntries(header.map((col, i) => [col, row[i] ?? ''])),
-  );
+  const dataRows = rows
+    .slice(1)
+    .map((row) => Object.fromEntries(header.map((col, i) => [col, row[i] ?? ''])));
   const shippable = dataRows.filter((row) => row.encryption === 'none');
   if (shippable.length === 0) {
     throw new Error(`${csvPath}: no encryption=none rows to convert`);
@@ -159,7 +159,10 @@ function loadCountryMeta(countryDir, countryCode) {
   }
   const raw = JSON.parse(readFileSync(gapsPath, 'utf8'));
   return {
-    countryLabel: typeof raw.countryLabel === 'string' ? raw.countryLabel : (FALLBACK_LABELS[countryCode] ?? countryCode),
+    countryLabel:
+      typeof raw.countryLabel === 'string'
+        ? raw.countryLabel
+        : (FALLBACK_LABELS[countryCode] ?? countryCode),
     datasetVersion: typeof raw.datasetVersion === 'string' ? raw.datasetVersion : '1',
     knownGaps: Array.isArray(raw.knownGaps) ? raw.knownGaps : [],
   };
@@ -302,7 +305,9 @@ export function convertAll(options = {}) {
   const outDir = options.outDir ?? DEFAULT_OUT_DIR;
   const iso2List = options.iso2?.map((c) => c.toLowerCase()) ?? listResearchCountries(researchRoot);
   if (iso2List.length === 0) {
-    throw new Error('No countries to convert. Pass an ISO-2 code or add research/<iso2>/channels.csv.');
+    throw new Error(
+      'No countries to convert. Pass an ISO-2 code or add research/<iso2>/channels.csv.',
+    );
   }
   mkdirSync(outDir, { recursive: true });
   const allIso2 = listResearchCountries(researchRoot);
@@ -335,7 +340,9 @@ function formatGeneratedModules(paths) {
     encoding: 'utf8',
   });
   if (result.status !== 0) {
-    throw new Error(result.stderr || result.stdout || 'prettier --write failed on generated modules');
+    throw new Error(
+      result.stderr || result.stdout || 'prettier --write failed on generated modules',
+    );
   }
 }
 

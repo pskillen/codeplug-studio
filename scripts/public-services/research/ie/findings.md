@@ -8,13 +8,13 @@ The honest picture is that **almost nothing used by Irish statutory emergency se
 
 `channels.csv` therefore contains **18 rows**, all analogue FM, all `encryption=none`:
 
-| Group | Rows | Confidence |
-| --- | --- | --- |
-| Irish Coast Guard distress/safety (Ch 16, Ch 67) | 2 | high |
-| Irish Coast Guard working channels (Ch 01, 02, 03, 04, 05, 61, 62, 63, 64) | 9 | high |
-| Dublin Port VTS (Ch 12, 13, 09) | 3 | high |
-| Port of Cork Harbour Radio (Ch 12, 14) | 2 | high |
-| Shannon Foynes port working (Ch 11, 14) | 2 | medium (2021 official guide) |
+| Group                                                                      | Rows | Confidence                   |
+| -------------------------------------------------------------------------- | ---- | ---------------------------- |
+| Irish Coast Guard distress/safety (Ch 16, Ch 67)                           | 2    | high                         |
+| Irish Coast Guard working channels (Ch 01, 02, 03, 04, 05, 61, 62, 63, 64) | 9    | high                         |
+| Dublin Port VTS (Ch 12, 13, 09)                                            | 3    | high                         |
+| Port of Cork Harbour Radio (Ch 12, 14)                                     | 2    | high                         |
+| Shannon Foynes port working (Ch 11, 14)                                    | 2    | medium (2021 official guide) |
 
 No fire, SAR land, ambulance, utility, or DMR rows met the sourcing bar. That is a result, not a gap in effort.
 

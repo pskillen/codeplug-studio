@@ -87,15 +87,17 @@ describe('validate-dataset', () => {
   it('rejects a DMR colour code on an FM row', () => {
     const path = writeCsv([HEADER, validFmRow({ 16: '1' })]);
     expect(
-      validatePath(path, HEADER).some((error: string) => error.includes("colour_code' must be blank")),
+      validatePath(path, HEADER).some((error: string) =>
+        error.includes("colour_code' must be blank"),
+      ),
     ).toBe(true);
   });
 
   it('rejects high confidence without an official source or corroboration', () => {
     const path = writeCsv([HEADER, validFmRow({ 21: 'high', 22: 'community' })]);
-    expect(validatePath(path, HEADER).some((error: string) => error.includes('confidence=high'))).toBe(
-      true,
-    );
+    expect(
+      validatePath(path, HEADER).some((error: string) => error.includes('confidence=high')),
+    ).toBe(true);
   });
 
   it('matches the template header', () => {

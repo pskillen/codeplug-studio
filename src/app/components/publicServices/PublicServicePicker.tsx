@@ -115,42 +115,42 @@ export default function PublicServicePicker() {
   const [countryCode, setCountryCode] = useState<string | null>(() =>
     countryCodeFromLocale(typeof navigator !== 'undefined' ? navigator.language : undefined),
   );
-  const [country, setCountry] = useState<PublicServiceCountry | null>(null);
+  const [loadedCountry, setLoadedCountry] = useState<PublicServiceCountry | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set());
-  const [selectedPreviewKeys, setSelectedPreviewKeys] = useState<Set<string>>(new Set());
+  const [untickedGroupIds, setUntickedGroupIds] = useState<Set<string>>(new Set());
+  const [untickedPreviewKeys, setUntickedPreviewKeys] = useState<Set<string>>(new Set());
   const [alsoCreateZones, setAlsoCreateZones] = useState(false);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const country = loadedCountry?.countryCode === countryCode ? loadedCountry : null;
+  const loading = Boolean(countryCode) && !country && !loadError;
+
   useEffect(() => {
-    if (!countryCode) {
-      setCountry(null);
-      return;
-    }
+    if (!countryCode) return;
     let cancelled = false;
-    setLoading(true);
-    setLoadError(null);
     void loadCountry(countryCode)
       .then((loaded) => {
         if (cancelled) return;
-        setCountry(loaded);
-        setSelectedGroupIds(new Set(loaded.groups.map((group) => group.groupId)));
+        setLoadedCountry(loaded);
+        setLoadError(null);
       })
       .catch((caught: unknown) => {
         if (cancelled) return;
-        setCountry(null);
         setLoadError(caught instanceof Error ? caught.message : 'Could not load country dataset.');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
     };
   }, [countryCode]);
+
+  const selectedGroupIds = useMemo(() => {
+    if (!country) return new Set<string>();
+    return new Set(
+      country.groups.map((group) => group.groupId).filter((id) => !untickedGroupIds.has(id)),
+    );
+  }, [country, untickedGroupIds]);
 
   const previewRows = useMemo((): PreviewRow[] => {
     if (!activeProjectId || !country) return [];
@@ -177,29 +177,22 @@ export default function PublicServicePicker() {
     });
   }, [activeProjectId, country, selectedGroupIds, library.channels]);
 
-  const addablePreviewKey = previewRows
-    .filter((row) => isPreviewSelectable(row.status))
-    .map((row) => row.name)
-    .join('\0');
-  useEffect(() => {
-    setSelectedPreviewKeys(new Set(addablePreviewKey ? addablePreviewKey.split('\0') : []));
-  }, [addablePreviewKey]);
-
   const selectedKeys = useMemo(
     () =>
       previewRows
-        .filter((row) => isPreviewSelectable(row.status) && selectedPreviewKeys.has(row.name))
+        .filter((row) => isPreviewSelectable(row.status) && !untickedPreviewKeys.has(row.name))
         .map((row) => row.name),
-    [previewRows, selectedPreviewKeys],
+    [previewRows, untickedPreviewKeys],
   );
 
   const addCount = selectedKeys.length;
 
   function onSelectionChange(keys: string[]) {
-    const addable = new Set(
-      previewRows.filter((row) => isPreviewSelectable(row.status)).map((row) => row.name),
-    );
-    setSelectedPreviewKeys(new Set(keys.filter((key) => addable.has(key))));
+    const addable = previewRows
+      .filter((row) => isPreviewSelectable(row.status))
+      .map((row) => row.name);
+    const selected = new Set(keys);
+    setUntickedPreviewKeys(new Set(addable.filter((name) => !selected.has(name))));
   }
 
   const previewColumns = useMemo((): DataTableColumn<PreviewRow>[] => {
@@ -231,16 +224,18 @@ export default function PublicServicePicker() {
       {
         key: 'status',
         header: 'Status',
-        render: (row) => <Pill tone={previewStatusTone(row.status)}>{previewStatusLabel(row)}</Pill>,
+        render: (row) => (
+          <Pill tone={previewStatusTone(row.status)}>{previewStatusLabel(row)}</Pill>
+        ),
       },
     ];
   }, []);
 
   function toggleGroup(groupId: string, checked: boolean) {
-    setSelectedGroupIds((current) => {
+    setUntickedGroupIds((current) => {
       const next = new Set(current);
-      if (checked) next.add(groupId);
-      else next.delete(groupId);
+      if (checked) next.delete(groupId);
+      else next.add(groupId);
       return next;
     });
   }
@@ -325,7 +320,12 @@ export default function PublicServicePicker() {
             data={countryOptions}
             value={countryCode}
             placeholder="Choose a country"
-            onChange={(value) => setCountryCode(value)}
+            onChange={(value) => {
+              setCountryCode(value);
+              setUntickedGroupIds(new Set());
+              setUntickedPreviewKeys(new Set());
+              setLoadError(null);
+            }}
             variant="unstyled"
           />
         </FormField>
@@ -355,9 +355,7 @@ export default function PublicServicePicker() {
 
       <Panel title="Groups">
         {loading ? <p>Loading dataset…</p> : null}
-        {!loading && !country ? (
-          <p>Choose a country to see published channel groups.</p>
-        ) : null}
+        {!loading && !country ? <p>Choose a country to see published channel groups.</p> : null}
         {country ? (
           <div className={classes.groupList}>
             {country.groups.map((group) => (

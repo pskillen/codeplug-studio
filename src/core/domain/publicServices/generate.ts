@@ -14,10 +14,6 @@ import type {
   PublicServiceModeSpec,
 } from './types.ts';
 
-export interface PublicServiceGenerateOptions {
-  // Transmit is not a parameter. Every generated channel is receive-only.
-}
-
 function profileFromSpec(spec: PublicServiceModeSpec): ChannelModeProfile {
   if (spec.mode === 'fm') {
     const base = defaultModeProfile('fm') as ChannelModeProfileAnalog;
@@ -70,7 +66,6 @@ export function generateChannelsFromGroups(
   projectId: string,
   country: PublicServiceCountry,
   groupIds: readonly string[],
-  _options: PublicServiceGenerateOptions = {},
 ): Channel[] {
   const selected = new Set(groupIds);
   const channels: Channel[] = [];

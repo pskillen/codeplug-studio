@@ -22,8 +22,7 @@ export interface PersistPublicServiceImportFailure {
 }
 
 export type PersistPublicServiceImportOutcome =
-  | PersistPublicServiceImportSuccess
-  | PersistPublicServiceImportFailure;
+  PersistPublicServiceImportSuccess | PersistPublicServiceImportFailure;
 
 export async function persistPublicServiceImport(
   options: PersistPublicServiceImportOptions,

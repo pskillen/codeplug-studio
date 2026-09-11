@@ -5,7 +5,9 @@ import type { PublicServiceCountry, PublicServiceEntry, PublicServiceGroup } fro
 
 const PROJECT_ID = 'proj-1';
 
-function entry(partial: Partial<PublicServiceEntry> & Pick<PublicServiceEntry, 'channelId' | 'name'>): PublicServiceEntry {
+function entry(
+  partial: Partial<PublicServiceEntry> & Pick<PublicServiceEntry, 'channelId' | 'name'>,
+): PublicServiceEntry {
   return {
     label: partial.label ?? partial.name,
     rxFrequencyHz: 449_012_500,
@@ -48,14 +50,18 @@ describe('generateChannelsFromGroups', () => {
     const channels = generateChannelsFromGroups(
       PROJECT_ID,
       country([
-        group('zz-fire', [
-          entry({
-            channelId: 'fg-1',
-            name: 'NFRS FG1',
-            label: 'Northshire Fireground 1',
-            modes: [{ mode: 'fm', isPrimary: true, bandwidthKHz: 12.5, rxTone: '77.0' }],
-          }),
-        ], { serviceOrg: 'Northshire FRS' }),
+        group(
+          'zz-fire',
+          [
+            entry({
+              channelId: 'fg-1',
+              name: 'NFRS FG1',
+              label: 'Northshire Fireground 1',
+              modes: [{ mode: 'fm', isPrimary: true, bandwidthKHz: 12.5, rxTone: '77.0' }],
+            }),
+          ],
+          { serviceOrg: 'Northshire FRS' },
+        ),
       ]),
       ['zz-fire'],
     );

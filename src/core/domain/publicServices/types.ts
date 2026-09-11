@@ -1,14 +1,7 @@
 import type { ChannelTone, DMRTimeSlot } from '../../models/library.ts';
 
 export type PublicServiceCategory =
-  | 'fire'
-  | 'maritime'
-  | 'sar'
-  | 'ambulance'
-  | 'utility'
-  | 'transport'
-  | 'event'
-  | 'other';
+  'fire' | 'maritime' | 'sar' | 'ambulance' | 'utility' | 'transport' | 'event' | 'other';
 
 export type PublicServiceMode = 'fm' | 'dmr';
 

@@ -41,7 +41,16 @@ export const REQUIRED = [
 ];
 
 export const ENUMS = {
-  category: new Set(['fire', 'maritime', 'sar', 'ambulance', 'utility', 'transport', 'event', 'other']),
+  category: new Set([
+    'fire',
+    'maritime',
+    'sar',
+    'ambulance',
+    'utility',
+    'transport',
+    'event',
+    'other',
+  ]),
   mode: new Set(['fm', 'dmr']),
   is_primary_mode: new Set(['true', 'false']),
   bandwidth_khz: new Set(['', '12.5', '25']),
@@ -124,7 +133,9 @@ export function validatePath(filePath, expectedHeader = loadTemplateHeader()) {
 
     for (const [col, allowed] of Object.entries(ENUMS)) {
       if (!allowed.has(r[col])) {
-        errors.push(`${tag}: '${col}' = ${JSON.stringify(r[col])} is not one of ${[...allowed].sort().join(', ')}`);
+        errors.push(
+          `${tag}: '${col}' = ${JSON.stringify(r[col])} is not one of ${[...allowed].sort().join(', ')}`,
+        );
       }
     }
 
@@ -133,7 +144,9 @@ export function validatePath(filePath, expectedHeader = loadTemplateHeader()) {
     if (!/^[A-Z]{2}$/.test(cc)) {
       errors.push(`${tag}: country_code ${JSON.stringify(cc)} must be two uppercase letters`);
     } else if (!r.group_id.startsWith(`${cc.toLowerCase()}-`)) {
-      errors.push(`${tag}: group_id ${JSON.stringify(r.group_id)} must start with '${cc.toLowerCase()}-'`);
+      errors.push(
+        `${tag}: group_id ${JSON.stringify(r.group_id)} must start with '${cc.toLowerCase()}-'`,
+      );
     }
 
     for (const col of ['group_id', 'channel_id']) {
@@ -196,20 +209,29 @@ export function validatePath(filePath, expectedHeader = loadTemplateHeader()) {
           errors.push(`${tag}: '${col}' must be blank on a DMR row`);
         }
       }
-      if (r.colour_code && !(/^\d+$/.test(r.colour_code) && Number(r.colour_code) >= 0 && Number(r.colour_code) <= 15)) {
-        errors.push(`${tag}: colour_code ${JSON.stringify(r.colour_code)} must be an integer 0-15 or blank`);
+      if (
+        r.colour_code &&
+        !(/^\d+$/.test(r.colour_code) && Number(r.colour_code) >= 0 && Number(r.colour_code) <= 15)
+      ) {
+        errors.push(
+          `${tag}: colour_code ${JSON.stringify(r.colour_code)} must be an integer 0-15 or blank`,
+        );
       }
       if (r.timeslot !== '' && r.timeslot !== '1' && r.timeslot !== '2') {
         errors.push(`${tag}: timeslot ${JSON.stringify(r.timeslot)} must be 1, 2 or blank`);
       }
       if (r.talkgroup_id && !/^\d+$/.test(r.talkgroup_id)) {
-        errors.push(`${tag}: talkgroup_id ${JSON.stringify(r.talkgroup_id)} must be an integer or blank`);
+        errors.push(
+          `${tag}: talkgroup_id ${JSON.stringify(r.talkgroup_id)} must be an integer or blank`,
+        );
       }
     }
 
     for (const col of ['rx_tone', 'tx_tone']) {
       if (r[col] && !TONE.test(r[col])) {
-        errors.push(`${tag}: '${col}' = ${JSON.stringify(r[col])} must be CTCSS like '77.0' or DCS like 'D023N'`);
+        errors.push(
+          `${tag}: '${col}' = ${JSON.stringify(r[col])} must be CTCSS like '77.0' or DCS like 'D023N'`,
+        );
       }
     }
 
@@ -219,7 +241,9 @@ export function validatePath(filePath, expectedHeader = loadTemplateHeader()) {
       }
     }
     if (r.source_date && !DATE.test(r.source_date)) {
-      errors.push(`${tag}: source_date ${JSON.stringify(r.source_date)} must be YYYY, YYYY-MM or YYYY-MM-DD`);
+      errors.push(
+        `${tag}: source_date ${JSON.stringify(r.source_date)} must be YYYY, YYYY-MM or YYYY-MM-DD`,
+      );
     }
     if (
       r.confidence === 'high' &&
@@ -246,12 +270,16 @@ export function validatePath(filePath, expectedHeader = loadTemplateHeader()) {
   for (const [channelKey, count] of [...primary.entries()].sort()) {
     if (count !== 1) {
       const [gid, chid] = channelKey.split('\0');
-      errors.push(`${gid}/${chid}: has ${count} rows with is_primary_mode=true, expected exactly 1`);
+      errors.push(
+        `${gid}/${chid}: has ${count} rows with is_primary_mode=true, expected exactly 1`,
+      );
     }
   }
 
   if (countryCodes.size > 1) {
-    errors.push(`file mixes country codes ${[...countryCodes].sort().join(', ')}; one country per file`);
+    errors.push(
+      `file mixes country codes ${[...countryCodes].sort().join(', ')}; one country per file`,
+    );
   }
 
   return errors;

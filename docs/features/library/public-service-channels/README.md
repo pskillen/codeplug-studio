@@ -8,25 +8,25 @@ The first datasets are the **United Kingdom** (national fireground, HM Coastguar
 
 ## Implementation status
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Add-from picker | Shipped | `/library/channels/add-public-services`; country from browser locale; groups pre-ticked |
-| Transmit at creation | Shipped | `forbidTransmit: 'forbid'` is not a parameter; no UI toggle |
-| Dual-mode channels | Shipped | One library channel with FM + DMR profiles; primary mode from the dataset |
-| Dedup | Shipped | Name identity (case/whitespace insensitive). Frequency collisions are an advisory, not a skip |
-| GB + IE datasets | Shipped | Bundled, code-split per country |
-| Contributor CSV pipeline | Shipped | `scripts/public-services/` validator + converter |
-| Site-specific filtering | Deferred | Flat groups — an Irish operator gets all Coast Guard working channels |
-| Export/write-time TX guard | Deferred | A later bulk edit or editor change can re-enable transmit |
-| General tags / provenance | Deferred | Identity is the generated channel name |
+| Area                       | Status   | Notes                                                                                         |
+| -------------------------- | -------- | --------------------------------------------------------------------------------------------- |
+| Add-from picker            | Shipped  | `/library/channels/add-public-services`; country from browser locale; groups pre-ticked       |
+| Transmit at creation       | Shipped  | `forbidTransmit: 'forbid'` is not a parameter; no UI toggle                                   |
+| Dual-mode channels         | Shipped  | One library channel with FM + DMR profiles; primary mode from the dataset                     |
+| Dedup                      | Shipped  | Name identity (case/whitespace insensitive). Frequency collisions are an advisory, not a skip |
+| GB + IE datasets           | Shipped  | Bundled, code-split per country                                                               |
+| Contributor CSV pipeline   | Shipped  | `scripts/public-services/` validator + converter                                              |
+| Site-specific filtering    | Deferred | Flat groups — an Irish operator gets all Coast Guard working channels                         |
+| Export/write-time TX guard | Deferred | A later bulk edit or editor change can re-enable transmit                                     |
+| General tags / provenance  | Deferred | Identity is the generated channel name                                                        |
 
 ## Documentation map
 
-| Doc | Contents |
-| --- | --- |
-| [dataset-schema.md](dataset-schema.md) | Interchange CSV columns, duplex and dual-mode conventions |
-| [contributing-data.md](contributing-data.md) | Research brief for adding a country |
-| Sidecar | [`PublicServicePicker.md`](../../../src/app/components/publicServices/PublicServicePicker.md) |
+| Doc                                          | Contents                                                                                      |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| [dataset-schema.md](dataset-schema.md)       | Interchange CSV columns, duplex and dual-mode conventions                                     |
+| [contributing-data.md](contributing-data.md) | Research brief for adding a country                                                           |
+| Sidecar                                      | [`PublicServicePicker.md`](../../../src/app/components/publicServices/PublicServicePicker.md) |
 
 ## Operator flow
 
@@ -52,25 +52,25 @@ For the two UK fireground repeater channels, `txFrequency` is the **repeater inp
 
 ## Dataset policy
 
-| Include | Exclude |
-| --- | --- |
-| Allocations in a public, citable source | Leaked documents or uncited hearsay |
+| Include                                     | Exclude                                              |
+| ------------------------------------------- | ---------------------------------------------------- |
+| Allocations in a public, citable source     | Leaked documents or uncited hearsay                  |
 | Unencrypted analogue FM and unencrypted DMR | Encrypted systems (UK Airwave/ESN, Irish TETRA/NDRS) |
-| Stable national or regional designations | Trunked talkgroup detail, ad-hoc assignments |
+| Stable national or regional designations    | Trunked talkgroup detail, ad-hoc assignments         |
 
 Encrypted services are recorded as `knownGaps` on the country (shown in the picker) rather than omitted silently.
 
 ## Defaults on generated channels
 
-| Field | Value |
-| --- | --- |
-| `forbidTransmit` | `'forbid'` |
-| `txPermit` | `'default'` |
-| `power` | `null` |
-| `scanInclusion` | `'default'` |
-| `contactRef` | `null` (promiscuous DMR monitoring) |
-| `comment` | Service organisation + channel designation — **not** source URLs |
-| `name` | Dataset short name, authored to ≤ 16 ASCII characters |
+| Field            | Value                                                            |
+| ---------------- | ---------------------------------------------------------------- |
+| `forbidTransmit` | `'forbid'`                                                       |
+| `txPermit`       | `'default'`                                                      |
+| `power`          | `null`                                                           |
+| `scanInclusion`  | `'default'`                                                      |
+| `contactRef`     | `null` (promiscuous DMR monitoring)                              |
+| `comment`        | Service organisation + channel designation — **not** source URLs |
+| `name`           | Dataset short name, authored to ≤ 16 ASCII characters            |
 
 Citations stay on the dataset entry and in `scripts/public-services/research/<iso2>/sources.md`.
 
@@ -89,12 +89,12 @@ Each country module under `src/core/domain/publicServices/data/` is reached only
 
 ## Code anchors
 
-| Layer | Path |
-| --- | --- |
-| Types, generate, dedup | `src/core/domain/publicServices/` |
-| Country data | `src/core/domain/publicServices/data/` |
-| Import plan | `src/core/services/publicServiceImport.ts` |
-| Lazy registry | `src/app/lib/publicServiceCountries.ts` |
-| Persist | `src/app/lib/publicServiceImport.ts` |
-| UI | `src/app/components/publicServices/PublicServicePicker.tsx` |
-| Tooling | `scripts/public-services/` |
+| Layer                  | Path                                                        |
+| ---------------------- | ----------------------------------------------------------- |
+| Types, generate, dedup | `src/core/domain/publicServices/`                           |
+| Country data           | `src/core/domain/publicServices/data/`                      |
+| Import plan            | `src/core/services/publicServiceImport.ts`                  |
+| Lazy registry          | `src/app/lib/publicServiceCountries.ts`                     |
+| Persist                | `src/app/lib/publicServiceImport.ts`                        |
+| UI                     | `src/app/components/publicServices/PublicServicePicker.tsx` |
+| Tooling                | `scripts/public-services/`                                  |

@@ -38,11 +38,7 @@ export const PUBLIC_SERVICE_SOURCE: ChannelDataSource = {
   description:
     'Receive-only memories for published, unencrypted service allocations near the amateur bands.',
   path: '/library/channels/add-public-services',
-  badges: [
-    { label: 'RX only' },
-    { emoji: '🇬🇧', label: 'UK' },
-    { emoji: '🇮🇪', label: 'Ireland' },
-  ],
+  badges: [{ label: 'RX only' }, { emoji: '🇬🇧', label: 'UK' }, { emoji: '🇮🇪', label: 'Ireland' }],
   Icon: IconBroadcast,
 };
 
