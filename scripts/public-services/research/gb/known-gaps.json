@@ -1,0 +1,16 @@
+{
+  "countryLabel": "United Kingdom",
+  "datasetVersion": "2026-09-11",
+  "knownGaps": [
+    {
+      "category": "ambulance",
+      "summary": "UK ambulance operational voice is on the encrypted Airwave TETRA network and its Emergency Services Network successor. There is nothing unencrypted to monitor.",
+      "sourceUrl": "https://www.ofcom.org.uk/spectrum/radio-equipment/emergency-services"
+    },
+    {
+      "category": "other",
+      "summary": "UK police operational voice is on encrypted Airwave TETRA / Emergency Services Network. Fireground UHF is the exception: national incident-ground channels are required to be clear speech.",
+      "sourceUrl": "https://www.ofcom.org.uk/spectrum/radio-equipment/emergency-services"
+    }
+  ]
+}

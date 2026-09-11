@@ -1,0 +1,21 @@
+{
+  "countryLabel": "Ireland",
+  "datasetVersion": "2026-09-11",
+  "knownGaps": [
+    {
+      "category": "fire",
+      "summary": "Irish fire services are run by local authorities with no published national channel plan, and operational radio has moved to an encrypted national digital service. There is nothing unencrypted to monitor.",
+      "sourceUrl": "https://www.comreg.ie/industry/radio-spectrum/licensing/search-licence-type/emergency-service-digital-radio/"
+    },
+    {
+      "category": "ambulance",
+      "summary": "HSE National Ambulance Service operates on the encrypted TETRA Managed National Digital Radio Service. No unencrypted voice channel is published.",
+      "sourceUrl": "https://www.comreg.ie/industry/radio-spectrum/licensing/search-licence-type/emergency-service-digital-radio/"
+    },
+    {
+      "category": "other",
+      "summary": "An Garda Síochána uses the encrypted national TETRA network. There is nothing unencrypted to monitor.",
+      "sourceUrl": "https://www.irishstatutebook.ie/eli/2008/si/324/made/en/html"
+    }
+  ]
+}
