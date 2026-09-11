@@ -39,10 +39,26 @@
   gap: 4px;
 }
 
+.gapIntro {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--dsv2-text-secondary);
+  line-height: 1.45;
+}
+
+.gapList {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
 .gapNote {
   font-size: 13px;
   color: var(--dsv2-text-secondary);
   line-height: 1.45;
+}
+
+.gapNote + .gapNote {
+  margin-top: 8px;
 }
 
 .gapNote a {

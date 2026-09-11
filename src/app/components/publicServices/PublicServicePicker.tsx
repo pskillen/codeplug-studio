@@ -314,7 +314,7 @@ export default function PublicServicePicker() {
       <Panel title="Country">
         <FormField
           label="Country"
-          hint="Pre-selected from your browser locale when we have a dataset for that region."
+          hint="Chosen from your browser locale when we cover that country."
         >
           <Select
             data={countryOptions}
@@ -329,32 +329,10 @@ export default function PublicServicePicker() {
             variant="unstyled"
           />
         </FormField>
-        {country && country.knownGaps.length > 0 ? (
-          <div>
-            <p>
-              <strong>Not available for {country.countryLabel}.</strong> Expected services that are
-              encrypted or unpublished are listed so a missing group is not mistaken for unfinished
-              data.
-            </p>
-            {country.knownGaps.map((gap) => (
-              <p key={gap.category} className={classes.gapNote}>
-                {CATEGORY_LABEL[gap.category]} — {gap.summary}
-                {gap.sourceUrl ? (
-                  <>
-                    {' '}
-                    <a href={gap.sourceUrl} target="_blank" rel="noreferrer">
-                      Sources
-                    </a>
-                  </>
-                ) : null}
-              </p>
-            ))}
-          </div>
-        ) : null}
       </Panel>
 
       <Panel title="Groups">
-        {loading ? <p>Loading dataset…</p> : null}
+        {loading ? <p>Loading channels…</p> : null}
         {!loading && !country ? <p>Choose a country to see published channel groups.</p> : null}
         {country ? (
           <div className={classes.groupList}>
@@ -385,6 +363,38 @@ export default function PublicServicePicker() {
           onChange={setAlsoCreateZones}
         />
       </Panel>
+
+      {country && country.knownGaps.length > 0 ? (
+        <Panel
+          title="Why some services aren't listed"
+          collapsible
+          defaultCollapsed
+          badge={`${country.knownGaps.length} note${country.knownGaps.length === 1 ? '' : 's'}`}
+        >
+          <p className={classes.gapIntro}>
+            This list only includes published, unencrypted allocations. The notes below explain
+            services you might expect that aren't here.
+          </p>
+          <ul className={classes.gapList}>
+            {country.knownGaps.map((gap) => (
+              <li key={gap.category} className={classes.gapNote}>
+                {gap.category === 'other' ? null : (
+                  <strong>{CATEGORY_LABEL[gap.category]}. </strong>
+                )}
+                {gap.summary}
+                {gap.sourceUrl ? (
+                  <>
+                    {' '}
+                    <a href={gap.sourceUrl} target="_blank" rel="noreferrer">
+                      Read the source
+                    </a>
+                  </>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
 
       <Panel title={`Preview (${previewRows.length} channels)`}>
         <DataTable

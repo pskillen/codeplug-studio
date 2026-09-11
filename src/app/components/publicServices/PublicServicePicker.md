@@ -22,7 +22,7 @@ Routed at `/library/channels/add-public-services` via `AddPublicServicesPage`.
 
 ## Behaviour
 
-- mk2 layout on `DirectoryIngestPage` — country `Select`, group checkboxes, known-gaps panel, preview `DataTable`
+- mk2 layout on `DirectoryIngestPage` — country `Select`, group checkboxes, preview `DataTable`. Encrypted or unpublished services sit in a collapsed **Why some services aren't listed** panel after the groups, so picking a country does not read as “not available”
 - Country is pre-selected from `navigator.language` when a dataset exists for that region (`en-GB` → United Kingdom). `en-US` leaves the picker open rather than silently choosing GB
 - Groups default to ticked. Dual-mode fireground rows show both FM and DMR pills
 - Frequency collisions with a differently named library channel stay selectable and show an advisory

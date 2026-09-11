@@ -58,7 +58,7 @@ For the two UK fireground repeater channels, `txFrequency` is the **repeater inp
 | Unencrypted analogue FM and unencrypted DMR | Encrypted systems (UK Airwave/ESN, Irish TETRA/NDRS) |
 | Stable national or regional designations    | Trunked talkgroup detail, ad-hoc assignments         |
 
-Encrypted services are recorded as `knownGaps` on the country (shown in the picker) rather than omitted silently.
+Encrypted services are recorded as `knownGaps` on the country. The picker shows them behind **Why some services aren't listed** after the groups, so a missing service is explained without reading as “this country isn't available”.
 
 ## Defaults on generated channels
 
