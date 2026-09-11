@@ -156,6 +156,22 @@ export const ATTRIBUTIONS: AttributionEntry[] = [
       'Planned OpenGD77-family Web Serial radio I/O (protocol lineage)',
     ],
   },
+  {
+    id: 'public-services-gb',
+    name: 'UK fireground and maritime safety allocations',
+    description:
+      'Bundled receive-only memories cited from NFCC Fireground Radios Guidance, Ofcom frequency tables, and Maritime and Coastguard Agency publications.',
+    homeUrl: 'https://www.ofcom.org.uk/spectrum/frequencies/uk-fat',
+    usedIn: ['Add from Public services'],
+  },
+  {
+    id: 'public-services-ie',
+    name: 'Irish Coast Guard and port VHF channels',
+    description:
+      'Bundled receive-only memories cited from Irish Marine Notices, the Department of Transport, and harbour-authority notices to mariners.',
+    homeUrl: 'https://www.gov.ie/en/department-of-transport/collections/marine-notices-2020/',
+    usedIn: ['Add from Public services'],
+  },
 ];
 
 export function findAttribution(id: string): AttributionEntry | undefined {
