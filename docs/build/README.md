@@ -158,6 +158,8 @@ IRTS and RepeaterBook upstream feeds are not browser-CORS accessible (RepeaterBo
 | `https://next.codeplug.mm9pdy.net`    | next                                          |
 | `https://staging.codeplug.mm9pdy.net` | staging                                       |
 | `http://localhost:5173`               | local Vite against deployed functions         |
+| `capacitor://localhost`               | Capacitor iOS default scheme                  |
+| `https://localhost`                   | Capacitor Android default scheme (`androidScheme: 'https'`) |
 
 Requests without a matching `Origin` or `Referer` receive **403**. Responses mirror the allowed origin in `Access-Control-Allow-Origin` (never `*`).
 

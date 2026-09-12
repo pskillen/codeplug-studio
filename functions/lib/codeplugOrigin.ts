@@ -13,6 +13,11 @@ function isAllowedUrl(url: URL): boolean {
     if (protocol === 'http:') {
       return port === '5173' || port === '80';
     }
+    // Capacitor's default androidScheme is `https`, so the Android WebView's
+    // Origin is `https://localhost` (unlike iOS's `capacitor://localhost`).
+    if (protocol === 'https:') {
+      return port === '443';
+    }
     return false;
   }
 
