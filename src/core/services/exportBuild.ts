@@ -1,6 +1,5 @@
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
-import { findZoneGroupingSection } from '@core/domain/zoneGroupingLayout.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
 import {
@@ -114,7 +113,6 @@ function assembleForExport(
   const baseAssembled = {
     ...projection,
     library,
-    zoneGrouping: findZoneGroupingSection(build),
   };
   const { assembled, warnings } = applyCpsDigitalDirectoryProjection(baseAssembled, exportOptions);
   return { assembled, projectionWarnings: warnings };

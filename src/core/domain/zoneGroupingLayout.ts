@@ -85,6 +85,20 @@ export function orderChannelIdsByLayoutHint(
   return ordered;
 }
 
+/**
+ * Reconcile a build's persisted zoneGrouping section with the current library before it is
+ * read for export/write. Without this, a zone (or a channel added to an existing zone) created
+ * since the section was last persisted is absent from `section.zones` and — because `assemble`
+ * treats a present section as the authoritative zone list — silently excluded from export and
+ * radio writes, not just missing an order hint. No-op when the build has no zoneGrouping section
+ * yet (assemble falls back to reading library zones directly in that case).
+ */
+export function withSyncedZoneGrouping(build: FormatBuild, library: LibrarySlice): FormatBuild {
+  const existing = findZoneGroupingSection(build);
+  if (!existing) return build;
+  return replaceZoneGroupingSection(build, syncZoneGroupingWithLibrary(existing, library));
+}
+
 export function updateZoneGroupingEntry(
   section: ZoneGroupingLayout,
   zoneId: string,

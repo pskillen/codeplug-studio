@@ -11,8 +11,13 @@ import {
   newRadioBuildForProfile,
   newScanList,
   newTalkGroup,
+  newZone,
 } from '@core/domain/factories.ts';
 import { withExportEligibleDefaults } from '@core/domain/channelTestHelpers.ts';
+import {
+  replaceZoneGroupingSection,
+  seedZoneGroupingFromLibrary,
+} from '@core/domain/zoneGroupingLayout.ts';
 import { parseProjectDocument } from '@core/import-export/formats/native-yaml/parse.ts';
 import { DEFAULT_CHANNEL_BEHAVIOUR_DEFAULTS } from '@core/models/channelBehaviourDefaults.ts';
 import { assemble, exportInclusionWarnings } from './assemble.ts';
@@ -110,6 +115,54 @@ describe('assemble', () => {
     // compose "GB7GL DMR Scotland"; name_only must compose "DMR Scotland" instead.
     expect(dmrChannel?.wireName).toBe('DMR Scotland');
     expect(dmrChannel?.wireNameOverride).toBeUndefined();
+  });
+
+  it('includes a zone added to the library after the build persisted its zoneGrouping section (regression #1281)', () => {
+    const projectId = '11111111-1111-4111-8111-111111111111';
+    const existingChannel = withExportEligibleDefaults(newChannel(projectId, 'Existing Ch'));
+    const existingZone = {
+      ...newZone(projectId, 'Alpha'),
+      members: [{ kind: 'channel' as const, channelId: existingChannel.id }],
+    };
+
+    let build = newFormatBuild(projectId, 'opengd77-1701');
+    build = replaceZoneGroupingSection(
+      build,
+      seedZoneGroupingFromLibrary({
+        channels: [existingChannel],
+        zones: [existingZone],
+        talkGroups: [],
+        digitalContacts: [],
+        analogContacts: [],
+        rxGroupLists: [],
+        scanLists: [],
+      }),
+    );
+
+    // "Blackpool" — created after the build's zoneGrouping section was last persisted, as in #1281.
+    const newChannelInLibrary = withExportEligibleDefaults(newChannel(projectId, 'Blackpool Ch'));
+    const newZoneInLibrary = {
+      ...newZone(projectId, 'Blackpool'),
+      members: [{ kind: 'channel' as const, channelId: newChannelInLibrary.id }],
+    };
+    const library = {
+      channels: [existingChannel, newChannelInLibrary],
+      zones: [existingZone, newZoneInLibrary],
+      talkGroups: [],
+      digitalContacts: [],
+      analogContacts: [],
+      rxGroupLists: [],
+      scanLists: [],
+    };
+
+    const projection = assemble(build, library, {
+      formatId: 'opengd77',
+      profileId: 'opengd77-1701',
+    });
+
+    const blackpool = projection.zones.find((zone) => zone.zoneId === newZoneInLibrary.id);
+    expect(blackpool?.memberChannelIds).toEqual([newChannelInLibrary.id]);
+    expect(projection.channels.some((row) => row.entity.id === newChannelInLibrary.id)).toBe(true);
   });
 
   it('excludes channels when channel override marks excluded', () => {
