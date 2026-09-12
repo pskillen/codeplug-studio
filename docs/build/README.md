@@ -151,14 +151,14 @@ Local check: `npm run build && npm run preview`, then open `/library/channels` o
 
 IRTS and RepeaterBook upstream feeds are not browser-CORS accessible (RepeaterBook also requires a server-set User-Agent). Studio ships edge proxies gated by a **shared origin allowlist** in [`functions/lib/codeplugOrigin.ts`](../../functions/lib/codeplugOrigin.ts):
 
-| Allowed origin                        | Notes                                         |
-| ------------------------------------- | --------------------------------------------- |
-| `https://codeplug.mm9pdy.net`         | prod apex (wildcard `*.` does not cover apex) |
-| `https://dev.codeplug.mm9pdy.net`     | dev                                           |
-| `https://next.codeplug.mm9pdy.net`    | next                                          |
-| `https://staging.codeplug.mm9pdy.net` | staging                                       |
-| `http://localhost:5173`               | local Vite against deployed functions         |
-| `capacitor://localhost`               | Capacitor iOS default scheme                  |
+| Allowed origin                        | Notes                                                       |
+| ------------------------------------- | ----------------------------------------------------------- |
+| `https://codeplug.mm9pdy.net`         | prod apex (wildcard `*.` does not cover apex)               |
+| `https://dev.codeplug.mm9pdy.net`     | dev                                                         |
+| `https://next.codeplug.mm9pdy.net`    | next                                                        |
+| `https://staging.codeplug.mm9pdy.net` | staging                                                     |
+| `http://localhost:5173`               | local Vite against deployed functions                       |
+| `capacitor://localhost`               | Capacitor iOS default scheme                                |
 | `https://localhost`                   | Capacitor Android default scheme (`androidScheme: 'https'`) |
 
 Requests without a matching `Origin` or `Referer` receive **403**. Responses mirror the allowed origin in `Access-Control-Allow-Origin` (never `*`).
