@@ -43,7 +43,7 @@ Capacitor-based Android shell for Codeplug Studio. Allows operators to carry the
 
 Web builds keep same-origin relative `/api/*` (hostname selects the Functions deployment). Pre-release sideload APKs (`BUILD_ENV=staging`) therefore hit staging proxies, not production.
 
-- **CORS:** Pages Functions allowlist includes `capacitor://localhost` and `http://localhost` (mirrored `Access-Control-Allow-Origin` — **not** `*`). See `functions/lib/codeplugOrigin.ts`.
+- **CORS:** Pages Functions allowlist includes `capacitor://localhost` (iOS), `https://localhost` (Android's default `androidScheme: 'https'`), and `http://localhost` (mirrored `Access-Control-Allow-Origin` — **not** `*`). See `functions/lib/codeplugOrigin.ts`.
 - **External Links:** Anchors with `target="_blank"` and http(s) hrefs open via `@capacitor/browser` (Chrome Custom Tabs).
 - **Combobox dropdowns:** Mantine `Select` / `Autocomplete` / `MultiSelect` use theme `hideDetached: false` so opening a control near the bottom of a scrollable page (e.g. Settings → Grid overlay) does not scroll the trigger off-screen ([#902](https://github.com/pskillen/codeplug-studio/issues/902)).
 - **Google Drive:** PKCE OAuth in Chrome Custom Tabs with redirect `net.mm9pdy.codeplugstudio:/oauth2redirect`. Requires Android OAuth client + `VITE_GOOGLE_ANDROID_CLIENT_ID` in APK builds. See [google-drive](../import-export/google-drive.md).

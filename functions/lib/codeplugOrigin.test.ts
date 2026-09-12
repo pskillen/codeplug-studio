@@ -25,6 +25,11 @@ describe('isAllowedCodeplugOrigin', () => {
     expect(isAllowedCodeplugOrigin('http://localhost/index.html')).toBe(true);
   });
 
+  it('accepts Capacitor Android default `https` scheme origin', () => {
+    expect(isAllowedCodeplugOrigin('https://localhost')).toBe(true);
+    expect(isAllowedCodeplugOrigin('https://localhost/index.html')).toBe(true);
+  });
+
   it('rejects unknown, typosquat, and wrong local ports', () => {
     expect(isAllowedCodeplugOrigin('https://evil.com')).toBe(false);
     expect(isAllowedCodeplugOrigin('https://codeplug.mm9pdy.net.evil.com')).toBe(false);
