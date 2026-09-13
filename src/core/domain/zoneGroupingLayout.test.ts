@@ -2,12 +2,16 @@ import { describe, expect, it } from 'vitest';
 import type { Zone } from '@core/models/library.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
 import { initialRevision } from '@core/models/revision.ts';
+import { newFormatBuild } from './factories.ts';
 import {
+  findZoneGroupingSection,
   isZoneMemberOrderOverridden,
+  replaceZoneGroupingSection,
   resetZoneMemberOrderToLibrary,
   seedZoneGroupingFromLibrary,
   syncZoneGroupingWithLibrary,
   updateZoneChannelIds,
+  withSyncedZoneGrouping,
 } from './zoneGroupingLayout.ts';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
@@ -59,6 +63,29 @@ describe('syncZoneGroupingWithLibrary', () => {
     expect(synced.zones[0]?.exportScanList).toBe(true);
     expect(synced.zones[0]?.scanCarrierFrequencyHz).toBe(430_000_000);
     expect(synced.zones[1]?.exportScanList).toBeUndefined();
+  });
+});
+
+describe('withSyncedZoneGrouping', () => {
+  it('adds a zone created after the build last persisted its zoneGrouping section', () => {
+    const library = emptyLibrary([zone(ZONE_A, 'Alpha')]);
+    let build = newFormatBuild(PROJECT_ID, 'opengd77-1701');
+    build = replaceZoneGroupingSection(build, seedZoneGroupingFromLibrary(library));
+
+    // Simulate #1281: "Blackpool" (ZONE_B) was created after the section was persisted.
+    const libraryWithNewZone = emptyLibrary([zone(ZONE_A, 'Alpha'), zone(ZONE_B, 'Beta')]);
+    const synced = withSyncedZoneGrouping(build, libraryWithNewZone);
+
+    expect(findZoneGroupingSection(synced)?.zones.map((entry) => entry.id)).toEqual([
+      ZONE_A,
+      ZONE_B,
+    ]);
+  });
+
+  it('is a no-op when the build has no zoneGrouping section yet', () => {
+    const build = newFormatBuild(PROJECT_ID, 'opengd77-1701');
+    const library = emptyLibrary([zone(ZONE_A, 'Alpha')]);
+    expect(withSyncedZoneGrouping(build, library)).toBe(build);
   });
 });
 

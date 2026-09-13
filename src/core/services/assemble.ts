@@ -25,7 +25,10 @@ import {
   resolveEffectiveZoneChannelIds,
   collectZoneFlattenWarnings,
 } from '@core/domain/zoneHierarchy.ts';
-import { orderChannelIdsByLayoutHint } from '@core/domain/zoneGroupingLayout.ts';
+import {
+  orderChannelIdsByLayoutHint,
+  withSyncedZoneGrouping,
+} from '@core/domain/zoneGroupingLayout.ts';
 import {
   buildUsesFlatMemoryList,
   chirpMemoryChannelIds,
@@ -604,7 +607,10 @@ export function assemble(
   const migratedBuild = buildUsesFlatMemoryList(migratedBase)
     ? migrateFlatMemoryLayoutToOrderOrSlot(migratedBase, library)
     : migratedBase;
-  const normalizedBuild = withExportInclusionDefaults(migratedBuild);
+  const normalizedBuild = withSyncedZoneGrouping(
+    withExportInclusionDefaults(migratedBuild),
+    library,
+  );
   const channels = assembleChannels(normalizedBuild, library, formatId, profileId);
   const exportedChannelIds = new Set(channels.map((c) => c.entity.id));
   const zones = assembleZones(normalizedBuild, library, exportedChannelIds);
