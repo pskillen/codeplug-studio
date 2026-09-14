@@ -12,6 +12,7 @@ export const ANALYTICS_ROUTE_TEMPLATES = [
   '/library/contacts/add-from-radioid',
   '/library/contacts/directory',
   '/library/channels/add-channel-set',
+  '/library/channels/add-public-services',
   '/library/channels/defaults',
   '/library/zones/defaults',
   '/library/zones/new-from-location',

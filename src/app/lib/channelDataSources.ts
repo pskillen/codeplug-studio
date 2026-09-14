@@ -1,6 +1,7 @@
 import type { TablerIcon } from '@tabler/icons-react';
 import {
   IconAntenna,
+  IconBroadcast,
   IconGlobe,
   IconPlane,
   IconPlaylistAdd,
@@ -28,6 +29,17 @@ export const CHANNEL_SET_SOURCE: ChannelDataSource = {
   path: '/library/channels/add-channel-set',
   badges: [{ label: 'PMR446' }, { label: 'CB' }, { label: 'Simplex' }],
   Icon: IconPlaylistAdd,
+};
+
+export const PUBLIC_SERVICE_SOURCE: ChannelDataSource = {
+  id: 'public-services',
+  title: 'Public services',
+  subtitle: 'Built-in datasets',
+  description:
+    'Receive-only memories for published, unencrypted service allocations near the amateur bands.',
+  path: '/library/channels/add-public-services',
+  badges: [{ label: 'RX only' }, { emoji: '🇬🇧', label: 'UK' }, { emoji: '🇮🇪', label: 'Ireland' }],
+  Icon: IconBroadcast,
 };
 
 /** External directory and API sources (ukrepeater, OpenAIP, BrandMeister). */
@@ -98,5 +110,6 @@ export const CHANNEL_DATA_SOURCES: readonly ChannelDataSource[] = [
 /** All entries shown in the Library **Add from…** picker modal. */
 export const CHANNEL_ADD_SOURCES: readonly ChannelDataSource[] = [
   CHANNEL_SET_SOURCE,
+  PUBLIC_SERVICE_SOURCE,
   ...CHANNEL_DATA_SOURCES,
 ];

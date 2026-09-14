@@ -10,6 +10,7 @@ import AddFromIrtsPage from './routes/library/AddFromIrtsPage.tsx';
 import AddFromRepeaterBookPage from './routes/library/AddFromRepeaterBookPage.tsx';
 import AddFromRadioidPage from './routes/library/AddFromRadioidPage.tsx';
 import AddChannelSetPage from './routes/library/AddChannelSetPage.tsx';
+import AddPublicServicesPage from './routes/library/AddPublicServicesPage.tsx';
 import ZoneFromLocationPage from './routes/library/ZoneFromLocationPage.tsx';
 import ZoneCreatePage from './routes/library/zones/ZoneCreatePage.tsx';
 import ZoneEditLayout from './routes/library/zones/ZoneEditLayout.tsx';
@@ -197,6 +198,10 @@ export const appRouter = createBrowserRouter([
           {
             path: '/library/channels/add-channel-set',
             element: <AddChannelSetPage />,
+          },
+          {
+            path: '/library/channels/add-public-services',
+            element: <AddPublicServicesPage />,
           },
           { path: '/library/:kind/:id', element: <EntityEditorPage /> },
           {
