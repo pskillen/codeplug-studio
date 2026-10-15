@@ -23,5 +23,6 @@ Studio `profileId` → radio home maps live in per-adapter [`profiles.md`](../ex
 
 ## Related
 
+- [reverse-engineering-vendor-cps.md](reverse-engineering-vendor-cps.md) — lessons learned for statically reverse-engineering an official CPS and diffing it against our docs/code
 - [radios-extract-progress.md](../radios-extract-progress.md)
 - [export-formats/](../export-formats/README.md)
