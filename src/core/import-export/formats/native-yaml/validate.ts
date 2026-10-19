@@ -1155,6 +1155,12 @@ function parseExportSettings(raw: unknown, label: string): BuildExportSettings |
       `${label}.scanListDwellTimeSeconds`,
     );
   }
+  if (record.assignMm9pdyStepKeys !== undefined && record.assignMm9pdyStepKeys !== null) {
+    settings.assignMm9pdyStepKeys = expectBoolean(
+      record.assignMm9pdyStepKeys,
+      `${label}.assignMm9pdyStepKeys`,
+    );
+  }
   return Object.keys(settings).length > 0 ? settings : undefined;
 }
 

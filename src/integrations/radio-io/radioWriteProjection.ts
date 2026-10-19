@@ -69,6 +69,12 @@ export interface RadioRxGroupDto {
    * - `radio-io-opengd77-*`: 1-based DMR contact bank indices when timeslot clones apply.
    */
   memberDigitalIds: readonly number[];
+  /**
+   * Parallel to `memberDigitalIds` on the MM9PDY AT-D890UV target.
+   * `1` / `2` write `0x01` / `0x02` at RX-group stride `+0x120 + index`.
+   * Omitted entries stay `0xFF`. Stock encode ignores this field.
+   */
+  memberTimeSlotOverrides?: readonly (1 | 2 | undefined)[];
 }
 
 /** Digital address-book contact (V-frame 0x0F). */
@@ -158,6 +164,17 @@ export interface RadioWriteOrganisation {
    * AT-D890UV scan-list timing deciseconds for all lists when build exportSettings override ([#1069](https://github.com/pskillen/codeplug-studio/issues/1069)).
    */
   atD890ScanListTiming?: AtD890ResolvedScanListTiming['deciseconds'];
+  /**
+   * MM9PDY AT-D890UV only. When true, RX-group encode writes
+   * {@link RadioRxGroupDto.memberTimeSlotOverrides} into the stride tail.
+   * Stock writes leave that tail `0xFF`.
+   */
+  writeRxGroupTimeSlotOverrides?: boolean;
+  /**
+   * MM9PDY AT-D890UV only. When true, encode and upload set P1 short to 14 and
+   * P2 short to 13. Stock writes leave those bytes as read.
+   */
+  assignMm9pdyStepKeys?: boolean;
   /**
    * OpenGD77 User Database (call-sign DB) rows. Omit to leave FLASH 0x50000 / 0xd8000
    * unchanged. Present (including empty) replaces the lookup store; not the 1024 contact bank.

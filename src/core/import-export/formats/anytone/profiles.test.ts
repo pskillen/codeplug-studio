@@ -52,6 +52,7 @@ describe('anytone profiles', () => {
 
   it('resolves Web Serial sibling profile to Anytone CSV caps', () => {
     expect(resolveAnytoneCpsProfileId('radio-io-at-d890uv')).toBe('anytone-at-d890uv');
+    expect(resolveAnytoneCpsProfileId('radio-io-at-d890uv-mm9pdy')).toBe('anytone-at-d890uv');
     expect(getAnytoneProfile('radio-io-at-d890uv').id).toBe('anytone-at-d890uv');
   });
 });

@@ -3,7 +3,7 @@
  */
 
 import { Link } from 'react-router-dom';
-import { Anchor, Group, Stack, Text } from '@mantine/core';
+import { Anchor, Group, Stack, Switch, Text } from '@mantine/core';
 import type { DigitalContactsWriteSource } from '@core/domain/digitalIdDirectoryProjection.ts';
 import KepsLastUpdated from '../library/KepsLastUpdated.tsx';
 import { Button, Checkbox, FormField, ModalShell, SegmentedControl } from '../v2/index.ts';
@@ -30,6 +30,9 @@ export interface WriteRadioModalProps {
   onWriteCodeplug: () => void;
   onWriteContacts: () => void;
   onWriteKeps: () => void;
+  /** MM9PDY AT-D890UV. Same persisted `assignMm9pdyStepKeys` as export settings. */
+  assignMm9pdyStepKeys?: boolean;
+  onAssignMm9pdyStepKeysChange?: (checked: boolean) => void;
 }
 
 const CONTACT_SOURCE_OPTIONS: { value: DigitalContactsWriteSource; label: string }[] = [
@@ -58,6 +61,8 @@ export default function WriteRadioModal({
   onWriteCodeplug,
   onWriteContacts,
   onWriteKeps,
+  assignMm9pdyStepKeys = false,
+  onAssignMm9pdyStepKeysChange,
 }: WriteRadioModalProps) {
   const writeDisabled = !serialOk || busy || writeHidden;
   const contactsWriteDisabled = writeDisabled || contactSource === 'none';
@@ -81,6 +86,16 @@ export default function WriteRadioModal({
             Write codeplug
           </Button>
         </Group>
+
+        {onAssignMm9pdyStepKeysChange ? (
+          <Switch
+            label="Assign TG previous and TG next"
+            description="P1 short becomes TG next and P2 short becomes TG previous. Official CPS shows these as item 15 Record and item 14 Record Switch. The radio's own key menu shows the MM9PDY names. Saved with this build."
+            checked={assignMm9pdyStepKeys}
+            disabled={busy}
+            onChange={(event) => onAssignMm9pdyStepKeysChange(event.currentTarget.checked)}
+          />
+        ) : null}
 
         {supportsDigitalContacts ? (
           <Stack gap="xs">

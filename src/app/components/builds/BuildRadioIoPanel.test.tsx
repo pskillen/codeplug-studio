@@ -63,6 +63,7 @@ vi.mock('../../state/persistence.ts', () => ({
     listSatellites: vi.fn(async () => []),
     countDigitalIdDirectoryEntries: vi.fn(async () => 0),
     subscribe: vi.fn(() => () => {}),
+    putRadioBuild: vi.fn(async () => ({ ok: true })),
   },
 }));
 
@@ -125,6 +126,26 @@ describe('BuildRadioIoPanel — dual-bank / single-bank extras', () => {
     expect(await screen.findByText('Digital contacts')).toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Write keps only' })).toBeDisabled();
+  });
+
+  it('hides TG step keys on the stock AT-D890 write popup', async () => {
+    renderPanel('radio-io-at-d890uv');
+    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+    expect(await screen.findByRole('button', { name: 'Write codeplug' })).toBeInTheDocument();
+    expect(screen.queryByRole('switch', { name: /Assign TG previous and TG next/ })).toBeNull();
+  });
+
+  it('saves TG step keys from the MM9PDY write popup onto the build', async () => {
+    renderPanel('radio-io-at-d890uv-mm9pdy');
+    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+    const toggle = await screen.findByRole('switch', { name: /Assign TG previous and TG next/ });
+    expect(toggle).not.toBeChecked();
+    fireEvent.click(toggle);
+    await waitFor(() => {
+      expect(persistence.putRadioBuild).toHaveBeenCalled();
+    });
+    const saved = vi.mocked(persistence.putRadioBuild).mock.calls.at(-1)?.[0];
+    expect(saved?.exportSettings?.assignMm9pdyStepKeys).toBe(true);
   });
 
   it('shows digital contacts extra for AT-D890', async () => {

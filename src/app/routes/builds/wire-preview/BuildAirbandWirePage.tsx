@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import BuildWirePreviewListPage from './BuildWirePreviewListPage.tsx';
 import { FormPage } from '../../../components/ui/index.ts';
 import { useBuildLayout } from '../BuildLayoutContext.tsx';
+import { isAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import { usesAtD890AirbandBankSplit } from '@core/services/anytoneChannelBanks.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { buildRadioWriteProjection } from '../../../services/radioIoWriteProjection.ts';
@@ -23,7 +24,7 @@ export default function BuildAirbandWirePage() {
   const [library, setLibrary] = useState<LibrarySlice | null>(null);
 
   const d890AirbandEgress = usesAtD890AirbandBankSplit(activeEgress?.profileId);
-  const isWebSerial = activeEgress?.profileId === 'radio-io-at-d890uv';
+  const isWebSerial = isAtD890RadioIoProfileId(activeEgress?.profileId ?? '');
 
   useEffect(() => {
     if (!activeProjectId) return;

@@ -38,9 +38,31 @@ export function encodeAtD890RxGroupRecord(rx: RadioRxGroupDto): Uint8Array {
   return out;
 }
 
+const RX_GROUP_TIMESLOT_TAIL = 0x120;
+
+function timeSlotWire(slot: 1 | 2 | undefined): number {
+  if (slot === 1) return 0x01;
+  if (slot === 2) return 0x02;
+  return 0xff;
+}
+
+/** Tail bytes at stride `+0x120`. `0x01` / `0x02` are TS1 / TS2; anything else is unset. */
+export function decodeAtD890RxGroupTimeSlotOverrides(
+  stride: Uint8Array,
+  memberCount: number,
+): (1 | 2 | undefined)[] {
+  const out: (1 | 2 | undefined)[] = [];
+  for (let i = 0; i < memberCount; i++) {
+    const byte = stride[RX_GROUP_TIMESLOT_TAIL + i];
+    out.push(byte === 0x01 ? 1 : byte === 0x02 ? 2 : undefined);
+  }
+  return out;
+}
+
 export function encodeRxGroupsIntoAtD890Image(
   image: MemoryMap,
   rxGroups: readonly RadioRxGroupDto[],
+  options?: { writeTimeSlotOverrides?: boolean },
 ): MemoryMap {
   const set = image.get(D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES).slice();
   clearBitmap(set);
@@ -53,7 +75,15 @@ export function encodeRxGroupsIntoAtD890Image(
     const idx = rx.index - 1;
     if (idx < 0) continue;
     setBitmapBit(set, idx, true);
-    image.set(receiveGroupAddress(idx), encodeAtD890RxGroupRecord(rx));
+    const address = receiveGroupAddress(idx);
+    image.set(address, encodeAtD890RxGroupRecord(rx));
+    if (options?.writeTimeSlotOverrides && rx.memberTimeSlotOverrides) {
+      const tail = new Uint8Array(rx.memberTimeSlotOverrides.length);
+      for (let i = 0; i < tail.length; i++) {
+        tail[i] = timeSlotWire(rx.memberTimeSlotOverrides[i]);
+      }
+      if (tail.length > 0) image.set(address + RX_GROUP_TIMESLOT_TAIL, tail);
+    }
   }
   image.set(D890_MAP.ReceiveGroupSet, set);
   return image;

@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Radio, Stack, Text } from '@mantine/core';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { egressKindForFormatId } from '@core/models/egressPath.ts';
+import { getFormatProfiles } from '@core/import-export/formatProfiles.ts';
 import { listRadioDescriptors } from '@integrations/radio-io/index.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { ModalShell, Button as V2Button } from '../v2/index.ts';
@@ -33,6 +34,14 @@ import {
 import RadioIoProgressModal, {
   type RadioIoProgressPhase,
 } from '../builds/RadioIoProgressModal.tsx';
+
+function webSerialRadioLabel(profileId: string, descriptorLabel?: string): string {
+  return (
+    getFormatProfiles('radio-io').find((row) => row.profileId === profileId)?.label ??
+    descriptorLabel ??
+    profileId
+  );
+}
 
 export interface SatelliteKepsWriteTargetModalProps {
   opened: boolean;
@@ -150,7 +159,7 @@ function SatelliteKepsWriteTargetModalInner({
           const build = buildById.get(egress.radioBuildId);
           if (!build) continue;
           const descriptor = descriptorsForEgress(egress)[0];
-          const radioLabel = descriptor?.label ?? egress.profileId;
+          const radioLabel = webSerialRadioLabel(egress.profileId, descriptor?.label);
           yours.push({
             kind: 'build',
             key: `build:${egress.id}`,
@@ -172,7 +181,7 @@ function SatelliteKepsWriteTargetModalInner({
             others.push({
               kind: 'generic',
               key: `generic:${profile.profileId}`,
-              label: descriptor.label,
+              label: webSerialRadioLabel(profile.profileId, descriptor.label),
               formatId: profile.formatId,
               profileId: profile.profileId,
             });

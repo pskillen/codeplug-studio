@@ -5,6 +5,7 @@ describe('usesAtD890AirbandBankSplit', () => {
   it('is true for D890 CSV and Web Serial egress profiles', () => {
     expect(usesAtD890AirbandBankSplit('anytone-at-d890uv')).toBe(true);
     expect(usesAtD890AirbandBankSplit('radio-io-at-d890uv')).toBe(true);
+    expect(usesAtD890AirbandBankSplit('radio-io-at-d890uv-mm9pdy')).toBe(true);
   });
 
   it('is false for other radio targets and missing profile', () => {

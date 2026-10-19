@@ -6,6 +6,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
+import {
+  isAtD890RadioIoProfileId,
+  isDm32RadioIoProfileId,
+} from '@core/import-export/formatProfiles.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
@@ -130,15 +134,14 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const writeHidden = writeGate === 'hidden';
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);
-  const isAtD890Write = egress.profileId === 'radio-io-at-d890uv';
+  const isAtD890Write = isAtD890RadioIoProfileId(egress.profileId);
   const supportsKepsWrite = hasSatelliteKepsWriteAdapter(egress.profileId);
   const kepsWriteFn = getSatelliteKepsWriteAdapter(egress.profileId);
   const dualBankTraitProfile = traitProfileFor(egress.profileId);
   const supportsDualBankWrite = Boolean(
     dualBankTraitProfile?.traits.includes(BuildCapabilityTrait.SeparateDigitalIdList),
   );
-  const supportsSingleBankWrite =
-    egress.profileId === 'radio-io-at-d890uv' && !supportsDualBankWrite;
+  const supportsSingleBankWrite = isAtD890Write && !supportsDualBankWrite;
   const supportsDigitalContacts = supportsDualBankWrite || supportsSingleBankWrite;
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
@@ -350,6 +353,18 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     }
   }
 
+  async function handleAssignMm9pdyStepKeys(checked: boolean) {
+    const next = buildService.withExportSettings(build, { assignMm9pdyStepKeys: checked });
+    const result = await buildService.putBuild(next, build.revision);
+    if (!result.ok) {
+      setError(
+        result.reason === 'revision_conflict'
+          ? 'Build changed elsewhere — reload and try again.'
+          : 'Could not save the TG step-key setting.',
+      );
+    }
+  }
+
   function openWriteRadio() {
     setContactSource('none');
     setKepsSelected(false);
@@ -503,12 +518,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
                 formatDebugMarkdown={writeVerifyHooks.formatDebugMarkdown}
                 onClose={handleCloseVerifyReport}
                 inModal
-                keptSectionTitle={
-                  egress.profileId === 'radio-io-at-d890uv' ? 'Preserved settings' : undefined
-                }
-                keptSummaryLabel={
-                  egress.profileId === 'radio-io-at-d890uv' ? '6 sentinel regions' : undefined
-                }
+                keptSectionTitle={isAtD890Write ? 'Preserved settings' : undefined}
+                keptSummaryLabel={isAtD890Write ? '6 sentinel regions' : undefined}
               />
             ) : null}
           </Stack>
@@ -531,12 +542,18 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         open={writeRadioOpen}
         onClose={() => setWriteRadioOpen(false)}
         buildId={build.id}
+        assignMm9pdyStepKeys={build.exportSettings?.assignMm9pdyStepKeys === true}
+        onAssignMm9pdyStepKeysChange={
+          build.radioTargetId === 'anytone-at-d890uv-mm9pdy'
+            ? (checked) => void handleAssignMm9pdyStepKeys(checked)
+            : undefined
+        }
         serialOk={serialOk}
         busy={busy}
         writeHidden={writeHidden}
         supportsDigitalContacts={supportsDigitalContacts}
         sharedContactBankNote={isOpenGd77RadioIoEgress(egress.profileId)}
-        sharedAddressBookNote={egress.profileId === 'radio-io-dm32uv'}
+        sharedAddressBookNote={isDm32RadioIoProfileId(egress.profileId)}
         supportsKeps={supportsKepsWrite}
         kepsLastUpdatedIso={activeProject?.satelliteLibraryLastUpdated}
         contactSource={contactSource}
@@ -566,7 +583,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           .
         </Text>
       ) : null}
-      {egress.profileId === 'radio-io-at-d890uv' ? (
+      {isAtD890Write ? (
         <AtD890WriteCoverageTable buildId={build.id} hasHydration={hasHydration} />
       ) : null}
       <Group gap="xs">
@@ -619,12 +636,12 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           . Write uses a live in-session read.
         </Text>
       )}
-      {egress.profileId === 'radio-io-dm32uv' ? (
+      {isDm32RadioIoProfileId(egress.profileId) ? (
         <Text size="xs" c="dimmed">
           {DM32_ANALOG_CONTACTS_WRITE_GAP}
         </Text>
       ) : null}
-      {egress.profileId === 'radio-io-at-d890uv' && !supportsSingleBankWrite ? (
+      {isAtD890Write && !supportsSingleBankWrite ? (
         <Text size="xs" c="dimmed">
           {AT_D890_DIGITAL_CONTACTS_WRITE_GAP}
         </Text>

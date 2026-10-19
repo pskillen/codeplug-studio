@@ -57,7 +57,9 @@ export const DEFAULT_ANYTONE_PROFILE_ID = ANYTONE_PROFILES[0]!.id;
 /** Map Web Serial / sibling egress profile ids to the Anytone CSV profile for caps. */
 export function resolveAnytoneCpsProfileId(profileId: string): string {
   if (ANYTONE_PROFILES.some((profile) => profile.id === profileId)) return profileId;
-  if (profileId === 'radio-io-at-d890uv') return 'anytone-at-d890uv';
+  if (profileId === 'radio-io-at-d890uv' || profileId === 'radio-io-at-d890uv-mm9pdy') {
+    return 'anytone-at-d890uv';
+  }
   const targetId = radioTargetIdForProfile(profileId);
   if (targetId) {
     const csv = radioTargetFor(targetId)?.compatibleEgress.find(

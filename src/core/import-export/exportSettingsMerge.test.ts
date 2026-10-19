@@ -48,6 +48,22 @@ describe('mergeExportOptions', () => {
     );
   });
 
+  it('getFormatExportDefaults leaves m×n off for the MM9PDY AT-D890UV profile', () => {
+    const defaults = getFormatExportDefaults('radio-io', 'radio-io-at-d890uv-mm9pdy');
+    expect(defaults.expandRxGroupLists).toBe(false);
+    expect(defaults.exportScratchChannels).toBe(false);
+    expect(defaults.exportZoneDerivedScanLists).toBe(false);
+    expect(getFormatExportDefaults('radio-io', 'radio-io-at-d890uv').expandRxGroupLists).toBe(true);
+  });
+
+  it('getFormatExportDefaults leaves m×n and zone-derived scans off for MM9PDY DM-32UV', () => {
+    const defaults = getFormatExportDefaults('radio-io', 'radio-io-dm32uv-mm9pdy');
+    expect(defaults.expandRxGroupLists).toBe(false);
+    expect(defaults.exportScratchChannels).toBe(false);
+    expect(defaults.exportZoneDerivedScanLists).toBe(false);
+    expect(getFormatExportDefaults('radio-io', 'radio-io-dm32uv').expandRxGroupLists).toBe(true);
+  });
+
   it('getFormatExportDefaults enables m×n for radio-io-dm32uv profile', () => {
     expect(getFormatExportDefaults('radio-io').expandRxGroupLists).toBe(false);
     expect(getFormatExportDefaults('radio-io', 'radio-io-dm32uv').expandRxGroupLists).toBe(true);

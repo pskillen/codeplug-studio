@@ -17,8 +17,10 @@ describe('AT-D890UV descriptor / registry', () => {
     expect(d?.baudRate).toBe(921_600);
     expect(d?.compatibleProfiles).toEqual([
       { formatId: 'radio-io', profileId: 'radio-io-at-d890uv' },
+      { formatId: 'radio-io', profileId: 'radio-io-at-d890uv-mm9pdy' },
     ]);
     expect(listDescriptorsForProfile('radio-io', 'radio-io-at-d890uv')).toHaveLength(1);
+    expect(listDescriptorsForProfile('radio-io', 'radio-io-at-d890uv-mm9pdy')).toHaveLength(1);
     expect(listDescriptorsForProfile('anytone', 'anytone-at-d890uv')).toHaveLength(0);
     expect(AT_D890UV_DESCRIPTOR.capabilities.supportsZones).toBe(true);
   });

@@ -56,6 +56,38 @@ describe('encodeDm32uvWriteImageFromDownloadCache', () => {
     expect(image.bytes[DM32_BLOCK_SIZE + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.VFO_SETTINGS);
   });
 
+  it('leaves settings tag 0x04 byte +0xB0 unchanged and writes no scan-list records', () => {
+    const channelBlock = makeBlock(DM32_METADATA.CHANNEL_FIRST, (b) => {
+      b[0] = 1;
+    });
+    const settingsBlock = makeBlock(DM32_METADATA.VFO_SETTINGS, (b) => {
+      b[0xb0] = 0xa5;
+    });
+    const scanBlock = makeBlock(DM32_METADATA.SCAN_LIST, (b) => {
+      b[0] = 2;
+    });
+    const cache: Dm32DownloadCache = {
+      addressBase: 0x1000,
+      mapSize: DM32_BLOCK_SIZE * 3,
+      discovered: [
+        { address: 0x1000, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' },
+        { address: 0x2000, metadata: DM32_METADATA.VFO_SETTINGS, type: 'vfo' },
+        { address: 0x3000, metadata: DM32_METADATA.SCAN_LIST, type: 'scan' },
+      ],
+      blocks: new Map([
+        [0x1000, channelBlock],
+        [0x2000, settingsBlock],
+        [0x3000, scanBlock],
+      ]),
+    };
+    const image = encodeDm32uvWriteImageFromDownloadCache(cache, [analogChannel()], {
+      scanLists: [],
+    });
+    expect(image.bytes[DM32_BLOCK_SIZE + 0xb0]).toBe(0xa5);
+    expect(image.bytes[DM32_BLOCK_SIZE * 2]).toBe(0);
+    expect(image.bytes[DM32_BLOCK_SIZE + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.VFO_SETTINGS);
+  });
+
   it('refuses when the download cache has no content blocks', () => {
     expect(() =>
       encodeDm32uvWriteImageFromDownloadCache(

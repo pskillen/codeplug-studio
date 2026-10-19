@@ -31,7 +31,10 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
     supportsBulkRead: true,
   },
   attributionIds: ['anytone-cps'],
-  compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-at-d890uv' }],
+  compatibleProfiles: [
+    { formatId: 'radio-io', profileId: 'radio-io-at-d890uv' },
+    { formatId: 'radio-io', profileId: 'radio-io-at-d890uv-mm9pdy' },
+  ],
   writeStrategy: 'selective-ranges',
   baudRate: AT_D890_CONNECTION.BAUD_RATE,
   hydration: {

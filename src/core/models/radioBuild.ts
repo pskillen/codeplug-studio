@@ -66,6 +66,11 @@ export interface BuildExportSettings {
   scanListDropoutDelaySeconds?: number;
   /** AT-D890UV `ScanList.CSV` Dwell Time[s] (0.1–5.0). Unset → 3.0 s. */
   scanListDwellTimeSeconds?: number;
+  /**
+   * MM9PDY AT-D890UV only. When true, Write sets P1 short to TG next (14) and
+   * P2 short to TG previous (13). Unset or false leaves those key bytes as read.
+   */
+  assignMm9pdyStepKeys?: boolean;
   /** CPS export: dual-bank directory toggles (`SeparateDigitalIdList` profiles). */
   cpsDualBankDirectory?: DualBankRadioWriteOptions;
   /** CPS export: single-bank digital contact projection (Anytone). */
