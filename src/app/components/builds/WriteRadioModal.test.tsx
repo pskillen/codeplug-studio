@@ -74,6 +74,24 @@ describe('WriteRadioModal (#1121)', () => {
     expect(screen.getByText(/digital contacts follow/i)).toBeInTheDocument();
   });
 
+  it('shows the MM9PDY step-key switch only when the build can save it', () => {
+    renderModal();
+    expect(screen.queryByRole('switch', { name: /Assign TG previous and TG next/ })).toBeNull();
+
+    const onAssignMm9pdyStepKeysChange = vi.fn();
+    renderModal({
+      assignMm9pdyStepKeys: false,
+      onAssignMm9pdyStepKeysChange,
+    });
+    const toggle = screen.getByRole('switch', { name: /Assign TG previous and TG next/ });
+    expect(toggle).not.toBeChecked();
+    expect(screen.getByText(/item 15 Record/)).toBeInTheDocument();
+    expect(screen.getByText(/item 14 Record Switch/)).toBeInTheDocument();
+    expect(screen.getByText(/MM9PDY names/)).toBeInTheDocument();
+    fireEvent.click(toggle);
+    expect(onAssignMm9pdyStepKeysChange).toHaveBeenCalledWith(true);
+  });
+
   it('hides digital contacts extra on analog radios', () => {
     renderModal({ supportsDigitalContacts: false, supportsKeps: false });
     expect(screen.getByRole('button', { name: 'Write codeplug' })).toBeInTheDocument();

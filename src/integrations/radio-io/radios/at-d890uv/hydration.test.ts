@@ -183,6 +183,38 @@ describe('encodeAtD890WriteImageFromDownloadCache', () => {
     expect(image.get(D890_MAP.ScanListSet, 1)[0]! & 1).toBe(0);
   });
 
+  it('leaves a pre-seeded P1 and P2 when MM9PDY step keys are off', () => {
+    const cache = seedLivePriorCache();
+    const block = new Uint8Array(16);
+    for (let i = 0; i < block.length; i++) block[i] = 0x30 + i;
+    putCacheBytes(cache, D890_MAP.OptionalSettingsMain + 0x10, block);
+    const image = encodeAtD890WriteImageFromDownloadCache(cache, [analogCh], {
+      zones: [{ wireName: 'Z1', channelNumbers: [1] }],
+    });
+    expect(image.get(D890_MAP.OptionalSettingsMain + 0x10, 16)).toEqual(block);
+  });
+
+  it('sets P1 short to 14 and P2 short to 13 without rewriting +0x200', () => {
+    const cache = seedLivePriorCache();
+    const block = new Uint8Array(16);
+    for (let i = 0; i < block.length; i++) block[i] = 0x30 + i;
+    putCacheBytes(cache, D890_MAP.OptionalSettingsMain + 0x10, block);
+    const marker = new Uint8Array(0x20);
+    for (let i = 0; i < marker.length; i++) marker[i] = 0x40 + (i % 16);
+    const store = D890_MAP.OptionalSettingsMain + 0x200;
+    putCacheBytes(cache, store, marker);
+    const image = encodeAtD890WriteImageFromDownloadCache(cache, [analogCh], {
+      zones: [{ wireName: 'Z1', channelNumbers: [1] }],
+      assignMm9pdyStepKeys: true,
+    });
+    const out = image.get(D890_MAP.OptionalSettingsMain + 0x10, 16);
+    expect(out[0]).toBe(0x30);
+    expect(out[3]).toBe(14);
+    expect(out[4]).toBe(13);
+    expect(out[5]).toBe(0x35);
+    expect(image.get(store, 0x20)).toEqual(marker);
+  });
+
   it('writes AES default 0 when the DTO does not model it, even if the cache slot had 0xfd', () => {
     const image = encodeAtD890WriteImageFromDownloadCache(seedLivePriorCache(0xfd), [analogCh], {
       radioIds: [],

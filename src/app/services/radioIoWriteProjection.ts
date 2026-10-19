@@ -1462,6 +1462,9 @@ export function buildRadioWriteProjection(
       talkGroups,
       rxGroups,
       ...(mm9pdy ? { writeRxGroupTimeSlotOverrides: true } : {}),
+      ...(mm9pdy && build.exportSettings?.assignMm9pdyStepKeys === true
+        ? { assignMm9pdyStepKeys: true }
+        : {}),
       radioIds: dm32RadioIds,
       ...(context?.singleBank?.digitalContacts !== undefined
         ? { digitalContacts: context.singleBank.digitalContacts }

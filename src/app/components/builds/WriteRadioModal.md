@@ -6,26 +6,28 @@ Build → Export **Write radio** popup: always **Write codeplug**, plus radio-ap
 
 ## Props
 
-| Prop                      | Type                         | Description                                  |
-| ------------------------- | ---------------------------- | -------------------------------------------- |
-| `open`                    | `boolean`                    | Modal visibility                             |
-| `onClose`                 | `() => void`                 | Dismiss                                      |
-| `buildId`                 | `string`                     | For Satellite keps tab link                  |
-| `serialOk`                | `boolean`                    | Web Serial / USB-serial available            |
-| `busy`                    | `boolean`                    | Transfer in progress                         |
-| `writeHidden`             | `boolean`                    | Prod write gate                              |
-| `supportsDigitalContacts` | `boolean`                    | Dual-bank trait or D890 single-bank          |
-| `sharedContactBankNote`   | `boolean`                    | OpenGD77 shared Contacts bank caveat         |
-| `sharedAddressBookNote`   | `boolean`                    | DM-32: library and RadioID share one book    |
-| `supportsKeps`            | `boolean`                    | Registered keps write adapter                |
-| `kepsLastUpdatedIso`      | `string \| null`             | `ProjectMeta.satelliteLibraryLastUpdated`    |
-| `contactSource`           | `DigitalContactsWriteSource` | `none` \| `library` \| `directory` \| `both` |
-| `onContactSourceChange`   | `(source) => void`           | Source picker                                |
-| `kepsSelected`            | `boolean`                    | Keps extra                                   |
-| `onKepsSelectedChange`    | `(selected) => void`         | Keps checkbox                                |
-| `onWriteCodeplug`         | `() => void`                 | Full codeplug write                          |
-| `onWriteContacts`         | `() => void`                 | Contacts-bank-only write                     |
-| `onWriteKeps`             | `() => void`                 | Keps-only write                              |
+| Prop                           | Type                         | Description                                                       |
+| ------------------------------ | ---------------------------- | ----------------------------------------------------------------- |
+| `open`                         | `boolean`                    | Modal visibility                                                  |
+| `onClose`                      | `() => void`                 | Dismiss                                                           |
+| `buildId`                      | `string`                     | For Satellite keps tab link                                       |
+| `serialOk`                     | `boolean`                    | Web Serial / USB-serial available                                 |
+| `busy`                         | `boolean`                    | Transfer in progress                                              |
+| `writeHidden`                  | `boolean`                    | Prod write gate                                                   |
+| `supportsDigitalContacts`      | `boolean`                    | Dual-bank trait or D890 single-bank                               |
+| `sharedContactBankNote`        | `boolean`                    | OpenGD77 shared Contacts bank caveat                              |
+| `sharedAddressBookNote`        | `boolean`                    | DM-32: library and RadioID share one book                         |
+| `supportsKeps`                 | `boolean`                    | Registered keps write adapter                                     |
+| `kepsLastUpdatedIso`           | `string \| null`             | `ProjectMeta.satelliteLibraryLastUpdated`                         |
+| `contactSource`                | `DigitalContactsWriteSource` | `none` \| `library` \| `directory` \| `both`                      |
+| `onContactSourceChange`        | `(source) => void`           | Source picker                                                     |
+| `kepsSelected`                 | `boolean`                    | Keps extra                                                        |
+| `onKepsSelectedChange`         | `(selected) => void`         | Keps checkbox                                                     |
+| `onWriteCodeplug`              | `() => void`                 | Full codeplug write                                               |
+| `onWriteContacts`              | `() => void`                 | Contacts-bank-only write                                          |
+| `onWriteKeps`                  | `() => void`                 | Keps-only write                                                   |
+| `assignMm9pdyStepKeys`         | `boolean`                    | MM9PDY AT-D890UV: persisted TG step-key flag                      |
+| `onAssignMm9pdyStepKeysChange` | `(checked: boolean) => void` | Present only for that radio target; same field as export settings |
 
 ## Usage
 
@@ -59,6 +61,7 @@ Build → Export **Write radio** popup: always **Write codeplug**, plus radio-ap
 - DM-32 (`sharedAddressBookNote`): library and RadioID share one address book; RadioID/Both **replace** it; None leaves it; operator radio IDs stay channel DMR IDs on Write codeplug; duplicate IDs: library wins.
 - Empty RadioID shadow warning is owned by `BuildRadioIoPanel`, not this modal.
 - When `supportsKeps`, shows keps last-updated (`KepsLastUpdated`) with a link to Library → Satellite Keps; preview tab link unchanged.
+- When `onAssignMm9pdyStepKeysChange` is set, a switch under Write codeplug assigns TG next (P1 short, firmware 14, CPS item 15 Record) and TG previous (P2 short, firmware 13, CPS item 14 Record Switch). The radio's own key menu shows the MM9PDY names. The switch writes `exportSettings.assignMm9pdyStepKeys` on the build — the same field as the export settings page. Unset or off leaves the key bytes as read.
 
 ## Related
 

@@ -266,6 +266,11 @@ export type AtD890UploadBankIntent = {
   replaceAmAirBank: boolean;
   /** When true, stage TalkgroupOrder rebuilt in the write image. */
   replaceTalkgroupOrder: boolean;
+  /**
+   * MM9PDY AT-D890UV. When true, upload patches P1/P2 short on the fresh
+   * optional-settings erase unit. Does not synthesize the settings record.
+   */
+  assignMm9pdyStepKeys?: boolean;
 };
 
 export function atD890UploadBankIntentFromOrganisation(
@@ -275,6 +280,7 @@ export function atD890UploadBankIntentFromOrganisation(
     replaceAmAirBank:
       organisation?.amAirChannels !== undefined && organisation?.amZones !== undefined,
     replaceTalkgroupOrder: organisation?.talkGroups !== undefined,
+    assignMm9pdyStepKeys: organisation?.assignMm9pdyStepKeys === true,
   };
 }
 

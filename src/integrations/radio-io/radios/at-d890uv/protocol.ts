@@ -63,6 +63,7 @@ import {
   overlayModelledChunksOntoUnit,
   preWriteChunksFromFreshUnits,
 } from './sparseEraseRmw.ts';
+import { patchMm9pdyStepKeysOnEraseUnit } from './mm9pdyStepKeys.ts';
 import {
   captureAtD890WriteStagingSnapshot,
   cloneAtD890WriteStagingSnapshot,
@@ -603,6 +604,12 @@ export class AtD890uvProtocol implements CloneImageRadio {
     const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
     const touchedUnits = listTouchedEraseUnits(modelledChunks.map((c) => c.address));
     const touchedUnitSet = new Set(touchedUnits);
+    const assignStepKeys = this.uploadBankIntent.assignMm9pdyStepKeys === true;
+    const stepKeyUnit = eraseUnitBaseFor(D890_MAP.OptionalSettingsMain);
+    if (assignStepKeys && !touchedUnitSet.has(stepKeyUnit)) {
+      touchedUnits.push(stepKeyUnit);
+      touchedUnitSet.add(stepKeyUnit);
+    }
     const transmitGuard = (address: number) => assertAtD890TransmitAddress(address, touchedUnitSet);
 
     try {
@@ -655,6 +662,16 @@ export class AtD890uvProtocol implements CloneImageRadio {
       for (const unitBase of touchedUnits) {
         const unitChunks = modelledChunks.filter((c) => eraseUnitBaseFor(c.address) === unitBase);
         overlayModelledChunksOntoUnit(unitBase, mergedUnits.get(unitBase)!, unitChunks);
+      }
+
+      if (assignStepKeys) {
+        const merged = mergedUnits.get(stepKeyUnit);
+        if (!merged) {
+          throw new RadioProtocolError(
+            'AT-D890UV step-key patch has no fresh read of the optional-settings erase unit',
+          );
+        }
+        modelledAddresses.add(patchMm9pdyStepKeysOnEraseUnit(stepKeyUnit, merged));
       }
 
       const stagingChunks = listSparseStagingChunks(mergedUnits, modelledAddresses);

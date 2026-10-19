@@ -171,6 +171,11 @@ export interface RadioWriteOrganisation {
    */
   writeRxGroupTimeSlotOverrides?: boolean;
   /**
+   * MM9PDY AT-D890UV only. When true, encode and upload set P1 short to 14 and
+   * P2 short to 13. Stock writes leave those bytes as read.
+   */
+  assignMm9pdyStepKeys?: boolean;
+  /**
    * OpenGD77 User Database (call-sign DB) rows. Omit to leave FLASH 0x50000 / 0xd8000
    * unchanged. Present (including empty) replaces the lookup store; not the 1024 contact bank.
    */

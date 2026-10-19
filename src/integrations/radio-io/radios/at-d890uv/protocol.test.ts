@@ -165,6 +165,42 @@ describe('AtD890uvProtocol', () => {
       writtenAddrs.some((a) => a >= D890_MAP.LocalInfo && a < D890_MAP.LocalInfo + 0x100),
     ).toBe(false);
     expect(writePayloadAt(pipe, D890_MAP.AlarmBitmap)?.[0]).toBe(0xab);
+    expect(writtenAddrs).not.toContain(D890_MAP.OptionalSettingsMain + 0x10);
+  });
+
+  it('patches only P1 and P2 when MM9PDY step keys are on and restages +0x200 from the radio', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    const settings = makeAtD890EraseUnitBuffer();
+    settings[0] = 0x11;
+    settings[0x900] = 0x22;
+    settings[0x1280] = 0x33;
+    const block = new Uint8Array(16);
+    for (let i = 0; i < block.length; i++) block[i] = 0x30 + i;
+    settings.set(block, 0x10);
+    const marker = new Uint8Array(16).fill(0x5a);
+    settings.set(marker, 0x200);
+    const memory = channelUploadMemory();
+    memory.set(0x350_0000, settings);
+    scriptAtD890UploadReadResponder(pipe, memory);
+    const image = seedChannelZeroUpload(radio);
+    radio.setUploadBankIntent({
+      replaceAmAirBank: false,
+      replaceTalkgroupOrder: false,
+      assignMm9pdyStepKeys: true,
+    });
+    enableAtD890AutoWriteAck(pipe);
+
+    await radio.upload(image, {});
+
+    const keys = writePayloadAt(pipe, D890_MAP.OptionalSettingsMain + 0x10);
+    expect(keys?.[0]).toBe(0x30);
+    expect(keys?.[3]).toBe(14);
+    expect(keys?.[4]).toBe(13);
+    expect(keys?.[5]).toBe(0x35);
+    expect(writePayloadAt(pipe, D890_MAP.OptionalSettingsMain + 0x200)).toEqual(marker);
   });
 
   it('never transmits the per-unit flash bookkeeping blocks', async () => {

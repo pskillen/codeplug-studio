@@ -72,6 +72,27 @@
 
 ---
 
+## Optional TG step keys
+
+**Status:** Complete on this branch
+**Issues:** [#1318](https://github.com/pskillen/codeplug-studio/issues/1318)
+
+**Delivered**
+
+- `assignMm9pdyStepKeys` on the build's export settings. Unset or false leaves P1 and P2 as read
+- When on, the MM9PDY write sets P1 short to 14 (TG next) and P2 short to 13 (TG previous)
+- The same switch is on the export settings page and in the Write radio popup
+- Upload patches those two bytes on the fresh optional-settings erase unit. `+0x200` stays the radio's own bytes
+- Stock AT-D890UV writes ignore the flag
+
+**Verify**
+
+- Encode: pre-seeded P1/P2 unchanged when off; 14 and 13 when on; `+0x200` marker intact
+- Protocol: the 16-byte frame at `+0x10` carries 14 and 13, and `+0x200` matches the fresh read
+- Popup: stock target has no switch; MM9PDY saves the same field
+
+---
+
 ## Next
 
-- Optional `assignMm9pdyStepKeys` on export settings and the Write radio modal; P1 short = 14, P2 short = 13 when on
+- PR 2: Baofeng DM-32UV MM9PDY target and zone-scan write (scan-list id 0). [#1321](https://github.com/pskillen/codeplug-studio/issues/1321) stays open

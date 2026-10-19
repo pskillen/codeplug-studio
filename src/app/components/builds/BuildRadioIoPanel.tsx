@@ -350,6 +350,18 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     }
   }
 
+  async function handleAssignMm9pdyStepKeys(checked: boolean) {
+    const next = buildService.withExportSettings(build, { assignMm9pdyStepKeys: checked });
+    const result = await buildService.putBuild(next, build.revision);
+    if (!result.ok) {
+      setError(
+        result.reason === 'revision_conflict'
+          ? 'Build changed elsewhere — reload and try again.'
+          : 'Could not save the TG step-key setting.',
+      );
+    }
+  }
+
   function openWriteRadio() {
     setContactSource('none');
     setKepsSelected(false);
@@ -527,6 +539,12 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         open={writeRadioOpen}
         onClose={() => setWriteRadioOpen(false)}
         buildId={build.id}
+        assignMm9pdyStepKeys={build.exportSettings?.assignMm9pdyStepKeys === true}
+        onAssignMm9pdyStepKeysChange={
+          build.radioTargetId === 'anytone-at-d890uv-mm9pdy'
+            ? (checked) => void handleAssignMm9pdyStepKeys(checked)
+            : undefined
+        }
         serialOk={serialOk}
         busy={busy}
         writeHidden={writeHidden}

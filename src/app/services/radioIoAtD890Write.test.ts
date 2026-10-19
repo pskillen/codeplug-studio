@@ -761,4 +761,44 @@ describe('buildRadioWriteProjection radio-io-at-d890uv-mm9pdy', () => {
     expect(digital.length).toBeGreaterThan(1);
     expect(projection.organisation.scanLists?.length ?? 0).toBeGreaterThan(0);
   });
+
+  it('sets assignMm9pdyStepKeys only for the MM9PDY target when the export setting is on', () => {
+    const { library } = repeaterWithTwoTalkGroups();
+    const mm9 = newRadioBuildForProfile('p1', 'radio-io-at-d890uv-mm9pdy');
+    const mm9On = {
+      ...mm9.build,
+      exportSettings: { assignMm9pdyStepKeys: true as const },
+    };
+    const onAssembled = assemble(mm9On, library, {
+      formatId: mm9.egress.formatId,
+      profileId: mm9.egress.profileId,
+    });
+    expect(
+      buildRadioWriteProjection(onAssembled, mm9On, library, mm9.egress).organisation
+        .assignMm9pdyStepKeys,
+    ).toBe(true);
+
+    const offAssembled = assemble(mm9.build, library, {
+      formatId: mm9.egress.formatId,
+      profileId: mm9.egress.profileId,
+    });
+    expect(
+      buildRadioWriteProjection(offAssembled, mm9.build, library, mm9.egress).organisation
+        .assignMm9pdyStepKeys,
+    ).toBeUndefined();
+
+    const stock = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const stockOn = {
+      ...stock.build,
+      exportSettings: { assignMm9pdyStepKeys: true as const },
+    };
+    const stockAssembled = assemble(stockOn, library, {
+      formatId: stock.egress.formatId,
+      profileId: stock.egress.profileId,
+    });
+    expect(
+      buildRadioWriteProjection(stockAssembled, stockOn, library, stock.egress).organisation
+        .assignMm9pdyStepKeys,
+    ).toBeUndefined();
+  });
 });

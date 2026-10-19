@@ -71,6 +71,7 @@ export default function ExportBuildSettingsSections({
     radioTargetHasCompatibleFormat(build.radioTargetId, 'dm32') ||
     radioTargetHasCompatibleFormat(build.radioTargetId, 'anytone');
   const showD890ScanListTiming = build.radioTargetId === 'anytone-at-d890uv';
+  const showMm9pdyStepKeys = build.radioTargetId === 'anytone-at-d890uv-mm9pdy';
 
   return (
     <Stack gap="md">
@@ -252,6 +253,25 @@ export default function ExportBuildSettingsSections({
         saving={saving}
         onPatch={onExportSettingsPatch}
       />
+
+      {showMm9pdyStepKeys ? (
+        <FieldCard
+          title="MM9PDY key assignment"
+          description="Optional. Off leaves the radio's programmable keys as they were read."
+        >
+          <Switch
+            label="Assign TG previous and TG next"
+            description="P1 short becomes TG next and P2 short becomes TG previous. Official CPS shows these as item 15 Record and item 14 Record Switch. The radio's own key menu shows the MM9PDY names."
+            checked={build.exportSettings?.assignMm9pdyStepKeys === true}
+            disabled={saving}
+            onChange={(event) =>
+              onExportSettingsPatch({
+                assignMm9pdyStepKeys: event.currentTarget.checked,
+              })
+            }
+          />
+        </FieldCard>
+      ) : null}
 
       <Text size="xs" c="dimmed">
         Export preferences are saved with this build and included in native YAML export.
