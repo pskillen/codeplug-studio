@@ -125,12 +125,12 @@ Last channel in first block: `0x10 + 83×48 = 0xFA0`. Details: [channel-record.m
 
 ## Write contract (Web Serial)
 
-| Category     | Strategy                                                                                                                                                                                                                                                |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Replaced** | Channels (+ TX-contact banks `0x42`/`0x43`), zones, scan lists, talk groups (`0x44` + counter `0x06` + quick-access `0x0B`), RX groups (`0x0F`), digital contacts (V-frame `0x0F` bank), operator DMR radio IDs (`0x67`), APRS settings slice in `0x04` |
-| **Kept**     | Radio settings (`0x04` outside APRS slice), analog/digital emergencies, encryption keys, calibration, quick messages, VFO A/B bank when not a channel bank                                                                                              |
+| Category     | Strategy                                                                                                                                                                                                                                                                                                                      |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Replaced** | Channels (+ TX-contact banks `0x42`/`0x43`), zones, scan lists, talk groups (`0x44` + counter `0x06` + quick-access `0x0B`), RX groups (`0x0F`), digital contacts (V-frame `0x0F` bank), operator DMR radio IDs (`0x67` — non-empty projection replaces the page; an empty projection is kept), APRS settings slice in `0x04` |
+| **Kept**     | Radio settings (`0x04` outside APRS slice), analog/digital emergencies, encryption keys, calibration, quick messages, VFO A/B bank when not a channel bank                                                                                                                                                                    |
 
-Replaced entities encode **full records** from `RadioWriteProjection` plus NeonPlug defaults for unmodelled bytes; unused list/slot entries are explicit empty/sentinel fill ([#685](https://github.com/pskillen/codeplug-studio/issues/685)). Manifest: `dm32WriteRole` in `writeRole.ts`.
+Replaced entities encode **full records** from `RadioWriteProjection` plus NeonPlug defaults for unmodelled bytes; unused list/slot entries are explicit empty/sentinel fill ([#685](https://github.com/pskillen/codeplug-studio/issues/685)). Manifest: `dm32WriteRole` in `writeRole.ts`. Tag `0x67` stays **Replaced** when the projection has any `dmrId > 0`. An empty or non-positive projection is kept byte-for-byte ([#1291](https://github.com/pskillen/codeplug-studio/issues/1291)); that exception is an encode guard, not a move into **Kept**.
 
 ## Verification
 

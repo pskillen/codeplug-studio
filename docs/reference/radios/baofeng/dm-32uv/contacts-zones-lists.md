@@ -152,6 +152,8 @@ VFO A/B selected zone and channel indices live in the **zone bank** first block 
 | Entry size   | **16** bytes                                                                                                                                                                                             |
 | Channel ref  | Channel byte `0x2B` is 0-based index; `0xFF` = none — Web Serial Write builds the bank from distinct channel `ModeProfile.dmrId` values ([#687](https://github.com/pskillen/codeplug-studio/issues/687)) |
 
+An empty or non-positive projection leaves the discovered block untouched ([#1291](https://github.com/pskillen/codeplug-studio/issues/1291)). A projection with any `dmrId > 0` still replaces the whole page from distinct channel `ModeProfile.dmrId` values. Hand-entered IDs that are not on a channel are dropped on that non-empty Write; merge-by-id is not this path.
+
 ## Related
 
 - [channel-record.md](channel-record.md) · [memory-layout.md](memory-layout.md) · [settings.md](settings.md)
