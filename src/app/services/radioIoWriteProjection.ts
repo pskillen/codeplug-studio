@@ -24,6 +24,10 @@ import {
   type ProfileExportLimits,
 } from '@core/import-export/profileExportLimits.ts';
 import type { FormatId } from '@core/import-export/types.ts';
+import {
+  isAtD890RadioIoProfileId,
+  isMm9pdyAtD890RadioIoProfileId,
+} from '@core/import-export/formats/radio-io/profiles.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import {
@@ -255,6 +259,7 @@ function buildDm32Organisation(
   channels: RadioChannelDto[],
   warnings: ExportWarning[],
   scanListWireCap?: number,
+  options?: { deriveScanLists?: boolean },
 ): {
   zones: RadioZoneDto[];
   scanLists: RadioScanListDto[];
@@ -262,23 +267,25 @@ function buildDm32Organisation(
   numbersBySourceChannelId: Map<string, number[]>;
 } {
   const limits = requireProfileExportLimits(egress);
+  const deriveScanLists = options?.deriveScanLists !== false;
   const maxZones = requireNumericLimit(limits.maxZones, 'maxZones', egress);
-  const maxScanLists =
-    scanListWireCap ??
-    Math.min(
-      requireNumericLimit(limits.maxScanLists, 'maxScanLists', egress),
-      DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX,
-    );
-  const scanListMembersCap = requireNumericLimit(limits.scanListMembers, 'scanListMembers', egress);
+  const maxScanLists = deriveScanLists
+    ? (scanListWireCap ??
+      Math.min(
+        requireNumericLimit(limits.maxScanLists, 'maxScanLists', egress),
+        DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX,
+      ))
+    : 0;
+  const scanListMembersCap = deriveScanLists
+    ? requireNumericLimit(limits.scanListMembers, 'scanListMembers', egress)
+    : 0;
   const maxMemorySlots = requireNumericLimit(limits.maxChannels, 'maxChannels', egress);
   const zoneMembersCap = requireNumericLimit(limits.zoneMembers, 'zoneMembers', egress);
   // Zone name length itself is no longer read here — resolveWireNames('zone') owns that limit
   // (same profileExportLimits.nameLengthZone SoT) via resolutionsByLibraryEntityId below.
-  const nameLengthScanList = requireNumericLimit(
-    limits.nameLengthScanList,
-    'nameLengthScanList',
-    egress,
-  );
+  const nameLengthScanList = deriveScanLists
+    ? requireNumericLimit(limits.nameLengthScanList, 'nameLengthScanList', egress)
+    : 0;
   /** Slots reserved for zone scan carriers — never steal their scanListId via shared members. */
   const carrierSlots = new Set<number>();
 
@@ -311,7 +318,7 @@ function buildDm32Organisation(
 
     let channelNumbers = expandMxNZoneMemberNumbers(zone.memberChannelIds, numbers);
     const entry = layoutEntry(layout, zone.zoneId);
-    const wantScan = masterOn && (entry?.exportScanList ?? false);
+    const wantScan = deriveScanLists && masterOn && (entry?.exportScanList ?? false);
 
     if (wantScan && scanLists.length >= maxScanLists) {
       if (
@@ -428,8 +435,8 @@ function buildDm32Organisation(
     zones.push({ wireName, channelNumbers });
   }
 
-  // Empty scan floor (#564)
-  if (scanLists.length === 0) {
+  // Empty scan floor (#564). MM9PDY zone-scan writes no scan-list bank.
+  if (deriveScanLists && scanLists.length === 0) {
     const firstCh = nextChannels.find((c) => !c.empty)?.slotIndex;
     scanLists.push({
       wireName: DM32_EMPTY_SCAN_LIST_NAME,
@@ -482,7 +489,7 @@ function buildTalkGroupsAndRx(
   const limits = requireProfileExportLimits(egress);
   const maxTalkGroups = requireNumericLimit(limits.maxTalkGroups, 'maxTalkGroups', egress);
   const maxDigitalContacts =
-    egress.profileId === 'radio-io-at-d890uv' || limits.maxContacts === 'not_used'
+    isAtD890RadioIoProfileId(egress.profileId) || limits.maxContacts === 'not_used'
       ? 0
       : requireNumericLimit(limits.maxContacts, 'maxContacts', egress);
   const maxRx = requireNumericLimit(limits.maxRxGroupLists, 'maxRxGroupLists', egress);
@@ -568,7 +575,7 @@ function buildTalkGroupsAndRx(
       row.wireName,
     );
     const memberDigitalIds: number[] = [];
-    const useTalkgroupBankSlots = egress.profileId === 'radio-io-at-d890uv';
+    const useTalkgroupBankSlots = isAtD890RadioIoProfileId(egress.profileId);
     for (const member of row.entity.members) {
       if (memberDigitalIds.length >= maxRxMembers) break;
       if (member.ref.kind === 'talkGroup') {
@@ -1328,7 +1335,7 @@ export function buildRadioWriteProjection(
   let dm32RadioIds: RadioRadioIdDto[] = [];
   let dm32AddressBook: RadioDigitalContactDto[] | undefined;
 
-  if (egress.profileId === 'radio-io-dm32uv' || egress.profileId === 'radio-io-at-d890uv') {
+  if (egress.profileId === 'radio-io-dm32uv' || isAtD890RadioIoProfileId(egress.profileId)) {
     const tgRx = buildTalkGroupsAndRx(
       assembled,
       build,
@@ -1372,10 +1379,9 @@ export function buildRadioWriteProjection(
     fkMaps = tgRx.fkMaps;
   }
 
-  const projectionAssembled =
-    egress.profileId === 'radio-io-at-d890uv'
-      ? buildAtD890DmrBankAssembled(assembled, build, egress, warnings)
-      : assembled;
+  const projectionAssembled = isAtD890RadioIoProfileId(egress.profileId)
+    ? buildAtD890DmrBankAssembled(assembled, build, egress, warnings)
+    : assembled;
 
   const { dtos, warnings: channelWarnings } = expandAssembledChannelsToRadioDtos(
     projectionAssembled,
@@ -1420,7 +1426,8 @@ export function buildRadioWriteProjection(
       ...(dualBankMode === 'codeplug' ? { radioIds: dm32RadioIds } : {}),
       aprs: radioAprsFromNeonplugPatch(assembled, numbersBySourceChannelId, warnings),
     };
-  } else if (egress.profileId === 'radio-io-at-d890uv') {
+  } else if (isAtD890RadioIoProfileId(egress.profileId)) {
+    const mm9pdy = isMm9pdyAtD890RadioIoProfileId(egress.profileId);
     const d890Limits = requireProfileExportLimits(egress);
     const org = buildDm32Organisation(
       projectionAssembled,
@@ -1430,7 +1437,8 @@ export function buildRadioWriteProjection(
       numbersBySourceChannelId,
       [...dtos],
       warnings,
-      requireNumericLimit(d890Limits.maxScanLists, 'maxScanLists', egress),
+      mm9pdy ? undefined : requireNumericLimit(d890Limits.maxScanLists, 'maxScanLists', egress),
+      { deriveScanLists: !mm9pdy },
     );
     channels = stampAtD890AutoScan(org.channels, org.scanLists);
     numbersBySourceChannelId = org.numbersBySourceChannelId;

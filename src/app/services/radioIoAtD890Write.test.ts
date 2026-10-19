@@ -629,3 +629,76 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     ).toBe(false);
   });
 });
+
+describe('buildRadioWriteProjection radio-io-at-d890uv-mm9pdy', () => {
+  function repeaterWithTwoTalkGroups() {
+    const tg1 = { ...newTalkGroup('p1', 'Local', 9), id: 'tg-1' };
+    const tg2 = { ...newTalkGroup('p1', 'Scotland', 2351), id: 'tg-2' };
+    const rxList = {
+      ...newRxGroupList('p1', 'Repeater'),
+      id: 'rx-1',
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg1.id } },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id } },
+      ],
+    };
+    const channel = {
+      ...newChannel('p1', 'GB3XX'),
+      id: 'ch-1',
+      callsign: 'GB3XX',
+      rxFrequency: 438_800_000,
+      txFrequency: 430_800_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg1.id },
+          rxGroupListId: rxList.id,
+        },
+      ],
+    };
+    const library: LibrarySlice = {
+      ...emptyLibrary([channel]),
+      talkGroups: [tg1, tg2],
+      rxGroupLists: [rxList],
+    };
+    return { channel, library };
+  }
+
+  it('emits one channel and one RX group for two talk groups on one repeater', () => {
+    const { channel, library } = repeaterWithTwoTalkGroups();
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv-mm9pdy');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    const digital = projection.channels.filter((row) => row.mode === 'digital');
+
+    expect(digital).toHaveLength(1);
+    expect(digital[0]?.rxGroupIndex).toBe(1);
+    expect(digital[0]?.txContactId).toBe(1);
+    expect(digital[0]?.scanListId).toBeUndefined();
+    expect(projection.numbersBySourceChannelId.get(channel.id)).toEqual([1]);
+    expect(projection.organisation.rxGroups).toEqual([
+      expect.objectContaining({ index: 1, memberDigitalIds: [0, 1] }),
+    ]);
+    expect(projection.organisation.scanLists).toEqual([]);
+  });
+
+  it('still expands the stock AT-D890UV target into more than one channel', () => {
+    const { library } = repeaterWithTwoTalkGroups();
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    const digital = projection.channels.filter((row) => row.mode === 'digital');
+
+    expect(digital.length).toBeGreaterThan(1);
+    expect(projection.organisation.scanLists?.length ?? 0).toBeGreaterThan(0);
+  });
+});

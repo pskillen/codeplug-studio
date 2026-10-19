@@ -168,6 +168,21 @@ describe('encodeAtD890WriteImageFromDownloadCache', () => {
     expect(image.get(D890_MAP.ZoneHide, AT_D890_LIMITS.ZONE_SET_BYTES)[0]! & 1).toBe(0);
   });
 
+  it('leaves the firmware settings store at optional-settings +0x200 unchanged', () => {
+    const cache = seedLivePriorCache();
+    const marker = new Uint8Array(0x20);
+    for (let i = 0; i < marker.length; i++) marker[i] = 0x40 + (i % 16);
+    const store = D890_MAP.OptionalSettingsMain + 0x200;
+    putCacheBytes(cache, store, marker);
+    const image = encodeAtD890WriteImageFromDownloadCache(cache, [analogCh], {
+      zones: [{ wireName: 'Z1', channelNumbers: [1] }],
+      scanLists: [],
+      rxGroups: [{ index: 1, wireName: 'R', memberDigitalIds: [0] }],
+    });
+    expect(image.get(store, 0x20)).toEqual(marker);
+    expect(image.get(D890_MAP.ScanListSet, 1)[0]! & 1).toBe(0);
+  });
+
   it('writes AES default 0 when the DTO does not model it, even if the cache slot had 0xfd', () => {
     const image = encodeAtD890WriteImageFromDownloadCache(seedLivePriorCache(0xfd), [analogCh], {
       radioIds: [],

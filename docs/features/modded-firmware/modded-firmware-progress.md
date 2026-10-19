@@ -34,6 +34,25 @@
 
 ---
 
+## One channel per repeater
+
+**Status:** Complete on this branch
+**Issues:** [#1316](https://github.com/pskillen/codeplug-studio/issues/1316)
+
+**Delivered**
+
+- MM9PDY write uses the stock D890 codec and emits one digital channel per repeater
+- That channel keeps its RX group; talk-group members are bank indexes
+- No scan-list records (scan-list limits stay `not_used`)
+- Optional-settings `+0x200`..`+0x21F` is not rewritten
+
+**Verify**
+
+- Two talk groups on one repeater → one channel and one RX group; stock target still expands
+- Firmware settings marker at `OptionalSettingsMain + 0x200` survives encode
+
+---
+
 ## Next
 
-- One channel per repeater on the D890 write, with the RX group attached, and optional-settings `+0x200` left unchanged
+- Per-member timeslot byte at RX-group `+0x120` on the MM9PDY target only; stock tail stays `0xFF`

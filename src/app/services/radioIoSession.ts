@@ -5,6 +5,7 @@
 
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
+import { isAtD890RadioIoProfileId } from '@core/import-export/formats/radio-io/profiles.ts';
 import { resolveAtD890ScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import {
@@ -372,7 +373,7 @@ export async function prepareRadioWriteImage(
         directorySlice,
       },
     };
-  } else if (opts?.singleBank && egress.profileId === 'radio-io-at-d890uv') {
+  } else if (opts?.singleBank && isAtD890RadioIoProfileId(egress.profileId)) {
     const limits = getProfileExportLimits(egress.formatId as FormatId, egress.profileId);
     const maxContacts =
       typeof limits?.maxContacts === 'number'
@@ -544,7 +545,7 @@ async function resolveRadioWriteImageForUpload(
   }
   if (!prepared.image) {
     throw new RadioWriteBlockedError(
-      egress.profileId === 'radio-io-at-d890uv'
+      isAtD890RadioIoProfileId(egress.profileId)
         ? 'Read this radio in the current session before Write. The AT-D890UV write encode needs the in-session download cache as its prior — it will not fall back to a blank 0xff image.'
         : 'Missing radio clone write image.',
     );
@@ -586,7 +587,7 @@ export async function writeBuildToRadio(
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
-  if (egress.profileId === 'radio-io-at-d890uv') {
+  if (isAtD890RadioIoProfileId(egress.profileId)) {
     await uploadAtD890DigitalContactsForWrite(session, prepared.organisation.digitalContacts, opts);
   }
   return { warnings: [...prepared.warnings, ...openGd77WriteWarnings(session)] };
@@ -625,7 +626,7 @@ export async function uploadPreparedRadioWrite(
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
-  if (egress.profileId === 'radio-io-at-d890uv') {
+  if (isAtD890RadioIoProfileId(egress.profileId)) {
     await uploadAtD890DigitalContactsForWrite(session, opts?.organisation?.digitalContacts, opts);
   }
   const captured = session.descriptor.writeVerify?.captureAfterUpload(session);

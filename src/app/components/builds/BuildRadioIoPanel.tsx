@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
+import { isAtD890RadioIoProfileId } from '@core/import-export/formats/radio-io/profiles.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
@@ -130,15 +131,14 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const writeHidden = writeGate === 'hidden';
   const hydration = getRadioCloneHydration(egress);
   const hasHydration = buildHasRadioCloneHydration(egress);
-  const isAtD890Write = egress.profileId === 'radio-io-at-d890uv';
+  const isAtD890Write = isAtD890RadioIoProfileId(egress.profileId);
   const supportsKepsWrite = hasSatelliteKepsWriteAdapter(egress.profileId);
   const kepsWriteFn = getSatelliteKepsWriteAdapter(egress.profileId);
   const dualBankTraitProfile = traitProfileFor(egress.profileId);
   const supportsDualBankWrite = Boolean(
     dualBankTraitProfile?.traits.includes(BuildCapabilityTrait.SeparateDigitalIdList),
   );
-  const supportsSingleBankWrite =
-    egress.profileId === 'radio-io-at-d890uv' && !supportsDualBankWrite;
+  const supportsSingleBankWrite = isAtD890Write && !supportsDualBankWrite;
   const supportsDigitalContacts = supportsDualBankWrite || supportsSingleBankWrite;
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
@@ -503,12 +503,8 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
                 formatDebugMarkdown={writeVerifyHooks.formatDebugMarkdown}
                 onClose={handleCloseVerifyReport}
                 inModal
-                keptSectionTitle={
-                  egress.profileId === 'radio-io-at-d890uv' ? 'Preserved settings' : undefined
-                }
-                keptSummaryLabel={
-                  egress.profileId === 'radio-io-at-d890uv' ? '6 sentinel regions' : undefined
-                }
+                keptSectionTitle={isAtD890Write ? 'Preserved settings' : undefined}
+                keptSummaryLabel={isAtD890Write ? '6 sentinel regions' : undefined}
               />
             ) : null}
           </Stack>
@@ -566,7 +562,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           .
         </Text>
       ) : null}
-      {egress.profileId === 'radio-io-at-d890uv' ? (
+      {isAtD890Write ? (
         <AtD890WriteCoverageTable buildId={build.id} hasHydration={hasHydration} />
       ) : null}
       <Group gap="xs">
@@ -624,7 +620,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           {DM32_ANALOG_CONTACTS_WRITE_GAP}
         </Text>
       ) : null}
-      {egress.profileId === 'radio-io-at-d890uv' && !supportsSingleBankWrite ? (
+      {isAtD890Write && !supportsSingleBankWrite ? (
         <Text size="xs" c="dimmed">
           {AT_D890_DIGITAL_CONTACTS_WRITE_GAP}
         </Text>
