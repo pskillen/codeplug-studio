@@ -333,7 +333,7 @@ describe('buildRadioWriteProjection radio-io-dm32uv-mm9pdy', () => {
       {
         ...channel,
         modeProfiles: channel.modeProfiles.map((profile) =>
-          profile.mode === 'dmr' ? { ...profile, contactRef: undefined } : profile,
+          profile.mode === 'dmr' ? { ...profile, contactRef: null } : profile,
         ),
       },
     ];
