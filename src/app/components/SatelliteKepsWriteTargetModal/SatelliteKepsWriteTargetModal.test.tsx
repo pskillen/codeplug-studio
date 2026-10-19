@@ -45,6 +45,7 @@ describe('SatelliteKepsWriteTargetModal — Workflow A target list (#859)', () =
 
     expect(await screen.findByText('Other supported radios')).toBeInTheDocument();
     expect(screen.getByText('Anytone AT-D890UV')).toBeInTheDocument();
+    expect(screen.getByText('Anytone AT-D890UV (MM9PDY modded firmware)')).toBeInTheDocument();
     expect(screen.getByText('Baofeng DM-1701 / RT-84 (OpenGD77)')).toBeInTheDocument();
     expect(screen.getByText('TYT MD-9600 / RT-90 (OpenGD77)')).toBeInTheDocument();
     expect(screen.queryByText('Recommended / Your radios')).not.toBeInTheDocument();
@@ -60,6 +61,7 @@ describe('SatelliteKepsWriteTargetModal — Workflow A target list (#859)', () =
     expect(await screen.findByText('Recommended / Your radios')).toBeInTheDocument();
     expect(screen.getByText('My D890 — Anytone AT-D890UV')).toBeInTheDocument();
     expect(screen.queryByRole('radio', { name: 'Anytone AT-D890UV' })).not.toBeInTheDocument();
+    expect(screen.getByText('Anytone AT-D890UV (MM9PDY modded firmware)')).toBeInTheDocument();
     expect(screen.getByText('Other supported radios')).toBeInTheDocument();
     expect(screen.getByText('Baofeng DM-1701 / RT-84 (OpenGD77)')).toBeInTheDocument();
   });
@@ -76,5 +78,6 @@ describe('SatelliteKepsWriteTargetModal — Workflow A target list (#859)', () =
     // The D890 (unrelated to this build) still shows up as a generic option.
     expect(await screen.findByText('Other supported radios')).toBeInTheDocument();
     expect(screen.getByText('Anytone AT-D890UV')).toBeInTheDocument();
+    expect(screen.getByText('Anytone AT-D890UV (MM9PDY modded firmware)')).toBeInTheDocument();
   });
 });
