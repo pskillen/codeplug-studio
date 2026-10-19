@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
-import { newChannel, newRadioBuildForProfile } from '@core/domain/factories.ts';
-import type { LibrarySlice } from '@core/services/assemble.ts';
+import {
+  newChannel,
+  newRadioBuildForProfile,
+  newRxGroupList,
+  newTalkGroup,
+} from '@core/domain/factories.ts';
+import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
+import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
 import {
   DM32_BLOCK_SIZE,
   DM32_METADATA,
@@ -266,5 +272,79 @@ describe('DM-32UV in-session pre-write content read', () => {
 
   it('hardware verify pending — operator to confirm on DM-32UV', () => {
     expect(true).toBe(true);
+  });
+});
+
+describe('buildRadioWriteProjection radio-io-dm32uv-mm9pdy', () => {
+  function repeaterWithTwoTalkGroups() {
+    const tg1 = { ...newTalkGroup('p1', 'Local', 9), id: 'tg-1' };
+    const tg2 = { ...newTalkGroup('p1', 'Scotland', 2351), id: 'tg-2' };
+    const rxList = {
+      ...newRxGroupList('p1', 'Repeater'),
+      id: 'rx-1',
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg1.id } },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id } },
+      ],
+    };
+    const channel = {
+      ...newChannel('p1', 'GB3XX'),
+      id: 'ch-1',
+      rxFrequency: 438_800_000,
+      txFrequency: 430_800_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg1.id },
+          rxGroupListId: rxList.id,
+        },
+      ],
+    };
+    const library: LibrarySlice = {
+      ...emptyLibrary([channel]),
+      talkGroups: [tg1, tg2],
+      rxGroupLists: [rxList],
+    };
+    return { library };
+  }
+
+  it('emits one channel with scan-list id 0 and no scan-list records', () => {
+    const { library } = repeaterWithTwoTalkGroups();
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv-mm9pdy');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    const digital = projection.channels.filter((row) => row.mode === 'digital');
+    expect(digital).toHaveLength(1);
+    expect(digital[0]?.scanListId).toBe(0);
+    expect(digital[0]?.rxGroupIndex).toBe(1);
+    expect(projection.organisation.scanLists).toEqual([]);
+  });
+
+  it('still expands the stock DM-32UV target and keeps a scan-list record', () => {
+    const { library } = repeaterWithTwoTalkGroups();
+    const channel = library.channels[0]!;
+    library.channels = [
+      {
+        ...channel,
+        modeProfiles: channel.modeProfiles.map((profile) =>
+          profile.mode === 'dmr' ? { ...profile, contactRef: undefined } : profile,
+        ),
+      },
+    ];
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    const digital = projection.channels.filter((row) => row.mode === 'digital');
+    expect(digital.length).toBeGreaterThan(1);
+    expect(projection.organisation.scanLists?.length ?? 0).toBeGreaterThan(0);
   });
 });

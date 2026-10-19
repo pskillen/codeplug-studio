@@ -17,6 +17,7 @@ import {
   projectedRowToAssembledDigitalContact,
   type CpsDirectoryProjectionPayload,
 } from '@core/domain/cpsDigitalDirectoryProjection.ts';
+import { isDm32RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import type { CpsExportOptions } from '@core/import-export/types.ts';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
@@ -132,7 +133,7 @@ async function collectSingleBankCpsProjection(
 }
 
 function dualBankCpsDirectoryWarning(egress: EgressPath): string {
-  if (egress.formatId === 'dm32' || egress.profileId === 'radio-io-dm32uv') {
+  if (egress.formatId === 'dm32' || isDm32RadioIoProfileId(egress.profileId)) {
     return DM32_CPS_DIRECTORY_WARNING;
   }
   return OPENGD77_CPS_DIRECTORY_WARNING;

@@ -110,6 +110,24 @@
 
 ---
 
+## DM-32UV zone-scan write
+
+**Status:** Complete on this branch
+**Issues:** [#1320](https://github.com/pskillen/codeplug-studio/issues/1320)
+
+**Delivered**
+
+- One digital channel per repeater. Every channel scan-list id is 0. No scan-list records
+- Tag `0x04` byte `+0xB0` stays as read on the shared encoder
+- Radio-ID bank, address book, and dual-bank directory stay on for both DM-32 profiles
+
+**Verify**
+
+- Projection test: two talk groups, one channel, `scanLists` empty. Stock profile still expands and keeps a scan-list record
+- Hydration test: settings `+0xB0` unchanged when scan lists are cleared
+
+---
+
 ## Next
 
-- Zone-scan write: one channel, scan-list id 0, no scan-list records, tag `0x04` `+0xB0` left as read. [#1321](https://github.com/pskillen/codeplug-studio/issues/1321) stays open
+- [#1321](https://github.com/pskillen/codeplug-studio/issues/1321) stays open until DM-32 C2 names a timeslot store and a step-key code

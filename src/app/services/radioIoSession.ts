@@ -5,7 +5,10 @@
 
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
-import { isAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
+import {
+  isAtD890RadioIoProfileId,
+  isDm32RadioIoProfileId,
+} from '@core/import-export/formatProfiles.ts';
 import { resolveAtD890ScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import {
@@ -347,7 +350,7 @@ export async function prepareRadioWriteImage(
     const maxRadioIds = typeof limits?.maxRadioIds === 'number' ? limits.maxRadioIds : undefined;
     const maxDirectoryContacts = isOpenGd77RadioIoEgress(egress.profileId)
       ? OPENGD77_FAMILY_LIMITS.USER_DATABASE_MAX
-      : egress.profileId === 'radio-io-dm32uv'
+      : isDm32RadioIoProfileId(egress.profileId)
         ? DM32UV_LIMITS.ADDRESS_BOOK_WRITE_MAX
         : typeof limits?.maxContacts === 'number'
           ? limits.maxContacts

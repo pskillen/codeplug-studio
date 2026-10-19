@@ -6,7 +6,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
-import { isAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
+import {
+  isAtD890RadioIoProfileId,
+  isDm32RadioIoProfileId,
+} from '@core/import-export/formatProfiles.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import {
@@ -550,7 +553,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         writeHidden={writeHidden}
         supportsDigitalContacts={supportsDigitalContacts}
         sharedContactBankNote={isOpenGd77RadioIoEgress(egress.profileId)}
-        sharedAddressBookNote={egress.profileId === 'radio-io-dm32uv'}
+        sharedAddressBookNote={isDm32RadioIoProfileId(egress.profileId)}
         supportsKeps={supportsKepsWrite}
         kepsLastUpdatedIso={activeProject?.satelliteLibraryLastUpdated}
         contactSource={contactSource}
@@ -633,7 +636,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           . Write uses a live in-session read.
         </Text>
       )}
-      {egress.profileId === 'radio-io-dm32uv' ? (
+      {isDm32RadioIoProfileId(egress.profileId) ? (
         <Text size="xs" c="dimmed">
           {DM32_ANALOG_CONTACTS_WRITE_GAP}
         </Text>

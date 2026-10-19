@@ -26,7 +26,9 @@ import {
 import type { FormatId } from '@core/import-export/types.ts';
 import {
   isAtD890RadioIoProfileId,
+  isDm32RadioIoProfileId,
   isMm9pdyAtD890RadioIoProfileId,
+  isMm9pdyDm32RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
@@ -1348,7 +1350,7 @@ export function buildRadioWriteProjection(
   let dm32RadioIds: RadioRadioIdDto[] = [];
   let dm32AddressBook: RadioDigitalContactDto[] | undefined;
 
-  if (egress.profileId === 'radio-io-dm32uv' || isAtD890RadioIoProfileId(egress.profileId)) {
+  if (isDm32RadioIoProfileId(egress.profileId) || isAtD890RadioIoProfileId(egress.profileId)) {
     const tgRx = buildTalkGroupsAndRx(
       assembled,
       build,
@@ -1361,7 +1363,7 @@ export function buildRadioWriteProjection(
     rxGroups = tgRx.rxGroups;
     digitalContacts = tgRx.digitalContacts;
     fkMaps = tgRx.fkMaps;
-    if (egress.profileId === 'radio-io-dm32uv') {
+    if (isDm32RadioIoProfileId(egress.profileId)) {
       const radioIdBank = buildDm32RadioIdBank(assembled, build, library, egress, warnings);
       dm32RadioIds = radioIdBank.radioIds;
       fkMaps = {
@@ -1418,7 +1420,8 @@ export function buildRadioWriteProjection(
   let channels = dtos;
   let organisation: RadioWriteProjection['organisation'] = {};
 
-  if (egress.profileId === 'radio-io-dm32uv') {
+  if (isDm32RadioIoProfileId(egress.profileId)) {
+    const mm9pdy = isMm9pdyDm32RadioIoProfileId(egress.profileId);
     const org = buildDm32Organisation(
       assembled,
       build,
@@ -1427,12 +1430,16 @@ export function buildRadioWriteProjection(
       numbersBySourceChannelId,
       [...dtos],
       warnings,
+      undefined,
+      mm9pdy ? { deriveScanLists: false } : undefined,
     );
-    channels = org.channels;
+    channels = mm9pdy
+      ? org.channels.map((ch) => (ch.empty ? ch : { ...ch, scanListId: 0 }))
+      : org.channels;
     numbersBySourceChannelId = org.numbersBySourceChannelId;
     organisation = {
       zones: org.zones,
-      scanLists: org.scanLists,
+      scanLists: mm9pdy ? [] : org.scanLists,
       talkGroups,
       rxGroups,
       ...(dm32AddressBook !== undefined ? { digitalContacts: dm32AddressBook } : {}),

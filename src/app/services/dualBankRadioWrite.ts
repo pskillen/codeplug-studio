@@ -8,6 +8,7 @@ import {
   type DualBankRadioWriteOptions,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import { OPENGD77_FAMILY_LIMITS } from '@core/radios/opengd77/limits.ts';
+import { isDm32RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import type { DualBankWriteMode } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
@@ -51,7 +52,7 @@ function dualBankDirectoryTargets(
   formatId: string | undefined,
   egressProfileId: string,
 ): { forDm32: boolean; forOpenGd77: boolean } {
-  if (formatId === 'dm32' || egressProfileId === 'radio-io-dm32uv') {
+  if (formatId === 'dm32' || isDm32RadioIoProfileId(egressProfileId)) {
     return { forDm32: true, forOpenGd77: false };
   }
   if (formatId === 'opengd77' || isOpenGd77RadioIoEgress(egressProfileId)) {
