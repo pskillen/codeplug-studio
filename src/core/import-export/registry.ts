@@ -146,6 +146,15 @@ const RADIO_IO_AT_D890UV_EXPORT_DEFAULTS: FormatExportDefaults = {
   exportZoneDerivedScanLists: false,
 };
 
+/** MM9PDY AT-D890UV — one channel per repeater; the zone is the scan. */
+const RADIO_IO_AT_D890UV_MM9PDY_EXPORT_DEFAULTS: FormatExportDefaults = {
+  defaultScanInclusion: 'scan',
+  expandModes: false,
+  expandRxGroupLists: false,
+  exportScratchChannels: false,
+  exportZoneDerivedScanLists: false,
+};
+
 const FORMAT_EXPORT_DEFAULTS: Partial<Record<FormatId, FormatExportDefaults>> = {
   chirp: CHIRP_EXPORT_DEFAULTS,
   'radio-io': RADIO_IO_EXPORT_DEFAULTS,
@@ -163,6 +172,9 @@ export function getFormatExportDefaults(
   }
   if (formatId === 'radio-io' && profileId === 'radio-io-at-d890uv') {
     return RADIO_IO_AT_D890UV_EXPORT_DEFAULTS;
+  }
+  if (formatId === 'radio-io' && profileId === 'radio-io-at-d890uv-mm9pdy') {
+    return RADIO_IO_AT_D890UV_MM9PDY_EXPORT_DEFAULTS;
   }
   if (
     formatId === 'radio-io' &&

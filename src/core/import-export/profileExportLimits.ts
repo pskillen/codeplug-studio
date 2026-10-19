@@ -341,7 +341,7 @@ export function getProfileExportLimits(
           nameLengthZone: profile.nameLimit,
           nameLengthContact: profile.nameLimit,
           nameLengthTalkGroup: profile.nameLimit,
-          nameLengthScanList: profile.nameLimit,
+          nameLengthScanList: profile.maxScanLists === 'not_used' ? 'not_used' : profile.nameLimit,
           nameLengthRxGroupList: profile.nameLimit,
           powerLadder: profile.powerLadder,
           siblingLadders: [],

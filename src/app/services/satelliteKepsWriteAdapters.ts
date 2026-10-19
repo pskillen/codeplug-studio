@@ -59,6 +59,7 @@ export type SatelliteKepsWriteFn = (
  */
 export const SATELLITE_KEPS_WRITE_ADAPTERS: Readonly<Record<string, SatelliteKepsWriteFn>> = {
   'radio-io-at-d890uv': writeSatellitesToRadio,
+  'radio-io-at-d890uv-mm9pdy': writeSatellitesToRadio,
   'radio-io-opengd77-1701': writeOpenGd77SatellitesToRadio,
   'radio-io-opengd77-md9600': writeOpenGd77SatellitesToRadio,
 };
@@ -94,6 +95,14 @@ export interface SatelliteKepsWriteCapacity {
  */
 export const SATELLITE_KEPS_WRITE_CAPACITY: Readonly<Record<string, SatelliteKepsWriteCapacity>> = {
   'radio-io-at-d890uv': {
+    max: AT_D890UV_LIMITS.SATELLITE_MAX,
+    countEligible: countWriteEligibleSatelliteRecords,
+    nameLength: AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH,
+    unitNoun: 'transmitter',
+    nameScope: 'transmitter',
+    limitsDoc: 'docs/reference/radios/anytone/at-d890uv/satellite-keps.md',
+  },
+  'radio-io-at-d890uv-mm9pdy': {
     max: AT_D890UV_LIMITS.SATELLITE_MAX,
     countEligible: countWriteEligibleSatelliteRecords,
     nameLength: AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH,
@@ -177,11 +186,14 @@ export type SatelliteKepsWritePreviewFn = (
  * `SATELLITE_KEPS_WRITE_ADAPTERS`/`SATELLITE_KEPS_WRITE_CAPACITY` above, so the export page can
  * render exactly what a write would send before/without opening a session.
  */
+const previewAtD890Satellites: SatelliteKepsWritePreviewFn = (satellites, options) =>
+  previewSatelliteWriteRecords(satellites, {
+    satelliteOverrides: options?.satelliteOverrides,
+  });
+
 export const SATELLITE_KEPS_WRITE_PREVIEW: Readonly<Record<string, SatelliteKepsWritePreviewFn>> = {
-  'radio-io-at-d890uv': (satellites, options) =>
-    previewSatelliteWriteRecords(satellites, {
-      satelliteOverrides: options?.satelliteOverrides,
-    }),
+  'radio-io-at-d890uv': previewAtD890Satellites,
+  'radio-io-at-d890uv-mm9pdy': previewAtD890Satellites,
   'radio-io-opengd77-1701': (satellites, options) =>
     previewOpenGd77SatelliteWriteRecords(satellites, {
       satelliteOverrides: options?.satelliteOverrides,
@@ -244,19 +256,22 @@ function openGd77Exclusions(
   ];
 }
 
+const atD890Exclusions: SatelliteKepsExclusionsFn = (satellites) => [
+  ...skippedSatellites(satellites).map((s) => ({
+    satelliteId: s.satelliteId,
+    transmitterId: null,
+    reason: s.reason,
+  })),
+  ...listCapabilitySkippedTransmitters(satellites).map((t) => ({
+    satelliteId: t.satelliteId,
+    transmitterId: t.transmitterId,
+    reason: t.reason,
+  })),
+];
+
 export const SATELLITE_KEPS_EXCLUSIONS: Readonly<Record<string, SatelliteKepsExclusionsFn>> = {
-  'radio-io-at-d890uv': (satellites) => [
-    ...skippedSatellites(satellites).map((s) => ({
-      satelliteId: s.satelliteId,
-      transmitterId: null,
-      reason: s.reason,
-    })),
-    ...listCapabilitySkippedTransmitters(satellites).map((t) => ({
-      satelliteId: t.satelliteId,
-      transmitterId: t.transmitterId,
-      reason: t.reason,
-    })),
-  ],
+  'radio-io-at-d890uv': atD890Exclusions,
+  'radio-io-at-d890uv-mm9pdy': atD890Exclusions,
   'radio-io-opengd77-1701': openGd77Exclusions,
   'radio-io-opengd77-md9600': openGd77Exclusions,
 };

@@ -155,6 +155,17 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.MxNChannelExpansion,
     ],
   },
+  /** Web Serial — AT-D890UV MM9PDY modded firmware. Same codec, no m×n or scan lists. */
+  'radio-io-at-d890uv-mm9pdy': {
+    profileId: 'radio-io-at-d890uv-mm9pdy',
+    formatId: 'radio-io',
+    label: 'Anytone AT-D890UV (MM9PDY modded firmware)',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+    ],
+  },
   /** Web Serial direct-write — OpenGD77 / OpenUV380 (DM-1701). */
   'radio-io-opengd77-1701': {
     profileId: 'radio-io-opengd77-1701',

@@ -54,16 +54,19 @@ export interface RadioIoDm32uvProfile {
   powerLadder: readonly PowerLadderEntry[];
 }
 
-/** Anytone AT-D890UV Web Serial — mirrors anytone-at-d890uv CSV caps. */
+export type AtD890RadioIoProfileId = 'radio-io-at-d890uv' | 'radio-io-at-d890uv-mm9pdy';
+
+/** Anytone AT-D890UV Web Serial — stock and MM9PDY share hardware limits. */
 export interface RadioIoAtD890uvProfile {
-  id: 'radio-io-at-d890uv';
+  id: AtD890RadioIoProfileId;
   label: string;
   maxMemorySlots: number;
   nameLimit: number;
   maxZones: number;
   zoneMembers: number;
-  maxScanLists: number;
-  scanListMembers: number;
+  /** MM9PDY zone-as-scan has no dedicated scan-list bank. */
+  maxScanLists: number | 'not_used';
+  scanListMembers: number | 'not_used';
   maxRxGroupLists: number;
   rxGroupListMembers: number;
   maxContacts: number;
@@ -117,10 +120,20 @@ export function isRadioIoDm32uvProfile(
   return profile.id === 'radio-io-dm32uv';
 }
 
+/** Stock and MM9PDY AT-D890UV Web Serial profiles share one codec. */
+export function isAtD890RadioIoProfileId(profileId: string): boolean {
+  return profileId === 'radio-io-at-d890uv' || profileId === 'radio-io-at-d890uv-mm9pdy';
+}
+
+/** MM9PDY modded firmware — one channel per repeater, zone is the scan. */
+export function isMm9pdyAtD890RadioIoProfileId(profileId: string): boolean {
+  return profileId === 'radio-io-at-d890uv-mm9pdy';
+}
+
 export function isRadioIoAtD890uvProfile(
   profile: RadioIoRadioProfile,
 ): profile is RadioIoAtD890uvProfile {
-  return profile.id === 'radio-io-at-d890uv';
+  return isAtD890RadioIoProfileId(profile.id);
 }
 
 export function isRadioIoOpenGd771701Profile(
@@ -252,6 +265,15 @@ export const RADIO_IO_AT_D890UV_PROFILE: RadioIoAtD890uvProfile = {
   powerLadder: AT_D890UV_POWER_LADDER,
 };
 
+/** Same hardware caps as stock. Scan lists are unused — the zone is the scan. */
+export const RADIO_IO_AT_D890UV_MM9PDY_PROFILE: RadioIoAtD890uvProfile = {
+  ...RADIO_IO_AT_D890UV_PROFILE,
+  id: 'radio-io-at-d890uv-mm9pdy',
+  label: 'Anytone AT-D890UV (MM9PDY modded firmware)',
+  maxScanLists: 'not_used',
+  scanListMembers: 'not_used',
+};
+
 export const RADIO_IO_OPENGD77_1701_PROFILE: RadioIoOpenGd771701Profile = {
   id: 'radio-io-opengd77-1701',
   label: 'Baofeng DM-1701 / RT-84 (OpenGD77)',
@@ -286,6 +308,7 @@ export const RADIO_IO_PROFILES: readonly RadioIoRadioProfile[] = [
   RADIO_IO_RT95_PROFILE,
   RADIO_IO_DM32UV_PROFILE,
   RADIO_IO_AT_D890UV_PROFILE,
+  RADIO_IO_AT_D890UV_MM9PDY_PROFILE,
   RADIO_IO_OPENGD77_1701_PROFILE,
   RADIO_IO_OPENGD77_MD9600_PROFILE,
 ];

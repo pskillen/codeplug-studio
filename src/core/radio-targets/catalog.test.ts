@@ -98,6 +98,7 @@ describe('radio target catalog', () => {
       'radio-io-uv21',
       'radio-io-dm32uv',
       'radio-io-at-d890uv',
+      'radio-io-at-d890uv-mm9pdy',
       'radio-io-opengd77-1701',
       'radio-io-opengd77-md9600',
       'radio-io-rt95',
@@ -123,6 +124,20 @@ describe('radio target catalog', () => {
     expect(hasMxNChannelExpansion('baofeng-uv5r-mini')).toBe(false);
     expect(hasMxNChannelExpansion('baofeng-dm32uv')).toBe(true);
     expect(hasMxNChannelExpansion('anytone-at-d890uv')).toBe(true);
+    expect(hasMxNChannelExpansion('anytone-at-d890uv-mm9pdy')).toBe(false);
+    expect(hasTalkGroupTimeslotClones('anytone-at-d890uv-mm9pdy')).toBe(false);
+    expect(traitsForRadioTarget('anytone-at-d890uv-mm9pdy')).toEqual([
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+    ]);
+    expect(radioTargetFor('anytone-at-d890uv-mm9pdy')?.label).toBe(
+      'Anytone AT-D890UV (MM9PDY modded firmware)',
+    );
+    expect(
+      radioTargetFor('anytone-at-d890uv-mm9pdy')?.compatibleEgress.map((e) => e.profileId),
+    ).toEqual(['radio-io-at-d890uv-mm9pdy']);
+    expect(radioTargetHasCompatibleFormat('anytone-at-d890uv-mm9pdy', 'anytone')).toBe(false);
     expect(hasTalkGroupTimeslotClones('baofeng-dm1701')).toBe(true);
     expect(hasTalkGroupTimeslotClones('tyt-md9600')).toBe(true);
     expect(hasTalkGroupTimeslotClones('baofeng-dm32uv')).toBe(false);

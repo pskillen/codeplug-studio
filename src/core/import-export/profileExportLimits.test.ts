@@ -175,4 +175,16 @@ describe('getProfileExportLimits', () => {
     expect(limits!.zoneMembers).toBe(250);
     expect(limits!.powerLadder.map((e) => e.wire)).toEqual(['Turbo', 'High', 'Mid', 'Low']);
   });
+
+  it('marks MM9PDY AT-D890UV scan-list limits not_used', () => {
+    const limits = getProfileExportLimits('radio-io', 'radio-io-at-d890uv-mm9pdy');
+    expect(limits).not.toBeNull();
+    expect(limits!.maxChannels).toBe(4000);
+    expect(limits!.maxScanLists).toBe('not_used');
+    expect(limits!.scanListMembers).toBe('not_used');
+    expect(limits!.nameLengthScanList).toBe('not_used');
+    expect(limits!.maxRxGroupLists).toBe(
+      getProfileExportLimits('radio-io', 'radio-io-at-d890uv')!.maxRxGroupLists,
+    );
+  });
 });

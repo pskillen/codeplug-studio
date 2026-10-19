@@ -52,6 +52,13 @@ const anytoneTraits: readonly Trait[] = [
   BuildCapabilityTrait.MxNChannelExpansion,
 ];
 
+/** MM9PDY modded firmware — zone is the scan, one channel per repeater. */
+const anytoneMm9pdyTraits: readonly Trait[] = [
+  BuildCapabilityTrait.ZoneGrouping,
+  BuildCapabilityTrait.ZoneAsScanList,
+  BuildCapabilityTrait.MultiTalkGroupPerChannel,
+];
+
 /** Authoritative radio-target catalog (#654). */
 export const RADIO_TARGETS: Record<string, RadioTarget> = {
   'baofeng-uv5r-mini': {
@@ -125,6 +132,13 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
       egress('radio-io', 'radio-io-at-d890uv', 'Web Serial'),
       egress('anytone', 'anytone-at-d890uv', 'Anytone CSV'),
     ],
+  },
+  'anytone-at-d890uv-mm9pdy': {
+    id: 'anytone-at-d890uv-mm9pdy',
+    label: 'Anytone AT-D890UV (MM9PDY modded firmware)',
+    group: 'Anytone',
+    traits: anytoneMm9pdyTraits,
+    compatibleEgress: [egress('radio-io', 'radio-io-at-d890uv-mm9pdy', 'Web Serial')],
   },
 };
 

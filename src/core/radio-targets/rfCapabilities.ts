@@ -84,15 +84,23 @@ const MD9600: RadioRfCapabilities = {
   frequencyRanges: DM1701_BANDS,
 };
 
+const AT_D890UV_BANDS: readonly RadioFrequencyRange[] = [
+  range(136, 174, ['fm', 'dmr']),
+  range(400, 480, ['fm', 'dmr']),
+  range(108, 136, ['am']),
+  range(87.5, 108, ['fm'], false),
+];
+
 const AT_D890UV: RadioRfCapabilities = {
   radioTargetId: 'anytone-at-d890uv',
   supportedModes: ['fm', 'am', 'dmr'],
-  frequencyRanges: [
-    range(136, 174, ['fm', 'dmr']),
-    range(400, 480, ['fm', 'dmr']),
-    range(108, 136, ['am']),
-    range(87.5, 108, ['fm'], false),
-  ],
+  frequencyRanges: AT_D890UV_BANDS,
+};
+
+const AT_D890UV_MM9PDY: RadioRfCapabilities = {
+  radioTargetId: 'anytone-at-d890uv-mm9pdy',
+  supportedModes: ['fm', 'am', 'dmr'],
+  frequencyRanges: AT_D890UV_BANDS,
 };
 
 /** Authoritative RF capability tables keyed by {@link RadioTarget.id}. */
@@ -104,6 +112,7 @@ export const RADIO_RF_CAPABILITIES: Record<string, RadioRfCapabilities> = {
   'baofeng-dm1701': DM1701,
   'tyt-md9600': MD9600,
   'anytone-at-d890uv': AT_D890UV,
+  'anytone-at-d890uv-mm9pdy': AT_D890UV_MM9PDY,
 };
 
 export function getRadioRfCapabilities(radioTargetId: string): RadioRfCapabilities | undefined {

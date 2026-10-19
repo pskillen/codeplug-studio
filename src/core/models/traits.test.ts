@@ -136,6 +136,18 @@ describe('trait profiles', () => {
     expect(profile?.traits).toContain(BuildCapabilityTrait.MxNChannelExpansion);
   });
 
+  it('registers radio-io-at-d890uv-mm9pdy without m×n or dedicated scan lists', () => {
+    const profile = traitProfileFor('radio-io-at-d890uv-mm9pdy');
+    expect(profile?.formatId).toBe('radio-io');
+    expect(profile?.label).toContain('MM9PDY');
+    expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneGrouping);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.ZoneAsScanList);
+    expect(profile?.traits).toContain(BuildCapabilityTrait.MultiTalkGroupPerChannel);
+    expect(profile?.traits).not.toContain(BuildCapabilityTrait.MxNChannelExpansion);
+    expect(profile?.traits).not.toContain(BuildCapabilityTrait.DedicatedScanLists);
+    expect(profile?.traits).not.toContain(BuildCapabilityTrait.TalkGroupTimeslotClones);
+  });
+
   it('has stable profile keys', () => {
     expect(Object.keys(TRAIT_PROFILES).sort()).toEqual([
       'anytone-at-d890uv',
@@ -148,6 +160,7 @@ describe('trait profiles', () => {
       'opengd77-1701',
       'opengd77-md9600',
       'radio-io-at-d890uv',
+      'radio-io-at-d890uv-mm9pdy',
       'radio-io-dm32uv',
       'radio-io-opengd77-1701',
       'radio-io-opengd77-md9600',
