@@ -67,6 +67,12 @@ const DM32UV: RadioRfCapabilities = {
   ],
 };
 
+const DM32UV_MM9PDY: RadioRfCapabilities = {
+  radioTargetId: 'baofeng-dm32uv-mm9pdy',
+  supportedModes: ['fm', 'am', 'dmr'],
+  frequencyRanges: DM32UV.frequencyRanges,
+};
+
 const DM1701_BANDS: readonly RadioFrequencyRange[] = [
   range(136, 174, ['fm', 'dmr']),
   range(400, 470, ['fm', 'dmr']),
@@ -109,6 +115,7 @@ export const RADIO_RF_CAPABILITIES: Record<string, RadioRfCapabilities> = {
   'baofeng-uv21': UV21,
   'retevis-rt95': RT95,
   'baofeng-dm32uv': DM32UV,
+  'baofeng-dm32uv-mm9pdy': DM32UV_MM9PDY,
   'baofeng-dm1701': DM1701,
   'tyt-md9600': MD9600,
   'anytone-at-d890uv': AT_D890UV,

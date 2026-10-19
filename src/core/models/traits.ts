@@ -144,6 +144,18 @@ export const TRAIT_PROFILES: Record<string, TraitProfile> = {
       BuildCapabilityTrait.SeparateDigitalIdList,
     ],
   },
+  /** Web Serial — DM-32UV MM9PDY modded firmware. Same codec, no m×n or scan lists. */
+  'radio-io-dm32uv-mm9pdy': {
+    profileId: 'radio-io-dm32uv-mm9pdy',
+    formatId: 'radio-io',
+    label: 'Baofeng DM-32UV (MM9PDY modded firmware)',
+    traits: [
+      BuildCapabilityTrait.ZoneGrouping,
+      BuildCapabilityTrait.ZoneAsScanList,
+      BuildCapabilityTrait.MultiTalkGroupPerChannel,
+      BuildCapabilityTrait.SeparateDigitalIdList,
+    ],
+  },
   /** Web Serial direct-write — Anytone AT-D890UV sparse D890_MAP. */
   'radio-io-at-d890uv': {
     profileId: 'radio-io-at-d890uv',

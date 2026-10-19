@@ -42,6 +42,7 @@ describe('formatProfiles', () => {
       'radio-io-uv21',
       'radio-io-rt95',
       'radio-io-dm32uv',
+      'radio-io-dm32uv-mm9pdy',
       'radio-io-at-d890uv',
       'radio-io-at-d890uv-mm9pdy',
       'radio-io-opengd77-1701',

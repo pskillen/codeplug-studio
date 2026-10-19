@@ -26,7 +26,9 @@ import {
   RADIO_IO_PROFILES,
   getRadioIoProfile,
   isAtD890RadioIoProfileId,
+  isDm32RadioIoProfileId,
   isMm9pdyAtD890RadioIoProfileId,
+  isMm9pdyDm32RadioIoProfileId,
   isRadioIoAtD890uvProfile,
   isRadioIoDm32uvProfile,
   isRadioIoOpenGd771701Profile,
@@ -156,7 +158,9 @@ export function scanListMemberCapForProfile(formatId: FormatId, profileId: strin
   if (formatId === 'radio-io') {
     try {
       const profile = getRadioIoProfile(profileId);
-      if (isRadioIoDm32uvProfile(profile)) return profile.scanListMembers;
+      if (isRadioIoDm32uvProfile(profile)) {
+        return typeof profile.scanListMembers === 'number' ? profile.scanListMembers : 0;
+      }
       if (isRadioIoAtD890uvProfile(profile)) {
         return typeof profile.scanListMembers === 'number' ? profile.scanListMembers : 0;
       }
@@ -232,4 +236,10 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
   return null;
 }
 
-export { isAtD890RadioIoProfileId, isMm9pdyAtD890RadioIoProfileId, resolveChirpExportProfileId };
+export {
+  isAtD890RadioIoProfileId,
+  isDm32RadioIoProfileId,
+  isMm9pdyAtD890RadioIoProfileId,
+  isMm9pdyDm32RadioIoProfileId,
+  resolveChirpExportProfileId,
+};

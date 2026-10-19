@@ -176,6 +176,17 @@ describe('getProfileExportLimits', () => {
     expect(limits!.powerLadder.map((e) => e.wire)).toEqual(['Turbo', 'High', 'Mid', 'Low']);
   });
 
+  it('marks MM9PDY DM-32UV scan-list limits not_used', () => {
+    const limits = getProfileExportLimits('radio-io', 'radio-io-dm32uv-mm9pdy');
+    const stock = getProfileExportLimits('radio-io', 'radio-io-dm32uv');
+    expect(limits).not.toBeNull();
+    expect(limits!.maxScanLists).toBe('not_used');
+    expect(limits!.scanListMembers).toBe('not_used');
+    expect(limits!.nameLengthScanList).toBe('not_used');
+    expect(limits!.maxChannels).toBe(stock!.maxChannels);
+    expect(stock!.maxScanLists).not.toBe('not_used');
+  });
+
   it('marks MM9PDY AT-D890UV scan-list limits not_used', () => {
     const limits = getProfileExportLimits('radio-io', 'radio-io-at-d890uv-mm9pdy');
     expect(limits).not.toBeNull();

@@ -35,15 +35,18 @@ export interface RadioIoRt95Profile {
   powerLadder: readonly PowerLadderEntry[];
 }
 
+export type Dm32RadioIoProfileId = 'radio-io-dm32uv' | 'radio-io-dm32uv-mm9pdy';
+
 export interface RadioIoDm32uvProfile {
-  id: 'radio-io-dm32uv';
+  id: Dm32RadioIoProfileId;
   label: string;
   maxMemorySlots: number;
   nameLimit: number;
   maxZones: number;
   zoneMembers: number;
-  maxScanLists: number;
-  scanListMembers: number;
+  /** MM9PDY zone-as-scan has no dedicated scan-list bank. */
+  maxScanLists: number | 'not_used';
+  scanListMembers: number | 'not_used';
   maxRxGroupLists: number;
   rxGroupListMembers: number;
   maxContacts: number;
@@ -114,10 +117,20 @@ export type RadioIoRadioProfile =
   | RadioIoOpenGd771701Profile
   | RadioIoOpenGd77Md9600Profile;
 
+/** Stock and MM9PDY DM-32UV Web Serial profiles share one codec. */
+export function isDm32RadioIoProfileId(profileId: string): boolean {
+  return profileId === 'radio-io-dm32uv' || profileId === 'radio-io-dm32uv-mm9pdy';
+}
+
+/** MM9PDY modded firmware — one channel per repeater, zone scan is scan-list id 0. */
+export function isMm9pdyDm32RadioIoProfileId(profileId: string): boolean {
+  return profileId === 'radio-io-dm32uv-mm9pdy';
+}
+
 export function isRadioIoDm32uvProfile(
   profile: RadioIoRadioProfile,
 ): profile is RadioIoDm32uvProfile {
-  return profile.id === 'radio-io-dm32uv';
+  return isDm32RadioIoProfileId(profile.id);
 }
 
 /** Stock and MM9PDY AT-D890UV Web Serial profiles share one codec. */
@@ -249,6 +262,15 @@ export const RADIO_IO_DM32UV_PROFILE: RadioIoDm32uvProfile = {
   powerLadder: DM32_POWER_LADDER,
 };
 
+/** Same hardware caps as stock. Scan lists are unused — the zone is the scan. */
+export const RADIO_IO_DM32UV_MM9PDY_PROFILE: RadioIoDm32uvProfile = {
+  ...RADIO_IO_DM32UV_PROFILE,
+  id: 'radio-io-dm32uv-mm9pdy',
+  label: 'Baofeng DM-32UV (MM9PDY modded firmware)',
+  maxScanLists: 'not_used',
+  scanListMembers: 'not_used',
+};
+
 export const RADIO_IO_AT_D890UV_PROFILE: RadioIoAtD890uvProfile = {
   id: 'radio-io-at-d890uv',
   label: 'Anytone AT-D890UV',
@@ -307,6 +329,7 @@ export const RADIO_IO_PROFILES: readonly RadioIoRadioProfile[] = [
   RADIO_IO_UV21_PROFILE,
   RADIO_IO_RT95_PROFILE,
   RADIO_IO_DM32UV_PROFILE,
+  RADIO_IO_DM32UV_MM9PDY_PROFILE,
   RADIO_IO_AT_D890UV_PROFILE,
   RADIO_IO_AT_D890UV_MM9PDY_PROFILE,
   RADIO_IO_OPENGD77_1701_PROFILE,

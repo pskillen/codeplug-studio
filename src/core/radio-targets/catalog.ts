@@ -52,7 +52,14 @@ const anytoneTraits: readonly Trait[] = [
   BuildCapabilityTrait.MxNChannelExpansion,
 ];
 
-/** MM9PDY modded firmware — zone is the scan, one channel per repeater. */
+/** MM9PDY DM-32UV — zone is the scan, one channel per repeater, dual-bank contacts. */
+const dm32Mm9pdyTraits: readonly Trait[] = [
+  BuildCapabilityTrait.ZoneGrouping,
+  BuildCapabilityTrait.ZoneAsScanList,
+  BuildCapabilityTrait.MultiTalkGroupPerChannel,
+  BuildCapabilityTrait.SeparateDigitalIdList,
+];
+
 const anytoneMm9pdyTraits: readonly Trait[] = [
   BuildCapabilityTrait.ZoneGrouping,
   BuildCapabilityTrait.ZoneAsScanList,
@@ -102,6 +109,13 @@ export const RADIO_TARGETS: Record<string, RadioTarget> = {
       egress('neonplug', 'neonplug-dm32uv', 'NeonPlug'),
       egress('dm32', 'dm32-baofeng-dm32uv', 'DM32 CSV'),
     ],
+  },
+  'baofeng-dm32uv-mm9pdy': {
+    id: 'baofeng-dm32uv-mm9pdy',
+    label: 'Baofeng DM-32UV (MM9PDY modded firmware)',
+    group: 'Baofeng',
+    traits: dm32Mm9pdyTraits,
+    compatibleEgress: [egress('radio-io', 'radio-io-dm32uv-mm9pdy', 'Web Serial')],
   },
   'baofeng-dm1701': {
     id: 'baofeng-dm1701',

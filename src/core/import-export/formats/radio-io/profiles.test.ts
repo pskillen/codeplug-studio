@@ -82,4 +82,17 @@ describe('radio-io profiles', () => {
     expect(profile.maxRxGroupLists).toBe(stock.maxRxGroupLists);
     expect(profile.nameLimit).toBe(AT_D890UV_LIMITS.NAME_LENGTH);
   });
+
+  it('marks MM9PDY DM-32UV scan lists unused and keeps the other hardware caps', () => {
+    const profile = getRadioIoProfile('radio-io-dm32uv-mm9pdy');
+    const stock = getRadioIoProfile('radio-io-dm32uv');
+    expect(isRadioIoDm32uvProfile(profile)).toBe(true);
+    expect(isRadioIoDm32uvProfile(stock)).toBe(true);
+    if (!isRadioIoDm32uvProfile(profile) || !isRadioIoDm32uvProfile(stock)) return;
+    expect(profile.label).toContain('MM9PDY');
+    expect(profile.maxScanLists).toBe('not_used');
+    expect(profile.scanListMembers).toBe('not_used');
+    expect(profile.maxMemorySlots).toBe(stock.maxMemorySlots);
+    expect(profile.maxRxGroupLists).toBe(stock.maxRxGroupLists);
+  });
 });

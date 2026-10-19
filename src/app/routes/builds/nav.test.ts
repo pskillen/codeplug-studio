@@ -163,6 +163,15 @@ describe('buildNavItems', () => {
     const stock = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
     expect(buildNavItems(stock.build).map((item) => item.label)).toContain('Scan lists');
   });
+
+  it('hides dedicated scan lists on the MM9PDY DM-32UV target', () => {
+    const { build, egressPaths } = newRadioBuildForProfile('proj', 'radio-io-dm32uv-mm9pdy');
+    const labels = buildNavItems(build, { egressPaths }).map((item) => item.label);
+    expect(labels).not.toContain('Scan lists');
+    expect(labels).toContain('Zones');
+    const stock = newRadioBuildForProfile('proj', 'radio-io-dm32uv');
+    expect(buildNavItems(stock.build).map((item) => item.label)).not.toContain('Scan lists');
+  });
 });
 
 describe('buildSectionNavItems', () => {

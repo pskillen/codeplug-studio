@@ -137,6 +137,15 @@ const ANYTONE_EXPORT_DEFAULTS: FormatExportDefaults = {
   exportZoneDerivedScanLists: false,
 };
 
+/** MM9PDY DM-32UV — one channel per repeater; zone scan is scan-list id 0. */
+const RADIO_IO_DM32UV_MM9PDY_EXPORT_DEFAULTS: FormatExportDefaults = {
+  defaultScanInclusion: 'scan',
+  expandModes: false,
+  expandRxGroupLists: false,
+  exportScratchChannels: false,
+  exportZoneDerivedScanLists: false,
+};
+
 /** Anytone AT-D890UV Web Serial — same m×n defaults as Anytone CPS. */
 const RADIO_IO_AT_D890UV_EXPORT_DEFAULTS: FormatExportDefaults = {
   defaultScanInclusion: 'scan',
@@ -167,6 +176,9 @@ export function getFormatExportDefaults(
   formatId: string,
   profileId?: string,
 ): FormatExportDefaults {
+  if (formatId === 'radio-io' && profileId === 'radio-io-dm32uv-mm9pdy') {
+    return RADIO_IO_DM32UV_MM9PDY_EXPORT_DEFAULTS;
+  }
   if (formatId === 'radio-io' && profileId === 'radio-io-dm32uv') {
     return RADIO_IO_DM32UV_EXPORT_DEFAULTS;
   }

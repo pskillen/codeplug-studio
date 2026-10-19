@@ -93,6 +93,23 @@
 
 ---
 
+## DM-32UV radio target
+
+**Status:** Complete on this branch
+**Issues:** [#1319](https://github.com/pskillen/codeplug-studio/issues/1319)
+
+**Delivered**
+
+- Radio target `baofeng-dm32uv-mm9pdy` and Web Serial profile `radio-io-dm32uv-mm9pdy`
+- Traits: zone grouping, zone as scan list, multi talk group per channel, separate digital ID list
+- No m×n, no scan-list bank, no timeslot clones. Stock CSV and NeonPlug stay on `baofeng-dm32uv`
+
+**Verify**
+
+- Catalog and trait tests. Stock `baofeng-dm32uv` traits are unchanged
+
+---
+
 ## Next
 
-- PR 2: Baofeng DM-32UV MM9PDY target and zone-scan write (scan-list id 0). [#1321](https://github.com/pskillen/codeplug-studio/issues/1321) stays open
+- Zone-scan write: one channel, scan-list id 0, no scan-list records, tag `0x04` `+0xB0` left as read. [#1321](https://github.com/pskillen/codeplug-studio/issues/1321) stays open

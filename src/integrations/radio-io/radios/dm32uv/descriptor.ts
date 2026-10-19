@@ -30,7 +30,10 @@ export const DM32UV_DESCRIPTOR: RadioDescriptor = {
     supportsBulkRead: true,
   },
   attributionIds: ['chirp', 'neonplug'],
-  compatibleProfiles: [{ formatId: 'radio-io', profileId: 'radio-io-dm32uv' }],
+  compatibleProfiles: [
+    { formatId: 'radio-io', profileId: 'radio-io-dm32uv' },
+    { formatId: 'radio-io', profileId: 'radio-io-dm32uv-mm9pdy' },
+  ],
   writeStrategy: 'selective-ranges',
   baudRate: DM32_CONNECTION.BAUD_RATE,
   hydration: {
