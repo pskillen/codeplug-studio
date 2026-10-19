@@ -8,6 +8,7 @@ import {
 import { mapDirectoryEntryToRadioRadioIdDto } from '@integrations/radioid/mapDirectoryEntryToRadioDto.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from './constants.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
+import { countRadioIdsInBlock } from './retainCounts.ts';
 
 describe('encodeDm32RadioIdEntry', () => {
   it('encodes 3-byte LE ID and null-terminated name', () => {
@@ -79,5 +80,34 @@ describe('encodeRadioIdsIntoDm32Image', () => {
     expect(image.bytes[offset]).toBe(1);
     expect(image.bytes[offset + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.DMR_RADIO_IDS);
     expect(image.bytes[offset + 0x10]).toBe(123);
+  });
+
+  it('retains discovered 0x67 when the projection has no positive dmrId', () => {
+    const addressBase = 0x1000;
+    const radioIdAddress = 0x5000;
+    const mapSize = radioIdAddress - addressBase + DM32_BLOCK_SIZE;
+    const image = createMemoryMap(mapSize);
+    image.fill(0xff, 0, mapSize);
+    const offset = radioIdAddress - addressBase;
+    image.bytes[offset] = 2;
+    image.bytes[offset + 0x10] = 0x4e;
+    image.bytes[offset + 0x11] = 0x61;
+    image.bytes[offset + 0x12] = 0xbc;
+    image.bytes[offset + DM32_METADATA_OFFSET] = DM32_METADATA.DMR_RADIO_IDS;
+    const before = image.bytes.slice();
+    const ctx = {
+      addressBase,
+      discovered: [{ address: radioIdAddress, metadata: DM32_METADATA.DMR_RADIO_IDS }],
+    };
+
+    encodeRadioIdsIntoDm32Image(image, ctx, []);
+    encodeRadioIdsIntoDm32Image(image, ctx, [
+      { index: 0, dmrId: 0, name: '' },
+      { index: 1, dmrId: -1, name: 'neg' },
+    ]);
+
+    expect([...image.bytes]).toEqual([...before]);
+    expect(image.bytes[offset + DM32_METADATA_OFFSET]).toBe(0x67);
+    expect(countRadioIdsInBlock(image.bytes.subarray(offset, offset + DM32_BLOCK_SIZE))).toBe(2);
   });
 });

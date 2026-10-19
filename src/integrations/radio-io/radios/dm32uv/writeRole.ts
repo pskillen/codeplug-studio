@@ -147,6 +147,7 @@ export function dm32WriteRole(
     return 'kept';
   }
   if (metadata === DM32_METADATA.DMR_RADIO_IDS || type === 'dmrradioid') {
+    // Role stays replaced; an empty projection does not rewrite the block.
     return 'replaced';
   }
   if (type === 'empty') {
