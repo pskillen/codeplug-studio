@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
-import { isAtD890RadioIoProfileId } from '@core/import-export/formats/radio-io/profiles.ts';
+import { isAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
 import {

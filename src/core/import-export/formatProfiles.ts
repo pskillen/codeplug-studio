@@ -25,6 +25,8 @@ import {
 import {
   RADIO_IO_PROFILES,
   getRadioIoProfile,
+  isAtD890RadioIoProfileId,
+  isMm9pdyAtD890RadioIoProfileId,
   isRadioIoAtD890uvProfile,
   isRadioIoDm32uvProfile,
   isRadioIoOpenGd771701Profile,
@@ -228,4 +230,4 @@ export function formatProfileWireHint(formatId: FormatId, profileId: string): st
   return null;
 }
 
-export { resolveChirpExportProfileId };
+export { isAtD890RadioIoProfileId, isMm9pdyAtD890RadioIoProfileId, resolveChirpExportProfileId };

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import BuildWirePreviewListPage from './BuildWirePreviewListPage.tsx';
 import { FormPage } from '../../../components/ui/index.ts';
 import { useBuildLayout } from '../BuildLayoutContext.tsx';
-import { isAtD890RadioIoProfileId } from '@core/import-export/formats/radio-io/profiles.ts';
+import { isAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import { usesAtD890AirbandBankSplit } from '@core/services/anytoneChannelBanks.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import { buildRadioWriteProjection } from '../../../services/radioIoWriteProjection.ts';

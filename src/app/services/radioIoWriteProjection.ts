@@ -27,7 +27,7 @@ import type { FormatId } from '@core/import-export/types.ts';
 import {
   isAtD890RadioIoProfileId,
   isMm9pdyAtD890RadioIoProfileId,
-} from '@core/import-export/formats/radio-io/profiles.ts';
+} from '@core/import-export/formatProfiles.ts';
 import { hasMxNChannelExpansion } from '@core/radio-targets/index.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import {

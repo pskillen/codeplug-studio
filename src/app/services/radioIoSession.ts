@@ -5,7 +5,7 @@
 
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
-import { isAtD890RadioIoProfileId } from '@core/import-export/formats/radio-io/profiles.ts';
+import { isAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import { resolveAtD890ScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 import { assemble, type LibrarySlice } from '@core/services/assemble.ts';
 import {
