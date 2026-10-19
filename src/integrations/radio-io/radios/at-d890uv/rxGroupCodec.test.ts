@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
-import { encodeAtD890RxGroupRecord, encodeRxGroupsIntoAtD890Image } from './rxGroupCodec.ts';
+import { receiveGroupAddress } from './memory.ts';
+import {
+  decodeAtD890RxGroupTimeSlotOverrides,
+  encodeAtD890RxGroupRecord,
+  encodeRxGroupsIntoAtD890Image,
+} from './rxGroupCodec.ts';
 
 function readU32Le(buf: Uint8Array, offset: number): number {
   return (
@@ -78,5 +83,42 @@ describe('encodeRxGroupsIntoAtD890Image', () => {
     const outSet = image.get(D890_MAP.ReceiveGroupSet, AT_D890_LIMITS.RX_GROUP_SET_BYTES);
     expect(outSet[0]).toBe(0x01); // bit 0 from encoded list
     expect(outSet[31]).toBe(0x00); // not 0xfc from preserved bits 250–255
+  });
+
+  it('writes MM9PDY timeslot bytes at +0x120 and reads them back', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    image.set(D890_MAP.ReceiveGroupSet, new Uint8Array(AT_D890_LIMITS.RX_GROUP_SET_BYTES));
+    encodeRxGroupsIntoAtD890Image(
+      image,
+      [
+        {
+          index: 1,
+          wireName: 'Repeater',
+          memberDigitalIds: [0, 1],
+          memberTimeSlotOverrides: [undefined, 2],
+        },
+      ],
+      { writeTimeSlotOverrides: true },
+    );
+    const stride = image.get(receiveGroupAddress(0), AT_D890_LIMITS.RX_GROUP_STRIDE);
+    expect(stride[0x120]).toBe(0xff);
+    expect(stride[0x121]).toBe(0x02);
+    expect(decodeAtD890RxGroupTimeSlotOverrides(stride, 2)).toEqual([undefined, 2]);
+  });
+
+  it('fills a previous timeslot tail with 0xFF on the stock encode', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    image.set(D890_MAP.ReceiveGroupSet, new Uint8Array(AT_D890_LIMITS.RX_GROUP_SET_BYTES));
+    const address = receiveGroupAddress(0);
+    image.set(address + 0x120, new Uint8Array([0x01, 0x02]));
+    encodeRxGroupsIntoAtD890Image(image, [
+      { index: 1, wireName: 'Stock', memberDigitalIds: [0, 1], memberTimeSlotOverrides: [1, 2] },
+    ]);
+    const stride = image.get(address, AT_D890_LIMITS.RX_GROUP_STRIDE);
+    expect(stride[0x120]).toBe(0xff);
+    expect(stride[0x121]).toBe(0xff);
+    expect(decodeAtD890RxGroupTimeSlotOverrides(stride, 2)).toEqual([undefined, undefined]);
   });
 });

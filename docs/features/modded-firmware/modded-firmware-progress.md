@@ -53,6 +53,25 @@
 
 ---
 
+## Per-member timeslot
+
+**Status:** Complete on this branch
+**Issues:** [#1317](https://github.com/pskillen/codeplug-studio/issues/1317)
+
+**Delivered**
+
+- MM9PDY write stores `timeSlotOverride` at RX-group stride `+0x120 + index` (`0x01` / `0x02`)
+- Omitted members stay `0xFF`
+- Stock encode fills that tail with `0xFF`, including over a previous `0x01` / `0x02`
+- Decode reads the tail back into `1` / `2` / unset
+
+**Verify**
+
+- Codec test: MM9PDY `0x02` at `+0x121`; stock fill is `0xFF`
+- Projection copies overrides only when the radio target is MM9PDY
+
+---
+
 ## Next
 
-- Per-member timeslot byte at RX-group `+0x120` on the MM9PDY target only; stock tail stays `0xFF`
+- Optional `assignMm9pdyStepKeys` on export settings and the Write radio modal; P1 short = 14, P2 short = 13 when on

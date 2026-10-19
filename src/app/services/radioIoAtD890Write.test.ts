@@ -688,6 +688,66 @@ describe('buildRadioWriteProjection radio-io-at-d890uv-mm9pdy', () => {
     expect(projection.organisation.scanLists).toEqual([]);
   });
 
+  it('copies per-member timeslot overrides onto the RX group for MM9PDY only', () => {
+    const tg1 = { ...newTalkGroup('p1', 'Local', 9), id: 'tg-1' };
+    const tg2 = { ...newTalkGroup('p1', 'Scotland', 2351), id: 'tg-2' };
+    const rxList = {
+      ...newRxGroupList('p1', 'Repeater'),
+      id: 'rx-1',
+      members: [
+        { ref: { kind: 'talkGroup' as const, id: tg1.id } },
+        { ref: { kind: 'talkGroup' as const, id: tg2.id }, timeSlotOverride: 2 as const },
+      ],
+    };
+    const channel = {
+      ...newChannel('p1', 'GB3XX'),
+      id: 'ch-1',
+      rxFrequency: 438_800_000,
+      txFrequency: 430_800_000,
+      modeProfiles: [
+        {
+          mode: 'dmr' as const,
+          colourCode: 1,
+          timeslot: 1 as const,
+          dmrId: 1234567,
+          contactRef: { kind: 'talkGroup' as const, id: tg1.id },
+          rxGroupListId: rxList.id,
+        },
+      ],
+    };
+    const library: LibrarySlice = {
+      ...emptyLibrary([channel]),
+      talkGroups: [tg1, tg2],
+      rxGroupLists: [rxList],
+    };
+
+    const mm9 = newRadioBuildForProfile('p1', 'radio-io-at-d890uv-mm9pdy');
+    const mm9Assembled = assemble(mm9.build, library, {
+      formatId: mm9.egress.formatId,
+      profileId: mm9.egress.profileId,
+    });
+    const mm9Projection = buildRadioWriteProjection(mm9Assembled, mm9.build, library, mm9.egress);
+    expect(mm9Projection.organisation.writeRxGroupTimeSlotOverrides).toBe(true);
+    expect(mm9Projection.organisation.rxGroups?.[0]?.memberTimeSlotOverrides).toEqual([
+      undefined,
+      2,
+    ]);
+
+    const stock = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const stockAssembled = assemble(stock.build, library, {
+      formatId: stock.egress.formatId,
+      profileId: stock.egress.profileId,
+    });
+    const stockProjection = buildRadioWriteProjection(
+      stockAssembled,
+      stock.build,
+      library,
+      stock.egress,
+    );
+    expect(stockProjection.organisation.writeRxGroupTimeSlotOverrides).toBeUndefined();
+    expect(stockProjection.organisation.rxGroups?.[0]?.memberTimeSlotOverrides).toBeUndefined();
+  });
+
   it('still expands the stock AT-D890UV target into more than one channel', () => {
     const { library } = repeaterWithTwoTalkGroups();
     const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');

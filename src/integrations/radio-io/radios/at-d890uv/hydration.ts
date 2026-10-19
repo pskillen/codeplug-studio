@@ -113,7 +113,9 @@ export function encodeAtD890ProjectionOntoImage(
     next = encodeTalkgroupsIntoAtD890Image(next, organisation.talkGroups);
   }
   if (organisation?.rxGroups) {
-    next = encodeRxGroupsIntoAtD890Image(next, organisation.rxGroups);
+    next = encodeRxGroupsIntoAtD890Image(next, organisation.rxGroups, {
+      writeTimeSlotOverrides: organisation.writeRxGroupTimeSlotOverrides === true,
+    });
   }
   if (organisation?.radioIds) {
     next = encodeRadioIdsIntoAtD890Image(next, organisation.radioIds);

@@ -575,13 +575,21 @@ function buildTalkGroupsAndRx(
       row.wireName,
     );
     const memberDigitalIds: number[] = [];
+    const memberTimeSlotOverrides: (1 | 2 | undefined)[] = [];
     const useTalkgroupBankSlots = isAtD890RadioIoProfileId(egress.profileId);
+    const writeTimeSlots = isMm9pdyAtD890RadioIoProfileId(egress.profileId);
     for (const member of row.entity.members) {
       if (memberDigitalIds.length >= maxRxMembers) break;
       if (member.ref.kind === 'talkGroup') {
         if (useTalkgroupBankSlots) {
           const bankIndex = contactIdByEntityId.get(member.ref.id);
-          if (bankIndex != null) memberDigitalIds.push(bankIndex - 1);
+          if (bankIndex != null) {
+            memberDigitalIds.push(bankIndex - 1);
+            if (writeTimeSlots) {
+              const slot = member.timeSlotOverride;
+              memberTimeSlotOverrides.push(slot === 1 || slot === 2 ? slot : undefined);
+            }
+          }
         } else {
           const tg = assembled.talkGroups.find((t) => t.entity.id === member.ref.id);
           if (tg) memberDigitalIds.push(tg.entity.digitalId);
@@ -592,7 +600,12 @@ function buildTalkGroupsAndRx(
       }
     }
     const index = rxGroups.length + 1;
-    rxGroups.push({ index, wireName, memberDigitalIds });
+    rxGroups.push({
+      index,
+      wireName,
+      memberDigitalIds,
+      ...(writeTimeSlots ? { memberTimeSlotOverrides } : {}),
+    });
     // Channel byte uses 0-based in some docs; NeonPlug RX group id is 1-based in channel field bits.
     // Studio channelCodec writes rxGroupIndex & 0x3f — use 1-based index matching NeonPlug.
     rxGroupIndexById.set(row.entity.id, index);
@@ -1448,6 +1461,7 @@ export function buildRadioWriteProjection(
       scanLists: org.scanLists,
       talkGroups,
       rxGroups,
+      ...(mm9pdy ? { writeRxGroupTimeSlotOverrides: true } : {}),
       radioIds: dm32RadioIds,
       ...(context?.singleBank?.digitalContacts !== undefined
         ? { digitalContacts: context.singleBank.digitalContacts }
