@@ -157,7 +157,9 @@ export function scanListMemberCapForProfile(formatId: FormatId, profileId: strin
     try {
       const profile = getRadioIoProfile(profileId);
       if (isRadioIoDm32uvProfile(profile)) return profile.scanListMembers;
-      if (isRadioIoAtD890uvProfile(profile)) return profile.scanListMembers;
+      if (isRadioIoAtD890uvProfile(profile)) {
+        return typeof profile.scanListMembers === 'number' ? profile.scanListMembers : 0;
+      }
     } catch {
       /* fall through */
     }
