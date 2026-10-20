@@ -9,7 +9,7 @@ Shared hardware / memory caps (NeonPlug `LIMITS` + radio-confirmed zone name len
 | Channels                            | **4000**             |                                                                                                                                |
 | Zones                               | **250**              |                                                                                                                                |
 | Zone members                        | **64**               | Distinct from scan-list member cap                                                                                             |
-| Scan lists                          | **32**               | EEPROM bank; channel `scanListId` FK is 4 bits → **15** referenceable lists (`CHANNEL_SCAN_LIST_ID_MAX`)                       |
+| Scan lists                          | **32**               | EEPROM bank. Channel `scanListId` is bits 5–0 (`0` = none, ids 1–32; `CHANNEL_SCAN_LIST_ID_MAX`)                               |
 | Scan list members                   | **15**               | Named CSV members; CPS “16” includes implicit current channel ([#486](https://github.com/pskillen/codeplug-studio/issues/486)) |
 | RX group lists                      | **32**               |                                                                                                                                |
 | RX group list members               | **32**               |                                                                                                                                |
