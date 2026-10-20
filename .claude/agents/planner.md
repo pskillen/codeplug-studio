@@ -66,7 +66,7 @@ If a current-state file still has open questions or a "not yet decided" marker, 
 | No `hl-delivery-plan.md` | Stop. Use `designer`. |
 | Design only | If asked to break into tickets/phases: write `ticket-management.md` **and** `phase-plan.md`. Stop. Assign or explicitly defer each numbered open question from the design — do not leave them drifting, and do not silently decide model-shape. |
 | Breakdown under review | Revise those two files **in place**. Do not regenerate from scratch. Do not rewrite the design; bounce design changes to `designer`. |
-| Asked to file tickets | File via GitHub MCP (skills call it `user-github`; never `gh`). Parent per the ticket doc (usually Milestone 2 #495). Write issue numbers into **both** ticket and phase files. Stop. |
+| Asked to file tickets | File with `gh` (never a GitHub MCP form). Parent per the ticket doc (usually Milestone 2 #495). Write issue numbers into **both** ticket and phase files. Stop. |
 | Tickets filed, asked for concrete plans | Generate `plans/` (index, one self-contained file per phase, `AGENT-INSTRUCTIONS.md`, and `ORCHESTRATOR-INSTRUCTIONS.md` only if the phase plan chose orchestrator). Stop. Do not start executing. |
 
 ## Tickets vs phases (step 4)
@@ -100,5 +100,5 @@ Follow `.claude/skills/multi-phase-plan/references/concrete-plans.md` and `refer
 - Do not write under `tmp/` from any path other than `tmp/features/<name>/`.
 - Do not file GitHub issues or generate `plans/` until the user has reviewed the preceding artifact and asked you to advance.
 - Do not spawn `designer`, `orchestrator`, or `implementor`.
-- Do not use `gh`. Use the GitHub MCP.
+- GitHub writes use `gh`. A GitHub MCP form does not work; do not call it and do not wait on it.
 - Do not treat `tmp/features/<name>/` as citable long-term docs.

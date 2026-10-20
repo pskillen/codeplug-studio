@@ -11,7 +11,7 @@ description: >-
 
 Turn one or more GitHub issues into a **Cursor plan** an agent can execute.
 
-Repo: `pskillen/codeplug-studio` (`C:\Users\pskil\git\codeplug-studio`). Use **`user-github`** MCP for issues — not `gh`.
+Repo: `pskillen/codeplug-studio` (`C:\Users\pskil\git\codeplug-studio`). Read and file issues with **`gh`**. A GitHub MCP form does not work; do not call it and do not wait on it. See [git-workflow](../git-workflow/SKILL.md).
 
 **Read first:** [DESIGN.md](../../../DESIGN.md), [docs/poc-migration/epic-1-context.md](../../../docs/poc-migration/epic-1-context.md).
 
@@ -191,7 +191,7 @@ If a checkpoint spans docs + code, prefer **two commits** (docs, then code) when
 
 **Shell:** set `working_directory` to `C:\Users\pskil\git\codeplug-studio` for all git commands.
 
-**PR:** one PR in `pskillen/codeplug-studio` via `user-github` MCP; link issue with `Closes #N`.
+**PR:** one PR in `pskillen/codeplug-studio` with `gh pr create`; link issue with `Closes #N`. Do not use a GitHub MCP form.
 
 ### Before opening the PR
 
