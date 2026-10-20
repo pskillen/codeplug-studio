@@ -113,6 +113,14 @@ describe('anytoneDmrRwCodec frames', () => {
     badTrailer[badTrailer.length - 1] = 0x15;
     expect(() => parseAnytoneDmrReadReply(badTrailer)).toThrow(RadioProtocolError);
   });
+
+  it('checks the echoed address only when one is expected', () => {
+    const payload = new Uint8Array(16).fill(0xcd);
+    const frame = buildReadReply(0x0100_0000, payload);
+    expect(parseAnytoneDmrReadReply(frame, 16, 0x0100_0000)).toEqual(payload);
+    expect(() => parseAnytoneDmrReadReply(frame, 16, 0x0200_0000)).toThrow(/address mismatch/);
+    expect(() => parseAnytoneDmrReadReply(frame, 16, 0x0200_0000)).not.toThrow(/checksum/);
+  });
 });
 
 describe('enterAnytoneDmrProgramMode', () => {

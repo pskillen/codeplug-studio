@@ -8,6 +8,7 @@ import {
   ANYTONE_DMR_BLOCK_SIZE,
   anytoneDmrChecksum8AfterOpcode,
 } from '../../../kit/codecs/anytoneDmrRw.ts';
+import { RadioTimeoutError } from '../../../kit/errors.ts';
 import { D890_MAP } from '../constants.ts';
 import { AT_D890_SENTINEL_EXTENTS } from '../writableExtents.ts';
 import { AT_D890_ERASE_UNIT_BYTES } from '../eraseUnits.ts';
@@ -25,6 +26,20 @@ export class AtD890ScriptedPipe implements BytePipe {
    */
   readResponder?: (address: number, length: number) => Uint8Array | null;
 
+  /**
+   * Next N `readExact` calls throw `RadioTimeoutError` and leave one stray byte.
+   * A following flush (the timeout resend path) must clear that byte.
+   */
+  pendingTimeouts = 0;
+
+  /**
+   * Enqueued once timeouts are exhausted and the buffer is still short.
+   * Kept off the byte queue so a timeout flush does not drop the later good frame.
+   */
+  replyAfterTimeouts?: Uint8Array;
+
+  flushCount = 0;
+
   enqueue(...chunks: Uint8Array[]): void {
     for (const chunk of chunks) {
       this.bytes.push(...chunk);
@@ -40,8 +55,17 @@ export class AtD890ScriptedPipe implements BytePipe {
 
   async readExact(n: number, timeoutMs: number): Promise<Uint8Array> {
     void timeoutMs;
+    if (this.pendingTimeouts > 0) {
+      this.pendingTimeouts -= 1;
+      this.bytes.push(0xaa);
+      throw new RadioTimeoutError(`AtD890ScriptedPipe: timeout needing ${n} bytes`);
+    }
     if (this.bytes.length < n) {
       this.tryEnqueueReadReplyFromLastRequest();
+    }
+    if (this.bytes.length < n && this.replyAfterTimeouts) {
+      this.enqueue(this.replyAfterTimeouts);
+      this.replyAfterTimeouts = undefined;
     }
     if (this.bytes.length < n) {
       throw new Error(`AtD890ScriptedPipe: need ${n} bytes, have ${this.bytes.length}`);
@@ -50,6 +74,7 @@ export class AtD890ScriptedPipe implements BytePipe {
   }
 
   async flush(): Promise<void> {
+    this.flushCount += 1;
     this.bytes = [];
   }
 

@@ -105,8 +105,15 @@ export function makeAnytoneDmrWriteFrame(
   return frame;
 }
 
-/** Parse read reply; payload starts after the 6-byte W + u32 + length header. */
-export function parseAnytoneDmrReadReply(frame: Uint8Array, expectedLength?: number): Uint8Array {
+/**
+ * Parse read reply; payload starts after the 6-byte W + u32 + length header.
+ * When `expectedAddress` is set, bytes 1–4 (u32 BE) must match it.
+ */
+export function parseAnytoneDmrReadReply(
+  frame: Uint8Array,
+  expectedLength?: number,
+  expectedAddress?: number,
+): Uint8Array {
   const minLen = ANYTONE_DMR_WRITE_REPLY_HEADER_LEN + 2;
   if (frame.length < minLen) {
     throw new RadioProtocolError(`Anytone DMR read reply too short: ${frame.length} bytes`);
@@ -115,6 +122,16 @@ export function parseAnytoneDmrReadReply(frame: Uint8Array, expectedLength?: num
     throw new RadioProtocolError(
       `Anytone DMR read reply expected opcode 0x57 ('W'), got 0x${frame[0]!.toString(16)}`,
     );
+  }
+
+  if (expectedAddress !== undefined) {
+    const echoed = ((frame[1]! << 24) | (frame[2]! << 16) | (frame[3]! << 8) | frame[4]!) >>> 0;
+    const expected = expectedAddress >>> 0;
+    if (echoed !== expected) {
+      throw new RadioProtocolError(
+        `Anytone DMR read reply address mismatch: expected 0x${expected.toString(16)}, got 0x${echoed.toString(16)}`,
+      );
+    }
   }
 
   const length = frame[5]!;
