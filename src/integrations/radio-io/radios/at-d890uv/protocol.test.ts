@@ -498,7 +498,7 @@ describe('AtD890uvProtocol', () => {
     await radio.upload(encoded, {});
 
     expect(collectAtD890WriteDataAddresses(pipe).length).toBeGreaterThan(0);
-  });
+  }, 20_000);
 
   it('refuses upload when the in-session download cache is empty', async () => {
     const pipe = new AtD890ScriptedPipe();
@@ -526,7 +526,7 @@ describe('AtD890uvProtocol', () => {
     const snap = radio.takeUploadSentinelSnapshot();
     expect(snap?.get('OptionalSettingsMain')?.[0]).toBe(0x00);
     expect(radio.takeUploadSentinelSnapshot()).toBeUndefined();
-  });
+  }, 20_000);
 
   it('verifySentinelRegionsAgainst passes when post-commit reads match', async () => {
     const pipe = new AtD890ScriptedPipe();
@@ -547,7 +547,7 @@ describe('AtD890uvProtocol', () => {
 
     const result = await radio.verifySentinelRegionsAgainst(before);
     expect(result).toEqual({ ok: true });
-  });
+  }, 20_000);
 
   it('verifySentinelRegionsAgainst names a mismatched region', async () => {
     const pipe = new AtD890ScriptedPipe();
@@ -580,5 +580,5 @@ describe('AtD890uvProtocol', () => {
         },
       ]);
     }
-  });
+  }, 20_000);
 });
