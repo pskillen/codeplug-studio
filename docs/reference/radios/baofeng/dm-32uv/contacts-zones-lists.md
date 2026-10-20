@@ -115,21 +115,21 @@ VFO A/B selected zone and channel indices live in the **zone bank** first block 
 | Max lists    | **32** bank / **32** channel-FK        |
 | Max members  | **15** named channels                  |
 
-**Studio Web Serial Write:** zone-derived scan lists are rewritten from projection; the block is **`0xFF`-filled** (NeonPlug `writeAllData` parity), then slots after the projected count are **vacant-cleared** (`+0x00` name, `+0x0B` member count `0x00`) so firmware does not treat `0xFF` at `+0x0B` as 255 members (zone vacant-slot parity). Each exporting zone gets a `{zone} Scan` carrier channel prepended to the zone and set as designated TX. Channel-record `scanListId` is bits 5–0 (`0` = none, ids **1–32**) — Studio caps addressable zone-derived lists at 32. **Members** stay `scanListId` 0 on the channel record; only **scan carriers** carry the zone list FK.
+**Studio Web Serial Write:** zone-derived scan lists are rewritten from projection; the block is **`0xFF`-filled** (NeonPlug `writeAllData` parity), then slots after the projected count are **vacant-cleared** (`+0x00` name, `+0x0B` member count `0x00`) so firmware does not treat `0xFF` at `+0x0B` as 255 members (zone vacant-slot parity). A non-empty list stores `+0x0B` as named members + 1 (the implicit current channel; at most 16). An empty projected list stays `0`. Named members stay u16 LE at `+0x1A` (at most 15); the extra count is not a 16th stored member. Write replaces the scan-list block, so hang time `+0x0D` is always the unmodelled default **50** (5.0 s) and is not copied from the radio. Each exporting zone gets a `{zone} Scan` carrier channel prepended to the zone and set as designated TX. Channel-record `scanListId` is bits 5–0 (`0` = none, ids **1–32**) — Studio caps addressable zone-derived lists at 32. **Members** stay `scanListId` 0 on the channel record; only **scan carriers** carry the zone list FK.
 
 ### 57-byte entry (summary)
 
-| Offset  | Field                                                                                                     |
-| ------- | --------------------------------------------------------------------------------------------------------- |
-| `+0x00` | Name (11)                                                                                                 |
-| `+0x0B` | Channel count                                                                                             |
-| `+0x0C` | CTC detection **0**; TX mode **1** (current) or **2** (designated TX channel) — Web Serial Write defaults |
-| `+0x0D` | Hang time **50** (5.0 s) — Web Serial Write default when unmodelled                                       |
-| `+0x0E` | Priority types                                                                                            |
-| `+0x0F` | Priority ch 1 (u16 LE)                                                                                    |
-| `+0x11` | Designated TX (encoded)                                                                                   |
-| `+0x13` | Priority ch 2 (encoded)                                                                                   |
-| `+0x1A` | Channel list (30 bytes, u16 LE, max 15)                                                                   |
+| Offset  | Field                                                                                                                        |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `+0x00` | Name (11)                                                                                                                    |
+| `+0x0B` | Named members + 1 for a non-empty list (implicit current channel, max 16). Empty projected lists and vacant slots stay **0** |
+| `+0x0C` | CTC detection **0**; TX mode **1** (current) or **2** (designated TX channel) — Web Serial Write defaults                    |
+| `+0x0D` | Hang time **50** (5.0 s) — unmodelled default. Write replaces the block, so a value read from the radio is not kept          |
+| `+0x0E` | Priority types                                                                                                               |
+| `+0x0F` | Priority ch 1 (u16 LE)                                                                                                       |
+| `+0x11` | Designated TX (encoded)                                                                                                      |
+| `+0x13` | Priority ch 2 (encoded)                                                                                                      |
+| `+0x1A` | Channel list (30 bytes, u16 LE, max 15)                                                                                      |
 
 ## RX groups — metadata `0x0F`
 
