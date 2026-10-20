@@ -35,6 +35,8 @@ After a **factory reset** (or a full CPS rewrite), the radio can place ZONE / VF
 | VFO at `0x86000`               | VFO at `0x63000`        | Startup text / key settings never update on the live settings block                   |
 | SCAN at `0x62000`              | SCAN at `0x62000`       | Scan lists may still land (address unchanged)                                         |
 
+Reset reuses each existing tag’s page. A missing tag takes the lowest free page. Later on-radio edits are copy-on-write, so absolute addresses wander. A factory reset does not write or move calibration (tag `0x02`). The reset that moves pages is Allow Reset plus SK1+SK2 at power-on. The power-cycle warning is [#1298](https://github.com/pskillen/codeplug-studio/issues/1298).
+
 **Write behaviour (#703 + #877):** before encoding the upload image, Studio **bulk-reads live 4KB block contents** for the Write-touched / required set (`download` with progress **Pre-write read**). Address/tag discovery (`discoverDm32MemoryBlocks`) is metadata only and does **not** satisfy that content read. Overlay modelled fields onto those live bytes (not a blank `0xff` map, not OpenGD77 restore’s blank prior). `upload` still remaps by metadata tag onto live absolute addresses. No persisted stash. Restore does not use this path.
 
 **Full Read** remains the path to refresh **unmodelled retain payloads** (settings slices not replaced by the build) from the radio — it is not required solely to learn current block addresses.
@@ -72,7 +74,7 @@ Metadata `0x02` is the calibration page only inside this V-frame `0x0A` window (
 | `0x5c`–`0x64`   | `zone`                    | Zone pages in tag order (~28 each). Header only on `0x5c`; later pages pack from offset 0 |
 | `0x11`          | `scan`                    | Scan lists                                                                                |
 | `0x04`          | `vfo`                     | Radio settings / names / embedded info                                                    |
-| `0x03`          | `digitalemergency`        | **Discovery path** maps digital emergency here                                            |
+| `0x03`          | `unknown`                 | Unidentified payload. Not an emergency table                                              |
 | `0x10`          | `analogemergency`         | Analog emergency; also co-hosts encryption keys (see [settings.md](settings.md))          |
 | `0x0A`          | `message`                 | Quick text messages                                                                       |
 | `0x02`          | `calibration`             | Calibration page **only inside** the V-frame `0x0A` window (see above)                    |
@@ -83,17 +85,9 @@ Metadata `0x02` is the calibration page only inside this V-frame `0x0A` window (
 | `0x45`–`0x48`   | `unknown`                 | Present. Not read or written until a dump shows the payload                               |
 | other           | `unknown`                 | Still may be bulk-read if listed as required (e.g. `0x42`, `0x43`, `0x0B`, `0x41`)        |
 
-### NeonPlug constant vs discovery inconsistency
+### Emergency and encryption tags
 
-| Source                                      | Digital emergency metadata      |
-| ------------------------------------------- | ------------------------------- |
-| `constants.ts` `METADATA.DIGITAL_EMERGENCY` | **`0x10`**                      |
-| `memory.ts` discovery (`metadata === 0x03`) | **`0x03`** → `digitalemergency` |
-| `memory.ts` (`metadata === 0x10`)           | **`0x10`** → `analogemergency`  |
-
-Document **both** as observed. Do **not** “fix” NeonPlug in this docs ticket — adapter [#638](https://github.com/pskillen/codeplug-studio/issues/638) must verify on hardware which tag the radio actually uses for digital emergency vs analog/encryption.
-
-Bulk-read still requests `METADATA.DIGITAL_EMERGENCY` / `ANALOG_EMERGENCY` by constant (`0x10` for both names in constants) — discovery typing and constant naming diverge.
+Firmware 048 puts emergency systems and encryption keys in tag `0x10`. Tag `0x03` is unidentified. `DIGITAL_EMERGENCY` and `ANALOG_EMERGENCY` stay `0x10`. NeonPlug’s old `0x03` → digital emergency mapping is history, not a second current mapping.
 
 ## Required / fixed blocks (bulk-read set)
 
@@ -103,7 +97,7 @@ NeonPlug `bulkReadRequiredBlocks` always tries to include:
 | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | Channel blocks needed by count                                          | First block metadata `0x12`; packing 84 then 85 — [channel-record.md](channel-record.md) |
 | `0x04`                                                                  | Radio settings (**critical**)                                                            |
-| `0x10`                                                                  | Emergency / encryption co-resident (see inconsistency note)                              |
+| `0x10`                                                                  | Emergency systems and encryption keys (see emergency and encryption tags)                |
 | `0x41`                                                                  | VFO channel bank (channels 4001/4002)                                                    |
 | `0x0A`                                                                  | Quick messages                                                                           |
 | `0x0B`                                                                  | Quick-access / TG index tables (**critical** for TG UI)                                  |

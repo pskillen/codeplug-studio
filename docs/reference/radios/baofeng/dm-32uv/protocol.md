@@ -74,8 +74,9 @@ Typical IDs used at connect (NeonPlug loops a fixed list including these):
 | `0x0B` | Codeplug version                                                                                   |
 | `0x0E` | Memberships range (noted)                                                                          |
 | `0x0F` | **Contacts** memory range / capacity                                                               |
+| `0x10` | **Max contact count**                                                                              |
 
-**Config range (`0x0A`):** 8 bytes = `start_addr` (u32 LE) + `end_addr` (u32 LE). Feeds discovery — see [memory-layout.md](memory-layout.md).
+**Config range (`0x0A`):** 8 bytes = `start_addr` (u32 LE) + `end_addr` (u32 LE). Feeds discovery — see [memory-layout.md](memory-layout.md). The `0x10` max-contact payload is 3-byte little-endian (firmware 048: `F0 49 02` = 150000) or 4-byte little-endian, and the reply length is the header length (no pad to 4).
 
 Studio’s shipped V-probe codec frames the same `0x56` request/reply shape; DM-32 session sequencing and PROGRAM/R/W stay in the radio module.
 
@@ -111,7 +112,7 @@ NeonPlug discovery reads **1 byte** at `blockAddr + 0xFFF` for metadata; bulk pa
 
 Metadata lives **inside** the data block at offset `0xFFF` (not a trailing extra byte outside the 4KB). Address must be **4KB-aligned**.
 
-Observed non-ACK codes (NeonPlug comments): `0xC0`, `0xC8`, `0x48` — treat as write rejection / busy / format errors; verify on hardware in adapter [#638](https://github.com/pskillen/codeplug-studio/issues/638).
+Firmware 048’s `0x57` handler replies `0x06` or stays silent. It does not send `0xC0`, `0xC8`, or `0x48`. Any reply other than `0x06` is a desync. Abort. NeonPlug’s `0xC0`, `0xC8`, and `0x48` (write rejection, busy, or format error) are history, not what firmware 048 sends.
 
 A `0x57` ACK does not rebuild the RAM tag table, and ending the PC-link session does not reboot the radio. After a successful Write or Restore the operator must power the radio off and on before using it or changing it on the keypad. Until then the radio is still using the page map from before the session, and the next keypad edit can erase a page that was just written. Restore refuses two blocks with the same occupied metadata tag before the first write; free-page markers may repeat. Stock and MM9PDY share this path. Studio does not send a reboot command.
 

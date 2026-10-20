@@ -16,7 +16,7 @@ Cite: anytone-cps `SerialDevice`; qdmr `anytone_interface` for handshake cross-c
 | Addr  | **u32 BE**                                                     | u16 BE                                    | u16 BE                  |
 | Block | Read negotiates up to **`0xf0`** (240); write stays **`0x10`** | 16                                        | `0x40`                  |
 | Image | **Sparse multi‑MB regions**                                    | Contiguous ≈ `0x32A0`                     | Contiguous `0x8240`     |
-| Extra | Skip write `0x2fa0010`; no echo-strip in anytone-cps           | Echo-strip                                | XOR crypt               |
+| Extra | Studio skips `0x2fa0010` (anytone-cps lore); no echo-strip     | Echo-strip                                | XOR crypt               |
 
 Kit codec for Anytone DMR R/W is shipped in `src/integrations/radio-io/kit/codecs/anytoneDmrRw.ts` ([#646](https://github.com/pskillen/codeplug-studio/issues/646)) — do not reuse RT95 `programQx.ts` (#641) framing (u16 + echo-strip) for this radio.
 
@@ -35,7 +35,7 @@ Kit codec for Anytone DMR R/W is shipped in `src/integrations/radio-io/kit/codec
 | Read opcode   | ASCII `'R'` (`0x52`)                                                                                                                     |
 | Write opcode  | ASCII `'W'` (`0x57`)                                                                                                                     |
 | Write ACK     | Trailing `0x06` on command; radio replies with `0x06`                                                                                    |
-| Safe-skip     | Do **not** write address **`0x2fa0010`** (anytone-cps hard skip)                                                                         |
+| Safe-skip     | Studio skips **`0x2fa0010`** (anytone-cps lore; the official CPS encoder we read does not)                                               |
 
 ## Model allow-list (ident response)
 
@@ -95,15 +95,15 @@ Studio chunks reads at the negotiated block size (16-byte aligned spans). If a l
 
 Checksum (anytone-cps): 8-bit sum over command bytes after the opcode (`cmd[1:]` before checksum/trailer).
 
-**Safe-skip:** if `address == 0x2fa0010`, anytone-cps returns without writing. Studio adapters should honour the same skip (D878 LocalInfo neighbourhood; keep for family safety even when targeting D890).
+**Safe-skip:** the `0x2fa0010` skip is anytone-cps lore. The official CPS encoder we read does not skip that address. Studio still skips it as a family precaution (D878 LocalInfo neighbourhood). D890 `LocalInfo+0x10` (`0x4f80010`) is excluded because LocalInfo is not on the upload allow-list.
 
-**ChannelData geometry:** the allow-list covers only backed low halves of each `0x80000` block; mirrored upper-half addresses are refused at `assertAtD890WritableAddress` ([#791](https://github.com/pskillen/codeplug-studio/issues/791)). See [memory-layout.md — Address aliasing](memory-layout.md#address-aliasing).
+**ChannelData geometry:** the allow-list covers only the low half of each `0x80000` block. Studio refuses upper-half addresses at `assertAtD890WritableAddress` ([#791](https://github.com/pskillen/codeplug-studio/issues/791)). That refusal is the write fence. The upper half is an alternate unit; the PC-link address map is not settled. See [memory-layout.md — Alternate half](memory-layout.md#alternate-half-of-a-0x40000-unit).
 
 ## Write staging and session exit
 
 `W` frames program flash according to the radio's sector state. There is **no** separate commit, erase, or bank-swap command on the wire — confirmed from a full official-CPS capture (19,960 frames, zero unknown). ASCII **`END`** exits PROGRAM and receives a bare `0x06`; it is **not** a commit opcode. See [flash-sectors.md](flash-sectors.md).
 
-**In-session reads return flash**, not a host-visible write shadow — a read issued in the same PROGRAM session after write frames still returns pre-write bytes when diversion or firmware buffering applies. **Read-back verification during upload is invalid by construction** ([#769](https://github.com/pskillen/codeplug-studio/issues/769)).
+**In-session reads return flash**, not a host-visible write shadow — a read issued in the same PROGRAM session after write frames still returns pre-write bytes. **Read-back verification during upload is invalid by construction** ([#769](https://github.com/pskillen/codeplug-studio/issues/769)).
 
 **Cross-session write verify (shipped, optional):** implemented via generic `RadioDescriptor.writeVerify` hooks ([#838](https://github.com/pskillen/codeplug-studio/issues/838)); AT-D890 behaviour unchanged from the [#837](https://github.com/pskillen/codeplug-studio/issues/837) reference. After a successful Write and `END`, the radio restarts on its own. On the build **Direct radio** panel, Studio prompts you to wait until the radio shows its normal screen, then click **Verify write** (the button enables after a brief debounce). Verify reads all modelled memory regions documented in [memory-layout.md](memory-layout.md) (~512 kB — same scope as Debug → Raw memory-region export; digital contacts and analog address book excluded), **plus** any 16-byte blocks staged from touched erase units that lie outside those banks (RMW-preserved spill). Compare is against **every comparable 16-byte staging chunk actually transmitted** during upload (addresses skipped at transmit, e.g. `0x2fa0010`, are omitted from the staging snapshot). Erase-unit bookkeeping blocks at **+0x3fbf0** and **+0x3fff0** are **never transmitted** ([flash-sectors.md](flash-sectors.md)); verify also excludes them when they lie outside declared modelled region spans. Unread addresses are reported as **not read** — verify never fabricates `0xff` readback. The six never-write sentinel spans are also diffed against the pre-Write snapshot. Results appear in a dedicated report modal with grouped regions, mismatch addresses, **Copy debug info**, and **Download markdown** ([#769](https://github.com/pskillen/codeplug-studio/issues/769) slice 5b; full-memory compare experiment). Extension pattern: [write-verify.md](../../../../features/radio-read-write/write-verify.md).
 

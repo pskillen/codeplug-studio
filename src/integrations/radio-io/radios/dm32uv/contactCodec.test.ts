@@ -46,6 +46,11 @@ describe('contactCodec', () => {
     expect(parseDm32MaxContacts(payload)).toBe(5000);
   });
 
+  it('parses a 3-byte V-frame 0x10 max contacts count', () => {
+    const payload = new Uint8Array([0xf0, 0x49, 0x02]); // 150000
+    expect(parseDm32MaxContacts(payload)).toBe(150000);
+  });
+
   it('plans contact blocks from header count, not full L01 V-frame end', () => {
     const contactsBase = 0x278000;
     const contactsEnd = 0xfff000; // absurd span (~3464 blocks if walked)

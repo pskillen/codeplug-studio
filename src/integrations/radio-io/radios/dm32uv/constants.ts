@@ -18,7 +18,7 @@ export const DM32_METADATA = {
   ZONE_PAGE_FIRST: 0x5c,
   ZONE_PAGE_LAST: 0x64,
   SCAN_LIST: 0x11,
-  /** NeonPlug constants name — same value as ANALOG_EMERGENCY; discovery may map 0x03. */
+  /** Emergency systems and encryption keys. Same value as ANALOG_EMERGENCY. */
   DIGITAL_EMERGENCY: 0x10,
   VFO_SETTINGS: 0x04,
   ANALOG_EMERGENCY: 0x10,
@@ -63,7 +63,7 @@ export const DM32_VFRAME = {
   MEMORY_LAYOUT: 0x0a,
   CODEPLUG_VERSION: 0x0b,
   CONTACTS: 0x0f,
-  /** Max contact count (u32 LE); NeonPlug also falls back to firmware L01 heuristics. */
+  /** Max contact count (3-byte or 4-byte LE); NeonPlug also falls back to firmware L01 heuristics. */
   MAX_CONTACTS: 0x10,
 } as const;
 

@@ -4,18 +4,19 @@ Digital APRS global settings, receive filters, and per-channel bindings on AT-D8
 
 **Hub:** [README.md](README.md) · **Memory map:** [memory-layout.md](memory-layout.md) · **Channel record:** [channel-record.md](channel-record.md) · **CSV wire:** [export-formats/anytone/aprs.md](../../../export-formats/anytone/aprs.md)
 
-> **Not the same as `0x3501280`.** Optional GPS info string lives at `0x3501280`/`0x30` (sentinel, never written). Real APRS config is `0x3501000` + `0x3501300`.
+> **Not the same as `0x3501280`.** Optional GPS info string lives at `0x3501280`/`0x30` (a sentinel Studio does not write). Real APRS config is `0x3501000` + `0x3501300`.
 
 ## Region summary
 
-| Region                | Base             | Length    | Studio v1                             |
-| --------------------- | ---------------- | --------- | ------------------------------------- |
-| Global APRS config    | `0x3501000`      | `0x260`   | Read + Write modelled fields          |
-| Receive filters (32×) | `0x3501300`      | `0x100`   | Read; Write RMW-preserve (unmodelled) |
-| Optional GPS info     | `0x3501280`      | `0x30`    | Read sentinel only — not APRS         |
-| Channel APRS bits     | MR `0x80` record | see below | Read + Write modelled fields          |
+| Region                | Base             | Length         | Studio v1                             |
+| --------------------- | ---------------- | -------------- | ------------------------------------- |
+| Global APRS config    | `0x3501000`      | `0x260`        | Read + Write modelled fields          |
+| Receive filters (32×) | `0x3501300`      | `0x100`        | Read; Write RMW-preserve (unmodelled) |
+| Optional GPS info     | `0x3501280`      | `0x30`         | Read sentinel only — not APRS         |
+| Channel APRS bits     | MR `0x80` record | see below      | Read + Write modelled fields          |
+| APRS names            | `0x3502400`      | 8 UTF-16 names | Unmodelled                            |
 
-Gap `0x3501260`–`0x35012FF` is unused padding between global block end (`0x3501260`) and filters (`0x3501300`).
+Gap `0x3501260`–`0x35012FF` is unused padding between global block end (`0x3501260`) and filters (`0x3501300`). The official CPS encoder we read does not write `0x3501100`–`0x35011FF`.
 
 ## Global block (`0x3501000`, `0x260`) — modelled in Studio v1
 
@@ -39,7 +40,7 @@ N ∈ 1…8. Sentinels for report channel: `0x0fa0` VFO A, `0x0fa1` VFO B, `0x0f
 
 ### Unmodelled (RMW-preserve on Write)
 
-Includes but not limited to: TX frequencies 1–8, tones, callsign/digipeater/symbol, packet-type filter bytes (`0xa8`/`0xa9`), fixed beacons 2–8 (`0xcd`…`0x104`), `sending_text` wide-char at `0x200`, roaming, altitude. Document loss in [cross-format-reconciliation](../../../../features/aprs/cross-format-reconciliation.md).
+Includes but not limited to: TX frequencies 1–8, tones, callsign/digipeater/symbol, packet-type filter bytes (`0xa8`/`0xa9`), fixed beacons 2–8 (`0xcd`…`0x104`), `sending_text` wide-char at `0x200`, roaming support at `0x78`, altitude. `0x3502400` is 8 UTF-16 names and is unmodelled. Document loss in [cross-format-reconciliation](../../../../features/aprs/cross-format-reconciliation.md).
 
 ## Receive filters (`0x3501300`, `0x100`)
 

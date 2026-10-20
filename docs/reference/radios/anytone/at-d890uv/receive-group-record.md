@@ -8,15 +8,15 @@ Cite: anytone-cps `ReceiveGroup::encode` — facts only; do not paste GPL source
 
 ## Geometry
 
-| Fact             | Value                                                              |
-| ---------------- | ------------------------------------------------------------------ |
-| Record size      | `0x120` (288) bytes encode                                         |
-| Stride           | `0x200` between slots                                              |
-| Max slots        | **250** (`ReceiveGroupSet` bitmap `0x20` bytes × 8 bits)           |
-| Occupancy        | Bit **set** → slot occupied ([memory-layout.md](memory-layout.md)) |
-| Max members      | **64** per list ([limits.md](limits.md))                           |
-| Name storage     | `0x20` bytes at offset `0x100` (wide-char / UTF-16 style packing)  |
-| Name display cap | 10 chars (CSV / [limits.md](limits.md))                            |
+| Fact             | Value                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------- |
+| Record size      | `0x120` (288) bytes — what Studio writes                                               |
+| Stride           | `0x200` between slots                                                                  |
+| Max slots        | **250** (`ReceiveGroupSet` bitmap `0x20` bytes × 8 bits)                               |
+| Occupancy        | Bit **set** → slot occupied ([memory-layout.md](memory-layout.md))                     |
+| Max members      | **64** per list ([limits.md](limits.md))                                               |
+| Name storage     | `0x20` bytes at offset `0x100` — what Studio writes (wide-char / UTF-16 style packing) |
+| Name display cap | 10 chars (CSV / [limits.md](limits.md))                                                |
 
 ## Address formula
 
@@ -41,16 +41,17 @@ receiveGroupAddr = 0x3780000 + (idx * 0x200)
 - Each value is a **0-based talkgroup bank slot index** (`Talkgroup.id` in anytone-cps), **not** the talkgroup DMR ID.
 - Unused slots are filled with `0xFFFFFFFF`.
 - Member order must match the talkgroup bank encode order (`TalkgroupData` slots `0..N-1`).
+- Studio (`writeU32Le` of the index), anytone-cps, and the official CPS GCall encoder (`0x5b3b70`) write that raw 0-based index. The firmware RX-group reader was not checked.
 
 ### Index vs DMR ID
 
 | Talkgroup bank slot | DMR ID (example) | RX member wire (u32 LE) |
 | ------------------- | ---------------- | ----------------------- |
-| 0                   | 91               | `02 00 00 00`           |
-| 1                   | 9                | `03 00 00 00`           |
-| 2                   | 23559            | `04 00 00 00`           |
+| 0                   | 91               | `00 00 00 00`           |
+| 1                   | 9                | `01 00 00 00`           |
+| 2                   | 23559            | `02 00 00 00`           |
 
-Studio `RadioWriteProjection` for `radio-io-at-d890uv` resolves library RX list members (UUID talk-group refs) to these **bank indices** via the same ordering as `TalkgroupData` encode. DM-32 Web Serial uses raw DMR IDs instead — do not copy that semantics here.
+The DMR ID column illustrates that the wire is not the DMR ID. Studio `RadioWriteProjection` for `radio-io-at-d890uv` resolves library RX list members (UUID talk-group refs) to these **bank indices** via the same ordering as `TalkgroupData` encode. DM-32 Web Serial uses raw DMR IDs instead — do not copy that semantics here.
 
 ## Name (`0x100`–`0x11F`)
 
@@ -58,7 +59,7 @@ Studio `RadioWriteProjection` for `radio-io-at-d890uv` resolves library RX list 
 nameAddr = receiveGroupAddr + 0x100
 ```
 
-Read/write `0x20` bytes. On D890, encode with wide-character packing (anytone-cps `Format::wideCharString`).
+Studio writes `0x20` name bytes at this offset inside a `0x120` record, with wide-character packing (anytone-cps `Format::wideCharString`). The official CPS transfer is `0x111` bytes, so that name is 16 characters (`0x100` + `0x11`). The geometry rows above are what Studio writes; this page does not shrink the encoder.
 
 ## Channel FK
 

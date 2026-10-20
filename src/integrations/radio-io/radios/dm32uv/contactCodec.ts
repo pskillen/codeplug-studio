@@ -143,10 +143,13 @@ export function parseDm32ContactsRange(payload: Uint8Array): { start: number; en
   return { start: start >>> 0, end: end >>> 0 };
 }
 
-/** Parse V-frame 0x10 payload → max contact count (u32 LE). */
+/** Parse V-frame 0x10 payload → max contact count (3-byte or 4-byte LE). */
 export function parseDm32MaxContacts(payload: Uint8Array): number | null {
-  if (payload.length < 4) return null;
-  const n = payload[0]! | (payload[1]! << 8) | (payload[2]! << 16) | (payload[3]! << 24);
+  if (payload.length < 3) return null;
+  const n =
+    payload.length >= 4
+      ? payload[0]! | (payload[1]! << 8) | (payload[2]! << 16) | (payload[3]! << 24)
+      : payload[0]! | (payload[1]! << 8) | (payload[2]! << 16);
   if (n <= 0) return null;
   return n >>> 0;
 }

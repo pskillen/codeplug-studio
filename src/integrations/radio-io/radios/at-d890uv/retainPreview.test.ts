@@ -9,6 +9,7 @@ import {
   optionalSettingsRetainPreview,
   settingsRetainPreview,
 } from './retainPreview.ts';
+import { encodeWideCharName } from './wideChar.ts';
 
 describe('settingsRetainPreview', () => {
   it('decodes ExpertOptions fields from LocalInfo', () => {
@@ -40,15 +41,45 @@ describe('optionalSettingsRetainPreview', () => {
     const ext = new Uint8Array(D890_MAP.OptionalSettingsExtLength);
     main[0x05] = 1; // German
     main[0x07] = 1; // password on
-    ext.set(new TextEncoder().encode('SECRET12'), 0x20);
+    main[0xd6] = 0x01;
+    main[0xd7] = 4;
+    main[0xd8] = 9;
+    main[0xd9] = 0xff;
+    main[0xda] = 12;
+    main[0xdb] = 77;
+    ext.set(encodeWideCharName('LINE ONE', 0x20), 0x00);
+    ext.set(encodeWideCharName('LINE TWO', 0x20), 0x20);
+    ext.set(new TextEncoder().encode('SECRET12'), 0x40);
 
     const rows = optionalSettingsRetainPreview(main, ext);
     expect(rows.find((r) => r.label === 'CPS language')?.value).toBe('German');
     expect(rows.find((r) => r.label === 'Power-on password enable')?.value).toBe('On');
-    expect(rows.find((r) => r.label === 'Power-on password (sensitive)')?.value).toBe('SECRET12');
     expect(rows.find((r) => r.label === 'Chinese UI (Expert options)')?.value).toMatch(
       /Local info/,
     );
+
+    const startup = rows.find((r) => r.label === 'Startup enable');
+    expect(startup?.value).toBe('On');
+    expect(startup?.address).toBe('0x35000d6');
+    expect(rows.find((r) => r.label === 'Startup zone A')?.value).toBe('4');
+    expect(rows.find((r) => r.label === 'Startup zone B')?.value).toBe('9');
+    expect(rows.find((r) => r.label === 'Startup channel A')?.value).toBe('none');
+    expect(rows.find((r) => r.label === 'Startup channel B')?.value).toBe('12');
+    expect(rows.find((r) => r.label === 'Default startup channel')).toBeUndefined();
+    expect(rows.find((r) => r.offset === '+0xdb')).toBeUndefined();
+
+    const line1 = rows.find((r) => r.label === 'Power-on display line 1');
+    expect(line1?.value).toBe('LINE ONE');
+    expect(line1?.address).toBe('0x3500900');
+    const line2 = rows.find((r) => r.label === 'Power-on display line 2');
+    expect(line2?.value).toBe('LINE TWO');
+    expect(line2?.address).toBe('0x3500920');
+
+    const password = rows.find((r) => r.label === 'Power-on password (sensitive)');
+    expect(password?.value).toBe('SECRET12');
+    expect(password?.offset).toBe('+0x40');
+    expect(password?.address).toBe('0x3500940');
+    expect(password?.value).not.toBe(line2?.value);
   });
 });
 

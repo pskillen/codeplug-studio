@@ -92,10 +92,10 @@ Channel records do **not** store the DMR talk-group ID. NeonPlug sets `contactId
 
 | Block metadata | Scope                                            |
 | -------------- | ------------------------------------------------ |
-| `0x42`         | Channels 1–2048 — 2 bytes per channel            |
-| `0x43`         | Channels 2049+ and VFO A/B (`0x0FFA` / `0x0FFC`) |
+| `0x42`         | Channels 1–2047 — 2 bytes per channel            |
+| `0x43`         | Channels 2048+ and VFO A/B (`0x0FFA` / `0x0FFC`) |
 
-Index into talk-group list in block `0x44`. Full packing: [contacts-zones-lists.md](contacts-zones-lists.md).
+Firmware 048 agrees (`0x03054a2c`). `getTxContactOffset` already uses this split. Index into talk-group list in block `0x44`. Full packing: [contacts-zones-lists.md](contacts-zones-lists.md).
 
 ## Forbid-TX flag byte (block-relative)
 

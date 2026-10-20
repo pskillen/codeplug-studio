@@ -12,14 +12,14 @@ Cite: NeonPlug `structures.ts`, `protocol.ts`, `constants.ts`.
 
 Separate from config-range metadata `0x0F` (RX groups).
 
-| Fact           | Value                                             |
-| -------------- | ------------------------------------------------- |
-| Range source   | V-frame `0x0F` (start/end + capacity heuristics)  |
-| Capacity hint  | V-frame `0x10` (u32 max) or firmware L01 fallback |
-| Entry size     | **`0x5C` (92)** bytes                             |
-| First block    | 16-byte header; entries from `0x10`; ~44 contacts |
-| Later blocks   | Entries from `0x00`; 44 per 4KB                   |
-| Empty sentinel | Name byte `0x00` or `0xFF`                        |
+| Fact           | Value                                                                          |
+| -------------- | ------------------------------------------------------------------------------ |
+| Range source   | V-frame `0x0F` (start/end + capacity heuristics)                               |
+| Capacity hint  | V-frame `0x10` (3-byte or 4-byte little-endian count) or firmware L01 fallback |
+| Entry size     | **`0x5C` (92)** bytes                                                          |
+| First block    | 16-byte header; entries from `0x10`; ~44 contacts                              |
+| Later blocks   | Entries from `0x00`; 44 per 4KB                                                |
+| Empty sentinel | Name byte `0x00` or `0xFF`                                                     |
 
 **Read (Web Serial):** clone download **skips** the digital address-book bank — it is not needed for the hydration stash (channels / zones / scan / TG / RX / settings). Connect still records V-frame `0x0F`/`0x10` range metadata. A count-based fold helper remains on the protocol (`foldContactBankIntoDownloadCache`) for a future contacts Read; do **not** walk V-frame start→end (L01 end near `0xFFF000` caused ~3464-block runaways).
 

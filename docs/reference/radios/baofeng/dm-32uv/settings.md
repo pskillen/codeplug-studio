@@ -12,26 +12,76 @@ Full 4KB; NeonPlug requires at least `0x508` bytes of meaningful layout for pars
 
 ### Highlights (not exhaustive)
 
-| Offset / area         | Role                                              |
-| --------------------- | ------------------------------------------------- |
-| `0x00`                | Power-on interface                                |
-| `0x01` / `0x0F`       | Power-on display lines (14 ASCII each)            |
-| `0x1D` bit 0          | Allow reset                                       |
-| `0x1E`                | Auto power off (0–5 enum)                         |
-| `0x20`–`0x21`         | Alert tone flags                                  |
-| `0x30`–`0x3B`         | Backlight, display flags, colours, menu exit      |
-| `0x40`–`0x45`         | GPS enable / units / mode / UTC / report interval |
-| `0x60`–`0x67`         | Digital decode / call hold / SMS / name display   |
-| `0x80`–`0x81`         | VFO embedded flags / TX dwell                     |
-| `0x85`–`0x86`, `0x93` | Key lock / auto lock delay / long-press           |
-| `0x87`–`0x90`         | Side / programmable key short/long functions      |
-| `0x120`…              | Analog one-key call entries                       |
-| `0x200`…              | One-touch call (5 × 5 bytes)                      |
-| `0x230`…              | Fun+ entries (10 × 7 bytes)                       |
-| `0x301`–`0x334`       | **APRS / GPS position** (below)                   |
-| `0x500`–`0x507`       | Menu enable/disable bitflags                      |
+| Offset / area         | Role                                                                                     |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `0x00`                | Power-on interface                                                                       |
+| `0x01` / `0x0F`       | Power-on display lines (14 ASCII each)                                                   |
+| `0x1D` bit 0          | Allow reset                                                                              |
+| `0x1E`                | Auto power off (0–5 enum)                                                                |
+| `0x20`–`0x21`         | Alert tone flags                                                                         |
+| `0x30`–`0x3B`         | Backlight, display flags, colours, menu exit                                             |
+| `0x40`–`0x45`         | GPS enable / units / mode / UTC / report interval                                        |
+| `0x60`–`0x67`         | Digital decode / call hold / SMS / name display                                          |
+| `0x80`–`0x81`         | VFO embedded flags / TX dwell                                                            |
+| `0x85`–`0x86`, `0x93` | Key lock / auto lock delay / long-press                                                  |
+| `0x87`–`0x90`         | Side / programmable key short/long functions ([key-function codes](#key-function-codes)) |
+| `0x120`…              | Analog one-key call entries                                                              |
+| `0x200`…              | One-touch call (5 × 5 bytes)                                                             |
+| `0x230`…              | Fun+ entries (10 × 7 bytes)                                                              |
+| `0x301`–`0x334`       | **APRS / GPS position** (below)                                                          |
+| `0x500`–`0x507`       | Menu enable/disable bitflags                                                             |
 
 Field-by-field UI enums live in NeonPlug `settingsProfile.ts` / settings parse — extract further only when adapter [#638](https://github.com/pskillen/codeplug-studio/issues/638) needs them.
+
+#### Key-function codes
+
+Studio previews these bytes and does not write them. A byte outside 0–42 renders `Function N` with the raw byte.
+
+| Code | Preview                |
+| ---- | ---------------------- |
+| 0    | None                   |
+| 1    | Power Select           |
+| 2    | Volt                   |
+| 3    | Talk Around            |
+| 4    | Digital Encrypt        |
+| 5    | Call                   |
+| 6    | Vox                    |
+| 7    | VFO/MR                 |
+| 8    | Alarm                  |
+| 9    | One Touch Call 1       |
+| 10   | One Touch Call 2       |
+| 11   | One Touch Call 3       |
+| 12   | One Touch Call 4       |
+| 13   | One Touch Call 5       |
+| 14   | SMS                    |
+| 15   | Contact                |
+| 16   | Zone Up                |
+| 17   | Zone Down              |
+| 18   | Scan                   |
+| 19   | Record Switch          |
+| 20   | Previous Record        |
+| 21   | Next Record            |
+| 22   | FM Radio               |
+| 23   | FM Search              |
+| 24   | GPS Info               |
+| 25   | Monitor                |
+| 26   | A/B Switch             |
+| 27   | Work Alone             |
+| 28   | KeyPad Lock            |
+| 29   | Nuisance Delete        |
+| 30   | TBST Send              |
+| 31   | APRS Send              |
+| 32   | Switch ChType          |
+| 33   | Display Mode           |
+| 34   | CTC/DCS Scan           |
+| 35   | CTC/DCS Set            |
+| 36   | Mute                   |
+| 37   | Roaming                |
+| 38   | Sub PTT                |
+| 39   | Analog Scramble Switch |
+| 40   | One Key Scan Freq      |
+| 41   | Flashlight             |
+| 42   | Man Down Alarm         |
 
 ### APRS / GPS position (`0x301`–`0x334`)
 
@@ -54,13 +104,13 @@ NeonPlug treats VFO A/B as channels **4001** / **4002** parsed from block metada
 
 ## Emergency / encryption co-resident notes
 
-| Topic             | Observed (NeonPlug)                                                                                                                                                      |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Analog emergency  | Entries in the `0x10`-tagged block region (~36 bytes each; max 16); encode clears `0x0AC`–`0x2FF` only                                                                   |
-| Encryption keys   | Start at offset **`0x300`** in the same physical block family as analog emergency                                                                                        |
-| Digital emergency | Entry size ~20–40 bytes; discovery may tag **`0x03`** while `METADATA.DIGITAL_EMERGENCY` constant is **`0x10`** — see [memory-layout.md](memory-layout.md) inconsistency |
+| Topic             | Observed (NeonPlug)                                                                                             |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| Analog emergency  | Entries in the `0x10`-tagged block region (~36 bytes each; max 16); encode clears `0x0AC`–`0x2FF` only          |
+| Encryption keys   | Start at offset **`0x300`** in the same physical block family as analog emergency                               |
+| Digital emergency | Entry size ~20–40 bytes. Emergency and encryption stay on **`0x10`** — see [memory-layout.md](memory-layout.md) |
 
-**Adapter implication:** always **read-modify-write** the full 4KB and preserve unknown bytes / co-resident sections. Never blank an entire `0x10` (or `0x03`) block when writing only one subsection.
+**Adapter implication:** always **read-modify-write** the full 4KB and preserve unknown bytes / co-resident sections. Never blank an entire `0x10` block when writing only one subsection.
 
 ## Upload / RMW guidance
 

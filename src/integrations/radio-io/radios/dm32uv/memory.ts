@@ -90,7 +90,7 @@ export function classifyDm32Metadata(metadata: number): Dm32BlockType {
   }
   if (isDm32ZonePageMetadata(metadata)) return 'zone';
   if (metadata === DM32_METADATA.SCAN_LIST) return 'scan';
-  if (metadata === 0x03) return 'digitalemergency'; // discovery path (see tier-3 inconsistency note)
+  if (metadata === 0x03) return 'unknown'; // unidentified payload; not an emergency table
   if (metadata === DM32_METADATA.VFO_SETTINGS) return 'vfo';
   if (metadata === DM32_METADATA.ANALOG_EMERGENCY) return 'analogemergency';
   if (metadata === DM32_METADATA.QUICK_MESSAGES) return 'message';
