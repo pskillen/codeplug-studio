@@ -7,7 +7,8 @@ import {
   parseAtD890ChannelRecord,
 } from './channelCodec.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
-import { AT_D890_INVALID_U16, AT_D890_LIMITS, AT_D890_MAP_SIZE, D890_MAP } from './constants.ts';
+import { AT_D890_LIMITS, AT_D890_MAP_SIZE, D890_MAP } from './constants.ts';
+import { listDescriptorsForProfile } from '../../registry.ts';
 import { setBitmapBit } from './bitmap.ts';
 import { channelPrimaryAddress, channelSecondaryAddress } from './memory.ts';
 import { HEALTHY_CHANNEL_RECORDS } from './__fixtures__/healthyChannelRecords.ts';
@@ -149,18 +150,73 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(encoded[9]! & 0xd0).toBe(0);
   });
 
-  it('writes omitted txContactId as 0xffff, not talk-group slot 0', () => {
-    const encoded = encodeAtD890ChannelRecord(simplexDigital);
-    const contactWire = (encoded[0x13]! << 8) | encoded[0x14]!;
-    expect(contactWire).toBe(AT_D890_INVALID_U16);
-    expect(parseAtD890ChannelRecord(encoded, 1).txContactId).toBeUndefined();
+  it('writes omitted txContactId as 0x17=0xFF with 0x13–0x16 zero', () => {
+    // No CPS none sample in HEALTHY_CHANNEL_RECORDS; encode follows the firmware rule.
+    const analog = { ...simplexDigital, mode: 'analog' as const, bandwidth: 'FM' as const };
+    for (const ch of [simplexDigital, analog]) {
+      const encoded = encodeAtD890ChannelRecord(ch);
+      expect(encoded[0x13]).toBe(0);
+      expect(encoded[0x14]).toBe(0);
+      expect(encoded[0x15]).toBe(0);
+      expect(encoded[0x16]).toBe(0);
+      expect(encoded[0x17]).toBe(0xff);
+      expect(parseAtD890ChannelRecord(encoded, ch.slotIndex).txContactId).toBeUndefined();
+    }
   });
 
   it('encodes txContactId 1 as talk-group slot 0', () => {
     const encoded = encodeAtD890ChannelRecord({ ...simplexDigital, txContactId: 1 });
     expect(encoded[0x13]).toBe(0);
     expect(encoded[0x14]).toBe(0);
+    expect(encoded[0x15]).toBe(0);
+    expect(encoded[0x16]).toBe(0);
+    expect(encoded[0x17]).toBe(0);
     expect(parseAtD890ChannelRecord(encoded, 1).txContactId).toBe(1);
+  });
+
+  it('encodes txContactId 257 as a little-endian u32 at 0x14', () => {
+    for (const mode of ['digital', 'fixed-digital'] as const) {
+      const encoded = encodeAtD890ChannelRecord({ ...simplexDigital, mode, txContactId: 257 });
+      expect(encoded[0x13]).toBe(0);
+      expect(encoded[0x14]).toBe(0x00);
+      expect(encoded[0x15]).toBe(0x01);
+      expect(encoded[0x16]).toBe(0);
+      expect(encoded[0x17]).toBe(0);
+      expect(parseAtD890ChannelRecord(encoded, 1).txContactId).toBe(257);
+    }
+  });
+
+  it('decodes a digital contact as none when byte 0x17 is 0x7F or 0x80', () => {
+    for (const high of [0x7f, 0x80]) {
+      const record = encodeAtD890ChannelRecord({ ...simplexDigital, txContactId: 2 });
+      record[0x14] = 0x11;
+      record[0x15] = 0x22;
+      record[0x16] = 0x33;
+      record[0x17] = high;
+      expect(parseAtD890ChannelRecord(record, 1).txContactId).toBeUndefined();
+    }
+  });
+
+  it('decodes an all-zero digital contact word as talk-group id 1', () => {
+    const record = encodeAtD890ChannelRecord({ ...simplexDigital, txContactId: 2 });
+    record[0x13] = 0;
+    record[0x14] = 0;
+    record[0x15] = 0;
+    record[0x16] = 0;
+    record[0x17] = 0;
+    expect(parseAtD890ChannelRecord(record, 1).txContactId).toBe(1);
+  });
+
+  it('shares the contact encoder between stock and MM9PDY radio-io profiles', () => {
+    const stock = listDescriptorsForProfile('radio-io', 'radio-io-at-d890uv');
+    const mm9 = listDescriptorsForProfile('radio-io', 'radio-io-at-d890uv-mm9pdy');
+    expect(stock).toHaveLength(1);
+    expect(mm9).toHaveLength(1);
+    expect(stock[0]).toBe(mm9[0]);
+    const omitted = encodeAtD890ChannelRecord(simplexDigital);
+    expect([...omitted.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0xff]);
+    const wide = encodeAtD890ChannelRecord({ ...simplexDigital, txContactId: 257 });
+    expect([...wide.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x01, 0x00, 0x00]);
   });
 
   it('encodes scan-list and RX-group none as 0xff', () => {
@@ -387,7 +443,7 @@ describe('encodeAtD890ChannelRecord', () => {
     expect((encoded[0x21]! >> 1) & 1).toBe(1);
     expect(encoded[0x22]).toBe(0);
     expect([...encoded.subarray(4, 8)]).toEqual([0, 0, 0, 0]);
-    expect((encoded[0x13]! << 8) | encoded[0x14]!).toBe(AT_D890_INVALID_U16);
+    expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0xff]);
   });
 
   it('returns empty record for vacant slot', () => {
@@ -417,7 +473,7 @@ describe('encodeAtD890ChannelRecord', () => {
       expect((encoded[0x21]! >> 1) & 1).toBe(1);
       expect(encoded[0x22]).toBe(0);
       if (dto.txContactId == null) {
-        expect((encoded[0x13]! << 8) | encoded[0x14]!).toBe(AT_D890_INVALID_U16);
+        expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0xff]);
       }
       if (original[0x1c] === 0) {
         expect(encoded[0x1c]).toBe(0xff);

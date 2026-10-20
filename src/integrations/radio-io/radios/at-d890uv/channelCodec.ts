@@ -8,7 +8,7 @@ import type { RadioChannelDto, RadioChannelMode, RadioTone } from '../../radioCh
 import { encodeBcdFrequencyHz, decodeBcdFrequencyHz } from './bcd.ts';
 import { assertAtD890MrChannelFrequencies } from './channelEncodeGuards.ts';
 import { clearBitmapBitsBelow, listSetBits, setBitmapBit } from './bitmap.ts';
-import { AT_D890_INVALID_U16, AT_D890_LIMITS, D890_MAP } from './constants.ts';
+import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
   cacheToMemoryMap,
   channelPrimaryAddress,
@@ -138,15 +138,30 @@ function encodeRxGroupWire(rxGroupIndex: number | undefined): number {
   return rxGroupIndex & 0xff;
 }
 
-function decodeTxContactId(contactWire: number, mode: RadioChannelMode): number | undefined {
+/** Firmware channel-apply: byte `0x17` >= this is no TX contact. `0x00000000` is slot 0. */
+const TX_CONTACT_NONE_HIGH = 0x7f;
+
+function decodeTxContactId(data: Uint8Array, mode: RadioChannelMode): number | undefined {
   if (!isDigitalMode(mode)) return undefined;
-  if (contactWire === AT_D890_INVALID_U16) return undefined;
-  return contactWire + 1;
+  if (data[0x17]! >= TX_CONTACT_NONE_HIGH) return undefined;
+  const wire = (data[0x14]! | (data[0x15]! << 8) | (data[0x16]! << 16) | (data[0x17]! << 24)) >>> 0;
+  return wire + 1;
 }
 
-function encodeTxContactWire(txContactId: number | undefined): number {
-  if (txContactId == null) return AT_D890_INVALID_U16;
-  return (txContactId - 1) & 0xffff;
+function encodeTxContactWire(data: Uint8Array, txContactId: number | undefined): void {
+  data[0x13] = 0;
+  if (txContactId == null) {
+    data[0x14] = 0;
+    data[0x15] = 0;
+    data[0x16] = 0;
+    data[0x17] = 0xff;
+    return;
+  }
+  const wire = txContactId - 1;
+  data[0x14] = wire & 0xff;
+  data[0x15] = (wire >>> 8) & 0xff;
+  data[0x16] = (wire >>> 16) & 0xff;
+  data[0x17] = (wire >>> 24) & 0xff;
 }
 
 export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): RadioChannelDto {
@@ -185,12 +200,11 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
     ctcssEncSel === 2
       ? decodeToneFromDcsU16(data[0x0c]!, data[0x0d]!)
       : decodeToneFromCtcssIndex(data[0x0a]!);
-  const contactWire = (data[0x13]! << 8) | data[0x14]!;
   let txHz = rxHz;
   if (duplex === 1) txHz = rxHz + offHz;
   if (duplex === 2) txHz = Math.max(0, rxHz - offHz);
   const autoScan = ((data[0x34]! >> 4) & 1) === 1;
-  const txContactId = decodeTxContactId(contactWire, channelType);
+  const txContactId = decodeTxContactId(data, channelType);
   return {
     slotIndex,
     empty: false,
@@ -280,9 +294,7 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto): Uint8Array {
     data[0x43] = cc;
   }
 
-  const contactWire = encodeTxContactWire(ch.txContactId);
-  data[0x13] = (contactWire >> 8) & 0xff;
-  data[0x14] = contactWire & 0xff;
+  encodeTxContactWire(data, ch.txContactId);
   data[0x18] = ch.dmrRadioIdIndex ?? 0;
   data[0x1b] = encodeScanListWire(ch.scanListId);
   data[0x1c] = encodeRxGroupWire(ch.rxGroupIndex);
