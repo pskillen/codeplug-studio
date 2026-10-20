@@ -27,19 +27,62 @@ const AUTO_POWER_OFF_LABELS = [
   '4 hours',
 ] as const;
 
-const SIDE_KEY_LABELS: Record<number, string> = {
-  0: 'None',
-  1: 'Monitor',
-  2: 'Scan',
-  3: 'VOX',
-  4: 'Emergency',
-  5: 'Zone select',
-  6: 'Power level',
-  7: 'Talkaround',
-};
+/**
+ * Preview names for key-function codes 0–42, in firmware order.
+ * CPS wording where it differs from the radio; otherwise the English radio name.
+ * A byte outside this list, including 0xFF, stays `Function N` with the raw byte.
+ */
+const KEY_FUNCTION_LABELS = [
+  'None',
+  'Power Select',
+  'Volt',
+  'Talk Around',
+  'Digital Encrypt',
+  'Call',
+  'Vox',
+  'VFO/MR',
+  'Alarm',
+  'One Touch Call 1',
+  'One Touch Call 2',
+  'One Touch Call 3',
+  'One Touch Call 4',
+  'One Touch Call 5',
+  'SMS',
+  'Contact',
+  'Zone Up',
+  'Zone Down',
+  'Scan',
+  'Record Switch',
+  'Previous Record',
+  'Next Record',
+  'FM Radio',
+  'FM Search',
+  'GPS Info',
+  'Monitor',
+  'A/B Switch',
+  'Work Alone',
+  'KeyPad Lock',
+  'Nuisance Delete',
+  'TBST Send',
+  'APRS Send',
+  'Switch ChType',
+  'Display Mode',
+  'CTC/DCS Scan',
+  'CTC/DCS Set',
+  'Mute',
+  'Roaming',
+  'Sub PTT',
+  'Analog Scramble Switch',
+  'One Key Scan Freq',
+  'Flashlight',
+  'Man Down Alarm',
+] as const;
 
 function sideKeyLabel(byte: number): string {
-  return SIDE_KEY_LABELS[byte & 0x7f] ?? `Function ${byte}`;
+  if (byte >= 0 && byte < KEY_FUNCTION_LABELS.length) {
+    return KEY_FUNCTION_LABELS[byte] ?? `Function ${byte}`;
+  }
+  return `Function ${byte}`;
 }
 
 /** Shallow retain fields from settings block (metadata 0x04), excluding APRS. */
