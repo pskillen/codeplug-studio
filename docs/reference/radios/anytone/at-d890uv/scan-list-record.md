@@ -94,6 +94,7 @@ Bit **set** → list occupied. Same indexing as channels/zones: list `n` → byt
 - **Timing (all four):** one byte at `0x06`, `0x08`, `0x0A`, and `0x0C`. `30` deciseconds (3.0 s) when build `exportSettings` unset; override via Export settings ([#1069](https://github.com/pskillen/codeplug-studio/issues/1069)); shared with CSV via `resolveAtD890ScanListTiming` / `scanListWireDefaults.ts`. Per-list library settings: [#572](https://github.com/pskillen/codeplug-studio/issues/572).
 - **Preserved on rewrite:** `0x00`, `0x07`, `0x09`, `0x0B`, `0x0D`, `0xF9`, `0xFA`, `0xFB` from the downloaded record. Unoccupied indices below the cap are still `0xff`-filled for the whole stride.
 - **Channel scan-list FK:** zone-derived FK on **carriers only** on Web Serial; see [zone-derived-scan-lists.md](../../../zone-derived-scan-lists.md). Library lists on serial: [#843](https://github.com/pskillen/codeplug-studio/issues/843).
+- An MM9PDY Write with no zone-derived lists still writes one scan list containing the first channel so the occupancy bitmap is not empty. Channels stay without a scan-list id.
 
 Codec: `src/integrations/radio-io/radios/at-d890uv/scanListCodec.ts`.
 

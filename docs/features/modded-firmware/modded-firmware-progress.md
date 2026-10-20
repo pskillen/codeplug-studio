@@ -128,6 +128,22 @@
 
 ---
 
+## AT-D890UV default scan list on Write
+
+**Status:** Complete on this branch
+
+**Delivered**
+
+- An AT-D890UV MM9PDY Write with no zone-derived lists still writes one scan list containing the first channel so the occupancy bitmap is not empty
+- Channels stay without a scan-list id. Stock AT-D890UV zone-derived lists and the DM-32 MM9PDY write (scan-list id 0, no records) are unchanged
+
+**Verify**
+
+- Projection: one repeater, two talk groups → list index 1, name `Scan list 1`, that channel's slot; `scanListId` unset
+- No channel → `scanLists` stays empty
+
+---
+
 ## Next
 
 - [#1321](https://github.com/pskillen/codeplug-studio/issues/1321) stays open until DM-32 C2 names a timeslot store and a step-key code
