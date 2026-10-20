@@ -146,10 +146,52 @@ describe('encodeDm32ScanList', () => {
       channelNumbers: [3, 4],
       listIndex: 1,
     });
-    expect(rec[0x0b]).toBe(2);
+    expect(rec[0x0b]).toBe(3);
+    expect(rec[0x0d]).toBe(50);
     expect((rec[0x0c]! >> 2) & 0x03).toBe(1); // current
     expect(rec[0x1a] | (rec[0x1b]! << 8)).toBe(3);
     expect(rec[0x1c] | (rec[0x1d]! << 8)).toBe(4);
+  });
+
+  it('counts three named members as four including the current channel', () => {
+    const rec = encodeDm32ScanList({
+      wireName: 'Three',
+      channelNumbers: [10, 11, 12],
+      listIndex: 1,
+    });
+    expect(rec[0x0b]).toBe(4);
+    expect(rec[0x0d]).toBe(50);
+    expect(rec[0x1a] | (rec[0x1b]! << 8)).toBe(10);
+    expect(rec[0x1c] | (rec[0x1d]! << 8)).toBe(11);
+    expect(rec[0x1e] | (rec[0x1f]! << 8)).toBe(12);
+  });
+
+  it('stores fifteen named members and writes count 16', () => {
+    const channelNumbers = Array.from({ length: 15 }, (_, i) => i + 1);
+    const rec = encodeDm32ScanList({
+      wireName: 'Full',
+      channelNumbers,
+      listIndex: 1,
+    });
+    expect(rec[0x0b]).toBe(16);
+    expect(rec[0x0d]).toBe(50);
+    expect(rec.length).toBe(57);
+    for (let i = 0; i < 15; i++) {
+      const off = 0x1a + i * 2;
+      expect(rec[off]! | (rec[off + 1]! << 8)).toBe(channelNumbers[i]);
+    }
+    // 15 u16s end at +0x37. The leftover byte is not a 16th member.
+    expect(rec[0x38]).toBe(0x00);
+  });
+
+  it('keeps an empty projected list at count 0 and hang time 50', () => {
+    const rec = encodeDm32ScanList({
+      wireName: 'Empty',
+      channelNumbers: [],
+      listIndex: 1,
+    });
+    expect(rec[0x0b]).toBe(0);
+    expect(rec[0x0d]).toBe(50);
   });
 });
 

@@ -20,7 +20,11 @@ export const DM32UV_LIMITS = {
    * 32 is `0x20` and does not use scan-add (bit 6).
    */
   CHANNEL_SCAN_LIST_ID_MAX: 32,
-  /** Named CSV scan-list members; CPS “16” includes implicit current channel. */
+  /**
+   * Named CSV scan-list members; CPS “16” includes the implicit current channel.
+   * Web Serial count byte `+0x0B` is named + 1 for a non-empty list (max 16).
+   * Empty projected lists and vacant slots stay 0.
+   */
   SCAN_LIST_MEMBERS_MAX: 15,
   /** RX group bank size (metadata 0x0F). */
   RX_GROUPS_MAX: 32,
