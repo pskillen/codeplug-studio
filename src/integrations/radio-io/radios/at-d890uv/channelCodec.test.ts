@@ -307,21 +307,56 @@ describe('encodeAtD890ChannelRecord', () => {
       wireName: 'DCS',
       rxHz: 430_000_000,
       txHz: 430_000_000,
-      rxTone: { kind: 'dcs', code: 123, polarity: 'N' },
-      txTone: { kind: 'dcs', code: 456, polarity: 'I' },
+      rxTone: { kind: 'dcs', code: 23, polarity: 'N' },
+      txTone: { kind: 'dcs', code: 23, polarity: 'N' },
       powerPercent: 50,
       bandwidth: 'NFM',
       mode: 'digital',
       timeslot: 2,
       scanAdd: false,
     };
-    const encoded = encodeAtD890ChannelRecord(ch);
-    const decoded = parseAtD890ChannelRecord(encoded, 2);
-    expect(decoded.rxTone).toEqual({ kind: 'dcs', code: 123, polarity: 'N' });
-    expect(decoded.txTone).toEqual({ kind: 'dcs', code: 456, polarity: 'I' });
+    const normal = encodeAtD890ChannelRecord(ch);
+    expect(normal[0x0c]).toBe(0x13);
+    expect(normal[0x0d]).toBe(0x00);
+    expect(normal[0x0e]).toBe(0x13);
+    expect(normal[0x0f]).toBe(0x00);
+
+    const inverted = encodeAtD890ChannelRecord({
+      ...ch,
+      rxTone: { kind: 'dcs', code: 23, polarity: 'I' },
+      txTone: { kind: 'dcs', code: 23, polarity: 'I' },
+    });
+    expect(inverted[0x0c]).toBe(0x13);
+    expect(inverted[0x0d]).toBe(0x02);
+    expect(inverted[0x0e]).toBe(0x13);
+    expect(inverted[0x0f]).toBe(0x02);
+
+    const planted = encodeAtD890ChannelRecord({
+      ...ch,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+    });
+    planted[0x09] = (2 << 2) | 2;
+    planted[0x0e] = 0x13;
+    planted[0x0f] = 0x02;
+    expect(parseAtD890ChannelRecord(planted, 2).rxTone).toEqual({
+      kind: 'dcs',
+      code: 23,
+      polarity: 'I',
+    });
+
+    planted[0x0c] = 0x23;
+    planted[0x0d] = 0x80;
+    expect(parseAtD890ChannelRecord(planted, 2).txTone).not.toEqual({
+      kind: 'dcs',
+      code: 23,
+      polarity: 'N',
+    });
+
+    const decoded = parseAtD890ChannelRecord(normal, 2);
     expect(decoded.timeslot).toBe(2);
     expect(decoded.scanAdd).toBe(false);
-    expect((encoded[0x34]! >> 4) & 1).toBe(0);
+    expect((normal[0x34]! >> 4) & 1).toBe(0);
   });
 
   it('encodes timeslot on 0x21 bit 0 and leaves SMS confirm on bit 1', () => {

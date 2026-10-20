@@ -112,19 +112,23 @@ function decodeToneFromCtcssIndex(index: number): RadioTone {
 }
 
 function decodeToneFromDcsU16(low: number, high: number): RadioTone {
-  if (low === 0 && high === 0) return { kind: 'none' };
-  const code = (high & 0x0f) * 100 + ((low >> 4) & 0x0f) * 10 + (low & 0x0f);
+  const word = low | (high << 8);
+  const binary = word & 0x1ff;
+  if (word === 0 || binary === 0) return { kind: 'none' };
+  // RadioTone.code is the octal numeral (D023 → 23). The word stores that octal value as a binary integer.
+  const code = Number.parseInt(binary.toString(8), 10);
   if (code === 0) return { kind: 'none' };
-  return { kind: 'dcs', code, polarity: high >= 0xc0 ? 'I' : 'N' };
+  return { kind: 'dcs', code, polarity: (word & 0x200) !== 0 ? 'I' : 'N' };
 }
 
 function encodeDcsTone(tone: RadioTone): { low: number; high: number } {
   if (tone.kind !== 'dcs') return { low: 0, high: 0 };
-  const hundreds = Math.floor(tone.code / 100) % 10;
-  const tens = Math.floor((tone.code % 100) / 10);
-  const ones = tone.code % 10;
-  const base = tone.polarity === 'I' ? 0xc0 : 0x80;
-  return { low: (tens << 4) | ones, high: base | hundreds };
+  const digits = String(Math.trunc(tone.code));
+  if (!/^[0-7]+$/.test(digits)) return { low: 0, high: 0 };
+  const binary = Number.parseInt(digits, 8) & 0x1ff;
+  if (binary === 0) return { low: 0, high: 0 };
+  const word = binary + (tone.polarity === 'I' ? 512 : 0);
+  return { low: word & 0xff, high: (word >> 8) & 0xff };
 }
 
 function modeFromWire(n: number): RadioChannelMode {
