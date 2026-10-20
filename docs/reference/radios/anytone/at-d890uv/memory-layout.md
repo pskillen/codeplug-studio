@@ -141,7 +141,7 @@ Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `wri
 
 **Sparse RMW flow (upload):** compute touched erase units from modelled write addresses → fresh-read each unit from the connected radio → overlay modelled chunks → stage only non-`0xff` 16-byte blocks **excluding** per-unit flash sector-management markers at `+0x3fbf0` / `+0x3fff0` → transmit filtered chunks → `END` (bare `0x06` ACK; no further wire command). There is **no** separate commit command — see [flash-sectors.md](flash-sectors.md). RMW preserves co-residents **outside** the modelled overlay; it is not a substitute for the in-session encode prior.
 
-**ChannelData** is modelled as **32 per-block backed low halves** (`0x40000` each, `0x80000` pitch) — mirrored upper-half addresses are refused ([#791](https://github.com/pskillen/codeplug-studio/issues/791)).
+**ChannelData** is modelled as **32 per-block low halves** (`0x40000` each, `0x80000` pitch). Studio refuses upper-half addresses ([#791](https://github.com/pskillen/codeplug-studio/issues/791)). That refusal is the write fence, separate from how firmware selects the live half.
 
 **Pre-Write sentinel plausibility:** before any write frames, Studio Reads six never-write spans and **refuses** the Write when any region reads entirely `0xff` (already-erased / faulted radio). Regions: `LocalInfo`; optional-settings main (`0x3500000`/`0x200`), ext (`0x3500900`/`0x60`), APRS (`0x3501280`/`0x30`); alarm bitmap (`0x3482e00`/`0x10`) and data (`0x3483000`/`0x30`). In-session pre/post compare was removed ([#769](https://github.com/pskillen/codeplug-studio/issues/769)) — reads in the same PROGRAM session return flash, not the RAM shadow. **Cross-session verify** after `END` is optional in the build **Direct radio** UI: wait for the radio to finish its automatic restart, reconnect, and diff those spans against the pre-Write snapshot ([#769](https://github.com/pskillen/codeplug-studio/issues/769) slice 5b).
 
@@ -160,7 +160,7 @@ Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `wri
 
 **AmAir erase unit:** `AmAirData` (`0x3880000`) and `AmZoneData` (`0x3888000`) share erase unit `0x3880000`. Sparse RMW fresh-reads the unit when airband is written.
 
-Safe-skip address `0x2fa0010` (family constant) is never written. D890 `LocalInfo+0x10` (`0x4f80010`) is **not** skipped — LocalInfo is excluded from upload entirely instead.
+The `0x2fa0010` skip is anytone-cps lore. The official CPS encoder we read does not skip that address. Studio still skips it as a family precaution. D890 `LocalInfo+0x10` (`0x4f80010`) is excluded because LocalInfo is not on the upload allow-list.
 
 **Operator note:** after CPS recovery or band changes, perform a **fresh Read** of the live radio before Write. Do not Write from a stale hydration YAML export — the build projection must match the radio you are connected to.
 
@@ -168,42 +168,42 @@ Web Serial Write is available on production deploys ([#800](https://github.com/p
 
 Zone record detail: [zone-record.md](zone-record.md). Channel geometry: [channel-record.md](channel-record.md).
 
-## Address aliasing
+## Alternate half of a `0x40000` unit
 
-Flash address space is **not** uniformly flat. Measured on hardware 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`, 240-byte reads).
+Flash address space is **not** uniformly flat. Measured on hardware 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`, 240-byte reads). The upper half of a `0x40000` unit is an alternate unit, not a mirror of the lower half.
 
 ### ChannelData
 
-| Property               | Value                                    |
-| ---------------------- | ---------------------------------------- |
-| Block pitch            | `0x80000` (`ChannelDataBlockOffset`)     |
-| Backed bytes per block | `0x40000` (low half only)                |
-| Alias stride           | `+0x40000` — upper half mirrors low half |
-| Erase unit             | `0x40000`, aligned                       |
+| Property                     | Value                                                       |
+| ---------------------------- | ----------------------------------------------------------- |
+| Block pitch                  | `0x80000` (`ChannelDataBlockOffset`)                        |
+| Bytes the write fence covers | `0x40000` (low half of each block)                          |
+| Upper half                   | `+0x40000` — alternate unit, not a mirror of the lower half |
+| Erase unit                   | `0x40000`, aligned                                          |
 
-The same `+0x40000` offset appears when Studio incorrectly transmitted flash sector-management markers: writes landed in a shadow window at `address + 0x40000` instead of on the live bank. That diversion is **probably** the same A/B sector mechanism as this alias stride — **inference, not proven**. Never write the markers; see [flash-sectors.md](flash-sectors.md) and investigation [i001](../../../investigations/i001-d890-write-commit-failure/README.md).
+Firmware selects the live half at run time. `55 55 AA AA` at `+0x3FFFC` is the tail of the already-documented `+0x3fff0` marker block. `AA AA 55 55` at `+0x3FDF8` marks the lower half not live. Firmware sites `0x08023EA8`, `0x080D4E14`, and `0x080D4028` read those words. The PC-link address map is not settled. Never write the `+0x3fbf0` / `+0x3fff0` markers; see [flash-sectors.md](flash-sectors.md) and investigation [i001](../../../investigations/i001-d890-write-commit-failure/README.md).
 
-Channel writes must stay in the low half of each block; `0x1840000` physically lands on `0x1800000`. The write fence models only backed halves (`writableExtents.ts` per-block extents; `channelDataGeometry.ts`).
+Studio refuses upper-half ChannelData addresses ([#791](https://github.com/pskillen/codeplug-studio/issues/791)). That refusal is the write fence (`writableExtents.ts` per-block extents; `channelDataGeometry.ts`), separate from how firmware selects the live half.
 
-### TalkgroupData (unverified mirror — [#829](https://github.com/pskillen/codeplug-studio/issues/829))
+### TalkgroupData ([#829](https://github.com/pskillen/codeplug-studio/issues/829))
 
-2026-07-28 memory dump: window at `0x3a40000` is a **byte-for-byte mirror** of `0x3a00000` (same geometry class as `ChannelData` above). Slot `i` is `0x3a00000 + floor(i / 1000) * 0x80000 + (i % 1000) * 0xc8`. The writable window stays `[TalkgroupData, TalkgroupOrder)` and still includes `0x3a40000`. Do not raise `TALK_GROUPS_MAX` or change writable extents without hardware verification.
+The 2026-07-28 memory dump showed identical bytes at `0x3a40000` and `0x3a00000`. That window is the alternate half of the unit, not a mirror of the lower half. Studio still models a flat `TalkgroupData` bank. Slot `i` is `0x3a00000 + floor(i / 1000) * 0x80000 + (i % 1000) * 0xc8`. The writable window stays `[TalkgroupData, TalkgroupOrder)` and still includes `0x3a40000`. Do not raise `TALK_GROUPS_MAX` or change writable extents.
 
 ### Config regions
 
-Regions that matter for erase-unit RMW ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) are **flat** at `+0x40000` — base and alias candidate hold distinct cells ([#792](https://github.com/pskillen/codeplug-studio/issues/792)):
+Regions that matter for erase-unit RMW ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) are **flat** across `+0x40000` — the base and the upper half hold distinct cells ([#792](https://github.com/pskillen/codeplug-studio/issues/792)):
 
-| Region                   | Base        | Alias (`+0x40000`) | Length  | Status | non-`0xff` (base / alias) |
-| ------------------------ | ----------- | ------------------ | ------- | ------ | ------------------------- |
-| LocalInfo                | `0x4f80000` | `0x4fc0000`        | `0x100` | flat   | 233 / 0                   |
-| Optional settings (main) | `0x3500000` | `0x3540000`        | `0x200` | flat   | 512 / 512                 |
-| ChannelSet               | `0x3482a00` | `0x34c2a00`        | `0x200` | flat   | 490 / 0                   |
+| Region                   | Base        | Upper half (`+0x40000`) | Length  | Status | non-`0xff` (base / upper) |
+| ------------------------ | ----------- | ----------------------- | ------- | ------ | ------------------------- |
+| LocalInfo                | `0x4f80000` | `0x4fc0000`             | `0x100` | flat   | 233 / 0                   |
+| Optional settings (main) | `0x3500000` | `0x3540000`             | `0x200` | flat   | 512 / 512                 |
+| ChannelSet               | `0x3482a00` | `0x34c2a00`             | `0x200` | flat   | 490 / 0                   |
 
 Sparse erase-unit RMW may treat `0x3480000` and `0x3500000` units as 1:1 address → cell. Dual all-`0xff` spans would be inconclusive (not “flat”); none of the measured pairs were.
 
 ## Flash erase unit
 
-Measured in `ChannelData` 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`): **`0x40000` (256 kB), aligned**. Writing into a unit can erase the whole unit; only bytes re-staged in the same PROGRAM session survive. There is no separate erase/commit opcode — see [flash-sectors.md](flash-sectors.md).
+Measured in `ChannelData` 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`): **`0x40000` (256 kB), aligned**. A write into a unit has been observed to clear co-resident bytes; bytes re-staged in the same PROGRAM session are what Studio puts back. There is no separate erase/commit opcode — see [flash-sectors.md](flash-sectors.md).
 
 | Erase unit base | Modelled writes (examples)                                       | Co-resident regions preserved by sparse RMW        |
 | --------------- | ---------------------------------------------------------------- | -------------------------------------------------- |
@@ -290,14 +290,14 @@ Dump / write-verify region sizes for `ReceiveGroupSet` and `ReceiveGroupData` de
 
 Cross-checked against:
 
-| Fact set                         | Source                                                                                                                                      |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Region bases / strides / lengths | anytone-cps `D890_MAP`                                                                                                                      |
-| Channel / zone address formulas  | anytone-cps `Device::readChannelData` / `readZoneData` / writers                                                                            |
-| Serial block size / framing      | anytone-cps `SerialDevice`                                                                                                                  |
-| ChannelData alias / erase unit   | Hardware probe 2026-07-27 (`/debug/d890-erase-probe`)                                                                                       |
-| Config-region flat at `+0x40000` | Hardware probe 2026-07-27 ([#792](https://github.com/pskillen/codeplug-studio/issues/792))                                                  |
-| AmAir / AmZone record layouts    | Hardware dump 2026-07-28 reconciled against CPS `AMAir.CSV` / `AMZone.CSV` ([#756](https://github.com/pskillen/codeplug-studio/issues/756)) |
+| Fact set                                | Source                                                                                                                                      |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Region bases / strides / lengths        | anytone-cps `D890_MAP`                                                                                                                      |
+| Channel / zone address formulas         | anytone-cps `Device::readChannelData` / `readZoneData` / writers                                                                            |
+| Serial block size / framing             | anytone-cps `SerialDevice`                                                                                                                  |
+| ChannelData alternate half / erase unit | Hardware probe 2026-07-27 (`/debug/d890-erase-probe`)                                                                                       |
+| Config-region flat at `+0x40000`        | Hardware probe 2026-07-27 ([#792](https://github.com/pskillen/codeplug-studio/issues/792))                                                  |
+| AmAir / AmZone record layouts           | Hardware dump 2026-07-28 reconciled against CPS `AMAir.CSV` / `AMZone.CSV` ([#756](https://github.com/pskillen/codeplug-studio/issues/756)) |
 
 Fixtures: [fixtures.md](fixtures.md).
 

@@ -11,8 +11,8 @@ Durable facts about erase-unit geometry and the two per-unit sector-management b
 | Size        | `0x40000` (256 kB), aligned |
 | Write chunk | always 16 bytes             |
 
-Writing any 16-byte block into a unit can erase the whole unit; co-resident bytes must be re-staged if
-Studio touches the unit (sparse erase-unit RMW — see [memory-layout.md](memory-layout.md)).
+A write into a unit has been observed to clear co-resident bytes. When Studio touches a unit it
+re-stages those bytes (sparse erase-unit RMW — see [memory-layout.md](memory-layout.md)).
 
 ## Sector-management markers
 
@@ -25,8 +25,8 @@ metadata, **not** codeplug payload:
 | `+0x3fff0`     | `ff ff ff ff ff ff ff ff ff ff ff ff 55 55 aa aa` |
 
 The radio maintains them itself — observed changing from all-`0xff` to the marker pattern on a sector
-Studio never addressed. Official Anytone CPS never writes them (USB wire capture of a full codeplug
-write: 9,976 `WRITE_CMD` frames, zero hits on either offset).
+Studio never addressed. The official CPS encoder we read does not write them (USB wire capture of a
+full codeplug write: 9,976 `WRITE_CMD` frames, zero hits on either offset).
 
 ### Never write them
 
@@ -56,17 +56,16 @@ Do not diagnose that message as a marker problem without checking the zone count
 is written faithfully by Studio and rejected by the radio — it is not an encoding fault.
 
 **Recovery, either way:** on-radio init, then write a full codeplug from the **official** Anytone CPS. Studio
-alone is not known to be sufficient — it writes 15 erase units where CPS writes 30.
+alone is not known to be sufficient. A typical Studio write touches 15 erase units. The official CPS
+encoder we read touched 30 units: it writes the blocks it marks and re-sends every settings block.
 
-## Write diversion at `+0x40000`
+## Alternate half at `+0x40000`
 
-When Studio transmitted the markers (after sparse RMW began sweeping them in), every write frame was
-ACKed and reached flash, but bytes landed at `address + 0x40000` while the live bank kept its previous
-contents.
-
-**Inference (not proven):** that diversion is probably the same A/B sector mechanism as ChannelData's
-documented alias stride of `+0x40000` ([memory-layout.md — Address aliasing](memory-layout.md#address-aliasing)).
-The actionable rule does not depend on proving that link — do not write the markers either way.
+The upper half of a `0x40000` unit is an alternate unit, not a mirror of the lower half. Firmware
+selects the live half at run time from the end-of-unit words in
+[memory-layout.md — Alternate half](memory-layout.md#alternate-half-of-a-0x40000-unit). The PC-link
+address map is not settled. Studio still must not write the `+0x3fbf0` / `+0x3fff0` markers; that
+warning stands on the program-error incident above.
 
 ## No commit / erase / swap command
 

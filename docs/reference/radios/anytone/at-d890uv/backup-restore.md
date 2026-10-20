@@ -26,4 +26,6 @@ Calibration is not an isolated named bank on this radio. Digital-contact FLASH i
 3. Overlay selected restorable region bytes onto freshly read erase units.
 4. Transmit non-`0xff` 16-byte blocks; skip LocalInfo, `0x2fa0010`, and flash bookkeeping markers (`+0x3fbf0` / `+0x3fff0`).
 
+The `0x2fa0010` skip is anytone-cps lore. The official CPS encoder we read does not skip that address. Studio still skips it on Restore, as a family precaution. D890 `LocalInfo+0x10` (`0x4f80010`) is excluded because LocalInfo is not on the upload allow-list.
+
 Progress copy is **Restore**, not “Writing codeplug.”
