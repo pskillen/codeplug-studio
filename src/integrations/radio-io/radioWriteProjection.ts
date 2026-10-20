@@ -99,7 +99,7 @@ export interface RadioRadioIdDto {
 
 /** APRS / GPS position slice on settings block (offsets 0x301–0x334). */
 export interface RadioAprsDigitalSlotDto {
-  /** LE u16 wire: MR CPS channel `No.` or sentinel (e.g. `0x0fa2` Current). */
+  /** LE u16 wire: 0-based MR memory index (CPS channel `No.` minus 1), or a sentinel (e.g. `0x0fa2` Current). */
   reportChannelWire: number;
   targetDmrId: number | null;
   callType: 0 | 1;
