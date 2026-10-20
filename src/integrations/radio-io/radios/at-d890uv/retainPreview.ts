@@ -4,6 +4,7 @@
  */
 
 import { AT_D890_BLOCK_SIZE, D890_MAP } from './constants.ts';
+import { decodeWideCharName } from './wideChar.ts';
 
 export interface AtD890RetainPreviewRow {
   /** Absolute radio address, when known. */
@@ -62,6 +63,11 @@ function hexDump(data: Uint8Array): string {
 
 function bit0(byte: number): boolean {
   return (byte & 1) !== 0;
+}
+
+/** Startup channel index: `0xFF` means no channel; any other byte is 0-based. */
+function startupChannelIndex(byte: number): string {
+  return byte === 0xff ? 'none' : String(byte);
 }
 
 /** Known ExpertOptions / LocalInfo fields (kept on Write — read for preview, not serial-written). */
@@ -168,18 +174,21 @@ export function optionalSettingsRetainPreview(
     pushMain(0x05, 'CPS language', enumLabel(AT_D890_CPS_LANGUAGE, lang, 'unknown'));
     const pwdEnable = main[0x07] ?? 0;
     pushMain(0x07, 'Power-on password enable', bit0(pwdEnable) ? 'On' : 'Off');
-    pushMain(0xd7, 'Default startup channel', String(main[0xd7] ?? 0));
-    pushMain(0xd8, 'Startup zone A', String(main[0xd8] ?? 0));
-    pushMain(0xd9, 'Startup zone B', String(main[0xd9] ?? 0));
-    pushMain(0xda, 'Startup channel A', String(main[0xda] ?? 0));
-    pushMain(0xdb, 'Startup channel B', String(main[0xdb] ?? 0));
+    const startupEnable = main[0xd6] ?? 0;
+    pushMain(0xd6, 'Startup enable', bit0(startupEnable) ? 'On' : 'Off');
+    pushMain(0xd7, 'Startup zone A', String(main[0xd7] ?? 0));
+    pushMain(0xd8, 'Startup zone B', String(main[0xd8] ?? 0));
+    pushMain(0xd9, 'Startup channel A', startupChannelIndex(main[0xd9] ?? 0));
+    pushMain(0xda, 'Startup channel B', startupChannelIndex(main[0xda] ?? 0));
   }
 
   if (ext.length > 0) {
-    pushExt(0x00, 'Power-on display line 1', readAsciiField(ext, 0x00, 14) || '(empty)');
-    pushExt(0x10, 'Power-on display line 2', readAsciiField(ext, 0x10, 14) || '(empty)');
-    const pwd = readAsciiField(ext, 0x20, 8) || '(empty)';
-    pushExt(0x20, 'Power-on password (sensitive)', pwd);
+    const line1 = decodeWideCharName(ext.subarray(0x00, 0x20)) || '(empty)';
+    pushExt(0x00, 'Power-on display line 1', line1);
+    const line2 = decodeWideCharName(ext.subarray(0x20, 0x40)) || '(empty)';
+    pushExt(0x20, 'Power-on display line 2', line2);
+    const pwd = readAsciiField(ext, 0x40, 8) || '(empty)';
+    pushExt(0x40, 'Power-on password (sensitive)', pwd);
   }
 
   return rows;
