@@ -57,7 +57,20 @@ function inScanListDataBank(address: number): boolean {
 const ZONE_SLOTS = bitmapSlotCount(AT_D890_LIMITS.ZONE_SET_BYTES);
 const RADIO_ID_SLOTS = bitmapSlotCount(AT_D890_LIMITS.RADIO_ID_SET_BYTES);
 const RX_GROUP_SLOTS = bitmapSlotCount(AT_D890_LIMITS.RX_GROUP_SET_BYTES);
-const TALKGROUP_SLOTS = bitmapSlotCount(AT_D890_LIMITS.TALKGROUP_SET_BYTES);
+
+/**
+ * Talkgroup records are banked, but labels use the writable window
+ * `[TalkgroupData, TalkgroupOrder)`. A flat `stride × bitmap slots` span stops
+ * at `0x3BE8480` and misses later banks (`talkgroupAddress(4000)` is `0x3C00000`).
+ * `0x3A40000` stays inside this window.
+ */
+function inTalkgroupDataWindow(address: number): boolean {
+  return inExclusiveSpan(
+    address,
+    D890_MAP.TalkgroupData,
+    D890_MAP.TalkgroupOrder - D890_MAP.TalkgroupData,
+  );
+}
 
 /** Channel primary/secondary halves live under ChannelData … ChannelData+0x1000000. */
 const CHANNEL_DATA_SPAN = 0x100_0000;
@@ -108,9 +121,7 @@ export function atD890RegionLabel(address: number): string {
   if (address === D890_MAP.ScanListSet) return 'Scan list bitmap';
   if (inScanListDataBank(address)) return 'Scan lists';
   if (address === D890_MAP.TalkgroupSet) return 'Talk group bitmap';
-  if (inBank(address, D890_MAP.TalkgroupData, D890_MAP.TalkgroupStride, TALKGROUP_SLOTS)) {
-    return 'Talk groups';
-  }
+  if (inTalkgroupDataWindow(address)) return 'Talk groups';
   if (address === D890_MAP.TalkgroupOrder) return 'Talk group order';
   if (address === D890_MAP.ReceiveGroupSet) return 'RX group bitmap';
   if (inBank(address, D890_MAP.ReceiveGroupData, D890_MAP.ReceiveGroupStride, RX_GROUP_SLOTS)) {
@@ -156,9 +167,7 @@ export function atD890WriteRole(address: number): AtD890WriteRole {
     return 'replaced';
   }
   if (inScanListDataBank(address)) return 'replaced';
-  if (inBank(address, D890_MAP.TalkgroupData, D890_MAP.TalkgroupStride, TALKGROUP_SLOTS)) {
-    return 'replaced';
-  }
+  if (inTalkgroupDataWindow(address)) return 'replaced';
   if (address === D890_MAP.TalkgroupOrder) return 'replaced';
   if (inBank(address, D890_MAP.ReceiveGroupData, D890_MAP.ReceiveGroupStride, RX_GROUP_SLOTS)) {
     return 'replaced';

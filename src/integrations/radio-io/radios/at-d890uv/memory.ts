@@ -64,7 +64,13 @@ export function scanListAddress(index: number): number {
 }
 
 export function talkgroupAddress(index: number): number {
-  return D890_MAP.TalkgroupData + index * D890_MAP.TalkgroupStride;
+  const bankIndex = Math.floor(index / D890_MAP.TalkgroupBankSize);
+  const indexInBank = index % D890_MAP.TalkgroupBankSize;
+  return (
+    D890_MAP.TalkgroupData +
+    bankIndex * D890_MAP.TalkgroupBankPitch +
+    indexInBank * D890_MAP.TalkgroupStride
+  );
 }
 
 /** Floor address to a 16-byte serial/cache boundary. */

@@ -38,6 +38,14 @@ describe('atD890RegionLabel / atD890WriteRole', () => {
     expect(atD890WriteRole(addr)).toBe('replaced');
     expect(talkgroupAddress(1)).toBe(D890_MAP.TalkgroupData + 0xc8);
     expect(atD890RegionLabel(talkgroupAddress(9))).toBe('Talk groups');
+    expect(talkgroupAddress(1000)).toBe(0x3a8_0000);
+    expect(atD890RegionLabel(talkgroupAddress(1000))).toBe('Talk groups');
+    expect(atD890WriteRole(talkgroupAddress(1000))).toBe('replaced');
+    expect(talkgroupAddress(4000)).toBe(0x3c0_0000);
+    expect(atD890RegionLabel(talkgroupAddress(4000))).toBe('Talk groups');
+    expect(atD890WriteRole(talkgroupAddress(4000))).toBe('replaced');
+    expect(atD890RegionLabel(0x3a4_0000)).toBe('Talk groups');
+    expect(atD890WriteRole(0x3a4_0000)).toBe('replaced');
   });
 
   it('classifies RX groups despite ReceiveGroupData > MasterIdData', () => {

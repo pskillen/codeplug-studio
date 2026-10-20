@@ -108,6 +108,10 @@ export const D890_MAP = {
   TalkgroupSet: 0x398_0000,
   TalkgroupData: 0x3a0_0000,
   TalkgroupStride: 0xc8,
+  /** Slots packed in one bank before the next {@link TalkgroupBankPitch}. */
+  TalkgroupBankSize: 1000,
+  /** Address pitch from talkgroup bank n to bank n+1. The gap is not payload. */
+  TalkgroupBankPitch: 0x8_0000,
   TalkgroupLength: 0xc8,
   TalkgroupOrder: 0x3f0_0000,
   ReceiveGroupSet: 0x370_1510,

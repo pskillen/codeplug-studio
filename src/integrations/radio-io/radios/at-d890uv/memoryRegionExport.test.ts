@@ -71,6 +71,13 @@ describe('AT_D890_MEMORY_REGIONS', () => {
     );
   });
 
+  it('dumps talkgroup records across the writable window', () => {
+    const talkgroupData = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'talkgroupData')!;
+    expect(talkgroupData.chunks).toHaveLength(1);
+    expect(talkgroupData.chunks[0]!.address).toBe(D890_MAP.TalkgroupData);
+    expect(talkgroupData.chunks[0]!.length).toBe(D890_MAP.TalkgroupOrder - D890_MAP.TalkgroupData);
+  });
+
   it('stops the scan-list alias probe at bank 1', () => {
     const probe = AT_D890_DUMP_REGIONS.find((r) => r.id === 'probeScanListData')!;
     expect(probe.chunks[0]!.address).toBe(0x214_0000);

@@ -31,6 +31,18 @@ describe('scanListAddress', () => {
   });
 });
 
+describe('talkgroupAddress', () => {
+  it('places slot 1000 at the next bank, not the byte after bank 0', () => {
+    expect(talkgroupAddress(0)).toBe(0x3a0_0000);
+    expect(talkgroupAddress(1)).toBe(D890_MAP.TalkgroupData + 0xc8);
+    expect(talkgroupAddress(999)).toBe(0x3a3_0c78);
+    expect(talkgroupAddress(1000)).toBe(0x3a8_0000);
+    expect(talkgroupAddress(1000)).not.toBe(0x3a3_0d40);
+    expect(talkgroupAddress(4000)).toBe(0x3c0_0000);
+    expect(talkgroupAddress(9999)).toBe(0x3eb_0c78);
+  });
+});
+
 describe('alignedSpanForAtD890Region', () => {
   it('covers odd talkgroup slots that are not 16-aligned', () => {
     const slot1 = talkgroupAddress(1);

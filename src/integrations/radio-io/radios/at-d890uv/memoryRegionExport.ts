@@ -8,7 +8,6 @@
  * interpret anything, and never emits a `W` frame.
  */
 
-import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import {
   atD890EnterProgram,
   atD890ExitProgram,
@@ -249,7 +248,7 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
     'Talkgroup records',
     'talkgroups',
     D890_MAP.TalkgroupData,
-    AT_D890UV_LIMITS.TALK_GROUPS_MAX * D890_MAP.TalkgroupStride,
+    D890_MAP.TalkgroupOrder - D890_MAP.TalkgroupData,
   ),
   region('talkgroupOrder', 'Talkgroup order table', 'talkgroups', D890_MAP.TalkgroupOrder, 0x1000),
   region(
