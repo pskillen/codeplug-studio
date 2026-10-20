@@ -44,14 +44,16 @@ Studio Web Serial encodes the **serial** address book only.
 
 **Studio Web Serial (#667, #685, [#1220](https://github.com/pskillen/codeplug-studio/issues/1220)):** Write **allocates** `ceil(n/44)` 4KB blocks from V-frame `0x0F` `contactsBase` (capped at `CONTACT_BANK_MAX_BLOCKS`) and includes those addresses in upload — clone **Read still skips** the bank (H6). A huge L01 `contactsEnd` is **not** treated as a clear/read span. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them. RadioID directory and library privates share this bank; operator radio IDs stay metadata `0x67`.
 
-## Talk groups — metadata `0x44` (+ counter `0x06`)
+## Talk groups — metadata `0x44` (+ quick access `0x0B`)
 
-| Fact          | Value                                                           |
-| ------------- | --------------------------------------------------------------- |
-| Data block    | Metadata **`0x44`**                                             |
-| Counter block | Metadata **`0x06`**, counter byte/word at offset **`0x1FF`**    |
-| Max           | **800** ([limits.md](limits.md))                                |
-| Related       | Metadata **`0x0B`** holds quick-access / sorted TG index tables |
+Talk-group cardinality is metadata **`0x44`** plus metadata **`0x0B`** (u16 LE at bytes 0–1). Max **800** ([limits.md](limits.md)).
+
+| Fact        | Value                                                           |
+| ----------- | --------------------------------------------------------------- |
+| Data block  | Metadata **`0x44`**                                             |
+| Cardinality | Metadata **`0x44`** payload, plus metadata **`0x0B`** bytes 0–1 |
+| Max         | **800** ([limits.md](limits.md))                                |
+| Related     | Metadata **`0x0B`** holds quick-access / sorted TG index tables |
 
 NeonPlug `parseQuickContacts`: variable packed entries (flag + 16-char name + 3-byte DMR ID + call type). First entry may skip a leading `0x00` header byte. Prefer NeonPlug encode/parse behaviour over inventing a new packing.
 
@@ -61,6 +63,12 @@ NeonPlug `parseQuickContacts`: variable packed entries (flag + 16-char name + 3-
 | **qDMR virtual**               | **Contact bank** at `0x44000` — different structure; not authoritative for Web Serial |
 
 TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0` = none).
+
+## Analogue (DTMF) contacts — metadata `0x06`
+
+A different bank from the V-frame `0x0F` address book above. Byte **`+0x1FF`** is the count of 32-byte analogue (DTMF) contacts that start at **`+0x200`**. It is not the talk-group count. NeonPlug names this byte `CONFIG_TG_COUNTER`; firmware reads it as the analogue contact count.
+
+**Studio Web Serial Write** does not change `+0x1FF` and does not encode these records. The page is retain-only (echoed from Read). Use CPS / NeonPlug file egress to edit them.
 
 ## TX contact — metadata `0x42` / `0x43`
 

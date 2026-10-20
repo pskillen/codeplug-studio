@@ -76,7 +76,7 @@ Typical span order-of-magnitude: hundreds of 4KB blocks (~800KB when 200 blocks)
 | `0x02`          | `calibration`             | Frequency adjustment                                                                       |
 | `0x0F`          | `rxgroup`                 | DMR RX groups (**metadata** `0x0F` — not V-frame `0x0F`)                                   |
 | `0x67`          | `dmrradioid`              | DMR radio ID list                                                                          |
-| `0x06`          | `config`                  | Config section 4; TG counter at `0x1FF`                                                    |
+| `0x06`          | `config`                  | Analogue (DTMF) contacts; count at `+0x1FF`; 32-byte records from `+0x200`                 |
 | other           | `unknown`                 | Still may be bulk-read if listed as required (e.g. `0x42`, `0x43`, `0x44`, `0x0B`, `0x41`) |
 
 ### NeonPlug constant vs discovery inconsistency
@@ -107,7 +107,7 @@ NeonPlug `bulkReadRequiredBlocks` always tries to include:
 | `0x02`                                                                  | Calibration                                                                              |
 | `0x0F`                                                                  | RX groups                                                                                |
 | `0x44`                                                                  | Talk groups data (**critical**)                                                          |
-| `0x06`                                                                  | TG counter at offset `0x1FF`                                                             |
+| `0x06`                                                                  | Analogue (DTMF) contacts; count at `+0x1FF` (retained on Write)                          |
 | `0x42`                                                                  | TX-contact low (channels 1–2047) (**critical**)                                          |
 | `0x43`                                                                  | TX-contact high (2048+ / VFOs) (**critical**)                                            |
 | all `zone` / `scan` / `message` / `dmrradioid` / `rxgroup` typed blocks | Organisation lists                                                                       |
@@ -125,10 +125,10 @@ Last channel in first block: `0x10 + 83×48 = 0xFA0`. Details: [channel-record.m
 
 ## Write contract (Web Serial)
 
-| Category     | Strategy                                                                                                                                                                                                                                                                                                                      |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Replaced** | Channels (+ TX-contact banks `0x42`/`0x43`), zones, scan lists, talk groups (`0x44` + counter `0x06` + quick-access `0x0B`), RX groups (`0x0F`), digital contacts (V-frame `0x0F` bank), operator DMR radio IDs (`0x67` — non-empty projection replaces the page; an empty projection is kept), APRS settings slice in `0x04` |
-| **Kept**     | Radio settings (`0x04` outside APRS slice), analog/digital emergencies, encryption keys, calibration, quick messages, VFO A/B bank when not a channel bank                                                                                                                                                                    |
+| Category     | Strategy                                                                                                                                                                                                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Replaced** | Channels (+ TX-contact banks `0x42`/`0x43`), zones, scan lists, talk groups (`0x44` + quick-access `0x0B`), RX groups (`0x0F`), digital contacts (V-frame `0x0F` bank), operator DMR radio IDs (`0x67` — non-empty projection replaces the page; an empty projection is kept), APRS settings slice in `0x04` |
+| **Kept**     | Radio settings (`0x04` outside APRS slice), analog/digital emergencies, encryption keys, calibration, quick messages, VFO A/B bank when not a channel bank, analogue contacts (`0x06`, echoed from Read, count byte `+0x1FF` not overwritten)                                                                |
 
 Replaced entities encode **full records** from `RadioWriteProjection` plus NeonPlug defaults for unmodelled bytes; unused list/slot entries are explicit empty/sentinel fill ([#685](https://github.com/pskillen/codeplug-studio/issues/685)). Manifest: `dm32WriteRole` in `writeRole.ts`. Tag `0x67` stays **Replaced** when the projection has any `dmrId > 0`. An empty or non-positive projection is kept byte-for-byte ([#1291](https://github.com/pskillen/codeplug-studio/issues/1291)); that exception is an encode guard, not a move into **Kept**.
 
