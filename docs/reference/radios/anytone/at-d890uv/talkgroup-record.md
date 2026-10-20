@@ -91,12 +91,30 @@ Companion write rebuilt whenever the talkgroup bank is encoded (anytone-cps `wri
 
 Example: DMR ID `9` group call → key `0x13` (`(9 << 1) + 1`); DMR ID `99` group → key `0xc7`.
 
+## Talkgroup position table (`0x3900000`)
+
+The radio counts the talkgroup list by binary-searching this table for the boundary between a non-`0xFFFFFFFF` entry and `0xFFFFFFFF`. That boundary is the list count. The order table above is not the list. The upper half at `0x3940000` is not written.
+
+Studio writes the identity the CPS writes. Entry `i` is u32 little-endian `i` for the `n` records just written, then `0xFFFFFFFF` through index `TALK_GROUPS_MAX - 1`.
+
+`n` is the number of records this call writes (the same skips as the record encode: `digitalId <= 0`, index below 1). When those slots are not exactly `{0 .. n-1}`, `n` is one past the highest written slot, so every written slot sits in the prefix and a hole stays an identity entry. An empty write is `n = 0`, so entry 0 is `0xFFFFFFFF`.
+
+| Fact       | Value                                                                  |
+| ---------- | ---------------------------------------------------------------------- |
+| Base       | `0x3900000` (`TalkgroupPosition`)                                      |
+| Width      | `TALK_GROUPS_MAX` little-endian u32s                                   |
+| Entry `i`  | u32 LE `i` while `i < n`; `0xFFFFFFFF` from `n` through the last index |
+| List count | The `n` / `0xFFFFFFFF` boundary                                        |
+
+[#1122](https://github.com/pskillen/codeplug-studio/issues/1122).
+
 ## Studio module
 
-`src/integrations/radio-io/radios/at-d890uv/talkGroupCodec.ts` — `encodeAtD890TalkgroupRecord`, `encodeTalkgroupsIntoAtD890Image`, `encodeAtD890TalkgroupOrder`.
+`src/integrations/radio-io/radios/at-d890uv/talkGroupCodec.ts` — `encodeAtD890TalkgroupRecord`, `encodeTalkgroupsIntoAtD890Image` (records, bitmap, order table, and position table), `encodeAtD890TalkgroupOrder`.
 
 ## Related
 
 - [#721](https://github.com/pskillen/codeplug-studio/issues/721) — BCD ID + call-type fix
 - [#717](https://github.com/pskillen/codeplug-studio/issues/717) — channel BCD (same packing class with ×10)
 - [#725](https://github.com/pskillen/codeplug-studio/issues/725) — TalkgroupOrder rebuild on Write
+- [#1122](https://github.com/pskillen/codeplug-studio/issues/1122) — position table is the talkgroup list count
