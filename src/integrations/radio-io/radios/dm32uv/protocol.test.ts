@@ -44,6 +44,8 @@ describe('classifyDm32Metadata', () => {
   });
 });
 
+const CONFIG_WINDOW = { start: 0x1000, end: 0xc8000 };
+
 describe('selectBlocksToBulkRead', () => {
   it('includes first channel block and required settings metadata', () => {
     const selected = selectBlocksToBulkRead(
@@ -53,6 +55,7 @@ describe('selectBlocksToBulkRead', () => {
         { address: 0x3000, metadata: 0x00, type: 'empty' },
       ],
       1,
+      CONFIG_WINDOW,
     );
     expect(selected.map((b) => b.address)).toEqual([0x1000, 0x2000]);
   });
@@ -64,9 +67,20 @@ describe('selectBlocksToBulkRead', () => {
       { address: 0x3000, metadata: DM32_METADATA.EMPTY },
       { address: 0x4000, metadata: DM32_METADATA.EMPTY_ALT },
     ].map((block) => ({ ...block, type: classifyDm32Metadata(block.metadata) }));
-    const selected = selectBlocksToBulkRead(discovered, 0);
+    const selected = selectBlocksToBulkRead(discovered, 0, CONFIG_WINDOW);
     expect(selected.map((b) => b.address)).toEqual([0x1000, 0x2000]);
     expect(selected.every((b) => b.type === 'zone')).toBe(true);
+  });
+
+  it('bulk-reads every in-range 0x02 page and skips fonts and voice outside the window', () => {
+    const discovered = [
+      { address: 0xb8000, metadata: DM32_METADATA.CALIBRATION },
+      { address: 0xc0000, metadata: DM32_METADATA.CALIBRATION },
+      { address: 0x105000, metadata: DM32_METADATA.CALIBRATION },
+      { address: 0x1000, metadata: DM32_METADATA.CHANNEL_FIRST },
+    ].map((block) => ({ ...block, type: classifyDm32Metadata(block.metadata) }));
+    const selected = selectBlocksToBulkRead(discovered, 1, CONFIG_WINDOW);
+    expect(selected.map((b) => b.address)).toEqual([0x1000, 0xb8000, 0xc0000]);
   });
 });
 

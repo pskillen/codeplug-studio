@@ -37,6 +37,7 @@ import {
   groupDm32BlocksForProgress,
   readChannelCount,
   selectBlocksToBulkRead,
+  type Dm32ConfigWindow,
   type Dm32DiscoveredBlock,
 } from './memory.ts';
 import { remapDm32BlocksByMetadata, remapDm32MemoryMapByTranslations } from './remap.ts';
@@ -143,6 +144,15 @@ export class Dm32uvProtocol implements CloneImageRadio {
   /** Last successful download cache (for hydration / RMW). */
   getDownloadCache(): Dm32DownloadCache | null {
     return this.cache;
+  }
+
+  /**
+   * Live V-frame `0x0A` window from this connect: block addresses from
+   * `addressBase` through `alignedEnd`. The app does not hard-code the bounds.
+   */
+  getLiveConfigWindow(): Dm32ConfigWindow | null {
+    if (!this.liveLayout) return null;
+    return { start: this.liveLayout.addressBase, end: this.liveLayout.alignedEnd };
   }
 
   /** V-frame bases from this PROGRAM connect — compared to the backup manifest. */
@@ -297,7 +307,13 @@ export class Dm32uvProtocol implements CloneImageRadio {
       channelCount = await readChannelCount(this.pipe, firstChannel.address, settle);
     }
 
-    const toRead = selectBlocksToBulkRead(discovered, channelCount);
+    if (!this.liveLayout) {
+      throw new RadioProtocolError('DM-32UV live memory layout unknown — reconnect before Read');
+    }
+    const toRead = selectBlocksToBulkRead(discovered, channelCount, {
+      start: this.liveLayout.addressBase,
+      end: this.liveLayout.alignedEnd,
+    });
     const groups = groupDm32BlocksForProgress(toRead);
     this.cache.blocks = new Map();
     for (const group of groups) {

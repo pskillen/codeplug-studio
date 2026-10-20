@@ -42,6 +42,47 @@ export function isDm32ZonePageMetadata(metadata: number): boolean {
   return metadata >= DM32_METADATA.ZONE_PAGE_FIRST && metadata <= DM32_METADATA.ZONE_PAGE_LAST;
 }
 
+/**
+ * Inclusive V-frame `0x0A` window: block addresses from `addressBase` through
+ * `alignedEnd`. Not the set of blocks already bulk-read, and not a scan past
+ * `0x0FFFFF`.
+ */
+export interface Dm32ConfigWindow {
+  start: number;
+  end: number;
+}
+
+export function isDm32AddressInConfigWindow(address: number, window: Dm32ConfigWindow): boolean {
+  return address >= window.start && address <= window.end;
+}
+
+export interface Dm32CalibrationPageSelection<T extends { address: number; metadata: number }> {
+  /** Lowest in-range tag-`0x02` page. */
+  live: T | null;
+  /** Higher in-range tag-`0x02` pages. Not the live page. */
+  duplicates: T[];
+}
+
+/**
+ * Tag `0x02` is calibration only inside the live V-frame `0x0A` window.
+ * Fonts and voice pages that end in `0x02` outside that window are rejected.
+ * The lowest in-range address is the live page.
+ */
+export function selectDm32CalibrationPages<T extends { address: number; metadata: number }>(
+  blocks: readonly T[],
+  window: Dm32ConfigWindow,
+): Dm32CalibrationPageSelection<T> {
+  const pages = blocks
+    .filter(
+      (block) =>
+        block.metadata === DM32_METADATA.CALIBRATION &&
+        isDm32AddressInConfigWindow(block.address, window),
+    )
+    .sort((a, b) => a.address - b.address);
+  const live = pages[0] ?? null;
+  return { live, duplicates: live ? pages.slice(1) : [] };
+}
+
 export function classifyDm32Metadata(metadata: number): Dm32BlockType {
   if (metadata === DM32_METADATA.EMPTY || metadata === DM32_METADATA.EMPTY_ALT) return 'empty';
   if (metadata >= DM32_METADATA.CHANNEL_FIRST && metadata <= DM32_METADATA.CHANNEL_LAST) {
@@ -53,6 +94,8 @@ export function classifyDm32Metadata(metadata: number): Dm32BlockType {
   if (metadata === DM32_METADATA.VFO_SETTINGS) return 'vfo';
   if (metadata === DM32_METADATA.ANALOG_EMERGENCY) return 'analogemergency';
   if (metadata === DM32_METADATA.QUICK_MESSAGES) return 'message';
+  // Tag identity only. Which page is live, and rejection of out-of-window `0x02`,
+  // go through selectDm32CalibrationPages. Discovery already stays inside the window.
   if (metadata === DM32_METADATA.CALIBRATION) return 'calibration';
   if (metadata === DM32_METADATA.RX_GROUPS) return 'rxgroup';
   if (metadata === DM32_METADATA.DMR_RADIO_IDS) return 'dmrradioid';
@@ -123,6 +166,7 @@ export function channelBlocksNeeded(
 export function selectBlocksToBulkRead(
   discovered: readonly Dm32DiscoveredBlock[],
   channelCount: number,
+  window: Dm32ConfigWindow,
 ): Dm32DiscoveredBlock[] {
   const selected: Dm32DiscoveredBlock[] = [];
   const seen = new Set<number>();
@@ -139,9 +183,14 @@ export function selectBlocksToBulkRead(
   }
 
   for (const metadata of DM32_REQUIRED_METADATA) {
+    if (metadata === DM32_METADATA.CALIBRATION) continue;
     const block = discovered.find((b) => b.metadata === metadata);
     if (block) push(block);
   }
+
+  const calibration = selectDm32CalibrationPages(discovered, window);
+  if (calibration.live) push(calibration.live);
+  for (const page of calibration.duplicates) push(page);
 
   for (const b of discovered) {
     if (

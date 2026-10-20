@@ -31,6 +31,7 @@ import type {
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import type { Dm32ConfigWindow } from '@integrations/radio-io/radios/dm32uv/memory.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { OpenGd77Protocol } from '@integrations/radio-io/radios/opengd77/protocol.ts';
 import {
@@ -88,6 +89,8 @@ export function packLiveRadioBackup(input: {
   inspectBag?: RadioCloneHydrationBag;
   firmware?: string;
   capturedAt?: string;
+  /** Live V-frame `0x0A` window from `Dm32uvProtocol.getLiveConfigWindow`. */
+  dm32ConfigWindow?: Dm32ConfigWindow;
   extraRegions?: readonly { region: RadioBackupManifestV1['regions'][number]; bytes: Uint8Array }[];
 }): { manifest: RadioBackupManifestV1; zipBytes: Uint8Array } {
   const capturedAt = input.capturedAt ?? new Date().toISOString();
@@ -100,6 +103,7 @@ export function packLiveRadioBackup(input: {
     addressBase: input.inspectBag?.retain.addressBase,
     dm32ContactsBase: input.inspectBag?.retain.dm32ContactsBase,
     dm32ContactsEnd: input.inspectBag?.retain.dm32ContactsEnd,
+    dm32ConfigWindow: input.dm32ConfigWindow,
     extraRegions: input.extraRegions,
   });
 
@@ -168,12 +172,17 @@ export async function backupLiveRadioSession(
       ];
     }
   }
+  const dm32ConfigWindow =
+    session.radio instanceof Dm32uvProtocol
+      ? (session.radio.getLiveConfigWindow() ?? undefined)
+      : undefined;
   const { manifest, zipBytes } = packLiveRadioBackup({
     descriptor: session.descriptor,
     image,
     inspectBag,
     firmware: firmware ?? inspectBag.retain.firmware,
     capturedAt: inspectBag.capturedAt,
+    dm32ConfigWindow,
     extraRegions,
   });
   downloadRadioBackupZip(zipBytes, manifest);
