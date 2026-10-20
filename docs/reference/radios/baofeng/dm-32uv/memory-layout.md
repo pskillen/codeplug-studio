@@ -63,21 +63,23 @@ Typical span order-of-magnitude: hundreds of 4KB blocks (~800KB when 200 blocks)
 
 ## Metadata → type (observed)
 
-| Metadata        | NeonPlug `memory.ts` type | Notes                                                                                      |
-| --------------- | ------------------------- | ------------------------------------------------------------------------------------------ |
-| `0x00` / `0xFF` | `empty`                   | Unused / unavailable                                                                       |
-| `0x12` … `0x41` | `channel`                 | Channel bank; `0x12` = first, `0x41` = last marker in constants                            |
-| `0x5c`          | `zone`                    | Zone bank                                                                                  |
-| `0x11`          | `scan`                    | Scan lists                                                                                 |
-| `0x04`          | `vfo`                     | Radio settings / names / embedded info                                                     |
-| `0x03`          | `digitalemergency`        | **Discovery path** maps digital emergency here                                             |
-| `0x10`          | `analogemergency`         | Analog emergency; also co-hosts encryption keys (see [settings.md](settings.md))           |
-| `0x0A`          | `message`                 | Quick text messages                                                                        |
-| `0x02`          | `calibration`             | Frequency adjustment                                                                       |
-| `0x0F`          | `rxgroup`                 | DMR RX groups (**metadata** `0x0F` — not V-frame `0x0F`)                                   |
-| `0x67`          | `dmrradioid`              | DMR radio ID list                                                                          |
-| `0x06`          | `config`                  | Analogue (DTMF) contacts; count at `+0x1FF`; 32-byte records from `+0x200`                 |
-| other           | `unknown`                 | Still may be bulk-read if listed as required (e.g. `0x42`, `0x43`, `0x44`, `0x0B`, `0x41`) |
+| Metadata        | NeonPlug `memory.ts` type | Notes                                                                                     |
+| --------------- | ------------------------- | ----------------------------------------------------------------------------------------- |
+| `0x00` / `0xFF` | `empty`                   | Unused / unavailable                                                                      |
+| `0x12` … `0x41` | `channel`                 | Channel bank; `0x12` = first, `0x41` = last marker in constants                           |
+| `0x5c`–`0x64`   | `zone`                    | Zone pages in tag order (~28 each). Header only on `0x5c`; later pages pack from offset 0 |
+| `0x11`          | `scan`                    | Scan lists                                                                                |
+| `0x04`          | `vfo`                     | Radio settings / names / embedded info                                                    |
+| `0x03`          | `digitalemergency`        | **Discovery path** maps digital emergency here                                            |
+| `0x10`          | `analogemergency`         | Analog emergency; also co-hosts encryption keys (see [settings.md](settings.md))          |
+| `0x0A`          | `message`                 | Quick text messages                                                                       |
+| `0x02`          | `calibration`             | Frequency adjustment                                                                      |
+| `0x0F`          | `rxgroup`                 | DMR RX groups (**metadata** `0x0F` — not V-frame `0x0F`)                                  |
+| `0x67`          | `dmrradioid`              | DMR radio ID list                                                                         |
+| `0x06`          | `config`                  | Analogue (DTMF) contacts; count at `+0x1FF`; 32-byte records from `+0x200`                |
+| `0x44`          | `unknown`                 | Talk-group page. Bulk-read because it is required. Meaning unchanged                      |
+| `0x45`–`0x48`   | `unknown`                 | Present. Not read or written until a dump shows the payload                               |
+| other           | `unknown`                 | Still may be bulk-read if listed as required (e.g. `0x42`, `0x43`, `0x0B`, `0x41`)        |
 
 ### NeonPlug constant vs discovery inconsistency
 
@@ -131,6 +133,12 @@ Last channel in first block: `0x10 + 83×48 = 0xFA0`. Details: [channel-record.m
 | **Kept**     | Radio settings (`0x04` outside APRS slice), analog/digital emergencies, encryption keys, calibration, quick messages, VFO A/B bank when not a channel bank, analogue contacts (`0x06`, echoed from Read, count byte `+0x1FF` not overwritten)                                                                |
 
 Replaced entities encode **full records** from `RadioWriteProjection` plus NeonPlug defaults for unmodelled bytes; unused list/slot entries are explicit empty/sentinel fill ([#685](https://github.com/pskillen/codeplug-studio/issues/685)). Manifest: `dm32WriteRole` in `writeRole.ts`. Tag `0x67` stays **Replaced** when the projection has any `dmrId > 0`. An empty or non-positive projection is kept byte-for-byte ([#1291](https://github.com/pskillen/codeplug-studio/issues/1291)); that exception is an encode guard, not a move into **Kept**.
+
+Zone pages are tags `0x5C` through `0x64` in tag order (about 28 zones each). Only `0x5C` carries the 16-byte header. Later pages pack from offset 0 and keep their own tag. When the projection does not fit on pages the radio already has, Write claims the lowest-address free page (`0x00` or `0xFF`) and stamps the next missing tag in that range once. It never stamps a second `0x5C`, and it never writes a zone page onto a block that already has any other tag. If no free page remains, or the next tag would pass `0x64`, leftover zones stay unwritten. An empty zone list does not claim a page. An already-present later zone page is bulk-read with the other zone blocks; empty pages are not.
+
+A write that adds a zone page the radio did not already have is unsafe until the operator power-cycles. The firmware RAM tag table does not learn the new page until reboot, and the next on-radio edit can erase it. Studio does not send a reboot command. The operator warning is [#1298](https://github.com/pskillen/codeplug-studio/issues/1298).
+
+Tag `0x44` stays the talk-group page. Tags `0x45`–`0x48` are present and are left unread and unwritten until a dump shows their payload.
 
 ## Verification
 

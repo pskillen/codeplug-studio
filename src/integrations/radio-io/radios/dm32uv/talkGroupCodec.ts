@@ -138,6 +138,9 @@ export function encodeTalkGroupsIntoDm32Image(
   ctx: Dm32TalkGroupEncodeContext,
   talkGroups: readonly RadioTalkGroupDto[],
 ): MemoryMap {
+  // Tag 0x44 is the talk-group page. Tags 0x45–0x48 exist on the radio, are not
+  // read or written, and must not be filled in from the CPS 24-byte contact
+  // reading. Do not claim a free page for them.
   const tgBlock = findBlock(ctx.discovered, DM32_METADATA.TALK_GROUPS);
   const quick = findBlock(ctx.discovered, DM32_METADATA.METADATA_0x0B);
 

@@ -97,6 +97,8 @@ A different bank from the V-frame `0x0F` address book above. Byte **`+0x1FF`** i
 | Name             | 11 bytes ASCII                                                                             |
 | Members          | Count at +16; u16 LE channel numbers from +17; max **64**; unused member bytes stay `0xFF` |
 
+Further zone pages are tags `0x5D`–`0x64` in tag order; the page range is in [memory-layout.md](memory-layout.md).
+
 ### First-block header (bytes 0–15)
 
 VFO A/B selected zone and channel indices live in the **zone bank** first block header (not settings `0x04`). Offsets cite qDMR `ZoneBankElement`; wire values are **1-based** (`0` = unset).
