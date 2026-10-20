@@ -27,9 +27,10 @@ Warn at backup: after a factory reset, a backup taken beforehand cannot be resto
 
 1. App identity: model match. This layout has **no serial** in the zip — confirm firmware / label. Serial mismatch is a hard refuse when a zip has a serial (D890-style archives).
 2. Live V-frame bases must match the manifest or restore is refused **before any write**.
-3. `Dm32uvProtocol.restoreFromBackup` — connected PROGRAM session; writes selected restorable 4KB blocks at their archive addresses.
-4. Never calibration. Never assemble. Never persist a radio-clone bag.
-5. Progress copy is **Restore**, not “Writing codeplug.” Write-codeplug overlays modelled channels onto an in-session content pre-write read; Restore does **not** call `upload()`, assemble, or that pre-write read.
+3. Duplicate occupied metadata tags are refused before any write ([protocol.md](protocol.md#write-codeplug-4kb-block)).
+4. `Dm32uvProtocol.restoreFromBackup` — connected PROGRAM session; writes selected restorable 4KB blocks at their archive addresses.
+5. Never calibration. Never assemble. Never persist a radio-clone bag.
+6. Progress copy is **Restore**, not “Writing codeplug.” Write-codeplug overlays modelled channels onto an in-session content pre-write read; Restore does **not** call `upload()`, assemble, or that pre-write read. After a successful Restore, stock and MM9PDY tell the operator to power the radio off and on ([protocol.md](protocol.md#write-codeplug-4kb-block)).
 
 ## Related
 
