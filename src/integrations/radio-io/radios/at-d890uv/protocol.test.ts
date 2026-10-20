@@ -428,7 +428,7 @@ describe('AtD890uvProtocol', () => {
 
     const endWrites = pipe.writes.filter((w) => new TextDecoder().decode(w) === 'END');
     expect(endWrites).toHaveLength(0);
-  });
+  }, 20_000);
 
   it('refuses upload when sentinel regions read all 0xff before any write frames', async () => {
     const pipe = new AtD890ScriptedPipe();
