@@ -42,6 +42,23 @@ function buildChannelDataWritableExtents(): AtD890MemoryExtent[] {
 
 const CHANNEL_DATA_WRITABLE_EXTENTS = buildChannelDataWritableExtents();
 
+/**
+ * Bitmap width (`SCAN_LIST_SET_BYTES` × 8), not the product encode cap.
+ * Upload walks every set bit, including slots above that cap.
+ * Each bank is `ScanListBankSize` × stride; the pitch gap stays off the allow-list.
+ */
+function buildScanListDataWritableExtents(): AtD890MemoryExtent[] {
+  const bankCount = SCAN_SLOTS / D890_MAP.ScanListBankSize;
+  const bankLength = D890_MAP.ScanListBankSize * D890_MAP.ScanListStride;
+  return Array.from({ length: bankCount }, (_, bankIndex) => ({
+    id: `ScanListData.bank${bankIndex}`,
+    start: D890_MAP.ScanListData + bankIndex * D890_MAP.ScanListBankPitch,
+    length: bankLength,
+  }));
+}
+
+const SCAN_LIST_DATA_WRITABLE_EXTENTS = buildScanListDataWritableExtents();
+
 /** Modelled banks Studio may serial-write (positive allow-list). */
 export const AT_D890_WRITABLE_EXTENTS: readonly AtD890MemoryExtent[] = [
   { id: 'ChannelSet', start: D890_MAP.ChannelSet, length: AT_D890_LIMITS.CHANNEL_SET_BYTES },
@@ -61,11 +78,7 @@ export const AT_D890_WRITABLE_EXTENTS: readonly AtD890MemoryExtent[] = [
     length: D890_MAP.ZoneChannelsStride * ZONE_SLOTS,
   },
   { id: 'ScanListSet', start: D890_MAP.ScanListSet, length: AT_D890_LIMITS.SCAN_LIST_SET_BYTES },
-  {
-    id: 'ScanListData',
-    start: D890_MAP.ScanListData,
-    length: D890_MAP.ScanListStride * SCAN_SLOTS,
-  },
+  ...SCAN_LIST_DATA_WRITABLE_EXTENTS,
   {
     id: 'TalkgroupSet',
     start: D890_MAP.TalkgroupSet,

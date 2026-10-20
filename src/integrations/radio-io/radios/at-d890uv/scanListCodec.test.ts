@@ -4,6 +4,7 @@ import { AT_D890_SCAN_TIMING_DECISECONDS } from '@core/radios/anytone/at-d890uv/
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
+import { scanListAddress } from './memory.ts';
 import {
   encodeAtD890ScanListRecord,
   encodeScanListsIntoAtD890Image,
@@ -97,6 +98,22 @@ describe('scanListCodec', () => {
 });
 
 describe('encodeScanListsIntoAtD890Image', () => {
+  it('stores listIndex 33 in bank 1 and leaves the gap after bank 0 erased', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    encodeScanListsIntoAtD890Image(image, [
+      { wireName: 'Far', listIndex: 33, channelNumbers: [1] },
+    ]);
+
+    expect(scanListAddress(32)).toBe(0x218_0000);
+    const stored = image.get(scanListAddress(32), AT_D890_LIMITS.SCAN_LIST_RECORD_SIZE);
+    expect(stored[0xf8]).toBe(0x01);
+    expect(stored[0]).toBe(0x00);
+    // Flat `base + 32 * stride` is the first byte after bank 0, not list 32.
+    expect(image.get(0x210_4000, 1)[0]).toBe(0xff);
+    expect(image.get(0x210_4000 + 0xf8, 1)[0]).toBe(0xff);
+  });
+
   it('leaves ScanListSet bytes for bits 100–255 when bit 249 was preset', () => {
     const image = createMemoryMap(0x500_0000);
     image.fill(0, 0x500_0000, 0xff);

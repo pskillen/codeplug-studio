@@ -54,10 +54,28 @@ describe('AT_D890_MEMORY_REGIONS', () => {
 
     expect(zonesName.chunks[0]!.length).toBe(AT_D890_DUMP_ZONES * D890_MAP.ZoneDataOffset);
     expect(zoneChannels.chunks[0]!.length).toBe(AT_D890_DUMP_ZONES * D890_MAP.ZoneChannelsStride);
-    expect(scanListData.chunks[0]!.length).toBe(AT_D890_DUMP_SCAN_LISTS * D890_MAP.ScanListStride);
+    expect(scanListData.chunks).toHaveLength(AT_D890_DUMP_SCAN_LISTS / D890_MAP.ScanListBankSize);
+    expect(scanListData.chunks[0]!.address).toBe(D890_MAP.ScanListData);
+    expect(scanListData.chunks[0]!.length).toBe(
+      D890_MAP.ScanListBankSize * D890_MAP.ScanListStride,
+    );
+    expect(scanListData.chunks[1]!.address).toBe(
+      D890_MAP.ScanListData + D890_MAP.ScanListBankPitch,
+    );
+    expect(scanListData.chunks.reduce((sum, chunk) => sum + chunk.length, 0)).toBe(
+      AT_D890_DUMP_SCAN_LISTS * D890_MAP.ScanListStride,
+    );
     expect(receiveGroupSet.chunks[0]!.length).toBe(AT_D890_LIMITS.RX_GROUP_SET_BYTES);
     expect(receiveGroupData.chunks[0]!.length).toBe(
       AT_D890_DUMP_RX_GROUP_LISTS * D890_MAP.ReceiveGroupStride,
+    );
+  });
+
+  it('stops the scan-list alias probe at bank 1', () => {
+    const probe = AT_D890_DUMP_REGIONS.find((r) => r.id === 'probeScanListData')!;
+    expect(probe.chunks[0]!.address).toBe(0x214_0000);
+    expect(probe.chunks[0]!.address + probe.chunks[0]!.length).toBe(
+      D890_MAP.ScanListData + D890_MAP.ScanListBankPitch,
     );
   });
 

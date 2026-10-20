@@ -8,6 +8,7 @@ import {
   getCacheBytes,
   listWriteChunks,
   putCacheBytes,
+  scanListAddress,
   talkgroupAddress,
   type AtD890DownloadCache,
 } from './memory.ts';
@@ -20,6 +21,15 @@ import {
   cacheFromBag,
   mergeChannelsIntoAtD890uvHydration,
 } from './hydration.ts';
+
+describe('scanListAddress', () => {
+  it('places list 32 at the next bank, not the byte after bank 0', () => {
+    expect(scanListAddress(0)).toBe(0x210_0000);
+    expect(scanListAddress(31)).toBe(0x210_3e00);
+    expect(scanListAddress(32)).toBe(0x218_0000);
+    expect(scanListAddress(33)).toBe(0x218_0200);
+  });
+});
 
 describe('alignedSpanForAtD890Region', () => {
   it('covers odd talkgroup slots that are not 16-aligned', () => {

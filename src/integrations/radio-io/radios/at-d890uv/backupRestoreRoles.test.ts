@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AT_D890_BACKUP_REGION_SPANS,
   atD890BackupRestoreRole,
   atD890BackupSpanForAddress,
   isAtD890RestoreNeverWriteAddress,
 } from './backupRestoreRoles.ts';
-import { AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
+import { AT_D890_LIMITS, AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
+import { scanListAddress } from './memory.ts';
 
 describe('AT_D890_BACKUP_REGION_SPANS', () => {
   it('marks LocalInfo and alarm inspect-only', () => {
@@ -38,6 +40,21 @@ describe('AT_D890_BACKUP_REGION_SPANS', () => {
     expect(atD890BackupRestoreRole(0x1234, 0x10)).toBe('inspect-only');
     expect(atD890BackupRestoreRole(AT_D890_SAFE_SKIP_WRITE_ADDR, 0x10)).toBe('inspect-only');
     expect(isAtD890RestoreNeverWriteAddress(AT_D890_SAFE_SKIP_WRITE_ADDR)).toBe(true);
+  });
+
+  it('restores each scan-list bank without archiving the pitch gap', () => {
+    const banks = AT_D890_BACKUP_REGION_SPANS.filter((span) =>
+      span.id.startsWith('scan-list-data.bank'),
+    );
+    const bankCount = (AT_D890_LIMITS.SCAN_LIST_SET_BYTES * 8) / D890_MAP.ScanListBankSize;
+    expect(banks).toHaveLength(bankCount);
+    expect(
+      banks.every((span) => span.length === D890_MAP.ScanListBankSize * D890_MAP.ScanListStride),
+    ).toBe(true);
+    expect(banks.every((span) => span.restoreRole === 'restorable')).toBe(true);
+    expect(atD890BackupRestoreRole(scanListAddress(32), 0x10)).toBe('restorable');
+    expect(atD890BackupRestoreRole(0x210_4000, 0x10)).toBe('inspect-only');
+    expect(atD890BackupSpanForAddress(0x214_0000)).toBeUndefined();
   });
 
   it('names LocalInfo and channel-data spans', () => {

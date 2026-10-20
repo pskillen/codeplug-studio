@@ -101,6 +101,10 @@ export const D890_MAP = {
   ScanListData: 0x210_0000,
   ScanListStride: 0x200,
   ScanListLength: 0xfa,
+  /** Lists packed in one bank before the next {@link ScanListBankPitch}. */
+  ScanListBankSize: 32,
+  /** Address pitch from scan-list bank n to bank n+1. The gap is not payload. */
+  ScanListBankPitch: 0x8_0000,
   TalkgroupSet: 0x398_0000,
   TalkgroupData: 0x3a0_0000,
   TalkgroupStride: 0xc8,

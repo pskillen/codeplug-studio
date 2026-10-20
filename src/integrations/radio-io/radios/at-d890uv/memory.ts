@@ -54,7 +54,13 @@ export function zoneChannelsAddress(zoneIndex: number): number {
 }
 
 export function scanListAddress(index: number): number {
-  return D890_MAP.ScanListData + index * D890_MAP.ScanListStride;
+  const bankIndex = Math.floor(index / D890_MAP.ScanListBankSize);
+  const indexInBank = index % D890_MAP.ScanListBankSize;
+  return (
+    D890_MAP.ScanListData +
+    bankIndex * D890_MAP.ScanListBankPitch +
+    indexInBank * D890_MAP.ScanListStride
+  );
 }
 
 export function talkgroupAddress(index: number): number {

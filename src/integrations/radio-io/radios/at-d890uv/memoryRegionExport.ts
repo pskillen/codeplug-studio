@@ -88,6 +88,20 @@ function channelDataChunks(): AtD890MemoryRegionChunk[] {
   return chunks;
 }
 
+/** One chunk per bank. Width follows the dump slot count, not the product encode cap. */
+function scanListDataChunks(): AtD890MemoryRegionChunk[] {
+  const perBank = D890_MAP.ScanListBankSize * D890_MAP.ScanListStride;
+  const bankCount = AT_D890_DUMP_SCAN_LISTS / D890_MAP.ScanListBankSize;
+  const chunks: AtD890MemoryRegionChunk[] = [];
+  for (let bank = 0; bank < bankCount; bank++) {
+    chunks.push({
+      address: D890_MAP.ScanListData + bank * D890_MAP.ScanListBankPitch,
+      length: perBank,
+    });
+  }
+  return chunks;
+}
+
 function region(
   id: string,
   label: string,
@@ -110,6 +124,8 @@ function region(
  * Each span starts one erase unit (`0x40000`) above the bank and runs to the next known
  * bank, so it catches a displacement of `+0x40000`, `+0x80000` or `+0xC0000` — not only the
  * exact offset seen once in the talkgroup bank. Nothing else is known to live in these gaps.
+ * Scan-list bank 1 begins `ScanListBankPitch` (`0x80000`) above bank 0, so
+ * `probeScanListData` stops there and only covers the `+0x40000` gap.
  *
  * Not in the default dump path — export the `aliasProbe` group explicitly. `ChannelData` is
  * deliberately absent: `ChannelDataAliasStride` is `0x40000`, so `0x1040000` already mirrors
@@ -117,7 +133,9 @@ function region(
  */
 const ALIAS_PROBE_REGIONS: readonly AtD890MemoryRegion[] = [
   region('probeZoneChannels', 'above zoneChannels', 'aliasProbe', 0x204_0000, 0xc_0000),
-  region('probeScanListData', 'above scanListData', 'aliasProbe', 0x214_0000, 0xc_0000),
+  // Bank 1 starts at ScanListData + ScanListBankPitch (0x2180000). This window is only
+  // the +0x40000 gap above bank 0; 0xc0000 used to run through bank 1 into bank 2.
+  region('probeScanListData', 'above scanListData', 'aliasProbe', 0x214_0000, 0x4_0000),
   region('probeBitmaps', 'above channel/zone/scan bitmaps', 'aliasProbe', 0x34c_0000, 0x4_0000),
   region('probeZonesName', 'above zonesName', 'aliasProbe', 0x364_0000, 0x4_0000),
   region('probeReceiveGroupData', 'above receiveGroupData', 'aliasProbe', 0x37c_0000, 0x4_0000),
@@ -219,13 +237,12 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
     D890_MAP.ZoneTableBytes,
   ),
   region('scanListSet', 'Scan-list occupancy bitmap', 'scanLists', D890_MAP.ScanListSet, 0x20),
-  region(
-    'scanListData',
-    'Scan-list records',
-    'scanLists',
-    D890_MAP.ScanListData,
-    AT_D890_DUMP_SCAN_LISTS * D890_MAP.ScanListStride,
-  ),
+  {
+    id: 'scanListData',
+    label: 'Scan-list records',
+    group: 'scanLists',
+    chunks: scanListDataChunks(),
+  },
   region('talkgroupSet', 'Talkgroup occupancy bitmap', 'talkgroups', D890_MAP.TalkgroupSet, 0x4f0),
   region(
     'talkgroupData',

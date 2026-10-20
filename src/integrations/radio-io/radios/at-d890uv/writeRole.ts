@@ -39,8 +39,22 @@ function inBank(address: number, base: number, stride: number, slotCount: number
   return inExclusiveSpan(address, base, stride * slotCount);
 }
 
+/**
+ * Scan-list records are banked: 32 strides, then a pitch gap. A flat
+ * `stride × bitmap slots` span from `ScanListData` stops at `0x2120000` and
+ * misses bank 1 (`0x2180000`).
+ */
+function inScanListDataBank(address: number): boolean {
+  if (address < D890_MAP.ScanListData) return false;
+  const bankCount = bitmapSlotCount(AT_D890_LIMITS.SCAN_LIST_SET_BYTES) / D890_MAP.ScanListBankSize;
+  const bankIndex = Math.floor((address - D890_MAP.ScanListData) / D890_MAP.ScanListBankPitch);
+  if (bankIndex < 0 || bankIndex >= bankCount) return false;
+  const bankStart = D890_MAP.ScanListData + bankIndex * D890_MAP.ScanListBankPitch;
+  const bankLength = D890_MAP.ScanListBankSize * D890_MAP.ScanListStride;
+  return address >= bankStart && address < bankStart + bankLength;
+}
+
 const ZONE_SLOTS = bitmapSlotCount(AT_D890_LIMITS.ZONE_SET_BYTES);
-const SCAN_SLOTS = bitmapSlotCount(AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
 const RADIO_ID_SLOTS = bitmapSlotCount(AT_D890_LIMITS.RADIO_ID_SET_BYTES);
 const RX_GROUP_SLOTS = bitmapSlotCount(AT_D890_LIMITS.RX_GROUP_SET_BYTES);
 const TALKGROUP_SLOTS = bitmapSlotCount(AT_D890_LIMITS.TALKGROUP_SET_BYTES);
@@ -92,9 +106,7 @@ export function atD890RegionLabel(address: number): string {
     return 'Operator radio IDs';
   }
   if (address === D890_MAP.ScanListSet) return 'Scan list bitmap';
-  if (inBank(address, D890_MAP.ScanListData, D890_MAP.ScanListStride, SCAN_SLOTS)) {
-    return 'Scan lists';
-  }
+  if (inScanListDataBank(address)) return 'Scan lists';
   if (address === D890_MAP.TalkgroupSet) return 'Talk group bitmap';
   if (inBank(address, D890_MAP.TalkgroupData, D890_MAP.TalkgroupStride, TALKGROUP_SLOTS)) {
     return 'Talk groups';
@@ -143,9 +155,7 @@ export function atD890WriteRole(address: number): AtD890WriteRole {
   if (inBank(address, D890_MAP.RadioIdData, D890_MAP.RadioIdStride, RADIO_ID_SLOTS)) {
     return 'replaced';
   }
-  if (inBank(address, D890_MAP.ScanListData, D890_MAP.ScanListStride, SCAN_SLOTS)) {
-    return 'replaced';
-  }
+  if (inScanListDataBank(address)) return 'replaced';
   if (inBank(address, D890_MAP.TalkgroupData, D890_MAP.TalkgroupStride, TALKGROUP_SLOTS)) {
     return 'replaced';
   }

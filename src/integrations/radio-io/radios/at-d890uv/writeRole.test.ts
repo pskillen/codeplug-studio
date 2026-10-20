@@ -3,6 +3,7 @@ import { D890_MAP } from './constants.ts';
 import {
   radioIdAddress,
   receiveGroupAddress,
+  scanListAddress,
   talkgroupAddress,
   zoneChannelsAddress,
   zoneNameAddress,
@@ -51,6 +52,13 @@ describe('atD890RegionLabel / atD890WriteRole', () => {
     expect(addr).toBeGreaterThan(D890_MAP.ScanListData);
     expect(atD890RegionLabel(addr)).toBe('Operator radio IDs');
     expect(atD890WriteRole(addr)).toBe('replaced');
+  });
+
+  it('classifies bank 1 scan lists as replaced', () => {
+    expect(scanListAddress(32)).toBe(0x218_0000);
+    expect(atD890RegionLabel(scanListAddress(32))).toBe('Scan lists');
+    expect(atD890WriteRole(scanListAddress(32))).toBe('replaced');
+    expect(atD890WriteRole(0x210_4000)).toBe('kept');
   });
 
   it('classifies TalkgroupOrder as replaced when talk groups are rewritten', () => {
