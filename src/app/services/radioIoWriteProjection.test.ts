@@ -354,11 +354,12 @@ describe('buildRadioWriteProjection', () => {
 
     const homeRec = encodeDm32ChannelRecord(bySlot.get(homeCarrier)!);
     const walkRec = encodeDm32ChannelRecord(bySlot.get(walkCarrier)!);
-    expect((homeRec[0x19]! >> 2) & 0x0f).toBe(1);
-    expect((walkRec[0x19]! >> 2) & 0x0f).toBe(2);
+    expect(homeRec[0x19]! & 0x3f).toBe(1);
+    expect(walkRec[0x19]! & 0x3f).toBe(2);
     expect(homeRec[0x19]! & 0x80).toBe(0x00); // NFM (narrow)
     expect(homeRec[0x19]! & 0x40).toBe(0x40); // scanAdd
-    expect(walkRec[0x19]).toBe(0x48);
+    expect(homeRec[0x19]).toBe(0x41);
+    expect(walkRec[0x19]).toBe(0x42);
 
     const addressBase = 0x8e000;
     const image = createMemoryMap(0x20_000);
@@ -373,7 +374,7 @@ describe('buildRadioWriteProjection', () => {
     );
     expect(walkFromImage?.wireName).toMatch(/Morn.*Scan|Walk.*Scan/i);
     const walkSlotOff = 0x10 + (walkCarrier - 1) * 48;
-    expect(image.bytes[walkSlotOff + 0x19]).toBe(0x48);
+    expect(image.bytes[walkSlotOff + 0x19]).toBe(0x42);
   });
 
   it('stamps UV-5R Mini scanAdd from effective scan inclusion', () => {

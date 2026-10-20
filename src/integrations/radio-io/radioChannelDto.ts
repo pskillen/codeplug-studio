@@ -45,8 +45,8 @@ export interface RadioChannelDto {
   /** RX group list index (0-based / radio-native). */
   rxGroupIndex?: number;
   /**
-   * Scan list id on channel record (1–32); bit-packed into byte 0x19 bits 5–2.
-   * Undefined = leave scan-list id unset (0).
+   * 1-based scan-list id in byte 0x19 bits 5–0 (0 = none, max 32 on DM-32UV).
+   * Undefined encodes as 0. Bit 6 is scan-add; bit 7 is bandwidth.
    */
   scanListId?: number;
   /** When true, set scan-add bit (0x19 bit 6). */
