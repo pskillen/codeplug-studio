@@ -12,6 +12,7 @@ import {
   mergeImageRegionIntoCache,
   clearTalkgroupDataBlocksFromCache,
   clearTalkgroupOrderBlocksFromCache,
+  clearTalkgroupPositionBlocksFromCache,
   talkgroupAddress,
   type AtD890DownloadCache,
 } from './memory.ts';
@@ -26,6 +27,54 @@ function writeU32Be(buf: Uint8Array, offset: number, value: number): void {
   buf[offset + 1] = (value >> 16) & 0xff;
   buf[offset + 2] = (value >> 8) & 0xff;
   buf[offset + 3] = value & 0xff;
+}
+
+function writeU32Le(buf: Uint8Array, offset: number, value: number): void {
+  buf[offset] = value & 0xff;
+  buf[offset + 1] = (value >> 8) & 0xff;
+  buf[offset + 2] = (value >> 16) & 0xff;
+  buf[offset + 3] = (value >> 24) & 0xff;
+}
+
+/**
+ * `n` is how many records this call writes. When those slots are not exactly
+ * `{0 .. n-1}`, `n` becomes one past the highest written slot so every written
+ * slot sits in the prefix. Empty input is `0`. The table itself is always
+ * `TALK_GROUPS_MAX` entries.
+ */
+function talkgroupPositionPrefixLength(slots: readonly number[]): number {
+  const limit = AT_D890UV_LIMITS.TALK_GROUPS_MAX;
+  if (slots.length === 0) return 0;
+  let n = slots.length;
+  const present = new Set(slots);
+  let contiguous = present.size === n;
+  if (contiguous) {
+    for (let i = 0; i < n; i++) {
+      if (!present.has(i)) {
+        contiguous = false;
+        break;
+      }
+    }
+  }
+  if (!contiguous) {
+    let highest = slots[0]!;
+    for (const slot of slots) {
+      if (slot > highest) highest = slot;
+    }
+    n = highest + 1;
+  }
+  return n > limit ? limit : n;
+}
+
+/** Identity prefix, then `0xFFFFFFFF` through the end of the search window. */
+function encodeAtD890TalkgroupPositionTable(slots: readonly number[]): Uint8Array {
+  const table = new Uint8Array(AT_D890UV_LIMITS.TALK_GROUPS_MAX * 4);
+  table.fill(0xff);
+  const n = talkgroupPositionPrefixLength(slots);
+  for (let i = 0; i < n; i++) {
+    writeU32Le(table, i * 4, i);
+  }
+  return table;
 }
 
 function encodeAtD890TalkgroupCallType(callType: number | undefined): number {
@@ -107,15 +156,18 @@ export function encodeTalkgroupsIntoAtD890Image(
   for (let i = 0; i < max; i++) {
     image.fill(talkgroupAddress(i), AT_D890_LIMITS.TALKGROUP_RECORD_SIZE, 0);
   }
+  const writtenSlots: number[] = [];
   for (const tg of talkGroups) {
     if (tg.digitalId <= 0) continue;
     const idx = tg.index - 1;
     if (idx < 0) continue;
     setBitmapBit(set, idx, true, true);
     image.set(talkgroupAddress(idx), encodeAtD890TalkgroupRecord(tg));
+    writtenSlots.push(idx);
   }
   image.set(D890_MAP.TalkgroupSet, set);
   image.set(D890_MAP.TalkgroupOrder, encodeAtD890TalkgroupOrder(talkGroups));
+  image.set(D890_MAP.TalkgroupPosition, encodeAtD890TalkgroupPositionTable(writtenSlots));
   return image;
 }
 
@@ -144,5 +196,12 @@ export function syncTalkgroupRegionsToCache(
     clearTalkgroupOrderBlocksFromCache(cache);
     const order = encodeAtD890TalkgroupOrder(talkGroups);
     mergeImageRegionIntoCache(cache, image, D890_MAP.TalkgroupOrder, order.length);
+    clearTalkgroupPositionBlocksFromCache(cache);
+    mergeImageRegionIntoCache(
+      cache,
+      image,
+      D890_MAP.TalkgroupPosition,
+      AT_D890UV_LIMITS.TALK_GROUPS_MAX * 4,
+    );
   }
 }

@@ -8,7 +8,13 @@ import {
   atD890BackupSpanForAddress,
 } from '../radios/at-d890uv/backupRestoreRoles.ts';
 import { D890_MAP } from '../radios/at-d890uv/constants.ts';
-import { dm32BackupRestoreRole } from '../radios/dm32uv/backupRestoreRoles.ts';
+import {
+  dm32BackupRestoreRole,
+  isDm32CalibrationBlock,
+  isDm32Tag02OutsideConfigWindow,
+} from '../radios/dm32uv/backupRestoreRoles.ts';
+import { selectDm32CalibrationPages, type Dm32ConfigWindow } from '../radios/dm32uv/memory.ts';
+import { DM32_BLOCK_SIZE, DM32_METADATA_OFFSET } from '../radios/dm32uv/constants.ts';
 import { OPENGD77_BACKUP_FLASH_SPANS } from '../radios/opengd77/backupRestoreRoles.ts';
 import { OPENUV380_IMAGE_SIZE, openUv380AbsToOffset } from '../radios/opengd77/constants.ts';
 import { RT95_IMAGE_SIZE, RT95_MODEL_ID } from '../radios/rt95/constants.ts';
@@ -50,6 +56,11 @@ export interface RegionsFromDownloadInput {
   addressBase?: number;
   dm32ContactsBase?: number;
   dm32ContactsEnd?: number;
+  /**
+   * Live V-frame `0x0A` window (`addressBase` through `alignedEnd`).
+   * Tag `0x02` is calibration only inside this window.
+   */
+  dm32ConfigWindow?: Dm32ConfigWindow;
   /** Extra named bins (OpenGD77 occupied User Database). */
   extraRegions?: readonly { region: RadioBackupRegionV1; bytes: Uint8Array }[];
 }
@@ -132,12 +143,18 @@ function uvLayoutFor(modelId: string) {
   return null;
 }
 
-function blockRole(modelId: string, address: number, data: Uint8Array): RadioBackupRegionRole {
+function blockRole(
+  modelId: string,
+  address: number,
+  data: Uint8Array,
+  dm32ConfigWindow?: Dm32ConfigWindow,
+): RadioBackupRegionRole {
   if (isD890Model(modelId)) {
     return d890Role(address, data.byteLength);
   }
   if (isDm32Model(modelId)) {
-    return dm32BackupRestoreRole(data);
+    if (!dm32ConfigWindow) return 'restorable';
+    return dm32BackupRestoreRole(data, address, dm32ConfigWindow);
   }
   return 'restorable';
 }
@@ -151,14 +168,23 @@ function d890CoalesceKey(address: number, length: number): string {
 function coalesceSparse(
   modelId: string,
   blocks: readonly BackupSparseBlock[],
+  dm32ConfigWindow?: Dm32ConfigWindow,
 ): BackupSparseBlock[] {
   const sorted = [...blocks].sort((a, b) => a.address - b.address);
   const out: BackupSparseBlock[] = [];
   for (const block of sorted) {
     const last = out[out.length - 1];
+    const calibrationPage = (candidate: BackupSparseBlock | undefined): boolean =>
+      !!candidate &&
+      !!dm32ConfigWindow &&
+      isDm32Model(modelId) &&
+      isDm32CalibrationBlock(candidate.data, candidate.address, dm32ConfigWindow);
     const sameRole =
       last &&
-      blockRole(modelId, last.address, last.data) === blockRole(modelId, block.address, block.data);
+      !calibrationPage(last) &&
+      !calibrationPage(block) &&
+      blockRole(modelId, last.address, last.data, dm32ConfigWindow) ===
+        blockRole(modelId, block.address, block.data, dm32ConfigWindow);
     const sameD890Span =
       !isD890Model(modelId) ||
       (last &&
@@ -189,14 +215,33 @@ function fromSparseBlocks(
   image: MemoryMap,
   sparseBlocks: readonly BackupSparseBlock[],
   extra?: Partial<BackupRegionExtract>,
+  dm32ConfigWindow?: Dm32ConfigWindow,
 ): BackupRegionExtract {
-  const coalesced = coalesceSparse(modelId, sparseBlocks);
+  const packed = sparseBlocks.filter((block) => {
+    if (!isDm32Model(modelId) || !dm32ConfigWindow) return true;
+    return !isDm32Tag02OutsideConfigWindow(block.data, block.address, dm32ConfigWindow);
+  });
+  const coalesced = coalesceSparse(modelId, packed, dm32ConfigWindow);
+  const calibration = dm32ConfigWindow
+    ? selectDm32CalibrationPages(
+        coalesced
+          .filter((block) => block.data.byteLength >= DM32_BLOCK_SIZE)
+          .map((block) => ({
+            address: block.address,
+            metadata: block.data[DM32_METADATA_OFFSET] ?? 0,
+          })),
+        dm32ConfigWindow,
+      )
+    : { live: null, duplicates: [] };
+  const duplicateAddresses = new Set(calibration.duplicates.map((page) => page.address));
   const usedIds = new Set<string>();
   const parts = coalesced.map((block, index) => {
     const inspect =
       isD890Model(modelId) && d890Role(block.address, block.data.byteLength) === 'inspect-only';
     const dm32Inspect =
-      isDm32Model(modelId) && dm32BackupRestoreRole(block.data) === 'inspect-only';
+      isDm32Model(modelId) &&
+      dm32ConfigWindow != null &&
+      dm32BackupRestoreRole(block.data, block.address, dm32ConfigWindow) === 'inspect-only';
     const restoreRole: RadioBackupRegionRole =
       inspect || dm32Inspect ? 'inspect-only' : 'restorable';
     const d890Span = isD890Model(modelId) ? atD890BackupSpanForAddress(block.address) : undefined;
@@ -212,7 +257,11 @@ function fromSparseBlocks(
     const label = d890Span
       ? d890Span.label
       : dm32Inspect
-        ? `Calibration (${hexId(block.address)})`
+        ? block.address === calibration.live?.address
+          ? `Live calibration page (${hexId(block.address)})`
+          : duplicateAddresses.has(block.address)
+            ? `Duplicate calibration page, not live (${hexId(block.address)})`
+            : `Calibration (${hexId(block.address)})`
         : inspect
           ? `Inspect-only (${hexId(block.address)})`
           : `Region ${index + 1} (${hexId(block.address)})`;
@@ -255,6 +304,20 @@ function fromRt95(image: MemoryMap): BackupRegionExtract {
   );
 }
 
+function appendExtraRegions(
+  extract: BackupRegionExtract,
+  extraRegions?: readonly { region: RadioBackupRegionV1; bytes: Uint8Array }[],
+): BackupRegionExtract {
+  if (!extraRegions || extraRegions.length === 0) return extract;
+  const regions = [...extract.regions];
+  const regionBytes = { ...extract.regionBytes };
+  for (const part of extraRegions) {
+    regions.push(part.region);
+    regionBytes[part.region.id] = part.bytes;
+  }
+  return { ...extract, regions, regionBytes };
+}
+
 /**
  * Build named region bins from a live download image (and optional sparse cache).
  */
@@ -269,7 +332,8 @@ export function regionsFromDownload(input: RegionsFromDownloadInput): BackupRegi
   }
 
   if (sparseBlocks && sparseBlocks.length > 0) {
-    return fromSparseBlocks(modelId, image, sparseBlocks, extra);
+    const extract = fromSparseBlocks(modelId, image, sparseBlocks, extra, input.dm32ConfigWindow);
+    return appendExtraRegions(extract, input.extraRegions);
   }
 
   const uv = uvLayoutFor(modelId);

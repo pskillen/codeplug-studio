@@ -40,7 +40,7 @@ node src/integrations/radio-io/radios/at-d890uv/__fixtures__/extractHealthyChann
   /path/to/project.yaml [egressPathId]
 ```
 
-`channelCodec.test.ts` round-trips every fixture with `parseAtD890ChannelRecord` → `encodeAtD890ChannelRecord` for **modelled** fields. Unmodelled offsets encode as [write defaults](channel-record.md#write-defaults-unmodelled-fields) (not byte-identical to the forensic occupant).
+`channelCodec.test.ts` round-trips every fixture with `parseAtD890ChannelRecord` → `encodeAtD890ChannelRecord` for **modelled** fields. That loop encodes **without** a prior, so unmodelled offsets stay [write defaults](channel-record.md#write-defaults-unmodelled-fields) (not a byte-identical round-trip). Image encode with a planted prior keeps the [preserve list](channel-record.md#preserve-list) from that slot.
 
 Acceptance for [#647](https://github.com/pskillen/codeplug-studio/issues/647) cross-checks region bases, strides, and protocol constants against anytone-cps `D890_MAP` / `SerialDevice`. A live dump is valuable for adapter [#649](https://github.com/pskillen/codeplug-studio/issues/649) but is not required to land these reference pages.
 

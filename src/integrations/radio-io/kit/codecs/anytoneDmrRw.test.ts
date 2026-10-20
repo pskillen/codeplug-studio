@@ -113,6 +113,14 @@ describe('anytoneDmrRwCodec frames', () => {
     badTrailer[badTrailer.length - 1] = 0x15;
     expect(() => parseAnytoneDmrReadReply(badTrailer)).toThrow(RadioProtocolError);
   });
+
+  it('checks the echoed address only when one is expected', () => {
+    const payload = new Uint8Array(16).fill(0xcd);
+    const frame = buildReadReply(0x0100_0000, payload);
+    expect(parseAnytoneDmrReadReply(frame, 16, 0x0100_0000)).toEqual(payload);
+    expect(() => parseAnytoneDmrReadReply(frame, 16, 0x0200_0000)).toThrow(/address mismatch/);
+    expect(() => parseAnytoneDmrReadReply(frame, 16, 0x0200_0000)).not.toThrow(/checksum/);
+  });
 });
 
 describe('enterAnytoneDmrProgramMode', () => {
@@ -127,6 +135,18 @@ describe('enterAnytoneDmrProgramMode', () => {
     await expect(enterAnytoneDmrProgramMode(pipe, 100)).resolves.toBeUndefined();
   });
 
+  it('qx-only rejects lone 0x00 and still accepts QX\\x06', async () => {
+    const nul = mockPipe([new Uint8Array([0x00])]);
+    await expect(
+      enterAnytoneDmrProgramMode(nul.pipe, 100, { programAck: 'qx-only' }),
+    ).rejects.toBeInstanceOf(RadioProtocolError);
+
+    const qx = mockPipe([new Uint8Array([0x51]), new Uint8Array([0x58, 0x06])]);
+    await expect(
+      enterAnytoneDmrProgramMode(qx.pipe, 100, { programAck: 'qx-only' }),
+    ).resolves.toBeUndefined();
+  });
+
   it('rejects unexpected enter reply', async () => {
     const { pipe } = mockPipe([new Uint8Array([0xff])]);
     await expect(enterAnytoneDmrProgramMode(pipe, 100)).rejects.toBeInstanceOf(RadioProtocolError);
@@ -134,20 +154,17 @@ describe('enterAnytoneDmrProgramMode', () => {
 });
 
 describe('probeAnytoneDmrIdent', () => {
-  it('returns raw ident bytes ending in 0x06', async () => {
-    const ident = new Uint8Array([
-      ...new TextEncoder().encode('ID890UV\0'),
-      0x00,
-      ...new TextEncoder().encode('V100'),
-      0x06,
-    ]);
-    const reads: Uint8Array[] = [];
-    for (const byte of ident) {
-      reads.push(new Uint8Array([byte]));
-    }
-    const { pipe, writes } = mockPipe(reads);
+  it('returns all 16 ident bytes when 0x06 appears before the end', async () => {
+    const ident = new Uint8Array(16);
+    ident.set(new TextEncoder().encode('ID890UV'), 0);
+    ident[8] = 0x06;
+    ident.set(new TextEncoder().encode('V100'), 9);
+    ident[13] = 0x06;
+    ident[15] = 0x06;
+    const { pipe, writes } = mockPipe([ident]);
     const result = await probeAnytoneDmrIdent(pipe, 500);
     expect(result).toEqual(ident);
+    expect(result).toHaveLength(16);
     expect(writes[0]).toEqual(new Uint8Array([0x02]));
   });
 });

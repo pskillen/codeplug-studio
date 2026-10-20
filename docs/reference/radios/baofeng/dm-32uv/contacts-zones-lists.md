@@ -89,13 +89,13 @@ A different bank from the V-frame `0x0F` address book above. Byte **`+0x1FF`** i
 
 ## Zones — metadata `0x5c`
 
-| Fact             | Value                                                                                      |
-| ---------------- | ------------------------------------------------------------------------------------------ |
-| Entry size       | **145** bytes                                                                              |
-| Start offset     | **16** in first block                                                                      |
-| Per-block approx | `(4096 − 16) / 145 ≈ 28`                                                                   |
-| Name             | 11 bytes ASCII                                                                             |
-| Members          | Count at +16; u16 LE channel numbers from +17; max **64**; unused member bytes stay `0xFF` |
+| Fact             | Value                                                                                                                                                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entry size       | **145** bytes                                                                                                                                                                                                             |
+| Start offset     | **16** in first block                                                                                                                                                                                                     |
+| Per-block approx | `(4096 − 16) / 145 ≈ 28`                                                                                                                                                                                                  |
+| Name             | **16** bytes at +0 (`NAME_LENGTH_CHANNEL_ZONE_CONTACT_TG` in `src/core/radios/baofeng/dm-32uv/limits.ts`). Shorter names are NUL-terminated and the rest of bytes 0–15 stay `0xFF`. A 16-character name fills bytes 0–15. |
+| Members          | Count at +16; u16 LE channel numbers from +17; max **64**; unused member bytes stay `0xFF`                                                                                                                                |
 
 Further zone pages are tags `0x5D`–`0x64` in tag order; the page range is in [memory-layout.md](memory-layout.md).
 

@@ -407,6 +407,38 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(parseAtD890ChannelRecord(repeater, 1).dmrOperatingMode).toBe('repeater');
   });
 
+  it('writes rxOnly on 0x34 bit 3 and leaves 0x09 bit 5 clear', () => {
+    const encoded = encodeAtD890ChannelRecord({
+      ...simplexDigital,
+      rxOnly: true,
+      dmrOperatingMode: 'dmo-simplex',
+      scanAdd: true,
+    });
+    expect((encoded[0x34]! >> 3) & 1).toBe(1);
+    expect((encoded[9]! >> 5) & 1).toBe(0);
+    expect((encoded[0x34]! >> 1) & 1).toBe(1);
+    expect((encoded[0x34]! >> 4) & 1).toBe(1);
+    expect(parseAtD890ChannelRecord(encoded, 1).rxOnly).toBe(true);
+  });
+
+  it('leaves 0x34 bit 3 clear when rxOnly is omitted or false', () => {
+    const omitted = encodeAtD890ChannelRecord(simplexDigital);
+    const explicitFalse = encodeAtD890ChannelRecord({ ...simplexDigital, rxOnly: false });
+    expect((omitted[0x34]! >> 3) & 1).toBe(0);
+    expect((explicitFalse[0x34]! >> 3) & 1).toBe(0);
+    expect((omitted[9]! >> 5) & 1).toBe(0);
+  });
+
+  it('decodes rxOnly from 0x34 bit 3 only', () => {
+    const rxOnlyRecord = encodeAtD890ChannelRecord(simplexDigital);
+    rxOnlyRecord[0x34] = 1 << 3;
+    expect(parseAtD890ChannelRecord(rxOnlyRecord, 1).rxOnly).toBe(true);
+
+    const pttProhibit = encodeAtD890ChannelRecord(simplexDigital);
+    pttProhibit[9] = 1 << 5;
+    expect(parseAtD890ChannelRecord(pttProhibit, 1).rxOnly).toBe(false);
+  });
+
   it('writes DMR MODE repeater on 0x34 bit 1 and SMS confirm On', () => {
     const encoded = encodeAtD890ChannelRecord({
       slotIndex: 1,
@@ -472,9 +504,146 @@ describe('encodeAtD890ChannelRecord', () => {
     const encoded = readChannelRecord(image, 7);
     expect(encoded[9]! & 0xd0).toBe(0);
     expect((encoded[0x21]! >> 1) & 1).toBe(1);
-    expect(encoded[0x22]).toBe(0);
+    expect(encoded[0x22]).toBe(0xfd);
     expect([...encoded.subarray(4, 8)]).toEqual([0, 0, 0, 0]);
     expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
+  });
+
+  it('keeps NXDN and AES from a downloaded slot and rewrites the contact', () => {
+    const image = createMemoryMap(AT_D890_MAP_SIZE);
+    const prior = encodeAtD890ChannelRecord({ ...simplexDigital, txContactId: 9 });
+    prior[0x10] = 0x10;
+    prior[0x11] = 0x11;
+    prior[0x12] = 0x12;
+    prior[0x19] = 0x19;
+    prior[0x1a] = 0x1a;
+    prior[0x1d] = 0x1d;
+    prior[0x1e] = 0x1e;
+    prior[0x1f] = 0x1f;
+    prior[0x22] = 0xab;
+    prior[0x36] = 0x36;
+    for (let offset = 0x39; offset <= 0x41; offset++) prior[offset] = offset;
+    for (let offset = 0x66; offset <= 0x6e; offset++) prior[offset] = offset;
+    prior[0x09] = 0xd0;
+    prior[0x13] = 0xee;
+    prior[0x14] = 0x11;
+    prior[0x15] = 0x22;
+    prior[0x16] = 0x33;
+    prior[0x17] = 0x44;
+    prior[0x1c] = 0x05;
+    prior[0x23] = 0x23;
+    prior[0x35] = 0x35;
+    prior[0x37] = 0x37;
+    prior[0x38] = 0x38;
+    prior[0x42] = 0x42;
+    prior[0x64] = 0x64;
+    prior[0x65] = 0x65;
+    prior[0x6f] = 0x6f;
+    plantChannelRecord(image, 3, prior);
+    plantChannelRecord(image, 8, prior);
+
+    encodeChannelsIntoAtD890Image(image, [{ ...simplexDigital, slotIndex: 3 }]);
+
+    const encoded = readChannelRecord(image, 3);
+    expect([...encoded.subarray(0x10, 0x13)]).toEqual([0x10, 0x11, 0x12]);
+    expect([...encoded.subarray(0x19, 0x1b)]).toEqual([0x19, 0x1a]);
+    expect([...encoded.subarray(0x1d, 0x20)]).toEqual([0x1d, 0x1e, 0x1f]);
+    expect(encoded[0x22]).toBe(0xab);
+    expect(encoded[0x36]).toBe(0x36);
+    expect([...encoded.subarray(0x39, 0x42)]).toEqual(
+      Array.from({ length: 0x42 - 0x39 }, (_, i) => 0x39 + i),
+    );
+    expect([...encoded.subarray(0x66, 0x6f)]).toEqual(
+      Array.from({ length: 0x6f - 0x66 }, (_, i) => 0x66 + i),
+    );
+    expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
+    expect(encoded[9]! & 0xd0).toBe(0);
+    expect(encoded[0x1c]).toBe(0xff);
+    expect(encoded[0x23]).toBe(0);
+    expect(encoded[0x35]).toBe(0);
+    expect(encoded[0x37]).toBe(0);
+    expect(encoded[0x38]).toBe(0);
+    expect(encoded[0x42]).toBe(0);
+    expect(encoded[0x64]).toBe(0);
+    expect(encoded[0x65]).toBe(0);
+    expect(encoded[0x6f]).toBe(0);
+    expect([...readChannelRecord(image, 8)]).toEqual(Array.from({ length: 0x80 }, () => 0));
+
+    const withContact = createMemoryMap(AT_D890_MAP_SIZE);
+    plantChannelRecord(withContact, 3, prior);
+    encodeChannelsIntoAtD890Image(withContact, [
+      { ...simplexDigital, slotIndex: 3, txContactId: 257 },
+    ]);
+    expect([...readChannelRecord(withContact, 3).subarray(0x13, 0x18)]).toEqual([
+      0x00, 0x00, 0x01, 0x00, 0x00,
+    ]);
+  });
+
+  it('keeps unmodelled 0x34 bits and writes DMO, RX-only, and auto scan from the DTO', () => {
+    const unmodelled = (1 << 0) | (1 << 2) | (1 << 5) | (1 << 6) | (1 << 7);
+    const image = createMemoryMap(AT_D890_MAP_SIZE);
+    const prior = encodeAtD890ChannelRecord(simplexDigital);
+    prior[0x34] = unmodelled;
+    plantChannelRecord(image, 4, prior);
+    encodeChannelsIntoAtD890Image(image, [
+      {
+        ...simplexDigital,
+        slotIndex: 4,
+        dmrOperatingMode: 'dmo-simplex',
+        scanAdd: true,
+        rxOnly: true,
+      },
+    ]);
+    const encoded = readChannelRecord(image, 4);
+    expect(encoded[0x34]! & unmodelled).toBe(unmodelled);
+    expect((encoded[0x34]! >> 1) & 1).toBe(1);
+    expect((encoded[0x34]! >> 3) & 1).toBe(1);
+    expect((encoded[0x34]! >> 4) & 1).toBe(1);
+
+    const cleared = createMemoryMap(AT_D890_MAP_SIZE);
+    const sticky = encodeAtD890ChannelRecord(simplexDigital);
+    sticky[0x34] = 0xff;
+    plantChannelRecord(cleared, 4, sticky);
+    encodeChannelsIntoAtD890Image(cleared, [{ ...simplexDigital, slotIndex: 4 }]);
+    const off = readChannelRecord(cleared, 4);
+    expect(off[0x34]! & unmodelled).toBe(unmodelled);
+    expect((off[0x34]! >> 1) & 1).toBe(0);
+    expect((off[0x34]! >> 3) & 1).toBe(0);
+    expect((off[0x34]! >> 4) & 1).toBe(0);
+  });
+
+  it('leaves preserve ranges at 0 when there is no real prior', () => {
+    const noPrior = encodeAtD890ChannelRecord(simplexDigital);
+    expect(noPrior[0x22]).toBe(0);
+    expect(noPrior[0x66]).toBe(0);
+    expect([...noPrior.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
+
+    const zeros = new Uint8Array(0x80);
+    zeros[0x22] = 0xab;
+    zeros[0x66] = 0xcd;
+    const fromZeros = encodeAtD890ChannelRecord(simplexDigital, zeros);
+    expect(fromZeros[0x22]).toBe(0);
+    expect(fromZeros[0x66]).toBe(0);
+
+    const virgin = new Uint8Array(0x80);
+    virgin.fill(0xff);
+    const fromVirgin = encodeAtD890ChannelRecord(simplexDigital, virgin);
+    expect(fromVirgin[0x22]).toBe(0);
+    expect(fromVirgin[0x66]).toBe(0);
+    expect([...fromVirgin.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
+
+    const shortPrior = new Uint8Array(0x40);
+    shortPrior[0] = 0x43;
+    shortPrior[0x22] = 0xab;
+    expect(encodeAtD890ChannelRecord(simplexDigital, shortPrior)[0x22]).toBe(0);
+
+    const image = createMemoryMap(AT_D890_MAP_SIZE);
+    plantChannelRecord(image, 1, virgin);
+    encodeChannelsIntoAtD890Image(image, [simplexDigital]);
+    const encoded = readChannelRecord(image, 1);
+    expect(encoded[0x22]).toBe(0);
+    expect(encoded[0x66]).toBe(0);
+    expect(encoded[0x6e]).toBe(0);
   });
 
   it('returns empty record for vacant slot', () => {

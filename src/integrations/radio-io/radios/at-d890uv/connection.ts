@@ -12,35 +12,54 @@ import {
   parseAnytoneDmrReadReply,
   probeAnytoneDmrIdent,
 } from '../../kit/codecs/anytoneDmrRw.ts';
-import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
+import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { throwIfAborted } from '../../kit/progress.ts';
 import { AT_D890_CONNECTION, AT_D890UV_MODEL_IDS } from './constants.ts';
 import { assertAtD890WritableAddress } from './writableExtents.ts';
 
 const TD = new TextDecoder('ascii', { fatal: false });
 
+const AT_D890_IDENT_MODEL = 'ID890UV';
+const AT_D890_IDENT_VERSION = 'V100';
+const AT_D890_IDENT_MODEL_LEN = 7;
+const AT_D890_IDENT_BAND_OFFSET = 8;
+const AT_D890_IDENT_VERSION_OFFSET = 9;
+const AT_D890_IDENT_VERSION_LEN = 4;
+
 export interface AtD890Ident {
   raw: Uint8Array;
   model: string;
   version: string;
+  /** Byte 8. Stored only — a band code is not used to accept or refuse the radio. */
+  bandCode: number;
+}
+
+function asciiAt(raw: Uint8Array, offset: number, length: number): string {
+  return TD.decode(raw.subarray(offset, offset + length));
 }
 
 export function parseAtD890Ident(raw: Uint8Array): AtD890Ident {
-  const text = TD.decode(raw).replace(/\0/g, '\0');
-  const parts = text.split('\0').filter((p) => p.length > 0);
-  const model = parts[0] ?? '';
-  const version = parts[1] ?? '';
-  if (model !== 'ID890UV') {
+  const model = asciiAt(raw, 0, AT_D890_IDENT_MODEL_LEN);
+  const version = asciiAt(raw, AT_D890_IDENT_VERSION_OFFSET, AT_D890_IDENT_VERSION_LEN);
+  const bandCode = raw[AT_D890_IDENT_BAND_OFFSET] ?? 0;
+  if (model !== AT_D890_IDENT_MODEL) {
     throw new RadioWrongIdentError(
       `Unsupported Anytone ident "${model}" — expected ID890UV / V100 for AT-D890UV`,
     );
   }
-  return { raw, model, version };
+  if (version !== AT_D890_IDENT_VERSION) {
+    throw new RadioWrongIdentError(
+      `Unsupported Anytone ident version "${version}" — expected ID890UV / V100 for AT-D890UV`,
+    );
+  }
+  return { raw, model, version, bandCode };
 }
 
 export async function atD890EnterProgram(pipe: BytePipe, signal?: AbortSignal): Promise<void> {
   throwIfAborted(signal);
-  await enterAnytoneDmrProgramMode(pipe, AT_D890_CONNECTION.TIMEOUT.HANDSHAKE_MS);
+  await enterAnytoneDmrProgramMode(pipe, AT_D890_CONNECTION.TIMEOUT.HANDSHAKE_MS, {
+    programAck: 'qx-only',
+  });
 }
 
 export async function atD890ProbeIdent(pipe: BytePipe, signal?: AbortSignal): Promise<AtD890Ident> {
@@ -53,6 +72,41 @@ export async function atD890ExitProgram(pipe: BytePipe): Promise<void> {
   await exitAnytoneDmrProgramMode(pipe);
 }
 
+/** Original send plus two resends of the same frame. */
+const AT_D890_RESEND_LIMIT = 2;
+
+function isChecksumMismatch(err: unknown): boolean {
+  return err instanceof RadioProtocolError && err.message.includes('checksum mismatch');
+}
+
+/**
+ * Run `exchange` up to three times. Timeout flushes leftover bytes before the next send.
+ * A checksum failure does not flush — that frame was already consumed.
+ */
+async function exchangeWithResend<T>(
+  pipe: BytePipe,
+  signal: AbortSignal | undefined,
+  exchange: () => Promise<T>,
+  shouldResend: (err: unknown) => boolean,
+): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= AT_D890_RESEND_LIMIT; attempt++) {
+    throwIfAborted(signal);
+    try {
+      return await exchange();
+    } catch (err) {
+      lastErr = err;
+      if (!shouldResend(err) || attempt === AT_D890_RESEND_LIMIT) {
+        throw err;
+      }
+      if (err instanceof RadioTimeoutError) {
+        await pipe.flush?.();
+      }
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new RadioProtocolError('D890 frame exchange failed');
+}
+
 async function readChunkWithFallback(
   pipe: BytePipe,
   address: number,
@@ -60,6 +114,7 @@ async function readChunkWithFallback(
   signal?: AbortSignal,
 ): Promise<Uint8Array> {
   try {
+    // `atD890ReadBlockRaw` already spent its resend budget. This catch is the size fallback only.
     return await atD890ReadBlockRaw(pipe, address, chunkLen, signal);
   } catch (firstErr) {
     if (chunkLen <= ANYTONE_DMR_BLOCK_SIZE) {
@@ -125,9 +180,16 @@ export async function atD890ReadBlockRaw(
   if (length < 1 || length > 0xff) {
     throw new RangeError(`D890 raw read length must be 1..255, got ${length}`);
   }
-  await pipe.write(makeAnytoneDmrReadFrame(address, length));
-  const reply = await pipe.readExact(length + 8, AT_D890_CONNECTION.TIMEOUT.READ_MS);
-  return parseAnytoneDmrReadReply(reply, length);
+  return exchangeWithResend(
+    pipe,
+    signal,
+    async () => {
+      await pipe.write(makeAnytoneDmrReadFrame(address, length));
+      const reply = await pipe.readExact(length + 8, AT_D890_CONNECTION.TIMEOUT.READ_MS);
+      return parseAnytoneDmrReadReply(reply, length, address);
+    },
+    (err) => err instanceof RadioTimeoutError || isChecksumMismatch(err),
+  );
 }
 
 export async function atD890WriteMemory(
@@ -147,13 +209,21 @@ export async function atD890WriteMemory(
     const addr = address + off;
     guard(addr);
     const chunk = data.subarray(off, off + ANYTONE_DMR_BLOCK_SIZE);
-    await pipe.write(makeAnytoneDmrWriteFrame(addr, ANYTONE_DMR_BLOCK_SIZE, chunk));
-    const ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);
-    if (ack[0] !== 0x06) {
-      throw new RadioProtocolError(
-        `D890 write not ACKed at 0x${addr.toString(16)}: got 0x${ack[0]?.toString(16) ?? '??'}`,
-      );
-    }
+    const frame = makeAnytoneDmrWriteFrame(addr, ANYTONE_DMR_BLOCK_SIZE, chunk);
+    await exchangeWithResend(
+      pipe,
+      signal,
+      async () => {
+        await pipe.write(frame);
+        const ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);
+        if (ack[0] !== 0x06) {
+          throw new RadioProtocolError(
+            `D890 write not ACKed at 0x${addr.toString(16)}: got 0x${ack[0]?.toString(16) ?? '??'}`,
+          );
+        }
+      },
+      (err) => err instanceof RadioTimeoutError,
+    );
     if (AT_D890_CONNECTION.INTER_BLOCK_DELAY_MS > 0) {
       await new Promise((r) => setTimeout(r, AT_D890_CONNECTION.INTER_BLOCK_DELAY_MS));
     }
@@ -182,13 +252,21 @@ export async function atD890WriteBlockRaw(
   for (let off = 0; off < data.length; off += ANYTONE_DMR_BLOCK_SIZE) {
     assertAtD890WritableAddress(address + off);
   }
-  await pipe.write(makeAnytoneDmrWriteFrame(address, data.length, data));
-  const ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);
-  if (ack[0] !== 0x06) {
-    throw new RadioProtocolError(
-      `D890 write not ACKed at 0x${address.toString(16)} (${data.length} bytes): got 0x${ack[0]?.toString(16) ?? '??'}`,
-    );
-  }
+  const frame = makeAnytoneDmrWriteFrame(address, data.length, data);
+  await exchangeWithResend(
+    pipe,
+    signal,
+    async () => {
+      await pipe.write(frame);
+      const ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);
+      if (ack[0] !== 0x06) {
+        throw new RadioProtocolError(
+          `D890 write not ACKed at 0x${address.toString(16)} (${data.length} bytes): got 0x${ack[0]?.toString(16) ?? '??'}`,
+        );
+      }
+    },
+    (err) => err instanceof RadioTimeoutError,
+  );
 }
 
 export function atD890ModelHints(): readonly string[] {

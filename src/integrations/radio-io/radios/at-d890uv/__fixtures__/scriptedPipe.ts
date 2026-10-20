@@ -8,6 +8,7 @@ import {
   ANYTONE_DMR_BLOCK_SIZE,
   anytoneDmrChecksum8AfterOpcode,
 } from '../../../kit/codecs/anytoneDmrRw.ts';
+import { RadioTimeoutError } from '../../../kit/errors.ts';
 import { D890_MAP } from '../constants.ts';
 import { AT_D890_SENTINEL_EXTENTS } from '../writableExtents.ts';
 import { AT_D890_ERASE_UNIT_BYTES } from '../eraseUnits.ts';
@@ -25,6 +26,20 @@ export class AtD890ScriptedPipe implements BytePipe {
    */
   readResponder?: (address: number, length: number) => Uint8Array | null;
 
+  /**
+   * Next N `readExact` calls throw `RadioTimeoutError` and leave one stray byte.
+   * A following flush (the timeout resend path) must clear that byte.
+   */
+  pendingTimeouts = 0;
+
+  /**
+   * Enqueued once timeouts are exhausted and the buffer is still short.
+   * Kept off the byte queue so a timeout flush does not drop the later good frame.
+   */
+  replyAfterTimeouts?: Uint8Array;
+
+  flushCount = 0;
+
   enqueue(...chunks: Uint8Array[]): void {
     for (const chunk of chunks) {
       this.bytes.push(...chunk);
@@ -40,8 +55,17 @@ export class AtD890ScriptedPipe implements BytePipe {
 
   async readExact(n: number, timeoutMs: number): Promise<Uint8Array> {
     void timeoutMs;
+    if (this.pendingTimeouts > 0) {
+      this.pendingTimeouts -= 1;
+      this.bytes.push(0xaa);
+      throw new RadioTimeoutError(`AtD890ScriptedPipe: timeout needing ${n} bytes`);
+    }
     if (this.bytes.length < n) {
       this.tryEnqueueReadReplyFromLastRequest();
+    }
+    if (this.bytes.length < n && this.replyAfterTimeouts) {
+      this.enqueue(this.replyAfterTimeouts);
+      this.replyAfterTimeouts = undefined;
     }
     if (this.bytes.length < n) {
       throw new Error(`AtD890ScriptedPipe: need ${n} bytes, have ${this.bytes.length}`);
@@ -50,6 +74,7 @@ export class AtD890ScriptedPipe implements BytePipe {
   }
 
   async flush(): Promise<void> {
+    this.flushCount += 1;
     this.bytes = [];
   }
 
@@ -136,12 +161,32 @@ export function scriptAtD890ConnectWithNegotiation(
   scriptAtD890Connect(pipe);
 }
 
+/** Captured band byte from the keps `IDENT_REPLY` (`0x03`). Not a terminator. */
+const AT_D890_IDENT_BAND_CAPTURED = 0x03;
+
+/**
+ * One 16-byte ident: `ID890UV`, NUL, band, version, two reserved bytes, trailing `0x06`.
+ * `firmwareHint` stays the 4-character version (`V100` unless a test overrides it).
+ */
+export function makeAtD890IdentFrame(
+  version = 'V100',
+  opts?: { model?: string; band?: number; byte13?: number; byte14?: number },
+): Uint8Array {
+  const frame = new Uint8Array(16);
+  const model = new TextEncoder().encode(opts?.model ?? 'ID890UV');
+  frame.set(model.subarray(0, 7), 0);
+  frame[8] = opts?.band ?? AT_D890_IDENT_BAND_CAPTURED;
+  frame.set(new TextEncoder().encode(version).subarray(0, 4), 9);
+  frame[13] = opts?.byte13 ?? 0x00;
+  frame[14] = opts?.byte14 ?? 0x00;
+  frame[15] = ANYTONE_DMR_ACK;
+  return frame;
+}
+
 export function scriptAtD890Connect(pipe: AtD890ScriptedPipe, version = 'V100'): void {
   pipe.enqueue(new Uint8Array([0x51]));
   pipe.enqueue(new Uint8Array([0x58, ANYTONE_DMR_ACK]));
-  const ident = new TextEncoder().encode(`ID890UV\0${version}\0`);
-  pipe.enqueue(ident);
-  pipe.enqueue(new Uint8Array([ANYTONE_DMR_ACK]));
+  pipe.enqueue(makeAtD890IdentFrame(version));
 }
 
 const NEGOTIATED_READ_BLOCK = 0xf0;

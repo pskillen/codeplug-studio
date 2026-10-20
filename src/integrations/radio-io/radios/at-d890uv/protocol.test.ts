@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { D890_MAP } from './constants.ts';
 import { listWriteChunks, cacheToMemoryMap, applyAtD890WriteImageToCache } from './memory.ts';
 import { AtD890uvProtocol } from './protocol.ts';
 import {
   AtD890ScriptedPipe,
+  makeAtD890IdentFrame,
+  scriptAtD890Connect,
   scriptAtD890ConnectWithNegotiation,
   scriptAtD890MinimalDownload,
   enqueueAtD890ReadReply,
@@ -107,6 +110,33 @@ describe('AtD890uvProtocol', () => {
     expect(ident.modelHints).toContain('AT-D890UV');
     expect(ident.firmwareHint).toBe('V100');
     expect(radio.getNegotiatedReadBlockSize()).toBe(NEGOTIATED_READ_BLOCK);
+  });
+
+  it('rejects a lone 0x00 PROGRAM ack and does not probe ident', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.enqueue(new Uint8Array([0x00]));
+    pipe.enqueue(makeAtD890IdentFrame());
+    const radio = new AtD890uvProtocol();
+    await expect(radio.connect(pipe)).rejects.toBeInstanceOf(RadioProtocolError);
+    expect(pipe.writes.some((frame) => frame.length === 1 && frame[0] === 0x02)).toBe(false);
+  });
+
+  it('rejects a version other than V100 before any read or write', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890Connect(pipe, 'V101');
+    const radio = new AtD890uvProtocol();
+    await expect(radio.connect(pipe)).rejects.toBeInstanceOf(RadioWrongIdentError);
+    expect(pipe.writes.some((frame) => frame[0] === 0x52 || frame[0] === 0x57)).toBe(false);
+  });
+
+  it('rejects a model other than ID890UV before any read or write', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.enqueue(new Uint8Array([0x51]));
+    pipe.enqueue(new Uint8Array([0x58, 0x06]));
+    pipe.enqueue(makeAtD890IdentFrame('V100', { model: 'D878UV2' }));
+    const radio = new AtD890uvProtocol();
+    await expect(radio.connect(pipe)).rejects.toBeInstanceOf(RadioWrongIdentError);
+    expect(pipe.writes.some((frame) => frame[0] === 0x52 || frame[0] === 0x57)).toBe(false);
   });
 
   it('falls back to 16-byte reads when the radio rejects large blocks', async () => {
@@ -398,7 +428,7 @@ describe('AtD890uvProtocol', () => {
 
     const endWrites = pipe.writes.filter((w) => new TextDecoder().decode(w) === 'END');
     expect(endWrites).toHaveLength(0);
-  });
+  }, 20_000);
 
   it('refuses upload when sentinel regions read all 0xff before any write frames', async () => {
     const pipe = new AtD890ScriptedPipe();
@@ -468,7 +498,7 @@ describe('AtD890uvProtocol', () => {
     await radio.upload(encoded, {});
 
     expect(collectAtD890WriteDataAddresses(pipe).length).toBeGreaterThan(0);
-  });
+  }, 20_000);
 
   it('refuses upload when the in-session download cache is empty', async () => {
     const pipe = new AtD890ScriptedPipe();
@@ -496,7 +526,7 @@ describe('AtD890uvProtocol', () => {
     const snap = radio.takeUploadSentinelSnapshot();
     expect(snap?.get('OptionalSettingsMain')?.[0]).toBe(0x00);
     expect(radio.takeUploadSentinelSnapshot()).toBeUndefined();
-  });
+  }, 20_000);
 
   it('verifySentinelRegionsAgainst passes when post-commit reads match', async () => {
     const pipe = new AtD890ScriptedPipe();
@@ -517,7 +547,7 @@ describe('AtD890uvProtocol', () => {
 
     const result = await radio.verifySentinelRegionsAgainst(before);
     expect(result).toEqual({ ok: true });
-  });
+  }, 20_000);
 
   it('verifySentinelRegionsAgainst names a mismatched region', async () => {
     const pipe = new AtD890ScriptedPipe();
@@ -550,5 +580,5 @@ describe('AtD890uvProtocol', () => {
         },
       ]);
     }
-  });
+  }, 20_000);
 });

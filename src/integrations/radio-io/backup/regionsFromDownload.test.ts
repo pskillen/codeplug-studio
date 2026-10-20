@@ -137,6 +137,7 @@ describe('regionsFromDownload', () => {
       addressBase: 0x1000,
       dm32ContactsBase: 0x278000,
       dm32ContactsEnd: 0x279000,
+      dm32ConfigWindow: { start: 0x1000, end: 0xc8000 },
     });
     expect(extract.restoreFragileAfterFactoryReset).toBe(true);
     expect(extract.addressBase).toBe(0x1000);
@@ -145,6 +146,44 @@ describe('regionsFromDownload', () => {
     const calRegion = extract.regions.find((r) => r.restoreRole === 'inspect-only');
     expect(calRegion?.address).toBe(0x2000);
     expect(extract.regions.find((r) => r.address === 0x1000)?.restoreRole).toBe('restorable');
+  });
+
+  it('does not pack a DM-32 page that ends in 0x02 outside the V-frame window', () => {
+    const font = new Uint8Array(DM32_BLOCK_SIZE).fill(0x00);
+    font[DM32_BLOCK_SIZE - 1] = DM32_METADATA.CALIBRATION;
+    const zone = new Uint8Array(DM32_BLOCK_SIZE).fill(0x11);
+    zone[DM32_BLOCK_SIZE - 1] = 0x5c;
+    const image = createMemoryMap(DM32_BLOCK_SIZE * 2);
+    const extract = regionsFromDownload({
+      modelId: 'DM-32UV',
+      image,
+      sparseBlocks: [
+        { address: 0x1000, data: zone },
+        { address: 0x105000, data: font },
+      ],
+      dm32ConfigWindow: { start: 0x1000, end: 0xc8000 },
+    });
+    expect(extract.regions.map((r) => r.address)).toEqual([0x1000]);
+    expect(extract.regions.every((r) => r.label.startsWith('Calibration'))).toBe(false);
+  });
+
+  it('labels the lower in-range calibration page as live and a higher one as a duplicate', () => {
+    const lower = new Uint8Array(DM32_BLOCK_SIZE).fill(0x00);
+    lower[DM32_BLOCK_SIZE - 1] = DM32_METADATA.CALIBRATION;
+    const higher = lower.slice();
+    const image = createMemoryMap(DM32_BLOCK_SIZE);
+    const extract = regionsFromDownload({
+      modelId: 'DM-32UV',
+      image,
+      sparseBlocks: [
+        { address: 0xc0000, data: higher },
+        { address: 0xb8000, data: lower },
+      ],
+      dm32ConfigWindow: { start: 0x1000, end: 0xc8000 },
+    });
+    expect(extract.regions.find((region) => region.address === 0xb8000)?.label).toMatch(/Live/);
+    expect(extract.regions.find((region) => region.address === 0xc0000)?.label).toMatch(/not live/);
+    expect(extract.regions.every((region) => region.restoreRole === 'inspect-only')).toBe(true);
   });
 });
 

@@ -192,6 +192,26 @@ describe('Dm32uvProtocol.restoreFromBackup', () => {
     expect(proto.takeUploadStagingSnapshot()).toBeUndefined();
   });
 
+  it('throws before any write when a restorable chunk ends in 0x02', async () => {
+    const pipe = new Dm32ScriptedPipe();
+    scriptDm32Connect(pipe, { start: 0x1000, end: 0x2fff });
+    const proto = new Dm32uvProtocol();
+    await proto.connect(pipe, { settleScale: 0 });
+    const writesAfterConnect = pipe.writes.length;
+
+    const tagged = makeEmptyBlock(DM32_METADATA.CALIBRATION);
+    const regions = [region('region-0x2000', 0x2000, tagged, 'restorable')];
+    const archive = packedArchive({ 'region-0x2000': tagged }, regions);
+
+    await expect(
+      proto.restoreFromBackup(archive, { regionIds: ['region-0x2000'] }),
+    ).rejects.toThrow(/calibration/);
+    const restoreWrites = pipe.writes.slice(writesAfterConnect);
+    expect(
+      restoreWrites.filter((frame) => frame[0] === 0x57 && frame.length === 6 + DM32_BLOCK_SIZE),
+    ).toHaveLength(0);
+  });
+
   it('refuses a factory-reset address-map mismatch before any write', async () => {
     const pipe = new Dm32ScriptedPipe();
     scriptDm32Connect(pipe, { start: 0x9000, end: 0xafff });

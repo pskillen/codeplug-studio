@@ -8,6 +8,8 @@ import {
 export interface ParsedRadioBackupZip {
   manifest: RadioBackupManifestV1;
   regions: Record<string, Uint8Array>;
+  /** Files that are not the manifest or a named region bin (calibration JSON, …). */
+  sidecars: Record<string, Uint8Array>;
 }
 
 /**
@@ -36,6 +38,12 @@ export function parseRadioBackupZip(bytes: Uint8Array): ParsedRadioBackupZip {
 
   const manifest = validateRadioBackupManifest(parsedJson);
   const regions: Record<string, Uint8Array> = {};
+  const regionPaths = new Set(manifest.regions.map((region) => region.path));
+  const sidecars: Record<string, Uint8Array> = {};
+  for (const [path, data] of Object.entries(entries)) {
+    if (path === 'manifest.json' || regionPaths.has(path)) continue;
+    sidecars[path] = data;
+  }
 
   for (const region of manifest.regions) {
     const data = entries[region.path];
@@ -50,5 +58,5 @@ export function parseRadioBackupZip(bytes: Uint8Array): ParsedRadioBackupZip {
     regions[region.id] = data;
   }
 
-  return { manifest, regions };
+  return { manifest, regions, sidecars };
 }

@@ -3,7 +3,14 @@
  */
 
 import type { BytePipe } from '../../../types.ts';
-import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from '../constants.ts';
+import {
+  DM32_BLOCK_SIZE,
+  DM32_FACTORY_SECTOR_LENGTH,
+  DM32_FACTORY_SECTOR_READ_FRAME,
+  DM32_FACTORY_SECTOR_REPLY_OPCODE,
+  DM32_METADATA,
+  DM32_METADATA_OFFSET,
+} from '../constants.ts';
 
 export class Dm32ScriptedPipe implements BytePipe {
   readonly writes: Uint8Array[] = [];
@@ -58,6 +65,20 @@ export function enqueueVFrame(pipe: Dm32ScriptedPipe, id: number, payload: Uint8
   if (payload.length > 0) pipe.enqueue(payload);
 }
 
+/** Reply shape: opcode `0x53`, 5 echoed command bytes, then 4096 data bytes. */
+export function enqueueDm32FactorySectorReply(pipe: Dm32ScriptedPipe, payload: Uint8Array): void {
+  if (payload.byteLength !== DM32_FACTORY_SECTOR_LENGTH) {
+    throw new Error(
+      `factory sector payload must be ${DM32_FACTORY_SECTOR_LENGTH} bytes, got ${payload.byteLength}`,
+    );
+  }
+  const header = new Uint8Array(6);
+  header[0] = DM32_FACTORY_SECTOR_REPLY_OPCODE;
+  header.set(DM32_FACTORY_SECTOR_READ_FRAME.subarray(1), 1);
+  pipe.enqueue(header);
+  pipe.enqueue(payload);
+}
+
 export function enqueueReadReply(pipe: Dm32ScriptedPipe, address: number, data: Uint8Array): void {
   const header = new Uint8Array([
     0x57,
@@ -89,6 +110,13 @@ export function scriptDm32Connect(
     end?: number;
     contactsBase?: number;
     contactsEnd?: number;
+    /**
+     * Opt-in replies inserted after SYSINFO. The default script does not
+     * enqueue a factory-sector read; Write and Restore tests leave this unset.
+     */
+    factorySectorReplies?: readonly [Uint8Array, Uint8Array];
+    /** Non-empty V-frame `0x02` payload. Default is an empty frame. */
+    efusePayload?: Uint8Array;
   },
 ): { start: number; end: number } {
   const start = opts?.start ?? 0x1000;
@@ -99,6 +127,11 @@ export function scriptDm32Connect(
   pipe.enqueue(psearch);
   pipe.enqueue(new Uint8Array([0x50, 0x00, 0x00]));
   pipe.enqueue(new Uint8Array([0x06]));
+  if (opts?.factorySectorReplies) {
+    for (const payload of opts.factorySectorReplies) {
+      enqueueDm32FactorySectorReply(pipe, payload);
+    }
+  }
 
   const layout = new Uint8Array(8);
   layout.set(u32le(start), 0);
@@ -118,7 +151,9 @@ export function scriptDm32Connect(
   ]) {
     if (id === 0x0a) enqueueVFrame(pipe, id, layout);
     else if (id === 0x01) enqueueVFrame(pipe, id, firmware);
-    else if (id === 0x0f) enqueueVFrame(pipe, id, contacts);
+    else if (id === 0x02 && opts?.efusePayload && opts.efusePayload.byteLength > 0) {
+      enqueueVFrame(pipe, id, opts.efusePayload);
+    } else if (id === 0x0f) enqueueVFrame(pipe, id, contacts);
     else enqueueVFrame(pipe, id, new Uint8Array(0));
   }
 

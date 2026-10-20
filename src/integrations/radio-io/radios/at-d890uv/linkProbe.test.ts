@@ -144,21 +144,21 @@ describe('benchmarkAtD890Sweep', () => {
 });
 
 describe('profileAtD890AccessPattern', () => {
-  /** Enough replies for every stride trial; content is irrelevant to timing. */
-  function scriptStrides(iterations: number): AtD890ScriptedPipe {
+  /** Echo the requested address. Content is irrelevant to timing. */
+  function scriptStrides(): AtD890ScriptedPipe {
     const pipe = new AtD890ScriptedPipe();
-    for (let i = 0; i < 8 * iterations; i++) pipe.enqueue(reply(ADDRESS, content(0x10)));
+    pipe.readResponder = (_addr, len) => content(len);
     return pipe;
   }
 
   it('never writes to the radio', async () => {
-    const pipe = scriptStrides(2);
+    const pipe = scriptStrides();
     await profileAtD890AccessPattern(pipe, ADDRESS, { iterations: 2 });
     expect(pipe.writes.every((w) => w[0] === 0x52)).toBe(true);
   });
 
   it('samples every stride once', async () => {
-    const r = await profileAtD890AccessPattern(scriptStrides(2), ADDRESS, { iterations: 2 });
+    const r = await profileAtD890AccessPattern(scriptStrides(), ADDRESS, { iterations: 2 });
     expect(r.samples.map((s) => s.stride)).toEqual([
       0x10, 0x40, 0x100, 0x400, 0x800, 0x1000, 0x2000, 0x4000,
     ]);
@@ -166,7 +166,7 @@ describe('profileAtD890AccessPattern', () => {
 
   it('declines to infer a page size from a flat latency curve', async () => {
     // A scripted pipe answers instantly at every stride, so there is no cache signal.
-    const r = await profileAtD890AccessPattern(scriptStrides(2), ADDRESS, { iterations: 2 });
+    const r = await profileAtD890AccessPattern(scriptStrides(), ADDRESS, { iterations: 2 });
     expect(r.inferredPageBytes).toBeNull();
   });
 });

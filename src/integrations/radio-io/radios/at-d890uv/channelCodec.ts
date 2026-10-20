@@ -35,9 +35,73 @@ const BYTE_21_DCDM_MASK = 0x0c;
 const BYTE_21_APRS_RX_BIT = 5;
 /** Digital DMO vs repeater (CPS-written SoT): `1` = DMO/simplex, `0` = repeater. */
 const BYTE_34_DMO_BIT = 1;
+/** CPS RX-only. Not `0x09` bit 5 (that bit is TX/PTT prohibit and stays clear). */
+const BYTE_34_RX_ONLY_BIT = 3;
+/** Auto scan ("start scanning on channel select"), not scan-list membership. */
+const BYTE_34_AUTO_SCAN_BIT = 4;
+/**
+ * Unmodelled `0x34` bits copied from a downloaded slot.
+ * Bit 0 ranging, bit 2 exclude-from-roaming, bit 5 idle TX, bit 6 compander, bit 7 DMR CRC ignore.
+ * Bits 1 (DMO), 3 (RX-only), and 4 (auto scan) stay on the DTO.
+ */
+const BYTE_34_PRESERVE_MASK = (1 << 0) | (1 << 2) | (1 << 5) | (1 << 6) | (1 << 7);
+
+/** Inclusive start, exclusive end. Modelled bytes are written after this copy. */
+const CHANNEL_PRESERVE_RANGES: readonly (readonly [number, number])[] = [
+  [0x10, 0x13],
+  [0x19, 0x1b],
+  [0x1d, 0x20],
+  [0x22, 0x23],
+  [0x36, 0x37],
+  [0x39, 0x42],
+  [0x66, 0x6f],
+];
 
 function setBit(byte: number, bit: number, value: boolean): number {
   return value ? (byte | (1 << bit)) & 0xff : byte & ~(1 << bit) & 0xff;
+}
+
+/**
+ * Modelled `0x34` bits always come from the DTO. `setBit` leaves the other bits alone
+ * so a later preserve copy of ranging / roaming / idle TX / compander / CRC-ignore survives.
+ */
+function applyModelledByte34(data: Uint8Array, ch: RadioChannelDto): void {
+  const digitalDmo = isDigitalMode(ch.mode) && ch.dmrOperatingMode === 'dmo-simplex';
+  data[0x34] = setBit(data[0x34]!, BYTE_34_DMO_BIT, digitalDmo);
+  data[0x34] = setBit(data[0x34]!, BYTE_34_RX_ONLY_BIT, ch.rxOnly === true);
+  data[0x34] = setBit(data[0x34]!, BYTE_34_AUTO_SCAN_BIT, ch.scanAdd === true);
+}
+
+/** Vacant, truncated, or virgin-`0xff` buffers are not a downloaded channel. */
+function channelPriorIsAbsent(prior: Uint8Array): boolean {
+  if (prior.length < AT_D890_LIMITS.CHANNEL_RECORD_SIZE) return true;
+  const record = prior.subarray(0, AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
+  let allFf = true;
+  for (let i = 0; i < record.length; i++) {
+    if (record[i] !== 0xff) {
+      allFf = false;
+      break;
+    }
+  }
+  if (allFf) return true;
+  return decodeBcdFrequencyHz(record.subarray(0, 4)) === 0;
+}
+
+function copyPreservedChannelBytes(data: Uint8Array, prior: Uint8Array): void {
+  for (const [start, end] of CHANNEL_PRESERVE_RANGES) {
+    data.set(prior.subarray(start, end), start);
+  }
+  data[0x34] = (data[0x34]! & ~BYTE_34_PRESERVE_MASK) | (prior[0x34]! & BYTE_34_PRESERVE_MASK);
+}
+
+function readCombinedChannelRecord(image: MemoryMap, idx: number): Uint8Array {
+  const combined = new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
+  combined.set(image.get(channelPrimaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE), 0);
+  combined.set(
+    image.get(channelSecondaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE),
+    AT_D890_LIMITS.CHANNEL_CHUNK_SIZE,
+  );
+  return combined;
 }
 
 function decodeToneFromCtcssIndex(index: number): RadioTone {
@@ -190,7 +254,6 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
   const powerPercent = powerPercentFromWire((b8 >> 2) & 0x3);
   const channelType = modeFromWire(b8 & 0x3);
   const b9 = data[9]!;
-  const rxOnly = ((b9 >> 5) & 1) === 1;
   const ctcssEncSel = (b9 >> 2) & 0x3;
   const ctcssDecSel = b9 & 0x3;
   const rxTone =
@@ -204,7 +267,8 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
   let txHz = rxHz;
   if (duplex === 1) txHz = rxHz + offHz;
   if (duplex === 2) txHz = Math.max(0, rxHz - offHz);
-  const autoScan = ((data[0x34]! >> 4) & 1) === 1;
+  const autoScan = ((data[0x34]! >> BYTE_34_AUTO_SCAN_BIT) & 1) === 1;
+  const rxOnly = ((data[0x34]! >> BYTE_34_RX_ONLY_BIT) & 1) === 1;
   const txContactId = decodeTxContactId(data, channelType);
   return {
     slotIndex,
@@ -240,11 +304,14 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
   };
 }
 
-export function encodeAtD890ChannelRecord(ch: RadioChannelDto): Uint8Array {
+export function encodeAtD890ChannelRecord(ch: RadioChannelDto, prior?: Uint8Array): Uint8Array {
   const data = new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
   data.fill(0);
   if (ch.empty || ch.rxHz <= 0) {
     return data;
+  }
+  if (prior != null && !channelPriorIsAbsent(prior)) {
+    copyPreservedChannelBytes(data, prior);
   }
   assertAtD890MrChannelFrequencies(ch);
   const rxHz = ch.rxHz;
@@ -261,7 +328,6 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto): Uint8Array {
     (wireFromMode(ch.mode) & 0x3);
 
   let b9 = 0;
-  if (ch.rxOnly) b9 |= 1 << 5;
   const txDcs = ch.txTone.kind === 'dcs';
   const rxDcs = ch.rxTone.kind === 'dcs';
   b9 |= (txDcs ? 2 : ch.txTone.kind === 'ctcss' ? 1 : 0) << 2;
@@ -308,15 +374,8 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto): Uint8Array {
   }
   if (ch.dmrOperatingMode === 'repeater' || ch.dmrOperatingMode === 'dmo-simplex') {
     data[0x21] = data[0x21]! & ~BYTE_21_DCDM_MASK;
-    data[0x34] = setBit(data[0x34]!, BYTE_34_DMO_BIT, ch.dmrOperatingMode === 'dmo-simplex');
   }
-
-  // scanAdd maps to auto_scan (bit 4) on AT-D890UV — not per-channel scan membership.
-  if (ch.scanAdd === true) {
-    data[0x34] = setBit(data[0x34]!, 4, true);
-  } else if (ch.scanAdd === false) {
-    data[0x34] = setBit(data[0x34]!, 4, false);
-  }
+  applyModelledByte34(data, ch);
 
   if (ch.aprsReceive != null) {
     data[0x21] = setBit(data[0x21]!, BYTE_21_APRS_RX_BIT, ch.aprsReceive);
@@ -373,6 +432,12 @@ export function encodeChannelsIntoAtD890Image(
     return idx >= 0 && idx < maxSlot;
   });
 
+  const priors = new Map<number, Uint8Array>();
+  for (const ch of toWrite) {
+    const idx = ch.slotIndex - 1;
+    priors.set(idx, readCombinedChannelRecord(image, idx));
+  }
+
   for (let idx = 0; idx < maxSlot; idx++) {
     const primary = channelPrimaryAddress(idx);
     image.fill(primary, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE, 0);
@@ -382,7 +447,7 @@ export function encodeChannelsIntoAtD890Image(
   for (const ch of toWrite) {
     const idx = ch.slotIndex - 1;
     setBitmapBit(set, idx, true);
-    const encoded = encodeAtD890ChannelRecord(ch);
+    const encoded = encodeAtD890ChannelRecord(ch, priors.get(idx));
     image.set(channelPrimaryAddress(idx), encoded.subarray(0, AT_D890_LIMITS.CHANNEL_CHUNK_SIZE));
     image.set(
       channelSecondaryAddress(idx),

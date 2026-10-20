@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   AtD890ScriptedPipe,
   enqueueAtD890ReadReply,
+  makeAtD890IdentFrame,
   scriptAtD890Connect,
   scriptAtD890NegotiateReadBlock,
   scriptAtD890WriteAck,
@@ -180,8 +181,7 @@ describe('runAtD890ProbePaint', () => {
     const pipe = new AtD890ScriptedPipe();
     pipe.enqueue(new Uint8Array([0x51]));
     pipe.enqueue(new Uint8Array([0x58, 0x06]));
-    pipe.enqueue(new TextEncoder().encode('D878UV2\0V100\0'));
-    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(makeAtD890IdentFrame('V100', { model: 'D878UV2' }));
 
     await expect(runAtD890ProbePaint(pipe)).rejects.toThrow(/expected ID890UV/);
     expect(writtenAddresses(pipe)).toEqual([]);

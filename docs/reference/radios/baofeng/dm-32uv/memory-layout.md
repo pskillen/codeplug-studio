@@ -61,6 +61,8 @@ NeonPlug discovery:
 
 Typical span order-of-magnitude: hundreds of 4KB blocks (~800KB when 200 blocks) — exact bounds come from the radio’s V-frame, not a fixed Studio constant.
 
+Metadata `0x02` is the calibration page only inside this V-frame `0x0A` window (block addresses from the announced start through `alignedEnd`). A 4KB page whose last byte is `0x02` outside that window is not calibration. Fonts and voice samples on a reference radio (`0x105000`, `0x116000`, `0x218000`, `0x24A000`, `0x25D000`) are those false positives and are not saved as the calibration page. When more than one in-range `0x02` page is present, the lowest address is the live page and every higher address is a duplicate.
+
 ## Metadata → type (observed)
 
 | Metadata        | NeonPlug `memory.ts` type | Notes                                                                                     |
@@ -73,7 +75,7 @@ Typical span order-of-magnitude: hundreds of 4KB blocks (~800KB when 200 blocks)
 | `0x03`          | `digitalemergency`        | **Discovery path** maps digital emergency here                                            |
 | `0x10`          | `analogemergency`         | Analog emergency; also co-hosts encryption keys (see [settings.md](settings.md))          |
 | `0x0A`          | `message`                 | Quick text messages                                                                       |
-| `0x02`          | `calibration`             | Frequency adjustment                                                                      |
+| `0x02`          | `calibration`             | Calibration page **only inside** the V-frame `0x0A` window (see above)                    |
 | `0x0F`          | `rxgroup`                 | DMR RX groups (**metadata** `0x0F` — not V-frame `0x0F`)                                  |
 | `0x67`          | `dmrradioid`              | DMR radio ID list                                                                         |
 | `0x06`          | `config`                  | Analogue (DTMF) contacts; count at `+0x1FF`; 32-byte records from `+0x200`                |
@@ -106,7 +108,7 @@ NeonPlug `bulkReadRequiredBlocks` always tries to include:
 | `0x0A`                                                                  | Quick messages                                                                           |
 | `0x0B`                                                                  | Quick-access / TG index tables (**critical** for TG UI)                                  |
 | `0x67`                                                                  | DMR radio IDs                                                                            |
-| `0x02`                                                                  | Calibration                                                                              |
+| `0x02`                                                                  | Calibration — every in-range page, not only the lowest address                           |
 | `0x0F`                                                                  | RX groups                                                                                |
 | `0x44`                                                                  | Talk groups data (**critical**)                                                          |
 | `0x06`                                                                  | Analogue (DTMF) contacts; count at `+0x1FF` (retained on Write)                          |

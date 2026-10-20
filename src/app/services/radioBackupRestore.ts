@@ -31,6 +31,13 @@ import type {
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import type { Dm32ConfigWindow } from '@integrations/radio-io/radios/dm32uv/memory.ts';
+import {
+  DM32_CALIBRATION_JSON_PATH,
+  DM32_FACTORY_JSON_PATH,
+  buildDm32CalibrationBackupSidecars,
+  dm32FactorySectorRegion,
+} from '@integrations/radio-io/radios/dm32uv/calibrationDecode.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { OpenGd77Protocol } from '@integrations/radio-io/radios/opengd77/protocol.ts';
 import {
@@ -47,7 +54,19 @@ export type RadioBackupSession = {
   inspectBag?: RadioCloneHydrationBag;
   zipBytes: Uint8Array;
   userDatabaseOccupied?: Uint8Array;
+  /** DM-32 calibration sidecar. The eFuse UID in this JSON is not `manifest.serial`. */
+  dm32CalibrationJson?: string;
+  dm32FactoryJson?: string;
 };
+
+function sidecarText(
+  sidecars: Record<string, Uint8Array> | undefined,
+  path: string,
+): string | undefined {
+  const bytes = sidecars?.[path];
+  if (!bytes || bytes.byteLength === 0) return undefined;
+  return new TextDecoder().decode(bytes);
+}
 
 function sanitizeModelId(modelId: string): string {
   return modelId.replace(/[^\w.-]+/g, '_') || 'radio';
@@ -88,7 +107,10 @@ export function packLiveRadioBackup(input: {
   inspectBag?: RadioCloneHydrationBag;
   firmware?: string;
   capturedAt?: string;
+  /** Live V-frame `0x0A` window from `Dm32uvProtocol.getLiveConfigWindow`. */
+  dm32ConfigWindow?: Dm32ConfigWindow;
   extraRegions?: readonly { region: RadioBackupManifestV1['regions'][number]; bytes: Uint8Array }[];
+  sidecars?: Record<string, Uint8Array>;
 }): { manifest: RadioBackupManifestV1; zipBytes: Uint8Array } {
   const capturedAt = input.capturedAt ?? new Date().toISOString();
   const modelId = input.descriptor.modelIds[0] ?? 'radio';
@@ -100,6 +122,7 @@ export function packLiveRadioBackup(input: {
     addressBase: input.inspectBag?.retain.addressBase,
     dm32ContactsBase: input.inspectBag?.retain.dm32ContactsBase,
     dm32ContactsEnd: input.inspectBag?.retain.dm32ContactsEnd,
+    dm32ConfigWindow: input.dm32ConfigWindow,
     extraRegions: input.extraRegions,
   });
 
@@ -125,7 +148,7 @@ export function packLiveRadioBackup(input: {
   if (extract.dm32ContactsBase !== undefined) manifest.dm32ContactsBase = extract.dm32ContactsBase;
   if (extract.dm32ContactsEnd !== undefined) manifest.dm32ContactsEnd = extract.dm32ContactsEnd;
 
-  const zipBytes = packRadioBackupZip(manifest, extract.regionBytes);
+  const zipBytes = packRadioBackupZip(manifest, extract.regionBytes, input.sidecars);
   return { manifest, zipBytes };
 }
 
@@ -168,13 +191,35 @@ export async function backupLiveRadioSession(
       ];
     }
   }
+  const dm32ConfigWindow =
+    session.radio instanceof Dm32uvProtocol
+      ? (session.radio.getLiveConfigWindow() ?? undefined)
+      : undefined;
+  let sidecars: Record<string, Uint8Array> | undefined;
+  if (session.radio instanceof Dm32uvProtocol && dm32ConfigWindow) {
+    const sector = session.radio.getFactorySector();
+    const capture = session.radio.getFactorySectorCapture();
+    if (sector) {
+      const factory = dm32FactorySectorRegion(sector);
+      extraRegions = [...(extraRegions ?? []), factory];
+    }
+    sidecars = await buildDm32CalibrationBackupSidecars({
+      blocks: radioCloneSparseBlockBytes(inspectBag),
+      window: dm32ConfigWindow,
+      efuse: session.radio.getEfuseIdentity(),
+      factorySector: sector,
+      factoryNotKeptReason: capture.status === 'not-kept' ? capture.reason : null,
+    });
+  }
   const { manifest, zipBytes } = packLiveRadioBackup({
     descriptor: session.descriptor,
     image,
     inspectBag,
     firmware: firmware ?? inspectBag.retain.firmware,
     capturedAt: inspectBag.capturedAt,
+    dm32ConfigWindow,
     extraRegions,
+    sidecars,
   });
   downloadRadioBackupZip(zipBytes, manifest);
   return {
@@ -184,6 +229,8 @@ export async function backupLiveRadioSession(
     inspectBag,
     zipBytes,
     userDatabaseOccupied,
+    dm32CalibrationJson: sidecarText(sidecars, DM32_CALIBRATION_JSON_PATH),
+    dm32FactoryJson: sidecarText(sidecars, DM32_FACTORY_JSON_PATH),
   };
 }
 
@@ -219,6 +266,8 @@ export function openRadioBackupZip(bytes: Uint8Array): RadioBackupSession {
     inspectBag,
     zipBytes: bytes,
     userDatabaseOccupied,
+    dm32CalibrationJson: sidecarText(parsed.sidecars, DM32_CALIBRATION_JSON_PATH),
+    dm32FactoryJson: sidecarText(parsed.sidecars, DM32_FACTORY_JSON_PATH),
   };
 }
 

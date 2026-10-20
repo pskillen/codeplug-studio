@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { D890_MAP } from './constants.ts';
 import {
   radioIdAddress,
@@ -72,5 +73,17 @@ describe('atD890RegionLabel / atD890WriteRole', () => {
   it('classifies TalkgroupOrder as replaced when talk groups are rewritten', () => {
     expect(atD890RegionLabel(D890_MAP.TalkgroupOrder)).toBe('Talk group order');
     expect(atD890WriteRole(D890_MAP.TalkgroupOrder)).toBe('replaced');
+  });
+
+  it('classifies every talkgroup position-table address as replaced', () => {
+    const last = D890_MAP.TalkgroupPosition + (AT_D890UV_LIMITS.TALK_GROUPS_MAX - 1) * 4;
+    expect(atD890RegionLabel(D890_MAP.TalkgroupPosition)).toBe('Talk group position table');
+    expect(atD890WriteRole(D890_MAP.TalkgroupPosition)).toBe('replaced');
+    expect(atD890RegionLabel(D890_MAP.TalkgroupPosition + 4)).toBe('Talk group position table');
+    expect(atD890WriteRole(D890_MAP.TalkgroupPosition + 4)).toBe('replaced');
+    expect(atD890RegionLabel(last)).toBe('Talk group position table');
+    expect(atD890WriteRole(last)).toBe('replaced');
+    expect(atD890WriteRole(0x394_0000)).toBe('kept');
+    expect(atD890RegionLabel(0x394_0000)).toBe('Other retained region');
   });
 });

@@ -13,7 +13,14 @@ import {
 } from '../../kit/codecs/vProbe.ts';
 import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { throwIfAborted } from '../../kit/progress.ts';
-import { DM32_BLOCK_SIZE, DM32_CONNECTION, DM32_METADATA_OFFSET } from './constants.ts';
+import {
+  DM32_BLOCK_SIZE,
+  DM32_CONNECTION,
+  DM32_FACTORY_SECTOR_LENGTH,
+  DM32_FACTORY_SECTOR_READ_FRAME,
+  DM32_FACTORY_SECTOR_REPLY_OPCODE,
+  DM32_METADATA_OFFSET,
+} from './constants.ts';
 
 const TE = new TextEncoder();
 const TD = new TextDecoder('ascii', { fatal: false });
@@ -233,6 +240,80 @@ export async function dm32WriteMemory(
     );
   }
   await delay(scaledMs(DM32_CONNECTION.BLOCK_READ_DELAY_MS, scale), opts?.signal);
+}
+
+export type Dm32FactorySectorCapture =
+  { status: 'kept'; bytes: Uint8Array } | { status: 'not-kept'; reason: 'mismatch' | 'failed' };
+
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.byteLength !== b.byteLength) return false;
+  for (let i = 0; i < a.byteLength; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+/**
+ * One factory-sector read. Sends only `47 00 00 00 00 10`.
+ * Reply is opcode `0x53`, then 5 echoed bytes, then 4096 data bytes.
+ * Sending `0x43` or `0x53` is refused — those opcodes erase the sector.
+ */
+async function dm32ReadFactorySectorOnce(
+  pipe: BytePipe,
+  opts?: Dm32SettleOptions,
+): Promise<Uint8Array> {
+  const frame = DM32_FACTORY_SECTOR_READ_FRAME;
+  if (frame[0] === 0x43 || frame[0] === 0x53 || frame.byteLength !== 6) {
+    throw new RadioProtocolError('DM-32 factory-sector read refused an erase opcode');
+  }
+  throwIfAborted(opts?.signal);
+  await pipe.write(frame);
+  const scale = opts?.settleScale ?? 1;
+  await delay(scaledMs(DM32_CONNECTION.INTER_CMD_DELAY_MS, scale), opts?.signal);
+  const header = await pipe.readExact(6, DM32_CONNECTION.TIMEOUT.READ_MEMORY_MS);
+  if (header[0] !== DM32_FACTORY_SECTOR_REPLY_OPCODE) {
+    throw new RadioProtocolError(
+      `Factory sector reply expected 0x53, got 0x${header[0]?.toString(16) ?? '??'}`,
+    );
+  }
+  const data = await pipe.readExact(
+    DM32_FACTORY_SECTOR_LENGTH,
+    DM32_CONNECTION.TIMEOUT.READ_MEMORY_MS,
+  );
+  if (data.byteLength !== DM32_FACTORY_SECTOR_LENGTH) {
+    throw new RadioProtocolError(
+      `Factory sector reply was ${data.byteLength} bytes, expected ${DM32_FACTORY_SECTOR_LENGTH}`,
+    );
+  }
+  return data;
+}
+
+/**
+ * Read the factory sector twice during SYSINFO, before V-frames.
+ * Keep the 4096 bytes only when both replies are well-formed and match.
+ * A mismatch, a short read, or any other failure keeps nothing.
+ * Does not send a third command and does not pick one of the two copies.
+ */
+async function readFactorySectorOrNull(
+  pipe: BytePipe,
+  opts?: Dm32SettleOptions,
+): Promise<Uint8Array | null> {
+  try {
+    return await dm32ReadFactorySectorOnce(pipe, opts);
+  } catch {
+    return null;
+  }
+}
+
+export async function dm32CaptureFactorySector(
+  pipe: BytePipe,
+  opts?: Dm32SettleOptions,
+): Promise<Dm32FactorySectorCapture> {
+  const first = await readFactorySectorOrNull(pipe, opts);
+  const second = await readFactorySectorOrNull(pipe, opts);
+  if (!first || !second) return { status: 'not-kept', reason: 'failed' };
+  if (!sameBytes(first, second)) return { status: 'not-kept', reason: 'mismatch' };
+  return { status: 'kept', bytes: first };
 }
 
 export function parseFirmwareFromVFrames(frames: Map<number, Uint8Array>): string | undefined {

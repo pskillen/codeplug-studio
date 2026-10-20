@@ -24,14 +24,11 @@ export const AT_D890UV_LIMITS = {
   /**
    * Satellite keps write cap — this is a **transmitter/record** cap, not a satellite cap
    * (`packSatelliteWriteRecords` emits one wire record per eligible `(satellite, transmitter)`
-   * pair, #856/#1068). No D890 firmware ceiling is known — anytone-cps's own
-   * `SatelliteTableModel`/`writeSatelliteData()` iterate an unbounded list. `50` is a
-   * Studio-chosen placeholder roughly midway between qdmr's smallest (D168UV, 25) and largest
-   * (DMR6X2UV, 200) declared Anytone-family satellite caps — not itself hardware-verified, and
-   * not a more confident number than the previous `25` placeholder it replaces. See
-   * docs/reference/radios/anytone/at-d890uv/satellite-keps.md ("Max satellite count").
+   * pair, #856/#1068). The D890 CPS writes a fixed table of this many records at
+   * `0x4A80000`–`0x4A831FF` and does not write `0x4A83200`–`0x4A863FF`. See
+   * docs/reference/radios/anytone/at-d890uv/satellite-keps.md and limits.md.
    */
-  SATELLITE_MAX: 50,
+  SATELLITE_MAX: 25,
   /** 8-byte ASCII name field at record offset 0x00 — see satellite-keps.md. */
   SATELLITE_NAME_LENGTH: 8,
   /** Digital contact bank — vendor programming guide (500k lookup table). */

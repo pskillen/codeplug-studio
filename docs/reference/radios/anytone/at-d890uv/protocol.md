@@ -26,7 +26,7 @@ Kit codec for Anytone DMR R/W is shipped in `src/integrations/radio-io/kit/codec
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | Baud          | **921600** (anytone-cps `SerialDevice` default)                                                                                          |
 | Enter         | ASCII `PROGRAM`                                                                                                                          |
-| Enter reply   | ASCII `QX` + `0x06` (anytone-cps also tolerates a lone `0x00`)                                                                           |
+| Enter reply   | ASCII `QX` + `0x06`. A lone `0x00` fails this session (the shared kit still accepts it for a future family caller)                       |
 | Version probe | `0x02` after enter                                                                                                                       |
 | Exit          | ASCII `END`                                                                                                                              |
 | Read block    | Negotiated on Connect up to **`0xf0`** (240); falls back to **`0x10`** ([#793](https://github.com/pskillen/codeplug-studio/issues/793))  |
@@ -39,23 +39,33 @@ Kit codec for Anytone DMR R/W is shipped in `src/integrations/radio-io/kit/codec
 
 ## Model allow-list (ident response)
 
-After `PROGRAM` → `QX\x06`, host sends `0x02`. anytone-cps parses:
+After `PROGRAM` → `QX\x06`, the host sends `0x02` and reads **16 bytes** with `readExact(16)`. The read does not scan for `0x06`. An interior `0x06` is payload.
 
-| Field   | Bytes (approx) | D890 expected |
-| ------- | -------------- | ------------- |
-| Model   | `resp[0..7]`   | **`ID890UV`** |
-| Version | `resp[9..12]`  | **`V100`**    |
+Captured `IDENT_REPLY` ([wire-capture-2026-08-11-write-keps.md](wire-capture-2026-08-11-write-keps.md)):
 
-NUL bytes are stripped. Reject other Anytone DMR idents (`ID878UV2` / `V101`, …) unless a separate radio home is opened ([#648](https://github.com/pskillen/codeplug-studio/issues/648)).
+`49 44 38 39 30 55 56 00 03 56 31 30 30 00 00 06` = `ID890UV \x00 \x03 V100 \x00 \x00 \x06`
 
-qdmr’s Anytone interface expects an `'I'`-prefixed structured reply for some models — treat qdmr as handshake DNA cross-check only; prefer anytone-cps byte offsets for D890.
+| Offset | Bytes | Meaning                                                                                                                                                                          |
+| ------ | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0–6    | 7     | ASCII `ID890UV`                                                                                                                                                                  |
+| 7      | 1     | `0x00`                                                                                                                                                                           |
+| 8      | 1     | Band code. Captured value `0x03`. A value of `0x06` (UHF 446–447, per [#1301](https://github.com/pskillen/codeplug-studio/issues/1301)) is a real code, not the end of the reply |
+| 9–12   | 4     | ASCII `V100`                                                                                                                                                                     |
+| 13–14  | 2     | May be `0x06`. Captured `0x00 0x00`. Not a terminator                                                                                                                            |
+| 15     | 1     | Trailing `0x06`                                                                                                                                                                  |
+
+Probe requires model `ID890UV` and version `V100` before any read or write. Anything else throws `RadioWrongIdentError`. Byte 8 is kept on the ident result and is not used to accept or refuse the radio. Reject other Anytone DMR idents (`ID878UV2` / `V101`, …) unless a separate radio home is opened ([#648](https://github.com/pskillen/codeplug-studio/issues/648)).
+
+Byte 8 is the band code. A hard refusal of unknown band codes waits until the CPS band table is written into this doc. The firmware sites that hold that table (`0x5c3e90`, `0x5fd870`, `0x5c4c20`, `0x7411a0`) are not transcribed in this repo. A wrong table would refuse healthy radios.
+
+qdmr’s Anytone interface expects an `'I'`-prefixed structured reply for some models — treat qdmr as handshake DNA cross-check only; prefer the captured 16-byte layout above for D890.
 
 ## Handshake
 
 1. Open serial at **921600**.
-2. Send ASCII `PROGRAM` → expect `QX` + `0x06`.
-3. Send `0x02` → parse model / version; require `ID890UV` + `V100`.
-4. **Negotiate read block size** — probe candidates up to `0xf0` at LocalInfo against a 16-byte baseline; cache the largest size that returns matching bytes ([#793](https://github.com/pskillen/codeplug-studio/issues/793)). Fall back to `0x10` on any failure.
+2. Send ASCII `PROGRAM` → expect `QX` + `0x06`. A lone `0x00` fails the D890 session and ident is not probed. The shared kit default still accepts a lone `0x00` for a future family caller.
+3. Send `0x02` → read 16 bytes; require `ID890UV` + `V100` before Write.
+4. **Negotiate read block size** — probe candidates up to `0xf0` at LocalInfo against a 16-byte baseline; cache the largest size that returns matching bytes ([#793](https://github.com/pskillen/codeplug-studio/issues/793)). Fall back to `0x10` on any failure. Negotiated reads up to `0xf0` are a Studio extension ([#793](https://github.com/pskillen/codeplug-studio/issues/793)). The official CPS keps session sent no `R` frames ([wire-capture-2026-08-11-write-keps.md](wire-capture-2026-08-11-write-keps.md)). The `0xf0` path stays as it is.
 5. Proceed to sparse region R/W ([memory-layout.md](memory-layout.md)).
 6. Send ASCII `END` to exit **only after a successful upload** — failed or aborted uploads must **not** send `END` (see [Write staging and session exit](#write-staging-and-session-exit)).
 
@@ -65,21 +75,23 @@ Unlike RT95, anytone-cps does **not** implement echo-strip for this path — TX/
 
 ### Read
 
-| Field   | Encoding                                                                                                                  |
-| ------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Request | `'R'` + address (u32 BE) + length (1 byte, `0x10`…`0xf0`) — 6 bytes                                                       |
-| Reply   | Starts with `'W'`; payload at bytes `[6..6+length-1]`; checksum before trailer `0x06`; total frame **`length + 8`** bytes |
+| Field   | Encoding                                                                                                                                                         |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Request | `'R'` + address (u32 BE) + length (1 byte, `0x10`…`0xf0`) — 6 bytes                                                                                              |
+| Reply   | Starts with `'W'`; echoed address is u32 BE at bytes 1–4; payload at bytes `[6..6+length-1]`; checksum before trailer `0x06`; total frame **`length + 8`** bytes |
 
 Checksum (anytone-cps): 8-bit sum of reply bytes `[1 .. size-3]` (i.e. excluding first opcode and last two checksum/trailer bytes); compared to the checksum byte immediately before `0x06`.
 
-Studio chunks reads at the negotiated block size (16-byte aligned spans). If a large frame fails mid-transfer, the adapter retries that chunk at `0x10` before surfacing an error.
+The echoed address must match the request or the transfer fails. A wrong address is not retried. A timeout or a bad checksum resends that same frame twice (three transmissions), then surfaces the error. A timeout flushes the pipe first so a partial reply is not concatenated with the next frame. A checksum failure does not flush — that frame was already consumed.
+
+Studio chunks reads at the negotiated block size (16-byte aligned spans). If a large frame still fails after that resend budget, the adapter retries that chunk at `0x10` before surfacing an error. That size fallback is separate from the two resends.
 
 ### Write
 
-| Field   | Encoding                                                                                |
-| ------- | --------------------------------------------------------------------------------------- |
-| Request | `'W'` + address (u32 BE) + length (`0x10`) + 16 data bytes + checksum + trailing `0x06` |
-| Reply   | Prefer 1 byte `0x06` ACK                                                                |
+| Field   | Encoding                                                                                                                |
+| ------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Request | `'W'` + address (u32 BE) + length (`0x10`) + 16 data bytes + checksum + trailing `0x06`                                 |
+| Reply   | Prefer 1 byte `0x06` ACK. A timeout resends that same frame twice, flushing first. Any other ack byte fails immediately |
 
 Checksum (anytone-cps): 8-bit sum over command bytes after the opcode (`cmd[1:]` before checksum/trailer).
 

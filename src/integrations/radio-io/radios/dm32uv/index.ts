@@ -12,7 +12,10 @@ export {
 export {
   classifyDm32Metadata,
   discoverDm32MemoryBlocks,
+  isDm32AddressInConfigWindow,
   selectBlocksToBulkRead,
+  selectDm32CalibrationPages,
+  type Dm32ConfigWindow,
   type Dm32DiscoveredBlock,
 } from './memory.ts';
 export {
@@ -28,6 +31,7 @@ export {
   dm32BackupRestoreRole,
   isDm32CalibrationBlock,
   isDm32RestoreNeverWriteBlock,
+  isDm32Tag02OutsideConfigWindow,
 } from './backupRestoreRoles.ts';
 export {
   assertDm32RestoreAddressMap,

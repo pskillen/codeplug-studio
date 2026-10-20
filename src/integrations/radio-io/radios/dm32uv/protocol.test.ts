@@ -14,6 +14,7 @@ import {
   enqueueVFrame,
   makeEmptyBlock,
   makeFirstChannelBlock,
+  scriptDm32Connect,
   scriptDm32DownloadTwoBlocks,
 } from './__fixtures__/scriptedPipe.ts';
 
@@ -44,6 +45,8 @@ describe('classifyDm32Metadata', () => {
   });
 });
 
+const CONFIG_WINDOW = { start: 0x1000, end: 0xc8000 };
+
 describe('selectBlocksToBulkRead', () => {
   it('includes first channel block and required settings metadata', () => {
     const selected = selectBlocksToBulkRead(
@@ -53,6 +56,7 @@ describe('selectBlocksToBulkRead', () => {
         { address: 0x3000, metadata: 0x00, type: 'empty' },
       ],
       1,
+      CONFIG_WINDOW,
     );
     expect(selected.map((b) => b.address)).toEqual([0x1000, 0x2000]);
   });
@@ -64,9 +68,20 @@ describe('selectBlocksToBulkRead', () => {
       { address: 0x3000, metadata: DM32_METADATA.EMPTY },
       { address: 0x4000, metadata: DM32_METADATA.EMPTY_ALT },
     ].map((block) => ({ ...block, type: classifyDm32Metadata(block.metadata) }));
-    const selected = selectBlocksToBulkRead(discovered, 0);
+    const selected = selectBlocksToBulkRead(discovered, 0, CONFIG_WINDOW);
     expect(selected.map((b) => b.address)).toEqual([0x1000, 0x2000]);
     expect(selected.every((b) => b.type === 'zone')).toBe(true);
+  });
+
+  it('bulk-reads every in-range 0x02 page and skips fonts and voice outside the window', () => {
+    const discovered = [
+      { address: 0xb8000, metadata: DM32_METADATA.CALIBRATION },
+      { address: 0xc0000, metadata: DM32_METADATA.CALIBRATION },
+      { address: 0x105000, metadata: DM32_METADATA.CALIBRATION },
+      { address: 0x1000, metadata: DM32_METADATA.CHANNEL_FIRST },
+    ].map((block) => ({ ...block, type: classifyDm32Metadata(block.metadata) }));
+    const selected = selectBlocksToBulkRead(discovered, 1, CONFIG_WINDOW);
+    expect(selected.map((b) => b.address)).toEqual([0x1000, 0xb8000, 0xc0000]);
   });
 });
 
@@ -210,6 +225,57 @@ describe('Dm32uvProtocol', () => {
     expect(writeFrames[0]![1]).toBe(start & 0xff);
     expect(writeFrames[0]![6 + 2]).toBe(0xaa);
     void end;
+  });
+
+  it('drops a tag-0x02 cache block and still writes settings', async () => {
+    const pipe = new Dm32ScriptedPipe();
+    const start = 0x1000;
+    scriptDm32Connect(pipe, { start, end: 0x3fff });
+    const radio = new Dm32uvProtocol();
+    await radio.connect(pipe, { settleScale: 0 });
+
+    const channelBlock = makeFirstChannelBlock(1);
+    const settingsBlock = makeEmptyBlock(DM32_METADATA.VFO_SETTINGS);
+    settingsBlock[3] = 0x44;
+    const cal = makeEmptyBlock(DM32_METADATA.CALIBRATION);
+    cal[0] = 0x99;
+    radio.seedDownloadCache({
+      addressBase: start,
+      mapSize: DM32_BLOCK_SIZE * 3,
+      discovered: [
+        { address: start, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' },
+        { address: 0x2000, metadata: DM32_METADATA.VFO_SETTINGS, type: 'vfo' },
+        { address: 0x3000, metadata: DM32_METADATA.CALIBRATION, type: 'calibration' },
+      ],
+      blocks: new Map([
+        [start, channelBlock],
+        [0x2000, settingsBlock],
+        [0x3000, cal],
+      ]),
+    });
+    const image = createMemoryMap(DM32_BLOCK_SIZE * 3);
+    image.fill(0, image.size, 0xff);
+    image.set(0, channelBlock);
+    image.set(DM32_BLOCK_SIZE, settingsBlock);
+    image.set(DM32_BLOCK_SIZE * 2, cal);
+
+    enqueueReadReply(pipe, start + 0xfff, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
+    enqueueReadReply(pipe, 0x2000 + 0xfff, new Uint8Array([DM32_METADATA.VFO_SETTINGS]));
+    enqueueReadReply(pipe, 0x3000 + 0xfff, new Uint8Array([DM32_METADATA.CALIBRATION]));
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array([0x06]));
+
+    await radio.upload(image, {});
+
+    const writeFrames = pipe.writes.filter(
+      (frame) => frame[0] === 0x57 && frame.length === 6 + DM32_BLOCK_SIZE,
+    );
+    expect(writeFrames).toHaveLength(2);
+    const addresses = writeFrames.map((frame) => frame[1]! | (frame[2]! << 8) | (frame[3]! << 16));
+    expect(addresses).toEqual([start, 0x2000]);
+    expect(
+      writeFrames.every((frame) => frame[frame.length - 1] !== DM32_METADATA.CALIBRATION),
+    ).toBe(true);
   });
 
   it('discovers live map and remaps VFO to a new absolute address before upload', async () => {

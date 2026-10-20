@@ -55,6 +55,8 @@ export const DM32_OFFSET = {
 
 export const DM32_VFRAME = {
   FIRMWARE: 0x01,
+  /** eFuse chip UID (first 8 bytes) plus 4 derived bytes. Not a radio serial. */
+  EFUSE_IDENTITY: 0x02,
   BUILD_DATE: 0x03,
   DSP_VERSION: 0x04,
   RADIO_VERSION: 0x05,
@@ -123,3 +125,13 @@ export const DM32_REQUIRED_METADATA: readonly number[] = [
 ];
 
 export const DM32_MODEL_IDS = ['DM-32UV', 'DP570UV'] as const;
+
+/**
+ * Program-flash factory sector `0x0300B000`–`0x0300BFFF`.
+ * The only `0x47` frame Studio sends. Never send opcode `0x43` or `0x53`.
+ */
+export const DM32_FACTORY_SECTOR_ADDRESS = 0x0300_b000;
+export const DM32_FACTORY_SECTOR_LENGTH = 4096;
+export const DM32_FACTORY_SECTOR_READ_FRAME = new Uint8Array([0x47, 0x00, 0x00, 0x00, 0x00, 0x10]);
+/** Reply opcode. Receiving this is required. Sending it erases the sector. */
+export const DM32_FACTORY_SECTOR_REPLY_OPCODE = 0x53;

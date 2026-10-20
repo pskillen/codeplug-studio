@@ -23,6 +23,7 @@ describe('BuildRadioBackupPage isolation', () => {
   it('does not import upload staging, assemble, or persist', () => {
     const sources = [
       'BuildRadioBackupPage.tsx',
+      'Dm32CalibrationBackupPanel.tsx',
       '../../services/radioBackupRestore.ts',
       '../../components/builds/RadioCloneSummaryView.tsx',
     ];
@@ -42,5 +43,10 @@ describe('BuildRadioBackupPage isolation', () => {
     expect(text).not.toContain('prodWriteDisabled');
     expect(text).toContain('descriptorSupportsRestore');
     expect(text).toContain('remapping those bases is out of scope');
+    expect(text).toContain('Dm32CalibrationBackupPanel');
+    const panel = readAppSource('Dm32CalibrationBackupPanel.tsx');
+    expect(panel).not.toMatch(/0x0300[Bb]000/);
+    expect(panel).not.toMatch(/47\s*00\s*00\s*00\s*00\s*10/);
+    expect(text).not.toMatch(/0x0300[Bb]000/);
   });
 });

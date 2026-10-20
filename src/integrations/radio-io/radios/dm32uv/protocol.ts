@@ -21,12 +21,14 @@ import {
 import { decodeChannelsFromDm32Image, encodeChannelsIntoDm32Image } from './channelCodec.ts';
 import {
   dm32AsciiHandshake,
+  dm32CaptureFactorySector,
   dm32EnterProgrammingMode,
   dm32QueryVFrame,
   dm32ReadMemory,
   dm32WriteMemory,
   parseConfigRangeFromV0a,
   parseFirmwareFromVFrames,
+  type Dm32FactorySectorCapture,
   type Dm32SettleOptions,
 } from './connection.ts';
 import {
@@ -37,8 +39,14 @@ import {
   groupDm32BlocksForProgress,
   readChannelCount,
   selectBlocksToBulkRead,
+  selectDm32CalibrationPages,
+  type Dm32ConfigWindow,
   type Dm32DiscoveredBlock,
 } from './memory.ts';
+import {
+  assertDm32OutgoingBlockIsNotCalibration,
+  dm32OutgoingBlockIsCalibration,
+} from './backupRestoreRoles.ts';
 import { remapDm32BlocksByMetadata, remapDm32MemoryMapByTranslations } from './remap.ts';
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
@@ -52,6 +60,7 @@ import {
 import {
   assertDm32RestoreAddressMap,
   assertDm32RestoreUniqueOccupiedTags,
+  dm32ArchiveLiveCalibrationAddress,
   listDm32RestoreBlocks,
   type Dm32RestoreLiveAddressMap,
 } from './restoreFromBackup.ts';
@@ -137,12 +146,44 @@ export class Dm32uvProtocol implements CloneImageRadio {
   private cache: Dm32DownloadCache | null = null;
   /** Live config range from V-frame 0x0A at connect — survives hydration seed. */
   private liveLayout: Dm32LiveLayout | null = null;
+  /** Matched factory-sector bytes, or null when backup did not keep them. */
+  private factorySector: Uint8Array | null = null;
+  private factorySectorCapture: Dm32FactorySectorCapture | { status: 'not-requested' } = {
+    status: 'not-requested',
+  };
+  /** V-frame 0x02 payload (eFuse UID plus 4 derived bytes). Not a serial. */
+  private efuseIdentity: Uint8Array | null = null;
   private programming = false;
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
 
   /** Last successful download cache (for hydration / RMW). */
   getDownloadCache(): Dm32DownloadCache | null {
     return this.cache;
+  }
+
+  /** Matched 4096-byte factory sector, or null when it was not kept. */
+  getFactorySector(): Uint8Array | null {
+    return this.factorySector ? this.factorySector.slice() : null;
+  }
+
+  /** `not-requested` on Write/Restore. `not-kept` when the two backup reads disagree or fail. */
+  getFactorySectorCapture(): Dm32FactorySectorCapture | { status: 'not-requested' } {
+    if (this.factorySectorCapture.status !== 'kept') return this.factorySectorCapture;
+    return { status: 'kept', bytes: this.factorySectorCapture.bytes.slice() };
+  }
+
+  /** V-frame `0x02` payload when the radio sent one. Not stored as `manifest.serial`. */
+  getEfuseIdentity(): Uint8Array | null {
+    return this.efuseIdentity ? this.efuseIdentity.slice() : null;
+  }
+
+  /**
+   * Live V-frame `0x0A` window from this connect: block addresses from
+   * `addressBase` through `alignedEnd`. The app does not hard-code the bounds.
+   */
+  getLiveConfigWindow(): Dm32ConfigWindow | null {
+    if (!this.liveLayout) return null;
+    return { start: this.liveLayout.addressBase, end: this.liveLayout.alignedEnd };
   }
 
   /** V-frame bases from this PROGRAM connect — compared to the backup manifest. */
@@ -199,14 +240,22 @@ export class Dm32uvProtocol implements CloneImageRadio {
 
   async connect(
     pipe: BytePipe,
-    opts?: { signal?: AbortSignal; settleScale?: number },
+    opts?: { signal?: AbortSignal; settleScale?: number; captureFactorySector?: boolean },
   ): Promise<IdentResult> {
     this.pipe = pipe;
     this.settle = { settleScale: opts?.settleScale ?? 1, signal: opts?.signal };
     this.cache = null;
     this.programming = false;
+    this.factorySector = null;
+    this.factorySectorCapture = { status: 'not-requested' };
+    this.efuseIdentity = null;
 
     const { modelString } = await dm32AsciiHandshake(pipe, this.settle);
+    if (opts?.captureFactorySector) {
+      const capture = await dm32CaptureFactorySector(pipe, this.settle);
+      this.factorySectorCapture = capture;
+      this.factorySector = capture.status === 'kept' ? capture.bytes.slice() : null;
+    }
     const vframes = new Map<number, Uint8Array>();
     for (const id of DM32_VFRAME_QUERY_IDS) {
       throwIfAborted(opts?.signal);
@@ -217,6 +266,9 @@ export class Dm32uvProtocol implements CloneImageRadio {
         // NeonPlug continues when a single V-frame fails.
       }
     }
+
+    const efuse = vframes.get(DM32_VFRAME.EFUSE_IDENTITY);
+    this.efuseIdentity = efuse && efuse.byteLength > 0 ? efuse.slice() : null;
 
     const layoutPayload = vframes.get(DM32_VFRAME.MEMORY_LAYOUT);
     if (!layoutPayload) {
@@ -297,7 +349,13 @@ export class Dm32uvProtocol implements CloneImageRadio {
       channelCount = await readChannelCount(this.pipe, firstChannel.address, settle);
     }
 
-    const toRead = selectBlocksToBulkRead(discovered, channelCount);
+    if (!this.liveLayout) {
+      throw new RadioProtocolError('DM-32UV live memory layout unknown — reconnect before Read');
+    }
+    const toRead = selectBlocksToBulkRead(discovered, channelCount, {
+      start: this.liveLayout.addressBase,
+      end: this.liveLayout.alignedEnd,
+    });
     const groups = groupDm32BlocksForProgress(toRead);
     this.cache.blocks = new Map();
     for (const group of groups) {
@@ -513,9 +571,18 @@ export class Dm32uvProtocol implements CloneImageRadio {
     this.cache.contactWriteAddresses = contactWriteAddresses;
     this.cache.zoneWriteAddresses = zoneWriteAddresses;
 
+    const liveCalibrationAddress = selectDm32CalibrationPages(liveDiscovered, {
+      start: this.liveLayout.addressBase,
+      end: this.liveLayout.alignedEnd,
+    }).live?.address;
     const blocks = memoryMapToDm32Blocks(remappedImage, this.cache.addressBase, addresses);
+    const writeAddresses = addresses.filter((addr) => {
+      const data = blocks.get(addr);
+      if (!data) return true;
+      return !dm32OutgoingBlockIsCalibration(addr, data, liveCalibrationAddress);
+    });
     const byAddr = new Map(this.cache.discovered.map((b) => [b.address, b]));
-    const discoveredForProgress: Dm32DiscoveredBlock[] = addresses.map((address) => {
+    const discoveredForProgress: Dm32DiscoveredBlock[] = writeAddresses.map((address) => {
       const known = byAddr.get(address);
       const data = blocks.get(address) ?? this.cache!.blocks.get(address);
       const metadata = data?.[DM32_BLOCK_SIZE - 1] ?? known?.metadata ?? 0xff;
@@ -573,6 +640,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
           },
           opts.signal,
         );
+        assertDm32OutgoingBlockIsNotCalibration(addr, data, liveCalibrationAddress);
         await dm32WriteMemory(this.pipe, addr, data, settle);
         this.cache.blocks.set(addr, data);
         stagingChunks.push({ address: addr, data: data.slice() });
@@ -593,6 +661,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
       throw new RadioProtocolError('DM-32UV restore: not connected / not in PROGRAM mode');
     }
     assertDm32RestoreAddressMap(archive.manifest, this.getLiveRestoreAddressMap());
+    const liveCalibrationAddress = dm32ArchiveLiveCalibrationAddress(archive);
     const blocks = listDm32RestoreBlocks(archive, opts.regionIds);
     assertDm32RestoreUniqueOccupiedTags(blocks);
     const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
@@ -616,6 +685,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
         await new Promise((r) => setTimeout(r, interBlockMs));
       }
       const block = blocks[i]!;
+      assertDm32OutgoingBlockIsNotCalibration(block.address, block.data, liveCalibrationAddress);
       await dm32WriteMemory(this.pipe, block.address, block.data, settle);
       reportProgress(
         opts.onProgress,

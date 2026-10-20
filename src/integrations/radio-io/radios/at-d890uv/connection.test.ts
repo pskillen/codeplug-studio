@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { RadioProtocolError } from '../../kit/errors.ts';
+import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { ANYTONE_DMR_ACK, anytoneDmrChecksum8AfterOpcode } from '../../kit/codecs/anytoneDmrRw.ts';
 import { AT_D890_CONNECTION, D890_MAP } from './constants.ts';
-import { atD890ReadMemory, atD890WriteMemory } from './connection.ts';
+import {
+  atD890ProbeIdent,
+  atD890ReadBlockRaw,
+  atD890ReadMemory,
+  atD890WriteBlockRaw,
+  atD890WriteMemory,
+} from './connection.ts';
 import { assertAtD890TransmitAddress } from './writableExtents.ts';
-import { AtD890ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
+import { AtD890ScriptedPipe, makeAtD890IdentFrame } from './__fixtures__/scriptedPipe.ts';
 
 function makeReadReply(address: number, payload: Uint8Array): Uint8Array {
   const bodyLen = 6 + payload.length;
@@ -25,6 +31,31 @@ function makeReadReply(address: number, payload: Uint8Array): Uint8Array {
 }
 
 const ADDRESS = 0x4f8_0000;
+
+describe('parseAtD890Ident', () => {
+  it('parses ID890UV / V100 when byte 8 and byte 13 are 0x06', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    const raw = makeAtD890IdentFrame('V100', { band: 0x06, byte13: 0x06 });
+    pipe.enqueue(raw);
+    const ident = await atD890ProbeIdent(pipe);
+    expect(ident.model).toBe('ID890UV');
+    expect(ident.version).toBe('V100');
+    expect(ident.bandCode).toBe(0x06);
+    expect(ident.raw).toEqual(raw);
+  });
+
+  it('rejects a version other than V100', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.enqueue(makeAtD890IdentFrame('V101'));
+    await expect(atD890ProbeIdent(pipe)).rejects.toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('rejects a model other than ID890UV', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.enqueue(makeAtD890IdentFrame('V100', { model: 'D878UV2' }));
+    await expect(atD890ProbeIdent(pipe)).rejects.toBeInstanceOf(RadioWrongIdentError);
+  });
+});
 
 describe('atD890WriteMemory allow-list', () => {
   it('refuses LocalInfo before serial I/O', async () => {
@@ -121,6 +152,96 @@ describe('atD890ReadMemory negotiated block size', () => {
     const got = await atD890ReadMemory(pipe, ADDRESS, 0xf0, undefined, 0xf0);
     expect(got).toEqual(full);
     const readFrames = pipe.writes.filter((w) => w[0] === 0x52);
-    expect(readFrames.filter((f) => f[5] === 0x10).length).toBe(15);
+    expect(readFrames.filter((f) => f[5] === 0xf0)).toHaveLength(1);
+    expect(readFrames.filter((f) => f[5] === 0x10)).toHaveLength(15);
+  });
+});
+
+function readFrames(pipe: AtD890ScriptedPipe): Uint8Array[] {
+  return pipe.writes.filter((frame) => frame[0] === 0x52);
+}
+
+function writeFrames(pipe: AtD890ScriptedPipe): Uint8Array[] {
+  return pipe.writes.filter((frame) => frame[0] === 0x57);
+}
+
+describe('atD890 frame resend', () => {
+  it('fails a mismatched echoed address without resending', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    const payload = new Uint8Array(0x10).fill(0x11);
+    pipe.enqueue(makeReadReply(ADDRESS + 0x10, payload));
+    await expect(atD890ReadBlockRaw(pipe, ADDRESS, 0x10)).rejects.toThrow(/address mismatch/);
+    expect(readFrames(pipe)).toHaveLength(1);
+    expect(pipe.flushCount).toBe(0);
+  });
+
+  it('resends once after a bad checksum and does not flush', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    const payload = new Uint8Array(0x10).fill(0x22);
+    const good = makeReadReply(ADDRESS, payload);
+    const bad = good.slice();
+    bad[bad.length - 2]! ^= 0xff;
+    pipe.enqueue(bad);
+    pipe.enqueue(good);
+    await expect(atD890ReadBlockRaw(pipe, ADDRESS, 0x10)).resolves.toEqual(payload);
+    expect(readFrames(pipe)).toHaveLength(2);
+    expect(pipe.flushCount).toBe(0);
+  });
+
+  it('flushes before each resend when a read times out twice', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    const payload = new Uint8Array(0x10).fill(0x33);
+    pipe.pendingTimeouts = 2;
+    pipe.replyAfterTimeouts = makeReadReply(ADDRESS, payload);
+    await expect(atD890ReadBlockRaw(pipe, ADDRESS, 0x10)).resolves.toEqual(payload);
+    expect(readFrames(pipe)).toHaveLength(3);
+    expect(pipe.flushCount).toBe(2);
+  });
+
+  it('stops after two read resends when every attempt times out', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.pendingTimeouts = 5;
+    await expect(atD890ReadBlockRaw(pipe, ADDRESS, 0x10)).rejects.toBeInstanceOf(RadioTimeoutError);
+    expect(readFrames(pipe)).toHaveLength(3);
+    expect(pipe.flushCount).toBe(2);
+  });
+
+  it('does not resend a read with a bad trailer', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    const frame = makeReadReply(ADDRESS, new Uint8Array(0x10).fill(1));
+    frame[frame.length - 1] = 0x15;
+    pipe.enqueue(frame);
+    await expect(atD890ReadBlockRaw(pipe, ADDRESS, 0x10)).rejects.toThrow(/trailer/);
+    expect(readFrames(pipe)).toHaveLength(1);
+    expect(pipe.flushCount).toBe(0);
+  });
+
+  it('resends a timed-out write twice and then accepts 0x06', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.pendingTimeouts = 2;
+    pipe.replyAfterTimeouts = new Uint8Array([ANYTONE_DMR_ACK]);
+    await atD890WriteMemory(pipe, D890_MAP.ChannelSet, new Uint8Array(0x10));
+    expect(writeFrames(pipe)).toHaveLength(3);
+    expect(pipe.flushCount).toBe(2);
+  });
+
+  it('stops after two write resends when every attempt times out', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.pendingTimeouts = 5;
+    await expect(
+      atD890WriteBlockRaw(pipe, D890_MAP.ChannelSet, new Uint8Array(0x10)),
+    ).rejects.toBeInstanceOf(RadioTimeoutError);
+    expect(writeFrames(pipe)).toHaveLength(3);
+    expect(pipe.flushCount).toBe(2);
+  });
+
+  it('does not resend a write when the ack is not 0x06', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.enqueue(new Uint8Array([0x15]));
+    await expect(
+      atD890WriteMemory(pipe, D890_MAP.ChannelSet, new Uint8Array(0x10)),
+    ).rejects.toThrow(/not ACKed/);
+    expect(writeFrames(pipe)).toHaveLength(1);
+    expect(pipe.flushCount).toBe(0);
   });
 });

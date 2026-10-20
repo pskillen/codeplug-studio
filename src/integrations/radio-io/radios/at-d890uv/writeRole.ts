@@ -6,6 +6,7 @@
  * Use explicit bank spans from each region's own base + stride × capacity.
  */
 
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 
 export type AtD890WriteRole = 'replaced' | 'kept';
@@ -123,6 +124,9 @@ export function atD890RegionLabel(address: number): string {
   if (address === D890_MAP.TalkgroupSet) return 'Talk group bitmap';
   if (inTalkgroupDataWindow(address)) return 'Talk groups';
   if (address === D890_MAP.TalkgroupOrder) return 'Talk group order';
+  if (inExclusiveSpan(address, D890_MAP.TalkgroupPosition, AT_D890UV_LIMITS.TALK_GROUPS_MAX * 4)) {
+    return 'Talk group position table';
+  }
   if (address === D890_MAP.ReceiveGroupSet) return 'RX group bitmap';
   if (inBank(address, D890_MAP.ReceiveGroupData, D890_MAP.ReceiveGroupStride, RX_GROUP_SLOTS)) {
     return 'RX group lists';
@@ -169,6 +173,9 @@ export function atD890WriteRole(address: number): AtD890WriteRole {
   if (inScanListDataBank(address)) return 'replaced';
   if (inTalkgroupDataWindow(address)) return 'replaced';
   if (address === D890_MAP.TalkgroupOrder) return 'replaced';
+  if (inExclusiveSpan(address, D890_MAP.TalkgroupPosition, AT_D890UV_LIMITS.TALK_GROUPS_MAX * 4)) {
+    return 'replaced';
+  }
   if (inBank(address, D890_MAP.ReceiveGroupData, D890_MAP.ReceiveGroupStride, RX_GROUP_SLOTS)) {
     return 'replaced';
   }

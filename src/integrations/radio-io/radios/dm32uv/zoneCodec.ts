@@ -66,11 +66,10 @@ export function encodeDm32Zone(zone: RadioZoneDto): Uint8Array {
   const data = new Uint8Array(DM32_ZONE_ENTRY_SIZE);
   data.fill(0xff);
 
-  const nameBytes = TE.encode(zone.wireName.slice(0, 10));
-  const nameLength = Math.min(nameBytes.length, 10);
-  data.set(nameBytes.subarray(0, nameLength), 0);
-  data[nameLength] = 0;
-  for (let i = nameLength + 1; i < 11; i++) data[i] = 0xff;
+  const nameLimit = DM32UV_LIMITS.NAME_LENGTH_CHANNEL_ZONE_CONTACT_TG;
+  const nameBytes = TE.encode(zone.wireName).subarray(0, nameLimit);
+  data.set(nameBytes, 0);
+  if (nameBytes.length < nameLimit) data[nameBytes.length] = 0;
 
   const channelCount = Math.min(zone.channelNumbers.length, DM32_ZONE_MAX_MEMBERS);
   data[16] = channelCount;
