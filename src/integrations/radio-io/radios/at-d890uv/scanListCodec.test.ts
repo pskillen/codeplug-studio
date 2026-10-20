@@ -157,11 +157,12 @@ describe('encodeScanListsIntoAtD890Image', () => {
     expect(image.get(neighbour, 1)[0]).toBe(0xff);
   });
 
-  it('leaves ScanListSet bytes for bits 100–255 when bit 249 was preset', () => {
+  it('clears modelled scan-list bits through 249 and preserves a bit in 250–255', () => {
     const image = createMemoryMap(0x500_0000);
     image.fill(0, 0x500_0000, 0xff);
     const set = new Uint8Array(AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
     setBitmapBit(set, 249, true);
+    setBitmapBit(set, 255, true);
     image.set(D890_MAP.ScanListSet, set);
 
     encodeScanListsIntoAtD890Image(image, [
@@ -170,10 +171,11 @@ describe('encodeScanListsIntoAtD890Image', () => {
 
     const outSet = image.get(D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
     expect(outSet[0]).toBe(0x01); // bit 0 from encoded list
-    expect(outSet[31]).toBe(0x02); // bit 249 preserved
+    expect(outSet[31]! & 0x02).toBe(0); // bit 249 cleared with the modelled range
+    expect(outSet[31]! & 0x80).toBe(0x80); // bit 255 preserved
   });
 
-  it('refreshScanListSetFromRadioBase preserves bits 100+ from live radio not stale cache', () => {
+  it('refreshScanListSetFromRadioBase preserves bits 250+ from live radio not stale cache', () => {
     const image = createMemoryMap(0x500_0000);
     image.fill(0, 0x500_0000, 0xff);
     image.set(D890_MAP.ScanListSet, new Uint8Array(AT_D890_LIMITS.SCAN_LIST_SET_BYTES));
@@ -185,10 +187,12 @@ describe('encodeScanListsIntoAtD890Image', () => {
 
     const freshRadio = new Uint8Array(AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
     setBitmapBit(freshRadio, 249, true);
+    setBitmapBit(freshRadio, 255, true);
     refreshScanListSetFromRadioBase(image, freshRadio);
 
     const outSet = image.get(D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
     expect(outSet[0]).toBe(0x01);
-    expect(outSet[31]).toBe(0x02);
+    expect(outSet[31]! & 0x02).toBe(0); // bit 249 cleared
+    expect(outSet[31]! & 0x80).toBe(0x80); // bit 255 preserved
   });
 });
