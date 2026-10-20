@@ -39,9 +39,14 @@ import {
   groupDm32BlocksForProgress,
   readChannelCount,
   selectBlocksToBulkRead,
+  selectDm32CalibrationPages,
   type Dm32ConfigWindow,
   type Dm32DiscoveredBlock,
 } from './memory.ts';
+import {
+  assertDm32OutgoingBlockIsNotCalibration,
+  dm32OutgoingBlockIsCalibration,
+} from './backupRestoreRoles.ts';
 import { remapDm32BlocksByMetadata, remapDm32MemoryMapByTranslations } from './remap.ts';
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
@@ -55,6 +60,7 @@ import {
 import {
   assertDm32RestoreAddressMap,
   assertDm32RestoreUniqueOccupiedTags,
+  dm32ArchiveLiveCalibrationAddress,
   listDm32RestoreBlocks,
   type Dm32RestoreLiveAddressMap,
 } from './restoreFromBackup.ts';
@@ -565,9 +571,18 @@ export class Dm32uvProtocol implements CloneImageRadio {
     this.cache.contactWriteAddresses = contactWriteAddresses;
     this.cache.zoneWriteAddresses = zoneWriteAddresses;
 
+    const liveCalibrationAddress = selectDm32CalibrationPages(liveDiscovered, {
+      start: this.liveLayout.addressBase,
+      end: this.liveLayout.alignedEnd,
+    }).live?.address;
     const blocks = memoryMapToDm32Blocks(remappedImage, this.cache.addressBase, addresses);
+    const writeAddresses = addresses.filter((addr) => {
+      const data = blocks.get(addr);
+      if (!data) return true;
+      return !dm32OutgoingBlockIsCalibration(addr, data, liveCalibrationAddress);
+    });
     const byAddr = new Map(this.cache.discovered.map((b) => [b.address, b]));
-    const discoveredForProgress: Dm32DiscoveredBlock[] = addresses.map((address) => {
+    const discoveredForProgress: Dm32DiscoveredBlock[] = writeAddresses.map((address) => {
       const known = byAddr.get(address);
       const data = blocks.get(address) ?? this.cache!.blocks.get(address);
       const metadata = data?.[DM32_BLOCK_SIZE - 1] ?? known?.metadata ?? 0xff;
@@ -625,6 +640,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
           },
           opts.signal,
         );
+        assertDm32OutgoingBlockIsNotCalibration(addr, data, liveCalibrationAddress);
         await dm32WriteMemory(this.pipe, addr, data, settle);
         this.cache.blocks.set(addr, data);
         stagingChunks.push({ address: addr, data: data.slice() });
@@ -645,6 +661,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
       throw new RadioProtocolError('DM-32UV restore: not connected / not in PROGRAM mode');
     }
     assertDm32RestoreAddressMap(archive.manifest, this.getLiveRestoreAddressMap());
+    const liveCalibrationAddress = dm32ArchiveLiveCalibrationAddress(archive);
     const blocks = listDm32RestoreBlocks(archive, opts.regionIds);
     assertDm32RestoreUniqueOccupiedTags(blocks);
     const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
@@ -668,6 +685,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
         await new Promise((r) => setTimeout(r, interBlockMs));
       }
       const block = blocks[i]!;
+      assertDm32OutgoingBlockIsNotCalibration(block.address, block.data, liveCalibrationAddress);
       await dm32WriteMemory(this.pipe, block.address, block.data, settle);
       reportProgress(
         opts.onProgress,

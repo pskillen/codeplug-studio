@@ -10,7 +10,10 @@
  * Read hydration inside entity payloads. Unused slots are explicit empty/sentinel fill.
  *
  * **Kept regions** (settings `0x04` outside APRS slice, emergencies, keys,
- * calibration, VFO bank, messages, analogue contacts `0x06`) stay Read-retained.
+ * VFO bank, messages, analogue contacts `0x06`) stay Read-retained and are
+ * still rewritten from the read. Calibration (`0x02`) is also `kept`, which
+ * means the radio's copy is left untouched — Write and Restore do not send
+ * that page back.
  * Talk-group cardinality is metadata `0x44` and quick-access `0x0B`. The
  * analogue-contact count at `0x06` `+0x1FF` is not projection-authored.
  */
@@ -155,6 +158,10 @@ export function dm32WriteRole(
   if (metadata === DM32_METADATA.DMR_RADIO_IDS || type === 'dmrradioid') {
     // Role stays replaced; an empty projection does not rewrite the block.
     return 'replaced';
+  }
+  if (metadata === DM32_METADATA.CALIBRATION || type === 'calibration') {
+    // Kept means the radio's page is left untouched, not written back.
+    return 'kept';
   }
   if (type === 'empty') {
     return 'kept';

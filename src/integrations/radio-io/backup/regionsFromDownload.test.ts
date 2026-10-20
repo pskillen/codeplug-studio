@@ -166,6 +166,25 @@ describe('regionsFromDownload', () => {
     expect(extract.regions.map((r) => r.address)).toEqual([0x1000]);
     expect(extract.regions.every((r) => r.label.startsWith('Calibration'))).toBe(false);
   });
+
+  it('labels the lower in-range calibration page as live and a higher one as a duplicate', () => {
+    const lower = new Uint8Array(DM32_BLOCK_SIZE).fill(0x00);
+    lower[DM32_BLOCK_SIZE - 1] = DM32_METADATA.CALIBRATION;
+    const higher = lower.slice();
+    const image = createMemoryMap(DM32_BLOCK_SIZE);
+    const extract = regionsFromDownload({
+      modelId: 'DM-32UV',
+      image,
+      sparseBlocks: [
+        { address: 0xc0000, data: higher },
+        { address: 0xb8000, data: lower },
+      ],
+      dm32ConfigWindow: { start: 0x1000, end: 0xc8000 },
+    });
+    expect(extract.regions.find((region) => region.address === 0xb8000)?.label).toMatch(/Live/);
+    expect(extract.regions.find((region) => region.address === 0xc0000)?.label).toMatch(/not live/);
+    expect(extract.regions.every((region) => region.restoreRole === 'inspect-only')).toBe(true);
+  });
 });
 
 describe('memoryMapFromBackupRegions', () => {

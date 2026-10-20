@@ -12,6 +12,7 @@ import {
 export function packRadioBackupZip(
   manifest: RadioBackupManifestV1,
   regionBytes: Record<string, Uint8Array>,
+  sidecars?: Record<string, Uint8Array>,
 ): Uint8Array {
   const validated = validateRadioBackupManifest(manifest);
   const entries: Record<string, Uint8Array> = {
@@ -34,6 +35,17 @@ export function packRadioBackupZip(
   for (const id of Object.keys(regionBytes)) {
     if (!validated.regions.some((region) => region.id === id)) {
       throw new RadioBackupError(`Radio backup pack has bytes for unknown region ${id}.`);
+    }
+  }
+
+  if (sidecars) {
+    for (const [path, bytes] of Object.entries(sidecars)) {
+      if (path === 'manifest.json' || validated.regions.some((region) => region.path === path)) {
+        throw new RadioBackupError(
+          `Radio backup sidecar path ${path} collides with a packed file.`,
+        );
+      }
+      entries[path] = bytes;
     }
   }
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DM32_BLOCK_SIZE, DM32_METADATA } from './constants.ts';
 import { selectDm32CalibrationPages, type Dm32ConfigWindow } from './memory.ts';
 import {
+  assertDm32OutgoingBlockIsNotCalibration,
   dm32BackupRestoreRole,
   isDm32CalibrationBlock,
   isDm32RestoreNeverWriteBlock,
@@ -44,6 +45,15 @@ describe('dm32BackupRestoreRole', () => {
     expect(dm32BackupRestoreRole(block(DM32_METADATA.ZONE), 0x2000, WINDOW)).toBe('restorable');
     expect(dm32BackupRestoreRole(block(DM32_METADATA.VFO_SETTINGS), 0x3000, WINDOW)).toBe(
       'restorable',
+    );
+  });
+});
+
+describe('assertDm32OutgoingBlockIsNotCalibration', () => {
+  it('rejects a block aimed at the live address even when the tag byte is not 0x02', () => {
+    const data = block(DM32_METADATA.ZONE);
+    expect(() => assertDm32OutgoingBlockIsNotCalibration(0xb8000, data, 0xb8000)).toThrow(
+      /calibration/,
     );
   });
 });

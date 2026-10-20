@@ -7,9 +7,14 @@
 import type { RadioBackupManifestV1, RadioBackupRegionV1 } from '../../backup/types.ts';
 import type { MemoryMap } from '../../types.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
-import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from './constants.ts';
+import {
+  DM32_BLOCK_SIZE,
+  DM32_FACTORY_SECTOR_ADDRESS,
+  DM32_METADATA,
+  DM32_METADATA_OFFSET,
+} from './constants.ts';
 import { isDm32RestoreNeverWriteBlock } from './backupRestoreRoles.ts';
-import { type Dm32ConfigWindow } from './memory.ts';
+import { selectDm32CalibrationPages, type Dm32ConfigWindow } from './memory.ts';
 
 export type Dm32RestoreArchive = {
   manifest: RadioBackupManifestV1;
@@ -82,6 +87,7 @@ function archiveConfigWindow(archive: Dm32RestoreArchive): Dm32ConfigWindow {
   const start = archive.manifest.addressBase ?? 0;
   let end = start;
   for (const region of archive.manifest.regions) {
+    if (region.address === DM32_FACTORY_SECTOR_ADDRESS) continue;
     if (region.byteLength < DM32_BLOCK_SIZE) continue;
     const lastBlock = region.address + region.byteLength - DM32_BLOCK_SIZE;
     if (lastBlock > end) end = lastBlock;
@@ -89,9 +95,29 @@ function archiveConfigWindow(archive: Dm32RestoreArchive): Dm32ConfigWindow {
   return { start, end };
 }
 
+/** Lowest in-range tag-`0x02` address in the archive, when one is packed. */
+export function dm32ArchiveLiveCalibrationAddress(archive: Dm32RestoreArchive): number | undefined {
+  const window = archiveConfigWindow(archive);
+  const candidates: { address: number; metadata: number }[] = [];
+  for (const region of archive.manifest.regions) {
+    if (region.address === DM32_FACTORY_SECTOR_ADDRESS) continue;
+    if (region.byteLength < DM32_BLOCK_SIZE) continue;
+    let data: Uint8Array;
+    try {
+      data = bytesForRegion(archive, region);
+    } catch {
+      continue;
+    }
+    if (data.byteLength < DM32_BLOCK_SIZE) continue;
+    candidates.push({ address: region.address, metadata: data[DM32_METADATA_OFFSET] ?? 0 });
+  }
+  return selectDm32CalibrationPages(candidates, window).live?.address;
+}
+
 /**
- * Selected restorable 4KB blocks. Calibration / inspect-only regions are omitted
- * even if listed in regionIds.
+ * Selected restorable 4KB blocks. Inspect-only regions are omitted even if
+ * listed in regionIds. A restorable chunk that ends in `0x02`, or that targets
+ * the live calibration address, throws before any write.
  */
 export function listDm32RestoreBlocks(
   archive: Dm32RestoreArchive,
@@ -99,6 +125,7 @@ export function listDm32RestoreBlocks(
 ): Dm32RestoreBlock[] {
   const selected = new Set(regionIds);
   const window = archiveConfigWindow(archive);
+  const liveCalibrationAddress = dm32ArchiveLiveCalibrationAddress(archive);
   const blocks: Dm32RestoreBlock[] = [];
   for (const region of archive.manifest.regions) {
     if (!selected.has(region.id)) continue;
@@ -107,6 +134,15 @@ export function listDm32RestoreBlocks(
     for (let off = 0; off + DM32_BLOCK_SIZE <= data.byteLength; off += DM32_BLOCK_SIZE) {
       const chunk = data.subarray(off, off + DM32_BLOCK_SIZE);
       const address = region.address + off;
+      const tag = chunk[DM32_METADATA_OFFSET] ?? 0;
+      if (
+        tag === DM32_METADATA.CALIBRATION ||
+        (liveCalibrationAddress !== undefined && address === liveCalibrationAddress)
+      ) {
+        throw new RadioProtocolError(
+          `Restore refused — block 0x${address.toString(16)} is calibration and is not written.`,
+        );
+      }
       if (isDm32RestoreNeverWriteBlock(chunk, address, window)) continue;
       blocks.push({ address, data: chunk.slice() });
     }
