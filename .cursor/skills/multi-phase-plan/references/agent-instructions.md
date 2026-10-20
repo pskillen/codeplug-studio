@@ -37,7 +37,7 @@ not a diff to apply literally.
 
 Run the phase file's full test plan before opening a PR, including
 npm run format:check && npm run lint && npm run test && npm run build.
-Open the PR via the user-github MCP (not gh) targeting main, using the
+Open the PR with `gh pr create` targeting main, using the
 branch name and Closes #<issue> the phase file specifies, once everything
 is green.
 

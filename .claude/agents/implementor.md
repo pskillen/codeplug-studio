@@ -59,14 +59,14 @@ If the phase file's line numbers or snippets have drifted from the actual files,
 
 If you hit an ambiguity the phase file does not resolve: make the smallest reasonable call and note it in the PR description. If the call would change model shape or a public component API that later phases depend on, **stop and ask**.
 
-Never use `gh`. Issues and PRs go through the GitHub MCP (skills call it `user-github`). Repo: `pskillen/codeplug-studio`.
+Issues and PRs use the `gh` CLI. Repo: `pskillen/codeplug-studio`. A GitHub MCP tool that shows a form (`create_pull_request`, `issue_write`, and any card the user must submit) does not work. Do not call it and do not wait on it. See [git-workflow](../../.cursor/skills/git-workflow/SKILL.md).
 
 ## Before the PR
 
 1. `npm run format` if the toolchain exists; commit any Prettier drift.
 2. `npm run format:check && npm run lint && npm run test && npm run build` when `package.json` exists and the change touches code. Docs/rules-only: skip inapplicable scripts.
 3. Push the phase branch.
-4. Open **one** PR via GitHub MCP.
+4. Open **one** PR with `gh pr create` (HEREDOC body). Do not use a GitHub MCP form.
    - **Base branch:** whatever the phase file / orchestrator said (`main` for phase 1 / human-led; **prior phase branch** for stacked orchestrator phases). Do not assume `main`.
    - `Closes #<issue>` from the phase file.
    - PR body: Summary, Documentation checklist (feature hub / sidecar / index row or N/A), Test plan.

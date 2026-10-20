@@ -83,5 +83,5 @@ When the design touches library/CRUD/model shape, include a **vendor-neutral int
 - Do not write `ticket-management.md`, `phase-plan.md`, or anything under `plans/`.
 - Do not file GitHub issues, open PRs, or edit `src/` / shipped `docs/`.
 - Do not spawn `planner`, `orchestrator`, or `implementor`.
-- Do not use `gh`.
+- Do not call GitHub tools from this role. A GitHub MCP form does not work.
 - Do not treat `tmp/features/<name>/` as citable long-term docs.

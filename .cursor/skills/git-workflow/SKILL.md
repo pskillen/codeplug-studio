@@ -15,7 +15,13 @@ This repo is a **Vite + React + TypeScript SPA** (when scaffolded) with `src/cor
 
 Workflow: plan → issue (when non-trivial) → branch → commit → PR → merge to `main` → publish releases for staging/prod deploys.
 
-Use the **`user-github`** MCP for issues and PRs. The `gh` CLI is not available on this machine.
+## GitHub: `gh` only
+
+Every GitHub operation uses the **`gh` CLI**: issues, pull requests, comments, reviews, checks, merges, and releases. `gh` is installed and authenticated on this machine. Pass titles and bodies with a HEREDOC (`gh pr create --body "$(cat <<'EOF' ... EOF)"`).
+
+A GitHub MCP tool that shows an interactive form is a **failed operation**. The form does not submit. Waiting for the user to click it does not create the issue, comment, or pull request. Do not call those tools. Do not stop and wait on a form. Do not fall back to MCP when a `gh` command fails; fix the command.
+
+Tools that render that form include `create_pull_request`, `issue_write`, and any other GitHub MCP call that asks the user to confirm in a card. Use `gh` for reads as well, so a write is never one tool-choice away from a form.
 
 For larger initiatives, pair with [progress-tracking](../progress-tracking/SKILL.md) and [feature-docs](../feature-docs/SKILL.md).
 
@@ -113,7 +119,7 @@ When the **Shell** tool runs `git`:
 
 3. **Permissions:** `required_permissions: ["git_write"]` for checkout/commit; add `"network"` for `fetch` / `push`.
 
-4. **PRs and issues:** use `user-github` MCP — not `gh`.
+4. **PRs and issues:** `gh` only. A GitHub MCP form is a failed operation. Do not call it and do not wait on it.
 
 5. **Commits:**
 
@@ -139,7 +145,7 @@ When work is ready:
 1. When toolchain exists: run `npm run format` and commit any Prettier fixes.
 2. When toolchain exists: run `npm run format:check && npm run lint && npm run test && npm run build`.
 3. Push the branch.
-4. Open one PR in `pskillen/codeplug-studio` via `user-github` MCP
+4. Open one PR in `pskillen/codeplug-studio` with `gh pr create`. Pass the body with a HEREDOC. Do not use a GitHub MCP form.
 5. Link the issue (`Closes #N`) when applicable
 6. Note which layer changed and how to smoke-test locally
 
@@ -172,5 +178,5 @@ See [documentation-deliverables.mdc](../rules/documentation-deliverables.mdc) an
 | Branch | `{num}/{author}/{slug}` or `{type}/{slug}` from `origin/main` |
 | Pre-commit | lint, test, build when `package.json` exists; no secrets in diff |
 | Commit | Conventional commits; atomic; Shell `working_directory` = repo root |
-| PR | push; one PR; link issue; describe manual test steps |
+| PR | `gh pr create` (no form); one PR; link issue; describe manual test steps |
 | Deploy | Merge to `main` (next deploy); push to `dev` (dev deploy); pre-release → staging; full release → prod on Cloudflare Pages. Tags are bare SemVer (`2.1.4`, no `v` prefix) |

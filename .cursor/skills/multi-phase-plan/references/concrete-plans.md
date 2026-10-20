@@ -37,14 +37,14 @@ file links now that they exist.>
 
 ## Git workflow (applies to every phase)
 
-- Repo: `pskillen/codeplug-studio`. Use **user-github MCP** — never `gh`.
+- Repo: `pskillen/codeplug-studio`. Use **`gh`**. A GitHub MCP form does not work; do not call it and do not wait on it.
 - Branch from `origin/main` <or: from the prior phase's branch, if
   stacked>, using the branch name in the table above.
 - Atomic conventional commits at each checkpoint listed in the phase file.
 - **Before opening the PR:** `npm run format` (commit any drift), then
   `npm run format:check && npm run lint && npm run test && npm run build`,
   all green.
-- One PR per phase via user-github MCP, `Closes #<issue>`.
+- One PR per phase with `gh pr create`, `Closes #<issue>`. Do not use a GitHub MCP form.
 - Docs ship in the same PR as the behavior they describe, per
   [documentation-deliverables.md](../../../../.claude/rules/documentation-deliverables.md).
 

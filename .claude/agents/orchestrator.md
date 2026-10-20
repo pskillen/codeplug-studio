@@ -66,6 +66,6 @@ Write `plans/zz-final-handover.md` per `.claude/skills/multi-phase-plan/referenc
 ## Hard no
 
 - Do not merge PRs unless the user explicitly asked for auto-merge.
-- Do not use `gh`. Implementors open PRs via GitHub MCP (`user-github`).
+- Issues and PRs use `gh`. A GitHub MCP form does not work; do not call it and do not wait on it.
 - Do not skip a phase, reorder around a failed phase, or rewrite a phase file to match what an implementor happened to do — stop and ask.
 - Do not wait for remote CI to go green before starting the next independent-looking phase; do wait for the prior **PR to be opened** and the prior **branch to contain the expected commits**.

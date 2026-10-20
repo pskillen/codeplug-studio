@@ -20,7 +20,7 @@ Ship a GitHub issue as a **PR opened after local confidence checks** — no Curs
 @drive-by-ticket
 ```
 
-Repo: `pskillen/codeplug-studio`. Use **`user-github`** MCP for issues and PRs — not `gh`.
+Repo: `pskillen/codeplug-studio`. Issues and PRs use **`gh`**. A GitHub MCP form does not work; do not call it and do not wait on it. See [git-workflow](../git-workflow/SKILL.md).
 
 **Read first:** [DESIGN.md](../../../DESIGN.md), [AGENTS.md](../../../AGENTS.md#vendor-boundaries).
 

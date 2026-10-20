@@ -119,7 +119,7 @@ Same as step 3, applied to `ticket-management.md`/`phase-plan.md`.
 
 ### 6. File the tickets
 
-Only when asked. Use **`user-github`** MCP (never `gh`) per this repo's convention — see [git-workflow](../git-workflow/SKILL.md). File each ticket from `ticket-management.md`, parented per the doc's own suggestion (usually [Milestone 2 — #495](https://github.com/pskillen/codeplug-studio/issues/495) or an existing epic). Write the resulting issue numbers back into **both** `ticket-management.md` and `phase-plan.md` — don't leave one updated and the other stale.
+Only when asked. File with **`gh`** per [git-workflow](../git-workflow/SKILL.md). A GitHub MCP form does not work; do not call it and do not wait on it. File each ticket from `ticket-management.md`, parented per the doc's own suggestion (usually [Milestone 2 — #495](https://github.com/pskillen/codeplug-studio/issues/495) or an existing epic). Write the resulting issue numbers back into **both** `ticket-management.md` and `phase-plan.md` — don't leave one updated and the other stale.
 
 ### 7. Concrete per-phase plans (`plans/`)
 
@@ -158,7 +158,7 @@ Per-phase handover (human-led) and whole-series final handover: [references/hand
 
 Pull these from the skills this one builds on rather than restating them:
 
-- **Branch naming, commit checkpoints, PR conventions:** [git-workflow](../git-workflow/SKILL.md) — `{num}/{author}/{short-slug}`, atomic conventional commits, `user-github` MCP not `gh`.
+- **Branch naming, commit checkpoints, PR conventions:** [git-workflow](../git-workflow/SKILL.md) — `{num}/{author}/{short-slug}`, atomic conventional commits, `gh` only (a GitHub MCP form is a failed operation).
 - **Git workflow / Documentation mandatory plan sections:** [make-a-plan](../make-a-plan/SKILL.md) sections 4–5 — every concrete phase file needs both, adapted to that phase's specific branch and issue.
 - **Progress/outstanding files:** [progress-tracking](../progress-tracking/SKILL.md) — only add these (in `docs/`, not `tmp/`) if a phase's own execution needs multi-session handoff *beyond* what the phase's plan file and this series' handover docs already provide. Most phases won't need them; don't create them reflexively.
 - **Feature docs:** [feature-docs](../feature-docs/SKILL.md) — the doc-update phase (usually the last phase in the series) follows this.

@@ -79,7 +79,7 @@ merge semantics ended up X instead of Y because Z" is.>
 
 <Anything left undone, whether by explicit "out of scope" calls made
 mid-series or genuine gaps discovered late. Break into two kinds:
-- **Suggested follow-up tickets:** file these (user-github MCP) if the user
+- **Suggested follow-up tickets:** file these with `gh` if the user
   wants them filed now, or list them ready-to-file if not.
 - **Gap descriptions with no clean ticket yet:** things worth knowing about
   even without a concrete next action.>

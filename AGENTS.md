@@ -65,10 +65,11 @@ The **library** and domain layer are **vendor-neutral**. Radio caps, column name
 
 Follow [`.cursor/skills/git-workflow/SKILL.md`](.cursor/skills/git-workflow/SKILL.md).
 
+**GitHub operations use the `gh` CLI.** Issues, pull requests, comments, reviews, checks, merges, and releases are `gh` commands. A GitHub MCP tool that shows an interactive form (`create_pull_request`, `issue_write`, and any other call that asks the user to submit a card) is a failed operation: the form does not submit, and waiting for it does not create the issue or pull request. Do not call those tools. Do not wait on a form.
+
 - Prefer **atomic conventional commits** per logical change.
 - Branch + pull request for features; `main` holds releasable source.
 - **Publish:** merge to `main` → continuous **next** deploy; push to `dev` → **dev** deploy; pre-release → **staging**; full GitHub release → **prod** on Cloudflare Pages (`https://codeplug.mm9pdy.net`).
-- Use **`user-github`** MCP for issues and PRs — not `gh` CLI.
 - Do not commit `.env`, secrets, or personal `sample-exports/`.
 
 ## Plans and feature docs
