@@ -19,10 +19,10 @@ import {
 } from './__fixtures__/scriptedPipe.ts';
 
 describe('classifyDm32Metadata', () => {
-  it('maps channel / settings / discovery emergency tags', () => {
+  it('maps channel, settings, and emergency tags', () => {
     expect(classifyDm32Metadata(0x12)).toBe('channel');
     expect(classifyDm32Metadata(0x04)).toBe('vfo');
-    expect(classifyDm32Metadata(0x03)).toBe('digitalemergency');
+    expect(classifyDm32Metadata(0x03)).toBe('unknown');
     expect(classifyDm32Metadata(0x10)).toBe('analogemergency');
     expect(classifyDm32Metadata(0xff)).toBe('empty');
   });

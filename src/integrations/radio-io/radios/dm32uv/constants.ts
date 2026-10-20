@@ -18,7 +18,7 @@ export const DM32_METADATA = {
   ZONE_PAGE_FIRST: 0x5c,
   ZONE_PAGE_LAST: 0x64,
   SCAN_LIST: 0x11,
-  /** NeonPlug constants name — same value as ANALOG_EMERGENCY; discovery may map 0x03. */
+  /** Emergency systems and encryption keys. Same value as ANALOG_EMERGENCY. */
   DIGITAL_EMERGENCY: 0x10,
   VFO_SETTINGS: 0x04,
   ANALOG_EMERGENCY: 0x10,
