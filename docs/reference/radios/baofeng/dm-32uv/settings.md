@@ -104,13 +104,13 @@ NeonPlug treats VFO A/B as channels **4001** / **4002** parsed from block metada
 
 ## Emergency / encryption co-resident notes
 
-| Topic             | Observed (NeonPlug)                                                                                                                                                      |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Analog emergency  | Entries in the `0x10`-tagged block region (~36 bytes each; max 16); encode clears `0x0AC`–`0x2FF` only                                                                   |
-| Encryption keys   | Start at offset **`0x300`** in the same physical block family as analog emergency                                                                                        |
-| Digital emergency | Entry size ~20–40 bytes; discovery may tag **`0x03`** while `METADATA.DIGITAL_EMERGENCY` constant is **`0x10`** — see [memory-layout.md](memory-layout.md) inconsistency |
+| Topic             | Observed (NeonPlug)                                                                                             |
+| ----------------- | --------------------------------------------------------------------------------------------------------------- |
+| Analog emergency  | Entries in the `0x10`-tagged block region (~36 bytes each; max 16); encode clears `0x0AC`–`0x2FF` only          |
+| Encryption keys   | Start at offset **`0x300`** in the same physical block family as analog emergency                               |
+| Digital emergency | Entry size ~20–40 bytes. Emergency and encryption stay on **`0x10`** — see [memory-layout.md](memory-layout.md) |
 
-**Adapter implication:** always **read-modify-write** the full 4KB and preserve unknown bytes / co-resident sections. Never blank an entire `0x10` (or `0x03`) block when writing only one subsection.
+**Adapter implication:** always **read-modify-write** the full 4KB and preserve unknown bytes / co-resident sections. Never blank an entire `0x10` block when writing only one subsection.
 
 ## Upload / RMW guidance
 
