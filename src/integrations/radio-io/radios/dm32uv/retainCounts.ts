@@ -50,7 +50,7 @@ export interface Dm32SparseBlockInput {
  * Header tag `0x5C` counts from offset 16. Any later tag in the zone bank
  * packs from offset 0; starting at 16 would skip that page's first record.
  */
-export function countZonesInBlock(data: Uint8Array, metadata = DM32_METADATA.ZONE): number {
+export function countZonesInBlock(data: Uint8Array, metadata: number = DM32_METADATA.ZONE): number {
   const entrySize = 145;
   const start = metadata !== DM32_METADATA.ZONE && isDm32ZonePageMetadata(metadata) ? 0 : 16;
   return countAsciiNames(data, entrySize, start, 11);
