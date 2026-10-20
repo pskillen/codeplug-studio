@@ -151,10 +151,11 @@ function decodeTxContactId(data: Uint8Array, mode: RadioChannelMode): number | u
 function encodeTxContactWire(data: Uint8Array, txContactId: number | undefined): void {
   data[0x13] = 0;
   if (txContactId == null) {
+    // Slot 0. Firmware reads +0x14 as a u32 and rejects 0x17 = 0xFF (index 0xFF000000).
     data[0x14] = 0;
     data[0x15] = 0;
     data[0x16] = 0;
-    data[0x17] = 0xff;
+    data[0x17] = 0;
     return;
   }
   const wire = txContactId - 1;

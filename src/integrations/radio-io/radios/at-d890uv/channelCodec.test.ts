@@ -150,18 +150,20 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(encoded[9]! & 0xd0).toBe(0);
   });
 
-  it('writes omitted txContactId as 0x17=0xFF with 0x13–0x16 zero', () => {
-    // No CPS none sample in HEALTHY_CHANNEL_RECORDS; encode follows the firmware rule.
+  it('writes omitted txContactId as five zero bytes (contact slot 0)', () => {
     const analog = { ...simplexDigital, mode: 'analog' as const, bandwidth: 'FM' as const };
     for (const ch of [simplexDigital, analog]) {
       const encoded = encodeAtD890ChannelRecord(ch);
-      expect(encoded[0x13]).toBe(0);
-      expect(encoded[0x14]).toBe(0);
-      expect(encoded[0x15]).toBe(0);
-      expect(encoded[0x16]).toBe(0);
-      expect(encoded[0x17]).toBe(0xff);
-      expect(parseAtD890ChannelRecord(encoded, ch.slotIndex).txContactId).toBeUndefined();
+      expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
     }
+    // Digital slot 0 parses as txContactId 1. Analog records do not carry a TX contact.
+    expect(
+      parseAtD890ChannelRecord(encodeAtD890ChannelRecord(simplexDigital), simplexDigital.slotIndex)
+        .txContactId,
+    ).toBe(1);
+    expect(
+      parseAtD890ChannelRecord(encodeAtD890ChannelRecord(analog), analog.slotIndex).txContactId,
+    ).toBeUndefined();
   });
 
   it('encodes txContactId 1 as talk-group slot 0', () => {
@@ -214,7 +216,7 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(mm9).toHaveLength(1);
     expect(stock[0]).toBe(mm9[0]);
     const omitted = encodeAtD890ChannelRecord(simplexDigital);
-    expect([...omitted.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0xff]);
+    expect([...omitted.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
     const wide = encodeAtD890ChannelRecord({ ...simplexDigital, txContactId: 257 });
     expect([...wide.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x01, 0x00, 0x00]);
     const firstList = encodeAtD890ChannelRecord({ ...simplexDigital, rxGroupIndex: 1 });
@@ -472,7 +474,7 @@ describe('encodeAtD890ChannelRecord', () => {
     expect((encoded[0x21]! >> 1) & 1).toBe(1);
     expect(encoded[0x22]).toBe(0);
     expect([...encoded.subarray(4, 8)]).toEqual([0, 0, 0, 0]);
-    expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0xff]);
+    expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
   });
 
   it('returns empty record for vacant slot', () => {
@@ -502,7 +504,7 @@ describe('encodeAtD890ChannelRecord', () => {
       expect((encoded[0x21]! >> 1) & 1).toBe(1);
       expect(encoded[0x22]).toBe(0);
       if (dto.txContactId == null) {
-        expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0xff]);
+        expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
       }
       if (slotIndex === 17) {
         expect(original[0x1c]).toBe(0);
