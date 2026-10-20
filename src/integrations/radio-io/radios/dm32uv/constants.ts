@@ -63,7 +63,7 @@ export const DM32_VFRAME = {
   MEMORY_LAYOUT: 0x0a,
   CODEPLUG_VERSION: 0x0b,
   CONTACTS: 0x0f,
-  /** Max contact count (u32 LE); NeonPlug also falls back to firmware L01 heuristics. */
+  /** Max contact count (3-byte or 4-byte LE); NeonPlug also falls back to firmware L01 heuristics. */
   MAX_CONTACTS: 0x10,
 } as const;
 
