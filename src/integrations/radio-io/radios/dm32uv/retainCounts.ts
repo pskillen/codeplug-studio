@@ -3,6 +3,7 @@
  * Cite: docs/reference/radios/baofeng/dm-32uv/contacts-zones-lists.md
  */
 
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from './constants.ts';
 import { isDm32ZonePageMetadata } from './memory.ts';
 
@@ -53,7 +54,7 @@ export interface Dm32SparseBlockInput {
 export function countZonesInBlock(data: Uint8Array, metadata: number = DM32_METADATA.ZONE): number {
   const entrySize = 145;
   const start = metadata !== DM32_METADATA.ZONE && isDm32ZonePageMetadata(metadata) ? 0 : 16;
-  return countAsciiNames(data, entrySize, start, 11);
+  return countAsciiNames(data, entrySize, start, DM32UV_LIMITS.NAME_LENGTH_CHANNEL_ZONE_CONTACT_TG);
 }
 
 export function countScanListsInBlock(data: Uint8Array): number {

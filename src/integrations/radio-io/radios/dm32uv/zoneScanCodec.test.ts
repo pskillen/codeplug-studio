@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from './constants.ts';
 import {
@@ -29,12 +30,28 @@ describe('encodeDm32Zone', () => {
     const rec = encodeDm32Zone({ wireName: 'Local', channelNumbers: [1, 2, 40] });
     expect(rec.length).toBe(DM32_ZONE_ENTRY_SIZE);
     expect(rec[0]).toBe('L'.charCodeAt(0));
+    expect(rec[5]).toBe(0);
+    expect(rec[6]).toBe(0xff);
+    expect(rec[15]).toBe(0xff);
     expect(rec[16]).toBe(3);
     expect(rec[17] | (rec[18]! << 8)).toBe(1);
     expect(rec[19] | (rec[20]! << 8)).toBe(2);
     expect(rec[21] | (rec[22]! << 8)).toBe(40);
     // pad after members stays 0xFF
     expect(rec[23]).toBe(0xff);
+  });
+
+  it('writes a 16-character name through byte 15 and keeps the member count at byte 16', () => {
+    const name = 'ABCDEFGHIJKLMNOP';
+    const rec = encodeDm32Zone({ wireName: name, channelNumbers: [7, 9] });
+    expect(name.length).toBe(DM32UV_LIMITS.NAME_LENGTH_CHANNEL_ZONE_CONTACT_TG);
+    for (let i = 0; i < name.length; i++) {
+      expect(rec[i]).toBe(name.charCodeAt(i));
+    }
+    expect(rec[15]).toBe('P'.charCodeAt(0));
+    expect(rec[16]).toBe(2);
+    expect(rec[17] | (rec[18]! << 8)).toBe(7);
+    expect(rec[19] | (rec[20]! << 8)).toBe(9);
   });
 });
 
