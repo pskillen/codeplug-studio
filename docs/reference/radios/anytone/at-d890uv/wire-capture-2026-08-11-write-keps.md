@@ -237,10 +237,9 @@ with concrete on-wire byte evidence, not just an eyeballed impression.
   "trailing slots observably get zeroed on the wire" are in tension and worth reconciling rather than leaving
   as an open contradiction.
 - Investigate the mystery **"25 records"** figure — is it a fixed UI table size in the satellite dialog,
-  unrelated to both the CSV row count (10) and the documented whitelist cardinality (10)? Could inform
-  Studio's own `AT_D890UV_LIMITS.SATELLITE_MAX` placeholder discussion (currently 50, chosen from qdmr
-  cross-family bounds) if 25 turns out to be a genuine D890 UI/firmware constant rather than an artifact of
-  this one capture.
+  unrelated to both the CSV row count (10) and the documented whitelist cardinality (10)? Studio's cap is
+  `AT_D890UV_LIMITS.SATELLITE_MAX` in `src/core/radios/anytone/at-d890uv/limits.ts`
+  ([#1305](https://github.com/pskillen/codeplug-studio/issues/1305)).
 - File the **CSV-escaping bug** as a known-vendor-quirk note (not a Studio bug) somewhere appropriate —
   possibly a short callout in `satellite-keps.md` warning that CSVs re-exported by the official CPS, or
   CSVs whose rows have very different quoted-field lengths, may trigger this vendor-side corruption if anyone

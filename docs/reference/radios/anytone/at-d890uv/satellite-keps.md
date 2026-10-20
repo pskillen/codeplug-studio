@@ -174,12 +174,20 @@ confirmed on real hardware, Studio's write path should not assume trailing slots
 zero/clear the full addressable range on every satellite write, or verify against a real radio that stale
 trailing entries are inert.
 
-## Max satellite count — no firmware cap found; use qdmr's declared caps as an informed placeholder
+## Max satellite count
 
-**No max-count constant exists anywhere in anytone-cps's `Satellite`, `Memory`, or `Device` source for the D890.**
+Studio's D890 write cap is `AT_D890UV_LIMITS.SATELLITE_MAX`, documented in [limits.md](limits.md). It is the
+size of the fixed table the D890 CPS writes, not a midpoint of other Anytone models
+([#1305](https://github.com/pskillen/codeplug-studio/issues/1305)). The writable span runs from the satellite
+base address through `SATELLITE_MAX` records and ends at `0x4A831FF`. Studio does not write
+`0x4A83200`–`0x4A863FF`.
+
+**No named max-count constant exists in anytone-cps's `Satellite`, `Memory`, or `Device` source for the D890.**
 `SatelliteTableModel::rowCount()` (`desktop/src/table_model/satellite_table_model.cpp`) returns
 `Anytone::Memory::satellite_data_list.size()` with no ceiling, and `writeSatelliteData()` iterates that same
-unbounded list. This is a genuine absence, not something missed by a narrower grep — the whole file was read.
+unbounded list. The table size above is from the captured D890 write
+([wire-capture-2026-08-11-write-keps.md](wire-capture-2026-08-11-write-keps.md)), not from a constant in that
+source.
 
 **anytone-cps's own default flow writes far fewer satellites than "unbounded" suggests in practice.** In
 `SatelliteDialog::decodeSatelliteData()` (`desktop/src/ui/satellite_dialog.cpp`), every satellite parsed from a
@@ -202,17 +210,11 @@ declare, for the Anytone models it does support:
 D890 appears in none of qdmr's Anytone satellite-config classes or radio files — it is simply not a qdmr-supported
 target for this feature.
 
-**Recommendation for [#856](https://github.com/pskillen/codeplug-studio/issues/856)/[#1068](https://github.com/pskillen/codeplug-studio/issues/1068):**
-no D890 firmware cap is known from either GPL source. Studio should still enforce _some_ ceiling to avoid an
-unbounded write into unit 298 (which — see erase-unit safety above — physically holds up to 512 records before
-spilling into unit 299, an undeclared region). `AT_D890UV_LIMITS.SATELLITE_MAX` is set to **50 transmitter
-records** — a Studio-chosen placeholder roughly midway between qdmr's smallest (D168UV, 25) and largest
-(DMR6X2UV, 200) declared Anytone-family satellite caps in the table above, on the reasoning that a family-wide
-range is a somewhat better-informed midpoint than either bound alone, though this is still **not** a D890-verified
-number and should be labelled as a placeholder pending hardware confirmation, not treated as ground truth. Note
-this cap counts write **records** — one per eligible `(satellite, transmitter)` pair emitted by
-`packSatelliteWriteRecords` — not distinct satellites; a satellite with two enabled transmitters consumes two
-slots against this limit.
+The qdmr rows above are other-model context. They are not the D890 cap.
+
+`AT_D890UV_LIMITS.SATELLITE_MAX` counts write **records** — one per eligible `(satellite, transmitter)` pair
+emitted by `packSatelliteWriteRecords` — not distinct satellites. A satellite with two enabled transmitters
+consumes two slots against this limit.
 
 **"Eligible" also includes a frequency-range gate (#1085 follow-up), not only mode.** In addition to the
 FM-family mode allowlist, `packSatelliteWriteRecords`/`listEligiblePairs` (`satelliteCodec.ts`) now also require
