@@ -56,19 +56,22 @@ describe('AT_D890 writable extents', () => {
   it('SatelliteData: base address and every address within MAX_SATELLITES * stride is writable', () => {
     const { BASE_ADDRESS, RECORD_STRIDE } = AT_D890_SATELLITE;
     const extentLength = RECORD_STRIDE * AT_D890_LIMITS.MAX_SATELLITES;
+    const lastByte = BASE_ADDRESS + extentLength - 1;
 
     expect(isAtD890WritableAddress(BASE_ADDRESS)).toBe(true);
-    expect(isAtD890WritableAddress(BASE_ADDRESS + extentLength - 1)).toBe(true);
+    expect(isAtD890WritableAddress(lastByte)).toBe(true);
+    expect(lastByte).toBe(0x4a831ff);
     // Spot-check a mid-extent record boundary too, not just the ends.
     expect(isAtD890WritableAddress(BASE_ADDRESS + RECORD_STRIDE * 3)).toBe(true);
   });
 
   it('SatelliteData: the address immediately before/after the extent is not writable', () => {
     const { BASE_ADDRESS, RECORD_STRIDE } = AT_D890_SATELLITE;
-    const extentLength = RECORD_STRIDE * AT_D890_LIMITS.MAX_SATELLITES;
+    const nextAddress = BASE_ADDRESS + RECORD_STRIDE * AT_D890_LIMITS.MAX_SATELLITES;
 
     expect(isAtD890WritableAddress(BASE_ADDRESS - 1)).toBe(false);
-    expect(isAtD890WritableAddress(BASE_ADDRESS + extentLength)).toBe(false);
+    expect(isAtD890WritableAddress(nextAddress)).toBe(false);
+    expect(nextAddress).toBe(0x4a83200);
   });
 
   it('excludes LocalInfo and optional settings', () => {

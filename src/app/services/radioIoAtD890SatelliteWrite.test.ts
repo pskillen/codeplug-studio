@@ -195,8 +195,8 @@ describe('writeSatellitesToRadio', () => {
       });
       expect(blocked.message).toBe(
         `You have selected ${AT_D890UV_LIMITS.SATELLITE_MAX + 1} satellites, but the D890 only ` +
-          `supports ${AT_D890UV_LIMITS.SATELLITE_MAX} (placeholder pending hardware ` +
-          'confirmation — see docs/reference/radios/anytone/at-d890uv/satellite-keps.md). ' +
+          `supports ${AT_D890UV_LIMITS.SATELLITE_MAX} (see ` +
+          'docs/reference/radios/anytone/at-d890uv/satellite-keps.md). ' +
           'Please deselect some satellites in the library.',
       );
     }

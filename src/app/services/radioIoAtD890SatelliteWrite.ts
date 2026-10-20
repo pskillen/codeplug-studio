@@ -118,7 +118,7 @@ export async function writeSatellitesToRadio(
     const radioLabel = session.descriptor.label;
     throw new RadioWriteBlockedError(
       `You have selected ${records.length} satellites, but the ${radioLabel} only supports ` +
-        `${AT_D890UV_LIMITS.SATELLITE_MAX} (placeholder pending hardware confirmation — see ` +
+        `${AT_D890UV_LIMITS.SATELLITE_MAX} (see ` +
         `docs/reference/radios/anytone/at-d890uv/satellite-keps.md). Please deselect some ` +
         `satellites in the library.`,
       { selected: records.length, max: AT_D890UV_LIMITS.SATELLITE_MAX, radioLabel },
