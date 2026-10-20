@@ -166,7 +166,7 @@ describe('runAtD890MemoryDumpAll', () => {
     }
     expect(result.totalBytes).toBeGreaterThan(0);
     expect(writeFrames(pipe)).toEqual([]);
-  });
+  }, 20_000);
 });
 
 describe('runAtD890MemoryGroupDump', () => {

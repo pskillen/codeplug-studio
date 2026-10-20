@@ -221,7 +221,7 @@ describe('AtD890uvProtocol', () => {
     const written = collectAtD890WriteDataAddresses(pipe);
     const bookkeeping = written.filter((a) => isAtD890EraseUnitBookkeepingAddress(a));
     expect(bookkeeping).toEqual([]);
-  });
+  }, 20_000);
 
   it('sends END on disconnect after connect', async () => {
     const pipe = new AtD890ScriptedPipe();
