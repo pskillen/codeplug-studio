@@ -113,6 +113,8 @@ export const D890_MAP = {
   /** Address pitch from talkgroup bank n to bank n+1. The gap is not payload. */
   TalkgroupBankPitch: 0x8_0000,
   TalkgroupLength: 0xc8,
+  /** List-count position table. One u32 LE per slot; entry count is `TALK_GROUPS_MAX`. */
+  TalkgroupPosition: 0x390_0000,
   TalkgroupOrder: 0x3f0_0000,
   ReceiveGroupSet: 0x370_1510,
   ReceiveGroupData: 0x378_0000,

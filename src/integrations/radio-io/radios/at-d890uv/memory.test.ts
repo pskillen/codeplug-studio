@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { AT_D890_LIMITS, AT_D890_MAP_SIZE, D890_MAP } from './constants.ts';
+import { eraseUnitBaseFor } from './eraseUnits.ts';
 import {
   alignedSpanForAtD890Region,
   applyAtD890WriteImageToCache,
@@ -156,6 +158,48 @@ describe('applyAtD890WriteImageToCache bank intent', () => {
     const chunks = listWriteChunks(cache);
     const addresses = new Set(chunks.map((c) => c.address));
     expect(addresses.has(D890_MAP.TalkgroupOrder)).toBe(true);
+  });
+
+  it('replaces a factory position-table prefix already in the download cache', () => {
+    const talkGroups = [
+      { index: 1, wireName: 'TG1', digitalId: 9, callType: 0x04 },
+      { index: 2, wireName: 'TG2', digitalId: 99, callType: 0x04 },
+      { index: 3, wireName: 'TG3', digitalId: 235, callType: 0x04 },
+    ];
+    const bag = minimalD890HydrationBag();
+    const cache = cacheFromBag(bag);
+    const factory = new Uint8Array(16);
+    factory.set([0x00, 0x00, 0x00, 0x00]);
+    factory.fill(0xff, 4);
+    cache.blocks.set(D890_MAP.TalkgroupPosition, factory);
+    // A short block that is not a 16-byte cache key. Clearing the span must drop it.
+    cache.blocks.set(D890_MAP.TalkgroupPosition + 4, new Uint8Array([0x00, 0x00, 0x00, 0x00]));
+
+    const image = mergeChannelsIntoAtD890uvHydration(bag, [], { talkGroups });
+    applyAtD890WriteImageToCache(cache, image, {
+      replaceAmAirBank: false,
+      replaceTalkgroupOrder: true,
+    });
+
+    const word = (index: number) => [
+      ...getCacheBytes(cache, D890_MAP.TalkgroupPosition + index * 4, 4),
+    ];
+    expect(word(0)).toEqual([0x00, 0x00, 0x00, 0x00]);
+    expect(word(1)).toEqual([0x01, 0x00, 0x00, 0x00]);
+    expect(word(2)).toEqual([0x02, 0x00, 0x00, 0x00]);
+    expect(word(3)).toEqual([0xff, 0xff, 0xff, 0xff]);
+    expect(word(AT_D890UV_LIMITS.TALK_GROUPS_MAX - 1)).toEqual([0xff, 0xff, 0xff, 0xff]);
+
+    const chunks = listWriteChunks(cache);
+    const covers = (address: number) =>
+      chunks.some(
+        (chunk) => address >= chunk.address && address < chunk.address + chunk.data.length,
+      );
+    expect(covers(0x394_0000)).toBe(false);
+    expect(chunks.some((chunk) => chunk.address === D890_MAP.TalkgroupPosition + 4)).toBe(false);
+    const unit = eraseUnitBaseFor(D890_MAP.TalkgroupPosition);
+    expect(covers(unit + 0x3_fdf8)).toBe(false);
+    expect(covers(unit + 0x3_fffc)).toBe(false);
   });
 
   it('stages AmAir/AmZone when replaceAmAirBank is set', () => {

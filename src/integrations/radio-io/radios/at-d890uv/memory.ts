@@ -9,6 +9,7 @@ export {
   isAtD890ChannelDataRealAddress,
 } from './channelDataGeometry.ts';
 
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import type { MemoryMap } from '../../types.ts';
 import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
@@ -234,6 +235,18 @@ export function clearTalkgroupOrderBlocksFromCache(cache: AtD890DownloadCache): 
 }
 
 /**
+ * Drop cached TalkgroupPosition blocks before rewriting the list-count table.
+ * A short factory block (`00 00 00 00` then `FF`) must not survive inside the span.
+ */
+export function clearTalkgroupPositionBlocksFromCache(cache: AtD890DownloadCache): void {
+  const base = D890_MAP.TalkgroupPosition;
+  const end = base + AT_D890UV_LIMITS.TALK_GROUPS_MAX * 4;
+  for (const addr of [...cache.blocks.keys()]) {
+    if (addr >= base && addr < end) cache.blocks.delete(addr);
+  }
+}
+
+/**
  * Drop cached AmAir / AmZone blocks so a DMR-only Write does not re-stage the
  * airband erase unit (retain-when-empty product rule — #756).
  */
@@ -391,6 +404,13 @@ export function applyAtD890WriteImageToCache(
   if (intent.replaceTalkgroupOrder) {
     clearTalkgroupOrderBlocksFromCache(cache);
     mergeImageRegionIntoCache(cache, image, D890_MAP.TalkgroupOrder, 0x1000);
+    clearTalkgroupPositionBlocksFromCache(cache);
+    mergeImageRegionIntoCache(
+      cache,
+      image,
+      D890_MAP.TalkgroupPosition,
+      AT_D890UV_LIMITS.TALK_GROUPS_MAX * 4,
+    );
   }
 
   if (intent.replaceAmAirBank) {

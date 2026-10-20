@@ -4,6 +4,7 @@
  * **transmit** unchanged bytes inside touched units to survive flash erase.
  */
 
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import {
   isAtD890ChannelDataAddress,
@@ -90,6 +91,11 @@ export const AT_D890_WRITABLE_EXTENTS: readonly AtD890MemoryExtent[] = [
     length: D890_MAP.TalkgroupOrder - D890_MAP.TalkgroupData,
   },
   { id: 'TalkgroupOrder', start: D890_MAP.TalkgroupOrder, length: 0x1000 },
+  {
+    id: 'TalkgroupPosition',
+    start: D890_MAP.TalkgroupPosition,
+    length: AT_D890UV_LIMITS.TALK_GROUPS_MAX * 4,
+  },
   {
     id: 'ReceiveGroupSet',
     start: D890_MAP.ReceiveGroupSet,

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
+import type { MemoryMap } from '../../types.ts';
 import { D890_MAP } from './constants.ts';
 import {
   encodeAtD890TalkgroupOrder,
@@ -82,7 +84,46 @@ describe('encodeAtD890TalkgroupRecord', () => {
   });
 });
 
+function positionWord(image: MemoryMap, index: number): number[] {
+  return [...image.get(D890_MAP.TalkgroupPosition + index * 4, 4)];
+}
+
 describe('encodeTalkgroupsIntoAtD890Image', () => {
+  it('writes the identity position table for the talk groups just stored', () => {
+    const image = createMemoryMap(0x500_0000);
+    encodeTalkgroupsIntoAtD890Image(image, [
+      { index: 1, wireName: 'A', digitalId: 9, callType: 0x04 },
+      { index: 2, wireName: 'B', digitalId: 99, callType: 0x04 },
+      { index: 3, wireName: 'C', digitalId: 235, callType: 0x04 },
+    ]);
+    expect(positionWord(image, 0)).toEqual([0x00, 0x00, 0x00, 0x00]);
+    expect(positionWord(image, 1)).toEqual([0x01, 0x00, 0x00, 0x00]);
+    expect(positionWord(image, 2)).toEqual([0x02, 0x00, 0x00, 0x00]);
+    expect(positionWord(image, 3)).toEqual([0xff, 0xff, 0xff, 0xff]);
+    expect(positionWord(image, AT_D890UV_LIMITS.TALK_GROUPS_MAX - 1)).toEqual([
+      0xff, 0xff, 0xff, 0xff,
+    ]);
+  });
+
+  it('fills the position table with 0xffffffff when no talk group is written', () => {
+    const image = createMemoryMap(0x500_0000);
+    encodeTalkgroupsIntoAtD890Image(image, []);
+    expect(positionWord(image, 0)).toEqual([0xff, 0xff, 0xff, 0xff]);
+  });
+
+  it('extends the position prefix through a hole so every written slot is inside it', () => {
+    const image = createMemoryMap(0x500_0000);
+    encodeTalkgroupsIntoAtD890Image(image, [
+      { index: 1, wireName: 'A', digitalId: 9, callType: 0x04 },
+      { index: 2, wireName: 'skip', digitalId: 0, callType: 0x04 },
+      { index: 3, wireName: 'C', digitalId: 99, callType: 0x04 },
+    ]);
+    expect(positionWord(image, 0)).toEqual([0x00, 0x00, 0x00, 0x00]);
+    expect(positionWord(image, 1)).toEqual([0x01, 0x00, 0x00, 0x00]);
+    expect(positionWord(image, 2)).toEqual([0x02, 0x00, 0x00, 0x00]);
+    expect(positionWord(image, 3)).toEqual([0xff, 0xff, 0xff, 0xff]);
+  });
+
   it('leaves the byte after the talkgroup order payload at 0xff', () => {
     const image = createMemoryMap(0x500_0000);
     image.fill(0, 0x500_0000, 0xff);
