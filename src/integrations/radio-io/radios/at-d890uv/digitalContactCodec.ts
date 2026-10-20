@@ -5,7 +5,7 @@
 
 import type { RadioDigitalContactDto } from '../../radioWriteProjection.ts';
 import { AT_D890_BLOCK_SIZE, D890_MAP } from './constants.ts';
-import { encodeBcdAsHexU32, decodeBcdAsHexU32 } from './bcd.ts';
+import { encodeBcdAsHexU32 } from './bcd.ts';
 import type { AtD890StagingChunk } from './sparseEraseRmw.ts';
 
 const ANYTONE_CALL_TYPE_PRIVATE = 0;
@@ -18,11 +18,11 @@ const STATE_MAX_CHARS = 16;
 const COUNTRY_MAX_CHARS = 16;
 const REMARK_MAX_CHARS = 16;
 
-function writeU32Be(buf: Uint8Array, offset: number, value: number): void {
-  buf[offset] = (value >> 24) & 0xff;
-  buf[offset + 1] = (value >> 16) & 0xff;
-  buf[offset + 2] = (value >> 8) & 0xff;
-  buf[offset + 3] = value & 0xff;
+function writeU32Le(buf: Uint8Array, offset: number, value: number): void {
+  buf[offset] = value & 0xff;
+  buf[offset + 1] = (value >> 8) & 0xff;
+  buf[offset + 2] = (value >> 16) & 0xff;
+  buf[offset + 3] = (value >> 24) & 0xff;
 }
 
 function encodeWideCharCString(text: string, maxChars: number): Uint8Array {
@@ -47,9 +47,14 @@ function concatParts(parts: readonly Uint8Array[]): Uint8Array {
   return out;
 }
 
+/**
+ * Contacts are private, so the added bit is 0.
+ * Key is the four BCD bytes as a big-endian integer, times 2.
+ */
 function digitalContactOrderKey(digitalId: number): number {
-  const bcdNum = decodeBcdAsHexU32(encodeBcdAsHexU32(digitalId));
-  return (bcdNum << 1) + ANYTONE_CALL_TYPE_PRIVATE;
+  const bcd = encodeBcdAsHexU32(digitalId);
+  const bcdHex = ((bcd[0]! << 24) | (bcd[1]! << 16) | (bcd[2]! << 8) | bcd[3]!) >>> 0;
+  return (bcdHex * 2 + (ANYTONE_CALL_TYPE_PRIVATE & 1)) >>> 0;
 }
 
 /** Variable-length wire record for one private digital contact. */
@@ -80,9 +85,10 @@ export function atD890BlockHoppedAddress(
   return base + block * stride + addrMod;
 }
 
+/** Odd entry counts get one `0xFF`×8 pad. Even counts, including empty, get none. */
 function padOrderTable(raw: Uint8Array): Uint8Array {
-  const padTo = raw.length + 0x10 - (raw.length % 0x10);
-  const out = new Uint8Array(padTo);
+  if (raw.length % 16 === 0) return raw;
+  const out = new Uint8Array(raw.length + 8);
   out.fill(0xff);
   out.set(raw);
   return out;
@@ -112,13 +118,23 @@ export function packAtD890DigitalContacts(
     dataOffset += record.length;
   }
 
-  orderEntries.sort((a, b) => a.key - b.key);
+  orderEntries.sort((a, b) => {
+    if (a.key < b.key) return -1;
+    if (a.key > b.key) return 1;
+    return 0;
+  });
+  const uniqueOrder: { key: number; dataOffset: number }[] = [];
+  for (const entry of orderEntries) {
+    const prev = uniqueOrder.at(-1);
+    if (prev !== undefined && prev.key === entry.key) continue;
+    uniqueOrder.push(entry);
+  }
 
-  const orderRaw = new Uint8Array(orderEntries.length * D890_MAP.DigitalContactOrderEntrySize);
-  for (let i = 0; i < orderEntries.length; i++) {
-    const entry = orderEntries[i]!;
-    writeU32Be(orderRaw, i * 8, entry.key);
-    writeU32Be(orderRaw, i * 8 + 4, entry.dataOffset);
+  const orderRaw = new Uint8Array(uniqueOrder.length * D890_MAP.DigitalContactOrderEntrySize);
+  for (let i = 0; i < uniqueOrder.length; i++) {
+    const entry = uniqueOrder[i]!;
+    writeU32Le(orderRaw, i * 8, entry.key);
+    writeU32Le(orderRaw, i * 8 + 4, entry.dataOffset);
   }
   const orderLinear = padOrderTable(orderRaw);
   const dataLinear = concatParts(dataParts);
@@ -135,7 +151,7 @@ export function packAtD890DigitalContacts(
 
   const meta = new Uint8Array(D890_MAP.DigitalContactMetaLength);
   const metaView = new DataView(meta.buffer);
-  metaView.setUint32(0, orderEntries.length, true);
+  metaView.setUint32(0, uniqueOrder.length, true);
   metaView.setUint32(4, endAddress, true);
 
   const stagingChunks: AtD890StagingChunk[] = [
@@ -155,7 +171,7 @@ export function packAtD890DigitalContacts(
   ];
 
   return {
-    contactCount: orderEntries.length,
+    contactCount: uniqueOrder.length,
     orderLinear,
     dataLinear,
     meta,
