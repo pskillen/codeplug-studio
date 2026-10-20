@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { RadioWrongIdentError } from '../../kit/errors.ts';
 import { D890_MAP } from './constants.ts';
 import { listWriteChunks, cacheToMemoryMap, applyAtD890WriteImageToCache } from './memory.ts';
 import { AtD890uvProtocol } from './protocol.ts';
 import {
   AtD890ScriptedPipe,
+  makeAtD890IdentFrame,
+  scriptAtD890Connect,
   scriptAtD890ConnectWithNegotiation,
   scriptAtD890MinimalDownload,
   enqueueAtD890ReadReply,
@@ -107,6 +110,24 @@ describe('AtD890uvProtocol', () => {
     expect(ident.modelHints).toContain('AT-D890UV');
     expect(ident.firmwareHint).toBe('V100');
     expect(radio.getNegotiatedReadBlockSize()).toBe(NEGOTIATED_READ_BLOCK);
+  });
+
+  it('rejects a version other than V100 before any read or write', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890Connect(pipe, 'V101');
+    const radio = new AtD890uvProtocol();
+    await expect(radio.connect(pipe)).rejects.toBeInstanceOf(RadioWrongIdentError);
+    expect(pipe.writes.some((frame) => frame[0] === 0x52 || frame[0] === 0x57)).toBe(false);
+  });
+
+  it('rejects a model other than ID890UV before any read or write', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.enqueue(new Uint8Array([0x51]));
+    pipe.enqueue(new Uint8Array([0x58, 0x06]));
+    pipe.enqueue(makeAtD890IdentFrame('V100', { model: 'D878UV2' }));
+    const radio = new AtD890uvProtocol();
+    await expect(radio.connect(pipe)).rejects.toBeInstanceOf(RadioWrongIdentError);
+    expect(pipe.writes.some((frame) => frame[0] === 0x52 || frame[0] === 0x57)).toBe(false);
   });
 
   it('falls back to 16-byte reads when the radio rejects large blocks', async () => {

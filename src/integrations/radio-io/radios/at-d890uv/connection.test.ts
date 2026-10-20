@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { RadioProtocolError } from '../../kit/errors.ts';
+import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { ANYTONE_DMR_ACK, anytoneDmrChecksum8AfterOpcode } from '../../kit/codecs/anytoneDmrRw.ts';
 import { AT_D890_CONNECTION, D890_MAP } from './constants.ts';
-import { atD890ReadMemory, atD890WriteMemory } from './connection.ts';
+import { atD890ProbeIdent, atD890ReadMemory, atD890WriteMemory } from './connection.ts';
 import { assertAtD890TransmitAddress } from './writableExtents.ts';
-import { AtD890ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
+import { AtD890ScriptedPipe, makeAtD890IdentFrame } from './__fixtures__/scriptedPipe.ts';
 
 function makeReadReply(address: number, payload: Uint8Array): Uint8Array {
   const bodyLen = 6 + payload.length;
@@ -25,6 +25,31 @@ function makeReadReply(address: number, payload: Uint8Array): Uint8Array {
 }
 
 const ADDRESS = 0x4f8_0000;
+
+describe('parseAtD890Ident', () => {
+  it('parses ID890UV / V100 when byte 8 and byte 13 are 0x06', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    const raw = makeAtD890IdentFrame('V100', { band: 0x06, byte13: 0x06 });
+    pipe.enqueue(raw);
+    const ident = await atD890ProbeIdent(pipe);
+    expect(ident.model).toBe('ID890UV');
+    expect(ident.version).toBe('V100');
+    expect(ident.bandCode).toBe(0x06);
+    expect(ident.raw).toEqual(raw);
+  });
+
+  it('rejects a version other than V100', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.enqueue(makeAtD890IdentFrame('V101'));
+    await expect(atD890ProbeIdent(pipe)).rejects.toBeInstanceOf(RadioWrongIdentError);
+  });
+
+  it('rejects a model other than ID890UV', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.enqueue(makeAtD890IdentFrame('V100', { model: 'D878UV2' }));
+    await expect(atD890ProbeIdent(pipe)).rejects.toBeInstanceOf(RadioWrongIdentError);
+  });
+});
 
 describe('atD890WriteMemory allow-list', () => {
   it('refuses LocalInfo before serial I/O', async () => {

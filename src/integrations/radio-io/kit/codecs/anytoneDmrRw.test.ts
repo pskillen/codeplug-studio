@@ -134,20 +134,17 @@ describe('enterAnytoneDmrProgramMode', () => {
 });
 
 describe('probeAnytoneDmrIdent', () => {
-  it('returns raw ident bytes ending in 0x06', async () => {
-    const ident = new Uint8Array([
-      ...new TextEncoder().encode('ID890UV\0'),
-      0x00,
-      ...new TextEncoder().encode('V100'),
-      0x06,
-    ]);
-    const reads: Uint8Array[] = [];
-    for (const byte of ident) {
-      reads.push(new Uint8Array([byte]));
-    }
-    const { pipe, writes } = mockPipe(reads);
+  it('returns all 16 ident bytes when 0x06 appears before the end', async () => {
+    const ident = new Uint8Array(16);
+    ident.set(new TextEncoder().encode('ID890UV'), 0);
+    ident[8] = 0x06;
+    ident.set(new TextEncoder().encode('V100'), 9);
+    ident[13] = 0x06;
+    ident[15] = 0x06;
+    const { pipe, writes } = mockPipe([ident]);
     const result = await probeAnytoneDmrIdent(pipe, 500);
     expect(result).toEqual(ident);
+    expect(result).toHaveLength(16);
     expect(writes[0]).toEqual(new Uint8Array([0x02]));
   });
 });

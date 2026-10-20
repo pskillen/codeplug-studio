@@ -19,23 +19,40 @@ import { assertAtD890WritableAddress } from './writableExtents.ts';
 
 const TD = new TextDecoder('ascii', { fatal: false });
 
+const AT_D890_IDENT_MODEL = 'ID890UV';
+const AT_D890_IDENT_VERSION = 'V100';
+const AT_D890_IDENT_MODEL_LEN = 7;
+const AT_D890_IDENT_BAND_OFFSET = 8;
+const AT_D890_IDENT_VERSION_OFFSET = 9;
+const AT_D890_IDENT_VERSION_LEN = 4;
+
 export interface AtD890Ident {
   raw: Uint8Array;
   model: string;
   version: string;
+  /** Byte 8. Stored only — a band code is not used to accept or refuse the radio. */
+  bandCode: number;
+}
+
+function asciiAt(raw: Uint8Array, offset: number, length: number): string {
+  return TD.decode(raw.subarray(offset, offset + length));
 }
 
 export function parseAtD890Ident(raw: Uint8Array): AtD890Ident {
-  const text = TD.decode(raw).replace(/\0/g, '\0');
-  const parts = text.split('\0').filter((p) => p.length > 0);
-  const model = parts[0] ?? '';
-  const version = parts[1] ?? '';
-  if (model !== 'ID890UV') {
+  const model = asciiAt(raw, 0, AT_D890_IDENT_MODEL_LEN);
+  const version = asciiAt(raw, AT_D890_IDENT_VERSION_OFFSET, AT_D890_IDENT_VERSION_LEN);
+  const bandCode = raw[AT_D890_IDENT_BAND_OFFSET] ?? 0;
+  if (model !== AT_D890_IDENT_MODEL) {
     throw new RadioWrongIdentError(
       `Unsupported Anytone ident "${model}" — expected ID890UV / V100 for AT-D890UV`,
     );
   }
-  return { raw, model, version };
+  if (version !== AT_D890_IDENT_VERSION) {
+    throw new RadioWrongIdentError(
+      `Unsupported Anytone ident version "${version}" — expected ID890UV / V100 for AT-D890UV`,
+    );
+  }
+  return { raw, model, version, bandCode };
 }
 
 export async function atD890EnterProgram(pipe: BytePipe, signal?: AbortSignal): Promise<void> {

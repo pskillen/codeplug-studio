@@ -13,7 +13,7 @@
  */
 
 import type { BlockCodec, BytePipe } from '../../types.ts';
-import { RadioProtocolError, RadioTimeoutError } from '../errors.ts';
+import { RadioProtocolError } from '../errors.ts';
 
 export const ANYTONE_DMR_ACK = 0x06;
 export const ANYTONE_DMR_READ_OPCODE = 0x52; // 'R'
@@ -181,25 +181,17 @@ export async function enterAnytoneDmrProgramMode(pipe: BytePipe, timeoutMs: numb
   );
 }
 
+/** Ident reply length for this family. Fixed; an interior `0x06` is not a terminator. */
+export const ANYTONE_DMR_IDENT_LEN = 16;
+
 /**
- * Version probe after enter: send 0x02 and read until trailing 0x06.
- * Returns raw bytes — model/version parsing belongs in radio modules.
+ * Version probe after enter: send `0x02` and read {@link ANYTONE_DMR_IDENT_LEN} bytes.
+ * A short reply is the timeout from `readExact`. Returns raw bytes — model/version
+ * parsing belongs in radio modules.
  */
 export async function probeAnytoneDmrIdent(pipe: BytePipe, timeoutMs: number): Promise<Uint8Array> {
   await pipe.write(new Uint8Array([0x02]));
-
-  const deadline = Date.now() + timeoutMs;
-  const chunks: number[] = [];
-  while (Date.now() < deadline) {
-    const remaining = Math.max(1, deadline - Date.now());
-    const byte = await pipe.readExact(1, remaining);
-    chunks.push(byte[0]!);
-    if (byte[0] === ANYTONE_DMR_ACK) {
-      return new Uint8Array(chunks);
-    }
-  }
-
-  throw new RadioTimeoutError('Timeout waiting for Anytone DMR ident reply');
+  return pipe.readExact(ANYTONE_DMR_IDENT_LEN, timeoutMs);
 }
 
 /** Exit program mode (best-effort; no reply required). */

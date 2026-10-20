@@ -136,12 +136,32 @@ export function scriptAtD890ConnectWithNegotiation(
   scriptAtD890Connect(pipe);
 }
 
+/** Captured band byte from the keps `IDENT_REPLY` (`0x03`). Not a terminator. */
+const AT_D890_IDENT_BAND_CAPTURED = 0x03;
+
+/**
+ * One 16-byte ident: `ID890UV`, NUL, band, version, two reserved bytes, trailing `0x06`.
+ * `firmwareHint` stays the 4-character version (`V100` unless a test overrides it).
+ */
+export function makeAtD890IdentFrame(
+  version = 'V100',
+  opts?: { model?: string; band?: number; byte13?: number; byte14?: number },
+): Uint8Array {
+  const frame = new Uint8Array(16);
+  const model = new TextEncoder().encode(opts?.model ?? 'ID890UV');
+  frame.set(model.subarray(0, 7), 0);
+  frame[8] = opts?.band ?? AT_D890_IDENT_BAND_CAPTURED;
+  frame.set(new TextEncoder().encode(version).subarray(0, 4), 9);
+  frame[13] = opts?.byte13 ?? 0x00;
+  frame[14] = opts?.byte14 ?? 0x00;
+  frame[15] = ANYTONE_DMR_ACK;
+  return frame;
+}
+
 export function scriptAtD890Connect(pipe: AtD890ScriptedPipe, version = 'V100'): void {
   pipe.enqueue(new Uint8Array([0x51]));
   pipe.enqueue(new Uint8Array([0x58, ANYTONE_DMR_ACK]));
-  const ident = new TextEncoder().encode(`ID890UV\0${version}\0`);
-  pipe.enqueue(ident);
-  pipe.enqueue(new Uint8Array([ANYTONE_DMR_ACK]));
+  pipe.enqueue(makeAtD890IdentFrame(version));
 }
 
 const NEGOTIATED_READ_BLOCK = 0xf0;
