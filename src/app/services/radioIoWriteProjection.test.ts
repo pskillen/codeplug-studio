@@ -1,4 +1,5 @@
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { describe, expect, it } from 'vitest';
 import {
   newChannel,
@@ -510,7 +511,7 @@ describe('buildRadioWriteProjection', () => {
 
   it('caps zone-derived scan lists at channel scanListId hardware limit', () => {
     const projectId = 'p1';
-    const pairs = Array.from({ length: 20 }, (_, i) => {
+    const pairs = Array.from({ length: DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX + 1 }, (_, i) => {
       const ch = withExportEligibleDefaults({
         ...newChannel(projectId, `Ch${i}`),
         id: `ch-${i}`,
@@ -552,10 +553,12 @@ describe('buildRadioWriteProjection', () => {
       profileId: egress.profileId,
     });
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
-    expect(projection.organisation.scanLists).toHaveLength(15);
+    expect(projection.organisation.scanLists).toHaveLength(DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX);
     expect(
       projection.warnings.some((w) =>
-        formatExportWarning(w).includes('channel scanListId supports at most 15'),
+        formatExportWarning(w).includes(
+          `channel scanListId supports at most ${DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX}`,
+        ),
       ),
     ).toBe(true);
   });

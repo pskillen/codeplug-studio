@@ -15,8 +15,11 @@ export const DM32UV_LIMITS = {
   ZONE_MEMBERS_MAX: 64,
   /** EEPROM scan-list bank size. */
   SCAN_LISTS_MAX: 32,
-  /** Channel record `scanListId` is 4 bits (0 = none) → max 15 referenceable lists. */
-  CHANNEL_SCAN_LIST_ID_MAX: 15,
+  /**
+   * Channel record `scanListId` is bits 5–0 (0 = none). Ids 1–32 fit;
+   * 32 is `0x20` and does not use scan-add (bit 6).
+   */
+  CHANNEL_SCAN_LIST_ID_MAX: 32,
   /** Named CSV scan-list members; CPS “16” includes implicit current channel. */
   SCAN_LIST_MEMBERS_MAX: 15,
   /** RX group bank size (metadata 0x0F). */

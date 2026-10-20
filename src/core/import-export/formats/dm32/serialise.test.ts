@@ -1,4 +1,5 @@
 import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -533,7 +534,7 @@ describe('DM32 export serialise', () => {
   });
 
   it('caps zone-derived scan list count at channel scanListId hardware limit', () => {
-    const pairs = Array.from({ length: 20 }, (_, i) => {
+    const pairs = Array.from({ length: DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX + 1 }, (_, i) => {
       const channel = fmChannel(`Z${i} Ch`);
       channel.id = `ch-${i}`;
       const zone = newZone(PROJECT_ID, `Zone${String(i).padStart(2, '0')}`);
@@ -576,10 +577,12 @@ describe('DM32 export serialise', () => {
     const warnings: ExportWarning[] = [];
     const files = serialiseDm32Files(assembled, library, DM32_PROJECTION, warnings);
     const scanRows = parseCsv(files['Scan.csv']);
-    expect(scanRows.length - 1).toBe(15);
+    expect(scanRows.length - 1).toBe(DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX);
     expect(
       warnings.some((w) =>
-        formatExportWarning(w).includes('channel scanListId supports at most 15'),
+        formatExportWarning(w).includes(
+          `channel scanListId supports at most ${DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX}`,
+        ),
       ),
     ).toBe(true);
   });
