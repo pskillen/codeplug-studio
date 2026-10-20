@@ -137,6 +137,151 @@ describe('encodeZonesIntoDm32Image', () => {
     expect(image.bytes[DM32_ZONE_HEADER_ZONE_INDEX_A]).toBe(2);
     expect(image.bytes[DM32_ZONE_HEADER_ZONE_INDEX_B]).toBe(0);
   });
+
+  function zones(count: number) {
+    return Array.from({ length: count }, (_, i) => ({
+      wireName: `Z${i + 1}`,
+      channelNumbers: [i + 1],
+    }));
+  }
+
+  function imageFromDiscovered(blocks: { address: number; metadata: number; marker?: number }[]) {
+    const base = Math.min(...blocks.map((b) => b.address));
+    const last = Math.max(...blocks.map((b) => b.address));
+    const image = createMemoryMap(last - base + DM32_BLOCK_SIZE);
+    image.fill(0, image.size, 0xff);
+    for (const block of blocks) {
+      const data = makeBlock(block.metadata);
+      if (block.marker != null) data[0] = block.marker;
+      image.set(block.address - base, data);
+    }
+    return {
+      image,
+      addressBase: base,
+      discovered: blocks.map(({ address, metadata }) => ({ address, metadata })),
+    };
+  }
+
+  it('keeps the header on 0x5C when 0x5D has the lower address', () => {
+    const headerAddr = 0x2000;
+    const laterAddr = 0x1000;
+    const packed = imageFromDiscovered([
+      {
+        address: headerAddr,
+        metadata: DM32_METADATA.ZONE,
+        marker: 0x11,
+      },
+      { address: laterAddr, metadata: 0x5d, marker: 0x22 },
+    ]);
+    packed.image.bytes[headerAddr - packed.addressBase + DM32_ZONE_HEADER_CHANNEL_INDEX_A] = 3;
+
+    const claimed: number[] = [];
+    encodeZonesIntoDm32Image(packed.image, packed, zones(29), {
+      channelCount: 10,
+      claimedAddresses: claimed,
+    });
+
+    const headerOff = headerAddr - packed.addressBase;
+    const laterOff = laterAddr - packed.addressBase;
+    expect(packed.image.bytes[headerOff + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.ZONE);
+    expect(packed.image.bytes[laterOff + DM32_METADATA_OFFSET]).toBe(0x5d);
+    expect(packed.image.bytes[headerOff]).toBe(28);
+    expect(packed.image.bytes[headerOff + DM32_ZONE_HEADER_CHANNEL_INDEX_A]).toBe(3);
+    expect(packed.image.bytes[headerOff + DM32_ZONE_START_OFFSET]).toBe('Z'.charCodeAt(0));
+    expect(packed.image.bytes[headerOff + DM32_ZONE_START_OFFSET + 1]).toBe('1'.charCodeAt(0));
+    const zone29 = laterOff;
+    expect(packed.image.bytes[zone29]).toBe('Z'.charCodeAt(0));
+    expect(packed.image.bytes[zone29 + 1]).toBe('2'.charCodeAt(0));
+    expect(packed.image.bytes[zone29 + 2]).toBe('9'.charCodeAt(0));
+    expect(claimed).toEqual([]);
+  });
+
+  it('claims the lower free page as 0x5D and leaves other tags unchanged', () => {
+    const zoneAddr = 0x1000;
+    const calibrationAddr = 0x2000;
+    const settingsAddr = 0x3000;
+    const higherFree = 0x5000;
+    const lowerFree = 0x4000;
+    const packed = imageFromDiscovered([
+      { address: zoneAddr, metadata: DM32_METADATA.ZONE },
+      { address: calibrationAddr, metadata: DM32_METADATA.CALIBRATION, marker: 0x22 },
+      { address: settingsAddr, metadata: DM32_METADATA.VFO_SETTINGS, marker: 0x44 },
+      { address: higherFree, metadata: DM32_METADATA.EMPTY, marker: 0x11 },
+      { address: lowerFree, metadata: DM32_METADATA.EMPTY_ALT, marker: 0x33 },
+    ]);
+    const claimed: number[] = [];
+    encodeZonesIntoDm32Image(packed.image, packed, zones(29), { claimedAddresses: claimed });
+
+    const at = (address: number) => address - packed.addressBase;
+    expect(claimed).toEqual([lowerFree]);
+    expect(packed.image.bytes[at(lowerFree) + DM32_METADATA_OFFSET]).toBe(0x5d);
+    expect(packed.image.bytes[at(lowerFree)]).toBe('Z'.charCodeAt(0));
+    expect(packed.image.bytes[at(lowerFree) + 1]).toBe('2'.charCodeAt(0));
+    expect(packed.image.bytes[at(lowerFree) + 2]).toBe('9'.charCodeAt(0));
+    expect(packed.image.bytes[at(zoneAddr) + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.ZONE);
+    expect(packed.image.bytes[at(calibrationAddr)]).toBe(0x22);
+    expect(packed.image.bytes[at(calibrationAddr) + DM32_METADATA_OFFSET]).toBe(
+      DM32_METADATA.CALIBRATION,
+    );
+    expect(packed.image.bytes[at(settingsAddr)]).toBe(0x44);
+    expect(packed.image.bytes[at(settingsAddr) + DM32_METADATA_OFFSET]).toBe(
+      DM32_METADATA.VFO_SETTINGS,
+    );
+    expect(packed.image.bytes[at(higherFree)]).toBe(0x11);
+    expect(packed.image.bytes[at(higherFree) + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.EMPTY);
+  });
+
+  it('omits leftover zones when the only other block is calibration', () => {
+    const zoneAddr = 0x1000;
+    const calibrationAddr = 0x2000;
+    const packed = imageFromDiscovered([
+      { address: zoneAddr, metadata: DM32_METADATA.ZONE },
+      { address: calibrationAddr, metadata: DM32_METADATA.CALIBRATION, marker: 0x22 },
+    ]);
+    const claimed: number[] = [];
+    encodeZonesIntoDm32Image(packed.image, packed, zones(29), { claimedAddresses: claimed });
+
+    const headerOff = zoneAddr - packed.addressBase;
+    const calibrationOff = calibrationAddr - packed.addressBase;
+    expect(claimed).toEqual([]);
+    expect(packed.image.bytes[headerOff]).toBe(28);
+    expect(packed.image.bytes[headerOff + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.ZONE);
+    expect(packed.image.bytes[calibrationOff]).toBe(0x22);
+    expect(packed.image.bytes[calibrationOff + DM32_METADATA_OFFSET]).toBe(
+      DM32_METADATA.CALIBRATION,
+    );
+    const lastOnHeader = headerOff + DM32_ZONE_START_OFFSET + 27 * DM32_ZONE_ENTRY_SIZE;
+    expect(packed.image.bytes[lastOnHeader]).toBe('Z'.charCodeAt(0));
+    expect(packed.image.bytes[lastOnHeader + 1]).toBe('2'.charCodeAt(0));
+    expect(packed.image.bytes[lastOnHeader + 2]).toBe('8'.charCodeAt(0));
+  });
+
+  it('does not claim a page for an empty zone list', () => {
+    const packed = imageFromDiscovered([
+      { address: 0x1000, metadata: DM32_METADATA.ZONE },
+      { address: 0x2000, metadata: DM32_METADATA.EMPTY, marker: 0x11 },
+    ]);
+    const claimed: number[] = [];
+    encodeZonesIntoDm32Image(packed.image, packed, [], { claimedAddresses: claimed });
+    expect(claimed).toEqual([]);
+    expect(packed.image.bytes[DM32_BLOCK_SIZE]).toBe(0x11);
+    expect(packed.image.bytes[DM32_BLOCK_SIZE + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.EMPTY);
+    expect(packed.image.bytes[DM32_METADATA_OFFSET]).toBe(DM32_METADATA.ZONE);
+  });
+
+  it('does not stamp a duplicate zone tag', () => {
+    const lower = 0x1000;
+    const higher = 0x2000;
+    const packed = imageFromDiscovered([
+      { address: higher, metadata: DM32_METADATA.ZONE, marker: 0x5a },
+      { address: lower, metadata: DM32_METADATA.ZONE, marker: 0x11 },
+    ]);
+    encodeZonesIntoDm32Image(packed.image, packed, zones(1));
+    expect(packed.image.bytes[DM32_ZONE_START_OFFSET]).toBe('Z'.charCodeAt(0));
+    expect(packed.image.bytes[DM32_METADATA_OFFSET]).toBe(DM32_METADATA.ZONE);
+    expect(packed.image.bytes[DM32_BLOCK_SIZE]).toBe(0x5a);
+    expect(packed.image.bytes[DM32_BLOCK_SIZE + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.ZONE);
+  });
 });
 
 describe('encodeDm32ScanList', () => {
@@ -146,10 +291,52 @@ describe('encodeDm32ScanList', () => {
       channelNumbers: [3, 4],
       listIndex: 1,
     });
-    expect(rec[0x0b]).toBe(2);
+    expect(rec[0x0b]).toBe(3);
+    expect(rec[0x0d]).toBe(50);
     expect((rec[0x0c]! >> 2) & 0x03).toBe(1); // current
     expect(rec[0x1a] | (rec[0x1b]! << 8)).toBe(3);
     expect(rec[0x1c] | (rec[0x1d]! << 8)).toBe(4);
+  });
+
+  it('counts three named members as four including the current channel', () => {
+    const rec = encodeDm32ScanList({
+      wireName: 'Three',
+      channelNumbers: [10, 11, 12],
+      listIndex: 1,
+    });
+    expect(rec[0x0b]).toBe(4);
+    expect(rec[0x0d]).toBe(50);
+    expect(rec[0x1a] | (rec[0x1b]! << 8)).toBe(10);
+    expect(rec[0x1c] | (rec[0x1d]! << 8)).toBe(11);
+    expect(rec[0x1e] | (rec[0x1f]! << 8)).toBe(12);
+  });
+
+  it('stores fifteen named members and writes count 16', () => {
+    const channelNumbers = Array.from({ length: 15 }, (_, i) => i + 1);
+    const rec = encodeDm32ScanList({
+      wireName: 'Full',
+      channelNumbers,
+      listIndex: 1,
+    });
+    expect(rec[0x0b]).toBe(16);
+    expect(rec[0x0d]).toBe(50);
+    expect(rec.length).toBe(57);
+    for (let i = 0; i < 15; i++) {
+      const off = 0x1a + i * 2;
+      expect(rec[off]! | (rec[off + 1]! << 8)).toBe(channelNumbers[i]);
+    }
+    // 15 u16s end at +0x37. The leftover byte is not a 16th member.
+    expect(rec[0x38]).toBe(0x00);
+  });
+
+  it('keeps an empty projected list at count 0 and hang time 50', () => {
+    const rec = encodeDm32ScanList({
+      wireName: 'Empty',
+      channelNumbers: [],
+      listIndex: 1,
+    });
+    expect(rec[0x0b]).toBe(0);
+    expect(rec[0x0d]).toBe(50);
   });
 });
 

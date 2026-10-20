@@ -10,7 +10,9 @@
  * Read hydration inside entity payloads. Unused slots are explicit empty/sentinel fill.
  *
  * **Kept regions** (settings `0x04` outside APRS slice, emergencies, keys,
- * calibration, VFO bank, messages) stay Read-retained.
+ * calibration, VFO bank, messages, analogue contacts `0x06`) stay Read-retained.
+ * Talk-group cardinality is metadata `0x44` and quick-access `0x0B`. The
+ * analogue-contact count at `0x06` `+0x1FF` is not projection-authored.
  */
 
 import { DM32_METADATA } from './constants.ts';
@@ -41,6 +43,14 @@ export const DM32_WRITTEN_FROM_BUILD_LABELS: readonly string[] = [
 export const DM32_ANALOG_CONTACTS_WRITE_GAP =
   'Analog contacts stay as they were on the radio when you Write. Export a file for your radio’s CPS or NeonPlug if you need to update those.';
 
+/**
+ * After a successful DM-32 Write or Restore. The radio keeps the page map from
+ * before the session until the operator power-cycles it. Stock and MM9PDY share
+ * this sentence.
+ */
+export const DM32_POWER_CYCLE_AFTER_SESSION_NOTE =
+  'Power the radio off and on before using it or changing it on the keypad. Until then it is still using the page map from before this session, and the next keypad edit can erase a page that was just written.';
+
 /** Operator-facing block label from metadata byte (no hex in output). */
 export function dm32BlockLabel(metadata: number, type: Dm32BlockType): string {
   if (metadata >= DM32_METADATA.CHANNEL_FIRST && metadata <= DM32_METADATA.CHANNEL_LAST) {
@@ -59,8 +69,8 @@ export function dm32BlockLabel(metadata: number, type: Dm32BlockType): string {
       return 'TX contacts (channels 2049+)';
     case DM32_METADATA.TALK_GROUPS:
       return 'Talk groups';
-    case DM32_METADATA.CONFIG_TG_COUNTER:
-      return 'Talk group counter';
+    case DM32_METADATA.ANALOG_CONTACTS:
+      return 'Analog contacts';
     case DM32_METADATA.METADATA_0x0B:
       return 'Talk group quick access';
     case DM32_METADATA.RX_GROUPS:
@@ -101,7 +111,7 @@ export function dm32BlockLabel(metadata: number, type: Dm32BlockType): string {
     case 'analogemergency':
       return 'Analog emergency';
     case 'config':
-      return 'Talk group counter';
+      return 'Analog contacts';
     case 'vfo':
       return 'Radio settings';
     case 'empty':
@@ -122,11 +132,7 @@ export function dm32WriteRole(
   if (metadata === DM32_METADATA.TX_CONTACT_LOW || metadata === DM32_METADATA.TX_CONTACT_HIGH) {
     return 'replaced';
   }
-  if (
-    metadata === DM32_METADATA.TALK_GROUPS ||
-    metadata === DM32_METADATA.METADATA_0x0B ||
-    metadata === DM32_METADATA.CONFIG_TG_COUNTER
-  ) {
+  if (metadata === DM32_METADATA.TALK_GROUPS || metadata === DM32_METADATA.METADATA_0x0B) {
     return 'replaced';
   }
   if (type === 'zone' || type === 'scan' || type === 'rxgroup') {
@@ -147,6 +153,7 @@ export function dm32WriteRole(
     return 'kept';
   }
   if (metadata === DM32_METADATA.DMR_RADIO_IDS || type === 'dmrradioid') {
+    // Role stays replaced; an empty projection does not rewrite the block.
     return 'replaced';
   }
   if (type === 'empty') {
@@ -182,7 +189,7 @@ export function dm32IsRequiredMetadata(metadata: number): boolean {
     metadata === DM32_METADATA.CALIBRATION ||
     metadata === DM32_METADATA.RX_GROUPS ||
     metadata === DM32_METADATA.TALK_GROUPS ||
-    metadata === DM32_METADATA.CONFIG_TG_COUNTER ||
+    metadata === DM32_METADATA.ANALOG_CONTACTS ||
     metadata === DM32_METADATA.TX_CONTACT_LOW ||
     metadata === DM32_METADATA.TX_CONTACT_HIGH
   );

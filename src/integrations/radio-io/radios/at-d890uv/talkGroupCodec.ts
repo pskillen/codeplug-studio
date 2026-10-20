@@ -4,6 +4,7 @@
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioTalkGroupDto } from '../../radioWriteProjection.ts';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { clearBitmap, setBitmapBit } from './bitmap.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
 import {
@@ -101,7 +102,8 @@ export function encodeTalkgroupsIntoAtD890Image(
 ): MemoryMap {
   const set = image.get(D890_MAP.TalkgroupSet, AT_D890_LIMITS.TALKGROUP_SET_BYTES).slice();
   clearBitmap(set, true);
-  const max = set.length * 8;
+  // Slot 10000 is TalkgroupOrder. Filling the bitmap width zeroes that window.
+  const max = AT_D890UV_LIMITS.TALK_GROUPS_MAX;
   for (let i = 0; i < max; i++) {
     image.fill(talkgroupAddress(i), AT_D890_LIMITS.TALKGROUP_RECORD_SIZE, 0);
   }

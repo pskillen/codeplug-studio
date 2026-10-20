@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
+import { listDescriptorsForProfile } from '../../registry.ts';
 import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
-import { receiveGroupAddress } from './memory.ts';
+import { receiveGroupAddress, talkgroupAddress } from './memory.ts';
 import {
   decodeAtD890RxGroupTimeSlotOverrides,
   encodeAtD890RxGroupRecord,
@@ -31,6 +32,21 @@ describe('encodeAtD890RxGroupRecord', () => {
     expect(readU32Le(record, 8)).toBe(4);
     expect(readU32Le(record, 12)).toBe(5);
     expect(readU32Le(record, 16)).toBe(0xffffffff);
+  });
+
+  it('keeps member 1000 as a talkgroup bank index on stock and MM9PDY', () => {
+    const stock = listDescriptorsForProfile('radio-io', 'radio-io-at-d890uv');
+    const mm9 = listDescriptorsForProfile('radio-io', 'radio-io-at-d890uv-mm9pdy');
+    expect(stock).toHaveLength(1);
+    expect(mm9).toHaveLength(1);
+    expect(stock[0]).toBe(mm9[0]);
+    const record = encodeAtD890RxGroupRecord({
+      index: 1,
+      wireName: 'R',
+      memberDigitalIds: [1000],
+    });
+    expect(readU32Le(record, 0)).toBe(1000);
+    expect(talkgroupAddress(1000)).toBe(0x3a8_0000);
   });
 
   it('encodes wide-char name at 0x100', () => {

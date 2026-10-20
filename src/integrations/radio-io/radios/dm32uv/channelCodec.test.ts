@@ -37,15 +37,15 @@ function sampleDto(overrides: Partial<RadioChannelDto> = {}): RadioChannelDto {
   };
 }
 
-// Golden bytes from NeonPlug encodeChannel + createDefaultChannel (structures.ts).
-const NEONPLUG_ANALOG_GOLDEN = hexToBytes(
-  '54 45 53 54 00 ff ff ff ff ff ff ff ff ff ff ff 00 00 55 14 00 00 55 14 04 80 00 00 30 00 ff 00 ff 00 00 00 00 00 00 50 00 00 00 ff ff ff ff ff',
+// Occupied-record defaults: firmware 048 zeros for unmodelled fields, 5 kHz step at 0x29.
+const OCCUPIED_ANALOG_RECORD = hexToBytes(
+  '54 45 53 54 00 ff ff ff ff ff ff ff ff ff ff ff 00 00 55 14 00 00 55 14 04 80 00 00 30 00 00 00 00 00 00 00 00 00 00 00 00 10 00 ff 00 00 00 00',
 );
-const NEONPLUG_DIGITAL_GOLDEN = hexToBytes(
-  '44 4d 52 2d 54 47 39 00 ff ff ff ff ff ff ff ff 50 12 06 43 50 12 06 43 18 00 00 00 30 11 ff 02 ff 00 00 00 00 00 00 50 00 00 00 ff ff ff ff ff',
+const OCCUPIED_DIGITAL_RECORD = hexToBytes(
+  '44 4d 52 2d 54 47 39 00 ff ff ff ff ff ff ff ff 50 12 06 43 50 12 06 43 18 00 00 00 30 11 00 02 00 00 00 00 00 00 00 00 00 10 00 ff 00 00 00 00',
 );
-const NEONPLUG_AIRBAND_GOLDEN = hexToBytes(
-  '41 49 52 00 ff ff ff ff ff ff ff ff ff ff ff ff 00 00 80 11 ff ff ff ff 0c 80 00 00 30 00 ff 00 ff 00 00 00 00 00 00 50 00 00 00 ff ff ff ff ff',
+const OCCUPIED_AIRBAND_RECORD = hexToBytes(
+  '41 49 52 00 ff ff ff ff ff ff ff ff ff ff ff ff 00 00 80 11 ff ff ff ff 0c 80 00 00 30 00 00 00 00 00 00 00 00 00 00 00 00 10 00 ff 00 00 00 00',
 );
 
 describe('dm32 channelCodec', () => {
@@ -68,7 +68,7 @@ describe('dm32 channelCodec', () => {
     expect(parseDm32ChannelRecord(rec, 3).empty).toBe(true);
   });
 
-  it('matches NeonPlug golden bytes for default-rich analog channel', () => {
+  it('encodes occupied-record defaults for a default-rich analog channel', () => {
     const encoded = encodeDm32ChannelRecord(
       sampleDto({
         wireName: 'TEST',
@@ -79,10 +79,15 @@ describe('dm32 channelCodec', () => {
         mode: 'analog',
       }),
     );
-    expect(Array.from(encoded)).toEqual(Array.from(NEONPLUG_ANALOG_GOLDEN));
+    expect(Array.from(encoded)).toEqual(Array.from(OCCUPIED_ANALOG_RECORD));
+    expect(encoded[0x1e]).toBe(0);
+    expect(encoded[0x20]).toBe(0);
+    expect(encoded[0x27]).toBe(0);
+    expect(encoded[0x29]).toBe(0x10);
+    expect(encoded[0x2a]).toBe(0);
   });
 
-  it('matches NeonPlug golden bytes for digital channel with forbid TX', () => {
+  it('encodes occupied-record defaults for a digital channel with forbid TX', () => {
     const encoded = encodeDm32ChannelRecord(
       sampleDto({
         slotIndex: 2,
@@ -98,10 +103,10 @@ describe('dm32 channelCodec', () => {
         rxOnly: true,
       }),
     );
-    expect(Array.from(encoded)).toEqual(Array.from(NEONPLUG_DIGITAL_GOLDEN));
+    expect(Array.from(encoded)).toEqual(Array.from(OCCUPIED_DIGITAL_RECORD));
   });
 
-  it('matches NeonPlug golden bytes for aviation receive-only (TX FF×4)', () => {
+  it('encodes occupied-record defaults for aviation receive-only (TX FF×4)', () => {
     const encoded = encodeDm32ChannelRecord(
       sampleDto({
         wireName: 'AIR',
@@ -112,7 +117,7 @@ describe('dm32 channelCodec', () => {
         rxOnly: true,
       }),
     );
-    expect(Array.from(encoded)).toEqual(Array.from(NEONPLUG_AIRBAND_GOLDEN));
+    expect(Array.from(encoded)).toEqual(Array.from(OCCUPIED_AIRBAND_RECORD));
     expect(encoded[0x14]).toBe(0xff);
     expect(encoded[0x18] & 0x08).toBe(0x08);
   });
@@ -122,19 +127,40 @@ describe('dm32 channelCodec', () => {
     expect(parseDm32ChannelRecord(encoded, 1).rxOnly).toBe(true);
   });
 
-  it('encodes zone-derived scanListId and scanAdd on byte 0x19', () => {
+  it('packs scan-list id into 0x19 bits 5–0 with scan-add in bit 6', () => {
     const list1 = encodeDm32ChannelRecord(
       sampleDto({ bandwidth: 'NFM', scanAdd: true, scanListId: 1 }),
     );
-    expect(list1[0x19]).toBe(0x44);
+    expect(list1[0x19]).toBe(0x41);
 
     const list2 = encodeDm32ChannelRecord(
       sampleDto({ bandwidth: 'NFM', scanAdd: true, scanListId: 2 }),
     );
-    expect(list2[0x19]).toBe(0x48);
+    expect(list2[0x19]).toBe(0x42);
     expect(list2[0x19]! & 0x80).toBe(0);
     expect(list2[0x19]! & 0x40).toBe(0x40);
-    expect((list2[0x19]! >> 2) & 0x0f).toBe(2);
+    expect(list2[0x19]! & 0x3f).toBe(2);
+
+    const list32 = encodeDm32ChannelRecord(
+      sampleDto({ bandwidth: 'NFM', scanAdd: true, scanListId: 32 }),
+    );
+    expect(list32[0x19]).toBe(0x60);
+
+    const none = encodeDm32ChannelRecord(
+      sampleDto({ bandwidth: 'NFM', scanAdd: true, scanListId: 0 }),
+    );
+    expect(none[0x19]).toBe(0x40);
+    expect(none[0x19]! & 0x3f).toBe(0);
+
+    const wide = encodeDm32ChannelRecord(
+      sampleDto({ bandwidth: 'FM', scanAdd: true, scanListId: 1 }),
+    );
+    expect(wide[0x19]).toBe(0xc1);
+
+    const parsed = parseDm32ChannelRecord(list1, 1);
+    expect(parsed.scanListId).toBe(1);
+    expect(parsed.scanAdd).toBe(true);
+    expect(parsed.bandwidth).toBe('NFM');
   });
 
   it('parses and encodes a basic analog channel record', () => {
@@ -146,6 +172,8 @@ describe('dm32 channelCodec', () => {
     expect(parsed.rxHz).toBe(145_500_000);
     expect(parsed.bandwidth).toBe('FM');
     expect(parsed.mode).toBe('analog');
+    expect(parsed.scanListId).toBeUndefined();
+    expect(parsed.scanAdd).toBeUndefined();
   });
 
   it('treats all-0xFF as empty', () => {

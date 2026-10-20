@@ -3,7 +3,8 @@
  * Cite: docs/reference/radios/baofeng/dm-32uv/contacts-zones-lists.md
  */
 
-import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET, DM32_OFFSET } from './constants.ts';
+import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from './constants.ts';
+import { isDm32ZonePageMetadata } from './memory.ts';
 
 const TD = new TextDecoder('ascii', { fatal: false });
 
@@ -45,9 +46,13 @@ export interface Dm32SparseBlockInput {
   type: string;
 }
 
-export function countZonesInBlock(data: Uint8Array): number {
+/**
+ * Header tag `0x5C` counts from offset 16. Any later tag in the zone bank
+ * packs from offset 0; starting at 16 would skip that page's first record.
+ */
+export function countZonesInBlock(data: Uint8Array, metadata: number = DM32_METADATA.ZONE): number {
   const entrySize = 145;
-  const start = 16;
+  const start = metadata !== DM32_METADATA.ZONE && isDm32ZonePageMetadata(metadata) ? 0 : 16;
   return countAsciiNames(data, entrySize, start, 11);
 }
 
@@ -57,9 +62,9 @@ export function countScanListsInBlock(data: Uint8Array): number {
 }
 
 export function countTalkGroupsInBlocks(blocks: readonly Dm32SparseBlockInput[]): number {
-  const counter = blocks.find((b) => b.metadata === DM32_METADATA.CONFIG_TG_COUNTER);
-  if (counter) {
-    const n = counter.data[DM32_OFFSET.TALK_GROUP_COUNTER] ?? 0;
+  const quick = blocks.find((b) => b.metadata === DM32_METADATA.METADATA_0x0B);
+  if (quick) {
+    const n = (quick.data[0] ?? 0) | ((quick.data[1] ?? 0) << 8);
     if (n > 0 && n <= 800) return n;
   }
   const tg = blocks.find((b) => b.metadata === DM32_METADATA.TALK_GROUPS);
@@ -136,7 +141,7 @@ export function aggregateOnRadioCounts(
 
   for (const b of blocks) {
     if (b.metadata === DM32_METADATA.ZONE || b.type === 'zone') {
-      zoneCount += countZonesInBlock(b.data);
+      zoneCount += countZonesInBlock(b.data, b.metadata);
     } else if (b.metadata === DM32_METADATA.SCAN_LIST || b.type === 'scan') {
       scanListCount += countScanListsInBlock(b.data);
     } else if (b.metadata === DM32_METADATA.RX_GROUPS || b.type === 'rxgroup') {

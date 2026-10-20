@@ -6,6 +6,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Alert, FileButton, Group, Stack, Table, Text } from '@mantine/core';
+import { isDm32RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
+import { DM32_POWER_CYCLE_AFTER_SESSION_NOTE } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
 import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import RadioCloneSummaryView from '../../components/builds/RadioCloneSummaryView.tsx';
@@ -94,7 +96,14 @@ export default function BuildRadioBackupPage() {
   const descriptor = descriptors[0];
   const serialOk = isRadioSerialSupported();
   const restoreAvailable = descriptorSupportsRestore(descriptor);
-  const warnFactoryReset = (descriptor?.modelIds ?? []).some((id) => /dm-?32/i.test(id));
+  const dm32Model = (descriptor?.modelIds ?? []).some((id) => /dm-?32/i.test(id));
+  const warnFactoryReset = dm32Model;
+  const dm32PowerCycle =
+    dm32Model ||
+    isDm32RadioIoProfileId(radioEgress.profileId) ||
+    (descriptor?.compatibleProfiles ?? []).some((profile) =>
+      isDm32RadioIoProfileId(profile.profileId),
+    );
 
   const attributionNames = (descriptor?.attributionIds ?? [])
     .map((id) => findAttribution(id)?.name)
@@ -481,6 +490,11 @@ export default function BuildRadioBackupPage() {
           navigationBlocked={leaveAttempted}
           onCancel={handleCancel}
           onClose={handleProgressClose}
+          successNote={
+            operation === 'restore' && dm32PowerCycle
+              ? DM32_POWER_CYCLE_AFTER_SESSION_NOTE
+              : undefined
+          }
         />
       </Stack>
     </FormPage>

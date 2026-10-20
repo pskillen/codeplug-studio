@@ -110,7 +110,7 @@ describe('deriveZoneDerivedScanLists', () => {
   });
 
   it('caps zone-derived scan list count at channel scanListId hardware limit', () => {
-    const pairs = Array.from({ length: 20 }, (_, i) => {
+    const pairs = Array.from({ length: DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX + 1 }, (_, i) => {
       const channel = {
         ...newChannel(PROJECT_ID, `Ch${i}`),
         id: `ch-${i}`,

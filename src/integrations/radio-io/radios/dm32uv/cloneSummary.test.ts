@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { createRadioCloneHydrationBagFromBlocks } from '@core/models/radioCloneHydration.ts';
-import { DM32_METADATA, DM32_OFFSET } from './constants.ts';
+import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_OFFSET } from './constants.ts';
 import { makeEmptyBlock, makeFirstChannelBlock } from './__fixtures__/scriptedPipe.ts';
 import { summariseDm32uvClone } from './cloneSummary.ts';
 import { encodeDm32ChannelRecord } from './channelCodec.ts';
@@ -69,6 +69,27 @@ describe('summariseDm32uvClone', () => {
       capturedVia: 'web-serial',
     });
     expect(summariseDm32uvClone(bag).inspectChannels).toEqual([{ slotIndex: 1, name: 'LOCAL' }]);
+  });
+
+  it('counts talk groups from quick access and retains the analogue contact page', () => {
+    const analog = makeEmptyBlock(DM32_METADATA.ANALOG_CONTACTS);
+    analog[DM32_OFFSET.ANALOG_CONTACT_COUNT] = 7;
+    const quick = makeEmptyBlock(DM32_METADATA.METADATA_0x0B);
+    quick[0] = 19;
+    quick[1] = 0;
+    const bag = createRadioCloneHydrationBagFromBlocks({
+      radioModelId: 'DM-32UV',
+      blocks: [
+        { address: 0x1000, data: analog },
+        { address: 0x1000 + DM32_BLOCK_SIZE, data: quick },
+      ],
+      addressBase: 0x1000,
+      capturedVia: 'web-serial',
+    });
+    const summary = summariseDm32uvClone(bag);
+    expect(summary.onRadioCounts.talkGroupCount).toBe(19);
+    expect(summary.retainGroups.some((g) => g.label === 'Analog contacts')).toBe(true);
+    expect(summary.retainGroups.some((g) => g.label === 'Talk group counter')).toBe(false);
   });
 });
 

@@ -261,7 +261,7 @@ function buildDm32Organisation(
   channels: RadioChannelDto[],
   warnings: ExportWarning[],
   scanListWireCap?: number,
-  options?: { deriveScanLists?: boolean },
+  options?: { deriveScanLists?: boolean; emptyScanFloor?: boolean },
 ): {
   zones: RadioZoneDto[];
   scanLists: RadioScanListDto[];
@@ -437,14 +437,26 @@ function buildDm32Organisation(
     zones.push({ wireName, channelNumbers });
   }
 
-  // Empty scan floor (#564). MM9PDY zone-scan writes no scan-list bank.
-  if (deriveScanLists && scanLists.length === 0) {
+  // Empty scan floor (#564) when zone-derived lists are on.
+  // AT-D890UV MM9PDY keeps deriveScanLists off. emptyScanFloor still writes one
+  // list with the first channel so ScanListSet is not all zeros — the radio
+  // rejects an empty occupancy bitmap. No channel means no list (an empty
+  // record is skipped and the bitmap would still be cleared).
+  if (scanLists.length === 0) {
     const firstCh = nextChannels.find((c) => !c.empty)?.slotIndex;
-    scanLists.push({
-      wireName: DM32_EMPTY_SCAN_LIST_NAME,
-      channelNumbers: firstCh != null ? [firstCh] : [],
-      listIndex: 1,
-    });
+    if (deriveScanLists) {
+      scanLists.push({
+        wireName: DM32_EMPTY_SCAN_LIST_NAME,
+        channelNumbers: firstCh != null ? [firstCh] : [],
+        listIndex: 1,
+      });
+    } else if (options?.emptyScanFloor === true && firstCh != null) {
+      scanLists.push({
+        wireName: DM32_EMPTY_SCAN_LIST_NAME,
+        channelNumbers: [firstCh],
+        listIndex: 1,
+      });
+    }
   }
 
   // Stamp scanListId on channel DTOs where derived
@@ -1458,7 +1470,7 @@ export function buildRadioWriteProjection(
       [...dtos],
       warnings,
       mm9pdy ? undefined : requireNumericLimit(d890Limits.maxScanLists, 'maxScanLists', egress),
-      { deriveScanLists: !mm9pdy },
+      { deriveScanLists: !mm9pdy, emptyScanFloor: mm9pdy },
     );
     channels = stampAtD890AutoScan(org.channels, org.scanLists);
     numbersBySourceChannelId = org.numbersBySourceChannelId;

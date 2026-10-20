@@ -25,6 +25,7 @@ describe('dm32WriteRole', () => {
     expect(dm32WriteRole(DM32_METADATA.VFO_SETTINGS, 'vfo')).toBe('kept');
     expect(dm32WriteRole(DM32_METADATA.QUICK_MESSAGES, 'message')).toBe('kept');
     expect(dm32WriteRole(DM32_METADATA.CALIBRATION, 'calibration')).toBe('kept');
+    expect(dm32WriteRole(DM32_METADATA.ANALOG_CONTACTS, 'config')).toBe('kept');
   });
 
   it('keeps VFO bank when not a channel bank address', () => {
@@ -53,5 +54,7 @@ describe('dm32BlockLabel', () => {
         classifyDm32Metadata(DM32_METADATA.TX_CONTACT_LOW),
       ),
     ).toContain('TX contacts');
+    expect(dm32BlockLabel(DM32_METADATA.ANALOG_CONTACTS, 'config')).toBe('Analog contacts');
+    expect(dm32BlockLabel(0x99, 'config')).toBe('Analog contacts');
   });
 });

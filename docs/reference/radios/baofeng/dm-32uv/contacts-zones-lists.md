@@ -44,14 +44,16 @@ Studio Web Serial encodes the **serial** address book only.
 
 **Studio Web Serial (#667, #685, [#1220](https://github.com/pskillen/codeplug-studio/issues/1220)):** Write **allocates** `ceil(n/44)` 4KB blocks from V-frame `0x0F` `contactsBase` (capped at `CONTACT_BANK_MAX_BLOCKS`) and includes those addresses in upload — clone **Read still skips** the bank (H6). A huge L01 `contactsEnd` is **not** treated as a clear/read span. Analog / DTMF contacts are **not** encoded — they stay as on the radio; use CPS / NeonPlug file egress to change them. RadioID directory and library privates share this bank; operator radio IDs stay metadata `0x67`.
 
-## Talk groups — metadata `0x44` (+ counter `0x06`)
+## Talk groups — metadata `0x44` (+ quick access `0x0B`)
 
-| Fact          | Value                                                           |
-| ------------- | --------------------------------------------------------------- |
-| Data block    | Metadata **`0x44`**                                             |
-| Counter block | Metadata **`0x06`**, counter byte/word at offset **`0x1FF`**    |
-| Max           | **800** ([limits.md](limits.md))                                |
-| Related       | Metadata **`0x0B`** holds quick-access / sorted TG index tables |
+Talk-group cardinality is metadata **`0x44`** plus metadata **`0x0B`** (u16 LE at bytes 0–1). Max **800** ([limits.md](limits.md)).
+
+| Fact        | Value                                                           |
+| ----------- | --------------------------------------------------------------- |
+| Data block  | Metadata **`0x44`**                                             |
+| Cardinality | Metadata **`0x44`** payload, plus metadata **`0x0B`** bytes 0–1 |
+| Max         | **800** ([limits.md](limits.md))                                |
+| Related     | Metadata **`0x0B`** holds quick-access / sorted TG index tables |
 
 NeonPlug `parseQuickContacts`: variable packed entries (flag + 16-char name + 3-byte DMR ID + call type). First entry may skip a leading `0x00` header byte. Prefer NeonPlug encode/parse behaviour over inventing a new packing.
 
@@ -61,6 +63,12 @@ NeonPlug `parseQuickContacts`: variable packed entries (flag + 16-char name + 3-
 | **qDMR virtual**               | **Contact bank** at `0x44000` — different structure; not authoritative for Web Serial |
 
 TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0` = none).
+
+## Analogue (DTMF) contacts — metadata `0x06`
+
+A different bank from the V-frame `0x0F` address book above. Byte **`+0x1FF`** is the count of 32-byte analogue (DTMF) contacts that start at **`+0x200`**. It is not the talk-group count. NeonPlug names this byte `CONFIG_TG_COUNTER`; firmware reads it as the analogue contact count.
+
+**Studio Web Serial Write** does not change `+0x1FF` and does not encode these records. The page is retain-only (echoed from Read). Use CPS / NeonPlug file egress to edit them.
 
 ## TX contact — metadata `0x42` / `0x43`
 
@@ -89,6 +97,8 @@ TX-contact indices (`0x42`/`0x43`) point into the **serial** talk-group list (`0
 | Name             | 11 bytes ASCII                                                                             |
 | Members          | Count at +16; u16 LE channel numbers from +17; max **64**; unused member bytes stay `0xFF` |
 
+Further zone pages are tags `0x5D`–`0x64` in tag order; the page range is in [memory-layout.md](memory-layout.md).
+
 ### First-block header (bytes 0–15)
 
 VFO A/B selected zone and channel indices live in the **zone bank** first block header (not settings `0x04`). Offsets cite qDMR `ZoneBankElement`; wire values are **1-based** (`0` = unset).
@@ -112,24 +122,24 @@ VFO A/B selected zone and channel indices live in the **zone bank** first block 
 | Entry size   | **57** bytes                           |
 | Count        | Byte at `0x00`                         |
 | Entry offset | `(57 × N) − 56` for list `N` (1-based) |
-| Max lists    | **32** bank / **15** channel-FK        |
+| Max lists    | **32** bank / **32** channel-FK        |
 | Max members  | **15** named channels                  |
 
-**Studio Web Serial Write:** zone-derived scan lists are rewritten from projection; the block is **`0xFF`-filled** (NeonPlug `writeAllData` parity), then slots after the projected count are **vacant-cleared** (`+0x00` name, `+0x0B` member count `0x00`) so firmware does not treat `0xFF` at `+0x0B` as 255 members (zone vacant-slot parity). Each exporting zone gets a `{zone} Scan` carrier channel prepended to the zone and set as designated TX. Channel-record `scanListId` is only **4 bits (1–15)** — Studio caps addressable zone-derived lists at 15 (NeonPlug parity). **Members** stay `scanListId` 0 on the channel record; only **scan carriers** carry the zone list FK.
+**Studio Web Serial Write:** zone-derived scan lists are rewritten from projection; the block is **`0xFF`-filled** (NeonPlug `writeAllData` parity), then slots after the projected count are **vacant-cleared** (`+0x00` name, `+0x0B` member count `0x00`) so firmware does not treat `0xFF` at `+0x0B` as 255 members (zone vacant-slot parity). A non-empty list stores `+0x0B` as named members + 1 (the implicit current channel; at most 16). An empty projected list stays `0`. Named members stay u16 LE at `+0x1A` (at most 15); the extra count is not a 16th stored member. Write replaces the scan-list block, so hang time `+0x0D` is always the unmodelled default **50** (5.0 s) and is not copied from the radio. Each exporting zone gets a `{zone} Scan` carrier channel prepended to the zone and set as designated TX. Channel-record `scanListId` is bits 5–0 (`0` = none, ids **1–32**) — Studio caps addressable zone-derived lists at 32. **Members** stay `scanListId` 0 on the channel record; only **scan carriers** carry the zone list FK.
 
 ### 57-byte entry (summary)
 
-| Offset  | Field                                                                                                     |
-| ------- | --------------------------------------------------------------------------------------------------------- |
-| `+0x00` | Name (11)                                                                                                 |
-| `+0x0B` | Channel count                                                                                             |
-| `+0x0C` | CTC detection **0**; TX mode **1** (current) or **2** (designated TX channel) — Web Serial Write defaults |
-| `+0x0D` | Hang time **50** (5.0 s) — Web Serial Write default when unmodelled                                       |
-| `+0x0E` | Priority types                                                                                            |
-| `+0x0F` | Priority ch 1 (u16 LE)                                                                                    |
-| `+0x11` | Designated TX (encoded)                                                                                   |
-| `+0x13` | Priority ch 2 (encoded)                                                                                   |
-| `+0x1A` | Channel list (30 bytes, u16 LE, max 15)                                                                   |
+| Offset  | Field                                                                                                                        |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `+0x00` | Name (11)                                                                                                                    |
+| `+0x0B` | Named members + 1 for a non-empty list (implicit current channel, max 16). Empty projected lists and vacant slots stay **0** |
+| `+0x0C` | CTC detection **0**; TX mode **1** (current) or **2** (designated TX channel) — Web Serial Write defaults                    |
+| `+0x0D` | Hang time **50** (5.0 s) — unmodelled default. Write replaces the block, so a value read from the radio is not kept          |
+| `+0x0E` | Priority types                                                                                                               |
+| `+0x0F` | Priority ch 1 (u16 LE)                                                                                                       |
+| `+0x11` | Designated TX (encoded)                                                                                                      |
+| `+0x13` | Priority ch 2 (encoded)                                                                                                      |
+| `+0x1A` | Channel list (30 bytes, u16 LE, max 15)                                                                                      |
 
 ## RX groups — metadata `0x0F`
 
@@ -151,6 +161,8 @@ VFO A/B selected zone and channel indices live in the **zone bank** first block 
 | Entries from | `0x10`                                                                                                                                                                                                   |
 | Entry size   | **16** bytes                                                                                                                                                                                             |
 | Channel ref  | Channel byte `0x2B` is 0-based index; `0xFF` = none — Web Serial Write builds the bank from distinct channel `ModeProfile.dmrId` values ([#687](https://github.com/pskillen/codeplug-studio/issues/687)) |
+
+An empty or non-positive projection leaves the discovered block untouched ([#1291](https://github.com/pskillen/codeplug-studio/issues/1291)). A projection with any `dmrId > 0` still replaces the whole page from distinct channel `ModeProfile.dmrId` values. Hand-entered IDs that are not on a channel are dropped on that non-empty Write; merge-by-id is not this path.
 
 ## Related
 

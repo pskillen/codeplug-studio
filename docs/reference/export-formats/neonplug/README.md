@@ -63,7 +63,7 @@ NeonPlug uses **1-based channel numbers** and **list indexes** — not names and
 | Scan list `channels[]`      | `channels[].number`             | Channel number                             |
 | Channel `contactId`         | Talk-group / contact list index | Integer index (`0` = none)                 |
 | Channel `rxGroupListId`     | `rxGroups` list                 | `0` = none; else **1-based** list position |
-| Channel `scanListId`        | `scanLists` entry               | `0` = none; else **1-based** (max **15**)  |
+| Channel `scanListId`        | `scanLists` entry               | `0` = none; else **1-based** (max **32**)  |
 | Channel `dmrRadioIdIndex`   | `radioIds[]`                    | 0-based index; `255` / omit = none         |
 | RX group `talkGroupIndices` | Talk-group **DMR IDs**          | Up to 32 integers (not book indexes)       |
 

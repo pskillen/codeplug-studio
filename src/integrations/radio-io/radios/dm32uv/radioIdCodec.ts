@@ -64,6 +64,11 @@ export function encodeRadioIdsIntoDm32Image(
 ): MemoryMap {
   const block = findBlock(ctx.discovered, DM32_METADATA.DMR_RADIO_IDS);
   if (!block) return image;
+  // Empty projection must not wipe a hydrated radio-ID bank: codeplug Write
+  // attaches [] when no channel has a positive dmrId.
+  if (!radioIds.some((rid) => rid.dmrId > 0)) {
+    return image;
+  }
   const packed = encodeDm32RadioIdBlock(radioIds);
   image.set(block.address - ctx.addressBase, packed);
   return image;

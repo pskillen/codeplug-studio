@@ -33,6 +33,8 @@ export interface RadioIoProgressModalProps {
   onCloseWithoutVerify?: () => void;
   onCancel: () => void;
   onClose?: () => void;
+  /** Extra sentence on a successful Write or Restore finish. Omitted radios show nothing. */
+  successNote?: string;
 }
 
 interface StepDef {
@@ -214,6 +216,7 @@ export default function RadioIoProgressModal({
   onCloseWithoutVerify,
   onCancel,
   onClose,
+  successNote,
 }: RadioIoProgressModalProps) {
   const stepDefs = buildSteps(operation, transferStages, phase, writeVerifyStatus);
   const activeId = activeStepId(phase, progress, transferStages, writeVerifyStatus);
@@ -264,6 +267,15 @@ export default function RadioIoProgressModal({
                 body: 'Selected restorable regions were sent from the backup file.',
               }
             : null;
+
+  const showSuccessNote =
+    Boolean(successNote) &&
+    ((operation === 'write' &&
+      phase === 'done' &&
+      (writeVerifyStatus === 'none' ||
+        writeVerifyStatus === 'unverified' ||
+        writeVerifyStatus === 'verified')) ||
+      (operation === 'restore' && phase === 'done'));
 
   const footer = complete ? (
     awaitingVerify ? (
@@ -319,6 +331,11 @@ export default function RadioIoProgressModal({
         alert ? (
           <Alert color={alert.color} title={alert.title}>
             <Text size="sm">{alert.body}</Text>
+            {showSuccessNote ? (
+              <Text size="sm" mt="xs">
+                {successNote}
+              </Text>
+            ) : null}
           </Alert>
         ) : null
       }

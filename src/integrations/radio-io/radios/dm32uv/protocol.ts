@@ -51,6 +51,7 @@ import {
 } from './contactCodec.ts';
 import {
   assertDm32RestoreAddressMap,
+  assertDm32RestoreUniqueOccupiedTags,
   listDm32RestoreBlocks,
   type Dm32RestoreLiveAddressMap,
 } from './restoreFromBackup.ts';
@@ -77,6 +78,11 @@ export interface Dm32DownloadCache {
   maxContacts?: number;
   /** Address-book 4KB blocks allocated for this Write (not in metadata discovery). */
   contactWriteAddresses?: number[];
+  /**
+   * Free pages claimed for a missing zone tag (`0x5C`–`0x64`). Not inserted into
+   * `blocks` before remap — upload unions these addresses after a live free-page check.
+   */
+  zoneWriteAddresses?: number[];
 }
 
 function blocksToMemoryMap(cache: Dm32DownloadCache): MemoryMap {
@@ -92,6 +98,24 @@ function blocksToMemoryMap(cache: Dm32DownloadCache): MemoryMap {
     map.set(offset, data);
   }
   return map;
+}
+
+/**
+ * A claimed zone page may be written only while the live metadata byte is still
+ * free. Any other value fails the upload. Do not search for a substitute page.
+ */
+function assertZoneClaimPagesStillFree(
+  addresses: readonly number[],
+  liveDiscovered: readonly { address: number; metadata: number }[],
+): void {
+  for (const addr of addresses) {
+    const liveMeta = liveDiscovered.find((block) => block.address === addr)?.metadata;
+    if (liveMeta === DM32_METADATA.EMPTY || liveMeta === DM32_METADATA.EMPTY_ALT) continue;
+    const shown = liveMeta == null ? 'missing' : `0x${liveMeta.toString(16)}`;
+    throw new RadioProtocolError(
+      `DM-32UV zone page 0x${addr.toString(16)} is not a free page (live metadata ${shown}). Read the radio again before Write.`,
+    );
+  }
 }
 
 export function memoryMapToDm32Blocks(
@@ -153,6 +177,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
         contactWriteAddresses: seed.contactWriteAddresses
           ? [...seed.contactWriteAddresses]
           : undefined,
+        zoneWriteAddresses: seed.zoneWriteAddresses ? [...seed.zoneWriteAddresses] : undefined,
       };
       return;
     }
@@ -166,6 +191,9 @@ export class Dm32uvProtocol implements CloneImageRadio {
     this.cache.maxContacts = seed.maxContacts;
     this.cache.contactWriteAddresses = seed.contactWriteAddresses
       ? [...seed.contactWriteAddresses]
+      : undefined;
+    this.cache.zoneWriteAddresses = seed.zoneWriteAddresses
+      ? [...seed.zoneWriteAddresses]
       : undefined;
   }
 
@@ -427,20 +455,28 @@ export class Dm32uvProtocol implements CloneImageRadio {
 
     const { blocks: remappedBlocks, discovered: remappedDiscovered, translations } = remapOutcome;
     const contactWriteAddresses = [...(this.cache.contactWriteAddresses ?? [])];
+    // Not a remap bank: the radio does not already have this tag. Union the
+    // address after the live byte is still free.
+    const zoneWriteAddresses = [...(this.cache.zoneWriteAddresses ?? [])];
+    assertZoneClaimPagesStillFree(zoneWriteAddresses, liveDiscovered);
     const configAddresses = [...remappedBlocks.keys()];
-    const addresses = [...new Set([...configAddresses, ...contactWriteAddresses])].sort(
-      (a, b) => a - b,
-    );
+    const addresses = [
+      ...new Set([...configAddresses, ...contactWriteAddresses, ...zoneWriteAddresses]),
+    ].sort((a, b) => a - b);
 
     const contactLast = contactWriteAddresses[contactWriteAddresses.length - 1];
-    const uploadBase =
+    const zoneFirst = zoneWriteAddresses.length > 0 ? Math.min(...zoneWriteAddresses) : undefined;
+    const zoneLast = zoneWriteAddresses.length > 0 ? Math.max(...zoneWriteAddresses) : undefined;
+    let uploadBase =
       contactWriteAddresses.length > 0
         ? Math.min(this.liveLayout.addressBase, contactWriteAddresses[0]!)
         : this.liveLayout.addressBase;
-    const uploadLast =
+    if (zoneFirst != null) uploadBase = Math.min(uploadBase, zoneFirst);
+    let uploadLast =
       contactLast != null
         ? Math.max(this.liveLayout.alignedEnd, contactLast)
         : this.liveLayout.alignedEnd;
+    if (zoneLast != null) uploadLast = Math.max(uploadLast, zoneLast);
     const uploadMapSize = uploadLast - uploadBase + DM32_BLOCK_SIZE;
     if (uploadMapSize <= 0 || uploadMapSize > DM32_MAX_COMBINED_MAP_BYTES) {
       throw new RadioProtocolError(
@@ -463,12 +499,19 @@ export class Dm32uvProtocol implements CloneImageRadio {
         remappedBlocks.set(addr, image.get(sourceOffset, DM32_BLOCK_SIZE).slice());
       }
     }
+    for (const addr of zoneWriteAddresses) {
+      const sourceOffset = addr - seededAddressBase;
+      if (sourceOffset >= 0 && sourceOffset + DM32_BLOCK_SIZE <= image.size) {
+        remappedBlocks.set(addr, image.get(sourceOffset, DM32_BLOCK_SIZE).slice());
+      }
+    }
 
     this.cache.addressBase = uploadBase;
     this.cache.mapSize = uploadMapSize;
     this.cache.discovered = remappedDiscovered;
     this.cache.blocks = remappedBlocks;
     this.cache.contactWriteAddresses = contactWriteAddresses;
+    this.cache.zoneWriteAddresses = zoneWriteAddresses;
 
     const blocks = memoryMapToDm32Blocks(remappedImage, this.cache.addressBase, addresses);
     const byAddr = new Map(this.cache.discovered.map((b) => [b.address, b]));
@@ -551,6 +594,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
     }
     assertDm32RestoreAddressMap(archive.manifest, this.getLiveRestoreAddressMap());
     const blocks = listDm32RestoreBlocks(archive, opts.regionIds);
+    assertDm32RestoreUniqueOccupiedTags(blocks);
     const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
     const scale = settle.settleScale ?? 1;
     const interBlockMs = scale <= 0 ? 0 : DM32_CONNECTION.BLOCK_READ_DELAY_MS * scale;

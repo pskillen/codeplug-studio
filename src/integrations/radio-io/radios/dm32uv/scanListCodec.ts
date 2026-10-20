@@ -28,7 +28,10 @@ export function encodeDm32ScanList(list: RadioScanListDto): Uint8Array {
   data[nameLength] = 0;
 
   const channelCount = Math.min(list.channelNumbers.length, DM32_SCAN_LIST_MAX_MEMBERS);
-  data[0x0b] = channelCount;
+  // Firmware counts slot 0 (the current channel) then the named members, so a
+  // non-empty list stores named + 1 (max 16). An empty projected list stays 0;
+  // writing 1 would look like one member. Members themselves stay at +0x1A.
+  data[0x0b] = channelCount === 0 ? 0 : channelCount + 1;
 
   // CTC=0 (Detection), TX mode: 1 = current when no designated channel, else 2
   const hasDesignated = list.designatedTxChannel != null && list.designatedTxChannel > 0;

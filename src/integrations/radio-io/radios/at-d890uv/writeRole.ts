@@ -39,11 +39,38 @@ function inBank(address: number, base: number, stride: number, slotCount: number
   return inExclusiveSpan(address, base, stride * slotCount);
 }
 
+/**
+ * Scan-list records are banked: 32 strides, then a pitch gap. A flat
+ * `stride × bitmap slots` span from `ScanListData` stops at `0x2120000` and
+ * misses bank 1 (`0x2180000`).
+ */
+function inScanListDataBank(address: number): boolean {
+  if (address < D890_MAP.ScanListData) return false;
+  const bankCount = bitmapSlotCount(AT_D890_LIMITS.SCAN_LIST_SET_BYTES) / D890_MAP.ScanListBankSize;
+  const bankIndex = Math.floor((address - D890_MAP.ScanListData) / D890_MAP.ScanListBankPitch);
+  if (bankIndex < 0 || bankIndex >= bankCount) return false;
+  const bankStart = D890_MAP.ScanListData + bankIndex * D890_MAP.ScanListBankPitch;
+  const bankLength = D890_MAP.ScanListBankSize * D890_MAP.ScanListStride;
+  return address >= bankStart && address < bankStart + bankLength;
+}
+
 const ZONE_SLOTS = bitmapSlotCount(AT_D890_LIMITS.ZONE_SET_BYTES);
-const SCAN_SLOTS = bitmapSlotCount(AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
 const RADIO_ID_SLOTS = bitmapSlotCount(AT_D890_LIMITS.RADIO_ID_SET_BYTES);
 const RX_GROUP_SLOTS = bitmapSlotCount(AT_D890_LIMITS.RX_GROUP_SET_BYTES);
-const TALKGROUP_SLOTS = bitmapSlotCount(AT_D890_LIMITS.TALKGROUP_SET_BYTES);
+
+/**
+ * Talkgroup records are banked, but labels use the writable window
+ * `[TalkgroupData, TalkgroupOrder)`. A flat `stride × bitmap slots` span stops
+ * at `0x3BE8480` and misses later banks (`talkgroupAddress(4000)` is `0x3C00000`).
+ * `0x3A40000` stays inside this window.
+ */
+function inTalkgroupDataWindow(address: number): boolean {
+  return inExclusiveSpan(
+    address,
+    D890_MAP.TalkgroupData,
+    D890_MAP.TalkgroupOrder - D890_MAP.TalkgroupData,
+  );
+}
 
 /** Channel primary/secondary halves live under ChannelData … ChannelData+0x1000000. */
 const CHANNEL_DATA_SPAN = 0x100_0000;
@@ -92,13 +119,9 @@ export function atD890RegionLabel(address: number): string {
     return 'Operator radio IDs';
   }
   if (address === D890_MAP.ScanListSet) return 'Scan list bitmap';
-  if (inBank(address, D890_MAP.ScanListData, D890_MAP.ScanListStride, SCAN_SLOTS)) {
-    return 'Scan lists';
-  }
+  if (inScanListDataBank(address)) return 'Scan lists';
   if (address === D890_MAP.TalkgroupSet) return 'Talk group bitmap';
-  if (inBank(address, D890_MAP.TalkgroupData, D890_MAP.TalkgroupStride, TALKGROUP_SLOTS)) {
-    return 'Talk groups';
-  }
+  if (inTalkgroupDataWindow(address)) return 'Talk groups';
   if (address === D890_MAP.TalkgroupOrder) return 'Talk group order';
   if (address === D890_MAP.ReceiveGroupSet) return 'RX group bitmap';
   if (inBank(address, D890_MAP.ReceiveGroupData, D890_MAP.ReceiveGroupStride, RX_GROUP_SLOTS)) {
@@ -143,12 +166,8 @@ export function atD890WriteRole(address: number): AtD890WriteRole {
   if (inBank(address, D890_MAP.RadioIdData, D890_MAP.RadioIdStride, RADIO_ID_SLOTS)) {
     return 'replaced';
   }
-  if (inBank(address, D890_MAP.ScanListData, D890_MAP.ScanListStride, SCAN_SLOTS)) {
-    return 'replaced';
-  }
-  if (inBank(address, D890_MAP.TalkgroupData, D890_MAP.TalkgroupStride, TALKGROUP_SLOTS)) {
-    return 'replaced';
-  }
+  if (inScanListDataBank(address)) return 'replaced';
+  if (inTalkgroupDataWindow(address)) return 'replaced';
   if (address === D890_MAP.TalkgroupOrder) return 'replaced';
   if (inBank(address, D890_MAP.ReceiveGroupData, D890_MAP.ReceiveGroupStride, RX_GROUP_SLOTS)) {
     return 'replaced';

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { DesignSystemV2Provider } from '../v2/index.ts';
+import { DM32_POWER_CYCLE_AFTER_SESSION_NOTE } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
 import RadioIoProgressModal, { writeDoneAlert } from './RadioIoProgressModal.tsx';
 
 function renderModal(props: ComponentProps<typeof RadioIoProgressModal>) {
@@ -359,5 +360,119 @@ describe('RadioIoProgressModal', () => {
     expect(screen.queryByRole('button', { name: 'Verify write' })).not.toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]);
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the caller success note on write and restore success', () => {
+    const { rerender } = renderModal({
+      opened: true,
+      operation: 'write',
+      phase: 'done',
+      progress: null,
+      writeVerifyStatus: 'none',
+      successNote: DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
+      onCancel: vi.fn(),
+      onClose: vi.fn(),
+    });
+    expect(screen.getByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).toBeInTheDocument();
+    expect(screen.getByText(/page map from before this session/i)).toBeInTheDocument();
+
+    rerenderModal(rerender, {
+      opened: true,
+      operation: 'write',
+      phase: 'done',
+      progress: null,
+      writeVerifyStatus: 'unverified',
+      requiresCrossSessionReconnect: false,
+      successNote: DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
+      onCancel: vi.fn(),
+      onVerify: vi.fn(),
+      onCloseWithoutVerify: vi.fn(),
+    });
+    expect(screen.getByText(/Click Verify write/i)).toBeInTheDocument();
+    expect(screen.getByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).toBeInTheDocument();
+
+    rerenderModal(rerender, {
+      opened: true,
+      operation: 'write',
+      phase: 'done',
+      progress: null,
+      writeVerifyStatus: 'verified',
+      successNote: DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
+      onCancel: vi.fn(),
+      onClose: vi.fn(),
+    });
+    expect(screen.getByText('Write finished — verify passed')).toBeInTheDocument();
+    expect(screen.getByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).toBeInTheDocument();
+
+    rerenderModal(rerender, {
+      opened: true,
+      operation: 'restore',
+      phase: 'done',
+      progress: null,
+      successNote: DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
+      onCancel: vi.fn(),
+      onClose: vi.fn(),
+    });
+    expect(screen.getByText('Restore finished')).toBeInTheDocument();
+    expect(screen.getByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).toBeInTheDocument();
+  });
+
+  it('hides the success note on verify failure, in-progress transfer, and when omitted', () => {
+    const { rerender } = renderModal({
+      opened: true,
+      operation: 'write',
+      phase: 'done',
+      progress: null,
+      writeVerifyStatus: 'failed',
+      successNote: DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
+      onCancel: vi.fn(),
+      onClose: vi.fn(),
+    });
+    expect(screen.getByText('Write verify failed')).toBeInTheDocument();
+    expect(screen.queryByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).not.toBeInTheDocument();
+
+    rerenderModal(rerender, {
+      opened: true,
+      operation: 'write',
+      phase: 'transfer',
+      progress: { cur: 1, max: 2, msg: 'Writing Zones' },
+      successNote: DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
+      onCancel: vi.fn(),
+    });
+    expect(screen.queryByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).not.toBeInTheDocument();
+
+    rerenderModal(rerender, {
+      opened: true,
+      operation: 'write',
+      phase: 'done',
+      progress: null,
+      onCancel: vi.fn(),
+      onClose: vi.fn(),
+    });
+    expect(screen.getByText(/Write finished/i)).toBeInTheDocument();
+    expect(screen.queryByText(/page map from before this session/i)).not.toBeInTheDocument();
+
+    rerenderModal(rerender, {
+      opened: true,
+      operation: 'read',
+      phase: 'done',
+      progress: null,
+      successNote: DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
+      onCancel: vi.fn(),
+      onClose: vi.fn(),
+    });
+    expect(screen.queryByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).not.toBeInTheDocument();
+
+    rerenderModal(rerender, {
+      opened: true,
+      operation: 'keps-write',
+      phase: 'done',
+      progress: null,
+      successNote: DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
+      onCancel: vi.fn(),
+      onClose: vi.fn(),
+    });
+    expect(screen.getByText('Keps write finished')).toBeInTheDocument();
+    expect(screen.queryByText(DM32_POWER_CYCLE_AFTER_SESSION_NOTE)).not.toBeInTheDocument();
   });
 });

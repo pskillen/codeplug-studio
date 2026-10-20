@@ -5,6 +5,7 @@ import {
   channelPrimaryAddress,
   channelSecondaryAddress,
   listWriteChunks,
+  scanListAddress,
   type AtD890DownloadCache,
 } from './memory.ts';
 import {
@@ -12,11 +13,21 @@ import {
   assertAtD890WritableAddress,
   assertAtD890WritableSpan,
   AT_D890_WRITABLE_EXTENTS,
+  findWritableExtentForAddress,
   isAtD890TransmitAddress,
   isAtD890WritableAddress,
 } from './writableExtents.ts';
 
 describe('AT_D890 writable extents', () => {
+  it('allow-lists banked scan-list slots and not the pitch gap', () => {
+    expect(isAtD890WritableAddress(scanListAddress(32))).toBe(true);
+    expect(isAtD890WritableAddress(scanListAddress(255))).toBe(true);
+    expect(findWritableExtentForAddress(0x210_4000)?.id ?? '').not.toMatch(/^ScanListData/);
+    expect(findWritableExtentForAddress(0x214_0000)?.id ?? '').not.toMatch(/^ScanListData/);
+    expect(isAtD890WritableAddress(0x210_4000)).toBe(false);
+    expect(isAtD890WritableAddress(0x214_0000)).toBe(false);
+  });
+
   it('ReceiveGroupData writable span matches RX_GROUP_SET_BYTES bitmap width', () => {
     const receiveGroupData = AT_D890_WRITABLE_EXTENTS.find((e) => e.id === 'ReceiveGroupData')!;
     expect(receiveGroupData.length).toBe(

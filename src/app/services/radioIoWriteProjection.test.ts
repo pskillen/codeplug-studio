@@ -1,4 +1,5 @@
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { describe, expect, it } from 'vitest';
 import {
   newChannel,
@@ -354,11 +355,12 @@ describe('buildRadioWriteProjection', () => {
 
     const homeRec = encodeDm32ChannelRecord(bySlot.get(homeCarrier)!);
     const walkRec = encodeDm32ChannelRecord(bySlot.get(walkCarrier)!);
-    expect((homeRec[0x19]! >> 2) & 0x0f).toBe(1);
-    expect((walkRec[0x19]! >> 2) & 0x0f).toBe(2);
+    expect(homeRec[0x19]! & 0x3f).toBe(1);
+    expect(walkRec[0x19]! & 0x3f).toBe(2);
     expect(homeRec[0x19]! & 0x80).toBe(0x00); // NFM (narrow)
     expect(homeRec[0x19]! & 0x40).toBe(0x40); // scanAdd
-    expect(walkRec[0x19]).toBe(0x48);
+    expect(homeRec[0x19]).toBe(0x41);
+    expect(walkRec[0x19]).toBe(0x42);
 
     const addressBase = 0x8e000;
     const image = createMemoryMap(0x20_000);
@@ -373,7 +375,7 @@ describe('buildRadioWriteProjection', () => {
     );
     expect(walkFromImage?.wireName).toMatch(/Morn.*Scan|Walk.*Scan/i);
     const walkSlotOff = 0x10 + (walkCarrier - 1) * 48;
-    expect(image.bytes[walkSlotOff + 0x19]).toBe(0x48);
+    expect(image.bytes[walkSlotOff + 0x19]).toBe(0x42);
   });
 
   it('stamps UV-5R Mini scanAdd from effective scan inclusion', () => {
@@ -509,7 +511,7 @@ describe('buildRadioWriteProjection', () => {
 
   it('caps zone-derived scan lists at channel scanListId hardware limit', () => {
     const projectId = 'p1';
-    const pairs = Array.from({ length: 20 }, (_, i) => {
+    const pairs = Array.from({ length: DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX + 1 }, (_, i) => {
       const ch = withExportEligibleDefaults({
         ...newChannel(projectId, `Ch${i}`),
         id: `ch-${i}`,
@@ -551,10 +553,12 @@ describe('buildRadioWriteProjection', () => {
       profileId: egress.profileId,
     });
     const projection = buildRadioWriteProjection(assembled, build, library, egress);
-    expect(projection.organisation.scanLists).toHaveLength(15);
+    expect(projection.organisation.scanLists).toHaveLength(DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX);
     expect(
       projection.warnings.some((w) =>
-        formatExportWarning(w).includes('channel scanListId supports at most 15'),
+        formatExportWarning(w).includes(
+          `channel scanListId supports at most ${DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX}`,
+        ),
       ),
     ).toBe(true);
   });

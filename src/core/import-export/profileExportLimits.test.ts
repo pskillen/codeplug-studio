@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getProfileExportLimits } from '@core/import-export/profileExportLimits.ts';
+import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 
 describe('getProfileExportLimits', () => {
   it('maps OpenGD77 entity caps and name lengths from profile', () => {
@@ -49,7 +50,7 @@ describe('getProfileExportLimits', () => {
     const limits = getProfileExportLimits('anytone', 'anytone-at-d890uv');
     expect(limits).not.toBeNull();
     expect(limits!.maxChannels).toBe(4000);
-    expect(limits!.maxScanLists).toBe(100);
+    expect(limits!.maxScanLists).toBe(AT_D890UV_LIMITS.SCAN_LISTS_MAX);
     expect(limits!.zoneMembers).toBe(250);
     expect(limits!.scanListMembers).toBe(100);
     expect(limits!.rxGroupListMembers).toBe(64);
@@ -170,7 +171,7 @@ describe('getProfileExportLimits', () => {
     expect(limits).not.toBeNull();
     expect(limits!.maxChannels).toBe(4000);
     expect(limits!.nameLengthChannel).toBe(16);
-    expect(limits!.maxScanLists).toBe(100);
+    expect(limits!.maxScanLists).toBe(AT_D890UV_LIMITS.SCAN_LISTS_MAX);
     expect(limits!.scanListMembers).toBe(100);
     expect(limits!.zoneMembers).toBe(250);
     expect(limits!.powerLadder.map((e) => e.wire)).toEqual(['Turbo', 'High', 'Mid', 'Low']);

@@ -62,7 +62,7 @@ Read/write `0x20` bytes. On D890, encode with wide-character packing (anytone-cp
 
 ## Channel FK
 
-DMR channel byte `0x1c` stores the **1-based receive-group list index** (see [channel-record.md](channel-record.md)). That index selects which `ReceiveGroupData` slot is active; members inside the record are talkgroup bank indices.
+DMR channel byte `0x1c` is a **0-based** list index (`0xFF` = none) selecting the `ReceiveGroupData` slot (see [channel-record.md](channel-record.md)). Members inside the record stay talkgroup bank indexes.
 
 ## Studio module
 

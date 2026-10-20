@@ -1,4 +1,5 @@
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
+import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLists/dm32EmptyScanFloor.ts';
 import { describe, expect, it, vi } from 'vitest';
 import {
   newChannel,
@@ -685,6 +686,25 @@ describe('buildRadioWriteProjection radio-io-at-d890uv-mm9pdy', () => {
     expect(projection.organisation.rxGroups).toEqual([
       expect.objectContaining({ index: 1, memberDigitalIds: [0, 1] }),
     ]);
+    expect(projection.organisation.scanLists).toEqual([
+      {
+        wireName: DM32_EMPTY_SCAN_LIST_NAME,
+        channelNumbers: [digital[0]!.slotIndex],
+        listIndex: 1,
+      },
+    ]);
+  });
+
+  it('leaves scan lists empty when an MM9PDY write has no channel', () => {
+    const library = emptyLibrary([]);
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv-mm9pdy');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+
+    expect(projection.channels.filter((row) => !row.empty)).toHaveLength(0);
     expect(projection.organisation.scanLists).toEqual([]);
   });
 
@@ -760,6 +780,10 @@ describe('buildRadioWriteProjection radio-io-at-d890uv-mm9pdy', () => {
 
     expect(digital.length).toBeGreaterThan(1);
     expect(projection.organisation.scanLists?.length ?? 0).toBeGreaterThan(0);
+    expect(projection.organisation.scanLists?.[0]?.wireName).toBe(DM32_EMPTY_SCAN_LIST_NAME);
+    expect(projection.organisation.scanLists?.[0]?.listIndex).toBe(1);
+    expect(projection.organisation.scanLists?.[0]?.channelNumbers).toEqual([digital[0]!.slotIndex]);
+    expect(digital.every((row) => row.scanListId == null)).toBe(true);
   });
 
   it('sets assignMm9pdyStepKeys only for the MM9PDY target when the export setting is on', () => {

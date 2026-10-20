@@ -1,6 +1,6 @@
 # AT-D890UV — talkgroup record
 
-Per-slot talkgroup element for Anytone AT-D890UV (`encode_D890UV` / `decode_D890UV`). Stored at `TalkgroupData` with stride **`0xc8`**; Studio encodes **`0xc8`** bytes per occupied slot.
+Per-slot talkgroup element for Anytone AT-D890UV (`encode_D890UV` / `decode_D890UV`). Stored at `TalkgroupData`. Slot `i` (0-based) is banked: 1000 strides of **`0xc8`**, then a pitch of **`0x80000`**. Studio encodes **`0xc8`** bytes per occupied slot. Stock and MM9PDY AT-D890UV share this address; RX-group members are still these bank indexes.
 
 **Hub:** [README.md](README.md) · **Regions:** [memory-layout.md](memory-layout.md)
 
@@ -11,7 +11,8 @@ Cite: anytone-cps `Talkgroup::encode_D890UV` + `Constants::CALL_TYPE` — facts 
 | Fact             | Value                                                                                     |
 | ---------------- | ----------------------------------------------------------------------------------------- |
 | Record size      | `0xc8` (200) bytes encode; CPS reads `0x80` (used fields fit)                             |
-| Stride           | `0xc8` between slots                                                                      |
+| Stride           | `0xc8` inside a bank of 1000                                                              |
+| Bank pitch       | `0x80000` from bank n to bank n+1                                                         |
 | Max slots        | `TalkgroupSet` bitmap `0x4F0` bytes × 8 bits                                              |
 | Occupancy        | **Inverted** bitmap — bit **set** → slot **empty** ([memory-layout.md](memory-layout.md)) |
 | Name storage     | `0x20` bytes at offset `0x6` (wide-char / UTF-16 style packing)                           |
@@ -19,13 +20,25 @@ Cite: anytone-cps `Talkgroup::encode_D890UV` + `Constants::CALL_TYPE` — facts 
 
 ## Address formula
 
-0-based index `idx`:
+Slot `i` (0-based) is banked the same way channels are: a fixed number of strides, then a pitch to the next bank. Stride `0xc8` applies inside a bank of 1000 slots. The next bank starts `0x80000` later. Index 999 stays in bank 0. Index 1000 is the first slot of bank 1, not `0x3a00000 + 1000 * 0xc8`.
 
 ```text
-talkgroupAddr = 0x3a00000 + (idx * 0xc8)
+bankIndex     = i / 1000
+indexInBank   = i % 1000
+talkgroupAddr = 0x3a00000
+              + (bankIndex * 0x80000)
+              + (indexInBank * 0xc8)
 ```
 
-Sparse serial/cache I/O uses a **16-aligned span** covering each slot (`alignDown(base + idx*0xc8)` …) because odd indices are not 16-aligned themselves. See [memory-layout.md](memory-layout.md).
+| Index | Address     |
+| ----- | ----------- |
+| 0     | `0x3a00000` |
+| 999   | `0x3a30c78` |
+| 1000  | `0x3a80000` |
+
+`0x3a00000 + 1000 * 0xc8` is `0x3a30d40`. That is the length of one digital-contact data block, not talkgroup slot 1000. Ten banks of 1000 slots end at index 9999 (`0x3eb0c78`), still below `TalkgroupOrder` (`0x3f00000`). The writable window stays `[TalkgroupData, TalkgroupOrder)`.
+
+Sparse serial/cache I/O uses a **16-aligned span** covering each banked slot because odd indices are not 16-aligned themselves. See [memory-layout.md](memory-layout.md).
 
 ## TalkgroupSet bitmap
 

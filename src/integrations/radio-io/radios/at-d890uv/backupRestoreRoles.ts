@@ -27,6 +27,19 @@ const SCAN_SLOTS = bitmapSlots(AT_D890_LIMITS.SCAN_LIST_SET_BYTES);
 const RADIO_ID_SLOTS = bitmapSlots(AT_D890_LIMITS.RADIO_ID_SET_BYTES);
 const RX_GROUP_SLOTS = bitmapSlots(AT_D890_LIMITS.RX_GROUP_SET_BYTES);
 
+/** One restorable extent per bank. A single span across the pitch would archive the gaps. */
+function scanListDataBackupSpans(): AtD890BackupRegionSpan[] {
+  const bankCount = SCAN_SLOTS / D890_MAP.ScanListBankSize;
+  const bankLength = D890_MAP.ScanListBankSize * D890_MAP.ScanListStride;
+  return Array.from({ length: bankCount }, (_, bankIndex) => ({
+    id: `scan-list-data.bank${bankIndex}`,
+    label: 'Scan lists',
+    start: D890_MAP.ScanListData + bankIndex * D890_MAP.ScanListBankPitch,
+    length: bankLength,
+    restoreRole: 'restorable' as const,
+  }));
+}
+
 /**
  * Named spans derived from `D890_MAP` / sparse download stages.
  * Inspect-only: LocalInfo, alarm, leftover. Restorable: codeplug-shaped banks
@@ -152,13 +165,7 @@ export const AT_D890_BACKUP_REGION_SPANS: readonly AtD890BackupRegionSpan[] = [
     length: AT_D890_LIMITS.SCAN_LIST_SET_BYTES,
     restoreRole: 'restorable',
   },
-  {
-    id: 'scan-list-data',
-    label: 'Scan lists',
-    start: D890_MAP.ScanListData,
-    length: D890_MAP.ScanListStride * SCAN_SLOTS,
-    restoreRole: 'restorable',
-  },
+  ...scanListDataBackupSpans(),
   {
     id: 'talkgroup-set',
     label: 'Talk groups (bitmap)',

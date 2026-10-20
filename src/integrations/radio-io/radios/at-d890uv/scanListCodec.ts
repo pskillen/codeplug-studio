@@ -34,6 +34,22 @@ const AT_D890_SCAN_REVERT_CHANNEL = 0x01;
 /** Member array: `SCAN_LIST_MEMBERS_MAX` × u16 at `+0x30` through `+0xF7`. */
 const AT_D890_SCAN_MEMBER_BYTES = AT_D890UV_LIMITS.SCAN_LIST_MEMBERS_MAX * 2;
 
+/**
+ * Bytes the encoder does not model. Copied back from the downloaded stride after
+ * the record overlay. `0xFA`/`0xFB` sit past `SCAN_LIST_RECORD_SIZE`.
+ */
+const UNMODELLED_SCAN_LIST_OFFSETS = [0x00, 0x07, 0x09, 0x0b, 0x0d, 0xf9, 0xfa, 0xfb] as const;
+
+function restoreUnmodelledScanListBytes(
+  image: MemoryMap,
+  address: number,
+  prior: Uint8Array,
+): void {
+  for (const offset of UNMODELLED_SCAN_LIST_OFFSETS) {
+    image.set(address + offset, Uint8Array.of(prior[offset]!));
+  }
+}
+
 export type AtD890ScanListTimingDeciseconds = AtD890ResolvedScanListTiming['deciseconds'];
 
 function defaultScanListTimingDeciseconds(): AtD890ScanListTimingDeciseconds {
@@ -55,10 +71,10 @@ export function encodeAtD890ScanListRecord(
   data[0x1] = 0;
   writeU16Le(data, 0x2, AT_D890_SCAN_PRIORITY_OFF);
   writeU16Le(data, 0x4, AT_D890_SCAN_PRIORITY_OFF);
-  writeU16Le(data, 0x6, resolved.lookBackA);
-  writeU16Le(data, 0x8, resolved.lookBackB);
-  writeU16Le(data, 0xa, resolved.dropoutDelay);
-  writeU16Le(data, 0xc, resolved.dwellTime);
+  data[0x6] = resolved.lookBackA;
+  data[0x8] = resolved.lookBackB;
+  data[0xa] = resolved.dropoutDelay;
+  data[0xc] = resolved.dwellTime;
   data.set(encodeWideCharName(scan.wireName, 0x20), 0xe);
   const members = new Uint8Array(AT_D890_SCAN_MEMBER_BYTES);
   members.fill(0xff);
@@ -102,6 +118,12 @@ export function encodeScanListsIntoAtD890Image(
   const set = image.get(D890_MAP.ScanListSet, AT_D890_LIMITS.SCAN_LIST_SET_BYTES).slice();
   clearBitmapBitsBelow(set, AT_D890UV_LIMITS.SCAN_LISTS_MAX);
   const max = AT_D890UV_LIMITS.SCAN_LISTS_MAX;
+  const priorByIndex = new Map<number, Uint8Array>();
+  for (const scan of scanLists) {
+    const idx = scan.listIndex - 1;
+    if (idx < 0 || scan.channelNumbers.length === 0 || priorByIndex.has(idx)) continue;
+    priorByIndex.set(idx, image.get(scanListAddress(idx), AT_D890_LIMITS.SCAN_LIST_STRIDE));
+  }
   for (let i = 0; i < max; i++) {
     image.fill(scanListAddress(i), AT_D890_LIMITS.SCAN_LIST_STRIDE, 0xff);
   }
@@ -111,7 +133,10 @@ export function encodeScanListsIntoAtD890Image(
     if (scan.channelNumbers.length === 0) continue;
     setBitmapBit(set, idx, true);
     const record = encodeAtD890ScanListRecord(scan, timing);
-    image.set(scanListAddress(idx), record.subarray(0, AT_D890_LIMITS.SCAN_LIST_STRIDE));
+    const address = scanListAddress(idx);
+    image.set(address, record.subarray(0, AT_D890_LIMITS.SCAN_LIST_STRIDE));
+    const prior = priorByIndex.get(idx);
+    if (prior) restoreUnmodelledScanListBytes(image, address, prior);
   }
   image.set(D890_MAP.ScanListSet, set);
   return image;

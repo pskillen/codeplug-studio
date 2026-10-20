@@ -24,6 +24,7 @@ import {
 } from './radioIoSession.ts';
 import { assembledChannelsToRadioDtos } from './radioIoChannelMap.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
+import { encodeDm32ChannelRecord } from '@integrations/radio-io/radios/dm32uv/channelCodec.ts';
 
 function emptyLibrary(channels: LibrarySlice['channels'] = []): LibrarySlice {
   return {
@@ -324,6 +325,8 @@ describe('buildRadioWriteProjection radio-io-dm32uv-mm9pdy', () => {
     expect(digital[0]?.scanListId).toBe(0);
     expect(digital[0]?.rxGroupIndex).toBe(1);
     expect(projection.organisation.scanLists).toEqual([]);
+    const encoded = encodeDm32ChannelRecord(digital[0]!);
+    expect(encoded[0x19]! & 0x3f).toBe(0);
   });
 
   it('still expands the stock DM-32UV target and keeps a scan-list record', () => {

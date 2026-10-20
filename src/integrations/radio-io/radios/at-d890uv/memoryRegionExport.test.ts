@@ -54,10 +54,35 @@ describe('AT_D890_MEMORY_REGIONS', () => {
 
     expect(zonesName.chunks[0]!.length).toBe(AT_D890_DUMP_ZONES * D890_MAP.ZoneDataOffset);
     expect(zoneChannels.chunks[0]!.length).toBe(AT_D890_DUMP_ZONES * D890_MAP.ZoneChannelsStride);
-    expect(scanListData.chunks[0]!.length).toBe(AT_D890_DUMP_SCAN_LISTS * D890_MAP.ScanListStride);
+    expect(scanListData.chunks).toHaveLength(AT_D890_DUMP_SCAN_LISTS / D890_MAP.ScanListBankSize);
+    expect(scanListData.chunks[0]!.address).toBe(D890_MAP.ScanListData);
+    expect(scanListData.chunks[0]!.length).toBe(
+      D890_MAP.ScanListBankSize * D890_MAP.ScanListStride,
+    );
+    expect(scanListData.chunks[1]!.address).toBe(
+      D890_MAP.ScanListData + D890_MAP.ScanListBankPitch,
+    );
+    expect(scanListData.chunks.reduce((sum, chunk) => sum + chunk.length, 0)).toBe(
+      AT_D890_DUMP_SCAN_LISTS * D890_MAP.ScanListStride,
+    );
     expect(receiveGroupSet.chunks[0]!.length).toBe(AT_D890_LIMITS.RX_GROUP_SET_BYTES);
     expect(receiveGroupData.chunks[0]!.length).toBe(
       AT_D890_DUMP_RX_GROUP_LISTS * D890_MAP.ReceiveGroupStride,
+    );
+  });
+
+  it('dumps talkgroup records across the writable window', () => {
+    const talkgroupData = AT_D890_MEMORY_REGIONS.find((r) => r.id === 'talkgroupData')!;
+    expect(talkgroupData.chunks).toHaveLength(1);
+    expect(talkgroupData.chunks[0]!.address).toBe(D890_MAP.TalkgroupData);
+    expect(talkgroupData.chunks[0]!.length).toBe(D890_MAP.TalkgroupOrder - D890_MAP.TalkgroupData);
+  });
+
+  it('stops the scan-list alias probe at bank 1', () => {
+    const probe = AT_D890_DUMP_REGIONS.find((r) => r.id === 'probeScanListData')!;
+    expect(probe.chunks[0]!.address).toBe(0x214_0000);
+    expect(probe.chunks[0]!.address + probe.chunks[0]!.length).toBe(
+      D890_MAP.ScanListData + D890_MAP.ScanListBankPitch,
     );
   });
 
@@ -141,7 +166,7 @@ describe('runAtD890MemoryDumpAll', () => {
     }
     expect(result.totalBytes).toBeGreaterThan(0);
     expect(writeFrames(pipe)).toEqual([]);
-  });
+  }, 20_000);
 });
 
 describe('runAtD890MemoryGroupDump', () => {

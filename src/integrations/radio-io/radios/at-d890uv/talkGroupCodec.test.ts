@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { encodeAtD890TalkgroupOrder, encodeAtD890TalkgroupRecord } from './talkGroupCodec.ts';
+import { createMemoryMap } from '../../kit/memoryMap.ts';
+import { D890_MAP } from './constants.ts';
+import {
+  encodeAtD890TalkgroupOrder,
+  encodeAtD890TalkgroupRecord,
+  encodeTalkgroupsIntoAtD890Image,
+} from './talkGroupCodec.ts';
 
 describe('encodeAtD890TalkgroupRecord', () => {
   it('encodes Local 99 as BCD-as-hex 00 00 00 99, not binary 00 00 00 63', () => {
@@ -73,5 +79,16 @@ describe('encodeAtD890TalkgroupRecord', () => {
     expect([...order.subarray(0, 8)]).toEqual([0x00, 0x00, 0x00, 0x13, 0x00, 0x00, 0x00, 0x02]);
     expect([...order.subarray(8, 16)]).toEqual([0x00, 0x00, 0x00, 0xc7, 0x00, 0x00, 0x00, 0x01]);
     expect(order[16]).toBe(0xff);
+  });
+});
+
+describe('encodeTalkgroupsIntoAtD890Image', () => {
+  it('leaves the byte after the talkgroup order payload at 0xff', () => {
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    const talkGroups = [{ index: 1, wireName: 'TG', digitalId: 99, callType: 0x04 }];
+    encodeTalkgroupsIntoAtD890Image(image, talkGroups);
+    const order = encodeAtD890TalkgroupOrder(talkGroups);
+    expect(image.get(D890_MAP.TalkgroupOrder + order.length, 1)[0]).toBe(0xff);
   });
 });

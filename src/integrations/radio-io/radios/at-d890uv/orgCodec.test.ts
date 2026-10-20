@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
+import { listDescriptorsForProfile } from '../../registry.ts';
 import { D890_MAP } from './constants.ts';
 import {
   encodeZonesIntoAtD890Image,
@@ -116,6 +117,23 @@ describe('talkGroupCodec', () => {
     expect(image.get(D890_MAP.TalkgroupData + 0xc8, 1)[0]).toBe(0x01);
     // Slot 1 must not sit at the old wrong pitch 0xd0
     expect(image.get(D890_MAP.TalkgroupData + 0xd0, 1)[0]).not.toBe(0x01);
+  });
+
+  it('writes slot 1000 at the next bank for the shared stock and MM9PDY codec', () => {
+    const stock = listDescriptorsForProfile('radio-io', 'radio-io-at-d890uv');
+    const mm9 = listDescriptorsForProfile('radio-io', 'radio-io-at-d890uv-mm9pdy');
+    expect(stock).toHaveLength(1);
+    expect(mm9).toHaveLength(1);
+    expect(stock[0]).toBe(mm9[0]);
+
+    const image = createMemoryMap(0x500_0000);
+    image.fill(0, 0x500_0000, 0xff);
+    encodeTalkgroupsIntoAtD890Image(image, [
+      { index: 1001, wireName: 'Bank', digitalId: 1, callType: 0x04 },
+    ]);
+    expect(image.get(0x3a8_0000, 1)[0]).toBe(0x01);
+    expect(image.get(0x3a3_0d40, 1)[0]).not.toBe(0x01);
+    expect(image.get(0x3a4_0000, 1)[0]).toBe(0xff);
   });
 });
 
