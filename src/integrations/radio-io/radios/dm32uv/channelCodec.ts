@@ -1,6 +1,7 @@
 /**
  * DM-32UV 48-byte channel record encode/decode + bank packing.
- * Cite: NeonPlug structures.ts parseChannel/encodeChannel; tier-3 channel-record.md.
+ * Cite: firmware 048 field layout in tier-3 channel-record.md.
+ * Name, BCD frequencies, mode flags, tones, and squelch still follow NeonPlug.
  */
 
 import type { MemoryMap } from '../../types.ts';
@@ -169,6 +170,8 @@ export function parseDm32ChannelRecord(data: Uint8Array, slotIndex: number): Rad
 
   const scanBw = data[0x19]!;
   const bandwidth: 'FM' | 'NFM' = (scanBw & 0x80) !== 0 ? 'FM' : 'NFM';
+  const scanListId = scanBw & 0x3f;
+  const scanAdd = (scanBw & 0x40) !== 0;
 
   const digitalFlags = data[0x1d]!;
   const colorCode = digitalFlags & 0x0f;
@@ -192,12 +195,15 @@ export function parseDm32ChannelRecord(data: Uint8Array, slotIndex: number): Rad
     timeslot,
     rxGroupIndex,
     ...(rxOnly ? { rxOnly: true } : {}),
+    ...(scanListId !== 0 ? { scanListId } : {}),
+    ...(scanAdd ? { scanAdd: true } : {}),
   };
 }
 
 /**
- * Encode a full 48-byte channel record from projection fields + NeonPlug wire defaults
- * for unmodelled offsets (emergency, encryption, PTT/signaling, DMR radio-ID index, …).
+ * Encode a full 48-byte channel record. Empty slots stay all `0xFF`.
+ * Occupied unmodelled bytes the firmware reads are 0. `0x2B = 0xFF` is still
+ * "no radio-ID index". Name padding stays null-terminated, not zero-filled.
  */
 export function encodeDm32ChannelRecord(ch: RadioChannelDto): Uint8Array {
   const data = new Uint8Array(DM32_CHANNEL_RECORD_SIZE);
@@ -225,10 +231,11 @@ export function encodeDm32ChannelRecord(ch: RadioChannelDto): Uint8Array {
   modeFlags |= (powerWireFromPercent(ch.powerPercent) & 0x03) << 1;
   data[0x18] = modeFlags;
 
+  // 0x19: bit 7 bandwidth, bit 6 scan-add, bits 5–0 scan-list id (0 = none).
   const scanBw =
     (ch.bandwidth === 'FM' ? 0x80 : 0x00) |
     (ch.scanAdd ? 0x40 : 0x00) |
-    (((ch.scanListId ?? 0) & 0x0f) << 2);
+    ((ch.scanListId ?? 0) & 0x3f);
   data[0x19] = scanBw;
 
   let talkaroundAprs = 0x00;
@@ -251,21 +258,30 @@ export function encodeDm32ChannelRecord(ch: RadioChannelDto): Uint8Array {
     data[0x1d] = 0x00;
     data[0x1f] = 0x00;
   }
+  // Firmware reads the encryption key at 0x1E (0 = none). 0x2A is never read.
+  data[0x1e] = 0x00;
+  // APRS report-channel index (0–7). Unmodelled; firmware must not see leftover 0xFF.
+  data[0x20] = 0x00;
 
   data.set(encodeTone(ch.rxTone), 0x21);
   data.set(encodeTone(ch.txTone), 0x23);
 
   data[0x25] = 0x00;
-  data[0x26] = 0x00;
-  data[0x27] = 0x50; // step 5 kHz, signaling None
+  data[0x26] = 0x00; // signalling type bits 3–1 stay off
+  data[0x27] = 0x00; // unused by firmware 048
   data[0x28] = 0x00;
-  data[0x29] = 0x00;
-  data[0x2a] = 0x00; // encryption id 0 / analog unknown2A
+  // Step index 1 (5 kHz) in bits 6–4. PTT ID bits 3–2 and the rest stay off.
+  data[0x29] = 0x10;
+  data[0x2a] = 0x00; // unread by firmware; kept 0
   if (ch.dmrRadioIdIndex != null && ch.dmrRadioIdIndex >= 0 && ch.dmrRadioIdIndex <= 254) {
     data[0x2b] = ch.dmrRadioIdIndex & 0xff;
   } else {
     data[0x2b] = 0xff; // DMR radio ID index: none
   }
+  data[0x2c] = 0x00;
+  data[0x2d] = 0x00;
+  data[0x2e] = 0x00;
+  data[0x2f] = 0x00;
 
   return data;
 }
