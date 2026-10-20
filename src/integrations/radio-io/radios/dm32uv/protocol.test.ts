@@ -363,6 +363,129 @@ describe('Dm32uvProtocol', () => {
     expect(contactWrite![6]).toBe(0xab);
   });
 
+  async function connectForUpload(end: number): Promise<{
+    pipe: Dm32ScriptedPipe;
+    radio: Dm32uvProtocol;
+  }> {
+    const pipe = new Dm32ScriptedPipe();
+    const psearch = new Uint8Array(8);
+    psearch[0] = 0x06;
+    psearch.set(new TextEncoder().encode('DP570UV'), 1);
+    pipe.enqueue(psearch);
+    pipe.enqueue(new Uint8Array([0x50, 0x00, 0x00]));
+    pipe.enqueue(new Uint8Array([0x06]));
+
+    const layout = new Uint8Array(8);
+    layout.set(new Uint8Array([0x00, 0x10, 0x00, 0x00]), 0);
+    layout[4] = end & 0xff;
+    layout[5] = (end >>> 8) & 0xff;
+    layout[6] = (end >>> 16) & 0xff;
+    layout[7] = (end >>> 24) & 0xff;
+    const firmware = new TextEncoder().encode('DM32.TEST.001\0');
+    for (const id of [
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x10,
+    ]) {
+      if (id === 0x0a) enqueueVFrame(pipe, id, layout);
+      else if (id === 0x01) enqueueVFrame(pipe, id, firmware);
+      else enqueueVFrame(pipe, id, new Uint8Array(0));
+    }
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array(8).fill(0xff));
+    pipe.enqueue(new Uint8Array([0x06]));
+
+    const radio = new Dm32uvProtocol();
+    await radio.connect(pipe, { settleScale: 0 });
+    return { pipe, radio };
+  }
+
+  function fullBlockWrites(pipe: Dm32ScriptedPipe): Uint8Array[] {
+    return pipe.writes.filter((w) => w[0] === 0x57 && w.length === 6 + DM32_BLOCK_SIZE);
+  }
+
+  it('uploads a claimed free zone page without requiring that tag on the radio', async () => {
+    const start = 0x1000;
+    const claimedAddr = 0x3000;
+    const { pipe, radio } = await connectForUpload(0x3fff);
+    const channelBlock = makeFirstChannelBlock(1);
+    const zoneBlock = makeEmptyBlock(DM32_METADATA.ZONE);
+    const claimedBlock = makeEmptyBlock(0x5d);
+    claimedBlock[0] = 0xab;
+
+    radio.seedDownloadCache({
+      addressBase: start,
+      mapSize: DM32_BLOCK_SIZE * 3,
+      discovered: [
+        { address: start, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' },
+        { address: 0x2000, metadata: DM32_METADATA.ZONE, type: 'zone' },
+      ],
+      blocks: new Map([
+        [start, channelBlock],
+        [0x2000, zoneBlock],
+      ]),
+      zoneWriteAddresses: [claimedAddr],
+    });
+
+    const image = createMemoryMap(DM32_BLOCK_SIZE * 3);
+    image.fill(0, image.size, 0xff);
+    image.set(0, channelBlock);
+    image.set(DM32_BLOCK_SIZE, zoneBlock);
+    image.set(DM32_BLOCK_SIZE * 2, claimedBlock);
+
+    enqueueReadReply(pipe, start + 0xfff, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
+    enqueueReadReply(pipe, 0x2000 + 0xfff, new Uint8Array([DM32_METADATA.ZONE]));
+    enqueueReadReply(pipe, claimedAddr + 0xfff, new Uint8Array([DM32_METADATA.EMPTY_ALT]));
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array([0x06]));
+
+    await radio.upload(image, {});
+
+    const writeFrames = fullBlockWrites(pipe);
+    const writeAddrs = writeFrames.map((w) => w[1]! | (w[2]! << 8) | (w[3]! << 16));
+    expect(writeAddrs).toContain(claimedAddr);
+    const claimedWrite = writeFrames.find(
+      (w) => (w[1]! | (w[2]! << 8) | (w[3]! << 16)) === claimedAddr,
+    );
+    expect(claimedWrite![6]).toBe(0xab);
+    expect(claimedWrite![6 + 0xfff]).toBe(0x5d);
+  });
+
+  it('refuses a claimed zone page when the live byte is no longer free', async () => {
+    const start = 0x1000;
+    const claimedAddr = 0x3000;
+    const { pipe, radio } = await connectForUpload(0x3fff);
+    const channelBlock = makeFirstChannelBlock(1);
+    const zoneBlock = makeEmptyBlock(DM32_METADATA.ZONE);
+    const claimedBlock = makeEmptyBlock(0x5d);
+
+    radio.seedDownloadCache({
+      addressBase: start,
+      mapSize: DM32_BLOCK_SIZE * 3,
+      discovered: [
+        { address: start, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' },
+        { address: 0x2000, metadata: DM32_METADATA.ZONE, type: 'zone' },
+      ],
+      blocks: new Map([
+        [start, channelBlock],
+        [0x2000, zoneBlock],
+      ]),
+      zoneWriteAddresses: [claimedAddr],
+    });
+
+    const image = createMemoryMap(DM32_BLOCK_SIZE * 3);
+    image.fill(0, image.size, 0xff);
+    image.set(0, channelBlock);
+    image.set(DM32_BLOCK_SIZE, zoneBlock);
+    image.set(DM32_BLOCK_SIZE * 2, claimedBlock);
+
+    enqueueReadReply(pipe, start + 0xfff, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
+    enqueueReadReply(pipe, 0x2000 + 0xfff, new Uint8Array([DM32_METADATA.ZONE]));
+    enqueueReadReply(pipe, claimedAddr + 0xfff, new Uint8Array([DM32_METADATA.CALIBRATION]));
+
+    await expect(radio.upload(image, {})).rejects.toThrow(/not a free page/);
+    expect(fullBlockWrites(pipe)).toHaveLength(0);
+  });
+
   it('download with progressStage labels content reads separately from metadata discovery', async () => {
     const pipe = new Dm32ScriptedPipe();
     scriptDm32DownloadTwoBlocks(pipe, 1);

@@ -87,6 +87,54 @@ describe('remapDm32BlocksByMetadata', () => {
     expect(result.missing).toEqual([{ metadata: DM32_METADATA.ZONE, seededAddress: zoneOld }]);
   });
 
+  it('remaps an existing 0x5C and 0x5D independently by tag', () => {
+    const laterOld = 0x1000;
+    const headerOld = 0x2000;
+    const laterNew = 0x3000;
+    const headerNew = 0x4000;
+    const header = makeEmptyBlock(DM32_METADATA.ZONE);
+    header[0] = 0x5c;
+    const later = makeEmptyBlock(0x5d);
+    later[0] = 0x5d;
+
+    const result = remapDm32BlocksByMetadata(
+      new Map([
+        [laterOld, later],
+        [headerOld, header],
+      ]),
+      [
+        { address: laterOld, metadata: 0x5d, type: 'zone' },
+        { address: headerOld, metadata: DM32_METADATA.ZONE, type: 'zone' },
+      ],
+      [
+        { address: laterNew, metadata: 0x5d, type: 'zone' },
+        { address: headerNew, metadata: DM32_METADATA.ZONE, type: 'zone' },
+      ],
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.blocks.get(headerNew)?.[0]).toBe(0x5c);
+    expect(result.blocks.get(laterNew)?.[0]).toBe(0x5d);
+    expect(result.translations).toEqual([
+      { from: laterOld, to: laterNew, metadata: 0x5d },
+      { from: headerOld, to: headerNew, metadata: DM32_METADATA.ZONE },
+    ]);
+  });
+
+  it('does not accept a later zone tag in place of a missing 0x5C', () => {
+    const zoneOld = 0x2000;
+    const zoneBlock = makeEmptyBlock(DM32_METADATA.ZONE);
+    const result = remapDm32BlocksByMetadata(
+      new Map([[zoneOld, zoneBlock]]),
+      [{ address: zoneOld, metadata: DM32_METADATA.ZONE, type: 'zone' }],
+      [{ address: 0x3000, metadata: 0x5d, type: 'zone' }],
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.missing).toEqual([{ metadata: DM32_METADATA.ZONE, seededAddress: zoneOld }]);
+  });
+
   it('matches multiple channel blocks by metadata in address order', () => {
     const ch1Old = 0x50000;
     const ch2Old = 0x51000;
