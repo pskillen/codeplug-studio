@@ -77,6 +77,11 @@ export interface Dm32DownloadCache {
   maxContacts?: number;
   /** Address-book 4KB blocks allocated for this Write (not in metadata discovery). */
   contactWriteAddresses?: number[];
+  /**
+   * Free pages claimed for a missing zone tag (`0x5C`–`0x64`). Not inserted into
+   * `blocks` before remap — upload unions these addresses after a live free-page check.
+   */
+  zoneWriteAddresses?: number[];
 }
 
 function blocksToMemoryMap(cache: Dm32DownloadCache): MemoryMap {
@@ -153,6 +158,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
         contactWriteAddresses: seed.contactWriteAddresses
           ? [...seed.contactWriteAddresses]
           : undefined,
+        zoneWriteAddresses: seed.zoneWriteAddresses ? [...seed.zoneWriteAddresses] : undefined,
       };
       return;
     }
@@ -166,6 +172,9 @@ export class Dm32uvProtocol implements CloneImageRadio {
     this.cache.maxContacts = seed.maxContacts;
     this.cache.contactWriteAddresses = seed.contactWriteAddresses
       ? [...seed.contactWriteAddresses]
+      : undefined;
+    this.cache.zoneWriteAddresses = seed.zoneWriteAddresses
+      ? [...seed.zoneWriteAddresses]
       : undefined;
   }
 

@@ -191,7 +191,13 @@ export function encodeDm32uvProjectionOntoImage(
   next = encodeChannelsIntoDm32Image(next, ctx, channels);
   if (organisation?.zones) {
     const channelCount = Math.max(0, ...channels.filter((c) => !c.empty).map((c) => c.slotIndex));
-    next = encodeZonesIntoDm32Image(next, ctx, organisation.zones, { channelCount });
+    const claimedAddresses: number[] = [];
+    next = encodeZonesIntoDm32Image(next, ctx, organisation.zones, {
+      channelCount,
+      claimedAddresses,
+    });
+    // Addresses only. Do not insert the stamped tag into cache.blocks before remap.
+    cache.zoneWriteAddresses = claimedAddresses;
   }
   if (organisation?.scanLists) {
     next = encodeScanListsIntoDm32Image(next, ctx, organisation.scanLists);

@@ -128,4 +128,38 @@ describe('encodeDm32uvWriteImageFromDownloadCache', () => {
     expect(image.bytes[off] | (image.bytes[off + 1]! << 8)).toBe(1);
     expect(image.bytes[off + 0x10]).toBe('D'.charCodeAt(0));
   });
+
+  it('records a claimed zone page without inserting it into sparse blocks', () => {
+    const zone = makeBlock(DM32_METADATA.ZONE);
+    const calibration = makeBlock(DM32_METADATA.CALIBRATION, (b) => {
+      b[0] = 0x22;
+    });
+    const cache: Dm32DownloadCache = {
+      addressBase: 0x1000,
+      mapSize: DM32_BLOCK_SIZE * 3,
+      discovered: [
+        { address: 0x1000, metadata: DM32_METADATA.ZONE, type: 'zone' },
+        { address: 0x2000, metadata: DM32_METADATA.CALIBRATION, type: 'calibration' },
+        { address: 0x3000, metadata: DM32_METADATA.EMPTY, type: 'empty' },
+      ],
+      blocks: new Map([
+        [0x1000, zone],
+        [0x2000, calibration],
+      ]),
+    };
+    const projectedZones = Array.from({ length: 29 }, (_, i) => ({
+      wireName: `Z${i + 1}`,
+      channelNumbers: [1],
+    }));
+    const image = encodeDm32uvWriteImageFromDownloadCache(cache, [analogChannel()], {
+      zones: projectedZones,
+    });
+    expect(cache.zoneWriteAddresses).toEqual([0x3000]);
+    expect(cache.blocks.has(0x3000)).toBe(false);
+    const claimedOff = 0x3000 - cache.addressBase;
+    expect(image.bytes[claimedOff + DM32_METADATA_OFFSET]).toBe(0x5d);
+    expect(image.bytes[claimedOff]).toBe('Z'.charCodeAt(0));
+    expect(image.bytes[DM32_BLOCK_SIZE]).toBe(0x22);
+    expect(image.bytes[DM32_BLOCK_SIZE + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.CALIBRATION);
+  });
 });
