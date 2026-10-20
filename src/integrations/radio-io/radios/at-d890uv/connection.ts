@@ -57,7 +57,9 @@ export function parseAtD890Ident(raw: Uint8Array): AtD890Ident {
 
 export async function atD890EnterProgram(pipe: BytePipe, signal?: AbortSignal): Promise<void> {
   throwIfAborted(signal);
-  await enterAnytoneDmrProgramMode(pipe, AT_D890_CONNECTION.TIMEOUT.HANDSHAKE_MS);
+  await enterAnytoneDmrProgramMode(pipe, AT_D890_CONNECTION.TIMEOUT.HANDSHAKE_MS, {
+    programAck: 'qx-only',
+  });
 }
 
 export async function atD890ProbeIdent(pipe: BytePipe, signal?: AbortSignal): Promise<AtD890Ident> {

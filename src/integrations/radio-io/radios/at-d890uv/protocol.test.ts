@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RadioWrongIdentError } from '../../kit/errors.ts';
+import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { D890_MAP } from './constants.ts';
 import { listWriteChunks, cacheToMemoryMap, applyAtD890WriteImageToCache } from './memory.ts';
 import { AtD890uvProtocol } from './protocol.ts';
@@ -110,6 +110,15 @@ describe('AtD890uvProtocol', () => {
     expect(ident.modelHints).toContain('AT-D890UV');
     expect(ident.firmwareHint).toBe('V100');
     expect(radio.getNegotiatedReadBlockSize()).toBe(NEGOTIATED_READ_BLOCK);
+  });
+
+  it('rejects a lone 0x00 PROGRAM ack and does not probe ident', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.enqueue(new Uint8Array([0x00]));
+    pipe.enqueue(makeAtD890IdentFrame());
+    const radio = new AtD890uvProtocol();
+    await expect(radio.connect(pipe)).rejects.toBeInstanceOf(RadioProtocolError);
+    expect(pipe.writes.some((frame) => frame.length === 1 && frame[0] === 0x02)).toBe(false);
   });
 
   it('rejects a version other than V100 before any read or write', async () => {

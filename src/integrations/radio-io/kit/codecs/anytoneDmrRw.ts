@@ -156,14 +156,26 @@ export function parseAnytoneDmrReadReply(frame: Uint8Array, expectedLength?: num
   return payload.slice();
 }
 
+/** `qx-or-nul` is the kit default. D890 passes `qx-only`. */
+export type AnytoneDmrProgramAck = 'qx-or-nul' | 'qx-only';
+
 /**
- * Enter program mode: PROGRAM → QX + 0x06 (anytone-cps also tolerates lone 0x00).
+ * Enter program mode: `PROGRAM` → `QX` + `0x06`.
+ * The default also accepts a lone `0x00` (anytone-cps). `qx-only` rejects that byte.
  */
-export async function enterAnytoneDmrProgramMode(pipe: BytePipe, timeoutMs: number): Promise<void> {
+export async function enterAnytoneDmrProgramMode(
+  pipe: BytePipe,
+  timeoutMs: number,
+  opts?: { programAck?: AnytoneDmrProgramAck },
+): Promise<void> {
+  const programAck = opts?.programAck ?? 'qx-or-nul';
   await pipe.write(PROGRAM_ENTER);
 
   const first = await pipe.readExact(1, timeoutMs);
   if (first[0] === 0x00) {
+    if (programAck === 'qx-only') {
+      throw new RadioProtocolError('Anytone DMR enter expected QX\\x06, got lone 0x00');
+    }
     return;
   }
   if (first[0] === 0x51) {

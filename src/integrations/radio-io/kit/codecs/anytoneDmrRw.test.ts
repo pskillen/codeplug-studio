@@ -127,6 +127,18 @@ describe('enterAnytoneDmrProgramMode', () => {
     await expect(enterAnytoneDmrProgramMode(pipe, 100)).resolves.toBeUndefined();
   });
 
+  it('qx-only rejects lone 0x00 and still accepts QX\\x06', async () => {
+    const nul = mockPipe([new Uint8Array([0x00])]);
+    await expect(
+      enterAnytoneDmrProgramMode(nul.pipe, 100, { programAck: 'qx-only' }),
+    ).rejects.toBeInstanceOf(RadioProtocolError);
+
+    const qx = mockPipe([new Uint8Array([0x51]), new Uint8Array([0x58, 0x06])]);
+    await expect(
+      enterAnytoneDmrProgramMode(qx.pipe, 100, { programAck: 'qx-only' }),
+    ).resolves.toBeUndefined();
+  });
+
   it('rejects unexpected enter reply', async () => {
     const { pipe } = mockPipe([new Uint8Array([0xff])]);
     await expect(enterAnytoneDmrProgramMode(pipe, 100)).rejects.toBeInstanceOf(RadioProtocolError);
