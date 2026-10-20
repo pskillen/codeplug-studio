@@ -20,7 +20,8 @@ export const DM32_METADATA = {
   RX_GROUPS: 0x0f,
   CALIBRATION: 0x02,
   TALK_GROUPS: 0x44,
-  CONFIG_TG_COUNTER: 0x06,
+  /** Analogue (DTMF) contact page. NeonPlug names this CONFIG_TG_COUNTER; that name is wrong. */
+  ANALOG_CONTACTS: 0x06,
   TX_CONTACT_LOW: 0x42,
   TX_CONTACT_HIGH: 0x43,
   DMR_RADIO_IDS: 0x67,
@@ -36,7 +37,13 @@ export const DM32_METADATA_OFFSET = 0xfff;
 export const DM32_OFFSET = {
   CHANNEL_COUNT: 0x00,
   FIRST_CHANNEL: 0x10,
-  TALK_GROUP_COUNTER: 0x1ff,
+  /**
+   * Count of 32-byte analogue (DTMF) contacts that start at +0x200.
+   * It is not the talk-group count. Talk-group cardinality is tag 0x0B
+   * bytes 0–1 and the tag 0x44 payload. Do not store a talk-group count here.
+   * This disagrees with NeonPlug’s CONFIG_TG_COUNTER on purpose.
+   */
+  ANALOG_CONTACT_COUNT: 0x1ff,
 } as const;
 
 export const DM32_VFRAME = {
@@ -103,7 +110,7 @@ export const DM32_REQUIRED_METADATA: readonly number[] = [
   DM32_METADATA.CALIBRATION,
   DM32_METADATA.RX_GROUPS,
   DM32_METADATA.TALK_GROUPS,
-  DM32_METADATA.CONFIG_TG_COUNTER,
+  DM32_METADATA.ANALOG_CONTACTS,
   DM32_METADATA.TX_CONTACT_LOW,
   DM32_METADATA.TX_CONTACT_HIGH,
 ];

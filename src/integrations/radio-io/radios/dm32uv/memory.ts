@@ -51,7 +51,7 @@ export function classifyDm32Metadata(metadata: number): Dm32BlockType {
   if (metadata === DM32_METADATA.CALIBRATION) return 'calibration';
   if (metadata === DM32_METADATA.RX_GROUPS) return 'rxgroup';
   if (metadata === DM32_METADATA.DMR_RADIO_IDS) return 'dmrradioid';
-  if (metadata === DM32_METADATA.CONFIG_TG_COUNTER) return 'config';
+  if (metadata === DM32_METADATA.ANALOG_CONTACTS) return 'config';
   return 'unknown';
 }
 
@@ -184,8 +184,7 @@ export function groupDm32BlocksForProgress(
   take('Scan lists', (b) => b.type === 'scan');
   take(
     'Talk groups',
-    (b) =>
-      b.metadata === DM32_METADATA.TALK_GROUPS || b.metadata === DM32_METADATA.CONFIG_TG_COUNTER,
+    (b) => b.metadata === DM32_METADATA.TALK_GROUPS || b.metadata === DM32_METADATA.ANALOG_CONTACTS,
   );
   take('RX groups', (b) => b.type === 'rxgroup');
   take(

@@ -21,36 +21,67 @@ describe('talkGroupCodec', () => {
     expect(String.fromCharCode(block[2]!)).toBe('T');
   });
 
-  it('patches counter and TG block on image', () => {
+  it('leaves the analogue contact page unchanged and updates talk-group cardinality', () => {
+    // Stock and MM9PDY share encodeTalkGroupsIntoDm32Image; this is the only writer.
     const image = createMemoryMap(DM32_BLOCK_SIZE * 3);
-    image.set(0, blankBlock(DM32_METADATA.CONFIG_TG_COUNTER));
+    const analog = blankBlock(DM32_METADATA.ANALOG_CONTACTS);
+    analog[DM32_OFFSET.ANALOG_CONTACT_COUNT] = 7;
+    image.set(0, analog);
     image.set(DM32_BLOCK_SIZE, blankBlock(DM32_METADATA.TALK_GROUPS));
     image.set(DM32_BLOCK_SIZE * 2, blankBlock(DM32_METADATA.METADATA_0x0B));
+    const before = image.bytes.slice(0, DM32_BLOCK_SIZE);
     encodeTalkGroupsIntoDm32Image(
       image,
       {
         addressBase: 0,
         discovered: [
-          { address: 0, metadata: DM32_METADATA.CONFIG_TG_COUNTER },
+          { address: 0, metadata: DM32_METADATA.ANALOG_CONTACTS },
           { address: DM32_BLOCK_SIZE, metadata: DM32_METADATA.TALK_GROUPS },
           { address: DM32_BLOCK_SIZE * 2, metadata: DM32_METADATA.METADATA_0x0B },
         ],
       },
       [{ index: 1, wireName: 'A', digitalId: 1, callType: 0x04 }],
     );
-    expect(image.bytes[DM32_OFFSET.TALK_GROUP_COUNTER]).toBe(1);
+    expect(image.bytes.subarray(0, DM32_BLOCK_SIZE)).toEqual(before);
+    expect(image.bytes[DM32_OFFSET.ANALOG_CONTACT_COUNT]).toBe(7);
     expect(image.bytes[DM32_BLOCK_SIZE + DM32_METADATA_OFFSET]).toBe(DM32_METADATA.TALK_GROUPS);
+    expect(image.bytes[DM32_BLOCK_SIZE * 2]).toBe(1);
+    expect(image.bytes[DM32_BLOCK_SIZE * 2 + 1]).toBe(0);
+  });
+
+  it('leaves the analogue contact page unchanged when the talk-group list is empty', () => {
+    const image = createMemoryMap(DM32_BLOCK_SIZE * 3);
+    const analog = blankBlock(DM32_METADATA.ANALOG_CONTACTS);
+    analog[DM32_OFFSET.ANALOG_CONTACT_COUNT] = 7;
+    image.set(0, analog);
+    image.set(DM32_BLOCK_SIZE, blankBlock(DM32_METADATA.TALK_GROUPS));
+    image.set(DM32_BLOCK_SIZE * 2, blankBlock(DM32_METADATA.METADATA_0x0B));
+    const before = image.bytes.slice(0, DM32_BLOCK_SIZE);
+    encodeTalkGroupsIntoDm32Image(
+      image,
+      {
+        addressBase: 0,
+        discovered: [
+          { address: 0, metadata: DM32_METADATA.ANALOG_CONTACTS },
+          { address: DM32_BLOCK_SIZE, metadata: DM32_METADATA.TALK_GROUPS },
+          { address: DM32_BLOCK_SIZE * 2, metadata: DM32_METADATA.METADATA_0x0B },
+        ],
+      },
+      [],
+    );
+    expect(image.bytes.subarray(0, DM32_BLOCK_SIZE)).toEqual(before);
+    expect(image.bytes[DM32_OFFSET.ANALOG_CONTACT_COUNT]).toBe(7);
   });
 
   it('replaces prior talk groups when list shrinks', () => {
     const image = createMemoryMap(DM32_BLOCK_SIZE * 3);
-    image.set(0, blankBlock(DM32_METADATA.CONFIG_TG_COUNTER));
+    image.set(0, blankBlock(DM32_METADATA.ANALOG_CONTACTS));
     image.set(DM32_BLOCK_SIZE, blankBlock(DM32_METADATA.TALK_GROUPS));
     image.set(DM32_BLOCK_SIZE * 2, blankBlock(DM32_METADATA.METADATA_0x0B));
     const ctx = {
       addressBase: 0,
       discovered: [
-        { address: 0, metadata: DM32_METADATA.CONFIG_TG_COUNTER },
+        { address: 0, metadata: DM32_METADATA.ANALOG_CONTACTS },
         { address: DM32_BLOCK_SIZE, metadata: DM32_METADATA.TALK_GROUPS },
         { address: DM32_BLOCK_SIZE * 2, metadata: DM32_METADATA.METADATA_0x0B },
       ],

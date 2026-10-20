@@ -1,11 +1,13 @@
 /**
- * DM-32UV talk-group encode — metadata 0x44 + counter 0x06 + quick-access 0x0B.
+ * DM-32UV talk-group encode — metadata 0x44 + quick-access 0x0B.
+ * Stock and MM9PDY share this writer. Analogue-contact page 0x06 (count at
+ * +0x1FF) is retain-only and is not written here.
  * Cite: NeonPlug encodeQuickContacts / writeQuickContacts; tier-3 contacts-zones-lists.md.
  */
 
 import type { MemoryMap } from '../../types.ts';
 import type { RadioTalkGroupDto } from '../../radioWriteProjection.ts';
-import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET, DM32_OFFSET } from './constants.ts';
+import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from './constants.ts';
 
 const TE = new TextEncoder();
 
@@ -67,17 +69,6 @@ export function encodeDm32TalkGroupBlock(talkGroups: readonly RadioTalkGroupDto[
   }
   // Empty sentinel entry (24 bytes of 0 already)
   return data;
-}
-
-function patchTgCounter(
-  image: MemoryMap,
-  addressBase: number,
-  address: number,
-  count: number,
-): void {
-  const base = address - addressBase;
-  image.bytes[base + DM32_OFFSET.TALK_GROUP_COUNTER] = count & 0xff;
-  image.bytes[base + DM32_METADATA_OFFSET] = DM32_METADATA.CONFIG_TG_COUNTER;
 }
 
 function typeByte(callType: number): number {
@@ -147,12 +138,9 @@ export function encodeTalkGroupsIntoDm32Image(
   ctx: Dm32TalkGroupEncodeContext,
   talkGroups: readonly RadioTalkGroupDto[],
 ): MemoryMap {
-  const counter = findBlock(ctx.discovered, DM32_METADATA.CONFIG_TG_COUNTER);
   const tgBlock = findBlock(ctx.discovered, DM32_METADATA.TALK_GROUPS);
   const quick = findBlock(ctx.discovered, DM32_METADATA.METADATA_0x0B);
 
-  const count = talkGroups.length > 0 ? talkGroups.length : 1;
-  if (counter) patchTgCounter(image, ctx.addressBase, counter.address, count);
   if (tgBlock) {
     const packed = encodeDm32TalkGroupBlock(talkGroups);
     image.set(tgBlock.address - ctx.addressBase, packed);
