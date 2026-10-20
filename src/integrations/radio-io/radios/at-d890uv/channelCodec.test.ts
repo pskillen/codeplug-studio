@@ -407,6 +407,38 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(parseAtD890ChannelRecord(repeater, 1).dmrOperatingMode).toBe('repeater');
   });
 
+  it('writes rxOnly on 0x34 bit 3 and leaves 0x09 bit 5 clear', () => {
+    const encoded = encodeAtD890ChannelRecord({
+      ...simplexDigital,
+      rxOnly: true,
+      dmrOperatingMode: 'dmo-simplex',
+      scanAdd: true,
+    });
+    expect((encoded[0x34]! >> 3) & 1).toBe(1);
+    expect((encoded[9]! >> 5) & 1).toBe(0);
+    expect((encoded[0x34]! >> 1) & 1).toBe(1);
+    expect((encoded[0x34]! >> 4) & 1).toBe(1);
+    expect(parseAtD890ChannelRecord(encoded, 1).rxOnly).toBe(true);
+  });
+
+  it('leaves 0x34 bit 3 clear when rxOnly is omitted or false', () => {
+    const omitted = encodeAtD890ChannelRecord(simplexDigital);
+    const explicitFalse = encodeAtD890ChannelRecord({ ...simplexDigital, rxOnly: false });
+    expect((omitted[0x34]! >> 3) & 1).toBe(0);
+    expect((explicitFalse[0x34]! >> 3) & 1).toBe(0);
+    expect((omitted[9]! >> 5) & 1).toBe(0);
+  });
+
+  it('decodes rxOnly from 0x34 bit 3 only', () => {
+    const rxOnlyRecord = encodeAtD890ChannelRecord(simplexDigital);
+    rxOnlyRecord[0x34] = 1 << 3;
+    expect(parseAtD890ChannelRecord(rxOnlyRecord, 1).rxOnly).toBe(true);
+
+    const pttProhibit = encodeAtD890ChannelRecord(simplexDigital);
+    pttProhibit[9] = 1 << 5;
+    expect(parseAtD890ChannelRecord(pttProhibit, 1).rxOnly).toBe(false);
+  });
+
   it('writes DMR MODE repeater on 0x34 bit 1 and SMS confirm On', () => {
     const encoded = encodeAtD890ChannelRecord({
       slotIndex: 1,

@@ -35,9 +35,24 @@ const BYTE_21_DCDM_MASK = 0x0c;
 const BYTE_21_APRS_RX_BIT = 5;
 /** Digital DMO vs repeater (CPS-written SoT): `1` = DMO/simplex, `0` = repeater. */
 const BYTE_34_DMO_BIT = 1;
+/** CPS RX-only. Not `0x09` bit 5 (that bit is TX/PTT prohibit and stays clear). */
+const BYTE_34_RX_ONLY_BIT = 3;
+/** Auto scan ("start scanning on channel select"), not scan-list membership. */
+const BYTE_34_AUTO_SCAN_BIT = 4;
 
 function setBit(byte: number, bit: number, value: boolean): number {
   return value ? (byte | (1 << bit)) & 0xff : byte & ~(1 << bit) & 0xff;
+}
+
+/**
+ * Modelled `0x34` bits always come from the DTO. `setBit` leaves the other bits alone
+ * so a later preserve copy of ranging / roaming / idle TX / compander / CRC-ignore survives.
+ */
+function applyModelledByte34(data: Uint8Array, ch: RadioChannelDto): void {
+  const digitalDmo = isDigitalMode(ch.mode) && ch.dmrOperatingMode === 'dmo-simplex';
+  data[0x34] = setBit(data[0x34]!, BYTE_34_DMO_BIT, digitalDmo);
+  data[0x34] = setBit(data[0x34]!, BYTE_34_RX_ONLY_BIT, ch.rxOnly === true);
+  data[0x34] = setBit(data[0x34]!, BYTE_34_AUTO_SCAN_BIT, ch.scanAdd === true);
 }
 
 function decodeToneFromCtcssIndex(index: number): RadioTone {
@@ -190,7 +205,6 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
   const powerPercent = powerPercentFromWire((b8 >> 2) & 0x3);
   const channelType = modeFromWire(b8 & 0x3);
   const b9 = data[9]!;
-  const rxOnly = ((b9 >> 5) & 1) === 1;
   const ctcssEncSel = (b9 >> 2) & 0x3;
   const ctcssDecSel = b9 & 0x3;
   const rxTone =
@@ -204,7 +218,8 @@ export function parseAtD890ChannelRecord(data: Uint8Array, slotIndex: number): R
   let txHz = rxHz;
   if (duplex === 1) txHz = rxHz + offHz;
   if (duplex === 2) txHz = Math.max(0, rxHz - offHz);
-  const autoScan = ((data[0x34]! >> 4) & 1) === 1;
+  const autoScan = ((data[0x34]! >> BYTE_34_AUTO_SCAN_BIT) & 1) === 1;
+  const rxOnly = ((data[0x34]! >> BYTE_34_RX_ONLY_BIT) & 1) === 1;
   const txContactId = decodeTxContactId(data, channelType);
   return {
     slotIndex,
@@ -261,7 +276,6 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto): Uint8Array {
     (wireFromMode(ch.mode) & 0x3);
 
   let b9 = 0;
-  if (ch.rxOnly) b9 |= 1 << 5;
   const txDcs = ch.txTone.kind === 'dcs';
   const rxDcs = ch.rxTone.kind === 'dcs';
   b9 |= (txDcs ? 2 : ch.txTone.kind === 'ctcss' ? 1 : 0) << 2;
@@ -308,15 +322,8 @@ export function encodeAtD890ChannelRecord(ch: RadioChannelDto): Uint8Array {
   }
   if (ch.dmrOperatingMode === 'repeater' || ch.dmrOperatingMode === 'dmo-simplex') {
     data[0x21] = data[0x21]! & ~BYTE_21_DCDM_MASK;
-    data[0x34] = setBit(data[0x34]!, BYTE_34_DMO_BIT, ch.dmrOperatingMode === 'dmo-simplex');
   }
-
-  // scanAdd maps to auto_scan (bit 4) on AT-D890UV — not per-channel scan membership.
-  if (ch.scanAdd === true) {
-    data[0x34] = setBit(data[0x34]!, 4, true);
-  } else if (ch.scanAdd === false) {
-    data[0x34] = setBit(data[0x34]!, 4, false);
-  }
+  applyModelledByte34(data, ch);
 
   if (ch.aprsReceive != null) {
     data[0x21] = setBit(data[0x21]!, BYTE_21_APRS_RX_BIT, ch.aprsReceive);
