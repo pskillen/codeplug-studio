@@ -25,6 +25,23 @@ describe('classifyDm32Metadata', () => {
     expect(classifyDm32Metadata(0x10)).toBe('analogemergency');
     expect(classifyDm32Metadata(0xff)).toBe('empty');
   });
+
+  it('maps the zone bank 0x5C–0x64 and leaves neighbours unknown', () => {
+    expect(classifyDm32Metadata(DM32_METADATA.ZONE)).toBe('zone');
+    expect(classifyDm32Metadata(0x5d)).toBe('zone');
+    expect(classifyDm32Metadata(DM32_METADATA.ZONE_PAGE_LAST)).toBe('zone');
+    expect(classifyDm32Metadata(0x5b)).toBe('unknown');
+    expect(classifyDm32Metadata(0x65)).toBe('unknown');
+    expect(classifyDm32Metadata(DM32_METADATA.CALIBRATION)).toBe('calibration');
+    expect(classifyDm32Metadata(DM32_METADATA.EMPTY)).toBe('empty');
+    expect(classifyDm32Metadata(DM32_METADATA.EMPTY_ALT)).toBe('empty');
+    expect(classifyDm32Metadata(DM32_METADATA.VFO_SETTINGS)).toBe('vfo');
+    // Talk-group neighbours stay unread until a dump shows their payload.
+    expect(classifyDm32Metadata(0x45)).toBe('unknown');
+    expect(classifyDm32Metadata(0x46)).toBe('unknown');
+    expect(classifyDm32Metadata(0x47)).toBe('unknown');
+    expect(classifyDm32Metadata(0x48)).toBe('unknown');
+  });
 });
 
 describe('selectBlocksToBulkRead', () => {
@@ -38,6 +55,18 @@ describe('selectBlocksToBulkRead', () => {
       1,
     );
     expect(selected.map((b) => b.address)).toEqual([0x1000, 0x2000]);
+  });
+
+  it('includes an already-present later zone page and omits empty pages', () => {
+    const discovered = [
+      { address: 0x1000, metadata: DM32_METADATA.ZONE },
+      { address: 0x2000, metadata: 0x5d },
+      { address: 0x3000, metadata: DM32_METADATA.EMPTY },
+      { address: 0x4000, metadata: DM32_METADATA.EMPTY_ALT },
+    ].map((block) => ({ ...block, type: classifyDm32Metadata(block.metadata) }));
+    const selected = selectBlocksToBulkRead(discovered, 0);
+    expect(selected.map((b) => b.address)).toEqual([0x1000, 0x2000]);
+    expect(selected.every((b) => b.type === 'zone')).toBe(true);
   });
 });
 

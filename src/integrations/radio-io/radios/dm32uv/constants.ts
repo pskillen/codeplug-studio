@@ -9,7 +9,14 @@ import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 export const DM32_METADATA = {
   CHANNEL_FIRST: 0x12,
   CHANNEL_LAST: 0x41,
+  /** First zone page. The block header (count and VFO indices) lives only here. */
   ZONE: 0x5c,
+  /**
+   * Inclusive zone-page bank, nine tags (`0x5C`–`0x64`). Protocol layout only —
+   * `ZONE_MAX` stays the core limits import. Do not treat this span as a second cap.
+   */
+  ZONE_PAGE_FIRST: 0x5c,
+  ZONE_PAGE_LAST: 0x64,
   SCAN_LIST: 0x11,
   /** NeonPlug constants name — same value as ANALOG_EMERGENCY; discovery may map 0x03. */
   DIGITAL_EMERGENCY: 0x10,

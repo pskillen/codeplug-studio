@@ -37,12 +37,17 @@ export interface Dm32DiscoveredBlock {
   type: Dm32BlockType;
 }
 
+/** True for zone-bank tags `0x5C` through `0x64` inclusive. */
+export function isDm32ZonePageMetadata(metadata: number): boolean {
+  return metadata >= DM32_METADATA.ZONE_PAGE_FIRST && metadata <= DM32_METADATA.ZONE_PAGE_LAST;
+}
+
 export function classifyDm32Metadata(metadata: number): Dm32BlockType {
   if (metadata === DM32_METADATA.EMPTY || metadata === DM32_METADATA.EMPTY_ALT) return 'empty';
   if (metadata >= DM32_METADATA.CHANNEL_FIRST && metadata <= DM32_METADATA.CHANNEL_LAST) {
     return 'channel';
   }
-  if (metadata === DM32_METADATA.ZONE) return 'zone';
+  if (isDm32ZonePageMetadata(metadata)) return 'zone';
   if (metadata === DM32_METADATA.SCAN_LIST) return 'scan';
   if (metadata === 0x03) return 'digitalemergency'; // discovery path (see tier-3 inconsistency note)
   if (metadata === DM32_METADATA.VFO_SETTINGS) return 'vfo';
