@@ -1,4 +1,5 @@
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
+import { DM32UV_LIMITS } from '@core/radios/baofeng/dm-32uv/limits.ts';
 import { describe, expect, it } from 'vitest';
 import {
   newChannel,
@@ -43,7 +44,7 @@ describe('neonplug/warnings', () => {
       scanLists: [],
       zoneGrouping: {
         kind: 'zoneGrouping',
-        zones: Array.from({ length: 16 }, (_, i) => ({
+        zones: Array.from({ length: DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX + 1 }, (_, i) => ({
           id: `z-${i}`,
           name: `Z${i}`,
           channelIds: [],
@@ -57,7 +58,13 @@ describe('neonplug/warnings', () => {
     expect(warnings.some((w) => /251 zone/.test(formatExportWarning(w)))).toBe(true);
     expect(warnings.some((w) => /260 talk group/.test(formatExportWarning(w)))).toBe(true);
     expect(warnings.some((w) => /33 RX group/.test(formatExportWarning(w)))).toBe(true);
-    expect(warnings.some((w) => /16 zone-derived scan/.test(formatExportWarning(w)))).toBe(true);
+    expect(
+      warnings.some((w) =>
+        formatExportWarning(w).includes(
+          `${DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX + 1} zone-derived scan`,
+        ),
+      ),
+    ).toBe(true);
   });
 
   it('does not warn for empty UV5R org arrays', () => {
