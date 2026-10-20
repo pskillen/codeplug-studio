@@ -71,7 +71,10 @@ import WriteVerifyReport from './WriteVerifyReport.tsx';
 import { mapWriteVerifyResultToV2Report } from './writeVerifyReportV2Adapter.ts';
 import WebSerialExperimentalAlert from './WebSerialExperimentalAlert.tsx';
 import AtD890WriteCoverageTable from './AtD890WriteCoverageTable.tsx';
-import { DM32_ANALOG_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
+import {
+  DM32_ANALOG_CONTACTS_WRITE_GAP,
+  DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
+} from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
 import { AT_D890_DIGITAL_CONTACTS_WRITE_GAP } from '@integrations/radio-io/radios/at-d890uv/writeRole.ts';
 import {
   resolveRadioWriteGate,
@@ -701,6 +704,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         onCloseWithoutVerify={handleCloseWithoutVerify}
         onCancel={handleCancel}
         onClose={handleProgressClose}
+        successNote={
+          operation === 'write' && isDm32RadioIoProfileId(egress.profileId)
+            ? DM32_POWER_CYCLE_AFTER_SESSION_NOTE
+            : undefined
+        }
       />
     </Stack>
   );

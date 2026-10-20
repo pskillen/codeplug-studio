@@ -43,6 +43,14 @@ export const DM32_WRITTEN_FROM_BUILD_LABELS: readonly string[] = [
 export const DM32_ANALOG_CONTACTS_WRITE_GAP =
   'Analog contacts stay as they were on the radio when you Write. Export a file for your radio’s CPS or NeonPlug if you need to update those.';
 
+/**
+ * After a successful DM-32 Write or Restore. The radio keeps the page map from
+ * before the session until the operator power-cycles it. Stock and MM9PDY share
+ * this sentence.
+ */
+export const DM32_POWER_CYCLE_AFTER_SESSION_NOTE =
+  'Power the radio off and on before using it or changing it on the keypad. Until then it is still using the page map from before this session, and the next keypad edit can erase a page that was just written.';
+
 /** Operator-facing block label from metadata byte (no hex in output). */
 export function dm32BlockLabel(metadata: number, type: Dm32BlockType): string {
   if (metadata >= DM32_METADATA.CHANNEL_FIRST && metadata <= DM32_METADATA.CHANNEL_LAST) {
