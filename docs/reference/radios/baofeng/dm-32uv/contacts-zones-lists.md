@@ -112,10 +112,10 @@ VFO A/B selected zone and channel indices live in the **zone bank** first block 
 | Entry size   | **57** bytes                           |
 | Count        | Byte at `0x00`                         |
 | Entry offset | `(57 × N) − 56` for list `N` (1-based) |
-| Max lists    | **32** bank / **15** channel-FK        |
+| Max lists    | **32** bank / **32** channel-FK        |
 | Max members  | **15** named channels                  |
 
-**Studio Web Serial Write:** zone-derived scan lists are rewritten from projection; the block is **`0xFF`-filled** (NeonPlug `writeAllData` parity), then slots after the projected count are **vacant-cleared** (`+0x00` name, `+0x0B` member count `0x00`) so firmware does not treat `0xFF` at `+0x0B` as 255 members (zone vacant-slot parity). Each exporting zone gets a `{zone} Scan` carrier channel prepended to the zone and set as designated TX. Channel-record `scanListId` is only **4 bits (1–15)** — Studio caps addressable zone-derived lists at 15 (NeonPlug parity). **Members** stay `scanListId` 0 on the channel record; only **scan carriers** carry the zone list FK.
+**Studio Web Serial Write:** zone-derived scan lists are rewritten from projection; the block is **`0xFF`-filled** (NeonPlug `writeAllData` parity), then slots after the projected count are **vacant-cleared** (`+0x00` name, `+0x0B` member count `0x00`) so firmware does not treat `0xFF` at `+0x0B` as 255 members (zone vacant-slot parity). Each exporting zone gets a `{zone} Scan` carrier channel prepended to the zone and set as designated TX. Channel-record `scanListId` is bits 5–0 (`0` = none, ids **1–32**) — Studio caps addressable zone-derived lists at 32. **Members** stay `scanListId` 0 on the channel record; only **scan carriers** carry the zone list FK.
 
 ### 57-byte entry (summary)
 

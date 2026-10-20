@@ -24,7 +24,7 @@ Wire shape for `codeplug.json` → `scanLists[]`.
 
 - Member channels are **numbers** into `channels[]`.
 - Priority / designated TX channel fields also use channel numbers (with NeonPlug encoding quirks for “None” / “Current”).
-- Channel `scanListId`: `0` = none; else **1-based** index into `scanLists[]`. Channel wire field is 4 bits (0–15), so at most **15** referenceable lists.
+- Channel `scanListId`: `0` = none; else **1-based** index into `scanLists[]`. Channel wire field is bits 5–0 (`0` = none, ids 1–32), so at most **32** referenceable lists.
 
 ## Studio export mapping (shipped #540 / #553 / #562)
 
@@ -39,7 +39,7 @@ DM32 CSV synthesises `Scan.csv` from **zone-derived** scan lists (with synthetic
 | Designated TX         | `designatedTxChannel` = carrier channel number                                                                                            |
 | Carrier frequency     | Layout `scanCarrierFrequencyHz` when present; else **145.500 MHz** (`DEFAULT_SCAN_CARRIER_HZ`)                                            |
 | Priority / hang / CTC | Lossy defaults: `ctcScanMode`/`scanTxMode` = `0`; omit rest                                                                               |
-| Cap                   | Min of profile `maxScanLists` and **15** (`DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX` in `src/core/radios/baofeng/dm-32uv/limits.ts`)        |
+| Cap                   | Min of profile `maxScanLists` and **32** (`DM32UV_LIMITS.CHANNEL_SCAN_LIST_ID_MAX` in `src/core/radios/baofeng/dm-32uv/limits.ts`)        |
 
 **List membership vs channel-record FK:** `scanLists[].channels` includes expanded member **numbers**. Only the synthetic **`{zone} Scan` carrier** row gets that list’s `scanListId` on the channel object (`scan-carrier:{zoneId}`). Member library channels stay `scanListId: 0` — parity with Web Serial Write ([#1225](https://github.com/pskillen/codeplug-studio/issues/1225)).
 
