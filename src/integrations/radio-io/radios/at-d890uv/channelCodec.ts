@@ -129,13 +129,13 @@ function encodeScanListWire(scanListId: number | undefined): number {
 }
 
 function decodeRxGroupIndex(wire: number): number | undefined {
-  if (wire === WIRE_INDEX_NONE || wire === 0) return undefined;
-  return wire;
+  if (wire === WIRE_INDEX_NONE) return undefined;
+  return wire + 1;
 }
 
 function encodeRxGroupWire(rxGroupIndex: number | undefined): number {
   if (rxGroupIndex == null) return WIRE_INDEX_NONE;
-  return rxGroupIndex & 0xff;
+  return (rxGroupIndex - 1) & 0xff;
 }
 
 /** Firmware channel-apply: byte `0x17` >= this is no TX contact. `0x00000000` is slot 0. */

@@ -207,7 +207,7 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(parseAtD890ChannelRecord(record, 1).txContactId).toBe(1);
   });
 
-  it('shares the contact encoder between stock and MM9PDY radio-io profiles', () => {
+  it('shares the channel contact and RX-group encoder between stock and MM9PDY', () => {
     const stock = listDescriptorsForProfile('radio-io', 'radio-io-at-d890uv');
     const mm9 = listDescriptorsForProfile('radio-io', 'radio-io-at-d890uv-mm9pdy');
     expect(stock).toHaveLength(1);
@@ -217,6 +217,10 @@ describe('encodeAtD890ChannelRecord', () => {
     expect([...omitted.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0xff]);
     const wide = encodeAtD890ChannelRecord({ ...simplexDigital, txContactId: 257 });
     expect([...wide.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x01, 0x00, 0x00]);
+    const firstList = encodeAtD890ChannelRecord({ ...simplexDigital, rxGroupIndex: 1 });
+    expect(firstList[0x1c]).toBe(0);
+    const secondList = encodeAtD890ChannelRecord({ ...simplexDigital, rxGroupIndex: 2 });
+    expect(secondList[0x1c]).toBe(1);
   });
 
   it('encodes scan-list and RX-group none as 0xff', () => {
@@ -252,7 +256,24 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(encoded[0x1c]).toBe(0xff);
   });
 
-  it('writes the DTO RX-group index', () => {
+  it('writes the DTO RX-group index as a 0-based wire byte', () => {
+    const first = encodeAtD890ChannelRecord({
+      slotIndex: 1,
+      empty: false,
+      wireName: 'Scratch',
+      rxHz: 438_800_000,
+      txHz: 434_000_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: 100,
+      bandwidth: 'NFM',
+      mode: 'digital',
+      rxGroupIndex: 1,
+    });
+    expect(first[0x1b]).toBe(0xff);
+    expect(first[0x1c]).toBe(0);
+    expect(parseAtD890ChannelRecord(first, 1).rxGroupIndex).toBe(1);
+
     const encoded = encodeAtD890ChannelRecord({
       slotIndex: 1,
       empty: false,
@@ -266,7 +287,15 @@ describe('encodeAtD890ChannelRecord', () => {
       mode: 'digital',
       rxGroupIndex: 2,
     });
-    expect(encoded[0x1c]).toBe(2);
+    expect(encoded[0x1b]).toBe(0xff);
+    expect(encoded[0x1c]).toBe(1);
+    expect(parseAtD890ChannelRecord(encoded, 1).rxGroupIndex).toBe(2);
+  });
+
+  it('parses RX-group wire 0 as DTO index 1', () => {
+    const record = encodeAtD890ChannelRecord(simplexDigital);
+    record[0x1c] = 0;
+    expect(parseAtD890ChannelRecord(record, 1).rxGroupIndex).toBe(1);
   });
 
   it('encodes DCS tones', () => {
@@ -475,8 +504,10 @@ describe('encodeAtD890ChannelRecord', () => {
       if (dto.txContactId == null) {
         expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0xff]);
       }
-      if (original[0x1c] === 0) {
-        expect(encoded[0x1c]).toBe(0xff);
+      if (slotIndex === 17) {
+        expect(original[0x1c]).toBe(0);
+        expect(encoded[0x1c]).toBe(0);
+        expect(dto.rxGroupIndex).toBe(1);
       }
     }
   });
