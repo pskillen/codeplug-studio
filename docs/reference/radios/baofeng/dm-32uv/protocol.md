@@ -74,8 +74,9 @@ Typical IDs used at connect (NeonPlug loops a fixed list including these):
 | `0x0B` | Codeplug version                                                                                   |
 | `0x0E` | Memberships range (noted)                                                                          |
 | `0x0F` | **Contacts** memory range / capacity                                                               |
+| `0x10` | **Max contact count**                                                                              |
 
-**Config range (`0x0A`):** 8 bytes = `start_addr` (u32 LE) + `end_addr` (u32 LE). Feeds discovery — see [memory-layout.md](memory-layout.md).
+**Config range (`0x0A`):** 8 bytes = `start_addr` (u32 LE) + `end_addr` (u32 LE). Feeds discovery — see [memory-layout.md](memory-layout.md). The `0x10` max-contact payload is 3-byte little-endian (firmware 048: `F0 49 02` = 150000) or 4-byte little-endian, and the reply length is the header length (no pad to 4).
 
 Studio’s shipped V-probe codec frames the same `0x56` request/reply shape; DM-32 session sequencing and PROGRAM/R/W stay in the radio module.
 
