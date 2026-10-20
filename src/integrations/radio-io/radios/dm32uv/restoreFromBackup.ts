@@ -7,7 +7,7 @@
 import type { RadioBackupManifestV1, RadioBackupRegionV1 } from '../../backup/types.ts';
 import type { MemoryMap } from '../../types.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
-import { DM32_BLOCK_SIZE } from './constants.ts';
+import { DM32_BLOCK_SIZE, DM32_METADATA, DM32_METADATA_OFFSET } from './constants.ts';
 import { isDm32RestoreNeverWriteBlock } from './backupRestoreRoles.ts';
 
 export type Dm32RestoreArchive = {
@@ -100,4 +100,23 @@ export function listDm32RestoreBlocks(
     throw new RadioProtocolError('DM-32 restore has no restorable blocks to write');
   }
   return blocks;
+}
+
+/**
+ * Refuse a backup that would upload two blocks with the same occupied metadata
+ * tag. Free-page markers may repeat. Does not drop or rewrite the higher block.
+ */
+export function assertDm32RestoreUniqueOccupiedTags(blocks: readonly Dm32RestoreBlock[]): void {
+  const seen = new Map<number, number>();
+  for (const block of blocks) {
+    const tag = block.data[DM32_METADATA_OFFSET] ?? 0;
+    if (tag === DM32_METADATA.EMPTY || tag === DM32_METADATA.EMPTY_ALT) continue;
+    const prior = seen.get(tag);
+    if (prior !== undefined) {
+      throw new RadioProtocolError(
+        `Restore refused — two backup pages share metadata tag 0x${tag.toString(16)} (0x${prior.toString(16)} and 0x${block.address.toString(16)}). Restoring them would let the radio erase the higher page at boot.`,
+      );
+    }
+    seen.set(tag, block.address);
+  }
 }

@@ -11,7 +11,11 @@ import {
 } from '../../backup/index.ts';
 import { DM32_BLOCK_SIZE, DM32_METADATA } from './constants.ts';
 import { Dm32uvProtocol } from './protocol.ts';
-import { assertDm32RestoreAddressMap, listDm32RestoreBlocks } from './restoreFromBackup.ts';
+import {
+  assertDm32RestoreAddressMap,
+  assertDm32RestoreUniqueOccupiedTags,
+  listDm32RestoreBlocks,
+} from './restoreFromBackup.ts';
 import {
   Dm32ScriptedPipe,
   makeEmptyBlock,
@@ -89,6 +93,36 @@ describe('listDm32RestoreBlocks', () => {
     expect(src).not.toMatch(/prepareRadioWriteImage/);
     expect(src).not.toMatch(/remapDm32/);
     expect(src).not.toMatch(/\bassemble\(/);
+  });
+});
+
+describe('assertDm32RestoreUniqueOccupiedTags', () => {
+  it('refuses a repeated occupied tag and leaves both blocks in the list', () => {
+    const lower = { address: 0x1000, data: makeEmptyBlock(DM32_METADATA.ZONE) };
+    const higher = { address: 0x2000, data: makeEmptyBlock(DM32_METADATA.ZONE) };
+    const blocks = [lower, higher];
+    expect(() => assertDm32RestoreUniqueOccupiedTags(blocks)).toThrow(/erase the higher page/);
+    expect(blocks).toEqual([lower, higher]);
+  });
+
+  it('allows different occupied tags', () => {
+    expect(() =>
+      assertDm32RestoreUniqueOccupiedTags([
+        { address: 0x1000, data: makeEmptyBlock(DM32_METADATA.ZONE) },
+        { address: 0x2000, data: makeEmptyBlock(DM32_METADATA.SCAN_LIST) },
+      ]),
+    ).not.toThrow();
+  });
+
+  it('allows repeated free-page markers', () => {
+    expect(() =>
+      assertDm32RestoreUniqueOccupiedTags([
+        { address: 0x1000, data: makeEmptyBlock(DM32_METADATA.EMPTY) },
+        { address: 0x2000, data: makeEmptyBlock(DM32_METADATA.EMPTY) },
+        { address: 0x3000, data: makeEmptyBlock(DM32_METADATA.EMPTY_ALT) },
+        { address: 0x4000, data: makeEmptyBlock(DM32_METADATA.EMPTY_ALT) },
+      ]),
+    ).not.toThrow();
   });
 });
 
@@ -176,5 +210,80 @@ describe('Dm32uvProtocol.restoreFromBackup', () => {
     expect(
       restoreWrites.filter((w) => w[0] === 0x57 && w.length === 6 + DM32_BLOCK_SIZE),
     ).toHaveLength(0);
+  });
+
+  async function connectMatching(): Promise<{ proto: Dm32uvProtocol; pipe: Dm32ScriptedPipe }> {
+    const pipe = new Dm32ScriptedPipe();
+    scriptDm32Connect(pipe, {
+      start: 0x1000,
+      end: 0x2fff,
+      contactsBase: 0x200000,
+      contactsEnd: 0x200fff,
+    });
+    const proto = new Dm32uvProtocol();
+    await proto.connect(pipe, { settleScale: 0 });
+    return { proto, pipe };
+  }
+
+  function twoRegionArchive(first: Uint8Array, second: Uint8Array) {
+    const regions = [
+      region('region-0x1000', 0x1000, first, 'restorable'),
+      region('region-0x2000', 0x2000, second, 'restorable'),
+    ];
+    return {
+      archive: packedArchive({ 'region-0x1000': first, 'region-0x2000': second }, regions),
+      regionIds: ['region-0x1000', 'region-0x2000'] as const,
+    };
+  }
+
+  it('refuses duplicate occupied tags before any write', async () => {
+    const { proto, pipe } = await connectMatching();
+    const writesAfterConnect = pipe.writes.length;
+    const { archive, regionIds } = twoRegionArchive(
+      makeEmptyBlock(DM32_METADATA.ZONE),
+      makeEmptyBlock(DM32_METADATA.ZONE),
+    );
+
+    await expect(proto.restoreFromBackup(archive, { regionIds })).rejects.toThrow(
+      /erase the higher page/,
+    );
+    const restoreWrites = pipe.writes.slice(writesAfterConnect);
+    expect(
+      restoreWrites.filter((w) => w[0] === 0x57 && w.length === 6 + DM32_BLOCK_SIZE),
+    ).toHaveLength(0);
+  });
+
+  it('writes a pair of different occupied tags', async () => {
+    const { proto, pipe } = await connectMatching();
+    const writesAfterConnect = pipe.writes.length;
+    const { archive, regionIds } = twoRegionArchive(
+      makeEmptyBlock(DM32_METADATA.ZONE),
+      makeEmptyBlock(DM32_METADATA.SCAN_LIST),
+    );
+    pipe.enqueue(new Uint8Array([0x06]), new Uint8Array([0x06]));
+
+    await proto.restoreFromBackup(archive, { regionIds });
+
+    const restoreWrites = pipe.writes.slice(writesAfterConnect);
+    expect(
+      restoreWrites.filter((w) => w[0] === 0x57 && w.length === 6 + DM32_BLOCK_SIZE),
+    ).toHaveLength(2);
+  });
+
+  it('writes repeated free-page markers', async () => {
+    const { proto, pipe } = await connectMatching();
+    const writesAfterConnect = pipe.writes.length;
+    const { archive, regionIds } = twoRegionArchive(
+      makeEmptyBlock(DM32_METADATA.EMPTY),
+      makeEmptyBlock(DM32_METADATA.EMPTY),
+    );
+    pipe.enqueue(new Uint8Array([0x06]), new Uint8Array([0x06]));
+
+    await proto.restoreFromBackup(archive, { regionIds });
+
+    const restoreWrites = pipe.writes.slice(writesAfterConnect);
+    expect(
+      restoreWrites.filter((w) => w[0] === 0x57 && w.length === 6 + DM32_BLOCK_SIZE),
+    ).toHaveLength(2);
   });
 });

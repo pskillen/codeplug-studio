@@ -51,6 +51,7 @@ import {
 } from './contactCodec.ts';
 import {
   assertDm32RestoreAddressMap,
+  assertDm32RestoreUniqueOccupiedTags,
   listDm32RestoreBlocks,
   type Dm32RestoreLiveAddressMap,
 } from './restoreFromBackup.ts';
@@ -593,6 +594,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
     }
     assertDm32RestoreAddressMap(archive.manifest, this.getLiveRestoreAddressMap());
     const blocks = listDm32RestoreBlocks(archive, opts.regionIds);
+    assertDm32RestoreUniqueOccupiedTags(blocks);
     const settle = { ...this.settle, signal: opts.signal ?? this.settle.signal };
     const scale = settle.settleScale ?? 1;
     const interBlockMs = scale <= 0 ? 0 : DM32_CONNECTION.BLOCK_READ_DELAY_MS * scale;

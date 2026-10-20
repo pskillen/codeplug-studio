@@ -31,6 +31,7 @@ export {
 } from './backupRestoreRoles.ts';
 export {
   assertDm32RestoreAddressMap,
+  assertDm32RestoreUniqueOccupiedTags,
   listDm32RestoreBlocks,
   type Dm32RestoreArchive,
   type Dm32RestoreLiveAddressMap,
