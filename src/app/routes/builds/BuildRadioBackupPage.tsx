@@ -37,6 +37,7 @@ import {
   type RadioBackupSession,
 } from '../../services/radioBackupRestore.ts';
 import { Button, Checkbox, ConfirmModal } from '../../components/v2/index.ts';
+import Dm32CalibrationBackupPanel from './Dm32CalibrationBackupPanel.tsx';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 
 function coverageCopy(coverage: RadioBackupSession['manifest']['coverage']): string {
@@ -441,6 +442,7 @@ export default function BuildRadioBackupPage() {
                 </Table.Tbody>
               </Table>
             </FormSection>
+            <Dm32CalibrationBackupPanel session={backup} />
             {backup.inspectBag ? (
               <RadioCloneSummaryView
                 bag={backup.inspectBag}
