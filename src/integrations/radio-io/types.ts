@@ -139,7 +139,16 @@ export interface RadioDescriptor {
 export interface CloneImageRadio {
   connect(
     pipe: BytePipe,
-    opts?: { signal?: AbortSignal; settleScale?: number; handshake?: 'read' | 'none' },
+    opts?: {
+      signal?: AbortSignal;
+      settleScale?: number;
+      handshake?: 'read' | 'none';
+      /**
+       * DM-32UV backup only. When set, that protocol reads the program-flash
+       * factory sector twice. Other radios ignore this. Write and Restore leave it unset.
+       */
+      captureFactorySector?: boolean;
+    },
   ): Promise<IdentResult>;
   disconnect(): Promise<void>;
   download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap>;

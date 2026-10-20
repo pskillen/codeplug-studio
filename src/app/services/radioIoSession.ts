@@ -171,6 +171,11 @@ export async function openRadioSessionForEgress(
      * (UV-17Pro / RT95). Assemble already finished before this open (#1247).
      */
     purpose?: 'read' | 'write' | 'restore';
+    /**
+     * DM-32UV backup sets this so connect reads the factory sector.
+     * Write and Restore leave it unset. Other radios ignore it.
+     */
+    captureFactorySector?: boolean;
   },
 ): Promise<OpenRadioSessionResult> {
   const candidates = descriptorsForEgress(egress);
@@ -225,6 +230,7 @@ export async function openRadioSessionForEgress(
       await radio.connect(pipe, {
         signal: opts?.signal,
         handshake: opts?.purpose === 'restore' ? 'none' : 'read',
+        ...(opts?.captureFactorySector ? { captureFactorySector: true as const } : {}),
       });
       const session = createRadioSession({ descriptor, pipe, radio });
       return { session, descriptor };

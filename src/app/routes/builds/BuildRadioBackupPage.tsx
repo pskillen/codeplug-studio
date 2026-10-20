@@ -145,6 +145,7 @@ export default function BuildRadioBackupPage() {
       const { session } = await openRadioSessionForEgress(radioEgress!, {
         forcePortSelection: true,
         purpose: 'read',
+        captureFactorySector: true,
       });
       sessionRef.current = session;
       setPhase('transfer');

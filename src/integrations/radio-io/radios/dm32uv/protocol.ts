@@ -21,12 +21,14 @@ import {
 import { decodeChannelsFromDm32Image, encodeChannelsIntoDm32Image } from './channelCodec.ts';
 import {
   dm32AsciiHandshake,
+  dm32CaptureFactorySector,
   dm32EnterProgrammingMode,
   dm32QueryVFrame,
   dm32ReadMemory,
   dm32WriteMemory,
   parseConfigRangeFromV0a,
   parseFirmwareFromVFrames,
+  type Dm32FactorySectorCapture,
   type Dm32SettleOptions,
 } from './connection.ts';
 import {
@@ -138,12 +140,35 @@ export class Dm32uvProtocol implements CloneImageRadio {
   private cache: Dm32DownloadCache | null = null;
   /** Live config range from V-frame 0x0A at connect — survives hydration seed. */
   private liveLayout: Dm32LiveLayout | null = null;
+  /** Matched factory-sector bytes, or null when backup did not keep them. */
+  private factorySector: Uint8Array | null = null;
+  private factorySectorCapture: Dm32FactorySectorCapture | { status: 'not-requested' } = {
+    status: 'not-requested',
+  };
+  /** V-frame 0x02 payload (eFuse UID plus 4 derived bytes). Not a serial. */
+  private efuseIdentity: Uint8Array | null = null;
   private programming = false;
   private lastUploadStaging: WriteVerifyStagingSnapshot | undefined;
 
   /** Last successful download cache (for hydration / RMW). */
   getDownloadCache(): Dm32DownloadCache | null {
     return this.cache;
+  }
+
+  /** Matched 4096-byte factory sector, or null when it was not kept. */
+  getFactorySector(): Uint8Array | null {
+    return this.factorySector ? this.factorySector.slice() : null;
+  }
+
+  /** `not-requested` on Write/Restore. `not-kept` when the two backup reads disagree or fail. */
+  getFactorySectorCapture(): Dm32FactorySectorCapture | { status: 'not-requested' } {
+    if (this.factorySectorCapture.status !== 'kept') return this.factorySectorCapture;
+    return { status: 'kept', bytes: this.factorySectorCapture.bytes.slice() };
+  }
+
+  /** V-frame `0x02` payload when the radio sent one. Not stored as `manifest.serial`. */
+  getEfuseIdentity(): Uint8Array | null {
+    return this.efuseIdentity ? this.efuseIdentity.slice() : null;
   }
 
   /**
@@ -209,14 +234,22 @@ export class Dm32uvProtocol implements CloneImageRadio {
 
   async connect(
     pipe: BytePipe,
-    opts?: { signal?: AbortSignal; settleScale?: number },
+    opts?: { signal?: AbortSignal; settleScale?: number; captureFactorySector?: boolean },
   ): Promise<IdentResult> {
     this.pipe = pipe;
     this.settle = { settleScale: opts?.settleScale ?? 1, signal: opts?.signal };
     this.cache = null;
     this.programming = false;
+    this.factorySector = null;
+    this.factorySectorCapture = { status: 'not-requested' };
+    this.efuseIdentity = null;
 
     const { modelString } = await dm32AsciiHandshake(pipe, this.settle);
+    if (opts?.captureFactorySector) {
+      const capture = await dm32CaptureFactorySector(pipe, this.settle);
+      this.factorySectorCapture = capture;
+      this.factorySector = capture.status === 'kept' ? capture.bytes.slice() : null;
+    }
     const vframes = new Map<number, Uint8Array>();
     for (const id of DM32_VFRAME_QUERY_IDS) {
       throwIfAborted(opts?.signal);
@@ -227,6 +260,9 @@ export class Dm32uvProtocol implements CloneImageRadio {
         // NeonPlug continues when a single V-frame fails.
       }
     }
+
+    const efuse = vframes.get(DM32_VFRAME.EFUSE_IDENTITY);
+    this.efuseIdentity = efuse && efuse.byteLength > 0 ? efuse.slice() : null;
 
     const layoutPayload = vframes.get(DM32_VFRAME.MEMORY_LAYOUT);
     if (!layoutPayload) {

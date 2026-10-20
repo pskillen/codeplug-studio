@@ -44,6 +44,16 @@ Cite: NeonPlug `connection.ts`, `constants.ts`, `protocol.ts` (facts only — do
 4. Send ASCII `PASSSTA` → expect **3 bytes** starting with `0x50`.
 5. Send ASCII `SYSINFO` → expect **1 byte** `0x06`.
 
+## Factory sector (backup only)
+
+Immediately after the `SYSINFO` ACK, and before V-frame queries and PROGRAM entry, a **backup** connect may read the program-flash factory sector at `0x0300B000`–`0x0300BFFF` (4096 bytes). Write and Restore leave this off, so they do not send `0x47`.
+
+Send **only** the 6-byte frame `47 00 00 00 00 10`, twice. Do not send NeonPlug’s 5-byte boot-image `0x47` frame, and do not send `47 00 01 00 00 01`. Do not send any other `0x47` frame.
+
+The reply is opcode `0x53`, then 5 echoed bytes, then 4096 data bytes. Accepting that reply is required. **Sending** opcode `0x43` or `0x53` is forbidden: both erase the sector. Opcode `0x57` stays the codeplug block write, later, in PROGRAM mode.
+
+Keep the 4096 data bytes only when both replies are well-formed and the payloads match. On a mismatch, a short read, or any other failure, keep nothing. Do not send a third command, and do not pick one of the two copies. A mismatch does not abort the rest of the backup.
+
 ## V-frame probe
 
 After handshake, NeonPlug queries V-frames with:
@@ -53,16 +63,17 @@ After handshake, NeonPlug queries V-frames with:
 
 Typical IDs used at connect (NeonPlug loops a fixed list including these):
 
-| ID     | Role (NeonPlug `VFRAME`)             |
-| ------ | ------------------------------------ |
-| `0x01` | Firmware string                      |
-| `0x03` | Build date                           |
-| `0x04` | DSP version                          |
-| `0x05` | Radio version                        |
-| `0x0A` | **Memory layout** (config start/end) |
-| `0x0B` | Codeplug version                     |
-| `0x0E` | Memberships range (noted)            |
-| `0x0F` | **Contacts** memory range / capacity |
+| ID     | Role (NeonPlug `VFRAME`)                                                                           |
+| ------ | -------------------------------------------------------------------------------------------------- |
+| `0x01` | Firmware string                                                                                    |
+| `0x02` | eFuse UID (first 8 bytes) plus 4 derived bytes. Not a serial; do not store it in `manifest.serial` |
+| `0x03` | Build date                                                                                         |
+| `0x04` | DSP version                                                                                        |
+| `0x05` | Radio version                                                                                      |
+| `0x0A` | **Memory layout** (config start/end)                                                               |
+| `0x0B` | Codeplug version                                                                                   |
+| `0x0E` | Memberships range (noted)                                                                          |
+| `0x0F` | **Contacts** memory range / capacity                                                               |
 
 **Config range (`0x0A`):** 8 bytes = `start_addr` (u32 LE) + `end_addr` (u32 LE). Feeds discovery — see [memory-layout.md](memory-layout.md).
 
@@ -106,8 +117,8 @@ A `0x57` ACK does not rebuild the RAM tag table, and ending the PC-link session 
 
 ## Typical session flow
 
-1. Open serial @ 115200 → ASCII handshake.
-2. Query V-frames (at least `0x0A` for range; `0x0F` for contacts capacity/range).
+1. Open serial @ 115200 → ASCII handshake. Backup then reads the factory sector (`47 00 00 00 00 10`, twice) before V-frames. Write and Restore skip that read.
+2. Query V-frames (at least `0x0A` for range; `0x0F` for contacts capacity/range; `0x02` is the eFuse identity when present).
 3. Enter PROGRAM mode.
 4. Discover blocks by reading metadata at each `addr + 0xFFF` in the config range.
 5. Bulk-read required 4KB blocks ([memory-layout.md](memory-layout.md)).
@@ -119,7 +130,7 @@ Upload stages each **post-remap 4 KB block** actually written. **Verify write** 
 
 ## Boot-image side note
 
-NeonPlug also has a **boot-image** path (`enterBootImageReadMode`, `writeMemoryBlock`) with different entry bytes (`0x47 …`) and writes of 2048/4096 without the codeplug metadata byte. **Out of scope** for codeplug adapter [#638](https://github.com/pskillen/codeplug-studio/issues/638) — document only so agents do not confuse it with codeplug R/W.
+The factory-sector read above is the only `0x47` frame Studio sends. NeonPlug also has a **boot-image** path (`enterBootImageReadMode`, `writeMemoryBlock`) with different `0x47` frames and writes of 2048/4096 without the codeplug metadata byte. That boot-image read and write is **out of scope** — do not add it, and do not treat the factory-sector read as permission to send any other `0x47` frame. Never send opcode `0x43` or `0x53`.
 
 ## Related
 
