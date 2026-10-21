@@ -1,10 +1,10 @@
-# Plan: core firmware foundation, stock pins, and stock-target prepare
+# Plan: core firmware foundation and release patch formats
 
-**Phase 3 of 13** in the modded firmware flasher series. This file is self-contained.
+**Phase 2 of 4** in the modded firmware flasher series. This file is self-contained.
 
-**Tracking:** [#1360](https://github.com/pskillen/codeplug-studio/issues/1360) (epic [#1358](https://github.com/pskillen/codeplug-studio/issues/1358))
-**Branch:** `1360/pskil/firmware-stock-pins`, from `origin/1364/pskil/d890-roundtrip-spike`. **PR base:**
-`1364/pskil/d890-roundtrip-spike`. **PR body:** `Closes #1360`.
+**Tracking:** [#1360](https://github.com/pskillen/codeplug-studio/issues/1360) and [#1361](https://github.com/pskillen/codeplug-studio/issues/1361), both closed by this PR. Epic [#1358](https://github.com/pskillen/codeplug-studio/issues/1358).
+**Branch:** `1360/pskil/firmware-core`, from `origin/1359/pskil/firmware-design-and-timing`. **PR base:**
+`1359/pskil/firmware-design-and-timing`. **PR body:** `Closes #1360`, `Closes #1361`.
 
 ---
 
@@ -53,7 +53,7 @@ Containers are reclaimed between phases. Assume nothing is set up.
 - **No vendor firmware, ever, in any committed path.** That means no stock `.bin`, `.CDD`, `.CDI` or `.spi`, no
   vendor zip, and no slice of one: not in `src/`, test fixtures, docs, scripts or the planning branch. Tests build
   **synthetic** images in memory, and compute hashes on the fly. Studio's own release patch files are allowed, and
-  only phase 7 adds them.
+  only phase 3 adds them.
 - **Hard interlocks are code.** No setting, flag, env value, query parameter or patch field may disable one.
 - **Layers:**
   - `src/core/` has no React, DOM, `@app` or `@integrations` imports;
@@ -64,11 +64,32 @@ Containers are reclaimed between phases. Assume nothing is set up.
 - **Never touch hardware**, and never ask anyone to except through the "Hardware gate" section, which the
   orchestrator handles. Do not start the next phase.
 
-## Context
+## What this phase delivers
+
+Pure core code, no UI and no hardware gate (the orchestrator stops for review):
+
+- **Part A (#1360):**
+  - firmware types, SHA-256 and hex helpers, `FirmwareError`;
+  - both radios' pinned stock descriptors (`firmware.ts` next to `limits.ts`) and a stock catalog;
+  - `resolveStockFirmware` + `StockSource`;
+  - `prepareFirmwareImage` for the **stock** target;
+  - tier-3 `firmware.md` stock sections.
+- **Part B (#1361):** the two release patch formats (parse and apply), with synthetic patch makers and refusal
+  tests.
+
+## Preconditions
+
+- `origin/1359/pskil/firmware-design-and-timing` exists. It contains phase 1: the DESIGN.md "Firmware flashing"
+  section, the agent rule, and the D890 timing pass on the debug page.
+- `src/core/firmware/` does **not** exist yet.
+
+## Part A: core firmware foundation, stock pins and stock-target prepare (#1360)
+
+### Background
 
 Studio will flash firmware that the **user supplies**. The user gives either the vendor zip or the files extracted
 from it. Studio verifies them against pinned SHA-256s, optionally applies a release patch (later phases), and hands
-the image to a bootloader updater (later phases). This phase lays the **pure core foundation**:
+the image to a bootloader updater (later phases). This part lays the **pure core foundation**:
 
 - firmware types, a SHA-256 helper, a strict hex parser, and typed errors (`src/core/firmware/`);
 - each radio's **pinned stock descriptor**, next to its `limits.ts` (`src/core/radios/<mfr>/<model>/firmware.ts`);
@@ -87,13 +108,7 @@ the image to a bootloader updater (later phases). This phase lays the **pure cor
 computed in the test. The real pins in `firmware.ts` are never matched by any test, because that would need vendor
 bytes. Never download, fetch or commit stock firmware.
 
-## Preconditions
-
-- `origin/1364/pskil/d890-roundtrip-spike` exists. It contains phase 1 (DESIGN.md "Firmware flashing") and phase 2
-  (D890 debug round-trip pass).
-- `src/core/firmware/` does **not** exist yet.
-
-## Current state (verify)
+### Current state (verify)
 
 - `src/core/radios/baofeng/dm-32uv/limits.ts`: `export const DM32UV_LIMITS = { … }` with a header comment
   "Code mirror of limits.md". Nothing firmware-related.
@@ -120,7 +135,7 @@ bytes. Never download, fetch or commit stock firmware.
   `docs/reference/radios/anytone/at-d890uv/README.md`. Each has a `## Documentation map` table
   (`| Doc | Contents |`) with rows such as `| [limits.md](limits.md) | … |`.
 
-## Target shapes (create exactly these; later phases depend on them)
+### Target shapes (create exactly these; later phases depend on them)
 
 `src/core/firmware/types.ts`:
 
@@ -217,9 +232,9 @@ export class FirmwareError extends Error {
 Every message names the problem in user terms. For example: "This is AT-D890UV firmware, but you picked the
 DM-32UV." or "This zip is not stock v1.01.048."
 
-## Slice 1: types, hash, hex, errors
+### Slice 1: types, hash, hex, errors
 
-- Create the files above plus `src/core/firmware/index.ts` (a barrel for everything in this phase).
+- Create the files above plus `src/core/firmware/index.ts` (a barrel for everything in this part).
 - Tests:
   - `hash.test.ts`: `sha256Hex(new TextEncoder().encode('abc'))` equals
     `ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad`, and the empty input equals
@@ -229,7 +244,7 @@ DM-32UV." or "This zip is not stock v1.01.048."
 
 **Commit checkpoint:** `feat(firmware): add core firmware types, hashing and errors`
 
-## Slice 2: pinned stock descriptors
+### Slice 2: pinned stock descriptors
 
 `src/core/radios/baofeng/dm-32uv/firmware.ts`. The values come from `baofeng-dm32-firmware`
 `tools/ci/fetch-stock.sh` and `tools/ci/stock-zip.sha256`; cross-check them there:
@@ -339,7 +354,7 @@ Test `stockCatalog.test.ts`:
 
 **Commit checkpoint:** `feat(firmware): pin DM-32UV and AT-D890UV stock firmware`
 
-## Slice 3: stock resolution and `StockSource`
+### Slice 3: stock resolution and `StockSource`
 
 `src/core/firmware/stock/resolveStockFirmware.ts`:
 
@@ -424,12 +439,12 @@ bytes, and compute the hashes with `sha256Hex`. Use `zipSync` from fflate to bui
 
 **Commit checkpoint:** `feat(firmware): verify user-supplied stock firmware`
 
-## Slice 4: `prepareFirmwareImage` (stock target)
+### Slice 4: `prepareFirmwareImage` (stock target)
 
 `src/core/services/firmware/prepareFirmwareImage.ts`:
 
 ```ts
-/** Phase 7 (#1362) widens this union with { kind: 'patch'; patch: LoadedFirmwarePatch }. */
+/** Phase 3 (#1362 catalog) widens this union with { kind: 'patch'; patch: LoadedFirmwarePatch }. */
 export type FirmwareTarget = { readonly kind: 'stock' };
 
 declare const preparedBrand: unique symbol;
@@ -474,7 +489,7 @@ Test `prepareFirmwareImage.test.ts`:
 
 **Commit checkpoint:** `feat(firmware): prepare stock firmware images`
 
-## Slice 5: tier-3 docs
+### Slice 5: tier-3 docs
 
 Create `docs/reference/radios/baofeng/dm-32uv/firmware.md` and `docs/reference/radios/anytone/at-d890uv/firmware.md`
 (tier 3: radio facts are allowed here). Each has:
@@ -491,64 +506,291 @@ Add a `| [firmware.md](firmware.md) | Stock firmware pin, update-mode entry (fla
 
 **Commit checkpoint:** `docs(radios): add DM-32UV and AT-D890UV stock firmware pins`
 
+## Part B: release patch formats (#1361)
+
+### Background
+
+Each firmware release is a **JSON patch**: the bytes that differ between the pinned stock firmware and the built
+image, plus SHA-256s that pin both ends. Two patch formats exist, one per radio, and both are `format: 1`. This part
+ports their `apply` to pure TypeScript in core, as a small dispatcher plus one module per patch `name`, modelled like
+an import format. Studio's parser is **stricter** than the Python, because a user-supplied patch is untrusted input.
+
+Only the format modules know about `.CDD`, offsets, segments or hooks. They map wire keys to **member roles** (the
+D890 `".CDD"` becomes role `cdd`), so generic code compares hashes by role.
+
+**Vendor firmware rule:** every test builds a **synthetic** stock package from seeded random bytes, and makes the
+patch with a test-only port of each repo's `make`. Never use or commit real stock bytes. The real published patches
+arrive in phase 3, and they aren't apply-tested in CI (there's no stock there).
+
+### The two formats (the spec; the Python source is in the firmware repos)
+
+**`baofeng-dm32-firmware` format 1** (`baofeng-dm32-firmware/fw/make_patch.py`):
+
+```json
+{ "format": 1, "name": "baofeng-dm32-firmware", "version": "1.0.0",
+  "stock":  { "sha256": "<64hex>", "size": 860416 },
+  "result": { "sha256": "<64hex>", "size": 860416 },
+  "segments": [ { "offset": 372, "hex": "06e0c683" }, … ],
+  "neutral_sha256": "<64hex>",                       // optional; unused by Studio
+  "version_slot": { "offset": 856492, "len": 24 } }  // optional; for the version stamp
+```
+
+The Python `apply`:
+
+```python
+def apply(stock, patch):
+    if patch.get("format") != 1: raise "unknown patch format"
+    if sha(stock) != patch["stock"]["sha256"] or len(stock) != patch["stock"]["size"]: raise "not the stock image"
+    out = bytearray(stock)
+    for s in patch["segments"]:
+        d = bytes.fromhex(s["hex"]); o = s["offset"]
+        if o > len(out): raise "segment leaves a gap"
+        out[o:o + len(d)] = d            # overwrite; extends when past the end
+    if sha(out) != patch["result"]["sha256"] or len(out) != patch["result"]["size"]: raise "result mismatch"
+    return out
+```
+
+`make` merges differing runs closer than `GAP = 16` bytes into one segment. A result longer than stock has its tail
+as one more segment, merged with the last segment when that ends exactly at `len(stock)`.
+
+**`anytone-d890-firmware` format 1** (`anytone-d890-firmware/fw/make_patch.py`):
+
+```json
+{ "format": 1, "name": "anytone-d890-firmware", "version": "1.0.0",
+  "stock":  { ".CDD": {"sha256","size"}, ".CDI": {…}, ".spi": {…} },
+  "result": { ".CDD": {…}, ".CDI": {…}, ".spi": {…} },
+  "append": { "offset": 1675272, "hex": "…" },
+  "hooks":  [ { "offset": 10, "original": "…", "hex": "…" }, … ] }
+```
+
+The Python `apply`:
+
+```python
+CDI_LEN_OFF = 0x104; SPI_LEN_OFF = 6; EXTS = (".CDD", ".CDI", ".spi")
+def apply(stock, patch):
+    if patch.get("format") != 1: raise
+    for ext in EXTS: check sha/size of stock[ext] against patch["stock"][ext]
+    cdd = bytearray(stock[".CDD"])
+    for h in patch["hooks"]:
+        orig, new = bytes.fromhex(h["original"]), bytes.fromhex(h["hex"]); off = h["offset"]
+        if len(orig) != len(new) or off < 0 or off + len(orig) > len(cdd): raise "hook outside image or changes length"
+        if cdd[off:off+len(orig)] != orig: raise "original bytes do not match"
+        cdd[off:off+len(new)] = new
+    if patch["append"]["offset"] != len(cdd): raise "append not at end"
+    cdd += bytes.fromhex(patch["append"]["hex"])
+    out = {".CDD": cdd, ".CDI": with_length(stock[".CDI"], 0x104, len(cdd)), ".spi": with_length(stock[".spi"], 6, len(cdd))}
+    for ext in EXTS: check sha/size of out[ext] against patch["result"][ext]
+    return out
+# with_length: copy, then struct.pack_into("<I", buf, off, n); refuse if off + 4 > len(buf)
+```
+
+`make` merges hooks the same way (`GAP = 16`) and stores `stock[start:last+1]` as `original`. The append is
+`built[len(stock):]`, and `make` refuses a `.CDI` or `.spi` that differs from stock by more than the length fields.
+
+### Target shapes
+
+`src/core/firmware/patch/types.ts`:
+
+```ts
+export interface FirmwarePatchHashes { readonly sha256: string; readonly size: number }
+
+/** Release metadata every format exposes. stock/result are keyed by member ROLE. */
+export interface FirmwarePatchDescription {
+  readonly name: string;
+  readonly format: number;
+  readonly version: string;
+  readonly stock: Readonly<Record<string, FirmwarePatchHashes>>;
+  readonly result: Readonly<Record<string, FirmwarePatchHashes>>;
+}
+
+export interface FirmwarePatchFormat<P> {
+  readonly name: string;                 // 'baofeng-dm32-firmware'
+  readonly formats: readonly number[];   // [1]
+  /** Structural validation of untrusted JSON. Throws FirmwareError('patch-malformed' | 'patch-unknown-format'). */
+  parse(json: unknown): P;
+  describe(p: P): FirmwarePatchDescription;
+  /** Pure: verify stock, apply, verify result. Never mutates `stock`. Output radioId = stock.radioId. */
+  apply(stock: FirmwarePackage, p: P): Promise<FirmwarePackage>;
+  /** Optional: the tag stamped into the result image, for the flash summary. */
+  readVersionStamp?(result: FirmwarePackage, p: P): string | undefined;
+}
+
+export interface ParsedFirmwarePatch {
+  readonly format: FirmwarePatchFormat<unknown>;
+  readonly patch: unknown;
+  readonly description: FirmwarePatchDescription;
+}
+```
+
+`src/core/firmware/patch/index.ts`:
+
+```ts
+export function listFirmwarePatchFormats(): readonly FirmwarePatchFormat<unknown>[];
+/** bytes → UTF-8 (fatal) → JSON → dispatch on `name` + `format`. */
+export function parseFirmwarePatch(bytes: Uint8Array): ParsedFirmwarePatch;
+export function applyFirmwarePatch(stock: FirmwarePackage, parsed: ParsedFirmwarePatch): Promise<FirmwarePackage>;
+export function readFirmwarePatchVersionStamp(result: FirmwarePackage, parsed: ParsedFirmwarePatch): string | undefined;
+```
+
+**Errors:**
+
+| Condition | Code |
+| --- | --- |
+| Bad UTF-8 or bad JSON | `patch-unreadable` |
+| Not an object, unknown `name`, or `name` known but `format` not in `formats` | `patch-unknown-format`, with a message naming the name and format |
+| Any structural problem | `patch-malformed` |
+| Stock hash or size mismatch inside `apply` | `patch-wrong-stock` |
+| D890 original bytes differ | `patch-original-mismatch` |
+| Result hash or size mismatch | `patch-result-mismatch` |
+
+Structural problems include: missing or extra-typed fields, a non-integer or negative offset, bad hex, a sha256 that
+isn't 64 hex, a gap, an out-of-range or unequal-length hook, a wrong append offset, and a length field outside its
+buffer.
+
+### Slice 6: dispatcher and `baofeng-dm32-firmware`
+
+- `patch/types.ts` and `patch/index.ts` as above. The dispatcher registers the format modules.
+- `patch/formats/baofeng-dm32-firmware/`:
+  - `schema.ts`: `parseDm32Patch(json: unknown): Dm32PatchV1`. Check every field's type: `segments` is an array of
+    `{offset: int ≥ 0, hex}` (validate the hex with `hexToBytes` up front); `stock`/`result` are
+    `{sha256: 64-hex, size: int ≥ 0}`; the optional `version_slot` is `{offset, len}` ints with `len` 1..64; the
+    optional `neutral_sha256` is 64-hex. Unknown extra keys are allowed and ignored.
+  - `apply.ts`: a port of `apply` above. Copy into a new `Uint8Array`, growing it when a segment extends past the
+    end. Hash with `sha256Hex`. Return `{ radioId: stock.radioId, files: { [DM32UV_FIRMWARE_ROLE_BIN]: out } }`. The
+    input package must have exactly the `bin` role, otherwise `patch-wrong-stock`.
+  - `describe`: maps `stock`/`result` to `{ bin: {sha256, size} }`.
+  - `readVersionStamp`: when `version_slot` exists, read `result.files.bin[offset, offset+len)` from the **result
+    image**, trim at the first NUL, and decode as ASCII. Return `undefined` when it's empty or non-printable.
+  - `index.ts`: exports the `FirmwarePatchFormat<Dm32PatchV1>` object `baofengDm32PatchFormat`.
+  - `__fixtures__/makeSyntheticPatch.ts`: a test-only port of `make` (with the `GAP = 16` merge, and the tail
+    segment merged when contiguous). Signature:
+    `makeSyntheticDm32Patch(stock: Uint8Array, built: Uint8Array, version: string, opts?: { versionSlot?: {offset; len} }): Promise<object>`.
+    It computes the hashes with `sha256Hex`.
+- Tests (`apply.test.ts`), porting `baofeng-dm32-firmware/fw/test_make_patch.py` onto a seeded random 5,000-byte
+  stock:
+  - identical images: `segments: []`, and apply returns stock;
+  - flips at 10, 20 and 4000 plus a 4-byte tail: **3 segments** (10 and 20 merge, then 4000, then the tail), and the
+    round trip is exact;
+  - a flip at the last stock byte plus a tail `xyz`: the last segment ends with hex `78797a`;
+  - wrong stock (last byte changed) → `patch-wrong-stock`;
+  - a tampered segment hex → `patch-result-mismatch`;
+  - a gap (segment offset > current length) → `patch-malformed`;
+  - malformed: odd hex, a negative offset, a string offset, a missing `result` → `patch-malformed`;
+  - `parseFirmwarePatch` with `name: 'nope'` → `patch-unknown-format`; with format `2` → `patch-unknown-format`;
+    non-JSON bytes → `patch-unreadable`;
+  - the input package is not mutated (snapshot its bytes before and compare after);
+  - the version stamp: slot bytes `"1.0.0\0\0…"` read back as `1.0.0`.
+
+**Commit checkpoint:** `feat(firmware): parse and apply DM-32UV release patches`
+
+### Slice 7: `anytone-d890-firmware`
+
+- `patch/formats/anytone-d890-firmware/`:
+  - `schema.ts`: `parseD890Patch(json): D890PatchV1`. `stock` and `result` must have **exactly** the keys `.CDD`,
+    `.CDI` and `.spi`. `hooks` is an array of `{offset: int ≥ 0, original: hex, hex: hex}` with equal decoded
+    lengths. `append` is `{offset: int ≥ 0, hex}`.
+  - `constants.ts` (format-private): `WIRE_TO_ROLE = { '.CDD': AT_D890UV_FIRMWARE_ROLE.CDD, '.CDI': …CDI, '.spi': …SPI }`,
+    `CDI_LEN_OFF = 0x104` and `SPI_LEN_OFF = 6`.
+  - `apply.ts`: a port of `apply` above, working on roles `cdd`/`cdi`/`spi`. Write the u32 LE length with a
+    `DataView`.
+  - `describe`: maps the wire keys to roles.
+  - `readVersionStamp`: not provided. The D890 image has no fixed slot in the patch; its version shows on the radio's
+    Device Info.
+  - `__fixtures__/makeSyntheticPatch.ts`: a port of `make`, `makeSyntheticD890Patch(stock: {cdd, cdi, spi}, built: {cdd, cdi, spi}, version)`.
+  - A test helper `synthD890Stock(len = 5000)`:
+    - `.CDD` of seeded random bytes;
+    - a 278-byte `.CDI` (name padded to `0x100`, then u32 LE `addr = 0x0800C000`, `len`, `off = 0`, `flag = 0x10000`,
+      zero padding to 278);
+    - a 51-byte `.spi` (u32 `0x20`, u16 `count = 1`, u32 `total = len`, then `D890UV  V100`, padded to 51).
+
+    This mirrors `synth()` in `anytone-d890-firmware/tools/test_d890update.py`. The length fields **must** be
+    consistent, so the length rewrite is tested meaningfully.
+- Tests (`apply.test.ts`). These are **rewritten onto the synthetic package**: the firmware repo's own
+  `fw/test_make_patch.py` reads the real stock through `stock.stock_dir()`, so it can't be ported as-is.
+  - identical: `hooks: []`, `append` is `{offset: len, hex: ''}`, and apply returns stock;
+  - flips at 10, 20 and 4000 plus a `tail` append: **2 hooks** (10 and 20 merge; 4000 stays separate).
+    `hooks[0].original` equals stock `[10..21)` hex. The append hex is `7461696c`. Apply equals built, including the
+    rewritten `.CDI+0x104` and `.spi+6` (both equal the new length);
+  - wrong stock `.CDD` (one byte flipped) → `patch-wrong-stock`;
+  - a tampered hook `hex` → `patch-result-mismatch`;
+  - a hook `original` that doesn't match → `patch-original-mismatch`;
+  - an out-of-range hook, or unequal `original`/`hex` lengths → `patch-malformed`;
+  - an append offset ≠ the `.CDD` length after hooks → `patch-malformed`;
+  - extra or missing keys in `stock` → `patch-malformed`;
+  - the input is not mutated.
+
+**Commit checkpoint:** `feat(firmware): parse and apply AT-D890UV release patches`
+
+### Slice 8: barrel and docs
+
+- Export the patch API from `src/core/firmware/index.ts`.
+- Docs: add a short **"Release patch format"** section to `docs/reference/radios/baofeng/dm-32uv/firmware.md` and
+  `docs/reference/radios/anytone/at-d890uv/firmware.md`, created earlier in this part. Cover the fields, the apply order, and
+  the refusal list, as tier-3 wire facts. Name the firmware repos' `fw/make_patch.py` as the source; the repos are
+  private, so don't link them.
+
+**Commit checkpoint:** `docs(radios): document the firmware release patch formats`
+
 ## Test plan
 
-- [ ] All new tests pass; no test reads a real stock file or uses the real pins as a match target
+- [ ] All new tests pass. No test reads a real stock file, or uses the real pins or real hashes as match targets or
+      apply inputs
 - [ ] `grep -rn "from '@integrations\|from '@app" src/core/firmware src/core/services/firmware` finds nothing
-- [ ] `src/core/firmware/*.ts` (outside `radios/`) contains no `.CDD`, `.bin` or `0x104` literals
+- [ ] Generic `src/core/firmware/*.ts`, `stock/`, `patch/index.ts`, `patch/types.ts` and `services/firmware/` contain
+      no `.CDD`, `.bin` or `0x104` literals
 - [ ] `npm run format:check && npm run lint && npm run test && npm run build`
 
 ## Git workflow
 
-- **Branch:** `1360/pskil/firmware-stock-pins`. Create it with `git checkout -B 1360/pskil/firmware-stock-pins origin/1364/pskil/d890-roundtrip-spike`. This is a **stacked** start: the previous phase branch, not `main`.
-- **PR base:** `1364/pskil/d890-roundtrip-spike`. Do **not** target `main`.
+- **Branch:** `1360/pskil/firmware-core`. Create it with `git checkout -B 1360/pskil/firmware-core origin/1359/pskil/firmware-design-and-timing`. This is a **stacked** start: the previous phase branch, not `main`.
+- **PR base:** `1359/pskil/firmware-design-and-timing`. Do **not** target `main`.
 - **Commit as you go.** At every commit checkpoint:
   1. run the checks that apply;
   2. stage only that slice's files;
   3. make one atomic conventional commit (`feat`, `fix`, `docs`, `style`, `refactor`, `chore`; never the word
      "enhance").
 
-  This overrides "commit only when asked". Never batch slices. After any context summary, check `git log -5` and
-  `git status -sb`.
+  This overrides "commit only when asked". This phase is large: keep every slice its own commit. Never batch slices.
+  After any context summary, check `git log -5` and `git status -sb`.
 - **Before the PR:**
   1. `npm run format`, and commit any drift as `chore: format`;
   2. `npm run format:check && npm run lint && npm run test && npm run build`, all green.
-- **Push:** `git push -u origin 1360/pskil/firmware-stock-pins`.
-- **PR:** use `mcp__github__create_pull_request` (owner `pskillen`, repo `codeplug-studio`, head `1360/pskil/firmware-stock-pins`,
-  base `1364/pskil/d890-roundtrip-spike`). The title is a conventional summary. The body has:
-  - Summary;
+- **Push:** `git push -u origin 1360/pskil/firmware-core`.
+- **PR:** use `mcp__github__create_pull_request` (owner `pskillen`, repo `codeplug-studio`, head `1360/pskil/firmware-core`,
+  base `1359/pskil/firmware-design-and-timing`). The title is a conventional summary. The body has:
+  - Summary, by Part;
   - **Documentation** checklist (hub / deep dive / sidecar / index row, or N/A with a reason);
   - **Test plan**;
   - **Deviations from the phase file** (say "none" if none);
-  - `Closes #1360`.
+  - `Closes #1360, Closes #1361`.
+- **No hardware gate.** After the PR is open, return to the orchestrator; it stops for review.
 - **Do not merge.** Do not wait for CI.
 - **Return to the orchestrator:** the PR URL, the branch head SHA, the deviations, and anything the next phase must
   know.
 
 ## Hardware gate
 
-None. The orchestrator stops after this phase for review.
+None. The orchestrator stops after this phase for the owner's review.
 
 ## Out of scope
 
-- Patch formats (phase 4); the patch target, release catalog and `LoadedFirmwarePatch` (phase 7).
-- Updaters and app UI (phases 5 and 6). There is no feature hub yet.
+- The release catalog, `LoadedFirmwarePatch` and the patch target in `prepareFirmwareImage` (phase 3, Part C).
+- Checking a patch's stock hashes against the **pinned** descriptor at prepare time (phase 3). Here, `apply` checks
+  the patch against the stock **it is given**.
+- Updaters and UI (phases 3 and 4).
 
 ## Cross-phase note
 
-Later phases import these exact names and paths:
+Phases 3 and 4 import these exact names and paths:
 
 - `@core/firmware/types.ts`: `FirmwareRadioId`, `NamedBytes`, `StockFirmwareDescriptor`, `FirmwarePackage`,
   `FirmwareProvenance`, `KnownPatchedResult`;
-- `@core/firmware/hash.ts`: `sha256Hex`; `@core/firmware/hex.ts`: `hexToBytes`, `bytesToHex`;
-- `@core/firmware/errors.ts`: `FirmwareError`, `FirmwareErrorCode`;
-- `@core/firmware/stockCatalog.ts`: `listStockFirmwareDescriptors`, `getStockFirmwareDescriptor`;
-- `@core/firmware/stock/resolveStockFirmware.ts`: `resolveStockFirmware`, `VerifiedStockFirmware`,
-  `ResolveStockContext`;
-- `@core/firmware/stock/stockSource.ts`: `createUserFileStockSource`;
-- `@core/services/firmware/prepareFirmwareImage.ts`: `prepareFirmwareImage`, `PreparedFirmwareImage`,
-  `FirmwareTarget`;
-- the radio constants `DM32UV_FIRMWARE_*`, `DM32UV_STOCK_FIRMWARE`, `AT_D890UV_FIRMWARE_ROLE` and
-  `AT_D890UV_STOCK_FIRMWARE`.
+- `hash.ts` `sha256Hex`; `hex.ts` `hexToBytes`, `bytesToHex`; `errors.ts` `FirmwareError`;
+- `stockCatalog.ts`; `stock/resolveStockFirmware.ts`, `stock/stockSource.ts`;
+- `patch/index.ts`: `parseFirmwarePatch`, `applyFirmwarePatch`, `readFirmwarePatchVersionStamp`,
+  `ParsedFirmwarePatch`;
+- `@core/services/firmware/prepareFirmwareImage.ts`;
+- the radio constants in both `firmware.ts` files;
+- `describe().stock` and `.result` keyed by **role**.
 
-Don't rename them without noting it in the PR. The orchestrator passes renames forward.
+Note any rename in the PR.

@@ -1,10 +1,16 @@
-# Plan: AT-D890UV bootloader updater
+# Plan: AT-D890UV end to end (updater, wizard, recovery docs, prod enable)
 
-**Phase 10 of 13** in the modded firmware flasher series. This file is self-contained.
+**Phase 4 of 4** in the modded firmware flasher series. This file is self-contained.
 
-**Tracking:** [#1364](https://github.com/pskillen/codeplug-studio/issues/1364), part 2 (epic [#1358](https://github.com/pskillen/codeplug-studio/issues/1358))
-**Branch:** `1364/pskil/d890-firmware-updater`, from `origin/1363/pskil/dm32-flash-prod-enable`. **PR base:**
-`1363/pskil/dm32-flash-prod-enable`. **PR body:** `Part of #1364`.
+**Tracking:**
+
+- [#1364](https://github.com/pskillen/codeplug-studio/issues/1364) (closes);
+- [#1365](https://github.com/pskillen/codeplug-studio/issues/1365) (closes: slice 3);
+- [#1366](https://github.com/pskillen/codeplug-studio/issues/1366) (closes).
+
+Epic [#1358](https://github.com/pskillen/codeplug-studio/issues/1358).
+**Branch:** `1364/pskil/firmware-d890`, from `origin/1363/pskil/firmware-dm32`. **PR base:** `1363/pskil/firmware-dm32`.
+**PR body:** `Closes #1364`, `Closes #1365`, `Closes #1366`.
 
 ---
 
@@ -53,7 +59,7 @@ Containers are reclaimed between phases. Assume nothing is set up.
 - **No vendor firmware, ever, in any committed path.** That means no stock `.bin`, `.CDD`, `.CDI` or `.spi`, no
   vendor zip, and no slice of one: not in `src/`, test fixtures, docs, scripts or the planning branch. Tests build
   **synthetic** images in memory, and compute hashes on the fly. Studio's own release patch files are allowed, and
-  only phase 7 adds them.
+  only phase 3 adds them.
 - **Hard interlocks are code.** No setting, flag, env value, query parameter or patch field may disable one.
 - **Layers:**
   - `src/core/` has no React, DOM, `@app` or `@integrations` imports;
@@ -63,32 +69,80 @@ Containers are reclaimed between phases. Assume nothing is set up.
 - **Docs ship in the same PR** as the behaviour they describe.
 - **Never touch hardware**, and never ask anyone to except through the "Hardware gate" section, which the
   orchestrator handles. Do not start the next phase.
+- **All user-facing strings are written for an end-user operator; no internal/test-status notes.** Don't put
+  Studio's own testing history or proof status in the UI ("not yet hardware-proven" and similar). That belongs in
+  docs and issues. Release-specific facts the operator needs, such as a release's own notes or an RC's "pre-release,
+  for testing" pill, are fine.
 
-## Context
+## What this phase delivers
 
-This phase adds the **AT-D890UV** firmware updater behind the existing `FirmwareUpdater` seam. It is a byte-exact
+Everything for the AT-D890UV, plus the recovery docs, in one PR with atomic commits:
+
+- **Part A (#1364, part 2):** the AT-D890UV updater (byte-exact port of `d890update.py`, firmware mode only), the
+  mock bootloader, and every interlock, including the band byte. It is registered with `prodFlashDisabled: true`.
+  The part also records the JS-side timing, and optionally a pipe optimisation if the owner asked after phase 1's
+  timing gate.
+- **Part B (#1365, slice 3):** the wizard handles D890 end states (`port-closed-by-radio`, `no-reply`), throttles
+  long progress, and shows the connect-step warnings.
+- **Part C (#1366):** stock flash as the documented recovery path: the hub's Recovery section, and links from the
+  wizard and the docs. There is **no** stock hardware gate. Both firmware projects' flashers have flashed stock many
+  times, and Studio's stock flash is the zero-patch case of the same stream.
+- **Hardware gate:** the owner flashes **bundled AT-D890UV `1.0.0`** from `dev`.
+- **Final slice, after the owner confirms the gate:** one commit sets AT-D890UV `prodFlashDisabled: false`.
+
+## Current state from earlier phases (verify; adapt if names drifted and note it in the PR)
+
+Phase 3 (DM-32UV) is complete on the start ref, including its final prod-enable commit. App and wizard facts:
+
+- `src/app/services/firmwareFlashEnvGate.ts`:
+  - `resolveFirmwareFlashGate(descriptor, buildEnv)` returns `'hidden'` iff prod && `prodFlashDisabled`, with no
+    Capacitor exemption;
+  - `listOfferedFirmwareUpdaters(buildEnv?)`.
+- `src/app/services/firmwareFlash.ts`:
+  - `filesToNamedBytes`, `verifyStockFiles` (with `listKnownPatchedResults`);
+  - `FirmwareChoice` (`stock` / `release` / `user-patch`), `listBundledReleases`, `loadChosenPatch`, `prepareFlash`;
+  - `grantFirmwarePort` (`requestWebSerialPort(true, link.usbFilters)`);
+  - `runFirmwareFlash` (open → identify → flash → always close, swallowing close errors) returning
+    `FirmwareFlashOutcome`;
+  - `formatFirmwareFlashSummary`.
+- `src/app/routes/firmware/`:
+  - `FirmwareFlasherPage.tsx`, `steps/*`, `firmwareWizardState.ts`, `ReleaseNotes.tsx`;
+  - steps: Radio → Firmware (releases, RC toggle, notes, stock entry, Advanced user patch) → Stock firmware →
+    Prepare → Before you flash → Enter update mode → Connect and flash → Done or failed;
+  - the failure screen for `radioTouched: true` says "Don't keep power-cycling" and has a placeholder recovery link;
+  - the Done step shows "Check: <image.verifyHint>".
+- The hub `docs/features/firmware-flashing/README.md` has an Implementation status table, a placeholder `## Recovery`
+  heading, and the documentation map. `docs/features/modded-firmware/README.md` links the hub.
+- The catalog `src/core/firmware/releases/index.ts` has the AT-D890UV `1.0.0` row
+  (`verifyHint: 'Menu > Device Info > Version shows "1.0.0".'`).
+- The DM-32UV descriptor has `prodFlashDisabled: false`. **Don't touch it.**
+
+## Part A: AT-D890UV bootloader updater (#1364)
+
+### Background
+
+This part adds the **AT-D890UV** firmware updater behind the existing `FirmwareUpdater` seam. It is a byte-exact
 port of `anytone-d890-firmware/tools/d890update.py`, **firmware mode only**: no resource mode (`PROGRAM`), and no
 ICON pack. That sender has written modded images (MOD, rc.2, rc.3) to real radios.
 
 The updater is **registered normally**, with:
 
-- `prodFlashDisabled: true`: hidden on prod, visible on next, dev and staging;
-- `stockFlashHardwareProven: false`: Studio has never flashed D890 stock; that is proven in phase 12.
+- `prodFlashDisabled: true`: hidden on prod, visible on next, dev and staging. This part's final commit clears it,
+  after the owner flashes `1.0.0` from `dev`.
 
-The wizard is radio-generic, so the D890 will appear on pre-prod once registered. D890-specific wizard wording and
-the hardware run come in phase 11.
+The wizard is radio-generic, so the D890 will appear on pre-prod once registered. D890-specific wizard wording comes in Part B.
 
-**Throughput.** Phase 2 measured Web Serial round trips on a real D890, read-only. The orchestrator's "Prior phases"
-note carries the numbers and the owner's decision. **If the owner asked for a pipe optimisation, do it in slice 5.**
-Otherwise skip slice 5. Pipelining frames ahead of their ACK is rejected either way: it changes the protocol.
+**Throughput.** Phase 1 measured Web Serial round trips on a real D890, read-only. The orchestrator's "Prior phases"
+note carries the numbers and the owner's decision. **If the owner asked for a pipe optimisation, do the optional slice at the end of Part A.**
+Otherwise skip it. Pipelining frames ahead of their ACK is rejected either way: it changes the protocol.
 
 **Vendor firmware rule:** tests use **synthetic** packages only. A real stock run through the mock is the firmware
 repo's `test_stock_firmware_through_the_mock`, which needs vendor files; **don't port it**. Replace it with a
 synthetic full-size run.
 
-## Preconditions
+### Current state from earlier phases (verify)
 
-`origin/1363/pskil/dm32-flash-prod-enable` contains phases 1 to 9. Verify these exist.
+The start ref contains phases 1 to 3. Verify these exist.
 
 **Core:**
 
@@ -98,7 +152,7 @@ synthetic full-size run.
 - `@core/services/firmware/prepareFirmwareImage.ts`, where `PreparedFirmwareImage` is
   `{ radioId, provenance, package: { radioId, files: Record<role, Uint8Array> }, sha256, verifyHint, … }`.
 
-**Integrations seam** (phase 5), in `src/integrations/radio-io/firmware/`:
+**Integrations seam** (phase 3), in `src/integrations/radio-io/firmware/`:
 
 - `types.ts`:
   - `FirmwareLinkSpec { baudRate; usbFilters; raiseDtrRts }`;
@@ -107,7 +161,7 @@ synthetic full-size run.
   - `FirmwareFlashEnd = 'eot-sent'|'acknowledged'|'port-closed-by-radio'|'no-reply'`;
   - `FirmwareFlashResult { framesSent; dataFrames; elapsedMs; end }`;
   - `FirmwareUpdater { radioId; link; checkImage(image); identify(pipe, {signal}); flash(image, {onProgress, signal}) }`;
-  - `FirmwareUpdaterDescriptor { radioId; label; stock; link; createUpdater; capacitorSupported; prodFlashDisabled; stockFlashHardwareProven; expectedDuration }`;
+  - `FirmwareUpdaterDescriptor { radioId; label; stock; link; createUpdater; capacitorSupported; prodFlashDisabled; expectedDuration }`;
 - `guardedSend.ts`: `createGuardedSend(pipe, check)`, the only `pipe.write` site;
 - `errors.ts`: `FirmwareFlashError({ cause, radioTouched, position })`;
 - `registry.ts`: `listFirmwareUpdaters()` (DM-32UV only today), `getFirmwareUpdater(radioId)`;
@@ -122,7 +176,7 @@ test includes the "one write call site" source check. Its mock is `radios/dm32uv
 
 - `constants.ts` has `AT_D890_CONNECTION.BAUD_RATE = 921600`;
 - `index.ts` holds the exports;
-- `roundTripProbe.ts` (phase 2) has `AT_D890_FW_FRAMES_STOCK = 52_353` and `AT_D890_FW_FRAMES_1_0_0 = 52_515`.
+- `roundTripProbe.ts` (phase 1) has `AT_D890_FW_FRAMES_STOCK = 52_353` and `AT_D890_FW_FRAMES_1_0_0 = 52_515`.
 
 The **Web Serial pipe**, `transport/webSerialPipe.ts`:
 
@@ -131,7 +185,7 @@ The **Web Serial pipe**, `transport/webSerialPipe.ts`:
   that surfaces as `RadioClosedError`;
 - `flush()` clears the receive buffer.
 
-## The protocol (spec, from `d890update.py`)
+### The protocol (spec, from `d890update.py`)
 
 ```python
 ENTRY = 278; BLOCK = 32; FRAME = 40
@@ -186,7 +240,7 @@ end reply: read 1 byte: 06 → ok; port closed (OSError ENXIO/EIO/ENODEV) → ok
 - The ident model is `D890UV` in the bootloader. The app-mode ident `ID890UV` handled by `connection.ts` is a
   different dialect; don't reuse `parseAtD890Ident`.
 
-## Slice 1: package parsing, frames and interlocks
+### Slice 1: package parsing, frames and interlocks
 
 Create `src/integrations/radio-io/radios/at-d890uv/firmwareUpdate/`:
 
@@ -239,7 +293,7 @@ Create `src/integrations/radio-io/radios/at-d890uv/firmwareUpdate/`:
 
 **Commit checkpoint:** `feat(radio-io): add AT-D890UV firmware package parsing and interlocks`
 
-## Slice 2: mock bootloader
+### Slice 2: mock bootloader
 
 `src/integrations/radio-io/radios/at-d890uv/__fixtures__/d890BootloaderMock.ts` is a `BytePipe` port of
 `MockBootloader`, firmware mode only:
@@ -259,7 +313,7 @@ Create `src/integrations/radio-io/radios/at-d890uv/firmwareUpdate/`:
 
 **Commit checkpoint:** `chore(radio-io): add AT-D890UV bootloader mock for tests`
 
-## Slice 3: updater, descriptor and registration
+### Slice 3: updater, descriptor and registration
 
 `updater.ts`: `createD890FirmwareUpdater(): FirmwareUpdater` (`radioId: 'anytone-at-d890uv'`, `link: AT_D890_FW_LINK`).
 
@@ -305,13 +359,12 @@ export const AT_D890UV_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   link: AT_D890_FW_LINK,
   createUpdater: () => createD890FirmwareUpdater(),
   capacitorSupported: false,
-  prodFlashDisabled: true,          // cleared in its own PR once proven (stock + a patched release on hardware)
-  stockFlashHardwareProven: false,  // Studio has never flashed D890 stock; proven in #1366
-  expectedDuration: '<from the H1 projection, e.g. "1 to 3 minutes">',
+  prodFlashDisabled: true,          // cleared by this part's final commit, after 1.0.0 is flashed on hardware
+  expectedDuration: '<from the phase 1 timing projection, e.g. "1 to 3 minutes">',
 };
 ```
 
-Set `expectedDuration` from the owner's H1 numbers, which arrive in "Prior phases".
+Set `expectedDuration` from the owner's phase 1 timing numbers, which arrive in "Prior phases".
 
 Export it from `radios/at-d890uv/index.ts`, and **register it** in `firmware/registry.ts`, after the DM-32UV. **Do not
 change the DM-32UV descriptor.**
@@ -331,7 +384,7 @@ Tests (`updater.test.ts`), porting the firmware-mode cases of `tools/test_d890up
 - a timeout after `18` gives `end: 'no-reply'`, not an error;
 - abort via signal before the first frame gives `radioTouched: false`; after it, `true`;
 - one write call site: no `.write(` in `radios/at-d890uv/firmwareUpdate/*.ts` (non-test);
-- the registry now lists both radios; the D890 has `prodFlashDisabled: true` and `stockFlashHardwareProven: false`;
+- the registry now lists both radios; the D890 has `prodFlashDisabled: true`;
   the DM-32UV is unchanged.
 
 **Timing test** (the JS-side overhead from the spike plan): build a synthetic package of
@@ -341,7 +394,7 @@ description.
 
 **Commit checkpoint:** `feat(radio-io): add the AT-D890UV firmware updater`
 
-## Slice 4: docs
+### Slice 4: docs
 
 - `docs/reference/radios/anytone/at-d890uv/firmware.md`, **"Bootloader update protocol"**:
   - the link (CDC `0483:5740`, the same ID in app and update mode; the filter identifies the device, not the mode);
@@ -357,7 +410,7 @@ description.
 
 **Commit checkpoint:** `docs(radio-io): document the AT-D890UV bootloader protocol`
 
-## Slice 5 (only if the owner asked after H1): Web Serial pipe optimisation
+### Slice 5 (optional: only if the owner asked after the phase 1 timing gate): Web Serial pipe optimisation
 
 If "Prior phases" says the owner wants the pipe made faster, keep `BytePipe` and its behaviour unchanged, and reduce
 per-read overhead in `transport/webSerialPipe.ts`. Two candidates:
@@ -368,54 +421,232 @@ per-read overhead in `transport/webSerialPipe.ts`. Two candidates:
 Keep every existing transport test green. Add a micro-benchmark test with a fake port. Separate commit:
 `refactor(radio-io): reduce Web Serial read overhead`.
 
+## Part B: AT-D890UV in the wizard (#1365)
+
+### Background
+
+The AT-D890UV updater is registered (earlier in this part), so the radio-generic wizard already lists it on pre-prod. The
+AT-D890UV still differs from the DM-32UV in ways the wizard must handle:
+
+- **About 52,515 frames** for release `1.0.0`, against 1,688 for the DM-32UV. Progress updates must be throttled,
+  or React re-renders tens of thousands of times.
+- **How the session ends.** After the end byte, the bootloader usually reboots at once and its USB port disappears:
+  `end: 'port-closed-by-radio'`, which is success. It may instead reply `06` (`'acknowledged'`), or say nothing
+  (`'no-reply'`). With `no-reply`, every frame was ACKed, so it is **not** a failure, but the operator should check
+  Device Info.
+- **Same USB ID in both modes.** The radio enumerates the same in normal and update mode. The descriptor's
+  `bootloaderEntry.warnings` already says so; make sure warnings are shown prominently next to the
+  "Connect and flash" button, not only in the update-mode step.
+
+All of this stays radio-generic: no radio literals in `src/app/`. The code branches on `FirmwareFlashEnd` values and
+descriptor fields, never on `radioId`.
+
+The AT-D890UV stays **prod-hidden** (`prodFlashDisabled: true`) until this part's final commit.
+
+### Slice 6: progress throttling and phase mapping
+
+- In the page's progress handler, coalesce updates. Store the latest `FirmwareFlashProgress` in a ref, and flush it
+  to state at most every ~100 ms (or per animation frame). Always flush immediately on a `phase` change and on
+  `radioTouched` flipping to true.
+- Map phases generically. When the updater never reports `erase` (the D890), render the ProgressModal steps from the
+  phases actually seen, or mark Erase as "skipped / part of transfer". Don't key this on `radioId`.
+- While the first data frame waits (up to 30 s), show "Waiting for the radio (it may be erasing)…". Derive it from
+  `phase === 'transfer' && cur` at its first transfer value.
+- Tests: a burst of 10,000 progress events causes fewer than ~100 state updates (fake timers). A phase change
+  flushes immediately.
+
+**Commit checkpoint:** `feat(app): throttle firmware flash progress for long transfers`
+
+### Slice 7: end states and connect-step warnings
+
+Done step, generic on `outcome.result.end`:
+
+| `end` | Message |
+| --- | --- |
+| `'port-closed-by-radio'` | "The radio restarted into the new firmware." + verify hint |
+| `'acknowledged'` / `'eot-sent'` | The current success text + verify hint |
+| `'no-reply'` | Success with a warning banner: "Every block was accepted, but the radio didn't confirm the end. Power-cycle it, then check: <verifyHint>." It is **not** the failure screen |
+
+Also:
+
+- The summary gains a line `End: <end>`, if not already present, plus the elapsed time in mm:ss.
+- Show `descriptor.stock.bootloaderEntry.warnings` again, in a `StatusBanner`, directly above "Connect and flash".
+- The radio cards show `expectedDuration`. Confirm the D890 card does.
+
+Tests (component, with mocked services):
+
+- each `end` value renders its message;
+- `no-reply` doesn't render the recovery screen;
+- the warnings appear on the connect step.
+
+**Commit checkpoint:** `feat(app): handle AT-D890UV flash end states in the firmware wizard`
+
+### Slice 8: docs
+
+Update hub `docs/features/firmware-flashing/README.md`:
+
+- AT-D890UV row: "Pre-prod" (the final commit makes it prod);
+- a short "What to expect" table per radio: duration (the descriptor's `expectedDuration`), how the radio signals
+  the end, how to verify (the release verify hint);
+- the `no-reply` explanation.
+
+**Commit checkpoint:** `docs(firmware): document AT-D890UV flashing in the hub`
+
+## Part C: stock flash as the documented recovery path (#1366)
+
+### Background
+
+"Flash stock firmware" is the zero-patch case of the same pipeline, and it is the **documented way back** on both
+radios. The wizard has offered a stock entry for every radio since phase 3. This part:
+
+- writes the **Recovery** section of the feature hub;
+- links it from the wizard's failure and recovery screen, and from the modded-firmware hub.
+
+Stock flashing has **no separate hardware gate** (owner decision): the firmware projects' own flashers have flashed
+stock on both radios many times, and Studio's stock flash is the zero-patch case of the same frame stream that the
+`1.0.0` hardware gate exercises.
+
+### Slice 9: hub Recovery section
+
+Write `## Recovery` in the hub (tier 1: product behaviour, no wire tables):
+
+- **If a flash fails before the radio was touched** ("Nothing was written"): power-cycle and try again.
+- **If it fails after** (`radioTouched`):
+  - don't keep power-cycling;
+  - re-enter update mode with the radio's steps (link the tier-3 `firmware.md` update-mode sections);
+  - flash the same release again, or flash **stock** from the wizard's "Stock firmware" entry;
+  - you need the vendor stock download either way.
+- **Going back to stock on purpose:** the same stock entry.
+- **Fallback:** the vendor CPS, for both radios. Name the CPS, and link to the vendor download only as a plain link,
+  the same URL as the descriptor.
+- Add a short "What Studio checks before any byte is sent" list (stock hashes, result hashes, interlocks), linking
+  `DESIGN.md#firmware-flashing`.
+
+**Commit checkpoint:** `docs(firmware): add the firmware recovery guide`
+
+### Slice 10: links
+
+- Wizard failure and recovery screen: point the recovery link at the hub section. The hub isn't served by the app,
+  so use the **GitHub URL** of the doc
+  (`https://github.com/pskillen/codeplug-studio/blob/main/docs/features/firmware-flashing/README.md#recovery`),
+  following how other app screens link docs. Check for an existing helper or constant for doc links, and reuse it.
+  Keep the in-app recovery steps on the screen itself, because the operator may be offline. Update the component
+  test for the link.
+- `docs/features/modded-firmware/README.md`: add "If something goes wrong: [Recovery](…/firmware-flashing/README.md#recovery)".
+- Both tier-3 `firmware.md` files: add a short "Recovery" note that links the hub section.
+
+**Commit checkpoint:** `docs(firmware): link recovery guidance from the wizard and radio docs`
+
 ## Test plan
 
 - [ ] All new tests pass; the DM-32UV tests are unchanged and green
 - [ ] No vendor bytes: every test package is synthetic
+- [ ] One write call site: no `.write(` under `radios/at-d890uv/firmwareUpdate/` (non-test)
+- [ ] No radio branching in the app:
+      `grep -rn "anytone-at-d890uv\|baofeng-dm32uv\|0483\|1a86" src/app/routes/firmware src/app/services/firmwareFlash.ts`
+      adds nothing
+- [ ] Every user-facing string reads as operator copy. No internal or test-status wording
+- [ ] The recovery links resolve (relative doc links; the app's GitHub link builds the right URL)
 - [ ] `npm run format:check && npm run lint && npm run test && npm run build`
-- [ ] `npm run dev`: `/firmware` (local env) now lists the AnyTone AT-D890UV card, and its stock entry shows the "not
-      yet hardware-proven" label
+- [ ] `npm run dev` → `/firmware` lists the AnyTone AT-D890UV, and `1.0.0` notes render
 
 ## Git workflow
 
-- **Branch:** `1364/pskil/d890-firmware-updater`. Create it with `git checkout -B 1364/pskil/d890-firmware-updater origin/1363/pskil/dm32-flash-prod-enable`. This is a **stacked** start: the previous phase branch, not `main`.
-- **PR base:** `1363/pskil/dm32-flash-prod-enable`. Do **not** target `main`.
+- **Branch:** `1364/pskil/firmware-d890`. Create it with `git checkout -B 1364/pskil/firmware-d890 origin/1363/pskil/firmware-dm32`. This is a **stacked** start: the previous phase branch, not `main`.
+- **PR base:** `1363/pskil/firmware-dm32`. Do **not** target `main`.
 - **Commit as you go.** At every commit checkpoint:
   1. run the checks that apply;
   2. stage only that slice's files;
   3. make one atomic conventional commit (`feat`, `fix`, `docs`, `style`, `refactor`, `chore`; never the word
      "enhance").
 
-  This overrides "commit only when asked". Never batch slices. After any context summary, check `git log -5` and
-  `git status -sb`.
+  This overrides "commit only when asked". This phase is large: keep every slice its own commit. Never batch slices.
+  After any context summary, check `git log -5` and `git status -sb`.
 - **Before the PR:**
   1. `npm run format`, and commit any drift as `chore: format`;
   2. `npm run format:check && npm run lint && npm run test && npm run build`, all green.
-- **Push:** `git push -u origin 1364/pskil/d890-firmware-updater`.
-- **PR:** use `mcp__github__create_pull_request` (owner `pskillen`, repo `codeplug-studio`, head `1364/pskil/d890-firmware-updater`,
-  base `1363/pskil/dm32-flash-prod-enable`). The title is a conventional summary. The body has:
-  - Summary;
+- **Push:** `git push -u origin 1364/pskil/firmware-d890`.
+- **PR:** use `mcp__github__create_pull_request` (owner `pskillen`, repo `codeplug-studio`, head `1364/pskil/firmware-d890`,
+  base `1363/pskil/firmware-dm32`). The title is a conventional summary. The body has:
+  - Summary, by Part;
   - **Documentation** checklist (hub / deep dive / sidecar / index row, or N/A with a reason);
   - **Test plan**;
   - **Deviations from the phase file** (say "none" if none);
-  - `Part of #1364`.
+  - `Closes #1364, Closes #1365, Closes #1366`.
+- **Hardware gate, then the prod flip.** After the PR is open:
+  1. push the branch to `dev` with `git push --force origin HEAD:dev`. This epic owns `dev` for its duration, so no
+     permission is needed;
+  2. **stop**;
+  3. return the "Hardware gate" script below.
+
+  In the PR body, add an unticked "prod flag flipped (after hardware gate)" item.
+
+  Only after the orchestrator tells you the owner confirmed the gate, add the final prod-flip slice as the **last
+  commit** on the same branch. Push, and update the PR body (`mcp__github__update_pull_request`).
+
+  If the owner reports a failure, fix it with new commits on this branch (don't rewrite history), push to `dev`
+  again, and stop again.
 - **Do not merge.** Do not wait for CI.
 - **Return to the orchestrator:** the PR URL, the branch head SHA, the deviations, and anything the next phase must
   know.
 
-## Hardware gate
+## Hardware gate: AT-D890UV `1.0.0` flash from `dev`
 
-None in this phase; the hardware flash is H4 in phase 11. The orchestrator stops after this phase for review, and
-posts the JS timing number on #1364.
+After the PR is open, push to `dev` (`git push --force origin HEAD:dev`), then **stop** and return this script to
+the orchestrator:
+
+> **AT-D890UV `1.0.0` flash from `dev`.** This writes firmware. Have the vendor CPS as a fallback. Use a short,
+> direct USB cable and a full battery.
+>
+> 1. Open `https://dev.codeplug.mm9pdy.net/firmware` once the deploy finishes.
+> 2. Pick **AnyTone AT-D890UV** → **1.0.0** → drop the vendor zip `D890UV V1.05 DMR official release 260521.zip`
+>    (about 44.5 MB) or the three extracted `.CDD`/`.CDI`/`.spi` files. Check Prepare shows "Bundled release 1.0.0".
+> 3. Preflight → update mode: radio off; hold PTT+PF3 and power on, keeping them held for 2 to 3 s; red LED
+>    blinking, screen blank; plug in USB.
+> 4. **Connect and flash.** Keep the tab in front. Note the total duration.
+> 5. The radio should restart by itself. Check that **Menu > Device Info > Version shows `1.0.0`**.
+> 6. Reply with: OK or FAIL, the **duration**, the end message shown, the copied summary, and notes on the wording or
+>    the flow.
+> 7. Optional:
+>    - flash stock V1.05 from the same page (the recovery path; there's no gate on it);
+>    - on a run you're happy to redo, press Cancel mid-transfer; it should confirm, then show the recovery screen.
+
+**Record:** the orchestrator posts the result and the duration on #1364, #1365 and #1366, with the footer.
+
+### Slice 11 (only after the owner confirms the gate): enable the AT-D890UV in prod
+
+The orchestrator resumes you, or spawns a new implementor on **this same branch**
+(`git checkout -B 1364/pskil/firmware-d890 origin/1364/pskil/firmware-d890`). Its prompt states that the owner
+confirmed the AT-D890UV `1.0.0` flash. **If it doesn't say so, stop.**
+
+- In `src/integrations/radio-io/radios/at-d890uv/firmwareUpdate/descriptor.ts`, set `prodFlashDisabled: false`, with
+  the comment `// Enabled in prod <date>: release 1.0.0 flashed from Studio on hardware (#1364).`
+- Tests:
+  - the descriptor or registry test now expects `false`;
+  - `listOfferedFirmwareUpdaters('prod')` lists both radios;
+  - keep the pure gate-resolver cases with inline descriptors.
+- Docs:
+  - the hub AT-D890UV row becomes "Shipped: prod";
+  - `docs/features/README.md`: the Firmware flashing row status becomes "both radios shipped";
+  - `docs/reference/radios/anytone/at-d890uv/firmware.md` gets one line, "Prod-enabled after a hardware flash of
+    1.0.0 (#1364)".
+
+**Commit checkpoint:** `feat(radio-io): enable the AT-D890UV firmware flasher in prod`. Make this the **last** commit
+on the branch.
+
+Then:
+
+1. Run the full gates.
+2. `git push`.
+3. Update the PR body with `mcp__github__update_pull_request`: tick "prod flag flipped", and record the gate result.
+4. Return the new head SHA.
 
 ## Out of scope
 
-- D890 wizard wording (phase 11); stock proof and recovery docs (phase 12); the prod flip (phase 13).
+- Android (#1367) and DM-32UV read-back verify (#1368). They are follow-ups.
 - Resource mode and the ICON pack. Deliberately refused.
+- Any change to the DM-32UV descriptor.
 
 ## Cross-phase note
 
-- Phase 11 relies on `FirmwareFlashEnd` values `'acknowledged' | 'port-closed-by-radio' | 'no-reply'` for the D890,
-  and on `stockFlashHardwareProven: false`.
-- Phase 13 flips `prodFlashDisabled` and `stockFlashHardwareProven` in `radios/at-d890uv/firmwareUpdate/descriptor.ts`.
-  Keep both as literals there.
+None. This is the final phase. The orchestrator then reports the PR chain and writes `plans/zz-final-handover.md`.

@@ -8,7 +8,14 @@ per-radio prod gate. This file maps the design onto those tickets.
 It also records size, priority, the open-question owner for each ticket, and the dependency graph that `phase-plan.md`
 will sequence. The initial delivery needs no new issues. The two follow-ups are listed at the end.
 
-**Phases:** see [phase-plan.md](phase-plan.md). In short: #1359 = phase 1; #1364 = phases 2 and 10; #1360 = 3; #1361 = 4; #1363 = 5 and 9; #1365 = 6, 8 and 11; #1362 = 7; #1366 = 12 and 13.
+**Phases (revised 2026-10-21: consolidated to 4):** see [phase-plan.md](phase-plan.md).
+
+| Phase | Tickets | PR closes |
+| --- | --- | --- |
+| 1 | #1359, #1364 part 1 (timing spike) | #1359 |
+| 2 | #1360, #1361 | #1360, #1361 |
+| 3 | #1363, #1362, #1365 slices 1–2, DM-32UV prod flip | #1363, #1362 |
+| 4 | #1364 part 2, #1365 slice 3, #1366, AT-D890UV prod flip | #1364, #1365, #1366 |
 
 Sizes are rough. **S** is one small PR, **M** is a few slices in one PR, and **L** is a multi-PR mini-series that
 `phase-plan.md` must split.
@@ -19,10 +26,11 @@ disagree, the table wins.
 | Decision | Effect on tickets |
 | --- | --- |
 | OQ1: accept bundling patches (option a) | #1362 bundles the published bytes as-is. There is no derived or stripped patch, and `patchSha256` is the published hash |
-| OQ2 (**revised 2026-10-21**): per-radio prod gate | Each `FirmwareUpdaterDescriptor` carries its own `prodFlashDisabled` (name to settle), on the same pattern as `prodWriteDisabled` / `radioWriteEnvGate.ts`. A flagged radio is hidden on the prod build and fully available on next, dev and staging, with no Capacitor exemption. Both radios start disabled. Each is flipped by a small PR once **that radio** is proven on hardware, independently of the other. **Proven** (owner, 2026-10-21) means Studio's updater has flashed **both** stock **and** at least one of our patched releases on a real radio. The flag goes in #1363 (seam), the resolver and tests in #1365, the DM-32UV flip (after #1365 slice 2) closes #1363, and the AT-D890UV flip (after #1365 slice 3 and #1366's stock run) closes #1366. This supersedes "no flag" and the earlier "merge the D890 unregistered" idea (see [Prod gate and delivery](#prod-gate-and-delivery)) |
+| OQ2 (**revised 2026-10-21**): per-radio prod gate | Each `FirmwareUpdaterDescriptor` carries its own `prodFlashDisabled` (name to settle), on the same pattern as `prodWriteDisabled` / `radioWriteEnvGate.ts`. A flagged radio is hidden on the prod build and fully available on next, dev and staging, with no Capacitor exemption. Both radios start disabled. Each is flipped once **that radio** is proven on hardware, independently of the other, as the **final commit in that radio's phase PR** (phase 3 for the DM-32UV, phase 4 for the AT-D890UV). **Proven** (owner, revised 2026-10-21) means Studio's updater has flashed **at least one of our patched releases** to that radio on hardware. Stock flash is built and offered as the recovery path, with **no** hardware gate: both firmware projects' own flashers have flashed stock many times. The flag goes in #1363 (seam), and the resolver and tests in #1365. This supersedes "no flag" and the earlier "merge the D890 unregistered" idea (see [Prod gate and delivery](#prod-gate-and-delivery)) |
 | OQ4: release notes copied into Studio next to each patch | #1362 commits a notes file per release, and its index row points at it. #1365 shows the notes. Nothing links to the private repos |
+| UI copy (owner, 2026-10-21) | All user-facing strings are written for an end-user operator, with no internal or test-status notes. The `stockFlashHardwareProven` descriptor field and the "not yet hardware-proven" stock label are **removed** from the plan. Proof status lives in docs and issues |
 | OQ9: defer Android; hide on Capacitor | #1363 sets `capacitorSupported: false` on both descriptors, and #1365 hides the route on Capacitor with a message. Android support is a follow-up |
-| Boundary breaches in existing code: ignore for now | No ticket fixes them, and none copies them. One sanctioned exception: phase 2 adds a pass to the existing `DebugD890EraseProbePage`, which already imports the radio module directly |
+| Boundary breaches in existing code: ignore for now | No ticket fixes them, and none copies them. One sanctioned exception (owner-confirmed): phase 1 adds a pass to the existing `DebugD890EraseProbePage`, which already imports the radio module directly |
 | Vendor firmware (owner, 2026-10-21) | Our patch files on `main` are fine. **Vendor firmware files must never reach `main` or any committed path**, test fixtures included. Every phase file that touches fixtures or stock handling states this |
 | Pushing to `dev` (owner, 2026-10-21) | The orchestrator or an implementor may force-push a phase branch to `dev` (deploys `dev.codeplug.mm9pdy.net`) without asking: it is a playground. At each hardware gate the orchestrator pushes, then stops and notifies the owner |
 | Release notes received (owner, 2026-10-21) | Studio copies at `owner-inputs/{dm32,d890}/1.0.0.release-notes.md`; the DM-32 notes were rewritten from the firmware repo's features guide. All #1362 inputs are in hand |
@@ -32,16 +40,18 @@ The other OQs keep the design's proposed defaults. Each is assigned to the ticke
 
 ## Delivery model (owner, 2026-10-21)
 
-**Orchestrator agent, with a hardware stop after every phase.**
+**Orchestrator agent, with a stop after every phase and every hardware gate.**
 
-- The orchestrator drives the phases on stacked branches. After **each** phase it stops and notifies the owner, and it
-  continues only once the owner replies.
+- The orchestrator drives **4 phases** on stacked branches. After each phase, and at each hardware gate inside one, it
+  stops and notifies the owner, and continues only once the owner replies.
+- In phases 3 and 4, after the owner confirms the bundled `1.0.0` flash, an implementor adds **one final commit** on
+  the same branch that sets the radio's `prodFlashDisabled: false`.
 - **The owner runs every physical hardware test.** For a hardware test, the phase's branch is pushed to `dev`, which
   deploys to `dev.codeplug.mm9pdy.net`. The owner tests there with the radio attached. The per-radio prod flags keep the
   flasher hidden on prod throughout.
 - **Optional:** `npm run dev` locally, for fast owner iteration on the AT-D890UV throughput spike (#1364 part 1).
-- **Pushing to `dev` needs no permission** (owner: "just a playground"). At each hardware gate the orchestrator
-  force-pushes the phase branch to `dev`, then stops and notifies the owner.
+- **This epic owns `dev` for its duration.** At each hardware gate the implementor force-pushes the phase branch to
+  `dev`, and the orchestrator checks it, then stops and notifies the owner.
 - **Planning files live on the orphan branch `plan/modded-firmware-flasher`** (never merged). Containers are reclaimed
   between phases, so every phase file bootstraps from a bare clone: fetch that branch, re-clone the firmware repos
   read-only if needed, and use the GitHub MCP tools (`gh` is unauthenticated).
@@ -67,7 +77,7 @@ The other OQs keep the design's proposed defaults. Each is assigned to the ticke
 | 3.9 AT-D890UV updater + mock; 3.10 AT-D890UV interlocks; throughput spike | #1364 |
 | 3.12 app orchestration (`firmwareFlash.ts`); UI changes (route, nav, wizard, wake lock, Stepper) | #1365 |
 | 3.11 flash stock (recovery): picker entry | #1365 (slice 1: stock is the only target) |
-| 3.11 flash stock (recovery): "not yet hardware-proven" flag, recovery docs, D890 hardware proof | #1366 |
+| 3.11 flash stock (recovery): recovery docs and links (the data-driven "not yet proven" label in 3.11 is **dropped**, owner 2026-10-21) | #1366 |
 | Consumer changes table | Split by row: transport and kit rows go to #1363; `App.tsx`, nav and Reference index go to #1365; `.prettierignore` and `.gitattributes` go to #1362; DESIGN.md and AGENTS.md go to #1359; docs rows go to their ticket (see [Documentation by ticket](#documentation-by-ticket)) |
 | Test fixtures (synthetic stock, `makeSyntheticPatch`, owner example patches, local `CODEPLUG_FIRMWARE_STOCK_DIR` check) | #1361 (synthetic patches), #1362 (bundled and non-shipping real patches, local stock check) |
 | 3.13 vendor-neutral note | Applies to every ticket. Each phase file restates it |
@@ -201,9 +211,8 @@ Design 3.7, 3.8 and 3.10 (DM-32UV rows). It adds:
 - [ ] Existing `requestWebSerialPort` callers are unchanged (their tests still pass). Filters reach `navigator.serial.requestPort`.
 - [ ] OQ6 default: `flash()` continues the session `identify()` opened, with no pause.
 - [ ] The descriptor has `prodFlashDisabled: true` (a test pins it until the flip PR).
-- [ ] Hardware, stock (run in #1365 slice 1, phase 6 / H2; this ticket has no UI): stock 048 flashed, and the radio boots.
-- [ ] Hardware, patched (run in #1365 slice 2, phase 8 / H3): bundled `1.0.0` flashed and checked with **its verify hint**, not Device Info. On DM-32UV `1.0.0`, Device Info still reads `DM32.01.L01.048`.
-- [ ] **Closing step (phase 9):** with both runs confirmed by the owner, the DM-32UV is proven. A small PR sets its `prodFlashDisabled` to `false`.
+- [ ] Hardware (phase 3 gate): bundled `1.0.0` flashed from `dev` and checked with **its verify hint**, not Device Info. On DM-32UV `1.0.0`, Device Info still reads `DM32.01.L01.048`. Stock flash is built but has no gate.
+- [ ] **Closing step (last commit of phase 3):** after the owner confirms the gate, set the DM-32UV `prodFlashDisabled` to `false`.
 - [ ] Tier-3 `dm-32uv/firmware.md`: update protocol, link facts, interlocks. The private firmware repo docs are named, not linked.
 
 ### #1364 feat(radio-io): AT-D890UV bootloader updater
@@ -226,7 +235,8 @@ Design 3.9 and 3.10 (AT-D890UV rows), with the OQ3 default (band-byte interlock 
 - [ ] A 52,353-frame synthetic run against the mock has its time recorded. The frame count for a patched package is `ceil(len / 32)` per `.CDI` entry; for `1.0.0` that is 52,515.
 - [ ] The descriptor is **registered normally**, with its own `prodFlashDisabled: true`. It is hidden on prod until #1366 flips it, so there is no need to hold registration back.
 - [ ] One `pipe.write` call site.
-- [ ] Hardware (in #1365 slice 3): a bundled release is flashed, Device Info > Version shows it, and the duration is posted to #1364.
+- [ ] Hardware (phase 4 gate): bundled `1.0.0` is flashed from `dev`, Device Info > Version shows it, and the duration is posted to #1364.
+- [ ] **Closing step (last commit of phase 4):** after the owner confirms, set the AT-D890UV `prodFlashDisabled` to `false`.
 - [ ] Tier-3 `at-d890uv/firmware.md`: update protocol, interlocks.
 
 ---
@@ -257,7 +267,7 @@ Design UI changes and 3.12, with the OQ6, OQ10, OQ11 and OQ12 defaults, the revi
 - [ ] On Capacitor the route is hidden or shows the unsupported message (OQ9). Without Web Serial it shows `getRadioSerialUnsupportedMessage`.
 - [ ] `src/app/` has no radio literals, USB IDs or wire bytes: everything comes from the registry and descriptors.
 - [ ] Stepper (OQ12 default): reusable v2 `Stepper` with sidecar `Stepper.md` and a styleguide demo.
-- [ ] Hardware (owner, on `dev.codeplug.mm9pdy.net`): DM-32UV stock 048 flashed end to end. This also satisfies #1363's and #1366's DM-32UV stock acceptance. **Not** enough on its own to enable prod (proven needs a patched release too).
+- [ ] (No hardware gate for the stock path; the owner may flash stock optionally during phase 3's gate.)
 - [ ] Docs: the `docs/features/firmware-flashing/README.md` hub (status table, map, concepts, recovery placeholder), a `docs/features/README.md` row, a `radio-read-write/README.md` row, and the `modded-firmware/README.md` cross-link. (The `adding-a-radio-adapter.md` "Firmware updater" section moved to #1363, phase 5.)
 
 **Slice 2: bundled releases and user patches (DM-32UV).**
@@ -266,13 +276,13 @@ Design UI changes and 3.12, with the OQ6, OQ10, OQ11 and OQ12 defaults, the revi
 - [ ] Advanced "Use a patch file from disk": the risk statement and "I understand" gate, or "This is release X (bundled)" when the file matches.
 - [ ] The summary records provenance (`user-supplied patch, sha256 …`).
 - [ ] The done step shows the release's `verifyHint`.
-- [ ] Hardware (phase 8 / H3): DM-32UV `1.0.0` flashed, and checked with its verify hint (#1363's patched hardware box). With H2 this makes the DM-32UV **proven**; the prod flip is then phase 9, a separate PR.
+- [ ] Hardware (phase 3 gate): DM-32UV `1.0.0` flashed from `dev`, and checked with its verify hint. This makes the DM-32UV **proven**; the prod flip is the final commit of the same PR.
 - [ ] The hub's status table is updated.
 
 **Slice 3: AT-D890UV.**
 
-- [ ] The D890 descriptor is registered and the wizard shows it on pre-prod. It stays prod-hidden through its own `prodFlashDisabled: true` until #1366. Its stock entry carries #1366's "not yet hardware-proven" label (the flag ships with the descriptor).
-- [ ] Hardware (phase 11 / H4): D890 `1.0.0` flashed end to end (#1364's hardware box; the D890's patched-release proof). Cancel and unplug mid-flash show the recovery screen.
+- [ ] The D890 descriptor is registered and the wizard shows it on pre-prod. It stays prod-hidden through its own `prodFlashDisabled: true` until phase 4's final commit.
+- [ ] Hardware (phase 4 gate): D890 `1.0.0` flashed end to end from `dev` (#1364's hardware box; the D890's proof). Cancel and unplug mid-flash show the recovery screen.
 - [ ] The hub's status table is updated.
 
 ---
@@ -283,16 +293,13 @@ Design UI changes and 3.12, with the OQ6, OQ10, OQ11 and OQ12 defaults, the revi
 
 **Size:** S · **Priority:** P2 · **Depends on:** #1365 slice 3 (so on #1364)
 
-Design 3.11. The picker entry has already shipped in #1365 slice 1. This ticket owns:
+Design 3.11. The picker entry has already shipped in #1365 slice 1. This ticket owns the recovery route's docs and
+links. Revised 2026-10-21 (owner):
 
-- the `stockFlashHardwareProven` (name to settle in planning) descriptor flag and its data-driven label;
-- the recovery section of the hub;
-- the D890 hardware stock proof.
+- there is **no stock hardware gate** (both firmware projects' flashers have flashed stock many times);
+- there is **no** "not yet proven" label in the UI (operator copy only).
 
-- [ ] The DM-32UV stock acceptance is the same run as #1365 slice 1 / #1363. It is ticked by reference, not re-run.
-- [ ] AT-D890UV: stock V1.05 flashed from Studio once on hardware (phase 12 / H5), and the radio boots stock (Device Info "Ver 1.05").
-- [ ] The label flag is flipped for the D890 after that run (phase 13), and the label disappears. A test covers both label states. The label is only ever seen on pre-prod, because the D890 is prod-hidden until the step below.
-- [ ] **Closing step (phase 13):** with the D890 stock run **and** its patched-release run (#1365 slice 3, phase 11 / H4) both confirmed, the D890 is proven. A small PR sets its `prodFlashDisabled` to `false`, enabling it in prod. This is independent of the DM-32UV flag.
+- [ ] The stock entry is offered for both radios with operator-facing copy only.
 - [ ] The hub has a recovery section (re-enter update mode, flash stock or the same release, don't keep power-cycling, vendor CPS fallback for both radios). It is linked from the wizard's failure screen and `docs/features/modded-firmware/README.md`.
 
 ---
@@ -302,7 +309,7 @@ Design 3.11. The picker entry has already shipped in #1365 slice 1. This ticket 
 | OQ | Status | Default carried | Owning ticket |
 | --- | --- | --- | --- |
 | 1 Bundling legal | **Decided**: accept | Patches bundled as published | #1362 |
-| 2 Prod availability | **Decided, revised**: per-radio prod gate | `prodFlashDisabled` per updater; flipped per radio once proven | #1363 (field), #1364 (D890 field), #1365 (resolver, DM-32 flip), #1366 (D890 flip) |
+| 2 Prod availability | **Decided, revised**: per-radio prod gate | `prodFlashDisabled` per updater; flipped once a patched release is flashed on hardware | #1363 (field + DM-32 flip), #1364 (D890 field + flip), #1365 (resolver) |
 | 3 D890 band-byte interlock | Default | Yes, require `ident[8] === 0x00` | #1364 |
 | 4 Release notes | **Decided**: copy into Studio next to each patch | Notes file per release + index row | #1362 (data), #1365 slice 2 (display) |
 | 5 Zip vs member hashes | Default | Members authoritative; re-zip accepted with a note | #1360 |
@@ -327,13 +334,12 @@ on `main` ships to prod with the next full Studio release as usual. So:
 - **Merging is decoupled from prod exposure.** Wizard slices and updaters can merge once their unit tests and (where
   the phase has one) the owner's hardware test on `dev` pass. A prod user never sees an unproven radio.
 - **Both AT-D890UV pieces register normally.** The earlier "merge #1364 part 2 unregistered" idea is dropped.
-- **The flips are separate, small PRs**, one per radio, each after the owner says that radio is **proven** (stock
-  **and** at least one patched release flashed by Studio on hardware):
-  - DM-32UV after #1365 slice 1 (stock 048) and slice 2 (`1.0.0`): phase 9, closing #1363;
-  - AT-D890UV after #1365 slice 3 (`1.0.0`) and #1366 (stock V1.05): phase 13, closing #1366.
+- **The flips are the final commit of each radio's phase PR**, made after the owner confirms that radio's bundled
+  `1.0.0` flash from `dev` (Studio flashing a patched release on hardware is the whole definition of proven):
+  - DM-32UV: the last commit of phase 3, closing #1363;
+  - AT-D890UV: the last commit of phase 4.
 
-  They are independent of each other. In [phase-plan.md](phase-plan.md) each flip is its own tiny phase, started only
-  after the owner's confirmation.
+  The two flags are independent.
 - **Prod before any flip:** the Tools strip entry is hidden and `/firmware` shows a short "not available on this site
   yet" message. This is proposed in #1365.
 - **The spike's debug route** stays under `/debug/`, which is not linked from the nav. If the owner doesn't want it
@@ -377,7 +383,7 @@ on `main` ships to prod with the next full Studio release as usual. So:
 
 #1365 slice 2 + #1364 part 2 ──► #1365 slice 3  AT-D890UV in the wizard (+ hardware)
                                         │
-                                        └──► #1366  D890 stock proof, recovery docs
+                                        └──► #1366  recovery docs (no stock gate)
 ```
 
 Can run in parallel once their prerequisite lands:
@@ -388,8 +394,8 @@ Can run in parallel once their prerequisite lands:
 - The #1364 part 1 hardware spike is independent of all code tickets after #1359. It needs the owner and a D890.
 
 **Hardware gates** (owner with radios, on `dev.codeplug.mm9pdy.net`; for the spike, optionally `npm run dev`):
-#1364 part 1; #1365 slices 1, 2 and 3; #1366 D890 stock. The chosen model handles these with a stop after every phase,
-and the orchestrator resumes only on the owner's reply ([Delivery model](#delivery-model-owner-2026-10-21)).
+the phase 1 timing pass (#1364 part 1), the phase 3 DM-32UV `1.0.0` flash, and the phase 4 AT-D890UV `1.0.0` flash. There
+is no stock gate. The orchestrator stops at each gate and resumes only on the owner's reply ([Delivery model](#delivery-model-owner-2026-10-21)).
 
 ## Not included here: future and dependent work
 
