@@ -72,15 +72,31 @@ describe('encodeAtD890TalkgroupRecord', () => {
     ).toBe(0x00);
   });
 
-  it('rebuilds TalkgroupOrder with sorted keys and 0xff padding', () => {
+  it('rebuilds TalkgroupOrder as little-endian BCD keys and 0-based slots', () => {
     const order = encodeAtD890TalkgroupOrder([
       { index: 2, wireName: 'TG2', digitalId: 9, callType: 0x04 },
       { index: 1, wireName: 'TG1', digitalId: 99, callType: 0x04 },
     ]);
-    expect(order.length).toBe(32);
-    expect([...order.subarray(0, 8)]).toEqual([0x00, 0x00, 0x00, 0x13, 0x00, 0x00, 0x00, 0x02]);
-    expect([...order.subarray(8, 16)]).toEqual([0x00, 0x00, 0x00, 0xc7, 0x00, 0x00, 0x00, 0x01]);
-    expect(order[16]).toBe(0xff);
+    expect(order.length).toBe(16);
+    expect([...order.subarray(0, 8)]).toEqual([0x13, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]);
+    expect([...order.subarray(8, 16)]).toEqual([0x33, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+  });
+
+  it('keeps the first private or all-call when they share a BCD key', () => {
+    const order = encodeAtD890TalkgroupOrder([
+      { index: 2, wireName: 'P', digitalId: 9, callType: 0x03 },
+      { index: 4, wireName: 'A', digitalId: 9, callType: 0x05 },
+    ]);
+    expect([...order.subarray(0, 8)]).toEqual([0x12, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]);
+    expect([...order.subarray(8, 16)]).toEqual([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
+    expect(order.length).toBe(16);
+  });
+
+  it('encodes ID 2351234 group at index 1 as little-endian BCD key 0x046A2469', () => {
+    const order = encodeAtD890TalkgroupOrder([
+      { index: 1, wireName: 'Wide', digitalId: 2_351_234, callType: 0x04 },
+    ]);
+    expect([...order.subarray(0, 8)]).toEqual([0x69, 0x24, 0x6a, 0x04, 0x00, 0x00, 0x00, 0x00]);
   });
 });
 

@@ -5,6 +5,23 @@ import { AT_D890_LIMITS, AT_D890_MAP_SIZE, D890_MAP } from './constants.ts';
 import { radioIdAddress } from './memory.ts';
 import { encodeAtD890RadioIdRecord, encodeRadioIdsIntoAtD890Image } from './radioIdCodec.ts';
 
+describe('encodeAtD890RadioIdRecord', () => {
+  it('stores the DMR ID as BCD and leaves +0x26 through the slot end zero', () => {
+    const record = encodeAtD890RadioIdRecord({
+      index: 0,
+      dmrId: 2_351_234,
+      name: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    });
+
+    expect([...record.subarray(0, 4)]).toEqual([0x02, 0x35, 0x12, 0x34]);
+    expect([...record.subarray(0, 4)]).not.toEqual([0x00, 0x23, 0xe0, 0x82]);
+    expect([...record.subarray(0, 4)]).not.toEqual([0x00, 0x23, 0xde, 0x02]);
+    // 18th character ('R') would land at +0x26 if the name were the old 52-byte field.
+    expect(record[0x26]).not.toBe(0x52);
+    expect([...record.subarray(0x26)]).toEqual([...new Uint8Array(record.length - 0x26)]);
+  });
+});
+
 describe('encodeRadioIdsIntoAtD890Image', () => {
   it('retains hydrated RadioId bank when projection is empty', () => {
     const image = createMemoryMap(AT_D890_MAP_SIZE);

@@ -23,6 +23,52 @@ describe('encodeAtD890DigitalContactRecord', () => {
 });
 
 describe('packAtD890DigitalContacts', () => {
+  it('encodes contact order as a little-endian BCD key with an odd-count pad', () => {
+    const pack = packAtD890DigitalContacts([
+      {
+        wireName: 'Contact 9',
+        digitalId: 9,
+        callsign: '',
+        city: '',
+        province: '',
+        country: '',
+        remark: '',
+      },
+    ]);
+    expect([...pack.orderLinear.subarray(0, 8)]).toEqual([
+      0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    ]);
+    expect([...pack.orderLinear.subarray(8, 16)]).toEqual([
+      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    ]);
+    expect(pack.orderLinear.length).toBe(16);
+  });
+
+  it('does not pad an even contact order past the entries', () => {
+    const pack = packAtD890DigitalContacts([
+      {
+        wireName: 'Contact 9',
+        digitalId: 9,
+        callsign: '',
+        city: '',
+        province: '',
+        country: '',
+        remark: '',
+      },
+      {
+        wireName: 'Contact 99',
+        digitalId: 99,
+        callsign: '',
+        city: '',
+        province: '',
+        country: '',
+        remark: '',
+      },
+    ]);
+    expect(pack.contactCount).toBe(2);
+    expect(pack.orderLinear.length).toBe(16);
+  });
+
   it('packs many contacts without pre-building a directory row array', () => {
     const contacts = Array.from({ length: 500 }, (_, i) => ({
       wireName: `User${i}`,

@@ -6,7 +6,11 @@ import type { MemoryMap } from '../../types.ts';
 import type { RadioRadioIdDto } from '../../radioWriteProjection.ts';
 import { D890_MAP } from './constants.ts';
 import { mergeMapRegionsIntoCache, putCacheBytes, type AtD890DownloadCache } from './memory.ts';
-import { encodeAtD890RadioIdRecord } from './radioIdCodec.ts';
+import { encodeBcdAsHexU32 } from './bcd.ts';
+import { encodeWideCharName } from './wideChar.ts';
+
+/** CPS master name is `0x20` bytes at `+4`. `+0x26` and every other byte stay. */
+const MASTER_ID_NAME_BYTES = 0x20;
 
 export function encodeMasterIdIntoAtD890Image(
   image: MemoryMap,
@@ -16,10 +20,10 @@ export function encodeMasterIdIntoAtD890Image(
   if (!master || master.dmrId <= 0) {
     return image;
   }
-  image.set(
-    D890_MAP.MasterIdData,
-    encodeAtD890RadioIdRecord(master).subarray(0, D890_MAP.MasterIdLength),
-  );
+  const data = image.get(D890_MAP.MasterIdData, D890_MAP.MasterIdLength);
+  data.set(encodeBcdAsHexU32(master.dmrId), 0);
+  data.set(encodeWideCharName(master.name, MASTER_ID_NAME_BYTES), 4);
+  image.set(D890_MAP.MasterIdData, data);
   return image;
 }
 

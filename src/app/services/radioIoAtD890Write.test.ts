@@ -2,6 +2,7 @@ import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { DM32_EMPTY_SCAN_LIST_NAME } from '@core/import-export/zoneDerivedScanLists/dm32EmptyScanFloor.ts';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  newAprsConfiguration,
   newChannel,
   newRadioBuildForProfile,
   newRxGroupList,
@@ -10,6 +11,7 @@ import {
 } from '@core/domain/factories.ts';
 import { defaultModeProfile } from '@core/domain/modeProfiles.ts';
 import type { LibrarySlice } from '@core/services/assemble.ts';
+import { AT_D890_APRS_CURRENT_CHANNEL_WIRE } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
 import type { CloneImageRadio, MemoryMap, RadioSession } from '@integrations/radio-io/types.ts';
 import {
@@ -628,6 +630,48 @@ describe('buildRadioWriteProjection radio-io-at-d890uv', () => {
     expect(
       projection.organisation.scanLists?.some((list) => list.designatedTxChannel != null),
     ).toBe(false);
+  });
+
+  it('stores a resolved APRS report channel as a 0-based index', () => {
+    const ch = {
+      ...newChannel('p1', 'CH1'),
+      id: 'ch-1',
+      rxFrequency: 145_500_000,
+      txFrequency: 145_500_000,
+      power: 100,
+      modeProfiles: [
+        { mode: 'fm' as const, squelch: null, rxTone: 'none', txTone: 'none', bandwidthKHz: 25 },
+      ],
+    };
+    const aprs = {
+      ...newAprsConfiguration('p1', 'Home'),
+      channelSlots: [
+        {
+          channelRef: { kind: 'channel' as const, id: ch.id },
+          timeslot: null,
+          targetDmrId: 91,
+          callType: 'group' as const,
+        },
+        {
+          channelRef: { kind: 'channel' as const, id: 'missing-channel' },
+          timeslot: null,
+          targetDmrId: null,
+          callType: 'group' as const,
+        },
+      ],
+    };
+    const library = { ...emptyLibrary([ch]), aprsConfiguration: aprs };
+    const { build, egress } = newRadioBuildForProfile('p1', 'radio-io-at-d890uv');
+    const assembled = assemble(build, library, {
+      formatId: egress.formatId,
+      profileId: egress.profileId,
+    });
+    const projection = buildRadioWriteProjection(assembled, build, library, egress);
+    const slots = projection.organisation.aprs?.digitalSlots;
+
+    expect(projection.numbersBySourceChannelId.get(ch.id)).toEqual([1]);
+    expect(slots?.[0]?.reportChannelWire).toBe(0);
+    expect(slots?.[1]?.reportChannelWire).toBe(AT_D890_APRS_CURRENT_CHANNEL_WIRE);
   });
 });
 

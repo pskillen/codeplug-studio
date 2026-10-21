@@ -12,16 +12,17 @@ import {
   radioIdAddress,
   type AtD890DownloadCache,
 } from './memory.ts';
+import { encodeBcdAsHexU32 } from './bcd.ts';
 import { encodeWideCharName } from './wideChar.ts';
+
+/** CPS name field is `0x22` bytes at `+4` (`+0x26` through the slot end stay zero). */
+const RADIO_ID_NAME_BYTES = 0x22;
 
 export function encodeAtD890RadioIdRecord(rid: RadioRadioIdDto): Uint8Array {
   const data = new Uint8Array(AT_D890_LIMITS.RADIO_ID_STRIDE);
   data.fill(0);
-  const idHex = rid.dmrId.toString(16).padStart(8, '0');
-  for (let i = 0; i < 4; i++) {
-    data[i] = Number.parseInt(idHex.slice(i * 2, i * 2 + 2), 16) & 0xff;
-  }
-  data.set(encodeWideCharName(rid.name, 52), 4);
+  data.set(encodeBcdAsHexU32(rid.dmrId), 0);
+  data.set(encodeWideCharName(rid.name, RADIO_ID_NAME_BYTES), 4);
   return data;
 }
 

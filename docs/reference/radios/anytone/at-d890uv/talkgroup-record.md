@@ -82,14 +82,19 @@ Studio `RadioWriteProjection` carries NeonPlug quick-contact call types (`0x03` 
 
 Companion write rebuilt whenever the talkgroup bank is encoded (anytone-cps `writeTalkgroupData`). Studio mirrors this on Write.
 
-| Fact         | Value                                                                          |
-| ------------ | ------------------------------------------------------------------------------ |
-| Base         | `0x3f00000`                                                                    |
-| Record shape | Sorted 8-byte pairs: **key** (u32 BE) + **slot id** (u32 BE, 1-based TG index) |
-| Key          | `(BCD-as-hex DMR ID << 1) + call_type` where call type is Anytone `0/1/2`      |
-| Padding      | Total length rounded up to 16 bytes with `0xff` fill                           |
+Each entry is two little-endian u32s: the key, then the 0-based talkgroup index (`tg.index - 1`). Entries sort by unsigned key. After that sort, a later entry whose key equals the previous one is dropped. An odd entry count is followed by one `FF×8` pad. An even count has no pad.
 
-Example: DMR ID `9` group call → key `0x13` (`(9 << 1) + 1`); DMR ID `99` group → key `0xc7`.
+The key is the four BCD ID bytes read as one big-endian integer, times 2, plus 1 only for a group call (`anytoneCallType & 1`). Private (`0`) and all-call (`2`) add 0, so they share a key for the same ID.
+
+| Fact         | Value                                                                        |
+| ------------ | ---------------------------------------------------------------------------- |
+| Base         | `0x3f00000`                                                                  |
+| Record shape | Sorted 8-byte pairs: **key** (u32 LE) + **index** (u32 LE, 0-based TG index) |
+| Key          | BCD bytes as a big-endian integer, times 2, plus 1 for a group call          |
+| Collision    | Private and all-call share a key; the later duplicate is dropped             |
+| Padding      | Odd entry count: one `FF×8`. Even count: none                                |
+
+DMR ID `9` group at index 0 is `13 00 00 00  00 00 00 00` (key `0x13`). DMR ID `99` group at index 0 is `33 01 00 00  00 00 00 00` (key `0x133`). DMR ID `2351234` group at index 0 is `69 24 6A 04  00 00 00 00` (key `0x046A2469`). Private or all-call ID `9` is key `0x12`.
 
 ## Talkgroup position table (`0x3900000`)
 

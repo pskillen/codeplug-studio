@@ -22,21 +22,21 @@ Gap `0x3501260`–`0x35012FF` is unused padding between global block end (`0x350
 
 Studio patches only these offsets on Write; all other bytes in the block are RMW-preserved from hydration.
 
-| Offset           | Size | Field                      | Encoding                                             |
-| ---------------- | ---: | -------------------------- | ---------------------------------------------------- |
-| `0x0a`           |    1 | Manual TX interval         | u8 seconds                                           |
-| `0x0b`           |    1 | Auto TX interval           | u8 wire code `k` (`(k+3)×15` seconds; `0` = off)     |
-| `0x0d`           |    1 | Fixed location beacon      | `0` = off; `1` = beacon slot 1 (library fixed point) |
-| `0x0e`–`0x10`    |    3 | Fix 1 latitude             | degrees, minutes, hundredths-of-minute               |
-| `0x11`           |    1 | Fix 1 N/S                  | `0` = N, `1` = S                                     |
-| `0x12`–`0x14`    |    3 | Fix 1 longitude            | degrees, minutes, hundredths                         |
-| `0x15`           |    1 | Fix 1 E/W                  | `0` = E, `1` = W                                     |
-| `0x40` + 2×(N−1) |    2 | Digital report channel N   | u16 LE — CPS channel `No.` or `0x0fa2` Current       |
-| `0x50` + 4×(N−1) |    4 | Digital report TG N        | BCD-as-hex u32 (DMR ID)                              |
-| `0x70` + (N−1)   |    1 | Digital report call type N | `0` private, `1` group                               |
-| `0x79` + (N−1)   |    1 | Digital report slot N      | `0` current, `1` TS1, `2` TS2                        |
+| Offset           | Size | Field                      | Encoding                                                                 |
+| ---------------- | ---: | -------------------------- | ------------------------------------------------------------------------ |
+| `0x0a`           |    1 | Manual TX interval         | u8 seconds                                                               |
+| `0x0b`           |    1 | Auto TX interval           | u8 wire code `k` (`(k+3)×15` seconds; `0` = off)                         |
+| `0x0d`           |    1 | Fixed location beacon      | `0` = off; `1` = beacon slot 1 (library fixed point)                     |
+| `0x0e`–`0x10`    |    3 | Fix 1 latitude             | degrees, minutes, hundredths-of-minute                                   |
+| `0x11`           |    1 | Fix 1 N/S                  | `0` = N, `1` = S                                                         |
+| `0x12`–`0x14`    |    3 | Fix 1 longitude            | degrees, minutes, hundredths                                             |
+| `0x15`           |    1 | Fix 1 E/W                  | `0` = E, `1` = W                                                         |
+| `0x40` + 2×(N−1) |    2 | Digital report channel N   | u16 LE — 0-based memory index (CPS channel `No.` minus 1), or a sentinel |
+| `0x50` + 4×(N−1) |    4 | Digital report TG N        | BCD-as-hex u32 (DMR ID)                                                  |
+| `0x70` + (N−1)   |    1 | Digital report call type N | `0` private, `1` group                                                   |
+| `0x79` + (N−1)   |    1 | Digital report slot N      | `0` current, `1` TS1, `2` TS2                                            |
 
-N ∈ 1…8. Sentinels for report channel: `0x0fa0` VFO A, `0x0fa1` VFO B, `0x0fa2` Current, `0xffff` none.
+N ∈ 1…8. Sentinels for report channel: `0x0fa0` VFO A, `0x0fa1` VFO B, `0x0fa2` Current, `0xffff` none. VFO A `0x0fa0` is index 4000, the same numbering.
 
 ### Unmodelled (RMW-preserve on Write)
 

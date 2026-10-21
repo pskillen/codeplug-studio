@@ -16,18 +16,11 @@ import {
   talkgroupAddress,
   type AtD890DownloadCache,
 } from './memory.ts';
-import { encodeBcdAsHexU32, decodeBcdAsHexU32 } from './bcd.ts';
+import { encodeBcdAsHexU32 } from './bcd.ts';
 import { encodeWideCharName } from './wideChar.ts';
 
 /** Anytone D890 wire call type: Private=0, Group=1, All=2. */
 const ANYTONE_CALL_TYPE_GROUP = 0x01;
-
-function writeU32Be(buf: Uint8Array, offset: number, value: number): void {
-  buf[offset] = (value >> 24) & 0xff;
-  buf[offset + 1] = (value >> 16) & 0xff;
-  buf[offset + 2] = (value >> 8) & 0xff;
-  buf[offset + 3] = value & 0xff;
-}
 
 function writeU32Le(buf: Uint8Array, offset: number, value: number): void {
   buf[offset] = value & 0xff;
@@ -99,39 +92,60 @@ const NEONPLUG_CALL_TYPE_PRIVATE = 0x03;
 const NEONPLUG_CALL_TYPE_GROUP = 0x04;
 const NEONPLUG_CALL_TYPE_ALL = 0x05;
 
+/**
+ * CPS key: four BCD bytes as a big-endian integer, times 2, plus 1 only for a group call.
+ * Private (`0`) and all-call (`2`) share a key for the same ID.
+ */
 function talkgroupOrderKey(digitalId: number, callType: number | undefined): number {
   const wireCallType = encodeAtD890TalkgroupCallType(callType);
-  const bcdNum = decodeBcdAsHexU32(encodeBcdAsHexU32(digitalId));
-  return (bcdNum << 1) + wireCallType;
+  const bcd = encodeBcdAsHexU32(digitalId);
+  const bcdHex = ((bcd[0]! << 24) | (bcd[1]! << 16) | (bcd[2]! << 8) | bcd[3]!) >>> 0;
+  return (bcdHex * 2 + (wireCallType & 1)) >>> 0;
+}
+
+/** Odd entry counts get one `0xFF`×8 pad. Even counts, including empty, get none. */
+function padOddOrderEntry(raw: Uint8Array): Uint8Array {
+  if (raw.length % 16 === 0) return raw;
+  const out = new Uint8Array(raw.length + 8);
+  out.fill(0xff);
+  out.set(raw);
+  return out;
 }
 
 /**
- * Rebuild TalkgroupOrder at `0x3f00000` (anytone-cps `writeTalkgroupData` companion write).
- * Sorted (key, slotId) pairs; key = (BCD-as-hex DMR ID << 1) + call type; value = 1-based TG index.
+ * Rebuild TalkgroupOrder at `0x3f00000`.
+ * Sorted little-endian pairs. Key is the BCD-byte integer times 2, plus 1 for group.
+ * Value is the 0-based talkgroup index. A later duplicate key is dropped.
  */
 export function encodeAtD890TalkgroupOrder(talkGroups: readonly RadioTalkGroupDto[]): Uint8Array {
   const entries: { key: number; slotId: number }[] = [];
   for (const tg of talkGroups) {
-    if (tg.digitalId <= 0) continue;
+    if (tg.digitalId <= 0 || tg.index < 1) continue;
     entries.push({
       key: talkgroupOrderKey(tg.digitalId, tg.callType),
-      slotId: tg.index,
+      slotId: tg.index - 1,
     });
   }
-  entries.sort((a, b) => a.key - b.key);
+  entries.sort((a, b) => {
+    if (a.key < b.key) return -1;
+    if (a.key > b.key) return 1;
+    return 0;
+  });
 
-  const raw = new Uint8Array(entries.length * 8);
-  for (let i = 0; i < entries.length; i++) {
-    const entry = entries[i]!;
-    writeU32Be(raw, i * 8, entry.key);
-    writeU32Be(raw, i * 8 + 4, entry.slotId);
+  const unique: { key: number; slotId: number }[] = [];
+  for (const entry of entries) {
+    const prev = unique.at(-1);
+    if (prev !== undefined && prev.key === entry.key) continue;
+    unique.push(entry);
   }
 
-  const padTo = raw.length + 0x10 - (raw.length % 0x10);
-  const out = new Uint8Array(padTo);
-  out.fill(0xff);
-  out.set(raw);
-  return out;
+  const raw = new Uint8Array(unique.length * 8);
+  for (let i = 0; i < unique.length; i++) {
+    const entry = unique[i]!;
+    writeU32Le(raw, i * 8, entry.key);
+    writeU32Le(raw, i * 8 + 4, entry.slotId);
+  }
+  return padOddOrderEntry(raw);
 }
 
 export function encodeAtD890TalkgroupRecord(tg: RadioTalkGroupDto): Uint8Array {

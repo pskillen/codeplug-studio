@@ -857,7 +857,8 @@ function radioAprsFromAnytoneLibrary(
           `APRS slot references channel "${slot.channelRef.id}" outside the DMR bank; encoding Current Channel on Web Serial Write`,
         );
       } else {
-        reportChannelWire = wire;
+        // Channel numbers are 1-based. The codec writes this value unchanged.
+        reportChannelWire = wire - 1;
       }
     }
     digitalSlots.push({
