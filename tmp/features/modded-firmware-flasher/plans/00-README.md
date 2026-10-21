@@ -13,7 +13,7 @@ under [#594 Browser radio I/O](https://github.com/pskillen/codeplug-studio/issue
   phase N-1's branch, and its PR targets that branch. The orchestrator never merges.
 - **After every phase, and at every hardware gate inside a phase, the orchestrator stops, notifies the owner and
   waits.**
-- In phases 1, 3 and 4 the implementor pushes the branch to `dev` (`https://dev.codeplug.mm9pdy.net`), stops at the
+- In phases 3 and 4 the implementor pushes the branch to `dev` (`https://dev.codeplug.mm9pdy.net`), stops at the
   hardware gate, and returns the owner's test script. Only the owner touches hardware.
 - In phases 3 and 4, after the owner confirms the gate, an implementor adds **one final commit** on the same branch
   that turns that radio on in prod (`prodFlashDisabled: false`).
@@ -33,16 +33,16 @@ The phases are large, so commits stay atomic per slice.
 - no runtime fetch;
 - no resource-mode (ICON pack) flashing;
 - **no vendor firmware committed anywhere, ever**;
-- no internal or test-status copy in the UI.
+- no internal or test-provenance copy in the UI (no tested/untested pills); a risk acknowledgement on every flash.
 
 ## Phases
 
 | # | File | What | Branch | Depends on | Gate |
 | --- | --- | --- | --- | --- | --- |
-| 1 | [01-design-and-d890-timing.md](01-design-and-d890-timing.md) | DESIGN.md section, AGENTS.md line, firmware-flashing rule; read-only D890 round-trip timing pass | `1359/pskil/firmware-design-and-timing` | — | **H1**: owner measures D890 timing (read-only) |
+| 1 | [01-design-section.md](01-design-section.md) | DESIGN.md section, AGENTS.md line, firmware-flashing rule | `1359/pskil/firmware-design` | — | review |
 | 2 | [02-core-firmware.md](02-core-firmware.md) | Core types, stock pins and verification, `prepareFirmwareImage` (stock), both patch formats | `1360/pskil/firmware-core` | 1 | review |
 | 3 | [03-dm32-end-to-end.md](03-dm32-end-to-end.md) | Updater seam + DM-32UV updater, wizard, prod gate resolver, catalog + `1.0.0` + notes, user patch; then the DM-32UV prod flip | `1363/pskil/firmware-dm32` | 2 | **H-DM32**: owner flashes bundled DM-32UV `1.0.0` from `dev` → final commit flips the prod flag |
-| 4 | [04-d890-end-to-end.md](04-d890-end-to-end.md) | AT-D890UV updater, D890 in the wizard, recovery docs; then the D890 prod flip | `1364/pskil/firmware-d890` | 3 | **H-D890**: owner flashes bundled AT-D890UV `1.0.0` from `dev` → final commit flips the prod flag |
+| 4 | [04-d890-end-to-end.md](04-d890-end-to-end.md) | AT-D890UV updater (measures frame timing and total duration), D890 in the wizard, recovery docs; then the D890 prod flip | `1364/pskil/firmware-d890` | 3 | **H-D890**: owner flashes bundled AT-D890UV `1.0.0` from `dev` → final commit flips the prod flag |
 
 Prod enablement needs only the patched-release flash on hardware. Stock flashing is built and offered as the
 recovery path, with no gate of its own: the firmware projects' own flashers have flashed stock many times.

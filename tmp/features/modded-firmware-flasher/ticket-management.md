@@ -12,10 +12,10 @@ will sequence. The initial delivery needs no new issues. The two follow-ups are 
 
 | Phase | Tickets | PR closes |
 | --- | --- | --- |
-| 1 | #1359, #1364 part 1 (timing spike) | #1359 |
+| 1 | #1359 | #1359 |
 | 2 | #1360, #1361 | #1360, #1361 |
 | 3 | #1363, #1362, #1365 slices 1–2, DM-32UV prod flip | #1363, #1362 |
-| 4 | #1364 part 2, #1365 slice 3, #1366, AT-D890UV prod flip | #1364, #1365, #1366 |
+| 4 | #1364, #1365 slice 3, #1366, AT-D890UV prod flip | #1364, #1365, #1366 |
 
 Sizes are rough. **S** is one small PR, **M** is a few slices in one PR, and **L** is a multi-PR mini-series that
 `phase-plan.md` must split.
@@ -49,7 +49,6 @@ The other OQs keep the design's proposed defaults. Each is assigned to the ticke
 - **The owner runs every physical hardware test.** For a hardware test, the phase's branch is pushed to `dev`, which
   deploys to `dev.codeplug.mm9pdy.net`. The owner tests there with the radio attached. The per-radio prod flags keep the
   flasher hidden on prod throughout.
-- **Optional:** `npm run dev` locally, for fast owner iteration on the AT-D890UV throughput spike (#1364 part 1).
 - **This epic owns `dev` for its duration.** At each hardware gate the implementor force-pushes the phase branch to
   `dev`, and the orchestrator checks it, then stops and notifies the owner.
 - **Planning files live on the orphan branch `plan/modded-firmware-flasher`** (never merged). Containers are reclaimed
@@ -74,7 +73,7 @@ The other OQs keep the design's proposed defaults. Each is assigned to the ticke
 | 3.6 `prepareFirmwareImage`, **patch target** | #1362 |
 | 3.7 `FirmwareUpdater` seam, firmware registry, guarded send, `'interlock'` error, transport filters | #1363 |
 | 3.8 DM-32UV updater + mock; 3.10 DM-32UV interlocks | #1363 |
-| 3.9 AT-D890UV updater + mock; 3.10 AT-D890UV interlocks; throughput spike | #1364 |
+| 3.9 AT-D890UV updater + mock; 3.10 AT-D890UV interlocks; throughput (spike dropped; measured on the real flash) | #1364 |
 | 3.12 app orchestration (`firmwareFlash.ts`); UI changes (route, nav, wizard, wake lock, Stepper) | #1365 |
 | 3.11 flash stock (recovery): picker entry | #1365 (slice 1: stock is the only target) |
 | 3.11 flash stock (recovery): recovery docs and links (the data-driven "not yet proven" label in 3.11 is **dropped**, owner 2026-10-21) | #1366 |
@@ -217,17 +216,15 @@ Design 3.7, 3.8 and 3.10 (DM-32UV rows). It adds:
 
 ### #1364 feat(radio-io): AT-D890UV bootloader updater
 
-**Size:** L (split in phase-plan) · **Priority:** P2 (the spike is P1: it is the epic's top technical risk) · **Depends on:** #1363 for the updater. The hardware spike (part 2) needs only #1359.
+**Size:** L · **Priority:** P2 · **Depends on:** #1363
 
-Design 3.9 and 3.10 (AT-D890UV rows), with the OQ3 default (band-byte interlock on). It has two separable parts.
+Design 3.9 and 3.10 (AT-D890UV rows), with the OQ3 default (band-byte interlock on). **The separate throughput spike
+was dropped** (owner, 2026-10-21): a Studio D890 codeplug write already sends 16-byte `W` frames, each waiting for its
+own ACK, and its write phase takes about 10 to 15 s in an active tab. Instead, the updater measures per-frame round
+trips and total duration on every real flash, and the phase 4 hardware gate records them on #1364. The wizard's
+duration text is then set from that measurement.
 
-**Part 1, the throughput spike** (read-only, no firmware written):
-
-- [ ] A debug route next to `/debug/d890-erase-probe` times about 2,000 normal-mode, read-only AnyTone program-mode round trips on a real D890. It reports the median and p99 in the foreground, in a background tab, and with the screen locked, and projects them to 52,353 frames. It sends nothing the Backup tab doesn't already send.
-- [ ] The results are posted to #1364. If the projection is over about 3 minutes, or p99 is near 2 s, the owner is told before any D890 UI work. Pipelining is rejected (design 3.9).
-- [ ] The JS-overhead half (52,353 frames against the TS mock) runs once the mock exists (part 2).
-
-**Part 2, the updater:**
+**The updater:**
 
 - [ ] `package.ts`, `frames.ts`, `interlocks.ts`, `updater.ts`, `descriptor.ts`, the firmware-mode `MockBootloader` port, and the firmware-mode cases from `tools/test_d890update.py` (the list in design 3.9).
 - [ ] Every interlock in design 3.10 (AT-D890UV rows) has a refusal test, including the band byte and resource mode (14-byte `.spi`).
@@ -272,7 +269,7 @@ Design UI changes and 3.12, with the OQ6, OQ10, OQ11 and OQ12 defaults, the revi
 
 **Slice 2: bundled releases and user patches (DM-32UV).**
 
-- [ ] The release list shows finals with a "Show release candidates" toggle. Each row shows the summary, radio-check status and the Studio copy of its notes.
+- [ ] The release list shows finals with a "Show release candidates" toggle. Each row shows the summary and the Studio copy of its notes (unchanged). RCs carry a factual "Pre-release" label. **No** tested/untested pills: the UI makes no test-provenance claims (owner, 2026-10-21). A risk acknowledgement is required for every flash.
 - [ ] Advanced "Use a patch file from disk": the risk statement and "I understand" gate, or "This is release X (bundled)" when the file matches.
 - [ ] The summary records provenance (`user-supplied patch, sha256 …`).
 - [ ] The done step shows the release's `verifyHint`.
@@ -342,8 +339,6 @@ on `main` ships to prod with the next full Studio release as usual. So:
   The two flags are independent.
 - **Prod before any flip:** the Tools strip entry is hidden and `/firmware` shows a short "not available on this site
   yet" message. This is proposed in #1365.
-- **The spike's debug route** stays under `/debug/`, which is not linked from the nav. If the owner doesn't want it
-  in prod, remove it after the measurement is recorded.
 
 ## Documentation by ticket
 
@@ -354,7 +349,7 @@ on `main` ships to prod with the next full Studio release as usual. So:
 | #1361 | Nothing user-facing (tier-3 patch notes optional) |
 | #1362 | `docs/features/firmware-flashing/adding-a-release.md`; release-notes files beside each patch |
 | #1363 | `dm-32uv/firmware.md` update protocol + interlocks; `adding-a-radio-adapter.md` "Firmware updater" checklist |
-| #1364 | `at-d890uv/firmware.md` update protocol + interlocks; spike numbers posted on the issue |
+| #1364 | `at-d890uv/firmware.md` update protocol + interlocks; measured flash time posted on the issue |
 | #1365 | Hub `docs/features/firmware-flashing/README.md` (status table per slice), `docs/features/README.md` row, `radio-read-write/README.md` row, `modded-firmware/README.md` link, `adding-a-radio-adapter.md` firmware section, `Stepper.md` sidecar |
 | #1366 | Hub recovery section and cross-links |
 
@@ -365,15 +360,13 @@ on `main` ships to prod with the next full Studio release as usual. So:
 ```text
 #1359  DESIGN.md gate
   │
-  ├──► #1364 part 1 (hardware): read-only throughput spike ─────────────────┐  (needs only #1359;
-  │                                                                          │   can run any time)
   ├──► #1360  core foundation + stock + prepare(stock)
   │      │
   │      ├──► #1363  seam + DM-32UV updater
   │      │      │
   │      │      ├──► #1365 slice 1  DM-32UV stock wizard (+ hardware: #1363, #1366 DM-32 boxes)
   │      │      │
-  │      │      └──► #1364 part 2  D890 updater + mock (JS overhead timing) ◄┘
+  │      │      └──► #1364  D890 updater + mock (measures real flash timing)
   │      │
   │      └──► #1362  catalog + user patch + prepare(patch)   ◄── #1361
   │                    │
@@ -381,7 +374,7 @@ on `main` ships to prod with the next full Studio release as usual. So:
   │
   └──► #1361  patch formats (parallel with #1360; whichever lands first creates types.ts)
 
-#1365 slice 2 + #1364 part 2 ──► #1365 slice 3  AT-D890UV in the wizard (+ hardware)
+#1365 slice 2 + #1364 ──► #1365 slice 3  AT-D890UV in the wizard (+ hardware)
                                         │
                                         └──► #1366  recovery docs (no stock gate)
 ```
@@ -390,11 +383,10 @@ Can run in parallel once their prerequisite lands:
 
 - #1360 ∥ #1361. They share `types.ts`, so in a stacked series run #1360 first.
 - #1362 ∥ #1363, both after #1360; #1362 also needs #1361.
-- #1365 slice 1 ∥ #1362 ∥ #1364 part 2, all after #1363 (#1362 also needs #1361).
-- The #1364 part 1 hardware spike is independent of all code tickets after #1359. It needs the owner and a D890.
+- #1365 slice 1 ∥ #1362 ∥ #1364, all after #1363 (#1362 also needs #1361).
 
-**Hardware gates** (owner with radios, on `dev.codeplug.mm9pdy.net`; for the spike, optionally `npm run dev`):
-the phase 1 timing pass (#1364 part 1), the phase 3 DM-32UV `1.0.0` flash, and the phase 4 AT-D890UV `1.0.0` flash. There
+**Hardware gates** (owner with radios, on `dev.codeplug.mm9pdy.net`):
+the phase 3 DM-32UV `1.0.0` flash and the phase 4 AT-D890UV `1.0.0` flash (which also records the measured flash time). There
 is no stock gate. The orchestrator stops at each gate and resumes only on the owner's reply ([Delivery model](#delivery-model-owner-2026-10-21)).
 
 ## Not included here: future and dependent work

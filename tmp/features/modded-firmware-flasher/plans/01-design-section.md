@@ -1,10 +1,10 @@
-# Plan: design section, agent rules and AT-D890UV timing pass
+# Plan: DESIGN.md firmware flashing section and agent rules
 
 **Phase 1 of 4** in the modded firmware flasher series. This file is self-contained.
 
-**Tracking:** [#1359](https://github.com/pskillen/codeplug-studio/issues/1359) (closes) and [#1364](https://github.com/pskillen/codeplug-studio/issues/1364) (part: the read-only timing spike). Epic [#1358](https://github.com/pskillen/codeplug-studio/issues/1358).
-**Branch:** `1359/pskil/firmware-design-and-timing`, from `origin/main`. **PR base:** `main`.
-**PR body:** `Closes #1359`, `Part of #1364`.
+**Tracking:** [#1359](https://github.com/pskillen/codeplug-studio/issues/1359) (closes). Epic [#1358](https://github.com/pskillen/codeplug-studio/issues/1358).
+**Branch:** `1359/pskil/firmware-design`, from `origin/main`. **PR base:** `main`.
+**PR body:** `Closes #1359`.
 
 ---
 
@@ -57,20 +57,15 @@ Containers are reclaimed between phases. Assume nothing is set up.
 
 ## What this phase delivers
 
-Two independent parts in one PR, with one hardware gate at the end:
+Docs and rules only, no `src/` change, with a review gate (no hardware):
 
-- **Part A (#1359):**
-  - DESIGN.md gains its "Firmware flashing" section;
-  - AGENTS.md gains a working-principle line;
-  - a path-scoped `firmware-flashing` rule is added to `.claude/rules/` and `.cursor/rules/`.
+- DESIGN.md gains its "Firmware flashing" section;
+- AGENTS.md gains a working-principle line;
+- a path-scoped `firmware-flashing` rule is added to `.claude/rules/` and `.cursor/rules/`.
 
-  Docs and rules only.
-- **Part B (#1364, part 1):** a **read-only** round-trip timing pass on the existing `/debug/d890-erase-probe` page.
-  It retires the top technical risk, which is AT-D890UV Web Serial throughput, before any D890 code exists.
-- **Hardware gate (H1):** after the PR is open and the branch is on `dev`, the owner measures round trips on a real
-  D890 in normal mode. Nothing is written to the radio.
-
-Commit atomically per slice. The two parts touch disjoint files.
+(The earlier plan had a D890 timing spike here. The owner dropped it on 2026-10-21: a Studio D890 codeplug write
+already runs 16-byte `W` frames with a per-frame ACK in about 10 to 15 s. Phase 4 measures the real flash timing
+instead.)
 
 ## Preconditions
 
@@ -320,165 +315,17 @@ alwaysApply: false
 This part *is* documentation. No feature hub yet: the hub `docs/features/firmware-flashing/README.md` arrives with
 the first wizard (phase 3). There are no product-behaviour changes.
 
-## Part B: AT-D890UV Web Serial round-trip timing pass (#1364, read-only)
-
-### Background
-
-The AT-D890UV firmware update protocol, which a later phase ports, sends about **52,515 frames** for release
-`1.0.0`. Each frame is 40 bytes and waits for a 1-byte `06` ACK, with a **2 s per-frame timeout**. The firmware
-repo's Python sender takes about 25 s (roughly 0.5 ms per round trip); the vendor CPS takes under a minute. Studio's
-Web Serial pipe does one `await writer.write()`, then a `readExact(1, …)` that parks on a promise woken by a reader
-pump. **Its per-round-trip latency in Chromium is unmeasured.** At 1 to 4 ms it would take 50 to 210 s. That is fine,
-but tab throttling could make it worse.
-
-This part retires that risk **before any D890 updater or UI is built**. It adds a **read-only** pass to the existing
-debug page `/debug/d890-erase-probe`. On a D890 in **normal (codeplug) mode**, the pass times about 2,000 small
-request/reply exchanges, using the same AnyTone program-mode read frame the Backup tab already sends. The same USB
-CDC device and driver carry the bootloader traffic later. The pass reports the median and p99, and projects them to
-the full frame count.
-
-A handshake-only run in update mode can't measure this, because it sends no data frames. That is why normal-mode
-reads are the proxy.
-
-**Nothing in this part writes to the radio.** No `W` frames and no update-mode traffic.
-
-### Current state (verify; snapshot from `main` at `5c0e0a1`)
-
-- `src/app/routes/debug/DebugD890EraseProbePage.tsx` is the AT-D890UV probe page at `/debug/d890-erase-probe`
-  (route in `src/app/App.tsx`, linked from `src/app/routes/debug/DebugIndexPage.tsx`).
-  - It imports from `@integrations/radio-io/radios/at-d890uv/index.ts` directly. That is a known, accepted
-    exception for this debug page; do not add such imports anywhere else.
-  - It has a `Pass` union (`'inspect' | 'paint' | 'mark' | 'measure' | 'diagnose' | 'link' | 'writeProbe' |
-    'writeVerify' | 'configAlias'`), a `PASS_LABEL` record and a `PASS_COMMITS_WRITES` record.
-  - `runPass(pass)` opens a port and dispatches. It does
-    `const port = await requestWebSerialPort(false); pipe = await openWebSerialPipe(port, AT_D890_CONNECTION.BAUD_RATE)`,
-    then branches by pass. For example:
-    `} else if (pass === 'link') { const r = await runAtD890LinkProbe(pipe, opts); … }`
-    with `opts = { onProgress: setProgress }`.
-  - Read-only passes have buttons such as `<Button variant="default" disabled={anyBusy} onClick={() => void runPass('link')}>{PASS_LABEL.link}</Button>`.
-- `src/integrations/radio-io/radios/at-d890uv/eraseUnitProbeRunner.ts`:
-  - `export interface AtD890ProbeOpts { onProgress?: ProgressFn; signal?: AbortSignal }`
-  - `async function enterProgramAndIdent(pipe, signal): Promise<string>` (module-private): `atD890EnterProgram` then
-    `atD890ProbeIdent`, returning the model;
-  - `async function commit(pipe)` (module-private): `atD890ExitProgram(pipe)`;
-  - `export async function runAtD890LinkProbe(pipe, opts = {})`: enter + ident → profile → `commit` → return.
-- `src/integrations/radio-io/radios/at-d890uv/connection.ts`:
-  - `export async function atD890ReadBlockRaw(pipe: BytePipe, address: number, length: number, signal?: AbortSignal): Promise<Uint8Array>`
-  - It is a single read frame, `makeAnytoneDmrReadFrame(address, length)`, reply `length + 8` bytes, with up to two
-    resends on timeout or checksum error. Read-only.
-- `src/integrations/radio-io/radios/at-d890uv/linkProbe.ts` already notes that a repeated 16-byte read at one address
-  costs about 0.5 ms (page-cache hit). That is why repeating one address measures the **link**, not the flash. Its
-  `AT_D890_PROBE.SPAN_START` is a safe read address used by the existing probes.
-- `src/integrations/radio-io/radios/at-d890uv/index.ts` re-exports the link probe and runner symbols the page uses.
-- Integrations code must not touch the DOM. The page (app layer) may.
-
-### Slice 3: round-trip measurement (integrations, pure stats + runner)
-
-Create `src/integrations/radio-io/radios/at-d890uv/roundTripProbe.ts`:
-
-```ts
-export const AT_D890_FW_FRAMES_STOCK = 52_353;   // stock V1.05 .CDD 1,675,272 B / 32
-export const AT_D890_FW_FRAMES_1_0_0 = 52_515;   // release 1.0.0: .CDD 1,680,476 B, ceil(/32)
-
-export interface AtD890RoundTripSample { readonly ms: number; readonly tag: string } // tag e.g. 'visible' | 'hidden'
-export interface AtD890RoundTripStats {
-  readonly count: number; readonly meanMs: number; readonly medianMs: number;
-  readonly p95Ms: number; readonly p99Ms: number; readonly maxMs: number;
-  readonly projectedSeconds: { readonly stock: number; readonly release100: number }; // median × frames / 1000
-  readonly p99OverBudget: boolean; // p99 >= 1000 ms (half the bootloader's 2 s frame timeout)
-}
-/** Pure. Percentiles by nearest-rank on a sorted copy. */
-export function summariseAtD890RoundTrips(samples: readonly number[]): AtD890RoundTripStats;
-
-export interface AtD890RoundTripOpts extends AtD890ProbeOpts {
-  readonly count?: number;        // default 2000
-  readonly readLength?: number;   // default 16 (1..255)
-  /** Called before each exchange; the app passes document.visibilityState. Integrations stay DOM-free. */
-  readonly tagSample?: () => string;
-}
-export interface AtD890RoundTripResult {
-  readonly model: string;
-  readonly samples: readonly AtD890RoundTripSample[];
-  readonly overall: AtD890RoundTripStats;
-  readonly byTag: Readonly<Record<string, AtD890RoundTripStats>>;
-}
-export async function runAtD890RoundTripProbe(pipe: BytePipe, opts?: AtD890RoundTripOpts): Promise<AtD890RoundTripResult>;
-```
-
-**Runner behaviour:**
-
-1. Enter program mode and ident, exactly as `runAtD890LinkProbe` does. Move `enterProgramAndIdent` / `commit` into a
-   small shared helper, or export them from `eraseUnitProbeRunner.ts`. Don't duplicate them.
-2. Loop `count` times. On each pass:
-   - `throwIfAborted(signal)`;
-   - `tag = tagSample?.() ?? 'n/a'`;
-   - `t0 = performance.now()`;
-   - `await atD890ReadBlockRaw(pipe, AT_D890_PROBE.SPAN_START, readLength, signal)`;
-   - push `{ ms: performance.now() - t0, tag }`;
-   - report progress every 50 exchanges.
-3. Exit program mode (`commit`) in a `finally`.
-4. Return the stats overall and grouped by tag.
-
-**Tests:** `roundTripProbe.test.ts`.
-
-- `summariseAtD890RoundTrips` on known arrays: median, p95, p99, max and projections, plus an empty array (throws
-  or returns zeros; pick one and test it).
-- The runner against the existing D890 `__fixtures__/scriptedPipe.ts`, or a minimal fake `BytePipe` that answers
-  ident and read frames. Check that it sends only enter-program, ident, `R` reads and exit. Assert that **no
-  write-opcode frame** appears in the TX log.
-
-Export the new symbols from `src/integrations/radio-io/radios/at-d890uv/index.ts`.
-
-**Commit checkpoint:** `feat(radio-io): add read-only AT-D890UV round-trip timing probe`
-
-### Slice 4: debug page pass
-
-In `DebugD890EraseProbePage.tsx`:
-
-- Add `'roundTrip'` to `Pass`, `PASS_LABEL.roundTrip = 'Round-trip timing (read-only)'` and
-  `PASS_COMMITS_WRITES.roundTrip = false`.
-- In `runPass`, call
-  `runAtD890RoundTripProbe(pipe, { ...opts, tagSample: () => document.visibilityState })`. Store the result in
-  state, and append a log line: median, p99, and the projection for `1.0.0` in seconds.
-- Add a button next to "Profile link speed (read-only)".
-- Render a small results table with rows Overall, `visible` and `hidden` (when present). Columns: count, median,
-  p95, p99, max, projected stock, projected `1.0.0`.
-- Add a short instruction:
-
-  > Put the radio in normal mode. Start the pass, then switch to another tab for about 20 s, then lock the screen
-  > for about 20 s, then come back. The hidden rows show the throttled cost.
-
-- Add a **Copy results** button that copies a plain-text summary (overall and per tag), for posting on #1364.
-- Show a verdict line from the overall stats:
-  - "OK to proceed" when projected `1.0.0` ≤ 180 s and `p99OverBudget` is false;
-  - otherwise "Raise with the owner before D890 UI work".
-- Don't touch the other passes.
-
-**Commit checkpoint:** `feat(debug): add D890 round-trip timing pass to the erase probe page`
-
-### Slice 5: docs
-
-- Find where the `/debug/d890-erase-probe` passes are documented: `docs/reference/radios/anytone/at-d890uv/memory-layout.md`
-  mentions the page (grep `d890-erase-probe`). Add one short paragraph there about the round-trip pass: what it
-  sends (read-only `R` frames at one address), what it reports, and why it exists (the firmware-update throughput
-  check for #1364).
-- If `docs/features/debug/README.md` lists the debug pages or passes, add one line there too.
-
-**Commit checkpoint:** `docs(radio-io): document the D890 round-trip timing pass`
-
 ## Test plan
 
 - [ ] DESIGN.md renders: the section sits between "Import and export" and "Build capability traits", and the
       tables are well formed
 - [ ] `.claude/rules/firmware-flashing.md` and `.cursor/rules/firmware-flashing.mdc` have identical bodies
-- [ ] `roundTripProbe.test.ts` passes: the stats, and a runner TX log with no write-opcode frames
-- [ ] Existing at-d890uv and debug-page tests still pass
+- [ ] No file outside `DESIGN.md`, `AGENTS.md`, `.claude/rules/` and `.cursor/rules/` changed
 - [ ] `npm run format:check && npm run lint && npm run test && npm run build`
-- [ ] `npm run dev` → `/debug/d890-erase-probe` renders the new button and the empty results table (no radio needed)
 
 ## Git workflow
 
-- **Branch:** `1359/pskil/firmware-design-and-timing`. Create it with `git checkout -B 1359/pskil/firmware-design-and-timing origin/main`. This is phase 1, so it starts from `main`.
+- **Branch:** `1359/pskil/firmware-design`. Create it with `git checkout -B 1359/pskil/firmware-design origin/main`. This is phase 1, so it starts from `main`.
 - **PR base:** `main`.
 - **Commit as you go.** At every commit checkpoint:
   1. run the checks that apply;
@@ -491,58 +338,28 @@ In `DebugD890EraseProbePage.tsx`:
 - **Before the PR:**
   1. `npm run format`, and commit any drift as `chore: format`;
   2. `npm run format:check && npm run lint && npm run test && npm run build`, all green.
-- **Push:** `git push -u origin 1359/pskil/firmware-design-and-timing`.
-- **PR:** use `mcp__github__create_pull_request` (owner `pskillen`, repo `codeplug-studio`, head `1359/pskil/firmware-design-and-timing`,
+- **Push:** `git push -u origin 1359/pskil/firmware-design`.
+- **PR:** use `mcp__github__create_pull_request` (owner `pskillen`, repo `codeplug-studio`, head `1359/pskil/firmware-design`,
   base `main`). The title is a conventional summary. The body has:
   - Summary, by Part;
   - **Documentation** checklist (hub / deep dive / sidecar / index row, or N/A with a reason);
   - **Test plan**;
   - **Deviations from the phase file** (say "none" if none);
-  - `Closes #1359, Part of #1364`.
-- **Hardware gate (H1, read-only).** After the PR is open:
-  1. push the branch to `dev` with `git push --force origin HEAD:dev`. This epic owns `dev` for its duration, so no
-     permission is needed;
-  2. **stop**;
-  3. return the "Hardware gate" script below to the orchestrator.
-
-  Nothing comes after the gate in this phase.
+  - `Closes #1359`.
+- **No hardware gate.** After the PR is open, return to the orchestrator; it stops for review.
 - **Do not merge.** Do not wait for CI.
 - **Return to the orchestrator:** the PR URL, the branch head SHA, the deviations, and anything the next phase must
   know.
 
-## Hardware gate (H1): timing measurements
+## Hardware gate
 
-After the PR is open, push the branch to `dev` (`git push --force origin HEAD:dev`), then **stop** and return this
-script to the orchestrator. The orchestrator relays it to the owner. The owner may use `npm run dev` locally instead.
-
-> **H1, AT-D890UV round-trip timing (read-only, writes nothing).**
->
-> 1. Open `https://dev.codeplug.mm9pdy.net/debug/d890-erase-probe` in Chrome or Edge (or a local `npm run dev`).
-> 2. AT-D890UV powered on in **normal mode**, USB connected. Close the vendor CPS.
-> 3. Click **Round-trip timing (read-only)** and pick the radio's port.
-> 4. Stay on the tab for about 20 s, switch to another tab for about 20 s, lock the screen for about 20 s, then come
->    back and let it finish.
-> 5. Click **Copy results** and reply with the text.
-> 6. Optional: repeat once with a different USB port or cable.
-
-**Record:** the orchestrator posts the owner's numbers as a comment on #1364 (with the footer).
-
-**Decision rule:**
-
-- If projected `1.0.0` ≤ 180 s and p99 is well under 2 s in all rows, continue.
-- Otherwise the owner chooses: accept, or ask for the optional pipe-optimisation slice in phase 4.
-
-**Pipelining frames ahead of their ACK is rejected.**
-
-This phase has nothing to add after the gate. The orchestrator moves on to phase 2 once the owner replies.
+None. The orchestrator stops after this phase for the owner's review.
 
 ## Out of scope
 
-- Any firmware code (phases 2 to 4). The feature hub arrives in phase 3.
-- Update-mode traffic, and any change to `webSerialPipe.ts`.
+- Any code (phases 2 to 4). The feature hub arrives in phase 3.
 - Rewording DESIGN.md "What this is" / "Non-goals: Replacing vendor CPS". Leave those lines alone.
 
 ## Cross-phase note
 
-- Keep the DESIGN.md heading text "Firmware flashing" exactly; later phases link `DESIGN.md#firmware-flashing`.
-- Phase 4 may reuse `AT_D890_FW_FRAMES_1_0_0` / `AT_D890_FW_FRAMES_STOCK` from `roundTripProbe.ts`.
+Keep the DESIGN.md heading text "Firmware flashing" exactly; later phases link `DESIGN.md#firmware-flashing`.

@@ -71,8 +71,9 @@ Containers are reclaimed between phases. Assume nothing is set up.
   orchestrator handles. Do not start the next phase.
 - **All user-facing strings are written for an end-user operator; no internal/test-status notes.** Don't put
   Studio's own testing history or proof status in the UI ("not yet hardware-proven" and similar). That belongs in
-  docs and issues. Release-specific facts the operator needs, such as a release's own notes or an RC's "pre-release,
-  for testing" pill, are fine.
+  docs and issues. **Make no claims about test provenance** (no "tested", "untested", "checked on a radio" or similar).
+  This is experimental amateur hobby firmware: the UI makes the risk clear and lets the operator decide. Release notes
+  shown are the copied notes, unchanged, and an RC may carry a factual "Pre-release" label.
 
 ## What this phase delivers
 
@@ -133,9 +134,7 @@ Everything for the DM-32UV, in one PR with atomic commits:
     `DM32UV_STOCK_FIRMWARE`;
   - `src/core/radios/anytone/at-d890uv/firmware.ts`: `AT_D890UV_FIRMWARE_ROLE`, `AT_D890UV_STOCK_FIRMWARE`.
 
-**Phase 1:** DESIGN.md "Firmware flashing", `.claude/rules/firmware-flashing.md`, and the D890 timing pass on
-`/debug/d890-erase-probe`. The owner's timing numbers are in the orchestrator's "Prior phases" note; they don't
-affect the DM-32UV.
+**Phase 1:** DESIGN.md "Firmware flashing" and `.claude/rules/firmware-flashing.md`.
 
 There is **no markdown renderer dependency** in `package.json`. Don't add one.
 
@@ -777,8 +776,10 @@ The page is wrapped in `DesignSystemV2Provider`, and follows `docs/reference/sty
    - Verified bytes are kept in component state only.
 4. **Prepare.** Run `prepareStockFlash`. Show the result hashes (short) and the provenance. Any failure stops here:
    "Nothing was sent to the radio."
-5. **Before you flash.** Required checkboxes:
-   - "I understand this can brick my radio";
+5. **Before you flash.** Required checkboxes, for **every** flash (stock, bundled release or user patch):
+   - a risk acknowledgement, shown in full every time: "This is experimental amateur firmware tooling. Flashing can
+     leave your radio unable to boot until it is recovered, and you flash at your own risk." with the checkbox
+     "I understand and accept the risk";
    - "The battery is charged";
    - "I'm using a short, direct USB cable (no hub)";
    - "The vendor CPS and other Studio tabs are closed".
@@ -945,7 +946,6 @@ export interface BundledFirmwareRelease {
   readonly stockVersion: string;        // must equal the radio's StockFirmwareDescriptor.version
   readonly publishedOn: string;         // ISO date
   readonly summary: string;             // one or two sentences for the release list
-  readonly radioStatus: 'radio-checked' | 'emulator-checked' | 'not-checked';
   readonly verifyHint: string;          // how the operator confirms this release is running
   /** Result hashes by role, duplicated from the patch so stock resolution can spot already-patched input. */
   readonly resultSha256: Readonly<Record<string, string>>;
@@ -985,7 +985,7 @@ export const BUNDLED_FIRMWARE_RELEASES: readonly BundledFirmwareRelease[] = [
     radioId: 'baofeng-dm32uv', tag: '1.0.0', channel: 'final',
     patchFile: 'dm32-fw-1.0.0.patch.json',
     patchSha256: 'fb14da26d8248011d50b89fc8286c67fcbcabeb3b43ebf3d184afd7bc474bf9f',
-    stockVersion: 'v1.01.048', publishedOn: '2026-10-20', radioStatus: 'radio-checked',
+    stockVersion: 'v1.01.048', publishedOn: '2026-10-20',
     summary: 'Zone scan on channels without a scan list, a quick menu with light mode, position-report retry, a GPS padding fix and menu text fixes.',
     verifyHint: 'Press Scan on a channel with no scan list: a zone scan should start. Device information still reads DM32.01.L01.048; that is expected.',
     resultSha256: { bin: '342bd5aceb5021508d31a1fc58d1cb12e41a1840ebe1b1c18c86f3cd23e5739a' },
@@ -996,7 +996,7 @@ export const BUNDLED_FIRMWARE_RELEASES: readonly BundledFirmwareRelease[] = [
     radioId: 'anytone-at-d890uv', tag: '1.0.0', channel: 'final',
     patchFile: 'd890-fw-1.0.0.patch.json',
     patchSha256: 'bd9e32812a89d91fdb548f6dddbea81f7de65c3d8c096e87ed20c82487f68b1f',
-    stockVersion: 'V1.05 (20260521)', publishedOn: '2026-10-20', radioStatus: 'radio-checked',
+    stockVersion: 'V1.05 (20260521)', publishedOn: '2026-10-20',
     summary: 'Talk-group keys, a star-key timeslot toggle, a quick filters menu, whole-zone scan, and the release name on the power-on screen.',
     verifyHint: 'Menu > Device Info > Version shows "1.0.0".',
     resultSha256: {
@@ -1111,7 +1111,7 @@ Also: wire `listKnownPatchedResults(radioId)` into `src/app/services/firmwareFla
   3. Copy the file with `cp` to `src/core/firmware/releases/<radioId>/<tag>.patch.json`. **Never reformat it**:
      `.prettierignore` and `.gitattributes` protect it.
   4. Write the Studio copy of the release notes as `<tag>.release-notes.md`.
-  5. Add the index row, including `resultSha256`, `verifyHint` and `radioStatus`.
+  5. Add the index row, including `resultSha256` and `verifyHint`.
   6. Run `npm run format` and confirm the hash is unchanged.
   7. Run the catalog test.
   8. Optionally run the local stock check with `CODEPLUG_FIRMWARE_STOCK_DIR`.
@@ -1131,7 +1131,7 @@ The `/firmware` wizard flashes **stock only** after Part B. The release catalog 
 with DM-32UV `1.0.0` and AT-D890UV `1.0.0` bundled. This part lets the operator:
 
 - pick a **bundled release**. Finals are shown; a "Show release candidates" toggle adds RCs, labelled pre-release.
-  Each row shows its summary, its radio-check status and **its release notes (the Studio copy)**;
+  Each row shows its summary and **its release notes (the Studio copy, unchanged)**;
 - or, under **Advanced**, **use a patch file from disk**. That requires accepting a risk statement, unless the file is
   byte-identical to a bundled release, in which case it's treated as that release.
 
@@ -1205,11 +1205,9 @@ Tests:
 **Firmware step:**
 
 - For the chosen radio, `listBundledReleases(radioId, includeRc)`. A `ToggleSwitch` "Show release candidates"
-  defaults off. RC rows carry a `Pill` "Pre-release, for testing".
-- Each row: tag, date, `summary`, a radio-status pill (`radio-checked` → "Tested on a radio"; `emulator-checked` →
-  "Tested in an emulator only"; `not-checked` → "Untested"). This describes the firmware release itself, from its
-  notes, for the operator; it is not Studio's own test status, and a **"Release notes"** disclosure that lazy-loads
-  `release.loadNotes()` into `ReleaseNotes`.
+  defaults off. RC rows carry a factual `Pill` "Pre-release".
+- Each row: tag, date, `summary`, and a **"Release notes"** disclosure that lazy-loads `release.loadNotes()` into
+  `ReleaseNotes`. **No** tested/untested or similar pill: the UI makes no claims about test provenance.
 - The **"Stock firmware (v…)"** entry stays, always present (it is the recovery path).
 - An **Advanced** disclosure, **"Use a patch file from disk"**:
   - `FileDropzone accept=".json"`, then `filesToNamedBytes`, then `loadChosenPatch(radioId, {kind:'user-patch', file})`.
@@ -1222,7 +1220,8 @@ Tests:
     > produces is safe**. A bad patch can leave your radio unable to boot. Only use patch files you built yourself or
     > got from the firmware project's own release page.
 
-    Plus a `Checkbox` "I understand", which **must** be ticked to continue. Show the patch version and a short
+    Plus a `Checkbox` "I understand", which **must** be ticked to continue. This is **in addition to** the risk
+    acknowledgement every flash requires at "Before you flash". Show the patch version and a short
     sha256.
   - A `FirmwareError` shows its message, for example "This patch is for the AT-D890UV".
 
@@ -1275,8 +1274,9 @@ Update hub `docs/features/firmware-flashing/README.md`:
       empty
 - [ ] `src/app` imports radio-io only from `@integrations/radio-io` (except the existing debug page)
 - [ ] No `dangerouslySetInnerHTML` in `src/app/routes/firmware/`
-- [ ] Every user-facing string reads as operator copy. No internal or test-status wording (`grep -rniw proven` in `src/app`,
-      "hardware-proven", "not yet tested by Studio")
+- [ ] Every user-facing string reads as operator copy. No internal or test-provenance wording
+      (`grep -rniwE "proven|tested|untested" src/app/routes/firmware` finds nothing user-facing). The risk
+      acknowledgement is required for every flash, bundled and stock included
 - [ ] `npm run format:check && npm run lint && npm run test && npm run build` (the build exercises `?raw`)
 - [ ] `npm run dev` → `/firmware`:
   - the DM-32UV card shows `1.0.0` with notes, plus the stock entry;

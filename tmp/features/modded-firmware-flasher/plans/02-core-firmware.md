@@ -3,8 +3,8 @@
 **Phase 2 of 4** in the modded firmware flasher series. This file is self-contained.
 
 **Tracking:** [#1360](https://github.com/pskillen/codeplug-studio/issues/1360) and [#1361](https://github.com/pskillen/codeplug-studio/issues/1361), both closed by this PR. Epic [#1358](https://github.com/pskillen/codeplug-studio/issues/1358).
-**Branch:** `1360/pskil/firmware-core`, from `origin/1359/pskil/firmware-design-and-timing`. **PR base:**
-`1359/pskil/firmware-design-and-timing`. **PR body:** `Closes #1360`, `Closes #1361`.
+**Branch:** `1360/pskil/firmware-core`, from `origin/1359/pskil/firmware-design`. **PR base:**
+`1359/pskil/firmware-design`. **PR body:** `Closes #1360`, `Closes #1361`.
 
 ---
 
@@ -79,8 +79,8 @@ Pure core code, no UI and no hardware gate (the orchestrator stops for review):
 
 ## Preconditions
 
-- `origin/1359/pskil/firmware-design-and-timing` exists. It contains phase 1: the DESIGN.md "Firmware flashing"
-  section, the agent rule, and the D890 timing pass on the debug page.
+- `origin/1359/pskil/firmware-design` exists. It contains phase 1: the DESIGN.md "Firmware flashing"
+  section and the agent rule.
 - `src/core/firmware/` does **not** exist yet.
 
 ## Part A: core firmware foundation, stock pins and stock-target prepare (#1360)
@@ -742,8 +742,8 @@ buffer.
 
 ## Git workflow
 
-- **Branch:** `1360/pskil/firmware-core`. Create it with `git checkout -B 1360/pskil/firmware-core origin/1359/pskil/firmware-design-and-timing`. This is a **stacked** start: the previous phase branch, not `main`.
-- **PR base:** `1359/pskil/firmware-design-and-timing`. Do **not** target `main`.
+- **Branch:** `1360/pskil/firmware-core`. Create it with `git checkout -B 1360/pskil/firmware-core origin/1359/pskil/firmware-design`. This is a **stacked** start: the previous phase branch, not `main`.
+- **PR base:** `1359/pskil/firmware-design`. Do **not** target `main`.
 - **Commit as you go.** At every commit checkpoint:
   1. run the checks that apply;
   2. stage only that slice's files;
@@ -757,7 +757,7 @@ buffer.
   2. `npm run format:check && npm run lint && npm run test && npm run build`, all green.
 - **Push:** `git push -u origin 1360/pskil/firmware-core`.
 - **PR:** use `mcp__github__create_pull_request` (owner `pskillen`, repo `codeplug-studio`, head `1360/pskil/firmware-core`,
-  base `1359/pskil/firmware-design-and-timing`). The title is a conventional summary. The body has:
+  base `1359/pskil/firmware-design`). The title is a conventional summary. The body has:
   - Summary, by Part;
   - **Documentation** checklist (hub / deep dive / sidecar / index row, or N/A with a reason);
   - **Test plan**;

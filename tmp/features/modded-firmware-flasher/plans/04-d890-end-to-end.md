@@ -71,8 +71,9 @@ Containers are reclaimed between phases. Assume nothing is set up.
   orchestrator handles. Do not start the next phase.
 - **All user-facing strings are written for an end-user operator; no internal/test-status notes.** Don't put
   Studio's own testing history or proof status in the UI ("not yet hardware-proven" and similar). That belongs in
-  docs and issues. Release-specific facts the operator needs, such as a release's own notes or an RC's "pre-release,
-  for testing" pill, are fine.
+  docs and issues. **Make no claims about test provenance** (no "tested", "untested", "checked on a radio" or similar).
+  This is experimental amateur hobby firmware: the UI makes the risk clear and lets the operator decide. Release notes
+  shown are the copied notes, unchanged, and an RC may carry a factual "Pre-release" label.
 
 ## What this phase delivers
 
@@ -80,8 +81,8 @@ Everything for the AT-D890UV, plus the recovery docs, in one PR with atomic comm
 
 - **Part A (#1364, part 2):** the AT-D890UV updater (byte-exact port of `d890update.py`, firmware mode only), the
   mock bootloader, and every interlock, including the band byte. It is registered with `prodFlashDisabled: true`.
-  The part also records the JS-side timing, and optionally a pipe optimisation if the owner asked after phase 1's
-  timing gate.
+  The updater **measures per-frame round-trip timing and total flash duration** on every real flash; the summary
+  shows them, and the hardware gate records them on #1364.
 - **Part B (#1365, slice 3):** the wizard handles D890 end states (`port-closed-by-radio`, `no-reply`), throttles
   long progress, and shows the connect-step warnings.
 - **Part C (#1366):** stock flash as the documented recovery path: the hub's Recovery section, and links from the
@@ -132,9 +133,11 @@ The updater is **registered normally**, with:
 
 The wizard is radio-generic, so the D890 will appear on pre-prod once registered. D890-specific wizard wording comes in Part B.
 
-**Throughput.** Phase 1 measured Web Serial round trips on a real D890, read-only. The orchestrator's "Prior phases"
-note carries the numbers and the owner's decision. **If the owner asked for a pipe optimisation, do the optional slice at the end of Part A.**
-Otherwise skip it. Pipelining frames ahead of their ACK is rejected either way: it changes the protocol.
+**Throughput.** There was no separate timing spike (owner, 2026-10-21): a Studio D890 codeplug write already sends
+16-byte `W` frames, each waiting for its own ACK, and its write phase takes about 10 to 15 s in an active tab. This
+phase measures the real thing instead. The updater times every frame's round trip, and the hardware gate records the
+median, p99 and total duration on #1364. The wizard's duration text is then set from that measurement, in the final
+slice. Pipelining frames ahead of their ACK is rejected: it changes the protocol.
 
 **Vendor firmware rule:** tests use **synthetic** packages only. A real stock run through the mock is the firmware
 repo's `test_stock_firmware_through_the_mock`, which needs vendor files; **don't port it**. Replace it with a
@@ -176,7 +179,8 @@ test includes the "one write call site" source check. Its mock is `radios/dm32uv
 
 - `constants.ts` has `AT_D890_CONNECTION.BAUD_RATE = 921600`;
 - `index.ts` holds the exports;
-- `roundTripProbe.ts` (phase 1) has `AT_D890_FW_FRAMES_STOCK = 52_353` and `AT_D890_FW_FRAMES_1_0_0 = 52_515`.
+- Frame counts (define them in `firmwareUpdate/constants.ts`): `AT_D890_FW_FRAMES_STOCK = 52_353` (stock `.CDD` 1,675,272 B / 32) and
+  `AT_D890_FW_FRAMES_1_0_0 = 52_515` (`1.0.0` `.CDD` 1,680,476 B, rounded up).
 
 The **Web Serial pipe**, `transport/webSerialPipe.ts`:
 
@@ -360,11 +364,15 @@ export const AT_D890UV_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   createUpdater: () => createD890FirmwareUpdater(),
   capacitorSupported: false,
   prodFlashDisabled: true,          // cleared by this part's final commit, after 1.0.0 is flashed on hardware
-  expectedDuration: '<from the phase 1 timing projection, e.g. "1 to 3 minutes">',
+  expectedDuration: 'a few minutes',  // set from the measured hardware flash in the final slice
 };
 ```
 
-Set `expectedDuration` from the owner's phase 1 timing numbers, which arrive in "Prior phases".
+**Timing measurement.** Add an optional field to `FirmwareFlashResult` in `src/integrations/radio-io/firmware/types.ts`:
+`readonly timing?: { readonly medianFrameMs: number; readonly p99FrameMs: number; readonly maxFrameMs: number }`.
+The D890 updater records each data frame's write-to-ACK time in a preallocated `Float64Array(N)` (keep it cheap),
+and fills `timing` on success and on failure (the latter is attached to `FirmwareFlashError` as `timing`, if
+practical). The DM-32UV updater may leave it undefined. Test: the field is populated against the mock.
 
 Export it from `radios/at-d890uv/index.ts`, and **register it** in `firmware/registry.ts`, after the DM-32UV. **Do not
 change the DM-32UV descriptor.**
@@ -387,7 +395,7 @@ Tests (`updater.test.ts`), porting the firmware-mode cases of `tools/test_d890up
 - the registry now lists both radios; the D890 has `prodFlashDisabled: true`;
   the DM-32UV is unchanged.
 
-**Timing test** (the JS-side overhead from the spike plan): build a synthetic package of
+**Timing test** (JS-side overhead): build a synthetic package of
 `AT_D890_FW_FRAMES_1_0_0 × 32` bytes, run the whole session against the mock, and record the elapsed time with
 `console.info`. Assert only a generous ceiling (for example under 60 s on CI), and put the measured number in the PR
 description.
@@ -410,9 +418,10 @@ description.
 
 **Commit checkpoint:** `docs(radio-io): document the AT-D890UV bootloader protocol`
 
-### Slice 5 (optional: only if the owner asked after the phase 1 timing gate): Web Serial pipe optimisation
+### Slice 5 (optional: only if the owner asks after the hardware gate): Web Serial pipe optimisation
 
-If "Prior phases" says the owner wants the pipe made faster, keep `BytePipe` and its behaviour unchanged, and reduce
+Skip this slice on the first pass. If the owner's gate reply says the flash is too slow and asks for this, do it as a
+fix on this branch before the prod flip, then re-push to `dev` for another gate run. To make the pipe faster, keep `BytePipe` and its behaviour unchanged, and reduce
 per-read overhead in `transport/webSerialPipe.ts`. Two candidates:
 
 - avoid reallocating `buf` on every chunk (use a growable buffer with a read offset);
@@ -469,7 +478,8 @@ Done step, generic on `outcome.result.end`:
 
 Also:
 
-- The summary gains a line `End: <end>`, if not already present, plus the elapsed time in mm:ss.
+- The summary gains a line `End: <end>`, if not already present, plus the elapsed time in mm:ss and, when
+  `result.timing` is set, `Frame round trip: median <x> ms, p99 <y> ms, max <z> ms`.
 - Show `descriptor.stock.bootloaderEntry.warnings` again, in a `StatusBanner`, directly above "Connect and flash".
 - The radio cards show `expectedDuration`. Confirm the D890 card does.
 
@@ -545,7 +555,7 @@ Write `## Recovery` in the hub (tier 1: product behaviour, no wire tables):
 - [ ] No radio branching in the app:
       `grep -rn "anytone-at-d890uv\|baofeng-dm32uv\|0483\|1a86" src/app/routes/firmware src/app/services/firmwareFlash.ts`
       adds nothing
-- [ ] Every user-facing string reads as operator copy. No internal or test-status wording
+- [ ] Every user-facing string reads as operator copy. No internal or test-provenance wording
 - [ ] The recovery links resolve (relative doc links; the app's GitHub link builds the right URL)
 - [ ] `npm run format:check && npm run lint && npm run test && npm run build`
 - [ ] `npm run dev` → `/firmware` lists the AnyTone AT-D890UV, and `1.0.0` notes render
@@ -611,7 +621,8 @@ the orchestrator:
 >    - flash stock V1.05 from the same page (the recovery path; there's no gate on it);
 >    - on a run you're happy to redo, press Cancel mid-transfer; it should confirm, then show the recovery screen.
 
-**Record:** the orchestrator posts the result and the duration on #1364, #1365 and #1366, with the footer.
+**Record:** the orchestrator posts the result, the total duration and the frame round-trip timing from the summary on
+#1364 (the measured flash time), and the result on #1365 and #1366, with the footer.
 
 ### Slice 11 (only after the owner confirms the gate): enable the AT-D890UV in prod
 
@@ -620,7 +631,8 @@ The orchestrator resumes you, or spawns a new implementor on **this same branch*
 confirmed the AT-D890UV `1.0.0` flash. **If it doesn't say so, stop.**
 
 - In `src/integrations/radio-io/radios/at-d890uv/firmwareUpdate/descriptor.ts`, set `prodFlashDisabled: false`, with
-  the comment `// Enabled in prod <date>: release 1.0.0 flashed from Studio on hardware (#1364).`
+  the comment `// Enabled in prod <date>: release 1.0.0 flashed from Studio on hardware (#1364).` In the same commit,
+  set `expectedDuration` from the measured duration the owner reported (for example `'about 2 minutes'`).
 - Tests:
   - the descriptor or registry test now expects `false`;
   - `listOfferedFirmwareUpdaters('prod')` lists both radios;

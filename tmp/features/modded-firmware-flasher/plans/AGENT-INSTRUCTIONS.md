@@ -53,7 +53,7 @@ Return: the PR URL, the branch head SHA, the deviations, the owner gate script (
 must know.
 
 Prior phases (from the orchestrator):
-<what earlier phases actually shipped, deviations, the owner's gate results and decisions (e.g. the phase 1 timing numbers)>
+<what earlier phases actually shipped, deviations, the owner's gate results and decisions>
 ```
 
 ## B. After a hardware gate (same phase, same branch)

@@ -27,19 +27,19 @@ The per-phase files are in [plans/](plans/00-README.md).
   that radio's `prodFlashDisabled: false`.
 - **After every phase, and every gate, the orchestrator stops** and notifies the owner.
 - **`dev` belongs to this epic** for its duration; force-pushing any flasher branch there is fine. The owner may use
-  `npm run dev` locally for the phase 1 timing pass.
+  `npm run dev` locally.
 - **Fresh containers.** Containers are reclaimed between phases and gates. Every phase file bootstraps from a bare
   clone: fetch `plan/modded-firmware-flasher`, re-clone the firmware repos read-only if needed, and use the GitHub
   MCP tools (`gh` is unauthenticated; this overrides the agents' `gh`-only line for this series).
 
 **Why this model:** most of the work is a mechanical port with strong unit tests. The owner touches hardware only
-three times, and is consulted at every gate.
+twice (one `1.0.0` flash per radio), and is consulted at every gate.
 
 ## Phases
 
 | # | Tickets | What | Gate | Depends on |
 | --- | --- | --- | --- | --- |
-| 1 | #1359, #1364 part 1 | DESIGN.md "Firmware flashing" section, AGENTS.md line, firmware-flashing rule; the read-only D890 round-trip timing pass on `/debug/d890-erase-probe` | **H1**: owner measures D890 round trips in normal mode (foreground, background tab, screen locked). Nothing is written. The numbers are posted on #1364 | — |
+| 1 | #1359 | DESIGN.md "Firmware flashing" section, AGENTS.md line, firmware-flashing rule. (The D890 timing spike was dropped, owner 2026-10-21: a D890 codeplug write already does per-frame-ACK writes in 10 to 15 s; phase 4 measures the real flash.) | Review only | — |
 | 2 | #1360, #1361 | Core firmware types and helpers; both radios' stock pins; `resolveStockFirmware` + `StockSource`; `prepareFirmwareImage` (stock); both patch formats with synthetic tests; tier-3 `firmware.md` stock and patch sections | Review only | 1 |
 | 3 | #1363, #1362, #1365 slices 1–2 | `FirmwareUpdater` seam, interlock error, USB filters, DM-32UV updater + mock; `/firmware` wizard, prod gate resolver, wake lock, Stepper, hub; catalog with both `1.0.0` patches and notes, hygiene, user patch source, patch-target prepare; wizard releases and user patch. **Final commit:** DM-32UV `prodFlashDisabled: false` | **H-DM32**: owner flashes bundled DM-32UV `1.0.0` from `dev`, then the flip commit | 2 |
 | 4 | #1364 part 2, #1365 slice 3, #1366 | AT-D890UV updater + mock (registered, prod-hidden); D890 end states and progress throttling in the wizard; recovery docs and links. **Final commit:** AT-D890UV `prodFlashDisabled: false` | **H-D890**: owner flashes bundled AT-D890UV `1.0.0` from `dev`, then the flip commit | 3 |
@@ -48,7 +48,7 @@ three times, and is consulted at every gate.
 
 | PR | Body says |
 | --- | --- |
-| Phase 1 | `Closes #1359`, `Part of #1364` |
+| Phase 1 | `Closes #1359` |
 | Phase 2 | `Closes #1360`, `Closes #1361` |
 | Phase 3 | `Closes #1363`, `Closes #1362`, `Part of #1365` |
 | Phase 4 | `Closes #1364`, `Closes #1365`, `Closes #1366` |
@@ -60,28 +60,31 @@ releases** to it on hardware. Stock flashing is built and offered in the wizard 
 hardware gate**: both firmware projects' own flashers have flashed stock many times, and Studio's stock flash is the
 zero-patch case of the same frame stream. The owner may optionally flash stock during a gate.
 
-**UI copy.** All user-facing strings are written for an end-user operator. Internal proof or test status
-belongs in docs and issues, never in the UI. Each UI phase file says so.
+**UI copy.** All user-facing strings are written for an end-user operator. The UI makes **no claims about test
+provenance** (no tested/untested pills); it makes the risk clear and lets the operator decide. A risk acknowledgement
+is required for **every** flash, bundled releases and stock included. RCs carry a factual "Pre-release" label, and
+the copied release notes are shown unchanged. Internal proof status belongs in docs and issues.
 
 ## Suggested order
 
 Strictly 1 → 2 → 3 → 4, because the phases are stacked.
 
-- Phase 1 retires the D890 throughput risk first: it measures with read-only traffic before any D890 code.
+- Phase 1 is docs and rules only. D890 throughput is measured on the real flash in phase 4.
 - Phase 3 finishes the DM-32UV end to end, including its prod flip, before the AT-D890UV starts.
 - The owner can merge the stack through phase 3 to release the DM-32UV while phase 4 is in progress.
 
 **If a gate fails:** an implementor fixes it on the **same branch** with new commits, re-pushes `dev`, and the
 orchestrator stops again. No prod flip and no later phase happen on a failed gate.
 
-**If H1 comes back slow:** the owner chooses before phase 4 either to accept it, or to enable phase 4's optional
-pipe-optimisation slice. Pipelining frames ahead of their ACK stays rejected.
+**If the D890 flash is too slow:** the phase 4 hardware gate measures the real flash time and per-frame round trips
+(recorded on #1364). If the owner asks, phase 4's optional pipe-optimisation slice is done as a fix on the same
+branch before the prod flip. Pipelining frames ahead of their ACK stays rejected.
 
 ## Branch strategy
 
 | # | Branch | Starts from | PR base |
 | --- | --- | --- | --- |
-| 1 | `1359/pskil/firmware-design-and-timing` | `origin/main` | `main` |
+| 1 | `1359/pskil/firmware-design` | `origin/main` | `main` |
 | 2 | `1360/pskil/firmware-core` | phase 1 branch | phase 1 branch |
 | 3 | `1363/pskil/firmware-dm32` | phase 2 branch | phase 2 branch |
 | 4 | `1364/pskil/firmware-d890` | phase 3 branch (including its flip commit) | phase 3 branch |
