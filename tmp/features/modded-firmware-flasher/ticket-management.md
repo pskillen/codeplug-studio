@@ -1,11 +1,12 @@
 # Tickets: modded firmware flasher
 
 These tickets are **already filed**: epic [#1358](https://github.com/pskillen/codeplug-studio/issues/1358) (under
-[#594](https://github.com/pskillen/codeplug-studio/issues/594), milestone M2: post-MVP), children #1359 to #1366. They
+[#594](https://github.com/pskillen/codeplug-studio/issues/594), milestone M2: post-MVP), children #1359 to #1366, plus follow-ups #1367 and #1368. The children
 were filed before the design, and their bodies were then **rewritten on 2026-10-21** to match
-[hl-delivery-plan.md](hl-delivery-plan.md) and the owner decisions below. This file maps the design onto those tickets.
+[hl-delivery-plan.md](hl-delivery-plan.md) and the owner decisions below, and revised again the same day for the
+per-radio prod gate. This file maps the design onto those tickets.
 It also records size, priority, the open-question owner for each ticket, and the dependency graph that `phase-plan.md`
-will sequence. No new issues are needed; the candidates for later are listed at the end.
+will sequence. The initial delivery needs no new issues. The two follow-ups are listed at the end.
 
 Sizes are rough. **S** is one small PR, **M** is a few slices in one PR, and **L** is a multi-PR mini-series that
 `phase-plan.md` must split.
@@ -310,15 +311,22 @@ Design 3.11. The picker entry has already shipped in #1365 slice 1. This ticket 
 Every numbered OQ has an owner. None of the defaults changes the model shape. If the owner overturns OQ7 (base64 `.ts`
 instead of `?raw`), only #1362 changes. If the owner overturns OQ12 (page-local steps), only #1365 slice 1 changes.
 
-## Delivery constraint (no flag)
+## Prod gate and delivery
 
-With no feature flag (OQ2), whatever is on `main` at the next full Studio release goes to prod. So:
+With the revised OQ2, each radio is **hidden on prod** until its own `prodFlashDisabled` flag is flipped. Everything else
+on `main` ships to prod with the next full Studio release as usual. So:
 
-- **#1365 slice 1 merges only after its DM-32UV stock hardware run passes.** Prod then gets a working "flash stock 048"
-  flasher for one radio. That is useful on its own and safe.
-- **The D890 is invisible until slice 3,** because the wizard lists only registered updaters. #1364 part 2 may
-  merge without registering its descriptor in the firmware registry; registration moves to slice 3, so a
-  mock-tested-only updater never reaches a prod UI. `phase-plan.md` must make this explicit.
+- **Merging is decoupled from prod exposure.** Wizard slices and updaters can merge once their unit tests and (where
+  the phase has one) the owner's hardware test on `dev` pass. A prod user never sees an unproven radio.
+- **Both AT-D890UV pieces register normally.** The earlier "merge #1364 part 2 unregistered" idea is dropped.
+- **The flips are separate, small PRs**, one per radio, each after the owner says that radio is proven:
+  - DM-32UV after the stock 048 run in #1365 slice 1, closing #1363;
+  - AT-D890UV after the stock V1.05 run, closing #1366.
+
+  They are independent, and either can come first. `phase-plan.md` should model each flip as its own tiny phase (or a
+  post-merge step) that waits on the owner's go-ahead, rather than folding it into a feature PR.
+- **Prod before any flip:** the Tools strip entry is hidden and `/firmware` shows a short "not available on this site
+  yet" message. This is proposed in #1365.
 - **The spike's debug route** stays under `/debug/`, which is not linked from the nav. If the owner doesn't want it
   in prod, remove it after the measurement is recorded.
 
@@ -370,15 +378,25 @@ Can run in parallel once their prerequisite lands:
 - #1365 slice 1 ∥ #1362 ∥ #1364 part 2, all after #1363 (#1362 also needs #1361).
 - The #1364 part 1 hardware spike is independent of all code tickets after #1359. It needs the owner and a D890.
 
-**Hardware gates** (owner with radios): #1364 part 1; #1365 slices 1, 2 and 3; #1366 D890 stock. A stacked
-orchestrator run cannot clear these by itself. `phase-plan.md` must choose the delivery model with that in mind.
+**Hardware gates** (owner with radios, on `dev.codeplug.mm9pdy.net`; for the spike, optionally `npm run dev`):
+#1364 part 1; #1365 slices 1, 2 and 3; #1366 D890 stock. The chosen model handles these with a stop after every phase,
+and the orchestrator resumes only on the owner's reply ([Delivery model](#delivery-model-owner-2026-10-21)).
 
 ## Not included here: future and dependent work
 
-- **Android / Capacitor flashing** (OQ9 follow-up). Needs DTR/RTS control in the Capacitor plugin, device choice beyond
-  `devices[0]`, and OTG re-enumeration tested in update mode. Suggested new ticket; not filed.
-- **DM-32UV post-flash read-back verify.** New `0x47` reads over the app region after a power cycle. Suggested new
-  ticket; not filed.
+Filed as **follow-ups** on 2026-10-21. They are sub-issues of #1358 but sit outside the dependency chain, and the epic
+can close without them:
+
+- [#1367](https://github.com/pskillen/codeplug-studio/issues/1367) **Android / Capacitor flashing** (OQ9 follow-up).
+  Needs DTR/RTS control in the Capacitor plugin, device choice beyond `devices[0]`, OTG enumeration tested in update
+  mode, and an OTG round-trip measurement for the D890. `capacitorSupported` is flipped per radio. There is no
+  Capacitor exemption from the prod gate.
+- [#1368](https://github.com/pskillen/codeplug-studio/issues/1368) **DM-32UV read-back verify after flash.** A
+  read-only `0x47` app-region read (ported from the firmware repo's `dm32_backup.py --progflash app`), compared with the
+  flashed image, which also shows the version stamp that Device Info doesn't.
+
+Not planned:
+
 - **In-flasher codeplug backup** (OQ11 alternative). Not planned.
 - **Flash history** (OQ10 alternative). Not planned.
 - **Proposal B (runtime fetch).** The seams exist (`FirmwareReleaseSource`, `StockSource`), and the legal blockers stand.
