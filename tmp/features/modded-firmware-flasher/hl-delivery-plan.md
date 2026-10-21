@@ -1103,7 +1103,7 @@ This is not a phase plan. These are the ordering constraints the design implies:
 
 | OQ | Decision |
 |---|---|
-| 1 | **Accept for A (option a).** Bundle the release patches as published, including the hook `original` bytes and the stock gap bytes. Proposal B's legal blocker stays separate and unresolved. |
+| 1 | **Accept for A (option a).** Clarified: *our* patch files on `main` are fine; *vendor* firmware files must never reach `main` (or any committed path). Bundle the release patches as published, including the hook `original` bytes and the stock gap bytes. Proposal B's legal blocker stays separate and unresolved. |
 | 2 | **Revised 2026-10-21: per-radio prod gate.** Each radio's firmware updater carries its own prod-disabled flag (mirroring `prodWriteDisabled` / `radioWriteEnvGate.ts`): hidden on the prod build, fully available on next/dev/staging. Both start disabled; each is flipped in a one-line PR once that radio is proven on hardware, in whichever order that happens. This supersedes "no feature flag" and the earlier "merge D890 unregistered" idea. |
 | 4 | **Copy each firmware release's notes into Studio** alongside its patch file. Index rows link to Studio-hosted notes, never to the private firmware repos. |
 | 9 | **Defer Android.** The flasher is hidden on Capacitor; flashing a radio from a phone is too risky for now. Android becomes a follow-up. |
@@ -1259,8 +1259,11 @@ project, library or build. The flasher needs no open project and stores nothing.
 5. **One pipeline.** Bundled release, user-supplied patch, and stock all take the same path:
    verify stock → (apply patch → verify result) → interlocks → bootloader ident → flash.
    "Flash stock" is the zero-patch case and is the documented recovery route; the vendor CPS stays the fallback.
-6. **Flash is not Write.** Codeplug Write rules, env gates and the build/egress model don't apply to firmware, and
+6. **Flash is not Write.** Codeplug Write rules, its env gate and the build/egress model don't apply to firmware, and
    firmware rules don't apply to Write.
+7. **Per-radio prod gate.** Each radio's firmware updater has its own prod-disabled flag. A gated radio is hidden on
+   the prod site and fully available on pre-prod (next, dev, staging). A radio's flag is cleared in its own PR once
+   flashing it is proven on hardware.
 
 ### Patch sources
 
