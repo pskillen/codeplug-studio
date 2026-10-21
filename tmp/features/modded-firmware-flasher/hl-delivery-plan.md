@@ -862,15 +862,9 @@ This is `FirmwareTarget { kind: 'stock' }` through the same path. The release pi
 (\<vendor version\>)"** as an entry for both radios, alongside the bundled releases. The recovery docs say: re-enter
 update mode, flash stock; the vendor CPS stays the documented fallback for both radios.
 
-Evidence and remaining proof:
-
-- **DM-32UV:** the firmware repo's sender wrote stock 048 to a real radio and it booted (F266/F267). Studio's DM-32
-  hardware acceptance (#1363) flashes stock first.
-- **AT-D890UV:** our sender has never written stock: runbook S4/S5 was dropped on 2026-10-20 in favour of the CPS.
-  Stock is the zero-hook, zero-append case of the same frame stream (`test_stock_firmware_through_the_mock`), but it
-  must be proven once on hardware before the docs call it the recovery route. Until then, the entry is labelled
-  "Stock firmware: Studio route not yet hardware-proven; the vendor CPS is the proven route". The wording is
-  data-driven from a flag on the updater descriptor, not hard-coded in the app.
+Stock flashing has **no hardware gate** (owner, 2026-10-21): both firmware repos' own senders have flashed their radios
+many times, and stock is the zero-patch case of the same frame stream. The stock entry carries no proof-status label;
+UI copy is written for operators, never about our testing history.
 
 ### 3.12 App orchestration (`src/app/services/firmwareFlash.ts`)
 
@@ -1104,7 +1098,7 @@ This is not a phase plan. These are the ordering constraints the design implies:
 | OQ | Decision |
 |---|---|
 | 1 | **Accept for A (option a).** Clarified: *our* patch files on `main` are fine; *vendor* firmware files must never reach `main` (or any committed path). Bundle the release patches as published, including the hook `original` bytes and the stock gap bytes. Proposal B's legal blocker stays separate and unresolved. |
-| 2 | **Revised 2026-10-21: per-radio prod gate.** Each radio's firmware updater carries its own prod-disabled flag (mirroring `prodWriteDisabled` / `radioWriteEnvGate.ts`): hidden on the prod build, fully available on next/dev/staging. Both start disabled; each is flipped in a one-line PR once that radio is proven on hardware, in whichever order that happens. This supersedes "no feature flag" and the earlier "merge D890 unregistered" idea. |
+| 2 | **Revised 2026-10-21: per-radio prod gate.** Each radio's firmware updater carries its own prod-disabled flag (mirroring `prodWriteDisabled` / `radioWriteEnvGate.ts`): hidden on the prod build, fully available on next/dev/staging. Both start disabled; each is flipped once Studio has flashed at least one of our patched releases to that radio on hardware (stock needs no gate), in whichever order that happens. This supersedes "no feature flag" and the earlier "merge D890 unregistered" idea. |
 | 4 | **Copy each firmware release's notes into Studio** alongside its patch file. Index rows link to Studio-hosted notes, never to the private firmware repos. |
 | 9 | **Defer Android.** The flasher is hidden on Capacitor; flashing a radio from a phone is too risky for now. Android becomes a follow-up. |
 
