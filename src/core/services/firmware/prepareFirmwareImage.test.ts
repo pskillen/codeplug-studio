@@ -9,10 +9,10 @@ async function verifiedStock() {
   const bin = seededBytes(21, 2048);
   const descriptor = await syntheticDescriptor(
     'baofeng-dm32uv',
-    [{ role: 'img', fileName: 'S.bin', bytes: bin }],
+    [{ role: 'img', fileName: 'S.img', bytes: bin }],
     { fileName: 's.zip', bytes: seededBytes(22, 16) },
   );
-  const stock = await resolveStockFirmware(descriptor, [{ name: 'S.bin', bytes: bin }], {
+  const stock = await resolveStockFirmware(descriptor, [{ name: 'S.img', bytes: bin }], {
     otherDescriptors: [],
   });
   return { bin, descriptor, stock };

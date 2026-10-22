@@ -44,14 +44,14 @@ const triB = seededBytes(3, 64);
 const triC = seededBytes(4, 32);
 
 const oneZip = zipSync({
-  'Vendor Firmware/ONE_STOCK.bin': oneBin,
+  'Vendor Firmware/ONE_STOCK.img': oneBin,
   'Vendor Firmware/readme.txt': strToU8('notes'),
 });
 const triZip = zipSync({
   'Pkg FW/TRI.A': triA,
   'Pkg FW/TRI.B': triB,
   'Pkg FW/TRI.C': triC,
-  'ICON/pack.bin': seededBytes(5, 2048),
+  'ICON/pack.img': seededBytes(5, 2048),
 });
 
 let one: StockFirmwareDescriptor;
@@ -60,7 +60,7 @@ let tri: StockFirmwareDescriptor;
 beforeAll(async () => {
   one = await syntheticDescriptor(
     'baofeng-dm32uv',
-    [{ role: 'img', fileName: 'ONE_STOCK.bin', bytes: oneBin }],
+    [{ role: 'img', fileName: 'ONE_STOCK.img', bytes: oneBin }],
     { fileName: 'one.zip', bytes: oneZip },
   );
   tri = await syntheticDescriptor(
@@ -92,7 +92,7 @@ describe('resolveStockFirmware — one-member radio', () => {
   });
 
   it('accepts the extracted file', async () => {
-    const v = await resolveStockFirmware(one, [{ name: 'ONE_STOCK.bin', bytes: oneBin }], ctxOne());
+    const v = await resolveStockFirmware(one, [{ name: 'ONE_STOCK.img', bytes: oneBin }], ctxOne());
     expect(v.via).toBe('files');
     expect(v.package.files.img).toEqual(oneBin);
   });
@@ -100,7 +100,7 @@ describe('resolveStockFirmware — one-member radio', () => {
   it('matches a loose file by basename, with either separator', async () => {
     const v = await resolveStockFirmware(
       one,
-      [{ name: 'C:\\Downloads\\ONE_STOCK.bin', bytes: oneBin }],
+      [{ name: 'C:\\Downloads\\ONE_STOCK.img', bytes: oneBin }],
       ctxOne(),
     );
     expect(v.package.files.img).toEqual(oneBin);
@@ -113,7 +113,7 @@ describe('resolveStockFirmware — three-member radio', () => {
     expect(v.via).toBe('zip');
     expect(Object.keys(v.package.files).sort()).toEqual(['a', 'b', 'c']);
     expect(v.package.files.a).toEqual(triA);
-    expect(filterLog.asked.find((a) => a.name === 'ICON/pack.bin')?.inflate).toBe(false);
+    expect(filterLog.asked.find((a) => a.name === 'ICON/pack.img')?.inflate).toBe(false);
   });
 
   it('accepts three loose files', async () => {
@@ -149,7 +149,7 @@ describe('resolveStockFirmware — refusals', () => {
     const bad = oneBin.slice();
     bad[100] = bad[100]! ^ 0xff;
     expect(
-      await codeOf(resolveStockFirmware(one, [{ name: 'ONE_STOCK.bin', bytes: bad }], ctxOne())),
+      await codeOf(resolveStockFirmware(one, [{ name: 'ONE_STOCK.img', bytes: bad }], ctxOne())),
     ).toBe('stock-wrong-version');
   });
 
@@ -158,7 +158,7 @@ describe('resolveStockFirmware — refusals', () => {
       await codeOf(
         resolveStockFirmware(
           one,
-          [{ name: 'ONE_STOCK.bin', bytes: oneBin.slice(0, 2999) }],
+          [{ name: 'ONE_STOCK.img', bytes: oneBin.slice(0, 2999) }],
           ctxOne(),
         ),
       ),
@@ -181,7 +181,7 @@ describe('resolveStockFirmware — refusals', () => {
   });
 
   it('refuses two zip entries with the same basename', async () => {
-    const dupZip = zipSync({ 'a/ONE_STOCK.bin': oneBin, 'b/ONE_STOCK.bin': oneBin });
+    const dupZip = zipSync({ 'a/ONE_STOCK.img': oneBin, 'b/ONE_STOCK.img': oneBin });
     expect(
       await codeOf(resolveStockFirmware(one, [{ name: 'dup.zip', bytes: dupZip }], ctxOne())),
     ).toBe('stock-duplicate-member');
@@ -193,8 +193,8 @@ describe('resolveStockFirmware — refusals', () => {
         resolveStockFirmware(
           one,
           [
-            { name: 'ONE_STOCK.bin', bytes: oneBin },
-            { name: 'copy/ONE_STOCK.bin', bytes: oneBin },
+            { name: 'ONE_STOCK.img', bytes: oneBin },
+            { name: 'copy/ONE_STOCK.img', bytes: oneBin },
           ],
           ctxOne(),
         ),
@@ -222,17 +222,17 @@ describe('resolveStockFirmware — refusals', () => {
 
   it("refuses the other radio's loose files", async () => {
     expect(
-      await codeOf(resolveStockFirmware(tri, [{ name: 'ONE_STOCK.bin', bytes: oneBin }], ctxTri())),
+      await codeOf(resolveStockFirmware(tri, [{ name: 'ONE_STOCK.img', bytes: oneBin }], ctxTri())),
     ).toBe('stock-wrong-radio');
   });
 
   it("refuses the other radio's bytes under this radio's file name", async () => {
     const twin = await syntheticDescriptor(
       'anytone-at-d890uv',
-      [{ role: 'img', fileName: 'TWIN.bin', bytes: seededBytes(11, 3000) }],
+      [{ role: 'img', fileName: 'TWIN.img', bytes: seededBytes(11, 3000) }],
       { fileName: 'twin.zip', bytes: seededBytes(12, 10) },
     );
-    const err = await resolveStockFirmware(twin, [{ name: 'TWIN.bin', bytes: oneBin }], {
+    const err = await resolveStockFirmware(twin, [{ name: 'TWIN.img', bytes: oneBin }], {
       otherDescriptors: [one],
     }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(FirmwareError);
@@ -255,7 +255,7 @@ describe('resolveStockFirmware — refusals', () => {
     };
     const err = await resolveStockFirmware(
       one,
-      [{ name: 'ONE_STOCK.bin', bytes: patched }],
+      [{ name: 'ONE_STOCK.img', bytes: patched }],
       ctx,
     ).catch((e: unknown) => e);
     expect((err as FirmwareError).code).toBe('stock-is-patched');
@@ -265,7 +265,7 @@ describe('resolveStockFirmware — refusals', () => {
 
 describe('resolveStockFirmware — zip handling', () => {
   it('accepts a re-zipped download and notes the zip mismatch', async () => {
-    const rezipped = zipSync({ 'other folder/ONE_STOCK.bin': oneBin }, { level: 1 });
+    const rezipped = zipSync({ 'other folder/ONE_STOCK.img': oneBin }, { level: 1 });
     expect(await sha256Hex(rezipped)).not.toBe(one.zip.sha256);
     const v = await resolveStockFirmware(one, [{ name: 'one.zip', bytes: rezipped }], ctxOne());
     expect(v.zipMismatchNoted).toBe(true);
@@ -274,19 +274,19 @@ describe('resolveStockFirmware — zip handling', () => {
 
   it('never inflates a large non-member entry', async () => {
     const decoyZip = zipSync({
-      'fw/ONE_STOCK.bin': oneBin,
-      'ICON/huge-decoy.bin': new Uint8Array(512 * 1024),
+      'fw/ONE_STOCK.img': oneBin,
+      'ICON/huge-decoy.img': new Uint8Array(512 * 1024),
     });
     const v = await resolveStockFirmware(one, [{ name: 'one.zip', bytes: decoyZip }], ctxOne());
-    const decoy = filterLog.asked.find((a) => a.name === 'ICON/huge-decoy.bin');
-    expect(decoy).toEqual({ name: 'ICON/huge-decoy.bin', inflate: false });
-    expect(filterLog.asked.find((a) => a.name === 'fw/ONE_STOCK.bin')?.inflate).toBe(true);
+    const decoy = filterLog.asked.find((a) => a.name === 'ICON/huge-decoy.img');
+    expect(decoy).toEqual({ name: 'ICON/huge-decoy.img', inflate: false });
+    expect(filterLog.asked.find((a) => a.name === 'fw/ONE_STOCK.img')?.inflate).toBe(true);
     expect(Object.keys(v.package.files)).toEqual(['img']);
   });
 
   it('returns copies, so the input buffers are never shared', async () => {
     const input = oneBin.slice();
-    const v = await resolveStockFirmware(one, [{ name: 'ONE_STOCK.bin', bytes: input }], ctxOne());
+    const v = await resolveStockFirmware(one, [{ name: 'ONE_STOCK.img', bytes: input }], ctxOne());
     v.package.files.img![0] = v.package.files.img![0]! ^ 0xff;
     expect(input).toEqual(oneBin);
   });
@@ -294,7 +294,7 @@ describe('resolveStockFirmware — zip handling', () => {
 
 describe('createUserFileStockSource', () => {
   it('returns the supplied files without verifying them', async () => {
-    const files: NamedBytes[] = [{ name: 'anything.bin', bytes: new Uint8Array([1, 2, 3]) }];
+    const files: NamedBytes[] = [{ name: 'anything.img', bytes: new Uint8Array([1, 2, 3]) }];
     const src = createUserFileStockSource(files);
     expect(src.kind).toBe('user-files');
     expect(await src.load(one)).toEqual(files);
