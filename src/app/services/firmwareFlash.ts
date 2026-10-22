@@ -4,7 +4,10 @@
  * flashing and docs/features/firmware-flashing/.
  */
 import { FirmwareError } from '@core/firmware/errors.ts';
+import { bundledFirmwareReleaseSource } from '@core/firmware/releases/bundledSource.ts';
 import { listKnownPatchedResults } from '@core/firmware/releases/index.ts';
+import type { FirmwareReleaseSummary, LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
+import { createUserPatchSource } from '@core/firmware/releases/userPatchSource.ts';
 import {
   resolveStockFirmware,
   type VerifiedStockFirmware,
@@ -16,6 +19,7 @@ import {
 import type { FirmwareRadioId, NamedBytes } from '@core/firmware/types.ts';
 import {
   prepareFirmwareImage,
+  type FirmwareTarget,
   type PreparedFirmwareImage,
 } from '@core/services/firmware/prepareFirmwareImage.ts';
 import {
@@ -59,18 +63,64 @@ export async function verifyStockFiles(
   });
 }
 
-/** Build the stock image, then run the updater's interlocks before any radio contact. */
+/** What the operator chose to flash. */
+export type FirmwareChoice =
+  | { kind: 'stock' }
+  | { kind: 'release'; source: 'bundled'; summary: FirmwareReleaseSummary }
+  | { kind: 'user-patch'; file: NamedBytes };
+
+export async function listBundledReleases(
+  radioId: FirmwareRadioId,
+  includeRc: boolean,
+): Promise<readonly FirmwareReleaseSummary[]> {
+  return bundledFirmwareReleaseSource.listReleases(radioId, { includeRc });
+}
+
+/** Load and check the chosen patch. FirmwareError codes pass through for the wizard to show. */
+export async function loadChosenPatch(
+  radioId: FirmwareRadioId,
+  choice: Exclude<FirmwareChoice, { kind: 'stock' }>,
+): Promise<LoadedFirmwarePatch> {
+  if (choice.kind === 'release') {
+    return bundledFirmwareReleaseSource.loadPatch(radioId, choice.summary.key);
+  }
+  const source = createUserPatchSource(choice.file);
+  const [summary] = await source.listReleases(radioId, { includeRc: true });
+  return source.loadPatch(radioId, summary!.key);
+}
+
+/**
+ * Build the image for the choice, then run the updater's interlocks before any radio contact.
+ * A patch choice needs its `loaded` patch.
+ */
+export async function prepareFlash(
+  radioId: FirmwareRadioId,
+  stock: VerifiedStockFirmware,
+  choice: FirmwareChoice,
+  loaded?: LoadedFirmwarePatch,
+): Promise<PreparedFirmwareImage> {
+  let target: FirmwareTarget;
+  if (choice.kind === 'stock') {
+    target = { kind: 'stock' };
+  } else {
+    if (!loaded) throw new Error('The chosen patch has not been loaded.');
+    target = { kind: 'patch', patch: loaded };
+  }
+  const image = await prepareFirmwareImage({
+    descriptor: getStockFirmwareDescriptor(radioId),
+    stock,
+    target,
+  });
+  requireUpdater(radioId).createUpdater().checkImage(image);
+  return image;
+}
+
+/** Stock-only shorthand for {@link prepareFlash}. */
 export async function prepareStockFlash(
   radioId: FirmwareRadioId,
   stock: VerifiedStockFirmware,
 ): Promise<PreparedFirmwareImage> {
-  const image = await prepareFirmwareImage({
-    descriptor: getStockFirmwareDescriptor(radioId),
-    stock,
-    target: { kind: 'stock' },
-  });
-  requireUpdater(radioId).createUpdater().checkImage(image);
-  return image;
+  return prepareFlash(radioId, stock, { kind: 'stock' });
 }
 
 /** Always a fresh pick, narrowed to the radio's cable. Call from a user gesture. */
@@ -173,7 +223,7 @@ function provenanceLine(image: PreparedFirmwareImage): string {
     case 'stock':
       return `Firmware: stock ${image.stockVersion}`;
     case 'bundled':
-      return `Firmware: release ${image.releaseTag ?? image.patchVersion ?? '?'} (bundled, patch sha256 ${image.patchSha256 ?? '?'})`;
+      return `Firmware: Release ${image.releaseTag ?? image.patchVersion ?? '?'} (bundled, patch sha256 ${image.patchSha256 ?? '?'})`;
     case 'unreviewed':
       return `Firmware: user-supplied patch, sha256 ${image.patchSha256 ?? '?'}, version ${image.patchVersion ?? '?'}`;
   }
