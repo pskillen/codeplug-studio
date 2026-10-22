@@ -77,3 +77,8 @@
   (52,515 data), Elapsed 00:25 (24.7 s), End `port-closed-by-radio`, round trip median 0.00 / p99 8.00 / max 11.0 ms,
   flashed hashes match. Posted on #1364, #1365, #1366. No pipe optimisation needed (slice 5 stays skipped).
 - Next: template B on `1364/pskil/firmware-d890` — slice 11 prod flip, `expectedDuration` "under a minute".
+- Owner merged #1374 at `6e88b13` (merge `19f07bf`) before the flip existed.
+- Follow-up PR https://github.com/pskillen/codeplug-studio/pull/1375 (base `main`), branch
+  `1364/pskil/firmware-d890-prod`, single commit `dd24849` (D890 `prodFlashDisabled: false`, `expectedDuration:
+  'under a minute'`, tests, docs). `dev` at `dd24849`. Gates green apart from the known D890 protocol flakes.
+- Waiting on owner to merge #1375. Then both radios reach prod at the next full Studio release.
