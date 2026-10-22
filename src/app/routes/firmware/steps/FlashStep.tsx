@@ -1,0 +1,355 @@
+import { useEffect, useRef, useState } from 'react';
+
+import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
+import {
+  isoTimestampForFilename,
+  downloadTextFile,
+} from '@integrations/download/browserDownload.ts';
+import type {
+  FirmwareBootloaderIdent,
+  FirmwareFlashPhase,
+  FirmwareFlashProgress,
+} from '@integrations/radio-io';
+
+import {
+  Button,
+  ConfirmModal,
+  Panel,
+  ProgressModal,
+  StatusBanner,
+  UnsavedChangesModal,
+  type ProgressModalStep,
+} from '../../../components/v2/index.ts';
+import { useScreenWakeLock } from '../../../hooks/useScreenWakeLock.ts';
+import { useUnsavedNavigationGuard } from '../../../hooks/useUnsavedNavigationGuard.ts';
+import {
+  formatFirmwareFlashSummary,
+  grantFirmwarePort,
+  runFirmwareFlash,
+  type FirmwareFlashOutcome,
+} from '../../../services/firmwareFlash.ts';
+import classes from '../FirmwareFlasherPage.module.css';
+import { PREFLIGHT_CHECKS } from '../firmwareWizardState.ts';
+import type { WizardStepProps } from './stepTypes.ts';
+
+/** Placeholder until the hub's Recovery section is written. */
+export const FIRMWARE_RECOVERY_DOC_URL =
+  'https://github.com/pskillen/codeplug-studio/blob/main/docs/features/firmware-flashing/README.md#recovery';
+
+const PHASES: { phase: FirmwareFlashPhase; label: string }[] = [
+  { phase: 'handshake', label: 'Handshake' },
+  { phase: 'erase', label: 'Erase' },
+  { phase: 'transfer', label: 'Transfer' },
+  { phase: 'finish', label: 'Finish' },
+];
+
+function modalSteps(
+  progress: FirmwareFlashProgress | null,
+  outcome: FirmwareFlashOutcome | null,
+): ProgressModalStep[] {
+  const current = PHASES.findIndex((p) => p.phase === (progress?.phase ?? 'handshake'));
+  return PHASES.map(({ phase, label }, i) => {
+    let status: ProgressModalStep['status'];
+    if (outcome?.ok) status = 'success';
+    else if (i < current) status = 'success';
+    else if (i > current) status = 'pending';
+    else status = outcome ? 'error' : 'active';
+    const detail =
+      phase === 'transfer' && progress?.phase === 'transfer' ? progress.msg : undefined;
+    return { id: phase, label, detail, status };
+  });
+}
+
+export interface FlashStepProps extends WizardStepProps {
+  readonly image: PreparedFirmwareImage;
+  /** Back to "Enter update mode". Never resends automatically. */
+  readonly onReenterUpdateMode: () => void;
+  /** Back to the firmware choice, to flash stock. */
+  readonly onChooseFirmware: () => void;
+  readonly onRunningChange: (running: boolean) => void;
+}
+
+export default function FlashStep({
+  state,
+  updater,
+  image,
+  onReenterUpdateMode,
+  onChooseFirmware,
+  onRunningChange,
+}: FlashStepProps) {
+  const [running, setRunning] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [progress, setProgress] = useState<FirmwareFlashProgress | null>(null);
+  const [ident, setIdent] = useState<FirmwareBootloaderIdent | null>(null);
+  const [outcome, setOutcome] = useState<FirmwareFlashOutcome | null>(null);
+  const [portError, setPortError] = useState<string | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useScreenWakeLock(running);
+  const guard = useUnsavedNavigationGuard(running);
+
+  useEffect(() => {
+    onRunningChange(running);
+  }, [running, onRunningChange]);
+
+  async function connectAndFlash() {
+    setPortError(null);
+    setOutcome(null);
+    setProgress(null);
+    setIdent(null);
+    setCopied(false);
+    let port;
+    try {
+      port = await grantFirmwarePort(updater.radioId);
+    } catch {
+      setPortError('No port was chosen. Click "Connect and flash" again and pick the cable.');
+      return;
+    }
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setRunning(true);
+    setModalOpen(true);
+    const result = await runFirmwareFlash({
+      radioId: updater.radioId,
+      image,
+      port,
+      onIdent: setIdent,
+      onProgress: setProgress,
+      signal: controller.signal,
+    });
+    abortRef.current = null;
+    setOutcome(result);
+    setRunning(false);
+  }
+
+  function requestCancel() {
+    if (progress?.radioTouched) setConfirmCancel(true);
+    else abortRef.current?.abort();
+  }
+
+  const summary = outcome ? formatFirmwareFlashSummary(outcome) : '';
+  const percent = progress && progress.max > 0 ? (progress.cur / progress.max) * 100 : 0;
+
+  async function copySummary() {
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  function downloadSummary() {
+    downloadTextFile(
+      summary,
+      `firmware-flash-${updater.radioId}-${isoTimestampForFilename()}.txt`,
+      'text/plain;charset=utf-8',
+    );
+  }
+
+  return (
+    <div className={classes.stack}>
+      <Panel title="Connect and flash" sub={`This takes ${updater.expectedDuration}.`}>
+        <div className={classes.stack}>
+          <p className={classes.copy}>
+            With the radio in update mode and the cable plugged in, click the button and pick the
+            cable&apos;s port. Keep this tab in front and don&apos;t let the computer sleep.
+          </p>
+          <div>
+            <Button
+              variant="primary"
+              onClick={() => void connectAndFlash()}
+              disabled={running || !PREFLIGHT_CHECKS.every((c) => state.checks[c])}
+            >
+              Connect and flash
+            </Button>
+          </div>
+          {portError ? <StatusBanner tone="warning">{portError}</StatusBanner> : null}
+          {ident ? (
+            <p className={classes.muted}>
+              Bootloader: <span className={classes.mono}>{ident.model}</span>
+            </p>
+          ) : null}
+        </div>
+      </Panel>
+
+      {outcome && !running ? (
+        <FlashResult
+          outcome={outcome}
+          summary={summary}
+          copied={copied}
+          onCopy={() => void copySummary()}
+          onDownload={downloadSummary}
+          onReenterUpdateMode={onReenterUpdateMode}
+          onChooseFirmware={onChooseFirmware}
+        />
+      ) : null}
+
+      <ProgressModal
+        open={modalOpen}
+        title={`Flashing the ${updater.label}`}
+        phase={running ? 'running' : 'finished'}
+        steps={modalSteps(progress, outcome)}
+        progress={outcome?.ok ? 100 : percent}
+        note={`Keep this tab in front; don't let the computer sleep. This takes ${updater.expectedDuration}.`}
+        summary={
+          outcome ? (outcome.ok ? 'Flash complete.' : `Flash failed: ${outcome.message}`) : null
+        }
+        onClose={() => setModalOpen(false)}
+        footer={
+          running ? (
+            <Button variant="secondary" size="sm" onClick={requestCancel}>
+              Cancel
+            </Button>
+          ) : (
+            <>
+              {outcome && !outcome.ok ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setModalOpen(false);
+                    onReenterUpdateMode();
+                  }}
+                >
+                  Retry
+                </Button>
+              ) : null}
+              <Button variant="primary" size="sm" onClick={() => setModalOpen(false)}>
+                Close
+              </Button>
+            </>
+          )
+        }
+      />
+
+      <ConfirmModal
+        open={confirmCancel}
+        title="Stop the flash?"
+        tone="destructive"
+        confirmLabel="Stop"
+        cancelLabel="Keep going"
+        onClose={() => setConfirmCancel(false)}
+        onConfirm={() => {
+          setConfirmCancel(false);
+          abortRef.current?.abort();
+        }}
+      >
+        Stopping now leaves the radio needing a re-flash.
+      </ConfirmModal>
+
+      <UnsavedChangesModal
+        opened={guard.modalOpen}
+        title="A flash is running"
+        message="Leaving now stops the flash and can leave the radio needing a re-flash."
+        onStay={guard.stay}
+        onLeave={() => {
+          abortRef.current?.abort();
+          guard.leave();
+        }}
+      />
+    </div>
+  );
+}
+
+function FlashResult({
+  outcome,
+  summary,
+  copied,
+  onCopy,
+  onDownload,
+  onReenterUpdateMode,
+  onChooseFirmware,
+}: {
+  outcome: FirmwareFlashOutcome;
+  summary: string;
+  copied: boolean;
+  onCopy: () => void;
+  onDownload: () => void;
+  onReenterUpdateMode: () => void;
+  onChooseFirmware: () => void;
+}) {
+  const summaryBlock = (
+    <>
+      <pre className={classes.summary} data-testid="firmware-flash-summary">
+        {summary}
+      </pre>
+      <div className={classes.actionsRight}>
+        <Button variant="secondary" size="sm" onClick={onCopy}>
+          {copied ? 'Copied' : 'Copy'}
+        </Button>
+        <Button variant="secondary" size="sm" onClick={onDownload}>
+          Download .txt
+        </Button>
+      </div>
+    </>
+  );
+
+  if (outcome.ok) {
+    return (
+      <Panel title="Done">
+        <div className={classes.stack}>
+          <StatusBanner tone="success">
+            Power-cycle the radio if it hasn&apos;t restarted, then check:{' '}
+            {outcome.image.verifyHint}
+          </StatusBanner>
+          {summaryBlock}
+        </div>
+      </Panel>
+    );
+  }
+
+  if (!outcome.radioTouched) {
+    return (
+      <Panel title="Flash failed">
+        <div className={classes.stack}>
+          <StatusBanner tone="warning">
+            Nothing was written. Power the radio off and on, then try again.
+          </StatusBanner>
+          <p className={classes.copy}>{outcome.message}</p>
+          <div>
+            <Button variant="secondary" size="sm" onClick={onReenterUpdateMode}>
+              Enter update mode again
+            </Button>
+          </div>
+          {summaryBlock}
+        </div>
+      </Panel>
+    );
+  }
+
+  return (
+    <Panel title="Recover the radio" variant="danger">
+      <div className={classes.stack}>
+        <StatusBanner tone="warning">
+          The flash stopped part-way. Don&apos;t keep power-cycling the radio.
+        </StatusBanner>
+        <p className={classes.copy}>{outcome.message}</p>
+        <ol className={classes.list}>
+          <li>Put the radio back into update mode.</li>
+          <li>Flash the same firmware again, or flash stock firmware.</li>
+          <li>
+            If that doesn&apos;t work, the vendor&apos;s own programming software can restore it.
+          </li>
+        </ol>
+        <div className={classes.actionsRight}>
+          <Button variant="primary" size="sm" onClick={onReenterUpdateMode}>
+            Enter update mode again
+          </Button>
+          <Button variant="secondary" size="sm" onClick={onChooseFirmware}>
+            Flash stock instead
+          </Button>
+        </div>
+        <p className={classes.muted}>
+          More help:{' '}
+          <a href={FIRMWARE_RECOVERY_DOC_URL} target="_blank" rel="noopener noreferrer">
+            recovering a radio after a failed flash
+          </a>
+        </p>
+        {summaryBlock}
+      </div>
+    </Panel>
+  );
+}

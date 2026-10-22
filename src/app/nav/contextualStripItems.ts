@@ -3,6 +3,8 @@
  * Labels match the design-system reference kit (`libStrip` / Tools / Help).
  */
 
+import { listOfferedFirmwareUpdaters } from '../services/firmwareFlashEnvGate.ts';
+
 export interface ContextualStripItem {
   label: string;
   to: string;
@@ -29,12 +31,29 @@ export const libraryStripItems: readonly ContextualStripItem[] = [
  * propagation.mm9pdy.net — shown on every build env (including prod) as an
  * external link, not gated by `isProdBuildEnv`.
  */
-export const toolsStripItems: readonly ContextualStripItem[] = [
-  { label: 'Maidenhead locator', to: '/reference/maidenhead' },
-  { label: 'Band plan', to: '/reference/bands' },
-  { label: 'Tracking Dashboard', to: '/tracking' },
-  { label: 'Propagation Visualiser', to: PROPAGATION_VISUALISER_URL, external: true },
-];
+export const FIRMWARE_FLASHER_STRIP_ITEM: ContextualStripItem = {
+  label: 'Firmware flasher',
+  to: '/firmware',
+};
+
+/**
+ * Tools strip items for a build. The firmware flasher appears only when this build and platform offer at least
+ * one radio (per-radio prod gate; hidden on Capacitor). Pure: pass `firmwareOffered` in tests.
+ */
+export function buildToolsStripItems(firmwareOffered: boolean): readonly ContextualStripItem[] {
+  return [
+    { label: 'Maidenhead locator', to: '/reference/maidenhead' },
+    { label: 'Band plan', to: '/reference/bands' },
+    { label: 'Tracking Dashboard', to: '/tracking' },
+    ...(firmwareOffered ? [FIRMWARE_FLASHER_STRIP_ITEM] : []),
+    { label: 'Propagation Visualiser', to: PROPAGATION_VISUALISER_URL, external: true },
+  ];
+}
+
+/** Computed once: build env and platform don't change at runtime. */
+export const toolsStripItems: readonly ContextualStripItem[] = buildToolsStripItems(
+  listOfferedFirmwareUpdaters().length > 0,
+);
 
 export const helpStripItems: readonly ContextualStripItem[] = [
   { label: 'Overview', to: '/help' },
@@ -60,7 +79,11 @@ export function resolveContextualStripItems(
   pathname: string,
 ): readonly ContextualStripItem[] | null {
   if (pathname.startsWith('/library')) return libraryStripItems;
-  if (pathname.startsWith('/reference') || pathname.startsWith('/tracking')) {
+  if (
+    pathname.startsWith('/reference') ||
+    pathname.startsWith('/tracking') ||
+    pathname.startsWith('/firmware')
+  ) {
     return toolsStripItems;
   }
   if (pathname.startsWith('/help') || pathname.startsWith('/attributions')) {
