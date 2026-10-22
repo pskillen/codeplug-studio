@@ -20,6 +20,8 @@ test fixtures. See [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware
 `<radioId>` is the firmware radio id (`baofeng-dm32uv`, `anytone-at-d890uv`). `<tag>` is the firmware project's tag
 without a `v` (`1.1.0`, `1.1.0-rc.1`).
 
+To find what is new upstream and drive this procedure, use the [firmware-release-sync skill](../../../.cursor/skills/firmware-release-sync/SKILL.md). It pins the two firmware repos (private; needs `gh` access to them).
+
 ## Procedure
 
 1. **Download** the release's `.patch.json` and `SHA256SUMS` from the firmware project's release page.
