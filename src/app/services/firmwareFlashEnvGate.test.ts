@@ -41,8 +41,8 @@ describe('listOfferedFirmwareUpdaters', () => {
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
   });
 
-  it('offers nothing on prod while the DM-32UV is prod-disabled', () => {
-    expect(listOfferedFirmwareUpdaters('prod')).toEqual([]);
+  it('offers the DM-32UV on prod', () => {
+    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toContain('baofeng-dm32uv');
   });
 
   it('offers the DM-32UV on dev', () => {

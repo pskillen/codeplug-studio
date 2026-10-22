@@ -12,6 +12,7 @@ export const BUNDLED_FIRMWARE_RELEASES: readonly BundledFirmwareRelease[] = [
   {
     radioId: 'baofeng-dm32uv',
     tag: '1.0.0',
+    patchName: 'baofeng-dm32-firmware',
     channel: 'final',
     patchFile: 'dm32-fw-1.0.0.patch.json',
     patchSha256: 'fb14da26d8248011d50b89fc8286c67fcbcabeb3b43ebf3d184afd7bc474bf9f',
@@ -28,6 +29,7 @@ export const BUNDLED_FIRMWARE_RELEASES: readonly BundledFirmwareRelease[] = [
   {
     radioId: 'anytone-at-d890uv',
     tag: '1.0.0',
+    patchName: 'anytone-d890-firmware',
     channel: 'final',
     patchFile: 'd890-fw-1.0.0.patch.json',
     patchSha256: 'bd9e32812a89d91fdb548f6dddbea81f7de65c3d8c096e87ed20c82487f68b1f',

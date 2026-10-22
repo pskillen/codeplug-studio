@@ -227,10 +227,10 @@ describe('one write call site', () => {
 });
 
 describe('firmware registry', () => {
-  it('lists the DM-32UV, prod-gated and hidden on Capacitor', () => {
+  it('lists the DM-32UV, enabled in prod and hidden on Capacitor', () => {
     const d = getFirmwareUpdater('baofeng-dm32uv');
     expect(listFirmwareUpdaters()).toContain(d);
-    expect(d).toMatchObject({ prodFlashDisabled: true, capacitorSupported: false });
+    expect(d).toMatchObject({ prodFlashDisabled: false, capacitorSupported: false });
     expect(d!.createUpdater().radioId).toBe('baofeng-dm32uv');
   });
 });

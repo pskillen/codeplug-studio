@@ -45,6 +45,7 @@ const IMAGE = {
   radioId: 'baofeng-dm32uv',
   provenance: 'stock',
   stockVersion: 'v9.9.9-test',
+  title: 'stock firmware v9.9.9-test',
   package: { radioId: 'baofeng-dm32uv', files: {} },
   sha256: { bin: 'ab'.repeat(32) },
   verifyHint: 'Boots.',
@@ -155,7 +156,7 @@ describe('formatFirmwareFlashSummary', () => {
     const text = formatFirmwareFlashSummary(outcome);
     expect(text).toContain('Result: OK');
     expect(text).toContain('Radio: Baofeng DM-32UV');
-    expect(text).toContain('Firmware: stock v9.9.9-test');
+    expect(text).toContain('Firmware: stock firmware v9.9.9-test');
     expect(text).toContain(`Flashed bin sha256: ${'ab'.repeat(32)}`);
     expect(text).toContain('Bootloader: MODEL (41 42)');
     expect(text).toContain('Frames sent: 10 (4 data)');

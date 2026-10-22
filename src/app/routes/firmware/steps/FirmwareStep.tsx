@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
+import { bundledReleaseSummary } from '@core/firmware/releases/bundledSource.ts';
+import { loadedFirmwarePatchTitle } from '@core/firmware/releases/projects.ts';
 import type { FirmwareReleaseSummary, LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
 
 import {
@@ -35,16 +37,7 @@ function messageOf(err: unknown, fallback: string): string {
 }
 
 function summaryForLoaded(loaded: LoadedFirmwarePatch): FirmwareReleaseSummary | null {
-  const r = loaded.release;
-  if (!r) return null;
-  return {
-    radioId: r.radioId,
-    key: r.tag,
-    label: r.tag,
-    channel: r.channel,
-    provenance: 'bundled',
-    release: r,
-  };
+  return loaded.release ? bundledReleaseSummary(loaded.release) : null;
 }
 
 function NotesDisclosure({ summary }: { summary: FirmwareReleaseSummary }) {
@@ -192,7 +185,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
                       disabled={busyKey !== null}
                       onChange={() => void chooseRelease(summary)}
                     />
-                    Release {summary.label}
+                    {summary.title}
                     {summary.channel === 'rc' ? <Pill tone="warning">Pre-release</Pill> : null}
                   </label>
                   <span className={classes.cardMeta}>Published {release.publishedOn}</span>
@@ -241,13 +234,13 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
             {userFile?.error ? <StatusBanner tone="warning">{userFile.error}</StatusBanner> : null}
             {userFile?.loaded?.release ? (
               <StatusBanner tone="success">
-                This is release {userFile.loaded.release.tag} (bundled).
+                This is the {loadedFirmwarePatchTitle(userFile.loaded)} (bundled).
               </StatusBanner>
             ) : null}
             {unreviewed ? (
               <>
                 <p className={classes.copy}>
-                  Patch version <strong>{unreviewed.parsed.description.version}</strong>, sha256{' '}
+                  Patch <strong>{loadedFirmwarePatchTitle(unreviewed)}</strong>, sha256{' '}
                   <span className={classes.mono}>{shortHash(unreviewed.sha256)}</span>
                 </p>
                 <StatusBanner tone="warning">{UNREVIEWED_PATCH_RISK_STATEMENT}</StatusBanner>

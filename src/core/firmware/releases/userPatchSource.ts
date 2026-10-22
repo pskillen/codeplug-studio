@@ -5,6 +5,7 @@ import { listStockFirmwareDescriptors } from '../stockCatalog.ts';
 import type { FirmwareRadioId, NamedBytes, StockFirmwareDescriptor } from '../types.ts';
 import { bundledReleaseSummary } from './bundledSource.ts';
 import { BUNDLED_FIRMWARE_RELEASES } from './index.ts';
+import { loadedFirmwarePatchTitle } from './projects.ts';
 import type {
   BundledFirmwareRelease,
   FirmwareReleaseSource,
@@ -62,6 +63,7 @@ export function createUserPatchSource(
       radioId,
       key: `user:${loaded.sha256}`,
       label: loaded.parsed.description.version,
+      title: loadedFirmwarePatchTitle(loaded),
       channel: 'unknown',
       provenance: 'unreviewed',
     };

@@ -5,6 +5,7 @@
 import { FirmwareError } from '../../firmware/errors.ts';
 import { sha256Hex } from '../../firmware/hash.ts';
 import { applyFirmwarePatch, readFirmwarePatchVersionStamp } from '../../firmware/patch/index.ts';
+import { loadedFirmwarePatchTitle, stockFirmwareTitle } from '../../firmware/releases/projects.ts';
 import type { LoadedFirmwarePatch } from '../../firmware/releases/types.ts';
 import type { VerifiedStockFirmware } from '../../firmware/stock/resolveStockFirmware.ts';
 import type {
@@ -28,6 +29,8 @@ export interface PreparedFirmwareImage {
   readonly radioId: FirmwareRadioId;
   readonly provenance: FirmwareProvenance;
   readonly stockVersion: string;
+  /** Operator-facing name of what is flashed: 'MM9PDY modded firmware 1.0.0' or 'stock firmware v1.01.048'. */
+  readonly title: string;
   readonly releaseTag?: string;
   readonly patchVersion?: string;
   readonly patchSha256?: string;
@@ -79,6 +82,7 @@ export async function prepareFirmwareImage(input: {
         radioId: descriptor.radioId,
         provenance: 'stock',
         stockVersion: descriptor.version,
+        title: stockFirmwareTitle(descriptor.version),
         package: pkg,
         sha256,
         verifyHint: descriptor.stockVerifyHint,
@@ -126,6 +130,7 @@ export async function prepareFirmwareImage(input: {
         radioId: descriptor.radioId,
         provenance: patch.provenance,
         stockVersion: descriptor.version,
+        title: loadedFirmwarePatchTitle(patch),
         releaseTag: patch.release?.tag,
         patchVersion: description.version,
         patchSha256: patch.sha256,

@@ -131,24 +131,36 @@ describe('formatFirmwareFlashSummary provenance lines', () => {
       image: image({
         provenance: 'bundled',
         releaseTag: '1.0.0',
+        title: 'MM9PDY modded firmware 1.0.0',
         patchSha256: 'aa',
         versionStamp: '1.0.0',
       }),
     });
-    expect(text).toContain('Release 1.0.0 (bundled, patch sha256 aa)');
+    expect(text).toContain('Firmware: MM9PDY modded firmware 1.0.0 (bundled, patch sha256 aa)');
     expect(text).toContain('Version stamp: 1.0.0');
   });
 
   it('flags a user-supplied patch', () => {
     const text = formatFirmwareFlashSummary({
       ...base,
-      image: image({ provenance: 'unreviewed', patchSha256: 'bb', patchVersion: '2.0.0' }),
+      image: image({
+        provenance: 'unreviewed',
+        title: 'MM9PDY modded firmware 2.0.0',
+        patchSha256: 'bb',
+        patchVersion: '2.0.0',
+      }),
     });
-    expect(text).toContain('user-supplied patch, sha256 bb, version 2.0.0');
+    expect(text).toContain(
+      'Firmware: MM9PDY modded firmware 2.0.0 (user-supplied patch, sha256 bb, version 2.0.0)',
+    );
   });
 
   it('names stock', () => {
-    const text = formatFirmwareFlashSummary({ ...base, image: image({ provenance: 'stock' }) });
-    expect(text).toContain('Firmware: stock v1');
+    const text = formatFirmwareFlashSummary({
+      ...base,
+      image: image({ provenance: 'stock', title: 'stock firmware v1' }),
+    });
+    expect(text).toContain('Firmware: stock firmware v1');
+    expect(text).not.toContain('MM9PDY');
   });
 });

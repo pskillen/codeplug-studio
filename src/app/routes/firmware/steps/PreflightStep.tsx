@@ -35,6 +35,11 @@ export default function PreflightStep({ state, dispatch, updater }: WizardStepPr
       <Panel title="Before you flash" sub="Tick every box to continue.">
         <div className={classes.checks}>
           <div>
+            {state.image ? (
+              <p className={classes.riskText}>
+                You are flashing the {state.image.title} to the {updater.label}.
+              </p>
+            ) : null}
             <p className={classes.riskText}>{RISK_ACKNOWLEDGEMENT}</p>
             <LabeledCheck
               label="I understand and accept the risk"

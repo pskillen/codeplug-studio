@@ -221,11 +221,11 @@ const shortHex = (bytes: Uint8Array) =>
 function provenanceLine(image: PreparedFirmwareImage): string {
   switch (image.provenance) {
     case 'stock':
-      return `Firmware: stock ${image.stockVersion}`;
+      return `Firmware: ${image.title}`;
     case 'bundled':
-      return `Firmware: Release ${image.releaseTag ?? image.patchVersion ?? '?'} (bundled, patch sha256 ${image.patchSha256 ?? '?'})`;
+      return `Firmware: ${image.title} (bundled, patch sha256 ${image.patchSha256 ?? '?'})`;
     case 'unreviewed':
-      return `Firmware: user-supplied patch, sha256 ${image.patchSha256 ?? '?'}, version ${image.patchVersion ?? '?'}`;
+      return `Firmware: ${image.title} (user-supplied patch, sha256 ${image.patchSha256 ?? '?'}, version ${image.patchVersion ?? '?'})`;
   }
 }
 

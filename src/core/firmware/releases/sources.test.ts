@@ -72,7 +72,11 @@ describe('user patch source', () => {
       { rows: [row], descriptors: [descriptor] },
     );
     const [summary] = await source.listReleases('baofeng-dm32uv', { includeRc: false });
-    expect(summary).toMatchObject({ provenance: 'bundled', label: row.tag });
+    expect(summary).toMatchObject({
+      provenance: 'bundled',
+      label: row.tag,
+      title: `MM9PDY modded firmware ${row.tag}`,
+    });
     const loaded = await source.loadPatch('baofeng-dm32uv', summary!.key);
     expect(loaded.provenance).toBe('bundled');
     expect(loaded.release).toBe(row);
@@ -89,6 +93,7 @@ describe('user patch source', () => {
     expect(summary).toMatchObject({
       provenance: 'unreviewed',
       label: '2.0.0',
+      title: 'MM9PDY modded firmware 2.0.0',
       channel: 'unknown',
       key: `user:${other.patchSha256}`,
     });
