@@ -38,3 +38,13 @@
 
 - Branch `1363/pskil/firmware-dm32` from `origin/main` (`646ec75`), PR base `main`, `Closes #1363`, `Closes #1362`,
   `Part of #1365`. Hardware gate H-DM32 then post-gate prod-flip commit.
+- PR https://github.com/pskillen/codeplug-studio/pull/1372 open (base `main`), head `57035f9`, 18 commits (slices
+  1–19), 84 files. `dev` force-pushed to `57035f9` (verified). Committed patch files hash to the published sha256s
+  (orchestrator verified); no vendor files.
+- Gates: format/lint/build pass; 3807 tests pass; 2 timeouts in untouched `at-d890uv/protocol.test.ts` (known RMW
+  flake + "patches only P1 and P2…", slow on this container; pass with --testTimeout=60000). Manual `npm run dev`
+  walkthrough not done.
+- Deviations: see PR (wrong-radio check in user patch source + prepare; own Web Serial message; EOT
+  `port-closed-by-radio`; guard copies plan; preflight disables connect; `buildToolsStripItems`; recovery link
+  placeholder for phase 4).
+- Gate H-DM32: owner script sent. Waiting on owner. Slice 20 (prod flip) NOT added.
