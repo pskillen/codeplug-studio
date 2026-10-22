@@ -150,20 +150,27 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(encoded[9]! & 0xd0).toBe(0);
   });
 
-  it('writes omitted txContactId as five zero bytes (contact slot 0)', () => {
+  it('writes omitted txContactId as FF FF FF FF (no contact, official CPS encoding)', () => {
     const analog = { ...simplexDigital, mode: 'analog' as const, bandwidth: 'FM' as const };
     for (const ch of [simplexDigital, analog]) {
       const encoded = encodeAtD890ChannelRecord(ch);
-      expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
+      expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0xff, 0xff, 0xff, 0xff]);
+      expect(parseAtD890ChannelRecord(encoded, ch.slotIndex).txContactId).toBeUndefined();
     }
-    // Digital slot 0 parses as txContactId 1. Analog records do not carry a TX contact.
-    expect(
-      parseAtD890ChannelRecord(encodeAtD890ChannelRecord(simplexDigital), simplexDigital.slotIndex)
-        .txContactId,
-    ).toBe(1);
-    expect(
-      parseAtD890ChannelRecord(encodeAtD890ChannelRecord(analog), analog.slotIndex).txContactId,
-    ).toBeUndefined();
+  });
+
+  it('round-trips no contact and an explicit slot 0 as different values', () => {
+    const none = encodeAtD890ChannelRecord(simplexDigital);
+    const parsedNone = parseAtD890ChannelRecord(none, simplexDigital.slotIndex);
+    expect(parsedNone.txContactId).toBeUndefined();
+    expect([...encodeAtD890ChannelRecord(parsedNone).subarray(0x14, 0x18)]).toEqual([
+      0xff, 0xff, 0xff, 0xff,
+    ]);
+
+    const slot0 = encodeAtD890ChannelRecord({ ...simplexDigital, txContactId: 1 });
+    const parsedSlot0 = parseAtD890ChannelRecord(slot0, simplexDigital.slotIndex);
+    expect(parsedSlot0.txContactId).toBe(1);
+    expect([...encodeAtD890ChannelRecord(parsedSlot0).subarray(0x14, 0x18)]).toEqual([0, 0, 0, 0]);
   });
 
   it('encodes txContactId 1 as talk-group slot 0', () => {
@@ -216,7 +223,7 @@ describe('encodeAtD890ChannelRecord', () => {
     expect(mm9).toHaveLength(1);
     expect(stock[0]).toBe(mm9[0]);
     const omitted = encodeAtD890ChannelRecord(simplexDigital);
-    expect([...omitted.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
+    expect([...omitted.subarray(0x13, 0x18)]).toEqual([0x00, 0xff, 0xff, 0xff, 0xff]);
     const wide = encodeAtD890ChannelRecord({ ...simplexDigital, txContactId: 257 });
     expect([...wide.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x01, 0x00, 0x00]);
     const firstList = encodeAtD890ChannelRecord({ ...simplexDigital, rxGroupIndex: 1 });
@@ -541,7 +548,7 @@ describe('encodeAtD890ChannelRecord', () => {
     expect((encoded[0x21]! >> 1) & 1).toBe(1);
     expect(encoded[0x22]).toBe(0xfd);
     expect([...encoded.subarray(4, 8)]).toEqual([0, 0, 0, 0]);
-    expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
+    expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0xff, 0xff, 0xff, 0xff]);
   });
 
   it('keeps NXDN and AES from a downloaded slot and rewrites the contact', () => {
@@ -591,7 +598,7 @@ describe('encodeAtD890ChannelRecord', () => {
     expect([...encoded.subarray(0x66, 0x6f)]).toEqual(
       Array.from({ length: 0x6f - 0x66 }, (_, i) => 0x66 + i),
     );
-    expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
+    expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0xff, 0xff, 0xff, 0xff]);
     expect(encoded[9]! & 0xd0).toBe(0);
     expect(encoded[0x1c]).toBe(0xff);
     expect(encoded[0x23]).toBe(0);
@@ -651,7 +658,7 @@ describe('encodeAtD890ChannelRecord', () => {
     const noPrior = encodeAtD890ChannelRecord(simplexDigital);
     expect(noPrior[0x22]).toBe(0);
     expect(noPrior[0x66]).toBe(0);
-    expect([...noPrior.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
+    expect([...noPrior.subarray(0x13, 0x18)]).toEqual([0x00, 0xff, 0xff, 0xff, 0xff]);
 
     const zeros = new Uint8Array(0x80);
     zeros[0x22] = 0xab;
@@ -665,7 +672,7 @@ describe('encodeAtD890ChannelRecord', () => {
     const fromVirgin = encodeAtD890ChannelRecord(simplexDigital, virgin);
     expect(fromVirgin[0x22]).toBe(0);
     expect(fromVirgin[0x66]).toBe(0);
-    expect([...fromVirgin.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
+    expect([...fromVirgin.subarray(0x13, 0x18)]).toEqual([0x00, 0xff, 0xff, 0xff, 0xff]);
 
     const shortPrior = new Uint8Array(0x40);
     shortPrior[0] = 0x43;
@@ -708,7 +715,7 @@ describe('encodeAtD890ChannelRecord', () => {
       expect((encoded[0x21]! >> 1) & 1).toBe(1);
       expect(encoded[0x22]).toBe(0);
       if (dto.txContactId == null) {
-        expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0x00, 0x00, 0x00, 0x00]);
+        expect([...encoded.subarray(0x13, 0x18)]).toEqual([0x00, 0xff, 0xff, 0xff, 0xff]);
       }
       if (slotIndex === 17) {
         expect(original[0x1c]).toBe(0);
