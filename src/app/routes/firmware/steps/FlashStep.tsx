@@ -168,6 +168,11 @@ export default function FlashStep({
             With the radio in update mode and the cable plugged in, click the button and pick the
             cable&apos;s port. Keep this tab in front and don&apos;t let the computer sleep.
           </p>
+          {updater.stock.bootloaderEntry.warnings.map((w) => (
+            <StatusBanner key={w} tone="warning">
+              {w}
+            </StatusBanner>
+          ))}
           <div>
             <Button
               variant="primary"
@@ -303,13 +308,40 @@ function FlashResult({
   );
 
   if (outcome.ok) {
+    const { title, verifyHint } = outcome.image;
+    let banner;
+    switch (outcome.result.end) {
+      case 'port-closed-by-radio':
+        banner = (
+          <StatusBanner tone="success">
+            The radio restarted into the new firmware. The {title} is on the radio. Check:{' '}
+            {verifyHint}
+          </StatusBanner>
+        );
+        break;
+      case 'no-reply':
+        banner = (
+          <>
+            <StatusBanner tone="success">The {title} was sent to the radio.</StatusBanner>
+            <StatusBanner tone="warning">
+              Every block was accepted, but the radio didn&apos;t confirm the end. Power-cycle it,
+              then check: {verifyHint}
+            </StatusBanner>
+          </>
+        );
+        break;
+      default:
+        banner = (
+          <StatusBanner tone="success">
+            The {title} is on the radio. Power-cycle the radio if it hasn&apos;t restarted, then
+            check: {verifyHint}
+          </StatusBanner>
+        );
+    }
     return (
       <Panel title="Done">
         <div className={classes.stack}>
-          <StatusBanner tone="success">
-            The {outcome.image.title} is on the radio. Power-cycle the radio if it hasn&apos;t
-            restarted, then check: {outcome.image.verifyHint}
-          </StatusBanner>
+          {banner}
           {summaryBlock}
         </div>
       </Panel>

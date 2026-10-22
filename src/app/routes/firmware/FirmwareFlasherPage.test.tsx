@@ -203,6 +203,34 @@ describe('FirmwareFlasherPage', () => {
     expect(screen.getByTestId('firmware-flash-summary')).toHaveTextContent('SUMMARY TEXT');
   });
 
+  it('shows the connect-step warnings beside "Connect and flash"', async () => {
+    await walkToFlashStep();
+    expect(screen.getByRole('button', { name: 'Connect and flash' })).toBeInTheDocument();
+    expect(screen.getByText(DM32.stock.bootloaderEntry.warnings[0]!)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['port-closed-by-radio', /The radio restarted into the new firmware/],
+    ['acknowledged', /Power-cycle the radio if it hasn't restarted, then check: The radio boots/],
+    ['eot-sent', /Power-cycle the radio if it hasn't restarted, then check: The radio boots/],
+    ['no-reply', /Every block was accepted, but the radio didn't confirm the end/],
+  ] as const)('renders the %s end state as success', async (end, message) => {
+    vi.mocked(flash.runFirmwareFlash).mockResolvedValue({
+      ok: true,
+      radioId: 'baofeng-dm32uv',
+      image: IMAGE,
+      ident: { radioId: 'baofeng-dm32uv', model: 'M', raw: new Uint8Array(0) },
+      result: { framesSent: 1, dataFrames: 1, elapsedMs: 1, end },
+      startedAt: 'now',
+    });
+    await walkToFlashStep();
+    fireEvent.click(screen.getByRole('button', { name: 'Connect and flash' }));
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Done' })).toBeInTheDocument();
+    expect(screen.queryByText(/Don't keep power-cycling the radio/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Nothing was written/)).not.toBeInTheDocument();
+  });
+
   it('shows the recovery screen after a failure that touched the radio', async () => {
     vi.mocked(flash.runFirmwareFlash).mockResolvedValue({
       ok: false,

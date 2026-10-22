@@ -164,6 +164,42 @@ describe('formatFirmwareFlashSummary', () => {
     expect(text).toMatch(/^Studio .+ \(.+\)$/m);
   });
 
+  it('adds the elapsed time and frame round-trip timing when measured', () => {
+    const text = formatFirmwareFlashSummary({
+      ok: true,
+      radioId: 'anytone-at-d890uv',
+      image: IMAGE,
+      ident: IDENT,
+      result: {
+        framesSent: 52_518,
+        dataFrames: 52_515,
+        elapsedMs: 125_300,
+        end: 'port-closed-by-radio',
+        timing: { medianFrameMs: 1.234, p99FrameMs: 3.5, maxFrameMs: 31.25 },
+      },
+      startedAt: '2026-01-01T00:00:00.000Z',
+    });
+    expect(text).toContain('Radio: AnyTone AT-D890UV');
+    expect(text).toContain('Elapsed: 02:05 (125.3 s)');
+    expect(text).toContain('End: port-closed-by-radio');
+    expect(text).toContain('Frame round trip: median 1.23 ms, p99 3.50 ms, max 31.3 ms');
+  });
+
+  it('adds frame timing to a failure when measured', () => {
+    const text = formatFirmwareFlashSummary({
+      ok: false,
+      radioId: 'baofeng-dm32uv',
+      image: IMAGE,
+      code: 'protocol',
+      message: 'no 06',
+      position: 'frame 3/32',
+      radioTouched: true,
+      startedAt: '2026-01-01T00:00:00.000Z',
+      timing: { medianFrameMs: 1, p99FrameMs: 2, maxFrameMs: 3 },
+    });
+    expect(text).toContain('Frame round trip: median 1.00 ms, p99 2.00 ms, max 3.00 ms');
+  });
+
   it('summarises a failure', () => {
     const text = formatFirmwareFlashSummary({
       ok: false,
