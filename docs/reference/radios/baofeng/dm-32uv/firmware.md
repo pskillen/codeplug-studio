@@ -43,6 +43,45 @@ Indicator: **green LED**.
 
 After a stock flash, the radio boots to its normal screen with your channels.
 
+## Release patch format
+
+Each firmware release is a JSON patch (`*.patch.json`): the bytes that differ between the pinned stock image and the
+built image, with SHA-256s pinning both ends. Source of truth: the `baofeng-dm32-firmware` project's
+`fw/make_patch.py`. Studio's port lives in `src/core/firmware/patch/formats/baofeng-dm32-firmware/`, and is stricter
+than the Python, because a user-supplied patch is untrusted input.
+
+| Field            | Type                                       | Meaning                                                                      |
+| ---------------- | ------------------------------------------ | ---------------------------------------------------------------------------- |
+| `format`         | `1`                                        | Patch format version. Anything else is refused as an unknown format          |
+| `name`           | `"baofeng-dm32-firmware"`                  | Selects this format module                                                   |
+| `version`        | text                                       | Release version, e.g. `1.0.0`                                                |
+| `stock`          | `{ sha256, size }`                         | The stock image the patch was made from (role `bin`)                         |
+| `result`         | `{ sha256, size }`                         | The image the patch must produce (role `bin`)                                |
+| `segments`       | list of `{ offset, hex }`                  | File offset and replacement bytes. Applied in order; may extend past the end |
+| `neutral_sha256` | 64 hex, optional                           | Hash of the build before the version stamp. Not used by Studio               |
+| `version_slot`   | `{ offset, len }`, optional, `len` 1 to 64 | Where the release tag is stamped in the result image (NUL-padded ASCII)      |
+
+Unknown extra keys are ignored. `make` merges differing runs closer than 16 bytes into one segment; a result longer
+than stock has its tail as one more segment, merged with the last segment when that ends exactly at the stock length.
+
+**Apply order:**
+
+1. The package must hold exactly the `bin` role, and its SHA-256 and size must equal `stock`.
+2. Copy the image. For each segment, refuse an `offset` past the current length (a gap), then overwrite
+   `hex` at `offset`, growing the image when the segment runs past the end.
+3. The result's SHA-256 and size must equal `result`.
+4. For the flash summary, the version stamp is read from `version_slot` in the result image, trimmed at the first NUL.
+
+**Refusals:**
+
+| Condition                                                                                      | Code                    |
+| ---------------------------------------------------------------------------------------------- | ----------------------- |
+| Not UTF-8, or not JSON                                                                         | `patch-unreadable`      |
+| Not an object, unknown `name`, or `format` other than 1                                        | `patch-unknown-format`  |
+| Missing or mistyped field, negative or non-integer offset, bad hex, bad SHA-256, gap, bad slot | `patch-malformed`       |
+| Stock hash or size differs, or the package is not a single `bin`                               | `patch-wrong-stock`     |
+| Result hash or size differs                                                                    | `patch-result-mismatch` |
+
 ## Bootloader update protocol
 
 Added with the updater ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363) / [#1364](https://github.com/pskillen/codeplug-studio/issues/1364)).

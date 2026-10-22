@@ -17,3 +17,13 @@ export {
   type VerifiedStockFirmware,
 } from './stock/resolveStockFirmware.ts';
 export { createUserFileStockSource, type StockSource } from './stock/stockSource.ts';
+export {
+  applyFirmwarePatch,
+  listFirmwarePatchFormats,
+  parseFirmwarePatch,
+  readFirmwarePatchVersionStamp,
+  type FirmwarePatchDescription,
+  type FirmwarePatchFormat,
+  type FirmwarePatchHashes,
+  type ParsedFirmwarePatch,
+} from './patch/index.ts';
