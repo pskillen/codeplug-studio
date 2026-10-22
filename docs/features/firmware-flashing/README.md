@@ -11,14 +11,14 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 
 ## Implementation status
 
-| Area                | Status                  | Notes                                                                                                                                                                                                                                                   |
-| ------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DM-32UV flash       | Shipped: prod           | Stock and bundled releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                   |
-| Bundled releases    | Shipped: prod (DM-32UV) | DM-32UV and AT-D890UV `1.0.0` in `src/core/firmware/releases/`, verified by the catalog test; release list, RC toggle and notes in the wizard; offered on prod wherever the radio is ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
-| User-supplied patch | Shipped: prod (DM-32UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                |
-| AT-D890UV           | Pre-prod                | Updater shipped (pre-prod); hardware run pending. Hidden on prod until Studio has flashed `1.0.0` on hardware ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                        |
-| Recovery docs       | Shipped                 | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                       |
-| Android             | Deferred                | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                          |
+| Area                | Status                             | Notes                                                                                                                                                                                                                                                   |
+| ------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DM-32UV flash       | Shipped: prod                      | Stock and bundled releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                   |
+| Bundled releases    | Shipped: prod (DM-32UV, AT-D890UV) | DM-32UV and AT-D890UV `1.0.0` in `src/core/firmware/releases/`, verified by the catalog test; release list, RC toggle and notes in the wizard; offered on prod wherever the radio is ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
+| User-supplied patch | Shipped: prod (DM-32UV, AT-D890UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                |
+| AT-D890UV           | Shipped: prod                      | Stock and bundled releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                   |
+| Recovery docs       | Shipped                            | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                       |
+| Android             | Deferred                           | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                          |
 
 ## Documentation map
 
@@ -107,10 +107,10 @@ flowchart LR
 
 ## What to expect
 
-| Radio     | Duration                                    | How the radio signals the end                                                                                        | How to check (release `1.0.0`)                                                                                  |
-| --------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| DM-32UV   | About 2 minutes (including a 13 s erase)    | Studio sends the end byte; any reply, or none, is fine (`eot-sent`)                                                  | Press Scan on a channel with no scan list: a zone scan starts. Device information still reads `DM32.01.L01.048` |
-| AT-D890UV | A few minutes (set from the hardware flash) | The radio restarts at once and its USB port disappears (`port-closed-by-radio`), or it replies `06` (`acknowledged`) | After the radio restarts, Device Info > Version shows `1.0.0`                                                   |
+| Radio     | Duration                                 | How the radio signals the end                                                                                        | How to check (release `1.0.0`)                                                                                  |
+| --------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| DM-32UV   | About 2 minutes (including a 13 s erase) | Studio sends the end byte; any reply, or none, is fine (`eot-sent`)                                                  | Press Scan on a channel with no scan list: a zone scan starts. Device information still reads `DM32.01.L01.048` |
+| AT-D890UV | Under a minute (about 25 s transfer)     | The radio restarts at once and its USB port disappears (`port-closed-by-radio`), or it replies `06` (`acknowledged`) | After the radio restarts, Device Info > Version shows `1.0.0`                                                   |
 
 The durations are the descriptors' `expectedDuration`, shown on the radio cards; the checks are the releases' verify
 hints.
@@ -202,6 +202,6 @@ written to browser storage or uploaded. The flash summary is only kept if you co
 
 1. `npm run dev`, open `/firmware`. The DM-32UV card shows the pinned stock version.
 2. Drop a non-firmware file on the stock step: a refusal message appears and Continue stays disabled.
-3. `BUILD_ENV=prod npm run dev`: `/firmware` offers only the radios whose prod gate is cleared (the DM-32UV), and
+3. `BUILD_ENV=prod npm run dev`: `/firmware` offers only the radios whose prod gate is cleared (both the DM-32UV and the AT-D890UV), and
    the Tools strip has a Firmware flasher entry. With no radio offered, `/firmware` shows "not available on this
    site yet" and the strip has no entry.

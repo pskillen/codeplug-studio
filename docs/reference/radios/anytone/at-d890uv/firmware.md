@@ -6,6 +6,8 @@ update mode, and the release patch format. Product rules: [DESIGN.md — Firmwar
 **Code mirror:** [`src/core/radios/anytone/at-d890uv/firmware.ts`](../../../../../src/core/radios/anytone/at-d890uv/firmware.ts)
 (`AT_D890UV_STOCK_FIRMWARE`, `AT_D890UV_FIRMWARE_ROLE`). Keep the two in step.
 
+Prod-enabled after a hardware flash of 1.0.0 ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364)).
+
 ## Stock firmware pin
 
 The user supplies the vendor zip, or the three files extracted from it. Studio never fetches, hosts or commits them.

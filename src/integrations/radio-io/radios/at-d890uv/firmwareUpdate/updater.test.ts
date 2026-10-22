@@ -248,7 +248,7 @@ describe('one write call site', () => {
 });
 
 describe('firmware registry', () => {
-  it('lists both radios; the AT-D890UV is prod-hidden and the DM-32UV unchanged', () => {
+  it('lists both radios; both are enabled in prod', () => {
     expect(listFirmwareUpdaters().map((d) => d.radioId)).toEqual([
       'baofeng-dm32uv',
       'anytone-at-d890uv',
@@ -256,7 +256,7 @@ describe('firmware registry', () => {
     const d890 = getFirmwareUpdater('anytone-at-d890uv');
     expect(d890).toMatchObject({
       label: 'AnyTone AT-D890UV',
-      prodFlashDisabled: true,
+      prodFlashDisabled: false,
       capacitorSupported: false,
     });
     expect(d890!.createUpdater().radioId).toBe('anytone-at-d890uv');

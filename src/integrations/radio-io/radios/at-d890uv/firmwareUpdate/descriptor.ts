@@ -14,8 +14,8 @@ export const AT_D890UV_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   link: AT_D890_FW_LINK,
   createUpdater: () => createD890FirmwareUpdater(),
   capacitorSupported: false,
-  // Cleared in its own commit after release 1.0.0 is flashed from Studio on hardware (#1364).
-  prodFlashDisabled: true,
-  // Set from the measured hardware flash when the prod flag is cleared.
-  expectedDuration: 'a few minutes',
+  // Enabled in prod 2026-10-22: release 1.0.0 flashed from Studio on hardware (#1364).
+  prodFlashDisabled: false,
+  // Measured hardware flash of 1.0.0: about 25 s of transfer.
+  expectedDuration: 'under a minute',
 };

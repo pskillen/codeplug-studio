@@ -41,8 +41,11 @@ describe('listOfferedFirmwareUpdaters', () => {
     vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
   });
 
-  it('offers the DM-32UV on prod', () => {
-    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toContain('baofeng-dm32uv');
+  it('offers both radios on prod', () => {
+    expect(listOfferedFirmwareUpdaters('prod').map((d) => d.radioId)).toEqual([
+      'baofeng-dm32uv',
+      'anytone-at-d890uv',
+    ]);
   });
 
   it('offers the DM-32UV on dev', () => {
