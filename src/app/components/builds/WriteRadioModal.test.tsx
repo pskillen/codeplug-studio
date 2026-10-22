@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { mm9pdyStepKeysDescription } from './mm9pdyStepKeysCopy.ts';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { MemoryRouter } from 'react-router-dom';
@@ -81,6 +82,7 @@ describe('WriteRadioModal (#1121)', () => {
     const onAssignMm9pdyStepKeysChange = vi.fn();
     renderModal({
       assignMm9pdyStepKeys: false,
+      assignMm9pdyStepKeysDescription: mm9pdyStepKeysDescription('anytone-at-d890uv-mm9pdy'),
       onAssignMm9pdyStepKeysChange,
     });
     const toggle = screen.getByRole('switch', { name: /Assign TG previous and TG next/ });
@@ -88,6 +90,7 @@ describe('WriteRadioModal (#1121)', () => {
     expect(screen.getByText(/item 15 Record/)).toBeInTheDocument();
     expect(screen.getByText(/item 14 Record Switch/)).toBeInTheDocument();
     expect(screen.getByText(/MM9PDY names/)).toBeInTheDocument();
+    expect(mm9pdyStepKeysDescription('baofeng-dm32uv-mm9pdy')).toMatch(/Previous Record.*TG Next/);
     fireEvent.click(toggle);
     expect(onAssignMm9pdyStepKeysChange).toHaveBeenCalledWith(true);
   });

@@ -329,6 +329,52 @@ describe('buildRadioWriteProjection radio-io-dm32uv-mm9pdy', () => {
     expect(encoded[0x19]! & 0x3f).toBe(0);
   });
 
+  it('projects per-member timeslots on MM9PDY only, plus the step-key flag when set', () => {
+    const { library } = repeaterWithTwoTalkGroups();
+    library.rxGroupLists = library.rxGroupLists.map((list) => ({
+      ...list,
+      members: [{ ...list.members[0]!, timeSlotOverride: 2 as const }, { ...list.members[1]! }],
+    }));
+    const mm = newRadioBuildForProfile('p1', 'radio-io-dm32uv-mm9pdy');
+    const modded = buildRadioWriteProjection(
+      assemble(mm.build, library, {
+        formatId: mm.egress.formatId,
+        profileId: mm.egress.profileId,
+      }),
+      { ...mm.build, exportSettings: { assignMm9pdyStepKeys: true } },
+      library,
+      mm.egress,
+    );
+    expect(modded.organisation.rxGroups?.[0]?.memberDigitalIds).toEqual([9, 2351]);
+    expect(modded.organisation.rxGroups?.[0]?.memberTimeSlotOverrides).toEqual([2, undefined]);
+    expect(modded.organisation.writeRxGroupTimeSlotOverrides).toBe(true);
+    expect(modded.organisation.assignMm9pdyStepKeys).toBe(true);
+
+    const unset = buildRadioWriteProjection(
+      assemble(mm.build, library, {
+        formatId: mm.egress.formatId,
+        profileId: mm.egress.profileId,
+      }),
+      mm.build,
+      library,
+      mm.egress,
+    );
+    expect(unset.organisation.assignMm9pdyStepKeys).toBeUndefined();
+
+    const stock = newRadioBuildForProfile('p1', 'radio-io-dm32uv');
+    const stockProjection = buildRadioWriteProjection(
+      assemble(stock.build, library, {
+        formatId: stock.egress.formatId,
+        profileId: stock.egress.profileId,
+      }),
+      stock.build,
+      library,
+      stock.egress,
+    );
+    expect(stockProjection.organisation.writeRxGroupTimeSlotOverrides).toBeUndefined();
+    expect(stockProjection.organisation.rxGroups?.[0]?.memberTimeSlotOverrides).toBeUndefined();
+  });
+
   it('still expands the stock DM-32UV target and keeps a scan-list record', () => {
     const { library } = repeaterWithTwoTalkGroups();
     const channel = library.channels[0]!;

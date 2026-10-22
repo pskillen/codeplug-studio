@@ -591,7 +591,9 @@ function buildTalkGroupsAndRx(
     const memberDigitalIds: number[] = [];
     const memberTimeSlotOverrides: (1 | 2 | undefined)[] = [];
     const useTalkgroupBankSlots = isAtD890RadioIoProfileId(egress.profileId);
-    const writeTimeSlots = isMm9pdyAtD890RadioIoProfileId(egress.profileId);
+    const writeTimeSlots =
+      isMm9pdyAtD890RadioIoProfileId(egress.profileId) ||
+      isMm9pdyDm32RadioIoProfileId(egress.profileId);
     for (const member of row.entity.members) {
       if (memberDigitalIds.length >= maxRxMembers) break;
       if (member.ref.kind === 'talkGroup') {
@@ -606,11 +608,20 @@ function buildTalkGroupsAndRx(
           }
         } else {
           const tg = assembled.talkGroups.find((t) => t.entity.id === member.ref.id);
-          if (tg) memberDigitalIds.push(tg.entity.digitalId);
+          if (tg) {
+            memberDigitalIds.push(tg.entity.digitalId);
+            if (writeTimeSlots) {
+              const slot = member.timeSlotOverride;
+              memberTimeSlotOverrides.push(slot === 1 || slot === 2 ? slot : undefined);
+            }
+          }
         }
       } else if (!useTalkgroupBankSlots && member.ref.kind === 'digitalContact') {
         const dc = assembled.digitalContacts.find((d) => d.entity.id === member.ref.id);
-        if (dc) memberDigitalIds.push(dc.entity.digitalId);
+        if (dc) {
+          memberDigitalIds.push(dc.entity.digitalId);
+          if (writeTimeSlots) memberTimeSlotOverrides.push(undefined);
+        }
       }
     }
     const index = rxGroups.length + 1;
@@ -1455,6 +1466,10 @@ export function buildRadioWriteProjection(
       scanLists: mm9pdy ? [] : org.scanLists,
       talkGroups,
       rxGroups,
+      ...(mm9pdy ? { writeRxGroupTimeSlotOverrides: true } : {}),
+      ...(mm9pdy && build.exportSettings?.assignMm9pdyStepKeys === true
+        ? { assignMm9pdyStepKeys: true }
+        : {}),
       ...(dm32AddressBook !== undefined ? { digitalContacts: dm32AddressBook } : {}),
       ...(dualBankMode === 'codeplug' ? { radioIds: dm32RadioIds } : {}),
       aprs: radioAprsFromNeonplugPatch(assembled, numbersBySourceChannelId, warnings),

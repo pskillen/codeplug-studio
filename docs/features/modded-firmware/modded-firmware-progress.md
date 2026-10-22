@@ -146,4 +146,19 @@
 
 ## Next
 
-- [#1321](https://github.com/pskillen/codeplug-studio/issues/1321) stays open until DM-32 C2 names a timeslot store and a step-key code
+- Nothing open on the DM-32UV slice beyond the outstanding list.
+
+---
+
+## DM-32UV timeslot store and step keys
+
+**Status:** Complete on this branch
+**Issues:** [#1321](https://github.com/pskillen/codeplug-studio/issues/1321)
+**Depends on:** firmware format in [baofeng-dm32-firmware#69](https://github.com/pskillen/baofeng-dm32-firmware/pull/69)
+
+**Delivered**
+
+- MM9PDY write stores `timeSlotOverride` in the RX-group page tail (marker, 2 bits per member, per-group check byte) when any member has one
+- Stock write keeps the `0xFF` tail
+- Decoder returns slots only when the marker and the group's check match
+- `assignMm9pdyStepKeys` now applies to the DM-32UV: P1 short 20, P2 short 21
