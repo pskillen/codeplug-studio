@@ -55,6 +55,7 @@ describe('bundled firmware release catalog', () => {
         const parsed = parseFirmwarePatch(await release.loadBytes());
         const { description } = parsed;
         expect(descriptor.patchNames).toContain(description.name);
+        expect(release.patchName).toBe(description.name);
         expect(description.version).toBe(release.tag);
         expect(release.stockVersion).toBe(descriptor.version);
         expect(Object.keys(description.stock).sort()).toEqual(

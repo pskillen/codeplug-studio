@@ -8,6 +8,8 @@ export interface BundledFirmwareRelease {
   readonly radioId: FirmwareRadioId;
   /** Firmware-repo tag, no 'v' ('1.0.0', '1.0.0-rc.3'). */
   readonly tag: string;
+  /** The patch's `name` (its firmware project), e.g. 'baofeng-dm32-firmware'. Names the release via `projects.ts`. */
+  readonly patchName: string;
   readonly channel: FirmwareReleaseChannel;
   /** Published asset name, e.g. 'dm32-fw-1.0.0.patch.json'. */
   readonly patchFile: string;
@@ -35,6 +37,8 @@ export interface FirmwareReleaseSummary {
   readonly key: string;
   /** e.g. '1.0.0' */
   readonly label: string;
+  /** Operator-facing name with the version, e.g. 'MM9PDY modded firmware 1.0.0'. */
+  readonly title: string;
   readonly channel: FirmwareReleaseChannel | 'unknown';
   readonly provenance: 'bundled' | 'unreviewed';
   readonly release?: BundledFirmwareRelease;

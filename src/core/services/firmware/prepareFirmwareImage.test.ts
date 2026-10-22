@@ -32,6 +32,7 @@ describe('prepareFirmwareImage — stock target', () => {
     expect(prepared.package.files.img).toEqual(bin);
     expect(prepared.sha256.img).toBe(descriptor.members[0]!.sha256);
     expect(prepared.releaseTag).toBeUndefined();
+    expect(prepared.title).toBe(`stock firmware ${descriptor.version}`);
   });
 
   it('refuses stock whose bytes no longer match the verified hashes', async () => {
@@ -76,6 +77,7 @@ describe('prepareFirmwareImage — patch target', () => {
     });
     expect(prepared.provenance).toBe('bundled');
     expect(prepared.releaseTag).toBe(row.tag);
+    expect(prepared.title).toBe(`MM9PDY modded firmware ${row.tag}`);
     expect(prepared.patchVersion).toBe('9.9.9');
     expect(prepared.patchSha256).toBe(patchSha256);
     expect(prepared.versionStamp).toBe('9.9.9');
@@ -93,6 +95,7 @@ describe('prepareFirmwareImage — patch target', () => {
     });
     expect(prepared.provenance).toBe('unreviewed');
     expect(prepared.releaseTag).toBeUndefined();
+    expect(prepared.title).toBe('MM9PDY modded firmware 9.9.9');
     expect(prepared.verifyHint).toBe(DEFAULT_PATCH_VERIFY_HINT);
   });
 

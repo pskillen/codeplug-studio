@@ -38,7 +38,9 @@ without a `v` (`1.1.0`, `1.1.0-rc.1`).
    unchanged, with a simple renderer: paragraphs, `- ` bullets, `**bold**` and `` `code` `` only. No links or HTML.
    Don't link to private repositories.
 5. **Add the index row** to `BUNDLED_FIRMWARE_RELEASES`:
-   - `tag`, `channel` (`'rc'` exactly when the tag ends `-rc.N`), `patchFile` (the published asset name),
+   - `tag`, `patchName` (the patch's `name`; it must have a row in `FIRMWARE_PROJECTS` in `projects.ts`, which
+     gives the wizard's display name), `channel` (`'rc'` exactly when the tag ends `-rc.N`), `patchFile` (the
+     published asset name),
      `patchSha256` (from `SHA256SUMS`), `stockVersion` (the radio's pinned `StockFirmwareDescriptor.version`),
      `publishedOn`;
    - `summary`: one or two sentences, from the notes' "What's in it";

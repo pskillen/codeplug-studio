@@ -23,6 +23,14 @@ export {
   createBundledFirmwareReleaseSource,
 } from './releases/bundledSource.ts';
 export { createUserPatchSource } from './releases/userPatchSource.ts';
+export {
+  FIRMWARE_PROJECTS,
+  firmwareProjectDisplayName,
+  firmwareReleaseTitle,
+  loadedFirmwarePatchTitle,
+  stockFirmwareTitle,
+  type FirmwareProject,
+} from './releases/projects.ts';
 export type {
   BundledFirmwareRelease,
   FirmwareReleaseChannel,

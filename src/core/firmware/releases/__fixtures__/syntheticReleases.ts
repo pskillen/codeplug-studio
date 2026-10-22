@@ -39,6 +39,7 @@ export async function syntheticDm32Release(opts: { version?: string; seed?: numb
   const row: BundledFirmwareRelease = {
     radioId: 'baofeng-dm32uv',
     tag: version,
+    patchName: 'baofeng-dm32-firmware',
     channel: version.includes('-rc.') ? 'rc' : 'final',
     patchFile: `synth-${version}.patch.json`,
     patchSha256,

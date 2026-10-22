@@ -21,6 +21,7 @@ export function preparedDm32Image(
     radioId: overrides.radioId ?? 'baofeng-dm32uv',
     provenance: 'stock',
     stockVersion: 'v0.0.1-test',
+    title: 'stock firmware v0.0.1-test',
     package: {
       radioId: overrides.radioId ?? 'baofeng-dm32uv',
       files: overrides.files ?? { bin },

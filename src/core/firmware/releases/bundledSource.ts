@@ -2,6 +2,7 @@ import { FirmwareError } from '../errors.ts';
 import { sha256Hex } from '../hash.ts';
 import { parseFirmwarePatch } from '../patch/index.ts';
 import { BUNDLED_FIRMWARE_RELEASES } from './index.ts';
+import { firmwareReleaseTitle } from './projects.ts';
 import type {
   BundledFirmwareRelease,
   FirmwareReleaseSource,
@@ -13,6 +14,7 @@ export function bundledReleaseSummary(release: BundledFirmwareRelease): Firmware
     radioId: release.radioId,
     key: release.tag,
     label: release.tag,
+    title: firmwareReleaseTitle(release.patchName, release.tag),
     channel: release.channel,
     provenance: 'bundled',
     release,
