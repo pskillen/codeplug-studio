@@ -9,3 +9,14 @@
 - Deviations from phase file: none in content; added a `---` separator after the new DESIGN.md section.
 - Orchestration notes: this orchestrator had no Agent/Task tool, so the implementor was started as a separate cloud session (`session_019Z9T2bU4T9BbqsqpRRZfeG`) via create_session (source: product repo `main`, no worktree isolation). The implementor's PR body used a different footer than the owner specified; orchestrator corrected it via update_pull_request. Sessions are not worktree-isolated; branch was created by `checkout -B` as instructed.
 - Gate: review. Not started phase 2; waiting on owner.
+
+## Phase 1 merged (2026-10-22)
+
+- Owner: "Approved, and merged." PR #1370 merged to `main` as `4358afa`; branch `1359/pskil/firmware-design` deleted.
+- Owner decision: the main session takes over as orchestrator and spawns implementors as in-session subagents
+  (no more separate cloud sessions).
+- Consequence: phase 2 starts from `origin/main` and its PR targets `main` (phase 1 is no longer a stack base).
+
+## Phase 2 (2026-10-22): started
+
+- Branch `1360/pskil/firmware-core` from `origin/main` (`4358afa`), PR base `main`, `Closes #1360`, `Closes #1361`.
