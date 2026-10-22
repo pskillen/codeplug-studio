@@ -84,4 +84,75 @@ than stock has its tail as one more segment, merged with the last segment when t
 
 ## Bootloader update protocol
 
-Added with the updater ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363) / [#1364](https://github.com/pskillen/codeplug-studio/issues/1364)).
+Studio's updater ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363)) is a byte-exact port of the
+firmware project's `tools/flash/dm32_fw_send.py`, whose frame plan equals a USB capture of the official CPS byte for
+byte. Protocol notes: that project's `docs/reference/update-protocol.md`.
+
+**Code:** `src/integrations/radio-io/radios/dm32uv/firmwareUpdate/` — `constants.ts` (link, frame bytes, timeouts),
+`crc16Xmodem.ts`, `plan.ts` (`buildDm32FirmwarePlan`), `interlocks.ts`, `updater.ts`, `descriptor.ts`
+(`DM32UV_FIRMWARE_UPDATER`). Test bootloader: `__fixtures__/dm32BootloaderMock.ts` (synthetic images only).
+
+### Link
+
+| Setting  | Value                                                                                                                                           |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cable    | CH340, USB `1a86:7523`                                                                                                                          |
+| Serial   | 115200 8N1, no flow control                                                                                                                     |
+| Signals  | DTR and RTS raised (as the CPS does)                                                                                                            |
+| Picker   | Filtered to `1a86:7523`. The filter identifies the cable, not whether the radio is in update mode: the cable enumerates with or without a radio |
+| Pre-send | Before every frame: clear the receive buffer, wait 10 ms (the CPS's ComWrite), then write                                                       |
+
+### Session
+
+Every frame is precomputed from the image before the first byte is sent. Each step sends its TX and must read back
+exactly its expected RX within the timeout. There is no NAK, no resend and no resume: any other reply, or silence,
+aborts at once.
+
+| Step           | TX                                   | Expected RX                 | Timeout | Phase     |
+| -------------- | ------------------------------------ | --------------------------- | ------- | --------- |
+| `init`         | `52`                                 | `06`                        | 0.5 s   | handshake |
+| `model-query`  | `4D 00 00 00 01`                     | `4D 01 09`                  | 0.5 s   | handshake |
+| `model-id`     | `06`                                 | `image[0..9)` = `BFUV32-V2` | 0.5 s   | handshake |
+| `prelude-45`   | `45 00 00 00 00`                     | `06`                        | 0.5 s   | handshake |
+| `prelude-31`   | `31`                                 | `43` (`C`)                  | 5 s     | handshake |
+| `soh-block0`   | `01`                                 | `43`                        | 5 s     | handshake |
+| `block0+erase` | `00 FF` + block 0 + CRC (0x84 bytes) | `06 43`                     | 60 s    | erase     |
+| `type#n`       | `02` (1024-byte block) or `01` (128) | `43`                        | 10 s    | transfer  |
+| `block#n`      | `seq`, `FF-seq`, data, CRC           | `06`                        | 10 s    | transfer  |
+| `eot`          | `04`                                 | 1 byte, ignored             | 5 s     | finish    |
+
+The first three steps are the non-destructive ident (`identify()`). The erase happens in reply to block 0: the CPS
+waits 20 s, the erase was observed at 12.6 s, and Studio waits 60 s.
+
+### Frames
+
+- **Block 0:** `<file name>\0<body length in decimal>`, zero-padded to 0x80 bytes. The file name is always
+  `DM32_L01_048_20250821.bin`, for patched images too. For a stock-length image the body length is `860160`, and the
+  block 0 CRC is `0x4227`.
+- **CRC:** CRC16-XMODEM (poly 0x1021, init 0, MSB first, no xorout), sent big-endian. `crc("123456789") = 0x31C3`.
+- **Data blocks:** the body (the image after its 0x100-byte header) in 1024-byte STX blocks; a tail under 1024 bytes
+  goes in 128-byte SOH blocks. The last block is padded with `0x1A`.
+- **Sequence:** starts at 1 and wraps from `0xFF` to `0x00`.
+- **Header:** the image's first 0x100 bytes are never sent.
+- **Stock-length image:** 840 STX blocks, last sequence `0x48`; 6 + 1 + 840 × 2 + 1 = 1,688 frames.
+
+### Hard interlocks
+
+None can be switched off by a setting, flag, environment value or patch field.
+
+1. **Image:** radio id `baofeng-dm32uv`; exactly one file (role `bin`); exactly 860,416 bytes; bytes 0–8 equal
+   `BFUV32-V2`; the CPS's header check (`E` at `0xFD`, `N` at `0xFE` or `D` at `0xFF`). Checked when the image is
+   prepared and again in `flash()`.
+2. **Model:** the image's first 9 bytes must equal the bootloader's ident, checked before the erase.
+3. **Frames:** every byte goes through the single guarded send. The guard copies the precomputed plan and accepts
+   exactly the next frame; anything else is refused and the session aborts.
+
+### Abort and `radioTouched`
+
+- Cancel is checked between frames, never mid-frame.
+- `radioTouched` becomes true immediately before the `block0+erase` frame is sent. Before that, nothing has been
+  written and the operator can simply power-cycle and retry. After it, the radio needs a re-flash (re-enter update
+  mode and flash again, or flash stock).
+- Every failure from `flash()` is a `FirmwareFlashError` carrying the cause, `radioTouched` and the step name it
+  stopped at (e.g. `block#57`). The updater never closes the port; the caller does.
+- A silent EOT is not an error: the session ends with `eot-sent`.
