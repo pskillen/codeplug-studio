@@ -208,6 +208,8 @@ function encodeRxGroupWire(rxGroupIndex: number | undefined): number {
 
 /** Firmware channel-apply: byte `0x17` >= this is no TX contact. `0x00000000` is slot 0. */
 const TX_CONTACT_NONE_HIGH = 0x7f;
+/** Official CPS encoding of no TX contact at `+0x14`. */
+const TX_CONTACT_NONE_WIRE = 0xffffffff;
 
 function decodeTxContactId(data: Uint8Array, mode: RadioChannelMode): number | undefined {
   if (!isDigitalMode(mode)) return undefined;
@@ -217,16 +219,11 @@ function decodeTxContactId(data: Uint8Array, mode: RadioChannelMode): number | u
 }
 
 function encodeTxContactWire(data: Uint8Array, txContactId: number | undefined): void {
+  // 0x13 is not part of the contact word; the official CPS never writes it.
   data[0x13] = 0;
-  if (txContactId == null) {
-    // Slot 0. Firmware reads +0x14 as a u32 and rejects 0x17 = 0xFF (index 0xFF000000).
-    data[0x14] = 0;
-    data[0x15] = 0;
-    data[0x16] = 0;
-    data[0x17] = 0;
-    return;
-  }
-  const wire = txContactId - 1;
+  // None is FF FF FF FF, as the official CPS writes it. Stock firmware clamps a word above
+  // 9999 to slot 0; MM9PDY firmware tells none from an explicit slot 0 before that clamp.
+  const wire = txContactId == null ? TX_CONTACT_NONE_WIRE : txContactId - 1;
   data[0x14] = wire & 0xff;
   data[0x15] = (wire >>> 8) & 0xff;
   data[0x16] = (wire >>> 16) & 0xff;
