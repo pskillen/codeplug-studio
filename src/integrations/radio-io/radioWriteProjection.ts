@@ -70,9 +70,11 @@ export interface RadioRxGroupDto {
    */
   memberDigitalIds: readonly number[];
   /**
-   * Parallel to `memberDigitalIds` on the MM9PDY AT-D890UV target.
-   * `1` / `2` write `0x01` / `0x02` at RX-group stride `+0x120 + index`.
-   * Omitted entries stay `0xFF`. Stock encode ignores this field.
+   * Parallel to `memberDigitalIds` on the MM9PDY targets.
+   * AT-D890UV: `1` / `2` write `0x01` / `0x02` at RX-group stride `+0x120 + index`;
+   * omitted entries stay `0xFF`.
+   * DM-32UV: 2 bits per member position in the RX-group page tail store.
+   * Stock encode ignores this field.
    */
   memberTimeSlotOverrides?: readonly (1 | 2 | undefined)[];
 }
@@ -165,14 +167,16 @@ export interface RadioWriteOrganisation {
    */
   atD890ScanListTiming?: AtD890ResolvedScanListTiming['deciseconds'];
   /**
-   * MM9PDY AT-D890UV only. When true, RX-group encode writes
-   * {@link RadioRxGroupDto.memberTimeSlotOverrides} into the stride tail.
+   * MM9PDY only (AT-D890UV, DM-32UV). When true, RX-group encode writes
+   * {@link RadioRxGroupDto.memberTimeSlotOverrides}: into the stride tail on the
+   * AT-D890UV, into the page-tail store (marker, slots, check bytes) on the DM-32UV.
    * Stock writes leave that tail `0xFF`.
    */
   writeRxGroupTimeSlotOverrides?: boolean;
   /**
-   * MM9PDY AT-D890UV only. When true, encode and upload set P1 short to 14 and
-   * P2 short to 13. Stock writes leave those bytes as read.
+   * MM9PDY only. When true, encode and upload set P1 short and P2 short: 14 and 13 on
+   * the AT-D890UV, 20 (TG Prev) and 21 (TG Next) on the DM-32UV. Stock writes leave
+   * those bytes as read.
    */
   assignMm9pdyStepKeys?: boolean;
   /**

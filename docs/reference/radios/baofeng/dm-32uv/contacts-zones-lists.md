@@ -153,6 +153,22 @@ VFO A/B selected zone and channel indices live in the **zone bank** first block 
 | Name       | 11 bytes at entry `+0x00`                     |
 | Members    | Up to 32 × 3-byte LE DMR IDs from `+0x0B`     |
 
+### Per-member timeslot store
+
+MM9PDY firmware only (baofeng-dm32-firmware#69). Stock firmware ignores the tail, and the stock target leaves it `0xFF`. Offsets are relative to the page start.
+
+| Offset             | Size      | Content                                                                                                                                                        |
+| ------------------ | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `+0xDFC`           | 4         | Marker `54 53 01 00`                                                                                                                                           |
+| `+0xE00 + (g-1)*8` | 8 / group | 2 bits per member by record position (0..31, empty positions included): member i is byte `i>>2`, bits `2*(i&3)+1..2*(i&3)`. `01` TS1, `10` TS2, `00`/`11` none |
+| `+0xF00 + (g-1)`   | 1 / group | `0xA5` XOR the group's 96 member bytes (record `+0x0B..+0x6A`)                                                                                                 |
+
+The firmware uses a group's slots only when the marker and that group's check match. Studio writes the store only when a member has an override.
+
+### Step keys (settings `0x04`)
+
+MM9PDY independent talk groups step with key-function codes 20 (TG Prev; CPS "Previous Record") and 21 (TG Next; CPS "Next Record"). Studio's optional `assignMm9pdyStepKeys` sets P1 short (`+0x8D`) to 20 and P2 short (`+0x8F`) to 21.
+
 ## DMR radio IDs — metadata `0x67`
 
 | Fact         | Value                                                                                                                                                                                                    |

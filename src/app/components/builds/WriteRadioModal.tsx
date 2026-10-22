@@ -30,8 +30,9 @@ export interface WriteRadioModalProps {
   onWriteCodeplug: () => void;
   onWriteContacts: () => void;
   onWriteKeps: () => void;
-  /** MM9PDY AT-D890UV. Same persisted `assignMm9pdyStepKeys` as export settings. */
+  /** MM9PDY targets. Same persisted `assignMm9pdyStepKeys` as export settings. */
   assignMm9pdyStepKeys?: boolean;
+  assignMm9pdyStepKeysDescription?: string;
   onAssignMm9pdyStepKeysChange?: (checked: boolean) => void;
 }
 
@@ -62,6 +63,7 @@ export default function WriteRadioModal({
   onWriteContacts,
   onWriteKeps,
   assignMm9pdyStepKeys = false,
+  assignMm9pdyStepKeysDescription,
   onAssignMm9pdyStepKeysChange,
 }: WriteRadioModalProps) {
   const writeDisabled = !serialOk || busy || writeHidden;
@@ -90,7 +92,7 @@ export default function WriteRadioModal({
         {onAssignMm9pdyStepKeysChange ? (
           <Switch
             label="Assign TG previous and TG next"
-            description="P1 short becomes TG next and P2 short becomes TG previous. Official CPS shows these as item 15 Record and item 14 Record Switch. The radio's own key menu shows the MM9PDY names. Saved with this build."
+            description={`${assignMm9pdyStepKeysDescription ?? ''} Saved with this build.`.trim()}
             checked={assignMm9pdyStepKeys}
             disabled={busy}
             onChange={(event) => onAssignMm9pdyStepKeysChange(event.currentTarget.checked)}

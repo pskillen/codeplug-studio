@@ -67,6 +67,7 @@ import RadioIoProgressModal, {
   type RadioIoProgressPhase,
   type RadioIoWriteVerifyStatus,
 } from './RadioIoProgressModal.tsx';
+import { isMm9pdyStepKeyTarget, mm9pdyStepKeysDescription } from './mm9pdyStepKeysCopy.ts';
 import WriteVerifyReport from './WriteVerifyReport.tsx';
 import { mapWriteVerifyResultToV2Report } from './writeVerifyReportV2Adapter.ts';
 import WebSerialExperimentalAlert from './WebSerialExperimentalAlert.tsx';
@@ -546,8 +547,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         onClose={() => setWriteRadioOpen(false)}
         buildId={build.id}
         assignMm9pdyStepKeys={build.exportSettings?.assignMm9pdyStepKeys === true}
+        assignMm9pdyStepKeysDescription={mm9pdyStepKeysDescription(build.radioTargetId)}
         onAssignMm9pdyStepKeysChange={
-          build.radioTargetId === 'anytone-at-d890uv-mm9pdy'
+          isMm9pdyStepKeyTarget(build.radioTargetId)
             ? (checked) => void handleAssignMm9pdyStepKeys(checked)
             : undefined
         }

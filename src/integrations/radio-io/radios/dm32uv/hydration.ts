@@ -18,6 +18,7 @@ import { encodeZonesIntoDm32Image } from './zoneCodec.ts';
 import { encodeScanListsIntoDm32Image } from './scanListCodec.ts';
 import { encodeTalkGroupsIntoDm32Image } from './talkGroupCodec.ts';
 import { encodeRxGroupsIntoDm32Image } from './rxGroupCodec.ts';
+import { encodeDm32Mm9pdyStepKeysIntoImage } from './mm9pdyStepKeys.ts';
 import {
   encodeDigitalContactsIntoDm32Image,
   planDm32ContactBankWriteBlocks,
@@ -186,7 +187,9 @@ export function encodeDm32uvProjectionOntoImage(
     );
   }
   if (organisation?.rxGroups) {
-    next = encodeRxGroupsIntoDm32Image(next, ctx, organisation.rxGroups);
+    next = encodeRxGroupsIntoDm32Image(next, ctx, organisation.rxGroups, {
+      writeTimeSlotOverrides: organisation.writeRxGroupTimeSlotOverrides === true,
+    });
   }
   next = encodeChannelsIntoDm32Image(next, ctx, channels);
   if (organisation?.zones) {
@@ -207,6 +210,9 @@ export function encodeDm32uvProjectionOntoImage(
   }
   if (organisation?.aprs) {
     next = encodeAprsIntoDm32Image(next, ctx, organisation.aprs);
+  }
+  if (organisation?.assignMm9pdyStepKeys === true) {
+    next = encodeDm32Mm9pdyStepKeysIntoImage(next, ctx);
   }
   return next;
 }

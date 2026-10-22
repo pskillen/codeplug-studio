@@ -21,6 +21,7 @@ import ExportDirectoryProjectionFields from './ExportDirectoryProjectionFields.t
 import AtD890ScanListTimingFields from './AtD890ScanListTimingFields.tsx';
 import type { ResolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
+import { isMm9pdyStepKeyTarget, mm9pdyStepKeysDescription } from './mm9pdyStepKeysCopy.ts';
 
 export interface ExportBuildSettingsSectionsProps {
   build: FormatBuild;
@@ -71,7 +72,7 @@ export default function ExportBuildSettingsSections({
     radioTargetHasCompatibleFormat(build.radioTargetId, 'dm32') ||
     radioTargetHasCompatibleFormat(build.radioTargetId, 'anytone');
   const showD890ScanListTiming = build.radioTargetId === 'anytone-at-d890uv';
-  const showMm9pdyStepKeys = build.radioTargetId === 'anytone-at-d890uv-mm9pdy';
+  const showMm9pdyStepKeys = isMm9pdyStepKeyTarget(build.radioTargetId);
 
   return (
     <Stack gap="md">
@@ -261,7 +262,7 @@ export default function ExportBuildSettingsSections({
         >
           <Switch
             label="Assign TG previous and TG next"
-            description="P1 short becomes TG next and P2 short becomes TG previous. Official CPS shows these as item 15 Record and item 14 Record Switch. The radio's own key menu shows the MM9PDY names."
+            description={mm9pdyStepKeysDescription(build.radioTargetId)}
             checked={build.exportSettings?.assignMm9pdyStepKeys === true}
             disabled={saving}
             onChange={(event) =>

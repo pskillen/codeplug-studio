@@ -35,7 +35,7 @@ Field-by-field UI enums live in NeonPlug `settingsProfile.ts` / settings parse �
 
 #### Key-function codes
 
-Studio previews these bytes and does not write them. A byte outside 0–42 renders `Function N` with the raw byte.
+Studio previews these bytes. Only the MM9PDY step-key option writes two of them (P1 short `+0x8D`, P2 short `+0x8F`: codes 20 and 21). A byte outside 0–42 renders `Function N` with the raw byte.
 
 | Code | Preview                |
 | ---- | ---------------------- |
