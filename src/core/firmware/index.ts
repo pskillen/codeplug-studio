@@ -17,6 +17,20 @@ export {
   type VerifiedStockFirmware,
 } from './stock/resolveStockFirmware.ts';
 export { createUserFileStockSource, type StockSource } from './stock/stockSource.ts';
+export { BUNDLED_FIRMWARE_RELEASES, listKnownPatchedResults } from './releases/index.ts';
+export {
+  bundledFirmwareReleaseSource,
+  createBundledFirmwareReleaseSource,
+} from './releases/bundledSource.ts';
+export { createUserPatchSource } from './releases/userPatchSource.ts';
+export type {
+  BundledFirmwareRelease,
+  FirmwareReleaseChannel,
+  FirmwareReleaseSource,
+  FirmwareReleaseSummary,
+  LoadedFirmwarePatch,
+} from './releases/types.ts';
+export { radioTargetIdsForFirmwareRadio } from './radioTargets.ts';
 export {
   applyFirmwarePatch,
   listFirmwarePatchFormats,
