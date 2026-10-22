@@ -87,4 +87,86 @@ There is no version stamp slot in this format: the radio shows its version under
 
 ## Bootloader update protocol
 
-Added with the updater ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363) / [#1364](https://github.com/pskillen/codeplug-studio/issues/1364)).
+Studio's updater ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364)) is a byte-exact port of the
+`anytone-d890-firmware` project's `tools/d890update.py`, **firmware mode only**. Protocol notes: that project's
+`docs/reference/firmware/update-protocol-and-bootloader.md` (private repository). Resource mode (`PROGRAM`, the ICON
+pack) is deliberately not supported: a 14-byte `.spi` is refused.
+
+**Code:** `src/integrations/radio-io/radios/at-d890uv/firmwareUpdate/` — `constants.ts` (link, bytes, windows,
+timeouts), `package.ts` (`parseD890FirmwarePackage`, `d890Blocks`), `frames.ts` (`makeD890UpdateFrame`),
+`interlocks.ts`, `updater.ts`, `descriptor.ts` (`AT_D890UV_FIRMWARE_UPDATER`). Test bootloader:
+`__fixtures__/d890BootloaderMock.ts`, with synthetic packages from `__fixtures__/syntheticPackage.ts`.
+
+### Link
+
+| Setting | Value                                                                                                                         |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| USB     | ST CDC, `0483:5740`: the **same ID in normal and update mode**. The picker filter identifies the device, not the mode         |
+| Serial  | 921600 8N1 (CDC ignores the rate)                                                                                             |
+| Signals | DTR and RTS raised                                                                                                            |
+| Mode    | Only the blinking red LED shows update mode. The bootloader's ident band byte (below) is how Studio tells the two modes apart |
+
+### Package layout
+
+| File   | Layout                                                                                                                                                                                                                 |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.spi` | 50 or 51 bytes. u32 LE `0x20` at 0; u16 LE entry count at 4; u32 LE total `.CDD` length at 6; model at `0x0E..0x14` (`D890UV`); version at `0x16..0x1A` (e.g. `V100`). A 14-byte `.spi` is an ICON pack and is refused |
+| `.CDI` | Entry count × 278 bytes. Each entry: name (`0x100` bytes, NUL- or space-padded), then u32 LE `addr`, `len`, `off`, `flag` at `0x100`                                                                                   |
+| `.CDD` | The image. Entry _i_ sends `.CDD[off .. off+len)` to `addr`, in 32-byte blocks; the last block of an entry is zero-padded                                                                                              |
+
+### Frames
+
+A data frame is 40 bytes: `01`, the address (u32 LE), 32 data bytes, a 16-bit sum (LE) of bytes `[1, 37)` (address and
+data), then `06`.
+
+| Step        | TX            | Expected RX                                                            | Timeout                                                           |
+| ----------- | ------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| update      | `UPDATE`      | Bytes read one at a time until `06` (at most 16)                       | 2 s overall                                                       |
+| ident       | `02`          | 16 bytes: `I`, model (7, NUL-padded), band, version (4), `00 00`, `06` | 2 s                                                               |
+| data (each) | 40-byte frame | `06`                                                                   | 30 s for the first frame (it may follow a flash erase), 2 s after |
+| end         | `18`          | See end handling                                                       | 2 s                                                               |
+
+`UPDATE` and the ident are the non-destructive `identify()`. **Resend rule:** on `15` (NAK), any other byte, or a
+timeout, Studio clears the receive buffer and resends the same frame **once**. A second failure aborts; nothing more is
+sent, and in particular no end byte.
+
+Frame counts: stock V1.05 `.CDD` is 1,675,272 bytes, **52,353** frames; release `1.0.0` is 1,680,476 bytes, **52,515**
+frames. Each frame waits for its own `06`; frames are never pipelined.
+
+### End handling
+
+| After `18`        | Result                                                                                             |
+| ----------------- | -------------------------------------------------------------------------------------------------- |
+| `06`              | `acknowledged`: success                                                                            |
+| The port closes   | `port-closed-by-radio`: success. The bootloader usually restarts at once and its USB port vanishes |
+| Silence (timeout) | `no-reply`: not an error, since every frame was acknowledged; the operator checks Device Info      |
+| Any other byte    | Error                                                                                              |
+
+The port closing **before** `18` is an error.
+
+### Hard interlocks
+
+None can be switched off by a setting, flag, environment value or patch field.
+
+1. **Image:** radio id `anytone-at-d890uv`; exactly the `cdd`, `cdi` and `spi` roles; the package parses (lengths
+   agree, no entry runs past the `.CDD`). Checked when the image is prepared and again in `flash()`.
+2. **Address window:** every 32-byte block must lie in `0x0800C000 ≤ a` and `a + 32 ≤ 0x081E4000`, and must not
+   overlap the activation page `0x0800A000..0x0800C000` (the bootloader sits below it).
+3. **First entry** loads at `0x0800C000`.
+4. **Vector table:** the image's initial stack pointer is in SRAM (`0x20000000..0x20040000`) and its reset vector is
+   odd and inside the first entry.
+5. **Ident:** the bootloader's model and version must equal the package's (`Model Error` otherwise), and the band
+   byte (ident byte 8) must be `00`, the bootloader. `03` means the radio is in normal mode. Both are checked before
+   any data frame.
+6. **Frames:** every byte goes through the single guarded send. The guard allows only `UPDATE`, `02`, `18` and
+   well-formed data frames (correct sum, safe address); anything else is refused and the session aborts.
+
+### Abort, `radioTouched` and timing
+
+- Cancel is checked between frames, never mid-frame.
+- `radioTouched` becomes true immediately before the first data frame. `UPDATE` and the ident erase nothing: before
+  that, the operator can power-cycle and retry.
+- Every failure from `flash()` is a `FirmwareFlashError` with `radioTouched` and the position, e.g.
+  `frame 3/52515 @ 0x0800C040`. The updater never closes the port; the caller does.
+- The updater times each data frame from write to `06` and reports the median, p99 and maximum in the flash result
+  (and on a failure), shown in the flash summary.

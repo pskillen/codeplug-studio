@@ -16,7 +16,7 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 | DM-32UV flash       | Shipped: prod           | Stock and bundled releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                   |
 | Bundled releases    | Shipped: prod (DM-32UV) | DM-32UV and AT-D890UV `1.0.0` in `src/core/firmware/releases/`, verified by the catalog test; release list, RC toggle and notes in the wizard; offered on prod wherever the radio is ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
 | User-supplied patch | Shipped: prod (DM-32UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                |
-| AT-D890UV           | Planned                 | [#1364](https://github.com/pskillen/codeplug-studio/issues/1364)                                                                                                                                                                                        |
+| AT-D890UV           | Pre-prod                | Updater shipped (pre-prod); hardware run pending. Hidden on prod until Studio has flashed `1.0.0` on hardware ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                        |
 | Recovery docs       | Planned                 | [#1366](https://github.com/pskillen/codeplug-studio/issues/1366)                                                                                                                                                                                        |
 | Android             | Deferred                | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                          |
 
@@ -27,7 +27,7 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 | [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing)                                                  | Product rules: no vendor firmware, pinning, interlocks, gates |
 | [adding-a-release.md](adding-a-release.md)                                                                             | Maintainer procedure for bundling a release                   |
 | [DM-32UV firmware.md](../../reference/radios/baofeng/dm-32uv/firmware.md)                                              | Stock pin, update mode, patch format, bootloader protocol     |
-| [AT-D890UV firmware.md](../../reference/radios/anytone/at-d890uv/firmware.md)                                          | Stock pin, update mode, patch format                          |
+| [AT-D890UV firmware.md](../../reference/radios/anytone/at-d890uv/firmware.md)                                          | Stock pin, update mode, patch format, bootloader protocol     |
 | [Adding a radio adapter — Firmware updater](../radio-read-write/adding-a-radio-adapter.md#8-firmware-updater-optional) | Checklist for a new radio's updater                           |
 | [Stepper.md](../../../src/app/components/v2/Stepper.md)                                                                | Wizard step indicator                                         |
 
@@ -64,6 +64,7 @@ flowchart LR
 | Radio facts  | `src/core/radios/<mfr>/<model>/firmware.ts`                                                |
 | Updater seam | `src/integrations/radio-io/firmware/` (types, registry, guarded send, errors)              |
 | DM-32UV      | `src/integrations/radio-io/radios/dm32uv/firmwareUpdate/`                                  |
+| AT-D890UV    | `src/integrations/radio-io/radios/at-d890uv/firmwareUpdate/`                               |
 | App          | `src/app/routes/firmware/`, `src/app/services/firmwareFlash.ts`, `firmwareFlashEnvGate.ts` |
 
 ## Wizard steps
