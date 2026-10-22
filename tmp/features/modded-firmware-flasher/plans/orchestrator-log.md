@@ -48,3 +48,8 @@
   `port-closed-by-radio`; guard copies plan; preflight disables connect; `buildToolsStripItems`; recovery link
   placeholder for phase 4).
 - Gate H-DM32: owner script sent. Waiting on owner. Slice 20 (prod flip) NOT added.
+- **H-DM32: OK (2026-10-22).** Owner: "Amazing! write success in about 2 mins. UI looks excellent." Posted on #1363
+  and #1365.
+- Owner copy nit (decision, applies to phase 4 too): UI must make clear it writes the **"MM9PDY modded firmware"**;
+  "1.0.0" or "the firmware" alone aren't specific enough. Owner: "Fix the copy, ship it! … Then on to the next one".
+- Next: template B on `1363/pskil/firmware-dm32` — copy commit, then slice 20 prod flip as the last commit.
