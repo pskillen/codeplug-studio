@@ -61,7 +61,8 @@ describe('createD890FirmwareUpdater', () => {
       p99FrameMs: expect.any(Number),
       maxFrameMs: expect.any(Number),
     });
-    expect(progress[0]).toMatchObject({ phase: 'transfer', cur: 0, radioTouched: true });
+    expect(progress[0]).toMatchObject({ phase: 'handshake', radioTouched: false });
+    expect(progress[1]).toMatchObject({ phase: 'transfer', cur: 0, radioTouched: true });
     expect(progress.at(-1)).toMatchObject({ phase: 'finish', cur: 32, max: 32 });
     expect(progress.some((p) => p.msg === 'Transfer 32/32')).toBe(true);
   });

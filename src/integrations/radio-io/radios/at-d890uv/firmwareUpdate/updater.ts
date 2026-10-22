@@ -177,6 +177,8 @@ export function createD890FirmwareUpdater(): FirmwareUpdater {
           flashOpts.onProgress?.(update);
         };
 
+        // The bootloader answered its ident in identify(); report the handshake as done before the transfer.
+        emit(0, total, 'handshake', 'Handshake');
         let n = 0;
         for (const { addr, data } of d890Blocks(pkg)) {
           position = `frame ${n + 1}/${total} @ ${hex32(addr)}`;
