@@ -20,3 +20,12 @@
 ## Phase 2 (2026-10-22): started
 
 - Branch `1360/pskil/firmware-core` from `origin/main` (`4358afa`), PR base `main`, `Closes #1360`, `Closes #1361`.
+- PR https://github.com/pskillen/codeplug-studio/pull/1371 open, head `bef1e78`, 9 commits, 35 files (+2388), no
+  vendor or patch files committed (orchestrator checked the diff).
+- Gates: format/lint/build pass; tests 3688 pass + known D890 RMW timeout flake (passes alone 20/20).
+- Deviations: shared `patch/schema.ts`; D890 constants hold patch name/formats/wire keys; camelCase decoded patch
+  objects; `prepareFirmwareImage` also refuses radio-id mismatch; loose duplicate of a zip member silently ignored;
+  `firmwareBasename` exported.
+- For phase 3: add `patch-wrong-radio` check (descriptor.patchNames) in catalog/prepare; add `*.patch.json` to
+  `.prettierignore` and `.gitattributes`; widen `FirmwareTarget` in prepareFirmwareImage; reuse synthetic fixtures.
+- Gate: review. Waiting on owner.
