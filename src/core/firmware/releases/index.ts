@@ -27,6 +27,24 @@ export const BUNDLED_FIRMWARE_RELEASES: readonly BundledFirmwareRelease[] = [
     loadNotes: () => import('./baofeng-dm32uv/1.0.0.release-notes.md?raw').then((m) => m.default),
   },
   {
+    radioId: 'baofeng-dm32uv',
+    tag: '1.0.0-rc.3',
+    patchName: 'baofeng-dm32-firmware',
+    channel: 'rc',
+    patchFile: 'dm32-fw-1.0.0-rc.3.patch.json',
+    patchSha256: '4946fe57a7bb5a894f34e573591724a074b66f5316d056104620eca1faa593d3',
+    stockVersion: 'v1.01.048',
+    publishedOn: '2026-10-20',
+    summary:
+      'The 1.0.0 release candidate: zone scan on channels without a scan list, a quick menu with light mode, position-report retry, a GPS padding fix and menu text fixes.',
+    verifyHint:
+      'Press Scan on a channel with no scan list: a zone scan should start. Device information still reads DM32.01.L01.048; that is expected.',
+    resultSha256: { bin: '15c318dd0bcca64c66844b689fe9f4cca50dc55e90b883f8807b833c87085dd8' },
+    loadBytes: () => import('./baofeng-dm32uv/1.0.0-rc.3.patch.json?raw').then(enc),
+    loadNotes: () =>
+      import('./baofeng-dm32uv/1.0.0-rc.3.release-notes.md?raw').then((m) => m.default),
+  },
+  {
     radioId: 'anytone-at-d890uv',
     tag: '1.0.0',
     patchName: 'anytone-d890-firmware',
@@ -46,6 +64,27 @@ export const BUNDLED_FIRMWARE_RELEASES: readonly BundledFirmwareRelease[] = [
     loadBytes: () => import('./anytone-at-d890uv/1.0.0.patch.json?raw').then(enc),
     loadNotes: () =>
       import('./anytone-at-d890uv/1.0.0.release-notes.md?raw').then((m) => m.default),
+  },
+  {
+    radioId: 'anytone-at-d890uv',
+    tag: '1.1.0-rc.1',
+    patchName: 'anytone-d890-firmware',
+    channel: 'rc',
+    patchFile: 'd890-fw-1.1.0-rc.1.patch.json',
+    patchSha256: '64e67c9814167df0de98253adf25e4bed63d32adb69e6a6cb0eb6be79b7776f7',
+    stockVersion: 'V1.05 (20260521)',
+    publishedOn: '2026-10-22',
+    summary:
+      'A 1.1.0 release candidate: a Mod Ver item in Device Info, a channel with no contact starting on its first RX-group talk group, and TG Next / TG Previous during a call.',
+    verifyHint: 'After the radio restarts, Device Info > Mod Ver shows "mm9pdy-1.1.0-rc.1".',
+    resultSha256: {
+      cdd: '713084e05671f22e58fb4d496422dd071e97bdcc7e34b78c5e99660a63aab2c9',
+      cdi: '7168e9536640da2bc9192bfff2c14929b7287d072d2718eedcc99a6c982ca563',
+      spi: '06914a208c16e8f72d1956c99771720c95333d05d1f57908f284bb02bc658f1f',
+    },
+    loadBytes: () => import('./anytone-at-d890uv/1.1.0-rc.1.patch.json?raw').then(enc),
+    loadNotes: () =>
+      import('./anytone-at-d890uv/1.1.0-rc.1.release-notes.md?raw').then((m) => m.default),
   },
 ];
 
