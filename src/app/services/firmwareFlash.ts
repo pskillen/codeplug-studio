@@ -4,6 +4,7 @@
  * flashing and docs/features/firmware-flashing/.
  */
 import { FirmwareError } from '@core/firmware/errors.ts';
+import { listKnownPatchedResults } from '@core/firmware/releases/index.ts';
 import {
   resolveStockFirmware,
   type VerifiedStockFirmware,
@@ -54,7 +55,7 @@ export async function verifyStockFiles(
   const others = listStockFirmwareDescriptors().filter((d) => d.radioId !== radioId);
   return resolveStockFirmware(descriptor, files, {
     otherDescriptors: others,
-    knownPatchedResults: [],
+    knownPatchedResults: listKnownPatchedResults(radioId),
   });
 }
 
