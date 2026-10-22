@@ -92,11 +92,37 @@ flowchart LR
    Baofeng DM-32UV"), then a risk acknowledgement, required for every flash, plus battery, cable and "other programs
    closed" checks. A **Back up first** panel links to the Backup tab of any build for this radio in the open project.
 6. **Enter update mode** — the radio's own steps, indicator and warnings, from its descriptor.
-7. **Flash** — names the firmware and radio again. **Connect and flash** opens a port picker narrowed to the
-   radio's cable. Progress shows Handshake → Erase → Transfer → Finish. While it runs, the screen is kept awake and leaving the page asks first. Cancelling
-   after the radio has been touched asks for confirmation.
+7. **Flash** — names the firmware and radio again, and repeats the radio's update-mode warnings right above
+   **Connect and flash**, which opens a port picker narrowed to the radio's USB device. Progress shows the phases
+   the radio's updater reports: Handshake → Erase → Transfer → Finish for the DM-32UV; Handshake → Transfer →
+   Finish for the AT-D890UV, which erases as part of the transfer. While the first block waits for the radio, the
+   transfer step reads "Waiting for the radio (it may be erasing)…". Progress is redrawn at most every ~100 ms (a
+   phase change, or the radio becoming touched, shows at once), so a 52,000-frame transfer stays responsive. While
+   it runs, the screen is kept awake and leaving the page asks first. Cancelling after the radio has been touched
+   asks for confirmation.
 8. **Done or failed** — on success, what is now on the radio ("The MM9PDY modded firmware 1.0.0 is on the radio"),
-   its verify hint and a plain-text summary (copy or download as `.txt`). A failure before the radio was touched says nothing was written. A failure after it shows the recovery steps.
+   its verify hint and a plain-text summary (copy or download as `.txt`). The message depends on how the session
+   ended (see [What to expect](#what-to-expect)). A failure before the radio was touched says nothing was written.
+   A failure after it shows the recovery steps.
+
+## What to expect
+
+| Radio     | Duration                                    | How the radio signals the end                                                                                        | How to check (release `1.0.0`)                                                                                  |
+| --------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| DM-32UV   | About 2 minutes (including a 13 s erase)    | Studio sends the end byte; any reply, or none, is fine (`eot-sent`)                                                  | Press Scan on a channel with no scan list: a zone scan starts. Device information still reads `DM32.01.L01.048` |
+| AT-D890UV | A few minutes (set from the hardware flash) | The radio restarts at once and its USB port disappears (`port-closed-by-radio`), or it replies `06` (`acknowledged`) | After the radio restarts, Device Info > Version shows `1.0.0`                                                   |
+
+The durations are the descriptors' `expectedDuration`, shown on the radio cards; the checks are the releases' verify
+hints.
+
+**When the radio doesn't confirm the end (`no-reply`).** Every block was acknowledged, but nothing came back after
+the end byte, and the port stayed open. This is **not** a failure: the wizard shows the success screen with a
+warning, "Every block was accepted, but the radio didn't confirm the end. Power-cycle it, then check: …". Power-cycle
+the radio and use the verify hint. If the check fails, follow [Recovery](#recovery).
+
+**Flash summary.** It records the end state (`End: …`), the elapsed time as `mm:ss`, and, for updaters that measure
+it (the AT-D890UV), each data frame's round trip from write to acknowledgement: `Frame round trip: median …, p99 …,
+max … ms`. A failed flash records the timing up to the failure.
 
 ## Provenance
 
