@@ -29,3 +29,12 @@
 - For phase 3: add `patch-wrong-radio` check (descriptor.patchNames) in catalog/prepare; add `*.patch.json` to
   `.prettierignore` and `.gitattributes`; widen `FirmwareTarget` in prepareFirmwareImage; reuse synthetic fixtures.
 - Gate: review. Waiting on owner.
+
+## Phase 2 merged (2026-10-22)
+
+- Owner: "Approved and merged, carry on". PR #1371 merged to `main` as `646ec75`.
+
+## Phase 3 (2026-10-22): started
+
+- Branch `1363/pskil/firmware-dm32` from `origin/main` (`646ec75`), PR base `main`, `Closes #1363`, `Closes #1362`,
+  `Part of #1365`. Hardware gate H-DM32 then post-gate prod-flip commit.
