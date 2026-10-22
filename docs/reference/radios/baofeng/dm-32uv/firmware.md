@@ -6,6 +6,8 @@ update mode, and the release patch format. Product rules: [DESIGN.md — Firmwar
 **Code mirror:** [`src/core/radios/baofeng/dm-32uv/firmware.ts`](../../../../../src/core/radios/baofeng/dm-32uv/firmware.ts)
 (`DM32UV_STOCK_FIRMWARE` and the `DM32UV_FIRMWARE_*` constants). Keep the two in step.
 
+Prod-enabled after a hardware flash of 1.0.0 ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363)).
+
 ## Stock firmware pin
 
 The user supplies the vendor zip, or the `.bin` extracted from it. Studio never fetches, hosts or commits it.

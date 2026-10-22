@@ -14,7 +14,7 @@ export const DM32UV_FIRMWARE_UPDATER: FirmwareUpdaterDescriptor = {
   link: DM32_FW_LINK,
   createUpdater: () => createDm32FirmwareUpdater(),
   capacitorSupported: false,
-  // Cleared in its own commit, after a patched release is flashed from Studio on hardware.
-  prodFlashDisabled: true,
+  // Enabled in prod 2026-10-22: release 1.0.0 flashed from Studio on hardware (#1363).
+  prodFlashDisabled: false,
   expectedDuration: 'about 2 minutes (including a 13 s erase)',
 };

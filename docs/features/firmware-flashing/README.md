@@ -11,14 +11,14 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 
 ## Implementation status
 
-| Area                | Status             | Notes                                                                                                                                                                                                            |
-| ------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DM-32UV flash       | Shipped (pre-prod) | Stock and bundled releases: wizard, updater and interlocks. Hidden on the prod site until the DM-32UV's prod gate is cleared ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                  |
-| Bundled releases    | Shipped (pre-prod) | DM-32UV and AT-D890UV `1.0.0` in `src/core/firmware/releases/`, verified by the catalog test; release list, RC toggle and notes in the wizard ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
-| User-supplied patch | Shipped (pre-prod) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                         |
-| AT-D890UV           | Planned            | [#1364](https://github.com/pskillen/codeplug-studio/issues/1364)                                                                                                                                                 |
-| Recovery docs       | Planned            | [#1366](https://github.com/pskillen/codeplug-studio/issues/1366)                                                                                                                                                 |
-| Android             | Deferred           | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                   |
+| Area                | Status                  | Notes                                                                                                                                                                                                                                                   |
+| ------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DM-32UV flash       | Shipped: prod           | Stock and bundled releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                   |
+| Bundled releases    | Shipped: prod (DM-32UV) | DM-32UV and AT-D890UV `1.0.0` in `src/core/firmware/releases/`, verified by the catalog test; release list, RC toggle and notes in the wizard; offered on prod wherever the radio is ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
+| User-supplied patch | Shipped: prod (DM-32UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                |
+| AT-D890UV           | Planned                 | [#1364](https://github.com/pskillen/codeplug-studio/issues/1364)                                                                                                                                                                                        |
+| Recovery docs       | Planned                 | [#1366](https://github.com/pskillen/codeplug-studio/issues/1366)                                                                                                                                                                                        |
+| Android             | Deferred                | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                          |
 
 ## Documentation map
 
@@ -132,5 +132,6 @@ written to browser storage or uploaded. The flash summary is only kept if you co
 
 1. `npm run dev`, open `/firmware`. The DM-32UV card shows the pinned stock version.
 2. Drop a non-firmware file on the stock step: a refusal message appears and Continue stays disabled.
-3. `BUILD_ENV=prod npm run dev`: `/firmware` shows "not available on this site yet" and the Tools strip has no
-   Firmware flasher entry.
+3. `BUILD_ENV=prod npm run dev`: `/firmware` offers only the radios whose prod gate is cleared (the DM-32UV), and
+   the Tools strip has a Firmware flasher entry. With no radio offered, `/firmware` shows "not available on this
+   site yet" and the strip has no entry.
