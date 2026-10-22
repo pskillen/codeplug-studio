@@ -45,6 +45,10 @@ Salvage from the old repo: wire-format reference docs, import parsers (simplifie
 | **Variant / profile**           | Per-radio specialisation _within_ one format — selects trait profile and wire limits at export. Not a separate format.                                                                                                                            |
 | **Codeplug** (export sense)     | The CPS-facing output of a build — files the vendor CPS accepts. Not the primary in-app edit model.                                                                                                                                               |
 | **Scratch channel**             | Export-time companion memory per repeater (library channel): a faithful projection of the parent channel with a `Scratch` name marker so the operator can retune in the field without editing programmed talk-group rows. Not a zone export knob. |
+| **Flash** (firmware)            | Writing a firmware image to a radio's program flash through its bootloader. Distinct from codeplug **Write**.                                                                                                                                     |
+| **Stock firmware**              | The vendor's firmware for the one version Studio pins per radio. Supplied by the user; never shipped.                                                                                                                                             |
+| **Firmware release (patch)**    | A firmware project's tagged release, shipped as a JSON patch applied in the browser to pinned stock.                                                                                                                                              |
+| **Hard interlock**              | A radio-side safety refusal in an updater, enforced in code before any byte is sent. Not configurable.                                                                                                                                            |
 
 User-facing copy may say "codeplug" when the operator would; internal docs use **library** and **build** for clarity.
 
@@ -214,6 +218,73 @@ OpenGD77 is one format among many. DM32 and CHIRP are unrelated siblings, not va
 
 ---
 
+## Firmware flashing
+
+Studio can flash community **modified firmware** releases, and the vendor's own **stock firmware**, to supported radios
+over Web Serial. This is a separate capability from codeplug Write. Firmware belongs to the physical radio, not to a
+project, library or build. The flasher needs no open project and stores nothing.
+
+### Rules
+
+1. **Studio never ships, hosts, mirrors or proxies vendor firmware.** No vendor file, image or excerpt goes in the repo,
+   the bundle, a test fixture, or any network path Studio controls. Tests use synthetic images. Studio's own release
+   patch files may be committed; vendor firmware files never are.
+2. **The user supplies stock firmware** during the session: the vendor zip, or the files extracted from it. The wizard
+   shows the vendor's download link as a plain link; Studio never fetches it. The bytes stay in that browser tab's
+   memory and are dropped when the user leaves the page.
+3. **Everything is pinned by SHA-256.** Each supported radio pins exactly one stock version: the hash and size of every
+   file, and the zip hash. A patch applies only to that pinned stock, and its result must match the hashes recorded in
+   the patch. Anything else is refused before any radio contact.
+4. **Hard interlocks can't be bypassed.** Each radio's updater refuses unsafe images and frames in code, before the
+   first byte is sent and again on every write. Examples: address windows that keep away from the bootloader and the
+   activation page; a model-ID match with the bootloader's own ident; a stock-length image where the radio requires
+   it. No setting, flag, environment value or patch field can switch one off.
+5. **One pipeline.** Bundled release, user-supplied patch, and stock all take the same path:
+   verify stock → (apply patch → verify result) → interlocks → bootloader ident → flash.
+   "Flash stock" is the zero-patch case and is the documented recovery route; the vendor CPS stays the fallback.
+6. **Flash is not Write.** Codeplug Write rules, its env gate and the build/egress model don't apply to firmware, and
+   firmware rules don't apply to Write.
+7. **Per-radio prod gate.** Each radio's firmware updater has its own prod-disabled flag. A gated radio is hidden on
+   the prod site and fully available on pre-prod (next, dev, staging). A radio's flag is cleared in its own commit once
+   Studio has flashed at least one patched release to that radio on hardware.
+
+### Patch sources
+
+| Source                  | What it is                                                                                                                                                                                                                                         | Trust                                                                                                                                                                                                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Bundled releases**    | Release patches copied by hand, byte for byte, from the firmware projects' releases into Studio, with their release notes and an index row each. Finals are listed by default; release candidates appear behind a "Show release candidates" toggle | Reviewed in a Studio PR. A unit test checks each file's hash, format and pinned stock. A firmware release reaches users only with a Studio release, which is deliberate: Studio chooses what ships                                                                             |
+| **User-supplied patch** | A `.patch.json` the user picks from disk, under an Advanced option, after accepting a risk statement                                                                                                                                               | Unreviewed. The format, stock-hash, result-hash and interlock checks all still apply; Studio can't judge whether the firmware it produces is safe. A file identical to a bundled release is treated as that release. The flash summary records "user-supplied patch, sha256 …" |
+
+### Where things live
+
+| Concern                                                                                          | Location                                                                                                                        |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Pinned stock (version, hashes, file names), update-mode entry, verify hints                      | `src/core/radios/<mfr>/<model>/firmware.ts`, beside `limits.ts`; human mirror `docs/reference/radios/<mfr>/<model>/firmware.md` |
+| Patch formats (pure apply, one module per patch format), release catalog, `prepareFirmwareImage` | `src/core/firmware/`, `src/core/services/firmware/`                                                                             |
+| Bootloader update protocols and hard interlocks (`FirmwareUpdater`)                              | `src/integrations/radio-io/radios/<id>/firmwareUpdate/`                                                                         |
+| Flasher wizard and thin orchestration                                                            | `src/app/` (route `/firmware`, under Tools)                                                                                     |
+
+Generic firmware code works on hashes and file roles only. File formats, offsets and wire bytes stay in the per-format
+and per-radio modules.
+
+### Future direction: runtime fetch (not planned)
+
+Studio could list firmware releases at runtime from the firmware projects, and offer a one-click stock download through
+a fixed-URL streaming proxy, keeping the file picker as a fallback. The pipeline has seams for it (`FirmwareReleaseSource`,
+`StockSource`), so it would add sources without changing verification or flashing. It is blocked by:
+
+- **Legal: opening the firmware repositories.** Runtime fetch needs them public. That would publish the
+  reverse-engineering record and patches containing small runs of stock bytes, which is an unresolved gray area.
+- **Legal: relaying vendor firmware.** A proxy that stores nothing still serves vendor binaries from Studio's domain.
+  That is a weaker position than the user downloading the file from the vendor.
+- **Mechanical:** the repos must be public; release-asset redirects may not be fetchable cross-origin; vendor hosts send
+  no CORS headers, so stock needs a proxy; vendor URLs aren't versioned; streaming large zips through Pages Functions
+  is unproven.
+- **Selectivity:** listing every tagged release at runtime undoes "Studio chooses what ships", unless the firmware
+  projects publish a curated index.
+
+---
+
 ## Build capability traits
 
 Radios and CPS tools differ in how they _organise_ channels, not just in CSV column names. A manageable set of **traits** describes those behaviours. A **trait profile** (per format/profile) declares which traits apply; the build model and build UI inherit that combination.
@@ -317,6 +388,7 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 - Cloud backend (browser + optional Drive OAuth only)
 - Perfect merge idempotency or round-trip fidelity
 - Supporting every CPS format or every radio — extensible adapter / protocol pattern; targets added incrementally
+- Hosting, mirroring or proxying vendor firmware; building firmware in the browser; bootloader or activation-page writes
 
 ### Intentional goals (phased)
 
@@ -328,8 +400,9 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 
 ## Revision log
 
-| Date       | Change                                                                                                                                  |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-07-22 | Browser WebSerial radio I/O as intentional goal; CPS/firmware versions ([#595](https://github.com/pskillen/codeplug-studio/issues/595)) |
-| 2026-06-29 | Initial draft on branch `2/pskil/design-md`                                                                                             |
-| 2026-06-29 | Build capability traits; bidirectional mapping test strategy                                                                            |
+| Date       | Change                                                                                                                                                                             |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-21 | Firmware flashing: user-supplied stock, bundled and user-supplied patches, hard interlocks, per-radio prod gate ([#1359](https://github.com/pskillen/codeplug-studio/issues/1359)) |
+| 2026-07-22 | Browser WebSerial radio I/O as intentional goal; CPS/firmware versions ([#595](https://github.com/pskillen/codeplug-studio/issues/595))                                            |
+| 2026-06-29 | Initial draft on branch `2/pskil/design-md`                                                                                                                                        |
+| 2026-06-29 | Build capability traits; bidirectional mapping test strategy                                                                                                                       |

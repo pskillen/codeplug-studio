@@ -60,6 +60,7 @@ The **library** and domain layer are **vendor-neutral**. Radio caps, column name
 8. **New CPS format** — follow [adding-a-new-format.md](docs/features/import-export/adding-a-new-format.md) for adapter, trait, test, and UI checklist.
 9. **New Web Serial radio adapter** — follow [adding-a-radio-adapter.md](docs/features/radio-read-write/adding-a-radio-adapter.md) (living checklist; update when implementation discovers cross-radio requirements). Write goes through FormatBuild + `assemble`; Read hydrates unmodelled/full-image state on the build.
 10. **UI rework** — follow [docs/reference/styleguide/](docs/reference/styleguide/) for list shells, Sort… / reorder, and chrome conventions (interactive demos at `/styleguide`).
+11. **Firmware flashing** — never vendor bytes in the repo (stock is user-supplied; tests are synthetic); hard interlocks are code; one guarded send path per updater. See [DESIGN.md — Firmware flashing](DESIGN.md#firmware-flashing).
 
 ## Git workflow
 

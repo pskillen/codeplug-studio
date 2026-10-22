@@ -7,7 +7,7 @@ paths:
 
 Read [`AGENTS.md`](../../AGENTS.md) and [`DESIGN.md`](../../DESIGN.md) first. For git, plans, and docs see [`.claude/skills/`](../skills/).
 
-**Critical rules:** [documentation-deliverables.md](documentation-deliverables.md), [vendor-boundaries.md](vendor-boundaries.md), [layer-boundaries.md](layer-boundaries.md), [library-and-builds.md](library-and-builds.md), [export-from-model.md](export-from-model.md), and [format-agnostic-docs.md](format-agnostic-docs.md). When editing related files, if you notice violations — even outside your current task — **flag them to the user as a high concern** before or alongside your main work. Do not silently ignore, copy the pattern, or defer without mention. Do not attempt to fix if it's outside the original instruction.
+**Critical rules:** [documentation-deliverables.md](documentation-deliverables.md), [vendor-boundaries.md](vendor-boundaries.md), [layer-boundaries.md](layer-boundaries.md), [library-and-builds.md](library-and-builds.md), [export-from-model.md](export-from-model.md), [format-agnostic-docs.md](format-agnostic-docs.md), and [firmware-flashing.md](firmware-flashing.md). When editing related files, if you notice violations — even outside your current task — **flag them to the user as a high concern** before or alongside your main work. Do not silently ignore, copy the pattern, or defer without mention. Do not attempt to fix if it's outside the original instruction.
 
 ## Product shape
 
