@@ -32,11 +32,20 @@ export interface FirmwareFlashProgress extends ProgressUpdate {
 
 export type FirmwareFlashEnd = 'eot-sent' | 'acknowledged' | 'port-closed-by-radio' | 'no-reply';
 
+/** Per data frame, write to acknowledgement, in milliseconds. */
+export interface FirmwareFlashTiming {
+  readonly medianFrameMs: number;
+  readonly p99FrameMs: number;
+  readonly maxFrameMs: number;
+}
+
 export interface FirmwareFlashResult {
   readonly framesSent: number;
   readonly dataFrames: number;
   readonly elapsedMs: number;
   readonly end: FirmwareFlashEnd;
+  /** Set by updaters that time each data frame's round trip. */
+  readonly timing?: FirmwareFlashTiming;
 }
 
 export interface FirmwareUpdater {

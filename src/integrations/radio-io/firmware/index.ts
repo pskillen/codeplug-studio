@@ -7,6 +7,7 @@ export type {
   FirmwareFlashPhase,
   FirmwareFlashProgress,
   FirmwareFlashResult,
+  FirmwareFlashTiming,
   FirmwareLinkSpec,
   FirmwareUpdater,
   FirmwareUpdaterDescriptor,
