@@ -4,6 +4,7 @@
  */
 import { FirmwareError } from '../errors.ts';
 import type { FirmwarePackage } from '../types.ts';
+import { anytoneD890PatchFormat } from './formats/anytone-d890-firmware/index.ts';
 import { baofengDm32PatchFormat } from './formats/baofeng-dm32-firmware/index.ts';
 import { isRecord } from './schema.ts';
 import type { FirmwarePatchFormat, ParsedFirmwarePatch } from './types.ts';
@@ -15,7 +16,10 @@ export type {
   ParsedFirmwarePatch,
 } from './types.ts';
 
-const FORMATS: readonly FirmwarePatchFormat<unknown>[] = [baofengDm32PatchFormat];
+const FORMATS: readonly FirmwarePatchFormat<unknown>[] = [
+  baofengDm32PatchFormat,
+  anytoneD890PatchFormat,
+];
 
 export function listFirmwarePatchFormats(): readonly FirmwarePatchFormat<unknown>[] {
   return FORMATS;
