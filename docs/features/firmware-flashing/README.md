@@ -11,20 +11,21 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 
 ## Implementation status
 
-| Area                | Status             | Notes                                                                                                                                                               |
-| ------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DM-32UV stock flash | Shipped (pre-prod) | Wizard, updater and interlocks. Hidden on the prod site until the DM-32UV's prod gate is cleared ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363)) |
-| Bundled releases    | Planned            | [#1362](https://github.com/pskillen/codeplug-studio/issues/1362)                                                                                                    |
-| User patch          | Planned            | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                            |
-| AT-D890UV           | Planned            | [#1364](https://github.com/pskillen/codeplug-studio/issues/1364)                                                                                                    |
-| Recovery docs       | Planned            | [#1366](https://github.com/pskillen/codeplug-studio/issues/1366)                                                                                                    |
-| Android             | Deferred           | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                      |
+| Area                | Status                       | Notes                                                                                                                                                               |
+| ------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DM-32UV stock flash | Shipped (pre-prod)           | Wizard, updater and interlocks. Hidden on the prod site until the DM-32UV's prod gate is cleared ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363)) |
+| Bundled releases    | Catalog shipped; wizard next | DM-32UV and AT-D890UV `1.0.0` in `src/core/firmware/releases/`, verified by the catalog test ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362))     |
+| User patch          | Planned                      | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                            |
+| AT-D890UV           | Planned                      | [#1364](https://github.com/pskillen/codeplug-studio/issues/1364)                                                                                                    |
+| Recovery docs       | Planned                      | [#1366](https://github.com/pskillen/codeplug-studio/issues/1366)                                                                                                    |
+| Android             | Deferred                     | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                      |
 
 ## Documentation map
 
 | Doc                                                                                                                    | Topic                                                         |
 | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing)                                                  | Product rules: no vendor firmware, pinning, interlocks, gates |
+| [adding-a-release.md](adding-a-release.md)                                                                             | Maintainer procedure for bundling a release                   |
 | [DM-32UV firmware.md](../../reference/radios/baofeng/dm-32uv/firmware.md)                                              | Stock pin, update mode, patch format, bootloader protocol     |
 | [AT-D890UV firmware.md](../../reference/radios/anytone/at-d890uv/firmware.md)                                          | Stock pin, update mode, patch format                          |
 | [Adding a radio adapter — Firmware updater](../radio-read-write/adding-a-radio-adapter.md#8-firmware-updater-optional) | Checklist for a new radio's updater                           |
