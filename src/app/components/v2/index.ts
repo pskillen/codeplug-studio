@@ -2,6 +2,8 @@ export { default as DesignSystemV2Provider } from './DesignSystemV2Provider.tsx'
 export type { DesignSystemV2ProviderProps } from './DesignSystemV2Provider.tsx';
 export { default as Button } from './Button.tsx';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './Button.tsx';
+export { default as Stepper } from './Stepper.tsx';
+export type { StepperProps, StepperStep, StepperStepStatus } from './Stepper.tsx';
 export { default as Pill } from './Pill.tsx';
 export type { PillProps, PillTone } from './Pill.tsx';
 export { default as CountTile } from './CountTile.tsx';

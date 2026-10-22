@@ -8,7 +8,9 @@ import {
   ContextualStrip,
   EditorHeader,
   SectionNav,
+  type StepperStep,
   StickyFooter,
+  Stepper,
 } from '../../components/v2/index.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 
@@ -37,6 +39,14 @@ const BOTTOM = [
     icon: <IconHome size={ICON_SIZE_NAV} stroke={ICON_STROKE} />,
   },
 ] as const;
+
+const STEPS: StepperStep[] = [
+  { id: 'radio', label: 'Radio', status: 'done' },
+  { id: 'firmware', label: 'Firmware', status: 'done' },
+  { id: 'prepare', label: 'Prepare', status: 'current' },
+  { id: 'flash', label: 'Flash', status: 'pending' },
+  { id: 'done', label: 'Done', status: 'pending' },
+];
 
 export default function StyleguideNavigationPage() {
   const [activeTab, setActiveTab] = useState<string>('Library');
@@ -165,6 +175,24 @@ export default function StyleguideNavigationPage() {
             </Text>
           </div>
         </div>
+      </StyleguideSection>
+
+      <StyleguideSection
+        title="Stepper"
+        description="Wizard step indicator (firmware flasher). Presentational: the page owns the steps."
+      >
+        <Stack gap="lg">
+          <Stepper ariaLabel="Horizontal demo" steps={STEPS} />
+          <Stepper
+            ariaLabel="Vertical demo"
+            orientation="vertical"
+            steps={[
+              { id: 'a', label: 'Handshake', status: 'done' },
+              { id: 'b', label: 'Transfer', status: 'error' },
+              { id: 'c', label: 'Finish', status: 'pending' },
+            ]}
+          />
+        </Stack>
       </StyleguideSection>
 
       <StyleguideSection title="BottomTabBar" description="Mobile primary nav.">
