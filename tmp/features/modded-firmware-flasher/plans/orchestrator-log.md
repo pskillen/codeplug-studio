@@ -53,3 +53,15 @@
 - Owner copy nit (decision, applies to phase 4 too): UI must make clear it writes the **"MM9PDY modded firmware"**;
   "1.0.0" or "the firmware" alone aren't specific enough. Owner: "Fix the copy, ship it! … Then on to the next one".
 - Next: template B on `1363/pskil/firmware-dm32` — copy commit, then slice 20 prod flip as the last commit.
+- Owner merged #1372 at `57035f9` (merge `76e7333`) before the copy fix and flip existed; branch deleted.
+- Follow-up PR https://github.com/pskillen/codeplug-studio/pull/1373 (base `main`), branch
+  `1363/pskil/firmware-dm32-prod`, head `1c25eae` = prod flip (last). Commits: `3a8a301` project names in catalog
+  (`src/core/firmware/releases/projects.ts`, `FIRMWARE_PROJECTS`), `22b1d37` wizard copy, `1c25eae` DM-32 prod flip.
+  `dev` at `1c25eae`. Gates green apart from the known D890 protocol timeouts. Patch hashes unchanged.
+- Deviation: hub "Bundled releases" / "User-supplied patch" rows now "Shipped: prod (DM-32UV)".
+
+## Phase 4 (2026-10-22): started
+
+- Owner: "merge has happened, carry on". Branch `1364/pskil/firmware-d890` from `origin/1363/pskil/firmware-dm32-prod`
+  (`1c25eae`) so it inherits the MM9PDY naming; PR base `1363/pskil/firmware-dm32-prod` (retarget to `main` once
+  #1373 merges). `Closes #1364`, `Closes #1365`, `Closes #1366`.
