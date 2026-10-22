@@ -1,4 +1,5 @@
 import { RadioIoError } from '../kit/errors.ts';
+import type { FirmwareFlashTiming } from './types.ts';
 
 function describeCause(cause: unknown): string {
   if (cause instanceof Error && cause.message) return cause.message;
@@ -16,8 +17,16 @@ export class FirmwareFlashError extends RadioIoError {
   /** Where the session stopped, e.g. a step name such as `block#57`. */
   readonly position: string;
   override readonly cause: unknown;
+  /** Frame round-trip timing up to the failure, when the updater measures it. */
+  readonly timing?: FirmwareFlashTiming;
 
-  constructor(init: { cause: unknown; radioTouched: boolean; position: string; message?: string }) {
+  constructor(init: {
+    cause: unknown;
+    radioTouched: boolean;
+    position: string;
+    message?: string;
+    timing?: FirmwareFlashTiming;
+  }) {
     super(
       init.cause instanceof RadioIoError ? init.cause.code : 'protocol',
       init.message ?? describeCause(init.cause),
@@ -26,5 +35,6 @@ export class FirmwareFlashError extends RadioIoError {
     this.radioTouched = init.radioTouched;
     this.position = init.position;
     this.cause = init.cause;
+    this.timing = init.timing;
   }
 }

@@ -34,6 +34,7 @@ export {
   isAtD890RestoreNeverWriteAddress,
 } from './backupRestoreRoles.ts';
 export { AT_D890UV_DESCRIPTOR, AT_D890UV_MODEL_ID } from './descriptor.ts';
+export { AT_D890UV_FIRMWARE_UPDATER } from './firmwareUpdate/descriptor.ts';
 export {
   extractAtD890uvHydration,
   extractAtD890uvHydrationFromProtocol,

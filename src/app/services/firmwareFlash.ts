@@ -32,6 +32,7 @@ import {
   type FirmwareBootloaderIdent,
   type FirmwareFlashProgress,
   type FirmwareFlashResult,
+  type FirmwareFlashTiming,
   type FirmwareUpdaterDescriptor,
   type SerialPortLike,
 } from '@integrations/radio-io';
@@ -147,6 +148,8 @@ export type FirmwareFlashOutcome =
       position: string;
       radioTouched: boolean;
       startedAt: string;
+      /** Frame round-trip timing up to the failure, when the updater measures it. */
+      timing?: FirmwareFlashTiming;
     };
 
 function errorCode(err: unknown): string {
@@ -197,6 +200,7 @@ export async function runFirmwareFlash(input: {
       position: flashErr?.position ?? stage,
       radioTouched: flashErr?.radioTouched ?? false,
       startedAt,
+      timing: flashErr?.timing,
     };
   } finally {
     if (pipe) {
@@ -229,6 +233,19 @@ function provenanceLine(image: PreparedFirmwareImage): string {
   }
 }
 
+/** `mm:ss (s.s s)`. */
+export function formatElapsed(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const mm = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+  const ss = String(totalSeconds % 60).padStart(2, '0');
+  return `${mm}:${ss} (${(ms / 1000).toFixed(1)} s)`;
+}
+
+function timingLine(t: FirmwareFlashTiming): string {
+  const ms = (x: number) => (x < 10 ? x.toFixed(2) : x.toFixed(1));
+  return `Frame round trip: median ${ms(t.medianFrameMs)} ms, p99 ${ms(t.p99FrameMs)} ms, max ${ms(t.maxFrameMs)} ms`;
+}
+
 /** Plain-text summary for the operator to copy or download. Not persisted. */
 export function formatFirmwareFlashSummary(outcome: FirmwareFlashOutcome): string {
   const { image } = outcome;
@@ -252,9 +269,10 @@ export function formatFirmwareFlashSummary(outcome: FirmwareFlashOutcome): strin
     const { result } = outcome;
     lines.push(
       `Frames sent: ${result.framesSent} (${result.dataFrames} data)`,
-      `Elapsed: ${(result.elapsedMs / 1000).toFixed(1)} s`,
+      `Elapsed: ${formatElapsed(result.elapsedMs)}`,
       `End: ${result.end}`,
     );
+    if (result.timing) lines.push(timingLine(result.timing));
   } else {
     lines.push(
       `Error code: ${outcome.code}`,
@@ -262,6 +280,7 @@ export function formatFirmwareFlashSummary(outcome: FirmwareFlashOutcome): strin
       `Stopped at: ${outcome.position}`,
       `Radio touched: ${outcome.radioTouched ? 'yes' : 'no'}`,
     );
+    if (outcome.timing) lines.push(timingLine(outcome.timing));
   }
   lines.push(`Studio ${__BUILD_VERSION__} (${__BUILD_ENV__})`, `Started: ${outcome.startedAt}`);
   return lines.join('\n');

@@ -21,6 +21,7 @@ import {
   type ProgressModalStep,
 } from '../../../components/v2/index.ts';
 import { useScreenWakeLock } from '../../../hooks/useScreenWakeLock.ts';
+import { githubDocUrl } from '../../../lib/githubLinks.ts';
 import { useUnsavedNavigationGuard } from '../../../hooks/useUnsavedNavigationGuard.ts';
 import {
   formatFirmwareFlashSummary,
@@ -30,32 +31,33 @@ import {
 } from '../../../services/firmwareFlash.ts';
 import classes from '../FirmwareFlasherPage.module.css';
 import { PREFLIGHT_CHECKS } from '../firmwareWizardState.ts';
+import {
+  createFlashProgressThrottle,
+  transferDetail,
+  visibleFlashPhases,
+} from '../flashProgressThrottle.ts';
 import type { WizardStepProps } from './stepTypes.ts';
 
-/** Placeholder until the hub's Recovery section is written. */
-export const FIRMWARE_RECOVERY_DOC_URL =
-  'https://github.com/pskillen/codeplug-studio/blob/main/docs/features/firmware-flashing/README.md#recovery';
-
-const PHASES: { phase: FirmwareFlashPhase; label: string }[] = [
-  { phase: 'handshake', label: 'Handshake' },
-  { phase: 'erase', label: 'Erase' },
-  { phase: 'transfer', label: 'Transfer' },
-  { phase: 'finish', label: 'Finish' },
-];
+/** The firmware-flashing hub's Recovery section. The steps are also on the recovery screen, for offline use. */
+const FIRMWARE_RECOVERY_DOC_URL = githubDocUrl(
+  'docs/features/firmware-flashing/README.md#recovery',
+);
 
 function modalSteps(
   progress: FirmwareFlashProgress | null,
+  seen: ReadonlySet<FirmwareFlashPhase>,
   outcome: FirmwareFlashOutcome | null,
 ): ProgressModalStep[] {
-  const current = PHASES.findIndex((p) => p.phase === (progress?.phase ?? 'handshake'));
-  return PHASES.map(({ phase, label }, i) => {
+  const phases = visibleFlashPhases(seen, progress?.phase ?? 'handshake');
+  const current = phases.findIndex((p) => p.phase === (progress?.phase ?? 'handshake'));
+  return phases.map(({ phase, label }, i) => {
     let status: ProgressModalStep['status'];
     if (outcome?.ok) status = 'success';
     else if (i < current) status = 'success';
     else if (i > current) status = 'pending';
     else status = outcome ? 'error' : 'active';
     const detail =
-      phase === 'transfer' && progress?.phase === 'transfer' ? progress.msg : undefined;
+      phase === 'transfer' && progress?.phase === 'transfer' ? transferDetail(progress) : undefined;
     return { id: phase, label, detail, status };
   });
 }
@@ -80,6 +82,7 @@ export default function FlashStep({
   const [running, setRunning] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [progress, setProgress] = useState<FirmwareFlashProgress | null>(null);
+  const [seenPhases, setSeenPhases] = useState<ReadonlySet<FirmwareFlashPhase>>(new Set());
   const [ident, setIdent] = useState<FirmwareBootloaderIdent | null>(null);
   const [outcome, setOutcome] = useState<FirmwareFlashOutcome | null>(null);
   const [portError, setPortError] = useState<string | null>(null);
@@ -98,6 +101,7 @@ export default function FlashStep({
     setPortError(null);
     setOutcome(null);
     setProgress(null);
+    setSeenPhases(new Set());
     setIdent(null);
     setCopied(false);
     let port;
@@ -111,14 +115,20 @@ export default function FlashStep({
     abortRef.current = controller;
     setRunning(true);
     setModalOpen(true);
+    // A long transfer reports tens of thousands of frames: render at most every ~100 ms.
+    const throttle = createFlashProgressThrottle((p) => {
+      setProgress(p);
+      setSeenPhases((prev) => (prev.has(p.phase) ? prev : new Set(prev).add(p.phase)));
+    });
     const result = await runFirmwareFlash({
       radioId: updater.radioId,
       image,
       port,
       onIdent: setIdent,
-      onProgress: setProgress,
+      onProgress: throttle.push,
       signal: controller.signal,
     });
+    throttle.flush();
     abortRef.current = null;
     setOutcome(result);
     setRunning(false);
@@ -160,6 +170,11 @@ export default function FlashStep({
             With the radio in update mode and the cable plugged in, click the button and pick the
             cable&apos;s port. Keep this tab in front and don&apos;t let the computer sleep.
           </p>
+          {updater.stock.bootloaderEntry.warnings.map((w) => (
+            <StatusBanner key={w} tone="warning">
+              {w}
+            </StatusBanner>
+          ))}
           <div>
             <Button
               variant="primary"
@@ -194,7 +209,7 @@ export default function FlashStep({
         open={modalOpen}
         title={`Flashing the ${image.title}`}
         phase={running ? 'running' : 'finished'}
-        steps={modalSteps(progress, outcome)}
+        steps={modalSteps(progress, seenPhases, outcome)}
         progress={outcome?.ok ? 100 : percent}
         note={`Keep this tab in front; don't let the computer sleep. This takes ${updater.expectedDuration}.`}
         summary={
@@ -295,13 +310,40 @@ function FlashResult({
   );
 
   if (outcome.ok) {
+    const { title, verifyHint } = outcome.image;
+    let banner;
+    switch (outcome.result.end) {
+      case 'port-closed-by-radio':
+        banner = (
+          <StatusBanner tone="success">
+            The radio restarted into the new firmware. The {title} is on the radio. Check:{' '}
+            {verifyHint}
+          </StatusBanner>
+        );
+        break;
+      case 'no-reply':
+        banner = (
+          <>
+            <StatusBanner tone="success">The {title} was sent to the radio.</StatusBanner>
+            <StatusBanner tone="warning">
+              Every block was accepted, but the radio didn&apos;t confirm the end. Power-cycle it,
+              then check: {verifyHint}
+            </StatusBanner>
+          </>
+        );
+        break;
+      default:
+        banner = (
+          <StatusBanner tone="success">
+            The {title} is on the radio. Power-cycle the radio if it hasn&apos;t restarted, then
+            check: {verifyHint}
+          </StatusBanner>
+        );
+    }
     return (
       <Panel title="Done">
         <div className={classes.stack}>
-          <StatusBanner tone="success">
-            The {outcome.image.title} is on the radio. Power-cycle the radio if it hasn&apos;t
-            restarted, then check: {outcome.image.verifyHint}
-          </StatusBanner>
+          {banner}
           {summaryBlock}
         </div>
       </Panel>

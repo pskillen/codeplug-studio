@@ -16,8 +16,8 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 | DM-32UV flash       | Shipped: prod           | Stock and bundled releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                   |
 | Bundled releases    | Shipped: prod (DM-32UV) | DM-32UV and AT-D890UV `1.0.0` in `src/core/firmware/releases/`, verified by the catalog test; release list, RC toggle and notes in the wizard; offered on prod wherever the radio is ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
 | User-supplied patch | Shipped: prod (DM-32UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                |
-| AT-D890UV           | Planned                 | [#1364](https://github.com/pskillen/codeplug-studio/issues/1364)                                                                                                                                                                                        |
-| Recovery docs       | Planned                 | [#1366](https://github.com/pskillen/codeplug-studio/issues/1366)                                                                                                                                                                                        |
+| AT-D890UV           | Pre-prod                | Updater shipped (pre-prod); hardware run pending. Hidden on prod until Studio has flashed `1.0.0` on hardware ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                        |
+| Recovery docs       | Shipped                 | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                       |
 | Android             | Deferred                | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                          |
 
 ## Documentation map
@@ -27,7 +27,7 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 | [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing)                                                  | Product rules: no vendor firmware, pinning, interlocks, gates |
 | [adding-a-release.md](adding-a-release.md)                                                                             | Maintainer procedure for bundling a release                   |
 | [DM-32UV firmware.md](../../reference/radios/baofeng/dm-32uv/firmware.md)                                              | Stock pin, update mode, patch format, bootloader protocol     |
-| [AT-D890UV firmware.md](../../reference/radios/anytone/at-d890uv/firmware.md)                                          | Stock pin, update mode, patch format                          |
+| [AT-D890UV firmware.md](../../reference/radios/anytone/at-d890uv/firmware.md)                                          | Stock pin, update mode, patch format, bootloader protocol     |
 | [Adding a radio adapter — Firmware updater](../radio-read-write/adding-a-radio-adapter.md#8-firmware-updater-optional) | Checklist for a new radio's updater                           |
 | [Stepper.md](../../../src/app/components/v2/Stepper.md)                                                                | Wizard step indicator                                         |
 
@@ -64,6 +64,7 @@ flowchart LR
 | Radio facts  | `src/core/radios/<mfr>/<model>/firmware.ts`                                                |
 | Updater seam | `src/integrations/radio-io/firmware/` (types, registry, guarded send, errors)              |
 | DM-32UV      | `src/integrations/radio-io/radios/dm32uv/firmwareUpdate/`                                  |
+| AT-D890UV    | `src/integrations/radio-io/radios/at-d890uv/firmwareUpdate/`                               |
 | App          | `src/app/routes/firmware/`, `src/app/services/firmwareFlash.ts`, `firmwareFlashEnvGate.ts` |
 
 ## Wizard steps
@@ -91,11 +92,37 @@ flowchart LR
    Baofeng DM-32UV"), then a risk acknowledgement, required for every flash, plus battery, cable and "other programs
    closed" checks. A **Back up first** panel links to the Backup tab of any build for this radio in the open project.
 6. **Enter update mode** — the radio's own steps, indicator and warnings, from its descriptor.
-7. **Flash** — names the firmware and radio again. **Connect and flash** opens a port picker narrowed to the
-   radio's cable. Progress shows Handshake → Erase → Transfer → Finish. While it runs, the screen is kept awake and leaving the page asks first. Cancelling
-   after the radio has been touched asks for confirmation.
+7. **Flash** — names the firmware and radio again, and repeats the radio's update-mode warnings right above
+   **Connect and flash**, which opens a port picker narrowed to the radio's USB device. Progress shows the phases
+   the radio's updater reports: Handshake → Erase → Transfer → Finish for the DM-32UV; Handshake → Transfer →
+   Finish for the AT-D890UV, which erases as part of the transfer. While the first block waits for the radio, the
+   transfer step reads "Waiting for the radio (it may be erasing)…". Progress is redrawn at most every ~100 ms (a
+   phase change, or the radio becoming touched, shows at once), so a 52,000-frame transfer stays responsive. While
+   it runs, the screen is kept awake and leaving the page asks first. Cancelling after the radio has been touched
+   asks for confirmation.
 8. **Done or failed** — on success, what is now on the radio ("The MM9PDY modded firmware 1.0.0 is on the radio"),
-   its verify hint and a plain-text summary (copy or download as `.txt`). A failure before the radio was touched says nothing was written. A failure after it shows the recovery steps.
+   its verify hint and a plain-text summary (copy or download as `.txt`). The message depends on how the session
+   ended (see [What to expect](#what-to-expect)). A failure before the radio was touched says nothing was written.
+   A failure after it shows the recovery steps.
+
+## What to expect
+
+| Radio     | Duration                                    | How the radio signals the end                                                                                        | How to check (release `1.0.0`)                                                                                  |
+| --------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| DM-32UV   | About 2 minutes (including a 13 s erase)    | Studio sends the end byte; any reply, or none, is fine (`eot-sent`)                                                  | Press Scan on a channel with no scan list: a zone scan starts. Device information still reads `DM32.01.L01.048` |
+| AT-D890UV | A few minutes (set from the hardware flash) | The radio restarts at once and its USB port disappears (`port-closed-by-radio`), or it replies `06` (`acknowledged`) | After the radio restarts, Device Info > Version shows `1.0.0`                                                   |
+
+The durations are the descriptors' `expectedDuration`, shown on the radio cards; the checks are the releases' verify
+hints.
+
+**When the radio doesn't confirm the end (`no-reply`).** Every block was acknowledged, but nothing came back after
+the end byte, and the port stayed open. This is **not** a failure: the wizard shows the success screen with a
+warning, "Every block was accepted, but the radio didn't confirm the end. Power-cycle it, then check: …". Power-cycle
+the radio and use the verify hint. If the check fails, follow [Recovery](#recovery).
+
+**Flash summary.** It records the end state (`End: …`), the elapsed time as `mm:ss`, and, for updaters that measure
+it (the AT-D890UV), each data frame's round trip from write to acknowledgement: `Frame round trip: median …, p99 …,
+max … ms`. A failed flash records the timing up to the failure.
 
 ## Provenance
 
@@ -119,9 +146,52 @@ release's verify hint asks the operator to press Scan on a channel with no scan 
 
 ## Recovery
 
-If a flash stops part-way, don't keep power-cycling the radio. Re-enter update mode and flash again, or flash stock
-firmware from the same page. The vendor's programming software is the fallback. Detailed per-radio recovery is
-tracked in [#1366](https://github.com/pskillen/codeplug-studio/issues/1366).
+Flashing stock firmware is the zero-patch case of the same pipeline, and it is the documented way back on every
+supported radio. The wizard always lists **Stock firmware** on the Firmware step, for every radio. Stock flashing
+has no hardware gate of its own: it sends the same kind of frame stream as a release.
+
+The wizard's own screens carry these steps too, so they work offline.
+
+### If a flash fails before the radio was touched
+
+The wizard says **Nothing was written**. The bootloader ident and the checks before it erase nothing. Power the
+radio off and on, then try again: **Enter update mode again** goes back to the update-mode step.
+
+### If a flash fails after the radio was touched
+
+The wizard shows **Recover the radio**. The radio's program firmware is incomplete, but its bootloader is intact:
+Studio never writes the bootloader or the activation area.
+
+1. **Don't keep power-cycling the radio.** It can't start the incomplete firmware.
+2. **Re-enter update mode** with the radio's own steps: [DM-32UV](../../reference/radios/baofeng/dm-32uv/firmware.md#update-mode-entry),
+   [AT-D890UV](../../reference/radios/anytone/at-d890uv/firmware.md#update-mode-entry).
+3. **Flash again:** the same release, or **stock** from the wizard's **Stock firmware** entry (the **Flash stock
+   instead** button goes straight to the firmware choice).
+4. Either way you need the vendor's stock download. A release is built from it, and stock is it.
+
+### Going back to stock on purpose
+
+Choose **Stock firmware** on the Firmware step and flash as usual. The radio then runs the vendor's pinned version.
+
+### Fallback: the vendor's programming software
+
+If Studio can't flash the radio, the vendor's own CPS (customer programming software) can: the Baofeng DM-32UV CPS
+or the AnyTone AT-D890UV CPS, using its firmware update with the vendor's firmware files. The vendor downloads
+Studio pins are:
+
+- DM-32UV: https://baofeng.s3.amazonaws.com/Baofeng_DM-32UV_Firmware_v1.01.048.zip
+- AT-D890UV: https://anytoneusa.com/Files/D890UV%20V1.05%20DMR%20official%20release%20260521.zip
+
+### What Studio checks before any byte is sent
+
+- **Stock hashes:** every stock file matches the pinned SHA-256 and size for the radio.
+- **Result hashes:** a patched image matches the result hashes recorded in the release patch.
+- **Interlocks:** the radio's updater refuses an unsafe image or frame in code (address windows away from the
+  bootloader and the activation page, image length and header, vector table), and checks the bootloader's ident,
+  including that the radio is in update mode, before the first data frame.
+
+Rules: [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing). Per-radio interlocks: the "Hard
+interlocks" sections of the two radios' `firmware.md`.
 
 ## Privacy
 
