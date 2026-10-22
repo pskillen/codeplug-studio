@@ -17,7 +17,7 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 | Bundled releases    | Shipped: prod (DM-32UV) | DM-32UV and AT-D890UV `1.0.0` in `src/core/firmware/releases/`, verified by the catalog test; release list, RC toggle and notes in the wizard; offered on prod wherever the radio is ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
 | User-supplied patch | Shipped: prod (DM-32UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                |
 | AT-D890UV           | Pre-prod                | Updater shipped (pre-prod); hardware run pending. Hidden on prod until Studio has flashed `1.0.0` on hardware ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                        |
-| Recovery docs       | Planned                 | [#1366](https://github.com/pskillen/codeplug-studio/issues/1366)                                                                                                                                                                                        |
+| Recovery docs       | Shipped                 | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                       |
 | Android             | Deferred                | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                          |
 
 ## Documentation map
@@ -146,9 +146,52 @@ release's verify hint asks the operator to press Scan on a channel with no scan 
 
 ## Recovery
 
-If a flash stops part-way, don't keep power-cycling the radio. Re-enter update mode and flash again, or flash stock
-firmware from the same page. The vendor's programming software is the fallback. Detailed per-radio recovery is
-tracked in [#1366](https://github.com/pskillen/codeplug-studio/issues/1366).
+Flashing stock firmware is the zero-patch case of the same pipeline, and it is the documented way back on every
+supported radio. The wizard always lists **Stock firmware** on the Firmware step, for every radio. Stock flashing
+has no hardware gate of its own: it sends the same kind of frame stream as a release.
+
+The wizard's own screens carry these steps too, so they work offline.
+
+### If a flash fails before the radio was touched
+
+The wizard says **Nothing was written**. The bootloader ident and the checks before it erase nothing. Power the
+radio off and on, then try again: **Enter update mode again** goes back to the update-mode step.
+
+### If a flash fails after the radio was touched
+
+The wizard shows **Recover the radio**. The radio's program firmware is incomplete, but its bootloader is intact:
+Studio never writes the bootloader or the activation area.
+
+1. **Don't keep power-cycling the radio.** It can't start the incomplete firmware.
+2. **Re-enter update mode** with the radio's own steps: [DM-32UV](../../reference/radios/baofeng/dm-32uv/firmware.md#update-mode-entry),
+   [AT-D890UV](../../reference/radios/anytone/at-d890uv/firmware.md#update-mode-entry).
+3. **Flash again:** the same release, or **stock** from the wizard's **Stock firmware** entry (the **Flash stock
+   instead** button goes straight to the firmware choice).
+4. Either way you need the vendor's stock download. A release is built from it, and stock is it.
+
+### Going back to stock on purpose
+
+Choose **Stock firmware** on the Firmware step and flash as usual. The radio then runs the vendor's pinned version.
+
+### Fallback: the vendor's programming software
+
+If Studio can't flash the radio, the vendor's own CPS (customer programming software) can: the Baofeng DM-32UV CPS
+or the AnyTone AT-D890UV CPS, using its firmware update with the vendor's firmware files. The vendor downloads
+Studio pins are:
+
+- DM-32UV: https://baofeng.s3.amazonaws.com/Baofeng_DM-32UV_Firmware_v1.01.048.zip
+- AT-D890UV: https://anytoneusa.com/Files/D890UV%20V1.05%20DMR%20official%20release%20260521.zip
+
+### What Studio checks before any byte is sent
+
+- **Stock hashes:** every stock file matches the pinned SHA-256 and size for the radio.
+- **Result hashes:** a patched image matches the result hashes recorded in the release patch.
+- **Interlocks:** the radio's updater refuses an unsafe image or frame in code (address windows away from the
+  bootloader and the activation page, image length and header, vector table), and checks the bootloader's ident,
+  including that the radio is in update mode, before the first data frame.
+
+Rules: [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing). Per-radio interlocks: the "Hard
+interlocks" sections of the two radios' `firmware.md`.
 
 ## Privacy
 
