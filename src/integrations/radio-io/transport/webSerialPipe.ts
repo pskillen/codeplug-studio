@@ -9,10 +9,18 @@ import type { BytePipe } from '../types.ts';
 import { RadioClosedError, RadioTimeoutError, RadioUnsupportedError } from '../kit/errors.ts';
 import { assertWebSerialSupported } from './featureDetect.ts';
 
+/** USB vendor / product filter for the Web Serial port picker. */
+export type WebSerialPortFilter = SerialPortFilter;
+
 export interface WebSerialPipeOptions {
   baudRate: number;
   /** When true, always show the browser port picker (ignore getPorts cache). */
   forceSelection?: boolean;
+  /**
+   * Narrow the picker to matching USB devices. Only applies when the picker is shown; an already-granted port
+   * reused with `forceSelection: false` ignores it.
+   */
+  filters?: readonly WebSerialPortFilter[];
 }
 
 /**
@@ -207,22 +215,29 @@ class WebSerialBytePipe implements BytePipe {
   }
 }
 
-async function resolvePort(forceSelection: boolean): Promise<SerialPortLike> {
+async function resolvePort(
+  forceSelection: boolean,
+  filters?: readonly WebSerialPortFilter[],
+): Promise<SerialPortLike> {
   assertWebSerialSupported();
   const serial = navigator.serial;
   if (!serial) {
     throw new RadioUnsupportedError();
   }
+  const requestOptions = filters?.length ? { filters: [...filters] } : undefined;
   if (forceSelection) {
-    return serial.requestPort();
+    return serial.requestPort(requestOptions);
   }
   const existing = await serial.getPorts();
-  return existing[0] ?? (await serial.requestPort());
+  return existing[0] ?? (await serial.requestPort(requestOptions));
 }
 
-/** Request (or reuse) a Web Serial port without opening it. */
-export async function requestWebSerialPort(forceSelection = false): Promise<SerialPortLike> {
-  return resolvePort(forceSelection);
+/** Request (or reuse) a Web Serial port without opening it. `filters` narrow the picker when it is shown. */
+export async function requestWebSerialPort(
+  forceSelection = false,
+  filters?: readonly WebSerialPortFilter[],
+): Promise<SerialPortLike> {
+  return resolvePort(forceSelection, filters);
 }
 
 async function assertSerialSignals(port: SerialPortLike): Promise<void> {
@@ -254,6 +269,6 @@ export async function openWebSerialPipe(port: SerialPortLike, baudRate: number):
  * Request (or reuse) a Web Serial port and open a BytePipe at `baudRate`.
  */
 export async function requestWebSerialPipe(options: WebSerialPipeOptions): Promise<BytePipe> {
-  const port = await requestWebSerialPort(options.forceSelection ?? false);
+  const port = await requestWebSerialPort(options.forceSelection ?? false, options.filters);
   return openWebSerialPipe(port, options.baudRate);
 }

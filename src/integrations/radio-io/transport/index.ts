@@ -14,6 +14,7 @@ export {
   WEB_SERIAL_HOST_BUFFER_SIZE,
   type SerialPortLike,
   type WebSerialPipeOptions,
+  type WebSerialPortFilter,
 } from './webSerialPipe.ts';
 export {
   CapacitorSerialBytePipe,
