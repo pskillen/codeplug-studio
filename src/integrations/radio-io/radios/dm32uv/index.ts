@@ -27,6 +27,7 @@ export {
   makeDm32WriteFrame,
 } from './connection.ts';
 export { DM32UV_DESCRIPTOR, DM32UV_MODEL_ID } from './descriptor.ts';
+export { DM32UV_FIRMWARE_UPDATER } from './firmwareUpdate/descriptor.ts';
 export {
   dm32BackupRestoreRole,
   isDm32CalibrationBlock,

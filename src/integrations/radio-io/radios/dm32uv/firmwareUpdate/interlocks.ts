@@ -54,13 +54,17 @@ export interface Dm32TxGuard {
   readonly index: number;
 }
 
-/** Port of `TxGuard`: the plan is the whole allow-list. */
+/**
+ * Port of `TxGuard`: the plan is the whole allow-list. The frames are copied when the guard is created, so a frame
+ * changed afterwards is refused.
+ */
 export function createDm32TxGuard(plan: readonly Dm32PlanStep[], startIndex = 0): Dm32TxGuard {
+  const allowed = plan.map((s) => s.tx.slice());
   let index = startIndex;
   return {
     check(frame) {
-      const step = plan[index];
-      if (!step || !bytesEqual(frame, step.tx)) {
+      const expected = allowed[index];
+      if (!expected || !bytesEqual(frame, expected)) {
         throw new RadioInterlockError(
           `Refused to send an unexpected frame (${frame.length} bytes) at plan step ${index}.`,
         );
