@@ -8,6 +8,8 @@ Wire layouts stay in the stock radio docs: [AT-D890UV](../../reference/radios/an
 
 **Tracking:** [codeplug-studio#1312](https://github.com/pskillen/codeplug-studio/issues/1312)
 
+**Getting the firmware onto the radio:** the [firmware flasher](../firmware-flashing/README.md) (Tools → Firmware flasher).
+
 ## Implementation status
 
 | Area                               | Status   | Notes                                                                                                                                                                                                                                                                                                                        |
