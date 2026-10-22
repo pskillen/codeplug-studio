@@ -208,21 +208,27 @@ function encodeRxGroupWire(rxGroupIndex: number | undefined): number {
 
 /** Firmware channel-apply: byte `0x17` >= this is no TX contact. `0x00000000` is slot 0. */
 const TX_CONTACT_NONE_HIGH = 0x7f;
-/** Official CPS encoding of no TX contact at `+0x14`. */
-const TX_CONTACT_NONE_WIRE = 0xffffffff;
+/**
+ * No TX contact is written as slot 9999 (`0F 27 00 00`). The radio's boot check rejects a
+ * contact word above its bound ("Program Error / Please Initialize The Radio!"), so
+ * `FF FF FF FF` and `FF FF 00 00` brick the codeplug. 9999 is in range and an unused slot in
+ * any real codeplug. The official CPS writes None as `00 00 00 00` (there is no wire none).
+ * Stock clamps an unused slot to slot 0; MM9PDY firmware treats it as none. See #1380.
+ */
+export const TX_CONTACT_NONE_WIRE = 9999;
 
 function decodeTxContactId(data: Uint8Array, mode: RadioChannelMode): number | undefined {
   if (!isDigitalMode(mode)) return undefined;
   if (data[0x17]! >= TX_CONTACT_NONE_HIGH) return undefined;
   const wire = (data[0x14]! | (data[0x15]! << 8) | (data[0x16]! << 16) | (data[0x17]! << 24)) >>> 0;
+  if (wire === TX_CONTACT_NONE_WIRE) return undefined;
   return wire + 1;
 }
 
 function encodeTxContactWire(data: Uint8Array, txContactId: number | undefined): void {
   // 0x13 is not part of the contact word; the official CPS never writes it.
   data[0x13] = 0;
-  // None is FF FF FF FF, as the official CPS writes it. Stock firmware clamps a word above
-  // 9999 to slot 0; MM9PDY firmware tells none from an explicit slot 0 before that clamp.
+  // None is slot 9999, not FF FF FF FF: the boot check rejects a word above its bound (#1380).
   const wire = txContactId == null ? TX_CONTACT_NONE_WIRE : txContactId - 1;
   data[0x14] = wire & 0xff;
   data[0x15] = (wire >>> 8) & 0xff;
