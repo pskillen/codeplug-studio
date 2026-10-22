@@ -26,6 +26,7 @@ Handheld DMR + analogue dual-band radio (DM-32 family). Studio targets it via DM
 | Doc                                                | Contents                                                                                                                           |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | [limits.md](limits.md)                             | Channels, zones, scan / RX / contacts / TGs, name lengths                                                                          |
+| [firmware.md](firmware.md)                         | Stock firmware pin, update-mode entry (flasher)                                                                                    |
 | [capabilities.md](capabilities.md)                 | Modes, organisation traits                                                                                                         |
 | [power.md](power.md)                               | High / Middle / Low + squelch ladder                                                                                               |
 | [protocol.md](protocol.md)                         | Baud, PSEARCH handshake, PROGRAM entry, V-frames, 4KB R/W wire, timeouts                                                           |
