@@ -65,3 +65,11 @@
 - Owner: "merge has happened, carry on". Branch `1364/pskil/firmware-d890` from `origin/1363/pskil/firmware-dm32-prod`
   (`1c25eae`) so it inherits the MM9PDY naming; PR base `1363/pskil/firmware-dm32-prod` (retarget to `main` once
   #1373 merges). `Closes #1364`, `Closes #1365`, `Closes #1366`.
+- Owner merged #1373 into `main`. Phase 4 PR retargeted to `main` before opening.
+- PR https://github.com/pskillen/codeplug-studio/pull/1374 (base `main`), head `6e88b13`, 9 commits (slices 1–4,
+  6–10; optional slice 5 skipped). `dev` at `6e88b13`. Gates green apart from 3 timing flakes in untouched D890 test
+  files. No vendor files. Mock 52,515-frame synthetic session ≈ 392 ms JS overhead.
+- Deviations: fixtures under `firmwareUpdate/__fixtures__/`; Handshake→Transfer→Finish (no Erase); `timing` added
+  to result, error and failed outcome; mock `closeAtFrame`; `githubDocUrl()` helper.
+- Gate H-D890: owner script sent (Prepare wording corrected to the MM9PDY title). Waiting on owner. Flip (slice 11)
+  NOT added.
