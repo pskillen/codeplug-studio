@@ -10,11 +10,11 @@ import { shortHash, type WizardStepProps } from './stepTypes.ts';
 function provenanceLabel(image: PreparedFirmwareImage): string {
   switch (image.provenance) {
     case 'stock':
-      return `Stock firmware ${image.stockVersion}`;
+      return image.title;
     case 'bundled':
-      return `Bundled release ${image.releaseTag ?? image.patchVersion ?? ''}`.trim();
+      return `${image.title} (bundled)`;
     case 'unreviewed':
-      return 'Unreviewed user-supplied patch';
+      return `${image.title} (unreviewed user-supplied patch)`;
   }
 }
 

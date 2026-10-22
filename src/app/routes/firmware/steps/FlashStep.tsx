@@ -151,7 +151,10 @@ export default function FlashStep({
 
   return (
     <div className={classes.stack}>
-      <Panel title="Connect and flash" sub={`This takes ${updater.expectedDuration}.`}>
+      <Panel
+        title="Connect and flash"
+        sub={`Flashing the ${image.title} to the ${updater.label}. This takes ${updater.expectedDuration}.`}
+      >
         <div className={classes.stack}>
           <p className={classes.copy}>
             With the radio in update mode and the cable plugged in, click the button and pick the
@@ -189,13 +192,17 @@ export default function FlashStep({
 
       <ProgressModal
         open={modalOpen}
-        title={`Flashing the ${updater.label}`}
+        title={`Flashing the ${image.title}`}
         phase={running ? 'running' : 'finished'}
         steps={modalSteps(progress, outcome)}
         progress={outcome?.ok ? 100 : percent}
         note={`Keep this tab in front; don't let the computer sleep. This takes ${updater.expectedDuration}.`}
         summary={
-          outcome ? (outcome.ok ? 'Flash complete.' : `Flash failed: ${outcome.message}`) : null
+          outcome
+            ? outcome.ok
+              ? `The ${image.title} is on the ${updater.label}.`
+              : `Flash failed: ${outcome.message}`
+            : null
         }
         onClose={() => setModalOpen(false)}
         footer={
@@ -292,8 +299,8 @@ function FlashResult({
       <Panel title="Done">
         <div className={classes.stack}>
           <StatusBanner tone="success">
-            Power-cycle the radio if it hasn&apos;t restarted, then check:{' '}
-            {outcome.image.verifyHint}
+            The {outcome.image.title} is on the radio. Power-cycle the radio if it hasn&apos;t
+            restarted, then check: {outcome.image.verifyHint}
           </StatusBanner>
           {summaryBlock}
         </div>

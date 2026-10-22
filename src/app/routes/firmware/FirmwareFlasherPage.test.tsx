@@ -51,6 +51,7 @@ const IMAGE = {
   radioId: 'baofeng-dm32uv',
   provenance: 'stock',
   stockVersion: DM32.stock.version,
+  title: `stock firmware ${DM32.stock.version}`,
   package: { radioId: 'baofeng-dm32uv', files: {} },
   sha256: { bin: 'cd'.repeat(32) },
   verifyHint: 'The radio boots to its normal screen.',
@@ -60,6 +61,7 @@ function release(tag: string, channel: 'final' | 'rc'): BundledFirmwareRelease {
   return {
     radioId: 'baofeng-dm32uv',
     tag,
+    patchName: 'baofeng-dm32-firmware',
     channel,
     patchFile: `synthetic-${tag}.patch.json`,
     patchSha256: 'ee'.repeat(32),
@@ -78,6 +80,7 @@ function summaryOf(r: BundledFirmwareRelease): FirmwareReleaseSummary {
     radioId: r.radioId,
     key: r.tag,
     label: r.tag,
+    title: `MM9PDY modded firmware ${r.tag}`,
     channel: r.channel,
     provenance: 'bundled',
     release: r,
@@ -100,7 +103,9 @@ function loadedFor(r: BundledFirmwareRelease): LoadedFirmwarePatch {
 const UNREVIEWED: LoadedFirmwarePatch = {
   bytes: new Uint8Array(0),
   sha256: '12'.repeat(32),
-  parsed: { description: { version: '7.7.7' } } as unknown as LoadedFirmwarePatch['parsed'],
+  parsed: {
+    description: { name: 'baofeng-dm32-firmware', version: '7.7.7' },
+  } as unknown as LoadedFirmwarePatch['parsed'],
   provenance: 'unreviewed',
 };
 
@@ -294,11 +299,13 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
 
   it('lists finals, and adds release candidates on request', async () => {
     await toFirmwareStep();
-    expect(screen.getByRole('radio', { name: /Release 1\.0\.0/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('radio', { name: /MM9PDY modded firmware 1\.0\.0/ }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/1\.1\.0-rc\.1/)).not.toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /Stock firmware/ })).toBeChecked();
     fireEvent.click(screen.getByText('Show release candidates'));
-    const rc = await screen.findByRole('radio', { name: /Release 1\.1\.0-rc\.1/ });
+    const rc = await screen.findByRole('radio', { name: /MM9PDY modded firmware 1\.1\.0-rc\.1/ });
     expect(rc.closest('label')).toHaveTextContent('Pre-release');
   });
 
@@ -316,6 +323,7 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
       ...IMAGE,
       provenance: 'bundled',
       releaseTag: '1.0.0',
+      title: 'MM9PDY modded firmware 1.0.0',
       versionStamp: '1.0.0',
       verifyHint: FINAL.release!.verifyHint,
     } as unknown as PreparedFirmwareImage;
@@ -337,24 +345,35 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
       startedAt: 'now',
     });
     await toFirmwareStep();
-    fireEvent.click(screen.getByRole('radio', { name: /Release 1\.0\.0/ }));
-    await screen.findByRole('radio', { name: /Release 1\.0\.0/, checked: true });
+    fireEvent.click(screen.getByRole('radio', { name: /MM9PDY modded firmware 1\.0\.0/ }));
+    await screen.findByRole('radio', { name: /MM9PDY modded firmware 1\.0\.0/, checked: true });
     cont();
     fireEvent.change(document.querySelector('input[type="file"]') as HTMLInputElement, {
       target: { files: [new File(['x'], 'stock.zip')] },
     });
     await screen.findByText(/verified/);
     cont();
-    expect(await screen.findByText(/Bundled release 1\.0\.0/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/MM9PDY modded firmware 1\.0\.0 \(bundled\)/),
+    ).toBeInTheDocument();
     expect(screen.getByText('Version stamp: 1.0.0')).toBeInTheDocument();
     const [, , , last] = vi.mocked(flash.prepareFlash).mock.calls[0]!;
     expect(last?.release?.tag).toBe('1.0.0');
     cont();
+    expect(
+      screen.getByText(/You are flashing the MM9PDY modded firmware 1\.0\.0 to the/),
+    ).toBeInTheDocument();
     for (const c of screen.getAllByRole('checkbox')) fireEvent.click(c);
     cont();
     cont();
+    expect(
+      screen.getByText(/Flashing the MM9PDY modded firmware 1\.0\.0 to the/),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Connect and flash' }));
     expect(await screen.findByText(/Release 1\.0\.0 verify hint/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/The MM9PDY modded firmware 1\.0\.0 is on the radio\./),
+    ).toBeInTheDocument();
   });
 
   it('treats a dropped file identical to a bundled release as that release', async () => {
@@ -363,9 +382,11 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
     );
     await toFirmwareStep();
     dropPatch();
-    expect(await screen.findByText('This is release 1.0.0 (bundled).')).toBeInTheDocument();
+    expect(
+      await screen.findByText('This is the MM9PDY modded firmware 1.0.0 (bundled).'),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/has not been reviewed or bundled/)).not.toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /Release 1\.0\.0/ })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /MM9PDY modded firmware 1\.0\.0/ })).toBeChecked();
     expect(screen.getByRole('button', { name: 'Continue' })).not.toBeDisabled();
   });
 
@@ -373,7 +394,7 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
     await toFirmwareStep();
     dropPatch();
     expect(await screen.findByText(/has not been reviewed or bundled/)).toBeInTheDocument();
-    expect(screen.getByText('7.7.7')).toBeInTheDocument();
+    expect(screen.getByText('MM9PDY modded firmware 7.7.7')).toBeInTheDocument();
     const continueButton = screen.getByRole('button', { name: 'Continue' });
     expect(continueButton).toBeDisabled();
     fireEvent.click(screen.getByRole('checkbox', { name: 'I understand' }));
