@@ -10,6 +10,8 @@ Wire layouts stay in the stock radio docs: [AT-D890UV](../../reference/radios/an
 
 **Getting the firmware onto the radio:** the [firmware flasher](../firmware-flashing/README.md) (Tools → Firmware flasher).
 
+**If something goes wrong:** [Recovery](../firmware-flashing/README.md#recovery).
+
 ## Implementation status
 
 | Area                               | Status   | Notes                                                                                                                                                                                                                                                                                                                        |

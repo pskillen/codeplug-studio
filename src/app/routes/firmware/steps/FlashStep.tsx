@@ -21,6 +21,7 @@ import {
   type ProgressModalStep,
 } from '../../../components/v2/index.ts';
 import { useScreenWakeLock } from '../../../hooks/useScreenWakeLock.ts';
+import { githubDocUrl } from '../../../lib/githubLinks.ts';
 import { useUnsavedNavigationGuard } from '../../../hooks/useUnsavedNavigationGuard.ts';
 import {
   formatFirmwareFlashSummary,
@@ -37,9 +38,10 @@ import {
 } from '../flashProgressThrottle.ts';
 import type { WizardStepProps } from './stepTypes.ts';
 
-/** Placeholder until the hub's Recovery section is written. */
-export const FIRMWARE_RECOVERY_DOC_URL =
-  'https://github.com/pskillen/codeplug-studio/blob/main/docs/features/firmware-flashing/README.md#recovery';
+/** The firmware-flashing hub's Recovery section. The steps are also on the recovery screen, for offline use. */
+const FIRMWARE_RECOVERY_DOC_URL = githubDocUrl(
+  'docs/features/firmware-flashing/README.md#recovery',
+);
 
 function modalSteps(
   progress: FirmwareFlashProgress | null,

@@ -39,6 +39,12 @@ only sign.
 
 After a stock flash, Menu > Device Info > Version shows "Ver 1.05".
 
+## Recovery
+
+If a flash stops after the radio was touched, re-enter update mode (above) and flash again, or flash stock from the
+wizard's **Stock firmware** entry. Full steps, and the vendor CPS fallback:
+[Firmware flashing — Recovery](../../../../features/firmware-flashing/README.md#recovery).
+
 ## Release patch format
 
 Each firmware release is a JSON patch (`*.patch.json`) over the three-file package: in-place hooks with their original

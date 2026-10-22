@@ -45,6 +45,12 @@ Indicator: **green LED**.
 
 After a stock flash, the radio boots to its normal screen with your channels.
 
+## Recovery
+
+If a flash stops after the radio was touched, re-enter update mode (above) and flash again, or flash stock from the
+wizard's **Stock firmware** entry. Full steps, and the vendor CPS fallback:
+[Firmware flashing — Recovery](../../../../features/firmware-flashing/README.md#recovery).
+
 ## Release patch format
 
 Each firmware release is a JSON patch (`*.patch.json`): the bytes that differ between the pinned stock image and the

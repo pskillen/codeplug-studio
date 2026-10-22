@@ -246,6 +246,12 @@ describe('FirmwareFlasherPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Connect and flash' }));
     expect(await screen.findByText(/Don't keep power-cycling the radio/)).toBeInTheDocument();
     expect(screen.queryByText(/Nothing was written/)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'recovering a radio after a failed flash' }),
+    ).toHaveAttribute(
+      'href',
+      'https://github.com/pskillen/codeplug-studio/blob/main/docs/features/firmware-flashing/README.md#recovery',
+    );
   });
 
   it('says nothing was written after a failure before touch', async () => {
