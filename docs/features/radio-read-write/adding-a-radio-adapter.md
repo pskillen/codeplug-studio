@@ -156,6 +156,24 @@ UV-5R Mini (PROGRAM+R/W): treat as **read-cached image + encode channels + uploa
 - [ ] **Update this file** with any new cross-radio requirements discovered
 - [ ] Component sidecars for new shared UI widgets
 
+### 8. Firmware updater (optional)
+
+Only when the radio gets a bootloader firmware flasher. Rules: [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing).
+Reference implementation: `src/integrations/radio-io/radios/dm32uv/firmwareUpdate/`.
+
+- [ ] Core `src/core/radios/<mfr>/<model>/firmware.ts` next to `limits.ts`: the pinned stock descriptor and image facts
+- [ ] `radios/<id>/firmwareUpdate/{constants,plan|frames,interlocks,updater,descriptor}.ts`
+- [ ] Every byte goes through `createGuardedSend` (the one `pipe.write` site in firmware code), with a test that reads
+      the sources and asserts it
+- [ ] A mock bootloader fixture under `firmwareUpdate/__fixtures__/`, driven with **synthetic images only**: never vendor
+      firmware or a slice of it
+- [ ] A refusal test for every hard interlock; `flash()` wraps every failure in `FirmwareFlashError` with an accurate
+      `radioTouched`
+- [ ] A `FirmwareUpdaterDescriptor` registered in `src/integrations/radio-io/firmware/registry.ts`, starting with
+      `prodFlashDisabled: true` (cleared in its own commit after a hardware flash of a release)
+- [ ] Tier-3 `docs/reference/radios/<mfr>/<model>/firmware.md`: stock pin, update-mode entry, bootloader protocol and
+      interlocks
+
 ---
 
 ## Anti-patterns

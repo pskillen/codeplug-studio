@@ -9,6 +9,7 @@ import { createFakeSerialPort } from './fakeSerialPort.ts';
 import {
   openWebSerialPipe,
   requestWebSerialPipe,
+  requestWebSerialPort,
   WEB_SERIAL_HOST_BUFFER_SIZE,
 } from './webSerialPipe.ts';
 
@@ -160,5 +161,42 @@ describe('requestWebSerialPipe', () => {
     const pipe = await requestWebSerialPipe({ baudRate: 38400, forceSelection: true });
     expect(requestPort).toHaveBeenCalled();
     await pipe.close();
+  });
+
+  it('calls requestPort with undefined when no filters are given', async () => {
+    const fake = createFakeSerialPort();
+    const requestPort = vi.fn<(options?: unknown) => Promise<typeof fake.port>>(
+      async () => fake.port,
+    );
+    vi.stubGlobal('navigator', { serial: { getPorts: async () => [], requestPort } });
+
+    await requestWebSerialPort(true);
+    expect(requestPort).toHaveBeenCalledWith(undefined);
+  });
+
+  it('passes USB filters to requestPort', async () => {
+    const fake = createFakeSerialPort();
+    const requestPort = vi.fn<(options?: unknown) => Promise<typeof fake.port>>(
+      async () => fake.port,
+    );
+    vi.stubGlobal('navigator', { serial: { getPorts: async () => [], requestPort } });
+
+    const filters = [{ usbVendorId: 0x1234, usbProductId: 0x5678 }];
+    await requestWebSerialPort(true, filters);
+    expect(requestPort).toHaveBeenCalledWith({ filters });
+
+    const pipe = await requestWebSerialPipe({ baudRate: 9600, forceSelection: true, filters });
+    expect(requestPort).toHaveBeenLastCalledWith({ filters });
+    await pipe.close();
+  });
+
+  it('ignores filters when reusing an already-granted port', async () => {
+    const fake = createFakeSerialPort();
+    const requestPort = vi.fn();
+    vi.stubGlobal('navigator', { serial: { getPorts: async () => [fake.port], requestPort } });
+
+    const port = await requestWebSerialPort(false, [{ usbVendorId: 0x1234 }]);
+    expect(port).toBe(fake.port);
+    expect(requestPort).not.toHaveBeenCalled();
   });
 });

@@ -17,3 +17,6 @@ sample-codeplugs/**/*.csv -text
 
 # CPS wire-verify fixtures must keep exact bytes (CRLF good samples vs LF bad samples).
 cps-verify/fixtures/** -text
+
+# Published firmware patches: exact bytes, hashed. Never normalise line endings.
+*.patch.json -text

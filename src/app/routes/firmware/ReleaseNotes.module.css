@@ -1,0 +1,25 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--dsv2-text-secondary);
+  font-size: var(--dsv2-font-body-sm);
+  line-height: 1.5;
+}
+
+.paragraph {
+  margin: 0;
+}
+
+.list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.code {
+  padding: 0 4px;
+  border-radius: var(--dsv2-radius-sm);
+  background: var(--dsv2-surface-quiet);
+  font-family: var(--dsv2-font-mono);
+  font-size: 0.95em;
+}

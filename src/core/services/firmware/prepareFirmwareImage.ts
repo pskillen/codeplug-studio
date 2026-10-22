@@ -4,6 +4,8 @@
  */
 import { FirmwareError } from '../../firmware/errors.ts';
 import { sha256Hex } from '../../firmware/hash.ts';
+import { applyFirmwarePatch, readFirmwarePatchVersionStamp } from '../../firmware/patch/index.ts';
+import type { LoadedFirmwarePatch } from '../../firmware/releases/types.ts';
 import type { VerifiedStockFirmware } from '../../firmware/stock/resolveStockFirmware.ts';
 import type {
   FirmwarePackage,
@@ -12,8 +14,11 @@ import type {
   StockFirmwareDescriptor,
 } from '../../firmware/types.ts';
 
-/** Phase 3 (#1362 catalog) widens this union with { kind: 'patch'; patch: LoadedFirmwarePatch }. */
-export type FirmwareTarget = { readonly kind: 'stock' };
+export type FirmwareTarget =
+  { readonly kind: 'stock' } | { readonly kind: 'patch'; readonly patch: LoadedFirmwarePatch };
+
+/** Shown after a patched flash when the release gives no verify hint of its own. */
+export const DEFAULT_PATCH_VERIFY_HINT = 'Check the radio boots and shows the expected version.';
 
 declare const preparedBrand: unique symbol;
 
@@ -77,6 +82,57 @@ export async function prepareFirmwareImage(input: {
         package: pkg,
         sha256,
         verifyHint: descriptor.stockVerifyHint,
+      } as PreparedFirmwareImage;
+    }
+    case 'patch': {
+      const { patch } = target;
+      const description = patch.parsed.description;
+      if (!descriptor.patchNames.includes(description.name)) {
+        throw new FirmwareError(
+          'patch-wrong-radio',
+          `This patch is not for the ${descriptor.label}.`,
+        );
+      }
+      // The pinned check: apply only checks the stock it is handed.
+      const roles = descriptor.members.map((m) => m.role);
+      const pinned =
+        Object.keys(description.stock).length === roles.length &&
+        descriptor.members.every((m) => {
+          const d = description.stock[m.role];
+          return d !== undefined && d.sha256 === m.sha256 && d.size === m.size;
+        });
+      if (!pinned) {
+        throw new FirmwareError(
+          'patch-wrong-stock',
+          'This patch was made for different stock firmware',
+        );
+      }
+      const pkg = await applyFirmwarePatch(stock.package, patch.parsed);
+      const sha256 = await hashPackage(pkg);
+      const resultRoles = Object.keys(description.result);
+      const matches =
+        Object.keys(sha256).length === resultRoles.length &&
+        resultRoles.every((r) => {
+          const want = description.result[r]!;
+          return sha256[r] === want.sha256 && pkg.files[r]?.length === want.size;
+        });
+      if (!matches) {
+        throw new FirmwareError(
+          'patch-result-mismatch',
+          'The patched firmware does not match the hash recorded in the patch. Nothing was flashed.',
+        );
+      }
+      return {
+        radioId: descriptor.radioId,
+        provenance: patch.provenance,
+        stockVersion: descriptor.version,
+        releaseTag: patch.release?.tag,
+        patchVersion: description.version,
+        patchSha256: patch.sha256,
+        versionStamp: readFirmwarePatchVersionStamp(pkg, patch.parsed),
+        package: pkg,
+        sha256,
+        verifyHint: patch.release?.verifyHint ?? DEFAULT_PATCH_VERIFY_HINT,
       } as PreparedFirmwareImage;
     }
   }

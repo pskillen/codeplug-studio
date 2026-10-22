@@ -54,6 +54,7 @@ export type {
 
 export * from './kit/index.ts';
 export * from './transport/index.ts';
+export * from './firmware/index.ts';
 export {
   getRadioDescriptor,
   isProfileCompatibleWithAnyRadio,

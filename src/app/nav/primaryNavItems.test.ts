@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   activeContextualStripLabel,
+  buildToolsStripItems,
   helpStripItems,
   libraryStripItems,
   resolveContextualStripItems,
@@ -48,7 +49,7 @@ describe('contextualStripItems', () => {
   });
 
   it('includes Tracking Dashboard and an external Propagation Visualiser link in the Tools strip, on every env', () => {
-    expect(toolsStripItems.map((i) => i.label)).toEqual([
+    expect(buildToolsStripItems(false).map((i) => i.label)).toEqual([
       'Maidenhead locator',
       'Band plan',
       'Tracking Dashboard',
@@ -61,6 +62,21 @@ describe('contextualStripItems', () => {
 
     expect(resolveContextualStripItems('/tracking')).toEqual(toolsStripItems);
     expect(resolveContextualStripItems('/reference/rf-propagation')).toEqual(toolsStripItems);
+  });
+
+  it('adds the firmware flasher to the Tools strip only when a radio is offered', () => {
+    expect(buildToolsStripItems(true).map((i) => i.label)).toEqual([
+      'Maidenhead locator',
+      'Band plan',
+      'Tracking Dashboard',
+      'Firmware flasher',
+      'Propagation Visualiser',
+    ]);
+    expect(buildToolsStripItems(false).some((i) => i.to === '/firmware')).toBe(false);
+    // Tests run as the `local` build: the flasher is offered.
+    expect(toolsStripItems.some((i) => i.to === '/firmware')).toBe(true);
+    expect(resolveContextualStripItems('/firmware')).toEqual(toolsStripItems);
+    expect(activeContextualStripLabel('/firmware', toolsStripItems)).toBe('Firmware flasher');
   });
 
   it('excludes external items from the active strip label', () => {

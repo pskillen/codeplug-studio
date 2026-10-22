@@ -70,6 +70,7 @@ Mantine `theme.components.*.defaultProps` and CSS variables are **global** if ap
 | `ModalShell`              | [ModalShell.md](../../../src/app/components/v2/ModalShell.md)                                      | Base overlay shell (#938)                                                                               |
 | `ConfirmModal`            | [ConfirmModal.md](../../../src/app/components/v2/ConfirmModal.md)                                  | Standard/destructive confirmation (#938)                                                                |
 | `ProgressModal`           | [ProgressModal.md](../../../src/app/components/v2/ProgressModal.md)                                | Blocking progress, per-step status (#938)                                                               |
+| `Stepper`                 | [Stepper.md](../../../src/app/components/v2/Stepper.md)                                            | Wizard step indicator (firmware flasher)                                                                |
 | `RowActionIcon`           | [RowActionIcon.md](../../../src/app/components/v2/RowActionIcon.md)                                | Icon-only row action, stops propagation (#938)                                                          |
 | `DataTable` (v2)          | [DataTable.md](../../../src/app/components/v2/DataTable.md)                                        | Full mk2 list table — sole product `DataTable` after #927                                               |
 | `AppShell`                | [AppShell.md](../../../src/app/components/v2/AppShell.md)                                          | Top header bar (not a sidebar shell)                                                                    |
@@ -102,7 +103,7 @@ Barrel: `src/app/components/v2/index.ts`.
 | `/styleguide/feedback`     | StatusBanner, StatusDot, DismissibleNotice                                                                                                                      |
 | `/styleguide/overlays`     | ModalShell, ConfirmModal, ProgressModal                                                                                                                         |
 | `/styleguide/membership`   | MembershipRow, MembershipPanel, MembershipPoolRow, AddMembersScreen                                                                                             |
-| `/styleguide/navigation`   | AppShell, ContextualStrip, EditorHeader, StickyFooter, SectionNav, BottomTabBar                                                                                 |
+| `/styleguide/navigation`   | AppShell, ContextualStrip, EditorHeader, StickyFooter, SectionNav, Stepper, BottomTabBar                                                                        |
 | `/styleguide/patterns`     | Membership + DataTable bulk-reorder patterns                                                                                                                    |
 | `/styleguide/containers`   | Panel danger/collapsible variants                                                                                                                               |
 

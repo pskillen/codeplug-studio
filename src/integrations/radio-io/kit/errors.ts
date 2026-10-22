@@ -4,7 +4,14 @@
  */
 
 export type RadioIoErrorCode =
-  'timeout' | 'closed' | 'noResponse' | 'wrongIdent' | 'protocol' | 'aborted' | 'unsupported';
+  | 'timeout'
+  | 'closed'
+  | 'noResponse'
+  | 'wrongIdent'
+  | 'protocol'
+  | 'aborted'
+  | 'unsupported'
+  | 'interlock';
 
 export class RadioIoError extends Error {
   readonly code: RadioIoErrorCode;
@@ -62,5 +69,16 @@ export class RadioUnsupportedError extends RadioIoError {
   constructor(message = 'Web Serial is not available in this browser.') {
     super('unsupported', message);
     this.name = 'RadioUnsupportedError';
+  }
+}
+
+/**
+ * A hard safety interlock refused the operation (firmware flashing). Never retried, never swallowed.
+ * See DESIGN.md — Firmware flashing.
+ */
+export class RadioInterlockError extends RadioIoError {
+  constructor(message: string) {
+    super('interlock', message);
+    this.name = 'RadioInterlockError';
   }
 }
