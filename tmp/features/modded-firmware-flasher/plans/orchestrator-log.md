@@ -73,3 +73,7 @@
   to result, error and failed outcome; mock `closeAtFrame`; `githubDocUrl()` helper.
 - Gate H-D890: owner script sent (Prepare wording corrected to the MM9PDY title). Waiting on owner. Flip (slice 11)
   NOT added.
+- **H-D890: OK (2026-10-22).** Owner: "success! it only took 1-2 mins, not long at all." Summary: 52,518 frames
+  (52,515 data), Elapsed 00:25 (24.7 s), End `port-closed-by-radio`, round trip median 0.00 / p99 8.00 / max 11.0 ms,
+  flashed hashes match. Posted on #1364, #1365, #1366. No pipe optimisation needed (slice 5 stays skipped).
+- Next: template B on `1364/pskil/firmware-d890` — slice 11 prod flip, `expectedDuration` "under a minute".
