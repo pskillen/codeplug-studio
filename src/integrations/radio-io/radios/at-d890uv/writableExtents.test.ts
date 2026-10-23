@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { RadioProtocolError } from '../../kit/errors.ts';
-import { AT_D890_LIMITS, AT_D890_SATELLITE, D890_MAP } from './constants.ts';
+import {
+  AT_D890_CHANNEL_LOCATION,
+  AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES,
+  AT_D890_LIMITS,
+  AT_D890_SATELLITE,
+  D890_MAP,
+} from './constants.ts';
 import {
   channelPrimaryAddress,
   channelSecondaryAddress,
@@ -219,5 +225,31 @@ describe('AT_D890 writable extents', () => {
       expect(isAtD890WritableAddress(channelPrimaryAddress(slot))).toBe(true);
       expect(isAtD890WritableAddress(channelSecondaryAddress(slot))).toBe(true);
     }
+  });
+});
+
+describe('AT_D890 channel location table extent (#1383)', () => {
+  const base = AT_D890_CHANNEL_LOCATION.BASE_ADDRESS;
+
+  it('allows the header and every entry of the A half', () => {
+    expect(findWritableExtentForAddress(base)?.id).toBe('ChannelLocationTable');
+    expect(isAtD890WritableAddress(base)).toBe(true);
+    expect(isAtD890WritableAddress(base + AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES - 0x10)).toBe(
+      true,
+    );
+    expect(() =>
+      assertAtD890WritableSpan(base, AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES),
+    ).not.toThrow();
+  });
+
+  it('still refuses its neighbours, the rest of the unit and the B half', () => {
+    expect(isAtD890WritableAddress(base - 0x10)).toBe(false);
+    expect(isAtD890WritableAddress(base + AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES)).toBe(false);
+    expect(isAtD890WritableAddress(base + 0x3_fbf0)).toBe(false);
+    expect(isAtD890WritableAddress(AT_D890_CHANNEL_LOCATION.PAIR_B_ADDRESS)).toBe(false);
+    expect(() =>
+      assertAtD890WritableSpan(base, AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES + 0x10),
+    ).toThrow(RadioProtocolError);
+    expect(isAtD890TransmitAddress(AT_D890_CHANNEL_LOCATION.PAIR_B_ADDRESS, new Set())).toBe(false);
   });
 });

@@ -34,6 +34,12 @@ export interface WriteRadioModalProps {
   assignMm9pdyStepKeys?: boolean;
   assignMm9pdyStepKeysDescription?: string;
   onAssignMm9pdyStepKeysChange?: (checked: boolean) => void;
+  /**
+   * Channel position note (#1383): MM9PDY targets say how many positions are written;
+   * stock AT-D890UV / DM-32UV targets say the MM9PDY target writes them. A note, not a
+   * confirmation — Write is never blocked by it.
+   */
+  channelLocationNote?: string | null;
 }
 
 const CONTACT_SOURCE_OPTIONS: { value: DigitalContactsWriteSource; label: string }[] = [
@@ -65,6 +71,7 @@ export default function WriteRadioModal({
   assignMm9pdyStepKeys = false,
   assignMm9pdyStepKeysDescription,
   onAssignMm9pdyStepKeysChange,
+  channelLocationNote,
 }: WriteRadioModalProps) {
   const writeDisabled = !serialOk || busy || writeHidden;
   const contactsWriteDisabled = writeDisabled || contactSource === 'none';
@@ -88,6 +95,12 @@ export default function WriteRadioModal({
             Write codeplug
           </Button>
         </Group>
+
+        {channelLocationNote ? (
+          <Text size="xs" c="dimmed" data-testid="write-radio-channel-location-note">
+            {channelLocationNote}
+          </Text>
+        ) : null}
 
         {onAssignMm9pdyStepKeysChange ? (
           <Switch

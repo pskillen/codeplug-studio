@@ -329,6 +329,26 @@ function channelOffsetInBank(slotIndex: number): { blockIndex: number; offsetInB
   return { blockIndex, offsetInBlock: indexInBlock * DM32_CHANNEL_RECORD_SIZE };
 }
 
+/**
+ * Image offset of the 48-byte record for 1-based `slotIndex`, or `null` when the channel
+ * bank page for that slot was not discovered. Bank pages are taken in tag order.
+ */
+export function dm32ChannelRecordImageOffset(
+  ctx: Dm32ChannelDecodeContext,
+  slotIndex: number,
+): number | null {
+  if (slotIndex < 1 || slotIndex > DM32_LIMITS.CHANNEL_MAX) return null;
+  const channelBlocks = ctx.discovered
+    .filter(
+      (b) => b.metadata >= DM32_METADATA.CHANNEL_FIRST && b.metadata <= DM32_METADATA.CHANNEL_LAST,
+    )
+    .sort((a, b) => a.metadata - b.metadata);
+  const { blockIndex, offsetInBlock } = channelOffsetInBank(slotIndex);
+  const block = channelBlocks[blockIndex];
+  if (!block) return null;
+  return block.address - ctx.addressBase + offsetInBlock;
+}
+
 function writeChannelSlot(
   image: MemoryMap,
   cache: Dm32ChannelDecodeContext,

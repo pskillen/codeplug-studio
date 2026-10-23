@@ -100,6 +100,8 @@ export interface RadioHydrationHooks {
     protocol: CloneImageRadio,
     bag: import('@core/models/radioCloneHydration.ts').RadioCloneHydrationBag | undefined,
     organisation?: import('./radioWriteProjection.ts').RadioWriteOrganisation,
+    /** Slot-aligned Write projection channels (AT-D890UV channel location table). */
+    channels?: readonly import('./radioChannelDto.ts').RadioChannelDto[],
   ): void;
 }
 

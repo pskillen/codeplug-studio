@@ -46,8 +46,13 @@ export class AtD890ScriptedPipe implements BytePipe {
     }
   }
 
+  /** Latest `R` frame; kept so a read reply never rescans every frame sent so far. */
+  private lastReadFrame: Uint8Array | undefined;
+
   async write(data: Uint8Array): Promise<void> {
-    this.writes.push(data.slice());
+    const copy = data.slice();
+    this.writes.push(copy);
+    if (copy[0] === 0x52) this.lastReadFrame = copy;
     if (this.autoAckWrites && data[0] === 0x57) {
       this.bytes.push(0x06);
     }
@@ -83,8 +88,7 @@ export class AtD890ScriptedPipe implements BytePipe {
   }
 
   private tryEnqueueReadReplyFromLastRequest(): void {
-    const readFrames = this.writes.filter((w) => w[0] === 0x52);
-    const last = readFrames.at(-1);
+    const last = this.lastReadFrame;
     if (!last || last.length < 6 || !this.readResponder) return;
     const addr = ((last[1]! << 24) | (last[2]! << 16) | (last[3]! << 8) | last[4]!) >>> 0;
     const len = last[5]!;
@@ -226,17 +230,17 @@ function scriptAtD890MemoryReadResponder(
 ): void {
   pipe.readResponder = (addr, len) => {
     if (addr === D890_MAP.LocalInfo && len > maxBlock) return null;
-    const out = new Uint8Array(len);
-    for (let i = 0; i < len; i++) {
-      const absolute = addr + i;
-      let byte = 0xff;
-      for (const [start, data] of memory) {
-        if (absolute >= start && absolute < start + data.length) {
-          byte = data[absolute - start]!;
-          break;
-        }
+    // Copy each overlapping region once (first match wins, as before), not byte by byte.
+    const out = new Uint8Array(len).fill(0xff);
+    const filled = new Uint8Array(len);
+    for (const [start, data] of memory) {
+      const from = Math.max(addr, start);
+      const to = Math.min(addr + len, start + data.length);
+      for (let abs = from; abs < to; abs++) {
+        if (filled[abs - addr]) continue;
+        out[abs - addr] = data[abs - start]!;
+        filled[abs - addr] = 1;
       }
-      out[i] = byte;
     }
     return out;
   };

@@ -13,7 +13,20 @@ import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import type { MemoryMap } from '../../types.ts';
 import type { RadioWriteOrganisation } from '../../radioWriteProjection.ts';
-import { AT_D890_BLOCK_SIZE, AT_D890_MAP_SIZE, AT_D890_LIMITS, D890_MAP } from './constants.ts';
+import type { RadioChannelDto } from '../../radioChannelDto.ts';
+import type { ChannelDistanceUnit } from '@core/models/radioBuild.ts';
+import {
+  AT_D890_BLOCK_SIZE,
+  AT_D890_CHANNEL_LOCATION,
+  AT_D890_MAP_SIZE,
+  AT_D890_LIMITS,
+  D890_MAP,
+} from './constants.ts';
+import { eraseUnitBaseFor, AT_D890_ERASE_UNIT_BYTES } from './eraseUnits.ts';
+import {
+  encodeAtD890ChannelLocationTable,
+  radioChannelHasTablePosition,
+} from './channelLocationCodec.ts';
 import { listSetBits } from './bitmap.ts';
 import { assertAtD890WritableSpan, isAtD890WritableAddress } from './writableExtents.ts';
 import { syncAmAirRegionsToCache } from './amAirCodec.ts';
@@ -296,17 +309,75 @@ export type AtD890UploadBankIntent = {
    * optional-settings erase unit. Does not synthesize the settings record.
    */
   assignMm9pdyStepKeys?: boolean;
+  /**
+   * MM9PDY AT-D890UV. When set, the cache merge encodes the channel location table from the
+   * write image (after the channel encode) and stages it at the A half of the dedicated
+   * pair. Upload owns that whole erase unit: it never carries bytes over from the fresh read.
+   * Stock intents leave this unset and never touch the pair.
+   */
+  channelLocationTable?: {
+    /** Channels that carry a table position (slot-aligned DTOs). */
+    channels: readonly RadioChannelDto[];
+    unit: ChannelDistanceUnit;
+  };
 };
 
 export function atD890UploadBankIntentFromOrganisation(
   organisation?: RadioWriteOrganisation,
+  channels?: readonly RadioChannelDto[],
 ): AtD890UploadBankIntent {
   return {
     replaceAmAirBank:
       organisation?.amAirChannels !== undefined && organisation?.amZones !== undefined,
     replaceTalkgroupOrder: organisation?.talkGroups !== undefined,
     assignMm9pdyStepKeys: organisation?.assignMm9pdyStepKeys === true,
+    ...(organisation?.writeChannelLocationTable === true
+      ? {
+          channelLocationTable: {
+            channels: (channels ?? []).filter(radioChannelHasTablePosition),
+            unit: organisation.channelDistanceUnit ?? 'km',
+          },
+        }
+      : {}),
   };
+}
+
+/** Erase-unit base Studio stages the channel location table in (A half of the pair). */
+export const AT_D890_CHANNEL_LOCATION_UNIT_BASE = eraseUnitBaseFor(
+  AT_D890_CHANNEL_LOCATION.BASE_ADDRESS,
+);
+
+/** True for any address inside the dedicated location pair (A or B half). */
+export function isAtD890ChannelLocationPairAddress(address: number): boolean {
+  return (
+    address >= AT_D890_CHANNEL_LOCATION.BASE_ADDRESS &&
+    address < AT_D890_CHANNEL_LOCATION.PAIR_B_ADDRESS + AT_D890_ERASE_UNIT_BYTES
+  );
+}
+
+/** Drop every cached block in the location pair so nothing stale reaches upload. */
+export function clearChannelLocationBlocksFromCache(cache: AtD890DownloadCache): void {
+  for (const addr of [...cache.blocks.keys()]) {
+    if (isAtD890ChannelLocationPairAddress(addr)) cache.blocks.delete(addr);
+  }
+}
+
+/**
+ * Stage the channel location table for this upload. Always clears the pair from the cache
+ * first, so a stock intent never sends it and an MM9PDY intent sends only this table.
+ * Returns the staged byte length (0 when nothing was staged).
+ */
+export function stageAtD890ChannelLocationTable(
+  cache: AtD890DownloadCache,
+  image: MemoryMap,
+  intent: AtD890UploadBankIntent,
+): number {
+  clearChannelLocationBlocksFromCache(cache);
+  const table = intent.channelLocationTable;
+  if (!table) return 0;
+  const { bytes } = encodeAtD890ChannelLocationTable(image, table.channels, table.unit);
+  putWritableCacheBytes(cache, AT_D890_CHANNEL_LOCATION.BASE_ADDRESS, bytes);
+  return bytes.length;
 }
 
 /** Push modelled regions from a merged MemoryMap back into the upload cache. */
@@ -418,6 +489,8 @@ export function applyAtD890WriteImageToCache(
     syncAmAirRegionsToCache(cache, image);
     syncAmZoneRegionsToCache(cache, image);
   }
+
+  stageAtD890ChannelLocationTable(cache, image, intent);
 }
 
 export function mergeMapRegionsIntoCache(

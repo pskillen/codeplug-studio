@@ -162,3 +162,20 @@
 - Stock write keeps the `0xFF` tail
 - Decoder returns slots only when the marker and the group's check match
 - `assignMm9pdyStepKeys` now applies to the DM-32UV: P1 short 20, P2 short 21
+
+---
+
+## Channel location table (AT-D890UV, DM-32UV)
+
+**Status:** Complete on this branch (radio checks on the firmware side)
+**Issues:** [#1383](https://github.com/pskillen/codeplug-studio/issues/1383)
+**Depends on:** storage contract v1 on [anytone-d890-firmware#75](https://github.com/pskillen/anytone-d890-firmware/issues/75) and [baofeng-dm32-firmware#71](https://github.com/pskillen/baofeng-dm32-firmware/issues/71)
+
+**Delivered**
+
+- Projection: `writeChannelLocationTable` and `channelDistanceUnit` on the MM9PDY targets; slot-aligned `location` / `useLocation` on the channel DTOs (after reorder and the AM-airband split). Stock projections carry neither
+- AT-D890UV: table encoded after the channel encode, staged at `0x05C00000`, whole unit owned (nothing carried over from the fresh read), allow-list extent, verify region, write-role and coverage rows
+- DM-32UV: twelve tag pages, live pages reused in place, never a duplicate tag, created only with a position, rewritten to clear; live check before Write
+- Build export setting for the distance unit (km default, miles)
+- Write radio popup note and `info` warnings (MM9PDY counts; stock D890/DM32 Web Serial and file exports point at the MM9PDY target)
+- Tests reuse the firmware repos' v1 golden vectors

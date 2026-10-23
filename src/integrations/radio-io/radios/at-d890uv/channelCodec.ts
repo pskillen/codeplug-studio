@@ -94,7 +94,8 @@ function copyPreservedChannelBytes(data: Uint8Array, prior: Uint8Array): void {
   data[0x34] = (data[0x34]! & ~BYTE_34_PRESERVE_MASK) | (prior[0x34]! & BYTE_34_PRESERVE_MASK);
 }
 
-function readCombinedChannelRecord(image: MemoryMap, idx: number): Uint8Array {
+/** Primary and secondary halves of channel `idx` (0-based) as one `0x80` record. */
+export function readCombinedChannelRecord(image: MemoryMap, idx: number): Uint8Array {
   const combined = new Uint8Array(AT_D890_LIMITS.CHANNEL_RECORD_SIZE);
   combined.set(image.get(channelPrimaryAddress(idx), AT_D890_LIMITS.CHANNEL_CHUNK_SIZE), 0);
   combined.set(

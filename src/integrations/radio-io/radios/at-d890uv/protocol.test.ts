@@ -17,7 +17,11 @@ import {
   indexOfFirstAtD890WriteFrame,
   writePayloadAt,
   enableAtD890AutoWriteAck,
+  collectAtD890ReadRequestAddresses,
 } from './__fixtures__/scriptedPipe.ts';
+import { AT_D890_CHANNEL_LOCATION } from './constants.ts';
+import { atD890UploadBankIntentFromOrganisation } from './memory.ts';
+import type { RadioChannelDto } from '../../radioChannelDto.ts';
 import { labelForAtD890SentinelId } from './sentinelVerify.ts';
 import { AT_D890_SAFE_SKIP_WRITE_ADDR } from './constants.ts';
 import { encodeBcdFrequencyHz } from './bcd.ts';
@@ -580,5 +584,88 @@ describe('AtD890uvProtocol', () => {
         },
       ]);
     }
+  }, 20_000);
+});
+
+describe('AtD890uvProtocol MM9PDY channel location table (#1383)', () => {
+  function locationUnitWithFactoryPattern(): Uint8Array {
+    const unit = makeAtD890EraseUnitBuffer();
+    unit.fill(0x55, 0, 0x10);
+    unit.set([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09], 0x1000);
+    unit.fill(0xab, 0x2000, 0x2010);
+    return unit;
+  }
+
+  function located(): RadioChannelDto {
+    return {
+      slotIndex: 1,
+      empty: false,
+      wireName: '',
+      rxHz: 145_520_000,
+      txHz: 145_520_000,
+      rxTone: { kind: 'none' },
+      txTone: { kind: 'none' },
+      powerPercent: null,
+      bandwidth: 'NFM',
+      useLocation: true,
+      location: { lat: 55.852056, lon: -4.259463 },
+    };
+  }
+
+  it('writes the header and every slot, owns the unit and never carries over the test pattern', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    const memory = channelUploadMemory();
+    memory.set(AT_D890_CHANNEL_LOCATION.BASE_ADDRESS, locationUnitWithFactoryPattern());
+    scriptAtD890UploadReadResponder(pipe, memory);
+    const image = seedChannelZeroUpload(radio);
+    radio.setUploadBankIntent(
+      atD890UploadBankIntentFromOrganisation(
+        { writeChannelLocationTable: true, channelDistanceUnit: 'mi' },
+        [located()],
+      ),
+    );
+    enableAtD890AutoWriteAck(pipe);
+
+    await radio.upload(image, {});
+
+    const base = AT_D890_CHANNEL_LOCATION.BASE_ADDRESS;
+    const inPair = collectAtD890WriteDataAddresses(pipe).filter(
+      (a) => a >= base && a < AT_D890_CHANNEL_LOCATION.PAIR_B_ADDRESS + 0x4_0000,
+    );
+    expect(inPair).toEqual([base, base + 0x10, base + 0x20]);
+    const header = writePayloadAt(pipe, base)!;
+    expect(new TextDecoder().decode(header.subarray(0, 4))).toBe('LOC1');
+    expect(header[6]).toBe(1);
+    expect(header[8]).toBe(1);
+    const entry = writePayloadAt(pipe, base + 0x20)!;
+    expect(entry[14]).toBe(1);
+    expect(entry.subarray(8, 12)).toEqual(encodeBcdFrequencyHz(145_520_000));
+  }, 20_000);
+
+  it('leaves the pair alone on a stock intent, even if the cache holds stale table blocks', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    const memory = channelUploadMemory();
+    memory.set(AT_D890_CHANNEL_LOCATION.BASE_ADDRESS, locationUnitWithFactoryPattern());
+    scriptAtD890UploadReadResponder(pipe, memory);
+    const image = seedChannelZeroUpload(radio);
+    radio
+      .getDownloadCache()!
+      .blocks.set(AT_D890_CHANNEL_LOCATION.BASE_ADDRESS, new Uint8Array(16).fill(0x11));
+    radio.setUploadBankIntent(atD890UploadBankIntentFromOrganisation({}, [located()]));
+    enableAtD890AutoWriteAck(pipe);
+
+    await radio.upload(image, {});
+
+    const base = AT_D890_CHANNEL_LOCATION.BASE_ADDRESS;
+    const touches = (a: number) =>
+      a >= base && a < AT_D890_CHANNEL_LOCATION.PAIR_B_ADDRESS + 0x4_0000;
+    expect(collectAtD890WriteDataAddresses(pipe).filter(touches)).toEqual([]);
+    expect(collectAtD890ReadRequestAddresses(pipe).filter(touches)).toEqual([]);
   }, 20_000);
 });

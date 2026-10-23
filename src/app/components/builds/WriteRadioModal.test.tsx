@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import type { DigitalContactsWriteSource } from '@core/domain/digitalIdDirectoryProjection.ts';
 import { DesignSystemV2Provider } from '../v2/index.ts';
 import WriteRadioModal from './WriteRadioModal.tsx';
+import { channelLocationWriteRadioNote } from '@core/radio-targets/channelLocationNotes.ts';
 
 function renderModal(overrides: Partial<ComponentProps<typeof WriteRadioModal>> = {}) {
   const props = {
@@ -124,5 +125,46 @@ describe('WriteRadioModal (#1121)', () => {
     renderModal({ kepsLastUpdatedIso: null });
     expect(screen.getByText(/Never refreshed/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Update in Library' })).toBeInTheDocument();
+  });
+});
+
+describe('WriteRadioModal channel position notes (#1383)', () => {
+  const counts = { written: 3, noPosition: 1, useLocationOff: 0, overCapacity: 0 };
+
+  it('shows the written count on the MM9PDY targets', () => {
+    for (const target of ['anytone-at-d890uv-mm9pdy', 'baofeng-dm32uv-mm9pdy']) {
+      const note = channelLocationWriteRadioNote(target, { counts, locatedChannels: 3 });
+      const { unmount } = renderModal({ channelLocationNote: note });
+      expect(screen.getByTestId('write-radio-channel-location-note')).toHaveTextContent(
+        /3 channel positions are written\. A later write from the official CPS or a stock target/,
+      );
+      expect(screen.getByRole('button', { name: 'Write codeplug' })).toBeEnabled();
+      unmount();
+    }
+  });
+
+  it('points stock AT-D890UV and DM-32UV targets at the MM9PDY target', () => {
+    for (const target of ['anytone-at-d890uv', 'baofeng-dm32uv']) {
+      const note = channelLocationWriteRadioNote(target, { locatedChannels: 2 });
+      const { unmount } = renderModal({ channelLocationNote: note });
+      expect(screen.getByTestId('write-radio-channel-location-note')).toHaveTextContent(
+        /2 channels in this build have a position\. .*MM9PDY modded firmware target writes them/,
+      );
+      unmount();
+    }
+  });
+
+  it('shows nothing without located channels or on targets with no MM9PDY sibling', () => {
+    expect(
+      channelLocationWriteRadioNote('anytone-at-d890uv-mm9pdy', {
+        counts: { ...counts, written: 0 },
+        locatedChannels: 0,
+      }),
+    ).toBeNull();
+    expect(channelLocationWriteRadioNote('anytone-at-d890uv', { locatedChannels: 0 })).toBeNull();
+    expect(channelLocationWriteRadioNote('baofeng-dm1701', { locatedChannels: 4 })).toBeNull();
+    expect(channelLocationWriteRadioNote('baofeng-uv5r-mini', { locatedChannels: 4 })).toBeNull();
+    renderModal({ channelLocationNote: null });
+    expect(screen.queryByTestId('write-radio-channel-location-note')).not.toBeInTheDocument();
   });
 });

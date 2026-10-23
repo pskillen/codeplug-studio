@@ -7,7 +7,12 @@
  */
 
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
-import { AT_D890_LIMITS, D890_MAP } from './constants.ts';
+import {
+  AT_D890_CHANNEL_LOCATION,
+  AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES,
+  AT_D890_LIMITS,
+  D890_MAP,
+} from './constants.ts';
 
 export type AtD890WriteRole = 'replaced' | 'kept';
 
@@ -23,6 +28,14 @@ export const AT_D890_WRITTEN_FROM_BUILD_LABELS: readonly string[] = [
   'AM airband channels',
   'AM airband zones',
 ] as const;
+
+function inChannelLocationTable(address: number): boolean {
+  return inExclusiveSpan(
+    address,
+    AT_D890_CHANNEL_LOCATION.BASE_ADDRESS,
+    AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES,
+  );
+}
 
 export const AT_D890_DIGITAL_CONTACTS_WRITE_GAP =
   'Boot images, analog address book, and other unmodelled regions stay as they were on the radio when you Write. Use Codeplug Write projection above for the digital contact bank.';
@@ -155,6 +168,7 @@ export function atD890RegionLabel(address: number): string {
   if (inBank(address, D890_MAP.AmZoneData, D890_MAP.AmZoneDataStride, D890_MAP.AmZoneCount)) {
     return 'AM airband zones';
   }
+  if (inChannelLocationTable(address)) return 'Channel location table (MM9PDY)';
   return 'Other retained region';
 }
 
@@ -191,5 +205,6 @@ export function atD890WriteRole(address: number): AtD890WriteRole {
   if (inExclusiveSpan(address, D890_MAP.AprsReceiveFilters, D890_MAP.AprsReceiveFiltersLength)) {
     return 'replaced';
   }
+  if (inChannelLocationTable(address)) return 'replaced';
   return 'kept';
 }

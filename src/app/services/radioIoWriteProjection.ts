@@ -64,6 +64,16 @@ import {
 } from '@core/import-export/scanInclusion/index.ts';
 import { getFormatExportDefaults } from '@core/import-export/registry.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
+import { channelHasUsableLocation, geoPointIsUsable } from '@core/domain/channelLocation.ts';
+import {
+  countChannelsWithUsableLocation,
+  emptyChannelLocationWriteCounts,
+  pushChannelLocationWriteSummary,
+  pushStockChannelLocationNote,
+  type ChannelLocationWriteCounts,
+} from '@core/radio-targets/channelLocationNotes.ts';
+import { AT_D890_CHANNEL_LOCATION } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
+import { DM32_CHANNEL_LOCATION_CAPACITY } from '@integrations/radio-io/radios/dm32uv/channelLocationCodec.ts';
 import type {
   RadioAmAirChannelDto,
   RadioAmZoneDto,
@@ -1354,6 +1364,64 @@ function buildAtD890AmAirOrganisation(
   return { amAirChannels, amZones };
 }
 
+/**
+ * MM9PDY channel location table: stamp `location` / `useLocation` on each slot DTO from its
+ * source library channel, after reorder (slot ↔ source via `numbersBySourceChannelId`).
+ * Only slots that get a table entry carry a position; every other DTO has both cleared.
+ */
+function stampMm9pdyChannelLocations(
+  channels: readonly RadioChannelDto[],
+  assembled: AssembledBuild,
+  numbersBySourceChannelId: ReadonlyMap<string, readonly number[]>,
+  capacity: number,
+): { channels: RadioChannelDto[]; counts: ChannelLocationWriteCounts } {
+  const entityBySlot = new Map<number, Channel>();
+  const entityById = new Map(assembled.channels.map((row) => [row.entity.id, row.entity]));
+  for (const [sourceId, numbers] of numbersBySourceChannelId) {
+    const entity = entityById.get(sourceId);
+    if (!entity) continue;
+    for (const n of numbers) entityBySlot.set(n, entity);
+  }
+  const counts = emptyChannelLocationWriteCounts();
+  const stamped = channels.map((ch) => {
+    const { location: _location, useLocation: _useLocation, ...rest } = ch;
+    void _location;
+    void _useLocation;
+    if (ch.empty) return rest;
+    const entity = entityBySlot.get(ch.slotIndex);
+    if (!entity || !geoPointIsUsable(entity.location)) {
+      counts.noPosition += 1;
+      return rest;
+    }
+    if (!channelHasUsableLocation(entity)) {
+      counts.useLocationOff += 1;
+      return rest;
+    }
+    if (ch.slotIndex > capacity) {
+      counts.overCapacity += 1;
+      return rest;
+    }
+    counts.written += 1;
+    return {
+      ...rest,
+      location: { lat: entity.location!.lat, lon: entity.location!.lon },
+      useLocation: true,
+    };
+  });
+  return { channels: stamped, counts };
+}
+
+/** Strip any position from stock D890 / DM32 DTOs (the stock codec never writes one). */
+function withoutChannelLocations(channels: readonly RadioChannelDto[]): RadioChannelDto[] {
+  return channels.map((ch) => {
+    if (ch.location === undefined && ch.useLocation === undefined) return ch;
+    const { location: _location, useLocation: _useLocation, ...rest } = ch;
+    void _location;
+    void _useLocation;
+    return rest;
+  });
+}
+
 export function buildRadioWriteProjection(
   assembled: AssembledBuild,
   build: RadioBuild,
@@ -1543,10 +1611,48 @@ export function buildRadioWriteProjection(
     );
   }
 
+  let channelLocations: RadioWriteProjection['channelLocations'];
+  if (isDm32RadioIoProfileId(egress.profileId) || isAtD890RadioIoProfileId(egress.profileId)) {
+    const mm9pdy =
+      isMm9pdyDm32RadioIoProfileId(egress.profileId) ||
+      isMm9pdyAtD890RadioIoProfileId(egress.profileId);
+    const locatedChannels = countChannelsWithUsableLocation(
+      projectionAssembled.channels.map((row) => row.entity),
+    );
+    if (mm9pdy) {
+      const capacity = isAtD890RadioIoProfileId(egress.profileId)
+        ? AT_D890_CHANNEL_LOCATION.MAX_ENTRIES
+        : DM32_CHANNEL_LOCATION_CAPACITY;
+      const stamped = stampMm9pdyChannelLocations(
+        channels,
+        projectionAssembled,
+        numbersBySourceChannelId,
+        capacity,
+      );
+      channels = stamped.channels;
+      organisation = {
+        ...organisation,
+        writeChannelLocationTable: true,
+        channelDistanceUnit: build.exportSettings?.channelDistanceUnit ?? 'km',
+      };
+      pushChannelLocationWriteSummary(warnings, stamped.counts);
+      channelLocations = { counts: stamped.counts, locatedChannels };
+    } else {
+      channels = withoutChannelLocations(channels);
+      pushStockChannelLocationNote(
+        warnings,
+        build.radioTargetId,
+        projectionAssembled.channels.map((row) => row.entity),
+      );
+      channelLocations = { locatedChannels };
+    }
+  }
+
   return {
     channels,
     organisation,
     numbersBySourceChannelId,
     warnings,
+    ...(channelLocations ? { channelLocations } : {}),
   };
 }

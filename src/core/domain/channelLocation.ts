@@ -165,3 +165,23 @@ export function locationConflict(
   if (!fromLocator) return false;
   return !coordsRoughlyMatch(location, fromLocator);
 }
+
+/**
+ * True when the channel carries a position a radio could use: *Use location* is on and the
+ * stored coordinates are finite, in range, and not the `0, 0` "unset" sentinel.
+ * The locator alone does not count — import and save already derive `location` from it.
+ */
+export function channelHasUsableLocation(
+  channel: Pick<Channel, 'location' | 'useLocation'>,
+): boolean {
+  return channel.useLocation === true && geoPointIsUsable(channel.location);
+}
+
+/** Finite, in-range WGS84 coordinates that are not the `0, 0` sentinel. */
+export function geoPointIsUsable(point: GeoPoint | null | undefined): point is GeoPoint {
+  if (!point) return false;
+  const { lat, lon } = point;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
+  return !(lat === 0 && lon === 0);
+}

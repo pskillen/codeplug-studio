@@ -68,8 +68,14 @@ function ShortenedGroupPanel({ group }: { group: WireNameShorteningGroup }) {
 export default function ExportWarningsAlert({ warnings }: ExportWarningsAlertProps) {
   if (warnings.length === 0) return null;
 
-  const { general, unlinkedGroup, memberCapGroups, shortenedProblemGroups, shortenedInfoGroups } =
-    formatExportWarnings(warnings);
+  const {
+    general,
+    generalInfo,
+    unlinkedGroup,
+    memberCapGroups,
+    shortenedProblemGroups,
+    shortenedInfoGroups,
+  } = formatExportWarnings(warnings);
 
   const hasProblems =
     general.length > 0 ||
@@ -77,8 +83,9 @@ export default function ExportWarningsAlert({ warnings }: ExportWarningsAlertPro
     memberCapGroups.length > 0 ||
     shortenedProblemGroups.length > 0;
   const hasInfo = shortenedInfoGroups.length > 0;
+  const hasNotes = generalInfo.length > 0;
 
-  if (!hasProblems && !hasInfo) return null;
+  if (!hasProblems && !hasInfo && !hasNotes) return null;
 
   return (
     <Stack gap="sm">
@@ -142,6 +149,17 @@ export default function ExportWarningsAlert({ warnings }: ExportWarningsAlertPro
                 })}
               </Accordion>
             ) : null}
+          </Stack>
+        </Alert>
+      ) : null}
+      {hasNotes ? (
+        <Alert color="blue" variant="light" title="Notes" data-testid="export-info-notes">
+          <Stack gap={4}>
+            {generalInfo.map((note, index) => (
+              <Text key={`note-${index}`} size="sm">
+                {note}
+              </Text>
+            ))}
           </Stack>
         </Alert>
       ) : null}

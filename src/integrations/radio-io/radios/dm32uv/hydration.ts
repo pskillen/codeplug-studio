@@ -26,6 +26,7 @@ import {
 import { encodeRadioIdsIntoDm32Image } from './radioIdCodec.ts';
 import { encodeAprsIntoDm32Image } from './aprsCodec.ts';
 import { classifyDm32Metadata } from './memory.ts';
+import { encodeDm32ChannelLocationPagesIntoImage } from './channelLocationCodec.ts';
 import type { Dm32DownloadCache } from './protocol.ts';
 
 export const DM32UV_MODEL_ID = DM32_MODEL_IDS[0];
@@ -201,6 +202,21 @@ export function encodeDm32uvProjectionOntoImage(
     });
     // Addresses only. Do not insert the stamped tag into cache.blocks before remap.
     cache.zoneWriteAddresses = claimedAddresses;
+  }
+  if (organisation?.writeChannelLocationTable === true) {
+    // MM9PDY only, after the channel encode so the fingerprint uses the encoded record.
+    // Zone claims run first; their pages are never reused for a location page.
+    const result = encodeDm32ChannelLocationPagesIntoImage(
+      next,
+      ctx,
+      channels,
+      organisation.channelDistanceUnit ?? 'km',
+      new Set(cache.zoneWriteAddresses ?? []),
+    );
+    cache.locationWritePages = result.pages;
+  } else {
+    // Stock: never touch the location tags.
+    cache.locationWritePages = undefined;
   }
   if (organisation?.scanLists) {
     next = encodeScanListsIntoDm32Image(next, ctx, organisation.scanLists);

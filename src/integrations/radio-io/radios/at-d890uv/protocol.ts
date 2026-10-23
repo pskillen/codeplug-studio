@@ -20,6 +20,7 @@ import {
   amAirDataAddress,
   amZoneDataAddress,
   alignedSpanForAtD890Region,
+  AT_D890_CHANNEL_LOCATION_UNIT_BASE,
   type AtD890DownloadCache,
   type AtD890UploadBankIntent,
 } from './memory.ts';
@@ -50,6 +51,7 @@ import {
   type AtD890SentinelSnapshot,
 } from './sentinelVerify.ts';
 import {
+  AT_D890_ERASE_UNIT_BYTES,
   eraseUnitBaseFor,
   isAtD890EraseUnitBookkeepingAddress,
   listTouchedEraseUnits,
@@ -610,6 +612,13 @@ export class AtD890uvProtocol implements CloneImageRadio {
       touchedUnits.push(stepKeyUnit);
       touchedUnitSet.add(stepKeyUnit);
     }
+    const ownsLocationUnit = this.uploadBankIntent.channelLocationTable !== undefined;
+    if (!ownsLocationUnit && touchedUnitSet.has(AT_D890_CHANNEL_LOCATION_UNIT_BASE)) {
+      // Stock intents clear the pair from the cache; reaching here is a staging bug.
+      throw new RadioProtocolError(
+        'AT-D890UV stock Write must not touch the MM9PDY channel location table',
+      );
+    }
     const transmitGuard = (address: number) => assertAtD890TransmitAddress(address, touchedUnitSet);
 
     try {
@@ -657,6 +666,12 @@ export class AtD890uvProtocol implements CloneImageRadio {
 
       const mergedUnits = new Map<number, Uint8Array>();
       for (const [base, data] of freshUnits) {
+        if (ownsLocationUnit && base === AT_D890_CHANNEL_LOCATION_UNIT_BASE) {
+          // Studio owns this whole unit. Start from erased flash, never from the fresh
+          // read: the factory test pattern (and any older table) must not be carried over.
+          mergedUnits.set(base, new Uint8Array(AT_D890_ERASE_UNIT_BYTES).fill(0xff));
+          continue;
+        }
         mergedUnits.set(base, data.slice());
       }
       for (const unitBase of touchedUnits) {

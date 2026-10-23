@@ -18,7 +18,7 @@
  * analogue-contact count at `0x06` `+0x1FF` is not projection-authored.
  */
 
-import { DM32_METADATA } from './constants.ts';
+import { DM32_CHANNEL_LOCATION, DM32_METADATA } from './constants.ts';
 import type { Dm32BlockType } from './memory.ts';
 import { channelBlocksNeeded } from './memory.ts';
 
@@ -55,7 +55,12 @@ export const DM32_POWER_CYCLE_AFTER_SESSION_NOTE =
   'Power the radio off and on before using it or changing it on the keypad. Until then it is still using the page map from before this session, and the next keypad edit can erase a page that was just written.';
 
 /** Operator-facing block label from metadata byte (no hex in output). */
+function isChannelLocationTag(metadata: number): boolean {
+  return (DM32_CHANNEL_LOCATION.TAGS as readonly number[]).includes(metadata);
+}
+
 export function dm32BlockLabel(metadata: number, type: Dm32BlockType): string {
+  if (isChannelLocationTag(metadata)) return 'Channel positions (MM9PDY)';
   if (metadata >= DM32_METADATA.CHANNEL_FIRST && metadata <= DM32_METADATA.CHANNEL_LAST) {
     return metadata === DM32_METADATA.CHANNEL_FIRST ? 'Channel bank (first)' : 'Channel bank';
   }
@@ -135,6 +140,8 @@ export function dm32WriteRole(
   if (metadata === DM32_METADATA.TX_CONTACT_LOW || metadata === DM32_METADATA.TX_CONTACT_HIGH) {
     return 'replaced';
   }
+  // MM9PDY channel location pages: only the MM9PDY Write stages them.
+  if (isChannelLocationTag(metadata)) return 'replaced';
   if (metadata === DM32_METADATA.TALK_GROUPS || metadata === DM32_METADATA.METADATA_0x0B) {
     return 'replaced';
   }

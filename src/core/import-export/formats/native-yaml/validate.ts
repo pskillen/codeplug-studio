@@ -1161,6 +1161,13 @@ function parseExportSettings(raw: unknown, label: string): BuildExportSettings |
       `${label}.assignMm9pdyStepKeys`,
     );
   }
+  if (record.channelDistanceUnit !== undefined && record.channelDistanceUnit !== null) {
+    const value = expectString(record.channelDistanceUnit, `${label}.channelDistanceUnit`);
+    if (value !== 'km' && value !== 'mi') {
+      throw new NativeYamlImportError(`${label}.channelDistanceUnit is invalid: ${value}`);
+    }
+    settings.channelDistanceUnit = value;
+  }
   return Object.keys(settings).length > 0 ? settings : undefined;
 }
 

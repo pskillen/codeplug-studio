@@ -28,6 +28,7 @@ Build → Export **Write radio** popup: always **Write codeplug**, plus radio-ap
 | `onWriteKeps`                  | `() => void`                 | Keps-only write                                                   |
 | `assignMm9pdyStepKeys`         | `boolean`                    | MM9PDY AT-D890UV: persisted TG step-key flag                      |
 | `onAssignMm9pdyStepKeysChange` | `(checked: boolean) => void` | Present only for that radio target; same field as export settings |
+| `channelLocationNote`          | `string \| null`             | Channel position note (#1383); from `channelLocationNoteForWrite` |
 
 ## Usage
 
@@ -62,6 +63,7 @@ Build → Export **Write radio** popup: always **Write codeplug**, plus radio-ap
 - Empty RadioID shadow warning is owned by `BuildRadioIoPanel`, not this modal.
 - When `supportsKeps`, shows keps last-updated (`KepsLastUpdated`) with a link to Library → Satellite Keps; preview tab link unchanged.
 - When `onAssignMm9pdyStepKeysChange` is set, a switch under Write codeplug assigns TG next (P1 short, firmware 14, CPS item 15 Record) and TG previous (P2 short, firmware 13, CPS item 14 Record Switch). The radio's own key menu shows the MM9PDY names. The switch writes `exportSettings.assignMm9pdyStepKeys` on the build — the same field as the export settings page. Unset or off leaves the key bytes as read.
+- `channelLocationNote` (#1383): a dimmed note under Write codeplug, never a confirmation. MM9PDY AT-D890UV / DM-32UV targets show how many channel positions are written and that a later official-CPS or stock write may leave them out of date. Stock AT-D890UV / DM-32UV targets with located channels say the MM9PDY target writes positions. `BuildRadioIoPanel` computes it with `channelLocationNoteForWrite` when the popup opens; copy lives in `core/radio-targets/channelLocationNotes.ts`.
 
 ## Related
 

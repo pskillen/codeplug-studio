@@ -230,6 +230,33 @@ export const AT_D890_SATELLITE = {
   RECORD_STRIDE: 0x200,
 } as const;
 
+/**
+ * MM9PDY channel location table (storage contract v1, owned by the firmware repo:
+ * pskillen/anytone-d890-firmware#75). Deliberately **not** part of `D890_MAP`: stock code,
+ * stock erase lists and the official CPS never name this pair. Studio addresses the A
+ * half only; the radio's unit walk at `END` promotes the pending copy.
+ *
+ * Sits above {@link AT_D890_MAP_SIZE}, so it never lives in the write `MemoryMap`.
+ * The upload stages it straight into the sparse cache.
+ */
+export const AT_D890_CHANNEL_LOCATION = {
+  /** A half of the dedicated `0x40000` erase-unit pair. */
+  BASE_ADDRESS: 0x5c0_0000,
+  /** B half. Studio never addresses it. */
+  PAIR_B_ADDRESS: 0x5c4_0000,
+  HEADER_BYTES: 0x20,
+  ENTRY_BYTES: 16,
+  /** One entry per memory channel (VFOs excluded). */
+  MAX_ENTRIES: AT_D890UV_LIMITS.CHANNEL_MAX,
+  MAGIC: 'LOC1',
+  VERSION: 1,
+} as const;
+
+/** Header plus every possible entry: the span Studio may write (`0xfa20`). */
+export const AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES =
+  AT_D890_CHANNEL_LOCATION.HEADER_BYTES +
+  AT_D890_CHANNEL_LOCATION.ENTRY_BYTES * AT_D890_CHANNEL_LOCATION.MAX_ENTRIES;
+
 /** Virtual MemoryMap span (absolute addresses; base 0). */
 export const AT_D890_MAP_SIZE = 0x500_0000;
 

@@ -135,3 +135,19 @@ export const DM32_FACTORY_SECTOR_LENGTH = 4096;
 export const DM32_FACTORY_SECTOR_READ_FRAME = new Uint8Array([0x47, 0x00, 0x00, 0x00, 0x00, 0x10]);
 /** Reply opcode. Receiving this is required. Sending it erases the sector. */
 export const DM32_FACTORY_SECTOR_REPLY_OPCODE = 0x53;
+
+/**
+ * MM9PDY channel location pages (storage contract v1, owned by the firmware repo:
+ * pskillen/baofeng-dm32-firmware#71). Tags the stock firmware never reads and the official
+ * CPS does not move. Page *k* uses `TAGS[k]` and covers channels `1 + 339k .. 339(k + 1)`.
+ */
+export const DM32_CHANNEL_LOCATION = {
+  TAGS: [0x70, 0x71, 0x72, 0x73, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x7b, 0x7d, 0x7e],
+  MAGIC: 'MLOC',
+  VERSION: 0x01,
+  HEADER_BYTES: 16,
+  ENTRY_BYTES: 0x0c,
+  ENTRIES_PER_PAGE: 339,
+  /** Fingerprint span of the channel record: 16-byte name + 4-byte BCD RX frequency. */
+  FINGERPRINT_BYTES: 0x14,
+} as const;

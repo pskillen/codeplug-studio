@@ -148,8 +148,10 @@ export {
   type AtD890ProbeInspectResult,
 } from './eraseUnitProbeRunner.ts';
 export {
+  AT_D890_MM9PDY_WRITE_COVERAGE_ROWS,
   AT_D890_WRITE_COVERAGE_ROWS,
   AT_D890_WRITE_COVERAGE_STATUS_LABEL,
+  atD890WriteCoverageRows,
   type AtD890WriteCoverageRow,
   type AtD890WriteCoverageStatus,
 } from './writeCoverage.ts';
@@ -192,3 +194,11 @@ export {
   type AtD890WriteVerifyDebugContext,
   type AtD890WriteVerifyResult,
 } from './writeMemoryVerify.ts';
+export {
+  decodeAtD890ChannelLocationTable,
+  encodeAtD890ChannelLocationEntry,
+  encodeAtD890ChannelLocationTable,
+  radioChannelHasTablePosition,
+  type AtD890ChannelLocationEntry,
+  type AtD890ChannelLocationTable,
+} from './channelLocationCodec.ts';

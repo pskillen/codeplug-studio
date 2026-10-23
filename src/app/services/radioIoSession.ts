@@ -5,6 +5,7 @@
 
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
+import { channelLocationWriteRadioNote } from '@core/radio-targets/channelLocationNotes.ts';
 import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
@@ -574,6 +575,26 @@ function openGd77WriteWarnings(session: RadioSession): ExportWarning[] {
 }
 
 /**
+ * Write radio popup note about MM9PDY channel positions (#1383), or `null`.
+ * Runs the same assemble + Write projection as Write, without contacts or a session.
+ */
+export function channelLocationNoteForWrite(
+  build: RadioBuild,
+  egress: EgressPath,
+  library: LibrarySlice,
+): string | null {
+  if (!isAtD890RadioIoProfileId(egress.profileId) && !isDm32RadioIoProfileId(egress.profileId)) {
+    return null;
+  }
+  const assembled = assemble(build, library, {
+    formatId: egress.formatId,
+    profileId: egress.profileId,
+  });
+  const projection = buildRadioWriteProjection(assembled, build, library, egress);
+  return channelLocationWriteRadioNote(build.radioTargetId, projection.channelLocations);
+}
+
+/**
  * Assemble build → overlay onto this PROGRAM session → upload.
  */
 export async function writeBuildToRadio(
@@ -589,6 +610,7 @@ export async function writeBuildToRadio(
     session.radio,
     hydration ?? undefined,
     prepared.organisation,
+    prepared.channels,
   );
   const image = await resolveRadioWriteImageForUpload(session, egress, prepared, opts);
   setCachedImage(session, image);
@@ -619,6 +641,7 @@ export async function uploadPreparedRadioWrite(
     session.radio,
     hydration ?? undefined,
     opts?.organisation,
+    opts?.channels,
   );
   const resolved = await resolveRadioWriteImageForUpload(
     session,
