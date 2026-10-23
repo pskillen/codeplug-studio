@@ -589,6 +589,7 @@ export async function writeBuildToRadio(
     session.radio,
     hydration ?? undefined,
     prepared.organisation,
+    prepared.channels,
   );
   const image = await resolveRadioWriteImageForUpload(session, egress, prepared, opts);
   setCachedImage(session, image);
@@ -619,6 +620,7 @@ export async function uploadPreparedRadioWrite(
     session.radio,
     hydration ?? undefined,
     opts?.organisation,
+    opts?.channels,
   );
   const resolved = await resolveRadioWriteImageForUpload(
     session,

@@ -39,4 +39,18 @@ export const AT_D890_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow[] = [
   { label: 'Analog address book', status: 'planned' },
   { label: 'Local info and band settings', status: 'leftAlone' },
   { label: 'Optional settings (password, UI language)', status: 'preserved' },
+  { label: 'Channel positions (MM9PDY firmware)', status: 'leftAlone' },
 ] as const;
+
+/**
+ * MM9PDY target rows: the same table, except channel positions are written from your
+ * library (channels with a position and *Use location* on).
+ */
+export const AT_D890_MM9PDY_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow[] =
+  AT_D890_WRITE_COVERAGE_ROWS.map((row) =>
+    row.label === 'Channel positions (MM9PDY firmware)' ? { ...row, status: 'written' } : row,
+  );
+
+export function atD890WriteCoverageRows(mm9pdy: boolean): readonly AtD890WriteCoverageRow[] {
+  return mm9pdy ? AT_D890_MM9PDY_WRITE_COVERAGE_ROWS : AT_D890_WRITE_COVERAGE_ROWS;
+}

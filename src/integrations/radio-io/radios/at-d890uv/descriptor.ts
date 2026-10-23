@@ -49,9 +49,11 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
       return extractAtD890uvHydration(image, meta);
     },
     mergeChannelsIntoHydration: mergeChannelsIntoAtD890uvHydration,
-    seedProtocolForUpload: (protocol, _bag, organisation) => {
+    seedProtocolForUpload: (protocol, _bag, organisation, channels) => {
       if (protocol instanceof AtD890uvProtocol) {
-        protocol.setUploadBankIntent(atD890UploadBankIntentFromOrganisation(organisation));
+        protocol.setUploadBankIntent(
+          atD890UploadBankIntentFromOrganisation(organisation, channels),
+        );
       }
     },
   },

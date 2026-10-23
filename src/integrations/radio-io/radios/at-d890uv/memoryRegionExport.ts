@@ -17,6 +17,8 @@ import {
 import { negotiateAtD890ReadBlockSize } from './linkProbe.ts';
 import {
   AT_D890_BLOCK_SIZE,
+  AT_D890_CHANNEL_LOCATION,
+  AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES,
   AT_D890_DUMP_RX_GROUP_LISTS,
   AT_D890_DUMP_SCAN_LISTS,
   AT_D890_DUMP_ZONES,
@@ -59,6 +61,7 @@ export const AT_D890_MEMORY_REGION_GROUPS: readonly AtD890MemoryRegionGroup[] = 
   { id: 'receiveGroups', label: 'RX groups' },
   { id: 'radioIds', label: 'Radio IDs' },
   { id: 'airband', label: 'Airband (AM channels + zones)' },
+  { id: 'channelLocations', label: 'Channel locations (MM9PDY firmware)' },
   { id: 'aliasProbe', label: 'Alias probe (+0x40000 windows) — B1/B2 diagnostic' },
 ];
 
@@ -316,6 +319,15 @@ export const AT_D890_MEMORY_REGIONS: readonly AtD890MemoryRegion[] = [
     'airband',
     D890_MAP.AmZoneData,
     D890_MAP.AmZoneCount * D890_MAP.AmZoneDataStride,
+  ),
+  // MM9PDY channel location table (A half). Only MM9PDY Writes stage it; reading it is
+  // harmless on stock firmware.
+  region(
+    'channelLocationTable',
+    'Channel location table (MM9PDY)',
+    'channelLocations',
+    AT_D890_CHANNEL_LOCATION.BASE_ADDRESS,
+    AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES,
   ),
 ];
 

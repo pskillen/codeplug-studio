@@ -9,6 +9,7 @@ import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
 import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
+  isMm9pdyAtD890RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
@@ -589,7 +590,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         </Text>
       ) : null}
       {isAtD890Write ? (
-        <AtD890WriteCoverageTable buildId={build.id} hasHydration={hasHydration} />
+        <AtD890WriteCoverageTable
+          buildId={build.id}
+          hasHydration={hasHydration}
+          mm9pdy={isMm9pdyAtD890RadioIoProfileId(egress.profileId)}
+        />
       ) : null}
       <Group gap="xs">
         {!writeHidden ? (

@@ -12,6 +12,8 @@ import {
 } from './channelDataGeometry.ts';
 import { eraseUnitBaseFor, isAtD890EraseUnitBookkeepingAddress } from './eraseUnits.ts';
 import {
+  AT_D890_CHANNEL_LOCATION,
+  AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES,
   AT_D890_LIMITS,
   AT_D890_SAFE_SKIP_WRITE_ADDR,
   AT_D890_SATELLITE,
@@ -141,6 +143,15 @@ export const AT_D890_WRITABLE_EXTENTS: readonly AtD890MemoryExtent[] = [
     id: 'SatelliteData',
     start: AT_D890_SATELLITE.BASE_ADDRESS,
     length: AT_D890_SATELLITE.RECORD_STRIDE * AT_D890_LIMITS.MAX_SATELLITES,
+  },
+  /**
+   * MM9PDY channel location table: header plus every entry, A half only. Only the MM9PDY
+   * upload intent stages it; the B half and the rest of the unit stay off the allow-list.
+   */
+  {
+    id: 'ChannelLocationTable',
+    start: AT_D890_CHANNEL_LOCATION.BASE_ADDRESS,
+    length: AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES,
   },
 ] as const;
 

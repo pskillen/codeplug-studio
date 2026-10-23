@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Anchor, Group, Stack, Table, Text } from '@mantine/core';
 import { IconCheck, IconMinus, IconX } from '@tabler/icons-react';
 import {
-  AT_D890_WRITE_COVERAGE_ROWS,
+  atD890WriteCoverageRows,
   AT_D890_WRITE_COVERAGE_STATUS_LABEL,
   type AtD890WriteCoverageStatus,
 } from '@integrations/radio-io/radios/at-d890uv/writeCoverage.ts';
@@ -85,11 +85,14 @@ function WriteCoverageStatusCell({ status }: { status: AtD890WriteCoverageStatus
 export interface AtD890WriteCoverageTableProps {
   buildId: string;
   hasHydration?: boolean;
+  /** MM9PDY target: channel positions are written, not left alone. */
+  mm9pdy?: boolean;
 }
 
 export default function AtD890WriteCoverageTable({
   buildId,
   hasHydration = false,
+  mm9pdy = false,
 }: AtD890WriteCoverageTableProps) {
   return (
     <Stack gap={4}>
@@ -109,7 +112,7 @@ export default function AtD890WriteCoverageTable({
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {AT_D890_WRITE_COVERAGE_ROWS.map((row) => (
+          {atD890WriteCoverageRows(mm9pdy).map((row) => (
             <Table.Tr key={row.label}>
               <Table.Td>{row.label}</Table.Td>
               <Table.Td>
