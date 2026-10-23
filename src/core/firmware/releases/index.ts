@@ -45,6 +45,40 @@ export const BUNDLED_FIRMWARE_RELEASES: readonly BundledFirmwareRelease[] = [
       import('./baofeng-dm32uv/1.0.0-rc.3.release-notes.md?raw').then((m) => m.default),
   },
   {
+    radioId: 'baofeng-dm32uv',
+    tag: '1.1.0',
+    patchName: 'baofeng-dm32-firmware',
+    channel: 'final',
+    patchFile: 'dm32-fw-1.1.0.patch.json',
+    patchSha256: 'e4ea52a8717c0cad0fed72d78fe868ef37227b2e0a5b231b53d553c3e0408000',
+    stockVersion: 'v1.01.048',
+    publishedOn: '2026-10-22',
+    summary:
+      'Talk-group keys that step through the RX group list, the PTT contact on screen, a star-key timeslot swap with a TS1/TS2 badge, a timeslot from a talk-group name suffix, and the mod version in Device Info.',
+    verifyHint: 'Settings > Device Info > Versions shows "mm9pdy-1.1.0" under DM32.01.L01.048.',
+    resultSha256: { bin: 'd77cdb00dbfd0e72a786c2a54cdb9fa07bceaf530bf8e953f2ed96be37a96be5' },
+    loadBytes: () => import('./baofeng-dm32uv/1.1.0.patch.json?raw').then(enc),
+    loadNotes: () => import('./baofeng-dm32uv/1.1.0.release-notes.md?raw').then((m) => m.default),
+  },
+  {
+    radioId: 'baofeng-dm32uv',
+    tag: '1.2.0-rc.1',
+    patchName: 'baofeng-dm32-firmware',
+    channel: 'rc',
+    patchFile: 'dm32-fw-1.2.0-rc.1.patch.json',
+    patchSha256: '6eea12ecfc9a9422917340d9bd31d16a907a6aac459bb2f4d14a47ebc3a52135',
+    stockVersion: 'v1.01.048',
+    publishedOn: '2026-10-23',
+    summary:
+      "A 1.2.0 release candidate: a timeslot per RX group list member, quick-menu RX match and TS filter rows, and the distance to the channel's site from positions Codeplug Studio writes. Emulator-checked only.",
+    verifyHint:
+      'Settings > Device Info > Versions shows "mm9pdy-1.2.0-rc.1" under DM32.01.L01.048.',
+    resultSha256: { bin: '96be3b3374d10a8339fa0d1d66c578e3c710ca77bf20058f3261e9ba9730eb93' },
+    loadBytes: () => import('./baofeng-dm32uv/1.2.0-rc.1.patch.json?raw').then(enc),
+    loadNotes: () =>
+      import('./baofeng-dm32uv/1.2.0-rc.1.release-notes.md?raw').then((m) => m.default),
+  },
+  {
     radioId: 'anytone-at-d890uv',
     tag: '1.0.0',
     patchName: 'anytone-d890-firmware',
@@ -85,6 +119,48 @@ export const BUNDLED_FIRMWARE_RELEASES: readonly BundledFirmwareRelease[] = [
     loadBytes: () => import('./anytone-at-d890uv/1.1.0-rc.1.patch.json?raw').then(enc),
     loadNotes: () =>
       import('./anytone-at-d890uv/1.1.0-rc.1.release-notes.md?raw').then((m) => m.default),
+  },
+  {
+    radioId: 'anytone-at-d890uv',
+    tag: '1.1.0',
+    patchName: 'anytone-d890-firmware',
+    channel: 'final',
+    patchFile: 'd890-fw-1.1.0.patch.json',
+    patchSha256: 'a5dd67e45957605a45c2da3b5b0bafa10d8286a9d9a712ad3de9cbb07688acb0',
+    stockVersion: 'V1.05 (20260521)',
+    publishedOn: '2026-10-22',
+    summary:
+      'TG Next / TG Previous during a call, a scan stop that keeps the talk group you heard, a timeslot per RX group list member, the talk group and zone on screen, and a Mod Ver item in Device Info.',
+    verifyHint: 'After the radio restarts, Device Info > Mod Ver shows "mm9pdy-1.1.0".',
+    resultSha256: {
+      cdd: 'f14acc2e294dd7f926ee1e4dc36e10a926c6bef18ff57c4bd3e1c3a208be91e2',
+      cdi: '3ca0366f3ad809a466beb7e890877dcfa9598a7289396ca47416544573f57bf8',
+      spi: '8fc39b820320912d8a57217479612c08b634f6f90d949d40ac709ed660d85410',
+    },
+    loadBytes: () => import('./anytone-at-d890uv/1.1.0.patch.json?raw').then(enc),
+    loadNotes: () =>
+      import('./anytone-at-d890uv/1.1.0.release-notes.md?raw').then((m) => m.default),
+  },
+  {
+    radioId: 'anytone-at-d890uv',
+    tag: '1.2.0-rc.2',
+    patchName: 'anytone-d890-firmware',
+    channel: 'rc',
+    patchFile: 'd890-fw-1.2.0-rc.2.patch.json',
+    patchSha256: '27a8cc428e4d8c750549b3bd299b2fd3d2bced89b951b911e33ea0bb59d97b85',
+    stockVersion: 'V1.05 (20260521)',
+    publishedOn: '2026-10-23',
+    summary:
+      "A 1.2.0 release candidate: the distance to the channel's site from positions Codeplug Studio writes, a new single-display layout, a heard-call popup during zone scan, and new quick filters rows.",
+    verifyHint: 'After the radio restarts, Device Info > Mod Ver shows "mm9pdy-1.2.0-rc.2".',
+    resultSha256: {
+      cdd: '5b11aad1d366984c0ab9554d7a1418525f39d17d9314ba1864e0b43172de71d1',
+      cdi: '4b3f407c599e8f1917fb2f658434b5f3e2cc610d20a012f0fc2069c055b52ea7',
+      spi: 'da822730221f40c9ff3df741816420f41d4cf0d224022db3ef7bf603489d1d85',
+    },
+    loadBytes: () => import('./anytone-at-d890uv/1.2.0-rc.2.patch.json?raw').then(enc),
+    loadNotes: () =>
+      import('./anytone-at-d890uv/1.2.0-rc.2.release-notes.md?raw').then((m) => m.default),
   },
 ];
 

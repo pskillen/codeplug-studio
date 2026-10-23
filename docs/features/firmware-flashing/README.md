@@ -11,14 +11,14 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 
 ## Implementation status
 
-| Area                | Status                             | Notes                                                                                                                                                                                                                                                                                           |
-| ------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DM-32UV flash       | Shipped: prod                      | Stock and bundled releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                                                           |
-| Bundled releases    | Shipped: prod (DM-32UV, AT-D890UV) | DM-32UV `1.0.0` and `1.0.0-rc.3`, AT-D890UV `1.0.0` and `1.1.0-rc.1`, in `src/core/firmware/releases/`, verified by the catalog test; release list, RC toggle and notes in the wizard; offered on prod wherever the radio is ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
-| User-supplied patch | Shipped: prod (DM-32UV, AT-D890UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                        |
-| AT-D890UV           | Shipped: prod                      | Stock and bundled releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                           |
-| Recovery docs       | Shipped                            | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                               |
-| Android             | Deferred                           | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                                                                  |
+| Area                | Status                             | Notes                                                                                                                                                                                                                                                                                                                                         |
+| ------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DM-32UV flash       | Shipped: prod                      | Stock and bundled releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                                                                                                         |
+| Bundled releases    | Shipped: prod (DM-32UV, AT-D890UV) | DM-32UV `1.0.0`, `1.0.0-rc.3`, `1.1.0` and `1.2.0-rc.1`, AT-D890UV `1.0.0`, `1.1.0-rc.1`, `1.1.0` and `1.2.0-rc.2`, in `src/core/firmware/releases/`, verified by the catalog test; release list, RC toggle and notes in the wizard; offered on prod wherever the radio is ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
+| User-supplied patch | Shipped: prod (DM-32UV, AT-D890UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                                                                      |
+| AT-D890UV           | Shipped: prod                      | Stock and bundled releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                                                                         |
+| Recovery docs       | Shipped                            | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                                             |
+| Android             | Deferred                           | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                                                                                                                |
 
 ## Documentation map
 
@@ -107,10 +107,10 @@ flowchart LR
 
 ## What to expect
 
-| Radio     | Duration                                 | How the radio signals the end                                                                                        | How to check (release `1.0.0`)                                                                                  |
-| --------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| DM-32UV   | About 2 minutes (including a 13 s erase) | Studio sends the end byte; any reply, or none, is fine (`eot-sent`)                                                  | Press Scan on a channel with no scan list: a zone scan starts. Device information still reads `DM32.01.L01.048` |
-| AT-D890UV | Under a minute (about 25 s transfer)     | The radio restarts at once and its USB port disappears (`port-closed-by-radio`), or it replies `06` (`acknowledged`) | After the radio restarts, Device Info > Version shows `1.0.0`                                                   |
+| Radio     | Duration                                 | How the radio signals the end                                                                                        | How to check (release `1.1.0`)                                                 |
+| --------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| DM-32UV   | About 2 minutes (including a 13 s erase) | Studio sends the end byte; any reply, or none, is fine (`eot-sent`)                                                  | Settings > Device Info > Versions shows `mm9pdy-1.1.0` under `DM32.01.L01.048` |
+| AT-D890UV | Under a minute (about 25 s transfer)     | The radio restarts at once and its USB port disappears (`port-closed-by-radio`), or it replies `06` (`acknowledged`) | After the radio restarts, Device Info > Mod Ver shows `mm9pdy-1.1.0`           |
 
 The durations are the descriptors' `expectedDuration`, shown on the radio cards; the checks are the releases' verify
 hints.
@@ -141,8 +141,9 @@ The summary also records the version stamp read from the patched image, when the
 
 ### DM-32UV `1.0.0`: checking it worked
 
-The DM-32UV doesn't show the mod's version: Device Info still reads `DM32.01.L01.048` after a `1.0.0` flash. The
+The DM-32UV `1.0.0` doesn't show the mod's version: Device Info still reads `DM32.01.L01.048` after a `1.0.0` flash. The
 release's verify hint asks the operator to press Scan on a channel with no scan list, which should start a zone scan.
+From `1.1.0` the mod shows `mm9pdy-<tag>` under Settings > Device Info > Versions, and that is the verify hint.
 
 ## Recovery
 
