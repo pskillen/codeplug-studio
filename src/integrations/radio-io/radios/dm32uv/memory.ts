@@ -7,6 +7,7 @@ import type { BytePipe, ProgressFn } from '../../types.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import {
   DM32_BLOCK_SIZE,
+  DM32_CHANNEL_LOCATION,
   DM32_CONNECTION,
   DM32_LIMITS,
   DM32_METADATA,
@@ -245,6 +246,9 @@ export function groupDm32BlocksForProgress(
     'TX contact index',
     (b) =>
       b.metadata === DM32_METADATA.TX_CONTACT_LOW || b.metadata === DM32_METADATA.TX_CONTACT_HIGH,
+  );
+  take('Channel positions', (b) =>
+    (DM32_CHANNEL_LOCATION.TAGS as readonly number[]).includes(b.metadata),
   );
   if (remaining.length > 0) {
     groups.push({ stage: 'Settings & other', blocks: remaining });

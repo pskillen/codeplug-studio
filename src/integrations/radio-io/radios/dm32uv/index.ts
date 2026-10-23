@@ -74,3 +74,10 @@ export {
   DM32_POWER_CYCLE_AFTER_SESSION_NOTE,
   type Dm32WriteRole,
 } from './writeRole.ts';
+export {
+  DM32_CHANNEL_LOCATION_CAPACITY,
+  decodeDm32ChannelLocationPage,
+  encodeDm32ChannelLocationPagesIntoImage,
+  isDm32ChannelLocationTag,
+  type Dm32ChannelLocationWritePage,
+} from './channelLocationCodec.ts';

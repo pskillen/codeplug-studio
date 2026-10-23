@@ -552,6 +552,75 @@ describe('Dm32uvProtocol', () => {
     expect(fullBlockWrites(pipe)).toHaveLength(0);
   });
 
+  it('writes a claimed channel location page and keeps it out of the sparse cache (#1383)', async () => {
+    const start = 0x1000;
+    const claimedAddr = 0x3000;
+    const { pipe, radio } = await connectForUpload(0x3fff);
+    const channelBlock = makeFirstChannelBlock(1);
+    const settings = makeEmptyBlock(DM32_METADATA.VFO_SETTINGS);
+    const locationPage = makeEmptyBlock(0x70);
+    locationPage[0] = 0x4d;
+
+    radio.seedDownloadCache({
+      addressBase: start,
+      mapSize: DM32_BLOCK_SIZE * 3,
+      discovered: [
+        { address: start, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' },
+        { address: 0x2000, metadata: DM32_METADATA.VFO_SETTINGS, type: 'vfo' },
+        { address: claimedAddr, metadata: 0xff, type: 'empty' },
+      ],
+      blocks: new Map([
+        [start, channelBlock],
+        [0x2000, settings],
+      ]),
+      locationWritePages: [{ address: claimedAddr, tag: 0x70, pageIndex: 0, mode: 'claim' }],
+    });
+
+    const image = createMemoryMap(DM32_BLOCK_SIZE * 3);
+    image.fill(0, image.size, 0xff);
+    image.set(0, channelBlock);
+    image.set(DM32_BLOCK_SIZE, settings);
+    image.set(DM32_BLOCK_SIZE * 2, locationPage);
+
+    enqueueReadReply(pipe, start + 0xfff, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
+    enqueueReadReply(pipe, 0x2000 + 0xfff, new Uint8Array([DM32_METADATA.VFO_SETTINGS]));
+    enqueueReadReply(pipe, claimedAddr + 0xfff, new Uint8Array([0xff]));
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array([0x06]));
+
+    await radio.upload(image, {});
+
+    const writeFrames = fullBlockWrites(pipe);
+    const page = writeFrames.find((w) => (w[1]! | (w[2]! << 8) | (w[3]! << 16)) === claimedAddr);
+    expect(page![6]).toBe(0x4d);
+    expect(page![6 + 0xfff]).toBe(0x70);
+    expect(radio.getDownloadCache()!.blocks.has(claimedAddr)).toBe(false);
+  });
+
+  it('refuses a channel location claim when the tag is already live elsewhere (#1383)', async () => {
+    const start = 0x1000;
+    const { pipe, radio } = await connectForUpload(0x3fff);
+    const channelBlock = makeFirstChannelBlock(1);
+    radio.seedDownloadCache({
+      addressBase: start,
+      mapSize: DM32_BLOCK_SIZE * 3,
+      discovered: [{ address: start, metadata: DM32_METADATA.CHANNEL_FIRST, type: 'channel' }],
+      blocks: new Map([[start, channelBlock]]),
+      locationWritePages: [{ address: 0x3000, tag: 0x70, pageIndex: 0, mode: 'claim' }],
+    });
+    const image = createMemoryMap(DM32_BLOCK_SIZE * 3);
+    image.fill(0, image.size, 0xff);
+    image.set(0, channelBlock);
+
+    enqueueReadReply(pipe, start + 0xfff, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
+    enqueueReadReply(pipe, 0x2000 + 0xfff, new Uint8Array([0x70]));
+    enqueueReadReply(pipe, 0x3000 + 0xfff, new Uint8Array([0xff]));
+
+    await expect(radio.upload(image, {})).rejects.toThrow(/Read the radio again/);
+    expect(fullBlockWrites(pipe)).toHaveLength(0);
+  });
+
   it('download with progressStage labels content reads separately from metadata discovery', async () => {
     const pipe = new Dm32ScriptedPipe();
     scriptDm32DownloadTwoBlocks(pipe, 1);

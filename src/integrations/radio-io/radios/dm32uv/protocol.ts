@@ -48,6 +48,11 @@ import {
   dm32OutgoingBlockIsCalibration,
 } from './backupRestoreRoles.ts';
 import { remapDm32BlocksByMetadata, remapDm32MemoryMapByTranslations } from './remap.ts';
+import {
+  assertDm32ChannelLocationPagesWritable,
+  isDm32ChannelLocationTag,
+  type Dm32ChannelLocationWritePage,
+} from './channelLocationCodec.ts';
 import type { WriteVerifyStagingSnapshot } from '../../writeVerify.ts';
 import { captureWriteVerifyStaging } from '../../writeVerifyCompare.ts';
 import {
@@ -92,6 +97,12 @@ export interface Dm32DownloadCache {
    * `blocks` before remap — upload unions these addresses after a live free-page check.
    */
   zoneWriteAddresses?: number[];
+  /**
+   * MM9PDY channel location pages for this Write (reused live pages and claimed free
+   * pages). Not inserted into `blocks`: upload checks each against the live metadata scan,
+   * writes it, and keeps it out of the sparse cache so a later stock Write never resends it.
+   */
+  locationWritePages?: Dm32ChannelLocationWritePage[];
 }
 
 function blocksToMemoryMap(cache: Dm32DownloadCache): MemoryMap {
@@ -219,6 +230,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
           ? [...seed.contactWriteAddresses]
           : undefined,
         zoneWriteAddresses: seed.zoneWriteAddresses ? [...seed.zoneWriteAddresses] : undefined,
+        locationWritePages: seed.locationWritePages?.map((p) => ({ ...p })),
       };
       return;
     }
@@ -236,6 +248,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
     this.cache.zoneWriteAddresses = seed.zoneWriteAddresses
       ? [...seed.zoneWriteAddresses]
       : undefined;
+    this.cache.locationWritePages = seed.locationWritePages?.map((p) => ({ ...p }));
   }
 
   async connect(
@@ -517,9 +530,27 @@ export class Dm32uvProtocol implements CloneImageRadio {
     // address after the live byte is still free.
     const zoneWriteAddresses = [...(this.cache.zoneWriteAddresses ?? [])];
     assertZoneClaimPagesStillFree(zoneWriteAddresses, liveDiscovered);
-    const configAddresses = [...remappedBlocks.keys()];
+    // MM9PDY only. Stock encodes leave this empty, so stock never writes the location tags.
+    const locationWritePages = this.cache.locationWritePages ?? [];
+    assertDm32ChannelLocationPagesWritable(locationWritePages, liveDiscovered);
+    const locationAddresses = locationWritePages.map((p) => p.address);
+    if (locationAddresses.some((addr) => zoneWriteAddresses.includes(addr))) {
+      throw new RadioProtocolError(
+        'DM-32UV channel location page collides with a claimed zone page. Read the radio again before Write.',
+      );
+    }
+    // Location tags never ride along as sparse cache blocks.
+    const configAddresses = [...remappedBlocks.keys()].filter((addr) => {
+      const meta = remappedBlocks.get(addr)?.[DM32_BLOCK_SIZE - 1];
+      return meta === undefined || !isDm32ChannelLocationTag(meta);
+    });
     const addresses = [
-      ...new Set([...configAddresses, ...contactWriteAddresses, ...zoneWriteAddresses]),
+      ...new Set([
+        ...configAddresses,
+        ...contactWriteAddresses,
+        ...zoneWriteAddresses,
+        ...locationAddresses,
+      ]),
     ].sort((a, b) => a - b);
 
     const contactLast = contactWriteAddresses[contactWriteAddresses.length - 1];
@@ -570,6 +601,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
     this.cache.blocks = remappedBlocks;
     this.cache.contactWriteAddresses = contactWriteAddresses;
     this.cache.zoneWriteAddresses = zoneWriteAddresses;
+    this.cache.locationWritePages = locationWritePages;
 
     const liveCalibrationAddress = selectDm32CalibrationPages(liveDiscovered, {
       start: this.liveLayout.addressBase,
@@ -642,7 +674,7 @@ export class Dm32uvProtocol implements CloneImageRadio {
         );
         assertDm32OutgoingBlockIsNotCalibration(addr, data, liveCalibrationAddress);
         await dm32WriteMemory(this.pipe, addr, data, settle);
-        this.cache.blocks.set(addr, data);
+        if (!locationAddresses.includes(addr)) this.cache.blocks.set(addr, data);
         stagingChunks.push({ address: addr, data: data.slice() });
       }
     }
