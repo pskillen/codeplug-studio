@@ -18,6 +18,10 @@ import type { PersistableRow } from './revision.ts';
 import type { TraitLayout } from './traitLayout.ts';
 
 /** How channels with `scanInclusion: default` serialise when build omits an override. */
+
+/** Channel distance display unit for the MM9PDY channel location table. */
+export type ChannelDistanceUnit = 'km' | 'mi';
+
 export type DefaultScanInclusion = 'skip' | 'scan';
 
 /**
@@ -71,6 +75,11 @@ export interface BuildExportSettings {
    * P2 short to TG previous (13). Unset or false leaves those key bytes as read.
    */
   assignMm9pdyStepKeys?: boolean;
+  /**
+   * MM9PDY AT-D890UV and DM-32UV only. Unit the modded firmware shows channel distances in;
+   * written into the channel location table header on Write. Unset → kilometres.
+   */
+  channelDistanceUnit?: ChannelDistanceUnit;
   /** CPS export: dual-bank directory toggles (`SeparateDigitalIdList` profiles). */
   cpsDualBankDirectory?: DualBankRadioWriteOptions;
   /** CPS export: single-bank digital contact projection (Anytone). */

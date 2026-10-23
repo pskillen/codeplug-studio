@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  channelHasUsableLocation,
   coordsFromChannelLocation,
+  geoPointIsUsable,
   coordinateDecimalPrecision,
   coordsWithinLocator,
   isCoordinateLessPrecise,
@@ -131,5 +133,27 @@ describe('location precision helpers', () => {
       isCoordinateLessPrecise({ lat: 51.123456, lon: -1.234567 }, { lat: 51.12, lon: -1.23 }),
     ).toBe(true);
     expect(coordinateDecimalPrecision({ lat: 51.123456, lon: -1.2 })).toBe(1);
+  });
+});
+
+describe('channelHasUsableLocation', () => {
+  it('needs Use location on and real coordinates', () => {
+    const location = { lat: 55.86, lon: -4.25 };
+    expect(channelHasUsableLocation({ location, useLocation: true })).toBe(true);
+    expect(channelHasUsableLocation({ location, useLocation: false })).toBe(false);
+    expect(channelHasUsableLocation({ location: null, useLocation: true })).toBe(false);
+  });
+
+  it('rejects the 0,0 sentinel, non-finite and out-of-range values', () => {
+    expect(channelHasUsableLocation({ location: { lat: 0, lon: 0 }, useLocation: true })).toBe(
+      false,
+    );
+    expect(
+      channelHasUsableLocation({ location: { lat: Number.NaN, lon: 1 }, useLocation: true }),
+    ).toBe(false);
+    expect(channelHasUsableLocation({ location: { lat: 91, lon: 1 }, useLocation: true })).toBe(
+      false,
+    );
+    expect(geoPointIsUsable({ lat: -33.9, lon: 151.2 })).toBe(true);
   });
 });

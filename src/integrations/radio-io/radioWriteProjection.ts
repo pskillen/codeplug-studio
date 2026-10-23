@@ -6,6 +6,7 @@ import type { ExportWarning } from '@core/import-export/exportWarning.ts';
  */
 
 import type { RadioChannelDto } from './radioChannelDto.ts';
+import type { ChannelDistanceUnit } from '@core/models/radioBuild.ts';
 import type { AtD890ResolvedScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
 
 /** Zone membership as radio channel numbers (1-based). */
@@ -179,6 +180,15 @@ export interface RadioWriteOrganisation {
    * those bytes as read.
    */
   assignMm9pdyStepKeys?: boolean;
+  /**
+   * MM9PDY only (AT-D890UV, DM-32UV). When true, Write stores the channel location table
+   * from {@link RadioChannelDto.location} on channels with `useLocation`: the dedicated
+   * erase-unit pair on the AT-D890UV, twelve tag pages on the DM-32UV. Stock writes never
+   * touch those regions.
+   */
+  writeChannelLocationTable?: boolean;
+  /** Unit written into the channel location table header. Unset → `'km'`. */
+  channelDistanceUnit?: ChannelDistanceUnit;
   /**
    * OpenGD77 User Database (call-sign DB) rows. Omit to leave FLASH 0x50000 / 0xd8000
    * unchanged. Present (including empty) replaces the lookup store; not the 1024 contact bank.

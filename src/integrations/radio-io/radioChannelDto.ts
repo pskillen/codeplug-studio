@@ -73,10 +73,15 @@ export interface RadioChannelDto {
   /** DM-32UV: 0-based operator radio-ID bank index; omit or 0xFF on wire when unset. */
   dmrRadioIdIndex?: number;
   /**
-   * OpenGD77 channel GPS — split packed-angle bytes in the 0x38 record.
-   * `null` when unset / all-zero on wire without Use Location flag.
+   * Channel position. OpenGD77: split packed-angle bytes in the 0x38 record (`null` when
+   * unset / all-zero on wire without Use Location flag). AT-D890UV / DM-32UV MM9PDY targets:
+   * the channel location table entry for this slot (stamped only when
+   * `organisation.writeChannelLocationTable` is set; stock projections omit it).
    */
   location?: { lat: number; lon: number } | null;
-  /** OpenGD77 LibreDMR_flag1 @ `0x26` bit 3 (`0x08`) — distance-from-repeater / roaming. */
+  /**
+   * OpenGD77 LibreDMR_flag1 @ `0x26` bit 3 (`0x08`) — distance-from-repeater / roaming.
+   * MM9PDY AT-D890UV / DM-32UV: the slot gets a table entry only when this is true.
+   */
   useLocation?: boolean;
 }
