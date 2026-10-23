@@ -45,6 +45,40 @@ export const BUNDLED_FIRMWARE_RELEASES: readonly BundledFirmwareRelease[] = [
       import('./baofeng-dm32uv/1.0.0-rc.3.release-notes.md?raw').then((m) => m.default),
   },
   {
+    radioId: 'baofeng-dm32uv',
+    tag: '1.1.0',
+    patchName: 'baofeng-dm32-firmware',
+    channel: 'final',
+    patchFile: 'dm32-fw-1.1.0.patch.json',
+    patchSha256: 'e4ea52a8717c0cad0fed72d78fe868ef37227b2e0a5b231b53d553c3e0408000',
+    stockVersion: 'v1.01.048',
+    publishedOn: '2026-10-22',
+    summary:
+      'Talk-group keys that step through the RX group list, the PTT contact on screen, a star-key timeslot swap with a TS1/TS2 badge, a timeslot from a talk-group name suffix, and the mod version in Device Info.',
+    verifyHint: 'Settings > Device Info > Versions shows "mm9pdy-1.1.0" under DM32.01.L01.048.',
+    resultSha256: { bin: 'd77cdb00dbfd0e72a786c2a54cdb9fa07bceaf530bf8e953f2ed96be37a96be5' },
+    loadBytes: () => import('./baofeng-dm32uv/1.1.0.patch.json?raw').then(enc),
+    loadNotes: () => import('./baofeng-dm32uv/1.1.0.release-notes.md?raw').then((m) => m.default),
+  },
+  {
+    radioId: 'baofeng-dm32uv',
+    tag: '1.2.0-rc.1',
+    patchName: 'baofeng-dm32-firmware',
+    channel: 'rc',
+    patchFile: 'dm32-fw-1.2.0-rc.1.patch.json',
+    patchSha256: '6eea12ecfc9a9422917340d9bd31d16a907a6aac459bb2f4d14a47ebc3a52135',
+    stockVersion: 'v1.01.048',
+    publishedOn: '2026-10-23',
+    summary:
+      "A 1.2.0 release candidate: a timeslot per RX group list member, quick-menu RX match and TS filter rows, and the distance to the channel's site from positions Codeplug Studio writes. Emulator-checked only.",
+    verifyHint:
+      'Settings > Device Info > Versions shows "mm9pdy-1.2.0-rc.1" under DM32.01.L01.048.',
+    resultSha256: { bin: '96be3b3374d10a8339fa0d1d66c578e3c710ca77bf20058f3261e9ba9730eb93' },
+    loadBytes: () => import('./baofeng-dm32uv/1.2.0-rc.1.patch.json?raw').then(enc),
+    loadNotes: () =>
+      import('./baofeng-dm32uv/1.2.0-rc.1.release-notes.md?raw').then((m) => m.default),
+  },
+  {
     radioId: 'anytone-at-d890uv',
     tag: '1.0.0',
     patchName: 'anytone-d890-firmware',
