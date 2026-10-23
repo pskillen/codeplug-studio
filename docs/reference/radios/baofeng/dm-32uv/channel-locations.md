@@ -6,9 +6,8 @@ on tags the stock firmware never reads and the official CPS does not move.
 
 **The firmware repo owns the byte layout.** This page says what Studio does with it; it does not copy it.
 
-- Layout (storage contract v1): the "Scope and plan" comment on
-  [baofeng-dm32-firmware#71](https://github.com/pskillen/baofeng-dm32-firmware/issues/71) and the firmware's
-  [channel distance docs](https://github.com/pskillen/baofeng-dm32-firmware/tree/main/docs/features/channel-distance)
+- Layout (storage contract v1): [baofeng-dm32-firmware — channel distance storage layout](https://github.com/pskillen/baofeng-dm32-firmware/blob/main/docs/features/channel-distance/storage-layout.md)
+  and the "Scope and plan" comment on [baofeng-dm32-firmware#71](https://github.com/pskillen/baofeng-dm32-firmware/issues/71)
 - User-facing behaviour: the shared spec `firmware-mods/features/channel-distance.md`
 - Studio ticket: [#1383](https://github.com/pskillen/codeplug-studio/issues/1383)
 
