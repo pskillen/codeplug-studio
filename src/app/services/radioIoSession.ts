@@ -5,6 +5,7 @@
 
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
+import { channelLocationWriteRadioNote } from '@core/radio-targets/channelLocationNotes.ts';
 import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
@@ -571,6 +572,26 @@ function openGd77WriteWarnings(session: RadioSession): ExportWarning[] {
   const userDb = session.radio.getLastUserDatabaseWarning();
   if (userDb) pushGeneralWarning(warnings, userDb);
   return warnings;
+}
+
+/**
+ * Write radio popup note about MM9PDY channel positions (#1383), or `null`.
+ * Runs the same assemble + Write projection as Write, without contacts or a session.
+ */
+export function channelLocationNoteForWrite(
+  build: RadioBuild,
+  egress: EgressPath,
+  library: LibrarySlice,
+): string | null {
+  if (!isAtD890RadioIoProfileId(egress.profileId) && !isDm32RadioIoProfileId(egress.profileId)) {
+    return null;
+  }
+  const assembled = assemble(build, library, {
+    formatId: egress.formatId,
+    profileId: egress.profileId,
+  });
+  const projection = buildRadioWriteProjection(assembled, build, library, egress);
+  return channelLocationWriteRadioNote(build.radioTargetId, projection.channelLocations);
 }
 
 /**

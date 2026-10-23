@@ -42,6 +42,8 @@ export interface UnlinkedExportGroup {
 export interface FormattedExportWarnings {
   /** Warnings that are not folded into a named group (caps, cycles, etc.). */
   general: string[];
+  /** Benign `info` notes (`kind: 'general'`, `severity: 'info'`) — never shown as warnings. */
+  generalInfo: string[];
   /** Orphan / unlinked inclusion lines — folded as one accordion section. */
   unlinkedGroup: UnlinkedExportGroup | null;
   memberCapGroups: MemberCapGroup[];
@@ -195,6 +197,7 @@ function addWireNameShortening(
 /** Group structured `ExportWarning[]` into presentation sections — no text parsing. */
 export function formatExportWarnings(warnings: ExportWarning[]): FormattedExportWarnings {
   const general: string[] = [];
+  const generalInfo: string[] = [];
   const unlinkedItems: string[] = [];
   const shortenedGroupsMap = new Map<string, WireNameShorteningGroup>();
   const memberCapGroupsMap = new Map<string, MemberCapGroup>();
@@ -246,7 +249,8 @@ export function formatExportWarnings(warnings: ExportWarning[]): FormattedExport
       }
 
       case 'general': {
-        general.push(warning.message);
+        if (warning.severity === 'info') generalInfo.push(warning.message);
+        else general.push(warning.message);
         break;
       }
     }
@@ -302,6 +306,7 @@ export function formatExportWarnings(warnings: ExportWarning[]): FormattedExport
 
   return {
     general,
+    generalInfo,
     unlinkedGroup,
     memberCapGroups,
     shortenedProblemGroups,

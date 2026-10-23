@@ -38,7 +38,7 @@ A fully clean export that only has successful shortens renders **no** yellow ale
 ## Behaviour
 
 - Collapsed headers show **title + issue count** (e.g. `Channel names shortened (23)`). Info-section headers use the same convention with muted styling and no "warning" framing.
-- Groups by `ExportWarning.kind` / `.remediation` / `.severity` — no text parsing. `formatExportWarnings` (`./formatExportWarnings.ts`) partitions clean `shortened` remediation into `shortenedInfoGroups` and `disambiguated` / `truncated` / `over_limit` into `shortenedProblemGroups`; `member_cap` and `unlinked` fold into their own groups; `general` stays flat.
+- Groups by `ExportWarning.kind` / `.remediation` / `.severity` — no text parsing. `formatExportWarnings` (`./formatExportWarnings.ts`) partitions clean `shortened` remediation into `shortenedInfoGroups` and `disambiguated` / `truncated` / `over_limit` into `shortenedProblemGroups`; `member_cap` and `unlinked` fold into their own groups; `general` stays flat. `general` warnings with `severity: 'info'` go to `generalInfo` and render as a blue **Notes** alert (`data-testid="export-info-notes"`), never as a warning (e.g. MM9PDY channel position counts, #1383).
 - Does not mutate or dedupe the input; core export already dedupes (`dedupeWarnings` compares structural identity, not message text).
 - Used on the build Export panel and inside the CSV preview modal (same component).
 

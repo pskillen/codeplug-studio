@@ -1,4 +1,4 @@
-import { Stack, Switch, Text } from '@mantine/core';
+import { SegmentedControl, Stack, Switch, Text } from '@mantine/core';
 import type {
   BuildExportSettings,
   DefaultScanInclusion,
@@ -271,6 +271,32 @@ export default function ExportBuildSettingsSections({
               })
             }
           />
+        </FieldCard>
+      ) : null}
+
+      {showMm9pdyStepKeys ? (
+        <FieldCard
+          title="MM9PDY channel distance"
+          description="Write stores each channel's position (Use location on) so the radio can show how far away the site is. Choose the unit the radio shows it in."
+        >
+          <Stack gap={4}>
+            <Text size="sm" fw={500}>
+              Distance unit
+            </Text>
+            <SegmentedControl
+              size="sm"
+              aria-label="Distance unit"
+              data={[
+                { value: 'km', label: 'Kilometres' },
+                { value: 'mi', label: 'Miles' },
+              ]}
+              value={build.exportSettings?.channelDistanceUnit ?? 'km'}
+              disabled={saving}
+              onChange={(value) =>
+                onExportSettingsPatch({ channelDistanceUnit: value === 'mi' ? 'mi' : 'km' })
+              }
+            />
+          </Stack>
         </FieldCard>
       ) : null}
 

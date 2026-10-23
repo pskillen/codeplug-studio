@@ -46,7 +46,8 @@ export interface UnlinkedExportWarning {
 
 export interface GeneralExportWarning {
   kind: 'general';
-  severity: 'problem';
+  /** `info` for benign notes (e.g. MM9PDY channel position counts); shown apart from problems. */
+  severity: ExportWarningSeverity;
   message: string;
 }
 
@@ -57,6 +58,11 @@ export type ExportWarning =
 /** Push a plain informational/problem note with no further structure. */
 export function pushGeneralWarning(warnings: ExportWarning[], message: string): void {
   warnings.push({ kind: 'general', severity: 'problem', message });
+}
+
+/** Push a benign informational note — rendered apart from the problem list. */
+export function pushGeneralInfoWarning(warnings: ExportWarning[], message: string): void {
+  warnings.push({ kind: 'general', severity: 'info', message });
 }
 
 /** Push a member/element cardinality-cap warning (zone/scan-list/RX-group-list caps and truncation). */

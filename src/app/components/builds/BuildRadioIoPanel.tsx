@@ -43,6 +43,7 @@ import { useBuildLayout } from '../../routes/builds/BuildLayoutContext.tsx';
 import { useProjects } from '../../state/useProjects.ts';
 import {
   buildHasRadioCloneHydration,
+  channelLocationNoteForWrite,
   closeRadioSession,
   descriptorsForEgress,
   getRadioCloneHydration,
@@ -130,6 +131,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const pendingEmptyDirectoryWriteRef = useRef<(() => void) | null>(null);
   const [kepsCapacityWarning, setKepsCapacityWarning] = useState<string | null>(null);
   const [kepsWriteSummary, setKepsWriteSummary] = useState<SatelliteKepsWriteResult | null>(null);
+  const [channelLocationNote, setChannelLocationNote] = useState<string | null>(null);
 
   const serialOk = isRadioSerialSupported();
   const descriptor = descriptors[0];
@@ -374,7 +376,20 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     setContactSource('none');
     setKepsSelected(false);
     setKepsCapacityWarning(null);
+    setChannelLocationNote(null);
     window.setTimeout(() => setWriteRadioOpen(true), 0);
+    void loadChannelLocationNote();
+  }
+
+  async function loadChannelLocationNote() {
+    if (!activeProjectId) return;
+    try {
+      const library = await loadLibrarySlice(persistence, activeProjectId);
+      setChannelLocationNote(channelLocationNoteForWrite(build, egress, library));
+    } catch {
+      // Informational only — Write still works without the note.
+      setChannelLocationNote(null);
+    }
   }
 
   async function guardDirectoryThenWrite(mode: DualBankWriteMode | SingleBankWriteMode) {
@@ -547,6 +562,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         open={writeRadioOpen}
         onClose={() => setWriteRadioOpen(false)}
         buildId={build.id}
+        channelLocationNote={channelLocationNote}
         assignMm9pdyStepKeys={build.exportSettings?.assignMm9pdyStepKeys === true}
         assignMm9pdyStepKeysDescription={mm9pdyStepKeysDescription(build.radioTargetId)}
         onAssignMm9pdyStepKeysChange={

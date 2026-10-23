@@ -2,6 +2,7 @@ import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { getExportAdapter } from '@core/import-export/registry.ts';
+import { pushStockChannelLocationNote } from '@core/radio-targets/channelLocationNotes.ts';
 import {
   isMultiFileExportAdapter,
   isSingleFileCpsExportAdapter,
@@ -99,6 +100,17 @@ export interface ExportBuildAllResult {
 }
 
 export { mergeExportOptions };
+
+/** Stock D890 / DM32 file exports: note that channel positions need the MM9PDY target. */
+function channelLocationExportNotes(build: RadioBuild, assembled: AssembledBuild): ExportWarning[] {
+  const notes: ExportWarning[] = [];
+  pushStockChannelLocationNote(
+    notes,
+    build.radioTargetId,
+    assembled.channels.map((row) => row.entity),
+  );
+  return notes;
+}
 
 function assembleForExport(
   build: RadioBuild,
@@ -213,6 +225,7 @@ export function exportBuildFile({
   const warnings = dedupeWarnings([
     ...projectionWarnings,
     ...exportInclusionWarnings(build, library, assembled),
+    ...channelLocationExportNotes(build, assembled),
     ...adapter.collectExportWarnings(assembled, exportOptions),
     ...result.warnings,
   ]);
@@ -242,6 +255,7 @@ export function exportBuildAll({
   const warnings: ExportWarning[] = [
     ...projectionWarnings,
     ...exportInclusionWarnings(build, library, assembled),
+    ...channelLocationExportNotes(build, assembled),
     ...adapter.collectExportWarnings(assembled, exportOptions),
   ];
 
@@ -290,6 +304,7 @@ export function exportBuildSingleFile({
   const warnings = dedupeWarnings([
     ...projectionWarnings,
     ...exportInclusionWarnings(build, library, assembled),
+    ...channelLocationExportNotes(build, assembled),
     ...result.warnings,
   ]);
 

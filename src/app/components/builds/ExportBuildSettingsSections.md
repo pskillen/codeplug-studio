@@ -24,6 +24,10 @@ order. Individual controls within a section gate on `build.radioTargetId` catalo
    always shown (fields inside gate by mode support)
 7. **Digital ID directory** — `ExportDirectoryProjectionFields`; self-gates and renders
    nothing when the target has neither dual-bank nor single-bank directory trait
+8. **MM9PDY key assignment** and **MM9PDY channel distance** — MM9PDY AT-D890UV and
+   DM-32UV targets only. The distance unit (`exportSettings.channelDistanceUnit`, km
+   default) is written into the channel location table header on Write
+   ([#1383](https://github.com/pskillen/codeplug-studio/issues/1383))
 
 These section names are the vocabulary phase 8's Resolution view attributes values to
 ("build export settings → Naming", …) — rename here and there together.
