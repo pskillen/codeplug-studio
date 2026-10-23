@@ -97,7 +97,11 @@ export function encodeAtD890ChannelLocationEntry(
   return entry;
 }
 
-function encodeHeader(count: number, unit: ChannelDistanceUnit): Uint8Array {
+/** Encode the 32-byte header (magic, version, entry size, count, unit, CRC-32). */
+export function encodeAtD890ChannelLocationHeader(
+  count: number,
+  unit: ChannelDistanceUnit,
+): Uint8Array {
   const header = new Uint8Array(AT_D890_CHANNEL_LOCATION.HEADER_BYTES);
   const view = new DataView(header.buffer);
   for (let i = 0; i < 4; i++) header[i] = AT_D890_CHANNEL_LOCATION.MAGIC.charCodeAt(i);
@@ -139,7 +143,7 @@ export function encodeAtD890ChannelLocationTable(
   const bytes = new Uint8Array(
     AT_D890_CHANNEL_LOCATION.HEADER_BYTES + count * AT_D890_CHANNEL_LOCATION.ENTRY_BYTES,
   );
-  bytes.set(encodeHeader(count, unit), 0);
+  bytes.set(encodeAtD890ChannelLocationHeader(count, unit), 0);
 
   let positions = 0;
   for (const ch of channels) {
