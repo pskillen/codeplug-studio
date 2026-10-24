@@ -3,6 +3,8 @@ import { useDebouncedValue } from '@mantine/hooks';
 import { useEffect, useMemo, useState } from 'react';
 import { coordsToLocator } from '@core/domain/maidenhead.ts';
 import { GeocodeError, geocodeQuery, type GeocodeProvider } from '@integrations/geocode/index.ts';
+import { Link } from 'react-router-dom';
+import { SETTINGS_MAPBOX_SECTION_ID } from '../../lib/settingsSections.ts';
 import { Combobox, type ComboboxOption, SegmentedControl } from '../v2/index.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 
@@ -142,8 +144,11 @@ export default function GeocodeCentreField({
       </div>
       {!hasMapboxToken ? (
         <p style={{ margin: '8px 0 0', fontSize: 11.5, color: 'var(--dsv2-text-tertiary)' }}>
-          Add a Mapbox token in Settings to use Mapbox geocoding. Photon (OSM) works without a
-          token.
+          Photon (OpenStreetMap) works with no setup. Optional:{' '}
+          <Link to="/settings" state={{ scrollTo: SETTINGS_MAPBOX_SECTION_ID }}>
+            add a Mapbox token in Settings
+          </Link>{' '}
+          to use Mapbox geocoding.
         </p>
       ) : null}
     </div>

@@ -46,14 +46,14 @@ export default function GoogleDriveConnectSection() {
           label={
             sessionExpired
               ? 'Session expired — reconnect to continue using Google Drive.'
-              : 'Not connected — use Open from Drive or Save to Drive in the app to connect.'
+              : 'Not connected. Connect here, or use Open from Drive or Save to Drive and Studio will ask you to sign in.'
           }
         />
       )}
       {error ? <Alert color="red">{error}</Alert> : null}
       {showReconnect ? (
         <Button variant="secondary" size="sm" loading={loading} onClick={() => void connect()}>
-          Reconnect
+          {sessionExpired ? 'Reconnect' : 'Connect Google Drive'}
         </Button>
       ) : null}
       {connected && !sessionExpired ? (
