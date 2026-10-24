@@ -227,8 +227,8 @@ project, library or build. The flasher needs no open project and stores nothing.
 ### Rules
 
 1. **Studio never ships, hosts, mirrors or proxies vendor firmware.** No vendor file, image or excerpt goes in the repo,
-   the bundle, a test fixture, or any network path Studio controls. Tests use synthetic images. Studio's own release
-   patch files may be committed; vendor firmware files never are.
+   the bundle, a test fixture, or any network path Studio controls. Tests use synthetic images. No firmware-derived
+   file is committed either: release patches are fetched from the firmware project's public release index.
 2. **The user supplies stock firmware** during the session: the vendor zip, or the files extracted from it. The wizard
    shows the vendor's download link as a plain link; Studio never fetches it. The bytes stay in that browser tab's
    memory and are dropped when the user leaves the page.
@@ -239,7 +239,7 @@ project, library or build. The flasher needs no open project and stores nothing.
    first byte is sent and again on every write. Examples: address windows that keep away from the bootloader and the
    activation page; a model-ID match with the bootloader's own ident; a stock-length image where the radio requires
    it. No setting, flag, environment value or patch field can switch one off.
-5. **One pipeline.** Bundled release, user-supplied patch, and stock all take the same path:
+5. **One pipeline.** Published release, user-supplied patch, and stock all take the same path:
    verify stock → (apply patch → verify result) → interlocks → bootloader ident → flash.
    "Flash stock" is the zero-patch case and is the documented recovery route; the vendor CPS stays the fallback.
 6. **Flash is not Write.** Codeplug Write rules, its env gate and the build/egress model don't apply to firmware, and
@@ -250,38 +250,40 @@ project, library or build. The flasher needs no open project and stores nothing.
 
 ### Patch sources
 
-| Source                  | What it is                                                                                                                                                                                                                                         | Trust                                                                                                                                                                                                                                                                          |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Bundled releases**    | Release patches copied by hand, byte for byte, from the firmware projects' releases into Studio, with their release notes and an index row each. Finals are listed by default; release candidates appear behind a "Show release candidates" toggle | Reviewed in a Studio PR. A unit test checks each file's hash, format and pinned stock. A firmware release reaches users only with a Studio release, which is deliberate: Studio chooses what ships                                                                             |
-| **User-supplied patch** | A `.patch.json` the user picks from disk, under an Advanced option, after accepting a risk statement                                                                                                                                               | Unreviewed. The format, stock-hash, result-hash and interlock checks all still apply; Studio can't judge whether the firmware it produces is safe. A file identical to a bundled release is treated as that release. The flash summary records "user-supplied patch, sha256 …" |
+| Source                  | What it is                                                                                                                                                                                                                                                                                                                                                                                                                   | Trust                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Published releases**  | Listed at run time from the firmware project's public release index, `releases.json` in [pskillen/mm9pdy-firmware](https://github.com/pskillen/mm9pdy-firmware), which the firmware repos publish to on every tag. Each row carries the patch path and SHA-256, the result hashes, a summary, a verify hint and the notes. Finals are listed by default; release candidates appear behind a "Show release candidates" toggle | The firmware project chooses what ships: a tag passes its emulator gate and publishes. Studio checks the downloaded bytes against the index hash, then that the patch is this radio's project and version, built on the pinned stock, with the result hashes the index declared, before the usual result-hash and interlock checks. Studio needs no release of its own for a new firmware release |
+| **User-supplied patch** | A `.patch.json` the user picks from disk, under an Advanced option, after accepting a risk statement                                                                                                                                                                                                                                                                                                                         | Unreviewed. The format, stock-hash, result-hash and interlock checks all still apply; Studio can't judge whether the firmware it produces is safe. A file identical to a published release is treated as that release. The flash summary records "user-supplied patch, sha256 …"                                                                                                                  |
 
 ### Where things live
 
-| Concern                                                                                          | Location                                                                                                                        |
-| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| Pinned stock (version, hashes, file names), update-mode entry, verify hints                      | `src/core/radios/<mfr>/<model>/firmware.ts`, beside `limits.ts`; human mirror `docs/reference/radios/<mfr>/<model>/firmware.md` |
-| Patch formats (pure apply, one module per patch format), release catalog, `prepareFirmwareImage` | `src/core/firmware/`, `src/core/services/firmware/`                                                                             |
-| Bootloader update protocols and hard interlocks (`FirmwareUpdater`)                              | `src/integrations/radio-io/radios/<id>/firmwareUpdate/`                                                                         |
-| Flasher wizard and thin orchestration                                                            | `src/app/` (route `/firmware`, under Tools)                                                                                     |
+| Concern                                                                                                           | Location                                                                                                                        |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Pinned stock (version, hashes, file names), update-mode entry, verify hints                                       | `src/core/radios/<mfr>/<model>/firmware.ts`, beside `limits.ts`; human mirror `docs/reference/radios/<mfr>/<model>/firmware.md` |
+| Patch formats (pure apply, one module per patch format), release index parsing and checks, `prepareFirmwareImage` | `src/core/firmware/`, `src/core/services/firmware/`                                                                             |
+| Fetching the public release index and patches                                                                     | `src/integrations/firmware-releases/`                                                                                           |
+| Bootloader update protocols and hard interlocks (`FirmwareUpdater`)                                               | `src/integrations/radio-io/radios/<id>/firmwareUpdate/`                                                                         |
+| Flasher wizard and thin orchestration                                                                             | `src/app/` (route `/firmware`, under Tools)                                                                                     |
 
 Generic firmware code works on hashes and file roles only. File formats, offsets and wire bytes stay in the per-format
 and per-radio modules.
 
-### Future direction: runtime fetch (not planned)
+### Network use
 
-Studio could list firmware releases at runtime from the firmware projects, and offer a one-click stock download through
-a fixed-URL streaming proxy, keeping the file picker as a fallback. The pipeline has seams for it (`FirmwareReleaseSource`,
-`StockSource`), so it would add sources without changing verification or flashing. It is blocked by:
+The flasher makes plain, credential-free GETs of two kinds of public file: the release index and the patch the
+operator picks, from the firmware project's public repository (override with `VITE_FIRMWARE_RELEASE_INDEX_URL`).
+Nothing about the operator, the radio or their stock is sent, and nothing is stored. If the index can't be fetched,
+stock and a user-supplied patch still work.
 
-- **Legal: opening the firmware repositories.** Runtime fetch needs them public. That would publish the
-  reverse-engineering record and patches containing small runs of stock bytes, which is an unresolved gray area.
+### Future direction: one-click stock (not planned)
+
+Studio could offer a one-click stock download through a fixed-URL streaming proxy, keeping the file picker as a
+fallback (`StockSource` is the seam). It is blocked by:
+
 - **Legal: relaying vendor firmware.** A proxy that stores nothing still serves vendor binaries from Studio's domain.
   That is a weaker position than the user downloading the file from the vendor.
-- **Mechanical:** the repos must be public; release-asset redirects may not be fetchable cross-origin; vendor hosts send
-  no CORS headers, so stock needs a proxy; vendor URLs aren't versioned; streaming large zips through Pages Functions
-  is unproven.
-- **Selectivity:** listing every tagged release at runtime undoes "Studio chooses what ships", unless the firmware
-  projects publish a curated index.
+- **Mechanical:** vendor hosts send no CORS headers, so stock needs a proxy; vendor URLs aren't versioned; streaming
+  large zips through Pages Functions is unproven.
 
 ---
 
@@ -402,6 +404,7 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 
 | Date       | Change                                                                                                                                                                             |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-24 | Firmware releases are listed and fetched at run time from the firmware project's public release index (pskillen/mm9pdy-firmware) instead of being bundled                          |
 | 2026-10-21 | Firmware flashing: user-supplied stock, bundled and user-supplied patches, hard interlocks, per-radio prod gate ([#1359](https://github.com/pskillen/codeplug-studio/issues/1359)) |
 | 2026-07-22 | Browser WebSerial radio I/O as intentional goal; CPS/firmware versions ([#595](https://github.com/pskillen/codeplug-studio/issues/595))                                            |
 | 2026-06-29 | Initial draft on branch `2/pskil/design-md`                                                                                                                                        |

@@ -1,5 +1,5 @@
 /**
- * Test-only synthetic DM-32 release: seeded stock and built images, a patch made from them, and a bundled-style row.
+ * Test-only synthetic DM-32 release: seeded stock and built images, a patch made from them, and a published-style row.
  * Never real stock bytes.
  */
 import { seededBytes, syntheticDescriptor } from '../../__fixtures__/synthetic.ts';
@@ -7,7 +7,7 @@ import { sha256Hex } from '../../hash.ts';
 import { makeSyntheticDm32Patch } from '../../patch/formats/baofeng-dm32-firmware/__fixtures__/makeSyntheticPatch.ts';
 import { resolveStockFirmware } from '../../stock/resolveStockFirmware.ts';
 import type { StockFirmwareDescriptor } from '../../types.ts';
-import type { BundledFirmwareRelease } from '../types.ts';
+import type { PublishedFirmwareRelease } from '../types.ts';
 
 export const SYNTH_DM32_FILE = 'SYNTH_DM32.bin';
 
@@ -36,7 +36,7 @@ export async function syntheticDm32Release(opts: { version?: string; seed?: numb
   const patchJson = await makeSyntheticDm32Patch(stockBin, built, version, { versionSlot: slot });
   const patchBytes = new TextEncoder().encode(JSON.stringify(patchJson, null, 1) + '\n');
   const patchSha256 = await sha256Hex(patchBytes);
-  const row: BundledFirmwareRelease = {
+  const row: PublishedFirmwareRelease = {
     radioId: 'baofeng-dm32uv',
     tag: version,
     patchName: 'baofeng-dm32-firmware',

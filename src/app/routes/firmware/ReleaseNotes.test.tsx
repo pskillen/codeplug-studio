@@ -1,22 +1,24 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import ReleaseNotes from './ReleaseNotes.tsx';
 import { parseReleaseNotes } from './releaseNotesParse.ts';
 
-const releasesDir = join(
-  dirname(fileURLToPath(import.meta.url)),
-  '../../../core/firmware/releases',
-);
+/** The shape the firmware project's release notes take (pskillen/mm9pdy-firmware `releases/*.md` bodies). */
+const SAMPLE_NOTES = `The first full release. It applies to stock **V1.05** only.
+
+**What's in it**
+
+- **Talk-group keys:** step through the RX group list with TG Previous / TG Next. A \`TS1\` or
+  \`TS2\` suffix sets the timeslot.
+- **Zone scan:** scans the whole zone.
+
+**Checking it worked:** Device Info > Version shows \`1.0.0\`.
+`;
 
 describe('ReleaseNotes', () => {
-  it.each(['baofeng-dm32uv', 'anytone-at-d890uv'])('renders the shipped %s notes', (radio) => {
-    const text = readFileSync(join(releasesDir, radio, '1.0.0.release-notes.md'), 'utf8');
-    const { container } = render(<ReleaseNotes text={text} />);
+  it('renders release notes as published', () => {
+    const { container } = render(<ReleaseNotes text={SAMPLE_NOTES} />);
     expect(container.querySelector('ul')).not.toBeNull();
     expect(screen.getByText("What's in it").tagName).toBe('STRONG');
   });

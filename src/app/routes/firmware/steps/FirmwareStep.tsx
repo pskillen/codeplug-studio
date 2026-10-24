@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
-import { bundledReleaseSummary } from '@core/firmware/releases/bundledSource.ts';
+import { publishedReleaseSummary } from '@core/firmware/releases/publishedSource.ts';
 import { loadedFirmwarePatchTitle } from '@core/firmware/releases/projects.ts';
 import type { FirmwareReleaseSummary, LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
 
 import {
+  Button,
   FileDropzone,
   Panel,
   Pill,
@@ -14,7 +15,7 @@ import {
 } from '../../../components/v2/index.ts';
 import {
   filesToNamedBytes,
-  listBundledReleases,
+  listPublishedReleases,
   loadChosenPatch,
 } from '../../../services/firmwareFlash.ts';
 import classes from '../FirmwareFlasherPage.module.css';
@@ -24,8 +25,8 @@ import { shortHash, type WizardStepProps } from './stepTypes.ts';
 
 const UNREVIEWED_PATCH_RISK_STATEMENT = (
   <>
-    This patch has not been reviewed or bundled by Codeplug Studio. Studio checks that it matches
-    your stock firmware and that the result matches the hash inside the patch, but it{' '}
+    This patch is not one of the firmware project&apos;s published releases. Studio checks that it
+    matches your stock firmware and that the result matches the hash inside the patch, but it{' '}
     <strong>cannot tell whether the firmware it produces is safe</strong>. A bad patch can leave
     your radio unable to boot. Only use patch files you built yourself or got from the firmware
     project&apos;s own release page.
@@ -37,7 +38,7 @@ function messageOf(err: unknown, fallback: string): string {
 }
 
 function summaryForLoaded(loaded: LoadedFirmwarePatch): FirmwareReleaseSummary | null {
-  return loaded.release ? bundledReleaseSummary(loaded.release) : null;
+  return loaded.release ? publishedReleaseSummary(loaded.release) : null;
 }
 
 function NotesDisclosure({ summary }: { summary: FirmwareReleaseSummary }) {
@@ -66,14 +67,16 @@ function NotesDisclosure({ summary }: { summary: FirmwareReleaseSummary }) {
   );
 }
 
-/** What to flash: a bundled release, stock (always: also the recovery path), or a patch file under Advanced. */
+/** What to flash: a published release, stock (always: also the recovery path), or a patch file under Advanced. */
 export default function FirmwareStep({ state, dispatch, updater }: WizardStepProps) {
   const radioId = updater.radioId;
   const listKey = `${radioId}:${state.includeRc}`;
   const [releases, setReleases] = useState<{
     key: string;
     list: readonly FirmwareReleaseSummary[];
+    error?: string;
   } | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [userFile, setUserFile] = useState<{
@@ -84,19 +87,26 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
 
   useEffect(() => {
     let cancelled = false;
-    listBundledReleases(radioId, state.includeRc)
+    listPublishedReleases(radioId, state.includeRc)
       .then((list) => {
         if (!cancelled) setReleases({ key: listKey, list });
       })
-      .catch(() => {
-        if (!cancelled) setReleases({ key: listKey, list: [] });
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setReleases({
+            key: listKey,
+            list: [],
+            error: messageOf(err, 'The firmware release list could not be downloaded.'),
+          });
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [radioId, state.includeRc, listKey]);
+  }, [radioId, state.includeRc, listKey, attempt]);
 
-  const list = releases?.key === listKey ? releases.list : null;
+  const current = releases?.key === listKey ? releases : null;
+  const list = current ? current.list : null;
   const { choice } = state;
 
   async function chooseRelease(summary: FirmwareReleaseSummary) {
@@ -105,12 +115,12 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
     try {
       const loaded = await loadChosenPatch(radioId, {
         kind: 'release',
-        source: 'bundled',
+        source: 'published',
         summary,
       });
       dispatch({
         type: 'chooseFirmware',
-        choice: { kind: 'release', source: 'bundled', summary },
+        choice: { kind: 'release', source: 'published', summary },
         loadedPatch: loaded,
       });
     } catch (err) {
@@ -128,11 +138,11 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
       const [named] = await filesToNamedBytes([file]);
       const loaded = await loadChosenPatch(radioId, { kind: 'user-patch', file: named! });
       setUserFile({ name: file.name, loaded, error: null });
-      const bundled = summaryForLoaded(loaded);
-      if (bundled) {
+      const published = summaryForLoaded(loaded);
+      if (published) {
         dispatch({
           type: 'chooseFirmware',
-          choice: { kind: 'release', source: 'bundled', summary: bundled },
+          choice: { kind: 'release', source: 'published', summary: published },
           loadedPatch: loaded,
         });
       } else {
@@ -169,6 +179,18 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
           />
           <div className={classes.stack} role="radiogroup" aria-label="Firmware">
             {list === null ? <p className={classes.muted}>Loading releases…</p> : null}
+            {current?.error ? (
+              <>
+                <StatusBanner tone="warning">
+                  {current.error} Stock firmware and a patch file from disk still work.
+                </StatusBanner>
+                <div>
+                  <Button variant="secondary" size="sm" onClick={() => setAttempt((n) => n + 1)}>
+                    Try again
+                  </Button>
+                </div>
+              </>
+            ) : null}
             {list?.map((summary) => {
               const release = summary.release!;
               const selected = choice.kind === 'release' && choice.summary.key === summary.key;
@@ -234,7 +256,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
             {userFile?.error ? <StatusBanner tone="warning">{userFile.error}</StatusBanner> : null}
             {userFile?.loaded?.release ? (
               <StatusBanner tone="success">
-                This is the {loadedFirmwarePatchTitle(userFile.loaded)} (bundled).
+                This is the {loadedFirmwarePatchTitle(userFile.loaded)} (published).
               </StatusBanner>
             ) : null}
             {unreviewed ? (

@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FirmwareError } from '@core/firmware/errors.ts';
-import type { LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
+import { syntheticDm32Release } from '@core/firmware/releases/__fixtures__/syntheticReleases.ts';
+import type {
+  LoadedFirmwarePatch,
+  PublishedFirmwareRelease,
+} from '@core/firmware/releases/types.ts';
 import * as prepareModule from '@core/services/firmware/prepareFirmwareImage.ts';
 import type { PreparedFirmwareImage } from '@core/services/firmware/prepareFirmwareImage.ts';
 import * as radioIo from '@integrations/radio-io';
@@ -9,13 +13,18 @@ import type { FirmwareUpdater } from '@integrations/radio-io';
 
 import {
   formatFirmwareFlashSummary,
-  listBundledReleases,
+  listPublishedReleases,
   loadChosenPatch,
   prepareFlash,
   type VerifiedStockFirmware,
 } from './firmwareFlash.ts';
 
 const checkImage = vi.fn();
+const publishedRows = vi.fn<() => Promise<readonly PublishedFirmwareRelease[]>>();
+
+vi.mock('@integrations/firmware-releases/publicReleaseIndex.ts', () => ({
+  createPublicReleaseIndexLoader: () => () => publishedRows(),
+}));
 
 vi.mock('@core/services/firmware/prepareFirmwareImage.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof prepareModule>();
@@ -37,7 +46,7 @@ vi.mock('@integrations/radio-io', async (importOriginal) => {
 
 const STOCK = {} as VerifiedStockFirmware;
 const IMAGE = { provenance: 'stock' } as unknown as PreparedFirmwareImage;
-const LOADED = { provenance: 'bundled' } as unknown as LoadedFirmwarePatch;
+const LOADED = { provenance: 'published' } as unknown as LoadedFirmwarePatch;
 
 describe('prepareFlash', () => {
   beforeEach(() => {
@@ -77,25 +86,30 @@ describe('prepareFlash', () => {
   });
 });
 
-describe('bundled releases and chosen patches', () => {
-  it('lists the bundled DM-32UV 1.0.0 final', async () => {
-    const list = await listBundledReleases('baofeng-dm32uv', false);
-    expect(list.map((r) => r.key)).toContain('1.0.0');
-    expect(list.every((r) => r.provenance === 'bundled')).toBe(true);
+describe('published releases and chosen patches', () => {
+  beforeEach(() => {
+    publishedRows.mockReset();
   });
 
-  it('loads the bundled release by key', async () => {
-    const [summary] = await listBundledReleases('baofeng-dm32uv', false);
-    const loaded = await loadChosenPatch('baofeng-dm32uv', {
-      kind: 'release',
-      source: 'bundled',
-      summary: summary!,
+  it('lists the published finals for the radio', async () => {
+    const { row } = await syntheticDm32Release();
+    publishedRows.mockResolvedValue([row, { ...row, tag: '9.9.9-rc.1', channel: 'rc' }]);
+    const list = await listPublishedReleases('baofeng-dm32uv', false);
+    expect(list.map((r) => r.key)).toEqual([row.tag]);
+    expect(list.every((r) => r.provenance === 'published')).toBe(true);
+  });
+
+  it('passes a release-list failure through', async () => {
+    publishedRows.mockImplementation(async () => {
+      throw new FirmwareError('patch-unreadable', 'offline');
     });
-    expect(loaded.provenance).toBe('bundled');
-    expect(loaded.release?.tag).toBe(summary!.key);
+    await expect(listPublishedReleases('baofeng-dm32uv', false)).rejects.toThrow('offline');
   });
 
-  it('passes FirmwareError codes through for a user file', async () => {
+  it('still reads a user file when the release list cannot be fetched', async () => {
+    publishedRows.mockImplementation(async () => {
+      throw new FirmwareError('patch-unreadable', 'offline');
+    });
     const err = await loadChosenPatch('baofeng-dm32uv', {
       kind: 'user-patch',
       file: { name: 'x.json', bytes: new TextEncoder().encode('{"name":"nope","format":1}') },
@@ -125,18 +139,18 @@ describe('formatFirmwareFlashSummary provenance lines', () => {
       ...extra,
     }) as unknown as PreparedFirmwareImage;
 
-  it('names a bundled release', () => {
+  it('names a published release', () => {
     const text = formatFirmwareFlashSummary({
       ...base,
       image: image({
-        provenance: 'bundled',
+        provenance: 'published',
         releaseTag: '1.0.0',
         title: 'MM9PDY modded firmware 1.0.0',
         patchSha256: 'aa',
         versionStamp: '1.0.0',
       }),
     });
-    expect(text).toContain('Firmware: MM9PDY modded firmware 1.0.0 (bundled, patch sha256 aa)');
+    expect(text).toContain('Firmware: MM9PDY modded firmware 1.0.0 (published, patch sha256 aa)');
     expect(text).toContain('Version stamp: 1.0.0');
   });
 

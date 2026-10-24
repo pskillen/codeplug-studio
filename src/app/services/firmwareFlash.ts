@@ -4,9 +4,13 @@
  * flashing and docs/features/firmware-flashing/.
  */
 import { FirmwareError } from '@core/firmware/errors.ts';
-import { bundledFirmwareReleaseSource } from '@core/firmware/releases/bundledSource.ts';
 import { listKnownPatchedResults } from '@core/firmware/releases/index.ts';
-import type { FirmwareReleaseSummary, LoadedFirmwarePatch } from '@core/firmware/releases/types.ts';
+import { createPublishedFirmwareReleaseSource } from '@core/firmware/releases/publishedSource.ts';
+import type {
+  FirmwareReleaseSummary,
+  LoadedFirmwarePatch,
+  PublishedFirmwareRelease,
+} from '@core/firmware/releases/types.ts';
 import { createUserPatchSource } from '@core/firmware/releases/userPatchSource.ts';
 import {
   resolveStockFirmware,
@@ -36,8 +40,22 @@ import {
   type FirmwareUpdaterDescriptor,
   type SerialPortLike,
 } from '@integrations/radio-io';
+import { createPublicReleaseIndexLoader } from '@integrations/firmware-releases/publicReleaseIndex.ts';
 
 export type { VerifiedStockFirmware };
+
+/** The firmware project's published releases, fetched once per page load (and again after a failure). */
+const loadPublishedReleases = createPublicReleaseIndexLoader();
+const publishedReleaseSource = createPublishedFirmwareReleaseSource(loadPublishedReleases);
+
+/** Published rows when the list can be fetched; none when it cannot (stock and user patches still work). */
+async function publishedRowsOrNone(): Promise<readonly PublishedFirmwareRelease[]> {
+  try {
+    return await loadPublishedReleases();
+  } catch {
+    return [];
+  }
+}
 
 function requireUpdater(radioId: FirmwareRadioId): FirmwareUpdaterDescriptor {
   const d = getFirmwareUpdater(radioId);
@@ -60,21 +78,22 @@ export async function verifyStockFiles(
   const others = listStockFirmwareDescriptors().filter((d) => d.radioId !== radioId);
   return resolveStockFirmware(descriptor, files, {
     otherDescriptors: others,
-    knownPatchedResults: listKnownPatchedResults(radioId),
+    knownPatchedResults: listKnownPatchedResults(radioId, await publishedRowsOrNone()),
   });
 }
 
 /** What the operator chose to flash. */
 export type FirmwareChoice =
   | { kind: 'stock' }
-  | { kind: 'release'; source: 'bundled'; summary: FirmwareReleaseSummary }
+  | { kind: 'release'; source: 'published'; summary: FirmwareReleaseSummary }
   | { kind: 'user-patch'; file: NamedBytes };
 
-export async function listBundledReleases(
+/** Throws FirmwareError when the release list cannot be fetched. */
+export async function listPublishedReleases(
   radioId: FirmwareRadioId,
   includeRc: boolean,
 ): Promise<readonly FirmwareReleaseSummary[]> {
-  return bundledFirmwareReleaseSource.listReleases(radioId, { includeRc });
+  return publishedReleaseSource.listReleases(radioId, { includeRc });
 }
 
 /** Load and check the chosen patch. FirmwareError codes pass through for the wizard to show. */
@@ -83,9 +102,9 @@ export async function loadChosenPatch(
   choice: Exclude<FirmwareChoice, { kind: 'stock' }>,
 ): Promise<LoadedFirmwarePatch> {
   if (choice.kind === 'release') {
-    return bundledFirmwareReleaseSource.loadPatch(radioId, choice.summary.key);
+    return publishedReleaseSource.loadPatch(radioId, choice.summary.key);
   }
-  const source = createUserPatchSource(choice.file);
+  const source = createUserPatchSource(choice.file, { rows: await publishedRowsOrNone() });
   const [summary] = await source.listReleases(radioId, { includeRc: true });
   return source.loadPatch(radioId, summary!.key);
 }
@@ -226,8 +245,8 @@ function provenanceLine(image: PreparedFirmwareImage): string {
   switch (image.provenance) {
     case 'stock':
       return `Firmware: ${image.title}`;
-    case 'bundled':
-      return `Firmware: ${image.title} (bundled, patch sha256 ${image.patchSha256 ?? '?'})`;
+    case 'published':
+      return `Firmware: ${image.title} (published, patch sha256 ${image.patchSha256 ?? '?'})`;
     case 'unreviewed':
       return `Firmware: ${image.title} (user-supplied patch, sha256 ${image.patchSha256 ?? '?'}, version ${image.patchVersion ?? '?'})`;
   }

@@ -11,8 +11,8 @@ function provenanceLabel(image: PreparedFirmwareImage): string {
   switch (image.provenance) {
     case 'stock':
       return image.title;
-    case 'bundled':
-      return `${image.title} (bundled)`;
+    case 'published':
+      return `${image.title} (published)`;
     case 'unreviewed':
       return `${image.title} (unreviewed user-supplied patch)`;
   }

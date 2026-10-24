@@ -11,25 +11,25 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 
 ## Implementation status
 
-| Area                | Status                             | Notes                                                                                                                                                                                                                                                                                                                                         |
-| ------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DM-32UV flash       | Shipped: prod                      | Stock and bundled releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                                                                                                         |
-| Bundled releases    | Shipped: prod (DM-32UV, AT-D890UV) | DM-32UV `1.0.0`, `1.0.0-rc.3`, `1.1.0` and `1.2.0-rc.1`, AT-D890UV `1.0.0`, `1.1.0-rc.1`, `1.1.0` and `1.2.0-rc.2`, in `src/core/firmware/releases/`, verified by the catalog test; release list, RC toggle and notes in the wizard; offered on prod wherever the radio is ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
-| User-supplied patch | Shipped: prod (DM-32UV, AT-D890UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                                                                      |
-| AT-D890UV           | Shipped: prod                      | Stock and bundled releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                                                                         |
-| Recovery docs       | Shipped                            | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                                             |
-| Android             | Deferred                           | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                                                                                                                |
+| Area                | Status                             | Notes                                                                                                                                                                                                                                                                                                                      |
+| ------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DM-32UV flash       | Shipped: prod                      | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                                                                                    |
+| Published releases  | Shipped (DM-32UV, AT-D890UV)       | Listed and fetched at run time from the firmware project's public release index ([releases.md](releases.md)), checked before use; release list, RC toggle, notes and a retry when the list can't be fetched in the wizard. Replaced the bundled catalog ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
+| User-supplied patch | Shipped: prod (DM-32UV, AT-D890UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                                                   |
+| AT-D890UV           | Shipped: prod                      | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                                                    |
+| Recovery docs       | Shipped                            | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                          |
+| Android             | Deferred                           | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                                                                                             |
 
 ## Documentation map
 
-| Doc                                                                                                                    | Topic                                                         |
-| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing)                                                  | Product rules: no vendor firmware, pinning, interlocks, gates |
-| [adding-a-release.md](adding-a-release.md)                                                                             | Maintainer procedure for bundling a release                   |
-| [DM-32UV firmware.md](../../reference/radios/baofeng/dm-32uv/firmware.md)                                              | Stock pin, update mode, patch format, bootloader protocol     |
-| [AT-D890UV firmware.md](../../reference/radios/anytone/at-d890uv/firmware.md)                                          | Stock pin, update mode, patch format, bootloader protocol     |
-| [Adding a radio adapter — Firmware updater](../radio-read-write/adding-a-radio-adapter.md#8-firmware-updater-optional) | Checklist for a new radio's updater                           |
-| [Stepper.md](../../../src/app/components/v2/Stepper.md)                                                                | Wizard step indicator                                         |
+| Doc                                                                                                                    | Topic                                                                                  |
+| ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [DESIGN.md — Firmware flashing](../../../DESIGN.md#firmware-flashing)                                                  | Product rules: no vendor firmware, pinning, interlocks, gates                          |
+| [releases.md](releases.md)                                                                                             | Where releases come from: the public release index, its format, and what Studio checks |
+| [DM-32UV firmware.md](../../reference/radios/baofeng/dm-32uv/firmware.md)                                              | Stock pin, update mode, patch format, bootloader protocol                              |
+| [AT-D890UV firmware.md](../../reference/radios/anytone/at-d890uv/firmware.md)                                          | Stock pin, update mode, patch format, bootloader protocol                              |
+| [Adding a radio adapter — Firmware updater](../radio-read-write/adding-a-radio-adapter.md#8-firmware-updater-optional) | Checklist for a new radio's updater                                                    |
+| [Stepper.md](../../../src/app/components/v2/Stepper.md)                                                                | Wizard step indicator                                                                  |
 
 ## Concepts
 
@@ -38,7 +38,7 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
   gate.
 - **One pipeline.** Verify the user's stock firmware against the pinned hashes → (apply a release patch → verify the
   result hash) → the updater's hard interlocks → the bootloader's ident → flash. Stock is the zero-patch case.
-- **Provenance.** Every prepared image records where it came from: `stock`, a `bundled` release, or an `unreviewed`
+- **Provenance.** Every prepared image records where it came from: `stock`, a `published` release, or an `unreviewed`
   user-supplied patch. The flash summary carries it.
 - **Hard interlocks.** Each radio's updater refuses unsafe images and frames in code (length, model ID, header, and a
   guard that only allows the next precomputed frame). No setting can switch one off.
@@ -71,20 +71,22 @@ flowchart LR
 
 1. **Radio** — the radios this site offers, with the pinned stock version and how long a flash takes.
 2. **Firmware** — what to flash:
-   - **Bundled releases** for the radio, newest first, each named by its firmware project and version ("MM9PDY
+   - **Published releases** for the radio, from the firmware project's public release index
+     ([releases.md](releases.md)), newest first, each named by its firmware project and version ("MM9PDY
      modded firmware 1.0.0"), with its date, a summary and a **Release notes**
-     disclosure that shows the Studio copy of the notes unchanged. Finals only by default; **Show release
+     disclosure that shows the published notes unchanged. If the list can't be downloaded, a warning says so with
+     **Try again**; stock and a patch file from disk still work. Finals only by default; **Show release
      candidates** adds RCs, labelled **Pre-release**.
    - **Stock firmware** ("Stock firmware (v1.01.048)"), always listed: it is also the recovery path.
-   - **Advanced: use a patch file from disk.** A `.patch.json` identical to a bundled release is treated as that
-     release ("This is the MM9PDY modded firmware 1.0.0 (bundled)"). Any other patch shows its project name and
+   - **Advanced: use a patch file from disk.** A `.patch.json` identical to a published release is treated as that
+     release ("This is the MM9PDY modded firmware 1.0.0 (published)"). Any other patch shows its project name and
      version, a short sha256 and a risk
      statement, and needs **I understand** ticked before the wizard continues. That is in addition to the risk
      acknowledgement every flash needs. A patch for another radio is refused with its own message.
 3. **Stock firmware** — the vendor's download link (a plain link: Studio never fetches it), the expected zip and
    file names, and a drop zone for the zip or the extracted files. Studio checks every file against the pinned hashes.
 4. **Prepare** — builds the exact image (applying the patch and checking its result hash) and runs the updater's
-   interlocks. Shows what will be flashed ("MM9PDY modded firmware 1.0.0 (bundled)", "MM9PDY modded firmware 1.1.0
+   interlocks. Shows what will be flashed ("MM9PDY modded firmware 1.0.0 (published)", "MM9PDY modded firmware 1.1.0
    (unreviewed user-supplied patch)" or "stock firmware v1.01.048"), the
    version stamp and the result hashes. A failure, such as a patch made for different stock, stops here; nothing is
    sent.
@@ -126,11 +128,11 @@ max … ms`. A failed flash records the timing up to the failure.
 
 ## Provenance
 
-| Provenance   | Source                                                | Flash summary line                                                                  |
-| ------------ | ----------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `stock`      | The user's verified stock, unchanged                  | `Firmware: stock firmware <version>`                                                |
-| `bundled`    | A bundled release, or a dropped file identical to one | `Firmware: <project> <tag> (bundled, patch sha256 <hash>)`                          |
-| `unreviewed` | Any other patch file from disk                        | `Firmware: <project> <version> (user-supplied patch, sha256 <hash>, version <ver>)` |
+| Provenance   | Source                                                  | Flash summary line                                                                  |
+| ------------ | ------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `stock`      | The user's verified stock, unchanged                    | `Firmware: stock firmware <version>`                                                |
+| `published`  | A published release, or a dropped file identical to one | `Firmware: <project> <tag> (published, patch sha256 <hash>)`                        |
+| `unreviewed` | Any other patch file from disk                          | `Firmware: <project> <version> (user-supplied patch, sha256 <hash>, version <ver>)` |
 
 `<project>` is the firmware project's display name, looked up by the patch `name` in
 `src/core/firmware/releases/projects.ts` (`FIRMWARE_PROJECTS`). The DM-32UV and AT-D890UV patch projects are both

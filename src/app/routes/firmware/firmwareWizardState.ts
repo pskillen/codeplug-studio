@@ -81,7 +81,7 @@ export function isChoiceReady(state: FirmwareWizardState): boolean {
   if (state.choice.kind === 'stock') return true;
   const loaded = state.loadedPatch;
   if (!loaded) return false;
-  return loaded.provenance === 'bundled' || state.riskAccepted;
+  return loaded.provenance === 'published' || state.riskAccepted;
 }
 
 /** Whether the operator may move past `state.step`. */
