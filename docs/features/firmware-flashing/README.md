@@ -11,14 +11,15 @@ touches the codeplug, and stores nothing. Product rules: [DESIGN.md — Firmware
 
 ## Implementation status
 
-| Area                | Status                             | Notes                                                                                                                                                                                                                                                                                                                      |
-| ------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DM-32UV flash       | Shipped: prod                      | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                                                                                    |
-| Published releases  | Shipped (DM-32UV, AT-D890UV)       | Listed and fetched at run time from the firmware project's public release index ([releases.md](releases.md)), checked before use; release list, RC toggle, notes and a retry when the list can't be fetched in the wizard. Replaced the bundled catalog ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
-| User-supplied patch | Shipped: prod (DM-32UV, AT-D890UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                                                   |
-| AT-D890UV           | Shipped: prod                      | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                                                    |
-| Recovery docs       | Shipped                            | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                          |
-| Android             | Deferred                           | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                                                                                             |
+| Area                        | Status                             | Notes                                                                                                                                                                                                                                                                                                                      |
+| --------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DM-32UV flash               | Shipped: prod                      | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1363](https://github.com/pskillen/codeplug-studio/issues/1363))                                                                                                                    |
+| Published releases          | Shipped (DM-32UV, AT-D890UV)       | Listed and fetched at run time from the firmware project's public release index ([releases.md](releases.md)), checked before use; release list, RC toggle, notes and a retry when the list can't be fetched in the wizard. Replaced the bundled catalog ([#1362](https://github.com/pskillen/codeplug-studio/issues/1362)) |
+| User-supplied patch         | Shipped: prod (DM-32UV, AT-D890UV) | Advanced option with a risk statement ([#1365](https://github.com/pskillen/codeplug-studio/issues/1365))                                                                                                                                                                                                                   |
+| AT-D890UV                   | Shipped: prod                      | Stock and published releases: wizard, updater and interlocks. Enabled on the prod site after a hardware flash of `1.0.0` from Studio ([#1364](https://github.com/pskillen/codeplug-studio/issues/1364))                                                                                                                    |
+| Recovery docs               | Shipped                            | [Recovery](#recovery): stock flash as the way back, vendor CPS as the fallback ([#1366](https://github.com/pskillen/codeplug-studio/issues/1366))                                                                                                                                                                          |
+| Browsers without Web Serial | Shipped                            | Phones, tablets, Firefox and Safari get a read-only list of the published releases for each offered radio (RC toggle, notes, retry) with a banner saying flashing needs Chrome or Edge on a desktop computer. No wizard, no port (`ReleaseBrowser.tsx`)                                                                    |
+| Android                     | Deferred                           | Hidden in the Capacitor app ([#1367](https://github.com/pskillen/codeplug-studio/issues/1367))                                                                                                                                                                                                                             |
 
 ## Documentation map
 
@@ -66,6 +67,15 @@ flowchart LR
 | DM-32UV      | `src/integrations/radio-io/radios/dm32uv/firmwareUpdate/`                                  |
 | AT-D890UV    | `src/integrations/radio-io/radios/at-d890uv/firmwareUpdate/`                               |
 | App          | `src/app/routes/firmware/`, `src/app/services/firmwareFlash.ts`, `firmwareFlashEnvGate.ts` |
+
+## Browsers without Web Serial
+
+Flashing needs Web Serial, which phones, tablets, Firefox and Safari don't have. On those browsers `/firmware` shows no
+wizard: a banner says flashing needs Chrome or Edge on a desktop computer, then each offered radio's published releases
+are listed read-only, newest first, with **Show release candidates**, the **Release notes** disclosure and the same
+**Try again** when the list can't be downloaded. Nothing there opens a port or loads a patch. The Tools strip still
+shows the flasher entry, so the releases can be read from a phone. The Android app is unchanged (the flasher is
+hidden there).
 
 ## Wizard steps
 

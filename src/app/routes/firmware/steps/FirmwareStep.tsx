@@ -19,7 +19,7 @@ import {
   loadChosenPatch,
 } from '../../../services/firmwareFlash.ts';
 import classes from '../FirmwareFlasherPage.module.css';
-import ReleaseNotes from '../ReleaseNotes.tsx';
+import ReleaseNotesDisclosure from '../ReleaseNotesDisclosure.tsx';
 import LabeledCheck from './LabeledCheck.tsx';
 import { shortHash, type WizardStepProps } from './stepTypes.ts';
 
@@ -39,32 +39,6 @@ function messageOf(err: unknown, fallback: string): string {
 
 function summaryForLoaded(loaded: LoadedFirmwarePatch): FirmwareReleaseSummary | null {
   return loaded.release ? publishedReleaseSummary(loaded.release) : null;
-}
-
-function NotesDisclosure({ summary }: { summary: FirmwareReleaseSummary }) {
-  const [notes, setNotes] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-  return (
-    <details
-      className={classes.disclosure}
-      onToggle={(e) => {
-        if (!e.currentTarget.open || notes !== null || !summary.release) return;
-        summary.release
-          .loadNotes()
-          .then(setNotes)
-          .catch(() => setFailed(true));
-      }}
-    >
-      <summary>Release notes</summary>
-      {failed ? (
-        <p className={classes.muted}>The release notes could not be loaded.</p>
-      ) : notes === null ? (
-        <p className={classes.muted}>Loading…</p>
-      ) : (
-        <ReleaseNotes text={notes} />
-      )}
-    </details>
-  );
 }
 
 /** What to flash: a published release, stock (always: also the recovery path), or a patch file under Advanced. */
@@ -212,7 +186,7 @@ export default function FirmwareStep({ state, dispatch, updater }: WizardStepPro
                   </label>
                   <span className={classes.cardMeta}>Published {release.publishedOn}</span>
                   <span className={classes.copy}>{release.summary}</span>
-                  <NotesDisclosure summary={summary} />
+                  <ReleaseNotesDisclosure summary={summary} />
                 </div>
               );
             })}

@@ -331,6 +331,44 @@ describe('FirmwareFlasherPage — releases and patch files', () => {
     );
   });
 
+  describe('without Web Serial (phones, tablets, other browsers)', () => {
+    beforeEach(() => {
+      vi.mocked(radioIo.isWebSerialSupported).mockReturnValue(false);
+    });
+
+    it('lists the published releases, with notes and RCs, but no way to flash', async () => {
+      renderPage();
+      expect(screen.getByText(/This browser can't flash firmware/)).toBeInTheDocument();
+      expect(await screen.findByText('Summary of 1.0.0.')).toBeInTheDocument();
+      expect(screen.getByText(DM32.stock.label)).toBeInTheDocument();
+      expect(screen.queryByText(/1\.1\.0-rc\.1/)).not.toBeInTheDocument();
+      expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Continue' })).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('Show release candidates'));
+      const rc = await screen.findByText(/MM9PDY modded firmware 1\.1\.0-rc\.1/);
+      expect(rc).toHaveTextContent('Pre-release');
+
+      const details = screen.getAllByText('Release notes')[0]!.closest('details')!;
+      details.open = true;
+      fireEvent(details, new Event('toggle'));
+      expect(
+        await screen.findByText(/Notes for 1\.1\.0-rc\.1|Notes for 1\.0\.0/),
+      ).toBeInTheDocument();
+      expect(flash.loadChosenPatch).not.toHaveBeenCalled();
+    });
+
+    it('says when the list cannot be downloaded, and retries', async () => {
+      vi.mocked(flash.listPublishedReleases).mockImplementationOnce(async () => {
+        throw new FirmwareError('patch-unreadable', 'The list is unavailable.');
+      });
+      renderPage();
+      expect(await screen.findByText('The list is unavailable.')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+      expect(await screen.findByText('Summary of 1.0.0.')).toBeInTheDocument();
+    });
+  });
+
   it('lists finals, and adds release candidates on request', async () => {
     await toFirmwareStep();
     expect(
