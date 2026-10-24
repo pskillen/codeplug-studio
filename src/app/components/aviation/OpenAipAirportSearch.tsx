@@ -22,7 +22,8 @@ import {
   type AirbandNamePrefixKind,
 } from '@core/domain/airband/index.ts';
 import { validateZoneMembership } from '@core/domain/validation.ts';
-import { SETTINGS_OPENAIP_SECTION_ID } from '../../lib/settingsSections.ts';
+import { OPENAIP_API_KEY_GUIDE } from '../../lib/credentialGuides.tsx';
+import CredentialMissingNotice from '../settings/CredentialMissingNotice.tsx';
 import { useOpenAipAirportSearch } from '../../hooks/useOpenAipAirportSearch.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import {
@@ -585,17 +586,7 @@ export default function OpenAipAirportSearch() {
     >
       <Panel title="Search" sub="Query OpenAIP by location or airport identifier.">
         {!search.hasApiKey ? (
-          <StatusBanner tone="warning">
-            OpenAIP API key required.{' '}
-            <Link
-              to="/settings"
-              state={{ scrollTo: SETTINGS_OPENAIP_SECTION_ID }}
-              className="libraryListNameLink"
-            >
-              Add your key in Settings
-            </Link>
-            .
-          </StatusBanner>
+          <CredentialMissingNotice guide={OPENAIP_API_KEY_GUIDE} action="Searching OpenAIP" />
         ) : null}
 
         <div className={pageClasses.filterGrid}>

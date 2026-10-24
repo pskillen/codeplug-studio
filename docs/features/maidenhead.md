@@ -26,7 +26,7 @@ Two modes on one page — **Convert** and **Bearing**.
 - Locator ↔ coordinates at selectable precision (4 / 6 / 8 / 10 characters)
 - Map click and drag marker (`MapLocationPicker` inside v2 `MapPanel`)
 - Device geolocation via **Use my location**
-- Address geocode (Photon by default; Mapbox when a token is set in Settings)
+- Address geocode (Photon by default; Mapbox when an optional token is set in Settings — [api-keys.md](app-shell/api-keys.md))
 - Channel lookup when a project is active (seeds from channel `location`)
 
 **Bearing** — distance and bearing between two points (mobile-first, outdoor workflow):
