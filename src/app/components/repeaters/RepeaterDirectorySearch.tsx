@@ -24,7 +24,8 @@ import { isSimplex } from '../../lib/channels.ts';
 import { ICON_SIZE_NAV, ICON_STROKE } from '../../lib/iconSizes.ts';
 import { isOperationalStatus, queryKindHint } from '../../lib/repeaters.ts';
 import { repeaterSearchCapabilities } from '../../lib/repeaterSearchCapabilities.ts';
-import { SETTINGS_REPEATERBOOK_SECTION_ID } from '../../lib/settingsSections.ts';
+import { REPEATERBOOK_TOKEN_GUIDE } from '../../lib/credentialGuides.tsx';
+import CredentialMissingNotice from '../settings/CredentialMissingNotice.tsx';
 import { modeFilterOptions } from '../../lib/channelModes.ts';
 import { hzToMhzString } from '../../lib/units.ts';
 import { persistence } from '../../state/persistence.ts';
@@ -488,17 +489,10 @@ export default function RepeaterDirectorySearch({
     >
       <Panel title="Search" sub={`Query ${sourceMeta.label} and add matches to your library.`}>
         {isRepeaterbook && !search.hasToken ? (
-          <StatusBanner tone="warning">
-            RepeaterBook token required.{' '}
-            <Link
-              to="/settings"
-              state={{ scrollTo: SETTINGS_REPEATERBOOK_SECTION_ID }}
-              className="libraryListNameLink"
-            >
-              Add your token in Settings
-            </Link>
-            .
-          </StatusBanner>
+          <CredentialMissingNotice
+            guide={REPEATERBOOK_TOKEN_GUIDE}
+            action="Searching RepeaterBook"
+          />
         ) : null}
 
         {capabilities.regionSelector ? (

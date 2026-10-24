@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Alert, Anchor, Button, Checkbox, Text } from '@mantine/core';
+import { Alert, Button, Checkbox, Text } from '@mantine/core';
 import type { Channel } from '@core/models/library.ts';
 import type { MapListingOptions, RepeaterListing } from '@integrations/repeaters/index.ts';
-import { SETTINGS_REPEATERBOOK_SECTION_ID } from '../../lib/settingsSections.ts';
+import { REPEATERBOOK_TOKEN_GUIDE } from '../../lib/credentialGuides.tsx';
+import CredentialMissingNotice from '../settings/CredentialMissingNotice.tsx';
 import { useRepeaterBookSettings } from '../../hooks/useRepeaterBookSettings.ts';
 import RepeaterListingPickerModal from './RepeaterListingPickerModal.tsx';
 import RepeaterListingUpdateDialog, {
@@ -138,17 +138,11 @@ export default function ChannelDirectoryVerifyActions({
         </Text>
       ) : null}
       {!hasRepeaterBookToken ? (
-        <Text size="sm" c="dimmed">
-          RepeaterBook verify requires a token —{' '}
-          <Anchor
-            component={Link}
-            to="/settings"
-            state={{ scrollTo: SETTINGS_REPEATERBOOK_SECTION_ID }}
-          >
-            add in Settings
-          </Anchor>
-          .
-        </Text>
+        <CredentialMissingNotice
+          guide={REPEATERBOOK_TOKEN_GUIDE}
+          action="Check RepeaterBook"
+          variant="inline"
+        />
       ) : null}
       {error ? (
         <Alert color="red" className={classes.error}>
