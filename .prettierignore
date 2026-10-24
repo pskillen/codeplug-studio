@@ -4,6 +4,5 @@ node_modules/
 .cursor/
 .claude/
 src/core/import-export/formats/native-yaml/__fixtures__/
-# Published firmware release patches: exact bytes, hashed. Never reformat.
-src/core/firmware/releases/**/*.patch.json
+# Firmware patch fixtures: exact bytes, hashed. Never reformat.
 src/core/firmware/**/__fixtures__/**/*.json

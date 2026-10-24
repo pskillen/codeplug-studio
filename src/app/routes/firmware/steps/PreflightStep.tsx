@@ -19,7 +19,7 @@ const OTHER_CHECKS: { check: Exclude<PreflightCheck, 'risk'>; label: string }[] 
   { check: 'otherApps', label: 'The vendor CPS and other Studio tabs are closed' },
 ];
 
-/** Required for every flash: stock, bundled release or user patch. */
+/** Required for every flash: stock, published release or user patch. */
 export default function PreflightStep({ state, dispatch, updater }: WizardStepProps) {
   const { builds } = useFormatBuilds();
   const matching = useMemo(() => {

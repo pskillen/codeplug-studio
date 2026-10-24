@@ -39,7 +39,7 @@ export function stockFirmwareTitle(version: string): string {
   return `stock firmware ${version}`;
 }
 
-/** 'MM9PDY modded firmware 1.0.0' for a loaded patch: its bundled release when matched, else its own name and version. */
+/** 'MM9PDY modded firmware 1.0.0' for a loaded patch: its published release when matched, else its own name and version. */
 export function loadedFirmwarePatchTitle(loaded: LoadedFirmwarePatch): string {
   if (loaded.release) return firmwareReleaseTitle(loaded.release.patchName, loaded.release.tag);
   const { name, version } = loaded.parsed.description;

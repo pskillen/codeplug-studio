@@ -1,5 +1,5 @@
 /**
- * Pure parser for the bundled release notes (Studio copies). Supports paragraphs, `- ` bullet lists, `**bold**` and
+ * Pure parser for the published release notes (from the release index). Supports paragraphs, `- ` bullet lists, `**bold**` and
  * `` `code` ``; everything else is plain text.
  */
 export type ReleaseNotesInline =

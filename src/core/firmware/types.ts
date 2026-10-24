@@ -48,7 +48,7 @@ export interface FirmwarePackage {
   readonly files: Readonly<Record<string, Uint8Array>>;
 }
 
-export type FirmwareProvenance = 'stock' | 'bundled' | 'unreviewed';
+export type FirmwareProvenance = 'stock' | 'published' | 'unreviewed';
 
 /** Result hashes of a known patched build, so stock resolution can say "this is already-patched firmware". */
 export interface KnownPatchedResult {

@@ -1,5 +1,5 @@
 /**
- * Safe renderer for the bundled release notes (Studio copies). Supports paragraphs, `- ` bullet lists, `**bold**`
+ * Safe renderer for the published release notes (from the release index). Supports paragraphs, `- ` bullet lists, `**bold**`
  * and `` `code` ``; everything else is plain text. No HTML passthrough, no links, no raw HTML injection.
  */
 import type { ReactNode } from 'react';

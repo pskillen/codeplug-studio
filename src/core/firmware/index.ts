@@ -17,11 +17,17 @@ export {
   type VerifiedStockFirmware,
 } from './stock/resolveStockFirmware.ts';
 export { createUserFileStockSource, type StockSource } from './stock/stockSource.ts';
-export { BUNDLED_FIRMWARE_RELEASES, listKnownPatchedResults } from './releases/index.ts';
 export {
-  bundledFirmwareReleaseSource,
-  createBundledFirmwareReleaseSource,
-} from './releases/bundledSource.ts';
+  checkPublishedPatch,
+  listKnownPatchedResults,
+  parsePublishedReleaseIndex,
+  PUBLISHED_RELEASE_INDEX_FORMAT,
+  type PublishedIndexOptions,
+} from './releases/index.ts';
+export {
+  createPublishedFirmwareReleaseSource,
+  publishedReleaseSummary,
+} from './releases/publishedSource.ts';
 export { createUserPatchSource } from './releases/userPatchSource.ts';
 export {
   FIRMWARE_PROJECTS,
@@ -32,7 +38,7 @@ export {
   type FirmwareProject,
 } from './releases/projects.ts';
 export type {
-  BundledFirmwareRelease,
+  PublishedFirmwareRelease,
   FirmwareReleaseChannel,
   FirmwareReleaseSource,
   FirmwareReleaseSummary,

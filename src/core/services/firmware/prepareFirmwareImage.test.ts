@@ -56,14 +56,14 @@ describe('prepareFirmwareImage — stock target', () => {
 });
 
 describe('prepareFirmwareImage — patch target', () => {
-  async function loaded(provenance: 'bundled' | 'unreviewed' = 'bundled') {
+  async function loaded(provenance: 'published' | 'unreviewed' = 'published') {
     const r = await syntheticDm32Release();
     const patch: LoadedFirmwarePatch = {
       bytes: r.patchBytes,
       sha256: r.patchSha256,
       parsed: parseFirmwarePatch(r.patchBytes),
       provenance,
-      release: provenance === 'bundled' ? r.row : undefined,
+      release: provenance === 'published' ? r.row : undefined,
     };
     return { ...r, patch };
   }
@@ -75,7 +75,7 @@ describe('prepareFirmwareImage — patch target', () => {
       stock,
       target: { kind: 'patch', patch },
     });
-    expect(prepared.provenance).toBe('bundled');
+    expect(prepared.provenance).toBe('published');
     expect(prepared.releaseTag).toBe(row.tag);
     expect(prepared.title).toBe(`MM9PDY modded firmware ${row.tag}`);
     expect(prepared.patchVersion).toBe('9.9.9');

@@ -22,6 +22,7 @@ import {
   INITIAL_FIRMWARE_WIZARD_STATE,
   type FirmwareWizardStep,
 } from './firmwareWizardState.ts';
+import ReleaseBrowser from './ReleaseBrowser.tsx';
 import FirmwareStep from './steps/FirmwareStep.tsx';
 import FlashStep from './steps/FlashStep.tsx';
 import PreflightStep from './steps/PreflightStep.tsx';
@@ -44,8 +45,6 @@ export const FIRMWARE_UNAVAILABLE_ON_SITE =
   'The firmware flasher is not available on this site yet.';
 export const FIRMWARE_DESKTOP_ONLY =
   'Firmware flashing is available in a desktop browser (Chrome or Edge) for now.';
-export const FIRMWARE_NEEDS_WEB_SERIAL =
-  'Firmware flashing needs Web Serial. Use a desktop browser such as Chrome or Edge.';
 
 function Unavailable({ message }: { message: string }) {
   return (
@@ -74,7 +73,14 @@ export default function FirmwareFlasherPage() {
     );
   }
   if (!isWebSerialSupported()) {
-    return <Unavailable message={FIRMWARE_NEEDS_WEB_SERIAL} />;
+    return (
+      <DesignSystemV2Provider>
+        <div className={classes.page}>
+          <h1 className={classes.title}>Firmware flasher</h1>
+          <ReleaseBrowser offered={offered} />
+        </div>
+      </DesignSystemV2Provider>
+    );
   }
 
   const updater = offered.find((d) => d.radioId === state.radioId) ?? null;

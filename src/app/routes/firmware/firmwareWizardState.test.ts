@@ -16,7 +16,7 @@ import {
 const STOCK = { via: 'files' } as unknown as VerifiedStockFirmware;
 const IMAGE = { provenance: 'stock' } as unknown as PreparedFirmwareImage;
 const UNREVIEWED = { provenance: 'unreviewed' } as unknown as LoadedFirmwarePatch;
-const BUNDLED = { provenance: 'bundled' } as unknown as LoadedFirmwarePatch;
+const BUNDLED = { provenance: 'published' } as unknown as LoadedFirmwarePatch;
 const USER_CHOICE: FirmwareChoice = {
   kind: 'user-patch',
   file: { name: 'p.json', bytes: new Uint8Array(0) },

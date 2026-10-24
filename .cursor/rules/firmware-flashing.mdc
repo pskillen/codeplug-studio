@@ -22,9 +22,9 @@ Read [DESIGN.md — Firmware flashing](../../DESIGN.md#firmware-flashing).
 ## Rules
 
 - **No vendor bytes, ever.** Never commit a stock image, a vendor zip, or any slice of one: not in `src/`, test
-  fixtures, docs or scripts. Tests build synthetic images with hashes computed on the fly. Studio's own release patch
-  files under `src/core/firmware/releases/` are the only committed firmware-derived files, and they are copied byte
-  for byte from the firmware projects' releases.
+  fixtures, docs or scripts. Tests build synthetic images with hashes computed on the fly. No firmware-derived file is
+  committed either: release patches are fetched at run time from the firmware project's public release index
+  (`src/integrations/firmware-releases/`) and checked in core before use.
 - **Hard interlocks are code.** No setting, flag, env value, query parameter or patch field may disable one. Each
   interlock has a refusal test.
 - **One send path per updater.** Every byte to a bootloader goes through the guarded send helper, the only
@@ -33,8 +33,8 @@ Read [DESIGN.md — Firmware flashing](../../DESIGN.md#firmware-flashing).
   `src/core/services/firmware/` works on member roles and hashes. File extensions, offsets and wire keys live only in
   `patch/formats/<patch-name>/` and the radio's `firmware.ts` / `firmwareUpdate/`.
 - **No radio literals in `src/app/`.** USB IDs, timeouts, entry steps and verify hints come from descriptors.
-- **Release patches are byte-exact.** Never reformat `*.patch.json` (they are in `.prettierignore` and `-text` in
-  `.gitattributes`).
+- **Published patches are checked, never trusted.** A downloaded patch must match the index SHA-256 and pass
+  `checkPublishedPatch` (project, version, pinned stock, result hashes) before it is prepared.
 - **Per-radio prod gate.** A radio's `prodFlashDisabled` is cleared only in its own commit, after Studio has flashed
   at least one patched release to that radio on hardware.
 - **Flash is not Write.** Don't reuse `radioWriteEnvGate`, egress or build plumbing for firmware.
