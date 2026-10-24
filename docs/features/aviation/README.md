@@ -36,7 +36,7 @@ Tier-1 reference for **airport airband monitoring** workflows — searching [Ope
 
 | Step          | Behaviour                                                                                                                                 |
 | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Configure key | Settings → OpenAIP API key ([docs.openaip.net](https://docs.openaip.net/#/))                                                              |
+| Configure key | Settings → API keys and tokens → OpenAIP, with setup steps ([api-keys.md](../app-shell/api-keys.md))                                      |
 | Search        | ICAO/IATA/name, town geocode, Maidenhead locator, or **Use my location** + radius (km)                                                    |
 | Review        | Map + per-airport frequency checkboxes; select individual services or whole airports                                                      |
 | Import        | `buildAirbandImportPlan` → `putChannel`; optional zone; channel names use selectable IATA/ICAO/name prefix with duplicate-token stripping |
