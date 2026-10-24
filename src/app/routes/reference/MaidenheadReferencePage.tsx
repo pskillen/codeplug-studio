@@ -31,6 +31,8 @@ import {
   type LocatorPrecision,
 } from '@core/domain/maidenhead.ts';
 import { GeocodeError, geocodeQuery, type GeocodeProvider } from '@integrations/geocode/index.ts';
+import { Link } from 'react-router-dom';
+import { SETTINGS_MAPBOX_SECTION_ID } from '../../lib/settingsSections.ts';
 import { useProjects } from '../../state/useProjects.ts';
 import { useLibrary } from '../../state/useLibrary.ts';
 import MaidenheadBearingSection from './MaidenheadBearingSection.tsx';
@@ -278,9 +280,17 @@ export default function MaidenheadReferencePage() {
                   <Stack gap="sm">
                     <Title order={4}>Address lookup</Title>
                     <Text size="sm" c="dimmed">
-                      {hasMapboxToken
-                        ? 'Geocode an address or postcode. Choose Mapbox or Photon (OpenStreetMap).'
-                        : 'Using Photon (OpenStreetMap). Set a Mapbox token in Settings for Mapbox geocoding.'}
+                      {hasMapboxToken ? (
+                        'Geocode an address or postcode. Choose Mapbox or Photon (OpenStreetMap).'
+                      ) : (
+                        <>
+                          Using Photon (OpenStreetMap), which needs no setup. Optional:{' '}
+                          <Link to="/settings" state={{ scrollTo: SETTINGS_MAPBOX_SECTION_ID }}>
+                            add a Mapbox token in Settings
+                          </Link>{' '}
+                          to use Mapbox geocoding.
+                        </>
+                      )}
                     </Text>
                     <SegmentedControl
                       value={geocodeProvider}

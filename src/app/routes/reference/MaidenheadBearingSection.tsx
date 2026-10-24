@@ -21,6 +21,8 @@ import {
 } from '@core/domain/geoDistance.ts';
 import { coordsToLocator, isValidLocator, locatorToCoords } from '@core/domain/maidenhead.ts';
 import { GeocodeError, geocodeQuery, type GeocodeProvider } from '@integrations/geocode/index.ts';
+import { Link } from 'react-router-dom';
+import { SETTINGS_MAPBOX_SECTION_ID } from '../../lib/settingsSections.ts';
 import MapPairPlot, { type MapPairPickTarget } from '../../components/MapPairPlot/MapPairPlot.tsx';
 import { DesignSystemV2Provider, MapPanel } from '../../components/v2/index.ts';
 import { mapComboboxProps } from '../../theme.ts';
@@ -346,9 +348,17 @@ export default function MaidenheadBearingSection({
               <Stack gap="sm">
                 <Title order={6}>Address look-up</Title>
                 <Text size="sm" c="dimmed">
-                  {hasMapboxToken
-                    ? 'Enter an address or postcode. Choose Mapbox or Photon (OpenStreetMap).'
-                    : 'Using Photon (OpenStreetMap). Set a Mapbox token in Settings for Mapbox.'}
+                  {hasMapboxToken ? (
+                    'Enter an address or postcode. Choose Mapbox or Photon (OpenStreetMap).'
+                  ) : (
+                    <>
+                      Using Photon (OpenStreetMap), which needs no setup. Optional:{' '}
+                      <Link to="/settings" state={{ scrollTo: SETTINGS_MAPBOX_SECTION_ID }}>
+                        add a Mapbox token in Settings
+                      </Link>{' '}
+                      to use Mapbox.
+                    </>
+                  )}
                 </Text>
                 <SegmentedControl
                   value={geocodeProvider}

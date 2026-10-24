@@ -23,7 +23,7 @@ No shared `app_` token in source, build artefacts, or documentation.
 | `X-RB-App-Token` | User's `rbuapp_…` token (preferred)                         |
 | `User-Agent`     | Approved string above — **required**; prefix match enforced |
 
-Token stored in browser `localStorage` only (`codeplug-studio:repeaterbookToken`).
+Token stored in browser `localStorage` only (`codeplug-studio:repeaterbookToken`). UI setup flow: [api-keys.md](../../../features/app-shell/api-keys.md).
 
 ### Operator token flow
 
@@ -31,7 +31,7 @@ Token stored in browser `localStorage` only (`codeplug-studio:repeaterbookToken`
 2. Open [API Apps and Tokens](https://www.repeaterbook.com/user/api_apps.php).
 3. Select **Codeplug Studio** (app ID 103).
 4. Generate token — copy immediately (shown once).
-5. Paste into Codeplug Studio **Settings → RepeaterBook** and Save.
+5. Paste into Codeplug Studio **Settings → API keys and tokens → RepeaterBook** and Save.
 
 ## Endpoints
 

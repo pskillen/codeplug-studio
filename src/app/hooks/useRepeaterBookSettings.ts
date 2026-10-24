@@ -1,27 +1,18 @@
-import { useCallback, useState } from 'react';
 import { loadRepeaterBookToken, saveRepeaterBookToken } from '@integrations/preferences/index.ts';
+import { useStoredCredential } from './useStoredCredential.ts';
 
 export function useRepeaterBookSettings() {
-  const [repeaterBookToken, setRepeaterBookTokenState] = useState(() => loadRepeaterBookToken());
-
-  const setRepeaterBookToken = useCallback((token: string) => {
-    setRepeaterBookTokenState(token);
-  }, []);
-
-  const saveToken = useCallback(() => {
-    saveRepeaterBookToken(repeaterBookToken);
-  }, [repeaterBookToken]);
-
-  const clearToken = useCallback(() => {
-    saveRepeaterBookToken('');
-    setRepeaterBookTokenState('');
-  }, []);
+  const credential = useStoredCredential(loadRepeaterBookToken, saveRepeaterBookToken);
 
   return {
-    repeaterBookToken,
-    setRepeaterBookToken,
-    saveToken,
-    clearToken,
-    hasToken: repeaterBookToken.trim().length > 0,
+    /** Saved token — what directory search and verify use. */
+    repeaterBookToken: credential.savedValue,
+    /** Settings input draft. */
+    repeaterBookTokenDraft: credential.value,
+    setRepeaterBookToken: credential.setValue,
+    saveToken: credential.save,
+    clearToken: credential.clear,
+    isDirty: credential.isDirty,
+    hasToken: credential.hasSavedValue,
   };
 }
