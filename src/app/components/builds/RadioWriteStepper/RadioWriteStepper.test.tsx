@@ -82,3 +82,78 @@ describe('RadioWriteStepper — step 1, what to write', () => {
     expect(onChange).toHaveBeenCalledWith(true);
   });
 });
+
+describe('RadioWriteStepper — steps 2 and 3', () => {
+  const identity = { model: 'AT-D890UV', serial: 'ABC1234567', name: 'MM9PDY-2' };
+
+  it('step 2 shows the read progress, the identity and a Cancel that aborts', () => {
+    const actions = renderStepper({
+      step: 'connectRead',
+      busy: true,
+      progress: { cur: 5, max: 10, msg: 'Zones' },
+      identity,
+    });
+    expect(screen.getByTestId('write-stepper-step-label')).toHaveTextContent('2 of 6 · Read');
+    expect(screen.getByText('MM9PDY-2')).toBeInTheDocument();
+    // Serial is masked to its last four characters.
+    expect(screen.getByText('…4567')).toBeInTheDocument();
+    expect(screen.queryByText(/ABC1234567/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(actions.onAbort).toHaveBeenCalled();
+  });
+
+  it('step 2 says when it is reconnecting', () => {
+    renderStepper({ step: 'connectRead', busy: true, reconnecting: true });
+    expect(screen.getByText(/the radio may have left programming mode/)).toBeInTheDocument();
+  });
+
+  it.each([
+    [{ codeplug: true, contacts: false, settings: false, keps: false }, 'Write codeplug'],
+    [{ codeplug: true, contacts: true, settings: false, keps: false }, 'Write codeplug + contacts'],
+    [{ codeplug: false, contacts: false, settings: false, keps: true }, 'Write keps'],
+    [{ codeplug: true, contacts: true, settings: false, keps: true }, 'Write 3 parts'],
+  ])('step 3 labels the primary button from the ticks %j', (parts, label) => {
+    const actions = renderStepper({
+      step: 'review',
+      parts,
+      review: {
+        channelCount: 12,
+        contactsNote: null,
+        kepsCount: null,
+        estimateSeconds: 100,
+        identityOnly: false,
+        sections: [<div key="a">Section A</div>],
+      },
+    });
+    expect(screen.getByText('Section A')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: label }));
+    expect(actions.onWrite).toHaveBeenCalled();
+  });
+
+  it('step 3 Cancel is the secondary action and writes nothing', () => {
+    const actions = renderStepper({
+      step: 'review',
+      review: {
+        channelCount: 1,
+        contactsNote: null,
+        kepsCount: null,
+        estimateSeconds: null,
+        identityOnly: false,
+        sections: [],
+      },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(actions.onCancelReview).toHaveBeenCalled();
+    expect(actions.onWrite).not.toHaveBeenCalled();
+  });
+
+  it('shows an error with Reconnect and read again when the flow offers it', () => {
+    const actions = renderStepper({
+      step: 'review',
+      error: 'No reply from the radio',
+      canReconnect: true,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect and read again' }));
+    expect(actions.onReconnect).toHaveBeenCalled();
+  });
+});

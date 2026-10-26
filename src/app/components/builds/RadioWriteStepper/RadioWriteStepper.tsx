@@ -18,6 +18,9 @@ import {
   type WriteStepperConfig,
 } from './types.ts';
 import { WhatToWriteBody, WhatToWriteFooter } from './steps/WhatToWriteStep.tsx';
+import { ConnectReadBody, ConnectReadFooter } from './steps/ConnectReadStep.tsx';
+import { ReviewBody, ReviewFooter } from './steps/ReviewStep.tsx';
+import { Button } from '../../v2/index.ts';
 
 export interface RadioWriteStepperProps {
   config: WriteStepperConfig;
@@ -59,6 +62,14 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
       body = <WhatToWriteBody {...props} />;
       footer = <WhatToWriteFooter {...props} />;
       break;
+    case 'connectRead':
+      body = <ConnectReadBody {...props} />;
+      footer = <ConnectReadFooter {...props} />;
+      break;
+    case 'review':
+      body = <ReviewBody {...props} />;
+      footer = <ReviewFooter {...props} />;
+      break;
     default:
       break;
   }
@@ -76,6 +87,13 @@ export default function RadioWriteStepper({ config, view, actions }: RadioWriteS
       {view.error ? (
         <Alert color="red" mb="sm" data-testid="write-stepper-error">
           {view.error}
+          {view.canReconnect ? (
+            <div style={{ marginTop: 8 }}>
+              <Button variant="secondary" size="sm" onClick={actions.onReconnect}>
+                Reconnect and read again
+              </Button>
+            </div>
+          ) : null}
         </Alert>
       ) : null}
       {body}
