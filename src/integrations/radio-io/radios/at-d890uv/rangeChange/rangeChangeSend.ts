@@ -55,8 +55,17 @@ export interface AtD890RangeChangeSender {
   ): Promise<void>;
 }
 
+/** The sender refused before writing anything. */
+export class AtD890RangeChangeSendRefusedError extends RadioInterlockError {
+  readonly frameSent = false;
+  constructor(message: string) {
+    super(message);
+    this.name = 'AtD890RangeChangeSendRefusedError';
+  }
+}
+
 function refuse(message: string): never {
-  throw new RadioInterlockError(message);
+  throw new AtD890RangeChangeSendRefusedError(message);
 }
 
 function regionEqual(a: Uint8Array, b: Uint8Array, offset: number, length: number): boolean {
@@ -115,15 +124,17 @@ export function createAtD890RangeChangeSender(pipe: BytePipe): AtD890RangeChange
   return {
     async send(address, data16, context, signal) {
       if (used) {
-        throw new RadioInterlockError('The range-change sender sends one frame, once.');
+        throw new AtD890RangeChangeSendRefusedError(
+          'The range-change sender sends one frame, once.',
+        );
       }
       if (address !== AT_D890_RANGE_CHANGE_EXTENT.start) {
-        throw new RadioInterlockError(
+        throw new AtD890RangeChangeSendRefusedError(
           `Range change may only write 0x${AT_D890_RANGE_CHANGE_EXTENT.start.toString(16)}, not 0x${(address >>> 0).toString(16)}.`,
         );
       }
       if (data16.length !== AT_D890_RANGE_CHANGE_EXTENT.length) {
-        throw new RadioInterlockError(
+        throw new AtD890RangeChangeSendRefusedError(
           `Range change frame must be ${AT_D890_RANGE_CHANGE_EXTENT.length} bytes, got ${data16.length}.`,
         );
       }

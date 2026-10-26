@@ -13,6 +13,7 @@ export {
 } from './rangeChangeFrame.ts';
 export {
   AtD890RangeChangeSessionError,
+  atD890RangeChangeMayEndAfter,
   changeAtD890FrequencyRange,
   type AtD890RangeChangeFailure,
   type AtD890RangeChangeOptions,

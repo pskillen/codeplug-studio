@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { AtD890StunKillError } from '../stunKillGuard.ts';
 import { syntheticLocalInfo } from '../__fixtures__/rangeChangeFixtures.ts';
 import { AtD890ScriptedPipe } from '../__fixtures__/scriptedPipe.ts';
-import { AtD890RangeChangeRefusedError } from './rangeChangeFrame.ts';
-import { AtD890RangeChangeSessionError, changeAtD890FrequencyRange } from './rangeChangeSession.ts';
+import { AtD890RangeChangeRefusedError, buildAtD890RangeChangeFrame } from './rangeChangeFrame.ts';
+import {
+  AtD890RangeChangeSessionError,
+  atD890RangeChangeMayEndAfter,
+  changeAtD890FrequencyRange,
+} from './rangeChangeSession.ts';
 
 const LOCAL_INFO = 0x04f80000;
 const dec = new TextDecoder();
@@ -64,13 +68,15 @@ describe('changeAtD890FrequencyRange', () => {
       onBeforeSend: () => {},
     }).catch((e) => e);
     expect(err).toBeInstanceOf(AtD890RangeChangeSessionError);
-    expect(err.endSafe).toBe(false);
+    expect(err.mayEnd).toBe(false);
+    expect(err.frameSent).toBe(true);
+    expect(atD890RangeChangeMayEndAfter(err)).toBe(false);
     expect(err.failure).toBe('send-failed');
     expect(endFrames(pipe)).toHaveLength(0);
     expect(writeFrames(pipe)).toHaveLength(1);
   });
 
-  it('timeout (three tries): no END, endSafe false', async () => {
+  it('timeout (three tries): no END, mayEnd false, frameSent true', async () => {
     const backup = syntheticLocalInfo(3);
     const pipe = setup(backup);
     // Reads are answered by the responder; the W's ACK read times out three times.
@@ -85,7 +91,8 @@ describe('changeAtD890FrequencyRange', () => {
       onBeforeSend: () => {},
     }).catch((e) => e);
     expect(err).toBeInstanceOf(AtD890RangeChangeSessionError);
-    expect(err.endSafe).toBe(false);
+    expect(err.mayEnd).toBe(false);
+    expect(err.frameSent).toBe(true);
     expect(endFrames(pipe)).toHaveLength(0);
     expect(writeFrames(pipe)).toHaveLength(3);
   });
@@ -110,7 +117,22 @@ describe('changeAtD890FrequencyRange', () => {
     expect(endFrames(pipe)).toHaveLength(0);
   });
 
-  it('LocalInfo differs from the backup: no W, endSafe true', async () => {
+  it.each([
+    ['stun', 0],
+    ['kill', 1],
+  ])('%s flag: the helper says do not END', async (_n, offset) => {
+    const flagged = syntheticLocalInfo(3);
+    flagged[offset] = 1;
+    const err = await changeAtD890FrequencyRange(setup(flagged), {
+      backupLocalInfo: syntheticLocalInfo(3),
+      target: 7,
+      onBeforeSend: () => {},
+    }).catch((e) => e);
+    expect(err).toBeInstanceOf(AtD890StunKillError);
+    expect(atD890RangeChangeMayEndAfter(err)).toBe(false);
+  });
+
+  it('LocalInfo differs from the backup: no W, mayEnd true', async () => {
     const live = syntheticLocalInfo(3);
     live[0x80] = 0x42;
     const pipe = setup(live);
@@ -123,11 +145,13 @@ describe('changeAtD890FrequencyRange', () => {
     }).catch((e) => e);
     expect(err).toBeInstanceOf(AtD890RangeChangeSessionError);
     expect(err.failure).toBe('local-info-changed');
-    expect(err.endSafe).toBe(true);
+    expect(err.mayEnd).toBe(true);
+    expect(err.frameSent).toBe(false);
+    expect(atD890RangeChangeMayEndAfter(err)).toBe(true);
     expect(writeFrames(pipe)).toHaveLength(0);
   });
 
-  it('a frame refusal: no W, endSafe true', async () => {
+  it('a frame refusal: no W, mayEnd true', async () => {
     const backup = syntheticLocalInfo(3);
     const pipe = setup(backup);
     const err = await changeAtD890FrequencyRange(pipe, {
@@ -136,11 +160,13 @@ describe('changeAtD890FrequencyRange', () => {
       onBeforeSend: () => {},
     }).catch((e) => e);
     expect(err).toBeInstanceOf(AtD890RangeChangeRefusedError);
-    expect(err.endSafe).toBe(true);
+    expect(err.mayEnd).toBe(true);
+    expect(err.frameSent).toBe(false);
+    expect(atD890RangeChangeMayEndAfter(err)).toBe(true);
     expect(writeFrames(pipe)).toHaveLength(0);
   });
 
-  it('onBeforeSend throwing: no W, endSafe true', async () => {
+  it('onBeforeSend throwing: no W, mayEnd true', async () => {
     const backup = syntheticLocalInfo(3);
     const pipe = setup(backup);
     const err = await changeAtD890FrequencyRange(pipe, {
@@ -152,12 +178,14 @@ describe('changeAtD890FrequencyRange', () => {
     }).catch((e) => e);
     expect(err).toBeInstanceOf(AtD890RangeChangeSessionError);
     expect(err.failure).toBe('before-send-failed');
-    expect(err.endSafe).toBe(true);
+    expect(err.mayEnd).toBe(true);
+    expect(err.frameSent).toBe(false);
+    expect(atD890RangeChangeMayEndAfter(err)).toBe(true);
     expect(writeFrames(pipe)).toHaveLength(0);
     expect(endFrames(pipe)).toHaveLength(0);
   });
 
-  it('an unreadable LocalInfo: no W, endSafe false', async () => {
+  it('an unreadable LocalInfo: no W, mayEnd false', async () => {
     const pipe = new AtD890ScriptedPipe();
     const err = await changeAtD890FrequencyRange(pipe, {
       backupLocalInfo: syntheticLocalInfo(3),
@@ -165,7 +193,87 @@ describe('changeAtD890FrequencyRange', () => {
       onBeforeSend: () => {},
     }).catch((e) => e);
     expect(err).toBeInstanceOf(AtD890RangeChangeSessionError);
-    expect(err.endSafe).toBe(false);
+    expect(err.mayEnd).toBe(false);
+    expect(err.frameSent).toBe(false);
+    expect(atD890RangeChangeMayEndAfter(err)).toBe(false);
     expect(writeFrames(pipe)).toHaveLength(0);
+  });
+
+  it('END failing after a clean ACK: end-failed, frameSent, no further END', async () => {
+    const backup = syntheticLocalInfo(3);
+    const pipe = setup(backup);
+    pipe.autoAckWrites = true;
+    const realWrite = pipe.write.bind(pipe);
+    pipe.write = async (b) => {
+      if (dec.decode(b) === 'END') throw new Error('port lost');
+      return realWrite(b);
+    };
+    const err = await changeAtD890FrequencyRange(pipe, {
+      backupLocalInfo: backup,
+      target: 7,
+      onBeforeSend: () => {},
+    }).catch((e) => e);
+    expect(err).toBeInstanceOf(AtD890RangeChangeSessionError);
+    expect(err.failure).toBe('end-failed');
+    expect(err.frameSent).toBe(true);
+    expect(err.mayEnd).toBe(false);
+    expect(atD890RangeChangeMayEndAfter(err)).toBe(false);
+    expect(writeFrames(pipe)).toHaveLength(1);
+  });
+
+  it('a backup shorter than 0x100: refused as local-info-changed with no W', async () => {
+    const pipe = setup(syntheticLocalInfo(3));
+    const err = await changeAtD890FrequencyRange(pipe, {
+      backupLocalInfo: syntheticLocalInfo(3).slice(0, 0x80),
+      target: 7,
+      onBeforeSend: () => {},
+    }).catch((e) => e);
+    expect(err).toBeInstanceOf(AtD890RangeChangeSessionError);
+    expect(err.mayEnd).toBe(true);
+    expect(writeFrames(pipe)).toHaveLength(0);
+  });
+});
+
+describe('atD890RangeChangeMayEndAfter fails closed', () => {
+  it('false for unknown errors, non-errors and the stun/kill error', () => {
+    expect(atD890RangeChangeMayEndAfter(new Error('???'))).toBe(false);
+    expect(atD890RangeChangeMayEndAfter(undefined)).toBe(false);
+    expect(atD890RangeChangeMayEndAfter('x')).toBe(false);
+    expect(
+      atD890RangeChangeMayEndAfter(new AtD890StunKillError({ stun: 1, kill: 0, flagged: true })),
+    ).toBe(false);
+  });
+
+  it('false for the stun/kill and short-local-info frame refusals, true for the others', () => {
+    for (const [reason, expected] of [
+      ['stun-kill-flag', false],
+      ['short-local-info', false],
+      ['market-lock-mismatch', true],
+      ['model-mismatch', true],
+      ['target-not-allowed', true],
+      ['maintenance-locked', true],
+      ['target-is-current', true],
+    ] as const) {
+      const err = new AtD890RangeChangeRefusedError(reason, 'x');
+      expect(err.frameSent).toBe(false);
+      expect(atD890RangeChangeMayEndAfter(err)).toBe(expected);
+    }
+  });
+
+  it('the builder refuses a short LocalInfo with mayEnd false', () => {
+    try {
+      buildAtD890RangeChangeFrame(new Uint8Array(0x20), 7);
+      expect.unreachable();
+    } catch (e) {
+      expect((e as AtD890RangeChangeRefusedError).mayEnd).toBe(false);
+    }
+  });
+
+  it('false for a session error that says frameSent, whatever mayEnd says', () => {
+    expect(
+      atD890RangeChangeMayEndAfter(
+        new AtD890RangeChangeSessionError('send-failed', { frameSent: true, mayEnd: true }, 'x'),
+      ),
+    ).toBe(false);
   });
 });

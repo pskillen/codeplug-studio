@@ -5,9 +5,12 @@
  * backed-up one and has no stun/kill flag, builds the frame, lets the caller write its journal, sends the one
  * `W`, and only then sends `END` (which makes the firmware commit and reboot).
  *
- * `endSafe` on every thrown error tells the caller whether it may still send `END`: true only when nothing has
- * been written and no stun/kill flag is known. After the `W` the radio holds a half-built image; `END` is the
- * commit, so it is sent only after a clean ACK and never on a failure path.
+ * Two facts about every failure, kept apart: `frameSent` (a `W` may have reached the radio) and `mayEnd` (the
+ * caller may still send `END` and say "Nothing has changed"). They differ: a stun/kill flag or an unreadable
+ * LocalInfo has `frameSent` false and `mayEnd` false. Callers must not test the fields on an unknown error;
+ * ask `atD890RangeChangeMayEndAfter(err)`, which is true only for the known-safe refusals and fails closed for
+ * everything else, including `AtD890StunKillError`. After the `W` the radio holds a half-built image; `END` is
+ * the commit, so it is sent only after a clean ACK and never on a failure path.
  */
 
 import type { BytePipe } from '../../../types.ts';
@@ -16,8 +19,15 @@ import { throwIfAborted } from '../../../kit/progress.ts';
 import { atD890ExitProgram, atD890ReadMemory } from '../connection.ts';
 import { D890_MAP } from '../constants.ts';
 import { assertAtD890NoStunKill } from '../stunKillGuard.ts';
-import { AT_D890_RANGE_CHANGE_EXTENT, buildAtD890RangeChangeFrame } from './rangeChangeFrame.ts';
-import { createAtD890RangeChangeSender } from './rangeChangeSend.ts';
+import {
+  AT_D890_RANGE_CHANGE_EXTENT,
+  AtD890RangeChangeRefusedError,
+  buildAtD890RangeChangeFrame,
+} from './rangeChangeFrame.ts';
+import {
+  AtD890RangeChangeSendRefusedError,
+  createAtD890RangeChangeSender,
+} from './rangeChangeSend.ts';
 
 export type AtD890RangeChangeFailure =
   /** LocalInfo could not be read; the stun/kill state is unknown. */
@@ -26,6 +36,8 @@ export type AtD890RangeChangeFailure =
   | 'local-info-changed'
   /** The caller's journal write failed. Nothing was written. */
   | 'before-send-failed'
+  /** The sender refused the payload before writing. Nothing was written. */
+  | 'send-refused'
   /** The `W` was not cleanly ACKed (NAK, timeout, port lost). `END` must not be sent. */
   | 'send-failed'
   /** The `W` was ACKed but `END` failed. */
@@ -33,19 +45,22 @@ export type AtD890RangeChangeFailure =
 
 export class AtD890RangeChangeSessionError extends RadioIoError {
   readonly failure: AtD890RangeChangeFailure;
-  /** True: nothing written, no flag, the caller may `END` and say "Nothing has changed". */
-  readonly endSafe: boolean;
+  /** A `W` may have reached the radio. False means nothing was written. */
+  readonly frameSent: boolean;
+  /** The caller may `END` and say "Nothing has changed": nothing written and no flag or unknown state. */
+  readonly mayEnd: boolean;
 
   constructor(
     failure: AtD890RangeChangeFailure,
-    endSafe: boolean,
+    state: { frameSent: boolean; mayEnd: boolean },
     message: string,
     cause?: unknown,
   ) {
     super('protocol', message);
     this.name = 'AtD890RangeChangeSessionError';
     this.failure = failure;
-    this.endSafe = endSafe;
+    this.frameSent = state.frameSent;
+    this.mayEnd = state.mayEnd;
     if (cause !== undefined) this.cause = cause;
   }
 }
@@ -62,6 +77,18 @@ export interface AtD890RangeChangeOptions {
 export interface AtD890RangeChangeResult {
   /** The 16 bytes that were sent. */
   frame: Uint8Array;
+}
+
+/**
+ * May the caller send `END` after this error? True only for errors known to be safe: a frame refusal or a
+ * session error that says `mayEnd` with nothing sent. False for everything else, so a stun/kill flag
+ * (`AtD890StunKillError`), an unreadable LocalInfo, a failure after the `W`, and any error this module does
+ * not know all fail closed.
+ */
+export function atD890RangeChangeMayEndAfter(err: unknown): boolean {
+  if (err instanceof AtD890RangeChangeRefusedError) return !err.frameSent && err.mayEnd;
+  if (err instanceof AtD890RangeChangeSessionError) return !err.frameSent && err.mayEnd;
+  return false;
 }
 
 function describe(err: unknown): string {
@@ -86,7 +113,7 @@ export async function changeAtD890FrequencyRange(
   } catch (err) {
     throw new AtD890RangeChangeSessionError(
       'read-failed',
-      false,
+      { frameSent: false, mayEnd: false },
       `Could not read the radio's LocalInfo: ${describe(err)}`,
       err,
     );
@@ -103,12 +130,12 @@ export async function changeAtD890FrequencyRange(
   ) {
     throw new AtD890RangeChangeSessionError(
       'local-info-changed',
-      true,
+      { frameSent: false, mayEnd: true },
       'The radio’s LocalInfo no longer matches the backup. Nothing has changed.',
     );
   }
 
-  // Refusals carry endSafe = true themselves: nothing has been sent.
+  // Refusals carry frameSent and mayEnd themselves: nothing has been sent.
   const frame = buildAtD890RangeChangeFrame(live, target);
 
   try {
@@ -117,7 +144,7 @@ export async function changeAtD890FrequencyRange(
   } catch (err) {
     throw new AtD890RangeChangeSessionError(
       'before-send-failed',
-      true,
+      { frameSent: false, mayEnd: true },
       `Stopped before sending: ${describe(err)}`,
       err,
     );
@@ -131,9 +158,10 @@ export async function changeAtD890FrequencyRange(
       signal,
     );
   } catch (err) {
+    const refused = err instanceof AtD890RangeChangeSendRefusedError;
     throw new AtD890RangeChangeSessionError(
-      'send-failed',
-      false,
+      refused ? 'send-refused' : 'send-failed',
+      refused ? { frameSent: false, mayEnd: true } : { frameSent: true, mayEnd: false },
       `The radio did not confirm the range change: ${describe(err)}`,
       err,
     );
@@ -144,7 +172,7 @@ export async function changeAtD890FrequencyRange(
   } catch (err) {
     throw new AtD890RangeChangeSessionError(
       'end-failed',
-      false,
+      { frameSent: true, mayEnd: false },
       `The range change was sent but END failed: ${describe(err)}`,
       err,
     );
