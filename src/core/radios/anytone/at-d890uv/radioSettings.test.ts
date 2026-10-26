@@ -3,8 +3,11 @@ import {
   AT_D890_KEY_FUNCTIONS,
   AT_D890_SETTING_FIELDS,
   AT_D890_SETTING_SECTIONS,
+  AT_D890_ADVANCED_SETTINGS_FIELD_IDS,
+  AT_D890_ALL_SETTINGS_FIELD_IDS,
   AT_D890_V1_SETTINGS_FIELD_IDS,
   atD890KeyFunctionOptions,
+  atD890LanguagesForLock,
   atD890SettingField,
   atD890SettingExposureFor,
   atD890SettingOptionLabel,
@@ -17,12 +20,12 @@ describe('AT-D890 radio settings field model', () => {
   it('has unique ids and lists every field in the display order', () => {
     const ids = AT_D890_SETTING_FIELDS.map((f) => f.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect([...AT_D890_V1_SETTINGS_FIELD_IDS].sort()).toEqual([...ids].sort());
+    expect([...AT_D890_ALL_SETTINGS_FIELD_IDS].sort()).toEqual([...ids].sort());
   });
 
   it('orders ids by section order', () => {
     const order = AT_D890_SETTING_SECTIONS.map((s) => s.id);
-    const seen = AT_D890_V1_SETTINGS_FIELD_IDS.map((id) =>
+    const seen = AT_D890_ALL_SETTINGS_FIELD_IDS.map((id) =>
       order.indexOf(atD890SettingField(id)!.section),
     );
     expect(seen).toEqual([...seen].sort((a, b) => a - b));
@@ -35,6 +38,7 @@ describe('AT-D890 radio settings field model', () => {
       'keys',
       'powerTimers',
       'dmr',
+      'advanced',
     ]);
   });
 
@@ -106,5 +110,29 @@ describe('AT-D890 radio settings page helpers', () => {
     expect(atD890TextProblem(line, 'x'.repeat(line.maxLength! + 1))).toBeDefined();
     expect(atD890TextProblem(line, 'café')).toBeDefined();
     expect(atD890TextProblem(line, 'tab\t')).toBeDefined();
+  });
+});
+
+describe('AT-D890 advanced fields', () => {
+  it('flags exactly the advanced section, each with a warning, and keeps v1 free of them', () => {
+    const advanced = AT_D890_SETTING_FIELDS.filter((f) => f.advanced);
+    expect(advanced.map((f) => f.id)).toEqual([...AT_D890_ADVANCED_SETTINGS_FIELD_IDS]);
+    for (const f of advanced) {
+      expect(f.section, f.id).toBe('advanced');
+      expect(f.warning, f.id).toBeTruthy();
+    }
+    for (const id of AT_D890_V1_SETTINGS_FIELD_IDS) {
+      expect(atD890SettingField(id)!.advanced, id).toBe(false);
+    }
+  });
+
+  it('offers language by the radio region lock', () => {
+    expect(atD890LanguagesForLock(0).map((o) => o.label)).toEqual([
+      'English',
+      'Chinese',
+      'Russian',
+    ]);
+    expect(atD890LanguagesForLock(1).map((o) => o.label)).toEqual(['English']);
+    expect(atD890LanguagesForLock(2).map((o) => o.label)).toEqual(['Chinese']);
   });
 });

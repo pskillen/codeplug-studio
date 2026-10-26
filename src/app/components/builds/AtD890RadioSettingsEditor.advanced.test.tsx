@@ -18,8 +18,6 @@ vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
   return { ...actual, isRadioSerialSupported: () => true };
 });
 
-vi.setConfig({ testTimeout: 30_000 });
-
 const { egress: D890_EGRESS } = newRadioBuildForProfile('proj', 'radio-io-at-d890uv');
 
 function readWith(
@@ -63,6 +61,9 @@ afterEach(() => {
   clearAllOverrides(BUILD);
   setShowAdvanced(BUILD, false);
 });
+
+// Each render is the whole settings page (about 100 rows), slow under jsdom.
+vi.setConfig({ testTimeout: 90_000 });
 
 describe('AtD890RadioSettingsEditor advanced settings', () => {
   it('hides every advanced row until the switch is on, and shows them after', () => {
