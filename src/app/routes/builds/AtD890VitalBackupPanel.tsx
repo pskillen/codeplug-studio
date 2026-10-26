@@ -121,8 +121,10 @@ export default function AtD890VitalBackupPanel({
                       {u.label}
                       {u.identicalTo ? (
                         <Text size="xs" c="dimmed">
-                          Same bytes as {u.identicalTo}. The radio answered this address with that
-                          unit.
+                          Same bytes as{' '}
+                          {session.units.find((o) => o.id === u.identicalTo)?.label ??
+                            u.identicalTo}
+                          . The radio answered this address with that unit.
                         </Text>
                       ) : null}
                     </Table.Td>

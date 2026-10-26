@@ -26,17 +26,17 @@ export interface AtD890VitalUnitDef {
 }
 
 export const AT_D890_VITAL_UNITS: readonly AtD890VitalUnitDef[] = [
-  { id: 'tune-a', label: 'Tune bank', address: 0x04f0_0000, asReturned: false },
+  { id: 'tune-a', label: 'Calibration (live)', address: 0x04f0_0000, asReturned: false },
   {
     id: 'tune-b',
-    label: 'Tune bank, upper address (as returned)',
+    label: 'Calibration B (as returned)',
     address: 0x04f4_0000,
     asReturned: true,
   },
-  { id: 'local-info', label: 'LocalInfo', address: D890_MAP.LocalInfo, asReturned: false },
+  { id: 'local-info', label: 'LocalInfo (live)', address: D890_MAP.LocalInfo, asReturned: false },
   {
     id: 'local-info-upper',
-    label: 'LocalInfo, upper address',
+    label: 'LocalInfo B',
     address: 0x04fc_0000,
     asReturned: false,
   },
@@ -61,8 +61,9 @@ export class AtD890VitalMismatchError extends RadioProtocolError {
   readonly unitIds: string[];
 
   constructor(unitIds: string[]) {
+    const names = unitIds.map((id) => AT_D890_VITAL_UNITS.find((u) => u.id === id)?.label ?? id);
     super(
-      `Vital data read twice gave different bytes for: ${unitIds.join(', ')}. ` +
+      `Vital data read twice gave different bytes for: ${names.join(', ')}. ` +
         'No file was produced. Check the cable and try again.',
     );
     this.name = 'AtD890VitalMismatchError';

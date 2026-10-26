@@ -23,12 +23,12 @@ Digital-contact FLASH is not in the codeplug backup. Calibration and identity ar
 
 Calibration and identity cannot be recreated if lost, so Studio has a separate, read-only **Back up vital data** action on the D890 Backup / Restore page (tracking [#1288](https://github.com/pskillen/codeplug-studio/issues/1288)). It is not part of the codeplug zip and has **no restore**.
 
-| Unit (requested address) | What it is                                                                                            |
-| ------------------------ | ----------------------------------------------------------------------------------------------------- |
-| `0x04F00000`             | Tune bank, marked live (`55 55 AA AA` at `+0x3FFFC`). About 1 KiB of non-`FF` tables from `+0x000`    |
-| `0x04F40000`             | Tune bank, upper address. **Labelled "as returned".** On hardware it returns LocalInfo, byte for byte |
-| `0x04F80000`             | LocalInfo, marked live. Serial at `+0x30`, range code at `+0x03`, stun/kill flags at `+0x00`/`+0x01`  |
-| `0x04FC0000`             | LocalInfo, upper address                                                                              |
+| Unit (requested address) | What it is                                                                                                             |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `0x04F00000`             | Calibration (live): tune bank, marked live (`55 55 AA AA` at `+0x3FFFC`). About 1 KiB of non-`FF` tables from `+0x000` |
+| `0x04F40000`             | Calibration B: tune bank, upper address. **Labelled "as returned".** On hardware it returns LocalInfo, byte for byte   |
+| `0x04F80000`             | LocalInfo (live), marked live. Serial at `+0x30`, range code at `+0x03`, stun/kill flags at `+0x00`/`+0x01`            |
+| `0x04FC0000`             | LocalInfo B, upper address                                                                                             |
 
 Rules, from the first hardware read (V1.05):
 
