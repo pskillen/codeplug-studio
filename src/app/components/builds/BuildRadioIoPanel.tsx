@@ -10,6 +10,7 @@ import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
   isMm9pdyAtD890RadioIoProfileId,
+  isMm9pdyDm32RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import {
@@ -163,6 +164,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     .join(' / ');
 
   if (descriptors.length === 0) return null;
+
+  const isMm9pdyTarget =
+    isMm9pdyAtD890RadioIoProfileId(egress.profileId) ||
+    isMm9pdyDm32RadioIoProfileId(egress.profileId);
+  const radioLabel = `${descriptor?.label ?? 'radio'}${isMm9pdyTarget ? ' (MM9PDY)' : ''}`;
 
   async function handleAssignMm9pdyStepKeys(checked: boolean) {
     const next = buildService.withExportSettings(build, { assignMm9pdyStepKeys: checked });
@@ -329,7 +335,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         actions={{ ...flowActions, onViewCheckReport: () => setVerifyReportOpen(true) }}
       />
       <WriteHeaderCard
-        radioLabel={descriptor?.label ?? 'radio'}
+        radioLabel={radioLabel}
         summary={
           facts
             ? buildSummaryLine({
