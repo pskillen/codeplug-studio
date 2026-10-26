@@ -45,7 +45,7 @@ export function ReviewFooter({ view, actions }: StepProps) {
         disabled={view.review?.writeDisabled === true}
         onClick={actions.onWrite}
       >
-        {writeButtonLabel(view.parts)}
+        {writeButtonLabel(view.review?.effectiveParts ?? view.parts)}
       </Button>
     </>
   );

@@ -130,6 +130,11 @@ export interface WriteReviewView {
   sections: ReactNode[];
   /** A Review that would write nothing (Radio settings alone with Keep): Write is disabled. */
   writeDisabled?: boolean;
+  /**
+   * The parts the Write will actually send, when that differs from the ticked ones (the D890 with
+   * Keep chosen sends no settings). The primary button's label follows it.
+   */
+  effectiveParts?: WriteParts;
 }
 
 /** Everything the stepper renders. `useRadioWriteFlow` is the one producer. */

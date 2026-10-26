@@ -469,13 +469,22 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       identityOnly: ctx.identityOnly,
       sections: descriptor ? reviewSectionsFor(descriptor, sectionsCtx) : [],
       writeDisabled: d890ControllerRef.current ? !d890ControllerRef.current.canWrite() : false,
+      effectiveParts: effectivePartsFor(p),
     });
     const controller = d890ControllerRef.current;
     if (controller) {
       reviewUnsubscribeRef.current?.();
       // Keep the footer's Write button in step with the choice (settings alone with Keep writes nothing).
       reviewUnsubscribeRef.current = controller.subscribe(() => {
-        setReview((r) => (r ? { ...r, writeDisabled: !controller.canWrite() } : r));
+        setReview((r) =>
+          r
+            ? {
+                ...r,
+                writeDisabled: !controller.canWrite(),
+                effectiveParts: effectivePartsFor(partsRef.current),
+              }
+            : r,
+        );
       });
     }
     setBusyNotify(false);
@@ -524,6 +533,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         const next = { ...partsRef.current, settings: true };
         partsRef.current = next;
         setParts(next);
+        // Asking for the keys is asking for them to be written: Use implies Apply, even on another
+        // radio where Keep is preselected (70- §2.4; the user's latest action wins).
+        controller.setChoice('apply');
         controller.setSettingsTicked(true);
       },
     });
@@ -564,12 +576,24 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
    * when Radio settings is ticked, there are overrides, and the choice is Apply; otherwise Keep.
    */
   function settingsPauseResult(): AtD890PreTransmitResult {
+    if (!settingsWillBeWritten()) return 'keep';
+    return { decision: 'apply', overrides: overridesForWrite(build.id) };
+  }
+
+  /** Radio settings is ticked, there are overrides, and the choice is Apply. */
+  function settingsWillBeWritten(): boolean {
     const c = d890ControllerRef.current;
-    if (!c) return 'keep';
+    if (!c) return false;
     const state = c.getState();
-    const overrides = overridesForWrite(build.id);
-    if (!state.settingsTicked || overrides.length === 0 || state.choice !== 'apply') return 'keep';
-    return { decision: 'apply', overrides };
+    return (
+      state.settingsTicked && state.choice === 'apply' && overridesForWrite(build.id).length > 0
+    );
+  }
+
+  /** The ticked parts, minus settings when the pause would answer Keep (the button names what is sent). */
+  function effectivePartsFor(p: WriteParts): WriteParts {
+    if (!d890ControllerRef.current || !p.settings || settingsWillBeWritten()) return p;
+    return { ...p, settings: false };
   }
 
   /** How many fields the applied settings changed on this radio (for the Done screen). */

@@ -299,14 +299,43 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     ctxFactory = () => atD890Ctx({ serial: OTHER_SERIAL });
     setOverride(build.id, 'keyTone', keyToneOpposite());
     await connect();
-    await screen.findByRole('button', { name: 'Write codeplug + settings' });
+    await screen.findByRole('button', { name: 'Write codeplug' });
     expect(screen.getByText(/This isn't the radio you read settings from/)).toBeInTheDocument();
     expect(screen.getByText(/1 change on this radio/)).toBeInTheDocument();
     const keep = screen.getByRole('button', { name: 'Keep its settings' });
     expect(keep).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(screen.getByRole('button', { name: 'Write codeplug + settings' }));
+    // The button names what will be written: with Keep, no settings.
+    expect(screen.queryByRole('button', { name: 'Write codeplug + settings' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Write codeplug' }));
     await waitFor(() => expect(results).toHaveLength(1));
     expect(results[0]).toBe('keep');
+    clearAllOverrides(build.id);
+  });
+
+  it('Apply on another radio puts settings back in the button label and the write', async () => {
+    const build = renderPanel();
+    setRead(build.id, readOf(SERIAL));
+    ctxFactory = () => atD890Ctx({ serial: OTHER_SERIAL });
+    setOverride(build.id, 'keyTone', keyToneOpposite());
+    await connect();
+    await screen.findByRole('button', { name: 'Write codeplug' });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug + settings' }));
+    await waitFor(() => expect(results).toHaveLength(1));
+    expect(results[0]).toMatchObject({ decision: 'apply' });
+    clearAllOverrides(build.id);
+  });
+
+  it('the step-key nudge on another radio implies Apply: label and write agree', async () => {
+    const build = renderPanel('radio-io-at-d890uv-mm9pdy');
+    ctxFactory = () => atD890Ctx({ serial: OTHER_SERIAL, target: 'mm9pdy' });
+    setRead(build.id, readOf(SERIAL));
+    await connect();
+    await screen.findByRole('button', { name: 'Write codeplug' });
+    fireEvent.click(screen.getByRole('button', { name: 'Use MM9PDY step keys' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug + settings' }));
+    await waitFor(() => expect(results).toHaveLength(1));
+    expect(results[0]).toMatchObject({ decision: 'apply' });
     clearAllOverrides(build.id);
   });
 
@@ -379,7 +408,8 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     await openStepper();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Codeplug' }));
     fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
-    const write = await screen.findByRole('button', { name: 'Write settings' });
+    // Nothing would be written with Keep, so the button names nothing and is disabled.
+    const write = await screen.findByRole('button', { name: 'Write' });
     expect(write).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     expect(screen.getByRole('button', { name: 'Write settings' })).toBeEnabled();
@@ -431,6 +461,22 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     await waitFor(() => expect(results).toHaveLength(1));
     // The nudge adds overrides at the pause, so the result carries them.
     expect(results[0]).toMatchObject({ decision: 'apply' });
+    clearAllOverrides(build.id);
+  });
+
+  it('shows no nudge on an MM9PDY radio whose keys are already TG next/previous, even with Radio settings ticked', async () => {
+    const build = renderPanel('radio-io-at-d890uv-mm9pdy');
+    ctxFactory = () => {
+      const ctx = atD890Ctx({ target: 'mm9pdy' });
+      ctx.snapshot.main[0x13] = 14;
+      ctx.snapshot.main[0x14] = 13;
+      return ctx;
+    };
+    setRead(build.id, readOf(SERIAL));
+    setOverride(build.id, 'keyTone', keyToneOpposite());
+    await connect();
+    await screen.findByRole('button', { name: 'Write codeplug + settings' });
+    expect(screen.queryByTestId('mm9pdy-step-keys-nudge')).toBeNull();
     clearAllOverrides(build.id);
   });
 
