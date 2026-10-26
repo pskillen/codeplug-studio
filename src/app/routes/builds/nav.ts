@@ -5,8 +5,10 @@ import {
   IconRadio,
   IconSatellite,
   IconSettings,
+  IconAdjustmentsHorizontal,
 } from '@tabler/icons-react';
 import type { TablerIcon } from '@tabler/icons-react';
+import { isAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import { BuildCapabilityTrait } from '@core/models/traits.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
@@ -24,6 +26,7 @@ export type BuildNavSection =
   | 'overview'
   | 'export'
   | 'export-settings'
+  | 'radio-settings'
   | 'wire-preview'
   | 'satellite-keps'
   | 'backup'
@@ -32,6 +35,7 @@ export type BuildNavSection =
 export const BUILD_SECTION_OVERVIEW = 'Overview';
 export const BUILD_SECTION_EXPORT = 'Export';
 export const BUILD_SECTION_EXPORT_SETTINGS = 'Export settings';
+export const BUILD_SECTION_RADIO_SETTINGS = 'Radio settings';
 export const BUILD_SECTION_WIRE_PREVIEW = 'Wire preview';
 export const BUILD_SECTION_SATELLITE_KEPS = 'Satellite keps';
 export const BUILD_SECTION_BACKUP = 'Backup / Restore';
@@ -96,6 +100,15 @@ export function showsBackupNav(_build: RadioBuild, options?: BuildNavOptions): b
   return Boolean(findRadioIoEgress(options?.egressPaths ?? []));
 }
 
+/**
+ * Radio settings strip tab (#1393): AT-D890UV Web Serial builds only, whichever egress is active
+ * (same "any egress path matches" rule as Backup / Restore).
+ */
+export function showsRadioSettingsNav(_build: RadioBuild, options?: BuildNavOptions): boolean {
+  const radioIo = findRadioIoEgress(options?.egressPaths ?? []);
+  return Boolean(radioIo && isAtD890RadioIoProfileId(radioIo.profileId));
+}
+
 /** mk2 B2 — peer sections in the contextual strip; Satellite keps (#1085) is conditional. */
 export function buildSectionNavItems(
   build: RadioBuild,
@@ -128,6 +141,15 @@ export function buildSectionNavItems(
       icon: entityNavIcons.channels,
     },
   ];
+
+  if (showsRadioSettingsNav(build, options)) {
+    items.splice(3, 0, {
+      label: BUILD_SECTION_RADIO_SETTINGS,
+      section: 'radio-settings',
+      path: `${base}/export/radio-settings`,
+      icon: IconAdjustmentsHorizontal,
+    });
+  }
 
   if (showsSatelliteKepsNav(build, options)) {
     items.push({
@@ -303,6 +325,7 @@ export function allBuildDetailPaths(build: RadioBuild, options?: BuildNavOptions
   const paths = new Set<string>([
     `${base}/export`,
     `${base}/export/settings`,
+    ...(showsRadioSettingsNav(build, options) ? [`${base}/export/radio-settings`] : []),
     `${base}/overview`,
     ...buildWireEntityNavItems(build, options).map((item) => item.path),
     `${base}/channels/bulk`,
@@ -334,6 +357,8 @@ export function activeBuildSection(pathname: string, buildId: string): BuildNavS
 
   const suffix = pathname.slice(prefix.length);
   if (!suffix || suffix === 'export') return 'export';
+  if (suffix === 'export/radio-settings' || suffix.startsWith('export/radio-settings/'))
+    return 'radio-settings';
   if (suffix === 'export/settings' || suffix.startsWith('export/settings/'))
     return 'export-settings';
   if (suffix === 'overview' || suffix.startsWith('overview/')) return 'overview';
@@ -357,6 +382,8 @@ export function activeBuildSectionLabel(pathname: string, buildId: string): stri
       return BUILD_SECTION_EXPORT;
     case 'export-settings':
       return BUILD_SECTION_EXPORT_SETTINGS;
+    case 'radio-settings':
+      return BUILD_SECTION_RADIO_SETTINGS;
     case 'wire-preview':
       return BUILD_SECTION_WIRE_PREVIEW;
     case 'satellite-keps':
