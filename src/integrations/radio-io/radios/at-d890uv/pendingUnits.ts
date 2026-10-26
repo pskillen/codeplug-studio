@@ -5,7 +5,7 @@
  * a power-cycle. The next write-mode `END` from **any** tool (Studio or the CPS) promotes every
  * marked half, so the units an aborted session had already finished are committed later, on top
  * of whatever that later write meant to do. The unit in progress at the abort has no marker and is
- * never promoted (anytone-d890-firmware F248 to F251, Q78; emulator cases F to H).
+ * never promoted (anytone-d890-firmware F278; emulator cases F to H).
  *
  * The only cure is to write those units again in a session that ends with `END`. Studio records
  * them here, in browser storage, and refuses any D890 write that would not rewrite them

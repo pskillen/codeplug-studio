@@ -69,6 +69,16 @@ selects the live half at run time from the end-of-unit words in
 address map is not settled. Studio still must not write the `+0x3fbf0` / `+0x3fff0` markers; that
 warning stands on the program-error incident above.
 
+## Firmware semantics behind the markers
+
+What the firmware does on the PC link (anytone-d890-firmware F274 to F278 and Q82, [findings](https://github.com/pskillen/anytone-d890-firmware/blob/main/docs/initial-re/findings.md)), as confirmed by running its real handlers in the emulator:
+
+- **First `W` into a unit** erases that unit's non-live half. Bytes the host never sends read `FF`.
+- **Leaving a unit** for the next one writes the PC marker (`22 33 44 55` at `+0x3FBF4`) on the half just written. The marker survives a power-cycle.
+- **`END`** marks the unit in progress, then walks every bank and promotes each marked half to live, marking the old half stale. This is why a unit written but never marked is not committed, and why a marked unit is committed by a later session's `END`.
+- **An `R` after a `W`** switches the PC-link unit state: the unit being written when the `R` arrives is never marked, and an `R` as the last command before `END` makes `END` skip the walk entirely. See [protocol.md — Session rule](protocol.md#session-rule-no-r-after-the-first-w).
+- **Abandoning** a session without `END` leaves marked units pending until some later write-mode `END`: [protocol.md — Abandoned sessions](protocol.md#abandoned-sessions-units-left-pending).
+
 ## No commit / erase / swap command
 
 The PROGRAM session is `PROGRAM` → ident → `R`/`W` frames → `END`. A full official-CPS wire capture

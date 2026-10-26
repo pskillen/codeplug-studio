@@ -5,7 +5,7 @@
  * (docs/reference/radios/anytone/at-d890uv/flash-sectors.md). An `R` into another unit switches
  * the firmware's PC-link unit state, so the unit being written when the `R` arrives is never
  * marked and `END` does not promote it; an `R` as the last command before `END` makes `END`
- * commit nothing at all. Emulator-confirmed (anytone-d890-firmware F248 to F251, Q78).
+ * commit nothing at all. Emulator-confirmed (anytone-d890-firmware F274 to F278, Q82).
  *
  * How. State is keyed on the **pipe**, not on a caller, and the three functions below sit at the
  * lowest send primitives in `connection.ts` (`atD890ReadBlockRaw`, `atD890WriteMemory`,

@@ -230,7 +230,8 @@ Studio upload uses a **positive allow-list** (`AT_D890_WRITABLE_EXTENTS` in `wri
 | AM airband channels + AM zones                             | `replaced`      | When projected         | Written together when build has airband zones; else radio bank left alone ([#756](https://github.com/pskillen/codeplug-studio/issues/756)) |
 | LocalInfo                                                  | `kept`          | No                     | **Not transmitted** — identity check only; unit not touched                                                                                |
 | Optional settings, alarm                                   | `kept`          | No                     | **Preserved** — fresh-read + unchanged re-stage inside touched units                                                                       |
-| DigitalContact\*, boot images, crypto, broadcast FM, …     | `kept` / unread | No                     | Untouched — absent from cache unless future Read tickets                                                                                   |
+| DigitalContact\*                                           | `replaced`      | Yes (contacts)         | Written from Studio-owned erase units, never read ([digital-contacts.md](digital-contacts.md))                                             |
+| Boot images, crypto, broadcast FM, …                       | `kept` / unread | No                     | Untouched — absent from cache unless future Read tickets                                                                                   |
 
 **Serial Write projection:** `RadioWriteProjection` for `radio-io-at-d890uv` partitions receive-only AM airband and broadcast FM out of MR channels, zones, and scan — same bank split as Anytone CSV egress ([#755](https://github.com/pskillen/codeplug-studio/issues/755)). **AM airband** then projects into the parallel `AmAir*` / `AmZone*` banks when the build has airband channels **and** AM zone membership (zones ship with channels). Empty airband content retains the radio bank (DigitalContacts-style). Broadcast FM stays CSV-only until a later ticket — see [am-air.md](../../../export-formats/anytone/am-air.md). Export **Web Serial** shows an operator-facing **What Write updates** table (written vs deferred vs left alone).
 
@@ -346,9 +347,9 @@ The official CPS encoder we read writes the address book, prefab SMS, FM, DTMF /
 
 Full map fields live in anytone-cps `D890_MAP`; expand these pages when an adapter slice needs them.
 
-### DigitalContact (huge bank — layout only; Read/decode exist, Studio Write is a deliberate v1 gap)
+### DigitalContact (huge bank — written on Write from Studio-owned units, no read)
 
-Cite: anytone-cps `D890_MAP`, `Device::readDigitalContacts` / `parseDigitalContact_D890UV` / `writeDigitalContacts` — facts only. Tracked in [#759](https://github.com/pskillen/codeplug-studio/issues/759); Studio never Reads or Writes this bank ([#753](https://github.com/pskillen/codeplug-studio/issues/753) allow-list). The layout itself is fully known upstream (unlike AmZone) — the open question is product policy (replace-vs-merge, never-wipe-on-empty), not RE.
+Cite: anytone-cps `D890_MAP`, `Device::readDigitalContacts` / `parseDigitalContact_D890UV` / `writeDigitalContacts` — facts only. Studio writes this bank on Write, from erase units it owns outright and without reading them: [digital-contacts.md](digital-contacts.md) ([#992](https://github.com/pskillen/codeplug-studio/issues/992), [#1406](https://github.com/pskillen/codeplug-studio/issues/1406)). The layout is fully known upstream (unlike AmZone).
 
 | Region                | Base        | Block length / stride             | Notes                                                                                                                                                                     |
 | --------------------- | ----------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
