@@ -64,6 +64,21 @@ export const SATELLITE_KEPS_WRITE_ADAPTERS: Readonly<Record<string, SatelliteKep
   'radio-io-opengd77-md9600': writeOpenGd77SatellitesToRadio,
 };
 
+/**
+ * Profiles whose keps writer can run in the codeplug's own session, after `upload()` and before
+ * END. The AT-D890UV keps unit (0x4A80000) is never touched by `upload()` and its writer does its
+ * own fresh-read RMW on the open pipe, as the digital contacts do. OpenGD77's `upload()` ends with
+ * SAVE_REBOOT, so its keps need a new session after the radio restarts.
+ */
+const KEPS_SAME_SESSION_AFTER_UPLOAD: ReadonlySet<string> = new Set([
+  'radio-io-at-d890uv',
+  'radio-io-at-d890uv-mm9pdy',
+]);
+
+export function satelliteKepsSameSessionAfterUpload(profileId: string): boolean {
+  return KEPS_SAME_SESSION_AFTER_UPLOAD.has(profileId);
+}
+
 export function hasSatelliteKepsWriteAdapter(profileId: string): boolean {
   return profileId in SATELLITE_KEPS_WRITE_ADAPTERS;
 }
