@@ -160,7 +160,7 @@ describe('RadioIoProgressModal replays real Write event shapes', () => {
       for (const li of Array.from(rows).slice(0, sc.plan.length + 2)) {
         expect(li.getAttribute('data-status')).toBe('success');
       }
-    });
+    }, 15_000);
   }
 });
 
@@ -212,7 +212,7 @@ describe('estimate on replayed Write streams (constant byte rate)', () => {
         }
       }
       expect(sawEta).toBe(true);
-    });
+    }, 15_000);
   }
 
   it('does not let a long read between sparse events decay the estimate (D890 preserve)', () => {

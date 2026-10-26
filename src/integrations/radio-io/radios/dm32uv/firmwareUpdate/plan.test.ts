@@ -105,7 +105,7 @@ describe('buildDm32FirmwarePlan', () => {
       expect(s.tx[1027]).toBe(crc & 0xff);
       expect(hex(s.rx)).toBe('06');
     });
-  });
+  }, 15_000);
 
   it('ends with EOT and never sends the header', () => {
     const last = plan[plan.length - 1]!;

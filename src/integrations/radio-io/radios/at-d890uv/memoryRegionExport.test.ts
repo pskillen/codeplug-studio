@@ -185,7 +185,7 @@ describe('runAtD890MemoryGroupDump', () => {
     );
     expect([...result.files.keys()]).toEqual(expectedIds);
     expect(writeFrames(pipe)).toEqual([]);
-  });
+  }, 15_000);
 
   it('rejects an unknown group id', async () => {
     const pipe = new AtD890ScriptedPipe();

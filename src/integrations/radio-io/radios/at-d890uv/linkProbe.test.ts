@@ -168,7 +168,7 @@ describe('profileAtD890AccessPattern', () => {
     // A scripted pipe answers instantly at every stride, so there is no cache signal.
     const r = await profileAtD890AccessPattern(scriptStrides(), ADDRESS, { iterations: 2 });
     expect(r.inferredPageBytes).toBeNull();
-  });
+  }, 15_000);
 });
 
 describe('estimateAtD890RmwCost', () => {

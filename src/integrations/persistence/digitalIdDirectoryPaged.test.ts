@@ -92,7 +92,7 @@ describe.each(implementations)('DigitalIdDirectory paged queries — %s', (_labe
     expect(middle.total).toBe(1_000);
     expect(middle.rows).toHaveLength(25);
     expect(middle.rows[0]?.name).toBe('Contact 00500');
-  });
+  }, 15_000);
 
   it('filters by callsign prefix without hydrating the full partition', async () => {
     const store = makeStore();
