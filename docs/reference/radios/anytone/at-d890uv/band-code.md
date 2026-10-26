@@ -1,6 +1,6 @@
 # AT-D890UV band code (frequency range)
 
-The official CPS lets the operator pick a **frequency range** (Europe, US, commercial, amateur, …). This page records what is known about where that choice lives on the radio and what Studio would need to change it ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369)). **Studio shows the range read-only (Backup page, LocalInfo decode) and uses the firmware table for the receive-only check; changing it is not implemented, and the hardware tests in "Open questions" have not been run.**
+The official CPS lets the operator pick a **frequency range** (Europe, US, commercial, amateur, …). This page records where that choice lives on the radio and how Studio changes it ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369)). **Studio shows the range read-only (Backup page, LocalInfo decode), uses the firmware table for the receive-only check, and has a range-change engine (a single 16-byte `W`, below) that no screen calls yet. The engine is not radio-tested: checks RT-1 and RT-2 are pending, as are the hardware tests in "Open questions".**
 
 Evidence comes from the MM9PDY firmware reverse-engineering notes (`anytone-d890-firmware`: `docs/reference/cps/protocol.md`, `docs/reference/firmware/calibration-and-identity.md`, `pc-link-protocol.md`, findings F51 / F73), and from a real read of one radio.
 
@@ -75,22 +75,79 @@ Code: [`frequencyRange.ts`](../../../../../src/core/radios/anytone/at-d890uv/fre
 - **CPS display differs from the firmware** for codes 15, 16 and 18 (see the CPS table above). Studio uses the firmware table.
 - The loader maps codes above 18 to 0, and code 14 to 0 unless LocalInfo `+0x0B..+0x0E` is `890#`. Studio's Backup row shows a locked 14 as "treated as 0". Anything that enforces the table (PR 4c's Review) must use the **sanitised** code (the ident reply byte 8, from RAM `0x20015277`), never the raw LocalInfo byte.
 - **Code 18 at 220 MHz is TX only (222–225).** The firmware's RX clamp, VFO range init and out-of-band check open 200–300 MHz only for code 14, so RX at 220 MHz on code 18 is not claimed. Unconfirmed on a radio; the earlier 220–225 RX figure came from the table row alone.
-- **Changing the range resets the radio** at the next boot: channels, zones, scan lists and the whole settings unit are cleared and the tune bank is rewritten. Changing it stays on [#1369](https://github.com/pskillen/codeplug-studio/issues/1369) and is not implemented in Studio.
-- **Single-frame `W` write** of the range byte: facts recorded from the firmware's code only, **not radio-tested**.
+- **Changing the range resets the radio** at the next boot: channels, zones, scan lists and the whole settings unit are cleared and the tune bank is rewritten (see "Changing the range" below).
 - **Calibration bank pair** `0x04F00000` / `0x04F40000` holds the tune data that is rewritten on a range change; Studio's vital-data backup reads and saves it (see [backup-restore.md](backup-restore.md#vital-data-backup)).
 
 ### How Studio uses it
 
 - Read-only display: the Backup page's LocalInfo decode shows "Frequency range: <caption> (code N) · TX …"; the ident reply carries the same byte (`AtD890Ident.bandCode`).
-- Studio **never writes LocalInfo**.
+- Studio writes LocalInfo **only through Radio tools' range change** (`integrations/radio-io/radios/at-d890uv/rangeChange/`). No codeplug Write, Restore or Backup path reaches it.
 - **Every channel the hardware can receive is written.** Once the Review step (PR 4c) lands, the Write's Review will warn, from the connected radio's code, about channels whose TX frequency is outside that radio's TX table (`listAtD890ReceiveOnlyChannels`): they are written and are receive-only on that radio. Nothing is stored per build. Build-level eligibility ([capabilities.md](capabilities.md)) is unchanged.
 
-## What changing it would take
+## Changing the range
 
-1. **Write LocalInfo.** The firmware's own writer erases the whole 256 KiB unit and rewrites it, keeping an A/B pair (`0x04F80000` / `0x04FC0000`) with live/stale markers. The same unit holds the **serial number** (`+0x30`) and stun/kill flags, which Studio's restore checks treat as identity. A partial or interrupted write could lose the serial, so the plan must be read-modify-write of the live unit with a verified read-back, the existing erase-unit machinery ([flash-sectors.md](flash-sectors.md), `sparseEraseRmw.ts`), and a mandatory Backup first. Never touch the sector markers.
-2. **Extend the write allow-list.** LocalInfo is deliberately outside it ([#753](https://github.com/pskillen/codeplug-studio/issues/753)); `writableExtents.ts` / `writeRole.ts` must gain a narrow, single-byte (`+0x03`) extent, only reachable through an explicit opt-in action, never through a build Write.
-3. **Product shape.** An opt-in control on the radio-io page: show the current code and its ranges (Read already fetches LocalInfo), pick a target code, show a warning (may exceed the radio's type approval; operator is responsible for lawful use; the official CPS will refuse to write until its codeplug is re-created with the new range), then write and verify.
-4. **Eligibility follows the code.** The D890 channel-eligibility bands ([capabilities.md](capabilities.md)) are currently fixed at 136–174 / 400–480 MHz RX-TX. With a known code they should come from the table above.
+Facts from a reading of stock V1.05 firmware. **Not radio-tested: RT-1 and RT-2 are pending** (see [radio-tools.md](../../../../features/radio-read-write/radio-tools.md)).
+
+### How the firmware takes the change
+
+- On entering PC mode the firmware pre-loads the live LocalInfo `+0x00..+0xFF` into a RAM image.
+- A PC-link `W` into the unit at `0x04F80000` is special-cased. The **first** `W` erases the **non-live** half of the A/B pair and programs nothing. Each 16-byte frame is overlaid on the RAM image at `addr & 0xFFF`; offsets `>= 0x100` are discarded.
+- At `END` the firmware programs the `0x100` RAM image into the erased half, marks it live and the old half stale, then **reboots**.
+- So **one 16-byte `W` at `0x04F80000`** changes the range. Everything else in LocalInfo (serial, model, unlock, dealer fields) survives from the RAM pre-load, because the frame is overlaid rather than replacing the unit.
+- **Abort:** if the link is lost after the `W` and before `END`, only the non-live half has been erased; the old LocalInfo is used at power-up and nothing changes. Studio therefore sends `END` only after a clean ACK and never on a failure path.
+- The RAM overlay is idempotent, so a lost ACK is handled by resending the identical frame (at most twice).
+
+### Never
+
+- **Never address `0x04FC0000`** (the other half of the pair). It misses the special case, and the generic path would erase an unrelated unit.
+- **Never use PC-link `H`.** It is a per-frame A/B LocalInfo writer with a RAM-overrun bug.
+- **Never touch the sector markers.**
+- Never write LocalInfo through the generic write helpers. LocalInfo is not on `AT_D890_WRITABLE_EXTENTS`, and the generic helpers hard-deny `0x04F00000..0x04FFFFFF` whatever guard they are given (vital-unit deny, a separate PR of #1369).
+
+### Sibling bytes in the 16-byte block
+
+The frame carries `+0x00..+0x0F` of the live LocalInfo with only `+0x03` changed. The other bytes matter:
+
+| Offset            | Meaning                     | Why the frame builder cares                                                                                                     |
+| ----------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `+0x00`           | Stun flag                   | Non-zero stuns the radio. `END` with a flag set rewrites LocalInfo from stale RAM, which would undo the frame. Refused.         |
+| `+0x01`           | Kill flag                   | As `+0x00`. Refused.                                                                                                            |
+| `+0x02`           | Test-mode bit               | Carried unchanged.                                                                                                              |
+| `+0x04` / `+0x05` | Market / language-lock pair | The `W` handler forces `+0x05`. If `+0x04 != +0x05` at boot the radio runs **full factory defaults**. Refused when they differ. |
+| `+0x06..+0x0A`    | Unknown                     | Carried unchanged.                                                                                                              |
+| `+0x0B..+0x0E`    | `890#` unlock               | The loader maps code 14 to 0 without `890#` (and codes above 18 to 0). Code 14 is a target only when `890#` is present.         |
+| `+0x10..+0x15`    | Model string `D890UV`       | Outside the frame, but checked in the live read: a different string refuses the change.                                         |
+| `+0x30`           | Serial                      | Outside the frame; survives from the RAM pre-load.                                                                              |
+
+### What happens at the next boot
+
+The firmware sees LocalInfo `+0x03` differ from the tune bank's copy at tune `+0x28` and:
+
+- wipes channels, zone members, scan lists, zone names and the whole settings unit (87 erase units in the emulator);
+- writes the new range's defaults;
+- A/B-rewrites the tune bank (`0x04F00000` to `0x04F40000`), byte-identical apart from `+0x28`.
+
+The official **CPS** never writes LocalInfo, cannot change a radio's range, and refuses an old codeplug file after a change ("Band Error!").
+
+### Frame rules (enforced in code)
+
+`buildAtD890RangeChangeFrame(liveLocalInfo, target)` refuses when: the LocalInfo is shorter than `0x100`; `+0x00` or `+0x01` is non-zero; `+0x04 != +0x05`; `+0x10..+0x15` is not `D890UV`; the target is not an integer in the allowed set; the target is 14 and `+0x0B..+0x0E` is not `890#`; or the target equals the raw `+0x03`. It returns a copy of `+0x00..+0x0F` with only `+0x03` set and asserts the diff against its input is exactly one byte.
+
+**Allowed targets:** 0, 1, 2, 3, 4, 5, 7, 8, 10, 11, 13, 16, 17, 18, plus 14 after `890#`. Codes 6, 9, 12 and 15 are offered by neither the CPS nor the radio's factory menu and are **never** a target. Targets whose receive range is narrower than 136-174 / 400-480 MHz: 2, 4, 5, 8, 16, 17. Codes 16 and 17 inhibit UHF transmit.
+
+### Session shape
+
+Run in PROGRAM by `changeAtD890FrequencyRange`: read LocalInfo `0x100`; refuse on a stun/kill flag; require the bytes to equal the verified backup; build the frame; let the caller write its journal; send the one `W`; send `END`. After the reboot, `verifyAtD890RangeChange` reads LocalInfo (and the tune bank when the backup has it) and reports any difference other than LocalInfo `+0x03` and tune `+0x28`.
+
+### Code and tests
+
+- Core: [`frequencyRange.ts`](../../../../../src/core/radios/anytone/at-d890uv/frequencyRange.ts) (targets, summaries).
+- Frame, sender, session, verify: `src/integrations/radio-io/radios/at-d890uv/rangeChange/`. `rangeChangeSend.ts` is the only code that can write LocalInfo; `rangeChangeBoundary.test.ts` keeps everything else from importing it.
+- **Not radio-tested.** The emulator has no USB, so the `W` path is proved on a radio (RT-1, RT-2).
+
+### Not engine work
+
+The wizard, the backup-first check, the resumable journal and the prod gate belong to later PRs of [#1369](https://github.com/pskillen/codeplug-studio/issues/1369). **Eligibility follows the code:** the D890 channel-eligibility bands ([capabilities.md](capabilities.md)) are currently fixed at 136-174 / 400-480 MHz and should come from the table above once the code is known.
 
 ## Open questions (hardware tests)
 
@@ -105,5 +162,5 @@ Code: [`frequencyRange.ts`](../../../../../src/core/radios/anytone/at-d890uv/fre
 ## Related
 
 - [memory-layout.md](memory-layout.md) — LocalInfo ExpertOptions.
-- [protocol.md](protocol.md) — ident.
+- [protocol.md](protocol.md) — ident, and the LocalInfo `W` special path.
 - [backup-restore.md](backup-restore.md) — LocalInfo is inspect-only today.

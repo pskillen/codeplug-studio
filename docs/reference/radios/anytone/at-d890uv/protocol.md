@@ -95,9 +95,19 @@ Studio chunks reads at the negotiated block size (16-byte aligned spans). If a l
 
 Checksum (anytone-cps): 8-bit sum over command bytes after the opcode (`cmd[1:]` before checksum/trailer).
 
-**Safe-skip:** the `0x2fa0010` skip is anytone-cps lore. The official CPS encoder we read does not skip that address. Studio still skips it as a family precaution (D878 LocalInfo neighbourhood). D890 `LocalInfo+0x10` (`0x4f80010`) is excluded because LocalInfo is not on the upload allow-list.
+**Safe-skip:** the `0x2fa0010` skip is anytone-cps lore. The official CPS encoder we read does not skip that address. Studio still skips it as a family precaution (D878 LocalInfo neighbourhood). D890 `LocalInfo+0x10` (`0x4f80010`) is excluded because LocalInfo is not on the upload allow-list (only the range change's single frame reaches LocalInfo).
 
 **ChannelData geometry:** the allow-list covers only the low half of each `0x80000` block. Studio refuses upper-half addresses at `assertAtD890WritableAddress` ([#791](https://github.com/pskillen/codeplug-studio/issues/791)). That refusal is the write fence. The upper half is an alternate unit; the PC-link address map is not settled. See [memory-layout.md — Alternate half](memory-layout.md#alternate-half-of-a-0x40000-unit).
+
+### LocalInfo `W` (special path)
+
+A `W` into the LocalInfo unit at `0x04F80000` is special-cased by the firmware. It is used by exactly one Studio feature, the range change ([band-code.md](band-code.md#changing-the-range)), and is **not part of a codeplug Write**.
+
+- The first such `W` erases the **non-live** half of the A/B pair and programs nothing.
+- Each 16-byte frame is overlaid on the RAM image the firmware pre-loaded from the live LocalInfo, at `addr & 0xFFF`; offsets `>= 0x100` are discarded.
+- **`END` is the commit:** the firmware programs the `0x100` RAM image into the erased half, marks it live and the old half stale, then reboots. A session that loses the link before `END` leaves the old LocalInfo in use.
+- Because `END` commits, it is sent only after a clean ACK of the `W`, and never when a stun/kill flag was seen.
+- Never address `0x04FC0000`. PC-link **`H`** exists (a per-frame A/B LocalInfo writer with a RAM-overrun bug) and Studio never sends it.
 
 ## Write staging and session exit
 
