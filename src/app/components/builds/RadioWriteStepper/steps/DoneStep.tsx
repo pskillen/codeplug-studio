@@ -6,7 +6,7 @@
 import { Alert, Stack, Text } from '@mantine/core';
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { Button } from '../../../v2/index.ts';
-import { maskSerial } from '../reviewSections.tsx';
+import { maskSerial } from '../maskSerial.ts';
 import classes from '../RadioWriteStepper.module.css';
 import type {
   WriteFlowActions,

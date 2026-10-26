@@ -188,7 +188,7 @@ describe('RadioWriteStepper — steps 4 to 6', () => {
     );
     expect(screen.getByRole('button', { name: 'Check write' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Write keps' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Skip and finish' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Finish without keps' }));
     expect(actions.onSkipCheck).toHaveBeenCalled();
   });
 

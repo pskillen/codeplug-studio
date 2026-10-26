@@ -6,7 +6,7 @@
 import { Progress, Text } from '@mantine/core';
 import RadioIoStageList from '../../RadioIoStageList.tsx';
 import { Button } from '../../../v2/index.ts';
-import { IdentitySection } from '../reviewSections.tsx';
+import { IdentitySection } from '../reviewSectionParts.tsx';
 import classes from '../RadioWriteStepper.module.css';
 import type { WriteFlowActions, WriteFlowView, WriteStepperConfig } from '../types.ts';
 
