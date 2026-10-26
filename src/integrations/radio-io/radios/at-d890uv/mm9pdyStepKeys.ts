@@ -5,13 +5,11 @@
  * functions one higher: item 15 Record is TG next, item 14 Record Switch is
  * TG previous. Offsets are short-press P1 (`+0x13`) and P2 (`+0x14`) inside
  * optional settings. They are ordinary settings fields (`keyShortP1`, `keyShortP2`):
- * the build's step-key switch turns into two overrides, and upload applies them as field
+ * the nudge in Review turns into two overrides, and upload applies them as field
  * patches on the fresh read of the settings unit. See `settingsFields.ts`.
  */
 
-import type { MemoryMap } from '../../types.ts';
-import { resolveAtD890SettingsPatches, type AtD890SettingsOverride } from './settingsFields.ts';
-import { applyAtD890SettingsPatchesToImage } from './settingsPatch.ts';
+import type { AtD890SettingsOverride } from './settingsFields.ts';
 
 /** Firmware function index for TG next (CPS item 15 Record). */
 export const MM9PDY_TG_NEXT_FUNCTION = 14;
@@ -29,12 +27,4 @@ export function mm9pdyStepKeyOverrides(): AtD890SettingsOverride[] {
     { fieldId: 'keyShortP1', value: MM9PDY_TG_NEXT_FUNCTION },
     { fieldId: 'keyShortP2', value: MM9PDY_TG_PREVIOUS_FUNCTION },
   ];
-}
-
-/** Patch the retained image. Neighbouring settings bytes, including `+0x200`, stay. */
-export function patchMm9pdyStepKeysOnImage(image: MemoryMap): void {
-  applyAtD890SettingsPatchesToImage(
-    image,
-    resolveAtD890SettingsPatches(mm9pdyStepKeyOverrides(), 'mm9pdy'),
-  );
 }
