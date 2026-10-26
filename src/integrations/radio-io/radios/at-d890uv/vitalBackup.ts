@@ -6,7 +6,7 @@
  * its bytes are "as returned", not a B copy. See docs/reference/radios/anytone/at-d890uv/backup-restore.md.
  */
 
-import { RadioProtocolError } from '../../kit/errors.ts';
+import { RadioAbortedError, RadioProtocolError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import type { BytePipe, ProgressFn } from '../../types.ts';
 import { atD890ReadMemory } from './connection.ts';
@@ -41,6 +41,10 @@ export const AT_D890_VITAL_UNITS: readonly AtD890VitalUnitDef[] = [
     asReturned: false,
   },
 ];
+
+const AT_D890_HEAD_READ_FAILED_MESSAGE =
+  "Could not read the radio's local info, so its stun or kill state is unknown. Studio has stopped without " +
+  'sending END. Power-cycle the radio, then try again.';
 
 /** Progress slice: keeps the bar moving. Each unit read is still split on frame boundaries inside one unit. */
 const SLICE_BYTES = 0x1_0000;
@@ -113,13 +117,23 @@ export async function readAtD890VitalUnits(
   opts: AtD890VitalReadOptions = {},
 ): Promise<AtD890VitalReadResult> {
   throwIfAborted(opts.signal);
-  const head = await atD890ReadMemory(
-    session.pipe,
-    D890_MAP.LocalInfo,
-    AT_D890_BLOCK_SIZE,
-    opts.signal,
-    AT_D890_BLOCK_SIZE,
-  );
+  let head: Uint8Array;
+  try {
+    head = await atD890ReadMemory(
+      session.pipe,
+      D890_MAP.LocalInfo,
+      AT_D890_BLOCK_SIZE,
+      opts.signal,
+      AT_D890_BLOCK_SIZE,
+    );
+  } catch (err) {
+    // The flags were never seen, so a stun/kill state cannot be ruled out: no END (see stunKillGuard.ts).
+    session.abandonProgramMode();
+    if (err instanceof RadioAbortedError) throw err;
+    throw new RadioProtocolError(
+      `${AT_D890_HEAD_READ_FAILED_MESSAGE} (${err instanceof Error ? err.message : String(err)})`,
+    );
+  }
   try {
     assertAtD890NoStunKill(head);
   } catch (err) {

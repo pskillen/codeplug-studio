@@ -180,6 +180,7 @@ export default function BuildRadioBackupPage() {
   }
 
   async function handleBackupVital() {
+    setVital(null);
     beginBusy('vital-read');
     try {
       const { session } = await openRadioSessionForEgress(radioEgress!, {
@@ -196,6 +197,7 @@ export default function BuildRadioBackupPage() {
       setVital(result);
       setPhase('done');
     } catch (err) {
+      setVital(null);
       setError(err instanceof Error ? err.message : String(err));
       await releaseSession();
       setBusy(false);
