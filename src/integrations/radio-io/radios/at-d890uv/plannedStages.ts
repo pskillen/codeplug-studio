@@ -199,12 +199,10 @@ function contactStages(ctx: RadioPlanContext): PlannedStage[] {
   const wanted = ctx.parts ? ctx.parts.contacts : (contacts?.length ?? 0) > 0;
   if (!wanted) return [];
   const optional = !contacts || contacts.length === 0;
-  let units = 1;
   let bytes = 0x4000;
   if (contacts && contacts.length > 0) {
     try {
       const chunks = packAtD890DigitalContacts(contacts).stagingChunks;
-      units = Math.max(1, listTouchedEraseUnits(chunks.map((c) => c.address)).length);
       bytes = chunks.length * BLOCK;
     } catch {
       // The plan is advisory: a contact set the packer rejects keeps the nominal sizes, and the
@@ -212,14 +210,8 @@ function contactStages(ctx: RadioPlanContext): PlannedStage[] {
     }
   }
   const flag = optional ? { optional: true } : {};
-  return [
-    {
-      label: 'Preserving untouched contact data',
-      weight: units * AT_D890_ERASE_UNIT_BYTES,
-      ...flag,
-    },
-    { label: 'Digital contacts', weight: bytes, ...flag },
-  ];
+  // The contact units are Studio-owned (#1406): no preserve read, only the write stage.
+  return [{ label: 'Digital contacts', weight: bytes, ...flag }];
 }
 
 /** Bytes a settings-only Write sends: the non-empty blocks of the one settings erase unit (nominal). */

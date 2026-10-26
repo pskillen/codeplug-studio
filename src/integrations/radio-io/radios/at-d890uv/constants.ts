@@ -232,8 +232,8 @@ export const D890_MAP = {
   AmZoneMemberSlots: 32,
   /**
    * Digital contact book. Huge, block-hopped bank — see memory-layout.md for the
-   * linear-stream reconstruction formula. Read/decode/encode all exist in anytone-cps;
-   * Studio deliberately never Reads or Writes this bank (#759, #753 allow-list).
+   * linear-stream reconstruction formula. Written on Write from Studio-owned erase units (no
+   * read); see docs/reference/radios/anytone/at-d890uv/digital-contacts.md.
    */
   DigitalContactMeta: 0x700_0000,
   DigitalContactMetaLength: 0x10,

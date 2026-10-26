@@ -95,12 +95,9 @@ describe('AT-D890UV planned stages', () => {
     const parts = { codeplug: true, contacts: true, settings: false, keps: true };
     const labels = planForOperation(AT_D890UV_DESCRIPTOR, 'write', { parts })!.map((s) => s.label);
     expect(labels).toEqual(
-      expect.arrayContaining([
-        'Preserving untouched contact data',
-        'Digital contacts',
-        'Preserving untouched satellite data',
-      ]),
+      expect.arrayContaining(['Digital contacts', 'Preserving untouched satellite data']),
     );
+    expect(labels).not.toContain('Preserving untouched contact data');
     const none = planForOperation(AT_D890UV_DESCRIPTOR, 'write')!.map((s) => s.label);
     expect(none).not.toContain('Digital contacts');
   });
@@ -137,10 +134,9 @@ describe('AT-D890UV planned stages', () => {
       { onProgress: rec.onProgress },
     );
     // The tail of the plan is what these two writers emit; the codeplug part is covered above.
-    const tail = plan.slice(labels.indexOf('Preserving untouched contact data'));
+    const tail = plan.slice(labels.indexOf('Digital contacts'));
     expectEventsFollowPlan(tail, rec.events);
     expect(rec.stages).toEqual([
-      'Preserving untouched contact data',
       'Digital contacts',
       'Preserving untouched satellite data',
       'Upload',

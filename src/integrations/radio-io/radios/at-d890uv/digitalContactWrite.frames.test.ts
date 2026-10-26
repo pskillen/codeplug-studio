@@ -109,7 +109,6 @@ async function runWrite(n: number) {
     return origWrite(data);
   };
   await uploadAtD890DigitalContacts(pipe, contacts(n), {
-    readBlockSize: 0xf0,
     onProgress: (p) => {
       currentStage = p.stage ?? '(none)';
     },
@@ -138,23 +137,16 @@ describe('AT-D890 digital contact write frame counts (#1406)', () => {
       expect(new Set(unitRuns).size).toBe(unitRuns.length);
       expect(unitRuns).toHaveLength(3);
 
-      expect(stages.get('Preserving untouched contact data')).toEqual(PRESERVE);
-      expect(stages.get('Digital contacts')).toEqual(EXPECTED_TODAY[n]);
-      // Today the planted contact-tail blocks are read and re-sent unchanged.
-      for (const p of PLANTED) expect(wAddrs).toContain(p);
-      expect(nonFfChunks(n)).toBeGreaterThan(0);
+      // No R frame at all, and no preserve stage.
+      expect(stages.has('Preserving untouched contact data')).toBe(false);
+      expect(stages.get('Digital contacts')).toEqual({ r: 0, rBytes: 0, w: EXPECTED_W[n] });
+      expect(wAddrs).toHaveLength(nonFfChunks(n));
+      // The stale tail of the earlier, longer list is erased, not re-sent.
+      for (const p of PLANTED) expect(wAddrs).not.toContain(p);
     },
     30_000,
   );
 });
 
-/*
- * Pinned today: the preserve read covers all three touched units whatever N is, and every
- * stale block of the earlier, longer list (plus the planted tails) is re-sent.
- */
-const PRESERVE: StageCounts = { r: 3279, rBytes: 786_432, w: 0 };
-const EXPECTED_TODAY: Record<number, StageCounts> = {
-  2: { r: 0, rBytes: 0, w: 21_951 },
-  100: { r: 0, rBytes: 0, w: 21_951 },
-  1000: { r: 0, rBytes: 0, w: 21_951 },
-};
+/** Non-`FF` packer chunks: the only frames a contact Write sends. */
+const EXPECTED_W: Record<number, number> = { 2: 14, 100: 626, 1000: 6251 };
