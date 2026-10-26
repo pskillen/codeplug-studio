@@ -169,6 +169,16 @@ export function atD890KeyFunctionOptions(target: 'stock' | 'mm9pdy'): AtD890Sett
   }));
 }
 
+/**
+ * Menu language, optional settings `+0x05`: 0 English, 1 Chinese, 2 Russian. The firmware does not
+ * range-check it; LocalInfo `+0x04` can force it at every load (1 English, 2 Chinese).
+ */
+export const AT_D890_LANGUAGES: readonly AtD890SettingOption[] = list([
+  'English',
+  'Chinese',
+  'Russian',
+]);
+
 const COLOURS_NAME = list(['Orange', 'Red', 'Yellow', 'Green', 'Turquoise', 'Blue', 'White']);
 const COLOURS_CALLSIGN: AtD890SettingOption[] = [
   ...COLOURS_NAME,

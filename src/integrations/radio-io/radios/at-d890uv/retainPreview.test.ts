@@ -66,10 +66,24 @@ describe('settingsRetainPreview frequency range', () => {
 });
 
 describe('optionalSettingsRetainPreview', () => {
+  it.each([
+    [0, 'English'],
+    [1, 'Chinese'],
+    [2, 'Russian'],
+  ])('labels language %i as %s', (byte, label) => {
+    const main = new Uint8Array(D890_MAP.OptionalSettingsMainLength);
+    main[0x05] = byte;
+    const rows = optionalSettingsRetainPreview(
+      main,
+      new Uint8Array(D890_MAP.OptionalSettingsExtLength),
+    );
+    expect(rows.find((r) => r.label === 'CPS language')?.value).toBe(label);
+  });
+
   it('decodes language, password enable, and password chars', () => {
     const main = new Uint8Array(D890_MAP.OptionalSettingsMainLength);
     const ext = new Uint8Array(D890_MAP.OptionalSettingsExtLength);
-    main[0x05] = 1; // German
+    main[0x05] = 2; // Russian
     main[0x07] = 1; // password on
     main[0xd6] = 0x01;
     main[0xd7] = 4;
@@ -82,7 +96,7 @@ describe('optionalSettingsRetainPreview', () => {
     ext.set(new TextEncoder().encode('SECRET12'), 0x40);
 
     const rows = optionalSettingsRetainPreview(main, ext);
-    expect(rows.find((r) => r.label === 'CPS language')?.value).toBe('German');
+    expect(rows.find((r) => r.label === 'CPS language')?.value).toBe('Russian');
     expect(rows.find((r) => r.label === 'Power-on password enable')?.value).toBe('On');
     expect(rows.find((r) => r.label === 'Chinese UI (Expert options)')?.value).toMatch(
       /Local info/,

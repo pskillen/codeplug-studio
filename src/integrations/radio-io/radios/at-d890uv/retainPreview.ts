@@ -3,6 +3,7 @@
  * Cite: anytone-cps ExpertOptions + docs/reference/radios/anytone/at-d890uv/memory-layout.md
  */
 
+import { AT_D890_LANGUAGES } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import { AT_D890_BLOCK_SIZE, D890_MAP } from './constants.ts';
 import {
   atD890MaintenanceUnlocked,
@@ -129,7 +130,7 @@ export function settingsRetainPreview(localInfo: Uint8Array): AtD890RetainPrevie
   return rows;
 }
 
-const AT_D890_CPS_LANGUAGE = ['English', 'German'] as const;
+const AT_D890_CPS_LANGUAGE = AT_D890_LANGUAGES.map((l) => l.label);
 const AT_D890_POWERON_INTERFACE = ['Default Interface', 'Custom Char', 'Custom Picture'] as const;
 
 function enumLabel<T extends readonly string[]>(
@@ -142,7 +143,8 @@ function enumLabel<T extends readonly string[]>(
 
 /**
  * Optional settings forensic preview (Read/stash only — never serial-written).
- * Chinese UI lives in LocalInfo ExpertOptions, not CPS language here.
+ * Language is optional settings `+0x05` (0 English, 1 Chinese, 2 Russian). LocalInfo `+0x04` forces
+ * the language at every load, so a radio can show a language that differs from this byte.
  */
 export function optionalSettingsRetainPreview(
   main: Uint8Array,
