@@ -45,6 +45,45 @@ From the CPS decoder (`0x7b6050`). TX narrower than RX means the radio receives 
 
 The names Europe / US / commercial / amateur are CPS UI captions. Their mapping to codes is not in the notes and needs a CPS capture.
 
+## Firmware range table (what the radio enforces)
+
+Code: [`frequencyRange.ts`](../../../../../src/core/radios/anytone/at-d890uv/frequencyRange.ts) (`AT_D890_FREQUENCY_RANGES`). This is the stock V1.05 firmware table, read from the radio's own tables (see the firmware repo's `calibration-and-identity.md` and `pc-link-protocol.md`; findings tracked on [#1369](https://github.com/pskillen/codeplug-studio/issues/1369)). **It supersedes the CPS display table above wherever they differ.** MHz, inclusive; "off" means transmit is inhibited.
+
+| Code | CPS caption                | RX UHF / VHF      | TX UHF / VHF      | 220 MHz                |
+| ---- | -------------------------- | ----------------- | ----------------- | ---------------------- |
+| 0    | Commercial Europe          | 400–480 / 136–174 | 400–480 / 136–174 | none                   |
+| 1    | Commercial US              | 400–480 / 136–174 | 400–480 / 136–174 | none                   |
+| 2    | Mode 000002                | 430–440 / 144–146 | 430–440 / 144–146 | none                   |
+| 3    | Amateur Europe             | 400–480 / 136–174 | 430–440 / 144–146 | none                   |
+| 4    | Band 4                     | 434–438 / 144–146 | 434–438 / 144–146 | none                   |
+| 5    | Band 5                     | 434–447 / 144–146 | 434–447 / 144–146 | none                   |
+| 6    | (not listed)               | 446–447 / 136–174 | 446–447 / 136–174 | none                   |
+| 7    | Amateur US                 | 400–480 / 136–174 | 420–450 / 144–148 | none                   |
+| 8    | Commercial                 | 400–470 / 136–174 | 400–470 / 136–174 | none                   |
+| 9    | (not listed)               | 430–432 / 144–146 | 430–432 / 144–146 | none                   |
+| 10   | Amateur Australia / Canada | 400–480 / 136–174 | 430–450 / 144–148 | none                   |
+| 11   | Mode 0011                  | 400–520 / 136–174 | 400–520 / 136–174 | none                   |
+| 12   | (not listed)               | 400–490 / 136–174 | 400–490 / 136–174 | none                   |
+| 13   | Commercial                 | 400–480 / 136–174 | 403–470 / 136–174 | none                   |
+| 14   | Maintenance (needs `890#`) | 400–520 / 136–174 | 400–520 / 136–174 | 220–225 RX and TX      |
+| 15   | (not listed)               | 420–520 / 144–148 | 420–520 / 144–148 | none                   |
+| 16   | Amateur Thailand           | 430–440 / 144–147 | off / 144–147     | none                   |
+| 17   | Commercial Thailand        | 430–440 / 136–174 | off / 136–174     | none                   |
+| 18   | Mode 000018                | 400–480 / 136–174 | 420–450 / 144–148 | 220–225 RX, 222–225 TX |
+
+- **TX is enforced at PTT.** The radio receives on its hardware bands whatever the code says, and refuses to transmit outside the code's TX table. A channel outside the TX table is therefore receive-only on that radio.
+- **CPS display differs from the firmware** for codes 15, 16 and 18 (see the CPS table above). Studio uses the firmware table.
+- The loader maps codes above 18 to 0, and code 14 to 0 unless LocalInfo `+0x0B..+0x0E` is `890#`.
+- **Changing the range resets the radio** at the next boot: channels, zones, scan lists and the whole settings unit are cleared and the tune bank is rewritten. Changing it stays on [#1369](https://github.com/pskillen/codeplug-studio/issues/1369) and is not implemented in Studio.
+- **Single-frame `W` write** of the range byte: facts recorded from the firmware's code only, **not radio-tested**.
+- **Calibration bank pair** `0x04F00000` / `0x04F40000` holds the tune data that is rewritten on a range change; Studio's backup does not read it yet.
+
+### How Studio uses it
+
+- Read-only display: the Backup page's LocalInfo decode shows "Frequency range: <caption> (code N) · TX …"; the ident reply carries the same byte (`AtD890Ident.bandCode`).
+- Studio **never writes LocalInfo**.
+- **Every channel the hardware can receive is written.** The Write's Review warns, from the connected radio's code, about channels whose TX frequency is outside that radio's TX table (`listAtD890ReceiveOnlyChannels`): they are written and are receive-only on that radio. Nothing is stored per build. Build-level eligibility ([capabilities.md](capabilities.md)) is unchanged.
+
 ## What changing it would take
 
 1. **Write LocalInfo.** The firmware's own writer erases the whole 256 KiB unit and rewrites it, keeping an A/B pair (`0x04F80000` / `0x04FC0000`) with live/stale markers. The same unit holds the **serial number** (`+0x30`) and stun/kill flags, which Studio's restore checks treat as identity. A partial or interrupted write could lose the serial, so the plan must be read-modify-write of the live unit with a verified read-back, the existing erase-unit machinery ([flash-sectors.md](flash-sectors.md), `sparseEraseRmw.ts`), and a mandatory Backup first. Never touch the sector markers.

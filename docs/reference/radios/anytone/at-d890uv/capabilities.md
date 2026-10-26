@@ -24,6 +24,8 @@ Inclusive MHz bands used when filtering build lists and export ([#612](https://g
 
 Source: Studio Anytone bank docs + common CPS clamps.
 
+These are the **hardware receive bands**: every channel inside them is written. The radio itself enforces its range code's **TX** table at PTT ([band-code.md](band-code.md)), so a channel can be written yet receive-only on a given radio. The Write's Review warns per connected radio about those channels (from the radio's range code, nothing stored in the build).
+
 ### Satellite transmitter mode support (Studio write eligibility) — operator-confirmed on real hardware
 
 Distinct question from the frequency-range table above: that table filters standard DMR/FM/AM
