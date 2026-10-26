@@ -373,7 +373,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     );
     const writeOnly = writePartOfPlan(ctx.plan, readPlanRef.current);
     updateWriteTrack((t) => trackWithPlan(t, writeOnly));
-    const estimateSeconds = ctx.identityOnly ? null : estimateWriteSeconds(writeOnly, rate);
+    const estimateSeconds = ctx.identityOnly
+      ? null
+      : estimateWriteSeconds(writeOnly, rate, descriptor?.nominalBytesPerSecond);
     const sectionsCtx = {
       identity: ctx.identity,
       parts: p,

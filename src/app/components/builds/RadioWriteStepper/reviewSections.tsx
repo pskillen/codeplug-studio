@@ -12,8 +12,6 @@ import { IdentitySection, Section, TimeSection } from './reviewSectionParts.tsx'
 import type { RadioIdentityView } from './types.ts';
 import type { WriteParts } from './writeParts.ts';
 
-export { maskSerial } from './maskSerial.ts';
-
 export interface ReviewContext {
   identity: RadioIdentityView | null;
   parts: WriteParts;

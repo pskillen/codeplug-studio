@@ -62,4 +62,7 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
   },
   writeVerify: AT_D890_WRITE_VERIFY_HOOKS,
   planStages: planAtD890Stages,
+  // Hardware (#1288, 2026-10-16): 0xF0-byte R frames run at ~110 KiB/s. Writes are a little
+  // slower, so round down.
+  nominalBytesPerSecond: 100_000,
 };

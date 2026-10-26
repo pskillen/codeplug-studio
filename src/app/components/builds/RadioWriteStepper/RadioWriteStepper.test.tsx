@@ -95,9 +95,8 @@ describe('RadioWriteStepper — steps 2 and 3', () => {
     });
     expect(screen.getByTestId('write-stepper-step-label')).toHaveTextContent('2 of 6 · Read');
     expect(screen.getByText('MM9PDY-2')).toBeInTheDocument();
-    // Serial is masked to its last four characters.
-    expect(screen.getByText('…4567')).toBeInTheDocument();
-    expect(screen.queryByText(/ABC1234567/)).toBeNull();
+    // The serial isn't sensitive: shown in full.
+    expect(screen.getByText('ABC1234567')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(actions.onAbort).toHaveBeenCalled();
   });

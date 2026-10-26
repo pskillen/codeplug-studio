@@ -6,7 +6,6 @@
 import { Alert, Stack, Text } from '@mantine/core';
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
 import { Button } from '../../../v2/index.ts';
-import { maskSerial } from '../maskSerial.ts';
 import classes from '../RadioWriteStepper.module.css';
 import type {
   WriteFlowActions,
@@ -61,7 +60,7 @@ export function DoneBody({ config, view, actions }: StepProps) {
   if (!summary) return null;
   const who = summary.identity
     ? `${summary.identity.name ?? summary.identity.model}${
-        summary.identity.serial ? ` (${maskSerial(summary.identity.serial)})` : ''
+        summary.identity.serial ? ` (${summary.identity.serial})` : ''
       }`
     : config.radioLabel;
   const kepsSkips = [

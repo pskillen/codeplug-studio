@@ -191,6 +191,12 @@ export interface RadioDescriptor {
    * `DEFAULT_PROGRAM_HOLD_SAFE_MS` and reconnects and re-reads before transmitting after that.
    */
   programHoldSafeMs?: number;
+  /**
+   * Typical wire throughput in bytes per second, for the Write stepper's first time estimate. The
+   * estimate never assumes slower than this, because the read-plan weights it measures against are
+   * nominal and under-count real reads. Unset uses `NOMINAL_BYTES_PER_SECOND`.
+   */
+  nominalBytesPerSecond?: number;
   /** Optional cross-session write verify — compare staged upload vs post-commit read-back. */
   writeVerify?: import('./writeVerify.ts').WriteVerifyHooks;
 }

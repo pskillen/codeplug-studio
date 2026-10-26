@@ -6,7 +6,6 @@
 
 import type { ReactNode } from 'react';
 import { Text } from '@mantine/core';
-import { maskSerial } from './maskSerial.ts';
 import classes from './RadioWriteStepper.module.css';
 import type { ReviewContext } from './reviewSections.tsx';
 import type { RadioIdentityView } from './types.ts';
@@ -25,7 +24,7 @@ export function IdentitySection({ identity }: { identity: RadioIdentityView | nu
   if (!identity) return null;
   const rows: [string, string][] = [['Model', identity.model]];
   if (identity.name) rows.push(['Name', identity.name]);
-  if (identity.serial) rows.push(['Serial', maskSerial(identity.serial)]);
+  if (identity.serial) rows.push(['Serial', identity.serial]);
   rows.push(['Firmware', identity.firmware ?? 'unknown']);
   return (
     <Section title="This radio">

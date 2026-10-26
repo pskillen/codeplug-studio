@@ -4,7 +4,6 @@ import type { ReactElement } from 'react';
 import { DesignSystemV2Provider } from '../../v2/index.ts';
 import type { RadioDescriptor } from '@integrations/radio-io/types.ts';
 import {
-  maskSerial,
   registerReviewSectionProvider,
   reviewSectionsFor,
   type ReviewContext,
@@ -37,7 +36,7 @@ describe('reviewSectionsFor', () => {
   it('gives identity, channels and time for a radio with no extras', () => {
     render(<>{reviewSectionsFor(descriptor, ctx)}</>);
     expect(screen.getByText('AT-D890UV')).toBeInTheDocument();
-    expect(screen.getByText('…6789')).toBeInTheDocument();
+    expect(screen.getByText('SN123456789')).toBeInTheDocument();
     expect(screen.getByText('412 channels will be written.')).toBeInTheDocument();
     expect(screen.getByText('About 1 min 40 s, then the radio restarts.')).toBeInTheDocument();
   });
@@ -74,18 +73,16 @@ describe('reviewSectionsFor', () => {
   });
 });
 
-describe('maskSerial', () => {
-  it('shows only the last four', () => {
-    expect(maskSerial('SN123456789')).toBe('…6789');
-    expect(maskSerial('12')).toBe('…12');
-  });
-});
-
 describe('write estimate', () => {
   const plan = [{ label: 'Upload', weight: 40000 }];
   it('uses the measured throughput when there is one', () => {
     expect(measuredThroughput([{ label: 'Read', weight: 20000 }], 10_000)).toBe(2000);
-    expect(estimateWriteSeconds(plan, 2000)).toBe(20);
+    expect(estimateWriteSeconds(plan, 2000, 1000)).toBe(20);
+  });
+  it('never assumes slower than the nominal rate', () => {
+    expect(estimateWriteSeconds(plan, 2000)).toBe(40000 / NOMINAL_BYTES_PER_SECOND);
+    expect(estimateWriteSeconds(plan, 2000, 100_000)).toBe(0.4);
+    expect(estimateWriteSeconds(plan, 200_000, 100_000)).toBe(0.2);
   });
   it('falls back to the nominal rate for a missing or too-short read', () => {
     expect(measuredThroughput(undefined, 10_000)).toBeNull();

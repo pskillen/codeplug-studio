@@ -229,13 +229,12 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     );
   });
 
-  it('always shows Review with the identity (serial masked) and the channel count', async () => {
+  it('always shows Review with the identity (full serial) and the channel count', async () => {
     openStepper('radio-io-at-d890uv');
     await connect();
     await screen.findByRole('button', { name: 'Write codeplug' });
     expect(screen.getByText('3 channels will be written.')).toBeInTheDocument();
-    expect(screen.getByText('…3456')).toBeInTheDocument();
-    expect(screen.queryByText(/SN123456/)).toBeNull();
+    expect(screen.getByText(/SN123456/)).toBeInTheDocument();
   });
 
   it('maps codeplug only to the codeplug mode with no contact source (D890 single bank)', async () => {

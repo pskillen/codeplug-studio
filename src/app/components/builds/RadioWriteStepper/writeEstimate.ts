@@ -1,14 +1,17 @@
 /**
  * Review's time estimate (#1393): the write plan's total weight over the throughput Studio measured
- * during the read in step 2, falling back to a nominal rate when the radio declared no read plan.
+ * during the read in step 2, never slower than the radio's nominal rate.
  * Pure; no clock.
  */
 
 import type { PlannedStage } from '@integrations/radio-io/types.ts';
 import { totalPlanWeight } from '@integrations/radio-io/plannedStages.ts';
 
-/** Nominal wire throughput when none was measured (bytes per second). A rough serial-link figure. */
-export const NOMINAL_BYTES_PER_SECOND = 4000;
+/**
+ * Nominal wire throughput when the radio declares none (bytes per second). Deliberately on the
+ * optimistic side: a first estimate of half an hour for a sub-minute write scares people off.
+ */
+export const NOMINAL_BYTES_PER_SECOND = 16_000;
 
 /** Reads shorter than this are too quick to give a stable rate. */
 const MIN_MEASURE_MS = 1500;
@@ -28,11 +31,16 @@ export function measuredThroughput(
 export function estimateWriteSeconds(
   writePlan: readonly PlannedStage[] | undefined,
   bytesPerSecond: number | null,
+  nominalBytesPerSecond: number = NOMINAL_BYTES_PER_SECOND,
 ): number | null {
   if (!writePlan || writePlan.length === 0) return null;
   const weight = totalPlanWeight(writePlan);
   if (weight <= 0) return null;
-  const rate = bytesPerSecond && bytesPerSecond > 0 ? bytesPerSecond : NOMINAL_BYTES_PER_SECOND;
+  // The nominal rate is a floor: measured rates come from nominal read-plan weights and run low.
+  const rate = Math.max(
+    bytesPerSecond && bytesPerSecond > 0 ? bytesPerSecond : 0,
+    nominalBytesPerSecond,
+  );
   return weight / rate;
 }
 
