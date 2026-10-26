@@ -15,6 +15,7 @@ import {
 } from '../hydration.ts';
 import { createOpenGd77Md9600Protocol, OpenGd77Protocol } from '../protocol.ts';
 import { createOpenGd77WriteVerifyHooks } from '../writeVerifyHooks.ts';
+import { planOpenGd77Stages } from '../plannedStages.ts';
 
 export { OPENGD77_MD9600_MODEL_ID };
 
@@ -58,4 +59,5 @@ export const OPENGD77_MD9600_DESCRIPTOR: RadioDescriptor = {
   baudRate: OPENGD77_BAUD_RATE,
   hydration,
   writeVerify: createOpenGd77WriteVerifyHooks(OPENGD77_MD9600_MODEL_ID),
+  planStages: planOpenGd77Stages,
 };

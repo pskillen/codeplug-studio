@@ -8,7 +8,8 @@ import { Navigate } from 'react-router-dom';
 import { Alert, FileButton, Group, Stack, Table, Text } from '@mantine/core';
 import { isDm32RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import { DM32_POWER_CYCLE_AFTER_SESSION_NOTE } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
-import type { ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
+import type { PlannedStage, ProgressUpdate, RadioSession } from '@integrations/radio-io/types.ts';
+import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
 import { FormPage, FormSection } from '../../components/ui/index.ts';
 import RadioCloneSummaryView from '../../components/builds/RadioCloneSummaryView.tsx';
 import RadioIoProgressModal, {
@@ -64,6 +65,7 @@ export default function BuildRadioBackupPage() {
   const [phase, setPhase] = useState<RadioIoProgressPhase>('connecting');
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [transferStages, setTransferStages] = useState<string[]>([]);
+  const [plan, setPlan] = useState<PlannedStage[] | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [backup, setBackup] = useState<RadioBackupSession | null>(null);
   const [selectedRegionIds, setSelectedRegionIds] = useState<ReadonlySet<string>>(new Set());
@@ -126,6 +128,7 @@ export default function BuildRadioBackupPage() {
     setPhase('connecting');
     setProgress(null);
     setTransferStages([]);
+    setPlan(undefined);
     abortRef.current = new AbortController();
   }
 
@@ -142,6 +145,7 @@ export default function BuildRadioBackupPage() {
 
   async function handleBackupRadio() {
     beginBusy();
+    setPlan(descriptor ? planForOperation(descriptor, 'backup', {}) : undefined);
     try {
       const { session } = await openRadioSessionForEgress(radioEgress!, {
         forcePortSelection: true,
@@ -149,6 +153,7 @@ export default function BuildRadioBackupPage() {
         captureFactorySector: true,
       });
       sessionRef.current = session;
+      setPlan(descriptor ? planForOperation(descriptor, 'backup', { session }) : undefined);
       setPhase('transfer');
       const result = await backupLiveRadioSession(session, {
         onProgress,
@@ -490,6 +495,7 @@ export default function BuildRadioBackupPage() {
           phase={phase}
           progress={progress}
           transferStages={transferStages}
+          plan={plan}
           navigationBlocked={leaveAttempted}
           onCancel={handleCancel}
           onClose={handleProgressClose}

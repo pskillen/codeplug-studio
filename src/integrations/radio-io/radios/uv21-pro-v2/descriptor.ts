@@ -11,6 +11,7 @@ import {
 } from '../uv17pro-family/hydration.ts';
 import { createUv17ProProtocol } from '../uv17pro-family/protocol.ts';
 import { createUv17ProWriteVerifyHooks } from '../uv17pro-family/writeVerifyHooks.ts';
+import { createUv17ProPlanStages } from '../uv17pro-family/plannedStages.ts';
 
 export const UV21_PRO_V2_MODEL_ID = UV21_PRO_V2_LAYOUT.radioModelId;
 
@@ -38,4 +39,5 @@ export const UV21_PRO_V2_DESCRIPTOR: RadioDescriptor = {
       mergeChannelsIntoUv17ProHydration(UV21_PRO_V2_LAYOUT, bag, channels, organisation),
   },
   writeVerify: createUv17ProWriteVerifyHooks(UV21_PRO_V2_LAYOUT),
+  planStages: createUv17ProPlanStages(UV21_PRO_V2_LAYOUT),
 };

@@ -11,6 +11,8 @@ import { encodeChannelsIntoImage } from './channelCodec.ts';
 import { OPENUV380_OFFSET } from './constants.ts';
 import { createOpenUv380Image, readAbs } from './memory.ts';
 import { OpenGd77Protocol, createOpenGd77Md9600Protocol, parseFirmwareInfo } from './protocol.ts';
+import { planOpenGd77Stages } from './plannedStages.ts';
+import { expectEventsFollowPlan, stageRecorder } from '../../plannedStagesTestKit.ts';
 import { openGd77KeptRegionLength } from './writeVerifySupport.ts';
 import {
   makeOpenGd77FirmwareInfoPayload,
@@ -107,12 +109,9 @@ describe('OpenGd77Protocol', () => {
       },
     ]);
 
-    const progressStages: string[] = [];
-    await proto.upload(next, {
-      onProgress: (p) => {
-        if (p.stage) progressStages.push(p.stage);
-      },
-    });
+    const rec = stageRecorder();
+    const progressStages = rec.stages;
+    await proto.upload(next, { onProgress: rec.onProgress });
 
     const firstReadIdx = pipe.writes.findIndex((w) => w[0] === OPENGD77_TYPE_READ && w[1] === 0x01);
     const firstWriteIdx = pipe.writes.findIndex(
@@ -124,6 +123,7 @@ describe('OpenGd77Protocol', () => {
 
     expect(progressStages).toContain('Pre-write read');
     expect(progressStages).toContain('FLASH sectors');
+    expectEventsFollowPlan(planOpenGd77Stages('write', {}), rec.events);
   });
 
   it('upload captures kept regions from pre-write read priorImage', async () => {
@@ -189,6 +189,53 @@ describe('OpenGd77Protocol', () => {
     const channels = proto.decodeChannels(proto.getPriorImage()!);
     expect(channels.some((ch) => ch.wireName === 'LIVE')).toBe(true);
     expect(proto.getLastDirtySectorCount()).toBeGreaterThan(0);
+  });
+
+  it('a full Write with User Database contacts follows the plan in order (#1393)', async () => {
+    const pipe = new OpenGd77ScriptedPipe(0x08);
+    const proto = new OpenGd77Protocol();
+    await proto.connect(pipe);
+    const rec = stageRecorder();
+    // The session reads first, then upload() reads again before programming.
+    await proto.download({ progressStage: 'Pre-write read', onProgress: rec.onProgress });
+    const organisation = {
+      zones: [],
+      userDatabaseContacts: [
+        {
+          wireName: 'N0CALL',
+          digitalId: 1234567,
+          callsign: 'N0CALL',
+          city: 'Town',
+          province: 'Shire',
+          country: 'UK',
+          remark: '',
+        },
+      ],
+    };
+    proto.armWriteProjection(
+      [
+        {
+          slotIndex: 1,
+          empty: false,
+          wireName: 'LIVE',
+          rxHz: 145_500_000,
+          txHz: 145_500_000,
+          rxTone: { kind: 'none' },
+          txTone: { kind: 'none' },
+          powerPercent: 100,
+          bandwidth: 'NFM',
+          mode: 'analog',
+        },
+      ],
+      organisation,
+    );
+    await proto.upload(createOpenUv380Image(), { onProgress: rec.onProgress });
+    const plan = planOpenGd77Stages('write', {
+      prepared: { channels: [], organisation },
+    });
+    expect(plan.map((s) => s.label)).toEqual(['Pre-write read', 'FLASH sectors', 'User Database']);
+    expectEventsFollowPlan(plan, rec.events);
+    expect(rec.stages).toEqual(['Pre-write read', 'FLASH sectors', 'User Database']);
   });
 
   it('reports zero dirty sectors when the overlay already matches FLASH', async () => {

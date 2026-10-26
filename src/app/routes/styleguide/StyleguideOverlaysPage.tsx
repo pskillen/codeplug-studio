@@ -1,6 +1,6 @@
 import { Group, Text } from '@mantine/core';
 import { IconHelpCircle } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleguidePageShell, StyleguideSection } from './StyleguidePageShell.tsx';
 import { FacetBar, FacetChip } from '../../components/library/FacetBar.tsx';
 import {
@@ -12,6 +12,8 @@ import {
   type ProgressModalStep,
 } from '../../components/v2/index.ts';
 import WriteRadioModal from '../../components/builds/WriteRadioModal.tsx';
+import RadioIoReplayDemo from './RadioIoReplayDemo.tsx';
+import RadioIoStageList, { type StageRow } from '../../components/builds/RadioIoStageList.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
 const RUNNING_STEPS: ProgressModalStep[] = [
@@ -32,7 +34,45 @@ const FINISHED_ERROR_STEPS: ProgressModalStep[] = [
   { id: 'verify', label: 'Verify', status: 'pending' },
 ];
 
+const LONG_PLAN_STAGES = 20;
+
+/** A 20-stage Write plan advancing on a timer, to show the fixed-height stage list. */
+function LongPlanDemo({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restart the demo each time it opens
+    setTick(0);
+    const id = window.setInterval(
+      () => setTick((t) => (t < LONG_PLAN_STAGES * 5 ? t + 1 : t)),
+      250,
+    );
+    return () => window.clearInterval(id);
+  }, [open]);
+  const current = Math.min(LONG_PLAN_STAGES - 1, Math.floor(tick / 5));
+  const rows = useMemo<StageRow[]>(
+    () =>
+      Array.from({ length: LONG_PLAN_STAGES }, (_, i) => ({
+        id: `s${i}`,
+        label: `Stage ${i + 1} of ${LONG_PLAN_STAGES}`,
+        status: i < current ? 'success' : i === current ? 'active' : 'pending',
+        weight: 1000 + (i % 4) * 500,
+      })),
+    [current],
+  );
+  return (
+    <ProgressModal
+      open={open}
+      phase="running"
+      steps={[]}
+      body={<RadioIoStageList rows={rows} progress={{ cur: tick % 5, max: 5, msg: '' }} />}
+      onClose={onClose}
+    />
+  );
+}
+
 export default function StyleguideOverlaysPage() {
+  const [longPlanOpen, setLongPlanOpen] = useState(false);
   const [shellOpen, setShellOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [destructiveOpen, setDestructiveOpen] = useState(false);
@@ -135,6 +175,9 @@ export default function StyleguideOverlaysPage() {
           <Button variant="secondary" onClick={() => setErrorOpen(true)}>
             Finished (error)
           </Button>
+          <Button variant="secondary" onClick={() => setLongPlanOpen(true)}>
+            Running (20 planned stages)
+          </Button>
         </Group>
         <ProgressModal
           open={runningOpen}
@@ -143,6 +186,13 @@ export default function StyleguideOverlaysPage() {
           progress={45}
           onClose={() => setRunningOpen(false)}
         />
+        <LongPlanDemo open={longPlanOpen} onClose={() => setLongPlanOpen(false)} />
+        <Text size="sm" mt="md">
+          The real progress window fed with a Write&apos;s event stream per radio (re-entered
+          stages, restarting counts, seed events), using each adapter&apos;s own plan. Add{' '}
+          <code>?replay=dm32uv&amp;at=0.55</code> to open it paused part-way.
+        </Text>
+        <RadioIoReplayDemo />
         <ProgressModal
           open={successOpen}
           phase="finished"

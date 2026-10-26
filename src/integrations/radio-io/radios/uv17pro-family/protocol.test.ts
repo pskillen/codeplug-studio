@@ -15,6 +15,8 @@ import { uv5rMiniCrypt } from '../uv5r-mini/crypt.ts';
 import { UV5R_MINI_MAGICS_READ, UV5R_MINI_MAGICS_UPLOAD } from '../uv5r-mini/magics.ts';
 import { UV5R_MINI_LAYOUT } from './layout.ts';
 import { Uv17ProProtocol } from './protocol.ts';
+import { createUv17ProPlanStages } from './plannedStages.ts';
+import { expectPlanMatchesEmitted, stageRecorder } from '../../plannedStagesTestKit.ts';
 
 function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
   return a.length === b.length && a.every((v, i) => v === b[i]);
@@ -201,6 +203,21 @@ describe('Uv17ProProtocol pre-write read', () => {
     const uploadTrailer = UV5R_MINI_MAGICS_UPLOAD[UV5R_MINI_MAGICS_UPLOAD.length - 1]!.send;
     expect(pipe.writes.some((w) => bytesEqual(w, uploadTrailer))).toBe(false);
     expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(UV5R_MINI_CLONE_BLOCK_COUNT);
+  });
+
+  it('declares every stage a Write emits (pre-write read, then upload)', async () => {
+    const source = createSyntheticImageBase();
+    const pipe = new ScriptedPipe();
+    pipe.armReadBlocks(listDownloadBlocks(source));
+    const radio = new Uv17ProProtocol(UV5R_MINI_LAYOUT);
+    await radio.connect(pipe, { settleScale: 0 });
+    const rec = stageRecorder();
+    await radio.download({ progressStage: 'Pre-write read', onProgress: rec.onProgress });
+    await radio.upload(memoryMapFromBytes(source), { onProgress: rec.onProgress });
+    const plan = createUv17ProPlanStages(UV5R_MINI_LAYOUT)('write', {});
+    expectPlanMatchesEmitted(plan, rec.stages);
+    expect(plan[1]!.weight).toBe(UV5R_MINI_CLONE_BLOCK_COUNT * UV5R_MINI_BLOCK_SIZE);
+    expect(createUv17ProPlanStages(UV5R_MINI_LAYOUT)('read', {})).toEqual([]);
   });
 
   it('Restore-shaped session: upload still idents when connect skipped handshake', async () => {

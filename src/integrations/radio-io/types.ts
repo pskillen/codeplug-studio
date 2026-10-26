@@ -3,6 +3,9 @@
  * See docs/features/radio-read-write/protocol-kit-architecture.md §2.
  */
 
+import type { RadioChannelDto } from './radioChannelDto.ts';
+import type { RadioWriteOrganisation } from './radioWriteProjection.ts';
+
 /** Contiguous clone-image buffer — layout offsets belong in radio modules. */
 export interface MemoryMap {
   readonly size: number;
@@ -35,6 +38,50 @@ export interface ProgressUpdate {
 }
 
 export type ProgressFn = (p: ProgressUpdate) => void;
+
+/**
+ * One step an adapter expects to emit during an operation, declared before any byte moves
+ * so the UI can show the whole list up front (workflow design §2.5, #1393).
+ */
+export interface PlannedStage {
+  /** Exactly the `ProgressUpdate.stage` string the adapter emits. */
+  readonly label: string;
+  /** Estimated bytes on the wire for this stage (reads and writes). Drives the overall bar and ETA. */
+  readonly weight: number;
+  /** May not occur in a given run (for example nothing to preserve). */
+  readonly optional?: boolean;
+  /**
+   * The adapter emits this label in this many passes, `cur` restarting at 0 each time (for
+   * example the DM-32UV pre-write read, one pass per block group). Default 1.
+   */
+  readonly passes?: number;
+  /**
+   * `cur`/`max` of this stage's events is a step index, not progress inside the stage (the D890
+   * download emits one event per stage). The UI shows no per-step bar and counts the stage when
+   * it completes.
+   */
+  readonly coarse?: boolean;
+}
+
+export type RadioOperation = 'read' | 'write' | 'backup' | 'restore';
+
+/** What an adapter may use to size a plan. Everything is optional; plans fall back to nominal sizes. */
+export interface RadioPlanContext {
+  /** Write: the prepared projection (channels + organisation). */
+  readonly prepared?: {
+    readonly channels: readonly RadioChannelDto[];
+    readonly organisation: RadioWriteOrganisation;
+  };
+  /** Write: which parts are being written. Omitted means the codeplug alone. */
+  readonly parts?: {
+    readonly codeplug: boolean;
+    readonly contacts: boolean;
+    readonly settings: boolean;
+    readonly keps: boolean;
+  };
+  /** After an in-session read, adapters may refine weights from what they read. */
+  readonly session?: RadioSession;
+}
 
 export interface IdentResult {
   raw: Uint8Array;
@@ -129,6 +176,14 @@ export interface RadioDescriptor {
   baudRateFallback?: number;
   /** Persist / merge clone image for this radio family. */
   hydration: RadioHydrationHooks;
+  /**
+   * Planned stages for an operation, in emission order, before any transfer. Labels must equal the
+   * `stage` strings the adapter emits (a test per adapter replays a scripted Write and checks the
+   * emitted labels against the plan, in order). A label emitted twice with other stages between
+   * appears twice in the plan; the UI matches occurrences in order.
+   * Omit for an operation without a plan: the UI falls back to a list that grows as stages arrive.
+   */
+  planStages?(op: RadioOperation, ctx: RadioPlanContext): PlannedStage[];
   /** Optional cross-session write verify — compare staged upload vs post-commit read-back. */
   writeVerify?: import('./writeVerify.ts').WriteVerifyHooks;
 }

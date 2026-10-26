@@ -1,0 +1,98 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-6);
+}
+
+.overall {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-2, 4px);
+}
+
+.overallText {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+  min-height: 1.25em;
+}
+
+.list {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 2px 0;
+  box-sizing: border-box;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.iconPending {
+  color: var(--dsv2-text-tertiary);
+}
+
+.iconActive {
+  color: var(--dsv2-accent);
+}
+
+.iconActive svg {
+  animation: dsv2-stage-spin 0.9s linear infinite;
+}
+
+.iconSuccess {
+  color: var(--dsv2-success);
+}
+
+.iconError {
+  color: var(--dsv2-destructive);
+}
+
+.copy {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.label {
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-primary);
+}
+
+.detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.stepBar {
+  flex: 0 0 72px;
+  align-self: center;
+}
+
+@keyframes dsv2-stage-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
