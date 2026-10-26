@@ -50,6 +50,10 @@ Route `/builds/:id/export/radio-settings`, reached from **Radio settings** in th
 - **Frequency range.** The banner names the range (`Amateur Europe`) and the read-only row gives name, code and transmit bands (`Amateur Europe (code 3) · TX 430–440, 144–146 MHz`), from `describeAtD890FrequencyRange` with the ident's band code.
 - **Write settings…** (sticky footer) opens the Write stepper on the Export page with only Radio settings ticked.
 
+## Export panel: the Radio settings card
+
+On Export (Web Serial, either D890 target) the **Radio settings** card sits under the Write header. It reads "N changes this session · read from <name>" (or "No changes · read from <name>", or "Your radios keep their own settings" before any read) and has **Edit settings** (the settings page) and **Read a radio** (a settings-only read that fills the page's Radio column, as on the page itself). The header's one-line summary also counts the changes. The counts are what this session holds: the Review can still answer Keep for a radio other than the one read, so a change counted here is written only where Review says Apply. The card is absent on every other radio. Backups saved this session (from the Backup page or from Review) live in the radio-neutral `radioSessionBackups` store, kept per build and in memory only; the Backup card on the same panel and the Backup page list both read it.
+
 ## Write: the Review step
 
 Plug in, **Write radio**, tick the parts, **Connect & read**, then **Review**: always shown, with sections that appear only when they apply. The D890's sections, in order:

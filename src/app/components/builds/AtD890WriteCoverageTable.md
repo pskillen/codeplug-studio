@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Shows AT-D890UV operators which parts of the radio **Write** updates from their library, which are **not supported yet** (use Anytone CSV), and which are **left alone** on the cable path. Rendered on **Export** when the Web Serial pathway is active.
+Shows AT-D890UV operators which parts of the radio **Write** updates from their library, which are **not supported yet** (use Anytone CSV), and which are **left alone** on the cable path. Rendered on **Export** when the Web Serial pathway is active, inside the **What Write updates** section of `BuildRadioIoPanel`, which is collapsed by default (the table mounts only when opened).
 
 ## Props
 
