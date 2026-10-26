@@ -36,6 +36,16 @@ export function parseRadioBackupZip(bytes: Uint8Array): ParsedRadioBackupZip {
     throw new RadioBackupError('Radio backup manifest.json is not valid JSON.');
   }
 
+  if (
+    typeof parsedJson === 'object' &&
+    parsedJson !== null &&
+    (parsedJson as { kind?: unknown }).kind === 'd890-vital'
+  ) {
+    throw new RadioBackupError(
+      'This is an AT-D890UV vital-data file, not a codeplug backup. Open it with Open vital data file.',
+    );
+  }
+
   const manifest = validateRadioBackupManifest(parsedJson);
   const regions: Record<string, Uint8Array> = {};
   const regionPaths = new Set(manifest.regions.map((region) => region.path));
