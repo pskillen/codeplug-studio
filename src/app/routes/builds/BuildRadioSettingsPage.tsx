@@ -34,8 +34,12 @@ export default function BuildRadioSettingsPage() {
           project.
         </p>
       </div>
-      {isD890 ? (
-        <AtD890RadioSettingsEditor buildId={buildId} target={isMm9pdy ? 'mm9pdy' : 'stock'} />
+      {isD890 && egress ? (
+        <AtD890RadioSettingsEditor
+          buildId={buildId}
+          target={isMm9pdy ? 'mm9pdy' : 'stock'}
+          egress={egress}
+        />
       ) : (
         <StatusBanner tone="info">{RADIO_SETTINGS_ONLY_D890_MESSAGE}</StatusBanner>
       )}

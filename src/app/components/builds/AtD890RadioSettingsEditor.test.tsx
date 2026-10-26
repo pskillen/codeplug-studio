@@ -8,24 +8,59 @@ import { MemoryRouter } from 'react-router-dom';
 import { DesignSystemV2Provider } from '../v2/index.ts';
 import {
   clearAllOverrides,
+  setRead,
   getAtD890RadioSettingsSession,
   setOverride,
 } from '../../state/atD890RadioSettingsSession.ts';
 import AtD890RadioSettingsEditor from './AtD890RadioSettingsEditor.tsx';
+import { newRadioBuildForProfile } from '@core/domain/factories.ts';
+import * as readService from '../../services/radioIoAtD890SettingsRead.ts';
 
-const BUILD = 'build-editor-test';
+vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../services/radioIoSession.ts')>();
+  return { ...actual, isRadioSerialSupported: () => true };
+});
+
+vi.mock('../../services/radioIoAtD890SettingsRead.ts', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('../../services/radioIoAtD890SettingsRead.ts')>();
+  return { ...actual, readAtD890SettingsFromRadio: vi.fn() };
+});
+
+const { egress: D890_EGRESS } = newRadioBuildForProfile('proj', 'radio-io-at-d890uv');
+
+const READ = {
+  serial: 'ABCD1234567',
+  masterIdName: 'DEMO-1',
+  readAt: new Date(2026, 9, 26, 14, 2).getTime(),
+  bandCode: 3,
+  languageLock: 0 as const,
+  decoded: {
+    keyTone: { value: false, raw: [0] },
+    smsFormat: { value: 1, raw: [1] },
+    callDisplayMode: {
+      value: undefined,
+      raw: [2],
+      label: 'Name based (the radio resets this at power-on)',
+    },
+  },
+};
+
+let BUILD = 'build-editor-0';
+let buildSeq = 0;
 
 function renderEditor(target: 'stock' | 'mm9pdy' = 'stock') {
   return render(
     <MemoryRouter>
       <DesignSystemV2Provider>
-        <AtD890RadioSettingsEditor buildId={BUILD} target={target} />
+        <AtD890RadioSettingsEditor buildId={BUILD} target={target} egress={D890_EGRESS} />
       </DesignSystemV2Provider>
     </MemoryRouter>,
   );
 }
 
 beforeEach(() => {
+  BUILD = `build-editor-${++buildSeq}`;
   clearAllOverrides(BUILD);
 });
 
@@ -89,5 +124,46 @@ describe('AtD890RadioSettingsEditor', () => {
     });
     expect(screen.getByText(/line 1 is empty/)).toBeInTheDocument();
     expect(screen.getAllByText(/8 characters or fewer use the large font/)).toHaveLength(2);
+  });
+
+  it('Read a radio fills the Radio column, banner and read-only rows, and changes no control', async () => {
+    vi.mocked(readService.readAtD890SettingsFromRadio).mockResolvedValue(READ);
+    renderEditor();
+    expect(screen.getAllByText('not read').length).toBeGreaterThan(40);
+    fireEvent.click(screen.getByRole('button', { name: 'Read a radio' }));
+    const banner = await screen.findByTestId('read-banner');
+    expect(banner).toHaveTextContent('Read from DEMO-1 (…4567) at');
+    expect(banner).toHaveTextContent('range code 3');
+    expect(banner).toHaveTextContent('Frequency range');
+    expect(banner).toHaveTextContent('unknown');
+    expect(banner).not.toHaveTextContent('ABCD1234567');
+    expect(screen.getByText('Off', { selector: 'span' })).toBeInTheDocument();
+    expect(screen.getByText(/Name based .* \(not offered\)/)).toBeInTheDocument();
+    expect(screen.getByTestId('changes-count')).toHaveTextContent('0 changes');
+    expect(getAtD890RadioSettingsSession(BUILD).overrides.size).toBe(0);
+    expect((screen.getByRole('combobox', { name: 'Key tone' }) as HTMLSelectElement).value).toBe(
+      'keep',
+    );
+    expect(await screen.findByText(/radio restarts/i)).toBeInTheDocument();
+  });
+
+  it('shows a read error in an alert and keeps the page as it was', async () => {
+    vi.mocked(readService.readAtD890SettingsFromRadio).mockRejectedValue(
+      new Error('No radio found'),
+    );
+    renderEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'Read a radio' }));
+    expect(await screen.findByText('No radio found')).toBeInTheDocument();
+    expect(screen.queryByTestId('read-banner')).not.toBeInTheDocument();
+  });
+
+  it('keeps overrides when a read replaces the earlier one', () => {
+    act(() => setOverride(BUILD, 'keyTone', true));
+    act(() => setRead(BUILD, READ));
+    renderEditor();
+    expect(screen.getByTestId('changes-count')).toHaveTextContent('1 change');
+    expect((screen.getByRole('combobox', { name: 'Key tone' }) as HTMLSelectElement).value).toBe(
+      'on',
+    );
   });
 });
