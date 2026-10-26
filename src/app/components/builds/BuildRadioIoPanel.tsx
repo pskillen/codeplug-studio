@@ -1,26 +1,17 @@
 /**
  * Web Serial connect / write (assemble → overlay this PROGRAM session → radio)
- * for egress pathways with a registered radio adapter.
+ * for egress pathways with a registered radio adapter. Write runs in the Write stepper (#1393).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Anchor, Button, Group, Stack, Text } from '@mantine/core';
+import { Alert, Anchor, Button, Stack, Text } from '@mantine/core';
 import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
   isMm9pdyAtD890RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
-import { formatExportWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
-import {
-  dualBankOptionsFromWriteSource,
-  singleBankProjectionFromWriteSource,
-  writeSourceIncludesDirectory,
-  type DigitalContactsWriteSource,
-  type DualBankWriteMode,
-  type SingleBankWriteMode,
-} from '@core/domain/digitalIdDirectoryProjection.ts';
 import {
   ModalShell,
   WriteVerifyReport as WriteVerifyReportV2,
@@ -29,17 +20,6 @@ import {
 } from '../v2/index.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
-import type {
-  PlannedStage,
-  ProgressUpdate,
-  RadioPlanContext,
-  RadioSession,
-} from '@integrations/radio-io/types.ts';
-import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
-import type {
-  WriteVerifyPendingPayload,
-  WriteVerifyResult,
-} from '@integrations/radio-io/writeVerify.ts';
 import { findAttribution } from '../../lib/attributions.ts';
 import { loadLibrarySlice } from '../../lib/loadLibrarySlice.ts';
 import { useUnsavedNavigationGuard } from '../../hooks/useUnsavedNavigationGuard.ts';
@@ -50,31 +30,11 @@ import { useProjects } from '../../state/useProjects.ts';
 import {
   buildHasRadioCloneHydration,
   channelLocationNoteForWrite,
-  closeRadioSession,
   descriptorsForEgress,
   getRadioCloneHydration,
   getRadioSerialUnsupportedMessage,
-  grantRadioSerialPortForEgress,
   isRadioSerialSupported,
-  openRadioSessionForEgress,
-  prepareRadioWriteImage,
-  RadioWriteBlockedError,
-  uploadPreparedRadioWrite,
-  verifyRadioWrite,
-  type GrantedRadioSerialPort,
 } from '../../services/radioIoSession.ts';
-import {
-  clearWriteVerifyPending,
-  deserializeWriteVerifyPending,
-  loadWriteVerifyPending,
-  saveWriteVerifyPending,
-  serializeWriteVerifyPending,
-} from '../../services/writeVerifyStorage.ts';
-import RadioIoProgressModal, {
-  type RadioIoOperation,
-  type RadioIoProgressPhase,
-  type RadioIoWriteVerifyStatus,
-} from './RadioIoProgressModal.tsx';
 import { isMm9pdyStepKeyTarget, mm9pdyStepKeysDescription } from './mm9pdyStepKeysCopy.ts';
 import WriteVerifyReport from './WriteVerifyReport.tsx';
 import { mapWriteVerifyResultToV2Report } from './writeVerifyReportV2Adapter.ts';
@@ -93,10 +53,12 @@ import { isOpenGd77RadioIoEgress } from '../../services/radioIoChannelMap.ts';
 import {
   getSatelliteKepsWriteAdapter,
   hasSatelliteKepsWriteAdapter,
-  satelliteKepsCapacityWarning,
-  type SatelliteKepsWriteResult,
+  satelliteKepsSameSessionAfterUpload,
 } from '../../services/satelliteKepsWriteAdapters.ts';
-import WriteRadioModal from './WriteRadioModal.tsx';
+import RadioWriteStepper from './RadioWriteStepper/RadioWriteStepper.tsx';
+import { useRadioWriteFlow } from './RadioWriteStepper/useRadioWriteFlow.tsx';
+import { RADIO_RESTART_WAIT_SECONDS } from './RadioWriteStepper/useRadioWriteFlow.tsx';
+import type { WriteStepperConfig } from './RadioWriteStepper/types.ts';
 
 export interface BuildRadioIoPanelProps {
   build: RadioBuild;
@@ -105,45 +67,20 @@ export interface BuildRadioIoPanelProps {
 }
 
 const buildService = new BuildService(persistence);
-const VERIFY_BUTTON_DEBOUNCE_MS = 5000;
-
-type PendingVerifyPayload = WriteVerifyPendingPayload;
 
 export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelProps) {
   const descriptors = descriptorsForEgress(egress);
   const { activeProjectId, activeProject } = useProjects();
   const { reloadEgressPaths } = useBuildLayout();
-  const sessionRef = useRef<RadioSession | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const pendingVerifyRef = useRef<PendingVerifyPayload | null>(null);
-  const verifyStartedRef = useRef(false);
-  const verifyReadActiveRef = useRef(false);
 
-  const [busy, setBusy] = useState(false);
-  const [operation, setOperation] = useState<RadioIoOperation>('read');
-  const [phase, setPhase] = useState<RadioIoProgressPhase>('connecting');
-  const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [writeWarnings, setWriteWarnings] = useState<ExportWarning[]>([]);
-  const [progress, setProgress] = useState<ProgressUpdate | null>(null);
-  const [transferStages, setTransferStages] = useState<string[]>([]);
-  const [plan, setPlan] = useState<PlannedStage[] | undefined>(undefined);
-  const [writeVerifyStatus, setWriteVerifyStatus] = useState<RadioIoWriteVerifyStatus>('none');
-  const [verifyButtonEnabled, setVerifyButtonEnabled] = useState(false);
-  const [verifyResult, setVerifyResult] = useState<WriteVerifyResult | null>(null);
-  const [writeRadioOpen, setWriteRadioOpen] = useState(false);
-  const [contactSource, setContactSource] = useState<DigitalContactsWriteSource>('none');
-  const [kepsSelected, setKepsSelected] = useState(false);
-  const [emptyDirectoryOpen, setEmptyDirectoryOpen] = useState(false);
-  const pendingEmptyDirectoryWriteRef = useRef<(() => void) | null>(null);
-  const [kepsCapacityWarning, setKepsCapacityWarning] = useState<string | null>(null);
-  const [kepsWriteSummary, setKepsWriteSummary] = useState<SatelliteKepsWriteResult | null>(null);
+  const [verifyReportOpen, setVerifyReportOpen] = useState(false);
   const [channelLocationNote, setChannelLocationNote] = useState<string | null>(null);
+  const [kepsCount, setKepsCount] = useState<number | null>(null);
 
   const serialOk = isRadioSerialSupported();
   const descriptor = descriptors[0];
   const writeVerifyHooks = descriptor?.writeVerify;
-  const supportsWriteVerify = Boolean(writeVerifyHooks);
   const writeGate = resolveRadioWriteGate(descriptor);
   const writeHidden = writeGate === 'hidden';
   const hydration = getRadioCloneHydration(egress);
@@ -158,231 +95,30 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const supportsSingleBankWrite = isAtD890Write && !supportsDualBankWrite;
   const supportsDigitalContacts = supportsDualBankWrite || supportsSingleBankWrite;
 
-  const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(busy);
+  const flow = useRadioWriteFlow({
+    build,
+    egress,
+    descriptor,
+    activeProjectId,
+    supportsDualBankWrite,
+    supportsSingleBankWrite,
+    kepsWriteFn,
+    kepsSameSessionAfterUpload: satelliteKepsSameSessionAfterUpload(egress.profileId),
+  });
+  const { view: flowView, actions: flowActions } = flow;
+
+  const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(flowView.busy);
 
   useEffect(() => {
     if (leaveAttempted) stay();
   }, [leaveAttempted, stay]);
-
-  useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-      const session = sessionRef.current;
-      sessionRef.current = null;
-      if (session) void closeRadioSession(session);
-    };
-  }, []);
-
-  const loadPendingVerify = useCallback((): PendingVerifyPayload | null => {
-    if (pendingVerifyRef.current) return pendingVerifyRef.current;
-    const stored = loadWriteVerifyPending(build.id, egress.id, egress.profileId);
-    if (!stored) return null;
-    return deserializeWriteVerifyPending(stored);
-  }, [build.id, egress.id, egress.profileId]);
-
-  const clearPendingVerify = useCallback((): void => {
-    pendingVerifyRef.current = null;
-    verifyStartedRef.current = false;
-    verifyReadActiveRef.current = false;
-    clearWriteVerifyPending();
-  }, []);
 
   const attributionNames = (descriptor?.attributionIds ?? [])
     .map((id) => findAttribution(id)?.name)
     .filter(Boolean)
     .join(' / ');
 
-  function onProgress(p: ProgressUpdate) {
-    if (verifyReadActiveRef.current) {
-      setPhase('verifying');
-      setProgress(p);
-      return;
-    }
-    setPhase('transfer');
-    setProgress(p);
-    if (p.stage) {
-      setTransferStages((prev) => (prev.includes(p.stage!) ? prev : [...prev, p.stage!]));
-    }
-  }
-
-  function beginBusy(next: RadioIoOperation): void {
-    setError(null);
-    setBusy(true);
-    setOperation(next);
-    setPhase('connecting');
-    setProgress(null);
-    setTransferStages([]);
-    setPlan(undefined);
-    setWriteVerifyStatus('none');
-    setVerifyButtonEnabled(false);
-    setVerifyResult(null);
-    setKepsWriteSummary(null);
-    verifyStartedRef.current = false;
-    verifyReadActiveRef.current = false;
-    clearPendingVerify();
-    abortRef.current = new AbortController();
-  }
-
-  async function releaseSession(): Promise<void> {
-    const session = sessionRef.current;
-    sessionRef.current = null;
-    setConnected(false);
-    if (session) await closeRadioSession(session);
-  }
-
-  async function ensureSession(
-    forWrite = false,
-    grantedPort?: GrantedRadioSerialPort,
-  ): Promise<RadioSession> {
-    if (sessionRef.current) return sessionRef.current;
-    const { session } = await openRadioSessionForEgress(egress, {
-      forcePortSelection: !grantedPort,
-      grantedPort,
-      purpose: forWrite ? 'write' : 'read',
-    });
-    sessionRef.current = session;
-    setConnected(true);
-    return session;
-  }
-
-  const handleVerifyWrite = useCallback(async () => {
-    const pending = loadPendingVerify();
-    if (!pending) return;
-    if (verifyStartedRef.current) return;
-    verifyStartedRef.current = true;
-    verifyReadActiveRef.current = true;
-    setWriteVerifyStatus('verifying');
-    setPhase('verifying');
-    setProgress(null);
-    setError(null);
-    if (!abortRef.current) {
-      abortRef.current = new AbortController();
-    }
-    try {
-      const session = await ensureSession();
-      setPhase('verifying');
-      const result = await verifyRadioWrite(session, pending, {
-        onProgress,
-        signal: abortRef.current.signal,
-      });
-      await releaseSession();
-      clearPendingVerify();
-      verifyReadActiveRef.current = false;
-      abortRef.current = null;
-      setProgress(null);
-      setError(null);
-      setVerifyResult(result);
-      setWriteVerifyStatus('none');
-      setPhase('done');
-      setBusy(false);
-    } catch (err) {
-      verifyStartedRef.current = false;
-      verifyReadActiveRef.current = false;
-      setError(err instanceof Error ? err.message : String(err));
-      setWriteVerifyStatus('unverified');
-      setVerifyButtonEnabled(true);
-      setPhase('done');
-      await releaseSession();
-    }
-  }, [clearPendingVerify, loadPendingVerify]);
-
-  useEffect(() => {
-    if (writeVerifyStatus !== 'unverified' || verifyButtonEnabled) return;
-
-    const timer = window.setTimeout(() => setVerifyButtonEnabled(true), VERIFY_BUTTON_DEBOUNCE_MS);
-    return () => window.clearTimeout(timer);
-  }, [writeVerifyStatus, verifyButtonEnabled]);
-
   if (descriptors.length === 0) return null;
-
-  function planForWrite(
-    prepared: RadioPlanContext['prepared'],
-    session: RadioSession | undefined,
-  ): PlannedStage[] | undefined {
-    if (!descriptor) return undefined;
-    return planForOperation(descriptor, 'write', {
-      ...(prepared ? { prepared } : {}),
-      ...(session ? { session } : {}),
-      parts: { codeplug: true, contacts: contactSource !== 'none', settings: false, keps: false },
-    });
-  }
-
-  async function handleWriteWithContactBanks(mode: DualBankWriteMode | SingleBankWriteMode) {
-    setWriteWarnings([]);
-    beginBusy('write');
-    // Show the whole step list at once, sized from nominal counts; refined once the session is open.
-    setPlan(planForWrite(undefined, undefined));
-    try {
-      if (!activeProjectId) {
-        throw new Error('No active project.');
-      }
-      let grantedPort: GrantedRadioSerialPort | undefined;
-      if (!sessionRef.current) {
-        setPhase('connecting');
-        grantedPort = await grantRadioSerialPortForEgress({ forcePortSelection: true });
-      }
-      const library = await loadLibrarySlice(persistence, activeProjectId);
-      setPhase('preparing');
-      const dualBankOptions = dualBankOptionsFromWriteSource(contactSource);
-      const singleBankProjection = singleBankProjectionFromWriteSource(contactSource);
-      const { image, warnings, organisation, channels } = await prepareRadioWriteImage(
-        build,
-        egress,
-        library,
-        supportsDualBankWrite
-          ? {
-              dualBank: { mode, options: dualBankOptions },
-              persistence,
-              projectId: activeProjectId,
-              onProgress,
-            }
-          : supportsSingleBankWrite
-            ? {
-                singleBank: { mode, projectionMode: singleBankProjection },
-                persistence,
-                projectId: activeProjectId,
-                onProgress,
-              }
-            : undefined,
-      );
-      const session = await ensureSession(true, grantedPort);
-      // Declare the whole step list before the first byte moves (#1393).
-      setPlan(planForWrite({ channels, organisation }, session));
-      setPhase('transfer');
-      const uploadResult = await uploadPreparedRadioWrite(session, egress, image, {
-        onProgress,
-        signal: abortRef.current!.signal,
-        organisation,
-        channels,
-      });
-      if (warnings.length > 0 || (uploadResult.warnings?.length ?? 0) > 0) {
-        setWriteWarnings([...warnings, ...(uploadResult.warnings ?? [])]);
-      }
-      await releaseSession();
-      if (supportsWriteVerify && uploadResult.writeVerifyPending) {
-        const pending: PendingVerifyPayload = uploadResult.writeVerifyPending;
-        pendingVerifyRef.current = pending;
-        saveWriteVerifyPending(
-          serializeWriteVerifyPending(build.id, egress.id, egress.profileId, pending),
-        );
-        setVerifyButtonEnabled(false);
-        setWriteVerifyStatus('unverified');
-      } else {
-        clearPendingVerify();
-      }
-      setPhase('done');
-    } catch (err) {
-      if (err instanceof RadioWriteBlockedError) {
-        setError(err.message);
-      } else {
-        setError(err instanceof Error ? err.message : String(err));
-      }
-      await releaseSession();
-      setBusy(false);
-      setProgress(null);
-      abortRef.current = null;
-    }
-  }
 
   async function handleAssignMm9pdyStepKeys(checked: boolean) {
     const next = buildService.withExportSettings(build, { assignMm9pdyStepKeys: checked });
@@ -397,12 +133,12 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   }
 
   function openWriteRadio() {
-    setContactSource('none');
-    setKepsSelected(false);
-    setKepsCapacityWarning(null);
+    setError(null);
     setChannelLocationNote(null);
-    window.setTimeout(() => setWriteRadioOpen(true), 0);
+    setKepsCount(null);
+    flow.open();
     void loadChannelLocationNote();
+    void loadKepsCount();
   }
 
   async function loadChannelLocationNote() {
@@ -416,103 +152,14 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     }
   }
 
-  async function guardDirectoryThenWrite(mode: DualBankWriteMode | SingleBankWriteMode) {
-    setWriteRadioOpen(false);
-    if (supportsDigitalContacts && writeSourceIncludesDirectory(contactSource) && activeProjectId) {
-      const count = await persistence.countDigitalIdDirectoryEntries(activeProjectId);
-      if (count === 0) {
-        pendingEmptyDirectoryWriteRef.current = () => {
-          void handleWriteWithContactBanks(mode);
-        };
-        setEmptyDirectoryOpen(true);
-        return;
-      }
-    }
-    await handleWriteWithContactBanks(mode);
-  }
-
-  function handleEmptyDirectoryCancel() {
-    setEmptyDirectoryOpen(false);
-    pendingEmptyDirectoryWriteRef.current = null;
-  }
-
-  function handleEmptyDirectoryConfirm() {
-    const pending = pendingEmptyDirectoryWriteRef.current;
-    setEmptyDirectoryOpen(false);
-    pendingEmptyDirectoryWriteRef.current = null;
-    pending?.();
-  }
-
-  async function handleWriteKepsFromPopup() {
-    if (!kepsWriteFn || !kepsSelected) return;
-    setWriteRadioOpen(false);
-    if (!activeProjectId) {
-      setError('No active project.');
-      return;
-    }
-    const allSatellites = await persistence.listSatellites(activeProjectId);
-    const satellites = allSatellites.filter((s) => s.enabled);
-    const capacityWarning = satelliteKepsCapacityWarning(egress.profileId, satellites);
-    if (capacityWarning) {
-      setKepsCapacityWarning(capacityWarning);
-      return;
-    }
-    setKepsCapacityWarning(null);
-    setKepsWriteSummary(null);
-    beginBusy('keps-write');
+  async function loadKepsCount() {
+    if (!activeProjectId || !supportsKepsWrite) return;
     try {
-      setPhase('preparing');
-      const session = await ensureSession(true);
-      setPhase('transfer');
-      const result = await kepsWriteFn(session, satellites, {
-        onProgress,
-        signal: abortRef.current!.signal,
-        satelliteOverrides: build.satelliteOverrides,
-      });
-      setKepsWriteSummary(result);
-      await releaseSession();
-      setPhase('done');
-    } catch (err) {
-      if (err instanceof RadioWriteBlockedError) {
-        setError(err.message);
-      } else {
-        setError(err instanceof Error ? err.message : String(err));
-      }
-      await releaseSession();
-      setBusy(false);
-      setProgress(null);
-      abortRef.current = null;
+      const all = await persistence.listSatellites(activeProjectId);
+      setKepsCount(all.filter((s) => s.enabled).length);
+    } catch {
+      setKepsCount(null);
     }
-  }
-
-  function resetProgressState(): void {
-    setBusy(false);
-    setProgress(null);
-    setWriteVerifyStatus('none');
-    setVerifyButtonEnabled(false);
-    clearPendingVerify();
-    abortRef.current = null;
-  }
-
-  function handleCloseVerifyReport(): void {
-    setVerifyResult(null);
-    resetProgressState();
-  }
-
-  function handleCancel() {
-    abortRef.current?.abort();
-  }
-
-  function handleProgressClose() {
-    resetProgressState();
-  }
-
-  function handleCloseWithoutVerify() {
-    resetProgressState();
-  }
-
-  async function handleDisconnect() {
-    await releaseSession();
   }
 
   async function handleClearHydration() {
@@ -526,28 +173,59 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     await reloadEgressPaths();
   }
 
+  const stepperConfig: WriteStepperConfig = {
+    radioLabel: descriptor?.label ?? 'radio',
+    buildId: build.id,
+    serialOk,
+    writeHidden,
+    support: { contacts: supportsDigitalContacts, keps: supportsKepsWrite, settings: false },
+    sharedContactBankNote: isOpenGd77RadioIoEgress(egress.profileId),
+    sharedAddressBookNote: isDm32RadioIoProfileId(egress.profileId),
+    kepsSummary:
+      kepsCount != null
+        ? `${kepsCount} ${kepsCount === 1 ? 'satellite' : 'satellites'}`
+        : undefined,
+    kepsLastUpdatedIso: activeProject?.satelliteLibraryLastUpdated,
+    channelLocationNote,
+    ...(isMm9pdyStepKeyTarget(build.radioTargetId)
+      ? {
+          stepKeys: {
+            checked: build.exportSettings?.assignMm9pdyStepKeys === true,
+            description: mm9pdyStepKeysDescription(build.radioTargetId),
+            onChange: (checked: boolean) => void handleAssignMm9pdyStepKeys(checked),
+          },
+        }
+      : {}),
+    restartWaitSeconds: RADIO_RESTART_WAIT_SECONDS,
+    supportsCheck: Boolean(writeVerifyHooks),
+    successNote: isDm32RadioIoProfileId(egress.profileId)
+      ? DM32_POWER_CYCLE_AFTER_SESSION_NOTE
+      : undefined,
+  };
+  const checkResult = flow.checkResult;
+
   return (
     <Stack gap="sm">
       <ModalShell
-        open={verifyResult !== null}
-        onClose={handleCloseVerifyReport}
+        open={verifyReportOpen && checkResult !== null}
+        onClose={() => setVerifyReportOpen(false)}
         title="Write verify report"
         size="lg"
         footer={
-          <V2Button variant="primary" size="sm" onClick={handleCloseVerifyReport}>
+          <V2Button variant="primary" size="sm" onClick={() => setVerifyReportOpen(false)}>
             Close
           </V2Button>
         }
       >
-        {verifyResult ? (
+        {checkResult ? (
           <Stack gap="md">
             <WriteVerifyReportV2
               title="Verify results"
-              {...mapWriteVerifyResultToV2Report(verifyResult)}
+              {...mapWriteVerifyResultToV2Report(checkResult)}
             />
             {writeVerifyHooks ? (
               <WriteVerifyReport
-                result={verifyResult}
+                result={checkResult}
                 debugContext={{
                   buildId: build.id,
                   egressId: egress.id,
@@ -560,7 +238,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
                   userAgent: navigator.userAgent,
                 }}
                 formatDebugMarkdown={writeVerifyHooks.formatDebugMarkdown}
-                onClose={handleCloseVerifyReport}
+                onClose={() => setVerifyReportOpen(false)}
                 inModal
                 keptSectionTitle={isAtD890Write ? 'Preserved settings' : undefined}
                 keptSummaryLabel={isAtD890Write ? '6 sentinel regions' : undefined}
@@ -570,45 +248,22 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         ) : null}
       </ModalShell>
       <ConfirmModal
-        open={emptyDirectoryOpen}
-        onClose={handleEmptyDirectoryCancel}
+        open={flow.emptyDirectory.open}
+        onClose={flow.emptyDirectory.cancel}
         title="RadioID directory is empty"
         confirmLabel="Write anyway"
         cancelLabel="Cancel"
-        onConfirm={handleEmptyDirectoryConfirm}
+        onConfirm={flow.emptyDirectory.confirm}
       >
         <Text size="sm">
           The local RadioID directory shadow has no rows. Fetch or import a directory before
           writing, or continue if you intend to write without directory contacts.
         </Text>
       </ConfirmModal>
-      <WriteRadioModal
-        open={writeRadioOpen}
-        onClose={() => setWriteRadioOpen(false)}
-        buildId={build.id}
-        channelLocationNote={channelLocationNote}
-        assignMm9pdyStepKeys={build.exportSettings?.assignMm9pdyStepKeys === true}
-        assignMm9pdyStepKeysDescription={mm9pdyStepKeysDescription(build.radioTargetId)}
-        onAssignMm9pdyStepKeysChange={
-          isMm9pdyStepKeyTarget(build.radioTargetId)
-            ? (checked) => void handleAssignMm9pdyStepKeys(checked)
-            : undefined
-        }
-        serialOk={serialOk}
-        busy={busy}
-        writeHidden={writeHidden}
-        supportsDigitalContacts={supportsDigitalContacts}
-        sharedContactBankNote={isOpenGd77RadioIoEgress(egress.profileId)}
-        sharedAddressBookNote={isDm32RadioIoProfileId(egress.profileId)}
-        supportsKeps={supportsKepsWrite}
-        kepsLastUpdatedIso={activeProject?.satelliteLibraryLastUpdated}
-        contactSource={contactSource}
-        onContactSourceChange={setContactSource}
-        kepsSelected={kepsSelected}
-        onKepsSelectedChange={setKepsSelected}
-        onWriteCodeplug={() => void guardDirectoryThenWrite('codeplug')}
-        onWriteContacts={() => void guardDirectoryThenWrite('digitalIdList')}
-        onWriteKeps={() => void handleWriteKepsFromPopup()}
+      <RadioWriteStepper
+        config={stepperConfig}
+        view={flowView}
+        actions={{ ...flowActions, onViewCheckReport: () => setVerifyReportOpen(true) }}
       />
       <WebSerialExperimentalAlert />
       <Text fw={600} size="sm">
@@ -636,21 +291,13 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           mm9pdy={isMm9pdyAtD890RadioIoProfileId(egress.profileId)}
         />
       ) : null}
-      <Group gap="xs">
-        {!writeHidden ? (
-          <Button size="xs" disabled={!serialOk || busy} onClick={openWriteRadio}>
+      {!writeHidden ? (
+        <div>
+          <Button size="xs" disabled={!serialOk || flowView.busy} onClick={openWriteRadio}>
             Write radio
           </Button>
-        ) : null}
-        <Button
-          size="xs"
-          variant="subtle"
-          disabled={busy || !connected}
-          onClick={() => void handleDisconnect()}
-        >
-          Disconnect
-        </Button>
-      </Group>
+        </div>
+      ) : null}
       {hasHydration && hydration ? (
         <Alert color="gray" title="Stored radio image (unused for Write)">
           <Text size="sm">
@@ -697,67 +344,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         </Text>
       ) : null}
       {error ? <Alert color="red">{error}</Alert> : null}
-      {kepsCapacityWarning ? (
-        <Alert color="yellow" title="Write capacity">
-          <Text size="sm">{kepsCapacityWarning}</Text>
-        </Alert>
-      ) : null}
-      {kepsWriteSummary ? (
-        <Alert
-          color={
-            kepsWriteSummary.skipped.length > 0 || kepsWriteSummary.skippedTransmitters.length > 0
-              ? 'yellow'
-              : 'green'
-          }
-          title="Keps write"
-        >
-          <Stack gap={4}>
-            <Text size="sm">{kepsWriteSummary.written} transmitter(s) written.</Text>
-            {kepsWriteSummary.skipped.map((s) => (
-              <Text key={`keps-skipped-${s.satelliteId}`} size="sm" c="dimmed">
-                Skipped {s.satelliteId}: {s.reason}
-              </Text>
-            ))}
-            {kepsWriteSummary.skippedTransmitters.map((s) => (
-              <Text key={`keps-skipped-tx-${s.transmitterId}`} size="sm" c="dimmed">
-                Skipped {s.satelliteId} / {s.transmitterId}: {s.reason}
-              </Text>
-            ))}
-          </Stack>
-        </Alert>
-      ) : null}
-      {writeWarnings.length > 0 ? (
-        <Alert color="yellow" title="Write warnings">
-          <Stack gap={4}>
-            {writeWarnings.map((warning, index) => (
-              <Text key={`write-warning-${index}`} size="sm">
-                {formatExportWarning(warning)}
-              </Text>
-            ))}
-          </Stack>
-        </Alert>
-      ) : null}
-      <RadioIoProgressModal
-        opened={busy}
-        operation={operation}
-        phase={phase}
-        progress={progress}
-        transferStages={transferStages}
-        plan={plan}
-        navigationBlocked={leaveAttempted}
-        writeVerifyStatus={writeVerifyStatus}
-        requiresCrossSessionReconnect={writeVerifyHooks?.requiresCrossSessionReconnect ?? true}
-        verifyButtonEnabled={verifyButtonEnabled}
-        onVerify={() => void handleVerifyWrite()}
-        onCloseWithoutVerify={handleCloseWithoutVerify}
-        onCancel={handleCancel}
-        onClose={handleProgressClose}
-        successNote={
-          operation === 'write' && isDm32RadioIoProfileId(egress.profileId)
-            ? DM32_POWER_CYCLE_AFTER_SESSION_NOTE
-            : undefined
-        }
-      />
     </Stack>
   );
 }

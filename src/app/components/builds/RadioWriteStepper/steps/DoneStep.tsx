@@ -75,6 +75,11 @@ export function DoneBody({ config, view, actions }: StepProps) {
             </Text>
           ))}
           <Text size="sm">{checkLine(summary)}</Text>
+          {config.successNote ? (
+            <Text size="sm" data-testid="write-stepper-success-note">
+              {config.successNote}
+            </Text>
+          ) : null}
         </Stack>
       </Alert>
       {summary.checkResult ? (

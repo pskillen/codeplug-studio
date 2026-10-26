@@ -2,6 +2,10 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
+import {
+  dualBankOptionsFromWriteSource,
+  singleBankProjectionFromWriteSource,
+} from '@core/domain/digitalIdDirectoryProjection.ts';
 import { DesignSystemV2Provider } from '../v2/index.ts';
 import { BuildLayoutProvider } from '../../routes/builds/BuildLayoutContext.tsx';
 import BuildRadioIoPanel from './BuildRadioIoPanel.tsx';
@@ -32,6 +36,8 @@ vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
   };
 });
 
+const kepsWrite = vi.hoisted(() => vi.fn());
+
 vi.mock('../../services/satelliteKepsWriteAdapters.ts', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('../../services/satelliteKepsWriteAdapters.ts')>();
@@ -45,7 +51,7 @@ vi.mock('../../services/satelliteKepsWriteAdapters.ts', async (importOriginal) =
       profileId === 'radio-io-at-d890uv' ||
       profileId === 'radio-io-opengd77-1701' ||
       profileId === 'radio-io-opengd77-md9600'
-        ? vi.fn()
+        ? kepsWrite
         : undefined,
   };
 });
@@ -89,55 +95,50 @@ function renderPanel(profileId: string) {
   return { ...result, build };
 }
 
-describe('BuildRadioIoPanel — Write radio popup (#1121)', () => {
-  it('opens a Write radio popup with keps extra for D890', async () => {
-    renderPanel('radio-io-at-d890uv');
-    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
-    expect(await screen.findByRole('button', { name: 'Write codeplug' })).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).toBeInTheDocument();
-    expect(screen.queryByText(/digital ID list/i)).not.toBeInTheDocument();
-  });
+const port = {
+  readable: null,
+  writable: null,
+  open: vi.fn(async () => undefined),
+  close: vi.fn(async () => undefined),
+};
 
-  it('does not show keps extra for a profile with no adapter', async () => {
-    renderPanel('radio-io-uv5r-mini');
-    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
-    expect(await screen.findByRole('button', { name: 'Write codeplug' })).toBeInTheDocument();
-    expect(screen.queryByRole('checkbox', { name: 'Satellite keps' })).not.toBeInTheDocument();
-    expect(screen.queryByText('Digital contacts')).not.toBeInTheDocument();
-  });
-});
+function openStepper(profileId: string) {
+  const rendered = renderPanel(profileId);
+  fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+  return rendered;
+}
 
-describe('BuildRadioIoPanel — dual-bank / single-bank extras', () => {
-  it('shows digital contacts extra for OpenGD77 and defaults None; keps extra is off until checked', async () => {
-    renderPanel('radio-io-opengd77-1701');
-    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
-    expect(await screen.findByRole('button', { name: 'None' })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
-    expect(screen.getByRole('button', { name: 'Write contacts only' })).toBeDisabled();
+describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
+  it('opens the stepper at "What to write" with keps offered for D890', async () => {
+    openStepper('radio-io-at-d890uv');
+    expect(await screen.findByRole('button', { name: 'Connect & read' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Codeplug' })).toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Digital contacts' })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).not.toBeChecked();
-    expect(screen.getByRole('button', { name: 'Write keps only' })).toBeDisabled();
+    expect(screen.queryByRole('checkbox', { name: 'Radio settings' })).toBeNull();
   });
 
-  it('shows digital contacts and satellite keps extras for MD-9600', async () => {
-    renderPanel('radio-io-opengd77-md9600');
-    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
-    expect(await screen.findByText('Digital contacts')).toBeInTheDocument();
-    expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Write keps only' })).toBeDisabled();
+  it('does not show keps or contacts for a profile with no adapter', async () => {
+    openStepper('radio-io-uv5r-mini');
+    await screen.findByRole('button', { name: 'Connect & read' });
+    expect(screen.queryByRole('checkbox', { name: 'Satellite keps' })).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: 'Digital contacts' })).toBeNull();
   });
 
-  it('hides TG step keys on the stock AT-D890 write popup', async () => {
-    renderPanel('radio-io-at-d890uv');
-    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
-    expect(await screen.findByRole('button', { name: 'Write codeplug' })).toBeInTheDocument();
+  it('shows contacts and keps rows for OpenGD77 MD-9600, unticked', async () => {
+    openStepper('radio-io-opengd77-md9600');
+    expect(await screen.findByRole('checkbox', { name: 'Digital contacts' })).not.toBeChecked();
+    expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).not.toBeChecked();
+  });
+
+  it('hides TG step keys on the stock AT-D890 popup', async () => {
+    openStepper('radio-io-at-d890uv');
+    await screen.findByRole('button', { name: 'Connect & read' });
     expect(screen.queryByRole('switch', { name: /Assign TG previous and TG next/ })).toBeNull();
   });
 
-  it('saves TG step keys from the MM9PDY write popup onto the build', async () => {
-    renderPanel('radio-io-at-d890uv-mm9pdy');
-    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+  it('keeps the MM9PDY step-key switch under the Codeplug part and saves it on the build', async () => {
+    openStepper('radio-io-at-d890uv-mm9pdy');
     const toggle = await screen.findByRole('switch', { name: /Assign TG previous and TG next/ });
     expect(toggle).not.toBeChecked();
     fireEvent.click(toggle);
@@ -148,116 +149,242 @@ describe('BuildRadioIoPanel — dual-bank / single-bank extras', () => {
     expect(saved?.exportSettings?.assignMm9pdyStepKeys).toBe(true);
   });
 
-  it('shows digital contacts extra for AT-D890', async () => {
-    renderPanel('radio-io-at-d890uv');
-    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
-    expect(await screen.findByText('Digital contacts')).toBeInTheDocument();
-    expect(
-      screen.queryByRole('combobox', { name: 'Codeplug Write projection' }),
-    ).not.toBeInTheDocument();
-  });
-
   it('warns when RadioID directory is selected and the shadow is empty', async () => {
-    renderPanel('radio-io-opengd77-1701');
-    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'RadioID' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Write codeplug' }));
+    openStepper('radio-io-opengd77-1701');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
+    fireEvent.click(screen.getByRole('button', { name: 'RadioID' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Connect & read' }));
     expect(await screen.findByText('RadioID directory is empty')).toBeInTheDocument();
   });
+});
 
-  describe('Write sequence (#1247)', () => {
-    const port = {
-      readable: null,
-      writable: null,
-      open: vi.fn(async () => undefined),
-      close: vi.fn(async () => undefined),
-    };
+describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
+  const identity = { model: 'Test radio', serial: 'SN123456' };
+  let upload: ReturnType<typeof vi.spyOn>;
+  let prepare: ReturnType<typeof vi.spyOn>;
+  let grant: ReturnType<typeof vi.spyOn>;
+  let hookRan: boolean;
+  let uploaded: number;
 
-    beforeEach(() => {
-      vi.mocked(persistence.countDigitalIdDirectoryEntries).mockResolvedValue(100);
+  function fakeSession(label: string) {
+    return {
+      descriptor: { label, modelIds: [label] },
+      pipe: { close: vi.fn(async () => undefined) },
+      radio: {},
+    } as never;
+  }
+
+  beforeEach(() => {
+    hookRan = false;
+    uploaded = 0;
+    kepsWrite.mockReset();
+    kepsWrite.mockResolvedValue({ written: 3, skipped: [], skippedTransmitters: [] });
+    vi.mocked(radioIoSession.closeRadioSession).mockClear();
+    vi.mocked(radioIoSession.openRadioSessionForEgress).mockClear();
+    vi.mocked(persistence.countDigitalIdDirectoryEntries).mockResolvedValue(100);
+    grant = vi
+      .spyOn(radioIoSession, 'grantRadioSerialPortForEgress')
+      .mockResolvedValue({ transport: 'web', port });
+    prepare = vi.spyOn(radioIoSession, 'prepareRadioWriteImage').mockResolvedValue({
+      warnings: [],
+      organisation: {},
+      channels: [{}, {}, {}] as never,
     });
-
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
-
-    it('grants serial port before prepareRadioWriteImage when directory contacts are selected', async () => {
-      const grantSpy = vi
-        .spyOn(radioIoSession, 'grantRadioSerialPortForEgress')
-        .mockResolvedValue({ transport: 'web', port });
-      const prepareSpy = vi.spyOn(radioIoSession, 'prepareRadioWriteImage').mockResolvedValue({
-        warnings: [],
-        organisation: {},
-        channels: [],
+    vi.spyOn(radioIoSession, 'openRadioSessionForEgress').mockImplementation(async () => ({
+      session: fakeSession('Test radio'),
+      descriptor: { modelIds: ['x'] } as never,
+    }));
+    upload = vi
+      .spyOn(radioIoSession, 'uploadPreparedRadioWrite')
+      .mockImplementation(async (_s, _e, _i, opts) => {
+        await opts?.beforeTransmit?.({
+          identity,
+          channelCount: 3,
+          plan: [{ label: 'Upload', weight: 4000 }],
+          identityOnly: false,
+        });
+        hookRan = true;
+        uploaded += 1;
+        return {};
       });
-      vi.spyOn(radioIoSession, 'openRadioSessionForEgress').mockResolvedValue({
-        session: {
-          descriptor: { modelIds: ['DM-1701'] },
-          pipe: { close: vi.fn(async () => undefined) },
-          radio: {},
-        } as never,
-        descriptor: { modelIds: ['DM-1701'] } as never,
-      });
-
-      renderPanel('radio-io-opengd77-1701');
-      fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
-      fireEvent.click(await screen.findByRole('button', { name: 'RadioID' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Write codeplug' }));
-
-      await waitFor(() => {
-        expect(grantSpy).toHaveBeenCalled();
-        expect(prepareSpy).toHaveBeenCalled();
-      });
-      expect(grantSpy.mock.invocationCallOrder[0]!).toBeLessThan(
-        prepareSpy.mock.invocationCallOrder[0]!,
-      );
-      expect(radioIoSession.openRadioSessionForEgress).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          grantedPort: { transport: 'web', port },
-          purpose: 'write',
-        }),
-      );
-    });
-
-    it('does not show a serial-confirm modal on AT-D890 Write (#1276)', async () => {
-      vi.spyOn(radioIoSession, 'grantRadioSerialPortForEgress').mockResolvedValue({
-        transport: 'web',
-        port,
-      });
-      vi.spyOn(radioIoSession, 'prepareRadioWriteImage').mockResolvedValue({
-        warnings: [],
-        organisation: {},
-        channels: [],
-      });
-      vi.spyOn(radioIoSession, 'openRadioSessionForEgress').mockResolvedValue({
-        session: {
-          descriptor: { modelIds: ['AT-D890UV'] },
-          pipe: { close: vi.fn(async () => undefined) },
-          radio: {},
-        } as never,
-        descriptor: { modelIds: ['AT-D890UV'] } as never,
-      });
-      vi.spyOn(radioIoSession, 'uploadPreparedRadioWrite').mockResolvedValue({});
-      const identitySpy = vi.spyOn(radioIoSession, 'readAtD890ConnectedRadioIdentity');
-
-      renderPanel('radio-io-at-d890uv');
-      fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
-      fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug' }));
-
-      await waitFor(() => {
-        expect(radioIoSession.prepareRadioWriteImage).toHaveBeenCalled();
-      });
-      expect(screen.queryByText('Confirm connected radio')).not.toBeInTheDocument();
-      expect(identitySpy).not.toHaveBeenCalled();
-    });
   });
 
-  it('does not show digital contacts extra for UV-5R Mini', async () => {
-    renderPanel('radio-io-uv5r-mini');
-    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  async function connect() {
+    fireEvent.click(await screen.findByRole('button', { name: 'Connect & read' }));
+  }
+
+  it('grants the port before prepare and opens a write session with it (#1247)', async () => {
+    openStepper('radio-io-opengd77-1701');
+    await connect();
     await screen.findByRole('button', { name: 'Write codeplug' });
-    expect(screen.queryByText('Digital contacts')).not.toBeInTheDocument();
+    expect(grant.mock.invocationCallOrder[0]!).toBeLessThan(prepare.mock.invocationCallOrder[0]!);
+    expect(radioIoSession.openRadioSessionForEgress).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ grantedPort: { transport: 'web', port }, purpose: 'write' }),
+    );
+  });
+
+  it('always shows Review with the identity (serial masked) and the channel count', async () => {
+    openStepper('radio-io-at-d890uv');
+    await connect();
+    await screen.findByRole('button', { name: 'Write codeplug' });
+    expect(screen.getByText('3 channels will be written.')).toBeInTheDocument();
+    expect(screen.getByText('…3456')).toBeInTheDocument();
+    expect(screen.queryByText(/SN123456/)).toBeNull();
+  });
+
+  it('maps codeplug only to the codeplug mode with no contact source (D890 single bank)', async () => {
+    openStepper('radio-io-at-d890uv');
+    await connect();
+    await screen.findByRole('button', { name: 'Write codeplug' });
+    const opts = prepare.mock.calls[0]![3] as {
+      singleBank: { mode: string; projectionMode: string };
+    };
+    expect(opts.singleBank.mode).toBe('codeplug');
+    expect(opts.singleBank.projectionMode).toBe(singleBankProjectionFromWriteSource('none'));
+  });
+
+  it('maps codeplug + contacts to the codeplug mode with that contact source (DM-32)', async () => {
+    openStepper('radio-io-dm32uv');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Digital contacts' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Both' }));
+    await connect();
+    await screen.findByRole('button', { name: 'Write codeplug + contacts' });
+    const opts = prepare.mock.calls[0]![3] as {
+      dualBank: { mode: string; options: unknown };
+    };
+    expect(opts.dualBank.mode).toBe('codeplug');
+    expect(opts.dualBank.options).toEqual(dualBankOptionsFromWriteSource('both'));
+  });
+
+  it('maps contacts only to the contacts mode (OpenGD77)', async () => {
+    openStepper('radio-io-opengd77-1701');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Codeplug' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Digital contacts' }));
+    await connect();
+    await screen.findByRole('button', { name: 'Write contacts' });
+    const opts = prepare.mock.calls[0]![3] as { dualBank: { mode: string } };
+    expect(opts.dualBank.mode).toBe('digitalIdList');
+  });
+
+  it('Cancel on Review sends nothing and closes the session', async () => {
+    openStepper('radio-io-at-d890uv');
+    await connect();
+    await screen.findByRole('button', { name: 'Write codeplug' });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() => expect(radioIoSession.closeRadioSession).toHaveBeenCalled());
+    expect(hookRan).toBe(false);
+    expect(uploaded).toBe(0);
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Write codeplug' })).toBeNull(),
+    );
+  });
+
+  it('writes, then shows Done with what was written; Write another keeps the ticks', async () => {
+    openStepper('radio-io-at-d890uv');
+    await connect();
+    fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug' }));
+    expect(await screen.findByText('Codeplug written (3 channels).')).toBeInTheDocument();
+    expect(uploaded).toBe(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Write another radio' }));
+    await screen.findByRole('button', { name: 'Write codeplug' });
+    // A second port prompt, same ticks.
+    expect(grant).toHaveBeenCalledTimes(2);
+    expect(prepare).toHaveBeenCalledTimes(2);
+  });
+
+  it('D890 keps in the same session: keps write runs before the session closes', async () => {
+    openStepper('radio-io-at-d890uv');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Satellite keps' }));
+    await connect();
+    fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug + keps' }));
+    expect(await screen.findByText(/Satellite keps written/)).toBeInTheDocument();
+    expect(kepsWrite).toHaveBeenCalledTimes(1);
+    const session = kepsWrite.mock.calls[0]![0];
+    expect(session.descriptor.label).toBe('Test radio');
+    expect(kepsWrite.mock.invocationCallOrder[0]!).toBeLessThan(
+      vi.mocked(radioIoSession.closeRadioSession).mock.invocationCallOrder[0]!,
+    );
+    // No restart step between.
+    expect(screen.queryByTestId('write-stepper-restart-wait')).toBeNull();
+  });
+
+  it('OpenGD77 keps need a new session: restart step, then Write keps', async () => {
+    openStepper('radio-io-opengd77-1701');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Satellite keps' }));
+    await connect();
+    fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug + keps' }));
+    expect(await screen.findByTestId('write-stepper-restart-wait')).toBeInTheDocument();
+    expect(kepsWrite).not.toHaveBeenCalled();
+    // The radio is back after its restart.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.now() + 25_000);
+    const writeKeps = await screen.findByRole('button', { name: 'Write keps' });
+    await waitFor(() => expect(writeKeps).toBeEnabled(), { timeout: 3000 });
+    fireEvent.click(writeKeps);
+    expect(await screen.findByText(/Satellite keps written/)).toBeInTheDocument();
+    expect(kepsWrite).toHaveBeenCalledTimes(1);
+  });
+
+  it('keps only: connects, reviews, then writes keps without an upload', async () => {
+    openStepper('radio-io-at-d890uv');
+    fireEvent.click(await screen.findByRole('checkbox', { name: 'Satellite keps' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Codeplug' }));
+    await connect();
+    fireEvent.click(await screen.findByRole('button', { name: 'Write keps' }));
+    expect(await screen.findByText(/Satellite keps written/)).toBeInTheDocument();
+    expect(upload).not.toHaveBeenCalled();
+    expect(prepare).not.toHaveBeenCalled();
+    expect(kepsWrite).toHaveBeenCalledTimes(1);
+  });
+
+  it('reconnects and re-reads when Review was open past the radio hold time', async () => {
+    openStepper('radio-io-opengd77-1701');
+    await connect();
+    const write = await screen.findByRole('button', { name: 'Write codeplug' });
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.now() + 60_000);
+    fireEvent.click(write);
+    expect(await screen.findByText('Codeplug written (3 channels).')).toBeInTheDocument();
+    // First pass reached Review and was refused; the second pass read again and wrote.
+    expect(radioIoSession.uploadPreparedRadioWrite).toHaveBeenCalledTimes(2);
+    expect(uploaded).toBe(1);
+    expect(radioIoSession.openRadioSessionForEgress).toHaveBeenCalledTimes(2);
+    expect(grant).toHaveBeenCalledTimes(1);
+  });
+
+  it('never reconnects the D890 however long Review stays open', async () => {
+    openStepper('radio-io-at-d890uv');
+    await connect();
+    const write = await screen.findByRole('button', { name: 'Write codeplug' });
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(Date.now() + 3_600_000);
+    fireEvent.click(write);
+    expect(await screen.findByText('Codeplug written (3 channels).')).toBeInTheDocument();
+    expect(radioIoSession.uploadPreparedRadioWrite).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers Reconnect and read again when the read fails before any frame', async () => {
+    upload.mockRejectedValueOnce(new Error('No reply from the radio'));
+    openStepper('radio-io-at-d890uv');
+    await connect();
+    expect(await screen.findByText('No reply from the radio')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect and read again' }));
+    await screen.findByRole('button', { name: 'Write codeplug' });
+  });
+
+  it('does not show a serial-confirm modal on AT-D890 Write (#1276)', async () => {
+    const identitySpy = vi.spyOn(radioIoSession, 'readAtD890ConnectedRadioIdentity');
+    openStepper('radio-io-at-d890uv');
+    await connect();
+    await screen.findByRole('button', { name: 'Write codeplug' });
+    expect(screen.queryByText('Confirm connected radio')).not.toBeInTheDocument();
+    expect(identitySpy).not.toHaveBeenCalled();
   });
 });
 

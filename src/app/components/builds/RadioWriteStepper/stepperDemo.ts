@@ -1,6 +1,6 @@
 /**
- * Test and styleguide helpers: a default stepper config, view and (no-op or spy) actions.
- * Not used by product code.
+ * Demo data for the styleguide and tests: a default stepper config, view and (no-op or spy) actions.
+ * Product code never imports this.
  */
 
 import { DEFAULT_WRITE_PARTS } from './writeParts.ts';

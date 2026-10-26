@@ -71,6 +71,11 @@ import type {
 import { estimateWriteSeconds, measuredThroughput } from './writeEstimate.ts';
 import { DEFAULT_WRITE_PARTS, writesToRadioImage, type WriteParts } from './writeParts.ts';
 
+/** Clock for event handlers (kept out of render by the purity lint). */
+function now(): number {
+  return Date.now();
+}
+
 type ContactSource = Exclude<DigitalContactsWriteSource, 'none'>;
 type Phase = 'read' | 'write' | 'keps' | 'check';
 
@@ -104,8 +109,6 @@ export interface UseRadioWriteFlowArgs {
   kepsWriteFn?: SatelliteKepsWriteFn;
   /** The keps writer can share the codeplug's session (D890). Otherwise the radio restarts first. */
   kepsSameSessionAfterUpload: boolean;
-  /** Fires when a read or transfer starts or ends (navigation guard). */
-  onBusyChange?: (busy: boolean) => void;
 }
 
 export interface RadioWriteFlow {
@@ -149,7 +152,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     supportsSingleBankWrite,
     kepsWriteFn,
     kepsSameSessionAfterUpload,
-    onBusyChange,
   } = args;
   const supportsDigitalContacts = supportsDualBankWrite || supportsSingleBankWrite;
   const writeVerifyHooks = descriptor?.writeVerify;
@@ -199,11 +201,14 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const checkStatusRef = useRef<CheckStatus>('none');
   const kepsPendingRef = useRef(false);
   const satellitesRef = useRef<Satellite[]>([]);
+  const restartDeadlineRef = useRef(0);
   const pendingEmptyDirectoryRef = useRef<(() => void) | null>(null);
   const partsRef = useRef(parts);
-  partsRef.current = parts;
   const contactSourceRef = useRef(contactSource);
-  contactSourceRef.current = contactSource;
+  useEffect(() => {
+    partsRef.current = parts;
+    contactSourceRef.current = contactSource;
+  });
 
   function setPhaseBoth(next: Phase) {
     phaseRef.current = next;
@@ -212,7 +217,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
 
   function setBusyNotify(next: boolean) {
     setBusy(next);
-    onBusyChange?.(next);
   }
 
   function setCheck(next: CheckStatus) {
@@ -237,11 +241,13 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     };
   }, []);
 
-  // Restart countdown on step 5.
+  // Restart countdown on step 5: counted from a deadline so a background tab cannot stall it.
   useEffect(() => {
     if (step !== 'restartCheck' || restartSecondsLeft <= 0) return;
-    const timer = window.setTimeout(() => setRestartSecondsLeft((s) => Math.max(0, s - 1)), 1000);
-    return () => window.clearTimeout(timer);
+    const timer = window.setInterval(() => {
+      setRestartSecondsLeft(Math.max(0, Math.ceil((restartDeadlineRef.current - now()) / 1000)));
+    }, 500);
+    return () => window.clearInterval(timer);
   }, [step, restartSecondsLeft]);
 
   function onProgress(p: ProgressUpdate) {
@@ -332,10 +338,12 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setIdentity(ctx.identity);
     if (autoProceedRef.current) {
       autoProceedRef.current = false;
+      // The user already pressed Write; the hold clock restarts with this fresh read.
+      reviewOpenedAtRef.current = now();
       return Promise.resolve();
     }
     const p = partsRef.current;
-    const readMs = Date.now() - readStartRef.current;
+    const readMs = now() - readStartRef.current;
     const rate = measuredThroughput(
       readPlanRef.current.length ? readPlanRef.current : undefined,
       readMs,
@@ -363,7 +371,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     });
     setBusyNotify(false);
     setStep('review');
-    reviewOpenedAtRef.current = Date.now();
+    reviewOpenedAtRef.current = now();
     return new Promise<void>((resolve, reject) => {
       decisionRef.current = { resolve, reject };
     });
@@ -371,7 +379,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
 
   /** After Review → Write: refuse to transmit on a session the radio may have dropped. */
   function enterWriting() {
-    if (reviewNeedsReconnect(descriptor ?? {}, Date.now() - reviewOpenedAtRef.current)) {
+    if (reviewNeedsReconnect(descriptor ?? {}, now() - reviewOpenedAtRef.current)) {
       throw new ReconnectRequiredError();
     }
     setPhaseBoth('write');
@@ -379,7 +387,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setStep('writing');
     setReconnecting(false);
     setBusyNotify(true);
-    setStartedAt(Date.now());
+    setStartedAt(now());
   }
 
   async function writeKeps(session: RadioSession): Promise<void> {
@@ -405,8 +413,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setWriteGrown([]);
     setReview(null);
     setBusyNotify(true);
-    setStartedAt(Date.now());
-    readStartRef.current = Date.now();
+    setStartedAt(now());
+    readStartRef.current = now();
     setPhaseBoth('read');
     transmitStartedRef.current = false;
     readLabelsRef.current = new Set();
@@ -452,7 +460,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       }
 
       const session = await ensureSession(true, granted);
-      readStartRef.current = Date.now();
+      readStartRef.current = now();
       const planCtx: RadioPlanContext = {
         ...(prepared
           ? { prepared: { channels: prepared.channels, organisation: prepared.organisation } }
@@ -511,6 +519,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
         setWriteFinished(true);
         if (checkStatusRef.current === 'available' || kepsPendingRef.current) {
           setBusyNotify(false);
+          restartDeadlineRef.current = now() + restartWaitSeconds * 1000;
           setRestartSecondsLeft(restartWaitSeconds);
           setStep('restartCheck');
         } else {

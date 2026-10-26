@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { DesignSystemV2Provider } from '../../v2/index.ts';
 import RadioWriteStepper from './RadioWriteStepper.tsx';
-import { demoFlowView, demoStepperConfig, noopActions } from './testFlow.ts';
+import { demoFlowView, demoStepperConfig, noopActions } from './stepperDemo.ts';
 import type { WriteFlowView, WriteStepperConfig } from './types.ts';
 
 function renderStepper(
@@ -155,5 +155,77 @@ describe('RadioWriteStepper — steps 2 and 3', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Reconnect and read again' }));
     expect(actions.onReconnect).toHaveBeenCalled();
+  });
+});
+
+describe('RadioWriteStepper — steps 4 to 6', () => {
+  it('step 4 shows the planned list and Cancel aborts', () => {
+    const actions = renderStepper({
+      step: 'writing',
+      busy: true,
+      writeRows: [
+        { id: 'a', label: 'Channels', status: 'success', weight: 100 },
+        { id: 'b', label: 'Zones', status: 'active', weight: 100 },
+        { id: 'c', label: 'Upload', status: 'pending', weight: 100 },
+      ],
+    });
+    expect(screen.getByTestId('write-stepper-step-label')).toHaveTextContent('4 of 6 · Writing');
+    expect(screen.getByText('Channels')).toBeInTheDocument();
+    expect(screen.getByText('Upload')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(actions.onAbort).toHaveBeenCalled();
+  });
+
+  it('step 5 waits for the restart, then offers Check write and Write keps', () => {
+    const actions = renderStepper({
+      step: 'restartCheck',
+      restartSecondsLeft: 12,
+      checkStatus: 'available',
+      kepsAfterRestart: 'pending',
+    });
+    expect(screen.getByTestId('write-stepper-restart-wait')).toHaveTextContent(
+      'Waiting for the radio to restart (about 20 s)',
+    );
+    expect(screen.getByRole('button', { name: 'Check write' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Write keps' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Skip and finish' }));
+    expect(actions.onSkipCheck).toHaveBeenCalled();
+  });
+
+  it('step 5 enables the check once the radio is back', () => {
+    const actions = renderStepper({
+      step: 'restartCheck',
+      restartSecondsLeft: 0,
+      checkStatus: 'available',
+    });
+    expect(screen.queryByRole('button', { name: 'Write keps' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Check write' }));
+    expect(actions.onCheckWrite).toHaveBeenCalled();
+  });
+
+  it('step 6 summarises, notes the check, and offers Write another radio and Close', () => {
+    const actions = renderStepper(
+      {
+        step: 'done',
+        summary: {
+          codeplugWritten: true,
+          contactsWritten: false,
+          channelCount: 412,
+          kepsResult: null,
+          warnings: [],
+          checkStatus: 'skipped',
+          checkResult: null,
+          identity: { model: 'AT-D890UV', serial: 'ABCD1234', name: 'MM9PDY-2' },
+        },
+      },
+      { successNote: 'Power-cycle the radio.' },
+    );
+    expect(screen.getByText('Codeplug written (412 channels).')).toBeInTheDocument();
+    expect(screen.getByText('Check write: skipped.')).toBeInTheDocument();
+    expect(screen.getByText('Power-cycle the radio.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Write another radio' }));
+    expect(actions.onWriteAnother).toHaveBeenCalled();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' }).at(-1)!);
+    expect(actions.onClose).toHaveBeenCalled();
   });
 });

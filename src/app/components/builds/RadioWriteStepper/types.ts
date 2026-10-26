@@ -72,6 +72,8 @@ export interface WriteStepperConfig {
   restartWaitSeconds: number;
   /** Radios with a Check write step. */
   supportsCheck: boolean;
+  /** Extra sentence on the Done step (DM-32: power-cycle the radio). */
+  successNote?: string;
 }
 
 export interface WriteStageRow {
