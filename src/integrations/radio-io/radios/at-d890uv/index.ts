@@ -210,6 +210,7 @@ export {
 export {
   decodeAtD890RadioSettings,
   languageLockFromLocalInfo,
+  atD890LanguageLockProblem,
   type AtD890DecodedSetting,
   type AtD890LanguageLock,
 } from './settingsCodec.ts';

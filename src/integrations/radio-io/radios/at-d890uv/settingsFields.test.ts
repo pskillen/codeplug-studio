@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   AT_D890_KEY_FUNCTION_MAX,
   AT_D890_POWER_ON_LINE_MAX_LENGTH,
+  AT_D890_ALL_SETTINGS_FIELD_IDS,
   AT_D890_V1_SETTINGS_FIELD_IDS,
   atD890KeyFunctionOptions,
   atD890SettingField,
@@ -188,21 +189,22 @@ describe('AT-D890 v1 settings fields', () => {
     const def = atD890SettingField(id)!;
     if (def.kind === 'boolean') return [false, true];
     if (def.kind === 'text') return ['', 'A', 'MM9PDY TEST', 'LINE TWO 12345'];
+    if (def.kind === 'password') return ['', '1', '12345678'];
     return def.options!.map((o) => o.value);
   };
 
   it('registers exactly the core field ids, each permitted', () => {
     expect([...AT_D890_SETTINGS_FIELDS.keys()].sort()).toEqual(
-      [...AT_D890_V1_SETTINGS_FIELD_IDS].sort(),
+      [...AT_D890_ALL_SETTINGS_FIELD_IDS].sort(),
     );
     for (const s of AT_D890_SETTINGS_FIELDS.values()) {
       expect(() => assertAtD890SettingsSpecPermitted(s), s.id).not.toThrow();
       expect(s.targets).toEqual(['stock', 'mm9pdy']);
-      expect(s.advanced).toBe(false);
+      expect(s.advanced).toBe(atD890SettingField(s.id)!.advanced);
     }
   });
 
-  it.each(AT_D890_V1_SETTINGS_FIELD_IDS)(
+  it.each(AT_D890_ALL_SETTINGS_FIELD_IDS)(
     '%s: decode(encode(v)) === v for every offered value',
     (id) => {
       const spec = AT_D890_SETTINGS_FIELDS.get(id)!;
@@ -214,11 +216,12 @@ describe('AT-D890 v1 settings fields', () => {
     },
   );
 
-  it.each(AT_D890_V1_SETTINGS_FIELD_IDS)('%s: refuses a value outside the list', (id) => {
+  it.each(AT_D890_ALL_SETTINGS_FIELD_IDS)('%s: refuses a value outside the list', (id) => {
     const spec = AT_D890_SETTINGS_FIELDS.get(id)!;
     const def = atD890SettingField(id)!;
     const bad: unknown[] = [{}, null, undefined];
     if (def.kind === 'boolean') bad.push(1, 'on');
+    else if (def.kind === 'password') bad.push(5, true, '123456789', '12a4', ' 1', '١٢٣');
     else if (def.kind === 'text')
       bad.push(5, 'x'.repeat(AT_D890_POWER_ON_LINE_MAX_LENGTH + 1), 'café', 'tab\t', '中');
     else {

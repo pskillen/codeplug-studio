@@ -201,6 +201,9 @@ interface FieldLayout {
 /** Power-on text: UTF-16LE, NUL padded to this many bytes. */
 export const AT_D890_POWER_ON_LINE_BYTES = 0x20;
 
+/** Power-on password block at ext `+0x40`: ASCII digits, NUL padded. */
+export const AT_D890_POWER_ON_PASSWORD_BYTES = 8;
+
 function isPrintableAscii(code: number): boolean {
   return code >= 0x20 && code <= 0x7e;
 }
@@ -210,7 +213,40 @@ function specFor(layout: FieldLayout): AtD890SettingsFieldSpec {
   const def = atD890SettingField(id);
   if (!def) throw new RadioProtocolError(`D890 setting ${id} has no field definition`);
   const address = (layout.ext ? EXT : MAIN) + layout.offset;
-  const base = { id, address, targets: BOTH_TARGETS, advanced: false } as const;
+  const base = { id, address, targets: BOTH_TARGETS, advanced: def.advanced } as const;
+
+  if (def.kind === 'password') {
+    // Up to 8 ASCII digits, NUL padded. The firmware compares typed characters with these bytes
+    // until it meets a NUL, so a shorter password is a prefix match; an empty one is eight NULs.
+    return {
+      ...base,
+      length: AT_D890_POWER_ON_PASSWORD_BYTES,
+      encode(value) {
+        if (typeof value !== 'string') refuse(id, value, 'not text');
+        if (value.length > AT_D890_POWER_ON_PASSWORD_BYTES) {
+          refuse(id, 'that password', `longer than ${AT_D890_POWER_ON_PASSWORD_BYTES} digits`);
+        }
+        const out = new Uint8Array(AT_D890_POWER_ON_PASSWORD_BYTES);
+        for (let i = 0; i < value.length; i++) {
+          const code = value.charCodeAt(i);
+          if (code < 0x30 || code > 0x39) refuse(id, 'that password', 'not digits only');
+          out[i] = code;
+        }
+        return out;
+      },
+      decode(bytes) {
+        let text = '';
+        let i = 0;
+        for (; i < bytes.length && bytes[i] !== 0; i++) {
+          const b = bytes[i]!;
+          if (b < 0x30 || b > 0x39) return undefined;
+          text += String.fromCharCode(b);
+        }
+        for (; i < bytes.length; i++) if (bytes[i] !== 0) return undefined;
+        return text;
+      },
+    };
+  }
 
   if (def.kind === 'text') {
     const maxLength = def.maxLength ?? AT_D890_POWER_ON_LINE_MAX_LENGTH;
@@ -359,6 +395,18 @@ const FIELD_LAYOUT: readonly FieldLayout[] = [
   { id: 'voiceHeaderRepeats', offset: 0x1b },
   { id: 'smsFormat', offset: 0xc3 },
   { id: 'missedCallFilterOwnId', offset: 0x38 },
+  // Advanced (behind "Show advanced settings")
+  { id: 'language', offset: 0x05 },
+  { id: 'powerOnPasswordEnabled', offset: 0x07, anyNonZeroOn: true },
+  { id: 'powerOnPasswordDigits', offset: 0x40, ext: true },
+  { id: 'professionalMode', offset: 0x34 },
+  { id: 'repeaterMode', offset: 0x143 },
+  { id: 'acceptRemoteKill', offset: 0x3c },
+  { id: 'acceptRemoteMonitor', offset: 0x3e },
+  { id: 'answerGpsRequests', offset: 0x3f },
+  { id: 'encryptionType', offset: 0x10a },
+  { id: 'autoRepeaterA', offset: 0x48 },
+  { id: 'autoRepeaterB', offset: 0xd4 },
 ];
 
 const SPECS: readonly AtD890SettingsFieldSpec[] = FIELD_LAYOUT.map(specFor);
@@ -380,6 +428,34 @@ export const AT_D890_SETTINGS_FIELDS: ReadonlyMap<string, AtD890SettingsFieldSpe
   buildRegistry(SPECS);
 
 /**
+ * The power-on password is one control over two fields. Turning it on needs digits, and digits need
+ * it on, so a Write can never leave the prompt on with a password nobody can type (an erased `FF`
+ * password with the enable byte set is exactly that lock). Clearing sends enable off with empty
+ * digits (eight `00` bytes).
+ */
+function assertPowerOnPasswordPair(overrides: readonly AtD890SettingsOverride[]): void {
+  const enabled = overrides.find((o) => o.fieldId === 'powerOnPasswordEnabled');
+  const digits = overrides.find((o) => o.fieldId === 'powerOnPasswordDigits');
+  if (!enabled && !digits) return;
+  if (!enabled || !digits) {
+    throw new RadioProtocolError(
+      'D890 setting powerOnPassword: the on/off byte and the digits are only written together',
+    );
+  }
+  const hasDigits = typeof digits.value === 'string' && digits.value.length > 0;
+  if (enabled.value === true && !hasDigits) {
+    throw new RadioProtocolError(
+      'D890 setting powerOnPassword: turning the password on needs 1 to 8 digits',
+    );
+  }
+  if (enabled.value === false && hasDigits) {
+    throw new RadioProtocolError(
+      'D890 setting powerOnPassword: turning the password off clears the digits',
+    );
+  }
+}
+
+/**
  * Overrides to patches. Throws before any frame is sent for an unknown field, a field the target
  * does not have, a refused value, a repeated field, or two patches that share a bit.
  */
@@ -388,6 +464,7 @@ export function resolveAtD890SettingsPatches(
   target: AtD890SettingsTarget,
   registry: ReadonlyMap<string, AtD890SettingsFieldSpec> = AT_D890_SETTINGS_FIELDS,
 ): AtD890SettingsPatch[] {
+  assertPowerOnPasswordPair(overrides);
   const seen = new Set<string>();
   const patches: AtD890SettingsPatch[] = [];
   const claimed = new Map<number, number>();

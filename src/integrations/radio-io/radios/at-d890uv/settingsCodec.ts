@@ -34,6 +34,24 @@ export function languageLockFromLocalInfo(localInfo: Uint8Array): AtD890Language
 }
 
 /**
+ * Why a language override cannot take effect on a radio with this lock, or `undefined` when it can
+ * (or there is no language override). The radio re-forces the language from LocalInfo at every
+ * load, so a Write of a forbidden value would be silently undone, or garble the menus until then.
+ */
+export function atD890LanguageLockProblem(
+  overrides: readonly { readonly fieldId: string; readonly value: unknown }[],
+  lock: AtD890LanguageLock,
+): string | undefined {
+  const language = overrides.find((o) => o.fieldId === 'language');
+  if (!language) return undefined;
+  if (lock === 0) return undefined;
+  const allowed = lock === 1 ? 0 : 1;
+  if (language.value === allowed) return undefined;
+  const only = lock === 1 ? 'English' : 'Chinese';
+  return `This radio's region only allows ${only}; the Language change can't be applied.`;
+}
+
+/**
  * Every registered field of the snapshot, by field id. Fields the target does not have are left out.
  */
 export function decodeAtD890RadioSettings(

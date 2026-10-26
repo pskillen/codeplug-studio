@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AT_D890_V1_SETTINGS_FIELD_IDS,
+  AT_D890_ALL_SETTINGS_FIELD_IDS,
   atD890SettingField,
 } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import { D890_MAP } from './constants.ts';
-import { decodeAtD890RadioSettings, languageLockFromLocalInfo } from './settingsCodec.ts';
+import {
+  atD890LanguageLockProblem,
+  decodeAtD890RadioSettings,
+  languageLockFromLocalInfo,
+} from './settingsCodec.ts';
 import { AT_D890_SETTINGS_FIELDS, type AtD890SettingValue } from './settingsFields.ts';
 
 function snapshotFrom(values: Record<string, AtD890SettingValue>) {
@@ -29,15 +33,18 @@ function highest(id: string): AtD890SettingValue {
   const def = atD890SettingField(id)!;
   if (def.kind === 'boolean') return true;
   if (def.kind === 'text') return 'MM9PDY TEST';
+  if (def.kind === 'password') return '1234';
   return def.options![def.options!.length - 1]!.value;
 }
 
 describe('decodeAtD890RadioSettings', () => {
   it('decodes a synthetic snapshot built from encodes', () => {
-    const values = Object.fromEntries(AT_D890_V1_SETTINGS_FIELD_IDS.map((id) => [id, highest(id)]));
+    const values = Object.fromEntries(
+      AT_D890_ALL_SETTINGS_FIELD_IDS.map((id) => [id, highest(id)]),
+    );
     const decoded = decodeAtD890RadioSettings(snapshotFrom(values), 'stock');
-    expect(Object.keys(decoded).sort()).toEqual([...AT_D890_V1_SETTINGS_FIELD_IDS].sort());
-    for (const id of AT_D890_V1_SETTINGS_FIELD_IDS) {
+    expect(Object.keys(decoded).sort()).toEqual([...AT_D890_ALL_SETTINGS_FIELD_IDS].sort());
+    for (const id of AT_D890_ALL_SETTINGS_FIELD_IDS) {
       expect(decoded[id]!.value, id).toBe(values[id]);
     }
     expect(decoded.callSignColour).toMatchObject({ value: 7, raw: [7], label: 'Black' });
@@ -100,5 +107,38 @@ describe('languageLockFromLocalInfo', () => {
     const info = new Uint8Array(0x100);
     info[0x04] = byte;
     expect(languageLockFromLocalInfo(info)).toBe(lock);
+  });
+});
+
+describe('atD890LanguageLockProblem', () => {
+  const lang = (value: number) => [{ fieldId: 'language', value }];
+
+  it('allows anything on a free radio and names the field on a locked one', () => {
+    expect(atD890LanguageLockProblem(lang(2), 0)).toBeUndefined();
+    expect(atD890LanguageLockProblem(lang(0), 1)).toBeUndefined();
+    expect(atD890LanguageLockProblem(lang(1), 2)).toBeUndefined();
+    expect(atD890LanguageLockProblem(lang(1), 1)).toMatch(/only allows English.*Language/);
+    expect(atD890LanguageLockProblem(lang(2), 1)).toBeDefined();
+    expect(atD890LanguageLockProblem(lang(0), 2)).toMatch(/only allows Chinese/);
+  });
+
+  it('ignores overrides that are not the language', () => {
+    expect(atD890LanguageLockProblem([{ fieldId: 'keyTone', value: true }], 1)).toBeUndefined();
+    expect(atD890LanguageLockProblem([], 2)).toBeUndefined();
+  });
+});
+
+describe('advanced fields decode', () => {
+  it('reads the power-on password state, an erased block and a non-digit block', () => {
+    const snap = snapshotFrom({ powerOnPasswordEnabled: true, powerOnPasswordDigits: '4821' });
+    const on = decodeAtD890RadioSettings(snap, 'stock');
+    expect(on.powerOnPasswordEnabled!.value).toBe(true);
+    expect(on.powerOnPasswordDigits!.value).toBe('4821');
+    const erased = decodeAtD890RadioSettings(
+      { main: new Uint8Array(0x200).fill(0xff), ext: new Uint8Array(0x60).fill(0xff) },
+      'stock',
+    );
+    expect(erased.powerOnPasswordDigits!.value).toBeUndefined();
+    expect(erased.powerOnPasswordEnabled!.value).toBe(true);
   });
 });
