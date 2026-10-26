@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import {
   AtD890ScriptedPipe,
+  assertAtD890NoReadAfterWrite,
   collectAtD890WriteDataAddresses,
   writePayloadAt,
 } from './__fixtures__/scriptedPipe.ts';
@@ -87,6 +88,7 @@ describe('uploadAtD890SatelliteRecords', () => {
     ];
 
     await uploadAtD890SatelliteRecords(pipe, records);
+    assertAtD890NoReadAfterWrite(pipe.writes);
 
     const firstWriteIndex = pipe.writes.findIndex((w) => w[0] === 0x57);
     expect(firstWriteIndex).toBeGreaterThan(0);

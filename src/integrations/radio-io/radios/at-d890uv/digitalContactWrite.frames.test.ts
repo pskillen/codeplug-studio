@@ -6,7 +6,7 @@
  * short one. Counts `R` and `W` frames per stage. No owner data: the stale list is generated.
  */
 import { describe, expect, it } from 'vitest';
-import { AtD890ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
+import { AtD890ScriptedPipe, assertAtD890NoReadAfterWrite } from './__fixtures__/scriptedPipe.ts';
 import { uploadAtD890DigitalContacts } from './digitalContactWrite.ts';
 import { packAtD890DigitalContacts } from './digitalContactCodec.ts';
 import { D890_MAP } from './constants.ts';
@@ -124,7 +124,7 @@ describe('AT-D890 digital contact write frame counts (#1406)', () => {
   it.each([2, 100, 1000])(
     'writes %i contacts over a stale 18,894 contact list',
     async (n) => {
-      const { stages, wAddrs } = await runWrite(n);
+      const { pipe, stages, wAddrs } = await runWrite(n);
       // No bookkeeping block and nothing in the non-contact unit is sent.
       expect(wAddrs.some(isAtD890EraseUnitBookkeepingAddress)).toBe(false);
       expect(wAddrs).not.toContain(PLANT_OTHER);
@@ -137,6 +137,7 @@ describe('AT-D890 digital contact write frame counts (#1406)', () => {
       expect(new Set(unitRuns).size).toBe(unitRuns.length);
       expect(unitRuns).toHaveLength(3);
 
+      assertAtD890NoReadAfterWrite(pipe.writes);
       // No R frame at all, and no preserve stage.
       expect(stages.has('Preserving untouched contact data')).toBe(false);
       expect(stages.get('Digital contacts')).toEqual({ r: 0, rBytes: 0, w: EXPECTED_W[n] });

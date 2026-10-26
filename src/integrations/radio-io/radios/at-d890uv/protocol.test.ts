@@ -3,6 +3,7 @@ import { RadioProtocolError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { D890_MAP } from './constants.ts';
 import { listWriteChunks, cacheToMemoryMap, applyAtD890WriteImageToCache } from './memory.ts';
 import { AtD890uvProtocol } from './protocol.ts';
+import { atD890ExitProgram } from './connection.ts';
 import {
   AtD890ScriptedPipe,
   makeAtD890IdentFrame,
@@ -589,6 +590,8 @@ describe('AtD890uvProtocol', () => {
         scriptAtD890UploadReadResponder(pipe, memory);
         enableAtD890AutoWriteAck(pipe);
         await radio.uploadSettingsPatches(patches, {});
+        // The settings Write ends with END (the latch refuses the codeplug's first R before it).
+        await atD890ExitProgram(pipe);
         const writesBefore = pipe.writes.filter((w) => w[0] === 0x57).length;
         const image = seedChannelZeroUpload(radio);
         radio.getDownloadCache()!.blocks.clear();

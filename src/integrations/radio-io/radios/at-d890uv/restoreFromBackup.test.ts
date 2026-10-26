@@ -20,6 +20,7 @@ import { AtD890uvProtocol } from './protocol.ts';
 import { listAtD890RestoreModelledChunks } from './restoreFromBackup.ts';
 import {
   AtD890ScriptedPipe,
+  assertAtD890NoReadAfterWrite,
   collectAtD890WriteDataAddresses,
   enableAtD890AutoWriteAck,
   localInfoWithSerial,
@@ -180,6 +181,7 @@ describe('AtD890uvProtocol.restoreFromBackup', () => {
     expect(writePayloadAt(pipe, D890_MAP.ChannelSet)?.[0]).toBe(0x21);
     expect(writePayloadAt(pipe, D890_MAP.OptionalSettingsMain)?.[0]).toBe(0x41);
     expect(writePayloadAt(pipe, D890_MAP.AlarmBitmap)?.[0]).toBe(0xab);
+    assertAtD890NoReadAfterWrite(pipe.writes);
   });
 
   it.each([

@@ -389,3 +389,24 @@ export function writePayloadAt(pipe: AtD890ScriptedPipe, address: number): Uint8
 }
 
 export { ANYTONE_DMR_BLOCK_SIZE };
+
+/**
+ * Independent model of the firmware rule (#1406): within one PROGRAM session (the frame log split
+ * at each `END`), no `R` frame may follow the first `W` frame. Deliberately does not import
+ * `programSession.ts`, so it checks the wire rather than the latch.
+ */
+export function assertAtD890NoReadAfterWrite(writes: readonly Uint8Array[]): void {
+  let seenWrite = false;
+  writes.forEach((f, i) => {
+    const isEnd = f.length === 3 && f[0] === 0x45 && f[1] === 0x4e && f[2] === 0x44;
+    if (isEnd) {
+      seenWrite = false;
+    } else if (f[0] === 0x57) {
+      seenWrite = true;
+    } else if (f[0] === 0x52 && seenWrite) {
+      throw new Error(
+        `R frame (log index ${i}, address 0x${addr32(f).toString(16)}) follows a W in the same PROGRAM session`,
+      );
+    }
+  });
+}

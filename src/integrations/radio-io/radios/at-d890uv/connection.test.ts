@@ -9,7 +9,12 @@ import {
   atD890WriteMemory,
 } from './connection.ts';
 import { assertAtD890TransmitAddress } from './writableExtents.ts';
-import { AtD890ScriptedPipe, makeAtD890IdentFrame } from './__fixtures__/scriptedPipe.ts';
+import {
+  AtD890ScriptedPipe,
+  assertAtD890NoReadAfterWrite,
+  makeAtD890IdentFrame,
+} from './__fixtures__/scriptedPipe.ts';
+import { AtD890ReadAfterWriteError } from './programSession.ts';
 
 function makeReadReply(address: number, payload: Uint8Array): Uint8Array {
   const bodyLen = 6 + payload.length;
@@ -268,5 +273,21 @@ describe('atD890 frame resend', () => {
     ).rejects.toThrow(/not ACKed/);
     expect(writeFrames(pipe)).toHaveLength(1);
     expect(pipe.flushCount).toBe(0);
+  });
+});
+
+describe('no R after the first W (#1406)', () => {
+  it('refuses the old contact order: a write, then a preserve-style read of a contact unit', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    pipe.autoAckWrites = true;
+    pipe.readResponder = (_addr, len) => new Uint8Array(len).fill(0xff);
+    await atD890WriteMemory(pipe, D890_MAP.ChannelSet, new Uint8Array(0x10));
+    const framesBefore = pipe.writes.length;
+    await expect(atD890ReadMemory(pipe, 0x0700_0000, 0x1000, undefined, 0xf0)).rejects.toThrow(
+      AtD890ReadAfterWriteError,
+    );
+    // The read frame never reached the pipe.
+    expect(pipe.writes).toHaveLength(framesBefore);
+    assertAtD890NoReadAfterWrite(pipe.writes);
   });
 });

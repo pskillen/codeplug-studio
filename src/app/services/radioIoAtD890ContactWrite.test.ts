@@ -14,6 +14,7 @@ import {
 import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
 import {
   AtD890ScriptedPipe,
+  assertAtD890NoReadAfterWrite,
   enableAtD890AutoWriteAck,
   localInfoWithSerial,
   makeAtD890EraseUnitBuffer,
@@ -28,7 +29,12 @@ import {
 } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import type { RadioSession } from '@integrations/radio-io/types.ts';
-import { closeRadioSession, uploadPreparedRadioWrite } from './radioIoSession.ts';
+import {
+  closeRadioSession,
+  uploadPreparedRadioWrite,
+  writeBuildToRadio,
+} from './radioIoSession.ts';
+import { uploadAtD890DigitalContactsForWrite } from './radioIoAtD890DigitalContactWrite.ts';
 
 const SERIAL = 'SN-TEST-UPLOAD01';
 
@@ -132,6 +138,35 @@ function contactFrameCount(pipe: AtD890ScriptedPipe): number {
 function sentEnd(pipe: AtD890ScriptedPipe): boolean {
   return pipe.writes.some((f) => f.length === 3 && f[0] === 0x45 && f[1] === 0x4e && f[2] === 0x44);
 }
+
+describe('AT-D890 Write flows send no R after the first W (#1406)', () => {
+  it('uploadPreparedRadioWrite: codeplug + contacts', async () => {
+    const { session, pipe } = await d890Session();
+    await uploadPreparedRadioWrite(session, egress, undefined, withContacts);
+    expect(contactFrameCount(pipe)).toBeGreaterThan(1);
+    await closeRadioSession(session);
+    assertAtD890NoReadAfterWrite(pipe.writes);
+  });
+
+  it('writeBuildToRadio: codeplug (+ contacts when the build has them)', async () => {
+    const { session, pipe } = await d890Session();
+    await writeBuildToRadio(session, build, egress, library);
+    expect(pipe.writes.some((f) => f[0] === 0x57)).toBe(true);
+    await closeRadioSession(session);
+    assertAtD890NoReadAfterWrite(pipe.writes);
+  });
+
+  it('contacts only', async () => {
+    const { session, pipe } = await d890Session();
+    const readsBefore = pipe.writes.filter((f) => f[0] === 0x52).length;
+    await uploadAtD890DigitalContactsForWrite(session, contacts);
+    expect(contactFrameCount(pipe)).toBeGreaterThan(1);
+    // No preserve read: the contact Write sends no R at all.
+    expect(pipe.writes.filter((f) => f[0] === 0x52)).toHaveLength(readsBefore);
+    await closeRadioSession(session);
+    assertAtD890NoReadAfterWrite(pipe.writes);
+  });
+});
 
 describe('AT-D890 contact write failure handling', () => {
   it('a clean Write sends END on close', async () => {

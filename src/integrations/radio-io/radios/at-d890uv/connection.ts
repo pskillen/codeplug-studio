@@ -15,6 +15,12 @@ import {
 import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { throwIfAborted } from '../../kit/progress.ts';
 import { AT_D890_CONNECTION, AT_D890UV_MODEL_IDS } from './constants.ts';
+import {
+  AtD890ReadAfterWriteError,
+  assertAtD890ReadAllowed,
+  noteAtD890ProgramExited,
+  noteAtD890WriteFrame,
+} from './programSession.ts';
 import { assertAtD890SpanNotHardDenied, assertAtD890WritableAddress } from './writableExtents.ts';
 
 const TD = new TextDecoder('ascii', { fatal: false });
@@ -69,6 +75,8 @@ export async function atD890ProbeIdent(pipe: BytePipe, signal?: AbortSignal): Pr
 }
 
 export async function atD890ExitProgram(pipe: BytePipe): Promise<void> {
+  // END commits (or, after an R, silently drops) the session's units: the write phase ends here.
+  noteAtD890ProgramExited(pipe);
   await exitAnytoneDmrProgramMode(pipe);
 }
 
@@ -117,7 +125,8 @@ async function readChunkWithFallback(
     // `atD890ReadBlockRaw` already spent its resend budget. This catch is the size fallback only.
     return await atD890ReadBlockRaw(pipe, address, chunkLen, signal);
   } catch (firstErr) {
-    if (chunkLen <= ANYTONE_DMR_BLOCK_SIZE) {
+    // A refused read sent nothing; a smaller read is refused the same way.
+    if (firstErr instanceof AtD890ReadAfterWriteError || chunkLen <= ANYTONE_DMR_BLOCK_SIZE) {
       throw firstErr;
     }
     const fallback = new Uint8Array(chunkLen);
@@ -184,6 +193,8 @@ export async function atD890ReadBlockRaw(
     pipe,
     signal,
     async () => {
+      // Throws before any byte is sent once a W has gone out in this PROGRAM session (#1406).
+      assertAtD890ReadAllowed(pipe, address, length);
       await pipe.write(makeAnytoneDmrReadFrame(address, length));
       const reply = await pipe.readExact(length + 8, AT_D890_CONNECTION.TIMEOUT.READ_MS);
       return parseAnytoneDmrReadReply(reply, length, address);
@@ -220,6 +231,8 @@ export async function atD890WriteMemory(
       pipe,
       signal,
       async () => {
+        // Latches before the frame leaves, so a W whose ACK never arrives still counts (#1406).
+        noteAtD890WriteFrame(pipe, addr);
         await pipe.write(frame);
         const ack = await pipe.readExact(1, AT_D890_CONNECTION.TIMEOUT.WRITE_MS);
         if (ack[0] !== 0x06) {
