@@ -58,7 +58,15 @@ import {
   type SatelliteKepsWriteResult,
 } from '../../../services/satelliteKepsWriteAdapters.ts';
 import { reviewSectionsFor } from './reviewSections.tsx';
-import { readPlanFor, stageRows, writePartOfPlan } from './stageRows.ts';
+import {
+  newTrack,
+  readPlanFor,
+  stageRows,
+  trackWithEvent,
+  trackWithPlan,
+  writePartOfPlan,
+  type StageTrack,
+} from './stageRows.ts';
 import type {
   CheckStatus,
   RadioIdentityView,
@@ -167,11 +175,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const [canReconnect, setCanReconnect] = useState(false);
   const [reconnecting, setReconnecting] = useState(false);
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
-  const [readPlan, setReadPlan] = useState<PlannedStage[]>([]);
-  const [writePlan, setWritePlan] = useState<PlannedStage[] | undefined>(undefined);
-  const [readGrown, setReadGrown] = useState<string[]>([]);
-  const [writeGrown, setWriteGrown] = useState<string[]>([]);
-  const [phase, setPhase] = useState<Phase>('read');
+  // Stage lists (4a's cursor): one track per list, kept in a ref so no event is lost between renders.
+  const readTrackRef = useRef<StageTrack>(newTrack());
+  const writeTrackRef = useRef<StageTrack>(newTrack());
+  const [readTrack, setReadTrack] = useState<StageTrack>(readTrackRef.current);
+  const [writeTrack, setWriteTrack] = useState<StageTrack>(writeTrackRef.current);
   const [identity, setIdentity] = useState<RadioIdentityView | null>(null);
   const [review, setReview] = useState<WriteReviewView | null>(null);
   const [writeFinished, setWriteFinished] = useState(false);
@@ -211,7 +219,6 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
 
   function setPhaseBoth(next: Phase) {
     phaseRef.current = next;
-    setPhase(next);
   }
 
   function setBusyNotify(next: boolean) {
@@ -255,13 +262,23 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     if (!stage) return;
     if (phaseRef.current === 'read') {
       readLabelsRef.current.add(stage);
-      setReadGrown((prev) => (prev.includes(stage) ? prev : [...prev, stage]));
+      updateReadTrack((t) => trackWithEvent(t, p));
       return;
     }
     if (phaseRef.current === 'write') transmitStartedRef.current = true;
     // The read's stages are not part of the write list (DM-32 re-emits 'Discover memory map').
     if (readLabelsRef.current.has(stage)) return;
-    setWriteGrown((prev) => (prev.includes(stage) ? prev : [...prev, stage]));
+    updateWriteTrack((t) => trackWithEvent(t, p));
+  }
+
+  function updateReadTrack(fn: (t: StageTrack) => StageTrack) {
+    readTrackRef.current = fn(readTrackRef.current);
+    setReadTrack(readTrackRef.current);
+  }
+
+  function updateWriteTrack(fn: (t: StageTrack) => StageTrack) {
+    writeTrackRef.current = fn(writeTrackRef.current);
+    setWriteTrack(writeTrackRef.current);
   }
 
   async function ensureSession(
@@ -283,11 +300,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setCanReconnect(false);
     setReconnecting(false);
     setProgress(null);
-    setReadPlan([]);
     readPlanRef.current = [];
-    setWritePlan(undefined);
-    setReadGrown([]);
-    setWriteGrown([]);
+    updateReadTrack(() => newTrack());
+    updateWriteTrack(() => newTrack());
     setIdentity(null);
     identityRef.current = null;
     setReview(null);
@@ -348,7 +363,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       readMs,
     );
     const writeOnly = writePartOfPlan(ctx.plan, readPlanRef.current);
-    setWritePlan(writeOnly);
+    updateWriteTrack((t) => trackWithPlan(t, writeOnly));
     const estimateSeconds = ctx.identityOnly ? null : estimateWriteSeconds(writeOnly, rate);
     const sectionsCtx = {
       identity: ctx.identity,
@@ -407,8 +422,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setCanReconnect(false);
     setReconnecting(opts.reconnect);
     setProgress(null);
-    setReadGrown([]);
-    setWriteGrown([]);
+    updateReadTrack(() => newTrack());
+    updateWriteTrack(() => newTrack());
     setReview(null);
     setBusyNotify(true);
     readStartRef.current = now();
@@ -466,7 +481,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       };
       const readStages = descriptor && prepared ? readPlanFor(descriptor, planCtx) : [];
       readPlanRef.current = readStages;
-      setReadPlan(readStages);
+      updateReadTrack((t) => trackWithPlan(t, readStages.length > 0 ? readStages : undefined));
 
       const contactsNote =
         p.contacts && prepared
@@ -710,20 +725,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     canReconnect,
     reconnecting,
     progress,
-    readRows: stageRows({
-      plan: readPlan.length > 0 ? readPlan : undefined,
-      grown: readGrown,
-      progress: phase === 'read' ? progress : null,
-      finished: readFinished,
-      startActive: true,
-    }),
-    writeRows: stageRows({
-      plan: writePlan,
-      grown: writeGrown,
-      progress: phase === 'read' ? null : progress,
-      finished: writeFinished,
-      startActive: true,
-    }),
+    readRows: stageRows(readTrack, { finished: readFinished, startActive: true }),
+    writeRows: stageRows(writeTrack, { finished: writeFinished, startActive: true }),
     identity,
     review,
     restartSecondsLeft,

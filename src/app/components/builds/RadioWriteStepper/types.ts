@@ -82,6 +82,10 @@ export interface WriteStageRow {
   status: 'pending' | 'active' | 'success' | 'error';
   weight?: number;
   optional?: boolean;
+  /** One event per stage (D890 download): no in-stage fraction until the stage completes. */
+  coarse?: boolean;
+  /** Held in-stage fraction from the stage cursor (0..1). */
+  fraction?: number;
 }
 
 export interface WriteSummary {
