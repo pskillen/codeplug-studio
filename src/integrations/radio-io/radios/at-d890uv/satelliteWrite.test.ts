@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RadioProtocolError } from '../../kit/errors.ts';
 import {
   AtD890ScriptedPipe,
   collectAtD890WriteDataAddresses,
@@ -164,5 +165,29 @@ describe('uploadAtD890SatelliteRecords', () => {
 
     const preservedPayload = writePayloadAt(pipe, BASE + preExistingOffset);
     expect(preservedPayload).toEqual(preExisting);
+  });
+
+  it('refuses a record at the LocalInfo unit before any write frame (hard deny)', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAllFfReads(pipe);
+    pipe.autoAckWrites = true;
+    const satellite = makeSatellite();
+    const transmitter = makeTransmitter();
+    const bytes = encodeSatelliteRecord(satellite, transmitter);
+    const records = [
+      {
+        satelliteId: satellite.id,
+        transmitterId: transmitter.id,
+        address: 0x04f8_0000,
+        bytes,
+      },
+    ];
+
+    await expect(uploadAtD890SatelliteRecords(pipe, records)).rejects.toThrow(RadioProtocolError);
+    await expect(uploadAtD890SatelliteRecords(pipe, records)).rejects.toThrow(
+      /LocalInfo \/ calibration/,
+    );
+    expect(collectAtD890WriteDataAddresses(pipe)).toEqual([]);
+    expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(0);
   });
 });
