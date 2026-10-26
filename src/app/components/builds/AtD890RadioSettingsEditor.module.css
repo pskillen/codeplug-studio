@@ -1,0 +1,136 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.count {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.readArea {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.readControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.readStage,
+.readNote {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.readOnly {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.readOnly dt {
+  color: var(--dsv2-text-tertiary);
+}
+
+.readOnly dd {
+  margin: 0;
+  color: var(--dsv2-text-primary);
+}
+
+.why {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.why summary {
+  cursor: pointer;
+}
+
+.why p {
+  margin: 4px 0 0;
+  line-height: 1.45;
+  max-width: 42rem;
+}
+
+.footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px var(--dsv2-panel-padding-x);
+  background: var(--dsv2-surface);
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  box-shadow: var(--dsv2-shadow-popover);
+}
+
+.footerCount {
+  font-weight: 600;
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-primary);
+}
+
+.footerNote {
+  flex: 1 1 14rem;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+/* Narrow screens: the interim note is kept for screen readers but not drawn, so the sticky footer
+   stays one short row instead of covering the rows being edited. */
+@media (max-width: 40rem) {
+  .footer {
+    padding-block: 6px;
+  }
+
+  .footerNote {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+.footerLink {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-accent);
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+}

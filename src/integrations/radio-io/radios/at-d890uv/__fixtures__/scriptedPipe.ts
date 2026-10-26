@@ -147,8 +147,14 @@ export function scriptAtD890NegotiateReadBlock(
   address: number,
   maxBlock: number,
   spanLength = 0x100,
+  /** LocalInfo `+0x00` / `+0x01` when `address` is LocalInfo: `[0, 0]` is a healthy radio (#1288). */
+  flags: readonly [number, number] = [0, 0],
 ): void {
   const data = new Uint8Array(spanLength).fill(0xff);
+  if (address === D890_MAP.LocalInfo) {
+    data[0] = flags[0];
+    data[1] = flags[1];
+  }
   pipe.readResponder = (addr, len) => {
     const off = addr - address;
     if (off < 0 || off + len > spanLength) return null;
@@ -160,8 +166,9 @@ export function scriptAtD890NegotiateReadBlock(
 export function scriptAtD890ConnectWithNegotiation(
   pipe: AtD890ScriptedPipe,
   maxBlock = 0xf0,
+  flags: readonly [number, number] = [0, 0],
 ): void {
-  scriptAtD890NegotiateReadBlock(pipe, D890_MAP.LocalInfo, maxBlock);
+  scriptAtD890NegotiateReadBlock(pipe, D890_MAP.LocalInfo, maxBlock, 0x100, flags);
   scriptAtD890Connect(pipe);
 }
 
@@ -195,9 +202,16 @@ export function scriptAtD890Connect(pipe: AtD890ScriptedPipe, version = 'V100'):
 
 const NEGOTIATED_READ_BLOCK = 0xf0;
 
+function healthyLocalInfo(): Uint8Array {
+  const out = new Uint8Array(D890_MAP.LocalInfoLength).fill(0xff);
+  out[0] = 0x00;
+  out[1] = 0x00;
+  return out;
+}
+
 function minimalDownloadMemory(): Map<number, Uint8Array> {
   return new Map([
-    [D890_MAP.LocalInfo, new Uint8Array(D890_MAP.LocalInfoLength).fill(0xff)],
+    [D890_MAP.LocalInfo, healthyLocalInfo()],
     [D890_MAP.OptionalSettingsMain, new Uint8Array(D890_MAP.OptionalSettingsMainLength).fill(0xff)],
     [D890_MAP.OptionalSettingsExt, new Uint8Array(D890_MAP.OptionalSettingsExtLength).fill(0xff)],
     [D890_MAP.OptionalSettingsAprs, new Uint8Array(D890_MAP.OptionalSettingsAprsLength).fill(0xff)],
@@ -304,6 +318,7 @@ export function localInfoWithSerial(serial: string): Uint8Array {
   const bytes = new TextEncoder().encode(serial);
   out.set(bytes.subarray(0, LOCAL_INFO_SERIAL_LENGTH), LOCAL_INFO_SERIAL_OFFSET);
   out[0] = 0x00;
+  out[1] = 0x00;
   return out;
 }
 

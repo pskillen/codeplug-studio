@@ -49,24 +49,26 @@ Addresses are **radio absolute** (u32). Read only enabled slots via each region�
 
 ### Optional settings and alarm (preserved through erase on Write)
 
-anytone-cps community RE — verify on hardware before relying on offsets. Studio **Reads** these regions on Connect/Read ([#760](https://github.com/pskillen/codeplug-studio/issues/760)) for Radio image forensics and persists them in the hydration bag.
+anytone-cps community RE — verify on hardware before relying on offsets. Studio **Reads** these regions on Connect/Read ([#760](https://github.com/pskillen/codeplug-studio/issues/760)) for Radio image forensics. They live in the session download cache only; Studio persists no settings bytes in the project or a hydration bag.
 
 On **Write**, Studio encodes the modelled overlay onto `cacheToMemoryMap` of this PROGRAM session download cache ([#875](https://github.com/pskillen/codeplug-studio/issues/875)) — not a persisted hydration bag and not a virgin `0xff` `MemoryMap`. Sparse erase-unit RMW ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) then **fresh-reads** each touched `0x40000` unit from the connected radio and re-stages non-`0xff` bytes unchanged **outside** that modelled overlay — including optional settings and alarm spans that share units with modelled banks. Studio does **not** re-derive those kept bytes from the library build. Identity is the radio on the cable this session ([#1276](https://github.com/pskillen/codeplug-studio/issues/1276)); Restore still refuses zip vs live serial mismatch.
 
 | Region / buffer              | Base                      | Length       | Notes                                                                                                                                                                                                                                                     |
 | ---------------------------- | ------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Optional settings (main)     | `0x3500000`               | `0x200`      | CPS language @ `+0x05` (`English`/`German` — **not** Chinese UI)                                                                                                                                                                                          |
+| Optional settings (main)     | `0x3500000`               | `0x200`      | Menu language @ `+0x05`: 0 English, 1 Chinese, 2 Russian (not range-checked; see below)                                                                                                                                                                   |
 | Optional settings (main)     | `0x3500000`               |              | Power-on interface @ `+0x06`; power-on password enable @ `+0x07`                                                                                                                                                                                          |
 | Optional settings (main)     | `0x3500000`               |              | Startup enable @ `+0xd6` bit 0; zone A/B @ `+0xd7`/`+0xd8`; channel A/B @ `+0xd9`/`+0xda` (`0xFF` = none)                                                                                                                                                 |
 | Zone A/B tables              | `0x3500400` / `0x3500600` | `0x200` each | **Modelled** — share erase unit `0x3500000` with optional settings below                                                                                                                                                                                  |
-| Optional settings (ext)      | `0x3500900`               | `0x60`       | UTF-16LE display lines @ `+0x00` / `+0x20` (`0x20` bytes each); power-on password @ `+0x40` (8 ASCII)                                                                                                                                                     |
+| Optional settings (ext)      | `0x3500900`               | `0x60`       | UTF-16LE display lines @ `+0x00` / `+0x20` (`0x20` bytes each, NUL padded; an empty line is `0x20` × `00`); power-on password @ `+0x40` (8 ASCII)                                                                                                         |
 | Optional settings (GPS info) | `0x3501280`               | `0x30`       | Optional GPS info string (the save and load paths use `0x42` bytes; the factory default string is shorter; Studio's preview span is `0x30`, the rest is the `gps-info-tail` backup span) — hex preview only; **not** APRS config (see [aprs.md](aprs.md)) |
 | Alarm settings               | `0x3482e00`               | `0x10`       | Call type @ `+0x00`, kind, and a BCD id, with `0x30` marked. Studio reads this `0x10` span.                                                                                                                                                               |
 | Alarm settings               | `0x3483000`               | `0x30`       | Analog/digital emergency alarm flags; man-down also @ optional main `+0x24` / `+0x4f`                                                                                                                                                                     |
 
-The Radio image retain preview reads startup enable at main `+0xD6` bit 0, zones A/B at `+0xD7`/`+0xD8`, channels A/B at `+0xD9`/`+0xDA` (`0xFF` = none), UTF-16LE display lines of `0x20` bytes at `0x3500900` and `0x3500920`, and an 8-byte ASCII password at `0x3500940`; Write does not program these fields.
+The Radio image retain preview reads startup enable at main `+0xD6` bit 0, zones A/B at `+0xD7`/`+0xD8`, channels A/B at `+0xD9`/`+0xDA` (`0xFF` = none), UTF-16LE display lines of `0x20` bytes at `0x3500900` and `0x3500920`, and an 8-byte ASCII password at `0x3500940`.
 
-Chinese UI on the radio is driven by **optional settings** (CPS language, power-on password) when those regions are erased — not LocalInfo ExpertOptions. Bag diffs on a faulted radio showed LocalInfo byte-identical between healthy and faulted reads ([#768](https://github.com/pskillen/codeplug-studio/issues/768)); the brick came from erase collateral in shared flash units, not LocalInfo replay.
+**Settings patches** ([#1393](https://github.com/pskillen/codeplug-studio/issues/1393)). A codeplug Write leaves these bytes as the radio holds them, except for registered fields. A registered field (address, length, optional bit mask, targets) is applied as a **field patch on the fresh read** of unit `0x3500000`: `new = (fresh & ~mask) | (value & mask)`. Only addresses in the main record `+0x000`…`+0x15F` and the power-on block `+0x900`…`+0x947` may be registered, and these main-record offsets never may (radio state): `+0x15 +0x16 +0x1D…+0x21 +0x2C +0x4E +0x6F +0x70 +0xDB +0x13E…+0x140 +0x14E…+0x150`. LocalInfo, alarm, Zone A/B, the safe-skip address, the flash markers and (until the MM9PDY store is modelled) `+0x200` are refused for every target. The preserved-byte check allows a staged block outside the modelled set to differ from the fresh read only in the patched bits. After patching, main `0x200` and ext `0x60` must not read all `0xFF`. The registry holds the v1 fields listed in [optional-settings.md](optional-settings.md) (each with its encoding and the firmware's clamp); the MM9PDY TG step keys are the short-press P1 (`+0x13`) and P2 (`+0x14`) fields set to 14 and 13. Empty power-on lines are encoded as `0x20` NUL bytes, which is how the CPS and the radio itself store them.
+
+**Language.** `+0x05` is the menu language (0 English, 1 Chinese, 2 Russian) and the firmware does not range-check it. LocalInfo `+0x04` **forces** the language at every settings load: 1 sets English, 2 sets Chinese; 0 leaves `+0x05` as stored. Studio never writes LocalInfo. A Chinese menu after an erase therefore comes from `+0x05` (an erased `0xFF` is out of range) on a radio whose LocalInfo does not force a language, not from LocalInfo being replayed. Bag diffs on a faulted radio showed LocalInfo byte-identical between healthy and faulted reads ([#768](https://github.com/pskillen/codeplug-studio/issues/768)); the brick came from erase collateral in shared flash units.
 
 **Backup / Restore** ([backup-restore.md](backup-restore.md)): optional settings and APRS **are** restorable from a zip; LocalInfo and alarm are inspect-only and are never taken from the archive.
 
@@ -135,25 +137,25 @@ Where the reconciliation contradicts anytone-cps, the hardware wins and the disc
 
 `LocalInfo` @ `0x4f80000` (`0x100` bytes) is **Read** on download for Radio image retain preview and future band validation. It is **not** on the serial write allow-list ([#753](https://github.com/pskillen/codeplug-studio/issues/753)). ExpertOptions fields (facts from anytone-cps `ExpertOptions::decode`):
 
-| Offset           | Field                   | Notes                                  |
-| ---------------- | ----------------------- | -------------------------------------- |
-| `+0x02` bit 0    | Full test mode          |                                        |
-| `+0x03`          | Frequency range         | u8 (see [band-code.md](band-code.md))  |
-| `+0x04`, `+0x05` | Chinese UI flag         | Both bytes `0` ⇒ Chinese expert chrome |
-| `+0x06` bit 0    | Band select             |                                        |
-| `+0x0b`          | Band-settings password  | 4 chars                                |
-| `+0x10`          | Radio type              | 7 chars                                |
-| `+0x28`          | Program password        | 4 chars                                |
-| `+0x2c`          | Area code               | 4 chars                                |
-| `+0x30`          | Serial number           | 16 chars                               |
-| `+0x40`          | Production date         | 16 chars                               |
-| `+0x50`          | Manufacture code        | 8 chars                                |
-| `+0x60`          | Maintenance date        | 16 chars                               |
-| `+0x70`          | Dealer code             | 16 chars                               |
-| `+0x80`          | Stock date              | 16 chars                               |
-| `+0x90`          | Sell date               | 16 chars                               |
-| `+0xa0`          | Seller                  | 16 chars                               |
-| `+0xb0`          | Maintenance description | 80 (`0x50`) chars                      |
+| Offset           | Field                       | Notes                                                                                                                                                                                                 |
+| ---------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `+0x02` bit 0    | Full test mode              |                                                                                                                                                                                                       |
+| `+0x03`          | Frequency range             | u8 (see [band-code.md](band-code.md))                                                                                                                                                                 |
+| `+0x04`, `+0x05` | Language lock, applied copy | `+0x04`: market / language lock (0 free, 1 English forced, 2 Chinese forced at every settings load). `+0x05`: its applied copy; a mismatch at boot runs factory defaults. Studio never writes either. |
+| `+0x06` bit 0    | Band select                 |                                                                                                                                                                                                       |
+| `+0x0b`          | Band-settings password      | 4 chars                                                                                                                                                                                               |
+| `+0x10`          | Radio type                  | 7 chars                                                                                                                                                                                               |
+| `+0x28`          | Program password            | 4 chars                                                                                                                                                                                               |
+| `+0x2c`          | Area code                   | 4 chars                                                                                                                                                                                               |
+| `+0x30`          | Serial number               | 16 chars                                                                                                                                                                                              |
+| `+0x40`          | Production date             | 16 chars                                                                                                                                                                                              |
+| `+0x50`          | Manufacture code            | 8 chars                                                                                                                                                                                               |
+| `+0x60`          | Maintenance date            | 16 chars                                                                                                                                                                                              |
+| `+0x70`          | Dealer code                 | 16 chars                                                                                                                                                                                              |
+| `+0x80`          | Stock date                  | 16 chars                                                                                                                                                                                              |
+| `+0x90`          | Sell date                   | 16 chars                                                                                                                                                                                              |
+| `+0xa0`          | Seller                      | 16 chars                                                                                                                                                                                              |
+| `+0xb0`          | Maintenance description     | 80 (`0x50`) chars                                                                                                                                                                                     |
 
 The table above is the anytone-cps `ExpertOptions::decode` layout. The official CPS encoder we read does not write `+0x00`–`+0x0F`. That encoder has a 2-character field at `+0x24`.
 
@@ -240,7 +242,7 @@ Measured in `ChannelData` 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`): **`
 | `0x3880000`     | `AmAir*` / `AmZone*` (when airband projected)                    | AmAir VFO + unmodelled co-residents in the unit     |
 | `0x1000000`+    | `ChannelData` (per backed block)                                 | Unused slots in same unit                           |
 
-**Sparse staging:** only non-`0xff` 16-byte blocks are re-transmitted (~37.5 kB across 14 touched units in a typical codeplug, vs 3.67 MB dense). Fresh-read source is the **connected radio**, not the hydration bag; LocalInfo serial must match the stash or Write is refused.
+**Sparse staging:** only non-`0xff` 16-byte blocks are re-transmitted (~37.5 kB across 14 touched units in a typical codeplug, vs 3.67 MB dense). Fresh-read source is the **connected radio**, not a stored bag. Identity is the radio on the cable ([#1276](https://github.com/pskillen/codeplug-studio/issues/1276)); an erased LocalInfo refuses Write.
 
 `LocalInfo` (`0x4f80000`) sits in unit `0x4f80000` — outside the modelled write set — so it is never transmitted.
 

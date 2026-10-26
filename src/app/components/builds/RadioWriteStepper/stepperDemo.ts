@@ -60,5 +60,6 @@ export function noopActions(make: () => () => void = () => () => {}): WriteFlowA
     onWriteKepsAfterRestart: make(),
     onWriteAnother: make(),
     onViewCheckReport: make(),
+    onEditSettings: make(),
   };
 }

@@ -209,6 +209,8 @@ describe('RadioWriteStepper — steps 4 to 6', () => {
         summary: {
           codeplugWritten: true,
           contactsWritten: false,
+          settingsChanged: null,
+          settingsTicked: false,
           channelCount: 412,
           kepsResult: null,
           kepsTicked: false,

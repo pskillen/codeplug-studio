@@ -5,10 +5,11 @@
  * receive-only channels, settings, backup).
  */
 
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { Text } from '@mantine/core';
 import type { RadioDescriptor } from '@integrations/radio-io/types.ts';
 import { IdentitySection, Section, TimeSection } from './reviewSectionParts.tsx';
+import type { AtD890ReviewController } from './d890/atD890ReviewController.ts';
 import type { RadioIdentityView } from './types.ts';
 import type { WriteParts } from './writeParts.ts';
 
@@ -23,11 +24,17 @@ export interface ReviewContext {
   identityOnly: boolean;
   /** The radio restarts after the write. */
   restartsAfterWrite: boolean;
+  /** AT-D890UV only: this Review's range, receive-only channels and live choices. */
+  atD890?: AtD890ReviewController;
 }
 
 export interface ReviewSectionProvider {
   /** Which radios this provider applies to. */
   matches(descriptor: RadioDescriptor): boolean;
+  /** Extra rows for the "This radio" block, after Firmware. */
+  identityRows?(ctx: ReviewContext): [string, string][];
+  /** Extra content under the Channels line (warnings, lists). */
+  channelNotes?(ctx: ReviewContext): ReactNode[];
   /** Extra sections, shown after the generic identity and channel sections and before time. */
   sections(ctx: ReviewContext, descriptor: RadioDescriptor): ReactNode[];
 }
@@ -44,8 +51,16 @@ export function registerReviewSectionProvider(provider: ReviewSectionProvider): 
 }
 
 /** Sections every radio gets, in order. */
-export function genericReviewSections(ctx: ReviewContext): ReactNode[] {
-  const out: ReactNode[] = [<IdentitySection key="identity" identity={ctx.identity} />];
+export function genericReviewSections(
+  ctx: ReviewContext,
+  hooks: {
+    identityRows?: [string, string][];
+    channelNotes?: ReactNode[];
+  } = {},
+): ReactNode[] {
+  const out: ReactNode[] = [
+    <IdentitySection key="identity" identity={ctx.identity} extraRows={hooks.identityRows} />,
+  ];
   if (ctx.parts.codeplug) {
     out.push(
       <Section key="channels" title="Channels">
@@ -54,6 +69,9 @@ export function genericReviewSections(ctx: ReviewContext): ReactNode[] {
             ? '1 channel will be written.'
             : `${ctx.channelCount} channels will be written.`}
         </Text>
+        {hooks.channelNotes?.map((n, i) => (
+          <Fragment key={i}>{n}</Fragment>
+        ))}
       </Section>,
     );
   }
@@ -80,11 +98,13 @@ export function genericReviewSections(ctx: ReviewContext): ReactNode[] {
 
 /** Generic sections, then registered per-radio sections, then time. */
 export function reviewSectionsFor(descriptor: RadioDescriptor, ctx: ReviewContext): ReactNode[] {
-  const extra = providers
-    .filter((p) => p.matches(descriptor))
-    .flatMap((p) => p.sections(ctx, descriptor));
+  const active = providers.filter((p) => p.matches(descriptor));
+  const extra = active.flatMap((p) => p.sections(ctx, descriptor));
   return [
-    ...genericReviewSections(ctx),
+    ...genericReviewSections(ctx, {
+      identityRows: active.flatMap((p) => p.identityRows?.(ctx) ?? []),
+      channelNotes: active.flatMap((p) => p.channelNotes?.(ctx) ?? []),
+    }),
     ...extra.map((node, i) => <div key={`extra-${i}`}>{node}</div>),
     <TimeSection key="time" ctx={ctx} />,
   ];

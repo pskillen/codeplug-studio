@@ -9,6 +9,10 @@ import type { RadioChannelDto } from './radioChannelDto.ts';
 import type { ChannelDistanceUnit } from '@core/models/radioBuild.ts';
 import type { ChannelLocationWriteCounts } from '@core/radio-targets/channelLocationNotes.ts';
 import type { AtD890ResolvedScanListTiming } from '@core/radios/anytone/at-d890uv/scanListWireDefaults.ts';
+import type {
+  AtD890SettingsOverride,
+  AtD890SettingsTarget,
+} from './radios/at-d890uv/settingsFields.ts';
 
 /** Zone membership as radio channel numbers (1-based). */
 export interface RadioZoneDto {
@@ -176,11 +180,20 @@ export interface RadioWriteOrganisation {
    */
   writeRxGroupTimeSlotOverrides?: boolean;
   /**
-   * MM9PDY only. When true, encode and upload set P1 short and P2 short: 14 and 13 on
-   * the AT-D890UV, 20 (TG Prev) and 21 (TG Next) on the DM-32UV. Stock writes leave
-   * those bytes as read.
+   * DM-32UV MM9PDY only. When true, encode and upload set P1 short and P2 short to 20 (TG Prev)
+   * and 21 (TG Next). The AT-D890UV ignores it since #1393: its step keys are ordinary settings
+   * overrides (`mm9pdyStepKeyOverrides()`), set by the Review nudge. Stock writes leave those
+   * bytes as read.
    */
   assignMm9pdyStepKeys?: boolean;
+  /**
+   * AT-D890UV radio settings overrides for this Write (session state, supplied by the app; never
+   * stored in the build). Each is applied as a field patch onto the fresh settings-unit read.
+   * Omit for a Write that leaves every setting as the radio holds it.
+   */
+  atD890SettingsOverrides?: readonly AtD890SettingsOverride[];
+  /** AT-D890UV firmware target, selects which settings fields exist. Unset → `'stock'`. */
+  atD890SettingsTarget?: AtD890SettingsTarget;
   /**
    * MM9PDY only (AT-D890UV, DM-32UV). When true, Write stores the channel location table
    * from {@link RadioChannelDto.location} on channels with `useLocation`: the dedicated

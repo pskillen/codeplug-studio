@@ -4,12 +4,13 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Alert, Anchor, Button, Stack, Text } from '@mantine/core';
 import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
   isMm9pdyAtD890RadioIoProfileId,
+  isMm9pdyDm32RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
 import { BuildCapabilityTrait, traitProfileFor } from '@core/models/traits.ts';
 import {
@@ -35,10 +36,28 @@ import {
   getRadioSerialUnsupportedMessage,
   isRadioSerialSupported,
 } from '../../services/radioIoSession.ts';
-import { isMm9pdyStepKeyTarget, mm9pdyStepKeysDescription } from './mm9pdyStepKeysCopy.ts';
+import { hasPersistedStepKeySwitch, mm9pdyStepKeysDescription } from './mm9pdyStepKeysCopy.ts';
+import {
+  buildSummaryLine,
+  radioIoPanelFacts,
+  type RadioIoPanelFacts,
+} from '../../services/radioIoPanelFacts.ts';
+import { descriptorSupportsBackup } from '../../services/radioBackupRestore.ts';
+import WriteHeaderCard from './RadioIoPanelCards/WriteHeaderCard.tsx';
+import BeforeYouWriteRows from './RadioIoPanelCards/BeforeYouWriteRows.tsx';
+import AtD890RadioSettingsCard from './RadioIoPanelCards/AtD890RadioSettingsCard.tsx';
+import RadioBackupCard from './RadioIoPanelCards/RadioBackupCard.tsx';
+import ExperimentalNote from './RadioIoPanelCards/ExperimentalNote.tsx';
+import {
+  atD890OverrideCount,
+  overridesForWrite,
+  setApplyToEveryRadio,
+  setWriteSettingsRequested,
+  useAtD890RadioSettingsSession,
+} from '../../state/atD890RadioSettingsSession.ts';
+import { atD890OverrideWords } from './RadioWriteStepper/d890/atD890ReviewFacts.ts';
 import WriteVerifyReport from './WriteVerifyReport.tsx';
 import { mapWriteVerifyResultToV2Report } from './writeVerifyReportV2Adapter.ts';
-import WebSerialExperimentalAlert from './WebSerialExperimentalAlert.tsx';
 import AtD890WriteCoverageTable from './AtD890WriteCoverageTable.tsx';
 import {
   DM32_ANALOG_CONTACTS_WRITE_GAP,
@@ -77,6 +96,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [verifyReportOpen, setVerifyReportOpen] = useState(false);
   const [channelLocationNote, setChannelLocationNote] = useState<string | null>(null);
   const [kepsCount, setKepsCount] = useState<number | null>(null);
+  const [facts, setFacts] = useState<RadioIoPanelFacts | null>(null);
+  const [coverageOpen, setCoverageOpen] = useState(false);
+  const navigate = useNavigate();
 
   const serialOk = isRadioSerialSupported();
   const descriptor = descriptors[0];
@@ -104,8 +126,36 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     supportsSingleBankWrite,
     kepsWriteFn,
     kepsSameSessionAfterUpload: satelliteKepsSameSessionAfterUpload(egress.profileId),
+    onOpenSettingsPage: () => navigate(`/builds/${build.id}/export/radio-settings`),
   });
   const { view: flowView, actions: flowActions } = flow;
+  const settingsSession = useAtD890RadioSettingsSession(build.id);
+  const openFlow = flow.open;
+  const writeSettingsRequested = isAtD890Write && settingsSession.writeSettingsRequested;
+
+  // The settings page's "Write settings…" lands here and opens the stepper with only Radio settings ticked.
+  useEffect(() => {
+    if (!writeSettingsRequested) return;
+    setWriteSettingsRequested(build.id, false);
+    openFlow({ codeplug: false, contacts: false, keps: false, settings: true });
+  }, [writeSettingsRequested, build.id, openFlow]);
+
+  // Counts and receive-range rows for the header and Before you write. Informational only.
+  useEffect(() => {
+    if (!activeProjectId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const library = await loadLibrarySlice(persistence, activeProjectId);
+        if (!cancelled) setFacts(radioIoPanelFacts(build, egress, library));
+      } catch {
+        if (!cancelled) setFacts(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeProjectId, build, egress]);
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(flowView.busy);
 
@@ -119,6 +169,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     .join(' / ');
 
   if (descriptors.length === 0) return null;
+
+  const isMm9pdyTarget =
+    isMm9pdyAtD890RadioIoProfileId(egress.profileId) ||
+    isMm9pdyDm32RadioIoProfileId(egress.profileId);
+  const radioLabel = `${descriptor?.label ?? 'radio'}${isMm9pdyTarget ? ' (MM9PDY)' : ''}`;
 
   async function handleAssignMm9pdyStepKeys(checked: boolean) {
     const next = buildService.withExportSettings(build, { assignMm9pdyStepKeys: checked });
@@ -178,7 +233,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     buildId: build.id,
     serialOk,
     writeHidden,
-    support: { contacts: supportsDigitalContacts, keps: supportsKepsWrite, settings: false },
+    support: {
+      contacts: supportsDigitalContacts,
+      keps: supportsKepsWrite,
+      settings: isAtD890Write,
+    },
     sharedContactBankNote: isOpenGd77RadioIoEgress(egress.profileId),
     sharedAddressBookNote: isDm32RadioIoProfileId(egress.profileId),
     kepsSummary:
@@ -187,7 +246,21 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         : undefined,
     kepsLastUpdatedIso: activeProject?.satelliteLibraryLastUpdated,
     channelLocationNote,
-    ...(isMm9pdyStepKeyTarget(build.radioTargetId)
+    ...(isAtD890Write
+      ? {
+          radioSettings: {
+            count: atD890OverrideCount(settingsSession.overrides),
+            words: atD890OverrideWords(
+              overridesForWrite(build.id),
+              isMm9pdyAtD890RadioIoProfileId(egress.profileId) ? 'mm9pdy' : 'stock',
+            ),
+            applyToEveryRadio: settingsSession.applyToEveryRadio,
+            onApplyToEveryRadioChange: (checked: boolean) =>
+              setApplyToEveryRadio(build.id, checked),
+          },
+        }
+      : {}),
+    ...(hasPersistedStepKeySwitch(build.radioTargetId)
       ? {
           stepKeys: {
             checked: build.exportSettings?.assignMm9pdyStepKeys === true,
@@ -266,16 +339,58 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         view={flowView}
         actions={{ ...flowActions, onViewCheckReport: () => setVerifyReportOpen(true) }}
       />
-      <WebSerialExperimentalAlert />
-      <Text fw={600} size="sm">
-        Direct radio (Web Serial)
-      </Text>
-      <Text size="sm" c="dimmed">
-        {isAtD890Write
-          ? 'Write assembles modelled channels and organisation from the build, then reads co-resident bytes from the connected radio during upload. Unmodelled settings are preserved via erase-unit read-modify-write — not from a stored project image. Use Backup / Restore for a zip snapshot and ephemeral inspection.'
-          : 'Write overlays modelled channels and organisation onto an in-session read of the connected radio. Unmodelled settings are preserved from that live FLASH image — not from a stored project clone. Identity is the radio on the cable this session, not a saved stash. Use Backup / Restore for a zip snapshot.'}
-      </Text>
+      <WriteHeaderCard
+        radioLabel={radioLabel}
+        summary={
+          facts
+            ? buildSummaryLine({
+                channels: facts.channelCount,
+                zones: facts.zoneCount,
+                ...(isAtD890Write
+                  ? { settingChanges: atD890OverrideCount(settingsSession.overrides) }
+                  : {}),
+              })
+            : undefined
+        }
+        writeHidden={writeHidden}
+        disabled={!serialOk || flowView.busy}
+        onWrite={openWriteRadio}
+      />
       {!serialOk ? <Alert color="yellow">{getRadioSerialUnsupportedMessage()}</Alert> : null}
+      <BeforeYouWriteRows
+        radioLabel={descriptor?.label ?? 'radio'}
+        outOfRangeNames={facts?.outOfRangeChannelNames ?? []}
+        txRangeInfo={isAtD890Write}
+      />
+      {isAtD890Write ? <AtD890RadioSettingsCard buildId={build.id} egress={egress} /> : null}
+      {descriptorSupportsBackup(descriptor) ? <RadioBackupCard buildId={build.id} /> : null}
+      {isAtD890Write ? (
+        <div>
+          <Button
+            size="xs"
+            variant="subtle"
+            aria-expanded={coverageOpen}
+            onClick={() => setCoverageOpen((v) => !v)}
+          >
+            {coverageOpen ? 'Hide what Write updates' : 'What Write updates'}
+          </Button>
+          {coverageOpen ? (
+            <AtD890WriteCoverageTable
+              settingsChangeCount={atD890OverrideCount(settingsSession.overrides)}
+              buildId={build.id}
+              hasHydration={hasHydration}
+              mm9pdy={isMm9pdyAtD890RadioIoProfileId(egress.profileId)}
+            />
+          ) : null}
+        </div>
+      ) : null}
+      <ExperimentalNote
+        details={
+          isAtD890Write
+            ? 'Write assembles modelled channels and organisation from the build, then reads co-resident bytes from the connected radio during upload. Unmodelled settings are preserved via erase-unit read-modify-write — not from a stored project image. Use Backup / Restore for a zip snapshot and ephemeral inspection.'
+            : 'Write overlays modelled channels and organisation onto an in-session read of the connected radio. Unmodelled settings are preserved from that live FLASH image — not from a stored project clone. Identity is the radio on the cable this session, not a saved stash. Use Backup / Restore for a zip snapshot.'
+        }
+      />
       {attributionNames ? (
         <Text size="xs" c="dimmed">
           Protocol lineage thanks to {attributionNames}. See{' '}
@@ -284,20 +399,6 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
           </Anchor>
           .
         </Text>
-      ) : null}
-      {isAtD890Write ? (
-        <AtD890WriteCoverageTable
-          buildId={build.id}
-          hasHydration={hasHydration}
-          mm9pdy={isMm9pdyAtD890RadioIoProfileId(egress.profileId)}
-        />
-      ) : null}
-      {!writeHidden ? (
-        <div>
-          <Button size="xs" disabled={!serialOk || flowView.busy} onClick={openWriteRadio}>
-            Write radio
-          </Button>
-        </div>
       ) : null}
       {hasHydration && hydration ? (
         <Alert color="gray" title="Stored radio image (unused for Write)">
@@ -325,15 +426,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         <Text size="xs" c="dimmed">
           {resolveRadioWriteProdDisabledMessage(egress.profileId)}
         </Text>
-      ) : (
-        <Text size="xs" c="dimmed">
-          Snapshot and inspect this radio on{' '}
-          <Anchor component={Link} to={`/builds/${build.id}/backup`} size="xs">
-            Backup / Restore
-          </Anchor>
-          . Write uses a live in-session read.
-        </Text>
-      )}
+      ) : null}
       {isDm32RadioIoProfileId(egress.profileId) ? (
         <Text size="xs" c="dimmed">
           {DM32_ANALOG_CONTACTS_WRITE_GAP}

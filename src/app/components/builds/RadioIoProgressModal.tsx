@@ -51,6 +51,8 @@ export interface RadioIoProgressModalProps {
   onClose?: () => void;
   /** Extra sentence on a successful Write or Restore finish. Omitted radios show nothing. */
   successNote?: string;
+  /** Extra button beside Close once the run finishes (e.g. Restore's "Back to Export"). */
+  finishAction?: { label: string; onClick: () => void };
 }
 
 interface StepDef {
@@ -264,6 +266,7 @@ export default function RadioIoProgressModal({
   onCancel,
   onClose,
   successNote,
+  finishAction,
 }: RadioIoProgressModalProps) {
   const planned = plan != null && plan.length > 0;
   const transferStages: readonly string[] = planned
@@ -404,9 +407,16 @@ export default function RadioIoProgressModal({
         </Button>
       </>
     ) : (
-      <Button size="sm" onClick={() => onClose?.()}>
-        Close
-      </Button>
+      <>
+        {finishAction ? (
+          <Button variant="secondary" size="sm" onClick={finishAction.onClick}>
+            {finishAction.label}
+          </Button>
+        ) : null}
+        <Button size="sm" onClick={() => onClose?.()}>
+          Close
+        </Button>
+      </>
     )
   ) : (
     <Button variant="secondary" size="sm" onClick={onCancel}>

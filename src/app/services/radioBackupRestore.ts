@@ -30,6 +30,10 @@ import type {
 } from '@integrations/radio-io/types.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
+import {
+  cacheToMemoryMap,
+  type AtD890DownloadCache,
+} from '@integrations/radio-io/radios/at-d890uv/memory.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import type { Dm32ConfigWindow } from '@integrations/radio-io/radios/dm32uv/memory.ts';
 import {
@@ -152,6 +156,61 @@ export function packLiveRadioBackup(input: {
   return { manifest, zipBytes };
 }
 
+/**
+ * Pack an AT-D890UV backup from a download cache the session already holds: no radio traffic. A Write
+ * reads the same cache (`download()` is `cacheToMemoryMap(cache)`), so this is the zip a Backup of
+ * that radio would have produced. Pass `cache` to pack a copy taken earlier (the Write's Review does,
+ * so a later `upload()` cannot change what is saved). Does not download the zip.
+ */
+export function packAtD890BackupFromSession(
+  session: RadioSession,
+  opts?: { cache?: AtD890DownloadCache; capturedAt?: string },
+): RadioBackupSession {
+  const radio = session.radio;
+  if (!(radio instanceof AtD890uvProtocol)) {
+    throw new Error('Connected radio is not an AT-D890UV.');
+  }
+  const cache = opts?.cache ?? radio.getDownloadCache();
+  if (!cache || cache.blocks.size === 0) {
+    throw new Error('Nothing has been read from the radio yet.');
+  }
+  // Hydration reads the protocol's own cache, so a copy needs a protocol that holds the copy.
+  let hydrationProtocol: AtD890uvProtocol = radio;
+  if (opts?.cache) {
+    hydrationProtocol = new AtD890uvProtocol();
+    hydrationProtocol.seedDownloadCache(opts.cache);
+  }
+  return packAtD890BackupFromImage(
+    session,
+    cacheToMemoryMap(cache),
+    opts?.capturedAt,
+    hydrationProtocol,
+  );
+}
+
+function packAtD890BackupFromImage(
+  session: RadioSession,
+  image: MemoryMap,
+  capturedAt?: string,
+  hydrationProtocol: CloneImageRadio = session.radio,
+): RadioBackupSession {
+  const firmware = session.radio.readFirmware(image) ?? undefined;
+  const modelId = session.descriptor.modelIds[0] ?? 'radio';
+  const inspectBag = session.descriptor.hydration.extractHydration(image, {
+    sourceFileName: `web-serial:${modelId}`,
+    protocol: hydrationProtocol,
+    capturedAt: capturedAt ?? new Date().toISOString(),
+  });
+  const { manifest, zipBytes } = packLiveRadioBackup({
+    descriptor: session.descriptor,
+    image,
+    inspectBag,
+    firmware: firmware ?? inspectBag.retain.firmware,
+    capturedAt: inspectBag.capturedAt,
+  });
+  return { source: 'live-read', manifest, image, inspectBag, zipBytes };
+}
+
 export async function backupLiveRadioSession(
   session: RadioSession,
   opts?: { onProgress?: ProgressFn; signal?: AbortSignal },
@@ -160,6 +219,11 @@ export async function backupLiveRadioSession(
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
+  if (session.radio instanceof AtD890uvProtocol) {
+    const packed = packAtD890BackupFromImage(session, image);
+    downloadRadioBackupZip(packed.zipBytes, packed.manifest);
+    return packed;
+  }
   const firmware = session.radio.readFirmware(image) ?? undefined;
   const modelId = session.descriptor.modelIds[0] ?? 'radio';
   const inspectBag = session.descriptor.hydration.extractHydration(image, {
@@ -297,6 +361,11 @@ export type RestoreAddressMapLive = {
 
 export function protocolSupportsRestore(radio: CloneImageRadio): boolean {
   return typeof radio.restoreFromBackup === 'function';
+}
+
+/** Backup reads the radio through the descriptor's clone-image hooks; a radio without them has none. */
+export function descriptorSupportsBackup(descriptor: RadioDescriptor | undefined): boolean {
+  return typeof descriptor?.hydration?.extractHydration === 'function';
 }
 
 export function descriptorSupportsRestore(descriptor: RadioDescriptor | undefined): boolean {

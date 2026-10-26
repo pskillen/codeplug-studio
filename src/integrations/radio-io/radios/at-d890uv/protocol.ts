@@ -60,12 +60,22 @@ import {
 import { assertAtD890LocalInfoPlausible } from './identityCheck.ts';
 import {
   assertPreservedBytesMatchFreshRead,
+  type AtD890StagingChunk,
   listSparseStagingChunks,
   modelledAddressSetFromChunks,
   overlayModelledChunksOntoUnit,
   preWriteChunksFromFreshUnits,
 } from './sparseEraseRmw.ts';
-import { patchMm9pdyStepKeysOnEraseUnit } from './mm9pdyStepKeys.ts';
+import {
+  assertAtD890SettingsPatchesPermitted,
+  type AtD890RadioSettingsSnapshot,
+  type AtD890SettingsPatch,
+} from './settingsFields.ts';
+import {
+  applyAtD890SettingsPatchesToUnit,
+  assertAtD890SentinelSpansNotErased,
+  atD890PatchMaskMap,
+} from './settingsPatch.ts';
 import {
   captureAtD890WriteStagingSnapshot,
   cloneAtD890WriteStagingSnapshot,
@@ -75,6 +85,7 @@ import { assertAtD890TransmitAddress } from './writableExtents.ts';
 import { restoreAtD890FromBackup, type AtD890RestoreArchive } from './restoreFromBackup.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
+import { assertAtD890NoStunKill, atD890StunKillState } from './stunKillGuard.ts';
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 
@@ -487,18 +498,63 @@ export async function downloadAtD890SparseRegions(
   }
 }
 
+/**
+ * Shown when LocalInfo could not be read, so the stun/kill state is unknown (#1288). END could clear a
+ * flag and rewrite LocalInfo, so Studio treats unknown like set: no END, no write.
+ */
+export const AT_D890_STUN_KILL_UNKNOWN_MESSAGE =
+  "Studio could not read this radio's local info, so it cannot tell whether the radio carries a stun or kill flag. It has stopped without sending END and has not written anything. Power-cycle the radio, then try again.";
+
 export class AtD890uvProtocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
   private cache: AtD890DownloadCache | null = null;
   private programming = false;
   private readBlockSize = AT_D890_BLOCK_SIZE;
   private identRaw: Uint8Array | null = null;
+  private identBandCode = 0;
+  /** LocalInfo `+0x00` / `+0x01` read at Connect (#1288); `null` when it could not be read. */
+  private localInfoFlags: readonly [number, number] | null = null;
   private lastUploadSentinelBefore: AtD890SentinelSnapshot | undefined;
   private lastUploadStagingSnapshot: AtD890WriteStagingSnapshot | undefined;
+  private lastUploadSettingsPatches: readonly AtD890SettingsPatch[] | undefined;
   private uploadBankIntent: AtD890UploadBankIntent = {
     replaceAmAirBank: false,
     replaceTalkgroupOrder: false,
   };
+
+  /** Band code from the connection ident (byte 8); `0` before connect. */
+  getIdentBandCode(): number {
+    return this.identBandCode;
+  }
+
+  /**
+   * True when LocalInfo `+0x00` or `+0x01` is non-zero (stun/kill flag, #1288). The radio's END then
+   * clears the flag and erases and rewrites LocalInfo, so Studio never sends END to it and never writes to it.
+   */
+  hasStunKillFlag(): boolean {
+    const f = this.localInfoFlags;
+    return f !== null && atD890StunKillState(Uint8Array.from(f)).flagged;
+  }
+
+  /** True when LocalInfo could not be read at Connect: the state is unknown and is treated like a set flag. */
+  stunKillStateUnknown(): boolean {
+    return this.pipe !== null && this.localInfoFlags === null;
+  }
+
+  /** Never send `END` (and never write) when the flag is set or its state is unknown. */
+  mustNotEnd(): boolean {
+    return this.hasStunKillFlag() || this.stunKillStateUnknown();
+  }
+
+  /** Throws before any frame when the radio reports a stun/kill flag. */
+  assertNoStunKillFlag(): void {
+    const f = this.localInfoFlags;
+    if (f === null) {
+      if (this.pipe !== null) throw new RadioProtocolError(AT_D890_STUN_KILL_UNKNOWN_MESSAGE);
+      return;
+    }
+    assertAtD890NoStunKill(Uint8Array.from(f));
+  }
 
   getNegotiatedReadBlockSize(): number {
     return this.readBlockSize;
@@ -542,6 +598,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
     this.cache = { blocks: new Map() };
     this.programming = false;
     this.readBlockSize = AT_D890_BLOCK_SIZE;
+    this.localInfoFlags = null;
 
     await atD890EnterProgram(pipe, opts?.signal);
     this.programming = true;
@@ -549,14 +606,36 @@ export class AtD890uvProtocol implements CloneImageRadio {
     this.identRaw = ident.raw.slice();
     this.cache.modelString = ident.model;
     this.cache.firmware = ident.version;
+    this.identBandCode = ident.bandCode;
 
     try {
-      const { bestBlockSize } = await negotiateAtD890ReadBlockSize(pipe, D890_MAP.LocalInfo, {
-        signal: opts?.signal,
-      });
+      const { bestBlockSize, baseline } = await negotiateAtD890ReadBlockSize(
+        pipe,
+        D890_MAP.LocalInfo,
+        { signal: opts?.signal },
+      );
       this.readBlockSize = bestBlockSize;
+      // The baseline is LocalInfo itself: the stun/kill flags need no extra read.
+      // A reply shorter than the two flag bytes is not a healthy read: leave the state unknown.
+      if (baseline.length >= 2) this.localInfoFlags = [baseline[0]!, baseline[1]!];
     } catch {
       this.readBlockSize = AT_D890_BLOCK_SIZE;
+    }
+    if (this.localInfoFlags === null) {
+      // The probe failed before it read LocalInfo: read the flags directly. If that also fails the
+      // state stays unknown, which is treated like a set flag (no END, no write).
+      try {
+        const head = await atD890ReadMemory(
+          pipe,
+          D890_MAP.LocalInfo,
+          AT_D890_BLOCK_SIZE,
+          opts?.signal,
+          AT_D890_BLOCK_SIZE,
+        );
+        if (head.length >= 2) this.localInfoFlags = [head[0]!, head[1]!];
+      } catch {
+        await pipe.flush?.();
+      }
     }
 
     return {
@@ -569,7 +648,8 @@ export class AtD890uvProtocol implements CloneImageRadio {
   async disconnect(): Promise<void> {
     const pipe = this.pipe;
     try {
-      if (pipe && this.programming) {
+      // A stun/kill flag (#1288): END would clear it and rewrite LocalInfo, so leave without END.
+      if (pipe && this.programming && !this.mustNotEnd()) {
         await atD890ExitProgram(pipe);
       }
     } catch {
@@ -596,6 +676,18 @@ export class AtD890uvProtocol implements CloneImageRadio {
     return snap ? cloneAtD890SentinelSnapshot(snap) : undefined;
   }
 
+  /** Settings patches the last successful {@link upload} applied — consumed once. */
+  takeUploadSettingsPatches(): readonly AtD890SettingsPatch[] | undefined {
+    const patches = this.lastUploadSettingsPatches;
+    this.lastUploadSettingsPatches = undefined;
+    return patches?.map((p) => ({
+      fieldId: p.fieldId,
+      address: p.address,
+      bytes: p.bytes.slice(),
+      mask: p.mask.slice(),
+    }));
+  }
+
   /** Staging chunks from the last successful {@link upload} — consumed once. */
   takeUploadStagingSnapshot(): AtD890WriteStagingSnapshot | undefined {
     const snap = this.lastUploadStagingSnapshot;
@@ -606,7 +698,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
   /** Re-read never-write regions and diff against a pre-Write snapshot (cross-session). */
   async verifySentinelRegionsAgainst(
     before: AtD890SentinelSnapshot,
-    opts?: { signal?: AbortSignal },
+    opts?: { signal?: AbortSignal; settingsPatches?: readonly AtD890SettingsPatch[] },
   ): Promise<AtD890SentinelCompareResult> {
     if (!this.pipe) {
       throw new RadioProtocolError('AT-D890UV not connected');
@@ -616,7 +708,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
       this.programming = true;
     }
     const after = await snapshotAtD890SentinelRegions(this.pipe, opts?.signal, this.readBlockSize);
-    return compareAtD890SentinelSnapshots(before, after);
+    return compareAtD890SentinelSnapshots(before, after, opts?.settingsPatches);
   }
 
   async download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap> {
@@ -638,6 +730,8 @@ export class AtD890uvProtocol implements CloneImageRadio {
     if (!this.pipe || !this.cache) {
       throw new RadioProtocolError('AT-D890UV not connected');
     }
+    this.assertNoStunKillFlag();
+    assertAtD890SettingsPatchesPermitted(this.uploadBankIntent.settingsPatches ?? []);
     if (!this.programming) {
       await atD890EnterProgram(this.pipe, opts.signal);
       this.programming = true;
@@ -670,16 +764,103 @@ export class AtD890uvProtocol implements CloneImageRadio {
     };
 
     const modelledChunks = listWriteChunks(this.cache, AT_D890_SAFE_SKIP_WRITE_ADDR);
-    const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
-    const touchedUnits = listTouchedEraseUnits(modelledChunks.map((c) => c.address));
-    const touchedUnitSet = new Set(touchedUnits);
-    const assignStepKeys = this.uploadBankIntent.assignMm9pdyStepKeys === true;
-    const stepKeyUnit = eraseUnitBaseFor(D890_MAP.OptionalSettingsMain);
-    if (assignStepKeys && !touchedUnitSet.has(stepKeyUnit)) {
-      touchedUnits.push(stepKeyUnit);
-      touchedUnitSet.add(stepKeyUnit);
+    await this.rmwStageAndTransmit({
+      updateDownloadCache: true,
+      modelledChunks,
+      touchedUnits: listTouchedEraseUnits(modelledChunks.map((c) => c.address)),
+      settingsPatches: this.uploadBankIntent.settingsPatches ?? [],
+      ownsLocationUnit: this.uploadBankIntent.channelLocationTable !== undefined,
+      preUploadCache,
+      opts,
+    });
+  }
+
+  /**
+   * Settings-only Write: apply `patches` to the fresh read of the settings erase unit and
+   * transmit that unit's non-`0xff` blocks, nothing else. Goes through the same RMW core as
+   * {@link upload}: sentinel and LocalInfo plausibility, marker filter, transmit fence limited to
+   * erase unit `0x3500000`, staging snapshot, and the no-`END` failure path. Needs no Download.
+   */
+  async uploadSettingsPatches(
+    patches: readonly AtD890SettingsPatch[],
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal },
+  ): Promise<void> {
+    if (!this.pipe) {
+      throw new RadioProtocolError('AT-D890UV not connected');
     }
-    const ownsLocationUnit = this.uploadBankIntent.channelLocationTable !== undefined;
+    if (patches.length === 0) {
+      throw new RadioProtocolError('AT-D890UV settings upload has no patches');
+    }
+    this.assertNoStunKillFlag();
+    assertAtD890SettingsPatchesPermitted(patches);
+    if (!this.programming) {
+      await atD890EnterProgram(this.pipe, opts.signal);
+      this.programming = true;
+    }
+    await this.rmwStageAndTransmit({
+      // A settings-only Write must not fabricate a download cache: a later codeplug Write relies
+      // on an empty cache to trigger the in-session download and the empty-cache guard.
+      updateDownloadCache: (this.cache?.blocks.size ?? 0) > 0,
+      modelledChunks: [],
+      touchedUnits: [eraseUnitBaseFor(D890_MAP.OptionalSettingsMain)],
+      settingsPatches: patches,
+      ownsLocationUnit: false,
+      opts,
+    });
+  }
+
+  /** Cheap read of the settings spans (W9): no other reads, no cache changes. */
+  async readSettingsSnapshot(opts?: {
+    signal?: AbortSignal;
+  }): Promise<AtD890RadioSettingsSnapshot> {
+    const pipe = this.pipe;
+    if (!pipe) {
+      throw new RadioProtocolError('AT-D890UV not connected');
+    }
+    if (!this.programming) {
+      await atD890EnterProgram(pipe, opts?.signal);
+      this.programming = true;
+    }
+    const read = (address: number, length: number) =>
+      atD890ReadMemory(pipe, address, length, opts?.signal, this.readBlockSize);
+    const localInfo = await read(D890_MAP.LocalInfo, D890_MAP.LocalInfoLength);
+    const main = await read(D890_MAP.OptionalSettingsMain, D890_MAP.OptionalSettingsMainLength);
+    const ext = await read(D890_MAP.OptionalSettingsExt, D890_MAP.OptionalSettingsExtLength);
+    const masterId = await read(D890_MAP.MasterIdData, D890_MAP.MasterIdLength);
+    return { localInfo, main, ext, masterId, bandCode: this.identBandCode };
+  }
+
+  /**
+   * Erase-unit read-modify-write: fresh-read each touched unit, overlay the modelled chunks, apply
+   * the settings patches, stage the non-`0xff` blocks and transmit them. Shared by {@link upload}
+   * and {@link uploadSettingsPatches}; every guard below applies to both.
+   */
+  private async rmwStageAndTransmit(args: {
+    modelledChunks: readonly AtD890StagingChunk[];
+    touchedUnits: readonly number[];
+    settingsPatches: readonly AtD890SettingsPatch[];
+    ownsLocationUnit: boolean;
+    /** Mirror transmitted blocks into the download cache (false: leave it untouched). */
+    updateDownloadCache: boolean;
+    /** Cache as it stood before the write image was applied; unset skips the staleness guard. */
+    preUploadCache?: AtD890DownloadCache;
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal };
+  }): Promise<void> {
+    const pipe = this.pipe;
+    if (!pipe) {
+      throw new RadioProtocolError('AT-D890UV not connected');
+    }
+    const { modelledChunks, settingsPatches, ownsLocationUnit, preUploadCache, opts } = args;
+    // Last line of defence: nothing outside the allow-list reaches the wire, whoever built the patch.
+    assertAtD890SettingsPatchesPermitted(settingsPatches);
+    const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
+    const touchedUnits = [...args.touchedUnits];
+    const touchedUnitSet = new Set(touchedUnits);
+    const settingsUnit = eraseUnitBaseFor(D890_MAP.OptionalSettingsMain);
+    if (settingsPatches.length > 0 && !touchedUnitSet.has(settingsUnit)) {
+      touchedUnits.push(settingsUnit);
+      touchedUnitSet.add(settingsUnit);
+    }
     if (!ownsLocationUnit && touchedUnitSet.has(AT_D890_CHANNEL_LOCATION_UNIT_BASE)) {
       // Stock intents clear the pair from the cache; reaching here is a staging bug.
       throw new RadioProtocolError(
@@ -690,12 +871,13 @@ export class AtD890uvProtocol implements CloneImageRadio {
 
     try {
       const sentinelBefore = await snapshotAtD890SentinelRegions(
-        this.pipe,
+        pipe,
         opts.signal,
         this.readBlockSize,
       );
       assertAtD890SentinelRegionsPlausible(sentinelBefore);
       this.lastUploadSentinelBefore = cloneAtD890SentinelSnapshot(sentinelBefore);
+      this.lastUploadSettingsPatches = settingsPatches;
 
       const freshUnits = new Map<number, Uint8Array>();
       for (let u = 0; u < touchedUnits.length; u++) {
@@ -712,18 +894,12 @@ export class AtD890uvProtocol implements CloneImageRadio {
           },
           opts.signal,
         );
-        const data = await atD890ReadMemory(
-          this.pipe,
-          start,
-          length,
-          opts.signal,
-          this.readBlockSize,
-        );
+        const data = await atD890ReadMemory(pipe, start, length, opts.signal, this.readBlockSize);
         freshUnits.set(unitBase, data);
       }
 
       const liveLocal = await atD890ReadMemory(
-        this.pipe,
+        pipe,
         D890_MAP.LocalInfo,
         D890_MAP.LocalInfoLength,
         opts.signal,
@@ -746,18 +922,26 @@ export class AtD890uvProtocol implements CloneImageRadio {
         overlayModelledChunksOntoUnit(unitBase, mergedUnits.get(unitBase)!, unitChunks);
       }
 
-      if (assignStepKeys) {
-        const merged = mergedUnits.get(stepKeyUnit);
+      if (settingsPatches.length > 0) {
+        const merged = mergedUnits.get(settingsUnit);
         if (!merged) {
           throw new RadioProtocolError(
-            'AT-D890UV step-key patch has no fresh read of the optional-settings erase unit',
+            'AT-D890UV settings patch has no fresh read of the optional-settings erase unit',
           );
         }
-        modelledAddresses.add(patchMm9pdyStepKeysOnEraseUnit(stepKeyUnit, merged));
+        // Field patches ride on the fresh read. The patched blocks are not "modelled": the
+        // preserved check below allows only the patched bits to differ.
+        applyAtD890SettingsPatchesToUnit(settingsUnit, merged, settingsPatches);
+        assertAtD890SentinelSpansNotErased(settingsUnit, merged);
       }
 
       const stagingChunks = listSparseStagingChunks(mergedUnits, modelledAddresses);
-      assertPreservedBytesMatchFreshRead(stagingChunks, freshUnits, modelledAddresses);
+      assertPreservedBytesMatchFreshRead(
+        stagingChunks,
+        freshUnits,
+        modelledAddresses,
+        atD890PatchMaskMap(settingsPatches),
+      );
       // Defence in depth: markers are already omitted in listSparseStagingChunks.
       // Keep this filter so a future staging change cannot put them on the wire.
       //
@@ -810,11 +994,12 @@ export class AtD890uvProtocol implements CloneImageRadio {
           },
           opts.signal,
         );
-        await atD890WriteMemory(this.pipe, address, data, opts.signal, { transmitGuard });
-        putCacheBytes(this.cache, address, data);
+        await atD890WriteMemory(pipe, address, data, opts.signal, { transmitGuard });
+        if (args.updateDownloadCache && this.cache) putCacheBytes(this.cache, address, data);
       }
     } catch (err) {
       this.lastUploadSentinelBefore = undefined;
+      this.lastUploadSettingsPatches = undefined;
       this.lastUploadStagingSnapshot = undefined;
       this.abandonProgramMode();
       throw err;

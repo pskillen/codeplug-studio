@@ -73,11 +73,12 @@ flowchart LR
   end
 ```
 
-| Composition      | Persist                       | `assemble`? | Feeds Write-codeplug? |
-| ---------------- | ----------------------------- | ----------- | --------------------- |
-| Backup / inspect | Optional zip only             | No          | No                    |
-| Pre-write read   | RAM, same connection as Write | Overlay yes | Yes                   |
-| Restore          | Zip → radio                   | No          | No                    |
+| Composition                                                                                 | Persist                          | `assemble`? | Feeds Write-codeplug?                                                                                       |
+| ------------------------------------------------------------------------------------------- | -------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| Backup / inspect                                                                            | Optional zip only                | No          | No                                                                                                          |
+| Pre-write read                                                                              | RAM, same connection as Write    | Overlay yes | Yes                                                                                                         |
+| Restore                                                                                     | Zip → radio                      | No          | No                                                                                                          |
+| Settings-only (AT-D890UV, [#1393](https://github.com/pskillen/codeplug-studio/issues/1393)) | RAM overrides, this session only | No          | No. Field patches on the fresh settings-unit read; reuses the Write RMW core, never Restore's region replay |
 
 Leaving the Backup / Restore page discards the RAM session. The zip on disk is the durable copy. Restore opens a **new** serial connection (backup already closed after read).
 
@@ -138,6 +139,7 @@ Do **not** import old Radio Info debug zips (`hydration.json`). None are expecte
 3. Region table: restorable vs inspect-only. Restore defaults to **all restorable** regions; the operator may uncheck restorable rows. Inspect-only rows cannot be enabled. The service drops inspect-only even if the UI is tampered.
 4. Inspect body: **what is on this image**, not “written from your build.” Occupancy plus **expandable** channel / zone / scan / talk-group / contact lists where codecs already exist. D890 Local info (including the read-only AT-D890 frequency range row, [band-code.md](../../reference/radios/anytone/at-d890uv/band-code.md)) / optional settings / APRS / alarm stay collapsed read-only forensics. Inspect-only regions remain in the region table and are not restore targets.
 5. Secondary: save zip again / clear / read again.
+6. **Backups saved this session** (last section, on the empty and populated page): each backup taken on this page or saved from the Write's Review, newest first, with the radio's own name when known and the model beneath it (the model alone when no name: the Backup page cannot read a name, Review can on the D890), its serial in full and the time; "No backups this session" when there are none. Per build (a radio backed up under another build is not listed here), per tab, in memory only, cleared by a reload. A blank serial is listed but never matches another backup, so Review does not claim "Backup saved" for a radio whose serial it cannot read ([#1393](https://github.com/pskillen/codeplug-studio/issues/1393) PR 4d; store `radioSessionBackups.ts`). The Export panel's Backup card shows the latest entry.
 
 Write-coverage tables stay on the **Export** write panel. They must not become the lead copy here.
 
@@ -146,6 +148,8 @@ Write-coverage tables stay on the **Export** write panel. They must not become t
 Confirm modal: connected model + serial (or firmware / label when the archive has no serial). **Serial mismatch is an error, not a confirm option.**
 
 Progress modal operation **`restore`** — copy must not say “Writing codeplug.” Abort / disconnect like other radio-io flows.
+
+When a Restore finishes, the progress dialog offers **Back to Export** beside Close.
 
 Optional post-restore verify where the descriptor already has `writeVerify` (same idea as Write). Not a blocker for families without hooks.
 
@@ -238,6 +242,10 @@ Build `inspectBag` with `descriptor.hydration.extractHydration(image, { protocol
 7. Do **not** gate Restore on vestigial `prodWriteDisabled` (no adapter sets it). Deleting that flag is not this feature.
 
 **Must not** call: `assemble()`, `buildRadioWriteProjection`, `prepareRadioWriteImage`, `mergeChannelsIntoHydration`, or D890 encode/assemble-from-build helpers.
+
+**Backup from the Write's read (AT-D890UV, [#1393](https://github.com/pskillen/codeplug-studio/issues/1393)).** A Backup is `download()` + `extractHydration` + `packLiveRadioBackup`, and a codeplug Write runs the same `download()` before it transmits. The Write stepper's Review step therefore offers **Save backup now**: it packs the read the Write already holds (`packAtD890BackupFromSession`, from a copy of the cache taken at the pause) into the same zip, with no further radio traffic. A settings-only Write reads only the settings spans, so Review's button first reads the rest in the held session. Restore is unchanged.
+
+The reverse holds too: the AT-D890UV settings-only Write (`uploadSettingsPatches`) reuses the Write RMW core and must never call `restoreFromBackup` or replay a settings region. Restore is the only whole-region settings replay.
 
 App entry: `src/app/services/radioBackupRestore.ts` — a sibling of write session code, not a branch inside `prepareRadioWriteImage`.
 

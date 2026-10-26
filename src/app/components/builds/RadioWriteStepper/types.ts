@@ -37,7 +37,7 @@ export function stepBarLabel(step: WriteStep): string {
   return `${WRITE_STEPS.indexOf(step) + 1} of ${WRITE_STEPS.length} · ${WRITE_STEP_LABEL[step]}`;
 }
 
-/** What Studio knows about the connected radio. Serial is shown masked (last 4). */
+/** What Studio knows about the connected radio. Serial is shown in full. */
 export interface RadioIdentityView {
   model: string;
   serial?: string;
@@ -62,7 +62,7 @@ export interface WriteStepperConfig {
   kepsSummary?: string;
   kepsLastUpdatedIso?: string | null;
   channelLocationNote?: string | null;
-  /** MM9PDY step-key switch (D890: removed in PR 4c; DM-32 keeps it). */
+  /** MM9PDY step-key switch (DM-32 only; the AT-D890 has the Review nudge instead). */
   stepKeys?: {
     checked: boolean;
     description: string;
@@ -72,6 +72,16 @@ export interface WriteStepperConfig {
   restartWaitSeconds: number;
   /** Closing the session (Cancel on Review) sends END and the radio restarts (Q-C). */
   cancelRestartsRadio?: boolean;
+  /** AT-D890 Radio settings part and Done-screen choice. Absent on every other radio. */
+  radioSettings?: {
+    /** Fields set this session. */
+    count: number;
+    /** The first few changes in words. */
+    words: string[];
+    /** "Don't ask again for other radios until I reload" (the Done screen's tick). */
+    applyToEveryRadio: boolean;
+    onApplyToEveryRadioChange: (checked: boolean) => void;
+  };
   /** Radios with a Check write step. */
   supportsCheck: boolean;
   /** Extra sentence on the Done step (DM-32: power-cycle the radio). */
@@ -93,6 +103,10 @@ export interface WriteStageRow {
 export interface WriteSummary {
   codeplugWritten: boolean;
   contactsWritten: boolean;
+  /** Radio settings applied to this radio: how many fields changed; null when none were applied. */
+  settingsChanged: number | null;
+  /** Radio settings was ticked. */
+  settingsTicked: boolean;
   channelCount: number;
   kepsResult: SatelliteKepsWriteResult | null;
   /** Keps were ticked (so "not written" is worth saying when `kepsResult` is null). */
@@ -112,8 +126,15 @@ export interface WriteReviewView {
   estimateSeconds: number | null;
   /** Studio reads the rest while writing (radios whose read happens inside upload). */
   identityOnly: boolean;
-  /** Per-radio sections from `reviewSectionsFor` (PR 4c adds the D890's). */
+  /** Per-radio sections from `reviewSectionsFor` (the D890's included). */
   sections: ReactNode[];
+  /** A Review that would write nothing (Radio settings alone with Keep): Write is disabled. */
+  writeDisabled?: boolean;
+  /**
+   * The parts the Write will actually send, when that differs from the ticked ones (the D890 with
+   * Keep chosen sends no settings). The primary button's label follows it.
+   */
+  effectiveParts?: WriteParts;
 }
 
 /** Everything the stepper renders. `useRadioWriteFlow` is the one producer. */
@@ -161,4 +182,6 @@ export interface WriteFlowActions {
   onWriteKepsAfterRestart: () => void;
   onWriteAnother: () => void;
   onViewCheckReport: () => void;
+  /** AT-D890 Radio settings part: Edit on the part row (the ticks are kept). */
+  onEditSettings: () => void;
 }

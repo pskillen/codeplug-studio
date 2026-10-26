@@ -25,6 +25,7 @@ One part in the Write stepper's "What to write" list (#1393): a tick, a title, a
 
 ## Behaviour
 
+- The AT-D890UV's **Radio settings** row is the one that can be disabled: no session changes means unticked, disabled, and _Set up…_ in the summary.
 - Options never render while unticked, so a part's choices cannot be changed without including it.
 - The part helpers (`writeButtonLabel`, `DEFAULT_WRITE_PARTS`, `clampPartsToSupport`) live in `writeParts.ts`.
 

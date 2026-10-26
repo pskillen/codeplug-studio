@@ -1202,7 +1202,7 @@ function AtD890RadioImageSections({
             <Accordion.Panel>
               <Text size="sm" c="dimmed" mb="sm">
                 {variant === 'inspect'
-                  ? 'Restore will not write optional settings.'
+                  ? 'Restore writes the optional settings too.'
                   : 'Decoded from optional settings @ 0x3500000 / 0x3500900 — never serial-written. CPS language here is separate from Chinese UI in Local info above.'}
               </Text>
               {summary.optionalSettingsRetain.length === 0 ? (

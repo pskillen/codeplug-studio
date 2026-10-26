@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Alert, FileButton, Group, Stack, Table, Text } from '@mantine/core';
 import { isDm32RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import { DM32_POWER_CYCLE_AFTER_SESSION_NOTE } from '@integrations/radio-io/radios/dm32uv/writeRole.ts';
@@ -45,6 +45,12 @@ import {
 } from '../../services/atD890VitalBackup.ts';
 import AtD890VitalBackupPanel from './AtD890VitalBackupPanel.tsx';
 import Dm32CalibrationBackupPanel from './Dm32CalibrationBackupPanel.tsx';
+import {
+  addBackupThisSession,
+  describeBackupRadio,
+  useBackupsThisSession,
+  type RadioBackupThisSession,
+} from '../../state/radioSessionBackups.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 
 function coverageCopy(coverage: RadioBackupSession['manifest']['coverage']): string {
@@ -58,9 +64,25 @@ function coverageCopy(coverage: RadioBackupSession['manifest']['coverage']): str
   }
 }
 
+function BackupRadioLabel({ backup }: { backup: RadioBackupThisSession }) {
+  const { primary, secondary } = describeBackupRadio(backup);
+  return (
+    <>
+      <Text size="sm">{primary}</Text>
+      {secondary ? (
+        <Text size="xs" c="dimmed">
+          {secondary}
+        </Text>
+      ) : null}
+    </>
+  );
+}
+
 export default function BuildRadioBackupPage() {
   const { build, egressPaths } = useBuildLayout();
   const radioEgress = findRadioIoEgress(egressPaths);
+  const navigate = useNavigate();
+  const backupsThisSession = useBackupsThisSession(build.id);
 
   const sessionRef = useRef<RadioSession | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -168,6 +190,12 @@ export default function BuildRadioBackupPage() {
         signal: abortRef.current!.signal,
       });
       await releaseSession();
+      addBackupThisSession(build.id, {
+        serial: result.manifest.serial ?? '',
+        model: result.manifest.descriptorLabel,
+        name: '',
+        at: Date.now(),
+      });
       applyBackupSession(result);
       setPhase('done');
     } catch (err) {
@@ -515,6 +543,44 @@ export default function BuildRadioBackupPage() {
           </>
         )}
 
+        <FormSection title="Backups saved this session">
+          {backupsThisSession.length === 0 ? (
+            <Text size="sm" c="dimmed">
+              No backups this session
+            </Text>
+          ) : (
+            <Table>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Radio</Table.Th>
+                  <Table.Th>Serial</Table.Th>
+                  <Table.Th>Saved</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {[...backupsThisSession].reverse().map((b, i) => (
+                  <Table.Tr key={`${b.at}-${i}`}>
+                    <Table.Td>
+                      <BackupRadioLabel backup={b} />
+                    </Table.Td>
+                    <Table.Td>{b.serial || '—'}</Table.Td>
+                    <Table.Td>
+                      {new Date(b.at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Table.Td>
+                  </Table.Tr>
+                ))}
+              </Table.Tbody>
+            </Table>
+          )}
+          <Text size="xs" c="dimmed" mt="xs">
+            This list is kept in this tab only and clears when you reload. Backups from the Write
+            review are listed too.
+          </Text>
+        </FormSection>
+
         {backup ? (
           <ConfirmModal
             open={restoreConfirmOpen}
@@ -556,6 +622,17 @@ export default function BuildRadioBackupPage() {
           navigationBlocked={leaveAttempted}
           onCancel={handleCancel}
           onClose={handleProgressClose}
+          finishAction={
+            operation === 'restore'
+              ? {
+                  label: 'Back to Export',
+                  onClick: () => {
+                    handleProgressClose();
+                    navigate(`/builds/${build.id}/export`);
+                  },
+                }
+              : undefined
+          }
           successNote={
             operation === 'restore' && dm32PowerCycle
               ? DM32_POWER_CYCLE_AFTER_SESSION_NOTE

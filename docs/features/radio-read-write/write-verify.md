@@ -36,6 +36,7 @@ The app orchestration (post-write prompt, debounced **Verify write** button, pro
    - `formatDebugMarkdown(result, context)` — agent-oriented export (full mismatch list + hints).
    - `requiresCrossSessionReconnect` — `true` when the operator must wait for radio restart before verify (D890, OpenGD77); `false` for soft reconnect (RT95, UV, DM-32).
 2. **Kept snapshot opacity** — serialize adapter-specific retained bytes into `WriteVerifyKeptSnapshot` (`Record<string, unknown>`). D890 and OpenGD77 use `{ entries: [{ id, data: number[] }] }`.
+   - A Write may deliberately change a kept span. D890: the kept JSON carries the Write's settings patches (`patches`: field id, address, bytes, mask; absent in payloads stored before they existed). The sentinel compare expects each span to read `before ⊕ patches`: a patched byte must equal its new value, every other byte must equal `before` ([#1394](https://github.com/pskillen/codeplug-studio/issues/1394), [at-d890uv-radio-settings.md](at-d890uv-radio-settings.md)).
 3. **Compare exclusions** — document adapter-owned rules (D890: erase-unit bookkeeping; `not_read` never fabricates bytes). Prefer `writeVerifyCompare.ts` for full-image / dirty-sector adapters.
 4. **No app `instanceof`** — `instanceof` for concrete protocols stays inside the adapter module only (same rule as `RadioHydrationHooks`).
 5. **Storage** — generic `writeVerifyStorage` matches `buildId`, `egressId`, and **`profileId`**.

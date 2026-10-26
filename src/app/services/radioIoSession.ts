@@ -74,7 +74,11 @@ import {
   resolveRadioWriteProdDisabledMessage,
 } from './radioWriteEnvGate.ts';
 import { encodeAtD890WriteImageFromDownloadCache } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
-import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import {
+  AT_D890_STUN_KILL_UNKNOWN_MESSAGE,
+  AtD890uvProtocol,
+} from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { AtD890StunKillError } from '@integrations/radio-io/radios/at-d890uv/stunKillGuard.ts';
 import { encodeDm32uvWriteImageFromDownloadCache } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
@@ -86,8 +90,23 @@ import { Uv17ProProtocol } from '@integrations/radio-io/radios/uv17pro-family/pr
 import { Rt95Protocol } from '@integrations/radio-io/radios/rt95/protocol.ts';
 import { atD890ReadMemory } from '@integrations/radio-io/radios/at-d890uv/connection.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
-import { getCacheBytes } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
+import {
+  atD890UploadBankIntentFromOrganisation,
+  alignDownAtD890Address,
+  getCacheBytes,
+  type AtD890DownloadCache,
+} from '@integrations/radio-io/radios/at-d890uv/memory.ts';
+import { decodeAtD890MasterIdName } from '@integrations/radio-io/radios/at-d890uv/masterIdCodec.ts';
+import {
+  atD890LanguageLockProblem,
+  languageLockFromLocalInfo,
+} from '@integrations/radio-io/radios/at-d890uv/settingsCodec.ts';
+import type {
+  AtD890RadioSettingsSnapshot,
+  AtD890SettingsOverride,
+  AtD890SettingsTarget,
+} from '@integrations/radio-io/radios/at-d890uv/settingsFields.ts';
 import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import { isOpenGd77RadioIoEgress } from './radioIoChannelMap.ts';
 import { pushGeneralWarning, type ExportWarning } from '@core/import-export/exportWarning.ts';
@@ -150,6 +169,10 @@ function isHandshakeConnectFailure(err: unknown): boolean {
 function withBaudsTriedMessage(err: unknown, baudsTried: readonly number[]): Error {
   const list = baudsTried.join(', ');
   if (err instanceof Error) {
+    // The stun/kill refusals are not connect failures: keep their class and wording (#1288).
+    if (err instanceof AtD890StunKillError || err.message === AT_D890_STUN_KILL_UNKNOWN_MESSAGE) {
+      return err;
+    }
     if (err.message.includes('tried baud')) {
       return err;
     }
@@ -237,6 +260,15 @@ export async function openRadioSessionForEgress(
         ...(opts?.captureFactorySector ? { captureFactorySector: true as const } : {}),
       });
       const session = createRadioSession({ descriptor, pipe, radio });
+      if (radio instanceof AtD890uvProtocol && radio.mustNotEnd()) {
+        // #1288: END would clear a stun/kill flag and rewrite LocalInfo, and an unreadable LocalInfo
+        // leaves the state unknown. `disconnect()` leaves without END; nothing is read or written.
+        try {
+          radio.assertNoStunKillFlag();
+        } finally {
+          await closeRadioSession(session).catch(() => undefined);
+        }
+      }
       return { session, descriptor };
     } catch (err) {
       const baudsTried = bauds.slice(0, attempt + 1);
@@ -308,6 +340,57 @@ export interface RadioWriteBlockedCapacity {
   max: number;
   /** Human label for the target radio, e.g. `descriptor.label`. */
   radioLabel: string;
+}
+
+/**
+ * The operator cancelled at the pause before the first `W` frame (AT-D890UV settings overrides).
+ * Nothing was written; release the session as a Read-only session is released.
+ */
+export class RadioWriteCancelledError extends Error {
+  constructor(message = 'Write cancelled before anything was sent to the radio.') {
+    super(message);
+    this.name = 'RadioWriteCancelledError';
+  }
+}
+
+/** What the app shows at the pause: the radio's identity and settings, and what will change. */
+export interface AtD890PreTransmitContext {
+  /** LocalInfo serial of the connected radio. */
+  serial: string;
+  /** Master radio ID name as the radio holds it. */
+  masterIdName: string;
+  /** Settings spans from the in-session read (no extra reads). */
+  snapshot: AtD890RadioSettingsSnapshot;
+  overrides: readonly AtD890SettingsOverride[];
+  target: AtD890SettingsTarget;
+  /**
+   * A copy of the in-session download cache taken at the pause, before `upload()` can touch it, so
+   * Review's "Save backup now" packs what the radio held. Absent for a settings-only Write, which
+   * reads only the settings.
+   */
+  downloadCache?: AtD890DownloadCache;
+}
+
+/** `'apply'` writes the overrides, `'keep'` writes without them, `'cancel'` stops before any frame. */
+export type AtD890PreTransmitDecision = 'apply' | 'keep' | 'cancel';
+
+/**
+ * What the pause may resolve with. `'apply'` writes the overrides given when the Write started;
+ * the object form writes the overrides the user ended with at the pause (Review can add some, for
+ * example through the step-key nudge). Both are refused before any frame if a field is unknown,
+ * duplicated or out of range.
+ */
+export type AtD890PreTransmitResult =
+  AtD890PreTransmitDecision | { decision: 'apply'; overrides: readonly AtD890SettingsOverride[] };
+
+/** Normalise a pause result to its decision and the overrides it applies. */
+export function atD890PauseOutcome(
+  result: AtD890PreTransmitResult | void,
+  startOverrides: readonly AtD890SettingsOverride[],
+): { decision: AtD890PreTransmitDecision; overrides: readonly AtD890SettingsOverride[] } {
+  if (result === undefined) return { decision: 'keep', overrides: startOverrides };
+  if (typeof result === 'string') return { decision: result, overrides: startOverrides };
+  return { decision: result.decision, overrides: result.overrides };
 }
 
 export class RadioWriteBlockedError extends Error {
@@ -631,7 +714,7 @@ export async function writeBuildToRadio(
 export interface RadioWriteIdentity {
   /** Descriptor label, e.g. `Anytone AT-D890UV`. */
   model: string;
-  /** Full serial where the radio reports one in the read (the UI shows the last four only). */
+  /** Full serial where the radio reports one in the read (shown in full). */
   serial?: string;
   name?: string;
   /** Firmware where the radio reports it; unset means unknown. */
@@ -653,6 +736,8 @@ export interface BeforeTransmitContext {
    * ident (Review says "Studio reads the rest while writing").
    */
   identityOnly: boolean;
+  /** AT-D890UV only: the settings spans from the in-session read, for Review and the fleet choice. */
+  atD890?: AtD890PreTransmitContext;
 }
 
 /** Whether `resolveRadioWriteImageForUpload` reads the radio itself (every protocol but the generic path). */
@@ -683,6 +768,38 @@ export function radioWriteIdentityFromSession(session: RadioSession): RadioWrite
   return identity;
 }
 
+/** Context for the pause, built from the in-session download cache: no extra reads. */
+function buildAtD890PreTransmitContext(
+  radio: AtD890uvProtocol,
+  organisation: RadioWriteOrganisation,
+): AtD890PreTransmitContext {
+  const cache = radio.getDownloadCache() ?? { blocks: new Map<number, Uint8Array>() };
+  const localInfo = getCacheBytes(cache, D890_MAP.LocalInfo, D890_MAP.LocalInfoLength);
+  const masterId = getCacheBytes(cache, D890_MAP.MasterIdData, D890_MAP.MasterIdLength);
+  return {
+    serial: formatAtD890LocalInfoSerial(localInfo),
+    masterIdName: decodeAtD890MasterIdName(masterId),
+    snapshot: {
+      localInfo,
+      main: getCacheBytes(
+        cache,
+        D890_MAP.OptionalSettingsMain,
+        D890_MAP.OptionalSettingsMainLength,
+      ),
+      ext: getCacheBytes(cache, D890_MAP.OptionalSettingsExt, D890_MAP.OptionalSettingsExtLength),
+      masterId,
+      bandCode: radio.getIdentBandCode(),
+    },
+    overrides: organisation.atD890SettingsOverrides ?? [],
+    target: organisation.atD890SettingsTarget ?? 'stock',
+    downloadCache: {
+      ...(cache.firmware !== undefined ? { firmware: cache.firmware } : {}),
+      ...(cache.modelString !== undefined ? { modelString: cache.modelString } : {}),
+      blocks: new Map([...cache.blocks].map(([addr, data]) => [addr, data.slice()])),
+    },
+  };
+}
+
 /** Upload a prepared clone image after {@link prepareRadioWriteImage} and session connect. */
 export async function uploadPreparedRadioWrite(
   session: RadioSession,
@@ -698,9 +815,12 @@ export async function uploadPreparedRadioWrite(
     /**
      * Pause point (#1393): called after the in-session read and before the first frame is sent
      * (`session.radio.upload`). Resolve to transmit; reject to stop (nothing is sent). Omitted:
-     * the path is unchanged.
+     * the path is unchanged. On the AT-D890UV the callback may resolve `'apply'` (write the session
+     * settings overrides), `'keep'` or nothing (write without them), or `'cancel'` (stop).
      */
-    beforeTransmit?: (ctx: BeforeTransmitContext) => Promise<void>;
+    beforeTransmit?: (ctx: BeforeTransmitContext) => Promise<void | AtD890PreTransmitResult>;
+    /** AT-D890UV session settings overrides. Empty or unset: today's Write, byte for byte. */
+    settingsOverrides?: readonly AtD890SettingsOverride[];
   },
 ): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult; warnings?: ExportWarning[] }> {
   const hydration = getRadioCloneHydration(egress);
@@ -721,8 +841,21 @@ export async function uploadPreparedRadioWrite(
     opts,
   );
   setCachedImage(session, resolved);
+  // A flagged radio is refused at open; this is the backstop before the pause and any frame.
+  if (session.radio instanceof AtD890uvProtocol) session.radio.assertNoStunKillFlag();
+  const overrides = opts?.settingsOverrides ?? [];
+  const isAtD890 = session.radio instanceof AtD890uvProtocol;
+  const withOverrides: RadioWriteOrganisation = {
+    ...(opts?.organisation ?? {}),
+    ...(overrides.length > 0 ? { atD890SettingsOverrides: overrides } : {}),
+  };
+  if (isAtD890 && overrides.length > 0) {
+    // Resolve now so a refused override (unknown field, duplicate, out of range) fails before the
+    // pause and before any frame.
+    atD890UploadBankIntentFromOrganisation(withOverrides, opts?.channels);
+  }
   if (opts?.beforeTransmit) {
-    await opts.beforeTransmit({
+    const result = await opts.beforeTransmit({
       identity: radioWriteIdentityFromSession(session),
       channelCount: opts.channels?.length ?? 0,
       identityOnly: !writeReadsBeforeTransmit(session),
@@ -731,7 +864,48 @@ export async function uploadPreparedRadioWrite(
         session,
         ...(opts.parts ? { parts: opts.parts } : {}),
       }),
+      ...(session.radio instanceof AtD890uvProtocol
+        ? { atD890: buildAtD890PreTransmitContext(session.radio, withOverrides) }
+        : {}),
     });
+    const outcome = atD890PauseOutcome(result, overrides);
+    if (outcome.decision === 'cancel') throw new RadioWriteCancelledError();
+    if (outcome.decision === 'apply' && isAtD890 && outcome.overrides.length > 0) {
+      const chosen: RadioWriteOrganisation = {
+        ...(opts?.organisation ?? {}),
+        atD890SettingsOverrides: outcome.overrides,
+      };
+      // The radio re-forces its language from LocalInfo at every load: refuse one its region forbids.
+      const languageCache = session.radio.getDownloadCache();
+      // Fail closed: a language change with no LocalInfo in the cache cannot be checked against the lock.
+      if (
+        outcome.overrides.some((o) => o.fieldId === 'language') &&
+        !languageCache?.blocks.has(alignDownAtD890Address(D890_MAP.LocalInfo))
+      ) {
+        throw new RadioWriteBlockedError(
+          "Studio can't check this radio's language lock because its LocalInfo was not read; the Language change was not written.",
+        );
+      }
+      const languageProblem = atD890LanguageLockProblem(
+        outcome.overrides,
+        languageLockFromLocalInfo(
+          getCacheBytes(
+            languageCache ?? { blocks: new Map<number, Uint8Array>() },
+            D890_MAP.LocalInfo,
+            D890_MAP.LocalInfoLength,
+          ),
+        ),
+      );
+      if (languageProblem) throw new RadioWriteBlockedError(languageProblem);
+      // Resolve again: the overrides may have changed at the pause. Refused ones fail here, before upload.
+      atD890UploadBankIntentFromOrganisation(chosen, opts?.channels);
+      session.descriptor.hydration.seedProtocolForUpload?.(
+        session.radio,
+        hydration ?? undefined,
+        chosen,
+        opts?.channels,
+      );
+    }
   }
   await session.radio.upload(resolved, {
     onProgress: opts?.onProgress,

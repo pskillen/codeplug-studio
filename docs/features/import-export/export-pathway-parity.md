@@ -50,6 +50,7 @@ See also [name-shortening.md](name-shortening.md) for the documented abbreviatio
 Document as **loss** or **trait**, not as a pathway bug:
 
 - **Fields a wire format cannot carry** — e.g. CHIRP flat-memory CSV has no per-channel scan-list concept the way DMR CSV does; NeonPlug radio-settings merge vs CPS CSV's lossy `APRS.md`-guide approach.
+- **AT-D890UV radio settings** ([#1393](https://github.com/pskillen/codeplug-studio/issues/1393)) are **Web Serial only**: the Anytone CSV has no `OptionalSetting` export in Studio, so a settings override has no CSV counterpart. This is a wire-format limit, not a divergence. Fields: [optional-settings.md](../../reference/radios/anytone/at-d890uv/optional-settings.md).
 - **Genuine trait differences between radios** (not between pathways of the same radio) — e.g. OpenGD77 DM-1701/MD-9600 correctly drop YSF/D-STAR/P25/NXDN/M17/TETRA rows; flat-memory CHIRP radios have no zones.
 - **NeonPlug index FKs vs CSV name FKs** — architectural format difference; never "fix" by making one pathway match the other's relationship-key strategy.
 - **Deliberate per-radio export defaults** — e.g. `exportZoneDerivedScanLists` may differ between Anytone and DM32 as a product decision, but **the same radio's** CSV, serial, and NeonPlug egresses must still agree with each other.

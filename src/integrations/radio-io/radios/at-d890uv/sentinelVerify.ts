@@ -9,6 +9,8 @@ import type { BytePipe } from '../../types.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { atD890ReadMemory } from './connection.ts';
 import { AT_D890_SENTINEL_EXTENTS } from './writableExtents.ts';
+import type { AtD890SettingsPatch } from './settingsFields.ts';
+import { applyAtD890SettingsPatchesToBytes } from './settingsPatch.ts';
 
 export type AtD890SentinelSnapshot = ReadonlyMap<string, Uint8Array>;
 
@@ -52,16 +54,23 @@ function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
 
 /**
  * Cross-session diff of never-write regions captured before and after a committed Write.
+ *
+ * The Write's settings patches are expected changes: each region must read `before ⊕ patches`,
+ * so a patched byte must equal its new value and every other byte must equal `before`.
  */
 export function compareAtD890SentinelSnapshots(
   before: AtD890SentinelSnapshot,
   after: AtD890SentinelSnapshot,
+  patches: readonly AtD890SettingsPatch[] = [],
 ): AtD890SentinelCompareResult {
   const mismatches: AtD890SentinelMismatch[] = [];
   for (const extent of AT_D890_SENTINEL_EXTENTS) {
     const prior = before.get(extent.id);
     const next = after.get(extent.id);
-    if (!prior || !next || !bytesEqual(prior, next)) {
+    const expected = prior
+      ? applyAtD890SettingsPatchesToBytes(extent.start, prior, patches)
+      : undefined;
+    if (!expected || !next || !bytesEqual(expected, next)) {
       mismatches.push({ id: extent.id, label: labelForAtD890SentinelId(extent.id) });
     }
   }

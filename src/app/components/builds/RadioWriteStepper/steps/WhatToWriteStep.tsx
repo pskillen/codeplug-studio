@@ -11,6 +11,7 @@ import { Button, FormField, SegmentedControl } from '../../../v2/index.ts';
 import WritePartRow from '../WritePartRow.tsx';
 import classes from '../RadioWriteStepper.module.css';
 import type { WriteFlowActions, WriteFlowView, WriteStepperConfig } from '../types.ts';
+import { changesLabel } from '../../../../lib/atD890RadioSettingsText.ts';
 import { tickedPartCount } from '../writeParts.ts';
 
 const CONTACT_SOURCE_OPTIONS: {
@@ -59,6 +60,30 @@ export function WhatToWriteBody({ config, view, actions }: StepProps) {
             />
           ) : null}
         </WritePartRow>
+
+        {support.settings && config.radioSettings ? (
+          <WritePartRow
+            title="Radio settings"
+            summary={
+              <span data-testid="write-radio-settings-summary">
+                {config.radioSettings.count > 0
+                  ? changesLabel(config.radioSettings.count)
+                  : 'No changes set'}{' '}
+                ·{' '}
+                <Anchor component="button" type="button" size="xs" onClick={actions.onEditSettings}>
+                  {config.radioSettings.count > 0 ? 'Edit' : 'Set up…'}
+                </Anchor>
+              </span>
+            }
+            checked={parts.settings && config.radioSettings.count > 0}
+            disabled={config.radioSettings.count === 0}
+            onCheckedChange={(settings) => set({ settings })}
+          >
+            <Text size="xs" c="dimmed" data-testid="write-radio-settings-words">
+              {config.radioSettings.words.join(' · ')}
+            </Text>
+          </WritePartRow>
+        ) : null}
 
         {support.contacts ? (
           <WritePartRow

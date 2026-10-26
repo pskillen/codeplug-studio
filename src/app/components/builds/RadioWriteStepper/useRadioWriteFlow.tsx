@@ -18,10 +18,20 @@ import {
   type SingleBankWriteMode,
 } from '@core/domain/digitalIdDirectoryProjection.ts';
 import type { ExportWarning } from '@core/import-export/exportWarning.ts';
+import { isAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import type { Satellite } from '@core/models/satellite.ts';
+import type { RadioChannelDto } from '@integrations/radio-io/radioChannelDto.ts';
 import { reviewNeedsReconnect } from '@integrations/radio-io/programHold.ts';
+import { planForOperation } from '@integrations/radio-io/plannedStages.ts';
+import {
+  decodeAtD890RadioSettings,
+  languageLockFromLocalInfo,
+  mm9pdyStepKeyOverrides,
+} from '@integrations/radio-io/radios/at-d890uv/index.ts';
+import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { d890DownloadStages } from '@integrations/radio-io/radios/at-d890uv/plannedStages.ts';
 import type {
   PlannedStage,
   ProgressUpdate,
@@ -36,12 +46,32 @@ import type {
 import { loadLibrarySlice } from '../../../lib/loadLibrarySlice.ts';
 import { persistence } from '../../../state/persistence.ts';
 import {
+  clearOverride,
+  defaultSettingsChoice,
+  getAtD890RadioSettingsSession,
+  isSettingsReadRadio,
+  overridesForWrite,
+  setOverride,
+  setRead,
+  setStepperTicks,
+} from '../../../state/atD890RadioSettingsSession.ts';
+import { addBackupThisSession, findBackupForSerial } from '../../../state/radioSessionBackups.ts';
+import {
+  packAtD890BackupFromSession,
+  downloadRadioBackupZip,
+} from '../../../services/radioBackupRestore.ts';
+import { atD890SettingsReadFromSnapshot } from '../../../services/radioIoAtD890SettingsRead.ts';
+import { writeAtD890SettingsOnly } from '../../../services/radioIoAtD890SettingsWrite.ts';
+import {
   closeRadioSession,
   grantRadioSerialPortForEgress,
   openRadioSessionForEgress,
   prepareRadioWriteImage,
   uploadPreparedRadioWrite,
   verifyRadioWrite,
+  RadioWriteCancelledError,
+  type AtD890PreTransmitContext,
+  type AtD890PreTransmitResult,
   type BeforeTransmitContext,
   type GrantedRadioSerialPort,
 } from '../../../services/radioIoSession.ts';
@@ -57,6 +87,16 @@ import {
   type SatelliteKepsWriteFn,
   type SatelliteKepsWriteResult,
 } from '../../../services/satelliteKepsWriteAdapters.ts';
+import './d890/registerAtD890Review.tsx';
+import {
+  createAtD890ReviewController,
+  type AtD890ReviewController,
+} from './d890/atD890ReviewController.ts';
+import {
+  atD890ReceiveOnlyChannels,
+  atD890ReviewRange,
+  atD890SettingChanges,
+} from './d890/atD890ReviewFacts.ts';
 import { reviewSectionsFor } from './reviewSections.tsx';
 import {
   newTrack,
@@ -77,6 +117,7 @@ import type {
   WriteSummary,
 } from './types.ts';
 import { estimateWriteSeconds, measuredThroughput } from './writeEstimate.ts';
+import { clampPartsToSupport } from './writeParts.ts';
 import { DEFAULT_WRITE_PARTS, writesToRadioImage, type WriteParts } from './writeParts.ts';
 
 /** Clock for event handlers (kept out of render by the purity lint). */
@@ -106,6 +147,14 @@ export class ReconnectRequiredError extends Error {
   }
 }
 
+/** Thrown out of `beforeTransmit` for "Review its settings": nothing is sent, the settings page opens. */
+export class ReviewSettingsRequestedError extends Error {
+  constructor() {
+    super('Review the settings of this radio.');
+    this.name = 'ReviewSettingsRequestedError';
+  }
+}
+
 export interface UseRadioWriteFlowArgs {
   build: RadioBuild;
   egress: EgressPath;
@@ -117,13 +166,15 @@ export interface UseRadioWriteFlowArgs {
   kepsWriteFn?: SatelliteKepsWriteFn;
   /** The keps writer can share the codeplug's session (D890). Otherwise the radio restarts first. */
   kepsSameSessionAfterUpload: boolean;
+  /** AT-D890 only: open the settings page (Edit on the part row, Review its settings). */
+  onOpenSettingsPage?: () => void;
 }
 
 export interface RadioWriteFlow {
   view: WriteFlowView;
   actions: WriteFlowActions;
-  /** Open the dialog at step 1 with the default ticks. */
-  open: () => void;
+  /** Open the dialog at step 1 with the default ticks (or the ticks a part of the Write asks for). */
+  open: (initialParts?: Partial<WriteParts>) => void;
   /** The check's result, once a check ran. */
   checkResult: WriteVerifyResult | null;
   /** Empty-RadioID-directory prompt shown before the read starts. */
@@ -133,6 +184,8 @@ export interface RadioWriteFlow {
 interface WrittenFacts {
   codeplugWritten: boolean;
   contactsWritten: boolean;
+  /** Radio settings were applied to this radio (the count of fields that changed). */
+  settingsChanged: number | null;
   channelCount: number;
   kepsResult: SatelliteKepsWriteResult | null;
   kepsError: string | null;
@@ -142,6 +195,7 @@ interface WrittenFacts {
 const EMPTY_FACTS: WrittenFacts = {
   codeplugWritten: false,
   contactsWritten: false,
+  settingsChanged: null,
   channelCount: 0,
   kepsResult: null,
   kepsError: null,
@@ -162,7 +216,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     supportsSingleBankWrite,
     kepsWriteFn,
     kepsSameSessionAfterUpload,
+    onOpenSettingsPage,
   } = args;
+  const isAtD890 = isAtD890RadioIoProfileId(egress.profileId);
   const supportsDigitalContacts = supportsDualBankWrite || supportsSingleBankWrite;
   const writeVerifyHooks = descriptor?.writeVerify;
   const requiresReconnect = writeVerifyHooks?.requiresCrossSessionReconnect ?? true;
@@ -214,6 +270,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   const satellitesRef = useRef<Satellite[]>([]);
   const restartDeadlineRef = useRef(0);
   const pendingEmptyDirectoryRef = useRef<(() => void) | null>(null);
+  const settingsAppliedRef = useRef<number | null>(null);
+  const reviewUnsubscribeRef = useRef<(() => void) | null>(null);
+  const d890ControllerRef = useRef<AtD890ReviewController | null>(null);
   const partsRef = useRef(parts);
   const contactSourceRef = useRef(contactSource);
   useEffect(() => {
@@ -325,6 +384,10 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     readLabelsRef.current = new Set();
     transmitStartedRef.current = false;
     autoProceedRef.current = false;
+    settingsAppliedRef.current = null;
+    d890ControllerRef.current = null;
+    reviewUnsubscribeRef.current?.();
+    reviewUnsubscribeRef.current = null;
     setPhaseBoth('read');
   }
 
@@ -333,6 +396,8 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     setSummary({
       codeplugWritten: facts.codeplugWritten,
       contactsWritten: facts.contactsWritten,
+      settingsChanged: facts.settingsChanged,
+      settingsTicked: partsRef.current.settings,
       channelCount: facts.channelCount,
       kepsResult: facts.kepsResult,
       kepsTicked: partsRef.current.keps,
@@ -354,9 +419,15 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       channelCount: number;
       plan?: PlannedStage[];
       identityOnly: boolean;
+      atD890?: AtD890PreTransmitContext;
+      channels?: readonly RadioChannelDto[];
     },
     extra: { contactsNote: string | null; kepsCount: number | null },
   ): Promise<void> {
+    const reviewIdentity: RadioIdentityView = ctx.atD890?.masterIdName
+      ? { ...ctx.identity, name: ctx.atD890.masterIdName }
+      : ctx.identity;
+    ctx = { ...ctx, identity: reviewIdentity };
     identityRef.current = ctx.identity;
     setIdentity(ctx.identity);
     if (autoProceedRef.current) {
@@ -372,6 +443,11 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       readMs,
     );
     const writeOnly = writePartOfPlan(ctx.plan, readPlanRef.current);
+    if (ctx.atD890) {
+      d890ControllerRef.current = buildD890Controller(ctx.atD890, ctx.channels ?? [], p);
+    } else {
+      d890ControllerRef.current = null;
+    }
     updateWriteTrack((t) => trackWithPlan(t, writeOnly));
     const estimateSeconds = ctx.identityOnly
       ? null
@@ -385,6 +461,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       estimateSeconds,
       identityOnly: ctx.identityOnly,
       restartsAfterWrite: requiresReconnect && writesToRadioImage(p),
+      ...(d890ControllerRef.current ? { atD890: d890ControllerRef.current } : {}),
     };
     setReview({
       channelCount: ctx.channelCount,
@@ -393,13 +470,148 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       estimateSeconds,
       identityOnly: ctx.identityOnly,
       sections: descriptor ? reviewSectionsFor(descriptor, sectionsCtx) : [],
+      writeDisabled: d890ControllerRef.current ? !d890ControllerRef.current.canWrite() : false,
+      effectiveParts: effectivePartsFor(p),
     });
+    const controller = d890ControllerRef.current;
+    if (controller) {
+      reviewUnsubscribeRef.current?.();
+      // Keep the footer's Write button in step with the choice (settings alone with Keep writes nothing).
+      reviewUnsubscribeRef.current = controller.subscribe(() => {
+        setReview((r) =>
+          r
+            ? {
+                ...r,
+                writeDisabled: !controller.canWrite(),
+                effectiveParts: effectivePartsFor(partsRef.current),
+              }
+            : r,
+        );
+      });
+    }
     setBusyNotify(false);
     setStep('review');
     reviewOpenedAtRef.current = now();
     return new Promise<void>((resolve, reject) => {
       decisionRef.current = { resolve, reject };
     });
+  }
+
+  /** The D890 Review's live state: range, receive-only channels, settings choice and backup. */
+  function buildD890Controller(
+    atCtx: AtD890PreTransmitContext,
+    channels: readonly RadioChannelDto[],
+    p: WriteParts,
+  ): AtD890ReviewController {
+    const store = getAtD890RadioSettingsSession(build.id);
+    const sameRadio = isSettingsReadRadio(store, atCtx.serial);
+    const existing = findBackupForSerial(build.id, atCtx.serial);
+    const fullReadHeld = atCtx.downloadCache !== undefined;
+    const download = estimateWriteSeconds(d890DownloadStages(), null);
+    const controller: AtD890ReviewController = createAtD890ReviewController({
+      buildId: build.id,
+      serial: atCtx.serial,
+      masterIdName: atCtx.masterIdName,
+      range: atD890ReviewRange(atCtx.snapshot),
+      receiveOnly: atD890ReceiveOnlyChannels(channels, atCtx.snapshot.bandCode),
+      snapshot: atCtx.snapshot,
+      target: atCtx.target,
+      decoded: decodeAtD890RadioSettings(atCtx.snapshot, atCtx.target),
+      languageLock: languageLockFromLocalInfo(atCtx.snapshot.localInfo),
+      getOverrides: () => overridesForWrite(build.id),
+      onClearLanguage: () => clearOverride(build.id, 'language'),
+      initialSettingsTicked: p.settings,
+      sameRadio,
+      applyToEveryRadio: store.applyToEveryRadio,
+      settingsOnly: p.settings && !writesToRadioImage(p),
+      fullReadHeld,
+      readRestSeconds: download == null ? null : Math.round(download / 5) * 5,
+      initialChoice: defaultSettingsChoice(store, atCtx.serial),
+      initialBackup: existing ? { status: 'saved', at: existing.at } : { status: 'none' },
+      onSaveBackup: () => void saveD890Backup(atCtx, () => controller),
+      onReviewSettings: () => {
+        setRead(build.id, atD890SettingsReadFromSnapshot(atCtx.snapshot, atCtx.target, now()));
+        decisionRef.current?.reject(new ReviewSettingsRequestedError());
+      },
+      onUseStepKeys: () => {
+        for (const o of mm9pdyStepKeyOverrides()) setOverride(build.id, o.fieldId, o.value);
+        const next = { ...partsRef.current, settings: true };
+        partsRef.current = next;
+        setParts(next);
+        // Asking for the keys is asking for them to be written: Use implies Apply, even on another
+        // radio where Keep is preselected (70- §2.4; the user's latest action wins).
+        controller.setChoice('apply');
+        controller.setSettingsTicked(true);
+      },
+    });
+    return controller;
+  }
+
+  /** Review's "Save backup now": the zip of the read this Write already did (same format as Backup). */
+  async function saveD890Backup(
+    atCtx: AtD890PreTransmitContext,
+    controller: () => AtD890ReviewController,
+  ): Promise<void> {
+    const session = sessionRef.current;
+    const c = controller();
+    if (!session) return;
+    try {
+      let cache = atCtx.downloadCache;
+      if (!cache) {
+        c.setBackup({ status: 'reading' });
+        await session.radio.download({ signal: abortRef.current?.signal });
+        cache =
+          session.radio instanceof AtD890uvProtocol
+            ? (session.radio.getDownloadCache() ?? undefined)
+            : undefined;
+      }
+      c.setBackup({ status: 'saving' });
+      const packed = packAtD890BackupFromSession(session, cache ? { cache } : undefined);
+      downloadRadioBackupZip(packed.zipBytes, packed.manifest);
+      const at = now();
+      addBackupThisSession(build.id, {
+        serial: atCtx.serial,
+        model: session.descriptor.label,
+        name: atCtx.masterIdName,
+        at,
+      });
+      c.setBackup({ status: 'saved', at });
+    } catch (err) {
+      c.setBackup({ status: 'error', message: errorMessage(err) });
+    }
+  }
+
+  /**
+   * What the pause decides about the settings: Apply (with the overrides as they stand now) only
+   * when Radio settings is ticked, there are overrides, and the choice is Apply; otherwise Keep.
+   */
+  function settingsPauseResult(): AtD890PreTransmitResult {
+    if (!settingsWillBeWritten()) return 'keep';
+    return { decision: 'apply', overrides: overridesForWrite(build.id) };
+  }
+
+  /** Radio settings is ticked, there are overrides, and the choice is Apply. */
+  function settingsWillBeWritten(): boolean {
+    const c = d890ControllerRef.current;
+    if (!c) return false;
+    const state = c.getState();
+    return (
+      state.settingsTicked && state.choice === 'apply' && overridesForWrite(build.id).length > 0
+    );
+  }
+
+  /** The ticked parts, minus settings when the pause would answer Keep (the button names what is sent). */
+  function effectivePartsFor(p: WriteParts): WriteParts {
+    if (!d890ControllerRef.current || !p.settings || settingsWillBeWritten()) return p;
+    return { ...p, settings: false };
+  }
+
+  /** How many fields the applied settings changed on this radio (for the Done screen). */
+  function changedCount(): number {
+    const c = d890ControllerRef.current;
+    if (!c) return 0;
+    const overrides = overridesForWrite(build.id);
+    return atD890SettingChanges(c.init.snapshot, c.init.target, overrides).length;
   }
 
   /** After Review → Write: refuse to transmit on a session the radio may have dropped. */
@@ -510,53 +722,59 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
           organisation: image.organisation,
           channels: image.channels,
           parts: p,
+          ...(isAtD890 && p.settings ? { settingsOverrides: overridesForWrite(build.id) } : {}),
           beforeTransmit: async (ctx: BeforeTransmitContext) => {
-            await awaitReview(ctx, { contactsNote, kepsCount });
+            await awaitReview({ ...ctx, channels: image.channels }, { contactsNote, kepsCount });
             enterWriting();
+            if (!ctx.atD890) return undefined;
+            const decision = settingsPauseResult();
+            if (typeof decision !== 'string') settingsAppliedRef.current = changedCount();
+            return decision;
           },
         });
         factsRef.current = {
           ...factsRef.current,
           codeplugWritten: p.codeplug,
           contactsWritten: p.contacts,
+          settingsChanged: settingsAppliedRef.current,
           channelCount: image.channels.length,
           warnings: [...image.warnings, ...(result.warnings ?? [])],
         };
-        if (p.keps && kepsSameSessionAfterUpload) {
-          // The keps unit is never touched by upload(); the writer does its own fresh read on the open pipe.
-          // The codeplug is already on the radio (closing the session sends END, which commits it), so a
-          // keps failure or abort is reported next to that fact, not as a failed write.
-          try {
-            await writeKeps(session);
-          } catch (err) {
-            const aborted = signal.aborted;
-            const reason = aborted ? 'cancelled' : errorMessage(err);
-            factsRef.current = { ...factsRef.current, kepsError: reason };
-            setKepsFailure(reason);
-          }
-        }
-        await releaseSession();
-        kepsPendingRef.current = p.keps && !kepsSameSessionAfterUpload;
-        setKepsAfterRestart(kepsPendingRef.current ? 'pending' : 'none');
-        if (writeVerifyHooks && result.writeVerifyPending) {
-          const pending: WriteVerifyPendingPayload = result.writeVerifyPending;
-          pendingVerifyRef.current = pending;
-          saveWriteVerifyPending(
-            serializeWriteVerifyPending(build.id, egress.id, egress.profileId, pending),
-          );
-          setCheck('available');
-        } else {
-          setCheck('none');
-        }
-        setWriteFinished(true);
-        if (checkStatusRef.current === 'available' || kepsPendingRef.current) {
-          setBusyNotify(false);
-          restartDeadlineRef.current = now() + restartWaitSeconds * 1000;
-          setRestartSecondsLeft(restartWaitSeconds);
-          setStep('restartCheck');
-        } else {
-          goDone();
-        }
+        await afterUpload(session, p, signal, result.writeVerifyPending);
+        return;
+      }
+
+      // Radio settings alone (AT-D890): read the settings, Review, then patch the one settings unit.
+      if (isAtD890 && p.settings) {
+        const overrides = overridesForWrite(build.id);
+        const settingsPlan = descriptor
+          ? planForOperation(descriptor, 'write', { parts: p, session })
+          : undefined;
+        const result = await writeAtD890SettingsOnly(session, egress, overrides, {
+          onProgress,
+          signal,
+          beforeTransmit: async (atCtx: AtD890PreTransmitContext) => {
+            await awaitReview(
+              {
+                identity: { model: session.descriptor.label, serial: atCtx.serial },
+                channelCount: 0,
+                identityOnly: false,
+                ...(settingsPlan ? { plan: settingsPlan } : {}),
+                atD890: atCtx,
+              },
+              { contactsNote: null, kepsCount },
+            );
+            enterWriting();
+            const decision = settingsPauseResult();
+            if (typeof decision !== 'string') settingsAppliedRef.current = changedCount();
+            return decision;
+          },
+        });
+        factsRef.current = {
+          ...factsRef.current,
+          settingsChanged: settingsAppliedRef.current,
+        };
+        await afterUpload(session, p, signal, result.writeVerifyPending);
         return;
       }
 
@@ -579,10 +797,65 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     }
   }
 
+  /** Everything after the transmit: keps in the same session, END, the Check write, Done. */
+  async function afterUpload(
+    session: RadioSession,
+    p: WriteParts,
+    signal: AbortSignal,
+    writeVerifyPending: WriteVerifyPendingPayload | undefined,
+  ): Promise<void> {
+    {
+      {
+        if (p.keps && kepsSameSessionAfterUpload) {
+          // The keps unit is never touched by upload(); the writer does its own fresh read on the open pipe.
+          // The codeplug is already on the radio (closing the session sends END, which commits it), so a
+          // keps failure or abort is reported next to that fact, not as a failed write.
+          try {
+            await writeKeps(session);
+          } catch (err) {
+            const aborted = signal.aborted;
+            const reason = aborted ? 'cancelled' : errorMessage(err);
+            factsRef.current = { ...factsRef.current, kepsError: reason };
+            setKepsFailure(reason);
+          }
+        }
+        await releaseSession();
+        kepsPendingRef.current = p.keps && !kepsSameSessionAfterUpload;
+        setKepsAfterRestart(kepsPendingRef.current ? 'pending' : 'none');
+        if (writeVerifyHooks && writeVerifyPending) {
+          const pending: WriteVerifyPendingPayload = writeVerifyPending;
+          pendingVerifyRef.current = pending;
+          saveWriteVerifyPending(
+            serializeWriteVerifyPending(build.id, egress.id, egress.profileId, pending),
+          );
+          setCheck('available');
+        } else {
+          setCheck('none');
+        }
+        setWriteFinished(true);
+        if (checkStatusRef.current === 'available' || kepsPendingRef.current) {
+          setBusyNotify(false);
+          restartDeadlineRef.current = now() + restartWaitSeconds * 1000;
+          setRestartSecondsLeft(restartWaitSeconds);
+          setStep('restartCheck');
+        } else {
+          goDone();
+        }
+      }
+    }
+  }
+
   async function onRunError(err: unknown): Promise<void> {
     await releaseSession().catch(() => undefined);
     decisionRef.current = null;
-    if (err instanceof WriteCancelledError) {
+    if (err instanceof ReviewSettingsRequestedError) {
+      // Nothing was written; the session closed (END). The settings page opens with this radio's values.
+      setBusyNotify(false);
+      setIsOpen(false);
+      onOpenSettingsPage?.();
+      return;
+    }
+    if (err instanceof WriteCancelledError || err instanceof RadioWriteCancelledError) {
       // Nothing was written; the session closed the way a read-only session does.
       setBusyNotify(false);
       setIsOpen(false);
@@ -762,13 +1035,33 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
     onWriteKepsAfterRestart: () => void writeKepsAfterRestart(),
     onWriteAnother: () => void writeAnother(),
     onViewCheckReport: () => undefined,
+    onEditSettings: () => {
+      // Keep the ticks for when the user comes back; the dialog closes (nothing has been read yet).
+      setStepperTicks(build.id, { ...partsRef.current });
+      setIsOpen(false);
+      onOpenSettingsPage?.();
+    },
   };
 
   return {
     view,
     actions,
-    open: () => {
-      setParts({ ...DEFAULT_WRITE_PARTS });
+    open: (initialParts?: Partial<WriteParts>) => {
+      const store = getAtD890RadioSettingsSession(build.id);
+      const hasChanges = isAtD890 && store.overrides.size > 0;
+      const restored = isAtD890 ? store.stepperTicks : undefined;
+      if (restored) setStepperTicks(build.id, undefined);
+      setParts(
+        clampPartsToSupport(
+          {
+            ...DEFAULT_WRITE_PARTS,
+            settings: hasChanges,
+            ...(restored ?? {}),
+            ...(initialParts ?? {}),
+          },
+          { contacts: true, keps: true, settings: hasChanges },
+        ),
+      );
       setContactSource('library');
       setStep('whatToWrite');
       resetRun();

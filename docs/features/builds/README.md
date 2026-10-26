@@ -42,7 +42,7 @@ Native YAML remains **project interchange** (library + all radio builds + egress
 | **Export** (`/builds/:id/export`)     | **Radio-level** projection settings (gated by `radioTargetId` traits), then **pathway cards**, download / Drive / donor / hydration |
 | **Overview** (`/builds/:id/overview`) | Build identity (rename/delete), catalog radio target, organisation capability badges                                                |
 
-Export does not host identity editors; Overview does not host download actions. Contextual strip: **Overview · Export · Wire preview · Audit**; `/builds/:id` redirects to Export.
+Export does not host identity editors; Overview does not host download actions. Contextual strip: **Overview · Export · Wire preview · Audit**; `/builds/:id` redirects to Export. AT-D890UV Web Serial builds add **Radio settings** (`/builds/:id/export/radio-settings`, after Export settings): read a radio's general settings and set them per field for the session — [at-d890uv-radio-settings.md](../radio-read-write/at-d890uv-radio-settings.md).
 
 Projection settings (scan inclusion, m×n, naming fill-ins, …) stay visible across pathway switches ([#658](https://github.com/pskillen/codeplug-studio/issues/658)). Pathway chrome (CHIRP profile picker, NeonPlug donor, Web Serial, CPS download) follows the active egress.
 

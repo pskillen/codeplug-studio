@@ -21,7 +21,11 @@ import ExportDirectoryProjectionFields from './ExportDirectoryProjectionFields.t
 import AtD890ScanListTimingFields from './AtD890ScanListTimingFields.tsx';
 import type { ResolvedBuildExportSettings } from '../../lib/buildExportSettingsUi.ts';
 import { TRAIT_LABELS } from '../../routes/builds/buildHelpers.ts';
-import { isMm9pdyStepKeyTarget, mm9pdyStepKeysDescription } from './mm9pdyStepKeysCopy.ts';
+import {
+  hasPersistedStepKeySwitch,
+  isMm9pdyStepKeyTarget,
+  mm9pdyStepKeysDescription,
+} from './mm9pdyStepKeysCopy.ts';
 
 export interface ExportBuildSettingsSectionsProps {
   build: FormatBuild;
@@ -73,6 +77,7 @@ export default function ExportBuildSettingsSections({
     radioTargetHasCompatibleFormat(build.radioTargetId, 'anytone');
   const showD890ScanListTiming = build.radioTargetId === 'anytone-at-d890uv';
   const showMm9pdyStepKeys = isMm9pdyStepKeyTarget(build.radioTargetId);
+  const showStepKeySwitch = hasPersistedStepKeySwitch(build.radioTargetId);
 
   return (
     <Stack gap="md">
@@ -255,7 +260,7 @@ export default function ExportBuildSettingsSections({
         onPatch={onExportSettingsPatch}
       />
 
-      {showMm9pdyStepKeys ? (
+      {showStepKeySwitch ? (
         <FieldCard
           title="MM9PDY key assignment"
           description="Optional. Off leaves the radio's programmable keys as they were read."

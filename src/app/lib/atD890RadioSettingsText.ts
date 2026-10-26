@@ -1,0 +1,111 @@
+/** Wording helpers for the AT-D890UV Radio settings page (#1393). */
+
+import { AT_D890_POWER_ON_PASSWORD_MAX_DIGITS } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
+import { describeAtD890FrequencyRange } from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
+import {
+  atD890SettingValueLabelFor,
+  type AtD890SettingFieldDef,
+  type AtD890SettingsTargetId,
+} from '@core/radios/anytone/at-d890uv/radioSettings.ts';
+import {
+  atD890RepeaterPrerequisiteProblems,
+  type AtD890DecodedSetting,
+  type AtD890RepeaterBootBytes,
+} from '@integrations/radio-io/radios/at-d890uv/index.ts';
+import type { AtD890RadioSettingsRead } from '../state/atD890RadioSettingsSession.ts';
+
+export const KEEP_RADIO_VALUE_LABEL = "Keep radio's value";
+
+/** Shown in a text row that is set to an empty line, so it does not read as "keep". */
+export const SET_EMPTY_LINE_LABEL = '(empty line)';
+export const SET_EMPTY_LINE_HINT = 'Will be set to an empty line.';
+
+export function changesLabel(count: number): string {
+  return `${count} ${count === 1 ? 'change' : 'changes'}`;
+}
+
+/** hh:mm in the user's locale. */
+function timeLabel(at: number): string {
+  return new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+/** The frequency range's name for the band code from the read, e.g. `Amateur Europe`. */
+export function rangeCaption(bandCode: number): string {
+  return describeAtD890FrequencyRange(bandCode).caption;
+}
+
+/** Name, code and transmit bands, e.g. `Amateur Europe (code 3) · TX 430–440, 144–146 MHz`. */
+export function rangeSummary(bandCode: number): string {
+  return describeAtD890FrequencyRange(bandCode).summary;
+}
+
+/** Banner text for a settings read. The serial is shown in full (it is not sensitive). */
+export function readBannerText(read: AtD890RadioSettingsRead): string {
+  const name = read.masterIdName.trim() || 'the radio';
+  return `Read from ${name} (${read.serial}) at ${timeLabel(read.readAt)} · range ${rangeCaption(read.bandCode)}`;
+}
+
+/** The Radio column text. */
+export function radioValueText(
+  field: AtD890SettingFieldDef,
+  target: AtD890SettingsTargetId,
+  decoded: AtD890DecodedSetting | undefined,
+  hasRead: boolean,
+): string {
+  if (!hasRead) return 'not read';
+  if (!decoded) return 'not on this radio';
+  const { value } = decoded;
+  if (value === undefined) {
+    if (decoded.label) return `${decoded.label} (not offered)`;
+    const shown = field.kind === 'text' ? 'unreadable text' : decoded.raw.join(' ');
+    return `${shown} (not offered)`;
+  }
+  if (typeof value === 'boolean') return value ? 'On' : 'Off';
+  if (typeof value === 'string') return value === '' ? '(empty)' : value;
+  return atD890SettingValueLabelFor(field, value, target) ?? String(value);
+}
+
+const PASSWORD_DIGITS = new RegExp(`^[0-9]{1,${AT_D890_POWER_ON_PASSWORD_MAX_DIGITS}}$`);
+
+/** Why the two power-on password entries do not make a password yet, or `undefined` when they do. */
+export function powerOnPasswordProblem(digits: string, again: string): string | undefined {
+  if (digits === '' && again === '') return undefined;
+  if (!PASSWORD_DIGITS.test(digits)) {
+    return `Digits only, 1 to ${AT_D890_POWER_ON_PASSWORD_MAX_DIGITS} of them.`;
+  }
+  if (digits !== again) return 'The two entries do not match.';
+  return undefined;
+}
+
+const REPEATER_CHANNEL_NOTE =
+  'It also switches it off unless channels A and B are both DMR, or are on different bands (one VHF, one UHF). Studio cannot check that.';
+const REPEATER_UNREAD_NOTE =
+  'Read the radio to check Sub-Channel Mode, NOAA alert and AM/FM function.';
+
+export interface AtD890RepeaterModeAdvice {
+  /** Amber line: the settings prerequisites that are not met. Absent when none fails, or unread. */
+  readonly caution?: string;
+  /** Plain note under it: the channel and band rule, which cannot be checked from settings. */
+  readonly note: string;
+}
+
+/**
+ * What to tell the user about repeater mode that is on (a Read plus session overrides): which
+ * start-up prerequisites the radio's settings fail. `undefined` when repeater mode is not on.
+ * A warning only; nothing is blocked and nothing is changed for the user.
+ */
+export function repeaterModeAdvice(
+  repeaterModeOn: boolean | undefined,
+  bytes: AtD890RepeaterBootBytes | undefined,
+): AtD890RepeaterModeAdvice | undefined {
+  if (repeaterModeOn !== true) return undefined;
+  if (!bytes) return { note: `${REPEATER_CHANNEL_NOTE} ${REPEATER_UNREAD_NOTE}` };
+  const problems = atD890RepeaterPrerequisiteProblems(bytes);
+  if (problems.length === 0) return { note: REPEATER_CHANNEL_NOTE };
+  return {
+    caution: `The radio will switch repeater mode off at start-up: ${problems
+      .map((p) => p.text)
+      .join('; ')}.`,
+    note: REPEATER_CHANNEL_NOTE,
+  };
+}

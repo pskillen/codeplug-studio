@@ -8,6 +8,7 @@ import {
   BUILD_SECTION_EXPORT,
   BUILD_SECTION_EXPORT_SETTINGS,
   BUILD_SECTION_OVERVIEW,
+  BUILD_SECTION_RADIO_SETTINGS,
   BUILD_SECTION_SATELLITE_KEPS,
   BUILD_SECTION_WIRE_PREVIEW,
   buildNavItems,
@@ -388,5 +389,37 @@ describe('pathForSwitchedBuild', () => {
     expect(
       pathForSwitchedBuild(`/builds/${from.id}/radio-info`, from.id, toSerial, { egressPaths }),
     ).toBe(`/builds/${toSerial.id}/backup`);
+  });
+});
+
+describe('Radio settings strip entry (#1393)', () => {
+  it('appears after Export settings for AT-D890UV Web Serial builds, both targets', () => {
+    for (const profile of ['radio-io-at-d890uv', 'radio-io-at-d890uv-mm9pdy']) {
+      const { build, egressPaths } = newRadioBuildForProfile('proj', profile);
+      const labels = buildSectionNavItems(build, { egressPaths }).map((item) => item.label);
+      expect(labels.indexOf(BUILD_SECTION_RADIO_SETTINGS)).toBe(
+        labels.indexOf(BUILD_SECTION_EXPORT_SETTINGS) + 1,
+      );
+      expect(allBuildDetailPaths(build, { egressPaths })).toContain(
+        `/builds/${build.id}/export/radio-settings`,
+      );
+    }
+  });
+
+  it('is absent for other radios and for D890 builds without a Web Serial egress', () => {
+    const other = newRadioBuildForProfile('proj', 'radio-io-opengd77-1701');
+    expect(
+      buildSectionNavItems(other.build, { egressPaths: other.egressPaths }).map((i) => i.label),
+    ).not.toContain(BUILD_SECTION_RADIO_SETTINGS);
+    const d890 = newRadioBuildForProfile('proj', 'anytone-at-d890uv');
+    const csvOnly = d890.egressPaths.filter((p) => p.formatId !== 'radio-io');
+    expect(
+      buildSectionNavItems(d890.build, { egressPaths: csvOnly }).map((i) => i.label),
+    ).not.toContain(BUILD_SECTION_RADIO_SETTINGS);
+  });
+
+  it('maps its path to its own section', () => {
+    expect(activeBuildSection('/builds/b1/export/radio-settings', 'b1')).toBe('radio-settings');
+    expect(activeBuildSection('/builds/b1/export/settings', 'b1')).toBe('export-settings');
   });
 });

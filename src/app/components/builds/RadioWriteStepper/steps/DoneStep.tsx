@@ -5,7 +5,7 @@
 
 import { Alert, Stack, Text } from '@mantine/core';
 import { formatExportWarning } from '@core/import-export/exportWarning.ts';
-import { Button } from '../../../v2/index.ts';
+import { Button, Checkbox } from '../../../v2/index.ts';
 import classes from '../RadioWriteStepper.module.css';
 import type {
   WriteFlowActions,
@@ -30,6 +30,15 @@ function writtenLines(summary: WriteSummary): string[] {
     );
   }
   if (summary.contactsWritten) lines.push('Digital contacts written.');
+  if (summary.settingsChanged !== null) {
+    lines.push(
+      summary.settingsChanged === 0
+        ? 'Radio settings: this radio already had them.'
+        : `Radio settings written (${summary.settingsChanged} ${summary.settingsChanged === 1 ? 'change' : 'changes'}).`,
+    );
+  } else if (summary.settingsTicked) {
+    lines.push('Radio settings: kept as this radio had them.');
+  }
   if (summary.kepsResult) {
     lines.push(`Satellite keps written (${summary.kepsResult.written} transmitters).`);
   } else if (summary.kepsTicked) {
@@ -71,7 +80,8 @@ export function DoneBody({ config, view, actions }: StepProps) {
   ];
   const notes = [...summary.warnings.map((w) => formatExportWarning(w)), ...kepsSkips];
   const kepsNotWritten = summary.kepsTicked && !summary.kepsResult;
-  const wroteSomething = summary.codeplugWritten || summary.contactsWritten;
+  const wroteSomething =
+    summary.codeplugWritten || summary.contactsWritten || summary.settingsChanged !== null;
   return (
     <div className={classes.stack}>
       <Alert
@@ -98,6 +108,15 @@ export function DoneBody({ config, view, actions }: StepProps) {
           ) : null}
         </Stack>
       </Alert>
+      {config.radioSettings && summary.settingsTicked ? (
+        <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Checkbox
+            checked={config.radioSettings.applyToEveryRadio}
+            onCheckedChange={config.radioSettings.onApplyToEveryRadioChange}
+          />
+          <Text size="sm">Don&apos;t ask again for other radios until I reload</Text>
+        </label>
+      ) : null}
       {summary.checkResult ? (
         <div>
           <Button variant="ghost" size="sm" onClick={actions.onViewCheckReport}>

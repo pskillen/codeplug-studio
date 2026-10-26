@@ -244,3 +244,23 @@ describe('native-yaml round-trip smoke', () => {
     expect(parsed.aprsConfiguration?.id).toBe(FIXTURE_APRS_CONFIG_ID);
   });
 });
+
+describe('assignMm9pdyStepKeys on an AT-D890 build (#1393)', () => {
+  it('still validates, round-trips and loads: old D890 files carry it, and it is simply ignored', () => {
+    const aggregate = projectWithRadioBuildAggregate();
+    const build = aggregate.radioBuilds[0]!;
+    const withKey = {
+      ...aggregate,
+      radioBuilds: [
+        {
+          ...build,
+          radioTargetId: 'anytone-at-d890uv-mm9pdy',
+          exportSettings: { ...build.exportSettings, assignMm9pdyStepKeys: true },
+        },
+      ],
+    };
+    const parsed = parseProjectDocument(serialiseProject(withKey));
+    expect(parsed.radioBuilds[0]?.exportSettings?.assignMm9pdyStepKeys).toBe(true);
+    expect(parsed.radioBuilds[0]?.radioTargetId).toBe('anytone-at-d890uv-mm9pdy');
+  });
+});
