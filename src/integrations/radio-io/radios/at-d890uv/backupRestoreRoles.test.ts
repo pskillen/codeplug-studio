@@ -6,7 +6,7 @@ import {
   isAtD890RestoreNeverWriteAddress,
 } from './backupRestoreRoles.ts';
 import { AT_D890_LIMITS, AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
-import { scanListAddress } from './memory.ts';
+import { channelPrimaryAddress, channelSecondaryAddress, scanListAddress } from './memory.ts';
 
 describe('AT_D890_BACKUP_REGION_SPANS', () => {
   it('marks LocalInfo and alarm inspect-only', () => {
@@ -60,5 +60,50 @@ describe('AT_D890_BACKUP_REGION_SPANS', () => {
   it('names LocalInfo and channel-data spans', () => {
     expect(atD890BackupSpanForAddress(D890_MAP.LocalInfo)?.id).toBe('local-info');
     expect(atD890BackupSpanForAddress(D890_MAP.ChannelData + 0x80)?.id).toBe('channel-data');
+  });
+
+  it('covers every settings-unit extent the firmware keeps across a save, with no hole', () => {
+    const unit = 0x350_0000;
+    const extents: [number, number][] = [
+      [0x000, 0xa00],
+      [0x1000, 0x400],
+      [0x2000, 0x510],
+    ];
+    for (const [off, len] of extents) {
+      for (let a = unit + off; a < unit + off + len; a++) {
+        const span = atD890BackupSpanForAddress(a);
+        expect(span, `0x${a.toString(16)}`).toBeDefined();
+        expect(span?.restoreRole).toBe('restorable');
+      }
+    }
+  });
+
+  it('adds the wiped-region spans at the planned addresses', () => {
+    const want: Record<string, [number, number]> = {
+      'settings-store': [0x350_0200, 0x200],
+      'dtmf-list': [0x350_0800, 0x100],
+      'optional-settings-ext-tail': [0x350_0960, 0xa0],
+      'aprs-text-tail': [0x350_1260, 0x20],
+      'gps-info-tail': [0x350_12b0, 0x50],
+      'gps-zone-switch': [0x350_2000, 0x400],
+      'aprs-beacon-names': [0x350_2400, 0x110],
+      'vfo-channels': [0x1f8_1000, 0x100],
+    };
+    for (const [id, [start, length]] of Object.entries(want)) {
+      const span = AT_D890_BACKUP_REGION_SPANS.find((s) => s.id === id);
+      expect(span, id).toMatchObject({ start, length, restoreRole: 'restorable' });
+    }
+  });
+
+  it('places VFO A/B (slots 4000/4001) in vfo-channels, not channel-data', () => {
+    for (const slot of [4000, 4001]) {
+      expect(channelPrimaryAddress(slot)).toBeGreaterThanOrEqual(D890_MAP.VfoChannels);
+      expect(channelSecondaryAddress(slot) + 0x40).toBeLessThanOrEqual(
+        D890_MAP.VfoChannels + D890_MAP.VfoChannelsLength,
+      );
+      expect(atD890BackupSpanForAddress(channelPrimaryAddress(slot))?.id).toBe('vfo-channels');
+      expect(atD890BackupSpanForAddress(channelSecondaryAddress(slot))?.id).toBe('vfo-channels');
+    }
+    expect(atD890BackupSpanForAddress(channelPrimaryAddress(3999))?.id).toBe('channel-data');
   });
 });

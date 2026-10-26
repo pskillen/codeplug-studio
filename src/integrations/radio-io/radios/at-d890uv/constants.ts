@@ -131,6 +131,35 @@ export const D890_MAP = {
   /** Optional GPS info string — not APRS config; hex preview + sentinel only. */
   OptionalSettingsAprs: 0x350_1280,
   OptionalSettingsAprsLength: 0x30,
+  /**
+   * Settings-unit extents the firmware keeps across a settings save and re-defaults on a
+   * frequency-range change (V1.05 save `FUN_08136474`, loaders `FUN_080ddee0` / `FUN_080db980`).
+   * Backup/Restore only; Write never stages them.
+   */
+  /** Carried tail of the first settings page; the MM9PDY settings store lives at `+0x200..+0x21F`. */
+  SettingsStore: 0x350_0200,
+  SettingsStoreLength: 0x200,
+  /** DTMF list (loader `FUN_080ddee0` reads `+0x800`, `0x100` bytes). */
+  DtmfList: 0x350_0800,
+  DtmfListLength: 0x100,
+  /** Carried tail after the password (`+0x940`, 8 bytes); no stock reader. */
+  OptionalSettingsExtTail: 0x350_0960,
+  OptionalSettingsExtTailLength: 0xa0,
+  /** APRS text block runs `0x7A` bytes from `+0x1200`; `aprs-config` ends at `+0x125F`. */
+  AprsTextTail: 0x350_1260,
+  AprsTextTailLength: 0x20,
+  /** GPS text is `0x42` bytes from `+0x1280`; the ext span covers `0x30` of them. */
+  GpsInfoTail: 0x350_12b0,
+  GpsInfoTailLength: 0x50,
+  /** 32 GPS zone-switch records of `0x20` bytes (meaning inferred). */
+  GpsZoneSwitch: 0x350_2000,
+  GpsZoneSwitchLength: 0x400,
+  /** 8 APRS fixed-beacon names, `0x22` bytes UTF-16 each (`0x110` total). */
+  AprsBeaconNames: 0x350_2400,
+  AprsBeaconNamesLength: 0x110,
+  /** VFO A/B are channel slots 4000/4001 (`channelPrimaryAddress`), `0x80` bytes each. */
+  VfoChannels: 0x1f8_1000,
+  VfoChannelsLength: 0x100,
   /** Alarm call-type / TG bitmap — Read/stash only. */
   AlarmBitmap: 0x3482_e00,
   AlarmBitmapLength: 0x10,

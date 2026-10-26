@@ -5,6 +5,11 @@
  * from a build). Restore **does** replay optional settings and APRS onto a fresh live
  * erase-unit read. LocalInfo, alarm forensics, unnamed leftover, and the family
  * safe-skip address are never restored.
+ *
+ * The settings unit (`0x03500000`) is wiped and re-defaulted by a frequency-range change.
+ * Every extent the firmware keeps across a settings save has a span here, so a backup taken
+ * before the change can bring it back. VFO A/B (channel slots 4000/4001) nest inside
+ * `channel-data`; the shortest span wins for their addresses.
  */
 
 import type { RadioBackupRegionRole } from '../../backup/types.ts';
@@ -103,6 +108,55 @@ export const AT_D890_BACKUP_REGION_SPANS: readonly AtD890BackupRegionSpan[] = [
     restoreRole: 'restorable',
   },
   {
+    id: 'settings-store',
+    label: 'Settings store (MM9PDY)',
+    start: D890_MAP.SettingsStore,
+    length: D890_MAP.SettingsStoreLength,
+    restoreRole: 'restorable',
+  },
+  {
+    id: 'dtmf-list',
+    label: 'DTMF list',
+    start: D890_MAP.DtmfList,
+    length: D890_MAP.DtmfListLength,
+    restoreRole: 'restorable',
+  },
+  {
+    id: 'optional-settings-ext-tail',
+    label: 'Optional settings (ext tail)',
+    start: D890_MAP.OptionalSettingsExtTail,
+    length: D890_MAP.OptionalSettingsExtTailLength,
+    restoreRole: 'restorable',
+  },
+  {
+    id: 'aprs-text-tail',
+    label: 'APRS text (tail)',
+    start: D890_MAP.AprsTextTail,
+    length: D890_MAP.AprsTextTailLength,
+    restoreRole: 'restorable',
+  },
+  {
+    id: 'gps-info-tail',
+    label: 'GPS info (tail)',
+    start: D890_MAP.GpsInfoTail,
+    length: D890_MAP.GpsInfoTailLength,
+    restoreRole: 'restorable',
+  },
+  {
+    id: 'gps-zone-switch',
+    label: 'GPS zone switch',
+    start: D890_MAP.GpsZoneSwitch,
+    length: D890_MAP.GpsZoneSwitchLength,
+    restoreRole: 'restorable',
+  },
+  {
+    id: 'aprs-beacon-names',
+    label: 'APRS beacon names',
+    start: D890_MAP.AprsBeaconNames,
+    length: D890_MAP.AprsBeaconNamesLength,
+    restoreRole: 'restorable',
+  },
+  {
     id: 'channel-set',
     label: 'Channels (bitmap)',
     start: D890_MAP.ChannelSet,
@@ -114,6 +168,13 @@ export const AT_D890_BACKUP_REGION_SPANS: readonly AtD890BackupRegionSpan[] = [
     label: 'Channels',
     start: D890_MAP.ChannelData,
     length: D890_MAP.ChannelDataBlockCount * D890_MAP.ChannelDataBlockOffset,
+    restoreRole: 'restorable',
+  },
+  {
+    id: 'vfo-channels',
+    label: 'VFO A/B',
+    start: D890_MAP.VfoChannels,
+    length: D890_MAP.VfoChannelsLength,
     restoreRole: 'restorable',
   },
   {
