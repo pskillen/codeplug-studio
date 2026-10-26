@@ -170,3 +170,34 @@ function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
   for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
   return true;
 }
+
+export interface AtD890NonFfRange {
+  /** Offset within the unit. */
+  start: number;
+  /** Exclusive end offset. */
+  end: number;
+}
+
+/**
+ * Ranges of a unit that are not `FF`, merged at 16-byte granularity. The last 4 bytes of each unit hold the
+ * `55 55 AA AA` live marker and are ignored: "all FF" is the wrong emptiness test (hardware, #1288).
+ */
+export function listAtD890NonFfRanges(unit: Uint8Array): AtD890NonFfRange[] {
+  const limit = Math.max(0, unit.length - 4);
+  const ranges: AtD890NonFfRange[] = [];
+  for (let off = 0; off < limit; off += AT_D890_BLOCK_SIZE) {
+    const end = Math.min(limit, off + AT_D890_BLOCK_SIZE);
+    let used = false;
+    for (let i = off; i < end; i++) {
+      if (unit[i] !== 0xff) {
+        used = true;
+        break;
+      }
+    }
+    if (!used) continue;
+    const last = ranges[ranges.length - 1];
+    if (last && last.end === off) last.end = end;
+    else ranges.push({ start: off, end });
+  }
+  return ranges;
+}

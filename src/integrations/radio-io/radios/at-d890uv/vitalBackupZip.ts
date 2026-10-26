@@ -78,7 +78,7 @@ export async function buildAtD890VitalManifest(
   for (const u of input.units) hashes.push(await sha256Hex(u.bytes));
   input.units.forEach((u, i) => {
     const sha256 = hashes[i]!;
-    const twin = input.units.findIndex((o, j) => j < i && hashes[j] === sha256);
+    const twin = input.units.findIndex((_o, j) => j < i && hashes[j] === sha256);
     units.push({
       id: u.def.id,
       label: u.def.label,
