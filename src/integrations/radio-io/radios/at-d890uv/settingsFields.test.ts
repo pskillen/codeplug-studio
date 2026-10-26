@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import {
+  AT_D890_V1_SETTINGS_FIELD_IDS,
+  atD890KeyFunctionOptions,
+  atD890SettingField,
+} from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
 import {
@@ -6,8 +11,13 @@ import {
   AT_D890_SETTINGS_FIELDS,
   assertAtD890SettingsSpecPermitted,
   resolveAtD890SettingsPatches,
+  type AtD890SettingValue,
   type AtD890SettingsFieldSpec,
 } from './settingsFields.ts';
+import {
+  applyAtD890SettingsPatchesToUnit,
+  assertAtD890SentinelSpansNotErased,
+} from './settingsPatch.ts';
 
 function spec(
   address: number,
@@ -168,5 +178,195 @@ describe('resolveAtD890SettingsPatches', () => {
         registry,
       ),
     ).toThrow(/overlaps/);
+  });
+});
+
+describe('AT-D890 v1 settings fields', () => {
+  const sampleFor = (id: string): AtD890SettingValue[] => {
+    const def = atD890SettingField(id)!;
+    if (def.kind === 'boolean') return [false, true];
+    if (def.kind === 'text') return ['', 'A', 'MM9PDY TEST', 'LINE TWO 1234567'];
+    return def.options!.map((o) => o.value);
+  };
+
+  it('registers exactly the core field ids, each permitted', () => {
+    expect([...AT_D890_SETTINGS_FIELDS.keys()].sort()).toEqual(
+      [...AT_D890_V1_SETTINGS_FIELD_IDS].sort(),
+    );
+    for (const s of AT_D890_SETTINGS_FIELDS.values()) {
+      expect(() => assertAtD890SettingsSpecPermitted(s), s.id).not.toThrow();
+      expect(s.targets).toEqual(['stock', 'mm9pdy']);
+      expect(s.advanced).toBe(false);
+    }
+  });
+
+  it.each(AT_D890_V1_SETTINGS_FIELD_IDS)(
+    '%s: decode(encode(v)) === v for every offered value',
+    (id) => {
+      const spec = AT_D890_SETTINGS_FIELDS.get(id)!;
+      for (const v of sampleFor(id)) {
+        const bytes = spec.encode(v);
+        expect(bytes.length, id).toBe(spec.length);
+        expect(spec.decode(bytes), `${id}=${String(v)}`).toBe(v);
+      }
+    },
+  );
+
+  it.each(AT_D890_V1_SETTINGS_FIELD_IDS)('%s: refuses a value outside the list', (id) => {
+    const spec = AT_D890_SETTINGS_FIELDS.get(id)!;
+    const def = atD890SettingField(id)!;
+    const bad: unknown[] = [{}, null, undefined];
+    if (def.kind === 'boolean') bad.push(1, 'on');
+    else if (def.kind === 'text') bad.push(5, 'x'.repeat(17), 'café', 'tab\t', '中');
+    else {
+      const values = def.options!.map((o) => o.value);
+      bad.push(true, '1', -1, 1.5);
+      for (let n = 0; n < 256; n++) {
+        if (!values.includes(n)) bad.push(n);
+      }
+    }
+    for (const v of bad) {
+      expect(() => spec.encode(v as AtD890SettingValue), `${id}=${String(v)}`).toThrow(
+        RadioProtocolError,
+      );
+    }
+  });
+
+  it('keyShort* and keyLong* refuse 65 and 255 and accept 0 and 64', () => {
+    const ids = AT_D890_V1_SETTINGS_FIELD_IDS.filter((i) => /^key(Short|Long)/.test(i));
+    expect(ids).toHaveLength(10);
+    for (const id of ids) {
+      const spec = AT_D890_SETTINGS_FIELDS.get(id)!;
+      expect(() => spec.encode(65)).toThrow(RadioProtocolError);
+      expect(() => spec.encode(255)).toThrow(RadioProtocolError);
+      expect([...spec.encode(0)]).toEqual([0]);
+      expect([...spec.encode(64)]).toEqual([64]);
+    }
+  });
+
+  it('puts the ten key fields at +0x10..0x14 and +0x41..0x45', () => {
+    ['PF1', 'PF2', 'PF3', 'P1', 'P2'].forEach((k, i) => {
+      expect(AT_D890_SETTINGS_FIELDS.get(`keyShort${k}`)!.address).toBe(0x3500010 + i);
+      expect(AT_D890_SETTINGS_FIELDS.get(`keyLong${k}`)!.address).toBe(0x3500041 + i);
+    });
+  });
+
+  it('refuses the colour index 7 for name colours and 8 for the call sign colour', () => {
+    for (const id of [
+      'channelNameColourA',
+      'channelNameColourB',
+      'zoneNameColourA',
+      'zoneNameColourB',
+    ]) {
+      expect(() => AT_D890_SETTINGS_FIELDS.get(id)!.encode(7)).toThrow(RadioProtocolError);
+    }
+    expect([...AT_D890_SETTINGS_FIELDS.get('callSignColour')!.encode(7)]).toEqual([7]);
+    expect(() => AT_D890_SETTINGS_FIELDS.get('callSignColour')!.encode(8)).toThrow(
+      RadioProtocolError,
+    );
+  });
+
+  it('decodes values Studio does not offer to undefined', () => {
+    const get = (id: string, b: number) =>
+      AT_D890_SETTINGS_FIELDS.get(id)!.decode(Uint8Array.of(b));
+    expect(get('callDisplayMode', 2)).toBeUndefined();
+    expect(get('powerOnScreen', 2)).toBeUndefined();
+    expect(get('standbyBackground', 1)).toBeUndefined();
+    expect(get('keyShortP1', 65)).toBeUndefined();
+    expect(get('keyShortP1', 0xff)).toBeUndefined();
+  });
+
+  it('decodes any non-zero volume bar byte as on, other booleans only 0 and 1', () => {
+    const get = (id: string, b: number) =>
+      AT_D890_SETTINGS_FIELDS.get(id)!.decode(Uint8Array.of(b));
+    expect(get('volumeBar', 7)).toBe(true);
+    expect(get('keyTone', 7)).toBeUndefined();
+    expect(get('keyTone', 0)).toBe(false);
+  });
+
+  it('encodes power-on lines as UTF-16LE, NUL padded to 0x20 bytes', () => {
+    const line1 = AT_D890_SETTINGS_FIELDS.get('powerOnLine1')!;
+    const line2 = AT_D890_SETTINGS_FIELDS.get('powerOnLine2')!;
+    expect(line1.address).toBe(D890_MAP.OptionalSettingsExt);
+    expect(line2.address).toBe(D890_MAP.OptionalSettingsExt + 0x20);
+    const bytes = line1.encode('AB');
+    expect(bytes.length).toBe(0x20);
+    expect([...bytes.subarray(0, 6)]).toEqual([0x41, 0, 0x42, 0, 0, 0]);
+    expect(bytes.subarray(4).every((b) => b === 0)).toBe(true);
+    expect([...line2.encode('')]).toEqual(new Array(0x20).fill(0));
+    expect(line1.decode(line1.encode('1234567890123456'))).toBe('1234567890123456');
+    expect(line1.decode(new Uint8Array(0x20).fill(0xff))).toBeUndefined();
+  });
+
+  it('keeps masked +0x110 specs independent', () => {
+    const patches = resolveAtD890SettingsPatches(
+      [
+        { fieldId: 'showChannelType', value: true },
+        { fieldId: 'showTimeSlot', value: false },
+        { fieldId: 'showColourCode', value: true },
+      ],
+      'stock',
+    );
+    expect(patches.map((p) => [p.bytes[0], p.mask[0]])).toEqual([
+      [0x01, 0x01],
+      [0x00, 0x02],
+      [0x04, 0x04],
+    ]);
+    const unit = new Uint8Array(0x40000).fill(0xff);
+    applyAtD890SettingsPatchesToUnit(0x3500000, unit, patches);
+    expect(unit[0x110]).toBe(0xff & ~0x02);
+    expect(AT_D890_SETTINGS_FIELDS.get('showTimeSlot')!.decode(Uint8Array.of(unit[0x110]!))).toBe(
+      false,
+    );
+    expect(AT_D890_SETTINGS_FIELDS.get('showColourCode')!.decode(Uint8Array.of(unit[0x110]!))).toBe(
+      true,
+    );
+  });
+
+  it('a mixed set (enum, boolean, text, masked bit) changes exactly those bytes', () => {
+    const unit = new Uint8Array(0x40000).fill(0xaa);
+    const before = unit.slice();
+    const patches = resolveAtD890SettingsPatches(
+      [
+        { fieldId: 'callSignColour', value: 7 },
+        { fieldId: 'volumeBar', value: false },
+        { fieldId: 'powerOnLine1', value: 'HI' },
+        { fieldId: 'showTimeSlot', value: true },
+      ],
+      'stock',
+    );
+    applyAtD890SettingsPatchesToUnit(0x3500000, unit, patches);
+    const changed: number[] = [];
+    unit.forEach((b, i) => {
+      if (b !== before[i]) changed.push(i);
+    });
+    const lineBytes = Array.from({ length: 0x20 }, (_, i) => 0x900 + i);
+    // 0xaa -> 0xaa | 0x02 changes nothing at +0x110 (bit 1 is already set), so it is not listed.
+    expect(changed).toEqual([0x47, 0xbc, ...lineBytes]);
+    expect(unit[0x110]).toBe(0xaa);
+  });
+
+  it('never trips the erased-span guard for a valid encode, empty lines included', () => {
+    const unit = new Uint8Array(0x40000).fill(0xff);
+    const patches = resolveAtD890SettingsPatches(
+      [
+        { fieldId: 'keyTone', value: false },
+        { fieldId: 'powerOnLine1', value: '' },
+        { fieldId: 'powerOnLine2', value: '' },
+      ],
+      'stock',
+    );
+    applyAtD890SettingsPatchesToUnit(0x3500000, unit, patches);
+    expect(() => assertAtD890SentinelSpansNotErased(0x3500000, unit)).not.toThrow();
+    expect(unit.subarray(0x900, 0x940).every((b) => b === 0)).toBe(true);
+  });
+
+  it('MM9PDY key names change labels, not wire values', () => {
+    const stock = atD890KeyFunctionOptions('stock');
+    const mm = atD890KeyFunctionOptions('mm9pdy');
+    const spec = AT_D890_SETTINGS_FIELDS.get('keyShortP1')!;
+    for (let i = 0; i < stock.length; i++) {
+      expect([...spec.encode(stock[i]!.value)]).toEqual([...spec.encode(mm[i]!.value)]);
+    }
   });
 });

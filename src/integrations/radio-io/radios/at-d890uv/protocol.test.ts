@@ -420,6 +420,43 @@ describe('AtD890uvProtocol', () => {
       expect(radio.takeUploadStagingSnapshot()?.chunks.length).toBe(frames.length);
     }, 20_000);
 
+    it('a mixed set (enum, boolean, text, masked bit) changes exactly those bytes of the fresh unit', async () => {
+      const settings = settingsUnit();
+      const { pipe, radio } = await connected(
+        new Map([
+          [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
+          [0x350_0000, settings],
+        ]),
+      );
+      const mixed = resolveAtD890SettingsPatches(
+        [
+          { fieldId: 'callSignColour', value: 7 },
+          { fieldId: 'volumeBar', value: false },
+          { fieldId: 'powerOnLine1', value: 'HI' },
+          { fieldId: 'showTimeSlot', value: true },
+        ],
+        'stock',
+      );
+
+      await radio.uploadSettingsPatches(mixed, {});
+
+      const expected = settings.slice();
+      expected[0xbc] = 7;
+      expected[0x47] = 0;
+      expected[0x110] = settings[0x110]! | 0x02;
+      expected.fill(0, 0x900, 0x920);
+      expected.set([0x48, 0, 0x49, 0], 0x900);
+      const sent = settings.slice();
+      for (const w of pipe.writes.filter((f) => f[0] === 0x57)) {
+        const address = ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0;
+        sent.set(w.subarray(6, 6 + w[5]!), address - 0x350_0000);
+      }
+      const changedBytes = (a: Uint8Array, b: Uint8Array) =>
+        [...a.keys()].filter((i) => a[i] !== b[i]);
+      expect(changedBytes(sent, settings)).toEqual(changedBytes(expected, settings));
+      expect(changedBytes(sent, settings)).toEqual(expect.arrayContaining([0x47, 0xbc, 0x900]));
+    }, 20_000);
+
     it('refuses an all-0xff settings unit before any frame and sends no END', async () => {
       const { pipe, radio } = await connected(
         new Map([

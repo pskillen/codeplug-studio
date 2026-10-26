@@ -10,6 +10,7 @@
  * Wire facts: `docs/reference/radios/anytone/at-d890uv/memory-layout.md`.
  */
 
+import { atD890SettingField } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
 import { isAtD890EraseUnitBookkeepingAddress } from './eraseUnits.ts';
@@ -172,32 +173,192 @@ export function assertAtD890SettingsPatchesPermitted(
   for (const patch of patches) assertAtD890SettingsPatchPermitted(patch);
 }
 
-/** Short-press key function index, `0..64` (firmware function list). */
-function keyFunctionField(id: string, offset: number): AtD890SettingsFieldSpec {
+const BOTH_TARGETS: readonly AtD890SettingsTarget[] = ['stock', 'mm9pdy'];
+
+function refuse(id: string, value: unknown, why: string): never {
+  throw new RadioProtocolError(`D890 setting ${id}: ${String(value)} is ${why}`);
+}
+
+function optionValues(id: string): ReadonlySet<number> {
+  const def = atD890SettingField(id);
+  if (!def?.options) throw new RadioProtocolError(`D890 setting ${id} has no value list`);
+  return new Set(def.options.map((o) => o.value));
+}
+
+/** Where a field lives. `offset` is from the main record, or from the ext block when `ext`. */
+interface FieldLayout {
+  readonly id: string;
+  readonly offset: number;
+  readonly mask?: number;
+  readonly ext?: boolean;
+  /** Boolean decode: any non-zero byte is on (the firmware tests `!= 0`). */
+  readonly anyNonZeroOn?: boolean;
+}
+
+/** Power-on text: UTF-16LE, NUL padded to this many bytes. */
+export const AT_D890_POWER_ON_LINE_BYTES = 0x20;
+
+function isPrintableAscii(code: number): boolean {
+  return code >= 0x20 && code <= 0x7e;
+}
+
+function specFor(layout: FieldLayout): AtD890SettingsFieldSpec {
+  const { id, mask, anyNonZeroOn } = layout;
+  const def = atD890SettingField(id);
+  if (!def) throw new RadioProtocolError(`D890 setting ${id} has no field definition`);
+  const address = (layout.ext ? EXT : MAIN) + layout.offset;
+  const base = { id, address, targets: BOTH_TARGETS, advanced: false } as const;
+
+  if (def.kind === 'text') {
+    const maxLength = def.maxLength ?? 16;
+    return {
+      ...base,
+      length: AT_D890_POWER_ON_LINE_BYTES,
+      encode(value) {
+        if (typeof value !== 'string') refuse(id, value, 'not text');
+        if (value.length > maxLength) refuse(id, value, `longer than ${maxLength} characters`);
+        const out = new Uint8Array(AT_D890_POWER_ON_LINE_BYTES);
+        for (let i = 0; i < value.length; i++) {
+          const code = value.charCodeAt(i);
+          if (!isPrintableAscii(code)) refuse(id, value, 'not printable ASCII');
+          out[i * 2] = code;
+        }
+        return out;
+      },
+      decode(bytes) {
+        let text = '';
+        for (let i = 0; i + 1 < bytes.length && i < maxLength * 2; i += 2) {
+          const code = bytes[i]! | (bytes[i + 1]! << 8);
+          if (code === 0) break;
+          if (!isPrintableAscii(code)) return undefined;
+          text += String.fromCharCode(code);
+        }
+        return text;
+      },
+    };
+  }
+
+  if (def.kind === 'boolean') {
+    const bits = mask ?? 0xff;
+    const on = mask === undefined ? 1 : mask;
+    return {
+      ...base,
+      length: 1,
+      ...(mask === undefined ? {} : { mask }),
+      encode(value) {
+        if (typeof value !== 'boolean') refuse(id, value, 'not on or off');
+        return Uint8Array.of(value ? on : 0);
+      },
+      decode(bytes) {
+        const b = (bytes[0] ?? 0) & bits;
+        if (mask !== undefined) return b !== 0;
+        if (b === 0) return false;
+        return b === 1 || anyNonZeroOn ? true : undefined;
+      },
+    };
+  }
+
+  const allowed = optionValues(id);
   return {
-    id,
-    address: MAIN + offset,
+    ...base,
     length: 1,
-    targets: ['stock', 'mm9pdy'],
-    advanced: false,
+    ...(mask === undefined ? {} : { mask }),
     encode(value) {
-      if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 64) {
-        throw new RadioProtocolError(`D890 setting ${id}: ${String(value)} is not a key function`);
+      if (typeof value !== 'number' || !Number.isInteger(value) || !allowed.has(value)) {
+        refuse(id, value, 'not an offered value');
       }
       return Uint8Array.of(value);
     },
     decode(bytes) {
       const b = bytes[0];
-      return b !== undefined && b <= 64 ? b : undefined;
+      return b !== undefined && allowed.has(b) ? b : undefined;
     },
   };
 }
 
-const SPECS: readonly AtD890SettingsFieldSpec[] = [
-  keyFunctionField('keyShortP1', 0x13),
-  keyFunctionField('keyShortP2', 0x14),
+const FIELD_LAYOUT: readonly FieldLayout[] = [
+  // Call display
+  { id: 'callDisplayMode', offset: 0xaf },
+  { id: 'callSignColour', offset: 0xbc },
+  { id: 'lastCaller', offset: 0x4d },
+  { id: 'aliasDisplayPriority', offset: 0xed },
+  { id: 'aliasTxFormat', offset: 0xee },
+  { id: 'showCurrentContact', offset: 0xb9 },
+  { id: 'channelNumberStyle', offset: 0xb8 },
+  { id: 'showChannelType', offset: 0x110, mask: 0x01 },
+  { id: 'showTimeSlot', offset: 0x110, mask: 0x02 },
+  { id: 'showColourCode', offset: 0x110, mask: 0x04 },
+  // Start-up
+  { id: 'powerOnScreen', offset: 0x06 },
+  { id: 'powerOnLine1', offset: 0x00, ext: true },
+  { id: 'powerOnLine2', offset: 0x20, ext: true },
+  { id: 'startupTone', offset: 0x39 },
+  { id: 'powerOnVolumeType', offset: 0x155 },
+  { id: 'powerOnVolumeLevel', offset: 0x156 },
+  // Volume and audio
+  { id: 'volumeBar', offset: 0x47, anyNonZeroOn: true },
+  { id: 'maxVolume', offset: 0x3b },
+  { id: 'maxHeadphoneVolume', offset: 0x52 },
+  { id: 'audioProfile', offset: 0x57 },
+  { id: 'rxNoiseReduction', offset: 0x148 },
+  { id: 'txNoiseReduction', offset: 0x149 },
+  { id: 'rxDrc', offset: 0x147 },
+  { id: 'dmrMicGain', offset: 0x0f },
+  { id: 'analogueMicGain', offset: 0x113 },
+  // Tones
+  { id: 'keyTone', offset: 0x00 },
+  { id: 'talkPermitTone', offset: 0x31 },
+  { id: 'callResetTone', offset: 0x32 },
+  { id: 'digitalIdleTone', offset: 0x36 },
+  { id: 'analogueIdleTone', offset: 0x111 },
+  { id: 'smsAlert', offset: 0x29 },
+  { id: 'callAlert', offset: 0x2f },
+  // Display
+  { id: 'displayMode', offset: 0x01 },
+  { id: 'backlightLevel', offset: 0x26 },
+  { id: 'backlightTimeout', offset: 0x27 },
+  { id: 'menuExitTime', offset: 0x37 },
+  { id: 'standbyTextColour', offset: 0xc0 },
+  { id: 'channelNameColourA', offset: 0xe3 },
+  { id: 'channelNameColourB', offset: 0x109 },
+  { id: 'zoneNameColourA', offset: 0x10d },
+  { id: 'zoneNameColourB', offset: 0x10e },
+  { id: 'standbyBackground', offset: 0xc1 },
+  { id: 'nightMode', offset: 0x14d },
+  { id: 'clockOnStandby', offset: 0x51 },
+  { id: 'dateFormat', offset: 0x112 },
+  { id: 'timeZone', offset: 0x30 },
+  // Keys (short +0x10..0x14, long +0x41..0x45)
+  { id: 'keyShortPF1', offset: 0x10 },
+  { id: 'keyShortPF2', offset: 0x11 },
+  { id: 'keyShortPF3', offset: 0x12 },
+  { id: 'keyShortP1', offset: 0x13 },
+  { id: 'keyShortP2', offset: 0x14 },
+  { id: 'keyLongPF1', offset: 0x41 },
+  { id: 'keyLongPF2', offset: 0x42 },
+  { id: 'keyLongPF3', offset: 0x43 },
+  { id: 'keyLongP1', offset: 0x44 },
+  { id: 'keyLongP2', offset: 0x45 },
+  { id: 'longPressTime', offset: 0x46 },
+  // Power and timers
+  { id: 'autoPowerOff', offset: 0x03 },
+  { id: 'autoPowerOffType', offset: 0x10f },
+  { id: 'txTimeout', offset: 0x04 },
+  { id: 'txTimeoutPreAlert', offset: 0x10b },
+  { id: 'powerSave', offset: 0x0b },
+  // DMR
+  { id: 'groupCallHangTime', offset: 0x19 },
+  { id: 'privateCallHangTime', offset: 0x1a },
+  { id: 'manualDialGroupHangTime', offset: 0x107 },
+  { id: 'manualDialPrivateHangTime', offset: 0x108 },
+  { id: 'analogueCallHold', offset: 0x50 },
+  { id: 'txPreamble', offset: 0x1c },
+  { id: 'voiceHeaderRepeats', offset: 0x1b },
+  { id: 'smsFormat', offset: 0xc3 },
+  { id: 'missedCallFilterOwnId', offset: 0x38 },
 ];
 
+const SPECS: readonly AtD890SettingsFieldSpec[] = FIELD_LAYOUT.map(specFor);
 function buildRegistry(
   specs: readonly AtD890SettingsFieldSpec[],
 ): ReadonlyMap<string, AtD890SettingsFieldSpec> {

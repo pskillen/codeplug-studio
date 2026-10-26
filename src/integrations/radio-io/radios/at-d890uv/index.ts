@@ -202,3 +202,17 @@ export {
   type AtD890ChannelLocationEntry,
   type AtD890ChannelLocationTable,
 } from './channelLocationCodec.ts';
+export {
+  decodeAtD890RadioSettings,
+  languageLockFromLocalInfo,
+  type AtD890DecodedSetting,
+  type AtD890LanguageLock,
+} from './settingsCodec.ts';
+export {
+  AT_D890_SETTINGS_FIELDS,
+  resolveAtD890SettingsPatches,
+  type AtD890RadioSettingsSnapshot,
+  type AtD890SettingValue,
+  type AtD890SettingsOverride,
+  type AtD890SettingsTarget,
+} from './settingsFields.ts';
