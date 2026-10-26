@@ -15,7 +15,7 @@ import {
 import { RadioProtocolError, RadioTimeoutError, RadioWrongIdentError } from '../../kit/errors.ts';
 import { throwIfAborted } from '../../kit/progress.ts';
 import { AT_D890_CONNECTION, AT_D890UV_MODEL_IDS } from './constants.ts';
-import { assertAtD890WritableAddress } from './writableExtents.ts';
+import { assertAtD890SpanNotHardDenied, assertAtD890WritableAddress } from './writableExtents.ts';
 
 const TD = new TextDecoder('ascii', { fatal: false });
 
@@ -192,6 +192,10 @@ export async function atD890ReadBlockRaw(
   );
 }
 
+/**
+ * `transmitGuard` narrows the fence; it cannot widen it past the hard deny (LocalInfo and
+ * calibration units, erase-unit bookkeeping markers, family safe-skip), which is checked first.
+ */
 export async function atD890WriteMemory(
   pipe: BytePipe,
   address: number,
@@ -201,6 +205,8 @@ export async function atD890WriteMemory(
 ): Promise<void> {
   const guard = opts?.transmitGuard ?? assertAtD890WritableAddress;
   throwIfAborted(signal);
+  // Non-overridable: runs before the caller's guard and before any frame is sent.
+  assertAtD890SpanNotHardDenied(address, data.length);
   guard(address);
   if (data.length % ANYTONE_DMR_BLOCK_SIZE !== 0) {
     throw new RangeError(`D890 write data must be 16-byte aligned: ${data.length}`);
@@ -247,6 +253,7 @@ export async function atD890WriteBlockRaw(
   if (data.length < 1 || data.length > 0xff) {
     throw new RangeError(`D890 raw write length must be 1..255, got ${data.length}`);
   }
+  assertAtD890SpanNotHardDenied(address, data.length);
   // Every 16-byte boundary the frame spans must be allow-listed, so a long frame cannot
   // straddle out of a permitted bank.
   for (let off = 0; off < data.length; off += ANYTONE_DMR_BLOCK_SIZE) {
