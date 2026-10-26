@@ -59,7 +59,10 @@ import {
   collectSingleBankDigitalContacts,
   type SingleBankRadioWritePrepareOptions,
 } from './singleBankRadioWrite.ts';
-import { uploadAtD890DigitalContactsForWrite } from './radioIoAtD890DigitalContactWrite.ts';
+import {
+  prepareAtD890DigitalContactsForWrite,
+  writePreparedAtD890DigitalContactsForWrite,
+} from './radioIoAtD890DigitalContactWrite.ts';
 import { mergeExportOptions } from '@core/import-export/exportSettingsMerge.ts';
 import { applyListWireNameLimits } from '@core/import-export/channelExpansion/listWireNames.ts';
 import { AT_D890UV_LIMITS } from '@core/radios/anytone/at-d890uv/limits.ts';
@@ -700,12 +703,18 @@ export async function writeBuildToRadio(
   );
   const image = await resolveRadioWriteImageForUpload(session, egress, prepared, opts);
   setCachedImage(session, image);
+  // Pack and validate the contacts before the first W: nothing below can then fail for a reason
+  // known up front, which would leave a half-written session (#1406).
+  const isD890 = isAtD890RadioIoProfileId(egress.profileId);
+  const contactWrite = isD890
+    ? prepareAtD890DigitalContactsForWrite(prepared.organisation.digitalContacts)
+    : undefined;
   await session.radio.upload(image, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
-  if (isAtD890RadioIoProfileId(egress.profileId)) {
-    await uploadAtD890DigitalContactsForWrite(session, prepared.organisation.digitalContacts, opts);
+  if (isD890) {
+    await writePreparedAtD890DigitalContactsForWrite(session, contactWrite, opts);
   }
   return { warnings: [...prepared.warnings, ...openGd77WriteWarnings(session)] };
 }
@@ -854,6 +863,11 @@ export async function uploadPreparedRadioWrite(
     // pause and before any frame.
     atD890UploadBankIntentFromOrganisation(withOverrides, opts?.channels);
   }
+  // Pack and validate the contacts before the pause and before the first W (#1406).
+  const isD890 = isAtD890RadioIoProfileId(egress.profileId);
+  const contactWrite = isD890
+    ? prepareAtD890DigitalContactsForWrite(opts?.organisation?.digitalContacts)
+    : undefined;
   if (opts?.beforeTransmit) {
     const result = await opts.beforeTransmit({
       identity: radioWriteIdentityFromSession(session),
@@ -911,8 +925,8 @@ export async function uploadPreparedRadioWrite(
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
-  if (isAtD890RadioIoProfileId(egress.profileId)) {
-    await uploadAtD890DigitalContactsForWrite(session, opts?.organisation?.digitalContacts, opts);
+  if (isD890) {
+    await writePreparedAtD890DigitalContactsForWrite(session, contactWrite, opts);
   }
   const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
   const warnings = openGd77WriteWarnings(session);
