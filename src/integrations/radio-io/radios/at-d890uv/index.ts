@@ -229,3 +229,4 @@ export {
   type AtD890SettingsOverride,
   type AtD890SettingsTarget,
 } from './settingsFields.ts';
+export * from './rangeChange/index.ts';
