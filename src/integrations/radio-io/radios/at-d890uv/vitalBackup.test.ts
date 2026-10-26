@@ -1,6 +1,10 @@
 import { unzipSync, zipSync } from 'fflate';
 import { describe, expect, it } from 'vitest';
-import { AtD890ScriptedPipe } from './__fixtures__/scriptedPipe.ts';
+import {
+  AtD890ScriptedPipe,
+  scriptAtD890ConnectWithNegotiation,
+} from './__fixtures__/scriptedPipe.ts';
+import { AtD890uvProtocol } from './protocol.ts';
 import {
   AT_D890_VITAL_UNITS,
   AT_D890_VITAL_UNIT_BYTES,
@@ -56,9 +60,6 @@ function makeSession(opts: { flags?: number[]; flipOnSecondPass?: boolean } = {}
         }
         return out;
       }
-      if (addr < base + AT_D890_VITAL_UNIT_BYTES && addr + len > base + AT_D890_VITAL_UNIT_BYTES) {
-        throw new Error(`frame crosses unit boundary at 0x${addr.toString(16)}`);
-      }
     }
     return null;
   };
@@ -71,6 +72,40 @@ function makeSession(opts: { flags?: number[]; flipOnSecondPass?: boolean } = {}
     },
   };
   return { pipe, session, seen, abandoned: () => abandoned };
+}
+
+const isEnd = (w: Uint8Array) => w.length === 3 && w[0] === 0x45 && w[1] === 0x4e && w[2] === 0x44;
+
+/** Decode every `R` frame the host sent: requested address and length. */
+function readFrames(pipe: AtD890ScriptedPipe): { addr: number; len: number }[] {
+  return pipe.writes
+    .filter((w) => w[0] === 0x52 && w.length >= 6)
+    .map((w) => ({
+      addr: ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0,
+      len: w[5]!,
+    }));
+}
+
+/** A real protocol over a scripted pipe, so `disconnect()` shows whether `END` goes out. */
+async function makeProtocolSession(flags: [number, number]) {
+  const pipe = new AtD890ScriptedPipe();
+  scriptAtD890ConnectWithNegotiation(pipe);
+  const radio = new AtD890uvProtocol();
+  await radio.connect(pipe);
+  const li = localInfo(flags);
+  pipe.readResponder = (addr, len) => {
+    const base = D890_MAP.LocalInfo;
+    if (addr >= base && addr + len <= base + AT_D890_VITAL_UNIT_BYTES) {
+      return li.slice(addr - base, addr - base + len);
+    }
+    return new Uint8Array(len).fill(0x22);
+  };
+  const session: AtD890VitalReadSession = {
+    pipe,
+    readBlockSize: radio.getNegotiatedReadBlockSize(),
+    abandonProgramMode: () => radio.abandonProgramMode(),
+  };
+  return { pipe, radio, session };
 }
 
 describe('readAtD890VitalUnits', () => {
@@ -88,6 +123,38 @@ describe('readAtD890VitalUnits', () => {
     expect(pipe.writes.every((w) => w[0] === 0x52)).toBe(true);
   }, 60_000);
 
+  it('never cuts a read frame across a 256 KiB unit boundary', async () => {
+    const { pipe, session } = makeSession();
+    await readAtD890VitalUnits(session);
+    const frames = readFrames(pipe);
+    expect(frames.length).toBeGreaterThan(8000);
+    // Full-size frames were used, so the check below is not trivially satisfied by 16-byte fallback reads.
+    expect(frames.filter((f) => f.len === BLOCK).length).toBeGreaterThan(frames.length / 2);
+    for (const f of frames) {
+      expect(f.len).toBeGreaterThan(0);
+      expect(Math.floor(f.addr / AT_D890_VITAL_UNIT_BYTES)).toBe(
+        Math.floor((f.addr + f.len - 1) / AT_D890_VITAL_UNIT_BYTES),
+      );
+    }
+  }, 60_000);
+
+  it('fails when the radio echoes a different address', async () => {
+    const { pipe, session } = await makeProtocolSession([0, 0]);
+    const readExact = pipe.readExact.bind(pipe);
+    // Shift the echoed address and fix the checksum, so only the address check can catch it.
+    pipe.readExact = async (n: number, timeoutMs: number) => {
+      const f = await readExact(n, timeoutMs);
+      if (f[0] === 0x57 && f.length > 8) {
+        f[4] = (f[4]! + 0x10) & 0xff;
+        let sum = 0;
+        for (let i = 1; i < f.length - 2; i++) sum = (sum + f[i]!) & 0xff;
+        f[f.length - 2] = sum;
+      }
+      return f;
+    };
+    await expect(readAtD890VitalUnits(session)).rejects.toThrow(/address mismatch/);
+  });
+
   it('fails loudly when the two passes differ', async () => {
     const { session } = makeSession({ flipOnSecondPass: true });
     await expect(readAtD890VitalUnits(session)).rejects.toBeInstanceOf(AtD890VitalMismatchError);
@@ -100,6 +167,32 @@ describe('readAtD890VitalUnits', () => {
     expect(seen).toEqual([D890_MAP.LocalInfo]);
     expect(pipe.writes.every((w) => w[0] === 0x52)).toBe(true);
   });
+
+  it.each([
+    [0, 0, 1],
+    [1, 0, 0],
+    [0, 1, 0],
+  ] as const)(
+    'with flags %i/%i a real session sends %i END frames on disconnect and never a W',
+    async (stun, kill, ends) => {
+      const { pipe, radio, session } = await makeProtocolSession([stun, kill]);
+      const run = readAtD890VitalUnits(session);
+      if (stun || kill) await expect(run).rejects.toBeInstanceOf(AtD890StunKillError);
+      else expect((await run).bothReadsMatched).toBe(true);
+      await radio.disconnect();
+      expect(pipe.writes.filter((w) => w[0] === 0x57)).toEqual([]);
+      expect(pipe.writes.filter(isEnd)).toHaveLength(ends);
+    },
+    60_000,
+  );
+
+  it('does not send END when the first LocalInfo read fails, and asks for a power-cycle', async () => {
+    const { pipe, radio, session } = await makeProtocolSession([0, 0]);
+    pipe.readResponder = () => null;
+    await expect(readAtD890VitalUnits(session)).rejects.toThrow(/power-cycle/i);
+    await radio.disconnect();
+    expect(pipe.writes.filter(isEnd)).toEqual([]);
+  }, 60_000);
 });
 
 describe('atD890StunKillState', () => {
