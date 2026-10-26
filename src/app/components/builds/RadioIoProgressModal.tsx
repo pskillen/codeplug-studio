@@ -19,8 +19,9 @@ import { Button, ProgressModal, type ProgressModalStep } from '../v2/index.ts';
  * no assemble-channels-into-image step, no write-verify concept, and no coverage table, so it
  * gets its own step list/title rather than reusing `'write'`'s codeplug-shaped copy.
  * `'restore'` replays a backup zip onto the radio — not Write-codeplug.
+ * `'vital-read'` is the AT-D890UV vital-data backup (#1288): it downloads a file and saves nothing on the build.
  */
-export type RadioIoOperation = 'read' | 'write' | 'keps-write' | 'restore';
+export type RadioIoOperation = 'read' | 'write' | 'keps-write' | 'restore' | 'vital-read';
 
 export type RadioIoProgressPhase =
   'connecting' | 'preparing' | 'transfer' | 'saving' | 'verifying' | 'done';
@@ -125,6 +126,18 @@ function buildSteps(
     ];
     if (phase === 'done') {
       steps.push({ id: 'done', label: 'Restore complete' });
+    }
+    return steps;
+  }
+  if (operation === 'vital-read') {
+    const steps: StepDef[] = [
+      { id: 'connecting', label: 'Connect and handshake' },
+      ...(transferStages.length > 0
+        ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
+        : [{ id: 'transfer', label: 'Read vital data' }]),
+    ];
+    if (phase === 'done') {
+      steps.push({ id: 'done', label: 'Vital data file downloaded' });
     }
     return steps;
   }
@@ -292,11 +305,13 @@ export default function RadioIoProgressModal({
   const title =
     operation === 'read'
       ? 'Reading from radio'
-      : operation === 'keps-write'
-        ? 'Writing keps to radio'
-        : operation === 'restore'
-          ? 'Restoring backup to radio'
-          : 'Writing to radio';
+      : operation === 'vital-read'
+        ? 'Backing up vital data'
+        : operation === 'keps-write'
+          ? 'Writing keps to radio'
+          : operation === 'restore'
+            ? 'Restoring backup to radio'
+            : 'Writing to radio';
   const percent = progress?.max ? Math.min(100, (100 * progress.cur) / progress.max) : undefined;
   const complete = phase === 'done';
   const verifying = phase === 'verifying' || writeVerifyStatus === 'verifying';
@@ -345,19 +360,25 @@ export default function RadioIoProgressModal({
             title: 'Read finished',
             body: 'Clone image is saved on this build.',
           }
-        : complete && operation === 'keps-write'
+        : complete && operation === 'vital-read'
           ? {
               color: 'green',
-              title: 'Keps write finished',
-              body: 'Satellite records were sent to the radio.',
+              title: 'Vital data backup finished',
+              body: 'The file was downloaded. Nothing is saved on this build. The radio restarts when the session ends.',
             }
-          : complete && operation === 'restore'
+          : complete && operation === 'keps-write'
             ? {
                 color: 'green',
-                title: 'Restore finished',
-                body: 'Selected restorable regions were sent from the backup file.',
+                title: 'Keps write finished',
+                body: 'Satellite records were sent to the radio.',
               }
-            : null;
+            : complete && operation === 'restore'
+              ? {
+                  color: 'green',
+                  title: 'Restore finished',
+                  body: 'Selected restorable regions were sent from the backup file.',
+                }
+              : null;
 
   const showSuccessNote =
     Boolean(successNote) &&

@@ -180,7 +180,7 @@ export default function BuildRadioBackupPage() {
   }
 
   async function handleBackupVital() {
-    beginBusy();
+    beginBusy('vital-read');
     try {
       const { session } = await openRadioSessionForEgress(radioEgress!, {
         forcePortSelection: true,
