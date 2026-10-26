@@ -16,6 +16,9 @@ import type {
   AtD890SettingsOverride,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 
+// Backups saved this session live in the radio-neutral store; re-exported for the Review.
+export { addBackupThisSession } from './radioSessionBackups.ts';
+
 /** What a settings Read of one radio produced. */
 export interface AtD890RadioSettingsRead {
   readonly serial: string;
@@ -24,13 +27,6 @@ export interface AtD890RadioSettingsRead {
   readonly bandCode: number;
   readonly languageLock: AtD890LanguageLock;
   readonly decoded: Readonly<Record<string, AtD890DecodedSetting>>;
-}
-
-/** A backup saved from the Write's Review this session (PR 4d lists these on the Backup page). */
-export interface AtD890BackupThisSession {
-  readonly serial: string;
-  readonly name: string;
-  readonly at: number;
 }
 
 /** The Write stepper's ticks, kept so an Edit round trip to the settings page returns to them. */
@@ -46,8 +42,6 @@ export interface AtD890RadioSettingsSessionState {
   readonly read?: AtD890RadioSettingsRead;
   /** The "don't ask again until reload" tick of the Done screen; read by the Review step. */
   readonly applyToEveryRadio: boolean;
-  /** Backups saved from Review, oldest first. Names and serials stay in memory only. */
-  readonly backupsThisSession: readonly AtD890BackupThisSession[];
   /** Ticks to restore when the stepper reopens after Edit; cleared once used. */
   readonly stepperTicks?: AtD890StepperTicks;
   /** "Write settings…" on the settings page asked the Export page to open the stepper with only Radio settings ticked. */
@@ -57,7 +51,6 @@ export interface AtD890RadioSettingsSessionState {
 const EMPTY: AtD890RadioSettingsSessionState = {
   overrides: new Map(),
   applyToEveryRadio: false,
-  backupsThisSession: [],
   writeSettingsRequested: false,
 };
 
@@ -166,10 +159,6 @@ export function isSettingsReadRadio(
 ): boolean {
   if (serial.trim() === '' || state.read === undefined) return false;
   return state.read.serial === serial;
-}
-
-export function addBackupThisSession(buildId: string, backup: AtD890BackupThisSession): void {
-  update(buildId, (s) => ({ ...s, backupsThisSession: [...s.backupsThisSession, backup] }));
 }
 
 export function setWriteSettingsRequested(buildId: string, requested: boolean): void {

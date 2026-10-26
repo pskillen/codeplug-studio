@@ -45,7 +45,6 @@ import type {
 import { loadLibrarySlice } from '../../../lib/loadLibrarySlice.ts';
 import { persistence } from '../../../state/persistence.ts';
 import {
-  addBackupThisSession,
   defaultSettingsChoice,
   getAtD890RadioSettingsSession,
   isSettingsReadRadio,
@@ -54,6 +53,7 @@ import {
   setRead,
   setStepperTicks,
 } from '../../../state/atD890RadioSettingsSession.ts';
+import { addBackupThisSession, getBackupsThisSession } from '../../../state/radioSessionBackups.ts';
 import {
   packAtD890BackupFromSession,
   downloadRadioBackupZip,
@@ -503,7 +503,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
   ): AtD890ReviewController {
     const store = getAtD890RadioSettingsSession(build.id);
     const sameRadio = isSettingsReadRadio(store, atCtx.serial);
-    const existing = store.backupsThisSession.filter((b) => b.serial === atCtx.serial).pop();
+    const existing = getBackupsThisSession(build.id)
+      .filter((b) => b.serial === atCtx.serial)
+      .pop();
     const fullReadHeld = atCtx.downloadCache !== undefined;
     const download = estimateWriteSeconds(d890DownloadStages(), null);
     const controller: AtD890ReviewController = createAtD890ReviewController({

@@ -153,17 +153,10 @@ describe('the Review helpers (PR 4c)', () => {
     );
   });
 
-  it('keeps backups saved from Review and the stepper ticks, per build', async () => {
+  it('keeps the stepper ticks, per build', async () => {
     const m = await freshStore();
-    m.addBackupThisSession('b1', { serial: 'SN-1', name: 'One', at: 5 });
-    m.addBackupThisSession('b1', { serial: 'SN-2', name: 'Two', at: 6 });
     m.setStepperTicks('b1', { codeplug: false, contacts: false, settings: true, keps: false });
-    expect(m.getAtD890RadioSettingsSession('b1').backupsThisSession.map((b) => b.serial)).toEqual([
-      'SN-1',
-      'SN-2',
-    ]);
     expect(m.getAtD890RadioSettingsSession('b1').stepperTicks?.settings).toBe(true);
-    expect(m.getAtD890RadioSettingsSession('b2').backupsThisSession).toEqual([]);
     m.setStepperTicks('b1', undefined);
     expect(m.getAtD890RadioSettingsSession('b1').stepperTicks).toBeUndefined();
   });
