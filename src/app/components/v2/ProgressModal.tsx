@@ -29,6 +29,8 @@ export interface ProgressModalProps {
   steps: ProgressModalStep[];
   /** 0-100, shown as a progress bar when provided. */
   progress?: number;
+  /** Replaces the default bar and step list (for example a fixed-height stage list). */
+  body?: ReactNode;
   /** Shown only while `phase === 'running'`. */
   note?: ReactNode;
   /** Shown only once `phase !== 'running'`. */
@@ -64,6 +66,7 @@ export default function ProgressModal({
   phase,
   steps,
   progress,
+  body,
   note = 'Do not disconnect the radio while this is running.',
   summary,
   onClose,
@@ -103,25 +106,28 @@ export default function ProgressModal({
         ))
       }
     >
-      {progress != null ? (
-        <Progress value={progress} size="sm" className={classes.progressBar} />
-      ) : null}
-      <ul className={classes.steps}>
-        {steps.map((step) => (
-          <li key={step.id} className={classes.step}>
-            <span
-              className={[classes.stepIcon, STEP_ICON_CLASS[step.status]].join(' ')}
-              aria-hidden
-            >
-              {STEP_ICON[step.status]}
-            </span>
-            <span className={classes.stepCopy}>
-              <span className={classes.stepLabel}>{step.label}</span>
-              {step.detail ? <span className={classes.stepDetail}>{step.detail}</span> : null}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {body ??
+        (progress != null ? (
+          <Progress value={progress} size="sm" className={classes.progressBar} />
+        ) : null)}
+      {body ? null : (
+        <ul className={classes.steps}>
+          {steps.map((step) => (
+            <li key={step.id} className={classes.step}>
+              <span
+                className={[classes.stepIcon, STEP_ICON_CLASS[step.status]].join(' ')}
+                aria-hidden
+              >
+                {STEP_ICON[step.status]}
+              </span>
+              <span className={classes.stepCopy}>
+                <span className={classes.stepLabel}>{step.label}</span>
+                {step.detail ? <span className={classes.stepDetail}>{step.detail}</span> : null}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
       {running && note ? <p className={classes.note}>{note}</p> : null}
       {!running && summary ? <div className={classes.summary}>{summary}</div> : null}
     </ModalShell>
