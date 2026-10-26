@@ -7,6 +7,7 @@ import {
   isAtD890RadioIoProfileId,
   isMm9pdyAtD890RadioIoProfileId,
 } from '@core/import-export/formatProfiles.ts';
+import AtD890RadioSettingsEditor from '../../components/builds/AtD890RadioSettingsEditor.tsx';
 import { StatusBanner } from '../../components/v2/index.ts';
 import { findRadioIoEgress } from '../../lib/buildEgressUi.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
@@ -16,7 +17,7 @@ export const RADIO_SETTINGS_ONLY_D890_MESSAGE =
   'Radio settings are only available for the AT-D890UV.';
 
 export default function BuildRadioSettingsPage() {
-  const { egressPaths } = useBuildLayout();
+  const { buildId, egressPaths } = useBuildLayout();
   const egress = findRadioIoEgress(egressPaths);
   const isD890 = Boolean(egress && isAtD890RadioIoProfileId(egress.profileId));
   const isMm9pdy = Boolean(egress && isMm9pdyAtD890RadioIoProfileId(egress.profileId));
@@ -33,7 +34,11 @@ export default function BuildRadioSettingsPage() {
           project.
         </p>
       </div>
-      {isD890 ? null : <StatusBanner tone="info">{RADIO_SETTINGS_ONLY_D890_MESSAGE}</StatusBanner>}
+      {isD890 ? (
+        <AtD890RadioSettingsEditor buildId={buildId} target={isMm9pdy ? 'mm9pdy' : 'stock'} />
+      ) : (
+        <StatusBanner tone="info">{RADIO_SETTINGS_ONLY_D890_MESSAGE}</StatusBanner>
+      )}
     </div>
   );
 }

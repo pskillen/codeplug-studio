@@ -6,7 +6,11 @@ import {
   AT_D890_V1_SETTINGS_FIELD_IDS,
   atD890KeyFunctionOptions,
   atD890SettingField,
+  atD890SettingExposureFor,
   atD890SettingOptionLabel,
+  atD890SettingOptionsFor,
+  atD890SettingValueLabelFor,
+  atD890TextProblem,
 } from './radioSettings.ts';
 
 describe('AT-D890 radio settings field model', () => {
@@ -74,5 +78,32 @@ describe('AT-D890 radio settings field model', () => {
 
   it('keeps the time-zone list at 34 entries', () => {
     expect(atD890SettingField('timeZone')!.options).toHaveLength(34);
+  });
+});
+
+describe('AT-D890 radio settings page helpers', () => {
+  it('uses MM9PDY key names only on the MM9PDY target', () => {
+    const f = atD890SettingField('keyShortP1')!;
+    expect(atD890SettingValueLabelFor(f, 14, 'stock')).toBe('Record');
+    expect(atD890SettingValueLabelFor(f, 14, 'mm9pdy')).toBe('TG Next');
+    expect(atD890SettingValueLabelFor(f, 13, 'mm9pdy')).toBe('TG Previous');
+    expect(atD890SettingOptionsFor(f, 'mm9pdy')).toHaveLength(65);
+  });
+
+  it('labels read-only values and tags exposure per target', () => {
+    const f = atD890SettingField('callDisplayMode')!;
+    expect(atD890SettingValueLabelFor(f, 2, 'stock')).toMatch(/Name based/);
+    for (const field of AT_D890_SETTING_FIELDS) {
+      expect(['menu', 'cps', 'hidden']).toContain(atD890SettingExposureFor(field, 'mm9pdy'));
+    }
+  });
+
+  it('accepts printable ASCII up to the line length and refuses the rest', () => {
+    const line = atD890SettingField('powerOnLine1')!;
+    expect(atD890TextProblem(line, '')).toBeUndefined();
+    expect(atD890TextProblem(line, 'MM9PDY D890 ~!')).toBeUndefined();
+    expect(atD890TextProblem(line, 'x'.repeat(17))).toBeDefined();
+    expect(atD890TextProblem(line, 'café')).toBeDefined();
+    expect(atD890TextProblem(line, 'tab\t')).toBeDefined();
   });
 });

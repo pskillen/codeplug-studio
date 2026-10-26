@@ -832,3 +832,50 @@ export function atD890SettingOptionLabel(id: string, value: number): string | un
     f?.readOnlyOptions?.find((o) => o.value === value)?.label
   );
 }
+
+export type AtD890SettingsTargetId = 'stock' | 'mm9pdy';
+
+/** Offered values for a target: key functions carry the MM9PDY names on the MM9PDY target. */
+export function atD890SettingOptionsFor(
+  field: AtD890SettingFieldDef,
+  target: AtD890SettingsTargetId,
+): readonly AtD890SettingOption[] {
+  if (field.section === 'keys') return atD890KeyFunctionOptions(target);
+  return field.options ?? [];
+}
+
+/** Label for a stored value on a target, offered or read-only. */
+export function atD890SettingValueLabelFor(
+  field: AtD890SettingFieldDef,
+  value: number,
+  target: AtD890SettingsTargetId,
+): string | undefined {
+  return (
+    atD890SettingOptionsFor(field, target).find((o) => o.value === value)?.label ??
+    field.readOnlyOptions?.find((o) => o.value === value)?.label
+  );
+}
+
+/** Where the field can be changed on the radio itself, for a target. */
+export function atD890SettingExposureFor(
+  field: AtD890SettingFieldDef,
+  target: AtD890SettingsTargetId,
+): AtD890SettingExposure {
+  return (target === 'mm9pdy' && field.mm9pdyExposure) || field.exposure;
+}
+
+/** Why a text value cannot be set, or `undefined` when it can. */
+export function atD890TextProblem(field: AtD890SettingFieldDef, text: string): string | undefined {
+  const max = field.maxLength ?? 16;
+  if (text.length > max) return `At most ${max} characters.`;
+  if (!isPrintableAscii(text)) return 'Letters, digits and punctuation only (no accents).';
+  return undefined;
+}
+
+function isPrintableAscii(text: string): boolean {
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    if (code < 0x20 || code > 0x7e) return false;
+  }
+  return true;
+}
