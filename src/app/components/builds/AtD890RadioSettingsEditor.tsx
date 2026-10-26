@@ -13,12 +13,13 @@ import {
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { Fragment, useState } from 'react';
 import { mm9pdyStepKeyOverrides } from '@integrations/radio-io/radios/at-d890uv/index.ts';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   clearAllOverrides,
   copyAllFromRead,
   clearOverride,
   setOverride,
+  setWriteSettingsRequested,
   useAtD890RadioSettingsSession,
 } from '../../state/atD890RadioSettingsSession.ts';
 import { Button, ConfirmModal, Panel, StatusBanner } from '../v2/index.ts';
@@ -26,10 +27,9 @@ import Mm9pdyStepKeysNudge from './Mm9pdyStepKeysNudge.tsx';
 import AtD890RadioSettingRow from './AtD890RadioSettingRow.tsx';
 import AtD890RadioSettingsReadButton from './AtD890RadioSettingsReadButton.tsx';
 import {
-  WRITE_ARRIVES_LATER_NOTE,
   changesLabel,
   readBannerText,
-  rangeCaption,
+  rangeSummary,
 } from '../../lib/atD890RadioSettingsText.ts';
 import classes from './AtD890RadioSettingsEditor.module.css';
 
@@ -56,6 +56,7 @@ export default function AtD890RadioSettingsEditor({
   egress,
 }: AtD890RadioSettingsEditorProps) {
   const session = useAtD890RadioSettingsSession(buildId);
+  const navigate = useNavigate();
   const { overrides, read } = session;
 
   const [confirm, setConfirm] = useState<'clear' | 'copy' | null>(null);
@@ -91,7 +92,7 @@ export default function AtD890RadioSettingsEditor({
           <dl className={classes.readOnly}>
             <div>
               <dt>Frequency range</dt>
-              <dd>{rangeCaption(read.bandCode)}</dd>
+              <dd>{rangeSummary(read.bandCode)}</dd>
             </div>
             <div>
               <dt>Firmware</dt>
@@ -172,7 +173,17 @@ export default function AtD890RadioSettingsEditor({
           <Button variant="outline" size="sm" onClick={() => setConfirm('clear')}>
             Clear all
           </Button>
-          <span className={classes.footerNote}>{WRITE_ARRIVES_LATER_NOTE}</span>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setWriteSettingsRequested(buildId, true);
+              navigate(`/builds/${buildId}/export`);
+            }}
+          >
+            Write settings…
+          </Button>
+          <span className={classes.footerNote}>Writes only these settings, nothing else.</span>
           <Link className={classes.footerLink} to={`/builds/${buildId}/backup`}>
             Back up a radio
           </Link>

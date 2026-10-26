@@ -133,7 +133,7 @@ describe('AtD890RadioSettingsEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Read a radio' }));
     const banner = await screen.findByTestId('read-banner');
     expect(banner).toHaveTextContent('Read from DEMO-1 (ABCD1234567) at');
-    expect(banner).toHaveTextContent('range code 3');
+    expect(banner).toHaveTextContent('range Amateur Europe');
     expect(banner).toHaveTextContent('Frequency range');
     expect(banner).toHaveTextContent('unknown');
     expect(within(banner).getByText('ABCD1234567')).toBeInTheDocument();
@@ -174,7 +174,7 @@ describe('AtD890RadioSettingsEditor', () => {
     act(() => setOverride(BUILD, 'smsFormat', 2));
     const footer = screen.getByTestId('changes-footer');
     expect(footer).toHaveTextContent('2 changes');
-    expect(footer).toHaveTextContent('arrives with the next Write update');
+    expect(footer).toHaveTextContent('Write settings');
     expect(within(footer).getByRole('link', { name: 'Back up a radio' })).toHaveAttribute(
       'href',
       `/builds/${BUILD}/backup`,

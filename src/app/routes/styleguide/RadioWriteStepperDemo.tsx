@@ -85,6 +85,8 @@ function viewFor(step: WriteStep, parts: WriteParts): WriteFlowView {
         summary: {
           codeplugWritten: true,
           contactsWritten: parts.contacts,
+          settingsChanged: null,
+          settingsTicked: false,
           channelCount: 412,
           kepsResult: null,
           kepsTicked: parts.keps,

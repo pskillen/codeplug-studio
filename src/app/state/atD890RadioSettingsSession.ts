@@ -26,16 +26,39 @@ export interface AtD890RadioSettingsRead {
   readonly decoded: Readonly<Record<string, AtD890DecodedSetting>>;
 }
 
+/** A backup saved from the Write's Review this session (PR 4d lists these on the Backup page). */
+export interface AtD890BackupThisSession {
+  readonly serial: string;
+  readonly name: string;
+  readonly at: number;
+}
+
+/** The Write stepper's ticks, kept so an Edit round trip to the settings page returns to them. */
+export interface AtD890StepperTicks {
+  readonly codeplug: boolean;
+  readonly contacts: boolean;
+  readonly settings: boolean;
+  readonly keps: boolean;
+}
+
 export interface AtD890RadioSettingsSessionState {
   readonly overrides: ReadonlyMap<string, AtD890SettingValue>;
   readonly read?: AtD890RadioSettingsRead;
-  /** The "don't ask again until reload" tick of the Done screen; read by the Review step (PR 4c). */
+  /** The "don't ask again until reload" tick of the Done screen; read by the Review step. */
   readonly applyToEveryRadio: boolean;
+  /** Backups saved from Review, oldest first. Names and serials stay in memory only. */
+  readonly backupsThisSession: readonly AtD890BackupThisSession[];
+  /** Ticks to restore when the stepper reopens after Edit; cleared once used. */
+  readonly stepperTicks?: AtD890StepperTicks;
+  /** "Write settings…" on the settings page asked the Export page to open the stepper with only Radio settings ticked. */
+  readonly writeSettingsRequested: boolean;
 }
 
 const EMPTY: AtD890RadioSettingsSessionState = {
   overrides: new Map(),
   applyToEveryRadio: false,
+  backupsThisSession: [],
+  writeSettingsRequested: false,
 };
 
 const states = new Map<string, AtD890RadioSettingsSessionState>();
@@ -114,6 +137,44 @@ export function overridesForWrite(buildId: string): AtD890SettingsOverride[] {
 
 export function setApplyToEveryRadio(buildId: string, value: boolean): void {
   update(buildId, (s) => (s.applyToEveryRadio === value ? s : { ...s, applyToEveryRadio: value }));
+}
+
+/** Whether the settings Review asks which to do for this radio: `apply` / `keep`. */
+export type AtD890SettingsChoice = 'apply' | 'keep';
+
+/**
+ * The Review's preselected choice for the radio with this serial. The radio the settings were read
+ * from, or any radio while "don't ask again" is set, preselects Apply; any other radio, or no read
+ * this session, preselects Keep.
+ */
+export function defaultSettingsChoice(
+  state: AtD890RadioSettingsSessionState,
+  serial: string,
+): AtD890SettingsChoice {
+  if (state.applyToEveryRadio) return 'apply';
+  return state.read !== undefined && state.read.serial === serial ? 'apply' : 'keep';
+}
+
+/** True when the settings were read from the radio with this serial (no choice to make). */
+export function isSettingsReadRadio(
+  state: AtD890RadioSettingsSessionState,
+  serial: string,
+): boolean {
+  return state.read !== undefined && state.read.serial === serial;
+}
+
+export function addBackupThisSession(buildId: string, backup: AtD890BackupThisSession): void {
+  update(buildId, (s) => ({ ...s, backupsThisSession: [...s.backupsThisSession, backup] }));
+}
+
+export function setWriteSettingsRequested(buildId: string, requested: boolean): void {
+  update(buildId, (s) =>
+    s.writeSettingsRequested === requested ? s : { ...s, writeSettingsRequested: requested },
+  );
+}
+
+export function setStepperTicks(buildId: string, ticks: AtD890StepperTicks | undefined): void {
+  update(buildId, (s) => ({ ...s, stepperTicks: ticks }));
 }
 
 /** React binding: the build's session state, re-rendered on change. */

@@ -39,7 +39,12 @@ export function ReviewFooter({ view, actions }: StepProps) {
       <Button variant="secondary" size="sm" onClick={actions.onCancelReview}>
         Cancel
       </Button>
-      <Button variant="primary" size="sm" onClick={actions.onWrite}>
+      <Button
+        variant="primary"
+        size="sm"
+        disabled={view.review?.writeDisabled === true}
+        onClick={actions.onWrite}
+      >
         {writeButtonLabel(view.parts)}
       </Button>
     </>

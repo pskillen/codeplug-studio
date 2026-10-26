@@ -222,7 +222,35 @@ function contactStages(ctx: RadioPlanContext): PlannedStage[] {
   ];
 }
 
+/** Bytes a settings-only Write sends: the non-empty blocks of the one settings erase unit (nominal). */
+const SETTINGS_ONLY_UPLOAD_BYTES = 0x1000;
+
+/** Settings alone (no codeplug or contacts): one erase unit, no download. */
+function isSettingsOnly(ctx: RadioPlanContext): boolean {
+  const p = ctx.parts;
+  return p !== undefined && p.settings && !p.codeplug && !p.contacts;
+}
+
+function settingsOnlyPlan(ctx: RadioPlanContext): PlannedStage[] {
+  const stages: PlannedStage[] = [
+    { label: 'Preserving untouched settings', weight: AT_D890_ERASE_UNIT_BYTES },
+    { label: 'Upload', weight: SETTINGS_ONLY_UPLOAD_BYTES },
+  ];
+  if (ctx.parts?.keps) {
+    stages.push(
+      {
+        label: 'Preserving untouched satellite data',
+        weight: AT_D890_ERASE_UNIT_BYTES,
+        optional: true,
+      },
+      { label: 'Upload', weight: AT_D890_LIMITS.MAX_SATELLITES * SATELLITE_RECORD_BYTES },
+    );
+  }
+  return stages;
+}
+
 function writePlan(ctx: RadioPlanContext): PlannedStage[] {
+  if (isSettingsOnly(ctx)) return settingsOnlyPlan(ctx);
   const counts = countsFor(ctx);
   const cache = sessionCache(ctx.session);
   const stages: PlannedStage[] = [];

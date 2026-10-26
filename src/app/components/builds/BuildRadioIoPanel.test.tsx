@@ -115,6 +115,16 @@ describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
     expect(screen.getByRole('checkbox', { name: 'Codeplug' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Digital contacts' })).not.toBeChecked();
     expect(screen.getByRole('checkbox', { name: 'Satellite keps' })).not.toBeChecked();
+    // Radio settings is offered on the AT-D890, unticked and disabled until a change is set.
+    const settings = screen.getByRole('checkbox', { name: 'Radio settings' });
+    expect(settings).not.toBeChecked();
+    expect(settings).toBeDisabled();
+    expect(screen.getByText('Set up…')).toBeInTheDocument();
+  });
+
+  it('does not offer Radio settings on a radio without a settings page', async () => {
+    openStepper('radio-io-dm32uv');
+    await screen.findByRole('button', { name: 'Connect & read' });
     expect(screen.queryByRole('checkbox', { name: 'Radio settings' })).toBeNull();
   });
 
@@ -137,8 +147,14 @@ describe('BuildRadioIoPanel — Write stepper, step 1 (#1393)', () => {
     expect(screen.queryByRole('switch', { name: /Assign TG previous and TG next/ })).toBeNull();
   });
 
-  it('keeps the MM9PDY step-key switch under the Codeplug part and saves it on the build', async () => {
+  it('has no step-key switch on the MM9PDY AT-D890: Review offers a nudge instead', async () => {
     openStepper('radio-io-at-d890uv-mm9pdy');
+    await screen.findByRole('button', { name: 'Connect & read' });
+    expect(screen.queryByRole('switch', { name: /Assign TG previous and TG next/ })).toBeNull();
+  });
+
+  it('keeps the MM9PDY step-key switch under the Codeplug part on the DM-32 and saves it on the build', async () => {
+    openStepper('radio-io-dm32uv-mm9pdy');
     const toggle = await screen.findByRole('switch', { name: /Assign TG previous and TG next/ });
     expect(toggle).not.toBeChecked();
     fireEvent.click(toggle);

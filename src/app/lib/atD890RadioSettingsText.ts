@@ -1,5 +1,6 @@
 /** Wording helpers for the AT-D890UV Radio settings page (#1393). */
 
+import { describeAtD890FrequencyRange } from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
 import {
   atD890SettingValueLabelFor,
   type AtD890SettingFieldDef,
@@ -14,9 +15,6 @@ export const KEEP_RADIO_VALUE_LABEL = "Keep radio's value";
 export const SET_EMPTY_LINE_LABEL = '(empty line)';
 export const SET_EMPTY_LINE_HINT = 'Will be set to an empty line.';
 
-export const WRITE_ARRIVES_LATER_NOTE =
-  'Writing these settings arrives with the next Write update.';
-
 export function changesLabel(count: number): string {
   return `${count} ${count === 1 ? 'change' : 'changes'}`;
 }
@@ -26,13 +24,14 @@ function timeLabel(at: number): string {
   return new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-/**
- * The frequency range caption for the band code from the read.
- * TODO(#1393 PR 7): use describeAtD890FrequencyRange(code) once PR 7 (#1395) is on this stack;
- * whichever of PR 3 / PR 7 merges second completes this line.
- */
+/** The frequency range's name for the band code from the read, e.g. `Amateur Europe`. */
 export function rangeCaption(bandCode: number): string {
-  return `code ${bandCode}`;
+  return describeAtD890FrequencyRange(bandCode).caption;
+}
+
+/** Name, code and transmit bands, e.g. `Amateur Europe (code 3) · TX 430–440, 144–146 MHz`. */
+export function rangeSummary(bandCode: number): string {
+  return describeAtD890FrequencyRange(bandCode).summary;
 }
 
 /** Banner text for a settings read. The serial is shown in full (it is not sensitive). */

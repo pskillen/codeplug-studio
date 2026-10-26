@@ -147,3 +147,31 @@ describe('AT-D890UV planned stages', () => {
     ]);
   });
 });
+
+describe('AT-D890UV planned stages for Radio settings alone (#1393)', () => {
+  it('plans one settings unit and an upload, with no download', () => {
+    const plan = planForOperation(AT_D890UV_DESCRIPTOR, 'write', {
+      parts: { codeplug: false, contacts: false, settings: true, keps: false },
+    })!;
+    expect(plan.map((s) => s.label)).toEqual(['Preserving untouched settings', 'Upload']);
+  });
+
+  it('adds the keps stages when keps are ticked with it', () => {
+    const plan = planForOperation(AT_D890UV_DESCRIPTOR, 'write', {
+      parts: { codeplug: false, contacts: false, settings: true, keps: true },
+    })!;
+    expect(plan.map((s) => s.label)).toEqual([
+      'Preserving untouched settings',
+      'Upload',
+      'Preserving untouched satellite data',
+      'Upload',
+    ]);
+  });
+
+  it('keeps the codeplug plan when the codeplug is ticked with settings', () => {
+    const plan = planForOperation(AT_D890UV_DESCRIPTOR, 'write', {
+      parts: { codeplug: true, contacts: false, settings: true, keps: false },
+    })!;
+    expect(plan[0]!.label).toBe('Local info');
+  });
+});

@@ -120,3 +120,40 @@ describe('AT-D890 radio settings session store', () => {
     expect(idb).not.toHaveBeenCalled();
   });
 });
+
+describe('the Review helpers (PR 4c)', () => {
+  it('preselects Apply for the radio the settings were read from, Keep for any other or none', async () => {
+    const m = await freshStore();
+    expect(m.defaultSettingsChoice(m.getAtD890RadioSettingsSession('b1'), 'SN-TEST')).toBe('keep');
+    m.setRead('b1', read({}));
+    const state = m.getAtD890RadioSettingsSession('b1');
+    expect(m.defaultSettingsChoice(state, 'SN-TEST')).toBe('apply');
+    expect(m.isSettingsReadRadio(state, 'SN-TEST')).toBe(true);
+    expect(m.defaultSettingsChoice(state, 'SN-OTHER')).toBe('keep');
+    expect(m.isSettingsReadRadio(state, 'SN-OTHER')).toBe(false);
+  });
+
+  it("preselects Apply for every radio once 'don't ask again' is set", async () => {
+    const m = await freshStore();
+    m.setRead('b1', read({}));
+    m.setApplyToEveryRadio('b1', true);
+    expect(m.defaultSettingsChoice(m.getAtD890RadioSettingsSession('b1'), 'SN-OTHER')).toBe(
+      'apply',
+    );
+  });
+
+  it('keeps backups saved from Review and the stepper ticks, per build', async () => {
+    const m = await freshStore();
+    m.addBackupThisSession('b1', { serial: 'SN-1', name: 'One', at: 5 });
+    m.addBackupThisSession('b1', { serial: 'SN-2', name: 'Two', at: 6 });
+    m.setStepperTicks('b1', { codeplug: false, contacts: false, settings: true, keps: false });
+    expect(m.getAtD890RadioSettingsSession('b1').backupsThisSession.map((b) => b.serial)).toEqual([
+      'SN-1',
+      'SN-2',
+    ]);
+    expect(m.getAtD890RadioSettingsSession('b1').stepperTicks?.settings).toBe(true);
+    expect(m.getAtD890RadioSettingsSession('b2').backupsThisSession).toEqual([]);
+    m.setStepperTicks('b1', undefined);
+    expect(m.getAtD890RadioSettingsSession('b1').stepperTicks).toBeUndefined();
+  });
+});

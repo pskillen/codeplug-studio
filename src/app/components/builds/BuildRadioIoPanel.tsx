@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Alert, Anchor, Button, Stack, Text } from '@mantine/core';
 import {
   isAtD890RadioIoProfileId,
@@ -35,7 +35,14 @@ import {
   getRadioSerialUnsupportedMessage,
   isRadioSerialSupported,
 } from '../../services/radioIoSession.ts';
-import { isMm9pdyStepKeyTarget, mm9pdyStepKeysDescription } from './mm9pdyStepKeysCopy.ts';
+import { hasPersistedStepKeySwitch, mm9pdyStepKeysDescription } from './mm9pdyStepKeysCopy.ts';
+import {
+  overridesForWrite,
+  setApplyToEveryRadio,
+  setWriteSettingsRequested,
+  useAtD890RadioSettingsSession,
+} from '../../state/atD890RadioSettingsSession.ts';
+import { atD890OverrideWords } from './RadioWriteStepper/d890/atD890ReviewFacts.ts';
 import WriteVerifyReport from './WriteVerifyReport.tsx';
 import { mapWriteVerifyResultToV2Report } from './writeVerifyReportV2Adapter.ts';
 import WebSerialExperimentalAlert from './WebSerialExperimentalAlert.tsx';
@@ -77,6 +84,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
   const [verifyReportOpen, setVerifyReportOpen] = useState(false);
   const [channelLocationNote, setChannelLocationNote] = useState<string | null>(null);
   const [kepsCount, setKepsCount] = useState<number | null>(null);
+  const navigate = useNavigate();
 
   const serialOk = isRadioSerialSupported();
   const descriptor = descriptors[0];
@@ -104,8 +112,19 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     supportsSingleBankWrite,
     kepsWriteFn,
     kepsSameSessionAfterUpload: satelliteKepsSameSessionAfterUpload(egress.profileId),
+    onOpenSettingsPage: () => navigate(`/builds/${build.id}/export/radio-settings`),
   });
   const { view: flowView, actions: flowActions } = flow;
+  const settingsSession = useAtD890RadioSettingsSession(build.id);
+  const openFlow = flow.open;
+  const writeSettingsRequested = isAtD890Write && settingsSession.writeSettingsRequested;
+
+  // The settings page's "Write settings…" lands here and opens the stepper with only Radio settings ticked.
+  useEffect(() => {
+    if (!writeSettingsRequested) return;
+    setWriteSettingsRequested(build.id, false);
+    openFlow({ codeplug: false, contacts: false, keps: false, settings: true });
+  }, [writeSettingsRequested, build.id, openFlow]);
 
   const { modalOpen: leaveAttempted, stay } = useUnsavedNavigationGuard(flowView.busy);
 
@@ -178,7 +197,11 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
     buildId: build.id,
     serialOk,
     writeHidden,
-    support: { contacts: supportsDigitalContacts, keps: supportsKepsWrite, settings: false },
+    support: {
+      contacts: supportsDigitalContacts,
+      keps: supportsKepsWrite,
+      settings: isAtD890Write,
+    },
     sharedContactBankNote: isOpenGd77RadioIoEgress(egress.profileId),
     sharedAddressBookNote: isDm32RadioIoProfileId(egress.profileId),
     kepsSummary:
@@ -187,7 +210,21 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         : undefined,
     kepsLastUpdatedIso: activeProject?.satelliteLibraryLastUpdated,
     channelLocationNote,
-    ...(isMm9pdyStepKeyTarget(build.radioTargetId)
+    ...(isAtD890Write
+      ? {
+          radioSettings: {
+            count: settingsSession.overrides.size,
+            words: atD890OverrideWords(
+              overridesForWrite(build.id),
+              isMm9pdyAtD890RadioIoProfileId(egress.profileId) ? 'mm9pdy' : 'stock',
+            ),
+            applyToEveryRadio: settingsSession.applyToEveryRadio,
+            onApplyToEveryRadioChange: (checked: boolean) =>
+              setApplyToEveryRadio(build.id, checked),
+          },
+        }
+      : {}),
+    ...(hasPersistedStepKeySwitch(build.radioTargetId)
       ? {
           stepKeys: {
             checked: build.exportSettings?.assignMm9pdyStepKeys === true,
@@ -287,6 +324,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
       ) : null}
       {isAtD890Write ? (
         <AtD890WriteCoverageTable
+          settingsChangeCount={settingsSession.overrides.size}
           buildId={build.id}
           hasHydration={hasHydration}
           mm9pdy={isMm9pdyAtD890RadioIoProfileId(egress.profileId)}
