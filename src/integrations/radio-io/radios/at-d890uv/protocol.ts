@@ -85,6 +85,7 @@ import { assertAtD890TransmitAddress } from './writableExtents.ts';
 import { restoreAtD890FromBackup, type AtD890RestoreArchive } from './restoreFromBackup.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
+import { assertAtD890NoStunKill, atD890StunKillState } from './stunKillGuard.ts';
 import type { BytePipe, CloneImageRadio, IdentResult, MemoryMap, ProgressFn } from '../../types.ts';
 import type { RadioChannelDto } from '../../radioChannelDto.ts';
 
@@ -498,11 +499,11 @@ export async function downloadAtD890SparseRegions(
 }
 
 /**
- * Shown when LocalInfo `+0x00` or `+0x01` is non-zero (#1288). The radio's END clears that flag and erases
- * and rewrites LocalInfo, so Studio leaves without END and writes nothing.
+ * Shown when LocalInfo could not be read, so the stun/kill state is unknown (#1288). END could clear a
+ * flag and rewrite LocalInfo, so Studio treats unknown like set: no END, no write.
  */
-export const AT_D890_STUN_KILL_MESSAGE =
-  "This radio reports a stun/kill flag, so Studio has not written to it and has not sent the end-of-programming command (that would clear the flag and rewrite the radio's identity data). Switch the radio off and on again, and check it with the vendor programming software.";
+export const AT_D890_STUN_KILL_UNKNOWN_MESSAGE =
+  "Studio could not read this radio's local info, so it cannot tell whether the radio carries a stun or kill flag. It has stopped without sending END and has not written anything. Power-cycle the radio, then try again.";
 
 export class AtD890uvProtocol implements CloneImageRadio {
   private pipe: BytePipe | null = null;
@@ -532,12 +533,27 @@ export class AtD890uvProtocol implements CloneImageRadio {
    */
   hasStunKillFlag(): boolean {
     const f = this.localInfoFlags;
-    return f !== null && (f[0] !== 0 || f[1] !== 0);
+    return f !== null && atD890StunKillState(Uint8Array.from(f)).flagged;
+  }
+
+  /** True when LocalInfo could not be read at Connect: the state is unknown and is treated like a set flag. */
+  stunKillStateUnknown(): boolean {
+    return this.pipe !== null && this.localInfoFlags === null;
+  }
+
+  /** Never send `END` (and never write) when the flag is set or its state is unknown. */
+  mustNotEnd(): boolean {
+    return this.hasStunKillFlag() || this.stunKillStateUnknown();
   }
 
   /** Throws before any frame when the radio reports a stun/kill flag. */
   assertNoStunKillFlag(): void {
-    if (this.hasStunKillFlag()) throw new RadioProtocolError(AT_D890_STUN_KILL_MESSAGE);
+    const f = this.localInfoFlags;
+    if (f === null) {
+      if (this.pipe !== null) throw new RadioProtocolError(AT_D890_STUN_KILL_UNKNOWN_MESSAGE);
+      return;
+    }
+    assertAtD890NoStunKill(Uint8Array.from(f));
   }
 
   getNegotiatedReadBlockSize(): number {
@@ -606,7 +622,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
     }
     if (this.localInfoFlags === null) {
       // The probe failed before it read LocalInfo: read the flags directly. If that also fails the
-      // link is unusable and the first real read reports it; the flags stay unknown (not flagged).
+      // state stays unknown, which is treated like a set flag (no END, no write).
       try {
         const head = await atD890ReadMemory(
           pipe,
@@ -632,7 +648,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
     const pipe = this.pipe;
     try {
       // A stun/kill flag (#1288): END would clear it and rewrite LocalInfo, so leave without END.
-      if (pipe && this.programming && !this.hasStunKillFlag()) {
+      if (pipe && this.programming && !this.mustNotEnd()) {
         await atD890ExitProgram(pipe);
       }
     } catch {

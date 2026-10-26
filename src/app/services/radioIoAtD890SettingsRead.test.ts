@@ -71,12 +71,10 @@ describe('readAtD890SettingsFromRadio (real service, scripted pipe)', () => {
     );
     if (opts?.silentAfterConnect) {
       const respond = pipe.readResponder!;
-      let connected = false;
       pipe.readResponder = (addr, len) => {
-        // Connect-time block negotiation reads LocalInfo; the settings read then goes silent.
-        if (!connected && addr === D890_MAP.LocalInfo) return respond(addr, len);
-        connected = true;
-        return null;
+        // Connect (LocalInfo) answers; the settings read then goes silent.
+        if (addr >= 0x350_0000 && addr < 0x354_0000) return null;
+        return respond(addr, len);
       };
     }
     const closeSpy = vi.spyOn(pipe, 'close');
@@ -127,7 +125,7 @@ describe('readAtD890SettingsFromRadio (real service, scripted pipe)', () => {
     const respond = pipe.readResponder!;
     pipe.readResponder = (addr, len) => {
       // Cancel as the settings read starts (after connect's LocalInfo negotiation).
-      if (addr >= 0x350_0000) controller.abort();
+      if (addr >= 0x350_0000 && addr < 0x354_0000) controller.abort();
       return respond(addr, len);
     };
 

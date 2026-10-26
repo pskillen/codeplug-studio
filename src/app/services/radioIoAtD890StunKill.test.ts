@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import * as radioIo from '@integrations/radio-io/index.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
-import { AT_D890_STUN_KILL_MESSAGE } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { AT_D890_STUN_KILL_UNKNOWN_MESSAGE } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { AT_D890_STUN_KILL_MESSAGE } from '@integrations/radio-io/radios/at-d890uv/stunKillGuard.ts';
 import {
   AtD890ScriptedPipe,
   localInfoWithSerial,
@@ -53,6 +54,24 @@ describe('AT-D890 stun/kill flag through the real session service (#1288)', () =
       expect(writeFrames(pipe)).toEqual([]);
     },
   );
+
+  it('a read session whose LocalInfo cannot be read sends no END and says to power-cycle', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890Connect(pipe);
+    const port = {
+      readable: null,
+      writable: null,
+      open: vi.fn(async () => undefined),
+      close: vi.fn(async () => undefined),
+    };
+    vi.spyOn(radioIo, 'requestWebSerialPort').mockResolvedValue(port);
+    vi.spyOn(radioIo, 'openWebSerialPipe').mockResolvedValue(pipe);
+    await expect(readAtD890SettingsFromRadio(egress())).rejects.toThrow(
+      AT_D890_STUN_KILL_UNKNOWN_MESSAGE,
+    );
+    expect(endFrames(pipe)).toHaveLength(0);
+    expect(writeFrames(pipe)).toEqual([]);
+  });
 
   it('flags 00 00: the read session still ends with END', async () => {
     const pipe = scriptedRadio([0, 0]);

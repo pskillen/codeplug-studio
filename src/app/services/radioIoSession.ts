@@ -6,7 +6,6 @@
 import type { RadioBuild } from '@core/models/radioBuild.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import { channelLocationWriteRadioNote } from '@core/radio-targets/channelLocationNotes.ts';
-import { RadioProtocolError } from '@integrations/radio-io/kit/errors.ts';
 import {
   isAtD890RadioIoProfileId,
   isDm32RadioIoProfileId,
@@ -75,10 +74,7 @@ import {
   resolveRadioWriteProdDisabledMessage,
 } from './radioWriteEnvGate.ts';
 import { encodeAtD890WriteImageFromDownloadCache } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
-import {
-  AT_D890_STUN_KILL_MESSAGE,
-  AtD890uvProtocol,
-} from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import { encodeDm32uvWriteImageFromDownloadCache } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
@@ -251,10 +247,14 @@ export async function openRadioSessionForEgress(
         ...(opts?.captureFactorySector ? { captureFactorySector: true as const } : {}),
       });
       const session = createRadioSession({ descriptor, pipe, radio });
-      if (radio instanceof AtD890uvProtocol && radio.hasStunKillFlag()) {
-        // #1288: END would clear the flag and rewrite LocalInfo. `disconnect()` leaves without END.
-        await closeRadioSession(session).catch(() => undefined);
-        throw new RadioProtocolError(AT_D890_STUN_KILL_MESSAGE);
+      if (radio instanceof AtD890uvProtocol && radio.mustNotEnd()) {
+        // #1288: END would clear a stun/kill flag and rewrite LocalInfo, and an unreadable LocalInfo
+        // leaves the state unknown. `disconnect()` leaves without END; nothing is read or written.
+        try {
+          radio.assertNoStunKillFlag();
+        } finally {
+          await closeRadioSession(session).catch(() => undefined);
+        }
       }
       return { session, descriptor };
     } catch (err) {
