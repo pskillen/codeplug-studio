@@ -130,6 +130,63 @@ describe('AtD890RadioSettingsEditor advanced settings', () => {
     );
   });
 
+  describe('repeater mode start-up check', () => {
+    const BOOT_BAD = { subChannelMode: 0, noaaAlert: 1, amFmFunction: 0 };
+    const BOOT_OK = { subChannelMode: 1, noaaAlert: 0, amFmFunction: 0 };
+    const repeaterRow = () =>
+      screen.getByRole('combobox', { name: 'Repeater mode' }).closest('[data-field-id]')!;
+
+    it('shows nothing while repeater mode is not on', () => {
+      act(() => setRead(BUILD, { ...readWith(0), repeaterBoot: BOOT_BAD }));
+      renderEditor();
+      showAdvanced();
+      expect(within(repeaterRow() as HTMLElement).queryByTestId('field-caution')).toBeNull();
+    });
+
+    it('names each unmet prerequisite once the override turns it on, and never blocks', () => {
+      act(() => setRead(BUILD, { ...readWith(0), repeaterBoot: BOOT_BAD }));
+      renderEditor();
+      showAdvanced();
+      fireEvent.change(screen.getByRole('combobox', { name: 'Repeater mode' }), {
+        target: { value: 'on' },
+      });
+      const row = within(repeaterRow() as HTMLElement);
+      expect(row.getByTestId('field-caution')).toHaveTextContent(
+        'The radio will switch repeater mode off at start-up: Sub-Channel Mode is off; NOAA alert is on.',
+      );
+      expect(row.getByText(/Studio cannot check that/)).toBeInTheDocument();
+      expect(getAtD890RadioSettingsSession(BUILD).overrides.get('repeaterMode')).toBe(true);
+    });
+
+    it('uses the radio value when it is already On, and drops the line when Off is set', () => {
+      act(() =>
+        setRead(BUILD, {
+          ...readWith(0, { repeaterMode: { value: true, raw: [1] } }),
+          repeaterBoot: BOOT_BAD,
+        }),
+      );
+      renderEditor();
+      showAdvanced();
+      expect(within(repeaterRow() as HTMLElement).getByTestId('field-caution')).toBeInTheDocument();
+      fireEvent.change(screen.getByRole('combobox', { name: 'Repeater mode' }), {
+        target: { value: 'off' },
+      });
+      expect(within(repeaterRow() as HTMLElement).queryByTestId('field-caution')).toBeNull();
+    });
+
+    it('gives only the channel note when the settings pass, and asks for a read when unread', () => {
+      act(() => setRead(BUILD, { ...readWith(0), repeaterBoot: BOOT_OK }));
+      renderEditor();
+      showAdvanced();
+      fireEvent.change(screen.getByRole('combobox', { name: 'Repeater mode' }), {
+        target: { value: 'on' },
+      });
+      const row = within(repeaterRow() as HTMLElement);
+      expect(row.queryByTestId('field-caution')).toBeNull();
+      expect(row.getByText(/Studio cannot check that/)).toBeInTheDocument();
+    });
+  });
+
   describe('language', () => {
     it("can't be set before a read", () => {
       renderEditor();

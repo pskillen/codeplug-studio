@@ -15,6 +15,7 @@ import {
 } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import type {
   AtD890DecodedSetting,
+  AtD890RepeaterBootBytes,
   AtD890LanguageLock,
   AtD890SettingValue,
   AtD890SettingsOverride,
@@ -31,6 +32,8 @@ export interface AtD890RadioSettingsRead {
   readonly bandCode: number;
   readonly languageLock: AtD890LanguageLock;
   readonly decoded: Readonly<Record<string, AtD890DecodedSetting>>;
+  /** The bytes the radio's repeater-mode start-up check reads; not settings Studio offers. */
+  readonly repeaterBoot?: AtD890RepeaterBootBytes;
 }
 
 /** The Write stepper's ticks, kept so an Edit round trip to the settings page returns to them. */

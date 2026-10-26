@@ -72,3 +72,48 @@ describe('AtD890 Review language guard', () => {
     expect(screen.queryByTestId('d890-language-blocked')).toBeNull();
   });
 });
+
+describe('AtD890 Review repeater mode check', () => {
+  function mainWith(bytes: Record<number, number>) {
+    const main = new Uint8Array(0x200);
+    for (const [at, v] of Object.entries(bytes)) main[Number(at)] = v;
+    return main;
+  }
+  const snapshot = (bytes: Record<number, number>) => ({
+    main: mainWith(bytes),
+    ext: new Uint8Array(0x60),
+  });
+
+  it('shows the amber line when the applied override turns repeater mode on', () => {
+    act(() => setOverride(BUILD, 'repeaterMode', true));
+    renderSections(controller(0, { snapshot: snapshot({ 0x2d: 0 }) }));
+    expect(screen.getByTestId('d890-repeater-caution')).toHaveTextContent(
+      'The radio will switch repeater mode off at start-up: Sub-Channel Mode is off.',
+    );
+    expect(screen.getByTestId('d890-repeater-mode')).toHaveTextContent(/Studio cannot check that/);
+  });
+
+  it('does not count an override that Keep will not write', () => {
+    act(() => setOverride(BUILD, 'repeaterMode', true));
+    renderSections(
+      controller(0, { snapshot: snapshot({}), sameRadio: false, initialChoice: 'keep' }),
+    );
+    expect(screen.queryByTestId('d890-repeater-mode')).toBeNull();
+  });
+
+  it('uses the radio value when nothing is overridden, and passes when the settings are met', () => {
+    renderSections(
+      controller(0, {
+        snapshot: snapshot({ 0x2d: 1 }),
+        decoded: { repeaterMode: { value: true, raw: [1] } },
+      }),
+    );
+    expect(screen.queryByTestId('d890-repeater-caution')).toBeNull();
+    expect(screen.getByTestId('d890-repeater-mode')).toBeInTheDocument();
+  });
+
+  it('is absent when repeater mode is off', () => {
+    renderSections(controller(0, { snapshot: snapshot({ 0x2d: 0 }) }));
+    expect(screen.queryByTestId('d890-repeater-mode')).toBeNull();
+  });
+});

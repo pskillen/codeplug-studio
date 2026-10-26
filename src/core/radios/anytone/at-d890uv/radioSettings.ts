@@ -884,7 +884,7 @@ export const AT_D890_SETTING_FIELDS: readonly AtD890SettingFieldDef[] = [
   advBool({
     id: 'repeaterMode',
     label: 'Repeater mode',
-    help: 'Use the radio as a repeater.',
+    help: 'Use the radio as a repeater. At start-up the radio switches it off again unless Sub-Channel Mode is on, the NOAA alert is off, the AM/FM function is not FM radio, and channels A and B are both DMR or on different bands (one VHF, one UHF).',
     exposure: 'menu',
     warning: 'The radio works as a repeater and most functions stop.',
   }),

@@ -215,6 +215,13 @@ export {
   type AtD890LanguageLock,
 } from './settingsCodec.ts';
 export {
+  atD890RepeaterBootBytes,
+  atD890RepeaterPrerequisiteProblems,
+  type AtD890RepeaterBootBytes,
+  type AtD890RepeaterPrerequisiteId,
+  type AtD890RepeaterPrerequisiteProblem,
+} from './repeaterModePrerequisites.ts';
+export {
   AT_D890_SETTINGS_FIELDS,
   resolveAtD890SettingsPatches,
   type AtD890RadioSettingsSnapshot,

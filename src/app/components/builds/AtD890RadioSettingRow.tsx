@@ -49,6 +49,8 @@ export interface AtD890RadioSettingRowProps {
   note?: string;
   /** The control is disabled, and why (e.g. Language before a read). */
   disabledReason?: string;
+  /** An amber line under the control: the set value may not do what the user expects. */
+  caution?: string;
   /** A red line under the control: the set value cannot be written to the read radio. */
   problem?: string;
 }
@@ -63,6 +65,7 @@ function AtD890RadioSettingRowView({
   onClear,
   note,
   disabledReason,
+  caution,
   problem,
 }: AtD890RadioSettingRowProps) {
   const isSet = override !== undefined;
@@ -155,6 +158,11 @@ function AtD890RadioSettingRowView({
         </div>
         {disabledReason ? <div className={classes.note}>{disabledReason}</div> : null}
         {note ? <div className={classes.note}>{note}</div> : null}
+        {caution ? (
+          <div className={classes.warning} data-testid="field-caution">
+            {caution}
+          </div>
+        ) : null}
         {problem ? (
           <div className={classes.problem} role="alert">
             {problem}
@@ -187,6 +195,7 @@ const AtD890RadioSettingRow = memo(AtD890RadioSettingRowView, (a, b) => {
     a.hasRead === b.hasRead &&
     a.note === b.note &&
     a.disabledReason === b.disabledReason &&
+    a.caution === b.caution &&
     a.problem === b.problem
   );
 });

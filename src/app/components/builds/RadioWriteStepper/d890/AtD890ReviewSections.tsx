@@ -8,7 +8,8 @@ import { useSyncExternalStore, type ReactNode } from 'react';
 import { Text } from '@mantine/core';
 import { Button, SegmentedControl, StatusBanner } from '../../../v2/index.ts';
 import { useAtD890RadioSettingsSession } from '../../../../state/atD890RadioSettingsSession.ts';
-import { changesLabel } from '../../../../lib/atD890RadioSettingsText.ts';
+import { changesLabel, repeaterModeAdvice } from '../../../../lib/atD890RadioSettingsText.ts';
+import { atD890RepeaterBootBytes } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import Mm9pdyStepKeysNudge from '../../Mm9pdyStepKeysNudge.tsx';
 import { Section } from '../reviewSectionParts.tsx';
 import type { ReviewContext } from '../reviewSections.tsx';
@@ -54,6 +55,16 @@ function SettingsSection({ controller }: { controller: AtD890ReviewController })
   const overrides = [...store.overrides].map(([fieldId, value]) => ({ fieldId, value }));
   const changes = atD890SettingChanges(init.snapshot, init.target, overrides);
   const blocked = controller.blockReason();
+  // What the radio will hold after the Write: the override only counts when it is applied.
+  const repeaterOverride =
+    state.choice === 'apply'
+      ? overrides.find((o) => o.fieldId === 'repeaterMode')?.value
+      : undefined;
+  const repeaterOn = (repeaterOverride ?? init.decoded.repeaterMode?.value) === true;
+  const repeaterAdvice = repeaterModeAdvice(
+    repeaterOn,
+    atD890RepeaterBootBytes(init.snapshot.main),
+  );
   return (
     <Section title="Radio settings">
       <div className={dClasses.stack} data-testid="d890-settings-review">
@@ -74,6 +85,18 @@ function SettingsSection({ controller }: { controller: AtD890ReviewController })
             </ul>
           </>
         )}
+        {repeaterAdvice ? (
+          <div className={dClasses.warn} data-testid="d890-repeater-mode">
+            {repeaterAdvice.caution ? (
+              <Text size="sm" className={dClasses.caution} data-testid="d890-repeater-caution">
+                {repeaterAdvice.caution}
+              </Text>
+            ) : null}
+            <Text size="xs" c="dimmed">
+              {repeaterAdvice.note}
+            </Text>
+          </div>
+        ) : null}
         {blocked ? (
           <div className={dClasses.warn} data-testid="d890-language-blocked">
             <Text size="sm" c="red">

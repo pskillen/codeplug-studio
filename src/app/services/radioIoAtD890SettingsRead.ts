@@ -14,6 +14,7 @@
 import { isMm9pdyAtD890RadioIoProfileId } from '@core/import-export/formatProfiles.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
 import {
+  atD890RepeaterBootBytes,
   decodeAtD890RadioSettings,
   languageLockFromLocalInfo,
   type AtD890RadioSettingsSnapshot,
@@ -43,6 +44,7 @@ export function atD890SettingsReadFromSnapshot(
   target: AtD890SettingsTarget,
   readAt: number,
 ): AtD890RadioSettingsRead {
+  const repeaterBoot = atD890RepeaterBootBytes(snapshot.main);
   return {
     serial: formatAtD890LocalInfoSerial(snapshot.localInfo),
     masterIdName: decodeWideCharName(snapshot.masterId.subarray(4, 0x24)),
@@ -50,6 +52,7 @@ export function atD890SettingsReadFromSnapshot(
     bandCode: snapshot.bandCode,
     languageLock: languageLockFromLocalInfo(snapshot.localInfo),
     decoded: decodeAtD890RadioSettings(snapshot, target),
+    ...(repeaterBoot ? { repeaterBoot } : {}),
   };
 }
 

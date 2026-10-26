@@ -7,7 +7,11 @@ import {
   type AtD890SettingFieldDef,
   type AtD890SettingsTargetId,
 } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
-import type { AtD890DecodedSetting } from '@integrations/radio-io/radios/at-d890uv/index.ts';
+import {
+  atD890RepeaterPrerequisiteProblems,
+  type AtD890DecodedSetting,
+  type AtD890RepeaterBootBytes,
+} from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import type { AtD890RadioSettingsRead } from '../state/atD890RadioSettingsSession.ts';
 
 export const KEEP_RADIO_VALUE_LABEL = "Keep radio's value";
@@ -71,4 +75,37 @@ export function powerOnPasswordProblem(digits: string, again: string): string | 
   }
   if (digits !== again) return 'The two entries do not match.';
   return undefined;
+}
+
+const REPEATER_CHANNEL_NOTE =
+  'It also switches it off unless channels A and B are both DMR, or are on different bands (one VHF, one UHF). Studio cannot check that.';
+const REPEATER_UNREAD_NOTE =
+  'Read the radio to check Sub-Channel Mode, NOAA alert and AM/FM function.';
+
+export interface AtD890RepeaterModeAdvice {
+  /** Amber line: the settings prerequisites that are not met. Absent when none fails, or unread. */
+  readonly caution?: string;
+  /** Plain note under it: the channel and band rule, which cannot be checked from settings. */
+  readonly note: string;
+}
+
+/**
+ * What to tell the user about repeater mode that is on (a Read plus session overrides): which
+ * start-up prerequisites the radio's settings fail. `undefined` when repeater mode is not on.
+ * A warning only; nothing is blocked and nothing is changed for the user.
+ */
+export function repeaterModeAdvice(
+  repeaterModeOn: boolean | undefined,
+  bytes: AtD890RepeaterBootBytes | undefined,
+): AtD890RepeaterModeAdvice | undefined {
+  if (repeaterModeOn !== true) return undefined;
+  if (!bytes) return { note: `${REPEATER_CHANNEL_NOTE} ${REPEATER_UNREAD_NOTE}` };
+  const problems = atD890RepeaterPrerequisiteProblems(bytes);
+  if (problems.length === 0) return { note: REPEATER_CHANNEL_NOTE };
+  return {
+    caution: `The radio will switch repeater mode off at start-up: ${problems
+      .map((p) => p.text)
+      .join('; ')}.`,
+    note: REPEATER_CHANNEL_NOTE,
+  };
 }

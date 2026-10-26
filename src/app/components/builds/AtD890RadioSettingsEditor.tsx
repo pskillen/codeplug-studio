@@ -35,7 +35,12 @@ import Mm9pdyStepKeysNudge from './Mm9pdyStepKeysNudge.tsx';
 import AtD890RadioSettingRow from './AtD890RadioSettingRow.tsx';
 import AtD890PowerOnPasswordRow from './AtD890PowerOnPasswordRow.tsx';
 import AtD890RadioSettingsReadButton from './AtD890RadioSettingsReadButton.tsx';
-import { changesLabel, readBannerText, rangeSummary } from '../../lib/atD890RadioSettingsText.ts';
+import {
+  changesLabel,
+  readBannerText,
+  rangeSummary,
+  repeaterModeAdvice,
+} from '../../lib/atD890RadioSettingsText.ts';
 import classes from './AtD890RadioSettingsEditor.module.css';
 
 export interface AtD890RadioSettingsEditorProps {
@@ -261,6 +266,10 @@ export default function AtD890RadioSettingsEditor({
                     />
                   );
                 }
+                const advice =
+                  field.id === 'repeaterMode'
+                    ? repeaterModeAdvice(effective('repeaterMode') === true, read?.repeaterBoot)
+                    : undefined;
                 return (
                   <AtD890RadioSettingRow
                     key={field.id}
@@ -269,6 +278,8 @@ export default function AtD890RadioSettingsEditor({
                     override={overrides.get(field.id)}
                     decoded={read?.decoded[field.id]}
                     hasRead={read !== undefined}
+                    caution={advice?.caution}
+                    note={advice?.note}
                     onSet={(value) => setOverride(buildId, field.id, value)}
                     onClear={() => clearOverride(buildId, field.id)}
                   />

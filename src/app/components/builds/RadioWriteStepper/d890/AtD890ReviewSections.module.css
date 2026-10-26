@@ -58,3 +58,7 @@
   max-height: 10rem;
   overflow: auto;
 }
+
+.caution {
+  color: var(--dsv2-warning);
+}
