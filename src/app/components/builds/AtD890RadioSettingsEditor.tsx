@@ -41,6 +41,7 @@ import {
   rangeSummary,
   repeaterModeAdvice,
 } from '../../lib/atD890RadioSettingsText.ts';
+import { DANGER_ZONE_DECISIONS } from '../../services/dangerZone/decisions.ts';
 import classes from './AtD890RadioSettingsEditor.module.css';
 
 export interface AtD890RadioSettingsEditorProps {
@@ -144,7 +145,7 @@ export default function AtD890RadioSettingsEditor({
             <p>
               The frequency range is the radio&apos;s region, set at the factory.{' '}
               {dangerZoneOffered
-                ? 'You can change it from Danger zone.'
+                ? `You can change it from ${DANGER_ZONE_DECISIONS.areaName}.`
                 : 'Studio can only show it.'}{' '}
               Studio cannot yet tell stock firmware from MM9PDY, so the firmware shows as unknown
               (issue #613).

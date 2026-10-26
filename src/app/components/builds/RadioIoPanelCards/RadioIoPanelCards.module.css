@@ -109,6 +109,10 @@
 }
 
 .dangerToggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
   padding: 0;
   border: 0;
   background: none;
@@ -116,4 +120,41 @@
   text-align: left;
   cursor: pointer;
   color: inherit;
+}
+
+.dangerToggle:hover .cardTitle {
+  text-decoration: underline;
+}
+
+.dangerToggle:focus-visible {
+  outline: 2px solid var(--dsv2-destructive);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+.dangerChevron {
+  display: inline-block;
+  flex: none;
+  color: var(--dsv2-text-secondary);
+  transition: transform 0.15s;
+}
+
+.dangerToggle:hover .dangerChevron {
+  color: var(--dsv2-destructive);
+}
+
+.dangerChevronOpen {
+  transform: rotate(90deg);
+}
+
+.dangerDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dangerChevron {
+    transition: none;
+  }
 }
