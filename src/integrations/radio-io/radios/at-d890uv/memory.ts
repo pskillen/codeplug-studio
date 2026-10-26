@@ -284,6 +284,20 @@ export function clearAmAirBankBlocksFromCache(cache: AtD890DownloadCache): void 
   }
 }
 
+/**
+ * Drop cached VFO A/B channel blocks (slots 4000/4001). Read captures them for Backup (through
+ * the channel bitmap, or the explicit VFO read), but a Write never models them, and staging
+ * them would rewrite the `0x01F80000` erase unit. The set-bit restage loop in
+ * {@link applyAtD890WriteImageToCache} skips those slots too.
+ */
+export function clearVfoChannelBlocksFromCache(cache: AtD890DownloadCache): void {
+  const base = D890_MAP.VfoChannels;
+  const end = base + D890_MAP.VfoChannelsLength;
+  for (const addr of [...cache.blocks.keys()]) {
+    if (addr >= base && addr < end) cache.blocks.delete(addr);
+  }
+}
+
 /** Merge a possibly unaligned image region into 16-byte cache keys. */
 export function mergeImageRegionIntoCache(
   cache: AtD890DownloadCache,
@@ -401,6 +415,7 @@ export function applyAtD890WriteImageToCache(
     { address: D890_MAP.ReceiveGroupSet, length: AT_D890_LIMITS.RX_GROUP_SET_BYTES },
     { address: D890_MAP.MasterIdData, length: D890_MAP.MasterIdLength },
   ];
+  clearVfoChannelBlocksFromCache(cache);
   mergeMapRegionsIntoCache(cache, image, staticRegions);
   // AprsConfigMain is modelled (patch-only) but not in staticRegions — without this,
   // listWriteChunks retransmits stale Read bytes and digital report slots never Upload (#884).
@@ -408,6 +423,10 @@ export function applyAtD890WriteImageToCache(
 
   const channelSet = image.get(D890_MAP.ChannelSet, AT_D890_LIMITS.CHANNEL_SET_BYTES);
   for (const idx of listSetBits(channelSet)) {
+    // Slots at or above MAX_CHANNELS are VFO A/B (4000/4001). A real radio's bitmap has those
+    // bits set, but Studio does not model them, so never restage them (it would rewrite the
+    // 0x01F80000 unit with stale Read-time bytes).
+    if (idx >= AT_D890_LIMITS.MAX_CHANNELS) continue;
     putWritableCacheBytes(
       cache,
       channelPrimaryAddress(idx),

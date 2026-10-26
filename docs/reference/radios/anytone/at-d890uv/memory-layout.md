@@ -53,22 +53,46 @@ anytone-cps community RE — verify on hardware before relying on offsets. Studi
 
 On **Write**, Studio encodes the modelled overlay onto `cacheToMemoryMap` of this PROGRAM session download cache ([#875](https://github.com/pskillen/codeplug-studio/issues/875)) — not a persisted hydration bag and not a virgin `0xff` `MemoryMap`. Sparse erase-unit RMW ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) then **fresh-reads** each touched `0x40000` unit from the connected radio and re-stages non-`0xff` bytes unchanged **outside** that modelled overlay — including optional settings and alarm spans that share units with modelled banks. Studio does **not** re-derive those kept bytes from the library build. Identity is the radio on the cable this session ([#1276](https://github.com/pskillen/codeplug-studio/issues/1276)); Restore still refuses zip vs live serial mismatch.
 
-| Region / buffer              | Base                      | Length       | Notes                                                                                                     |
-| ---------------------------- | ------------------------- | ------------ | --------------------------------------------------------------------------------------------------------- |
-| Optional settings (main)     | `0x3500000`               | `0x200`      | CPS language @ `+0x05` (`English`/`German` — **not** Chinese UI)                                          |
-| Optional settings (main)     | `0x3500000`               |              | Power-on interface @ `+0x06`; power-on password enable @ `+0x07`                                          |
-| Optional settings (main)     | `0x3500000`               |              | Startup enable @ `+0xd6` bit 0; zone A/B @ `+0xd7`/`+0xd8`; channel A/B @ `+0xd9`/`+0xda` (`0xFF` = none) |
-| Zone A/B tables              | `0x3500400` / `0x3500600` | `0x200` each | **Modelled** — share erase unit `0x3500000` with optional settings below                                  |
-| Optional settings (ext)      | `0x3500900`               | `0x60`       | UTF-16LE display lines @ `+0x00` / `+0x20` (`0x20` bytes each); power-on password @ `+0x40` (8 ASCII)     |
-| Optional settings (GPS info) | `0x3501280`               | `0x30`       | Optional GPS info string — hex preview only; **not** APRS config (see [aprs.md](aprs.md))                 |
-| Alarm settings               | `0x3482e00`               | `0x10`       | Call type @ `+0x00`, kind, and a BCD id, with `0x30` marked. Studio reads this `0x10` span.               |
-| Alarm settings               | `0x3483000`               | `0x30`       | Analog/digital emergency alarm flags; man-down also @ optional main `+0x24` / `+0x4f`                     |
+| Region / buffer              | Base                      | Length       | Notes                                                                                                                                                                                                                                                     |
+| ---------------------------- | ------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Optional settings (main)     | `0x3500000`               | `0x200`      | CPS language @ `+0x05` (`English`/`German` — **not** Chinese UI)                                                                                                                                                                                          |
+| Optional settings (main)     | `0x3500000`               |              | Power-on interface @ `+0x06`; power-on password enable @ `+0x07`                                                                                                                                                                                          |
+| Optional settings (main)     | `0x3500000`               |              | Startup enable @ `+0xd6` bit 0; zone A/B @ `+0xd7`/`+0xd8`; channel A/B @ `+0xd9`/`+0xda` (`0xFF` = none)                                                                                                                                                 |
+| Zone A/B tables              | `0x3500400` / `0x3500600` | `0x200` each | **Modelled** — share erase unit `0x3500000` with optional settings below                                                                                                                                                                                  |
+| Optional settings (ext)      | `0x3500900`               | `0x60`       | UTF-16LE display lines @ `+0x00` / `+0x20` (`0x20` bytes each); power-on password @ `+0x40` (8 ASCII)                                                                                                                                                     |
+| Optional settings (GPS info) | `0x3501280`               | `0x30`       | Optional GPS info string (the save and load paths use `0x42` bytes; the factory default string is shorter; Studio's preview span is `0x30`, the rest is the `gps-info-tail` backup span) — hex preview only; **not** APRS config (see [aprs.md](aprs.md)) |
+| Alarm settings               | `0x3482e00`               | `0x10`       | Call type @ `+0x00`, kind, and a BCD id, with `0x30` marked. Studio reads this `0x10` span.                                                                                                                                                               |
+| Alarm settings               | `0x3483000`               | `0x30`       | Analog/digital emergency alarm flags; man-down also @ optional main `+0x24` / `+0x4f`                                                                                                                                                                     |
 
 The Radio image retain preview reads startup enable at main `+0xD6` bit 0, zones A/B at `+0xD7`/`+0xD8`, channels A/B at `+0xD9`/`+0xDA` (`0xFF` = none), UTF-16LE display lines of `0x20` bytes at `0x3500900` and `0x3500920`, and an 8-byte ASCII password at `0x3500940`; Write does not program these fields.
 
 Chinese UI on the radio is driven by **optional settings** (CPS language, power-on password) when those regions are erased — not LocalInfo ExpertOptions. Bag diffs on a faulted radio showed LocalInfo byte-identical between healthy and faulted reads ([#768](https://github.com/pskillen/codeplug-studio/issues/768)); the brick came from erase collateral in shared flash units, not LocalInfo replay.
 
 **Backup / Restore** ([backup-restore.md](backup-restore.md)): optional settings and APRS **are** restorable from a zip; LocalInfo and alarm are inspect-only and are never taken from the archive.
+
+#### Settings-unit map (`0x3500000`, both halves)
+
+A settings **save** in stock V1.05 erases the other half of the unit and writes back only the extents below; anything else in the unit does not survive a save. A frequency-range change (LocalInfo `+0x03`) erases and re-defaults the whole unit on the next boot, so every extent here has a Studio backup span and is restorable. The firmware's settings save copies the old half, overlays the settings it holds in RAM and writes only these extents; the settings loaders read the same ones. Offsets are from `0x3500000`.
+
+| Extent             | Contents                                                                                            | Studio span (id)                   |
+| ------------------ | --------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `+0x000..+0x1FF`   | Settings, loader reads `0x160`                                                                      | `optional-settings-main`           |
+| `+0x200..+0x3FF`   | Carried from the old half. MM9PDY settings store at `+0x200..+0x21F`; stock never reads it          | `settings-store`                   |
+| `+0x400..+0x7FF`   | Zone A table, zone B table (`0x200` each)                                                           | `zone-a-channel`, `zone-b-channel` |
+| `+0x800..+0x8FF`   | DTMF list                                                                                           | `dtmf-list`                        |
+| `+0x900..+0x95F`   | Power-on lines (`0x40`), password (`8` at `+0x940`)                                                 | `optional-settings-ext`            |
+| `+0x960..+0x9FF`   | Carried tail, no stock reader                                                                       | `optional-settings-ext-tail`       |
+| `+0x1000..+0x125F` | APRS config (`0x106` bytes read; `+0x1100..+0x11FF` is inside the `0x260` span), start of APRS text | `aprs-config`                      |
+| `+0x1260..+0x127F` | Rest of the APRS text block (`0x7A` bytes from `+0x1200`)                                           | `aprs-text-tail`                   |
+| `+0x1280..+0x12AF` | GPS text (the save and load paths use `0x42` bytes; the factory default string is shorter)          | `optional-settings-aprs`           |
+| `+0x12B0..+0x12FF` | Rest of the GPS text; data ends at `+0x12C1`, then `FF`                                             | `gps-info-tail`                    |
+| `+0x1300..+0x13FF` | APRS receive filters (`8` bytes each)                                                               | `aprs-receive-filters`             |
+| `+0x2000..+0x23FF` | 32 GPS zone-switch records of `0x20` bytes (meaning inferred)                                       | `gps-zone-switch`                  |
+| `+0x2400..+0x250F` | 8 APRS fixed-beacon names, `0x22` bytes UTF-16 each (defaults "FIX 1".."FIX 8")                     | `aprs-beacon-names`                |
+
+The range change also re-defaults VFO A/B, which are channel slots 4000/4001 at `0x1F81000` and `0x1F81080` (`0x80` each). On a real radio the channel bitmap normally has bits 4000/4001 set, so Read already pulls VFO A/B in with the channels (and older zips carry them inside `channel-data` regions). Studio also reads this `0x100` block explicitly, so it is captured when the bits are clear, and names it `vfo-channels`. Write never stages it, even when the bitmap bits are set.
+
+The flash sector-management markers at `+0x3FBF0` / `+0x3FFF0` of each half (including the bytes at `+0x3FFFC..+0x3FFFF`) are radio-managed. They are deliberately uncovered: never backed up, never restored (see [flash-sectors.md](flash-sectors.md)).
 
 ### APRS (binary — [#758](https://github.com/pskillen/codeplug-studio/issues/758))
 
