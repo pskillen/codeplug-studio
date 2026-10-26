@@ -4,7 +4,10 @@
  */
 
 import { AT_D890_BLOCK_SIZE, D890_MAP } from './constants.ts';
-import { describeAtD890FrequencyRange } from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
+import {
+  atD890MaintenanceUnlocked,
+  describeAtD890FrequencyRange,
+} from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
 import { decodeWideCharName } from './wideChar.ts';
 
 export interface AtD890RetainPreviewRow {
@@ -90,7 +93,13 @@ export function settingsRetainPreview(localInfo: Uint8Array): AtD890RetainPrevie
   push(0x02, 'Full test mode (bit 0)', bit0(b2) ? 'On' : 'Off');
 
   const freqMode = localInfo[0x03] ?? 0;
-  push(0x03, 'Frequency range', describeAtD890FrequencyRange(freqMode).summary);
+  push(
+    0x03,
+    'Frequency range',
+    describeAtD890FrequencyRange(freqMode, {
+      maintenanceUnlocked: atD890MaintenanceUnlocked(localInfo),
+    }).summary,
+  );
 
   const c4 = localInfo[0x04] ?? 0xff;
   const c5 = localInfo[0x05] ?? 0xff;

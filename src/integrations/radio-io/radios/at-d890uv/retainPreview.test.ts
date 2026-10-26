@@ -44,6 +44,18 @@ describe('settingsRetainPreview frequency range', () => {
     return settingsRetainPreview(data).find((r) => r.label === 'Frequency range')?.value;
   };
 
+  it('shows code 14 as treated as 0 unless LocalInfo +0x0B holds 890#', () => {
+    const data = new Uint8Array(D890_MAP.LocalInfoLength);
+    data[0x03] = 14;
+    const value = () =>
+      settingsRetainPreview(data).find((r) => r.label === 'Frequency range')?.value;
+    expect(value()).toBe(
+      'Maintenance (needs 890#) not unlocked, treated as 0 (code 14) · TX 400–480, 136–174 MHz',
+    );
+    data.set([0x38, 0x39, 0x30, 0x23], 0x0b);
+    expect(value()).toBe('Maintenance (needs 890#) (code 14) · TX 400–520, 136–174, 220–225 MHz');
+  });
+
   it('describes codes 3, 7 and 19', () => {
     expect(rangeRow(3)).toBe('Amateur Europe (code 3) · TX 430–440, 144–146 MHz');
     expect(rangeRow(7)).toBe('Amateur US (code 7) · TX 420–450, 144–148 MHz');

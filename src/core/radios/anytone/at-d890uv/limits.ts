@@ -38,6 +38,15 @@ export const AT_D890UV_LIMITS = {
 /** Per-code RX/TX range table (LocalInfo +0x03): see frequencyRange.ts. */
 export {
   AT_D890_FREQUENCY_RANGES,
+  atD890MaintenanceUnlocked,
   atD890TxAllowed,
   describeAtD890FrequencyRange,
+  listAtD890ReceiveOnlyChannels,
+} from './frequencyRange.ts';
+export type {
+  AtD890DescribeOptions,
+  AtD890FrequencyRangeDescription,
+  AtD890FrequencyRangeRow,
+  AtD890MhzRange,
+  AtD890RangeCheckChannel,
 } from './frequencyRange.ts';

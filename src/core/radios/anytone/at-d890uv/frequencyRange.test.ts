@@ -31,7 +31,8 @@ describe('AT_D890_FREQUENCY_RANGES', () => {
     expect(r(15).tx).toEqual({ uhf: [420, 520], vhf: [144, 148] });
     expect(r(16).rx).toEqual({ uhf: [430, 440], vhf: [144, 147] });
     expect(r(16).tx).toEqual({ vhf: [144, 147] });
-    expect(r(18).rx).toEqual({ uhf: [400, 480], vhf: [136, 174], b220: [220, 225] });
+    // RX 220 on code 18 is not confirmed: the RX clamp and out-of-band check only open 200-300 MHz for code 14.
+    expect(r(18).rx).toEqual({ uhf: [400, 480], vhf: [136, 174] });
     expect(r(18).tx).toEqual({ uhf: [420, 450], vhf: [144, 148], b220: [222, 225] });
   });
 
@@ -48,11 +49,94 @@ describe('AT_D890_FREQUENCY_RANGES', () => {
     expect(unlisted).toEqual([6, 9, 12, 15]);
   });
 
+  it('code 14 without the 890# unlock is described and enforced as code 0', () => {
+    const locked = describeAtD890FrequencyRange(14, { maintenanceUnlocked: false });
+    expect(locked.row.code).toBe(0);
+    expect(locked.caption).toBe('Maintenance (needs 890#) not unlocked, treated as 0');
+    expect(locked.summary).toBe(
+      'Maintenance (needs 890#) not unlocked, treated as 0 (code 14) · TX 400–480, 136–174 MHz',
+    );
+    const unlocked = describeAtD890FrequencyRange(14, { maintenanceUnlocked: true });
+    expect(unlocked.row.code).toBe(14);
+    expect(unlocked.summary).toBe(
+      'Maintenance (needs 890#) (code 14) · TX 400–520, 136–174, 220–225 MHz',
+    );
+    // Unspecified keeps the table row (callers without the unlock state).
+    expect(describeAtD890FrequencyRange(14).row.code).toBe(14);
+    expect(describeAtD890FrequencyRange(3, { maintenanceUnlocked: false }).row.code).toBe(3);
+  });
+
   it('code 19 is unknown and treated as 0', () => {
     const d = describeAtD890FrequencyRange(19);
     expect(d.caption).toBe('Unknown (treated as 0 by the radio)');
     expect(d.known).toBe(false);
     expect(atD890TxAllowed(19, 470)).toBe(true);
+  });
+});
+
+type R = readonly [number, number];
+/** Decoded from the stock V1.05 firmware range tables (main.elf), independent of the module's own literals. */
+const FIRMWARE_TABLE: readonly {
+  code: number;
+  rxUhf: R;
+  rxVhf: R;
+  txUhf?: R;
+  txVhf: R;
+  tx220?: R;
+}[] = [
+  { code: 0, rxUhf: [400, 480], rxVhf: [136, 174], txUhf: [400, 480], txVhf: [136, 174] },
+  { code: 1, rxUhf: [400, 480], rxVhf: [136, 174], txUhf: [400, 480], txVhf: [136, 174] },
+  { code: 2, rxUhf: [430, 440], rxVhf: [144, 146], txUhf: [430, 440], txVhf: [144, 146] },
+  { code: 3, rxUhf: [400, 480], rxVhf: [136, 174], txUhf: [430, 440], txVhf: [144, 146] },
+  { code: 4, rxUhf: [434, 438], rxVhf: [144, 146], txUhf: [434, 438], txVhf: [144, 146] },
+  { code: 5, rxUhf: [434, 447], rxVhf: [144, 146], txUhf: [434, 447], txVhf: [144, 146] },
+  { code: 6, rxUhf: [446, 447], rxVhf: [136, 174], txUhf: [446, 447], txVhf: [136, 174] },
+  { code: 7, rxUhf: [400, 480], rxVhf: [136, 174], txUhf: [420, 450], txVhf: [144, 148] },
+  { code: 8, rxUhf: [400, 470], rxVhf: [136, 174], txUhf: [400, 470], txVhf: [136, 174] },
+  { code: 9, rxUhf: [430, 432], rxVhf: [144, 146], txUhf: [430, 432], txVhf: [144, 146] },
+  { code: 10, rxUhf: [400, 480], rxVhf: [136, 174], txUhf: [430, 450], txVhf: [144, 148] },
+  { code: 11, rxUhf: [400, 520], rxVhf: [136, 174], txUhf: [400, 520], txVhf: [136, 174] },
+  { code: 12, rxUhf: [400, 490], rxVhf: [136, 174], txUhf: [400, 490], txVhf: [136, 174] },
+  { code: 13, rxUhf: [400, 480], rxVhf: [136, 174], txUhf: [403, 470], txVhf: [136, 174] },
+  {
+    code: 14,
+    rxUhf: [400, 520],
+    rxVhf: [136, 174],
+    txUhf: [400, 520],
+    txVhf: [136, 174],
+    tx220: [220, 225],
+  },
+  { code: 15, rxUhf: [420, 520], rxVhf: [144, 148], txUhf: [420, 520], txVhf: [144, 148] },
+  { code: 16, rxUhf: [430, 440], rxVhf: [144, 147], txVhf: [144, 147] },
+  { code: 17, rxUhf: [430, 440], rxVhf: [136, 174], txVhf: [136, 174] },
+  {
+    code: 18,
+    rxUhf: [400, 480],
+    rxVhf: [136, 174],
+    txUhf: [420, 450],
+    txVhf: [144, 148],
+    tx220: [222, 225],
+  },
+];
+
+describe('firmware table, all 19 codes', () => {
+  it.each(FIRMWARE_TABLE)('code $code matches the firmware', (f) => {
+    const row = AT_D890_FREQUENCY_RANGES[f.code]!;
+    expect(row.rx.uhf).toEqual(f.rxUhf);
+    expect(row.rx.vhf).toEqual(f.rxVhf);
+    expect(row.tx.uhf).toEqual(f.txUhf);
+    expect(row.tx.vhf).toEqual(f.txVhf);
+    expect(row.tx.b220).toEqual(f.tx220);
+
+    const allowed = [f.txUhf, f.txVhf, f.tx220].filter((r): r is R => r !== undefined);
+    for (const [lo, hi] of allowed) {
+      expect(atD890TxAllowed(f.code, lo)).toBe(true);
+      expect(atD890TxAllowed(f.code, hi)).toBe(true);
+      expect(atD890TxAllowed(f.code, lo - 0.01)).toBe(false);
+      expect(atD890TxAllowed(f.code, hi + 0.01)).toBe(false);
+    }
+    if (!f.txUhf) expect(atD890TxAllowed(f.code, f.rxUhf[0])).toBe(false);
+    if (!f.tx220) expect(atD890TxAllowed(f.code, 223)).toBe(false);
   });
 });
 

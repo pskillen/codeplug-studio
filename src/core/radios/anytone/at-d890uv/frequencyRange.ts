@@ -17,12 +17,16 @@ export interface AtD890FrequencyRangeRow {
   caption: string;
   /** True when the CPS offers this code in its picker. */
   cpsListed: boolean;
+  /**
+   * Receive bands. No `b220` for code 18: the RX clamp and out-of-band check only open 200-300 MHz for code 14, so
+   * RX at 220 MHz on 18 is unconfirmed (needs a radio check) and not claimed.
+   */
   rx: { uhf: AtD890MhzRange; vhf: AtD890MhzRange; b220?: AtD890MhzRange };
   /** `uhf` undefined = UHF transmit inhibited. */
   tx: { uhf?: AtD890MhzRange; vhf: AtD890MhzRange; b220?: AtD890MhzRange };
 }
 
-const NOT_LISTED = 'Not listed in the CPS';
+const NOT_LISTED = 'Unlisted range';
 
 /** Same range for RX and TX. */
 function sym(
@@ -104,7 +108,7 @@ export const AT_D890_FREQUENCY_RANGES: readonly AtD890FrequencyRangeRow[] = [
     code: 18,
     caption: 'Mode 000018',
     cpsListed: true,
-    rx: { uhf: FULL_UHF, vhf: FULL_VHF, b220: [220, 225] },
+    rx: { uhf: FULL_UHF, vhf: FULL_VHF },
     tx: { uhf: [420, 450], vhf: [144, 148], b220: [222, 225] },
   },
 ];
@@ -138,12 +142,37 @@ function summarise(r: {
   return `${parts.join(', ')} MHz`;
 }
 
-/** Describe a LocalInfo `+0x03` range code. Codes > 18 are shown as unknown (the radio uses code 0). */
-export function describeAtD890FrequencyRange(code: number): AtD890FrequencyRangeDescription {
+export interface AtD890DescribeOptions {
+  /**
+   * Whether LocalInfo `+0x0B..+0x0E` reads `890#`. The loader maps code 14 to 0 without it. `undefined` = not
+   * known, so code 14 is described as listed. Pass the state when the whole LocalInfo is at hand.
+   */
+  maintenanceUnlocked?: boolean;
+}
+
+/** True when LocalInfo `+0x0B..+0x0E` is the ASCII unlock `890#`. */
+export function atD890MaintenanceUnlocked(localInfo: Uint8Array): boolean {
+  return [0x38, 0x39, 0x30, 0x23].every((b, i) => localInfo[0x0b + i] === b);
+}
+
+/**
+ * Describe a LocalInfo `+0x03` range code. Codes > 18 are shown as unknown, and code 14 without the `890#`
+ * unlock as locked; the radio uses code 0 for both. PR 4c must pass the SANITISED code (RAM `0x20015277`, ident
+ * byte 8), never the raw LocalInfo byte.
+ */
+export function describeAtD890FrequencyRange(
+  code: number,
+  opts: AtD890DescribeOptions = {},
+): AtD890FrequencyRangeDescription {
   const exact = AT_D890_FREQUENCY_RANGES.find((r) => r.code === code);
-  const known = exact !== undefined;
-  const row = exact ?? AT_D890_FREQUENCY_RANGES[0]!;
-  const caption = known ? row.caption : 'Unknown (treated as 0 by the radio)';
+  const locked = code === 14 && opts.maintenanceUnlocked === false;
+  const known = exact !== undefined && !locked;
+  const row = known ? exact : AT_D890_FREQUENCY_RANGES[0]!;
+  const caption = locked
+    ? `${exact!.caption} not unlocked, treated as 0`
+    : known
+      ? row.caption
+      : 'Unknown (treated as 0 by the radio)';
   const txSummary = summarise(row.tx);
   const rxSummary = summarise(row.rx);
   return {
