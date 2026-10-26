@@ -10,7 +10,7 @@
 | 1   | Patch core: field allow-list, patch helpers, mask-level preserved check, verify expects patches ([#1394](https://github.com/pskillen/codeplug-studio/issues/1394)), settings-only upload, settings read, pause before transmit; step keys migrated; no UI | Done on `1393/pskil/d890-settings-patch-core` |
 | 2   | v1 field registry, codec, session store, field reference                                                                                                                                                                                                  | Done on `1393/pskil/d890-settings-fields`     |
 | 3   | Settings page, Read from radio                                                                                                                                                                                                                            | Done on `1393/pskil/d890-settings-page`       |
-| 4   | Write UI (confirm, settings-only, fleet default)                                                                                                                                                                                                          | Not started                                   |
+| 4c  | D890 Review (range, receive-only channels, settings now → after, fleet choice, backup, step-key nudge), Radio settings part, settings-only Write, step-key switch removed for the D890, stun/kill guard                                                   | Not started                                   |
 | 5   | Advanced fields                                                                                                                                                                                                                                           | Not started                                   |
 | 7   | Frequency range display                                                                                                                                                                                                                                   | Not started                                   |
 
@@ -26,6 +26,13 @@
 - `settingsFields.ts`: one spec per v1 field; `settingsCodec.ts`: decode a snapshot, language lock
 - `atD890RadioSettingsSession.ts`: session-only overrides and read values
 - Reference page `optional-settings.md`; layout corrections
+
+### PR 4c: Review and settings Write
+
+- Review sections for the D890 (`RadioWriteStepper/d890/`), the Radio settings part row, the Done-screen "don't ask again", settings-only Write from the stepper and the settings page's **Write settings…**
+- `packAtD890BackupFromSession`: **Save backup now** from the Write's read
+- The persisted step-key switch is gone for the D890 (the nudge replaces it); What Write updates counts the session's settings
+- Stun/kill guard on `END` ([#1288](https://github.com/pskillen/codeplug-studio/issues/1288))
 
 ### PR 3: settings page
 

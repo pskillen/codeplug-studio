@@ -83,6 +83,8 @@ The optional-settings record is the radio's general settings: erase unit `0x3500
 | `keyLongPF1`, `keyLongPF2`, `keyLongPF3`, `keyLongP1`, `keyLongP2`      | `+0x41..+0x45` | ff   | as short                                           | **none**       | menu     | as above                                                  |
 | `longPressTime`                                                         | `+0x46`        | ff   | 0..4 = 1..5 s                                      | `>4` becomes 0 | CPS      | Yes                                                       |
 
+On the AT-D890UV the MM9PDY step keys are ordinary overrides: `keyShortP1` = 14 (TG next) and `keyShortP2` = 13 (TG previous), set by the Review nudge or by hand on the settings page; there is no separate step-key path ([#1393](https://github.com/pskillen/codeplug-studio/issues/1393)). The same two fields set twice are refused before any frame.
+
 The firmware does not range-check the key bytes: it calls through a table indexed by the stored value (`0x08016978`), so 65 and above reach the release table and 130 and above jump through arbitrary RAM. MM9PDY renames four functions: 13 TG Previous, 14 TG Next, 30 Quick Filters, 55 S-Meter; Studio shows those names on the MM9PDY target and writes the same numbers. The radio's own Key Func menu hides some functions per key (for example 62 Digital Protocol never, 6 Call on P keys, 9 Sub PTT on short P and all long, 12 Alarm, 18 Monitor and 46 TBST Send on long presses); Studio offers all 65, as the CPS does.
 
 ## Power and timers

@@ -240,6 +240,8 @@ Build `inspectBag` with `descriptor.hydration.extractHydration(image, { protocol
 
 **Must not** call: `assemble()`, `buildRadioWriteProjection`, `prepareRadioWriteImage`, `mergeChannelsIntoHydration`, or D890 encode/assemble-from-build helpers.
 
+**Backup from the Write's read (AT-D890UV, [#1393](https://github.com/pskillen/codeplug-studio/issues/1393)).** A Backup is `download()` + `extractHydration` + `packLiveRadioBackup`, and a codeplug Write runs the same `download()` before it transmits. The Write stepper's Review step therefore offers **Save backup now**: it packs the read the Write already holds (`packAtD890BackupFromSession`, from a copy of the cache taken at the pause) into the same zip, with no further radio traffic. A settings-only Write reads only the settings spans, so Review's button first reads the rest in the held session. Restore is unchanged.
+
 The reverse holds too: the AT-D890UV settings-only Write (`uploadSettingsPatches`) reuses the Write RMW core and must never call `restoreFromBackup` or replay a settings region. Restore is the only whole-region settings replay.
 
 App entry: `src/app/services/radioBackupRestore.ts` — a sibling of write session code, not a branch inside `prepareRadioWriteImage`.
