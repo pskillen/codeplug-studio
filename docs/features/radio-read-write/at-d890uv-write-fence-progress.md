@@ -24,6 +24,11 @@
 - `channelEncodeGuards.ts` — AM airband-in-MR and BCD-encodable Hz hard failures
 - Tier-3 Write contract + feature hub updated ([#753](https://github.com/pskillen/codeplug-studio/issues/753), [#769](https://github.com/pskillen/codeplug-studio/issues/769))
 
+## 2026-10-26: hard deny before any caller guard ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369))
+
+- `isAtD890HardDeniedWriteAddress` / `assertAtD890NotHardDenied`: LocalInfo and calibration units (`0x04F00000..0x04FFFFFF`), erase-unit bookkeeping markers and the family safe-skip address are refused before the touched-unit shortcut and before any caller `transmitGuard`
+- `atD890WriteMemory` and `atD890WriteBlockRaw` check the whole span before the first frame; Restore's own LocalInfo filter stays (belt and braces)
+
 ## Manual verify (pending hardware — after merge)
 
 - [ ] Fresh Read → Write → Read-back on spare AT-D890UV (pre-prod only)

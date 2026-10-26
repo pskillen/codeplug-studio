@@ -31,7 +31,8 @@ full codeplug write: 9,976 `WRITE_CMD` frames, zero hits on either offset).
 ### Never write them
 
 Studio must not transmit these addresses on any path (staging, transmit filter, or write fence). There
-is no diagnostic or debug exception.
+is no diagnostic or debug exception. The deny is non-overridable: `atD890WriteMemory` and `atD890WriteBlockRaw`
+apply it before any caller-supplied transmit guard.
 
 **Consequence (hardware, 2026-07-30, one variable):** restoring marker writes made the radio display
 _"Program error please initialise the radio!"_ and **factory-reset itself**, destroying the operator's
