@@ -24,6 +24,10 @@ Provisional caps for variant `anytone-at-d890uv`. Enforced at **export** (warnin
 | Max satellite keps records | **25**                                                                                                                                                                                                  | `AT_D890UV_LIMITS.SATELLITE_MAX` — D890 CPS fixed table, span `0x4A80000`–`0x4A831FF`, does not write `0x4A83200`–`0x4A863FF` — see [satellite-keps.md](satellite-keps.md) and [wire-capture-2026-08-11-write-keps.md](wire-capture-2026-08-11-write-keps.md) | [#1305](https://github.com/pskillen/codeplug-studio/issues/1305) |
 | Satellite keps name field  | **8** chars                                                                                                                                                                                             | `AT_D890UV_LIMITS.SATELLITE_NAME_LENGTH` — record offset `0x00`; shortening rules in [name-shortening.md](../../../features/satellite-keps/name-shortening.md) ([#1090](https://github.com/pskillen/codeplug-studio/issues/1090))                             | GPL-source-inferred — see [satellite-keps.md](satellite-keps.md) |
 
+## Frequency range (band code)
+
+Per-code RX/TX tables (19 codes) live in `src/core/radios/anytone/at-d890uv/frequencyRange.ts`, re-exported from `limits.ts`; see [band-code.md](band-code.md).
+
 ## Related
 
 - [capabilities.md](capabilities.md) · [power.md](power.md) · [satellite-keps.md](satellite-keps.md)

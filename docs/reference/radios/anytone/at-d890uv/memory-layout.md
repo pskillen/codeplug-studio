@@ -114,7 +114,7 @@ Where the reconciliation contradicts anytone-cps, the hardware wins and the disc
 | Offset           | Field                   | Notes                                  |
 | ---------------- | ----------------------- | -------------------------------------- |
 | `+0x02` bit 0    | Full test mode          |                                        |
-| `+0x03`          | Frequency mode          | u8                                     |
+| `+0x03`          | Frequency range         | u8 (see [band-code.md](band-code.md))  |
 | `+0x04`, `+0x05` | Chinese UI flag         | Both bytes `0` ⇒ Chinese expert chrome |
 | `+0x06` bit 0    | Band select             |                                        |
 | `+0x0b`          | Band-settings password  | 4 chars                                |

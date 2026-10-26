@@ -133,7 +133,7 @@ Do **not** import old Radio Info debug zips (`hydration.json`). None are expecte
 1. **Restore to radio** at the top (dangerous primary). Disabled until that adapter implements restore, with copy that backup/inspect is available.
 2. Identity + **coverage honesty** (see archive).
 3. Region table: restorable vs inspect-only. Restore defaults to **all restorable** regions; the operator may uncheck restorable rows. Inspect-only rows cannot be enabled. The service drops inspect-only even if the UI is tampered.
-4. Inspect body: **what is on this image**, not “written from your build.” Occupancy plus **expandable** channel / zone / scan / talk-group / contact lists where codecs already exist. D890 Local info / optional settings / APRS / alarm stay collapsed read-only forensics. Inspect-only regions remain in the region table and are not restore targets.
+4. Inspect body: **what is on this image**, not “written from your build.” Occupancy plus **expandable** channel / zone / scan / talk-group / contact lists where codecs already exist. D890 Local info (including the read-only AT-D890 frequency range row, [band-code.md](../../reference/radios/anytone/at-d890uv/band-code.md)) / optional settings / APRS / alarm stay collapsed read-only forensics. Inspect-only regions remain in the region table and are not restore targets.
 5. Secondary: save zip again / clear / read again.
 
 Write-coverage tables stay on the **Export** write panel. They must not become the lead copy here.

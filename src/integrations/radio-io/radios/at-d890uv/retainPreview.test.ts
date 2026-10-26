@@ -26,12 +26,42 @@ describe('settingsRetainPreview', () => {
 
     const rows = settingsRetainPreview(data);
     expect(rows.find((r) => r.label.startsWith('Full test mode'))?.value).toBe('On');
-    expect(rows.find((r) => r.label === 'Frequency mode')?.value).toBe('2');
+    expect(rows.find((r) => r.label === 'Frequency range')?.value).toBe(
+      'Mode 000002 (code 2) · TX 430–440, 144–146 MHz',
+    );
     expect(rows.find((r) => r.label.startsWith('Chinese UI'))?.value).toMatch(/Chinese/);
     expect(rows.find((r) => r.label === 'Band-settings password')?.value).toBe('1234');
     expect(rows.find((r) => r.label === 'Radio type')?.value).toBe('D890UV');
     expect(rows.find((r) => r.label === 'Program password')?.value).toBe('ABCD');
     expect(rows.find((r) => r.label === 'Serial number')?.value).toBe('SN1234567890');
+  });
+});
+
+describe('settingsRetainPreview frequency range', () => {
+  const rangeRow = (code: number) => {
+    const data = new Uint8Array(D890_MAP.LocalInfoLength);
+    data[0x03] = code;
+    return settingsRetainPreview(data).find((r) => r.label === 'Frequency range')?.value;
+  };
+
+  it('shows code 14 as treated as 0 unless LocalInfo +0x0B holds 890#', () => {
+    const data = new Uint8Array(D890_MAP.LocalInfoLength);
+    data[0x03] = 14;
+    const value = () =>
+      settingsRetainPreview(data).find((r) => r.label === 'Frequency range')?.value;
+    expect(value()).toBe(
+      'Maintenance (needs 890#) not unlocked, treated as 0 (code 14) · TX 400–480, 136–174 MHz',
+    );
+    data.set([0x38, 0x39, 0x30, 0x23], 0x0b);
+    expect(value()).toBe('Maintenance (needs 890#) (code 14) · TX 400–520, 136–174, 220–225 MHz');
+  });
+
+  it('describes codes 3, 7 and 19', () => {
+    expect(rangeRow(3)).toBe('Amateur Europe (code 3) · TX 430–440, 144–146 MHz');
+    expect(rangeRow(7)).toBe('Amateur US (code 7) · TX 420–450, 144–148 MHz');
+    expect(rangeRow(19)).toBe(
+      'Unknown (treated as 0 by the radio) (code 19) · TX 400–480, 136–174 MHz',
+    );
   });
 });
 
