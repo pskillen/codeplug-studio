@@ -166,14 +166,7 @@ export async function downloadAtD890SparseRegions(
     signal,
     readBlockSize,
   );
-  await readRegion(
-    pipe,
-    cache,
-    D890_MAP.DtmfList,
-    D890_MAP.DtmfListLength,
-    signal,
-    readBlockSize,
-  );
+  await readRegion(pipe, cache, D890_MAP.DtmfList, D890_MAP.DtmfListLength, signal, readBlockSize);
   await readRegion(
     pipe,
     cache,
