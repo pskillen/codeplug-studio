@@ -29,7 +29,7 @@ const DESCRIPTORS: Record<ReplayRadioId, RadioDescriptor> = {
 
 /** Milliseconds between replayed events when playing normally, and when seeking to `at`. */
 const PLAY_MS = 120;
-const SEEK_MS = 4;
+const SEEK_MS = 40;
 
 function isReplayRadio(v: string | null): v is ReplayRadioId {
   return REPLAY_RADIOS.some((r) => r.id === v);
