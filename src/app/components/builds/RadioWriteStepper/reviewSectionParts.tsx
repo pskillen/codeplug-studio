@@ -20,12 +20,19 @@ export function Section({ title, children }: { title: string; children: ReactNod
   );
 }
 
-export function IdentitySection({ identity }: { identity: RadioIdentityView | null }) {
+export function IdentitySection({
+  identity,
+  extraRows = [],
+}: {
+  identity: RadioIdentityView | null;
+  extraRows?: [string, string][];
+}) {
   if (!identity) return null;
   const rows: [string, string][] = [['Model', identity.model]];
   if (identity.name) rows.push(['Name', identity.name]);
   if (identity.serial) rows.push(['Serial', identity.serial]);
   rows.push(['Firmware', identity.firmware ?? 'unknown']);
+  rows.push(...extraRows);
   return (
     <Section title="This radio">
       <dl className={classes.identityGrid} style={{ margin: 0 }}>

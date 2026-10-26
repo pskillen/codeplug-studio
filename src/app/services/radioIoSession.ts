@@ -94,6 +94,7 @@ import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d8
 import {
   atD890UploadBankIntentFromOrganisation,
   getCacheBytes,
+  type AtD890DownloadCache,
 } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
 import { decodeAtD890MasterIdName } from '@integrations/radio-io/radios/at-d890uv/masterIdCodec.ts';
 import type {
@@ -250,15 +251,15 @@ export async function openRadioSessionForEgress(
         ...(opts?.captureFactorySector ? { captureFactorySector: true as const } : {}),
       });
       const session = createRadioSession({ descriptor, pipe, radio });
-      return { session, descriptor };
-    } catch (err) {
-      const baudsTried = bauds.slice(0, attempt + 1);
-      const canRetry =
       if (radio instanceof AtD890uvProtocol && radio.hasStunKillFlag()) {
         // #1288: END would clear the flag and rewrite LocalInfo. `disconnect()` leaves without END.
         await closeRadioSession(session).catch(() => undefined);
         throw new RadioProtocolError(AT_D890_STUN_KILL_MESSAGE);
       }
+      return { session, descriptor };
+    } catch (err) {
+      const baudsTried = bauds.slice(0, attempt + 1);
+      const canRetry =
         attempt < bauds.length - 1 && isHandshakeConnectFailure(err) && descriptor.baudRateFallback;
       if (!canRetry) {
         try {
@@ -349,10 +350,35 @@ export interface AtD890PreTransmitContext {
   snapshot: AtD890RadioSettingsSnapshot;
   overrides: readonly AtD890SettingsOverride[];
   target: AtD890SettingsTarget;
+  /**
+   * A copy of the in-session download cache taken at the pause, before `upload()` can touch it, so
+   * Review's "Save backup now" packs what the radio held. Absent for a settings-only Write, which
+   * reads only the settings.
+   */
+  downloadCache?: AtD890DownloadCache;
 }
 
 /** `'apply'` writes the overrides, `'keep'` writes without them, `'cancel'` stops before any frame. */
 export type AtD890PreTransmitDecision = 'apply' | 'keep' | 'cancel';
+
+/**
+ * What the pause may resolve with. `'apply'` writes the overrides given when the Write started;
+ * the object form writes the overrides the user ended with at the pause (Review can add some, for
+ * example through the step-key nudge). Both are refused before any frame if a field is unknown,
+ * duplicated or out of range.
+ */
+export type AtD890PreTransmitResult =
+  AtD890PreTransmitDecision | { decision: 'apply'; overrides: readonly AtD890SettingsOverride[] };
+
+/** Normalise a pause result to its decision and the overrides it applies. */
+export function atD890PauseOutcome(
+  result: AtD890PreTransmitResult | void,
+  startOverrides: readonly AtD890SettingsOverride[],
+): { decision: AtD890PreTransmitDecision; overrides: readonly AtD890SettingsOverride[] } {
+  if (result === undefined) return { decision: 'keep', overrides: startOverrides };
+  if (typeof result === 'string') return { decision: result, overrides: startOverrides };
+  return { decision: result.decision, overrides: result.overrides };
+}
 
 export class RadioWriteBlockedError extends Error {
   /** Present when the block reason is a cardinality overage (#859 §9) — absent otherwise. */
@@ -753,6 +779,11 @@ function buildAtD890PreTransmitContext(
     },
     overrides: organisation.atD890SettingsOverrides ?? [],
     target: organisation.atD890SettingsTarget ?? 'stock',
+    downloadCache: {
+      ...(cache.firmware !== undefined ? { firmware: cache.firmware } : {}),
+      ...(cache.modelString !== undefined ? { modelString: cache.modelString } : {}),
+      blocks: new Map([...cache.blocks].map(([addr, data]) => [addr, data.slice()])),
+    },
   };
 }
 
@@ -774,7 +805,7 @@ export async function uploadPreparedRadioWrite(
      * the path is unchanged. On the AT-D890UV the callback may resolve `'apply'` (write the session
      * settings overrides), `'keep'` or nothing (write without them), or `'cancel'` (stop).
      */
-    beforeTransmit?: (ctx: BeforeTransmitContext) => Promise<void | AtD890PreTransmitDecision>;
+    beforeTransmit?: (ctx: BeforeTransmitContext) => Promise<void | AtD890PreTransmitResult>;
     /** AT-D890UV session settings overrides. Empty or unset: today's Write, byte for byte. */
     settingsOverrides?: readonly AtD890SettingsOverride[];
   },
@@ -797,6 +828,8 @@ export async function uploadPreparedRadioWrite(
     opts,
   );
   setCachedImage(session, resolved);
+  // A flagged radio is refused at open; this is the backstop before the pause and any frame.
+  if (session.radio instanceof AtD890uvProtocol) session.radio.assertNoStunKillFlag();
   const overrides = opts?.settingsOverrides ?? [];
   const isAtD890 = session.radio instanceof AtD890uvProtocol;
   const withOverrides: RadioWriteOrganisation = {
@@ -809,7 +842,7 @@ export async function uploadPreparedRadioWrite(
     atD890UploadBankIntentFromOrganisation(withOverrides, opts?.channels);
   }
   if (opts?.beforeTransmit) {
-    const decision = await opts.beforeTransmit({
+    const result = await opts.beforeTransmit({
       identity: radioWriteIdentityFromSession(session),
       channelCount: opts.channels?.length ?? 0,
       identityOnly: !writeReadsBeforeTransmit(session),
@@ -822,17 +855,22 @@ export async function uploadPreparedRadioWrite(
         ? { atD890: buildAtD890PreTransmitContext(session.radio, withOverrides) }
         : {}),
     });
-    if (decision === 'cancel') throw new RadioWriteCancelledError();
-    if (decision === 'apply' && isAtD890 && overrides.length > 0) {
+    const outcome = atD890PauseOutcome(result, overrides);
+    if (outcome.decision === 'cancel') throw new RadioWriteCancelledError();
+    if (outcome.decision === 'apply' && isAtD890 && outcome.overrides.length > 0) {
+      const chosen: RadioWriteOrganisation = {
+        ...(opts?.organisation ?? {}),
+        atD890SettingsOverrides: outcome.overrides,
+      };
+      // Resolve again: the overrides may have changed at the pause. Refused ones fail here, before upload.
+      atD890UploadBankIntentFromOrganisation(chosen, opts?.channels);
       session.descriptor.hydration.seedProtocolForUpload?.(
         session.radio,
         hydration ?? undefined,
-        withOverrides,
+        chosen,
         opts?.channels,
       );
     }
-  // A flagged radio is refused at open; this is the backstop before the pause and any frame.
-  if (session.radio instanceof AtD890uvProtocol) session.radio.assertNoStunKillFlag();
   }
   await session.radio.upload(resolved, {
     onProgress: opts?.onProgress,

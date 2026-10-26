@@ -32,7 +32,8 @@ import {
   RadioWriteBlockedError,
   RadioWriteCancelledError,
   type AtD890PreTransmitContext,
-  type AtD890PreTransmitDecision,
+  atD890PauseOutcome,
+  type AtD890PreTransmitResult,
 } from './radioIoSession.ts';
 
 function requireAtD890(session: RadioSession): AtD890uvProtocol {
@@ -65,7 +66,7 @@ export async function writeAtD890SettingsOnly(
   egress: EgressPath,
   overrides: readonly AtD890SettingsOverride[],
   opts?: {
-    beforeTransmit?: (ctx: AtD890PreTransmitContext) => Promise<AtD890PreTransmitDecision>;
+    beforeTransmit?: (ctx: AtD890PreTransmitContext) => Promise<AtD890PreTransmitResult>;
     onProgress?: ProgressFn;
     signal?: AbortSignal;
   },
@@ -79,7 +80,7 @@ export async function writeAtD890SettingsOnly(
   const patches = resolveAtD890SettingsPatches(overrides, target);
 
   const snapshot = await radio.readSettingsSnapshot({ signal: opts?.signal });
-  const decision = opts?.beforeTransmit
+  const result = opts?.beforeTransmit
     ? await opts.beforeTransmit({
         serial: formatAtD890LocalInfoSerial(snapshot.localInfo),
         masterIdName: decodeAtD890MasterIdName(snapshot.masterId),
@@ -88,9 +89,15 @@ export async function writeAtD890SettingsOnly(
         target,
       })
     : 'cancel';
-  if (decision !== 'apply') throw new RadioWriteCancelledError();
+  const outcome = atD890PauseOutcome(result, overrides);
+  if (outcome.decision !== 'apply') throw new RadioWriteCancelledError();
+  // The pause may have changed the overrides (the step-key nudge); resolve again, before any frame.
+  const chosenPatches =
+    outcome.overrides === overrides
+      ? patches
+      : resolveAtD890SettingsPatches(outcome.overrides, target);
 
-  await radio.uploadSettingsPatches(patches, {
+  await radio.uploadSettingsPatches(chosenPatches, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,
   });
