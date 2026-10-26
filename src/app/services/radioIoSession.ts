@@ -666,7 +666,7 @@ export async function writeBuildToRadio(
 export interface RadioWriteIdentity {
   /** Descriptor label, e.g. `Anytone AT-D890UV`. */
   model: string;
-  /** Full serial where the radio reports one in the read (the UI shows the last four only). */
+  /** Full serial where the radio reports one in the read (shown in full). */
   serial?: string;
   name?: string;
   /** Firmware where the radio reports it; unset means unknown. */

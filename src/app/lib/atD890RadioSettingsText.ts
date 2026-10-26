@@ -26,10 +26,6 @@ function timeLabel(at: number): string {
   return new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export function lastFour(serial: string): string {
-  return serial.length <= 4 ? serial : serial.slice(-4);
-}
-
 /**
  * The frequency range caption for the band code from the read.
  * TODO(#1393 PR 7): use describeAtD890FrequencyRange(code) once PR 7 (#1395) is on this stack;
@@ -39,10 +35,10 @@ export function rangeCaption(bandCode: number): string {
   return `code ${bandCode}`;
 }
 
-/** Banner text for a settings read. Never shows more than the last four serial characters. */
+/** Banner text for a settings read. The serial is shown in full (it is not sensitive). */
 export function readBannerText(read: AtD890RadioSettingsRead): string {
   const name = read.masterIdName.trim() || 'the radio';
-  return `Read from ${name} (…${lastFour(read.serial)}) at ${timeLabel(read.readAt)} · range ${rangeCaption(read.bandCode)}`;
+  return `Read from ${name} (${read.serial}) at ${timeLabel(read.readAt)} · range ${rangeCaption(read.bandCode)}`;
 }
 
 /** The Radio column text. */

@@ -132,11 +132,11 @@ describe('AtD890RadioSettingsEditor', () => {
     expect(screen.getAllByText('not read').length).toBeGreaterThan(40);
     fireEvent.click(screen.getByRole('button', { name: 'Read a radio' }));
     const banner = await screen.findByTestId('read-banner');
-    expect(banner).toHaveTextContent('Read from DEMO-1 (…4567) at');
+    expect(banner).toHaveTextContent('Read from DEMO-1 (ABCD1234567) at');
     expect(banner).toHaveTextContent('range code 3');
     expect(banner).toHaveTextContent('Frequency range');
     expect(banner).toHaveTextContent('unknown');
-    expect(banner).not.toHaveTextContent('ABCD1234567');
+    expect(within(banner).getByText('ABCD1234567')).toBeInTheDocument();
     expect(screen.getByText('Off', { selector: 'span' })).toBeInTheDocument();
     expect(screen.getByText(/Name based .* \(not offered\)/)).toBeInTheDocument();
     expect(screen.getByTestId('changes-count')).toHaveTextContent('0 changes');

@@ -37,7 +37,7 @@ export function stepBarLabel(step: WriteStep): string {
   return `${WRITE_STEPS.indexOf(step) + 1} of ${WRITE_STEPS.length} · ${WRITE_STEP_LABEL[step]}`;
 }
 
-/** What Studio knows about the connected radio. Serial is shown masked (last 4). */
+/** What Studio knows about the connected radio. Serial is shown in full. */
 export interface RadioIdentityView {
   model: string;
   serial?: string;

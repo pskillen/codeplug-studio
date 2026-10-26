@@ -29,7 +29,6 @@ import {
   WRITE_ARRIVES_LATER_NOTE,
   changesLabel,
   readBannerText,
-  lastFour,
   rangeCaption,
 } from '../../lib/atD890RadioSettingsText.ts';
 import classes from './AtD890RadioSettingsEditor.module.css';
@@ -100,7 +99,7 @@ export default function AtD890RadioSettingsEditor({
             </div>
             <div>
               <dt>Serial</dt>
-              <dd>…{lastFour(read.serial)}</dd>
+              <dd>{read.serial}</dd>
             </div>
           </dl>
           <details className={classes.why}>
@@ -108,8 +107,7 @@ export default function AtD890RadioSettingsEditor({
             <p>
               The frequency range is the radio&apos;s region, set at the factory; Studio can only
               show it. Changing it is tracked in issue #1369. Studio cannot yet tell stock firmware
-              from MM9PDY, so the firmware shows as unknown (issue #613). Only the last four
-              characters of the serial are shown.
+              from MM9PDY, so the firmware shows as unknown (issue #613).
             </p>
           </details>
         </div>

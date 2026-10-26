@@ -22,7 +22,7 @@ The body of the AT-D890UV Radio settings page (`/builds/:id/export/radio-setting
 
 ## Behaviour
 
-- **States.** Not read (every Radio column says "not read", values can still be set); Read (banner "Read from <name> (…<last 4>) at <hh:mm> · range <range>", read-only rows for frequency range, firmware ("unknown") and serial (last four only)); Changed (sticky footer; under 40 rem the interim "Write arrives later" note is visually hidden, kept for screen readers, so the footer is one short row).
+- **States.** Not read (every Radio column says "not read", values can still be set); Read (banner "Read from <name> (<serial>) at <hh:mm> · range <range>", read-only rows for frequency range, firmware ("unknown") and serial (shown in full)); Changed (sticky footer; under 40 rem the interim "Write arrives later" note is visually hidden, kept for screen readers, so the footer is one short row).
 - **Keep / Set.** Every field defaults to Keep radio's value. Setting a field adds a session override; **Clear** on the row returns it to Keep. A read never sets or clears an override.
 - **Copy all from this radio** (after a read) turns every readable value into an override after a confirm; **Clear all** (footer) clears every override after a confirm.
 - **Footer** (only with changes): "N changes", Clear all, "Writing these settings arrives with the next Write update." (until the Write step ships), and a link to Back up a radio.
