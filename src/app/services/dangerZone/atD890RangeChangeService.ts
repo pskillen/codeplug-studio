@@ -14,7 +14,10 @@
  * `atD890RangeChangeMayEndAfter`, which fails closed.
  */
 
-import { atD890MaintenanceUnlocked } from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
+import {
+  atD890MaintenanceUnlocked,
+  listAtD890ReceiveOnlyChannels,
+} from '@core/radios/anytone/at-d890uv/frequencyRange.ts';
 import type { RadioBackupManifestV1 } from '@integrations/radio-io/backup/index.ts';
 import type { MemoryMap, ProgressFn, RadioSession } from '@integrations/radio-io/types.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
@@ -221,6 +224,25 @@ function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
 export function saveRangeChangeBackupPair(pair: RangeChangeBackupPair): void {
   downloadRadioBackupZip(pair.backup.zipBytes, pair.backup.manifest);
   downloadAtD890VitalZip(pair.vital);
+}
+
+/**
+ * How many of the backup's channels will be receive-only on `target` (their transmit frequency is outside the
+ * target's transmit range). From the backup's channels, so it needs no radio traffic. `null` when the channels
+ * cannot be decoded.
+ */
+export function receiveOnlyAfterChange(
+  session: RadioSession,
+  pair: Pick<RangeChangeBackupPair, 'backup'>,
+  target: number,
+): { count: number; total: number } | null {
+  try {
+    const channels = d890(session).decodeChannels(pair.backup.image);
+    const used = channels.filter((c) => !c.empty);
+    return { count: listAtD890ReceiveOnlyChannels(used, target).length, total: used.length };
+  } catch {
+    return null;
+  }
 }
 
 // ---- Session A: the change ------------------------------------------------------------------------------

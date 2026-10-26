@@ -46,7 +46,7 @@ function renderPage(profileId: string, options?: { csvOnly?: boolean }) {
 }
 
 describe('BuildDangerZonePage', () => {
-  it('lists the D890 range tool under the strap, with no Start button', () => {
+  it('lists the D890 range tool under the strap, with Start…', () => {
     renderPage('radio-io-at-d890uv');
     expect(screen.getByRole('heading', { level: 1, name: 'Danger zone' })).toBeInTheDocument();
     expect(
@@ -54,7 +54,7 @@ describe('BuildDangerZonePage', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Change frequency range' })).toBeInTheDocument();
     expect(screen.getByText(/About 10 minutes/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Start/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /Start/ })).toBeInTheDocument();
     expect(screen.queryByText(/coming soon/i)).toBeNull();
   });
 
