@@ -9,13 +9,21 @@
  * Settings are session state in Studio (never part of a build); see `atD890RadioSettingsSession`.
  */
 
-export type AtD890SettingKind = 'enum' | 'boolean' | 'text' | 'level';
+export type AtD890SettingKind = 'enum' | 'boolean' | 'text' | 'level' | 'password';
 
 /** Where the setting can be changed on the radio itself. `hidden`: firmware honours it, nothing shows it. */
 export type AtD890SettingExposure = 'menu' | 'cps' | 'hidden';
 
 export type AtD890SettingSectionId =
-  'callDisplay' | 'startup' | 'volumeAudio' | 'tones' | 'display' | 'keys' | 'powerTimers' | 'dmr';
+  | 'callDisplay'
+  | 'startup'
+  | 'volumeAudio'
+  | 'tones'
+  | 'display'
+  | 'keys'
+  | 'powerTimers'
+  | 'dmr'
+  | 'advanced';
 
 export interface AtD890SettingOption {
   readonly value: number;
@@ -34,7 +42,10 @@ export interface AtD890SettingFieldDef {
   readonly exposure: AtD890SettingExposure;
   /** MM9PDY firmware adds a radio menu row for a field that is CPS-only on stock. */
   readonly mm9pdyExposure?: AtD890SettingExposure;
-  readonly advanced: false;
+  /** Behind the page's "Show advanced settings" switch: a wrong value can lock or cripple the radio. */
+  readonly advanced: boolean;
+  /** One line shown with an advanced field once it is set. */
+  readonly warning?: string;
   /** Offered values for `enum` and `level`. */
   readonly options?: readonly AtD890SettingOption[];
   /** Values the radio may hold that Studio shows but does not offer (decoded, never encoded). */
@@ -55,6 +66,7 @@ export const AT_D890_SETTING_SECTIONS: readonly {
   { id: 'keys', label: 'Keys' },
   { id: 'powerTimers', label: 'Power and timers' },
   { id: 'dmr', label: 'DMR' },
+  { id: 'advanced', label: 'Advanced' },
 ];
 
 /** Stored value `n` for `from..to`, labelled by `label(n)`. */
@@ -157,6 +169,15 @@ export const AT_D890_KEY_FUNCTIONS: readonly AtD890KeyFunction[] = KEY_FUNCTION_
  */
 export const AT_D890_POWER_ON_LINE_MAX_LENGTH = 14;
 
+/** Longest power-on password: the firmware compares at most 8 characters. */
+export const AT_D890_POWER_ON_PASSWORD_MAX_DIGITS = 8;
+
+/** The two registry fields behind the one "Power-on password" control. */
+export const AT_D890_POWER_ON_PASSWORD_FIELD_IDS: readonly string[] = [
+  'powerOnPasswordEnabled',
+  'powerOnPasswordDigits',
+];
+
 /** Highest key function value the firmware has a handler for. */
 export const AT_D890_KEY_FUNCTION_MAX = 64;
 
@@ -250,11 +271,24 @@ const TIME_ZONES = list([
 ]);
 
 type Def = Omit<AtD890SettingFieldDef, 'advanced' | 'kind'>;
+type AdvDef = Omit<Def, 'section'> & { readonly warning: string };
 
 const bool = (d: Def): AtD890SettingFieldDef => ({ ...d, kind: 'boolean', advanced: false });
 const en = (d: Def): AtD890SettingFieldDef => ({ ...d, kind: 'enum', advanced: false });
 const lvl = (d: Def): AtD890SettingFieldDef => ({ ...d, kind: 'level', advanced: false });
 const txt = (d: Def): AtD890SettingFieldDef => ({ ...d, kind: 'text', advanced: false });
+const advBool = (d: AdvDef): AtD890SettingFieldDef => ({
+  ...d,
+  section: 'advanced',
+  kind: 'boolean',
+  advanced: true,
+});
+const advEn = (d: AdvDef): AtD890SettingFieldDef => ({
+  ...d,
+  section: 'advanced',
+  kind: 'enum',
+  advanced: true,
+});
 
 const KEY_NAMES = [
   ['PF1', 'Short', 'keyShortPF1'],
@@ -809,16 +843,124 @@ export const AT_D890_SETTING_FIELDS: readonly AtD890SettingFieldDef[] = [
     help: 'Do not list calls from your own ID as missed.',
     exposure: 'cps',
   }),
+
+  // Advanced: behind "Show advanced settings"
+  advEn({
+    id: 'language',
+    label: 'Language',
+    help: 'Language of the radio menus.',
+    exposure: 'menu',
+    options: AT_D890_LANGUAGES,
+    warning: "The radio's region decides which languages stick.",
+  }),
+  advBool({
+    id: 'powerOnPasswordEnabled',
+    label: 'Power-on password',
+    help: 'Ask for a password when the radio starts.',
+    exposure: 'menu',
+    warning:
+      "The radio won't start until this is typed. Write it down. If you forget it, the radio can't be programmed until it is typed.",
+  }),
+  {
+    id: 'powerOnPasswordDigits',
+    section: 'advanced',
+    label: 'Power-on password digits',
+    help: `1 to ${AT_D890_POWER_ON_PASSWORD_MAX_DIGITS} digits.`,
+    kind: 'password',
+    exposure: 'menu',
+    advanced: true,
+    maxLength: AT_D890_POWER_ON_PASSWORD_MAX_DIGITS,
+    warning:
+      "The radio won't start until this is typed. Write it down. If you forget it, the radio can't be programmed until it is typed.",
+  },
+  advEn({
+    id: 'professionalMode',
+    label: 'Working mode',
+    help: 'Amateur, or Professional (a trimmed-down menu).',
+    exposure: 'cps',
+    options: list(['Amateur', 'Professional']),
+    warning: 'Hides VFO and most menus. Set it back to Amateur here to undo.',
+  }),
+  advBool({
+    id: 'repeaterMode',
+    label: 'Repeater mode',
+    help: 'Use the radio as a repeater.',
+    exposure: 'menu',
+    warning: 'The radio works as a repeater and most functions stop.',
+  }),
+  advBool({
+    id: 'acceptRemoteKill',
+    label: 'Accept remote stun/kill',
+    help: 'Let another radio switch this one off over the air.',
+    exposure: 'cps',
+    warning: 'Anyone with the right ID can disable this radio.',
+  }),
+  advBool({
+    id: 'acceptRemoteMonitor',
+    label: 'Accept remote monitor',
+    help: 'Let another radio open this radio’s microphone over the air.',
+    exposure: 'cps',
+    warning: 'Anyone with the right ID can listen through this radio.',
+  }),
+  advBool({
+    id: 'answerGpsRequests',
+    label: 'Answer GPS position requests',
+    help: 'Reply with this radio’s position when another radio asks.',
+    exposure: 'cps',
+    warning: 'Anyone with the right ID can learn where this radio is.',
+  }),
+  advEn({
+    id: 'encryptionType',
+    label: 'Encryption type',
+    help: 'Kind of digital encryption.',
+    exposure: 'cps',
+    options: list(['Common', 'AES / ARC4']),
+    warning: 'Must match the other radios.',
+  }),
+  advEn({
+    id: 'autoRepeaterA',
+    label: 'Auto repeater A',
+    help: 'Shift transmit on the VFO automatically.',
+    exposure: 'menu',
+    options: list(['Off', 'Positive', 'Negative']),
+    warning: 'Shifts TX on VFO.',
+  }),
+  advEn({
+    id: 'autoRepeaterB',
+    label: 'Auto repeater B',
+    help: 'Shift transmit on the other VFO automatically.',
+    exposure: 'menu',
+    options: list(['Off', 'Positive', 'Negative']),
+    warning: 'Shifts TX on VFO.',
+  }),
 ];
 
 const FIELD_BY_ID: ReadonlyMap<string, AtD890SettingFieldDef> = new Map(
   AT_D890_SETTING_FIELDS.map((f) => [f.id, f]),
 );
 
-/** Field ids in display order (section order, then declaration order). */
+/** Field ids in display order (section order, then declaration order), advanced fields excluded. */
 export const AT_D890_V1_SETTINGS_FIELD_IDS: readonly string[] = AT_D890_SETTING_SECTIONS.flatMap(
-  (s) => AT_D890_SETTING_FIELDS.filter((f) => f.section === s.id).map((f) => f.id),
+  (s) => AT_D890_SETTING_FIELDS.filter((f) => f.section === s.id && !f.advanced).map((f) => f.id),
 );
+
+/** The advanced field ids, in display order. */
+export const AT_D890_ADVANCED_SETTINGS_FIELD_IDS: readonly string[] = AT_D890_SETTING_FIELDS.filter(
+  (f) => f.advanced,
+).map((f) => f.id);
+
+/** Every field id in display order: v1 first, then advanced. */
+export const AT_D890_ALL_SETTINGS_FIELD_IDS: readonly string[] = [
+  ...AT_D890_V1_SETTINGS_FIELD_IDS,
+  ...AT_D890_ADVANCED_SETTINGS_FIELD_IDS,
+];
+
+/** Language values a radio with this LocalInfo lock keeps: 0 free, 1 English only, 2 Chinese only. */
+export function atD890LanguagesForLock(lock: 0 | 1 | 2): readonly AtD890SettingOption[] {
+  if (lock === 1) return AT_D890_LANGUAGES.filter((o) => o.value === 0);
+  if (lock === 2) return AT_D890_LANGUAGES.filter((o) => o.value === 1);
+  return AT_D890_LANGUAGES;
+}
 
 export function atD890SettingField(id: string): AtD890SettingFieldDef | undefined {
   return FIELD_BY_ID.get(id);
