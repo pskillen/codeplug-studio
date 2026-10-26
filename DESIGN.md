@@ -287,27 +287,26 @@ fallback (`StockSource` is the seam). It is blocked by:
 
 ---
 
-## Radio tools
+## Danger zone
 
-**Radio tools** are rare jobs that change the radio itself rather than its codeplug, for example changing an
+**The Danger zone** holds rare jobs that change the radio itself rather than its codeplug, for example changing an
 AT-D890UV's frequency range. They sit under a build's **Export** because the Web Serial egress is the door to a radio.
 When Backup and Restore get a radio-level door of their own, the area moves to **Tools**. A tool is not Write, Restore
-or Backup: it has its own wizard, its own send path and its own prod gate. The first tool is the AT-D890UV frequency
+or Backup: it has its own wizard, and its own send path. The first tool is the AT-D890UV frequency
 range change ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369)).
 
 ### Rules
 
 1. **A tool runs only from its own wizard.** Never from Write, Restore or Backup, and never as a side effect of them.
-2. **Backup first, checked.** Studio refuses to touch the radio until the backup is saved and re-opened, and what it
-   re-opens matches what the radio holds.
+2. **Backup first, checked.** Studio refuses to touch the radio until the user has saved the backup files and ticked
+   "I've saved both files".
 3. **One guarded send path per tool, with its own allow-list, as narrow as the change.** Hard interlocks are code: no
    flag, setting, environment value or query parameter turns one off, and each has a refusal test. Generic write
    helpers never reach what a tool writes, and a test keeps every other module from importing the tool's sender.
 4. **Say "Nothing has changed" at every exit before the first write, and offer a resumable recovery after it.** The
    wizard knows which side of the first write it is on, and a journal survives a closed tab.
-5. **Per-tool prod gate.** Each tool has its own prod-disabled flag. A gated tool is hidden on the prod site and fully
-   available on pre-prod (next, dev, staging). A tool's flag is cleared in its own commit once the owner has run the
-   tool on a radio.
+5. **No feature flag.** There is no prod-disabled switch for a tool. The owner tests each tool on a radio, on pre-prod
+   builds, before a release that carries it.
 
 Interlocks never read the owner-decisions file (copy, confirm method, timings): decisions are product choices, and
 interlocks are not.
@@ -319,9 +318,9 @@ interlocks are not.
 | Core rules (targets, summaries, what is allowed) | `src/core/radios/<mfr>/<model>/`                                                               |
 | Send paths, sessions, verifiers, boundary test   | `src/integrations/radio-io/radios/<id>/<tool>/`                                                |
 | Journal (resumable recovery state)               | `src/integrations/persistence/`                                                                |
-| Tool registry, prod gate, owner decisions        | `src/app/services/radioTools/`                                                                 |
-| Wizard and area UI                               | `src/app/routes/builds/radio-tools/`                                                           |
-| Deep dive: rules, status, radio checks           | [docs/features/radio-read-write/radio-tools.md](docs/features/radio-read-write/radio-tools.md) |
+| Tool registry, owner decisions                   | `src/app/services/dangerZone/`                                                                 |
+| Wizard and area UI                               | `src/app/routes/builds/danger-zone/`                                                           |
+| Deep dive: rules, status, radio checks           | [docs/features/radio-read-write/danger-zone.md](docs/features/radio-read-write/danger-zone.md) |
 
 ---
 
@@ -442,7 +441,7 @@ Aligned with [Epic #1](https://github.com/pskillen/codeplug-studio/issues/1):
 
 | Date       | Change                                                                                                                                                                             |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-10-26 | Radio tools: rules for jobs that change the radio itself, first the AT-D890UV frequency range change ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369))            |
+| 2026-10-26 | Danger zone: rules for jobs that change the radio itself, first the AT-D890UV frequency range change ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369))            |
 | 2026-10-24 | Firmware releases are listed and fetched at run time from the firmware project's public release index (pskillen/mm9pdy-firmware) instead of being bundled                          |
 | 2026-10-21 | Firmware flashing: user-supplied stock, bundled and user-supplied patches, hard interlocks, per-radio prod gate ([#1359](https://github.com/pskillen/codeplug-studio/issues/1359)) |
 | 2026-07-22 | Browser WebSerial radio I/O as intentional goal; CPS/firmware versions ([#595](https://github.com/pskillen/codeplug-studio/issues/595))                                            |

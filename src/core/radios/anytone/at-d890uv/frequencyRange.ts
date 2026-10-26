@@ -5,7 +5,7 @@
  * per-code firmware tables; it receives across the hardware bands regardless. Values here are the firmware
  * tables (stock V1.05), not the CPS display table: they differ for codes 15, 16 and 18.
  * Mirror of [band-code.md](../../../../../docs/reference/radios/anytone/at-d890uv/band-code.md). Studio writes
- * LocalInfo only through Radio tools' range change
+ * LocalInfo only through the Danger zone's range change
  * (`integrations/radio-io/radios/at-d890uv/rangeChange/`); this module only describes and checks, and lists the
  * codes a range change may target.
  */

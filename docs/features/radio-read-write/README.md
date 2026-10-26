@@ -93,7 +93,7 @@ In-browser read and write of handheld radios over **Web Serial** (and related tr
 | [adding-a-radio-adapter.md](adding-a-radio-adapter.md)                | Checklist for new Web Serial radio modules (living — update as we learn)                                                                                  |
 | [browser-radio-io-progress.md](browser-radio-io-progress.md)          | Program progress for epic #594                                                                                                                            |
 | [browser-radio-io-outstanding.md](browser-radio-io-outstanding.md)    | Open debt with linked issues                                                                                                                              |
-| [radio-tools.md](radio-tools.md)                                      | Radio tools: jobs that change the radio itself (AT-D890 frequency range change). Rules, engine anchors, radio checks RT-1 to RT-9 (pending)               |
+| [danger-zone.md](danger-zone.md)                                      | Danger zone: jobs that change the radio itself (AT-D890 frequency range change). Rules, engine anchors, radio checks RT-1 to RT-9 (pending)               |
 | [protocol-kit-architecture.md](protocol-kit-architecture.md)          | Spike deep-dive — kit vs per-radio modules                                                                                                                |
 | [backup-restore.md](backup-restore.md)                                | Operator backup zip + inspect + restore (not Write-codeplug). Restore shipped for D890 / OpenGD77 / UV-17Pro / DM-32 / RT95; **hardware verify pending**. |
 

@@ -81,12 +81,12 @@ Code: [`frequencyRange.ts`](../../../../../src/core/radios/anytone/at-d890uv/fre
 ### How Studio uses it
 
 - Read-only display: the Backup page's LocalInfo decode shows "Frequency range: <caption> (code N) · TX …"; the ident reply carries the same byte (`AtD890Ident.bandCode`).
-- Studio writes LocalInfo **only through Radio tools' range change** (`integrations/radio-io/radios/at-d890uv/rangeChange/`). No codeplug Write, Restore or Backup path reaches it.
+- Studio writes LocalInfo **only through the Danger zone's range change** (`integrations/radio-io/radios/at-d890uv/rangeChange/`). No codeplug Write, Restore or Backup path reaches it.
 - **Every channel the hardware can receive is written.** Once the Review step (PR 4c) lands, the Write's Review will warn, from the connected radio's code, about channels whose TX frequency is outside that radio's TX table (`listAtD890ReceiveOnlyChannels`): they are written and are receive-only on that radio. Nothing is stored per build. Build-level eligibility ([capabilities.md](capabilities.md)) is unchanged.
 
 ## Changing the range
 
-Facts from a reading of stock V1.05 firmware. **Not radio-tested: RT-1 and RT-2 are pending** (see [radio-tools.md](../../../../features/radio-read-write/radio-tools.md)).
+Facts from a reading of stock V1.05 firmware. **Not radio-tested: RT-1 and RT-2 are pending** (see [danger-zone.md](../../../../features/radio-read-write/danger-zone.md)).
 
 ### How the firmware takes the change
 
@@ -133,11 +133,11 @@ The official **CPS** never writes LocalInfo, cannot change a radio's range, and 
 
 `buildAtD890RangeChangeFrame(liveLocalInfo, target)` refuses when: the LocalInfo is shorter than `0x100`; `+0x00` or `+0x01` is non-zero; `+0x04 != +0x05`; `+0x10..+0x15` is not `D890UV`; the target is not an integer in the allowed set; the target is 14 and `+0x0B..+0x0E` is not `890#`; or the target equals the raw `+0x03`. It returns a copy of `+0x00..+0x0F` with only `+0x03` set and asserts the diff against its input is exactly one byte.
 
-**Allowed targets:** 0, 1, 2, 3, 4, 5, 7, 8, 10, 11, 13, 16, 17, 18, plus 14 after `890#`. Codes 6, 9, 12 and 15 are offered by neither the CPS nor the radio's factory menu and are **never** a target. Targets whose receive range is narrower than 136-174 / 400-480 MHz: 2, 4, 5, 8, 16, 17. Codes 16 and 17 inhibit UHF transmit.
+**Allowed targets:** every code 0 to 18. Code 14 only when `+0x0B..+0x0E` reads `890#` (otherwise refused with reason `maintenance-locked`). Codes 6, 9, 12 and 15 are valid to the firmware but offered by neither the CPS nor the radio's factory menu: they are allowed, flagged `unlisted` so a screen can warn loudly, and a radio already on one is not refused. Targets whose receive range is narrower than 136-174 / 400-480 MHz: 2, 4, 5, 8, 16, 17 (listed) and 6, 9, 15 (unlisted). Codes 16 and 17 inhibit UHF transmit.
 
 ### Session shape
 
-Run in PROGRAM by `changeAtD890FrequencyRange`: read LocalInfo `0x100`; refuse on a stun/kill flag; require the bytes to equal the verified backup; build the frame; let the caller write its journal; send the one `W`; send `END`. After the reboot, `verifyAtD890RangeChange` reads LocalInfo (and the tune bank when the backup has it) and reports any difference other than LocalInfo `+0x03` and tune `+0x28`.
+Run in PROGRAM by `changeAtD890FrequencyRange`: read LocalInfo `0x100`; refuse on a stun/kill flag; require the bytes to equal the verified backup; build the frame; let the caller write its journal; send the one `W`; send `END`. After the reboot, `verifyAtD890RangeChange` (a separate step the user starts; nothing runs it automatically) reads LocalInfo (and the tune bank when the backup has it) and reports any difference other than LocalInfo `+0x03` and tune `+0x28`.
 
 ### Code and tests
 
@@ -147,7 +147,7 @@ Run in PROGRAM by `changeAtD890FrequencyRange`: read LocalInfo `0x100`; refuse o
 
 ### Not engine work
 
-The wizard, the backup-first check, the resumable journal and the prod gate belong to later PRs of [#1369](https://github.com/pskillen/codeplug-studio/issues/1369). **Eligibility follows the code:** the D890 channel-eligibility bands ([capabilities.md](capabilities.md)) are currently fixed at 136-174 / 400-480 MHz and should come from the table above once the code is known.
+The wizard, the backup tickbox, the resumable journal and the final Check button belong to later PRs of [#1369](https://github.com/pskillen/codeplug-studio/issues/1369). **Eligibility follows the code:** the D890 channel-eligibility bands ([capabilities.md](capabilities.md)) are currently fixed at 136-174 / 400-480 MHz and should come from the table above once the code is known.
 
 ## Open questions (hardware tests)
 
