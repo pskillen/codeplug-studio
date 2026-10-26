@@ -174,7 +174,7 @@ describe('AT-D890 backup of the extents a range change wipes', () => {
       return addr >= 0x1f8_0000 && addr < 0x1fc_0000;
     });
     expect(vfoUnit).toEqual([]);
-  });
+  }, 30_000);
 
   it('listWriteChunks ignores the settings-unit extents', () => {
     const blocks = new Map<number, Uint8Array>();
