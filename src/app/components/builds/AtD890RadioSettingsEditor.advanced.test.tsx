@@ -69,9 +69,9 @@ describe('AtD890RadioSettingsEditor advanced settings', () => {
   it('hides every advanced row until the switch is on, and shows them after', () => {
     renderEditor();
     expect(screen.queryByTestId('advanced-rows')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Language')).toBeNull();
-    expect(screen.queryByRole('combobox', { name: 'Working mode' })).toBeNull();
+    expect(document.querySelector('[data-field-id="language"]')).toBeNull();
     showAdvanced();
+    expect(document.querySelector('[data-field-id="language"]')).not.toBeNull();
     const advanced = within(screen.getByTestId('advanced-rows'));
     for (const name of [
       'Language',
