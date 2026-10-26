@@ -1,7 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
+import * as featureDetect from '@integrations/radio-io/transport/featureDetect.ts';
+import { setRead, clearAllOverrides } from '../../state/atD890RadioSettingsSession.ts';
 import { DesignSystemV2Provider } from '../../components/v2/index.ts';
 import { BuildLayoutProvider } from './BuildLayoutContext.tsx';
 import BuildRadioSettingsPage, {
@@ -12,6 +14,20 @@ vi.mock('../../services/radioIoSession.ts', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../services/radioIoSession.ts')>();
   return { ...actual, isRadioSerialSupported: () => true };
 });
+
+vi.mock('@integrations/radio-io/transport/featureDetect.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof featureDetect>();
+  return { ...actual, isCapacitorSerialSupported: vi.fn(() => false) };
+});
+
+const READ = {
+  serial: 'ABCD1234567',
+  masterIdName: 'DEMO-1',
+  readAt: new Date(2026, 9, 26, 14, 2).getTime(),
+  bandCode: 3,
+  languageLock: 0 as const,
+  decoded: {},
+};
 
 function renderPage(profileId: string) {
   const { build, egress } = newRadioBuildForProfile('proj', profileId);
@@ -56,5 +72,33 @@ describe('BuildRadioSettingsPage', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       'Radio settings — AT-D890UV (MM9PDY firmware)',
     );
+  });
+
+  describe('Danger zone Change… link', () => {
+    afterEach(() => {
+      clearAllOverrides('page-radio-io-at-d890uv');
+      clearAllOverrides('page-radio-io-at-d890uv-mm9pdy');
+      vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(false);
+    });
+
+    it('is wired from the page for both D890 targets', () => {
+      for (const profile of ['radio-io-at-d890uv', 'radio-io-at-d890uv-mm9pdy']) {
+        act(() => setRead(`page-${profile}`, READ));
+        const { unmount } = renderPage(profile);
+        expect(screen.getByRole('link', { name: 'Change…' })).toHaveAttribute(
+          'href',
+          `/builds/page-${profile}/export/danger-zone`,
+        );
+        unmount();
+      }
+    });
+
+    it('is absent in the native app (Capacitor)', () => {
+      vi.mocked(featureDetect.isCapacitorSerialSupported).mockReturnValue(true);
+      act(() => setRead('page-radio-io-at-d890uv', READ));
+      renderPage('radio-io-at-d890uv');
+      expect(screen.getByText('Frequency range')).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Change…' })).toBeNull();
+    });
   });
 });
