@@ -8,6 +8,7 @@ import {
   type RadioBackupManifestV1,
   type RadioBackupRegionV1,
 } from '../../backup/types.ts';
+import { RadioProtocolError } from '../../kit/errors.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import {
   AT_D890_LIMITS,
@@ -179,5 +180,36 @@ describe('AtD890uvProtocol.restoreFromBackup', () => {
     expect(writePayloadAt(pipe, D890_MAP.ChannelSet)?.[0]).toBe(0x21);
     expect(writePayloadAt(pipe, D890_MAP.OptionalSettingsMain)?.[0]).toBe(0x41);
     expect(writePayloadAt(pipe, D890_MAP.AlarmBitmap)?.[0]).toBe(0xab);
+  });
+
+  it.each([
+    ['tune unit A', 0x04f0_0000],
+    ['LocalInfo unit past the restore filter', 0x04f8_0100],
+  ])('refuses a forged restorable region in the %s with zero frames', async (_name, address) => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    const memory = new Map<number, Uint8Array>([
+      [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
+    ]);
+    const unitBase = address - (address % 0x4_0000);
+    // The LocalInfo unit is already served by the serial span above.
+    if (!memory.has(unitBase)) memory.set(unitBase, makeAtD890EraseUnitBuffer());
+    scriptAtD890UploadReadResponder(pipe, memory);
+    enableAtD890AutoWriteAck(pipe);
+
+    const image = createMemoryMap(AT_D890_MAP_SIZE);
+    image.fill(address, 0x20, 0x5a);
+    const archive = { manifest: manifest([region('forged', address, 0x20, 'restorable')]), image };
+
+    const failure = await radio.restoreFromBackup(archive, { regionIds: ['forged'] }).then(
+      () => undefined,
+      (e: unknown) => e,
+    );
+    expect(failure).toBeInstanceOf(RadioProtocolError);
+    expect((failure as Error).message).toMatch(/LocalInfo \/ calibration/);
+    expect(collectAtD890WriteDataAddresses(pipe)).toEqual([]);
+    expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(0);
   });
 });

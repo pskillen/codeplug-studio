@@ -177,6 +177,74 @@ export function findWritableExtentForAddress(address: number): AtD890MemoryExten
   return AT_D890_WRITABLE_EXTENTS.find((extent) => isAddressInExtent(address, extent));
 }
 
+/**
+ * LocalInfo and calibration (tune) units: the A/B pairs at 0x04F00000 / 0x04F40000 (tune)
+ * and 0x04F80000 / 0x04FC0000 (LocalInfo), one contiguous 1 MiB range.
+ */
+export const AT_D890_VITAL_UNITS_RANGE = { start: 0x04f0_0000, endExclusive: 0x0500_0000 } as const;
+
+type HardDenyReason = 'vital-unit' | 'bookkeeping' | 'safe-skip';
+
+function hardDenyReasonFor(address: number): HardDenyReason | undefined {
+  // ⚠️ DO NOT REMOVE, AND DO NOT ADD A FLAG TO RE-ENABLE THIS.
+  // The LocalInfo units (serial, stun/kill flags, frequency range, market byte) and the
+  // calibration units cannot be recreated if wrong: a bad byte can stun or kill the radio,
+  // factory-reset it or lose its serial. Calibration is unique to the unit. The erase-unit
+  // bookkeeping markers and the family safe-skip address are refused for the same reason
+  // (see the bookkeeping note in isAtD890TransmitAddress).
+  //
+  // This runs before any touched-unit shortcut and before any caller-supplied transmitGuard,
+  // so no generic write path can reach these addresses. There is no LocalInfo writer today.
+  // The only one planned is the Danger zone frequency-range change (#1369), a one-shot,
+  // single-purpose sender that will use neither atD890WriteMemory nor atD890WriteBlockRaw.
+  if (
+    address >= AT_D890_VITAL_UNITS_RANGE.start &&
+    address < AT_D890_VITAL_UNITS_RANGE.endExclusive
+  ) {
+    return 'vital-unit';
+  }
+  if (isAtD890EraseUnitBookkeepingAddress(address)) return 'bookkeeping';
+  if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) return 'safe-skip';
+  return undefined;
+}
+
+const HARD_DENY_TEXT: Record<HardDenyReason, string> = {
+  'vital-unit': 'LocalInfo / calibration unit (never written by generic paths)',
+  bookkeeping: 'erase-unit flash sector-management marker (never write)',
+  'safe-skip': 'family safe-skip',
+};
+
+/** True for addresses no generic D890 write may ever reach, whatever guard a caller supplies. */
+export function isAtD890HardDeniedWriteAddress(address: number): boolean {
+  return hardDenyReasonFor(address) !== undefined;
+}
+
+export function assertAtD890NotHardDenied(address: number): void {
+  const reason = hardDenyReasonFor(address);
+  if (reason) {
+    throw new RadioProtocolError(
+      `D890 write refused at 0x${address.toString(16)} — ${HARD_DENY_TEXT[reason]}`,
+    );
+  }
+}
+
+/**
+ * Hard-deny check for a whole write span, before any frame is sent: the start address,
+ * the vital range as a range, and every aligned 16-byte block the span touches (which
+ * includes the block holding the last byte).
+ */
+export function assertAtD890SpanNotHardDenied(address: number, length: number): void {
+  assertAtD890NotHardDenied(address);
+  if (length <= 0) return;
+  const last = address + length - 1;
+  if (address < AT_D890_VITAL_UNITS_RANGE.endExclusive && last >= AT_D890_VITAL_UNITS_RANGE.start) {
+    throw new RadioProtocolError(
+      `D890 write refused at 0x${Math.max(address, AT_D890_VITAL_UNITS_RANGE.start).toString(16)} — ${HARD_DENY_TEXT['vital-unit']}`,
+    );
+  }
+  for (let a = address - (address % 16); a <= last; a += 16) assertAtD890NotHardDenied(a);
+}
+
 export function isAtD890WritableAddress(address: number): boolean {
   if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) return false;
   if (isAtD890ChannelDataAddress(address) && !isAtD890ChannelDataRealAddress(address)) {
@@ -186,12 +254,8 @@ export function isAtD890WritableAddress(address: number): boolean {
 }
 
 export function assertAtD890WritableAddress(address: number): void {
+  assertAtD890NotHardDenied(address);
   if (!isAtD890TransmitAddress(address, new Set())) {
-    if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) {
-      throw new RadioProtocolError(
-        `D890 write refused at forbidden address 0x${address.toString(16)} (family safe-skip)`,
-      );
-    }
     if (isAtD890ChannelDataAddress(address) && !isAtD890ChannelDataRealAddress(address)) {
       throw new RadioProtocolError(
         `D890 write refused at 0x${address.toString(16)} — ChannelData mirrored address (not backed storage)`,
@@ -211,6 +275,7 @@ export function isAtD890TransmitAddress(
   address: number,
   touchedUnitBases: ReadonlySet<number>,
 ): boolean {
+  if (isAtD890HardDeniedWriteAddress(address)) return false;
   if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) return false;
   // ⚠️ DO NOT REMOVE, AND DO NOT ADD A FLAG TO RE-ENABLE THIS.
   // +0x3fbf0 and +0x3fff0 in every 0x40000 erase unit are the radio's own flash
@@ -238,17 +303,8 @@ export function assertAtD890TransmitAddress(
   address: number,
   touchedUnitBases: ReadonlySet<number>,
 ): void {
+  assertAtD890NotHardDenied(address);
   if (isAtD890TransmitAddress(address, touchedUnitBases)) return;
-  if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) {
-    throw new RadioProtocolError(
-      `D890 write refused at forbidden address 0x${address.toString(16)} (family safe-skip)`,
-    );
-  }
-  if (isAtD890EraseUnitBookkeepingAddress(address)) {
-    throw new RadioProtocolError(
-      `D890 write refused at 0x${address.toString(16)} — erase-unit flash sector-management marker (never write)`,
-    );
-  }
   if (isAtD890ChannelDataAddress(address) && !isAtD890ChannelDataRealAddress(address)) {
     throw new RadioProtocolError(
       `D890 write refused at 0x${address.toString(16)} — ChannelData mirrored address (not backed storage)`,

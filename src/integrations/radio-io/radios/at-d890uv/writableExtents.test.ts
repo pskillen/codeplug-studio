@@ -15,11 +15,13 @@ import {
   type AtD890DownloadCache,
 } from './memory.ts';
 import {
+  assertAtD890NotHardDenied,
   assertAtD890TransmitAddress,
   assertAtD890WritableAddress,
   assertAtD890WritableSpan,
   AT_D890_WRITABLE_EXTENTS,
   findWritableExtentForAddress,
+  isAtD890HardDeniedWriteAddress,
   isAtD890TransmitAddress,
   isAtD890WritableAddress,
 } from './writableExtents.ts';
@@ -251,5 +253,47 @@ describe('AT_D890 channel location table extent (#1383)', () => {
       assertAtD890WritableSpan(base, AT_D890_CHANNEL_LOCATION_TABLE_MAX_BYTES + 0x10),
     ).toThrow(RadioProtocolError);
     expect(isAtD890TransmitAddress(AT_D890_CHANNEL_LOCATION.PAIR_B_ADDRESS, new Set())).toBe(false);
+  });
+});
+
+describe('hard deny (LocalInfo, calibration, markers, safe-skip)', () => {
+  it('transmit fence refuses vital units even when the unit is in the touched set', () => {
+    expect(isAtD890TransmitAddress(0x04f8_0000, new Set([0x04f8_0000]))).toBe(false);
+    expect(isAtD890TransmitAddress(0x04f0_0010, new Set([0x04f0_0000]))).toBe(false);
+    expect(isAtD890TransmitAddress(0x04fc_0000, new Set([0x04fc_0000]))).toBe(false);
+  });
+
+  it('range boundaries', () => {
+    expect(isAtD890HardDeniedWriteAddress(0x04ef_ffe0)).toBe(false);
+    expect(isAtD890HardDeniedWriteAddress(0x04f0_0000)).toBe(true);
+    expect(isAtD890HardDeniedWriteAddress(0x04ff_fff0)).toBe(true);
+    expect(isAtD890HardDeniedWriteAddress(0x0500_0000)).toBe(false);
+  });
+
+  it('pins the top of every vital unit by the range rule, not the bookkeeping rule', () => {
+    // +0x3fff0 in an erase unit is a bookkeeping offset, so it is denied whatever the range
+    // says. +0x3ffe0 is not, so these addresses only stay denied while the range covers them.
+    for (const address of [0x04ff_ffe0, 0x04f7_ffe0, 0x04f3_ffe0, 0x04fb_ffe0]) {
+      expect(isAtD890HardDeniedWriteAddress(address)).toBe(true);
+      expect(() => assertAtD890NotHardDenied(address)).toThrow(/LocalInfo \/ calibration/);
+    }
+  });
+
+  it('keeps 0x04effff0 denied as a bookkeeping marker, not as a vital unit', () => {
+    // 0x04ec0000 is 0x40000-aligned, so 0x04effff0 is its +0x3fff0 marker offset.
+    expect(isAtD890HardDeniedWriteAddress(0x04ef_fff0)).toBe(true);
+    expect(() => assertAtD890NotHardDenied(0x04ef_fff0)).toThrow(/sector-management marker/);
+    expect(isAtD890HardDeniedWriteAddress(0x04ef_ffe0)).toBe(false);
+  });
+
+  it('denies bookkeeping and safe-skip, with the reason in the message', () => {
+    expect(isAtD890HardDeniedWriteAddress(0x03a3_fbf0)).toBe(true);
+    expect(isAtD890HardDeniedWriteAddress(0x03a3_fff0)).toBe(true);
+    expect(() => assertAtD890NotHardDenied(0x03a3_fbf0)).toThrow(/sector-management marker/);
+    expect(() => assertAtD890NotHardDenied(0x02fa_0010)).toThrow(/family safe-skip/);
+    expect(() => assertAtD890NotHardDenied(0x04f8_0000)).toThrow(/LocalInfo \/ calibration/);
+    expect(() => assertAtD890TransmitAddress(0x04f8_0000, new Set([0x04f8_0000]))).toThrow(
+      /LocalInfo \/ calibration/,
+    );
   });
 });

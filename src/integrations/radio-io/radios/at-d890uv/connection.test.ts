@@ -109,6 +109,43 @@ describe('atD890WriteMemory allow-list', () => {
   });
 });
 
+describe('hard deny before any caller guard', () => {
+  const permissive = { transmitGuard: () => {} };
+  const denied = [
+    0x04f8_0000, 0x04f0_0000, 0x04f7_fff0, 0x04ff_fff0, 0x04ff_ffe0, 0x04f7_ffe0, 0x04f3_ffe0,
+    0x03a3_fbf0, 0x02fa_0010,
+  ];
+  for (const addr of denied) {
+    it(`atD890WriteMemory refuses 0x${addr.toString(16)} with a permissive guard`, async () => {
+      const pipe = new AtD890ScriptedPipe();
+      await expect(
+        atD890WriteMemory(pipe, addr, new Uint8Array(0x10), undefined, permissive),
+      ).rejects.toThrow(RadioProtocolError);
+      expect(pipe.writes.filter((w) => w[0] === 0x57)).toHaveLength(0);
+      expect(pipe.writes).toHaveLength(0);
+    });
+    it(`atD890WriteBlockRaw refuses 0x${addr.toString(16)}`, async () => {
+      const pipe = new AtD890ScriptedPipe();
+      await expect(atD890WriteBlockRaw(pipe, addr, new Uint8Array(0x10))).rejects.toThrow(
+        RadioProtocolError,
+      );
+      expect(pipe.writes).toHaveLength(0);
+    });
+  }
+
+  it('refuses a span that starts below the range and runs into it, before the first frame', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    await expect(
+      atD890WriteMemory(pipe, 0x04ef_ffe0, new Uint8Array(0x30), undefined, permissive),
+    ).rejects.toThrow(/LocalInfo \/ calibration/);
+    expect(pipe.writes).toHaveLength(0);
+    await expect(atD890WriteBlockRaw(pipe, 0x04ef_ffe0, new Uint8Array(0x30))).rejects.toThrow(
+      RadioProtocolError,
+    );
+    expect(pipe.writes).toHaveLength(0);
+  });
+});
+
 describe('atD890ReadMemory negotiated block size', () => {
   it('reads aligned spans in 240-byte chunks', async () => {
     const pipe = new AtD890ScriptedPipe();
