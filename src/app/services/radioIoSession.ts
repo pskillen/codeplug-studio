@@ -59,6 +59,7 @@ import {
   collectSingleBankDigitalContacts,
   type SingleBankRadioWritePrepareOptions,
 } from './singleBankRadioWrite.ts';
+import { startAtD890WriteTiming } from './radioIoAtD890WriteTimings.ts';
 import {
   declareAtD890ContactUnitsForWrite,
   prepareAtD890DigitalContactsForWrite,
@@ -833,7 +834,15 @@ export async function uploadPreparedRadioWrite(
     /** AT-D890UV session settings overrides. Empty or unset: today's Write, byte for byte. */
     settingsOverrides?: readonly AtD890SettingsOverride[];
   },
-): Promise<{ writeVerifyPending?: WriteVerifyCaptureResult; warnings?: ExportWarning[] }> {
+): Promise<{
+  writeVerifyPending?: WriteVerifyCaptureResult;
+  warnings?: ExportWarning[];
+  /** AT-D890UV: the `[d890-write-timing]` console line (#1406), for the Done step's copy button. */
+  timings?: string;
+}> {
+  // Per-stage timings with frame counts; the Review pause is excluded (#1406).
+  const timing = startAtD890WriteTiming(session, opts?.onProgress);
+  const onProgress = timing ? timing.timeline.onProgress : opts?.onProgress;
   const hydration = getRadioCloneHydration(egress);
   session.descriptor.hydration.seedProtocolForUpload?.(
     session.radio,
@@ -849,7 +858,7 @@ export async function uploadPreparedRadioWrite(
       channels: opts?.channels ?? [],
       organisation: opts?.organisation ?? {},
     },
-    opts,
+    { ...opts, onProgress },
   );
   setCachedImage(session, resolved);
   // A flagged radio is refused at open; this is the backstop before the pause and any frame.
@@ -871,6 +880,7 @@ export async function uploadPreparedRadioWrite(
     ? prepareAtD890DigitalContactsForWrite(opts?.organisation?.digitalContacts)
     : undefined;
   if (opts?.beforeTransmit) {
+    timing?.timeline.markPauseStart();
     const result = await opts.beforeTransmit({
       identity: radioWriteIdentityFromSession(session),
       channelCount: opts.channels?.length ?? 0,
@@ -884,6 +894,7 @@ export async function uploadPreparedRadioWrite(
         ? { atD890: buildAtD890PreTransmitContext(session.radio, withOverrides) }
         : {}),
     });
+    timing?.timeline.markPauseEnd();
     const outcome = atD890PauseOutcome(result, overrides);
     if (outcome.decision === 'cancel') throw new RadioWriteCancelledError();
     if (outcome.decision === 'apply' && isAtD890 && outcome.overrides.length > 0) {
@@ -925,17 +936,25 @@ export async function uploadPreparedRadioWrite(
   }
   declareAtD890ContactUnitsForWrite(session, contactWrite);
   await session.radio.upload(resolved, {
-    onProgress: opts?.onProgress,
+    onProgress,
     signal: opts?.signal,
   });
   if (isD890) {
-    await writePreparedAtD890DigitalContactsForWrite(session, contactWrite, opts);
+    await writePreparedAtD890DigitalContactsForWrite(session, contactWrite, {
+      ...opts,
+      onProgress,
+    });
   }
   const captured = session.descriptor.writeVerify?.captureAfterUpload(session);
   const warnings = openGd77WriteWarnings(session);
+  const timings = timing?.finish({
+    profileId: egress.profileId,
+    contacts: opts?.organisation?.digitalContacts?.length ?? 0,
+  });
   return {
     ...(captured ? { writeVerifyPending: captured } : {}),
     ...(warnings.length ? { warnings } : {}),
+    ...(timings ? { timings } : {}),
   };
 }
 

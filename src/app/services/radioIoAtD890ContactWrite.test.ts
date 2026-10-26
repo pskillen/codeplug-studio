@@ -3,7 +3,7 @@
  * write leaves PROGRAM without `END`.
  */
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { newChannel, newRadioBuildForProfile, newZone } from '@core/domain/factories.ts';
 import { assemble } from '@core/services/assemble.ts';
 import { buildRadioWriteProjection } from './radioIoWriteProjection.ts';
@@ -176,6 +176,42 @@ describe('AT-D890 Write flows send no R after the first W (#1406)', () => {
     expect(pipe.writes.filter((f) => f[0] === 0x52)).toHaveLength(readsBefore);
     await closeRadioSession(session);
     assertAtD890NoReadAfterWrite(pipe.writes);
+  });
+});
+
+describe('AT-D890 write timings (#1406)', () => {
+  it('returns the [d890-write-timing] line: rows in order, frame deltas equal the pipe totals', async () => {
+    const { session, pipe } = await d890Session();
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    const readsBefore = pipe.writes.filter((f) => f[0] === 0x52).length;
+    const result = await uploadPreparedRadioWrite(session, egress, undefined, {
+      ...withContacts,
+      beforeTransmit: async () => undefined,
+    });
+    expect(result.timings?.startsWith('[d890-write-timing] ')).toBe(true);
+    expect(info).toHaveBeenCalledWith(result.timings);
+    info.mockRestore();
+    const report = JSON.parse(result.timings!.slice('[d890-write-timing] '.length)) as {
+      contacts: number;
+      untimed: string[];
+      rows: { stage: string; counters: Record<string, number> }[];
+    };
+    expect(report.contacts).toBe(2);
+    expect(report.untimed).toEqual(['END']);
+    const stages = report.rows.map((r) => r.stage);
+    expect(stages.indexOf('Preserving untouched settings')).toBeLessThan(stages.indexOf('Upload'));
+    expect(stages.indexOf('Upload')).toBeLessThan(stages.indexOf('Digital contacts'));
+    const sum = (k: string) => report.rows.reduce((a, r) => a + (r.counters[k] ?? 0), 0);
+    expect(sum('wFrames')).toBe(pipe.writes.filter((f) => f[0] === 0x57).length);
+    expect(sum('rFrames')).toBe(pipe.writes.filter((f) => f[0] === 0x52).length - readsBefore);
+    const contactsRow = report.rows.find((r) => r.stage === 'Digital contacts')!;
+    expect(contactsRow.counters.rFrames).toBe(0);
+    expect(contactsRow.counters.wFrames).toBe(contactFrameCount(pipe));
+  });
+
+  it('is absent for the other radios (no D890 session)', async () => {
+    const { startAtD890WriteTiming } = await import('./radioIoAtD890WriteTimings.ts');
+    expect(startAtD890WriteTiming({ radio: {}, pipe: {} } as never, undefined)).toBeUndefined();
   });
 });
 
