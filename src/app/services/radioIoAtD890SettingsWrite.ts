@@ -26,7 +26,7 @@ import {
   type AtD890SettingsOverride,
 } from '@integrations/radio-io/radios/at-d890uv/settingsFields.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
-import { decodeWideCharName } from '@integrations/radio-io/radios/at-d890uv/wideChar.ts';
+import { decodeAtD890MasterIdName } from '@integrations/radio-io/radios/at-d890uv/masterIdCodec.ts';
 import type { WriteVerifyCaptureResult } from '@integrations/radio-io/writeVerify.ts';
 import {
   RadioWriteBlockedError,
@@ -82,7 +82,7 @@ export async function writeAtD890SettingsOnly(
   const decision = opts?.beforeTransmit
     ? await opts.beforeTransmit({
         serial: formatAtD890LocalInfoSerial(snapshot.localInfo),
-        masterIdName: decodeWideCharName(snapshot.masterId.subarray(4, 0x24)),
+        masterIdName: decodeAtD890MasterIdName(snapshot.masterId),
         snapshot,
         overrides,
         target,

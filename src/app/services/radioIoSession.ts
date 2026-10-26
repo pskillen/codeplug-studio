@@ -91,7 +91,7 @@ import {
   atD890UploadBankIntentFromOrganisation,
   getCacheBytes,
 } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
-import { decodeWideCharName } from '@integrations/radio-io/radios/at-d890uv/wideChar.ts';
+import { decodeAtD890MasterIdName } from '@integrations/radio-io/radios/at-d890uv/masterIdCodec.ts';
 import type {
   AtD890RadioSettingsSnapshot,
   AtD890SettingsOverride,
@@ -730,7 +730,7 @@ function buildAtD890PreTransmitContext(
   const masterId = getCacheBytes(cache, D890_MAP.MasterIdData, D890_MAP.MasterIdLength);
   return {
     serial: formatAtD890LocalInfoSerial(localInfo),
-    masterIdName: decodeWideCharName(masterId.subarray(4, 0x24)),
+    masterIdName: decodeAtD890MasterIdName(masterId),
     snapshot: {
       localInfo,
       main: getCacheBytes(
