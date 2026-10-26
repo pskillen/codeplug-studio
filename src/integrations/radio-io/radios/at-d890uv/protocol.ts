@@ -272,7 +272,8 @@ export async function downloadAtD890SparseRegions(
     putCacheBytes(cache, channelSecondaryAddress(idx), secondary);
   }
 
-  // VFO A/B (slots 4000/4001) are never in the channel bitmap; a range change re-defaults them.
+  // VFO A/B (slots 4000/4001) are normally bitmap-set and already read above. This read makes
+  // sure they are captured even when the bits are clear, and names them `vfo-channels`.
   await readRegion(
     pipe,
     cache,
