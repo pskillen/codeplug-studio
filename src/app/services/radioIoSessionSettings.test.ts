@@ -17,6 +17,7 @@ import {
   RadioWriteCancelledError,
   uploadPreparedRadioWrite,
   type AtD890PreTransmitContext,
+  type BeforeTransmitContext,
 } from './radioIoSession.ts';
 
 const SERIAL = 'SN-TEST-SESSION1';
@@ -68,15 +69,18 @@ function makeSession() {
 const overrides = [{ fieldId: 'keyShortP1', value: 9 }];
 
 describe('uploadPreparedRadioWrite with AT-D890UV settings overrides', () => {
-  it('never calls beforeTransmit without overrides', async () => {
+  it('offers the pause without overrides, and an apply decision adds no patches', async () => {
     const { session, egress, upload, intents } = makeSession();
-    const beforeTransmit = vi.fn(async () => 'apply' as const);
+    const beforeTransmit = vi.fn<(ctx: BeforeTransmitContext) => Promise<'apply'>>(
+      async () => 'apply',
+    );
     await uploadPreparedRadioWrite(session, egress, undefined, {
       organisation,
       channels: [analogCh],
       beforeTransmit,
     });
-    expect(beforeTransmit).not.toHaveBeenCalled();
+    expect(beforeTransmit).toHaveBeenCalledTimes(1);
+    expect(beforeTransmit.mock.calls[0]![0].atD890?.overrides).toEqual([]);
     expect(upload).toHaveBeenCalledTimes(1);
     expect(intents).toHaveLength(1);
     expect(intents[0]!.settingsPatches).toBeUndefined();
@@ -90,7 +94,7 @@ describe('uploadPreparedRadioWrite with AT-D890UV settings overrides', () => {
       channels: [analogCh],
       settingsOverrides: overrides,
       beforeTransmit: async (ctx) => {
-        seen.push(ctx);
+        seen.push(ctx.atD890!);
         expect(upload).not.toHaveBeenCalled();
         return 'apply';
       },
@@ -141,7 +145,9 @@ describe('uploadPreparedRadioWrite with AT-D890UV settings overrides', () => {
 
   it('refuses a bad override before the pause', async () => {
     const { session, egress, upload } = makeSession();
-    const beforeTransmit = vi.fn(async () => 'apply' as const);
+    const beforeTransmit = vi.fn<(ctx: BeforeTransmitContext) => Promise<'apply'>>(
+      async () => 'apply',
+    );
     await expect(
       uploadPreparedRadioWrite(session, egress, undefined, {
         organisation,
@@ -156,7 +162,9 @@ describe('uploadPreparedRadioWrite with AT-D890UV settings overrides', () => {
 
   it('a write blocked by encode never reaches the pause', async () => {
     const { session, egress } = makeSession();
-    const beforeTransmit = vi.fn(async () => 'apply' as const);
+    const beforeTransmit = vi.fn<(ctx: BeforeTransmitContext) => Promise<'apply'>>(
+      async () => 'apply',
+    );
     await expect(
       uploadPreparedRadioWrite(session, egress, undefined, {
         organisation: { zones: [] },

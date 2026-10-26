@@ -765,9 +765,7 @@ export async function uploadPreparedRadioWrite(
      * the path is unchanged. On the AT-D890UV the callback may resolve `'apply'` (write the session
      * settings overrides), `'keep'` or nothing (write without them), or `'cancel'` (stop).
      */
-    beforeTransmit?: (
-      ctx: BeforeTransmitContext,
-    ) => Promise<void | AtD890PreTransmitDecision>;
+    beforeTransmit?: (ctx: BeforeTransmitContext) => Promise<void | AtD890PreTransmitDecision>;
     /** AT-D890UV session settings overrides. Empty or unset: today's Write, byte for byte. */
     settingsOverrides?: readonly AtD890SettingsOverride[];
   },

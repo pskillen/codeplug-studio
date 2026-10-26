@@ -162,7 +162,7 @@ function writeWeightsFromCache(
     applyAtD890WriteImageToCache(clone, image, intent);
     const modelled = listWriteChunks(clone, AT_D890_SAFE_SKIP_WRITE_ADDR);
     const units = new Set(listTouchedEraseUnits(modelled.map((c) => c.address)));
-    if (intent.assignMm9pdyStepKeys) {
+    if ((intent.settingsPatches?.length ?? 0) > 0) {
       units.add(eraseUnitBaseFor(D890_MAP.OptionalSettingsMain));
     }
     // Transmitted = modelled blocks plus the non-empty co-resident blocks of the touched units.
