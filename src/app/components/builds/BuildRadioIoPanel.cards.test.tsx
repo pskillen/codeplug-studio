@@ -238,11 +238,60 @@ describe('BuildRadioIoPanel layout, other radios (#1393)', () => {
     expect(screen.queryByText(/radio-setting change/)).toBeNull();
   });
 
-  it('a radio without backup support has no backup card', async () => {
+  it('a future adapter without backup support has no backup card (mocked: every registered radio supports it today)', async () => {
     const spy = vi.spyOn(backupRestore, 'descriptorSupportsBackup').mockReturnValue(false);
     renderPanel('radio-io-uv5r-mini');
     expect(await screen.findByRole('button', { name: 'Write radio…' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Backup' })).toBeNull();
     spy.mockRestore();
+  });
+});
+
+describe('BuildRadioIoPanel header label and every Web Serial radio (#1393)', () => {
+  it.each([
+    ['radio-io-at-d890uv-mm9pdy', /Write to .*\(MM9PDY\)/],
+    ['radio-io-dm32uv-mm9pdy', /Write to .*\(MM9PDY\)/],
+  ])('%s names the MM9PDY target in the header', async (profileId, label) => {
+    renderPanel(profileId);
+    expect(await screen.findByRole('region', { name: label })).toBeInTheDocument();
+  });
+
+  it.each([['radio-io-at-d890uv'], ['radio-io-dm32uv']])(
+    '%s header label carries no MM9PDY suffix',
+    async (profileId) => {
+      renderPanel(profileId);
+      await screen.findByRole('button', { name: 'Write radio…' });
+      expect(screen.queryByRole('region', { name: /MM9PDY/ })).toBeNull();
+    },
+  );
+
+  it.each([
+    ['radio-io-opengd77-1701'],
+    ['radio-io-opengd77-md9600'],
+    ['radio-io-rt95'],
+    ['radio-io-uv21'],
+    ['radio-io-uv5r-mini'],
+    ['radio-io-dm32uv'],
+    ['radio-io-dm32uv-mm9pdy'],
+    ['radio-io-at-d890uv'],
+    ['radio-io-at-d890uv-mm9pdy'],
+  ])('%s renders one Write radio… button, a Backup card and no alert', async (profileId) => {
+    renderPanel(profileId);
+    expect(await screen.findAllByRole('button', { name: 'Write radio…' })).toHaveLength(1);
+    expect(screen.getByRole('region', { name: 'Backup' })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('DM-32UV lists a channel outside its receive range in Before you write', async () => {
+    library.value = {
+      ...library.value,
+      channels: [fmChannel('Far out', 10_000_000_000), fmChannel('Fine', 145_500_000)],
+    };
+    renderPanel('radio-io-dm32uv');
+    const section = await screen.findByRole('region', { name: 'Before you write' });
+    expect(await within(section).findByText(/1 channel is outside the/)).toBeInTheDocument();
+    expect(within(section).queryByText(/Transmit limits depend/)).toBeNull();
+    fireEvent.click(within(section).getByRole('button', { name: 'Show' }));
+    expect(within(section).getByText('Far out')).toBeInTheDocument();
   });
 });

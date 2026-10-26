@@ -34,20 +34,3 @@ export default function WriteHeaderCard({
     </section>
   );
 }
-
-/** "412 channels · 18 zones · 3 radio-setting changes" (settings part only when `settingChanges` is given). */
-export function buildSummaryLine(input: {
-  channels: number;
-  zones: number;
-  settingChanges?: number;
-}): string {
-  const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-  const parts = [
-    plural(input.channels, 'channel', 'channels'),
-    plural(input.zones, 'zone', 'zones'),
-  ];
-  if (input.settingChanges !== undefined) {
-    parts.push(plural(input.settingChanges, 'radio-setting change', 'radio-setting changes'));
-  }
-  return parts.join(' · ');
-}

@@ -37,9 +37,13 @@ import {
   isRadioSerialSupported,
 } from '../../services/radioIoSession.ts';
 import { hasPersistedStepKeySwitch, mm9pdyStepKeysDescription } from './mm9pdyStepKeysCopy.ts';
-import { radioIoPanelFacts, type RadioIoPanelFacts } from '../../services/radioIoPanelFacts.ts';
+import {
+  buildSummaryLine,
+  radioIoPanelFacts,
+  type RadioIoPanelFacts,
+} from '../../services/radioIoPanelFacts.ts';
 import { descriptorSupportsBackup } from '../../services/radioBackupRestore.ts';
-import WriteHeaderCard, { buildSummaryLine } from './RadioIoPanelCards/WriteHeaderCard.tsx';
+import WriteHeaderCard from './RadioIoPanelCards/WriteHeaderCard.tsx';
 import BeforeYouWriteRows from './RadioIoPanelCards/BeforeYouWriteRows.tsx';
 import AtD890RadioSettingsCard from './RadioIoPanelCards/AtD890RadioSettingsCard.tsx';
 import RadioBackupCard from './RadioIoPanelCards/RadioBackupCard.tsx';
