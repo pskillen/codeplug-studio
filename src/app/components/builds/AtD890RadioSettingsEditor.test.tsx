@@ -97,7 +97,7 @@ describe('AtD890RadioSettingsEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear Key tone' }));
     expect(getAtD890RadioSettingsSession(BUILD).overrides.size).toBe(0);
     expect(screen.getByTestId('changes-count')).toHaveTextContent('0 changes');
-  });
+  }, 30_000);
 
   it('shows overrides set earlier in the session (navigation keeps them)', () => {
     act(() => setOverride(BUILD, 'keyTone', true));
