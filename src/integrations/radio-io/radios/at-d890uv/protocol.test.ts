@@ -5,6 +5,7 @@ import { listWriteChunks, cacheToMemoryMap, applyAtD890WriteImageToCache } from 
 import { AtD890uvProtocol } from './protocol.ts';
 import { atD890ExitProgram } from './connection.ts';
 import {
+  assertAtD890NoReadAfterWrite,
   AtD890ScriptedPipe,
   makeAtD890IdentFrame,
   scriptAtD890Connect,
@@ -391,6 +392,25 @@ describe('AtD890uvProtocol', () => {
       enableAtD890AutoWriteAck(pipe);
       return { pipe, radio };
     }
+
+    it('reads the settings unit before its first W and sends no R after it (#1406)', async () => {
+      const { pipe, radio } = await connected(
+        new Map([
+          [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
+          [0x350_0000, settingsUnit()],
+        ]),
+      );
+      await radio.uploadSettingsPatches(patches, {});
+      const firstW = pipe.writes.findIndex((w) => w[0] === 0x57);
+      expect(firstW).toBeGreaterThan(0);
+      const readsBefore = pipe.writes
+        .slice(0, firstW)
+        .filter((w) => w[0] === 0x52)
+        .map((w) => ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0);
+      // The whole settings unit is read before any W, through the latch.
+      expect(readsBefore.some((a) => a >= 0x350_0000 && a < 0x354_0000)).toBe(true);
+      assertAtD890NoReadAfterWrite(pipe.writes);
+    }, 20_000);
 
     it('transmits only the settings erase unit, no markers, with just the patched bytes changed', async () => {
       const settings = settingsUnit();
