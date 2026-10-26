@@ -20,8 +20,9 @@ export interface AtD890FrequencyRangeRow {
   /** True when the CPS offers this code in its picker. */
   cpsListed: boolean;
   /**
-   * Receive bands. No `b220` for code 18: the RX clamp and out-of-band check only open 200-300 MHz for code 14, so
-   * RX at 220 MHz on 18 is unconfirmed (needs a radio check) and not claimed.
+   * Receive bands. Code 18 carries `b220` because the firmware's receive clamp and TX check accept 18 at 220 MHz
+   * (220 tables: RX 220-225, TX 222-225). Mixed evidence: the VFO range init and the out-of-band flag open the band
+   * for code 14 only, so RX at 220 MHz on 18 is unconfirmed on a radio (radio check RT-10).
    */
   rx: { uhf: AtD890MhzRange; vhf: AtD890MhzRange; b220?: AtD890MhzRange };
   /** `uhf` undefined = UHF transmit inhibited. */
@@ -110,7 +111,7 @@ export const AT_D890_FREQUENCY_RANGES: readonly AtD890FrequencyRangeRow[] = [
     code: 18,
     caption: 'Mode 000018',
     cpsListed: true,
-    rx: { uhf: FULL_UHF, vhf: FULL_VHF },
+    rx: { uhf: FULL_UHF, vhf: FULL_VHF, b220: [220, 225] },
     tx: { uhf: [420, 450], vhf: [144, 148], b220: [222, 225] },
   },
 ];
@@ -159,8 +160,8 @@ export function atD890MaintenanceUnlocked(localInfo: Uint8Array): boolean {
 
 /**
  * Describe a LocalInfo `+0x03` range code. Codes > 18 are shown as unknown, and code 14 without the `890#`
- * unlock as locked; the radio uses code 0 for both. PR 4c must pass the SANITISED code (RAM `0x20015277`, ident
- * byte 8), never the raw LocalInfo byte.
+ * unlock as locked; the radio uses code 0 for both. PR 4c must pass the SANITISED code (the ident reply byte
+ * 8), never the raw LocalInfo byte.
  */
 export function describeAtD890FrequencyRange(
   code: number,

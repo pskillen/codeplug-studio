@@ -36,8 +36,8 @@ describe('AT_D890_FREQUENCY_RANGES', () => {
     expect(r(15).tx).toEqual({ uhf: [420, 520], vhf: [144, 148] });
     expect(r(16).rx).toEqual({ uhf: [430, 440], vhf: [144, 147] });
     expect(r(16).tx).toEqual({ vhf: [144, 147] });
-    // RX 220 on code 18 is not confirmed: the RX clamp and out-of-band check only open 200-300 MHz for code 14.
-    expect(r(18).rx).toEqual({ uhf: [400, 480], vhf: [136, 174] });
+    // The firmware's receive clamp and TX check accept code 18 at 220 MHz (RX 220-225, TX 222-225).
+    expect(r(18).rx).toEqual({ uhf: [400, 480], vhf: [136, 174], b220: [220, 225] });
     expect(r(18).tx).toEqual({ uhf: [420, 450], vhf: [144, 148], b220: [222, 225] });
   });
 
@@ -244,6 +244,13 @@ describe('range change targets', () => {
     expect(atD890ReceiveNarrower(3, 7)).toBe(false);
     expect(atD890ReceiveNarrower(3, 11)).toBe(false);
     expect(atD890ReceiveNarrower(2, 3)).toBe(false);
+    // Code 18 receives 220-225, so leaving it for a code without 220 loses receive; 18 -> 14 loses nothing.
+    expect(atD890ReceiveNarrower(18, 3)).toBe(true);
+    expect(atD890ReceiveNarrower(18, 14)).toBe(false);
+    expect(atD890ReceiveNarrower(3, 18)).toBe(false);
+    // An unlisted source code is described like any other.
+    expect(atD890ReceiveNarrower(9, 3)).toBe(false);
+    expect(atD890ReceiveNarrower(3, 9)).toBe(true);
   });
 
   it('summary 3 to 7 opens 146-148, 420-430, 440-450 and closes nothing', () => {
