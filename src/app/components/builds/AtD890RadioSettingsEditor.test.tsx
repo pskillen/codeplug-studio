@@ -166,4 +166,38 @@ describe('AtD890RadioSettingsEditor', () => {
       'on',
     );
   });
+
+  it('shows the sticky footer only with changes, and Clear all asks first', async () => {
+    renderEditor();
+    expect(screen.queryByTestId('changes-footer')).not.toBeInTheDocument();
+    act(() => setOverride(BUILD, 'keyTone', true));
+    act(() => setOverride(BUILD, 'smsFormat', 2));
+    const footer = screen.getByTestId('changes-footer');
+    expect(footer).toHaveTextContent('2 changes');
+    expect(footer).toHaveTextContent('arrives with the next Write update');
+    expect(within(footer).getByRole('link', { name: 'Back up a radio' })).toHaveAttribute(
+      'href',
+      `/builds/${BUILD}/backup`,
+    );
+    fireEvent.click(within(footer).getByRole('button', { name: 'Clear all' }));
+    expect(getAtD890RadioSettingsSession(BUILD).overrides.size).toBe(2);
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Clear all' }));
+    expect(getAtD890RadioSettingsSession(BUILD).overrides.size).toBe(0);
+  });
+
+  it('Copy all from this radio only exists after a read, and asks first', async () => {
+    renderEditor();
+    expect(screen.queryByRole('button', { name: 'Copy all from this radio' })).toBeNull();
+    act(() => setRead(BUILD, READ));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy all from this radio' }));
+    expect(getAtD890RadioSettingsSession(BUILD).overrides.size).toBe(0);
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent("Set 2 fields to this radio's values?");
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Copy all' }));
+    const overrides = getAtD890RadioSettingsSession(BUILD).overrides;
+    expect(overrides.get('keyTone')).toBe(false);
+    expect(overrides.get('smsFormat')).toBe(1);
+    expect(overrides.has('callDisplayMode')).toBe(false);
+  });
 });

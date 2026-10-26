@@ -75,6 +75,38 @@
   max-width: 42rem;
 }
 
+.footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px var(--dsv2-panel-padding-x);
+  background: var(--dsv2-surface);
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  box-shadow: var(--dsv2-shadow-popover);
+}
+
+.footerCount {
+  font-weight: 600;
+  font-size: var(--dsv2-font-body);
+  color: var(--dsv2-text-primary);
+}
+
+.footerNote {
+  flex: 1 1 14rem;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-tertiary);
+}
+
+.footerLink {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-accent);
+}
+
 .sections {
   display: flex;
   flex-direction: column;

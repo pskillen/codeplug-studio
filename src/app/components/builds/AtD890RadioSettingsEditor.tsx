@@ -6,17 +6,22 @@
 import {
   AT_D890_SETTING_FIELDS,
   AT_D890_SETTING_SECTIONS,
+  AT_D890_V1_SETTINGS_FIELD_IDS,
   type AtD890SettingFieldDef,
   type AtD890SettingsTargetId,
 } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
+  clearAllOverrides,
+  copyAllFromRead,
   clearOverride,
   setOverride,
   useAtD890RadioSettingsSession,
 } from '../../state/atD890RadioSettingsSession.ts';
 import type { AtD890RadioSettingsRead } from '../../state/atD890RadioSettingsSession.ts';
-import { Panel, StatusBanner } from '../v2/index.ts';
+import { Button, ConfirmModal, Panel, StatusBanner } from '../v2/index.ts';
 import AtD890RadioSettingRow from './AtD890RadioSettingRow.tsx';
 import AtD890RadioSettingsReadButton from './AtD890RadioSettingsReadButton.tsx';
 import classes from './AtD890RadioSettingsEditor.module.css';
@@ -27,6 +32,9 @@ export interface AtD890RadioSettingsEditorProps {
   /** The build's Web Serial egress, used by Read a radio. */
   egress: EgressPath;
 }
+
+export const WRITE_ARRIVES_LATER_NOTE =
+  'Writing these settings arrives with the next Write update.';
 
 const LARGE_FONT_HINT = 'Both lines 8 characters or fewer use the large font.';
 
@@ -70,6 +78,11 @@ export default function AtD890RadioSettingsEditor({
   const session = useAtD890RadioSettingsSession(buildId);
   const { overrides, read } = session;
 
+  const [confirm, setConfirm] = useState<'clear' | 'copy' | null>(null);
+  const copyCount = read
+    ? AT_D890_V1_SETTINGS_FIELD_IDS.filter((id) => read.decoded[id]?.value !== undefined).length
+    : 0;
+
   const effective = (id: string) => overrides.get(id) ?? read?.decoded[id]?.value;
   const customTextWithEmptyLine1 =
     effective('powerOnScreen') === 1 && effective('powerOnLine1') === '';
@@ -81,6 +94,16 @@ export default function AtD890RadioSettingsEditor({
           {changesLabel(overrides.size)}
         </span>
         <AtD890RadioSettingsReadButton buildId={buildId} egress={egress} />
+        {read ? (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={copyCount === 0}
+            onClick={() => setConfirm('copy')}
+          >
+            Copy all from this radio
+          </Button>
+        ) : null}
       </div>
       {read ? (
         <div className={classes.banner} data-testid="read-banner">
@@ -148,6 +171,43 @@ export default function AtD890RadioSettingsEditor({
           );
         })}
       </div>
+      {overrides.size > 0 ? (
+        <div className={classes.footer} data-testid="changes-footer">
+          <span className={classes.footerCount}>{changesLabel(overrides.size)}</span>
+          <Button variant="outline" size="sm" onClick={() => setConfirm('clear')}>
+            Clear all
+          </Button>
+          <span className={classes.footerNote}>{WRITE_ARRIVES_LATER_NOTE}</span>
+          <Link className={classes.footerLink} to={`/builds/${buildId}/backup`}>
+            Back up a radio
+          </Link>
+        </div>
+      ) : null}
+      <ConfirmModal
+        open={confirm === 'clear'}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => {
+          clearAllOverrides(buildId);
+          setConfirm(null);
+        }}
+        title="Clear all changes?"
+        confirmLabel="Clear all"
+        tone="destructive"
+      >
+        Every field goes back to Keep radio&apos;s value.
+      </ConfirmModal>
+      <ConfirmModal
+        open={confirm === 'copy'}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => {
+          copyAllFromRead(buildId);
+          setConfirm(null);
+        }}
+        title="Copy all from this radio?"
+        confirmLabel="Copy all"
+      >
+        Set {copyCount} fields to this radio&apos;s values?
+      </ConfirmModal>
     </div>
   );
 }
