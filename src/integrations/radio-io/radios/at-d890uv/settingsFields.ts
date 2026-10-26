@@ -101,6 +101,38 @@ function inPermittedSpan(address: number): boolean {
   return PERMITTED_SPANS.some((s) => address >= s.start && address < s.end);
 }
 
+/** Throws unless the byte at `address` may be patched; `label` names the spec or patch. */
+function assertAtD890SettingsAddressPermitted(address: number, label: string): void {
+  const where = `${label} covers ${hex(address)}`;
+  if (address >= D890_MAP.LocalInfo && address < D890_MAP.LocalInfo + D890_MAP.LocalInfoLength) {
+    throw new RadioProtocolError(`${where} (LocalInfo is never written)`);
+  }
+  if (
+    (address >= D890_MAP.AlarmBitmap && address < D890_MAP.AlarmBitmap + 0x10) ||
+    (address >= D890_MAP.AlarmData && address < D890_MAP.AlarmData + 0x30)
+  ) {
+    throw new RadioProtocolError(`${where} (alarm settings are never written)`);
+  }
+  if (
+    address >= D890_MAP.ZoneAChannel &&
+    address < D890_MAP.ZoneBChannel + D890_MAP.ZoneTableBytes
+  ) {
+    throw new RadioProtocolError(`${where} (Zone A/B tables belong to the codeplug Write)`);
+  }
+  if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) {
+    throw new RadioProtocolError(`${where} (family safe-skip address)`);
+  }
+  if (isAtD890EraseUnitBookkeepingAddress(address & ~0xf)) {
+    throw new RadioProtocolError(`${where} (erase-unit flash marker)`);
+  }
+  if (NEVER_PATCH_ADDRESSES.has(address)) {
+    throw new RadioProtocolError(`${where} (radio state, never patched)`);
+  }
+  if (!inPermittedSpan(address)) {
+    throw new RadioProtocolError(`${where} (outside the permitted settings spans)`);
+  }
+}
+
 /** Refuses a spec that covers any byte outside the permitted spans or on a never-patch offset. */
 export function assertAtD890SettingsSpecPermitted(spec: AtD890SettingsFieldSpec): void {
   if (!Number.isInteger(spec.length) || spec.length < 1) {
@@ -112,36 +144,32 @@ export function assertAtD890SettingsSpecPermitted(spec: AtD890SettingsFieldSpec)
     );
   }
   for (let i = 0; i < spec.length; i++) {
-    const address = spec.address + i;
-    const where = `D890 settings field ${spec.id} covers ${hex(address)}`;
-    if (address >= D890_MAP.LocalInfo && address < D890_MAP.LocalInfo + D890_MAP.LocalInfoLength) {
-      throw new RadioProtocolError(`${where} (LocalInfo is never written)`);
-    }
-    if (
-      (address >= D890_MAP.AlarmBitmap && address < D890_MAP.AlarmBitmap + 0x10) ||
-      (address >= D890_MAP.AlarmData && address < D890_MAP.AlarmData + 0x30)
-    ) {
-      throw new RadioProtocolError(`${where} (alarm settings are never written)`);
-    }
-    if (
-      address >= D890_MAP.ZoneAChannel &&
-      address < D890_MAP.ZoneBChannel + D890_MAP.ZoneTableBytes
-    ) {
-      throw new RadioProtocolError(`${where} (Zone A/B tables belong to the codeplug Write)`);
-    }
-    if (address === AT_D890_SAFE_SKIP_WRITE_ADDR) {
-      throw new RadioProtocolError(`${where} (family safe-skip address)`);
-    }
-    if (isAtD890EraseUnitBookkeepingAddress(address & ~0xf)) {
-      throw new RadioProtocolError(`${where} (erase-unit flash marker)`);
-    }
-    if (NEVER_PATCH_ADDRESSES.has(address)) {
-      throw new RadioProtocolError(`${where} (radio state, never patched)`);
-    }
-    if (!inPermittedSpan(address)) {
-      throw new RadioProtocolError(`${where} (outside the permitted settings spans)`);
-    }
+    assertAtD890SettingsAddressPermitted(spec.address + i, `D890 settings field ${spec.id}`);
   }
+}
+
+/**
+ * Transmit-layer allow-list: refuses a raw patch that covers any byte outside the permitted spans
+ * or on a never-patch offset, or whose bytes and mask disagree. Called by the protocol before any
+ * frame, so a patch built by hand cannot bypass {@link resolveAtD890SettingsPatches}.
+ */
+export function assertAtD890SettingsPatchPermitted(patch: AtD890SettingsPatch): void {
+  const label = `D890 settings patch ${patch.fieldId}`;
+  if (!Number.isInteger(patch.address) || patch.address < 0) {
+    throw new RadioProtocolError(`${label} has an invalid address`);
+  }
+  if (patch.bytes.length < 1 || patch.mask.length !== patch.bytes.length) {
+    throw new RadioProtocolError(`${label} needs bytes and a mask of the same length`);
+  }
+  for (let i = 0; i < patch.bytes.length; i++) {
+    assertAtD890SettingsAddressPermitted(patch.address + i, label);
+  }
+}
+
+export function assertAtD890SettingsPatchesPermitted(
+  patches: readonly AtD890SettingsPatch[],
+): void {
+  for (const patch of patches) assertAtD890SettingsPatchPermitted(patch);
 }
 
 /** Short-press key function index, `0..64` (firmware function list). */
@@ -213,6 +241,8 @@ export function resolveAtD890SettingsPatches(
       throw new RadioProtocolError(`D890 setting ${fieldId} is set twice`);
     }
     seen.add(fieldId);
+    // A custom registry must not skip the allow-list.
+    assertAtD890SettingsSpecPermitted(spec);
     const bytes = spec.encode(value);
     if (bytes.length !== spec.length) {
       throw new RadioProtocolError(`D890 setting ${fieldId} encoded ${bytes.length} bytes`);
@@ -231,5 +261,6 @@ export function resolveAtD890SettingsPatches(
     }
     patches.push({ fieldId, address: spec.address, bytes: bytes.slice(), mask });
   }
+  assertAtD890SettingsPatchesPermitted(patches);
   return patches;
 }

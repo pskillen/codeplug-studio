@@ -28,7 +28,7 @@ import { encodeBcdFrequencyHz } from './bcd.ts';
 import { setBitmapBit } from './bitmap.ts';
 import { channelPrimaryAddress, channelSecondaryAddress } from './memory.ts';
 import { encodeAtD890WriteImageFromDownloadCache } from './hydration.ts';
-import { resolveAtD890SettingsPatches } from './settingsFields.ts';
+import { resolveAtD890SettingsPatches, type AtD890SettingsPatch } from './settingsFields.ts';
 
 import { isAtD890EraseUnitBookkeepingAddress, listTouchedEraseUnits } from './eraseUnits.ts';
 
@@ -104,6 +104,18 @@ function channelUploadMemoryWithBookkeepingMarkers(
     [0x100_0000, unit100],
     [0x348_0000, unit348],
   ]);
+}
+
+/** Absolute addresses of the 16-byte blocks of an erase unit that are not all 0xff and not markers. */
+function nonFfBlockAddresses(unit: Uint8Array, include: (off: number) => boolean = () => true) {
+  const out: number[] = [];
+  for (let off = 0; off < unit.length; off += 16) {
+    if (!include(off)) continue;
+    if (unit.subarray(off, off + 16).every((b) => b === 0xff)) continue;
+    if (isAtD890EraseUnitBookkeepingAddress(0x350_0000 + off)) continue;
+    out.push(0x350_0000 + off);
+  }
+  return out;
 }
 
 describe('AtD890uvProtocol', () => {
@@ -273,6 +285,13 @@ describe('AtD890uvProtocol', () => {
       compared++;
     }
     expect(compared).toBeGreaterThan(10);
+    // Every non-FF block of the unit outside the zone tables is restaged: the unit is erased on
+    // the first frame, so a dropped block would be lost from flash.
+    const transmitted = pipe.writes
+      .filter((f) => f[0] === 0x57)
+      .map((w) => ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0)
+      .filter((a) => a >= 0x350_0000 && a < 0x354_0000 && !zoneBytes(a - 0x350_0000));
+    expect(transmitted).toEqual(nonFfBlockAddresses(expected, (off) => !zoneBytes(off)));
     expect(radio.takeUploadSettingsPatches()?.map((p) => p.fieldId)).toEqual(['keyShortP1']);
     expect(radio.takeUploadSettingsPatches()).toBeUndefined();
   });
@@ -349,6 +368,9 @@ describe('AtD890uvProtocol', () => {
       settings.set([0x41, 0x42], 0x900);
       settings[0x1280] = 0x33;
       settings.fill(0x5a, 0x200, 0x210);
+      for (const off of [0x400, 0x600, 0x800, 0x1000, 0x1300, 0x2000, 0x10000, 0x3f000]) {
+        settings.fill(0x60 + ((off >> 12) & 0xf), off, off + 16);
+      }
       seedAtD890EraseUnitBookkeepingMarkers(settings);
       return settings;
     }
@@ -378,6 +400,11 @@ describe('AtD890uvProtocol', () => {
       expect(frames.length).toBeGreaterThan(10);
       const expected = settings.slice();
       expected[0x13] = 9;
+      // Every non-FF block is restaged, in order, and nothing else: the unit is erased on the
+      // first frame, so a dropped block would be lost from flash.
+      expect(
+        frames.map((w) => ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0),
+      ).toEqual(nonFfBlockAddresses(expected));
       for (const w of frames) {
         const address = ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0;
         expect(address).toBeGreaterThanOrEqual(0x350_0000);
@@ -413,6 +440,135 @@ describe('AtD890uvProtocol', () => {
     it('refuses an empty patch list', async () => {
       const { radio } = await connected(new Map());
       await expect(radio.uploadSettingsPatches([], {})).rejects.toBeInstanceOf(RadioProtocolError);
+    });
+
+    describe('transmit-layer allow-list', () => {
+      const raw = (address: number): AtD890SettingsPatch => ({
+        fieldId: 'raw',
+        address,
+        bytes: Uint8Array.of(0xaa),
+        mask: Uint8Array.of(0xff),
+      });
+      const refused: ReadonlyArray<readonly [string, number]> = [
+        ['Zone A table', 0x350_0400],
+        ['MM9PDY store (+0x200)', 0x350_0200],
+        ['APRS', 0x350_1000],
+        ['never-patch radio state (+0x15)', 0x350_0015],
+        ['+0x160', 0x350_0160],
+        ['flash marker', 0x353_fbf0],
+        ['LocalInfo', D890_MAP.LocalInfo],
+      ];
+
+      for (const [name, address] of refused) {
+        it(`uploadSettingsPatches refuses a raw patch at ${name} before any frame`, async () => {
+          const { pipe, radio } = await connected(
+            new Map([
+              [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
+              [0x350_0000, settingsUnit()],
+            ]),
+          );
+          const before = collectAtD890ReadRequestAddresses(pipe).length;
+          await expect(radio.uploadSettingsPatches([raw(address)], {})).rejects.toBeInstanceOf(
+            RadioProtocolError,
+          );
+          expect(indexOfFirstAtD890WriteFrame(pipe)).toBe(-1);
+          expect(collectAtD890ReadRequestAddresses(pipe).length).toBe(before);
+        });
+      }
+
+      it('refuses a patch whose mask length differs from its bytes', async () => {
+        const { pipe, radio } = await connected(new Map());
+        await expect(
+          radio.uploadSettingsPatches(
+            [{ ...raw(0x350_0013), mask: new Uint8Array(2).fill(0xff) }],
+            {},
+          ),
+        ).rejects.toBeInstanceOf(RadioProtocolError);
+        expect(indexOfFirstAtD890WriteFrame(pipe)).toBe(-1);
+      });
+
+      it('upload() refuses a raw patch in the bank intent before any frame', async () => {
+        const pipe = new AtD890ScriptedPipe();
+        scriptAtD890ConnectWithNegotiation(pipe);
+        const radio = new AtD890uvProtocol();
+        await radio.connect(pipe);
+        scriptAtD890UploadReadResponder(pipe, channelUploadMemory());
+        const image = seedChannelZeroUpload(radio);
+        radio.setUploadBankIntent({
+          ...atD890UploadBankIntentFromOrganisation({}),
+          settingsPatches: [raw(0x350_0015)],
+        });
+        enableAtD890AutoWriteAck(pipe);
+        await expect(radio.upload(image, {})).rejects.toBeInstanceOf(RadioProtocolError);
+        expect(indexOfFirstAtD890WriteFrame(pipe)).toBe(-1);
+      });
+
+      it('a custom registry cannot resolve a spec outside the allow-list', () => {
+        const spec = {
+          id: 'bad',
+          address: 0x350_0400,
+          length: 1,
+          targets: ['stock'] as const,
+          advanced: false,
+          encode: () => Uint8Array.of(1),
+          decode: () => 1,
+        };
+        expect(() =>
+          resolveAtD890SettingsPatches(
+            [{ fieldId: 'bad', value: 1 }],
+            'stock',
+            new Map([['bad', spec]]),
+          ),
+        ).toThrow(RadioProtocolError);
+      });
+    });
+
+    describe('download cache', () => {
+      it('a settings-only Write on a session with no download leaves the cache empty', async () => {
+        const { radio } = await connected(
+          new Map([
+            [D890_MAP.LocalInfo, localInfoWithSerial(TEST_SERIAL)],
+            [0x350_0000, settingsUnit()],
+          ]),
+        );
+        expect(radio.getDownloadCache()?.blocks.size).toBe(0);
+        await radio.uploadSettingsPatches(patches, {});
+        expect(radio.getDownloadCache()?.blocks.size).toBe(0);
+      }, 20_000);
+
+      it('a later codeplug upload still hits the empty-cache guard', async () => {
+        const memory = channelUploadMemory();
+        memory.set(0x350_0000, settingsUnit());
+        const pipe = new AtD890ScriptedPipe();
+        scriptAtD890ConnectWithNegotiation(pipe);
+        const radio = new AtD890uvProtocol();
+        await radio.connect(pipe);
+        scriptAtD890UploadReadResponder(pipe, memory);
+        enableAtD890AutoWriteAck(pipe);
+        await radio.uploadSettingsPatches(patches, {});
+        const writesBefore = pipe.writes.filter((w) => w[0] === 0x57).length;
+        const image = seedChannelZeroUpload(radio);
+        radio.getDownloadCache()!.blocks.clear();
+        await expect(radio.upload(image, {})).rejects.toThrow(/in-session download cache/);
+        expect(pipe.writes.filter((w) => w[0] === 0x57).length).toBe(writesBefore);
+      }, 20_000);
+
+      it('a settings-only Write keeps a populated cache in step with what it transmitted', async () => {
+        const memory = channelUploadMemory();
+        const settings = settingsUnit();
+        memory.set(0x350_0000, settings);
+        const pipe = new AtD890ScriptedPipe();
+        scriptAtD890ConnectWithNegotiation(pipe);
+        const radio = new AtD890uvProtocol();
+        await radio.connect(pipe);
+        scriptAtD890UploadReadResponder(pipe, memory);
+        enableAtD890AutoWriteAck(pipe);
+        seedChannelZeroUpload(radio);
+        const size = radio.getDownloadCache()!.blocks.size;
+        expect(size).toBeGreaterThan(0);
+        await radio.uploadSettingsPatches(patches, {});
+        expect(radio.getDownloadCache()!.blocks.get(0x350_0010)?.[3]).toBe(9);
+      }, 20_000);
     });
 
     it('readSettingsSnapshot reads only the four settings spans and reports the ident band', async () => {

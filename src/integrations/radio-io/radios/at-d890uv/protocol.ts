@@ -66,7 +66,11 @@ import {
   overlayModelledChunksOntoUnit,
   preWriteChunksFromFreshUnits,
 } from './sparseEraseRmw.ts';
-import type { AtD890RadioSettingsSnapshot, AtD890SettingsPatch } from './settingsFields.ts';
+import {
+  assertAtD890SettingsPatchesPermitted,
+  type AtD890RadioSettingsSnapshot,
+  type AtD890SettingsPatch,
+} from './settingsFields.ts';
 import {
   applyAtD890SettingsPatchesToUnit,
   assertAtD890SentinelSpansNotErased,
@@ -664,6 +668,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
     if (!this.pipe || !this.cache) {
       throw new RadioProtocolError('AT-D890UV not connected');
     }
+    assertAtD890SettingsPatchesPermitted(this.uploadBankIntent.settingsPatches ?? []);
     if (!this.programming) {
       await atD890EnterProgram(this.pipe, opts.signal);
       this.programming = true;
@@ -697,6 +702,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
 
     const modelledChunks = listWriteChunks(this.cache, AT_D890_SAFE_SKIP_WRITE_ADDR);
     await this.rmwStageAndTransmit({
+      updateDownloadCache: true,
       modelledChunks,
       touchedUnits: listTouchedEraseUnits(modelledChunks.map((c) => c.address)),
       settingsPatches: this.uploadBankIntent.settingsPatches ?? [],
@@ -722,11 +728,15 @@ export class AtD890uvProtocol implements CloneImageRadio {
     if (patches.length === 0) {
       throw new RadioProtocolError('AT-D890UV settings upload has no patches');
     }
+    assertAtD890SettingsPatchesPermitted(patches);
     if (!this.programming) {
       await atD890EnterProgram(this.pipe, opts.signal);
       this.programming = true;
     }
     await this.rmwStageAndTransmit({
+      // A settings-only Write must not fabricate a download cache: a later codeplug Write relies
+      // on an empty cache to trigger the in-session download and the empty-cache guard.
+      updateDownloadCache: (this.cache?.blocks.size ?? 0) > 0,
       modelledChunks: [],
       touchedUnits: [eraseUnitBaseFor(D890_MAP.OptionalSettingsMain)],
       settingsPatches: patches,
@@ -766,6 +776,8 @@ export class AtD890uvProtocol implements CloneImageRadio {
     touchedUnits: readonly number[];
     settingsPatches: readonly AtD890SettingsPatch[];
     ownsLocationUnit: boolean;
+    /** Mirror transmitted blocks into the download cache (false: leave it untouched). */
+    updateDownloadCache: boolean;
     /** Cache as it stood before the write image was applied; unset skips the staleness guard. */
     preUploadCache?: AtD890DownloadCache;
     opts: { onProgress?: ProgressFn; signal?: AbortSignal };
@@ -775,6 +787,8 @@ export class AtD890uvProtocol implements CloneImageRadio {
       throw new RadioProtocolError('AT-D890UV not connected');
     }
     const { modelledChunks, settingsPatches, ownsLocationUnit, preUploadCache, opts } = args;
+    // Last line of defence: nothing outside the allow-list reaches the wire, whoever built the patch.
+    assertAtD890SettingsPatchesPermitted(settingsPatches);
     const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
     const touchedUnits = [...args.touchedUnits];
     const touchedUnitSet = new Set(touchedUnits);
@@ -917,7 +931,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
           opts.signal,
         );
         await atD890WriteMemory(pipe, address, data, opts.signal, { transmitGuard });
-        if (this.cache) putCacheBytes(this.cache, address, data);
+        if (args.updateDownloadCache && this.cache) putCacheBytes(this.cache, address, data);
       }
     } catch (err) {
       this.lastUploadSentinelBefore = undefined;
