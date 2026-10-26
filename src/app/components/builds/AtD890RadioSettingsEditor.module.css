@@ -102,6 +102,23 @@
   color: var(--dsv2-text-tertiary);
 }
 
+/* Narrow screens: the interim note is kept for screen readers but not drawn, so the sticky footer
+   stays one short row instead of covering the rows being edited. */
+@media (max-width: 40rem) {
+  .footer {
+    padding-block: 6px;
+  }
+
+  .footerNote {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
 .footerLink {
   font-size: var(--dsv2-font-body-sm);
   color: var(--dsv2-accent);

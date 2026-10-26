@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AT_D890_SETTING_FIELDS,
@@ -199,5 +199,51 @@ describe('AtD890RadioSettingsEditor', () => {
     expect(overrides.get('keyTone')).toBe(false);
     expect(overrides.get('smsFormat')).toBe(1);
     expect(overrides.has('callDisplayMode')).toBe(false);
+  });
+
+  it('offers Cancel only once the port picker has closed', async () => {
+    let onStage: ((stage: 'connecting' | 'reading') => void) | undefined;
+    let signal: AbortSignal | undefined;
+    vi.mocked(readService.readAtD890SettingsFromRadio).mockImplementation(
+      (_egress, opts) =>
+        new Promise((_resolve, reject) => {
+          onStage = opts?.onStage;
+          signal = opts?.signal;
+          opts?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        }),
+    );
+    renderEditor();
+    fireEvent.click(screen.getByRole('button', { name: 'Read a radio' }));
+    expect(await screen.findByText(/Choose the radio in the port picker/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+
+    act(() => onStage?.('connecting'));
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel' }));
+    expect(signal?.aborted).toBe(true);
+    await waitFor(() => expect(screen.queryByRole('status')).not.toBeInTheDocument());
+    // A cancelled read is not an error.
+    expect(screen.queryByText('Could not read the radio')).not.toBeInTheDocument();
+  });
+
+  it('Copy all copies P1/P2 into overrides, which hides the step-key nudge (MM9PDY)', async () => {
+    const read = {
+      ...READ,
+      decoded: {
+        ...READ.decoded,
+        keyShortP1: { value: 3, raw: [3] },
+        keyShortP2: { value: 4, raw: [4] },
+      },
+    };
+    act(() => setRead(BUILD, read));
+    renderEditor('mm9pdy');
+    expect(screen.getByTestId('mm9pdy-step-keys-nudge')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy all from this radio' }));
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Copy all' }));
+    const overrides = getAtD890RadioSettingsSession(BUILD).overrides;
+    expect(overrides.get('keyShortP1')).toBe(3);
+    expect(overrides.get('keyShortP2')).toBe(4);
+    // The user never chose a key layout, but the keys now equal the radio's: nudge stays quiet.
+    expect(screen.queryByTestId('mm9pdy-step-keys-nudge')).not.toBeInTheDocument();
   });
 });

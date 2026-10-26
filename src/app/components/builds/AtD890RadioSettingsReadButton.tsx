@@ -82,9 +82,12 @@ export default function AtD890RadioSettingsReadButton({
             <span className={classes.readStage} role="status">
               {STAGE_TEXT[stage]}
             </span>
-            <Button variant="ghost" size="sm" onClick={() => abortRef.current?.abort()}>
-              Cancel
-            </Button>
+            {/* The browser's port picker cannot be aborted from here; Cancel starts once it closes. */}
+            {stage !== 'choosing' ? (
+              <Button variant="ghost" size="sm" onClick={() => abortRef.current?.abort()}>
+                Cancel
+              </Button>
+            ) : null}
           </>
         ) : null}
       </div>

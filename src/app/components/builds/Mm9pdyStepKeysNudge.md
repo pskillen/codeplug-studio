@@ -35,6 +35,7 @@ A different key layout is a valid choice, so the component shows **nothing** whe
 ## Behaviour
 
 - The function numbers come from the radio-io module (`MM9PDY_TG_NEXT_FUNCTION`, `MM9PDY_TG_PREVIOUS_FUNCTION`); the component holds no wire values.
+- Any override of P1 or P2 hides the nudge, including the ones "Copy all from this radio" sets: after Copy all the keys equal what the radio has, so the nudge stays quiet even though the user never chose a layout. A caller that wants to ask again (the Write review) must decide that itself.
 - There is no link to the build's old persisted step-key switch; the switch is removed from the D890 Write in a later step.
 
 ## Related
