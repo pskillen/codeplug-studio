@@ -10,8 +10,14 @@ import { ICON_STROKE } from '../../lib/iconSizes.ts';
 
 const STATUS_ICON_SIZE = 16;
 
-function WriteCoverageStatusCell({ status }: { status: AtD890WriteCoverageStatus }) {
-  const label = AT_D890_WRITE_COVERAGE_STATUS_LABEL[status];
+function WriteCoverageStatusCell({
+  status,
+  note,
+}: {
+  status: AtD890WriteCoverageStatus;
+  note?: string;
+}) {
+  const label = note ?? AT_D890_WRITE_COVERAGE_STATUS_LABEL[status];
 
   if (status === 'written') {
     return (
@@ -87,12 +93,15 @@ export interface AtD890WriteCoverageTableProps {
   hasHydration?: boolean;
   /** MM9PDY target: channel positions are written, not left alone. */
   mm9pdy?: boolean;
+  /** Radio settings fields set this session (the Radio settings row says so). */
+  settingsChangeCount?: number;
 }
 
 export default function AtD890WriteCoverageTable({
   buildId,
   hasHydration = false,
   mm9pdy = false,
+  settingsChangeCount = 0,
 }: AtD890WriteCoverageTableProps) {
   return (
     <Stack gap={4}>
@@ -112,11 +121,11 @@ export default function AtD890WriteCoverageTable({
           </Table.Tr>
         </Table.Thead>
         <Table.Tbody>
-          {atD890WriteCoverageRows(mm9pdy).map((row) => (
+          {atD890WriteCoverageRows(mm9pdy, settingsChangeCount).map((row) => (
             <Table.Tr key={row.label}>
               <Table.Td>{row.label}</Table.Td>
               <Table.Td>
-                <WriteCoverageStatusCell status={row.status} />
+                <WriteCoverageStatusCell status={row.status} note={row.note} />
               </Table.Td>
             </Table.Tr>
           ))}

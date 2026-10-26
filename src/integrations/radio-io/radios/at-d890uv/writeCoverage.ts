@@ -9,7 +9,12 @@ export type AtD890WriteCoverageStatus =
 export interface AtD890WriteCoverageRow {
   label: string;
   status: AtD890WriteCoverageStatus;
+  /** Replaces the status label when the row has something more precise to say. */
+  note?: string;
 }
+
+/** The Radio settings row's label (the count of session changes is reported on it). */
+export const AT_D890_RADIO_SETTINGS_COVERAGE_LABEL = 'Radio settings';
 
 export const AT_D890_WRITE_COVERAGE_STATUS_LABEL: Record<AtD890WriteCoverageStatus, string> = {
   written: 'Updated from your library',
@@ -38,7 +43,7 @@ export const AT_D890_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow[] = [
   { label: 'Boot images', status: 'planned' },
   { label: 'Analog address book', status: 'planned' },
   { label: 'Local info and band settings', status: 'leftAlone' },
-  { label: 'Optional settings (password, UI language)', status: 'preserved' },
+  { label: AT_D890_RADIO_SETTINGS_COVERAGE_LABEL, status: 'preserved' },
   { label: 'Channel positions (MM9PDY firmware)', status: 'leftAlone' },
 ] as const;
 
@@ -51,6 +56,20 @@ export const AT_D890_MM9PDY_WRITE_COVERAGE_ROWS: readonly AtD890WriteCoverageRow
     row.label === 'Channel positions (MM9PDY firmware)' ? { ...row, status: 'written' } : row,
   );
 
-export function atD890WriteCoverageRows(mm9pdy: boolean): readonly AtD890WriteCoverageRow[] {
-  return mm9pdy ? AT_D890_MM9PDY_WRITE_COVERAGE_ROWS : AT_D890_WRITE_COVERAGE_ROWS;
+/**
+ * The rows for a target. `settingsChangeCount` is how many Radio settings fields the user has set
+ * this session: the Radio settings row then reads "Preserved, except N fields you set".
+ */
+export function atD890WriteCoverageRows(
+  mm9pdy: boolean,
+  settingsChangeCount = 0,
+): readonly AtD890WriteCoverageRow[] {
+  const rows = mm9pdy ? AT_D890_MM9PDY_WRITE_COVERAGE_ROWS : AT_D890_WRITE_COVERAGE_ROWS;
+  if (settingsChangeCount <= 0) return rows;
+  const note = `Preserved, except ${settingsChangeCount} ${
+    settingsChangeCount === 1 ? 'field' : 'fields'
+  } you set`;
+  return rows.map((row) =>
+    row.label === AT_D890_RADIO_SETTINGS_COVERAGE_LABEL ? { ...row, note } : row,
+  );
 }
