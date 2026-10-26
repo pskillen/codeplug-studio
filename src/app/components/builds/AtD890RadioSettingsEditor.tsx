@@ -11,7 +11,8 @@ import {
   type AtD890SettingsTargetId,
 } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import type { EgressPath } from '@core/models/egressPath.ts';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
+import { mm9pdyStepKeyOverrides } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import { Link } from 'react-router-dom';
 import {
   clearAllOverrides,
@@ -22,6 +23,7 @@ import {
 } from '../../state/atD890RadioSettingsSession.ts';
 import type { AtD890RadioSettingsRead } from '../../state/atD890RadioSettingsSession.ts';
 import { Button, ConfirmModal, Panel, StatusBanner } from '../v2/index.ts';
+import Mm9pdyStepKeysNudge from './Mm9pdyStepKeysNudge.tsx';
 import AtD890RadioSettingRow from './AtD890RadioSettingRow.tsx';
 import AtD890RadioSettingsReadButton from './AtD890RadioSettingsReadButton.tsx';
 import classes from './AtD890RadioSettingsEditor.module.css';
@@ -64,6 +66,10 @@ export function readBannerText(read: AtD890RadioSettingsRead): string {
  */
 function rangeCaption(bandCode: number): string {
   return `code ${bandCode}`;
+}
+
+function numberOrUndefined(v: unknown): number | undefined {
+  return typeof v === 'number' ? v : undefined;
 }
 
 function fieldsOfSection(sectionId: string): AtD890SettingFieldDef[] {
@@ -139,35 +145,51 @@ export default function AtD890RadioSettingsEditor({
           if (fields.length === 0) return null;
           const setCount = fields.filter((f) => overrides.has(f.id)).length;
           return (
-            <Panel
-              key={section.id}
-              id={`radio-settings-${section.id}`}
-              title={section.label}
-              collapsible
-              badge={setCount > 0 ? changesLabel(setCount) : undefined}
-            >
-              {section.id === 'startup' && customTextWithEmptyLine1 ? (
-                <StatusBanner tone="warning">
-                  The power-on screen is Custom text but line 1 is empty, so the radio shows an
-                  empty start-up screen.
-                </StatusBanner>
+            <Fragment key={section.id}>
+              {section.id === 'keys' ? (
+                <Mm9pdyStepKeysNudge
+                  target={target}
+                  hasRead={read !== undefined}
+                  readP1={numberOrUndefined(read?.decoded.keyShortP1?.value)}
+                  readP2={numberOrUndefined(read?.decoded.keyShortP2?.value)}
+                  overrideP1={overrides.get('keyShortP1')}
+                  overrideP2={overrides.get('keyShortP2')}
+                  onUse={() => {
+                    for (const o of mm9pdyStepKeyOverrides()) {
+                      setOverride(buildId, o.fieldId, o.value);
+                    }
+                  }}
+                />
               ) : null}
-              <div className={classes.rows}>
-                {fields.map((field) => (
-                  <AtD890RadioSettingRow
-                    key={field.id}
-                    field={field}
-                    target={target}
-                    override={overrides.get(field.id)}
-                    decoded={read?.decoded[field.id]}
-                    hasRead={read !== undefined}
-                    note={field.id.startsWith('powerOnLine') ? LARGE_FONT_HINT : undefined}
-                    onSet={(value) => setOverride(buildId, field.id, value)}
-                    onClear={() => clearOverride(buildId, field.id)}
-                  />
-                ))}
-              </div>
-            </Panel>
+              <Panel
+                id={`radio-settings-${section.id}`}
+                title={section.label}
+                collapsible
+                badge={setCount > 0 ? changesLabel(setCount) : undefined}
+              >
+                {section.id === 'startup' && customTextWithEmptyLine1 ? (
+                  <StatusBanner tone="warning">
+                    The power-on screen is Custom text but line 1 is empty, so the radio shows an
+                    empty start-up screen.
+                  </StatusBanner>
+                ) : null}
+                <div className={classes.rows}>
+                  {fields.map((field) => (
+                    <AtD890RadioSettingRow
+                      key={field.id}
+                      field={field}
+                      target={target}
+                      override={overrides.get(field.id)}
+                      decoded={read?.decoded[field.id]}
+                      hasRead={read !== undefined}
+                      note={field.id.startsWith('powerOnLine') ? LARGE_FONT_HINT : undefined}
+                      onSet={(value) => setOverride(buildId, field.id, value)}
+                      onClear={() => clearOverride(buildId, field.id)}
+                    />
+                  ))}
+                </div>
+              </Panel>
+            </Fragment>
           );
         })}
       </div>

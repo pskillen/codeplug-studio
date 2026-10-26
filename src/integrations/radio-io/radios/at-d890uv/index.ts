@@ -203,6 +203,11 @@ export {
   type AtD890ChannelLocationTable,
 } from './channelLocationCodec.ts';
 export {
+  MM9PDY_TG_NEXT_FUNCTION,
+  MM9PDY_TG_PREVIOUS_FUNCTION,
+  mm9pdyStepKeyOverrides,
+} from './mm9pdyStepKeys.ts';
+export {
   decodeAtD890RadioSettings,
   languageLockFromLocalInfo,
   type AtD890DecodedSetting,
