@@ -127,6 +127,7 @@ export async function changeAtD890FrequencyRange(
     await createAtD890RangeChangeSender(pipe).send(
       AT_D890_RANGE_CHANGE_EXTENT.start,
       frame,
+      { liveLocalInfo: live, backupLocalInfo },
       signal,
     );
   } catch (err) {
