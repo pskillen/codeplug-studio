@@ -3,6 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   AT_D890_FREQUENCY_RANGES,
   atD890TxAllowed,
+  AT_D890_RANGE_CHANGE_TARGET_CODES,
+  atD890RangeChangeTargets,
+  atD890ReceiveNarrower,
+  atD890TxChangeSummary,
+  isAtD890RangeChangeTarget,
   describeAtD890FrequencyRange,
   listAtD890ReceiveOnlyChannels,
 } from './frequencyRange.ts';
@@ -185,5 +190,67 @@ describe('listAtD890ReceiveOnlyChannels', () => {
   it('skips receive-only and empty channels', () => {
     const input = [ch(446, { rxOnly: true }), ch(446, { empty: true }), ch(446)];
     expect(listAtD890ReceiveOnlyChannels(input, 3)).toEqual([input[2]]);
+  });
+});
+
+describe('range change targets', () => {
+  it('lists the CPS codes and never 6, 9, 12 or 15', () => {
+    const codes = atD890RangeChangeTargets(3, { maintenanceUnlocked: true }).map((t) => t.code);
+    expect(codes).toEqual([...AT_D890_RANGE_CHANGE_TARGET_CODES]);
+    for (const never of [6, 9, 12, 15, 19]) {
+      expect(codes).not.toContain(never);
+      expect(isAtD890RangeChangeTarget(never)).toBe(false);
+    }
+    expect(isAtD890RangeChangeTarget(14)).toBe(true);
+  });
+
+  it('marks the current code, and code 14 unavailable until unlocked', () => {
+    const locked = atD890RangeChangeTargets(3, { maintenanceUnlocked: false });
+    expect(locked.find((t) => t.isCurrent)?.code).toBe(3);
+    const c14 = locked.find((t) => t.code === 14)!;
+    expect(c14.requiresMaintenanceUnlock).toBe(true);
+    expect(c14.available).toBe(false);
+    expect(locked.filter((t) => !t.available)).toHaveLength(1);
+    const open = atD890RangeChangeTargets(3, { maintenanceUnlocked: true });
+    expect(open.find((t) => t.code === 14)!.available).toBe(true);
+    expect(open.filter((t) => t.requiresMaintenanceUnlock)).toHaveLength(1);
+  });
+
+  it('narrow-receive set is 2, 4, 5, 8, 16, 17; UHF TX inhibited for 16 and 17', () => {
+    const t = atD890RangeChangeTargets(3, { maintenanceUnlocked: true });
+    expect(t.filter((x) => x.receiveNarrowerThanFull).map((x) => x.code)).toEqual([
+      2, 4, 5, 8, 16, 17,
+    ]);
+    expect(t.filter((x) => x.uhfTxInhibited).map((x) => x.code)).toEqual([16, 17]);
+  });
+
+  it('classifies the TX change against the current code', () => {
+    const t = atD890RangeChangeTargets(3, { maintenanceUnlocked: true });
+    const by = (c: number) => t.find((x) => x.code === c)!.txChange;
+    expect(by(7)).toBe('wider');
+    expect(by(4)).toBe('narrower');
+    expect(by(16)).toBe('different');
+    expect(by(18)).toBe('wider');
+  });
+
+  it('atD890ReceiveNarrower', () => {
+    expect(atD890ReceiveNarrower(3, 2)).toBe(true);
+    expect(atD890ReceiveNarrower(3, 7)).toBe(false);
+    expect(atD890ReceiveNarrower(3, 11)).toBe(false);
+    expect(atD890ReceiveNarrower(2, 3)).toBe(false);
+  });
+
+  it('summary 3 to 7 opens 146-148, 420-430, 440-450 and closes nothing', () => {
+    const s = atD890TxChangeSummary(3, 7);
+    expect(s.from).toBe('430–440, 144–146 MHz');
+    expect(s.to).toBe('420–450, 144–148 MHz');
+    expect(s.opens).toEqual(['146–148', '420–430', '440–450']);
+    expect(s.closes).toEqual([]);
+  });
+
+  it('summary 7 to 16 closes UHF TX and 147-148', () => {
+    const s = atD890TxChangeSummary(7, 16);
+    expect(s.closes).toEqual(['147–148', '420–450']);
+    expect(s.opens).toEqual([]);
   });
 });
