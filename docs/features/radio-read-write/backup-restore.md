@@ -73,11 +73,12 @@ flowchart LR
   end
 ```
 
-| Composition      | Persist                       | `assemble`? | Feeds Write-codeplug? |
-| ---------------- | ----------------------------- | ----------- | --------------------- |
-| Backup / inspect | Optional zip only             | No          | No                    |
-| Pre-write read   | RAM, same connection as Write | Overlay yes | Yes                   |
-| Restore          | Zip → radio                   | No          | No                    |
+| Composition                                                                                 | Persist                          | `assemble`? | Feeds Write-codeplug?                                                                                       |
+| ------------------------------------------------------------------------------------------- | -------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| Backup / inspect                                                                            | Optional zip only                | No          | No                                                                                                          |
+| Pre-write read                                                                              | RAM, same connection as Write    | Overlay yes | Yes                                                                                                         |
+| Restore                                                                                     | Zip → radio                      | No          | No                                                                                                          |
+| Settings-only (AT-D890UV, [#1393](https://github.com/pskillen/codeplug-studio/issues/1393)) | RAM overrides, this session only | No          | No. Field patches on the fresh settings-unit read; reuses the Write RMW core, never Restore's region replay |
 
 Leaving the Backup / Restore page discards the RAM session. The zip on disk is the durable copy. Restore opens a **new** serial connection (backup already closed after read).
 
@@ -238,6 +239,8 @@ Build `inspectBag` with `descriptor.hydration.extractHydration(image, { protocol
 7. Do **not** gate Restore on vestigial `prodWriteDisabled` (no adapter sets it). Deleting that flag is not this feature.
 
 **Must not** call: `assemble()`, `buildRadioWriteProjection`, `prepareRadioWriteImage`, `mergeChannelsIntoHydration`, or D890 encode/assemble-from-build helpers.
+
+The reverse holds too: the AT-D890UV settings-only Write (`uploadSettingsPatches`) reuses the Write RMW core and must never call `restoreFromBackup` or replay a settings region. Restore is the only whole-region settings replay.
 
 App entry: `src/app/services/radioBackupRestore.ts` — a sibling of write session code, not a branch inside `prepareRadioWriteImage`.
 

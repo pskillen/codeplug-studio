@@ -49,7 +49,7 @@ Addresses are **radio absolute** (u32). Read only enabled slots via each region�
 
 ### Optional settings and alarm (preserved through erase on Write)
 
-anytone-cps community RE — verify on hardware before relying on offsets. Studio **Reads** these regions on Connect/Read ([#760](https://github.com/pskillen/codeplug-studio/issues/760)) for Radio image forensics and persists them in the hydration bag.
+anytone-cps community RE — verify on hardware before relying on offsets. Studio **Reads** these regions on Connect/Read ([#760](https://github.com/pskillen/codeplug-studio/issues/760)) for Radio image forensics. They live in the session download cache only; Studio persists no settings bytes in the project or a hydration bag.
 
 On **Write**, Studio encodes the modelled overlay onto `cacheToMemoryMap` of this PROGRAM session download cache ([#875](https://github.com/pskillen/codeplug-studio/issues/875)) — not a persisted hydration bag and not a virgin `0xff` `MemoryMap`. Sparse erase-unit RMW ([#768](https://github.com/pskillen/codeplug-studio/issues/768)) then **fresh-reads** each touched `0x40000` unit from the connected radio and re-stages non-`0xff` bytes unchanged **outside** that modelled overlay — including optional settings and alarm spans that share units with modelled banks. Studio does **not** re-derive those kept bytes from the library build. Identity is the radio on the cable this session ([#1276](https://github.com/pskillen/codeplug-studio/issues/1276)); Restore still refuses zip vs live serial mismatch.
 
@@ -64,7 +64,9 @@ On **Write**, Studio encodes the modelled overlay onto `cacheToMemoryMap` of thi
 | Alarm settings               | `0x3482e00`               | `0x10`       | Call type @ `+0x00`, kind, and a BCD id, with `0x30` marked. Studio reads this `0x10` span.                                                                                                                                                               |
 | Alarm settings               | `0x3483000`               | `0x30`       | Analog/digital emergency alarm flags; man-down also @ optional main `+0x24` / `+0x4f`                                                                                                                                                                     |
 
-The Radio image retain preview reads startup enable at main `+0xD6` bit 0, zones A/B at `+0xD7`/`+0xD8`, channels A/B at `+0xD9`/`+0xDA` (`0xFF` = none), UTF-16LE display lines of `0x20` bytes at `0x3500900` and `0x3500920`, and an 8-byte ASCII password at `0x3500940`; Write does not program these fields.
+The Radio image retain preview reads startup enable at main `+0xD6` bit 0, zones A/B at `+0xD7`/`+0xD8`, channels A/B at `+0xD9`/`+0xDA` (`0xFF` = none), UTF-16LE display lines of `0x20` bytes at `0x3500900` and `0x3500920`, and an 8-byte ASCII password at `0x3500940`.
+
+**Settings patches** ([#1393](https://github.com/pskillen/codeplug-studio/issues/1393)). A codeplug Write leaves these bytes as the radio holds them, except for registered fields. A registered field (address, length, optional bit mask, targets) is applied as a **field patch on the fresh read** of unit `0x3500000`: `new = (fresh & ~mask) | (value & mask)`. Only addresses in the main record `+0x000`…`+0x15F` and the power-on block `+0x900`…`+0x947` may be registered, and these main-record offsets never may (radio state): `+0x15 +0x16 +0x1D…+0x21 +0x2C +0x4E +0x6F +0x70 +0xDB +0x13E…+0x140 +0x14E…+0x150`. LocalInfo, alarm, Zone A/B, the safe-skip address, the flash markers and (until the MM9PDY store is modelled) `+0x200` are refused for every target. The preserved-byte check allows a staged block outside the modelled set to differ from the fresh read only in the patched bits. After patching, main `0x200` and ext `0x60` must not read all `0xFF`. Today the registry holds the two short-press key bytes `+0x13` (P1) and `+0x14` (P2); the MM9PDY TG step keys are these two fields set to 14 and 13.
 
 Chinese UI on the radio is driven by **optional settings** (CPS language, power-on password) when those regions are erased — not LocalInfo ExpertOptions. Bag diffs on a faulted radio showed LocalInfo byte-identical between healthy and faulted reads ([#768](https://github.com/pskillen/codeplug-studio/issues/768)); the brick came from erase collateral in shared flash units, not LocalInfo replay.
 
@@ -240,7 +242,7 @@ Measured in `ChannelData` 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`): **`
 | `0x3880000`     | `AmAir*` / `AmZone*` (when airband projected)                    | AmAir VFO + unmodelled co-residents in the unit     |
 | `0x1000000`+    | `ChannelData` (per backed block)                                 | Unused slots in same unit                           |
 
-**Sparse staging:** only non-`0xff` 16-byte blocks are re-transmitted (~37.5 kB across 14 touched units in a typical codeplug, vs 3.67 MB dense). Fresh-read source is the **connected radio**, not the hydration bag; LocalInfo serial must match the stash or Write is refused.
+**Sparse staging:** only non-`0xff` 16-byte blocks are re-transmitted (~37.5 kB across 14 touched units in a typical codeplug, vs 3.67 MB dense). Fresh-read source is the **connected radio**, not a stored bag. Identity is the radio on the cable ([#1276](https://github.com/pskillen/codeplug-studio/issues/1276)); an erased LocalInfo refuses Write.
 
 `LocalInfo` (`0x4f80000`) sits in unit `0x4f80000` — outside the modelled write set — so it is never transmitted.
 
