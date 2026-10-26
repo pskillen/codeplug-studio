@@ -1,0 +1,40 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: var(--dsv2-panel-padding-y, 12px) var(--dsv2-panel-padding-x, 16px);
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-surface);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--dsv2-font-body);
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+}
+
+.body {
+  margin: 0;
+  max-width: 42rem;
+  font-size: var(--dsv2-font-body-sm);
+  line-height: 1.45;
+  color: var(--dsv2-text-secondary);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.start {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .start {
+    width: auto;
+  }
+}
