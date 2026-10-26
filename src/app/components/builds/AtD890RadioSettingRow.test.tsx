@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { atD890SettingField } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import { DesignSystemV2Provider } from '../v2/index.ts';
@@ -100,6 +100,19 @@ describe('AtD890RadioSettingRow', () => {
     const input = screen.getByRole('textbox', { name: 'Power-on line 1' });
     fireEvent.change(input, { target: { value: '' } });
     expect(onSet).toHaveBeenCalledWith('');
+  });
+
+  it('shows a text row set to an empty line differently from Keep', () => {
+    renderRow('powerOnLine1', { override: '' });
+    const set = screen.getByRole('textbox', { name: 'Power-on line 1' });
+    expect(set).toHaveAttribute('placeholder', '(empty line)');
+    expect(screen.getByText('Will be set to an empty line.')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Will be set' })).toBeInTheDocument();
+    cleanup();
+    renderRow('powerOnLine1');
+    const keep = screen.getByRole('textbox', { name: 'Power-on line 1' });
+    expect(keep).toHaveAttribute('placeholder', "Keep radio's value");
+    expect(screen.queryByText('Will be set to an empty line.')).not.toBeInTheDocument();
   });
 
   it('flags text that is too long or not plain ASCII', () => {

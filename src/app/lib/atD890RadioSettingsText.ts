@@ -10,6 +10,10 @@ import type { AtD890RadioSettingsRead } from '../state/atD890RadioSettingsSessio
 
 export const KEEP_RADIO_VALUE_LABEL = "Keep radio's value";
 
+/** Shown in a text row that is set to an empty line, so it does not read as "keep". */
+export const SET_EMPTY_LINE_LABEL = '(empty line)';
+export const SET_EMPTY_LINE_HINT = 'Will be set to an empty line.';
+
 export const WRITE_ARRIVES_LATER_NOTE =
   'Writing these settings arrives with the next Write update.';
 

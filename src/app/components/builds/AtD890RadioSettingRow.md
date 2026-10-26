@@ -33,7 +33,7 @@ One AT-D890UV radio setting on the Radio settings page: label, a tag saying wher
 
 ## Behaviour
 
-- Select controls (enums, levels, Off/On for booleans) list **Keep radio's value** first. Text lines are a text box whose placeholder is "Keep radio's value"; an empty value that was typed is a set value (an empty line), and Clear returns to Keep.
+- Select controls (enums, levels, Off/On for booleans) list **Keep radio's value** first. Text lines are a text box whose placeholder is "Keep radio's value"; an empty value that was typed is a set value (an empty line): the box then shows the placeholder "(empty line)" and the hint "Will be set to an empty line.", so it does not read as Keep, and Clear returns to Keep.
 - A value the radio holds that Studio does not offer (a custom picture, a corrupt byte) appears only in the Radio column, as "<name or raw bytes> (not offered)"; it is never an option.
 - Text lines are checked with the core `atD890TextProblem` (16 characters, printable ASCII); the problem shows under the box.
 - A set row shows a dot and a **Clear** button.

@@ -17,7 +17,12 @@ import type {
   AtD890SettingValue,
 } from '@integrations/radio-io/radios/at-d890uv/index.ts';
 import { Button, TextInput } from '../v2/index.ts';
-import { KEEP_RADIO_VALUE_LABEL, radioValueText } from '../../lib/atD890RadioSettingsText.ts';
+import {
+  KEEP_RADIO_VALUE_LABEL,
+  SET_EMPTY_LINE_HINT,
+  SET_EMPTY_LINE_LABEL,
+  radioValueText,
+} from '../../lib/atD890RadioSettingsText.ts';
 import classes from './AtD890RadioSettingRow.module.css';
 
 const EXPOSURE_TAG: Record<AtD890SettingExposure, string> = {
@@ -62,14 +67,15 @@ export default function AtD890RadioSettingRow({
   if (field.kind === 'text') {
     const text = typeof override === 'string' ? override : '';
     const problem = isSet ? atD890TextProblem(field, text) : undefined;
+    const setEmpty = isSet && text === '';
     control = (
       <TextInput
         id={controlId}
         aria-label={field.label}
         value={text}
-        placeholder={KEEP_RADIO_VALUE_LABEL}
+        placeholder={setEmpty ? SET_EMPTY_LINE_LABEL : KEEP_RADIO_VALUE_LABEL}
         error={Boolean(problem)}
-        hint={problem}
+        hint={problem ?? (setEmpty ? SET_EMPTY_LINE_HINT : undefined)}
         onChange={(e) => onSet(e.target.value)}
       />
     );
