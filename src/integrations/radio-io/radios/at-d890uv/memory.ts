@@ -28,6 +28,8 @@ import {
   radioChannelHasTablePosition,
 } from './channelLocationCodec.ts';
 import { listSetBits } from './bitmap.ts';
+import { mm9pdyStepKeyOverrides } from './mm9pdyStepKeys.ts';
+import { resolveAtD890SettingsPatches, type AtD890SettingsPatch } from './settingsFields.ts';
 import { assertAtD890WritableSpan, isAtD890WritableAddress } from './writableExtents.ts';
 import { syncAmAirRegionsToCache } from './amAirCodec.ts';
 import { syncAmZoneRegionsToCache } from './amZoneCodec.ts';
@@ -319,10 +321,11 @@ export type AtD890UploadBankIntent = {
   /** When true, stage TalkgroupOrder rebuilt in the write image. */
   replaceTalkgroupOrder: boolean;
   /**
-   * MM9PDY AT-D890UV. When true, upload patches P1/P2 short on the fresh
-   * optional-settings erase unit. Does not synthesize the settings record.
+   * Settings field patches (build step keys and session overrides, already resolved against the
+   * allow-list). Upload applies them to the fresh read of the optional-settings erase unit, bit by
+   * bit. Does not synthesize the settings record. Unset or empty: no settings byte changes.
    */
-  assignMm9pdyStepKeys?: boolean;
+  settingsPatches?: readonly AtD890SettingsPatch[];
   /**
    * MM9PDY AT-D890UV. When set, the cache merge encodes the channel location table from the
    * write image (after the channel encode) and stages it at the A half of the dedicated
@@ -340,11 +343,18 @@ export function atD890UploadBankIntentFromOrganisation(
   organisation?: RadioWriteOrganisation,
   channels?: readonly RadioChannelDto[],
 ): AtD890UploadBankIntent {
+  const settingsPatches = resolveAtD890SettingsPatches(
+    [
+      ...(organisation?.assignMm9pdyStepKeys === true ? mm9pdyStepKeyOverrides() : []),
+      ...(organisation?.atD890SettingsOverrides ?? []),
+    ],
+    organisation?.atD890SettingsTarget ?? 'stock',
+  );
   return {
     replaceAmAirBank:
       organisation?.amAirChannels !== undefined && organisation?.amZones !== undefined,
     replaceTalkgroupOrder: organisation?.talkGroups !== undefined,
-    assignMm9pdyStepKeys: organisation?.assignMm9pdyStepKeys === true,
+    ...(settingsPatches.length > 0 ? { settingsPatches } : {}),
     ...(organisation?.writeChannelLocationTable === true
       ? {
           channelLocationTable: {

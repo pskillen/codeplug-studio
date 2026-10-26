@@ -220,11 +220,9 @@ describe('AtD890uvProtocol', () => {
     memory.set(0x350_0000, settings);
     scriptAtD890UploadReadResponder(pipe, memory);
     const image = seedChannelZeroUpload(radio);
-    radio.setUploadBankIntent({
-      replaceAmAirBank: false,
-      replaceTalkgroupOrder: false,
-      assignMm9pdyStepKeys: true,
-    });
+    radio.setUploadBankIntent(
+      atD890UploadBankIntentFromOrganisation({ assignMm9pdyStepKeys: true }),
+    );
     enableAtD890AutoWriteAck(pipe);
 
     await radio.upload(image, {});
@@ -236,6 +234,57 @@ describe('AtD890uvProtocol', () => {
     expect(keys?.[5]).toBe(0x35);
     expect(writePayloadAt(pipe, D890_MAP.OptionalSettingsMain + 0x200)).toEqual(marker);
   }, 20_000);
+
+  it('applies a settings override on a stock target as a patch on the fresh read only', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    const settings = makeAtD890EraseUnitBuffer();
+    for (let i = 0; i < 0x160; i++) settings[i] = (i * 5 + 3) & 0xff;
+    settings.set([0x41, 0x42, 0x43], 0x900);
+    settings[0x1280] = 0x33;
+    settings.fill(0x5a, 0x200, 0x210);
+    const memory = channelUploadMemory();
+    memory.set(0x350_0000, settings);
+    scriptAtD890UploadReadResponder(pipe, memory);
+    const image = seedChannelZeroUpload(radio);
+    radio.setUploadBankIntent(
+      atD890UploadBankIntentFromOrganisation({
+        atD890SettingsTarget: 'stock',
+        atD890SettingsOverrides: [{ fieldId: 'keyShortP1', value: 3 }],
+      }),
+    );
+    enableAtD890AutoWriteAck(pipe);
+
+    await radio.upload(image, {});
+
+    const expected = settings.slice();
+    expected[0x13] = 3;
+    const zoneBytes = (off: number) => off >= 0x400 && off < 0x800;
+    let compared = 0;
+    for (const w of pipe.writes.filter((f) => f[0] === 0x57)) {
+      const address = ((w[1]! << 24) | (w[2]! << 16) | (w[3]! << 8) | w[4]!) >>> 0;
+      if (address < 0x350_0000 || address >= 0x354_0000) continue;
+      const off = address - 0x350_0000;
+      if (zoneBytes(off)) continue;
+      expect([...w.subarray(6, 22)]).toEqual([...expected.subarray(off, off + 16)]);
+      compared++;
+    }
+    expect(compared).toBeGreaterThan(10);
+    expect(radio.takeUploadSettingsPatches()?.map((p) => p.fieldId)).toEqual(['keyShortP1']);
+    expect(radio.takeUploadSettingsPatches()).toBeUndefined();
+  });
+
+  it('refuses a session override of a key the step-key switch already sets', () => {
+    expect(() =>
+      atD890UploadBankIntentFromOrganisation({
+        assignMm9pdyStepKeys: true,
+        atD890SettingsTarget: 'mm9pdy',
+        atD890SettingsOverrides: [{ fieldId: 'keyShortP2', value: 5 }],
+      }),
+    ).toThrow(RadioProtocolError);
+  });
 
   it('never transmits the per-unit flash bookkeeping blocks', async () => {
     // E7: `+0x3fbf0` and `+0x3fff0` are radio-managed sector metadata, confirmed on

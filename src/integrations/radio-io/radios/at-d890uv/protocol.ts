@@ -60,12 +60,18 @@ import {
 import { assertAtD890LocalInfoPlausible } from './identityCheck.ts';
 import {
   assertPreservedBytesMatchFreshRead,
+  type AtD890StagingChunk,
   listSparseStagingChunks,
   modelledAddressSetFromChunks,
   overlayModelledChunksOntoUnit,
   preWriteChunksFromFreshUnits,
 } from './sparseEraseRmw.ts';
-import { patchMm9pdyStepKeysOnEraseUnit } from './mm9pdyStepKeys.ts';
+import type { AtD890SettingsPatch } from './settingsFields.ts';
+import {
+  applyAtD890SettingsPatchesToUnit,
+  assertAtD890SentinelSpansNotErased,
+  atD890PatchMaskMap,
+} from './settingsPatch.ts';
 import {
   captureAtD890WriteStagingSnapshot,
   cloneAtD890WriteStagingSnapshot,
@@ -495,6 +501,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
   private identRaw: Uint8Array | null = null;
   private lastUploadSentinelBefore: AtD890SentinelSnapshot | undefined;
   private lastUploadStagingSnapshot: AtD890WriteStagingSnapshot | undefined;
+  private lastUploadSettingsPatches: readonly AtD890SettingsPatch[] | undefined;
   private uploadBankIntent: AtD890UploadBankIntent = {
     replaceAmAirBank: false,
     replaceTalkgroupOrder: false,
@@ -596,6 +603,18 @@ export class AtD890uvProtocol implements CloneImageRadio {
     return snap ? cloneAtD890SentinelSnapshot(snap) : undefined;
   }
 
+  /** Settings patches the last successful {@link upload} applied — consumed once. */
+  takeUploadSettingsPatches(): readonly AtD890SettingsPatch[] | undefined {
+    const patches = this.lastUploadSettingsPatches;
+    this.lastUploadSettingsPatches = undefined;
+    return patches?.map((p) => ({
+      fieldId: p.fieldId,
+      address: p.address,
+      bytes: p.bytes.slice(),
+      mask: p.mask.slice(),
+    }));
+  }
+
   /** Staging chunks from the last successful {@link upload} — consumed once. */
   takeUploadStagingSnapshot(): AtD890WriteStagingSnapshot | undefined {
     const snap = this.lastUploadStagingSnapshot;
@@ -670,16 +689,43 @@ export class AtD890uvProtocol implements CloneImageRadio {
     };
 
     const modelledChunks = listWriteChunks(this.cache, AT_D890_SAFE_SKIP_WRITE_ADDR);
-    const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
-    const touchedUnits = listTouchedEraseUnits(modelledChunks.map((c) => c.address));
-    const touchedUnitSet = new Set(touchedUnits);
-    const assignStepKeys = this.uploadBankIntent.assignMm9pdyStepKeys === true;
-    const stepKeyUnit = eraseUnitBaseFor(D890_MAP.OptionalSettingsMain);
-    if (assignStepKeys && !touchedUnitSet.has(stepKeyUnit)) {
-      touchedUnits.push(stepKeyUnit);
-      touchedUnitSet.add(stepKeyUnit);
+    await this.rmwStageAndTransmit({
+      modelledChunks,
+      touchedUnits: listTouchedEraseUnits(modelledChunks.map((c) => c.address)),
+      settingsPatches: this.uploadBankIntent.settingsPatches ?? [],
+      ownsLocationUnit: this.uploadBankIntent.channelLocationTable !== undefined,
+      preUploadCache,
+      opts,
+    });
+  }
+
+  /**
+   * Erase-unit read-modify-write: fresh-read each touched unit, overlay the modelled chunks, apply
+   * the settings patches, stage the non-`0xff` blocks and transmit them. Shared by {@link upload}
+   * and {@link uploadSettingsPatches}; every guard below applies to both.
+   */
+  private async rmwStageAndTransmit(args: {
+    modelledChunks: readonly AtD890StagingChunk[];
+    touchedUnits: readonly number[];
+    settingsPatches: readonly AtD890SettingsPatch[];
+    ownsLocationUnit: boolean;
+    /** Cache as it stood before the write image was applied; unset skips the staleness guard. */
+    preUploadCache?: AtD890DownloadCache;
+    opts: { onProgress?: ProgressFn; signal?: AbortSignal };
+  }): Promise<void> {
+    const pipe = this.pipe;
+    if (!pipe) {
+      throw new RadioProtocolError('AT-D890UV not connected');
     }
-    const ownsLocationUnit = this.uploadBankIntent.channelLocationTable !== undefined;
+    const { modelledChunks, settingsPatches, ownsLocationUnit, preUploadCache, opts } = args;
+    const modelledAddresses = modelledAddressSetFromChunks(modelledChunks);
+    const touchedUnits = [...args.touchedUnits];
+    const touchedUnitSet = new Set(touchedUnits);
+    const settingsUnit = eraseUnitBaseFor(D890_MAP.OptionalSettingsMain);
+    if (settingsPatches.length > 0 && !touchedUnitSet.has(settingsUnit)) {
+      touchedUnits.push(settingsUnit);
+      touchedUnitSet.add(settingsUnit);
+    }
     if (!ownsLocationUnit && touchedUnitSet.has(AT_D890_CHANNEL_LOCATION_UNIT_BASE)) {
       // Stock intents clear the pair from the cache; reaching here is a staging bug.
       throw new RadioProtocolError(
@@ -690,12 +736,13 @@ export class AtD890uvProtocol implements CloneImageRadio {
 
     try {
       const sentinelBefore = await snapshotAtD890SentinelRegions(
-        this.pipe,
+        pipe,
         opts.signal,
         this.readBlockSize,
       );
       assertAtD890SentinelRegionsPlausible(sentinelBefore);
       this.lastUploadSentinelBefore = cloneAtD890SentinelSnapshot(sentinelBefore);
+      this.lastUploadSettingsPatches = settingsPatches;
 
       const freshUnits = new Map<number, Uint8Array>();
       for (let u = 0; u < touchedUnits.length; u++) {
@@ -712,18 +759,12 @@ export class AtD890uvProtocol implements CloneImageRadio {
           },
           opts.signal,
         );
-        const data = await atD890ReadMemory(
-          this.pipe,
-          start,
-          length,
-          opts.signal,
-          this.readBlockSize,
-        );
+        const data = await atD890ReadMemory(pipe, start, length, opts.signal, this.readBlockSize);
         freshUnits.set(unitBase, data);
       }
 
       const liveLocal = await atD890ReadMemory(
-        this.pipe,
+        pipe,
         D890_MAP.LocalInfo,
         D890_MAP.LocalInfoLength,
         opts.signal,
@@ -746,18 +787,26 @@ export class AtD890uvProtocol implements CloneImageRadio {
         overlayModelledChunksOntoUnit(unitBase, mergedUnits.get(unitBase)!, unitChunks);
       }
 
-      if (assignStepKeys) {
-        const merged = mergedUnits.get(stepKeyUnit);
+      if (settingsPatches.length > 0) {
+        const merged = mergedUnits.get(settingsUnit);
         if (!merged) {
           throw new RadioProtocolError(
-            'AT-D890UV step-key patch has no fresh read of the optional-settings erase unit',
+            'AT-D890UV settings patch has no fresh read of the optional-settings erase unit',
           );
         }
-        modelledAddresses.add(patchMm9pdyStepKeysOnEraseUnit(stepKeyUnit, merged));
+        // Field patches ride on the fresh read. The patched blocks are not "modelled": the
+        // preserved check below allows only the patched bits to differ.
+        applyAtD890SettingsPatchesToUnit(settingsUnit, merged, settingsPatches);
+        assertAtD890SentinelSpansNotErased(settingsUnit, merged);
       }
 
       const stagingChunks = listSparseStagingChunks(mergedUnits, modelledAddresses);
-      assertPreservedBytesMatchFreshRead(stagingChunks, freshUnits, modelledAddresses);
+      assertPreservedBytesMatchFreshRead(
+        stagingChunks,
+        freshUnits,
+        modelledAddresses,
+        atD890PatchMaskMap(settingsPatches),
+      );
       // Defence in depth: markers are already omitted in listSparseStagingChunks.
       // Keep this filter so a future staging change cannot put them on the wire.
       //
@@ -810,11 +859,12 @@ export class AtD890uvProtocol implements CloneImageRadio {
           },
           opts.signal,
         );
-        await atD890WriteMemory(this.pipe, address, data, opts.signal, { transmitGuard });
-        putCacheBytes(this.cache, address, data);
+        await atD890WriteMemory(pipe, address, data, opts.signal, { transmitGuard });
+        if (this.cache) putCacheBytes(this.cache, address, data);
       }
     } catch (err) {
       this.lastUploadSentinelBefore = undefined;
+      this.lastUploadSettingsPatches = undefined;
       this.lastUploadStagingSnapshot = undefined;
       this.abandonProgramMode();
       throw err;
