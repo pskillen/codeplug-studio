@@ -66,7 +66,6 @@ export default function BuildRadioBackupPage() {
   const [progress, setProgress] = useState<ProgressUpdate | null>(null);
   const [transferStages, setTransferStages] = useState<string[]>([]);
   const [plan, setPlan] = useState<PlannedStage[] | undefined>(undefined);
-  const [startedAt, setStartedAt] = useState<number | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [backup, setBackup] = useState<RadioBackupSession | null>(null);
   const [selectedRegionIds, setSelectedRegionIds] = useState<ReadonlySet<string>>(new Set());
@@ -130,7 +129,6 @@ export default function BuildRadioBackupPage() {
     setProgress(null);
     setTransferStages([]);
     setPlan(undefined);
-    setStartedAt(Date.now());
     abortRef.current = new AbortController();
   }
 
@@ -147,6 +145,7 @@ export default function BuildRadioBackupPage() {
 
   async function handleBackupRadio() {
     beginBusy();
+    setPlan(descriptor ? planForOperation(descriptor, 'backup', {}) : undefined);
     try {
       const { session } = await openRadioSessionForEgress(radioEgress!, {
         forcePortSelection: true,
@@ -497,7 +496,6 @@ export default function BuildRadioBackupPage() {
           progress={progress}
           transferStages={transferStages}
           plan={plan}
-          startedAt={startedAt}
           navigationBlocked={leaveAttempted}
           onCancel={handleCancel}
           onClose={handleProgressClose}

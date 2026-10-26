@@ -12,6 +12,7 @@ import {
   type ProgressModalStep,
 } from '../../components/v2/index.ts';
 import WriteRadioModal from '../../components/builds/WriteRadioModal.tsx';
+import RadioIoReplayDemo from './RadioIoReplayDemo.tsx';
 import RadioIoStageList, { type StageRow } from '../../components/builds/RadioIoStageList.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
@@ -38,12 +39,10 @@ const LONG_PLAN_STAGES = 20;
 /** A 20-stage Write plan advancing on a timer, to show the fixed-height stage list. */
 function LongPlanDemo({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [tick, setTick] = useState(0);
-  const [startedAt, setStartedAt] = useState(() => Date.now());
   useEffect(() => {
     if (!open) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- restart the demo each time it opens
     setTick(0);
-    setStartedAt(Date.now());
     const id = window.setInterval(
       () => setTick((t) => (t < LONG_PLAN_STAGES * 5 ? t + 1 : t)),
       250,
@@ -66,13 +65,7 @@ function LongPlanDemo({ open, onClose }: { open: boolean; onClose: () => void })
       open={open}
       phase="running"
       steps={[]}
-      body={
-        <RadioIoStageList
-          rows={rows}
-          progress={{ cur: tick % 5, max: 5, msg: '' }}
-          startedAt={startedAt}
-        />
-      }
+      body={<RadioIoStageList rows={rows} progress={{ cur: tick % 5, max: 5, msg: '' }} />}
       onClose={onClose}
     />
   );
@@ -194,6 +187,12 @@ export default function StyleguideOverlaysPage() {
           onClose={() => setRunningOpen(false)}
         />
         <LongPlanDemo open={longPlanOpen} onClose={() => setLongPlanOpen(false)} />
+        <Text size="sm" mt="md">
+          The real progress window fed with a Write&apos;s event stream per radio (re-entered
+          stages, restarting counts, seed events), using each adapter&apos;s own plan. Add{' '}
+          <code>?replay=dm32uv&amp;at=0.55</code> to open it paused part-way.
+        </Text>
+        <RadioIoReplayDemo />
         <ProgressModal
           open={successOpen}
           phase="finished"

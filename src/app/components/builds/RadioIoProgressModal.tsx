@@ -2,9 +2,16 @@
  * Blocking modal for Web Serial read/write — uses v2 ProgressModal (R1).
  */
 
+import { useState } from 'react';
 import { Alert, Text } from '@mantine/core';
 import type { PlannedStage, ProgressUpdate } from '@integrations/radio-io/types.ts';
 import RadioIoStageList, { type StageRow } from './RadioIoStageList.tsx';
+import {
+  START_CURSOR,
+  foldStageEvent,
+  type CursorRow,
+  type StageCursor,
+} from './radioIoStageCursor.ts';
 import { Button, ProgressModal, type ProgressModalStep } from '../v2/index.ts';
 
 /**
@@ -29,11 +36,10 @@ export interface RadioIoProgressModalProps {
   /**
    * Stages the adapter declared before the transfer (`planForOperation`). When present the whole
    * list is shown up front in a fixed-height list with an overall bar and time remaining;
-   * `transferStages` then only adds stages the plan did not name. Omitted: the list grows.
+   * `transferStages` then only adds stages the plan did not name. Progress only moves forward
+   * (see `radioIoStageCursor.ts`). Omitted: the list grows.
    */
   plan?: readonly PlannedStage[];
-  /** When the operation began (ms), for the time estimate. */
-  startedAt?: number;
   navigationBlocked?: boolean;
   writeVerifyStatus?: RadioIoWriteVerifyStatus;
   requiresCrossSessionReconnect?: boolean;
@@ -51,12 +57,20 @@ interface StepDef {
   label: string;
 }
 
+/** Row id of the transfer stage at `index`. Planned lists may repeat a label, so they use the index. */
+function stageId(planned: boolean, index: number, label: string): string {
+  return planned ? `stage:${index}` : `stage:${label}`;
+}
+
 function buildSteps(
   operation: RadioIoOperation,
   transferStages: readonly string[],
   phase: RadioIoProgressPhase,
   writeVerifyStatus: RadioIoWriteVerifyStatus,
+  planned: boolean,
 ): StepDef[] {
+  const stageSteps = (): StepDef[] =>
+    transferStages.map((label, i) => ({ id: stageId(planned, i, label), label }));
   if (operation === 'write') {
     const postUpload = writeVerifyStatus !== 'none' || phase === 'done' || phase === 'verifying';
 
@@ -64,7 +78,8 @@ function buildSteps(
       const steps: StepDef[] = [
         { id: 'connecting', label: 'Connect and handshake' },
         { id: 'preparing', label: 'Assemble channels into image' },
-        { id: 'transfer', label: 'Upload to radio' },
+        // A planned list keeps its rows (all done) so the list does not shrink at the finish.
+        ...(planned ? stageSteps() : [{ id: 'transfer', label: 'Upload to radio' }]),
       ];
       if (writeVerifyStatus !== 'none') {
         steps.push({ id: 'verify', label: 'Verify write (optional)' });
@@ -83,7 +98,7 @@ function buildSteps(
       { id: 'connecting', label: 'Connect and handshake' },
       { id: 'preparing', label: 'Assemble channels into image' },
       ...(transferStages.length > 0
-        ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
+        ? stageSteps()
         : [{ id: 'transfer', label: 'Upload to radio' }]),
     ];
     return steps;
@@ -93,7 +108,7 @@ function buildSteps(
       { id: 'connecting', label: 'Connect and handshake' },
       { id: 'preparing', label: 'Pack satellite records' },
       ...(transferStages.length > 0
-        ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
+        ? stageSteps()
         : [{ id: 'transfer', label: 'Upload to radio' }]),
     ];
     if (phase === 'done') {
@@ -105,7 +120,7 @@ function buildSteps(
     const steps: StepDef[] = [
       { id: 'connecting', label: 'Connect and handshake' },
       ...(transferStages.length > 0
-        ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
+        ? stageSteps()
         : [{ id: 'transfer', label: 'Restore archive regions' }]),
     ];
     if (phase === 'done') {
@@ -116,7 +131,7 @@ function buildSteps(
   const steps: StepDef[] = [
     { id: 'connecting', label: 'Connect and handshake' },
     ...(transferStages.length > 0
-      ? transferStages.map((label) => ({ id: `stage:${label}`, label }))
+      ? stageSteps()
       : [{ id: 'transfer', label: 'Download clone image' }]),
     { id: 'saving', label: 'Save image on this build' },
   ];
@@ -131,7 +146,7 @@ function activeStepId(
   progress: ProgressUpdate | null,
   transferStages: readonly string[],
   writeVerifyStatus: RadioIoWriteVerifyStatus,
-  planned = false,
+  cursor: StageCursor | null,
 ): string {
   if (phase === 'connecting') return 'connecting';
   if (phase === 'preparing') return 'preparing';
@@ -144,8 +159,15 @@ function activeStepId(
     return 'verify';
   }
   if (phase === 'done') return 'done';
+  if (cursor) {
+    // Planned: the cursor only moves forward; before the first event the first stage is current.
+    return stageId(
+      true,
+      Math.max(0, cursor.index),
+      transferStages[Math.max(0, cursor.index)] ?? '',
+    );
+  }
   if (progress?.stage) return `stage:${progress.stage}`;
-  if (planned && transferStages.length > 0) return `stage:${transferStages[0]}`;
   if (transferStages.length > 0) return `stage:${transferStages[transferStages.length - 1]}`;
   return 'transfer';
 }
@@ -220,7 +242,6 @@ export default function RadioIoProgressModal({
   progress,
   transferStages: grownStages = [],
   plan,
-  startedAt,
   navigationBlocked = false,
   writeVerifyStatus = 'none',
   requiresCrossSessionReconnect = true,
@@ -235,8 +256,39 @@ export default function RadioIoProgressModal({
   const transferStages: readonly string[] = planned
     ? [...plan.map((p) => p.label), ...grownStages.filter((l) => !plan.some((p) => p.label === l))]
     : grownStages;
-  const stepDefs = buildSteps(operation, transferStages, phase, writeVerifyStatus);
-  const activeId = activeStepId(phase, progress, transferStages, writeVerifyStatus, planned);
+
+  // Fold each event into the stage cursor while rendering (the "adjust state on a prop change"
+  // pattern), so the row never lags an event and a re-emitted label cannot move it back.
+  const cursorRows: CursorRow[] = planned
+    ? [
+        ...plan.map((p) => ({
+          label: p.label,
+          ...(p.optional ? { optional: true } : {}),
+          ...(p.passes ? { passes: p.passes } : {}),
+          ...(p.coarse ? { coarse: true } : {}),
+        })),
+        ...transferStages.slice(plan.length).map((label) => ({ label, unplanned: true })),
+      ]
+    : [];
+  const [cursorState, setCursorState] = useState<{
+    seen: ProgressUpdate | null;
+    cursor: StageCursor;
+  }>({ seen: null, cursor: START_CURSOR });
+  let cursor = cursorState.cursor;
+  if (progress !== cursorState.seen) {
+    cursor =
+      progress && planned ? foldStageEvent(cursorState.cursor, cursorRows, progress) : START_CURSOR;
+    setCursorState({ seen: progress, cursor });
+  }
+
+  const stepDefs = buildSteps(operation, transferStages, phase, writeVerifyStatus, planned);
+  const activeId = activeStepId(
+    phase,
+    progress,
+    transferStages,
+    writeVerifyStatus,
+    planned ? cursor : null,
+  );
   const title =
     operation === 'read'
       ? 'Reading from radio'
@@ -262,19 +314,26 @@ export default function RadioIoProgressModal({
         : stepStatus(step.id, activeId, stepDefs),
   }));
 
-  const planByStep = new Map((plan ?? []).map((p) => [`stage:${p.label}`, p]));
+  const planByStep = new Map((plan ?? []).map((p, i) => [`stage:${i}`, { p, i }]));
   const stageRows: StageRow[] = steps.map((step) => {
-    const p = planByStep.get(step.id);
+    const hit = planByStep.get(step.id);
     return {
       id: step.id,
       label: typeof step.label === 'string' ? step.label : String(step.id),
       status: step.status,
       ...(typeof step.detail === 'string' ? { detail: step.detail } : {}),
-      ...(p ? { weight: p.weight, ...(p.optional ? { optional: true } : {}) } : {}),
+      ...(hit
+        ? {
+            weight: hit.p.weight,
+            ...(hit.p.optional ? { optional: true } : {}),
+            ...(hit.p.coarse ? { coarse: true } : {}),
+            fraction: cursor.frac[hit.i] ?? 0,
+          }
+        : {}),
     };
   });
   const stageListBody = planned ? (
-    <RadioIoStageList rows={stageRows} progress={progress} startedAt={startedAt} />
+    <RadioIoStageList rows={stageRows} progress={progress} />
   ) : undefined;
 
   const alert =

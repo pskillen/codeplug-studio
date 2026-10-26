@@ -9,11 +9,11 @@ import RadioIoStageList, {
   type StageRow,
 } from './RadioIoStageList.tsx';
 
-function ui(rows: StageRow[], progress: ProgressUpdate | null, startedAt?: number) {
+function ui(rows: StageRow[], progress: ProgressUpdate | null) {
   return (
     <MantineProvider>
       <DesignSystemV2Provider>
-        <RadioIoStageList rows={rows} progress={progress} startedAt={startedAt} />
+        <RadioIoStageList rows={rows} progress={progress} />
       </DesignSystemV2Provider>
     </MantineProvider>
   );
@@ -56,13 +56,12 @@ describe('RadioIoStageList', () => {
   });
 
   it('shows the overall percentage and the estimate only after 2 s of progress', () => {
-    const start = Date.now();
-    const { rerender } = render(ui(makeRows(2, 0), { cur: 0, max: 100, msg: '' }, start));
+    const { rerender } = render(ui(makeRows(2, 0), { cur: 0, max: 100, msg: '' }));
     expect(screen.getByTestId('stage-list-eta')).toHaveTextContent('');
     act(() => {
       vi.advanceTimersByTime(1000);
     });
-    rerender(ui(makeRows(2, 0), { cur: 25, max: 100, msg: '' }, start));
+    rerender(ui(makeRows(2, 0), { cur: 25, max: 100, msg: '' }));
     expect(screen.getByText('13%')).toBeInTheDocument();
     expect(screen.getByTestId('stage-list-eta')).toHaveTextContent('');
     act(() => {
@@ -76,5 +75,20 @@ describe('RadioIoStageList', () => {
     const rows: StageRow[] = [{ id: 'a', label: 'A', status: 'active' }];
     render(ui(rows, null));
     expect(screen.queryByTestId('stage-list-eta')).not.toBeInTheDocument();
+  });
+
+  it('shows a per-step bar on the current row, but not for a coarse row (cur is a step index)', () => {
+    const fine = makeRows(2, 0);
+    const { rerender } = render(ui(fine, { cur: 1, max: 2, msg: '' }));
+    expect(screen.getByLabelText('Stage 0 progress')).toBeInTheDocument();
+    const coarse = fine.map((r, i) => (i === 0 ? { ...r, coarse: true } : r));
+    rerender(ui(coarse, { cur: 1, max: 2, msg: '' }));
+    expect(screen.queryByLabelText('Stage 0 progress')).not.toBeInTheDocument();
+  });
+
+  it('holds a row at the fraction the cursor gives it, whatever the latest event says', () => {
+    const rows = makeRows(2, 0).map((r, i) => (i === 0 ? { ...r, fraction: 0.5 } : r));
+    render(ui(rows, { cur: 0, max: 100, msg: 'a stage re-entered at the start' }));
+    expect(screen.getByText('25%')).toBeInTheDocument();
   });
 });

@@ -33,8 +33,6 @@ export const STAGE_LIST_ROW_PX = 28;
 export interface RadioIoStageListProps {
   rows: readonly StageRow[];
   progress: ProgressUpdate | null;
-  /** When the operation began (ms). The estimate waits 2 s after this. Defaults to mount time. */
-  startedAt?: number;
   /** Hide the overall bar and estimate (rows without weights never show them anyway). */
   hideOverall?: boolean;
 }
@@ -56,14 +54,12 @@ const ICON_CLASS: Record<StageRowStatus, string> = {
 export default function RadioIoStageList({
   rows,
   progress,
-  startedAt,
   hideOverall = false,
 }: RadioIoStageListProps) {
-  const [mountedAt] = useState(() => Date.now());
-  const start = startedAt ?? mountedAt;
   const [tracker, setTracker] = useState(EMPTY_TRACKER);
   const [now, setNow] = useState(() => Date.now());
   const activeRef = useRef<HTMLLIElement | null>(null);
+  const listRef = useRef<HTMLUListElement | null>(null);
 
   // Fold each progress event into the tracker.
   useEffect(() => {
@@ -73,10 +69,15 @@ export default function RadioIoStageList({
     setNow(t);
   }, [rows, progress]);
 
-  // Keep the current row visible inside the fixed-height list.
+  // Keep the current row visible inside the fixed-height list, about a third from the top so the
+  // next pending rows stay in view. Scrolls the list only, never the modal or the page.
   const activeId = rows.find((r) => r.status === 'active')?.id;
   useEffect(() => {
-    activeRef.current?.scrollIntoView?.({ block: 'nearest' });
+    const list = listRef.current;
+    const row = activeRef.current;
+    if (!list || !row) return;
+    const target = row.offsetTop - (list.clientHeight || 0) / 3;
+    list.scrollTop = Math.max(0, target);
   }, [activeId]);
 
   // Let the estimate appear after 2 s even if no event arrives in between.
@@ -90,8 +91,8 @@ export default function RadioIoStageList({
     [rows, tracker, progress],
   );
   const eta = useMemo(
-    () => etaSeconds(rows, tracker, progress, now - start),
-    [rows, tracker, progress, now, start],
+    () => etaSeconds(rows, tracker, progress, now),
+    [rows, tracker, progress, now],
   );
   const showOverall = !hideOverall && overall.total > 0;
 
@@ -111,6 +112,7 @@ export default function RadioIoStageList({
         </div>
       ) : null}
       <ul
+        ref={listRef}
         className={classes.list}
         data-testid="stage-list"
         style={{
@@ -135,7 +137,7 @@ export default function RadioIoStageList({
                 <span className={classes.label}>{row.label}</span>
                 {row.detail ? <span className={classes.detail}>{row.detail}</span> : null}
               </span>
-              {active && row.weight != null && progress?.max ? (
+              {active && row.weight != null && !row.coarse && progress?.max ? (
                 <Progress
                   value={Math.round(rowFraction(row, tracker, progress) * 100)}
                   size="xs"
