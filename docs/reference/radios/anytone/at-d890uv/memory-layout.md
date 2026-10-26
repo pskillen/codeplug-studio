@@ -218,6 +218,8 @@ Measured in `ChannelData` 2026-07-27 (`/debug/d890-erase-probe`, `ID890UV`): **`
 
 `LocalInfo` (`0x4f80000`) sits in unit `0x4f80000` — outside the modelled write set — so it is never transmitted.
 
+**Vital units `0x4f00000`–`0x4fc0000`:** the tune bank (`0x4f00000`, calibration tables) and LocalInfo sit in four 256 KiB units that the [vital-data backup](backup-restore.md#vital-data-backup) reads whole. `0x4f40000` is diverted to LocalInfo on hardware. They are read-only to Studio.
+
 ## Channel address formula
 
 For 0-based channel index `idx`:
