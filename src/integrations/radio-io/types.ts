@@ -3,6 +3,9 @@
  * See docs/features/radio-read-write/protocol-kit-architecture.md §2.
  */
 
+import type { RadioChannelDto } from './radioChannelDto.ts';
+import type { RadioWriteOrganisation } from './radioWriteProjection.ts';
+
 /** Contiguous clone-image buffer — layout offsets belong in radio modules. */
 export interface MemoryMap {
   readonly size: number;
@@ -47,6 +50,17 @@ export interface PlannedStage {
   readonly weight: number;
   /** May not occur in a given run (for example nothing to preserve). */
   readonly optional?: boolean;
+  /**
+   * The adapter emits this label in this many passes, `cur` restarting at 0 each time (for
+   * example the DM-32UV pre-write read, one pass per block group). Default 1.
+   */
+  readonly passes?: number;
+  /**
+   * `cur`/`max` of this stage's events is a step index, not progress inside the stage (the D890
+   * download emits one event per stage). The UI shows no per-step bar and counts the stage when
+   * it completes.
+   */
+  readonly coarse?: boolean;
 }
 
 export type RadioOperation = 'read' | 'write' | 'backup' | 'restore';
@@ -55,8 +69,8 @@ export type RadioOperation = 'read' | 'write' | 'backup' | 'restore';
 export interface RadioPlanContext {
   /** Write: the prepared projection (channels + organisation). */
   readonly prepared?: {
-    readonly channels: readonly import('./radioChannelDto.ts').RadioChannelDto[];
-    readonly organisation: import('./radioWriteProjection.ts').RadioWriteOrganisation;
+    readonly channels: readonly RadioChannelDto[];
+    readonly organisation: RadioWriteOrganisation;
   };
   /** Write: which parts are being written. Omitted means the codeplug alone. */
   readonly parts?: {
@@ -164,7 +178,9 @@ export interface RadioDescriptor {
   hydration: RadioHydrationHooks;
   /**
    * Planned stages for an operation, in emission order, before any transfer. Labels must equal the
-   * `stage` strings the adapter emits (a test per adapter checks emitted is a subset of declared).
+   * `stage` strings the adapter emits (a test per adapter replays a scripted Write and checks the
+   * emitted labels against the plan, in order). A label emitted twice with other stages between
+   * appears twice in the plan; the UI matches occurrences in order.
    * Omit for an operation without a plan: the UI falls back to a list that grows as stages arrive.
    */
   planStages?(op: RadioOperation, ctx: RadioPlanContext): PlannedStage[];

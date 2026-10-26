@@ -25,7 +25,7 @@ export function planOpenGd77Stages(op: RadioOperation, ctx: RadioPlanContext): P
   const dirtySectors =
     FIXED_DIRTY_SECTORS + Math.ceil((channels * CHANNEL_RECORD_BYTES) / OPENGD77_SECTOR);
   const stages: PlannedStage[] = [
-    { label: 'Pre-write read', weight: 2 * FLASH_BYTES },
+    { label: 'Pre-write read', weight: 2 * FLASH_BYTES, passes: 2 },
     { label: 'FLASH sectors', weight: dirtySectors * OPENGD77_SECTOR },
   ];
   const userDb = ctx.prepared?.organisation.userDatabaseContacts;

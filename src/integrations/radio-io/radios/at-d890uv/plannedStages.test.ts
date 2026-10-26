@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { expectPlanMatchesEmitted, stageRecorder } from '../../plannedStagesTestKit.ts';
+import { expectEventsFollowPlan, stageRecorder } from '../../plannedStagesTestKit.ts';
 import { planForOperation } from '../../plannedStages.ts';
 import type { RadioSession } from '../../types.ts';
 import { AT_D890UV_DESCRIPTOR } from './descriptor.ts';
-import { AT_D890_SAFE_SKIP_WRITE_ADDR, D890_MAP } from './constants.ts';
+import { AT_D890_SAFE_SKIP_WRITE_ADDR, AT_D890_SATELLITE, D890_MAP } from './constants.ts';
 import { AtD890uvProtocol } from './protocol.ts';
+import { uploadAtD890DigitalContacts } from './digitalContactWrite.ts';
+import { uploadAtD890SatelliteRecords } from './satelliteWrite.ts';
+
 import {
   AtD890ScriptedPipe,
   enableAtD890AutoWriteAck,
@@ -34,7 +37,7 @@ describe('AT-D890UV planned stages', () => {
     const rec = stageRecorder();
     await radio.download({ onProgress: rec.onProgress });
     const plan = planForOperation(AT_D890UV_DESCRIPTOR, 'read')!;
-    expectPlanMatchesEmitted(plan, rec.stages);
+    expectEventsFollowPlan(plan, rec.events);
     expect(planForOperation(AT_D890UV_DESCRIPTOR, 'backup')).toEqual(plan);
     expect(planForOperation(AT_D890UV_DESCRIPTOR, 'restore')).toBeUndefined();
   });
@@ -79,7 +82,7 @@ describe('AT-D890UV planned stages', () => {
 
     const rec = stageRecorder();
     await radio.upload(image, { onProgress: rec.onProgress });
-    expectPlanMatchesEmitted(plan, rec.stages);
+    expectEventsFollowPlan(plan, rec.events);
   }, 20_000);
 
   it('puts the download stages first when a write has to read, then the write stages', () => {
@@ -100,5 +103,47 @@ describe('AT-D890UV planned stages', () => {
     );
     const none = planForOperation(AT_D890UV_DESCRIPTOR, 'write')!.map((s) => s.label);
     expect(none).not.toContain('Digital contacts');
+  });
+
+  it('the contact and keps writers emit the declared stages, in order, with Upload twice', async () => {
+    const contacts = [
+      {
+        wireName: 'Contact 1',
+        digitalId: 1234567,
+        callsign: 'CALL',
+        city: 'City',
+        province: 'State',
+        country: 'Country',
+        remark: 'Note',
+      },
+    ];
+    const plan = planForOperation(AT_D890UV_DESCRIPTOR, 'write', {
+      prepared: { channels: [], organisation: { zones: [], digitalContacts: contacts } },
+      parts: { codeplug: true, contacts: true, settings: false, keps: true },
+    })!;
+    const labels = plan.map((s) => s.label);
+    expect(labels.filter((l) => l === 'Upload')).toHaveLength(2);
+    expect(labels.indexOf('Digital contacts')).toBeLessThan(labels.lastIndexOf('Upload'));
+
+    const pipe = new AtD890ScriptedPipe();
+    pipe.readResponder = (_addr, len) => new Uint8Array(len).fill(0xff);
+    pipe.autoAckWrites = true;
+    const rec = stageRecorder();
+    await uploadAtD890DigitalContacts(pipe, contacts, { onProgress: rec.onProgress });
+    const bytes = new Uint8Array(AT_D890_SATELLITE.RECORD_STRIDE).fill(0x11);
+    await uploadAtD890SatelliteRecords(
+      pipe,
+      [{ satelliteId: 's', transmitterId: 't', address: AT_D890_SATELLITE.BASE_ADDRESS, bytes }],
+      { onProgress: rec.onProgress },
+    );
+    // The tail of the plan is what these two writers emit; the codeplug part is covered above.
+    const tail = plan.slice(labels.indexOf('Preserving untouched contact data'));
+    expectEventsFollowPlan(tail, rec.events);
+    expect(rec.stages).toEqual([
+      'Preserving untouched contact data',
+      'Digital contacts',
+      'Preserving untouched satellite data',
+      'Upload',
+    ]);
   });
 });

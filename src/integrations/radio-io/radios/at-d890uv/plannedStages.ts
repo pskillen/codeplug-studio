@@ -81,7 +81,9 @@ function countsFor(ctx: RadioPlanContext): Counts {
 export function d890DownloadStages(counts: Counts = NOMINAL_COUNTS): PlannedStage[] {
   const L = AT_D890_LIMITS;
   const M = D890_MAP;
-  return [
+  // `downloadAtD890SparseRegions` emits one event per stage with `cur` = the stage's position in
+  // the list, not progress inside it, so every stage is `coarse` (no per-step bar).
+  return coarse([
     { label: 'Local info', weight: M.LocalInfoLength },
     {
       label: 'Optional settings / alarm',
@@ -117,7 +119,11 @@ export function d890DownloadStages(counts: Counts = NOMINAL_COUNTS): PlannedStag
         counts.amAir * M.AmAirDataLength +
         counts.amZones * M.AmZoneDataLength,
     },
-  ];
+  ]);
+}
+
+function coarse(stages: PlannedStage[]): PlannedStage[] {
+  return stages.map((s) => ({ ...s, coarse: true }));
 }
 
 /** The session's download cache, when it holds one (then Write does not read again). */
@@ -196,9 +202,14 @@ function contactStages(ctx: RadioPlanContext): PlannedStage[] {
   let units = 1;
   let bytes = 0x4000;
   if (contacts && contacts.length > 0) {
-    const chunks = packAtD890DigitalContacts(contacts).stagingChunks;
-    units = Math.max(1, listTouchedEraseUnits(chunks.map((c) => c.address)).length);
-    bytes = chunks.length * BLOCK;
+    try {
+      const chunks = packAtD890DigitalContacts(contacts).stagingChunks;
+      units = Math.max(1, listTouchedEraseUnits(chunks.map((c) => c.address)).length);
+      bytes = chunks.length * BLOCK;
+    } catch {
+      // The plan is advisory: a contact set the packer rejects keeps the nominal sizes, and the
+      // Write itself reports the real error.
+    }
   }
   const flag = optional ? { optional: true } : {};
   return [
@@ -220,11 +231,7 @@ function writePlan(ctx: RadioPlanContext): PlannedStage[] {
 
   const exact = cache ? writeWeightsFromCache(cache, ctx) : undefined;
   const units = exact?.units ?? NOMINAL_TOUCHED_UNITS;
-  let uploadBytes = exact?.uploadBytes ?? nominalUploadBytes(counts);
-  if (ctx.parts?.keps) {
-    // The satellite writer re-emits 'Upload' for its own blocks; fold their size into this entry.
-    uploadBytes += AT_D890_LIMITS.MAX_SATELLITES * SATELLITE_RECORD_BYTES;
-  }
+  const uploadBytes = exact?.uploadBytes ?? nominalUploadBytes(counts);
   stages.push(
     {
       label: 'Preserving untouched settings',
@@ -234,11 +241,16 @@ function writePlan(ctx: RadioPlanContext): PlannedStage[] {
   );
   stages.push(...contactStages(ctx));
   if (ctx.parts?.keps) {
-    stages.push({
-      label: 'Preserving untouched satellite data',
-      weight: AT_D890_ERASE_UNIT_BYTES,
-      optional: true,
-    });
+    // `satelliteWrite.ts` preserves, then emits 'Upload' again for its own blocks: a second
+    // 'Upload' slot, matched in order after the contact stages.
+    stages.push(
+      {
+        label: 'Preserving untouched satellite data',
+        weight: AT_D890_ERASE_UNIT_BYTES,
+        optional: true,
+      },
+      { label: 'Upload', weight: AT_D890_LIMITS.MAX_SATELLITES * SATELLITE_RECORD_BYTES },
+    );
   }
   return stages;
 }

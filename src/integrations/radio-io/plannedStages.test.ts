@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { listRadioDescriptors } from './registry.ts';
-import { mergeDuplicateStages, planForOperation, totalPlanWeight } from './plannedStages.ts';
+import { planForOperation, totalPlanWeight } from './plannedStages.ts';
 
 describe('planForOperation', () => {
-  it('gives every registered radio a Write plan with unique labels and sane weights', () => {
+  it('gives every registered radio a Write plan with sane weights and no adjacent repeats', () => {
     for (const d of listRadioDescriptors()) {
       const plan = planForOperation(d, 'write', {});
       expect(plan, d.label).toBeDefined();
       const labels = plan!.map((s) => s.label);
-      expect(new Set(labels).size, d.label).toBe(labels.length);
+      // A label may recur only with another stage between (a re-entered stage); back-to-back
+      // repeats are one stage with `passes`.
+      labels.forEach((l, i) => expect(l, `${d.label} repeats ${l}`).not.toBe(labels[i - 1]));
       for (const s of plan!) {
         expect(Number.isFinite(s.weight), `${d.label} ${s.label}`).toBe(true);
         expect(s.weight).toBeGreaterThanOrEqual(0);
@@ -21,20 +23,5 @@ describe('planForOperation', () => {
     for (const d of listRadioDescriptors()) {
       expect(planForOperation(d, 'restore', {}), d.label).toBeUndefined();
     }
-  });
-});
-
-describe('mergeDuplicateStages', () => {
-  it('adds weights of a repeated label and keeps the first position', () => {
-    const merged = mergeDuplicateStages([
-      { label: 'A', weight: 1 },
-      { label: 'B', weight: 2, optional: true },
-      { label: 'A', weight: 3 },
-      { label: 'B', weight: 4, optional: true },
-    ]);
-    expect(merged).toEqual([
-      { label: 'A', weight: 4 },
-      { label: 'B', weight: 6, optional: true },
-    ]);
   });
 });

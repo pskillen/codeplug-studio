@@ -39,8 +39,9 @@ export function planDm32Stages(op: RadioOperation, ctx: RadioPlanContext): Plann
   ];
   const readBytes = groups.reduce((sum, g) => sum + g.weight, 0);
   return [
-    { label: 'Discover memory map', weight: 2 * DISCOVER_BYTES },
-    { label: 'Pre-write read', weight: readBytes },
+    { label: 'Discover memory map', weight: DISCOVER_BYTES },
+    { label: 'Pre-write read', weight: readBytes, passes: groups.length },
+    { label: 'Discover memory map', weight: DISCOVER_BYTES },
     ...groups,
   ];
 }

@@ -9,7 +9,11 @@ import {
 } from './memory.ts';
 import { Dm32uvProtocol } from './protocol.ts';
 import { planDm32Stages } from './plannedStages.ts';
-import { expectEmittedWithinPlan, stageRecorder } from '../../plannedStagesTestKit.ts';
+import {
+  expectEmittedWithinPlan,
+  expectEventsFollowPlan,
+  stageRecorder,
+} from '../../plannedStagesTestKit.ts';
 import {
   Dm32ScriptedPipe,
   enqueueReadReply,
@@ -647,5 +651,34 @@ describe('Dm32uvProtocol', () => {
     expect(stages.indexOf('Discover memory map')).toBeLessThan(stages.indexOf('Pre-write read'));
     expect(radio.getDownloadCache()?.blocks.size).toBe(2);
     expect(image.size).toBe(DM32_BLOCK_SIZE * 2);
+  });
+
+  it('a full Write (pre-write read, then upload) follows the plan in order (#1393)', async () => {
+    const pipe = new Dm32ScriptedPipe();
+    const { start } = scriptDm32DownloadTwoBlocks(pipe, 1);
+    const radio = new Dm32uvProtocol();
+    await radio.connect(pipe, { settleScale: 0 });
+    const rec = stageRecorder();
+    const image = await radio.download({
+      progressStage: 'Pre-write read',
+      onProgress: rec.onProgress,
+    });
+    // The upload discovers the live map again, then writes the two dirty blocks.
+    enqueueReadReply(pipe, start + 0xfff, new Uint8Array([DM32_METADATA.CHANNEL_FIRST]));
+    enqueueReadReply(pipe, 0x2000 + 0xfff, new Uint8Array([DM32_METADATA.VFO_SETTINGS]));
+    pipe.enqueue(new Uint8Array([0x06]));
+    pipe.enqueue(new Uint8Array([0x06]));
+    await radio.upload(image, { onProgress: rec.onProgress });
+
+    const plan = planDm32Stages('write', {});
+    expectEventsFollowPlan(plan, rec.events);
+    // The label sequence the verifier saw: discover, read, discover again, then the group writes.
+    const runs: string[] = [];
+    for (const e of rec.events) {
+      if (e.stage && e.cur > 0 && runs[runs.length - 1] !== e.stage) runs.push(e.stage);
+    }
+    expect(runs).toEqual(expect.arrayContaining(['Pre-write read', 'Channels']));
+    const all = rec.events.map((e) => e.stage).filter((l, i, a) => l !== a[i - 1]);
+    expect(all.filter((l) => l === 'Discover memory map')).toHaveLength(2);
   });
 });

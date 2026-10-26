@@ -2,16 +2,26 @@ import { describe, expect, it } from 'vitest';
 import type { BytePipe } from '../../types.ts';
 import { RadioTimeoutError } from '../../kit/errors.ts';
 import { memoryMapToBytes } from '../../kit/memoryMap.ts';
-import { PROGRAM_QX_BLOCK_SIZE } from '../../kit/codecs/programQx.ts';
+import {
+  PROGRAM_QX_BLOCK_SIZE,
+  makeProgramQxReadFrame as kitReadFrame,
+  makeProgramQxWriteFrame,
+} from '../../kit/codecs/programQx.ts';
+import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { Rt95Protocol } from './protocol.ts';
 import { planRt95Stages } from './plannedStages.ts';
-import { expectEmittedWithinPlan } from '../../plannedStagesTestKit.ts';
+import {
+  expectEmittedWithinPlan,
+  expectEventsFollowPlan,
+  stageRecorder,
+} from '../../plannedStagesTestKit.ts';
 import { buildSyntheticRt95Image } from './__fixtures__/syntheticImage.ts';
 import {
   RT95_BLOCK_ADDR_END,
   RT95_BLOCK_ADDR_START,
   RT95_BLOCK_SIZE,
   RT95_IMAGE_SIZE,
+  RT95_UPLOAD_PRIME_ADDR,
 } from './constants.ts';
 import { programQxChecksum8AfterOpcode } from '../../kit/codecs/programQx.ts';
 
@@ -119,6 +129,48 @@ describe('Rt95Protocol', () => {
     expect(programIdx).toBeGreaterThanOrEqual(0);
     expect(firstR).toBeGreaterThan(programIdx);
     await radio.disconnect();
+  });
+
+  it('a full Write (pre-write read, then upload) follows the plan in order (#1393)', async () => {
+    const image = buildSyntheticRt95Image();
+    const byteChunks = (frame: Uint8Array) => Array.from(frame, (b) => new Uint8Array([b]));
+    const reads: Uint8Array[] = [...enterReplyBytes(), ...identReplyBytes()];
+    for (let addr = RT95_BLOCK_ADDR_START; addr <= RT95_BLOCK_ADDR_END; addr += RT95_BLOCK_SIZE) {
+      const payload = image.subarray(addr, addr + PROGRAM_QX_BLOCK_SIZE);
+      reads.push(
+        ...byteChunks(
+          new Uint8Array([...makeProgramQxReadFrame(addr), ...buildReadReply(addr, payload)]),
+        ),
+      );
+    }
+    // Upload: enter, ident, prime read, then an echoed frame and a 0x06 ACK per block.
+    reads.push(...enterReplyBytes(), ...identReplyBytes());
+    const primeFrame = kitReadFrame(RT95_UPLOAD_PRIME_ADDR, PROGRAM_QX_BLOCK_SIZE);
+    reads.push(
+      ...byteChunks(
+        new Uint8Array([
+          ...primeFrame,
+          ...buildReadReply(RT95_UPLOAD_PRIME_ADDR, new Uint8Array(PROGRAM_QX_BLOCK_SIZE)),
+        ]),
+      ),
+    );
+    const upImage = createMemoryMap(RT95_IMAGE_SIZE);
+    upImage.set(0, image.subarray(0, RT95_IMAGE_SIZE));
+    for (let addr = RT95_BLOCK_ADDR_START; addr <= RT95_BLOCK_ADDR_END; addr += RT95_BLOCK_SIZE) {
+      const frame = makeProgramQxWriteFrame(
+        addr,
+        PROGRAM_QX_BLOCK_SIZE,
+        upImage.get(addr, RT95_BLOCK_SIZE),
+      );
+      reads.push(...byteChunks(frame), new Uint8Array([0x06]));
+    }
+    const radio = new Rt95Protocol();
+    await radio.connect(scriptedEchoPipe(reads));
+    const rec = stageRecorder();
+    await radio.download({ progressStage: 'Pre-write read', onProgress: rec.onProgress });
+    await radio.upload(upImage, { onProgress: rec.onProgress });
+    expectEventsFollowPlan(planRt95Stages('write', {}), rec.events);
+    expect(rec.stages).toEqual(['Pre-write read', 'Upload']);
   });
 });
 
