@@ -302,7 +302,8 @@ range change ([#1369](https://github.com/pskillen/codeplug-studio/issues/1369)).
    "I've saved both files".
 3. **One guarded send path per tool, with its own allow-list, as narrow as the change.** Hard interlocks are code: no
    flag, setting, environment value or query parameter turns one off, and each has a refusal test. Generic write
-   helpers never reach what a tool writes, and a test keeps every other module from importing the tool's sender.
+   helpers never reach what a tool writes (the AT-D890 helpers' hard deny lands with #1410), and a test keeps every
+   other module from importing the tool's sender or building its frame.
 4. **Say "Nothing has changed" at every exit before the first write, and offer a resumable recovery after it.** The
    wizard knows which side of the first write it is on, and a journal survives a closed tab.
 5. **No feature flag.** There is no prod-disabled switch for a tool. The owner tests each tool on a radio, on pre-prod

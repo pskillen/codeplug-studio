@@ -8,7 +8,7 @@ Evidence comes from the MM9PDY firmware reverse-engineering notes (`anytone-d890
 
 | Fact                     | Detail                                                                                                                                                                                                                         |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Radio-side copy**      | LocalInfo `+0x03` (`0x04F80003`), RAM `0x20015277`. One byte.                                                                                                                                                                  |
+| **Radio-side copy**      | LocalInfo `+0x03` (`0x04F80003`), plus a sanitised copy the firmware keeps in RAM. One byte.                                                                                                                                   |
 | **Reported to the CPS**  | Ident reply byte 8 (the "band code"). Studio parses it as `AtD890Ident.bandCode` ([connection.ts](../../../../../src/integrations/radio-io/radios/at-d890uv/connection.ts)); the Backup page shows the LocalInfo byte instead. |
 | **CPS-side copy**        | Saved with the codeplug file. On **Write** the CPS refuses the radio, and closes the port without `END`, if the radio's band code differs from the file's.                                                                     |
 | **Who writes LocalInfo** | The official CPS **never** writes it. It is not a codeplug value. This is why the CPS cannot change the range for an existing radio: the codeplug file is bound to the radio's code.                                           |
@@ -20,7 +20,7 @@ Studio's earlier field hints named `+0x03` "frequency mode" (from anytone-cps `E
 
 ## Band code table (CPS display decoder; superseded for codes 15, 16 and 18)
 
-From the CPS decoder (`0x7b6050`). TX narrower than RX means the radio receives the wider range but only transmits in the narrow one.
+From the CPS's own decoder. TX narrower than RX means the radio receives the wider range but only transmits in the narrow one.
 
 | Code | Ranges (MHz)                                             |
 | ---- | -------------------------------------------------------- |
@@ -49,32 +49,32 @@ The names Europe / US / commercial / amateur are CPS UI captions. Their mapping 
 
 Code: [`frequencyRange.ts`](../../../../../src/core/radios/anytone/at-d890uv/frequencyRange.ts) (`AT_D890_FREQUENCY_RANGES`). This is the stock V1.05 firmware table, read from the radio's own tables (see the firmware repo's `calibration-and-identity.md` and `pc-link-protocol.md`; findings tracked on [#1369](https://github.com/pskillen/codeplug-studio/issues/1369)). **It supersedes the CPS display table above wherever they differ.** MHz, inclusive; "off" means transmit is inhibited.
 
-| Code | CPS caption                | RX UHF / VHF      | TX UHF / VHF      | 220 MHz           |
-| ---- | -------------------------- | ----------------- | ----------------- | ----------------- |
-| 0    | Commercial Europe          | 400–480 / 136–174 | 400–480 / 136–174 | none              |
-| 1    | Commercial US              | 400–480 / 136–174 | 400–480 / 136–174 | none              |
-| 2    | Mode 000002                | 430–440 / 144–146 | 430–440 / 144–146 | none              |
-| 3    | Amateur Europe             | 400–480 / 136–174 | 430–440 / 144–146 | none              |
-| 4    | Band 4                     | 434–438 / 144–146 | 434–438 / 144–146 | none              |
-| 5    | Band 5                     | 434–447 / 144–146 | 434–447 / 144–146 | none              |
-| 6    | (not listed)               | 446–447 / 136–174 | 446–447 / 136–174 | none              |
-| 7    | Amateur US                 | 400–480 / 136–174 | 420–450 / 144–148 | none              |
-| 8    | Commercial                 | 400–470 / 136–174 | 400–470 / 136–174 | none              |
-| 9    | (not listed)               | 430–432 / 144–146 | 430–432 / 144–146 | none              |
-| 10   | Amateur Australia / Canada | 400–480 / 136–174 | 430–450 / 144–148 | none              |
-| 11   | Mode 0011                  | 400–520 / 136–174 | 400–520 / 136–174 | none              |
-| 12   | (not listed)               | 400–490 / 136–174 | 400–490 / 136–174 | none              |
-| 13   | Commercial                 | 400–480 / 136–174 | 403–470 / 136–174 | none              |
-| 14   | Maintenance (needs `890#`) | 400–520 / 136–174 | 400–520 / 136–174 | 220–225 RX and TX |
-| 15   | (not listed)               | 420–520 / 144–148 | 420–520 / 144–148 | none              |
-| 16   | Amateur Thailand           | 430–440 / 144–147 | off / 144–147     | none              |
-| 17   | Commercial Thailand        | 430–440 / 136–174 | off / 136–174     | none              |
-| 18   | Mode 000018                | 400–480 / 136–174 | 420–450 / 144–148 | TX 222–225 only   |
+| Code | CPS caption                | RX UHF / VHF      | TX UHF / VHF      | 220 MHz                |
+| ---- | -------------------------- | ----------------- | ----------------- | ---------------------- |
+| 0    | Commercial Europe          | 400–480 / 136–174 | 400–480 / 136–174 | none                   |
+| 1    | Commercial US              | 400–480 / 136–174 | 400–480 / 136–174 | none                   |
+| 2    | Mode 000002                | 430–440 / 144–146 | 430–440 / 144–146 | none                   |
+| 3    | Amateur Europe             | 400–480 / 136–174 | 430–440 / 144–146 | none                   |
+| 4    | Band 4                     | 434–438 / 144–146 | 434–438 / 144–146 | none                   |
+| 5    | Band 5                     | 434–447 / 144–146 | 434–447 / 144–146 | none                   |
+| 6    | (not listed)               | 446–447 / 136–174 | 446–447 / 136–174 | none                   |
+| 7    | Amateur US                 | 400–480 / 136–174 | 420–450 / 144–148 | none                   |
+| 8    | Commercial                 | 400–470 / 136–174 | 400–470 / 136–174 | none                   |
+| 9    | (not listed)               | 430–432 / 144–146 | 430–432 / 144–146 | none                   |
+| 10   | Amateur Australia / Canada | 400–480 / 136–174 | 430–450 / 144–148 | none                   |
+| 11   | Mode 0011                  | 400–520 / 136–174 | 400–520 / 136–174 | none                   |
+| 12   | (not listed)               | 400–490 / 136–174 | 400–490 / 136–174 | none                   |
+| 13   | Commercial                 | 400–480 / 136–174 | 403–470 / 136–174 | none                   |
+| 14   | Maintenance (needs `890#`) | 400–520 / 136–174 | 400–520 / 136–174 | 220–225 RX and TX      |
+| 15   | (not listed)               | 420–520 / 144–148 | 420–520 / 144–148 | none                   |
+| 16   | Amateur Thailand           | 430–440 / 144–147 | off / 144–147     | none                   |
+| 17   | Commercial Thailand        | 430–440 / 136–174 | off / 136–174     | none                   |
+| 18   | Mode 000018                | 400–480 / 136–174 | 420–450 / 144–148 | RX 220–225, TX 222–225 |
 
 - **TX is enforced at PTT.** The radio receives on its hardware bands whatever the code says, and refuses to transmit outside the code's TX table. A channel outside the TX table is therefore receive-only on that radio.
 - **CPS display differs from the firmware** for codes 15, 16 and 18 (see the CPS table above). Studio uses the firmware table.
-- The loader maps codes above 18 to 0, and code 14 to 0 unless LocalInfo `+0x0B..+0x0E` is `890#`. Studio's Backup row shows a locked 14 as "treated as 0". Anything that enforces the table (PR 4c's Review) must use the **sanitised** code (the ident reply byte 8, from RAM `0x20015277`), never the raw LocalInfo byte.
-- **Code 18 at 220 MHz is TX only (222–225).** The firmware's RX clamp, VFO range init and out-of-band check open 200–300 MHz only for code 14, so RX at 220 MHz on code 18 is not claimed. Unconfirmed on a radio; the earlier 220–225 RX figure came from the table row alone.
+- The loader maps codes above 18 to 0, and code 14 to 0 unless LocalInfo `+0x0B..+0x0E` is `890#`. Studio's Backup row shows a locked 14 as "treated as 0". Anything that enforces the table (PR 4c's Review) must use the **sanitised** code (the ident reply byte 8, which is the firmware's sanitised copy), never the raw LocalInfo byte.
+- **Code 18 at 220 MHz: mixed firmware evidence.** The firmware's receive-frequency clamp and its TX check both accept code 18 at 220 MHz, with the 220 tables holding 220–225 for receive and 222–225 for transmit, so Studio's row carries RX 220–225 and TX 222–225. The VFO range initialiser and the out-of-band flag open 200–300 MHz only for code 14, so a radio on code 18 may still flag 220 MHz as out of band. Not confirmed on a radio: radio check RT-10 in [danger-zone.md](../../../../features/radio-read-write/danger-zone.md).
 - **Changing the range resets the radio** at the next boot: channels, zones, scan lists and the whole settings unit are cleared and the tune bank is rewritten (see "Changing the range" below).
 - **Calibration bank pair** `0x04F00000` / `0x04F40000` holds the tune data that is rewritten on a range change; Studio's vital-data backup reads and saves it (see [backup-restore.md](backup-restore.md#vital-data-backup)).
 
@@ -102,7 +102,7 @@ Facts from a reading of stock V1.05 firmware. **Not radio-tested: RT-1 and RT-2 
 - **Never address `0x04FC0000`** (the other half of the pair). It misses the special case, and the generic path would erase an unrelated unit.
 - **Never use PC-link `H`.** It is a per-frame A/B LocalInfo writer with a RAM-overrun bug.
 - **Never touch the sector markers.**
-- Never write LocalInfo through the generic write helpers. LocalInfo is not on `AT_D890_WRITABLE_EXTENTS`, and the generic helpers hard-deny `0x04F00000..0x04FFFFFF` whatever guard they are given (vital-unit deny, a separate PR of #1369).
+- Never write LocalInfo through the generic write helpers. LocalInfo is not on `AT_D890_WRITABLE_EXTENTS`, and the generic helpers' hard deny of `0x04F00000..0x04FFFFFF` (whatever guard they are given) lands with #1410, not in this PR.
 
 ### Sibling bytes in the 16-byte block
 
@@ -153,7 +153,7 @@ The wizard, the backup tickbox, the resumable journal and the final Check button
 
 | #   | Question                                                                                                                      | How to answer                                                                                                                                                                                                |
 | --- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | Does the firmware enforce TX limits from this byte at runtime (RAM `0x20015277`), or is it only the ident / CPS check?        | Firmware decompile search for readers of `0x20015277`; then a bench test on a dummy load.                                                                                                                    |
+| 1   | Does the firmware enforce TX limits from this byte at runtime, or is it only the ident / CPS check?                           | The firmware repo's reverse engineering shows the PTT check reads the per-code tables (see its `calibration-and-identity.md`); bench test on a dummy load (RT-5).                                            |
 | 2   | Is the whole change really one LocalInfo byte, or does the radio also expect other fields (`+0x06`, band password) to change? | Capture the CPS "dealer" / expert range setting if one exists; diff LocalInfo between two radios of different codes.                                                                                         |
 | 3   | Does the radio wipe or flag existing channels outside the new range?                                                          | Test on a spare radio after a Backup: change the code, read channels back.                                                                                                                                   |
 | 4   | Does it need a power cycle or `END` reboot to take effect?                                                                    | Same test.                                                                                                                                                                                                   |
