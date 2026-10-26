@@ -93,6 +93,7 @@ import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
 import {
   atD890UploadBankIntentFromOrganisation,
+  alignDownAtD890Address,
   getCacheBytes,
   type AtD890DownloadCache,
 } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
@@ -875,11 +876,21 @@ export async function uploadPreparedRadioWrite(
         atD890SettingsOverrides: outcome.overrides,
       };
       // The radio re-forces its language from LocalInfo at every load: refuse one its region forbids.
+      const languageCache = session.radio.getDownloadCache();
+      // Fail closed: a language change with no LocalInfo in the cache cannot be checked against the lock.
+      if (
+        outcome.overrides.some((o) => o.fieldId === 'language') &&
+        !languageCache?.blocks.has(alignDownAtD890Address(D890_MAP.LocalInfo))
+      ) {
+        throw new RadioWriteBlockedError(
+          "Studio can't check this radio's language lock because its LocalInfo was not read; the Language change was not written.",
+        );
+      }
       const languageProblem = atD890LanguageLockProblem(
         outcome.overrides,
         languageLockFromLocalInfo(
           getCacheBytes(
-            session.radio.getDownloadCache() ?? { blocks: new Map<number, Uint8Array>() },
+            languageCache ?? { blocks: new Map<number, Uint8Array>() },
             D890_MAP.LocalInfo,
             D890_MAP.LocalInfoLength,
           ),

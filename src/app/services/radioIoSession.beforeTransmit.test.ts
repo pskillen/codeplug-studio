@@ -23,6 +23,7 @@ import {
 import { encodeBcdFrequencyHz } from '@integrations/radio-io/radios/at-d890uv/bcd.ts';
 import { setBitmapBit } from '@integrations/radio-io/radios/at-d890uv/bitmap.ts';
 import {
+  alignDownAtD890Address,
   channelPrimaryAddress,
   channelSecondaryAddress,
 } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
@@ -223,6 +224,22 @@ describe('uploadPreparedRadioWrite beforeTransmit', () => {
         beforeTransmit: async () => 'apply',
       }),
     ).rejects.toThrow(/only allows English.*Language/);
+    expect(pipe.writes.length).toBe(before);
+  }, 20_000);
+
+  it('fails closed when a language change cannot be checked because LocalInfo is not cached', async () => {
+    const { session, pipe } = await d890Session();
+    (session.radio as AtD890uvProtocol)
+      .getDownloadCache()
+      ?.blocks.delete(alignDownAtD890Address(D890_MAP.LocalInfo));
+    const before = pipe.writes.length;
+    await expect(
+      uploadPreparedRadioWrite(session, egress, undefined, {
+        ...projected,
+        settingsOverrides: [{ fieldId: 'language', value: 0 }],
+        beforeTransmit: async () => 'apply',
+      }),
+    ).rejects.toThrow(/can't check this radio's language lock/);
     expect(pipe.writes.length).toBe(before);
   }, 20_000);
 
