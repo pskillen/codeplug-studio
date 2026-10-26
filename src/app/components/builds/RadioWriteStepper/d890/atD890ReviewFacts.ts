@@ -88,7 +88,13 @@ function passwordChange(
     fieldId: 'powerOnPasswordEnabled',
     label: 'Power-on password',
     now: nowOn === undefined ? 'unknown' : nowOn ? 'On' : 'Off',
-    after: enabled && typeof digits === 'string' ? `On (${digits})` : 'Off',
+    after:
+      enabled && typeof digits === 'string'
+        ? `On (${digits})`
+        : // Off already, but stale digits are stored: the write wipes them, so say so.
+          nowOn === false
+          ? 'Off (stored digits cleared)'
+          : 'Off',
   };
 }
 

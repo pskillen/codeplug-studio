@@ -138,6 +138,24 @@ describe('the power-on password in the Review', () => {
     expect(atD890SettingChanges(off, 'stock', pair(false, ''))).toEqual([]);
   });
 
+  it('Clear password on a factory-default radio (off, stock digits) says the digits are cleared', () => {
+    const ext = new Uint8Array(0x60);
+    ext.set([0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38], 0x40);
+    const changes = atD890SettingChanges(
+      { main: new Uint8Array(0x200), ext },
+      'stock',
+      pair(false, ''),
+    );
+    expect(changes).toEqual([
+      {
+        fieldId: 'powerOnPasswordEnabled',
+        label: 'Power-on password',
+        now: 'Off',
+        after: 'Off (stored digits cleared)',
+      },
+    ]);
+  });
+
   it('a new password over the same on state is still a change; the same one is not', () => {
     expect(atD890SettingChanges(on, 'stock', pair(true, '9999'))).toHaveLength(1);
     expect(atD890SettingChanges(on, 'stock', pair(true, '1234'))).toEqual([]);
