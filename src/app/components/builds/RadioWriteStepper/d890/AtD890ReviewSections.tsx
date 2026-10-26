@@ -80,10 +80,13 @@ function SettingsSection({ controller }: { controller: AtD890ReviewController })
         ) : (
           <div className={dClasses.choice} data-testid="d890-settings-choice">
             <Text size="sm">
-              {store.read
-                ? "This isn't the radio you read settings from."
-                : "You haven't read a radio's settings this session."}{' '}
-              {init.masterIdName ? `${init.masterIdName} ` : ''}({init.serial})
+              {!store.read
+                ? "You haven't read a radio's settings this session."
+                : init.serial.trim() === ''
+                  ? "Studio can't tell whether this is the radio you read settings from."
+                  : "This isn't the radio you read settings from."}{' '}
+              {init.masterIdName ? `${init.masterIdName} ` : ''}
+              {init.serial.trim() === '' ? '(no serial)' : `(${init.serial})`}
             </Text>
             <SegmentedControl
               size="sm"

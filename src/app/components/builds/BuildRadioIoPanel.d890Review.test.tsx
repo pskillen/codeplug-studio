@@ -312,6 +312,20 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     clearAllOverrides(build.id);
   });
 
+  it('a blank serial says Studio cannot tell, not that it is another radio', async () => {
+    const build = renderPanel();
+    setRead(build.id, readOf(SERIAL));
+    ctxFactory = () => atD890Ctx({ serial: '' });
+    setOverride(build.id, 'keyTone', keyToneOpposite());
+    await connect();
+    await screen.findByRole('button', { name: 'Write codeplug' });
+    expect(
+      screen.getByText(/Studio can't tell whether this is the radio you read/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/This isn't the radio you read settings from/)).toBeNull();
+    clearAllOverrides(build.id);
+  });
+
   it('Apply on another radio puts settings back in the button label and the write', async () => {
     const build = renderPanel();
     setRead(build.id, readOf(SERIAL));
