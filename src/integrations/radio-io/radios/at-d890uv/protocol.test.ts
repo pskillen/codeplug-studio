@@ -309,6 +309,24 @@ describe('AtD890uvProtocol', () => {
     );
     enqueueAtD890ReadReply(
       pipe,
+      D890_MAP.SettingsStore,
+      new Uint8Array(D890_MAP.SettingsStoreLength).fill(0xff),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.DtmfList,
+      new Uint8Array(D890_MAP.DtmfListLength).fill(0xff),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.OptionalSettingsExtTail,
+      new Uint8Array(D890_MAP.OptionalSettingsExtTailLength).fill(0xff),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
       D890_MAP.AlarmBitmap,
       new Uint8Array(D890_MAP.AlarmBitmapLength).fill(0xff),
       NEGOTIATED_READ_BLOCK,
@@ -331,6 +349,30 @@ describe('AtD890uvProtocol', () => {
       new Uint8Array(D890_MAP.AprsReceiveFiltersLength).fill(0x22),
       NEGOTIATED_READ_BLOCK,
     );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.AprsTextTail,
+      new Uint8Array(D890_MAP.AprsTextTailLength).fill(0x33),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.GpsInfoTail,
+      new Uint8Array(D890_MAP.GpsInfoTailLength).fill(0x33),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.GpsZoneSwitch,
+      new Uint8Array(D890_MAP.GpsZoneSwitchLength).fill(0x33),
+      NEGOTIATED_READ_BLOCK,
+    );
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.AprsBeaconNames,
+      new Uint8Array(D890_MAP.AprsBeaconNamesLength).fill(0x33),
+      NEGOTIATED_READ_BLOCK,
+    );
     const channelSet = new Uint8Array(0x200);
     setBitmapBit(channelSet, 128, true);
     enqueueAtD890ReadReply(pipe, D890_MAP.ChannelSet, channelSet, NEGOTIATED_READ_BLOCK);
@@ -339,6 +381,12 @@ describe('AtD890uvProtocol', () => {
     const secondary = new Uint8Array(0x40);
     enqueueAtD890ReadReply(pipe, channelPrimaryAddress(128), primary, NEGOTIATED_READ_BLOCK);
     enqueueAtD890ReadReply(pipe, channelSecondaryAddress(128), secondary, NEGOTIATED_READ_BLOCK);
+    enqueueAtD890ReadReply(
+      pipe,
+      D890_MAP.VfoChannels,
+      new Uint8Array(D890_MAP.VfoChannelsLength).fill(0x44),
+      NEGOTIATED_READ_BLOCK,
+    );
     enqueueAtD890ReadReply(pipe, D890_MAP.ZoneSet, new Uint8Array(0x20), NEGOTIATED_READ_BLOCK);
     enqueueAtD890ReadReply(pipe, D890_MAP.ZoneHide, new Uint8Array(0x20), NEGOTIATED_READ_BLOCK);
     enqueueAtD890ReadReply(

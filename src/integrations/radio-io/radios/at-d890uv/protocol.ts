@@ -161,6 +161,30 @@ export async function downloadAtD890SparseRegions(
   await readRegion(
     pipe,
     cache,
+    D890_MAP.SettingsStore,
+    D890_MAP.SettingsStoreLength,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.DtmfList,
+    D890_MAP.DtmfListLength,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.OptionalSettingsExtTail,
+    D890_MAP.OptionalSettingsExtTailLength,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
     D890_MAP.AlarmBitmap,
     D890_MAP.AlarmBitmapLength,
     signal,
@@ -189,6 +213,38 @@ export async function downloadAtD890SparseRegions(
     cache,
     D890_MAP.AprsReceiveFilters,
     D890_MAP.AprsReceiveFiltersLength,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.AprsTextTail,
+    D890_MAP.AprsTextTailLength,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.GpsInfoTail,
+    D890_MAP.GpsInfoTailLength,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.GpsZoneSwitch,
+    D890_MAP.GpsZoneSwitchLength,
+    signal,
+    readBlockSize,
+  );
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.AprsBeaconNames,
+    D890_MAP.AprsBeaconNamesLength,
     signal,
     readBlockSize,
   );
@@ -222,6 +278,16 @@ export async function downloadAtD890SparseRegions(
     );
     putCacheBytes(cache, channelSecondaryAddress(idx), secondary);
   }
+
+  // VFO A/B (slots 4000/4001) are never in the channel bitmap; a range change re-defaults them.
+  await readRegion(
+    pipe,
+    cache,
+    D890_MAP.VfoChannels,
+    D890_MAP.VfoChannelsLength,
+    signal,
+    readBlockSize,
+  );
 
   stage('Reading zones…');
   await readRegion(
