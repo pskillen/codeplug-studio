@@ -34,3 +34,11 @@ export function expectPlanMatchesEmitted(
   const required = plan.filter((s) => !s.optional).map((s) => s.label);
   expect(emitted).toEqual(expect.arrayContaining(required));
 }
+
+/** Every emitted stage is declared (use when a scenario skips a declared step, e.g. a seeded read). */
+export function expectEmittedWithinPlan(
+  plan: readonly PlannedStage[],
+  emitted: readonly string[],
+): void {
+  expect(plan.map((s) => s.label)).toEqual(expect.arrayContaining([...emitted]));
+}

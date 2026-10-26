@@ -11,6 +11,7 @@ import {
 } from '../hydration.ts';
 import { createOpenGd77Dm1701Protocol, OpenGd77Protocol } from '../protocol.ts';
 import { createOpenGd77WriteVerifyHooks } from '../writeVerifyHooks.ts';
+import { planOpenGd77Stages } from '../plannedStages.ts';
 
 export { OPENGD77_DM1701_MODEL_ID };
 
@@ -50,4 +51,5 @@ export const OPENGD77_DM1701_DESCRIPTOR: RadioDescriptor = {
   baudRate: OPENGD77_BAUD_RATE,
   hydration,
   writeVerify: createOpenGd77WriteVerifyHooks(OPENGD77_DM1701_MODEL_ID),
+  planStages: planOpenGd77Stages,
 };

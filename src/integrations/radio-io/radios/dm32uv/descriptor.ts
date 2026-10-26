@@ -12,6 +12,7 @@ import {
 } from './hydration.ts';
 import { createDm32uvProtocol, Dm32uvProtocol } from './protocol.ts';
 import { DM32_WRITE_VERIFY_HOOKS } from './writeVerifyHooks.ts';
+import { planDm32Stages } from './plannedStages.ts';
 
 export { DM32UV_MODEL_ID };
 
@@ -50,4 +51,5 @@ export const DM32UV_DESCRIPTOR: RadioDescriptor = {
     mergeChannelsIntoHydration: mergeChannelsIntoDm32uvHydration,
   },
   writeVerify: DM32_WRITE_VERIFY_HOOKS,
+  planStages: planDm32Stages,
 };

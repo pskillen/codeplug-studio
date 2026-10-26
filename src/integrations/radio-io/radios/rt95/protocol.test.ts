@@ -4,6 +4,8 @@ import { RadioTimeoutError } from '../../kit/errors.ts';
 import { memoryMapToBytes } from '../../kit/memoryMap.ts';
 import { PROGRAM_QX_BLOCK_SIZE } from '../../kit/codecs/programQx.ts';
 import { Rt95Protocol } from './protocol.ts';
+import { planRt95Stages } from './plannedStages.ts';
+import { expectEmittedWithinPlan } from '../../plannedStagesTestKit.ts';
 import { buildSyntheticRt95Image } from './__fixtures__/syntheticImage.ts';
 import {
   RT95_BLOCK_ADDR_END,
@@ -105,6 +107,9 @@ describe('Rt95Protocol', () => {
     expect(memoryMapToBytes(map).length).toBe(RT95_IMAGE_SIZE);
     expect(map.bytes[0]).toBe(image[0]);
     expect(stages.every((s) => s === 'Pre-write read')).toBe(true);
+    const plan = planRt95Stages('write', {});
+    expectEmittedWithinPlan(plan, stages);
+    expect(plan.map((s) => s.label)).toEqual(['Pre-write read', 'Upload']);
     expect(stages.length).toBeGreaterThan(0);
     const program = new TextEncoder().encode('PROGRAM');
     const programIdx = writes.findIndex(

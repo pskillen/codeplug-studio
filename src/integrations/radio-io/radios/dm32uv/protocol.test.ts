@@ -8,6 +8,8 @@ import {
   selectBlocksToBulkRead,
 } from './memory.ts';
 import { Dm32uvProtocol } from './protocol.ts';
+import { planDm32Stages } from './plannedStages.ts';
+import { expectEmittedWithinPlan, stageRecorder } from '../../plannedStagesTestKit.ts';
 import {
   Dm32ScriptedPipe,
   enqueueReadReply,
@@ -216,7 +218,11 @@ describe('Dm32uvProtocol', () => {
     pipe.enqueue(new Uint8Array([0x06]));
     pipe.enqueue(new Uint8Array([0x06]));
 
-    await radio.upload(image, {});
+    const rec = stageRecorder();
+    await radio.upload(image, { onProgress: rec.onProgress });
+    // This scenario seeds the cache instead of reading, so 'Pre-write read' is not emitted here.
+    expectEmittedWithinPlan(planDm32Stages('write', {}), rec.stages);
+    expect(rec.stages).toContain('Channels');
 
     const writeFrames = pipe.writes.filter(
       (w) => w[0] === 0x57 && w.length === 6 + DM32_BLOCK_SIZE,
@@ -635,6 +641,7 @@ describe('Dm32uvProtocol', () => {
       },
     });
 
+    expectEmittedWithinPlan(planDm32Stages('write', {}), stages);
     expect(stages).toContain('Discover memory map');
     expect(stages).toContain('Pre-write read');
     expect(stages.indexOf('Discover memory map')).toBeLessThan(stages.indexOf('Pre-write read'));

@@ -11,6 +11,8 @@ import { encodeChannelsIntoImage } from './channelCodec.ts';
 import { OPENUV380_OFFSET } from './constants.ts';
 import { createOpenUv380Image, readAbs } from './memory.ts';
 import { OpenGd77Protocol, createOpenGd77Md9600Protocol, parseFirmwareInfo } from './protocol.ts';
+import { planOpenGd77Stages } from './plannedStages.ts';
+import { expectPlanMatchesEmitted } from '../../plannedStagesTestKit.ts';
 import { openGd77KeptRegionLength } from './writeVerifySupport.ts';
 import {
   makeOpenGd77FirmwareInfoPayload,
@@ -124,6 +126,7 @@ describe('OpenGd77Protocol', () => {
 
     expect(progressStages).toContain('Pre-write read');
     expect(progressStages).toContain('FLASH sectors');
+    expectPlanMatchesEmitted(planOpenGd77Stages('write', {}), [...new Set(progressStages)]);
   });
 
   it('upload captures kept regions from pre-write read priorImage', async () => {
