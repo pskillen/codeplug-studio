@@ -12,6 +12,7 @@
 
 import {
   AT_D890_POWER_ON_LINE_MAX_LENGTH,
+  AT_D890_POWER_ON_PASSWORD_MAX_DIGITS,
   atD890SettingField,
 } from '@core/radios/anytone/at-d890uv/radioSettings.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
@@ -201,8 +202,8 @@ interface FieldLayout {
 /** Power-on text: UTF-16LE, NUL padded to this many bytes. */
 export const AT_D890_POWER_ON_LINE_BYTES = 0x20;
 
-/** Power-on password block at ext `+0x40`: ASCII digits, NUL padded. */
-export const AT_D890_POWER_ON_PASSWORD_BYTES = 8;
+/** Power-on password block at ext `+0x40`: ASCII digits, NUL padded. One byte per digit; the size is declared once, in core. */
+export const AT_D890_POWER_ON_PASSWORD_BYTES = AT_D890_POWER_ON_PASSWORD_MAX_DIGITS;
 
 function isPrintableAscii(code: number): boolean {
   return code >= 0x20 && code <= 0x7e;
