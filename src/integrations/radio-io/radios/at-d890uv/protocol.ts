@@ -508,6 +508,11 @@ export class AtD890uvProtocol implements CloneImageRadio {
     replaceTalkgroupOrder: false,
   };
 
+  /** Band code from the connection ident (byte 8); `0` before connect. */
+  getIdentBandCode(): number {
+    return this.identBandCode;
+  }
+
   getNegotiatedReadBlockSize(): number {
     return this.readBlockSize;
   }
