@@ -155,6 +155,18 @@ describe('uploadPreparedRadioWrite with AT-D890UV settings overrides', () => {
       expect(ids).toEqual(['keyShortP1', 'keyShortP2']);
     });
 
+    it('an empty list replaces the start overrides: the codeplug is written with no settings patches', async () => {
+      const { session, egress, upload, intents } = makeSession();
+      await uploadPreparedRadioWrite(session, egress, undefined, {
+        organisation,
+        channels: [analogCh],
+        settingsOverrides: overrides,
+        beforeTransmit: async () => ({ decision: 'apply', overrides: [] }),
+      });
+      expect(upload).toHaveBeenCalledTimes(1);
+      expect(intents[intents.length - 1]!.settingsPatches).toBeUndefined();
+    });
+
     it('refuses a bad, duplicated or unknown override from the pause before any frame', async () => {
       for (const bad of [
         [{ fieldId: 'keyShortP1', value: 99 }],
