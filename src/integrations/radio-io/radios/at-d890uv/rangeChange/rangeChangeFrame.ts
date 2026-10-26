@@ -47,6 +47,10 @@ export type AtD890RangeChangeRefusalReason =
 /** The frame builder refused. Nothing has been sent. */
 export class AtD890RangeChangeRefusedError extends RadioInterlockError {
   readonly reason: AtD890RangeChangeRefusalReason;
+  /** Nothing has been sent, so the caller may `END`, unless a stun/kill flag was seen (END would rewrite LocalInfo). */
+  get endSafe(): boolean {
+    return this.reason !== 'stun-kill-flag';
+  }
 
   constructor(reason: AtD890RangeChangeRefusalReason, message: string) {
     super(message);
