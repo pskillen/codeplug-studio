@@ -10,7 +10,6 @@ import { DesignSystemV2Provider } from '../v2/index.ts';
 import { BuildLayoutProvider } from '../../routes/builds/BuildLayoutContext.tsx';
 import BuildRadioIoPanel from './BuildRadioIoPanel.tsx';
 import * as radioIoSession from '../../services/radioIoSession.ts';
-import * as radioToolsGate from '../../services/radioTools/gate.ts';
 import { persistence } from '../../state/persistence.ts';
 
 vi.mock('../../lib/loadLibrarySlice.ts', () => ({
@@ -555,41 +554,34 @@ describe('BuildRadioIoPanel — no write-panel Read stash (#878)', () => {
   });
 });
 
-describe('BuildRadioIoPanel — Radio tools card (#1369)', () => {
+describe('BuildRadioIoPanel — Danger zone card (#1369)', () => {
   it('is the last card on the D890 panel, collapsed, and opens the area', () => {
     const { container, build } = renderPanel('radio-io-at-d890uv');
-    const card = screen.getByRole('region', { name: 'Radio tools' });
-    expect(card).toHaveTextContent('Radio tools · Changes the radio itself');
-    expect(screen.queryByRole('button', { name: 'Open radio tools' })).toBeNull();
+    const card = screen.getByRole('region', { name: 'Danger zone' });
+    expect(card).toHaveTextContent('Danger zone · Changes the radio itself');
+    expect(screen.queryByRole('button', { name: 'Open danger zone' })).toBeNull();
     const cards = Array.from(container.querySelectorAll('section'));
     expect(cards[cards.length - 1]).toBe(card);
-    fireEvent.click(screen.getByRole('button', { name: /Radio tools/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Danger zone/ }));
     expect(
       screen.getByText(
         'Rare jobs that change the radio, not your codeplug. Each one backs up first.',
       ),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Open radio tools' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open danger zone' })).toBeInTheDocument();
     expect(build.id).toBeTruthy();
   });
 
   it('is present on the MM9PDY D890 panel', () => {
     renderPanel('radio-io-at-d890uv-mm9pdy');
-    expect(screen.getByRole('region', { name: 'Radio tools' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Danger zone' })).toBeInTheDocument();
   });
 
   it('is absent for DM-32 and OpenGD77', () => {
     for (const profile of ['radio-io-dm32uv', 'radio-io-opengd77-1701']) {
       const { unmount } = renderPanel(profile);
-      expect(screen.queryByRole('region', { name: 'Radio tools' })).toBeNull();
+      expect(screen.queryByRole('region', { name: 'Danger zone' })).toBeNull();
       unmount();
     }
-  });
-
-  it('is absent when the gate is closed (prod)', () => {
-    const offered = vi.spyOn(radioToolsGate, 'listOfferedRadioTools').mockReturnValue([]);
-    renderPanel('radio-io-at-d890uv');
-    expect(screen.queryByRole('region', { name: 'Radio tools' })).toBeNull();
-    offered.mockRestore();
   });
 });

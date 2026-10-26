@@ -1,20 +1,19 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import { DesignSystemV2Provider } from '../../../components/v2/index.ts';
 import { BuildLayoutProvider } from '../BuildLayoutContext.tsx';
-import BuildRadioToolsPage from './BuildRadioToolsPage.tsx';
-import * as gate from '../../../services/radioTools/gate.ts';
+import BuildDangerZonePage from './BuildDangerZonePage.tsx';
 
-afterEach(() => vi.restoreAllMocks());
-
-function renderPage(profileId: string, buildEnv: string) {
-  const { build, egressPaths, egress } = newRadioBuildForProfile('proj', profileId);
-  const real = gate.listOfferedRadioTools;
-  vi.spyOn(gate, 'listOfferedRadioTools').mockImplementation((id) => real(id, buildEnv));
+function renderPage(profileId: string, options?: { csvOnly?: boolean }) {
+  const built = newRadioBuildForProfile('proj', profileId);
+  const { build, egress } = built;
+  const egressPaths = options?.csvOnly
+    ? built.egressPaths.filter((p) => p.formatId !== 'radio-io')
+    : built.egressPaths;
   render(
-    <MemoryRouter initialEntries={[`/builds/${build.id}/export/radio-tools`]}>
+    <MemoryRouter initialEntries={[`/builds/${build.id}/export/danger-zone`]}>
       <BuildLayoutProvider
         value={{
           build,
@@ -27,7 +26,7 @@ function renderPage(profileId: string, buildEnv: string) {
       >
         <DesignSystemV2Provider>
           <Routes>
-            <Route path="/builds/:id/export/radio-tools" element={<BuildRadioToolsPage />} />
+            <Route path="/builds/:id/export/danger-zone" element={<BuildDangerZonePage />} />
             <Route path="/builds/:id/export" element={<p>EXPORT PAGE</p>} />
           </Routes>
         </DesignSystemV2Provider>
@@ -36,10 +35,10 @@ function renderPage(profileId: string, buildEnv: string) {
   );
 }
 
-describe('BuildRadioToolsPage', () => {
+describe('BuildDangerZonePage', () => {
   it('lists the D890 range tool under the strap, with no Start button', () => {
-    renderPage('radio-io-at-d890uv', 'dev');
-    expect(screen.getByRole('heading', { level: 1, name: 'Radio tools' })).toBeInTheDocument();
+    renderPage('radio-io-at-d890uv');
+    expect(screen.getByRole('heading', { level: 1, name: 'Danger zone' })).toBeInTheDocument();
     expect(
       screen.getByText("These change the radio itself. A Write can't undo them."),
     ).toBeInTheDocument();
@@ -49,13 +48,13 @@ describe('BuildRadioToolsPage', () => {
     expect(screen.queryByText(/coming soon/i)).toBeNull();
   });
 
-  it('redirects to Export on the prod site', () => {
-    renderPage('radio-io-at-d890uv', 'prod');
+  it('redirects to Export when the build has no Web Serial egress', () => {
+    renderPage('radio-io-at-d890uv', { csvOnly: true });
     expect(screen.getByText('EXPORT PAGE')).toBeInTheDocument();
   });
 
   it('redirects to Export for a DM-32 build', () => {
-    renderPage('radio-io-dm32uv', 'dev');
+    renderPage('radio-io-dm32uv');
     expect(screen.getByText('EXPORT PAGE')).toBeInTheDocument();
   });
 });

@@ -254,7 +254,7 @@ describe('AtD890RadioSettingsEditor — range row (#1369)', () => {
     setRead(BUILD, READ);
   });
 
-  it('links Change… to Radio tools and says so in the why text when the gate is open', () => {
+  it('links Change… to Danger zone and says so in the why text when the gate is open', () => {
     render(
       <MemoryRouter>
         <DesignSystemV2Provider>
@@ -262,14 +262,14 @@ describe('AtD890RadioSettingsEditor — range row (#1369)', () => {
             buildId={BUILD}
             target="stock"
             egress={D890_EGRESS}
-            radioToolsOffered
+            dangerZoneOffered
           />
         </DesignSystemV2Provider>
       </MemoryRouter>,
     );
     const link = screen.getByRole('link', { name: 'Change…' });
-    expect(link).toHaveAttribute('href', `/builds/${BUILD}/export/radio-tools`);
-    expect(screen.getByText(/You can change it from Radio tools\./)).toBeInTheDocument();
+    expect(link).toHaveAttribute('href', `/builds/${BUILD}/export/danger-zone`);
+    expect(screen.getByText(/You can change it from Danger zone\./)).toBeInTheDocument();
     expect(screen.queryByText(/issue #1369/)).toBeNull();
   });
 

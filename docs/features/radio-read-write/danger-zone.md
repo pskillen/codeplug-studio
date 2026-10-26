@@ -25,8 +25,36 @@ Agent rules: [.claude/rules/danger-zone.md](../../../.claude/rules/danger-zone.m
 | Piece                                                              | Status  | Notes                                                 |
 | ------------------------------------------------------------------ | ------- | ----------------------------------------------------- |
 | Range-change engine (core rules, frame, sender, session, verifier) | Shipped | The "Engine" section below. No UI calls it yet        |
-| Danger zone area                                                   | Planned | PR 3 of #1369                                         |
+| Danger zone area (page, registry, entry points, nav)               | Shipped | PR 3 of #1369. Lists the tool; no **Start…** yet      |
 | Change frequency range wizard                                      | Planned | PR 4 of #1369, including the user-started final Check |
+
+## The area
+
+- **Route:** `/builds/:id/export/danger-zone` (`BuildDangerZonePage`). It sits under a build because the build's Web Serial egress is the only door to a radio today. It is **not** a strip tab, a Write stepper step or a Backup page action: `activeBuildSection` maps it (and anything below it) to Export, so the Export tab stays lit.
+- **Page:** title **Danger zone**, a fixed red strap ("These change the radio itself. A Write can't undo them."), then one [`DangerZoneToolCard`](../../../src/app/components/dangerZone/DangerZoneToolCard.md) per offered tool: what it does, what it costs, how long, and **Start…** when the tool has a `route`. Nothing on the page touches the radio. Danger colour is used once per screen (the strap). Below the cards is a footer slot for the wizard PR ("Finish a range change from a backup file", "Last change: …").
+- **Entry points:**
+  1. The **last card** of the AT-D890UV Export panel (`DangerZoneCard`, after **What Write updates**): collapsed red-edged "Danger zone · Changes the radio itself"; open: "Rare jobs that change the radio, not your codeplug. Each one backs up first." and **Open danger zone**.
+  2. The Radio settings page's read-only **Frequency range** row: "<range> · **Change…**" (shown only after a Read, only when the area is offered). The "Why can't I change these?" text says the range can be changed from Danger zone, or "Studio can only show it" when the area is not offered.
+- **Not offered** (a radio with no tool, a build with no Web Serial egress, or the Capacitor app where Web Serial isn't available): both entry points are hidden and the route redirects to `/builds/:id/export`.
+- **Build switch:** `pathForSwitchedBuild` keeps `export/danger-zone` only when the target build also shows it (`showsDangerZoneNav`), else lands on Export.
+
+## Registry and gate
+
+`src/app/services/dangerZone/`:
+
+| File           | Role                                                                                                                                                                                                                                                                                                                                                            |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `registry.ts`  | `DANGER_ZONE_TOOLS`: `{ id, title, summary, cost, minutes, radios, route? }`. `radios` lists `RadioBuild.radioTargetId` values (the D890 stock and MM9PDY targets are separate ids)                                                                                                                                                                             |
+| `gate.ts`      | `listOfferedDangerZoneTools(radioTargetId)`: the tools for this radio target; empty in the Capacitor app. No prod gate or feature flag (owner decision: testing happens on pre-prod)                                                                                                                                                                            |
+| `decisions.ts` | `DANGER_ZONE_DECISIONS`: the area's name and strap. Owner decisions live here; interlocks never read this file. It also records the wizard's decisions (confirm checkbox, all ranges, code 14 needs `890#`, tickbox backup check, restore-anyway second confirm, codes 6/9/12/15 behind a scary warning, final Check never automatic) for the wizard PR to read |
+
+Like the firmware flasher, there is no Capacitor exemption: the area is hidden in the native app until Web Serial works there.
+
+## How a tool joins
+
+1. Add a registry entry (copy deck: what it does, what it costs, minutes, radios).
+2. Build its wizard as a page under `export/danger-zone/<tool>` with its own guarded send path; set `route` so the card shows **Start…**.
+3. Say "nothing has changed" at every exit before the first write; offer a resumable recovery after it.
 
 ## Engine
 
@@ -75,3 +103,8 @@ All pending. Nothing here has run on a radio; the emulator has no USB, so the `W
 | RT-8  | Program Error: can the radio enter PC mode in that loop?                                                                                    | Pending |
 | RT-9  | Resume: reload between `END` and Restore; resume from the saved zip                                                                         | Pending |
 | RT-10 | Code 18 at 220 MHz: change to 18, tune a 222.5 MHz signal. Does receive work, and is it flagged out of band? (Studio's row says RX 220–225) | Pending |
+
+## Related
+
+- [README](README.md), [backup-restore.md](backup-restore.md), [adding-a-radio-adapter.md](adding-a-radio-adapter.md)
+- Cards: [RadioIoPanelCards](../../../src/app/components/builds/RadioIoPanelCards/RadioIoPanelCards.md)

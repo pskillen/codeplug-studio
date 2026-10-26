@@ -48,8 +48,8 @@ export interface AtD890RadioSettingsEditorProps {
   target: AtD890SettingsTargetId;
   /** The build's Web Serial egress, used by Read a radio. */
   egress: EgressPath;
-  /** True when the Radio tools area is offered for this build on this deploy (gate open). */
-  radioToolsOffered?: boolean;
+  /** True when the Danger zone area is offered for this build on this deploy (gate open). */
+  dangerZoneOffered?: boolean;
 }
 
 const LARGE_FONT_HINT = 'Both lines 8 characters or fewer use the large font.';
@@ -70,7 +70,7 @@ export default function AtD890RadioSettingsEditor({
   buildId,
   target,
   egress,
-  radioToolsOffered = false,
+  dangerZoneOffered = false,
 }: AtD890RadioSettingsEditorProps) {
   const session = useAtD890RadioSettingsSession(buildId);
   const navigate = useNavigate();
@@ -122,10 +122,10 @@ export default function AtD890RadioSettingsEditor({
               <dt>Frequency range</dt>
               <dd>
                 {rangeSummary(read.bandCode)}
-                {radioToolsOffered ? (
+                {dangerZoneOffered ? (
                   <>
                     {' · '}
-                    <Link to={`/builds/${buildId}/export/radio-tools`}>Change…</Link>
+                    <Link to={`/builds/${buildId}/export/danger-zone`}>Change…</Link>
                   </>
                 ) : null}
               </dd>
@@ -143,8 +143,8 @@ export default function AtD890RadioSettingsEditor({
             <summary>Why can&apos;t I change these?</summary>
             <p>
               The frequency range is the radio&apos;s region, set at the factory.{' '}
-              {radioToolsOffered
-                ? 'You can change it from Radio tools.'
+              {dangerZoneOffered
+                ? 'You can change it from Danger zone.'
                 : 'Studio can only show it.'}{' '}
               Studio cannot yet tell stock firmware from MM9PDY, so the firmware shows as unknown
               (issue #613).

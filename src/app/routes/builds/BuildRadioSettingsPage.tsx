@@ -10,7 +10,7 @@ import {
 import AtD890RadioSettingsEditor from '../../components/builds/AtD890RadioSettingsEditor.tsx';
 import { StatusBanner } from '../../components/v2/index.ts';
 import { findRadioIoEgress } from '../../lib/buildEgressUi.ts';
-import { listOfferedRadioTools } from '../../services/radioTools/gate.ts';
+import { listOfferedDangerZoneTools } from '../../services/dangerZone/gate.ts';
 import { useBuildLayout } from './BuildLayoutContext.tsx';
 import classes from './BuildRadioSettingsPage.module.css';
 
@@ -40,7 +40,7 @@ export default function BuildRadioSettingsPage() {
           buildId={buildId}
           target={isMm9pdy ? 'mm9pdy' : 'stock'}
           egress={egress}
-          radioToolsOffered={listOfferedRadioTools(build.radioTargetId).length > 0}
+          dangerZoneOffered={listOfferedDangerZoneTools(build.radioTargetId).length > 0}
         />
       ) : (
         <StatusBanner tone="info">{RADIO_SETTINGS_ONLY_D890_MESSAGE}</StatusBanner>

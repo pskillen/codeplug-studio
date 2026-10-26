@@ -1,21 +1,23 @@
 /**
- * Radio tools area (#1369): rare jobs that change the radio itself, one card per tool offered for this build's
- * radio. Nothing on this page touches the radio. Redirects to Export when no tool is offered (prod site, a radio
+ * Danger zone area (#1369): rare jobs that change the radio itself, one card per tool offered for this build's
+ * radio. Nothing on this page touches the radio. Redirects to Export when no tool is offered (a radio
  * with no tools, no Web Serial egress, or the native app).
  */
 
 import { Navigate, useNavigate } from 'react-router-dom';
-import RadioToolCard from '../../../components/radioTools/RadioToolCard.tsx';
+import DangerZoneToolCard from '../../../components/dangerZone/DangerZoneToolCard.tsx';
 import { findRadioIoEgress } from '../../../lib/buildEgressUi.ts';
-import { RADIO_TOOLS_DECISIONS } from '../../../services/radioTools/decisions.ts';
-import { listOfferedRadioTools } from '../../../services/radioTools/gate.ts';
+import { DANGER_ZONE_DECISIONS } from '../../../services/dangerZone/decisions.ts';
+import { listOfferedDangerZoneTools } from '../../../services/dangerZone/gate.ts';
 import { useBuildLayout } from '../BuildLayoutContext.tsx';
-import classes from './BuildRadioToolsPage.module.css';
+import classes from './BuildDangerZonePage.module.css';
 
-export default function BuildRadioToolsPage() {
+export default function BuildDangerZonePage() {
   const { build, egressPaths } = useBuildLayout();
   const navigate = useNavigate();
-  const tools = findRadioIoEgress(egressPaths) ? listOfferedRadioTools(build.radioTargetId) : [];
+  const tools = findRadioIoEgress(egressPaths)
+    ? listOfferedDangerZoneTools(build.radioTargetId)
+    : [];
 
   if (tools.length === 0) {
     return <Navigate to={`/builds/${build.id}/export`} replace />;
@@ -24,14 +26,14 @@ export default function BuildRadioToolsPage() {
   return (
     <div className={classes.page}>
       <div className={classes.header}>
-        <h1 className={classes.title}>{RADIO_TOOLS_DECISIONS.areaName}</h1>
+        <h1 className={classes.title}>{DANGER_ZONE_DECISIONS.areaName}</h1>
         <p className={classes.strap} role="note">
-          {RADIO_TOOLS_DECISIONS.strap}
+          {DANGER_ZONE_DECISIONS.strap}
         </p>
       </div>
       <div className={classes.cards}>
         {tools.map((tool) => (
-          <RadioToolCard
+          <DangerZoneToolCard
             key={tool.id}
             tool={tool}
             onStart={tool.route ? () => navigate(`/builds/${build.id}/${tool.route}`) : undefined}
