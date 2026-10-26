@@ -17,6 +17,7 @@ import {
 } from './memoryRegionExport.ts';
 import { AtD890uvProtocol } from './protocol.ts';
 import type { AtD890SentinelSnapshot } from './sentinelVerify.ts';
+import type { AtD890SettingsPatch } from './settingsFields.ts';
 import {
   AT_D890_RMW_SPILL_GROUP,
   buildAtD890WriteVerifyResult,
@@ -30,16 +31,45 @@ const AT_D890_VERIFY_ONLY_REGION_GROUPS = [
   { id: AT_D890_RMW_SPILL_GROUP, label: 'RMW-preserved spill' },
 ];
 
+export interface AtD890KeptPatchJson {
+  readonly fieldId: string;
+  readonly address: number;
+  readonly bytes: readonly number[];
+  readonly mask: readonly number[];
+}
+
 export interface AtD890KeptSnapshotJson extends WriteVerifyKeptSnapshot {
   readonly entries: readonly { readonly id: string; readonly data: readonly number[] }[];
+  /** Settings patches the Write applied; absent in payloads stored before they existed. */
+  readonly patches?: readonly AtD890KeptPatchJson[];
 }
 
 export function serializeAtD890KeptSnapshot(
   snapshot: AtD890SentinelSnapshot,
+  patches: readonly AtD890SettingsPatch[] = [],
 ): AtD890KeptSnapshotJson {
   return {
     entries: [...snapshot.entries()].map(([id, data]) => ({ id, data: [...data] })),
+    ...(patches.length > 0
+      ? {
+          patches: patches.map((p) => ({
+            fieldId: p.fieldId,
+            address: p.address,
+            bytes: [...p.bytes],
+            mask: [...p.mask],
+          })),
+        }
+      : {}),
   };
+}
+
+export function deserializeAtD890KeptPatches(json: AtD890KeptSnapshotJson): AtD890SettingsPatch[] {
+  return (json.patches ?? []).map((p) => ({
+    fieldId: p.fieldId,
+    address: p.address,
+    bytes: Uint8Array.from(p.bytes),
+    mask: Uint8Array.from(p.mask),
+  }));
 }
 
 export function deserializeAtD890KeptSnapshot(
@@ -140,6 +170,7 @@ export const AT_D890_WRITE_VERIFY_HOOKS: WriteVerifyHooks = {
     const stagingSnapshot = session.radio.takeUploadStagingSnapshot();
     if (!stagingSnapshot) return undefined;
     const sentinelBefore = session.radio.takeUploadSentinelSnapshot();
+    const settingsPatches = session.radio.takeUploadSettingsPatches() ?? [];
     return {
       staging: {
         capturedAt: stagingSnapshot.capturedAt,
@@ -156,7 +187,9 @@ export const AT_D890_WRITE_VERIFY_HOOKS: WriteVerifyHooks = {
           data: c.data,
         })),
       },
-      kept: sentinelBefore ? serializeAtD890KeptSnapshot(sentinelBefore) : undefined,
+      kept: sentinelBefore
+        ? serializeAtD890KeptSnapshot(sentinelBefore, settingsPatches)
+        : undefined,
     };
   },
 
@@ -165,9 +198,9 @@ export const AT_D890_WRITE_VERIFY_HOOKS: WriteVerifyHooks = {
       throw new Error('Write verify is only supported for AT-D890UV.');
     }
     const stagingSnapshot = mapD890StagingSnapshot(pending.staging);
-    const sentinelBefore = pending.kept
-      ? deserializeAtD890KeptSnapshot(isAtD890KeptSnapshotJson(pending.kept))
-      : undefined;
+    const keptJson = pending.kept ? isAtD890KeptSnapshotJson(pending.kept) : undefined;
+    const sentinelBefore = keptJson ? deserializeAtD890KeptSnapshot(keptJson) : undefined;
+    const settingsPatches = keptJson ? deserializeAtD890KeptPatches(keptJson) : [];
     const spillAddresses = listStagingAddressesOutsideModelledRegions(stagingSnapshot);
     const dump = await runAtD890WriteVerifyMemoryRead(session.pipe, spillAddresses, {
       onProgress: opts?.onProgress,
@@ -183,6 +216,7 @@ export const AT_D890_WRITE_VERIFY_HOOKS: WriteVerifyHooks = {
         totalBytesRead: dump.totalBytes,
       },
       dump.spillChunks,
+      settingsPatches,
     );
     return mapD890ResultToNeutral(result);
   },

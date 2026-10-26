@@ -286,6 +286,59 @@ describe('AtD890uvProtocol', () => {
     ).toThrow(RadioProtocolError);
   });
 
+  it('cross-session verify after a step-key Write expects the patched bytes only (#1394)', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    const settings = makeAtD890EraseUnitBuffer();
+    settings[0] = 0x11;
+    settings[0x900] = 0x22;
+    settings[0x1280] = 0x33;
+    settings[0x13] = 0x01;
+    settings[0x14] = 0x02;
+    const memory = channelUploadMemory();
+    memory.set(0x350_0000, settings);
+    scriptAtD890UploadReadResponder(pipe, memory);
+    const image = seedChannelZeroUpload(radio);
+    radio.setUploadBankIntent(
+      atD890UploadBankIntentFromOrganisation({ assignMm9pdyStepKeys: true }),
+    );
+    enableAtD890AutoWriteAck(pipe);
+    await radio.upload(image, {});
+    const before = radio.takeUploadSentinelSnapshot()!;
+    const patches = radio.takeUploadSettingsPatches()!;
+    const written = writePayloadAt(pipe, D890_MAP.OptionalSettingsMain + 0x10)!;
+
+    const after = settings.slice();
+    after.set(written, 0x10);
+    const reconnect = async (radioMemory: Map<number, Uint8Array>) => {
+      await radio.disconnect();
+      scriptAtD890ConnectWithNegotiation(pipe);
+      await radio.connect(pipe);
+      scriptAtD890UploadReadResponder(pipe, radioMemory);
+    };
+
+    const ok = channelUploadMemory();
+    ok.set(0x350_0000, after);
+    await reconnect(ok);
+    expect(await radio.verifySentinelRegionsAgainst(before, { settingsPatches: patches })).toEqual({
+      ok: true,
+    });
+
+    await reconnect(ok);
+    const withoutPatches = await radio.verifySentinelRegionsAgainst(before);
+    expect(withoutPatches.ok).toBe(false);
+
+    const collateral = after.slice();
+    collateral[0x05] = 0x77;
+    const bad = channelUploadMemory();
+    bad.set(0x350_0000, collateral);
+    await reconnect(bad);
+    const result = await radio.verifySentinelRegionsAgainst(before, { settingsPatches: patches });
+    expect(result.ok).toBe(false);
+  }, 20_000);
+
   it('never transmits the per-unit flash bookkeeping blocks', async () => {
     // E7: `+0x3fbf0` and `+0x3fff0` are radio-managed sector metadata, confirmed on
     // hardware — the marker changed on flash without Studio ever writing it. Not the

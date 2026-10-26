@@ -625,7 +625,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
   /** Re-read never-write regions and diff against a pre-Write snapshot (cross-session). */
   async verifySentinelRegionsAgainst(
     before: AtD890SentinelSnapshot,
-    opts?: { signal?: AbortSignal },
+    opts?: { signal?: AbortSignal; settingsPatches?: readonly AtD890SettingsPatch[] },
   ): Promise<AtD890SentinelCompareResult> {
     if (!this.pipe) {
       throw new RadioProtocolError('AT-D890UV not connected');
@@ -635,7 +635,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
       this.programming = true;
     }
     const after = await snapshotAtD890SentinelRegions(this.pipe, opts?.signal, this.readBlockSize);
-    return compareAtD890SentinelSnapshots(before, after);
+    return compareAtD890SentinelSnapshots(before, after, opts?.settingsPatches);
   }
 
   async download(opts: { onProgress?: ProgressFn; signal?: AbortSignal }): Promise<MemoryMap> {

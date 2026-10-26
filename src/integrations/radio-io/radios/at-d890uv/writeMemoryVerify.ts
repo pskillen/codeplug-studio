@@ -7,6 +7,7 @@
 
 import { AT_D890_MEMORY_REGIONS } from './memoryRegionExport.ts';
 import type { AtD890StagingChunk } from './sparseEraseRmw.ts';
+import type { AtD890SettingsPatch } from './settingsFields.ts';
 import { eraseUnitBaseFor, isAtD890ExcludedBookkeepingStagingAddress } from './eraseUnits.ts';
 import {
   compareAtD890SentinelSnapshots,
@@ -468,11 +469,12 @@ export function buildAtD890WriteVerifyResult(
   sentinelBefore: AtD890SentinelSnapshot | undefined,
   meta: { model: string; elapsedMs: number; totalBytesRead: number },
   spillChunks: ReadonlyMap<number, Uint8Array> = new Map(),
+  settingsPatches: readonly AtD890SettingsPatch[] = [],
 ): AtD890WriteVerifyResult {
   const { mismatches } = compareStagingAgainstRegionDump(snapshot, files, spillChunks);
   const sentinelAfter = sentinelSnapshotFromRegionDump(files);
   const sentinel = sentinelBefore
-    ? compareAtD890SentinelSnapshots(sentinelBefore, sentinelAfter)
+    ? compareAtD890SentinelSnapshots(sentinelBefore, sentinelAfter, settingsPatches)
     : ({ ok: true } as AtD890SentinelCompareResult);
   const regions = summarizeVerifyByRegion(snapshot, files, mismatches, spillChunks);
   const notReadChunks = mismatches.filter((m) => m.kind === 'not_read').length;
