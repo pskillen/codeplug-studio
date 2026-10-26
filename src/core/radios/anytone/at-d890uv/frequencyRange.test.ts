@@ -10,6 +10,7 @@ import {
   isAtD890RangeChangeTarget,
   describeAtD890FrequencyRange,
   listAtD890ReceiveOnlyChannels,
+  sanitiseAtD890RangeCode,
 } from './frequencyRange.ts';
 
 const ch = (txMhz: number, extra: object = {}) => ({ txHz: Math.round(txMhz * 1e6), ...extra });
@@ -265,5 +266,16 @@ describe('range change targets', () => {
     const s = atD890TxChangeSummary(7, 16);
     expect(s.closes).toEqual(['147–148', '420–450']);
     expect(s.opens).toEqual([]);
+  });
+});
+
+describe('sanitiseAtD890RangeCode', () => {
+  it('codes above 18 read as 0, and 14 without 890# reads as 0', () => {
+    expect(sanitiseAtD890RangeCode(19, true)).toBe(0);
+    expect(sanitiseAtD890RangeCode(255, false)).toBe(0);
+    expect(sanitiseAtD890RangeCode(14, false)).toBe(0);
+    expect(sanitiseAtD890RangeCode(14, true)).toBe(14);
+    expect(sanitiseAtD890RangeCode(7, false)).toBe(7);
+    expect(sanitiseAtD890RangeCode(15, false)).toBe(15);
   });
 });

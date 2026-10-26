@@ -48,6 +48,7 @@ import BeforeYouWriteRows from './RadioIoPanelCards/BeforeYouWriteRows.tsx';
 import AtD890RadioSettingsCard from './RadioIoPanelCards/AtD890RadioSettingsCard.tsx';
 import RadioBackupCard from './RadioIoPanelCards/RadioBackupCard.tsx';
 import ExperimentalNote from './RadioIoPanelCards/ExperimentalNote.tsx';
+import RangeChangeBanner from '../dangerZone/RangeChangeBanner.tsx';
 import DangerZoneCard from './RadioIoPanelCards/DangerZoneCard.tsx';
 import { listOfferedDangerZoneTools } from '../../services/dangerZone/gate.ts';
 import {
@@ -341,6 +342,7 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
         view={flowView}
         actions={{ ...flowActions, onViewCheckReport: () => setVerifyReportOpen(true) }}
       />
+      {isAtD890Write ? <RangeChangeBanner buildId={build.id} /> : null}
       <WriteHeaderCard
         radioLabel={radioLabel}
         summary={

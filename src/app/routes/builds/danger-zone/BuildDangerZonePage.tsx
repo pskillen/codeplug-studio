@@ -6,6 +6,13 @@
 
 import { Navigate, useNavigate } from 'react-router-dom';
 import DangerZoneToolCard from '../../../components/dangerZone/DangerZoneToolCard.tsx';
+import RangeChangeBanner from '../../../components/dangerZone/RangeChangeBanner.tsx';
+import { Button } from '../../../components/v2/index.ts';
+import {
+  lastDoneRangeChange,
+  useRangeChangeJournal,
+} from '../../../state/atD890RangeChangeJournal.ts';
+import { COPY, dayAndClock, rangeCaption, tail4 } from './rangeChange/rangeChangeCopy.ts';
 import { findRadioIoEgress } from '../../../lib/buildEgressUi.ts';
 import { DANGER_ZONE_DECISIONS } from '../../../services/dangerZone/decisions.ts';
 import { listOfferedDangerZoneTools } from '../../../services/dangerZone/gate.ts';
@@ -15,6 +22,7 @@ import classes from './BuildDangerZonePage.module.css';
 export default function BuildDangerZonePage() {
   const { build, egressPaths } = useBuildLayout();
   const navigate = useNavigate();
+  const last = lastDoneRangeChange(useRangeChangeJournal());
   const tools = findRadioIoEgress(egressPaths)
     ? listOfferedDangerZoneTools(build.radioTargetId)
     : [];
@@ -31,6 +39,7 @@ export default function BuildDangerZonePage() {
           {DANGER_ZONE_DECISIONS.strap}
         </p>
       </div>
+      <RangeChangeBanner buildId={build.id} />
       <div className={classes.cards}>
         {tools.map((tool) => (
           <DangerZoneToolCard
@@ -40,7 +49,39 @@ export default function BuildDangerZonePage() {
           />
         ))}
       </div>
-      {/* Footer slot (PR 4): "Finish a range change from a backup file", "Last change: …". */}
+      <div className={classes.footer}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() =>
+            navigate(`/builds/${build.id}/export/danger-zone/frequency-range/resume?file=1`)
+          }
+        >
+          {COPY.footer.fromFile}
+        </Button>
+        {last ? (
+          <p className={classes.last} data-testid="range-last-change">
+            {COPY.footer.last(
+              tail4(last.serial),
+              rangeCaption(last.fromCode),
+              rangeCaption(last.toCode),
+              dayAndClock(last.updatedAt),
+            )}{' '}
+            ·{' '}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                navigate(
+                  `/builds/${build.id}/export/danger-zone/frequency-range?target=${last.fromCode}`,
+                )
+              }
+            >
+              {COPY.footer.changeBack}
+            </Button>
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }
