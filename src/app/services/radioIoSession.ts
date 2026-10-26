@@ -97,6 +97,10 @@ import {
   type AtD890DownloadCache,
 } from '@integrations/radio-io/radios/at-d890uv/memory.ts';
 import { decodeAtD890MasterIdName } from '@integrations/radio-io/radios/at-d890uv/masterIdCodec.ts';
+import {
+  atD890LanguageLockProblem,
+  languageLockFromLocalInfo,
+} from '@integrations/radio-io/radios/at-d890uv/settingsCodec.ts';
 import type {
   AtD890RadioSettingsSnapshot,
   AtD890SettingsOverride,
@@ -870,6 +874,18 @@ export async function uploadPreparedRadioWrite(
         ...(opts?.organisation ?? {}),
         atD890SettingsOverrides: outcome.overrides,
       };
+      // The radio re-forces its language from LocalInfo at every load: refuse one its region forbids.
+      const languageProblem = atD890LanguageLockProblem(
+        outcome.overrides,
+        languageLockFromLocalInfo(
+          getCacheBytes(
+            session.radio.getDownloadCache() ?? { blocks: new Map<number, Uint8Array>() },
+            D890_MAP.LocalInfo,
+            D890_MAP.LocalInfoLength,
+          ),
+        ),
+      );
+      if (languageProblem) throw new RadioWriteBlockedError(languageProblem);
       // Resolve again: the overrides may have changed at the pause. Refused ones fail here, before upload.
       atD890UploadBankIntentFromOrganisation(chosen, opts?.channels);
       session.descriptor.hydration.seedProtocolForUpload?.(

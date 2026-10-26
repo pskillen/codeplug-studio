@@ -25,6 +25,10 @@ import {
   type AtD890RadioSettingsSnapshot,
   type AtD890SettingsOverride,
 } from '@integrations/radio-io/radios/at-d890uv/settingsFields.ts';
+import {
+  atD890LanguageLockProblem,
+  languageLockFromLocalInfo,
+} from '@integrations/radio-io/radios/at-d890uv/settingsCodec.ts';
 import { formatAtD890LocalInfoSerial } from '@integrations/radio-io/radios/at-d890uv/identityCheck.ts';
 import { decodeAtD890MasterIdName } from '@integrations/radio-io/radios/at-d890uv/masterIdCodec.ts';
 import type { WriteVerifyCaptureResult } from '@integrations/radio-io/writeVerify.ts';
@@ -95,6 +99,13 @@ export async function writeAtD890SettingsOnly(
   if (outcome.overrides.length === 0) {
     throw new RadioWriteBlockedError('There are no radio settings to write.');
   }
+  // Backstop for the Review's own check: the radio re-forces its language from LocalInfo at every
+  // load, so a language its region forbids is refused here, before any frame.
+  const languageProblem = atD890LanguageLockProblem(
+    outcome.overrides,
+    languageLockFromLocalInfo(snapshot.localInfo),
+  );
+  if (languageProblem) throw new RadioWriteBlockedError(languageProblem);
   const chosenPatches =
     outcome.overrides === overrides
       ? patches

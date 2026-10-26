@@ -22,7 +22,7 @@ import {
 
 const SERIAL = 'SN-TEST-SETTINGS';
 
-async function connectedSession() {
+async function connectedSession(localInfoByte4?: number) {
   const pipe = new AtD890ScriptedPipe();
   scriptAtD890ConnectWithNegotiation(pipe);
   const radio = new AtD890uvProtocol();
@@ -31,10 +31,12 @@ async function connectedSession() {
   for (let i = 0; i < 0x160; i++) settings[i] = (i * 3 + 1) & 0xff;
   settings.set([0x41, 0x42], 0x900);
   settings[0x1280] = 0x33;
+  const localInfo = localInfoWithSerial(SERIAL);
+  if (localInfoByte4 !== undefined) localInfo[0x04] = localInfoByte4;
   scriptAtD890UploadReadResponder(
     pipe,
     new Map([
-      [D890_MAP.LocalInfo, localInfoWithSerial(SERIAL)],
+      [D890_MAP.LocalInfo, localInfo],
       [0x350_0000, settings],
     ]),
   );
@@ -142,5 +144,47 @@ describe('AT-D890UV settings-only write service', () => {
       }),
     ).rejects.toThrow();
     expect(pipe.writes.length).toBe(before);
+  });
+
+  describe('language lock backstop', () => {
+    const language = (value: number) => [{ fieldId: 'language', value }];
+
+    it.each([
+      [1, 2, /only allows English.*Language/],
+      [1, 1, /only allows English/],
+      [2, 0, /only allows Chinese/],
+    ])('lock %i refuses language %i before any W frame', async (lock, value, message) => {
+      const { session, egress, pipe } = await connectedSession(lock);
+      await expect(
+        writeAtD890SettingsOnly(session, egress, language(value), {
+          beforeTransmit: async () => 'apply',
+        }),
+      ).rejects.toThrow(message);
+      expect(collectAtD890WriteDataAddresses(pipe)).toEqual([]);
+    });
+
+    it('also refuses a language the pause adds', async () => {
+      const { session, egress, pipe } = await connectedSession(2);
+      await expect(
+        writeAtD890SettingsOnly(session, egress, overrides, {
+          beforeTransmit: async () => ({ decision: 'apply', overrides: language(0) }),
+        }),
+      ).rejects.toBeInstanceOf(RadioWriteBlockedError);
+      expect(collectAtD890WriteDataAddresses(pipe)).toEqual([]);
+    });
+
+    it.each([
+      [1, 0],
+      [2, 1],
+      [undefined, 2],
+    ])('lock %s allows language %i and patches it', async (lock, value) => {
+      const { session, egress, pipe } = await connectedSession(lock);
+      const result = await writeAtD890SettingsOnly(session, egress, language(value), {
+        beforeTransmit: async () => 'apply',
+      });
+      expect(collectAtD890WriteDataAddresses(pipe).length).toBeGreaterThan(0);
+      const kept = result.writeVerifyPending?.kept as { patches?: { fieldId: string }[] };
+      expect(kept.patches?.map((p) => p.fieldId)).toEqual(['language']);
+    });
   });
 });

@@ -33,7 +33,7 @@ import { uploadPreparedRadioWrite, type BeforeTransmitContext } from './radioIoS
 
 const SERIAL = 'SN-TEST-UPLOAD01';
 
-async function d890Session(): Promise<{ session: RadioSession; pipe: AtD890ScriptedPipe }> {
+async function d890Session(lockByte?: number): Promise<{ session: RadioSession; pipe: AtD890ScriptedPipe }> {
   const pipe = new AtD890ScriptedPipe();
   scriptAtD890ConnectWithNegotiation(pipe);
   const radio = new AtD890uvProtocol();
@@ -53,9 +53,11 @@ async function d890Session(): Promise<{ session: RadioSession; pipe: AtD890Scrip
   setBitmapBit(channelSet, 0, true);
   const primary = new Uint8Array(0x40);
   primary.set(encodeBcdFrequencyHz(145_520_000), 0);
+  const localInfo = localInfoWithSerial(SERIAL);
+  if (lockByte !== undefined) localInfo[0x04] = lockByte;
   radio.seedDownloadCache({
     blocks: new Map([
-      [D890_MAP.LocalInfo, localInfoWithSerial(SERIAL)],
+      [D890_MAP.LocalInfo, localInfo],
       [D890_MAP.ChannelSet, channelSet],
       [channelPrimaryAddress(0), primary],
       [channelSecondaryAddress(0), new Uint8Array(0x40)],
@@ -207,6 +209,30 @@ describe('uploadPreparedRadioWrite beforeTransmit', () => {
       }),
     ).rejects.toThrow('cancelled');
     expect(pipe.writes.length).toBe(before);
+  }, 20_000);
+
+  it('refuses a language the radio region forbids before any frame (D890 language lock)', async () => {
+    const { session, pipe } = await d890Session(1);
+    const before = pipe.writes.length;
+    await expect(
+      uploadPreparedRadioWrite(session, egress, undefined, {
+        ...projected,
+        settingsOverrides: [{ fieldId: 'language', value: 2 }],
+        beforeTransmit: async () => 'apply',
+      }),
+    ).rejects.toThrow(/only allows English.*Language/);
+    expect(pipe.writes.length).toBe(before);
+  }, 20_000);
+
+  it('lets an allowed language through to the upload', async () => {
+    const { session, pipe } = await d890Session(1);
+    const before = pipe.writes.length;
+    await uploadPreparedRadioWrite(session, egress, undefined, {
+      ...projected,
+      settingsOverrides: [{ fieldId: 'language', value: 0 }],
+      beforeTransmit: async () => 'apply',
+    });
+    expect(pipe.writes.length).toBeGreaterThan(before);
   }, 20_000);
 
   it('calls the hook before upload for a radio without a plan (generic path)', async () => {
