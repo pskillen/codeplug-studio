@@ -5,8 +5,9 @@
  * Q7 (no prod gate, no feature flag; testing happens on pre-prod) is the absence of any gate: the registry has no
  * `prodDisabled` and nothing hides the area by build environment.
  *
- * Only `areaName` and `strap` are read in this PR (the area). The rest is recorded here for the Change frequency
- * range wizard PR (PR 4) and the engine PR (PR 2) to read; nothing reads them yet.
+ * `areaName` is the one name for the area: the page title, the Export card, its button and the Radio settings
+ * pointer are all built from it. `strap` is read by the area page. The rest is recorded here for the Change
+ * frequency range wizard PR (PR 4) to read; nothing reads them yet.
  */
 export const DANGER_ZONE_DECISIONS = {
   /** Q1: the area's name. */
