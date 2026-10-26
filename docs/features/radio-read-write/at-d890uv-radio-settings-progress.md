@@ -9,7 +9,7 @@
 | --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | 1   | Patch core: field allow-list, patch helpers, mask-level preserved check, verify expects patches ([#1394](https://github.com/pskillen/codeplug-studio/issues/1394)), settings-only upload, settings read, pause before transmit; step keys migrated; no UI | Done on `1393/pskil/d890-settings-patch-core` |
 | 2   | v1 field registry, codec, session store, field reference                                                                                                                                                                                                  | Done on `1393/pskil/d890-settings-fields`     |
-| 3   | Settings page, Read from radio                                                                                                                                                                                                                            | Not started                                   |
+| 3   | Settings page, Read from radio (shipped)                                                                                                                                                                                                                  | Not started                                   |
 | 4   | Write UI (confirm, settings-only, fleet default)                                                                                                                                                                                                          | Not started                                   |
 | 5   | Advanced fields                                                                                                                                                                                                                                           | Not started                                   |
 | 7   | Frequency range display                                                                                                                                                                                                                                   | Not started                                   |
@@ -26,6 +26,12 @@
 - `settingsFields.ts`: one spec per v1 field; `settingsCodec.ts`: decode a snapshot, language lock
 - `atD890RadioSettingsSession.ts`: session-only overrides and read values
 - Reference page `optional-settings.md`; layout corrections
+
+### PR 3: settings page
+
+- Route `/builds/:id/export/radio-settings` and a strip entry on AT-D890UV Web Serial builds
+- `AtD890RadioSettingsEditor`, `AtD890RadioSettingRow`, `Mm9pdyStepKeysNudge`; Read a radio (`radioIoAtD890SettingsRead.ts`); Copy all, Clear all, the sticky changes footer
+- The strip entry and page need no Write: the footer says writing arrives with the next Write update
 
 ## Radio checks
 

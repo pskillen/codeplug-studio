@@ -4,10 +4,10 @@
 
 ## Open
 
-- [ ] PRs 3–5 and 7 (settings page, Write UI, advanced fields, frequency range)
+- [ ] PRs 4–5 and 7 (Write UI, advanced fields, frequency range); the page's range line shows "code N" until #1395 lands (`TODO(#1393 PR 7)`)
 - [ ] Start-up channel `+0xD6..+0xDA` and the key-lock scope `+0xBE` (bits not settled statically)
 - [ ] Last-caller value order and the time-slot / colour-code bits on a DMR channel (radio checks RS8b, RS8c)
-- [ ] Replace the persisted MM9PDY step-key switch with a nudge that sets ordinary session overrides (with the Write UI)
+- [ ] Remove the persisted MM9PDY step-key switch for the D890 (the nudge is on the settings page; Review adds it with the Write UI)
 - [ ] Owner radio checks RS1, RS2, RS8, RS8b, RS8c (see the feature page)
 
 ## Closed / filed elsewhere
