@@ -58,12 +58,12 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  clearAllOverrides(BUILD);
-  setShowAdvanced(BUILD, false);
+  // The editor may still be mounted here: store writes go through act.
+  act(() => {
+    clearAllOverrides(BUILD);
+    setShowAdvanced(BUILD, false);
+  });
 });
-
-// Each render is the whole settings page (about 100 rows), slow under jsdom.
-vi.setConfig({ testTimeout: 90_000 });
 
 describe('AtD890RadioSettingsEditor advanced settings', () => {
   it('hides every advanced row until the switch is on, and shows them after', () => {
@@ -72,7 +72,7 @@ describe('AtD890RadioSettingsEditor advanced settings', () => {
     expect(screen.queryByLabelText('Language')).toBeNull();
     expect(screen.queryByRole('combobox', { name: 'Working mode' })).toBeNull();
     showAdvanced();
-    expect(screen.getByTestId('advanced-rows')).toBeInTheDocument();
+    const advanced = within(screen.getByTestId('advanced-rows'));
     for (const name of [
       'Language',
       'Working mode',
@@ -84,9 +84,9 @@ describe('AtD890RadioSettingsEditor advanced settings', () => {
       'Auto repeater A',
       'Auto repeater B',
     ]) {
-      expect(screen.getByRole('combobox', { name }), name).toBeInTheDocument();
+      expect(advanced.getByRole('combobox', { name }), name).toBeInTheDocument();
     }
-    expect(screen.getByLabelText('New power-on password')).toBeInTheDocument();
+    expect(advanced.getByLabelText('New power-on password')).toBeInTheDocument();
   });
 
   it('is off by default and not kept in the project', () => {
@@ -167,11 +167,21 @@ describe('AtD890RadioSettingsEditor advanced settings', () => {
   });
 
   describe('power-on password', () => {
+    // getByLabelText scans the whole page (about 100 rows), which is the slow part: look the
+    // inputs up once per render and reuse them.
+    const inputs = () => {
+      const row = document.querySelector('[data-field-id="powerOnPassword"]') as HTMLElement;
+      return {
+        first: row.querySelector('input[aria-label="New power-on password"]') as HTMLInputElement,
+        again: row.querySelector(
+          'input[aria-label="Type the power-on password again"]',
+        ) as HTMLInputElement,
+      };
+    };
     const typeBoth = (a: string, b: string) => {
-      fireEvent.change(screen.getByLabelText('New power-on password'), { target: { value: a } });
-      fireEvent.change(screen.getByLabelText('Type the power-on password again'), {
-        target: { value: b },
-      });
+      const { first, again } = inputs();
+      fireEvent.change(first, { target: { value: a } });
+      fireEvent.change(again, { target: { value: b } });
     };
 
     it('only sets the pair once the digits are valid and typed twice the same', () => {
@@ -199,21 +209,15 @@ describe('AtD890RadioSettingsEditor advanced settings', () => {
       renderEditor();
       showAdvanced();
       typeBoth('4821', '4821');
-      expect((screen.getByLabelText('New power-on password') as HTMLInputElement).type).toBe(
-        'text',
-      );
-      expect((screen.getByLabelText('New power-on password') as HTMLInputElement).value).toBe(
-        '4821',
-      );
+      expect(inputs().first.type).toBe('text');
+      expect(inputs().first.value).toBe('4821');
     });
 
     it('a broken edit after a good one goes back to Keep (the latest action wins)', () => {
       renderEditor();
       showAdvanced();
       typeBoth('4821', '4821');
-      fireEvent.change(screen.getByLabelText('Type the power-on password again'), {
-        target: { value: '482' },
-      });
+      fireEvent.change(inputs().again, { target: { value: '482' } });
       expect(getAtD890RadioSettingsSession(BUILD).overrides.size).toBe(0);
     });
 
@@ -250,9 +254,7 @@ describe('AtD890RadioSettingsEditor advanced settings', () => {
       );
       renderEditor();
       showAdvanced();
-      const row = screen
-        .getByLabelText('New power-on password')
-        .closest('[data-field-id]') as HTMLElement;
+      const row = document.querySelector('[data-field-id="powerOnPassword"]') as HTMLElement;
       expect(row).toHaveTextContent('Radio: On');
       expect(row).not.toHaveTextContent('9876');
     });

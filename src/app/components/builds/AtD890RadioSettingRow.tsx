@@ -3,6 +3,7 @@
  * and a Keep / Set control (#1393). Renders from core field metadata only.
  */
 
+import { memo } from 'react';
 import { NativeSelect } from '@mantine/core';
 import {
   atD890SettingExposureFor,
@@ -52,7 +53,7 @@ export interface AtD890RadioSettingRowProps {
   problem?: string;
 }
 
-export default function AtD890RadioSettingRow({
+function AtD890RadioSettingRowView({
   field,
   target,
   override,
@@ -168,3 +169,26 @@ export default function AtD890RadioSettingRow({
     </div>
   );
 }
+
+/**
+ * The page holds about a hundred rows and re-renders on every store change, so a row re-renders
+ * only when something it shows changed. `onSet` and `onClear` are ignored on purpose: callers
+ * build them from the build id and field id alone, so a new closure never means new behaviour.
+ */
+const AtD890RadioSettingRow = memo(AtD890RadioSettingRowView, (a, b) => {
+  const sameField =
+    a.field === b.field ||
+    (a.field.id === b.field.id && JSON.stringify(a.field) === JSON.stringify(b.field));
+  return (
+    sameField &&
+    a.target === b.target &&
+    a.override === b.override &&
+    a.decoded === b.decoded &&
+    a.hasRead === b.hasRead &&
+    a.note === b.note &&
+    a.disabledReason === b.disabledReason &&
+    a.problem === b.problem
+  );
+});
+
+export default AtD890RadioSettingRow;
