@@ -61,6 +61,7 @@ import {
   packAtD890BackupFromSession,
   downloadRadioBackupZip,
 } from '../../../services/radioBackupRestore.ts';
+import { interruptedWriteWarning } from '../../../services/radioIoInterruptedWrite.ts';
 import { atD890SettingsReadFromSnapshot } from '../../../services/radioIoAtD890SettingsRead.ts';
 import { writeAtD890SettingsOnly } from '../../../services/radioIoAtD890SettingsWrite.ts';
 import {
@@ -857,7 +858,9 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       return;
     }
     setBusyNotify(false);
-    setError(errorMessage(err));
+    // A D890 Write interrupted after whole units were sent leaves them pending on the radio (#1406).
+    const interrupted = interruptedWriteWarning(egress.profileId, err);
+    setError(interrupted ? `${errorMessage(err)} ${interrupted}` : errorMessage(err));
     // Before the first frame, a failure is recoverable by reading again.
     setCanReconnect(!transmitStartedRef.current && phaseRef.current !== 'keps');
   }

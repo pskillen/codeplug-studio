@@ -18,11 +18,23 @@
  *   session abandoned without `END` leaves the radio's unit state unknown.
  * - A new pipe object starts clean.
  * - A refused read throws before any byte is sent.
+ *
+ * Abandoned sessions (#1406). Leaving PROGRAM without `END` keeps the unit in progress safe, but
+ * every unit the session had already finished keeps its PC marker and is committed by the next
+ * write-mode `END` from any tool. {@link recordAtD890AbandonedSession} persists those units
+ * (`pendingUnits.ts`), and {@link gateAtD890Write} refuses, before the first `W`, any write that
+ * would not rewrite them.
  */
 
 import type { BytePipe } from '../../types.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { eraseUnitBaseFor } from './eraseUnits.ts';
+import {
+  AtD890PendingUnitsError,
+  clearAtD890PendingUnits,
+  readAtD890PendingUnits,
+  recordAtD890PendingUnits,
+} from './pendingUnits.ts';
 
 export class AtD890ReadAfterWriteError extends RadioProtocolError {
   constructor(
@@ -53,6 +65,10 @@ interface AtD890ProgramSessionState {
   counters: AtD890ProgramCounters;
   /** Erase units entered by `W` since the last `END`, in order, consecutive repeats collapsed. */
   unitsEntered: number[];
+  /** Units a caller has said this session will write beyond the ones it names to the gate. */
+  declaredUnits: Set<number>;
+  /** The pending-units gate has passed for this session. */
+  gated: boolean;
 }
 
 const sessions = new WeakMap<BytePipe, AtD890ProgramSessionState>();
@@ -63,6 +79,8 @@ function stateFor(pipe: BytePipe): AtD890ProgramSessionState {
     st = {
       counters: { rFrames: 0, rBytes: 0, wFrames: 0, wUnitsEntered: 0 },
       unitsEntered: [],
+      declaredUnits: new Set(),
+      gated: false,
     };
     sessions.set(pipe, st);
   }
@@ -73,6 +91,12 @@ function stateFor(pipe: BytePipe): AtD890ProgramSessionState {
 export function noteAtD890WriteFrame(pipe: BytePipe, address: number): void {
   const st = stateFor(pipe);
   if (st.firstWriteAddress === undefined) {
+    // Backstop: a sender that never called the gate may not write while units are pending.
+    if (!st.gated) {
+      const pending = readAtD890PendingUnits();
+      if (pending.length > 0) throw new AtD890PendingUnitsError(pending);
+      st.gated = true;
+    }
     st.firstWriteAddress = address;
     st.firstWriteAtMs = Date.now();
   }
@@ -114,4 +138,47 @@ export function isAtD890WritePhase(pipe: BytePipe): boolean {
 /** Erase units entered by `W` since the last `END`, in order. */
 export function listAtD890UnitsEntered(pipe: BytePipe): readonly number[] {
   return [...stateFor(pipe).unitsEntered];
+}
+
+/**
+ * Tell the gate which units this session will also write (the app knows the contact units before
+ * `upload()` runs). Additive; call before {@link gateAtD890Write}.
+ */
+export function declareAtD890PlannedUnits(pipe: BytePipe, units: readonly number[]): void {
+  const st = stateFor(pipe);
+  for (const u of units) st.declaredUnits.add(u);
+}
+
+/**
+ * Before the first `W`: units pending from an abandoned Write must all be rewritten by this
+ * session (`plannedUnits` plus the declared ones), else throw {@link AtD890PendingUnitsError}
+ * having sent nothing. Passing marks the session so later senders in it are not re-checked.
+ */
+export function gateAtD890Write(pipe: BytePipe, plannedUnits: readonly number[]): void {
+  const st = stateFor(pipe);
+  if (st.gated) return;
+  const pending = readAtD890PendingUnits();
+  if (pending.length > 0) {
+    const planned = new Set([...st.declaredUnits, ...plannedUnits]);
+    if (!pending.every((u) => planned.has(u))) throw new AtD890PendingUnitsError(pending);
+  }
+  st.gated = true;
+}
+
+/**
+ * The session is being left without `END`. Every unit it had finished (all entered, except the
+ * one in progress) keeps its PC marker, so persist them. Returns the units recorded.
+ */
+export function recordAtD890AbandonedSession(pipe: BytePipe): readonly number[] {
+  const st = stateFor(pipe);
+  const finished = st.unitsEntered.slice(0, -1);
+  recordAtD890PendingUnits(finished);
+  st.gated = false;
+  return finished;
+}
+
+/** After `END` was sent: the units this session wrote are committed, so no longer pending. */
+export function commitAtD890SessionUnits(pipe: BytePipe, units: readonly number[]): void {
+  void pipe;
+  clearAtD890PendingUnits(units);
 }

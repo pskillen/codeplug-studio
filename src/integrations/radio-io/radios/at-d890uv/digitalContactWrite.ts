@@ -11,6 +11,7 @@ import type { BytePipe, ProgressFn } from '../../types.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
 import { reportProgress, throwIfAborted } from '../../kit/progress.ts';
 import { atD890WriteMemory } from './connection.ts';
+import { gateAtD890Write } from './programSession.ts';
 import { isAtD890DigitalContactUnit } from './digitalContactUnits.ts';
 import { AT_D890_ERASE_UNIT_BYTES, eraseUnitBaseFor, listTouchedEraseUnits } from './eraseUnits.ts';
 import {
@@ -88,6 +89,9 @@ export async function writePreparedAtD890DigitalContacts(
   prepared: AtD890PreparedContactWrite,
   opts: { onProgress?: ProgressFn; signal?: AbortSignal } = {},
 ): Promise<void> {
+  // Contacts alone (no codeplug upload before them): the pending-units gate runs here, before
+  // the first W. Already passed when a codeplug upload ran first in this session (#1406).
+  gateAtD890Write(pipe, prepared.units);
   const touchedUnitSet = new Set(prepared.units);
   const transmitGuard = (address: number) => {
     assertAtD890TransmitAddress(address, touchedUnitSet);

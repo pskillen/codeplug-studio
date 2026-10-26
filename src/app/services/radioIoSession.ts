@@ -60,6 +60,7 @@ import {
   type SingleBankRadioWritePrepareOptions,
 } from './singleBankRadioWrite.ts';
 import {
+  declareAtD890ContactUnitsForWrite,
   prepareAtD890DigitalContactsForWrite,
   writePreparedAtD890DigitalContactsForWrite,
 } from './radioIoAtD890DigitalContactWrite.ts';
@@ -709,6 +710,7 @@ export async function writeBuildToRadio(
   const contactWrite = isD890
     ? prepareAtD890DigitalContactsForWrite(prepared.organisation.digitalContacts)
     : undefined;
+  declareAtD890ContactUnitsForWrite(session, contactWrite);
   await session.radio.upload(image, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,
@@ -921,6 +923,7 @@ export async function uploadPreparedRadioWrite(
       );
     }
   }
+  declareAtD890ContactUnitsForWrite(session, contactWrite);
   await session.radio.upload(resolved, {
     onProgress: opts?.onProgress,
     signal: opts?.signal,

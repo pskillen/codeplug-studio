@@ -39,6 +39,7 @@ import {
   atD890WriteMemory,
   atD890ModelHints,
 } from './connection.ts';
+import { gateAtD890Write, recordAtD890AbandonedSession } from './programSession.ts';
 import { negotiateAtD890ReadBlockSize } from './linkProbe.ts';
 import { decodeChannelsFromAtD890Cache, encodeChannelsIntoAtD890Image } from './channelCodec.ts';
 import { refreshScanListSetFromRadioBase } from './scanListCodec.ts';
@@ -666,6 +667,10 @@ export class AtD890uvProtocol implements CloneImageRadio {
    * Call on failed or aborted upload before disconnect().
    */
   abandonProgramMode(): void {
+    // Units this session had already finished keep their PC marker and are committed by the next
+    // write-mode END from any tool: record them so Studio refuses other writes until they are
+    // rewritten (#1406).
+    if (this.pipe && this.programming) recordAtD890AbandonedSession(this.pipe);
     this.programming = false;
   }
 
@@ -870,6 +875,9 @@ export class AtD890uvProtocol implements CloneImageRadio {
     const transmitGuard = (address: number) => assertAtD890TransmitAddress(address, touchedUnitSet);
 
     try {
+      // Units pending from an interrupted Write must be rewritten by this one: nothing is sent
+      // otherwise (#1406). Inside the try so a refusal abandons rather than ENDs.
+      gateAtD890Write(pipe, touchedUnits);
       const sentinelBefore = await snapshotAtD890SentinelRegions(
         pipe,
         opts.signal,

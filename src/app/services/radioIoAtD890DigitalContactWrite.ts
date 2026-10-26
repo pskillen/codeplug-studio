@@ -6,6 +6,7 @@
  * `session.radio.upload`), {@link writePreparedAtD890DigitalContactsForWrite} sends.
  */
 
+import { declareAtD890PlannedUnits } from '@integrations/radio-io/radios/at-d890uv/programSession.ts';
 import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
 import {
   prepareAtD890DigitalContactWrite,
@@ -22,6 +23,17 @@ export function prepareAtD890DigitalContactsForWrite(
   return digitalContacts === undefined
     ? undefined
     : prepareAtD890DigitalContactWrite(digitalContacts);
+}
+
+/**
+ * Tell the session's pending-units gate which contact units this Write will rewrite, before
+ * `session.radio.upload` runs its own gate (#1406).
+ */
+export function declareAtD890ContactUnitsForWrite(
+  session: RadioSession,
+  prepared: AtD890PreparedContactWrite | undefined,
+): void {
+  if (prepared) declareAtD890PlannedUnits(session.pipe, prepared.units);
 }
 
 /**

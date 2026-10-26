@@ -18,6 +18,8 @@ import { AT_D890_CONNECTION, AT_D890UV_MODEL_IDS } from './constants.ts';
 import {
   AtD890ReadAfterWriteError,
   assertAtD890ReadAllowed,
+  commitAtD890SessionUnits,
+  listAtD890UnitsEntered,
   noteAtD890ProgramExited,
   noteAtD890WriteFrame,
 } from './programSession.ts';
@@ -76,8 +78,10 @@ export async function atD890ProbeIdent(pipe: BytePipe, signal?: AbortSignal): Pr
 
 export async function atD890ExitProgram(pipe: BytePipe): Promise<void> {
   // END commits (or, after an R, silently drops) the session's units: the write phase ends here.
+  const entered = listAtD890UnitsEntered(pipe);
   noteAtD890ProgramExited(pipe);
   await exitAnytoneDmrProgramMode(pipe);
+  commitAtD890SessionUnits(pipe, entered);
 }
 
 /** Original send plus two resends of the same frame. */
