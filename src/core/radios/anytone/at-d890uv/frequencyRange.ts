@@ -222,11 +222,12 @@ export function listAtD890ReceiveOnlyChannels<T extends AtD890RangeCheckChannel>
 }
 
 /**
- * Range codes a range change may target: the codes the CPS lists (14 only after `890#`). Codes 6, 9, 12 and 15 are
- * offered by neither the CPS nor the radio's factory menu, so they are never a target.
+ * Range codes a range change may target: every firmware code, 0 to 18. Code 14 only when LocalInfo holds `890#`
+ * (the frame builder refuses it otherwise). Codes 6, 9, 12 and 15 are valid to the firmware but offered by neither
+ * the CPS nor the radio's factory menu: they are targets, flagged `unlisted` so a screen can warn.
  */
 export const AT_D890_RANGE_CHANGE_TARGET_CODES = [
-  0, 1, 2, 3, 4, 5, 7, 8, 10, 11, 13, 14, 16, 17, 18,
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 ] as const;
 
 export type AtD890RangeChangeTargetCode = (typeof AT_D890_RANGE_CHANGE_TARGET_CODES)[number];
@@ -283,6 +284,8 @@ export interface AtD890RangeChangeTarget {
   code: number;
   caption: string;
   isCurrent: boolean;
+  /** True for 6, 9, 12 and 15: firmware-valid, but not offered by the CPS or the factory menu. */
+  unlisted: boolean;
   /** Code 14 only. */
   requiresMaintenanceUnlock: boolean;
   /** False for code 14 while the radio is not `890#`-unlocked. */
@@ -296,7 +299,7 @@ export interface AtD890RangeChangeTarget {
 }
 
 /**
- * One entry per allowed target code, in code order. Pure facts only: which entries a screen shows, and in what
+ * One entry per target code (0 to 18), in code order. `currentCode` may itself be an unlisted code. Pure facts only: which entries a screen shows, and in what
  * words, is the caller's policy.
  */
 export function atD890RangeChangeTargets(
@@ -312,6 +315,7 @@ export function atD890RangeChangeTargets(
       code,
       caption: row.caption,
       isCurrent: code === currentCode,
+      unlisted: !row.cpsListed,
       requiresMaintenanceUnlock: code === 14,
       available: code !== 14 || opts.maintenanceUnlocked,
       receiveNarrowerThanFull: !(covers(row.rx.uhf, FULL_UHF) && covers(row.rx.vhf, FULL_VHF)),

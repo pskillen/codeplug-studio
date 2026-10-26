@@ -194,14 +194,20 @@ describe('listAtD890ReceiveOnlyChannels', () => {
 });
 
 describe('range change targets', () => {
-  it('lists the CPS codes and never 6, 9, 12 or 15', () => {
-    const codes = atD890RangeChangeTargets(3, { maintenanceUnlocked: true }).map((t) => t.code);
-    expect(codes).toEqual([...AT_D890_RANGE_CHANGE_TARGET_CODES]);
-    for (const never of [6, 9, 12, 15, 19]) {
-      expect(codes).not.toContain(never);
-      expect(isAtD890RangeChangeTarget(never)).toBe(false);
-    }
-    expect(isAtD890RangeChangeTarget(14)).toBe(true);
+  it('lists every code 0 to 18, flagging 6, 9, 12 and 15 as unlisted', () => {
+    const targets = atD890RangeChangeTargets(3, { maintenanceUnlocked: true });
+    expect(targets.map((t) => t.code)).toEqual(Array.from({ length: 19 }, (_, i) => i));
+    expect(targets.map((t) => t.code)).toEqual([...AT_D890_RANGE_CHANGE_TARGET_CODES]);
+    expect(targets.filter((t) => t.unlisted).map((t) => t.code)).toEqual([6, 9, 12, 15]);
+    for (const code of [0, 6, 14, 18]) expect(isAtD890RangeChangeTarget(code)).toBe(true);
+    for (const bad of [-1, 19, 255]) expect(isAtD890RangeChangeTarget(bad)).toBe(false);
+  });
+
+  it('a radio already on an unlisted code still gets the full list', () => {
+    const targets = atD890RangeChangeTargets(9, { maintenanceUnlocked: false });
+    expect(targets).toHaveLength(19);
+    expect(targets.find((t) => t.isCurrent)?.code).toBe(9);
+    expect(targets.find((t) => t.isCurrent)?.unlisted).toBe(true);
   });
 
   it('marks the current code, and code 14 unavailable until unlocked', () => {
@@ -216,10 +222,10 @@ describe('range change targets', () => {
     expect(open.filter((t) => t.requiresMaintenanceUnlock)).toHaveLength(1);
   });
 
-  it('narrow-receive set is 2, 4, 5, 8, 16, 17; UHF TX inhibited for 16 and 17', () => {
+  it('narrow-receive set is the listed 2, 4, 5, 8, 16, 17 plus unlisted 6, 9, 15; UHF TX inhibited for 16 and 17', () => {
     const t = atD890RangeChangeTargets(3, { maintenanceUnlocked: true });
     expect(t.filter((x) => x.receiveNarrowerThanFull).map((x) => x.code)).toEqual([
-      2, 4, 5, 8, 16, 17,
+      2, 4, 5, 6, 8, 9, 15, 16, 17,
     ]);
     expect(t.filter((x) => x.uhfTxInhibited).map((x) => x.code)).toEqual([16, 17]);
   });

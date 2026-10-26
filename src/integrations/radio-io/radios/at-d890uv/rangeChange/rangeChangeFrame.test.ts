@@ -68,10 +68,19 @@ describe('buildAtD890RangeChangeFrame', () => {
     ).toBe('short-local-info');
   });
 
-  it.each([19, 6, 9, 12, 15, -1, 255, 3.5, Number.NaN])('refuses target %s', (target) => {
+  it.each([19, -1, 255, 3.5, Number.NaN])('refuses target %s', (target) => {
     expect(refusal(() => buildAtD890RangeChangeFrame(syntheticLocalInfo(3), target))).toBe(
       'target-not-allowed',
     );
+  });
+
+  it.each([6, 9, 12, 15])('allows unlisted code %s as a target', (code) => {
+    expect(buildAtD890RangeChangeFrame(syntheticLocalInfo(3), code)[3]).toBe(code);
+  });
+
+  it('does not refuse a radio that is already on an unlisted code', () => {
+    const frame = buildAtD890RangeChangeFrame(syntheticLocalInfo(9), 3);
+    expect(frame[3]).toBe(3);
   });
 
   it('refuses 14 without 890#', () => {
