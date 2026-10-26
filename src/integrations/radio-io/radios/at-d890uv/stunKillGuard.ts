@@ -1,9 +1,9 @@
 /**
  * AT-D890UV stun / kill guard — LocalInfo `+0x00` / `+0x01`.
  *
- * A non-zero flag means the radio has been remotely stunned or killed. `END` commits state and reboots, and the
- * firmware acts on those flags at boot, so a session that sees one must not send `END` (#1288). The operator is
- * told to power-cycle the radio instead.
+ * A non-zero flag means the radio has been remotely stunned or killed. In a read session, `END` with a flag set
+ * clears the flag and erases and rewrites LocalInfo (hardware, #1288). A session that sees a flag must therefore not send `END`. The operator is told to
+ * power-cycle the radio instead.
  *
  * One small helper so every D890 session (vital backup now; the write and read sessions in PR 4c) converges on
  * the same check and the same wording.
@@ -16,7 +16,7 @@ export const AT_D890_KILL_FLAG_OFFSET = 0x01;
 
 export const AT_D890_STUN_KILL_MESSAGE =
   'This radio reports a stun or kill flag in its local info. Studio has stopped without sending END, because END ' +
-  'reboots the radio and the radio acts on that flag at boot. Power-cycle the radio, then try again.';
+  "would clear the flag and erase and rewrite the radio's LocalInfo. Power-cycle the radio, then try again.";
 
 export interface AtD890StunKillState {
   stun: number;
