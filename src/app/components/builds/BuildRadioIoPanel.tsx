@@ -48,6 +48,8 @@ import BeforeYouWriteRows from './RadioIoPanelCards/BeforeYouWriteRows.tsx';
 import AtD890RadioSettingsCard from './RadioIoPanelCards/AtD890RadioSettingsCard.tsx';
 import RadioBackupCard from './RadioIoPanelCards/RadioBackupCard.tsx';
 import ExperimentalNote from './RadioIoPanelCards/ExperimentalNote.tsx';
+import RadioToolsCard from './RadioIoPanelCards/RadioToolsCard.tsx';
+import { listOfferedRadioTools } from '../../services/radioTools/gate.ts';
 import {
   atD890OverrideCount,
   overridesForWrite,
@@ -383,6 +385,9 @@ export default function BuildRadioIoPanel({ build, egress }: BuildRadioIoPanelPr
             />
           ) : null}
         </div>
+      ) : null}
+      {isAtD890Write && listOfferedRadioTools(build.radioTargetId).length > 0 ? (
+        <RadioToolsCard buildId={build.id} />
       ) : null}
       <ExperimentalNote
         details={

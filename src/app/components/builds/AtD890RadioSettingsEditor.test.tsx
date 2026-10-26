@@ -247,3 +247,36 @@ describe('AtD890RadioSettingsEditor', () => {
     expect(screen.queryByTestId('mm9pdy-step-keys-nudge')).not.toBeInTheDocument();
   });
 });
+
+describe('AtD890RadioSettingsEditor — range row (#1369)', () => {
+  beforeEach(() => {
+    BUILD = `build-editor-range-${++buildSeq}`;
+    setRead(BUILD, READ);
+  });
+
+  it('links Change… to Radio tools and says so in the why text when the gate is open', () => {
+    render(
+      <MemoryRouter>
+        <DesignSystemV2Provider>
+          <AtD890RadioSettingsEditor
+            buildId={BUILD}
+            target="stock"
+            egress={D890_EGRESS}
+            radioToolsOffered
+          />
+        </DesignSystemV2Provider>
+      </MemoryRouter>,
+    );
+    const link = screen.getByRole('link', { name: 'Change…' });
+    expect(link).toHaveAttribute('href', `/builds/${BUILD}/export/radio-tools`);
+    expect(screen.getByText(/You can change it from Radio tools\./)).toBeInTheDocument();
+    expect(screen.queryByText(/issue #1369/)).toBeNull();
+  });
+
+  it('shows no link and says Studio can only show it when the gate is closed', () => {
+    renderEditor();
+    expect(screen.queryByRole('link', { name: 'Change…' })).toBeNull();
+    expect(screen.getByText(/Studio can only show it\./)).toBeInTheDocument();
+    expect(screen.queryByText(/issue #1369/)).toBeNull();
+  });
+});

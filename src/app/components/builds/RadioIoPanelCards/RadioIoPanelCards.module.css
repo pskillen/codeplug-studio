@@ -95,3 +95,25 @@
   font-size: var(--dsv2-font-body-sm);
   color: var(--dsv2-text-secondary);
 }
+
+.dangerCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: var(--dsv2-panel-padding-y, 12px) var(--dsv2-panel-padding-x, 16px);
+  border: 1px solid var(--dsv2-border);
+  border-left: 4px solid var(--dsv2-destructive);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-surface);
+}
+
+.dangerToggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
