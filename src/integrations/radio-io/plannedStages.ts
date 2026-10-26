@@ -3,12 +3,7 @@
  * See docs/features/radio-read-write/protocol-kit-architecture.md (planned stages).
  */
 
-import type {
-  PlannedStage,
-  RadioDescriptor,
-  RadioOperation,
-  RadioPlanContext,
-} from './types.ts';
+import type { PlannedStage, RadioDescriptor, RadioOperation, RadioPlanContext } from './types.ts';
 
 /** The adapter's plan for `op`, or `undefined` when it declares none (UI falls back to a growing list). */
 export function planForOperation(
