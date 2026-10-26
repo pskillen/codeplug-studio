@@ -322,11 +322,38 @@ describe('BuildRadioIoPanel — Write stepper flow (#1393)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug' }));
     expect(await screen.findByText('Codeplug written (3 channels).')).toBeInTheDocument();
     expect(uploaded).toBe(1);
+    // No timings from this upload: no Copy button.
+    expect(screen.queryByRole('button', { name: 'Copy write timings' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Write another radio' }));
     await screen.findByRole('button', { name: 'Write codeplug' });
     // A second port prompt, same ticks.
     expect(grant).toHaveBeenCalledTimes(2);
     expect(prepare).toHaveBeenCalledTimes(2);
+  });
+
+  it('Done offers Copy write timings when the upload returned them (#1406)', async () => {
+    const line = '[d890-write-timing] {"profileId":"radio-io-at-d890uv","rows":[]}';
+    vi.mocked(radioIoSession.uploadPreparedRadioWrite).mockImplementation(
+      async (_s, _e, _i, opts) => {
+        await opts?.beforeTransmit?.({
+          identity,
+          channelCount: 3,
+          plan: [{ label: 'Upload', weight: 4000 }],
+          identityOnly: false,
+        });
+        return { timings: line };
+      },
+    );
+    const writeText = vi.fn<(text: string) => Promise<void>>(async () => undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    openStepper('radio-io-at-d890uv');
+    await connect();
+    fireEvent.click(await screen.findByRole('button', { name: 'Write codeplug' }));
+    expect(await screen.findByText('Codeplug written (3 channels).')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy write timings' }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(line));
+    expect(writeText.mock.calls[0]![0]).toMatch(/^\[d890-write-timing\] /);
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeInTheDocument();
   });
 
   it('D890 keps need a new session: restart step, then Write keps (#1406)', async () => {

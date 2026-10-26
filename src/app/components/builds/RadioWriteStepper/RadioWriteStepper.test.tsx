@@ -219,6 +219,7 @@ describe('RadioWriteStepper — steps 4 to 6', () => {
           checkStatus: 'skipped',
           checkResult: null,
           identity: { model: 'AT-D890UV', serial: 'ABCD1234', name: 'MM9PDY-2' },
+          writeTimings: null,
         },
       },
       { successNote: 'Power-cycle the radio.' },
@@ -226,6 +227,7 @@ describe('RadioWriteStepper — steps 4 to 6', () => {
     expect(screen.getByText('Codeplug written (412 channels).')).toBeInTheDocument();
     expect(screen.getByText('Check write: skipped.')).toBeInTheDocument();
     expect(screen.getByText('Power-cycle the radio.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Copy write timings' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Write another radio' }));
     expect(actions.onWriteAnother).toHaveBeenCalled();
     fireEvent.click(screen.getAllByRole('button', { name: 'Close' }).at(-1)!);

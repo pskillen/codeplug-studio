@@ -117,6 +117,8 @@ export interface WriteSummary {
   checkStatus: CheckStatus;
   checkResult: WriteVerifyResult | null;
   identity: RadioIdentityView | null;
+  /** Per-stage write timings as one line of text to paste into a report; null when the radio has none. */
+  writeTimings: string | null;
 }
 
 export interface WriteReviewView {

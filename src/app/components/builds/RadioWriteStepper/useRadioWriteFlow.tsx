@@ -192,6 +192,8 @@ interface WrittenFacts {
   kepsResult: SatelliteKepsWriteResult | null;
   kepsError: string | null;
   warnings: ExportWarning[];
+  /** Per-stage write timings from the upload (AT-D890); keps after a restart are not timed. */
+  writeTimings: string | null;
 }
 
 const EMPTY_FACTS: WrittenFacts = {
@@ -202,6 +204,7 @@ const EMPTY_FACTS: WrittenFacts = {
   kepsResult: null,
   kepsError: null,
   warnings: [],
+  writeTimings: null,
 };
 
 function errorMessage(err: unknown): string {
@@ -400,6 +403,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
       // A ref, not the render's state: check-then-keps reaches here from an older closure.
       checkResult: checkResultRef.current,
       identity: identityRef.current,
+      writeTimings: facts.writeTimings,
     });
     setBusyNotify(false);
     setStep('done');
@@ -732,6 +736,7 @@ export function useRadioWriteFlow(args: UseRadioWriteFlowArgs): RadioWriteFlow {
           settingsChanged: settingsAppliedRef.current,
           channelCount: image.channels.length,
           warnings: [...image.warnings, ...(result.warnings ?? [])],
+          writeTimings: result.timings ?? null,
         };
         await afterUpload(session, p, signal, result.writeVerifyPending);
         return;
