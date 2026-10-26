@@ -36,6 +36,39 @@ export interface ProgressUpdate {
 
 export type ProgressFn = (p: ProgressUpdate) => void;
 
+/**
+ * One step an adapter expects to emit during an operation, declared before any byte moves
+ * so the UI can show the whole list up front (workflow design §2.5, #1393).
+ */
+export interface PlannedStage {
+  /** Exactly the `ProgressUpdate.stage` string the adapter emits. */
+  readonly label: string;
+  /** Estimated bytes on the wire for this stage (reads and writes). Drives the overall bar and ETA. */
+  readonly weight: number;
+  /** May not occur in a given run (for example nothing to preserve). */
+  readonly optional?: boolean;
+}
+
+export type RadioOperation = 'read' | 'write' | 'backup' | 'restore';
+
+/** What an adapter may use to size a plan. Everything is optional; plans fall back to nominal sizes. */
+export interface RadioPlanContext {
+  /** Write: the prepared projection (channels + organisation). */
+  readonly prepared?: {
+    readonly channels: readonly import('./radioChannelDto.ts').RadioChannelDto[];
+    readonly organisation: import('./radioWriteProjection.ts').RadioWriteOrganisation;
+  };
+  /** Write: which parts are being written. Omitted means the codeplug alone. */
+  readonly parts?: {
+    readonly codeplug: boolean;
+    readonly contacts: boolean;
+    readonly settings: boolean;
+    readonly keps: boolean;
+  };
+  /** After an in-session read, adapters may refine weights from what they read. */
+  readonly session?: RadioSession;
+}
+
 export interface IdentResult {
   raw: Uint8Array;
   firmwareHint?: string;
@@ -129,6 +162,12 @@ export interface RadioDescriptor {
   baudRateFallback?: number;
   /** Persist / merge clone image for this radio family. */
   hydration: RadioHydrationHooks;
+  /**
+   * Planned stages for an operation, in emission order, before any transfer. Labels must equal the
+   * `stage` strings the adapter emits (a test per adapter checks emitted is a subset of declared).
+   * Omit for an operation without a plan: the UI falls back to a list that grows as stages arrive.
+   */
+  planStages?(op: RadioOperation, ctx: RadioPlanContext): PlannedStage[];
   /** Optional cross-session write verify — compare staged upload vs post-commit read-back. */
   writeVerify?: import('./writeVerify.ts').WriteVerifyHooks;
 }
