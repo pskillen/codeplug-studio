@@ -11,9 +11,19 @@ import {
   AtD890ScriptedPipe,
   localInfoWithSerial,
   scriptAtD890Connect,
+  scriptAtD890ConnectWithNegotiation,
   scriptAtD890UploadReadResponder,
 } from '@integrations/radio-io/radios/at-d890uv/__fixtures__/scriptedPipe.ts';
 import { readAtD890SettingsFromRadio } from './radioIoAtD890SettingsRead.ts';
+import { uploadPreparedRadioWrite } from './radioIoSession.ts';
+import { AT_D890UV_DESCRIPTOR } from '@integrations/radio-io/radios/at-d890uv/descriptor.ts';
+import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import {
+  channelPrimaryAddress,
+  channelSecondaryAddress,
+  putCacheBytes,
+} from '@integrations/radio-io/radios/at-d890uv/memory.ts';
+import type { RadioSession } from '@integrations/radio-io/types.ts';
 
 function scriptedRadio(flags: readonly [number, number]) {
   const pipe = new AtD890ScriptedPipe();
@@ -81,6 +91,48 @@ describe('AT-D890 stun/kill flag through the real session service (#1288)', () =
     );
     expect(endFrames(pipe)).toHaveLength(0);
     expect(writeFrames(pipe)).toEqual([]);
+  });
+
+  it('uploadPreparedRadioWrite on a flagged radio sends no W frame and no END', async () => {
+    const pipe = new AtD890ScriptedPipe();
+    scriptAtD890ConnectWithNegotiation(pipe, 0xf0, [1, 0]);
+    const radio = new AtD890uvProtocol();
+    await radio.connect(pipe);
+    radio.seedDownloadCache({
+      blocks: new Map([[D890_MAP.LocalInfo, localInfoWithSerial('SN-FLAG')]]),
+    });
+    const cache = radio.getDownloadCache()!;
+    putCacheBytes(cache, D890_MAP.RadioIdSet, new Uint8Array(0x20));
+    putCacheBytes(cache, D890_MAP.ChannelSet, new Uint8Array(0x200));
+    putCacheBytes(cache, channelPrimaryAddress(0), new Uint8Array(0x40));
+    putCacheBytes(cache, channelSecondaryAddress(0), new Uint8Array(0x40));
+    putCacheBytes(cache, D890_MAP.ZoneSet, new Uint8Array(0x20));
+    putCacheBytes(cache, D890_MAP.ZoneHide, new Uint8Array(0x20).fill(0xff));
+    putCacheBytes(cache, D890_MAP.TalkgroupSet, new Uint8Array(0x4f0).fill(0xff));
+    const session: RadioSession = { descriptor: AT_D890UV_DESCRIPTOR, pipe, radio };
+    await expect(
+      uploadPreparedRadioWrite(session, egress(), undefined, {
+        organisation: { zones: [{ wireName: 'Z1', channelNumbers: [1] }] },
+        channels: [
+          {
+            slotIndex: 1,
+            empty: false,
+            wireName: 'CH1',
+            rxHz: 145_500_000,
+            txHz: 145_500_000,
+            rxTone: { kind: 'none' },
+            txTone: { kind: 'none' },
+            powerPercent: 100,
+            bandwidth: 'FM',
+            mode: 'analog',
+          },
+        ],
+        beforeTransmit: async () => 'apply',
+      }),
+    ).rejects.toBeInstanceOf(AtD890StunKillError);
+    expect(writeFrames(pipe)).toEqual([]);
+    await radio.disconnect();
+    expect(endFrames(pipe)).toHaveLength(0);
   });
 
   it('flags 00 00: the read session still ends with END', async () => {
