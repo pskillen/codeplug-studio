@@ -3,7 +3,10 @@ import { newRadioBuildForProfile } from '@core/domain/factories.ts';
 import * as radioIo from '@integrations/radio-io/index.ts';
 import { D890_MAP } from '@integrations/radio-io/radios/at-d890uv/constants.ts';
 import { AT_D890_STUN_KILL_UNKNOWN_MESSAGE } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
-import { AT_D890_STUN_KILL_MESSAGE } from '@integrations/radio-io/radios/at-d890uv/stunKillGuard.ts';
+import {
+  AT_D890_STUN_KILL_MESSAGE,
+  AtD890StunKillError,
+} from '@integrations/radio-io/radios/at-d890uv/stunKillGuard.ts';
 import {
   AtD890ScriptedPipe,
   localInfoWithSerial,
@@ -54,6 +57,13 @@ describe('AT-D890 stun/kill flag through the real session service (#1288)', () =
       expect(writeFrames(pipe)).toEqual([]);
     },
   );
+
+  it('keeps the AtD890StunKillError class and adds no baud note', async () => {
+    scriptedRadio([1, 0]);
+    const err = await readAtD890SettingsFromRadio(egress()).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(AtD890StunKillError);
+    expect((err as Error).message).not.toMatch(/tried baud/);
+  });
 
   it('a read session whose LocalInfo cannot be read sends no END and says to power-cycle', async () => {
     const pipe = new AtD890ScriptedPipe();

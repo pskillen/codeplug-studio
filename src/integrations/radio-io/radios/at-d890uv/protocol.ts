@@ -616,7 +616,8 @@ export class AtD890uvProtocol implements CloneImageRadio {
       );
       this.readBlockSize = bestBlockSize;
       // The baseline is LocalInfo itself: the stun/kill flags need no extra read.
-      this.localInfoFlags = [baseline[0] ?? 0, baseline[1] ?? 0];
+      // A reply shorter than the two flag bytes is not a healthy read: leave the state unknown.
+      if (baseline.length >= 2) this.localInfoFlags = [baseline[0]!, baseline[1]!];
     } catch {
       this.readBlockSize = AT_D890_BLOCK_SIZE;
     }
@@ -631,7 +632,7 @@ export class AtD890uvProtocol implements CloneImageRadio {
           opts?.signal,
           AT_D890_BLOCK_SIZE,
         );
-        this.localInfoFlags = [head[0] ?? 0, head[1] ?? 0];
+        if (head.length >= 2) this.localInfoFlags = [head[0]!, head[1]!];
       } catch {
         await pipe.flush?.();
       }

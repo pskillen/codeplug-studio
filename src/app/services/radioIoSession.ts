@@ -74,7 +74,11 @@ import {
   resolveRadioWriteProdDisabledMessage,
 } from './radioWriteEnvGate.ts';
 import { encodeAtD890WriteImageFromDownloadCache } from '@integrations/radio-io/radios/at-d890uv/hydration.ts';
-import { AtD890uvProtocol } from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import {
+  AT_D890_STUN_KILL_UNKNOWN_MESSAGE,
+  AtD890uvProtocol,
+} from '@integrations/radio-io/radios/at-d890uv/protocol.ts';
+import { AtD890StunKillError } from '@integrations/radio-io/radios/at-d890uv/stunKillGuard.ts';
 import { encodeDm32uvWriteImageFromDownloadCache } from '@integrations/radio-io/radios/dm32uv/hydration.ts';
 import { Dm32uvProtocol } from '@integrations/radio-io/radios/dm32uv/protocol.ts';
 import { encodeOpenGd77WriteImageFromPrior } from '@integrations/radio-io/radios/opengd77/hydration.ts';
@@ -160,6 +164,10 @@ function isHandshakeConnectFailure(err: unknown): boolean {
 function withBaudsTriedMessage(err: unknown, baudsTried: readonly number[]): Error {
   const list = baudsTried.join(', ');
   if (err instanceof Error) {
+    // The stun/kill refusals are not connect failures: keep their class and wording (#1288).
+    if (err instanceof AtD890StunKillError || err.message === AT_D890_STUN_KILL_UNKNOWN_MESSAGE) {
+      return err;
+    }
     if (err.message.includes('tried baud')) {
       return err;
     }
