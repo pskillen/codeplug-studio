@@ -26,7 +26,7 @@ reviewSectionsFor(descriptor, { ...ctx, atD890: controller });
 - **Range and channels:** `atD890ReviewFacts.ts` (pure). The range comes from the ident's band code via `describeAtD890FrequencyRange`; receive-only channels are exactly `listAtD890ReceiveOnlyChannels(channels, bandCode)`. They are written anyway.
 - **Radio settings:** hidden unless ticked. Same radio as the settings read: the changes, no choice. Another radio (or no read): Apply / Keep its settings (Keep preselected, Apply when "don't ask again" is set) and **Review its settings**.
 - **Backup:** "Save backup now" from the read the Write holds, or "Read the rest of the radio and save a backup" after a settings-only read; "✓ Backup saved 14:02" afterwards.
-- **Nudge:** `Mm9pdyStepKeysNudge`, which hides itself on the stock target, when the keys already match, and once the session overrides either key.
+- **Nudge:** `Mm9pdyStepKeysNudge`, which hides itself on the stock target, when the keys already match, and once the session overrides either key. Its button also selects Apply, so the Write button's label (`review.effectiveParts`: settings only when they will be sent) and the write agree.
 
 ## Related
 
