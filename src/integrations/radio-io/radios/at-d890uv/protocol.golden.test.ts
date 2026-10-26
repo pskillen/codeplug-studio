@@ -20,6 +20,7 @@ import {
   channelSecondaryAddress,
 } from './memory.ts';
 import { AtD890uvProtocol } from './protocol.ts';
+import { mm9pdyStepKeyOverrides } from './mm9pdyStepKeys.ts';
 import {
   AtD890ScriptedPipe,
   enableAtD890AutoWriteAck,
@@ -127,7 +128,13 @@ function locationUnit(): Uint8Array {
 const SCENARIOS: Record<string, () => Promise<GoldenFrame[]>> = {
   stockRmw: () => transmittedFrames(atD890UploadBankIntentFromOrganisation({}, [])),
   stepKeys: () =>
-    transmittedFrames(atD890UploadBankIntentFromOrganisation({ assignMm9pdyStepKeys: true }, [])),
+    // The same frames as when the build-level switch drove this: the nudge's overrides write the same bytes.
+    transmittedFrames(
+      atD890UploadBankIntentFromOrganisation(
+        { atD890SettingsOverrides: mm9pdyStepKeyOverrides() },
+        [],
+      ),
+    ),
   locationTable: () =>
     transmittedFrames(
       atD890UploadBankIntentFromOrganisation(

@@ -830,7 +830,7 @@ describe('buildRadioWriteProjection radio-io-at-d890uv-mm9pdy', () => {
     expect(digital.every((row) => row.scanListId == null)).toBe(true);
   });
 
-  it('sets assignMm9pdyStepKeys only for the MM9PDY target when the export setting is on', () => {
+  it('never sets assignMm9pdyStepKeys for an AT-D890 target, whatever the stored export setting (#1393)', () => {
     const { library } = repeaterWithTwoTalkGroups();
     const mm9 = newRadioBuildForProfile('p1', 'radio-io-at-d890uv-mm9pdy');
     const mm9On = {
@@ -844,7 +844,7 @@ describe('buildRadioWriteProjection radio-io-at-d890uv-mm9pdy', () => {
     expect(
       buildRadioWriteProjection(onAssembled, mm9On, library, mm9.egress).organisation
         .assignMm9pdyStepKeys,
-    ).toBe(true);
+    ).toBeUndefined();
 
     const offAssembled = assemble(mm9.build, library, {
       formatId: mm9.egress.formatId,

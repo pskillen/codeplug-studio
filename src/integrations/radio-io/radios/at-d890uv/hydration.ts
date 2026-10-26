@@ -21,7 +21,6 @@ import { encodeMasterIdIntoAtD890Image } from './masterIdCodec.ts';
 import { encodeAprsIntoAtD890Image } from './aprsCodec.ts';
 import { encodeAmAirIntoAtD890Image } from './amAirCodec.ts';
 import { encodeAmZonesIntoAtD890Image } from './amZoneCodec.ts';
-import { patchMm9pdyStepKeysOnImage } from './mm9pdyStepKeys.ts';
 import { AT_D890UV_MODEL_IDS, AT_D890_MAP_SIZE } from './constants.ts';
 import { createMemoryMap } from '../../kit/memoryMap.ts';
 import { RadioProtocolError } from '../../kit/errors.ts';
@@ -140,9 +139,6 @@ export function encodeAtD890ProjectionOntoImage(
   }
   if (organisation?.aprs) {
     next = encodeAprsIntoAtD890Image(next, organisation.aprs);
-  }
-  if (organisation?.assignMm9pdyStepKeys === true) {
-    patchMm9pdyStepKeysOnImage(next);
   }
 
   return next;

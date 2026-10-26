@@ -28,7 +28,6 @@ import {
   radioChannelHasTablePosition,
 } from './channelLocationCodec.ts';
 import { listSetBits } from './bitmap.ts';
-import { mm9pdyStepKeyOverrides } from './mm9pdyStepKeys.ts';
 import { resolveAtD890SettingsPatches, type AtD890SettingsPatch } from './settingsFields.ts';
 import { assertAtD890WritableSpan, isAtD890WritableAddress } from './writableExtents.ts';
 import { syncAmAirRegionsToCache } from './amAirCodec.ts';
@@ -344,10 +343,7 @@ export function atD890UploadBankIntentFromOrganisation(
   channels?: readonly RadioChannelDto[],
 ): AtD890UploadBankIntent {
   const settingsPatches = resolveAtD890SettingsPatches(
-    [
-      ...(organisation?.assignMm9pdyStepKeys === true ? mm9pdyStepKeyOverrides() : []),
-      ...(organisation?.atD890SettingsOverrides ?? []),
-    ],
+    [...(organisation?.atD890SettingsOverrides ?? [])],
     organisation?.atD890SettingsTarget ?? 'stock',
   );
   return {

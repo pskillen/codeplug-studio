@@ -180,9 +180,10 @@ export interface RadioWriteOrganisation {
    */
   writeRxGroupTimeSlotOverrides?: boolean;
   /**
-   * MM9PDY only. When true, encode and upload set P1 short and P2 short: 14 and 13 on
-   * the AT-D890UV, 20 (TG Prev) and 21 (TG Next) on the DM-32UV. Stock writes leave
-   * those bytes as read.
+   * DM-32UV MM9PDY only. When true, encode and upload set P1 short and P2 short to 20 (TG Prev)
+   * and 21 (TG Next). The AT-D890UV ignores it since #1393: its step keys are ordinary settings
+   * overrides (`mm9pdyStepKeyOverrides()`), set by the Review nudge. Stock writes leave those
+   * bytes as read.
    */
   assignMm9pdyStepKeys?: boolean;
   /**

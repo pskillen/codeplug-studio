@@ -71,8 +71,9 @@ export interface BuildExportSettings {
   /** AT-D890UV `ScanList.CSV` Dwell Time[s] (0.1–5.0). Unset → 3.0 s. */
   scanListDwellTimeSeconds?: number;
   /**
-   * MM9PDY AT-D890UV only. When true, Write sets P1 short to TG next (14) and
-   * P2 short to TG previous (13). Unset or false leaves those key bytes as read.
+   * DM-32UV MM9PDY only. When true, Write sets P1 short to TG previous and P2 short to TG next.
+   * Ignored on the AT-D890UV since #1393 (old projects and YAML files may still carry it; it loads,
+   * saves and validates, and produces no patch). The D890's step keys come from the Review nudge.
    */
   assignMm9pdyStepKeys?: boolean;
   /**

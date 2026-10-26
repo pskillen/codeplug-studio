@@ -28,6 +28,7 @@ import { encodeBcdFrequencyHz } from './bcd.ts';
 import { setBitmapBit } from './bitmap.ts';
 import { channelPrimaryAddress, channelSecondaryAddress } from './memory.ts';
 import { encodeAtD890WriteImageFromDownloadCache } from './hydration.ts';
+import { mm9pdyStepKeyOverrides } from './mm9pdyStepKeys.ts';
 import { resolveAtD890SettingsPatches, type AtD890SettingsPatch } from './settingsFields.ts';
 
 import { isAtD890EraseUnitBookkeepingAddress, listTouchedEraseUnits } from './eraseUnits.ts';
@@ -234,7 +235,7 @@ describe('AtD890uvProtocol', () => {
     scriptAtD890UploadReadResponder(pipe, memory);
     const image = seedChannelZeroUpload(radio);
     radio.setUploadBankIntent(
-      atD890UploadBankIntentFromOrganisation({ assignMm9pdyStepKeys: true }),
+      atD890UploadBankIntentFromOrganisation({ atD890SettingsOverrides: mm9pdyStepKeyOverrides() }),
     );
     enableAtD890AutoWriteAck(pipe);
 
@@ -296,14 +297,19 @@ describe('AtD890uvProtocol', () => {
     expect(radio.takeUploadSettingsPatches()).toBeUndefined();
   });
 
-  it('throws before any frame when the step-key switch and an override patch the same field', () => {
+  it('throws before any frame when the step-key overrides and another override patch the same field', () => {
     expect(() =>
       atD890UploadBankIntentFromOrganisation({
-        assignMm9pdyStepKeys: true,
         atD890SettingsTarget: 'mm9pdy',
-        atD890SettingsOverrides: [{ fieldId: 'keyShortP2', value: 5 }],
+        atD890SettingsOverrides: [...mm9pdyStepKeyOverrides(), { fieldId: 'keyShortP2', value: 5 }],
       }),
     ).toThrow(RadioProtocolError);
+  });
+
+  it('ignores the build-level step-key flag on the AT-D890 (no patch since #1393)', () => {
+    expect(atD890UploadBankIntentFromOrganisation({ assignMm9pdyStepKeys: true })).toEqual(
+      atD890UploadBankIntentFromOrganisation({}),
+    );
   });
 
   it('cross-session verify after a step-key Write expects the patched bytes only (#1394)', async () => {
@@ -322,7 +328,7 @@ describe('AtD890uvProtocol', () => {
     scriptAtD890UploadReadResponder(pipe, memory);
     const image = seedChannelZeroUpload(radio);
     radio.setUploadBankIntent(
-      atD890UploadBankIntentFromOrganisation({ assignMm9pdyStepKeys: true }),
+      atD890UploadBankIntentFromOrganisation({ atD890SettingsOverrides: mm9pdyStepKeyOverrides() }),
     );
     enableAtD890AutoWriteAck(pipe);
     await radio.upload(image, {});

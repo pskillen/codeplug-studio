@@ -207,10 +207,11 @@ describe('encodeAtD890WriteImageFromDownloadCache', () => {
       zones: [{ wireName: 'Z1', channelNumbers: [1] }],
       assignMm9pdyStepKeys: true,
     });
+    // The build-level flag no longer patches the image on the AT-D890 (#1393): bytes stay as read.
     const out = image.get(D890_MAP.OptionalSettingsMain + 0x10, 16);
     expect(out[0]).toBe(0x30);
-    expect(out[3]).toBe(14);
-    expect(out[4]).toBe(13);
+    expect(out[3]).toBe(0x33);
+    expect(out[4]).toBe(0x34);
     expect(out[5]).toBe(0x35);
     expect(image.get(store, 0x20)).toEqual(marker);
   });
