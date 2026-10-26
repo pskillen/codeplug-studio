@@ -47,9 +47,9 @@ The app orchestration (post-write prompt, debounced **Verify write** button, pro
 ## Operator flow
 
 1. **Write to radio** completes; if `descriptor.writeVerify` is defined, staging (+ optional kept) snapshots persist to `sessionStorage`.
-2. Progress modal shows **Verify write** after a 5s debounce. Copy depends on `requiresCrossSessionReconnect` (restart wait vs immediate reconnect prompt).
-3. Operator clicks **Verify write** → new serial session → read-back compare → **Write verify report** modal.
-4. **Skip verify** / close clears pending storage.
+2. The Write stepper's step 5 (**Restart & check**) offers **Check write** once the restart wait is over (about 20 s when `requiresCrossSessionReconnect`, immediately otherwise). It is optional: **Skip and finish** clears the pending storage.
+3. Operator clicks **Check write** → new serial session (new port prompt) → read-back compare. The Done step says whether the check passed, failed or was skipped, and **View check report** opens the **Write verify report** modal.
+4. Closing the stepper from step 5 clears pending storage.
 
 Radios without `writeVerify` skip the prompt entirely.
 
@@ -72,7 +72,7 @@ Tier-3 protocol notes: each radio's `protocol.md` under `docs/reference/radios/`
 ## Manual verify
 
 1. `npm run dev` — open a build with a shipped `radio-io-*` egress.
-2. Read → Write → **Verify write** → confirm report pass/fail.
+2. Read → Write → **Check write** → confirm report pass/fail.
 3. **Hard reconnect:** D890, OpenGD77 — wait for radio UI before verify.
 4. **Soft reconnect:** RT95, UV, DM-32 — verify prompt appears without restart-wait copy.
 5. Grep: no `profileId === 'radio-io-*'` gate in `BuildRadioIoPanel` verify path; no adapter `instanceof` in `radioIoSession.ts`.
