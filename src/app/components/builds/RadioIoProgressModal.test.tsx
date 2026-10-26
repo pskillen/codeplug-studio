@@ -409,6 +409,21 @@ describe('RadioIoProgressModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('offers the caller finish action beside Close once a Restore finishes', () => {
+    const onBack = vi.fn();
+    renderModal({
+      opened: true,
+      operation: 'restore',
+      phase: 'done',
+      progress: null,
+      finishAction: { label: 'Back to Export', onClick: onBack },
+      onCancel: vi.fn(),
+      onClose: vi.fn(),
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Export' }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the caller success note on write and restore success', () => {
     const { rerender } = renderModal({
       opened: true,
