@@ -423,7 +423,7 @@ export const AT_D890_SETTING_FIELDS: readonly AtD890SettingFieldDef[] = [
     label: 'Volume bar',
     help: 'Show the volume popup when the knob turns.',
     exposure: 'cps',
-    mm9pdyExposure: 'menu',
+    // MM9PDY firmware PR #102 plans a menu row for this; it is not on main, so none is claimed.
   }),
   en({
     id: 'maxVolume',
