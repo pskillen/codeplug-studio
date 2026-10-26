@@ -2,7 +2,7 @@
  * Styleguide demo of the Write stepper (#1393): one button per step, dummy data, no radio.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useReducer, useState } from 'react';
 import { Group } from '@mantine/core';
 import RadioWriteStepper from '../../components/builds/RadioWriteStepper/RadioWriteStepper.tsx';
 import {
@@ -136,6 +136,9 @@ function viewFor(step: WriteStep, parts: WriteParts, d890?: AtD890ReviewControll
           kepsCount,
           estimateSeconds: 100,
           identityOnly: false,
+          // The button names what will be sent: Keep on another radio sends no settings.
+          effectiveParts:
+            d890 && d890.getState().choice !== 'apply' ? { ...parts, settings: false } : parts,
           sections: reviewSectionsFor(AT_D890UV_DESCRIPTOR, {
             identity: IDENTITY,
             parts,
@@ -195,6 +198,8 @@ export default function RadioWriteStepperDemo() {
     () => (d890Variant ? demoD890Controller(d890Variant) : undefined),
     [d890Variant],
   );
+  const [, rerender] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => d890?.subscribe(rerender), [d890]);
   useEffect(() => {
     clearAllOverrides(D890_DEMO_BUILD);
     setOverride(D890_DEMO_BUILD, 'volumeBar', true);
