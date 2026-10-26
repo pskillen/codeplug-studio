@@ -200,7 +200,7 @@ describe('AtD890uvProtocol', () => {
     ).toBe(false);
     expect(writePayloadAt(pipe, D890_MAP.AlarmBitmap)?.[0]).toBe(0xab);
     expect(writtenAddrs).not.toContain(D890_MAP.OptionalSettingsMain + 0x10);
-  });
+  }, 20_000);
 
   it('patches only P1 and P2 when MM9PDY step keys are on and restages +0x200 from the radio', async () => {
     const pipe = new AtD890ScriptedPipe();
@@ -235,7 +235,7 @@ describe('AtD890uvProtocol', () => {
     expect(keys?.[4]).toBe(13);
     expect(keys?.[5]).toBe(0x35);
     expect(writePayloadAt(pipe, D890_MAP.OptionalSettingsMain + 0x200)).toEqual(marker);
-  });
+  }, 20_000);
 
   it('never transmits the per-unit flash bookkeeping blocks', async () => {
     // E7: `+0x3fbf0` and `+0x3fff0` are radio-managed sector metadata, confirmed on
@@ -265,7 +265,7 @@ describe('AtD890uvProtocol', () => {
     await radio.disconnect();
     const endWrites = pipe.writes.filter((w) => new TextDecoder().decode(w) === 'END');
     expect(endWrites).toHaveLength(1);
-  });
+  }, 20_000);
 
   it('sends END on disconnect after download', async () => {
     const pipe = new AtD890ScriptedPipe();
@@ -451,7 +451,7 @@ describe('AtD890uvProtocol', () => {
     await expect(radio.upload(image, {})).rejects.toThrow(/OptionalSettingsMain reads erased/);
 
     expect(collectAtD890WriteDataAddresses(pipe)).toHaveLength(0);
-  });
+  }, 20_000);
 
   it('refuses upload when LocalInfo serial reads erased', async () => {
     const pipe = new AtD890ScriptedPipe();

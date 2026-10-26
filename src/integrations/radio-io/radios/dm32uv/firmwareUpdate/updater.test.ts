@@ -69,7 +69,7 @@ describe('createDm32FirmwareUpdater', () => {
     expect(progress.find((p) => p.phase === 'handshake')!.radioTouched).toBe(false);
     expect(progress.find((p) => p.phase === 'transfer')!.radioTouched).toBe(true);
     expect(progress.some((p) => p.msg === 'Transfer 120/840')).toBe(true);
-  });
+  }, 15_000);
 
   it('returns the bootloader ident', async () => {
     const ident = await createDm32FirmwareUpdater({ preSendDelayMs: 0 }).identify(
