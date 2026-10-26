@@ -37,6 +37,8 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
     { formatId: 'radio-io', profileId: 'radio-io-at-d890uv-mm9pdy' },
   ],
   writeStrategy: 'selective-ranges',
+  // The PC-mode loop has no exit of its own (static read of the stock firmware; radio check RS14).
+  programHoldSafeMs: Number.POSITIVE_INFINITY,
   baudRate: AT_D890_CONNECTION.BAUD_RATE,
   hydration: {
     extractHydration: (image, meta) => {
@@ -60,4 +62,7 @@ export const AT_D890UV_DESCRIPTOR: RadioDescriptor = {
   },
   writeVerify: AT_D890_WRITE_VERIFY_HOOKS,
   planStages: planAtD890Stages,
+  // Hardware (#1288, 2026-10-16): 0xF0-byte R frames run at ~110 KiB/s. Writes are a little
+  // slower, so round down.
+  nominalBytesPerSecond: 100_000,
 };

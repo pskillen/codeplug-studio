@@ -11,8 +11,8 @@ import {
   ProgressModal,
   type ProgressModalStep,
 } from '../../components/v2/index.ts';
-import WriteRadioModal from '../../components/builds/WriteRadioModal.tsx';
 import RadioIoReplayDemo from './RadioIoReplayDemo.tsx';
+import RadioWriteStepperDemo from './RadioWriteStepperDemo.tsx';
 import RadioIoStageList, { type StageRow } from '../../components/builds/RadioIoStageList.tsx';
 import { ICON_SIZE_ACTION, ICON_STROKE } from '../../lib/iconSizes.ts';
 
@@ -80,11 +80,6 @@ export default function StyleguideOverlaysPage() {
   const [runningOpen, setRunningOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [errorOpen, setErrorOpen] = useState(false);
-  const [writeRadioOpen, setWriteRadioOpen] = useState(false);
-  const [demoContactSource, setDemoContactSource] = useState<
-    'none' | 'library' | 'directory' | 'both'
-  >('none');
-  const [demoKeps, setDemoKeps] = useState(false);
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   const [filterTab, setFilterTab] = useState<'bands' | 'zones' | 'modes'>('bands');
   const [demoBands, setDemoBands] = useState<string[]>(['2m']);
@@ -92,7 +87,7 @@ export default function StyleguideOverlaysPage() {
   return (
     <StyleguidePageShell
       title="Overlays"
-      description="ModalShell, ConfirmModal, and ProgressModal. Product Write radio is ModalShell composition (`WriteRadioModal`), not a new overlay primitive."
+      description="ModalShell, ConfirmModal, and ProgressModal. The product Write stepper is a ModalShell composition (`RadioWriteStepper`), not a new overlay primitive."
     >
       <StyleguideSection
         title="ModalShell"
@@ -254,38 +249,10 @@ export default function StyleguideOverlaysPage() {
       </StyleguideSection>
 
       <StyleguideSection
-        title="Write radio (product composition)"
-        description="Build → Export uses ModalShell via WriteRadioModal — not a new overlay primitive. Live demo with dummy handlers."
+        title="Write stepper (product composition)"
+        description="Build → Export → Write radio is one ModalShell dialog with six steps. Pick a step to preview it with dummy data; nothing talks to a radio."
       >
-        <Group gap="sm">
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setDemoContactSource('none');
-              setDemoKeps(false);
-              setWriteRadioOpen(true);
-            }}
-          >
-            Open Write radio
-          </Button>
-        </Group>
-        <WriteRadioModal
-          open={writeRadioOpen}
-          onClose={() => setWriteRadioOpen(false)}
-          buildId="demo"
-          serialOk
-          busy={false}
-          writeHidden={false}
-          supportsDigitalContacts
-          supportsKeps
-          contactSource={demoContactSource}
-          onContactSourceChange={setDemoContactSource}
-          kepsSelected={demoKeps}
-          onKepsSelectedChange={setDemoKeps}
-          onWriteCodeplug={() => setWriteRadioOpen(false)}
-          onWriteContacts={() => setWriteRadioOpen(false)}
-          onWriteKeps={() => setWriteRadioOpen(false)}
-        />
+        <RadioWriteStepperDemo />
       </StyleguideSection>
     </StyleguidePageShell>
   );

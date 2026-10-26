@@ -1,0 +1,135 @@
+/**
+ * Step 1: what to write (#1393). One tick per part; options only under ticked parts; rows a radio
+ * does not support are not shown. Primary button: Connect & read.
+ */
+
+import { Link } from 'react-router-dom';
+import { Anchor, Switch, Text } from '@mantine/core';
+import type { DigitalContactsWriteSource } from '@core/domain/digitalIdDirectoryProjection.ts';
+import KepsLastUpdated from '../../../library/KepsLastUpdated.tsx';
+import { Button, FormField, SegmentedControl } from '../../../v2/index.ts';
+import WritePartRow from '../WritePartRow.tsx';
+import classes from '../RadioWriteStepper.module.css';
+import type { WriteFlowActions, WriteFlowView, WriteStepperConfig } from '../types.ts';
+import { tickedPartCount } from '../writeParts.ts';
+
+const CONTACT_SOURCE_OPTIONS: {
+  value: Exclude<DigitalContactsWriteSource, 'none'>;
+  label: string;
+}[] = [
+  { value: 'library', label: 'Library' },
+  { value: 'directory', label: 'RadioID' },
+  { value: 'both', label: 'Both' },
+];
+
+interface StepProps {
+  config: WriteStepperConfig;
+  view: WriteFlowView;
+  actions: WriteFlowActions;
+}
+
+export function WhatToWriteBody({ config, view, actions }: StepProps) {
+  const { parts } = view;
+  const { support } = config;
+  const set = (patch: Partial<typeof parts>) => actions.onPartsChange({ ...parts, ...patch });
+
+  return (
+    <div className={classes.stack}>
+      <div>
+        <WritePartRow
+          title="Codeplug"
+          summary={
+            config.codeplugSummary ??
+            'Channels, zones, scan lists and the other modelled lists from this build'
+          }
+          checked={parts.codeplug}
+          onCheckedChange={(codeplug) => set({ codeplug })}
+        >
+          {config.channelLocationNote ? (
+            <Text size="xs" c="dimmed" data-testid="write-radio-channel-location-note">
+              {config.channelLocationNote}
+            </Text>
+          ) : null}
+          {config.stepKeys ? (
+            <Switch
+              label="Assign TG previous and TG next"
+              description={`${config.stepKeys.description} Saved with this build.`.trim()}
+              checked={config.stepKeys.checked}
+              onChange={(event) => config.stepKeys?.onChange(event.currentTarget.checked)}
+            />
+          ) : null}
+        </WritePartRow>
+
+        {support.contacts ? (
+          <WritePartRow
+            title="Digital contacts"
+            summary="Replaces the radio's contact list"
+            checked={parts.contacts}
+            onCheckedChange={(contacts) => set({ contacts })}
+          >
+            <FormField
+              label="Contact source"
+              hint={
+                config.sharedContactBankNote
+                  ? 'Library talk groups and privates use the 1024-slot DMR contact bank. RadioID directory writes the firmware User Database for incoming-call lookup. RadioID does not fill the 1024 contact bank; RadioID-only leaves prior FLASH contacts. Library or Both replaces talk groups and library privates in that bank.'
+                  : config.sharedAddressBookNote
+                    ? 'Library contacts and the RadioID directory share one address book. RadioID or Both replaces that book. Duplicate DMR IDs: library wins. Operator radio IDs come from channel DMR IDs when the codeplug is written; contacts alone do not rewrite them.'
+                    : 'Library contacts are curated project rows. RadioID directory is the local shadow book. Both: library wins on duplicate DMR ID.'
+              }
+            >
+              <SegmentedControl
+                size="sm"
+                value={view.contactSource}
+                onChange={actions.onContactSourceChange}
+                aria-label="Contact source"
+                options={CONTACT_SOURCE_OPTIONS}
+              />
+            </FormField>
+          </WritePartRow>
+        ) : null}
+
+        {support.keps ? (
+          <WritePartRow
+            title="Satellite keps"
+            summary={
+              <>
+                {config.kepsSummary ? <span>{config.kepsSummary} · </span> : null}
+                <Anchor component={Link} to={`/builds/${config.buildId}/satellite-keps`} size="xs">
+                  Preview on the Satellite keps tab
+                </Anchor>
+              </>
+            }
+            checked={parts.keps}
+            onCheckedChange={(keps) => set({ keps })}
+          >
+            <Text size="xs" c="dimmed" component="div">
+              Writes enabled library satellites only.{' '}
+              <KepsLastUpdated
+                iso={config.kepsLastUpdatedIso}
+                libraryHref="/library/satellite-keps"
+              />
+            </Text>
+          </WritePartRow>
+        ) : null}
+      </div>
+      <Text size="sm" c="dimmed">
+        Anything not ticked stays as it is on the radio.
+      </Text>
+    </div>
+  );
+}
+
+export function WhatToWriteFooter({ config, view, actions }: StepProps) {
+  const disabled =
+    !config.serialOk || config.writeHidden || tickedPartCount(view.parts) === 0 || view.busy;
+  return (
+    <>
+      <Button variant="secondary" size="sm" onClick={actions.onClose}>
+        Cancel
+      </Button>
+      <Button variant="primary" size="sm" disabled={disabled} onClick={actions.onConnectAndRead}>
+        Connect &amp; read
+      </Button>
+    </>
+  );
+}

@@ -34,4 +34,4 @@ import KepsLastUpdated from '@app/components/library/KepsLastUpdated.tsx';
 ## Related
 
 - [satellite-keps hub](../../../../docs/features/satellite-keps/README.md)
-- [WriteRadioModal.md](../builds/WriteRadioModal.md)
+- [RadioWriteStepper.md](../builds/RadioWriteStepper/RadioWriteStepper.md)

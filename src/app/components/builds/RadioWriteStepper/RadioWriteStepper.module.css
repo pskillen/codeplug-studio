@@ -1,0 +1,121 @@
+.stepBar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-4, 6px);
+  margin-bottom: var(--dsv2-space-8, 12px);
+}
+
+.stepBarLabel {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.stepDots {
+  display: flex;
+  gap: 4px;
+}
+
+.stepDot {
+  flex: 1 1 0;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--dsv2-border-subtle, rgba(128, 128, 128, 0.3));
+}
+
+.stepDotDone,
+.stepDotCurrent {
+  background: var(--dsv2-accent, #228be6);
+}
+
+.stepDotCurrent {
+  opacity: 0.6;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-8, 12px);
+}
+
+.partRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: var(--dsv2-space-6, 8px) 0;
+  border-bottom: 1px solid var(--dsv2-border-subtle, rgba(128, 128, 128, 0.2));
+}
+
+.partRow:last-of-type {
+  border-bottom: none;
+}
+
+.partTick {
+  margin-top: 3px;
+  flex: none;
+}
+
+.partBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.partTitle {
+  font-weight: 600;
+  font-size: var(--dsv2-font-body, 14px);
+}
+
+.partSummary {
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+.partOptions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dsv2-space-6, 8px);
+  margin-top: 6px;
+}
+
+.identityGrid {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.identityKey {
+  color: var(--dsv2-text-secondary);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: var(--dsv2-space-6, 8px);
+  border-bottom: 1px solid var(--dsv2-border-subtle, rgba(128, 128, 128, 0.2));
+}
+
+.sectionTitle {
+  font-weight: 600;
+  font-size: var(--dsv2-font-body-sm);
+}
+
+.footerNote {
+  margin-right: auto;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}
+
+@media (max-width: 480px) {
+  .identityGrid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .identityKey {
+    margin-top: 4px;
+  }
+}
