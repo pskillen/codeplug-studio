@@ -2,8 +2,8 @@
  * AT-D890UV stun / kill guard — LocalInfo `+0x00` / `+0x01`.
  *
  * A non-zero flag means the radio has been remotely stunned or killed. In a read session, `END` with a flag set
- * clears the flag and erases and rewrites LocalInfo (hardware, #1288). A session that sees a flag must therefore not send `END`. The operator is told to
- * power-cycle the radio instead.
+ * clears the flag and erases and rewrites LocalInfo (hardware, #1288). A session that sees a flag must therefore
+ * not send `END`. The operator is told to power-cycle the radio instead.
  *
  * One small helper so every D890 session (vital backup now; the write and read sessions in PR 4c) converges on
  * the same check and the same wording.
