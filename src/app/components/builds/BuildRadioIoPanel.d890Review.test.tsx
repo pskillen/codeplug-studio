@@ -240,7 +240,7 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
   });
 
   async function openStepper() {
-    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write radio…' }));
     await screen.findByRole('button', { name: 'Connect & read' });
   }
 
@@ -418,7 +418,7 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
 
   it('the part row is ticked with changes, disabled with Set up… without, and Edit keeps the ticks', async () => {
     const build = renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write radio…' }));
     const box = await screen.findByRole('checkbox', { name: 'Radio settings' });
     expect(box).toBeDisabled();
     expect(box).not.toBeChecked();
@@ -426,7 +426,7 @@ describe('AT-D890 Review and the Radio settings part (#1393)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
     setOverride(build.id, 'keyTone', keyToneOpposite());
-    fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write radio…' }));
     const ticked = await screen.findByRole('checkbox', { name: 'Radio settings' });
     expect(ticked).toBeChecked();
     expect(screen.getByTestId('write-radio-settings-summary')).toHaveTextContent('1 change');

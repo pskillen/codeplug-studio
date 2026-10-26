@@ -104,7 +104,7 @@ const port = {
 
 function openStepper(profileId: string) {
   const rendered = renderPanel(profileId);
-  fireEvent.click(screen.getByRole('button', { name: 'Write radio' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Write radio…' }));
   return rendered;
 }
 

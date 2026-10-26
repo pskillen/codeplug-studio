@@ -363,6 +363,11 @@ export function protocolSupportsRestore(radio: CloneImageRadio): boolean {
   return typeof radio.restoreFromBackup === 'function';
 }
 
+/** Backup reads the radio through the descriptor's clone-image hooks; a radio without them has none. */
+export function descriptorSupportsBackup(descriptor: RadioDescriptor | undefined): boolean {
+  return typeof descriptor?.hydration?.extractHydration === 'function';
+}
+
 export function descriptorSupportsRestore(descriptor: RadioDescriptor | undefined): boolean {
   if (!descriptor) return false;
   return protocolSupportsRestore(descriptor.protocolFactory());

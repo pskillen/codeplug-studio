@@ -1,0 +1,97 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: var(--dsv2-panel-padding-y, 12px) var(--dsv2-panel-padding-x, 16px);
+  border: 1px solid var(--dsv2-border);
+  border-radius: var(--dsv2-radius-panel);
+  background: var(--dsv2-surface);
+}
+
+.headerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--dsv2-font-body);
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: var(--dsv2-font-body-sm);
+  font-weight: 600;
+  color: var(--dsv2-text-primary);
+}
+
+.line {
+  margin: 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-primary);
+}
+
+.rowMain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+}
+
+.warn {
+  color: var(--dsv2-warning);
+  font-weight: 600;
+}
+
+.nameList {
+  margin: 0;
+  padding-left: 20px;
+  max-height: 160px;
+  overflow-y: auto;
+  color: var(--dsv2-text-secondary);
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--dsv2-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.experimental {
+  margin: 0;
+  font-size: var(--dsv2-font-body-sm);
+  color: var(--dsv2-text-secondary);
+}

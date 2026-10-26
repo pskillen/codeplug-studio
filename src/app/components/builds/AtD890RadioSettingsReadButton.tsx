@@ -22,6 +22,8 @@ import classes from './AtD890RadioSettingsEditor.module.css';
 export interface AtD890RadioSettingsReadButtonProps {
   buildId: string;
   egress: EgressPath;
+  /** Button style; the settings page leads with it, the Export card keeps Write as the one primary. */
+  variant?: 'primary' | 'secondary';
 }
 
 const STAGE_TEXT: Record<AtD890SettingsReadStage | 'choosing', string> = {
@@ -33,6 +35,7 @@ const STAGE_TEXT: Record<AtD890SettingsReadStage | 'choosing', string> = {
 export default function AtD890RadioSettingsReadButton({
   buildId,
   egress,
+  variant = 'primary',
 }: AtD890RadioSettingsReadButtonProps) {
   const [stage, setStage] = useState<AtD890SettingsReadStage | 'choosing' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +72,7 @@ export default function AtD890RadioSettingsReadButton({
     <div className={classes.readArea}>
       <div className={classes.readControls}>
         <Button
-          variant="primary"
+          variant={variant}
           size="sm"
           disabled={!supported || busy}
           loading={busy}
