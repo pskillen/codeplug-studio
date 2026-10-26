@@ -111,6 +111,72 @@ describe('uploadPreparedRadioWrite with AT-D890UV settings overrides', () => {
     ]);
   });
 
+  describe("the object form { decision: 'apply', overrides }", () => {
+    const stepKeys = [
+      { fieldId: 'keyShortP1', value: 14 },
+      { fieldId: 'keyShortP2', value: 13 },
+    ];
+
+    it('applies overrides that were not set at the start, as the string form would have', async () => {
+      const viaStart = makeSession();
+      await uploadPreparedRadioWrite(viaStart.session, viaStart.egress, undefined, {
+        organisation,
+        channels: [analogCh],
+        settingsOverrides: stepKeys,
+        beforeTransmit: async () => 'apply',
+      });
+      const viaPause = makeSession();
+      await uploadPreparedRadioWrite(viaPause.session, viaPause.egress, undefined, {
+        organisation,
+        channels: [analogCh],
+        beforeTransmit: async (ctx) => {
+          expect(ctx.atD890?.overrides).toEqual([]);
+          return { decision: 'apply', overrides: stepKeys };
+        },
+      });
+      const last = viaPause.intents[viaPause.intents.length - 1]!;
+      expect(last.settingsPatches?.map((p) => [p.fieldId, [...p.bytes]])).toEqual([
+        ['keyShortP1', [14]],
+        ['keyShortP2', [13]],
+      ]);
+      expect(last).toEqual(viaStart.intents[viaStart.intents.length - 1]);
+      expect(viaPause.upload).toHaveBeenCalledTimes(1);
+    });
+
+    it('replaces the overrides given at the start with the ones the pause returns', async () => {
+      const { session, egress, intents } = makeSession();
+      await uploadPreparedRadioWrite(session, egress, undefined, {
+        organisation,
+        channels: [analogCh],
+        settingsOverrides: overrides,
+        beforeTransmit: async () => ({ decision: 'apply', overrides: stepKeys }),
+      });
+      const ids = intents[intents.length - 1]!.settingsPatches?.map((p) => p.fieldId);
+      expect(ids).toEqual(['keyShortP1', 'keyShortP2']);
+    });
+
+    it('refuses a bad, duplicated or unknown override from the pause before any frame', async () => {
+      for (const bad of [
+        [{ fieldId: 'keyShortP1', value: 99 }],
+        [
+          { fieldId: 'keyShortP1', value: 14 },
+          { fieldId: 'keyShortP1', value: 13 },
+        ],
+        [{ fieldId: 'noSuchField', value: 1 }],
+      ]) {
+        const { session, egress, upload } = makeSession();
+        await expect(
+          uploadPreparedRadioWrite(session, egress, undefined, {
+            organisation,
+            channels: [analogCh],
+            beforeTransmit: async () => ({ decision: 'apply', overrides: bad }),
+          }),
+        ).rejects.toThrow();
+        expect(upload).not.toHaveBeenCalled();
+      }
+    });
+  });
+
   it("'cancel' throws before upload", async () => {
     const { session, egress, upload } = makeSession();
     await expect(

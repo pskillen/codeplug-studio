@@ -90,6 +90,49 @@ describe('AT-D890UV settings-only write service', () => {
     }
   });
 
+  describe("the object form { decision: 'apply', overrides }", () => {
+    const stepKeys = [
+      { fieldId: 'keyShortP1', value: 14 },
+      { fieldId: 'keyShortP2', value: 13 },
+    ];
+
+    it('writes the overrides the pause returns, inside the settings unit', async () => {
+      const { pipe, session, egress } = await connectedSession();
+      const result = await writeAtD890SettingsOnly(session, egress, overrides, {
+        beforeTransmit: async () => ({ decision: 'apply', overrides: stepKeys }),
+      });
+      const addrs = collectAtD890WriteDataAddresses(pipe);
+      expect(addrs.length).toBeGreaterThan(0);
+      expect(addrs.every((a) => a >= 0x350_0000 && a < 0x354_0000)).toBe(true);
+      const kept = result.writeVerifyPending?.kept as { patches?: { fieldId: string }[] };
+      expect(kept.patches?.map((p) => p.fieldId)).toEqual(['keyShortP1', 'keyShortP2']);
+    });
+
+    it('writes the same frames as the string form given those overrides at the start', async () => {
+      const a = await connectedSession();
+      await writeAtD890SettingsOnly(a.session, a.egress, stepKeys, {
+        beforeTransmit: async () => 'apply',
+      });
+      const b = await connectedSession();
+      await writeAtD890SettingsOnly(b.session, b.egress, overrides, {
+        beforeTransmit: async () => ({ decision: 'apply', overrides: stepKeys }),
+      });
+      expect(b.pipe.writes.map((w) => [...w])).toEqual(a.pipe.writes.map((w) => [...w]));
+    });
+
+    it('refuses a bad or empty override list from the pause before any W frame', async () => {
+      for (const bad of [[{ fieldId: 'keyShortP1', value: 99 }], []]) {
+        const { session, egress, pipe } = await connectedSession();
+        await expect(
+          writeAtD890SettingsOnly(session, egress, overrides, {
+            beforeTransmit: async () => ({ decision: 'apply', overrides: bad }),
+          }),
+        ).rejects.toThrow();
+        expect(collectAtD890WriteDataAddresses(pipe)).toEqual([]);
+      }
+    });
+  });
+
   it('refuses a bad override before reading or writing', async () => {
     const { session, egress, pipe } = await connectedSession();
     const before = pipe.writes.length;

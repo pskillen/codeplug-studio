@@ -92,6 +92,9 @@ export async function writeAtD890SettingsOnly(
   const outcome = atD890PauseOutcome(result, overrides);
   if (outcome.decision !== 'apply') throw new RadioWriteCancelledError();
   // The pause may have changed the overrides (the step-key nudge); resolve again, before any frame.
+  if (outcome.overrides.length === 0) {
+    throw new RadioWriteBlockedError('There are no radio settings to write.');
+  }
   const chosenPatches =
     outcome.overrides === overrides
       ? patches
