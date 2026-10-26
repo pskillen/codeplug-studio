@@ -31,7 +31,6 @@ import {
   type AtD890DownloadCache,
 } from './memory.ts';
 import { AtD890uvProtocol } from './protocol.ts';
-import { SATELLITE_RECORD_BYTES } from './satelliteCodec.ts';
 
 /** Record counts the download weights are sized from. Nominal values suit a typical codeplug. */
 interface Counts {
@@ -223,26 +222,16 @@ function isSettingsOnly(ctx: RadioPlanContext): boolean {
   return p !== undefined && p.settings && !p.codeplug && !p.contacts;
 }
 
-function settingsOnlyPlan(ctx: RadioPlanContext): PlannedStage[] {
-  const stages: PlannedStage[] = [
+function settingsOnlyPlan(): PlannedStage[] {
+  // Keps after a restart are a separate session with no plan (#1406).
+  return [
     { label: 'Preserving untouched settings', weight: AT_D890_ERASE_UNIT_BYTES },
     { label: 'Upload', weight: SETTINGS_ONLY_UPLOAD_BYTES },
   ];
-  if (ctx.parts?.keps) {
-    stages.push(
-      {
-        label: 'Preserving untouched satellite data',
-        weight: AT_D890_ERASE_UNIT_BYTES,
-        optional: true,
-      },
-      { label: 'Upload', weight: AT_D890_LIMITS.MAX_SATELLITES * SATELLITE_RECORD_BYTES },
-    );
-  }
-  return stages;
 }
 
 function writePlan(ctx: RadioPlanContext): PlannedStage[] {
-  if (isSettingsOnly(ctx)) return settingsOnlyPlan(ctx);
+  if (isSettingsOnly(ctx)) return settingsOnlyPlan();
   const counts = countsFor(ctx);
   const cache = sessionCache(ctx.session);
   const stages: PlannedStage[] = [];

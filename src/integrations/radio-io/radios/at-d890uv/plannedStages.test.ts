@@ -154,16 +154,11 @@ describe('AT-D890UV planned stages for Radio settings alone (#1393)', () => {
     expect(plan.map((s) => s.label)).toEqual(['Preserving untouched settings', 'Upload']);
   });
 
-  it('adds the keps stages when keps are ticked with it', () => {
+  it('adds no keps stages when keps are ticked with it: they follow the restart (#1406)', () => {
     const plan = planForOperation(AT_D890UV_DESCRIPTOR, 'write', {
       parts: { codeplug: false, contacts: false, settings: true, keps: true },
     })!;
-    expect(plan.map((s) => s.label)).toEqual([
-      'Preserving untouched settings',
-      'Upload',
-      'Preserving untouched satellite data',
-      'Upload',
-    ]);
+    expect(plan.map((s) => s.label)).toEqual(['Preserving untouched settings', 'Upload']);
   });
 
   it('keeps the codeplug plan when the codeplug is ticked with settings', () => {
