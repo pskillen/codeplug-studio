@@ -466,9 +466,9 @@ export default function ExportBuildCpsPanel({
           <Text span fw={600}>
             {profileLabel}
           </Text>
-          . There is no CPS file export for this pathway — use Connect / Read / Write below. Curate
-          channels on the library and this build&apos;s memory list; Write runs assemble into a
-          previously Read clone image.
+          . There is no CPS file export for this pathway: Write sends this build to the radio you
+          connect. Curate channels on the library and this build&apos;s memory list; Write overlays
+          them onto a read of the radio taken in the same session.
         </Text>
         {wireHint ? (
           <Text size="sm" c="dimmed">
