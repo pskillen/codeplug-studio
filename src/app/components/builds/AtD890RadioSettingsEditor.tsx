@@ -26,11 +26,7 @@ import { Button, ConfirmModal, Panel, StatusBanner } from '../v2/index.ts';
 import Mm9pdyStepKeysNudge from './Mm9pdyStepKeysNudge.tsx';
 import AtD890RadioSettingRow from './AtD890RadioSettingRow.tsx';
 import AtD890RadioSettingsReadButton from './AtD890RadioSettingsReadButton.tsx';
-import {
-  changesLabel,
-  readBannerText,
-  rangeSummary,
-} from '../../lib/atD890RadioSettingsText.ts';
+import { changesLabel, readBannerText, rangeSummary } from '../../lib/atD890RadioSettingsText.ts';
 import classes from './AtD890RadioSettingsEditor.module.css';
 
 export interface AtD890RadioSettingsEditorProps {
