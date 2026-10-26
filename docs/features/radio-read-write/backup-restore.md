@@ -139,6 +139,7 @@ Do **not** import old Radio Info debug zips (`hydration.json`). None are expecte
 3. Region table: restorable vs inspect-only. Restore defaults to **all restorable** regions; the operator may uncheck restorable rows. Inspect-only rows cannot be enabled. The service drops inspect-only even if the UI is tampered.
 4. Inspect body: **what is on this image**, not “written from your build.” Occupancy plus **expandable** channel / zone / scan / talk-group / contact lists where codecs already exist. D890 Local info (including the read-only AT-D890 frequency range row, [band-code.md](../../reference/radios/anytone/at-d890uv/band-code.md)) / optional settings / APRS / alarm stay collapsed read-only forensics. Inspect-only regions remain in the region table and are not restore targets.
 5. Secondary: save zip again / clear / read again.
+6. **Backups saved this session** (last section, on the empty and populated page): each backup taken on this page or saved from the Write's Review, newest first, with the radio's name, its serial in full and the time; "No backups this session" when there are none. Per tab, in memory only, cleared by a reload ([#1393](https://github.com/pskillen/codeplug-studio/issues/1393) PR 4d; store `radioSessionBackups.ts`). The Export panel's Backup card shows the latest entry.
 
 Write-coverage tables stay on the **Export** write panel. They must not become the lead copy here.
 
@@ -147,6 +148,8 @@ Write-coverage tables stay on the **Export** write panel. They must not become t
 Confirm modal: connected model + serial (or firmware / label when the archive has no serial). **Serial mismatch is an error, not a confirm option.**
 
 Progress modal operation **`restore`** — copy must not say “Writing codeplug.” Abort / disconnect like other radio-io flows.
+
+When a Restore finishes, the progress dialog offers **Back to Export** beside Close.
 
 Optional post-restore verify where the descriptor already has `writeVerify` (same idea as Write). Not a blocker for families without hooks.
 
